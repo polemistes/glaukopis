@@ -548,8 +548,19 @@ fn why_of(certainty: Certainty, reasons: &[Reason]) -> String {
     }
 }
 
-pub(super) fn suggest(library: &Library, item: &FoundItem) -> Vec<Suggestion> {
+/// What each of the works may be. The shelf is asked for once for them all:
+/// its stamp hashes every field of the library, which for 2 000 citations
+/// against 20 000 entries, asked for each, took most of twenty seconds.
+pub(super) fn suggest_all(library: &Library, items: &[FoundItem]) -> Vec<Vec<Suggestion>> {
     let shelf = shelf(library);
+    items.iter().map(|item| suggest_on(library, &shelf, item)).collect()
+}
+
+pub(super) fn suggest(library: &Library, item: &FoundItem) -> Vec<Suggestion> {
+    suggest_on(library, &shelf(library), item)
+}
+
+fn suggest_on(library: &Library, shelf: &Shelf, item: &FoundItem) -> Vec<Suggestion> {
     if shelf.is_empty() {
         return Vec::new();
     }
@@ -878,5 +889,63 @@ mod tests {
         }
         assert_eq!(said("nb", "author-year-title", "no"), "samme forfatter, år og tittel");
         assert_eq!(said("nb", "year", "yes"), "samme år, og en lignende tittel");
+    }
+
+    /// The works of a document with 2 000 found citations, looked up in a
+    /// library of 20 000 entries. It says how long it took:
+    ///
+    ///     cargo test -p glaukopis-core --release -- --ignored many_found_looked_up --nocapture
+    #[test]
+    #[ignore = "a measure, to be run in release: cargo test --release -p glaukopis-core -- --ignored many_found_looked_up"]
+    fn many_found_looked_up() {
+        use crate::bib::names::Person;
+        use crate::library::entry::Draft;
+
+        let tmp = tempfile::tempdir().unwrap();
+        let mut library = Library::open_at(&tmp.path().join("library")).unwrap();
+        // Titles of words that few others have, as real ones are: made of syllables by the number.
+        let sounds = ["ka", "lo", "mi", "ne", "ru", "sa", "te", "vo", "phi", "the", "xe", "ly"];
+        let word = |n: usize| format!("{}{}{}", sounds[n % 12], sounds[n / 12 % 12], sounds[n / 144 % 12]);
+        let title = |i: usize| format!("On the {} of the {}", word(i), word(i * 7 + 3));
+        let drafts: Vec<Draft> = (0..20_000)
+            .map(|i| {
+                let mut draft = Draft { entry_type: "book".into(), ..Default::default() };
+                draft.fields.insert("title".into(), title(i));
+                draft.fields.insert("date".into(), (1900 + i % 120).to_string());
+                draft.fields.insert("publisher".into(), "A Press".into());
+                draft.names.insert("author".into(), vec![Person::new(format!("Family{}", i % 3000), "Anna")]);
+                draft
+            })
+            .collect();
+        library.add_many(&drafts).unwrap();
+        let items: Vec<FoundItem> = (0..2_000)
+            .map(|i| FoundItem {
+                data: Some(json!({
+                    "type": "book", "title": title(i * 7),
+                    "author": [{"family": format!("Family{}", (i * 7) % 3000), "given": "Anna"}],
+                    "issued": {"date-parts": [[1900 + (i * 7) % 120]]}
+                })),
+                ..Default::default()
+            })
+            .collect();
+        shelf(&library);
+        let began = std::time::Instant::now();
+        let stamped = stamp(&library);
+        let one_stamp = began.elapsed();
+        let began = std::time::Instant::now();
+        let found = suggest_all(&library, &items);
+        let took = began.elapsed();
+        // As they were asked for before, each with the stamp made anew.
+        let began = std::time::Instant::now();
+        let one_by_one: Vec<Vec<Suggestion>> = items.iter().take(200).map(|item| suggest(&library, item)).collect();
+        let each = began.elapsed();
+        assert_eq!(one_by_one, found[..200]);
+        eprintln!(
+            "{} citations against {} entries looked up in {took:?} all at once; 200 of them one by one in {each:?}; \
+             one stamp of the library takes {one_stamp:?} ({stamped:x})",
+            items.len(),
+            library.len()
+        );
+        assert!(found.iter().all(|f| !f.is_empty()));
     }
 }

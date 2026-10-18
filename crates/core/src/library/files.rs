@@ -8,7 +8,7 @@
 //! belong to no entry; it is in the store all the same, and leaves it only
 //! when it is removed itself.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
 
@@ -57,14 +57,101 @@ pub struct FileRecord {
 }
 
 /// The record of the files of the library.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", default)]
+///
+/// The files are found by their hashes and the folders by their ids through
+/// indexes kept beside the lists: a store of thousands of files is looked
+/// through at every load (`reconcile`) and for every view of the files, and
+/// a search of the list for each made those quadratic. The lists are changed
+/// only here, so that the indexes stay true to them.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", from = "Stored")]
 pub struct Files {
-    pub folders: Vec<FileFolder>,
-    pub files: Vec<FileRecord>,
+    folders: Vec<FileFolder>,
+    files: Vec<FileRecord>,
+    /// Where each file stands in `files`, by its hash.
+    #[serde(skip)]
+    by_hash: HashMap<String, usize>,
+    /// Where each folder stands in `folders`, by its id.
+    #[serde(skip)]
+    by_id: HashMap<String, usize>,
+    /// The first folder of each name under each parent, by the two.
+    #[serde(skip)]
+    by_place: HashMap<(Option<String>, String), usize>,
+}
+
+/// The record as it is written.
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct Stored {
+    folders: Vec<FileFolder>,
+    files: Vec<FileRecord>,
+}
+
+impl From<Stored> for Files {
+    fn from(stored: Stored) -> Files {
+        let mut files = Files { folders: stored.folders, files: stored.files, ..Default::default() };
+        files.index_files();
+        files.index_folders();
+        files
+    }
+}
+
+/// Two records are the same where their lists are: the indexes follow from them.
+impl PartialEq for Files {
+    fn eq(&self, other: &Files) -> bool {
+        self.folders == other.folders && self.files == other.files
+    }
 }
 
 impl Files {
+    /// The files, in the order of the record.
+    pub fn files(&self) -> &[FileRecord] {
+        &self.files
+    }
+
+    /// The folders, in the order they were made in.
+    pub fn folders(&self) -> &[FileFolder] {
+        &self.folders
+    }
+
+    fn index_files(&mut self) {
+        self.by_hash = self.files.iter().enumerate().map(|(i, f)| (f.hash.clone(), i)).collect();
+    }
+
+    fn index_folders(&mut self) {
+        self.by_id = self.folders.iter().enumerate().map(|(i, f)| (f.id.clone(), i)).collect();
+        self.by_place.clear();
+        for (i, f) in self.folders.iter().enumerate() {
+            self.by_place.entry((f.parent.clone(), f.name.clone())).or_insert(i);
+        }
+    }
+
+    fn folder_at(&self, id: &str) -> Option<&FileFolder> {
+        self.by_id.get(id).map(|&i| &self.folders[i])
+    }
+
+    /// Enters a record of a file the record does not know; one it knows is
+    /// put in the place of what was known.
+    pub fn insert(&mut self, record: FileRecord) {
+        match self.by_hash.get(&record.hash) {
+            Some(&at) => self.files[at] = record,
+            None => {
+                self.by_hash.insert(record.hash.clone(), self.files.len());
+                self.files.push(record);
+            }
+        }
+    }
+
+    /// Forgets the files of these hashes. Returns how many it knew.
+    pub fn forget_all(&mut self, hashes: &HashSet<&str>) -> usize {
+        let before = self.files.len();
+        self.files.retain(|f| !hashes.contains(f.hash.as_str()));
+        if self.files.len() != before {
+            self.index_files();
+        }
+        before - self.files.len()
+    }
+
     /// Reads the record; one that is not there is empty, and one that
     /// cannot be read is set aside (see `sidefile`), which `aside` says.
     pub fn load(path: &Path) -> Result<(Self, Option<SetAside>)> {
@@ -78,14 +165,14 @@ impl Files {
     }
 
     pub fn get(&self, hash: &str) -> Option<&FileRecord> {
-        self.files.iter().find(|f| f.hash == hash)
+        self.by_hash.get(hash).map(|&i| &self.files[i])
     }
 
     fn get_mut(&mut self, hash: &str) -> Result<&mut FileRecord> {
-        self.files
-            .iter_mut()
-            .find(|f| f.hash == hash)
-            .ok_or_else(|| Error::not_found(tr!("core-library-the-file-of-library")))
+        match self.by_hash.get(hash) {
+            Some(&i) => Ok(&mut self.files[i]),
+            None => Err(Error::not_found(tr!("core-library-the-file-of-library"))),
+        }
     }
 
     /// Enters a file of the store that the record does not know. One that it
@@ -93,18 +180,20 @@ impl Files {
     /// whether anything changed.
     pub fn record(&mut self, path: &str, folder: Option<&str>, origin: Option<&str>, added: &str) -> bool {
         let Some(hash) = attachments::hash_of_path(path) else { return false };
-        if let Some(known) = self.files.iter_mut().find(|f| f.hash == hash) {
+        if let Some(&at) = self.by_hash.get(hash) {
+            let known = &mut self.files[at];
             if known.path != path {
                 known.path = path.to_owned();
                 return true;
             }
             return false;
         }
-        self.files.push(FileRecord {
+        let folder = folder.filter(|f| self.by_id.contains_key(*f)).map(str::to_owned);
+        self.insert(FileRecord {
             hash: hash.to_owned(),
             path: path.to_owned(),
             name: path.rsplit('/').next().unwrap_or(path).to_owned(),
-            folder: folder.filter(|f| self.folders.iter().any(|x| x.id == *f)).map(str::to_owned),
+            folder,
             origin: origin.filter(|o| !o.is_empty()).map(str::to_owned),
             added: added.to_owned(),
         });
@@ -113,8 +202,10 @@ impl Files {
 
     /// Forgets a file. Returns what was known of it.
     pub fn forget(&mut self, hash: &str) -> Option<FileRecord> {
-        let at = self.files.iter().position(|f| f.hash == hash)?;
-        Some(self.files.remove(at))
+        let at = *self.by_hash.get(hash)?;
+        let record = self.files.remove(at);
+        self.index_files();
+        Some(record)
     }
 
     pub fn rename(&mut self, hash: &str, name: &str) -> Result<FileRecord> {
@@ -137,7 +228,7 @@ impl Files {
     // ---- folders ----
 
     pub fn folder(&self, id: &str) -> Result<&FileFolder> {
-        self.folders.iter().find(|f| f.id == id).ok_or_else(|| Error::not_found(tr!("core-library-the-folder")))
+        self.folder_at(id).ok_or_else(|| Error::not_found(tr!("core-library-the-folder")))
     }
 
     /// The folders, in their order.
@@ -159,7 +250,7 @@ impl Files {
             if steps > self.folders.len() {
                 return false;
             }
-            at = self.folders.iter().find(|f| f.id == id).and_then(|f| f.parent.clone());
+            at = self.folder_at(&id).and_then(|f| f.parent.clone());
         }
         false
     }
@@ -176,6 +267,8 @@ impl Files {
             parent: parent.map(str::to_owned),
             order: next_order(last),
         };
+        self.by_id.insert(folder.id.clone(), self.folders.len());
+        self.by_place.entry((folder.parent.clone(), folder.name.clone())).or_insert(self.folders.len());
         self.folders.push(folder.clone());
         Ok(folder)
     }
@@ -183,8 +276,8 @@ impl Files {
     /// The folder of this name under `parent`, made where there is none.
     pub fn folder_named(&mut self, name: &str, parent: Option<&str>) -> Result<FileFolder> {
         let name = check_name(name)?;
-        if let Some(found) = self.folders.iter().find(|f| f.name == name && f.parent.as_deref() == parent) {
-            return Ok(found.clone());
+        if let Some(&at) = self.by_place.get(&(parent.map(str::to_owned), name.clone())) {
+            return Ok(self.folders[at].clone());
         }
         self.folder_create(&name, parent)
     }
@@ -192,9 +285,10 @@ impl Files {
     pub fn folder_rename(&mut self, id: &str, name: &str) -> Result<FileFolder> {
         let name = check_name(name)?;
         self.folder(id)?;
-        let folder = self.folders.iter_mut().find(|f| f.id == id).expect("found above");
-        folder.name = name;
-        Ok(folder.clone())
+        let at = self.by_id[id];
+        self.folders[at].name = name;
+        self.index_folders();
+        Ok(self.folders[at].clone())
     }
 
     /// Puts a folder in another, or at the top. A folder cannot be put in
@@ -207,9 +301,10 @@ impl Files {
                 return Err(Error::invalid(tr!("core-library-folder-in-itself")));
             }
         }
-        let folder = self.folders.iter_mut().find(|f| f.id == id).expect("found above");
-        folder.parent = parent.map(str::to_owned);
-        Ok(folder.clone())
+        let at = self.by_id[id];
+        self.folders[at].parent = parent.map(str::to_owned);
+        self.index_folders();
+        Ok(self.folders[at].clone())
     }
 
     /// Deletes a folder. The folders and files in it move up to where it was.
@@ -226,6 +321,7 @@ impl Files {
             }
         }
         self.folders.retain(|f| f.id != id);
+        self.index_folders();
         Ok(())
     }
 
@@ -278,13 +374,13 @@ impl Files {
     /// The folders from the top down to this one, its own name last.
     pub fn path_of(&self, id: &str) -> Vec<FileFolder> {
         let mut out = Vec::new();
-        let mut at = self.folders.iter().find(|f| f.id == id);
+        let mut at = self.folder_at(id);
         while let Some(folder) = at {
             if out.iter().any(|f: &FileFolder| f.id == folder.id) {
                 break;
             }
             out.push(folder.clone());
-            at = folder.parent.as_deref().and_then(|p| self.folders.iter().find(|f| f.id == p));
+            at = folder.parent.as_deref().and_then(|p| self.folder_at(p));
         }
         out.reverse();
         out
@@ -542,6 +638,48 @@ mod tests {
         assert_eq!(Files::load(&tmp.path().join("none.json")).unwrap().0, Files::default());
     }
 
+    /// The indexes follow the lists through every change, and are made again when the record is read.
+    #[test]
+    fn files_and_folders_are_found_after_every_change() {
+        let mut files = Files::default();
+        let hashes: Vec<String> = (0..5).map(|i| attachments::hash_bytes(&[i])).collect();
+        for (i, hash) in hashes.iter().enumerate() {
+            assert!(files.record(&format!("attachments/{}/{hash}/{i}.pdf", &hash[..2]), None, None, "t"));
+        }
+        assert_eq!(files.forget(&hashes[1]).unwrap().hash, hashes[1]);
+        assert_eq!(files.forget_all(&[hashes[0].as_str(), hashes[3].as_str(), "unknown"].into_iter().collect()), 2);
+        assert!(files.get(&hashes[0]).is_none() && files.get(&hashes[1]).is_none() && files.get(&hashes[3]).is_none());
+        assert_eq!(files.get(&hashes[4]).unwrap().name, "4.pdf");
+        assert_eq!(files.rename(&hashes[2], "Two").unwrap().name, "Two");
+        files.insert(FileRecord { hash: hashes[2].clone(), name: "Again".into(), ..Default::default() });
+        assert_eq!(files.files().len(), 2);
+        assert_eq!(files.get(&hashes[2]).unwrap().name, "Again");
+
+        let greek = files.folder_create("Greek", None).unwrap();
+        let latin = files.folder_create("Latin", None).unwrap();
+        let epic = files.folder_create("Epic", Some(&greek.id)).unwrap();
+        files.folder_rename(&greek.id, "Hellenic").unwrap();
+        assert_ne!(files.folder_named("Greek", None).unwrap().id, greek.id, "the old name is free");
+        assert_eq!(files.folder_named("Hellenic", None).unwrap().id, greek.id);
+        files.folder_move(&epic.id, Some(&latin.id)).unwrap();
+        assert_eq!(files.folder_named("Epic", Some(&latin.id)).unwrap().id, epic.id);
+        assert_ne!(files.folder_named("Epic", Some(&greek.id)).unwrap().id, epic.id);
+        files.move_file(&hashes[4], Some(&epic.id)).unwrap();
+        files.folder_delete(&latin.id).unwrap();
+        assert!(files.folder(&latin.id).is_err());
+        assert_eq!(files.path_of(&epic.id).len(), 1, "moved up to the top");
+        assert_eq!(files.folder(&epic.id).unwrap().name, "Epic");
+
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join(FILE);
+        files.save(&path).unwrap();
+        let read = Files::load(&path).unwrap().0;
+        assert_eq!(read, files);
+        assert_eq!(read.get(&hashes[4]).unwrap().folder.as_deref(), Some(epic.id.as_str()));
+        assert_eq!(read.folder(&greek.id).unwrap().name, "Hellenic");
+        assert_eq!(read.clone().folder_named("Epic", None).unwrap().id, epic.id);
+    }
+
     #[test]
     fn kinds_by_ending() {
         assert_eq!(kind_of("Nagy 1979.PDF"), FileKind::Pdf);
@@ -550,5 +688,38 @@ mod tests {
         assert_eq!(kind_of("book.epub"), FileKind::Document);
         assert_eq!(kind_of("book.djvu"), FileKind::Other);
         assert_eq!(kind_of("README"), FileKind::Other);
+    }
+
+    /// A store of many files in many folders, taken in, reconciled and
+    /// looked up as the library does at every load and in the files view.
+    #[test]
+    #[ignore = "a measure, to be run in release: cargo test --release -p glaukopis-core -- --ignored many_files_recorded"]
+    fn many_files_recorded() {
+        for count in [5_000, 20_000] {
+            let mut files = Files::default();
+            let hashes: Vec<String> = (0..count).map(|i| attachments::hash_bytes(format!("{i}").as_bytes())).collect();
+            let began = std::time::Instant::now();
+            for (i, hash) in hashes.iter().enumerate() {
+                // As `enter_taken`: the folders of the file made where they are not, then the file entered.
+                let top = files.folder_named(&format!("Author {}", i % 100), None).unwrap();
+                let sub = files.folder_named(&format!("Work {}", i % 7), Some(&top.id)).unwrap();
+                assert!(files.get(hash).is_none());
+                files.record(&format!("attachments/{}/{hash}/file {i}.pdf", &hash[..2]), Some(&sub.id), None, "t");
+            }
+            let entered = began.elapsed();
+            let began = std::time::Instant::now();
+            // As `reconcile` and `file_views`: every file looked up by its hash, and its folder's path.
+            let mut deep = 0;
+            for hash in &hashes {
+                let record = files.get(hash).unwrap();
+                deep += files.path_of(record.folder.as_deref().unwrap()).len();
+            }
+            let looked_up = began.elapsed();
+            eprintln!(
+                "{count} files in {} folders: entered in {entered:?}, each looked up with its folder in {looked_up:?}",
+                files.folders().len()
+            );
+            assert_eq!(deep, 2 * count);
+        }
     }
 }

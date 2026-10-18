@@ -84,7 +84,13 @@ impl Parsed {
 
 pub fn parse(source: &str) -> Parsed {
     let source = source.strip_prefix('\u{feff}').unwrap_or(source);
-    let mut parser = Parser { src: source.as_bytes(), text: source, pos: 0, out: Parsed::default() };
+    let mut parser = Parser {
+        src: source.as_bytes(),
+        text: source,
+        pos: 0,
+        out: Parsed::default(),
+        counted: std::cell::Cell::new((0, 1)),
+    };
     for (name, value) in MONTHS {
         parser.out.strings.insert((*name).to_owned(), (*value).to_owned());
     }
@@ -112,6 +118,12 @@ struct Parser<'a> {
     text: &'a str,
     pos: usize,
     out: Parsed,
+    /// The last place whose line was asked for, and its line. The places
+    /// asked for go forward, so that only the newlines between the last and
+    /// the next are counted, and a file is counted through once: counted
+    /// from the beginning each time, a library of 10 000 entries took
+    /// seconds for its line numbers alone.
+    counted: std::cell::Cell<(usize, usize)>,
 }
 
 type PResult<T> = Result<T, String>;
@@ -188,7 +200,14 @@ impl<'a> Parser<'a> {
     }
 
     fn line_of(&self, pos: usize) -> usize {
-        self.src[..pos.min(self.src.len())].iter().filter(|&&b| b == b'\n').count() + 1
+        let pos = pos.min(self.src.len());
+        let (from, line) = self.counted.get();
+        let newlines = |range: &[u8]| range.iter().filter(|&&b| b == b'\n').count();
+        // A place before the last is counted back from it.
+        let line =
+            if pos >= from { line + newlines(&self.src[from..pos]) } else { line - newlines(&self.src[pos..from]) };
+        self.counted.set((pos, line));
+        line
     }
 
     fn peek(&self) -> Option<u8> {
@@ -691,5 +710,43 @@ mod key_tests {
         assert_eq!(e[1].get("year"), Some("2000"));
         assert_eq!(e[2].key, "");
         assert_eq!(e[3].key, "k");
+    }
+
+    /// Lines are counted as the parser goes: an unknown abbreviation inside an entry, a broken
+    /// entry after it and the entries that follow all have the line they stand on.
+    #[test]
+    fn lines_are_right_however_far_into_the_file() {
+        let mut src = String::new();
+        for i in 0..50 {
+            src.push_str(&format!("@book{{k{i},\n  title = {{T}},\n  publisher = nowhere{i}\n}}\n\n"));
+        }
+        src.push_str("@book{broken, title = {No end\n@book{last, title = {L}}\n");
+        let parsed = parse(&src);
+        let lines: Vec<usize> = parsed.entries().map(|e| e.line).collect();
+        assert_eq!(lines.len(), 51);
+        assert!(lines[..50].iter().enumerate().all(|(i, &l)| l == 1 + 5 * i), "{lines:?}");
+        assert_eq!(lines[50], 252);
+        let warned: Vec<usize> = parsed.warnings.iter().map(|w| w.line).collect();
+        assert_eq!(warned.len(), 51, "{warned:?}");
+        assert!(warned[..50].iter().enumerate().all(|(i, &l)| l == 3 + 5 * i), "{warned:?}");
+        assert_eq!(warned[50], 251);
+    }
+
+    #[test]
+    #[ignore = "a measure, to be run in release: cargo test --release -p glaukopis-core -- --ignored many_entries_parsed"]
+    fn many_entries_parsed() {
+        for count in [10_000, 30_000] {
+            let mut src = String::new();
+            for i in 0..count {
+                src.push_str(&format!(
+                    "@article{{key{i},\n  author = {{Family{i}, Given}},\n  title = {{A title of some length, number {i}}},\n  journal = {{Journal}},\n  year = {{{}}},\n  pages = {{1--20}},\n}}\n\n",
+                    1900 + i % 120
+                ));
+            }
+            let began = std::time::Instant::now();
+            let parsed = parse(&src);
+            eprintln!("{count} entries ({} MB) parsed in {:?}", src.len() / 1_000_000, began.elapsed());
+            assert_eq!(parsed.entries().count(), count);
+        }
     }
 }

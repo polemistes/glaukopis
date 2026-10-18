@@ -10,6 +10,7 @@
 use std::collections::{HashMap, HashSet};
 use std::io;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex as Guarded, MutexGuard};
 use std::time::{Duration, Instant};
 
@@ -26,9 +27,15 @@ use crate::registry::room_dir;
 /// How many may have one project open at a time.
 pub const MOST_PRESENT: usize = 64;
 
-/// How much may wait to be sent to one who is slow to receive. One who falls
-/// further behind is let go, and catches up on coming back.
+/// How many messages may wait to be sent to one who is slow to receive. One
+/// who falls further behind is let go, and catches up on coming back.
 const WAITING: usize = 512;
+
+/// How much may wait to be sent to one, in bytes, as so many times the most
+/// a document may hold. Counted in messages alone, what waited could be 512
+/// copies of the whole document; one answer of the whole state waits at a
+/// time besides (`Waiting::answer`).
+const WAITING_DOCUMENTS: usize = 2;
 
 /// How long a room is kept in memory after the last one has left.
 const KEPT_EMPTY: Duration = Duration::from_secs(60);
@@ -76,11 +83,58 @@ pub enum EnterError {
 }
 
 struct Peer {
-    tx: mpsc::Sender<Outgoing>,
+    tx: mpsc::Sender<Queued>,
+    waiting: Arc<Waiting>,
     /// The member, or none for the owner.
     member: Option<String>,
     /// Those whose presence came by this connection, and goes with it.
     clients: HashSet<ClientID>,
+}
+
+/// What waits to be sent to one who is present: counted as it is put in
+/// under the room's lock, and as it is taken out by the connection.
+#[derive(Default)]
+struct Waiting {
+    bytes: AtomicUsize,
+    /// Whether an answer to their asking for what they lack waits unsent.
+    answer: AtomicBool,
+}
+
+/// A message on its way to one who is present, with what it counts for.
+struct Queued {
+    out: Outgoing,
+    bytes: usize,
+    answer: bool,
+}
+
+impl Peer {
+    /// Puts a message in the queue of this one. False where there is no room
+    /// for it, in messages or in bytes (`most` bytes may wait); a closing
+    /// always has room in bytes.
+    fn send(&self, out: Outgoing, answer: bool, most: usize) -> bool {
+        let bytes = match &out {
+            Outgoing::Message(message) => message.len(),
+            Outgoing::Close(..) => 0,
+        };
+        // Counted before it is sent, so that the connection never takes away
+        // what was not counted yet.
+        let before = self.waiting.bytes.fetch_add(bytes, Ordering::SeqCst);
+        if bytes > 0 && before + bytes > most {
+            self.waiting.bytes.fetch_sub(bytes, Ordering::SeqCst);
+            return false;
+        }
+        if answer {
+            self.waiting.answer.store(true, Ordering::SeqCst);
+        }
+        if self.tx.try_send(Queued { out, bytes, answer }).is_err() {
+            self.waiting.bytes.fetch_sub(bytes, Ordering::SeqCst);
+            if answer {
+                self.waiting.answer.store(false, Ordering::SeqCst);
+            }
+            return false;
+        }
+        true
+    }
 }
 
 struct Inner {
@@ -107,6 +161,31 @@ pub struct Room {
     writing: Mutex<()>,
 }
 
+/// What is to be sent to one who has entered, as the connection takes it.
+pub struct Incoming {
+    rx: mpsc::Receiver<Queued>,
+    waiting: Arc<Waiting>,
+}
+
+impl Incoming {
+    pub async fn recv(&mut self) -> Option<Outgoing> {
+        let queued = self.rx.recv().await?;
+        Some(self.taken(queued))
+    }
+
+    pub fn try_recv(&mut self) -> Result<Outgoing, mpsc::error::TryRecvError> {
+        self.rx.try_recv().map(|queued| self.taken(queued))
+    }
+
+    fn taken(&self, queued: Queued) -> Outgoing {
+        self.waiting.bytes.fetch_sub(queued.bytes, Ordering::SeqCst);
+        if queued.answer {
+            self.waiting.answer.store(false, Ordering::SeqCst);
+        }
+        queued.out
+    }
+}
+
 fn encode(message: &Message) -> Bytes {
     let mut encoder = EncoderV1::new();
     message.encode(&mut encoder);
@@ -114,14 +193,20 @@ fn encode(message: &Message) -> Bytes {
 }
 
 impl Inner {
+    /// The most that may wait to be sent to one, in bytes.
+    fn most_waiting(&self) -> usize {
+        self.most.saturating_mul(WAITING_DOCUMENTS)
+    }
+
     /// Sends to everyone present but `except`. Those who cannot take more are let go.
     fn tell(&mut self, message: Bytes, except: Option<u64>) {
+        let most = self.most_waiting();
         let mut lost = Vec::new();
         for (id, peer) in &self.peers {
             if Some(*id) == except {
                 continue;
             }
-            if peer.tx.try_send(Outgoing::Message(message.clone())).is_err() {
+            if !peer.send(Outgoing::Message(message.clone()), false, most) {
                 lost.push(*id);
             }
         }
@@ -135,7 +220,7 @@ impl Inner {
         let Some(peer) = self.peers.remove(&id) else { return };
         if let Some((code, reason)) = close {
             // If there is no room for this either, the connection ends when the sender is dropped.
-            let _ = peer.tx.try_send(Outgoing::Close(code, reason));
+            let _ = peer.send(Outgoing::Close(code, reason), false, usize::MAX);
         }
         let clients: Vec<ClientID> = peer.clients.into_iter().collect();
         if !clients.is_empty() {
@@ -151,9 +236,11 @@ impl Inner {
         }
     }
 
-    fn reply(&mut self, to: u64, message: &Message) {
+    /// Answers one. An `answer` is to their asking for what they lack.
+    fn reply(&mut self, to: u64, message: &Message, answer: bool) {
+        let most = self.most_waiting();
         let sent = match self.peers.get(&to) {
-            Some(peer) => peer.tx.try_send(Outgoing::Message(encode(message))).is_ok(),
+            Some(peer) => peer.send(Outgoing::Message(encode(message)), answer, most),
             None => true,
         };
         if !sent {
@@ -168,8 +255,18 @@ impl Inner {
         }
         match message {
             Message::Sync(SyncMessage::SyncStep1(theirs)) => {
+                // While an answer to an earlier asking waits unsent, this one
+                // is not answered: what it would be given is in what waits,
+                // since what was taken in after that answer was made goes to
+                // them as changes, and one's own state does not go back. One
+                // who asks in a loop and reads nothing so holds one copy of
+                // the document, not one for each asking, and costs no more
+                // encoding of it.
+                if self.peers.get(&from).is_some_and(|peer| peer.waiting.answer.load(Ordering::SeqCst)) {
+                    return Ok(());
+                }
                 let lacking = self.awareness.doc().transact().encode_state_as_update_v1(&theirs);
-                self.reply(from, &Message::Sync(SyncMessage::SyncStep2(lacking)));
+                self.reply(from, &Message::Sync(SyncMessage::SyncStep2(lacking)), true);
             }
             Message::Sync(SyncMessage::SyncStep2(bytes)) | Message::Sync(SyncMessage::Update(bytes)) => {
                 // What would make the project larger than the server keeps is not taken in.
@@ -242,7 +339,7 @@ impl Inner {
             }
             Message::AwarenessQuery => {
                 let update = self.awareness.update()?;
-                self.reply(from, &Message::Awareness(update));
+                self.reply(from, &Message::Awareness(update), false);
             }
             // Nothing is asked of the server by these.
             Message::Auth(_) | Message::Custom(..) => {}
@@ -308,20 +405,23 @@ impl Room {
             return Err(EnterError::Crowded);
         }
         let (tx, rx) = mpsc::channel(WAITING);
+        let waiting = Arc::new(Waiting::default());
+        let peer = Peer { tx, waiting: waiting.clone(), member, clients: HashSet::new() };
         let id = inner.next;
         inner.next += 1;
         inner.empty_since = None;
 
         // The server asks for what it lacks, and tells who is present.
+        let most = inner.most_waiting();
         let theirs = inner.awareness.doc().transact().state_vector();
-        let _ = tx.try_send(Outgoing::Message(encode(&Message::Sync(SyncMessage::SyncStep1(theirs)))));
+        let _ = peer.send(Outgoing::Message(encode(&Message::Sync(SyncMessage::SyncStep1(theirs)))), false, most);
         if let Ok(present) = inner.awareness.update()
             && !present.clients.is_empty()
         {
-            let _ = tx.try_send(Outgoing::Message(encode(&Message::Awareness(present))));
+            let _ = peer.send(Outgoing::Message(encode(&Message::Awareness(present))), false, most);
         }
-        inner.peers.insert(id, Peer { tx, member, clients: HashSet::new() });
-        Ok(Entered { peer: id, incoming: rx })
+        inner.peers.insert(id, peer);
+        Ok(Entered { peer: id, incoming: Incoming { rx, waiting } })
     }
 
     /// Takes in what one who is present has sent.
@@ -425,7 +525,7 @@ impl Room {
 /// What one who has entered holds.
 pub struct Entered {
     pub peer: u64,
-    pub incoming: mpsc::Receiver<Outgoing>,
+    pub incoming: Incoming,
 }
 
 pub struct Rooms {
@@ -539,7 +639,7 @@ mod tests {
     struct Side {
         doc: Doc,
         peer: u64,
-        incoming: mpsc::Receiver<Outgoing>,
+        incoming: Incoming,
         room: Arc<Room>,
     }
 
@@ -725,6 +825,74 @@ mod tests {
         c.take_in();
         assert_eq!(c.text(), "μῆνιν: Sing, goddess, the wrath");
         assert!(room_dir(tmp.path(), ROOM).join("state.bak").exists());
+    }
+
+    /// One who asks for the whole state again and again and reads nothing is
+    /// not given a copy of the document for each asking: one answer waits at
+    /// a time, and what waits for one is bounded by its size in bytes.
+    #[tokio::test]
+    async fn one_who_asks_and_does_not_read_is_held_to_one_copy() {
+        let tmp = tempfile::tempdir().unwrap();
+        let rooms = Rooms::new(tmp.path().to_owned(), MAX_DOCUMENT_BYTES);
+        let mut owner = Side::enter(&rooms, None).await;
+        owner.take_in();
+        owner.write(0, &"Sing, goddess, the wrath of Achilles. ".repeat(5_000));
+        let whole = owner.room.state().len();
+        assert!(whole > 150_000, "{whole}");
+
+        let mut anna = Side::enter(&rooms, Some("anna")).await;
+        for _ in 0..2_000 {
+            anna.send(&Message::Sync(SyncMessage::SyncStep1(StateVector::default())));
+        }
+        let mut waiting = 0;
+        let mut answers = 0;
+        let mut closed = None;
+        while let Ok(out) = anna.incoming.try_recv() {
+            match out {
+                Outgoing::Message(bytes) => {
+                    waiting += bytes.len();
+                    answers += usize::from(bytes.len() >= whole);
+                }
+                Outgoing::Close(code, _) => closed = Some(code),
+            }
+        }
+        assert_eq!(closed, None, "she was not let go");
+        assert_eq!(answers, 1, "one whole state waited for her, of {whole} bytes; {waiting} bytes in all");
+        assert!(waiting < 2 * whole, "{waiting} bytes waited");
+
+        // Once what waited is read, she is answered again.
+        anna.send(&Message::Sync(SyncMessage::SyncStep1(StateVector::default())));
+        let heard = anna.take_in();
+        assert!(heard.iter().any(|m| matches!(m, Message::Sync(SyncMessage::SyncStep2(b)) if b.len() >= whole)));
+        assert_eq!(anna.text(), owner.text());
+    }
+
+    /// One who reads nothing while the others write much is let go when what
+    /// waits for them is more than a few times the document, before the
+    /// count of messages is reached.
+    #[tokio::test]
+    async fn one_who_falls_far_behind_in_bytes_is_let_go() {
+        let tmp = tempfile::tempdir().unwrap();
+        let rooms = Rooms::new(tmp.path().to_owned(), 1 << 20);
+        let mut owner = Side::enter(&rooms, None).await;
+        owner.take_in();
+        let mut anna = Side::enter(&rooms, Some("anna")).await;
+        anna.take_in();
+        // A long passage written and taken away again, many times: the
+        // document stays small, what waits for her does not.
+        let piece = "x".repeat(100_000);
+        let text = owner.doc.get_or_insert_text("text");
+        for _ in 0..30 {
+            owner.write(0, &piece);
+            let before = owner.doc.transact().state_vector();
+            text.remove_range(&mut owner.doc.transact_mut(), 0, piece.len() as u32);
+            let change = owner.doc.transact().encode_state_as_update_v1(&before);
+            owner.send(&Message::Sync(SyncMessage::Update(change)));
+        }
+        assert!(owner.room.state().len() < 1 << 20);
+        assert_eq!(anna.closed_with(), Some(close::BEHIND));
+        owner.take_in();
+        assert_eq!(rooms.present(ROOM).await.len(), 1);
     }
 
     #[tokio::test]

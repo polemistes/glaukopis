@@ -215,6 +215,12 @@ pub fn suggest(library: &Library, item: &FoundItem) -> Vec<Suggestion> {
     matching::suggest(library, item)
 }
 
+/// As `suggest`, for each of the works: what the library has is laid out,
+/// or found unchanged, once for them all.
+pub fn suggest_all(library: &Library, items: &[FoundItem]) -> Vec<Vec<Suggestion>> {
+    matching::suggest_all(library, items)
+}
+
 /// What looks like citations in the passages, in the order of the passages
 /// and of the text.
 pub fn propose(library: &Library, passages: &[Passage], options: &Options) -> Vec<Proposal> {

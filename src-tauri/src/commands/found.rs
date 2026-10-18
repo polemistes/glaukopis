@@ -15,7 +15,7 @@ use crate::state::AppState;
 #[tauri::command(async)]
 pub fn found_suggest(state: State<'_, AppState>, items: Vec<FoundItem>) -> CommandResult<Vec<Vec<Suggestion>>> {
     let library = state.library();
-    Ok(items.iter().map(|item| found::suggest(&library, item)).collect())
+    Ok(found::suggest_all(&library, &items))
 }
 
 /// What looks like citations in the passages, with the references of the
