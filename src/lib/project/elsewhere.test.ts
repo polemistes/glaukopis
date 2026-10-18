@@ -8,6 +8,8 @@ import {
   openHere,
   writeElsewhere,
 } from './elsewhere';
+import { clipboard, cutElements, pasteElements } from './clipboard.svelte';
+import { sendElements } from './elements';
 import { Project } from './model/project.svelte';
 import { PROJECT } from './model/types';
 
@@ -125,6 +127,53 @@ describe('elements carried from one project to another', () => {
     // What was done before in either is not touched.
     expect(from.canUndo).toBe(false);
     expect(to.canUndo).toBe(false);
+  });
+
+  it('are moved by cut and paste between the panes, the two steps one, as for a drag', () => {
+    const { from, to, book, a, h, x, y } = two();
+    openHere('iliad', from);
+    openHere('odyssey', to);
+    expect(cutElements(from, [a, h])).toBe(2);
+    expect(clipboard.held?.from).toBe('iliad');
+    const made = pasteElements(to, { under: PROJECT });
+    expect(titles(to, made)).toEqual(['Achilles', 'Hector']);
+    expect(from.tree().children.get(book) ?? []).toEqual([]);
+    // Undone where they were pasted, they are back where they were cut.
+    to.undo();
+    expect(to.tree().children.get(PROJECT)).toEqual([x, y]);
+    expect(from.tree().children.get(book)).toEqual([a, h]);
+    from.redo();
+    expect(from.tree().children.get(book) ?? []).toEqual([]);
+    expect(titles(to, to.tree().children.get(PROJECT) ?? [])).toEqual([
+      'Ithaca',
+      'Troy',
+      'Achilles',
+      'Hector',
+    ]);
+    from.undo();
+    expect(from.tree().children.get(book)).toEqual([a, h]);
+    expect(to.tree().children.get(PROJECT)).toEqual([x, y]);
+  });
+
+  it('are moved with Move to, to a project open beside, the two steps one, as for a drag', async () => {
+    const { from, to, book, a, x, y } = two();
+    openHere('odyssey', to);
+    expect(await sendElements(from, [a], { project: 'odyssey' }, true)).toBe(1);
+    expect(from.tree().children.get(book)).not.toContain(a);
+    expect(titles(to, to.tree().children.get(PROJECT) ?? [])).toEqual([
+      'Ithaca',
+      'Troy',
+      'Achilles',
+    ]);
+    to.undo();
+    expect(to.tree().children.get(PROJECT)).toEqual([x, y]);
+    expect(from.tree().children.get(book)).toContain(a);
+    expect(from.node(a)?.title).toBe('Achilles');
+    to.redo();
+    expect(from.node(a)).toBeUndefined();
+    from.undo();
+    expect(from.node(a)?.title).toBe('Achilles');
+    expect(to.tree().children.get(PROJECT)).toEqual([x, y]);
   });
 
   it('do not go where there is no element to take them', () => {

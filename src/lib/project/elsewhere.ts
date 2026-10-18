@@ -117,13 +117,33 @@ export function carryAcross(
     made = to.move(made, place.under, place.index, { pos: null, keepFolded: place.keepFolded });
   }
   to.checkpoint();
-  if (move && made.length) {
-    from.checkpoint();
-    from.remove(going);
-    from.checkpoint();
-    pair(to, from);
-  }
+  if (move && made.length) removeCarried(to, lastStep(to), from, going);
   return made;
+}
+
+/** A step of undo, as a project's undo keeps it. */
+type Step = NonNullable<ReturnType<typeof lastStep>>;
+
+/** The step last done in a project: to be paired with one done in another. */
+export function lastStep(p: Project) {
+  return p.undoManager.undoStack.at(-1);
+}
+
+/**
+ * Removes from a project open in the view the elements just made in
+ * another from them, in `made`, the step that made them there; the two
+ * steps are one, as for a drag from one pane onto the other (ADR 0053), so
+ * that undone in either project the elements are back in the other. For
+ * cut and paste, and for *Move to*, as for a drag. Where nothing was there
+ * to be removed, there is nothing to pair.
+ */
+export function removeCarried(to: Project, made: Step | undefined, from: Project, ids: string[]) {
+  from.checkpoint();
+  const before = lastStep(from);
+  from.remove(ids);
+  from.checkpoint();
+  const removed = lastStep(from);
+  if (made && removed && removed !== before && from !== to) pairSteps(to, made, from, removed);
 }
 
 /** Two steps, one in each of two projects, that are undone and done again together. */
@@ -135,12 +155,11 @@ interface Pair {
 const PAIRED = 'across';
 const linked = new WeakSet<Project>();
 
-/** The steps last done in two projects are one. */
-function pair(a: Project, b: Project) {
-  const steps = [a.undoManager.undoStack.at(-1), b.undoManager.undoStack.at(-1)];
-  if (!steps[0] || !steps[1]) return;
+/** Two steps, one done in each of two projects, are one. */
+function pairSteps(a: Project, stepA: Step, b: Project, stepB: Step) {
   const both: Pair = { a, b };
-  for (const step of steps) step!.meta.set(PAIRED, both);
+  stepA.meta.set(PAIRED, both);
+  stepB.meta.set(PAIRED, both);
   follow(a);
   follow(b);
 }

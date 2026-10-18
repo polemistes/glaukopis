@@ -16,7 +16,7 @@
 import { t } from '$lib/i18n';
 import { router } from '$lib/state/router.svelte';
 import { notifyError } from '$lib/ui/toast.svelte';
-import { idOf, writeElsewhere } from './elsewhere';
+import { idOf, lastStep, openedHere, removeCarried, writeElsewhere } from './elsewhere';
 import type { Project } from './model/project.svelte';
 import { makePortable, portable, type Place, type Portable } from './model/portable';
 import { isAncestor, topmost } from './model/tree';
@@ -127,13 +127,20 @@ function pasteCut(held: Held, project: Project, place: Place): string[] {
   if (asCopies(held, project)) {
     return project.move(held.ids, place.under, undefined, { pos: place.pos ?? null });
   }
+  project.checkpoint();
   const made = makePortable(project, held.portable, place);
+  project.checkpoint();
   if (made.length && held.from) {
     const from = held.from;
     const ids = held.ids;
-    void writeElsewhere(from, (there) => there.remove(ids)).catch((error) =>
-      notifyError(t('project-cut-not-removed'), error),
-    );
+    // Where the project they came from is open beside, the two steps are
+    // one, as for a drag: undone in either, the elements are in the other.
+    const beside = openedHere(from);
+    if (beside && beside !== project) removeCarried(project, lastStep(project), beside, ids);
+    else
+      void writeElsewhere(from, (there) => there.remove(ids)).catch((error) =>
+        notifyError(t('project-cut-not-removed'), error),
+      );
   }
   return made;
 }
