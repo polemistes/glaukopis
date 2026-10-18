@@ -79,6 +79,7 @@ review-versions-count = { $count ->
 }
 review-versions-reading = Leser historikken …
 review-versions-none = Ingenting skjedde mellom de to endene.
+review-versions-failed = Historikken kunne ikke leses.
 review-version-by = { $who }, { $when }
 review-accept-up-to = Godta hit
 review-use-version = Bruk denne versjonen

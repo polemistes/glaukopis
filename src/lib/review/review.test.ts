@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
 import type {
   History,
@@ -313,5 +313,19 @@ describe('a review', () => {
     await review.acceptUpTo(review.changes[0], history.versionsSaid[0]);
     const kept = readReview(project.doc, 'me')!;
     expect(kept.accepted[0].visible[9]).toEqual([[3, 9]]);
+  });
+
+  it('says that the versions could not be read, not that there are none', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { review, history } = setUp();
+    await review.refresh();
+    history.versions = () => Promise.reject(new Error('change 3 of 7 could not be applied'));
+    await review.loadVersions();
+    expect(review.versions).toEqual({
+      key: review.current!.key,
+      list: [],
+      failed: 'change 3 of 7 could not be applied',
+    });
+    error.mockRestore();
   });
 });

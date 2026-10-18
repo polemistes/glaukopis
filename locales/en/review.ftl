@@ -84,6 +84,7 @@ review-versions-count = { $count ->
 }
 review-versions-reading = Reading its history…
 review-versions-none = Nothing happened between the two ends.
+review-versions-failed = Its history could not be read.
 review-version-by = { $who }, { $when }
 review-accept-up-to = Accept up to here
 review-use-version = Use this version

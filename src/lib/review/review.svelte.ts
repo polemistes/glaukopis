@@ -77,8 +77,12 @@ export class Review {
   working = $state(false);
   failure = $state<string | null>(null);
   people = $state.raw<ReadonlyMap<string, Person>>(new Map());
-  /** The versions of the change looked at, once asked for. */
-  versions = $state.raw<{ key: string; list: Version[] | null } | null>(null);
+  /**
+   * The versions of the change looked at, once asked for; `failed`, where the
+   * history could not tell them, says why (and `list` is then empty): that is
+   * not the same as a change without versions.
+   */
+  versions = $state.raw<{ key: string; list: Version[] | null; failed?: string } | null>(null);
 
   /** The marks the text shows of the changes, by element. */
   #lastMarked: Marked | null = null;
@@ -534,9 +538,9 @@ export class Review {
     const history = this.history!;
     const key = change.key;
     this.versions = { key, list: null };
-    const found = await this.#reference();
-    const stretch = this.#accepted(change.stretches[0]);
     try {
+      const found = await this.#reference();
+      const stretch = this.#accepted(change.stretches[0]);
       // A passage gone that held nothing has no versions to tell.
       const list =
         found && stretch
@@ -545,7 +549,12 @@ export class Review {
       if (this.versions?.key === key) this.versions = { key, list };
     } catch (error) {
       console.error('the versions could not be read', error);
-      if (this.versions?.key === key) this.versions = { key, list: [] };
+      if (this.versions?.key === key)
+        this.versions = {
+          key,
+          list: [],
+          failed: error instanceof Error ? error.message : String(error),
+        };
     }
   }
 
