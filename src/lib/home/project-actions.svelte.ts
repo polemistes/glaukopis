@@ -196,7 +196,8 @@ export class ProjectActions {
     return folderTree(projects.folders)
       .filter((x) => ids.has(x.folder.id))
       .map((x) => ({
-        label: ' '.repeat(x.depth) + x.folder.name,
+        label: x.folder.name,
+        depth: x.depth,
         checked: x.folder.id === current,
         disabled: x.folder.id === current,
         action: () => move(x.folder.id),

@@ -46,6 +46,7 @@
   import EmptyState from '$lib/ui/EmptyState.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
+  import { treeMenu } from '$lib/ui/tree-menu';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { notifyError, notifyOk } from '$lib/ui/toast.svelte';
   import { copyOut } from './copying';
@@ -231,19 +232,7 @@
   }
 
   function collectionItems(ids: string[]): MenuItem[] {
-    const collator = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
-    const walk = (parent: string | null, depth: number): MenuItem[] =>
-      library.collections
-        .filter((c) => (c.parent ?? null) === parent)
-        .sort((a, b) => collator.compare(a.name, b.name))
-        .flatMap((c) => [
-          {
-            label: ' '.repeat(depth) + c.name,
-            action: () => addTo(c.id, ids),
-          } as MenuItem,
-          ...walk(c.id, depth + 1),
-        ]);
-    return walk(null, 0);
+    return treeMenu(library.collections, (c) => ({ action: () => addTo(c.id, ids) }));
   }
 
   function context(event: MouseEvent, entries: Summary[]) {

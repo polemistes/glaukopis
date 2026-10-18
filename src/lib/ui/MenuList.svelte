@@ -221,7 +221,12 @@
               ></span>{/if}</span
           >
         {/if}
-        <span class="label">
+        <span
+          class="label"
+          style:padding-inline-start={item.kind !== 'submenu' && item.depth
+            ? `${item.depth * 14}px`
+            : undefined}
+        >
           <span class="truncate">{item.label}</span>
           {#if item.kind !== 'submenu' && item.hint}<span class="hint truncate">{item.hint}</span
             >{/if}

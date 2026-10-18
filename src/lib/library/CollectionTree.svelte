@@ -23,6 +23,7 @@
   import { dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
+  import { treeMenu } from '$lib/ui/tree-menu';
   import { notifyError, notifyOk } from '$lib/ui/toast.svelte';
 
   interface Props {
@@ -147,19 +148,6 @@
 
   /** The places a collection can be moved to: the top, and every collection but itself and those within it. */
   function moveItems(c: Collection): MenuItem[] {
-    const walk = (parent: string | null, depth: number): MenuItem[] =>
-      library.collections
-        .filter((x) => (x.parent ?? null) === parent && x.id !== c.id)
-        .sort((a, b) => collator.compare(a.name, b.name))
-        .flatMap((x) => [
-          {
-            label: ' '.repeat(depth) + x.name,
-            icon: depth ? undefined : Folder,
-            disabled: x.id === c.parent,
-            action: () => move(c.id, x.id),
-          } as MenuItem,
-          ...walk(x.id, depth + 1),
-        ]);
     return [
       {
         label: t('library-collection-to-top'),
@@ -168,7 +156,11 @@
         action: () => move(c.id, null),
       },
       { kind: 'separator' },
-      ...walk(null, 0),
+      ...treeMenu(
+        library.collections,
+        (x) => ({ disabled: x.id === c.parent, action: () => move(c.id, x.id) }),
+        { leave: (x) => x.id === c.id, icon: Folder },
+      ),
     ];
   }
 

@@ -29,7 +29,6 @@
   import type { FileKind, FileView } from '$lib/api/files';
   import { attachmentOpen } from '$lib/api/library';
   import DocumentHost from '$lib/documents/DocumentHost.svelte';
-  import { folderTree } from '$lib/home/folders';
   import { t } from '$lib/i18n';
   import { shortcuts } from '$lib/shell/keys.svelte';
   import { library } from '$lib/state/library.svelte';
@@ -39,6 +38,7 @@
   import EmptyState from '$lib/ui/EmptyState.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
+  import { treeMenu } from '$lib/ui/tree-menu';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { notify, notifyError } from '$lib/ui/toast.svelte';
   import FileList from './FileList.svelte';
@@ -191,14 +191,10 @@
         action: () => void moveFiles(hashes, null),
       },
       ...(files.folders.length ? [{ kind: 'separator' } as MenuItem] : []),
-      ...folderTree(files.folders).map(
-        ({ folder: f, depth }) =>
-          ({
-            label: ' '.repeat(depth) + f.name,
-            icon: depth ? undefined : Folder,
-            disabled: here(f.id),
-            action: () => void moveFiles(hashes, f.id),
-          }) as MenuItem,
+      ...treeMenu(
+        files.folders,
+        (f) => ({ disabled: here(f.id), action: () => void moveFiles(hashes, f.id) }),
+        { icon: Folder },
       ),
     ];
   }
