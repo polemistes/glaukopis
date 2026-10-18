@@ -11,7 +11,7 @@
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
-  import { notifyError } from '$lib/ui/toast.svelte';
+  import { describeError, notifyError } from '$lib/ui/toast.svelte';
   import { ago } from '$lib/util/time';
 
   interface Props {
@@ -23,13 +23,15 @@
   let { project, onclose, onopened }: Props = $props();
 
   let entries = $state.raw<HistoryEntry[] | null>(null);
+  /** Why the versions could not be read: shown in the dialog, not "none kept", which would be false. */
+  let failed = $state<string | null>(null);
   let busy = $state(false);
 
   onMount(async () => {
     try {
       entries = await projectHistory(project.id);
     } catch (error) {
-      entries = [];
+      failed = describeError(error) ?? '';
       notifyError(t('home-history-unread'), error);
     }
   });
@@ -75,7 +77,11 @@
   width={520}
   {onclose}
 >
-  {#if entries === null}
+  {#if failed !== null}
+    <p class="failed" role="alert">
+      {t('home-history-unread')}{#if failed}: {failed}{/if}
+    </p>
+  {:else if entries === null}
     <div class="waiting"><Spinner size={18} /></div>
   {:else if !entries.length}
     <p class="none">
@@ -110,6 +116,11 @@
   .none {
     color: var(--ink-2);
     line-height: 1.55;
+  }
+  .failed {
+    color: var(--danger);
+    line-height: 1.55;
+    overflow-wrap: anywhere;
   }
   ul {
     margin: 0;
