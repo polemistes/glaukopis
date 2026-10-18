@@ -874,9 +874,9 @@ impl Library {
             }
         }
         let mut count = 0;
-        for hash in hashes {
+        for &hash in &wanted {
             let found = attachments::find_by_hash(&self.dir, hash);
-            let known = self.files.forget(hash).is_some();
+            let known = self.files.get(hash).is_some();
             if known {
                 self.files_dirty = true;
             }
@@ -887,6 +887,8 @@ impl Library {
                 count += 1;
             }
         }
+        // Forgotten all at once: one at a time, each made the record over.
+        self.files.forget_all(&wanted);
         for id in &emptied {
             if self.files.folder_delete(id).is_ok() {
                 self.files_dirty = true;
@@ -915,7 +917,7 @@ impl Library {
         let gone: Vec<String> = if with_folders { self.files.with_descendants(id) } else { vec![id.to_owned()] };
         let inside: Vec<String> = self
             .files
-            .files
+            .files()
             .iter()
             .filter(|f| f.folder.as_ref().is_some_and(|at| gone.contains(at)))
             .map(|f| f.hash.clone())
@@ -1034,7 +1036,7 @@ impl Library {
             });
             record.hash = new_hash;
             record.path = new.clone();
-            self.files.files.push(record);
+            self.files.insert(record);
             self.files_dirty = true;
         }
         self.save()?;
@@ -1076,7 +1078,7 @@ impl Library {
             }
         }
         self.files
-            .files
+            .files()
             .iter()
             .map(|r| FileView::of(&self.dir, r, by_hash.remove(r.hash.as_str()).unwrap_or_default()))
             .collect()
@@ -1096,7 +1098,7 @@ impl Library {
         if let Some(folder) = folder {
             self.files.folder(folder)?;
         }
-        let before = self.files.folders.len();
+        let before = self.files.folders().len();
         let mut out = TakenIn::default();
         let mut seen = HashSet::new();
         for t in taken {
@@ -1121,7 +1123,7 @@ impl Library {
                 out.files.push(view);
             }
         }
-        out.folders = self.files.folders.len() - before;
+        out.folders = self.files.folders().len() - before;
         if !out.files.is_empty() || out.folders > 0 {
             self.save_files()?;
         }
@@ -1892,7 +1894,7 @@ mod tests {
         assert_eq!(told.last(), Some(&(4, 4)));
         let got = lib.enter_taken(&taken, Some(&top.id)).unwrap();
         assert_eq!((got.files.len(), got.same.len(), got.folders), (4, 0, 2));
-        let homer = lib.files.folders.iter().find(|f| f.name == "Homer").unwrap().clone();
+        let homer = lib.files.folders().iter().find(|f| f.name == "Homer").unwrap().clone();
         let greek = lib.files.folder(homer.parent.as_deref().unwrap()).unwrap().clone();
         assert_eq!((greek.name.as_str(), greek.parent.as_deref()), ("Greek", Some(top.id.as_str())));
         let nagy = got.files.iter().find(|f| f.name == "Nagy 1979.pdf").unwrap();

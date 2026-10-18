@@ -215,14 +215,14 @@ impl Library {
                 }
             }
             ExportSelection::All => {
-                for record in &self.files.files {
+                for record in self.files.files() {
                     // A file whose folder is not known any more stands at the top.
                     let dir = dirs.get(&record.folder).cloned().unwrap_or_default();
                     chosen.push((record, dir));
                 }
             }
             ExportSelection::Folder { .. } => {
-                for record in &self.files.files {
+                for record in self.files.files() {
                     if let Some(dir) = dirs.get(&record.folder) {
                         chosen.push((record, dir.clone()));
                     }
