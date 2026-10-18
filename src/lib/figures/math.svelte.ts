@@ -11,6 +11,7 @@ import { SvelteMap } from 'svelte/reactivity';
 import font from '@fontsource/stix-two-math/files/stix-two-math-latin-400-normal.woff2?url';
 import { mathRender, type Formula } from '$lib/api/pictures';
 import { t } from '$lib/i18n';
+import { describeError } from '$lib/ui/toast.svelte';
 
 export interface Shown {
   /** The formula as MathML that may be put into the page as it is. */
@@ -145,8 +146,11 @@ function withFont() {
 }
 
 class Mathematics {
-  /** What came of each formula; `unread` for one that could not be read, and no reason was given. */
-  readonly #shown = new SvelteMap<string, Shown | 'unread'>();
+  /**
+   * What came of each formula; `unread` for one that could not be read, and
+   * no reason was given; `failed` where no formula could be made at all, with why.
+   */
+  readonly #shown = new SvelteMap<string, Shown | 'unread' | { failed: string }>();
   #wanted = new Map<string, Formula>();
   #timer: ReturnType<typeof setTimeout> | undefined;
 
@@ -161,6 +165,8 @@ class Mathematics {
     const known = this.#shown.get(key);
     // Said in the language of the interface as it is when it is shown.
     if (known === 'unread') return { mathml: null, problem: t('figures-formula-unread') };
+    if (known && 'failed' in known)
+      return { mathml: null, problem: t('figures-formula-failed', { reason: known.failed }) };
     if (known) return known;
     if (!this.#wanted.has(key)) {
       this.#wanted.set(key, { tex: formula, display });
@@ -190,9 +196,12 @@ class Mathematics {
               : 'unread',
         );
       });
-    } catch {
-      // Without Pandoc the formula is shown as it was written, and nothing is said of it.
-      for (const [key] of wanted) this.#shown.set(key, { mathml: null, problem: null });
+    } catch (error) {
+      // Without Pandoc, or where it fails, the formula is shown as it was
+      // written, and says why in its title and in the formula panel.
+      console.error('the formulas could not be made', error);
+      const failed = describeError(error) ?? String(error);
+      for (const [key] of wanted) this.#shown.set(key, { failed });
     }
   }
 }
