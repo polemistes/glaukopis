@@ -42,6 +42,8 @@ core-import-zotero-alone = { $count ->
    *[other] { $count } filer og notater i Zotero hører ikke til noen referanse, og ble utelatt.
 }
 core-import-zotero-not-a-field = Zotero oppgir { $name } som { $role }, men BibLaTeX har ikke noe felt for det. Navnet ble utelatt.
+core-import-zotero-collaborator = Zotero oppgir { $name } som { $role }, men BibLaTeX har ikke noe felt for det. Navnet ble ført opp blant medarbeiderne (en redaktør av typen «collaborator»), og rollen er ikke tatt vare på.
+core-import-zotero-collaborator-unnamed = Zotero oppgir { $name } i en rolle uten navn, og BibLaTeX har ikke noe felt for det. Navnet ble ført opp blant medarbeiderne (en redaktør av typen «collaborator»).
 core-import-zotero-left-out = Zotero-feltet «{ $field }» har ikke noe motstykke i BibLaTeX og ble utelatt: { $value }
 
 ## Databasen til Zotero.

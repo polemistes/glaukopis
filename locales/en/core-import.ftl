@@ -43,6 +43,8 @@ core-import-zotero-alone = { $count ->
 }
 # The role is Zotero's own name for it: "recipient", "reviewed author".
 core-import-zotero-not-a-field = Zotero names { $name } as { $role }, which BibLaTeX has no field for. The name was left out.
+core-import-zotero-collaborator = Zotero names { $name } as { $role }, which BibLaTeX has no field for. The name was put among those who worked along on it (an editor of the type “collaborator”), and the role is not kept.
+core-import-zotero-collaborator-unnamed = Zotero names { $name } in a role it gives no name, and BibLaTeX has no field for that. The name was put among those who worked along on it (an editor of the type “collaborator”).
 core-import-zotero-left-out = Zotero’s field “{ $field }” has no counterpart in BibLaTeX and was left out: { $value }
 
 ## Zotero's database.
