@@ -206,7 +206,10 @@ describe('a review', () => {
     await review.refresh();
     await review.accept();
     await review.accept();
-    expect(readReview(project.doc, 'me')!.accepted).toHaveLength(2);
+    // Not settled: what was accepted is kept, the two stretches of the paragraph as one.
+    const kept = readReview(project.doc, 'me')!;
+    expect(kept.moment).toEqual(BEGINNING.moment.snapshot);
+    expect(kept.accepted).toHaveLength(1);
   });
 
   it('with one’s own changes shown, is not settled while one’s own are left elsewhere', async () => {
@@ -234,7 +237,9 @@ describe('a review', () => {
     await review.accept();
     expect(review.changes).toEqual([]);
     // Settled, the review would begin at now with nothing accepted, and the rename would never be shown.
-    expect(readReview(project.doc, 'me')!.accepted).toHaveLength(2);
+    const kept = readReview(project.doc, 'me')!;
+    expect(kept.moment).toEqual(BEGINNING.moment.snapshot);
+    expect(kept.accepted).toHaveLength(1);
   });
 
   it('accepts as it stands what was written since the changes were worked out', async () => {

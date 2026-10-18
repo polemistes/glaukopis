@@ -37,10 +37,12 @@ import {
   addItems,
   branchOf,
   has,
+  idleStretches,
   readBranch,
   readPieces,
   treeAt,
   units,
+  type Override,
   type Unit,
   type Who,
 } from './reading';
@@ -132,6 +134,10 @@ export type When = number | Uint8Array;
 export const PAUSE = 10 * 60 * 1000;
 
 const OVERRIDE_NONE = new Map();
+
+/** A position that names an item this copy has not yet got. */
+const UNKNOWN = Symbol('unknown');
+type Unknown = typeof UNKNOWN;
 
 export class Engine {
   readonly doc = new Y.Doc({ gc: false });
@@ -411,19 +417,51 @@ export class Engine {
   // Comparing
   // =====================================================================
 
-  /** What was accepted, by the block it is in, as positions among its units. */
-  #overrides(accepted: Accepted[], transaction: Y.Transaction) {
-    const out = new Map<string, { from: number; to: number; visible: Items }[]>();
+  /**
+   * What was accepted, by the block it is in, as positions among its units;
+   * and, given the moment compared with, which of the entries accept
+   * nothing any more (their indices in `accepted`): those whose text is as
+   * the moment had it, and those that stand for nowhere, which change
+   * nothing in any comparison. An entry that names what this copy has not
+   * yet got is neither.
+   */
+  #overrides(accepted: Accepted[], transaction: Y.Transaction, before?: At) {
     for (const a of accepted) splitAt(transaction, a.visible);
-    for (const a of accepted) {
-      const from = this.#position(a.from, transaction);
-      const to = this.#position(a.to, transaction);
-      if (!from || !to || from.block !== to.block) continue;
-      const list = out.get(idWord(from.block._item!.id)) ?? [];
-      list.push({ from: from.index, to: to.index, visible: a.visible });
-      out.set(idWord(from.block._item!.id), list);
-    }
-    return out;
+    // Every split first: a split made for one position would move the
+    // places found before it for another.
+    const decoded = accepted.map(
+      (a) => [this.#split(a.from, transaction), this.#split(a.to, transaction)] as const,
+    );
+    const lists = new Map<Y.XmlElement, Unit[]>();
+    const blocks = new Map<string, { block: Y.XmlElement; list: Override[]; entries: number[] }>();
+    const idle: number[] = [];
+    let unknown = false;
+    decoded.forEach(([f, t], i) => {
+      if (f === UNKNOWN || t === UNKNOWN) {
+        unknown = true;
+        return;
+      }
+      const from = f && this.#locate(f, lists);
+      const to = t && this.#locate(t, lists);
+      if (!from || !to || from.block !== to.block) {
+        idle.push(i);
+        return;
+      }
+      const word = idWord(from.block._item!.id);
+      const kept = blocks.get(word) ?? { block: from.block, list: [], entries: [] };
+      kept.list.push({ from: from.index, to: to.index, visible: accepted[i].visible });
+      kept.entries.push(i);
+      blocks.set(word, kept);
+    });
+    // Which accept nothing is told against all the others: not while one
+    // of them cannot be placed yet, which may be in the same block.
+    if (before && !unknown)
+      for (const { block, list, entries } of blocks.values())
+        for (const k of idleStretches(block, list, before)) idle.push(entries[k]);
+    return {
+      overrides: new Map([...blocks].map(([word, { list }]) => [word, list])),
+      idle: idle.sort((x, y) => x - y),
+    };
   }
 
   /**
@@ -434,23 +472,43 @@ export class Engine {
     encoded: Uint8Array,
     transaction: Y.Transaction,
   ): { block: Y.XmlElement; index: number; units: Unit[] } | null {
-    // A position that does not decode (an empty one, which an earlier
-    // version could store) stands for nowhere, and fails no working-out.
+    const rpos = this.#split(encoded, transaction);
+    return rpos && rpos !== UNKNOWN ? this.#locate(rpos, new Map()) : null;
+  }
+
+  /**
+   * A relative position decoded, with the items split where it falls, so
+   * that a unit begins there (and ends there, of one after it). Nothing
+   * where it does not decode (an empty one, which an earlier version could
+   * store: it stands for nowhere, and fails no working-out); UNKNOWN where
+   * it names an item this copy has not yet got.
+   */
+  #split(encoded: Uint8Array, transaction: Y.Transaction): Y.RelativePosition | null | Unknown {
     let rpos: Y.RelativePosition;
     try {
       rpos = Y.decodeRelativePosition(encoded);
     } catch {
       return null;
     }
-    let type: Y.AbstractType<unknown> | null = null;
-    let target: Y.Item | null = null;
+    const named = rpos.item ?? rpos.type;
+    if (named && Y.getState(this.doc.store, named.client) <= named.clock) return UNKNOWN;
     if (rpos.item) {
       const { client, clock } = rpos.item;
-      if (Y.getState(this.doc.store, client) <= clock) return null;
-      // Split so that the item begins where the position is (and ends there, of one after it).
       Y.getItemCleanStart(transaction, Y.createID(client, clock));
       if (rpos.assoc < 0 && clock + 1 < Y.getState(this.doc.store, client))
         Y.getItemCleanStart(transaction, Y.createID(client, clock + 1));
+    }
+    return rpos;
+  }
+
+  /** Where a decoded position stands among the units of its block, the lists of units kept in `lists`. */
+  #locate(
+    rpos: Y.RelativePosition,
+    lists: Map<Y.XmlElement, Unit[]>,
+  ): { block: Y.XmlElement; index: number; units: Unit[] } | null {
+    let type: Y.AbstractType<unknown> | null = null;
+    let target: Y.Item | null = null;
+    if (rpos.item) {
       target = findItem(this.doc, rpos.item);
       type = (target?.parent as Y.AbstractType<unknown>) ?? null;
     } else if (rpos.type) {
@@ -460,7 +518,11 @@ export class Engine {
     if (!type) return null;
     const block = (type instanceof Y.XmlText ? type.parent : type) as Y.XmlElement | null;
     if (!(block instanceof Y.XmlElement)) return null;
-    const list = units(block);
+    let list = lists.get(block);
+    if (!list) {
+      list = units(block);
+      lists.set(block, list);
+    }
     let index: number;
     if (target) {
       const at = list.findIndex((u) => u.item === target);
@@ -481,7 +543,7 @@ export class Engine {
     let result!: BranchChanges;
     this.doc.transact((transaction) => {
       split(transaction, before);
-      const overrides = this.#overrides(reference.accepted, transaction);
+      const { overrides, idle } = this.#overrides(reference.accepted, transaction, before);
       const reading = readBranch(this.doc, at, before, NOW, this.who, {
         elements: elements ? new Set(elements) : undefined,
         overrides,
@@ -491,6 +553,7 @@ export class Engine {
         passages: reading.passages,
         objects: reading.objects,
         elements: reading.elements,
+        idle,
       };
     });
     return result;
@@ -632,9 +695,6 @@ export class Engine {
       const end = this.#position(to, transaction);
       if (!start || !end || start.block !== end.block) return;
       const block = start.block;
-      const overrides = this.#overrides(reference.accepted, transaction).get(
-        idWord(block._item!.id),
-      );
       // The records that made or deleted something in the stretch, after the reference.
       const touched: number[] = [];
       const span = units(block).slice(start.index, end.index);
@@ -654,6 +714,11 @@ export class Engine {
         if (hit) touched.push(i);
       });
       for (const i of touched) split(transaction, atSnapshot(this.snapshot(i)));
+      // What was accepted is placed after every split, which would move its
+      // places among the units; the stretch itself is found by its items.
+      const overrides = this.#overrides(reference.accepted, transaction).overrides.get(
+        idWord(block._item!.id),
+      );
       const range = (list: Unit[]) => {
         // The stretch among the units as they are after splitting.
         const first = list.findIndex((u) => u.item === start.units[start.index]?.item);
