@@ -92,6 +92,7 @@ ocr-picture-title = The text in the picture
 ocr-picture-empty = No text was found in the picture.
 ocr-picture-copy = Copy
 ocr-picture-copied = The text is copied
+ocr-picture-copy-failed = The text could not be copied
 ocr-picture-map = Make an element of it
 
 ## Tesseract in the settings
@@ -157,6 +158,7 @@ ocr-text-translate-searchable-hint = The PDF's own tables are put right, so that
 ocr-text-anew-no-tesseract = Tesseract, which reads text in pictures, is not installed.
 ocr-text-page = Page { $label }
 ocr-text-page-none = No text on this page: it is read from a picture of it.
+ocr-text-rest-failed = The pages after these could not be read.
 ocr-about-translate = { $without ->
     [0] The text the PDF has is made readable; no page is read from a picture.
     [one] The text the PDF has is made readable, and the one page without text is read from a picture of it.

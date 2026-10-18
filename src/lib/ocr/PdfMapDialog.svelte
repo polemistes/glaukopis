@@ -83,10 +83,28 @@
         onenter?.(made.top);
         return;
       }
-      const id = into === NEW ? (await projects.create(title)).id : into;
-      const opened = await openProject(id);
-      const made = makeImported(opened.project, PROJECT, imported, title, styles);
-      await opened.project.close();
+      const fresh = into === NEW;
+      const id = fresh ? (await projects.create(title)).id : into;
+      let made: ReturnType<typeof makeImported> = null;
+      try {
+        const opened = await openProject(id);
+        try {
+          made = makeImported(opened.project, PROJECT, imported, title, styles);
+        } finally {
+          // Closed whether or not the elements were made: an instance left
+          // open would go on following and saving the project.
+          await opened.project.close();
+        }
+      } finally {
+        // A project made for the elements is not left empty in the list
+        // when they could not be made: it goes into the trash.
+        if (!made && fresh)
+          await projects
+            .remove(id)
+            .catch((error) =>
+              console.error('the project made for the elements could not be taken away', error),
+            );
+      }
       if (!made) throw new Error(t('ocr-map-failed'));
       onclose();
       router.go({ view: 'project', project: id, at: made.top, mode: 'text' });

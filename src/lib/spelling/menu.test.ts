@@ -78,7 +78,13 @@ describe('a dictionary that cannot be read', () => {
 describe('what a word may be', () => {
   it('that could not be looked up is said so, not that there is nothing like it, and logged', async () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
-    await openWordMenu({ language: 'en', word: 'broken', anchor, replace: () => {}, project: null });
+    await openWordMenu({
+      language: 'en',
+      word: 'broken',
+      anchor,
+      replace: () => {},
+      project: null,
+    });
     expect(labels()[0]).toBe(t('spelling-suggest-failed'));
     expect(error).toHaveBeenCalledWith(
       'spelling: what "broken" may be could not be looked up',

@@ -8,6 +8,7 @@
   import { ocrText, type PageTextView } from '$lib/api/ocr';
   import { t } from '$lib/i18n';
   import Spinner from '$lib/ui/Spinner.svelte';
+  import { describeError } from '$lib/ui/toast.svelte';
 
   interface Props {
     path: string;
@@ -25,22 +26,31 @@
 
   let shown = $state.raw<PageTextView[]>([]);
   let loading = $state(false);
-  let failed = $state(false);
+  /** Why the rest could not be read, where it could not: said under the last page shown. */
+  let failed = $state<string | null>(null);
   let box = $state<HTMLDivElement>();
   let end = $state<HTMLDivElement>();
   let gone = false;
   onDestroy(() => (gone = true));
 
   async function more() {
-    if (loading || failed || shown.length >= pages) return;
+    if (loading || failed !== null || shown.length >= pages) return;
     loading = true;
+    const from = shown.length;
     try {
-      const next = await ocrText(path, stored, shown.length, BATCH);
+      const next = await ocrText(path, stored, from, BATCH);
       if (gone) return;
       shown = [...shown, ...next];
-      if (!next.length) failed = true;
-    } catch {
-      failed = true;
+      // Fewer pages than the PDF has, and none of them given: the core read
+      // no further, which is not the end of the text.
+      if (!next.length) {
+        failed = '';
+        console.error(`the text of ${path} gave no pages from page ${from + 1} of ${pages}`);
+      }
+    } catch (error) {
+      if (gone) return;
+      failed = describeError(error) ?? '';
+      console.error(`the text of ${path} could not be read from page ${from + 1}`, error);
     } finally {
       loading = false;
     }
@@ -77,6 +87,12 @@
   {/each}
   <div class="end" bind:this={end}>
     {#if loading}<Spinner size={14} />{/if}
+    {#if failed !== null}
+      <p class="failed" data-text-failed>
+        {t('ocr-text-rest-failed')}
+        {#if failed}<span class="reason">{failed}</span>{/if}
+      </p>
+    {/if}
   </div>
 </div>
 
@@ -121,5 +137,15 @@
     justify-content: center;
     min-height: 8px;
     padding-top: 6px;
+  }
+  .failed {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--danger);
+    overflow-wrap: anywhere;
+  }
+  .reason {
+    display: block;
+    color: var(--ink-3);
   }
 </style>
