@@ -19,7 +19,7 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import TextField from '$lib/ui/TextField.svelte';
   import { describeError } from '$lib/ui/toast.svelte';
-  import { makeLibraryMap, planMap } from './map';
+  import { makeLibraryMap, planMap, withName } from './map';
 
   interface Props {
     /** The collection the map is of, or null for the whole library. */
@@ -48,25 +48,22 @@
     ...projects.list.map((p) => ({ value: p.id, label: p.name })),
   ]);
 
-  const plan = $derived(
-    planMap(
-      name.replace(/\s+/g, ' ').trim() || t('project-untitled'),
-      collection,
-      library.collections,
-      library.entries,
-      sort,
-    ),
-  );
+  // The map laid out without its name, which only its top takes: again when
+  // the library, the collection or the order changes, not for every letter
+  // typed in the name, which laid out the whole library, sorted, each time.
+  const plan = $derived(planMap('', collection, library.collections, library.entries, sort));
+  const named = () => withName(plan, name.replace(/\s+/g, ' ').trim() || t('project-untitled'));
 
   async function make() {
     if (making || !plan.parts.length) return;
     making = true;
     failure = null;
+    const map = named();
     try {
-      const id = into === NEW ? (await projects.create(plan.name)).id : into;
+      const id = into === NEW ? (await projects.create(map.name)).id : into;
       const opened = await openProject(id);
-      const top = makeLibraryMap(opened.project, PROJECT, plan);
-      if (top) await keepReferences(opened.project, plan.cited);
+      const top = makeLibraryMap(opened.project, PROJECT, map);
+      if (top) await keepReferences(opened.project, map.cited);
       await opened.project.close();
       if (!top) throw new Error(t('library-map-failed'));
       onclose();

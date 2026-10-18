@@ -94,13 +94,13 @@ export function passageGone(doc: Y.Doc, passage: NonNullable<Thread['passage']>)
 }
 
 interface Marked {
-  threads: Thread[];
+  threads: readonly Thread[];
   set: DecorationSet;
 }
 
 const key = new PluginKey<Marked>('comment-marks');
 
-function decorate(state: EditorState, threads: Thread[]): DecorationSet {
+function decorate(state: EditorState, threads: readonly Thread[]): DecorationSet {
   const list: Decoration[] = [];
   for (const thread of threads) {
     if (!thread.passage) continue;
@@ -123,7 +123,7 @@ export function commentMarks(): Plugin<Marked> {
     state: {
       init: () => ({ threads: [], set: DecorationSet.empty }),
       apply: (tr, value, _before, state) => {
-        const threads = tr.getMeta(key) as Thread[] | undefined;
+        const threads = tr.getMeta(key) as readonly Thread[] | undefined;
         if (threads) return { threads, set: decorate(state, threads) };
         if (!tr.docChanged || !value.threads.length) return value;
         // The positions are in the shared text, and are read anew from it.
@@ -135,14 +135,40 @@ export function commentMarks(): Plugin<Marked> {
 }
 
 /** The threads an editor was last given. */
-const given = new WeakMap<EditorView, Thread[]>();
+const given = new WeakMap<EditorView, readonly Thread[]>();
 
-/** Gives an editor the threads on its element, in place of those it had; none, to take them away. */
-export function markComments(view: EditorView, threads: Thread[]) {
+const sameBytes = (a: Uint8Array, b: Uint8Array) =>
+  a === b || (a.length === b.length && a.every((byte, i) => byte === b[i]));
+
+/**
+ * Whether two lists of threads draw the same marks: the same threads, each
+ * on the same passage, settled or not. A thread is made anew for every note
+ * written or changed in it, which changes nothing that is drawn.
+ */
+export function sameMarks(a: readonly Thread[], b: readonly Thread[]): boolean {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  return a.every((thread, i) => {
+    const other = b[i];
+    if (thread.id !== other.id || thread.resolved !== other.resolved) return false;
+    if (!thread.passage || !other.passage) return thread.passage === other.passage;
+    return (
+      sameBytes(thread.passage.from, other.passage.from) &&
+      sameBytes(thread.passage.to, other.passage.to)
+    );
+  });
+}
+
+/**
+ * Gives an editor the threads on its element, in place of those it had;
+ * none, to take them away. The marks are drawn again only where what they
+ * show has changed.
+ */
+export function markComments(view: EditorView, threads: readonly Thread[]) {
   if (view.isDestroyed || !key.getState(view.state)) return;
   const had = given.get(view);
-  if (had === threads || (!threads.length && !had?.length)) return;
   given.set(view, threads);
+  if (sameMarks(had ?? [], threads)) return;
   view.dispatch(view.state.tr.setMeta(key, threads).setMeta('addToHistory', false));
 }
 

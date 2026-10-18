@@ -5,6 +5,7 @@ import { makeImported, nameStyles, titleOf } from './import';
 import { Project } from './project.svelte';
 import { inlineText, paragraph, readBody, readTitle, type Block, type Inline } from './text';
 import { PROJECT } from './types';
+import { growth } from '$lib/util/growth';
 
 const t = (text: string, marks: Record<string, true> = {}): Inline => ({
   kind: 'text',
@@ -235,32 +236,35 @@ describe('a document made into a branch', () => {
     // 2000 paragraphs under 60 headings, every tenth with a note and a citation.
     const words =
       'Sing, goddess, the wrath of Achilles son of Peleus, the accursed wrath which brought countless sorrows upon the Achaeans, and sent down to Hades many valiant souls of warriors. ';
-    const sections: ImportedSection[] = [];
+    // Under `headings` headings, a third of them with 34 paragraphs, the rest with 33.
     let paragraphs = 0;
-    for (let h = 0; h < 60; h++) {
-      const blocks: Block[] = [];
-      const here = h < 20 ? 34 : 33;
-      for (let i = 0; i < here; i++) {
-        const content: Inline[] = [t(words.repeat(3)), t('Emphasised.', { em: true })];
-        if (paragraphs % 10 === 0) {
-          content.push(
-            { kind: 'citation', items: [{ id: `r${h}`, locator: String(i) }], mode: 'normal' },
-            { kind: 'footnote', content: [t(words)] },
-          );
+    const long = (headings: number) => {
+      const sections: ImportedSection[] = [];
+      for (let h = 0; h < headings; h++) {
+        const blocks: Block[] = [];
+        const here = h < headings / 3 ? 34 : 33;
+        for (let i = 0; i < here; i++) {
+          const content: Inline[] = [t(words.repeat(3)), t('Emphasised.', { em: true })];
+          if (paragraphs % 10 === 0) {
+            content.push(
+              { kind: 'citation', items: [{ id: `r${h}`, locator: String(i) }], mode: 'normal' },
+              { kind: 'footnote', content: [t(words)] },
+            );
+          }
+          blocks.push(p(...content));
+          paragraphs++;
         }
-        blocks.push(p(...content));
-        paragraphs++;
+        sections.push(section(h % 6 === 0 ? 1 : h % 3 === 0 ? 3 : 2, `Part ${h + 1}`, ...blocks));
       }
-      sections.push(section(h % 6 === 0 ? 1 : h % 3 === 0 ? 3 : 2, `Part ${h + 1}`, ...blocks));
-    }
+      return sections;
+    };
+    const sections = long(60);
     expect(paragraphs).toBe(2000);
 
     const project = begun();
     const updates: number[] = [];
     project.doc.on('update', (update: Uint8Array) => updates.push(update.length));
-    const before = performance.now();
     const made = makeImported(project, PROJECT, imported(sections))!;
-    const took = performance.now() - before;
 
     expect(made.elements).toHaveLength(61);
     // One transaction: one change to be saved, and one step of undo.
@@ -271,9 +275,12 @@ describe('a document made into a branch', () => {
       .sequence.reduce((n, id) => n + project.node(id)!.words, 0);
     expect(counted).toBe(2000 * (3 * 29 + 1) + 200 * 29);
     console.info(
-      `a document of 2000 paragraphs under 60 headings: ${Math.round(took)} ms, ${Math.round(updates[0] / 1024)} kB`,
+      `a document of 2000 paragraphs under 60 headings: ${Math.round(updates[0] / 1024)} kB`,
     );
-    expect(took).toBeLessThan(5000);
+    // Four times as long a document takes about four times as long, not sixteen.
+    expect(
+      growth((n) => makeImported(begun(), PROJECT, imported(long(n))), 15, { times: 3 }),
+    ).toBeLessThan(8);
 
     const undone = performance.now();
     project.undo();

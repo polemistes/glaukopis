@@ -17,7 +17,7 @@
 
 import { writeBody } from '$lib/project/model/blocks';
 import { TIDY, type Project } from '$lib/project/model/project.svelte';
-import { paragraph, type Block, type Inline } from '$lib/project/model/text';
+import { fillTitle, paragraph, type Block, type Inline } from '$lib/project/model/text';
 import { PROJECT } from '$lib/project/model/types';
 import { readFile, tidy, type Change } from './fluent';
 
@@ -87,24 +87,38 @@ export function fillWords(
     const en = readFile(text);
     if (!en.messages.length) continue;
     const mine = own.has(file) ? readFile(own.get(file)!) : null;
-    const top = project.addChild(PROJECT, { title: file.replace(/\.ftl$/, '') });
-    if (!top) continue;
-    for (const m of en.messages) {
-      for (const part of m.parts) {
-        const id = project.addChild(top, { title: part.key });
-        if (!id) continue;
-        const was = mine?.parts.get(part.key)?.text ?? '';
-        const note = part.key.includes('.') ? '' : m.comment;
-        writeBody(
-          project.fragment(id, 'body')!,
-          elementText(en.parts.get(part.key)!.text, note, was, tag),
-        );
-        project.transact(() =>
-          project.yNodes.get(id)?.set(WORDS, { file, key: part.key, was } satisfies ElementWords),
-        );
-        count++;
-      }
-    }
+    // A file is one branch, its top and a part for each part of each
+    // message, made in one step: made one by one, each was placed among
+    // the others by the tree of the whole project, made again for each, and
+    // the words of a language took the square of their number.
+    const parts = en.messages.flatMap((m) =>
+      m.parts.map((part) => ({
+        key: part.key,
+        text: en.parts.get(part.key)!.text,
+        note: part.key.includes('.') ? '' : m.comment,
+        was: mine?.parts.get(part.key)?.text ?? '',
+      })),
+    );
+    const made = project.buildBranch(
+      PROJECT,
+      file,
+      [{ under: 0 }, ...parts.map(() => ({ under: 0 }))],
+      (i, title, body) => {
+        if (i === 0) return fillTitle(title, file.replace(/\.ftl$/, ''));
+        const part = parts[i - 1];
+        fillTitle(title, part.key);
+        writeBody(body, elementText(part.text, part.note, part.was, tag));
+      },
+    );
+    if (!made) continue;
+    project.transact(() =>
+      parts.forEach(({ key, was }, i) =>
+        project.yNodes
+          .get(made.nodes[i + 1])
+          ?.set(WORDS, { file, key, was } satisfies ElementWords),
+      ),
+    );
+    count += parts.length;
   }
   project.undoManager.clear();
   return count;

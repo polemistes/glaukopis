@@ -13,6 +13,7 @@
   import { t } from '$lib/i18n';
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
+  import { forChoosing } from './order';
   import { KIND_ICONS, fileMatches, files, referenceWords } from './store.svelte';
 
   interface Props {
@@ -27,7 +28,6 @@
 
   /** The most rows shown: what is sought is found by searching, not by scrolling. */
   const MOST = 50;
-  const collator = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
 
   let query = $state('');
   let at = $state(0);
@@ -36,15 +36,10 @@
 
   $effect(() => void files.load());
 
-  const found = $derived(
-    files.files
-      .filter((f) => !except.includes(f.hash) && fileMatches(f, query))
-      .sort(
-        (a, b) =>
-          Number(a.references.length > 0) - Number(b.references.length > 0) ||
-          collator.compare(a.name, b.name),
-      ),
-  );
+  // Sorted when the files change; what is searched for is filtered out of
+  // that, in the same order, with every letter typed.
+  const ordered = $derived(forChoosing(files.files));
+  const found = $derived(ordered.filter((f) => !except.includes(f.hash) && fileMatches(f, query)));
   const shown = $derived(found.slice(0, MOST));
 
   $effect(() => {

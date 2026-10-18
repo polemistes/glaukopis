@@ -11,7 +11,8 @@
  */
 
 import { documentWord, t } from '$lib/i18n';
-import { SvelteMap } from 'svelte/reactivity';
+import { untrack } from 'svelte';
+import { createSubscriber, SvelteMap } from 'svelte/reactivity';
 import type { DocumentFormat } from '$lib/api/documents';
 import { documents } from '$lib/preview/documents.svelte';
 import { walkDocument } from '$lib/project/model/document';
@@ -211,10 +212,34 @@ export function formsOf(kind: PointedKind, numbered: boolean): { form: RefForm; 
   }
 }
 
+/** Whether two countings of a document give the same numbers, to the same things, with the same words. */
+export function sameNumbers(a: Numbers, b: Numbers): boolean {
+  if (a === b) return true;
+  if (a.all.length !== b.all.length || a.within.size !== b.within.size) return false;
+  const same = (x: Pointed, y: Pointed) =>
+    x.id === y.id &&
+    x.kind === y.kind &&
+    x.number === y.number &&
+    x.words === y.words &&
+    x.element === y.element &&
+    x.file === y.file &&
+    x.extension === y.extension;
+  if (!a.all.every((x, i) => same(x, b.all[i]))) return false;
+  const list = (x: (string | null)[], y: (string | null)[] | undefined) =>
+    !!y && x.length === y.length && x.every((n, i) => n === y[i]);
+  for (const [element, x] of a.within) {
+    const y = b.within.get(element);
+    if (!list(x.figure, y?.figure) || !list(x.table, y?.table) || !list(x.equation, y?.equation))
+      return false;
+  }
+  return true;
+}
+
 class Numbering {
   /** The formats that have been read, by their ids. */
   readonly #formats = new SvelteMap<string, DocumentFormat | null>();
-  #counted = new Map<string, { mark: string; numbers: Numbers }>();
+  /** The numbers of the documents of each project, by the element each is the document of. */
+  #counted = new WeakMap<Project, Map<string, Counted>>();
 
   /** The format of the document of an element, when it has been read; it is asked for when it has not. */
   formatOf(project: Project, at: string): DocumentFormat | undefined {
@@ -241,18 +266,84 @@ class Numbering {
 
   /**
    * The numbers of the document of an element, as they are now. Read where
-   * they are shown: what reads them is told when the project has changed.
+   * they are shown: what reads them is told when they have changed, and
+   * only then.
+   *
+   * They are counted once for every change of the project, however many
+   * figures, equations and words that point read them, and the same object
+   * is given out until the numbers themselves are different. A word typed
+   * in a paragraph changes the project but no number, and what shows one is
+   * not done again: read with the project's revision, as they were, every
+   * figure, table, equation and pointer on the screen, and every text shown
+   * with them, was worked out again for every keystroke anywhere.
    */
   of(project: Project, at: string): Numbers {
-    const counting = this.countingOf(project, at);
-    const mark = `${project.revision}:${project.structure}:${counting.numberedHeadings}:${counting.runIn}:${counting.deepest}:${counting.label}:${counting.tableLabel}`;
-    const known = this.#counted.get(at);
-    if (known && known.mark === mark) return known.numbers;
-    const numbers = count(project, at, counting);
-    if (this.#counted.size > 40) this.#counted.clear();
-    this.#counted.set(at, { mark, numbers });
-    return numbers;
+    let byElement = this.#counted.get(project);
+    if (!byElement) this.#counted.set(project, (byElement = new Map()));
+    let counted = byElement.get(at);
+    if (!counted) {
+      if (byElement.size > 40) byElement.clear();
+      byElement.set(at, (counted = new Counted(project, at, this)));
+    }
+    return counted.read();
   }
 }
+
+/** The numbers of the document of one element, counted when the project has changed, and given out until they are different. */
+class Counted {
+  readonly #project: Project;
+  readonly #at: string;
+  readonly #numbering: Numbering;
+  #numbers: Numbers | undefined;
+  /** The revision of the project, and what of the format, they were counted with. */
+  #mark = '';
+  /** The numbers those who follow them were last told of. */
+  #told: Numbers | undefined;
+  /** Follows them, for an effect or a derived that reads them: told when they are different. */
+  readonly #follow: () => void;
+
+  constructor(project: Project, at: string, numbering: Numbering) {
+    this.#project = project;
+    this.#at = at;
+    this.#numbering = numbering;
+    // While anything follows them, they are counted once for all that
+    // changed at a moment, and those who follow are told only where the
+    // numbers came out different.
+    this.#follow = createSubscriber((tell) =>
+      project.onChange(() => {
+        const numbers = this.#count(untrack(() => numbering.countingOf(project, at)));
+        if (numbers === this.#told) return;
+        this.#told = numbers;
+        tell();
+      }),
+    );
+  }
+
+  read(): Numbers {
+    this.#follow();
+    // Followed itself: a format read later, or changed, counts them anew.
+    const counting = this.#numbering.countingOf(this.#project, this.#at);
+    // Counted here as well, where the project has changed since: what reads
+    // them at once, before those who follow are told, has them as they are.
+    const numbers = this.#count(counting);
+    this.#told ??= numbers;
+    return numbers;
+  }
+
+  #count(counting: Counting): Numbers {
+    return untrack(() => {
+      const mark = `${this.#project.revision}:${this.#project.structure}:${countingMark(counting)}`;
+      if (this.#numbers && mark === this.#mark) return this.#numbers;
+      this.#mark = mark;
+      const now = count(this.#project, this.#at, counting);
+      if (!this.#numbers || !sameNumbers(this.#numbers, now)) this.#numbers = now;
+      return this.#numbers;
+    });
+  }
+}
+
+/** What of the format the numbers depend on. */
+const countingMark = (c: Counting) =>
+  `${c.numberedHeadings}:${c.runIn}:${c.deepest}:${c.label}:${c.tableLabel}`;
 
 export const numbering = new Numbering();

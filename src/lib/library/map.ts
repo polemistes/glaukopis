@@ -100,6 +100,12 @@ export function planMap(
   };
 }
 
+/** The map, named: the name is its top's, and the project's where one is made for it. */
+export function withName(plan: Plan, name: string): Plan {
+  const [top, ...rest] = plan.parts;
+  return { ...plan, name, parts: [{ ...top, title: name }, ...rest] };
+}
+
 /**
  * Makes the map as a branch under an element of the project, in one step
  * that undo takes back as one. Returns the element at the top of the

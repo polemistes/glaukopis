@@ -3,7 +3,7 @@ import type { Collection, Summary } from '$lib/api/library';
 import { Project } from '$lib/project/model/project.svelte';
 import { paragraph, readBody } from '$lib/project/model/text';
 import { PROJECT } from '$lib/project/model/types';
-import { elementName, makeLibraryMap, planMap } from './map';
+import { elementName, makeLibraryMap, planMap, withName } from './map';
 
 function entry(partial: Partial<Summary>): Summary {
   return {
@@ -126,5 +126,10 @@ describe('a map of the library', () => {
     project.undo();
     expect(project.tree().sequence).toEqual([PROJECT]);
     expect(makeLibraryMap(project, 'gone', plan)).toBeNull();
+  });
+
+  it('laid out without a name, takes one at its top, the same as one laid out with it', () => {
+    const named = withName(planMap('', null, collections, entries), 'The library');
+    expect(named).toEqual(planMap('The library', null, collections, entries));
   });
 });

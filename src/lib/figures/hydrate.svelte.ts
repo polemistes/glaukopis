@@ -5,6 +5,7 @@
  * text has been put into the page and whenever it is put there anew.
  */
 
+import { untrack } from 'svelte';
 import type { Project } from '$lib/project/model/project.svelte';
 import { refForm } from '$lib/project/model/text';
 import { showFormula } from './math.svelte';
@@ -34,7 +35,9 @@ function fill(root: HTMLElement, shown: Shown) {
   }
 
   // The numbers, what the document calls things, and where they stand.
-  if (!shown.project.node(shown.element)) return;
+  // That the element is there, not what it is: what it has is filled in
+  // anew when it is shown anew, and its numbers are followed on their own.
+  if (!untrack(() => shown.project.node(shown.element))) return;
   const at = shown.at ?? topOf(shown.project, shown.element);
   const format = numbering.formatOf(shown.project, at);
   for (const [selector, kind] of [

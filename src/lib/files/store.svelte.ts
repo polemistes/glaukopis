@@ -316,17 +316,28 @@ export function referenceWords(reference: Summary): string {
 export function fileMatches(file: FileView, query: string): boolean {
   const words = fold(query).split(' ').filter(Boolean);
   if (!words.length) return true;
-  const hay =
-    ' ' +
-    fold(
-      [
-        file.name,
-        file.origin ?? '',
-        ...file.references.flatMap((r) => [r.authors, r.title, r.year]),
-      ].join(' '),
-    );
+  let hay = searched.get(file);
+  if (hay === undefined) {
+    hay =
+      ' ' +
+      fold(
+        [
+          file.name,
+          file.origin ?? '',
+          ...file.references.flatMap((r) => [r.authors, r.title, r.year]),
+        ].join(' '),
+      );
+    searched.set(file, hay);
+  }
   return words.every((w) => hay.includes(' ' + w));
 }
+
+/**
+ * What is searched in each file, made once: a file is read anew whenever it
+ * changes, and folded again for every letter typed in a search over
+ * thousands it made the field stutter.
+ */
+const searched = new WeakMap<FileView, string>();
 
 /** What came of taking files in, in words: the new, those already there, the folders made, the problems. */
 export function takenWords(taken: TakenIn): string {
