@@ -107,25 +107,25 @@ core-import-document-notebook = Jupyter-notebook
 
 core-import-document-found = { $count ->
     [one] { $made ->
-        [all] Er is { $count } verwijzing gevonden die nog niet aan een referentie van je bibliotheek is gekoppeld, gemaakt door een programma dat referenties bijhoudt. Ze staat er als de tekst waarin ze is geschreven, en kan worden doorgenomen wanneer de mindmap wordt gemaakt, en later.
-       *[none] Er is { $count } verwijzing gevonden die nog niet aan een referentie van je bibliotheek is gekoppeld. Ze staat er als de tekst waarin ze is geschreven, en kan worden doorgenomen wanneer de mindmap wordt gemaakt, en later.
+        [all] Er is { $count } verwijzing gevonden die nog niet aan een referentie van je bibliotheek is gekoppeld, gemaakt door een programma dat referenties bijhoudt. Ze staat er als de tekst waarin ze is geschreven, en kan worden doorgenomen wanneer het document is binnengehaald, en later.
+       *[none] Er is { $count } verwijzing gevonden die nog niet aan een referentie van je bibliotheek is gekoppeld. Ze staat er als de tekst waarin ze is geschreven, en kan worden doorgenomen wanneer het document is binnengehaald, en later.
     }
    *[other] { $made ->
-        [all] Er zijn { $count } verwijzingen gevonden die nog niet aan referenties van je bibliotheek zijn gekoppeld, alle gemaakt door een programma dat referenties bijhoudt. Ze staan er als de tekst waarin ze zijn geschreven, en kunnen worden doorgenomen wanneer de mindmap wordt gemaakt, en later.
-        [some] Er zijn { $count } verwijzingen gevonden die nog niet aan referenties van je bibliotheek zijn gekoppeld, { $some } ervan gemaakt door een programma dat referenties bijhoudt. Ze staan er als de tekst waarin ze zijn geschreven, en kunnen worden doorgenomen wanneer de mindmap wordt gemaakt, en later.
-       *[none] Er zijn { $count } verwijzingen gevonden die nog niet aan referenties van je bibliotheek zijn gekoppeld. Ze staan er als de tekst waarin ze zijn geschreven, en kunnen worden doorgenomen wanneer de mindmap wordt gemaakt, en later.
+        [all] Er zijn { $count } verwijzingen gevonden die nog niet aan referenties van je bibliotheek zijn gekoppeld, alle gemaakt door een programma dat referenties bijhoudt. Ze staan er als de tekst waarin ze zijn geschreven, en kunnen worden doorgenomen wanneer het document is binnengehaald, en later.
+        [some] Er zijn { $count } verwijzingen gevonden die nog niet aan referenties van je bibliotheek zijn gekoppeld, { $some } ervan gemaakt door een programma dat referenties bijhoudt. Ze staan er als de tekst waarin ze zijn geschreven, en kunnen worden doorgenomen wanneer het document is binnengehaald, en later.
+       *[none] Er zijn { $count } verwijzingen gevonden die nog niet aan referenties van je bibliotheek zijn gekoppeld. Ze staan er als de tekst waarin ze zijn geschreven, en kunnen worden doorgenomen wanneer het document is binnengehaald, en later.
     }
 }
 core-import-document-endnote = { $count ->
-    [one] { $count } verwijzing die door EndNote is gemaakt, wordt binnengehaald als de tekst die ze toont, en hoort niet bij de gevonden verwijzingen: wat EndNote over de werken zegt, kon niet worden gelezen.
-   *[other] { $count } verwijzingen die door EndNote zijn gemaakt, worden binnengehaald als de tekst die ze tonen, en horen niet bij de gevonden verwijzingen: wat EndNote over de werken zegt, kon niet worden gelezen.
+    [one] { $count } verwijzing die door EndNote is gemaakt, wordt binnengehaald als de tekst die ze toont, en hoort niet bij de losse verwijzingen: wat EndNote over de werken zegt, kon niet worden gelezen.
+   *[other] { $count } verwijzingen die door EndNote zijn gemaakt, worden binnengehaald als de tekst die ze tonen, en horen niet bij de losse verwijzingen: wat EndNote over de werken zegt, kon niet worden gelezen.
 }
 core-import-document-bookmarks = { $count ->
     [one] Het document bewaart { $count } verwijzing in een bladwijzer, en waarnaar ze verwijst kon niet worden gelezen: ze is tekst zoals ze er staat. Zotero bewaart ze anders als zijn documentvoorkeuren dat zeggen.
    *[other] Het document bewaart { $count } verwijzingen in bladwijzers, en waarnaar ze verwijzen kon niet worden gelezen: ze zijn tekst zoals ze er staan. Zotero bewaart ze anders als zijn documentvoorkeuren dat zeggen.
 }
-core-import-document-bibliography = Het document heeft een lijst van wat het citeert, onder ‘{ $heading }’. Die wordt als tekst binnengehaald, net als de rest. De mindmap maakt een eigen bibliografie van wat erin wordt geciteerd.
-core-import-document-bibliography-made = Het document heeft een lijst van wat het citeert, gemaakt door het programma dat zijn referenties bijhoudt. Die wordt als tekst binnengehaald, net als de rest. De mindmap maakt een eigen bibliografie van wat erin wordt geciteerd.
+core-import-document-bibliography = Het document heeft een lijst van wat het citeert, onder ‘{ $heading }’. Die wordt als tekst binnengehaald, net als de rest. Glaukopis maakt een eigen bibliografie van wat wordt geciteerd.
+core-import-document-bibliography-made = Het document heeft een lijst van wat het citeert, gemaakt door het programma dat zijn referenties bijhoudt. Die wordt als tekst binnengehaald, net als de rest. Glaukopis maakt een eigen bibliografie van wat wordt geciteerd.
 core-import-document-tracked = Het document heeft bijgehouden wijzigingen. De tekst wordt binnengehaald zoals hij is wanneer die alle worden aanvaard.
 core-import-document-comments = Het document heeft opmerkingen in de marge; die worden weggelaten.
 core-import-document-heading-notes = { $count ->
@@ -134,8 +134,8 @@ core-import-document-heading-notes = { $count ->
 }
 # What a caption began with is shown as the document has it: “Figure 1:”.
 core-import-document-labels = { $count ->
-    [one] { $count } bijschrift begon met een woord en een nummer, zoals ‘{ $first }’. Dat is weggelaten: de mindmap nummert haar figuren en tabellen zelf. Waar de tekst er een bij zijn nummer noemt, is dat tekst zoals ze is geschreven, en volgt ze de nummers van de mindmap niet.
-   *[other] { $count } bijschriften begonnen met een woord en een nummer, zoals ‘{ $first }’. Die zijn weggelaten: de mindmap nummert haar figuren en tabellen zelf. Waar de tekst er een bij zijn nummer noemt, is dat tekst zoals ze is geschreven, en volgt ze de nummers van de mindmap niet.
+    [one] { $count } bijschrift begon met een woord en een nummer, zoals ‘{ $first }’. Dat is weggelaten: Glaukopis nummert figuren en tabellen zelf. Waar de tekst er een bij zijn nummer noemt, is dat tekst zoals ze is geschreven, en volgt ze de nummers niet zoals ze worden gedrukt.
+   *[other] { $count } bijschriften begonnen met een woord en een nummer, zoals ‘{ $first }’. Die zijn weggelaten: Glaukopis nummert figuren en tabellen zelf. Waar de tekst er een bij zijn nummer noemt, is dat tekst zoals ze is geschreven, en volgt ze de nummers niet zoals ze worden gedrukt.
 }
 core-import-document-label-example = Figuur 1:
 core-import-document-caption-notes = { $count ->

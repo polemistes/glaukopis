@@ -59,3 +59,12 @@ core-export-format-own-only = Só os formatos próprios se podem eliminar.
 core-export-not-a-length = «{ $length }» não é uma medida
 # Shown after "not found: ".
 core-export-the-format = o formato «{ $id }»
+
+## Templates.
+
+core-export-template-bad-id = «{ $id }» não pode ser o identificador de um modelo
+core-export-template-needs-name = Um modelo precisa de um nome.
+core-export-template-own-only = Só os modelos próprios se podem eliminar.
+core-export-the-template = o modelo «{ $id }»
+core-export-output-not-yet = O ficheiro «{ $id }» do modelo ainda não se pode fazer: por agora, só se faz o documento.
+core-export-output-unknown = O modelo não faz nenhum ficheiro «{ $id }».

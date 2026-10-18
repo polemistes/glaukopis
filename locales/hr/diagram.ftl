@@ -2,6 +2,10 @@
 
 diagram-map = Mapa
 diagram-idea = Naziv
+diagram-new-here = Novi element ovdje
+diagram-new-here-hint = Zamisao koja još nema svoje mjesto, ispod elementa u prikazu
+diagram-open-as-map = Otvori kao mapu
+diagram-open-as-map-hint = Element u središtu, s onim što je ispod njega
 diagram-show-all = Prikaži cijelu mapu
 diagram-tidy = Uredi cijelu mapu
 diagram-tidy-hint = Svaki se element vraća na svoje automatsko mjesto
@@ -29,5 +33,12 @@ diagram-copied = { $count ->
     [few] { $count } elementa kopirana, sa svime ispod njih
    *[other] { $count } elemenata kopirano, sa svime ispod njih
 }
+diagram-cut = { $count ->
+    [1] Jedan je element izrezan: premješta se onamo gdje ga zalijepite
+    [one] { $count } element je izrezan: premješta se onamo gdje ga zalijepite
+    [few] { $count } elementa su izrezana: premještaju se onamo gdje ih zalijepite
+   *[other] { $count } elemenata je izrezano: premještaju se onamo gdje ih zalijepite
+}
+diagram-paste-here = Zalijepi ovdje
 diagram-nothing-copied = Još ništa nije kopirano
 diagram-pasted-elsewhere = Kopirano je iz drugog projekta i ne može se zalijepiti ovdje

@@ -111,30 +111,30 @@ core-import-document-notebook = notatnik Jupyter
 
 core-import-document-found = { $count ->
     [one] { $made ->
-        [all] Znaleziono { $count } cytowanie, które nie jest jeszcze powiązane z pozycją z twojej biblioteki; zrobił je program zarządzający bibliografią. Stoi jako tekst, którym je zapisano, i można je przejrzeć, gdy mapa powstanie, a także później.
-       *[none] Znaleziono { $count } cytowanie, które nie jest jeszcze powiązane z pozycją z twojej biblioteki. Stoi jako tekst, którym je zapisano, i można je przejrzeć, gdy mapa powstanie, a także później.
+        [all] Znaleziono { $count } cytowanie, które nie jest jeszcze powiązane z pozycją z twojej biblioteki; zrobił je program zarządzający bibliografią. Stoi jako tekst, którym je zapisano, i można je przejrzeć, po wczytaniu dokumentu, a także później.
+       *[none] Znaleziono { $count } cytowanie, które nie jest jeszcze powiązane z pozycją z twojej biblioteki. Stoi jako tekst, którym je zapisano, i można je przejrzeć, po wczytaniu dokumentu, a także później.
     }
     [few] { $made ->
-        [all] Znaleziono { $count } cytowania, które nie są jeszcze powiązane z pozycjami z twojej biblioteki; wszystkie zrobił program zarządzający bibliografią. Stoją jako tekst, którym je zapisano, i można je przejrzeć, gdy mapa powstanie, a także później.
-        [some] Znaleziono { $count } cytowania, które nie są jeszcze powiązane z pozycjami z twojej biblioteki; { $some } z nich zrobił program zarządzający bibliografią. Stoją jako tekst, którym je zapisano, i można je przejrzeć, gdy mapa powstanie, a także później.
-       *[none] Znaleziono { $count } cytowania, które nie są jeszcze powiązane z pozycjami z twojej biblioteki. Stoją jako tekst, którym je zapisano, i można je przejrzeć, gdy mapa powstanie, a także później.
+        [all] Znaleziono { $count } cytowania, które nie są jeszcze powiązane z pozycjami z twojej biblioteki; wszystkie zrobił program zarządzający bibliografią. Stoją jako tekst, którym je zapisano, i można je przejrzeć, po wczytaniu dokumentu, a także później.
+        [some] Znaleziono { $count } cytowania, które nie są jeszcze powiązane z pozycjami z twojej biblioteki; { $some } z nich zrobił program zarządzający bibliografią. Stoją jako tekst, którym je zapisano, i można je przejrzeć, po wczytaniu dokumentu, a także później.
+       *[none] Znaleziono { $count } cytowania, które nie są jeszcze powiązane z pozycjami z twojej biblioteki. Stoją jako tekst, którym je zapisano, i można je przejrzeć, po wczytaniu dokumentu, a także później.
     }
     [many] { $made ->
-        [all] Znaleziono { $count } cytowań, które nie są jeszcze powiązane z pozycjami z twojej biblioteki; wszystkie zrobił program zarządzający bibliografią. Stoją jako tekst, którym je zapisano, i można je przejrzeć, gdy mapa powstanie, a także później.
-        [some] Znaleziono { $count } cytowań, które nie są jeszcze powiązane z pozycjami z twojej biblioteki; { $some } z nich zrobił program zarządzający bibliografią. Stoją jako tekst, którym je zapisano, i można je przejrzeć, gdy mapa powstanie, a także później.
-       *[none] Znaleziono { $count } cytowań, które nie są jeszcze powiązane z pozycjami z twojej biblioteki. Stoją jako tekst, którym je zapisano, i można je przejrzeć, gdy mapa powstanie, a także później.
+        [all] Znaleziono { $count } cytowań, które nie są jeszcze powiązane z pozycjami z twojej biblioteki; wszystkie zrobił program zarządzający bibliografią. Stoją jako tekst, którym je zapisano, i można je przejrzeć, po wczytaniu dokumentu, a także później.
+        [some] Znaleziono { $count } cytowań, które nie są jeszcze powiązane z pozycjami z twojej biblioteki; { $some } z nich zrobił program zarządzający bibliografią. Stoją jako tekst, którym je zapisano, i można je przejrzeć, po wczytaniu dokumentu, a także później.
+       *[none] Znaleziono { $count } cytowań, które nie są jeszcze powiązane z pozycjami z twojej biblioteki. Stoją jako tekst, którym je zapisano, i można je przejrzeć, po wczytaniu dokumentu, a także później.
     }
    *[other] { $made ->
-        [all] Znaleziono { $count } cytowań, które nie są jeszcze powiązane z pozycjami z twojej biblioteki; wszystkie zrobił program zarządzający bibliografią. Stoją jako tekst, którym je zapisano, i można je przejrzeć, gdy mapa powstanie, a także później.
-        [some] Znaleziono { $count } cytowań, które nie są jeszcze powiązane z pozycjami z twojej biblioteki; { $some } z nich zrobił program zarządzający bibliografią. Stoją jako tekst, którym je zapisano, i można je przejrzeć, gdy mapa powstanie, a także później.
-       *[none] Znaleziono { $count } cytowań, które nie są jeszcze powiązane z pozycjami z twojej biblioteki. Stoją jako tekst, którym je zapisano, i można je przejrzeć, gdy mapa powstanie, a także później.
+        [all] Znaleziono { $count } cytowań, które nie są jeszcze powiązane z pozycjami z twojej biblioteki; wszystkie zrobił program zarządzający bibliografią. Stoją jako tekst, którym je zapisano, i można je przejrzeć, po wczytaniu dokumentu, a także później.
+        [some] Znaleziono { $count } cytowań, które nie są jeszcze powiązane z pozycjami z twojej biblioteki; { $some } z nich zrobił program zarządzający bibliografią. Stoją jako tekst, którym je zapisano, i można je przejrzeć, po wczytaniu dokumentu, a także później.
+       *[none] Znaleziono { $count } cytowań, które nie są jeszcze powiązane z pozycjami z twojej biblioteki. Stoją jako tekst, którym je zapisano, i można je przejrzeć, po wczytaniu dokumentu, a także później.
     }
 }
 core-import-document-endnote = { $count ->
-    [one] { $count } cytowanie zrobione przez EndNote wczytano jako tekst, który pokazuje, i nie ma go wśród znalezionych: nie udało się odczytać tego, co EndNote mówi o dziełach.
-    [few] { $count } cytowania zrobione przez EndNote wczytano jako tekst, który pokazują, i nie ma ich wśród znalezionych: nie udało się odczytać tego, co EndNote mówi o dziełach.
-    [many] { $count } cytowań zrobionych przez EndNote wczytano jako tekst, który pokazują, i nie ma ich wśród znalezionych: nie udało się odczytać tego, co EndNote mówi o dziełach.
-   *[other] { $count } cytowań zrobionych przez EndNote wczytano jako tekst, który pokazują, i nie ma ich wśród znalezionych: nie udało się odczytać tego, co EndNote mówi o dziełach.
+    [one] { $count } cytowanie zrobione przez EndNote wczytano jako tekst, który pokazuje, i nie ma go wśród niepowiązanych cytowań: nie udało się odczytać tego, co EndNote mówi o dziełach.
+    [few] { $count } cytowania zrobione przez EndNote wczytano jako tekst, który pokazują, i nie ma ich wśród niepowiązanych cytowań: nie udało się odczytać tego, co EndNote mówi o dziełach.
+    [many] { $count } cytowań zrobionych przez EndNote wczytano jako tekst, który pokazują, i nie ma ich wśród niepowiązanych cytowań: nie udało się odczytać tego, co EndNote mówi o dziełach.
+   *[other] { $count } cytowań zrobionych przez EndNote wczytano jako tekst, który pokazują, i nie ma ich wśród niepowiązanych cytowań: nie udało się odczytać tego, co EndNote mówi o dziełach.
 }
 core-import-document-bookmarks = { $count ->
     [one] Dokument trzyma { $count } cytowanie w zakładce, a tego, co cytuje, nie udało się odczytać: jest tekstem, jak stoi. Zotero trzyma je tak, gdy tak każą jego ustawienia dokumentu.
@@ -142,8 +142,8 @@ core-import-document-bookmarks = { $count ->
     [many] Dokument trzyma { $count } cytowań w zakładkach, a tego, co cytują, nie udało się odczytać: są tekstem, jak stoją. Zotero trzyma je tak, gdy tak każą jego ustawienia dokumentu.
    *[other] Dokument trzyma { $count } cytowań w zakładkach, a tego, co cytują, nie udało się odczytać: są tekstem, jak stoją. Zotero trzyma je tak, gdy tak każą jego ustawienia dokumentu.
 }
-core-import-document-bibliography = Dokument ma spis tego, co cytuje, pod nagłówkiem „{ $heading }”. Wczytano go jako tekst, jak resztę. Mapa sama tworzy bibliografię z tego, co się w niej cytuje.
-core-import-document-bibliography-made = Dokument ma spis tego, co cytuje, zrobiony przez program zarządzający jego bibliografią. Wczytano go jako tekst, jak resztę. Mapa sama tworzy bibliografię z tego, co się w niej cytuje.
+core-import-document-bibliography = Dokument ma spis tego, co cytuje, pod nagłówkiem „{ $heading }”. Wczytano go jako tekst, jak resztę. Glaukopis tworzy własną bibliografię z tego, co jest cytowane.
+core-import-document-bibliography-made = Dokument ma spis tego, co cytuje, zrobiony przez program zarządzający jego bibliografią. Wczytano go jako tekst, jak resztę. Glaukopis tworzy własną bibliografię z tego, co jest cytowane.
 core-import-document-tracked = Dokument ma śledzone zmiany. Tekst wczytano w postaci, jaką ma po przyjęciu ich wszystkich.
 core-import-document-comments = Dokument ma komentarze na marginesie; pominięto je.
 core-import-document-heading-notes = { $count ->
@@ -154,10 +154,10 @@ core-import-document-heading-notes = { $count ->
 }
 # What a caption began with is shown as the document has it: “Figure 1:”.
 core-import-document-labels = { $count ->
-    [one] { $count } podpis zaczynał się od słowa i numeru, jak „{ $first }”. Pominięto go: mapa sama numeruje swoje ryciny i tabele. Tam, gdzie tekst wymienia którąś z nich po numerze, jest to tekst, jak go zapisano, i nie podąża za numeracją mapy.
-    [few] { $count } podpisy zaczynały się od słowa i numeru, jak „{ $first }”. Pominięto je: mapa sama numeruje swoje ryciny i tabele. Tam, gdzie tekst wymienia którąś z nich po numerze, jest to tekst, jak go zapisano, i nie podąża za numeracją mapy.
-    [many] { $count } podpisów zaczynało się od słowa i numeru, jak „{ $first }”. Pominięto je: mapa sama numeruje swoje ryciny i tabele. Tam, gdzie tekst wymienia którąś z nich po numerze, jest to tekst, jak go zapisano, i nie podąża za numeracją mapy.
-   *[other] { $count } podpisów zaczynało się od słowa i numeru, jak „{ $first }”. Pominięto je: mapa sama numeruje swoje ryciny i tabele. Tam, gdzie tekst wymienia którąś z nich po numerze, jest to tekst, jak go zapisano, i nie podąża za numeracją mapy.
+    [one] { $count } podpis zaczynał się od słowa i numeru, jak „{ $first }”. Pominięto go: Glaukopis sam numeruje ryciny i tabele. Tam, gdzie tekst wymienia którąś z nich po numerze, jest to tekst, jak go zapisano, i nie podąża za numeracją w druku.
+    [few] { $count } podpisy zaczynały się od słowa i numeru, jak „{ $first }”. Pominięto je: Glaukopis sam numeruje ryciny i tabele. Tam, gdzie tekst wymienia którąś z nich po numerze, jest to tekst, jak go zapisano, i nie podąża za numeracją w druku.
+    [many] { $count } podpisów zaczynało się od słowa i numeru, jak „{ $first }”. Pominięto je: Glaukopis sam numeruje ryciny i tabele. Tam, gdzie tekst wymienia którąś z nich po numerze, jest to tekst, jak go zapisano, i nie podąża za numeracją w druku.
+   *[other] { $count } podpisów zaczynało się od słowa i numeru, jak „{ $first }”. Pominięto je: Glaukopis sam numeruje ryciny i tabele. Tam, gdzie tekst wymienia którąś z nich po numerze, jest to tekst, jak go zapisano, i nie podąża za numeracją w druku.
 }
 core-import-document-label-example = Ryc. 1.
 core-import-document-caption-notes = { $count ->

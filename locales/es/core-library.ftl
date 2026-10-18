@@ -50,3 +50,13 @@ core-library-collection-in-itself = Una colección no se puede poner dentro de s
 
 core-library-not-in-library = «{ $path }» no es una ruta dentro de la biblioteca
 core-library-not-a-file = { $path } no es un archivo
+
+## The files of the library and their folders.
+
+core-library-the-file-of-library = el archivo de la biblioteca
+core-library-the-folder = la carpeta
+core-library-needs-name = Hace falta un nombre.
+core-library-name-too-long = Ese nombre es demasiado largo.
+core-library-folder-in-itself = Una carpeta no se puede poner dentro de sí misma.
+# The record of the files could not be read; it was put aside under another name.
+core-library-files-unreadable = No se pudo leer el registro de los archivos de la biblioteca, y se dejó aparte como { $path }: { $message }

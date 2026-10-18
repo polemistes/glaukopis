@@ -4,19 +4,22 @@
 ## What a file is.
 
 ocr-kind-pdf = PDF
+ocr-no-headings = Nu s-a găsit niciun titlu: paginile sunt elementele.
 ocr-kind-picture = Imagine
 
 ## When text cannot be read.
 
 ocr-stopped = Citirea a fost oprită.
 ocr-no-language = Tesseract nu are date pentru limba „{ $language }”.
-ocr-no-languages = Tesseract nu are date pentru nicio limbă. Instalați datele uneia, precum tesseract-data-eng pe Arch.
+ocr-no-languages = Tesseract nu are date pentru nicio limbă. Importați una din Setări › Programe sau instalați una cu gestionarul de pachete al sistemului, precum tesseract-data-eng pe Arch.
 ocr-not-pdf = „{ $file }” nu este un PDF.
 ocr-no-pages = „{ $file }” nu are pagini.
 ocr-locked = „{ $file }” este încuiat cu o parolă, iar paginile lui nu se pot desena.
 ocr-unreadable = „{ $file }” nu s-a putut citi ca PDF. Poate fi stricat.
 ocr-page-not-drawn = Pagina { $page } nu s-a putut desena.
 ocr-picture-unreadable = Imaginea nu s-a putut citi: { $message }
+ocr-not-made = Tesseract nu a făcut { $path }.
+ocr-not-made-said = Tesseract nu a făcut { $path }. A spus: { $message }
 ocr-drawing = Un desen (SVG) nu are în el nicio imagine din care să se citească text.
 
 ## Making a PDF searchable.
@@ -34,3 +37,25 @@ ocr-remark-more-failed = { $count ->
    *[other] Încă { $count } de pagini nu s-au putut citi.
 }
 ocr-remark-empty = Nu s-a găsit niciun text.
+
+## What a reading of a PDF came to (ADR 0044).
+
+ocr-remark-counts = { $read ->
+    [0] Nicio pagină citită de Tesseract
+    [one] O pagină citită de Tesseract
+    [few] { $read } pagini citite de Tesseract
+   *[other] { $read } de pagini citite de Tesseract
+}, { $taken ->
+    [0] niciuna luată din textul propriu al PDF-ului
+    [one] una luată din textul propriu al PDF-ului
+    [few] { $taken } luate din textul propriu al PDF-ului
+   *[other] { $taken } luate din textul propriu al PDF-ului
+}, { $failed ->
+    [0] niciuna care să nu se fi putut citi.
+    [one] una care nu s-a putut citi.
+    [few] { $failed } care nu s-au putut citi.
+   *[other] { $failed } care nu s-au putut citi.
+}
+# Stands in the element in the place of a page that could not be read.
+ocr-page-failed-line = [Această pagină nu s-a putut citi: { $message }]
+ocr-why-no-tesseract = Tesseract, care citește textul din imagini, nu este instalat.

@@ -45,13 +45,13 @@ figures-stands-where = Gdzie stoi { $kind ->
         [table] tabela
        *[equation] równanie
     }
-figures-side-format = Jak format
+figures-side-format = Jak w układzie
 figures-side-left = Z lewej
 figures-side-middle = Pośrodku
 figures-side-right = Z prawej
-# What the format of the document says of where things of a kind stand. The
+# What the layout of the document says of where things of a kind stand. The
 # flow is none for equations, and for what stands in the middle.
-figures-usual = Format stawia { $kind ->
+figures-usual = Układ stawia { $kind ->
         [figure] ryciny
         [table] tabele
        *[equation] równania
@@ -70,7 +70,7 @@ figures-flows-where = Czy tekst opływa { $kind ->
         [table] tabelę
        *[equation] równanie
     }
-figures-flow-format = Jak format
+figures-flow-format = Jak w układzie
 figures-flow-around = Opływa
 figures-flow-apart = Stoi osobno
 figures-flow-at-side = Tekst opływa to, co stoi z boku.
@@ -141,7 +141,7 @@ figures-targets-figure-unsaid = Rycina, o której nic nie powiedziano
 figures-targets-table-unsaid = Tabela, o której nic nie powiedziano
 figures-targets-no-match = Nic w dokumencie nie odpowiada tym słowom.
 figures-targets-none = Nie ma jeszcze na co wskazać: żadnej ryciny, tabeli, numerowanego równania ani części z nazwą.
-figures-targets-hint = Odsyłacz podąża za tym, na co wskazuje: za jego numerem i tym, jak nazywa go format.
+figures-targets-hint = Odsyłacz podąża za tym, na co wskazuje: za jego numerem i tym, jak nazywa go układ.
 
 ## Shown by the stylesheet, where the page has no element for the words.
 

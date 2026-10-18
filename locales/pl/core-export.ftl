@@ -61,3 +61,12 @@ core-export-format-own-only = Usunąć można tylko własne formaty.
 core-export-not-a-length = „{ $length }” nie jest długością
 # Shown after "not found: ".
 core-export-the-format = format „{ $id }”
+
+## Templates.
+
+core-export-template-bad-id = „{ $id }” nie może być identyfikatorem szablonu
+core-export-template-needs-name = Szablon musi mieć nazwę.
+core-export-template-own-only = Usunąć można tylko własne szablony.
+core-export-the-template = szablon „{ $id }”
+core-export-output-not-yet = Pliku „{ $id }” z szablonu nie da się jeszcze utworzyć: na razie powstaje tylko dokument.
+core-export-output-unknown = Szablon nie przewiduje pliku „{ $id }”.

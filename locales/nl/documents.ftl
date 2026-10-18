@@ -1,16 +1,18 @@
-# Documents that are brought in, each to become a map (ADR 0012), in
-# English. See locales/README.md.
+# Documents that are brought in, each to become a tree of elements under
+# the element in view (ADR 0012, 0037), in English. See locales/README.md.
 
 documents-choose = Een document om binnen te halen
 documents-filter = Documenten
 documents-filter-all = Alle bestanden
+documents-title-element = Een document in het element in beeld
 documents-title-project = Een project uit een document
 documents-reading = { $file } wordt gelezen…
 documents-reading-hint = Een lang document duurt even.
 documents-no-pandoc = Documenten van deze soort worden gelezen door Pandoc, dat niet is geïnstalleerd of niet kon worden gevonden. Waar het staat, kan in de instellingen worden gezegd.
 documents-unread = Het bestand kon niet worden gelezen.
 documents-title = Titel
-documents-title-hint-project = De naam van het project, van zijn mindmap, en van het element in de kern van de mindmap.
+documents-title-hint-element = De naam van het bovenste element van het document, onder het element in beeld.
+documents-title-hint-project = De naam van het project, en van het bovenste element van het document daarin.
 # What a project made of a document is called when the document has no title.
 documents-untitled = Zonder titel
 
@@ -76,12 +78,20 @@ documents-found-made = { $count ->
 documents-found-some-made = Er zijn { $count } verwijzingen gevonden, { $made } ervan gemaakt door een programma dat referenties bijhoudt.
 documents-at-once = Maak meteen verwijzingen van die welke Zotero heeft gemaakt naar werken die je bibliotheek heeft
 # Under the choice: what becomes of a note that holds one of them.
-documents-at-once-notes = Een noot die niets anders is dan een verwijzing, wordt een verwijzing in de regel, die de citeerstijl in een noot of in de regel zet; een noot die meer zegt, houdt haar verwijzing. Wat je in het paneel van gevonden verwijzingen voor noten hebt gekozen, voor alle volgende, geldt ook hier.
+documents-at-once-notes = Een noot die niets anders is dan een verwijzing, wordt een verwijzing in de regel, die de citeerstijl in een noot of in de regel zet; een noot die meer zegt, houdt haar verwijzing. Wat je in het paneel van losse verwijzingen voor noten hebt gekozen, voor alle volgende, geldt ook hier.
+documents-go-through-element = De verwijzingen doornemen wanneer het document is binnengehaald
 documents-go-through-project = De verwijzingen doornemen wanneer het project is gemaakt
 
-## Making the map.
+## Making the elements.
 
 # Over what the one who brings the document in should know of it.
 documents-to-know = Goed om te weten
-documents-making = De mindmap wordt gemaakt…
+documents-making = Het document wordt binnengehaald…
+documents-make-element = Binnenhalen
 documents-make-project = Het project maken
+documents-failed = Het document kon niet worden binnengehaald.
+
+## What an element inherits as a document
+
+# Under a setting an element does not make, which it takes from the element named, over it.
+documents-inherited-from = Van { $name }

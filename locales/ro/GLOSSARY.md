@@ -37,23 +37,39 @@ fișier. Înțelesul fiecărui cuvânt este în `locales/GLOSSARY.md`.
 
 | engleză | română | note |
 | --- | --- | --- |
-| project | proiect | |
-| map | hartă | harta minții; în aplicație doar „harta” |
-| element | element | |
+| project | proiect | un singur arbore de elemente, al cărui element de sus poartă numele proiectului |
+| tree | arbore | arborele unui proiect; „în ordinea arborelui” |
+| map | hartă | harta minții; în aplicație doar „harta”; orice element se poate deschide ca hartă |
+| open as a map | a deschide ca hartă | „Deschide ca hartă” |
+| go up | a urca | la elementul de deasupra; „elementul de deasupra” (the one above) |
+| the top (of a tree, of a map) | vârful | „elementul din vârf”, „stau în vârf” |
+| element | element | orice element se poate tipări ca document |
+| the element in view | elementul afișat | „textul afișat” (the text in view) |
 | the centre | centrul | |
 | the diagram | diagrama | vederea cu casete și linii |
 | the text | textul | vederea cu text curgător; „modul text” |
 | view | vedere | vederile barei: Proiecte, Bibliotecă, Imagini, Setări |
 | passage | pasaj | „pasajul selectat”, cum se spune despre un text |
 | kind | tip | de element, de paragraf, de cuvinte: un înțeles, niciodată o înfățișare |
-| look | aspect | cum este așezat un tip în document |
-| format | format | al documentului întreg; „format de fișier” pentru DOCX, PDF… |
-| style | stil | numai stilul citărilor și al bibliografiei |
+| look | aspect | cum este așezat un tip în document; aspectele țin de machetă |
+| layout | machetă | cum arată pagina unui document: margini, fonturi, titluri, note, aspectele tipurilor; „Manuscris” și „O carte de ficțiune” sunt machete; cuvântul editurilor pentru înfățișarea stabilită a paginilor unei cărți sau reviste; fișierele și codul îi spun *format* |
+| format | format | numai formatul de fișier (Word, PDF…), „format de fișier”; până la 2026-10 însemna și macheta |
+| template | șablon | din ce constă un document de un anumit fel: părțile și ordinea lor, tipurile puse la îndemână, macheta și stilul pe care le aduce, cerințele, fișierele pe care le face; „Articol de revistă” e un șablon; se moștenește în jos pe arbore |
+| style | stil | numai stilul citărilor și al bibliografiei („stil de citare”) |
+| document settings | setările documentului | fereastra documentului unui element: șablon, detalii, părți, aspect, limbă, lista de verificare |
+| details | detalii | ce stă pe prima pagină: titlu, autori, dată, cuvinte-cheie, identificatori |
+| part | parte | un tip de element care are un loc în document: rezumatul, dedicația, anexa, coperta |
+| front matter | părți preliminare | ce se tipărește înaintea textului; cum le spun ghidurile de teze și editurile |
+| back matter | părți finale | ce se tipărește după text |
+| the cover | coperta | |
+| the Look panel | panoul Aspect | panoul de lângă previzualizare, unde se stabilește tot ce ține de cum arată paginile |
+| checklist | listă de verificare | ce cere șablonul, față de text și arbore |
 | document | document | |
 | the manuscript | manuscrisul | cum îi spun editurile |
 | the preview | previzualizarea | |
 | export | a exporta, export | |
 | bring in | a aduce | un document se aduce și devine hartă; referințele din Zotero se *importă* |
+| import | a importa | ce engleza numește *import*: referințe, pachete de limbă, textul unui PDF ca hartă |
 | bring back | a readuce | din coș, din istoric |
 | bin | coș | coșul de gunoi |
 | folder | dosar | |
@@ -62,6 +78,14 @@ fișier. Înțelesul fiecărui cuvânt este în `locales/GLOSSARY.md`.
 | name | nume | al unui element, al unei hărți |
 | language | limbă | |
 | server | server | |
+
+## Proiectele
+
+| engleză | română | note |
+| --- | --- | --- |
+| the owl map | harta bufniței | toate proiectele pe o hartă în jurul bufniței, cu dosarele ca etichete |
+| the map of the projects | harta proiectelor | același lucru, spus pe larg |
+| project file | fișier de proiect | „un fișier de proiect Glaukopis” |
 
 ## Referințe și citări
 
@@ -72,13 +96,14 @@ fișier. Înțelesul fiecărui cuvânt este în `locales/GLOSSARY.md`.
 | work | lucrare | |
 | collection | colecție | |
 | attachment | atașament | |
+| the files of the library | fișierele bibliotecii | vederea lor proprie, alături de referințe |
 | note | notă | nota scrisă pe o referință; și nota de subsol |
 | citation | citare | referința citată în text; „citat” e paragraful citat |
 | quotation | citat | tipul de paragraf |
 | locator | loc | „locul citat”: pagina, capitolul, versul |
 | lookup, look up | căutare pe internet, a căuta pe internet | după DOI, ISBN sau cuvinte din titlu |
-| found citations | citări găsite | recunoscute într-un text adus |
-| match | a potrivi, potrivire | o citare găsită cu o referință |
+| loose citations | citări nelegate | citări dintr-un text adus, recunoscute, dar nelegate încă de o referință din bibliotecă; *făcute citări* când sunt legate; până la 2026-10-12, „citări găsite” |
+| match | a potrivi, potrivire | o citare nelegată cu o referință |
 | bibliography | bibliografie | |
 | footnote, endnote | notă de subsol, notă de final | |
 
@@ -140,8 +165,10 @@ fișier. Înțelesul fiecărui cuvânt este în `locales/GLOSSARY.md`.
 | own words | cuvintele proprii | adăugate la dicționar |
 | reading text, OCR | citirea textului, OCR | cu Tesseract |
 | made searchable | cu text căutabil | textul așezat sub imaginea paginilor |
+| language package | pachet de limbă | un dicționar de ortografie sau datele Tesseract ale unei limbi, importate de pe un server |
 | search, replace | căutare, înlocuire | |
 | found | găsite | ce scoate la iveală o căutare |
+| count the words | a număra cuvintele | |
 
 ## Interfața
 
@@ -163,6 +190,7 @@ fișier. Înțelesul fiecărui cuvânt este în `locales/GLOSSARY.md`.
 | select, selection | a selecta, selecție | |
 | press | a apăsa | pe o tastă sau pe un buton |
 | drag | a trage | |
+| credits | mulțumiri | cei ale căror lucrări le folosește Glaukopis, cu licențele lor |
 
 ## Nume care nu se traduc
 

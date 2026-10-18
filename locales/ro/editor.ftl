@@ -17,29 +17,82 @@ editor-block-quotation = Citat în bloc
 editor-list = Listă
 editor-text = Text
 editor-text-hint = Un paragraf
-editor-quotation-hint = Despărțit de text
-editor-list-hint = Cu un semn înaintea fiecărui punct
+editor-quotation-hint = Cuvintele altcuiva, despărțite de text
+editor-list-hint = Un punct al unei liste; retras, face o listă în listă
 editor-numbered-list = Listă numerotată
-editor-numbered-list-hint = Cu un număr înaintea fiecărui punct
+editor-numbered-list-hint = Un punct al unei liste numărate; retras, face o listă în listă
 editor-verse = Versuri
-editor-verse-hint = Rânduri de poezie sau de teatru, fiecare păstrat ca rând
+editor-verse-hint = Un rând de poezie, de teatru sau dintr-o transcriere, păstrat ca rând
 editor-speaker = Vorbitor
-editor-speaker-hint = Cine vorbește, pe un rând al lui
+editor-speaker-hint = Cine vorbește: pe un rând separat sau ca cuvinte în rând
 editor-direction = Indicație scenică
-editor-direction-hint = Ce se face, cu cursive
-editor-line-numbers = Numerele versurilor
-editor-line-numbers-hint = Numerotează versurile de aici: de la care vers și din câte în câte
-editor-line-numbers-from = Numerotează versurile de la
+editor-direction-hint = Ce se face pe scenă: pe un rând separat sau ca cuvinte în rând
+editor-line-numbers = Numere
+editor-line-numbers-hint = Numerotează aceste rânduri: cum se numără, de la ce număr, din câte în câte și pe ce parte; și ce se spune despre rândul în care este cursorul. Rândurile numerotate împreună, cu aceleași setări, se numără într-un singur șir, oricare le-ar fi tipurile.
+editor-line-numbers-from = Numerotează de la
+editor-line-numbers-from-hint = Primul rând numărat primește acest număr, iar numărătoarea continuă de la el.
 editor-line-numbers-every = Arată un număr la fiecare
 editor-line-numbers-number = Este nevoie de un număr întreg.
+editor-line-this = Acest rând
+editor-line-number = Numărul sau eticheta lui
+editor-line-number-placeholder = Numărat ca celelalte
+editor-line-number-hint = 1234, 567a: se arată întotdeauna; rândurile de după el se numără mai departe de la el.
+editor-line-uncounted = Nenumărat
+editor-line-uncounted-hint = Ca a doua jumătate a unui vers împărțit între vorbitori: numărătoarea trece peste el.
+editor-line-hidden = Numărat, fără să i se arate numărul
+editor-line-hidden-hint = Numărătoarea trece prin el ca prin orice rând, dar în document niciun număr nu stă lângă el, nici chiar acolo unde i-ar reveni unul. Acolo unde scrieți, stă între paranteze.
+editor-line-number-held = Numărat și nearătat în document. Apăsați ca să-i dați un număr al lui.
+editor-line-margin = Cuvinte pe margine
+editor-line-margin-placeholder = Un metru, numărul altei ediții
+editor-line-margin-hint = Se arată pe margine, lângă el, în partea opusă numerelor; nu se numără.
+# How the lines of a stretch are numbered: see ADR 0041.
+editor-numbering = Numerotare
+editor-numbering-none = Nenumerotate
+editor-numbering-counted = Numărate de la primul număr dat
+editor-numbering-given = Numai numerele date
+editor-line-numbers-every-layout = Ca macheta: la fiecare { $every }
+editor-line-numbers-side = Partea numerelor
+editor-side-layout = Cum spune macheta ({ $side })
+editor-side-left = Stânga
+editor-side-right = Dreapta
+# The first counted line of the stretch is the one the cursor is in: its number is where the count begins.
+editor-line-number-first-hint = Numărătoarea începe aici.
+# Over a number in the margin of the text, which opens a field for it when pressed.
+editor-line-number-press = Numărul acestui rând: apăsați ca să-l schimbați
+
+## Numbers belong to what they number (ADR 0041): the Numbers menu offers
+## the three, each saying what it numbers.
+editor-numbers = Numere
+editor-numbers-hint = Numerotează rândurile pe care le scrieți, marchează un loc în proză sau numerotează rândurile paginii
+editor-numbers-lines = Numerotează aceste rânduri…
+editor-numbers-lines-hint = Rândurile paragrafelor în care este cursorul sau ale celor selectate: de la ce număr, din câte în câte, pe ce parte
+editor-numbers-refmark-hint = Un loc în proză, după un verset, o pagină sau un număr al unei ediții: 3:16, 327a
+editor-numbers-page = Numerotează rândurile paginii
+editor-numbers-page-hint = Fiecare rând al paginii tipărite, numerotat pe margine, în acest document și în cele de sub el
+
+## The bracket at the left of paragraphs of one kind standing together (a
+## run), named by the kind; its menu says what is said of them.
+# After the name of the kind, where the lines of the run are numbered: "Verse · numbered".
+editor-bracket-numbered = cu numere
+editor-run-label-hint = { $kind } · apăsați pentru ce se spune despre aceste paragrafe
+editor-run-numbers = Numere…
+editor-run-numbers-hint = Cum se numără rândurile de aici, de la ce număr, din câte în câte și pe ce parte
+editor-run-select = Selectează aceste paragrafe
+editor-run-to-text = Fă din ele text
+editor-run-to-text-hint = Paragrafele de acest tip devin text; rândurile lor și tot restul rămân cum sunt
+editor-run-begin = Începe aici un șir nou
+editor-run-begin-hint = Paragraful în care este cursorul începe o acoladă a lui, deși cel dinainte este de același tip
+editor-run-join = Unește cu șirul dinainte
+editor-run-join-hint = Aceste paragrafe fac din nou un singur șir cu cele de același tip dinaintea lor
 editor-kinds-text = Text
 editor-kinds-quotation = Citat
 editor-kinds-verse = Versuri
 editor-kinds-script = Scenariu
+editor-kinds-list = Listă
 editor-kinds-more = Altele
 editor-kinds-words = Cuvinte
 editor-attribution = Atribuire
-editor-attribution-hint = Ale cui sunt cuvintele, sub un citat, la dreapta
+editor-attribution-hint = Ale cui sunt cuvintele unui citat
 editor-epigraph = Motto
 editor-epigraph-hint = Un citat în fruntea unei părți
 editor-headword = Cuvânt-titlu
@@ -47,9 +100,9 @@ editor-headword-hint = Cuvântul pe care îl explică un glosar
 editor-gloss = Glosă
 editor-gloss-hint = Ce înseamnă cuvântul-titlu
 editor-code = Cod
-editor-code-hint = Păstrat literă cu literă, în litere de lățime egală
+editor-code-hint = Un rând de cod sau de orice se păstrează literă cu literă
 editor-break = Pauză
-editor-break-hint = O pauză între părți, cu semnul pe care i-l dă formatul
+editor-break-hint = O pauză între părți, cu semnul pe care i-l dă macheta
 editor-draft = Notă de lucru
 editor-draft-hint = Pentru ochii dumneavoastră: nu intră în niciun document
 editor-foreign = Cuvinte străine
@@ -66,41 +119,60 @@ editor-underline = Subliniat
 editor-code-words = Cod în rând
 editor-code-words-hint = Litere de lățime egală, în rând
 editor-scene = Titlu de scenă
-editor-scene-hint = INT. CASĂ – NOAPTE
+editor-scene-hint = Unde și când are loc o scenă: INT. CASĂ – NOAPTE
 editor-action = Acțiune
 editor-action-hint = Ce se vede și ce se face
 editor-character = Personaj
-editor-character-hint = Cine vorbește, deasupra dialogului
+editor-character-hint = Cine rostește dialogul care urmează
 editor-dialogue = Dialog
 editor-dialogue-hint = Ce se spune
 editor-parenthetical = Paranteză
-editor-parenthetical-hint = Cum se spune, între paranteze
+editor-parenthetical-hint = Cum se spune o replică
 editor-transition = Tranziție
-editor-transition-hint = TRECERE LA:, la dreapta
+editor-transition-hint = Cum se trece de la o scenă la următoarea: TRECERE LA:
 editor-comment = Comentariu
 editor-comment-hint = Un comentariu la ce este selectat
 editor-comment-element-hint = Un comentariu la acest element; selectați cuvinte ca să le comentați
 editor-parallel = Două texte alăturate
 editor-parallel-hint = Un original și traducerea lui, fiecare un text al lui
+editor-page-break = Sfârșit de pagină
+editor-page-break-hint = Ce urmează începe pe o pagină nouă
+editor-column-break = Sfârșit de coloană
+editor-column-break-hint = Ce urmează începe în capul coloanei următoare, acolo unde macheta așază textul pe coloane
 editor-paragraph-kind = Tip de paragraf
 # Said of the button that shows the kind of paragraph the cursor is in.
 editor-paragraph-kind-now = Tip de paragraf: { $kind }
 
-## The kind menu: the kinds in hand, the whole catalogue under "More…", and
-## the format that sets them at its foot. The words menu, with the kinds of
-## words. And a kind of the writer's own, in its dialog.
+## The kind menu: the kinds written with those where the cursor is, the kinds at hand,
+## the whole catalogue under "More…", and the layout that sets them at its foot.
+## The words menu, with the kinds of words. And a kind of the writer's own, in its dialog.
 
 editor-kinds-menu-more = Altele…
+editor-kinds-mixed = Amestecate
 editor-kinds-own = Ale dumneavoastră
 editor-kinds-make = Fă un tip…
 editor-kinds-change-own = Modifică un tip propriu…
-# Over the item that opens the format editor: the format sets how each kind looks.
+# Over the item that opens the look of the document at the kind the cursor is in.
 editor-kinds-set-by = Așezate cum le are „{ $format }”
+editor-kinds-change-look = Cum arată „{ $kind }”…
+editor-kinds-change-look-hint = Aspectul lui în acest document și restul paginii
 editor-words = Cuvinte
-editor-words-hint = Subliniere, exponent, cod; cuvinte străine, titlul unei lucrări, un termen
+editor-words-hint = Subliniere, exponent, cod; limba unui pasaj, cuvinte străine, titlul unei lucrări, un termen, un vorbitor în rând
 editor-words-make = Fă un tip de cuvinte…
+# Beside the language of the map, first among the languages foreign words may be in.
+editor-foreign-of-text = Limba textului
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = Cuvinte simple
+# The language of a passage, from a word to many paragraphs: it has no look of its own.
+editor-language = Limbă
+editor-language-of-text = Limba proprie a textului
+editor-language-other = Altă limbă…
+editor-language-other-title = Limba pasajului
+editor-language-tag = Codul limbii
+editor-language-no-tag = Acesta nu este un cod de limbă: un cod este de felul „grc”, „la” sau „de-CH”.
+editor-language-unnamed = O limbă pentru care sistemul nu are nume: codul se păstrează așa cum este scris.
+editor-language-suggested = Limbi citate des
+editor-language-other-hint = Pasajul este verificat cu dicționarul limbii lui, acolo unde s-a importat unul, și lăsat în pace acolo unde nu există; un document care se face transmite limba mai departe către Word, OpenDocument, Typst și LaTeX.
 editor-own-kind-new = Un tip propriu
 editor-own-kind-change = Modifică tipul
 editor-own-kind-name = Nume
@@ -137,6 +209,9 @@ editor-new-split = Desparte aici
 editor-new-split-hint = Ce urmează după cursor devine un element nou
 editor-spelling-on = Ortografia se verifică în timp ce scrieți · apăsați ca să opriți
 editor-spelling-off = Ortografia nu se verifică · apăsați ca să o verificați
+editor-break-signs = Semnul unui rând nou în paragraf
+editor-break-signs-on = Un rând nou în paragraf se arată cu ↵ · apăsați ca să ascundeți semnul
+editor-break-signs-off = Un rând nou în paragraf nu se arată · apăsați ca să-l arătați cu ↵
 editor-picture-file = Imagine dintr-un fișier…
 editor-picture-file-hint = O figură, cu ce se spune despre ea
 editor-picture-store = Imagine din depozit…
@@ -151,12 +226,18 @@ editor-formula = Formulă
 editor-formula-hint = Matematică în rând
 editor-pointer = Trimitere…
 editor-pointer-hint = La o figură, un tabel, o ecuație sau o parte: „vezi figura 2”
+editor-refmark = Reper…
+editor-refmark-hint = Un verset, o pagină sau un număr al unei ediții: 3:16, 327a
+editor-refmark-title = Reper
+editor-refmark-label = Etichetă
+editor-refmark-placeholder = 3:16, 327a, 1094a1
+editor-refmark-dialog-hint = Reperul nu face parte din cuvinte: ortografia, căutarea și numărarea cuvintelor trec peste el. Macheta spune dacă se ridică în rând sau se așază pe margine.
 # What a picture that was pasted without a name of its own is called in the store of pictures.
 editor-pasted-picture = imagine
 
 ## More.
 
-editor-found = Citări găsite…
+editor-found = Citări nelegate…
 editor-found-count = { $count ->
     [one] Una de parcurs, din care să se facă o citare
     [few] { $count } de parcurs, din care să se facă citări
@@ -225,7 +306,7 @@ editor-locator-sub-verbo = Sub verbo
 # The number is that of the note, or a letter for a note that stands in a place of its own.
 editor-note-numbered = Nota { $number }
 editor-note-place = Unde stă nota
-editor-note-place-format = Unde își are formatul notele
+editor-note-place-format = Unde își are macheta notele
 editor-note-place-foot = La subsolul paginii
 editor-note-place-end = La sfârșitul textului
 editor-note-placeholder = Textul notei

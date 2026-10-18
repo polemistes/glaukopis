@@ -54,3 +54,13 @@ core-library-collection-in-itself = Sbírku nelze vložit do ní samé.
 
 core-library-not-in-library = „{ $path }“ není cesta uvnitř knihovny
 core-library-not-a-file = { $path } není soubor
+
+## The files of the library and their folders.
+
+core-library-the-file-of-library = soubor knihovny
+core-library-the-folder = složka
+core-library-needs-name = Je potřeba název.
+core-library-name-too-long = Ten název je příliš dlouhý.
+core-library-folder-in-itself = Složku nelze vložit do ní samé.
+# The record of the files could not be read; it was put aside under another name.
+core-library-files-unreadable = Soupis souborů knihovny nelze přečíst; byl odložen jako { $path }: { $message }

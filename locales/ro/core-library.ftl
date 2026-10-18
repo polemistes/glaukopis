@@ -54,3 +54,13 @@ core-library-collection-in-itself = O colecție nu poate fi pusă înăuntrul ei
 
 core-library-not-in-library = „{ $path }” nu este o cale din bibliotecă
 core-library-not-a-file = { $path } nu este un fișier
+
+## The files of the library and their folders.
+
+core-library-the-file-of-library = fișierul din bibliotecă
+core-library-the-folder = dosarul
+core-library-needs-name = Este nevoie de un nume.
+core-library-name-too-long = Numele acesta este prea lung.
+core-library-folder-in-itself = Un dosar nu poate fi pus în el însuși.
+# The record of the files could not be read; it was put aside under another name.
+core-library-files-unreadable = Evidența fișierelor bibliotecii nu s-a putut citi și a fost pusă deoparte ca { $path }: { $message }

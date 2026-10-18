@@ -59,3 +59,12 @@ core-export-format-own-only = Smazat lze jen vlastní formáty.
 core-export-not-a-length = „{ $length }“ není délka
 # Shown after "not found: ".
 core-export-the-format = formát „{ $id }“
+
+## Templates.
+
+core-export-template-bad-id = „{ $id }“ nemůže být identifikátorem šablony
+core-export-template-needs-name = Šablona potřebuje název.
+core-export-template-own-only = Smazat lze jen vlastní šablony.
+core-export-the-template = šablona „{ $id }“
+core-export-output-not-yet = Výstup „{ $id }“ šablony zatím nelze vytvořit: lze vytvořit jen dokument.
+core-export-output-unknown = Šablona nemá výstup „{ $id }“.

@@ -1,16 +1,18 @@
-# Documents that are brought in, each to become a map (ADR 0012), in
-# English. See locales/README.md.
+# Documents that are brought in, each to become a tree of elements under
+# the element in view (ADR 0012, 0037), in English. See locales/README.md.
 
 documents-choose = Dokument do wczytania
 documents-filter = Dokumenty
 documents-filter-all = Wszystkie pliki
+documents-title-element = Dokument do elementu w widoku
 documents-title-project = Projekt z dokumentu
 documents-reading = Czytanie { $file }…
 documents-reading-hint = Długi dokument zajmuje chwilę.
 documents-no-pandoc = Dokumenty tego rodzaju czyta Pandoc, który nie jest zainstalowany lub nie został znaleziony. Gdzie jest, można podać w ustawieniach.
 documents-unread = Nie udało się odczytać pliku.
 documents-title = Tytuł
-documents-title-hint-project = Nazwa projektu, jego mapy i elementu w środku mapy.
+documents-title-hint-element = Nazwa najwyższego elementu dokumentu; stanie on pod elementem w widoku.
+documents-title-hint-project = Nazwa projektu i najwyższego elementu dokumentu w nim.
 # What a project made of a document is called when the document has no title.
 documents-untitled = Bez tytułu
 
@@ -97,12 +99,20 @@ documents-found-some-made = { $count ->
 }
 documents-at-once = Od razu zrób cytowania z tych, które Zotero zrobiło z dzieł, jakie ma twoja biblioteka
 # Under the choice: what becomes of a note that holds one of them.
-documents-at-once-notes = Przypis, który jest tylko cytowaniem, staje się cytowaniem w wierszu, a styl cytowania składa je w przypisie lub w wierszu; przypis, który mówi więcej, zachowuje swoje cytowanie. To, co wybrano dla przypisów w panelu znalezionych cytowań, dla wszystkich kolejnych, obowiązuje i tutaj.
+documents-at-once-notes = Przypis, który jest tylko cytowaniem, staje się cytowaniem w wierszu, a styl cytowania składa je w przypisie lub w wierszu; przypis, który mówi więcej, zachowuje swoje cytowanie. To, co wybrano dla przypisów w panelu niepowiązanych cytowań, dla wszystkich kolejnych, obowiązuje i tutaj.
+documents-go-through-element = Przejrzyj cytowania po wczytaniu dokumentu
 documents-go-through-project = Przejrzyj cytowania, gdy projekt powstanie
 
-## Making the map.
+## Making the elements.
 
 # Over what the one who brings the document in should know of it.
 documents-to-know = Warto wiedzieć
-documents-making = Tworzenie mapy…
+documents-making = Wczytywanie dokumentu…
+documents-make-element = Wczytaj
 documents-make-project = Utwórz projekt
+documents-failed = Nie udało się wczytać dokumentu.
+
+## What an element inherits as a document
+
+# Under a setting an element does not make, which it takes from the element named, over it.
+documents-inherited-from = Z elementu „{ $name }”

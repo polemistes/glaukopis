@@ -109,32 +109,32 @@ core-import-document-notebook = caiet Jupyter
 
 core-import-document-found = { $count ->
     [one] { $made ->
-        [all] S-a găsit { $count } citare care nu este încă legată de o referință din biblioteca dumneavoastră, făcută de un program care ține referințe. Stă ca textul în care a fost scrisă și poate fi parcursă când se face harta, și mai târziu.
-       *[none] S-a găsit { $count } citare care nu este încă legată de o referință din biblioteca dumneavoastră. Stă ca textul în care a fost scrisă și poate fi parcursă când se face harta, și mai târziu.
+        [all] S-a găsit { $count } citare care nu este încă legată de o referință din biblioteca dumneavoastră, făcută de un program care ține referințe. Stă ca textul în care a fost scrisă și poate fi parcursă după ce documentul a fost adus, și mai târziu.
+       *[none] S-a găsit { $count } citare care nu este încă legată de o referință din biblioteca dumneavoastră. Stă ca textul în care a fost scrisă și poate fi parcursă după ce documentul a fost adus, și mai târziu.
     }
     [few] { $made ->
-        [all] S-au găsit { $count } citări care nu sunt încă legate de referințe din biblioteca dumneavoastră, toate făcute de un program care ține referințe. Stau ca textul în care au fost scrise și pot fi parcurse când se face harta, și mai târziu.
-        [some] S-au găsit { $count } citări care nu sunt încă legate de referințe din biblioteca dumneavoastră, { $some } dintre ele făcute de un program care ține referințe. Stau ca textul în care au fost scrise și pot fi parcurse când se face harta, și mai târziu.
-       *[none] S-au găsit { $count } citări care nu sunt încă legate de referințe din biblioteca dumneavoastră. Stau ca textul în care au fost scrise și pot fi parcurse când se face harta, și mai târziu.
+        [all] S-au găsit { $count } citări care nu sunt încă legate de referințe din biblioteca dumneavoastră, toate făcute de un program care ține referințe. Stau ca textul în care au fost scrise și pot fi parcurse după ce documentul a fost adus, și mai târziu.
+        [some] S-au găsit { $count } citări care nu sunt încă legate de referințe din biblioteca dumneavoastră, { $some } dintre ele făcute de un program care ține referințe. Stau ca textul în care au fost scrise și pot fi parcurse după ce documentul a fost adus, și mai târziu.
+       *[none] S-au găsit { $count } citări care nu sunt încă legate de referințe din biblioteca dumneavoastră. Stau ca textul în care au fost scrise și pot fi parcurse după ce documentul a fost adus, și mai târziu.
     }
    *[other] { $made ->
-        [all] S-au găsit { $count } de citări care nu sunt încă legate de referințe din biblioteca dumneavoastră, toate făcute de un program care ține referințe. Stau ca textul în care au fost scrise și pot fi parcurse când se face harta, și mai târziu.
-        [some] S-au găsit { $count } de citări care nu sunt încă legate de referințe din biblioteca dumneavoastră, { $some } dintre ele făcute de un program care ține referințe. Stau ca textul în care au fost scrise și pot fi parcurse când se face harta, și mai târziu.
-       *[none] S-au găsit { $count } de citări care nu sunt încă legate de referințe din biblioteca dumneavoastră. Stau ca textul în care au fost scrise și pot fi parcurse când se face harta, și mai târziu.
+        [all] S-au găsit { $count } de citări care nu sunt încă legate de referințe din biblioteca dumneavoastră, toate făcute de un program care ține referințe. Stau ca textul în care au fost scrise și pot fi parcurse după ce documentul a fost adus, și mai târziu.
+        [some] S-au găsit { $count } de citări care nu sunt încă legate de referințe din biblioteca dumneavoastră, { $some } dintre ele făcute de un program care ține referințe. Stau ca textul în care au fost scrise și pot fi parcurse după ce documentul a fost adus, și mai târziu.
+       *[none] S-au găsit { $count } de citări care nu sunt încă legate de referințe din biblioteca dumneavoastră. Stau ca textul în care au fost scrise și pot fi parcurse după ce documentul a fost adus, și mai târziu.
     }
 }
 core-import-document-endnote = { $count ->
-    [one] { $count } citare făcută de EndNote este adusă ca textul pe care îl arată și nu este printre cele găsite: ce spune EndNote despre lucrări nu s-a putut citi.
-    [few] { $count } citări făcute de EndNote sunt aduse ca textul pe care îl arată și nu sunt printre cele găsite: ce spune EndNote despre lucrări nu s-a putut citi.
-   *[other] { $count } de citări făcute de EndNote sunt aduse ca textul pe care îl arată și nu sunt printre cele găsite: ce spune EndNote despre lucrări nu s-a putut citi.
+    [one] { $count } citare făcută de EndNote este adusă ca textul pe care îl arată și nu este printre citările nelegate: ce spune EndNote despre lucrări nu s-a putut citi.
+    [few] { $count } citări făcute de EndNote sunt aduse ca textul pe care îl arată și nu sunt printre citările nelegate: ce spune EndNote despre lucrări nu s-a putut citi.
+   *[other] { $count } de citări făcute de EndNote sunt aduse ca textul pe care îl arată și nu sunt printre citările nelegate: ce spune EndNote despre lucrări nu s-a putut citi.
 }
 core-import-document-bookmarks = { $count ->
     [one] Documentul ține { $count } citare într-un semn de carte, iar ce citează nu s-a putut citi: este text așa cum stă. Zotero le ține altfel acolo unde preferințele lui pentru document spun așa.
     [few] Documentul ține { $count } citări în semne de carte, iar ce citează nu s-a putut citi: sunt text așa cum stau. Zotero le ține altfel acolo unde preferințele lui pentru document spun așa.
    *[other] Documentul ține { $count } de citări în semne de carte, iar ce citează nu s-a putut citi: sunt text așa cum stau. Zotero le ține altfel acolo unde preferințele lui pentru document spun așa.
 }
-core-import-document-bibliography = Documentul are o listă a lucrărilor citate, sub „{ $heading }”. Este adusă ca text, ca și restul. Harta își face o bibliografie a ei din ce se citează în ea.
-core-import-document-bibliography-made = Documentul are o listă a lucrărilor citate, făcută de programul care îi ține referințele. Este adusă ca text, ca și restul. Harta își face o bibliografie a ei din ce se citează în ea.
+core-import-document-bibliography = Documentul are o listă a lucrărilor citate, sub „{ $heading }”. Este adusă ca text, ca și restul. Glaukopis face singur o bibliografie din ce se citează.
+core-import-document-bibliography-made = Documentul are o listă a lucrărilor citate, făcută de programul care îi ține referințele. Este adusă ca text, ca și restul. Glaukopis face singur o bibliografie din ce se citează.
 core-import-document-tracked = Documentul are modificări urmărite. Textul este adus așa cum stă când toate sunt primite.
 core-import-document-comments = Documentul are comentarii pe margine, care sunt lăsate afară.
 core-import-document-heading-notes = { $count ->
@@ -144,9 +144,9 @@ core-import-document-heading-notes = { $count ->
 }
 # What a caption began with is shown as the document has it: “Figure 1:”.
 core-import-document-labels = { $count ->
-    [one] { $count } legendă începea cu un cuvânt și un număr, precum „{ $first }”. Este lăsat afară: harta își numerotează singură figurile și tabelele. Acolo unde textul numește una dintre ele după număr, acela este text așa cum a fost scris și nu urmează numerele hărții.
-    [few] { $count } legende începeau cu un cuvânt și un număr, precum „{ $first }”. Sunt lăsate afară: harta își numerotează singură figurile și tabelele. Acolo unde textul numește una dintre ele după număr, acela este text așa cum a fost scris și nu urmează numerele hărții.
-   *[other] { $count } de legende începeau cu un cuvânt și un număr, precum „{ $first }”. Sunt lăsate afară: harta își numerotează singură figurile și tabelele. Acolo unde textul numește una dintre ele după număr, acela este text așa cum a fost scris și nu urmează numerele hărții.
+    [one] { $count } legendă începea cu un cuvânt și un număr, precum „{ $first }”. Este lăsat afară: Glaukopis numerotează singur figurile și tabelele. Acolo unde textul numește una dintre ele după număr, acela este text așa cum a fost scris și nu urmează numerele așa cum se tipăresc.
+    [few] { $count } legende începeau cu un cuvânt și un număr, precum „{ $first }”. Sunt lăsate afară: Glaukopis numerotează singur figurile și tabelele. Acolo unde textul numește una dintre ele după număr, acela este text așa cum a fost scris și nu urmează numerele așa cum se tipăresc.
+   *[other] { $count } de legende începeau cu un cuvânt și un număr, precum „{ $first }”. Sunt lăsate afară: Glaukopis numerotează singur figurile și tabelele. Acolo unde textul numește una dintre ele după număr, acela este text așa cum a fost scris și nu urmează numerele așa cum se tipăresc.
 }
 core-import-document-label-example = Figura 1:
 core-import-document-caption-notes = { $count ->

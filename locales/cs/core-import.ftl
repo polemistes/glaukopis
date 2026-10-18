@@ -109,32 +109,32 @@ core-import-document-notebook = sešit Jupyter
 
 core-import-document-found = { $count ->
     [one] { $made ->
-        [all] Byla nalezena { $count } citace, která ještě není spojena se záznamem vaší knihovny; vytvořil ji program na správu záznamů. Stojí v textu tak, jak byla napsána, a lze ji projít, až bude mapa vytvořena, i později.
-       *[none] Byla nalezena { $count } citace, která ještě není spojena se záznamem vaší knihovny. Stojí v textu tak, jak byla napsána, a lze ji projít, až bude mapa vytvořena, i později.
+        [all] Byla nalezena { $count } citace, která ještě není přiřazena k záznamu vaší knihovny; vytvořil ji program na správu záznamů. Stojí v textu tak, jak byla napsána, a lze ji projít, až bude dokument načten, i později.
+       *[none] Byla nalezena { $count } citace, která ještě není přiřazena k záznamu vaší knihovny. Stojí v textu tak, jak byla napsána, a lze ji projít, až bude dokument načten, i později.
     }
     [few] { $made ->
-        [all] Byly nalezeny { $count } citace, které ještě nejsou spojeny se záznamy vaší knihovny; všechny vytvořil program na správu záznamů. Stojí v textu tak, jak byly napsány, a lze je projít, až bude mapa vytvořena, i později.
-        [some] Byly nalezeny { $count } citace, které ještě nejsou spojeny se záznamy vaší knihovny; { $some } z nich vytvořil program na správu záznamů. Stojí v textu tak, jak byly napsány, a lze je projít, až bude mapa vytvořena, i později.
-       *[none] Byly nalezeny { $count } citace, které ještě nejsou spojeny se záznamy vaší knihovny. Stojí v textu tak, jak byly napsány, a lze je projít, až bude mapa vytvořena, i později.
+        [all] Byly nalezeny { $count } citace, které ještě nejsou přiřazeny k záznamům vaší knihovny; všechny vytvořil program na správu záznamů. Stojí v textu tak, jak byly napsány, a lze je projít, až bude dokument načten, i později.
+        [some] Byly nalezeny { $count } citace, které ještě nejsou přiřazeny k záznamům vaší knihovny; { $some } z nich vytvořil program na správu záznamů. Stojí v textu tak, jak byly napsány, a lze je projít, až bude dokument načten, i později.
+       *[none] Byly nalezeny { $count } citace, které ještě nejsou přiřazeny k záznamům vaší knihovny. Stojí v textu tak, jak byly napsány, a lze je projít, až bude dokument načten, i později.
     }
    *[other] { $made ->
-        [all] Bylo nalezeno { $count } citací, které ještě nejsou spojeny se záznamy vaší knihovny; všechny vytvořil program na správu záznamů. Stojí v textu tak, jak byly napsány, a lze je projít, až bude mapa vytvořena, i později.
-        [some] Bylo nalezeno { $count } citací, které ještě nejsou spojeny se záznamy vaší knihovny; { $some } z nich vytvořil program na správu záznamů. Stojí v textu tak, jak byly napsány, a lze je projít, až bude mapa vytvořena, i později.
-       *[none] Bylo nalezeno { $count } citací, které ještě nejsou spojeny se záznamy vaší knihovny. Stojí v textu tak, jak byly napsány, a lze je projít, až bude mapa vytvořena, i později.
+        [all] Bylo nalezeno { $count } citací, které ještě nejsou přiřazeny k záznamům vaší knihovny; všechny vytvořil program na správu záznamů. Stojí v textu tak, jak byly napsány, a lze je projít, až bude dokument načten, i později.
+        [some] Bylo nalezeno { $count } citací, které ještě nejsou přiřazeny k záznamům vaší knihovny; { $some } z nich vytvořil program na správu záznamů. Stojí v textu tak, jak byly napsány, a lze je projít, až bude dokument načten, i později.
+       *[none] Bylo nalezeno { $count } citací, které ještě nejsou přiřazeny k záznamům vaší knihovny. Stojí v textu tak, jak byly napsány, a lze je projít, až bude dokument načten, i později.
     }
 }
 core-import-document-endnote = { $count ->
-    [one] { $count } citace vytvořená EndNotem je načtena jako text, který zobrazuje, a není mezi nalezenými: co EndNote o dílech říká, nelze přečíst.
-    [few] { $count } citace vytvořené EndNotem jsou načteny jako text, který zobrazují, a nejsou mezi nalezenými: co EndNote o dílech říká, nelze přečíst.
-   *[other] { $count } citací vytvořených EndNotem je načteno jako text, který zobrazují, a nejsou mezi nalezenými: co EndNote o dílech říká, nelze přečíst.
+    [one] { $count } citace vytvořená EndNotem je načtena jako text, který zobrazuje, a není mezi nepřiřazenými citacemi: co EndNote o dílech říká, nelze přečíst.
+    [few] { $count } citace vytvořené EndNotem jsou načteny jako text, který zobrazují, a nejsou mezi nepřiřazenými citacemi: co EndNote o dílech říká, nelze přečíst.
+   *[other] { $count } citací vytvořených EndNotem je načteno jako text, který zobrazují, a není mezi nepřiřazenými citacemi: co EndNote o dílech říká, nelze přečíst.
 }
 core-import-document-bookmarks = { $count ->
     [one] Dokument má { $count } citaci v záložce a co cituje, nelze přečíst: je to text, jak stojí. Zotero je tak ukládá, pokud to má v nastavení dokumentu.
     [few] Dokument má { $count } citace v záložkách a co citují, nelze přečíst: je to text, jak stojí. Zotero je tak ukládá, pokud to má v nastavení dokumentu.
    *[other] Dokument má { $count } citací v záložkách a co citují, nelze přečíst: je to text, jak stojí. Zotero je tak ukládá, pokud to má v nastavení dokumentu.
 }
-core-import-document-bibliography = Dokument má seznam toho, co cituje, pod nadpisem „{ $heading }“. Je načten jako text, jako vše ostatní. Mapa si bibliografii vytvoří sama z toho, co se v ní cituje.
-core-import-document-bibliography-made = Dokument má seznam toho, co cituje, vytvořený programem na správu záznamů. Je načten jako text, jako vše ostatní. Mapa si bibliografii vytvoří sama z toho, co se v ní cituje.
+core-import-document-bibliography = Dokument má seznam toho, co cituje, pod nadpisem „{ $heading }“. Je načten jako text, jako vše ostatní. Glaukopis vytvoří vlastní bibliografii z toho, co se cituje.
+core-import-document-bibliography-made = Dokument má seznam toho, co cituje, vytvořený programem na správu záznamů. Je načten jako text, jako vše ostatní. Glaukopis vytvoří vlastní bibliografii z toho, co se cituje.
 core-import-document-tracked = Dokument má sledované změny. Text je načten tak, jak stojí po přijetí všech.
 core-import-document-comments = Dokument má komentáře na okraji, které jsou vynechány.
 core-import-document-heading-notes = { $count ->
@@ -144,9 +144,9 @@ core-import-document-heading-notes = { $count ->
 }
 # What a caption began with is shown as the document has it: “Figure 1:”.
 core-import-document-labels = { $count ->
-    [one] { $count } popisek začínal slovem a číslem, například „{ $first }“. Je vynecháno: mapa si vyobrazení a tabulky čísluje sama. Kde text některé z nich jmenuje číslem, je to text, jak byl napsán, a čísla mapy nesleduje.
-    [few] { $count } popisky začínaly slovem a číslem, například „{ $first }“. Jsou vynechány: mapa si vyobrazení a tabulky čísluje sama. Kde text některé z nich jmenuje číslem, je to text, jak byl napsán, a čísla mapy nesleduje.
-   *[other] { $count } popisků začínalo slovem a číslem, například „{ $first }“. Jsou vynechány: mapa si vyobrazení a tabulky čísluje sama. Kde text některé z nich jmenuje číslem, je to text, jak byl napsán, a čísla mapy nesleduje.
+    [one] { $count } popisek začínal slovem a číslem, například „{ $first }“. Slovo s číslem je vynecháno: vyobrazení a tabulky čísluje Glaukopis. Kde text některé z nich jmenuje číslem, je to text, jak byl napsán, a čísla, jak se tisknou, nesleduje.
+    [few] { $count } popisky začínaly slovem a číslem, například „{ $first }“. Slova s čísly jsou vynechána: vyobrazení a tabulky čísluje Glaukopis. Kde text některé z nich jmenuje číslem, je to text, jak byl napsán, a čísla, jak se tisknou, nesleduje.
+   *[other] { $count } popisků začínalo slovem a číslem, například „{ $first }“. Slova s čísly jsou vynechána: vyobrazení a tabulky čísluje Glaukopis. Kde text některé z nich jmenuje číslem, je to text, jak byl napsán, a čísla, jak se tisknou, nesleduje.
 }
 core-import-document-label-example = Obrázek 1:
 core-import-document-caption-notes = { $count ->

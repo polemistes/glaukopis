@@ -109,32 +109,32 @@ core-import-document-notebook = caderno Jupyter
 
 core-import-document-found = { $count ->
     [one] { $made ->
-        [all] Encontrou-se { $count } citação ainda não ligada a uma referência da biblioteca, feita por um programa que guarda referências. Fica como texto, tal como foi escrita, e pode ser percorrida quando o mapa se fizer, e mais tarde.
-       *[none] Encontrou-se { $count } citação ainda não ligada a uma referência da biblioteca. Fica como texto, tal como foi escrita, e pode ser percorrida quando o mapa se fizer, e mais tarde.
+        [all] Encontrou-se { $count } citação ainda não ligada a uma referência da biblioteca, feita por um programa que guarda referências. Fica como texto, tal como foi escrita, e pode ser percorrida quando o documento tiver sido trazido, e mais tarde.
+       *[none] Encontrou-se { $count } citação ainda não ligada a uma referência da biblioteca. Fica como texto, tal como foi escrita, e pode ser percorrida quando o documento tiver sido trazido, e mais tarde.
     }
     [many] { $made ->
-        [all] Encontraram-se { $count } citações ainda não ligadas a referências da biblioteca, todas feitas por um programa que guarda referências. Ficam como texto, tal como foram escritas, e podem ser percorridas uma a uma quando o mapa se fizer, e mais tarde.
-        [some] Encontraram-se { $count } citações ainda não ligadas a referências da biblioteca, { $some } delas feitas por um programa que guarda referências. Ficam como texto, tal como foram escritas, e podem ser percorridas uma a uma quando o mapa se fizer, e mais tarde.
-       *[none] Encontraram-se { $count } citações ainda não ligadas a referências da biblioteca. Ficam como texto, tal como foram escritas, e podem ser percorridas uma a uma quando o mapa se fizer, e mais tarde.
+        [all] Encontraram-se { $count } citações ainda não ligadas a referências da biblioteca, todas feitas por um programa que guarda referências. Ficam como texto, tal como foram escritas, e podem ser percorridas quando o documento tiver sido trazido, e mais tarde.
+        [some] Encontraram-se { $count } citações ainda não ligadas a referências da biblioteca, { $some } delas feitas por um programa que guarda referências. Ficam como texto, tal como foram escritas, e podem ser percorridas quando o documento tiver sido trazido, e mais tarde.
+       *[none] Encontraram-se { $count } citações ainda não ligadas a referências da biblioteca. Ficam como texto, tal como foram escritas, e podem ser percorridas quando o documento tiver sido trazido, e mais tarde.
     }
    *[other] { $made ->
-        [all] Encontraram-se { $count } citações ainda não ligadas a referências da biblioteca, todas feitas por um programa que guarda referências. Ficam como texto, tal como foram escritas, e podem ser percorridas uma a uma quando o mapa se fizer, e mais tarde.
-        [some] Encontraram-se { $count } citações ainda não ligadas a referências da biblioteca, { $some } delas feitas por um programa que guarda referências. Ficam como texto, tal como foram escritas, e podem ser percorridas uma a uma quando o mapa se fizer, e mais tarde.
-       *[none] Encontraram-se { $count } citações ainda não ligadas a referências da biblioteca. Ficam como texto, tal como foram escritas, e podem ser percorridas uma a uma quando o mapa se fizer, e mais tarde.
+        [all] Encontraram-se { $count } citações ainda não ligadas a referências da biblioteca, todas feitas por um programa que guarda referências. Ficam como texto, tal como foram escritas, e podem ser percorridas quando o documento tiver sido trazido, e mais tarde.
+        [some] Encontraram-se { $count } citações ainda não ligadas a referências da biblioteca, { $some } delas feitas por um programa que guarda referências. Ficam como texto, tal como foram escritas, e podem ser percorridas quando o documento tiver sido trazido, e mais tarde.
+       *[none] Encontraram-se { $count } citações ainda não ligadas a referências da biblioteca. Ficam como texto, tal como foram escritas, e podem ser percorridas quando o documento tiver sido trazido, e mais tarde.
     }
 }
 core-import-document-endnote = { $count ->
-    [one] { $count } citação feita pelo EndNote é trazida como o texto que mostra, e não está entre as encontradas: não foi possível ler o que o EndNote diz das obras.
-    [many] { $count } citações feitas pelo EndNote são trazidas como o texto que mostram, e não estão entre as encontradas: não foi possível ler o que o EndNote diz das obras.
-   *[other] { $count } citações feitas pelo EndNote são trazidas como o texto que mostram, e não estão entre as encontradas: não foi possível ler o que o EndNote diz das obras.
+    [one] { $count } citação feita pelo EndNote é trazida como o texto que mostra, e não está entre as citações soltas: não foi possível ler o que o EndNote diz das obras.
+    [many] { $count } citações feitas pelo EndNote são trazidas como o texto que mostram, e não estão entre as citações soltas: não foi possível ler o que o EndNote diz das obras.
+   *[other] { $count } citações feitas pelo EndNote são trazidas como o texto que mostram, e não estão entre as citações soltas: não foi possível ler o que o EndNote diz das obras.
 }
 core-import-document-bookmarks = { $count ->
     [one] O documento guarda { $count } citação num marcador, e não foi possível ler o que ela cita: é texto tal como está. O Zotero guarda-as assim quando as preferências do documento o dizem.
     [many] O documento guarda { $count } citações em marcadores, e não foi possível ler o que elas citam: são texto tal como estão. O Zotero guarda-as assim quando as preferências do documento o dizem.
    *[other] O documento guarda { $count } citações em marcadores, e não foi possível ler o que elas citam: são texto tal como estão. O Zotero guarda-as assim quando as preferências do documento o dizem.
 }
-core-import-document-bibliography = O documento tem uma lista do que cita, sob «{ $heading }». É trazida como texto, como o resto. O mapa faz a sua própria bibliografia a partir do que nele se cita.
-core-import-document-bibliography-made = O documento tem uma lista do que cita, feita pelo programa que guarda as suas referências. É trazida como texto, como o resto. O mapa faz a sua própria bibliografia a partir do que nele se cita.
+core-import-document-bibliography = O documento tem uma lista do que cita, sob «{ $heading }». É trazida como texto, como o resto. O Glaukopis faz uma bibliografia própria a partir do que se cita.
+core-import-document-bibliography-made = O documento tem uma lista do que cita, feita pelo programa que guarda as suas referências. É trazida como texto, como o resto. O Glaukopis faz uma bibliografia própria a partir do que se cita.
 core-import-document-tracked = O documento tem alterações registadas. O texto é trazido tal como fica quando todas são aceites.
 core-import-document-comments = O documento tem comentários na margem, que ficam de fora.
 core-import-document-heading-notes = { $count ->
@@ -144,9 +144,9 @@ core-import-document-heading-notes = { $count ->
 }
 # What a caption began with is shown as the document has it: “Figure 1:”.
 core-import-document-labels = { $count ->
-    [one] { $count } legenda começava por uma palavra e um número, como «{ $first }». Fica de fora: o mapa numera ele próprio as suas figuras e tabelas. Onde o texto nomeia uma delas pelo número, isso é texto tal como foi escrito, e não segue a numeração do mapa.
-    [many] { $count } legendas começavam por uma palavra e um número, como «{ $first }». Ficam de fora: o mapa numera ele próprio as suas figuras e tabelas. Onde o texto nomeia uma delas pelo número, isso é texto tal como foi escrito, e não segue a numeração do mapa.
-   *[other] { $count } legendas começavam por uma palavra e um número, como «{ $first }». Ficam de fora: o mapa numera ele próprio as suas figuras e tabelas. Onde o texto nomeia uma delas pelo número, isso é texto tal como foi escrito, e não segue a numeração do mapa.
+    [one] { $count } legenda começava por uma palavra e um número, como «{ $first }». Fica de fora: o Glaukopis numera ele próprio as figuras e as tabelas. Onde o texto nomeia uma delas pelo número, isso é texto tal como foi escrito, e não segue os números tal como se imprimem.
+    [many] { $count } legendas começavam por uma palavra e um número, como «{ $first }». Ficam de fora: o Glaukopis numera ele próprio as figuras e as tabelas. Onde o texto nomeia uma delas pelo número, isso é texto tal como foi escrito, e não segue os números tal como se imprimem.
+   *[other] { $count } legendas começavam por uma palavra e um número, como «{ $first }». Ficam de fora: o Glaukopis numera ele próprio as figuras e as tabelas. Onde o texto nomeia uma delas pelo número, isso é texto tal como foi escrito, e não segue os números tal como se imprimem.
 }
 core-import-document-label-example = Figura 1:
 core-import-document-caption-notes = { $count ->

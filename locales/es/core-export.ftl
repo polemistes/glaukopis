@@ -53,9 +53,18 @@ core-export-the-style = el estilo «{ $id }»
 
 ## Document formats.
 
-core-export-format-bad-id = «{ $id }» no puede ser el identificador de un formato
-core-export-format-needs-name = Un formato necesita un nombre.
-core-export-format-own-only = Solo se pueden eliminar los formatos propios.
+core-export-format-bad-id = «{ $id }» no puede ser el identificador de un diseño
+core-export-format-needs-name = Un diseño necesita un nombre.
+core-export-format-own-only = Solo se pueden eliminar los diseños propios.
 core-export-not-a-length = «{ $length }» no es una medida
 # Shown after "not found: ".
-core-export-the-format = el formato «{ $id }»
+core-export-the-format = el diseño «{ $id }»
+
+## Templates.
+
+core-export-template-bad-id = «{ $id }» no puede ser el identificador de una plantilla
+core-export-template-needs-name = Una plantilla necesita un nombre.
+core-export-template-own-only = Solo se pueden eliminar las plantillas propias.
+core-export-the-template = la plantilla «{ $id }»
+core-export-output-not-yet = El archivo «{ $id }» de la plantilla aún no se puede hacer: por ahora, solo el documento.
+core-export-output-unknown = La plantilla no hace ningún archivo «{ $id }».

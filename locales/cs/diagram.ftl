@@ -2,6 +2,10 @@
 
 diagram-map = Mapa
 diagram-idea = Název
+diagram-new-here = Nový prvek zde
+diagram-new-here-hint = Myšlenka, která ještě nemá své místo, pod zobrazeným prvkem
+diagram-open-as-map = Otevřít jako mapu
+diagram-open-as-map-hint = Prvek ve středu, s tím, co je pod ním
 diagram-show-all = Zobrazit celou mapu
 diagram-tidy = Uspořádat celou mapu
 diagram-tidy-hint = Každý prvek se vrátí na své automatické místo
@@ -28,5 +32,11 @@ diagram-copied = { $count ->
     [few] Zkopírovány { $count } prvky se vším, co je pod nimi
    *[other] Zkopírováno { $count } prvků se vším, co je pod nimi
 }
+diagram-cut = { $count ->
+    [one] Jeden prvek je vyjmut: přesune se tam, kam ho vložíte
+    [few] { $count } prvky jsou vyjmuty: přesunou se tam, kam je vložíte
+   *[other] { $count } prvků je vyjmuto: přesunou se tam, kam je vložíte
+}
+diagram-paste-here = Vložit sem
 diagram-nothing-copied = Zatím není nic zkopírováno
 diagram-pasted-elsewhere = Zkopírované je z jiného projektu a sem je nelze vložit

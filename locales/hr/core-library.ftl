@@ -54,3 +54,13 @@ core-library-collection-in-itself = Zbirka se ne može staviti u samu sebe.
 
 core-library-not-in-library = „{ $path }” nije putanja unutar knjižnice
 core-library-not-a-file = { $path } nije datoteka
+
+## The files of the library and their folders.
+
+core-library-the-file-of-library = datoteka knjižnice
+core-library-the-folder = direktorij
+core-library-needs-name = Potreban je naziv.
+core-library-name-too-long = Taj je naziv predugačak.
+core-library-folder-in-itself = Direktorij se ne može staviti u samog sebe.
+# The record of the files could not be read; it was put aside under another name.
+core-library-files-unreadable = Zapis o datotekama knjižnice nije bilo moguće pročitati, pa je odložen kao { $path }: { $message }

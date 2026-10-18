@@ -1,16 +1,18 @@
-# Documents that are brought in, each to become a map (ADR 0012), in
-# English. See locales/README.md.
+# Documents that are brought in, each to become a tree of elements under
+# the element in view (ADR 0012, 0037), in English. See locales/README.md.
 
 documents-choose = Dokument za učitavanje
 documents-filter = Dokumenti
 documents-filter-all = Sve datoteke
+documents-title-element = Dokument u element koji je u prikazu
 documents-title-project = Projekt iz dokumenta
 documents-reading = Čitanje { $file }…
 documents-reading-hint = Dugačak dokument traje trenutak.
 documents-no-pandoc = Dokumente ove vrste čita Pandoc, koji nije instaliran ili ga nije moguće pronaći. Gdje se nalazi može se reći u postavkama.
 documents-unread = Datoteku nije bilo moguće pročitati.
 documents-title = Naslov
-documents-title-hint-project = Naziv projekta, njegove mape i elementa u središtu mape.
+documents-title-hint-element = Naziv elementa na vrhu dokumenta, ispod elementa u prikazu.
+documents-title-hint-project = Naziv projekta i elementa na vrhu dokumenta u njemu.
 # What a project made of a document is called when the document has no title.
 documents-untitled = Bez naslova
 
@@ -98,12 +100,20 @@ documents-found-some-made = { $count ->
 }
 documents-at-once = Odmah načini citate od onih koje je Zotero načinio za djela koja vaša knjižnica ima
 # Under the choice: what becomes of a note that holds one of them.
-documents-at-once-notes = Bilješka koja nije ništa drugo nego citat postaje citat u retku, koji citatni stil smješta u bilješku ili u redak; bilješka koja kaže više zadržava svoj citat. Što ste za bilješke odabrali u ploči pronađenih citata, za sve koje slijede, vrijedi i ovdje.
+documents-at-once-notes = Bilješka koja nije ništa drugo nego citat postaje citat u retku, koji citatni stil smješta u bilješku ili u redak; bilješka koja kaže više zadržava svoj citat. Što ste za bilješke odabrali u ploči nepovezanih citata, za sve koje slijede, vrijedi i ovdje.
+documents-go-through-element = Prođi kroz citate kad se dokument učita
 documents-go-through-project = Prođi kroz citate kad se projekt načini
 
-## Making the map.
+## Making the elements.
 
 # Over what the one who brings the document in should know of it.
 documents-to-know = Dobro je znati
-documents-making = Izrada mape…
+documents-making = Učitavanje dokumenta…
+documents-make-element = Učitaj
 documents-make-project = Načini projekt
+documents-failed = Dokument nije bilo moguće učitati.
+
+## What an element inherits as a document
+
+# Under a setting an element does not make, which it takes from the element named, over it.
+documents-inherited-from = Naslijeđeno od: { $name }

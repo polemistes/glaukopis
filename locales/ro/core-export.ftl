@@ -59,3 +59,12 @@ core-export-format-own-only = Numai formatele proprii pot fi șterse.
 core-export-not-a-length = „{ $length }” nu este o lungime
 # Shown after "not found: ".
 core-export-the-format = formatul „{ $id }”
+
+## Templates.
+
+core-export-template-bad-id = „{ $id }” nu poate fi identificatorul unui șablon
+core-export-template-needs-name = Un șablon are nevoie de un nume.
+core-export-template-own-only = Numai șabloanele proprii pot fi șterse.
+core-export-the-template = șablonul „{ $id }”
+core-export-output-not-yet = Fișierul „{ $id }” al șablonului nu se poate face încă: deocamdată se face numai documentul.
+core-export-output-unknown = Șablonul nu are niciun fișier „{ $id }”.

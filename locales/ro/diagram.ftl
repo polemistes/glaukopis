@@ -2,6 +2,10 @@
 
 diagram-map = Hartă
 diagram-idea = Nume
+diagram-new-here = Element nou aici
+diagram-new-here-hint = Un gând care nu are încă un loc, sub elementul afișat
+diagram-open-as-map = Deschide ca hartă
+diagram-open-as-map-hint = Elementul în centru, cu ce este sub el
 diagram-show-all = Arată toată harta
 diagram-tidy = Ordonează toată harta
 diagram-tidy-hint = Fiecare element se întoarce la locul lui automat
@@ -28,5 +32,11 @@ diagram-copied = { $count ->
     [few] { $count } elemente copiate, cu tot ce este sub ele
    *[other] { $count } de elemente copiate, cu tot ce este sub ele
 }
+diagram-cut = { $count ->
+    [one] Un element este decupat: se mută acolo unde îl lipiți
+    [few] { $count } elemente sunt decupate: se mută acolo unde le lipiți
+   *[other] { $count } de elemente sunt decupate: se mută acolo unde le lipiți
+}
+diagram-paste-here = Lipește aici
 diagram-nothing-copied = Nu este nimic copiat încă
 diagram-pasted-elsewhere = Ce s-a copiat este din alt proiect și nu se poate lipi aici

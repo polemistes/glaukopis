@@ -109,32 +109,32 @@ core-import-document-notebook = Jupyterova bilježnica
 
 core-import-document-found = { $count ->
     [one] { $made ->
-        [all] Pronađen je { $count } citat koji još nije vezan uz referencu iz vaše knjižnice, a načinio ga je program koji vodi reference. Stoji kao tekst kakvim je napisan, a može se proći kad se mapa načini, i poslije.
-       *[none] Pronađen je { $count } citat koji još nije vezan uz referencu iz vaše knjižnice. Stoji kao tekst kakvim je napisan, a može se proći kad se mapa načini, i poslije.
+        [all] Pronađen je { $count } citat koji još nije vezan uz referencu iz vaše knjižnice, a načinio ga je program koji vodi reference. Stoji kao tekst kakvim je napisan, a može se proći kad se dokument učita, i poslije.
+       *[none] Pronađen je { $count } citat koji još nije vezan uz referencu iz vaše knjižnice. Stoji kao tekst kakvim je napisan, a može se proći kad se dokument učita, i poslije.
     }
     [few] { $made ->
-        [all] Pronađena su { $count } citata koji još nisu vezani uz reference iz vaše knjižnice, a sve ih je načinio program koji vodi reference. Stoje kao tekst kakvim su napisani, a mogu se proći kad se mapa načini, i poslije.
-        [some] Pronađena su { $count } citata koji još nisu vezani uz reference iz vaše knjižnice, od kojih je { $some } načinio program koji vodi reference. Stoje kao tekst kakvim su napisani, a mogu se proći kad se mapa načini, i poslije.
-       *[none] Pronađena su { $count } citata koji još nisu vezani uz reference iz vaše knjižnice. Stoje kao tekst kakvim su napisani, a mogu se proći kad se mapa načini, i poslije.
+        [all] Pronađena su { $count } citata koji još nisu vezani uz reference iz vaše knjižnice, a sve ih je načinio program koji vodi reference. Stoje kao tekst kakvim su napisani, a mogu se proći kad se dokument učita, i poslije.
+        [some] Pronađena su { $count } citata koji još nisu vezani uz reference iz vaše knjižnice, od kojih je { $some } načinio program koji vodi reference. Stoje kao tekst kakvim su napisani, a mogu se proći kad se dokument učita, i poslije.
+       *[none] Pronađena su { $count } citata koji još nisu vezani uz reference iz vaše knjižnice. Stoje kao tekst kakvim su napisani, a mogu se proći kad se dokument učita, i poslije.
     }
    *[other] { $made ->
-        [all] Pronađeno je { $count } citata koji još nisu vezani uz reference iz vaše knjižnice, a sve ih je načinio program koji vodi reference. Stoje kao tekst kakvim su napisani, a mogu se proći kad se mapa načini, i poslije.
-        [some] Pronađeno je { $count } citata koji još nisu vezani uz reference iz vaše knjižnice, od kojih je { $some } načinio program koji vodi reference. Stoje kao tekst kakvim su napisani, a mogu se proći kad se mapa načini, i poslije.
-       *[none] Pronađeno je { $count } citata koji još nisu vezani uz reference iz vaše knjižnice. Stoje kao tekst kakvim su napisani, a mogu se proći kad se mapa načini, i poslije.
+        [all] Pronađeno je { $count } citata koji još nisu vezani uz reference iz vaše knjižnice, a sve ih je načinio program koji vodi reference. Stoje kao tekst kakvim su napisani, a mogu se proći kad se dokument učita, i poslije.
+        [some] Pronađeno je { $count } citata koji još nisu vezani uz reference iz vaše knjižnice, od kojih je { $some } načinio program koji vodi reference. Stoje kao tekst kakvim su napisani, a mogu se proći kad se dokument učita, i poslije.
+       *[none] Pronađeno je { $count } citata koji još nisu vezani uz reference iz vaše knjižnice. Stoje kao tekst kakvim su napisani, a mogu se proći kad se dokument učita, i poslije.
     }
 }
 core-import-document-endnote = { $count ->
-    [one] { $count } citat koji je načinio EndNote učitan je kao tekst koji prikazuje i nije među pronađenima: što EndNote kaže o djelima nije bilo moguće pročitati.
-    [few] { $count } citata koja je načinio EndNote učitana su kao tekst koji prikazuju i nisu među pronađenima: što EndNote kaže o djelima nije bilo moguće pročitati.
-   *[other] { $count } citata koje je načinio EndNote učitano je kao tekst koji prikazuju i nisu među pronađenima: što EndNote kaže o djelima nije bilo moguće pročitati.
+    [one] { $count } citat koji je načinio EndNote učitan je kao tekst koji prikazuje i nije među nepovezanim citatima: što EndNote kaže o djelima nije bilo moguće pročitati.
+    [few] { $count } citata koja je načinio EndNote učitana su kao tekst koji prikazuju i nisu među nepovezanim citatima: što EndNote kaže o djelima nije bilo moguće pročitati.
+   *[other] { $count } citata koje je načinio EndNote učitano je kao tekst koji prikazuju i nisu među nepovezanim citatima: što EndNote kaže o djelima nije bilo moguće pročitati.
 }
 core-import-document-bookmarks = { $count ->
     [one] Dokument drži { $count } citat u knjižnoj oznaci, a što citira nije bilo moguće pročitati: to je tekst kakav jest. Zotero ih tako drži kad to kažu postavke dokumenta.
     [few] Dokument drži { $count } citata u knjižnim oznakama, a što citiraju nije bilo moguće pročitati: to je tekst kakav jest. Zotero ih tako drži kad to kažu postavke dokumenta.
    *[other] Dokument drži { $count } citata u knjižnim oznakama, a što citiraju nije bilo moguće pročitati: to je tekst kakav jest. Zotero ih tako drži kad to kažu postavke dokumenta.
 }
-core-import-document-bibliography = Dokument ima popis onoga što citira, pod naslovom „{ $heading }”. Učitan je kao tekst, kao i ostalo. Mapa sama izrađuje popis literature iz onoga što se u njoj citira.
-core-import-document-bibliography-made = Dokument ima popis onoga što citira, koji je načinio program koji vodi njegove reference. Učitan je kao tekst, kao i ostalo. Mapa sama izrađuje popis literature iz onoga što se u njoj citira.
+core-import-document-bibliography = Dokument ima popis onoga što citira, pod naslovom „{ $heading }”. Učitan je kao tekst, kao i ostalo. Glaukopis sam izrađuje popis literature iz onoga što se citira.
+core-import-document-bibliography-made = Dokument ima popis onoga što citira, koji je načinio program koji vodi njegove reference. Učitan je kao tekst, kao i ostalo. Glaukopis sam izrađuje popis literature iz onoga što se citira.
 core-import-document-tracked = Dokument ima praćene izmjene. Tekst je učitan onakav kakav je kad su sve prihvaćene.
 core-import-document-comments = Dokument ima komentare na margini, koji su izostavljeni.
 core-import-document-heading-notes = { $count ->
@@ -144,9 +144,9 @@ core-import-document-heading-notes = { $count ->
 }
 # What a caption began with is shown as the document has it: “Figure 1:”.
 core-import-document-labels = { $count ->
-    [one] { $count } opis počinjao je riječju i brojem, kao „{ $first }”. Izostavljen je: mapa sama numerira svoje ilustracije i tablice. Gdje tekst koju od njih imenuje brojem, to je tekst kakav je napisan i ne slijedi brojeve mape.
-    [few] { $count } opisa počinjala su riječju i brojem, kao „{ $first }”. Izostavljeni su: mapa sama numerira svoje ilustracije i tablice. Gdje tekst koju od njih imenuje brojem, to je tekst kakav je napisan i ne slijedi brojeve mape.
-   *[other] { $count } opisa počinjalo je riječju i brojem, kao „{ $first }”. Izostavljeni su: mapa sama numerira svoje ilustracije i tablice. Gdje tekst koju od njih imenuje brojem, to je tekst kakav je napisan i ne slijedi brojeve mape.
+    [one] { $count } opis počinjao je riječju i brojem, kao „{ $first }”. Izostavljen je: Glaukopis sam numerira ilustracije i tablice. Gdje tekst koju od njih imenuje brojem, to je tekst kakav je napisan i ne slijedi brojeve kakvi se tiskaju.
+    [few] { $count } opisa počinjala su riječju i brojem, kao „{ $first }”. Izostavljeni su: Glaukopis sam numerira ilustracije i tablice. Gdje tekst koju od njih imenuje brojem, to je tekst kakav je napisan i ne slijedi brojeve kakvi se tiskaju.
+   *[other] { $count } opisa počinjalo je riječju i brojem, kao „{ $first }”. Izostavljeni su: Glaukopis sam numerira ilustracije i tablice. Gdje tekst koju od njih imenuje brojem, to je tekst kakav je napisan i ne slijedi brojeve kakvi se tiskaju.
 }
 core-import-document-label-example = Slika 1:
 core-import-document-caption-notes = { $count ->

@@ -2,6 +2,10 @@
 
 diagram-map = Mindmap
 diagram-idea = Naam
+diagram-new-here = Nieuw element hier
+diagram-new-here-hint = Een gedachte die nog geen plaats heeft, onder het element in beeld
+diagram-open-as-map = Als mindmap openen
+diagram-open-as-map-hint = Het element in de kern, met wat eronder staat
 diagram-show-all = De hele mindmap tonen
 diagram-tidy = De hele mindmap opruimen
 diagram-tidy-hint = Elk element gaat terug naar zijn automatische plaats
@@ -27,5 +31,10 @@ diagram-copied = { $count ->
     [one] Eén element gekopieerd, met alles eronder
    *[other] { $count } elementen gekopieerd, met alles eronder
 }
+diagram-cut = { $count ->
+    [one] Eén element is geknipt: het gaat naar waar je het plakt
+   *[other] { $count } elementen zijn geknipt: ze gaan naar waar je ze plakt
+}
+diagram-paste-here = Hier plakken
 diagram-nothing-copied = Er is nog niets gekopieerd
 diagram-pasted-elsewhere = Wat is gekopieerd, is van een ander project en kan hier niet worden geplakt

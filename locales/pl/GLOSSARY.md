@@ -18,28 +18,74 @@ wszystkich plikach `locales/pl/`.
   (s. 12–14).
 - **Klawisze**, jak pisze je polska klawiatura: Ctrl, Shift, Alt, Enter,
   Esc, Tab, Backspace, Delete, spacja, strzałki.
-- **Liczba mnoga**: formy `one`, `few`, `many` i na końcu `*[other]`.
+- **Liczba mnoga**: formy `one`, `few`, `many` i na końcu `*[other]`
+  (`other` jak `many`). Gdzie angielski pisze „{ $count } pages” bez
+  wyboru, a polski odmienia rzeczownik, wybór dodajemy sami.
 
 ## Praca
 
 | angielski | polski | uwagi |
 |---|---|---|
-| project | projekt | |
+| project | projekt | jedno drzewo elementów |
 | map | mapa | mapa myśli; w tekście zwykle samo „mapa” |
+| open as a map | otworzyć jako mapę | każdy element można otworzyć jako mapę |
+| up, up to … | w górę, w górę do „…” | do elementu wyżej, nad tym w widoku |
+| the owl map | mapa projektów | wszystkie projekty wokół sowy, foldery jako etykiety; przycisk: *Mapa* |
 | element | element | |
 | the centre | środek | element, z którego mapa wyrasta |
 | the diagram | diagram | widok mapy w prostokątach i liniach |
 | the text | tekst | widok tekstowy; „w tekście” |
 | passage | fragment | akapit lub ciąg akapitów traktowany jako jedno |
 | kind | rodzaj | rodzaj elementu, akapitu, słów; nigdy „typ” |
-| look | wygląd | jak rodzaj jest składany w dokumencie |
-| format | format | jak składa się cały dokument; „APA 7” to format |
+| look | wygląd | jak rodzaj jest składany w dokumencie; należy do układu |
+| the Look panel | Wygląd, panel *Wygląd* | panel obok podglądu, gdzie ustawia się wygląd dokumentu |
+| layout | układ | jak wygląda strona dokumentu: marginesy, czcionki, nagłówki, przypisy, wygląd rodzajów; „Maszynopis” to układ. Pliki i kod mówią *format* |
+| format | format | tylko format pliku (Word, PDF); nigdy o układzie |
+| template | szablon | z czego składa się dokument danego rodzaju: części, rodzaje, układ i styl, wymagania, pliki; „Artykuł w czasopiśmie” to szablon |
+| document settings | ustawienia dokumentu | okno dokumentu elementu: szablon, dane, części, wygląd, język, lista kontrolna |
+| details | dane | tytuł, autorzy, data, słowa kluczowe, identyfikatory |
+| part | część | rodzaj elementu, który ma miejsce w dokumencie: streszczenie, dedykacja, aneks, okładka |
+| front matter | część wstępna | jak w pracach dyplomowych: część wstępna, tekst główny, część końcowa |
+| back matter | część końcowa | |
+| the cover | okładka | |
+| checklist | lista kontrolna | co szablon wymaga, wobec tekstu i drzewa |
+| requirements | wymagania | |
 | style | styl | tylko styl cytowania; nigdy o wyglądzie |
+| reference style | styl cytowania | |
 | document | dokument | |
 | the manuscript | maszynopis | dokument, jak wyjdzie z druku; co pokazuje podgląd |
 | the preview | podgląd | |
 | export | eksport, wyeksportować | |
 | bring in | wczytać | dokument się *wczytuje*; z Zotero się *importuje* |
+
+## Części dokumentu
+
+| angielski | polski |
+|---|---|
+| half title | przedtytuł |
+| title page | strona tytułowa |
+| copyright page | strona redakcyjna |
+| abstract | streszczenie |
+| keywords | słowa kluczowe |
+| dedication | dedykacja |
+| epigraph | motto |
+| foreword | słowo wstępne |
+| preface | przedmowa |
+| table of contents | spis treści |
+| list of figures / tables | spis rycin / spis tabel |
+| the text (body) | tekst główny |
+| notes | przypisy |
+| bibliography | bibliografia |
+| acknowledgements | podziękowania |
+| appendix | aneks (nie „załącznik”, to *attachment*) |
+| afterword | posłowie |
+| glossary | słowniczek |
+| about the author | o autorze |
+| signature | podpis autora (samo „podpis” to *caption*) |
+| cast | osoby dramatu |
+| setting | miejsce akcji |
+| standfirst | lead |
+| blurb | notka na okładkę |
 
 ## Pozycje i cytowania
 
@@ -49,11 +95,13 @@ wszystkich plikach `locales/pl/`.
 | reference | pozycja | pozycja bibliograficzna: książka, artykuł, rozdział |
 | collection | kolekcja | |
 | attachment | załącznik | |
+| the files of the library | pliki biblioteki | osobny zbiór plików obok obrazów, w folderach; plik należy do żadnej, jednej lub kilku pozycji |
+| take in (files) | przyjąć (pliki) | pliki *przyjmuje się* do biblioteki |
 | note | notatka | |
 | citation | cytowanie | pozycja przywołana w tekście, ze stronami |
 | locator | miejsce | strona, rozdział, wers, wiersz |
 | lookup | pobranie danych | po DOI, ISBN lub z wyszukiwania w sieci |
-| found citations | znalezione cytowania | rozpoznane w wczytanym tekście |
+| loose citations | niepowiązane cytowania | rozpoznane w wczytanym tekście, jeszcze niepowiązane z pozycją biblioteki; zakładka *Niepowiązane*. Nie „luźne” (to brzmi jak cytat niedokładny). Dawniej *znalezione cytowania* |
 
 ## Słowa i wyróżnienia
 
@@ -99,6 +147,8 @@ wszystkich plikach `locales/pl/`.
 | own words | własne słowa | |
 | reading text / OCR | rozpoznawanie tekstu / OCR | |
 | made searchable | przeszukiwalny | PDF z tekstem pod obrazem stron |
+| language package | pakiet językowy | słowniki pisowni i języki rozpoznawania tekstu, pobierane z serwera |
+| counting words | liczenie słów | |
 | search / replace | szukaj / zamień | |
 | found | znaleziono, znalezione | |
 
@@ -114,6 +164,8 @@ wszystkich plikach `locales/pl/`.
 | fold / unfold | zwinąć / rozwinąć | |
 | settings | ustawienia | |
 | data directory | folder danych | |
+| the project file | plik projektu | |
+| credits | podziękowania i licencje | kto i co złożyło się na program |
 
 ## Nazw nie tłumaczymy
 

@@ -45,13 +45,13 @@ figures-stands-where = Unde stă { $kind ->
         [table] tabelul
        *[equation] ecuația
     }
-figures-side-format = Ca formatul
+figures-side-format = Ca macheta
 figures-side-left = La stânga
 figures-side-middle = La mijloc
 figures-side-right = La dreapta
-# What the format of the document says of where things of a kind stand. The
+# What the layout of the document says of where things of a kind stand. The
 # flow is none for equations, and for what stands in the middle.
-figures-usual = Formatul are { $kind ->
+figures-usual = Macheta are { $kind ->
         [figure] figurile
         [table] tabelele
        *[equation] ecuațiile
@@ -70,7 +70,7 @@ figures-flows-where = Dacă textul curge în jurul { $kind ->
         [table] tabelului
        *[equation] ecuației
     }
-figures-flow-format = Ca formatul
+figures-flow-format = Ca macheta
 figures-flow-around = Curge în jur
 figures-flow-apart = Stă despărțit
 figures-flow-at-side = Textul curge în jurul a ceea ce stă pe o parte.
@@ -141,7 +141,7 @@ figures-targets-figure-unsaid = O figură despre care nu se spune nimic
 figures-targets-table-unsaid = Un tabel despre care nu se spune nimic
 figures-targets-no-match = Nimic din document nu răspunde la aceste cuvinte.
 figures-targets-none = Nu este încă nimic la care să se facă trimitere: nicio figură, niciun tabel, nicio ecuație numerotată, nicio parte cu nume.
-figures-targets-hint = O trimitere urmează ceea la ce se referă: numărul lui și cum îi spune formatul.
+figures-targets-hint = O trimitere urmează ceea ce indică: numărul lui și cum îi spune macheta.
 
 ## Shown by the stylesheet, where the page has no element for the words.
 

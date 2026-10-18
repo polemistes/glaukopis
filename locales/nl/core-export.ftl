@@ -48,9 +48,18 @@ core-export-the-style = de stijl ‘{ $id }’
 
 ## Document formats.
 
-core-export-format-bad-id = ‘{ $id }’ kan niet het id van een formaat zijn
-core-export-format-needs-name = Een formaat heeft een naam nodig.
-core-export-format-own-only = Alleen je eigen formaten kunnen worden gewist.
+core-export-format-bad-id = ‘{ $id }’ kan niet het id van een lay-out zijn
+core-export-format-needs-name = Een lay-out heeft een naam nodig.
+core-export-format-own-only = Alleen je eigen lay-outs kunnen worden gewist.
 core-export-not-a-length = ‘{ $length }’ is geen lengte
 # Shown after "not found: ".
-core-export-the-format = het formaat ‘{ $id }’
+core-export-the-format = de lay-out ‘{ $id }’
+
+## Templates.
+
+core-export-template-bad-id = ‘{ $id }’ kan niet het id van een sjabloon zijn
+core-export-template-needs-name = Een sjabloon heeft een naam nodig.
+core-export-template-own-only = Alleen je eigen sjablonen kunnen worden gewist.
+core-export-the-template = het sjabloon ‘{ $id }’
+core-export-output-not-yet = Het bestand ‘{ $id }’ van het sjabloon kan nog niet worden gemaakt; alleen het document kan dat al.
+core-export-output-unknown = Het sjabloon heeft geen bestand ‘{ $id }’.

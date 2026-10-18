@@ -49,3 +49,13 @@ core-library-collection-in-itself = Een verzameling kan niet in zichzelf worden 
 
 core-library-not-in-library = ‘{ $path }’ is geen pad binnen de bibliotheek
 core-library-not-a-file = { $path } is geen bestand
+
+## The files of the library and their folders.
+
+core-library-the-file-of-library = het bestand van de bibliotheek
+core-library-the-folder = de map
+core-library-needs-name = Er is een naam nodig.
+core-library-name-too-long = Die naam is te lang.
+core-library-folder-in-itself = Een map kan niet in zichzelf worden gezet.
+# The record of the files could not be read; it was put aside under another name.
+core-library-files-unreadable = Het register van de bestanden van de bibliotheek kon niet worden gelezen en is opzijgezet als { $path }: { $message }
