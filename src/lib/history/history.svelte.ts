@@ -104,7 +104,20 @@ export class ProjectHistory implements History {
 
   /** Reads the history, and follows the project from then on. Once. */
   start(): Promise<void> {
-    this.#started ??= (async () => {
+    this.#started ??= this.#begin().catch((error) => {
+      // A reading that failed leaves nothing behind: no worker that nothing
+      // could end, and no following of the project that would tell every
+      // change to an engine that never read anything, which holds them all.
+      // A later question begins it again.
+      if (this.#started === started) this.stop();
+      throw error;
+    });
+    const started = this.#started;
+    return started;
+  }
+
+  #begin(): Promise<void> {
+    return (async () => {
       // A reading that is stopped while it waits leaves off: another has
       // begun, and this one must touch neither it nor what it has made.
       const run = ++this.#run;
@@ -151,7 +164,6 @@ export class ProjectHistory implements History {
       this.#post({ kind: 'load', records, me: this.project.me?.id ?? null });
       this.ready = true;
     })();
-    return this.#started;
   }
 
   /** Reads the history anew: after it was kept less finely, or taken out. */
