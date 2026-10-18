@@ -193,9 +193,29 @@ export const defaultSettings: Settings = {
   libraryDetailWidth: 400,
 };
 
-export const settingsLoad = () => call<Partial<Settings>>('settings_load');
+/** A damaged file of settings, set aside at the start under its name with `.broken-<time>` added. */
+export interface SettingsSetAside {
+  /** Where it is now. */
+  path: string;
+  /** Why it could not be read. */
+  reason: string;
+  /** Whether the id of the person could be read from it, and is kept. */
+  personKept: boolean;
+}
+
+/**
+ * The settings as they are kept, and the file that was set aside if it was
+ * damaged: the settings are then the defaults, with the person kept where
+ * it could be read.
+ */
+export interface SettingsLoaded {
+  settings: Partial<Settings>;
+  setAside: SettingsSetAside | null;
+}
+
+export const settingsLoad = () => call<SettingsLoaded>('settings_load');
 export const settingsSave = (settings: Settings) => call<void>('settings_save', { settings });
 
-/** Writes into the log of the run what went wrong in the page. */
+/** Writes into the log of the run what went wrong in the page: see `shell/page-log.ts`. */
 export const logPage = (level: 'error' | 'warn', message: string) =>
   call<void>('log_page', { level, message });

@@ -272,6 +272,8 @@ editor-citation-after-placeholder = og passim
 editor-citation-locator-kind = Slags sted i verket
 editor-citation-suppress-author = Forfatteren er nevnt i setningen min: vis bare årstallet
 editor-citation-remove-work = Fjern dette verket
+editor-citation-no-place = En kildehenvisning kan ikke stå der
+editor-reference-not-kept = Referansen kunne ikke tas vare på i prosjektet
 # Står i teksten i stedet for en kildehenvisning til et verk som verken er i biblioteket eller i prosjektet.
 editor-citation-missing = [referansen ble ikke funnet]
 # Står i teksten i stedet for en kildehenvisning til ingen verk.

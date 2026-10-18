@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { testHook } from '$lib/shell/testing';
   import { onMount } from 'svelte';
   import Ellipsis from '@lucide/svelte/icons/ellipsis';
   import LayoutGrid from '@lucide/svelte/icons/layout-grid';
@@ -92,10 +93,9 @@
   const actions = new ProjectActions({ open, deleted: readTrash });
   const items = (p: ProjectInfo) => actions.items(p);
 
-  // For the tests of the running application, which cannot answer the dialog that chooses a file.
-  (window as unknown as Record<string, unknown>).__glaukopisOrg = {
-    open: (path: string) => actions.openOrgAt(path),
-  };
+  // For the tests of the running application, which cannot answer the dialog
+  // that chooses a file; only when the harness asks for it.
+  testHook('__glaukopisOrg', { open: (path: string) => actions.openOrgAt(path) });
 
   // A PDF or a picture has its text read.
   const written = (path: string) =>

@@ -4,6 +4,10 @@ settings-title = Innstillinger
 settings-error-system = Opplysningene om programmet kunne ikke leses
 settings-error-read = Innstillingene kunne ikke leses
 settings-error-save = Innstillingene kunne ikke lagres
+settings-error-fonts = Skriftene på denne datamaskinen kunne ikke listes opp
+settings-error-templates = Malene kunne ikke listes opp
+settings-set-aside = Innstillingene kunne ikke leses, og er lagt til side som { $path }; standardinnstillingene brukes
+settings-set-aside-person = Innstillingene kunne ikke leses, og er lagt til side som { $path }; standardinnstillingene brukes, og denne datamaskinen er en ny person i historikken til prosjektene
 
 ## Utseende
 
@@ -89,6 +93,7 @@ settings-language = Språk
 settings-language-interface = Grensesnittet
 settings-language-system = Som systemet ({ $language })
 settings-language-texts = Språk for nye tekster
+settings-language-error-load = Ordene på { $language } kunne ikke lastes inn
 
 ## The log of the runs.
 

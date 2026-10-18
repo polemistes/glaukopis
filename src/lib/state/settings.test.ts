@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Settings } from '$lib/api/system';
+import type { Settings, SettingsLoaded } from '$lib/api/system';
 
 const writes: { settings: Settings; resolve: () => void; reject: (e: unknown) => void }[] = [];
 
 vi.mock('$lib/api/system', async (original) => ({
   ...(await original<typeof import('$lib/api/system')>()),
-  settingsLoad: vi.fn(async () => ({})),
+  settingsLoad: vi.fn(async (): Promise<SettingsLoaded> => ({ settings: {}, setAside: null })),
   settingsSave: vi.fn(
     (settings: Settings) =>
       new Promise<void>((resolve, reject) => writes.push({ settings, resolve, reject })),
@@ -13,6 +13,8 @@ vi.mock('$lib/api/system', async (original) => ({
 }));
 
 const { settings } = await import('./settings.svelte');
+const { settingsLoad } = await import('$lib/api/system');
+const { toasts } = await import('$lib/ui/toast.svelte');
 const { finishBeforeClose } = await import('./closing');
 
 /** Lets what waits on settled promises go on. */
@@ -70,6 +72,69 @@ describe('the settings as they are written', () => {
     expect(writes).toHaveLength(2);
     writes[1].resolve();
     expect(await again).toEqual([]);
+    error.mockRestore();
+  });
+});
+
+describe('the settings as they are read', () => {
+  beforeEach(() => {
+    writes.length = 0;
+    for (const toast of [...toasts.list]) toasts.dismiss(toast.id);
+    vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener: () => {} }));
+  });
+
+  it('that were damaged and set aside are told, and the person read from them is kept', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(settingsLoad).mockResolvedValueOnce({
+      settings: { person: 'kept-id' },
+      setAside: {
+        path: '/data/settings.json.broken-20261018T120000Z',
+        reason: 'expected `,` or `}` at line 3 column 3',
+        personKept: true,
+      },
+    });
+    await settings.load();
+    expect(settings.value.person).toBe('kept-id');
+    expect(settings.value.theme).toBe('system');
+    // Nothing is written at once: the person is the one that was.
+    expect(writes).toHaveLength(0);
+    const told = toasts.list.find((t) => t.kind === 'error');
+    expect(told?.message).toContain('/data/settings.json.broken-20261018T120000Z');
+    expect(told?.detail).toContain('line 3');
+    error.mockRestore();
+  });
+
+  it('that were damaged with no person in them make a new one, and write it', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(settingsLoad).mockResolvedValueOnce({
+      settings: {},
+      setAside: {
+        path: '/data/settings.json.broken-x',
+        reason: 'not an object',
+        personKept: false,
+      },
+    });
+    const loading = settings.load();
+    await settle();
+    expect(writes).toHaveLength(1);
+    expect(writes[0].settings.person).toBeTruthy();
+    writes[0].resolve();
+    await loading;
+    expect(toasts.list.find((t) => t.kind === 'error')?.message).toMatch(/new person/);
+    error.mockRestore();
+  });
+
+  it('whose first writing fails are said to be unsaved, not unread', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(settingsLoad).mockResolvedValueOnce({ settings: {}, setAside: null });
+    const loading = settings.load();
+    await settle();
+    writes[0].reject(new Error('read-only'));
+    await loading;
+    expect(toasts.list.find((t) => t.kind === 'error')?.message).toBe(
+      'The settings could not be saved',
+    );
+    expect(settings.loaded).toBe(true);
     error.mockRestore();
   });
 });

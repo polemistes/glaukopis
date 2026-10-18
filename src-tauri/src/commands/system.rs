@@ -49,9 +49,11 @@ fn user_name() -> String {
     login
 }
 
+/// The settings, as the page reads them at the start: a damaged file is set
+/// aside, and the page is told so, to say it (`settings::load_or_set_aside`).
 #[tauri::command]
-pub fn settings_load(state: State<'_, AppState>) -> CommandResult<serde_json::Map<String, serde_json::Value>> {
-    Ok(glaukopis_core::settings::load(&state.data.settings_file())?)
+pub fn settings_load(state: State<'_, AppState>) -> CommandResult<glaukopis_core::settings::Loaded> {
+    Ok(glaukopis_core::settings::load_or_set_aside(&state.data.settings_file())?)
 }
 
 #[tauri::command(async)]
@@ -113,8 +115,10 @@ pub fn reveal_path(app: AppHandle, path: String) -> CommandResult<()> {
         .map_err(|e| CommandError { kind: "open", message: e.to_string() })
 }
 
-/// What went wrong in the page, for the log of the run: an error that was
-/// not caught, or a promise that failed with no one to hear it.
+/// What went wrong in the page, for the log of the run: a warning or an
+/// error the page wrote to its console, an error that was not caught, or a
+/// promise that failed with no one to hear it. The page sends a few a
+/// second at most (`shell/page-log.ts`); a line is cut at 4000 characters.
 #[tauri::command(async)]
 pub fn log_page(level: String, message: String) {
     let message: String = message.chars().take(4000).collect();

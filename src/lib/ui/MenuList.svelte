@@ -62,15 +62,20 @@
     }
   }
 
-  function rowRect(i: number): RectLike {
+  function rowRect(i: number): RectLike | null {
     const row = el?.querySelector<HTMLElement>(`[data-index="${i}"]`);
-    return (row ?? el!).getBoundingClientRect();
+    return (row ?? el)?.getBoundingClientRect() ?? null;
   }
 
   function openSub(i: number) {
     clearTimeout(subTimer);
-    sub = { index: i, anchor: rowRect(i) };
+    // Not when the menu is gone, as it may be when a timer comes late.
+    const anchor = rowRect(i);
+    if (anchor) sub = { index: i, anchor };
   }
+
+  // A submenu about to open, or to close, is not when the menu itself has closed.
+  $effect(() => () => clearTimeout(subTimer));
 
   function choose(i: number) {
     const item = items[i];

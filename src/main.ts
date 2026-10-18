@@ -11,32 +11,14 @@ import { languageName } from '$lib/i18n';
 import { inTauri } from '$lib/api/backend';
 import { logPage } from '$lib/api/system';
 import { guardPaste, pastesThroughGtk } from '$lib/util/paste';
+import { forwardToLog } from '$lib/shell/page-log';
 
 nameLanguagesBy(languageName);
 
-// What goes wrong in the page and is caught by no one is written into the log
-// of the run, where it can be read after the window is gone. No more than a
-// hundred a run, lest one fault repeated fill it.
-/** Where in the code an error came about, on lines of its own; WebKit's stack does not repeat the message. */
-function stackOf(error: unknown): string {
-  const stack = (error as { stack?: unknown } | null)?.stack;
-  return typeof stack === 'string' && stack.trim() ? `\n${stack.trim()}` : '';
-}
-
-if (inTauri) {
-  let told = 0;
-  const tell = (message: string) => {
-    if (told++ < 100) logPage('error', message).catch(() => {});
-  };
-  window.addEventListener('error', (event) => {
-    const where = event.filename ? ` (${event.filename}:${event.lineno}:${event.colno})` : '';
-    tell(`${event.message}${where}${stackOf(event.error)}`);
-  });
-  window.addEventListener('unhandledrejection', (event) => {
-    const reason = event.reason;
-    tell(`a promise failed unheard: ${reason?.message ?? String(reason)}${stackOf(reason)}`);
-  });
-}
+// What the page says of its faults reaches the log of the run, where it can
+// be read after the window is gone: the console's warnings and errors, and
+// what no one caught; a few lines a second, the rest counted (record 0052).
+if (inTauri) forwardToLog(logPage);
 
 // WebKitGTK does not paste safely; the Rust side reads the clipboard instead (record 0048).
 if (inTauri && pastesThroughGtk) guardPaste();

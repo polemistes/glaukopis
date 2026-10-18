@@ -4,6 +4,11 @@ settings-title = Settings
 settings-error-system = Something about the application could not be read
 settings-error-read = The settings could not be read
 settings-error-save = The settings could not be saved
+settings-error-fonts = The fonts of this computer could not be listed
+settings-error-templates = The templates could not be listed
+# A damaged file of settings was renamed and left beside where it was; $path is where it is now.
+settings-set-aside = The settings could not be read, and are set aside as { $path }; the defaults are used
+settings-set-aside-person = The settings could not be read, and are set aside as { $path }; the defaults are used, and this computer is a new person in the history of projects
 
 ## Appearance
 
@@ -101,6 +106,8 @@ settings-language = Language
 settings-language-interface = The interface
 settings-language-system = As the system ({ $language })
 settings-language-texts = Language of new texts
+# The words of the language chosen for the interface could not be read; it stays in the one it was in.
+settings-language-error-load = The words of { $language } could not be loaded
 
 ## The log of the runs.
 

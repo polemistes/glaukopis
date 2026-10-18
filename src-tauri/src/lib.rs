@@ -364,8 +364,15 @@ fn speak_as_chosen(data: Option<&DataDir>) {
 /// itself, and watches each. A window is shown only once it is watched, so
 /// that the log sees it come on the screen.
 fn make_windows(app: &tauri::App) -> tauri::Result<()> {
+    // The hooks the e2e scripts reach the page by are there only when the
+    // harness asks for them (`shell/testing.ts`), never in a working window.
+    let testing = std::env::var_os("GLAUKOPIS_E2E").is_some_and(|v| !v.is_empty());
     for config in &app.config().app.windows {
-        let window = tauri::WebviewWindowBuilder::from_config(app.handle(), config)?.visible(false).build()?;
+        let mut builder = tauri::WebviewWindowBuilder::from_config(app.handle(), config)?.visible(false);
+        if testing {
+            builder = builder.initialization_script("window.__glaukopisTesting = true;");
+        }
+        let window = builder.build()?;
         watch(&window);
         if config.visible {
             window.show()?;
