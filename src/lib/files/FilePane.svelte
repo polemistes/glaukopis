@@ -38,7 +38,7 @@
   import Button from '$lib/ui/Button.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
   import TextField from '$lib/ui/TextField.svelte';
-  import { notifyError } from '$lib/ui/toast.svelte';
+  import { describeError, notifyError } from '$lib/ui/toast.svelte';
   import ReferenceChooser from './ReferenceChooser.svelte';
   import {
     KIND_ICONS,
@@ -81,6 +81,12 @@
   });
 
   let looked = $state.raw<Looked | null>(looks.get(own) ?? null);
+  /**
+   * Why the PDF could not be looked at, shown where its pages would be, so
+   * that a look that failed is not taken for one not made. Not kept: the
+   * file is looked at again when it is selected again.
+   */
+  let lookFailed = $state<string | null>(null);
   onMount(() => {
     const f = files.get(own);
     if (!f || f.kind !== 'pdf' || !f.exists || looks.has(own)) return;
@@ -90,7 +96,11 @@
         looks.set(own, found);
         looked = found;
       })
-      .catch(() => looks.delete(own));
+      .catch((error) => {
+        console.warn(`the PDF ${f.path} could not be looked at`, error);
+        looks.delete(own);
+        lookFailed = describeError(error) ?? String(error);
+      });
   });
 
   /** A dialog over the pane. */
@@ -191,6 +201,7 @@
   }
 
   const pages = $derived.by(() => {
+    if (lookFailed) return t('files-pdf-unread', { reason: lookFailed });
     if (!looked || looked.picture) return '';
     const text =
       looked.withText === 0

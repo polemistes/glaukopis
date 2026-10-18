@@ -75,6 +75,16 @@
     });
   });
 
+  /**
+   * The files still there that were not looked at: stopped halfway, or where
+   * looking failed. They are not among the rows, and are said apart, so
+   * that the count of the title is not taken for what was gone through.
+   */
+  const notReached = $derived.by(() => {
+    void found;
+    return hashes.filter((h) => !proposals.has(h) && files.get(h)).length;
+  });
+
   /** What a file is called now: a proposal keeps the name it had when it was found out, and the file may have been renamed since. */
   const nameOf = (p: Proposal) => files.get(p.hash)?.name ?? p.name;
 
@@ -410,6 +420,9 @@
     {:else}
       {#if !rows.length}
         <p class="none">{t('files-going-none')}</p>
+      {/if}
+      {#if notReached}
+        <p class="none" data-not-reached>{t('files-going-not-reached', { count: notReached })}</p>
       {/if}
 
       {#each GROUPS as g (g)}

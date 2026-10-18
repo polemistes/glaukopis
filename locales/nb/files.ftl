@@ -162,6 +162,7 @@ files-pdf-pages = { $count ->
 }
 files-pdf-has-text = har tekst
 files-pdf-no-text = ingen tekst
+files-pdf-unread = kunne ikke leses: { $reason }
 files-pdf-some-text = { $count ->
     [one] én side uten tekst
    *[other] { $count } sider uten tekst
@@ -305,6 +306,10 @@ files-going-nothing = Ingenting funnet
 files-going-chosen = Valgt
 files-going-made-here = Laget her
 files-going-none = Ingen av filene kunne gås gjennom.
+files-going-not-reached = { $count ->
+    [one] Én fil ble ikke sett på. Den blir stående som den er, til en annen gang.
+   *[other] { $count } filer ble ikke sett på. De blir stående som de er, til en annen gang.
+}
 files-going-counts = { $assign } å gi bort, { $later } senere
 files-going-done = { $count ->
     [0] Ingenting å gi
