@@ -411,9 +411,9 @@ impl Draft {
                 draft.names.insert(name, parse_list(&text));
             } else if under_alias {
                 // A value given under the proper name wins over one given under an alias.
-                if !draft.fields.contains_key(&name) {
-                    by_alias.insert(name.clone());
-                    draft.fields.insert(name, text);
+                if let std::collections::btree_map::Entry::Vacant(free) = draft.fields.entry(name) {
+                    by_alias.insert(free.key().clone());
+                    free.insert(text);
                 }
             } else if by_alias.remove(&name) || !draft.fields.contains_key(&name) {
                 draft.fields.insert(name, text);
