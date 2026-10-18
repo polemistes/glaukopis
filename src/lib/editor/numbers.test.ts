@@ -249,6 +249,37 @@ describe('the numbers in the margin', () => {
   });
 });
 
+describe('the field of a line`s number', () => {
+  /** Opens the field by pressing the first number in the margin. */
+  function open(v: EditorView): HTMLInputElement {
+    (v.dom.querySelector('.line-number') as HTMLElement).click();
+    const field = v.dom.querySelector('.line-number-field') as HTMLInputElement;
+    expect(document.activeElement).toBe(field);
+    return field;
+  }
+
+  it('gives the text the cursor again when it is closed by a key', () => {
+    const v = at(['line #counted/1: {n=1}a / b']);
+    const field = open(v);
+    field.value = '4';
+    field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect(margin(v)).toEqual(['4! 5']);
+    expect(document.activeElement).toBe(v.dom);
+  });
+
+  it('leaves the focus with what was pressed when it is left for it', () => {
+    const v = at(['line #counted/1: {n=1}a / b']);
+    const search = document.body.appendChild(document.createElement('input'));
+    const field = open(v);
+    field.value = '4';
+    search.focus();
+    expect(document.activeElement).toBe(search);
+    // Left so, nothing is given.
+    expect(margin(v)).toEqual(['1! 2']);
+    expect(v.dom.querySelector('.line-number-field')).toBeNull();
+  });
+});
+
 describe('what the dialog of the numbers asks', () => {
   it('in text not yet numbered: counted from 1, every paragraph, the cursor`s line the first', () => {
     const v = at(['text: One|', 'text: Two']);
