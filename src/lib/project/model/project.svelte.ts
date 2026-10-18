@@ -48,6 +48,7 @@ import {
   STATUSES,
   type DocumentSettings,
   type KindRecord,
+  type Note,
   type TimelineSettings,
   type LinkRecord,
   type NodeRecord,
@@ -567,10 +568,10 @@ export class Project {
         card && Number.isFinite(card.x) && Number.isFinite(card.y)
           ? { x: card.x, y: card.y }
           : null,
-      notes: (notes.toArray() as unknown[]).filter(
-        (n): n is Thread['notes'][number] =>
-          !!n && typeof n === 'object' && typeof (n as { text?: unknown }).text === 'string',
-      ),
+      notes: (notes.toArray() as unknown[]).flatMap((n) => {
+        const note = noteOf(n);
+        return note ? [note] : [];
+      }),
     });
   }
 
@@ -1064,3 +1065,28 @@ Object.assign(
   passageKindChanges,
   templateChanges,
 );
+
+/**
+ * A note of a thread, from what may be one. What another copy of the
+ * program wrote, an older one or one gone wrong, may lack what a note has:
+ * a note is its text, and of the rest each part is taken where it is of its
+ * type and is else empty, so that what shows a note never meets a part that
+ * is not there.
+ */
+export function noteOf(value: unknown): Note | null {
+  if (!value || typeof value !== 'object') return null;
+  const held = value as Record<string, unknown>;
+  if (typeof held.text !== 'string') return null;
+  const author =
+    held.author && typeof held.author === 'object'
+      ? (held.author as Record<string, unknown>)
+      : {};
+  const edited = str(held.edited);
+  return {
+    id: str(held.id),
+    author: { id: str(author.id), name: str(author.name) },
+    created: str(held.created),
+    ...(edited ? { edited } : {}),
+    text: held.text,
+  };
+}
