@@ -20,6 +20,10 @@ ocr-page-not-drawn = Side { $page } kunne ikke tegnes.
 ocr-picture-unreadable = Bildet kunne ikke leses: { $message }
 ocr-not-made = Tesseract laget ikke { $path }.
 ocr-not-made-said = Tesseract laget ikke { $path }. Den sa: { $message }
+ocr-child-time = Lesingen av «{ $file }» tok lengre tid enn den får, og ble stoppet. Filen kan være skadet, eller laget slik at den ikke kan leses.
+ocr-child-memory = Lesingen av «{ $file }» tok mer minne enn den får, og ble stoppet. Filen kan være skadet, eller laget slik at den ikke kan leses.
+ocr-child-failed = «{ $file }» kunne ikke leses: { $message }
+ocr-child-not-started = «{ $file }» kunne ikke leses, fordi ingen prosess kunne startes for å lese den: { $message }
 ocr-drawing = En tegning (SVG) har ikke noe bilde å lese tekst fra.
 
 ## Å gjøre en PDF søkbar.

@@ -21,6 +21,10 @@ ocr-picture-unreadable = The picture could not be read: { $message }
 ocr-not-made = Tesseract did not make { $path }.
 ocr-not-made-said = Tesseract did not make { $path }. It said: { $message }
 ocr-drawing = A drawing (SVG) has no picture in it to read text from.
+ocr-child-time = Reading “{ $file }” took longer than it may, and was stopped. The file may be damaged, or made in a way that cannot be read.
+ocr-child-memory = Reading “{ $file }” took more memory than it may, and was stopped. The file may be damaged, or made in a way that cannot be read.
+ocr-child-failed = “{ $file }” could not be read: { $message }
+ocr-child-not-started = “{ $file }” could not be read, since no process could be started to read it in: { $message }
 
 ## Making a PDF searchable.
 

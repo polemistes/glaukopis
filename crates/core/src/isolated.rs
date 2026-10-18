@@ -274,6 +274,9 @@ fn task(name: &str) -> Option<Task> {
     match name {
         "pdf-layer" => Some(|input| answer(&crate::ocr::layer::read_here(input)?)),
         "pdf-facts" => Some(|input| answer(&crate::import::pdf::read_here(input))),
+        // The look at a PDF, and the work on its pages (`ocr/child.rs`).
+        "pdf-look" => Some(crate::ocr::child::look_task),
+        "pdf-job" => Some(crate::ocr::child::work_task),
         // For the tests of this module, only where they ask for them.
         "test-sleep" if testing() => Some(|_| {
             std::thread::sleep(Duration::from_secs(600));
@@ -289,11 +292,12 @@ fn task(name: &str) -> Option<Task> {
         "test-echo" if testing() => Some(|input| answer(&std::fs::read_to_string(input).map_err(|e| e.to_string())?)),
         // Tells a line every 20 ms, for ever.
         "test-tell" if testing() => Some(|_| {
-            for n in 0u64.. {
+            let mut n = 0u64;
+            loop {
                 tell(&n.to_string());
+                n += 1;
                 std::thread::sleep(Duration::from_millis(20));
             }
-            Ok(Vec::new())
         }),
         // Tells three lines, and gives what it was given.
         "test-tell-and-give" if testing() => Some(|input| {

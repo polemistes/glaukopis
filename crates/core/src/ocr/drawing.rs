@@ -35,7 +35,7 @@ pub const MOST_DPI: u32 = 600;
 
 /// How the pages are drawn for Tesseract: at what resolution, and whether
 /// in black and white.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Quality {
     /// The dots to the inch asked for; nought where none were, which is 300.
     pub dpi: u32,
@@ -318,7 +318,7 @@ pub fn draw_with_hayro(pdf: &Pdf, index: usize, quality: Quality) -> Result<Draw
 /// The pages of a PDF and their sizes as they are shown, as Poppler's
 /// `pdfinfo` tells them. Nothing, where it is not beside `pdftoppm` or
 /// cannot read the file either.
-fn poppler_sizes(pdftoppm: &Path, file: &Path) -> Option<Vec<(f32, f32)>> {
+pub(crate) fn poppler_sizes(pdftoppm: &Path, file: &Path) -> Option<Vec<(f32, f32)>> {
     let pdfinfo = pdftoppm.with_file_name(if cfg!(windows) { "pdfinfo.exe" } else { "pdfinfo" });
     let out = tools::run(
         &pdfinfo,
