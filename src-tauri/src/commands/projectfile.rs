@@ -50,10 +50,10 @@ pub fn project_file_write(app: AppHandle, state: State<'_, AppState>, request: R
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-struct ReadHead {
-    manifest: Manifest,
+pub struct ReadHead {
+    pub manifest: Manifest,
     /// How many pictures the store did not have.
-    pictures: usize,
+    pub pictures: usize,
 }
 
 /// Reads a project file and takes its pictures into the store. Gives what

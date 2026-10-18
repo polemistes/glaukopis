@@ -88,7 +88,7 @@ fn lock<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
 /// a language: that without the country, `en` for `en-GB`.
 pub fn words_language(language: Option<&str>) -> String {
     let tag = found::normalise(language.filter(|l| !l.trim().is_empty()).unwrap_or("en"));
-    found::primary(&tag).to_owned()
+    found::primary(&tag)
 }
 
 impl Spelling {
@@ -211,7 +211,7 @@ impl Spelling {
         // Own words that cannot be read are set aside by `list`, which the
         // writer is told; the dictionary is used without them. A list that
         // could not even be set aside is said in the log.
-        let own = self.own.list(found::primary(&found.tag)).unwrap_or_else(|e| {
+        let own = self.own.list(&found::primary(&found.tag)).unwrap_or_else(|e| {
             tracing::warn!(%e, "the own words are not used");
             Vec::new()
         });

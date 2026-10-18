@@ -39,6 +39,33 @@ const MINUTE: Duration = Duration::from_secs(60);
 // ---------------------------------------------------------------------------
 // Refusals, as they are told
 
+// The sentences the server says of its own here, besides those of the
+// refusals of the registry and of the files. The client says a refusal in
+// the language of its interface by its kind, or, where the kind does not say
+// all of it, by these very sentences; the test at the end asks the client
+// (the core, which the tests of the server use) for its words for every one
+// of them, so that a sentence reworded here and not there fails it. A new
+// sentence goes into `SENTENCES`.
+const NO_TOKEN: &str = "no token was given";
+const TOO_MANY: &str = "too many attempts have come from this address; try again in a while";
+const PASSWORD_ASKED: &str = "this server asks for a password from those who publish projects on it";
+const PASSWORD_WRONG: &str = "the password is not the one this server asks for";
+const NOT_WHOLE: &str = "the file did not arrive whole";
+const NO_TICKET: &str = "no ticket was given";
+const BAD_TICKET: &str = "the ticket is not valid: it may have been used, or it is too old";
+
+/// Every sentence of this file, with the kind and the status it is sent with.
+#[cfg(test)]
+const SENTENCES: [(&str, StatusCode, &str); 7] = [
+    ("not-admitted", StatusCode::UNAUTHORIZED, NO_TOKEN),
+    ("too-many", StatusCode::TOO_MANY_REQUESTS, TOO_MANY),
+    ("password", StatusCode::UNAUTHORIZED, PASSWORD_ASKED),
+    ("password", StatusCode::UNAUTHORIZED, PASSWORD_WRONG),
+    ("invalid", StatusCode::BAD_REQUEST, NOT_WHOLE),
+    ("not-admitted", StatusCode::UNAUTHORIZED, NO_TICKET),
+    ("not-admitted", StatusCode::UNAUTHORIZED, BAD_TICKET),
+];
+
 #[derive(Debug)]
 pub struct Failure {
     status: StatusCode,
@@ -52,15 +79,11 @@ impl Failure {
     }
 
     fn no_token() -> Self {
-        Failure::new(StatusCode::UNAUTHORIZED, "not-admitted", "no token was given")
+        Failure::new(StatusCode::UNAUTHORIZED, "not-admitted", NO_TOKEN)
     }
 
     fn too_many() -> Self {
-        Failure::new(
-            StatusCode::TOO_MANY_REQUESTS,
-            "too-many",
-            "too many attempts have come from this address; try again in a while",
-        )
+        Failure::new(StatusCode::TOO_MANY_REQUESTS, "too-many", TOO_MANY)
     }
 }
 
@@ -79,7 +102,9 @@ impl From<Refusal> for Failure {
             Refusal::BadCode => (StatusCode::NOT_FOUND, "bad-code"),
             Refusal::Exists => (StatusCode::CONFLICT, "exists"),
             Refusal::Full => (StatusCode::SERVICE_UNAVAILABLE, "full"),
-            Refusal::Invalid(_) => (StatusCode::BAD_REQUEST, "invalid"),
+            Refusal::BadId | Refusal::NoName | Refusal::ManyInvitations | Refusal::NoCollaborator => {
+                (StatusCode::BAD_REQUEST, "invalid")
+            }
             Refusal::Io(e) => {
                 tracing::error!(%e, "the disk could not be written");
                 (StatusCode::INTERNAL_SERVER_ERROR, "server")
@@ -367,11 +392,7 @@ async fn publish(
                 return Err(Failure::new(
                     StatusCode::UNAUTHORIZED,
                     "password",
-                    if given.is_empty() {
-                        "this server asks for a password from those who publish projects on it"
-                    } else {
-                        "the password is not the one this server asks for"
-                    },
+                    if given.is_empty() { PASSWORD_ASKED } else { PASSWORD_WRONG },
                 ));
             }
         }
@@ -673,7 +694,7 @@ async fn store(
     drop(coming);
     let arriving = writing.await.unwrap_or_else(|e| Err(Refused::Io(io::Error::other(e))))?;
     if !whole {
-        return Err(Failure::new(StatusCode::BAD_REQUEST, "invalid", "the file did not arrive whole"));
+        return Err(Failure::new(StatusCode::BAD_REQUEST, "invalid", NOT_WHOLE));
     }
 
     let registry = server.registry.lock().await;
@@ -707,15 +728,10 @@ async fn socket(
     upgrade: WebSocketUpgrade,
 ) -> Response {
     let Some(ticket) = query.get("ticket") else {
-        return Failure::new(StatusCode::UNAUTHORIZED, "not-admitted", "no ticket was given").into_response();
+        return Failure::new(StatusCode::UNAUTHORIZED, "not-admitted", NO_TICKET).into_response();
     };
     let Some(member) = server.tickets.lock().await.redeem(&room, ticket) else {
-        return Failure::new(
-            StatusCode::UNAUTHORIZED,
-            "not-admitted",
-            "the ticket is not valid: it may have been used, or it is too old",
-        )
-        .into_response();
+        return Failure::new(StatusCode::UNAUTHORIZED, "not-admitted", BAD_TICKET).into_response();
     };
     // A message may hold no more than the document may: the first may bring all of it.
     upgrade
@@ -823,6 +839,84 @@ pub fn router(server: Shared) -> Router {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Every refusal of the registry; the match fails to compile when one is added and not listed.
+    fn every_refusal() -> Vec<Refusal> {
+        let all = vec![
+            Refusal::NoRoom,
+            Refusal::NotAdmitted,
+            Refusal::NotOwner,
+            Refusal::BadCode,
+            Refusal::Exists,
+            Refusal::Full,
+            Refusal::BadId,
+            Refusal::NoName,
+            Refusal::ManyInvitations,
+            Refusal::NoCollaborator,
+            Refusal::Io(std::io::Error::other("no space left on the device")),
+        ];
+        for refusal in &all {
+            match refusal {
+                Refusal::NoRoom
+                | Refusal::NotAdmitted
+                | Refusal::NotOwner
+                | Refusal::BadCode
+                | Refusal::Exists
+                | Refusal::Full
+                | Refusal::BadId
+                | Refusal::NoName
+                | Refusal::ManyInvitations
+                | Refusal::NoCollaborator
+                | Refusal::Io(_) => {}
+            }
+        }
+        all
+    }
+
+    /// Every refusal of the files, as `every_refusal`.
+    fn every_refusal_of_files() -> Vec<Refused> {
+        let all = vec![
+            Refused::NoRoom,
+            Refused::NoFile,
+            Refused::BadName,
+            Refused::NotAsNamed,
+            Refused::FileTooLarge(crate::MAX_FILE_BYTES),
+            Refused::FileTooLarge(1_000_000),
+            Refused::RoomFull(crate::MAX_ROOM_BYTES),
+            Refused::Io(std::io::Error::other("no space left on the device")),
+        ];
+        for refused in &all {
+            match refused {
+                Refused::NoRoom
+                | Refused::NoFile
+                | Refused::BadName
+                | Refused::NotAsNamed
+                | Refused::FileTooLarge(_)
+                | Refused::RoomFull(_)
+                | Refused::Io(_) => {}
+            }
+        }
+        all
+    }
+
+    #[test]
+    fn the_client_has_words_for_every_refusal_of_the_server() {
+        let mut failures: Vec<Failure> = SENTENCES.iter().map(|(k, s, m)| Failure::new(*s, k, *m)).collect();
+        failures.extend(every_refusal().into_iter().map(Failure::from));
+        failures.extend(every_refusal_of_files().into_iter().map(Failure::from));
+        for failure in &failures {
+            let words =
+                glaukopis_core::sharing::refusal_in_words(failure.kind, failure.status.as_u16(), &failure.message);
+            assert!(words.is_some(), "the client would pass on in English: {} ({})", failure.message, failure.kind);
+        }
+        // The two refusals of a password are told apart by their words.
+        let said = |message: &str| glaukopis_core::sharing::refusal_in_words("password", 401, message);
+        assert_ne!(said(PASSWORD_ASKED), said(PASSWORD_WRONG));
+        // What the server says of the most it takes reaches the user.
+        let most = Failure::from(Refused::FileTooLarge(crate::MAX_FILE_BYTES));
+        let words = glaukopis_core::sharing::refusal_in_words(most.kind, 413, &most.message).unwrap();
+        assert!(words.contains("50 MB"), "{words}");
+    }
 
     #[test]
     fn attempts_are_counted_for_each_address() {

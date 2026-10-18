@@ -2,11 +2,11 @@
 //! PDF files, and the libraries of Zotero.
 
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex};
 
 use serde::Serialize;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, State};
 
 use glaukopis_core::duplicates;
 use glaukopis_core::i18n::tr;
@@ -16,6 +16,7 @@ use glaukopis_core::library::entry::Draft;
 use glaukopis_core::lookup::{self, Hit, Query, Scope};
 use glaukopis_core::ocr;
 
+use super::work::{self, Count, Work};
 use crate::error::CommandResult;
 use crate::state::AppState;
 
@@ -146,26 +147,6 @@ pub(crate) fn identify(
     Some(Identified { facts, candidate, looked_up, said })
 }
 
-/// The files that are being found out about, by the tickets they were asked
-/// for with, each with what stops it.
-static IDENTIFYING: Mutex<Vec<(String, Arc<AtomicBool>)>> = Mutex::new(Vec::new());
-
-fn identifying() -> std::sync::MutexGuard<'static, Vec<(String, Arc<AtomicBool>)>> {
-    IDENTIFYING.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
-}
-
-/// How far the finding out about PDF files has come, as the interface is told it.
-#[derive(Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct PdfsProgress {
-    ticket: String,
-    /// How many files are done, and of how many.
-    done: usize,
-    total: usize,
-    /// The file that is at hand.
-    name: String,
-}
-
 /// Makes references of PDF files: each is identified, and kept with its
 /// reference. With a ticket, the interface is told how far it has come
 /// (`pdfs-progress`), and it can be stopped: it then fails with the kind
@@ -178,33 +159,18 @@ pub fn import_pdfs(
     ask: Option<bool>,
     ticket: Option<String>,
 ) -> CommandResult<Plan> {
-    let stop = Arc::new(AtomicBool::new(false));
-    if let Some(ticket) = &ticket {
-        identifying().push((ticket.clone(), stop.clone()));
-    }
-    let planned = plan_pdfs(&app, &state, &paths, ask.unwrap_or(true), ticket.as_deref(), &stop);
-    if let Some(ticket) = &ticket {
-        identifying().retain(|(t, _)| t != ticket);
-    }
-    planned
+    let work = Work::begin(ticket);
+    plan_pdfs(&app, &state, &paths, ask.unwrap_or(true), &work)
 }
 
 /// Stops the finding out about PDF files that goes on.
 #[tauri::command(async)]
 pub fn import_pdfs_stop(ticket: String) {
-    for (_, stop) in identifying().iter().filter(|(t, _)| *t == ticket) {
-        stop.store(true, Ordering::Relaxed);
-    }
+    work::stop(&ticket);
 }
 
-fn plan_pdfs(
-    app: &AppHandle,
-    state: &AppState,
-    paths: &[String],
-    ask: bool,
-    ticket: Option<&str>,
-    stop: &AtomicBool,
-) -> CommandResult<Plan> {
+fn plan_pdfs(app: &AppHandle, state: &AppState, paths: &[String], ask: bool, work: &Work) -> CommandResult<Plan> {
+    let stop = &*work.stop;
     let stopped = || glaukopis_core::Error::Refused {
         kind: glaukopis_core::export::tools::STOPPED,
         message: tr!("core-import-pdfs-stopped"),
@@ -222,15 +188,8 @@ fn plan_pdfs(
     let at_hand: Mutex<Vec<String>> = Mutex::new(Vec::new());
     let done = AtomicUsize::new(0);
     let tell = |name: String| {
-        if let Some(ticket) = ticket {
-            let told = PdfsProgress {
-                ticket: ticket.to_owned(),
-                done: done.load(Ordering::Relaxed),
-                total: paths.len(),
-                name,
-            };
-            let _ = app.emit("pdfs-progress", told);
-        }
+        let told = Count { done: done.load(Ordering::Relaxed), total: paths.len(), name };
+        work.tell(app, work::PDFS_PROGRESS, told);
     };
     std::thread::scope(|s| {
         let working: Vec<_> = (0..AT_ONCE.min(paths.len()))

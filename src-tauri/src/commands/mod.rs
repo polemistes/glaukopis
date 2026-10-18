@@ -20,6 +20,7 @@ pub mod system;
 pub mod tables;
 pub mod templates;
 pub mod words;
+pub mod work;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 

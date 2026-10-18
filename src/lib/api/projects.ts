@@ -190,6 +190,13 @@ export interface ProjectFileManifest {
   app: string;
 }
 
+/** What a project file says before its document, as `project_file_read` gives it. */
+export interface ProjectFileHead {
+  manifest: ProjectFileManifest;
+  /** How many of its pictures the store did not have. */
+  pictures: number;
+}
+
 /** A project file as it was read: its pictures are in the store already. */
 export interface ProjectFile {
   manifest: ProjectFileManifest;
@@ -283,10 +290,7 @@ export async function projectFileRead(path: string): Promise<ProjectFile> {
     at += 4 + n;
     return bytes.subarray(at - n, at);
   };
-  const head = JSON.parse(new TextDecoder().decode(part())) as {
-    manifest: ProjectFileManifest;
-    pictures: number;
-  };
+  const head = JSON.parse(new TextDecoder().decode(part())) as ProjectFileHead;
   return { ...head, state: part() };
 }
 

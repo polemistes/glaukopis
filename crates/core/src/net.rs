@@ -14,16 +14,97 @@ pub fn user_agent() -> String {
     format!("Glaukopis/{} (research tool; +https://github.com/polemistes/glaukopis)", env!("CARGO_PKG_VERSION"))
 }
 
-/// The hosts that answer a program that does not say who uses it one
-/// request at a time: Crossref, and doi.org, which hands Crossref's DOIs on
-/// to it. Their requests wait for each other, from whichever thread.
-const ONE_AT_A_TIME: &[&str] = &["api.crossref.org", "data.crossref.org", "doi.org", "dx.doi.org"];
+/// A service that says how often a program may ask it, by the hosts it
+/// answers at. This is the one table of how the services are paced: a host
+/// that is not in it is asked as often as it is asked.
+///
+/// Each service is asked one request at a time, from whichever thread the
+/// requests come, as the owner wants of every service that is asked without
+/// an address to reach the person at: the next request waits until the one
+/// before has been answered and the gap after it has passed.
+struct Service {
+    /// The hosts, with the port where it is not the usual one, as [`host`] gives them.
+    hosts: &'static [&'static str],
+    /// The least time from the end of one request to the start of the next.
+    gap: Duration,
+    /// A longer gap after a request whose path and query begin so: a search,
+    /// of which the service allows fewer.
+    searching: Option<(&'static str, Duration)>,
+}
 
-/// Held while a request to one of `ONE_AT_A_TIME` is under way, with when the last ended.
-static ONE_AT_A_TIME_GATE: Mutex<Option<Instant>> = Mutex::new(None);
+const fn millis(ms: u64) -> Duration {
+    Duration::from_millis(ms)
+}
 
-/// The least time between two requests to those hosts: Crossref takes five a second.
-const ONE_AT_A_TIME_GAP: Duration = Duration::from_millis(220);
+const SERVICES: [Service; 8] = [
+    // Crossref takes five records a second and one search, one at a time,
+    // from those who give no address to be reached at; doi.org hands
+    // Crossref's DOIs on to it, so the two are one service here.
+    Service {
+        hosts: &["api.crossref.org", "doi.org", "dx.doi.org"],
+        gap: millis(250),
+        searching: Some(("/works?", millis(1000))),
+    },
+    Service { hosts: &["data.crosscite.org"], gap: millis(250), searching: None },
+    // arXiv asks for no more than one request in three seconds.
+    Service { hosts: &["export.arxiv.org"], gap: millis(3000), searching: None },
+    // PubMed allows three a second without a key.
+    Service { hosts: &["eutils.ncbi.nlm.nih.gov"], gap: millis(400), searching: None },
+    // The catalogues of libraries say nothing; two a second is polite.
+    Service { hosts: &["sru.k10plus.de"], gap: millis(500), searching: None },
+    Service { hosts: &["bibsys.alma.exlibrisgroup.com"], gap: millis(500), searching: None },
+    Service { hosts: &["services.dnb.de"], gap: millis(500), searching: None },
+    Service { hosts: &["lx2.loc.gov:210"], gap: millis(500), searching: None },
+];
+
+/// Held while a request to the service of the same place in `SERVICES` is
+/// under way: the earliest the next request may begin.
+static GATES: [Mutex<Option<Instant>>; SERVICES.len()] = [const { Mutex::new(None) }; SERVICES.len()];
+
+/// The place in `SERVICES` of the service that answers at `url`.
+fn service_of(url: &str) -> Option<usize> {
+    let host = host(url);
+    SERVICES.iter().position(|s| s.hosts.contains(&host.as_str()))
+}
+
+/// Whether requests to `url` are paced: for the test that every service
+/// the lookups ask is in the table.
+#[cfg(test)]
+pub(crate) fn paced(url: &str) -> bool {
+    service_of(url).is_some()
+}
+
+/// How long the service at `index` is left alone after a request to `url`.
+fn gap_after(index: usize, url: &str) -> Duration {
+    let service = &SERVICES[index];
+    let path = url.split("://").nth(1).unwrap_or(url);
+    let path = path.find(['/', '?']).map_or("", |at| &path[at..]);
+    match service.searching {
+        Some((begins, gap)) if path.starts_with(begins) => gap,
+        _ => service.gap,
+    }
+}
+
+/// Asks with the gate held: waits until the gate says the service may be
+/// asked, asks, and sets when it may be asked next, `gap` after the answer
+/// or, when the service asked to be left alone longer, after that. What was
+/// asked comes back with the wait the service asked for.
+fn through_gate<T>(
+    gate: &Mutex<Option<Instant>>,
+    gap: Duration,
+    ask: impl FnOnce() -> (T, Option<Duration>),
+) -> (T, Option<Duration>) {
+    let mut ready = gate.lock().unwrap_or_else(|p| p.into_inner());
+    if let Some(at) = *ready {
+        let now = Instant::now();
+        if at > now {
+            std::thread::sleep(at - now);
+        }
+    }
+    let (answer, wait) = ask();
+    *ready = Some(Instant::now() + wait.map_or(gap, |w| w.max(gap)));
+    (answer, wait)
+}
 
 /// How often a request is tried again when the service says it is asked too
 /// often (429) or is too busy (503), and the longest it is waited for.
@@ -143,33 +224,38 @@ impl Client {
     }
 
     /// Gets a page. `accept` says which form is wanted, where the service
-    /// offers several. A host that takes one request at a time is asked one
-    /// at a time; a service that says it is asked too often or is too busy
-    /// is asked again after the wait it asks for, a few times.
+    /// offers several. A service in `SERVICES` is asked one request at a
+    /// time and no oftener than it allows; a service that says it is asked
+    /// too often or is too busy is asked again after the wait it asks for,
+    /// a few times. The gate of the service is not held through that wait,
+    /// but it says to every request to the service that it must wait too.
     pub fn get(&self, url: &str, accept: Option<&str>) -> Result<Response> {
-        let gated = ONE_AT_A_TIME.contains(&host(url).as_str());
-        let mut gate = gated.then(|| ONE_AT_A_TIME_GATE.lock().unwrap_or_else(|p| p.into_inner()));
+        let service = service_of(url);
         let mut attempt = 0;
         loop {
             if self.stopped() {
                 // No one waits for the answer: it is not asked for.
                 return Err(Error::Network(tr!("network-failed", host = host(url))));
             }
-            if let Some(last) = gate.as_deref().copied().flatten() {
-                let since = last.elapsed();
-                if since < ONE_AT_A_TIME_GAP {
-                    std::thread::sleep(ONE_AT_A_TIME_GAP - since);
+            let ask = || {
+                let (response, retry_after) = self.get_once(url, accept);
+                let busy = matches!(&response, Ok(r) if r.status == 429 || r.status == 503);
+                let wait = busy.then(|| wait_before(attempt, retry_after.as_deref()));
+                (response, wait)
+            };
+            let (response, wait) = match service {
+                Some(index) => {
+                    let (response, wait) = through_gate(&GATES[index], gap_after(index, url), ask);
+                    // The gate makes the next attempt wait as long as was asked.
+                    (response, wait.map(|_| Duration::ZERO))
                 }
-            }
-            let (response, retry_after) = self.get_once(url, accept);
-            if let Some(g) = gate.as_mut() {
-                **g = Some(Instant::now());
-            }
-            let busy = matches!(&response, Ok(r) if r.status == 429 || r.status == 503);
-            if !busy || attempt >= RETRIES || self.stopped() {
+                None => ask(),
+            };
+            let Some(wait) = wait else { return response };
+            if attempt >= RETRIES || self.stopped() {
                 return response;
             }
-            std::thread::sleep(wait_before(attempt, retry_after.as_deref()));
+            std::thread::sleep(wait);
             attempt += 1;
         }
     }
@@ -313,6 +399,61 @@ mod tests {
         assert_eq!(wait_before(0, None), Duration::from_secs(1));
         assert_eq!(wait_before(2, Some("soon")), Duration::from_secs(4));
         assert_eq!(wait_before(0, Some("3600")), LONGEST_WAIT);
+    }
+
+    #[test]
+    fn a_service_is_known_by_its_hosts() {
+        let doi = service_of("https://doi.org/10.1086/599247");
+        assert!(doi.is_some());
+        assert_eq!(service_of("https://api.crossref.org/works/10.1086/599247/transform"), doi);
+        assert_ne!(service_of("https://data.crosscite.org/10.5061/dryad.1"), doi);
+        assert!(service_of("http://lx2.loc.gov:210/lcdb?version=1.1").is_some());
+        assert_eq!(service_of("https://raw.githubusercontent.com/citation-style-language/styles/master/apa.csl"), None);
+    }
+
+    #[test]
+    fn a_search_leaves_the_service_alone_longer_than_a_record() {
+        let crossref = service_of("https://api.crossref.org/works").unwrap();
+        assert_eq!(gap_after(crossref, "https://api.crossref.org/works?query.bibliographic=x&rows=5"), millis(1000));
+        assert_eq!(gap_after(crossref, "https://api.crossref.org/works/10.1/x/transform"), millis(250));
+        assert_eq!(gap_after(crossref, "https://doi.org/10.1/x"), millis(250));
+        let arxiv = service_of("https://export.arxiv.org/api/query?id_list=1706.03762").unwrap();
+        assert_eq!(gap_after(arxiv, "https://export.arxiv.org/api/query?id_list=1706.03762"), millis(3000));
+    }
+
+    #[test]
+    fn a_service_is_asked_one_request_at_a_time_and_no_oftener_than_it_allows() {
+        use std::sync::atomic::AtomicUsize;
+        let gate = Mutex::new(None);
+        let under_way = AtomicUsize::new(0);
+        let most = AtomicUsize::new(0);
+        let start = Instant::now();
+        std::thread::scope(|s| {
+            for _ in 0..3 {
+                s.spawn(|| {
+                    through_gate(&gate, millis(40), || {
+                        let now = under_way.fetch_add(1, Ordering::SeqCst) + 1;
+                        most.fetch_max(now, Ordering::SeqCst);
+                        std::thread::sleep(millis(10));
+                        under_way.fetch_sub(1, Ordering::SeqCst);
+                        ((), None)
+                    });
+                });
+            }
+        });
+        assert_eq!(most.load(Ordering::SeqCst), 1, "never two requests at once");
+        // Three answers of 10 ms with two gaps of 40 ms between them.
+        assert!(start.elapsed() >= millis(110));
+    }
+
+    #[test]
+    fn a_wait_the_service_asks_for_holds_for_every_request_to_it() {
+        let gate = Mutex::new(None);
+        let (_, wait) = through_gate(&gate, millis(10), || ((), Some(millis(80))));
+        assert_eq!(wait, Some(millis(80)));
+        let start = Instant::now();
+        through_gate(&gate, millis(10), || ((), None));
+        assert!(start.elapsed() >= millis(70), "the next request waited for what the service asked");
     }
 
     #[test]

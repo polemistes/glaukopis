@@ -13,8 +13,6 @@
 //! editors, makes keys that are not keys and puts the book of a chapter in
 //! `journal`.
 
-use std::time::Duration;
-
 use serde_json::Value;
 
 use crate::bib::names::Person;
@@ -24,9 +22,7 @@ use crate::tr;
 use crate::written::identifiers::isbn;
 
 use super::csl::{self, Converted};
-use super::{
-    Hit, Outcome, failure, pace, text, xml_child as child, xml_child_text as child_text, xml_text as text_within,
-};
+use super::{Hit, Outcome, failure, text, xml_child as child, xml_child_text as child_text, xml_text as text_within};
 
 const CSL_JSON: &str = "application/vnd.citationstyles.csl+json";
 const UNIXREF: &str = "application/vnd.crossref.unixref+xml";
@@ -62,7 +58,7 @@ fn ask(client: &Client, url: &str, accept: &str) -> Result<Answer> {
 
 /// The addresses at which a form of the record may be had: the resolver, and
 /// the two large agencies themselves, for when the resolver cannot be reached.
-fn addresses(doi: &str) -> [(&'static str, String); 3] {
+pub(crate) fn addresses(doi: &str) -> [(&'static str, String); 3] {
     let path = path(doi);
     [
         ("doi.org", format!("https://doi.org/{path}")),
@@ -77,7 +73,6 @@ pub(crate) fn lookup(client: &Client, doi: &str) -> Result<Outcome> {
     let mut denied = 0;
     let addresses = addresses(doi);
     for (service, url) in &addresses {
-        pace(service, Duration::from_millis(250));
         match ask(client, url, CSL_JSON) {
             Ok(Answer::Record(body)) => {
                 found = Some((*service, url.as_str(), body));
@@ -109,7 +104,6 @@ pub(crate) fn lookup(client: &Client, doi: &str) -> Result<Outcome> {
     };
 
     if converted.in_book && converted.agency == Some("Crossref") {
-        pace(service, Duration::from_millis(250));
         match ask(client, url, UNIXREF) {
             Ok(Answer::Record(xml)) => {
                 if !with_book(&mut converted, &xml, doi) {

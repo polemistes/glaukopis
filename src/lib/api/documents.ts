@@ -512,8 +512,14 @@ export const documentPreviewWhole = (request: DocumentRequest, pages: number[]) 
   );
 
 /** Pages of the document that was made last for a key, as they come into view. */
+/** Pages of a preview made before: how many it has, and those asked for. */
+export interface PagesOf {
+  count: number;
+  pages: PreviewPage[];
+}
+
 export const documentPreviewPages = (key: string, pages: number[]) =>
-  call<{ count: number; pages: PreviewPage[] }>('document_preview_pages', { key, pages });
+  call<PagesOf>('document_preview_pages', { key, pages });
 
 /** Stops what is being made for a key: the preview was closed. */
 export const documentPreviewStop = (key: string) => call<void>('document_preview_stop', { key });

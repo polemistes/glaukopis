@@ -264,9 +264,29 @@ fn kind(named: &str, status: u16) -> &'static str {
     }
 }
 
-/// What the user is told, in whole sentences.
+/// What the user is told, in whole sentences. A refusal the application
+/// has no words for is passed on in the server's English, and said in the
+/// log; the test of the server (in its api.rs) holds every refusal it may
+/// give to having words here, so that this happens only with a server newer
+/// than the application.
 fn explain(kind: &str, from_server: &str, host: &str) -> String {
-    match kind {
+    if let Some(said) = in_words(kind, from_server, host) {
+        return said;
+    }
+    tracing::warn!(kind, said = from_server, "the server refused in words the application has none for");
+    let mut text = from_server.to_owned();
+    if let Some(first) = text.get(..1) {
+        text = first.to_uppercase() + &text[1..];
+    }
+    if !text.ends_with(['.', '!', '?']) {
+        text.push('.');
+    }
+    text
+}
+
+/// A refusal in the words of the interface, where the application has them.
+fn in_words(kind: &str, from_server: &str, host: &str) -> Option<String> {
+    Some(match kind {
         "no-room" => tr!("core-sharing-no-room"),
         "not-admitted" => tr!("core-sharing-not-admitted"),
         "not-owner" => tr!("core-sharing-not-owner"),
@@ -279,21 +299,25 @@ fn explain(kind: &str, from_server: &str, host: &str) -> String {
         "password" => tr!("core-sharing-password-wrong"),
         "too-many" => tr!("core-sharing-too-many"),
         "no-file" => tr!("core-sharing-no-file"),
-        _ if from_server.is_empty() => tr!("core-sharing-server-error", host = host),
-        _ => {
-            if let Some(said) = in_own_words(from_server) {
-                return said;
+        // What failed on the server itself (its disk) is the server's to
+        // mend: the user is told that it failed, the log what it said.
+        "server" => {
+            if !from_server.is_empty() {
+                tracing::warn!(%host, said = from_server, "the server failed");
             }
-            let mut text = from_server.to_owned();
-            if let Some(first) = text.get(..1) {
-                text = first.to_uppercase() + &text[1..];
-            }
-            if !text.ends_with(['.', '!', '?']) {
-                text.push('.');
-            }
-            text
+            tr!("core-sharing-server-error", host = host)
         }
-    }
+        _ if from_server.is_empty() => tr!("core-sharing-server-error", host = host),
+        _ => return in_own_words(from_server),
+    })
+}
+
+/// What the user is told of a refusal as the server sends it (the `error`
+/// it names, the status, and its `message`), where the application has
+/// words of its own for it; None where it would pass the server's English
+/// on. For the test of the server, which asks this of every refusal it may give.
+pub fn refusal_in_words(error: &str, status: u16, message: &str) -> Option<String> {
+    in_words(kind(error, status), message, "the server")
 }
 
 /// What the server says in its own words, which are English, said in the
@@ -308,6 +332,10 @@ fn in_own_words(from_server: &str) -> Option<String> {
         "there are fifty open invitations already; withdraw some" => tr!("core-sharing-many-invitations"),
         "there is no such collaborator" => tr!("core-sharing-no-collaborator"),
         "the file did not arrive whole" => tr!("core-sharing-not-whole"),
+        "a file is named by the SHA-256 of what it holds: 64 characters, each of 0 to 9 or a to f" => {
+            tr!("core-sharing-bad-file-name")
+        }
+        "what was sent is not what its name says it is: its SHA-256 is another" => tr!("core-sharing-not-as-named"),
         _ => {
             if let Some(most) = most("the file is larger than this server takes: one file may hold ", " at the most") {
                 tr!("core-sharing-file-too-large", most = most)
@@ -678,6 +706,11 @@ mod tests {
         assert!(explain("bad-code", "the code is not valid", "h").starts_with("The code is not valid."));
         assert_eq!(explain("invalid", "the project has no name", "h"), "The project has no name.");
         assert_eq!(explain("server", "", "example.org"), "example.org answered with an error.");
+        // What the server says of its disk is for the log, not for the user.
+        assert_eq!(
+            explain("server", "the server could not write to its disk: No space left on device", "example.org"),
+            "example.org answered with an error."
+        );
         assert_eq!(kind("something new", 401), "not-admitted");
         assert_eq!(kind("something new", 500), "server");
     }
@@ -694,6 +727,8 @@ mod tests {
         );
         assert_eq!(in_own_words("the file did not arrive whole").as_deref(), Some("The file did not arrive whole."));
         assert_eq!(in_own_words("something new"), None);
+        assert_eq!(refusal_in_words("invalid", 400, "something new"), None);
+        assert!(refusal_in_words("whatever", 404, "").is_some(), "known by its status");
         assert_eq!(explain("invalid", "something new", "h"), "Something new.");
     }
 }

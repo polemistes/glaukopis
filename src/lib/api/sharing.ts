@@ -55,14 +55,25 @@ export interface Room {
  */
 export const FINAL = ['no-room', 'not-admitted'];
 
+/** What was found in what was pasted as an invitation: the server, and the code. */
+export interface ReadInvitation {
+  server: string | null;
+  code: string | null;
+}
+
+/** Where the socket of a shared project is opened: good once, and for a minute. */
+export interface SharingTicket {
+  url: string;
+}
+
 export const sharingServer = (server: string) => call<ServerInfo>('sharing_server', { server });
 export const sharingReadInvitation = (text: string) =>
-  call<{ server: string | null; code: string | null }>('sharing_read_invitation', { text });
+  call<ReadInvitation>('sharing_read_invitation', { text });
 export const sharingPublish = (id: string, server: string, password: string | null) =>
   call<ProjectInfo>('sharing_publish', { id, server, password });
 export const sharingJoin = (server: string, code: string, name: string) =>
   call<ProjectInfo>('sharing_join', { server, code, name });
-export const sharingTicket = (id: string) => call<{ url: string }>('sharing_ticket', { id });
+export const sharingTicket = (id: string) => call<SharingTicket>('sharing_ticket', { id });
 export const sharingRoom = (id: string) => call<Room>('sharing_room', { id });
 export const sharingInvite = (
   id: string,

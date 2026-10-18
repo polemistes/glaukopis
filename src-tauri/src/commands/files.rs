@@ -1,11 +1,11 @@
 //! Commands for the files of the library and their folders (ADR 0043).
 
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex, MutexGuard};
 
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, State};
 
 use glaukopis_core::i18n::tr;
 use glaukopis_core::library::export::{ExportSelection, Exported};
@@ -13,6 +13,7 @@ use glaukopis_core::library::files::{self, FileFolder};
 use glaukopis_core::library::{FileView, Library, TakenIn, attachments};
 use glaukopis_core::pictures::Picture;
 
+use super::work::{self, Work};
 use crate::error::CommandResult;
 use crate::state::AppState;
 
@@ -138,8 +139,8 @@ fn pairs_of(pairs: Vec<FileAndReference>) -> Vec<(String, String)> {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FilesRemoved {
-    files: usize,
-    folders: usize,
+    pub files: usize,
+    pub folders: usize,
 }
 
 /// The folders that removing these files would leave empty, for asking
@@ -239,7 +240,7 @@ pub fn files_identify(
     ask: Option<bool>,
     ticket: Option<String>,
 ) -> CommandResult<Vec<Proposal>> {
-    let work = Ticket::begin(ticket);
+    let work = Work::begin(ticket);
     let (entries, index, wanted) = {
         let mut library = state.library();
         library.refresh()?;
@@ -260,7 +261,7 @@ pub fn files_identify(
         (library.entries().to_vec(), library.duplicates_index().clone(), wanted)
     };
     let ask = ask.unwrap_or(true);
-    let tell = Mutex::new(work.teller(&app));
+    let tell = Mutex::new(work.counter(&app, work::FILES_PROGRESS));
     let told = |done: usize, name: &str| {
         let mut tell = tell.lock().unwrap_or_else(|p| p.into_inner());
         (*tell)(done, wanted.len(), name);
@@ -282,7 +283,7 @@ pub fn files_identify(
                         loop {
                             let i = next.fetch_add(1, Ordering::Relaxed);
                             let Some(file) = wanted.get(i) else { break };
-                            if work.stop.load(Ordering::Relaxed) {
+                            if work.stopped() {
                                 break;
                             }
                             at_hand.lock().unwrap_or_else(|p| p.into_inner()).push(file.name.clone());
@@ -290,7 +291,7 @@ pub fn files_identify(
                             let known = known_of(&state, file, ask, &work.stop);
                             let proposal = proposals::propose(&entries, &index, known);
                             // What was cut short by the stop may be less than the file would tell.
-                            if !work.stop.load(Ordering::Relaxed) {
+                            if !work.stopped() {
                                 found.lock().unwrap_or_else(|p| p.into_inner())[i] = Some(proposal);
                             }
                             let finished = done.fetch_add(1, Ordering::Relaxed) + 1;
@@ -341,66 +342,10 @@ fn known_of(state: &AppState, file: &Wanted, ask: bool, stop: &AtomicBool) -> Kn
 
 // ---- taking in ----
 
-#[derive(Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct FilesProgress {
-    ticket: String,
-    done: usize,
-    total: usize,
-    /// The file at hand.
-    name: String,
-}
-
-/// The work on files that goes on, by the tickets it was asked for with,
-/// each with what stops it.
-static GOING: Mutex<Vec<(String, Arc<AtomicBool>)>> = Mutex::new(Vec::new());
-
-fn going() -> MutexGuard<'static, Vec<(String, Arc<AtomicBool>)>> {
-    GOING.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
-}
-
-/// What stops the work with a ticket, and forgets it when the work is done.
-pub(crate) struct Ticket {
-    ticket: Option<String>,
-    pub stop: Arc<AtomicBool>,
-}
-
-impl Ticket {
-    pub(crate) fn begin(ticket: Option<String>) -> Self {
-        let stop = Arc::new(AtomicBool::new(false));
-        if let Some(t) = &ticket {
-            going().push((t.clone(), stop.clone()));
-        }
-        Ticket { ticket, stop }
-    }
-
-    /// Tells the interface how far the work has come, as `files-progress`.
-    pub(crate) fn teller<'a>(&'a self, app: &'a AppHandle) -> impl FnMut(usize, usize, &str) + 'a {
-        move |done, total, name| {
-            if let Some(ticket) = &self.ticket {
-                let _ = app.emit(
-                    "files-progress",
-                    FilesProgress { ticket: ticket.clone(), done, total, name: name.to_owned() },
-                );
-            }
-        }
-    }
-}
-
-impl Drop for Ticket {
-    fn drop(&mut self) {
-        if let Some(t) = &self.ticket {
-            going().retain(|(x, _)| x != t);
-        }
-    }
-}
-
 /// Stops the work on files with this ticket: taking in, finding out, exporting.
 #[tauri::command(async)]
 pub fn files_stop(ticket: String) {
-    for (_, stop) in going().iter().filter(|(t, _)| *t == ticket) {
-        stop.store(true, Ordering::Relaxed);
-    }
+    work::stop(&ticket);
 }
 
 /// Takes files and folders into the library, into `folder`: a folder with
@@ -416,14 +361,19 @@ pub fn files_take_in(
     structure: Option<bool>,
     ticket: Option<String>,
 ) -> CommandResult<TakenIn> {
-    let work = Ticket::begin(ticket);
+    let work = Work::begin(ticket);
     let dir = state.library().dir().to_owned();
     if let Some(folder) = &folder {
         state.library().files.folder(folder)?;
     }
     let paths: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
-    let (taken, problems) =
-        files::store_paths(&dir, &paths, structure.unwrap_or(true), &mut work.teller(&app), &work.stop);
+    let (taken, problems) = files::store_paths(
+        &dir,
+        &paths,
+        structure.unwrap_or(true),
+        &mut work.counter(&app, work::FILES_PROGRESS),
+        &work.stop,
+    );
     let mut library = state.library();
     let mut out = library.enter_taken(&taken, folder.as_deref())?;
     out.problems.splice(0..0, problems);
@@ -500,7 +450,7 @@ pub fn files_export(
     with_bib: Option<bool>,
     ticket: Option<String>,
 ) -> CommandResult<Exported> {
-    let work = Ticket::begin(ticket);
+    let work = Work::begin(ticket);
     let library = {
         let mut library = state.library();
         library.refresh()?;
@@ -510,7 +460,7 @@ pub fn files_export(
         &selection,
         Path::new(&into),
         with_bib.unwrap_or(false),
-        &mut work.teller(&app),
+        &mut work.counter(&app, work::FILES_PROGRESS),
         &work.stop,
     )?)
 }
