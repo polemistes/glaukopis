@@ -16,6 +16,8 @@ export interface Choice {
   kind: 'beginning' | 'session' | 'named';
   /** The name given to the moment, where it has one. */
   name?: string;
+  /** Which naming of a moment it is, where it was named: two can share a name and a time. */
+  id?: string;
   /** Who worked in the session that begins there. */
   by?: string[];
 }
@@ -29,6 +31,18 @@ export interface Source {
   choices(): Promise<Choice[]>;
   /** Turns the history of the project on, where that can be done from here; whether it was. */
   turnOn: (() => Promise<boolean>) | null;
+}
+
+/**
+ * Whether two choices are the same moment to review from. The moments are
+ * asked for anew each time they are offered, and the history answers each
+ * with a fresh snapshot, so a choice is known by what it is: its kind, and
+ * the naming or the time of its moment.
+ */
+export function sameChoice(a: Choice | null, b: Choice): boolean {
+  if (!a || a.kind !== b.kind) return false;
+  if (a.kind === 'named' && (a.id !== undefined || b.id !== undefined)) return a.id === b.id;
+  return a.moment.time === b.moment.time && a.name === b.name;
 }
 
 /** What a project without a history offers. */
@@ -66,7 +80,7 @@ export function sourceFor(project: Project, id: string): Source {
         if (moments[i].time <= begins.time) return;
         out.push({ moment: moments[i], kind: 'session', by: s.person ? [s.person] : [] });
       });
-      for (const n of named) out.push({ moment: n.moment, kind: 'named', name: n.name });
+      for (const n of named) out.push({ moment: n.moment, kind: 'named', name: n.name, id: n.id });
       return out.sort((a, b) => a.moment.time - b.moment.time);
     },
     turnOn: async () => {

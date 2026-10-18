@@ -20,7 +20,7 @@
   import { tooltip } from '$lib/ui/tooltip';
   import type { Change } from './grouping';
   import { colour, type Review } from './review.svelte';
-  import type { Choice } from './source';
+  import { sameChoice, type Choice } from './source';
   import { branchText } from '$lib/org/of-project';
   import OrgDiff from '$lib/org/OrgDiff.svelte';
   import { branchTextOf } from '$lib/org/past';
@@ -86,7 +86,7 @@
         .map((c): MenuItem => ({
           label: sinceOf(c),
           hint: c.kind === 'named' ? when(c.moment.time) : undefined,
-          checked: review.chosen?.moment.snapshot === c.moment.snapshot,
+          checked: sameChoice(review.chosen, c),
           action: () => review.choose(c),
         })),
       { kind: 'separator' },
