@@ -99,7 +99,11 @@
 >
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="editor" bind:this={root} {onkeydown}>
-    {#each items as item, i (item.id)}
+    <!-- Keyed by place, not by the reference: one work may be cited twice
+         in a citation, at two places in it ("Nagy 1979, 12; Nagy 1979, 30"),
+         and a key met twice throws. Items are only ever taken out or added
+         at the end, and each shows its item and nothing of its own. -->
+    {#each items as item, i (i)}
       <CitationItem
         reference={item.id}
         bind:said={items[i]}
