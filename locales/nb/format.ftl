@@ -170,6 +170,7 @@ format-kind-text-note = som skriften og avsnittene i oppsettet har det
 format-kind-as-base = som grunnlaget
 format-kind-resolved = Slik det blir: { $look }
 format-kind-resolved-nothing = Slik det blir: som teksten rundt
+format-kind-resolved-failed = Hvordan det blir, lot seg ikke regne ut: { $reason }
 format-as-the-base-is = Som grunnlaget ({ $value })
 format-kind-based-on = bygger på { $base }
 format-as-the-base = Som grunnlaget

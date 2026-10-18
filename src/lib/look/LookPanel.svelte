@@ -45,7 +45,7 @@
   import Settings from '$lib/ui/settings/Settings.svelte';
   import { rowsOf, type Choices, type Provenance, type Row } from '$lib/ui/settings/rows';
   import Spinner from '$lib/ui/Spinner.svelte';
-  import { describeError, notifyOk } from '$lib/ui/toast.svelte';
+  import { describeError, notifyError, notifyOk } from '$lib/ui/toast.svelte';
   import {
     changesBetween,
     countOf,
@@ -240,7 +240,11 @@
         .then((loaded) => {
           if (id === choice.template) template = loaded;
         })
-        .catch(() => {}),
+        .catch((error) => {
+          // The panel goes on without what the template brings; the log says why.
+          console.error(`the template ${id} could not be read for the Look panel`, error);
+          if (id === choice.template) template = null;
+        }),
     );
   });
 
@@ -341,7 +345,9 @@
       documents.forgetFormat(gone.id);
       await documents.reload();
       const who = inherited.from.get('format') ?? at;
-      setOwnAt(who, { format: gone.basedOn ?? 'manuscript' });
+      // Back to the layout it was made from; one made from nothing gives the
+      // element nothing of its own, so it takes the writer's usual again.
+      setOwnAt(who, { format: gone.basedOn });
     } catch (e) {
       error = describeError(e) ?? t('format-delete-failed');
     }
@@ -424,7 +430,8 @@
   $effect(() => {
     fontsList()
       .then((list) => (fonts = list))
-      .catch(() => {});
+      // The usual fonts are still offered; the log says why the others are not.
+      .catch((error) => console.error('the fonts of this computer could not be listed', error));
   });
   const usual = [
     'Times New Roman',
@@ -955,6 +962,8 @@
   // the base looks, the kinds each is based on and what the layout says;
   // again a moment after each change (ADR 0040).
   let resolved = $state.raw<KindLooks>({});
+  /** Why the looks could not be resolved, the last time they were asked for. */
+  let resolvedProblem = $state<string | null>(null);
   const ownKinds = $derived<OwnKind[]>(
     passageKinds.map(({ id, name, family, basedOn, look }) => ({
       id,
@@ -970,8 +979,16 @@
     const kinds = ownKinds;
     const timer = setTimeout(() => {
       formatKindLooks(JSON.parse(snapshot), kinds).then(
-        (looks) => (resolved = looks),
-        () => {},
+        (looks) => {
+          resolved = looks;
+          resolvedProblem = null;
+        },
+        (error) => {
+          // Not the looks of the layout before: each kind says it could not be worked out.
+          console.error('the looks of the kinds could not be resolved', error);
+          resolved = {};
+          resolvedProblem = describeError(error) ?? String(error);
+        },
       );
     }, 150);
     return () => clearTimeout(timer);
@@ -1136,6 +1153,10 @@
       {@const words = resolvedWords(look, k.family)}
       <p class="resolved" data-resolved>
         {words ? t('format-kind-resolved', { look: words }) : t('format-kind-resolved-nothing')}
+      </p>
+    {:else if resolvedProblem}
+      <p class="resolved problem" data-resolved>
+        {t('format-kind-resolved-failed', { reason: resolvedProblem })}
       </p>
     {/if}
     <Settings target={f} rows={kindRows.get(k.id) ?? []} {from} />
@@ -1443,7 +1464,8 @@
                   <button
                     type="button"
                     class="link"
-                    onclick={() => openPath(s.url).catch(() => {})}
+                    onclick={() =>
+                      openPath(s.url).catch((e) => notifyError(t('common-link-open-failed'), e))}
                   >
                     {s.url}
                     <ExternalLink size={11} />
@@ -1765,6 +1787,9 @@
     font-size: var(--text-sm);
     color: var(--ink-3);
     line-height: 1.5;
+  }
+  .resolved.problem {
+    color: var(--danger);
   }
   .hint.bad {
     color: var(--danger);
