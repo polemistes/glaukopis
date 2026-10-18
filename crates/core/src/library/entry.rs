@@ -379,6 +379,9 @@ impl Draft {
             None => draft.entry_type = raw.entry_type.clone(),
         }
 
+        // The fields whose value came under an alias, which a value under the
+        // proper name replaces wherever it stands in the entry.
+        let mut by_alias: std::collections::HashSet<String> = std::collections::HashSet::new();
         for (name, value) in &raw.fields {
             if name == FIELD_ZOTERO {
                 // What the entry is in Zotero goes with it wherever it is
@@ -393,7 +396,9 @@ impl Draft {
             if name.starts_with("glaukopis-") {
                 continue;
             }
-            let name = schema.field_aliases.get(name).cloned().unwrap_or_else(|| name.clone());
+            let alias = schema.field_aliases.get(name);
+            let under_alias = alias.is_some();
+            let name = alias.cloned().unwrap_or_else(|| name.clone());
             let text = if crate::bib::is_verbatim_field(&name) {
                 value.trim().to_owned()
             } else {
@@ -404,9 +409,14 @@ impl Draft {
             }
             if is_name_field(&name) && !matches!(name.as_str(), "shortauthor" | "shorteditor" | "sortname") {
                 draft.names.insert(name, parse_list(&text));
-            } else {
+            } else if under_alias {
                 // A value given under the proper name wins over one given under an alias.
-                draft.fields.entry(name).or_insert(text);
+                if !draft.fields.contains_key(&name) {
+                    by_alias.insert(name.clone());
+                    draft.fields.insert(name, text);
+                }
+            } else if by_alias.remove(&name) || !draft.fields.contains_key(&name) {
+                draft.fields.insert(name, text);
             }
         }
 
@@ -537,6 +547,14 @@ mod tests {
         assert_eq!(d.get("date"), Some("2001-03"));
         assert!(d.get("year").is_none());
         assert_eq!(d.names["author"][0].family, "Muñoz");
+    }
+
+    #[test]
+    fn the_proper_name_of_a_field_wins_over_its_alias_wherever_it_stands() {
+        assert_eq!(draft("@article{x, journal={A}, journaltitle={B}}").get("journaltitle"), Some("B"));
+        assert_eq!(draft("@article{x, journaltitle={B}, journal={A}}").get("journaltitle"), Some("B"));
+        assert_eq!(draft("@article{x, journal={A}}").get("journaltitle"), Some("A"));
+        assert_eq!(draft("@book{x, address={Oslo}, location={Bergen}}").get("location"), Some("Bergen"));
     }
 
     #[test]
