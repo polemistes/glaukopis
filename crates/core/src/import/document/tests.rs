@@ -763,6 +763,12 @@ fn locators_in_their_parts() {
     assert_eq!(parts(" {ii, A}, as said"), ("ii, A".into(), String::new(), "as said".into()));
     assert_eq!(parts(", part of it"), (String::new(), String::new(), "part of it".into()));
     assert_eq!(parts(""), (String::new(), String::new(), String::new()));
+    // Letters whose lower case is longer or shorter than they are (a Kelvin
+    // sign for the K, as OCR or a copy can give it): the term is cut where
+    // it ends in the text as written.
+    assert_eq!(parts(", \u{212a}AP. 5"), ("5".into(), "chapter".into(), String::new()));
+    assert_eq!(parts(", \u{212a}ap. 5, as said"), ("5".into(), "chapter".into(), "as said".into()));
+    assert_eq!(parts(" {\u{212a}AP. 5}, as said"), ("5".into(), "chapter".into(), "as said".into()));
 }
 
 #[test]
