@@ -92,6 +92,7 @@ core-import-document-stopped = The reading was stopped.
 core-import-pdfs-stopped = Finding out what the files are was stopped. Nothing was added.
 core-import-document-kind = “{ $file }” is not of a kind that can be brought in as a document. Those that can are Word (DOCX), OpenDocument (ODT), Markdown, HTML, LaTeX, RTF, EPUB, Org, reStructuredText, Typst and plain text.
 core-import-document-too-large = “{ $file }” is larger than 50 MB, which is more than can be brought in as a document.
+core-import-document-too-deep = “{ $file }” is nested too deep to be brought in: its parts lie within one another deeper than can be read, some hundreds of levels. A page saved from a web site may be saved again as plain HTML, or its text copied into a new document.
 # The kind is the kind of file: Word (DOCX), plain text.
 core-import-document-unreadable = “{ $file }” could not be read as { $kind }. It may be damaged, or of another kind than its name says. Pandoc, which reads it, said: { $message }
 core-import-document-pandoc-unreadable = what Pandoc made of “{ $file }” could not be read: { $error }

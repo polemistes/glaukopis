@@ -450,9 +450,7 @@ pub fn read(
                 )),
                 other => other,
             })?;
-            let value: Value = serde_json::from_slice(&json).map_err(|e| {
-                Error::invalid(tr!("core-import-document-pandoc-unreadable", file = &file, error = e.to_string()))
-            })?;
+            let value = pandoc_value(&json, &file)?;
             convert_with(&value, &stem, &prepared.properties, &prepared.made, keys, &mut take_in, format.keeps_lines())
         }
     };
@@ -472,6 +470,56 @@ pub fn read(
     imported.kind = format.name();
     imported.pictures = taken;
     Ok(imported)
+}
+
+/// The most levels of Pandoc's JSON that are read: some 170 `div`s within
+/// one another, or 250 quotations or emphases, since Pandoc writes each
+/// level as two or three. A page saved from a web site nests 40 to 60 `div`s
+/// around its text, past the 128 levels the JSON parser reads by itself.
+/// Deeper than this, the reading of the document, by recursion, would want
+/// more stack than the thread it runs on has (2 MB); measured on a build
+/// for debugging, whose frames are the largest, emphasis within emphasis
+/// overflows at half as deep again.
+const DEEPEST_JSON: usize = 512;
+
+/// How deep JSON nests, its arrays and objects counted, strings gone past.
+fn json_depth(json: &[u8]) -> usize {
+    let (mut depth, mut deepest) = (0usize, 0usize);
+    let (mut within_string, mut escaped) = (false, false);
+    for &b in json {
+        if within_string {
+            match b {
+                _ if escaped => escaped = false,
+                b'\\' => escaped = true,
+                b'"' => within_string = false,
+                _ => {}
+            }
+            continue;
+        }
+        match b {
+            b'"' => within_string = true,
+            b'[' | b'{' => {
+                depth += 1;
+                deepest = deepest.max(depth);
+            }
+            b']' | b'}' => depth = depth.saturating_sub(1),
+            _ => {}
+        }
+    }
+    deepest
+}
+
+/// What Pandoc made of `file`, read from its JSON as deep as it nests, to
+/// [`DEEPEST_JSON`].
+pub(crate) fn pandoc_value(json: &[u8], file: &str) -> Result<Value> {
+    if json_depth(json) > DEEPEST_JSON {
+        return Err(Error::invalid(tr!("core-import-document-too-deep", file = file)));
+    }
+    let mut reader = serde_json::Deserializer::from_slice(json);
+    // The depth is bounded above, by what the reading after it can take.
+    reader.disable_recursion_limit();
+    let value = Value::deserialize(&mut reader).and_then(|v| reader.end().map(|()| v));
+    value.map_err(|e| Error::invalid(tr!("core-import-document-pandoc-unreadable", file = file, error = e.to_string())))
 }
 
 /// Takes pictures out of the store again: those that were taken in for a

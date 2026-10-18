@@ -4207,6 +4207,7 @@ dependencies = [
  "cff-parser",
  "encoding_rs",
  "euclid 0.20.14",
+ "flate2",
  "log",
  "lopdf",
  "postscript",

@@ -763,6 +763,12 @@ fn locators_in_their_parts() {
     assert_eq!(parts(" {ii, A}, as said"), ("ii, A".into(), String::new(), "as said".into()));
     assert_eq!(parts(", part of it"), (String::new(), String::new(), "part of it".into()));
     assert_eq!(parts(""), (String::new(), String::new(), String::new()));
+    // Letters whose lower case is longer or shorter than they are (a Kelvin
+    // sign for the K, as OCR or a copy can give it): the term is cut where
+    // it ends in the text as written.
+    assert_eq!(parts(", \u{212a}AP. 5"), ("5".into(), "chapter".into(), String::new()));
+    assert_eq!(parts(", \u{212a}ap. 5, as said"), ("5".into(), "chapter".into(), "as said".into()));
+    assert_eq!(parts(" {\u{212a}AP. 5}, as said"), ("5".into(), "chapter".into(), "as said".into()));
 }
 
 #[test]
@@ -2003,4 +2009,77 @@ fn pictures_that_cannot_be_taken_in() {
     );
     // What was said of them is kept.
     assert_eq!(kinds(&read.sections[0].blocks), vec!["paragraph", "paragraph", "paragraph"]);
+}
+
+/// Divs within divs, as a page saved from a web site nests them, `depth`
+/// deep around a paragraph: Pandoc writes each as three levels of JSON.
+fn nested_divs(depth: usize) -> String {
+    nested(depth, |block| format!(r#"{{"t":"Div","c":[["",[],[]],[{block}]]}}"#))
+}
+
+fn nested(depth: usize, around: impl Fn(&str) -> String) -> String {
+    let mut block = para("Deep within.");
+    for _ in 0..depth {
+        block = around(&block);
+    }
+    doc("{}", &[block])
+}
+
+/// As deep as may be read, in each way a document nests: it is read on a
+/// thread of the size the application reads documents on.
+#[test]
+fn a_document_nested_as_deep_as_may_be_is_read_on_a_small_stack() {
+    // Each level of the document as so many levels of JSON; around a
+    // paragraph, which with the document is five.
+    type Around = fn(&str) -> String;
+    let ways: [(usize, Around); 3] = [
+        (3, |b| format!(r#"{{"t":"Div","c":[["",[],[]],[{b}]]}}"#)),
+        (2, |b| format!(r#"{{"t":"BlockQuote","c":[{b}]}}"#)),
+        (3, |b| format!(r#"{{"t":"BulletList","c":[[{b}]]}}"#)),
+    ];
+    let mut emphasis = r#"{"t":"Str","c":"Deep within."}"#.to_owned();
+    for _ in 0..(DEEPEST_JSON - 5) / 2 {
+        emphasis = format!(r#"{{"t":"Emph","c":[{emphasis}]}}"#);
+    }
+    let emphasis = doc("{}", &[format!(r#"{{"t":"Para","c":[{emphasis}]}}"#)]);
+    let all = ways.into_iter().map(|(levels, around)| nested((DEEPEST_JSON - 5) / levels, around));
+    for (i, json) in all.chain([emphasis]).enumerate() {
+        assert!(json_depth(json.as_bytes()) <= DEEPEST_JSON, "{i}: {}", json_depth(json.as_bytes()));
+        assert!(json_depth(json.as_bytes()) > DEEPEST_JSON - 3, "{i}: {}", json_depth(json.as_bytes()));
+        std::thread::Builder::new()
+            .stack_size(2 << 20)
+            .spawn(move || {
+                let value = pandoc_value(json.as_bytes(), "page.html").unwrap();
+                let imported = convert(&value, "page", &Properties::default(), &none, &mut a_picture);
+                assert!(serde_json::to_string(&imported.sections).unwrap().contains("Deep within."));
+            })
+            .unwrap()
+            .join()
+            .unwrap();
+    }
+}
+
+/// A document nested as deep as saved web pages are, and deeper, is read,
+/// on a thread of the size the application reads documents on; one nested
+/// past all reason is refused in plain words, not with the parser's.
+#[test]
+fn a_document_nested_deep_is_read_and_one_past_reason_refused() {
+    let read = |depth: usize| {
+        std::thread::Builder::new()
+            .stack_size(2 << 20)
+            .spawn(move || {
+                let value = pandoc_value(nested_divs(depth).as_bytes(), "page.html")?;
+                Ok::<_, Error>(convert(&value, "page", &Properties::default(), &none, &mut a_picture))
+            })
+            .unwrap()
+            .join()
+            .unwrap()
+    };
+    for depth in [45, 60, 160] {
+        let imported = read(depth).unwrap_or_else(|e| panic!("{depth}: {e}"));
+        let text = serde_json::to_string(&imported.sections).unwrap();
+        assert!(text.contains("Deep within."), "{depth}");
+    }
+    let refused = read(2000).unwrap_err().to_string();
+    assert!(refused.contains("nested too deep"), "{refused}");
 }

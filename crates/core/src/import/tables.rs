@@ -153,10 +153,23 @@ fn decode(bytes: &[u8]) -> String {
 pub fn from_text(name: &str, bytes: &[u8], sign: Option<char>) -> Sheet {
     let text = decode(bytes);
     let sign = sign.unwrap_or_else(|| sign_of(&text));
-    match records(&text, sign, MAX_ROWS * 5) {
-        Some(rows) => tidy(name, rows),
-        None => Sheet { name: name.to_string(), rows: Vec::new(), problem: too_large(MAX_ROWS * 5 + 1, 0) },
+    let refused = |problem| Sheet { name: name.to_string(), rows: Vec::new(), problem: Some(problem) };
+    match records(&text, sign, MAX_ROWS * 5, MAX_COLUMNS * 5) {
+        Ok(rows) => tidy(name, rows),
+        Err(Over::Rows) => refused(too_large(MAX_ROWS * 5 + 1, 0).unwrap_or_default()),
+        Err(Over::Columns) => refused(tr!(
+            "core-import-table-columns",
+            columns = tr!("core-import-table-more-than", count = MAX_COLUMNS * 5),
+            most = MAX_COLUMNS
+        )),
     }
+}
+
+/// What a text has more of than is read of it.
+#[derive(Debug, PartialEq)]
+enum Over {
+    Rows,
+    Columns,
 }
 
 /// The sign that parts the values: the one of which every line has as many.
@@ -227,9 +240,11 @@ fn records_counted(text: &str, lines: usize) -> Vec<[usize; 3]> {
 
 /// The rows of a text whose values are parted by a sign. A value may stand
 /// within quotation marks, and may then hold the sign, line breaks, and the
-/// quotation mark itself, written twice. Nothing, where there are more rows
-/// than `most`.
-fn records(text: &str, sign: char, most: usize) -> Option<Vec<Vec<String>>> {
+/// quotation mark itself, written twice. Given up where there are more rows
+/// than `most`, or more values in a row than `widest`: a line of signs
+/// without end, as a damaged export can be, would otherwise be made into
+/// millions of values before the columns are counted.
+fn records(text: &str, sign: char, most: usize, widest: usize) -> std::result::Result<Vec<Vec<String>>, Over> {
     let mut rows: Vec<Vec<String>> = Vec::new();
     let mut row: Vec<String> = Vec::new();
     let mut value = String::new();
@@ -271,6 +286,9 @@ fn records(text: &str, sign: char, most: usize) -> Option<Vec<Vec<String>>> {
             was_quoted = true;
         } else if c == sign {
             keep(&mut row, &mut value, &mut was_quoted);
+            if row.len() > widest {
+                return Err(Over::Columns);
+            }
         } else if c == '\n' || c == '\r' {
             if c == '\r' && chars.peek() == Some(&'\n') {
                 chars.next();
@@ -278,7 +296,7 @@ fn records(text: &str, sign: char, most: usize) -> Option<Vec<Vec<String>>> {
             keep(&mut row, &mut value, &mut was_quoted);
             rows.push(std::mem::take(&mut row));
             if rows.len() > most {
-                return None;
+                return Err(Over::Rows);
             }
         } else if was_quoted && c.is_whitespace() {
             // Room between the closing mark and the sign.
@@ -290,7 +308,7 @@ fn records(text: &str, sign: char, most: usize) -> Option<Vec<Vec<String>>> {
         keep(&mut row, &mut value, &mut was_quoted);
         rows.push(row);
     }
-    Some(rows)
+    Ok(rows)
 }
 
 // ---- sheets ----
@@ -651,6 +669,17 @@ mod tests {
         let huge: String = (0..MAX_ROWS * 6).map(|i| format!("{i}\n")).collect();
         let (_d, path) = file("huge.csv", huge.as_bytes());
         assert!(read(&path).unwrap_err().to_string().starts_with("The table has more than 10000 rows."));
+
+        // Nor one line of values without end, as a damaged export can be:
+        // it is given up at five times the most columns, before every value
+        // of it is made.
+        let endless = "1,".repeat(MAX_COLUMNS * 50);
+        let (_e, path) = file("endless.csv", endless.as_bytes());
+        assert!(
+            read(&path).unwrap_err().to_string().starts_with("The table has more than 500 columns."),
+            "{}",
+            read(&path).unwrap_err()
+        );
     }
 
     #[test]

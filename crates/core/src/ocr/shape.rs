@@ -219,6 +219,14 @@ fn digits(text: &str) -> bool {
     (1..=4).contains(&text.len()) && text.bytes().all(|b| b.is_ascii_digit())
 }
 
+/// A line cut at the white space before its last word: what stands before
+/// that space, and the word. The space may be any of Unicode's, and a
+/// no-break space is two bytes, a thin space three, so the cut is made at
+/// the space's own width, never a byte after where it begins.
+fn last_word_apart(text: &str) -> Option<(&str, &str)> {
+    text.rsplit_once(char::is_whitespace)
+}
+
 /// Whether a text is a number alone, in figures or in Roman numerals: what
 /// stands in a margin beside a line.
 fn number_alone(text: &str) -> bool {
@@ -782,14 +790,13 @@ fn margin_numbers(segment: &Segment, file: &File) -> Vec<Numbered> {
         let trimmed = text.trim_end();
         // Figures at the end, beyond the right edge.
         if line.right > segment.right + file.size
-            && let Some(at) = trimmed.rfind(char::is_whitespace)
-            && digits(&trimmed[at + 1..])
-            && has_letters(&trimmed[..at])
-            && let room = before(line, trimmed.len() - trimmed[at + 1..].len(), file)
+            && let Some((head, number)) = last_word_apart(trimmed)
+            && digits(number)
+            && has_letters(head)
+            && let room = before(line, trimmed.len() - number.len(), file)
             && !matches!(room, Before::Close)
         {
-            let number = &trimmed[at + 1..];
-            let mut rest = cut(line, 0, trimmed[..at].trim_end().len());
+            let mut rest = cut(line, 0, head.trim_end().len());
             rest.right = if let Before::Apart(end, _) = room {
                 end
             } else {
@@ -901,12 +908,11 @@ fn numbers_inside(out: &mut [Numbered], gone: &mut [bool], width: f32, lefts: &[
         let room = apart.max(0.25 * (line.right - line.left));
         let text = &line.text;
         let trimmed = text.trim_end();
-        if let Some(at) = trimmed.rfind(char::is_whitespace)
-            && digits(&trimmed[at + 1..])
-            && has_letters(&trimmed[..at])
+        if let Some((head, number)) = last_word_apart(trimmed)
+            && digits(number)
+            && has_letters(head)
         {
-            let number = &trimmed[at + 1..];
-            let mut rest = cut(line, 0, trimmed[..at].trim_end().len());
+            let mut rest = cut(line, 0, head.trim_end().len());
             let guess = line.left + rest.text.chars().count() as f32 * width;
             let end = match before(line, trimmed.len() - number.len(), file) {
                 Before::Apart(end, _) => Some(end),
@@ -1037,17 +1043,16 @@ fn numbers_flush(out: &mut [Numbered], gone: &[bool], lines: &[Line], width: f32
             continue;
         }
         let trimmed = line.text.trim_end();
-        let Some(at) = trimmed.rfind(char::is_whitespace) else { continue };
-        let number = &trimmed[at + 1..];
+        let Some((head, number)) = last_word_apart(trimmed) else { continue };
         let size = file.key(line).size;
         if !digits(number)
-            || !has_letters(&trimmed[..at])
+            || !has_letters(head)
             || !column.iter().any(|(right, s)| *s == size && (right - line.right).abs() < 0.5 * file.size)
         {
             continue;
         }
         let Ok(value) = number.parse() else { continue };
-        let mut rest = cut(line, 0, trimmed[..at].trim_end().len());
+        let mut rest = cut(line, 0, head.trim_end().len());
         let guess = line.left + rest.text.chars().count() as f32 * width;
         rest.right = guess.min(line.right - (number.len() + 1) as f32 * width).max(line.left + width);
         numbers.push((i, value, Some((rest, number.to_owned()))));
@@ -2197,6 +2202,38 @@ mod tests {
             assert!(lines[4].0.right < 400.0);
             // Once, on one page: the body's.
             assert_eq!(styles.len(), 1);
+        }
+    }
+
+    /// A space wider than a byte before the last word of a line (the no-break
+    /// space French puts before `?` and `»`, LaTeX's `~`, a thin space) is
+    /// a space like any other, before a number in the margin, a number
+    /// within the edges, or a word.
+    #[test]
+    fn a_space_of_more_than_one_byte_before_the_last_word_is_a_space() {
+        for space in ['\u{a0}', '\u{2009}', '\u{202f}', '\u{3000}'] {
+            let mut page = numbered(true);
+            for l in &mut page.lines {
+                if let Some((text, n)) = l.text.rsplit_once(' ')
+                    && (n == "5" || n == "10")
+                {
+                    l.text = format!("{text}{space}{n}");
+                }
+            }
+            let (pieces, _) = shape(vec![page]);
+            let Piece::KeptLines { lines, .. } = &pieces[0][1] else { panic!("{:#?}", pieces[0]) };
+            let numbers: Vec<(usize, &str)> =
+                lines.iter().enumerate().filter_map(|(i, l)| Some((i, l.1.as_deref()?))).collect();
+            assert_eq!(numbers, [(4, "5"), (9, "10")], "{space:?}");
+
+            let mut pen = Pen::new();
+            pen.text(NOVEL[3], 11.0, 11.0, true).space(13.2);
+            let asked = format!("Pourquoi{space}?");
+            let seen = format!("voir p.{space}12");
+            pen.lines(&[&asked, &seen, "et ainsi de suite."], LEFT, 11.0);
+            let (pieces, _) = shape(vec![pen.page()]);
+            let all = all_text(&pieces);
+            assert!(all.contains(&asked) && all.contains(&seen), "{space:?}: {all}");
         }
     }
 

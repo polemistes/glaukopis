@@ -228,6 +228,52 @@ pub(crate) fn too_large(doc: &Document, number: u32, stored_limit: usize) -> boo
     false
 }
 
+/// The content of a stream unpacked, where it comes to no more than `left`
+/// bytes; nothing where it would come to more, or is packed in a way not
+/// unpacked here. It is for what is unpacked in the application's own
+/// process, where no limit of the process stands guard: Flate is unpacked
+/// as far as the limit and no further, kept as far as it went where the
+/// stream is broken, as the PDF library keeps it; ASCII85 comes to at most
+/// four bytes for each it has and is unpacked by the library. LZW, which
+/// can unpack to thousands of times its size and cannot be stopped midway
+/// in the library, and filters with a predictor, which no content of a
+/// page has in practice, are not unpacked.
+pub(crate) fn unpacked_within(stream: &pdf_text::Stream, left: u64) -> Option<Vec<u8>> {
+    use std::io::Read;
+    let filters: Vec<&[u8]> = match stream.dict.get(b"Filter") {
+        Err(_) => Vec::new(),
+        Ok(Object::Name(name)) => vec![name.as_slice()],
+        Ok(Object::Array(list)) => list.iter().map(|f| f.as_name().ok()).collect::<Option<_>>()?,
+        Ok(_) => return None,
+    };
+    if stream.dict.has(b"DecodeParms") && !filters.is_empty() {
+        return None;
+    }
+    let mut data = stream.content.clone();
+    for filter in filters {
+        data = match filter {
+            b"FlateDecode" => {
+                let mut out = Vec::new();
+                let inflated = flate2::read::ZlibDecoder::new(data.as_slice()).take(left + 1).read_to_end(&mut out);
+                if inflated.is_err() && out.is_empty() && data.len() > 2 {
+                    // A broken checksum, as in some encrypted files: as raw deflate after the header.
+                    let _ = flate2::read::DeflateDecoder::new(&data[2..]).take(left + 1).read_to_end(&mut out);
+                }
+                out
+            }
+            b"ASCII85Decode" => {
+                let alone = pdf_text::Stream::new(lopdf::dictionary! { "Filter" => "ASCII85Decode" }, data);
+                alone.decompressed_content().ok()?
+            }
+            _ => return None,
+        };
+        if data.len() as u64 > left {
+            return None;
+        }
+    }
+    (data.len() as u64 <= left).then_some(data)
+}
+
 /// What was read of the text of a PDF. It is carried as JSON from the
 /// process that reads it (`isolated.rs`).
 #[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -465,14 +511,27 @@ fn over_letter(mark: &str, before: &str) -> String {
     .to_owned()
 }
 
+/// The farthest from the origin a place on a page is carried, in points:
+/// some hundred times the largest page there is.
+const FARTHEST: f64 = 1e6;
+
+/// A place or a size on a page as the layer carries it: within
+/// [`FARTHEST`], and nought for one that is no number. The layer crosses
+/// from the process that reads it as JSON, which has no number for an
+/// infinity, and a matrix of a broken file can scale a letter beyond what
+/// an f32 holds; one such letter would lose the text of the whole file.
+fn on_page(v: f64) -> f32 {
+    if v.is_nan() { 0.0 } else { v.clamp(-FARTHEST, FARTHEST) as f32 }
+}
+
 impl Gatherer {
     fn line_for(&mut self, x: f64, baseline: f64, size: f64) {
-        let top = (self.top - baseline - size) as f32;
-        let bottom = (self.top - baseline) as f32;
+        let top = on_page(self.top - baseline - size);
+        let bottom = on_page(self.top - baseline);
         self.lines.push(Line {
             text: String::new(),
-            left: x as f32,
-            right: x as f32,
+            left: on_page(x),
+            right: on_page(x),
             top,
             bottom,
             ..Default::default()
@@ -521,7 +580,7 @@ impl Gatherer {
         }
         let advance = width * font_size.abs() * stretch;
         let reach = x + direction.0 * advance;
-        let (right, bottom) = (reach as f32, (self.top - y) as f32);
+        let (right, bottom) = (on_page(reach), on_page(self.top - y));
         if new_line {
             self.line_for(x, y, size);
         } else if back && let Some(parts) = self.parts.last_mut() {
@@ -549,9 +608,9 @@ impl Gatherer {
             run.translated.push_str(shown);
         }
         let line = self.lines.last_mut().expect("there is a line");
-        line.left = line.left.min(x as f32);
+        line.left = line.left.min(on_page(x));
         line.right = line.right.max(right);
-        line.top = line.top.min(bottom - size as f32);
+        line.top = line.top.min(bottom - on_page(size));
         line.bottom = line.bottom.max(bottom);
         if !mark {
             self.begins = false;
@@ -672,7 +731,7 @@ fn runs_of(mut parts: Vec<Part>) -> Vec<PartRun> {
         if let Some(end) = reach
             && part.left > end
         {
-            runs[0].gap = Some((end as f32, part.left as f32));
+            runs[0].gap = Some((on_page(end), on_page(part.left)));
         }
         reach = Some(reach.map_or(part.right, |r| r.max(part.right)));
         out.extend(runs);
@@ -747,7 +806,7 @@ fn page_lines(doc: &Document, number: u32) -> Option<PageRead> {
         Ok(Err(e)) => tracing::debug!(%e, number, "a page of the PDF could not be read to its end"),
         Err(_) => tracing::debug!(number, "a page of the PDF could not be read to its end"),
     }
-    let size = (gatherer.width as f32, gatherer.top as f32);
+    let size = (on_page(gatherer.width), on_page(gatherer.top));
     let Gatherer { lines, parts, named, fonts, mut schemes, maps, translated_fonts, font_counts, .. } = gatherer;
     let mut out_lines = Vec::new();
     let mut out_translated = Vec::new();
@@ -812,10 +871,21 @@ fn page_lines(doc: &Document, number: u32) -> Option<PageRead> {
 // The numbers of the pages in print
 // ---------------------------------------------------------------------------
 
+/// The most letters a number of a page is written in: past them, it is
+/// written in figures, as a Roman numeral past 3999 is. No book gets near;
+/// a file that asks for a billionth page in letters would have a string of
+/// millions of letters for each of its pages.
+const MOST_LETTERS: usize = 8;
+
 /// A number in letters, as PDF numbers pages so: a to z, then aa to zz.
 fn letters(n: usize) -> String {
-    let letter = char::from(b'a' + ((n.max(1) - 1) % 26) as u8);
-    std::iter::repeat_n(letter, (n.max(1) - 1) / 26 + 1).collect()
+    let n = n.max(1);
+    let count = (n - 1) / 26 + 1;
+    if count > MOST_LETTERS {
+        return n.to_string();
+    }
+    let letter = char::from(b'a' + ((n - 1) % 26) as u8);
+    std::iter::repeat_n(letter, count).collect()
 }
 
 /// How a range of pages is numbered: from its first page, in a style, with
@@ -830,7 +900,7 @@ struct Numbering {
 
 impl Numbering {
     fn label(&self, index: usize) -> String {
-        let n = self.start + index - self.from;
+        let n = self.start.saturating_add(index - self.from);
         let number = match self.style {
             Some(b'D') => n.to_string(),
             Some(b'R') => roman::of(u32::try_from(n).unwrap_or(u32::MAX)).to_uppercase(),
@@ -844,15 +914,23 @@ impl Numbering {
 }
 
 /// The ranges of the number tree of `/PageLabels`: its `/Nums`, and those
-/// of its kids. A tree that is broken gives what could be read of it.
-fn numberings(doc: &Document, node: &Object, into: &mut Vec<Numbering>, depth: usize) {
+/// of its kids. A tree that is broken gives what could be read of it; a
+/// node named again, by a kid that names its parent or by two kids that
+/// name the same, is gone through once (`seen`), or a tree of a few objects
+/// would be walked billions of times.
+fn numberings(doc: &Document, node: &Object, into: &mut Vec<Numbering>, depth: usize, seen: &mut HashSet<ObjectId>) {
+    if let Object::Reference(id) = node
+        && !seen.insert(*id)
+    {
+        return;
+    }
     let Some(node) = doc.dereference(node).ok().and_then(|(_, o)| o.as_dict().ok()) else { return };
     if depth > 16 {
         return;
     }
     if let Ok(kids) = node.get(b"Kids").and_then(Object::as_array) {
         for kid in kids {
-            numberings(doc, kid, into, depth + 1);
+            numberings(doc, kid, into, depth + 1, seen);
         }
     }
     let Ok(nums) = node.get(b"Nums").and_then(Object::as_array) else { return };
@@ -977,17 +1055,30 @@ fn named_destinations(doc: &Document) -> HashMap<Vec<u8>, Object> {
             out.insert(name.clone(), dest.clone());
         }
     }
-    if let Some(tree) = catalog.get(b"Names").ok().and_then(dict).and_then(|n| n.get(b"Dests").ok()).and_then(dict) {
-        name_tree(doc, tree, &mut out, 0);
+    if let Some(tree) = catalog.get(b"Names").ok().and_then(dict).and_then(|n| n.get(b"Dests").ok()) {
+        name_tree(doc, tree, &mut out, 0, &mut HashSet::new());
     }
     out
 }
 
-/// The pairs of a name tree: its `/Names`, and those of its kids.
-fn name_tree(doc: &Document, node: &pdf_text::Dictionary, into: &mut HashMap<Vec<u8>, Object>, depth: usize) {
+/// The pairs of a name tree: its `/Names`, and those of its kids. A node
+/// named again is gone through once, as in [`numberings`].
+fn name_tree(
+    doc: &Document,
+    node: &Object,
+    into: &mut HashMap<Vec<u8>, Object>,
+    depth: usize,
+    seen: &mut HashSet<ObjectId>,
+) {
     if depth > OUTLINE_DEEPEST || into.len() >= OUTLINE_MOST {
         return;
     }
+    if let Object::Reference(id) = node
+        && !seen.insert(*id)
+    {
+        return;
+    }
+    let Some(node) = doc.dereference(node).ok().and_then(|(_, o)| o.as_dict().ok()) else { return };
     if let Ok(names) = node.get(b"Names").and_then(Object::as_array) {
         for pair in names.chunks(2) {
             if let [Object::String(name, _), dest] = pair {
@@ -997,9 +1088,7 @@ fn name_tree(doc: &Document, node: &pdf_text::Dictionary, into: &mut HashMap<Vec
     }
     if let Ok(kids) = node.get(b"Kids").and_then(Object::as_array) {
         for kid in kids {
-            if let Some(kid) = doc.dereference(kid).ok().and_then(|(_, o)| o.as_dict().ok()) {
-                name_tree(doc, kid, into, depth + 1);
-            }
+            name_tree(doc, kid, into, depth + 1, seen);
         }
     }
 }
@@ -1009,7 +1098,7 @@ fn name_tree(doc: &Document, node: &pdf_text::Dictionary, into: &mut HashMap<Vec
 fn labels(doc: &Document, pages: usize) -> Vec<String> {
     let mut ranges = Vec::new();
     if let Ok(tree) = doc.catalog().and_then(|c| c.get(b"PageLabels")) {
-        numberings(doc, tree, &mut ranges, 0);
+        numberings(doc, tree, &mut ranges, 0, &mut HashSet::new());
     }
     ranges.sort_by_key(|r| r.from);
     (0..pages)
@@ -1216,6 +1305,44 @@ mod tests {
         assert_eq!(back, layer);
     }
 
+    /// Text drawn at a place too far for the numbers the layer carries (a
+    /// scale of 10^40 here) is carried with the rest, not given up whole
+    /// because JSON has no number for infinity.
+    #[test]
+    fn text_drawn_beyond_all_measure_crosses_as_json() {
+        use lopdf::{Stream, dictionary};
+        let content = b"BT /F1 12 Tf 72 700 Td (Near) Tj ET\n\
+            q 100000000000000000000.0 0 0 100000000000000000000.0 0 0 cm \
+            100000000000000000000.0 0 0 100000000000000000000.0 0 0 cm \
+            BT /F1 12 Tf 10 10 Td (Far) Tj ET Q\n";
+        let mut doc = Document::with_version("1.5");
+        let pages = doc.new_object_id();
+        let font = doc.add_object(dictionary! { "Type" => "Font", "Subtype" => "Type1", "BaseFont" => "Helvetica" });
+        let stream = doc.add_object(Stream::new(lopdf::Dictionary::new(), content.to_vec()));
+        let page = doc.add_object(dictionary! {
+            "Type" => "Page",
+            "Parent" => pages,
+            "MediaBox" => vec![0.into(), 0.into(), 612.into(), 792.into()],
+            "Resources" => dictionary! { "Font" => dictionary! { "F1" => font } },
+            "Contents" => stream,
+        });
+        doc.objects.insert(
+            pages,
+            Object::Dictionary(dictionary! { "Type" => "Pages", "Kids" => vec![page.into()], "Count" => 1 }),
+        );
+        let catalog = doc.add_object(dictionary! { "Type" => "Catalog", "Pages" => pages });
+        doc.trailer.set("Root", catalog);
+        let mut bytes = Vec::new();
+        doc.save_to(&mut bytes).unwrap();
+
+        let layer = read(Arc::new(bytes), Duration::from_secs(30));
+        let lines = layer.pages[0].as_ref().expect("the page is read");
+        assert!(lines.iter().any(|l| l.text == "Near"), "{lines:?}");
+        let json = serde_json::to_vec(&layer).unwrap();
+        let back: Layer = serde_json::from_slice(&json).expect("it crosses");
+        assert_eq!(back.pages[0].as_ref().unwrap().len(), lines.len());
+    }
+
     #[test]
     fn the_outline_a_file_carries_of_its_headings() {
         let pdf = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../e2e/fixtures/structure.pdf");
@@ -1308,6 +1435,67 @@ mod tests {
         // Without a tree the pages are counted.
         doc.catalog_mut().unwrap().remove(b"PageLabels");
         assert_eq!(labels(&doc, 3), vec!["1", "2", "3"]);
+    }
+
+    /// Letters far on, as a broken or hostile file may ask for, are given in
+    /// figures, as Roman numerals past 3999 are, not as a string of millions
+    /// of letters; and a start at the end of the numbers does not overflow.
+    #[test]
+    fn a_page_label_of_letters_far_on_is_given_in_figures() {
+        assert_eq!(letters(26 * 8), "zzzzzzzz");
+        assert_eq!(letters(26 * 8 + 1), "209");
+        let far = Numbering { from: 0, style: Some(b'a'), prefix: String::new(), start: 1_000_000_000 };
+        assert_eq!(far.label(0), "1000000000");
+        let farthest = Numbering { from: 2, style: Some(b'A'), prefix: "P-".into(), start: usize::MAX };
+        assert_eq!(farthest.label(5), format!("P-{}", usize::MAX));
+    }
+
+    /// A tree of the numbers of pages, or of names, whose kids name the same
+    /// node again and again, or itself, is gone through once a node, not
+    /// once a path through it.
+    #[test]
+    fn a_tree_whose_kids_name_themselves_is_gone_through_once() {
+        use lopdf::dictionary;
+        let mut doc = Document::with_version("1.7");
+        let pages = doc.new_object_id();
+        let page = doc.add_object(dictionary! { "Type" => "Page", "Parent" => pages });
+        doc.objects.insert(
+            pages,
+            Object::Dictionary(dictionary! { "Type" => "Pages", "Kids" => vec![page.into()], "Count" => 1 }),
+        );
+        let numbers = doc.new_object_id();
+        doc.objects.insert(
+            numbers,
+            Object::Dictionary(dictionary! {
+                "Kids" => vec![Object::Reference(numbers); 2],
+                "Nums" => vec![0.into(), Object::Dictionary(dictionary! { "S" => "D", "St" => 3 })],
+            }),
+        );
+        let names = doc.new_object_id();
+        doc.objects.insert(
+            names,
+            Object::Dictionary(dictionary! {
+                "Kids" => vec![Object::Reference(names); 8],
+                "Names" => vec![Object::string_literal("here"), Object::Array(vec![page.into()])],
+            }),
+        );
+        let catalog = doc.add_object(dictionary! {
+            "Type" => "Catalog",
+            "Pages" => pages,
+            "PageLabels" => numbers,
+            "Names" => dictionary! { "Dests" => names },
+        });
+        doc.trailer.set("Root", catalog);
+        let mut ranges = Vec::new();
+        numberings(&doc, &Object::Reference(numbers), &mut ranges, 0, &mut HashSet::new());
+        assert_eq!(ranges.len(), 1);
+        assert_eq!(labels(&doc, 1), vec!["3"]);
+        // Eight kids to a node, sixteen deep, would be gone through for ever.
+        let (tx, rx) = mpsc::channel();
+        let doc = Arc::new(doc);
+        let reading = Arc::clone(&doc);
+        std::thread::spawn(move || tx.send(named_destinations(&reading).len()));
+        assert_eq!(rx.recv_timeout(Duration::from_secs(20)), Ok(1));
     }
 
     #[test]

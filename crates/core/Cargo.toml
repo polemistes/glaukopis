@@ -9,7 +9,8 @@ rust-version.workspace = true
 
 [dependencies]
 serde.workspace = true
-serde_json.workspace = true
+# The depth of Pandoc's JSON is bounded by the core, not by the parser's 128 levels.
+serde_json = { workspace = true, features = ["unbounded_depth"] }
 uuid.workspace = true
 time.workspace = true
 tracing.workspace = true

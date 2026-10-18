@@ -44,6 +44,29 @@ fn is_roman(word: &str) -> bool {
     pieces.peek().is_some() && pieces.all(roman::is_one)
 }
 
+/// Where `text` begins with `word`, a term in lower case, compared letter by
+/// letter in lower case: where the term ends in `text`. A letter's lower
+/// case may be longer or shorter than it is (İ is two bytes and its lower
+/// case three, the Kelvin sign three and k one), so the end is found in the
+/// text as written, not counted in its lower case; and a final sigma is a
+/// sigma, since the terms were lowered as words and the text is lowered
+/// here a letter at a time.
+fn begins_with_lowered(text: &str, word: &str) -> Option<usize> {
+    let sigma = |c: char| if c == 'ς' { 'σ' } else { c };
+    let mut wanted = word.chars().map(sigma).peekable();
+    for (i, c) in text.char_indices() {
+        if wanted.peek().is_none() {
+            return Some(i);
+        }
+        for lower in c.to_lowercase() {
+            if wanted.next() != Some(sigma(lower)) {
+                return None;
+            }
+        }
+    }
+    wanted.peek().is_none().then_some(text.len())
+}
+
 /// What is said after a work that is cited, in its parts: the locator, what
 /// it counts, and the words after it.
 pub(super) fn locator(suffix: &str, terms: &[(String, String)]) -> (Option<String>, Option<String>, Option<String>) {
@@ -57,13 +80,10 @@ pub(super) fn locator(suffix: &str, terms: &[(String, String)]) -> (Option<Strin
         return (None, None, None);
     }
     let label_of = |text: &str| -> (Option<String>, usize) {
-        let lower = text.to_lowercase();
         for (word, label) in terms {
-            if !lower.starts_with(word.as_str()) {
-                continue;
-            }
+            let Some(end) = begins_with_lowered(text, word) else { continue };
             // The word whole, and something counted after it.
-            let after = &text[lower.char_indices().nth(word.chars().count()).map_or(lower.len(), |(i, _)| i)..];
+            let after = &text[end..];
             let next = after.chars().next();
             let whole = word.ends_with('.') || word == "§" || next.is_none_or(|c| c.is_whitespace());
             if whole && after.trim_start().chars().next().is_some_and(|c| c.is_alphanumeric()) {

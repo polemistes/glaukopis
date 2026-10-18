@@ -235,26 +235,30 @@ impl Styles {
     /// the one it names, under its own name.
     pub fn fetch(&self, id: &str, client: &Client) -> Result<StyleSummary> {
         check_id(id)?;
-        let entry = self.index().iter().find(|e| e.i == id);
-        let xml = match entry.and_then(|e| e.p.as_deref()) {
-            Some(parent) => {
-                check_id(parent)?;
-                let form = client.get_ok(&format!("{REPOSITORY}/{parent}.csl"), None)?;
-                rename(&form, id, &entry.map(|e| e.t.clone()).unwrap_or_else(|| id.to_owned()))
+        let names_another = self.index().iter().any(|e| e.i == id && e.p.is_some());
+        let independent = || client.get_ok(&format!("{REPOSITORY}/{id}.csl"), None);
+        let dependent = || client.get_ok(&format!("{REPOSITORY}/dependent/{id}.csl"), None);
+        // The dependent's own file is read, not only the index's word for
+        // it: it says which form it takes and in what locale, and the locale
+        // is most often why it exists. Either may have changed since the
+        // index was made, so each way falls back on the other.
+        let as_named = |dependent: String| -> Result<String> {
+            let parent =
+                parent_of(&dependent).ok_or_else(|| Error::not_found(tr!("core-export-the-style", id = id)))?;
+            check_id(&parent)?;
+            let form = client.get_ok(&format!("{REPOSITORY}/{parent}.csl"), None)?;
+            Ok(named_form(&dependent, &form, id))
+        };
+        let xml = if names_another {
+            match dependent() {
+                Ok(found) => as_named(found)?,
+                Err(first) => independent().map_err(|_| first)?,
             }
-            None => client.get_ok(&format!("{REPOSITORY}/{id}.csl"), None).or_else(|first| {
-                // The index may be older than the repository, in which a style
-                // has meanwhile become a name for another.
-                client.get_ok(&format!("{REPOSITORY}/dependent/{id}.csl"), None).map_err(|_| first).and_then(
-                    |dependent| {
-                        let parent = parent_of(&dependent)
-                            .ok_or_else(|| Error::not_found(tr!("core-export-the-style", id = id)))?;
-                        check_id(&parent)?;
-                        let form = client.get_ok(&format!("{REPOSITORY}/{parent}.csl"), None)?;
-                        Ok(rename(&form, id, &describe(&dependent).0))
-                    },
-                )
-            })?,
+        } else {
+            match independent() {
+                Ok(found) => found,
+                Err(first) => as_named(dependent().map_err(|_| first)?)?,
+            }
         };
         check_style(&xml)?;
         self.store(id, &xml)
@@ -317,6 +321,58 @@ fn parent_of(xml: &str) -> Option<String> {
     let href = tag.find("href=\"")? + 6;
     let close = tag[href..].find('"')? + href;
     tag[href..close].trim_end_matches('/').rsplit('/').next().map(str::to_owned)
+}
+
+/// The form of the style a dependent names, kept as the dependent: under
+/// its title and id, and in its locale where it has one, which overrides
+/// the form's, as the specification of CSL has it.
+fn named_form(dependent: &str, form: &str, id: &str) -> String {
+    let mut out = rename(form, id, &describe(dependent).0);
+    if let Some(locale) = default_locale(dependent)
+        && let Some(tag) = style_tag(&out)
+    {
+        let attribute = format!(" default-locale=\"{}\"", escape(&locale));
+        match attribute_value(&out[tag.clone()], "default-locale") {
+            // From the blank before the name to the closing quotation mark.
+            Some(value) => {
+                let name = out[tag.start..tag.start + value.start].rfind("default-locale").unwrap_or(0);
+                let blank = out[tag.start..tag.start + name].trim_end().len();
+                out.replace_range(tag.start + blank..tag.start + value.end + 1, &attribute);
+            }
+            None => out.insert_str(tag.end, &attribute),
+        }
+    }
+    out
+}
+
+/// The locale a style is written for, where it says.
+fn default_locale(xml: &str) -> Option<String> {
+    let tag = style_tag(xml)?;
+    let tag = &xml[tag];
+    let value = attribute_value(tag, "default-locale")?;
+    Some(unescape(&tag[value]).trim().to_owned()).filter(|l| !l.is_empty())
+}
+
+/// The start tag of a style, `<style …`, without its closing `>`.
+fn style_tag(xml: &str) -> Option<std::ops::Range<usize>> {
+    let (start, _) =
+        xml.match_indices("<style").find(|(i, _)| xml[i + 6..].starts_with(|c: char| c.is_whitespace() || c == '>'))?;
+    let end = start + xml[start..].find('>')?;
+    Some(start..end)
+}
+
+/// Where the value of an attribute stands in a tag, within its quotation
+/// marks, which may be single or double.
+fn attribute_value(tag: &str, name: &str) -> Option<std::ops::Range<usize>> {
+    let (at, _) = tag.match_indices(name).find(|(i, _)| {
+        tag[..*i].ends_with(char::is_whitespace) && tag[i + name.len()..].trim_start().starts_with('=')
+    })?;
+    let after = &tag[at + name.len()..];
+    let after_equals = after.trim_start()[1..].trim_start();
+    let quote = after_equals.chars().next().filter(|c| *c == '"' || *c == '\'')?;
+    let start = tag.len() - after_equals.len() + 1;
+    let end = start + tag[start..].find(quote)?;
+    Some(start..end)
 }
 
 /// Gives a style another title and id, leaving all else as it is.
@@ -389,6 +445,26 @@ mod tests {
         assert_eq!(describe(&out).0, "Mine <2>");
         assert!(out.contains("<id>https://glaukopis.invalid/styles/mine</id>"));
         assert!(check_style(&out).is_ok());
+    }
+
+    /// A style that names another is kept as the other's form under its own
+    /// name, and in its own locale: the usual reason it exists.
+    #[test]
+    fn a_style_that_names_another_keeps_its_own_locale() {
+        let kept = named_form(DEPENDENT, STYLE, "the-classical-quarterly");
+        assert_eq!(describe(&kept).0, "The Classical Quarterly");
+        assert_eq!(default_locale(&kept).as_deref(), Some("en-GB"));
+        assert!(kept.contains("<id>https://glaukopis.invalid/styles/the-classical-quarterly</id>"));
+        assert!(check_style(&kept).is_ok());
+        // Where the form has a locale of its own, the dependent's takes its place.
+        let american = STYLE.replace("version=\"1.0\">", "version=\"1.0\" default-locale='en-US'>");
+        let kept = named_form(DEPENDENT, &american, "the-classical-quarterly");
+        assert_eq!(default_locale(&kept).as_deref(), Some("en-GB"));
+        assert_eq!(kept.matches("default-locale").count(), 1);
+        // A dependent without one has the form's.
+        let plain = DEPENDENT.replace(" default-locale=\"en-GB\"", "");
+        assert_eq!(default_locale(&named_form(&plain, &american, "q")).as_deref(), Some("en-US"));
+        assert_eq!(default_locale(&named_form(&plain, STYLE, "q")), None);
     }
 
     #[test]
