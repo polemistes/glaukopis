@@ -129,6 +129,8 @@ export class App {
       LIBGL_ALWAYS_SOFTWARE: '1',
       GLAUKOPIS_DATA_DIR: app.dataDir,
       GLAUKOPIS_LOG: process.env.GLAUKOPIS_LOG ?? 'info',
+      // The hooks the scripts reach the page by, which a working window has not.
+      GLAUKOPIS_E2E: '1',
       // The scripts find what they press by its English words, whatever the
       // language of the computer they run on; a script may ask for another.
       GLAUKOPIS_LANGUAGE: 'en',

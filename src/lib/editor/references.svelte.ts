@@ -4,13 +4,15 @@
  * the rest.
  */
 
-import type { Reference, Summary } from '$lib/api/library';
+import { isNotFound } from '$lib/api/backend';
+import { libraryGet, type Reference, type Summary } from '$lib/api/library';
 import { documentWord, primary, t } from '$lib/i18n';
 import { library } from '$lib/state/library.svelte';
 import type { Project } from '$lib/project/model/project.svelte';
 import type { RefRecord } from '$lib/project/model/types';
 import terms from '../../../resources/csl/locator-terms.json';
 import { LOCATOR_LABELS, type CiteItem, type CiteMode } from './schema';
+import { notifyError } from '$lib/ui/toast.svelte';
 
 export interface RefLabel {
   authors: string;
@@ -73,6 +75,21 @@ export function lookup(id: string): RefLabel | null {
     };
   }
   return null;
+}
+
+/**
+ * Puts into a project its copy of a reference it cites, from the library.
+ * One the library has not (a citation that came with a shared project) the
+ * project has its own copy of already. Any other failure, a library that
+ * could not be read, is said: the project would be left without the record,
+ * and the citation later read "missing" with no hint why.
+ */
+export async function keepReference(project: Project, id: string) {
+  try {
+    project.putReference(recordOf(await libraryGet(id)));
+  } catch (error) {
+    if (!isNotFound(error)) notifyError(t('editor-reference-not-kept'), error);
+  }
 }
 
 export function recordOf(reference: Reference): RefRecord {

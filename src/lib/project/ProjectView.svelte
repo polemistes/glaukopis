@@ -19,6 +19,7 @@
 </script>
 
 <script lang="ts">
+  import { testHook } from '$lib/shell/testing';
   import WordsBar from '$lib/words/WordsBar.svelte';
   import { onDestroy, onMount, tick, untrack } from 'svelte';
   import ArrowLeft from '@lucide/svelte/icons/arrow-left';
@@ -96,8 +97,7 @@
   import type { ElementsPayload } from './elements';
   import { closedHere, openHere } from './elsewhere';
   import type { ProjectInfo } from '$lib/api/projects';
-  import { recordOf } from '$lib/editor/references.svelte';
-  import { libraryGet } from '$lib/api/library';
+  import { keepReference } from '$lib/editor/references.svelte';
   import {
     arranged,
     clamp,
@@ -360,11 +360,7 @@
       keep(id);
       return;
     }
-    try {
-      p?.putReference(recordOf(await libraryGet(id)));
-    } catch {
-      // Not in this user's library: the project has its own copy already.
-    }
+    if (p) await keepReference(p, id);
   }
 
   // The pane of projects, outside the view, shows the project and where one is in it.
@@ -514,11 +510,12 @@
     showShare = false;
     const fetched = !!project?.node(PROJECT);
     if (!fetched) {
-      // There is nothing here to keep.
-      projects.remove(ownId).catch(() => {});
-      notify(
-        why === 'deleted' ? t('project-unshared') : t('project-left-out'),
-        t('project-unshared-unfetched'),
+      // There is nothing here to keep: it is taken off the list, and that
+      // it is gone is said once it is, or that it could not be.
+      const title = why === 'deleted' ? t('project-unshared') : t('project-left-out');
+      projects.remove(ownId).then(
+        () => notify(title, t('project-unshared-unfetched')),
+        (error) => notifyError(t('project-unshared-not-removed'), error),
       );
       router.go({ view: 'projects' });
       return;
@@ -541,14 +538,15 @@
       p.setMe(who);
       g?.setMe(who);
     });
-    // For the tests of the running application, which ask the history as the review does.
-    (window as unknown as Record<string, unknown>).__glaukopisHistory = {
+    // For the tests of the running application, which ask the history as the
+    // review does; only when the harness asks for it.
+    testHook('__glaukopisHistory', {
       history: historyOf(p, ownId),
       positions,
       get review() {
         return review;
       },
-    };
+    });
   });
 
   async function leave(p: Project) {
@@ -597,7 +595,7 @@
     documents
       .templateOf(id)
       .then((tp) => p.keepTemplate($state.snapshot(tp) as Template))
-      .catch(() => {});
+      .catch((error) => notifyError(t('project-template-not-renewed'), error));
   }
 
   onDestroy(() => {

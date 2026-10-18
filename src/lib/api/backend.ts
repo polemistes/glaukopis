@@ -17,6 +17,11 @@ export function isBackendError(value: unknown): value is BackendError {
   );
 }
 
+/** Whether the core said it has not the thing asked for (`Error::NotFound`), not that it failed to look. */
+export function isNotFound(error: unknown): boolean {
+  return isBackendError(error) && error.kind === 'not-found';
+}
+
 export const inTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
 /** With bytes for `args`, they are sent as they are, as the body of the request. */

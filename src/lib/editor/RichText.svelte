@@ -7,6 +7,8 @@
     type Command,
   } from 'prosemirror-state';
   import { CellSelection } from 'prosemirror-tables';
+  import { insertPoint } from 'prosemirror-transform';
+  import { notify, notifyError } from '$lib/ui/toast.svelte';
   import { EditorView } from 'prosemirror-view';
   import { untrack } from 'svelte';
   import { ySyncPlugin, yCursorPlugin } from 'y-prosemirror';
@@ -604,16 +606,26 @@
       // A reference dropped into the text is cited where it was dropped.
       const ids = event.payload.data as string[];
       const pos = at?.pos ?? view.state.selection.from;
-      const node = view.state.schema.nodes.citation.create({
+      const citation = view.state.schema.nodes.citation;
+      const node = citation.create({
         items: ids.map((id) => ({ id })),
         mode: 'normal',
       });
+      // Where it was dropped, or the nearest place a citation can stand;
+      // else where the cursor is. Nowhere: said, not a drop that vanishes.
+      const doc = view.state.doc;
+      const where =
+        insertPoint(doc, pos, citation) ?? insertPoint(doc, view.state.selection.from, citation);
+      if (where == null) {
+        notify(t('editor-citation-no-place'));
+        return;
+      }
       try {
-        view.dispatch(view.state.tr.insert(pos, node));
+        view.dispatch(view.state.tr.insert(where, node));
         for (const id of ids) oncite?.(id);
         view.focus();
-      } catch {
-        // Not a place where a citation can stand.
+      } catch (error) {
+        notifyError(t('editor-citation-no-place'), error);
       }
     },
   }}
