@@ -49,8 +49,12 @@ pub fn write(dir: &Path, readable: &Readable<'_>, store: &Pictures, library: Opt
     write_atomic(&dir.join(BIB), references_bib(readable.records, library).as_bytes())?;
     let pictures = dir.join(PICTURES);
     let mut wanted = HashSet::new();
+    let mut lacking: Vec<&str> = Vec::new();
     for hash in readable.pictures {
-        let Ok(picture) = store.get(hash) else { continue };
+        let Ok(picture) = store.get(hash) else {
+            lacking.push(hash);
+            continue;
+        };
         let name = format!("{}.{}", picture.hash, picture.extension);
         wanted.insert(name.clone());
         let to = pictures.join(&name);
@@ -68,10 +72,17 @@ pub fn write(dir: &Path, readable: &Readable<'_>, store: &Pictures, library: Opt
         for entry in entries.flatten() {
             let name = entry.file_name().to_string_lossy().into_owned();
             let ours = name.split_once('.').is_some_and(|(hash, _)| is_hash(hash));
-            if ours && !wanted.contains(&name) {
-                let _ = fs::remove_file(entry.path());
+            if ours
+                && !wanted.contains(&name)
+                && let Err(e) = fs::remove_file(entry.path())
+            {
+                tracing::warn!(%e, picture = name, "a picture the project no longer shows could not be taken out of its readable copy");
             }
         }
+    }
+    if !lacking.is_empty() {
+        // The copy is written at every save: one line for all that are lacking.
+        tracing::warn!(pictures = ?lacking, "pictures the project shows are not in the store, and are not in its readable copy");
     }
     Ok(())
 }
@@ -92,7 +103,15 @@ pub fn read(path: &Path) -> Result<Read> {
     let file: PathBuf = if path.is_dir() { path.join(ORG) } else { path.to_path_buf() };
     let org = fs::read_to_string(&file).context(|| tr!("io-reading", path = &file))?;
     let dir = file.parent().map(Path::to_path_buf).unwrap_or_default();
-    let bib = fs::read_to_string(dir.join(BIB)).unwrap_or_default();
+    // The works it cites: none when there is no file of them, and an error
+    // when there is one that cannot be read, lest the project be opened
+    // without its references and no word why.
+    let bib_path = dir.join(BIB);
+    let bib = match fs::read_to_string(&bib_path) {
+        Ok(bib) => bib,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
+        Err(e) => return Err(e).context(|| tr!("io-reading", path = &bib_path)),
+    };
     let mut pictures = Vec::new();
     if let Ok(entries) = fs::read_dir(dir.join(PICTURES)) {
         for entry in entries.flatten() {
@@ -101,7 +120,13 @@ pub fn read(path: &Path) -> Result<Read> {
             if !is_hash(hash) || entry.metadata().is_ok_and(|m| m.len() > MOST_PICTURE) {
                 continue;
             }
-            let Ok(bytes) = fs::read(entry.path()) else { continue };
+            let bytes = match fs::read(entry.path()) {
+                Ok(bytes) => bytes,
+                Err(e) => {
+                    tracing::warn!(%e, picture = name, "a picture beside an Org file could not be read, and is left out");
+                    continue;
+                }
+            };
             let picture = Picture {
                 hash: hash.to_owned(),
                 extension: extension.to_ascii_lowercase(),
@@ -172,5 +197,16 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         fs::write(tmp.path().join(ORG), "  \n").unwrap();
         assert!(read(tmp.path()).is_err());
+    }
+
+    #[test]
+    fn works_that_are_there_and_cannot_be_read_are_not_taken_for_none() {
+        let tmp = tempfile::tempdir().unwrap();
+        fs::write(tmp.path().join(ORG), "* Wrath\n").unwrap();
+        assert_eq!(read(tmp.path()).unwrap().bib, "", "none there, none read");
+        // Not UTF-8, as an editor that saves in Latin-1 writes it.
+        fs::write(tmp.path().join(BIB), b"@book{a, author = {M\xfcller}}").unwrap();
+        let said = read(tmp.path()).err().unwrap().to_string();
+        assert!(said.contains(BIB), "{said}");
     }
 }

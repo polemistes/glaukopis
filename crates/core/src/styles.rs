@@ -59,6 +59,8 @@ pub struct Found {
 pub struct Styles {
     bundled: PathBuf,
     index: PathBuf,
+    /// The index, read when it is first asked for.
+    read_index: OnceLock<Vec<IndexEntry>>,
     own: PathBuf,
 }
 
@@ -119,6 +121,7 @@ impl Styles {
         Styles {
             bundled: resources.join("csl").join("styles"),
             index: resources.join("csl").join("index.json"),
+            read_index: OnceLock::new(),
             own: own.to_owned(),
         }
     }
@@ -182,10 +185,19 @@ impl Styles {
         fs::read_to_string(&path).context(|| tr!("io-reading", path = &path))
     }
 
-    fn index(&self) -> &'static [IndexEntry] {
-        static INDEX: OnceLock<Vec<IndexEntry>> = OnceLock::new();
-        INDEX.get_or_init(|| {
-            fs::read_to_string(&self.index).ok().and_then(|text| serde_json::from_str(&text).ok()).unwrap_or_default()
+    /// The index of all styles there are, which comes with the
+    /// application. One that cannot be read is said in the log, once: the
+    /// search then finds nothing, and a style is fetched as one that stands
+    /// on its own, and if it is not, as one that names another.
+    fn index(&self) -> &[IndexEntry] {
+        self.read_index.get_or_init(|| {
+            let read = fs::read_to_string(&self.index)
+                .map_err(|e| e.to_string())
+                .and_then(|text| serde_json::from_str(&text).map_err(|e| e.to_string()));
+            read.unwrap_or_else(|error| {
+                tracing::warn!(path = %self.index.display(), %error, "the index of the styles could not be read");
+                Vec::new()
+            })
         })
     }
 
