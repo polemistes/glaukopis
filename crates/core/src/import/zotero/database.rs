@@ -531,7 +531,11 @@ impl Database {
     /// reference. They are not imported, which the user should be told.
     pub(super) fn count_alone(&self, library: i64) -> Result<usize> {
         let mut count = 0;
-        for (table, condition) in [("itemAttachments", "x.linkMode IN (0, 1, 2)"), ("itemNotes", "1")] {
+        // Files as `is_file` takes them: a snapshot of a web page is none.
+        let files = "x.linkMode IN (0, 1, 2) AND TRIM(COALESCE(x.path, '')) <> '' \
+                     AND NOT (x.linkMode = 1 AND LOWER(TRIM(COALESCE(x.contentType, ''))) \
+                     IN ('text/html', 'application/xhtml+xml'))";
+        for (table, condition) in [("itemAttachments", files), ("itemNotes", "1")] {
             if !self.has(&[table]) {
                 continue;
             }

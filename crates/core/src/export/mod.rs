@@ -218,6 +218,25 @@ struct Placed {
     name: String,
     /// Those that are there, as `<hash>.<extension>`.
     present: std::collections::HashSet<String>,
+    /// How many the store has and could not be put there, and why the
+    /// first could not: a disk that is full, a folder that cannot be
+    /// written. Said apart from the pictures that are not in the store.
+    failed: usize,
+    error: Option<String>,
+}
+
+impl Placed {
+    fn failed(&mut self, count: usize, error: String) {
+        tracing::warn!(count, %error, "the files of figures could not be placed");
+        self.failed += count;
+        self.error.get_or_insert(error);
+    }
+
+    /// What is said of those that could not be placed.
+    fn remark(&self) -> Option<String> {
+        let error = self.error.as_ref()?;
+        Some(tr!("core-export-files-not-placed", count = self.failed, error = error))
+    }
 }
 
 /// The widest a picture is in the preview, in points of the picture: a
@@ -237,7 +256,8 @@ fn place_files(ctx: &Context, request: &Request, into: &Path, name: &str, light:
         return placed;
     }
     let to = into.join(name);
-    if fs::create_dir_all(&to).is_err() {
+    if let Err(e) = fs::create_dir_all(&to) {
+        placed.failed(wanted.len(), Error::io(tr!("io-creating", path = &to), e).to_string());
         return placed;
     }
     for (hash, extension) in wanted {
@@ -253,16 +273,25 @@ fn place_files(ctx: &Context, request: &Request, into: &Path, name: &str, light:
             Some(n) => n == whole,
             None => false,
         };
-        let made = there
-            || (light
-                && whole > 200_000
-                && fs::read(&source)
-                    .ok()
-                    .and_then(|bytes| crate::pictures::lighter(&bytes, &extension, WIDEST_SHOWN))
-                    .is_some_and(|small| write_atomic(&target, &small).is_ok()))
-            || fs::copy(&source, &target).is_ok();
-        if made {
-            placed.present.insert(file);
+        // A lighter one that cannot be made is not a failure: the whole one is copied.
+        let lighter = || {
+            (light && whole > 200_000)
+                .then(|| fs::read(&source).ok())
+                .flatten()
+                .and_then(|bytes| crate::pictures::lighter(&bytes, &extension, WIDEST_SHOWN))
+        };
+        let made = if there {
+            Ok(())
+        } else if let Some(small) = lighter() {
+            write_atomic(&target, &small)
+        } else {
+            fs::copy(&source, &target).map(|_| ()).context(|| tr!("io-copying", path = &source))
+        };
+        match made {
+            Ok(()) => {
+                placed.present.insert(file);
+            }
+            Err(e) => placed.failed(1, e.to_string()),
         }
     }
     placed
@@ -496,6 +525,7 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
     }
     let doc = &document;
     let f = &request.format;
+    let not_placed = placed.remark();
     let bibliography = gather(doc, ctx.library);
     let has_citations = !bibliography.keys.is_empty();
     let style_has_bibliography =
@@ -819,11 +849,9 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
         }
         blocks.extend(held);
     }
-    let remarks: Vec<String> = converter
-        .extras
-        .absent()
+    let remarks: Vec<String> = not_placed
         .into_iter()
-        .map(|name| tr!("core-export-picture-missing", name = name))
+        .chain(converter.extras.absent().into_iter().map(|name| tr!("core-export-picture-missing", name = name)))
         .chain(match converter.extras.astray() {
             0 => None,
             n => Some(tr!("core-export-astray", count = n)),
@@ -927,6 +955,7 @@ fn files_beside(ctx: &Context, request: &Request, path: &Path, name: &str, expor
     if !placed.present.is_empty() {
         exported.also.push(parent.join(name).display().to_string());
     }
+    exported.warnings.extend(placed.remark());
 }
 
 /// The document as Typst, whole.
@@ -1289,14 +1318,21 @@ pub fn export_until(
                 .iter()
                 .filter(|p| place_of(&p.kind) == PartPlace::Cover)
                 .find_map(|p| p.first_figure());
-            if let (Some((hash, extension)), Some(pictures)) = (cover, ctx.pictures)
-                && let Ok(source) = crate::pictures::file_in(pictures, &hash, &extension)
-                && source.is_file()
-            {
+            // A cover that cannot be put there is said, not left out quietly.
+            if let (Some((hash, extension)), Some(pictures)) = (cover, ctx.pictures) {
                 let target = dir.join(format!("cover.{extension}"));
-                if fs::copy(&source, &target).is_ok() {
-                    args.push("--epub-cover-image".into());
-                    args.push(target.display().to_string());
+                let copied = crate::pictures::file_in(pictures, &hash, &extension).and_then(|source| {
+                    fs::copy(&source, &target).map(|_| ()).context(|| tr!("io-copying", path = &source))
+                });
+                match copied {
+                    Ok(()) => {
+                        args.push("--epub-cover-image".into());
+                        args.push(target.display().to_string());
+                    }
+                    Err(error) => {
+                        tracing::warn!(%error, "the cover of the book could not be placed");
+                        exported.warnings.push(tr!("core-export-cover-left-out", error = error.to_string()));
+                    }
                 }
             }
         }
@@ -3588,6 +3624,51 @@ mod tests {
             Inline::Math { tex: "x".into() },
         ]));
         assert_eq!(count_words(&d, false), 22 + 5 + 2);
+    }
+
+    #[test]
+    fn files_of_figures_that_cannot_be_placed_are_said_to_be_that() {
+        let tmp = tempfile::tempdir().unwrap();
+        let resources = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../resources");
+        let styles = Styles::new(&resources, &tmp.path().join("styles"));
+        let tools = Tools::default();
+        let store = Pictures::open(tmp.path().join("pictures")).unwrap();
+        let vase = store.add("vase.png", &crate::pictures::fixtures::PNG).unwrap();
+        let ctx = Context {
+            tools: &tools,
+            resources: &resources,
+            styles: &styles,
+            library: None,
+            work: tmp.path().join("w"),
+            fonts: &[],
+            pictures: Some(store.dir()),
+        };
+        let mut request = request("apa");
+        request.document.sections[1].blocks.push(Block::Figure {
+            id: String::new(),
+            align: None,
+            wrap: None,
+            file: vase.hash.clone(),
+            extension: "png".into(),
+            name: "vase.png".into(),
+            caption: Vec::new(),
+            alt: String::new(),
+            width: 100,
+            numbered: true,
+        });
+        let into = tmp.path().join("made");
+        fs::create_dir_all(&into).unwrap();
+        let placed = place_files(&ctx, &request, &into, "files", false);
+        assert_eq!(placed.present.len(), 1);
+        assert!(placed.remark().is_none());
+
+        // Where the folder of the files cannot be made, that is said, and why.
+        fs::write(into.join("blocked"), "a file where the folder would be").unwrap();
+        let placed = place_files(&ctx, &request, &into, "blocked", false);
+        assert!(placed.present.is_empty());
+        let remark = placed.remark().unwrap();
+        assert!(remark.starts_with("The file of a picture could not be put where the document is made"), "{remark}");
+        assert!(remark.contains("blocked"), "{remark}");
     }
 
     #[test]

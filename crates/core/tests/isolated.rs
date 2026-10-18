@@ -40,6 +40,33 @@ fn a_child_that_takes_too_much_memory_is_killed() {
     assert!(started.elapsed() < Duration::from_secs(30), "{:?}", started.elapsed());
 }
 
+/// A child whose application is gone, killed or forced to quit, ends
+/// itself, as it must on macOS where nothing else ends it. Started by a
+/// shell that ends at once, and without the signal the application asks for
+/// on Linux, it is left to another as such a child is.
+#[cfg(unix)]
+#[test]
+fn a_child_whose_parent_is_gone_ends_itself() {
+    let out = std::process::Command::new("sh")
+        .arg("-c")
+        .arg("\"$0\" --glaukopis-isolated test-sleep . /dev/null >/dev/null 2>&1 & echo $!")
+        .arg(program())
+        .output()
+        .unwrap();
+    let pid = String::from_utf8_lossy(&out.stdout).trim().to_owned();
+    assert!(pid.parse::<u32>().is_ok(), "{pid:?}");
+    let started = Instant::now();
+    let alive = || {
+        let state = std::process::Command::new("ps").args(["-o", "stat=", "-p", &pid]).output().unwrap();
+        let state = String::from_utf8_lossy(&state.stdout).trim().to_owned();
+        !state.is_empty() && !state.starts_with('Z')
+    };
+    while alive() {
+        assert!(started.elapsed() < Duration::from_secs(10), "the child {pid} lives on without its parent");
+        std::thread::sleep(Duration::from_millis(100));
+    }
+}
+
 #[test]
 fn a_task_that_is_not_known_fails() {
     let got = run_with::<String>(program(), "nothing-such", Path::new("."), limits(10, 1024));

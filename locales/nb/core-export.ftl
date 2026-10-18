@@ -4,6 +4,11 @@
 ## Å lage et dokument.
 
 core-export-picture-missing = Bildet «{ $name }» finnes ikke på denne datamaskinen, og er utelatt fra dokumentet.
+core-export-files-not-placed = { $count ->
+    [one] Filen til et bilde kunne ikke legges der dokumentet lages, og bildet er utelatt fra det: { $error }
+   *[other] Filene til { $count } bilder kunne ikke legges der dokumentet lages, og bildene er utelatt fra det: { $error }
+}
+core-export-cover-left-out = Bildet på omslaget kunne ikke legges der boken lages, og boken har ikke noe omslag: { $error }
 core-export-astray = { $count ->
     [one] En kryssreferanse i teksten viser til noe som ikke er i dokumentet. Den er satt som [?].
    *[other] Kryssreferanser i teksten viser, på { $count } steder, til noe som ikke er i dokumentet. De er satt som [?].

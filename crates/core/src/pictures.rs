@@ -36,6 +36,7 @@ use crate::error::{Error, IoContext, Result};
 use crate::fsutil::write_atomic;
 use crate::library::attachments::hash_bytes;
 use crate::library::now;
+use crate::sidefile;
 use crate::tr;
 
 const INDEX: &str = "pictures.json";
@@ -70,6 +71,13 @@ pub struct Picture {
     pub alt: String,
     /// What the user makes of it. Part of no document.
     pub note: String,
+    /// Whether its file is not in the store: removed by hand, or on a
+    /// drive that is not there now. What the user wrote of it is kept, and
+    /// is its own again when the file comes back; until then it is not
+    /// listed, nor given by `get`, so that a picture that comes in anew
+    /// is stored.
+    #[serde(skip)]
+    pub(crate) missing: bool,
 }
 
 /// What is said anew of a picture. What is not given stays as it is.
@@ -251,22 +259,24 @@ fn trimmed(text: &str, most: usize) -> String {
 impl Pictures {
     /// Opens the store at `dir`, which is made if it is not there. Files
     /// that are there and not known are made known; what is known and has
-    /// no file is forgotten.
+    /// no file is kept, and said in the log, as missing. A record that
+    /// cannot be read is set aside (see `sidefile`), and the store begins
+    /// with what its files are.
     pub fn open(dir: impl Into<PathBuf>) -> Result<Self> {
         let dir = dir.into();
         let files = dir.join(FILES);
         fs::create_dir_all(&files).context(|| tr!("io-creating", path = &files))?;
         let index = dir.join(INDEX);
-        let mut known: Vec<Picture> = match fs::read_to_string(&index) {
-            Ok(text) => {
-                serde_json::from_str(&text).map_err(|e| Error::Parse { path: index, message: e.to_string() })?
-            }
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Vec::new(),
-            Err(e) => return Err(Error::io(tr!("io-reading", path = &index), e)),
-        };
-        let before = known.len();
-        known.retain(|p| file_in(&dir, &p.hash, &p.extension).is_ok_and(|f| f.is_file()));
-        let mut changed = known.len() != before;
+        let read = sidefile::read_json::<Vec<Picture>>(&index)?;
+        let mut changed = read.set_aside().is_some();
+        let mut known = read.or_default();
+        for picture in &mut known {
+            picture.missing = !file_in(&dir, &picture.hash, &picture.extension).is_ok_and(|f| f.is_file());
+        }
+        let missing: Vec<&str> = known.iter().filter(|p| p.missing).map(|p| p.name.as_str()).collect();
+        if !missing.is_empty() {
+            tracing::warn!(count = missing.len(), names = ?missing, "pictures whose files are not in the store; what is said of them is kept");
+        }
         if let Ok(entries) = fs::read_dir(&files) {
             for entry in entries.flatten() {
                 let name = entry.file_name().to_string_lossy().into_owned();
@@ -322,7 +332,7 @@ impl Pictures {
 
     /// The pictures, the one taken in last first.
     pub fn list(&self) -> Vec<Picture> {
-        let mut all = self.known().clone();
+        let mut all: Vec<Picture> = self.known().iter().filter(|p| !p.missing).cloned().collect();
         all.reverse();
         all
     }
@@ -330,7 +340,7 @@ impl Pictures {
     pub fn get(&self, hash: &str) -> Result<Picture> {
         self.known()
             .iter()
-            .find(|p| p.hash == hash)
+            .find(|p| p.hash == hash && !p.missing)
             .cloned()
             .ok_or_else(|| Error::not_found(tr!("core-pictures-the-picture")))
     }
@@ -375,6 +385,17 @@ impl Pictures {
     fn note_down(&self, new: Picture) -> Result<Picture> {
         let mut known = self.known();
         if let Some(there) = known.iter_mut().find(|p| p.hash == new.hash) {
+            // Its file was missing, and is stored now: what was said of it is its own again.
+            if there.missing {
+                there.missing = false;
+                there.extension = new.extension;
+                if there.name.is_empty() {
+                    there.name = new.name;
+                }
+                let there = there.clone();
+                self.write(&known)?;
+                return Ok(there);
+            }
             // One that came without a name is given the name it is met by.
             if there.name.is_empty() && !new.name.is_empty() {
                 there.name = new.name;
@@ -463,7 +484,7 @@ impl Pictures {
         let mut known = self.known();
         let picture = known
             .iter_mut()
-            .find(|p| p.hash == hash)
+            .find(|p| p.hash == hash && !p.missing)
             .ok_or_else(|| Error::not_found(tr!("core-pictures-the-picture")))?;
         if let Some(name) = change.name {
             let name = trimmed(&name.replace('\n', " "), 200);
@@ -652,7 +673,9 @@ mod tests {
         let (tmp, p) = pictures();
         let a = p.add("vase.png", &PNG).unwrap();
         let b = p.add("circle.svg", SVG.as_bytes()).unwrap();
-        // A file that is gone is forgotten; one that is there and not known is made known.
+        p.update(&a.hash, Change { alt: Some("A vase with a lid".into()), ..Default::default() }).unwrap();
+        // A file that is gone is not listed, and what was said of it is kept;
+        // one that is there and not known is made known.
         fs::remove_file(p.path(&a.hash, "png").unwrap()).unwrap();
         let other = SVG.replace("30", "20");
         let hash = hash_bytes(other.as_bytes());
@@ -665,6 +688,35 @@ mod tests {
         expected.sort();
         assert_eq!(hashes, expected);
         assert_eq!(q.get(&b.hash).unwrap().name, "circle.svg");
+        assert!(q.get(&a.hash).is_err());
+        assert!(fs::read_to_string(q.dir().join(INDEX)).unwrap().contains("A vase with a lid"));
+
+        // When the file comes back, by hand or from elsewhere, it is the picture it was.
+        let back = q.keep(&a.hash, &PNG, "").unwrap();
+        assert_eq!((back.name.as_str(), back.alt.as_str()), ("vase.png", "A vase with a lid"));
+        assert_eq!(q.list().len(), 3);
+        fs::remove_file(q.path(&a.hash, "png").unwrap()).unwrap();
+        fs::write(q.path(&a.hash, "png").unwrap(), PNG).unwrap();
+        let r = Pictures::open(tmp.path().join("pictures")).unwrap();
+        assert_eq!(r.get(&a.hash).unwrap().alt, "A vase with a lid");
+    }
+
+    #[test]
+    fn a_record_that_cannot_be_read_is_set_aside() {
+        let (tmp, p) = pictures();
+        let a = p.add("vase.png", &PNG).unwrap();
+        fs::write(p.dir().join(INDEX), "[{\"hash\": ").unwrap();
+        let q = Pictures::open(tmp.path().join("pictures")).unwrap();
+        // The store opens with what its files are, and the record is kept as it was.
+        assert_eq!(q.list().iter().map(|x| x.hash.as_str()).collect::<Vec<_>>(), [a.hash.as_str()]);
+        let aside: Vec<_> = fs::read_dir(q.dir())
+            .unwrap()
+            .flatten()
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .filter(|n| n.starts_with("pictures.json.broken-"))
+            .collect();
+        assert_eq!(aside.len(), 1);
+        assert_eq!(fs::read_to_string(q.dir().join(&aside[0])).unwrap(), "[{\"hash\": ");
     }
 
     #[test]

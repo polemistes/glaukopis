@@ -29,8 +29,15 @@ io-copying = kunne ikke kopiere { $path }
 io-flushing = kunne ikke skrive { $path } ferdig til disken
 io-replacing = kunne ikke erstatte { $path }
 io-backing-up = kunne ikke ta sikkerhetskopi av { $path }
+io-setting-aside = kunne ikke legge { $path } til side
 io-storing = kunne ikke lagre { $path }
 io-no-directory = { $path } ligger ikke i noen mappe
+
+## En av programmets egne filer som ikke kunne leses: den legges til side,
+## under sitt navn med tiden lagt til, og programmet fortsetter uten den.
+## Vises nederst i vinduet.
+
+core-set-aside = { $path } kunne ikke leses, og er lagt til side som { $aside } i samme mappe; Glaukopis fortsetter uten det den inneholdt. Feilen: { $cause }
 
 ## Nettverket. Vises etter «nettverket: ».
 
@@ -41,6 +48,12 @@ network-unreachable-because = fikk ikke kontakt med { $host }: { $error }
 network-nothing-there = { $host } har ingenting på den adressen
 network-wait = { $host } ber oss vente før vi spør igjen
 network-status = { $host } svarte med en feil ({ $status })
+network-too-large = { $host } svarte med mer enn Glaukopis tar imot ({ $most } MB)
+network-tls = fikk ikke en sikker forbindelse til { $host }: datamaskinen stoler kanskje ikke på sertifikatet, eller noe imellom, som en proxy eller en brannmur, står i veien
+network-redirects = { $host } sendte spørsmålet videre fra én adresse til en annen for mange ganger
+network-stalled = svaret fra { $host } stoppet opp
+network-not-understood = { $host } svarte på en måte som ikke kunne forstås
+network-failed = { $host } kunne ikke spørres; loggen for kjøringen sier hvorfor
 network-method = { $method } er ikke en måte å spørre på som brukes her
 
 ## Når programmet åpnes en gang til.

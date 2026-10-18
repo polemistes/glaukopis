@@ -729,6 +729,30 @@ fn a_group_library() {
 }
 
 #[test]
+fn a_page_of_ones_own_is_a_file_and_notes_follow_the_annotation_extra_gives() {
+    let z = a_library();
+    // An HTML file the user stored as a file of their own is a file, not a snapshot.
+    let own = z.item("book", "OWNPAGE1", &[("title", "A Thesis Written in HTML")]);
+    z.attach(Some(own), "OWNHTML1", 0, "text/html", Some("storage:thesis.html"));
+    z.store("OWNHTML1", "thesis.html");
+    // A snapshot that stands alone is not counted as a file left out.
+    z.attach(None, "ALONESNP", 1, "text/html", Some("storage:index.html"));
+    // Extra gives an annotation, and the reference has a note of its own.
+    let annotated = z.item("book", "ANNOTATE", &[("title", "Annotated"), ("extra", "tex.annotation: Read in 2019")]);
+    z.note(Some(annotated), "NOTE0009", "<p>And again in 2024.</p>");
+
+    let (candidates, warnings) = read_all(&z);
+    let c = by_key(&candidates, "OWNPAGE1");
+    assert_eq!(c.files.len(), 1, "{:?}", c.notes);
+    assert!(c.files[0].ends_with("thesis.html"), "{:?}", c.files);
+    let c = by_key(&candidates, "ANNOTATE");
+    assert_eq!(c.draft.get("annotation"), Some("Read in 2019\n\nAnd again in 2024."));
+    assert_eq!(warnings, vec!["2 files and notes stand in Zotero under no reference, and were left out."]);
+    // What is counted before the import is what the import takes.
+    assert_eq!(inspect(z.path()).unwrap().attachments, 4);
+}
+
+#[test]
 fn inspecting() {
     let z = a_library();
     let info = inspect(z.path()).unwrap();

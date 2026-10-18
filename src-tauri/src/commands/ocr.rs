@@ -205,6 +205,13 @@ pub fn ocr_searchable(
 ) -> CommandResult<MadeSearchable> {
     let reading = Reading::begin(ticket);
     let absolute = state.library().attachment_path(&path)?;
+    // The reference is looked for before the work, which replaces the file:
+    // one that is not there must not make the work that was done look failed.
+    if let Some(id) = &id
+        && state.library().resolve(id).is_none()
+    {
+        return Err(glaukopis_core::Error::not_found(tr!("core-library-the-reference")).into());
+    }
     let made = ocr::make_searchable(
         &absolute,
         &state.tools(),
@@ -218,12 +225,8 @@ pub fn ocr_searchable(
         Some(pdf) => library.replace_file(&path, pdf)?.0,
         None => path.clone(),
     };
-    let reference = match &id {
-        Some(id) => {
-            Some(full(&library, library.resolve(id).ok_or_else(|| glaukopis_core::Error::not_found(id.clone()))?))
-        }
-        None => None,
-    };
+    // Gone while the work was done, it is not given: the file was made searchable all the same.
+    let reference = id.as_deref().and_then(|id| library.resolve(id)).map(|entry| full(&library, entry));
     Ok(MadeSearchable {
         reference,
         file: library.describe_file(&now),

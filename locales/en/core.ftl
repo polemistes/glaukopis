@@ -32,8 +32,16 @@ io-copying = copying { $path }
 io-flushing = flushing { $path }
 io-replacing = replacing { $path }
 io-backing-up = backing up { $path }
+io-setting-aside = setting aside { $path }
 io-storing = storing { $path }
 io-no-directory = { $path } has no directory
+
+## A file of the application's own that could not be read: it is set aside,
+## under its name with the time added, and the application goes on without
+## it. Shown at the foot of the window.
+
+# $path is where the file was; $aside the name it has now, in the same folder; $cause what was wrong with it.
+core-set-aside = { $path } could not be read, and is set aside as { $aside } in the same folder; Glaukopis goes on without what it held. What was wrong: { $cause }
 
 ## The network. Shown after "network: ".
 
@@ -44,6 +52,14 @@ network-unreachable-because = { $host } could not be reached: { $error }
 network-nothing-there = { $host } has nothing at that address
 network-wait = { $host } asks us to wait before asking again
 network-status = { $host } answered with an error ({ $status })
+# $most is in megabytes.
+network-too-large = { $host } answered with more than Glaukopis takes ({ $most } MB)
+network-tls = a secure connection to { $host } could not be made: its certificate may not be trusted on this computer, or something between them, such as a proxy or a firewall, is in the way
+network-redirects = { $host } sent the question on from one address to another too many times
+network-stalled = the answer of { $host } stopped coming
+network-not-understood = { $host } answered in a way that could not be understood
+# What else went wrong; what was said of it is in the log of the run.
+network-failed = { $host } could not be asked; the log of the run says why
 # A way of asking, GET or POST, that the application does not use.
 network-method = { $method } is not a way of asking that is used here
 

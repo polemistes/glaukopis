@@ -42,6 +42,7 @@ use sha2::{Digest, Sha256};
 
 use crate::error::{Error, IoContext, Result};
 use crate::fsutil;
+use crate::sidefile;
 use crate::spelling::found;
 use crate::tr;
 
@@ -273,10 +274,16 @@ impl Languages {
                 .collect();
             names.sort();
             for name in names {
-                let manifest: Manifest = fs::read(dir.join(format!("{name}.json")))
-                    .ok()
-                    .and_then(|b| serde_json::from_slice(&b).ok())
-                    .unwrap_or_default();
+                // What it says of itself; one that cannot be read is set aside,
+                // and the language is listed by its name.
+                let path = dir.join(format!("{name}.json"));
+                let manifest: Manifest = match sidefile::read_json(&path) {
+                    Ok(read) => read.or_default(),
+                    Err(e) => {
+                        tracing::warn!(%e, path = %path.display(), "what a language says of itself is not used");
+                        Manifest::default()
+                    }
+                };
                 let language = match kind {
                     _ if !manifest.language.is_empty() => manifest.language,
                     Kind::Spelling => found::tag_of_name(&name).unwrap_or_default(),

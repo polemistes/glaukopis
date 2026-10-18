@@ -309,6 +309,14 @@ pub struct Layer {
     /// The outline the file carries of its own headings, its bookmarks, in
     /// their order (ADR 0047); empty where it has none.
     pub outline: Vec<OutlineEntry>,
+    /// The pages, counted from one, whose text could not be read to its
+    /// end: what was read of them is kept, and the rest is not there.
+    #[serde(default)]
+    pub broken: Vec<usize>,
+    /// Whether the reading of the file broke off before its end: the pages
+    /// after are not read.
+    #[serde(default)]
+    pub unfinished: bool,
 }
 
 impl Layer {
@@ -791,21 +799,30 @@ struct PageRead {
     maps: HashMap<ObjectId, BTreeMap<u32, String>>,
     fonts: BTreeMap<String, usize>,
     size: (f32, f32),
+    /// Whether it could not be read to its end.
+    broken: bool,
 }
 
 /// The lines of a page, as far as they can be read, as the PDF has them and
 /// as translated. The library panics on fonts and encodings it does not
-/// know; what it had read by then is kept.
+/// know; what it had read by then is kept, and the page is said to be
+/// broken (`Layer::broken`), which the log is told of once for the file.
 fn page_lines(doc: &Document, number: u32) -> Option<PageRead> {
     if too_large(doc, number, LARGEST_PAGE) {
         return None;
     }
     let mut gatherer = Gatherer::default();
-    match catch_unwind(AssertUnwindSafe(|| pdf_text::output_doc_page(doc, &mut gatherer, number))) {
-        Ok(Ok(())) => {}
-        Ok(Err(e)) => tracing::debug!(%e, number, "a page of the PDF could not be read to its end"),
-        Err(_) => tracing::debug!(number, "a page of the PDF could not be read to its end"),
-    }
+    let broken = match catch_unwind(AssertUnwindSafe(|| pdf_text::output_doc_page(doc, &mut gatherer, number))) {
+        Ok(Ok(())) => false,
+        Ok(Err(e)) => {
+            tracing::debug!(%e, number, "a page of the PDF could not be read to its end");
+            true
+        }
+        Err(_) => {
+            tracing::debug!(number, "a page of the PDF could not be read to its end");
+            true
+        }
+    };
     let size = (on_page(gatherer.width), on_page(gatherer.top));
     let Gatherer { lines, parts, named, fonts, mut schemes, maps, translated_fonts, font_counts, .. } = gatherer;
     let mut out_lines = Vec::new();
@@ -864,6 +881,7 @@ fn page_lines(doc: &Document, number: u32) -> Option<PageRead> {
         maps,
         fonts: font_counts,
         size,
+        broken,
     })
 }
 
@@ -1161,6 +1179,9 @@ fn read_into(bytes: &[u8], layer: &Mutex<Layer>) {
         let read = page_lines(&doc, number as u32);
         keep(layer, |l| match read {
             Some(page) => {
+                if page.broken {
+                    l.broken.push(number);
+                }
                 l.pages[number - 1] = Some(page.lines);
                 l.translated[number - 1] = page.translated;
                 l.schemes[number - 1] = page.schemes;
@@ -1190,7 +1211,10 @@ pub fn read_path(path: &Path, bytes: Arc<Vec<u8>>) -> Layer {
     let limits = crate::isolated::Limits::for_file(bytes.len() as u64, wait);
     match crate::isolated::run::<Layer>("pdf-layer", path, limits) {
         None => read(bytes, wait),
-        Some(Ok(layer)) => layer,
+        Some(Ok(layer)) => {
+            said_of(&layer);
+            layer
+        }
         Some(Err(crate::isolated::Ended::NotStarted(why))) => {
             tracing::warn!(%why, "no process could be started for reading the PDF; it is read here");
             read(bytes, wait)
@@ -1207,8 +1231,9 @@ pub fn read_path(path: &Path, bytes: Arc<Vec<u8>>) -> Layer {
 pub(crate) fn read_here(path: &Path) -> Result<Layer, String> {
     let bytes = std::fs::read(path).map_err(|e| e.to_string())?;
     let layer = Mutex::new(Layer::default());
+    // Said in the answer, which the application's log is told of.
     if catch_unwind(AssertUnwindSafe(|| read_into(&bytes, &layer))).is_err() {
-        tracing::warn!("the text of the PDF could not be read to its end");
+        keep(&layer, |l| l.unfinished = true);
     }
     Ok(layer.into_inner().unwrap_or_else(PoisonError::into_inner))
 }
@@ -1245,7 +1270,7 @@ pub fn read(bytes: Arc<Vec<u8>>, patience: Duration) -> Layer {
         let layer = Arc::clone(&layer);
         move || {
             if catch_unwind(AssertUnwindSafe(|| read_into(&bytes, &layer))).is_err() {
-                tracing::warn!("the text of the PDF could not be read to its end");
+                keep(&layer, |l| l.unfinished = true);
             }
             let _ = done.send(());
         }
@@ -1260,7 +1285,19 @@ pub fn read(bytes: Arc<Vec<u8>>, patience: Duration) -> Layer {
         Err(e) => tracing::warn!(%e, "no thread could be started for reading the PDF"),
     }
     let layer = layer.lock().unwrap_or_else(PoisonError::into_inner);
+    said_of(&layer);
     layer.clone()
+}
+
+/// Says in the log what of the text of a file could not be read: once for
+/// the file, wherever it was read.
+fn said_of(layer: &Layer) {
+    if layer.unfinished {
+        tracing::warn!(pages = layer.pages.len(), "the text of the PDF could not be read to its end");
+    }
+    if !layer.broken.is_empty() {
+        tracing::warn!(pages = ?layer.broken, "pages of the PDF whose text could not be read to its end");
+    }
 }
 
 /// How long the text of a file of this size may take to read.

@@ -30,6 +30,7 @@ use crate::fsutil::write_atomic;
 use crate::history::{Record, append_record, now_ms, read_records};
 use crate::library::now;
 use crate::paths::DataDir;
+use crate::sidefile;
 use crate::tr;
 
 const INFO: &str = "project.json";
@@ -508,14 +509,27 @@ impl Projects {
         Ok(())
     }
 
-    /// Projects in the trash, the most recently deleted first.
+    /// Projects in the trash, the most recently deleted first. One whose
+    /// project.json cannot be read is said in the log, and given by the
+    /// name of its folder, so that it can at least be removed for good.
     pub fn trash(&self) -> Result<Vec<(String, ProjectInfo)>> {
         let mut out = Vec::new();
         let Ok(entries) = fs::read_dir(self.root.join(TRASH)) else { return Ok(out) };
         for entry in entries.flatten() {
-            if let Ok(info) = Self::read_info(&entry.path()) {
-                out.push((entry.file_name().to_string_lossy().into_owned(), info));
+            let path = entry.path();
+            if !path.is_dir() {
+                continue;
             }
+            let name = entry.file_name().to_string_lossy().into_owned();
+            let info = match Self::read_info(&path) {
+                Ok(info) => info,
+                Err(e) => {
+                    tracing::warn!(%e, trashed = %name, "a project in the trash could not be read");
+                    let id = name.split_once('_').map_or(name.as_str(), |(_, id)| id).to_owned();
+                    ProjectInfo { id, name: name.clone(), ..Default::default() }
+                }
+            };
+            out.push((name, info));
         }
         out.sort_by(|a, b| b.0.cmp(&a.0));
         Ok(out)
@@ -541,7 +555,7 @@ impl Projects {
             return Err(Error::invalid(tr!("core-projects-not-in-trash")));
         }
         let dir = self.root.join(TRASH).join(trashed);
-        if !dir.join(INFO).is_file() {
+        if !dir.is_dir() {
             return Err(Error::not_found(tr!("core-projects-the-project-in-trash")));
         }
         fs::remove_dir_all(&dir).context(|| tr!("io-removing", path = &dir))
@@ -587,13 +601,11 @@ impl Projects {
 
     // ---- folders: see `Folder` and ADR 0031 ----
 
+    /// The folders and the places of the map. A file that cannot be read
+    /// is set aside (see `sidefile`), and the projects stand in no folder
+    /// until they are put in one again.
     fn read_arrangement(&self) -> Result<Arrangement> {
-        let path = self.root.join(FOLDERS);
-        match fs::read_to_string(&path) {
-            Ok(text) => serde_json::from_str(&text).map_err(|e| Error::Parse { path, message: e.to_string() }),
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Arrangement::default()),
-            Err(e) => Err(e).context(|| tr!("io-reading", path = &path)),
-        }
+        Ok(sidefile::read_json(&self.root.join(FOLDERS))?.or_default())
     }
 
     fn write_arrangement(&self, arrangement: &Arrangement) -> Result<()> {
@@ -1100,6 +1112,39 @@ mod tests {
         p.purge(&trash[0].0).unwrap();
         assert!(p.trash().unwrap().is_empty());
         assert_eq!(p.list().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn a_project_in_the_trash_that_cannot_be_read_is_shown_and_can_be_purged() {
+        let (_tmp, p) = projects();
+        let a = p.create("A").unwrap();
+        p.delete(&a.id).unwrap();
+        let trashed = p.trash().unwrap()[0].0.clone();
+        fs::write(p.root.join(TRASH).join(&trashed).join(INFO), "{ damaged").unwrap();
+        let trash = p.trash().unwrap();
+        assert_eq!(trash.len(), 1);
+        assert_eq!((trash[0].1.id.as_str(), trash[0].1.name.as_str()), (a.id.as_str(), trashed.as_str()));
+        assert!(p.restore(&trashed).is_err());
+        p.purge(&trashed).unwrap();
+        assert!(p.trash().unwrap().is_empty());
+    }
+
+    #[test]
+    fn folders_that_cannot_be_read_are_set_aside() {
+        let (_tmp, p) = projects();
+        let folder = p.folder_create("Homer", None).unwrap();
+        fs::write(p.root.join(FOLDERS), "{ \"folders\": [ ").unwrap();
+        assert!(p.folders().unwrap().is_empty());
+        let aside = fs::read_dir(&p.root)
+            .unwrap()
+            .flatten()
+            .filter(|e| e.file_name().to_string_lossy().starts_with("folders.json.broken-"))
+            .count();
+        assert_eq!(aside, 1);
+        // And the work goes on: a folder can be made again.
+        p.folder_create("Homer", None).unwrap();
+        assert_eq!(p.folders().unwrap().len(), 1);
+        let _ = folder;
     }
 
     #[test]

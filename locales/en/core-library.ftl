@@ -63,3 +63,5 @@ core-library-assign-reference-gone = “{ $name }” was not given to its refere
 core-library-assign-stored-gone = “{ $name }” was not given to its reference: the file is no longer where the library keeps it, { $path }.
 # The record of the files could not be read; it was put aside under another name.
 core-library-files-unreadable = The record of the files of the library could not be read, and was put aside as { $path }: { $message }
+# The library file has bytes that are not UTF-8, as an editor that saves in Latin-1 writes them; $aside is the name of the copy kept in the same folder.
+core-library-not-utf8 = { $path } has letters that are not in UTF-8, as an editor that saves in another encoding writes them. They are read as �, and will be written so; the file as it was is kept as { $aside } in the same folder.

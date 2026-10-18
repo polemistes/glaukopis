@@ -11,7 +11,7 @@ use std::path::PathBuf;
 
 use glaukopis_core::i18n::tr;
 use glaukopis_core::paths::{DataDir, default_root};
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 
 /// The variable by which WebKitGTK 2.54 and later are told which compositor
@@ -69,6 +69,13 @@ pub fn run() {
                 }
                 say_and_end(app, tr!("core-start-failed-title"), message, MessageDialogKind::Error, 1);
             };
+            // What the core tells without being asked (a file set aside while
+            // the stores open, say) waits for the page; the page is told when
+            // more comes, and takes what waits when it starts.
+            let handle = app.handle().clone();
+            glaukopis_core::notices::on_told(move || {
+                let _ = handle.emit(commands::notices::EVENT, ());
+            });
             match opening(default_root(), app.path().resource_dir().ok(), speak_as_chosen) {
                 Opening::Ready(state) => {
                     app.manage(*state);
@@ -103,6 +110,7 @@ pub fn run() {
             commands::system::language_set,
             commands::system::reveal_path,
             commands::system::log_page,
+            commands::notices::notices_take,
             commands::clipboard::clipboard_read,
             commands::library::library_list,
             commands::library::library_refresh,
