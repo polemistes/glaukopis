@@ -55,6 +55,7 @@ settings-reference-style = Referansestil
 ## Om deg
 
 settings-you = Opplysninger om deg
+settings-you-about = Navnet ditt er det historikken til et prosjekt og de du deler det med, kaller deg. Et nytt prosjekt har deg som forfatter, med organisasjon, e-post og ORCID; det endres i dokumentinnstillingene til prosjektet. Tittel, adresse og telefon tas vare på for dokumenter som vil be om dem; ingenting bruker dem ennå. Glaukopis sender ikke noe av dette noe sted av seg selv: det som står i dokumentinnstillingene til et prosjekt, følger med prosjektet når du deler eller eksporterer det.
 settings-first-name = Fornavn
 settings-last-name = Etternavn
 settings-organization = Organisasjon

@@ -109,7 +109,12 @@ export interface Settings {
   contactEmail: string | null;
   /** Name shown to collaborators: the first and the last name, where they are given. */
   displayName: string | null;
-  /** The user's details, for documents and letters that ask for them. */
+  /**
+   * The user's details. The name, the organisation, the email and the ORCID
+   * make the author of a new project (`authorOf` in state/settings); the
+   * position, the address and the phone are kept for documents that will
+   * ask for them, and used by nothing yet.
+   */
   firstName: string | null;
   lastName: string | null;
   organization: string | null;

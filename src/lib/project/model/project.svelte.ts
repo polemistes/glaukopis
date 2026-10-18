@@ -63,6 +63,7 @@ import {
   type LinkRecord,
   type NodeRecord,
   type PassageKindRecord,
+  type Person,
   type Position,
   type RefRecord,
   type Thread,
@@ -473,11 +474,13 @@ export class Project {
    * ADR 0037, as maps with a centre each and loose elements beside, is
    * brought into one tree. Done once, saved but not undone; nothing happens
    * to a project that is in shape. Not for a joined project that has not
-   * arrived yet: its element is on its way. Returns whether anything was done.
+   * arrived yet: its element is on its way. A project that begins now, with
+   * nothing in it, has `author` for its author, where one is given: the
+   * writer, as the settings name them. Returns whether anything was done.
    */
-  begin(name: string): boolean {
+  begin(name: string, author?: Person | null): boolean {
     if (!needsMigration(this.doc)) return false;
-    this.doc.transact(() => migrate(this.doc, name, newTextLanguage(), term), TIDY);
+    this.doc.transact(() => migrate(this.doc, name, newTextLanguage(), term, author), TIDY);
     return true;
   }
 

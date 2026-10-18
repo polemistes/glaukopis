@@ -65,6 +65,7 @@ settings-reference-style = Reference style
 ## You
 
 settings-you = Your details
+settings-you-about = Your name is what the history of a project and those you share it with call you. A new project has you as its author, with your organization, email and ORCID; that is changed in the project's document settings. Title, address and phone are kept for documents that will ask for them; nothing uses them yet. Glaukopis sends none of this anywhere by itself: what stands in a project's document settings goes with the project when you share or export it.
 settings-first-name = First name
 settings-last-name = Last name
 settings-organization = Organization
