@@ -88,6 +88,12 @@
           checked: review.chosen?.moment.snapshot === c.moment.snapshot,
           action: () => review.choose(c),
         })),
+      { kind: 'separator' },
+      {
+        label: t('review-forget-accepted'),
+        hint: t('review-forget-accepted-hint'),
+        action: () => review.forgetAccepted(),
+      },
     ];
     openMenu(anchor, items, { side: 'bottom', align: 'start' });
   }
@@ -322,7 +328,14 @@
     </div>
 
     {#if review.failure}
-      <EmptyState compact title={t('review-failed')} text={review.failure} />
+      <!-- What was accepted may be what fails: it can be forgotten from here. -->
+      <EmptyState compact title={t('review-failed')} text={review.failure}>
+        <Button
+          variant="ghost"
+          title={t('review-forget-accepted-hint')}
+          onclick={() => review.forgetAccepted()}>{t('review-forget-accepted')}</Button
+        >
+      </EmptyState>
     {:else if !review.ready}
       <div class="waiting"><Spinner size={18} /><span>{t('review-working')}</span></div>
     {:else if !review.changes.length}

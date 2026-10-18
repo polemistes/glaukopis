@@ -238,6 +238,30 @@ describe('the history of a project', () => {
     expect(gone.pieces[0]).toMatchObject({ status: 'removed', text: 'King of Troy.', by: 'bo' });
   });
 
+  it('takes a kept position that does not decode for nowhere, and still works the changes out', async () => {
+    const { a, b, ann, at, root, flush } = await two();
+    paragraph(a, root, 'Sing, goddess.');
+    await flush();
+    const since = engineOf(ann, 'ann').moment(Infinity);
+    b.transact(() => textOf(b, root).insert(0, 'O '));
+    await flush();
+    const e = engineOf(ann, 'ann', a);
+    // As an earlier version kept them, for a passage gone that held nothing.
+    const broken = {
+      place: { element: root, part: 'body' as const, path: [0] },
+      from: new Uint8Array(),
+      to: new Uint8Array(),
+      visible: {},
+    };
+    const reference: Reference = { moment: since.snapshot, accepted: [broken] };
+    const passage = e.compare(at, reference).passages[0];
+    expect(passage.pieces.find((p) => p.status === 'added')?.text).toBe('O ');
+    const t = textOf(a, root);
+    const from = Y.encodeRelativePosition(Y.createRelativePositionFromTypeIndex(t, 0));
+    const to = Y.encodeRelativePosition(Y.createRelativePositionFromTypeIndex(t, t.length, -1));
+    expect(e.versions(passage.place, from, to, reference).length).toBe(2);
+  });
+
   it('takes back changes, makes a stretch as it was, and tells its versions', async () => {
     const { a, b, ann, at, root, flush } = await two();
     paragraph(a, root, 'Sing, goddess, the wrath.');

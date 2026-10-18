@@ -274,6 +274,18 @@ describe('new and deleted text', () => {
     expect(shown(found[0])).toBe('{It was here. And this.}');
   });
 
+  it('a paragraph deleted that held nothing is no change, nor part of its element removed', () => {
+    const empty = passage('a', [2], [], { after: false });
+    expect(group(changes([empty]))).toEqual([]);
+    const found = group(
+      changes([deleted('gone', [0], 'Its text.'), passage('gone', [0], [], { after: false, part: 'title' })], {
+        elements: [{ element: 'gone', kind: 'removed', before: { parent: 'root', after: null }, by: 'bo' }],
+      }),
+    );
+    expect(found.map((c) => c.change?.kind ?? c.kind)).toEqual(['removed']);
+    expect(found[0].stretches.map((s) => s.passage.place.part)).toEqual(['body']);
+  });
+
   it('within a list and after it', () => {
     const found = group(
       changes([

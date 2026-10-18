@@ -230,21 +230,38 @@ export function acceptBetween(
  * where the stretch begins and ends in the text of the block as it is now
  * (signs counted as the history counts them), and `pieces` what the change
  * showed of it. Where the block is no longer there, it is found by the items
- * of the pieces, and nothing in it is to be seen.
+ * of the pieces, and nothing in it is to be seen; where it had no pieces
+ * either, there is nothing to accept, and nothing is returned: a position
+ * of nothing could not be read again.
  */
+export function acceptStretch(
+  block: Y.XmlElement,
+  place: Place,
+  from: number,
+  to: number,
+  pieces: Piece[],
+): Accepted;
 export function acceptStretch(
   block: Y.XmlElement | null,
   place: Place,
   from: number,
   to: number,
   pieces: Piece[],
-): Accepted {
+): Accepted | null;
+export function acceptStretch(
+  block: Y.XmlElement | null,
+  place: Place,
+  from: number,
+  to: number,
+  pieces: Piece[],
+): Accepted | null {
   if (!block) {
     const { first, last } = edges(pieces);
+    if (!first || !last) return null;
     return {
       place,
-      from: first ? at(first[0], first[1], 0) : new Uint8Array(),
-      to: last ? at(last[0], last[1], -1) : new Uint8Array(),
+      from: at(first[0], first[1], 0),
+      to: at(last[0], last[1], -1),
       visible: {},
     };
   }

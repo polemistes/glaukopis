@@ -53,8 +53,11 @@ function isAccepted(value: unknown): value is Accepted {
   return (
     !!a &&
     typeof a === 'object' &&
+    // An empty position, which an earlier version could keep, is of nothing.
     a.from instanceof Uint8Array &&
+    a.from.length > 0 &&
     a.to instanceof Uint8Array &&
+    a.to.length > 0 &&
     typeof a.visible === 'object' &&
     !!a.place &&
     typeof a.place.element === 'string'
@@ -121,6 +124,7 @@ export function accept(
   accepted: Accepted[],
   settled: Settled[] = [],
 ) {
+  accepted = accepted.filter(isAccepted);
   if (!accepted.length && !settled.length) return;
   doc.transact(() => {
     const all = reviews(doc);
@@ -160,6 +164,20 @@ export function settle(doc: Y.Doc, person: string, now: Moment) {
       all.set(person, kept);
     }
     begin(kept, now);
+  }, REVIEWING);
+}
+
+/**
+ * Forgets what a person has accepted since the moment they review from:
+ * the changes since come back to be reviewed. A review that what was kept
+ * of it has led astray is mended so, without going back to the beginning.
+ */
+export function forgetAccepted(doc: Y.Doc, person: string) {
+  const kept = reviews(doc).get(person);
+  if (!(kept instanceof Y.Map)) return;
+  doc.transact(() => {
+    kept.set('accepted', new Y.Array<Accepted>());
+    kept.set('settled', new Y.Array<Settled>());
   }, REVIEWING);
 }
 
