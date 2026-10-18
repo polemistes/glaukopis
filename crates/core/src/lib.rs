@@ -28,6 +28,7 @@ pub mod projects;
 pub mod readable;
 pub mod settings;
 pub mod sharing;
+mod shelf;
 pub mod sidefile;
 pub mod spelling;
 pub mod styles;

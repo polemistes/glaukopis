@@ -5,7 +5,7 @@ use std::fmt::Write;
 
 use crate::formats::kinds::Resolved;
 use crate::formats::typst::Particulars;
-use crate::formats::{Align, Case, DocumentFormat, HeadContent, NoteKind, Paragraphs, Position};
+use crate::formats::{Align, Case, DocumentFormat, NoteKind, Paragraphs, Position};
 
 /// Text as LaTeX, with the characters that mean something to it made harmless.
 pub fn escape(text: &str) -> String {
@@ -247,27 +247,13 @@ pub fn settings(f: &DocumentFormat, p: &Particulars) -> Settings {
         h,
         "\\usepackage{{fancyhdr}}\n\\pagestyle{{fancy}}\n\\fancyhf{{}}\n\\renewcommand{{\\headrulewidth}}{{0pt}}"
     );
-    if f.running_head.content != HeadContent::None {
-        let authors = if f.title.anonymous { String::new() } else { p.authors.join(", ") };
-        let mut words = match f.running_head.content {
-            HeadContent::Title => p.title.clone(),
-            HeadContent::Author => authors,
-            HeadContent::AuthorTitle if authors.is_empty() => p.title.clone(),
-            HeadContent::AuthorTitle => format!("{authors}: {}", p.title),
-            HeadContent::Text => f.running_head.text.clone(),
-            HeadContent::None => String::new(),
+    if let Some(words) = p.running_head_cased(f) {
+        let slot = match f.running_head.align {
+            Align::Left | Align::Justified => "L",
+            Align::Center => "C",
+            Align::Right => "R",
         };
-        if f.running_head.case == Case::Upper {
-            words = words.to_uppercase();
-        }
-        if !words.trim().is_empty() {
-            let slot = match f.running_head.align {
-                Align::Left | Align::Justified => "L",
-                Align::Center => "C",
-                Align::Right => "R",
-            };
-            let _ = writeln!(h, "\\fancyhead[{slot}]{{{}}}", escape(words.trim()));
-        }
+        let _ = writeln!(h, "\\fancyhead[{slot}]{{{}}}", escape(&words));
     }
     if f.page_numbers.show {
         let (place, slot) = match f.page_numbers.position {
@@ -426,6 +412,7 @@ pub fn biblatex_style(style: &str, kind: &str) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::formats::HeadContent;
 
     #[test]
     fn escaping() {

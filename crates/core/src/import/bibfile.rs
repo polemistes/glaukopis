@@ -42,30 +42,16 @@ fn is_foreign_bookkeeping(name: &str) -> bool {
         )
 }
 
-/// Reads bytes as UTF-8, or as Windows-1252 when they are not valid UTF-8,
-/// which is how older files were written.
-pub fn decode_bytes(bytes: &[u8]) -> String {
-    match std::str::from_utf8(bytes) {
-        Ok(s) => s.to_owned(),
-        Err(_) => bytes.iter().map(|&b| windows_1252(b)).collect(),
-    }
-}
-
-fn windows_1252(b: u8) -> char {
-    const HIGH: [char; 32] = [
-        '€', '\u{81}', '‚', 'ƒ', '„', '…', '†', '‡', 'ˆ', '‰', 'Š', '‹', 'Œ', '\u{8d}', 'Ž', '\u{8f}', '\u{90}', '‘',
-        '’', '“', '”', '•', '–', '—', '˜', '™', 'š', '›', 'œ', '\u{9d}', 'ž', 'Ÿ',
-    ];
-    match b {
-        0x80..=0x9f => HIGH[(b - 0x80) as usize],
-        _ => b as char,
-    }
-}
-
 pub fn read_file(path: &Path) -> Result<(Vec<Candidate>, Vec<String>)> {
     let bytes = std::fs::read(path).context(|| tr!("io-reading", path = path))?;
-    let text = decode_bytes(&bytes);
-    Ok(read_text(&text, path.parent()))
+    let decoded = super::decoding::decode_text(&bytes);
+    let (candidates, mut warnings) = read_text(&decoded.text, path.parent());
+    if decoded.western {
+        let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+        tracing::warn!(path = %path.display(), "a .bib file is neither UTF-8 nor UTF-16, and is read as Windows-1252");
+        warnings.insert(0, tr!("core-import-read-as-western", name = name));
+    }
+    Ok((candidates, warnings))
 }
 
 /// Reads BibLaTeX source. Paths of attached files are resolved against `base`.
@@ -235,8 +221,23 @@ mod tests {
 
     #[test]
     fn old_encodings() {
-        assert_eq!(decode_bytes("Gödel".as_bytes()), "Gödel");
-        assert_eq!(decode_bytes(&[b'G', 0xf6, b'd', b'e', b'l', b' ', 0x96, b' ', 0x93, b'x', 0x94]), "Gödel – “x”");
+        let tmp = tempfile::tempdir().unwrap();
+        let bib = tmp.path().join("notepad.bib");
+        let source = "@book{godel, author = {Gödel, Kurt}, title = {Über formal unentscheidbare Sätze}}";
+        // Saved by Notepad, or exported by EndNote, as "Unicode": UTF-16
+        // with its mark. Its entry is read, and nothing needs saying.
+        let utf16: Vec<u8> = [0xff, 0xfe].into_iter().chain(source.encode_utf16().flat_map(u16::to_le_bytes)).collect();
+        std::fs::write(&bib, utf16).unwrap();
+        let (candidates, warnings) = read_file(&bib).unwrap();
+        assert_eq!(candidates.len(), 1);
+        assert_eq!(candidates[0].draft.names["author"][0].family, "Gödel");
+        assert!(warnings.is_empty(), "{warnings:?}");
+        // A file of Windows-1252 is read so, and the guess is said.
+        let western: Vec<u8> = source.chars().map(|c| u8::try_from(u32::from(c)).unwrap()).collect();
+        std::fs::write(&bib, western).unwrap();
+        let (candidates, warnings) = read_file(&bib).unwrap();
+        assert_eq!(candidates[0].draft.names["author"][0].family, "Gödel");
+        assert!(warnings[0].contains("notepad.bib") && warnings[0].contains("Windows-1252"), "{warnings:?}");
     }
 
     #[test]

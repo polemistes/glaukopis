@@ -171,3 +171,7 @@ core-import-document-picture-outside = det ligger ikke i filen, men et annet ste
 core-import-document-picture-not-found = filen ble ikke funnet der dokumentet sier den er
 core-import-document-picture-too-large = det er større enn 50 MB
 core-import-document-picture-file-unreadable = filen kunne ikke leses
+
+## En tekstfil som verken er UTF-8 eller UTF-16, hentet inn som referanser, et dokument eller en tabell.
+
+core-import-read-as-western = «{ $name }» er verken skrevet i UTF-8 eller i UTF-16, og ble lest som vesteuropeisk (Windows-1252). Bokstaver fra andre alfabeter kan ha blitt feil: for å være sikker, lagre filen som UTF-8 og hent den inn på nytt.

@@ -30,6 +30,34 @@ pub struct Particulars {
     pub own_kinds: Vec<OwnKind>,
 }
 
+impl Particulars {
+    /// The words of the running head as the format asks for them, trimmed,
+    /// without their case: None where the head is off or would be empty. An
+    /// anonymous manuscript names no author, so "author: title" is then the
+    /// title alone. Typst, LaTeX, DOCX and ODT all take their head from here.
+    pub fn running_head(&self, format: &DocumentFormat) -> Option<String> {
+        let authors = if format.title.anonymous { String::new() } else { self.authors.join(", ") };
+        let words = match format.running_head.content {
+            HeadContent::None => return None,
+            HeadContent::Title => self.title.clone(),
+            HeadContent::Author => authors,
+            HeadContent::AuthorTitle if authors.is_empty() => self.title.clone(),
+            HeadContent::AuthorTitle => format!("{authors}: {}", self.title),
+            HeadContent::Text => format.running_head.text.clone(),
+        };
+        let words = words.trim();
+        (!words.is_empty()).then(|| words.to_owned())
+    }
+
+    /// The words of the running head with capitals already in them where
+    /// the format asks for capitals, for a target that sets the head as
+    /// plain text. Small capitals are left to a target that can set them.
+    pub fn running_head_cased(&self, format: &DocumentFormat) -> Option<String> {
+        let words = self.running_head(format)?;
+        Some(if format.running_head.case == Case::Upper { words.to_uppercase() } else { words })
+    }
+}
+
 /// What makes text flow around what stands at its side: see the file.
 const AROUND: &str = include_str!("../../../../resources/typst/wrap-it.typ");
 
@@ -195,30 +223,14 @@ fn margin_row(format: &DocumentFormat, p: &Particulars, top: bool) -> Option<Str
     let mut slots: [Vec<String>; 3] = [Vec::new(), Vec::new(), Vec::new()];
 
     // The running head, which stands at the top.
-    if top && format.running_head.content != HeadContent::None {
-        let authors = if format.title.anonymous { String::new() } else { p.authors.join(", ") };
-        let words = match format.running_head.content {
-            HeadContent::Title => p.title.clone(),
-            HeadContent::Author => authors,
-            HeadContent::AuthorTitle => {
-                if authors.is_empty() {
-                    p.title.clone()
-                } else {
-                    format!("{authors}: {}", p.title)
-                }
-            }
-            HeadContent::Text => format.running_head.text.clone(),
-            HeadContent::None => String::new(),
+    if top && let Some(words) = p.running_head(format) {
+        let body = cased(format.running_head.case, &format!("text({})", string(&words)));
+        let slot = match format.running_head.align {
+            Align::Left | Align::Justified => 0,
+            Align::Center => 1,
+            Align::Right => 2,
         };
-        if !words.trim().is_empty() {
-            let body = cased(format.running_head.case, &format!("text({})", string(words.trim())));
-            let slot = match format.running_head.align {
-                Align::Left | Align::Justified => 0,
-                Align::Center => 1,
-                Align::Right => 2,
-            };
-            slots[slot].push(body);
-        }
+        slots[slot].push(body);
     }
 
     if format.page_numbers.show {
@@ -864,5 +876,38 @@ mod tests {
         f.running_head.content = HeadContent::AuthorTitle;
         let out = preamble(&f, &p);
         assert!(!out.contains("A. Scholar"), "an anonymous manuscript does not name its author anywhere");
+    }
+
+    #[test]
+    fn the_running_head_is_worked_out_once() {
+        let mut f = DocumentFormat::default();
+        let p = Particulars {
+            title: "Wrath".into(),
+            authors: vec!["A. Scholar".into(), "B. Other".into()],
+            ..Default::default()
+        };
+        f.running_head.content = HeadContent::None;
+        assert_eq!(p.running_head(&f), None);
+        f.running_head.content = HeadContent::Title;
+        assert_eq!(p.running_head(&f).as_deref(), Some("Wrath"));
+        f.running_head.content = HeadContent::Author;
+        assert_eq!(p.running_head(&f).as_deref(), Some("A. Scholar, B. Other"));
+        f.running_head.content = HeadContent::AuthorTitle;
+        assert_eq!(p.running_head(&f).as_deref(), Some("A. Scholar, B. Other: Wrath"));
+        f.running_head.case = Case::Upper;
+        assert_eq!(p.running_head_cased(&f).as_deref(), Some("A. SCHOLAR, B. OTHER: WRATH"));
+        assert_eq!(p.running_head(&f).as_deref(), Some("A. Scholar, B. Other: Wrath"), "Typst sets its own capitals");
+        f.running_head.case = Case::Smallcaps;
+        assert_eq!(p.running_head_cased(&f).as_deref(), Some("A. Scholar, B. Other: Wrath"));
+        // An anonymous manuscript names no author, so the head is the title.
+        f.title.anonymous = true;
+        assert_eq!(p.running_head(&f).as_deref(), Some("Wrath"));
+        f.running_head.content = HeadContent::Author;
+        assert_eq!(p.running_head(&f), None);
+        f.running_head.content = HeadContent::Text;
+        f.running_head.text = "  R&D ".into();
+        assert_eq!(p.running_head(&f).as_deref(), Some("R&D"));
+        f.running_head.text = "   ".into();
+        assert_eq!(p.running_head(&f), None);
     }
 }

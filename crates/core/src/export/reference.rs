@@ -11,8 +11,7 @@ use crate::error::{Error, Result};
 use crate::formats::kinds::{self, Family, OwnKind, Resolved};
 use crate::formats::typst::Particulars;
 use crate::formats::{
-    Align, CaptionPosition, Case, DocumentFormat, HeadContent, HeadingLevel, Length, NoteKind, Paragraphs, Rules,
-    fallbacks,
+    Align, CaptionPosition, Case, DocumentFormat, HeadingLevel, Length, NoteKind, Paragraphs, Rules, fallbacks,
 };
 use crate::tr;
 
@@ -818,22 +817,8 @@ fn margins(f: &DocumentFormat, p: &Particulars) -> (Margin, Margin) {
         Align::Center => m.center.push(piece),
         Align::Right => m.right.push(piece),
     };
-    if f.running_head.content != HeadContent::None {
-        let authors = if f.title.anonymous { String::new() } else { p.authors.join(", ") };
-        let mut words = match f.running_head.content {
-            HeadContent::Title => p.title.clone(),
-            HeadContent::Author => authors,
-            HeadContent::AuthorTitle if authors.is_empty() => p.title.clone(),
-            HeadContent::AuthorTitle => format!("{authors}: {}", p.title),
-            HeadContent::Text => f.running_head.text.clone(),
-            HeadContent::None => String::new(),
-        };
-        if f.running_head.case == Case::Upper {
-            words = words.to_uppercase();
-        }
-        if !words.trim().is_empty() {
-            slot(&mut top, f.running_head.align, Piece::Words(words.trim().to_owned()));
-        }
+    if let Some(words) = p.running_head_cased(f) {
+        slot(&mut top, f.running_head.align, Piece::Words(words));
     }
     if f.page_numbers.show {
         let pos = f.page_numbers.position;
@@ -1792,6 +1777,7 @@ pub fn substitute(f: &DocumentFormat, installed: &[String]) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::formats::HeadContent;
 
     fn format() -> DocumentFormat {
         let mut f = DocumentFormat { name: "Test".into(), ..Default::default() };

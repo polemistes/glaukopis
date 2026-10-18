@@ -13,6 +13,7 @@ use crate::error::{Error, IoContext, Result};
 use crate::fsutil::write_atomic;
 use crate::net::Client;
 use crate::tr;
+use crate::written::entities::resolve;
 
 const REPOSITORY: &str = "https://raw.githubusercontent.com/citation-style-language/styles/master";
 
@@ -78,7 +79,7 @@ pub fn describe(xml: &str) -> (String, String, bool) {
     let between = |open: &str, close: &str| -> Option<String> {
         let a = head.find(open)? + open.len();
         let b = head[a..].find(close)? + a;
-        Some(unescape(head[a..b].trim()))
+        Some(resolve(head[a..b].trim()))
     };
     let title = between("<title>", "</title>").unwrap_or_default();
     let kind = head
@@ -87,15 +88,6 @@ pub fn describe(xml: &str) -> (String, String, bool) {
         .and_then(|i| head[i..].find('"').map(|j| head[i..i + j].to_owned()))
         .unwrap_or_default();
     (title, kind, xml.contains("<bibliography"))
-}
-
-fn unescape(text: &str) -> String {
-    text.replace("&amp;", "&")
-        .replace("&lt;", "<")
-        .replace("&gt;", ">")
-        .replace("&quot;", "\"")
-        .replace("&apos;", "'")
-        .replace("&#38;", "&")
 }
 
 pub fn escape(text: &str) -> String {
@@ -362,7 +354,7 @@ fn default_locale(xml: &str) -> Option<String> {
     let tag = style_tag(xml)?;
     let tag = &xml[tag];
     let value = attribute_value(tag, "default-locale")?;
-    Some(unescape(&tag[value]).trim().to_owned()).filter(|l| !l.is_empty())
+    Some(resolve(&tag[value]).trim().to_owned()).filter(|l| !l.is_empty())
 }
 
 /// The start tag of a style, `<style …`, without its closing `>`.
@@ -448,6 +440,10 @@ mod tests {
         assert!(check_style(STYLE).is_ok());
         assert!(check_style(DEPENDENT).is_err());
         assert!(check_style("<html/>").is_err());
+        // An entity is resolved once, as XML has it: an escaped ampersand
+        // before "amp;" stays text, and numbered entities are read.
+        let twice = STYLE.replace("Test &amp; Trial", "A &amp;amp; B &#8211; C");
+        assert_eq!(describe(&twice).0, "A &amp; B – C");
         assert!(check_style("not xml").is_err());
     }
 

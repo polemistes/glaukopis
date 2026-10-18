@@ -12,13 +12,13 @@ pub mod typst;
 
 use std::collections::BTreeMap;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
 use crate::document::Side;
 use crate::error::{Error, IoContext, Result};
-use crate::fsutil::write_atomic;
+use crate::shelf::{self, Shelf, Shelved};
 use crate::tr;
 
 pub use length::Length;
@@ -909,57 +909,52 @@ pub struct FormatSummary {
 }
 
 pub struct Formats {
-    bundled: PathBuf,
-    own: PathBuf,
+    shelf: Shelf,
 }
 
-fn check_id(id: &str) -> Result<()> {
-    let ok = !id.is_empty()
-        && id.len() <= 80
-        && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
-        && !id.starts_with('-');
-    if ok { Ok(()) } else { Err(Error::invalid(tr!("core-export-format-bad-id", id = id))) }
+/// A format read from its file, put right where it says nonsense.
+fn read(path: &Path) -> Result<DocumentFormat> {
+    let text = fs::read_to_string(path).context(|| tr!("io-reading", path = path))?;
+    let mut format: DocumentFormat =
+        serde_json::from_str(&text).map_err(|e| Error::Parse { path: path.to_owned(), message: e.to_string() })?;
+    if format.id.is_empty() {
+        format.id = shelf::stem(path);
+    }
+    format.sanitise();
+    Ok(format)
 }
 
-impl Formats {
-    pub fn new(resources: &Path, own: &Path) -> Self {
-        Formats { bundled: resources.join("formats"), own: own.to_owned() }
+impl Shelved for DocumentFormat {
+    const CALLED: &'static str = "a format";
+
+    fn read_bundled(_: &Shelf, path: &Path) -> Result<Self> {
+        read(path)
     }
 
-    fn read(path: &Path) -> Result<DocumentFormat> {
-        let text = fs::read_to_string(path).context(|| tr!("io-reading", path = path))?;
-        let mut format: DocumentFormat =
-            serde_json::from_str(&text).map_err(|e| Error::Parse { path: path.to_owned(), message: e.to_string() })?;
-        if format.id.is_empty() {
-            format.id = path.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
-        }
-        format.sanitise();
+    fn read_own(path: &Path) -> Result<Self> {
+        let mut format = read(path)?;
+        format.kind = Kind::Own;
         Ok(format)
     }
 
-    fn read_dir(dir: &Path, own: bool, out: &mut Vec<(DocumentFormat, bool)>) {
-        let Ok(entries) = fs::read_dir(dir) else { return };
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.extension().is_some_and(|e| e == "json") {
-                match Self::read(&path) {
-                    Ok(mut f) => {
-                        if own {
-                            f.kind = Kind::Own;
-                        }
-                        out.push((f, own));
-                    }
-                    Err(e) => tracing::warn!(%e, "a format could not be read"),
-                }
-            }
-        }
+    fn id(&self) -> &str {
+        &self.id
     }
-
-    pub fn all(&self) -> Vec<(DocumentFormat, bool)> {
-        let mut out = Vec::new();
-        Self::read_dir(&self.bundled, false, &mut out);
-        Self::read_dir(&self.own, true, &mut out);
-        let rank = |k: Kind| match k {
+    fn set_id(&mut self, id: String) {
+        self.id = id;
+    }
+    fn name_mut(&mut self) -> &mut String {
+        &mut self.name
+    }
+    fn based_on_mut(&mut self) -> &mut Option<String> {
+        &mut self.based_on
+    }
+    fn readied_as_own(&mut self) {
+        self.kind = Kind::Own;
+        self.sanitise();
+    }
+    fn rank(&self) -> u8 {
+        match self.kind {
             Kind::Own => 0,
             Kind::General => 1,
             Kind::Fiction => 2,
@@ -968,11 +963,33 @@ impl Formats {
             Kind::StyleGuide => 5,
             Kind::Publisher => 6,
             Kind::Journal => 7,
-        };
-        out.sort_by(|a, b| {
-            rank(a.0.kind).cmp(&rank(b.0.kind)).then(a.0.name.to_lowercase().cmp(&b.0.name.to_lowercase()))
-        });
-        out
+        }
+    }
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn bad_id(id: &str) -> Error {
+        Error::invalid(tr!("core-export-format-bad-id", id = id))
+    }
+    fn needs_name() -> Error {
+        Error::invalid(tr!("core-export-format-needs-name"))
+    }
+    fn own_only() -> Error {
+        Error::invalid(tr!("core-export-format-own-only"))
+    }
+    fn not_found(id: &str) -> Error {
+        Error::not_found(tr!("core-export-the-format", id = id))
+    }
+}
+
+impl Formats {
+    pub fn new(resources: &Path, own: &Path) -> Self {
+        Formats { shelf: Shelf::new(resources.join("formats"), own) }
+    }
+
+    pub fn all(&self) -> Vec<(DocumentFormat, bool)> {
+        self.shelf.all()
     }
 
     pub fn list(&self) -> Vec<FormatSummary> {
@@ -993,23 +1010,12 @@ impl Formats {
     /// The format with an id. The user's own is preferred to one that comes
     /// with the application under the same id.
     pub fn get(&self, id: &str) -> Result<DocumentFormat> {
-        check_id(id)?;
-        let own = self.own.join(format!("{id}.json"));
-        if own.is_file() {
-            let mut f = Self::read(&own)?;
-            f.kind = Kind::Own;
-            return Ok(f);
-        }
-        let bundled = self.bundled.join(format!("{id}.json"));
-        if bundled.is_file() {
-            return Self::read(&bundled);
-        }
-        Err(Error::not_found(tr!("core-export-the-format", id = id)))
+        self.shelf.get(id)
     }
 
     /// The format with an id, or the general one when it is not there.
     pub fn get_or_default(&self, id: &str) -> DocumentFormat {
-        self.get(id).or_else(|_| self.get("manuscript")).unwrap_or_else(|_| {
+        self.shelf.get_or(id, "manuscript", || {
             let mut f = DocumentFormat { id: "manuscript".into(), name: "Manuscript".into(), ..Default::default() };
             f.sanitise();
             f
@@ -1017,39 +1023,12 @@ impl Formats {
     }
 
     /// Saves a format as the user's own. Returns it as saved.
-    pub fn save(&self, mut format: DocumentFormat) -> Result<DocumentFormat> {
-        format.name = format.name.split_whitespace().collect::<Vec<_>>().join(" ");
-        if format.name.is_empty() {
-            return Err(Error::invalid(tr!("core-export-format-needs-name")));
-        }
-        if format.id.is_empty() || self.bundled.join(format!("{}.json", format.id)).is_file() {
-            // A new one, or one made from a format that comes with the application.
-            let base = slug(&format.name);
-            let mut id = base.clone();
-            let mut n = 2;
-            while self.own.join(format!("{id}.json")).exists() || self.bundled.join(format!("{id}.json")).exists() {
-                id = format!("{base}-{n}");
-                n += 1;
-            }
-            if format.based_on.is_none() && !format.id.is_empty() {
-                format.based_on = Some(format.id.clone());
-            }
-            format.id = id;
-        }
-        check_id(&format.id)?;
-        format.kind = Kind::Own;
-        format.sanitise();
-        write_atomic(&self.own.join(format!("{}.json", format.id)), serde_json::to_string_pretty(&format)?.as_bytes())?;
-        Ok(format)
+    pub fn save(&self, format: DocumentFormat) -> Result<DocumentFormat> {
+        self.shelf.save(format)
     }
 
     pub fn delete(&self, id: &str) -> Result<()> {
-        check_id(id)?;
-        let path = self.own.join(format!("{id}.json"));
-        if !path.is_file() {
-            return Err(Error::invalid(tr!("core-export-format-own-only")));
-        }
-        fs::remove_file(&path).context(|| tr!("io-removing", path = &path))
+        self.shelf.delete::<DocumentFormat>(id)
     }
 }
 

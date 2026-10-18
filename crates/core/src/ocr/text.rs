@@ -12,6 +12,8 @@
 //! begins with a small letter and the part before it does not look like a
 //! name.
 
+use super::rules::{self, ends_sentence, median};
+
 /// Whether a word is a word of the language, as a dictionary knows.
 pub type IsWord<'a> = dyn Fn(&str) -> bool + Sync + 'a;
 
@@ -282,14 +284,6 @@ pub fn only_marks(text: &str, confidence: Option<f32>) -> bool {
 // The text a PDF has
 // ---------------------------------------------------------------------------
 
-fn median(mut values: Vec<f32>) -> Option<f32> {
-    if values.is_empty() {
-        return None;
-    }
-    values.sort_by(f32::total_cmp);
-    Some(values[values.len() / 2])
-}
-
 /// Lines of a page, in the order in which they are read, gathered into
 /// paragraphs by where they stand. A paragraph ends where the room to the
 /// next line is larger than the room between lines on the page, where the
@@ -366,11 +360,6 @@ fn ending(text: &str) -> Ending {
         '–' | '—' | '/' if after_word => Ending::Close,
         _ => Ending::Space,
     }
-}
-
-/// Whether a text ends a sentence, whatever closes after the full stop.
-fn ends_sentence(text: &str) -> bool {
-    text.trim_end().trim_end_matches(['"', '\'', '”', '’', '»', ')', ']', '*']).ends_with(['.', '!', '?', ':', '…'])
 }
 
 /// Whether the part of a word before the hyphen looks like a name: it has
@@ -458,21 +447,25 @@ pub fn join_lines<'s>(lines: impl IntoIterator<Item = &'s str>, is_word: Option<
 /// `[17]`, or one in small Roman numerals, `xiv`, as the pages before the
 /// text are numbered. A word of such letters that is no numeral as numerals
 /// are written (`il`, `vil`, `civil`), or that the dictionary knows (`vi`,
-/// `li`), is a word of the text.
+/// `li`), is a word of the text. A page read alone has no neighbours to step
+/// its numbers with, as the shape of a file has, so fewer forms are taken
+/// here than there: a numeral in capitals (`IV`) is more often the number of
+/// a chapter, and one with letters before it (`A-3`) a name.
 fn is_page_number(text: &str, is_word: Option<&IsWord>) -> bool {
+    let Some((form, _)) = rules::page_number(text) else { return false };
     let bare = text.trim_matches(|c: char| c.is_whitespace() || matches!(c, '-' | '–' | '—' | '[' | ']' | '(' | ')'));
-    let digits = (1..=4).contains(&bare.len()) && bare.bytes().all(|b| b.is_ascii_digit());
-    let roman = bare.chars().all(|c| "ivxlc".contains(c))
-        && super::shape::roman(bare).is_some()
-        && !is_word.is_some_and(|is_word| is_word(bare));
-    digits || roman
+    match form.as_str() {
+        "" => true,
+        "i" => bare.chars().all(|c| "ivxlc".contains(c)) && !is_word.is_some_and(|is_word| is_word(bare)),
+        _ => false,
+    }
 }
 
 /// Whether a paragraph goes on in the next: it does not end a sentence, and
 /// the next begins with a small letter, as where the text of a column went
 /// on in the next, or a figure stood between.
 fn goes_on(before: &str, next: &str) -> bool {
-    next.chars().next().is_some_and(char::is_lowercase) && !ends_sentence(before)
+    rules::begins_small(next) && !ends_sentence(before)
 }
 
 /// The paragraphs of a page as they are kept. Lines without a letter or a

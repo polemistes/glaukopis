@@ -19,6 +19,8 @@ use std::ops::Range;
 
 use crate::document::Side;
 
+use super::rules::roman;
+use super::rules::{digits, ends_sentence, median, page_number};
 use super::text::{self, Gap, Line, Run, Style};
 
 /// A page's lines, in reading order, as they are to be shaped, and its size
@@ -131,14 +133,6 @@ fn has_letters(text: &str) -> bool {
     text.chars().any(char::is_alphabetic)
 }
 
-fn median(mut values: Vec<f32>) -> Option<f32> {
-    if values.is_empty() {
-        return None;
-    }
-    values.sort_by(f32::total_cmp);
-    Some(values[values.len() / 2])
-}
-
 fn percentile(mut values: Vec<f32>, part: f32) -> Option<f32> {
     if values.is_empty() {
         return None;
@@ -156,69 +150,6 @@ fn deviation(values: &[f32]) -> f32 {
     (values.iter().map(|v| (v - mean).powi(2)).sum::<f32>() / values.len() as f32).sqrt()
 }
 
-/// Whether a text ends a sentence, whatever closes after the full stop (as `text.rs` has it).
-fn ends_sentence(text: &str) -> bool {
-    text.trim_end().trim_end_matches(['"', '\'', '”', '’', '»', ')', ']', '*']).ends_with(['.', '!', '?', ':', '…'])
-}
-
-/// The value of a number in Roman numerals, of one case, written as they are written.
-pub(super) fn roman(text: &str) -> Option<i64> {
-    if text.is_empty() || text.len() > 7 {
-        return None;
-    }
-    let lower = text.to_ascii_lowercase();
-    if text != lower && text != text.to_ascii_uppercase() {
-        return None;
-    }
-    let value = |c: char| match c {
-        'i' => Some(1),
-        'v' => Some(5),
-        'x' => Some(10),
-        'l' => Some(50),
-        'c' => Some(100),
-        'd' => Some(500),
-        'm' => Some(1000),
-        _ => None,
-    };
-    let values: Vec<i64> = lower.chars().map(value).collect::<Option<_>>()?;
-    let mut total = 0;
-    for (i, v) in values.iter().enumerate() {
-        if values.get(i + 1).is_some_and(|next| next > v) { total -= v } else { total += v }
-    }
-    // Written back as numerals are written, or it is a word of such letters (`mix`, `civil`).
-    (total > 0 && to_roman(total) == lower).then_some(total)
-}
-
-fn to_roman(mut n: i64) -> String {
-    const NUMERALS: [(i64, &str); 13] = [
-        (1000, "m"),
-        (900, "cm"),
-        (500, "d"),
-        (400, "cd"),
-        (100, "c"),
-        (90, "xc"),
-        (50, "l"),
-        (40, "xl"),
-        (10, "x"),
-        (9, "ix"),
-        (5, "v"),
-        (4, "iv"),
-        (1, "i"),
-    ];
-    let mut out = String::new();
-    for (value, numeral) in NUMERALS {
-        while n >= value {
-            out.push_str(numeral);
-            n -= value;
-        }
-    }
-    out
-}
-
-fn digits(text: &str) -> bool {
-    (1..=4).contains(&text.len()) && text.bytes().all(|b| b.is_ascii_digit())
-}
-
 /// A line cut at the white space before its last word: what stands before
 /// that space, and the word. The space may be any of Unicode's, and a
 /// no-break space is two bytes, a thin space three, so the cut is made at
@@ -232,24 +163,6 @@ fn last_word_apart(text: &str) -> Option<(&str, &str)> {
 fn number_alone(text: &str) -> bool {
     let text = text.trim();
     digits(text) || roman(text).is_some()
-}
-
-/// A page number as a line has it, `17`, `- 17 -`, `[17]`, `xiv`, `XIV` or
-/// `A-3`: the form (what stands before the number, or the case of the
-/// numerals) and the value, for numbers to be stepped.
-fn page_number(text: &str) -> Option<(String, i64)> {
-    let bare = text.trim_matches(|c: char| c.is_whitespace() || matches!(c, '-' | '–' | '—' | '[' | ']' | '(' | ')'));
-    if digits(bare) {
-        return Some((String::new(), bare.parse().ok()?));
-    }
-    if let Some(value) = roman(bare) {
-        let form = if bare.starts_with(|c: char| c.is_ascii_uppercase()) { "I" } else { "i" };
-        return Some((form.to_owned(), value));
-    }
-    let (prefix, number) = bare.split_once(['-', '–', '.'])?;
-    ((1..=3).contains(&prefix.chars().count()) && prefix.chars().all(char::is_alphabetic) && digits(number))
-        .then(|| Some((format!("{prefix}-"), number.parse().ok()?)))
-        .flatten()
 }
 
 // ---------------------------------------------------------------------------

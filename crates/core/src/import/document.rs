@@ -49,7 +49,7 @@ use convert::convert_with;
 pub use convert::count_words;
 use pandoc::{pandoc, stopped};
 use pictures::{kind_of_name, name_of, picture_bytes};
-use plain::{decode, plain};
+use plain::plain;
 
 use std::collections::{BTreeMap, HashSet};
 use std::fs;
@@ -415,7 +415,14 @@ pub fn read(
     let mut imported = match format.reader() {
         None => {
             let bytes = fs::read(path).context(|| tr!("io-reading", path = path))?;
-            plain(&decode(&bytes), &stem)
+            let decoded = super::decoding::decode_text(&bytes);
+            let mut imported = plain(&decoded.text, &stem);
+            if decoded.western {
+                tracing::warn!(path = %path.display(), "a text is neither UTF-8 nor UTF-16, and is read as Windows-1252");
+                let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+                imported.remarks.push(tr!("core-import-read-as-western", name = name));
+            }
+            imported
         }
         Some(reader) => {
             let prepared = lifting::prepare(path, format, work);

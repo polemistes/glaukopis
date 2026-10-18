@@ -10,14 +10,14 @@
 pub mod kinds;
 
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::error::{Error, IoContext, Result};
-use crate::formats::{Source, slug};
-use crate::fsutil::write_atomic;
+use crate::formats::Source;
+use crate::shelf::{self, Shelf, Shelved};
 use crate::tr;
 
 pub use kinds::{PartLook, Place};
@@ -256,99 +256,93 @@ pub struct TemplateSummary {
 }
 
 pub struct Templates {
-    bundled: PathBuf,
-    own: PathBuf,
+    shelf: Shelf,
 }
 
-fn check_id(id: &str) -> Result<()> {
-    let ok = !id.is_empty()
-        && id.len() <= 80
-        && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
-        && !id.starts_with('-');
-    if ok { Ok(()) } else { Err(Error::invalid(tr!("core-export-template-bad-id", id = id))) }
+fn raw(path: &Path) -> Result<Value> {
+    let text = fs::read_to_string(path).context(|| tr!("io-reading", path = path))?;
+    serde_json::from_str(&text).map_err(|e| Error::Parse { path: path.to_owned(), message: e.to_string() })
 }
 
-impl Templates {
-    pub fn new(resources: &Path, own: &Path) -> Self {
-        Templates { bundled: resources.join("templates"), own: own.to_owned() }
+fn from_value(value: Value, path: &Path) -> Result<Template> {
+    let mut template: Template =
+        serde_json::from_value(value).map_err(|e| Error::Parse { path: path.to_owned(), message: e.to_string() })?;
+    if template.id.is_empty() {
+        template.id = shelf::stem(path);
     }
+    template.sanitise();
+    Ok(template)
+}
 
-    fn raw(path: &Path) -> Result<Value> {
-        let text = fs::read_to_string(path).context(|| tr!("io-reading", path = path))?;
-        serde_json::from_str(&text).map_err(|e| Error::Parse { path: path.to_owned(), message: e.to_string() })
-    }
-
-    fn from_value(value: Value, path: &Path) -> Result<Template> {
-        let mut template: Template = serde_json::from_value(value)
-            .map_err(|e| Error::Parse { path: path.to_owned(), message: e.to_string() })?;
-        if template.id.is_empty() {
-            template.id = path.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
-        }
-        template.sanitise();
-        Ok(template)
-    }
-
-    /// A template that comes with the application, whole: what its file does
-    /// not say is as the template it is based on has it, down to the root.
-    fn read_bundled(&self, path: &Path, depth: u8) -> Result<Template> {
-        let mut value = Self::raw(path)?;
-        let based_on = value.get("basedOn").and_then(Value::as_str).map(str::to_owned);
-        let stem = path.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
-        if let Some(base) = based_on.filter(|b| *b != stem) {
-            let base = if depth < 8 { self.bundled_whole(&base, depth + 1) } else { None };
-            let base = serde_json::to_value(base.unwrap_or_else(Template::plain))?;
-            if let (Some(own), Some(from)) = (value.as_object_mut(), base.as_object()) {
-                for (key, v) in from {
-                    if !OWN_FIELDS.contains(&key.as_str()) && !own.contains_key(key) {
-                        own.insert(key.clone(), v.clone());
-                    }
+/// A template that comes with the application, whole: what its file does
+/// not say is as the template it is based on has it, down to the root.
+fn read_whole(shelf: &Shelf, path: &Path, depth: u8) -> Result<Template> {
+    let mut value = raw(path)?;
+    let based_on = value.get("basedOn").and_then(Value::as_str).map(str::to_owned);
+    let stem = shelf::stem(path);
+    if let Some(base) = based_on.filter(|b| *b != stem) {
+        let base = if depth < 8 { bundled_whole(shelf, &base, depth + 1) } else { None };
+        let base = serde_json::to_value(base.unwrap_or_else(Template::plain))?;
+        if let (Some(own), Some(from)) = (value.as_object_mut(), base.as_object()) {
+            for (key, v) in from {
+                if !OWN_FIELDS.contains(&key.as_str()) && !own.contains_key(key) {
+                    own.insert(key.clone(), v.clone());
                 }
             }
         }
-        Self::from_value(value, path)
     }
+    from_value(value, path)
+}
 
-    fn bundled_whole(&self, id: &str, depth: u8) -> Option<Template> {
-        if check_id(id).is_err() {
-            return None;
+fn bundled_whole(shelf: &Shelf, id: &str, depth: u8) -> Option<Template> {
+    if Shelf::check_id::<Template>(id).is_err() {
+        return None;
+    }
+    let path = shelf.bundled_path(id);
+    if !path.is_file() {
+        return None;
+    }
+    match read_whole(shelf, &path, depth) {
+        Ok(t) => Some(t),
+        Err(e) => {
+            tracing::warn!(%e, "a template could not be read");
+            None
         }
-        let path = self.bundled.join(format!("{id}.json"));
-        if !path.is_file() {
-            return None;
-        }
-        match self.read_bundled(&path, depth) {
-            Ok(t) => Some(t),
-            Err(e) => {
-                tracing::warn!(%e, "a template could not be read");
-                None
-            }
-        }
+    }
+}
+
+impl Shelved for Template {
+    const CALLED: &'static str = "a template";
+
+    fn read_bundled(shelf: &Shelf, path: &Path) -> Result<Self> {
+        read_whole(shelf, path, 0)
     }
 
     /// A template of the writer's own, which is saved whole.
-    fn read_own(path: &Path) -> Result<Template> {
-        let mut t = Self::from_value(Self::raw(path)?, path)?;
+    fn read_own(path: &Path) -> Result<Self> {
+        let mut t = from_value(raw(path)?, path)?;
         t.group = Group::Own;
         Ok(t)
     }
 
-    pub fn all(&self) -> Vec<(Template, bool)> {
-        let mut out = Vec::new();
-        for (dir, own) in [(&self.bundled, false), (&self.own, true)] {
-            let Ok(entries) = fs::read_dir(dir) else { continue };
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if path.extension().is_none_or(|e| e != "json") {
-                    continue;
-                }
-                let read = if own { Self::read_own(&path) } else { self.read_bundled(&path, 0) };
-                match read {
-                    Ok(t) => out.push((t, own)),
-                    Err(e) => tracing::warn!(%e, "a template could not be read"),
-                }
-            }
-        }
-        let rank = |g: Group| match g {
+    fn id(&self) -> &str {
+        &self.id
+    }
+    fn set_id(&mut self, id: String) {
+        self.id = id;
+    }
+    fn name_mut(&mut self) -> &mut String {
+        &mut self.name
+    }
+    fn based_on_mut(&mut self) -> &mut Option<String> {
+        &mut self.based_on
+    }
+    fn readied_as_own(&mut self) {
+        self.group = Group::Own;
+        self.sanitise();
+    }
+    fn rank(&self) -> u8 {
+        match self.group {
             Group::Own => 0,
             Group::Plain => 1,
             Group::Article => 2,
@@ -360,11 +354,33 @@ impl Templates {
             Group::Journal => 8,
             Group::Publisher => 9,
             Group::StyleGuide => 10,
-        };
-        out.sort_by(|a, b| {
-            rank(a.0.group).cmp(&rank(b.0.group)).then(a.0.name.to_lowercase().cmp(&b.0.name.to_lowercase()))
-        });
-        out
+        }
+    }
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn bad_id(id: &str) -> Error {
+        Error::invalid(tr!("core-export-template-bad-id", id = id))
+    }
+    fn needs_name() -> Error {
+        Error::invalid(tr!("core-export-template-needs-name"))
+    }
+    fn own_only() -> Error {
+        Error::invalid(tr!("core-export-template-own-only"))
+    }
+    fn not_found(id: &str) -> Error {
+        Error::not_found(tr!("core-export-the-template", id = id))
+    }
+}
+
+impl Templates {
+    pub fn new(resources: &Path, own: &Path) -> Self {
+        Templates { shelf: Shelf::new(resources.join("templates"), own) }
+    }
+
+    pub fn all(&self) -> Vec<(Template, bool)> {
+        self.shelf.all()
     }
 
     pub fn list(&self) -> Vec<TemplateSummary> {
@@ -385,21 +401,12 @@ impl Templates {
     /// The template with an id, whole. The writer's own is preferred to one
     /// that comes with the application under the same id.
     pub fn get(&self, id: &str) -> Result<Template> {
-        check_id(id)?;
-        let own = self.own.join(format!("{id}.json"));
-        if own.is_file() {
-            return Self::read_own(&own);
-        }
-        let bundled = self.bundled.join(format!("{id}.json"));
-        if bundled.is_file() {
-            return self.read_bundled(&bundled, 0);
-        }
-        Err(Error::not_found(tr!("core-export-the-template", id = id)))
+        self.shelf.get(id)
     }
 
     /// The template with an id, or the plain one when it is not there.
     pub fn get_or_default(&self, id: &str) -> Template {
-        self.get(id).or_else(|_| self.get(PLAIN)).unwrap_or_else(|_| {
+        self.shelf.get_or(id, PLAIN, || {
             let mut t = Template::plain();
             t.sanitise();
             t
@@ -407,42 +414,12 @@ impl Templates {
     }
 
     /// Saves a template as the writer's own, whole. Returns it as saved.
-    pub fn save(&self, mut template: Template) -> Result<Template> {
-        template.name = template.name.split_whitespace().collect::<Vec<_>>().join(" ");
-        if template.name.is_empty() {
-            return Err(Error::invalid(tr!("core-export-template-needs-name")));
-        }
-        if template.id.is_empty() || self.bundled.join(format!("{}.json", template.id)).is_file() {
-            // A new one, or one made from a template that comes with the application.
-            let base = slug(&template.name);
-            let mut id = base.clone();
-            let mut n = 2;
-            while self.own.join(format!("{id}.json")).exists() || self.bundled.join(format!("{id}.json")).exists() {
-                id = format!("{base}-{n}");
-                n += 1;
-            }
-            if template.based_on.is_none() && !template.id.is_empty() {
-                template.based_on = Some(template.id.clone());
-            }
-            template.id = id;
-        }
-        check_id(&template.id)?;
-        template.group = Group::Own;
-        template.sanitise();
-        write_atomic(
-            &self.own.join(format!("{}.json", template.id)),
-            serde_json::to_string_pretty(&template)?.as_bytes(),
-        )?;
-        Ok(template)
+    pub fn save(&self, template: Template) -> Result<Template> {
+        self.shelf.save(template)
     }
 
     pub fn delete(&self, id: &str) -> Result<()> {
-        check_id(id)?;
-        let path = self.own.join(format!("{id}.json"));
-        if !path.is_file() {
-            return Err(Error::invalid(tr!("core-export-template-own-only")));
-        }
-        fs::remove_file(&path).context(|| tr!("io-removing", path = &path))
+        self.shelf.delete::<Template>(id)
     }
 }
 
