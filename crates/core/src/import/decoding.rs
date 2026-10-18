@@ -41,12 +41,12 @@ pub fn decode_text(bytes: &[u8]) -> Decoded {
 /// alphabet has fewer, at its spaces and signs, so a few on one side and
 /// none to speak of on the other are enough.
 fn unmarked_utf16(bytes: &[u8]) -> Option<&'static Encoding> {
-    if bytes.len() < 2 || bytes.len() % 2 != 0 {
+    if bytes.len() < 2 || !bytes.len().is_multiple_of(2) {
         return None;
     }
     let pairs = bytes.len() / 2;
     let (mut first, mut second) = (0usize, 0usize);
-    for pair in bytes.chunks_exact(2) {
+    for pair in bytes.as_chunks::<2>().0 {
         first += usize::from(pair[0] == 0);
         second += usize::from(pair[1] == 0);
     }
