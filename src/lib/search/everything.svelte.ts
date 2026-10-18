@@ -70,6 +70,11 @@ class Everything {
   error = $state<string | null>(null);
   /** The projects that could not be read. */
   unread = $state.raw<string[]>([]);
+  /**
+   * The projects read only in part, with how many of their changes could not
+   * be applied: what is found in them may lack what those changes wrote.
+   */
+  partly = $state.raw<{ project: string; name: string; count: number }[]>([]);
   /** Whether what was found is for the words as they are. */
   done = $state(false);
   /** Whether there were no projects to search. */
@@ -79,6 +84,8 @@ class Everything {
   /** What was read of each project: its time of change when it was read. */
   #read = new Map<string, string>();
   #round = 0;
+  /** The projects, as they were changed, already said in the log to be read in part. */
+  #told = new Set<string>();
   #timer: ReturnType<typeof setTimeout> | undefined;
 
   get count(): number {
@@ -108,6 +115,7 @@ class Everything {
     this.found = [];
     this.error = null;
     this.unread = [];
+    this.partly = [];
     this.done = false;
     this.none = false;
     if (!words) {
@@ -142,6 +150,19 @@ class Everything {
       if (result && 'error' in result) {
         this.error = result.error;
         break;
+      }
+      if (result?.unapplied) {
+        this.partly = [
+          ...this.partly,
+          { project: info.id, name: info.name, count: result.unapplied },
+        ];
+        const told = `${info.id} ${info.modified}`;
+        if (!this.#told.has(told)) {
+          this.#told.add(told);
+          console.warn(
+            `${info.name} was searched in part: ${result.unapplied} of its changes could not be applied`,
+          );
+        }
       }
       if (result?.count) this.found = [...this.found, { ...result, name: info.name }];
     }

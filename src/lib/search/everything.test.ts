@@ -76,6 +76,18 @@ describe('the search through everything', () => {
     });
   });
 
+  it('says how many of the changes on disk could not be applied, and searches the rest', () => {
+    const { pr } = made();
+    const state = Y.encodeStateAsUpdate(pr.doc);
+    const whole = readProject('p1', 'Wrath', state, []);
+    expect(whole.unapplied).toBe(0);
+    const partly = readProject('p1', 'Wrath', state, [new Uint8Array([1, 2, 3])]);
+    expect(partly.unapplied).toBe(1);
+    const result = found(searchProject(partly, 'wrath', options()));
+    expect(result.unapplied).toBe(1);
+    expect(result.count).toBe(3);
+  });
+
   it('reads a project written as maps in the shape it opens in, without writing it back', () => {
     const old = oldDocument({
       centre: [p(t('Of wrath.'))],
