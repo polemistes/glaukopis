@@ -8,6 +8,11 @@
 //! fails where the two differ: a field that is not declared, one that is
 //! declared and not sent, one of another kind, a name spelt otherwise.
 //!
+//! Every type a command answers with, and every event that tells the page
+//! of work that goes on, is here: what a new command sends is put here too,
+//! with the name of the type the interface declares for it, written with the
+//! module of `src/lib/api/` it is in (`library.Summary`).
+//!
 //! What differs from one run to the next, ids, times and places on disk, is
 //! made the same, so that the file changes only when a type does.
 
@@ -201,59 +206,394 @@ fn what_is_sent_is_what_the_interface_declares() {
         places: vec![Place { element: "e1".into(), page: 1, y: 72.0 }],
     };
 
-    let mut values: Vec<(&str, &str, &str, Value)> = Vec::new();
-    let mut put = |name: &'static str, kind: &'static str, from: &'static str, value: &dyn erased::Json| {
-        values.push((name, kind, from, steady(value.json(), tmp.path(), &resources)));
+    // What the rest of the commands send: built as they build it, or as
+    // literals where what they send is a plain record.
+    let project_info = project.clone();
+    let system_info = crate::commands::system::SystemInfo {
+        version: "0.0.0",
+        data_dir: "/data".into(),
+        logs: "/data/logs".into(),
+        platform: "linux",
+        user: "Some One".into(),
     };
-    put("summary", "Summary", "library", &work.summary());
-    put("reference", "Reference", "library", &full(&library, &work));
-    put("listing", "LibraryListing", "library", &listing(&library));
-    put("looked", "Looked", "ocr", &looked);
-    put("shapedImport", "Imported", "imported", &shaped_import);
-    put("pageText", "PageTextView[]", "ocr", &page_text);
-    put("files", "FilesListing", "files", &crate::commands::files::files_listing(&library));
-    put("takenIn", "TakenIn", "files", &taken_in);
-    put("exported", "Exported", "files", &exported);
-    put("proposal", "Proposal[]", "files", &proposals);
-    put("importPlan", "ImportPlan", "library", &plan);
-    put("duplicates", "DuplicateGroup[]", "library", &groups);
-    put("project", "ProjectInfo", "projects", &project);
-    put("folder", "Folder", "projects", &folder);
-    put("picture", "Picture", "pictures", &picture);
-    put("tools", "ToolsInfo", "documents", &tools);
-    put("format", "DocumentFormat", "documents", &formats.get("manuscript").unwrap());
-    put("formats", "FormatSummary[]", "documents", &formats.list());
-    put("styles", "StyleSummary[]", "documents", &styles.list());
-    put("preview", "Preview", "documents", &preview);
-    put("kinds", "KindEntry[]", "documents", &glaukopis_core::formats::kinds::catalogue());
+    let languages = crate::commands::system::Languages {
+        system: "nb-NO".into(),
+        interface: vec![crate::commands::system::Language { tag: "nb", name: "norsk bokmål" }],
+        interface_default: "nb",
+        texts: vec!["en", "nb"],
+        text_default: "nb".into(),
+    };
+    let settings = glaukopis_core::settings::Loaded {
+        settings: serde_json::json!({ "theme": "dark", "textSize": 17 }).as_object().unwrap().clone(),
+        set_aside: Some(glaukopis_core::settings::SetAside {
+            path: "/data/settings.json.broken-20260101T000000Z".into(),
+            reason: "not JSON".into(),
+            person_kept: true,
+        }),
+    };
+    let pasted = crate::commands::clipboard::Pasted {
+        text: Some("Wrath".into()),
+        html: None,
+        pictures: vec![crate::commands::clipboard::PastedPicture {
+            name: "dot.png".into(),
+            mime: "image/png".into(),
+            data: "iVBORw0KGgo=".into(),
+        }],
+    };
+    let trashed =
+        vec![crate::commands::projects::Trashed { entry: "20260101T000000Z-wrath".into(), info: project_info.clone() }];
+    let history = vec![glaukopis_core::projects::HistoryEntry {
+        id: "20260101T000000Z".into(),
+        time: "2026-01-01T00:00:00Z".into(),
+        size: 5,
+    }];
+    let place = glaukopis_core::projects::Place { x: 1.5, y: -2.0 };
+    let head = crate::commands::projectfile::ReadHead {
+        manifest: glaukopis_core::projectfile::Manifest {
+            format: 1,
+            name: "Wrath".into(),
+            description: "Of Achilles.".into(),
+            written: "2026-01-01T00:00:00Z".into(),
+            app: "0.0.0".into(),
+        },
+        pictures: 1,
+    };
+    let drafted = glaukopis_core::library::entry::Draft::from_entry(&work);
+    let records = vec![
+        // As the library has it, and as another file has it.
+        glaukopis_core::projectfile::Record {
+            id: work.id.clone(),
+            key: drafted.key.clone(),
+            entry_type: drafted.entry_type.clone(),
+            fields: drafted.fields.clone(),
+            names: drafted.names.clone(),
+        },
+        glaukopis_core::projectfile::Record {
+            id: "another".into(),
+            key: "lord1960".into(),
+            entry_type: "book".into(),
+            fields: [("title".to_owned(), "The Singer of Tales".to_owned())].into(),
+            names: Default::default(),
+        },
+    ];
+    let lite = glaukopis_core::import::SummaryLite::from(&work.summary());
+    let found_works = {
+        use glaukopis_core::projectfile::{Finding, Found};
+        let mut found = glaukopis_core::projectfile::examine(&library, &records);
+        found.push(Found { id: "x".into(), file: lite.clone(), finding: Finding::Differs { library: lite.clone() } });
+        found.push(Found {
+            id: "y".into(),
+            file: lite.clone(),
+            finding: Finding::Alike {
+                id: work.id.clone(),
+                library: lite.clone(),
+                certainty: glaukopis_core::import::CertaintyWord::Probable,
+                reasons: vec![
+                    glaukopis_core::import::ReasonWord::Doi,
+                    glaukopis_core::import::ReasonWord::Alike {
+                        title: glaukopis_core::duplicates::Agreement::Same,
+                        author: glaukopis_core::duplicates::Agreement::Like,
+                        year: glaukopis_core::duplicates::Agreement::None,
+                    },
+                ],
+                merged: false,
+                gains: vec!["doi".into()],
+            },
+        });
+        found
+    };
+    let settled = crate::commands::projectfile::Settled {
+        settled: vec![
+            crate::commands::projectfile::SettledWork {
+                from: "another".into(),
+                to: work.id.clone(),
+                reference: Some(full(&library, &work)),
+            },
+            crate::commands::projectfile::SettledWork { from: "x".into(), to: "x".into(), reference: None },
+        ],
+        added: vec!["x".into()],
+        changed: vec![],
+        problems: vec!["A remark.".into()],
+    };
+    let read_org =
+        crate::commands::readable::ReadOrg { org: "* Wrath\n".into(), records: records.clone(), pictures: 0 };
+    let lookup_found = crate::commands::sources::Found {
+        query: glaukopis_core::lookup::Query::Doi("10.1/x".into()),
+        hits: vec![crate::commands::sources::FoundHit {
+            hit: glaukopis_core::lookup::Hit {
+                draft: drafted.clone(),
+                source: "Crossref".into(),
+                url: Some("https://doi.org/10.1/x".into()),
+                remarks: vec!["A remark.".into()],
+            },
+            summary: lite.clone(),
+            known: Some(work.id.clone()),
+        }],
+        failures: vec!["arXiv: export.arxiv.org could not be reached.".into()],
+    };
+    let acknowledgements: Vec<crate::commands::sources::Acknowledgement> = glaukopis_core::lookup::acknowledgements()
+        .into_iter()
+        .take(1)
+        .map(|(service, words)| crate::commands::sources::Acknowledgement { service, words })
+        .collect();
+    let zotero = glaukopis_core::import::zotero::ZoteroInfo {
+        path: "/data/Zotero".into(),
+        items: 2,
+        attachments: 1,
+        collections: 1,
+        libraries: vec![glaukopis_core::import::zotero::ZoteroLibrary {
+            id: 1,
+            name: "My Library".into(),
+            kind: glaukopis_core::import::zotero::LibraryKind::User,
+            items: 2,
+        }],
+        warnings: vec!["A remark.".into()],
+    };
+    let zotero_collections = vec![glaukopis_core::import::zotero::ZoteroCollection {
+        key: "ABCD1234".into(),
+        name: "Epic".into(),
+        path: vec!["Greek".into(), "Epic".into()],
+        items: 1,
+    }];
+    let outcome = glaukopis_core::import::Outcome {
+        added: vec![work.id.clone()],
+        updated: vec![],
+        skipped: 1,
+        files: 1,
+        problems: vec!["A remark.".into()],
+    };
+    let found_options: glaukopis_core::found::Options =
+        serde_json::from_value(serde_json::json!({ "years": true, "named": true, "notes": false })).unwrap();
+    let passages: Vec<glaukopis_core::found::Passage> = serde_json::from_value(serde_json::json!([
+        { "id": "p1", "text": "As Nagy (1979, 73) argues, the hero is best.", "note": false, "taken": [] }
+    ]))
+    .unwrap();
+    let found_proposals = glaukopis_core::found::propose(&library, &passages, &found_options);
+    assert!(!found_proposals.is_empty(), "a citation is found to stand for the type");
+    let found_items: Vec<glaukopis_core::found::FoundItem> =
+        serde_json::from_value(serde_json::json!([{ "key": "nagy1979" }])).unwrap();
+    let suggestions = glaukopis_core::found::suggest_all(&library, &found_items);
+    assert!(!suggestions[0].is_empty());
+    let searchable = crate::commands::ocr::MadeSearchable {
+        reference: Some(full(&library, &work)),
+        file: library.describe_file(&stored),
+        read: 2,
+        with_text: 1,
+        failed: vec![(3, "A remark.".into())],
+        remapped: 1,
+    };
+    let synced = glaukopis_core::sharing::Synced { sent: 1, fetched: 0, problems: vec!["A remark.".into()] };
+    let rendered = vec![
+        glaukopis_core::export::math::Rendered { mathml: Some("<math/>".into()), problem: None },
+        glaukopis_core::export::math::Rendered { mathml: None, problem: Some("A remark.".into()) },
+    ];
+    let sheets = vec![
+        glaukopis_core::import::tables::Sheet {
+            name: "Sheet".into(),
+            rows: vec![vec!["a".into(), "b".into()]],
+            problem: None,
+        },
+        glaukopis_core::import::tables::Sheet { name: "Empty".into(), rows: vec![], problem: Some("A remark.".into()) },
+    ];
+    let server = glaukopis_core::sharing::ServerInfo {
+        server: "https://example.org".into(),
+        version: "0.0.0".into(),
+        protocol: glaukopis_core::sharing::PROTOCOL,
+        password_required: false,
+        encrypted: true,
+    };
+    let invitation = glaukopis_core::sharing::Invitation {
+        id: "i1".into(),
+        hash: "abc".into(),
+        code: Some("ABCD-EFGH-JKMN".into()),
+        label: "For a friend".into(),
+        created: 1,
+        expires: Some(2),
+        uses_left: None,
+        used: 0,
+        open: true,
+    };
+    let room = glaukopis_core::sharing::Room {
+        room: "r1".into(),
+        name: "Wrath".into(),
+        created: 1,
+        role: "owner".into(),
+        you: None,
+        owner_present: true,
+        members: vec![glaukopis_core::sharing::Member {
+            id: "m1".into(),
+            name: "Some One".into(),
+            joined: 1,
+            last_seen: 2,
+            present: false,
+        }],
+        invitations: vec![glaukopis_core::sharing::Invitation { code: None, ..invitation.clone() }],
+    };
+    let read_invitation = crate::commands::sharing::ReadInvitation {
+        server: Some("https://example.org".into()),
+        code: Some("ABCD-EFGH-JKMN".into()),
+    };
+    let ticket = crate::commands::sharing::Ticket { url: "wss://example.org/rooms/r1/socket?ticket=t".into() };
+    let pages_of = crate::commands::documents::PagesOf { count: preview.count, pages: preview.pages.clone() };
+    let exported_document = glaukopis_core::export::Exported {
+        path: "/data/wrath.pdf".into(),
+        also: vec!["/data/wrath.bib".into()],
+        warnings: vec!["A remark.".into()],
+        missing: vec![],
+    };
+    let style_found = vec![glaukopis_core::styles::Found {
+        id: "apa".into(),
+        title: "American Psychological Association".into(),
+        kind: "author-date".into(),
+        parent: None,
+        fields: vec!["psychology".into()],
+        installed: false,
+    }];
+    let words_files = vec![crate::commands::words::WordsFile { name: "common.ftl".into(), text: "a = A\n".into() }];
+    let own_words = vec![crate::commands::words::OwnWords {
+        tag: "nb".into(),
+        files: vec![crate::commands::words::WordsFile { name: "common.ftl".into(), text: "a = A\n".into() }],
+    }];
+    let left_out = vec![glaukopis_core::i18n::LeftOut {
+        language: "nb".into(),
+        file: "common.ftl".into(),
+        id: "a".into(),
+        why: "A remark.".into(),
+    }];
+    let installed = vec![glaukopis_core::languages::Installed {
+        kind: glaukopis_core::languages::Kind::Spelling,
+        name: "nb_NO".into(),
+        language: "nb-NO".into(),
+        title: "Norsk bokmål".into(),
+        version: "2026.10.06".into(),
+        licence: "GPL".into(),
+        source: "https://example.org".into(),
+    }];
+    let offer: crate::commands::languages::Offer = crate::commands::languages::Offer {
+        server: "https://example.org/glaukopis/".into(),
+        packages: vec![
+            serde_json::from_value(serde_json::json!({
+                "kind": "ocr", "name": "nor", "language": "nb", "title": "Norsk", "version": "4.1",
+                "file": "ocr-nor-4.1.zip", "size": 1000, "sha256": "ab", "licence": "Apache-2.0", "source": "tessdata"
+            }))
+            .unwrap(),
+        ],
+    };
+    let dictionary = glaukopis_core::spelling::found::Found {
+        tag: "nb-NO".into(),
+        name: "nb_NO".into(),
+        source: glaukopis_core::spelling::found::Source::Imported,
+        dir: tmp.path().join("languages"),
+    };
+    let checking = glaukopis_core::spelling::Checking {
+        dictionaries: vec![dictionary.clone()],
+        script: Some("Latn".into()),
+        words: "nb".into(),
+    };
+    let removed = crate::commands::files::FilesRemoved { files: 2, folders: 1 };
+    use crate::commands::work::{Count, Told};
+    let files_told = Told { ticket: "t".into(), told: Count { done: 1, total: 3, name: "nagy.pdf".into() } };
+    let pdfs_told = files_told.clone();
+    let ocr_told = Told { ticket: "t".into(), told: glaukopis_core::ocr::Progress { done: 1, total: 3, page: 2 } };
+
+    let mut values: Vec<(&str, &str, Value)> = Vec::new();
+    let mut put = |name: &'static str, kind: &'static str, value: &dyn erased::Json| {
+        values.push((name, kind, steady(value.json(), tmp.path(), &resources)));
+    };
+    put("summary", "library.Summary", &work.summary());
+    put("reference", "library.Reference", &full(&library, &work));
+    put("listing", "library.LibraryListing", &listing(&library));
+    put("looked", "ocr.Looked", &looked);
+    put("shapedImport", "imported.Imported", &shaped_import);
+    put("pageText", "ocr.PageTextView[]", &page_text);
+    put("filesListing", "files.FilesListing", &crate::commands::files::files_listing(&library));
+    put("takenIn", "files.TakenIn", &taken_in);
+    put("exported", "files.Exported", &exported);
+    put("proposal", "files.Proposal[]", &proposals);
+    put("importPlan", "library.ImportPlan", &plan);
+    put("duplicates", "library.DuplicateGroup[]", &groups);
+    put("project", "projects.ProjectInfo", &project);
+    put("folder", "projects.Folder", &folder);
+    put("picture", "pictures.Picture", &picture);
+    put("tools", "documents.ToolsInfo", &tools);
+    put("format", "documents.DocumentFormat", &formats.get("manuscript").unwrap());
+    put("formats", "documents.FormatSummary[]", &formats.list());
+    put("styles", "documents.StyleSummary[]", &styles.list());
+    put("preview", "documents.Preview", &preview);
+    put("kinds", "documents.KindEntry[]", &glaukopis_core::formats::kinds::catalogue());
     put(
         "kindLooks",
-        "KindLooks",
-        "documents",
+        "documents.KindLooks",
         &glaukopis_core::formats::kinds::looks(&formats.get("manuscript").unwrap(), &[]),
     );
-    put("template", "Template", "templates", &templates.get("plain").unwrap());
-    put("templates", "TemplateSummary[]", "templates", &templates.list());
-    put("partKinds", "PartKindEntry[]", "templates", &glaukopis_core::templates::kinds::catalogue());
+    put("template", "templates.Template", &templates.get("plain").unwrap());
+    put("templateSummaries", "templates.TemplateSummary[]", &templates.list());
+    put("partKinds", "templates.PartKindEntry[]", &glaukopis_core::templates::kinds::catalogue());
+    put("systemInfo", "system.SystemInfo", &system_info);
+    put("languagesInfo", "system.LanguagesInfo", &languages);
+    put("settingsLoaded", "system.SettingsLoaded", &settings);
+    put("pasted", "clipboard.Pasted", &pasted);
+    put("trashed", "projects.Trashed[]", &trashed);
+    put("history", "projects.HistoryEntry[]", &history);
+    put("place", "projects.Place", &place);
+    put("projectFileHead", "projects.ProjectFileHead", &head);
+    put("foundWorks", "projects.FoundWork[]", &found_works);
+    put("settled", "projects.FileSettlement", &settled);
+    put("readOrg", "projects.ReadOrg", &read_org);
+    put("lookupFound", "sources.Found", &lookup_found);
+    put("acknowledgements", "sources.Acknowledgement[]", &acknowledgements);
+    put("zotero", "sources.ZoteroInfo", &zotero);
+    put("zoteroCollections", "sources.ZoteroCollection[]", &zotero_collections);
+    put("importOutcome", "library.ImportOutcome", &outcome);
+    put("foundProposals", "found.Proposal[]", &found_proposals);
+    put("suggestions", "found.Suggestion[][]", &suggestions);
+    put("madeSearchable", "ocr.MadeSearchable", &searchable);
+    put("synced", "pictures.Synced", &synced);
+    put("rendered", "pictures.Rendered[]", &rendered);
+    put("sheets", "tables.Sheet[]", &sheets);
+    put("server", "sharing.ServerInfo", &server);
+    put("invitation", "sharing.Invitation", &invitation);
+    put("room", "sharing.Room", &room);
+    put("readInvitation", "sharing.ReadInvitation", &read_invitation);
+    put("ticket", "sharing.SharingTicket", &ticket);
+    put("pagesOf", "documents.PagesOf", &pages_of);
+    put("exportedDocument", "documents.Exported", &exported_document);
+    put("styleFound", "documents.StyleFound[]", &style_found);
+    put("wordsFiles", "words.WordsFile[]", &words_files);
+    put("ownWords", "words.OwnWordsOf[]", &own_words);
+    put("leftOut", "words.LeftOut[]", &left_out);
+    put("installed", "languages.InstalledLanguage[]", &installed);
+    put("offer", "languages.LanguageOffer", &offer);
+    put("dictionaries", "spelling.Dictionary[]", &vec![dictionary]);
+    put("checking", "spelling.Checking", &checking);
+    put("filesRemoved", "files.FilesRemoved", &removed);
+    // The events that tell of work that goes on (`commands/work.rs`).
+    put("filesProgress", "backend.Told<files.FilesProgress>", &files_told);
+    put("pdfsProgress", "backend.Told<sources.PdfsProgress>", &pdfs_told);
+    put("ocrProgress", "backend.Told<ocr.Progress>", &ocr_told);
 
     let mut out = String::from(
         "// Made by the test `contract` in src-tauri/src/contract.rs: what the Rust side\n\
          // sends, as it sends it, typed as the interface declares it. The type check\n\
          // fails where the two differ. Not to be changed by hand: run the tests.\n\n",
     );
-    let mut from: Vec<(&str, Vec<&str>)> = Vec::new();
-    for (_, kind, module, _) in &values {
-        let kind = kind.trim_end_matches("[]");
-        match from.iter_mut().find(|(m, _)| m == module) {
-            Some((_, kinds)) if !kinds.contains(&kind) => kinds.push(kind),
-            Some(_) => {}
-            None => from.push((module, vec![kind])),
+    // Each module of the interface is imported whole, by its name, so that
+    // two of them may have a type of the same name.
+    let mut modules: Vec<&str> = Vec::new();
+    for (_, kind, _) in &values {
+        for word in kind.split(|c: char| !(c.is_ascii_alphanumeric() || c == '.')) {
+            if let Some((module, _)) = word.split_once('.')
+                && !modules.contains(&module)
+            {
+                modules.push(module);
+            }
         }
     }
-    for (module, kinds) in &from {
-        out.push_str(&format!("import type {{ {} }} from './{module}';\n", kinds.join(", ")));
+    for module in &modules {
+        assert!(values.iter().all(|(name, _, _)| name != module), "the constant {module} has the name of a module");
+        out.push_str(&format!("import type * as {module} from './{module}';\n"));
     }
-    for (name, kind, _, value) in &values {
+    for (name, kind, value) in &values {
         out.push_str(&format!("\nexport const {name}: {kind} = {};\n", serde_json::to_string_pretty(value).unwrap()));
     }
 

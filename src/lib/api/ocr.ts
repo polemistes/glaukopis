@@ -2,6 +2,7 @@
 
 import { listen } from '@tauri-apps/api/event';
 import { call, inTauri } from './backend';
+import type { Told } from './backend';
 import type { Imported } from './imported';
 import type { Reference, StoredFile } from './library';
 
@@ -165,7 +166,7 @@ export async function onProgress(
   told: (progress: Progress) => void,
 ): Promise<() => void> {
   if (!inTauri) return () => {};
-  return listen<Progress & { ticket: string }>('ocr-progress', (event) => {
+  return listen<Told<Progress>>('ocr-progress', (event) => {
     if (event.payload.ticket === ticket) told(event.payload);
   });
 }

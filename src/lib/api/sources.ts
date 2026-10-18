@@ -2,6 +2,7 @@
 
 import { listen } from '@tauri-apps/api/event';
 import { call, inTauri } from './backend';
+import type { Count, Told } from './backend';
 import type { Draft, ImportPlan, SummaryLite } from './library';
 
 export type Query =
@@ -66,8 +67,13 @@ export interface ZoteroOptions {
 
 export const lookupFind = (input: string, scope: Scope = 'any') =>
   call<Found>('lookup_find', { input, scope });
-export const lookupAcknowledgements = () =>
-  call<{ service: string; words: string }[]>('lookup_acknowledgements');
+/** What a service that is asked wants said of it. */
+export interface Acknowledgement {
+  service: string;
+  words: string;
+}
+
+export const lookupAcknowledgements = () => call<Acknowledgement[]>('lookup_acknowledgements');
 /**
  * Finds out what PDF files are. With a ticket, `onPdfsProgress` tells how far
  * it has come, and `importPdfsStop` stops it: it then fails with the kind `stopped`.
@@ -77,11 +83,7 @@ export const importPdfs = (paths: string[], ask = true, ticket?: string) =>
 export const importPdfsStop = (ticket: string) => call<void>('import_pdfs_stop', { ticket });
 
 /** How many files are done, of how many, and the one at hand. */
-export interface PdfsProgress {
-  done: number;
-  total: number;
-  name: string;
-}
+export type PdfsProgress = Count;
 
 /** Listens to how far the finding out with a ticket has come. Gives what ends the listening. */
 export async function onPdfsProgress(
@@ -89,7 +91,7 @@ export async function onPdfsProgress(
   told: (progress: PdfsProgress) => void,
 ): Promise<() => void> {
   if (!inTauri) return () => {};
-  return listen<PdfsProgress & { ticket: string }>('pdfs-progress', (event) => {
+  return listen<Told<PdfsProgress>>('pdfs-progress', (event) => {
     if (event.payload.ticket === ticket) told(event.payload);
   });
 }

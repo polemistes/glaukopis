@@ -22,6 +22,20 @@ export function isNotFound(error: unknown): boolean {
   return isBackendError(error) && error.kind === 'not-found';
 }
 
+/**
+ * What the page is told of work asked for with a ticket while it goes on,
+ * by an event: what is told, with the ticket beside it (`commands/work.rs`).
+ */
+export type Told<T> = T & { ticket: string };
+
+/** How far work on many things has come: how many are done, of how many, and the one at hand. */
+export interface Count {
+  done: number;
+  total: number;
+  /** The one at hand. */
+  name: string;
+}
+
 export const inTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
 /** With bytes for `args`, they are sent as they are, as the body of the request. */

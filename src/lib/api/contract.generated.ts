@@ -2,16 +2,26 @@
 // sends, as it sends it, typed as the interface declares it. The type check
 // fails where the two differ. Not to be changed by hand: run the tests.
 
-import type { Summary, Reference, LibraryListing, ImportPlan, DuplicateGroup } from './library';
-import type { Looked, PageTextView } from './ocr';
-import type { Imported } from './imported';
-import type { FilesListing, TakenIn, Exported, Proposal } from './files';
-import type { ProjectInfo, Folder } from './projects';
-import type { Picture } from './pictures';
-import type { ToolsInfo, DocumentFormat, FormatSummary, StyleSummary, Preview, KindEntry, KindLooks } from './documents';
-import type { Template, TemplateSummary, PartKindEntry } from './templates';
+import type * as library from './library';
+import type * as ocr from './ocr';
+import type * as imported from './imported';
+import type * as files from './files';
+import type * as projects from './projects';
+import type * as pictures from './pictures';
+import type * as documents from './documents';
+import type * as templates from './templates';
+import type * as system from './system';
+import type * as clipboard from './clipboard';
+import type * as sources from './sources';
+import type * as found from './found';
+import type * as tables from './tables';
+import type * as sharing from './sharing';
+import type * as words from './words';
+import type * as languages from './languages';
+import type * as spelling from './spelling';
+import type * as backend from './backend';
 
-export const summary: Summary = {
+export const summary: library.Summary = {
   "added": "2026-01-01T00:00:00Z",
   "attachments": 1,
   "authors": "Nagy",
@@ -29,7 +39,7 @@ export const summary: Summary = {
   "yearNumber": 1979
 };
 
-export const reference: Reference = {
+export const reference: library.Reference = {
   "added": "2026-01-01T00:00:00Z",
   "attachments": [
     "attachments/e1/e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e/Nagy 1979 - The Best of the Achaeans.pdf"
@@ -95,7 +105,7 @@ export const reference: Reference = {
   "type": "book"
 };
 
-export const listing: LibraryListing = {
+export const listing: library.LibraryListing = {
   "collections": [
     {
       "created": "2026-01-01T00:00:00Z",
@@ -147,7 +157,7 @@ export const listing: LibraryListing = {
   "warnings": []
 };
 
-export const looked: Looked = {
+export const looked: ocr.Looked = {
   "file": "porson.pdf",
   "fonts": [
     "PorsonGreekSF"
@@ -185,7 +195,7 @@ export const looked: Looked = {
   "withText": 1
 };
 
-export const shapedImport: Imported = {
+export const shapedImport: imported.Imported = {
   "abstract": null,
   "authors": [],
   "counts": {
@@ -508,7 +518,7 @@ export const shapedImport: Imported = {
   ]
 };
 
-export const pageText: PageTextView[] = [
+export const pageText: ocr.PageTextView[] = [
   {
     "hasText": true,
     "label": "1",
@@ -528,7 +538,7 @@ export const pageText: PageTextView[] = [
   }
 ];
 
-export const files: FilesListing = {
+export const filesListing: files.FilesListing = {
   "files": [
     {
       "added": "2026-01-01T00:00:00Z",
@@ -582,7 +592,7 @@ export const files: FilesListing = {
   ]
 };
 
-export const takenIn: TakenIn = {
+export const takenIn: files.TakenIn = {
   "files": [
     {
       "added": "2026-01-01T00:00:00Z",
@@ -602,7 +612,7 @@ export const takenIn: TakenIn = {
   "same": []
 };
 
-export const exported: Exported = {
+export const exported: files.Exported = {
   "bib": "/data/exported/references.bib",
   "files": 2,
   "folders": 1,
@@ -611,7 +621,7 @@ export const exported: Exported = {
   "total": 2
 };
 
-export const proposal: Proposal[] = [
+export const proposal: files.Proposal[] = [
   {
     "hash": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
     "lookup": {
@@ -678,7 +688,7 @@ export const proposal: Proposal[] = [
   }
 ];
 
-export const importPlan: ImportPlan = {
+export const importPlan: library.ImportPlan = {
   "items": [
     {
       "action": {
@@ -786,7 +796,7 @@ export const importPlan: ImportPlan = {
   "warnings": []
 };
 
-export const duplicates: DuplicateGroup[] = [
+export const duplicates: library.DuplicateGroup[] = [
   {
     "certainty": "certain",
     "ids": [
@@ -799,7 +809,7 @@ export const duplicates: DuplicateGroup[] = [
   }
 ];
 
-export const project: ProjectInfo = {
+export const project: projects.ProjectInfo = {
   "cited": [
     "reference"
   ],
@@ -823,14 +833,14 @@ export const project: ProjectInfo = {
   "words": 12
 };
 
-export const folder: Folder = {
+export const folder: projects.Folder = {
   "id": "00000000-0000-4000-8000-000000000000",
   "name": "Epic",
   "order": "000002",
   "parent": "00000000-0000-4000-8000-000000000000"
 };
 
-export const picture: Picture = {
+export const picture: pictures.Picture = {
   "added": "2026-01-01T00:00:00Z",
   "alt": "",
   "extension": "png",
@@ -842,7 +852,7 @@ export const picture: Picture = {
   "width": 1
 };
 
-export const tools: ToolsInfo = {
+export const tools: documents.ToolsInfo = {
   "latex": [
     "lualatex"
   ],
@@ -861,7 +871,7 @@ export const tools: ToolsInfo = {
   "tesseract": null
 };
 
-export const format: DocumentFormat = {
+export const format: documents.DocumentFormat = {
   "bibliography": {
     "entrySpacing": "0pt",
     "hangingIndent": "1.27cm",
@@ -1040,7 +1050,7 @@ export const format: DocumentFormat = {
   }
 };
 
-export const formats: FormatSummary[] = [
+export const formats: documents.FormatSummary[] = [
   {
     "checked": "",
     "confidence": "",
@@ -1430,7 +1440,7 @@ export const formats: FormatSummary[] = [
   }
 ];
 
-export const styles: StyleSummary[] = [
+export const styles: documents.StyleSummary[] = [
   {
     "bibliography": true,
     "id": "american-chemical-society",
@@ -1762,7 +1772,7 @@ export const styles: StyleSummary[] = [
   }
 ];
 
-export const preview: Preview = {
+export const preview: documents.Preview = {
   "count": 2,
   "height": 842.0,
   "missing": [
@@ -1797,7 +1807,7 @@ export const preview: Preview = {
   "width": 595.0
 };
 
-export const kinds: KindEntry[] = [
+export const kinds: documents.KindEntry[] = [
   {
     "basedOn": null,
     "counted": true,
@@ -2025,7 +2035,7 @@ export const kinds: KindEntry[] = [
   }
 ];
 
-export const kindLooks: KindLooks = {
+export const kindLooks: documents.KindLooks = {
   "action": {
     "look": {
       "align": "left",
@@ -2553,7 +2563,7 @@ export const kindLooks: KindLooks = {
   }
 };
 
-export const template: Template = {
+export const template: templates.Template = {
   "contents": [
     {
       "part": "title-page"
@@ -2599,7 +2609,7 @@ export const template: Template = {
   }
 };
 
-export const templates: TemplateSummary[] = [
+export const templateSummaries: templates.TemplateSummary[] = [
   {
     "checked": "2026-10-11",
     "confidence": "medium",
@@ -3070,7 +3080,7 @@ export const templates: TemplateSummary[] = [
   }
 ];
 
-export const partKinds: PartKindEntry[] = [
+export const partKinds: templates.PartKindEntry[] = [
   {
     "basedOn": null,
     "group": "front",
@@ -3272,3 +3282,802 @@ export const partKinds: PartKindEntry[] = [
     "style": "Blurb"
   }
 ];
+
+export const systemInfo: system.SystemInfo = {
+  "dataDir": "/data",
+  "logs": "/data/logs",
+  "platform": "linux",
+  "user": "Some One",
+  "version": "0.0.0"
+};
+
+export const languagesInfo: system.LanguagesInfo = {
+  "interface": [
+    {
+      "name": "norsk bokmål",
+      "tag": "nb"
+    }
+  ],
+  "interfaceDefault": "nb",
+  "system": "nb-NO",
+  "textDefault": "nb",
+  "texts": [
+    "en",
+    "nb"
+  ]
+};
+
+export const settingsLoaded: system.SettingsLoaded = {
+  "setAside": {
+    "path": "/data/settings.json.broken-20260101T000000Z",
+    "personKept": true,
+    "reason": "not JSON"
+  },
+  "settings": {
+    "textSize": 17,
+    "theme": "dark"
+  }
+};
+
+export const pasted: clipboard.Pasted = {
+  "html": null,
+  "pictures": [
+    {
+      "data": "iVBORw0KGgo=",
+      "mime": "image/png",
+      "name": "dot.png"
+    }
+  ],
+  "text": "Wrath"
+};
+
+export const trashed: projects.Trashed[] = [
+  {
+    "entry": "20260101T000000Z-wrath",
+    "info": {
+      "cited": [
+        "reference"
+      ],
+      "created": "2026-01-01T00:00:00Z",
+      "description": "",
+      "folder": "00000000-0000-4000-8000-000000000000",
+      "id": "00000000-0000-4000-8000-000000000000",
+      "maps": [
+        {
+          "elements": 3,
+          "id": "map",
+          "name": "Wrath"
+        }
+      ],
+      "modified": "2026-01-01T00:00:00Z",
+      "name": "Wrath",
+      "pictures": [
+        "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5"
+      ],
+      "references": 1,
+      "words": 12
+    }
+  }
+];
+
+export const history: projects.HistoryEntry[] = [
+  {
+    "id": "20260101T000000Z",
+    "size": 5,
+    "time": "2026-01-01T00:00:00Z"
+  }
+];
+
+export const place: projects.Place = {
+  "x": 1.5,
+  "y": -2.0
+};
+
+export const projectFileHead: projects.ProjectFileHead = {
+  "manifest": {
+    "app": "0.0.0",
+    "description": "Of Achilles.",
+    "format": 1,
+    "name": "Wrath",
+    "written": "2026-01-01T00:00:00Z"
+  },
+  "pictures": 1
+};
+
+export const foundWorks: projects.FoundWork[] = [
+  {
+    "file": {
+      "authors": "Nagy",
+      "container": "",
+      "key": "nagy1979",
+      "title": "The Best of the Achaeans: Concepts of the Hero",
+      "type": "book",
+      "year": "1979"
+    },
+    "finding": {
+      "kind": "same"
+    },
+    "id": "00000000-0000-4000-8000-000000000000"
+  },
+  {
+    "file": {
+      "authors": "",
+      "container": "",
+      "key": "lord1960",
+      "title": "The Singer of Tales",
+      "type": "book",
+      "year": ""
+    },
+    "finding": {
+      "kind": "new"
+    },
+    "id": "another"
+  },
+  {
+    "file": {
+      "authors": "Nagy",
+      "container": "",
+      "key": "nagy1979",
+      "title": "The Best of the Achaeans: Concepts of the Hero",
+      "type": "book",
+      "year": "1979"
+    },
+    "finding": {
+      "kind": "differs",
+      "library": {
+        "authors": "Nagy",
+        "container": "",
+        "key": "nagy1979",
+        "title": "The Best of the Achaeans: Concepts of the Hero",
+        "type": "book",
+        "year": "1979"
+      }
+    },
+    "id": "x"
+  },
+  {
+    "file": {
+      "authors": "Nagy",
+      "container": "",
+      "key": "nagy1979",
+      "title": "The Best of the Achaeans: Concepts of the Hero",
+      "type": "book",
+      "year": "1979"
+    },
+    "finding": {
+      "certainty": "probable",
+      "gains": [
+        "doi"
+      ],
+      "id": "00000000-0000-4000-8000-000000000000",
+      "kind": "alike",
+      "library": {
+        "authors": "Nagy",
+        "container": "",
+        "key": "nagy1979",
+        "title": "The Best of the Achaeans: Concepts of the Hero",
+        "type": "book",
+        "year": "1979"
+      },
+      "merged": false,
+      "reasons": [
+        "doi",
+        {
+          "alike": {
+            "author": "like",
+            "title": "same",
+            "year": "none"
+          }
+        }
+      ]
+    },
+    "id": "y"
+  }
+];
+
+export const settled: projects.FileSettlement = {
+  "added": [
+    "x"
+  ],
+  "changed": [],
+  "problems": [
+    "A remark."
+  ],
+  "settled": [
+    {
+      "from": "another",
+      "reference": {
+        "added": "2026-01-01T00:00:00Z",
+        "attachments": [
+          "attachments/e1/e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e/Nagy 1979 - The Best of the Achaeans.pdf"
+        ],
+        "collections": [
+          "00000000-0000-4000-8000-000000000000"
+        ],
+        "fields": {
+          "annotation": "Read again.",
+          "date": "1979",
+          "doi": "10.1/x",
+          "isbn": "9780801823886",
+          "keywords": "hero, epic",
+          "location": "Baltimore",
+          "publisher": "Johns Hopkins",
+          "subtitle": "Concepts of the Hero",
+          "title": "The Best of the Achaeans"
+        },
+        "files": [
+          {
+            "exists": true,
+            "hash": "e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e",
+            "kind": "pdf",
+            "name": "Nagy 1979 - The Best of the Achaeans.pdf",
+            "path": "attachments/e1/e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e/Nagy 1979 - The Best of the Achaeans.pdf",
+            "size": 8
+          }
+        ],
+        "id": "00000000-0000-4000-8000-000000000000",
+        "key": "nagy1979",
+        "modified": "2026-01-01T00:00:00Z",
+        "names": {
+          "author": [
+            {
+              "family": "Nagy",
+              "given": "Gregory"
+            }
+          ],
+          "editor": [
+            {
+              "family": "Else",
+              "given": "Some"
+            }
+          ]
+        },
+        "summary": {
+          "added": "2026-01-01T00:00:00Z",
+          "attachments": 1,
+          "authors": "Nagy",
+          "authorsSort": "nagy gregory",
+          "container": "",
+          "hasNote": true,
+          "id": "00000000-0000-4000-8000-000000000000",
+          "key": "nagy1979",
+          "modified": "2026-01-01T00:00:00Z",
+          "publisher": "Johns Hopkins",
+          "search": "gregory nagy some else the best of the achaeans concepts of the hero  johns hopkins baltimore hero epic 10 1 x 9780801823886 read again 1979 nagy1979",
+          "title": "The Best of the Achaeans: Concepts of the Hero",
+          "type": "book",
+          "year": "1979",
+          "yearNumber": 1979
+        },
+        "type": "book"
+      },
+      "to": "00000000-0000-4000-8000-000000000000"
+    },
+    {
+      "from": "x",
+      "reference": null,
+      "to": "x"
+    }
+  ]
+};
+
+export const readOrg: projects.ReadOrg = {
+  "org": "* Wrath\n",
+  "pictures": 0,
+  "records": [
+    {
+      "fields": {
+        "annotation": "Read again.",
+        "date": "1979",
+        "doi": "10.1/x",
+        "isbn": "9780801823886",
+        "keywords": "hero, epic",
+        "location": "Baltimore",
+        "publisher": "Johns Hopkins",
+        "subtitle": "Concepts of the Hero",
+        "title": "The Best of the Achaeans"
+      },
+      "id": "00000000-0000-4000-8000-000000000000",
+      "key": "nagy1979",
+      "names": {
+        "author": [
+          {
+            "family": "Nagy",
+            "given": "Gregory"
+          }
+        ],
+        "editor": [
+          {
+            "family": "Else",
+            "given": "Some"
+          }
+        ]
+      },
+      "type": "book"
+    },
+    {
+      "fields": {
+        "title": "The Singer of Tales"
+      },
+      "id": "another",
+      "key": "lord1960",
+      "names": {},
+      "type": "book"
+    }
+  ]
+};
+
+export const lookupFound: sources.Found = {
+  "failures": [
+    "arXiv: export.arxiv.org could not be reached."
+  ],
+  "hits": [
+    {
+      "draft": {
+        "fields": {
+          "annotation": "Read again.",
+          "date": "1979",
+          "doi": "10.1/x",
+          "isbn": "9780801823886",
+          "keywords": "hero, epic",
+          "location": "Baltimore",
+          "publisher": "Johns Hopkins",
+          "subtitle": "Concepts of the Hero",
+          "title": "The Best of the Achaeans"
+        },
+        "key": "nagy1979",
+        "names": {
+          "author": [
+            {
+              "family": "Nagy",
+              "given": "Gregory"
+            }
+          ],
+          "editor": [
+            {
+              "family": "Else",
+              "given": "Some"
+            }
+          ]
+        },
+        "type": "book"
+      },
+      "known": "00000000-0000-4000-8000-000000000000",
+      "remarks": [
+        "A remark."
+      ],
+      "source": "Crossref",
+      "summary": {
+        "authors": "Nagy",
+        "container": "",
+        "key": "nagy1979",
+        "title": "The Best of the Achaeans: Concepts of the Hero",
+        "type": "book",
+        "year": "1979"
+      },
+      "url": "https://doi.org/10.1/x"
+    }
+  ],
+  "query": {
+    "kind": "doi",
+    "value": "10.1/x"
+  }
+};
+
+export const acknowledgements: sources.Acknowledgement[] = [
+  {
+    "service": "arXiv",
+    "words": "Thank you to arXiv for use of its open access interoperability."
+  }
+];
+
+export const zotero: sources.ZoteroInfo = {
+  "attachments": 1,
+  "collections": 1,
+  "items": 2,
+  "libraries": [
+    {
+      "id": 1,
+      "items": 2,
+      "kind": "user",
+      "name": "My Library"
+    }
+  ],
+  "path": "/data/Zotero",
+  "warnings": [
+    "A remark."
+  ]
+};
+
+export const zoteroCollections: sources.ZoteroCollection[] = [
+  {
+    "items": 1,
+    "key": "ABCD1234",
+    "name": "Epic",
+    "path": [
+      "Greek",
+      "Epic"
+    ]
+  }
+];
+
+export const importOutcome: library.ImportOutcome = {
+  "added": [
+    "00000000-0000-4000-8000-000000000000"
+  ],
+  "files": 1,
+  "problems": [
+    "A remark."
+  ],
+  "skipped": 1,
+  "updated": []
+};
+
+export const foundProposals: found.Proposal[] = [
+  {
+    "end": 18,
+    "items": [
+      {
+        "end": 17,
+        "locator": "73",
+        "start": 3,
+        "suggestions": [
+          {
+            "reference": "00000000-0000-4000-8000-000000000000",
+            "sure": "likely",
+            "why": "Nagy, 1979"
+          },
+          {
+            "reference": "00000000-0000-4000-8000-000000000000",
+            "sure": "likely",
+            "why": "Nagy, 1979"
+          }
+        ],
+        "suppressAuthor": false,
+        "words": "Nagy 1979"
+      }
+    ],
+    "mode": "intext",
+    "passage": "p1",
+    "start": 3
+  }
+];
+
+export const suggestions: found.Suggestion[][] = [
+  [
+    {
+      "reference": "00000000-0000-4000-8000-000000000000",
+      "sure": "certain",
+      "why": "the same citation key"
+    }
+  ]
+];
+
+export const madeSearchable: ocr.MadeSearchable = {
+  "failed": [
+    [
+      3,
+      "A remark."
+    ]
+  ],
+  "file": {
+    "exists": true,
+    "hash": "e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e",
+    "kind": "pdf",
+    "name": "Nagy 1979 - The Best of the Achaeans.pdf",
+    "path": "attachments/e1/e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e/Nagy 1979 - The Best of the Achaeans.pdf",
+    "size": 8
+  },
+  "read": 2,
+  "reference": {
+    "added": "2026-01-01T00:00:00Z",
+    "attachments": [
+      "attachments/e1/e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e/Nagy 1979 - The Best of the Achaeans.pdf"
+    ],
+    "collections": [
+      "00000000-0000-4000-8000-000000000000"
+    ],
+    "fields": {
+      "annotation": "Read again.",
+      "date": "1979",
+      "doi": "10.1/x",
+      "isbn": "9780801823886",
+      "keywords": "hero, epic",
+      "location": "Baltimore",
+      "publisher": "Johns Hopkins",
+      "subtitle": "Concepts of the Hero",
+      "title": "The Best of the Achaeans"
+    },
+    "files": [
+      {
+        "exists": true,
+        "hash": "e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e",
+        "kind": "pdf",
+        "name": "Nagy 1979 - The Best of the Achaeans.pdf",
+        "path": "attachments/e1/e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e/Nagy 1979 - The Best of the Achaeans.pdf",
+        "size": 8
+      }
+    ],
+    "id": "00000000-0000-4000-8000-000000000000",
+    "key": "nagy1979",
+    "modified": "2026-01-01T00:00:00Z",
+    "names": {
+      "author": [
+        {
+          "family": "Nagy",
+          "given": "Gregory"
+        }
+      ],
+      "editor": [
+        {
+          "family": "Else",
+          "given": "Some"
+        }
+      ]
+    },
+    "summary": {
+      "added": "2026-01-01T00:00:00Z",
+      "attachments": 1,
+      "authors": "Nagy",
+      "authorsSort": "nagy gregory",
+      "container": "",
+      "hasNote": true,
+      "id": "00000000-0000-4000-8000-000000000000",
+      "key": "nagy1979",
+      "modified": "2026-01-01T00:00:00Z",
+      "publisher": "Johns Hopkins",
+      "search": "gregory nagy some else the best of the achaeans concepts of the hero  johns hopkins baltimore hero epic 10 1 x 9780801823886 read again 1979 nagy1979",
+      "title": "The Best of the Achaeans: Concepts of the Hero",
+      "type": "book",
+      "year": "1979",
+      "yearNumber": 1979
+    },
+    "type": "book"
+  },
+  "remapped": 1,
+  "withText": 1
+};
+
+export const synced: pictures.Synced = {
+  "fetched": 0,
+  "problems": [
+    "A remark."
+  ],
+  "sent": 1
+};
+
+export const rendered: pictures.Rendered[] = [
+  {
+    "mathml": "<math/>",
+    "problem": null
+  },
+  {
+    "mathml": null,
+    "problem": "A remark."
+  }
+];
+
+export const sheets: tables.Sheet[] = [
+  {
+    "name": "Sheet",
+    "rows": [
+      [
+        "a",
+        "b"
+      ]
+    ]
+  },
+  {
+    "name": "Empty",
+    "problem": "A remark.",
+    "rows": []
+  }
+];
+
+export const server: sharing.ServerInfo = {
+  "encrypted": true,
+  "passwordRequired": false,
+  "protocol": 1,
+  "server": "https://example.org",
+  "version": "0.0.0"
+};
+
+export const invitation: sharing.Invitation = {
+  "code": "ABCD-EFGH-JKMN",
+  "created": 1,
+  "expires": 2,
+  "hash": "abc",
+  "id": "i1",
+  "label": "For a friend",
+  "open": true,
+  "used": 0,
+  "usesLeft": null
+};
+
+export const room: sharing.Room = {
+  "created": 1,
+  "invitations": [
+    {
+      "created": 1,
+      "expires": 2,
+      "hash": "abc",
+      "id": "i1",
+      "label": "For a friend",
+      "open": true,
+      "used": 0,
+      "usesLeft": null
+    }
+  ],
+  "members": [
+    {
+      "id": "m1",
+      "joined": 1,
+      "lastSeen": 2,
+      "name": "Some One",
+      "present": false
+    }
+  ],
+  "name": "Wrath",
+  "ownerPresent": true,
+  "role": "owner",
+  "room": "r1",
+  "you": null
+};
+
+export const readInvitation: sharing.ReadInvitation = {
+  "code": "ABCD-EFGH-JKMN",
+  "server": "https://example.org"
+};
+
+export const ticket: sharing.SharingTicket = {
+  "url": "wss://example.org/rooms/r1/socket?ticket=t"
+};
+
+export const pagesOf: documents.PagesOf = {
+  "count": 2,
+  "pages": [
+    {
+      "number": 1,
+      "svg": "<svg/>",
+      "texts": [
+        {
+          "baseline": 100.5,
+          "size": 11.0,
+          "text": "Wrath",
+          "width": 40.25,
+          "x": 72.0
+        }
+      ]
+    }
+  ]
+};
+
+export const exportedDocument: documents.Exported = {
+  "also": [
+    "/data/wrath.bib"
+  ],
+  "missing": [],
+  "path": "/data/wrath.pdf",
+  "warnings": [
+    "A remark."
+  ]
+};
+
+export const styleFound: documents.StyleFound[] = [
+  {
+    "fields": [
+      "psychology"
+    ],
+    "id": "apa",
+    "installed": false,
+    "kind": "author-date",
+    "parent": null,
+    "title": "American Psychological Association"
+  }
+];
+
+export const wordsFiles: words.WordsFile[] = [
+  {
+    "name": "common.ftl",
+    "text": "a = A\n"
+  }
+];
+
+export const ownWords: words.OwnWordsOf[] = [
+  {
+    "files": [
+      {
+        "name": "common.ftl",
+        "text": "a = A\n"
+      }
+    ],
+    "tag": "nb"
+  }
+];
+
+export const leftOut: words.LeftOut[] = [
+  {
+    "file": "common.ftl",
+    "id": "a",
+    "language": "nb",
+    "why": "A remark."
+  }
+];
+
+export const installed: languages.InstalledLanguage[] = [
+  {
+    "kind": "spelling",
+    "language": "nb-NO",
+    "licence": "GPL",
+    "name": "nb_NO",
+    "source": "https://example.org",
+    "title": "Norsk bokmål",
+    "version": "2026.10.06"
+  }
+];
+
+export const offer: languages.LanguageOffer = {
+  "packages": [
+    {
+      "file": "ocr-nor-4.1.zip",
+      "kind": "ocr",
+      "language": "nb",
+      "licence": "Apache-2.0",
+      "name": "nor",
+      "sha256": "ab",
+      "size": 1000,
+      "source": "tessdata",
+      "title": "Norsk",
+      "version": "4.1"
+    }
+  ],
+  "server": "https://example.org/glaukopis/"
+};
+
+export const dictionaries: spelling.Dictionary[] = [
+  {
+    "dir": "/data/languages",
+    "name": "nb_NO",
+    "source": "imported",
+    "tag": "nb-NO"
+  }
+];
+
+export const checking: spelling.Checking = {
+  "dictionaries": [
+    {
+      "dir": "/data/languages",
+      "name": "nb_NO",
+      "source": "imported",
+      "tag": "nb-NO"
+    }
+  ],
+  "script": "Latn",
+  "words": "nb"
+};
+
+export const filesRemoved: files.FilesRemoved = {
+  "files": 2,
+  "folders": 1
+};
+
+export const filesProgress: backend.Told<files.FilesProgress> = {
+  "done": 1,
+  "name": "nagy.pdf",
+  "ticket": "t",
+  "total": 3
+};
+
+export const pdfsProgress: backend.Told<sources.PdfsProgress> = {
+  "done": 1,
+  "name": "nagy.pdf",
+  "ticket": "t",
+  "total": 3
+};
+
+export const ocrProgress: backend.Told<ocr.Progress> = {
+  "done": 1,
+  "page": 2,
+  "ticket": "t",
+  "total": 3
+};

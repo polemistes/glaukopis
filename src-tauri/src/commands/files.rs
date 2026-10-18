@@ -139,8 +139,8 @@ fn pairs_of(pairs: Vec<FileAndReference>) -> Vec<(String, String)> {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FilesRemoved {
-    files: usize,
-    folders: usize,
+    pub files: usize,
+    pub folders: usize,
 }
 
 /// The folders that removing these files would leave empty, for asking

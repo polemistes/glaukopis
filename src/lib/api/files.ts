@@ -2,6 +2,7 @@
 
 import { listen } from '@tauri-apps/api/event';
 import { call, inTauri } from './backend';
+import type { Count, Told } from './backend';
 import type { Candidate, Match, Summary } from './library';
 import type { Picture } from './pictures';
 
@@ -53,12 +54,8 @@ export interface TakenIn {
   problems: string[];
 }
 
-export interface FilesProgress {
-  done: number;
-  total: number;
-  /** The file at hand. */
-  name: string;
-}
+/** How far the work on files has come: how many are done, of how many, and the file at hand. */
+export type FilesProgress = Count;
 
 /** What the name of a file says of the work in it: `Nagy 1979 - The Best of the Achaeans`. */
 export interface Named {
@@ -127,9 +124,15 @@ export const fileRename = (hash: string, name: string) =>
 export const fileRemove = (hash: string) => call<void>('file_remove', { hash });
 /** The folders that removing these files would leave empty; not those empty before. */
 export const filesLeftEmpty = (hashes: string[]) => call<string[]>('files_left_empty', { hashes });
+/** What came of removing many files: how many files, and how many folders. */
+export interface FilesRemoved {
+  files: number;
+  folders: number;
+}
+
 /** Removes many files at once; with `folders`, the folders this leaves empty too. */
 export const filesRemove = (hashes: string[], folders: boolean) =>
-  call<{ files: number; folders: number }>('files_remove', { hashes, folders });
+  call<FilesRemoved>('files_remove', { hashes, folders });
 export const filesMove = (hashes: string[], folder: string | null) =>
   call<void>('files_move', { hashes, folder });
 /** Gives many files each to its reference; what could not be given, a line each. */
@@ -175,7 +178,7 @@ export async function onFilesProgress(
   told: (progress: FilesProgress) => void,
 ): Promise<() => void> {
   if (!inTauri) return () => {};
-  return listen<FilesProgress & { ticket: string }>('files-progress', (event) => {
+  return listen<Told<FilesProgress>>('files-progress', (event) => {
     if (event.payload.ticket === ticket) told(event.payload);
   });
 }
