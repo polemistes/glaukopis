@@ -412,18 +412,7 @@ impl Projects {
         kept = list_history(&history);
         while kept.len() > HISTORY_LIMIT {
             let times: Vec<i64> = kept.iter().map(|h| parse_stamp(&h.id).unwrap_or(0)).collect();
-            let mut drop = 1;
-            let mut smallest = i64::MAX;
-            for i in 1..times.len() - 1 {
-                let gap = times[i + 1] - times[i - 1];
-                // Weigh by age, so that old entries go before new ones.
-                let age = (now_unix - times[i]).max(1);
-                let score = gap / age.max(3600) * 3600 + gap % 3600;
-                if score < smallest {
-                    smallest = score;
-                    drop = i;
-                }
-            }
+            let drop = which_to_thin(&times, now_unix);
             let _ = fs::remove_file(history.join(&kept[drop].id));
             kept.remove(drop);
         }
@@ -801,6 +790,28 @@ fn read_log(path: &Path) -> Result<Vec<Vec<u8>>> {
     Ok(read_records(path)?.into_iter().map(|r| r.update).collect())
 }
 
+/// Which of the kept states, by their times from the oldest, goes when the
+/// history is over its limit: the one closest in time to its neighbours,
+/// weighed by age, so that old entries go before new ones. The first and
+/// the last are never chosen. Wants three times or more.
+fn which_to_thin(times: &[i64], now: i64) -> usize {
+    let mut drop = 1;
+    let mut smallest = f64::INFINITY;
+    for i in 1..times.len() - 1 {
+        let gap = (times[i + 1] - times[i - 1]) as f64;
+        // In fractions, not whole numbers: the span over the age, small for
+        // the dense and for the old. A state younger than an hour is weighed
+        // as an hour old.
+        let age = ((now - times[i]) as f64).max(3600.0);
+        let score = gap / age;
+        if score < smallest {
+            smallest = score;
+            drop = i;
+        }
+    }
+    drop
+}
+
 fn stamp_name(unix: i64) -> String {
     let t = time::OffsetDateTime::from_unix_timestamp(unix).unwrap_or(time::OffsetDateTime::UNIX_EPOCH);
     format!(
@@ -977,7 +988,38 @@ mod tests {
             }
         }
         p.save_state(&a.id, b"4", None).unwrap();
-        assert_eq!(p.history(&a.id).unwrap().len(), HISTORY_LIMIT);
+        let kept = p.history(&a.id).unwrap();
+        assert_eq!(kept.len(), HISTORY_LIMIT);
+        // Thinned over the whole stretch, not cut from its front: the oldest
+        // is there, and no two kept states of it lie more than two hours apart.
+        let mut times: Vec<i64> =
+            kept.iter().filter_map(|e| parse_stamp(&e.id)).filter(|&t| t <= base + 100 * 3600).collect();
+        times.sort();
+        assert_eq!(times[0], base);
+        assert!(times.windows(2).all(|w| w[1] - w[0] <= 2 * 3600), "{times:?}");
+    }
+
+    #[test]
+    fn the_state_that_goes_is_the_densest_weighed_by_age() {
+        let now = 400 * 86400;
+        // The second's neighbours are 3,599 s apart, the third's 3,601 s,
+        // at much the same age: the second goes, being the denser.
+        assert_eq!(which_to_thin(&[0, 1000, 3599, 4601], now), 1);
+        assert_eq!(which_to_thin(&[0, 1000, 3601, 4599], now), 2);
+        // Of two as dense, the older goes.
+        let hour = 3600;
+        assert_eq!(which_to_thin(&[0, 2 * hour, 4 * hour, now - 4 * hour, now - 2 * hour, now], now), 1);
+        // Density is weighed by age: states a day apart a year ago lie closer
+        // for their age (two days in a year) than states a minute apart an
+        // hour ago (two minutes in an hour), and go first.
+        let year = 365 * 86400;
+        let times = [now - year - 86400, now - year, now - year + 86400, now - 3660, now - 3600, now - 3540, now];
+        assert_eq!(which_to_thin(&times, now), 1);
+        // Three a minute apart an hour ago, against two a week apart a year
+        // ago: now the recent ones are the denser.
+        let week = 7 * 86400;
+        let times = [now - year - week, now - year, now - year + week, now - 3660, now - 3600, now - 3540, now];
+        assert_eq!(which_to_thin(&times, now), 4);
     }
 
     #[test]
