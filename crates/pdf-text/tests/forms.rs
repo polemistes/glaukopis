@@ -112,7 +112,7 @@ fn a_form_that_unpacks_without_end_is_passed_over() {
     let pdf = page_with_a_large_form(40 << 20);
     assert!(pdf.len() < 1 << 20, "it packs small: {}", pdf.len());
     let text = pdf_text::extract_text_from_mem(&pdf).unwrap();
-    assert!(text.contains("Outside") && !text.contains("Not text"), "{text}");
+    assert!(text.contains("Outside") && !text.contains("Not text"), "{}", text);
 }
 
 #[test]
@@ -127,7 +127,7 @@ fn a_form_that_draws_itself_is_drawn_once() {
             .unwrap()
             .join()
             .unwrap();
-        assert!(text.contains("Outside"), "{text}");
-        assert_eq!(text.matches("Inside").count(), 1, "{text}");
+        assert!(text.contains("Outside"), "{}", text);
+        assert_eq!(text.matches("Inside").count(), 1, "{}", text);
     }
 }

@@ -2028,7 +2028,8 @@ fn nested(depth: usize, around: impl Fn(&str) -> String) -> String {
 fn a_document_nested_as_deep_as_may_be_is_read_on_a_small_stack() {
     // Each level of the document as so many levels of JSON; around a
     // paragraph, which with the document is five.
-    let ways: [(usize, fn(&str) -> String); 3] = [
+    type Around = fn(&str) -> String;
+    let ways: [(usize, Around); 3] = [
         (3, |b| format!(r#"{{"t":"Div","c":[["",[],[]],[{b}]]}}"#)),
         (2, |b| format!(r#"{{"t":"BlockQuote","c":[{b}]}}"#)),
         (3, |b| format!(r#"{{"t":"BulletList","c":[[{b}]]}}"#)),
