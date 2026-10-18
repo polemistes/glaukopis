@@ -14,9 +14,8 @@
  */
 
 import { t } from '$lib/i18n';
-import { router } from '$lib/state/router.svelte';
 import { notifyError } from '$lib/ui/toast.svelte';
-import { idOf, lastStep, openedHere, removeCarried, writeElsewhere } from './elsewhere';
+import { lastStep, openProjectId, openedHere, removeCarried, writeElsewhere } from './elsewhere';
 import type { Project } from './model/project.svelte';
 import { makePortable, portable, type Place, type Portable } from './model/portable';
 import { isAncestor, topmost } from './model/tree';
@@ -34,12 +33,6 @@ export interface Held {
   cut: boolean;
 }
 
-/** The id of the project that is open, as the route names it. */
-function openId(): string | null {
-  const route = router.route;
-  return route.view === 'project' ? route.project : null;
-}
-
 /**
  * Whether what is held is pasted as copies of the elements themselves: it
  * came from this project (the same, or the same opened anew since, which is
@@ -47,8 +40,7 @@ function openId(): string | null {
  * Otherwise it is made anew, as it was when it was copied.
  */
 function asCopies(held: Held, project: Project): boolean {
-  const here =
-    held.project === project || (!!held.from && held.from === (idOf(project) ?? openId()));
+  const here = held.project === project || (!!held.from && held.from === openProjectId(project));
   return here && held.ids.every((id) => project.node(id));
 }
 
@@ -67,7 +59,7 @@ export function copyElements(project: Project, ids: string[], cut = false): numb
     ids.filter((id) => project.node(id)),
   ).filter((id) => id !== PROJECT);
   clipboard.held = top.length
-    ? { project, from: idOf(project) ?? openId(), ids: top, portable: portable(project, top), cut }
+    ? { project, from: openProjectId(project), ids: top, portable: portable(project, top), cut }
     : null;
   return top.length;
 }

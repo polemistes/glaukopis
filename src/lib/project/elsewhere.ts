@@ -8,6 +8,7 @@
  */
 
 import { openProject, projects } from '$lib/state/projects.svelte';
+import { router } from '$lib/state/router.svelte';
 import { makePortable, portable, type Place } from './model/portable';
 import type { Project } from './model/project.svelte';
 import { topmost } from './model/tree';
@@ -70,6 +71,21 @@ export function openedHere(id: string): Project | undefined {
 export function idOf(project: Project): string | null {
   for (const [id, p] of open) if (p === project) return id;
   return null;
+}
+
+/** The id of the project the route names, where the view is a project. */
+export function routeProjectId(): string | null {
+  const route = router.route;
+  return route.view === 'project' ? route.project : null;
+}
+
+/**
+ * The id of a project: as it is open in the view, else as the route names
+ * it, since a project being opened is named by the route before it is
+ * among those open. Without a project, the route's alone.
+ */
+export function openProjectId(project?: Project): string | null {
+  return (project && idOf(project)) ?? routeProjectId();
 }
 
 export async function openElsewhere(id: string): Promise<Elsewhere> {
