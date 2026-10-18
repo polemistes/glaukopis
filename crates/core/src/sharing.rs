@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 use crate::error::{Error, Result};
+use crate::library::attachments::hash_bytes;
 use crate::net::{self, Client};
 use crate::pictures::{self, Pictures};
 use crate::tr;
@@ -581,9 +582,26 @@ impl Remote<'_> {
                 continue;
             }
             let name = used.iter().find(|u| u.hash == file.hash).map(|u| u.name.as_str()).unwrap_or("");
-            let fetching =
-                self.fetch_file(room, token, &file.hash).and_then(|content| pictures.keep(&file.hash, &content, name));
-            match fetching {
+            let content = match self.fetch_file(room, token, &file.hash) {
+                Ok(content) => content,
+                Err(Error::Refused { message, .. }) => {
+                    say(message);
+                    continue;
+                }
+                Err(e) => {
+                    say(tr!("core-sharing-picture-not-fetched", error = e.to_string()));
+                    continue;
+                }
+            };
+            // What the server gives under a name that is not what it holds was
+            // damaged on its way or where it is kept: said, since the figure
+            // stays empty for everyone until it is mended there.
+            if hash_bytes(&content) != file.hash {
+                tracing::warn!(hash = %file.hash, "a picture the server gave is not the one it listed");
+                say(tr!("core-sharing-picture-not-as-listed", host = net::host(&self.server)));
+                continue;
+            }
+            match pictures.keep(&file.hash, &content, name) {
                 Ok(_) => done.fetched += 1,
                 // What is on the server and is no picture is nothing to the project.
                 Err(Error::Invalid(_)) => {}

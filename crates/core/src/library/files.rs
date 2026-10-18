@@ -14,8 +14,9 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
-use crate::error::{Error, IoContext, Result};
+use crate::error::{Error, Result};
 use crate::fsutil::write_atomic;
+use crate::sidefile::{self, SetAside};
 use crate::tr;
 
 use super::attachments;
@@ -64,15 +65,12 @@ pub struct Files {
 }
 
 impl Files {
-    /// Reads the record; one that is not there is empty.
-    pub fn load(path: &Path) -> Result<Self> {
-        match fs::read_to_string(path) {
-            Ok(text) => {
-                serde_json::from_str(&text).map_err(|e| Error::Parse { path: path.to_owned(), message: e.to_string() })
-            }
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Files::default()),
-            Err(e) => Err(e).context(|| tr!("io-reading", path = path)),
-        }
+    /// Reads the record; one that is not there is empty, and one that
+    /// cannot be read is set aside (see `sidefile`), which `aside` says.
+    pub fn load(path: &Path) -> Result<(Self, Option<SetAside>)> {
+        let read = sidefile::read_json::<Files>(path)?;
+        let aside = read.set_aside().cloned();
+        Ok((read.or_default(), aside))
     }
 
     pub fn save(&self, path: &Path) -> Result<()> {
@@ -540,8 +538,8 @@ mod tests {
 
         let path = lib.join(FILE);
         files.save(&path).unwrap();
-        assert_eq!(Files::load(&path).unwrap(), files);
-        assert_eq!(Files::load(&tmp.path().join("none.json")).unwrap(), Files::default());
+        assert_eq!(Files::load(&path).unwrap().0, files);
+        assert_eq!(Files::load(&tmp.path().join("none.json")).unwrap().0, Files::default());
     }
 
     #[test]

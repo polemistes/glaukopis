@@ -19,7 +19,8 @@ use crate::bib::{self, RawEntry};
 use crate::error::{Error, IoContext, Result};
 use crate::fsutil::write_atomic_with_backup;
 use crate::paths::DataDir;
-use crate::tr;
+use crate::sidefile;
+use crate::{notices, tr};
 
 pub use attachments::StoredFile;
 pub use collections::{Collection, Collections};
@@ -137,7 +138,10 @@ impl Library {
         let mut needs_saving = false;
 
         let text = match fs::read(&self.file) {
-            Ok(bytes) => String::from_utf8_lossy(&bytes).into_owned(),
+            Ok(bytes) => match String::from_utf8(bytes) {
+                Ok(text) => text,
+                Err(e) => self.read_in_part(e)?,
+            },
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
             Err(e) => return Err(e).context(|| tr!("io-reading", path = &self.file)),
         };
@@ -177,8 +181,10 @@ impl Library {
             self.entries.push(entry);
         }
         self.reindex();
-        self.collections = Collections::load(&self.collections_file)?;
-        self.load_files();
+        let (collections, aside) = Collections::load(&self.collections_file)?;
+        self.collections = collections;
+        self.warnings.extend(aside.map(|a| a.message()));
+        self.load_files()?;
 
         if needs_saving {
             self.save()?;
@@ -187,23 +193,31 @@ impl Library {
         Ok(())
     }
 
+    /// A library file with bytes that are not UTF-8, as an editor that
+    /// saves in Latin-1 writes them: read with those bytes as U+FFFD, which
+    /// the next save writes. The file as it was is kept beside it, and the
+    /// writer is told where.
+    fn read_in_part(&mut self, e: std::string::FromUtf8Error) -> Result<String> {
+        let cause = e.utf8_error().to_string();
+        let aside = sidefile::copy_aside(&self.file, &cause)?;
+        let (path, name) = (self.file.clone(), aside.file_name().unwrap_or_default().to_string_lossy().into_owned());
+        let said = move || tr!("core-library-not-utf8", path = &path, aside = &name);
+        self.warnings.push(said());
+        notices::tell(said);
+        Ok(String::from_utf8_lossy(e.as_bytes()).into_owned())
+    }
+
     /// Reads the record of the files, and enters what the store has that it
-    /// lacks. A record that cannot be read is put aside under another name,
-    /// not written over, and said to be.
-    fn load_files(&mut self) {
-        self.files = match Files::load(&self.files_file) {
-            Ok(files) => files,
-            Err(e) => {
-                let aside =
-                    self.files_file.with_extension(format!("unreadable-{}.json", uuid::Uuid::new_v4().simple()));
-                let _ = fs::rename(&self.files_file, &aside);
-                self.warnings.push(tr!("core-library-files-unreadable", path = &aside, message = e.to_string()));
-                Files::default()
-            }
-        };
+    /// lacks. A record that cannot be read is set aside, not written over,
+    /// and said to be.
+    fn load_files(&mut self) -> Result<()> {
+        let (files, aside) = Files::load(&self.files_file)?;
+        self.files = files;
+        self.warnings.extend(aside.map(|a| a.message()));
         if self.files.reconcile(&self.dir) {
             self.files_dirty = true;
         }
+        Ok(())
     }
 
     fn reindex(&mut self) {
@@ -1498,6 +1512,49 @@ mod tests {
         assert_eq!(again.matches("@book{broken").count(), 1);
         assert_eq!(again.matches("@string{hup").count(), 1);
         assert_eq!(again.matches("could not be read by Glaukopis").count(), 1);
+    }
+
+    fn aside_in(dir: &Path, name: &str) -> Vec<PathBuf> {
+        fs::read_dir(dir)
+            .unwrap()
+            .flatten()
+            .filter(|e| e.file_name().to_string_lossy().starts_with(&format!("{name}.broken-")))
+            .map(|e| e.path())
+            .collect()
+    }
+
+    #[test]
+    fn side_files_that_cannot_be_read_are_set_aside_and_the_library_opens() {
+        let (_tmp, mut lib) = library();
+        lib.add(&draft("@book{a, title={A}}")).unwrap();
+        let dir = lib.dir().to_owned();
+        fs::write(dir.join("collections.json"), "{ \"collections\": [ {").unwrap();
+        fs::write(dir.join("files.json"), "[ not a record").unwrap();
+        let reopened = Library::open_at(&dir).unwrap();
+        assert_eq!(reopened.len(), 1);
+        assert!(reopened.collections.list.is_empty());
+        assert_eq!(reopened.warnings.len(), 2, "{:?}", reopened.warnings);
+        let collections = aside_in(&dir, "collections.json");
+        assert_eq!(collections.len(), 1);
+        assert_eq!(fs::read_to_string(&collections[0]).unwrap(), "{ \"collections\": [ {");
+        assert_eq!(aside_in(&dir, "files.json").len(), 1);
+        assert!(reopened.warnings.iter().any(|w| w.contains("collections.json.broken-")));
+    }
+
+    #[test]
+    fn a_library_file_not_in_utf8_is_kept_as_it_was_and_said_to_be() {
+        let (_tmp, mut lib) = library();
+        lib.add(&draft("@book{a, title={A}}")).unwrap();
+        let mut bytes = fs::read(lib.file()).unwrap();
+        // "Müller", as an editor that saves in Latin-1 writes it.
+        bytes.extend_from_slice(b"\n@book{b, author = {M\xfcller, Hans}, title={B}}\n");
+        fs::write(lib.file(), &bytes).unwrap();
+        assert!(lib.refresh().unwrap());
+        assert_eq!(lib.len(), 2);
+        assert!(lib.warnings.iter().any(|w| w.contains("UTF-8")), "{:?}", lib.warnings);
+        let kept = aside_in(lib.dir(), "library.bib");
+        assert_eq!(kept.len(), 1);
+        assert_eq!(fs::read(&kept[0]).unwrap(), bytes);
     }
 
     #[test]

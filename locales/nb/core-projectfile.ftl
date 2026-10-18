@@ -7,6 +7,7 @@ core-projectfile-no-document = Prosjektfilen inneholder ikke noe prosjekt.
 core-projectfile-unreadable = Prosjektfilen kan ikke leses: { $error }
 core-projectfile-unwritable = Prosjektfilen kunne ikke skrives: { $error }
 core-projectfile-too-large = En del av prosjektfilen er for stor: { $name }
+core-projectfile-pictures-unreadable = Det prosjektfilen sier om bildene sine, kunne ikke leses, så de kommer uten navn, bildetekster og beskrivelser: { $cause }
 
 ## Det som ble gjort da systemet sa nei, vist foran det systemet sa.
 

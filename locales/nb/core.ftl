@@ -29,8 +29,15 @@ io-copying = kunne ikke kopiere { $path }
 io-flushing = kunne ikke skrive { $path } ferdig til disken
 io-replacing = kunne ikke erstatte { $path }
 io-backing-up = kunne ikke ta sikkerhetskopi av { $path }
+io-setting-aside = kunne ikke legge { $path } til side
 io-storing = kunne ikke lagre { $path }
 io-no-directory = { $path } ligger ikke i noen mappe
+
+## En av programmets egne filer som ikke kunne leses: den legges til side,
+## under sitt navn med tiden lagt til, og programmet fortsetter uten den.
+## Vises nederst i vinduet.
+
+core-set-aside = { $path } kunne ikke leses, og er lagt til side som { $aside } i samme mappe; Glaukopis fortsetter uten det den inneholdt. Feilen: { $cause }
 
 ## Nettverket. Vises etter «nettverket: ».
 

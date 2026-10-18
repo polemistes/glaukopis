@@ -6,6 +6,7 @@ pub mod history;
 pub mod import;
 pub mod languages;
 pub mod library;
+pub mod notices;
 pub mod ocr;
 pub mod pictures;
 pub mod projectfile;

@@ -41,6 +41,7 @@ core-sharing-picture-too-large = { $host } tar ikke imot et så stort bilde.
 core-sharing-picture-larger = Et bilde er større enn { $host } tar imot (høyst { $most } MB), og kommer ikke fram til de andre.
 core-sharing-picture-not-sent = Et bilde kunne ikke sendes: { $error }.
 core-sharing-picture-not-fetched = Et bilde kunne ikke hentes: { $error }.
+core-sharing-picture-not-as-listed = Et bilde { $host } ga, er ikke det den oppga: det ble skadet underveis eller der det lagres.
 
 ## Å dele og å bli med.
 

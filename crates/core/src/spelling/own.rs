@@ -11,7 +11,7 @@ use std::path::PathBuf;
 
 use crate::error::{Error, IoContext, Result};
 use crate::fsutil::write_atomic;
-use crate::tr;
+use crate::{sidefile, tr};
 
 #[derive(Debug, Clone)]
 pub struct OwnWords {
@@ -51,26 +51,14 @@ impl OwnWords {
     /// are no word too (a hand edit may have put a space in one), so that
     /// writing the list does not lose them. A list that is not there has
     /// none. One that cannot be read, or is not UTF-8, is never taken for
-    /// empty, which the next word added would have written over it: what
-    /// is read only for checking is refused, and said in the log; what is
-    /// read to be written (`for_writing`) is set aside under its name with
-    /// `.broken-<time>` added, and the error that goes to the page says
-    /// where, so that the writer is told when they add or take away a word.
-    fn lines(&self, language: &str, for_writing: bool) -> Result<Vec<String>> {
-        let path = self.file(language);
-        let text = match fs::read(&path) {
-            Ok(bytes) => String::from_utf8(bytes).map_err(|e| e.utf8_error().to_string()),
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
-            Err(e) => Err(e.to_string()),
-        };
-        let text = match text {
-            Ok(text) => text,
-            Err(message) if for_writing => return Err(self.set_aside(language, &message)),
-            Err(message) => {
-                tracing::warn!(path = %path.display(), message, "the own words could not be read, and are not used");
-                return Err(Error::invalid(tr!("spelling-own-unreadable", language = language, message = message)));
-            }
-        };
+    /// empty, which the next word added would have written over: it is set
+    /// aside under its name with `.broken-<time>` added (see `sidefile`),
+    /// which the writer is told, and the list begins anew.
+    fn lines(&self, language: &str) -> Result<Vec<String>> {
+        let read = sidefile::read(&self.file(language), |bytes| {
+            String::from_utf8(bytes).map_err(|e| e.utf8_error().to_string())
+        })?;
+        let text = read.or_default();
         let mut lines: Vec<String> = Vec::new();
         for line in text.lines().map(str::trim).filter(|l| !l.is_empty()) {
             if !lines.iter().any(|w| w == line) {
@@ -80,32 +68,11 @@ impl OwnWords {
         Ok(lines)
     }
 
-    fn set_aside(&self, language: &str, message: &str) -> Error {
-        let path = self.file(language);
-        let t = time::OffsetDateTime::now_utc();
-        let stamp = format!(
-            "{:04}{:02}{:02}T{:02}{:02}{:02}Z",
-            t.year(),
-            u8::from(t.month()),
-            t.day(),
-            t.hour(),
-            t.minute(),
-            t.second()
-        );
-        let aside = self.dir.join(format!("{language}.txt.broken-{stamp}"));
-        if let Err(e) = fs::rename(&path, &aside) {
-            tracing::warn!(path = %path.display(), %e, message, "the own words could not be read, nor set aside");
-            return Error::io(tr!("io-reading", path = &path), e);
-        }
-        tracing::warn!(path = %path.display(), aside = %aside.display(), message, "the own words could not be read, and are set aside");
-        Error::invalid(tr!("spelling-own-set-aside", language = language, path = &aside, message = message))
-    }
-
     /// The words of a language, in the order they were added. A line that
     /// is no word is left out, and said in the log.
     pub fn list(&self, language: &str) -> Result<Vec<String>> {
         check_language(language)?;
-        let mut words = self.lines(language, false)?;
+        let mut words = self.lines(language)?;
         words.retain(|line| {
             let good = check_word(line).is_ok();
             if !good {
@@ -145,7 +112,7 @@ impl OwnWords {
     pub fn add(&self, language: &str, word: &str) -> Result<bool> {
         check_language(language)?;
         check_word(word)?;
-        let mut words = self.lines(language, true)?;
+        let mut words = self.lines(language)?;
         if words.iter().any(|w| w == word) {
             return Ok(false);
         }
@@ -157,7 +124,7 @@ impl OwnWords {
     /// Takes a word away. False when it was not there.
     pub fn remove(&self, language: &str, word: &str) -> Result<bool> {
         check_language(language)?;
-        let mut words = self.lines(language, true)?;
+        let mut words = self.lines(language)?;
         let before = words.len();
         words.retain(|w| w != word);
         if words.len() == before {
@@ -204,8 +171,8 @@ mod tests {
         fs::write(dir.join("en.txt"), &bytes).unwrap();
         let own = OwnWords::new(&dir);
 
-        let refused = own.add("en", "new").unwrap_err().to_string();
-        assert!(refused.contains(".broken-"), "{refused}");
+        // The word is added to a list begun anew, and the writer is told where the old one is.
+        assert!(own.add("en", "new").unwrap());
         let aside: Vec<_> = fs::read_dir(&dir)
             .unwrap()
             .flatten()
@@ -215,8 +182,7 @@ mod tests {
         assert_eq!(aside.len(), 1, "{aside:?}");
         assert_eq!(fs::read(dir.join(&aside[0])).unwrap(), bytes, "what was there is kept as it was");
 
-        // The list begins anew, and the file set aside is not taken for a language.
-        assert!(own.add("en", "new").unwrap());
+        // The file set aside is not taken for a language.
         assert_eq!(own.list("en").unwrap(), ["new"]);
         assert_eq!(own.all().keys().collect::<Vec<_>>(), ["en"]);
     }

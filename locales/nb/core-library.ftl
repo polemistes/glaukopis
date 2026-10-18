@@ -59,3 +59,4 @@ core-library-needs-name = Et navn trengs.
 core-library-name-too-long = Det navnet er for langt.
 core-library-folder-in-itself = En mappe kan ikke legges i seg selv.
 core-library-files-unreadable = Oversikten over filene i biblioteket kunne ikke leses, og ble lagt til side som { $path }: { $message }
+core-library-not-utf8 = { $path } har bokstaver som ikke er i UTF-8, slik et redigeringsprogram som lagrer i en annen tegnkoding skriver dem. De leses som �, og blir skrevet slik; filen slik den var, er tatt vare på som { $aside } i samme mappe.

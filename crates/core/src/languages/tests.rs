@@ -206,3 +206,32 @@ fn the_server_is_the_projects_unless_another_is_said() {
     assert_eq!(address("https://example.org/l/", "index.json"), "https://example.org/l/index.json");
     assert_eq!(address("https://example.org/l", "index.json"), "https://example.org/l/index.json");
 }
+
+#[test]
+fn what_a_language_says_of_itself_is_set_aside_when_it_cannot_be_read() {
+    let tmp = tempfile::tempdir().unwrap();
+    let languages = Languages::new(tmp.path().join("languages"));
+    let package = zip(&[
+        (MANIFEST, &manifest(r#"{"format":1,"kind":"spelling","language":"nb-NO","title":"Norsk bokmål"}"#)),
+        ("dictionaries/nb.aff", AFF),
+        ("dictionaries/nb.dic", DIC),
+    ]);
+    let path = tmp.path().join("nb.zip");
+    fs::write(&path, package).unwrap();
+    languages.import_paths(&[path]).unwrap();
+    let dir = languages.dir(Kind::Spelling);
+    fs::write(dir.join("nb_NO.json"), "{ \"title\": ").unwrap();
+
+    // Still there, by its name, with what it said kept aside as it was.
+    let installed = languages.installed();
+    assert_eq!(installed[0].name, "nb_NO");
+    assert_eq!(installed[0].title, "");
+    let aside: Vec<String> = fs::read_dir(&dir)
+        .unwrap()
+        .flatten()
+        .map(|e| e.file_name().to_string_lossy().into_owned())
+        .filter(|n| n.starts_with("nb_NO.json.broken-"))
+        .collect();
+    assert_eq!(aside.len(), 1);
+    assert_eq!(languages.installed().len(), 1);
+}

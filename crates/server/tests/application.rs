@@ -81,6 +81,32 @@ async fn the_pictures_of_a_project_are_brought_to_be_the_same() {
         assert_eq!(his.list().len(), 2);
         assert_eq!(hers.list().len(), 3);
 
+        // A picture the server keeps damaged is not taken in, and is said to be that.
+        fn find(dir: &std::path::Path, name: &str) -> Option<std::path::PathBuf> {
+            for entry in std::fs::read_dir(dir).ok()?.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    if let Some(found) = find(&path, name) {
+                        return Some(found);
+                    }
+                } else if entry.file_name() == name {
+                    return Some(path);
+                }
+            }
+            None
+        }
+        let kept = find(&root.join("server"), &vase.hash).unwrap();
+        let mut damaged = PNG;
+        damaged[40] ^= 0xff;
+        std::fs::write(&kept, damaged).unwrap();
+        let theirs = Pictures::open(root.join("theirs")).unwrap();
+        let done = remote.sync_pictures(ROOM, &joined.token, &theirs, &used(&[&vase])).unwrap();
+        assert_eq!(done.fetched, 1, "the circle is fetched");
+        assert_eq!(done.problems.len(), 1, "{:?}", done.problems);
+        assert!(done.problems[0].contains("is not the one it listed"), "{:?}", done.problems);
+        assert!(theirs.get(&vase.hash).is_err());
+        std::fs::write(&kept, PNG).unwrap();
+
         // A picture the server does not take is said to be that, once, and
         // does not keep the rest from being seen to.
         let large = format!("<svg xmlns=\"http://www.w3.org/2000/svg\"><!--{}--></svg>", "x".repeat(400));

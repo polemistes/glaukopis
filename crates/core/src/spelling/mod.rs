@@ -208,10 +208,13 @@ impl Spelling {
         let mut dictionary = Dictionary::new(&aff, &dic)
             .map_err(|e| Error::invalid(tr!("spelling-unreadable", name = &found.name, message = e.to_string())))?;
         let script = dictionary_script(&aff, &dic);
-        // Own words that cannot be read are said in the log by `list`; the
-        // dictionary is used without them, and the writer is told when they
-        // next add a word, which sets the list aside.
-        let own = self.own.list(found::primary(&found.tag)).unwrap_or_default();
+        // Own words that cannot be read are set aside by `list`, which the
+        // writer is told; the dictionary is used without them. A list that
+        // could not even be set aside is said in the log.
+        let own = self.own.list(found::primary(&found.tag)).unwrap_or_else(|e| {
+            tracing::warn!(%e, "the own words are not used");
+            Vec::new()
+        });
         for word in &own {
             take_in(&mut dictionary, word);
         }

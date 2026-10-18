@@ -44,6 +44,8 @@ core-sharing-picture-too-large = { $host } does not take a picture as large as t
 core-sharing-picture-larger = A picture is larger than { $host } takes ({ $most } MB at the most), and does not reach the others.
 core-sharing-picture-not-sent = A picture could not be sent: { $error }.
 core-sharing-picture-not-fetched = A picture could not be fetched: { $error }.
+# The server gave a picture whose content is not what its name says: damaged on the way or where the server keeps it.
+core-sharing-picture-not-as-listed = A picture { $host } gave is not the one it listed: it was damaged on its way or where it is kept.
 
 ## Publishing and joining.
 

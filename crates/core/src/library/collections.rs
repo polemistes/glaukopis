@@ -5,8 +5,9 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
-use crate::error::{Error, IoContext, Result};
+use crate::error::{Error, Result};
 use crate::fsutil::write_atomic;
+use crate::sidefile::{self, SetAside};
 use crate::tr;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -36,18 +37,14 @@ pub struct Collections {
 }
 
 impl Collections {
-    pub fn load(path: &Path) -> Result<Self> {
-        match std::fs::read_to_string(path) {
-            Ok(text) => {
-                let file: CollectionsFile = serde_json::from_str(&text)
-                    .map_err(|e| Error::Parse { path: path.to_owned(), message: e.to_string() })?;
-                let mut c = Collections { list: file.collections };
-                c.repair();
-                Ok(c)
-            }
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Collections::default()),
-            Err(e) => Err(e).context(|| tr!("io-reading", path = path)),
-        }
+    /// Reads the collections; a file that is not there has none, and one
+    /// that cannot be read is set aside (see `sidefile`), which `aside` says.
+    pub fn load(path: &Path) -> Result<(Self, Option<SetAside>)> {
+        let read = sidefile::read_json::<CollectionsFile>(path)?;
+        let aside = read.set_aside().cloned();
+        let mut c = Collections { list: read.or_default().collections };
+        c.repair();
+        Ok((c, aside))
     }
 
     pub fn save(&self, path: &Path) -> Result<()> {
@@ -289,7 +286,8 @@ mod tests {
                 {"id":"c","name":"C","parent":"gone"}]}"#,
         )
         .unwrap();
-        let c = Collections::load(&path).unwrap();
+        let (c, aside) = Collections::load(&path).unwrap();
+        assert!(aside.is_none());
         assert_eq!(c.get("c").unwrap().parent, None);
         assert!(!c.is_within("a", "a"));
         assert!(!c.is_within("b", "b"));

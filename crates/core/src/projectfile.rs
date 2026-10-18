@@ -29,6 +29,7 @@ use crate::error::{Error, IoContext, Result};
 use crate::fsutil::write_atomic;
 use crate::import::{CertaintyWord, ReasonWord, SummaryLite, fill_missing};
 use crate::library::{Draft, Entry, Library, now};
+use crate::notices;
 use crate::pictures::{self, Change, Picture, Pictures};
 use crate::tr;
 
@@ -227,8 +228,16 @@ pub fn read_from<R: Read + Seek>(source: R) -> Result<Opened> {
         .filter(|s| !s.is_empty())
         .ok_or_else(|| Error::invalid(tr!("core-projectfile-no-document")))?;
 
+    // What the file says of its pictures. When it cannot be read, the
+    // pictures still come, without their names, captions and alt texts,
+    // and the writer is told so: those were written on the other computer.
     let said: Vec<Picture> = match part(&mut archive, PICTURES, MOST_SAID)? {
-        Some(bytes) => serde_json::from_slice(&bytes).unwrap_or_default(),
+        Some(bytes) => serde_json::from_slice(&bytes).unwrap_or_else(|e| {
+            let cause = e.to_string();
+            tracing::warn!(%cause, "what a project file says of its pictures could not be read");
+            notices::tell(move || tr!("core-projectfile-pictures-unreadable", cause = &cause));
+            Vec::new()
+        }),
         None => Vec::new(),
     };
     let names: Vec<String> = archive.file_names().filter(|n| n.starts_with(PICTURE_DIR)).map(str::to_owned).collect();

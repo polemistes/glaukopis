@@ -2,6 +2,8 @@
   import { onMount } from 'svelte';
   import { getCurrentWebview } from '@tauri-apps/api/webview';
   import { languageSet, languagesInfo } from '$lib/api/system';
+  import { noticesTake, onNotices } from '$lib/api/notices';
+  import { toasts } from '$lib/ui/toast.svelte';
   import { languages, load, t } from '$lib/i18n';
   import { readOwnWords } from '$lib/words/own';
   import { library } from '$lib/state/library.svelte';
@@ -74,6 +76,26 @@
         // Only if it is still the one wanted: another may have been chosen meanwhile.
         if (interfaceTag() === tag) languages.current = tag;
       });
+  });
+
+  // What the core tells without being asked, such as a file of its own set
+  // aside because it could not be read: taken once the interface speaks
+  // its language, and whenever the core says there is more. Each stays at
+  // the foot of the window until it is dismissed.
+  function takeNotices() {
+    if (!ready) return;
+    noticesTake()
+      .then((told) => {
+        for (const message of told) toasts.show({ kind: 'error', message }, 0);
+      })
+      .catch((error) => console.warn('What the core had to tell was not taken', error));
+  }
+  onMount(() => {
+    const listening = onNotices(takeNotices);
+    return () => void listening.then((unlisten) => unlisten());
+  });
+  $effect(() => {
+    if (ready) takeNotices();
   });
 
   // Words the stylesheet shows where the page has no element for them.
