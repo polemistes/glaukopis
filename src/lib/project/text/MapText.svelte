@@ -1,6 +1,12 @@
 <script lang="ts">
-  import { notifyOk } from '$lib/ui/toast.svelte';
-  import { canPaste, copyElements, cutElements, pasteElements } from '../clipboard.svelte';
+  import { notify, notifyOk } from '$lib/ui/toast.svelte';
+  import {
+    canPaste,
+    copyElements,
+    cutElements,
+    pasteElements,
+    pastesUnderItself,
+  } from '../clipboard.svelte';
   import { TextSelection } from 'prosemirror-state';
   import type { EditorView } from 'prosemirror-view';
   import { onDestroy, onMount, tick, untrack } from 'svelte';
@@ -896,6 +902,10 @@
   /** Pastes what is held under an element, at the end of what is under it. */
   function pasteUnder(id: string) {
     if (!canPaste(project)) return;
+    if (pastesUnderItself(project, id)) {
+      notify(t('diagram-paste-under-itself'));
+      return;
+    }
     project.checkpoint();
     const made = pasteElements(project, { under: id });
     project.checkpoint();

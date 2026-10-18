@@ -38,3 +38,4 @@ diagram-cut = { $count ->
 diagram-paste-here = Paste here
 diagram-nothing-copied = Nothing is copied yet
 diagram-pasted-elsewhere = What was copied is of another project, and cannot be pasted here
+diagram-paste-under-itself = What was cut cannot go under itself: it is still cut, to be pasted somewhere else

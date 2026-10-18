@@ -90,6 +90,18 @@ export function canPaste(project: Project): boolean {
 }
 
 /**
+ * Whether what is held was cut in this project and the element given is one
+ * of it, or under one: elements cannot be moved under themselves, so such a
+ * paste is refused, and said to be.
+ */
+export function pastesUnderItself(project: Project, under: string): boolean {
+  const held = clipboard.held;
+  if (!held?.cut || !asCopies(held, project)) return false;
+  const tree = project.tree();
+  return held.ids.some((id) => id === under || isAncestor(tree, id, under));
+}
+
+/**
  * Pastes what is held under the element given, at the end of what is under
  * it: at the position given, relative to that element, or placed
  * automatically. Within the project they came from as copies; in another,
@@ -108,11 +120,11 @@ export function pasteElements(project: Project, place: Place): string[] {
  * and taken away from the project it came from, where it came from another.
  */
 function pasteCut(held: Held, project: Project, place: Place): string[] {
+  // Refused before the clipboard is emptied: what was cut stays cut, to be
+  // pasted somewhere else, and the caller says why nothing moved.
+  if (pastesUnderItself(project, place.under)) return [];
   clipboard.held = null;
   if (asCopies(held, project)) {
-    // Under one of what was cut, or under what is under it, it cannot go.
-    const tree = project.tree();
-    if (held.ids.some((id) => id === place.under || isAncestor(tree, id, place.under))) return [];
     return project.move(held.ids, place.under, undefined, { pos: place.pos ?? null });
   }
   const made = makePortable(project, held.portable, place);
