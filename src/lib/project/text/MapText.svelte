@@ -472,11 +472,27 @@
     else addAfter(id);
   }
 
+  /**
+   * Whether an element can be joined to the one shown before it: it has
+   * nothing under it, and the one before is not folded. What is folded
+   * stands, in the document, between that element's own text and this
+   * one, and a text joined to it would move before what is folded away.
+   */
+  function joinable(id: string): boolean {
+    const i = indexOf(id);
+    return (
+      i > 0 &&
+      id !== tree.root &&
+      !(tree.children.get(id)?.length ?? 0) &&
+      !rows[i - 1].hidden
+    );
+  }
+
   /** Joins an element to the one before it in the text. Its name, if it has one, becomes a paragraph. */
   function merge(id: string) {
     const i = indexOf(id);
     const node = project.node(id);
-    if (i <= 0 || !node || (tree.children.get(id)?.length ?? 0) > 0) return;
+    if (!node || !joinable(id)) return;
     const before = rows[i - 1];
     const target = project.fragment(before.id, 'body');
     const source = project.fragment(id, 'body');
@@ -912,7 +928,6 @@
         !('label' in item) ||
         (item.label !== t('project-write-text') && item.label !== t('common-rename')),
     );
-    const i = indexOf(id);
     const extra: MenuItem[] = [];
     if (view && view.hasFocus()) {
       extra.push({
@@ -923,7 +938,7 @@
         action: () => split(id, view),
       });
     }
-    if (i > 0 && id !== tree.root && !(tree.children.get(id)?.length ?? 0)) {
+    if (joinable(id)) {
       extra.push({
         label: t('text-join'),
         icon: Merge,
