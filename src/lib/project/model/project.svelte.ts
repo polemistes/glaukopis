@@ -41,7 +41,15 @@ import { isCatalogueKind } from '$lib/project/parts';
 import { gather, ReadableCopy } from '$lib/org/folder';
 import { getAt, pathsOf, setAt, type LookChanges, type LookPath } from '$lib/look/changes';
 import { migrate, needsMigration } from './migrate';
-import { bodyFacts, inlineText, readBody, readTitle, titleHtml, type Block } from './text';
+import {
+  BodyReading,
+  inlineText,
+  readBody,
+  readTitle,
+  titleHtml,
+  type Block,
+  type BodyFacts,
+} from './text';
 import { buildTree, pathTo, viewOf, type FlatNode, type Tree } from './tree';
 import {
   OWN_SETTINGS,
@@ -89,6 +97,13 @@ function holdsWorkOfOthers(type: Y.AbstractType<any>, me: number): boolean {
   // What a map holds by name: the parts of an element, and the attributes of a paragraph.
   for (const item of type._map.values()) if (holds(item)) return true;
   return false;
+}
+
+/** The text of an element as it was read, its facts, and the stamp it is known by. */
+interface ReadText {
+  blocks: Block[];
+  facts: BodyFacts;
+  stamp: string;
 }
 
 /** When an element is, as the document holds it; nothing where it says nothing that can be read. */
@@ -755,21 +770,38 @@ export class Project {
   }
 
   /** The text of each element as it was read, and what it is known by: see `#readNode`. */
-  #texts = new WeakMap<NodeRecord, { blocks: Block[]; stamp: string }>();
-  /** For each element, what its text was when it was last read, in few signs, and the stamp it has. */
-  #stamps = new Map<string, { print: string; stamp: string }>();
+  #texts = new WeakMap<NodeRecord, ReadText>();
+  /** For each element, its text as it was last read. */
+  #bodies = new Map<string, ReadText>();
+  /** The parts of the texts as they were last read: see `BodyReading`. */
+  #reading = new BodyReading();
   #stamped = 0;
 
-  #readNode(id: string) {
+  /**
+   * Reads an element anew. Its text is read again only where `written`
+   * says it was changed, and then only the parts of it that were changed
+   * (`#nodesChanged` tells which); else it is what it was.
+   */
+  #readNode(id: string, written = true) {
     const n = this.yNodes.get(id);
     if (!(n instanceof Y.Map)) {
       this.nodes.delete(id);
-      this.#stamps.delete(id);
+      this.#bodies.delete(id);
       return;
     }
     const title = readTitle(n.get('title') as Y.XmlFragment | undefined);
-    const blocks = readBody(n.get('body') as Y.XmlFragment | undefined, this.passageKinds);
-    const facts = bodyFacts(blocks);
+    // The stamp of a text stays the same while the text does, whatever else
+    // of the element is changed: where it stands in the diagram, whether it
+    // is folded. It is new when anything within the text was changed, as
+    // the changes say, and not by comparing the text with what it was, which
+    // took writing the whole text out on every keystroke.
+    let text = written ? undefined : this.#bodies.get(id);
+    if (!text) {
+      const { blocks, facts } = this.#reading.read(n.get('body') as Y.XmlFragment | undefined);
+      text = { blocks, facts, stamp: `${id}.${++this.#stamped}` };
+      this.#bodies.set(id, text);
+    }
+    const facts = text.facts;
     const pos = n.get('pos') as Position | null | undefined;
     const origin = n.get('origin') as NodeRecord['origin'] | undefined;
     const record: NodeRecord = {
@@ -802,14 +834,8 @@ export class Project {
     };
     // The text as it was read is kept with the record, which is made anew
     // whenever the element is changed: a document is then made of what was
-    // read already, and only what was changed is read again. The stamp of
-    // a text stays the same while the text does, whatever else of the
-    // element is changed: where it stands in the diagram, whether it is folded.
-    const print = printOf(JSON.stringify(blocks));
-    const before = this.#stamps.get(id);
-    const stamp = before?.print === print ? before.stamp : `${id}.${++this.#stamped}`;
-    this.#stamps.set(id, { print, stamp });
-    this.#texts.set(record, { blocks, stamp });
+    // read already, and only what was changed is read again.
+    this.#texts.set(record, text);
     this.nodes.set(id, record);
     if (id === PROJECT) this.name = record.title;
   }
@@ -868,23 +894,59 @@ export class Project {
   #nodesChanged(events: Y.YEvent<Y.AbstractType<unknown>>[]) {
     let structural = false;
     const touched = new Set<string>();
+    /** The elements whose text was changed. */
+    const written = new Set<string>();
     for (const event of events) {
       if (event.target === this.yNodes) {
         structural = true;
-        for (const key of (event as Y.YMapEvent<unknown>).keysChanged) touched.add(key);
+        for (const key of (event as Y.YMapEvent<unknown>).keysChanged) {
+          touched.add(key);
+          written.add(key);
+        }
         continue;
       }
-      const id = event.path[0];
-      if (typeof id !== 'string') continue;
-      touched.add(id);
-      if (event.path.length === 1 && event instanceof Y.YMapEvent) {
-        for (const key of event.keysChanged) {
+      const where = this.#whereIn(event.target);
+      if (!where) continue;
+      touched.add(where.id);
+      if (where.own) {
+        for (const key of (event as Y.YMapEvent<unknown>).keysChanged) {
           if (key === 'parent' || key === 'order') structural = true;
+          if (key === 'body') written.add(where.id);
         }
+      } else if (where.text === 'body') {
+        written.add(where.id);
+        if (where.part instanceof Y.XmlElement) this.#reading.changed(where.part);
       }
     }
-    for (const id of touched) this.#readNode(id);
+    for (const id of touched) this.#readNode(id, written.has(id));
     if (structural) this.structure++;
+  }
+
+  /**
+   * Where something that was changed among the elements stands: in which
+   * element, whether it is the element's own map, in which of its texts
+   * (`body`, `title`), and, in a text, the part at the top of it that holds
+   * it. Found by going up from what was changed, and not by the path of the
+   * change, which counts the place of each part among all beside it.
+   */
+  #whereIn(target: Y.AbstractType<unknown>): {
+    id: string;
+    own: boolean;
+    text: string | null;
+    part: Y.AbstractType<unknown> | null;
+  } | null {
+    let part: Y.AbstractType<unknown> | null = null;
+    let below: Y.AbstractType<unknown> | null = null;
+    let at = target;
+    while (at.parent !== this.yNodes) {
+      if (!at.parent) return null;
+      part = below;
+      below = at;
+      at = at.parent;
+    }
+    const id = at._item?.parentSub;
+    if (typeof id !== 'string') return null;
+    return { id, own: !below, text: below?._item?.parentSub ?? null, part };
   }
 
   node(id: string | null | undefined): NodeRecord | undefined {

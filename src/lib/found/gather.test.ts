@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
 import { writeBody } from '$lib/project/model/blocks';
 import {
@@ -267,5 +267,75 @@ describe('the citations that were found', () => {
     expect(inOrder(placeOf(byId, places[0].id, 7), order[0])).toBeGreaterThan(0);
     expect(inOrder(placeOf(byId, places[0].id, 7), order[1])).toBeLessThan(0);
     expect(placeOf(byId, 'gone', 0)[0]).toBe(Number.MAX_SAFE_INTEGER);
+  });
+});
+
+describe('what is gathered on every change', () => {
+  /** A project of many elements, each with a citation that was found, and a way to write in one of them. */
+  function many() {
+    const texts = Array.from({ length: 40 }, (_, i) => [
+      p(t(`Part ${i}, as was said `), t('(Nagy 1979)', { found: zotero(`a${i}b2c3d4e5f6`) })),
+    ]);
+    const made = project(...texts);
+    const write = (element: string, what: string) =>
+      made.pr.transact(() => {
+        const paragraph = made.pr.fragment(element, 'body')!.get(0) as Y.XmlElement;
+        (paragraph.get(0) as Y.XmlText).insert(0, what);
+      });
+    return { ...made, write };
+  }
+
+  /** How many texts of elements are read while `f` runs. */
+  function reads(pr: ReturnType<typeof many>['pr'], f: () => void): number {
+    const spy = vi.spyOn(pr, 'fragment');
+    f();
+    const n = spy.mock.calls.filter(([, which]) => which === 'body').length;
+    spy.mockRestore();
+    return n;
+  }
+
+  it('reads again only the element written in, to count the citations of the branch', () => {
+    const { pr, at, elements, write } = many();
+    expect(countFound(pr, at)).toBe(40);
+    write(elements[7], 'So ');
+    expect(reads(pr, () => expect(countFound(pr, at)).toBe(40))).toBe(1);
+    // Nothing changed: nothing is read.
+    expect(reads(pr, () => countFound(pr, at))).toBe(0);
+  });
+
+  it('reads again only the element written in, to gather the branch, and gives what is new', () => {
+    const { pr, at, elements, write } = many();
+    const before = gather(pr, at);
+    write(elements[7], 'So ');
+    let after = gather(pr, at);
+    expect(reads(pr, () => (after = gather(pr, at)))).toBe(0);
+    write(elements[3], 'Then ');
+    expect(reads(pr, () => (after = gather(pr, at)))).toBe(1);
+    expect(after.places.map((x) => x.order)).toEqual(before.places.map((x) => x.order));
+    expect(after.places[3].text).toBe(`Then ${before.places[3].text}`);
+    expect(after.places[7].text).toBe(`So ${before.places[7].text}`);
+    expect(after.marked[3].start).toBe(before.marked[3].start + 'Then '.length);
+    expect(after.marked.map((m) => m.found.id)).toEqual(before.marked.map((m) => m.found.id));
+    // What one took and changed is not what the next is given.
+    after.places[0].text = 'changed';
+    after.marked[0].start = -1;
+    const again = gather(pr, at);
+    expect(again.places[0].text).toBe(before.places[0].text);
+    expect(again.marked[0].start).toBe(before.marked[0].start);
+  });
+
+  it('counts what was found anew where a citation is left as text', () => {
+    const { pr, at, elements } = many();
+    expect(countFound(pr, at)).toBe(40);
+    pr.transact(() => {
+      const paragraph = pr.fragment(elements[2], 'body')!.get(0) as Y.XmlElement;
+      const text = paragraph.get(0) as Y.XmlText;
+      const length = text.length;
+      text.format(length - '(Nagy 1979)'.length, '(Nagy 1979)'.length, {
+        found: { ...zotero('a2b2c3d4e5f6'), left: true },
+      });
+    });
+    expect(countFound(pr, at)).toBe(39);
+    expect(gather(pr, at).marked).toHaveLength(39);
   });
 });

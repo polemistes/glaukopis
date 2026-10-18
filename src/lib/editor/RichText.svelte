@@ -17,7 +17,7 @@
   import type { RefRecord } from '$lib/project/model/types';
   import { library } from '$lib/state/library.svelte';
   import type { ResolvedPos, Slice } from 'prosemirror-model';
-  import { t } from '$lib/i18n';
+  import { languages, t } from '$lib/i18n';
   import { insertCitation } from './commands';
   import {
     bodyPlugins,
@@ -37,7 +37,7 @@
     numberFrom,
     numbersAsked,
     numberStretch,
-    relayoutNumbers,
+    redrawShape,
     stretchAt,
     stretchToNumber,
     type NumbersAsked,
@@ -147,21 +147,35 @@
 
   // What the layout of the document says of the numbers of a stretch that
   // does not say: every how many, and on which side (ADR 0041). The editor
-  // is given it through a hook, and told to draw the numbers anew when it
-  // changes, or when the kinds of the writer's own do.
+  // is given it through a hook. The numbers of lines and the brackets of
+  // runs are not drawn anew on every keystroke, so the editor is told to
+  // draw them anew when what they are drawn with changes: the layout's
+  // numbers, the kinds of the writer's own (which are counted, and their
+  // names on the brackets), and the language of the interface, in which
+  // the names of the kinds of the catalogue are said. That is what this
+  // depends on; the rest is read untracked.
   const numbersLayout = $derived.by<NumbersLayout>(() => {
     if (kind !== 'body' || !owner || !project.node(owner)) return LAYOUT_NUMBERS;
     return documents.formatForCached(project, owner)?.verse ?? LAYOUT_NUMBERS;
   });
-  let numbersNow: NumbersLayout = LAYOUT_NUMBERS;
+  let drawnWith: { numbers: NumbersLayout; kinds: unknown; language: string } | null = null;
   $effect(() => {
-    const now = numbersLayout;
-    void project.passageKinds;
+    const now = {
+      numbers: numbersLayout,
+      kinds: project.passageKinds,
+      language: languages.current,
+    };
     void made;
     untrack(() => {
-      const changed = now.every !== numbersNow.every || now.side !== numbersNow.side;
-      numbersNow = now;
-      if (view && kind === 'body' && changed) relayoutNumbers(view);
+      // At first, the editor was made with what is now, and the layout's numbers as given.
+      const was = drawnWith ?? { ...now, numbers: LAYOUT_NUMBERS };
+      drawnWith = now;
+      const changed =
+        now.numbers.every !== was.numbers.every ||
+        now.numbers.side !== was.numbers.side ||
+        now.kinds !== was.kinds ||
+        now.language !== was.language;
+      if (view && kind === 'body' && changed) redrawShape(view);
     });
   });
 
@@ -426,7 +440,7 @@
       // The kinds of the writer's own, for what they are based on: a line of verse, a kind that is counted, the name of a run.
       passageKinds: () => project.passageKinds,
       // What the layout says of the numbers of a stretch: see above.
-      numbers: () => numbersNow,
+      numbers: () => drawnWith?.numbers ?? LAYOUT_NUMBERS,
       // The dialogs of the numbers and of a language, and the language of the document for the one of a language.
       askNumbers: kind === 'body' ? askNumbers : undefined,
       askLanguage: kind === 'body' ? askLanguage : undefined,

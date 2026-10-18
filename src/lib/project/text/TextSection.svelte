@@ -48,7 +48,6 @@
   import { initials } from '$lib/sharing/connection.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import type { Other, Project } from '../model/project.svelte';
-  import { readBody } from '../model/text';
   import type { NodeRecord } from '../model/types';
   import { saidWords } from '../elements';
   import { kindColour } from '../kinds';
@@ -150,12 +149,12 @@
   const language = $derived(project.documentOf(node.id).settings.language ?? null);
   const html = $derived.by(() => {
     if (active) return '';
-    // The record is made anew whenever the text changes.
-    void node.words;
-    void node.cited;
-    // The kinds of the writer's own say which of their paragraphs a numbering counts.
+    // The text as the model read it when the element last changed: it
+    // depends on the element's record, which is made anew whenever the text
+    // changes, and is not read a second time here. The kinds of the writer's
+    // own say which of their paragraphs a numbering counts.
     const own = project.passageKinds;
-    return body ? blocksHtml(readBody(body, own), language, own) : '';
+    return body ? blocksHtml(project.blocksOf(node.id), language, own) : '';
   });
   /** The element it stands for in the document, where it stands for one. */
   const included = $derived(node.include ? project.node(node.include) : undefined);

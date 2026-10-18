@@ -13,6 +13,7 @@ import * as Y from 'yjs';
 import type { Found, Passage } from '$lib/api/found';
 import { bodySchema, foundAttrs } from '$lib/editor/schema';
 import type { Project } from '$lib/project/model/project.svelte';
+import type { NodeRecord } from '$lib/project/model/types';
 import { NO_TEXT, signOf } from '$lib/search/passages';
 
 export { NO_TEXT };
@@ -221,6 +222,28 @@ export function gatherElement(project: Project, element: string, into?: Gathered
   return out;
 }
 
+/*
+ * What was gathered of each element is kept with its record, which the
+ * project makes anew whenever anything of the element changes, its text
+ * among it (`Project.#readNode`): while the record is the same, so is the
+ * text, and what is gathered of it. So a keystroke reads again only the
+ * element written in, and not every text of the branch, when the branch is
+ * gone through or its citations are counted on every change of the
+ * project. An element without a record is read each time.
+ */
+const gathered = new WeakMap<NodeRecord, Gathered>();
+const counted = new WeakMap<NodeRecord, number>();
+
+/** What there is in the text of one element, as it was when the element last changed. */
+function gatheredOf(project: Project, element: string): Gathered {
+  const record = project.node(element);
+  const kept = record && gathered.get(record);
+  if (kept) return kept;
+  const own = gatherElement(project, element);
+  if (record) gathered.set(record, own);
+  return own;
+}
+
 /**
  * The passages of an element and all under it, and the citations that were
  * found in them, in the order of the text: in the texts of all those
@@ -228,13 +251,34 @@ export function gatherElement(project: Project, element: string, into?: Gathered
  */
 export function gather(project: Project, at: string): Gathered {
   const out: Gathered = { places: [], marked: [] };
-  for (const element of project.tree(at).sequence) gatherElement(project, element, out);
+  for (const element of project.tree(at).sequence) {
+    const own = gatheredOf(project, element);
+    // Copies, so that what is kept is not changed by those who take it; in
+    // the order of the whole branch.
+    const before = out.places.length;
+    for (const place of own.places) out.places.push({ ...place, order: before + place.order });
+    for (const marked of own.marked) out.marked.push({ ...marked });
+  }
   return out;
 }
 
-/** How many citations that were found an element in view has to go through. */
+/**
+ * How many citations that were found an element in view has to go through.
+ * Read in an effect, it depends on the shape of the branch and on the
+ * record of each element in it, and on nothing else of the project.
+ */
 export function countFound(project: Project, at: string): number {
-  return gather(project, at).marked.length;
+  let n = 0;
+  for (const element of project.tree(at).sequence) {
+    const record = project.node(element);
+    let own = record && (counted.get(record) ?? gathered.get(record)?.marked.length);
+    if (own === undefined) {
+      own = gatherElement(project, element).marked.length;
+      if (record) counted.set(record, own);
+    }
+    n += own;
+  }
+  return n;
 }
 
 /** A passage as it is now, by what it is known by. Nothing, when it is no longer there. */

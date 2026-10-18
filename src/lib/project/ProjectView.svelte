@@ -45,6 +45,7 @@
   import { foundUi, goThrough, takeWaiting } from '$lib/found/found.svelte';
   import FoundPanel from '$lib/found/FoundPanel.svelte';
   import { countFound } from '$lib/found/gather';
+  import { PictureSync, pictureSet } from './shared-pictures';
   import type { Entry } from '$lib/found/going.svelte';
   import { revealFound } from '$lib/found/reveal';
   import { pictures } from '$lib/figures/pictures.svelte';
@@ -630,18 +631,18 @@
   });
 
   // The pictures of a project that is shared are with the others as well:
-  // when the connection is there, what either side lacks is sent and fetched.
+  // when the connection is there, what either side lacks is sent and fetched,
+  // and again when the set of pictures the project uses has changed.
+  const usedPictureSet = $derived(project ? pictureSet(project) : '');
+  const pictureSync = new PictureSync();
   $effect(() => {
     if (!project) return;
     pictures.shared = !!shared?.sharing;
-    // Again whenever the project uses a picture it did not use before.
-    const used = project
-      .usedPictures()
-      .map((p) => p.hash)
-      .sort()
-      .join(' ');
-    if (shared?.sharing && shared.connection?.synced && used !== undefined)
-      untrack(() => void pictures.sync());
+    // It depends on the set of pictures, a derived string that tells only
+    // when it has become another, and on the connection; a keystroke, which
+    // makes the pictures be read again, gives the same set and syncs nothing.
+    const synced = !!(shared?.sharing && shared.connection?.synced);
+    if (pictureSync.wanted(usedPictureSet, synced)) untrack(() => void pictures.sync());
   });
 
   function viewToStore(): StoredView {
@@ -877,12 +878,14 @@
     });
   });
 
-  /** How many citations that were found the element in view has left, for the tab of their panel. */
-  const foundCount = $derived.by(() => {
-    if (!project || !ownPane) return 0;
-    void project.revision;
-    return countFound(project, ownPane.at);
-  });
+  /**
+   * How many citations that were found the element in view has left, for
+   * the tab of their panel. It depends on the shape of the branch and on the
+   * record of each element in it (what `countFound` reads), and not on the
+   * revision of the whole project: the count of each element is kept with
+   * its record, so a keystroke counts again only the element written in.
+   */
+  const foundCount = $derived(project && ownPane ? countFound(project, ownPane.at) : 0);
 
   /** Shows a citation that was found where a pane shows the element in view as text: scrolled to, and selected. */
   function showFound(at: string, entry: Entry) {
