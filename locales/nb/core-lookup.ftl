@@ -42,6 +42,7 @@ core-lookup-crossref-in-book = Et søk gir ikke redaktørene og ISBN-et til boke
 core-lookup-book-unreadable = Det Crossref har om boken, kunne ikke leses: redaktørene kan mangle.
 core-lookup-book-not-fetched = Det Crossref har om boken, kunne ikke hentes: redaktørene kan mangle.
 core-lookup-chapter-author = Crossref oppgir ingen forfatter for kapitlet. Forfatteren av boken er ført inn som forfatter.
+core-lookup-chapter-not-found = Kapitlet ble ikke funnet blant delene av boken i det Crossref har: sidene og forfatterne er ikke hentet derfra.
 core-lookup-group-name = «{ $name }» var oppgitt som navnet på en person, «{ $family }, { $given }», og er tatt som navnet på en gruppe.
 core-lookup-kind-none = Posten oppgir ingen publikasjonstype. Den er ført inn som «misc»: velg riktig type.
 core-lookup-kind = Posten kaller publikasjonstypen «{ $kind }». Den er ført inn som «misc»: velg riktig type.

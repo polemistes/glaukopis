@@ -313,7 +313,11 @@ fn roles(field: &Field) -> Vec<Role> {
 /// What a person did, as the statement of responsibility on the title page
 /// says it (245 $c): "Jan Assmann ; trad. de l'allemand par Diane Meur".
 /// Used for persons whose field gives no role, as in older records.
-fn roles_by_statement(family: &str, statement: &str) -> Vec<Role> {
+/// `names` are the folded words of the names of the record's persons: they
+/// are not read as words of a role, so that a co-author named Ford (the
+/// Hungarian "ford." is "translated") or Ed does not make the others
+/// translators or editors.
+fn roles_by_statement(family: &str, statement: &str, names: &[String]) -> Vec<Role> {
     const WORDS: &[(Role, &[&str])] = &[
         (
             Role::Editor,
@@ -398,7 +402,7 @@ fn roles_by_statement(family: &str, statement: &str) -> Vec<Role> {
         if !format!(" {folded} ").contains(&format!(" {family} ")) {
             continue;
         }
-        let words: Vec<&str> = folded.split(' ').collect();
+        let words: Vec<&str> = folded.split(' ').filter(|w| !names.iter().any(|n| n == w)).collect();
         let mut found: Vec<Role> =
             WORDS.iter().filter(|(_, signs)| words.iter().any(|w| signs.contains(w))).map(|(role, _)| *role).collect();
         if found.len() > 1 {
@@ -1035,6 +1039,15 @@ fn names(record: &Record, draft: &mut Draft, remarks: &mut Vec<String>) {
         }
     };
     let mut unplaced: Vec<String> = Vec::new();
+    // The words of every person's name, which the statement holds as well.
+    let mut name_words: Vec<String> = Vec::new();
+    for field in record.fields.iter().filter(|f| matches!(f.tag.as_str(), "100" | "700")) {
+        if let Some(who) = person(field, &mut Vec::new()) {
+            for part in [&who.family, &who.given, &who.prefix] {
+                name_words.extend(fold(part).split(' ').filter(|w| !w.is_empty()).map(str::to_owned));
+            }
+        }
+    }
 
     for field in &record.fields {
         let personal = matches!(field.tag.as_str(), "100" | "700");
@@ -1052,7 +1065,7 @@ fn names(record: &Record, draft: &mut Draft, remarks: &mut Vec<String>) {
             if field.tag.starts_with('1') {
                 found.push(Role::Author);
             } else if personal {
-                found = roles_by_statement(&who.family, &statement);
+                found = roles_by_statement(&who.family, &statement, &name_words);
                 if found.is_empty() {
                     unplaced.push(who.display());
                 }
@@ -1803,6 +1816,21 @@ mod tests {
                 "The record names Jane Doe without saying as what. The name has not been entered.",
             ]
         );
+    }
+
+    #[test]
+    fn a_co_author_named_ford_or_ed_makes_no_one_a_translator_or_editor() {
+        let xml = [
+            field("100", "1 ", &[('a', "Ford, John.")]),
+            field("245", "10", &[('a', "A history of Greece /"), ('c', "John Ford and Mary Smith ; Ed Brown.")]),
+            field("700", "1 ", &[('a', "Smith, Mary.")]),
+            field("700", "1 ", &[('a', "Brown, Ed,")]),
+        ]
+        .concat();
+        let d = describe(&record(&xml), None).unwrap();
+        assert_eq!(d.draft.names["author"], vec![Person::new("Ford", "John"), Person::new("Smith", "Mary")]);
+        assert_eq!(d.draft.names.len(), 1, "{:?}", d.draft.names);
+        assert_eq!(d.remarks, vec!["The record names Ed Brown without saying as what. The name has not been entered."]);
     }
 
     #[test]
