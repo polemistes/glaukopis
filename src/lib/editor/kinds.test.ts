@@ -10,12 +10,14 @@ import {
   amongOthers,
   catalogueKindOf,
   CATALOGUE,
+  catalogueKindsCss,
   fellowsOf,
   GROUPS,
   groupOf,
   inHand,
   passageKindsCss,
   points,
+  showCatalogueKinds,
   specOf,
   WORD_KINDS,
 } from './kinds';
@@ -260,5 +262,57 @@ describe('the cues on screen of a kind of the writer`s own', () => {
     expect(css).toContain('.prose p[data-kind="v1"] { --inset: 2.4em; margin-left: 2.4em; }');
     expect(css).toContain('.prose p[data-kind="c1"] { font-weight: 600; }');
     expect(css).not.toContain('bad id');
+  });
+});
+
+describe('the cues on screen of the kinds of the catalogue', () => {
+  const css = catalogueKindsCss();
+  /** The rules of a selector in a style sheet, one a line, as they are made. */
+  const rulesOf = (sheet: string, selector: string) =>
+    sheet.split('\n').filter((line) => line.startsWith(selector));
+
+  it('are those a kind of the writer`s own based on one of them has, given nothing of its own', () => {
+    for (const spec of CATALOGUE) {
+      const families = [
+        ...(spec.family === 'paragraph' ? (['paragraph'] as const) : []),
+        ...(WORD_KINDS.includes(spec.id) ? (['words'] as const) : []),
+      ];
+      for (const family of families) {
+        const own = passageKindsCss([
+          { id: 'k', name: 'k', family, basedOn: spec.id, look: {}, order: 'a0' },
+        ]);
+        const place = family === 'words' ? '.prose .kind' : '.prose p';
+        const theirs = rulesOf(own, `${place}[data-kind="k"]`).map((r) =>
+          r.replaceAll('[data-kind="k"]', `[data-kind="${spec.id}"]`),
+        );
+        expect(theirs, `${spec.id} (${family})`).toEqual(
+          rulesOf(css, `${place}[data-kind="${spec.id}"]`),
+        );
+      }
+    }
+  });
+
+  it('keep the measures the screen had: a quotation and a list in by less than verse', () => {
+    expect(css).toContain(
+      '.prose p[data-kind="quote"] { --inset: 1.4em; margin-left: 1.4em; font-size: 0.96em; color: var(--ink-2); }',
+    );
+    expect(css).toContain('.prose p[data-kind="item"] { --inset: 1.6em; margin-left: 1.6em; }');
+    expect(css).toContain('.prose p[data-kind="numbered"] { --inset: 1.6em; margin-left: 1.6em; }');
+    expect(css).toContain('.prose p[data-kind="line"] { --inset: 2.4em; margin-left: 2.4em; }');
+    expect(css).toContain('.prose p[data-kind="gloss"] { --inset: 3.05em;');
+    expect(css).toContain('.prose p[data-kind="epigraph"] { --inset: 9.6em;');
+    expect(css).toContain('.prose p[data-kind="character"] { --inset: 13.44em;');
+    expect(css).toContain('.prose .kind[data-kind="foreign"] { font-style: italic; }');
+    expect(css).toContain('.prose p[data-kind="break"]:empty::before { content: "* * *";');
+    expect(css).toContain('.prose .kind[data-kind="mention"]::before { content: open-quote; }');
+  });
+
+  it('are set once in the head of the page', () => {
+    showCatalogueKinds();
+    showCatalogueKinds();
+    const sheets = document.head.querySelectorAll('style#catalogue-kinds');
+    expect(sheets.length).toBe(1);
+    expect(sheets[0].textContent).toBe(css);
+    sheets[0].remove();
   });
 });

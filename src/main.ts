@@ -6,6 +6,7 @@ import './placing.css';
 import './settings.css';
 import { mount } from 'svelte';
 import App from './App.svelte';
+import { showCatalogueKinds } from '$lib/editor/kinds';
 import { nameLanguagesBy } from '$lib/editor/schema';
 import { languageName } from '$lib/i18n';
 import { inTauri } from '$lib/api/backend';
@@ -14,6 +15,10 @@ import { guardPaste, pastesThroughGtk } from '$lib/util/paste';
 import { forwardToLog } from '$lib/shell/page-log';
 
 nameLanguagesBy(languageName);
+
+// The kinds of paragraph and of words are seen by the cues of editor/kinds.ts,
+// made into a style sheet after app.css, before anything is drawn.
+showCatalogueKinds();
 
 // What the page says of its faults reaches the log of the run, where it can
 // be read after the window is gone: the console's warnings and errors, and

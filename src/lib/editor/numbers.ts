@@ -361,7 +361,8 @@ const key = new PluginKey<DecorationSet>('stretch-numbers');
  * Opens the field for the number of the line a number stands by, in the
  * place of the number: Enter gives the line what is written, an empty
  * field takes its number away, Escape leaves it as it was. The text has
- * the cursor again afterwards.
+ * the cursor again afterwards, unless the field was left for something
+ * else: what was pressed keeps the focus it was given.
  */
 function editNumber(view: EditorView, getPos: () => number | undefined, el: HTMLElement) {
   const at = getPos();
@@ -379,7 +380,7 @@ function editNumber(view: EditorView, getPos: () => number | undefined, el: HTML
   el.classList.add('editing');
   el.replaceChildren(input);
   let done = false;
-  const finish = (keep: boolean) => {
+  const finish = (keep: boolean, refocus = true) => {
     if (done) return;
     done = true;
     const value = input.value;
@@ -390,7 +391,7 @@ function editNumber(view: EditorView, getPos: () => number | undefined, el: HTML
       const now = getPos();
       if (now !== undefined) giveNumber(now, value)(view.state, view.dispatch);
     }
-    if (!view.isDestroyed) view.focus();
+    if (refocus && !view.isDestroyed) view.focus();
   };
   input.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
@@ -401,7 +402,9 @@ function editNumber(view: EditorView, getPos: () => number | undefined, el: HTML
       finish(false);
     }
   });
-  input.addEventListener('blur', () => finish(false));
+  // Focus taken back in a blur would stop it on its way to what was
+  // pressed; the text is given it only where it went nowhere.
+  input.addEventListener('blur', (event) => finish(false, event.relatedTarget === null));
   input.focus();
   input.select();
 }

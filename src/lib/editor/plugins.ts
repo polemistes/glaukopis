@@ -133,6 +133,9 @@ const dashes = [
   new InputRule(/\.\.\.$/, '…'),
 ];
 
+/** What prosemirror-inputrules puts for a leaf, such as a line mark, in the text it matches. */
+const LEAF = '\uFFFC';
+
 /**
  * A rule that makes a text paragraph of a kind when a sign is typed at its
  * start: "> " a quotation, "- " an item, "1. " a numbered item; one that
@@ -144,7 +147,11 @@ function kindRule(
   kind: string,
   number?: (match: RegExpMatchArray) => string | null,
 ) {
-  return new InputRule(regexp, (state, match, start, end) => {
+  return new InputRule(regexp, (state, match, from, end) => {
+    // The rules read a leaf in the text before as the object replacement
+    // character, so a line mark at the start of the line is in the match:
+    // the sign begins after it.
+    const start = match[0].startsWith(LEAF) ? from + 1 : from;
     const $start = state.doc.resolve(start);
     const paragraph = $start.parent;
     if (paragraph.type.name !== 'paragraph' || paragraph.attrs.kind !== 'text') return null;
@@ -169,9 +176,9 @@ function kindRule(
 function blockRules(schema: Schema): InputRule[] {
   if (!schema.nodes.linemark) return [];
   return [
-    kindRule(/^\s*>\s$/, 'quote'),
-    kindRule(/^\s*([-+*])\s$/, 'item'),
-    kindRule(/^(\d+)\.\s$/, 'numbered', (match) => (match[1] === '1' ? null : match[1])),
+    kindRule(/^\uFFFC?\s*>\s$/, 'quote'),
+    kindRule(/^\uFFFC?\s*([-+*])\s$/, 'item'),
+    kindRule(/^\uFFFC?(\d+)\.\s$/, 'numbered', (match) => (match[1] === '1' ? null : match[1])),
   ];
 }
 

@@ -217,29 +217,51 @@ export function inHand(project: Project, templateKinds: readonly string[] = []):
 /**
  * The cues by which the editor shows the kinds of the catalogue where one
  * writes, by the measures a look has: these are the editor's own and reach
- * no document; every look lives in a layout (ADR 0040). The style sheet
- * (`app.css`) sets the kinds of the catalogue by hand to the same measures;
- * a kind of the writer's own is set from them by `passageKindsCss`, through
- * the kinds it is based on.
+ * no document; every look lives in a layout (ADR 0040). They are kept here
+ * only: the style sheet of the catalogue's kinds is made from them
+ * (`catalogueKindsCss`), and a kind of the writer's own is set from them by
+ * `passageKindsCss`, through the kinds it is based on, so that a kind based
+ * on another and given nothing of its own looks as that one does. A
+ * centimetre is about 2.4em on screen and 12pt about an em, so the
+ * measures in points are those of the screen; `app.css` has only what
+ * depends on the paragraphs around, and the signs before a list's items.
  */
 const CUES: Record<string, Look> = {
-  quote: { indentLeft: '1.27cm', spaceBefore: '6pt', spaceAfter: '6pt' },
-  attribution: { align: 'right', spaceBefore: '0pt', italic: false, firstLine: '0pt' },
-  epigraph: { indentLeft: '4cm', indentRight: '0pt', spaceAfter: '18pt', firstLine: '0pt' },
+  quote: { indentLeft: '16.5pt', size: 11.5 },
+  attribution: {
+    indentLeft: '1.27cm',
+    align: 'right',
+    spaceBefore: '0pt',
+    italic: false,
+    firstLine: '0pt',
+  },
+  epigraph: {
+    indentLeft: '4cm',
+    indentRight: '0pt',
+    spaceBefore: '6pt',
+    spaceAfter: '18pt',
+    firstLine: '0pt',
+  },
   line: { indentLeft: '1cm' },
-  speaker: { case: 'smallcaps', indentLeft: '1cm', spaceBefore: '6pt' },
-  direction: { italic: true, indentLeft: '1cm' },
-  scene: { bold: true, case: 'upper', spaceBefore: '19pt', spaceAfter: '11pt', align: 'left' },
-  action: { spaceBefore: '11pt', spaceAfter: '11pt', align: 'left' },
-  character: { indentLeft: '5.6cm', case: 'upper', spaceBefore: '11pt', spaceAfter: '0pt' },
+  speaker: { case: 'smallcaps', indentLeft: '1cm', spaceBefore: '7pt' },
+  direction: { italic: true, indentLeft: '1cm', spaceBefore: '2.4pt', spaceAfter: '2.4pt' },
+  scene: { bold: true, case: 'upper', spaceBefore: '16.5pt', align: 'left' },
+  action: { align: 'left' },
+  character: { indentLeft: '5.6cm', case: 'upper', spaceBefore: '10.6pt', spaceAfter: '0pt' },
   dialogue: { indentLeft: '2.5cm', indentRight: '3.8cm', spaceBefore: '0pt', spaceAfter: '0pt' },
-  parenthetical: { indentLeft: '4cm', indentRight: '4cm', spaceBefore: '0pt', spaceAfter: '0pt' },
-  transition: { align: 'right', case: 'upper', spaceBefore: '11pt', spaceAfter: '11pt' },
+  parenthetical: {
+    indentLeft: '4cm',
+    indentRight: '4cm',
+    spaceBefore: '0pt',
+    spaceAfter: '0pt',
+    italic: true,
+  },
+  transition: { align: 'right', case: 'upper', spaceBefore: '10.6pt' },
   headword: { bold: true, spaceBefore: '6pt', spaceAfter: '0pt', firstLine: '0pt' },
   gloss: { indentLeft: '1.27cm', spaceBefore: '0pt', spaceAfter: '6pt' },
-  item: { indentLeft: '1.27cm' },
-  numbered: { indentLeft: '1.27cm' },
-  code: { monospace: true, lineSpacing: 1, align: 'left', spaceBefore: '6pt', spaceAfter: '6pt' },
+  item: { indentLeft: '18.9pt' },
+  numbered: { indentLeft: '18.9pt' },
+  code: { monospace: true, lineSpacing: 1, align: 'left', size: 10.3 },
   break: { align: 'center', spaceBefore: '12pt', spaceAfter: '12pt', text: '* * *' },
   foreign: { italic: true },
   title: { italic: true },
@@ -248,12 +270,14 @@ const CUES: Record<string, Look> = {
 
 /** What some kinds have on screen beyond the measures, which a kind based on them has too. */
 const CUES_MORE: Record<string, string> = {
+  quote: 'color: var(--ink-2);',
+  code: 'font-variant-numeric: lining-nums; hanging-punctuation: none;',
   draft: 'color: var(--ink-3); border-left: 2px dashed var(--line-strong); padding-left: 0.8em;',
   highlight:
     'background: var(--highlight); border-radius: 2px; box-decoration-break: clone; -webkit-box-decoration-break: clone;',
 };
 
-/** The quotation marks a mentioned word stands in, by language: see the same in `app.css`. */
+/** The quotation marks a mentioned word stands in, by language. */
 const QUOTES: [string[], string][] = [
   [[''], "'\\201C' '\\201D' '\\2018' '\\2019'"],
   [[':lang(nb)', ':lang(nn)', ':lang(no)'], "'\\AB' '\\BB' '\\2018' '\\2019'"],
@@ -301,16 +325,23 @@ function selectorId(id: string): string | null {
 }
 
 /**
- * The cues of a kind of the writer's own as they come to be on screen: the
- * cues of the kinds it is based on, through the catalogue and other own
- * kinds, with its own look over them; and the kinds of the catalogue it
- * passed through, for what they have beyond the measures.
+ * The cues of a kind as they come to be on screen: the cues of the kinds
+ * from `start` on, through the catalogue and the writer's own kinds, with
+ * `top` over them; and the kinds of the catalogue it passed through, for
+ * what they have beyond the measures. A kind of the writer's own starts at
+ * what it is based on, with its own look on top; a kind of the catalogue
+ * starts at itself.
  */
-function screenLook(kind: PassageKindRecord, own: PassageKindRecord[]) {
+function screenLook(
+  start: string | null | undefined,
+  top: Look,
+  own: PassageKindRecord[],
+  self?: string,
+) {
   const looks: Look[] = [];
   const through = new Set<string>();
-  const seen = new Set<string>([kind.id]);
-  let at: string | undefined = kind.basedOn ? renamed(kind.basedOn) : undefined;
+  const seen = new Set<string>(self ? [self] : []);
+  let at: string | undefined = start ? renamed(start) : undefined;
   for (let depth = 0; at && depth < 8 && !seen.has(at); depth++) {
     seen.add(at);
     const catalogued = specOf(at);
@@ -325,7 +356,7 @@ function screenLook(kind: PassageKindRecord, own: PassageKindRecord[]) {
     looks.unshift(other.look);
     at = other.basedOn ? renamed(other.basedOn) : undefined;
   }
-  looks.push(kind.look);
+  looks.push(top);
   const look: Record<string, unknown> = {};
   for (const l of looks) {
     for (const [key, value] of Object.entries(l))
@@ -361,13 +392,44 @@ function declarations(look: Look, family: KindFamily): string[] {
   if (look.italic !== undefined) out.push(`font-style: ${look.italic ? 'italic' : 'normal'};`);
   if (look.case === 'upper') out.push('text-transform: uppercase;');
   else if (look.case === 'smallcaps')
-    out.push('font-variant-caps: small-caps; letter-spacing: 0.02em;');
+    out.push('font-variant-caps: small-caps; letter-spacing: 0.03em;');
   else if (look.case === 'none') out.push('text-transform: none; font-variant-caps: normal;');
   if (look.underline !== undefined)
     out.push(`text-decoration: ${look.underline ? 'underline' : 'none'};`);
   if (look.monospace !== undefined)
     out.push(`font-family: ${look.monospace ? 'var(--font-mono)' : 'inherit'};`);
   return out;
+}
+
+/** The rules that set a kind on screen under its selector, from the look it comes to and the kinds of the catalogue it passed through. */
+function kindRules(
+  selector: string,
+  family: KindFamily,
+  look: Look,
+  through: ReadonlySet<string>,
+): string[] {
+  const rules: string[] = [];
+  const words = family === 'words';
+  const own = declarations(look, family);
+  for (const base of through) if (CUES_MORE[base]) own.push(CUES_MORE[base]);
+  if (own.length) rules.push(`${selector} { ${own.join(' ')} }`);
+  if (!words && look.text) {
+    // The sign of a break, drawn where the paragraph holds nothing: in text
+    // that is drawn, and in the editor, where an empty paragraph holds a
+    // line break and nothing else.
+    const sign = `content: "${css(look.text)}"; letter-spacing: 0.4em; color: var(--ink-3);`;
+    rules.push(`${selector}:empty::before { ${sign} }`);
+    rules.push(`${selector}:has(> .ProseMirror-trailingBreak:only-child)::before { ${sign} }`);
+  }
+  if (words && through.has('mention')) {
+    // A mentioned word stands in the quotation marks of the language of the
+    // text, which the editor is given as `lang` from the map.
+    for (const [langs, quotes] of QUOTES)
+      rules.push(`${langs.map((l) => selector + l).join(', ')} { quotes: ${quotes}; }`);
+    rules.push(`${selector}::before { content: open-quote; }`);
+    rules.push(`${selector}::after { content: close-quote; }`);
+  }
+  return rules;
 }
 
 /**
@@ -384,22 +446,41 @@ export function passageKindsCss(kinds: PassageKindRecord[]): string {
     if (!id) continue;
     const words = kind.family === 'words';
     const selector = words ? `.prose .kind[data-kind="${id}"]` : `.prose p[data-kind="${id}"]`;
-    const { look, through } = screenLook(kind, kinds);
-    const own = declarations(look, kind.family);
-    for (const base of through) if (CUES_MORE[base]) own.push(CUES_MORE[base]);
-    if (own.length) rules.push(`${selector} { ${own.join(' ')} }`);
-    if (!words && look.text) {
-      // The sign of a break, drawn where the paragraph holds nothing.
-      const sign = `content: "${css(look.text)}"; letter-spacing: 0.4em; color: var(--ink-3);`;
-      rules.push(`${selector}:empty::before { ${sign} }`);
-      rules.push(`${selector}:has(> .ProseMirror-trailingBreak:only-child)::before { ${sign} }`);
-    }
-    if (words && through.has('mention')) {
-      for (const [langs, quotes] of QUOTES)
-        rules.push(`${langs.map((l) => selector + l).join(', ')} { quotes: ${quotes}; }`);
-      rules.push(`${selector}::before { content: open-quote; }`);
-      rules.push(`${selector}::after { content: close-quote; }`);
-    }
+    const { look, through } = screenLook(kind.basedOn, kind.look, kinds, kind.id);
+    rules.push(...kindRules(selector, kind.family, look, through));
   }
   return rules.join('\n');
+}
+
+/**
+ * The style sheet for the kinds of the catalogue, from their cues: a rule
+ * on the paragraphs of each kind of paragraph, and on the words of each
+ * kind that may stand on words (a speaker and a direction within a line
+ * have the cues of their paragraphs).
+ */
+export function catalogueKindsCss(): string {
+  const rules: string[] = [];
+  for (const spec of CATALOGUE) {
+    const { look, through } = screenLook(spec.id, {}, []);
+    if (spec.family === 'paragraph')
+      rules.push(...kindRules(`.prose p[data-kind="${spec.id}"]`, 'paragraph', look, through));
+    if (WORD_KINDS.includes(spec.id))
+      rules.push(...kindRules(`.prose .kind[data-kind="${spec.id}"]`, 'words', look, through));
+  }
+  return rules.join('\n');
+}
+
+/**
+ * Sets the kinds of the catalogue on screen: a style sheet at the end of
+ * the head of the page, made once, so that it comes after `app.css` and is
+ * what a rule there of the same weight would say of a kind.
+ */
+export function showCatalogueKinds(page: Document = document) {
+  let sheet = page.getElementById('catalogue-kinds');
+  if (!sheet) {
+    sheet = page.createElement('style');
+    sheet.id = 'catalogue-kinds';
+    page.head.appendChild(sheet);
+  }
+  sheet.textContent = catalogueKindsCss();
 }
