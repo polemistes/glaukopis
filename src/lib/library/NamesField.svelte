@@ -18,8 +18,12 @@
   let { people = $bindable(), label, onchange, id }: Props = $props();
 
   let root = $state<HTMLDivElement>();
-  /** Rows whose prefix and suffix fields are shown although empty. */
-  let expanded = $state(new Set<number>());
+  /**
+   * The names whose prefix and suffix fields are shown although empty: by
+   * the name itself, not by its row, so that the fields go with it when a
+   * name before it is taken away or it is moved.
+   */
+  let expanded = $state(new Set<Person>());
 
   const rows = $derived(people.length ? people : [{ family: '', given: '' }]);
 
@@ -45,8 +49,8 @@
   }
 
   function remove(i: number) {
-    people.splice(i, 1);
-    expanded.delete(i);
+    const [gone] = people.splice(i, 1);
+    if (gone && expanded.delete(gone)) expanded = new Set(expanded);
     onchange();
     focusRow(Math.max(0, i - 1));
   }
@@ -128,11 +132,13 @@
         {
           label: t('library-names-prefix-suffix'),
           hint: t('library-names-prefix-suffix.hint'),
-          checked: expanded.has(i) || !!person.prefix || !!person.suffix,
+          checked: expanded.has(person) || !!person.prefix || !!person.suffix,
           disabled: !!person.literal,
           action: () => {
-            if (expanded.has(i)) expanded.delete(i);
-            else expanded.add(i);
+            // The row that stands for no name yet becomes a name, to be known by.
+            const named = ensure()[i];
+            if (expanded.has(named)) expanded.delete(named);
+            else expanded.add(named);
             expanded = new Set(expanded);
           },
         },
@@ -197,7 +203,7 @@
         <Ellipsis size={14} />
       </button>
     </div>
-    {#if !person.literal && (expanded.has(i) || person.prefix || person.suffix)}
+    {#if !person.literal && (expanded.has(person) || person.prefix || person.suffix)}
       <div class="row extra">
         <input
           value={person.prefix ?? ''}

@@ -101,7 +101,7 @@ describe('a time moved along the axis', () => {
     expect(precisionOf('soon', 'dates')).toBeNull();
     expect(snap(-430.4, 'year')).toBe(-430);
     expect(snap(1453.37, 'month')).toBeCloseTo(1453 + 120 / 365, 9);
-    expect(snap(-427, 'decade')).toBe(-430);
+    expect(snap(-427, 'decade')).toBe(-428);
     expect(writeTime(-430, 'year', 'dates', '431 BC')).toBe('431 BC');
     expect(writeTime(-425, 'year', 'dates', '431 BCE')).toBe('426 BCE');
     expect(writeTime(1453, 'year', 'dates', '1450')).toBe('1453');
@@ -109,7 +109,7 @@ describe('a time moved along the axis', () => {
     expect(writeTime(readTime('1453-05-29', 'dates')!.from, 'day', 'dates', '1453-05-29')).toBe(
       '1453-05-29',
     );
-    expect(writeTime(1920, 'decade', 'dates', 'the 1920s')).toBe('1920s');
+    expect(writeTime(1920, 'decade', 'dates', 'the 1920s')).toBe('the 1920s');
     expect(writeTime(-499, 'century', 'dates', '5th century BC')).toBe('5th century BC');
     expect(writeTime(401, 'century', 'dates', '5th century')).toBe('5th century');
     expect(writeTime(15, 'unit', 'units', 'Year 12')).toBe('Year 15');
@@ -126,6 +126,61 @@ describe('a time moved along the axis', () => {
         6,
       );
     }
+  });
+});
+
+describe('a time dragged along the axis', () => {
+  /** What a drag writes, as the timeline does it: the start of what was written, moved, snapped, written anew. */
+  const dragged = (like: string, to: number) => {
+    const precision = precisionOf(like, 'dates')!;
+    return writeTime(snap(to, precision, like), precision, 'dates', like);
+  };
+  /** Where what the drag wrote is drawn: its start, as it is read back. */
+  const drawnAt = (like: string, to: number) => readTime(dragged(like, to), 'dates')!.from;
+
+  it('draws a century where it was dropped, not the century before', () => {
+    // Dropped at 449, the 5th century (401–500) is nearest; at 450 the 6th
+    // would be as near, and either is drawn where the snap put it.
+    for (const v of [449, 450, 451, 1900, 1949, -400, -450, -449, -1]) {
+      const at = snap(v, 'century');
+      expect(drawnAt('5th century', v)).toBe(at);
+      expect(drawnAt('5th century BC', v)).toBe(at);
+      expect(Math.abs(at - v)).toBeLessThanOrEqual(50);
+    }
+    expect(dragged('5th century', 449)).toBe('5th century');
+    expect(dragged('5th century', 401)).toBe('5th century');
+    expect(dragged('5th century BC', -450)).toBe('5th century BC');
+    expect(dragged('5th century BC', -499)).toBe('5th century BC');
+  });
+
+  it('draws a decade where it was dropped, after Christ and before', () => {
+    for (const v of [-425, -430, -428, -421, 1920, 1925, 1918]) {
+      const at = snap(v, 'decade', '1920s');
+      expect(drawnAt('420s BC', v)).toBe(at);
+      expect(drawnAt('1920s', v)).toBe(at);
+      expect(Math.abs(at - v)).toBeLessThanOrEqual(5);
+    }
+    expect(dragged('420s BC', -425)).toBe('420s BC');
+    expect(dragged('420s BC', -428)).toBe('420s BC');
+  });
+
+  it('keeps a hundred years written as the 1900s in that form', () => {
+    expect(dragged('1900s', 1900)).toBe('1900s');
+    expect(drawnAt('1900s', 1900)).toBe(1900);
+    expect(dragged('1900s', 1830)).toBe('1800s');
+    expect(drawnAt('400s BC', -498)).toBe(-498);
+    expect(dragged('400s BC', -498)).toBe('400s BC');
+  });
+
+  it('keeps the words the time was written in', () => {
+    expect(dragged('5. århundre f.Kr.', -399 - 100)).toBe('5. århundre f.Kr.');
+    expect(dragged('5. århundre f.Kr.', -399)).toBe('4. århundre f.Kr.');
+    expect(dragged('12. århundre', 1201)).toBe('13. århundre');
+    expect(dragged('the 5th century', 501)).toBe('the 6th century');
+    expect(dragged('1920-tallet', 1931)).toBe('1930-tallet');
+    expect(dragged('c. 431 BC', -429)).toBe('c. 430 BC');
+    expect(writeDuration(5.4, 'dates', '7')).toBe('5');
+    expect(writeDuration(0.5, 'dates', '7')).toBe('6 months');
   });
 });
 
@@ -245,6 +300,26 @@ describe('where elements stand in time', () => {
     expect(s.placed.get('f')!.problem).toBe('unknown');
     // Two that are only after each other have no window and are not placed.
     expect(Number.isNaN(s.placed.get('c')!.from)).toBe(true);
+  });
+
+  it('does not place a span that refers only to what cannot be placed', () => {
+    const s = solve(
+      [
+        { id: 'fixed', when: at('1000') },
+        { id: 'z', when: at('gibberish') },
+        { id: 'span', when: { start: { after: 'z' }, end: { before: 'z' } } },
+        { id: 'x', when: { start: { after: 'z' } } },
+        { id: 'span3', when: { start: { during: 'x' }, end: { during: 'x' } } },
+      ],
+      'dates',
+    );
+    expect(s.placed.get('x')!.problem).toBe('unknown');
+    for (const id of ['span', 'span3']) {
+      const p = s.placed.get(id)!;
+      expect(Number.isNaN(p.from)).toBe(true);
+      expect(p.problem).toBe('unknown');
+    }
+    expect(s.range).toEqual([1000, 1001]);
   });
 
   it('orders what has no times at all, each after what it comes after', () => {

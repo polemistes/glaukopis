@@ -482,6 +482,8 @@ library-lookup-label = Look up a reference
 library-lookup-failed = Nothing could be looked up.
 # Where the reference came from: a service such as Crossref.
 library-lookup-filled = Filled in from { $source }.
+library-lookup-filled-empty = Only the fields that were still empty were filled in from { $source }, since you had written in the others meanwhile.
+library-lookup-fill-all = Fill in all it has
 library-lookup-others = { $count ->
     [one] { $count } other record
    *[other] { $count } other records

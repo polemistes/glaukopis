@@ -175,6 +175,12 @@ export class Going {
   #round = 0;
   #timer: ReturnType<typeof setTimeout> | undefined;
   #unheard: (() => void) | null = null;
+  /**
+   * Closed: its panel is gone. An opening that comes after, as when the
+   * library has loaded only once the panel was gone, does nothing, so that
+   * nothing goes on listening to the project for a panel nobody sees.
+   */
+  #closed = false;
   /** What there was when something was taken back: what is proposed anew then is what came back. */
   #before: Set<string> | null = null;
   /** The state of the project that was last looked at. */
@@ -371,6 +377,7 @@ export class Going {
    */
   async ask(): Promise<void> {
     clearTimeout(this.#timer);
+    if (this.#closed) return;
     const round = ++this.#round;
     this.asking = true;
     this.failure = null;
@@ -481,6 +488,7 @@ export class Going {
 
   /** Looks, and asks the library. `at` is the id of a citation that was found, to begin with. */
   async open(at?: string | null): Promise<void> {
+    if (this.#closed) return;
     // What is written elsewhere meanwhile, by the writer, by others, by undo.
     this.#unheard ??= this.project.onChange(() => this.changed());
     this.look();
@@ -495,7 +503,7 @@ export class Going {
    */
   changed(wait = 400): boolean {
     // Before it was looked at for the first time, there is nothing to read anew.
-    if (this.seen < 0 || this.project.revision === this.seen) return false;
+    if (this.#closed || this.seen < 0 || this.project.revision === this.seen) return false;
     const known = new Set(this.entries.map((e) => e.key));
     this.look();
     // What has come back, as by undo, is what is looked at.
@@ -529,8 +537,9 @@ export class Going {
     await this.ask();
   }
 
-  /** The window is closed: nothing more is asked. */
+  /** The window is closed: nothing more is asked, nor listened to, and it is not opened again. */
   close() {
+    this.#closed = true;
     this.#unheard?.();
     this.#unheard = null;
     clearTimeout(this.#timer);

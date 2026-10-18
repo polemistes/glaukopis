@@ -25,11 +25,20 @@ export function shortLabel(s: { authors: string; year: string; title: string }):
   return s.year ? `${who} ${s.year}` : who;
 }
 
+/**
+ * A text cut to so many characters, at a word where one ends near enough,
+ * with an ellipsis. Counted by characters, not by the halves JavaScript
+ * keeps a sign outside the first plane in (Linear B, Gothic, cuneiform, the
+ * letters of mathematics), so that no sign is cut in two.
+ */
 export function truncate(text: string, length: number): string {
-  if (text.length <= length) return text;
-  const cut = text.slice(0, length);
+  const signs = Array.from(text);
+  if (signs.length <= length) return text;
+  const cut = signs.slice(0, length);
   const space = cut.lastIndexOf(' ');
-  return (space > length * 0.6 ? cut.slice(0, space) : cut).replace(/[\s,;:.–-]+$/, '') + '…';
+  return (
+    (space > length * 0.6 ? cut.slice(0, space) : cut).join('').replace(/[\s,;:.–-]+$/, '') + '…'
+  );
 }
 
 export function reasonWords(reasons: Reason[]): string {

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import Code from '@lucide/svelte/icons/code';
   import {
     collectionAdd,
@@ -19,6 +20,7 @@
   import Dialog from '$lib/ui/Dialog.svelte';
   import { describeError } from '$lib/ui/toast.svelte';
   import DuplicateNotice from './DuplicateNotice.svelte';
+  import { fillEmpty } from './filling';
   import Lookup from './Lookup.svelte';
   import NoteButton from './NoteButton.svelte';
   import { withNoteAsItIs } from './notes.svelte';
@@ -81,10 +83,44 @@
     }
   }
 
-  $effect(() => {
-    look();
+  // Looked for once when the form opens, and then a moment after each
+  // change (`onchange`). Not in an effect: `look` reads the whole draft,
+  // which an effect would follow, so that every keystroke looked at once
+  // and the wait before it was cleared.
+  onMount(() => {
+    void look();
     return () => clearTimeout(timer);
   });
+
+  /** How many times the writer has changed the form, and how many when a lookup began. */
+  let edits = 0;
+  let editsAsked = 0;
+  // svelte-ignore state_referenced_locally
+  const typeBegun = draft.type;
+
+  function edited() {
+    edits++;
+    onchange();
+  }
+
+  /**
+   * What a lookup found fills the form: all of it where the writer chose
+   * it, or where nothing was written while the lookup was out; otherwise
+   * only what is still empty, so that an answer that comes late does not
+   * take away what the writer typed meanwhile. Returns whether all of it
+   * was filled.
+   */
+  function picked(found: Parameters<typeof fillEmpty>[1], how: 'chosen' | 'found'): boolean {
+    if (how === 'chosen' || edits === editsAsked) {
+      draft = found;
+      onchange();
+      return true;
+    }
+    const filled = fillEmpty($state.snapshot(draft), found, typeBegun);
+    draft = filled.draft;
+    onchange();
+    return !filled.kept;
+  }
 
   function finish(result: Parameters<FormRequest['resolve']>[0]) {
     request.resolve(result);
@@ -180,13 +216,7 @@
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="content" {onkeydown}>
     {#if isNew && source === null}
-      <Lookup
-        initial={request.lookup}
-        onpick={(found) => {
-          draft = found;
-          onchange();
-        }}
-      />
+      <Lookup initial={request.lookup} onpick={picked} onask={() => (editsAsked = edits)} />
     {/if}
     {#if isNew}
       <DuplicateNotice {matches} onuse={useExisting} />
@@ -205,7 +235,7 @@
         }}></textarea>
       {#if sourceError}<p class="error selectable" role="alert">{sourceError}</p>{/if}
     {:else}
-      <ReferenceForm bind:draft {onchange} {suggestedKey} {keyError} autofocus={!isNew} />
+      <ReferenceForm bind:draft onchange={edited} {suggestedKey} {keyError} autofocus={!isNew} />
     {/if}
   </div>
 

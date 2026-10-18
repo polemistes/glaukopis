@@ -27,6 +27,7 @@ import {
   elementOf,
   gatherElement,
   markName,
+  signIn,
   type Gathered,
   type Marked,
   type Place,
@@ -96,14 +97,22 @@ export function nodeOf(holder: Y.XmlElement): Node {
   return bodySchema.node(holder.nodeName, holder.getAttributes() as Attrs, inlines(holder));
 }
 
-/** Where a place of the passage is in the node that holds it. */
-export function positionOf(node: Node, offset: number): number {
+/**
+ * Where a place of the passage is in the node that holds it. In the
+ * passage what is no text is one sign whatever it holds, or nothing, as a
+ * reference mark is (`signIn`): the start of something is after what is
+ * nothing there, and its end (`end`) before it, so that a change of what
+ * was found never takes in a mark beside it.
+ */
+export function positionOf(node: Node, offset: number, end = false): number {
   let at = 0;
   let pos = 0;
   for (let i = 0; i < node.childCount; i++) {
     const child = node.child(i);
-    // In the passage, what is no text is one sign, whatever it holds.
-    const length = child.isText ? child.text!.length : 1;
+    const length = child.isText
+      ? child.text!.length
+      : signIn(node.type.name, child.type.name, (key) => child.attrs[key]).length;
+    if (!length && end && offset === at) return pos;
     if (offset < at + length) return pos + (child.isText ? offset - at : 0);
     at += length;
     pos += child.nodeSize;
@@ -275,7 +284,7 @@ function cite(project: Project, making: Making): Outcome {
     const node = nodeOf(at.place.holder);
     const made = citation.create({ items, mode });
     const from = positionOf(node, at.start);
-    const to = positionOf(node, at.end);
+    const to = positionOf(node, at.end, true);
     write(project, at.place.holder, new Transform(node).replaceWith(from, to, made).doc);
     return { done: true };
   } catch (error) {
@@ -291,7 +300,7 @@ function leave(project: Project, target: Target, mode: CiteMode): Outcome {
   try {
     const node = nodeOf(at.place.holder);
     const from = positionOf(node, at.start);
-    const to = positionOf(node, at.end);
+    const to = positionOf(node, at.end, true);
     const tr = new Transform(node);
     if (at.marked) {
       // What is known of it stays with the text: nothing is lost by leaving it.

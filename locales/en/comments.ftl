@@ -27,6 +27,7 @@ comments-edit = Change
 comments-edited = changed
 comments-someone = Someone
 comments-note-deleted = The note was deleted
+comments-passage-gone = This passage is no longer in the text: it was deleted, or cut and pasted elsewhere.
 # On an element in the diagram, and in the margin of the text.
 comments-element-hint = Press to go to the element; press twice to write in it
 comments-mark = { $count ->

@@ -231,8 +231,48 @@ export function precisionOf(written: string, axis: Axis): Precision | null {
   return 'century';
 }
 
-/** A value on the axis moved to the nearest time of a precision: the start of a day, a month, a year, a decade, a century. */
-export function snap(value: number, precision: Precision): number {
+/**
+ * The way a decade or a hundred years is written, `1920s`, `the 1920s`,
+ * `1920-tallet`: what stands before the number and the ending after it.
+ */
+const DECADE_FORM = /^(the\s+)?\d{1,4}0(s|-tallet|-årene|-åra)$/i;
+const HUNDREDS_FORM = /^(?:the\s+)?\d{1,4}00(?:s|-tallet|-årene|-åra)$/i;
+/** The way a century is written: `the 5th century`, `5. århundre`, `5 c.`. */
+const CENTURY_FORM = /^(the\s+)?\d{1,2}(st|nd|rd|th|\.)?(\s+)(century|c\.|århundre|hundreår)$/i;
+
+/** What was written, without its sign of being approximate and its sign of BC or AD. */
+function bareOf(like: string): string {
+  return like
+    .trim()
+    .replace(APPROX, '')
+    .replace(BC, '')
+    .replace(AD, '')
+    .replace(AD_FIRST, '')
+    .trim();
+}
+
+/**
+ * The nearest of the starts of spans that are counted one way after Christ
+ * and another before: after, every `step` from `step`; before, every `step`
+ * from `-step + shift` down. Between the two lie the years no such span can
+ * name (the decade of 9 BC to AD 9 is neither the 0s nor the 10s BC).
+ */
+function nearestStart(value: number, step: number, shift: number): number {
+  const after = Math.max(step, Math.round(value / step) * step);
+  const before = Math.min(-2 * step + shift, Math.round((value - shift) / step) * step + shift);
+  return Math.abs(after - value) <= Math.abs(before - value) ? after : before;
+}
+
+/**
+ * A value on the axis moved to the nearest time of a precision: the start
+ * of a day, a month, a year, a decade, a century, as `readTime` reads where
+ * each begins, so that what is written there is drawn where it was put. A
+ * century begins in a year 1 (401 for the fifth, 500 BC for the fifth BC);
+ * a decade after Christ in a year 0, before him in a year 9 (the 420s BC
+ * begin in 429 BC); a hundred years written as `the 1900s` (`like`) in a
+ * year 00 after and 99 before.
+ */
+export function snap(value: number, precision: Precision, like = ''): number {
   switch (precision) {
     case 'day':
       return Math.round(value * 365) / 365;
@@ -252,9 +292,13 @@ export function snap(value: number, precision: Precision): number {
       return year + BEFORE_MONTH[best - 1] / 365;
     }
     case 'decade':
-      return Math.round(value / 10) * 10;
+      // 1920 is the start of the 1920s; -428 (429 BC) of the 420s BC.
+      return nearestStart(value, 10, 2);
     case 'century':
-      return Math.round(value / 100) * 100;
+      // The 1900s begin at 1900, the 400s BC at -498 (499 BC).
+      if (HUNDREDS_FORM.test(bareOf(like))) return nearestStart(value, 100, 2);
+      // Every century, before Christ and after, begins at a year 1 on the axis.
+      return Math.round((value - 1) / 100) * 100 + 1;
     default:
       return Math.round(value);
   }
@@ -278,8 +322,12 @@ function dayOfYear(fraction: number): { month: number; day: number } {
 
 /**
  * A time written anew at a value of the axis, as finely as it was written
- * before (`like`), in the way it was written: with the sign of BC that was
- * used, and the word of the unit that stood with the number.
+ * before (`like`), in the way it was written: with the sign of being
+ * approximate and the sign of BC that were used, the words of a century or
+ * of a decade (`the 5th century`, `5. århundre`, `1920-tallet`, `the
+ * 1900s`), and the word of the unit that stood with the number. The time
+ * written is the one the value falls in: a value inside a century names
+ * that century.
  */
 export function writeTime(value: number, precision: Precision, axis: Axis, like = ''): string {
   if (axis === 'units') {
@@ -288,34 +336,46 @@ export function writeTime(value: number, precision: Precision, axis: Axis, like 
     const m = /^([\p{L}.]+\s+)?-?\d+(?:[.,]\d+)?(\s+[\p{L}.]+)?$/u.exec(like.trim());
     return `${m?.[1] ?? ''}${n}${m?.[2] ?? ''}`;
   }
+  const approx = APPROX.exec(like.trim())?.[0] ?? '';
+  const bare = bareOf(like);
   const year = Math.floor(value + 1e-9);
   const bc = year <= 0;
   const bcWord = (BC.exec(like.trim())?.[0] ?? ' BC').trim();
   const era = bc ? ` ${bcWord}` : '';
   const written = bc ? 1 - year : year;
   const two = (n: number) => String(n).padStart(2, '0');
-  switch (precision) {
-    case 'day': {
-      const { month, day } = dayOfYear(value - year);
-      return `${written}-${two(month)}-${two(day)}${era}`;
+  const body = (): string => {
+    switch (precision) {
+      case 'day': {
+        const { month, day } = dayOfYear(value - year);
+        return `${written}-${two(month)}-${two(day)}`;
+      }
+      case 'month': {
+        const { month } = dayOfYear(value - year);
+        return `${written}-${two(month)}`;
+      }
+      case 'decade': {
+        // The 1920s begin at 1920; the 420s BC at 429 BC, which is -428 on the axis.
+        const form = DECADE_FORM.exec(bare);
+        return `${form?.[1] ?? ''}${Math.floor(written / 10) * 10}${form?.[2] ?? 's'}`;
+      }
+      case 'century': {
+        const hundreds = HUNDREDS_FORM.test(bare) ? DECADE_FORM.exec(bare) : null;
+        // The 1900s are 1900 to 1999; the 400s BC 499 to 400 BC.
+        if (hundreds) return `${hundreds[1] ?? ''}${Math.floor(written / 100) * 100}${hundreds[2]}`;
+        // The fifth century BC is 500 to 401 BC; the fifth century AD 401 to 500.
+        const n = Math.max(1, Math.ceil(written / 100));
+        const form = CENTURY_FORM.exec(bare);
+        if (!form) return `${ordinal(n)} century`;
+        const suffix = form[2] ?? '';
+        const number = suffix === '.' ? `${n}.` : suffix ? ordinal(n) : String(n);
+        return `${form[1] ?? ''}${number}${form[3]}${form[4]}`;
+      }
+      default:
+        return String(written);
     }
-    case 'month': {
-      const { month } = dayOfYear(value - year);
-      return `${written}-${two(month)}${era}`;
-    }
-    case 'decade': {
-      // The 1920s begin at 1920; the 420s BC at 429 BC, which is -428 on the axis.
-      const start = bc ? Math.floor((1 - year) / 10) * 10 : Math.floor(year / 10) * 10;
-      return `${start}s${era}`;
-    }
-    case 'century': {
-      // The fifth century BC is 500 to 401 BC; the fifth century AD 401 to 500.
-      const n = bc ? Math.ceil((1 - year) / 100) : Math.ceil(year / 100);
-      return `${ordinal(Math.max(1, n))} century${era}`;
-    }
-    default:
-      return `${written}${era}`;
-  }
+  };
+  return `${approx}${body()}${era}`;
 }
 
 /**
@@ -335,6 +395,9 @@ export function writeDuration(value: number, axis: Axis, like = ''): string {
   }
   const unit = word ? LENGTHS.find(([re]) => re.test(word)) : undefined;
   if (word && unit) return `${Math.max(1, Math.round(value / unit[1]))} ${word}`;
+  // A bare number is a number of years, and stays one where it can.
+  const bare = /^(?:[±+/-]+\s*)?\d+(?:[.,]\d+)?$/.test(like.trim());
+  if (bare && value >= 1) return String(Math.round(value));
   if (value >= 1) return `${Math.max(1, Math.round(value))} years`;
   if (value >= 1 / 12) return `${Math.max(1, Math.round(value * 12))} months`;
   return `${Math.max(1, Math.round(value * 365))} days`;

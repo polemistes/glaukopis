@@ -458,6 +458,8 @@ library-lookup-placeholder = Slå den opp: en DOI, et ISBN eller ord fra tittele
 library-lookup-label = Slå opp en referanse
 library-lookup-failed = Ingenting kunne slås opp.
 library-lookup-filled = Fylt ut fra { $source }.
+library-lookup-filled-empty = Bare feltene som fortsatt var tomme, ble fylt ut fra { $source }, siden du hadde skrevet i de andre i mellomtiden.
+library-lookup-fill-all = Fyll ut alt den har
 library-lookup-others = { $count ->
     [one] { $count } annen post
    *[other] { $count } andre poster

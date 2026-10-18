@@ -397,6 +397,18 @@ describe('text that was proposed', () => {
     expect(g.index).toBe(2);
   });
 
+  it('opened after its panel was closed, as when the library loads late, listens to nothing', async () => {
+    const { g, pr, calls } = going([wrath], { NAGY1979: sure('r-nagy') });
+    g.close();
+    await g.open();
+    expect(g.asked).toBe(false);
+    pr.transact(() => pr.setTitle(g.within, 'Another name'));
+    expect(g.changed()).toBe(false);
+    await vi.advanceTimersByTimeAsync(500);
+    expect(calls).toMatchObject({ suggest: 0, propose: 0 });
+    expect(g.entries).toEqual([]);
+  });
+
   it('is made a citation, and what was proposed after it is where it now stands', async () => {
     const { g, pr, elements, calls } = going(
       [plain],

@@ -564,7 +564,12 @@
     const delta = (event.clientX - drag.x0) / scale;
     const draft: Dragging['draft'] = {};
     const written = (end: End) =>
-      writeTime(snap(end.at + delta, end.precision), end.precision, timeline.axis, end.text);
+      writeTime(
+        snap(end.at + delta, end.precision, end.text),
+        end.precision,
+        timeline.axis,
+        end.text,
+      );
     if ((drag.mode === 'move' || drag.mode === 'start') && drag.start)
       draft.start = written(drag.start);
     if ((drag.mode === 'move' || drag.mode === 'end') && drag.end) draft.end = written(drag.end);

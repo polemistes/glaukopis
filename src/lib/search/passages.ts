@@ -23,7 +23,7 @@
  */
 
 import type { CiteItem, CiteMode } from '$lib/editor/schema';
-import type { Block, Inline, RefForm } from '$lib/project/model/text';
+import { refForm, type Block, type Inline, type RefForm } from '$lib/project/model/text';
 
 /** What stands in a passage for what is not text. */
 export const NO_TEXT = '￼';
@@ -61,6 +61,78 @@ export interface Passage {
   /** A line that begins a run of its own, as the first of a side of a parallel text does. */
   parted?: true;
 }
+
+/** What a thing that is no text stands as in a passage: the kind of piece, and its text. */
+export interface Sign {
+  kind: PieceKind;
+  text: string;
+}
+
+const str = (value: unknown): string => (typeof value === 'string' ? value : '');
+
+/**
+ * What a thing in the line that is no text stands as in a passage, by its
+ * name in the schema (`editor/schema.ts`) and what it says (`attr`): the
+ * one table every reader of a text follows, the three of the search and
+ * the one of the citations that were found (`found/gather.ts`), so that
+ * they all read the same text with the same offsets. A citation, a note,
+ * a formula and words that point are one sign (or, where `labels` are
+ * given, what is shown of them); a break of the line is a new line; a
+ * reference mark and a line mark are nothing, since they are no part of
+ * the words, and so is a formula without TeX or words that point to
+ * nothing, which show nothing. Of what this version does not know,
+ * nothing is said (`undefined`): each reader does with it what it can.
+ */
+export function signOf(
+  name: string,
+  attr: (key: string) => unknown,
+  labels: Labels | null = null,
+): Sign | null | undefined {
+  switch (name) {
+    case 'hard_break':
+      return { kind: 'break', text: '\n' };
+    case 'citation':
+      return {
+        kind: 'citation',
+        text: labels
+          ? labels.citation(
+              citedItems(attr('items')),
+              attr('mode') === 'intext' ? 'intext' : 'normal',
+            )
+          : NO_TEXT,
+      };
+    case 'footnote':
+      return { kind: 'note', text: NO_TEXT };
+    case 'math': {
+      const tex = str(attr('tex')).trim();
+      return tex ? { kind: 'math', text: labels ? tex : NO_TEXT } : null;
+    }
+    case 'crossref': {
+      const target = str(attr('target'));
+      if (!target) return null;
+      return {
+        kind: 'crossref',
+        text: labels ? labels.crossref(target, refForm(attr('form'))) || '?' : NO_TEXT,
+      };
+    }
+    case 'refmark':
+    case 'linemark':
+      return null;
+    default:
+      return undefined;
+  }
+}
+
+/** The name in the schema of a thing in the line as `model/text.ts` gives it. */
+const NODE_OF: Record<Exclude<Inline['kind'], 'text'>, string> = {
+  break: 'hard_break',
+  citation: 'citation',
+  footnote: 'footnote',
+  math: 'math',
+  crossref: 'crossref',
+  refmark: 'refmark',
+  linemark: 'linemark',
+};
 
 /** The citations of a text as the reader sees them: only those that name a work. */
 export function citedItems(items: unknown): CiteItem[] {
@@ -121,21 +193,24 @@ export class PassageMaker<Ref = undefined> {
     passage.text += text;
   }
 
-  /** What stands for a citation. */
-  citation(items: unknown, mode: unknown): string {
-    return this.labels
-      ? this.labels.citation(citedItems(items), mode === 'intext' ? 'intext' : 'normal')
-      : NO_TEXT;
-  }
-
-  /** What stands for a formula, in the line or by itself. */
-  math(tex: string): string {
-    return this.labels ? tex : NO_TEXT;
-  }
-
-  /** What stands for words that point. */
-  crossref(target: string, form: RefForm): string {
-    return this.labels ? this.labels.crossref(target, form) || '?' : NO_TEXT;
+  /**
+   * Adds what a thing in the line that is no text stands as (`signOf`).
+   * Returns what it was, so that the reader can read a note after the line;
+   * nothing for what stands as nothing, or for a note in what is said of a
+   * figure or a table (`said`), which holds none; `undefined` for what this
+   * version does not know.
+   */
+  sign(
+    passage: Passage,
+    name: string,
+    attr: (key: string) => unknown,
+    ref: Ref,
+    said = false,
+  ): Sign | null | undefined {
+    const sign = signOf(name, attr, this.labels);
+    if (!sign || (said && sign.kind === 'note')) return sign && null;
+    this.put(passage, sign.kind, sign.text, ref);
+    return sign;
   }
 
   /** Begins the passage of an equation, which is its formula where that is taken in, and nothing otherwise. */
@@ -157,30 +232,16 @@ function line(
   const passage = maker.begin(kind, within, said);
   const notes: { content: Inline[]; at: number }[] = [];
   for (const i of inlines) {
-    switch (i.kind) {
-      case 'text':
-        maker.put(passage, 'text', i.text);
-        break;
-      case 'break':
-        maker.put(passage, 'break', '\n');
-        break;
-      case 'citation':
-        maker.put(passage, 'citation', maker.citation(i.items, i.mode));
-        break;
-      case 'math':
-        maker.put(passage, 'math', maker.math(i.tex));
-        break;
-      case 'crossref':
-        maker.put(passage, 'crossref', maker.crossref(i.target, i.form));
-        break;
-      case 'footnote':
-        // What is said of a figure or a table holds no note.
-        if (said) break;
-        maker.put(passage, 'note', NO_TEXT);
-        // A note within a note is not a thing: it is read as nothing more.
-        if (kind === 'line') notes.push({ content: i.content, at: passage.text.length - 1 });
-        break;
+    if (i.kind === 'text') {
+      maker.put(passage, 'text', i.text);
+      continue;
     }
+    const attrs = i as unknown as Record<string, unknown>;
+    // What is said of a figure or a table holds no note.
+    const sign = maker.sign(passage, NODE_OF[i.kind], (key) => attrs[key], undefined, said);
+    // A note within a note is not a thing: it is read as nothing more.
+    if (sign?.kind === 'note' && i.kind === 'footnote' && kind === 'line')
+      notes.push({ content: i.content, at: passage.text.length - 1 });
   }
   for (const n of notes)
     line(maker, n.content, 'note', { passage: passage.index, at: n.at }, false);

@@ -218,7 +218,10 @@ export function solve(items: { id: string; when: When }[], axis: Axis): Solved {
    * Where a floating end is drawn: in the middle of its window, or a little
    * way from its one edge. What it refers to is taken where that was
    * drawn, once it has been, so that a chain of elements each after the
-   * last is drawn in its order, not all at the same earliest place.
+   * last is drawn in its order, not all at the same earliest place. Where
+   * the window is open at both edges nothing says where the end is: it is
+   * nowhere (NaN), and the element is listed among what cannot be placed,
+   * as a point is, rather than drawn at the earliest time written.
    */
   const drawn = new Map<string, { from: number; to: number }>();
   const settle = (
@@ -226,7 +229,6 @@ export function solve(items: { id: string; when: When }[], axis: Axis): Solved {
     which: 'start' | 'end',
     fixed: Interval | null,
     bound: Bound,
-    lean: number,
   ): number => {
     // A written time stands where it was written: a point at its start, a span's end at its end.
     if (fixed) return which === 'start' ? fixed[0] : fixed[1];
@@ -243,12 +245,12 @@ export function solve(items: { id: string; when: When }[], axis: Axis): Solved {
     if (a > b) {
       // After what is drawn later than what it is before: nowhere to be.
       node.problem = 'contradiction';
-      return Number.isFinite(a) ? a : Number.isFinite(b) ? b : lean;
+      return Number.isFinite(a) ? a : Number.isFinite(b) ? b : NaN;
     }
     if (Number.isFinite(a) && Number.isFinite(b)) return (a + b) / 2;
     if (Number.isFinite(a)) return a + gap;
     if (Number.isFinite(b)) return b - gap;
-    return lean;
+    return NaN;
   };
 
   const placed = new Map<string, Placed>();
@@ -276,8 +278,8 @@ export function solve(items: { id: string; when: When }[], axis: Axis): Solved {
     return out;
   };
   const place = (node: Node) => {
-    const from = settle(node, 'start', node.fixedStart, node.when.start, lo);
-    let to = node.when.end ? settle(node, 'end', node.fixedEnd, node.when.end, from + gap) : from;
+    const from = settle(node, 'start', node.fixedStart, node.when.start);
+    let to = node.when.end ? settle(node, 'end', node.fixedEnd, node.when.end) : from;
     if (node.when.end && !node.fixedEnd && to <= from) to = from + gap;
     // A point written as a year, a month, a century, is as long as what was written.
     if (!node.when.end && node.fixedStart) to = node.fixedStart[1];

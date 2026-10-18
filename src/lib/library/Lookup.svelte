@@ -10,7 +10,20 @@
   import { describeError } from '$lib/ui/toast.svelte';
   import TypeIcon from './TypeIcon.svelte';
 
-  let { onpick, initial = '' }: { onpick: (draft: Draft) => void; initial?: string } = $props();
+  interface Props {
+    /**
+     * What was found is to fill the form: chosen by the writer, or, where it
+     * was asked for by its number and was the one hit, found alone
+     * (`found`). Returns whether the whole form was filled: a hit found
+     * alone after the writer has written in the form fills only what is
+     * still empty.
+     */
+    onpick: (draft: Draft, how: 'chosen' | 'found') => boolean;
+    /** A lookup begins: what the writer writes from now on is written while it is out. */
+    onask?: () => void;
+    initial?: string;
+  }
+  let { onpick, onask, initial = '' }: Props = $props();
 
   // What was being searched for where the form was opened from: looked up at
   // once where it is a number that names one work, and otherwise left to be.
@@ -25,14 +38,20 @@
   let problem = $state<string | null>(null);
   /** The hit the form was filled from. */
   let taken = $state.raw<Hit | null>(null);
+  /** Whether the hit filled only the fields that were empty, the writer having written in the others. */
+  let partly = $state(false);
   /** Whether the other hits are shown after one was taken. */
   let showing = $state(true);
   let round = 0;
 
+  // A lookup asked for while another is out takes its place, as when the
+  // scope is changed meanwhile: the answer to the earlier one is dropped
+  // by its round, so that the hits shown are those of the scope shown.
   async function find() {
     const asked = words.trim();
-    if (!asked || searching) return;
+    if (!asked) return;
     const mine = ++round;
+    onask?.();
     searching = true;
     problem = null;
     taken = null;
@@ -42,7 +61,7 @@
       if (mine !== round) return;
       found = result;
       // Asked for by its number, there is nothing to choose between.
-      if (result.query.kind !== 'text' && result.hits.length === 1) take(result.hits[0]);
+      if (result.query.kind !== 'text' && result.hits.length === 1) take(result.hits[0], 'found');
     } catch (error) {
       if (mine !== round) return;
       found = null;
@@ -52,10 +71,10 @@
     }
   }
 
-  function take(hit: Hit) {
+  function take(hit: Hit, how: 'chosen' | 'found' = 'chosen') {
     taken = hit;
     showing = false;
-    onpick({ ...hit.draft, key: '' });
+    partly = !onpick({ ...hit.draft, key: '' }, how);
   }
 
   /** Whether a text is a DOI or an ISBN, which names one work. */
@@ -106,8 +125,18 @@
       <p class="from">
         <Check size={13} />
         <span>
-          {t('library-lookup-filled', { source: taken.source })}
+          {#if partly}
+            {t('library-lookup-filled-empty', { source: taken.source })}
+          {:else}
+            {t('library-lookup-filled', { source: taken.source })}
+          {/if}
           {#each taken.remarks as remark}{' '}{remark}{/each}
+          {#if partly}
+            {@const hit = taken}
+            <button type="button" class="link" onclick={() => take(hit)}>
+              {t('library-lookup-fill-all')}
+            </button>
+          {/if}
           {#if found.hits.length > 1}
             <button type="button" class="link" onclick={() => (showing = true)}>
               {t('library-lookup-others', { count: found.hits.length - 1 })}
