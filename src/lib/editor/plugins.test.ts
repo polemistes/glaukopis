@@ -5,6 +5,7 @@ import { kindOf, setKind } from './commands';
 import { bodyPlugins } from './plugins';
 import { DOMSerializer } from 'prosemirror-model';
 import { bodySchema, safeHref } from './schema';
+import { editorOf, shapeOf, type as typeIn } from './testing';
 
 let view: EditorView | undefined;
 
@@ -127,6 +128,37 @@ describe('what is put right as it is typed', () => {
     expect(kindOf(x.state)).toBe('item');
     expect(x.state.doc.textContent).toBe('Point > not');
     x.destroy();
+  });
+});
+
+describe('a sign typed after the mark of a line', () => {
+  // The rules see a line mark, a leaf, as the object replacement character
+  // in the text before the cursor; they look past it to the start of the line.
+  it('makes a quotation, a list and a numbered list, keeping the mark', () => {
+    const q = editorOf(['text: {n=12}|']);
+    typeIn(q, '> Sing');
+    expect(shapeOf(q)).toEqual(['quote: {n=12}Sing|']);
+    q.destroy();
+    const i = editorOf(['text: {-}|']);
+    typeIn(i, '- Point');
+    expect(shapeOf(i)).toEqual(['item: {-}Point|']);
+    i.destroy();
+    const n = editorOf(['text: {m=A}|']);
+    typeIn(n, '7. Seventh');
+    // The mark the line had is given the number, and keeps what it said.
+    expect(shapeOf(n)).toEqual(['numbered: {n=7,m=A}Seventh|']);
+    n.destroy();
+    const one = editorOf(['text: {n=4}|']);
+    typeIn(one, '1. First');
+    expect(shapeOf(one)).toEqual(['numbered: {n=4}First|']);
+    one.destroy();
+  });
+
+  it('does nothing after words', () => {
+    const after = editorOf(['text: {n=3}So|']);
+    typeIn(after, '> not');
+    expect(shapeOf(after)).toEqual(['text: {n=3}So> not|']);
+    after.destroy();
   });
 });
 
