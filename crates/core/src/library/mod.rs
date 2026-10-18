@@ -399,8 +399,19 @@ impl Library {
     pub fn add_many(&mut self, drafts: &[Draft]) -> Result<Vec<Entry>> {
         self.refresh()?;
         let mut out = Vec::with_capacity(drafts.len());
+        let before = self.entries.len();
         for d in drafts {
-            out.push(self.insert(d, false)?);
+            match self.insert(d, false) {
+                Ok(entry) => out.push(entry),
+                Err(e) => {
+                    // All or nothing: what was inserted before the failure is
+                    // taken out again, or the next save of anything would
+                    // write half an import nobody was told of.
+                    self.entries.truncate(before);
+                    self.reindex();
+                    return Err(e);
+                }
+            }
         }
         if !out.is_empty() {
             self.save()?;
@@ -586,9 +597,17 @@ impl Library {
         self.require(kept)?;
 
         // Remove first, so that the absorbed entry's key is free to be taken.
-        self.entries.retain(|e| e.id != absorbed);
+        // If the draft is refused, the absorbed entry is put back where it
+        // was: the next save of anything would otherwise write the library
+        // without it.
+        let place = self.by_id[absorbed];
+        self.entries.remove(place);
         self.reindex();
-        self.apply(kept, draft)?;
+        if let Err(e) = self.apply(kept, draft) {
+            self.entries.insert(place, gone);
+            self.reindex();
+            return Err(e);
+        }
 
         let index = self.by_id[kept];
         let entry = &mut self.entries[index];
@@ -1610,6 +1629,55 @@ mod tests {
         // The trail survives a restart.
         let reopened = Library::open_at(lib.dir()).unwrap();
         assert_eq!(reopened.resolve(&b.id).unwrap().id, a.id);
+    }
+
+    #[test]
+    fn a_merge_that_is_refused_keeps_both_entries() {
+        let (_tmp, mut lib) = library();
+        let a = lib.add(&draft("@book{nagy1979, author={Nagy, G.}, title={Best}, date={1979}}")).unwrap();
+        let b = lib.add(&draft("@book{Nagy:1979, author={Nagy, Gregory}, title={The Best}, date={1979}}")).unwrap();
+        let c = lib.add(&draft("@book{taken, author={Other, A.}, title={Else}, date={2000}}")).unwrap();
+
+        // The key asked for is the third entry's: the merge is refused.
+        let mut merged = Draft::from_entry(&a);
+        merged.key = "taken".into();
+        assert!(lib.merge(&a.id, &b.id, &merged).is_err());
+        assert_eq!(lib.len(), 3);
+        assert_eq!(lib.require(&b.id).unwrap().key, "Nagy:1979");
+
+        // A type that is none is refused as well, and loses nothing.
+        let mut merged = Draft::from_entry(&a);
+        merged.entry_type = "comment".into();
+        assert!(lib.merge(&a.id, &b.id, &merged).is_err());
+        assert_eq!(lib.len(), 3);
+
+        // The next save, of anything, writes all three.
+        lib.set_note(&c.id, "a note").unwrap();
+        let reopened = Library::open_at(lib.dir()).unwrap();
+        assert_eq!(reopened.len(), 3);
+        assert!(reopened.require(&b.id).is_ok());
+        assert!(reopened.require(&a.id).unwrap().merged.is_empty());
+    }
+
+    #[test]
+    fn an_import_that_fails_adds_nothing() {
+        let (_tmp, mut lib) = library();
+        let kept = lib.add(&draft("@book{kept, title={Kept}, date={1990}}")).unwrap();
+        let mut bad = draft("@book{bad, title={Bad}, date={1991}}");
+        bad.entry_type = "comment".into();
+        let drafts = vec![
+            draft("@book{first, title={First}, date={1992}}"),
+            draft("@book{second, title={Second}, date={1993}}"),
+            bad,
+        ];
+        assert!(lib.add_many(&drafts).is_err());
+        assert_eq!(lib.len(), 1);
+        assert_eq!(lib.summaries().len(), 1);
+        assert!(lib.by_key("first").is_none());
+
+        lib.set_note(&kept.id, "a note").unwrap();
+        let reopened = Library::open_at(lib.dir()).unwrap();
+        assert_eq!(reopened.len(), 1, "what an import that failed began is not written");
     }
 
     #[test]

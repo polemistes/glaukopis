@@ -250,8 +250,18 @@ fn read_character_command(cur: &mut Cursor) -> Option<String> {
     None
 }
 
+/// How deep in braces a value is read. Real files nest two or three levels;
+/// what lies deeper is kept as it stands, so that a crafted file of
+/// thousands of braces neither runs the stack out, which ends the process,
+/// nor costs time by the square of its depth.
+const DEEPEST: usize = 64;
+
 /// Raw to text.
 pub fn decode(raw: &str) -> String {
+    decode_at(raw, 0)
+}
+
+fn decode_at(raw: &str, depth: usize) -> String {
     if !raw.contains(['\\', '{', '~', '-', '`', '\'']) {
         return raw.nfc().collect();
     }
@@ -279,6 +289,12 @@ pub fn decode(raw: &str) -> String {
             '{' => {
                 cur.pos += 1;
                 let inner = cur.group();
+                if depth >= DEEPEST {
+                    out.push('{');
+                    out.push_str(&inner);
+                    out.push('}');
+                    continue;
+                }
                 // A group that holds only one accent or symbol was there for
                 // TeX's sake: `{\"o}` is ö.
                 let trimmed = inner.trim();
@@ -293,7 +309,7 @@ pub fn decode(raw: &str) -> String {
                     }
                 }
                 out.push('{');
-                out.push_str(&decode(&inner));
+                out.push_str(&decode_at(&inner, depth + 1));
                 out.push('}');
             }
             '$' => {
@@ -469,11 +485,16 @@ pub fn plain(text: &str) -> String {
     }
     let mut cur = Cursor::new(text);
     let mut out = String::with_capacity(text.len());
-    plain_into(&mut cur, &mut out, false);
+    plain_into(&mut cur, &mut out, 0);
     super::parser::normalise_space(&out)
 }
 
-fn plain_into(cur: &mut Cursor, out: &mut String, in_group: bool) {
+/// Writes the plain form of what follows, up to the brace that closes the
+/// group it is in (at a `depth` above 0) or to the end. Below `DEEPEST`,
+/// groups are not descended into but counted here (`flat`), so that a
+/// value of thousands of braces does not run the stack out.
+fn plain_into(cur: &mut Cursor, out: &mut String, depth: usize) {
+    let mut flat = 0usize;
     while let Some(c) = cur.peek() {
         match c {
             '\\' => {
@@ -500,12 +521,15 @@ fn plain_into(cur: &mut Cursor, out: &mut String, in_group: bool) {
                                 }
                             }
                         }
-                        if cur.peek() == Some('{') {
+                        if cur.peek() == Some('{') && depth >= DEEPEST {
+                            cur.pos += 1;
+                            flat += 1;
+                        } else if cur.peek() == Some('{') {
                             cur.pos += 1;
                             if quoted {
                                 out.push('“');
                             }
-                            plain_into(cur, out, true);
+                            plain_into(cur, out, depth + 1);
                             if quoted {
                                 out.push('”');
                             }
@@ -533,11 +557,17 @@ fn plain_into(cur: &mut Cursor, out: &mut String, in_group: bool) {
             }
             '{' => {
                 cur.pos += 1;
-                plain_into(cur, out, true);
+                if depth >= DEEPEST {
+                    flat += 1;
+                } else {
+                    plain_into(cur, out, depth + 1);
+                }
             }
             '}' => {
                 cur.pos += 1;
-                if in_group {
+                if flat > 0 {
+                    flat -= 1;
+                } else if depth > 0 {
                     return;
                 }
             }
@@ -651,6 +681,31 @@ mod tests {
         assert_eq!(balance("ends with \\"), "ends with ");
         assert!(is_balanced("{a{b}}"));
         assert!(!is_balanced("}{"));
+    }
+
+    #[test]
+    fn braces_nested_without_end_neither_overflow_nor_take_long() {
+        let depth = 20_000;
+        let raw = format!("{}\\\"o \\emph{{x}}{}", "{".repeat(depth), "}".repeat(depth));
+        // On a small stack, as an import's thread may have.
+        let (decoded, plained) = std::thread::Builder::new()
+            .stack_size(256 * 1024)
+            .spawn(move || {
+                let started = std::time::Instant::now();
+                let out = (decode(&raw), plain(&raw));
+                assert!(started.elapsed() < std::time::Duration::from_secs(5), "{:?}", started.elapsed());
+                out
+            })
+            .unwrap()
+            .join()
+            .unwrap();
+        // Plain is given text, not TeX: the accent's command is only dropped.
+        assert_eq!(plained, "\"o x");
+        assert_eq!(decoded.matches('{').count(), decoded.matches('}').count());
+        assert!(decoded.contains("\\emph"), "what lies too deep is kept as it stands");
+        // The few levels real files have are read as before.
+        assert_eq!(decode("{{{\\\"o}}}"), "{{ö}}");
+        assert_eq!(plain("{{{\\mkbibquote{Wrath}}}}"), "“Wrath”");
     }
 
     #[test]

@@ -51,6 +51,8 @@ static FOLDERS_LOCK: Mutex<()> = Mutex::new(());
 const HISTORY_LIMIT: usize = 40;
 /// The least time between two states kept in the history, in seconds.
 const HISTORY_INTERVAL: i64 = 10 * 60;
+/// The longest name of a project, in characters.
+const NAME_LIMIT: usize = 200;
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -251,10 +253,26 @@ impl Projects {
         if name.is_empty() {
             return Err(Error::invalid(tr!("core-projects-needs-name")));
         }
-        if name.chars().count() > 200 {
+        if name.chars().count() > NAME_LIMIT {
             return Err(Error::invalid(tr!("core-projects-name-too-long")));
         }
         Ok(name)
+    }
+
+    /// The name a project takes from the title of its top element, which the
+    /// user typed as a title and not as a name: one too long for a name is
+    /// cut, with an ellipsis, rather than refused. A refusal came after the
+    /// state was written, and told the user at every save that the project
+    /// could not be saved.
+    fn fit_name(title: &str) -> String {
+        let name = title.split_whitespace().collect::<Vec<_>>().join(" ");
+        if name.chars().count() <= NAME_LIMIT {
+            return name;
+        }
+        let mut cut: String = name.chars().take(NAME_LIMIT - 1).collect();
+        cut.truncate(cut.trim_end().len());
+        cut.push('…');
+        cut
     }
 
     pub fn create(&self, name: &str) -> Result<ProjectInfo> {
@@ -382,7 +400,7 @@ impl Projects {
                 info.pictures = s.pictures;
                 info.cited = s.cited;
                 if let Some(name) = s.name.filter(|n| !n.trim().is_empty()) {
-                    info.name = name;
+                    info.name = Self::fit_name(&name);
                 }
                 if let Some(description) = s.description {
                     info.description = description;
@@ -412,18 +430,7 @@ impl Projects {
         kept = list_history(&history);
         while kept.len() > HISTORY_LIMIT {
             let times: Vec<i64> = kept.iter().map(|h| parse_stamp(&h.id).unwrap_or(0)).collect();
-            let mut drop = 1;
-            let mut smallest = i64::MAX;
-            for i in 1..times.len() - 1 {
-                let gap = times[i + 1] - times[i - 1];
-                // Weigh by age, so that old entries go before new ones.
-                let age = (now_unix - times[i]).max(1);
-                let score = gap / age.max(3600) * 3600 + gap % 3600;
-                if score < smallest {
-                    smallest = score;
-                    drop = i;
-                }
-            }
+            let drop = which_to_thin(&times, now_unix);
             let _ = fs::remove_file(history.join(&kept[drop].id));
             kept.remove(drop);
         }
@@ -801,6 +808,28 @@ fn read_log(path: &Path) -> Result<Vec<Vec<u8>>> {
     Ok(read_records(path)?.into_iter().map(|r| r.update).collect())
 }
 
+/// Which of the kept states, by their times from the oldest, goes when the
+/// history is over its limit: the one closest in time to its neighbours,
+/// weighed by age, so that old entries go before new ones. The first and
+/// the last are never chosen. Wants three times or more.
+fn which_to_thin(times: &[i64], now: i64) -> usize {
+    let mut drop = 1;
+    let mut smallest = f64::INFINITY;
+    for i in 1..times.len() - 1 {
+        let gap = (times[i + 1] - times[i - 1]) as f64;
+        // In fractions, not whole numbers: the span over the age, small for
+        // the dense and for the old. A state younger than an hour is weighed
+        // as an hour old.
+        let age = ((now - times[i]) as f64).max(3600.0);
+        let score = gap / age;
+        if score < smallest {
+            smallest = score;
+            drop = i;
+        }
+    }
+    drop
+}
+
 fn stamp_name(unix: i64) -> String {
     let t = time::OffsetDateTime::from_unix_timestamp(unix).unwrap_or(time::OffsetDateTime::UNIX_EPOCH);
     format!(
@@ -926,6 +955,22 @@ mod tests {
     }
 
     #[test]
+    fn a_long_title_is_cut_for_the_card_and_the_save_succeeds() {
+        let (_tmp, p) = projects();
+        let a = p.create("A").unwrap();
+        let title = format!("Of a long title: {}", "and its subtitle, ".repeat(20));
+        let summary = Summary { name: Some(title.clone()), words: 7, ..Default::default() };
+        let info = p.save_state(&a.id, b"STATE", Some(summary)).unwrap();
+        assert_eq!(info.words, 7);
+        assert!(info.name.chars().count() <= 200, "{}", info.name);
+        assert!(info.name.starts_with("Of a long title: and its subtitle"), "{}", info.name);
+        assert!(info.name.ends_with('…'), "{}", info.name);
+        assert_eq!(p.info(&a.id).unwrap().name, info.name);
+        // A name the user gives the project is still refused when too long.
+        assert!(p.rename(&a.id, &title).is_err());
+    }
+
+    #[test]
     fn a_log_cut_short_loses_only_its_tail() {
         let (_tmp, p) = projects();
         let a = p.create("A").unwrap();
@@ -977,7 +1022,38 @@ mod tests {
             }
         }
         p.save_state(&a.id, b"4", None).unwrap();
-        assert_eq!(p.history(&a.id).unwrap().len(), HISTORY_LIMIT);
+        let kept = p.history(&a.id).unwrap();
+        assert_eq!(kept.len(), HISTORY_LIMIT);
+        // Thinned over the whole stretch, not cut from its front: the oldest
+        // is there, and no two kept states of it lie more than two hours apart.
+        let mut times: Vec<i64> =
+            kept.iter().filter_map(|e| parse_stamp(&e.id)).filter(|&t| t <= base + 100 * 3600).collect();
+        times.sort();
+        assert_eq!(times[0], base);
+        assert!(times.windows(2).all(|w| w[1] - w[0] <= 2 * 3600), "{times:?}");
+    }
+
+    #[test]
+    fn the_state_that_goes_is_the_densest_weighed_by_age() {
+        let now = 400 * 86400;
+        // The second's neighbours are 3,599 s apart, the third's 3,601 s,
+        // at much the same age: the second goes, being the denser.
+        assert_eq!(which_to_thin(&[0, 1000, 3599, 4601], now), 1);
+        assert_eq!(which_to_thin(&[0, 1000, 3601, 4599], now), 2);
+        // Of two as dense, the older goes.
+        let hour = 3600;
+        assert_eq!(which_to_thin(&[0, 2 * hour, 4 * hour, now - 4 * hour, now - 2 * hour, now], now), 1);
+        // Density is weighed by age: states a day apart a year ago lie closer
+        // for their age (two days in a year) than states a minute apart an
+        // hour ago (two minutes in an hour), and go first.
+        let year = 365 * 86400;
+        let times = [now - year - 86400, now - year, now - year + 86400, now - 3660, now - 3600, now - 3540, now];
+        assert_eq!(which_to_thin(&times, now), 1);
+        // Three a minute apart an hour ago, against two a week apart a year
+        // ago: now the recent ones are the denser.
+        let week = 7 * 86400;
+        let times = [now - year - week, now - year, now - year + week, now - 3660, now - 3600, now - 3540, now];
+        assert_eq!(which_to_thin(&times, now), 4);
     }
 
     #[test]
