@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { languages, t } from '$lib/i18n';
-import { fileSize, reasonWords, wordsAround } from './format';
+import { fileSize, reasonWords, truncate, wordsAround } from './format';
 
 afterEach(() => {
   languages.current = 'en';
@@ -39,5 +39,25 @@ describe('the words for things of the library', () => {
     languages.current = 'nb';
     expect(notFound()[0]).toMatch(/mappen med $/);
     expect(wordsAround(() => t('library-no-title'))).toEqual(['Ingen tittel', '']);
+  });
+});
+
+describe('a text cut short', () => {
+  it('is cut at a word, with an ellipsis', () => {
+    expect(truncate('The Best of the Achaeans', 40)).toBe('The Best of the Achaeans');
+    expect(truncate('The Best of the Achaeans: Concepts of the Hero', 32)).toBe(
+      'The Best of the Achaeans…',
+    );
+  });
+
+  it('never cuts a sign outside the first plane in two', () => {
+    // A letter and forty signs of Linear B, each two halves in JavaScript:
+    // the 32nd half is the first of a sign.
+    const title = 'A' + '\u{10000}\u{10001}\u{10002}\u{10003}\u{10004}'.repeat(8);
+    const cut = truncate(title, 32);
+    expect(Array.from(cut)).toHaveLength(33);
+    expect(cut.endsWith('…')).toBe(true);
+    expect(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/.test(cut)).toBe(false);
+    expect(truncate('\u{10000}'.repeat(5), 5)).toBe('\u{10000}'.repeat(5));
   });
 });

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { tick } from 'svelte';
+  import { tick, untrack } from 'svelte';
   import Plus from '@lucide/svelte/icons/plus';
   import X from '@lucide/svelte/icons/x';
   import type { Draft } from '$lib/api/library';
@@ -41,8 +41,36 @@
 
   const uid = $props.id();
   let root = $state<HTMLDivElement>();
-  /** Fields the user asked for, shown although still empty. */
+  /**
+   * Fields shown although they may be empty: those the reference had when
+   * it came into the form, and those the user asked for. A field stays
+   * until the user takes it away with its button, so that emptying it to
+   * write it anew does not take the row away under the cursor.
+   */
   let added = $state<string[]>([]);
+
+  /** The fields and the names a draft holds something in. */
+  function present(d: Draft): string[] {
+    const out = Object.entries(d.fields)
+      .filter(([, value]) => value.trim())
+      .map(([name]) => name);
+    for (const [name, people] of Object.entries(d.names))
+      if (people.some((p) => p.family?.trim() || p.given?.trim())) out.push(name);
+    return out;
+  }
+
+  // A draft that comes into the form, at first or in the place of the one
+  // before (filled from a lookup, read back from its source), brings its
+  // fields with it. Only the draft itself is followed, not what is written in it.
+  let seeded: Draft | null = null;
+  $effect.pre(() => {
+    const current = draft;
+    untrack(() => {
+      if (current === seeded) return;
+      seeded = current;
+      added = present(current);
+    });
+  });
 
   // A type the schema does not know is offered under its own name.
   const types = $derived(
@@ -58,11 +86,7 @@
 
   const shown = $derived.by(() => {
     const primary = primaryFields(draft.type);
-    const rest = new Set<string>();
-    for (const [name, value] of Object.entries(draft.fields)) if (value.trim()) rest.add(name);
-    for (const [name, people] of Object.entries(draft.names)) {
-      if (people.some((p) => p.family?.trim() || p.given?.trim())) rest.add(name);
-    }
+    const rest = new Set<string>(present(draft));
     for (const name of added) rest.add(name);
     for (const name of primary) rest.delete(name);
     rest.delete('file');
