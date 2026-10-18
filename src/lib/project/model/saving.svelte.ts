@@ -163,6 +163,11 @@ export class Saving {
     return this.#writing;
   }
 
+  /** Whether changes are waiting to be written, or could not be: kept to be tried again. */
+  get unwritten(): boolean {
+    return this.#pending.length > 0;
+  }
+
   /** Follows the changes as they are made, until the function returned is called. */
   follow(follower: Follower): () => void {
     // What is made and not yet written is told first, so that the follower

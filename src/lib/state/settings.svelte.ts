@@ -8,6 +8,7 @@ import {
 import type { KindFamily, Look } from '$lib/api/documents';
 import { t } from '$lib/i18n';
 import { notifyError } from '$lib/ui/toast.svelte';
+import { beforeClose } from './closing';
 
 /**
  * A kind of paragraph or of words of the writer's own, as it is remembered
@@ -44,6 +45,19 @@ class SettingsState {
   loaded = $state(false);
   #systemDark = $state(false);
   #saveTimer: ReturnType<typeof setTimeout> | undefined;
+  /**
+   * The writes asked for, one after another: two at once on the thread
+   * pool of the core could land out of order, and the older settings be
+   * those left in the file.
+   */
+  #saving: Promise<void> = Promise.resolve();
+  /** Whether something was changed that is not yet written, or could not be. */
+  #unsaved = false;
+
+  constructor() {
+    // A setting changed a moment before the window closes is written before it goes.
+    beforeClose(() => this.flush(), 'first');
+  }
 
   /** The theme in effect, with "system" resolved. */
   get theme(): 'light' | 'dark' | 'mellow' | 'own' {
@@ -76,9 +90,25 @@ class SettingsState {
   }
 
   /** Writes at once what would otherwise be written in a moment. */
-  async saveNow() {
+  saveNow(): Promise<void> {
     clearTimeout(this.#saveTimer);
-    await settingsSave($state.snapshot(this.value));
+    return this.#write();
+  }
+
+  /** Writes what is not yet written, if anything; waits for the writes begun. */
+  flush(): Promise<void> {
+    return this.#unsaved ? this.saveNow() : this.#saving;
+  }
+
+  /** Writes the settings as they are now, after the writes asked for before. */
+  #write(): Promise<void> {
+    const value = $state.snapshot(this.value);
+    this.#unsaved = false;
+    const done = this.#saving.then(() => settingsSave(value));
+    this.#saving = done.catch(() => {
+      this.#unsaved = true;
+    });
+    return done;
   }
 
   /** What is done with citations that are found, changed in part. */
@@ -90,11 +120,10 @@ class SettingsState {
   set<K extends keyof MoreSettings>(key: K, value: MoreSettings[K]): void;
   set(key: keyof AllSettings, value: AllSettings[keyof AllSettings]) {
     Object.assign(this.value, { [key]: value });
+    this.#unsaved = true;
     clearTimeout(this.#saveTimer);
     this.#saveTimer = setTimeout(() => {
-      settingsSave($state.snapshot(this.value)).catch((error) =>
-        notifyError(t('settings-error-save'), error),
-      );
+      this.#write().catch((error) => notifyError(t('settings-error-save'), error));
     }, 300);
   }
 }

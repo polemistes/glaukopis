@@ -4,6 +4,7 @@ import type { Template } from '$lib/api/templates';
 import { Project, type Persistence, type Summary } from './project.svelte';
 import { fillBody, paragraph } from './text';
 import { PROJECT } from './types';
+import { finishBeforeClose } from '$lib/state/closing';
 
 /** A project begun: its own element at the top, named after it. */
 function project() {
@@ -611,6 +612,25 @@ describe('saving', () => {
       this.log = [];
     }
   }
+
+  it('before the window closes, what is not written is appended first, and a failure keeps it open', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const disk = new Disk();
+    const p = new Project(disk);
+    p.begin('Draft');
+    p.addChild(PROJECT, { title: 'Last words' });
+    disk.fail = true;
+    expect(await finishBeforeClose()).toEqual([new Error('disk full')]);
+    expect(disk.log.length).toBe(0);
+    disk.fail = false;
+    expect(await finishBeforeClose()).toEqual([]);
+    expect(disk.log.length).toBe(1);
+    await p.close();
+    // A project closed is no longer waited for.
+    disk.fail = true;
+    expect(await finishBeforeClose()).toEqual([]);
+    error.mockRestore();
+  });
 
   it('what is saved can be read again', async () => {
     const disk = new Disk();

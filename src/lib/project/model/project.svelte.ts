@@ -27,6 +27,7 @@ import { cleanLook, family, passageKindChanges } from './changing/passage-kinds'
 import { referenceChanges } from './changing/references';
 import { cleanTemplate, templateChanges } from './changing/templates';
 import { HISTORY, LOAD, LOCAL, str, TIDY, type YNode } from './origins';
+import { beforeClose } from '$lib/state/closing';
 import { People, type Me } from './people';
 import { Presence, type Other } from './presence.svelte';
 import {
@@ -225,6 +226,8 @@ export class Project {
   #loaded = false;
   #trees = new Map<string, { structure: number; tree: Tree }>();
   #closed = false;
+  /** Takes back what is done before the window closes: see `#writeBeforeClose`. */
+  readonly #releaseClose: (() => void) | null;
 
   constructor(persistence: Persistence | null = null) {
     this.doc = new Y.Doc();
@@ -252,6 +255,7 @@ export class Project {
       beforeState: () => this.#people.tidy(),
       afterState: () => this.#copy?.schedule(),
     });
+    this.#releaseClose = persistence ? beforeClose(() => this.#writeBeforeClose(), 'first') : null;
 
     this.undoManager = new Y.UndoManager([this.yMeta, this.yNodes, this.yLinks], {
       trackedOrigins: new Set<unknown>([LOCAL, ySyncPluginKey]),
@@ -369,6 +373,20 @@ export class Project {
   /** Writes the changes not yet written to the log. */
   flush(): Promise<void> {
     return this.#saving.flush();
+  }
+
+  /**
+   * Before the window closes, first of all: the changes not yet written
+   * are appended to the log, which is quick, before the whole state is
+   * written by whoever closes the project, which may take long. Fails when
+   * they could not be written, so that the window stays open and says so.
+   */
+  async #writeBeforeClose(): Promise<void> {
+    if (this.#closed) return;
+    await this.#saving.flush();
+    // What failed is kept to be tried again; what came from others meanwhile only waits.
+    const error = this.#saving.saveError;
+    if (this.#saving.unwritten && error) throw new Error(error);
   }
 
   /** Follows the changes as they are made, until the function returned is called. */
@@ -655,6 +673,7 @@ export class Project {
     // What the readable copy waits to write is written while the document is there.
     await this.#copy?.finish();
     this.#closed = true;
+    this.#releaseClose?.();
     this.#listeners.clear();
     this.#saving.stop();
     this.undoManager.destroy();
