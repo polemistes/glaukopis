@@ -23,16 +23,23 @@ use super::mend_sigmas;
 /// not Beta Code. None of them is a Greek word as Beta Code may write it
 /// without marks (such as `de`, `te`, `per`, `kai`, `ton`), and only words
 /// without a mark are compared with them.
+#[rustfmt::skip]
 const COMMON: &[&str] = &[
     // English
     "the", "and", "with", "that", "for", "this", "from", "which", "are", "was",
     // Norwegian, Danish, Swedish
-    "det", "som", "ikke", "med", "og", "och", "att", "inte", "eller", "jeg", // German
-    "der", "die", "das", "und", "nicht", "mit", "ist", "sich", "auf", "auch", // Dutch
-    "het", "een", "van", "niet", "zijn", // French
-    "les", "des", "est", "une", "dans", "pour", "qui", "avec", "sur", // Italian, Spanish, Portuguese
-    "che", "della", "non", "gli", "sono", "los", "las", "del", "por", "con", "para", "uma", "com", // Latin
-    "quod", "sunt", "atque", "enim", "cum", // Polish, Czech
+    "det", "som", "ikke", "med", "og", "och", "att", "inte", "eller", "jeg",
+    // German
+    "der", "die", "das", "und", "nicht", "mit", "ist", "sich", "auf", "auch",
+    // Dutch
+    "het", "een", "van", "niet", "zijn",
+    // French
+    "les", "des", "est", "une", "dans", "pour", "qui", "avec", "sur",
+    // Italian, Spanish, Portuguese
+    "che", "della", "non", "gli", "sono", "los", "las", "del", "por", "con", "para", "uma", "com",
+    // Latin
+    "quod", "sunt", "atque", "enim", "cum",
+    // Polish, Czech
     "nie", "jest", "oraz", "jako", "nebo",
 ];
 
