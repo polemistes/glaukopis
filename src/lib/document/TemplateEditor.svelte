@@ -23,7 +23,7 @@
   } from '$lib/api/templates';
   import { CATALOGUE, GROUPS } from '$lib/editor/kinds';
   import { t } from '$lib/i18n';
-  import { formatKindWords, kindWords } from '$lib/preview/documents.svelte';
+  import { formatGroups, styleGroups } from '$lib/look/choosing.svelte';
   import Button from '$lib/ui/Button.svelte';
   import { confirm } from '$lib/ui/confirm.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
@@ -158,23 +158,8 @@
 
   // ---- the layout and the style ----
 
-  const formatGroups = $derived(
-    ['own', 'general', 'fiction', 'stage', 'poetry', 'style-guide', 'publisher', 'journal']
-      .map((kind) => ({
-        name: formatKindWords(kind) ?? kind,
-        formats: documents.formats.filter((f) => f.kind === kind),
-      }))
-      .filter((g) => g.formats.length),
-  );
-  const styleGroups = $derived.by(() => {
-    const groups = new Map<string, typeof documents.styles>();
-    const other = t('style-kind-other');
-    for (const s of documents.styles) {
-      const key = kindWords(s.kind) || other;
-      groups.set(key, [...(groups.get(key) ?? []), s]);
-    }
-    return [...groups];
-  });
+  const layoutGroups = $derived(formatGroups());
+  const styleGroupsOffered = $derived(styleGroups());
 
   // ---- the contents ----
 
@@ -393,7 +378,7 @@
               onchange={(e) => (tp.layout = e.currentTarget.value || undefined)}
             >
               <option value="">{t('template-usual')}</option>
-              {#each formatGroups as group (group.name)}
+              {#each layoutGroups as group (group.name)}
                 <optgroup label={group.name}>
                   {#each group.formats as f (f.id)}
                     <option value={f.id}>{f.name}</option>
@@ -412,7 +397,7 @@
               onchange={(e) => (tp.style = e.currentTarget.value || undefined)}
             >
               <option value="">{t('template-usual')}</option>
-              {#each styleGroups as [group, styles] (group)}
+              {#each styleGroupsOffered as [group, styles] (group)}
                 <optgroup label={group}>
                   {#each styles as s (s.id)}
                     <option value={s.id}>{s.title}</option>
