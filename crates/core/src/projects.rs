@@ -535,17 +535,35 @@ impl Projects {
         Ok(out)
     }
 
+    /// Brings a project back from the trash, under its own id. Where a
+    /// project of that id is there already, as when a shared project was
+    /// deleted and joined again, it comes back as a project of its own under
+    /// a new id, with all it held, its history among it, and not shared: the
+    /// room it was shared in is the other one's. The user is told so.
     pub fn restore(&self, trashed: &str) -> Result<ProjectInfo> {
         if trashed.contains(['/', '\\']) || trashed.starts_with('.') {
             return Err(Error::invalid(tr!("core-projects-not-in-trash")));
         }
         let from = self.root.join(TRASH).join(trashed);
-        let info = Self::read_info(&from)?;
+        let mut info = Self::read_info(&from)?;
         let to = self.dir(&info.id)?;
-        if to.exists() {
-            return Err(Error::invalid(tr!("core-projects-id-exists")));
+        if !to.exists() {
+            fs::rename(&from, &to).context(|| tr!("core-projects-bringing-back"))?;
+            return Ok(info);
         }
+        let taken = std::mem::replace(&mut info.id, uuid::Uuid::new_v4().to_string());
+        let to = self.dir(&info.id)?;
         fs::rename(&from, &to).context(|| tr!("core-projects-bringing-back"))?;
+        info.sharing = None;
+        match fs::remove_file(to.join(TOKEN)) {
+            Ok(()) => {}
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) => return Err(e).context(|| tr!("core-projects-forgetting-token")),
+        }
+        Self::write_info(&to, &info)?;
+        tracing::info!(taken, id = %info.id, "a project brought back from the trash had an id that is taken; it has a new one");
+        let name = info.name.clone();
+        crate::notices::tell(move || tr!("core-projects-restored-anew", name = name.as_str()));
         Ok(info)
     }
 
@@ -1112,6 +1130,29 @@ mod tests {
         p.purge(&trash[0].0).unwrap();
         assert!(p.trash().unwrap().is_empty());
         assert_eq!(p.list().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn a_project_whose_id_is_taken_comes_back_from_the_trash_under_a_new_one() {
+        let (_tmp, p) = projects();
+        let a = p.create("Shared").unwrap();
+        let sharing = Sharing { server: "wss://example.org".into(), room: a.id.clone(), owner: false, member: None };
+        p.share(&a.id, sharing, "secret").unwrap();
+        p.append(&a.id, b"mine").unwrap();
+        p.delete(&a.id).unwrap();
+        // Joined again: the room's project is made anew under its id.
+        p.create_with_id(&a.id, "Shared", None).unwrap();
+
+        let trashed = p.trash().unwrap()[0].0.clone();
+        let back = p.restore(&trashed).unwrap();
+        assert_ne!(back.id, a.id);
+        assert_eq!(back.name, "Shared");
+        assert!(back.sharing.is_none());
+        assert!(p.shared(&back.id).is_err(), "the token is gone with the sharing");
+        assert_eq!(p.load(&back.id).unwrap().updates.len(), 1, "what it held came back with it");
+        assert_eq!(p.info(&back.id).unwrap().id, back.id);
+        assert!(p.info(&a.id).is_ok(), "the other is left as it was");
+        assert!(p.trash().unwrap().is_empty());
     }
 
     #[test]
