@@ -94,6 +94,12 @@
     {:else if dictionaries}
       <p class="none">{t('spelling-dictionaries-none')}</p>
     {/if}
+    <!-- A dictionary listed is not always one that could be read: those that could not, and why. -->
+    {#each spelling.failed as [language, reason] (language)}
+      <p class="failed" data-dictionary-failed={language}>
+        {t('spelling-dictionary-failed', { language: languageName(language || 'en'), reason })}
+      </p>
+    {/each}
   </div>
 
   <LanguagePackages
@@ -147,5 +153,11 @@
     margin: 4px 0 0;
     color: var(--ink-3);
     font-size: var(--text-sm);
+  }
+  .failed {
+    margin: 4px 0 0;
+    color: var(--danger);
+    font-size: var(--text-sm);
+    overflow-wrap: anywhere;
   }
 </style>

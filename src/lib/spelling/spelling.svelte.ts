@@ -107,7 +107,9 @@ class Spelling {
           return checking;
         })
         .catch((error) => {
-          // Not checked, with the reason kept to be shown; tried again when next asked.
+          // Not checked, with the reason kept to be shown (F7 and the
+          // settings say it) and logged; tried again when next made ready.
+          console.error(`spelling: the dictionary for "${key || 'en'}" could not be read`, error);
           this.#preparing.delete(key);
           this.failed.set(key, error?.message ?? String(error));
           this.checking.set(key, null);
@@ -193,7 +195,11 @@ class Spelling {
     }
   }
 
-  /** What a misspelt word may be, the likeliest first. Asked once for each word. */
+  /**
+   * What a misspelt word may be, the likeliest first. Asked once for each
+   * word. A failure is logged here and rejects, so that the menu can say it
+   * could not look, which is not the same as there being nothing like it.
+   */
   suggest(language: string | null | undefined, word: string): Promise<string[]> {
     const key = `${languageKey(language)}\n${word}`;
     let found = this.#suggested.get(key);
@@ -201,7 +207,10 @@ class Spelling {
       found = this.prepare(language).then((checking) =>
         checking ? spellingSuggest(languageKey(language) || null, word) : [],
       );
-      found.catch(() => this.#suggested.delete(key));
+      found.catch((error) => {
+        console.error(`spelling: what "${word}" may be could not be looked up`, error);
+        this.#suggested.delete(key);
+      });
       this.#suggested.set(key, found);
     }
     return found;

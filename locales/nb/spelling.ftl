@@ -7,12 +7,15 @@ spelling-no-suggestions = Ingenting likt det i ordboken
 spelling-add-word = Legg til i mine ord
 spelling-ignore = Overse i dette prosjektet
 spelling-add-failed = Ordet kunne ikke legges til
+spelling-suggest-failed = Det gikk ikke å slå opp hva det kan være
 
 ## Det menyen sier der det ikke er noe feilstavet ord (F7).
 
 spelling-nothing = Ingenting er feilstavet her.
 # $language er navnet på språket til kartet: latin.
 spelling-no-dictionary = Det finnes ingen ordbok for { $language }, så stavingen kontrolleres ikke. Ordbøker importeres under Innstillinger › Språk › Staving.
+# $language er navnet på språket til kartet: latin.
+spelling-failed = Ordboken for { $language } kunne ikke leses, så stavingen kontrolleres ikke.
 spelling-not-ready = Ordboken leses inn. Prøv igjen om et øyeblikk.
 spelling-off = Stavingen kontrolleres ikke. Det slås på i innstillingene.
 
@@ -40,3 +43,5 @@ spelling-add-word-here = Legg til
 spelling-remove-word = Ta bort «{ $word }»
 spelling-settings-failed = Ordbøkene kunne ikke listes opp
 spelling-remove-failed = Ordet kunne ikke tas bort
+# $language er navnet på et språk: tysk. $reason er hvorfor, slik loggen har det.
+spelling-dictionary-failed = Ordboken for { $language } kunne ikke leses: { $reason }
