@@ -320,29 +320,127 @@ fn decoded_contents(doc: &Document, page: &Dictionary) -> Option<Vec<u8>> {
     Some(out)
 }
 
-/// An object as it is written in a content stream.
-fn written(object: &Object) -> Vec<u8> {
-    let mut out = Content { operations: vec![Operation::new("", vec![object.clone()])] }.encode().unwrap_or_default();
-    while out.last().is_some_and(|b| b.is_ascii_whitespace()) {
-        out.pop();
+/// The operator a picture within the content stands in for while the rest
+/// is read, numbered in letters, since the library reads only letters in an
+/// operator's name: the picture is put back where it stood, to the byte.
+const INLINE: &str = "GlaukopisInline";
+
+/// A number in letters, `a` for nought: `a`, `b`, … `z`, `ba`, ….
+fn in_letters(mut n: usize) -> String {
+    let mut out = Vec::new();
+    loop {
+        out.push(b'a' + (n % 26) as u8);
+        n /= 26;
+        if n == 0 {
+            break;
+        }
     }
-    out
+    out.reverse();
+    String::from_utf8(out).expect("letters")
 }
 
-/// A picture within the content (`BI … ID … EI`), written as it was read:
-/// what it says of itself, then its bytes.
-fn inline_image(image: &Stream, out: &mut Vec<u8>) {
-    out.extend_from_slice(b"BI\n");
-    for (key, value) in image.dict.iter() {
-        out.push(b'/');
-        out.extend_from_slice(key);
-        out.push(b' ');
-        out.extend(written(value));
-        out.push(b'\n');
+fn from_letters(s: &str) -> Option<usize> {
+    if s.is_empty() {
+        return None;
     }
-    out.extend_from_slice(b"ID\n");
-    out.extend_from_slice(&image.content);
-    out.extend_from_slice(b"\nEI\n");
+    s.bytes().try_fold(0usize, |n, b| b.is_ascii_lowercase().then(|| n * 26 + usize::from(b - b'a')))
+}
+
+/// Whether a byte ends a token of a content stream.
+fn delimiter(b: u8) -> bool {
+    b.is_ascii_whitespace() || b"()<>[]{}/%".contains(&b)
+}
+
+/// Takes the pictures within the content (`BI … ID … EI`) out of it, each
+/// as it was written, and puts in their place an operator that stands for
+/// it. The library that reads contents reads such a picture only where it
+/// can tell its length from what it says of itself, and loses the page
+/// where it cannot, as with one packed in hexadecimal; taken out first, a
+/// picture is never read, only kept. Strings and comments are gone past, so
+/// that a `BI` in a line of text is not taken for one. Nothing where a
+/// picture has no end.
+fn take_inline_images(raw: &[u8]) -> Option<(Vec<u8>, Vec<Vec<u8>>)> {
+    let mut out = Vec::with_capacity(raw.len());
+    let mut images = Vec::new();
+    let mut i = 0;
+    while i < raw.len() {
+        match raw[i] {
+            // A string, with its brackets nested and its escapes: passed whole.
+            b'(' => {
+                let start = i;
+                let mut depth = 0usize;
+                while i < raw.len() {
+                    match raw[i] {
+                        b'\\' => i += 1,
+                        b'(' => depth += 1,
+                        b')' => {
+                            depth -= 1;
+                            if depth == 0 {
+                                break;
+                            }
+                        }
+                        _ => {}
+                    }
+                    i += 1;
+                }
+                i = (i + 1).min(raw.len());
+                out.extend_from_slice(&raw[start..i]);
+            }
+            // A comment, to the end of its line.
+            b'%' => {
+                let start = i;
+                while i < raw.len() && raw[i] != b'\n' && raw[i] != b'\r' {
+                    i += 1;
+                }
+                out.extend_from_slice(&raw[start..i]);
+            }
+            b'B' if raw.get(i + 1) == Some(&b'I')
+                && (i == 0 || delimiter(raw[i - 1]))
+                && raw.get(i + 2).is_none_or(|b| delimiter(*b)) =>
+            {
+                // What it says of itself runs to `ID`, and one byte of white after it.
+                let start = i;
+                let mut j = i + 2;
+                let data = loop {
+                    if j + 1 >= raw.len() {
+                        return None;
+                    }
+                    if raw[j] == b'I'
+                        && raw[j + 1] == b'D'
+                        && delimiter(raw[j - 1])
+                        && raw.get(j + 2).is_none_or(|b| b.is_ascii_whitespace())
+                    {
+                        break j + 3;
+                    }
+                    j += 1;
+                };
+                // Its bytes run to white, `EI`, and white or the end, as readers find it.
+                let mut k = data.min(raw.len());
+                let end = loop {
+                    if k + 2 > raw.len() {
+                        return None;
+                    }
+                    if raw[k] == b'E'
+                        && raw[k + 1] == b'I'
+                        && k > 0
+                        && raw[k - 1].is_ascii_whitespace()
+                        && raw.get(k + 2).is_none_or(|b| delimiter(*b))
+                    {
+                        break k + 2;
+                    }
+                    k += 1;
+                };
+                out.extend_from_slice(format!("\n{INLINE}{}\n", in_letters(images.len())).as_bytes());
+                images.push(raw[start..end].to_vec());
+                i = end;
+            }
+            b => {
+                out.push(b);
+                i += 1;
+            }
+        }
+    }
+    Some((out, images))
 }
 
 /// The content of a page without the text that is unseen: an operation
@@ -353,9 +451,11 @@ fn inline_image(image: &Stream, out: &mut Vec<u8>) {
 /// taken from `xobjects` as well. Everything else stays as it was, letters
 /// that are seen and what sets them among it. Nothing where the content
 /// cannot be read whole, as when it holds a picture packed in a way that is
-/// not read here: the page is then left as it is.
+/// not read here: the page is then left as it is. Pictures within the
+/// content are taken out before it is read, and put back to the byte.
 fn stripped(doc: &Document, page: &Dictionary, xobjects: &mut Dictionary) -> Option<Vec<u8>> {
-    let content = Content::decode(&decoded_contents(doc, page)?).ok()?;
+    let (raw, images) = take_inline_images(&decoded_contents(doc, page)?)?;
+    let content = Content::decode(&raw).ok()?;
     let mut out = Vec::new();
     let mut run: Vec<Operation> = Vec::new();
     let flush = |run: &mut Vec<Operation>, out: &mut Vec<u8>| -> Option<()> {
@@ -385,12 +485,12 @@ fn stripped(doc: &Document, page: &Dictionary, xobjects: &mut Dictionary) -> Opt
             xobjects.remove(name);
             continue;
         }
-        if operator == "BI" {
-            // A picture within the content is kept as it was read; one that
-            // could not be read is lost, and the page is left as it is.
-            let Some(Object::Stream(image)) = operation.operands.first() else { return None };
+        // A picture within the content, put back as it was written.
+        if let Some(n) = operator.strip_prefix(INLINE) {
+            let image = images.get(from_letters(n)?)?;
             flush(&mut run, &mut out)?;
-            inline_image(image, &mut out);
+            out.extend_from_slice(image);
+            out.push(b'\n');
             continue;
         }
         run.push(operation);
@@ -706,6 +806,47 @@ mod tests {
     }
 
     #[test]
+    fn a_picture_the_library_cannot_read_is_kept_and_the_text_taken_away_all_the_same() {
+        // As Acrobat's Paper Capture writes a page: a picture of one dot packed in
+        // hexadecimal, which the library that reads contents cannot tell the
+        // length of; a word that says BI; and the unseen text of its reading.
+        let picture: &[u8] = b"BI /W 1 /H 1 /IM true /BPC 1 /F [/AHx] ID\n\n00>\r\nEI";
+        let mut content = b"q 12 0 0 58 0 170 cm\n".to_vec();
+        content.extend_from_slice(picture);
+        content.extend_from_slice(b"\nQ\nBT 0 Tr /F1 12 Tf 10 10 Td (Seen BI word) Tj ET\n");
+        content.extend_from_slice(b"BT 3 Tr /F1 12 Tf 72 70 Td (NORGE'> DAE1t!RING) Tj ET\n");
+        let before = page_of(&content);
+        let laid = page_of(b"BT 3 Tr /F1 12 Tf 72 70 Td (NORGES DAEMRING) Tj ET\n");
+        let layers = [Layer { page: 0, pdf: laid }];
+        let doc = open(&before).unwrap();
+        let stripped = lay_over(before.clone(), doc, &layers, true).unwrap();
+        assert!(holds(&stripped, 1, &layers));
+        let text = pdf_text::extract_text_from_mem(&stripped).unwrap();
+        assert!(!text.contains("DAE1t"), "the old reading is gone: {text}");
+        assert!(text.contains("NORGES DAEMRING") && text.contains("Seen BI word"), "{text}");
+        // The picture is in the page as it was written, to the byte.
+        let doc = Document::load_mem(&stripped).unwrap();
+        let page = doc.get_pages()[&1];
+        let written = doc.get_page_content(page).unwrap();
+        assert!(written.windows(picture.len()).any(|w| w == picture), "{}", String::from_utf8_lossy(&written));
+    }
+
+    #[test]
+    fn pictures_within_a_content_are_taken_out_and_strings_and_comments_gone_past() {
+        let raw = b"(a BI in a string) Tj % BI in a comment\nBI /W 2 /H 1 /BPC 8 /CS /G ID \x00\x45\x49 EI Q";
+        let (out, images) = take_inline_images(raw).unwrap();
+        assert_eq!(images, vec![b"BI /W 2 /H 1 /BPC 8 /CS /G ID \x00\x45\x49 EI".to_vec()]);
+        let out = String::from_utf8_lossy(&out);
+        assert!(out.contains("(a BI in a string)") && out.contains("% BI in a comment"), "{out}");
+        assert!(out.contains("GlaukopisInlinea") && out.trim_end().ends_with('Q'), "{out}");
+        for n in [0, 1, 25, 26, 27, 700] {
+            assert_eq!(from_letters(&in_letters(n)), Some(n), "{n}");
+        }
+        // A picture with no end: the content is not read.
+        assert!(take_inline_images(b"q BI /W 1 /H 1 ID \x00\x01").is_none());
+    }
+
+    #[test]
     fn the_text_a_page_has_is_taken_away_and_the_rest_stays() {
         // An unseen word, a rectangle, and a picture of one grey dot within the content.
         let before = page_of(
@@ -797,14 +938,18 @@ mod tests {
     /// within the content that names its colours as lopdf does not know them.
     #[test]
     fn a_page_whose_content_is_not_read_whole_keeps_its_text() {
-        let before = page_of(b"BT 3 Tr /F1 12 Tf 72 70 Td (Hello) Tj ET\nq BI /W 1 /H 1 /CS /G /BPC 8 ID \x80 EI Q\n");
+        // A picture within the content that has no end.
+        let before = page_of(b"BT 3 Tr /F1 12 Tf 72 70 Td (Hello) Tj ET\nq BI /W 1 /H 1 /CS /G /BPC 8 ID \x80\x80\n");
         let laid = page_of(b"BT 3 Tr /F1 12 Tf 72 70 Td (Laid) Tj ET\n");
         let layers = [Layer { page: 0, pdf: laid }];
         let doc = open(&before).unwrap();
         let made = lay_over(before.clone(), doc, &layers, true).unwrap();
         assert!(holds(&made, 1, &layers));
-        let text = pdf_text::extract_text_from_mem(&made).unwrap();
-        assert!(text.contains("Hello") && text.contains("Laid"), "{text}");
+        // Its own text stays in its content, and the text laid is over it.
+        let doc = Document::load_mem(&made).unwrap();
+        let content = doc.get_page_content(doc.get_pages()[&1]).unwrap();
+        assert!(content.windows(10).any(|w| w == b"(Hello) Tj"), "{}", String::from_utf8_lossy(&content));
+        assert_eq!(xobject_names(&made), vec!["GlaukopisText"]);
         assert!(made.starts_with(&before), "the page is kept to the byte");
     }
 
