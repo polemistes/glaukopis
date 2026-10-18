@@ -4,9 +4,10 @@
  * looked at, and what is decided of each.
  *
  * The changes are worked out by the history in its worker, and grouped here;
- * again a while after the project has changed, never at every key. Accepting
- * a change that was written in since works the changes out first, so that it
- * is accepted as it stands.
+ * again a while after the project has changed, never at every key. Deciding
+ * on a change that was written in since (accepting it, taking it back,
+ * accepting it up to a version or making it a version again) works the
+ * changes out first, so that the decision is about the text as it stands.
  */
 
 import * as Y from 'yjs';
@@ -418,9 +419,13 @@ export class Review {
   }
 
   /** Takes a change back: the text goes back to what it was, by a change of the reviewer's. */
-  async reject(change: Change | null = this.current) {
-    if (!change || !this.canReject(change)) return;
-    const history = this.history!;
+  async reject(given: Change | null = this.current) {
+    if (!given || !this.canReject(given)) return;
+    // The offsets and paths of the change are those of the text as it stood
+    // when the changes were worked out: they are worked out again first.
+    const change = await this.#asItStands(given);
+    if (!change || !this.canReject(change) || !this.history) return;
+    const history = this.history;
     const project = this.project;
     const text = !change.change && !change.object;
     // Where each stretch begins and ends, by the signs on either side of it,
@@ -559,9 +564,11 @@ export class Review {
   }
 
   /** Accepts the versions of a change up to one, and leaves those after it to be reviewed. */
-  async acceptUpTo(change: Change, version: Version) {
-    const stretch = change.stretches[0];
-    if (!stretch) return;
+  async acceptUpTo(given: Change, version: Version) {
+    // The stretch is accepted where it stands now, not where it stood when worked out.
+    const change = await this.#asItStands(given);
+    const stretch = change?.stretches[0];
+    if (!change || !stretch) return;
     const seen = itemsOfPieces(version.pieces.filter((p) => p.status !== 'removed'));
     const accepted = this.#accepted(stretch, seen);
     this.#keep(change, accepted ? [accepted] : []);
@@ -569,9 +576,11 @@ export class Review {
   }
 
   /** Makes the text of a change what it was in a version again, and accepts it as it then stands. */
-  async useVersion(change: Change, version: Version) {
+  async useVersion(given: Change, version: Version) {
+    // The stretch is made again where it stands now, not where it stood when worked out.
+    const change = await this.#asItStands(given);
     const history = this.history;
-    const stretch = change.stretches[0];
+    const stretch = change?.stretches[0];
     if (!history || !stretch) return;
     const accepted = this.#accepted(stretch);
     // A passage that is gone and held nothing has no place to be made again in.
@@ -617,8 +626,10 @@ export class Review {
     if (!kept) return;
     const reference = referenceOf(kept);
     if (this.at !== PROJECT) {
+      // What is left is what this review shows: with one's own changes
+      // shown, those elsewhere are left to review as well.
       const left = await this.#changesOf(history, PROJECT, reference, kept.settled, {
-        own: false,
+        own: this.own,
         unit: 'paragraph',
       });
       if (left.length) return;

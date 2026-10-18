@@ -13,6 +13,7 @@ import type {
 } from '$lib/history/types';
 import { Project } from '$lib/project/model/project.svelte';
 import { PROJECT } from '$lib/project/model/types';
+import { blockAt, textOf } from './accepting';
 import { readReview } from './kept';
 import { Review } from './review.svelte';
 import type { Choice, Source } from './source';
@@ -34,6 +35,7 @@ class FakeHistory implements History {
   compared: Reference[] = [];
   reverted: { passage: Passage; pieces: Piece[] }[] = [];
   restored: Uint8Array[] = [];
+  restoredAt: { from: Uint8Array; to: Uint8Array }[] = [];
   versionsSaid: Version[] = [];
   #doc: Y.Doc;
 
@@ -81,8 +83,9 @@ class FakeHistory implements History {
     this.reverted.push({ passage, pieces });
   }
 
-  async restore(_place: unknown, _from: Uint8Array, _to: Uint8Array, moment: Uint8Array) {
+  async restore(_place: unknown, from: Uint8Array, to: Uint8Array, moment: Uint8Array) {
     this.restored.push(moment);
+    this.restoredAt.push({ from, to });
   }
 }
 
@@ -203,6 +206,34 @@ describe('a review', () => {
     await review.refresh();
     await review.accept();
     await review.accept();
+    expect(readReview(project.doc, 'me')!.accepted).toHaveLength(2);
+  });
+
+  it('with one’s own changes shown, is not settled while one’s own are left elsewhere', async () => {
+    const { review, project, history } = setUp();
+    const other = project.addChild(PROJECT, { title: 'Other' })!;
+    // Elsewhere in the project the reviewer renamed an element, and nobody else changed anything.
+    history.said.set(PROJECT, () => ({
+      at: PROJECT,
+      passages: [
+        {
+          place: { element: other, part: 'title', path: [0] },
+          block: '1:2',
+          kind: 'name',
+          before: true,
+          after: true,
+          pieces: [piece('same', 'Oth'), piece('added', 'er', 'me')],
+        },
+      ],
+      objects: [],
+      elements: [],
+    }));
+    review.setOwn(true);
+    await review.refresh();
+    await review.accept();
+    await review.accept();
+    expect(review.changes).toEqual([]);
+    // Settled, the review would begin at now with nothing accepted, and the rename would never be shown.
     expect(readReview(project.doc, 'me')!.accepted).toHaveLength(2);
   });
 
@@ -327,5 +358,101 @@ describe('a review', () => {
       failed: 'change 3 of 7 could not be applied',
     });
     error.mockRestore();
+  });
+
+  describe('acts on the text as it stands, written in since the changes were worked out', () => {
+    /**
+     * Anna wrote "black" into the first paragraph: the history says so of the
+     * paragraph as it stands, wherever "black" now is in it.
+     */
+    /** The stretch of the change: the sentence "black" was written into. */
+    const SENTENCE = 'The black cat sat.';
+
+    function standing() {
+      const set = setUp();
+      const { project, root, element, history } = set;
+      const place = { element, part: 'body' as const, path: [0] };
+      history.said.set(root, (reference) => {
+        const text = textOf(blockAt(project.fragment(element, 'body'), place)!);
+        const at = text.indexOf('black ');
+        const pieces =
+          at < 0 || reference.accepted.length
+            ? [piece('same', text)]
+            : [
+                piece('same', text.slice(0, at)),
+                piece('added', 'black ', 'anna'),
+                piece('same', text.slice(at + 'black '.length)),
+              ];
+        return {
+          at: root,
+          passages: [{ place, block: '1:1', kind: 'paragraph', before: true, after: true, pieces }],
+          objects: [],
+          elements: [],
+        };
+      });
+      /** Something written at the head of the paragraph, by someone else. */
+      const writeAtHead = (what: string) => {
+        const paragraph = blockAt(project.fragment(element, 'body'), place)!;
+        const text = paragraph.get(0) as Y.XmlText;
+        project.doc.transact(() => text.insert(0, what));
+      };
+      /** The text between two positions the review kept. */
+      const between = (from: Uint8Array, to: Uint8Array) => {
+        const a = Y.createAbsolutePositionFromRelativePosition(
+          Y.decodeRelativePosition(from),
+          project.doc,
+        )!;
+        const b = Y.createAbsolutePositionFromRelativePosition(
+          Y.decodeRelativePosition(to),
+          project.doc,
+        )!;
+        const paragraph = blockAt(project.fragment(element, 'body'), place)!;
+        const text = textOf(paragraph);
+        const index = (p: Y.AbsolutePosition) =>
+          p.type === paragraph ? (p.index === 0 ? 0 : text.length) : p.index;
+        return text.slice(index(a), index(b));
+      };
+      return { ...set, writeAtHead, between };
+    }
+
+    it('rejecting accepts what now stands where the change was', async () => {
+      const { review, project, writeAtHead, between } = standing();
+      await review.refresh();
+      expect(review.changes).toHaveLength(1);
+      writeAtHead('Yes. ');
+      await review.reject();
+      const kept = readReview(project.doc, 'me')!;
+      expect(kept.accepted).toHaveLength(1);
+      expect(between(kept.accepted[0].from, kept.accepted[0].to)).toBe(SENTENCE);
+    });
+
+    it('using a version makes the stretch of the change what it was, not the one beside it', async () => {
+      const { review, history, writeAtHead, between } = standing();
+      await review.refresh();
+      writeAtHead('Yes. ');
+      const version: Version = {
+        moment: { snapshot: new Uint8Array([1]), time: 10 },
+        by: ['anna'],
+        pieces: [piece('same', 'The cat sat.')],
+      };
+      await review.useVersion(review.changes[0], version);
+      expect(history.restoredAt).toHaveLength(1);
+      expect(between(history.restoredAt[0].from, history.restoredAt[0].to)).toBe(SENTENCE);
+    });
+
+    it('accepting up to a version keeps the stretch of the change', async () => {
+      const { review, project, writeAtHead, between } = standing();
+      await review.refresh();
+      writeAtHead('Yes. ');
+      const version: Version = {
+        moment: { snapshot: new Uint8Array([1]), time: 10 },
+        by: ['anna'],
+        pieces: [piece('added', 'black ', 'anna')],
+      };
+      await review.acceptUpTo(review.changes[0], version);
+      const kept = readReview(project.doc, 'me')!;
+      expect(kept.accepted).toHaveLength(1);
+      expect(between(kept.accepted[0].from, kept.accepted[0].to)).toBe(SENTENCE);
+    });
   });
 });
