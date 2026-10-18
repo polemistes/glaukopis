@@ -35,6 +35,10 @@ export function forgetStale(
 }
 
 /** Forgets what was decided of one file put anew, where its references changed. */
-export function forgetChanged(old: FileView | undefined, view: FileView, decided: Map<string, unknown>): void {
+export function forgetChanged(
+  old: FileView | undefined,
+  view: FileView,
+  decided: Map<string, unknown>,
+): void {
   if (old && referencesOf(old) !== referencesOf(view)) decided.delete(view.hash);
 }

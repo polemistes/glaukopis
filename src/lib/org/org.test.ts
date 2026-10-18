@@ -525,8 +525,12 @@ describe('the Org form of a text', () => {
 
   it('reads a code line escaped before its indentation, as earlier versions wrote it', () => {
     expect(
-      readBlocks(lines('#+BEGIN_SRC', ',    * a comment-ish line', ',  #+not a keyword', '#+END_SRC')),
-    ).toEqual(normal([p([t('    * a comment-ish line')], 'code'), p([t('  #+not a keyword')], 'code')]));
+      readBlocks(
+        lines('#+BEGIN_SRC', ',    * a comment-ish line', ',  #+not a keyword', '#+END_SRC'),
+      ),
+    ).toEqual(
+      normal([p([t('    * a comment-ish line')], 'code'), p([t('  #+not a keyword')], 'code')]),
+    );
   });
 
   it('closes and opens the block where a paragraph begins a new run', () => {

@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { Folder, ProjectInfo } from '$lib/api/projects';
-import { ancestors, descendants, folderTree, foldersOpenTo, pathOf, rows, topmost } from './folders';
+import {
+  ancestors,
+  descendants,
+  folderTree,
+  foldersOpenTo,
+  pathOf,
+  rows,
+  topmost,
+} from './folders';
 
 const folder = (id: string, name: string, parent?: string): Folder => ({
   id,

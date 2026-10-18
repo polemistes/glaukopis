@@ -58,7 +58,7 @@ export function topmost<T extends { projects: string[]; folders: string[] }>(
   /** Whether a folder above, from the parent given up, is among those chosen; a folder is not above itself. */
   const under = (parent: string | null | undefined, self?: string) => {
     const seen = new Set<string>(self ? [self] : []);
-    for (let at = parent ?? null; at && byId.has(at) && !seen.has(at); ) {
+    for (let at = parent ?? null; at && byId.has(at) && !seen.has(at);) {
       if (chosen.has(at)) return true;
       seen.add(at);
       at = byId.get(at)!.parent ?? null;

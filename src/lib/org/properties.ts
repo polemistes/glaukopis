@@ -670,9 +670,7 @@ export function readParagraphKinds(lines: string[]): {
 
 /** A template the project carries, as a block of JSON named after it. */
 export function writeTemplate(id: string, template: Template): string[] {
-  const body = JSON.stringify(template, null, 2)
-    .split('\n')
-    .map(escapeCodeLine);
+  const body = JSON.stringify(template, null, 2).split('\n').map(escapeCodeLine);
   return [`#+BEGIN_SRC json :template ${id}`, ...body, '#+END_SRC'];
 }
 
