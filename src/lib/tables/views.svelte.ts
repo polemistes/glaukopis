@@ -25,6 +25,7 @@ import { figureLabel, numberOf, showPlacing } from '$lib/figures/views.svelte';
 import { t } from '$lib/i18n';
 import { place, type RectLike } from '$lib/ui/floating';
 import { openContextMenu, type MenuItem } from '$lib/ui/menu.svelte';
+import { belongs, Panel } from '$lib/ui/panel';
 import {
   alignCells,
   headingColumn,
@@ -213,7 +214,7 @@ export class TableTools {
   readonly view: EditorView;
   #bar: HTMLElement | null = null;
   #barMounted: Record<string, unknown> | null = null;
-  #panel: HTMLElement | null = null;
+  #panel: Panel | null = null;
   #panelMounted: Record<string, unknown> | null = null;
   #watch: ResizeObserver | null = null;
   #waiting = 0;
@@ -234,7 +235,7 @@ export class TableTools {
     if (this.view.hasFocus()) return true;
     const at = document.activeElement;
     if (!at) return false;
-    if (this.#bar?.contains(at) || this.#panel?.contains(at)) return true;
+    if (this.#bar?.contains(at) || this.#panel?.el.contains(at)) return true;
     // A menu of the tools has the cursor while it is open.
     return !!this.#bar && !!at.closest('.menu');
   }
@@ -329,7 +330,7 @@ export class TableTools {
       },
       { side: 'top', align: 'start', gap: 4 },
     );
-    if (this.#panel) this.#placePanel();
+    this.#panel?.place();
   }
 
   run(command: Command) {
@@ -345,14 +346,13 @@ export class TableTools {
 
   openPanel() {
     if (this.#panel || !this.now) return;
-    const panel = document.createElement('div');
-    panel.className = 'note-panel table-panel';
-    panel.setAttribute('role', 'dialog');
-    panel.setAttribute('aria-label', t('tables-table'));
-    document.body.append(panel);
+    // Beside the table where there is room, and under it otherwise; the
+    // table is found anew each time, since it is drawn anew as it changes.
+    const drawn = () => this.#drawn();
+    const panel = new Panel(drawn, t('tables-table'), 'table-panel', drawn);
     this.#panel = panel;
     this.#panelMounted = mount(TablePanel, {
-      target: panel,
+      target: panel.el,
       props: {
         tools: this,
         ontry: (width: number) => this.#try(width),
@@ -372,8 +372,7 @@ export class TableTools {
         },
       },
     });
-    this.#watch?.observe(panel);
-    requestAnimationFrame(() => this.#placePanel());
+    requestAnimationFrame(() => this.#panel?.place());
     window.addEventListener('pointerdown', this.#outside, true);
   }
 
@@ -399,24 +398,9 @@ export class TableTools {
     wide(drawn, w);
   }
 
-  /** Beside the table where there is room, and under the bar otherwise. */
-  #placePanel() {
-    const panel = this.#panel;
-    const drawn = this.#drawn();
-    if (!panel || !drawn) return;
-    const table = drawn.getBoundingClientRect();
-    const needed = panel.offsetWidth + 12 + 8;
-    const right = window.innerWidth - table.right >= needed;
-    if (right || table.left >= needed)
-      place(panel, table, { side: right ? 'right' : 'left', align: 'start', gap: 12 });
-    else place(panel, table, { side: 'bottom', align: 'start', gap: 8 });
-  }
-
   #outside = (event: PointerEvent) => {
     const target = event.target as HTMLElement | null;
-    if (!target || !this.#panel) return;
-    if (this.#panel.contains(target) || this.#bar?.contains(target)) return;
-    if (target.closest('.popover, .menu, dialog, .backdrop')) return;
+    if (!target || !this.#panel || belongs(target, this.#panel.el, this.#bar)) return;
     this.closePanel();
     this.later();
   };
@@ -424,7 +408,6 @@ export class TableTools {
   closePanel() {
     if (!this.#panel) return;
     window.removeEventListener('pointerdown', this.#outside, true);
-    this.#watch?.unobserve(this.#panel);
     if (this.#panelMounted) void unmount(this.#panelMounted);
     this.#panelMounted = null;
     this.#panel.remove();
