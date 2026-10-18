@@ -83,6 +83,8 @@ class Everything {
   #engine: Engine | null = null;
   /** What was read of each project: its time of change when it was read. */
   #read = new Map<string, string>();
+  /** The beginning of the engine's worker that `#read` is of. */
+  #generation = 0;
   #round = 0;
   /** The projects, as they were changed, already said in the log to be read in part. */
   #told = new Set<string>();
@@ -127,25 +129,27 @@ class Everything {
     if (!projects.loaded) await projects.load();
     const targets = this.targets();
     this.none = !targets.length;
+    this.#forget(engine, targets);
     for (const target of targets) {
       if (round !== this.#round) return;
       // A project that is being closed is read when what was written in it is on disk.
       await projects.closed(target.id);
       const info = projects.list.find((p) => p.id === target.id) ?? target;
-      if (this.#read.get(info.id) !== info.modified) {
-        this.reading = info.name;
-        try {
-          const loaded = await projectLoad(info.id);
-          await engine.read(info.id, info.name, loaded.state, loaded.updates);
-          this.#read.set(info.id, info.modified);
-        } catch (error) {
-          console.error(`${info.name} could not be read`, error);
-          if (round === this.#round) this.unread = [...this.unread, info.name];
-          continue;
+      let result: ProjectFound | { error: string } | null;
+      // A project that could not be read or searched is named as such, not
+      // taken for one where nothing was found; the next is searched still.
+      try {
+        if (!this.#holds(engine, info)) {
+          this.reading = info.name;
+          await this.#readInto(engine, info);
         }
+        if (round !== this.#round) return;
+        result = await engine.search(info.id, words, options);
+      } catch (error) {
+        console.error(`${info.name} could not be read`, error);
+        if (round === this.#round) this.unread = [...this.unread, info.name];
+        continue;
       }
-      if (round !== this.#round) return;
-      const result = await engine.search(info.id, words, options);
       if (round !== this.#round) return;
       if (result && 'error' in result) {
         this.error = result.error;
@@ -177,13 +181,43 @@ class Everything {
    */
   async citedIn(info: ProjectInfo): Promise<string[]> {
     this.#engine ??= new Engine();
+    const engine = this.#engine;
     await projects.closed(info.id);
-    if (this.#read.get(info.id) !== info.modified) {
-      const loaded = await projectLoad(info.id);
-      await this.#engine.read(info.id, info.name, loaded.state, loaded.updates);
-      this.#read.set(info.id, info.modified);
+    if (!this.#holds(engine, info)) await this.#readInto(engine, info);
+    return engine.cited(info.id);
+  }
+
+  /**
+   * Whether the engine holds a project as it is now. A worker begun anew,
+   * after one failed, has read nothing: what was read before is read again.
+   */
+  #holds(engine: Engine, info: ProjectInfo): boolean {
+    if (this.#generation !== engine.generation) {
+      this.#read.clear();
+      this.#generation = engine.generation;
     }
-    return this.#engine.cited(info.id);
+    return this.#read.get(info.id) === info.modified;
+  }
+
+  async #readInto(engine: Engine, info: ProjectInfo) {
+    const generation = engine.generation;
+    const loaded = await projectLoad(info.id);
+    await engine.read(info.id, info.name, loaded.state, loaded.updates);
+    if (engine.generation === generation) this.#read.set(info.id, info.modified);
+  }
+
+  /**
+   * Forgets what is held of the projects that are gone, and, when only the
+   * one opened last is searched, of all the others: a project read for a
+   * search through all is not held for the rest of the session.
+   */
+  #forget(engine: Engine, targets: ProjectInfo[]) {
+    const keep = new Set((this.scope === 'all' ? projects.list : targets).map((p) => p.id));
+    for (const id of [...this.#read.keys()]) {
+      if (keep.has(id)) continue;
+      this.#read.delete(id);
+      engine.forget(id).catch((error) => console.warn(`${id} could not be forgotten`, error));
+    }
   }
 
   /** Opens what was found where it stands. */

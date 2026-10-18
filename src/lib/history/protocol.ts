@@ -1,5 +1,6 @@
 /** What the window and the engine of the history tell each other. */
 
+import type { Answerer } from '$lib/util/worker-client';
 import type { Engine } from './engine';
 import type { HistoryRecord } from './records';
 
@@ -23,32 +24,35 @@ export type Method =
   | 'thin'
   | 'records';
 
+/** What the engine is told, and answers nothing to. */
 export type Message =
   | { kind: 'load'; records: HistoryRecord[]; me: string | null }
   /** What follows waits for the next load: the history is read anew. */
   | { kind: 'reset' }
   | { kind: 'change'; update: Uint8Array; here: boolean }
-  | { kind: 'written'; time: number; here: boolean; changes: number }
-  | { kind: 'ask'; ask: number; method: Method; args: unknown[] };
+  | { kind: 'written'; time: number; here: boolean; changes: number };
 
-export type Reply = { ask: number; value: unknown } | { ask: number; error: string };
+/** What the engine is asked: one of its methods, with what it is given. */
+export type Question = { method: Method; args: unknown[] };
 
 /**
  * What takes the messages to the engine: in the worker, or here where there
- * is none. What comes before the history is read waits for it.
+ * is none, answering through the client of the workers. What comes before
+ * the history is read waits for it, in the order it came. A load, a change
+ * or a writing that throws is a fault of the whole engine, which the client
+ * makes the window hear: what the engine holds is then no longer the
+ * history, and it is read anew when next asked.
  */
-export class Host {
+export class Host implements Answerer<Question, Message> {
   engine: Engine | null = null;
-  #waiting: Message[] = [];
+  #waiting: (() => void)[] = [];
   readonly #make: () => Engine;
-  readonly #reply: (reply: Reply) => void;
 
-  constructor(make: () => Engine, reply: (reply: Reply) => void) {
+  constructor(make: () => Engine) {
     this.#make = make;
-    this.#reply = reply;
   }
 
-  take(message: Message) {
+  tell(message: Message) {
     if (message.kind === 'reset') {
       this.engine = null;
       return;
@@ -60,47 +64,52 @@ export class Host {
       this.engine = engine;
       const later = this.#waiting;
       this.#waiting = [];
-      for (const m of later) this.take(m);
+      for (const run of later) run();
       return;
     }
-    const engine = this.engine;
-    if (!engine) {
-      this.#waiting.push(message);
-      return;
-    }
-    if (message.kind === 'change') engine.change(message.update, message.here);
-    else if (message.kind === 'written')
-      engine.written(message.time, message.here, message.changes);
-    else this.#reply(answer(engine, message));
+    const run = () => {
+      const engine = this.engine!;
+      if (message.kind === 'change') engine.change(message.update, message.here);
+      else engine.written(message.time, message.here, message.changes);
+    };
+    if (this.engine) run();
+    else this.#waiting.push(run);
+  }
+
+  answer(question: Question): unknown {
+    if (this.engine) return answer(this.engine, question);
+    return new Promise((resolve, reject) =>
+      this.#waiting.push(() => {
+        try {
+          resolve(answer(this.engine!, question));
+        } catch (error) {
+          reject(error);
+        }
+      }),
+    );
   }
 }
 
-/** Answers a question with the engine. */
-export function answer(
-  engine: Engine,
-  message: { ask: number; method: Method; args: unknown[] },
-): Reply {
+/** Answers a question with the engine; what it cannot answer it throws, and says in the log. */
+export function answer(engine: Engine, question: Question): unknown {
   try {
-    const args = message.args;
-    let value: unknown;
-    switch (message.method) {
+    const args = question.args;
+    switch (question.method) {
       case 'records':
         // What is known of the records, for keeping older history less finely.
-        value = engine.records.map((r) => ({
+        return engine.records.map((r) => ({
           kind: r.kind,
           time: r.time,
           until: r.until,
           stored: r.stored,
         }));
-        break;
       default: {
-        const method = engine[message.method] as (...a: unknown[]) => unknown;
-        value = method.apply(engine, args);
+        const method = engine[question.method] as (...a: unknown[]) => unknown;
+        return method.apply(engine, args);
       }
     }
-    return { ask: message.ask, value };
   } catch (error) {
     console.error('the history could not answer', error);
-    return { ask: message.ask, error: (error as Error)?.message ?? String(error) };
+    throw error;
   }
 }
