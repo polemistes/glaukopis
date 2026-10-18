@@ -34,9 +34,8 @@
     KIND_ICONS,
     decisions,
     files,
-    filesUi,
     proposals,
-    undoLast,
+    rememberGoing,
     type Decision,
   } from './store.svelte';
 
@@ -276,18 +275,8 @@
     if (later) parts.push(t('files-going-later-count', { count: later }));
     const words = parts.join(', ');
     const done = given.length || madeIds.length;
-    filesUi.lastDone = done ? { assigned: given, made: madeIds } : filesUi.lastDone;
-    if (problems.length) notifyError(words, problems.slice(0, 4).join('\n'));
-    else if (done)
-      // It stays until it is dismissed: what was done to many is undone at once.
-      toasts.show(
-        {
-          kind: 'ok',
-          message: words,
-          action: { label: t('files-going-undo'), run: () => void undoLast() },
-        },
-        0,
-      );
+    if (done) rememberGoing({ assigned: given, made: madeIds }, words, problems);
+    else if (problems.length) notifyError(words, problems.slice(0, 4).join('\n'));
     else toasts.show({ kind: 'ok', message: words });
     onclose();
   }
