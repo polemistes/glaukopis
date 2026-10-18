@@ -353,7 +353,13 @@ export function apply(
         ]);
       } else edits.push([anchor, anchor, `\n${blocks.join('\n')}`]);
     }
-    edits.sort((a, b) => b[0] - a[0]);
+    // Applied from the end, so that each offset still holds. Of those at the
+    // same offset the one made last is applied first, and so lands after
+    // those made before it: the new parts of a message (made first) come
+    // right after it, in their English order, and a new message that follows
+    // it (made after) comes after them, not between the message and its parts.
+    const order = new Map(edits.map((e, i) => [e, i]));
+    edits.sort((a, b) => b[0] - a[0] || order.get(b)! - order.get(a)!);
     for (const [start, end, replacement] of edits)
       text = text.slice(0, start) + replacement + text.slice(end);
     if (messagesOf(text).faulty) {
