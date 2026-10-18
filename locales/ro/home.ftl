@@ -64,7 +64,6 @@ home-map-failed = Harta proiectelor nu s-a putut face
 ## When there are none yet
 
 home-welcome = Bun venit la Glaukopis
-home-welcome-text = Un proiect cuprinde lucrul la o carte sau la un articol: hărțile ideilor dumneavoastră, textele pe care le scrieți în ele și referințele pe care se sprijină.
 home-begin = Începeți un proiect
 
 ## A project in the list

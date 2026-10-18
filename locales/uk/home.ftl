@@ -66,7 +66,6 @@ home-map-failed = Не вдалося створити мапу проєктів
 ## When there are none yet
 
 home-welcome = Ласкаво просимо до Glaukopis
-home-welcome-text = Проєкт містить роботу над однією книжкою чи статтею: мапи ваших ідей, тексти, які ви в них пишете, і джерела, на які вони спираються.
 home-begin = Почати проєкт
 
 ## A project in the list

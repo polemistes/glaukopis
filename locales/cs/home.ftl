@@ -64,7 +64,6 @@ home-map-failed = Mapu projektů nelze vytvořit
 ## When there are none yet
 
 home-welcome = Vítejte v Glaukopis
-home-welcome-text = Projekt obsahuje práci na jedné knize nebo článku: mapy vašich myšlenek, texty, které do nich píšete, a záznamy, o něž se opírají.
 home-begin = Začít projekt
 
 ## A project in the list

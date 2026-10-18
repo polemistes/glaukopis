@@ -159,3 +159,27 @@ paragraph that is not foreign but only in another language.
   where it is not the document's own: Pandoc reads it from HTML, Markdown
   and LaTeX. It does not read it from Word or OpenDocument, which say what
   language the computer had more often than that of the text.
+
+## Addendum of 2026-10-18: only complete languages are offered
+
+Thirty-six languages had been begun; some were complete, others half done,
+and a half-done interface, English in every other place, was offered as if
+it were finished. The one the application is made for asked that only the
+complete ones be offered.
+
+- **The interface is offered only in the languages that are complete**:
+  `OFFERED` in `i18n.rs` names them, now Danish, German, English, French,
+  Italian, Bokmål, Nynorsk and Swedish, and `i18n::interface()` lists
+  those of `NAMES` that are offered and have their `core.ftl`. A language
+  is named there by hand when the check says it lacks nothing.
+- **What English gains afterwards does not take a language away**: it is
+  said in English until it is translated, as before. Only English and
+  Bokmål are held complete by the tests.
+- **The language of the system is matched among those offered**: a system
+  in Spanish has the interface in English until Spanish is complete. A
+  language chosen in the settings that is no longer offered gives the
+  system's, and the settings show that choice.
+- **The others stay** under `locales/` and go on being translated. The
+  project of words at the foot of the settings offers every language that
+  has a folder, and the words of documents are in every language as before,
+  so that a text in any of them prints its own words.

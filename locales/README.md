@@ -53,9 +53,11 @@ file, and give the language its name in `NAMES` in
 `crates/core/src/i18n.rs`. `node scripts/check-locales.mjs <tag>` says what
 is lacking and what is wrong. A language can be read through and mended in a
 spreadsheet, `node scripts/locale-sheet.mjs export <tag>` and `import`; see
-`TRANSLATING.md`. A language is offered in the settings as soon
-as it has a `core.ftl`; what it lacks is said in English. A language that
-has only `document.ftl` has words for documents and not an interface.
+`TRANSLATING.md`. A language is offered in the settings when it is
+complete: it is then named in `OFFERED` in `crates/core/src/i18n.rs`. What
+English gains after that is said in English until it is translated, and
+does not take the language away. A language that has only `document.ftl`
+has words for documents and not an interface.
 English and Bokmål must be complete; the tests (`pnpm test`, `cargo test`)
 demand that, and that no language has anything wrong. Serbian in Latin
 letters is made from the Cyrillic by `scripts/serbian-latin.mjs`, and is not

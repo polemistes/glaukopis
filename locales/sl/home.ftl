@@ -66,7 +66,6 @@ home-map-failed = Miselnega vzorca projektov ni bilo mogoče narediti
 ## When there are none yet
 
 home-welcome = Dobrodošli v Glaukopisu
-home-welcome-text = Projekt hrani delo na eni knjigi ali članku: miselne vzorce vaših zamisli, besedila, ki jih pišete vanje, in vire, na katerih slonijo.
 home-begin = Začni projekt
 
 ## A project in the list

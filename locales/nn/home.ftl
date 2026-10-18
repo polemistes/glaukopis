@@ -131,7 +131,7 @@ home-map-failed = Kartet over prosjekta kunne ikkje lagast
 ## When there are none yet
 
 home-welcome = Velkomen til Glaukopis
-home-welcome-text = Eit prosjekt rommar arbeidet med éi bok eller ein artikkel: kartet over ideane dine, tekstane du skriv inn i det, og referansane dei byggjer på.
+home-welcome-text = Eit idéorientert skriveprogram
 home-begin = Byrj på eit prosjekt
 
 ## A project in the list

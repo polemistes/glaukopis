@@ -36,7 +36,7 @@ pub const ENGLISH: &str = "en";
 /// The languages the application may be in, each with its name in itself:
 /// every language that has, or is to have, a folder under `locales/`, in the
 /// order they are offered, by alphabet within each script. A language is
-/// offered only when its words are there (see [`interface`]).
+/// offered only when its translation is complete (see [`OFFERED`]).
 const NAMES: &[(&str, &str)] = &[
     ("sq", "Shqip"),
     ("bs", "Bosanski"),
@@ -78,15 +78,25 @@ const NAMES: &[(&str, &str)] = &[
     ("ja", "日本語"),
 ];
 
+/// The languages the interface is offered in: those whose translation was
+/// complete when it was last finished, as `node scripts/check-locales.mjs`
+/// tells. What English has gained since is said in English until it is
+/// translated, and does not take a language away. The others stay under
+/// `locales/` while they are translated, and are added here when they are
+/// complete (ADR 0020).
+const OFFERED: &[&str] = &["da", "de", "en", "fr", "it", "nb", "nn", "sv"];
+
 /// The languages the interface is in: the tag, and the name of the language
-/// in itself. Those of [`NAMES`] whose words are there, which is told by
-/// the core's own file, `core.ftl`, being among the files compiled in.
+/// in itself. Those of [`NAMES`] that are [`OFFERED`] and whose words are
+/// there, which is told by the core's own file, `core.ftl`, being among the
+/// files compiled in.
 pub fn interface() -> &'static [(&'static str, &'static str)] {
     static INTERFACE: OnceLock<Vec<(&'static str, &'static str)>> = OnceLock::new();
     INTERFACE.get_or_init(|| {
         NAMES
             .iter()
             .copied()
+            .filter(|(tag, _)| OFFERED.contains(tag))
             .filter(|(tag, _)| files::FILES.iter().any(|&(t, name, _)| t == *tag && name == "core.ftl"))
             .collect()
     })
@@ -864,6 +874,18 @@ mod tests {
         for tag in tags {
             assert!(NAMES.iter().any(|(t, _)| *t == tag), "{tag} has a folder under locales/ and no name in NAMES");
         }
+    }
+
+    /// The interface is in the languages offered and no others, so that a
+    /// tag mistyped in `OFFERED`, or a language without its words, is not
+    /// left out unseen.
+    #[test]
+    fn the_interface_is_in_the_languages_offered() {
+        let offered: Vec<&str> = interface().iter().map(|&(tag, _)| tag).collect();
+        for tag in OFFERED {
+            assert!(offered.contains(tag), "{tag} is offered, and has no name in NAMES or no core.ftl");
+        }
+        assert_eq!(offered.len(), OFFERED.len());
     }
 
     /// Every name the code says something by is there in English.

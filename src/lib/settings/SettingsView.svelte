@@ -426,8 +426,11 @@
     <section>
       <h2>{t('settings-language')}</h2>
       <div class="pair">
+        <!-- A language chosen once and no longer offered shows as the system's, which the interface then has. -->
         <Select
-          value={settings.value.language}
+          value={languages.interface.some((l) => l.tag === settings.value.language)
+            ? settings.value.language
+            : 'system'}
           label={t('settings-language-interface')}
           options={interfaceOptions}
           onchange={(tag) => settings.set('language', tag)}

@@ -59,7 +59,6 @@ home-map-failed = De mindmap van de projecten kon niet worden gemaakt
 ## When there are none yet
 
 home-welcome = Welkom bij Glaukopis
-home-welcome-text = Een project bevat het werk aan één boek of artikel: de mindmaps van je ideeën, de teksten die je erin schrijft, en de referenties waarop ze steunen.
 home-begin = Een project beginnen
 
 ## A project in the list
