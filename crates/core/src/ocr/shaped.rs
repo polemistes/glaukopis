@@ -7,6 +7,7 @@ use std::collections::BTreeMap;
 use crate::document::{Block, Inline, Numbering, Side};
 use crate::import::document::{Section, StyleFoundView};
 
+use super::rules;
 use super::schemes;
 use super::shape::{Piece, StyleFound};
 use super::text::{self, IsWord, Line};
@@ -358,16 +359,13 @@ fn aside(item: &Item) -> bool {
 
 /// Whether a paragraph goes on in the next: where the next begins with a
 /// small letter, or the one before ends without the end of a sentence and
-/// the next is not set further in.
+/// the next is not set further in. Where a sentence ends is as the reading
+/// of a page by its lines has it (`rules::ends_sentence`).
 fn goes_on(before: &[Inline], after: &[Inline], after_indent: bool) -> bool {
-    let first = plain_of(after).chars().find(|c| c.is_alphabetic());
-    if first.is_some_and(char::is_lowercase) {
+    if rules::begins_small(&plain_of(after)) {
         return true;
     }
-    let ended = plain_of(before).trim_end().chars().last().is_some_and(|c| {
-        matches!(c, '.' | '!' | '?' | ':' | ';' | '…' | '”' | '’' | '"' | '\'' | ')' | ']' | '»' | '·')
-    });
-    !ended && !after_indent
+    !rules::ends_sentence(&plain_of(before)) && !after_indent
 }
 
 /// The document's pieces, page after page, as its structure: what stands
@@ -557,6 +555,23 @@ mod tests {
     fn heading(text: &str, level: u8) -> Shaped {
         Shaped::Heading { level, content: words(text) }
     }
+    #[test]
+    fn a_paragraph_goes_on_over_the_edge_as_the_lines_have_it() {
+        let goes = |before: &str, after: &str, indent: bool| goes_on(&words(before), &words(after), indent);
+        // Where a sentence ends is as text.rs has it: a closing mark alone
+        // ends none, a semicolon ends one only as the Greek question mark.
+        assert!(goes("he spoke of the \"word\"", "Then", false));
+        assert!(goes("his art was old;", "Then", false));
+        assert!(!goes("τί ἔφη;", "Ἀλλὰ", false));
+        assert!(!goes("ἔφη·", "Ἀλλὰ", false));
+        assert!(!goes("he spoke.»", "Then", false));
+        assert!(!goes("his art was", "Then", true), "set in, it begins anew");
+        // A small letter begins the paragraph's going on, after a quotation
+        // mark too; a number before it is a section that begins.
+        assert!(goes("he spoke.", "«and so", true));
+        assert!(!goes("ἔφη.", "3 ὁ δὲ", true));
+    }
+
     fn kept(lines: &[&str]) -> Shaped {
         Shaped::Kept { lines: lines.iter().map(|l| (words(l), None)).collect(), side: None, style: 0 }
     }

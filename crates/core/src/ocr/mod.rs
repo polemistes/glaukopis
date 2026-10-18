@@ -16,6 +16,7 @@ pub mod drawing;
 #[doc(hidden)]
 pub mod fixture;
 pub mod layer;
+mod rules;
 pub mod schemes;
 pub mod searchable;
 pub mod shape;
