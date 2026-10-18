@@ -57,5 +57,9 @@ core-library-the-folder = the folder
 core-library-needs-name = A name is needed.
 core-library-name-too-long = That name is too long.
 core-library-folder-in-itself = A folder cannot be put in itself.
+# Why a file was not given to the reference chosen for it, when files are gone through.
+core-library-assign-file-gone = A file was not given to its reference: it is no longer among the files of the library.
+core-library-assign-reference-gone = “{ $name }” was not given to its reference: the reference is no longer in the library.
+core-library-assign-stored-gone = “{ $name }” was not given to its reference: the file is no longer where the library keeps it, { $path }.
 # The record of the files could not be read; it was put aside under another name.
 core-library-files-unreadable = The record of the files of the library could not be read, and was put aside as { $path }: { $message }
