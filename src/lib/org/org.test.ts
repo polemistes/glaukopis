@@ -501,6 +501,34 @@ describe('the Org form of a text', () => {
     );
   });
 
+  it('escapes a code line that looks like a headline after its indentation, as Org does', () => {
+    expect(
+      written([
+        p([t('    * a comment-ish line')], 'code'),
+        p([t('  #+not a keyword')], 'code'),
+        p([t('  ,* once escaped')], 'code'),
+        p([t(', * a comma, then a star')], 'code'),
+        p([t('  , * left alone')], 'code'),
+      ]),
+    ).toBe(
+      lines(
+        '#+BEGIN_SRC',
+        '    ,* a comment-ish line',
+        '  ,#+not a keyword',
+        '  ,,* once escaped',
+        ',, * a comma, then a star',
+        '  , * left alone',
+        '#+END_SRC',
+      ),
+    );
+  });
+
+  it('reads a code line escaped before its indentation, as earlier versions wrote it', () => {
+    expect(
+      readBlocks(lines('#+BEGIN_SRC', ',    * a comment-ish line', ',  #+not a keyword', '#+END_SRC')),
+    ).toEqual(normal([p([t('    * a comment-ish line')], 'code'), p([t('  #+not a keyword')], 'code')]));
+  });
+
   it('closes and opens the block where a paragraph begins a new run', () => {
     expect(
       written([

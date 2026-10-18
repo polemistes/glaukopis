@@ -46,7 +46,7 @@ import {
   type BasedKind,
   type Numbering,
 } from '$lib/project/model/families';
-import { isConstruct, isEscapedLine, slug } from './escape';
+import { escapeCodeLine, isConstruct, isEscapedLine, slug, unescapeCodeLine } from './escape';
 import { readGrid, writeGrid } from './grid';
 import {
   RESERVED_NAMES,
@@ -325,7 +325,7 @@ function srcLines(ps: ParagraphBlock[]): string[] | null {
     const text = content[0].text;
     if (Object.keys(content[0].marks).length || /[\n\0]/.test(text)) return null;
     if (!text.trim() || text !== text.trimEnd()) return null;
-    out.push(/^\s*(\*|#\+|,\*|,#\+)/.test(text) ? `,${text}` : text);
+    out.push(escapeCodeLine(text));
   }
   return out;
 }
@@ -1250,7 +1250,7 @@ export function readBody(lines: readonly string[], ctx: TextContext): Block[] {
           const kind = kindAttr ? ctx.kindOf(kindAttr) : 'code';
           const got = settle(
             inner
-              .map((l) => l.replace(/^(\s*),(\*|#\+|,\*|,#\+)/, '$1$2'))
+              .map(unescapeCodeLine)
               .filter((l) => l !== '')
               .map((l) => makeParagraph([{ kind: 'text', text: l, marks: {} }], kind)),
             said,
