@@ -63,40 +63,47 @@ pub(super) fn picture_bytes(
     let plain = named.strip_prefix("file://").unwrap_or(named);
     let plain = unescape(plain.split(['?', '#']).next().unwrap_or(plain));
     let path = PathBuf::from(&plain);
+    // A document of one's own names its pictures, and is let take only
+    // those in its own folder and below: one received from someone else
+    // may name any picture on this computer, which would then go into the
+    // project, and to those it is shared with.
+    if !held {
+        return match includes::Folder::new(beside).place(&beside.join(&path)) {
+            includes::Place::Within(found) => read_picture(&found),
+            includes::Place::Outside => Err(tr!("core-import-document-picture-outside-folder")),
+            includes::Place::Missing => Err(tr!("core-import-document-picture-not-found")),
+        };
+    }
     let candidates: Vec<PathBuf> = if path.is_absolute() {
         vec![path]
-    } else if held {
-        vec![media.join(&path), media.parent().unwrap_or(media).join(&path)]
     } else {
-        vec![beside.join(&path)]
+        vec![media.join(&path), media.parent().unwrap_or(media).join(&path)]
     };
     let found = candidates.into_iter().find(|c| c.is_file());
     let Some(found) = found else {
-        return Err(if held {
-            tr!("core-import-document-picture-not-taken-out")
-        } else {
-            tr!("core-import-document-picture-not-found")
-        });
+        return Err(tr!("core-import-document-picture-not-taken-out"));
     };
     // A file that holds its pictures has them within it, and Pandoc took them
     // out to where the work is done. One that names a picture elsewhere on
     // this computer, as a Word file may link one, would bring that into the
     // project, and to those it is shared with.
-    if held {
-        let work = media.parent().unwrap_or(media);
-        let within = match (found.canonicalize(), work.canonicalize()) {
-            (Ok(found), Ok(work)) => found.starts_with(work),
-            _ => false,
-        };
-        if !within {
-            return Err(tr!("core-import-document-picture-outside"));
-        }
+    let work = media.parent().unwrap_or(media);
+    let within = match (found.canonicalize(), work.canonicalize()) {
+        (Ok(found), Ok(work)) => found.starts_with(work),
+        _ => false,
+    };
+    if !within {
+        return Err(tr!("core-import-document-picture-outside"));
     }
-    match fs::metadata(&found) {
+    read_picture(&found)
+}
+
+fn read_picture(found: &Path) -> std::result::Result<Vec<u8>, String> {
+    match fs::metadata(found) {
         Ok(m) if m.len() > crate::pictures::MAX_BYTES => return Err(tr!("core-import-document-picture-too-large")),
         _ => {}
     }
-    fs::read(&found).map_err(|_| tr!("core-import-document-picture-file-unreadable"))
+    fs::read(found).map_err(|_| tr!("core-import-document-picture-file-unreadable"))
 }
 
 /// How wide a figure is when the file does not say: as suits what the

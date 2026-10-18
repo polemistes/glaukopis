@@ -12,9 +12,13 @@
 //!
 //! The pictures of the document are taken into the store of pictures. A file
 //! that holds its pictures itself (DOCX, ODT, EPUB) has them taken out by
-//! Pandoc, which is then kept from reading anything but the file; a file
-//! that names its pictures (Markdown, HTML, LaTeX) has them read from where
-//! it says, beside it. Nothing is fetched from the network.
+//! Pandoc; a file that names its pictures (Markdown, HTML, LaTeX) has them
+//! read from where it says, in its own folder or below. Pandoc is kept from
+//! reading anything but the file it is given: what a document takes in from
+//! other files (LaTeX's `\input`, the includes of reStructuredText, Org,
+//! AsciiDoc and Typst) is read in `includes.rs`, from the document's folder
+//! and below only, and what it names elsewhere is left out and said in the
+//! remarks. Nothing is fetched from the network.
 //!
 //! An OpenDocument or a Word file is looked at before Pandoc reads it, and
 //! where Pandoc would lose something of it, Pandoc reads a copy that is
@@ -36,6 +40,7 @@
 mod captions;
 mod cited;
 mod convert;
+mod includes;
 mod lifting;
 mod locating;
 mod made;
@@ -434,21 +439,21 @@ pub fn read(
             if format == Format::Docx {
                 args.push("--track-changes=accept".into());
             }
-            // Where the file holds its pictures, Pandoc takes them out, and
-            // is kept from reading anything else, on this computer or from
-            // the network. Otherwise it works where the file is, so that
-            // what the file names as parts of it is found.
-            let dir = if format.holds_pictures() {
-                args.push("--sandbox".into());
+            // Pandoc is kept from reading anything but the file, on this
+            // computer or from the network. Where the file holds its
+            // pictures, Pandoc takes them out; what a file takes in from
+            // others in its folder is set in a copy of it beforehand.
+            args.push("--sandbox".into());
+            if format.holds_pictures() {
                 args.push(format!("--extract-media={}", media.display()));
-                work
-            } else {
-                beside.as_path()
-            };
+            }
+            let included = includes::take_in(path, format, work)?;
             held = prepared.held;
             told = prepared.remarks;
-            args.push(prepared.copy.as_deref().unwrap_or(path).display().to_string());
-            let json = pandoc(tools, &args, dir, work, stop).map_err(|e| match e {
+            told.extend(included.remarks);
+            let input = prepared.copy.or(included.copy);
+            args.push(input.as_deref().unwrap_or(path).display().to_string());
+            let json = pandoc(tools, &args, work, work, stop).map_err(|e| match e {
                 Error::Program { message, .. } => Error::invalid(tr!(
                     "core-import-document-unreadable",
                     file = &file,

@@ -178,9 +178,24 @@ core-import-document-picture-unreadable = it could not be read
 core-import-document-picture-network = it is on the network, and nothing is fetched from there
 core-import-document-picture-not-taken-out = it could not be taken out of the file
 core-import-document-picture-outside = it is not in the file, but elsewhere on this computer, and is not taken from there
+core-import-document-picture-outside-folder = it is outside the document’s folder, and a document brought in takes only the files in its own folder and below
 core-import-document-picture-not-found = the file was not found where the document says it is
 core-import-document-picture-too-large = it is larger than 50 MB
 core-import-document-picture-file-unreadable = the file could not be read
+
+## What a document takes in from other files (LaTeX's \input, the includes
+## of reStructuredText, Org, AsciiDoc and Typst), and what was left out.
+## $name is the file as the document names it.
+
+core-import-document-include-outside = The file “{ $name }”, which the document takes in, is outside the document’s folder and was left out: a document brought in reads only the files in its own folder and below.
+core-import-document-include-not-found = The file “{ $name }”, which the document takes in, was not found in the document’s folder and was left out.
+core-import-document-include-network = “{ $name }”, which the document takes in, is on the network, and nothing is fetched from there: it was left out.
+core-import-document-include-unreadable = The file “{ $name }”, which the document takes in, could not be read as text (UTF-8) and was left out.
+core-import-document-include-circle = The file “{ $name }” takes itself in, through the files it takes in; it was read once.
+core-import-document-include-too-deep = The file “{ $name }” was left out: the files the document takes in take in others more than { $count } deep.
+core-import-document-include-too-large = The file “{ $name }” was left out: with the files the document takes in, it would be larger than 50 MB.
+# A Typst module imported as a whole (#import "file.typ" or #import "file.typ" as name).
+core-import-document-include-module = The Typst file “{ $name }” is imported as a whole, under a name of its own, which is not read here; it was left out. What is imported from it by name is read.
 
 ## A file of text that is neither UTF-8 nor UTF-16, brought in as references, a document or a table.
 
