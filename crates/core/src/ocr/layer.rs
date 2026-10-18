@@ -511,14 +511,27 @@ fn over_letter(mark: &str, before: &str) -> String {
     .to_owned()
 }
 
+/// The farthest from the origin a place on a page is carried, in points:
+/// some hundred times the largest page there is.
+const FARTHEST: f64 = 1e6;
+
+/// A place or a size on a page as the layer carries it: within
+/// [`FARTHEST`], and nought for one that is no number. The layer crosses
+/// from the process that reads it as JSON, which has no number for an
+/// infinity, and a matrix of a broken file can scale a letter beyond what
+/// an f32 holds; one such letter would lose the text of the whole file.
+fn on_page(v: f64) -> f32 {
+    if v.is_nan() { 0.0 } else { v.clamp(-FARTHEST, FARTHEST) as f32 }
+}
+
 impl Gatherer {
     fn line_for(&mut self, x: f64, baseline: f64, size: f64) {
-        let top = (self.top - baseline - size) as f32;
-        let bottom = (self.top - baseline) as f32;
+        let top = on_page(self.top - baseline - size);
+        let bottom = on_page(self.top - baseline);
         self.lines.push(Line {
             text: String::new(),
-            left: x as f32,
-            right: x as f32,
+            left: on_page(x),
+            right: on_page(x),
             top,
             bottom,
             ..Default::default()
@@ -567,7 +580,7 @@ impl Gatherer {
         }
         let advance = width * font_size.abs() * stretch;
         let reach = x + direction.0 * advance;
-        let (right, bottom) = (reach as f32, (self.top - y) as f32);
+        let (right, bottom) = (on_page(reach), on_page(self.top - y));
         if new_line {
             self.line_for(x, y, size);
         } else if back && let Some(parts) = self.parts.last_mut() {
@@ -595,9 +608,9 @@ impl Gatherer {
             run.translated.push_str(shown);
         }
         let line = self.lines.last_mut().expect("there is a line");
-        line.left = line.left.min(x as f32);
+        line.left = line.left.min(on_page(x));
         line.right = line.right.max(right);
-        line.top = line.top.min(bottom - size as f32);
+        line.top = line.top.min(bottom - on_page(size));
         line.bottom = line.bottom.max(bottom);
         if !mark {
             self.begins = false;
@@ -718,7 +731,7 @@ fn runs_of(mut parts: Vec<Part>) -> Vec<PartRun> {
         if let Some(end) = reach
             && part.left > end
         {
-            runs[0].gap = Some((end as f32, part.left as f32));
+            runs[0].gap = Some((on_page(end), on_page(part.left)));
         }
         reach = Some(reach.map_or(part.right, |r| r.max(part.right)));
         out.extend(runs);
@@ -793,7 +806,7 @@ fn page_lines(doc: &Document, number: u32) -> Option<PageRead> {
         Ok(Err(e)) => tracing::debug!(%e, number, "a page of the PDF could not be read to its end"),
         Err(_) => tracing::debug!(number, "a page of the PDF could not be read to its end"),
     }
-    let size = (gatherer.width as f32, gatherer.top as f32);
+    let size = (on_page(gatherer.width), on_page(gatherer.top));
     let Gatherer { lines, parts, named, fonts, mut schemes, maps, translated_fonts, font_counts, .. } = gatherer;
     let mut out_lines = Vec::new();
     let mut out_translated = Vec::new();
@@ -1290,6 +1303,44 @@ mod tests {
         let json = serde_json::to_vec(&layer).unwrap();
         let back: Layer = serde_json::from_slice(&json).unwrap();
         assert_eq!(back, layer);
+    }
+
+    /// Text drawn at a place too far for the numbers the layer carries (a
+    /// scale of 10^40 here) is carried with the rest, not given up whole
+    /// because JSON has no number for infinity.
+    #[test]
+    fn text_drawn_beyond_all_measure_crosses_as_json() {
+        use lopdf::{Stream, dictionary};
+        let content = b"BT /F1 12 Tf 72 700 Td (Near) Tj ET\n\
+            q 100000000000000000000.0 0 0 100000000000000000000.0 0 0 cm \
+            100000000000000000000.0 0 0 100000000000000000000.0 0 0 cm \
+            BT /F1 12 Tf 10 10 Td (Far) Tj ET Q\n";
+        let mut doc = Document::with_version("1.5");
+        let pages = doc.new_object_id();
+        let font = doc.add_object(dictionary! { "Type" => "Font", "Subtype" => "Type1", "BaseFont" => "Helvetica" });
+        let stream = doc.add_object(Stream::new(lopdf::Dictionary::new(), content.to_vec()));
+        let page = doc.add_object(dictionary! {
+            "Type" => "Page",
+            "Parent" => pages,
+            "MediaBox" => vec![0.into(), 0.into(), 612.into(), 792.into()],
+            "Resources" => dictionary! { "Font" => dictionary! { "F1" => font } },
+            "Contents" => stream,
+        });
+        doc.objects.insert(
+            pages,
+            Object::Dictionary(dictionary! { "Type" => "Pages", "Kids" => vec![page.into()], "Count" => 1 }),
+        );
+        let catalog = doc.add_object(dictionary! { "Type" => "Catalog", "Pages" => pages });
+        doc.trailer.set("Root", catalog);
+        let mut bytes = Vec::new();
+        doc.save_to(&mut bytes).unwrap();
+
+        let layer = read(Arc::new(bytes), Duration::from_secs(30));
+        let lines = layer.pages[0].as_ref().expect("the page is read");
+        assert!(lines.iter().any(|l| l.text == "Near"), "{lines:?}");
+        let json = serde_json::to_vec(&layer).unwrap();
+        let back: Layer = serde_json::from_slice(&json).expect("it crosses");
+        assert_eq!(back.pages[0].as_ref().unwrap().len(), lines.len());
     }
 
     #[test]
