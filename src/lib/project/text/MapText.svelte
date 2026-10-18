@@ -374,9 +374,14 @@
     );
   }
 
+  /** Whether its text is not shown: folded away, or empty, when it is closed until it is pressed or Enter is pressed in the name. */
+  function textClosed(id: string): boolean {
+    return folding.hides(tree, id) || !!project.node(id)?.empty;
+  }
+
   /** Where the cursor lands in an element it comes to from below: at the end of its text, or of its name when that is all that is shown. */
   function endOf(id: string): Part {
-    return folding.hides(tree, id) ? 'title' : 'body';
+    return textClosed(id) ? 'title' : 'body';
   }
 
   /** Those of the others who are at an element, or at what is folded away under it. */
@@ -509,8 +514,8 @@
         }
         return false;
       case 'down-out':
-        // Past a text that is folded away, which the arrows do not open.
-        if (part === 'title' && !folding.hides(tree, id)) go(id, 'body', 'start');
+        // Past a text that is folded away or empty, which the arrows do not open.
+        if (part === 'title' && !textClosed(id)) go(id, 'body', 'start');
         else if (rows[i + 1]) go(rows[i + 1].id, 'title', 'start');
         else return false;
         return true;
@@ -813,8 +818,9 @@
     const id = before.dataset.section;
     if (!id) return;
     event.preventDefault();
+    // An empty text is opened by the press, under the name it belongs to.
     if (before.getBoundingClientRect().top > event.clientY) void go(id, 'title', 'start');
-    else void go(id, endOf(id), 'end');
+    else void go(id, folding.hides(tree, id) ? 'title' : 'body', 'end');
   }
 
   async function jumpTo(jump: Jump) {

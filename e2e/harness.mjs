@@ -324,6 +324,39 @@ export class App {
 
   async click(target) {
     const id = await this.el(target);
+    // An empty text in the text view takes no room until it is pressed: it
+    // is pressed where a hand would press it, in the gap under the name,
+    // halfway to what follows (the letters of a name reach a little under it).
+    const gap = await this.exec(
+      `const el = arguments[0];
+       if (!el.matches?.('.body.closed')) return null;
+       const section = el.closest('[data-section]');
+       const h = section?.querySelector(':scope > .content > .heading')?.getBoundingClientRect();
+       if (!h) return null;
+       const next = section.nextElementSibling?.matches('[data-section]')
+         ? section.nextElementSibling.getBoundingClientRect().top
+         : h.bottom + 24;
+       return { x: Math.round(h.left + 40), y: Math.round((h.bottom + next) / 2) };`,
+      { [ELEMENT]: id },
+    );
+    if (gap) {
+      await this.cmd('POST', '/actions', {
+        actions: [
+          {
+            type: 'pointer',
+            id: 'mouse',
+            parameters: { pointerType: 'mouse' },
+            actions: [
+              { type: 'pointerMove', origin: 'viewport', x: gap.x, y: gap.y },
+              { type: 'pointerDown', button: 0 },
+              { type: 'pointerUp', button: 0 },
+            ],
+          },
+        ],
+      });
+      await this.cmd('DELETE', '/actions');
+      return;
+    }
     await this.cmd('POST', `/element/${id}/click`, {});
   }
 

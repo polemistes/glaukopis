@@ -254,7 +254,7 @@ try {
   list = await sections();
   check('pressed, the element is entered', list[0] === 'Beta:0', list.join(' | '));
 
-  // --- An empty text not yet written in is a line high, and pressed, takes the cursor ---
+  // --- An empty text not yet written in takes no room, and pressed under its name, takes the cursor ---
   await app.clickText('header [role="radio"]', 'Diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
@@ -262,11 +262,12 @@ try {
   await app.waitFor('.text-view .section', 8000);
   await sleep(600);
   const blanks = await app.exec(
-    `return Array.from(document.querySelectorAll('.text-view .body .static.blank')).map((b) => Math.round(b.getBoundingClientRect().height))`,
+    `return Array.from(document.querySelectorAll('.text-view .body .static.blank')).map((b) => Math.round(b.parentElement.closest('.body').getBoundingClientRect().height))`,
   );
-  check('an empty text is a line high', blanks.length > 0 && blanks.every((h) => h >= 20), blanks.join(' '));
+  check('an empty text takes no room', blanks.length > 0 && blanks.every((h) => h === 0), blanks.join(' '));
   const one = await section('Beta one');
-  await app.click(await app.exec(`return arguments[0].querySelector('.body .static')`, one));
+  // Pressed as a hand does it, under the name: see `App.click`.
+  await app.click(await app.exec(`return arguments[0].querySelector('.body')`, one));
   await sleep(300);
   at = await where();
   check('and pressed, has the cursor', at.section === 'Beta one' && at.part === 'body' && at.editor, JSON.stringify(at));

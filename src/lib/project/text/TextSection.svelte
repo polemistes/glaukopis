@@ -1,3 +1,29 @@
+<script module lang="ts">
+  /**
+   * Whether a button of the pointer is held down. An empty text the cursor
+   * leaves by a press closes only when the button is let go, so that what
+   * was pressed under it does not move while it is pressed.
+   */
+  let held = false;
+  if (typeof window !== 'undefined') {
+    window.addEventListener('pointerdown', () => (held = true), true);
+    window.addEventListener('pointerup', () => (held = false), true);
+    window.addEventListener('pointercancel', () => (held = false), true);
+  }
+
+  /** Calls `then` once the pointer is let go, or at once when it is not held. */
+  function whenLetGo(then: () => void) {
+    if (!held) return void setTimeout(then);
+    const done = () => {
+      window.removeEventListener('pointerup', done);
+      window.removeEventListener('pointercancel', done);
+      requestAnimationFrame(then);
+    };
+    window.addEventListener('pointerup', done);
+    window.addEventListener('pointercancel', done);
+  }
+</script>
+
 <script lang="ts">
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
@@ -12,6 +38,7 @@
   import type { TextDepth } from '$lib/api/system';
   import { commentsUi } from '$lib/comments/ui.svelte';
   import RichText, { type FocusAt } from '$lib/editor/RichText.svelte';
+  import { editorUi } from '$lib/editor/ui.svelte';
   import { blocksHtml } from '../model/html';
   import { hydrate } from '$lib/figures/hydrate.svelte';
   import { pressedFound } from '$lib/found/found.svelte';
@@ -137,6 +164,36 @@
       ? pieces((m) => t('text-include', m), { name: included.title || t('project-untitled') })
       : [],
   );
+  /** Whether the cursor is in its text. */
+  let writing = $state(false);
+  /** Whether the text was left for a box it asked for, a work to cite or a label: it stays open while the box does. */
+  let lent = $state(false);
+  const asking = $derived(
+    !!(editorUi.picking || editorUi.citation || editorUi.pointing || editorUi.marking),
+  );
+  /**
+   * An empty text takes no room, so that a name follows the name before it
+   * closely: it opens when the cursor goes into it, by a press under the
+   * name or by Enter in it, and closes when the cursor leaves it with nothing
+   * written.
+   */
+  const closed = $derived(node.empty && !(writing && active) && !(lent && asking));
+
+  function intoText() {
+    writing = true;
+    lent = false;
+  }
+
+  function outOfText(view: EditorView) {
+    const wasAsking = asking;
+    whenLetGo(() => {
+      // Still in it, or back: the window was left, or the press was in the text.
+      if (!view.isDestroyed && view.hasFocus()) return;
+      writing = false;
+      lent = wasAsking || asking;
+    });
+  }
+
   /** Its kind, where it has one: a tag by its name. */
   const kind = $derived(kindLabel(project, node.kind));
   /** Where its kind puts it in the document, where that is not where it stands: said beside the kind. */
@@ -430,7 +487,7 @@
 
     {#if !hidden}
       <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-      <div class="body" data-part="body" onmousedown={(e) => press(e, 'body')}>
+      <div class="body" class:closed data-part="body" onmousedown={(e) => press(e, 'body')}>
         {#if active && body}
           <RichText
             bind:this={bodyEditor}
@@ -441,7 +498,11 @@
             {at}
             autofocus={focus?.part === 'body' ? focus.at : null}
             onaction={(a, v) => onaction(node.id, 'body', a, v)}
-            onfocus={() => onfocused(node.id, 'body')}
+            onfocus={() => {
+              intoText();
+              onfocused(node.id, 'body');
+            }}
+            onblur={outOfText}
             oncite={onkeep}
           />
         {:else if html}
@@ -735,12 +796,17 @@
   .static {
     white-space: pre-wrap;
   }
-  /* An empty text is a line high, as it is when it is written in: there is room to press it. */
+  /* An empty text, when it is opened, is a line high, as it is when it is written in. */
   .static.blank {
     min-height: 1lh;
   }
   .body {
     cursor: text;
+  }
+  /* Closed, it takes no room: a press under the name, in the gap, opens it. */
+  .body.closed {
+    height: 0;
+    overflow: hidden;
   }
 
   /* The title of the document */
