@@ -278,36 +278,37 @@ pub fn files_identify(
         let working: Vec<_> = (0..AT_ONCE.min(wanted.len()))
             .map(|_| {
                 s.spawn(|| {
-                    loop {
-                        let i = next.fetch_add(1, Ordering::Relaxed);
-                        let Some(file) = wanted.get(i) else { break };
-                        if work.stop.load(Ordering::Relaxed) {
-                            break;
+                    super::guarded(&work.stop, || {
+                        loop {
+                            let i = next.fetch_add(1, Ordering::Relaxed);
+                            let Some(file) = wanted.get(i) else { break };
+                            if work.stop.load(Ordering::Relaxed) {
+                                break;
+                            }
+                            at_hand.lock().unwrap_or_else(|p| p.into_inner()).push(file.name.clone());
+                            told(done.load(Ordering::Relaxed), &file.name);
+                            let known = known_of(&state, file, ask, &work.stop);
+                            let proposal = proposals::propose(&entries, &index, known);
+                            // What was cut short by the stop may be less than the file would tell.
+                            if !work.stop.load(Ordering::Relaxed) {
+                                found.lock().unwrap_or_else(|p| p.into_inner())[i] = Some(proposal);
+                            }
+                            let finished = done.fetch_add(1, Ordering::Relaxed) + 1;
+                            let still = {
+                                let mut at_hand = at_hand.lock().unwrap_or_else(|p| p.into_inner());
+                                at_hand.retain(|n| *n != file.name);
+                                at_hand.first().cloned()
+                            };
+                            told(finished, still.as_deref().unwrap_or(""));
                         }
-                        at_hand.lock().unwrap_or_else(|p| p.into_inner()).push(file.name.clone());
-                        told(done.load(Ordering::Relaxed), &file.name);
-                        let known = known_of(&state, file, ask, &work.stop);
-                        let proposal = proposals::propose(&entries, &index, known);
-                        // What was cut short by the stop may be less than the file would tell.
-                        if !work.stop.load(Ordering::Relaxed) {
-                            found.lock().unwrap_or_else(|p| p.into_inner())[i] = Some(proposal);
-                        }
-                        let finished = done.fetch_add(1, Ordering::Relaxed) + 1;
-                        let still = {
-                            let mut at_hand = at_hand.lock().unwrap_or_else(|p| p.into_inner());
-                            at_hand.retain(|n| *n != file.name);
-                            at_hand.first().cloned()
-                        };
-                        told(finished, still.as_deref().unwrap_or(""));
-                    }
+                    })
                 })
             })
             .collect();
-        // What went wrong in finding out about a file is not passed over in silence.
-        for h in working {
-            h.join().unwrap_or_else(|e| std::panic::resume_unwind(e));
-        }
-    });
+        // What went wrong in finding out about a file is not passed over in
+        // silence: a worker that panicked fails the command, which answers.
+        super::all_answered(working.into_iter().map(|h| h.join()))
+    })?;
     // In the order the files were asked for, whatever order they were found out about in.
     Ok(found.into_inner().unwrap_or_else(|p| p.into_inner()).into_iter().flatten().collect())
 }

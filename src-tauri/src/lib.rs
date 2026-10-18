@@ -7,8 +7,10 @@ mod error;
 mod log;
 mod state;
 
+use std::path::PathBuf;
+
 use glaukopis_core::i18n::tr;
-use glaukopis_core::paths::DataDir;
+use glaukopis_core::paths::{DataDir, default_root};
 use tauri::Manager;
 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 
@@ -38,7 +40,7 @@ fn previous_compositor() -> bool {
 pub fn run() {
     #[cfg(target_os = "linux")]
     let compositor_asked = previous_compositor();
-    log::start(&glaukopis_core::paths::default_root());
+    let log_file = log::start(&default_root());
     // PDFs are read in a process of their own, this program started anew, so
     // that one a library loses itself in cannot take the machine's memory.
     match std::env::current_exe() {
@@ -52,44 +54,44 @@ pub fn run() {
         "the compositor of WebKitGTK"
     );
 
-    tauri::Builder::default()
+    let built = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .setup(|app| {
-            let data = DataDir::open_default()?;
-            // The core speaks the language of the interface from the start: the
-            // one chosen in the settings, or that of the system.
-            let chosen = glaukopis_core::settings::load(&data.settings_file())
-                .ok()
-                .and_then(|settings| glaukopis_core::settings::string(&settings, "language"))
-                .filter(|language| language != "system");
-            glaukopis_core::i18n::set_language(&chosen.unwrap_or_else(glaukopis_core::i18n::system_tag));
-            tracing::info!(language = glaukopis_core::i18n::language(), "language of the interface");
-            // And with the words the writer has changed, where there are any (ADR 0035).
-            let left_out = glaukopis_core::i18n::use_own_words(&data.words());
-            if !left_out.is_empty() {
-                tracing::warn!(count = left_out.len(), "own words that do not fit are left out");
-            }
-            tracing::info!(data = %data.root().display(), "data directory");
-
-            let Some(claim) = data.claim()? else {
-                // Another is at work in the same data: this one says so, and goes.
-                tracing::warn!("the data directory is in use by another instance; this one ends");
-                for window in app.webview_windows().values() {
-                    let _ = window.hide();
+        .setup(move |app| {
+            // Nothing in setup returns an error: Tauri would panic with it, and
+            // started from the desktop the program would vanish without a word.
+            // What goes wrong is said in a dialog, after which the program ends.
+            let failed = |app: &tauri::App, error: &dyn std::fmt::Display| {
+                tracing::error!(%error, "the application could not start");
+                let mut message = tr!("core-start-failed", error = error.to_string());
+                if let Some(log) = &log_file {
+                    message = format!("{message}\n\n{}", tr!("core-start-failed-log", log = log));
                 }
-                let handle = app.handle().clone();
-                app.dialog()
-                    .message(tr!("core-in-use", path = data.root()))
-                    .title(tr!("core-in-use-title"))
-                    .kind(MessageDialogKind::Info)
-                    .show(move |_| handle.exit(0));
-                return Ok(());
+                say_and_end(app, tr!("core-start-failed-title"), message, MessageDialogKind::Error, 1);
             };
-            let state = state::AppState::open(data, claim, app.path().resource_dir().ok())?;
-            app.manage(state);
-            for window in app.webview_windows().values() {
-                watch(window);
+            match opening(default_root(), app.path().resource_dir().ok(), speak_as_chosen) {
+                Opening::Ready(state) => {
+                    app.manage(*state);
+                    // The windows are made only now that what their commands ask
+                    // for is there (they are not made by Tauri from the
+                    // configuration, where `create` is false): a page that ran
+                    // without it had its first command panic on the main thread.
+                    if let Err(error) = make_windows(app) {
+                        failed(app, &error);
+                    }
+                }
+                Opening::InUse(root) => {
+                    // Another is at work in the same data: this one says so, and goes.
+                    tracing::warn!("the data directory is in use by another instance; this one ends");
+                    say_and_end(
+                        app,
+                        tr!("core-in-use-title"),
+                        tr!("core-in-use", path = &root),
+                        MessageDialogKind::Info,
+                        0,
+                    );
+                }
+                Opening::Failed(error) => failed(app, &error),
             }
             Ok(())
         })
@@ -281,19 +283,102 @@ pub fn run() {
             commands::spelling::spelling_add_word,
             commands::spelling::spelling_remove_word,
         ])
-        .build(tauri::generate_context!())
-        .expect("the application could not start")
-        .run(|_, event| match event {
-            tauri::RunEvent::WindowEvent { label, event: tauri::WindowEvent::CloseRequested { .. }, .. } => {
-                tracing::info!(window = label, "the window is asked to close")
-            }
-            tauri::RunEvent::WindowEvent { label, event: tauri::WindowEvent::Destroyed, .. } => {
-                tracing::info!(window = label, "the window is destroyed")
-            }
-            tauri::RunEvent::ExitRequested { code, .. } => tracing::info!(?code, "the application is asked to end"),
-            tauri::RunEvent::Exit => tracing::info!("the application ends"),
-            _ => {}
-        });
+        .build(tauri::generate_context!());
+    // Before the loop of events runs no dialog can be shown: what failed to
+    // be built (the webview's runtime, a plugin) is logged, and the program ends.
+    let app = match built {
+        Ok(app) => app,
+        Err(error) => {
+            tracing::error!(%error, "the application could not be built");
+            std::process::exit(1);
+        }
+    };
+    app.run(|_, event| match event {
+        tauri::RunEvent::WindowEvent { label, event: tauri::WindowEvent::CloseRequested { .. }, .. } => {
+            tracing::info!(window = label, "the window is asked to close")
+        }
+        tauri::RunEvent::WindowEvent { label, event: tauri::WindowEvent::Destroyed, .. } => {
+            tracing::info!(window = label, "the window is destroyed")
+        }
+        tauri::RunEvent::ExitRequested { code, .. } => tracing::info!(?code, "the application is asked to end"),
+        tauri::RunEvent::Exit => tracing::info!("the application ends"),
+        _ => {}
+    });
+}
+
+/// What came of opening the data directory, before any window is made.
+enum Opening {
+    /// Claimed and read: what the commands work with.
+    Ready(Box<state::AppState>),
+    /// Another instance is at work in it, at this place.
+    InUse(PathBuf),
+    /// It could not be made, claimed or read.
+    Failed(glaukopis_core::Error),
+}
+
+/// Opens the data directory at `root`, has the core speak as `speak` says
+/// (given the directory where it could be opened), claims it, and reads the
+/// library and the stores. Nothing of it is read past the claim when another
+/// instance holds it.
+fn opening(root: PathBuf, resources: Option<PathBuf>, speak: impl FnOnce(Option<&DataDir>)) -> Opening {
+    let data = match DataDir::open(root) {
+        Ok(data) => data,
+        Err(error) => {
+            speak(None);
+            return Opening::Failed(error);
+        }
+    };
+    speak(Some(&data));
+    tracing::info!(data = %data.root().display(), "data directory");
+    let claim = match data.claim() {
+        Ok(Some(claim)) => claim,
+        Ok(None) => return Opening::InUse(data.root().to_owned()),
+        Err(error) => return Opening::Failed(error),
+    };
+    match state::AppState::open(data, claim, resources) {
+        Ok(state) => Opening::Ready(Box::new(state)),
+        Err(error) => Opening::Failed(error),
+    }
+}
+
+/// The core speaks the language of the interface from the start: the one
+/// chosen in the settings, or that of the system; with the words the writer
+/// has changed, where there are any (ADR 0035). Without a data directory, in
+/// that of the system, which is what a failure to start is said in.
+fn speak_as_chosen(data: Option<&DataDir>) {
+    let chosen = data
+        .and_then(|data| glaukopis_core::settings::load(&data.settings_file()).ok())
+        .and_then(|settings| glaukopis_core::settings::string(&settings, "language"))
+        .filter(|language| language != "system");
+    glaukopis_core::i18n::set_language(&chosen.unwrap_or_else(glaukopis_core::i18n::system_tag));
+    tracing::info!(language = glaukopis_core::i18n::language(), "language of the interface");
+    if let Some(data) = data {
+        let left_out = glaukopis_core::i18n::use_own_words(&data.words());
+        if !left_out.is_empty() {
+            tracing::warn!(count = left_out.len(), "own words that do not fit are left out");
+        }
+    }
+}
+
+/// Makes the windows of the configuration, which Tauri is told not to make
+/// itself, and watches each. A window is shown only once it is watched, so
+/// that the log sees it come on the screen.
+fn make_windows(app: &tauri::App) -> tauri::Result<()> {
+    for config in &app.config().app.windows {
+        let window = tauri::WebviewWindowBuilder::from_config(app.handle(), config)?.visible(false).build()?;
+        watch(&window);
+        if config.visible {
+            window.show()?;
+        }
+    }
+    Ok(())
+}
+
+/// Shows a message, and ends the program with `code` when it has been read.
+/// There is no window to show it over, and none is needed.
+fn say_and_end(app: &tauri::App, title: String, message: String, kind: MessageDialogKind, code: i32) {
+    let handle = app.handle().clone();
+    app.dialog().message(message).title(title).kind(kind).show(move |_| handle.exit(code));
 }
 
 /// Logs what becomes of a window that the log of the run cannot see from
@@ -321,4 +406,55 @@ fn watch(window: &tauri::WebviewWindow) {
     }
     #[cfg(not(target_os = "linux"))]
     let _ = window;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_second_opening_of_the_same_data_finds_it_in_use_and_reads_nothing() {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path().join("data");
+        let first = opening(root.clone(), None, |_| {});
+        assert!(matches!(first, Opening::Ready(_)));
+        let mut spoken = false;
+        match opening(root.clone(), None, |data| spoken = data.is_some()) {
+            Opening::InUse(at) => assert_eq!(at, root),
+            _ => panic!("the second opening did not find the data in use"),
+        }
+        assert!(spoken, "the language is chosen before the claim, so that the dialog speaks it");
+        drop(first);
+        assert!(matches!(opening(root, None, |_| {}), Opening::Ready(_)), "the claim is let go with the state");
+    }
+
+    #[test]
+    fn data_that_cannot_be_made_is_a_failure_to_say() {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path().join("a file");
+        std::fs::write(&root, "not a directory").unwrap();
+        let mut spoken = None;
+        let opened = opening(root, None, |data| spoken = Some(data.is_some()));
+        assert!(matches!(opened, Opening::Failed(_)));
+        assert_eq!(spoken, Some(false), "a failure is said in the language of the system");
+    }
+
+    #[test]
+    fn a_library_that_cannot_be_read_is_a_failure_to_say() {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path().join("data");
+        let data = DataDir::open(&root).unwrap();
+        std::fs::create_dir_all(data.library_file()).unwrap();
+        assert!(matches!(opening(root, None, |_| {}), Opening::Failed(_)));
+    }
+
+    #[test]
+    fn the_windows_are_made_by_the_application_not_by_tauri() {
+        let config: serde_json::Value = serde_json::from_str(include_str!("../tauri.conf.json")).unwrap();
+        let windows = config["app"]["windows"].as_array().unwrap();
+        assert!(!windows.is_empty());
+        for window in windows {
+            assert_eq!(window["create"], false, "{window}: a page made before the state is managed asks for it");
+        }
+    }
 }
