@@ -106,17 +106,22 @@
     contact = v.contactEmail ?? '';
     orcid = v.orcid ?? '';
     pandoc = v.pandocPath ?? '';
+    // The chooser then offers only the font of the interface: said, not left to look like the system's fonts.
     fontsList()
       .then((list) => (fonts = list))
-      .catch(() => {});
+      .catch((error) => notifyError(t('settings-error-fonts'), error));
     try {
       [system, tools, styles, formats, templates] = await Promise.all([
         systemInfo(),
         toolsInfo(),
         stylesList(),
         formatsList(),
-        // Nothing, where the core has no templates to list.
-        templatesList().catch(() => []),
+        // The core always has its list; that it could not be had is said,
+        // and the rest of the settings shown without the chooser of templates.
+        templatesList().catch((error) => {
+          notifyError(t('settings-error-templates'), error);
+          return [];
+        }),
       ]);
     } catch (error) {
       notifyError(t('settings-error-system'), error);

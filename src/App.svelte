@@ -2,7 +2,8 @@
   import { onMount } from 'svelte';
   import { getCurrentWebview } from '@tauri-apps/api/webview';
   import { languageSet, languagesInfo } from '$lib/api/system';
-  import { languages, load, t } from '$lib/i18n';
+  import { languageName, languages, load, t } from '$lib/i18n';
+  import { notifyError } from '$lib/ui/toast.svelte';
   import { readOwnWords } from '$lib/words/own';
   import { library } from '$lib/state/library.svelte';
   import { router, type Route } from '$lib/state/router.svelte';
@@ -43,14 +44,21 @@
         languages.texts = info.texts;
         languages.textDefault = info.textDefault;
       })
-      .catch(() => {});
+      // The page goes on in English, the language it always has; the log is told.
+      .catch((error) =>
+        console.warn('The languages of the application could not be read: English is used', error),
+      );
     // The own words, laid over those built in, by the interface and the core (ADR 0035).
     const own = readOwnWords().catch((error) => console.warn('Own words not read', error));
     await Promise.all([settings.load(), known, own]);
     // And the words of the language, lest the interface be shown in English first.
+    // Those that do not come are tried again, and said, as the language is spoken below.
     const tag = interfaceTag();
-    await load(tag).catch(() => {});
-    languages.current = tag;
+    const spoken = await load(tag).then(
+      () => true,
+      () => false,
+    );
+    if (spoken) languages.current = tag;
     ready = true;
   });
 
@@ -67,13 +75,19 @@
     if (!ready) return;
     const tag = interfaceTag();
     document.documentElement.lang = tag;
-    languageSet(tag).catch(() => {});
-    load(tag)
-      .catch(() => {})
-      .then(() => {
-        // Only if it is still the one wanted: another may have been chosen meanwhile.
+    languageSet(tag).catch((error) => console.warn('The core was not told the language', error));
+    // Only if it is still the one wanted: another may have been chosen meanwhile.
+    // A language whose words did not come is not the one spoken: the
+    // interface stays in the one it was, and says why.
+    load(tag).then(
+      () => {
         if (interfaceTag() === tag) languages.current = tag;
-      });
+      },
+      (error) => {
+        if (interfaceTag() === tag)
+          notifyError(t('settings-language-error-load', { language: languageName(tag) }), error);
+      },
+    );
   });
 
   // Words the stylesheet shows where the page has no element for them.

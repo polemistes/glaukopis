@@ -228,6 +228,12 @@ const documentBundles = new Map<string, FluentBundle | null>();
 /** The files of the languages loaded, as they are built in, by path. */
 const builtIn = new Map<string, [string, string][]>();
 const loading = new Map<string, Promise<void>>();
+/**
+ * The languages whose words could not be loaded, with why: not tried again
+ * by every `t` (which would fetch and warn once a word), but by the next
+ * `load` asked for, when the language is chosen again.
+ */
+const failed = new Map<string, unknown>();
 
 /** Counts the languages that have been loaded, so that what `t` said is said anew when one arrives. */
 let arrived = $state(0);
@@ -240,6 +246,7 @@ export function load(tag: string): Promise<void> {
   if (tag === ENGLISH || builtIn.has(tag)) return Promise.resolve();
   let pending = loading.get(tag);
   if (!pending) {
+    failed.delete(tag);
     pending = (async () => {
       const files = Object.entries(fetched).filter(([path]) => {
         const p = parts(path);
@@ -252,10 +259,18 @@ export function load(tag: string): Promise<void> {
       }
       builtIn.set(tag, sources);
       bundles.delete(tag);
-      loading.delete(tag);
       arrived++;
     })();
     loading.set(tag, pending);
+    // Done either way: what failed is remembered, and tried again when asked.
+    pending.then(
+      () => loading.delete(tag),
+      (error) => {
+        loading.delete(tag);
+        failed.set(tag, error);
+        console.warn(`The words of ${tag} could not be loaded: ${error}`);
+      },
+    );
   }
   return pending;
 }
@@ -291,7 +306,8 @@ function bundleOf(tag: string): FluentBundle | null {
         })
       : builtIn.get(tag);
   if (!sources) {
-    load(tag).catch((error) => console.warn(`The words of ${tag} could not be loaded: ${error}`));
+    // Told once, by `load`; a language that failed waits to be asked again.
+    if (!failed.has(tag)) load(tag).catch(() => {});
     return null;
   }
   const bundle = makeBundle(tag, sources, own.get(tag));
