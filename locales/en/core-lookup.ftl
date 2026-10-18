@@ -43,6 +43,7 @@ core-lookup-crossref-in-book = A search does not give the editors and the ISBN o
 core-lookup-book-unreadable = What Crossref has about the book could not be read: its editors may be missing.
 core-lookup-book-not-fetched = What Crossref has about the book could not be fetched: its editors may be missing.
 core-lookup-chapter-author = Crossref names no author for the chapter. The author of the book has been entered as its author.
+core-lookup-chapter-not-found = The chapter was not found among the parts of the book in what Crossref has: its pages and its authors have not been taken from there.
 core-lookup-group-name = “{ $name }” was given as the name of a person, “{ $family }, { $given }”, and has been taken as the name of a group.
 core-lookup-kind-none = The record calls the kind of publication nothing. It has been entered as “misc”: choose the right type.
 core-lookup-kind = The record calls the kind of publication “{ $kind }”. It has been entered as “misc”: choose the right type.

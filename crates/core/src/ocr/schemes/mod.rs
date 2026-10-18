@@ -499,5 +499,25 @@ mod tests {
         assert_eq!(beta_code("Det er ikke (som) med det"), None);
         assert_eq!(beta_code("Homer, Iliad 1.1"), None);
         assert_eq!(beta_code(""), None);
+        // Lines of code, formulas and lettered lists, in any language.
+        for line in [
+            "print(x)",
+            "f(x) = g(x)",
+            "(a) (b) (c)",
+            "(a) (e) (i) (o)",
+            "Cf. (b), (c)",
+            "km/h and m/s",
+            "km/h, m/s, kg/m",
+            "and/or he/she",
+            "a+b=c",
+            "/usr/lib/a)/eide",
+            "Die Funktion (a) ist a=b+c",
+            "les cas (a) et (e) sont a/e/i",
+            "Hier ist a)/e/i/o/u",
+        ] {
+            assert_eq!(beta_code(line), None, "{line}");
+        }
+        // A short line of Greek, with a rho's breathing.
+        assert_eq!(beta_code("r(o/dos kai\\ a)/nqos").as_deref(), Some("ῥόδος καὶ ἄνθος"));
     }
 }

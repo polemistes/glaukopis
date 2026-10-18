@@ -166,16 +166,24 @@ pub(crate) fn with_book(converted: &mut Converted, xml: &str, doi: &str) -> bool
     let Some(about) = book.children().find(|c| c.is_element() && c.tag_name().name().ends_with("_metadata")) else {
         return false;
     };
+    // A DOI may be written with a resolver before it, or in other capitals.
+    let bare = |t: &str| super::doi(t.trim()).unwrap_or_else(|| t.trim().to_owned());
+    let asked = bare(doi);
     let is_this = |item: &roxmltree::Node| {
         item.descendants()
             .filter(|n| n.is_element() && n.tag_name().name() == "doi")
-            .any(|n| n.text().is_some_and(|t| t.trim().eq_ignore_ascii_case(doi)))
+            .any(|n| n.text().is_some_and(|t| bare(t).eq_ignore_ascii_case(&asked)))
     };
     let parts: Vec<roxmltree::Node> =
         book.children().filter(|c| c.is_element() && c.tag_name().name() == "content_item").collect();
-    let part = parts.iter().find(|p| is_this(p)).or(parts.first()).copied();
+    // Only the part that carries the DOI asked for is this chapter: another
+    // part's pages and authors are not taken for its own.
+    let part = parts.iter().find(|p| is_this(p)).copied();
 
     let Converted { draft, remarks, .. } = converted;
+    if part.is_none() && !parts.is_empty() {
+        remarks.push(tr!("core-lookup-chapter-not-found"));
+    }
     let langid = draft.get("langid").map(str::to_owned);
     let langid = langid.as_deref();
     let mut put = |name: &str, value: String| {
@@ -361,6 +369,21 @@ mod tests {
         assert_eq!(hit.draft.names["editor"].len(), 4);
         assert_eq!(hit.draft.names["editor"][3], Person::new("Tuytelaars", "Tinne"));
         assert!(hit.remarks.is_empty(), "{:?}", hit.remarks);
+    }
+
+    #[test]
+    fn a_chapter_not_among_the_parts_of_its_book_takes_no_other_part_for_its_own() {
+        let mut converted = csl::convert(&serde_json::from_str(samples::DOI_PEARL).unwrap()).unwrap();
+        converted.draft.fields.remove("pages");
+        assert!(with_book(&mut converted, samples::UNIXREF_PEARL, "10.1017/not-this-one"));
+        assert_eq!(converted.draft.get("pages"), None);
+        assert!(converted.remarks.iter().any(|r| r.contains("not found among the parts")), "{:?}", converted.remarks);
+
+        // The DOI of the part written with a resolver before it is the same DOI.
+        let mut converted = csl::convert(&serde_json::from_str(samples::DOI_PEARL).unwrap()).unwrap();
+        converted.draft.fields.remove("pages");
+        assert!(with_book(&mut converted, samples::UNIXREF_PEARL, "https://doi.org/10.1017/CBO9780511803161.003"));
+        assert_eq!(converted.draft.get("pages"), Some("1–40"));
     }
 
     #[test]

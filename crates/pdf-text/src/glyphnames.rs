@@ -4707,5 +4707,28 @@ pub fn name_to_unicode(name: &str) -> Option<u16> {
 ("zukatakana", 0x30ba)
     ];
     let result = names.binary_search_by_key(&name, |&(name,_code)| &name);
-    result.ok().map(|indx| names[indx].1)
+    // Glaukopis: the names the glyph-list specification makes of a code,
+    // read where the table does not have the name.
+    result.ok().map(|indx| names[indx].1).or_else(|| by_code(name))
+}
+
+/// Glaukopis: a name of the forms the Adobe Glyph List specification gives
+/// a character by its code: `uni` and four hexadecimal digits (`uni0391`),
+/// or `u` and four to six (`u1F00`), the digits in capitals, never a
+/// surrogate. The table holds one UTF-16 unit for each code, so a name of
+/// several characters (`uni00660069`) or of one beyond the first plane is
+/// not read, as before.
+fn by_code(name: &str) -> Option<u16> {
+    let digits = match name.strip_prefix("uni") {
+        Some(digits) if digits.len() == 4 => digits,
+        _ => name.strip_prefix('u').filter(|d| (4..=6).contains(&d.len()))?,
+    };
+    if !digits.bytes().all(|b| b.is_ascii_digit() || (b'A'..=b'F').contains(&b)) {
+        return None;
+    }
+    let code = u32::from_str_radix(digits, 16).ok()?;
+    if code > 0xFFFF || (0xD800..=0xDFFF).contains(&code) {
+        return None;
+    }
+    Some(code as u16)
 }

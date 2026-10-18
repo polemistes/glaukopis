@@ -108,3 +108,57 @@ fn the_names_of_the_glyphs_reach_the_device() {
     assert_eq!(font_name, "Helvetica", "without the prefix of the subset");
     assert!(has_id, "the font's object, as the page names it");
 }
+
+#[test]
+fn names_of_a_code_are_read_as_the_glyph_list_gives_them() {
+    let mut doc = Document::with_version("1.5");
+    let pages_id = doc.new_object_id();
+    // No map of the PDF's own: the names alone say the characters.
+    let font = doc.add_object(dictionary! {
+        "Type" => "Font",
+        "Subtype" => "Type1",
+        "BaseFont" => "Greek",
+        "Encoding" => dictionary! {
+            "Type" => "Encoding",
+            "BaseEncoding" => "WinAnsiEncoding",
+            "Differences" => vec![
+                65.into(),
+                Object::Name(b"uni0391".to_vec()),
+                Object::Name(b"u1F00".to_vec()),
+                Object::Name(b"uni1f00".to_vec()),
+                Object::Name(b"uniD800".to_vec()),
+                Object::Name(b"u03B2".to_vec()),
+            ],
+        },
+        "FirstChar" => 32,
+        "LastChar" => 126,
+        "Widths" => vec![Object::Integer(500); 95],
+    });
+    let resources = doc.add_object(dictionary! { "Font" => dictionary! { "F1" => font } });
+    let content = Content {
+        operations: vec![
+            Operation::new("BT", vec![]),
+            Operation::new("Tf", vec!["F1".into(), 12.into()]),
+            Operation::new("Td", vec![72.into(), 700.into()]),
+            Operation::new("Tj", vec![Object::string_literal("ABCDE")]),
+            Operation::new("ET", vec![]),
+        ],
+    };
+    let content = doc.add_object(Stream::new(dictionary! {}, content.encode().unwrap()));
+    let page = doc.add_object(dictionary! {
+        "Type" => "Page",
+        "Parent" => pages_id,
+        "Contents" => content,
+        "Resources" => resources,
+        "MediaBox" => vec![0.into(), 0.into(), 595.into(), 842.into()],
+    });
+    doc.objects.insert(pages_id, Object::Dictionary(dictionary! { "Type" => "Pages", "Kids" => vec![page.into()], "Count" => 1 }));
+    let catalog = doc.add_object(dictionary! { "Type" => "Catalog", "Pages" => pages_id });
+    doc.trailer.set("Root", catalog);
+
+    let mut seen = Seen::default();
+    pdf_text::output_doc(&doc, &mut seen).unwrap();
+    let got: Vec<&str> = seen.glyphs.iter().map(|(c, ..)| c.as_str()).collect();
+    // The digits in small letters, and a surrogate, are not names of a code.
+    assert_eq!(got, vec!["Α", "ἀ", "", "", "β"]);
+}

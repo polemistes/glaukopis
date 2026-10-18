@@ -162,7 +162,7 @@ fn ends_sentence(text: &str) -> bool {
 }
 
 /// The value of a number in Roman numerals, of one case, written as they are written.
-fn roman(text: &str) -> Option<i64> {
+pub(super) fn roman(text: &str) -> Option<i64> {
     if text.is_empty() || text.len() > 7 {
         return None;
     }

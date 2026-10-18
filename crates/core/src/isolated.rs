@@ -321,9 +321,18 @@ fn resident(pid: u32) -> Option<u64> {
     }
     #[cfg(target_os = "macos")]
     {
-        let out = std::process::Command::new("ps").args(["-o", "rss=", "-p", &pid.to_string()]).output().ok()?;
-        let kb: u64 = String::from_utf8_lossy(&out.stdout).trim().parse().ok()?;
-        Some(kb * 1024)
+        // Asked of the kernel, as `ps` asks it, without starting a process
+        // for it 25 times a second: one that may itself fail to start when
+        // memory runs short, just when the answer matters.
+        let pid = libc::c_int::try_from(pid).ok()?;
+        // SAFETY: proc_taskinfo is plain integers, for which all zeros is a value.
+        let mut info: libc::proc_taskinfo = unsafe { std::mem::zeroed() };
+        let size = libc::c_int::try_from(std::mem::size_of::<libc::proc_taskinfo>()).ok()?;
+        // SAFETY: the buffer is a proc_taskinfo of the size given, as PROC_PIDTASKINFO fills.
+        let filled =
+            unsafe { libc::proc_pidinfo(pid, libc::PROC_PIDTASKINFO, 0, (&raw mut info).cast::<libc::c_void>(), size) };
+        // A short answer is no answer: the process has gone, or may not be asked.
+        (filled == size).then_some(info.pti_resident_size)
     }
     #[cfg(not(any(target_os = "linux", target_os = "macos")))]
     {

@@ -456,11 +456,15 @@ pub fn join_lines<'s>(lines: impl IntoIterator<Item = &'s str>, is_word: Option<
 
 /// Whether a paragraph is only the number of the page: `17`, `- 17 -`,
 /// `[17]`, or one in small Roman numerals, `xiv`, as the pages before the
-/// text are numbered.
-fn is_page_number(text: &str) -> bool {
+/// text are numbered. A word of such letters that is no numeral as numerals
+/// are written (`il`, `vil`, `civil`), or that the dictionary knows (`vi`,
+/// `li`), is a word of the text.
+fn is_page_number(text: &str, is_word: Option<&IsWord>) -> bool {
     let bare = text.trim_matches(|c: char| c.is_whitespace() || matches!(c, '-' | '–' | '—' | '[' | ']' | '(' | ')'));
     let digits = (1..=4).contains(&bare.len()) && bare.bytes().all(|b| b.is_ascii_digit());
-    let roman = (1..=7).contains(&bare.len()) && bare.chars().all(|c| "ivxlc".contains(c));
+    let roman = bare.chars().all(|c| "ivxlc".contains(c))
+        && super::shape::roman(bare).is_some()
+        && !is_word.is_some_and(|is_word| is_word(bare));
     digits || roman
 }
 
@@ -493,10 +497,10 @@ pub fn page_paragraphs(groups: Vec<Vec<Line>>, is_word: Option<&IsWord>) -> Vec<
             _ => out.push(text),
         }
     }
-    if out.first().is_some_and(|p| is_page_number(p)) {
+    if out.first().is_some_and(|p| is_page_number(p, is_word)) {
         out.remove(0);
     }
-    if out.last().is_some_and(|p| is_page_number(p)) {
+    if out.last().is_some_and(|p| is_page_number(p, is_word)) {
         out.pop();
     }
     out
@@ -740,6 +744,15 @@ mod tests {
         assert_eq!(paragraphs, vec!["The singer of tales sang; his art was old.", "Then came the book."]);
         // A chapter numbered in capitals is kept.
         assert_eq!(page_paragraphs(vec![group(&["IV"]), group(&["Text."])], None), vec!["IV", "Text."]);
+        // A word of the letters of numerals that is no numeral is a word.
+        for word in ["il", "vil", "civil", "cill", "iiii"] {
+            assert_eq!(page_paragraphs(vec![group(&["Text."]), group(&[word])], None), vec!["Text.", word]);
+        }
+        assert_eq!(page_paragraphs(vec![group(&["Text."]), group(&["vi"])], None), vec!["Text."]);
+        // A numeral that the dictionary knows as a word is a word of the text.
+        let is_word = |w: &str| w == "vi";
+        assert_eq!(page_paragraphs(vec![group(&["Text."]), group(&["vi"])], Some(&is_word)), vec!["Text.", "vi"]);
+        assert_eq!(page_paragraphs(vec![group(&["Text."]), group(&["xiv"])], Some(&is_word)), vec!["Text."]);
     }
 
     #[test]

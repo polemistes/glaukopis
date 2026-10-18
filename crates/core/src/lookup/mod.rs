@@ -307,12 +307,19 @@ fn agreement(hit: &Hit, words: &[String]) -> f64 {
     has.push_str(&hit.draft.get("date").map(|d| d.chars().take(4).collect::<String>()).unwrap_or_default());
     let has = fold(&has);
     let has: Vec<&str> = has.split(' ').collect();
+    // A word asked for is folded as the hit's words are, which splits
+    // "Lévi-Strauss" or "O'Brien" in two: it is found when each of its parts
+    // is, since a folded part is compared only with a folded word.
     let found = words
         .iter()
         .filter(|w| {
             let w = fold(w);
-            // The beginning of a word is enough: "Achaean" finds "Achaeans".
-            has.iter().any(|h| *h == w || (w.chars().count() >= 4 && h.starts_with(&w)))
+            let mut parts = w.split(' ').filter(|p| !p.is_empty()).peekable();
+            parts.peek().is_some()
+                && parts.all(|p| {
+                    // The beginning of a word is enough: "Achaean" finds "Achaeans".
+                    has.iter().any(|h| *h == p || (p.chars().count() >= 4 && h.starts_with(p)))
+                })
         })
         .count();
     if words.is_empty() { 0.0 } else { found as f64 / words.len() as f64 }
@@ -846,6 +853,14 @@ mod tests {
         // A review by Hainsworth has the name of the author reviewed in its title.
         assert!((agreement(&articles[2], &words) - 0.75).abs() < 1e-9);
         assert!(agreement(&articles[0], &["Homophily".to_owned()]) < 0.1);
+
+        // A word with a hyphen or an apostrophe is found by its parts.
+        let mut tropiques = articles[0].clone();
+        tropiques.draft.fields.insert("title".into(), "Lévi-Strauss and O’Brien on the state of the art".into());
+        let asked = text::search_words("Lévi-Strauss O'Brien state-of-the-art");
+        assert_eq!(asked, vec!["Lévi-Strauss", "O'Brien", "state-of-the-art"]);
+        assert!((agreement(&tropiques, &asked) - 1.0).abs() < 1e-9);
+        assert!(agreement(&tropiques, &["Lévi-Bruhl".to_owned()]) < 1e-9, "every part must be found");
 
         // The same book from a second catalogue, and another edition of it from there.
         let mut again = books[0].clone();

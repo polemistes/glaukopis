@@ -770,6 +770,15 @@ impl DocumentFormat {
         }
     }
 
+    /// The format as a document is made with it, for the preview and the
+    /// export alike: within bounds first, and then in the language of the
+    /// document, so that a word put back to its default is given in that
+    /// language too.
+    pub fn readied(&mut self, language: Option<&str>) {
+        self.sanitise();
+        self.speak(language);
+    }
+
     /// Puts values that make no sense back within bounds, so that a format
     /// made by hand cannot break the making of a document.
     pub fn sanitise(&mut self) {
@@ -1073,6 +1082,17 @@ mod tests {
         let text = serde_json::to_string(&f).unwrap();
         let again: DocumentFormat = serde_json::from_str(&text).unwrap();
         assert_eq!(f, again);
+    }
+
+    #[test]
+    fn a_word_put_back_to_its_default_is_in_the_language_of_the_document() {
+        let mut f = DocumentFormat::default();
+        f.figures.placeholder = "Figur".into();
+        f.readied(Some("nb"));
+        let default = Figures::default().placeholder;
+        assert_eq!(f.figures.placeholder, crate::i18n::in_language(Some("nb"), &default));
+        assert_ne!(f.figures.placeholder, default, "said in Bokmål");
+        assert!(f.figures.placeholder.contains("{}"));
     }
 
     #[test]

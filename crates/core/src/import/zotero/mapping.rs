@@ -568,7 +568,9 @@ pub(super) fn entry(item: &Item) -> (Draft, Vec<String>) {
 
     // The user's own words.
     if let Some(summary) = fields.take(&["abstractNote"]) {
-        let summary = if markup::has_tags(summary) { markup::plain(summary) } else { summary.to_owned() };
+        // Entities are resolved with tags or without, as in titles: "R&amp;D".
+        let summary =
+            if markup::has_tags(summary) { markup::plain(summary) } else { crate::written::entities::resolve(summary) };
         set(&mut draft, "abstract", text::paragraphs(&summary));
     }
     let tags: Vec<String> = item
@@ -1166,6 +1168,9 @@ mod tests {
         it.tags = vec!["Homer".into(), "epic, Greek".into(), " ".into(), "Homer".into()];
         let (d, _) = entry(&it);
         assert_eq!(d.get("abstract"), Some("First paragraph.\nCosts \\$5."));
+        // Entities without a tag are resolved as well.
+        let (plain, _) = entry(&item("journalArticle", &[("abstractNote", "R&amp;D in the 1990s&#8217; firms")], &[]));
+        assert_eq!(plain.get("abstract"), Some("R&D in the 1990s’ firms"));
         assert_eq!(d.get("pages"), Some("151–172"));
         assert_eq!(d.get("edition"), Some("2"));
         assert_eq!(d.get("keywords"), Some("Homer, epic; Greek"));

@@ -215,11 +215,14 @@ fn anchor_of(id: &str) -> String {
     format!("gk-to-{safe}")
 }
 
-/// Text as Typst takes it within square brackets.
+/// Text as Typst takes it within square brackets: every character that
+/// markup gives a meaning is escaped, among them `/` (`//` and `/*` begin a
+/// comment), `~` (a no-break space) and `-` (`--` is a dash, `-?` a soft
+/// hyphen).
 pub(crate) fn typst_text(text: &str) -> String {
     let mut out = String::with_capacity(text.len() + 4);
     for c in text.chars() {
-        if matches!(c, '\\' | '#' | '[' | ']' | '$' | '*' | '_' | '`' | '<' | '>' | '@') {
+        if matches!(c, '\\' | '#' | '[' | ']' | '$' | '*' | '_' | '`' | '<' | '>' | '@' | '/' | '~' | '-') {
             out.push('\\');
         }
         out.push(c);
@@ -992,6 +995,13 @@ pub fn meta_blocks(text: &str) -> Value {
 mod tests {
     use super::super::fixtures::*;
     use super::*;
+
+    #[test]
+    fn text_for_typst_is_inert() {
+        assert_eq!(typst_text("Figures // Plates"), "Figures \\/\\/ Plates");
+        assert_eq!(typst_text("Tables ~ 1--2 /* x"), "Tables \\~ 1\\-\\-2 \\/\\* x");
+        assert_eq!(typst_text("#[a]"), "\\#\\[a\\]");
+    }
 
     fn converter(keys: &HashMap<String, String>) -> Converter<'_> {
         Converter {
