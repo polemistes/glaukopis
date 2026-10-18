@@ -52,6 +52,7 @@ import { router } from '$lib/state/router.svelte';
 import { ask, confirm } from '$lib/ui/confirm.svelte';
 import { describeError, notifyError, notifyOk, toasts } from '$lib/ui/toast.svelte';
 import { newId } from '$lib/util/id';
+import { forgetChanged, forgetStale } from './kept';
 
 /** What files dragged from the list are, for what takes them. Not 'files': that is what comes from the desktop. */
 export const FILES_DRAGGED = 'library-files';
@@ -74,8 +75,8 @@ class FilesState {
     if (!this.#loading) {
       this.#loading = filesList()
         .then((listing) => {
-          proposals.clear();
-          decisions.clear();
+          // What was found out and decided is kept for the session; only what no longer holds goes.
+          forgetStale(this.files, listing.files, proposals, decisions);
           this.folders = listing.folders;
           this.files = listing.files;
           this.loaded = true;
@@ -123,6 +124,8 @@ class FilesState {
 
   /** After a file was changed, or taken in. */
   put(view: FileView) {
+    // A file given to a reference, or taken from one, has its going-through to come anew.
+    forgetChanged(this.get(view.hash), view, decisions);
     const i = this.files.findIndex((f) => f.hash === view.hash);
     if (i >= 0) {
       const next = this.files.slice();
@@ -134,6 +137,8 @@ class FilesState {
   }
 
   forget(hash: string) {
+    proposals.delete(hash);
+    decisions.delete(hash);
     this.files = this.files.filter((f) => f.hash !== hash);
   }
 
@@ -185,6 +190,8 @@ class FilesUi {
   exporting = $state.raw<ExportRequest | null>(null);
   /** What the last going-through did, to be undone at once; `null` once it is undone. */
   lastDone = $state.raw<Done | null>(null);
+  /** The message that offers to undo it, while it stands. */
+  lastToast: number | null = null;
   /** The folders whose bar of unassigned files is hidden for the session; `null` is the top. */
   barHidden = new SvelteSet<string | null>();
 }
@@ -455,15 +462,41 @@ export async function unassign(file: FileView, id: string): Promise<void> {
 }
 
 /**
- * Undoes the last going-through at once: each file taken back from the
- * reference it was given to, and the references made in it removed, their
- * files staying in the library. What was decided of those files is
- * forgotten, so that a going-through opened again starts from the proposals.
+ * Keeps what a going-through did as the last, to be undone, with the
+ * message that tells of it, and of what went wrong in it, and offers to:
+ * the message of the one before is taken away, so that no two offers stand
+ * together, and each undoes what it tells of, never what came after it.
  */
-export async function undoLast(): Promise<void> {
+export function rememberGoing(done: Done, words: string, problems: string[] = []): void {
+  if (filesUi.lastToast !== null) toasts.dismiss(filesUi.lastToast);
+  filesUi.lastDone = done;
+  if (problems.length) console.error(words, problems);
+  filesUi.lastToast = toasts.show(
+    {
+      kind: problems.length ? 'error' : 'ok',
+      message: words,
+      detail: problems.length ? problems.slice(0, 4).join('\n') : undefined,
+      action: { label: t('files-going-undo'), run: () => void undoLast(done) },
+    },
+    // It stays until it is dismissed: what was done to many is undone at once.
+    0,
+  );
+}
+
+/**
+ * Undoes a going-through, the last where none is named, at once: each file
+ * taken back from the reference it was given to, and the references made in
+ * it removed, their files staying in the library. What was decided of those
+ * files is forgotten, so that a going-through opened again starts from the
+ * proposals. Only the last can be undone: one that came before it is not,
+ * since what came after may have built on it.
+ */
+export async function undoLast(done?: Done): Promise<void> {
   const last = filesUi.lastDone;
-  if (!last) return;
+  if (!last || (done && done !== last)) return;
   filesUi.lastDone = null;
+  if (filesUi.lastToast !== null) toasts.dismiss(filesUi.lastToast);
+  filesUi.lastToast = null;
   const problems: string[] = [];
   let back = 0;
   for (const { hash } of last.assigned) decisions.delete(hash);

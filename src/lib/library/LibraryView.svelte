@@ -48,6 +48,7 @@
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { notifyError, notifyOk } from '$lib/ui/toast.svelte';
+  import { safeFileName } from '$lib/util/file-name';
   import { citing } from './citing.svelte';
   import CollectionTree from './CollectionTree.svelte';
   import { columns } from './columns.svelte';
@@ -192,7 +193,7 @@
   async function exportEntries(ids: string[] | null, name: string) {
     const path = await save({
       title: t('library-export-title'),
-      defaultPath: `${name}.bib`,
+      defaultPath: `${safeFileName(name, t('library-export-file-library'))}.bib`,
       filters: [{ name: 'BibLaTeX', extensions: ['bib'] }],
     });
     if (!path) return;

@@ -1,0 +1,59 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const api = vi.hoisted(() => ({
+  filesUnassign: vi.fn(async () => {}),
+  filesList: vi.fn(async () => ({ folders: [], files: [] })),
+  libraryRemove: vi.fn(async (ids: string[]) => ids.length),
+  library: { reload: vi.fn(async () => {}) },
+}));
+
+vi.mock('$lib/api/files', async (original) => ({
+  ...(await original<typeof import('$lib/api/files')>()),
+  filesUnassign: api.filesUnassign,
+  filesList: api.filesList,
+}));
+vi.mock('$lib/api/library', async (original) => ({
+  ...(await original<typeof import('$lib/api/library')>()),
+  libraryRemove: api.libraryRemove,
+}));
+vi.mock('$lib/state/library.svelte', async (original) => ({
+  ...(await original<typeof import('$lib/state/library.svelte')>()),
+  library: api.library,
+}));
+
+const { filesUi, rememberGoing, undoLast } = await import('./store.svelte');
+const { toasts } = await import('$lib/ui/toast.svelte');
+
+describe('undoing a going-through', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    filesUi.lastDone = null;
+    filesUi.lastToast = null;
+    for (const toast of [...toasts.list]) toasts.dismiss(toast.id);
+  });
+
+  it('offers one undo at a time, and each undoes what it tells of', async () => {
+    const a = { assigned: [{ hash: 'a1', id: 'r1' }], made: [] };
+    const b = { assigned: [{ hash: 'b1', id: 'r2' }], made: [] };
+    rememberGoing(a, 'A done');
+    rememberGoing(b, 'B done');
+    // The message of A is taken away when B's comes: no two undos stand together.
+    expect(toasts.list.map((t) => t.message)).toEqual(['B done']);
+    toasts.list[0].action!.run();
+    await vi.waitFor(() => expect(api.filesUnassign).toHaveBeenCalledTimes(1));
+    expect(api.filesUnassign).toHaveBeenCalledWith([{ hash: 'b1', id: 'r2' }]);
+    expect(filesUi.lastDone).toBeNull();
+  });
+
+  it('does not undo a later going-through from the offer of an earlier one', async () => {
+    const a = { assigned: [{ hash: 'a1', id: 'r1' }], made: [] };
+    const b = { assigned: [{ hash: 'b1', id: 'r2' }], made: [] };
+    rememberGoing(a, 'A done');
+    const offerOfA = toasts.list[0].action!.run;
+    rememberGoing(b, 'B done');
+    await undoLast(a);
+    offerOfA();
+    expect(api.filesUnassign).not.toHaveBeenCalled();
+    expect(filesUi.lastDone).toBe(b);
+  });
+});

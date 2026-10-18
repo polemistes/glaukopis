@@ -27,7 +27,7 @@ import type {
 } from '$lib/project/model/types';
 import type { LookChanges } from '$lib/look/changes';
 import type { When } from '$lib/timeline/solve';
-import { slug } from './escape';
+import { escapeCodeLine, slug, unescapeCodeLine } from './escape';
 import type { OrgElement, OrgLink, OrgNote, OrgThread } from './types';
 
 // ---- values ----
@@ -670,15 +670,13 @@ export function readParagraphKinds(lines: string[]): {
 
 /** A template the project carries, as a block of JSON named after it. */
 export function writeTemplate(id: string, template: Template): string[] {
-  const body = JSON.stringify(template, null, 2)
-    .split('\n')
-    .map((l) => (/^\s*(\*|#\+|,\*|,#\+)/.test(l) ? `,${l}` : l));
+  const body = JSON.stringify(template, null, 2).split('\n').map(escapeCodeLine);
   return [`#+BEGIN_SRC json :template ${id}`, ...body, '#+END_SRC'];
 }
 
 /** A template from the lines of its block; nothing where they are not one. */
 export function readTemplate(lines: string[]): Template | null {
-  const text = lines.map((l) => l.replace(/^(\s*),(\*|#\+|,\*|,#\+)/, '$1$2')).join('\n');
+  const text = lines.map(unescapeCodeLine).join('\n');
   const got = jsonOf(text);
   return got &&
     typeof got === 'object' &&

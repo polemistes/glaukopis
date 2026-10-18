@@ -130,12 +130,16 @@
     return true;
   }
 
-  /** The first and the last name kept, and the name shown to collaborators made of them. */
+  /**
+   * The first and the last name kept, and the name shown to collaborators
+   * made of them: cleared with them, or the old name would still be shown in
+   * sharing and in the history, and read back into the two fields the next
+   * time the settings are opened.
+   */
   function keepName() {
     keep('firstName', firstName);
     keep('lastName', lastName);
-    const whole = `${firstName.trim()} ${lastName.trim()}`.trim();
-    if (whole) keep('displayName', whole);
+    keep('displayName', `${firstName.trim()} ${lastName.trim()}`);
   }
 
   /** The fonts the editor may set the text in: that of the interface first. */

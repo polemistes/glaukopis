@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { Folder, ProjectInfo } from '$lib/api/projects';
-import { ancestors, descendants, folderTree, foldersOpenTo, pathOf, rows } from './folders';
+import {
+  ancestors,
+  descendants,
+  folderTree,
+  foldersOpenTo,
+  pathOf,
+  rows,
+  topmost,
+} from './folders';
 
 const folder = (id: string, name: string, parent?: string): Folder => ({
   id,
@@ -73,6 +81,27 @@ describe('the rows of the list of projects', () => {
 });
 
 describe('folders as a tree', () => {
+  it('move a folder with what is in it, not what is in it out of it', () => {
+    // Greek, its Epic and the Odyssey in that, chosen together: Greek alone moves, and takes the rest along.
+    expect(
+      topmost(folders, projects, { folders: ['g', 'e'], projects: ['odyssey', 'aeneid', 'notes'] }),
+    ).toEqual({ folders: ['g'], projects: ['aeneid', 'notes'] });
+    expect(topmost(folders, projects, { folders: ['e'], projects: ['odyssey', 'lost'] })).toEqual({
+      folders: ['e'],
+      projects: ['lost'],
+    });
+    expect(topmost(folders, projects, { folders: ['l'], projects: ['odyssey'] })).toEqual({
+      folders: ['l'],
+      projects: ['odyssey'],
+    });
+    // A loop of parents among broken folders ends.
+    const looped = [folder('a', 'A', 'b'), folder('b', 'B', 'a')];
+    expect(topmost(looped, [], { folders: ['a'], projects: [] })).toEqual({
+      folders: ['a'],
+      projects: [],
+    });
+  });
+
   it('know what lies under a folder', () => {
     expect([...descendants(folders, 'g')].sort()).toEqual(['e', 'g']);
     expect([...descendants(folders, 'l')]).toEqual(['l']);

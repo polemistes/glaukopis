@@ -59,7 +59,7 @@
     type Things,
   } from './changes';
   import { closedTrees, type ClosedTree } from './closed.svelte';
-  import { folderOf } from './folders';
+  import { folderOf, topmost } from './folders';
   import { listUi } from './list.svelte';
   import NameField from './NameField.svelte';
   import {
@@ -973,9 +973,17 @@
       };
     }
     if (!movable(key)) return null;
-    const keys = selected.has(key)
+    const pool = selected.has(key)
       ? [key, ...selection.filter((x) => x !== key && movable(x))]
       : [key];
+    // The topmost of them, as for elements: what is in a folder dragged goes with it, lifted with it, and is not counted.
+    const top = topmost(projects.folders, projects.list, thingsIn(pool));
+    const keys = pool.filter((x) => {
+      const k = keyed(x);
+      return k.kind === 'project'
+        ? top.projects.includes(k.id)
+        : k.kind === 'folder' && top.folders.includes(k.id);
+    });
     dragging = { keys, grab };
     if (keys.length > 1) {
       return {
@@ -984,9 +992,10 @@
         label: t('home-owl-dragged', { count: keys.length }),
       };
     }
-    const f = folderOfKey(key);
+    const one = keys[0] ?? key;
+    const f = folderOfKey(one);
     if (f) return { kind: 'folder', data: f.id, label: f.name };
-    const p = projectOfKey(key);
+    const p = projectOfKey(one);
     return p ? { kind: 'project', data: p.id, label: p.name } : null;
   }
 

@@ -34,9 +34,8 @@
     KIND_ICONS,
     decisions,
     files,
-    filesUi,
     proposals,
-    undoLast,
+    rememberGoing,
     type Decision,
   } from './store.svelte';
 
@@ -75,6 +74,9 @@
       return p && files.get(h) ? [p] : [];
     });
   });
+
+  /** What a file is called now: a proposal keeps the name it had when it was found out, and the file may have been renamed since. */
+  const nameOf = (p: Proposal) => files.get(p.hash)?.name ?? p.name;
 
   function decisionOf(p: Proposal): Decision {
     return (
@@ -239,7 +241,7 @@
           if (d.choice === 'new') madeIds.push(d.chosen.id);
         } else later++;
       } catch (error) {
-        problems.push(`${p.name}: ${describeError(error)}`);
+        problems.push(`${nameOf(p)}: ${describeError(error)}`);
       }
     }
     if (pairs.length) {
@@ -273,18 +275,8 @@
     if (later) parts.push(t('files-going-later-count', { count: later }));
     const words = parts.join(', ');
     const done = given.length || madeIds.length;
-    filesUi.lastDone = done ? { assigned: given, made: madeIds } : filesUi.lastDone;
-    if (problems.length) notifyError(words, problems.slice(0, 4).join('\n'));
-    else if (done)
-      // It stays until it is dismissed: what was done to many is undone at once.
-      toasts.show(
-        {
-          kind: 'ok',
-          message: words,
-          action: { label: t('files-going-undo'), run: () => void undoLast() },
-        },
-        0,
-      );
+    if (done) rememberGoing({ assigned: given, made: madeIds }, words, problems);
+    else if (problems.length) notifyError(words, problems.slice(0, 4).join('\n'));
     else toasts.show({ kind: 'ok', message: words });
     onclose();
   }
@@ -306,18 +298,19 @@
 {#snippet item(p: Proposal)}
   {@const d = decisionOf(p)}
   {@const file = files.get(p.hash)}
+  {@const name = file?.name ?? p.name}
   {@const Icon = KIND_ICONS[file?.kind ?? 'other']}
   {@const match = p.matches[Math.min(d.match, Math.max(0, p.matches.length - 1))]}
-  <div class="item" data-going-file={p.name} data-hash={p.hash}>
+  <div class="item" data-going-file={name} data-hash={p.hash}>
     <div class="what">
       <span class="icon"><Icon size={16} strokeWidth={1.6} /></span>
-      <span class="name selectable">{p.name}</span>
+      <span class="name selectable">{name}</span>
     </div>
     {#key shown}
       <Segmented
         size="sm"
         value={d.choice}
-        label={t('files-going-what', { name: p.name })}
+        label={t('files-going-what', { name })}
         options={[
           {
             value: 'this',
@@ -496,7 +489,7 @@
 {#if choosing}
   {@const p = proposals.get(choosing)}
   <ReferenceChooser
-    title={t('files-assign-title', { name: p?.name ?? '' })}
+    title={t('files-assign-title', { name: p ? nameOf(p) : '' })}
     onpick={(id) => {
       const entry = library.get(id);
       if (p && entry) decide(p.hash, { ...decisionOf(p), choice: 'other', chosen: entry });

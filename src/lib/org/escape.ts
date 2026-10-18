@@ -146,3 +146,29 @@ export function slug(name: string): string {
       .replace(/^-|-$/g, '') || 'kind'
   );
 }
+
+/**
+ * A line of a source block that Org would take for a headline or a keyword
+ * gets a comma, Org's way: after its indentation, before the star or `#+`
+ * and before any commas already there, so that Org and this reader both take
+ * one comma away. A line that begins with commas and then a space before
+ * such a sign gets a comma at its very start, because the reader also takes
+ * one away there, for the files of earlier versions (below).
+ */
+export function escapeCodeLine(line: string): string {
+  if (/^\s*,*(\*|#\+)/.test(line)) return line.replace(/^(\s*)/, '$1,');
+  if (/^,+\s+,*(\*|#\+)/.test(line)) return `,${line}`;
+  return line;
+}
+
+/**
+ * A line of a source block as it was before it was escaped. Earlier versions
+ * put the comma before the indentation (`,    * x`), where Org leaves it; a
+ * comma at the start before spaces and such a sign is taken away as well, so
+ * that what they wrote reads back as it was.
+ */
+export function unescapeCodeLine(line: string): string {
+  if (/^\s*,,*(\*|#\+)/.test(line)) return line.replace(/^(\s*),/, '$1');
+  if (/^,,*\s+,*(\*|#\+)/.test(line)) return line.slice(1);
+  return line;
+}
