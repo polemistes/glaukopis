@@ -434,8 +434,11 @@ body.dragging * {
    that it runs straight through a run of kinds set in differently; the
    numbers in the margin stand by the same edge. `--inset` is a length, so
    that what it comes to in a paragraph is what its widgets take from it.
-   The cues of each kind here are the editor's own, and reach no document:
-   every look lives in a layout. */
+   The cues of each kind are the editor's own, and reach no document:
+   every look lives in a layout. Their measures, `--inset` among them, are
+   set in one place, the cues of editor/kinds.ts, from which the page makes
+   a style sheet of the catalogue's kinds when it starts; here is only what
+   depends on the paragraphs around, and the signs before a list's items. */
 @property --inset {
   syntax: '<length>';
   inherits: true;
@@ -515,20 +518,12 @@ body.dragging * {
 .prose.static .run-line {
   display: none;
 }
-.prose p[data-kind='quote'] {
-  --inset: 1.4em;
-  margin-left: var(--inset);
-  color: var(--ink-2);
-  font-size: 0.96em;
-}
 /* Lists: items with a bullet or a number before them, a deeper indent a
    list within the list. The count of numbered items begins again where
    they begin. */
 .prose p[data-kind='item'],
 .prose p[data-kind='numbered'] {
-  --inset: 1.6em;
   position: relative;
-  margin-left: var(--inset);
 }
 .prose p[data-kind='item']::before,
 .prose p[data-kind='numbered']::before {
@@ -1227,27 +1222,8 @@ span.math.selected {
   display: inline-block;
   width: calc(var(--indent, 0) * 1.5em);
 }
-.prose p[data-kind='line'] {
-  --inset: 2.4em;
-  margin-left: var(--inset);
-  text-indent: 0;
-}
 .prose p[data-kind='line'] + p[data-kind='line'] {
   margin-top: 0.9em;
-}
-.prose p[data-kind='speaker'] {
-  --inset: 2.4em;
-  margin-left: var(--inset);
-  margin-top: 0.6em;
-  font-variant: small-caps;
-  letter-spacing: 0.03em;
-}
-.prose p[data-kind='direction'] {
-  --inset: 2.4em;
-  margin-left: var(--inset);
-  font-style: italic;
-  margin-top: 0.2em;
-  margin-bottom: 0.2em;
 }
 .prose p[data-kind='speaker'] + p[data-kind='line'],
 .prose p[data-kind='direction'] + p[data-kind='line'] {
@@ -1429,35 +1405,11 @@ span.math.selected {
 }
 
 /* A screenplay: each paragraph a part of the script, set as scripts are. */
-.prose p[data-kind='scene'] {
-  margin-top: 1.4em;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-.prose p[data-kind='character'] {
-  --inset: 13.44em;
-  margin: 0.9em 0 0 var(--inset);
-  text-transform: uppercase;
-}
-.prose p[data-kind='dialogue'] {
-  --inset: 6em;
-  margin: 0 9.12em 0 var(--inset);
-}
-.prose p[data-kind='parenthetical'] {
-  --inset: 9.6em;
-  margin: 0 9.6em 0 var(--inset);
-  font-style: italic;
-}
 .prose p[data-kind='parenthetical']::before {
   content: '(';
 }
 .prose p[data-kind='parenthetical']::after {
   content: ')';
-}
-.prose p[data-kind='transition'] {
-  margin-top: 0.9em;
-  text-align: right;
-  text-transform: uppercase;
 }
 .prose p[data-kind='character'] + p[data-kind='dialogue'],
 .prose p[data-kind='parenthetical'] + p[data-kind='dialogue'],
@@ -1465,69 +1417,16 @@ span.math.selected {
   margin-top: 0;
 }
 
-/* The other kinds of paragraph, each seen at once on neutral paper, by the
-   same measures that give a kind of the writer's own its cues
-   (editor/kinds.ts, where the measures of these are declared): a
-   centimetre of the format is about 2.4em here, 12pt about an em. */
+/* A paragraph of any kind begins at its edge; the rest of each kind's
+   look is in the cues of editor/kinds.ts. */
 .prose p[data-kind] {
   text-indent: 0;
-}
-.prose p[data-kind='attribution'] {
-  --inset: 3.05em;
-  margin-top: 0;
-  margin-left: var(--inset);
-  text-align: right;
-}
-.prose p[data-kind='epigraph'] {
-  --inset: 9.6em;
-  margin: 0.51em 0 1.52em var(--inset);
-}
-.prose p[data-kind='headword'] {
-  margin-top: 0.51em;
-  margin-bottom: 0;
-  font-weight: 600;
-}
-.prose p[data-kind='gloss'] {
-  --inset: 3.05em;
-  margin: 0 0 0.51em var(--inset);
-}
-.prose p[data-kind='code'] {
-  font-family: var(--font-mono);
-  font-size: 0.86em;
-  line-height: 1.62;
-  text-align: left;
-  white-space: pre-wrap;
-  font-variant-numeric: lining-nums;
-  hanging-punctuation: none;
 }
 .prose p[data-kind='code'] + p[data-kind='code'] {
   margin-top: 0;
 }
 .prose p[data-kind='code'] code {
   font-size: inherit;
-}
-.prose p[data-kind='break'] {
-  margin: 1.02em 0;
-  text-align: center;
-}
-/* The sign of a break stands where the paragraph holds nothing: in text
-   that is drawn, and in the editor, where an empty paragraph holds a line
-   break and nothing else. */
-.prose p[data-kind='break']:empty::before {
-  content: '* * *';
-  letter-spacing: 0.4em;
-  color: var(--ink-3);
-}
-.prose p[data-kind='break']:has(> .ProseMirror-trailingBreak:only-child)::before {
-  content: '* * *';
-  letter-spacing: 0.4em;
-  color: var(--ink-3);
-}
-/* A draft note goes into no document. */
-.prose p[data-kind='draft'] {
-  padding-left: 0.8em;
-  border-left: 2px dashed var(--line-strong);
-  color: var(--ink-3);
 }
 
 /* The marks underline and code. */
@@ -1541,44 +1440,6 @@ span.math.selected {
   font-variant-numeric: lining-nums;
 }
 
-/* The kinds of words. A mentioned word stands in the quotation marks of
-   the language of the text, which the editor is given as `lang` from the
-   map; a kind of the writer's own based on one of these is set the same
-   way by editor/kinds.ts. */
-.prose .kind[data-kind='foreign'],
-.prose .kind[data-kind='title'],
-.prose .kind[data-kind='term'] {
-  font-style: italic;
-}
-/* A speaker and a stage direction within a line have the cues of their
-   paragraphs: small capitals, and italic (ADR 0041). */
-.prose .kind[data-kind='speaker'] {
-  font-variant: small-caps;
-  letter-spacing: 0.03em;
-}
-.prose .kind[data-kind='direction'] {
-  font-style: italic;
-}
-.prose .kind[data-kind='mention'] {
-  quotes: '\201C' '\201D' '\2018' '\2019';
-}
-.prose .kind[data-kind='mention']:lang(nb),
-.prose .kind[data-kind='mention']:lang(nn),
-.prose .kind[data-kind='mention']:lang(no) {
-  quotes: '\AB' '\BB' '\2018' '\2019';
-}
-.prose .kind[data-kind='mention']:lang(de) {
-  quotes: '\201E' '\201C' '\201A' '\2018';
-}
-.prose .kind[data-kind='mention']:lang(fr) {
-  quotes: '\AB\A0' '\A0\BB' '\201C' '\201D';
-}
-.prose .kind[data-kind='mention']::before {
-  content: open-quote;
-}
-.prose .kind[data-kind='mention']::after {
-  content: close-quote;
-}
 /* The language of a passage (ADR 0020) is no look: a faint dotted line
    under it, below where spelling draws its wave, and its name on hover,
    as the title. */
@@ -1589,11 +1450,4 @@ span.math.selected {
 }
 .prose .lang:hover {
   background: color-mix(in srgb, var(--accent) 7%, transparent);
-}
-/* A highlight is for the eye on the screen, and goes into no document. */
-.prose .kind[data-kind='highlight'] {
-  background: var(--highlight);
-  border-radius: 2px;
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
 }
