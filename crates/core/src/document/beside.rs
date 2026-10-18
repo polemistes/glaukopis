@@ -31,7 +31,13 @@ const OPENERS: &[char] = &['“', '‘', '«', '‹', '(', '['];
 /// otherwise.
 pub fn place_citations(doc: &mut Document, notes: bool) {
     place_line(&mut doc.title, notes);
-    for section in &mut doc.sections {
+    // The parts (preface, abstract, dedication) are text of the document as
+    // the body is, and every other pass over the whole takes them in.
+    for part in &mut doc.parts {
+        place_line(&mut part.title, notes);
+    }
+    let parts = doc.parts.iter_mut().flat_map(|p| p.sections.iter_mut());
+    for section in parts.chain(doc.sections.iter_mut()) {
         if let Some(heading) = &mut section.heading {
             place_line(heading, notes);
         }
@@ -302,5 +308,29 @@ mod tests {
         assert_eq!(said(content), "Said.[c]");
         let Block::Paragraph { content, .. } = &doc.sections[0].blocks[1] else { panic!() };
         assert_eq!(said(content), "Quoted.[c]");
+    }
+
+    /// The parts (a preface, an abstract, a dedication) are placed as the
+    /// body is: a citation in a preface comes out as one in a chapter does.
+    #[test]
+    fn through_the_parts_as_through_the_body() {
+        use super::super::fixtures::para;
+        let section = |line| super::super::Section { level: 1, blocks: vec![para(line)], ..Default::default() };
+        let mut doc = Document {
+            parts: vec![super::super::Part {
+                kind: "preface".into(),
+                title: vec![text("Preface "), cite("t", None), text(".")],
+                sections: vec![section(vec![text("As is said. "), cite("a", None)])],
+                ..Default::default()
+            }],
+            sections: vec![section(vec![text("Said. "), cite("b", None)])],
+            ..Default::default()
+        };
+        place_citations(&mut doc, false);
+        let Block::Paragraph { content, .. } = &doc.sections[0].blocks[0] else { panic!() };
+        assert_eq!(said(content), "Said [c].");
+        let Block::Paragraph { content, .. } = &doc.parts[0].sections[0].blocks[0] else { panic!() };
+        assert_eq!(said(content), "As is said [c].");
+        assert_eq!(said(&doc.parts[0].title), "Preface [c].");
     }
 }

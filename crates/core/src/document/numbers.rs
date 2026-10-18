@@ -43,7 +43,10 @@ struct Count {
 /// a nought.
 fn read_label(label: &str) -> Option<Count> {
     let end = label.rfind(|c: char| c.is_ascii_digit())? + 1;
-    let begin = label[..end].rfind(|c: char| !c.is_ascii_digit()).map_or(0, |i| i + 1);
+    // After the last character that is not a digit, at its own width: "§5"
+    // has two bytes before its digit.
+    let begin =
+        label[..end].char_indices().rev().find(|(_, c)| !c.is_ascii_digit()).map_or(0, |(i, c)| i + c.len_utf8());
     let digits = &label[begin..end];
     let n = digits.parse::<i64>().ok()?;
     let width = if digits.len() > 1 && digits.starts_with('0') { digits.len() } else { 0 };
@@ -75,13 +78,13 @@ pub fn numbers(numbering: Numbering, every: u32, lines: &[(bool, Option<&str>)])
             }
             if !given.is_empty() {
                 if let Some(read) = read_label(given) {
-                    count = Some(Count { next: read.next + 1, ..read });
+                    count = Some(Count { next: read.next.saturating_add(1), ..read });
                 }
                 return Some(Shown { label: given.to_owned(), set: true });
             }
             let count = count.as_mut()?;
             let n = count.next;
-            count.next += 1;
+            count.next = count.next.saturating_add(1);
             (n % step == 0).then(|| Shown { label: written(count, n), set: false })
         })
         .collect()
@@ -272,6 +275,24 @@ mod tests {
         let mut lines = vec![line(Some("0098"), true)];
         lines.extend(plain(2));
         assert_eq!(shown(Numbering::Counted, 1, &lines), ["0098!", "0099", "0100"]);
+    }
+
+    #[test]
+    fn go_on_from_a_label_with_a_letter_of_more_than_one_byte_before_its_digits() {
+        for (given, next) in [("§5", "§6"), ("ι1", "ι2"), ("α12", "α13"), ("¶3", "¶4"), ("–7", "–8")] {
+            let mut lines = vec![line(Some(given), true)];
+            lines.extend(plain(1));
+            assert_eq!(shown(Numbering::Counted, 1, &lines), [format!("{given}!"), next.to_owned()]);
+        }
+    }
+
+    #[test]
+    fn a_label_of_the_largest_number_does_not_overflow_the_count() {
+        let mut lines = vec![line(Some("9223372036854775807"), true)];
+        lines.extend(plain(2));
+        let shown = shown(Numbering::Counted, 1, &lines);
+        assert_eq!(shown[0], "9223372036854775807!");
+        assert_eq!(shown.len(), 3);
     }
 
     #[test]
