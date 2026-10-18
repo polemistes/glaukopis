@@ -858,10 +858,21 @@ fn page_lines(doc: &Document, number: u32) -> Option<PageRead> {
 // The numbers of the pages in print
 // ---------------------------------------------------------------------------
 
+/// The most letters a number of a page is written in: past them, it is
+/// written in figures, as a Roman numeral past 3999 is. No book gets near;
+/// a file that asks for a billionth page in letters would have a string of
+/// millions of letters for each of its pages.
+const MOST_LETTERS: usize = 8;
+
 /// A number in letters, as PDF numbers pages so: a to z, then aa to zz.
 fn letters(n: usize) -> String {
-    let letter = char::from(b'a' + ((n.max(1) - 1) % 26) as u8);
-    std::iter::repeat_n(letter, (n.max(1) - 1) / 26 + 1).collect()
+    let n = n.max(1);
+    let count = (n - 1) / 26 + 1;
+    if count > MOST_LETTERS {
+        return n.to_string();
+    }
+    let letter = char::from(b'a' + ((n - 1) % 26) as u8);
+    std::iter::repeat_n(letter, count).collect()
 }
 
 /// How a range of pages is numbered: from its first page, in a style, with
@@ -876,7 +887,7 @@ struct Numbering {
 
 impl Numbering {
     fn label(&self, index: usize) -> String {
-        let n = self.start + index - self.from;
+        let n = self.start.saturating_add(index - self.from);
         let number = match self.style {
             Some(b'D') => n.to_string(),
             Some(b'R') => roman::of(u32::try_from(n).unwrap_or(u32::MAX)).to_uppercase(),
@@ -890,15 +901,23 @@ impl Numbering {
 }
 
 /// The ranges of the number tree of `/PageLabels`: its `/Nums`, and those
-/// of its kids. A tree that is broken gives what could be read of it.
-fn numberings(doc: &Document, node: &Object, into: &mut Vec<Numbering>, depth: usize) {
+/// of its kids. A tree that is broken gives what could be read of it; a
+/// node named again, by a kid that names its parent or by two kids that
+/// name the same, is gone through once (`seen`), or a tree of a few objects
+/// would be walked billions of times.
+fn numberings(doc: &Document, node: &Object, into: &mut Vec<Numbering>, depth: usize, seen: &mut HashSet<ObjectId>) {
+    if let Object::Reference(id) = node
+        && !seen.insert(*id)
+    {
+        return;
+    }
     let Some(node) = doc.dereference(node).ok().and_then(|(_, o)| o.as_dict().ok()) else { return };
     if depth > 16 {
         return;
     }
     if let Ok(kids) = node.get(b"Kids").and_then(Object::as_array) {
         for kid in kids {
-            numberings(doc, kid, into, depth + 1);
+            numberings(doc, kid, into, depth + 1, seen);
         }
     }
     let Ok(nums) = node.get(b"Nums").and_then(Object::as_array) else { return };
@@ -1023,17 +1042,30 @@ fn named_destinations(doc: &Document) -> HashMap<Vec<u8>, Object> {
             out.insert(name.clone(), dest.clone());
         }
     }
-    if let Some(tree) = catalog.get(b"Names").ok().and_then(dict).and_then(|n| n.get(b"Dests").ok()).and_then(dict) {
-        name_tree(doc, tree, &mut out, 0);
+    if let Some(tree) = catalog.get(b"Names").ok().and_then(dict).and_then(|n| n.get(b"Dests").ok()) {
+        name_tree(doc, tree, &mut out, 0, &mut HashSet::new());
     }
     out
 }
 
-/// The pairs of a name tree: its `/Names`, and those of its kids.
-fn name_tree(doc: &Document, node: &pdf_text::Dictionary, into: &mut HashMap<Vec<u8>, Object>, depth: usize) {
+/// The pairs of a name tree: its `/Names`, and those of its kids. A node
+/// named again is gone through once, as in [`numberings`].
+fn name_tree(
+    doc: &Document,
+    node: &Object,
+    into: &mut HashMap<Vec<u8>, Object>,
+    depth: usize,
+    seen: &mut HashSet<ObjectId>,
+) {
     if depth > OUTLINE_DEEPEST || into.len() >= OUTLINE_MOST {
         return;
     }
+    if let Object::Reference(id) = node
+        && !seen.insert(*id)
+    {
+        return;
+    }
+    let Some(node) = doc.dereference(node).ok().and_then(|(_, o)| o.as_dict().ok()) else { return };
     if let Ok(names) = node.get(b"Names").and_then(Object::as_array) {
         for pair in names.chunks(2) {
             if let [Object::String(name, _), dest] = pair {
@@ -1043,9 +1075,7 @@ fn name_tree(doc: &Document, node: &pdf_text::Dictionary, into: &mut HashMap<Vec
     }
     if let Ok(kids) = node.get(b"Kids").and_then(Object::as_array) {
         for kid in kids {
-            if let Some(kid) = doc.dereference(kid).ok().and_then(|(_, o)| o.as_dict().ok()) {
-                name_tree(doc, kid, into, depth + 1);
-            }
+            name_tree(doc, kid, into, depth + 1, seen);
         }
     }
 }
@@ -1055,7 +1085,7 @@ fn name_tree(doc: &Document, node: &pdf_text::Dictionary, into: &mut HashMap<Vec
 fn labels(doc: &Document, pages: usize) -> Vec<String> {
     let mut ranges = Vec::new();
     if let Ok(tree) = doc.catalog().and_then(|c| c.get(b"PageLabels")) {
-        numberings(doc, tree, &mut ranges, 0);
+        numberings(doc, tree, &mut ranges, 0, &mut HashSet::new());
     }
     ranges.sort_by_key(|r| r.from);
     (0..pages)
@@ -1354,6 +1384,67 @@ mod tests {
         // Without a tree the pages are counted.
         doc.catalog_mut().unwrap().remove(b"PageLabels");
         assert_eq!(labels(&doc, 3), vec!["1", "2", "3"]);
+    }
+
+    /// Letters far on, as a broken or hostile file may ask for, are given in
+    /// figures, as Roman numerals past 3999 are, not as a string of millions
+    /// of letters; and a start at the end of the numbers does not overflow.
+    #[test]
+    fn a_page_label_of_letters_far_on_is_given_in_figures() {
+        assert_eq!(letters(26 * 8), "zzzzzzzz");
+        assert_eq!(letters(26 * 8 + 1), "209");
+        let far = Numbering { from: 0, style: Some(b'a'), prefix: String::new(), start: 1_000_000_000 };
+        assert_eq!(far.label(0), "1000000000");
+        let farthest = Numbering { from: 2, style: Some(b'A'), prefix: "P-".into(), start: usize::MAX };
+        assert_eq!(farthest.label(5), format!("P-{}", usize::MAX));
+    }
+
+    /// A tree of the numbers of pages, or of names, whose kids name the same
+    /// node again and again, or itself, is gone through once a node, not
+    /// once a path through it.
+    #[test]
+    fn a_tree_whose_kids_name_themselves_is_gone_through_once() {
+        use lopdf::dictionary;
+        let mut doc = Document::with_version("1.7");
+        let pages = doc.new_object_id();
+        let page = doc.add_object(dictionary! { "Type" => "Page", "Parent" => pages });
+        doc.objects.insert(
+            pages,
+            Object::Dictionary(dictionary! { "Type" => "Pages", "Kids" => vec![page.into()], "Count" => 1 }),
+        );
+        let numbers = doc.new_object_id();
+        doc.objects.insert(
+            numbers,
+            Object::Dictionary(dictionary! {
+                "Kids" => vec![Object::Reference(numbers); 2],
+                "Nums" => vec![0.into(), Object::Dictionary(dictionary! { "S" => "D", "St" => 3 })],
+            }),
+        );
+        let names = doc.new_object_id();
+        doc.objects.insert(
+            names,
+            Object::Dictionary(dictionary! {
+                "Kids" => vec![Object::Reference(names); 8],
+                "Names" => vec![Object::string_literal("here"), Object::Array(vec![page.into()])],
+            }),
+        );
+        let catalog = doc.add_object(dictionary! {
+            "Type" => "Catalog",
+            "Pages" => pages,
+            "PageLabels" => numbers,
+            "Names" => dictionary! { "Dests" => names },
+        });
+        doc.trailer.set("Root", catalog);
+        let mut ranges = Vec::new();
+        numberings(&doc, &Object::Reference(numbers), &mut ranges, 0, &mut HashSet::new());
+        assert_eq!(ranges.len(), 1);
+        assert_eq!(labels(&doc, 1), vec!["3"]);
+        // Eight kids to a node, sixteen deep, would be gone through for ever.
+        let (tx, rx) = mpsc::channel();
+        let doc = Arc::new(doc);
+        let reading = Arc::clone(&doc);
+        std::thread::spawn(move || tx.send(named_destinations(&reading).len()));
+        assert_eq!(rx.recv_timeout(Duration::from_secs(20)), Ok(1));
     }
 
     #[test]
