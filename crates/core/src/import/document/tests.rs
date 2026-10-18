@@ -833,9 +833,12 @@ fn a_list_of_what_is_cited_is_kept_and_said() {
 
 #[test]
 fn words_are_counted_as_the_application_counts_them() {
-    assert_eq!(count_words("The hero's well-known wrath — 24 books; l'ire."), 7);
-    assert_eq!(count_words("μῆνιν ἄειδε θεά"), 3);
-    assert_eq!(count_words(" - ' "), 0);
+    // The same texts as the test of `countWords` in src/lib/project/model/text.test.ts:
+    // the two must count alike.
+    let cases: Vec<(String, usize)> = serde_json::from_str(include_str!("../../../tests/fixtures/words.json")).unwrap();
+    for (text, words) in cases {
+        assert_eq!(count_words(&text), words, "{text:?}");
+    }
 }
 
 #[test]

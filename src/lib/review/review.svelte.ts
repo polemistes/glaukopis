@@ -23,7 +23,7 @@ import type { Project } from '$lib/project/model/project.svelte';
 import { PROJECT } from '$lib/project/model/types';
 import { acceptBetween, acceptStretch, blockAt, edgesOf, itemsOfPieces, nodeAt } from './accepting';
 import { changed, group, type Change, type Stretch, type Unit } from './grouping';
-import { accept, readReview, referenceOf, settle, type Settled } from './kept';
+import { accept, forgetAccepted, readReview, referenceOf, settle, type Settled } from './kept';
 import { colourOf } from '$lib/sharing/connection.svelte';
 import { markChanges, NOBODY, type Marked } from './marks';
 import type { Choice, Source } from './source';
@@ -345,14 +345,17 @@ export class Review {
     );
   }
 
-  /** What is accepted of a stretch, found in the text as it stands. */
-  #accepted(stretch: Stretch, visible?: Accepted['visible']): Accepted {
+  /**
+   * What is accepted of a stretch, found in the text as it stands; nothing
+   * for a passage that is gone and held nothing, where there is nothing to accept.
+   */
+  #accepted(stretch: Stretch, visible?: Accepted['visible']): Accepted | null {
     const { place } = stretch.passage;
     const block = stretch.passage.after
       ? blockAt(this.project.fragment(place.element, place.part), place)
       : null;
     const accepted = acceptStretch(block, place, stretch.now.from, stretch.now.to, stretch.pieces);
-    return visible ? { ...accepted, visible } : accepted;
+    return accepted && visible ? { ...accepted, visible } : accepted;
   }
 
   /** Keeps what was accepted, and takes it from the list. */
@@ -391,7 +394,7 @@ export class Review {
     if (!standing) return;
     this.#keep(
       standing,
-      standing.stretches.map((s) => this.#accepted(s)),
+      standing.stretches.map((s) => this.#accepted(s)).filter((a) => a !== null),
     );
     if (!this.changes.length) {
       this.#decided = false;
@@ -452,11 +455,10 @@ export class Review {
       const block = blockAt(project.fragment(b.place.element, b.place.part), b.place);
       if (!block) continue;
       // A passage that was gone and is back is accepted whole.
-      accepted.push(
-        b.edges
-          ? acceptBetween(block, b.place, b.edges)
-          : acceptStretch(block, b.place, 0, Number.MAX_SAFE_INTEGER, []),
-      );
+      const whole = b.edges
+        ? acceptBetween(block, b.place, b.edges)
+        : acceptStretch(block, b.place, 0, Number.MAX_SAFE_INTEGER, []);
+      if (whole) accepted.push(whole);
     }
     this.#keep(change, accepted);
     this.later(0);
@@ -535,9 +537,11 @@ export class Review {
     const found = await this.#reference();
     const stretch = this.#accepted(change.stretches[0]);
     try {
-      const list = found
-        ? await history.versions(stretch.place, stretch.from, stretch.to, found.reference)
-        : [];
+      // A passage gone that held nothing has no versions to tell.
+      const list =
+        found && stretch
+          ? await history.versions(stretch.place, stretch.from, stretch.to, found.reference)
+          : [];
       if (this.versions?.key === key) this.versions = { key, list };
     } catch (error) {
       console.error('the versions could not be read', error);
@@ -550,7 +554,8 @@ export class Review {
     const stretch = change.stretches[0];
     if (!stretch) return;
     const seen = itemsOfPieces(version.pieces.filter((p) => p.status !== 'removed'));
-    this.#keep(change, [this.#accepted(stretch, seen)]);
+    const accepted = this.#accepted(stretch, seen);
+    this.#keep(change, accepted ? [accepted] : []);
     this.later(0);
   }
 
@@ -560,6 +565,8 @@ export class Review {
     const stretch = change.stretches[0];
     if (!history || !stretch) return;
     const accepted = this.#accepted(stretch);
+    // A passage that is gone and held nothing has no place to be made again in.
+    if (!accepted) return;
     this.project.checkpoint();
     await history.restore(accepted.place, accepted.from, accepted.to, version.moment.snapshot);
     this.project.checkpoint();
@@ -569,6 +576,20 @@ export class Review {
       c.stretches.some((s) => samePlace(s.passage.place, place)),
     );
     if (now) await this.accept(now);
+  }
+
+  /**
+   * Forgets what was accepted since the moment reviewed from, by this
+   * person or in the review from a chosen moment: the changes since are
+   * shown again. Mends a review that what was kept of it has led astray.
+   */
+  forgetAccepted() {
+    if (this.chosen) {
+      this.#session = [];
+      this.#sessionSettled = [];
+    } else if (this.me) forgetAccepted(this.project.doc, this.me);
+    this.#decided = false;
+    this.later(0);
   }
 
   // ---- when nothing is left ----

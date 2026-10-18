@@ -11,7 +11,6 @@
 
 import { generateKeyBetween } from 'fractional-indexing';
 import * as Y from 'yjs';
-import { newId } from '$lib/util/id';
 import { str } from './origins';
 import { fillBody, fillTitle, inlineText, readTitle } from './text';
 import { PROJECT, type DocumentSettings, type TimelineSettings } from './types';
@@ -234,6 +233,11 @@ function partsOut(
       const order = str(m.get('order'), 'a0');
       if (first === null || order < first) first = order;
     }
+    // The ids are made of the element's and the part's, not drawn at random:
+    // every copy of a shared project is migrated by itself, as it is opened,
+    // before what the others did has arrived, and two copies that each made
+    // an abstract of their own would hold two once they meet. With the same
+    // id the two writes are of one element, and one of them is kept.
     const make = (name: string, kind: string, fill: (body: Y.XmlFragment) => void) => {
       const child = new Y.Map<unknown>();
       child.set('parent', id);
@@ -243,7 +247,7 @@ function partsOut(
       const body = new Y.XmlFragment();
       child.set('title', title);
       child.set('body', body);
-      yNodes.set(newId(), child);
+      yNodes.set(`${id}${kind}`, child);
       fillTitle(title, name);
       fill(body);
     };
@@ -254,7 +258,7 @@ function partsOut(
     if (hash)
       make('Cover', 'cover', (body) => {
         const figure = new Y.XmlElement('figure');
-        figure.setAttribute('id', newId());
+        figure.setAttribute('id', `${id}coverfigure`);
         figure.setAttribute('file', hash);
         figure.setAttribute('extension', str(cover?.extension));
         figure.setAttribute('name', '');

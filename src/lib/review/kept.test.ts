@@ -4,7 +4,16 @@ import type { Accepted, Moment, Piece, Place } from '$lib/history/types';
 import { Project } from '$lib/project/model/project.svelte';
 import { PROJECT } from '$lib/project/model/types';
 import { acceptStretch, blockAt, itemsOf, textOf } from './accepting';
-import { accept, forget, readReview, referenceOf, reviewers, settle } from './kept';
+import {
+  accept,
+  forget,
+  forgetAccepted,
+  readReview,
+  referenceOf,
+  reviewers,
+  settle,
+  REVIEWS,
+} from './kept';
 
 // ---- a text in a document ----
 
@@ -129,10 +138,14 @@ describe('a stretch accepted', () => {
         runs: [[7, 20, 4]],
       },
     ];
-    const accepted = acceptStretch(null, place([3]), 0, 0, pieces);
+    const accepted = acceptStretch(null, place([3]), 0, 0, pieces)!;
     expect(Y.decodeRelativePosition(accepted.from).item).toMatchObject({ client: 7, clock: 10 });
     expect(Y.decodeRelativePosition(accepted.to).item).toMatchObject({ client: 7, clock: 23 });
     expect(accepted.visible).toEqual({});
+  });
+
+  it('of a block that is gone and held nothing is nothing: there is nothing to accept', () => {
+    expect(acceptStretch(null, place([3]), 0, 0, [])).toBeNull();
   });
 
   it('counts items as the history does, in ranges for each copy', () => {
@@ -180,6 +193,40 @@ describe('what a person has reviewed', () => {
     expect(review.time).toBe(1000);
     expect(review.accepted).toEqual([stretch(1)]);
     expect(referenceOf(review)).toEqual({ moment: then.snapshot, accepted: [stretch(1)] });
+  });
+
+  it('never keeps an acceptance of nowhere, and passes over one an earlier version kept', () => {
+    const doc = new Y.Doc();
+    const empty: Accepted = {
+      place: place([1]),
+      from: new Uint8Array(),
+      to: new Uint8Array(),
+      visible: {},
+    };
+    accept(doc, 'anna', moment(doc, 1000), [empty]);
+    expect(readReview(doc, 'anna')).toBeNull();
+    accept(doc, 'anna', moment(doc, 1000), [stretch(1), empty]);
+    expect(readReview(doc, 'anna')!.accepted).toEqual([stretch(1)]);
+    // Written straight in, as before.
+    const kept = doc.getMap<Y.Map<unknown>>(REVIEWS).get('anna')!;
+    (kept.get('accepted') as Y.Array<Accepted>).push([empty]);
+    expect(readReview(doc, 'anna')!.accepted).toEqual([stretch(1)]);
+  });
+
+  it('can forget what was accepted, and keep the moment it reviews from', () => {
+    const doc = new Y.Doc();
+    const then = moment(doc, 1000);
+    accept(doc, 'anna', then, [stretch(1)], [{ key: 'k', state: 's' }]);
+    forgetAccepted(doc, 'anna');
+    expect(readReview(doc, 'anna')).toEqual({
+      moment: then.snapshot,
+      time: 1000,
+      accepted: [],
+      settled: [],
+    });
+    // One who has not begun has nothing to forget.
+    forgetAccepted(doc, 'bo');
+    expect(readReview(doc, 'bo')).toBeNull();
   });
 
   it('keeps each acceptance after the others, and from the moment it began', () => {

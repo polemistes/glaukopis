@@ -1134,11 +1134,16 @@ fn is_bibliography(heading: &str) -> bool {
 }
 
 fn is_word_char(c: char) -> bool {
-    c.is_alphabetic() || c.is_numeric()
+    c.is_alphabetic() || c.is_numeric() || unicode_normalization::char::is_combining_mark(c)
 }
 
-/// The words of a text, as the application counts them: letters and
-/// digits in runs, with apostrophes and hyphens inside them.
+/// The words of a text, as the application counts them: letters, digits
+/// and the marks set on them, in runs, with apostrophes and hyphens inside
+/// them. The marks belong to the word: a vowel sign of Hindi, the vowels
+/// of Arabic and Hebrew and an accent written apart from its letter would
+/// otherwise end the word at every syllable. The page counts by the same
+/// rule (`countWords` in src/lib/project/model/text.ts), and both are
+/// tested against the texts of tests/fixtures/words.json.
 pub fn count_words(text: &str) -> usize {
     let chars: Vec<char> = text.chars().collect();
     let mut count = 0;

@@ -4,6 +4,7 @@ import type { Template } from '$lib/api/templates';
 import { Project, type Persistence, type Summary } from './project.svelte';
 import { fillBody, paragraph } from './text';
 import { PROJECT } from './types';
+import { finishBeforeClose } from '$lib/state/closing';
 
 /** A project begun: its own element at the top, named after it. */
 function project() {
@@ -459,6 +460,28 @@ describe('notes on references', () => {
     expect(a.notes.get('nagy')).toBe('Read again: On kleos. See chapter 2.');
     expect(b.notes.get('nagy')).toBe(a.notes.get('nagy'));
   });
+
+  it('keep a character outside the basic plane whole when the change begins or ends inside it', () => {
+    // 😀 and 😁 share their first half (U+D83D): a change worked out by
+    // halves would begin between the two halves, and Yjs would put U+FFFD
+    // in the place of each half it splits.
+    const edits: [string, string][] = [
+      ['a😀', 'a😁'],
+      ['😀😀', '😀😁'],
+      ['😁b', '😀b'],
+      ['x𝔄y', 'x𝔅y'],
+      ['a😀b', 'a😁😀b'],
+    ];
+    for (const [before, after] of edits) {
+      const { p } = project();
+      p.setNote('w', before);
+      p.setNote('w', after);
+      expect(p.notes.get('w')).toBe(after);
+      const read = new Project(null);
+      Y.applyUpdate(read.doc, Y.encodeStateAsUpdate(p.doc));
+      expect(read.notes.get('w')).toBe(after);
+    }
+  });
 });
 
 describe('undo', () => {
@@ -589,6 +612,25 @@ describe('saving', () => {
       this.log = [];
     }
   }
+
+  it('before the window closes, what is not written is appended first, and a failure keeps it open', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const disk = new Disk();
+    const p = new Project(disk);
+    p.begin('Draft');
+    p.addChild(PROJECT, { title: 'Last words' });
+    disk.fail = true;
+    expect(await finishBeforeClose()).toEqual([new Error('disk full')]);
+    expect(disk.log.length).toBe(0);
+    disk.fail = false;
+    expect(await finishBeforeClose()).toEqual([]);
+    expect(disk.log.length).toBe(1);
+    await p.close();
+    // A project closed is no longer waited for.
+    disk.fail = true;
+    expect(await finishBeforeClose()).toEqual([]);
+    error.mockRestore();
+  });
 
   it('what is saved can be read again', async () => {
     const disk = new Disk();

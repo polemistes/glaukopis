@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
+import words from '../../../../crates/core/tests/fixtures/words.json';
 import {
   beginsIn,
   blocksText,
   bodyFacts,
+  countWords,
   fillBody,
   linemark,
   pagebreak,
@@ -260,6 +262,13 @@ describe('what a text says of itself', () => {
     expect(bodyFacts([]).uses).toEqual([]);
   });
 
+  it('a text of a page break alone is not empty', () => {
+    expect(bodyFacts([paragraph([])]).empty).toBe(true);
+    expect(bodyFacts([pagebreak('page')]).empty).toBe(false);
+    expect(bodyFacts([paragraph([]), pagebreak('column')]).empty).toBe(false);
+    expect(bodyFacts([pagebreak()]).words).toBe(0);
+  });
+
   it('a text is filled in the kind of paragraph an element begins in', () => {
     const doc = new Y.Doc();
     const own = [
@@ -289,5 +298,12 @@ describe('what a text says of itself', () => {
     expect(beginsIn('text')).toBe('text');
     expect(beginsIn('title')).toBe('text');
     expect(beginsIn('k2', own)).toBe('k2');
+  });
+});
+
+describe('the words of a text', () => {
+  // The same texts as the test of `count_words` in the core: the two must count alike.
+  it.each(words as [string, number][])('%j has %i', (text, count) => {
+    expect(countWords(text)).toBe(count);
   });
 });

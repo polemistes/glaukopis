@@ -616,10 +616,21 @@ export function titleHtml(inlines: Inline[]): string {
   return out;
 }
 
+/**
+ * The words of a text: letters, digits and the marks set on them, in runs,
+ * with apostrophes and hyphens inside them. The marks belong to the word:
+ * a vowel sign of Hindi, the vowels of Arabic and Hebrew and an accent
+ * written apart from its letter (as text from a PDF often has it) would
+ * otherwise end the word at every syllable. The core counts by the same
+ * rule (`count_words` in crates/core/src/import/document/convert.rs), and
+ * the two are tested against the same texts in
+ * crates/core/tests/fixtures/words.json.
+ */
 export function countWords(text: string): number {
-  // Letters and digits in runs, with apostrophes and hyphens inside them.
-  return text.match(/[\p{L}\p{N}]+(?:['’\-][\p{L}\p{N}]+)*/gu)?.length ?? 0;
+  return text.match(WORD)?.length ?? 0;
 }
+
+const WORD = /[\p{Alphabetic}\p{N}\p{M}]+(?:['’\-][\p{Alphabetic}\p{N}\p{M}]+)*/gu;
 
 export interface BodyFacts {
   /** The figures and equations, in the order they stand in. */
@@ -649,7 +660,7 @@ export function bodyFacts(blocks: Block[]): BodyFacts {
   let notes = 0;
   /** What the notes say. */
   let noted = '';
-  /** Figures and formulas. */
+  /** Figures, formulas, tables and breaks: what is part of a document without being words. */
   let set = 0;
   const setOff: SetOff[] = [];
   let text = '';
@@ -713,6 +724,10 @@ export function bodyFacts(blocks: Block[]): BodyFacts {
         text += '\n';
         for (const row of b.rows) for (const cell of row) visit(cell.content);
       } else if (b.kind === 'row') visit(b.items);
+      // A page or column break is part of the document: an element that
+      // holds only one is there to begin what follows on a new page, and
+      // is not empty, to be hidden, removed by Backspace or filled anew.
+      else if (b.kind === 'break') set++;
       text += '\n';
     }
   };

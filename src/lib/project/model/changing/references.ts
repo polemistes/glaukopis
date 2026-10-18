@@ -105,6 +105,11 @@ export const referenceChanges = {
       let start = 0;
       const most = Math.min(before.length, text.length);
       while (start < most && before[start] === text[start]) start++;
+      // The common ends are found by UTF-16 halves; a character outside the
+      // basic plane is two of them, and Yjs puts U+FFFD in place of each half
+      // of a pair it splits. So a change never begins after a first half or
+      // ends before a second one: it takes in the whole character.
+      if (start > 0 && isFirstHalf(before.charCodeAt(start - 1))) start--;
       let end = 0;
       while (
         end < most - start &&
@@ -112,6 +117,7 @@ export const referenceChanges = {
       ) {
         end++;
       }
+      if (end > 0 && isSecondHalf(before.charCodeAt(before.length - end))) end--;
       if (before.length - start - end > 0) note.delete(start, before.length - start - end);
       if (text.length - start - end > 0) note.insert(start, text.slice(start, text.length - end));
     }, 'notes');
@@ -148,3 +154,13 @@ export const referenceChanges = {
     this.doc.transact(() => this.yRefs.set(record.id, record), 'references');
   },
 };
+
+/** The first half of a surrogate pair, U+D800 to U+DBFF. */
+function isFirstHalf(code: number): boolean {
+  return code >= 0xd800 && code <= 0xdbff;
+}
+
+/** The second half of a surrogate pair, U+DC00 to U+DFFF. */
+function isSecondHalf(code: number): boolean {
+  return code >= 0xdc00 && code <= 0xdfff;
+}

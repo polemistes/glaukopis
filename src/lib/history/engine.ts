@@ -379,7 +379,14 @@ export class Engine {
     encoded: Uint8Array,
     transaction: Y.Transaction,
   ): { block: Y.XmlElement; index: number; units: Unit[] } | null {
-    const rpos = Y.decodeRelativePosition(encoded);
+    // A position that does not decode (an empty one, which an earlier
+    // version could store) stands for nowhere, and fails no working-out.
+    let rpos: Y.RelativePosition;
+    try {
+      rpos = Y.decodeRelativePosition(encoded);
+    } catch {
+      return null;
+    }
     let type: Y.AbstractType<unknown> | null = null;
     let target: Y.Item | null = null;
     if (rpos.item) {

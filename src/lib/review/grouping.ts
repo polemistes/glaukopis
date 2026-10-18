@@ -474,6 +474,11 @@ export function group(changes: BranchChanges, options: Options = {}): Change[] {
 
   // What each passage holds.
   for (const passage of changes.passages) {
+    // A passage that is gone and held nothing, an empty paragraph or the
+    // empty name of an element never named, shows nothing to review, and
+    // nothing of it could be accepted: no item is left to keep a place by,
+    // so it would be shown again after every acceptance.
+    if (!passage.after && !passage.pieces.length) continue;
     const layout = lay(passage.pieces);
     const whole = wholly(passage);
     if (unit === 'paragraph' || whole) {
