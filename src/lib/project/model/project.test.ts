@@ -459,6 +459,28 @@ describe('notes on references', () => {
     expect(a.notes.get('nagy')).toBe('Read again: On kleos. See chapter 2.');
     expect(b.notes.get('nagy')).toBe(a.notes.get('nagy'));
   });
+
+  it('keep a character outside the basic plane whole when the change begins or ends inside it', () => {
+    // 😀 and 😁 share their first half (U+D83D): a change worked out by
+    // halves would begin between the two halves, and Yjs would put U+FFFD
+    // in the place of each half it splits.
+    const edits: [string, string][] = [
+      ['a😀', 'a😁'],
+      ['😀😀', '😀😁'],
+      ['😁b', '😀b'],
+      ['x𝔄y', 'x𝔅y'],
+      ['a😀b', 'a😁😀b'],
+    ];
+    for (const [before, after] of edits) {
+      const { p } = project();
+      p.setNote('w', before);
+      p.setNote('w', after);
+      expect(p.notes.get('w')).toBe(after);
+      const read = new Project(null);
+      Y.applyUpdate(read.doc, Y.encodeStateAsUpdate(p.doc));
+      expect(read.notes.get('w')).toBe(after);
+    }
+  });
 });
 
 describe('undo', () => {
