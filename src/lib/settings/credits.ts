@@ -16,7 +16,8 @@
  *
  * When a dependency is added to `Cargo.toml` (of `src-tauri` or of a crate
  * under `crates/`) or to the dependencies of `package.json`, it is added
- * here too.
+ * here too: credits.test.ts reads the manifests and fails for one that is
+ * not, and says there how one credited under another name is mapped.
  */
 
 export interface Credit {
@@ -201,6 +202,13 @@ export const CREDIT_GROUPS: CreditGroup[] = [
         licence: 'MIT',
         url: 'https://github.com/J-F-Liu/lopdf',
         by: 'Junfeng Liu',
+      },
+      {
+        name: 'flate2',
+        what: 'credits-what-flate2',
+        licence: 'MIT OR Apache-2.0',
+        url: 'https://github.com/rust-lang/flate2-rs',
+        by: 'Alex Crichton, Josh Triplett',
       },
       {
         name: 'adobe-cmap-parser',
@@ -415,6 +423,20 @@ export const CREDIT_GROUPS: CreditGroup[] = [
         licence: 'MIT OR Apache-2.0',
         url: 'https://github.com/rust-random/getrandom',
         by: 'The rust-random Project Developers, The Rust Project Developers',
+      },
+      {
+        name: 'libc',
+        what: 'credits-what-libc',
+        licence: 'MIT OR Apache-2.0',
+        url: 'https://github.com/rust-lang/libc',
+        by: 'The Rust Project Developers',
+      },
+      {
+        name: 'windows-sys',
+        what: 'credits-what-windows-sys',
+        licence: 'MIT OR Apache-2.0',
+        url: 'https://github.com/microsoft/windows-rs',
+        by: 'Microsoft',
       },
     ],
   },
