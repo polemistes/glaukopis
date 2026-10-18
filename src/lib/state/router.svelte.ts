@@ -18,9 +18,23 @@ export type Route =
   | { view: 'search' }
   | { view: 'settings'; section?: string };
 
+/**
+ * A part of the place as it is written, decoded; as it is, where it is no
+ * encoding, as a link pasted in with a stray `%`: the place is read from the
+ * address at start, and a part that could not be read must not keep the
+ * application from starting.
+ */
+function decoded(part: string): string {
+  try {
+    return decodeURIComponent(part);
+  } catch {
+    return part;
+  }
+}
+
 export function parseRoute(hash: string): Route {
   const [path, query = ''] = hash.replace(/^#\/?/, '').split('?');
-  const parts = path.split('/').filter(Boolean).map(decodeURIComponent);
+  const parts = path.split('/').filter(Boolean).map(decoded);
   const params = new URLSearchParams(query);
   switch (parts[0]) {
     case 'library':
