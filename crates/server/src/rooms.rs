@@ -6,12 +6,23 @@
 //! seconds while it changes. Should the server stop between two writings,
 //! nothing is lost as long as one of those who were present comes back: the
 //! protocol has each side tell the other what it lacks.
+//!
+//! What the library does with a room's document (reading a change, taking it
+//! in, writing the whole state) may take seconds for a large project, and is
+//! done under the room's lock. None of it is done on the threads that serve
+//! the connections, of which there are as many as cores: a connection hands
+//! it to the threads kept for work that blocks (`Room::aside`), and waits
+//! there. Done on the serving threads, the other connections of a busy room,
+//! each waiting for its lock, would hold every one of them, and no other room
+//! would be answered until the room was free. For the same reason no lock
+//! that every call needs is held while waiting for a room: who is present is
+//! kept beside the room's lock, and a room that is busy is not idle.
 
 use std::collections::{HashMap, HashSet};
 use std::io;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex as Guarded, MutexGuard};
+use std::sync::{Arc, Mutex as Guarded, MutexGuard, TryLockError};
 use std::time::{Duration, Instant};
 
 use axum::body::Bytes;
@@ -145,7 +156,11 @@ struct Inner {
     unsaved: bool,
     /// The room was taken off the server: nothing of it is written again.
     gone: bool,
+    /// The room was put away: one who found it before must find it again.
+    put_away: bool,
     empty_since: Option<Instant>,
+    /// Who is present, as `Room::present` tells it without the room's lock.
+    present: Arc<Guarded<Vec<Option<String>>>>,
     /// About how much the document holds: what it held when it was last
     /// read or written, and the changes since, which may overlap.
     size: usize,
@@ -157,6 +172,11 @@ pub struct Room {
     pub id: String,
     dir: PathBuf,
     inner: Guarded<Inner>,
+    /// The members present, with none standing for the owner: one for each
+    /// connection. Written under the room's lock as they come and go, and
+    /// read without it, so that telling who is there, which is done while the
+    /// list of rooms is held, never waits for a room that is busy.
+    present: Arc<Guarded<Vec<Option<String>>>>,
     /// One writing at a time, in the order of the states.
     writing: Mutex<()>,
 }
@@ -193,6 +213,12 @@ fn encode(message: &Message) -> Bytes {
 }
 
 impl Inner {
+    /// Writes down who is present now, for `Room::present`.
+    fn note_present(&self) {
+        let members = self.peers.values().map(|p| p.member.clone()).collect();
+        *self.present.lock().unwrap_or_else(|poisoned| poisoned.into_inner()) = members;
+    }
+
     /// The most that may wait to be sent to one, in bytes.
     fn most_waiting(&self) -> usize {
         self.most.saturating_mul(WAITING_DOCUMENTS)
@@ -218,6 +244,7 @@ impl Inner {
     /// Takes one out of the room, and tells the others that they left.
     fn dismiss(&mut self, id: u64, close: Option<(u16, &'static str)>) {
         let Some(peer) = self.peers.remove(&id) else { return };
+        self.note_present();
         if let Some((code, reason)) = close {
             // If there is no room for this either, the connection ends when the sender is dropped.
             let _ = peer.send(Outgoing::Close(code, reason), false, usize::MAX);
@@ -376,6 +403,7 @@ impl Room {
             Err(e) if e.kind() == io::ErrorKind::NotFound => {}
             Err(e) => return Err(e),
         }
+        let present = Arc::new(Guarded::new(Vec::new()));
         Ok(Room {
             id: id.to_owned(),
             dir,
@@ -385,10 +413,13 @@ impl Room {
                 next: 1,
                 unsaved: false,
                 gone: false,
+                put_away: false,
                 empty_since: Some(Instant::now()),
+                present: present.clone(),
                 size,
                 most,
             }),
+            present,
             writing: Mutex::new(()),
         })
     }
@@ -399,8 +430,33 @@ impl Room {
         self.inner.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
     }
 
-    fn enter(&self, member: Option<String>) -> Result<Entered, EnterError> {
+    /// Does `work` with the room on a thread kept for work that blocks, and
+    /// waits for it there: whatever takes the room's lock, which may be held
+    /// for seconds by the work of the library on a large project, is done so
+    /// from a connection or a call (see the head of this module).
+    pub async fn aside<T: Send + 'static>(self: &Arc<Self>, work: impl FnOnce(&Room) -> T + Send + 'static) -> T {
+        let room = self.clone();
+        match tokio::task::spawn_blocking(move || work(&room)).await {
+            Ok(done) => done,
+            // A panic goes on where it would have gone had the work been done here.
+            Err(e) => match e.try_into_panic() {
+                Ok(panic) => std::panic::resume_unwind(panic),
+                Err(e) => panic!("the work on a room was not done: {e}"),
+            },
+        }
+    }
+
+    /// Lets one in. None where the room was put away, or taken off the
+    /// server, after it was found: it is then to be found again.
+    pub async fn enter(self: &Arc<Self>, member: Option<String>) -> Result<Option<Entered>, EnterError> {
+        self.aside(move |room| room.admit(member)).await
+    }
+
+    fn admit(&self, member: Option<String>) -> Result<Option<Entered>, EnterError> {
         let mut inner = self.inner();
+        if inner.put_away || inner.gone {
+            return Ok(None);
+        }
         if inner.peers.len() >= MOST_PRESENT {
             return Err(EnterError::Crowded);
         }
@@ -421,7 +477,8 @@ impl Room {
             let _ = peer.send(Outgoing::Message(encode(&Message::Awareness(present))), false, most);
         }
         inner.peers.insert(id, peer);
-        Ok(Entered { peer: id, incoming: Incoming { rx, waiting } })
+        inner.note_present();
+        Ok(Some(Entered { peer: id, incoming: Incoming { rx, waiting } }))
     }
 
     /// Takes in what one who is present has sent.
@@ -470,9 +527,10 @@ impl Room {
         self.dismiss_everyone(close::DELETED, "the project was taken off the server");
     }
 
-    /// The members present, with none standing for the owner: one for each connection.
+    /// The members present, with none standing for the owner: one for each
+    /// connection. Told without the room's lock.
     pub fn present(&self) -> Vec<Option<String>> {
-        self.inner().peers.values().map(|p| p.member.clone()).collect()
+        self.present.lock().unwrap_or_else(|poisoned| poisoned.into_inner()).clone()
     }
 
     /// The whole state, as one change to an empty document.
@@ -480,9 +538,14 @@ impl Room {
         self.inner().awareness.doc().transact().encode_state_as_update_v1(&StateVector::default())
     }
 
-    /// Writes the state if it has changed since it was written.
-    pub async fn save(&self) -> io::Result<bool> {
+    /// Writes the state if it has changed since it was written. The whole
+    /// state is made, as well as written, aside.
+    pub async fn save(self: &Arc<Self>) -> io::Result<bool> {
         let _one_at_a_time = self.writing.lock().await;
+        self.aside(Room::write).await
+    }
+
+    fn write(&self) -> io::Result<bool> {
         let state = {
             let mut inner = self.inner();
             if !inner.unsaved || inner.gone {
@@ -493,15 +556,12 @@ impl Room {
             inner.size = state.len();
             state
         };
-        let dir = self.dir.clone();
-        let written = tokio::task::spawn_blocking(move || {
-            std::fs::create_dir_all(&dir)?;
-            let tmp = dir.join(".state.bin.tmp");
+        let written = (|| {
+            std::fs::create_dir_all(&self.dir)?;
+            let tmp = self.dir.join(".state.bin.tmp");
             std::fs::write(&tmp, &state)?;
-            std::fs::rename(&tmp, dir.join("state.bin"))
-        })
-        .await
-        .unwrap_or_else(|e| Err(io::Error::other(e)));
+            std::fs::rename(&tmp, self.dir.join("state.bin"))
+        })();
         match written {
             Ok(()) if self.inner().gone => {
                 // Taken off the server while this was written.
@@ -516,9 +576,23 @@ impl Room {
         }
     }
 
+    /// Whether the room may be put away now; if so, it is marked as put
+    /// away. Asked while the list of rooms is held, so it does not wait for
+    /// the room's lock: a room whose lock is held is busy, not idle.
     fn may_be_put_away(&self) -> bool {
-        let inner = self.inner();
-        inner.peers.is_empty() && !inner.unsaved && inner.empty_since.is_none_or(|t| t.elapsed() >= KEPT_EMPTY)
+        let mut inner = match self.inner.try_lock() {
+            Ok(inner) => inner,
+            Err(TryLockError::Poisoned(poisoned)) => poisoned.into_inner(),
+            Err(TryLockError::WouldBlock) => return false,
+        };
+        let idle =
+            inner.peers.is_empty() && !inner.unsaved && inner.empty_since.is_none_or(|t| t.elapsed() >= KEPT_EMPTY);
+        if idle {
+            // One who found the room before it was taken from the list, and
+            // has not yet entered, finds it again, read anew.
+            inner.put_away = true;
+        }
+        idle
     }
 }
 
@@ -540,28 +614,38 @@ impl Rooms {
         Rooms { data, open: Mutex::new(HashMap::new()), most }
     }
 
-    /// Lets one into a room, which is read from disk if it is not open.
+    /// The room, which is read from disk if it is not open. To be entered
+    /// with `Room::enter`, which waits for the room, after letting go of
+    /// whatever else is held.
     ///
-    /// Entering and putting away both hold the list of open rooms, so that no
-    /// one enters a room that is being put away.
-    pub async fn enter(&self, id: &str, member: Option<String>) -> Result<(Arc<Room>, Entered), EnterError> {
+    /// Finding and putting away both hold the list of open rooms, and a room
+    /// put away is marked so: one who found it before, and enters it after,
+    /// is sent to find it again.
+    pub async fn open(&self, id: &str) -> Result<Arc<Room>, EnterError> {
         let mut open = self.open.lock().await;
-        let room = match open.get(id) {
-            Some(room) => room.clone(),
-            None => {
-                let dir = room_dir(&self.data, id);
-                let name = id.to_owned();
-                let most = self.most;
-                let room = tokio::task::spawn_blocking(move || Room::load(&name, dir, most))
-                    .await
-                    .unwrap_or_else(|e| Err(io::Error::other(e)))?;
-                let room = Arc::new(room);
-                open.insert(id.to_owned(), room.clone());
-                room
+        if let Some(room) = open.get(id) {
+            return Ok(room.clone());
+        }
+        let dir = room_dir(&self.data, id);
+        let name = id.to_owned();
+        let most = self.most;
+        let room = tokio::task::spawn_blocking(move || Room::load(&name, dir, most))
+            .await
+            .unwrap_or_else(|e| Err(io::Error::other(e)))?;
+        let room = Arc::new(room);
+        open.insert(id.to_owned(), room.clone());
+        Ok(room)
+    }
+
+    /// Lets one into a room, as a connection does in two steps.
+    #[cfg(test)]
+    pub async fn enter(&self, id: &str, member: Option<String>) -> Result<(Arc<Room>, Entered), EnterError> {
+        loop {
+            let room = self.open(id).await?;
+            if let Some(entered) = room.enter(member.clone()).await? {
+                return Ok((room, entered));
             }
-        };
-        let entered = room.enter(member)?;
-        Ok((room, entered))
+        }
     }
 
     /// The room, if it is open.
@@ -579,7 +663,8 @@ impl Rooms {
 
     pub async fn expel(&self, id: &str, member: &str) {
         if let Some(room) = self.get(id).await {
-            room.expel(member);
+            let member = member.to_owned();
+            room.aside(move |room| room.expel(&member)).await;
         }
     }
 
@@ -588,7 +673,7 @@ impl Rooms {
     pub async fn abandon(&self, id: &str) {
         let room = self.open.lock().await.remove(id);
         if let Some(room) = room {
-            room.abandon();
+            room.aside(Room::abandon).await;
             // A writing that was under way is let finish, so that it does not
             // put the directory back afterwards.
             let _ = room.writing.lock().await;
@@ -599,7 +684,7 @@ impl Rooms {
     pub async fn dismiss_all(&self) {
         let rooms: Vec<Arc<Room>> = self.open.lock().await.values().cloned().collect();
         for room in rooms {
-            room.dismiss_everyone(close::STOPPING, "the server is stopping");
+            room.aside(|room| room.dismiss_everyone(close::STOPPING, "the server is stopping")).await;
         }
     }
 
@@ -990,6 +1075,56 @@ mod tests {
         a.room.inner().empty_since = Some(Instant::now() - KEPT_EMPTY);
         rooms.unload_idle().await;
         assert_eq!(rooms.open_count().await, 0);
+    }
+
+    /// One who found a room just before it was put away, and enters after,
+    /// enters the room read anew, not the one that is no longer open.
+    #[tokio::test]
+    async fn a_room_put_away_while_one_comes_is_found_again() {
+        let tmp = tempfile::tempdir().unwrap();
+        let rooms = Rooms::new(tmp.path().to_owned(), MAX_DOCUMENT_BYTES);
+        let a = Side::enter(&rooms, None).await;
+        a.write(0, "kept");
+        a.room.leave(a.peer);
+        rooms.save_all().await;
+        let found = rooms.open(ROOM).await.unwrap();
+        found.inner().empty_since = Some(Instant::now() - KEPT_EMPTY);
+        rooms.unload_idle().await;
+        assert_eq!(rooms.open_count().await, 0);
+
+        assert!(found.enter(None).await.unwrap().is_none(), "the room put away lets no one in");
+        let mut b = Side::enter(&rooms, Some("anna")).await;
+        assert!(!Arc::ptr_eq(&b.room, &found));
+        b.take_in();
+        assert_eq!(b.text(), "kept");
+        assert_eq!(rooms.open_count().await, 1);
+    }
+
+    /// While a room is held, as by the library at work on a large change, it
+    /// is not put away, and who is present in it is told without waiting for
+    /// it. Were either to wait, this test would wait for ever: the room is
+    /// held by the thread that asks.
+    #[tokio::test]
+    #[allow(clippy::await_holding_lock, reason = "the room is held across the asking on purpose")]
+    async fn a_busy_room_is_not_waited_for_by_what_holds_the_list() {
+        let tmp = tempfile::tempdir().unwrap();
+        let rooms = Rooms::new(tmp.path().to_owned(), MAX_DOCUMENT_BYTES);
+        let a = Side::enter(&rooms, Some("anna")).await;
+        let b = Side::enter(&rooms, None).await;
+        b.room.leave(b.peer);
+        let held = a.room.inner();
+        assert_eq!(rooms.present(ROOM).await, vec![Some("anna".to_owned())]);
+        drop(held);
+
+        a.room.leave(a.peer);
+        assert_eq!(rooms.present(ROOM).await, Vec::<Option<String>>::new());
+        a.room.inner().empty_since = Some(Instant::now() - KEPT_EMPTY);
+        let held = a.room.inner();
+        rooms.unload_idle().await;
+        assert_eq!(rooms.open_count().await, 1, "a room that is held is busy, not idle");
+        drop(held);
+        rooms.unload_idle().await;
+        assert_eq!(rooms.open_count().await, 0, "put away once it is idle and free");
     }
 
     #[tokio::test]
