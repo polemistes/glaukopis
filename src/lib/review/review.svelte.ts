@@ -32,11 +32,30 @@ import type { Choice, Source } from './source';
 /** How long after the project has changed the changes are worked out again. */
 const CHANGED = 600;
 
-/** What a change to an element or an object is now, to tell whether it changed again once accepted. */
+/**
+ * A value written as JSON with the keys of every object in order, so that
+ * the same value reads the same however its object was put together.
+ */
+function canonical(value: unknown): string {
+  return JSON.stringify(value, (_key, v: unknown) =>
+    v && typeof v === 'object' && !Array.isArray(v) && !ArrayBuffer.isView(v)
+      ? Object.fromEntries(
+          Object.entries(v as Record<string, unknown>).sort(([a], [b]) =>
+            a < b ? -1 : a > b ? 1 : 0,
+          ),
+        )
+      : v,
+  );
+}
+
+/**
+ * What a change to an element or an object is now, to tell whether it
+ * changed again once accepted. The same on every computer: the order of
+ * the keys of its records is not that in which a copy received them.
+ */
 export function stateOf(c: Change): string {
-  if (c.change)
-    return JSON.stringify([c.change.kind, c.change.after ?? null, c.change.before ?? null]);
-  if (c.object) return JSON.stringify([c.object.status, c.object.after ?? null]);
+  if (c.change) return canonical([c.change.kind, c.change.after ?? null, c.change.before ?? null]);
+  if (c.object) return canonical([c.object.status, c.object.after ?? null]);
   return '';
 }
 

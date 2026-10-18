@@ -91,10 +91,15 @@ export function keysOf(type: AnyType): string[] {
   return [...type._map.keys()];
 }
 
-/** The attributes of an element at a moment. */
+/**
+ * The attributes of an element at a moment, in the order of their names:
+ * the order of a map of Yjs is the order its copy received the items in,
+ * which differs between copies, and what is kept of them must read the
+ * same on every computer.
+ */
 export function attributesAt(element: AnyType, at: At): Record<string, unknown> {
   const out: Record<string, unknown> = {};
-  for (const key of keysOf(element)) {
+  for (const key of keysOf(element).sort()) {
     const value = valueAt(element, key, at);
     if (value !== undefined && value !== null) out[key] = value;
   }

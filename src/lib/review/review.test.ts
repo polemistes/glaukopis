@@ -15,7 +15,7 @@ import { Project } from '$lib/project/model/project.svelte';
 import { PROJECT } from '$lib/project/model/types';
 import { blockAt, textOf } from './accepting';
 import { readReview } from './kept';
-import { Review } from './review.svelte';
+import { Review, stateOf } from './review.svelte';
 import type { Choice, Source } from './source';
 
 function piece(status: Piece['status'], text: string, by: string | null = null): Piece {
@@ -454,5 +454,24 @@ describe('a review', () => {
       expect(kept.accepted).toHaveLength(1);
       expect(between(kept.accepted[0].from, kept.accepted[0].to)).toBe(SENTENCE);
     });
+  });
+});
+
+describe('what a settled change is kept as', () => {
+  it('reads the same whatever order the keys of its records came in', () => {
+    const place = { element: 'e', part: 'text', path: [0] };
+    const of = (after: Record<string, unknown>) =>
+      stateOf({
+        key: 'k',
+        kind: 'object',
+        element: 'e',
+        stretches: [],
+        by: [],
+        object: { place, kind: 'figure', status: 'changed', after, by: null },
+      } as unknown as Parameters<typeof stateOf>[0]);
+    expect(of({ width: 'half', caption: { text: 'Troy', lang: 'en' } })).toBe(
+      of({ caption: { lang: 'en', text: 'Troy' }, width: 'half' }),
+    );
+    expect(of({ width: 'half' })).not.toBe(of({ width: 'whole' }));
   });
 });
