@@ -209,6 +209,34 @@ describe('a review', () => {
     expect(readReview(project.doc, 'me')!.accepted).toHaveLength(2);
   });
 
+  it('with one’s own changes shown, is not settled while one’s own are left elsewhere', async () => {
+    const { review, project, history } = setUp();
+    const other = project.addChild(PROJECT, { title: 'Other' })!;
+    // Elsewhere in the project the reviewer renamed an element, and nobody else changed anything.
+    history.said.set(PROJECT, () => ({
+      at: PROJECT,
+      passages: [
+        {
+          place: { element: other, part: 'title', path: [0] },
+          block: '1:2',
+          kind: 'name',
+          before: true,
+          after: true,
+          pieces: [piece('same', 'Oth'), piece('added', 'er', 'me')],
+        },
+      ],
+      objects: [],
+      elements: [],
+    }));
+    review.setOwn(true);
+    await review.refresh();
+    await review.accept();
+    await review.accept();
+    expect(review.changes).toEqual([]);
+    // Settled, the review would begin at now with nothing accepted, and the rename would never be shown.
+    expect(readReview(project.doc, 'me')!.accepted).toHaveLength(2);
+  });
+
   it('accepts as it stands what was written since the changes were worked out', async () => {
     const { review, project, element, history } = setUp();
     await review.refresh();

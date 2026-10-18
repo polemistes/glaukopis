@@ -626,8 +626,10 @@ export class Review {
     if (!kept) return;
     const reference = referenceOf(kept);
     if (this.at !== PROJECT) {
+      // What is left is what this review shows: with one's own changes
+      // shown, those elsewhere are left to review as well.
       const left = await this.#changesOf(history, PROJECT, reference, kept.settled, {
-        own: false,
+        own: this.own,
         unit: 'paragraph',
       });
       if (left.length) return;
