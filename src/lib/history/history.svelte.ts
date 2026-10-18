@@ -139,35 +139,49 @@ export class ProjectHistory implements History {
       const run = ++this.#run;
       const stale = () => run !== this.#run;
       this.#failure = null;
-      // Older history is kept less finely, once each time the project is opened.
-      if (!this.archive && !this.#thinned) {
-        this.#thinned = true;
-        try {
-          const records = readRecords(await this.#read());
-          if (stale()) return;
-          this.#post({ kind: 'load', records, me: null });
-          // An engine that could not take it, here, has stopped the history already.
-          if (stale()) return;
-          await this.#thin(Date.now());
-        } catch (error) {
-          if (stale()) return;
-          console.error('older history could not be kept less finely', error);
-        }
-        if (stale()) return;
-        this.#post({ kind: 'reset' });
-      }
       // Followed before it is read: what is written meanwhile is both on disk
       // and told, and the engine takes it once.
-      if (!this.archive)
+      const follow = () => {
+        if (this.archive) return;
         this.#unfollow = this.project.follow({
           change: (update, here) => this.#post({ kind: 'change', update, here }),
           written: (time, here, changes) => this.#post({ kind: 'written', time, here, changes }),
         });
-      const records = readRecords(await this.#read());
-      if (stale()) return;
-      this.#post({ kind: 'load', records, me: this.project.me?.id ?? null });
+      };
+      const load = async () => {
+        const records = readRecords(await this.#read());
+        if (stale()) return;
+        this.#post({ kind: 'load', records, me: this.project.me?.id ?? null });
+      };
+      follow();
+      await load();
       // An engine that could not take it, here, has stopped the history already.
       if (stale()) return;
+      // Older history is kept less finely, once each time the project is opened.
+      // Only what was merged on disk makes the history be read anew, which a
+      // long history takes long to be: most often nothing is old enough.
+      if (!this.archive && !this.#thinned) {
+        this.#thinned = true;
+        let again = true;
+        try {
+          again = (await this.#thin(Date.now())) > 0;
+        } catch (error) {
+          if (stale()) return;
+          // What was merged before it failed is not known: read anew.
+          console.error('older history could not be kept less finely', error);
+        }
+        if (stale()) return;
+        if (again) {
+          // Read anew as at the beginning: what is told from now on goes to
+          // the engine that reads the history as it is now on disk.
+          this.#unfollow?.();
+          this.#unfollow = null;
+          this.#post({ kind: 'reset' });
+          follow();
+          await load();
+          if (stale()) return;
+        }
+      }
       this.ready = true;
     })();
   }

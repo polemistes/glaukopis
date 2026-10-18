@@ -7,6 +7,13 @@ import { ProjectHistory } from './history.svelte';
 import { Host } from './protocol';
 import { writeRecords } from './records';
 
+vi.mock('$lib/api/history', () => ({
+  historyMerge: vi.fn(async () => {}),
+  historyRead: vi.fn(async () => new Uint8Array()),
+  historyCut: vi.fn(async () => {}),
+  historyRoom: vi.fn(async () => 0),
+}));
+
 describe('a history whose reading fails', () => {
   it('leaves nothing behind: the project is no longer followed, and a later question reads it again', async () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -144,5 +151,30 @@ describe('a history whose engine fails', () => {
       history.stop();
       await expect(waiting).rejects.toThrow('the history was closed');
     });
+  });
+});
+
+describe('a history opened', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('is read once when nothing is old enough to be kept less finely', async () => {
+    const { project, history, read } = opened();
+    const follow = vi.spyOn(project, 'follow');
+    expect(await history.people()).toEqual([]);
+    expect(read).toHaveBeenCalledOnce();
+    expect(follow).toHaveBeenCalledOnce();
+    expect(history.ready).toBe(true);
+    history.stop();
+  });
+
+  it('is read anew when older history was merged on disk', async () => {
+    const thin = vi.spyOn(Engine.prototype, 'thin').mockReturnValueOnce([
+      { first: 0, count: 2, time: 1, until: 2, record: { kind: 'change', here: true, time: 1, until: 2, update: new Uint8Array([0, 0]) } },
+    ] as ReturnType<Engine['thin']>);
+    const { history, read } = opened();
+    expect(await history.people()).toEqual([]);
+    expect(thin).toHaveBeenCalledOnce();
+    expect(read).toHaveBeenCalledTimes(2);
+    history.stop();
   });
 });
