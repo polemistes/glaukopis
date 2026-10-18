@@ -173,6 +173,7 @@ format-kind-text-note = as the type and the paragraphs of the layout have it
 format-kind-as-base = as the base
 format-kind-resolved = As it will stand: { $look }
 format-kind-resolved-nothing = As it will stand: as the text around it
+format-kind-resolved-failed = How it will stand could not be worked out: { $reason }
 format-as-the-base = As the base
 # "As the base", with what the base comes to: "As the base (Yes)", "As the base (11 pt)".
 format-as-the-base-is = As the base ({ $value })

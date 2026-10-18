@@ -61,6 +61,7 @@ template-saved = «{ $name }» er lagret blant dine egne maler
 template-read-failed = Malen kunne ikke leses.
 template-save-failed = Malen kunne ikke lagres.
 template-delete-failed = Malen kunne ikke slettes.
+template-keep-failed = Malen kunne ikke tas vare på i prosjektet. På en annen datamaskin, og i en fil av prosjektet, får dokumentet den vanlige malen i stedet.
 template-delete-title = Slette malen «{ $name }»?
 template-delete-message = Elementer som bruker den, vil bruke malen den ble laget av i stedet.
 template-delete-confirm = Slett malen

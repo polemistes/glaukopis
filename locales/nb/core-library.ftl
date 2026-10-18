@@ -58,4 +58,7 @@ core-library-the-folder = mappen
 core-library-needs-name = Et navn trengs.
 core-library-name-too-long = Det navnet er for langt.
 core-library-folder-in-itself = En mappe kan ikke legges i seg selv.
+core-library-assign-file-gone = En fil ble ikke gitt til referansen sin: den er ikke lenger blant filene i biblioteket.
+core-library-assign-reference-gone = «{ $name }» ble ikke gitt til referansen sin: referansen er ikke lenger i biblioteket.
+core-library-assign-stored-gone = «{ $name }» ble ikke gitt til referansen sin: filen er ikke lenger der biblioteket har den, { $path }.
 core-library-files-unreadable = Oversikten over filene i biblioteket kunne ikke leses, og ble lagt til side som { $path }: { $message }

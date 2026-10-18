@@ -937,17 +937,18 @@ impl Library {
         self.refresh()?;
         let mut problems = Vec::new();
         let mut changed = false;
+        // Each problem a sentence that names the file, as the page shows it.
         for (hash, id) in pairs {
-            let Some(path) = self.files.get(hash).map(|r| r.path.clone()) else {
-                problems.push(tr!("core-library-the-file-of-library"));
+            let Some((path, name)) = self.files.get(hash).map(|r| (r.path.clone(), r.name.clone())) else {
+                problems.push(tr!("core-library-assign-file-gone"));
                 continue;
             };
             let Some(&index) = self.by_id.get(id.as_str()) else {
-                problems.push(tr!("core-library-the-reference"));
+                problems.push(tr!("core-library-assign-reference-gone", name = &name));
                 continue;
             };
             if !attachments::absolute(&self.dir, &path)?.is_file() {
-                problems.push(tr!("core-library-the-stored-file", path = &path));
+                problems.push(tr!("core-library-assign-stored-gone", name = &name, path = &path));
                 continue;
             }
             changed |= self.link_file_unsaved(index, path, None);
@@ -1772,6 +1773,40 @@ mod tests {
         }
         // A reference without files is left as it is.
         assert_eq!(lib.detach_all(&a.id).unwrap().modified, after.modified);
+    }
+
+    #[test]
+    fn a_file_not_given_to_its_reference_is_named_in_the_problem() {
+        use std::sync::atomic::AtomicBool;
+        let (tmp, mut lib) = library();
+        let desk = tmp.path().join("desk");
+        fs::create_dir_all(&desk).unwrap();
+        fs::write(desk.join("Nagy 1979.pdf"), b"%PDF nagy").unwrap();
+        fs::write(desk.join("West 1988.pdf"), b"%PDF west").unwrap();
+        let stop = AtomicBool::new(false);
+        let (taken, _) = files::store_paths(lib.dir(), std::slice::from_ref(&desk), true, &mut |_, _, _| {}, &stop);
+        let got = lib.enter_taken(&taken, None).unwrap();
+        let nagy = got.files.iter().find(|f| f.name == "Nagy 1979.pdf").unwrap().clone();
+        let west = got.files.iter().find(|f| f.name == "West 1988.pdf").unwrap().clone();
+        let e = lib.add(&draft("@book{n, title={Best}}")).unwrap();
+        fs::remove_file(lib.attachment_path(&west.path).unwrap()).unwrap();
+
+        let problems = lib
+            .assign_files(&[
+                ("0".repeat(64), e.id.clone()),
+                (nagy.hash.clone(), "gone".into()),
+                (west.hash.clone(), e.id.clone()),
+            ])
+            .unwrap();
+        assert_eq!(problems.len(), 3, "{problems:?}");
+        assert!(problems[0].contains("no longer among the files"), "{}", problems[0]);
+        assert!(
+            problems[1].contains("Nagy 1979.pdf") && problems[1].contains("reference is no longer"),
+            "{}",
+            problems[1]
+        );
+        assert!(problems[2].contains("West 1988.pdf") && problems[2].contains(&west.path), "{}", problems[2]);
+        assert!(lib.require(&e.id).unwrap().attachments().is_empty());
     }
 
     #[test]

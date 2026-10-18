@@ -269,6 +269,7 @@ library-copy-key = Copy citation key
 library-copied-key = Copied “{ $key }”
 library-copy-biblatex = Copy as BibLaTeX
 library-copied = Copied
+library-copy-failed = Nothing was copied
 library-delete-one-title = Delete “{ $name }”?
 library-delete-many-title = { $count ->
     [one] Delete { $count } reference?
@@ -402,6 +403,9 @@ library-zotero-lead = What is imported is copied into your library, with its fil
 library-zotero-choose = The data directory of Zotero
 library-zotero-none-there = There is no Zotero there.
 library-zotero-unread = Zotero could not be read.
+# Looking in the places where Zotero usually keeps its data failed; the reason is shown under it.
+library-zotero-find-failed = The places where Zotero usually keeps its data could not be looked through. If you know where it keeps it, show where.
+library-zotero-collections-unread = The collections could not be read, so everything is imported: { $reason }
 library-zotero-library = Library
 # A library of Zotero, with the number of its references.
 library-zotero-library-option = { $name } ({ $count })

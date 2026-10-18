@@ -52,6 +52,7 @@
 
   let timer: ReturnType<typeof setTimeout> | undefined;
   let round = 0;
+  let lookFailed = false;
 
   function onchange() {
     changed = true;
@@ -72,8 +73,11 @@
       if (mine !== round) return;
       matches = found;
       suggestedKey = key;
-    } catch {
-      // Looking for duplicates is a help, not a condition.
+    } catch (error) {
+      // Looking for duplicates is a help, not a condition: the form goes on
+      // without it, and the log says why, once for the form.
+      if (!lookFailed) console.warn('duplicates and a key could not be looked for', error);
+      lookFailed = true;
     }
   }
 

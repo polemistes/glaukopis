@@ -15,6 +15,7 @@ common-open = Open
 common-search = Search
 common-try-again = Try again
 common-choose = Choose…
+common-link-open-failed = The link could not be opened
 
 ## How long ago something was: "Changed { $ago }".
 

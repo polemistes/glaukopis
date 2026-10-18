@@ -26,6 +26,7 @@
   import { PROJECT, type DocumentSettings, type Person } from '$lib/project/model/types';
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
+  import { notifyError } from '$lib/ui/toast.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
   import { DOCUMENT_SECTIONS, type DocumentSection } from './document-settings.svelte';
   import { checklist, type Remark } from './checklist';
@@ -76,7 +77,11 @@
         .then((loaded) => {
           if (id === choice.template) template = loaded;
         })
-        .catch(() => {}),
+        .catch((error) => {
+          // The window goes on without what the template brings; the log says why.
+          console.error(`the template ${id} could not be read for the document window`, error);
+          if (id === choice.template) template = null;
+        }),
     );
   });
   $effect(() => {
@@ -88,7 +93,10 @@
         .then((loaded) => {
           if (id === choice.format) format = loaded;
         })
-        .catch(() => (format = null)),
+        .catch((error) => {
+          console.error(`the layout ${id} could not be read for the document window`, error);
+          if (id === choice.format) format = null;
+        }),
     );
   });
 
@@ -189,7 +197,9 @@
     documents
       .templateOf(id)
       .then((tp) => project.keepTemplate($state.snapshot(tp) as Template))
-      .catch(() => {});
+      // Chosen but not kept: the writer is told, since a shared project and a
+      // file of it would fall back to the usual template without a word.
+      .catch((error) => notifyError(t('template-keep-failed'), error));
   }
 
   function editTemplate(fresh: boolean) {
@@ -428,7 +438,10 @@
                           <button
                             type="button"
                             class="link"
-                            onclick={() => openPath(source.url).catch(() => {})}
+                            onclick={() =>
+                              openPath(source.url).catch((e) =>
+                                notifyError(t('common-link-open-failed'), e),
+                              )}
                           >
                             {source.url}
                             <ExternalLink size={11} />

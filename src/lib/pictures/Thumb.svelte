@@ -6,6 +6,7 @@
    */
   import ImageOff from '@lucide/svelte/icons/image-off';
   import { pictures } from '$lib/figures/pictures.svelte';
+  import { t } from '$lib/i18n';
 
   interface Props {
     hash: string;
@@ -25,6 +26,10 @@
     <img src={shown.url} {alt} draggable="false" />
   {:else if shown.state === 'absent'}
     <ImageOff size={small ? 16 : 22} strokeWidth={1.5} />
+  {:else if shown.state === 'unread'}
+    <span title={t('figures-picture-unread', { reason: shown.why })}>
+      <ImageOff size={small ? 16 : 22} strokeWidth={1.5} />
+    </span>
   {/if}
 </div>
 

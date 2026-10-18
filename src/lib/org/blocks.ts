@@ -1539,6 +1539,8 @@ export function textContext(opts: {
   targets: Map<string, 'fig' | 'tab' | 'eq'>;
   /** Makes a kind of the writer's own of a name no kind has, and gives its id; without it, the name is the id. */
   make?: (name: string, words: boolean) => string;
+  /** Told of words that would not read back the same, as `InlineWriting.unsure` is. */
+  unsure?: (text: string) => void;
 }): TextContext {
   const kinds = opts.paragraphKinds;
   const slugs = opts.slugs ?? ownSlugs(kinds, takenName);
@@ -1561,6 +1563,7 @@ export function textContext(opts: {
       kindName: (id) => (KIND_FACTS[id] ? id : (slugs.get(id) ?? id)),
       citeKey: (id) => keys.get(id) || id,
       refPrefix: (target) => opts.targets.get(target) ?? 'id',
+      unsure: opts.unsure,
     },
     reading: {
       kindOf: (name) => kindOf(name, true),

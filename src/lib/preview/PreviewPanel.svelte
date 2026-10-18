@@ -364,8 +364,9 @@
         const came = new Set(got.pages.map((p) => p.number));
         if (lacking.some((n) => !came.has(n))) return;
       }
-    } catch {
+    } catch (error) {
       // The pages stay as they are; they are asked for again when the preview is moved.
+      console.warn('the pages of the preview could not be fetched', error);
       return;
     } finally {
       fetching = false;

@@ -32,7 +32,7 @@
   import Settings from '$lib/ui/settings/Settings.svelte';
   import { rowsOf, type Row } from '$lib/ui/settings/rows';
   import Spinner from '$lib/ui/Spinner.svelte';
-  import { describeError, notifyOk } from '$lib/ui/toast.svelte';
+  import { describeError, notifyError, notifyOk } from '$lib/ui/toast.svelte';
   import { documents } from '$lib/preview/documents.svelte';
   import { PARTS as PART_CATALOGUE } from '$lib/project/parts';
   import {
@@ -362,7 +362,12 @@
               <p class="overline">{t('format-source')}</p>
               <p class="serif">{s.name}</p>
               {#if s.url}
-                <button type="button" class="link" onclick={() => openPath(s.url).catch(() => {})}>
+                <button
+                  type="button"
+                  class="link"
+                  onclick={() =>
+                    openPath(s.url).catch((e) => notifyError(t('common-link-open-failed'), e))}
+                >
                   {s.url}
                   <ExternalLink size={11} />
                 </button>

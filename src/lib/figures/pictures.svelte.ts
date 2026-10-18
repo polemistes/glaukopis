@@ -25,13 +25,44 @@ import {
   type PictureChange,
   type UsedPicture,
 } from '$lib/api/pictures';
+import { isBackendError } from '$lib/api/backend';
 import { t } from '$lib/i18n';
-import { notify, notifyError } from '$lib/ui/toast.svelte';
+import { describeError, notify, notifyError } from '$lib/ui/toast.svelte';
 
 export type { Picture, PictureChange, UsedPicture };
 
-/** The address of a picture in memory, or why there is none. */
-export type Shown = { url: string; state: 'shown' } | { url: null; state: 'reading' | 'absent' };
+/**
+ * The address of a picture in memory, or why there is none: being read; not
+ * on this computer; or there and not to be read, with what the reading said.
+ */
+export type Shown =
+  | { url: string; state: 'shown' }
+  | { url: null; state: 'reading' | 'absent' }
+  | { url: null; state: 'unread'; why: string };
+
+/**
+ * Shows a picture of the store in its holder: the picture where it can be
+ * had, else the holder's state, by which the stylesheet says why there is
+ * none; where it could not be read, in the words of what refused it.
+ */
+export function showPicture(holder: HTMLElement | null, img: HTMLImageElement, shown: Shown) {
+  if (shown.url) {
+    if (img.getAttribute('src') !== shown.url) img.src = shown.url;
+    holder?.removeAttribute('data-state');
+  } else {
+    img.removeAttribute('src');
+    holder?.setAttribute('data-state', shown.state);
+  }
+  if (!holder) return;
+  if (shown.state === 'unread') {
+    const why = t('figures-picture-unread', { reason: shown.why });
+    holder.dataset.why = why;
+    holder.title = why;
+  } else if (holder.dataset.why !== undefined) {
+    delete holder.dataset.why;
+    holder.removeAttribute('title');
+  }
+}
 
 const TYPES: Record<string, string> = {
   png: 'image/png',
@@ -233,7 +264,15 @@ class Pictures {
       const before = this.#shown.get(key);
       if (before?.url) URL.revokeObjectURL(before.url);
       this.#shown.set(key, { url, state: 'shown' });
-    } catch {
+    } catch (error) {
+      if (!isBackendError(error) || error.kind !== 'not-found') {
+        // There, and not to be read: damaged, refused, of a kind not known.
+        // Said as it is, not as a picture that is elsewhere.
+        console.error(`the picture ${hash}.${extension} could not be read`, error);
+        const why = describeError(error) ?? String(error);
+        this.#shown.set(key, { url: null, state: 'unread', why });
+        return;
+      }
       this.#shown.set(key, { url: null, state: 'absent' });
       // It may be with the others.
       const project = this.#project;

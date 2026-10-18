@@ -41,6 +41,7 @@
   import { openMenu } from '$lib/ui/menu.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError, notifyError, notifyOk } from '$lib/ui/toast.svelte';
+  import { copyOut } from './copying';
   import { citing, showCitations } from './citing.svelte';
   import { dateWords, fileSize } from './format';
   import { toLines, withNoteAsItIs } from './notes.svelte';
@@ -356,17 +357,11 @@
         {
           label: t('library-copy-key'),
           icon: Copy,
-          action: () => {
-            navigator.clipboard.writeText(r.key);
-            notifyOk(t('library-copied-key', { key: r.key }));
-          },
+          action: () => copyOut(() => r.key, t('library-copied-key', { key: r.key })),
         },
         {
           label: t('library-copy-biblatex'),
-          action: async () => {
-            navigator.clipboard.writeText(await librarySource(r.id));
-            notifyOk(t('library-copied'));
-          },
+          action: () => copyOut(() => librarySource(r.id), t('library-copied')),
         },
         { kind: 'separator' },
         {

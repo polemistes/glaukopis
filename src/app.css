@@ -862,6 +862,11 @@ span.math.selected {
 .figure .picture[data-state='absent']::after {
   content: var(--words-picture-absent, 'The picture is not on this computer');
 }
+/* There and not to be read: the words of why, in the language of the interface, are on the holder. */
+.figure .picture[data-state='unread']::after {
+  content: attr(data-why);
+  color: var(--danger);
+}
 .prose:not(.static) .figure .picture:hover,
 .figure.selected .picture,
 .figure.ProseMirror-selectednode .picture {

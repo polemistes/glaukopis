@@ -48,6 +48,7 @@
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { notifyError, notifyOk } from '$lib/ui/toast.svelte';
+  import { copyOut } from './copying';
   import { safeFileName } from '$lib/util/file-name';
   import { citing } from './citing.svelte';
   import CollectionTree from './CollectionTree.svelte';
@@ -266,20 +267,17 @@
             {
               label: t('library-copy-key'),
               icon: Copy,
-              action: () => {
-                navigator.clipboard.writeText(one.key);
-                notifyOk(t('library-copied-key', { key: one.key }));
-              },
+              action: () => copyOut(() => one.key, t('library-copied-key', { key: one.key })),
             } as MenuItem,
           ]
         : []),
       {
         label: t('library-copy-biblatex'),
-        action: async () => {
-          const sources = await Promise.all(ids.map((id) => librarySource(id)));
-          navigator.clipboard.writeText(sources.join('\n'));
-          notifyOk(t('library-copied'));
-        },
+        action: () =>
+          copyOut(
+            async () => (await Promise.all(ids.map((id) => librarySource(id)))).join('\n'),
+            t('library-copied'),
+          ),
       },
       {
         label: one ? t('library-export-one') : t('library-export-many', { count: entries.length }),

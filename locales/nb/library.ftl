@@ -258,6 +258,7 @@ library-copy-key = Kopier referansenøkkelen
 library-copied-key = Kopierte «{ $key }»
 library-copy-biblatex = Kopier som BibLaTeX
 library-copied = Kopiert
+library-copy-failed = Ingenting ble kopiert
 library-delete-one-title = Slette «{ $name }»?
 library-delete-many-title = { $count ->
     [one] Slette { $count } referanse?
@@ -383,6 +384,8 @@ library-zotero-lead = Det som importeres, kopieres inn i biblioteket ditt, med f
 library-zotero-choose = Datamappen til Zotero
 library-zotero-none-there = Det er ingen Zotero der.
 library-zotero-unread = Zotero kunne ikke leses.
+library-zotero-find-failed = Stedene der Zotero vanligvis har dataene sine, kunne ikke gås gjennom. Vet du hvor den har dem, så vis hvor.
+library-zotero-collections-unread = Samlingene kunne ikke leses, så alt importeres: { $reason }
 library-zotero-library = Bibliotek
 library-zotero-library-option = { $name } ({ $count })
 library-zotero-my-library = Mitt bibliotek

@@ -9,7 +9,7 @@ import type { Project } from '$lib/project/model/project.svelte';
 import { refForm } from '$lib/project/model/text';
 import { showFormula } from './math.svelte';
 import { numbering, pointerText, topOf } from './numbering.svelte';
-import { pictures } from './pictures.svelte';
+import { pictures, showPicture } from './pictures.svelte';
 import { dress } from '$lib/tables/look';
 import { usualOf } from './placing';
 import { figureLabel, showPlacing } from './views.svelte';
@@ -30,15 +30,7 @@ function fill(root: HTMLElement, shown: Shown) {
   }
   for (const img of root.querySelectorAll<HTMLImageElement>('img[data-picture]')) {
     const [hash, extension] = (img.dataset.picture ?? '').split('.');
-    const picture = pictures.of(hash, extension ?? '');
-    const holder = img.parentElement;
-    if (picture.url) {
-      if (img.getAttribute('src') !== picture.url) img.src = picture.url;
-      holder?.removeAttribute('data-state');
-    } else {
-      img.removeAttribute('src');
-      holder?.setAttribute('data-state', picture.state);
-    }
+    showPicture(img.parentElement, img, pictures.of(hash, extension ?? ''));
   }
 
   // The numbers, what the document calls things, and where they stand.

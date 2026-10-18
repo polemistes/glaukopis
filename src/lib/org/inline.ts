@@ -216,6 +216,12 @@ export interface InlineWriting {
   citeKey: (id: string) => string;
   /** What a cross-reference points to: `fig`, `tab`, `eq`, or `id` for a part. */
   refPrefix: (target: string) => string;
+  /**
+   * Told of words that no way of writing them reads back the same, with
+   * their text: they are written as near as can be, and the writer of the
+   * whole says so once.
+   */
+  unsure?: (text: string) => void;
 }
 
 /** How hard the words are escaped: only where needed; every sign; every sign and every mark in brackets. */
@@ -558,6 +564,7 @@ export function writeContentLines(
     lines = contentLines(want, form, { ...writing, mode });
     if (sameInlines(readContentLines(lines, form, reading), want)) return lines;
   }
+  writing.unsure?.(lines.join('\n'));
   return lines;
 }
 
@@ -573,6 +580,7 @@ export function writeLine(
     line = escapeLineStart(writeNodes(treeOf(want), '', '', { ...writing, mode }));
     if (sameInlines(readLine(line, reading), want)) return line;
   }
+  writing.unsure?.(line);
   return line;
 }
 

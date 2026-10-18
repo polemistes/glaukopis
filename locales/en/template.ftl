@@ -62,6 +62,7 @@ template-saved = “{ $name }” is saved among your own templates
 template-read-failed = The template could not be read.
 template-save-failed = The template could not be saved.
 template-delete-failed = The template could not be deleted.
+template-keep-failed = The template could not be kept in the project. On another computer, and in a file of the project, the document will have the usual template instead.
 template-delete-title = Delete the template “{ $name }”?
 template-delete-message = Elements that use it will use the template it was made from instead.
 template-delete-confirm = Delete template

@@ -86,6 +86,7 @@ figures-formula-empty = Det som skrives, vises her slik det vil stå.
 figures-formula-hint = Skrives som i TeX. Enter når du er ferdig, Escape for å la den være som den var.
 figures-equation-hint = Skrives som i TeX. Enter når du er ferdig, Shift+Enter for ny linje, Escape for å la den være som den var.
 figures-formula-unread = Formelen kunne ikke leses.
+figures-formula-failed = Formler kan ikke vises: { $reason }
 # Vises i teksten der en formel ennå ikke har noe skrevet i seg.
 figures-formula-blank = formel
 figures-equation-blank = En ligning
@@ -146,4 +147,5 @@ figures-targets-hint = Ordene følger det de viser til: nummeret, og hva oppsett
 ## Vist av stilarket, der siden ikke har noe element for ordene.
 
 figures-picture-absent = Bildet finnes ikke på denne datamaskinen
+figures-picture-unread = Bildet kunne ikke leses: { $reason }
 figures-caption-placeholder = Bildetekst

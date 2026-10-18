@@ -86,6 +86,8 @@ figures-formula-empty = What is written is shown here as it will stand.
 figures-formula-hint = Written as in TeX. Enter when done, Escape to leave it as it was.
 figures-equation-hint = Written as in TeX. Enter when done, Shift+Enter for a new line, Escape to leave it as it was.
 figures-formula-unread = The formula could not be read.
+# Where no formula could be made, as when Pandoc is not there: the reason is what the program said.
+figures-formula-failed = Formulas cannot be shown: { $reason }
 # Shown in the text where a formula has nothing written in it yet.
 figures-formula-blank = formula
 figures-equation-blank = An equation
@@ -146,4 +148,6 @@ figures-targets-hint = A cross-reference follows what it refers to: its number, 
 ## Shown by the stylesheet, where the page has no element for the words.
 
 figures-picture-absent = The picture is not on this computer
+# A picture that is on this computer and could not be read: the reason is what the reading said.
+figures-picture-unread = The picture could not be read: { $reason }
 figures-caption-placeholder = What is said of the picture

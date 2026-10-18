@@ -25,6 +25,10 @@
   let found = $state.raw<ZoteroInfo[] | null>(null);
   let info = $state.raw<ZoteroInfo | null>(null);
   let collections = $state.raw<ZoteroCollection[]>([]);
+  /** Why the collections of the library chosen could not be read; nothing where they were. */
+  let collectionsProblem = $state<string | null>(null);
+  /** Whether looking for Zotero failed, which is not the same as finding none. */
+  let findFailed = $state(false);
   let library = $state('');
   let collection = $state('');
   let attachments = $state(true);
@@ -44,8 +48,10 @@
       found = await zoteroFind();
       if (found.length) await take(found[0]);
     } catch (e) {
+      console.error('Zotero could not be looked for', e);
       found = [];
-      error = describeError(e) ?? null;
+      findFailed = true;
+      error = describeError(e) ?? t('library-zotero-unread');
     }
   });
 
@@ -62,8 +68,12 @@
     if (!info) return;
     try {
       collections = await zoteroCollections(info.path, library ? Number(library) : null);
-    } catch {
+      collectionsProblem = null;
+    } catch (e) {
+      // Everything can still be imported; the dialog says why there is no choosing.
+      console.error('the collections of Zotero could not be read', e);
       collections = [];
+      collectionsProblem = describeError(e) ?? String(e);
     }
   }
 
@@ -72,6 +82,7 @@
     if (typeof dir !== 'string') return;
     try {
       await take(await zoteroInspect(dir));
+      findFailed = false;
     } catch (e) {
       error = describeError(e) ?? t('library-zotero-none-there');
     }
@@ -108,6 +119,8 @@
   <div class="content">
     {#if found === null}
       <div class="waiting"><Spinner size={18} /></div>
+    {:else if !info && findFailed}
+      <p class="lead">{t('library-zotero-find-failed')}</p>
     {:else if !info}
       {@const [before, after] = wordsAround((file) => t('library-zotero-not-found', { file }))}
       <p class="lead">{before}<code>zotero.sqlite</code>{after}</p>
@@ -142,6 +155,12 @@
             readCollections();
           }}
         />
+      {/if}
+      {#if collectionsProblem}
+        <p class="warning">
+          <TriangleAlert size={13} />
+          {t('library-zotero-collections-unread', { reason: collectionsProblem })}
+        </p>
       {/if}
       {#if collections.length}
         <Select

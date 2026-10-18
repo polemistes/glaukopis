@@ -20,6 +20,29 @@ import {
 } from './properties';
 import type { OrgElement, OrgProject, OrgTextOptions } from './types';
 
+/**
+ * The words of a writing that no way of writing reads back the same: said
+ * once in the log for the whole, with how many and the first of them, so
+ * that a fault of the reader is found rather than hidden. The copy is
+ * written as near as can be all the same.
+ */
+function unsureWords() {
+  let count = 0;
+  let first = '';
+  return {
+    add: (text: string) => {
+      if (!count) first = text;
+      count++;
+    },
+    tell: (what: string) => {
+      if (count)
+        console.warn(
+          `the Org form of the ${what} has ${count} passage(s) that will not read back as they are; the first: ${JSON.stringify(first.slice(0, 200))}`,
+        );
+    },
+  };
+}
+
 /** An element's name as the words of its headline, kept from reading as Org's own things at its start or its end. */
 function headlineWords(name: Inline[], ctx: TextContext): string {
   let words = writeLine(name, ctx.writing, ctx.reading);
@@ -70,27 +93,33 @@ export function writeProject(p: OrgProject): string {
   const slugs = ownSlugs(p.paragraphKinds, takenName);
   const targets = new Map<string, 'fig' | 'tab' | 'eq'>();
   for (const e of p.elements) targetsOf(e.blocks, targets);
+  const unsure = unsureWords();
   const ctx = textContext({
     paragraphKinds: p.paragraphKinds,
     slugs,
     references: p.references,
     targets,
+    unsure: unsure.add,
   });
   const out = [`#+TITLE: ${p.title.replace(/\s*\n\s*/g, ' ')}`];
   if (p.language) out.push(`#+LANGUAGE: ${p.language}`);
   out.push('#+BIBLIOGRAPHY: references.bib');
   for (const [n, e] of p.elements.entries())
     out.push('', ...elementLines(e, p, ctx, n === 0, slugs));
+  unsure.tell('project');
   return `${out.join('\n')}\n`;
 }
 
 /** One element's text as Org, for the clipboard. */
 export function writeBlocks(blocks: Block[], options: OrgTextOptions = {}): string {
+  const unsure = unsureWords();
   const ctx = textContext({
     paragraphKinds: options.paragraphKinds ?? [],
     references: options.references ?? [],
     targets: options.targets ?? targetsOf(blocks),
+    unsure: unsure.add,
   });
   const lines = bodyLines(blocks, ctx);
+  unsure.tell('text');
   return lines.length ? `${lines.join('\n')}\n` : '';
 }
