@@ -1346,6 +1346,28 @@ struct TextState<'a>
     tm: Transform,
 }
 
+/// Glaukopis: the most a form's content is unpacked to, as the core's limit
+/// for a page's own content (`LARGEST_UNPACKED` in ocr/layer.rs).
+const LARGEST_FORM: u64 = 32 << 20;
+
+/// Glaukopis: the content of a form, nothing where it is packed with Flate
+/// alone and unpacks beyond [`LARGEST_FORM`]: a stream that packs small and
+/// unpacks without end would otherwise take the memory of the process.
+fn form_contents(form: &Stream) -> Option<Vec<u8>> {
+    use std::io::Read;
+    let flate = matches!(form.filters().as_deref(), Ok([f]) if *f == b"FlateDecode");
+    if !flate || form.dict.has(b"DecodeParms") {
+        return Some(get_contents(form));
+    }
+    let mut out = Vec::new();
+    let _ = flate2::read::ZlibDecoder::new(form.content.as_slice()).take(LARGEST_FORM + 1).read_to_end(&mut out);
+    if out.is_empty() {
+        // As the library does with a checksum that is broken.
+        return Some(get_contents(form));
+    }
+    (out.len() as u64 <= LARGEST_FORM).then_some(out)
+}
+
 // XXX: We'd ideally implement this without having to copy the uncompressed data
 fn get_contents(contents: &Stream) -> Vec<u8> {
     if contents.filters().is_ok() {
@@ -1667,11 +1689,18 @@ fn make_colorspace<'a>(doc: &'a Document, name: &[u8], resources: &'a Dictionary
 struct Processor<'a> {
     font_table: HashMap<Vec<u8>, Rc<dyn PdfFont + 'a>>,
     _none: PhantomData<&'a ()>,
+    /// Glaukopis: the forms being drawn, from the page's own content down,
+    /// so that a form that draws itself, or two that draw each other, are
+    /// drawn once on the path and not until the stack is gone.
+    forms: Vec<*const Stream>,
 }
+
+/// Glaukopis: how deep forms within forms are drawn, as other readers have it.
+const DEEPEST_FORMS: usize = 32;
 
 impl<'a> Processor<'a> {
     fn new() -> Processor<'a> {
-        Processor { font_table: HashMap::new(), _none: PhantomData }
+        Processor { font_table: HashMap::new(), _none: PhantomData, forms: Vec::new() }
     }
 
     fn process_stream(&mut self, doc: &'a Document, content: Vec<u8>, resources: &'a Dictionary, media_box: &MediaBox, output: &mut dyn OutputDev, page_num: u32) -> Result<(), OutputError> {
@@ -1960,9 +1989,21 @@ impl<'a> Processor<'a> {
                     let xobject: &Dictionary = get(&doc, resources, b"XObject");
                     let name = operation.operands[0].as_name().unwrap();
                     let xf: &Stream = get(&doc, xobject, name);
-                    let resources = maybe_get_obj(&doc, &xf.dict, b"Resources").and_then(|n| n.as_dict().ok()).unwrap_or(resources);
-                    let contents = get_contents(xf);
-                    self.process_stream(&doc, contents, resources, &media_box, output, page_num)?;
+                    // Glaukopis: a form already on the path, or too deep, is not drawn again;
+                    // and a picture has no text, and is not unpacked to look for it.
+                    let key = xf as *const Stream;
+                    let picture = xf.dict.get(b"Subtype").and_then(Object::as_name).is_ok_and(|s| s != b"Form");
+                    if picture || self.forms.contains(&key) || self.forms.len() >= DEEPEST_FORMS {
+                        dlog!("a form within itself, or too deep, is passed over");
+                    } else {
+                        let resources = maybe_get_obj(&doc, &xf.dict, b"Resources").and_then(|n| n.as_dict().ok()).unwrap_or(resources);
+                        if let Some(contents) = form_contents(xf) {
+                            self.forms.push(key);
+                            let drawn = self.process_stream(&doc, contents, resources, &media_box, output, page_num);
+                            self.forms.pop();
+                            drawn?;
+                        }
+                    }
                 }
                 _ => { dlog!("unknown operation {:?}", operation); }
 
