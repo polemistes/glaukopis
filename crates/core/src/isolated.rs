@@ -12,11 +12,20 @@
 //! Where no program is set ([`set_program`]), as in the tests of this crate,
 //! the work is done on a thread as before, and the caller is told so by
 //! [`run`] giving nothing.
+//!
+//! A task may say how far it has come, in lines on its standard output
+//! ([`tell`]), which the parent hands on as they come ([`run_watched`]); and
+//! it may be stopped by the one who asked for it. A child that is ended is
+//! ended with what it started, the programs it runs (Tesseract, Poppler):
+//! on Linux and macOS the child leads a process group of its own, which is
+//! killed whole; on Windows its job ends them with it.
 
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::sync::OnceLock;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
 use serde::Serialize;
@@ -62,6 +71,8 @@ pub enum Ended {
     Failed(String),
     /// It could not be started: the caller may do the work itself.
     NotStarted(String),
+    /// The one who asked for it stopped it, and it was killed.
+    Stopped,
 }
 
 impl std::fmt::Display for Ended {
@@ -69,6 +80,7 @@ impl std::fmt::Display for Ended {
         match self {
             Ended::Time => write!(f, "its time was up"),
             Ended::Memory => write!(f, "it took more memory than it was given"),
+            Ended::Stopped => write!(f, "it was stopped"),
             Ended::Failed(why) | Ended::NotStarted(why) => write!(f, "{why}"),
         }
     }
@@ -83,7 +95,55 @@ pub fn run<T: DeserializeOwned>(task: &str, input: &Path, limits: Limits) -> Opt
 
 /// As [`run`], with the program given: for the tests.
 pub fn run_with<T: DeserializeOwned>(program: &Path, task: &str, input: &Path, limits: Limits) -> Result<T, Ended> {
+    run_in(program, task, input, limits, &mut |_| {}, &AtomicBool::new(false))
+}
+
+/// As [`run`], with each line the task says ([`tell`]) given to `told` as it
+/// comes, and the task killed as soon as `stop` is set.
+pub fn run_watched<T: DeserializeOwned>(
+    task: &str,
+    input: &Path,
+    limits: Limits,
+    told: &mut dyn FnMut(&str),
+    stop: &AtomicBool,
+) -> Option<Result<T, Ended>> {
+    let program = PROGRAM.get()?;
+    Some(run_in(program, task, input, limits, told, stop))
+}
+
+/// As [`run_watched`], with the program given: for the tests.
+pub fn run_watched_with<T: DeserializeOwned>(
+    program: &Path,
+    task: &str,
+    input: &Path,
+    limits: Limits,
+    told: &mut dyn FnMut(&str),
+    stop: &AtomicBool,
+) -> Result<T, Ended> {
+    run_in(program, task, input, limits, told, stop)
+}
+
+/// Says a line to the parent, which gives it to the one who watches the
+/// task: how far the task has come. A line holds no line break.
+pub fn tell(line: &str) {
+    use std::io::Write;
+    let mut out = std::io::stdout().lock();
+    // A parent that no longer listens is no reason to stop the work.
+    let _ = writeln!(out, "{}", line.replace(['\n', '\r'], " ")).and_then(|()| out.flush());
+}
+
+fn run_in<T: DeserializeOwned>(
+    program: &Path,
+    task: &str,
+    input: &Path,
+    limits: Limits,
+    told: &mut dyn FnMut(&str),
+    stop: &AtomicBool,
+) -> Result<T, Ended> {
     let failed = |e: &dyn std::fmt::Display| Ended::Failed(e.to_string());
+    if stop.load(Ordering::Relaxed) {
+        return Err(Ended::Stopped);
+    }
     let dir = tempfile::Builder::new()
         .prefix("glaukopis-isolated-")
         .tempdir()
@@ -91,13 +151,13 @@ pub fn run_with<T: DeserializeOwned>(program: &Path, task: &str, input: &Path, l
     let output = dir.path().join("out.json");
     let mut c = crate::export::tools::command(program);
     c.arg(FLAG).arg(task).arg(input).arg(&output);
-    c.stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::piped());
+    c.stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped());
     unix_child(&mut c);
     let mut child = c.spawn().map_err(|e| Ended::NotStarted(e.to_string()))?;
     // Without its job the child has no bound on its memory, which the loop
     // below cannot watch on Windows: it is said, and the time still holds.
     #[cfg(windows)]
-    let _job = windows::limit(&child, limits.memory)
+    let job = windows::limit(&child, limits.memory)
         .inspect_err(|code| {
             tracing::warn!(
                 task,
@@ -115,6 +175,19 @@ pub fn run_with<T: DeserializeOwned>(program: &Path, task: &str, input: &Path, l
         }
         all
     });
+    // The lines it tells, handed on here, on the thread of the one who asked.
+    let (send, lines) = mpsc::channel::<String>();
+    let stdout = child.stdout.take();
+    let telling = std::thread::spawn(move || {
+        use std::io::BufRead;
+        let Some(out) = stdout else { return };
+        for line in std::io::BufReader::new(out).lines() {
+            let Ok(line) = line else { break };
+            if send.send(line).is_err() {
+                break;
+            }
+        }
+    });
 
     let started = Instant::now();
     let mut ended = None;
@@ -125,23 +198,35 @@ pub fn run_with<T: DeserializeOwned>(program: &Path, task: &str, input: &Path, l
             Err(e) => {
                 // It cannot be watched: it is ended, lest it go on without bounds.
                 ended = Some(failed(&e));
-                let _ = child.kill();
-                let _ = child.wait();
+                kill(&mut child);
                 break None;
             }
         }
-        if started.elapsed() > limits.time {
+        for line in lines.try_iter() {
+            told(&line);
+        }
+        if stop.load(Ordering::Relaxed) {
+            ended = Some(Ended::Stopped);
+        } else if started.elapsed() > limits.time {
             ended = Some(Ended::Time);
         } else if resident(child.id()).is_some_and(|held| held > limits.memory) {
             ended = Some(Ended::Memory);
         }
         if ended.is_some() {
-            let _ = child.kill();
-            let _ = child.wait();
+            kill(&mut child);
             break None;
         }
         std::thread::sleep(Duration::from_millis(40));
     };
+    // What the child started dies with its job, before what they may hold
+    // open of its output is waited for: on Windows they share its handles.
+    #[cfg(windows)]
+    drop(job);
+    // What it told before it ended: the last page of a task that is done.
+    let _ = telling.join();
+    for line in lines.try_iter() {
+        told(&line);
+    }
     let said = said.join().unwrap_or_default();
     if let Some(ended) = ended {
         return Err(ended);
@@ -168,6 +253,19 @@ pub fn run_with<T: DeserializeOwned>(program: &Path, task: &str, input: &Path, l
     serde_json::from_slice(&bytes).map_err(|e| failed(&e))
 }
 
+/// Kills a child, and on Linux and macOS what it started: the group it leads.
+/// The group is killed before the child is waited for, while its number
+/// cannot have been given to another.
+fn kill(child: &mut std::process::Child) {
+    #[cfg(unix)]
+    if let Ok(group) = libc::pid_t::try_from(child.id()) {
+        // SAFETY: kill has no preconditions; a group that is gone is an error that is not needed.
+        unsafe { libc::kill(-group, libc::SIGKILL) };
+    }
+    let _ = child.kill();
+    let _ = child.wait();
+}
+
 /// What a task of [`serve`] does: from the file it is given, what it gives.
 type Task = fn(&Path) -> Result<Vec<u8>, String>;
 
@@ -189,6 +287,28 @@ fn task(name: &str) -> Option<Task> {
             }
         }),
         "test-echo" if testing() => Some(|input| answer(&std::fs::read_to_string(input).map_err(|e| e.to_string())?)),
+        // Tells a line every 20 ms, for ever.
+        "test-tell" if testing() => Some(|_| {
+            for n in 0u64.. {
+                tell(&n.to_string());
+                std::thread::sleep(Duration::from_millis(20));
+            }
+            Ok(Vec::new())
+        }),
+        // Tells three lines, and gives what it was given.
+        "test-tell-and-give" if testing() => Some(|input| {
+            for n in 1..=3 {
+                tell(&format!("line {n}"));
+            }
+            answer(&std::fs::read_to_string(input).map_err(|e| e.to_string())?)
+        }),
+        // Starts a program that sleeps, tells its number, and sleeps itself.
+        "test-family" if testing() => Some(|_| {
+            let sleeper = std::process::Command::new("sleep").arg("600").spawn().map_err(|e| e.to_string())?;
+            tell(&sleeper.id().to_string());
+            std::thread::sleep(Duration::from_secs(600));
+            Ok(Vec::new())
+        }),
         _ => None,
     }
 }
@@ -341,20 +461,25 @@ fn resident(pid: u32) -> Option<u64> {
     }
 }
 
-/// On Linux the child ends with the application, should the application end first.
+/// On Linux and macOS the child leads a process group of its own, so that
+/// what it starts is killed with it ([`kill`]); on Linux it ends with the
+/// application, should the application end first.
 fn unix_child(c: &mut std::process::Command) {
-    #[cfg(target_os = "linux")]
+    #[cfg(unix)]
     {
         use std::os::unix::process::CommandExt;
-        // SAFETY: prctl is safe to call between fork and exec, and touches nothing of the parent.
+        // SAFETY: setpgid and prctl are safe to call between fork and exec,
+        // and touch nothing of the parent.
         unsafe {
             c.pre_exec(|| {
+                libc::setpgid(0, 0);
+                #[cfg(target_os = "linux")]
                 libc::prctl(libc::PR_SET_PDEATHSIG, libc::SIGKILL);
                 Ok(())
             });
         }
     }
-    #[cfg(not(target_os = "linux"))]
+    #[cfg(not(unix))]
     {
         let _ = c;
     }
