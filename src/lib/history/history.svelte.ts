@@ -16,9 +16,10 @@ import type { CiteItem, CiteMode } from '$lib/editor/schema';
 import { HISTORY, type Project } from '$lib/project/model/project.svelte';
 import { toBase64 } from '$lib/util/base64';
 import { newId } from '$lib/util/id';
+import { wasEnded, WorkerClient, WorkerError } from '$lib/util/worker-client';
 import { applyEdits } from './applying';
 import { Engine, type Edit, type When } from './engine';
-import { Host, type Message, type Method, type Reply } from './protocol';
+import { Host, type Message, type Method, type Question } from './protocol';
 import { readRecords, writeRecords, type HistoryRecord } from './records';
 import type {
   History,
@@ -41,16 +42,40 @@ export type BranchAt = BranchChanges & {
   order: { element: string; before: boolean; after: boolean; level: number }[];
 };
 
+/**
+ * How long a question of the history may take: reading a long history and
+ * keeping it less finely take seconds; nothing should take minutes.
+ */
+const TIMEOUT = 180_000;
+
+/** How many times a question is asked again of a history read anew while it waited. */
+const ASKED_AGAIN = 3;
+
 export class ProjectHistory implements History {
   readonly project: Project;
   readonly id: string;
   /** Whether the history has been read, and is followed. */
   ready = $state(false);
-  #worker: Worker | null = null;
-  /** Where there is no worker (the tests): the engine, here. */
-  #host: Host | null = null;
-  #asked = 0;
-  #waiting = new Map<number, { resolve: (v: unknown) => void; reject: (e: unknown) => void }>();
+  /**
+   * The engine, in a worker of its own, or here where there is none (the
+   * tests). A worker that fails stops the history: what was asked of it
+   * fails with the reason, and the next question reads the history anew.
+   */
+  readonly #client = new WorkerClient<Question, Message>({
+    name: 'the history',
+    make: () =>
+      typeof Worker === 'undefined'
+        ? null
+        : new Worker(new URL('./engine.worker.ts', import.meta.url), { type: 'module' }),
+    here: () => new Host(() => new Engine()),
+    timeout: TIMEOUT,
+    onFault: (error) => {
+      this.#failure = error;
+      this.stop();
+    },
+  });
+  /** Why the history stopped last, where its engine failed. */
+  #failure: Error | null = null;
   #started: Promise<void> | null = null;
   /** Whether older history has been kept less finely since the project was opened. */
   #thinned = false;
@@ -90,16 +115,7 @@ export class ProjectHistory implements History {
   }
 
   #post(message: Message) {
-    if (this.#worker) this.#worker.postMessage(message);
-    else this.#host?.take(message);
-  }
-
-  #reply(reply: Reply) {
-    const waiting = this.#waiting.get(reply.ask);
-    this.#waiting.delete(reply.ask);
-    if (!waiting) return;
-    if ('error' in reply) waiting.reject(new Error(reply.error));
-    else waiting.resolve(reply.value);
+    this.#client.tell(message);
   }
 
   /** Reads the history, and follows the project from then on. Once. */
@@ -122,21 +138,7 @@ export class ProjectHistory implements History {
       // begun, and this one must touch neither it nor what it has made.
       const run = ++this.#run;
       const stale = () => run !== this.#run;
-      if (typeof Worker !== 'undefined') {
-        try {
-          this.#worker = new Worker(new URL('./engine.worker.ts', import.meta.url), {
-            type: 'module',
-          });
-          this.#worker.onmessage = (event: MessageEvent<Reply>) => this.#reply(event.data);
-        } catch {
-          this.#worker = null;
-        }
-      }
-      if (!this.#worker)
-        this.#host = new Host(
-          () => new Engine(),
-          (reply) => this.#reply(reply),
-        );
+      this.#failure = null;
       // Older history is kept less finely, once each time the project is opened.
       if (!this.archive && !this.#thinned) {
         this.#thinned = true;
@@ -144,6 +146,8 @@ export class ProjectHistory implements History {
           const records = readRecords(await this.#read());
           if (stale()) return;
           this.#post({ kind: 'load', records, me: null });
+          // An engine that could not take it, here, has stopped the history already.
+          if (stale()) return;
           await this.#thin(Date.now());
         } catch (error) {
           if (stale()) return;
@@ -162,6 +166,8 @@ export class ProjectHistory implements History {
       const records = readRecords(await this.#read());
       if (stale()) return;
       this.#post({ kind: 'load', records, me: this.project.me?.id ?? null });
+      // An engine that could not take it, here, has stopped the history already.
+      if (stale()) return;
       this.ready = true;
     })();
   }
@@ -172,30 +178,44 @@ export class ProjectHistory implements History {
     return this.start();
   }
 
+  /** Stops following the project and ends the engine; what was asked of it fails, as ended. */
   stop() {
     this.#run++;
     this.#unfollow?.();
     this.#unfollow = null;
-    this.#worker?.terminate();
-    this.#worker = null;
-    this.#host = null;
     this.#started = null;
     this.ready = false;
-    for (const w of this.#waiting.values()) w.reject(new Error('the history was closed'));
-    this.#waiting.clear();
+    this.#client.end('the history was closed');
   }
 
+  /**
+   * Asks the engine, once the history is read. A question whose history was
+   * read anew while it waited (after it was taken out or kept less finely)
+   * is asked again of the new reading, so that the one who asked does not
+   * take a routine beginning again for a failure; one whose history was
+   * stopped, or whose engine failed, fails with the reason.
+   */
   async #ask<T>(method: Method, ...args: unknown[]): Promise<T> {
-    await this.start();
-    return this.#send(method, ...args);
+    for (let tries = 0; ; tries++) {
+      const started = this.start();
+      try {
+        await started;
+        if (this.#started !== started) {
+          // Stopped, or begun anew, while it was read.
+          if (!this.#started)
+            throw this.#failure ?? new WorkerError('ended', 'the history was closed');
+          if (tries < ASKED_AGAIN) continue;
+        }
+        return await this.#send<T>(method, ...args);
+      } catch (error) {
+        if (wasEnded(error) && this.#started && tries < ASKED_AGAIN) continue;
+        throw error;
+      }
+    }
   }
 
   #send<T>(method: Method, ...args: unknown[]): Promise<T> {
-    const ask = ++this.#asked;
-    return new Promise<T>((resolve, reject) => {
-      this.#waiting.set(ask, { resolve: resolve as (v: unknown) => void, reject });
-      this.#post({ kind: 'ask', ask, method, args });
-    });
+    return this.#client.ask<T>({ method, args });
   }
 
   // ---- the contract ----

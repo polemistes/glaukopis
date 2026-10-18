@@ -15,6 +15,9 @@ export class FakeWorker<A extends Answerer<never, never> = Answerer<never, never
   terminated = false;
   /** What was posted to it, as it was posted. */
   readonly posted: unknown[] = [];
+  /** What was posted while it was held, not yet taken. */
+  readonly held: (() => void)[] = [];
+  #holding = false;
   readonly answerer: A;
   readonly #scope = {
     onmessage: null as unknown,
@@ -33,10 +36,23 @@ export class FakeWorker<A extends Answerer<never, never> = Answerer<never, never
     if (this.terminated) return;
     const copy = structuredClone(m);
     this.posted.push(m);
-    queueMicrotask(() => {
+    const take = () => {
       if (!this.terminated)
         (this.#scope.onmessage as (e: MessageEvent) => void)({ data: copy } as MessageEvent);
-    });
+    };
+    if (this.#holding) this.held.push(take);
+    else queueMicrotask(take);
+  }
+
+  /** Holds what is posted from now on, as a worker busy with something long. */
+  hold() {
+    this.#holding = true;
+  }
+
+  /** Takes what was held, and what is posted after. */
+  release() {
+    this.#holding = false;
+    for (const take of this.held.splice(0)) queueMicrotask(take);
   }
 
   terminate() {
