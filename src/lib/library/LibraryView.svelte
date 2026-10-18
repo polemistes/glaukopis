@@ -1,6 +1,6 @@
 <script lang="ts">
   import { save } from '@tauri-apps/plugin-dialog';
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { shortcuts } from '$lib/shell/keys.svelte';
   import ArrowDownUp from '@lucide/svelte/icons/arrow-down-up';
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
@@ -105,13 +105,34 @@
     else void library.load();
   });
 
-  // Open the entry the route names.
+  // The entry the route names is selected, once the library is loaded, and
+  // once only: the effect also reads the entries, which change with every
+  // save, import or change from outside, and without the guard each of them
+  // took the selection back to the entry of the route while another was
+  // being written in. What is selected here is named by the route in its
+  // turn, without a step in the history, as the view of the files does.
+  let applied: string | undefined;
+  /** The entry this view last had the route name: the route is changed when the selection changes, not when the route does. */
+  let named: string | undefined;
   $effect(() => {
     const wanted = route.entry;
-    if (wanted && library.loaded && library.get(wanted)) {
+    if (!library.loaded || wanted === applied) return;
+    applied = wanted;
+    if (wanted && untrack(() => library.get(wanted))) {
+      named = wanted;
       selection = [wanted];
       queueMicrotask(() => list?.scrollTo(wanted));
     }
+  });
+  $effect(() => {
+    const entry = single ?? undefined;
+    if (!library.loaded || entry === named || (!entry && selection.length)) return;
+    named = entry;
+    applied = entry;
+    untrack(() => {
+      if (entry !== route.entry)
+        router.replace({ view: 'library', collection: collectionId ?? undefined, entry });
+    });
   });
 
   // What is selected must exist.
@@ -121,6 +142,9 @@
   });
 
   function selectCollection(id: string | null) {
+    // The route of the collection names no entry.
+    named = undefined;
+    applied = undefined;
     selection = [];
     router.go({ view: 'library', collection: id ?? undefined });
   }
