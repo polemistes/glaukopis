@@ -6,11 +6,9 @@
 //! `ocr-progress`, which carries the ticket.
 
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex, MutexGuard};
 
 use serde::Serialize;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, State};
 
 use glaukopis_core::error::IoContext;
 use glaukopis_core::import::document::Imported;
@@ -21,57 +19,13 @@ use crate::commands::library::{EntryFull, full};
 use glaukopis_core::library::StoredFile;
 use glaukopis_core::tr;
 
+use super::work::{self, Work};
 use crate::error::CommandResult;
 use crate::state::AppState;
 
-/// The readings that go on, by the tickets they were asked for with, each
-/// with what stops it.
-static READINGS: Mutex<Vec<(String, Arc<AtomicBool>)>> = Mutex::new(Vec::new());
-
-fn readings() -> MutexGuard<'static, Vec<(String, Arc<AtomicBool>)>> {
-    READINGS.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
-}
-
-/// A reading that goes on, known by its ticket until it is done.
-struct Reading {
-    ticket: Option<String>,
-    stop: Arc<AtomicBool>,
-}
-
-impl Reading {
-    fn begin(ticket: Option<String>) -> Reading {
-        let stop = Arc::new(AtomicBool::new(false));
-        if let Some(ticket) = &ticket {
-            readings().push((ticket.clone(), stop.clone()));
-        }
-        Reading { ticket, stop }
-    }
-
-    /// Tells the interface how far the reading has come.
-    fn teller<'a>(&'a self, app: &'a AppHandle) -> impl FnMut(Progress) + 'a {
-        move |progress| {
-            if let Some(ticket) = &self.ticket {
-                let _ = app.emit("ocr-progress", Told { ticket: ticket.clone(), progress });
-            }
-        }
-    }
-}
-
-impl Drop for Reading {
-    fn drop(&mut self) {
-        if let Some(ticket) = &self.ticket {
-            readings().retain(|(t, _)| t != ticket);
-        }
-    }
-}
-
-/// How far a reading has come, as the interface is told it.
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct Told {
-    ticket: String,
-    #[serde(flatten)]
-    progress: Progress,
+/// What tells the page how far a reading has come, as `ocr-progress`.
+fn teller<'a>(work: &'a Work, app: &'a AppHandle) -> impl FnMut(Progress) + 'a {
+    move |progress| work.tell(app, work::OCR_PROGRESS, progress)
 }
 
 fn file_name(path: &Path) -> String {
@@ -146,7 +100,7 @@ pub fn ocr_read(
     stored: Option<bool>,
 ) -> CommandResult<Imported> {
     let path = if stored.unwrap_or(false) { state.library().attachment_path(&path)? } else { PathBuf::from(path) };
-    let reading = Reading::begin(ticket);
+    let reading = Work::begin(ticket);
     let tools = state.tools();
     let work = state.data.work();
     let file = file_name(&path);
@@ -159,7 +113,7 @@ pub fn ocr_read(
     }
     let words = words_of(&state, &asked);
     let is_word = words.as_ref().map(|w| w as &IsWord);
-    let read = ocr::read_pdf(&path, &tools, &work, &asked, is_word, &mut reading.teller(&app), &reading.stop)?;
+    let read = ocr::read_pdf(&path, &tools, &work, &asked, is_word, &mut teller(&reading, &app), &reading.stop)?;
     let title = glaukopis_core::import::pdf::identify(&path).ok().and_then(|facts| facts.title);
     Ok(ocr::imported_pdf(&file, &title.unwrap_or_else(|| stem(&file)), read))
 }
@@ -167,9 +121,7 @@ pub fn ocr_read(
 /// Stops a reading that goes on.
 #[tauri::command(async)]
 pub fn ocr_stop(ticket: String) {
-    for (_, stop) in readings().iter().filter(|(t, _)| *t == ticket) {
-        stop.store(true, Ordering::Relaxed);
-    }
+    work::stop(&ticket);
 }
 
 /// What came of making a PDF of the library searchable.
@@ -203,7 +155,7 @@ pub fn ocr_searchable(
     asked: Asked,
     ticket: Option<String>,
 ) -> CommandResult<MadeSearchable> {
-    let reading = Reading::begin(ticket);
+    let reading = Work::begin(ticket);
     let absolute = state.library().attachment_path(&path)?;
     // The reference is looked for before the work, which replaces the file:
     // one that is not there must not make the work that was done look failed.
@@ -217,7 +169,7 @@ pub fn ocr_searchable(
         &state.tools(),
         &state.data.work(),
         &asked,
-        &mut reading.teller(&app),
+        &mut teller(&reading, &app),
         &reading.stop,
     )?;
     let mut library = state.library();
@@ -261,7 +213,7 @@ pub fn ocr_picture(
     asked: Asked,
     ticket: Option<String>,
 ) -> CommandResult<Imported> {
-    let reading = Reading::begin(ticket);
+    let reading = Work::begin(ticket);
     let picture = state.pictures.get(&hash)?;
     let bytes = state.pictures.read(&hash, &picture.extension)?;
     let words = words_of(&state, &asked);

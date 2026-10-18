@@ -3,23 +3,14 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
 
 use tauri::State;
 
 use glaukopis_core::import::document::{self, Imported};
 
+use super::work::{self, Work};
 use crate::error::CommandResult;
 use crate::state::AppState;
-
-/// The readings that are going on, by the tickets they were asked for with,
-/// each with what stops it.
-static READING: Mutex<Vec<(String, Arc<AtomicBool>)>> = Mutex::new(Vec::new());
-
-fn readings() -> std::sync::MutexGuard<'static, Vec<(String, Arc<AtomicBool>)>> {
-    READING.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
-}
 
 /// Reads a document from a file: its parts, what it says of itself, and
 /// what the one who brings it in should know. Its pictures are taken into
@@ -33,10 +24,7 @@ pub fn document_read(
     stored: Option<bool>,
 ) -> CommandResult<Imported> {
     let path = if stored.unwrap_or(false) { state.library().attachment_path(&path.to_string_lossy())? } else { path };
-    let stop = Arc::new(AtomicBool::new(false));
-    if let Some(ticket) = &ticket {
-        readings().push((ticket.clone(), stop.clone()));
-    }
+    let work = Work::begin(ticket);
     // The library as it is now; every key is looked for once.
     let refreshed = state.library().refresh().map(|_| ());
     let known: RefCell<HashMap<String, Option<String>>> = RefCell::new(HashMap::new());
@@ -49,19 +37,14 @@ pub fn document_read(
         found
     };
     let read = refreshed
-        .and_then(|()| document::read(&path, &state.tools(), &state.pictures, &state.data.work(), &keys, &stop));
-    if let Some(ticket) = &ticket {
-        readings().retain(|(t, _)| t != ticket);
-    }
+        .and_then(|()| document::read(&path, &state.tools(), &state.pictures, &state.data.work(), &keys, &work.stop));
     Ok(read?)
 }
 
 /// Stops a reading that goes on.
 #[tauri::command(async)]
 pub fn document_read_stop(ticket: String) {
-    for (_, stop) in readings().iter().filter(|(t, _)| *t == ticket) {
-        stop.store(true, Ordering::Relaxed);
-    }
+    work::stop(&ticket);
 }
 
 /// Takes out of the store the pictures that were taken in for a document
