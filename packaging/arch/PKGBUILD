@@ -9,7 +9,7 @@
 
 pkgbase=glaukopis
 pkgname=(glaukopis glaukopis-server)
-pkgver=0.2.1
+pkgver=0.2.2
 pkgrel=1
 arch=(x86_64 aarch64)
 # The program and the owl. The dictionaries of spelling and the data of
