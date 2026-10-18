@@ -29,6 +29,8 @@ library-names-prefix = Forledd: van, de la
 library-names-prefix-of = { $role }: forledd
 library-names-suffix = Etterledd: Jr., III
 library-names-suffix-of = { $role }: etterledd
+library-names-add = Legg til et navn
+library-names-add-of = { $role }: legg til et navn
 
 ## Ord om referanser, hvor de enn vises.
 

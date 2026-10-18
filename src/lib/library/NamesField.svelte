@@ -221,9 +221,14 @@
       </div>
     {/if}
   {/each}
-  <button type="button" class="add" onclick={() => add()}>
+  <button
+    type="button"
+    class="add"
+    aria-label={t('library-names-add-of', { role: label })}
+    onclick={() => add()}
+  >
     <Plus size={12} />
-    <span>{label.toLowerCase()}</span>
+    <span>{t('library-names-add')}</span>
   </button>
 </div>
 

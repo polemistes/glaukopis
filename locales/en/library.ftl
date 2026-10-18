@@ -30,6 +30,11 @@ library-names-prefix = Prefix: van, de la
 library-names-prefix-of = { $role }: prefix
 library-names-suffix = Suffix: Jr., III
 library-names-suffix-of = { $role }: suffix
+# The button under a field of names. Its own words, not the field's label
+# put in small letters, which is wrong in a language that writes nouns with
+# a capital.
+library-names-add = Add a name
+library-names-add-of = { $role }: add a name
 
 ## Words for references, wherever they are shown.
 

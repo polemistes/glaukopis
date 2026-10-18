@@ -36,6 +36,20 @@ import { newId } from '$lib/util/id';
 export const MOST_ROWS = 100;
 export const MOST_COLUMNS = 20;
 
+/**
+ * The most rows and columns of text that are pasted into a table: those
+ * of a table made from a file (the core's MAX_ROWS and MAX_COLUMNS in
+ * crates/core/src/import/tables.rs), since a table in a text is not a
+ * spreadsheet.
+ */
+export const PASTED_ROWS = 2000;
+export const PASTED_COLUMNS = 100;
+
+/** The length of the longest of the rows, counted without a spread, which has a limit. */
+function widest(lengths: number[]): number {
+  return lengths.reduce((w, n) => Math.max(w, n), 0);
+}
+
 /** A table that is to be made: what its cells hold, and what is said of it. */
 export interface TableOf {
   /** What each cell holds, row by row. A line break parts paragraphs. */
@@ -65,7 +79,7 @@ export function isNumber(text: string): boolean {
  * something, the headings apart, holds a number.
  */
 export function numberColumns(given: TableOf): boolean[] {
-  const width = Math.max(0, ...given.rows.map((r) => r.length));
+  const width = widest(given.rows.map((r) => r.length));
   const out: boolean[] = [];
   for (let c = 0; c < width; c++) {
     if (given.headerColumn && c === 0) {
@@ -87,7 +101,7 @@ export function tableNode(schema: Schema, given: TableOf): Node | null {
     schema.nodes;
   if (!tabular || !table_caption || !table || !table_row || !table_cell || !table_header)
     return null;
-  const width = Math.max(0, ...given.rows.map((r) => r.length));
+  const width = widest(given.rows.map((r) => r.length));
   if (!given.rows.length || !width) return null;
   const numbers = numberColumns(given);
   const rows = given.rows.map((row, r) =>
@@ -536,13 +550,29 @@ export function leaveByArrow(dir: -1 | 1): Command {
 
 // ---- pasting ----
 
-/** Text in which tabs part the values, as the cells of a table. Nothing, where it has no tabs. */
-export function cellsOfText(schema: Schema, text: string) {
+/** Text that has more rows or columns than a table takes from it, with how many it has. */
+export interface TooLarge {
+  tooLarge: true;
+  rows: number;
+  columns: number;
+}
+
+/**
+ * Text in which tabs part the values, as the cells of a table. Nothing,
+ * where it has no tabs; how large it is, where it has more rows or columns
+ * than a table takes.
+ */
+export function cellsOfText(
+  schema: Schema,
+  text: string,
+): { width: number; height: number; rows: Fragment[] } | TooLarge | null {
   if (!text.includes('\t')) return null;
   const { table_cell, paragraph } = schema.nodes;
   if (!table_cell || !paragraph) return null;
   const lines = text.replace(/\r\n?/g, '\n').replace(/\n+$/, '').split('\n');
-  const width = Math.max(...lines.map((l) => l.split('\t').length));
+  const width = widest(lines.map((l) => l.split('\t').length));
+  if (lines.length > PASTED_ROWS || width > PASTED_COLUMNS)
+    return { tooLarge: true, rows: lines.length, columns: width };
   const rows = lines.map((line) => {
     const values = line.split('\t');
     return Fragment.from(
@@ -558,12 +588,22 @@ export function cellsOfText(schema: Schema, text: string) {
   return { width, height: rows.length, rows };
 }
 
-/** Fills the cells from where the cursor is with text in which tabs part the values. */
-export function pasteText(text: string): Command {
+/**
+ * Fills the cells from where the cursor is with text in which tabs part
+ * the values. Text with more rows or columns than a table takes is not
+ * pasted at all, rather than cut, and `refused` is told how large it is;
+ * the paste is still taken as done, so that it does not land in the cell
+ * as tens of thousands of lines.
+ */
+export function pasteText(text: string, refused?: (size: TooLarge) => void): Command {
   return (state, dispatch) => {
     if (!isInTable(state)) return false;
     const cells = cellsOfText(state.schema, text);
     if (!cells) return false;
+    if ('tooLarge' in cells) {
+      if (dispatch) refused?.(cells);
+      return true;
+    }
     if (dispatch) {
       const $cell = selectionCell(state);
       const start = $cell.start(-1);

@@ -33,6 +33,8 @@ import {
   insertTable,
   isNumber,
   numberColumns,
+  PASTED_COLUMNS,
+  PASTED_ROWS,
   pasteText,
   removeBlankTable,
   removeTable,
@@ -602,6 +604,26 @@ describe('what is pasted', () => {
     expect(pasteText('no tabs here')(v.state, v.dispatch)).toBe(false);
     const w = editor('Text');
     expect(pasteText('a\tb')(w.state, w.dispatch)).toBe(false);
+  });
+
+  it('text with more rows or columns than a table takes is refused whole, and said', () => {
+    const v = editor();
+    insertTable(emptyTable(2, 2, false))(v.state, v.dispatch);
+    cursorIn(v, 1);
+    const before = v.state.doc;
+    const refused: unknown[] = [];
+    // More lines than a spread of their widths could take as arguments.
+    const long = Array.from({ length: 200_000 }, (_, i) => `${i}\tx`).join('\n');
+    expect(pasteText(long, (size) => refused.push(size))(v.state, v.dispatch)).toBe(true);
+    expect(refused).toEqual([{ tooLarge: true, rows: 200_000, columns: 2 }]);
+    const wide = Array.from({ length: PASTED_COLUMNS + 1 }, () => 'x').join('\t');
+    expect(pasteText(wide, (size) => refused.push(size))(v.state, v.dispatch)).toBe(true);
+    expect(refused[1]).toEqual({ tooLarge: true, rows: 1, columns: PASTED_COLUMNS + 1 });
+    expect(v.state.doc.eq(before)).toBe(true);
+    // As many as a table takes are pasted.
+    const most = Array.from({ length: PASTED_ROWS }, (_, i) => `${i}\tx`).join('\n');
+    expect(pasteText(most)(v.state, v.dispatch)).toBe(true);
+    expect(v.state.doc.firstChild!.textContent).toContain('1999');
   });
 });
 
