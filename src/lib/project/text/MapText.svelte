@@ -903,7 +903,7 @@
   function pasteUnder(id: string) {
     if (!canPaste(project)) return;
     if (pastesUnderItself(project, id)) {
-      notify(t('diagram-paste-under-itself'));
+      notify(t('project-pick-itself'));
       return;
     }
     project.checkpoint();

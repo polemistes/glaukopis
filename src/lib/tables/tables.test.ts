@@ -579,9 +579,9 @@ describe('what is pasted', () => {
       expect(() => tabForward(v.state, v.dispatch), odd).not.toThrow();
     }
     // What a page says within reason is kept, and what is too much is what HTML allows.
-    expect(tablesOfHtml('<table><tr><td colspan="2" rowspan="70000">a</td></tr></table>')).toContain(
-      'colspan="2" rowspan="65534"',
-    );
+    expect(
+      tablesOfHtml('<table><tr><td colspan="2" rowspan="70000">a</td></tr></table>'),
+    ).toContain('colspan="2" rowspan="65534"');
   });
 
   it('cells that were copied by themselves become a table of their own', () => {

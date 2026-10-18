@@ -287,7 +287,9 @@
               <div class="said">
                 <div class="by">
                   <span class="name">{note.author.name || t('comments-someone')}</span>
-                  <span class="when" use:tooltip={note.created ? new Date(note.created).toLocaleString() : ''}
+                  <span
+                    class="when"
+                    use:tooltip={note.created ? new Date(note.created).toLocaleString() : ''}
                     >{ago(note.created)}{note.edited ? ` · ${t('comments-edited')}` : ''}</span
                   >
                   {#if mine(note) && !(editing?.note === note.id)}

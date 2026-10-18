@@ -1078,9 +1078,7 @@ export function noteOf(value: unknown): Note | null {
   const held = value as Record<string, unknown>;
   if (typeof held.text !== 'string') return null;
   const author =
-    held.author && typeof held.author === 'object'
-      ? (held.author as Record<string, unknown>)
-      : {};
+    held.author && typeof held.author === 'object' ? (held.author as Record<string, unknown>) : {};
   const edited = str(held.edited);
   return {
     id: str(held.id),

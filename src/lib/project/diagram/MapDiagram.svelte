@@ -829,7 +829,7 @@
       return;
     }
     if (pastesUnderItself(project, under ?? at)) {
-      notify(t('diagram-paste-under-itself'));
+      notify(t('project-pick-itself'));
       return;
     }
     const r = viewport?.getBoundingClientRect();
