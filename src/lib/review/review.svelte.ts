@@ -538,9 +538,10 @@ export class Review {
     const stretch = this.#accepted(change.stretches[0]);
     try {
       // A passage gone that held nothing has no versions to tell.
-      const list = found && stretch
-        ? await history.versions(stretch.place, stretch.from, stretch.to, found.reference)
-        : [];
+      const list =
+        found && stretch
+          ? await history.versions(stretch.place, stretch.from, stretch.to, found.reference)
+          : [];
       if (this.versions?.key === key) this.versions = { key, list };
     } catch (error) {
       console.error('the versions could not be read', error);

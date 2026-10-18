@@ -278,9 +278,17 @@ describe('new and deleted text', () => {
     const empty = passage('a', [2], [], { after: false });
     expect(group(changes([empty]))).toEqual([]);
     const found = group(
-      changes([deleted('gone', [0], 'Its text.'), passage('gone', [0], [], { after: false, part: 'title' })], {
-        elements: [{ element: 'gone', kind: 'removed', before: { parent: 'root', after: null }, by: 'bo' }],
-      }),
+      changes(
+        [
+          deleted('gone', [0], 'Its text.'),
+          passage('gone', [0], [], { after: false, part: 'title' }),
+        ],
+        {
+          elements: [
+            { element: 'gone', kind: 'removed', before: { parent: 'root', after: null }, by: 'bo' },
+          ],
+        },
+      ),
     );
     expect(found.map((c) => c.change?.kind ?? c.kind)).toEqual(['removed']);
     expect(found[0].stretches.map((s) => s.passage.place.part)).toEqual(['body']);

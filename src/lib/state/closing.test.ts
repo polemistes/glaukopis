@@ -56,7 +56,10 @@ describe('what is done before the window closes', () => {
       throw new Error('the readable copy');
     });
     expect(await finishBeforeClose()).toEqual([]);
-    expect(error).toHaveBeenCalledWith('a task before closing failed', new Error('the readable copy'));
+    expect(error).toHaveBeenCalledWith(
+      'a task before closing failed',
+      new Error('the readable copy'),
+    );
     release();
     error.mockRestore();
   });

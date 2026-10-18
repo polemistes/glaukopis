@@ -835,8 +835,7 @@ fn a_list_of_what_is_cited_is_kept_and_said() {
 fn words_are_counted_as_the_application_counts_them() {
     // The same texts as the test of `countWords` in src/lib/project/model/text.test.ts:
     // the two must count alike.
-    let cases: Vec<(String, usize)> =
-        serde_json::from_str(include_str!("../../../tests/fixtures/words.json")).unwrap();
+    let cases: Vec<(String, usize)> = serde_json::from_str(include_str!("../../../tests/fixtures/words.json")).unwrap();
     for (text, words) in cases {
         assert_eq!(count_words(&text), words, "{text:?}");
     }

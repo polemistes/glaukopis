@@ -481,10 +481,7 @@
   function joinable(id: string): boolean {
     const i = indexOf(id);
     return (
-      i > 0 &&
-      id !== tree.root &&
-      !(tree.children.get(id)?.length ?? 0) &&
-      !rows[i - 1].hidden
+      i > 0 && id !== tree.root && !(tree.children.get(id)?.length ?? 0) && !rows[i - 1].hidden
     );
   }
 

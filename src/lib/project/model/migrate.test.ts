@@ -216,9 +216,17 @@ describe('an abstract or a cover in the settings of an element', () => {
     for (const doc of copies) {
       const q = new Project(null);
       q.load(Y.encodeStateAsUpdate(doc), []);
-      const kinds = q.tree().children.get(book)!.map((id) => q.node(id)?.kind ?? null);
+      const kinds = q
+        .tree()
+        .children.get(book)!
+        .map((id) => q.node(id)?.kind ?? null);
       expect(kinds).toEqual(['cover', 'abstract', null]);
-      expect(q.tree().children.get(chapter)!.map((id) => q.node(id)?.kind)).toEqual(['cover']);
+      expect(
+        q
+          .tree()
+          .children.get(chapter)!
+          .map((id) => q.node(id)?.kind),
+      ).toEqual(['cover']);
       expect(q.blocksOf(q.tree().children.get(book)![1])).toHaveLength(2);
     }
   });

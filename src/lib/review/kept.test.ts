@@ -197,7 +197,12 @@ describe('what a person has reviewed', () => {
 
   it('never keeps an acceptance of nowhere, and passes over one an earlier version kept', () => {
     const doc = new Y.Doc();
-    const empty: Accepted = { place: place([1]), from: new Uint8Array(), to: new Uint8Array(), visible: {} };
+    const empty: Accepted = {
+      place: place([1]),
+      from: new Uint8Array(),
+      to: new Uint8Array(),
+      visible: {},
+    };
     accept(doc, 'anna', moment(doc, 1000), [empty]);
     expect(readReview(doc, 'anna')).toBeNull();
     accept(doc, 'anna', moment(doc, 1000), [stretch(1), empty]);
