@@ -30,6 +30,7 @@
   import type { FoundBy } from '$lib/api/found';
   import { editorUi } from '$lib/editor/ui.svelte';
   import { t } from '$lib/i18n';
+  import { keyLabel, keyOf, keysFor } from '$lib/shell/keys.svelte';
   import { truncate } from '$lib/library/format';
   import { editReference, newReference } from '$lib/library/references.svelte';
   import type { Project } from '$lib/project/model/project.svelte';
@@ -271,7 +272,7 @@
     const target = event.target as HTMLElement;
     const mod = event.ctrlKey || event.metaKey;
     const typing = !!target.closest('input:not([type="checkbox"]):not([type="radio"]), textarea');
-    const key = event.key.toLowerCase();
+    const key = keyOf(event);
     if (mod && !event.altKey && (key === 'z' || key === 'y')) {
       // In a field, what was typed is taken back; elsewhere, what was done to the text.
       if (typing) return;
@@ -538,7 +539,10 @@
 
   {#if current}
     <footer>
-      <span class="keys"><kbd>↑</kbd><kbd>↓</kbd> <kbd>Enter</kbd> <kbd>Ctrl+Z</kbd></span>
+      <span class="keys"
+        ><kbd>↑</kbd><kbd>↓</kbd> <kbd>{keyLabel('Enter')}</kbd>
+        <kbd>{keyLabel(keysFor('undo'))}</kbd></span
+      >
       <div class="buttons">
         <Button
           variant="ghost"

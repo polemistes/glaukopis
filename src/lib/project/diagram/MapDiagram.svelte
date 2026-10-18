@@ -13,6 +13,7 @@
   import type { KeyAction } from '$lib/editor/plugins';
   import { pictures, PICTURES_DRAGGED } from '$lib/figures/pictures.svelte';
   import { t } from '$lib/i18n';
+  import { keyLabel, keysFor } from '$lib/shell/keys.svelte';
   import { drag, dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
   import type { RectLike } from '$lib/ui/floating';
   import { openContextMenu, type MenuItem } from '$lib/ui/menu.svelte';
@@ -794,7 +795,7 @@
         label: t('diagram-open-as-map'),
         hint: t('diagram-open-as-map-hint'),
         icon: Minimize2,
-        shortcut: 'Alt+Shift+↓',
+        shortcut: keysFor('diagram-enter'),
         action: () => onenter(one),
       },
       { kind: 'separator' },
@@ -956,12 +957,12 @@
         {
           label: t('diagram-paste-here'),
           icon: ClipboardPaste,
-          shortcut: 'Ctrl+V',
+          shortcut: keysFor('diagram-paste'),
           disabled: !clipboard.held || !canPaste(project),
           action: () => paste(null, world),
         },
         { kind: 'separator' },
-        { label: t('diagram-show-all'), shortcut: 'Ctrl+0', action: fit },
+        { label: t('diagram-show-all'), shortcut: keysFor('diagram-whole'), action: fit },
         {
           label: t('diagram-tidy'),
           hint: t('diagram-tidy-hint'),
@@ -1058,10 +1059,10 @@
 
   // What is said at the foot of the map, with the keys shown as keys.
   const emptyHint = $derived(
-    pieces((m) => t('diagram-hint-empty', m), { tab: 'Tab', enter: 'Enter' }),
+    pieces((m) => t('diagram-hint-empty', m), { tab: keyLabel('Tab'), enter: keyLabel('Enter') }),
   );
   const linkingHint = $derived(
-    pieces((m) => t('diagram-hint-linking', m), { enter: 'Enter', esc: 'Esc' }),
+    pieces((m) => t('diagram-hint-linking', m), { enter: keyLabel('Enter'), esc: keyLabel('Esc') }),
   );
 </script>
 
@@ -1268,7 +1269,11 @@
     <button
       type="button"
       aria-label={t('diagram-zoom-out')}
-      use:tooltip={{ text: t('diagram-zoom-out'), shortcut: 'Ctrl+−', side: 'top' }}
+      use:tooltip={{
+        text: t('diagram-zoom-out'),
+        shortcut: keysFor('diagram-farther'),
+        side: 'top',
+      }}
       onclick={() => zoomBy(1 / 1.25)}
     >
       <Minus size={14} />
@@ -1285,7 +1290,7 @@
     <button
       type="button"
       aria-label={t('diagram-zoom-in')}
-      use:tooltip={{ text: t('diagram-zoom-in'), shortcut: 'Ctrl+=', side: 'top' }}
+      use:tooltip={{ text: t('diagram-zoom-in'), shortcut: keysFor('diagram-closer'), side: 'top' }}
       onclick={() => zoomBy(1.25)}
     >
       <Plus size={14} />
@@ -1307,7 +1312,7 @@
     <button
       type="button"
       aria-label={t('diagram-show-all')}
-      use:tooltip={{ text: t('diagram-show-all'), shortcut: 'Ctrl+0', side: 'top' }}
+      use:tooltip={{ text: t('diagram-show-all'), shortcut: keysFor('diagram-whole'), side: 'top' }}
       onclick={fit}
     >
       <Maximize size={14} />

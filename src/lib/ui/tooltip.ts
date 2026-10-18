@@ -6,9 +6,11 @@
  * delay, and at once when another tooltip was showing a moment ago.
  */
 
+import { keyLabel } from '$lib/shell/keys.svelte';
 import { place, type Side } from './floating';
 import { lower, raise } from './top';
 
+/** `shortcut` is written as the table of keys writes keys (`Ctrl+Shift+Z`), and shown as this computer names them. */
 export type TooltipOptions = string | { text: string; shortcut?: string; side?: Side } | null;
 
 let bubble: HTMLDivElement | null = null;
@@ -39,7 +41,7 @@ export function tooltip(node: HTMLElement | SVGElement, options: TooltipOptions)
     if (opts.shortcut) {
       const k = document.createElement('span');
       k.className = 'tooltip-shortcut';
-      k.textContent = opts.shortcut;
+      k.textContent = keyLabel(opts.shortcut);
       el.append(k);
     }
     raise(el);

@@ -9,6 +9,7 @@
   import { mathematics } from './math.svelte';
   import Placing from './Placing.svelte';
   import type { Usual } from './placing';
+  import { keyOf } from '$lib/shell/keys.svelte';
 
   interface Props {
     tex: string;
@@ -108,7 +109,7 @@
       event.preventDefault();
       event.stopPropagation();
       oncancel();
-    } else if ((event.ctrlKey || event.metaKey) && ['z', 'y'].includes(event.key.toLowerCase())) {
+    } else if ((event.ctrlKey || event.metaKey) && ['z', 'y'].includes(keyOf(event))) {
       // What is taken back here is what was typed here.
       event.stopPropagation();
     }

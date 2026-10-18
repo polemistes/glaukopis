@@ -19,6 +19,7 @@
   import MessageSquare from '@lucide/svelte/icons/message-square';
   import TextSearch from '@lucide/svelte/icons/text-search';
   import { t } from '$lib/i18n';
+  import { keysFor } from '$lib/shell/keys.svelte';
   import { tooltip } from '$lib/ui/tooltip';
 
   interface Props {
@@ -35,43 +36,43 @@
       kind: 'look' as const,
       label: t('look-title'),
       icon: Palette,
-      shortcut: 'Ctrl+Shift+A',
+      shortcut: keysFor('side-look'),
     },
     {
       kind: 'references' as const,
       label: t('project-references'),
       icon: BookMarked,
-      shortcut: 'Ctrl+Shift+R',
+      shortcut: keysFor('side-references'),
     },
     {
       kind: 'pictures' as const,
       label: t('project-pictures'),
       icon: Images,
-      shortcut: 'Ctrl+Shift+P',
+      shortcut: keysFor('side-pictures'),
     },
     {
       kind: 'comments' as const,
       label: t('comments-title'),
       icon: MessageSquare,
-      shortcut: 'Ctrl+Shift+M',
+      shortcut: keysFor('side-comments'),
     },
     {
       kind: 'found' as const,
       label: t('found-tab'),
       icon: TextSearch,
-      shortcut: 'Ctrl+Shift+T',
+      shortcut: keysFor('side-found'),
     },
     {
       kind: 'history' as const,
       label: t('history-title'),
       icon: HistoryIcon,
-      shortcut: 'Ctrl+Shift+H',
+      shortcut: keysFor('side-history'),
     },
     {
       kind: 'changes' as const,
       label: t('review-title'),
       icon: FileDiff,
-      shortcut: 'Ctrl+Shift+E',
+      shortcut: keysFor('side-changes'),
     },
   ]);
 

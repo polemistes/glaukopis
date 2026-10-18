@@ -9,6 +9,7 @@
   import Placing from '$lib/figures/Placing.svelte';
   import { t } from '$lib/i18n';
   import type { TableTools } from './views.svelte';
+  import { keyOf } from '$lib/shell/keys.svelte';
 
   interface Props {
     tools: TableTools;
@@ -60,7 +61,7 @@
       event.preventDefault();
       event.stopPropagation();
       onclose();
-    } else if ((event.ctrlKey || event.metaKey) && ['z', 'y'].includes(event.key.toLowerCase())) {
+    } else if ((event.ctrlKey || event.metaKey) && ['z', 'y'].includes(keyOf(event))) {
       event.stopPropagation();
     }
   }

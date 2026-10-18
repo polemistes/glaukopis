@@ -10,6 +10,7 @@
   import Table from '@lucide/svelte/icons/table';
   import type { TargetRequest } from '$lib/editor/ui.svelte';
   import { t } from '$lib/i18n';
+  import { keyLabel } from '$lib/shell/keys.svelte';
   import type { Project } from '$lib/project/model/project.svelte';
   import Popover from '$lib/ui/Popover.svelte';
   import { numbering, pointerText, type Pointed } from './numbering.svelte';
@@ -169,7 +170,7 @@
 
     <div class="actions">
       <span class="hint">{t('figures-targets-hint')}</span>
-      <span class="keys"><kbd>↑</kbd><kbd>↓</kbd> <kbd>Enter</kbd></span>
+      <span class="keys"><kbd>↑</kbd><kbd>↓</kbd> <kbd>{keyLabel('Enter')}</kbd></span>
     </div>
   </div>
 </Popover>

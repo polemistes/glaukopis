@@ -20,6 +20,7 @@ import Trash2 from '@lucide/svelte/icons/trash-2';
 import type { FileChoice, Folder, FoundWork, ProjectInfo } from '$lib/api/projects';
 import { currentProject } from '$lib/editor/references.svelte';
 import { t } from '$lib/i18n';
+import { keysFor } from '$lib/shell/keys.svelte';
 import { projects } from '$lib/state/projects.svelte';
 import { settings } from '$lib/state/settings.svelte';
 import type { MapMode } from '$lib/state/router.svelte';
@@ -251,19 +252,19 @@ export class ProjectActions {
       {
         label: make ? t('home-owl-new-project') : t('home-folder-new-project'),
         icon: FilePlus,
-        shortcut: make ? 'Enter' : undefined,
+        shortcut: make ? keysFor('owl-new-project') : undefined,
         action: () => (make ? make('project') : this.newProject(f.id)),
       },
       {
         label: make ? t('home-owl-new-folder') : t('home-folder-new-inside'),
         icon: FolderPlus,
-        shortcut: make ? 'Tab' : undefined,
+        shortcut: make ? keysFor('owl-new-folder') : undefined,
         action: () => (make ? make('folder') : this.newFolder(f.id)),
       },
       {
         label: t('common-rename'),
         icon: Pencil,
-        shortcut: 'F2',
+        shortcut: keysFor('owl-rename'),
         action: () => this.renameFolder(f),
       },
       { kind: 'separator' },

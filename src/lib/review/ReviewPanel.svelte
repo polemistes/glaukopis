@@ -10,6 +10,7 @@
   import X from '@lucide/svelte/icons/x';
   import type { Piece, Version } from '$lib/history/types';
   import { languages, t } from '$lib/i18n';
+  import { keyLabel, keysFor } from '$lib/shell/keys.svelte';
   import Button from '$lib/ui/Button.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
@@ -274,8 +275,11 @@
 <aside class="panel review-panel" aria-label={t('review-title')} {onkeydown}>
   <header>
     {#if head}{@render head()}{:else}<h2>{t('review-title')}</h2>{/if}
-    <IconButton label={t('common-close')} shortcut="Ctrl+Shift+E" size="sm" onclick={onclose}
-      ><X size={15} /></IconButton
+    <IconButton
+      label={t('common-close')}
+      shortcut={keysFor('side-changes')}
+      size="sm"
+      onclick={onclose}><X size={15} /></IconButton
     >
   </header>
 
@@ -361,12 +365,15 @@
         >
         <IconButton
           label={t('review-previous')}
-          shortcut="Shift+F8"
+          shortcut={keysFor('review-previous')}
           size="sm"
           onclick={() => review.previous()}><ChevronLeft size={15} /></IconButton
         >
-        <IconButton label={t('review-later')} shortcut="F8" size="sm" onclick={() => review.next()}
-          ><ChevronRight size={15} /></IconButton
+        <IconButton
+          label={t('review-later')}
+          shortcut={keysFor('review-next')}
+          size="sm"
+          onclick={() => review.next()}><ChevronRight size={15} /></IconButton
         >
       </div>
 
@@ -434,14 +441,14 @@
                     variant="primary"
                     size="sm"
                     onclick={() => review.accept(c)}
-                    title={`${t('review-accept')} (Ctrl+Alt+Y)`}
+                    title={`${t('review-accept')} (${keyLabel(keysFor('review-accept'))})`}
                   >
                     {#snippet icon()}<Check size={14} />{/snippet}
                     {t('review-accept')}
                   </Button>
                   <span
                     use:tooltip={review.canReject(c)
-                      ? { text: t('review-reject'), shortcut: 'Ctrl+Alt+N' }
+                      ? { text: t('review-reject'), shortcut: keysFor('review-reject') }
                       : t('review-reject-cannot')}
                   >
                     <Button
@@ -457,7 +464,7 @@
                     size="sm"
                     variant="ghost"
                     onclick={() => review.next()}
-                    title={`${t('review-later')} (F8)`}
+                    title={`${t('review-later')} (${keyLabel(keysFor('review-next'))})`}
                   >
                     {t('review-later')}
                   </Button>

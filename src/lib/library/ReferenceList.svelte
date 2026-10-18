@@ -4,6 +4,7 @@
   import { startDrag } from '$lib/ui/drag.svelte';
   import { shortLabel } from './format';
   import ReferenceRow from './ReferenceRow.svelte';
+  import { keyOf } from '$lib/shell/keys.svelte';
 
   interface Props {
     entries: Summary[];
@@ -137,6 +138,12 @@
     const current = indexOf(focused);
     let next = current;
     const page = Math.max(1, Math.floor(height / ROW) - 1);
+    // Ctrl+A by its letter, which is found on a Greek or a Russian keyboard too.
+    if ((event.ctrlKey || event.metaKey) && keyOf(event) === 'a') {
+      selection = entries.map((e) => e.id);
+      event.preventDefault();
+      return;
+    }
     switch (event.key) {
       case 'ArrowDown':
         next = Math.min(entries.length - 1, current + 1);
@@ -163,12 +170,6 @@
       case 'Delete':
         if (selection.length) ondelete?.(entries.filter((e) => selected.has(e.id)));
         event.preventDefault();
-        return;
-      case 'a':
-        if (event.ctrlKey || event.metaKey) {
-          selection = entries.map((e) => e.id);
-          event.preventDefault();
-        }
         return;
       case 'Escape':
         if (selection.length > 1 && focused) {

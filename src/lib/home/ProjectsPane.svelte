@@ -14,6 +14,7 @@
   import X from '@lucide/svelte/icons/x';
   import type { ProjectInfo } from '$lib/api/projects';
   import { t } from '$lib/i18n';
+  import { keysFor } from '$lib/shell/keys.svelte';
   import type { Project } from '$lib/project/model/project.svelte';
   import { PROJECT } from '$lib/project/model/types';
   import { projects } from '$lib/state/projects.svelte';
@@ -77,7 +78,7 @@
     </IconButton>
     <IconButton
       label={t('home-pane-close')}
-      shortcut="Ctrl+Shift+L"
+      shortcut={keysFor('projects-pane')}
       size="sm"
       onclick={toggleProjectsPane}
     >

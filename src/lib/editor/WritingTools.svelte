@@ -64,6 +64,7 @@
   import { commentsUi } from '$lib/comments/ui.svelte';
   import { documentSettingsUi } from '$lib/document/document-settings.svelte';
   import { languageName, t, TEXT_LANGUAGES } from '$lib/i18n';
+  import { keysFor } from '$lib/shell/keys.svelte';
   import { showPictures } from '$lib/pictures/store.svelte';
   import { documents } from '$lib/preview/documents.svelte';
   import { lookUi } from '$lib/look/look.svelte';
@@ -261,7 +262,7 @@
           label: t('editor-refmark'),
           hint: t('editor-numbers-refmark-hint'),
           icon: Milestone,
-          shortcut: 'Ctrl+Alt+K',
+          shortcut: keysFor('writing-refmark'),
           action: () => void askRefMark(view),
         },
         { kind: 'separator' },
@@ -318,7 +319,7 @@
                 label: t('editor-picture-file'),
                 hint: t('editor-picture-file-hint'),
                 icon: ImagePlus,
-                shortcut: 'Ctrl+Alt+P',
+                shortcut: keysFor('writing-picture'),
                 action: () => hooks?.picture?.(view),
               },
               {
@@ -335,7 +336,7 @@
                 label: t('editor-equation'),
                 hint: t('editor-equation-hint'),
                 icon: SquareFunction,
-                shortcut: 'Ctrl+Alt+E',
+                shortcut: keysFor('writing-equation'),
                 // It opens a panel of its own, which takes the cursor.
                 action: () => void insertEquation(view.state, view.dispatch, view),
               },
@@ -343,7 +344,7 @@
                 label: t('editor-table'),
                 hint: t('editor-table-hint'),
                 icon: Table,
-                shortcut: 'Ctrl+Alt+T',
+                shortcut: keysFor('writing-table'),
                 action: () => void askForTable(view),
               },
               {
@@ -377,14 +378,14 @@
           label: t('editor-formula'),
           hint: t('editor-formula-hint'),
           icon: Sigma,
-          shortcut: 'Ctrl+Alt+M',
+          shortcut: keysFor('writing-formula'),
           action: () => void insertMath(view.state, view.dispatch, view),
         },
         {
           label: t('editor-refmark'),
           hint: t('editor-refmark-hint'),
           icon: Milestone,
-          shortcut: 'Ctrl+Alt+K',
+          shortcut: keysFor('writing-refmark'),
           action: () => void askRefMark(view),
         },
         ...(hooks?.point
@@ -394,7 +395,7 @@
                 label: t('editor-pointer'),
                 hint: t('editor-pointer-hint'),
                 icon: Link2,
-                shortcut: 'Ctrl+Alt+R',
+                shortcut: keysFor('writing-crossref'),
                 action: () => hooks.point?.(view),
               },
             ]
@@ -415,20 +416,20 @@
           label: t('editor-new-after'),
           icon: Plus,
           // In a text, the key makes the new element from the cursor on: the last of these.
-          shortcut: body ? undefined : 'Ctrl+Enter',
+          shortcut: body ? undefined : keysFor('text-new-after'),
           action: () => add('after'),
         },
         {
           label: t('editor-new-under'),
           icon: CornerDownRight,
-          shortcut: 'Ctrl+Shift+Enter',
+          shortcut: keysFor('text-new-under'),
           action: () => add('under'),
         },
         {
           label: t('editor-new-split'),
           hint: t('editor-new-split-hint'),
           icon: SplitSquareVertical,
-          shortcut: 'Ctrl+Enter',
+          shortcut: keysFor('text-new-after'),
           disabled: !body,
           action: () => add('split'),
         },
@@ -617,10 +618,10 @@
     openMenu(
       event.currentTarget as HTMLElement,
       [
-        mark('underline', t('editor-underline'), Underline, 'Ctrl+U'),
-        mark('sup', t('editor-superscript'), Superscript, 'Ctrl+.'),
-        mark('sub', t('editor-subscript'), Subscript, 'Ctrl+,'),
-        mark('strike', t('editor-struck'), Strikethrough, 'Ctrl+Shift+X'),
+        mark('underline', t('editor-underline'), Underline, keysFor('writing-underline')),
+        mark('sup', t('editor-superscript'), Superscript, keysFor('writing-raised')),
+        mark('sub', t('editor-subscript'), Subscript, keysFor('writing-lowered')),
+        mark('strike', t('editor-struck'), Strikethrough, keysFor('writing-strike')),
         mark('code', t('editor-code-words'), Code, undefined, t('editor-code-words-hint')),
         { kind: 'separator' },
         ofPassage,
@@ -657,7 +658,11 @@
       type="button"
       class="word element"
       aria-label={t('editor-new-element')}
-      use:tooltip={{ text: t('editor-new-element-hint'), shortcut: 'Ctrl+Enter', side: 'bottom' }}
+      use:tooltip={{
+        text: t('editor-new-element-hint'),
+        shortcut: keysFor('text-new-after'),
+        side: 'bottom',
+      }}
       onclick={newElement}
     >
       <ListPlus size={14} />
@@ -699,7 +704,7 @@
     class:on={s?.marks.em}
     disabled={!s}
     aria-label={t('editor-italic')}
-    use:tooltip={{ text: t('editor-italic'), shortcut: 'Ctrl+I', side: 'bottom' }}
+    use:tooltip={{ text: t('editor-italic'), shortcut: keysFor('writing-italic'), side: 'bottom' }}
     onclick={() => run(toggle('em'))}
   >
     <Italic size={15} />
@@ -709,7 +714,7 @@
     class:on={s?.marks.strong}
     disabled={!s || s.kind === 'title'}
     aria-label={t('editor-bold')}
-    use:tooltip={{ text: t('editor-bold'), shortcut: 'Ctrl+B', side: 'bottom' }}
+    use:tooltip={{ text: t('editor-bold'), shortcut: keysFor('writing-bold'), side: 'bottom' }}
     onclick={() => run(toggle('strong'))}
   >
     <Bold size={15} />
@@ -720,7 +725,11 @@
     class:on={s?.marks.smallcaps}
     disabled={!s}
     aria-label={t('editor-small-capitals')}
-    use:tooltip={{ text: t('editor-small-capitals'), shortcut: 'Ctrl+Shift+K', side: 'bottom' }}
+    use:tooltip={{
+      text: t('editor-small-capitals'),
+      shortcut: keysFor('writing-smallcaps'),
+      side: 'bottom',
+    }}
     onclick={() => run(toggle('smallcaps'))}
   >
     <span>Sc</span>
@@ -745,7 +754,11 @@
     type="button"
     class="word cite"
     disabled={!s || s.kind === 'title'}
-    use:tooltip={{ text: t('editor-cite-at-cursor'), shortcut: '@', side: 'bottom' }}
+    use:tooltip={{
+      text: t('editor-cite-at-cursor'),
+      shortcut: keysFor('writing-cite'),
+      side: 'bottom',
+    }}
     onclick={cite}
   >
     <Quote size={13} />
@@ -757,7 +770,7 @@
     disabled={!body}
     use:tooltip={{
       text: t('editor-note-hint'),
-      shortcut: 'Ctrl+Alt+F',
+      shortcut: keysFor('writing-note'),
       side: 'bottom',
     }}
     onclick={note}
@@ -771,7 +784,7 @@
     disabled={!body || !elementOf(s?.view)}
     use:tooltip={{
       text: s?.empty ? t('editor-comment-element-hint') : t('editor-comment-hint'),
-      shortcut: 'Ctrl+Alt+C',
+      shortcut: keysFor('comment'),
       side: 'bottom',
     }}
     onclick={comment}

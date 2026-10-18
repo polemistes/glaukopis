@@ -11,6 +11,7 @@
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import X from '@lucide/svelte/icons/x';
   import { t } from '$lib/i18n';
+  import { keysFor } from '$lib/shell/keys.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
   import { indent, outdent, shift } from '../elements';
   import { kindColour } from '../kinds';
@@ -110,7 +111,12 @@
 <aside class="outline" aria-label={t('text-outline')} style:--outline-width="{width}px">
   <header>
     <h2>{t('text-outline')}</h2>
-    <IconButton label={t('common-close')} shortcut="Ctrl+Shift+O" size="sm" onclick={onclose}>
+    <IconButton
+      label={t('common-close')}
+      shortcut={keysFor('text-outline')}
+      size="sm"
+      onclick={onclose}
+    >
       <X size={14} />
     </IconButton>
   </header>

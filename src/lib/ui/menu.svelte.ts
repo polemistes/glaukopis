@@ -15,6 +15,7 @@ export type MenuItem =
       icon?: Component<{ size?: number | string }>;
       /** A dot of this colour, in place of an icon: for a kind of element. */
       colour?: string;
+      /** Written as the table of keys writes keys (`Ctrl+Shift+Z`): see `keysFor`. Shown as this computer names them. */
       shortcut?: string;
       disabled?: boolean;
       danger?: boolean;

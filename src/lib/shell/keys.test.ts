@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { has } from '$lib/i18n';
-import { KEYS, clashes, matches, shortcuts } from './keys.svelte';
+import {
+  KEYS,
+  TOGETHER,
+  clashes,
+  formatKeys,
+  keyLabel,
+  keyOf,
+  keysFor,
+  matches,
+  shortcuts,
+  type Place,
+} from './keys.svelte';
 
 const press = (key: string, more: Partial<KeyboardEventInit> & { code?: string } = {}) =>
   new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...more });
@@ -21,6 +32,24 @@ describe('the keys', () => {
       { id: 'd', keys: 'Ctrl+F', place: 'store' },
     ]);
     expect(found.map(([a, b]) => `${a.id}+${b.id}`)).toEqual(['a+b']);
+  });
+
+  it('are in force together both ways, wherever two places are', () => {
+    const places = Object.keys(TOGETHER) as Place[];
+    const oneWay = places.flatMap((a) =>
+      places
+        .filter((b) => TOGETHER[a].includes(b) && !TOGETHER[b].includes(a))
+        .map((b) => `${a} has ${b}, but ${b} has not ${a}`),
+    );
+    expect(oneWay).toEqual([]);
+    // The store of pictures has the keys that hold everywhere, whichever comes first in the table.
+    for (const order of [
+      ['everywhere', 'store'],
+      ['store', 'everywhere'],
+    ] as const) {
+      const found = clashes(order.map((place, i) => ({ id: `k${i}`, keys: 'Ctrl+K', place })));
+      expect(found.length, order.join(' before ')).toBe(1);
+    }
   });
 
   it('have each a name of its own, and words for it', () => {
@@ -53,6 +82,88 @@ describe('the keys', () => {
     expect(matches(entry('F8'), press('F8'))).toBe(true);
     expect(matches(entry('Shift+F8'), press('F8'))).toBe(false);
     expect(matches(entry(''), press('x'))).toBe(false);
+  });
+
+  it('are a Latin letter that is written, wherever it is on the keyboard', () => {
+    const entry = (keys: string) => ({ id: 'x', keys, place: 'everywhere' as const });
+    // A German keyboard has its Z where others have the Y: Ctrl+Z there is undo, not redo.
+    const z = press('z', { ctrlKey: true, code: 'KeyY' });
+    expect(matches(entry('Ctrl+Z'), z)).toBe(true);
+    expect(matches(entry('Ctrl+Y'), z)).toBe(false);
+    // A Greek one writes ζ where the Z is, a Russian one я.
+    expect(matches(entry('Ctrl+Z'), press('ζ', { ctrlKey: true, code: 'KeyZ' }))).toBe(true);
+    expect(matches(entry('Ctrl+Z'), press('я', { ctrlKey: true, code: 'KeyZ' }))).toBe(true);
+  });
+
+  it('give the letter of a key to a view that matches it, on a Greek or a Russian keyboard too', () => {
+    const key = (key: string, code: string) => keyOf({ key, code });
+    expect(key('a', 'KeyA')).toBe('a');
+    expect(key('A', 'KeyA')).toBe('a');
+    expect(key('α', 'KeyA')).toBe('a');
+    expect(key('Α', 'KeyA')).toBe('a');
+    expect(key('ф', 'KeyA')).toBe('a');
+    expect(key('ψ', 'KeyC')).toBe('c');
+    // Where the keyboard has another Latin letter, that letter: the A of a French keyboard is where others have the Q.
+    expect(key('a', 'KeyQ')).toBe('a');
+    expect(key('F3', 'F3')).toBe('f3');
+    expect(key('Enter', 'Enter')).toBe('enter');
+    // A sign is the sign, not the digit under it.
+    expect(key('/', 'Digit7')).toBe('/');
+    expect(key('&', 'Digit1')).toBe('&');
+  });
+
+  it('are shown as the computer names them', () => {
+    const pc = (keys: string) => formatKeys(keys, false);
+    const mac = (keys: string) => formatKeys(keys, true);
+    for (const keys of ['Ctrl+Shift+Z', 'Ctrl+Alt+K', 'Alt+Shift+↓', 'F8', 'Enter', 'Ctrl+=']) {
+      expect(pc(keys)).toBe(keys);
+    }
+    expect(mac('Ctrl+Shift+Z')).toBe('⇧⌘Z');
+    expect(mac('Ctrl+Alt+K')).toBe('⌥⌘K');
+    expect(mac('Ctrl+Alt+Shift+U')).toBe('⌥⇧⌘U');
+    expect(mac('Alt+Shift+↓')).toBe('⌥⇧↓');
+    expect(mac('Ctrl+Enter')).toBe('⌘↩');
+    expect(mac('Shift+Tab')).toBe('⇧⇥');
+    expect(mac('Ctrl+/')).toBe('⌘/');
+    expect(mac('Ctrl+=')).toBe('⌘=');
+    expect(mac('Ctrl+-')).toBe('⌘-');
+    expect(mac("Ctrl+'")).toBe("⌘'");
+    expect(mac('Shift+F8')).toBe('⇧F8');
+    expect(mac('Del')).toBe('⌦');
+    expect(mac('Esc')).toBe('⎋');
+    expect(mac('Space')).toBe('Space');
+    expect(mac('Ctrl')).toBe('⌘');
+    expect(mac('@')).toBe('@');
+    expect(mac('')).toBe('');
+    // What is no keys is left as it is.
+    expect(mac('Double-click')).toBe('Double-click');
+    // Every key of the table is shown without a plus sign on a Mac, but where the key is one.
+    for (const k of KEYS.filter((k) => k.keys)) {
+      expect(mac(k.keys).replace(/\+$/, ''), k.id).not.toContain('+');
+    }
+    // Here, which is no Mac.
+    expect(keyLabel(keysFor('sheet'))).toBe('Ctrl+/');
+    expect(keysFor('palette')).toBe('Ctrl+K');
+  });
+
+  it('are written in menus and tooltips by the table, not by hand', () => {
+    // A shortcut with Ctrl or Alt in it is taken from the table by `keysFor`, so that a key changed there is changed everywhere it is shown.
+    const sources = import.meta.glob('/src/**/*.{ts,svelte}', {
+      query: '?raw',
+      import: 'default',
+      eager: true,
+    }) as Record<string, string>;
+    expect(Object.keys(sources).length).toBeGreaterThan(100);
+    const byHand = Object.entries(sources)
+      .filter(([path]) => !path.endsWith('.test.ts') && !path.endsWith('shell/keys.svelte.ts'))
+      .flatMap(([path, text]) =>
+        [
+          ...text.matchAll(
+            /shortcut\s*(?:=\{?|:)[^\n]*?["'`]([^"'`\n]*(?:Ctrl|Alt)\+[^"'`\n]*)["'`]/g,
+          ),
+        ].map((m) => `${path}: ${m[1]}`),
+      );
+    expect(byHand).toEqual([]);
   });
 
   it('do what is bound, while it is bound, and leave what another has taken', () => {

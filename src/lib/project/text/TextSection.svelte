@@ -43,6 +43,7 @@
   import { hydrate } from '$lib/figures/hydrate.svelte';
   import { pressedFound } from '$lib/found/found.svelte';
   import { t } from '$lib/i18n';
+  import { keysFor } from '$lib/shell/keys.svelte';
   import { drawnWordAt, spellingMarks } from '$lib/spelling/drawn';
   import { initials } from '$lib/sharing/connection.svelte';
   import { tooltip } from '$lib/ui/tooltip';
@@ -370,7 +371,7 @@
         type="button"
         class="corner enter"
         aria-label={t('text-open-as-map')}
-        use:tooltip={{ text: t('text-open-as-map'), shortcut: 'Alt+Shift+↓', side: 'top' }}
+        use:tooltip={{ text: t('text-open-as-map'), shortcut: keysFor('text-enter'), side: 'top' }}
         tabindex="-1"
         onmousedown={(e) => e.preventDefault()}
         onclick={() => onenter(node.id)}
@@ -384,7 +385,7 @@
         aria-label={t('project-leave-map', { name: above })}
         use:tooltip={{
           text: t('project-leave-map', { name: above }),
-          shortcut: 'Alt+Shift+↑',
+          shortcut: keysFor('up'),
           side: 'top',
         }}
         tabindex="-1"
