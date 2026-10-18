@@ -42,7 +42,10 @@ export function hasNotes(id: string): boolean {
 /**
  * A form holds the reference as it was when the form was opened. If the note
  * was not changed in the form, what is kept is the note as it is now: it may
- * have been written elsewhere meanwhile.
+ * have been written elsewhere meanwhile. Where the note as it is now cannot
+ * be read, even at a second asking, the save is refused with why: saving the
+ * form's note would write the old note over a newer one, and leaving the
+ * note out would delete it, since a save replaces every field.
  */
 export async function withNoteAsItIs(
   id: string,
@@ -50,15 +53,11 @@ export async function withNoteAsItIs(
   loaded: Reference | null,
 ): Promise<Draft> {
   if ((draft.fields.annotation ?? '') !== (loaded?.fields.annotation ?? '')) return draft;
-  try {
-    const now = (await libraryGet(id)).fields.annotation;
-    const fields = { ...draft.fields };
-    if (now) fields.annotation = now;
-    else delete fields.annotation;
-    return { ...draft, fields };
-  } catch {
-    return draft;
-  }
+  const now = (await libraryGet(id).catch(() => libraryGet(id))).fields.annotation;
+  const fields = { ...draft.fields };
+  if (now) fields.annotation = now;
+  else delete fields.annotation;
+  return { ...draft, fields };
 }
 
 export interface NotesRequest {
