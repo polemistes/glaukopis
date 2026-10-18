@@ -25,7 +25,7 @@ import {
   type Counting,
   type Numbers,
 } from './numbering.svelte';
-import { pictures, PICTURE_ENDINGS } from './pictures.svelte';
+import { pictures, PICTURE_ENDINGS, showPicture } from './pictures.svelte';
 import {
   canStandBeside,
   inRow,
@@ -481,14 +481,7 @@ export class FigureView implements NodeView {
     this.#stop = $effect.root(() => {
       $effect(() => {
         const { file, extension } = this.#file;
-        const shown = pictures.of(file, extension);
-        if (shown.url) {
-          if (this.#img.getAttribute('src') !== shown.url) this.#img.src = shown.url;
-          this.#picture.removeAttribute('data-state');
-        } else {
-          this.#img.removeAttribute('src');
-          this.#picture.dataset.state = shown.state;
-        }
+        showPicture(this.#picture, this.#img, pictures.of(file, extension));
       });
       // Where it stands, as the document has it.
       $effect(() => {
