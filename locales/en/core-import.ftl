@@ -49,9 +49,11 @@ core-import-zotero-left-out = Zotero’s field “{ $field }” has no counterpa
 
 core-import-zotero-no-database = a Zotero database ({ $file }) in { $path }
 core-import-zotero-copying = copying { $path } to a temporary directory
+core-import-zotero-locked = Zotero keeps { $path } locked while it runs, so it could not be read. Close Zotero and import again
 core-import-zotero-empty = the file is empty
 core-import-zotero-disturbed = Zotero was writing to its database while it was read. If something is missing, close Zotero and import again.
 core-import-zotero-backup-read = Zotero’s database could not be read ({ $error }). Its backup, { $backup }, was read instead: what was changed in Zotero since the backup was made is missing.
+core-import-zotero-backup-read-locked = Zotero keeps its database locked while it runs, so the database could not be read. Its backup, { $backup }, was read instead: what was changed in Zotero since the backup was made is missing. Close Zotero and import again to read the database itself.
 core-import-zotero-not-a-database = { $path } is not a database of Zotero.
 core-import-zotero-unreadable = The Zotero database has a form that cannot be read here: { $what }. If it was written by an old version of Zotero, opening it once in a current one brings it up to date.
 core-import-zotero-unreadable-version = The Zotero database has a form that cannot be read here (version { $version } of Zotero’s database): { $what }. If it was written by an old version of Zotero, opening it once in a current one brings it up to date.

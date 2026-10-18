@@ -869,6 +869,26 @@ fn zotero_running_is_no_hindrance() {
 }
 
 #[test]
+fn a_database_longer_than_a_gibibyte() {
+    use std::io::{Seek, SeekFrom, Write};
+    // A full-text index of many PDFs makes Zotero's database this long. The
+    // file is made long without data, so that it costs no room; in the page
+    // that holds SQLite's lock bytes, which SQLite never uses, it has bytes
+    // that are no part of a database, and which are not copied.
+    let z = a_library();
+    let (_, before) = read(z.path(), &EVERYTHING).unwrap();
+    let mut file = fs::OpenOptions::new().write(true).open(z.path().join("zotero.sqlite")).unwrap();
+    file.set_len((1 << 30) + (1 << 16)).unwrap();
+    file.seek(SeekFrom::Start(1 << 30)).unwrap();
+    file.write_all(&[0xff; 512]).unwrap();
+    drop(file);
+
+    let (candidates, warnings) = read(z.path(), &EVERYTHING).unwrap();
+    assert_eq!(candidates.len(), 7);
+    assert_eq!(warnings, before);
+}
+
+#[test]
 fn a_database_that_keeps_a_log() {
     // Zotero does not write ahead of its database, but others that use
     // the database may have set it to.

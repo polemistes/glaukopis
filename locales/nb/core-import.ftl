@@ -48,9 +48,11 @@ core-import-zotero-left-out = Zotero-feltet «{ $field }» har ikke noe motstykk
 
 core-import-zotero-no-database = en Zotero-database ({ $file }) i { $path }
 core-import-zotero-copying = kunne ikke kopiere { $path } til en midlertidig mappe
+core-import-zotero-locked = Zotero holder { $path } låst så lenge programmet kjører, så filen kunne ikke leses. Lukk Zotero og importer på nytt
 core-import-zotero-empty = filen er tom
 core-import-zotero-disturbed = Zotero skrev til databasen sin mens den ble lest. Hvis noe mangler, lukk Zotero og importer på nytt.
 core-import-zotero-backup-read = Databasen til Zotero kunne ikke leses ({ $error }). Sikkerhetskopien, { $backup }, ble lest i stedet: det som er endret i Zotero etter at sikkerhetskopien ble tatt, mangler.
+core-import-zotero-backup-read-locked = Zotero holder databasen sin låst så lenge programmet kjører, så databasen kunne ikke leses. Sikkerhetskopien, { $backup }, ble lest i stedet: det som er endret i Zotero etter at sikkerhetskopien ble tatt, mangler. Lukk Zotero og importer på nytt for å lese selve databasen.
 core-import-zotero-not-a-database = { $path } er ikke en Zotero-database.
 core-import-zotero-unreadable = Zotero-databasen har en form som ikke kan leses her: { $what }. Hvis den ble skrevet av en gammel versjon av Zotero, blir den oppdatert når den åpnes én gang i en nyere versjon.
 core-import-zotero-unreadable-version = Zotero-databasen har en form som ikke kan leses her (versjon { $version } av Zoteros database): { $what }. Hvis den ble skrevet av en gammel versjon av Zotero, blir den oppdatert når den åpnes én gang i en nyere versjon.
