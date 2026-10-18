@@ -17,7 +17,16 @@
  */
 
 import * as Y from 'yjs';
-import { LOCATOR_LABELS, type CiteItem, type CiteMode } from '$lib/editor/schema';
+import {
+  citationText,
+  citationWordsOf,
+  PLAIN_WORDS,
+  pointerText,
+  workText,
+  type CitedWork,
+  type LabelWords,
+  type PointedKind,
+} from '$lib/editor/labels';
 import { migrate, needsMigration } from '$lib/project/model/migrate';
 import {
   bodyFacts,
@@ -27,11 +36,15 @@ import {
   readTitle,
   refForm,
   type Block,
-  type RefForm,
   type SetOff,
 } from '$lib/project/model/text';
 import { buildTree, pathTo, type FlatNode, type Tree } from '$lib/project/model/tree';
-import { PROJECT, type DocumentSettings, type RefRecord } from '$lib/project/model/types';
+import {
+  OWN_SETTINGS,
+  PROJECT,
+  type DocumentSettings,
+  type RefRecord,
+} from '$lib/project/model/types';
 import { Matcher, type SearchOptions } from './matching';
 import {
   bodyPassages,
@@ -64,8 +77,8 @@ interface ElementRead {
    * id; nothing for the project itself.
    */
   tree: string | null;
-  /** The passages with what stands outside the text, when they have been read so. */
-  shown?: Passage[];
+  /** The passages with what stands outside the text, when they have been read so, and the words they were read with. */
+  shown?: { key: string; passages: Passage[] };
 }
 
 /** A project as it is searched: one tree, the project's own element at the top (ADR 0037). */
@@ -175,54 +188,59 @@ export function readProject(
 
 // ---- what stands outside the text, as the text in view shows it ----
 
-/** A work in short, as a citation shows it: see `editor/references.svelte.ts`. */
-function workOf(project: ProjectRead, id: string): string {
-  const r = project.refs.get(id);
-  if (!r) return '';
-  const who = r.authors?.replace(/ \(eds?\.\)$/, '') || r.title?.split(/[:.?!]\s/)[0] || r.key;
-  return `${who} ${r.year || 'n.d.'}`.trim();
+/** Something words can point to, in the document it is counted in. */
+type Pointed = { kind: PointedKind; number: string | null; words: string };
+
+/** A reference a project keeps, as a citation shows it. */
+const workOf = (r: RefRecord): CitedWork => ({
+  authors: r.authors ?? '',
+  year: r.year ?? '',
+  title: r.title ?? '',
+  key: r.key ?? '',
+});
+
+/**
+ * The documents of a project, the project's own and each tree under it,
+ * with what is said of each as a document: its own settings laid over the
+ * project's, as `Project.documentOf` lays them, but for the title and the
+ * subtitle, which are each document's own. The window works out from them
+ * the words each document shows (`LabelWords`), which it has and the
+ * worker has not: the format and the language.
+ */
+export interface ReadDocument {
+  /** The tree under the project, by its id; the project itself for its own. */
+  tree: string;
+  settings: DocumentSettings;
 }
 
-function citationOf(project: ProjectRead, items: CiteItem[], mode: CiteMode): string {
-  const one = (item: CiteItem, withoutAuthor = false) => {
-    const r = project.refs.get(item.id);
-    let out = [
-      item.prefix?.trim(),
-      withoutAuthor || item.suppressAuthor ? (r?.year ?? '') : workOf(project, item.id),
-    ]
-      .filter(Boolean)
-      .join(' ');
-    if (item.locator) {
-      const label =
-        item.label && item.label !== 'page'
-          ? (LOCATOR_LABELS.find(([name]) => name === item.label)?.[1] ?? '')
-          : '';
-      out += `, ${label ? `${label} ` : ''}${item.locator}`;
-    }
-    const after = item.suffix?.trim();
-    if (after) out += /^[,;:.!?)]/.test(after) ? after : ` ${after}`;
-    return out;
-  };
-  if (!items.length) return '';
-  if (mode === 'intext') {
-    const [first, ...rest] = items;
-    const who = project.refs.get(first.id)?.authors ?? '';
-    return `${who} (${[one(first, true), ...rest.map((i) => one(i))].join('; ')})`;
-  }
-  return `(${items.map((i) => one(i)).join('; ')})`;
+export function documentsOf(project: ProjectRead): ReadDocument[] {
+  const own = project.byId.get(PROJECT)?.document ?? {};
+  const set = (d: DocumentSettings) =>
+    Object.fromEntries(
+      Object.entries(d).filter(
+        ([, v]) => v !== undefined && v !== '' && !(Array.isArray(v) && !v.length),
+      ),
+    ) as DocumentSettings;
+  const shared = Object.fromEntries(
+    Object.entries(set(own)).filter(([k]) => !OWN_SETTINGS.includes(k as keyof DocumentSettings)),
+  ) as DocumentSettings;
+  return [
+    { tree: PROJECT, settings: set(own) },
+    ...(project.tree.children.get(PROJECT) ?? []).map((tree) => ({
+      tree,
+      settings: { ...shared, ...set(project.byId.get(tree)?.document ?? {}) },
+    })),
+  ];
 }
 
 /**
  * What words that point say in the document of an element, counted as the
- * document counts: see `figures/numbering.svelte.ts`. The words are those of
- * a document without a format of its own. The document is walked from
- * `top`: the project itself, for the whole of it.
+ * document counts: see `figures/numbering.svelte.ts`. The document is walked
+ * from `top`: the tree under the project that is the document, or the
+ * project itself, for the whole of it.
  */
-function pointersOf(
-  project: ProjectRead,
-  top: string = PROJECT,
-): Map<string, { kind: string; number: string | null; words: string }> {
-  const out = new Map<string, { kind: string; number: string | null; words: string }>();
+function pointersOf(project: ProjectRead, top: string = PROJECT): Map<string, Pointed> {
+  const out = new Map<string, Pointed>();
   const counted: Record<string, number> = { figure: 0, table: 0, equation: 0 };
   const walkBranch = (branch: string, within: Set<string>) => {
     const walk = (id: string, root: boolean) => {
@@ -242,23 +260,6 @@ function pointersOf(
   };
   walkBranch(top, new Set([top]));
   return out;
-}
-
-function pointerOf(
-  pointed: { kind: string; number: string | null; words: string } | undefined,
-  form: RefForm,
-): string {
-  if (!pointed) return '';
-  if (pointed.kind === 'figure' || pointed.kind === 'table') {
-    const called = pointed.kind === 'figure' ? 'Figure' : 'Table';
-    if (pointed.number === null) return called;
-    return form === 'number' ? pointed.number : `${called} ${pointed.number}`;
-  }
-  if (pointed.kind === 'equation') {
-    if (pointed.number === null) return '';
-    return form === 'number' ? pointed.number : `(${pointed.number})`;
-  }
-  return pointed.words;
 }
 
 // ---- searching ----
@@ -373,6 +374,7 @@ export function searchProject(
   words: string,
   options: SearchOptions,
   most = 300,
+  shownWords: Record<string, LabelWords> = {},
 ): ProjectFound | { error: string } | null {
   const made = Matcher.make(words, options);
   if (!made) return null;
@@ -398,13 +400,35 @@ export function searchProject(
     out.found.push({ ...found, before, text: middle, after });
   };
 
-  let pointers: ReturnType<typeof pointersOf> | null = null;
-  // What stands outside the text, as the text shows it: searched where that is asked for,
-  // and shown in the words around what is found in any case.
-  const labels: Labels = {
-    citation: (items, mode) => citationOf(project, items, mode),
-    crossref: (target, form) =>
-      pointerOf((pointers ??= pointersOf(project)).get(target), refForm(form)),
+  // What stands outside the text, as the text shows it: searched where that
+  // is asked for, and shown in the words around what is found in any case.
+  // Each document shows it in its own words, which the window sends
+  // (`LabelWords`); one it sent none for, in those of a document without a
+  // format of its own. The words that point are counted in each document.
+  const wordsOf = (tree: string) => shownWords[tree] ?? PLAIN_WORDS;
+  const lookup = (id: string) => {
+    const r = project.refs.get(id);
+    return r ? workOf(r) : null;
+  };
+  const labelled = new Map<string, { labels: Labels; key: string }>();
+  const labelsOf = (tree: string) => {
+    let known = labelled.get(tree);
+    if (!known) {
+      const said = wordsOf(tree);
+      const citation = citationWordsOf(said.citation);
+      let pointers: Map<string, Pointed> | null = null;
+      const labels: Labels = {
+        citation: (items, mode) => citationText(items, mode, lookup, citation),
+        crossref: (target, form) =>
+          pointerText(
+            (pointers ??= pointersOf(project, tree)).get(target),
+            refForm(form),
+            said.pointer,
+          ),
+      };
+      labelled.set(tree, (known = { labels, key: JSON.stringify(said) }));
+    }
+    return known;
   };
   /** The tree under the project an element is in, as what is found says it. */
   const treeOf = (e: ElementRead | undefined) => ({
@@ -421,7 +445,12 @@ export function searchProject(
       };
       for (const hit of matcher.find(e.title.text))
         put({ ...base, part: 'title', passage: 0, start: hit.start, end: hit.end }, e.title.text);
-      const shown = () => (e.shown ??= bodyPassages(e.blocks, labels));
+      // Read with labels once for the words they are read with: other words, read anew.
+      const shown = () => {
+        const { labels, key } = labelsOf(e.tree ?? PROJECT);
+        if (e.shown?.key !== key) e.shown = { key, passages: bodyPassages(e.blocks, labels) };
+        return e.shown.passages;
+      };
       const list = options.labels ? shown() : e.body;
       for (const j of matcher.acrossParagraphs ? joined(list) : alone(list)) {
         if (!j.text) continue;
@@ -506,7 +535,10 @@ export function searchProject(
             start: hit.start,
             end: hit.end,
             ref: note.ref,
-            work: workOf(project, note.ref),
+            work: (() => {
+              const r = project.refs.get(note.ref);
+              return r ? workText(workOf(r), wordsOf(PROJECT).citation) : '';
+            })(),
           },
           note.text,
         );
