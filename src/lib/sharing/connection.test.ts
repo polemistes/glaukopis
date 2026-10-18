@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as decoding from 'lib0/decoding';
 import * as encoding from 'lib0/encoding';
-import { Awareness } from 'y-protocols/awareness';
+import { applyAwarenessUpdate, Awareness } from 'y-protocols/awareness';
 import { writeSyncStep1 } from 'y-protocols/sync';
 import * as Y from 'yjs';
 import { Connection } from './connection.svelte';
@@ -129,5 +130,36 @@ describe('the connection to the server', () => {
     expect(ended).toEqual(['removed']);
     await vi.advanceTimersByTimeAsync(60_000);
     expect(sockets).toHaveLength(1);
+  });
+
+  it('tells the others that this copy leaves before it closes the socket', async () => {
+    const doc = new Y.Doc();
+    const awareness = new Awareness(doc);
+    awareness.setLocalState({ name: 'Me' });
+    const sockets: Socket[] = [];
+    const connection = new Connection(doc, awareness, {
+      ticket: async () => 'ws://server/room',
+      socket: () => {
+        sockets.push(new Socket());
+        return sockets.at(-1) as unknown as WebSocket;
+      },
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    sockets[0].open();
+    sockets[0].hear();
+    // Another copy that knows this one, as the others in the room do.
+    const other = new Awareness(new Y.Doc());
+    const hear = (message: Uint8Array) => {
+      const decoder = decoding.createDecoder(message);
+      if (decoding.readVarUint(decoder) !== 1) return;
+      applyAwarenessUpdate(other, decoding.readVarUint8Array(decoder), 'server');
+    };
+    sockets[0].sent.forEach(hear);
+    expect(other.getStates().has(doc.clientID)).toBe(true);
+    const before = sockets[0].sent.length;
+    connection.stop();
+    sockets[0].sent.slice(before).forEach(hear);
+    expect(other.getStates().has(doc.clientID)).toBe(false);
+    other.destroy();
   });
 });

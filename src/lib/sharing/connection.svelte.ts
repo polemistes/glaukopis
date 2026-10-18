@@ -108,11 +108,13 @@ export class Connection {
     this.#stopped = true;
     clearTimeout(this.#retry);
     this.tooLarge = false;
+    // Said while there is a socket to say it on, and while the handler that
+    // sends the awareness still listens: the others see this one leave at
+    // once, without waiting for the server to notice the socket close.
+    removeAwarenessStates(this.#awareness, [this.#doc.clientID], 'leaving');
     this.#doc.off('update', this.#onUpdate);
     this.#awareness.off('update', this.#onAwareness);
     if (typeof window !== 'undefined') window.removeEventListener('online', this.#onOnline);
-    // Said while there is a socket to say it on: the others see this one leave at once.
-    removeAwarenessStates(this.#awareness, [this.#doc.clientID], 'leaving');
     this.#forgetOthers();
     const socket = this.#socket;
     this.#socket = null;

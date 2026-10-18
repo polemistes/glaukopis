@@ -102,9 +102,13 @@ export function macrosUsedBy(style: Style, start: Element): Element[] {
   return out;
 }
 
-/** How many places call a macro. */
+/**
+ * How many places call a macro: a <text> and a <key> of a sort alike, as
+ * macrosUsedBy follows them, since a macro the sort uses changes the order
+ * of the bibliography when it is edited.
+ */
 export function usesOf(style: Style, name: string): number {
-  return Array.from(style.root.querySelectorAll('text')).filter(
+  return Array.from(style.root.querySelectorAll('text, key')).filter(
     (t) => t.getAttribute('macro') === name,
   ).length;
 }
