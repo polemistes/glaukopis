@@ -51,3 +51,16 @@ network-method = { $method } is not a way of asking that is used here
 
 core-in-use-title = Glaukopis is open already
 core-in-use = Glaukopis is already open, and at work in { $path }. Only one can work there at a time, lest each write over what the other has written. Go on in the one that is open.
+
+## When the application cannot start: its data cannot be made or read.
+
+core-start-failed-title = Glaukopis could not start
+# What went wrong is given after the colon, as "creating /home/…/library: Permission denied".
+core-start-failed = Glaukopis could not start. What went wrong: { $error }
+# Said after core-start-failed, where the log of the run could be written.
+core-start-failed-log = More of what happened is in the log of the run, { $log }
+
+## When something goes wrong inside Glaukopis itself.
+
+# What the program said of itself is given after the colon, in English.
+core-worker-panicked = Something went wrong inside Glaukopis, and what was being done was given up: { $message }. The log of the run has more.

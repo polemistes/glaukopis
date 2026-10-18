@@ -236,42 +236,43 @@ fn plan_pdfs(
         let working: Vec<_> = (0..AT_ONCE.min(paths.len()))
             .map(|_| {
                 s.spawn(|| {
-                    loop {
-                        let i = next.fetch_add(1, Ordering::Relaxed);
-                        let Some(given) = paths.get(i) else { break };
-                        if stop.load(Ordering::Relaxed) {
-                            break;
+                    super::guarded(stop, || {
+                        loop {
+                            let i = next.fetch_add(1, Ordering::Relaxed);
+                            let Some(given) = paths.get(i) else { break };
+                            if stop.load(Ordering::Relaxed) {
+                                break;
+                            }
+                            let path = Path::new(given);
+                            let name = name_of(path);
+                            at_hand.lock().unwrap_or_else(|poisoned| poisoned.into_inner()).push(name.clone());
+                            tell(name.clone());
+                            let mut said = Vec::new();
+                            let candidate = if path.extension().is_some_and(|e| e.eq_ignore_ascii_case("pdf")) {
+                                identify(state, path, ask, &mut said, stop).map(|found| found.candidate)
+                            } else {
+                                said.push(tr!("core-import-not-a-pdf", name = &name));
+                                None
+                            };
+                            found.lock().unwrap_or_else(|poisoned| poisoned.into_inner())[i] = Some((candidate, said));
+                            done.fetch_add(1, Ordering::Relaxed);
+                            let still = {
+                                let mut at_hand = at_hand.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+                                at_hand.retain(|n| *n != name);
+                                at_hand.first().cloned()
+                            };
+                            if let Some(still) = still {
+                                tell(still);
+                            }
                         }
-                        let path = Path::new(given);
-                        let name = name_of(path);
-                        at_hand.lock().unwrap_or_else(|poisoned| poisoned.into_inner()).push(name.clone());
-                        tell(name.clone());
-                        let mut said = Vec::new();
-                        let candidate = if path.extension().is_some_and(|e| e.eq_ignore_ascii_case("pdf")) {
-                            identify(state, path, ask, &mut said, stop).map(|found| found.candidate)
-                        } else {
-                            said.push(tr!("core-import-not-a-pdf", name = &name));
-                            None
-                        };
-                        found.lock().unwrap_or_else(|poisoned| poisoned.into_inner())[i] = Some((candidate, said));
-                        done.fetch_add(1, Ordering::Relaxed);
-                        let still = {
-                            let mut at_hand = at_hand.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
-                            at_hand.retain(|n| *n != name);
-                            at_hand.first().cloned()
-                        };
-                        if let Some(still) = still {
-                            tell(still);
-                        }
-                    }
+                    })
                 })
             })
             .collect();
-        // What went wrong in finding out about a file is not passed over in silence.
-        for h in working {
-            h.join().unwrap_or_else(|e| std::panic::resume_unwind(e));
-        }
-    });
+        // What went wrong in finding out about a file is not passed over in
+        // silence: a worker that panicked fails the command, which answers.
+        super::all_answered(working.into_iter().map(|h| h.join()))
+    })?;
     let mut warnings = Vec::new();
     let mut candidates = Vec::new();
     // In the order the files were given, whatever order they were found out about in.

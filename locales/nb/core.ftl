@@ -47,3 +47,13 @@ network-method = { $method } er ikke en måte å spørre på som brukes her
 
 core-in-use-title = Glaukopis er allerede åpent
 core-in-use = Glaukopis er allerede åpent, og arbeider i { $path }. Bare ett kan arbeide der om gangen, ellers skriver de over det den andre har skrevet. Fortsett i det som er åpent.
+
+## Når programmet ikke kan starte: dataene kan ikke lages eller leses.
+
+core-start-failed-title = Glaukopis kunne ikke starte
+core-start-failed = Glaukopis kunne ikke starte. Det som gikk galt: { $error }
+core-start-failed-log = Mer om hva som skjedde, står i loggen for kjøringen, { $log }
+
+## Når noe går galt inne i Glaukopis selv.
+
+core-worker-panicked = Noe gikk galt inne i Glaukopis, og det som ble gjort, ble gitt opp: { $message }. Loggen for kjøringen har mer.
