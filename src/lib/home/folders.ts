@@ -43,6 +43,36 @@ export function folderOf(folders: Folder[], project: ProjectInfo): string | null
   return folder && folders.some((f) => f.id === folder) ? folder : null;
 }
 
+/**
+ * Of some projects and folders, those that lie in no folder among them: a
+ * folder moved takes what is in it along, so what is in it is not moved
+ * out of it on its own, as the elements of a map move by their topmost.
+ */
+export function topmost<T extends { projects: string[]; folders: string[] }>(
+  folders: Folder[],
+  list: ProjectInfo[],
+  things: T,
+): T {
+  const byId = new Map(folders.map((f) => [f.id, f]));
+  const chosen = new Set(things.folders);
+  /** Whether a folder above, from the parent given up, is among those chosen; a folder is not above itself. */
+  const under = (parent: string | null | undefined, self?: string) => {
+    const seen = new Set<string>(self ? [self] : []);
+    for (let at = parent ?? null; at && byId.has(at) && !seen.has(at); ) {
+      if (chosen.has(at)) return true;
+      seen.add(at);
+      at = byId.get(at)!.parent ?? null;
+    }
+    return false;
+  };
+  const projectsById = new Map(list.map((p) => [p.id, p]));
+  return {
+    ...things,
+    folders: things.folders.filter((id) => !under(byId.get(id)?.parent, id)),
+    projects: things.projects.filter((id) => !under(projectsById.get(id)?.folder)),
+  };
+}
+
 /** The folder and every folder under it, by id. */
 export function descendants(folders: Folder[], id: string): Set<string> {
   const out = new Set<string>([id]);

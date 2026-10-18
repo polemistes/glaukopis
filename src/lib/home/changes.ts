@@ -19,7 +19,7 @@ import { confirm } from '$lib/ui/confirm.svelte';
 import type { DragPayload } from '$lib/ui/drag.svelte';
 import { notifyError } from '$lib/ui/toast.svelte';
 import { closedTrees } from './closed.svelte';
-import { ancestors, descendants, folderOf, parentOf } from './folders';
+import { ancestors, descendants, folderOf, parentOf, topmost } from './folders';
 import { listUi } from './list.svelte';
 import { homeUndo } from './undo.svelte';
 
@@ -119,8 +119,9 @@ export function thingsOf(payload: DragPayload): Things | null {
 }
 
 /** Whether anything of what is dragged would move, dropped into a folder or at the top. */
-export function wouldMove(things: Things, into: string | null): boolean {
+export function wouldMove(dragged: Things, into: string | null): boolean {
   const folders = projects.folders;
+  const things = topmost(folders, projects.list, dragged);
   return (
     things.projects.some((id) => {
       const p = projectNamed(id);
@@ -135,11 +136,13 @@ export function wouldMove(things: Things, into: string | null): boolean {
 
 /**
  * Moves projects and folders into a folder, or out of all folders. What is
- * there already stays, and a folder is not put into itself or into what
- * lies under it. One change, undone as one. Whether anything moved.
+ * there already stays, a folder is not put into itself or into what lies
+ * under it, and what lies in a folder that is moved as well goes with it,
+ * not out of it beside it. One change, undone as one. Whether anything moved.
  */
-export async function moveThings(things: Things, into: string | null): Promise<boolean> {
+export async function moveThings(chosen: Things, into: string | null): Promise<boolean> {
   const folders = projects.folders;
+  const things = topmost(folders, projects.list, chosen);
   const moves: { kind: 'project' | 'folder'; id: string; from: string | null; name: string }[] = [];
   for (const id of things.projects) {
     const p = projectNamed(id);
