@@ -526,13 +526,56 @@ export function readBody(
   own: readonly BasedKind[] = [],
 ): Block[] {
   if (!fragment) return [];
-  const blocks = blocksOf(fragment);
+  return trimmed(blocksOf(fragment));
+}
+
+/** The blocks, without the empty paragraphs of text at the end. */
+function trimmed(blocks: Block[]): Block[] {
   while (blocks.length) {
     const last = blocks[blocks.length - 1];
     if (last.kind === 'paragraph' && last.name === 'text' && !last.content.length) blocks.pop();
     else break;
   }
   return blocks;
+}
+
+/**
+ * The texts of elements, read again after a change part by part: what each
+ * part at the top of a text reads as (a paragraph, a table, a figure), and
+ * its facts, are kept with the part until a change within it is told
+ * (`changed`). So a keystroke in a long text reads again the paragraph
+ * written in, and not the whole text: reading all of it, with its facts, on
+ * every keystroke took some 38 ms in a text of 2000 paragraphs. What is
+ * read is what `readBody` and `bodyFacts` give for the whole text.
+ */
+export class BodyReading {
+  #parts = new WeakMap<Y.XmlElement, { blocks: Block[]; facts: BodyFacts }>();
+
+  /**
+   * Something within a part at the top of a text has changed, or the part
+   * itself: it is read again. A change of the text itself, a part put in or
+   * taken out, needs no word: a part put in has not been read.
+   */
+  changed(part: Y.XmlElement) {
+    this.#parts.delete(part);
+  }
+
+  read(fragment: Y.XmlFragment | undefined): { blocks: Block[]; facts: BodyFacts } {
+    const blocks: Block[] = [];
+    const facts: BodyFacts[] = [];
+    for (const child of fragment ? elementsOf(fragment) : []) {
+      let part = this.#parts.get(child);
+      if (!part) {
+        const own = blocksOfElement(child);
+        part = { blocks: own, facts: bodyFacts(own) };
+        this.#parts.set(child, part);
+      }
+      for (const b of part.blocks) blocks.push(b);
+      facts.push(part.facts);
+    }
+    // The empty paragraphs at the end that are dropped say nothing of the facts.
+    return { blocks: trimmed(blocks), facts: joinedFacts(facts) };
+  }
 }
 
 /**
@@ -649,6 +692,31 @@ export interface BodyFacts {
    * and the kinds of its words.
    */
   uses: string[];
+}
+
+/**
+ * The facts of a text from those of its parts, in order, as `bodyFacts`
+ * gives them of the whole: every block ends its text with a new line, so no
+ * word runs from one part into the next, and the words are the sum.
+ */
+export function joinedFacts(parts: BodyFacts[]): BodyFacts {
+  const set: SetOff[] = [];
+  const cited = new Set<string>();
+  const uses = new Set<string>();
+  let empty = true;
+  let words = 0;
+  let notes = 0;
+  let noteWords = 0;
+  for (const f of parts) {
+    for (const s of f.set) set.push(s);
+    for (const id of f.cited) cited.add(id);
+    for (const id of f.uses) uses.add(id);
+    empty &&= f.empty;
+    words += f.words;
+    notes += f.notes;
+    noteWords += f.noteWords;
+  }
+  return { set, empty, words, cited: [...cited], notes, noteWords, uses: [...uses] };
 }
 
 export function bodyFacts(blocks: Block[]): BodyFacts {
