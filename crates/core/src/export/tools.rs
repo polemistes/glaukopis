@@ -145,36 +145,21 @@ pub struct Output {
 }
 
 /// Runs a program to its end. What it writes as errors is returned when it
-/// succeeds and is the error when it fails.
+/// succeeds and is the error when it fails. What it is given is written, and
+/// what it writes is read, each by a thread of its own, as in
+/// [`run_command_until`]: a program that writes much before it has read all
+/// it is given is never kept waiting on a full pipe.
 pub fn run<I, S>(program: &Path, name: &str, args: I, input: Option<&[u8]>, dir: Option<&Path>) -> Result<Output>
 where
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
 {
     let mut c = command(program);
-    c.args(args).stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped());
+    c.args(args);
     if let Some(d) = dir {
         c.current_dir(d);
     }
-    let mut child = c.spawn().map_err(|e| Error::Program { program: name.into(), message: e.to_string() })?;
-    {
-        let mut stdin = child.stdin.take().expect("stdin was asked for");
-        if let Some(bytes) = input {
-            // A program that ends before reading everything is reported by its status.
-            let _ = stdin.write_all(bytes);
-        }
-    }
-    let out = child.wait_with_output().map_err(|e| Error::Program { program: name.into(), message: e.to_string() })?;
-    let messages = String::from_utf8_lossy(&out.stderr).trim().to_owned();
-    if !out.status.success() {
-        let message = if messages.is_empty() {
-            tr!("program-ended", status = out.status.to_string())
-        } else {
-            messages.lines().take(12).collect::<Vec<_>>().join("\n")
-        };
-        return Err(Error::Program { program: name.into(), message });
-    }
-    Ok(Output { stdout: out.stdout, messages })
+    run_command(c, name, input, None)
 }
 
 /// The kind of the error of a program that was ended before its end.
@@ -206,7 +191,13 @@ where
 
 /// As [`run_until`], for a command that has been made ready elsewhere: with
 /// what it is to find in its environment, for one.
-pub fn run_command_until(mut c: Command, name: &str, input: Option<&[u8]>, stop: &AtomicBool) -> Result<Output> {
+pub fn run_command_until(c: Command, name: &str, input: Option<&[u8]>, stop: &AtomicBool) -> Result<Output> {
+    run_command(c, name, input, Some(stop))
+}
+
+/// The one way a program is run: watched for `stop` when there is one, or
+/// else waited for.
+fn run_command(mut c: Command, name: &str, input: Option<&[u8]>, stop: Option<&AtomicBool>) -> Result<Output> {
     let failed = |e: std::io::Error| Error::Program { program: name.into(), message: e.to_string() };
     c.stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped());
     let mut child = c.spawn().map_err(failed)?;
@@ -233,6 +224,7 @@ pub fn run_command_until(mut c: Command, name: &str, input: Option<&[u8]>, stop:
             all
         });
         let status = loop {
+            let Some(stop) = stop else { break Some(child.wait()) };
             if stop.load(Ordering::Relaxed) {
                 let _ = child.kill();
                 let _ = child.wait();
@@ -483,6 +475,16 @@ mod tests {
         let err = run(&sh, "sh", ["-c", "echo broken >&2; exit 3"], None, None).unwrap_err();
         assert_eq!(err.to_string(), "sh failed: broken");
         assert_eq!(err.kind(), "program");
+    }
+
+    #[test]
+    fn a_program_that_writes_much_before_it_reads_is_not_kept_waiting() {
+        let Some(sh) = find("sh", None, &[]) else { return };
+        // More than a pipe holds, on both sides: written to stdin from the
+        // calling thread, this waited for ever.
+        let input = vec![b'a'; 300_000];
+        let ran = run(&sh, "sh", ["-c", "head -c 300000 /dev/zero >&2; cat"], Some(&input), None).unwrap();
+        assert_eq!(ran.stdout.len(), 300_000);
     }
 
     #[test]
