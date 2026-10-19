@@ -718,6 +718,8 @@ fn look_switch(
 ) -> Vec<Value> {
     match target {
         Target::Pdf | Target::Typst => vec![raw("typst", typst::switch(from, to, p, entering))],
+        // LaTeX: the page, the type and the paragraphs of the look it comes to.
+        Target::Latex | Target::PdfLatex => vec![raw("latex", latex::switch(from, to, entering))],
         _ => Vec::new(),
     }
 }
@@ -1624,7 +1626,8 @@ pub fn export_until(
             args.push(pattern_path.display().to_string());
         }
         Target::Latex | Target::PdfLatex => {
-            let settings = latex::settings(&request.format, &p);
+            let looks: Vec<&DocumentFormat> = request.document.looks.iter().map(|l| &l.format).collect();
+            let settings = latex::settings(&request.format, &looks, &p);
             let mut without_font = false;
             if target == Target::PdfLatex {
                 let engine = ctx.tools.latex_engine()?;
@@ -2774,6 +2777,74 @@ mod tests {
         // The places of the elements are still found.
         let places: Vec<(&str, u32)> = p.places.iter().map(|pl| (pl.element.as_str(), pl.page)).collect();
         assert_eq!(places, [("one", 1), ("two", 2), ("within", 2), ("three", 3)], "{:?}", p.places);
+    }
+
+    #[test]
+    fn latex_follows_the_look_of_an_element() {
+        use crate::document::fixtures::text;
+        use crate::document::{Block, ElementLook, Section};
+        let Some(s) = setup() else { return };
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let mut r = request("chicago-author-date");
+        let section = |level: u8, heading: &str| Section {
+            level,
+            heading: Some(vec![text(heading)]),
+            blocks: vec![Block::paragraph(vec![text(&format!("Words of {heading}."))])],
+            element: Some(heading.to_lowercase()),
+            kind: None,
+        };
+        r.document.sections = vec![section(1, "One"), section(1, "Two"), section(2, "Within"), section(1, "Three")];
+        r.format.title.placement = TitlePlacement::Top;
+        // Two in larger type, on a page in landscape without its footer, its pages counted anew in roman.
+        let mut two = r.format.clone();
+        two.font.size = 14.0;
+        two.footer.shown = false;
+        two.header.shown = true;
+        two.header.places.right = vec![crate::formats::Item::PageNumber];
+        two.page.size = "custom".into();
+        two.page.width = crate::formats::Length::mm(297.0);
+        two.page.height = crate::formats::Length::mm(210.0);
+        two.page.numbering = crate::formats::NumberStyle::RomanLower;
+        two.page.restart = true;
+        r.document.looks = vec![ElementLook { element: "two".into(), format: two }];
+
+        let tex = out.join("looks.tex");
+        export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
+        let l = fs::read_to_string(&tex).unwrap();
+        let at = |w: &str| l.find(w).unwrap_or_else(|| panic!("{w} in {l}"));
+        assert!(l.contains("\\fancypagestyle{gklook") && l.contains("\\newcommand{\\gkopener}"), "{l}");
+        let into = &l[at("\\section{One}")..at("\\section{Two}")];
+        assert!(into.contains("\\clearpage") && into.contains("\\newgeometry{layoutwidth=841.89"), "{into}");
+        assert!(into.contains("\\pagenumbering{roman}") && into.contains("\\gktype{14}{16.8}"), "{into}");
+        // Back to the document's look after Within, which is Two's.
+        let back = &l[at("\\subsection{Within}")..at("\\section{Three}")];
+        assert!(back.contains("\\newgeometry{layoutwidth=595.28bp,layoutheight=841.89bp"), "{back}");
+        assert!(back.contains("\\gdef\\thepage{\\arabic{page}}") && !back.contains("\\pagenumbering"), "{back}");
+        assert!(back.contains("\\gktype{12}{14.4}"), "{back}");
+        assert_eq!(l.matches("\\newgeometry").count(), 2, "no look elsewhere: {l}");
+
+        // The PDF, where there is LaTeX: Two begins a page of its own, in landscape, numbered i.
+        if s.tools.latex_engine().is_ok() {
+            let pdf = out.join("looks.pdf");
+            let e = export(&s.ctx(), &r, Target::PdfLatex, &pdf, &ExportOptions::default()).unwrap();
+            assert!(fs::read(&pdf).unwrap().starts_with(b"%PDF"), "{:?}", e.warnings);
+            let text = std::process::Command::new("pdftotext").args(["-layout"]).arg(&pdf).arg("-").output();
+            if let Some(text) = text.ok().filter(|t| t.status.success()) {
+                let pages: Vec<String> =
+                    String::from_utf8_lossy(&text.stdout).split('\u{c}').map(|p| p.to_owned()).collect();
+                let words = |n: usize| pages[n].split_whitespace().collect::<Vec<_>>().join(" ");
+                assert!(words(0).contains("One") && !words(0).contains("Two"), "{pages:?}");
+                assert!(words(1).starts_with("i ") && words(1).contains("Two Words of Two."), "{pages:?}");
+                assert!(words(2).contains("Three") && words(2).ends_with('2'), "counted on from Two's one: {pages:?}");
+            }
+            // The body in two columns: they are ended for Two's new page and begun again after it.
+            r.format.page.columns = 2;
+            let e = export(&s.ctx(), &r, Target::PdfLatex, &pdf, &ExportOptions::default()).unwrap();
+            assert!(fs::read(&pdf).unwrap().starts_with(b"%PDF"), "{:?}", e.warnings);
+        } else {
+            eprintln!("LaTeX is not installed: the PDF of the looks by LaTeX is not tested");
+        }
     }
 
     #[test]
