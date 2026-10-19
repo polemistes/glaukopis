@@ -1,10 +1,13 @@
 // What you are writing, and the doors to how it looks (ADR 0054): what
 // stands where on the pages. Every line of the preview knows what it is
-// (data-what): the text, the quotation, the heading of Book one. The
-// pointer resting on a line shows a chip at the edge of the page that names
-// it, and pressing the chip opens Look at it: at the look of the kind, for
-// the quotation. The switch at the foot of the preview turns the chips off,
-// and what each line is stays known; turned on again, the chip is back.
+// (data-what): the text, the quotation, the heading of Book one. A line
+// pressed shows a chip at the edge of the page that names it, which stays
+// until the same line is pressed again, another is pressed and the chip
+// moves there, the page is left or Escape is pressed; pressing the chip
+// opens Look at it: at the look of the kind, for the quotation. The switch
+// at the foot of the preview turns the chips off, and what each line is
+// stays known; turned on again, the chip is back. What the layout puts in
+// the margins and the page itself have chips too (ADR 0056).
 
 import { App, sleep } from './harness.mjs';
 
@@ -31,7 +34,7 @@ const chip = () =>
      return c ? { words: c.textContent.trim(), label: c.getAttribute('aria-label'), what: c.dataset.what } : null;`,
   );
 /** Waits until a chip is shown, or until it is certain that none is. */
-async function chipAfterHover(shown = true, ms = 3000) {
+async function chipAfter(shown = true, ms = 3000) {
   const until = Date.now() + ms;
   while (Date.now() < until) {
     const now = await chip();
@@ -90,12 +93,15 @@ try {
   check('the title of the document stands on the front page', (await whatOf('Odyssey')).includes('front'), JSON.stringify(await whatOf('Odyssey')));
   check('no line is unnamed', (await app.count('.preview .page .line:not([data-what])')) === 0);
 
-  // --- The pointer resting on the quotation shows its chip ---
+  // --- The quotation pressed shows its chip, which stays ---
   check('the chips are on, unless turned off', (await app.attr('.preview .chip-switch', 'aria-pressed')) === 'true');
-  check('no chip is shown before the pointer rests on a line', (await chip()) === null);
+  check('no chip is shown before a line is pressed', (await chip()) === null);
   await app.hover(quoteLine);
-  let shown = await chipAfterHover();
-  check('resting on the quotation shows a chip that names it', shown?.words === 'Quotation' && shown?.what === 'kind:quote', JSON.stringify(shown));
+  await sleep(500);
+  check('resting the pointer on a line shows nothing', (await chip()) === null);
+  await app.click(quoteLine);
+  let shown = await chipAfter();
+  check('pressing the quotation shows a chip that names it', shown?.words === 'Quotation' && shown?.what === 'kind:quote', JSON.stringify(shown));
   check('the chip says what it does', shown?.label === 'How “Quotation” looks…', shown?.label);
   const placed = await app.exec(
     `const c = document.querySelector('.preview .page .chip').getBoundingClientRect();
@@ -107,12 +113,28 @@ try {
   check('the chip stands in the margin beside the line, over no text', placed.inPage && placed.besideText && placed.atLine, JSON.stringify(placed));
   await app.screenshot('what-3-chip');
   await app.hover('.preview footer');
-  await sleep(1200);
-  check('the chip goes a moment after the pointer leaves', (await chip()) === null);
+  await sleep(900);
+  check('the chip stays while the pointer goes elsewhere', (await chip())?.what === 'kind:quote');
+  await app.click(quoteLine);
+  await sleep(300);
+  check('the same line pressed again takes the chip away', (await chip()) === null);
+  await app.click(quoteLine);
+  await chipAfter();
+  await app.click('.preview .page .line[data-what="text"]');
+  await sleep(300);
+  check('another line pressed moves the chip there', (await chip())?.what === 'text', JSON.stringify(await chip()));
+  await app.click('.preview footer');
+  await sleep(300);
+  check('a press outside the page takes the chip away', (await chip()) === null);
+  await app.click(quoteLine);
+  await chipAfter();
+  await app.press('Escape');
+  await sleep(300);
+  check('and so does Escape', (await chip()) === null);
 
   // --- Pressing it opens Look at the look of the quotation ---
-  await app.hover(quoteLine);
-  await chipAfterHover();
+  await app.click(quoteLine);
+  await chipAfter();
   await app.click('.preview .page .chip');
   await app.waitFor('.side .look', 8000);
   await app.waitUntil(`return !!document.querySelector('.side .look details[data-kind="quote"][open]')`, 8000, 'the look of the quotation').catch(() => {});
@@ -125,17 +147,15 @@ try {
   await app.click('.preview .chip-switch');
   await sleep(300);
   check('the switch turns the chips off', (await app.attr('.preview .chip-switch', 'aria-pressed')) === 'false');
-  await app.hover(quoteLine);
-  check('with the chips off, resting on a line shows none', (await chipAfterHover(false, 1200)) === null);
+  await app.click(quoteLine);
+  check('with the chips off, pressing a line shows none', (await chipAfter(false, 1200)) === null);
   check('and what each line is stays known', (await app.count(quoteLine)) > 0 && (await app.count('.preview .page .line:not([data-what])')) === 0);
   await app.screenshot('what-5-off');
   await app.click('.preview .chip-switch');
   await sleep(300);
   check('the switch turns them on again', (await app.attr('.preview .chip-switch', 'aria-pressed')) === 'true');
-  await app.hover('.preview footer');
-  await sleep(200);
-  await app.hover(quoteLine);
-  shown = await chipAfterHover();
+  await app.click(quoteLine);
+  shown = await chipAfter();
   check('and the chip is back', shown?.words === 'Quotation', JSON.stringify(shown));
 
   // --- What the layout puts in the margins has its chip, which lands where it is turned off (ADR 0056) ---
@@ -152,8 +172,8 @@ try {
   await app.waitFor(numberLine, 15000);
   await app.exec(`document.querySelector(arguments[0]).scrollIntoView({ block: 'center' });`, numberLine);
   await sleep(400);
-  await app.hover(numberLine);
-  shown = await chipAfterHover();
+  await app.click(numberLine);
+  shown = await chipAfter();
   check('the number of the page has a chip that names it', shown?.words === 'Page number' && shown?.what === 'page-number', JSON.stringify(shown));
   await app.click('.preview .page .chip');
   await sleep(600);
@@ -167,8 +187,8 @@ try {
   check('a play has a running head, named as one', await app.exists(headLine));
   await app.exec(`document.querySelector(arguments[0]).scrollIntoView({ block: 'center' });`, headLine);
   await sleep(400);
-  await app.hover(headLine);
-  shown = await chipAfterHover();
+  await app.click(headLine);
+  shown = await chipAfter();
   check('the running head has a chip that names it', shown?.words === 'Running head', JSON.stringify(shown));
   await app.screenshot('what-6-running-head');
   await app.click('.preview .page .chip');
@@ -186,8 +206,8 @@ try {
   await app.waitFor(titleLine, 15000);
   await app.exec(`document.querySelector(arguments[0]).scrollIntoView({ block: 'center' });`, titleLine);
   await sleep(400);
-  await app.hover(titleLine);
-  shown = await chipAfterHover();
+  await app.click(titleLine);
+  shown = await chipAfter();
   check('the title has its chip', shown?.what === 'front', JSON.stringify(shown));
   await app.click('.preview .page .chip');
   await sleep(600);
@@ -203,13 +223,17 @@ try {
     .catch(() => {});
   check('turned off there, the title page is gone from the pages', !(await app.exists(titleLine)));
 
-  // The page itself: where the pointer rests on no line, a chip for the page.
+  // The page itself: pressed where no line is, a chip for the page.
   await app.exec(`document.querySelector('.preview .page[data-page="1"]').scrollIntoView({ block: 'start' });`);
   await sleep(400);
   const lower = await app.exec(`return Math.round(document.querySelector('.preview .page[data-page="1"]').getBoundingClientRect().height * 0.3)`);
   await app.hover('.preview .page[data-page="1"]', 0, lower);
-  shown = await chipAfterHover();
-  check('resting on the page and on no line shows a chip for the page', shown?.words === 'Page' && shown?.what === 'page', JSON.stringify(shown));
+  await app.cmd('POST', '/actions', {
+    actions: [{ type: 'pointer', id: 'mouse', parameters: { pointerType: 'mouse' }, actions: [{ type: 'pointerDown', button: 0 }, { type: 'pointerUp', button: 0 }] }],
+  });
+  await app.cmd('DELETE', '/actions');
+  shown = await chipAfter();
+  check('pressing the page where no line is shows a chip for the page', shown?.words === 'Page' && shown?.what === 'page', JSON.stringify(shown));
   await app.screenshot('what-7-page');
   await app.click('.preview .page .chip');
   await sleep(600);

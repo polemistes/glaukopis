@@ -118,6 +118,6 @@ settings-logs-hint = What Glaukopis tells of itself in each run, of the last { $
 ## What a line of the preview is: whether a chip at the edge of a page names it.
 
 settings-page-chips = Name what a line of the preview is
-settings-page-chips-hint = When the pointer rests on a line of the preview, a chip at the edge of the page says what the line is (text, a quotation, a heading…) and opens Look at it.
+settings-page-chips-hint = Pressed, a line of the preview shows a chip at the edge of the page that says what the line is (text, a quotation, a heading…) and opens Look at it; pressed again, the chip goes.
 settings-page-chips-on = On
 settings-page-chips-off = Off

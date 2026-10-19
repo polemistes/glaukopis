@@ -323,8 +323,8 @@
       let_go.push(next.get(n)!.url);
       next.delete(n);
     }
-    // The chip of a line that is no longer there goes with it.
-    if (pointed && next.get(pointed.page)?.lines !== shown.get(pointed.page)?.lines) pointed = null;
+    // The chip of a page that is no longer there goes with it.
+    if (pointed && !next.has(pointed.page)) pointed = null;
     shown = next;
     // What was replaced is let go when what is in its place has been drawn.
     if (let_go.length) setTimeout(() => let_go.forEach((url) => URL.revokeObjectURL(url)), 2000);
@@ -479,48 +479,52 @@
 
   // ---- what a line is, named at the edge of its page ----
 
-  /** Whether a chip names the line the pointer rests on: the writer's setting, on unless turned off. */
+  /** Whether a press on the page shows a chip that names what was pressed: the writer's setting, on unless turned off. */
   const chips = $derived(writerSettings.value.pageChips !== false);
   /**
-   * What the pointer rests on, while its chip is shown: a line, or the page
-   * itself where it rests on no line (ADR 0056); its page, what it is, and
-   * where the chip stands, in percent of the height of the page.
+   * What was pressed, while its chip is shown: a line, or the page itself
+   * where no line was pressed (ADR 0056); its page, what it is, and where
+   * the chip stands, in percent of the height of the page. The chip stays
+   * until the same thing is pressed again, something else is pressed and
+   * the chip moves there, the page is left, or Escape.
    */
   let pointed = $state.raw<{ page: number; what: string; top: number } | null>(null);
-  /** The chip goes a moment after the pointer has left both the line and the chip. */
-  let parting: ReturnType<typeof setTimeout> | undefined;
-  /** The chip of the page comes a moment after the pointer rests on no line. */
-  let paging: ReturnType<typeof setTimeout> | undefined;
+  /** Where the pointer went down on a page, to tell a press from a drag that selects text. */
+  let pressed: { x: number; y: number } | null = null;
 
-  function point(event: PointerEvent, page: number, line: Line) {
-    // Not while text is selected by dragging over the lines.
-    if (event.buttons) return;
-    clearTimeout(parting);
-    clearTimeout(paging);
-    pointed = { page, what: line.what, top: line.top };
+  function press(event: PointerEvent) {
+    pressed = { x: event.clientX, y: event.clientY };
   }
-  /** The pointer moving over the page, on no line and not on the chip: the page's own chip, a moment after. */
-  function pointPage(event: PointerEvent, page: number) {
-    if (event.buttons || (event.target as Element | null)?.closest?.('.line, .chip')) return;
+  /**
+   * A press on a page, released where it began: on a line, the chip of what
+   * the line is; elsewhere, the chip of the page at that height. The same
+   * thing pressed again at the same place takes the chip away; pressed
+   * elsewhere, the chip follows. A drag, which selects text, shows nothing.
+   */
+  function pick(event: MouseEvent, page: number) {
+    const target = event.target as Element | null;
+    if (!pressed || target?.closest?.('.chip')) return;
+    const moved = Math.hypot(event.clientX - pressed.x, event.clientY - pressed.y) > 4;
+    pressed = null;
+    const selection = getSelection();
+    if (moved || (selection && !selection.isCollapsed)) return;
     const box = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    const top = Math.max(0, Math.min(97, ((event.clientY - box.top) / box.height) * 100));
-    if (pointed?.what === PAGE && pointed.page === page && Math.abs(pointed.top - top) < 2) {
-      clearTimeout(parting);
+    const line = target?.closest<HTMLElement>('.line');
+    const what = line?.dataset.what || PAGE;
+    const top = line
+      ? parseFloat(line.style.top)
+      : Math.max(0, Math.min(97, ((event.clientY - box.top) / box.height) * 100));
+    const same = pointed?.page === page && pointed.what === what && Math.abs(pointed.top - top) < 2;
+    pointed = same ? null : { page, what, top };
+  }
+  /** A press outside the pages, or Escape, takes the chip away. */
+  function leave(event: Event) {
+    if (!pointed) return;
+    if (event instanceof KeyboardEvent) {
+      if (event.key === 'Escape') pointed = null;
       return;
     }
-    clearTimeout(paging);
-    paging = setTimeout(() => {
-      clearTimeout(parting);
-      pointed = { page, what: PAGE, top };
-    }, 350);
-  }
-  function stay() {
-    clearTimeout(parting);
-  }
-  function part() {
-    clearTimeout(parting);
-    clearTimeout(paging);
-    parting = setTimeout(() => (pointed = null), 700);
+    if (!(event.target as Element | null)?.closest?.('.preview .page')) pointed = null;
   }
 
   /** What a line is, in words: the name of its kind or part, or of its level of heading. */
@@ -541,8 +545,6 @@
 
   /** Opens Look at what a line is. */
   function lookAt(what: string) {
-    clearTimeout(parting);
-    clearTimeout(paging);
     pointed = null;
     lookUi.open(lookFor(what));
   }
@@ -573,8 +575,6 @@
     clearTimeout(waiting);
     clearTimeout(settled);
     clearTimeout(marking);
-    clearTimeout(parting);
-    clearTimeout(paging);
     release();
     // What is being made is no longer wanted.
     void documentPreviewStop(projectId).catch(() => {});
@@ -592,6 +592,8 @@
 
   const issueCount = $derived(warnings.length + missing.length + (substitute ? 1 : 0));
 </script>
+
+<svelte:document onpointerdown={leave} onkeydown={leave} />
 
 <aside class="preview" aria-label={t('preview')}>
   <header>
@@ -671,8 +673,8 @@
           data-page={n}
           style:aspect-ratio="{size.width} / {size.height}"
           aria-label={t('preview-page', { number: String(n) })}
-          onpointermove={chips ? (e) => pointPage(e, n) : undefined}
-          onpointerleave={chips ? part : undefined}
+          onpointerdown={chips ? press : undefined}
+          onclick={chips ? (e) => pick(e, n) : undefined}
           role="presentation"
         >
           {#if page}<img
@@ -682,13 +684,11 @@
             />
             <!-- The text, over the drawn page and unseen, so that it can be selected and copied. -->
             <div class="texts">
-              <!-- A line is text to select and nothing to press: the pointer resting on it shows its chip, beside it. -->
+              <!-- A line is text to select; pressed without dragging, its chip is shown beside it (the page listens). -->
               {#each page.lines as line}<div
                   class="line"
                   role="presentation"
                   data-what={line.what}
-                  onpointerenter={chips ? (e) => point(e, n, line) : undefined}
-                  onpointerleave={chips ? part : undefined}
                   style:left="{line.left}%"
                   style:top="{line.top}%"
                   style:width="{line.width}%"
@@ -705,7 +705,7 @@
             {#if chips && pointed?.page === n}
               {@const what = pointed.what}
               {@const words = wordsOf(what)}
-              <!-- What the line the pointer rests on is, in the margin beside it, over no text: it opens Look at it. -->
+              <!-- What was pressed, in the margin beside it, over no text: it opens Look at it. -->
               <button
                 type="button"
                 class="chip"
@@ -713,8 +713,6 @@
                 style:top="{pointed.top}%"
                 style:max-width="{Math.max(4, 98.5 - page.right)}%"
                 aria-label={t('preview-what-open', { what: words })}
-                onpointerenter={stay}
-                onpointerleave={part}
                 onclick={() => lookAt(what)}>{words}</button
               >
             {/if}{/if}

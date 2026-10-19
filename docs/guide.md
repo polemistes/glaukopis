@@ -2050,12 +2050,14 @@ it opens the chooser of what you are writing (see *What you are writing*).
 **Look**, beside it, opens the look of the document (see *The look of a
 document*), and the button with the sliders opens *About this document*.
 
-Every line of the pages knows what it is. Rest the pointer on one, and a
-small chip in the margin beside it names it: *Text*, *Quotation*, *Verse*
+Every line of the pages knows what it is. Press one, without dragging, and
+a small chip in the margin beside it names it: *Text*, *Quotation*, *Verse*
 or another kind, *Heading 2*, *Note*, *Bibliography*, *Figure*, *Table*, the
 *Front page*, or a part such as the *Abstract*. What the layout puts in the
-margins has its chip too, *Running head* and *Page number*, and where the
-pointer rests a moment on the page and on no line, a chip says *Page*.
+margins has its chip too, *Running head* and *Page number*, and pressed on
+the page where no line is, a chip says *Page*. The chip stays until the same
+thing is pressed again, something else is pressed and the chip goes there,
+the page is left, or Escape is pressed; dragging to select text shows none.
 Pressing the chip opens Look at that line: for what the layout or the
 template puts on the page, at the row that says whether it is shown at all,
 with how it is set under it. The chips are turned off and on by the button

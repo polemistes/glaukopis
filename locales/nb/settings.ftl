@@ -104,6 +104,6 @@ settings-logs-hint = Det Glaukopis forteller om seg selv i hver kjøring, for de
 ## Hva en linje i forhåndsvisningen er: om en merkelapp i kanten av siden sier det.
 
 settings-page-chips = Vis hva en linje i forhåndsvisningen er
-settings-page-chips-hint = Når pekeren hviler på en linje i forhåndsvisningen, sier en merkelapp i kanten av siden hva linjen er (tekst, et sitat, en overskrift …), og åpner Utseende for den.
+settings-page-chips-hint = Trykker du på en linje i forhåndsvisningen, viser en brikke i kanten av siden hva linjen er (tekst, et sitat, en overskrift …) og åpner Utseende der; trykker du igjen, forsvinner brikken.
 settings-page-chips-on = På
 settings-page-chips-off = Av
