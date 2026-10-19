@@ -205,6 +205,39 @@ async function measure() {
          window.__last = now;
        }, 10);`,
     );
+    // What the page itself does, which is what an application at rest must not: the time spent in
+    // its timers and frames (and in its long tasks, where the engine tells them), how often it
+    // changes what is shown, and how often it asks the core. Unlike the processes' time of the processor, it does not grow with what
+    // else the machine is doing. Put in after the probe above, which is not counted.
+    await app.exec(
+      `window.__busy = { ms: 0, calls: 0, mutations: 0, long: 0 };
+       const counted = (fn) => typeof fn !== 'function' ? fn : function (...args) {
+         const at = performance.now();
+         try { return fn.apply(this, args); } finally { window.__busy.ms += performance.now() - at; window.__busy.calls++; }
+       };
+       const timeout = window.setTimeout, interval = window.setInterval, frame = window.requestAnimationFrame;
+       window.setTimeout = (fn, ...rest) => timeout(counted(fn), ...rest);
+       window.setInterval = (fn, ...rest) => interval(counted(fn), ...rest);
+       window.requestAnimationFrame = (fn) => frame(counted(fn));
+       // An interval set before this is not counted; one that asks the core again and again is, by
+       // what carries the question, since Tauri's invoke cannot be replaced: a fetch of ipc:.
+       window.__busy.asked = 0;
+       const fetched = window.fetch;
+       window.fetch = function (url, ...rest) {
+         if (String(url).startsWith('ipc:') || String(url).includes('ipc.localhost')) window.__busy.asked++;
+         return fetched.call(this, url, ...rest);
+       };
+       new MutationObserver((list) => { window.__busy.mutations += list.length; })
+         .observe(document, { subtree: true, childList: true, attributes: true, characterData: true });
+       window.__busy.longTasks = !!PerformanceObserver.supportedEntryTypes?.includes('longtask');
+       if (window.__busy.longTasks)
+         new PerformanceObserver((list) => { for (const e of list.getEntries()) window.__busy.long += e.duration; })
+           .observe({ type: 'longtask' });`,
+    );
+    const busy = () =>
+      app.exec(
+        `const b = { ...window.__busy }; Object.assign(window.__busy, { ms: 0, calls: 0, mutations: 0, long: 0, asked: 0 }); return b;`,
+      );
     const took = async () => {
       const list = await app.exec(`const t = window.__took; window.__took = []; return t;`);
       const still = Math.round(
@@ -243,19 +276,24 @@ async function measure() {
 
     // ---- at rest ----
     await took();
+    await busy();
     let before = worked();
     const those = new Map(byName);
     await sleep(5000);
     const rest = worked() - before;
     const atRest = await took();
+    const page = await busy();
+    const pageMs = Math.round((page.ms + page.long) / 5);
     console.log(
-      `      at rest: the processor worked ${Math.round(rest / 5)} ms in each second (${who(those)}); the window stood still for ${atRest.still} ms at the most`,
+      `      at rest: the page worked ${pageMs} ms in each second, in ${page.calls} timers and frames${page.longTasks ? ` (long tasks ${Math.round(page.long)} ms)` : ''}, changed what is shown ${page.mutations} times and asked the core ${page.asked} times; the processes had the processor ${Math.round(rest / 5)} ms in each second (${who(those)}); the window stood still for ${atRest.still} ms at the most`,
     );
-    // The watching itself works ten times in a hundredth of a second each; what is looked for is an application that never rests.
+    // What is looked for is an application that never rests: a timer or a frame that comes again
+    // and again, an effect that keeps changing what is shown. The processes' time is said, not
+    // checked, since it grows with whatever else the machine does.
     check(
       'at rest the application does nothing',
-      rest / 5 < 250,
-      `${Math.round(rest / 5)} ms in each second`,
+      pageMs < 20 && page.mutations < 10 && page.asked < 10,
+      `${pageMs} ms in each second, ${page.calls} timers and frames, ${page.mutations} changes of what is shown, ${page.asked} questions to the core`,
     );
 
     // ---- writing in the middle of the text ----
