@@ -280,8 +280,8 @@ fn entry_type(item: &Item, fields: &Fields, extra: &Extra, eprint: Option<&Eprin
 fn names(item: &Item, draft: &mut Draft, notes: &mut Vec<String>) {
     let mut found: BTreeMap<&str, Vec<Person>> = BTreeMap::new();
     let has_author = item.creators.iter().any(|c| c.role == "author");
-    let mut series: Vec<Person> = Vec::new();
-    let mut others: Vec<Person> = Vec::new();
+    let mut series: Vec<(Person, &str)> = Vec::new();
+    let mut others: Vec<(Person, &str)> = Vec::new();
     for creator in &item.creators {
         let Some(person) = person(creator) else { continue };
         let field = match creator.role.as_str() {
@@ -297,8 +297,8 @@ fn names(item: &Item, draft: &mut Draft, notes: &mut Vec<String>) {
             {
                 "author"
             }
-            "seriesEditor" => {
-                series.push(person);
+            role @ "seriesEditor" => {
+                series.push((person, role));
                 continue;
             }
             // Those a work is written to or about have no part in making it.
@@ -306,8 +306,8 @@ fn names(item: &Item, draft: &mut Draft, notes: &mut Vec<String>) {
                 notes.push(tr!("core-import-zotero-not-a-field", name = person.display(), role = text::label(role)));
                 continue;
             }
-            _ => {
-                others.push(person);
+            role => {
+                others.push((person, role));
                 continue;
             }
         };
@@ -317,11 +317,26 @@ fn names(item: &Item, draft: &mut Draft, notes: &mut Vec<String>) {
         draft.names.entry(field.to_owned()).or_insert(people);
     }
     // BibLaTeX has further editors, each kind with its role. The editors of
-    // the series come first; all others are those who worked along.
+    // the series come first; all others are those who worked along. That
+    // folds roles BibLaTeX has no name for (composer, producer, guest, and
+    // whatever Zotero adds) into one it prints as "in collaboration with",
+    // as Zotero's own export does; each such person is named in a remark
+    // with Zotero's word for the role, which the entry no longer holds.
     let further = [(series, "redactor"), (others, "collaborator")];
     for ((people, role), field) in further.into_iter().filter(|(p, _)| !p.is_empty()).zip(["editora", "editorb"]) {
-        if !draft.names.contains_key(field) {
-            draft.names.insert(field.to_owned(), people);
+        let placed = !draft.names.contains_key(field);
+        for (person, zotero_role) in &people {
+            let (name, zotero_role) = (person.display(), text::label(zotero_role));
+            if !placed {
+                notes.push(tr!("core-import-zotero-not-a-field", name = name, role = zotero_role));
+            } else if role == "collaborator" && zotero_role.is_empty() {
+                notes.push(tr!("core-import-zotero-collaborator-unnamed", name = name));
+            } else if role == "collaborator" {
+                notes.push(tr!("core-import-zotero-collaborator", name = name, role = zotero_role));
+            }
+        }
+        if placed {
+            draft.names.insert(field.to_owned(), people.into_iter().map(|(person, _)| person).collect());
             set(draft, &format!("{field}type"), role);
         }
     }
@@ -1103,6 +1118,28 @@ mod tests {
         assert_eq!(d.names["editora"], vec![Person::new("D", "C")]);
         let d = draft("blogPost", &[], &[("author", "A", "B"), ("commenter", "C", "D")]);
         assert_eq!(d.names["commentator"], vec![Person::new("D", "C")]);
+
+        // Each one folded into "collaborator" is named, with the role Zotero gave.
+        let (d, notes) = entry(&item(
+            "audioRecording",
+            &[],
+            &[("performer", "Avdo", "Međedović"), ("composer", "Béla", "Bartók"), ("castMember", "C", "D")],
+        ));
+        assert_eq!(d.names["author"], vec![Person::new("Međedović", "Avdo")]);
+        assert_eq!(d.names["editora"], vec![Person::new("Bartók", "Béla"), Person::new("D", "C")]);
+        assert_eq!(
+            notes,
+            vec![
+                "Zotero names Béla Bartók as composer, which BibLaTeX has no field for. The name was put among those \
+                 who worked along on it (an editor of the type “collaborator”), and the role is not kept.",
+                "Zotero names C D as cast member, which BibLaTeX has no field for. The name was put among those \
+                 who worked along on it (an editor of the type “collaborator”), and the role is not kept.",
+            ]
+        );
+        let (_, notes) =
+            entry(&item("film", &[], &[("director", "Akira", "Kurosawa"), ("producer", "Sojiro", "Motoki")]));
+        assert_eq!(notes.len(), 1);
+        assert!(notes[0].starts_with("Zotero names Sojiro Motoki as producer,"), "{notes:?}");
 
         let (d, notes) = entry(&item("letter", &[], &[("author", "A", "B"), ("recipient", "Albert", "Lord")]));
         assert_eq!(d.names.len(), 1);

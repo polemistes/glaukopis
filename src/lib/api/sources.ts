@@ -101,3 +101,5 @@ export const zoteroCollections = (path: string, library: number | null) =>
   call<ZoteroCollection[]>('zotero_collections', { path, library });
 export const importZotero = (path: string, options: ZoteroOptions) =>
   call<ImportPlan>('import_zotero', { path, options });
+/** The dialog of Zotero is closed: the copies of the databases it read are removed. */
+export const zoteroDone = () => call<void>('zotero_done');

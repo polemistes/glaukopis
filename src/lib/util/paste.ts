@@ -66,16 +66,35 @@ async function pasteAgain(target: EventTarget | null, primary: boolean) {
     document.execCommand('insertText', false, pasted.text);
 }
 
+/** Where the pictures of a paste are, by the order of its files: see `pastedPaths`. */
+const PATHS = 'application/x-glaukopis-picture-paths';
+
+/**
+ * Where each picture of a paste is on this computer, by the order of the
+ * paste's files: the path of one copied as a file in a file manager, whose
+ * file in the paste holds nothing, since it is taken in from there; null
+ * for one copied as a picture, whose file holds it. Nothing for a paste
+ * that WebKit made itself.
+ */
+export function pastedPaths(data: DataTransfer | null): (string | null)[] {
+  try {
+    const paths: unknown = JSON.parse(data?.getData(PATHS) || '[]');
+    return Array.isArray(paths) ? paths.map((p) => (typeof p === 'string' ? p : null)) : [];
+  } catch {
+    return [];
+  }
+}
+
 function dataOf(pasted: Pasted): DataTransfer {
   const data = new DataTransfer();
   if (pasted.html) data.setData('text/html', pasted.html);
   if (pasted.text) data.setData('text/plain', pasted.text);
-  for (const picture of pasted.pictures)
-    data.items.add(
-      new File([fromBase64(picture.data) as Uint8Array<ArrayBuffer>], picture.name, {
-        type: picture.mime,
-      }),
-    );
+  for (const picture of pasted.pictures) {
+    const bytes = picture.path ? [] : [fromBase64(picture.data) as Uint8Array<ArrayBuffer>];
+    data.items.add(new File(bytes, picture.name, { type: picture.mime }));
+  }
+  if (pasted.pictures.some((p) => p.path))
+    data.setData(PATHS, JSON.stringify(pasted.pictures.map((p) => p.path)));
   return data;
 }
 

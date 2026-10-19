@@ -3325,7 +3325,14 @@ export const pasted: clipboard.Pasted = {
     {
       "data": "iVBORw0KGgo=",
       "mime": "image/png",
-      "name": "dot.png"
+      "name": "",
+      "path": null
+    },
+    {
+      "data": "",
+      "mime": "image/png",
+      "name": "dot.png",
+      "path": "/home/someone/dot.png"
     }
   ],
   "text": "Wrath"

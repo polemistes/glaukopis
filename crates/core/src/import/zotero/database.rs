@@ -262,9 +262,13 @@ impl Database {
         |e| Error::Parse { path: self.source.clone(), message: e.to_string() }
     }
 
-    fn open(dir: &Path, file: &Path, warnings: &mut Vec<String>) -> Result<Self> {
-        let copy =
-            tempfile::Builder::new().prefix("glaukopis-zotero-").tempdir().context(|| tr!("io-creating-temporary"))?;
+    /// Copies the database into a directory of its own under `temp`, and opens the copy.
+    fn open(dir: &Path, file: &Path, temp: &Path, warnings: &mut Vec<String>) -> Result<Self> {
+        fs::create_dir_all(temp).context(|| tr!("io-creating", path = temp))?;
+        let copy = tempfile::Builder::new()
+            .prefix("glaukopis-zotero-")
+            .tempdir_in(temp)
+            .context(|| tr!("io-creating-temporary"))?;
         let target = copy.path().join(DATABASE);
         let (companions, disturbed) = copy_database(file, &target)?;
         // To SQLite an empty file is a database with nothing in it.
@@ -647,42 +651,114 @@ fn integer(row: &Row, column: usize) -> Option<i64> {
     }
 }
 
-/// Runs `work` on a copy of the database. When the database cannot be read
-/// and Zotero's own backup of it can, the backup is read, with a warning.
-/// The second value holds the warnings.
+/// A copy of Zotero's database, made once and read as often as asked: for
+/// all the steps of one dialog, which would otherwise copy a database of a
+/// gigabyte or more anew for each. When the database cannot be read and
+/// Zotero's own backup of it can, the backup is read, with a warning.
+pub(super) struct Opened {
+    /// Zotero's data directory.
+    pub dir: PathBuf,
+    /// The database, as it was asked for: not the backup.
+    file: PathBuf,
+    /// Where the copy is made.
+    temp: PathBuf,
+    database: Database,
+    /// What was said when the copy was opened, said again with every answer.
+    warnings: Vec<String>,
+    /// Whether the copy is of the backup.
+    backup: bool,
+    /// The database as it was when it was copied.
+    stamp: Stamp,
+}
+
+/// The lengths and times of a database and of the journals beside it, by
+/// which a change that Zotero made to it since is seen. Not of the index of
+/// the write-ahead log, which a reader changes too.
+type Stamp = [Option<(u64, Option<SystemTime>)>; 3];
+
+fn stamps(file: &Path) -> Stamp {
+    [stamp(file), stamp(&with_suffix(file, "-journal")), stamp(&with_suffix(file, "-wal"))]
+}
+
+/// Whether an error means that the database could not be read, which sends
+/// us to the backup. An answer such as "there is no such collection" would
+/// be the same there.
+fn unreadable(error: &Error) -> bool {
+    matches!(error, Error::Io { .. } | Error::Parse { .. })
+}
+
+impl Opened {
+    /// Copies the database at `path` (the data directory, or the database
+    /// in it) under `temp`, and opens the copy.
+    pub(super) fn open(path: &Path, temp: &Path) -> Result<Opened> {
+        let (dir, file) = locate(path)?;
+        let stamp = stamps(&file);
+        let mut warnings = Vec::new();
+        let (database, warnings, backup) = match Database::open(&dir, &file, temp, &mut warnings) {
+            Ok(database) => (database, warnings, false),
+            Err(error) => match open_backup(&dir, &file, temp, &error) {
+                Some((database, warnings)) => (database, warnings, true),
+                None => return Err(error),
+            },
+        };
+        Ok(Opened { dir, file, temp: temp.to_owned(), database, warnings, backup, stamp })
+    }
+
+    /// Whether Zotero has changed its database since the copy was made.
+    pub(super) fn is_current(&self) -> bool {
+        stamps(&self.file) == self.stamp
+    }
+
+    /// Runs `work` on the copy. The second value holds the warnings. When
+    /// the database cannot be read after all, the backup is tried, and
+    /// kept for what is asked after, if it can be.
+    pub(super) fn run<T>(
+        &mut self,
+        work: impl Fn(&Database, &mut Vec<String>) -> Result<T>,
+    ) -> Result<(T, Vec<String>)> {
+        let mut warnings = self.warnings.clone();
+        let error = match work(&self.database, &mut warnings) {
+            Ok(value) => return Ok((value, warnings)),
+            Err(error) => error,
+        };
+        if self.backup {
+            return Err(error);
+        }
+        let Some((database, mut warnings)) = open_backup(&self.dir, &self.file, &self.temp, &error) else {
+            return Err(error);
+        };
+        let opened = warnings.clone();
+        let Ok(value) = work(&database, &mut warnings) else { return Err(error) };
+        (self.database, self.warnings, self.backup) = (database, opened, true);
+        Ok((value, warnings))
+    }
+}
+
+/// Zotero's backup of its database, opened, when `error` says that the
+/// database itself could not be read; with the warning that says so first.
+fn open_backup(dir: &Path, file: &Path, temp: &Path, error: &Error) -> Option<(Database, Vec<String>)> {
+    let backup = dir.join(BACKUP);
+    if !unreadable(error) || backup == file || !backup.is_file() {
+        return None;
+    }
+    let mut warnings = Vec::new();
+    let database = Database::open(dir, &backup, temp, &mut warnings).ok()?;
+    let warning = if locked_database(error) {
+        tr!("core-import-zotero-backup-read-locked", backup = BACKUP)
+    } else {
+        tr!("core-import-zotero-backup-read", error = error.to_string(), backup = BACKUP)
+    };
+    warnings.insert(0, warning);
+    Some((database, warnings))
+}
+
+/// Runs `work` on a copy of the database, made in the system's temporary
+/// directory and gone afterwards. The second value holds the warnings.
 pub(super) fn with_database<T>(
     path: &Path,
     work: impl Fn(&Database, &mut Vec<String>) -> Result<T>,
 ) -> Result<(T, Vec<String>)> {
-    let (dir, file) = locate(path)?;
-    let attempt = |file: &Path| {
-        let mut warnings = Vec::new();
-        let database = Database::open(&dir, file, &mut warnings)?;
-        let value = work(&database, &mut warnings)?;
-        Ok((value, warnings))
-    };
-    let error = match attempt(&file) {
-        Ok(done) => return Ok(done),
-        Err(e) => e,
-    };
-    // Only a database that cannot be read sends us to the backup. An answer
-    // such as "there is no such collection" would be the same there.
-    let backup = dir.join(BACKUP);
-    if !matches!(error, Error::Io { .. } | Error::Parse { .. }) || backup == file || !backup.is_file() {
-        return Err(error);
-    }
-    match attempt(&backup) {
-        Ok((value, mut warnings)) => {
-            let warning = if locked_database(&error) {
-                tr!("core-import-zotero-backup-read-locked", backup = BACKUP)
-            } else {
-                tr!("core-import-zotero-backup-read", error = error.to_string(), backup = BACKUP)
-            };
-            warnings.insert(0, warning);
-            Ok((value, warnings))
-        }
-        Err(_) => Err(error),
-    }
+    Opened::open(path, &std::env::temp_dir())?.run(work)
 }
 
 #[cfg(test)]

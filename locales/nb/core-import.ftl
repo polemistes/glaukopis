@@ -42,6 +42,8 @@ core-import-zotero-alone = { $count ->
    *[other] { $count } filer og notater i Zotero hører ikke til noen referanse, og ble utelatt.
 }
 core-import-zotero-not-a-field = Zotero oppgir { $name } som { $role }, men BibLaTeX har ikke noe felt for det. Navnet ble utelatt.
+core-import-zotero-collaborator = Zotero oppgir { $name } som { $role }, men BibLaTeX har ikke noe felt for det. Navnet ble ført opp blant medarbeiderne (en redaktør av typen «collaborator»), og rollen er ikke tatt vare på.
+core-import-zotero-collaborator-unnamed = Zotero oppgir { $name } i en rolle uten navn, og BibLaTeX har ikke noe felt for det. Navnet ble ført opp blant medarbeiderne (en redaktør av typen «collaborator»).
 core-import-zotero-left-out = Zotero-feltet «{ $field }» har ikke noe motstykke i BibLaTeX og ble utelatt: { $value }
 
 ## Databasen til Zotero.
@@ -70,6 +72,7 @@ core-import-zotero-no-group-names = navnene på gruppebibliotekene er ikke kjent
 
 core-import-pdf-empty = Filen «{ $name }» er tom.
 core-import-pdf-not-a-pdf = Filen «{ $name }» er ikke en PDF.
+core-import-pdf-not-started = «{ $name }» kunne ikke leses, fordi ingen prosess kunne startes for å lese den i: { $message }
 core-import-pdf-unreadable = Filen kunne ikke leses: den er skadet, beskyttet med passord eller for stor.
 core-import-pdf-scan = Filen har ikke noe tekstlag: den er skannet.
 core-import-pdf-from-file = Opplysningene er hentet fra selve filen, ikke fra en katalog, og bør kontrolleres.
@@ -170,9 +173,22 @@ core-import-document-picture-unreadable = det kunne ikke leses
 core-import-document-picture-network = det ligger på nettet, og ingenting hentes derfra
 core-import-document-picture-not-taken-out = det kunne ikke tas ut av filen
 core-import-document-picture-outside = det ligger ikke i filen, men et annet sted på denne datamaskinen, og hentes ikke derfra
+core-import-document-picture-outside-folder = det ligger utenfor mappen til dokumentet, og et dokument som hentes inn, tar bare med filer i sin egen mappe og under den
 core-import-document-picture-not-found = filen ble ikke funnet der dokumentet sier den er
 core-import-document-picture-too-large = det er større enn 50 MB
 core-import-document-picture-file-unreadable = filen kunne ikke leses
+
+## Det et dokument tar inn fra andre filer (\input i LaTeX, include i
+## reStructuredText, Org, AsciiDoc og Typst), og det som ble utelatt.
+
+core-import-document-include-outside = Filen «{ $name }», som dokumentet tar inn, ligger utenfor mappen til dokumentet og ble utelatt: et dokument som hentes inn, leser bare filer i sin egen mappe og under den.
+core-import-document-include-not-found = Filen «{ $name }», som dokumentet tar inn, ble ikke funnet i mappen til dokumentet og ble utelatt.
+core-import-document-include-network = «{ $name }», som dokumentet tar inn, ligger på nettet, og ingenting hentes derfra: det ble utelatt.
+core-import-document-include-unreadable = Filen «{ $name }», som dokumentet tar inn, kunne ikke leses som tekst (UTF-8) og ble utelatt.
+core-import-document-include-circle = Filen «{ $name }» tar inn seg selv gjennom filene den tar inn; den ble lest én gang.
+core-import-document-include-too-deep = Filen «{ $name }» ble utelatt: filene dokumentet tar inn, tar inn andre mer enn { $count } ledd dypt.
+core-import-document-include-too-large = Filen «{ $name }» ble utelatt: med filene dokumentet tar inn, ville den blitt større enn 50 MB.
+core-import-document-include-module = Typst-filen «{ $name }» importeres i sin helhet, under et eget navn, og det leses ikke her; den ble utelatt. Det som importeres fra den ved navn, blir lest.
 
 ## En tekstfil som verken er UTF-8 eller UTF-16, hentet inn som referanser, et dokument eller en tabell.
 

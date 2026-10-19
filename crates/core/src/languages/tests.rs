@@ -235,3 +235,27 @@ fn what_a_language_says_of_itself_is_set_aside_when_it_cannot_be_read() {
     assert_eq!(aside.len(), 1);
     assert_eq!(languages.installed().len(), 1);
 }
+
+/// A zip whose entries say they hold less than they do: what they hold is
+/// what counts against the limit.
+#[test]
+fn a_zip_that_says_it_holds_less_than_it_does() {
+    let big = vec![b'a'; 600 * 1024];
+    let mut bytes = zip(&[("one.dic", &big), ("two.dic", &big)]);
+    // Each entry says it holds ten bytes, in its own header and in the
+    // directory at the end.
+    for (signature, offset) in [(&b"PK\x03\x04"[..], 22), (&b"PK\x01\x02"[..], 24)] {
+        let starts: Vec<usize> =
+            bytes.windows(4).enumerate().filter(|(_, w)| *w == signature).map(|(i, _)| i).collect();
+        assert_eq!(starts.len(), 2);
+        for start in starts {
+            bytes[start + offset..start + offset + 4].copy_from_slice(&10u32.to_le_bytes());
+        }
+    }
+    let read = Bundle::from_zip_within(&bytes, "lying.zip", 1024 * 1024);
+    let error = read.err().map(|e| e.to_string()).unwrap_or_default();
+    assert_eq!(error, tr!("core-packages-too-large", file = "lying.zip"));
+    // What it holds, within the limit, is read.
+    let honest = zip(&[("one.dic", &big)]);
+    assert_eq!(Bundle::from_zip_within(&honest, "honest.zip", 1024 * 1024).unwrap().files[0].1.len(), big.len());
+}

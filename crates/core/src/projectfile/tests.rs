@@ -129,6 +129,35 @@ fn a_project_is_written_as_one_file_and_read_again() {
     assert_eq!(said.name, "circle.svg");
 }
 
+/// A project file is read with its pictures taken into the store one by
+/// one, none of them held when it is done.
+#[test]
+fn pictures_are_taken_in_as_they_are_read() {
+    let tmp = tempfile::tempdir().unwrap();
+    let there = store(&tmp, "there");
+    let png = there.add("vase.png", &PNG).unwrap();
+    let svg = there.add("circle.svg", SVG.as_bytes()).unwrap();
+    let hashes = [png.hash.clone(), svg.hash.clone()];
+    let contents = Contents {
+        manifest: Manifest { name: "P".into(), ..Default::default() },
+        state: b"x",
+        pictures: &hashes,
+        records: &[],
+    };
+    let path = tmp.path().join("p.glaukopis");
+    write(&path, &contents, &there, None).unwrap();
+    let here = store(&tmp, "here");
+    let (opened, added) = read_into(&path, &here).unwrap();
+    assert_eq!(
+        (opened.manifest.name.as_str(), opened.state.as_slice(), opened.pictures.len(), added),
+        ("P", &b"x"[..], 0, 2)
+    );
+    assert_eq!(here.read(&svg.hash, "svg").unwrap(), SVG.as_bytes());
+    assert!(here.get(&png.hash).is_ok());
+    // Those the store has already are not counted again.
+    assert_eq!(read_into(&path, &here).unwrap().1, 0);
+}
+
 #[test]
 fn pictures_are_taken_in_by_their_hash() {
     let tmp = tempfile::tempdir().unwrap();

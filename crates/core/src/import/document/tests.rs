@@ -1982,9 +1982,133 @@ fn a_file_that_holds_its_pictures_brings_none_from_elsewhere() {
     assert_eq!(picture_bytes(&outside, &beside, &media, true).unwrap_err(), refused);
     assert_eq!(picture_bytes(&format!("file://{outside}"), &beside, &media, true).unwrap_err(), refused);
     assert_eq!(picture_bytes("../../secret.png", &beside, &media, true).unwrap_err(), refused);
-    // A text of one's own names pictures beside it, and where it likes.
+    // A text of one's own names pictures in its folder and below, and nowhere else.
+    fs::create_dir_all(beside.join("figures")).unwrap();
+    fs::write(beside.join("figures/map.png"), b"below").unwrap();
     assert_eq!(picture_bytes("drawn.png", &beside, &media, false).unwrap(), b"beside");
-    assert_eq!(picture_bytes(&outside, &beside, &media, false).unwrap(), b"elsewhere");
+    assert_eq!(picture_bytes("figures/map.png", &beside, &media, false).unwrap(), b"below");
+    let named = beside.join("drawn.png").display().to_string();
+    assert_eq!(picture_bytes(&format!("file://{named}"), &beside, &media, false).unwrap(), b"beside");
+    let outside_folder = tr!("core-import-document-picture-outside-folder");
+    assert_eq!(picture_bytes(&outside, &beside, &media, false).unwrap_err(), outside_folder);
+    assert_eq!(picture_bytes(&format!("file://{outside}"), &beside, &media, false).unwrap_err(), outside_folder);
+    assert_eq!(picture_bytes("../secret.png", &beside, &media, false).unwrap_err(), outside_folder);
+    assert_eq!(picture_bytes("figures/../../secret.png", &beside, &media, false).unwrap_err(), outside_folder);
+    assert_eq!(picture_bytes("../nowhere.png", &beside, &media, false).unwrap_err(), outside_folder);
+    assert_eq!(
+        picture_bytes("nowhere.png", &beside, &media, false).unwrap_err(),
+        tr!("core-import-document-picture-not-found")
+    );
+}
+
+/// A document received from someone else, which names files outside its
+/// folder: only what lies in its folder and below is read, and each file
+/// left out is named in the remarks.
+#[test]
+fn a_document_reads_only_its_own_folder() {
+    let Some(s) = setup() else { return };
+    let desk = s.desk();
+    let folder = desk.join("received");
+    fs::create_dir_all(folder.join("parts")).unwrap();
+    fs::write(desk.join("private.txt"), "The secret of the desk.\n").unwrap();
+    fs::write(desk.join("private.png"), PNG).unwrap();
+    let private = desk.join("private.txt").display().to_string();
+    let outside = |name: &str| tr!("core-import-document-include-outside", name = name);
+    let all_text = |read: &Imported| {
+        let mut text = String::new();
+        for section in &read.sections {
+            text.push_str(&document::plain(&section.heading));
+            document::walk(&section.blocks, &mut |_| {}, &mut |l| {
+                text.push_str(&document::plain(l));
+                text.push(' ');
+            });
+        }
+        text
+    };
+
+    // LaTeX, whose parts lie beside it and below it.
+    fs::write(folder.join("parts/one.tex"), "\\section{One}\nRead from below it.\n\\input{parts/two}\n").unwrap();
+    fs::write(folder.join("parts/two.tex"), "And from deeper.\n").unwrap();
+    fs::write(folder.join("macros.sty"), "\\newcommand{\\hero}{Achilles}\n").unwrap();
+    fs::write(folder.join("figure.png"), PNG).unwrap();
+    let path = folder.join("paper.tex");
+    fs::write(
+        &path,
+        format!(
+            "\\documentclass{{article}}\n\\usepackage{{macros}}\n\\begin{{document}}\nOf \\hero.\n\\include{{parts/one}}\n\
+             \\input{{../private.txt}}\n\\input{{{private}}}\n\\includegraphics{{figure.png}}\n\
+             \\includegraphics{{../private.png}}\n\\end{{document}}\n"
+        ),
+    )
+    .unwrap();
+    let read = s.read(&path).unwrap();
+    let text = all_text(&read);
+    assert!(!text.contains("secret"), "{text}");
+    assert!(text.contains("Of Achilles."), "{text}");
+    assert!(text.contains("Read from below it.") && text.contains("And from deeper."), "{text}");
+    assert_eq!(read.pictures.len(), 1, "{:?}", read.remarks);
+    for remark in [outside("../private.txt"), outside(&private)] {
+        assert!(read.remarks.contains(&remark), "{remark}: {:?}", read.remarks);
+    }
+    let picture = tr!(
+        "core-import-document-picture-left-out",
+        name = "private.png",
+        why = tr!("core-import-document-picture-outside-folder")
+    );
+    assert!(read.remarks.contains(&picture), "{:?}", read.remarks);
+
+    // reStructuredText, whose own include is read and the other left out.
+    fs::write(folder.join("parts/note.rst"), "Read from beside it, in rst.\n").unwrap();
+    let path = folder.join("notes.rst");
+    fs::write(
+        &path,
+        "Notes\n=====\n\n.. include:: parts/note.rst\n\n.. include:: ../private.txt\n\n\
+         .. include:: ../private.txt\n   :literal:\n\nThe end.\n",
+    )
+    .unwrap();
+    let read = s.read(&path).unwrap();
+    let text = all_text(&read);
+    assert!(!text.contains("secret"), "{text}");
+    assert!(text.contains("Read from beside it, in rst.") && text.contains("The end."), "{text}");
+    assert_eq!(read.remarks.iter().filter(|r| **r == outside("../private.txt")).count(), 2, "{:?}", read.remarks);
+
+    // Org, the same.
+    fs::write(folder.join("parts/more.org"), "Read from beside it, in Org.\n").unwrap();
+    let path = folder.join("notes.org");
+    fs::write(&path, "* Notes\n#+INCLUDE: \"parts/more.org\"\n#+INCLUDE: \"../private.txt\" src text\n").unwrap();
+    let read = s.read(&path).unwrap();
+    let text = all_text(&read);
+    assert!(!text.contains("secret") && text.contains("Read from beside it, in Org."), "{text}");
+    assert!(read.remarks.contains(&outside("../private.txt")), "{:?}", read.remarks);
+
+    // Typst, which imports what it defines from beside it, and AsciiDoc.
+    fs::write(folder.join("parts/template.typ"), "#let hero = [Achilles]\n").unwrap();
+    fs::write(folder.join("parts/song.typ"), "Sung from below it.\n").unwrap();
+    let path = folder.join("song.typ");
+    fs::write(
+        &path,
+        "#import \"parts/template.typ\": hero\n= Song\nOf #hero.\n#include \"parts/song.typ\"\n\
+         #read(\"../private.txt\")\n",
+    )
+    .unwrap();
+    let read = s.read(&path).unwrap();
+    let text = all_text(&read);
+    assert!(!text.contains("secret"), "{text}");
+    assert!(text.contains("Of Achilles.") && text.contains("Sung from below it."), "{text}");
+    assert!(read.remarks.contains(&outside("../private.txt")), "{:?}", read.remarks);
+    fs::write(folder.join("parts/part.adoc"), "Read from below it, in AsciiDoc.\n").unwrap();
+    let path = folder.join("notes.adoc");
+    fs::write(&path, "= Notes\n\n== One\n\ninclude::parts/part.adoc[]\n\ninclude::../private.txt[]\n").unwrap();
+    let read = s.read(&path).unwrap();
+    let text = all_text(&read);
+    assert!(!text.contains("secret") && text.contains("Read from below it, in AsciiDoc."), "{text}");
+    assert!(read.remarks.contains(&outside("../private.txt")), "{:?}", read.remarks);
+
+    // What a document names that is not seen here, Pandoc does not read either.
+    let path = folder.join("hidden.tex");
+    fs::write(&path, "\\newcommand{\\take}{\\input}\n\\take{../private.txt}\nAfter.\n").unwrap();
+    let read = s.read(&path).unwrap();
+    assert!(!all_text(&read).contains("secret"));
 }
 
 #[test]

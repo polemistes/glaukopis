@@ -48,6 +48,13 @@ pub const SHOWN: [&str; 2] = ["recent", "list"];
 /// One at a time changes the file of folders: it is read, changed and written whole.
 static FOLDERS_LOCK: Mutex<()> = Mutex::new(());
 
+/// And one at a time the file of what is kept about a project, project.json,
+/// for the same reason: the commands run on threads of their own, and the
+/// page asks for two changes of it at once (the state saved and the place
+/// kept, as the window loses focus), of which one would otherwise be lost.
+/// Taken after `FOLDERS_LOCK` where both are, never before it.
+static INFO_LOCK: Mutex<()> = Mutex::new(());
+
 /// The most history kept for one project.
 const HISTORY_LIMIT: usize = 40;
 /// The least time between two states kept in the history, in seconds.
@@ -313,6 +320,7 @@ impl Projects {
     /// Changes what is kept about a project. The id and the date of creation stay.
     pub fn update_info(&self, id: &str, change: impl FnOnce(&mut ProjectInfo)) -> Result<ProjectInfo> {
         let dir = self.existing_dir(id)?;
+        let _held = INFO_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let mut info = Self::read_info(&dir)?;
         let (keep_id, keep_created) = (info.id.clone(), info.created.clone());
         change(&mut info);
@@ -910,6 +918,31 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let p = Projects::at(tmp.path().join("projects"));
         (tmp, p)
+    }
+
+    /// Two writers of project.json at once, as the page has them when the
+    /// window loses focus: neither change is lost.
+    #[test]
+    fn two_writers_of_a_project_at_once() {
+        let (_tmp, p) = projects();
+        let id = p.create("Busy").unwrap().id;
+        std::thread::scope(|scope| {
+            for writer in 0..8 {
+                let (p, id) = (&p, &id);
+                scope.spawn(move || {
+                    for _ in 0..25 {
+                        p.update_info(id, |info| {
+                            info.words += 1;
+                            if writer % 2 == 0 {
+                                info.view = serde_json::json!({ "writer": writer });
+                            }
+                        })
+                        .unwrap();
+                    }
+                });
+            }
+        });
+        assert_eq!(p.info(&id).unwrap().words, 8 * 25);
     }
 
     #[test]

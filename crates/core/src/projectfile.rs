@@ -214,6 +214,28 @@ fn part<R: Read + Seek>(archive: &mut zip::ZipArchive<R>, name: &str, most: u64)
 
 /// Reads a project file from what it holds.
 pub fn read_from<R: Read + Seek>(source: R) -> Result<Opened> {
+    let mut pictures = Vec::new();
+    let mut opened = read_each(source, |picture, bytes| pictures.push((picture, bytes)))?;
+    opened.pictures = pictures;
+    Ok(opened)
+}
+
+/// Reads a project file and takes its pictures into the store as each is
+/// read, so that one picture at a time is held, however many the file has:
+/// each may be 50 MB, and a file may hold any number. Gives the file without
+/// its pictures, and how many of them the store did not have.
+pub fn read_into(path: &Path, store: &Pictures) -> Result<(Opened, usize)> {
+    let file = std::fs::File::open(path).context(|| tr!("io-opening", path = path))?;
+    let mut added = 0;
+    let opened = read_each(std::io::BufReader::new(file), |picture, bytes| {
+        added += take_pictures(store, &[(picture, bytes)]);
+    })?;
+    Ok((opened, added))
+}
+
+/// Reads a project file, giving each picture to `each` as it is read; the
+/// file is given back without them.
+fn read_each<R: Read + Seek>(source: R, mut each: impl FnMut(Picture, Vec<u8>)) -> Result<Opened> {
     let not_one = || Error::invalid(tr!("core-projectfile-not-one"));
     let mut archive = zip::ZipArchive::new(source).map_err(|_| not_one())?;
     let manifest = part(&mut archive, MANIFEST, MOST_SAID)?.ok_or_else(not_one)?;
@@ -241,7 +263,6 @@ pub fn read_from<R: Read + Seek>(source: R) -> Result<Opened> {
         None => Vec::new(),
     };
     let names: Vec<String> = archive.file_names().filter(|n| n.starts_with(PICTURE_DIR)).map(str::to_owned).collect();
-    let mut pictures = Vec::new();
     for name in names {
         let Some((hash, extension)) = name[PICTURE_DIR.len()..].split_once('.') else { continue };
         if !pictures::is_hash(hash) {
@@ -253,9 +274,9 @@ pub fn read_from<R: Read + Seek>(source: R) -> Result<Opened> {
             extension: extension.to_owned(),
             ..Default::default()
         });
-        pictures.push((picture, bytes));
+        each(picture, bytes);
     }
-    Ok(Opened { manifest, state, pictures })
+    Ok(Opened { manifest, state, pictures: Vec::new() })
 }
 
 pub fn read(path: &Path) -> Result<Opened> {
