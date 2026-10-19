@@ -58,6 +58,23 @@
   import { isAncestor } from '../model/tree';
   import { pieces } from '../pieces';
   import type { Folding } from './folding.svelte';
+  import {
+    bracketsOf,
+    depthAt,
+    dropChoices,
+    dropIndent,
+    GUTTER,
+    joinable as joinableIn,
+    lineBetween,
+    marginWidth as marginFor,
+    nearestChoice,
+    outlineNumbers,
+    placeAt,
+    textRows,
+    totalsOf,
+    type Bracket,
+    type Row,
+  } from './layout';
   import TextSection, { type Part } from './TextSection.svelte';
   import { progressOf, progressWords } from '../status';
   import { settings } from '$lib/state/settings.svelte';
@@ -112,8 +129,6 @@
   /** How wide the outline is, as it was last dragged. */
 
   const KEPT_ACTIVE = 10;
-  /** The width of the gutter of a section, before its name: see `TextSection`. */
-  const GUTTER = 44;
 
   interface DropSlot {
     /** Where the elements go: under which, at which place among those under it. */
@@ -154,56 +169,14 @@
   /** How far the writing of the branch has come, where its elements say. */
   const progress = $derived(progressOf(project, at));
 
-  interface Row {
-    id: string;
-    level: number;
-    excluded: boolean;
-    /** Whether it has text of its own or something under it, which can be folded away. */
-    foldable: boolean;
-    /**
-     * What is folded away of it: the elements under it, whether it has text
-     * of its own, and how many words there are in all of it.
-     */
-    hidden: { ids: string[]; text: boolean; words: number } | null;
-    /** Whether it is folded away itself, under another. */
-    away: boolean;
-  }
-
   /** Every element of the branch, the one in view first, those that are folded away as well. */
-  const all = $derived.by(() => {
-    const out: Row[] = [];
-    const walk = (id: string, level: number, excluded: boolean, away: boolean) => {
-      const node = project.nodes.get(id);
-      if (!node) return;
-      const out_ = excluded || node.excluded;
-      const under = tree.children.get(id) ?? [];
-      const text = !node.empty || !!node.include;
-      const foldable = under.length > 0 || text;
-      const hides = !away && foldable && folding.has(id);
-      const row: Row = {
-        id,
-        level,
-        excluded: out_,
-        foldable,
-        hidden: hides ? { ids: [], text, words: node.words } : null,
-        away,
-      };
-      out.push(row);
-      // The element in view is the title; an element whose name is not
-      // printed does not deepen what is under it.
-      const next = level === 0 ? 1 : node.heading ? level + 1 : level;
-      const from = out.length;
-      for (const c of under) walk(c, next, out_, away || hides);
-      if (row.hidden) {
-        for (const r of out.slice(from)) {
-          row.hidden.ids.push(r.id);
-          row.hidden.words += project.nodes.get(r.id)?.words ?? 0;
-        }
-      }
-    };
-    walk(tree.root, 0, false, false);
-    return out;
-  });
+  const all = $derived(
+    textRows(
+      tree,
+      (id) => project.nodes.get(id),
+      (id) => folding.has(id),
+    ),
+  );
 
   /** The elements that are shown. */
   const rows = $derived(all.filter((r) => !r.away));
@@ -216,18 +189,11 @@
    * among those whose names are printed as headings, what is folded away
    * as well, so that they do not change as it is folded.
    */
-  const numbers = $derived.by(() => {
-    const out = new Map<string, string>();
-    if (depthShown !== 'numbers') return out;
-    const counters: number[] = [];
-    for (const r of all) {
-      if (r.level === 0 || r.excluded || !project.nodes.get(r.id)?.heading) continue;
-      counters.length = r.level;
-      counters[r.level - 1] = (counters[r.level - 1] ?? 0) + 1;
-      out.set(r.id, Array.from(counters, (n) => n ?? 0).join('.'));
-    }
-    return out;
-  });
+  const numbers = $derived(
+    depthShown === 'numbers'
+      ? outlineNumbers(all, (id) => !!project.nodes.get(id)?.heading)
+      : new Map<string, string>(),
+  );
 
   // ---- the element at the top of what is in view, for the outline ----
 
@@ -270,19 +236,8 @@
     atTop = id;
   }
 
-  const totals = $derived.by(() => {
-    let words = 0;
-    let notes = 0;
-    // What is folded away is counted as well: it is in the document.
-    for (const r of all) {
-      if (r.excluded) continue;
-      const n = project.nodes.get(r.id);
-      if (!n) continue;
-      words += n.words;
-      notes += n.notes;
-    }
-    return { words, notes };
-  });
+  // What is folded away is counted as well: it is in the document.
+  const totals = $derived(totalsOf(all, (id) => project.nodes.get(id)));
 
   /**
    * What is counted, as it is shown under the text: a moment behind the
@@ -489,18 +444,8 @@
     else addAfter(id);
   }
 
-  /**
-   * Whether an element can be joined to the one shown before it: it has
-   * nothing under it, and the one before is not folded. What is folded
-   * stands, in the document, between that element's own text and this
-   * one, and a text joined to it would move before what is folded away.
-   */
-  function joinable(id: string): boolean {
-    const i = indexOf(id);
-    return (
-      i > 0 && id !== tree.root && !(tree.children.get(id)?.length ?? 0) && !rows[i - 1].hidden
-    );
-  }
+  /** Whether an element can be joined to the one shown before it: see `joinable` in `layout`. */
+  const joinable = (id: string) => joinableIn(rows, tree, id);
 
   /** Joins an element to the one before it in the text. Its name, if it has one, becomes a paragraph. */
   function merge(id: string) {
@@ -1043,26 +988,13 @@
     return el && id ? { id, where: 'after' } : null;
   }
 
-  /** How far each level of a drop is indented, from where the names begin. */
-  const DROP_STEP = 24;
-
-  /** How deep an element stands under the element in view, which is at nought. */
-  function depthOf(id: string): number {
-    let depth = 0;
-    for (let at = id; at !== tree.root; depth++) {
-      const parent = tree.parent.get(at);
-      if (!parent) break;
-      at = parent;
-    }
-    return depth;
-  }
-
   /**
    * Where elements dragged in the text would go. The pointer's height says
    * between which two elements, as they are shown; how far it is to the
    * right says how deep among the depths that place allows: under the
    * element above, beside it, or beside one over it, as far out as beside
-   * the element below. Moving sideways never changes the place between the two.
+   * the element below. Moving sideways never changes the place between the
+   * two. The choice is made in `layout`; here the column is measured.
    */
   function slotAt(event: DropEvent): DropSlot | null {
     if (!column) return null;
@@ -1070,65 +1002,31 @@
     const sections = [...column.querySelectorAll<HTMLElement>(':scope > [data-section]')];
     if (!sections.length) return null;
     // The element above the place, and the one below it.
-    let above = 0;
-    for (let i = 0; i < sections.length; i++) {
-      const r = sections[i].getBoundingClientRect();
-      if (event.y < r.top) break;
-      const upper = event.y < r.top + Math.min(r.height / 2, 60);
-      above = upper ? Math.max(0, i - 1) : i;
-      if (upper || event.y <= r.bottom) break;
-    }
+    const above = placeAt(event.y, sections.length, (i) => sections[i].getBoundingClientRect());
     const a = sections[above].dataset.section!;
     const b = sections[above + 1]?.dataset.section ?? null;
     // Elements are not put into themselves.
     const inside = (id: string) =>
       payload.project === project && payload.ids.some((d) => d === id || isAncestor(tree, d, id));
-    // From the deepest the place allows to the shallowest, each with where it puts them.
-    const deepest = depthOf(a) + 1;
-    const shallowest = b ? depthOf(b) : 1;
-    const choices: { depth: number; parent: string; index: number; label: string }[] = [];
-    const name = (id: string) => project.node(id)?.title || t('project-untitled');
-    if (!inside(a))
-      choices.push({
-        depth: deepest,
-        parent: a,
-        index: 0,
-        label: t('text-drop-under', { name: name(a) }),
-      });
-    // After the element above, or after the one over it at each depth out.
-    let x: string | undefined = a;
-    for (let depth = deepest - 1; depth >= shallowest && x && x !== tree.root; depth--) {
-      const parent = tree.parent.get(x);
-      if (!parent) break;
-      if (!inside(parent)) {
-        const list = tree.children.get(parent) ?? [];
-        choices.push({
-          depth,
-          parent,
-          index: list.indexOf(x) + 1,
-          label:
-            b && depthOf(b) === depth
-              ? t('text-drop-before', { name: name(b) })
-              : t('text-drop-after', { name: name(x) }),
-        });
-      }
-      x = parent;
-    }
+    const choices = dropChoices(tree, a, b, inside);
     if (!choices.length) return null;
-    // The depth the pointer is at, from where the names begin.
-    const left = column.getBoundingClientRect().left + GUTTER;
-    const wanted = 1 + Math.round((event.x - left) / DROP_STEP);
-    const chosen = choices.reduce((best, c) =>
-      Math.abs(c.depth - wanted) < Math.abs(best.depth - wanted) ? c : best,
-    );
-    const base = column.getBoundingClientRect().top;
+    const box = column.getBoundingClientRect();
+    const chosen = nearestChoice(choices, depthAt(event.x, box.left + GUTTER));
+    const name = project.node(chosen.name)?.title || t('project-untitled');
     const ra = sections[above].getBoundingClientRect();
     const rb = sections[above + 1]?.getBoundingClientRect();
-    const top = Math.round((rb ? (ra.bottom + rb.top) / 2 : ra.bottom + 6) - base);
     return {
-      ...chosen,
-      top,
-      indent: Math.min(GUTTER + (chosen.depth - 1) * DROP_STEP, column.offsetWidth - 80),
+      parent: chosen.parent,
+      index: chosen.index,
+      depth: chosen.depth,
+      label:
+        chosen.say === 'under'
+          ? t('text-drop-under', { name })
+          : chosen.say === 'before'
+            ? t('text-drop-before', { name })
+            : t('text-drop-after', { name }),
+      top: lineBetween(ra, rb, box.top),
+      indent: dropIndent(chosen.depth, column.offsetWidth),
     };
   }
 
@@ -1237,73 +1135,12 @@
     };
   });
 
-  interface Bracket {
-    id: string;
-    from: string;
-    to: string;
-    top: number;
-    bottom: number;
-    lane: number;
-    label: string;
-    path: string;
-  }
-
-  const LANE = 9;
-  const FIRST = 10;
-
-  const brackets = $derived.by(() => {
-    // The end of an association is the element itself, or what it is folded away under.
-    const shown = (id: string) => folding.hiddenUnder(tree, id) ?? id;
-    const spans = project
-      .linksOf(at)
-      .map((l) => {
-        const from = shown(l.from);
-        const to = shown(l.to);
-        if (from === to) return null;
-        const a = anchors.get(from);
-        const b = anchors.get(to);
-        if (a === undefined || b === undefined) return null;
-        const upper = a <= b ? from : to;
-        const lower = a <= b ? to : from;
-        return {
-          id: l.id,
-          from: upper,
-          to: lower,
-          top: Math.min(a, b),
-          bottom: Math.max(a, b),
-          label: l.label,
-        };
-      })
-      .filter((s): s is NonNullable<typeof s> => s !== null)
-      // Short ones innermost.
-      .sort((x, y) => x.bottom - x.top - (y.bottom - y.top) || x.top - y.top);
-
-    const lanes: { top: number; bottom: number }[][] = [];
-    const out: Bracket[] = [];
-    for (const s of spans) {
-      let lane = 0;
-      for (;;) {
-        const taken = lanes[lane] ?? (lanes[lane] = []);
-        if (!taken.some((t) => s.top <= t.bottom + 6 && s.bottom >= t.top - 6)) {
-          taken.push({ top: s.top, bottom: s.bottom });
-          break;
-        }
-        lane++;
-      }
-      const x = FIRST + lane * LANE;
-      const r = Math.min(5, (s.bottom - s.top) / 2);
-      const path =
-        s.bottom - s.top < 2
-          ? `M 0 ${s.top} H ${x}`
-          : `M 0 ${s.top} H ${x - r} Q ${x} ${s.top} ${x} ${s.top + r} V ${s.bottom - r} Q ${x} ${s.bottom} ${x - r} ${s.bottom} H 0`;
-      out.push({ ...s, lane, path });
-    }
-    return out;
-  });
-
-  const marginWidth = $derived(
-    Math.max(40, FIRST + (Math.max(-1, ...brackets.map((b) => b.lane)) + 1) * LANE + 12),
+  // The end of an association is the element itself, or what it is folded away under.
+  const brackets = $derived(
+    bracketsOf(project.linksOf(at), anchors, (id) => folding.hiddenUnder(tree, id) ?? id),
   );
+
+  const marginWidth = $derived(marginFor(brackets));
 
   let hoveredLink = $state<string | null>(null);
 
