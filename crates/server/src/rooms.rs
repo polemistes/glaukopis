@@ -375,34 +375,50 @@ impl Inner {
     }
 }
 
+/// A document made from a state as the room writes it.
+fn read_state(bytes: &[u8]) -> Result<Doc, String> {
+    let doc = Doc::new();
+    let update = Update::decode_v1(bytes).map_err(|e| e.to_string())?;
+    doc.transact_mut().apply_update(update).map_err(|e| e.to_string())?;
+    Ok(doc)
+}
+
 impl Room {
     fn load(id: &str, dir: PathBuf, most: usize) -> io::Result<Room> {
-        let doc = Doc::new();
         let state = dir.join("state.bin");
-        let mut size = 0;
-        match std::fs::read(&state) {
-            Ok(bytes) => {
-                size = bytes.len();
-                let applied = Update::decode_v1(&bytes)
-                    .map_err(|e| e.to_string())
-                    .and_then(|u| doc.transact_mut().apply_update(u).map_err(|e| e.to_string()));
-                match applied {
-                    // What the room held when it was last opened is kept, should
-                    // something go wrong while it is open this time.
-                    Ok(()) => {
-                        let _ = std::fs::copy(&state, dir.join("state.bak"));
-                    }
-                    Err(e) => {
-                        // Those who come bring what they have, so the room is
-                        // opened empty rather than not at all.
-                        tracing::error!(room = id, %e, "the state of a room could not be read; it is set aside");
-                        let _ = std::fs::rename(&state, dir.join("state.damaged"));
+        let kept = dir.join("state.bak");
+        let (doc, size) = match std::fs::read(&state) {
+            Ok(bytes) => match read_state(&bytes) {
+                Ok(doc) => {
+                    // What the room held when it was last opened well is kept,
+                    // to be read should the state be found damaged another time.
+                    let _ = std::fs::copy(&state, &kept);
+                    (doc, bytes.len())
+                }
+                Err(e) => {
+                    tracing::error!(room = id, %e, "the state of a room could not be read; it is set aside");
+                    let _ = std::fs::rename(&state, dir.join("state.damaged"));
+                    // The copy kept when it was last opened well, where there
+                    // is one; else the room is opened empty, and those who come
+                    // bring what they have.
+                    match std::fs::read(&kept)
+                        .map_err(|e| e.to_string())
+                        .and_then(|b| read_state(&b).map(|d| (d, b.len())))
+                    {
+                        Ok((doc, size)) => {
+                            tracing::warn!(room = id, "the room is opened from the copy kept when it was last opened");
+                            (doc, size)
+                        }
+                        Err(why) => {
+                            tracing::warn!(room = id, %why, "no copy of the room could be read; it is opened empty");
+                            (Doc::new(), 0)
+                        }
                     }
                 }
-            }
-            Err(e) if e.kind() == io::ErrorKind::NotFound => {}
+            },
+            Err(e) if e.kind() == io::ErrorKind::NotFound => (Doc::new(), 0),
             Err(e) => return Err(e),
-        }
+        };
         let present = Arc::new(Guarded::new(Vec::new()));
         Ok(Room {
             id: id.to_owned(),
@@ -910,6 +926,33 @@ mod tests {
         c.take_in();
         assert_eq!(c.text(), "μῆνιν: Sing, goddess, the wrath");
         assert!(room_dir(tmp.path(), ROOM).join("state.bak").exists());
+    }
+
+    /// A state that cannot be read is set aside, and the room is opened from
+    /// the copy kept the last time it was opened well, not empty.
+    #[tokio::test]
+    async fn a_damaged_state_is_read_from_the_copy_kept_before() {
+        let tmp = tempfile::tempdir().unwrap();
+        let rooms = Rooms::new(tmp.path().to_owned(), MAX_DOCUMENT_BYTES);
+        let a = Side::enter(&rooms, Some("anna")).await;
+        a.write(0, "Sing, goddess");
+        assert!(a.room.save().await.unwrap());
+        drop(a);
+        // Opened again: what it held is kept as the copy.
+        let again = Rooms::new(tmp.path().to_owned(), MAX_DOCUMENT_BYTES);
+        let mut b = Side::enter(&again, Some("bert")).await;
+        b.take_in();
+        assert_eq!(b.text(), "Sing, goddess");
+        drop(b);
+        let dir = room_dir(tmp.path(), ROOM);
+        assert!(dir.join("state.bak").exists());
+        std::fs::write(dir.join("state.bin"), b"\xff\xff not a state").unwrap();
+
+        let third = Rooms::new(tmp.path().to_owned(), MAX_DOCUMENT_BYTES);
+        let mut c = Side::enter(&third, Some("carl")).await;
+        c.take_in();
+        assert_eq!(c.text(), "Sing, goddess", "read from the copy");
+        assert!(dir.join("state.damaged").exists(), "the damaged state is set aside");
     }
 
     /// One who asks for the whole state again and again and reads nothing is
