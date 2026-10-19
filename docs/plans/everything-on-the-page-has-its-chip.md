@@ -33,12 +33,12 @@ After the blocks, for every page `i` with `(top_of_page, text_top, text_bottom, 
 ```rust
 let f = &request.format;
 let numbered_at = |top: bool| f.page_numbers.show && (f.page_numbers.position.is_top() == top);
-let head = if f.running_head.content != RunningHeadContent::None { Some("running-head") } else if numbered_at(true) { Some("page-number") } else { None };
+let head = if f.running_head.content != HeadContent::None { Some("running-head") } else if numbered_at(true) { Some("page-number") } else { None };
 let foot = numbered_at(false).then_some("page-number");
 let margins = typeset::Margins { top: f.page.margin_top.points(), bottom: f.page.margin_bottom.points(), head, foot };
 ```
 
-Read `formats/mod.rs` for the names of the running head's `content` enum and of `Position` (its six values begin `Top…`/`Bottom…`); write `is_top()` on `Position` if nothing like it exists. Where the running head and the page number share the head, the head is named for the running head: Look's page part shows the page numbers' rows a few rows below the running head's.
+`HeadContent` (`None`, `Title`, `Author`, `AuthorTitle`, `Text`) and `Position` (`TopLeft`, `TopCenter`, `TopRight`, `BottomLeft`, `BottomCenter`, `BottomRight`) are in `formats/mod.rs`; write `is_top()` on `Position` if nothing like it exists. Where the running head and the page number share the head, the head is named for the running head: Look's page part shows the page numbers' rows a few rows below the running head's.
 
 ### 1.3 Tests
 
