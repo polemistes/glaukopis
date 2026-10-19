@@ -1625,9 +1625,9 @@ the unseen text it had, and what is read is laid in its place; the pages
 look as they did, and the pages that keep their text are not touched.
 
 Where the text keeps its letters in a way Glaukopis knows (below), the text
-the PDF has is taken **as translated by what its fonts say**, a switch in
-the header of its pane, on at first: no page is read from a picture for it,
-and the pane shows the text as it will be. In a searchable PDF the PDF's
+the PDF has is taken as translated by what its fonts say (**Translated by
+what the fonts say**, over its pane, is ticked at first): no page is read
+from a picture for it, and the pane shows the text as it will be. In a searchable PDF the PDF's
 own tables are put right instead (**Make readable**), so that every reader
 copies and searches the text rightly; nothing that is shown changes.
 
@@ -1705,9 +1705,9 @@ out, and so are lines without a letter or a digit, which are what is read
 of a rule or a picture on the page.
 
 **The shape of the pages.** Where **Keep the shape of the pages** is chosen
-under **What is made of it**, as it is at first, the shape of each page is read from where its lines stand
-and how large they are, the same for the text a PDF has and for what
-Tesseract reads, and kept in the elements made:
+under **What is made of it**, as it is at first, the shape of each page is
+read from where its lines stand and how large they are, the same for the
+text a PDF has and for what Tesseract reads, and kept in the elements made:
 
 - *Headings*, a line or two set larger or bolder than the text and standing
   apart from it, become elements, each holding what follows it up to the
