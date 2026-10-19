@@ -9,6 +9,7 @@
  */
 
 import type { Spot } from '$lib/api/documents';
+import type { GeneratedPart } from '$lib/api/templates';
 
 /** Where Look opens for what a line is: a section of Look, and in it a kind, a level of heading or a subheading. */
 export interface LookAim {
@@ -27,6 +28,18 @@ export type What =
 
 /** What the core names, of a line that stands in nothing it names. */
 export const TEXT = 'text';
+
+/**
+ * The parts the core makes itself that it names on the pages, as
+ * `part:<id>` beside the elements of a kind that makes a document: the
+ * contents, and the lists of figures and of tables.
+ */
+const MADE: readonly GeneratedPart[] = ['contents', 'list-of-figures', 'list-of-tables'];
+
+/** Whether the id of a part is of one the core makes, not of a kind of element. */
+export function isMade(id: string): id is GeneratedPart {
+  return (MADE as readonly string[]).includes(id);
+}
 
 /**
  * How far a baseline may stand outside a spot and still be within it, in

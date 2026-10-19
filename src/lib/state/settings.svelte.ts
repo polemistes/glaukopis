@@ -27,6 +27,11 @@ export interface RememberedPassageKind {
 export interface MoreSettings {
   /** The kinds of paragraph and of words made in any project, the latest first. */
   passageKinds: RememberedPassageKind[];
+  /**
+   * Whether a chip at the edge of a page of the preview says what the line
+   * the pointer rests on is, and opens Look at it. On, unless turned off.
+   */
+  pageChips: boolean;
 }
 
 export type AllSettings = Settings & MoreSettings;
@@ -35,6 +40,7 @@ const more = (kept: Partial<AllSettings> = {}): MoreSettings => ({
   passageKinds: Array.isArray(kept.passageKinds)
     ? kept.passageKinds.filter((k) => k && typeof k.name === 'string')
     : [],
+  pageChips: typeof kept.pageChips === 'boolean' ? kept.pageChips : true,
 });
 
 /**

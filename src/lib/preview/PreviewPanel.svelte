@@ -4,6 +4,7 @@
   import ScanEye from '@lucide/svelte/icons/scan-eye';
   import Share from '@lucide/svelte/icons/share';
   import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
+  import Tag from '@lucide/svelte/icons/tag';
   import TextCursorInput from '@lucide/svelte/icons/text-cursor-input';
   import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
   import X from '@lucide/svelte/icons/x';
@@ -19,7 +20,14 @@
     type Spot,
     type TextRun,
   } from '$lib/api/documents';
-  import { spotsOn, whatIs } from './spots';
+  import { isMade, lookFor, readWhat, spotsOn, whatIs } from './spots';
+  import { generatedPartWords } from '$lib/document/templates';
+  import { kindName } from '$lib/editor/kinds';
+  import type { LookRequest } from '$lib/look/look.svelte';
+  import { partOf } from '$lib/project/parts';
+  // The writer's settings; `settings` below are those of the document.
+  import { settings as writerSettings } from '$lib/state/settings.svelte';
+  import { tooltip } from '$lib/ui/tooltip';
   import type { Template } from '$lib/api/templates';
   import { documentSettingsUi } from '$lib/document/document-settings.svelte';
   import { layoutName, styleName } from '$lib/look/choosing.svelte';
@@ -52,12 +60,18 @@
 
   let { project, projectId, at, onclose, ongo, current }: Props = $props();
 
-  /** A page as it is shown: what it holds, the address it is shown from, the making it is of, and its text, laid over it. */
+  /**
+   * A page as it is shown: what it holds, the address it is shown from, the
+   * making it is of, and its text, laid over it; and where the text ends at
+   * the right, in percent of the width of the page, so that the chip that
+   * names a line stands in the margin beside it.
+   */
   interface Shown {
     svg: string;
     url: string;
     made: number;
     lines: Line[];
+    right: number;
   }
 
   /**
@@ -294,7 +308,8 @@
       if (before) let_go.push(before.url);
       const url = URL.createObjectURL(new Blob([page.svg], { type: 'image/svg+xml' }));
       const lines = linesOf(page.texts ?? [], size, page.number, on);
-      next.set(page.number, { svg: page.svg, url, made, lines });
+      const right = Math.max(0, ...lines.map((l) => l.left + l.width));
+      next.set(page.number, { svg: page.svg, url, made, lines, right });
     }
     // Pages that are no longer there, and those farthest from what is looked at.
     const wanted = near();
@@ -307,6 +322,8 @@
       let_go.push(next.get(n)!.url);
       next.delete(n);
     }
+    // The chip of a line that is no longer there goes with it.
+    if (pointed && next.get(pointed.page)?.lines !== shown.get(pointed.page)?.lines) pointed = null;
     shown = next;
     // What was replaced is let go when what is in its place has been drawn.
     if (let_go.length) setTimeout(() => let_go.forEach((url) => URL.revokeObjectURL(url)), 2000);
@@ -458,6 +475,53 @@
     marking = setTimeout(() => (marked = null), 1000);
   }
 
+  // ---- what a line is, named at the edge of its page ----
+
+  /** Whether a chip names the line the pointer rests on: the writer's setting, on unless turned off. */
+  const chips = $derived(writerSettings.value.pageChips !== false);
+  /** The line the pointer rests on, and its page, while its chip is shown. */
+  let pointed = $state.raw<{ page: number; line: Line } | null>(null);
+  /** The chip goes a moment after the pointer has left both the line and the chip. */
+  let parting: ReturnType<typeof setTimeout> | undefined;
+
+  function point(event: PointerEvent, page: number, line: Line) {
+    // Not while text is selected by dragging over the lines.
+    if (event.buttons) return;
+    clearTimeout(parting);
+    pointed = { page, line };
+  }
+  function stay() {
+    clearTimeout(parting);
+  }
+  function part() {
+    clearTimeout(parting);
+    parting = setTimeout(() => (pointed = null), 700);
+  }
+
+  /** What a line is, in words: the name of its kind or part, or of its level of heading. */
+  function wordsOf(what: string): string {
+    const read = readWhat(what);
+    switch (read.sort) {
+      case 'kind':
+        return kindName(read.id, project.passageKinds);
+      case 'part':
+        if (isMade(read.id)) return generatedPartWords(read.id);
+        return project.kind(read.id)?.name || partOf(project, read.id)?.label() || read.id;
+      case 'heading':
+        return t('preview-what-heading', { level: read.level });
+      default:
+        return t(`preview-what-${read.sort}`);
+    }
+  }
+
+  /** Opens Look at what a line is. */
+  function lookAt(what: string) {
+    clearTimeout(parting);
+    pointed = null;
+    // The cast goes when Look's sections are renamed to those LookAim names.
+    lookUi.open(lookFor(what) as unknown as LookRequest);
+  }
+
   // The preview follows the text, a moment behind it: the longer the pages
   // take to make, the longer it waits for the writing to pause.
   let waiting: ReturnType<typeof setTimeout> | undefined;
@@ -484,6 +548,7 @@
     clearTimeout(waiting);
     clearTimeout(settled);
     clearTimeout(marking);
+    clearTimeout(parting);
     release();
     // What is being made is no longer wanted.
     void documentPreviewStop(projectId).catch(() => {});
@@ -590,9 +655,13 @@
             />
             <!-- The text, over the drawn page and unseen, so that it can be selected and copied. -->
             <div class="texts">
+              <!-- A line is text to select and nothing to press: the pointer resting on it shows its chip, beside it. -->
               {#each page.lines as line}<div
                   class="line"
+                  role="presentation"
                   data-what={line.what}
+                  onpointerenter={chips ? (e) => point(e, n, line) : undefined}
+                  onpointerleave={chips ? part : undefined}
                   style:left="{line.left}%"
                   style:top="{line.top}%"
                   style:width="{line.width}%"
@@ -605,7 +674,23 @@
                       style:font-size="{run.size}cqw">{run.text}</span
                     >{/each}<br />
                 </div>{/each}
-            </div>{/if}
+            </div>
+            {#if chips && pointed?.page === n}
+              {@const what = pointed.line.what}
+              {@const words = wordsOf(what)}
+              <!-- What the line the pointer rests on is, in the margin beside it, over no text: it opens Look at it. -->
+              <button
+                type="button"
+                class="chip"
+                data-what={what}
+                style:top="{pointed.line.top}%"
+                style:max-width="{Math.max(4, 98.5 - page.right)}%"
+                aria-label={t('preview-what-open', { what: words })}
+                onpointerenter={stay}
+                onpointerleave={part}
+                onclick={() => lookAt(what)}>{words}</button
+              >
+            {/if}{/if}
         </div>
       {/each}
       {#if span.to < count}
@@ -631,6 +716,15 @@
         {t('preview-remarks-count', { count: issueCount })}
       </button>
     {/if}
+    <!-- Whether a chip at the edge of a page names the line the pointer rests on. -->
+    <button
+      type="button"
+      class="chip-switch"
+      aria-pressed={chips}
+      aria-label={chips ? t('preview-chips-off') : t('preview-chips')}
+      use:tooltip={{ text: chips ? t('preview-chips-off') : t('preview-chips'), side: 'top' }}
+      onclick={() => writerSettings.set('pageChips', !chips)}><Tag size={12} /></button
+    >
   </footer>
 </aside>
 
@@ -833,6 +927,34 @@
     background: var(--selection);
     color: transparent;
   }
+  /* What the line the pointer rests on is: a chip in the margin at the
+     right of the page, at the height of the line, never wider than the
+     margin beside the text. */
+  .chip {
+    position: absolute;
+    right: 0.75%;
+    min-width: 0;
+    height: 17px;
+    padding: 0 7px;
+    overflow: hidden;
+    border: 1px solid var(--line-strong);
+    border-radius: 9px;
+    background: var(--paper-raised);
+    box-shadow: var(--shadow-1);
+    color: var(--ink-2);
+    font: 500 10.5px/15px var(--font-ui);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: pointer;
+  }
+  .chip:hover,
+  .chip:focus-visible {
+    border-color: var(--accent);
+    color: var(--accent-strong);
+    outline: none;
+  }
   .room {
     flex: none;
     width: 1px;
@@ -893,5 +1015,30 @@
   }
   .issues:hover {
     background: var(--gold-soft);
+  }
+  /* The switch of the chips stands last, at the right, after the remarks where there are any. */
+  .chip-switch {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin-left: auto;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-s);
+    background: transparent;
+    color: var(--ink-4);
+    cursor: pointer;
+  }
+  .issues + .chip-switch {
+    margin-left: 0;
+  }
+  .chip-switch:hover {
+    background: var(--paper-hover);
+    color: var(--ink-2);
+  }
+  .chip-switch[aria-pressed='true'] {
+    color: var(--accent);
   }
 </style>

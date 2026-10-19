@@ -88,3 +88,21 @@ preview-export-show-in-folder = Vis i mappen
 preview-export-open-failed = Filen kunne ikke åpnes
 preview-export-folder-failed = Mappen kunne ikke åpnes
 preview-export-another = Eksporter en til
+
+## Hva en linje på en side er: merkelappen i kanten av siden som sier hva
+## linjen pekeren hviler på er og åpner Utseende der, og bryteren nederst.
+
+# På merkelappen: hva linjen er.
+preview-what-text = Tekst
+# En overskrift, etter nivået: Overskrift 1, Overskrift 2.
+preview-what-heading = Overskrift { $level }
+preview-what-note = Note
+preview-what-bibliography = Litteraturliste
+preview-what-figure = Figur
+preview-what-table = Tabell
+preview-what-front = Forside
+# Det merkelappen gjør, slik det sies til dem som ikke kan se den; hva linjen er: Sitat, Overskrift 1.
+preview-what-open = Hvordan «{ $what }» ser ut …
+# Bryteren nederst i forhåndsvisningen, mens merkelappene ikke vises og mens de vises.
+preview-chips = Vis hva linjene på siden er
+preview-chips-off = Skjul hva linjene er

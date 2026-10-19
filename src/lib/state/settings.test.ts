@@ -124,6 +124,26 @@ describe('the settings as they are read', () => {
     error.mockRestore();
   });
 
+  it('name the lines of the preview unless that was turned off, and keep it as it was set', async () => {
+    const kept = (more: object): Partial<Settings> => ({ person: 'kept-id', ...more });
+    vi.mocked(settingsLoad).mockResolvedValueOnce({ settings: kept({}), setAside: null });
+    await settings.load();
+    expect(settings.value.pageChips).toBe(true);
+    vi.mocked(settingsLoad).mockResolvedValueOnce({
+      settings: kept({ pageChips: false }),
+      setAside: null,
+    });
+    await settings.load();
+    expect(settings.value.pageChips).toBe(false);
+    vi.mocked(settingsLoad).mockResolvedValueOnce({
+      settings: kept({ pageChips: 'no' }),
+      setAside: null,
+    });
+    await settings.load();
+    expect(settings.value.pageChips).toBe(true);
+    expect(writes).toHaveLength(0);
+  });
+
   it('whose first writing fails are said to be unsaved, not unread', async () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.mocked(settingsLoad).mockResolvedValueOnce({ settings: {}, setAside: null });

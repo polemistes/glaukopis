@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Spot } from '$lib/api/documents';
-import { lookFor, readWhat, spotsOn, TEXT, whatIs } from './spots';
+import { isMade, lookFor, readWhat, spotsOn, TEXT, whatIs } from './spots';
 
 const spot = (page: number, top: number, bottom: number, what: string): Spot => ({
   page,
@@ -72,6 +72,11 @@ describe('what a line is, taken apart', () => {
     expect(readWhat('heading:3')).toEqual({ sort: 'heading', level: 3 });
     for (const sort of ['note', 'bibliography', 'figure', 'table', 'front', 'text'] as const)
       expect(readWhat(sort)).toEqual({ sort });
+  });
+
+  it('tells the parts the core makes from the kinds of element', () => {
+    expect(['contents', 'list-of-figures', 'list-of-tables'].every(isMade)).toBe(true);
+    expect(['appendix', 'dedication', 'k-3f9a', 'body', ''].some(isMade)).toBe(false);
   });
 
   it('reads what it does not know as text', () => {
