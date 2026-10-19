@@ -85,3 +85,7 @@ look-from-with = Fra { $name } ({ $what })
 look-layout = Oppsett
 look-style = Referansestil
 look-style-change = Endre denne referansestilen …
+
+# The switch of the title page, first in the part of the front page.
+look-front-title-page = En tittelside
+look-front-title-page-hint = Om dokumentet har en i det hele tatt; den samme bryteren som under Hva dokumentet inneholder

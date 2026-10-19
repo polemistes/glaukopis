@@ -64,6 +64,7 @@
   import { formatGroups, layoutName, styleGroups, styleName } from './choosing.svelte';
   import { LOOK_SECTIONS, lookUi, type LookRequest, type LookSection } from './look.svelte';
   import ContentsSection from './ContentsSection.svelte';
+  import { Composition } from './composition.svelte';
   import { lengthsOk, lookRows, lookWords, resolvedWords, setKindLook } from './rows.svelte';
 
   interface Props {
@@ -771,17 +772,10 @@
     level.length(t('format-space-after'), 'spaceAfter', { when: (l) => !l.runIn }),
   ]);
 
+  // First whether, then how (ADR 0056): the switch of the title page stands
+  // over these rows; then what the title page shows; then how it is set.
   const titleRows: Row<F>[] = $derived([
-    chosen(t('format-title-placement'), 'title.placement', [
-      ['top', t('format-title-top')],
-      ['own-page', t('format-title-own-page')],
-    ]),
-    number(t('format-size'), 'title.size', pt()),
-    toggle(t('format-bold'), 'title.bold'),
-    toggle(t('format-italic'), 'title.italic'),
-    chosen(t('format-letters'), 'title.case', cases),
-    chosen(t('format-alignment'), 'title.align', aligns),
-    { subheading: t('format-title-shown') },
+    { subheading: t('format-title-shown'), at: 'title-shown' },
     toggle(t('format-title-anonymous'), 'title.anonymous', {
       hint: t('format-title-anonymous-hint'),
     }),
@@ -791,7 +785,25 @@
     toggle(t('format-title-abstract'), 'title.showAbstract'),
     text(t('format-title-abstract-label'), 'title.abstractLabel', { when: withAbstract }),
     text(t('format-title-keywords-label'), 'title.keywordsLabel', { when: withAbstract }),
+    { subheading: t('format-title-how'), at: 'title-how' },
+    chosen(t('format-title-placement'), 'title.placement', [
+      ['top', t('format-title-top')],
+      ['own-page', t('format-title-own-page')],
+    ]),
+    number(t('format-size'), 'title.size', pt()),
+    toggle(t('format-bold'), 'title.bold'),
+    toggle(t('format-italic'), 'title.italic'),
+    chosen(t('format-letters'), 'title.case', cases),
+    chosen(t('format-alignment'), 'title.align', aligns),
   ]);
+
+  /** What the document contains, for the switch of the title page over the front page's rows. */
+  const contained = new Composition(
+    () => project,
+    () => at,
+  );
+  /** Where the switch of the title page has its value from: nothing where it is the template's. */
+  const titlePageFrom = $derived(contained.from('parts.title-page'));
 
   const quotationRows: Row<F>[] = $derived([
     length(t('format-quote-indent-left'), 'quote.indentLeft'),
@@ -1531,6 +1543,29 @@
 
         <section class="part" data-part="front">
           <h3>{sectionWords.front}</h3>
+          <!-- Whether the document has a title page: the switch of What the document contains, here too. -->
+          <label class="row check" data-front-switch>
+            <span class="what"
+              >{t('look-front-title-page')}<small>{t('look-front-title-page-hint')}</small></span
+            >
+            <input
+              type="checkbox"
+              data-part-switch="title-page"
+              checked={contained.has('title-page')}
+              disabled={!contained.used}
+              onchange={(e) => contained.setPart('title-page', e.currentTarget.checked)}
+            />
+          </label>
+          {#if titlePageFrom}
+            {@const said = titlePageFrom}
+            <p class="from" data-from>
+              {said.words}{#if said.again}{' · '}<button
+                  type="button"
+                  class="again"
+                  onclick={said.again.take}>{said.again.label}</button
+                >{/if}
+            </p>
+          {/if}
           <Settings target={f} rows={titleRows} {from} />
         </section>
 

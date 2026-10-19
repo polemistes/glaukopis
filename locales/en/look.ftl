@@ -99,3 +99,7 @@ look-from-with = From { $name } ({ $what })
 look-layout = Layout
 look-style = Reference style
 look-style-change = Change this reference style…
+
+# The switch of the title page, first in the part of the front page.
+look-front-title-page = A title page
+look-front-title-page-hint = Whether the document has one at all; the same switch as under What the document contains

@@ -133,6 +133,7 @@ format-title-placement = The title stands
 format-title-top = At the top of the first page
 format-title-own-page = On a page of its own
 format-title-shown = What is shown
+format-title-how = How it is set
 format-title-anonymous = Without the names of the authors
 format-title-anonymous-hint = For review: the authors are left out everywhere, the running head too
 format-title-authors = Authors

@@ -20,22 +20,19 @@
   import type { GeneratedPart } from '$lib/api/templates';
   import {
     ALWAYS_MADE,
-    compositionPaths,
     hasPart,
     LIMITS,
-    withCompositionPath,
-    withoutCompositionPath,
-    type CompositionChanges,
     type CompositionPath,
     type Limit,
   } from '$lib/document/composition';
   import { GENERATED_PARTS, generatedPartWords, partGroupWords } from '$lib/document/templates';
   import { t } from '$lib/i18n';
-  import { documents, templateName, templateUsedCached } from '$lib/preview/documents.svelte';
+  import { documents } from '$lib/preview/documents.svelte';
   import type { Project } from '$lib/project/model/project.svelte';
   import { partOf, placeWords, type PartSpec as PartKind } from '$lib/project/parts';
   import Button from '$lib/ui/Button.svelte';
   import type { Provenance } from '$lib/ui/settings/rows';
+  import { Composition } from './composition.svelte';
 
   interface Props {
     project: Project;
@@ -51,59 +48,18 @@
     documents.load();
   });
 
-  /** What the element sets of its own. */
-  const own = $derived<CompositionChanges | undefined>(project.node(at)?.document.composition);
-  /** What the document sets with what the elements over it set, and which element sets each path. */
-  const composition = $derived(project.compositionOf(at));
-  const choice = $derived(documents.choice(project.documentOf(at).settings, project));
-  /** What the document is, by the name the writer is shown. */
-  const named = $derived(templateName(project, choice.template));
-  /** The template as the document uses it: what the rows show. Nothing until it has been read. */
-  const used = $derived(templateUsedCached(project, at));
-  /** The changes of the elements over this one: what its own are laid over. */
-  const above = $derived.by<CompositionChanges>(() => {
-    const way = project.pathTo(at);
-    return way.length > 1 ? project.compositionOf(way[way.length - 2]).changes : {};
-  });
-  /** The template as the elements over this one leave it: what a change here is told from. */
-  const given = $derived(templateUsedCached(project, at, above));
-
-  /** The name of an element, as a row says a change was made in it. */
+  // What the document contains, read and changed as the front page reads and changes its switch.
+  const c = new Composition(
+    () => project,
+    () => at,
+  );
+  const used = $derived(c.used);
+  const named = $derived(c.named);
+  const set = (path: CompositionPath, value: unknown, left: unknown) => c.set(path, value, left);
+  const from = (path: CompositionPath): Provenance | null => c.from(path);
+  const given = $derived(c.given);
+  /** The name of an element. */
   const nameOf = (id: string) => project.node(id)?.title || t('project-untitled');
-
-  /** Writes changes of an element's own, as one step of undo; nothing where they are as they were. */
-  function write(element: string, next: CompositionChanges) {
-    const before = project.node(element)?.document.composition;
-    if (!project.node(element) || JSON.stringify(next) === JSON.stringify(before ?? {})) return;
-    project.checkpoint();
-    project.setDocument(element, {
-      composition: compositionPaths(next).length ? next : undefined,
-    });
-    project.checkpoint();
-  }
-
-  /** Sets a value of the element's own; where it is what the elements above leave, takes the change away instead. */
-  function set(path: CompositionPath, value: unknown, left: unknown) {
-    write(
-      at,
-      value === left ? withoutCompositionPath(own, path) : withCompositionPath(own, path, value),
-    );
-  }
-
-  /** Takes the template's value again: the change at a path goes from the element that makes it. */
-  function takeAgain(who: string, path: CompositionPath) {
-    write(who, withoutCompositionPath(project.node(who)?.document.composition, path));
-  }
-
-  /** Where the value at a path comes from: nothing where it is the template's. */
-  function from(path: CompositionPath): Provenance | null {
-    const who = composition.from.get(path);
-    if (!who) return null;
-    return {
-      words: who === at ? t('look-changed-here') : t('look-changed-in', { name: nameOf(who) }),
-      again: { label: t('look-take-again', { layout: named }), take: () => takeAgain(who, path) },
-    };
-  }
 
   // ---- the parts the core makes ----
 
@@ -116,7 +72,7 @@
   };
 
   function setPart(part: GeneratedPart, on: boolean) {
-    set(`parts.${part}`, on, given ? hasPart(given, part) : undefined);
+    c.setPart(part, on);
   }
 
   // ---- the kinds of elements with a place of their own ----

@@ -133,6 +133,7 @@ format-title-placement = Tittelen står
 format-title-top = Øverst på første side
 format-title-own-page = På en egen side
 format-title-shown = Hva som vises
+format-title-how = Hvordan den settes
 format-title-anonymous = Uten forfatternes navn
 format-title-anonymous-hint = Til fagfellevurdering: forfatterne utelates overalt, også i toppteksten
 format-title-authors = Forfattere
