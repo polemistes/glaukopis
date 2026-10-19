@@ -103,7 +103,11 @@ SPELLING = [
 
 # The languages for Tesseract: its name of the language, the language, and
 # what it is called in itself. Tesseract has one Norwegian, for Bokmål and
-# Nynorsk both, and one English.
+# Nynorsk both, and one English. A model of type is listed under the
+# language it was trained on, and has no language of its own to be called
+# anything in: its title says what it is. The Fraktur model reads the Gothic
+# type of German, Norwegian, Danish and Swedish books of before about 1900,
+# whatever their language.
 OCR = [
     ("eng", "en", "English"),
     ("nor", "no", "Norsk"),
@@ -114,6 +118,7 @@ OCR = [
     ("ita", "it", "Italiano"),
     ("grc", "grc", "Ἀρχαία ἑλληνική"),
     ("lat", "la", "Latina"),
+    ("deu_latf", "de", "Fraktur"),
 ]
 TESSDATA_VERSION = "4.1.0"
 

@@ -238,3 +238,8 @@ ocr-script = { $script ->
 }
 # $alike: bokstavene som ligner hverandre, parvis, det første alfabetets først: «ϲ c, ο o, ν v».
 ocr-languages-scripts-alike = Det { $a } alfabetet leses sammen med det { $b }: bokstaver som ligner hverandre i de to ({ $alike }), leses ofte som hverandre, og hele ord blir feil. For bare ett alfabet, ta de andre bort.
+
+# Tesseracts frakturmodell, blant språkene i teksten: oppkalt etter skriften den leser, ikke etter et språk.
+ocr-language-fraktur-model = Fraktur (gotisk skrift)
+# Under språkene i teksten, der frakturmodellen er installert.
+ocr-languages-fraktur-hint = Bøker trykt med gotisk skrift, slik norske, danske, svenske og tyske bøker ofte ble før omkring 1900, leses med frakturmodellen, valgt først eller alene, uansett språk.

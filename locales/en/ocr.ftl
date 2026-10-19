@@ -238,3 +238,8 @@ ocr-script = { $script ->
 }
 # $alike: the letters that look alike, in pairs, the first script's first: "ϲ c, ο o, ν v".
 ocr-languages-scripts-alike = The { $a } script is read together with the { $b }: letters that look alike in the two ({ $alike }) are often read as the other, and whole words come out wrong. For one script alone, take the others away.
+
+# Tesseract's Fraktur model, among the languages of the text: named for the type it reads, not for a language.
+ocr-language-fraktur-model = Fraktur (Gothic type)
+# Under the languages of the text, where the Fraktur model is installed.
+ocr-languages-fraktur-hint = Books in Gothic type, as Norwegian, Danish, Swedish and German ones often were before about 1900, are read with the Fraktur model, chosen first or alone, whatever their language.
