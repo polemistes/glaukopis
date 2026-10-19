@@ -89,9 +89,9 @@
   import { filesDropped, mapOfIt } from './drops';
   import type { ElementsPayload } from './elements';
   import { closedHere, openHere } from './elsewhere';
-  import type { ProjectInfo } from '$lib/api/projects';
   import { keepReference } from '$lib/editor/references.svelte';
   import { clamp, guestMode, sideWidth, type Pane, type Sizes, GIVEN } from './layout';
+  import { GuestProject } from './guest.svelte';
   import { ViewStore } from './view-store.svelte';
   import ProjectDialogs from './ProjectDialogs.svelte';
   import MapBar from './MapBar.svelte';
@@ -166,32 +166,23 @@
   // ---- another project beside (ADR 0037) ----
 
   /**
-   * Another project, open in the second pane beside the one of the view,
-   * with its own sharing, so that one that is shared stays in touch. The
-   * panels at the side, the preview, the history, the review and the
-   * comments are of the project of the view, and say nothing of it.
-   */
-  interface Guest {
-    id: string;
-    info: ProjectInfo;
-    project: Project;
-    sharing: ProjectSharing;
-    folding: Folding;
-  }
-  let guest = $state.raw<Guest | null>(null);
-  /** The project being opened beside, until it is open. */
-  let guestOpening: string | null = null;
-  /**
-   * The view has gone: the project of the view, or one opened beside, that
-   * is still being opened is let go at once when it is.
+   * The view has gone: the project of the view that is still being opened
+   * is let go at once when it is.
    */
   let gone = false;
 
+  /** Another project, open in the second pane beside the one of the view: see `guest.svelte`. */
+  const guest = new GuestProject({
+    own: () => project,
+    onfail: (id, error) => {
+      notifyError(t('project-beside-failed'), error);
+      if (panes[1]?.project === id) closePane(1);
+    },
+  });
+
   /** The project a pane shows; none while the one beside is being opened. */
   function projectOf(p: Pane | undefined): Project | null {
-    if (!p) return null;
-    if (!p.project) return project;
-    return guest?.id === p.project ? guest.project : null;
+    return guest.projectOf(p);
   }
 
   /** Whether the two panes show two projects. */
@@ -220,7 +211,7 @@
   /** How a project is named first in the bar of its pane, where two are side by side. */
   function namedIn(p: Pane): { name: string; sharing: { owner: boolean } | null } | null {
     if (!across) return null;
-    const of = p.project ? guest : null;
+    const of = p.project ? guest.current : null;
     const name = (of ? of.project.name || of.info.name : project?.name) ?? '';
     const sharing = of ? of.sharing.sharing : shared?.sharing;
     return { name, sharing: sharing ? { owner: sharing.owner } : null };
@@ -229,73 +220,9 @@
   /** The key of the camera of a pane: elements of two projects may have the same id. */
   const cameraOf = (p: Pane) => (p.project ? `${p.project}:${p.at}` : p.at);
 
-  // The project beside follows what the second pane asks for: opened, or let go.
-  const wantedGuest = $derived(panes[1]?.project ?? null);
-  $effect(() => {
-    const id = wantedGuest;
-    untrack(() => void turnGuest(id));
-  });
-
-  async function turnGuest(id: string | null) {
-    if (guest?.id === id || (id && guestOpening === id)) return;
-    const was = guest;
-    guest = null;
-    if (was) letGo(was);
-    guestOpening = id;
-    if (!id) return;
-    try {
-      // What was written in it when it was last let go is on disk first.
-      await projects.closed(id);
-      if (gone || guestOpening !== id) return;
-      // It is opened beside: not the project last opened.
-      const last = projects.lastOpened;
-      const opened = await openProject(id);
-      projects.lastOpened = last;
-      const p = opened.project;
-      const g: Guest = {
-        id,
-        info: opened.info,
-        project: p,
-        sharing: new ProjectSharing(id, p, opened.info),
-        folding: new Folding([], (e) => {
-          const node = p.nodes.get(e);
-          return !!node && (!node.empty || !!node.include);
-        }),
-      };
-      if (gone || guestOpening !== id) {
-        letGo(g);
-        return;
-      }
-      guestOpening = null;
-      openHere(id, p);
-      p.setMe(me());
-      guest = g;
-    } catch (error) {
-      if (guestOpening !== id) return;
-      guestOpening = null;
-      notifyError(t('project-beside-failed'), error);
-      if (panes[1]?.project === id) closePane(1);
-    }
-  }
-
-  /** Lets go of the project beside: on disk, out of touch with the others, and closed. */
-  function letGo(g: Guest): Promise<void> {
-    closedHere(g.id, g.project);
-    g.sharing.close();
-    const done = g.project.close();
-    // What reads it from disk meanwhile waits for it.
-    projects.closing(g.id, done);
-    return done.catch((error) => console.error(error));
-  }
-
-  /** Lets go of the project beside, where there is one, when the view goes. */
-  function leaveGuest(): Promise<void> {
-    gone = true;
-    guestOpening = null;
-    const g = guest;
-    guest = null;
-    return g ? letGo(g) : Promise.resolve();
-  }
+  // The project beside follows what the second pane asks for: opened, or let
+  // go. Its effect depends on that id alone.
+  guest.follow(() => panes[1]?.project ?? null);
 
   /**
    * Opens a project beside, in the second pane, at an element of it or at
@@ -477,7 +404,7 @@
       project = p;
       openHere(ownId, p);
       release = beforeClose(async () => {
-        await Promise.all([leave(p), leaveGuest()]);
+        await Promise.all([leave(p), guest.leave()]);
       });
       // The citations of a document the project was made of are gone through, where that was asked for.
       const found = takeWaiting(ownId);
@@ -527,7 +454,7 @@
     const who = me();
     const p = project;
     if (!p) return;
-    const g = guest?.project;
+    const g = guest.current?.project;
     untrack(() => {
       p.setMe(who);
       g?.setMe(who);
@@ -566,7 +493,7 @@
   $effect(() => {
     // Those of a project beside as well: their ids are their own.
     const css = project
-      ? passageKindsCss([...project.passageKinds, ...(guest?.project.passageKinds ?? [])])
+      ? passageKindsCss([...project.passageKinds, ...(guest.current?.project.passageKinds ?? [])])
       : '';
     let sheet = document.getElementById('passage-kinds');
     if (!sheet) {
@@ -598,7 +525,7 @@
       viewing.beside = null;
     }
     if (project) closedHere(ownId, project);
-    void leaveGuest();
+    void guest.leave();
     if (pictures.project === ownId) pictures.open(null);
     // What reads the project from disk meanwhile, as the search through everything, waits for it.
     if (project)
@@ -640,7 +567,7 @@
   $effect(() => {
     if (!project) return;
     void project.structure;
-    void guest?.project.structure;
+    void guest.current?.project.structure;
     const next = panes.map((pane) => {
       const p = projectOf(pane);
       // A project beside that is being opened, or has not been fetched, is looked at when it is there.
@@ -1239,7 +1166,7 @@
                 <!-- A project beside, being opened, or on its way from the others. -->
                 <div class="centre"><Spinner size={20} /></div>
               {:else}
-                {@const paneFolding = (p.project ? guest?.folding : null) ?? folding}
+                {@const paneFolding = (p.project ? guest.current?.folding : null) ?? folding}
                 {#if showOutline}
                   <Outline
                     project={of}
