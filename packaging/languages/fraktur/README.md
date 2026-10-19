@@ -64,7 +64,58 @@ The sets:
   spelling as printed, ſ as s, ligatures as letters, the em dash as —.
   The owner's book: the lines stay out of git.
 - `heldout`: two real-scan pages of the training repository
-  (`paakierkegaardske`, `tilselvprøvelse`), never trained on.
+  (`paakierkegaardske`, `tilselvprøvelse`), never trained on; 59 lines,
+  3002 characters, 38 of them æ ø å.
+
+## Lines from the box files
+
+`lines_from_boxes.py` turns a set's box files into line images with their
+text, as tesstrain takes them (`<set>.<page>.<nnn>.png` and `.gt.txt`).
+Its docstring says how lines are grouped, where a space goes (a gap wider
+than half the median box height), and what is dropped. The three sets of
+the repository turned out to be the same thirty pages under three names
+(only `nyeeventyr` in `dan-frak` and `fontfile_9` in `deu-frak` are
+unique), so the model is trained on the Danish lines and that one German
+page alone; German and Swedish lines mixed in would only have repeated
+the Danish ones.
+
+```
+python3 -I packaging/languages/fraktur/lines_from_boxes.py \
+  packaging/build/fraktur/clones/tesseract-training-fraktur/dan-frak \
+  packaging/build/fraktur/lines/dan --exclude paakierkegaardske,tilselvprøvelse,font18,font19
+python3 -I packaging/languages/fraktur/lines_from_boxes.py \
+  packaging/build/fraktur/clones/tesseract-training-fraktur/dan-frak \
+  packaging/build/fraktur/lines/heldout --only paakierkegaardske,tilselvprøvelse
+python3 -I packaging/languages/fraktur/lines_from_boxes.py \
+  packaging/build/fraktur/clones/tesseract-training-fraktur/deu-frak \
+  packaging/build/fraktur/lines/deu --exclude font18,font19
+mkdir -p packaging/build/fraktur/lines/german
+ln packaging/build/fraktur/lines/deu/deu-frak.fontfile_9.* packaging/build/fraktur/lines/german/
+```
+
+`font18` and `font19` are set letter-spaced, so no share of the height
+tells their words apart; they are left out. 971 Danish lines and 34
+German came out, 989 with their lstmf; 59 held-out.
+
+## Making the model
+
+`make-model.sh` does what tesstrain does for a start model with new
+letters: `deu_latf` is taken apart (`combine_tessdata -u`), the unicharset
+of the training lines is merged into its own (`merge_unicharsets`), a
+proto model with the widened unicharset and no word lists is made
+(`combine_lang_model`, with `radical-stroke.txt` in `clones/`), a WordStr
+box and an lstmf are written beside every line, nine lines in ten go on
+the training list and one in ten on the evaluation list, and
+`lstmtraining` continues from `deu_latf`'s LSTM with `--old_traineddata`
+so that the net's output layer is remapped to the new unicharset. The
+unicharset grows from 100 entries to 118 (æ ø å Æ Ø Å, — ” „ ½ § · and a
+few French letters of the test text).
+
+```
+packaging/languages/fraktur/make-model.sh prepare
+nohup packaging/languages/fraktur/make-model.sh train run1 15000 > packaging/build/fraktur/logs/run1.log 2>&1 &
+packaging/languages/fraktur/make-model.sh finish run1   # models/run1/dan_latf.traineddata
+```
 
 ### Measurements
 
@@ -76,6 +127,10 @@ out right; conf the mean confidence.
 |---|---|---|---|---|---|
 | owner | deu_latf | 6.70 | 4.85 | 0/53 | 83.7 |
 | owner | dan_frak (legacy) | 15.39 | 14.85 | 34/53 | 69.5 |
+| owner | pilot (300 iterations) | 9.17 | 7.72 | 0/53 | 62.0 |
+| heldout | deu_latf | 3.46 | 2.40 | 0/38 | 88.8 |
+| heldout | dan_frak (legacy) | 2.53 | 2.10 | 25/38 | 84.5 |
+| heldout | pilot (300 iterations) | 6.36 | 5.90 | 0/38 | 69.1 |
 
 `deu_latf` writes the em dash as `-=-` or `=`; those count against it on
 the owner's lines (a few characters), the same for every model.
