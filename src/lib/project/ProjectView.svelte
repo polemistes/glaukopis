@@ -40,15 +40,14 @@
   import SharePanel from '$lib/sharing/SharePanel.svelte';
   import { ProjectSharing } from '$lib/sharing/sharing.svelte';
   import { bringIn, chooseDocument } from '$lib/documents/bringing.svelte';
+  import { goThrough, takeWaiting } from '$lib/found/found.svelte';
   import DocumentHost from '$lib/documents/DocumentHost.svelte';
-  import { foundUi, goThrough, takeWaiting } from '$lib/found/found.svelte';
   import FoundPanel from '$lib/found/FoundPanel.svelte';
   import { countFound } from '$lib/found/gather';
   import { PictureSync, pictureSet } from './shared-pictures';
   import type { Entry } from '$lib/found/going.svelte';
   import { revealFound } from '$lib/found/reveal';
   import { pictures } from '$lib/figures/pictures.svelte';
-  import { picturesUi, type PictureScope } from '$lib/pictures/store.svelte';
   import { confirm } from '$lib/ui/confirm.svelte';
   import { drag, dropTarget } from '$lib/ui/drag.svelte';
   import { notify, notifyError } from '$lib/ui/toast.svelte';
@@ -92,6 +91,7 @@
   import { keepReference } from '$lib/editor/references.svelte';
   import { clamp, guestMode, sideWidth, type Pane, type Sizes, GIVEN } from './layout';
   import { GuestProject } from './guest.svelte';
+  import { Side } from './side.svelte';
   import { ViewStore } from './view-store.svelte';
   import ProjectDialogs from './ProjectDialogs.svelte';
   import MapBar from './MapBar.svelte';
@@ -100,7 +100,7 @@
   import { PROJECT } from './model/types';
   import PicturePanel from './PicturePanel.svelte';
   import ReferencePanel from './ReferencePanel.svelte';
-  import SideTabs, { type SideKind } from './SideTabs.svelte';
+  import SideTabs from './SideTabs.svelte';
   import MapText from './text/MapText.svelte';
   import PreviewPanel from '$lib/preview/PreviewPanel.svelte';
   import LookPanel from '$lib/look/LookPanel.svelte';
@@ -112,11 +112,8 @@
   import * as positions from '$lib/history/positions';
   import HistoryPanel from '$lib/history/HistoryPanel.svelte';
   import PastView from '$lib/history/PastView.svelte';
-  import type { Looking } from '$lib/history/looking';
   import { provideReviewing } from '$lib/review/context';
-  import { Review } from '$lib/review/review.svelte';
   import ReviewPanel from '$lib/review/ReviewPanel.svelte';
-  import { sourceFor } from '$lib/review/source';
 
   let { projectId }: { projectId: string } = $props();
 
@@ -125,14 +122,7 @@
   let panes = $state<Pane[]>([]);
   let focused = $state(0);
   let cameras = $state<Record<string, Camera>>({});
-  /** What the panel at the side shows: one thing at a time, in the one place. */
-  let sideKind = $state<SideKind | null>(null);
-  let lastSide = $state<SideKind>('references');
   let showOutline = $state(false);
-  /** A moment of the history that is looked at, in place of the map as it is. */
-  let looking = $state.raw<Looking | null>(null);
-  /** Which pictures the panel shows. */
-  let pictureScope = $state<PictureScope>('project');
   let showPreview = $state(false);
   let sizes = $state<Sizes>({ ...GIVEN });
   let work = $state<HTMLDivElement>();
@@ -141,8 +131,6 @@
   let host = $state<ReturnType<typeof EditorHost>>();
   /** An element to show when a pane turns to it by a jump. */
   let reveal = $state<string | null>(null);
-  /** A reference to show at the references, with where it is cited, as the library asked. */
-  let citationsOf = $state<string | null>(null);
   let release: (() => void) | undefined;
   let shared = $state<ProjectSharing | null>(null);
   let showShare = $state(false);
@@ -160,16 +148,20 @@
   /** The diagrams in the panes, where a pane shows the diagram. */
   let diagrams = $state<(ReturnType<typeof MapDiagram> | undefined)[]>([]);
 
-  /** The pane that has the focus, whichever project it shows. */
-  const pane = $derived(panes[Math.min(focused, panes.length - 1)]);
-
-  // ---- another project beside (ADR 0037) ----
-
+  // The view is made anew for every project, so the id is the same throughout;
+  // it is kept here because it is needed after the view has gone.
+  // svelte-ignore state_referenced_locally
+  const ownId = projectId;
   /**
    * The view has gone: the project of the view that is still being opened
    * is let go at once when it is.
    */
   let gone = false;
+
+  /** The pane that has the focus, whichever project it shows. */
+  const pane = $derived(panes[Math.min(focused, panes.length - 1)]);
+
+  // ---- another project beside (ADR 0037) ----
 
   /** Another project, open in the second pane beside the one of the view: see `guest.svelte`. */
   const guest = new GuestProject({
@@ -269,7 +261,9 @@
     if (p) await keepReference(p, id);
   }
 
-  // The pane of projects, outside the view, shows the project and where one is in it.
+  // The pane of projects, outside the view, shows the project and where one
+  // is in it. It depends on the project and on the element in view of the
+  // pane of the project of the view.
   $effect(() => {
     viewing.project = project;
     viewing.at = ownPane?.at ?? null;
@@ -277,67 +271,40 @@
     viewing.beside = besideProject;
   });
 
-  /** The review of the changes of the element in view, while its panel is open (ADR 0022). */
-  let review = $state<Review | null>(null);
+  // ---- the panel at the side ----
+
+  /** The panel at the side and what it shows: see `side.svelte`. */
+  const side = new Side({
+    id: ownId,
+    project: () => project,
+    ownPane: () => ownPane,
+    besideInFocus: () => !!pane?.project,
+    holding: (element) => holding(element),
+    show: (at) => show(at),
+    toText: (at) => {
+      const i = panes.findIndex((p) => p.at === at);
+      if (i >= 0 && panes[i].mode !== 'text') panes[i] = { ...panes[i], mode: 'text' };
+    },
+  });
   provideReviewing({
     get review() {
-      return review;
+      return side.review;
     },
   });
 
-  /** Opens the panel of changes beside the text, or closes it. */
-  function toggleReview(open = !review) {
-    if (!open || !project || !ownPane) {
-      review?.close();
-      review = null;
-      if (sideKind === 'changes') sideKind = null;
-      return;
-    }
-    sideKind = lastSide = 'changes';
-    if (review) return;
-    looking = null;
-    review = new Review(project, sourceFor(project, ownId), ownPane.at);
-    review.later(0);
+  /** Closes the panel at the side, whatever it shows. */
+  function closeSide() {
+    side.close();
   }
-
-  // The changes are shown in the text. Opening the panel leaves the view as
-  // it is; going to a change from it turns the pane of its element to the text.
-  let broughtChange = $state(-1);
-  $effect(() => {
-    const r = review;
-    if (!r) {
-      broughtChange = -1;
-      return;
-    }
-    const shown = r.shown;
-    untrack(() => {
-      if (broughtChange >= 0 && shown !== broughtChange) {
-        const i = panes.findIndex((p) => p.at === r.at);
-        if (i >= 0 && panes[i].mode !== 'text') panes[i] = { ...panes[i], mode: 'text' };
-      }
-      broughtChange = shown;
-    });
-  });
 
   /** The element the panel at the side is about: that whose changes are reviewed, else the one in view. */
   const sideElement = $derived(
-    sideKind === 'history'
+    side.kind === 'history'
       ? undefined
-      : sideKind === 'look'
+      : side.kind === 'look'
         ? (previewOf ?? project)?.node(previewPane?.at)
-        : project?.node((sideKind === 'changes' && review?.at) || ownPane?.at),
+        : project?.node((side.kind === 'changes' && side.review?.at) || ownPane?.at),
   );
-
-  // The review follows the element in view, and what is written.
-  $effect(() => {
-    const at = ownPane?.at;
-    if (at) untrack(() => review?.turnTo(at));
-  });
-
-  // The view is made anew for every project, so the id is the same throughout;
-  // it is kept here because it is needed after the view has gone.
-  // svelte-ignore state_referenced_locally
-  const ownId = projectId;
 
   // ---- the view as it is kept ----
 
@@ -346,8 +313,8 @@
     layout: () => ({
       panes,
       cameras,
-      side: sideKind,
-      lastSide,
+      side: side.kind,
+      lastSide: side.last,
       outline: showOutline,
       preview: showPreview,
       sizes,
@@ -355,8 +322,8 @@
     apply: (laid) => {
       panes = laid.panes;
       cameras = laid.cameras;
-      sideKind = laid.side;
-      lastSide = laid.lastSide;
+      side.kind = laid.side;
+      side.last = laid.lastSide;
       showOutline = laid.outline;
       showPreview = laid.preview;
       sizes = laid.sizes;
@@ -394,10 +361,10 @@
       // A project that was joined and has not been fetched has no element of its own yet.
       if (p.node(PROJECT)) store.arrange(p);
       // What was found through everything in what is written about a work is shown with the references.
-      if (jumpFor(ownId)?.references) side('references', true);
+      if (jumpFor(ownId)?.references) side.show('references', true);
       // The library asked where a work is cited in this project.
-      citationsOf = takeCitations(ownId);
-      if (citationsOf) side('references', true);
+      side.citationsOf = takeCitations(ownId);
+      if (side.citationsOf) side.show('references', true);
       shared = new ProjectSharing(ownId, p, opened.info);
       pictures.open(ownId, () => p.usedPictures());
       void pictures.nameFrom(p.usedPictures());
@@ -423,7 +390,8 @@
     if (project && !panes.length && project.node(PROJECT)) store.arrange(project);
   });
 
-  // The sharing has ended from the other side.
+  // The sharing has ended from the other side. It depends on why it ended,
+  // which it takes at once, so that it is answered once.
   $effect(() => {
     const why = shared?.ended;
     if (!why || !shared) return;
@@ -449,7 +417,9 @@
     });
   });
 
-  // Who works here, as the history knows them: again when they are named anew.
+  // Who works here, as the history knows them: again when they are named
+  // anew. It depends on who that is, on the project of the view and on the
+  // project beside; the projects are told untracked.
   $effect(() => {
     const who = me();
     const p = project;
@@ -465,7 +435,7 @@
       history: historyOf(p, ownId),
       positions,
       get review() {
-        return review;
+        return side.review;
       },
     });
   });
@@ -477,7 +447,8 @@
     await p.close();
   }
 
-  // The window is named after the project while it is open.
+  // The window is named after the project while it is open. It depends on
+  // the project's name.
   $effect(() => {
     const name = project?.name;
     const title = name ? `Glaukopis – ${name}` : 'Glaukopis';
@@ -489,7 +460,9 @@
 
   // The kinds of paragraph and of words of the writer's own are seen at
   // once: a style sheet in the head of the document sets them from what
-  // they are based on (`passageKindsCss`), anew whenever they change.
+  // they are based on (`passageKindsCss`), anew whenever they change. It
+  // depends on the kinds of passage of the project of the view and of the
+  // project beside.
   $effect(() => {
     // Those of a project beside as well: their ids are their own.
     const css = project
@@ -515,7 +488,7 @@
     documentSettingsUi.close();
     templateEditorUi.close();
     ownKindsUi.editing = null;
-    review?.close();
+    side.review?.close();
     comparing.copy = null;
     release?.();
     if (viewing.project === project) {
@@ -553,7 +526,8 @@
   // The view is saved a moment after any part of it that is kept changes.
   store.follow();
 
-  // The place in the application follows the first pane.
+  // The place in the application follows the first pane. It depends on the
+  // project and on the element in view and the way of the first pane.
   $effect(() => {
     if (!project || !panes.length) return;
     router.replace({ view: 'project', project: projectId, at: panes[0].at, mode: panes[0].mode });
@@ -562,7 +536,11 @@
   // An element that is gone, deleted or taken back by undo, cannot be in
   // view: the pane turns to the nearest element over it that is there, else
   // to the project. The way to each element in view is remembered for that,
-  // since a gone element no longer says where it stood.
+  // since a gone element no longer says where it stood. It depends on the
+  // shape of the project of the view and of the project beside, on the
+  // panes, and on the record of each element in view (which `node` reads),
+  // so that it runs again as one is written in, a look-up a pane; it writes
+  // the panes only where one has to turn, and so settles.
   const ways = new Map<string, string[]>();
   $effect(() => {
     if (!project) return;
@@ -686,11 +664,6 @@
   }
 
   /**
-   * Shows one of what the panel at the side can show, or closes it: the
-   * references, the pictures, the history and the changes have the same
-   * place, one at a time.
-   */
-  /**
    * Begins a comment: on the passage that is selected in the text, or on
    * the element the cursor is in; or on the element selected in the diagram.
    */
@@ -707,37 +680,10 @@
     if (chosen.length === 1) commentsUi.begin(chosen[0]);
   }
 
-  // What the comments ask of the view: that their panel open.
-  $effect(() => {
-    if (!commentsUi.asked) return;
-    untrack(() => {
-      // A thread of a project beside, begun or asked for, is not for the panel of this one.
-      if (pane?.project) {
-        commentsUi.done();
-        notify(t('project-beside-no-comments'));
-        return;
-      }
-      side('comments', true);
-    });
-  });
-
-  // What the citations that were found ask of the view: that their panel
-  // open, with their element in view. What was asked before this view was made is not for it.
-  let foundHandled = untrack(() => foundUi.asked);
-  $effect(() => {
-    const n = foundUi.asked;
-    const p = project;
-    if (!p || !ownPane) return;
-    untrack(() => {
-      if (n === foundHandled) return;
-      foundHandled = n;
-      const asked = foundUi.request;
-      if (!asked || !p.node(asked.at)) return;
-      const at = holding(asked.at);
-      if (ownPane.at !== at) show(at);
-      side('found', true);
-    });
-  });
+  // What is asked of the panel at the side from elsewhere (the comments, the
+  // citations found, the look, the pictures) is answered, and the review
+  // follows the element in view: the effects are those of `side.svelte`.
+  side.follow();
 
   /**
    * How many citations that were found the element in view has left, for
@@ -766,45 +712,6 @@
     for (const id of project.tree(at).sequence) if (project.node(id)?.when) return true;
     return false;
   }
-
-  function side(which: SideKind, shown?: boolean) {
-    const open = shown ?? sideKind !== which;
-    if (which === 'changes') {
-      toggleReview(open);
-      return;
-    }
-    if (open) {
-      if (review) toggleReview(false);
-      sideKind = lastSide = which;
-    } else if (sideKind === which) {
-      sideKind = null;
-    }
-    if (sideKind !== 'history') looking = null;
-  }
-
-  function closeSide() {
-    if (sideKind) side(sideKind, false);
-  }
-
-  // The look of the document is asked for from elsewhere: the preview, the kind menu, the palette.
-  let lookAsked = untrack(() => lookUi.asked);
-  $effect(() => {
-    const asked = lookUi.asked;
-    if (asked === lookAsked) return;
-    lookAsked = asked;
-    untrack(() => side('look', true));
-  });
-
-  // The pictures are asked for from elsewhere, as from the tools for writing.
-  $effect(() => {
-    const wanted = picturesUi.wanted;
-    if (!wanted) return;
-    untrack(() => {
-      picturesUi.wanted = null;
-      pictureScope = wanted.scope;
-      side('pictures', true);
-    });
-  });
 
   function closePane(i: number) {
     // The first pane is of the project of the view: where the other shows another, that one goes.
@@ -842,7 +749,7 @@
 
   // The keys of a project, while it is open: see `shell/keys`.
   onMount(() => {
-    const reviewing = () => !!review;
+    const reviewing = () => !!side.review;
     return shortcuts.bind({
       'diagram-or-text': {
         run: () => {
@@ -860,17 +767,17 @@
         when: () => !!pane && !!focusedProject,
       },
       'projects-pane': toggleProjectsPane,
-      'side-look': () => side('look'),
+      'side-look': () => side.show('look'),
       'look-type': () => lookUi.open({ section: 'type' }),
-      'side-references': () => side('references'),
+      'side-references': () => side.show('references'),
       // Not Ctrl+Shift+I, which the window keeps for itself while the application is being developed.
-      'side-pictures': () => side('pictures'),
-      'side-comments': () => side('comments'),
-      'side-found': () => side('found'),
+      'side-pictures': () => side.show('pictures'),
+      'side-comments': () => side.show('comments'),
+      'side-found': () => side.show('found'),
       comment: { run: beginComment, when: () => !!project },
-      'side-history': () => side('history'),
-      'side-changes': () => toggleReview(),
-      'side-panel': () => (sideKind ? closeSide() : side(lastSide, true)),
+      'side-history': () => side.show('history'),
+      'side-changes': () => side.toggleReview(),
+      'side-panel': () => side.toggle(),
       'side-by-side': sideBySide,
       share: () => (showShare = true),
       'text-outline': {
@@ -883,10 +790,10 @@
       undo: { run: () => focusedProject?.undo(), when: () => !!project },
       redo: { run: () => focusedProject?.redo(), when: () => !!project },
       'redo-y': { run: () => focusedProject?.redo(), when: () => !!project },
-      'review-next': { run: () => review?.next(), when: reviewing },
-      'review-previous': { run: () => review?.previous(), when: reviewing },
-      'review-accept': { run: () => void review?.accept(), when: reviewing },
-      'review-reject': { run: () => void review?.reject(), when: reviewing },
+      'review-next': { run: () => side.review?.next(), when: reviewing },
+      'review-previous': { run: () => side.review?.previous(), when: reviewing },
+      'review-accept': { run: () => void side.review?.accept(), when: reviewing },
+      'review-reject': { run: () => void side.review?.reject(), when: reviewing },
     });
   });
 </script>
@@ -1026,11 +933,7 @@
       >
         <Redo2 size={16} />
       </IconButton>
-      <IconButton
-        label={t('project-side')}
-        active={!!sideKind}
-        onclick={() => (sideKind ? closeSide() : side(lastSide, true))}
-      >
+      <IconButton label={t('project-side')} active={!!side.kind} onclick={() => side.toggle()}>
         <PanelRight size={16} />
       </IconButton>
     </header>
@@ -1187,8 +1090,13 @@
                 {/if}
                 <div class="view">
                   {#key `${p.project ?? ''}:${p.at}:${p.mode}`}
-                    {#if looking && looking.pane === i && !p.project}
-                      <PastView {project} at={p.at} {looking} onback={() => (looking = null)} />
+                    {#if side.looking && side.looking.pane === i && !p.project}
+                      <PastView
+                        {project}
+                        at={p.at}
+                        looking={side.looking}
+                        onback={() => (side.looking = null)}
+                      />
                     {:else if p.mode === 'timeline' && !p.project}
                       <TimelineView
                         {project}
@@ -1286,24 +1194,24 @@
           {/key}
         </div>
       {/if}
-      {#if sideKind}
+      {#if side.kind}
         {#snippet tabs()}
           <SideTabs
-            current={sideKind ?? lastSide}
+            current={side.kind ?? side.last}
             counts={{ found: foundCount }}
-            onpick={(kind) => side(kind, true)}
+            onpick={(kind) => side.show(kind, true)}
           />
         {/snippet}
         <Divider
-          label={sideKind === 'look'
+          label={side.kind === 'look'
             ? t('look-between')
-            : sideKind === 'pictures'
+            : side.kind === 'pictures'
               ? t('project-between-pictures')
-              : sideKind === 'history'
+              : side.kind === 'history'
                 ? t('history-between')
-                : sideKind === 'comments'
+                : side.kind === 'comments'
                   ? t('comments-between')
-                  : sideKind === 'found'
+                  : side.kind === 'found'
                     ? t('found-between')
                     : t('project-between-references')}
           onstart={() => measure('references')}
@@ -1321,7 +1229,7 @@
               <strong>{sideElement.title || t('project-untitled')}</strong>
             </div>
           {/if}
-          {#if sideKind === 'look'}
+          {#if side.kind === 'look'}
             <!-- The look of the document the preview shows. -->
             {@const lookOf = previewOf ?? project}
             {#key `${previewId}\n${previewPane.at}`}
@@ -1335,19 +1243,19 @@
                 onclose={closeSide}
               />
             {/key}
-          {:else if sideKind === 'changes' && review}
-            <ReviewPanel {review} head={tabs} onclose={closeSide} />
-          {:else if sideKind === 'history'}
+          {:else if side.kind === 'changes' && side.review}
+            <ReviewPanel review={side.review} head={tabs} onclose={closeSide} />
+          {:else if side.kind === 'history'}
             <HistoryPanel
               {project}
               history={historyOf(project, ownId)}
-              {looking}
+              looking={side.looking}
               pane={ownIndex}
-              onlook={(l) => (looking = l)}
+              onlook={(l) => (side.looking = l)}
               head={tabs}
               onclose={closeSide}
             />
-          {:else if sideKind === 'comments'}
+          {:else if side.kind === 'comments'}
             <CommentsPanel
               {project}
               at={ownPane.at}
@@ -1361,7 +1269,7 @@
                 else goTo(element, { mode: 'text' });
               }}
             />
-          {:else if sideKind === 'found'}
+          {:else if side.kind === 'found'}
             {#key ownPane.at}
               <FoundPanel
                 {project}
@@ -1372,11 +1280,11 @@
                 onshow={(entry) => showFound(ownPane.at, entry)}
               />
             {/key}
-          {:else if sideKind === 'pictures'}
+          {:else if side.kind === 'pictures'}
             <PicturePanel
               {project}
               at={ownPane.at}
-              bind:scope={pictureScope}
+              bind:scope={side.pictureScope}
               head={tabs}
               onclose={closeSide}
               onenter={(id) => show(id)}
@@ -1387,7 +1295,7 @@
               at={ownPane.at}
               head={tabs}
               onclose={closeSide}
-              show={citationsOf}
+              show={side.citationsOf}
               ongo={(element) => goTo(element)}
             />
           {/if}
