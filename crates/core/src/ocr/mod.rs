@@ -608,7 +608,7 @@ pub fn read_pdf(
                             }
                         }
                     }
-                    Ok(child::Done::Made(_)) => return Err(Error::invalid("the pages were not read")),
+                    Ok(_) => return Err(Error::invalid("the pages were not read")),
                     Err(e) if e.kind() == tools::STOPPED || anew || to_take == 0 => return Err(e),
                     // The pages that have text are taken all the same.
                     Err(e) => failed.extend(wanted.iter().map(|i| (i + 1, e.to_string()))),
@@ -836,7 +836,7 @@ pub fn first_pages(path: &Path, tools: &Tools, work: &Path, count: usize, stop: 
     let job = child::Job::new(path, Some(&reader), tools.pdftoppm.as_ref(), place.path(), child::Task::First { count });
     let pages = match child::work(job, size, place.path(), &mut |_| {}, stop) {
         Ok(child::Done::Pages(pages)) => pages,
-        Ok(child::Done::Made(_)) => Vec::new(),
+        Ok(_) => Vec::new(),
         Err(e) => {
             tracing::warn!(%e, "the first pages of the PDF could not be read");
             Vec::new()
@@ -908,7 +908,7 @@ pub fn make_searchable(
     let job = child::Job::new(path, reader.as_ref(), tools.pdftoppm.as_ref(), place.path(), task);
     let made = match child::work(job, size, place.path(), told, stop)? {
         child::Done::Made(made) => made,
-        child::Done::Pages(_) => return Err(Error::invalid("the file was not made searchable")),
+        _ => return Err(Error::invalid("the file was not made searchable")),
     };
     if made.remapped > 0 {
         tracing::info!(fonts = made.remapped, "the fonts of a PDF were given their letters");
@@ -1015,4 +1015,37 @@ pub fn imported_picture(file: &str, title: &str, paragraphs: Vec<String>) -> Imp
         remarks,
         ..Default::default()
     }
+}
+
+// ---------------------------------------------------------------------------
+// Small pictures of the pages
+// ---------------------------------------------------------------------------
+
+/// Small pictures of `count` pages of the PDF at `path` from `from`
+/// (counted from nought), as many as it has, each `width` dots wide, in
+/// grey: PNGs carried as base64, by the page, to be shown as a strip of
+/// pages. A page that cannot be drawn says why, and the others are drawn
+/// all the same. They are drawn in the child, as all that opens the file
+/// is; Tesseract is not needed.
+pub fn pages_pictures(
+    path: &Path,
+    tools: &Tools,
+    work: &Path,
+    from: usize,
+    count: usize,
+    width: u32,
+    stop: &AtomicBool,
+) -> Result<Vec<(usize, std::result::Result<String, String>)>> {
+    let size = checked_pdf(path)?;
+    let place = place_in(work)?;
+    let task = child::Task::Pictures { from, count, width };
+    let job = child::Job::new(path, None, tools.pdftoppm.as_ref(), place.path(), task);
+    let pictures = match child::work(job, size, place.path(), &mut |_| {}, stop)? {
+        child::Done::Pictures(pictures) => pictures,
+        _ => return Err(Error::invalid("the pages were not drawn")),
+    };
+    if stop.load(Ordering::Relaxed) {
+        return Err(stopped());
+    }
+    Ok(pictures)
 }

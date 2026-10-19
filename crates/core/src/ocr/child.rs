@@ -175,6 +175,9 @@ pub enum Task {
     /// these pages drawn and read and what was read laid over them, the text
     /// they had taken away first where `strip`, and the file written to `output`.
     Searchable { pages: Vec<usize>, strip: bool, maps: Vec<searchable::FontMap>, output: PathBuf },
+    /// Small pictures of `count` pages from `from`, counted from nought, as
+    /// many as the file has, each `width` dots wide: to be shown, not read.
+    Pictures { from: usize, count: usize, width: u32 },
 }
 
 /// What the child is asked to do with the pages of a PDF.
@@ -221,7 +224,7 @@ impl Job {
     fn pages(&self) -> usize {
         match &self.task {
             Task::Read { pages } | Task::Searchable { pages, .. } => pages.len(),
-            Task::First { count } => *count,
+            Task::First { count } | Task::Pictures { count, .. } => *count,
         }
     }
 }
@@ -264,11 +267,16 @@ pub struct Made {
     pub written: bool,
 }
 
+/// A small picture of a page: a PNG in grey, carried as base64; or why the
+/// page could not be drawn.
+pub type PagePicture = (usize, std::result::Result<String, String>);
+
 /// What a job came to.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Done {
     Pages(Vec<PageRead>),
     Made(Made),
+    Pictures(Vec<PagePicture>),
 }
 
 /// How long the work on a file of `bytes` may take, with `pages` to draw and
@@ -357,6 +365,11 @@ fn work_here(job: &Job, told: &mut dyn FnMut(Progress), stop: &AtomicBool) -> st
             .map_err(failure)?;
             Ok(Done::Made(made))
         }
+        Task::Pictures { from, count, width } => {
+            let drawing = Pages::open(&job.pdf, Arc::new(bytes), pdftoppm.as_ref()).map_err(failure)?;
+            let pages: Vec<usize> = (*from..from.saturating_add(*count).min(drawing.count())).collect();
+            Ok(Done::Pictures(pictures(job, &drawing, &pages, *width, size, told, stop)))
+        }
     }
 }
 
@@ -394,6 +407,32 @@ fn read_pages(
     };
     let at_once = at_once(drawing, pages, reader.quality, job.memory, bytes);
     tracing::info!(pages = pages.len(), at_once, "pages read by Tesseract");
+    several(pages, at_once, &one, told, stop)
+        .into_iter()
+        .map(|(index, result)| (index, result.map_err(|e: Error| e.to_string())))
+        .collect()
+}
+
+/// Small pictures of pages, several at a time, as [`Task::Pictures`] says.
+/// However small the picture, the page is taken apart whole, and a scan's
+/// picture is unpacked whole: so as many are drawn at once as could be
+/// drawn for Tesseract.
+fn pictures(
+    job: &Job,
+    drawing: &Pages,
+    pages: &[usize],
+    width: u32,
+    bytes: u64,
+    told: &mut dyn FnMut(Progress),
+    stop: &AtomicBool,
+) -> Vec<PagePicture> {
+    use base64::Engine as _;
+    let one = |index: usize| {
+        let png = drawing.small(index, width, &job.work, stop)?;
+        Ok(base64::engine::general_purpose::STANDARD.encode(png))
+    };
+    let at_once = at_once(drawing, pages, Quality::default(), job.memory, bytes);
+    tracing::debug!(pages = pages.len(), at_once, width, "small pictures of pages drawn");
     several(pages, at_once, &one, told, stop)
         .into_iter()
         .map(|(index, result)| (index, result.map_err(|e: Error| e.to_string())))

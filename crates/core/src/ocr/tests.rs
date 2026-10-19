@@ -906,3 +906,76 @@ fn as_many_pages_at_once_as_the_memory_free_will_hold() {
     // Not known: the cores decide.
     assert_eq!(by_memory(5, a4_fine, None), 5);
 }
+
+/// A PDF of pages of these sizes, in points, each with a black square near
+/// its top left: made here, with nothing installed.
+fn pages_of_sizes(sizes: &[(i64, i64)]) -> Vec<u8> {
+    let mut doc = Document::with_version("1.5");
+    let pages_id = doc.new_object_id();
+    let mut kids: Vec<Object> = Vec::new();
+    for (width, height) in sizes {
+        let square = format!("0 g 20 {} 100 100 re f\n", height - 120);
+        let content = doc.add_object(lopdf::Stream::new(dictionary! {}, square.into_bytes()));
+        let page = doc.add_object(dictionary! {
+            "Type" => "Page",
+            "Parent" => pages_id,
+            "Contents" => content,
+            "MediaBox" => vec![0.into(), 0.into(), (*width).into(), (*height).into()],
+        });
+        kids.push(page.into());
+    }
+    let count = kids.len() as i64;
+    doc.objects
+        .insert(pages_id, Object::Dictionary(dictionary! { "Type" => "Pages", "Kids" => kids, "Count" => count }));
+    let catalog = doc.add_object(dictionary! { "Type" => "Catalog", "Pages" => pages_id });
+    doc.trailer.set("Root", catalog);
+    let mut out = Vec::new();
+    doc.save_to(&mut out).unwrap();
+    out
+}
+
+/// Small pictures of the pages, for the strip of pages: each a PNG in grey
+/// as wide as asked, whatever the size of its page, as many as the file has
+/// from where they are asked for.
+#[test]
+fn the_pages_are_drawn_small_for_the_strip() {
+    use base64::Engine as _;
+    let tmp = tempfile::tempdir().unwrap();
+    let pdf = tmp.path().join("three.pdf");
+    // A4 upright, A4 on its side, A5.
+    std::fs::write(&pdf, pages_of_sizes(&[(595, 842), (842, 595), (420, 595)])).unwrap();
+    let work = tmp.path().join("work");
+    let drawn = |from, count| pages_pictures(&pdf, &Tools::default(), &work, from, count, 120, &never()).unwrap();
+    let numbers = |pictures: &[(usize, std::result::Result<String, String>)]| -> Vec<usize> {
+        pictures.iter().map(|(index, _)| *index).collect()
+    };
+
+    let pictures = drawn(0, 40);
+    assert_eq!(numbers(&pictures), [0, 1, 2]);
+    let sizes: Vec<(u32, u32)> = pictures
+        .iter()
+        .map(|(index, picture)| {
+            let png = base64::engine::general_purpose::STANDARD.decode(picture.as_ref().unwrap()).unwrap();
+            assert!(png.starts_with(b"\x89PNG\r\n\x1a\n"), "page {index} is a PNG");
+            let picture = image::load_from_memory(&png).unwrap();
+            assert_eq!(picture.color(), image::ColorType::L8, "page {index} is grey");
+            let grey = picture.into_luma8();
+            assert!(grey.get_pixel(12, 12).0[0] < 128, "page {index} has its square");
+            assert!(grey.get_pixel(110, 80).0[0] > 200, "page {index} is white elsewhere");
+            grey.dimensions()
+        })
+        .collect();
+    assert_eq!(sizes, [(120, 170), (120, 85), (120, 170)]);
+
+    // From the second page, as many as there are; past the last, none.
+    assert_eq!(numbers(&drawn(1, 40)), [1, 2]);
+    assert_eq!(numbers(&drawn(0, 1)), [0]);
+    assert!(drawn(3, 40).is_empty());
+    // Stopped, it says so.
+    let stopped = pages_pictures(&pdf, &Tools::default(), &work, 0, 40, 120, &AtomicBool::new(true)).unwrap_err();
+    assert_eq!(stopped.kind(), tools::STOPPED);
+    // What is not a PDF is not drawn.
+    let text = tmp.path().join("text.pdf");
+    std::fs::write(&text, "no PDF").unwrap();
+    assert!(pages_pictures(&text, &Tools::default(), &work, 0, 40, 120, &never()).is_err());
+}
