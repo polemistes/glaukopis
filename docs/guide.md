@@ -2083,6 +2083,16 @@ goes into the document*). Where the document is given as it is written, in
 LaTeX, Typst or Markdown, its pictures are put in a folder beside it, named
 after it.
 
+Every document that is made follows the preview in what it holds and in
+what order: the half title, the title page, the abstract, the keywords and
+the contents stand where the template puts them, in Word, Writer, LaTeX and
+the web page as in the PDF, and a part turned off in Look is left out of
+them all. The title and the authors are in the file's own properties all
+the same, where a word processor, a browser or a reader of PDFs shows
+them: every author, also where the title page shows none, unless the
+layout is anonymous. The e-book has them in its package, and a Markdown
+file at its head, which has no page to place a title page on.
+
 In Word and Writer every kind is a style, with the look the layout gives
 it, so that a publisher can change every epigraph at once: the paragraph
 styles *Attribution*, *Epigraph*, *Scene Heading*, *Action*, *Character*,
@@ -2192,8 +2202,9 @@ What you are writing says what the document consists of, and this part of
 Look shows it, to change for one document. **The parts of the document**
 are those Glaukopis makes itself: the half title, the title page, the
 keywords, the table of contents and the lists of figures and of tables,
-each with a switch; and the text, the notes and the bibliography, which are
-always there wherever there is something to make them of. **Elements with
+each with a switch, which holds in every document that is made, as in the
+preview; and the text, the notes and the bibliography, which are always
+there wherever there is something to make them of. **Elements with
 a place of their own** are the kinds of
 elements what you are writing gives a place to, the abstract or the
 dedication, each with where it is printed, front matter, back matter or
