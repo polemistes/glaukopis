@@ -35,7 +35,6 @@
   import Undo2 from '@lucide/svelte/icons/undo-2';
   import Users from '@lucide/svelte/icons/users';
   import X from '@lucide/svelte/icons/x';
-  import { projectSaveView } from '$lib/api/projects';
   import { Folding } from './text/folding.svelte';
   import Presence from '$lib/sharing/Presence.svelte';
   import SharePanel from '$lib/sharing/SharePanel.svelte';
@@ -92,17 +91,8 @@
   import { closedHere, openHere } from './elsewhere';
   import type { ProjectInfo } from '$lib/api/projects';
   import { keepReference } from '$lib/editor/references.svelte';
-  import {
-    arranged,
-    clamp,
-    guestMode,
-    sideWidth,
-    toStore,
-    type Pane,
-    type Sizes,
-    type StoredView,
-    GIVEN,
-  } from './layout';
+  import { clamp, guestMode, sideWidth, type Pane, type Sizes, GIVEN } from './layout';
+  import { ViewStore } from './view-store.svelte';
   import ProjectDialogs from './ProjectDialogs.svelte';
   import MapBar from './MapBar.svelte';
   import WritingTools from '$lib/editor/WritingTools.svelte';
@@ -156,8 +146,6 @@
   let release: (() => void) | undefined;
   let shared = $state<ProjectSharing | null>(null);
   let showShare = $state(false);
-  /** What was kept of the view, until there is a project to show. */
-  let stored: StoredView = {};
   /** What is folded away in the text: as it was left, for the whole project, whatever is in view. */
   let folding = $state.raw(new Folding());
   /** The texts in the panes, where a pane shows the text: to be searched. */
@@ -424,6 +412,32 @@
   // svelte-ignore state_referenced_locally
   const ownId = projectId;
 
+  // ---- the view as it is kept ----
+
+  /** The view as it was left, and saved as it changes: see `view-store.svelte`. */
+  const store = new ViewStore(ownId, {
+    layout: () => ({
+      panes,
+      cameras,
+      side: sideKind,
+      lastSide,
+      outline: showOutline,
+      preview: showPreview,
+      sizes,
+    }),
+    apply: (laid) => {
+      panes = laid.panes;
+      cameras = laid.cameras;
+      sideKind = laid.side;
+      lastSide = laid.lastSide;
+      showOutline = laid.outline;
+      showPreview = laid.preview;
+      sizes = laid.sizes;
+    },
+    project: () => project,
+    folding: () => folding,
+  });
+
   onMount(async () => {
     library.load();
     try {
@@ -445,13 +459,13 @@
         );
         return;
       }
-      stored = (opened.info.view ?? {}) as StoredView;
-      folding = new Folding(Array.isArray(stored.folded) ? stored.folded : [], (id) => {
+      store.read(opened.info.view);
+      folding = new Folding(store.folded, (id) => {
         const node = p.nodes.get(id);
         return !!node && (!node.empty || !!node.include);
       });
       // A project that was joined and has not been fetched has no element of its own yet.
-      if (p.node(PROJECT)) arrange(p);
+      if (p.node(PROJECT)) store.arrange(p);
       // What was found through everything in what is written about a work is shown with the references.
       if (jumpFor(ownId)?.references) side('references', true);
       // The library asked where a work is cited in this project.
@@ -475,22 +489,11 @@
     }
   });
 
-  /** Lays out the view as it was left, or as a project is first met. */
-  function arrange(p: Project) {
-    const route = router.route.view === 'project' ? router.route : null;
-    const laid = arranged(p.nodes, stored, route);
-    panes = laid.panes;
-    cameras = laid.cameras;
-    sideKind = laid.side;
-    lastSide = laid.lastSide;
-    showOutline = laid.outline;
-    showPreview = laid.preview;
-    sizes = laid.sizes;
-  }
-
-  // What a joined project holds has arrived.
+  // What a joined project holds has arrived. It depends on the project, on
+  // whether there are panes yet, and on its own element; once there are
+  // panes it does nothing more.
   $effect(() => {
-    if (project && !panes.length && project.node(PROJECT)) arrange(project);
+    if (project && !panes.length && project.node(PROJECT)) store.arrange(project);
   });
 
   // The sharing has ended from the other side.
@@ -543,7 +546,7 @@
   async function leave(p: Project) {
     historyOf(p, ownId).stop();
     shared?.close();
-    await saveView();
+    await store.save();
     await p.close();
   }
 
@@ -620,52 +623,8 @@
     if (pictureSync.wanted(usedPictureSet, synced)) untrack(() => void pictures.sync());
   });
 
-  function viewToStore(): StoredView {
-    const layout = {
-      panes: $state.snapshot(panes),
-      cameras: $state.snapshot(cameras),
-      side: sideKind,
-      lastSide,
-      outline: showOutline,
-      preview: showPreview,
-      sizes: $state.snapshot(sizes),
-    };
-    return toStore(
-      layout,
-      project?.nodes ?? new Map(),
-      folding.kept((id) => !!project?.node(id)),
-    );
-  }
-
-  let viewTimer: ReturnType<typeof setTimeout> | undefined;
-  async function saveView() {
-    clearTimeout(viewTimer);
-    if (!project) return;
-    try {
-      await projectSaveView(ownId, viewToStore());
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  $effect(() => {
-    if (!project) return;
-    void panes.map((p) => `${p.at}${p.mode}`);
-    void sideKind;
-    void lastSide;
-    void showOutline;
-    void showPreview;
-    // Each camera, not the record of them: one is written by its entry,
-    // which reading the record alone would not see.
-    void Object.values(cameras);
-    void sizes.split;
-    void sizes.preview;
-    void sizes.references;
-    void folding.folded.size;
-    void [...folding.folded];
-    clearTimeout(viewTimer);
-    viewTimer = setTimeout(saveView, 1500);
-  });
+  // The view is saved a moment after any part of it that is kept changes.
+  store.follow();
 
   // The place in the application follows the first pane.
   $effect(() => {
@@ -944,7 +903,7 @@
   /** When the user turns to something else, what is there is put in order on disk. */
   function onblur() {
     if (project) void project.snapshot();
-    void saveView();
+    void store.save();
   }
 
   /** The text of the element in view is searched; from the diagram, the text is turned to first. */
