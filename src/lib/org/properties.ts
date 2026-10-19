@@ -9,9 +9,9 @@
  *
  * A value is written bare where it can be read back so, and as a string of
  * JSON where it holds spaces or signs: `alt="A drawing of a hull"`. `WHEN`,
- * `TIMELINE` and `LOOK` are written as one line of JSON for now: the words the
- * program writes for a placement in time are not yet a form that reads
- * back.
+ * `TIMELINE`, `LOOK` and `COMPOSITION` are written as one line of JSON for
+ * now: the words the program writes for a placement in time are not yet a
+ * form that reads back.
  */
 
 import type { Template } from '$lib/api/templates';
@@ -25,6 +25,7 @@ import type {
   Status,
   TimelineSettings,
 } from '$lib/project/model/types';
+import type { CompositionChanges } from '$lib/document/composition';
 import type { LookChanges } from '$lib/look/changes';
 import type { When } from '$lib/timeline/solve';
 import { escapeCodeLine, slug, unescapeCodeLine } from './escape';
@@ -331,6 +332,12 @@ export function writeProperties(e: OrgElement, w: DrawerWriting): string[] {
     ],
     ['LINE_NUMBERS', d.lineNumbers === undefined ? undefined : d.lineNumbers ? 't' : 'nil'],
     ['LOOK', d.look && Object.keys(d.look).length ? JSON.stringify(d.look) : undefined],
+    [
+      'COMPOSITION',
+      d.composition && Object.keys(d.composition).length
+        ? JSON.stringify(d.composition)
+        : undefined,
+    ],
     ['TIMELINE', e.timeline ? JSON.stringify(e.timeline) : undefined],
   ];
   const lines = said.filter((p): p is [string, string] => p[1] !== undefined);
@@ -469,6 +476,13 @@ export function readProperties(lines: string[]): ReadProperties {
       case 'LOOK': {
         const look = jsonOf(raw);
         if (look && typeof look === 'object' && !Array.isArray(look)) d.look = look as LookChanges;
+        else if (raw) out.unknown.push(line.trim());
+        break;
+      }
+      case 'COMPOSITION': {
+        const composition = jsonOf(raw);
+        if (composition && typeof composition === 'object' && !Array.isArray(composition))
+          d.composition = composition as CompositionChanges;
         else if (raw) out.unknown.push(line.trim());
         break;
       }

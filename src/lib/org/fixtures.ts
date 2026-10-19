@@ -565,6 +565,10 @@ export function everything(): OrgProject {
           identifiers: { isbn: '978-3-16-148410-0', doi: '10.1000/xyz 1' },
           lineNumbers: true,
           look: { font: { family: 'EB Garamond' }, kinds: { quote: { italic: null } } },
+          composition: {
+            parts: { contents: true, 'title-page': false },
+            requirements: { words: 8000, keywords: null, anonymous: true },
+          },
         },
         timeline: {
           axis: 'dates',

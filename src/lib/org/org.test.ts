@@ -3,6 +3,7 @@ import type { Block, Inline } from '$lib/project/model/text';
 import type { PassageKindRecord } from '$lib/project/model/types';
 import { br, everything, mark, p, t, trapBlocks, TRAPS } from './fixtures';
 import { normalInlines } from './inline';
+import { readProperties } from './properties';
 import { readBlocks, readProject } from './read';
 import type { OrgProject } from './types';
 import { writeBlocks, writeProject } from './write';
@@ -113,6 +114,9 @@ describe('the Org form of a project', () => {
     expect(text).toContain(':LINE_NUMBERS: t\n');
     expect(text).toContain(
       ':LOOK:         {"font":{"family":"EB Garamond"},"kinds":{"quote":{"italic":null}}}\n',
+    );
+    expect(text).toContain(
+      ':COMPOSITION:  {"parts":{"contents":true,"title-page":false},"requirements":{"words":8000,"keywords":null,"anonymous":true}}\n',
     );
     expect(text).toContain('*** Kinds\n:PROPERTIES:\n:ID:     kinds\n:KIND:   Character\n');
     expect(text).toContain('** \\TODO Buy milk :work\\:\n');
@@ -836,6 +840,7 @@ describe('reading an Org file written by hand', () => {
       '',
       '*',
       '* \n:PROPERTIES:\n:WHEN: {not json\n',
+      '* \n:PROPERTIES:\n:COMPOSITION: {"parts":\n',
       '#+BEGIN_VERSE\nno end',
       '[[[[',
       '[cite:',
@@ -849,6 +854,15 @@ describe('reading an Org file written by hand', () => {
       expect(() => readProject(bad)).not.toThrow();
       expect(() => readBlocks(bad)).not.toThrow();
     }
+  });
+
+  it('reads what a document sets otherwise than its template, and keeps a line of it that does not read', () => {
+    const read = readProperties([':COMPOSITION: {"parts":{"keywords":false}}']);
+    expect(read.document.composition).toEqual({ parts: { keywords: false } });
+    expect(read.unknown).toEqual([]);
+    const bad = readProperties([':COMPOSITION: {"parts":', ':COMPOSITION: [1, 2]']);
+    expect(bad.document.composition).toBeUndefined();
+    expect(bad.unknown).toEqual([':COMPOSITION: {"parts":', ':COMPOSITION: [1, 2]']);
   });
 
   it('reads signs that open and never close without reading them over and over', () => {
