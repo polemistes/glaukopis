@@ -22,7 +22,7 @@ use serde::Serialize;
 use serde_json::Value;
 
 use glaukopis_core::export::tools::{Tool, Tools};
-use glaukopis_core::export::{Page, Place, Preview, TextRun};
+use glaukopis_core::export::{Page, Place, Preview, Spot, TextRun};
 use glaukopis_core::formats::Formats;
 use glaukopis_core::import::{self, bibfile};
 use glaukopis_core::library::{Library, attachments, draft_from_source};
@@ -204,6 +204,7 @@ fn what_is_sent_is_what_the_interface_declares() {
         missing: vec!["gone".into()],
         substitute: Some("Libertinus Serif".into()),
         places: vec![Place { element: "e1".into(), page: 1, y: 72.0 }],
+        spots: vec![Spot { page: 1, top: 90.5, bottom: 130.25, what: "kind:quote".into() }],
     };
 
     // What the rest of the commands send: built as they build it, or as

@@ -19,8 +19,8 @@ use typst::layout::{BlockElem, Frame, FrameItem, Point, Transform};
 use typst::model::{
     EnumElem, FigureElem, FigureKind, FootnoteEntry, HeadingElem, ListElem, OutlineElem, QuoteElem, TableElem,
 };
-use typst::text::RawElem;
 use typst::syntax::{FileId, RootedPath, Source, VirtualPath, VirtualRoot};
+use typst::text::RawElem;
 use typst::text::{Font, FontBook};
 use typst::utils::LazyHash;
 use typst::{Library, LibraryExt, World};
@@ -345,7 +345,7 @@ fn what_of(content: &Content) -> Option<String> {
         let listed = match &outline.target.get_cloned(styles).0 {
             Selector::Elem(elem, Some(fields)) if *elem == FigureElem::ELEM => {
                 let tables =
-                    fields.iter().any(|(_, v)| matches!(v, Value::Func(f) if f.element() == Some(TableElem::ELEM)));
+                    fields.iter().any(|(_, v)| matches!(v, Value::Func(f) if f.to_element() == Some(TableElem::ELEM)));
                 if tables { "list-of-tables" } else { "list-of-figures" }
             }
             _ => "contents",
@@ -532,6 +532,143 @@ mod tests {
             assert_eq!(texts(&plain.document, page), texts(&set.document, page), "page {page}");
             assert_eq!(svg(&plain.document, page), svg(&set.document, page), "page {page}");
         }
+    }
+
+    #[test]
+    fn what_stands_where_on_the_pages_is_found() {
+        let tmp = tempfile::tempdir().unwrap();
+        // The pages as the opening of a document sets them: margins, a running
+        // head, the number at the foot, and the edges of the type. The blocks
+        // with labels as Pandoc writes them, and the rest as Typst has it.
+        let source = "#set page(width: 100mm, height: 80mm, margin: (top: 30pt, bottom: 30pt, x: 20pt), \
+              header: [Running head], footer: context counter(page).display())\n\
+            #set text(size: 9pt, top-edge: 0.8em, bottom-edge: -0.2em)\n\
+            #show <gk-kind-epigraph>: it => block(inset: (left: 1em), it.body)\n\
+            #block[#block[The title] <gk-title>] <gk-front>\n\
+            #outline(title: [Contents])\n\
+            #outline(title: [Tables], target: figure.where(kind: table))\n\
+            Words before.#footnote[A note.]\n\n\
+            #block[Sing, goddess.] <gk-kind-epigraph>\n\n\
+            #quote(block: true)[The wrath of Achilles.]\n\n\
+            Within a line #quote[a quotation] and #box[words] <gk-kind-foreign> of a kind.\n\n\
+            = A heading\n\
+            == A deeper one\n\
+            #block[#rect(width: 10pt, height: 10pt) #block[Figure 1.] <gk-figure-caption>] <gk-figure-center>\n\
+            #figure(table(columns: 2)[a][b], caption: [The poems])\n\n\
+            - One\n- Two\n\n\
+            #block[#lorem(400)] <gk-part-appendix>\n\n\
+            Words with a long note.#footnote[#lorem(250)]\n\n\
+            #heading(level: 1, numbering: none)[Bibliography]\n<bibliography>\n\
+            #block[#block[Nagy 1979.] <ref-nagy>] <refs>\n";
+        std::fs::write(tmp.path().join("document.typ"), source).unwrap();
+        let set = set(tmp.path(), "document.typ").unwrap();
+        let count = set.document.pages().len();
+        let height = 80.0 * 72.0 / 25.4;
+        let found = spots(&set.document, (30.0, 30.0));
+        for s in &found {
+            assert!(s.page >= 1 && s.page as usize <= count, "{s:?}");
+            assert!(s.top >= 0.0 && s.top < s.bottom && s.bottom <= height + 0.01, "{s:?}");
+        }
+        // What a line is: the innermost spot that holds its baseline, as the preview reads it.
+        let named = |page: usize, baseline: f32| {
+            found
+                .iter()
+                .filter(|s| s.page as usize == page && s.top - 0.5 <= baseline && baseline <= s.bottom + 0.5)
+                .min_by(|a, b| (a.bottom - a.top).total_cmp(&(b.bottom - b.top)))
+                .map(|s| s.what.as_str())
+        };
+        let runs: Vec<(usize, TextRun)> =
+            (1..=count).flat_map(|page| texts(&set.document, page).into_iter().map(move |r| (page, r))).collect();
+        // What each run of these words is, wherever it stands, in the order of the pages.
+        let names = |words: &str| -> Vec<Option<&str>> {
+            let mut out: Vec<Option<&str>> = runs
+                .iter()
+                .filter(|(_, r)| r.text.trim() == words || r.text.trim().starts_with(&format!("{words} ")))
+                .map(|(p, r)| named(*p, r.baseline))
+                .collect();
+            assert!(!out.is_empty(), "“{words}” is not on the pages: {runs:?}");
+            out.dedup();
+            out
+        };
+
+        assert_eq!(names("The title"), [Some("front")]);
+        // The titles of the lists of contents are theirs, not headings; what they list is theirs too.
+        assert_eq!(names("Contents"), [Some("part:contents")]);
+        assert_eq!(names("Tables"), [Some("part:list-of-tables")]);
+        assert_eq!(names("A heading"), [Some("part:contents"), Some("heading:1")]);
+        assert_eq!(names("A deeper one"), [Some("part:contents"), Some("heading:2")]);
+        assert_eq!(names("Sing, goddess."), [Some("kind:epigraph")]);
+        assert_eq!(names("The wrath of Achilles."), [Some("kind:quote")]);
+        assert_eq!(names("Figure 1."), [Some("figure")]);
+        assert_eq!(names("a"), [Some("table")]);
+        assert_eq!(names("b"), [Some("table")]);
+        assert_eq!(names("One"), [Some("kind:item")]);
+        assert_eq!(names("Two"), [Some("kind:item")]);
+        assert_eq!(names("Nagy 1979."), [Some("bibliography")]);
+        assert!(names("Bibliography").ends_with(&[Some("bibliography")]), "{:?}", names("Bibliography"));
+        assert_eq!(names("A note."), [Some("note")]);
+        // A plain paragraph is in no spot, nor are words of a kind or a quotation within a line,
+        // nor the running head and the numbers of the pages.
+        assert_eq!(names("Words before."), [None]);
+        assert_eq!(names("Within a line"), [None]);
+        assert_eq!(names("Words with a long"), [None]);
+        assert_eq!(names("Running head"), [None]);
+        for (page, run) in
+            runs.iter().filter(|(_, r)| r.baseline > height - 30.0 && r.text.trim().parse::<usize>().is_ok())
+        {
+            assert_eq!(named(*page, run.baseline), None, "the number of page {page}");
+        }
+        assert_eq!(found.iter().filter(|s| s.what == "kind:quote").count(), 1, "{found:?}");
+        assert!(!found.iter().any(|s| s.what.contains("foreign")), "{found:?}");
+
+        // In the order of the text, and one below another: the epigraph above the
+        // quotation, the quotation above the heading.
+        let first =
+            |what: &str| found.iter().find(|s| s.what == what).unwrap_or_else(|| panic!("no {what}: {found:?}"));
+        let order = [
+            "front",
+            "part:contents",
+            "part:list-of-tables",
+            "kind:epigraph",
+            "kind:quote",
+            "heading:1",
+            "heading:2",
+            "figure",
+            "table",
+            "kind:item",
+            "part:appendix",
+            "bibliography",
+        ];
+        for pair in order.windows(2) {
+            let (a, b) = (first(pair[0]), first(pair[1]));
+            assert!((a.page, a.top) < (b.page, b.top), "{a:?} {b:?}");
+            if a.page == b.page {
+                assert!(a.bottom <= b.top + 0.01, "{a:?} {b:?}");
+            }
+        }
+
+        // A part that goes on over pages goes on below the margin at the head of
+        // each and fills those between, to the margin at the foot.
+        let appendix: Vec<&Spot> = found.iter().filter(|s| s.what == "part:appendix").collect();
+        assert!(appendix.len() >= 3, "{appendix:?}");
+        for (i, s) in appendix.iter().enumerate() {
+            assert_eq!(s.page, appendix[0].page + i as u32, "{appendix:?}");
+            if i > 0 {
+                assert!((s.top - 30.0).abs() < 0.01, "{s:?}");
+            }
+            if i + 1 < appendix.len() {
+                assert!((s.bottom - (height - 30.0)).abs() < 0.01, "{s:?}");
+            }
+        }
+        // Each note once, the long one too, which goes on to the next page and
+        // is named on its first only.
+        assert_eq!(found.iter().filter(|s| s.what == "note").count(), 2, "{found:?}");
+
+        // Plain text names nothing.
+        std::fs::write(tmp.path().join("document.typ"), "#set page(width: 100mm, height: 80mm)\nWords.\n\nMore words.")
+            .unwrap();
+        let plain = super::set(tmp.path(), "document.typ").unwrap();
+        assert!(spots(&plain.document, (30.0, 30.0)).is_empty());
     }
 
     #[test]

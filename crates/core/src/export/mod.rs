@@ -2118,37 +2118,81 @@ mod tests {
     }
 
     #[test]
-    fn zz_probe_the_typst_of_every_spot() {
-        use crate::document::fixtures::{lines, mark, text};
+    fn the_preview_tells_what_stands_where_on_its_pages() {
+        use crate::document::fixtures::text;
         use crate::document::{Block, Section};
         use std::collections::BTreeMap;
         let Some(s) = setup() else { return };
+        // The sample, with its heading, citations, note and quotation; figures
+        // and a table; the parts of an article; a deeper heading, a passage of
+        // a kind, and words of a kind.
         let mut r = with_figures(&s);
         let parts = with_parts();
         r.document.parts = parts.document.parts;
         r.template = parts.template;
-        r.key = "probe".into();
-        let marked = |words: &str, mark: &str, value: Value| Inline::Text {
-            text: words.into(),
-            marks: BTreeMap::from([(mark.to_owned(), value)]),
+        r.key = "spots".into();
+        let foreign = Inline::Text {
+            text: "μῆνις".into(),
+            marks: BTreeMap::from([("kind".to_owned(), json!({"name": "foreign", "lang": "el"}))]),
         };
         r.document.sections.push(Section {
             level: 2,
             heading: Some(vec![text("Deeper")]),
             blocks: vec![
-                Block::of_kind("epigraph", vec![text("Sing, goddess.")]),
-                lines("line", vec![(Some(mark().number("1").done()), "Sing, goddess, the wrath"), (None, "of Achilles")]),
-                Block::paragraph(vec![text("The word "), marked("μῆνις", "kind", json!({"name": "foreign", "lang": "el"})), text(" is wrath.")]),
+                Block::of_kind("epigraph", vec![text("Rage, goddess, sing.")]),
+                Block::paragraph(vec![text("Of "), foreign, text(", wrath.")]),
                 Block::Table(poems("t-poems", "The poems")),
             ],
             element: Some("e3".into()),
             kind: None,
         });
         let p = preview(&s.ctx(), &r).unwrap();
-        let source = fs::read_to_string(s.work.join("probe/preview/document.typ")).unwrap();
-        let out = std::env::var("PROBE_OUT").unwrap_or_else(|_| "/tmp/probe.typ".into());
-        fs::write(&out, &source).unwrap();
-        eprintln!("pages {} warnings {:?}", p.count, p.warnings);
+        assert!(p.warnings.iter().all(|w| w.contains("lost.jpg")), "{:?}", p.warnings);
+        for spot in &p.spots {
+            assert!(spot.page >= 1 && spot.page as usize <= p.count, "{spot:?}");
+            assert!(spot.top < spot.bottom && spot.bottom <= p.height, "{spot:?}");
+        }
+        // What each run of these words is, as the preview names a line: the innermost spot that holds it.
+        let names = |words: &str| -> Vec<Option<&str>> {
+            let mut out: Vec<Option<&str>> = p
+                .pages
+                .iter()
+                .flat_map(|page| page.texts.iter().map(move |r| (page.number, r)))
+                .filter(|(_, r)| r.text.trim() == words || r.text.trim().starts_with(&format!("{words} ")))
+                .map(|(page, r)| {
+                    p.spots
+                        .iter()
+                        .filter(|s| s.page == page && s.top - 0.5 <= r.baseline && r.baseline <= s.bottom + 0.5)
+                        .min_by(|a, b| (a.bottom - a.top).total_cmp(&(b.bottom - b.top)))
+                        .map(|s| s.what.as_str())
+                })
+                .collect();
+            assert!(!out.is_empty(), "“{words}” is not on the pages");
+            out.dedup();
+            out
+        };
+        assert!(names("Wrath and the hero").contains(&Some("front")), "{:?}", p.spots);
+        assert!(names("Contents").contains(&Some("part:contents")), "{:?}", p.spots);
+        assert_eq!(names("For the goddess."), [Some("part:dedication")]);
+        assert!(names("The word").contains(&Some("heading:1")), "{:?}", names("The word"));
+        assert!(names("Deeper").contains(&Some("heading:2")), "{:?}", names("Deeper"));
+        // The quotation is a block Pandoc writes as Typst's own; another kind is a block with its label.
+        assert_eq!(names("Sing, goddess, the wrath."), [Some("kind:quote")]);
+        assert_eq!(names("Rage, goddess, sing."), [Some("kind:epigraph")]);
+        assert_eq!(names("So the scholia"), [Some("note")]);
+        // A figure and a table, with what is said of them.
+        assert_eq!(names("Figure\u{a0}1. The shield, as"), [Some("figure")]);
+        assert_eq!(names("Figure\u{a0}2. A vase"), [Some("figure")]);
+        assert_eq!(names("Table\u{a0}1. The poems"), [Some("table")]);
+        assert_eq!(names("Iliad"), [Some("table")]);
+        assert_eq!(names("Notes of the scholiasts."), [Some("part:appendix")]);
+        assert_eq!(names("Thanks are due to the Muses."), [Some("part:acknowledgements")]);
+        assert!(names("Bibliography").ends_with(&[Some("bibliography")]), "{:?}", names("Bibliography"));
+        assert_eq!(names("Nagy, Gregory. 1979."), [Some("bibliography")]);
+        // The text is in no spot, nor are words of a kind within it.
+        assert_eq!(names("Before the first section."), [None]);
+        assert_eq!(names("Of"), [None]);
+        assert!(!p.spots.iter().any(|s| s.what.contains("foreign")), "{:?}", p.spots);
     }
 
     #[test]

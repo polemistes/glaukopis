@@ -1800,6 +1800,14 @@ export const preview: documents.Preview = {
       "y": 72.0
     }
   ],
+  "spots": [
+    {
+      "bottom": 130.25,
+      "page": 1,
+      "top": 90.5,
+      "what": "kind:quote"
+    }
+  ],
   "substitute": "Libertinus Serif",
   "warnings": [
     "A remark."
