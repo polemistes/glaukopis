@@ -2140,6 +2140,7 @@ mod tests {
             heading: Some(vec![text("Deeper")]),
             blocks: vec![
                 Block::of_kind("epigraph", vec![text("Rage, goddess, sing.")]),
+                Block::of_kind("line", vec![text("Tell me, Muse, of the man.")]),
                 Block::paragraph(vec![text("Of "), foreign, text(", wrath.")]),
                 Block::Table(poems("t-poems", "The poems")),
             ],
@@ -2179,6 +2180,8 @@ mod tests {
         // The quotation is a block Pandoc writes as Typst's own; another kind is a block with its label.
         assert_eq!(names("Sing, goddess, the wrath."), [Some("kind:quote")]);
         assert_eq!(names("Rage, goddess, sing."), [Some("kind:epigraph")]);
+        // A line of verse is named by its kind, as the lines of a play are.
+        assert_eq!(names("Tell me, Muse, of the man."), [Some("kind:line")]);
         assert_eq!(names("So the scholia"), [Some("note")]);
         // A figure and a table, with what is said of them.
         assert_eq!(names("Figure\u{a0}1. The shield, as"), [Some("figure")]);

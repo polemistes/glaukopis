@@ -10,14 +10,7 @@
 
 import type { Spot } from '$lib/api/documents';
 import type { GeneratedPart } from '$lib/api/templates';
-
-/** Where Look opens for what a line is: a section of Look, and in it a kind, a level of heading or a subheading. */
-export interface LookAim {
-  section: 'type' | 'paragraphs' | 'headings' | 'notes' | 'figures' | 'front' | 'contents';
-  kind?: string;
-  level?: number;
-  at?: string;
-}
+import type { LookRequest } from '$lib/look/look.svelte';
 
 /** What a line is, taken apart: what sort of thing, and which kind, part or level of heading. */
 export type What =
@@ -92,8 +85,8 @@ export function readWhat(what: string): What {
   }
 }
 
-/** Where Look opens for what a line is. */
-export function lookFor(what: string): LookAim {
+/** Where Look opens for what a line is: a part of Look, and in it a kind, a level of heading or a heading within it. */
+export function lookFor(what: string): LookRequest {
   const read = readWhat(what);
   switch (read.sort) {
     case 'kind':

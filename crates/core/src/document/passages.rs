@@ -405,10 +405,11 @@ impl Converter<'_> {
         let line_look = x.kinds.get("line").map(|info| &info.look);
         match x.flavour {
             Flavour::Typst => {
-                // The numbers are counted here, and each line is given what it shows.
+                // The numbers are counted here, and each line is given what it shows,
+                // and a label of its kind, by which the preview names the line.
                 out.push(raw("typst", "#gk-verse["));
                 for item in &items {
-                    let VerseItem::Line { base, content, indent, margin, shown, .. } = item else {
+                    let VerseItem::Line { base, name, content, indent, margin, shown } = item else {
                         out.push(raw("typst", "#v(1em)"));
                         continue;
                     };
@@ -419,7 +420,7 @@ impl Converter<'_> {
                         format!("#gk-line(\"{base}\", {indent}, n: {n}, margin: {margin}, side: \"{}\")[", side.name()),
                     ));
                     out.push(json!({"t": "Plain", "c": self.inlines(content)}));
-                    out.push(raw("typst", "]"));
+                    out.push(raw("typst", format!("] <gk-line-{}>", label(name))));
                 }
                 out.push(raw("typst", "]"));
             }
@@ -897,6 +898,9 @@ mod tests {
         assert_eq!(out[4]["c"][1], "#gk-line(\"line\", 0, n: \"1\", margin: none, side: \"left\")[");
         assert_eq!(out[7]["c"][1], "#gk-line(\"line\", 1, n: \"2\", margin: none, side: \"left\")[");
         assert_eq!(out[10]["c"][1], "#gk-line(\"line\", 0, n: none, margin: \"ia.\", side: \"left\")[");
+        // Each line labelled by its kind, by which the preview names it.
+        assert_eq!(out[3]["c"][1], "] <gk-line-speaker>");
+        assert_eq!(out[6]["c"][1], "] <gk-line-line>");
         let c = converter(&keys, Flavour::Latex);
         let out = written(&c, &verse);
         assert_eq!(

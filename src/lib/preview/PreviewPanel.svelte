@@ -25,7 +25,6 @@
   import { isMade, lookFor, readWhat, spotsOn, whatIs } from './spots';
   import { generatedPartWords } from '$lib/document/templates';
   import { kindName } from '$lib/editor/kinds';
-  import type { LookRequest } from '$lib/look/look.svelte';
   import { partOf } from '$lib/project/parts';
   // The writer's settings; `settings` below are those of the document.
   import { settings as writerSettings } from '$lib/state/settings.svelte';
@@ -521,8 +520,7 @@
   function lookAt(what: string) {
     clearTimeout(parting);
     pointed = null;
-    // The cast goes when Look's sections are renamed to those LookAim names.
-    lookUi.open(lookFor(what) as unknown as LookRequest);
+    lookUi.open(lookFor(what));
   }
 
   // The preview follows the text, a moment behind it: the longer the pages

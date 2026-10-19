@@ -294,6 +294,10 @@ fn what_of(content: &Content) -> Option<String> {
         if let Some(id) = label.strip_prefix("gk-part-") {
             return Some(format!("part:{id}"));
         }
+        // A line of verse, a speaker or a direction, as `passages` labels each by its kind.
+        if let Some(id) = label.strip_prefix("gk-line-") {
+            return Some(format!("kind:{id}"));
+        }
         let placed = |side: &str| matches!(side, "left" | "center" | "right" | "within");
         return match label {
             "gk-front" | "gk-half-title" => Some("front".into()),
