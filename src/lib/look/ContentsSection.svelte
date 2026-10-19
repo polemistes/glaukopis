@@ -166,7 +166,11 @@
     keywords: { max: 50, step: 1 },
   };
 
-  /** Sets a limit from its field: empty or nought for none; what cannot be a limit is not written, and the field shows what is. */
+  /**
+   * Sets a limit from its field: a whole number, empty or nought for none.
+   * What cannot be a limit is not written, and the field shows what is; what
+   * is written, the field shows as it is written.
+   */
   function setLimit(limit: Limit, field: HTMLInputElement) {
     const typed = field.value.trim();
     const count = typed === '' ? 0 : Number(typed);
@@ -174,7 +178,9 @@
       field.value = String(used?.requirements[limit] ?? '');
       return;
     }
-    set(`requirements.${limit}`, Math.round(count) || null, given?.requirements[limit] ?? null);
+    const most = Math.round(count) || null;
+    field.value = most === null ? '' : String(most);
+    set(`requirements.${limit}`, most, given?.requirements[limit] ?? null);
   }
 
   function setAnonymous(on: boolean) {
