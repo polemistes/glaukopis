@@ -22,7 +22,7 @@
     type Spot,
     type TextRun,
   } from '$lib/api/documents';
-  import { isMade, lookFor, readWhat, spotsOn, whatIs } from './spots';
+  import { isMade, lookFor, PAGE, readWhat, spotsOn, whatIs } from './spots';
   import { generatedPartWords } from '$lib/document/templates';
   import { kindName } from '$lib/editor/kinds';
   import { partOf } from '$lib/project/parts';
@@ -481,22 +481,45 @@
 
   /** Whether a chip names the line the pointer rests on: the writer's setting, on unless turned off. */
   const chips = $derived(writerSettings.value.pageChips !== false);
-  /** The line the pointer rests on, and its page, while its chip is shown. */
-  let pointed = $state.raw<{ page: number; line: Line } | null>(null);
+  /**
+   * What the pointer rests on, while its chip is shown: a line, or the page
+   * itself where it rests on no line (ADR 0056); its page, what it is, and
+   * where the chip stands, in percent of the height of the page.
+   */
+  let pointed = $state.raw<{ page: number; what: string; top: number } | null>(null);
   /** The chip goes a moment after the pointer has left both the line and the chip. */
   let parting: ReturnType<typeof setTimeout> | undefined;
+  /** The chip of the page comes a moment after the pointer rests on no line. */
+  let paging: ReturnType<typeof setTimeout> | undefined;
 
   function point(event: PointerEvent, page: number, line: Line) {
     // Not while text is selected by dragging over the lines.
     if (event.buttons) return;
     clearTimeout(parting);
-    pointed = { page, line };
+    clearTimeout(paging);
+    pointed = { page, what: line.what, top: line.top };
+  }
+  /** The pointer moving over the page, on no line and not on the chip: the page's own chip, a moment after. */
+  function pointPage(event: PointerEvent, page: number) {
+    if (event.buttons || (event.target as Element | null)?.closest?.('.line, .chip')) return;
+    const box = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const top = Math.max(0, Math.min(97, ((event.clientY - box.top) / box.height) * 100));
+    if (pointed?.what === PAGE && pointed.page === page && Math.abs(pointed.top - top) < 2) {
+      clearTimeout(parting);
+      return;
+    }
+    clearTimeout(paging);
+    paging = setTimeout(() => {
+      clearTimeout(parting);
+      pointed = { page, what: PAGE, top };
+    }, 350);
   }
   function stay() {
     clearTimeout(parting);
   }
   function part() {
     clearTimeout(parting);
+    clearTimeout(paging);
     parting = setTimeout(() => (pointed = null), 700);
   }
 
@@ -519,6 +542,7 @@
   /** Opens Look at what a line is. */
   function lookAt(what: string) {
     clearTimeout(parting);
+    clearTimeout(paging);
     pointed = null;
     lookUi.open(lookFor(what));
   }
@@ -550,6 +574,7 @@
     clearTimeout(settled);
     clearTimeout(marking);
     clearTimeout(parting);
+    clearTimeout(paging);
     release();
     // What is being made is no longer wanted.
     void documentPreviewStop(projectId).catch(() => {});
@@ -646,6 +671,9 @@
           data-page={n}
           style:aspect-ratio="{size.width} / {size.height}"
           aria-label={t('preview-page', { number: String(n) })}
+          onpointermove={chips ? (e) => pointPage(e, n) : undefined}
+          onpointerleave={chips ? part : undefined}
+          role="presentation"
         >
           {#if page}<img
               src={page.url}
@@ -675,14 +703,14 @@
                 </div>{/each}
             </div>
             {#if chips && pointed?.page === n}
-              {@const what = pointed.line.what}
+              {@const what = pointed.what}
               {@const words = wordsOf(what)}
               <!-- What the line the pointer rests on is, in the margin beside it, over no text: it opens Look at it. -->
               <button
                 type="button"
                 class="chip"
                 data-what={what}
-                style:top="{pointed.line.top}%"
+                style:top="{pointed.top}%"
                 style:max-width="{Math.max(4, 98.5 - page.right)}%"
                 aria-label={t('preview-what-open', { what: words })}
                 onpointerenter={stay}

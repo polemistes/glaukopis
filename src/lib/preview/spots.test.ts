@@ -70,7 +70,17 @@ describe('what a line is, taken apart', () => {
     expect(readWhat('part:appendix')).toEqual({ sort: 'part', id: 'appendix' });
     expect(readWhat('part:list-of-figures')).toEqual({ sort: 'part', id: 'list-of-figures' });
     expect(readWhat('heading:3')).toEqual({ sort: 'heading', level: 3 });
-    for (const sort of ['note', 'bibliography', 'figure', 'table', 'front', 'text'] as const)
+    for (const sort of [
+      'note',
+      'bibliography',
+      'figure',
+      'table',
+      'front',
+      'running-head',
+      'page-number',
+      'page',
+      'text',
+    ] as const)
       expect(readWhat(sort)).toEqual({ sort });
   });
 
@@ -88,6 +98,7 @@ describe('what a line is, taken apart', () => {
       'heading:0',
       'heading:two',
       'note:1',
+      'running-head:1',
       'margin',
       'x:y',
     ])
@@ -108,6 +119,12 @@ describe('where Look opens', () => {
     expect(lookFor('table')).toEqual({ section: 'figures' });
     expect(lookFor('front')).toEqual({ section: 'front' });
     expect(lookFor('text')).toEqual({ section: 'type' });
+  });
+
+  it('opens at the rows that say whether what stands in the margins is shown, and at the page', () => {
+    expect(lookFor('running-head')).toEqual({ section: 'page', at: 'running-head' });
+    expect(lookFor('page-number')).toEqual({ section: 'page', at: 'page-numbers' });
+    expect(lookFor('page')).toEqual({ section: 'page' });
   });
 
   it('opens at the type for what it does not know', () => {

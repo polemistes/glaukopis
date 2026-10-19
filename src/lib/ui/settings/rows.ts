@@ -41,7 +41,12 @@ export type Choices = readonly (readonly [string | number, string])[];
 
 export type Row<T> =
   | { heading: string; when?: (target: T) => boolean }
-  | { subheading: string; when?: (target: T) => boolean }
+  | {
+      subheading: string;
+      when?: (target: T) => boolean;
+      /** A name by which the heading is found and brought into view: `data-at`. */
+      at?: string;
+    }
   | { note: string; when?: (target: T) => boolean }
   | (Named<T> & { kind: 'toggle' } & Reach<T, boolean>)
   | (Named<T> & {

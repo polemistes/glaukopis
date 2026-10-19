@@ -709,7 +709,7 @@
       },
       { when: (f) => (f.page.columns ?? 1) > 1, path: 'page.columnGap' },
     ),
-    { subheading: t('format-page-numbers') },
+    { subheading: t('format-page-numbers'), at: 'page-numbers' },
     toggle(t('format-page-numbers-show'), 'pageNumbers.show'),
     chosen(
       t('format-page-numbers-where'),
@@ -725,7 +725,7 @@
       { when: numbered },
     ),
     toggle(t('format-page-numbers-first'), 'pageNumbers.firstPage', { when: numbered }),
-    { subheading: t('format-running-head') },
+    { subheading: t('format-running-head'), at: 'running-head' },
     chosen(t('format-running-head-content'), 'runningHead.content', [
       ['none', t('format-running-head-none')],
       ['title', t('format-running-head-title')],

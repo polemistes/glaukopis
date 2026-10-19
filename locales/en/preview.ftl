@@ -116,3 +116,8 @@ preview-what-open = How “{ $what }” looks…
 # The switch at the foot of the preview, while the chips are not shown and while they are.
 preview-chips = Name the lines of the page
 preview-chips-off = Stop naming the lines
+
+# What stands in the margins of a page, and the page itself where the pointer rests on no line.
+preview-what-running-head = Running head
+preview-what-page-number = Page number
+preview-what-page = Page

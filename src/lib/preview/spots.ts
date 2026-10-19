@@ -3,7 +3,9 @@
  * made (`Preview.spots`): a stretch of a page and what stands in it, a
  * quotation or another kind of paragraph, a heading of a level, a note,
  * the bibliography, a figure, a table, the front page, a part of the
- * document; text where nothing stands. And where Look opens for it, which
+ * document, the running head and the number of the page in the margins
+ * (ADR 0056); text where nothing stands; and the page itself, where the
+ * pointer rests on no line. And where Look opens for it, which
  * the chip at the edge of the page does. Pure: no words and nothing
  * reactive; the panel says it in words (ADR 0054).
  */
@@ -17,10 +19,24 @@ export type What =
   | { sort: 'kind'; id: string }
   | { sort: 'part'; id: string }
   | { sort: 'heading'; level: number }
-  | { sort: 'note' | 'bibliography' | 'figure' | 'table' | 'front' | 'text' };
+  | {
+      sort:
+        | 'note'
+        | 'bibliography'
+        | 'figure'
+        | 'table'
+        | 'front'
+        | 'running-head'
+        | 'page-number'
+        | 'page'
+        | 'text';
+    };
 
 /** What the core names, of a line that stands in nothing it names. */
 export const TEXT = 'text';
+
+/** What the pointer rests on where it rests on no line: the page itself. */
+export const PAGE = 'page';
 
 /**
  * The parts the core makes itself that it names on the pages, as
@@ -79,6 +95,9 @@ export function readWhat(what: string): What {
     case 'figure':
     case 'table':
     case 'front':
+    case 'running-head':
+    case 'page-number':
+    case 'page':
       return colon < 0 ? { sort } : { sort: 'text' };
     default:
       return { sort: 'text' };
@@ -104,6 +123,13 @@ export function lookFor(what: string): LookRequest {
       return { section: 'figures' };
     case 'front':
       return { section: 'front' };
+    // At the rows that say whether it is shown, and how (ADR 0056).
+    case 'running-head':
+      return { section: 'page', at: 'running-head' };
+    case 'page-number':
+      return { section: 'page', at: 'page-numbers' };
+    case 'page':
+      return { section: 'page' };
     case 'text':
       return { section: 'type' };
   }

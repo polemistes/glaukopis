@@ -106,3 +106,8 @@ preview-what-open = Hvordan «{ $what }» ser ut …
 # Bryteren nederst i forhåndsvisningen, mens merkelappene ikke vises og mens de vises.
 preview-chips = Vis hva linjene på siden er
 preview-chips-off = Skjul hva linjene er
+
+# What stands in the margins of a page, and the page itself where the pointer rests on no line.
+preview-what-running-head = Kolumnetittel
+preview-what-page-number = Sidetall
+preview-what-page = Side

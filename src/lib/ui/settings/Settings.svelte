@@ -26,7 +26,7 @@
     {#if 'heading' in row}
       <h3>{row.heading}</h3>
     {:else if 'subheading' in row}
-      <h4>{row.subheading}</h4>
+      <h4 data-at={row.at}>{row.subheading}</h4>
     {:else if 'note' in row}
       <p class="hint">{row.note}</p>
     {:else}
