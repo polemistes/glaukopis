@@ -442,6 +442,20 @@ export interface Place {
   y: number;
 }
 
+/**
+ * A stretch of a page and what stands in it: the page, from 1, and the top
+ * and the bottom in points from the top of it. `what` is `kind:<id>` for a
+ * kind of paragraph, `part:<id>` for an element of a kind that makes a
+ * document or a part the core makes (`part:contents`), `heading:<level>`,
+ * `note`, `bibliography`, `figure`, `table` or `front`. See `preview/spots.ts`.
+ */
+export interface Spot {
+  page: number;
+  top: number;
+  bottom: number;
+  what: string;
+}
+
 export interface Preview {
   /** How many pages the document has. */
   count: number;
@@ -451,6 +465,8 @@ export interface Preview {
   height: number;
   /** Where each element of the map begins, in the order of the text. */
   places: Place[];
+  /** What stands where on all the pages, page by page, from the top. */
+  spots: Spot[];
   warnings: string[];
   missing: string[];
   substitute: string | null;

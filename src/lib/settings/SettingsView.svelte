@@ -431,6 +431,22 @@
           />
         {/if}
       </div>
+      <!-- Whether a chip at the edge of a page of the preview names the line the pointer rests on. -->
+      <div class="row top" data-page-chips>
+        <div class="what">
+          <div class="label">{t('settings-page-chips')}</div>
+          <div class="hint">{t('settings-page-chips-hint')}</div>
+        </div>
+        <Segmented
+          value={settings.value.pageChips === false ? 'off' : 'on'}
+          label={t('settings-page-chips')}
+          options={[
+            { value: 'on', label: t('settings-page-chips-on') },
+            { value: 'off', label: t('settings-page-chips-off') },
+          ]}
+          onchange={(on: 'on' | 'off') => settings.set('pageChips', on === 'on')}
+        />
+      </div>
     </section>
 
     <section>

@@ -98,3 +98,21 @@ preview-export-show-in-folder = Show in folder
 preview-export-open-failed = The file could not be opened
 preview-export-folder-failed = The folder could not be opened
 preview-export-another = Export another
+
+## What a line of a page is: the chip at the edge of the page that names the
+## line the pointer rests on and opens Look at it, and its switch at the foot.
+
+# On the chip: what the line is.
+preview-what-text = Text
+# A heading, by its level: Heading 1, Heading 2.
+preview-what-heading = Heading { $level }
+preview-what-note = Note
+preview-what-bibliography = Bibliography
+preview-what-figure = Figure
+preview-what-table = Table
+preview-what-front = Front page
+# What the chip does, as it is told to those who cannot see it; what the line is: Quotation, Heading 1.
+preview-what-open = How “{ $what }” looks…
+# The switch at the foot of the preview, while the chips are not shown and while they are.
+preview-chips = Name the lines of the page
+preview-chips-off = Stop naming the lines

@@ -100,3 +100,10 @@ settings-language-error-load = Ordene på { $language } kunne ikke lastes inn
 
 settings-logs = Loggen
 settings-logs-hint = Det Glaukopis forteller om seg selv i hver kjøring, for de siste { $count } kjøringene: hva det gjorde, hva som gikk galt, og hva som ble av vinduet. Til nytte når noe har gått galt og ingen så hvorfor.
+
+## Hva en linje i forhåndsvisningen er: om en merkelapp i kanten av siden sier det.
+
+settings-page-chips = Vis hva en linje i forhåndsvisningen er
+settings-page-chips-hint = Når pekeren hviler på en linje i forhåndsvisningen, sier en merkelapp i kanten av siden hva linjen er (tekst, et sitat, en overskrift …), og åpner Utseende for den.
+settings-page-chips-on = På
+settings-page-chips-off = Av
