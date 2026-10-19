@@ -407,87 +407,294 @@ fn table_header_rows(table: &str) -> usize {
     }
 }
 
-/// What the converter writes where a section of Word begins at an opener
-/// (ADR 0057): a paragraph that ends the section before it, saying only how
-/// the next begins, `nextPage` or `oddPage`.
+/// What the converter writes where a section of Word begins: a paragraph
+/// that ends the section before it, saying how the next begins, `nextPage`
+/// or `oddPage`. At an opener it says no more (ADR 0057); where the stretch
+/// of an element with a look of its own begins or ends it says too how the
+/// pages of the next are set (`reference::docx_section_mark`, ADR 0059).
 const SECTION_MARK: &str = "<w:sectPr><w:type w:val=\"";
+/// What holds a mark: a paragraph of its own.
+const MARK_OPEN: &str = "<w:p><w:pPr>";
+const MARK_CLOSE: &str = "</w:pPr></w:p>";
+/// A plain new page, which a new section begins anyway.
+const PAGE_BREAK: &str = "<w:p><w:r><w:br w:type=\"page\"/></w:r></w:p>";
+/// What a look says of a section's pages, which stands in place of the
+/// document's: in the order Word wants them.
+const PAGE_TAGS: [&str; 5] = ["pgSz", "pgMar", "lnNumType", "pgNumType", "cols"];
 
-/// The sections of a document of Word made whole (ADR 0057). Each mark the
-/// converter left ends a section; the section it ends has the properties of
-/// the document's own (`reference::docx`, the last in the body), and the
-/// sections after the first begin as their mark says, with a first page of
-/// their own that takes the header and the footer of the openers. In Word
-/// the properties of a section stand where it ends, so each section's are
-/// written at the next mark, the last at the end of the body.
+/// Where the elements `<w:tag …/>` (or `<w:tag …>…</w:tag>`) stand in a text.
+fn elements(s: &str, tag: &str) -> Vec<(usize, usize)> {
+    let open = format!("<w:{tag}");
+    let close = format!("</w:{tag}>");
+    let mut out = Vec::new();
+    let mut from = 0;
+    while let Some(found) = s[from..].find(&open) {
+        let at = from + found;
+        let after = at + open.len();
+        if !s[after..].starts_with([' ', '/', '>']) {
+            from = after;
+            continue;
+        }
+        let Some(gt) = s[after..].find('>').map(|g| after + g) else { break };
+        let end = if s[..gt].ends_with('/') {
+            gt + 1
+        } else {
+            match s[gt..].find(&close) {
+                Some(c) => gt + c + close.len(),
+                None => break,
+            }
+        };
+        out.push((at, end));
+        from = end;
+    }
+    out
+}
+
+/// The text without the elements `<w:tag …/>` whose text `which` takes.
+fn without(s: &str, tag: &str, which: impl Fn(&str) -> bool) -> String {
+    let mut out = s.to_owned();
+    for (a, b) in elements(s, tag).into_iter().rev() {
+        if which(&s[a..b]) {
+            out.replace_range(a..b, "");
+        }
+    }
+    out
+}
+
+/// Whether a stretch of the body holds nothing but room and plain new pages.
+fn bare(s: &str) -> bool {
+    let mut rest = s.trim_start();
+    while !rest.is_empty() {
+        match rest.strip_prefix(PAGE_BREAK) {
+            Some(r) => rest = r.trim_start(),
+            None => return false,
+        }
+    }
+    true
+}
+
+/// A place where one section ends and the next begins: one mark or more,
+/// with the plain new pages beside them, which the new section makes.
+struct Break<'a> {
+    start: usize,
+    end: usize,
+    /// The marks stand in paragraphs of their own, and are replaced whole.
+    whole: bool,
+    kind: &'a str,
+    /// It begins at an opener.
+    opener: bool,
+    /// How the pages of the section after it are set, where a look says so.
+    look: Option<&'a str>,
+}
+
+/// How a section begins: where it is the document's first, nothing; else
+/// how, and whether at an opener.
+struct Section {
+    look: Option<String>,
+    begins: Option<(String, bool)>,
+}
+
+/// The properties of a section of Word: the document's own (`base`), with
+/// the pages as its look sets them; a section after the first without the
+/// first page of the document's, beginning as it says, and where it begins
+/// at an opener with the openers' header and footer on its first page,
+/// unless its look leaves the margin off.
+fn section_properties(base: &str, section: &Section, header: bool, footer: bool) -> String {
+    let mut s = base.to_owned();
+    if section.begins.is_some() {
+        for which in ["header", "footer"] {
+            s = without(&s, &format!("{which}Reference"), |e| e.contains("w:type=\"first\""));
+        }
+        // Pandoc writes the document's own as it pleases, `<w:titlePg />` among them.
+        s = without(&s, "titlePg", |_| true);
+    }
+    let mut left_off = [false, false];
+    let mut references = String::new();
+    if let Some(look) = section.look.as_deref() {
+        for (i, which) in ["header", "footer"].into_iter().enumerate() {
+            let tag = format!("{which}Reference");
+            let own = elements(look, &tag);
+            if !own.is_empty() {
+                left_off[i] = true;
+                s = without(&s, &tag, |_| true);
+                own.iter().for_each(|(a, b)| references.push_str(&look[*a..*b]));
+            }
+        }
+        let pages: String =
+            PAGE_TAGS.iter().flat_map(|tag| elements(look, tag).into_iter().map(|(a, b)| &look[a..b])).collect();
+        let at = elements(&s, "pgSz").first().map(|(a, _)| *a);
+        for tag in PAGE_TAGS.iter().rev() {
+            s = without(&s, tag, |_| true);
+        }
+        // The page's elements come after the references, the notes and how
+        // the section begins, and before the rest.
+        let at = at.unwrap_or_else(|| {
+            ["titlePg", "docGrid"]
+                .iter()
+                .find_map(|tag| elements(&s, tag).first().map(|(a, _)| *a))
+                .unwrap_or(s.len() - "</w:sectPr>".len())
+        });
+        s.insert_str(at, &pages);
+    }
+    if let Some((kind, opener)) = &section.begins {
+        if *opener {
+            for (i, which, has) in [(0, "header", header), (1, "footer", footer)] {
+                if has && !left_off[i] {
+                    let _ = write!(
+                        references,
+                        "<w:{which}Reference w:type=\"first\" r:id=\"{}\"/>",
+                        reference::opener_relation(which)
+                    );
+                }
+            }
+        }
+        if let Some(at) = s.find("<w:pgSz") {
+            s.insert_str(at, &format!("<w:type w:val=\"{kind}\"/>"));
+        }
+        if *opener {
+            let at = s.find("<w:docGrid").unwrap_or(s.len() - "</w:sectPr>".len());
+            s.insert_str(at, "<w:titlePg/>");
+        }
+    }
+    if let Some(open) = s.find('>') {
+        s.insert_str(open + 1, &references);
+    }
+    s
+}
+
+/// The sections of a document of Word made whole (ADR 0057, 0059). Each mark
+/// the converter left ends a section; the section it ends has the
+/// properties of the document's own (`reference::docx`, the last in the
+/// body), with the pages as the look of its stretch sets them where a mark
+/// before it said so; the sections after the first begin as their mark
+/// says, and those at an opener with a first page of their own that takes
+/// the header and the footer of the openers. In Word the properties of a
+/// section stand where it ends, so each section's are written at the next
+/// mark, the last at the end of the body. Marks side by side, and the plain
+/// new pages beside them, are one break; a mark with nothing before it in
+/// the body sets the first section, and one with nothing after it is none.
 pub fn docx_sections(xml: &str, header: bool, footer: bool) -> String {
     let Some(base_at) = xml.rfind("<w:sectPr") else { return xml.to_owned() };
     let Some(base_end) = xml[base_at..].find("</w:sectPr>").map(|e| base_at + e + "</w:sectPr>".len()) else {
         return xml.to_owned();
     };
     let base = &xml[base_at..base_end];
-    // The marks, each with how the section after it begins.
-    let mut marks: Vec<(usize, usize, &str)> = Vec::new();
+    // The marks, each with how the section after it begins and is set.
+    let mut breaks: Vec<Break> = Vec::new();
     let mut from = 0;
     while let Some(found) = xml[from..base_at].find(SECTION_MARK) {
         let at = from + found;
         let kind_at = at + SECTION_MARK.len();
         let Some(kind_end) = xml[kind_at..].find('"').map(|e| kind_at + e) else { break };
         let Some(end) = xml[at..].find("</w:sectPr>").map(|e| at + e + "</w:sectPr>".len()) else { break };
-        marks.push((at, end, &xml[kind_at..kind_end]));
         from = end;
+        let kind = &xml[kind_at..kind_end];
+        let said = xml[kind_end..end - "</w:sectPr>".len()].split_once("/>").map(|(_, rest)| rest).unwrap_or("");
+        let look = said.contains("<w:pgSz").then_some(said);
+        let whole = xml[..at].ends_with(MARK_OPEN) && xml[end..].starts_with(MARK_CLOSE);
+        let (mut start, mut end) = (at, end);
+        if whole {
+            start -= MARK_OPEN.len();
+            end += MARK_CLOSE.len();
+        }
+        let mark = Break { start, end, whole, kind, opener: look.is_none(), look };
+        match breaks.last_mut() {
+            Some(last) if last.whole && whole && bare(&xml[last.end..start]) => {
+                last.end = end;
+                if kind == "oddPage" {
+                    last.kind = kind;
+                }
+                last.opener |= mark.opener;
+                last.look = mark.look.or(last.look);
+            }
+            _ => breaks.push(mark),
+        }
     }
-    if marks.is_empty() {
+    if breaks.is_empty() {
         return xml.to_owned();
     }
-    // A section that begins at an opener: the document's, beginning as it
-    // says, its first page with the openers' header and footer.
-    let opener = |kind: &str| {
-        let mut s = base.to_owned();
-        for which in ["header", "footer"] {
-            let tag = format!("<w:{which}Reference w:type=\"first\"");
-            while let Some(a) = s.find(&tag) {
-                let Some(b) = s[a..].find("/>") else { break };
-                s.replace_range(a..a + b + 2, "");
+    // The plain new pages beside a break are its own.
+    for b in breaks.iter_mut().filter(|b| b.whole) {
+        while xml[..b.start].trim_end().ends_with(PAGE_BREAK) {
+            b.start = xml[..b.start].trim_end().len() - PAGE_BREAK.len();
+        }
+        loop {
+            let rest = &xml[b.end..base_at];
+            match rest.trim_start().strip_prefix(PAGE_BREAK) {
+                Some(r) => b.end = base_at - r.len(),
+                None => break,
             }
         }
-        s = s.replace("<w:titlePg/>", "");
-        let mut references = String::new();
-        if header {
-            let _ = write!(
-                references,
-                "<w:headerReference w:type=\"first\" r:id=\"{}\"/>",
-                reference::opener_relation("header")
-            );
-        }
-        if footer {
-            let _ = write!(
-                references,
-                "<w:footerReference w:type=\"first\" r:id=\"{}\"/>",
-                reference::opener_relation("footer")
-            );
-        }
-        if let Some(open) = s.find('>') {
-            s.insert_str(open + 1, &references);
-        }
-        if let Some(at) = s.find("<w:pgSz") {
-            s.insert_str(at, &format!("<w:type w:val=\"{kind}\"/>"));
-        }
-        let at = s.find("<w:docGrid").unwrap_or(s.len() - "</w:sectPr>".len());
-        s.insert_str(at, "<w:titlePg/>");
-        s
-    };
-    let mut out = String::with_capacity(xml.len() + base.len() * (marks.len() + 1));
+    }
+    let body = xml.find("<w:body>").map(|b| b + "<w:body>".len()).unwrap_or(0);
+    let mut first = Section { look: None, begins: None };
+    let mut out = String::with_capacity(xml.len() + base.len() * (breaks.len() + 1));
     let mut at = 0;
-    let mut before: Option<&str> = None;
-    for (start, end, kind) in &marks {
-        out.push_str(&xml[at..*start]);
-        out.push_str(&before.map(opener).unwrap_or_else(|| base.to_owned()));
-        before = Some(kind);
-        at = *end;
+    let mut sections: Vec<Section> = Vec::new();
+    for b in &breaks {
+        let leading = b.start >= body && xml[body..b.start].trim().is_empty();
+        let trailing = xml[b.end..base_at].trim().is_empty();
+        if !b.opener && b.whole && (leading || trailing) {
+            // At the head of the body it sets the first section; at its end it begins none.
+            out.push_str(&xml[at..b.start]);
+            at = b.end;
+            if leading {
+                first.look = b.look.map(str::to_owned);
+            }
+            continue;
+        }
+        out.push_str(&xml[at..b.start]);
+        let current = sections.last().unwrap_or(&first);
+        let properties = section_properties(base, current, header, footer);
+        if b.whole {
+            let _ = write!(out, "{MARK_OPEN}{properties}{MARK_CLOSE}");
+        } else {
+            out.push_str(&properties);
+        }
+        // The count begins anew where the stretch begins, not at each section within it.
+        let look = match b.look {
+            Some(l) => Some(l.to_owned()),
+            None => current.look.as_ref().map(|l| l.replace(" w:start=\"1\"", "")),
+        };
+        sections.push(Section { look, begins: Some((b.kind.to_owned(), b.opener)) });
+        at = b.end;
     }
     out.push_str(&xml[at..base_at]);
-    out.push_str(&before.map(opener).unwrap_or_else(|| base.to_owned()));
+    out.push_str(&section_properties(base, sections.last().unwrap_or(&first), header, footer));
     out.push_str(&xml[base_end..]);
+    out
+}
+
+/// A plain new page of Writer, as the converter writes it.
+const ODT_PAGE_BREAK: &str = "<text:p text:style-name=\"Pagebreak\"/>";
+/// The paragraph that brings the pages of a look in Writer (`reference::odt_look_mark`).
+const ODT_LOOK: &str = "<text:p text:style-name=\"GkLook";
+
+/// The paragraphs that bring the pages of a look in Writer (ADR 0059) begin
+/// a page themselves: a plain new page beside one would leave a page empty,
+/// and is let go; and one at the end of the text, which would begin an
+/// empty page, is let go too.
+pub fn odt_looks(xml: &str) -> String {
+    let mut out = String::with_capacity(xml.len());
+    let mut rest = xml;
+    while let Some(at) = rest.find(ODT_LOOK) {
+        let Some(len) = rest[at..].find("/>").map(|e| e + 2) else { break };
+        let mark = &rest[at..at + len];
+        let mut before = &rest[..at];
+        while let Some(b) = before.trim_end().strip_suffix(ODT_PAGE_BREAK) {
+            before = b;
+        }
+        let mut after = &rest[at + len..];
+        while let Some(a) = after.trim_start().strip_prefix(ODT_PAGE_BREAK) {
+            after = a;
+        }
+        out.push_str(before);
+        if !after.trim_start().starts_with("</office:text>") {
+            out.push_str(mark);
+        }
+        rest = after;
+    }
+    out.push_str(rest);
     out
 }
 
@@ -512,7 +719,7 @@ pub fn docx(bytes: &[u8], properties: &Properties) -> Result<Vec<u8>> {
 pub fn odt(bytes: &[u8], format: &DocumentFormat, properties: &Properties) -> Result<Vec<u8>> {
     rewrite(bytes, |files| {
         let content = text_of(files, "content.xml")?;
-        put(files, "content.xml", odt_content(&odt_lists(&content), format));
+        put(files, "content.xml", odt_content(&odt_looks(&odt_lists(&content)), format));
         if let Ok(meta) = text_of(files, "meta.xml") {
             put(files, "meta.xml", odt_properties(&meta, properties));
         }
@@ -554,6 +761,95 @@ mod tests {
         // Without marks, nothing changes.
         let plain = format!("<w:body><w:p>A</w:p>{base}</w:body>");
         assert_eq!(docx_sections(&plain, true, true), plain);
+    }
+
+    /// A mark of the stretch of a look: its footer left off, where `off`, and its page.
+    fn look_mark(off: bool, page: &str) -> String {
+        let footer = if off { "<w:footerReference w:type=\"default\" r:id=\"E\"/>" } else { "" };
+        format!("<w:p><w:pPr><w:sectPr><w:type w:val=\"nextPage\"/>{footer}{page}</w:sectPr></w:pPr></w:p>")
+    }
+
+    /// The document's own section, as Pandoc writes it.
+    const BASE: &str = "<w:sectPr>\n  <w:footerReference w:type=\"default\" r:id=\"f1\" />\n  <w:footerReference r:id=\"f3\" w:type=\"first\" />\n  <w:footnotePr />\n  <w:pgSz w:w=\"1\" />\n  <w:pgMar w:top=\"1\" />\n  <w:titlePg />\n</w:sectPr>";
+
+    #[test]
+    fn sections_take_the_pages_of_the_looks() {
+        let into = look_mark(
+            true,
+            "<w:pgSz w:w=\"2\" w:orient=\"landscape\"/><w:pgMar w:top=\"2\"/><w:pgNumType w:fmt=\"lowerRoman\" w:start=\"1\"/>",
+        );
+        let back = look_mark(false, "<w:pgSz w:w=\"1\"/><w:pgMar w:top=\"1\"/>");
+        let xml = format!("<w:body><w:p>A</w:p>{into}<w:p>B</w:p>{back}<w:p>C</w:p>{BASE}</w:body>");
+        let out = docx_sections(&xml, false, true);
+        roxmltree::Document::parse(&format!("<w:document xmlns:w=\"w\" xmlns:r=\"r\">{out}</w:document>")).unwrap();
+        // The first is the document's as it was; the look's has its pages and the empty footer, and no first page of
+        // its own; the last is the document's again, begun on a new page.
+        let look = "<w:sectPr><w:footerReference w:type=\"default\" r:id=\"E\"/>\n  \n  \n  <w:footnotePr />\n  <w:type w:val=\"nextPage\"/><w:pgSz w:w=\"2\" w:orient=\"landscape\"/><w:pgMar w:top=\"2\"/><w:pgNumType w:fmt=\"lowerRoman\" w:start=\"1\"/>\n  \n  \n</w:sectPr>";
+        let again = "<w:sectPr>\n  <w:footerReference w:type=\"default\" r:id=\"f1\" />\n  \n  <w:footnotePr />\n  <w:type w:val=\"nextPage\"/><w:pgSz w:w=\"1\"/><w:pgMar w:top=\"1\"/>\n  \n  \n</w:sectPr>";
+        assert_eq!(
+            out,
+            format!(
+                "<w:body><w:p>A</w:p><w:p><w:pPr>{BASE}</w:pPr></w:p><w:p>B</w:p><w:p><w:pPr>{look}</w:pPr></w:p><w:p>C</w:p>{again}</w:body>"
+            )
+        );
+    }
+
+    #[test]
+    fn a_stretch_with_openers_in_it_counts_anew_once() {
+        let into = look_mark(true, "<w:pgSz w:w=\"1\"/><w:pgNumType w:start=\"1\"/>");
+        let opener = "<w:p><w:pPr><w:sectPr><w:type w:val=\"oddPage\"/></w:sectPr></w:pPr></w:p>";
+        let back = look_mark(false, "<w:pgSz w:w=\"1\"/>");
+        let xml =
+            format!("<w:body><w:p>A</w:p>{into}<w:p>B</w:p>{opener}<w:p>C</w:p>{back}<w:p>D</w:p>{BASE}</w:body>");
+        let out = docx_sections(&xml, false, true);
+        let sections: Vec<&str> =
+            out.split("<w:sectPr>").skip(1).map(|s| s.split("</w:sectPr>").next().unwrap()).collect();
+        assert_eq!(sections.len(), 4, "{out}");
+        assert!(sections[1].contains("<w:pgNumType w:start=\"1\"/>"), "{}", sections[1]);
+        // Within the stretch, at an opener: the look's pages, counted on, beginning on an odd page with a first
+        // page of its own whose footer is the look's, left off.
+        let within = sections[2];
+        assert!(!within.contains("w:start") && within.contains("<w:type w:val=\"oddPage\"/>"), "{within}");
+        assert!(within.contains("<w:titlePg/>") && !within.contains("Opener"), "{within}");
+        assert!(within.contains("r:id=\"E\"") && !within.contains("f1"), "{within}");
+        // After it, the document's, with no first page of its own.
+        assert!(sections[3].contains("r:id=\"f1\"") && !sections[3].contains("titlePg"), "{}", sections[3]);
+        assert!(!sections[3].contains("w:pgNumType"), "{}", sections[3]);
+    }
+
+    #[test]
+    fn marks_side_by_side_are_one_break() {
+        let page_break = "<w:p><w:r><w:br w:type=\"page\"/></w:r></w:p>";
+        let into = look_mark(true, "<w:pgSz w:w=\"2\"/>");
+        let opener = "<w:p><w:pPr><w:sectPr><w:type w:val=\"oddPage\"/></w:sectPr></w:pPr></w:p>";
+        let back = look_mark(false, "<w:pgSz w:w=\"1\"/>");
+        // A look at the head of the body sets the first section; a mark at its end begins none.
+        let xml = format!(
+            "<w:body>{into}<w:p>A</w:p>{page_break}\n{back}\n{page_break}{opener}<w:p>B</w:p>{into}{BASE}</w:body>"
+        );
+        let out = docx_sections(&xml, true, true);
+        assert!(!out.contains("w:type=\"page\""), "the new pages are the sections': {out}");
+        assert_eq!(out.matches("<w:sectPr").count(), 2, "{out}");
+        let first = &out[..out.find("<w:p>B</w:p>").unwrap()];
+        assert!(first.starts_with("<w:body><w:p>A</w:p><w:p><w:pPr><w:sectPr>"), "{out}");
+        // The first section: the look's pages and footer, with the document's first page.
+        assert!(
+            first.contains("<w:pgSz w:w=\"2\"/>") && first.contains("r:id=\"E\"") && first.contains("<w:titlePg />")
+        );
+        // The second: the document's, at an opener on an odd page, its first page the openers'.
+        let last = &out[out.find("<w:p>B</w:p>").unwrap()..];
+        assert!(last.contains("<w:type w:val=\"oddPage\"/>") && last.contains("rIdGkfooterOpenerxml"), "{last}");
+        assert!(last.contains("<w:pgSz w:w=\"1\"/>") && last.contains("r:id=\"f1\""), "{last}");
+    }
+
+    #[test]
+    fn the_pages_of_a_look_in_writer_are_begun_once() {
+        let look = "<text:p text:style-name=\"GkLook12345678\"/>";
+        let page = ODT_PAGE_BREAK;
+        let xml = format!(
+            "<office:text><text:p>A</text:p>{page}\n{look}\n{page}<text:h>B</text:h>{look}{page}\n</office:text>"
+        );
+        assert_eq!(odt_looks(&xml), format!("<office:text><text:p>A</text:p>{look}<text:h>B</text:h>\n</office:text>"));
     }
 
     #[test]

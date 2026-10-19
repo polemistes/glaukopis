@@ -718,6 +718,28 @@ fn look_switch(
 ) -> Vec<Value> {
     match target {
         Target::Pdf | Target::Typst => vec![raw("typst", typst::switch(from, to, p, entering))],
+        // Word and Writer follow the pages, where what they can say of them
+        // differs or the count begins anew: Word begins a section, Writer a
+        // page of the look's master page. Neither can set one stretch in
+        // other type: their styles are the document's.
+        Target::Docx => {
+            let restart = entering && to.page.restart;
+            let differs = reference::docx_section_mark(from, false) != reference::docx_section_mark(to, false);
+            if differs || restart {
+                vec![raw("openxml", reference::docx_section_mark(to, restart))]
+            } else {
+                Vec::new()
+            }
+        }
+        Target::Odt => {
+            let restart = entering && to.page.restart;
+            let differs = reference::odt_look_name(from, p) != reference::odt_look_name(to, p);
+            if differs || restart {
+                vec![raw("opendocument", reference::odt_look_mark(to, p, restart))]
+            } else {
+                Vec::new()
+            }
+        }
         _ => Vec::new(),
     }
 }
@@ -1615,7 +1637,9 @@ pub fn export_until(
                 reference::docx(&default, &request.format, &p)?
             } else {
                 // A style for beginning a new page, which the pattern of Writer lacks.
-                let with_break = reference::odt(&default, &request.format, &p)?;
+                // The master pages of the elements with a look of their own, which their stretches bring.
+                let looks: Vec<&DocumentFormat> = request.document.looks.iter().map(|l| &l.format).collect();
+                let with_break = reference::odt_with_looks(&default, &request.format, &p, &looks)?;
                 add_odt_break(&with_break)?
             };
             let pattern_path = dir.join(name);
@@ -2774,6 +2798,127 @@ mod tests {
         // The places of the elements are still found.
         let places: Vec<(&str, u32)> = p.places.iter().map(|pl| (pl.element.as_str(), pl.page)).collect();
         assert_eq!(places, [("one", 1), ("two", 2), ("within", 2), ("three", 3)], "{:?}", p.places);
+    }
+
+    const W: &str = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+    const R: &str = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+    const STYLE: &str = "urn:oasis:names:tc:opendocument:xmlns:style:1.0";
+
+    #[test]
+    fn word_and_writer_follow_the_pages_of_an_element_with_a_look_of_its_own() {
+        use crate::document::fixtures::text;
+        use crate::document::{Block, ElementLook, Section};
+        use crate::formats::NumberStyle;
+        let Some(s) = setup() else { return };
+        let mut r = request("chicago-author-date");
+        let section = |level: u8, heading: &str| Section {
+            level,
+            heading: Some(vec![text(heading)]),
+            blocks: vec![Block::paragraph(vec![text(&format!("Words of {heading}."))])],
+            element: Some(heading.to_lowercase()),
+            kind: None,
+        };
+        r.document.sections = vec![section(1, "One"), section(1, "Two"), section(2, "Within"), section(1, "Three")];
+        r.format.title.placement = TitlePlacement::Top;
+        // Two in larger type, without its footer, its pages counted anew in small roman numbers.
+        let mut two = r.format.clone();
+        two.font.size = 14.0;
+        two.footer.shown = false;
+        two.page.restart = true;
+        two.page.numbering = NumberStyle::RomanLower;
+        r.document.looks = vec![ElementLook { element: "two".into(), format: two }];
+        r.key = "looks-word".into();
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+
+        // Word: a section ends before Two with the document's settings; Two's
+        // ends before Three, numbered anew in roman, its footer the empty
+        // one; the last is the document's again.
+        let docx = out.join("looks.docx");
+        let e = export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        assert!(e.warnings.is_empty(), "{:?}", e.warnings);
+        let d = unzip(&docx, "word/document.xml");
+        let tree = roxmltree::Document::parse(&d).unwrap();
+        let sections: Vec<roxmltree::Node> = tree.descendants().filter(|n| n.has_tag_name((W, "sectPr"))).collect();
+        assert_eq!(sections.len(), 3, "{d}");
+        let starts: Vec<usize> = sections.iter().map(|n| n.range().start).collect();
+        assert!(at(&d, "Words of One.") < starts[0] && starts[0] < at(&d, ">Two<"), "{d}");
+        assert!(at(&d, "Words of Within.") < starts[1] && starts[1] < at(&d, ">Three<"), "{d}");
+        // What a section says: its footers, how it begins, how its pages are numbered.
+        let child = |n: &roxmltree::Node, tag: &str, attribute: &str| {
+            n.children().find(|c| c.has_tag_name((W, tag))).and_then(|c| c.attribute((W, attribute))).map(str::to_owned)
+        };
+        let footers = |n: &roxmltree::Node| {
+            n.children()
+                .filter(|c| c.has_tag_name((W, "footerReference")))
+                .map(|c| format!("{}={}", c.attribute((W, "type")).unwrap(), c.attribute((R, "id")).unwrap()))
+                .collect::<Vec<_>>()
+        };
+        let ours = vec!["default=rIdGkfooter1xml".to_owned()];
+        assert_eq!(footers(&sections[0]), ours);
+        assert_eq!(child(&sections[0], "pgNumType", "fmt"), None);
+        assert_eq!(child(&sections[1], "type", "val").as_deref(), Some("nextPage"));
+        assert_eq!(child(&sections[1], "pgNumType", "fmt").as_deref(), Some("lowerRoman"));
+        assert_eq!(child(&sections[1], "pgNumType", "start").as_deref(), Some("1"));
+        assert_eq!(
+            footers(&sections[1]),
+            ["default", "even", "first"].map(|t| format!("{t}=rIdGkfooterEmptyxml")),
+            "{d}"
+        );
+        assert_eq!(footers(&sections[2]), ours);
+        assert_eq!(child(&sections[2], "type", "val").as_deref(), Some("nextPage"));
+        assert_eq!(child(&sections[2], "pgNumType", "fmt"), None);
+        assert!(unzip(&docx, "word/_rels/document.xml.rels").contains("Target=\"footerEmpty.xml\""));
+        assert!(!unzip(&docx, "word/footerEmpty.xml").contains("PAGE"));
+
+        // Writer: the look's master page, without the footer, numbered in
+        // roman; a paragraph that brings it before Two, counting anew, and
+        // one that brings the document's back before Three.
+        let odt = out.join("looks.odt");
+        let e = export(&s.ctx(), &r, Target::Odt, &odt, &ExportOptions::default()).unwrap();
+        assert!(e.warnings.is_empty(), "{:?}", e.warnings);
+        let styles = unzip(&odt, "styles.xml");
+        let content = unzip(&odt, "content.xml");
+        roxmltree::Document::parse(&styles).unwrap();
+        roxmltree::Document::parse(&content).unwrap();
+        let p = particulars(&r.document, &r.format);
+        let name = reference::odt_look_name(&r.document.looks[0].format, &p);
+        let own = reference::odt_look_name(&r.format, &p);
+        let tree = roxmltree::Document::parse(&styles).unwrap();
+        let named = |tag: &str, n: &str| {
+            tree.descendants()
+                .find(|e| e.has_tag_name((STYLE, tag)) && e.attribute((STYLE, "name")) == Some(n))
+                .unwrap_or_else(|| panic!("{tag} {n} in {styles}"))
+        };
+        let master = named("master-page", &name);
+        assert_eq!(master.attribute((STYLE, "page-layout-name")), Some(format!("{name}Layout").as_str()));
+        assert!(!master.children().any(|c| c.has_tag_name((STYLE, "footer"))), "{styles}");
+        assert!(named("master-page", "Standard").children().any(|c| c.has_tag_name((STYLE, "footer"))));
+        let layout = named("page-layout", &format!("{name}Layout"));
+        let properties = layout.first_element_child().unwrap();
+        assert_eq!(properties.attribute((STYLE, "num-format")), Some("i"));
+        let restart = named("style", &format!("{name}Restart"));
+        assert_eq!(restart.attribute((STYLE, "master-page-name")), Some(name.as_str()));
+        assert_eq!(restart.first_element_child().unwrap().attribute((STYLE, "page-number")), Some("1"));
+        assert_eq!(named("style", &own).attribute((STYLE, "master-page-name")), Some("Standard"));
+        let into = at(&content, &format!("<text:p text:style-name=\"{name}Restart\"/>"));
+        let back = at(&content, &format!("<text:p text:style-name=\"{own}\"/>"));
+        assert!(at(&content, "Words of One.") < into && into < at(&content, ">Two<"), "{content}");
+        assert!(at(&content, "Words of Within.") < back && back < at(&content, ">Three<"), "{content}");
+
+        // Where the chapters begin a page anyway, the new section or page is
+        // that page: no empty page beside it.
+        r.format.headings.levels[0].begins = crate::formats::Begins::Page;
+        r.document.looks[0].format.headings.levels[0].begins = crate::formats::Begins::Page;
+        r.key = "looks-pages".into();
+        export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        let d = unzip(&docx, "word/document.xml");
+        assert_eq!(d.matches("<w:sectPr").count(), 3, "{d}");
+        assert_eq!(d.matches("w:type=\"page\"").count(), 1, "only One's: {d}");
+        export(&s.ctx(), &r, Target::Odt, &odt, &ExportOptions::default()).unwrap();
+        let content = unzip(&odt, "content.xml");
+        assert_eq!(content.matches("text:style-name=\"Pagebreak\"").count(), 1, "only One's: {content}");
+        assert_eq!(content.matches("text:style-name=\"GkLook").count(), 2, "{content}");
     }
 
     #[test]
