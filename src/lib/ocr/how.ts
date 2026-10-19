@@ -47,31 +47,17 @@ export function lowResolution(looked: { resolution?: number | null }): boolean {
 }
 
 /**
- * What becomes of the text a PDF has at first: translated where a scheme
- * applies, read anew where the text is poor and none does, kept otherwise.
- * A scan of too few dots to the inch is not read anew at first, poor as its
- * text may be: what is read would be no better.
+ * What every page takes at first, all one way (ADR 0061): read by Tesseract
+ * where half or more of the pages that have text have text that does not
+ * read as text, and the scan is not too coarse to be read anew; the text
+ * the PDF has otherwise, and always where Tesseract is not there to read.
+ * Pages without text are read whatever this says.
  */
-export function firstTextChoice(looked: {
-  withText: number;
-  poor: number;
-  schemes: unknown[];
-  resolution?: number | null;
-}): 'keep' | 'translate' | 'anew' {
-  if (looked.schemes.length) return 'translate';
-  return anewAtFirst(looked) && !lowResolution(looked) ? 'anew' : 'keep';
-}
-
-/**
- * The page tried at first: the first Tesseract is to read, which is the
- * first page without text where the text is kept, and the first page where
- * every page is read anew.
- */
-export function firstPageToTry(
-  looked: { firstWithoutText?: number | null },
-  text: 'keep' | 'translate' | 'anew',
-): number {
-  return text === 'anew' ? 1 : (looked.firstWithoutText ?? 1);
+export function firstSource(
+  looked: { withText: number; poor: number; resolution?: number | null },
+  canRead: boolean,
+): 'pdf' | 'read' {
+  return canRead && anewAtFirst(looked) && !lowResolution(looked) ? 'read' : 'pdf';
 }
 
 /** Pages, counted from one and in order, said as stretches, `3–5, 9`, as the core says them; past ten stretches, the rest are not named. */

@@ -9,21 +9,6 @@ ocr-no-tesseract = O Tesseract, que lê texto em imagens, não está instalado o
 ocr-failed = Não foi possível ler o texto.
 ocr-looking = A examinar { $file }…
 ocr-about-picture = O texto lê-se da imagem.
-ocr-about-scan = { $pages ->
-    [one] O PDF não tem texto: lê-se de uma imagem da sua página.
-    [many] Nenhuma das { $pages } páginas tem texto: leem-se de imagens delas.
-   *[other] Nenhuma das { $pages } páginas tem texto: leem-se de imagens delas.
-}
-ocr-about-some = { $without ->
-    [one] Uma das { $pages } páginas não tem texto, e lê-se de uma imagem dela; as outras tomam-se como estão.
-    [many] { $without } das { $pages } páginas não têm texto, e leem-se de imagens delas; as outras tomam-se como estão.
-   *[other] { $without } das { $pages } páginas não têm texto, e leem-se de imagens delas; as outras tomam-se como estão.
-}
-ocr-about-text = { $pages ->
-    [one] A página tem texto, que se toma como está.
-    [many] Todas as páginas têm texto, que se toma como está.
-   *[other] Todas as páginas têm texto, que se toma como está.
-}
 ocr-read = Ler o texto
 ocr-read-text-pages = Tomar as páginas que têm texto
 ocr-take-text = Tomar o texto
@@ -33,7 +18,6 @@ ocr-reading-hint = Uma página leva alguns segundos. Cancelar interrompe a leitu
 
 ## How the text is read: what to try when a reading goes badly
 
-ocr-how = Como se lê
 ocr-how-dpi = Resolução, em pontos por polegada
 ocr-how-layout = Disposição da página
 ocr-how-layout-auto = Como o Tesseract julgar
@@ -59,16 +43,6 @@ ocr-language-vertical = { $language }, escrito na vertical
 
 ocr-searchable-button = Tornar pesquisável…
 ocr-searchable-title = Tornar o PDF pesquisável
-ocr-searchable-about = { $without ->
-    [one] Uma das { $pages } páginas não tem texto. É lida, e o seu texto fica invisível sob o que se mostra, para que se possa procurar e copiar. O PDF fica com o aspeto que tinha.
-    [many] { $without } das { $pages } páginas não têm texto. São lidas, e o seu texto fica invisível sob o que se mostra, para que se possa procurar e copiar. O PDF fica com o aspeto que tinha.
-   *[other] { $without } das { $pages } páginas não têm texto. São lidas, e o seu texto fica invisível sob o que se mostra, para que se possa procurar e copiar. O PDF fica com o aspeto que tinha.
-}
-ocr-searchable-has-text = { $pages ->
-    [one] A página tem texto: o PDF já se pode pesquisar.
-    [many] Todas as páginas têm texto: o PDF já se pode pesquisar.
-   *[other] Todas as páginas têm texto: o PDF já se pode pesquisar.
-}
 ocr-searchable-damaged = Não foi possível desmontar o PDF para o alterar: pode estar danificado. O seu texto pode ainda assim ser trazido para um projeto como mapa.
 ocr-searchable-make = Tornar pesquisável
 ocr-searchable-done = { $count ->

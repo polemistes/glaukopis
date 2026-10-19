@@ -9,21 +9,6 @@ ocr-no-tesseract = Tesseract, který čte text v obrázcích, není nainstalová
 ocr-failed = Text nelze přečíst.
 ocr-looking = Prohlíží se { $file }…
 ocr-about-picture = Text se čte z obrázku.
-ocr-about-scan = { $pages ->
-    [one] PDF nemá text: čte se z obrazu jeho stránky.
-    [few] Žádná z { $pages } stránek nemá text: čtou se z jejich obrazů.
-   *[other] Žádná z { $pages } stránek nemá text: čtou se z jejich obrazů.
-}
-ocr-about-some = { $without ->
-    [one] Jedna z { $pages } stránek nemá text a čte se z jejího obrazu; ostatní se přebírají, jak jsou.
-    [few] { $without } z { $pages } stránek nemají text a čtou se z jejich obrazů; ostatní se přebírají, jak jsou.
-   *[other] { $without } z { $pages } stránek nemá text a čte se z jejich obrazů; ostatní se přebírají, jak jsou.
-}
-ocr-about-text = { $pages ->
-    [one] Stránka má text, který se přebírá, jak je.
-    [few] Každá stránka má text, který se přebírá, jak je.
-   *[other] Každá stránka má text, který se přebírá, jak je.
-}
 ocr-read = Číst text
 ocr-read-text-pages = Převzít stránky, které text mají
 ocr-take-text = Převzít text
@@ -37,7 +22,6 @@ ocr-reading-hint = Stránka trvá několik sekund. Zrušit čtení zastaví.
 
 ## How the text is read: what to try when a reading goes badly
 
-ocr-how = Jak se čte
 ocr-how-dpi = Rozlišení, v bodech na palec
 ocr-how-layout = Rozvržení stránky
 ocr-how-layout-auto = Jak usoudí Tesseract
@@ -63,16 +47,6 @@ ocr-language-vertical = { $language }, psaný svisle
 
 ocr-searchable-button = Učinit prohledávatelným…
 ocr-searchable-title = Učinit PDF prohledávatelným
-ocr-searchable-about = { $without ->
-    [one] Jedna z { $pages } stránek nemá text. Přečte se a její text se neviditelně položí pod to, co je vidět, aby se v něm dalo hledat a kopírovat. PDF bude vypadat jako dosud.
-    [few] { $without } z { $pages } stránek nemají text. Přečtou se a jejich text se neviditelně položí pod to, co je vidět, aby se v něm dalo hledat a kopírovat. PDF bude vypadat jako dosud.
-   *[other] { $without } z { $pages } stránek nemá text. Přečtou se a jejich text se neviditelně položí pod to, co je vidět, aby se v něm dalo hledat a kopírovat. PDF bude vypadat jako dosud.
-}
-ocr-searchable-has-text = { $pages ->
-    [one] Stránka má text: v PDF už lze hledat.
-    [few] Každá stránka má text: v PDF už lze hledat.
-   *[other] Každá stránka má text: v PDF už lze hledat.
-}
 ocr-searchable-damaged = PDF nelze rozebrat, aby se dalo změnit: může být poškozené. Jeho text lze přesto načíst do projektu jako mapu.
 ocr-searchable-make = Učinit prohledávatelným
 ocr-searchable-done = { $count ->

@@ -25,8 +25,10 @@
   import { keepReferences, type Bringing, type Brought } from './bringing.svelte';
 
   let { request, onclose }: { request: Bringing; onclose: () => void } = $props();
-  /** Whether the reading step shows the text the PDF has beside its choices: the dialog widens. */
-  let wide = $state(false);
+  /** Whether the reading step shows the workbench of a reading: the dialog is wide and tall for it. */
+  let showing = $state(false);
+  /** What the main button does while the workbench is shown. */
+  let action = $state<{ label: string; enabled: boolean; run: () => void } | null>(null);
 
   // svelte-ignore state_referenced_locally
   const file = request.name ?? request.path.split(/[\\/]/).pop() ?? request.path;
@@ -181,7 +183,9 @@
   open
   title={request.project ? t('documents-title-element') : t('documents-title-project')}
   subtitle={read ? `${read.file} · ${read.kind}` : file}
-  width={wide && !read ? 960 : 560}
+  width={showing && !read ? 1240 : 560}
+  tall={showing && !read}
+  padded={!(showing && !read)}
   dismissable={!making}
   onclose={cancel}
 >
@@ -192,7 +196,8 @@
       path={request.path}
       stored={!!request.stored}
       name={request.name}
-      bind:wide
+      bind:showing
+      bind:action
       onread={(imported, token, count) => {
         read = imported;
         title = titleOf(imported);
@@ -302,6 +307,11 @@
     {/if}
     {#if failure && !read}
       <Button variant="primary" onclick={cancel}>{t('common-close')}</Button>
+    {:else if !read && action}
+      <Button variant="ghost" onclick={cancel}>{t('common-cancel')}</Button>
+      <Button variant="primary" disabled={!action.enabled} onclick={action.run} data-ocr-read>
+        {action.label}
+      </Button>
     {:else}
       <Button variant="ghost" disabled={making} onclick={cancel}>{t('common-cancel')}</Button>
       <Button variant="primary" disabled={!read || making || !title.trim()} onclick={make}>

@@ -9,24 +9,6 @@ ocr-no-tesseract = Tesseract, ki bere besedilo v slikah, ni nameščen ali ga ni
 ocr-failed = Besedila ni bilo mogoče prebrati.
 ocr-looking = Ogled { $file }…
 ocr-about-picture = Besedilo se prebere iz slike.
-ocr-about-scan = { $pages ->
-    [one] PDF nima besedila: prebere se iz slike njegove strani.
-    [two] Nobena od { $pages } strani nima besedila: prebereta se iz svojih slik.
-    [few] Nobena od { $pages } strani nima besedila: preberejo se iz svojih slik.
-   *[other] Nobena od { $pages } strani nima besedila: preberejo se iz svojih slik.
-}
-ocr-about-some = { $without ->
-    [one] Ena od { $pages } strani nima besedila in se prebere iz svoje slike; druge se vzamejo, kakršne so.
-    [two] { $without } od { $pages } strani nimata besedila in se prebereta iz svojih slik; druge se vzamejo, kakršne so.
-    [few] { $without } od { $pages } strani nimajo besedila in se preberejo iz svojih slik; druge se vzamejo, kakršne so.
-   *[other] { $without } od { $pages } strani nima besedila in se preberejo iz svojih slik; druge se vzamejo, kakršne so.
-}
-ocr-about-text = { $pages ->
-    [one] Stran ima besedilo, ki se vzame, kakršno je.
-    [two] Obe strani imata besedilo, ki se vzame, kakršno je.
-    [few] Vse strani imajo besedilo, ki se vzame, kakršno je.
-   *[other] Vse strani imajo besedilo, ki se vzame, kakršno je.
-}
 ocr-read = Preberi besedilo
 ocr-read-text-pages = Vzemi strani, ki imajo besedilo
 ocr-take-text = Vzemi besedilo
@@ -36,7 +18,6 @@ ocr-reading-hint = Stran vzame nekaj sekund. Prekliči ustavi branje.
 
 ## How the text is read: what to try when a reading goes badly
 
-ocr-how = Kako se bere
 ocr-how-dpi = Ločljivost, v pikah na palec
 ocr-how-layout = Postavitev strani
 ocr-how-layout-auto = Kakor presodi Tesseract
@@ -62,18 +43,6 @@ ocr-language-vertical = { $language }, pisano navzdol
 
 ocr-searchable-button = Dodaj besedilo za iskanje…
 ocr-searchable-title = Dodaj PDF-ju besedilo za iskanje
-ocr-searchable-about = { $without ->
-    [one] Ena od { $pages } strani nima besedila. Prebere se in njeno besedilo se nevidno položi pod prikazano, da ga je mogoče iskati in kopirati. PDF je videti, kakor je bil.
-    [two] { $without } od { $pages } strani nimata besedila. Prebereta se in njuno besedilo se nevidno položi pod prikazano, da ga je mogoče iskati in kopirati. PDF je videti, kakor je bil.
-    [few] { $without } od { $pages } strani nimajo besedila. Preberejo se in njihovo besedilo se nevidno položi pod prikazano, da ga je mogoče iskati in kopirati. PDF je videti, kakor je bil.
-   *[other] { $without } od { $pages } strani nima besedila. Preberejo se in njihovo besedilo se nevidno položi pod prikazano, da ga je mogoče iskati in kopirati. PDF je videti, kakor je bil.
-}
-ocr-searchable-has-text = { $pages ->
-    [one] Stran ima besedilo: po PDF-ju je že mogoče iskati.
-    [two] Obe strani imata besedilo: po PDF-ju je že mogoče iskati.
-    [few] Vse strani imajo besedilo: po PDF-ju je že mogoče iskati.
-   *[other] Vse strani imajo besedilo: po PDF-ju je že mogoče iskati.
-}
 ocr-searchable-damaged = PDF-ja ni bilo mogoče razstaviti, da bi ga spremenili: morda je poškodovan. Njegovo besedilo je vseeno mogoče uvoziti v projekt kot miselni vzorec.
 ocr-searchable-make = Dodaj besedilo za iskanje
 ocr-searchable-done = { $count ->

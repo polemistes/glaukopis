@@ -9,54 +9,25 @@ ocr-no-tesseract = Tesseract, som leser tekst i bilder, er ikke installert eller
 ocr-failed = Teksten kunne ikke leses.
 ocr-looking = Ser på { $file }…
 ocr-about-picture = Teksten leses fra bildet.
-ocr-about-scan = { $pages ->
-    [one] PDF-en har ingen tekst: den leses fra et bilde av siden.
-   *[other] Ingen av de { $pages } sidene har tekst: de leses fra bilder av dem.
-}
-ocr-about-some = { $without ->
-    [one] Én av de { $pages } sidene har ingen tekst, og leses fra et bilde av den; de andre tas som de er.
-   *[other] { $without } av de { $pages } sidene har ingen tekst, og leses fra bilder av dem; de andre tas som de er.
-}
-ocr-about-text = { $pages ->
-    [one] Siden har tekst, som tas slik den er.
-   *[other] Alle sidene har tekst, som tas slik den er.
-}
 # Where the pages of a PDF are pictures of too few dots to the inch to be read well.
 ocr-low-resolution = Sidene er bilder med { $dpi } punkter per tomme: for få til at bokstavene kan leses godt, uansett hva som velges.
 ocr-low-resolution-text = Å lese dem på nytt vil ikke gjøre teksten PDF-en har, bedre.
 
-# A page tried before the whole is read: shown beside the choices, in place of the text the PDF has.
-ocr-view-text = Teksten den har
-ocr-view-try = Prøv en side
-ocr-try-page = Side
-ocr-try-of = av { $pages }
-ocr-try = Prøv
-ocr-try-hint = Les én side med språkene og innstillingene som er valgt, og se hva Tesseract får ut av den før det hele leses. En side tar noen sekunder; bytt et språk eller en innstilling og prøv igjen.
 ocr-trying = Leser side { $page } …
 ocr-tried-confidence = Side { $label } ble lest med en sikkerhet på { $confidence } av 100.
 ocr-tried-poorly = Det er dårlig: prøv et annet språk, frakturmodellen for gotisk skrift eller et annet oppsett av siden.
 ocr-tried-nothing = Ingen tekst ble lest på side { $label }.
-ocr-tried-changed = Språkene eller innstillingene er endret siden: prøv igjen for å se hva de leser.
-# The alternative text of the picture of the page tried.
-ocr-tried-picture = Side { $label } slik Tesseract så den
 ocr-tried-blocks = { $count ->
     [one] Vis tekstblokken Tesseract fant
    *[other] Vis de { $count } tekstblokkene Tesseract fant, nummerert i den rekkefølgen den leser dem
 }
 ocr-tried-blocks-hint = To spalter tatt som én, eller noter tatt inn i teksten, leses i feil rekkefølge: et annet oppsett av siden kan skille dem.
-# Stretches of pages read with languages and a layout of their own, as chips over the strip of pages.
-ocr-stretches = Bolker av sider
-ocr-stretch-page = Side { $page }
-ocr-stretch-pages = Sidene { $from }–{ $to }
-# $languages: the languages, with commas between them; $layout: the layout of the page, as the settings name it.
-ocr-stretch-with-layout = { $languages } · { $layout }
-ocr-stretch-no-language = Engelsk, der ingen er valgt
-ocr-stretch-remove = Les sidene fra { $page } som sidene før dem
-ocr-stretches-hint = En bok som skifter språk eller skrift underveis, kan leses i bolker: velg en side nedenfor, og begynn en bolk der.
-ocr-stretches-editing = Språkene og oppsettet som er valgt, gjelder bolken som er merket: velg en annen for å gi den sine egne.
-ocr-stretches-outline = Begynn en bolk ved hver av de { $count } delene i filens innholdsfortegnelse
 
 ocr-read = Les teksten
+ocr-read-pages = { $count ->
+    [one] Les én side
+   *[other] Les { $count } sider
+}
 ocr-read-text-pages = Ta sidene som har tekst
 ocr-take-text = Ta teksten
 ocr-reading = Leser { $file }…
@@ -65,7 +36,6 @@ ocr-reading-hint = En side tar noen sekunder. Avbryt stopper lesingen.
 
 ## Hvordan teksten leses: det som kan prøves når en lesing går dårlig
 
-ocr-how = Hvordan den leses
 ocr-how-dpi = Oppløsning, i punkter per tomme
 ocr-how-layout = Sidens oppsett
 ocr-how-layout-auto = Som Tesseract bedømmer
@@ -91,14 +61,6 @@ ocr-language-vertical = { $language }, skrevet nedover
 
 ocr-searchable-button = Gjør søkbar…
 ocr-searchable-title = Gjør PDF-en søkbar
-ocr-searchable-about = { $without ->
-    [one] Én av de { $pages } sidene har ingen tekst. Den leses, og teksten legges usynlig under det som vises, så den kan søkes i og kopieres. PDF-en ser ut som før.
-   *[other] { $without } av de { $pages } sidene har ingen tekst. De leses, og teksten legges usynlig under det som vises, så den kan søkes i og kopieres. PDF-en ser ut som før.
-}
-ocr-searchable-has-text = { $pages ->
-    [one] Siden har tekst: PDF-en er søkbar allerede.
-   *[other] Alle sidene har tekst: PDF-en er søkbar allerede.
-}
 ocr-searchable-damaged = PDF-en kunne ikke tas fra hverandre for å endres: den kan være skadet. Teksten kan likevel tas inn i et prosjekt som et kart.
 ocr-searchable-make = Gjør søkbar
 ocr-searchable-done = { $count ->
@@ -154,57 +116,15 @@ ocr-settings-not-found = Tesseract ble ikke funnet. Si hvor det er under Program
 ## Hva som blir av teksten en PDF har (det samme i hver dialog som leser en).
 
 ocr-text-title = Teksten PDF-en har
-ocr-text-poor = { $poor ->
-    [one] På én av de { $pages } sidene som har tekst, leses den ikke som tekst, slik det blir når en skrift ikke sier hvilke bokstaver den viser, eller en lesning var dårlig.
-   *[other] På { $poor } av de { $pages } sidene som har tekst, leses den ikke som tekst, slik det blir når en skrift ikke sier hvilke bokstaver den viser, eller en lesning var dårlig.
-}
-ocr-text-poor-all = { $pages ->
-    [one] Teksten PDF-en har, leses ikke som tekst, slik det blir når en skrift ikke sier hvilke bokstaver den viser, eller en lesning var dårlig.
-   *[other] På alle de { $pages } sidene som har tekst, leses den ikke som tekst, slik det blir når en skrift ikke sier hvilke bokstaver den viser, eller en lesning var dårlig.
-}
-ocr-text-keep = Behold teksten PDF-en har
-ocr-text-keep-hint = Bare sidene uten tekst leses; de andre tas som de er.
-ocr-text-keep-searchable-hint = Bare sidene uten tekst leses; de andre beholder teksten de har.
-ocr-text-anew = Les hver side på nytt med Tesseract
-ocr-text-anew-hint = Bare det Tesseract leser fra bilder av sidene, beholdes; teksten PDF-en har, tas ikke fra noen side.
-ocr-text-anew-searchable-hint = Den usynlige teksten sidene har, tas bort, og det som leses, legges i stedet. Sidene ser ut som før.
-ocr-about-anew = { $pages ->
-    [one] Siden leses på nytt, fra et bilde av den.
-   *[other] Alle { $pages } sidene leses på nytt, fra bilder av dem.
-}
-ocr-searchable-anew = { $pages ->
-    [one] Siden leses på nytt, og teksten legges usynlig under det som vises, i stedet for den den hadde. PDF-en ser ut som før.
-   *[other] Alle { $pages } sidene leses på nytt, og teksten legges usynlig under det som vises, i stedet for den de hadde. PDF-en ser ut som før.
-}
 
 ## Hva som er funnet av teksten en PDF har, og hva som kan gjøres med den.
 
-ocr-text-found = Tekst på { $withText } av { $pages } sider, i { $fonts }.
-ocr-text-found-no-fonts = Tekst på { $withText } av { $pages } sider.
-ocr-text-fonts-more = { $fonts } og { $count ->
-    [one] én til
-   *[other] { $count } til
-}
 ocr-text-scheme-greek-names = Gresken er lagret som tegnnavnene i { $fonts }, og kan gjøres om til greske bokstaver.
 ocr-text-scheme-expert-names = Kapitéler og gammeldagse tall i { $fonts } er lagret ved navn, og kan gjøres om til bokstavene og sifrene sine.
 ocr-text-scheme-beta-code = Gresk er skrevet i Beta Code, og kan gjøres om til greske bokstaver.
-ocr-text-translate = Oversett den til lesbar tekst
-ocr-text-translate-hint = Teksten gjøres lesbar ut fra det skriftene sier om bokstavene sine; ingen side leses fra et bilde for det.
-ocr-text-translate-searchable-hint = PDF-ens egne tabeller rettes, så hver leser kopierer og søker i teksten riktig; ingenting av det som vises, endres.
-ocr-text-anew-no-tesseract = Tesseract, som leser tekst i bilder, er ikke installert.
 ocr-text-page = Side { $label }
 ocr-text-page-none = Ingen tekst på denne siden: den leses fra et bilde av den.
 ocr-text-rest-failed = Sidene etter disse kunne ikke leses.
-ocr-about-translate = { $without ->
-    [0] Teksten PDF-en har, gjøres lesbar; ingen side leses fra et bilde.
-    [one] Teksten PDF-en har, gjøres lesbar, og den ene siden uten tekst leses fra et bilde av den.
-   *[other] Teksten PDF-en har, gjøres lesbar, og de { $without } sidene uten tekst leses fra bilder av dem.
-}
-ocr-searchable-translate = { $without ->
-    [0] Skriftene i PDF-en får bokstavene sine, så teksten kan kopieres og søkes i riktig. PDF-en ser ut som før.
-    [one] Skriftene i PDF-en får bokstavene sine, og den ene siden uten tekst leses og får tekst. PDF-en ser ut som før.
-   *[other] Skriftene i PDF-en får bokstavene sine, og de { $without } sidene uten tekst leses og får tekst. PDF-en ser ut som før.
-}
 ocr-searchable-make-readable = Gjør lesbar
 ocr-searchable-readable-done = { $count ->
     [one] Teksten i PDF-en er lesbar nå: én skrift fikk bokstavene sine
@@ -218,7 +138,6 @@ ocr-shape-hint = Overskrifter, linjer som holdes som linjer, numre i margen, og 
 # How a PDF read with its shape kept becomes a map: the document's own tree, or an element for each page.
 ocr-structure = Elementer
 ocr-structure-headings = Etter overskriftene
-ocr-structure-pages = Etter sidene
 ocr-page-marks = Merk hvor hver side begynner
 ocr-page-marks-hint = Et referansemerke med sidetallet, der siden begynte.
 # What is made of a PDF that was read, asked after the reading: the same reading made anew.
@@ -307,8 +226,6 @@ ocr-strip-page = Side { $number }
 ocr-strip-page-failed = Ikke tegnet
 # $from og $to: den første og den siste av sidene, talt fra én, som skulle tegnes sammen.
 ocr-strip-failed = Side { $from }–{ $to } kunne ikke tegnes.
-# På siden som er valgt i stripen: sidene fra den av leses med egne språk og et eget oppsett.
-ocr-strip-begin = Begynn en bolk her
 
 # The panes of the workbench: the picture of the page in view, the text the
 # PDF has for it, what Tesseract read of it with the page's trials, and the
@@ -351,6 +268,11 @@ ocr-pane-unsure = { $unsure ->
 }
 # The tooltip of a word Tesseract was unsure of.
 ocr-pane-unsure-word = Lest med en sikkerhet på { $confidence } av 100
+# The pages the buttons of the panes act on, after "Use for": the page in view alone, or every page.
+ocr-pane-scope-page = denne siden
+ocr-pane-scope-all = alle sidene
+# Said after the line over the settings, where the pages selected are read in different ways: a change holds for all of them.
+ocr-settings-scope-differ = (leses på ulike måter)
 # Over the list of the page's trials, each said by the settings it was read with.
 ocr-trials = Prøvd med
 ocr-trial-confidence = { $confidence } av 100

@@ -41,8 +41,10 @@
   }
 
   let { file, project = null, projectId = null, at = null, onenter, onclose }: Props = $props();
-  /** Whether the reading step shows the text the PDF has beside its choices: the dialog widens. */
-  let wide = $state(false);
+  /** Whether the reading step shows the workbench of a reading: the dialog is wide and tall for it. */
+  let showing = $state(false);
+  /** What the main button does while the workbench is shown. */
+  let action = $state<{ label: string; enabled: boolean; run: () => void } | null>(null);
 
   /** A new project, named after the PDF. Ids of projects are not words. */
   const NEW = 'new';
@@ -55,6 +57,8 @@
   let read = $state.raw<Imported | null>(null);
   /** What each style found was said to be, by its number; text where nothing is said. */
   const styles = new SvelteMap<number, StyleChoice>();
+  /** Whether the workbench takes the dialog's room. */
+  const bench = $derived(showing && !making && !read);
 
   /** The reading kept, so that what is made of it can be made anew, and how many pages it has. */
   let kept = $state<string | null>(null);
@@ -137,11 +141,13 @@
   open
   title={t('ocr-map-title')}
   subtitle={file.name}
-  width={wide && !making && !read ? 960 : 520}
+  width={bench ? 1240 : 520}
+  tall={bench}
+  padded={!bench}
   dismissable={!making}
   {onclose}
 >
-  <div class="body">
+  <div class="body" class:bench>
     <div data-ocr-into>
       <Select bind:value={into} label={t('ocr-map-into')} {options} disabled={making} />
     </div>
@@ -167,7 +173,16 @@
         <StylesFound styles={read.styles} choices={styles} />
       {/if}
     {:else}
-      <ReadStep path={file.path} stored name={file.name} onread={readDone} bind:wide />
+      <div class="step">
+        <ReadStep
+          path={file.path}
+          stored
+          name={file.name}
+          onread={readDone}
+          bind:showing
+          bind:action
+        />
+      </div>
     {/if}
     {#if failure}
       <p class="failure selectable" role="alert">
@@ -182,6 +197,10 @@
       <Button variant="primary" disabled={making} onclick={() => read && made(read)}>
         {t('ocr-map-make')}
       </Button>
+    {:else if action && !making}
+      <Button variant="primary" disabled={!action.enabled} onclick={action.run} data-ocr-read>
+        {action.label}
+      </Button>
     {/if}
   {/snippet}
 </Dialog>
@@ -191,6 +210,20 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
+  }
+  /* The workbench takes the room under the choice of project. */
+  .body.bench {
+    height: 100%;
+    min-height: 0;
+    gap: 0;
+  }
+  .body.bench [data-ocr-into] {
+    padding: var(--space-3) var(--space-4) 0;
+    max-width: 420px;
+  }
+  .step {
+    flex: 1 1 auto;
+    min-height: 0;
   }
   .working {
     display: flex;

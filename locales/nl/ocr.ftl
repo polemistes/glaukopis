@@ -9,18 +9,6 @@ ocr-no-tesseract = Tesseract, dat tekst in afbeeldingen leest, is niet geïnstal
 ocr-failed = De tekst kon niet worden gelezen.
 ocr-looking = { $file } wordt bekeken…
 ocr-about-picture = De tekst wordt uit de afbeelding gelezen.
-ocr-about-scan = { $pages ->
-    [one] De PDF heeft geen tekst: hij wordt gelezen van een afbeelding van zijn pagina.
-   *[other] Geen van de { $pages } pagina's heeft tekst: ze worden gelezen van afbeeldingen ervan.
-}
-ocr-about-some = { $without ->
-    [one] Eén van de { $pages } pagina's heeft geen tekst en wordt gelezen van een afbeelding ervan; de andere worden overgenomen zoals ze zijn.
-   *[other] { $without } van de { $pages } pagina's hebben geen tekst en worden gelezen van afbeeldingen ervan; de andere worden overgenomen zoals ze zijn.
-}
-ocr-about-text = { $pages ->
-    [one] De pagina heeft tekst, die wordt overgenomen zoals ze is.
-   *[other] Elke pagina heeft tekst, die wordt overgenomen zoals ze is.
-}
 ocr-read = De tekst lezen
 ocr-read-text-pages = De pagina's met tekst overnemen
 ocr-take-text = De tekst overnemen
@@ -30,7 +18,6 @@ ocr-reading-hint = Een pagina duurt een paar seconden. Annuleren stopt het lezen
 
 ## How the text is read: what to try when a reading goes badly
 
-ocr-how = Hoe het wordt gelezen
 ocr-how-dpi = Resolutie, in punten per inch
 ocr-how-layout = Indeling van de pagina
 ocr-how-layout-auto = Zoals Tesseract het inschat
@@ -56,14 +43,6 @@ ocr-language-vertical = { $language }, verticaal geschreven
 
 ocr-searchable-button = Doorzoekbaar maken…
 ocr-searchable-title = De PDF doorzoekbaar maken
-ocr-searchable-about = { $without ->
-    [one] Eén van de { $pages } pagina's heeft geen tekst. Ze wordt gelezen, en haar tekst wordt onzichtbaar onder het getoonde gelegd, zodat hij kan worden doorzocht en gekopieerd. De PDF ziet eruit zoals hij was.
-   *[other] { $without } van de { $pages } pagina's hebben geen tekst. Ze worden gelezen, en hun tekst wordt onzichtbaar onder het getoonde gelegd, zodat hij kan worden doorzocht en gekopieerd. De PDF ziet eruit zoals hij was.
-}
-ocr-searchable-has-text = { $pages ->
-    [one] De pagina heeft tekst: de PDF kan al worden doorzocht.
-   *[other] Elke pagina heeft tekst: de PDF kan al worden doorzocht.
-}
 ocr-searchable-damaged = De PDF kon niet uit elkaar worden gehaald om te worden veranderd: hij is misschien beschadigd. Zijn tekst kan wel als mindmap in een project worden binnengehaald.
 ocr-searchable-make = Doorzoekbaar maken
 ocr-searchable-done = { $count ->

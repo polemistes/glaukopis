@@ -9,54 +9,25 @@ ocr-no-tesseract = Tesseract, which reads text in pictures, is not installed or 
 ocr-failed = The text could not be read.
 ocr-looking = Looking at { $file }…
 ocr-about-picture = The text is read from the picture.
-ocr-about-scan = { $pages ->
-    [one] The PDF has no text: it is read from a picture of its page.
-   *[other] None of the { $pages } pages has text: they are read from pictures of them.
-}
-ocr-about-some = { $without ->
-    [one] One of the { $pages } pages has no text, and is read from a picture of it; the others are taken as they are.
-   *[other] { $without } of the { $pages } pages have no text, and are read from pictures of them; the others are taken as they are.
-}
-ocr-about-text = { $pages ->
-    [one] The page has text, which is taken as it is.
-   *[other] Every page has text, which is taken as it is.
-}
 # Where the pages of a PDF are pictures of too few dots to the inch to be read well.
 ocr-low-resolution = The pages are pictures at { $dpi } dots to the inch: too few for their letters to be read well, whatever is chosen.
 ocr-low-resolution-text = Reading them anew will not better the text the PDF has.
 
-# A page tried before the whole is read: shown beside the choices, in place of the text the PDF has.
-ocr-view-text = The text it has
-ocr-view-try = Try a page
-ocr-try-page = Page
-ocr-try-of = of { $pages }
-ocr-try = Try
-ocr-try-hint = Read one page with the languages and settings chosen, and see what Tesseract makes of it before the whole is read. A page takes a few seconds; change a language or a setting and try again.
 ocr-trying = Reading page { $page }…
 ocr-tried-confidence = Page { $label } was read with a confidence of { $confidence } out of 100.
 ocr-tried-poorly = That is poor: try another language, the Fraktur model for Gothic type, or another layout.
 ocr-tried-nothing = No text was read on page { $label }.
-ocr-tried-changed = The languages or settings have changed since: try again to see what they read.
-# The alternative text of the picture of the page tried.
-ocr-tried-picture = Page { $label } as Tesseract saw it
 ocr-tried-blocks = { $count ->
     [one] Show the block of text Tesseract found
    *[other] Show the { $count } blocks of text Tesseract found, numbered in the order it reads them
 }
 ocr-tried-blocks-hint = Two columns taken as one, or notes taken into the text, read in the wrong order: another layout may part them.
-# Stretches of pages read with languages and a layout of their own, as chips over the strip of pages.
-ocr-stretches = Stretches of pages
-ocr-stretch-page = Page { $page }
-ocr-stretch-pages = Pages { $from }–{ $to }
-# $languages: the languages, with commas between them; $layout: the layout of the page, as the settings name it.
-ocr-stretch-with-layout = { $languages } · { $layout }
-ocr-stretch-no-language = English, where none is chosen
-ocr-stretch-remove = Read the pages from { $page } as those before them
-ocr-stretches-hint = A book that changes language or type part way can be read in stretches: choose a page below, and begin a stretch there.
-ocr-stretches-editing = The languages and the layout chosen hold for the stretch that is marked: choose another to set its own.
-ocr-stretches-outline = Begin a stretch at each of the { $count } parts of the file's outline
 
 ocr-read = Read the text
+ocr-read-pages = { $count ->
+    [one] Read one page
+   *[other] Read { $count } pages
+}
 ocr-read-text-pages = Take the pages that have text
 ocr-take-text = Take the text
 ocr-reading = Reading { $file }…
@@ -65,7 +36,6 @@ ocr-reading-hint = A page takes a few seconds. Cancel stops the reading.
 
 ## How the text is read: what to try when a reading goes badly
 
-ocr-how = How it is read
 ocr-how-dpi = Resolution, in dots to the inch
 ocr-how-layout = Layout of the page
 ocr-how-layout-auto = As Tesseract judges
@@ -91,14 +61,6 @@ ocr-language-vertical = { $language }, written downwards
 
 ocr-searchable-button = Make searchable…
 ocr-searchable-title = Make the PDF searchable
-ocr-searchable-about = { $without ->
-    [one] One of the { $pages } pages has no text. It is read, and its text is laid unseen under what is shown, so that it can be searched and copied. The PDF looks as it did.
-   *[other] { $without } of the { $pages } pages have no text. They are read, and their text is laid unseen under what is shown, so that it can be searched and copied. The PDF looks as it did.
-}
-ocr-searchable-has-text = { $pages ->
-    [one] The page has text: the PDF can be searched already.
-   *[other] Every page has text: the PDF can be searched already.
-}
 ocr-searchable-damaged = The PDF could not be taken apart to be changed: it may be damaged. Its text can still be brought into a project as a map.
 ocr-searchable-make = Make searchable
 ocr-searchable-done = { $count ->
@@ -154,60 +116,15 @@ ocr-settings-not-found = Tesseract was not found. Say where it is under Programs
 ## What becomes of the text a PDF has (the same in every dialog that reads one).
 
 ocr-text-title = The text the PDF has
-# Said where some pages have text that does not read as text.
-ocr-text-poor = { $poor ->
-    [one] On one of the { $pages } pages that have text, it does not read as text, as when a font does not say which letters it shows, or a reading was poor.
-   *[other] On { $poor } of the { $pages } pages that have text, it does not read as text, as when a font does not say which letters it shows, or a reading was poor.
-}
-# Said where every page that has text has text that does not read as text.
-ocr-text-poor-all = { $pages ->
-    [one] The text the PDF has does not read as text, as when a font does not say which letters it shows, or a reading was poor.
-   *[other] On all { $pages } pages that have text, it does not read as text, as when a font does not say which letters it shows, or a reading was poor.
-}
-ocr-text-keep = Keep the text the PDF has
-ocr-text-keep-hint = Only the pages without text are read; the others are taken as they are.
-ocr-text-keep-searchable-hint = Only the pages without text are read; the others keep the text they have.
-ocr-text-anew = Read every page anew with Tesseract
-ocr-text-anew-hint = Only what Tesseract reads from pictures of the pages is kept; the text the PDF has is taken from no page.
-ocr-text-anew-searchable-hint = The unseen text the pages have is taken away, and what is read is laid in its place. The pages look as they did.
-ocr-about-anew = { $pages ->
-    [one] The page is read anew, from a picture of it.
-   *[other] All { $pages } pages are read anew, from pictures of them.
-}
-ocr-searchable-anew = { $pages ->
-    [one] The page is read anew, and its text is laid unseen under what is shown, in place of what it had. The PDF looks as it did.
-   *[other] All { $pages } pages are read anew, and their text is laid unseen under what is shown, in place of what they had. The PDF looks as it did.
-}
 
 ## What is found of the text a PDF has, and what can be done with it (ADR 0044).
 
-ocr-text-found = Text on { $withText } of { $pages } pages, in { $fonts }.
-ocr-text-found-no-fonts = Text on { $withText } of { $pages } pages.
-# The first fonts, and how many more there are.
-ocr-text-fonts-more = { $fonts } and { $count ->
-    [one] one more
-   *[other] { $count } more
-}
 ocr-text-scheme-greek-names = The Greek is stored as the glyph names of { $fonts }, and can be made into Greek letters.
 ocr-text-scheme-expert-names = Small capitals and old-style figures of { $fonts } are stored by name, and can be made into their letters and digits.
 ocr-text-scheme-beta-code = Greek is written in Beta Code, and can be made into Greek letters.
-ocr-text-translate = Translate it into readable text
-ocr-text-translate-hint = The text is made readable by what the fonts say of their letters; no page is read from a picture for it.
-ocr-text-translate-searchable-hint = The PDF's own tables are put right, so that every reader copies and searches the text rightly; nothing drawn changes.
-ocr-text-anew-no-tesseract = Tesseract, which reads text in pictures, is not installed.
 ocr-text-page = Page { $label }
 ocr-text-page-none = No text on this page: it is read from a picture of it.
 ocr-text-rest-failed = The pages after these could not be read.
-ocr-about-translate = { $without ->
-    [0] The text the PDF has is made readable; no page is read from a picture.
-    [one] The text the PDF has is made readable, and the one page without text is read from a picture of it.
-   *[other] The text the PDF has is made readable, and the { $without } pages without text are read from pictures of them.
-}
-ocr-searchable-translate = { $without ->
-    [0] The fonts of the PDF are given their letters, so that its text can be copied and searched rightly. The PDF looks as it did.
-    [one] The fonts of the PDF are given their letters, and the one page without text is read and given text. The PDF looks as it did.
-   *[other] The fonts of the PDF are given their letters, and the { $without } pages without text are read and given text. The PDF looks as it did.
-}
 ocr-searchable-make-readable = Make readable
 ocr-searchable-readable-done = { $count ->
     [one] The PDF's text is readable now: one font was given its letters
@@ -221,7 +138,6 @@ ocr-shape-hint = Headings, lines kept as lines, numbers in the margin, and the r
 # How a PDF read with its shape kept becomes a map: the document's own tree, or an element for each page.
 ocr-structure = Elements
 ocr-structure-headings = By its headings
-ocr-structure-pages = By its pages
 ocr-page-marks = Mark where each page begins
 ocr-page-marks-hint = A reference mark with the page's number, where it began.
 # What is made of a PDF that was read, asked after the reading: the same reading made anew.
@@ -307,8 +223,6 @@ ocr-strip-page = Page { $number }
 ocr-strip-page-failed = Not drawn
 # $from and $to: the first and the last of the pages, counted from one, that were to be drawn together.
 ocr-strip-failed = Pages { $from }–{ $to } could not be drawn.
-# On the page chosen in the strip: the pages from it on are read with languages and a layout of their own.
-ocr-strip-begin = Begin a stretch here
 
 # The panes of the workbench: the picture of the page in view, the text the
 # PDF has for it, what Tesseract read of it with the page's trials, and the
@@ -351,6 +265,11 @@ ocr-pane-unsure = { $unsure ->
 }
 # The tooltip of a word Tesseract was unsure of.
 ocr-pane-unsure-word = Read with a confidence of { $confidence } out of 100
+# The pages the buttons of the panes act on, after "Use for": the page in view alone, or every page.
+ocr-pane-scope-page = this page
+ocr-pane-scope-all = all pages
+# Said after the line over the settings, where the pages selected are read in different ways: a change holds for all of them.
+ocr-settings-scope-differ = (read in different ways)
 # Over the list of the page's trials, each said by the settings it was read with.
 ocr-trials = Tried with
 ocr-trial-confidence = { $confidence } of 100

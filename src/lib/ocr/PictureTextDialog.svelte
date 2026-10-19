@@ -54,6 +54,10 @@
   let read = $state.raw<Imported | null>(null);
   let failure = $state<string | null>(null);
   let gone = false;
+  /** Whether the reading step of a file of the library shows the workbench: the dialog is wide and tall for it. */
+  let showing = $state(false);
+  let action = $state<{ label: string; enabled: boolean; run: () => void } | null>(null);
+  const bench = $derived(showing && phase === 'asking' && !!file);
 
   onMount(() => {
     // The language the text is written in where the picture is looked at, as far as the elements say.
@@ -133,8 +137,16 @@
   }
 </script>
 
-<Dialog open title={t('ocr-picture-title')} subtitle={name} width={560} onclose={cancel}>
-  <div class="body" data-ocr={phase}>
+<Dialog
+  open
+  title={t('ocr-picture-title')}
+  subtitle={name}
+  width={bench ? 1240 : 560}
+  tall={bench}
+  padded={!bench}
+  onclose={cancel}
+>
+  <div class="body" class:bench data-ocr={phase}>
     {#if phase === 'asking' && file}
       <!-- A file of the library is looked at and read by the step that reads the library's PDFs. -->
       <ReadStep
@@ -145,6 +157,8 @@
           read = imported;
           phase = 'shown';
         }}
+        bind:showing
+        bind:action
       />
     {:else if phase === 'asking'}
       <p class="about">{t('ocr-about-picture')}</p>
@@ -196,6 +210,11 @@
       <Button variant="primary" onclick={onclose}>{t('common-close')}</Button>
     {:else if file}
       <Button variant="ghost" onclick={cancel}>{t('common-cancel')}</Button>
+      {#if action}
+        <Button variant="primary" disabled={!action.enabled} onclick={action.run} data-ocr-read>
+          {action.label}
+        </Button>
+      {/if}
     {:else}
       <Button variant="ghost" onclick={cancel}>{t('common-cancel')}</Button>
       <Button
@@ -216,6 +235,10 @@
     flex-direction: column;
     gap: var(--space-3);
     min-height: 90px;
+  }
+  .body.bench {
+    height: 100%;
+    min-height: 0;
   }
   .working {
     display: flex;

@@ -9,24 +9,6 @@ ocr-no-tesseract = Tesseract, który czyta tekst na obrazach, nie jest zainstalo
 ocr-failed = Nie udało się odczytać tekstu.
 ocr-looking = Oglądanie { $file }…
 ocr-about-picture = Tekst jest czytany z obrazu.
-ocr-about-scan = { $pages ->
-    [one] PDF nie ma tekstu: jest czytany z obrazu swojej strony.
-    [few] Żadna z { $pages } stron nie ma tekstu: są czytane z ich obrazów.
-    [many] Żadna z { $pages } stron nie ma tekstu: są czytane z ich obrazów.
-   *[other] Żadna z { $pages } stron nie ma tekstu: są czytane z ich obrazów.
-}
-ocr-about-some = { $without ->
-    [one] Jedna z { $pages } stron nie ma tekstu i jest czytana z jej obrazu; pozostałe brane są, jak są.
-    [few] { $without } z { $pages } stron nie mają tekstu i są czytane z ich obrazów; pozostałe brane są, jak są.
-    [many] { $without } z { $pages } stron nie ma tekstu i jest czytanych z ich obrazów; pozostałe brane są, jak są.
-   *[other] { $without } z { $pages } stron nie ma tekstu i jest czytanych z ich obrazów; pozostałe brane są, jak są.
-}
-ocr-about-text = { $pages ->
-    [one] Strona ma tekst, który brany jest, jak jest.
-    [few] Każda strona ma tekst, który brany jest, jak jest.
-    [many] Każda strona ma tekst, który brany jest, jak jest.
-   *[other] Każda strona ma tekst, który brany jest, jak jest.
-}
 ocr-read = Czytaj tekst
 ocr-read-text-pages = Weź strony, które mają tekst
 ocr-take-text = Weź tekst
@@ -36,7 +18,6 @@ ocr-reading-hint = Strona zajmuje kilka sekund. Anuluj zatrzymuje czytanie.
 
 ## How the text is read: what to try when a reading goes badly
 
-ocr-how = Jak się czyta
 ocr-how-dpi = Rozdzielczość, w punktach na cal
 ocr-how-layout = Układ strony
 ocr-how-layout-auto = Jak oceni Tesseract
@@ -62,18 +43,6 @@ ocr-language-vertical = { $language }, pisany pionowo
 
 ocr-searchable-button = Uczyń przeszukiwalnym…
 ocr-searchable-title = Uczyń PDF przeszukiwalnym
-ocr-searchable-about = { $without ->
-    [one] Jedna z { $pages } stron nie ma tekstu. Zostaje odczytana, a jej tekst kładzie się niewidocznie pod tym, co widać, by dało się go szukać i kopiować. PDF wygląda jak przedtem.
-    [few] { $without } z { $pages } stron nie mają tekstu. Zostają odczytane, a ich tekst kładzie się niewidocznie pod tym, co widać, by dało się go szukać i kopiować. PDF wygląda jak przedtem.
-    [many] { $without } z { $pages } stron nie ma tekstu. Zostają odczytane, a ich tekst kładzie się niewidocznie pod tym, co widać, by dało się go szukać i kopiować. PDF wygląda jak przedtem.
-   *[other] { $without } z { $pages } stron nie ma tekstu. Zostają odczytane, a ich tekst kładzie się niewidocznie pod tym, co widać, by dało się go szukać i kopiować. PDF wygląda jak przedtem.
-}
-ocr-searchable-has-text = { $pages ->
-    [one] Strona ma tekst: PDF już da się przeszukiwać.
-    [few] Każda strona ma tekst: PDF już da się przeszukiwać.
-    [many] Każda strona ma tekst: PDF już da się przeszukiwać.
-   *[other] Każda strona ma tekst: PDF już da się przeszukiwać.
-}
 ocr-searchable-damaged = Nie udało się rozłożyć pliku PDF, by go zmienić: może być uszkodzony. Jego tekst można mimo to wczytać do projektu jako mapę.
 ocr-searchable-make = Uczyń przeszukiwalnym
 ocr-searchable-done = { $count ->

@@ -9,21 +9,6 @@ ocr-no-tesseract = Tesseract, koji čita tekst na slikama, nije instaliran ili g
 ocr-failed = Tekst nije bilo moguće pročitati.
 ocr-looking = Pregledanje { $file }…
 ocr-about-picture = Tekst se čita sa slike.
-ocr-about-scan = { $pages ->
-    [one] PDF nema teksta: čita se sa slike njegove stranice.
-    [few] Nijedna od { $pages } stranice nema teksta: čitaju se s njihovih slika.
-   *[other] Nijedna od { $pages } stranica nema teksta: čitaju se s njihovih slika.
-}
-ocr-about-some = { $without ->
-    [one] Jedna od { $pages } stranica nema teksta i čita se s njene slike; ostale se uzimaju kakve jesu.
-    [few] { $without } od { $pages } stranica nemaju teksta i čitaju se s njihovih slika; ostale se uzimaju kakve jesu.
-   *[other] { $without } od { $pages } stranica nema teksta i čitaju se s njihovih slika; ostale se uzimaju kakve jesu.
-}
-ocr-about-text = { $pages ->
-    [one] Stranica ima tekst, koji se uzima kakav jeste.
-    [few] Svaka stranica ima tekst, koji se uzima kakav jeste.
-   *[other] Svaka stranica ima tekst, koji se uzima kakav jeste.
-}
 ocr-read = Pročitaj tekst
 ocr-read-text-pages = Uzmi stranice koje imaju tekst
 ocr-take-text = Uzmi tekst
@@ -33,7 +18,6 @@ ocr-reading-hint = Stranica traje nekoliko sekundi. Odustani zaustavlja čitanje
 
 ## How the text is read: what to try when a reading goes badly
 
-ocr-how = Kako se čita
 ocr-how-dpi = Rezolucija, u tačkama po inču
 ocr-how-layout = Raspored stranice
 ocr-how-layout-auto = Kako Tesseract procijeni
@@ -59,16 +43,6 @@ ocr-language-vertical = { $language }, pisan odozgo nadolje
 
 ocr-searchable-button = Učini pretraživim…
 ocr-searchable-title = Učini PDF pretraživim
-ocr-searchable-about = { $without ->
-    [one] Jedna od { $pages } stranica nema teksta. Čita se, a njen se tekst nevidljivo polaže ispod prikazanog, da se može pretraživati i kopirati. PDF izgleda kao i prije.
-    [few] { $without } od { $pages } stranica nemaju teksta. Čitaju se, a njihov se tekst nevidljivo polaže ispod prikazanog, da se može pretraživati i kopirati. PDF izgleda kao i prije.
-   *[other] { $without } od { $pages } stranica nema teksta. Čitaju se, a njihov se tekst nevidljivo polaže ispod prikazanog, da se može pretraživati i kopirati. PDF izgleda kao i prije.
-}
-ocr-searchable-has-text = { $pages ->
-    [one] Stranica ima tekst: PDF se već može pretraživati.
-    [few] Svaka stranica ima tekst: PDF se već može pretraživati.
-   *[other] Svaka stranica ima tekst: PDF se već može pretraživati.
-}
 ocr-searchable-damaged = PDF nije bilo moguće rastaviti radi izmjene: možda je oštećen. Njegov se tekst ipak može učitati u projekat kao mapa.
 ocr-searchable-make = Učini pretraživim
 ocr-searchable-done = { $count ->

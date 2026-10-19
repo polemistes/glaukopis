@@ -9,33 +9,6 @@ ocr-no-tesseract = Tesseract, care citește textul din imagini, nu este instalat
 ocr-failed = Textul nu s-a putut citi.
 ocr-looking = Se privește { $file }…
 ocr-about-picture = Textul se citește din imagine.
-ocr-about-scan = { $pages ->
-    [one] PDF-ul nu are text: se citește dintr-o imagine a paginii lui.
-    [few] Niciuna dintre cele { $pages } pagini nu are text: se citesc din imagini ale lor.
-   *[other] Niciuna dintre cele { $pages } de pagini nu are text: se citesc din imagini ale lor.
-}
-ocr-about-some = { $without ->
-    [one] Una dintre cele { $pages ->
-            [one] { $pages } pagină
-            [few] { $pages } pagini
-           *[other] { $pages } de pagini
-        } nu are text și se citește dintr-o imagine a ei; celelalte se iau cum sunt.
-    [few] { $without } dintre cele { $pages ->
-            [one] { $pages } pagină
-            [few] { $pages } pagini
-           *[other] { $pages } de pagini
-        } nu au text și se citesc din imagini ale lor; celelalte se iau cum sunt.
-   *[other] { $without } dintre cele { $pages ->
-            [one] { $pages } pagină
-            [few] { $pages } pagini
-           *[other] { $pages } de pagini
-        } nu au text și se citesc din imagini ale lor; celelalte se iau cum sunt.
-}
-ocr-about-text = { $pages ->
-    [one] Pagina are text, care se ia cum este.
-    [few] Fiecare pagină are text, care se ia cum este.
-   *[other] Fiecare pagină are text, care se ia cum este.
-}
 ocr-read = Citește textul
 ocr-read-text-pages = Ia paginile care au text
 ocr-take-text = Ia textul
@@ -49,7 +22,6 @@ ocr-reading-hint = O pagină ia câteva secunde. Anulează oprește citirea.
 
 ## How the text is read: what to try when a reading goes badly
 
-ocr-how = Cum se citește
 ocr-how-dpi = Rezoluția, în puncte pe inch
 ocr-how-layout = Așezarea paginii
 ocr-how-layout-auto = Cum socotește Tesseract
@@ -75,28 +47,6 @@ ocr-language-vertical = { $language }, scrisă pe verticală
 
 ocr-searchable-button = Fă-l căutabil…
 ocr-searchable-title = Fă PDF-ul căutabil
-ocr-searchable-about = { $without ->
-    [one] Una dintre cele { $pages ->
-            [one] { $pages } pagină
-            [few] { $pages } pagini
-           *[other] { $pages } de pagini
-        } nu are text. Se citește, iar textul ei se așază nevăzut sub ce se arată, ca să poată fi căutat și copiat. PDF-ul arată ca înainte.
-    [few] { $without } dintre cele { $pages ->
-            [one] { $pages } pagină
-            [few] { $pages } pagini
-           *[other] { $pages } de pagini
-        } nu au text. Se citesc, iar textul lor se așază nevăzut sub ce se arată, ca să poată fi căutat și copiat. PDF-ul arată ca înainte.
-   *[other] { $without } dintre cele { $pages ->
-            [one] { $pages } pagină
-            [few] { $pages } pagini
-           *[other] { $pages } de pagini
-        } nu au text. Se citesc, iar textul lor se așază nevăzut sub ce se arată, ca să poată fi căutat și copiat. PDF-ul arată ca înainte.
-}
-ocr-searchable-has-text = { $pages ->
-    [one] Pagina are text: PDF-ul se poate căuta deja.
-    [few] Fiecare pagină are text: PDF-ul se poate căuta deja.
-   *[other] Fiecare pagină are text: PDF-ul se poate căuta deja.
-}
 ocr-searchable-damaged = PDF-ul nu s-a putut desface ca să fie modificat: poate fi stricat. Textul lui poate fi totuși adus într-un proiect ca hartă.
 ocr-searchable-make = Fă-l căutabil
 ocr-searchable-done = { $count ->

@@ -9,18 +9,6 @@ ocr-no-tesseract = Tesseract, som les tekst i bilete, er ikkje installert eller 
 ocr-failed = Teksten kunne ikkje lesast.
 ocr-looking = Ser på { $file } …
 ocr-about-picture = Teksten blir lesen frå biletet.
-ocr-about-scan = { $pages ->
-    [one] PDF-en har ingen tekst: den blir lesen frå eit bilete av sida.
-   *[other] Ingen av dei { $pages } sidene har tekst: dei blir lesne frå bilete av dei.
-}
-ocr-about-some = { $without ->
-    [one] Éi av dei { $pages } sidene har ingen tekst, og blir lesen frå eit bilete av den; dei andre blir tekne som dei er.
-   *[other] { $without } av dei { $pages } sidene har ingen tekst, og blir lesne frå bilete av dei; dei andre blir tekne som dei er.
-}
-ocr-about-text = { $pages ->
-    [one] Sida har tekst, som blir teken slik den er.
-   *[other] Alle sidene har tekst, som blir teken slik den er.
-}
 ocr-read = Les teksten
 ocr-read-text-pages = Ta sidene som har tekst
 ocr-take-text = Ta teksten
@@ -30,7 +18,6 @@ ocr-reading-hint = Ei side tek nokre sekund. Avbryt stoppar lesinga.
 
 ## How the text is read: what to try when a reading goes badly
 
-ocr-how = Korleis den blir lesen
 ocr-how-dpi = Oppløysing, i punkt per tomme
 ocr-how-layout = Oppsettet på sida
 ocr-how-layout-auto = Som Tesseract vurderer
@@ -56,14 +43,6 @@ ocr-language-vertical = { $language }, skrive nedover
 
 ocr-searchable-button = Gjer søkbar …
 ocr-searchable-title = Gjer PDF-en søkbar
-ocr-searchable-about = { $without ->
-    [one] Éi av dei { $pages } sidene har ingen tekst. Den blir lesen, og teksten blir lagd usynleg under det som blir vist, så den kan søkjast i og kopierast. PDF-en ser ut som før.
-   *[other] { $without } av dei { $pages } sidene har ingen tekst. Dei blir lesne, og teksten blir lagd usynleg under det som blir vist, så den kan søkjast i og kopierast. PDF-en ser ut som før.
-}
-ocr-searchable-has-text = { $pages ->
-    [one] Sida har tekst: PDF-en er søkbar allereie.
-   *[other] Alle sidene har tekst: PDF-en er søkbar allereie.
-}
 ocr-searchable-damaged = PDF-en kunne ikkje takast frå kvarandre for å endrast: den kan vere skadd. Teksten kan likevel hentast inn i eit prosjekt som eit kart.
 ocr-searchable-make = Gjer søkbar
 ocr-searchable-done = { $count ->
@@ -114,59 +93,14 @@ ocr-settings-not-found = Tesseract vart ikkje funne. Sei kvar det er under Progr
 ## What becomes of the text a PDF has (the same in every dialog that reads one).
 
 ocr-text-title = Teksten PDF-en har
-# Said where some pages have text that does not read as text.
-ocr-text-poor = { $poor ->
-    [one] På éi av dei { $pages } sidene som har tekst, kan den ikkje lesast som tekst, slik det blir når ei skrift ikkje seier kva bokstavar den viser, eller når ei lesing var dårleg.
-   *[other] På { $poor } av dei { $pages } sidene som har tekst, kan den ikkje lesast som tekst, slik det blir når ei skrift ikkje seier kva bokstavar den viser, eller når ei lesing var dårleg.
-}
-# Said where every page that has text has text that does not read as text.
-ocr-text-poor-all = { $pages ->
-    [one] Teksten PDF-en har, kan ikkje lesast som tekst, slik det blir når ei skrift ikkje seier kva bokstavar den viser, eller når ei lesing var dårleg.
-   *[other] På alle dei { $pages } sidene som har tekst, kan den ikkje lesast som tekst, slik det blir når ei skrift ikkje seier kva bokstavar den viser, eller når ei lesing var dårleg.
-}
-ocr-text-keep = Hald på teksten PDF-en har
-ocr-text-keep-hint = Berre sidene utan tekst blir lesne; dei andre blir tekne som dei er.
-ocr-text-keep-searchable-hint = Berre sidene utan tekst blir lesne; dei andre held på teksten dei har.
-ocr-text-anew = Les kvar side på nytt med Tesseract
-ocr-text-anew-hint = Berre det Tesseract les frå bilete av sidene, blir teke vare på; teksten PDF-en har, blir ikkje teken frå nokon side.
-ocr-text-anew-searchable-hint = Den usynlege teksten sidene har, blir teken bort, og det som blir lese, blir lagt i staden. Sidene ser ut som før.
-ocr-about-anew = { $pages ->
-    [one] Sida blir lesen på nytt, frå eit bilete av den.
-   *[other] Alle dei { $pages } sidene blir lesne på nytt, frå bilete av dei.
-}
-ocr-searchable-anew = { $pages ->
-    [one] Sida blir lesen på nytt, og teksten blir lagd usynleg under det som blir vist, i staden for teksten den hadde. PDF-en ser ut som før.
-   *[other] Alle dei { $pages } sidene blir lesne på nytt, og teksten blir lagd usynleg under det som blir vist, i staden for teksten dei hadde. PDF-en ser ut som før.
-}
 
 ## What is found of the text a PDF has, and what can be done with it (ADR 0044).
 
-ocr-text-found = Tekst på { $withText } av { $pages } sider, i { $fonts }.
-ocr-text-found-no-fonts = Tekst på { $withText } av { $pages } sider.
-# The first fonts, and how many more there are.
-ocr-text-fonts-more = { $fonts } og { $count ->
-    [one] éi til
-   *[other] { $count } til
-}
 ocr-text-scheme-greek-names = Gresken er lagra som teiknnamna i { $fonts }, og kan gjerast om til greske bokstavar.
 ocr-text-scheme-expert-names = Kapitélar og gammaldagse tal i { $fonts } er lagra ved namn, og kan gjerast om til bokstavane og sifra sine.
 ocr-text-scheme-beta-code = Gresk er skrive i Beta Code, og kan gjerast om til greske bokstavar.
-ocr-text-translate = Omset den til lesbar tekst
-ocr-text-translate-hint = Teksten blir gjord lesbar ut frå det skriftene seier om bokstavane sine; ingen side blir lesen frå eit bilete for det.
-ocr-text-translate-searchable-hint = PDF-en sine eigne tabellar blir retta, slik at kvart program som les den, kopierer og søkjer rett i teksten; ingenting av det som er teikna, blir endra.
-ocr-text-anew-no-tesseract = Tesseract, som les tekst i bilete, er ikkje installert.
 ocr-text-page = Side { $label }
 ocr-text-page-none = Ingen tekst på denne sida: den blir lesen frå eit bilete av den.
-ocr-about-translate = { $without ->
-    [0] Teksten PDF-en har, blir gjord lesbar; ingen side blir lesen frå eit bilete.
-    [one] Teksten PDF-en har, blir gjord lesbar, og den eine sida utan tekst blir lesen frå eit bilete av den.
-   *[other] Teksten PDF-en har, blir gjord lesbar, og dei { $without } sidene utan tekst blir lesne frå bilete av dei.
-}
-ocr-searchable-translate = { $without ->
-    [0] Skriftene i PDF-en får bokstavane sine, så teksten kan kopierast og søkjast i rett. PDF-en ser ut som før.
-    [one] Skriftene i PDF-en får bokstavane sine, og den eine sida utan tekst blir lesen og får tekst. PDF-en ser ut som før.
-   *[other] Skriftene i PDF-en får bokstavane sine, og dei { $without } sidene utan tekst blir lesne og får tekst. PDF-en ser ut som før.
-}
 ocr-searchable-make-readable = Gjer lesbar
 ocr-searchable-readable-done = { $count ->
     [one] Teksten i PDF-en er lesbar no: éi skrift fekk bokstavane sine
@@ -180,7 +114,6 @@ ocr-shape-hint = Overskrifter, linjer som blir haldne som linjer, nummer i marge
 # How a PDF read with its shape kept becomes a map: the document's own tree, or an element for each page.
 ocr-structure = Element
 ocr-structure-headings = Etter overskriftene
-ocr-structure-pages = Etter sidene
 ocr-page-marks = Merk der kvar side byrjar
 ocr-page-marks-hint = Eit referansemerke med sidetalet, der sida byrja.
 # The outline shown before a PDF read by its headings is made into a map.

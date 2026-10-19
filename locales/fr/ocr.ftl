@@ -9,21 +9,6 @@ ocr-no-tesseract = Tesseract, qui lit le texte des images, n’est pas installé
 ocr-failed = Le texte n’a pas pu être lu.
 ocr-looking = Examen de { $file }…
 ocr-about-picture = Le texte est lu d’après l’image.
-ocr-about-scan = { $pages ->
-    [one] Le PDF n’a pas de texte : il est lu d’après l’image de sa page.
-    [many] Aucune des { $pages } pages n’a de texte : elles sont lues d’après leurs images.
-   *[other] Aucune des { $pages } pages n’a de texte : elles sont lues d’après leurs images.
-}
-ocr-about-some = { $without ->
-    [one] Une des { $pages } pages n’a pas de texte, et est lue d’après son image ; les autres sont prises telles quelles.
-    [many] { $without } des { $pages } pages n’ont pas de texte, et sont lues d’après leurs images ; les autres sont prises telles quelles.
-   *[other] { $without } des { $pages } pages n’ont pas de texte, et sont lues d’après leurs images ; les autres sont prises telles quelles.
-}
-ocr-about-text = { $pages ->
-    [one] La page a du texte, qui est pris tel quel.
-    [many] Chaque page a du texte, qui est pris tel quel.
-   *[other] Chaque page a du texte, qui est pris tel quel.
-}
 ocr-read = Lire le texte
 ocr-read-text-pages = Prendre les pages qui ont du texte
 ocr-take-text = Prendre le texte
@@ -33,7 +18,6 @@ ocr-reading-hint = Une page prend quelques secondes. Annuler arrête la lecture.
 
 ## How the text is read: what to try when a reading goes badly
 
-ocr-how = Comment le texte est lu
 ocr-how-dpi = Résolution, en points par pouce
 ocr-how-layout = Mise en page
 ocr-how-layout-auto = Au jugé de Tesseract
@@ -59,16 +43,6 @@ ocr-language-vertical = { $language }, écrit verticalement
 
 ocr-searchable-button = Rendre interrogeable…
 ocr-searchable-title = Rendre le PDF interrogeable
-ocr-searchable-about = { $without ->
-    [one] Une des { $pages } pages n’a pas de texte. Elle est lue, et son texte est posé, invisible, sous ce qui s’affiche, pour qu’on puisse y chercher et le copier. Le PDF garde son apparence.
-    [many] { $without } des { $pages } pages n’ont pas de texte. Elles sont lues, et leur texte est posé, invisible, sous ce qui s’affiche, pour qu’on puisse y chercher et le copier. Le PDF garde son apparence.
-   *[other] { $without } des { $pages } pages n’ont pas de texte. Elles sont lues, et leur texte est posé, invisible, sous ce qui s’affiche, pour qu’on puisse y chercher et le copier. Le PDF garde son apparence.
-}
-ocr-searchable-has-text = { $pages ->
-    [one] La page a du texte : on peut déjà chercher dans le PDF.
-    [many] Chaque page a du texte : on peut déjà chercher dans le PDF.
-   *[other] Chaque page a du texte : on peut déjà chercher dans le PDF.
-}
 ocr-searchable-damaged = Le PDF n’a pas pu être décomposé pour être modifié : il est peut-être abîmé. Son texte peut tout de même être importé dans un projet comme carte.
 ocr-searchable-make = Rendre interrogeable
 ocr-searchable-done = { $count ->
@@ -121,66 +95,14 @@ ocr-settings-not-found = Tesseract n’a pas été trouvé. Indiquez où il se t
 ## What becomes of the text a PDF has (the same in every dialog that reads one).
 
 ocr-text-title = Le texte que contient le PDF
-# Said where some pages have text that does not read as text.
-ocr-text-poor = { $poor ->
-    [one] Sur une des { $pages } pages qui ont du texte, ce texte n’est pas lisible, comme quand une police ne dit pas quelles lettres elle montre, ou qu’une lecture a été mauvaise.
-    [many] Sur { $poor } des { $pages } pages qui ont du texte, ce texte n’est pas lisible, comme quand une police ne dit pas quelles lettres elle montre, ou qu’une lecture a été mauvaise.
-   *[other] Sur { $poor } des { $pages } pages qui ont du texte, ce texte n’est pas lisible, comme quand une police ne dit pas quelles lettres elle montre, ou qu’une lecture a été mauvaise.
-}
-# Said where every page that has text has text that does not read as text.
-ocr-text-poor-all = { $pages ->
-    [one] Le texte que contient le PDF n’est pas lisible, comme quand une police ne dit pas quelles lettres elle montre, ou qu’une lecture a été mauvaise.
-    [many] Sur toutes les { $pages } pages qui ont du texte, ce texte n’est pas lisible, comme quand une police ne dit pas quelles lettres elle montre, ou qu’une lecture a été mauvaise.
-   *[other] Sur toutes les { $pages } pages qui ont du texte, ce texte n’est pas lisible, comme quand une police ne dit pas quelles lettres elle montre, ou qu’une lecture a été mauvaise.
-}
-ocr-text-keep = Garder le texte que contient le PDF
-ocr-text-keep-hint = Seules les pages sans texte sont lues ; les autres sont prises telles quelles.
-ocr-text-keep-searchable-hint = Seules les pages sans texte sont lues ; les autres gardent le texte qu’elles ont.
-ocr-text-anew = Lire de nouveau chaque page avec Tesseract
-ocr-text-anew-hint = Seul ce que Tesseract lit dans les images des pages est gardé ; le texte que contient le PDF n’est pris d’aucune page.
-ocr-text-anew-searchable-hint = Le texte invisible des pages est retiré, et ce qui est lu est posé à sa place. Les pages gardent leur apparence.
-ocr-about-anew = { $pages ->
-    [one] La page est lue de nouveau, d’après son image.
-    [many] Toutes les { $pages } pages sont lues de nouveau, d’après leurs images.
-   *[other] Toutes les { $pages } pages sont lues de nouveau, d’après leurs images.
-}
-ocr-searchable-anew = { $pages ->
-    [one] La page est lue de nouveau, et son texte est posé, invisible, sous ce qui s’affiche, à la place de celui qu’elle avait. Le PDF garde son apparence.
-    [many] Toutes les { $pages } pages sont lues de nouveau, et leur texte est posé, invisible, sous ce qui s’affiche, à la place de celui qu’elles avaient. Le PDF garde son apparence.
-   *[other] Toutes les { $pages } pages sont lues de nouveau, et leur texte est posé, invisible, sous ce qui s’affiche, à la place de celui qu’elles avaient. Le PDF garde son apparence.
-}
 
 ## What is found of the text a PDF has, and what can be done with it (ADR 0044).
 
-ocr-text-found = Du texte sur { $withText } des { $pages } pages, en { $fonts }.
-ocr-text-found-no-fonts = Du texte sur { $withText } des { $pages } pages.
-# The first fonts, and how many more there are.
-ocr-text-fonts-more = { $fonts } et { $count ->
-    [one] une autre
-    [many] { $count } autres
-   *[other] { $count } autres
-}
 ocr-text-scheme-greek-names = Le grec est noté par les noms des glyphes de { $fonts }, et peut être converti en lettres grecques.
 ocr-text-scheme-expert-names = Les petites capitales et les chiffres elzéviriens de { $fonts } sont notés par leur nom, et peuvent être convertis en leurs lettres et leurs chiffres.
 ocr-text-scheme-beta-code = Le grec est écrit en Beta Code, et peut être converti en lettres grecques.
-ocr-text-translate = Le convertir en texte lisible
-ocr-text-translate-hint = Le texte est rendu lisible d’après ce que les polices disent de leurs lettres ; aucune page n’est lue d’après une image pour cela.
-ocr-text-translate-searchable-hint = Les tables propres au PDF sont corrigées, pour que tout lecteur de PDF copie le texte et y cherche correctement ; rien de ce qui est dessiné ne change.
-ocr-text-anew-no-tesseract = Tesseract, qui lit le texte des images, n’est pas installé.
 ocr-text-page = Page { $label }
 ocr-text-page-none = Pas de texte sur cette page : elle est lue d’après son image.
-ocr-about-translate = { $without ->
-    [0] Le texte que contient le PDF est rendu lisible ; aucune page n’est lue d’après une image.
-    [one] Le texte que contient le PDF est rendu lisible, et la seule page sans texte est lue d’après son image.
-    [many] Le texte que contient le PDF est rendu lisible, et les { $without } pages sans texte sont lues d’après leurs images.
-   *[other] Le texte que contient le PDF est rendu lisible, et les { $without } pages sans texte sont lues d’après leurs images.
-}
-ocr-searchable-translate = { $without ->
-    [0] Les polices du PDF reçoivent leurs lettres, pour que son texte puisse être copié et cherché correctement. Le PDF garde son apparence.
-    [one] Les polices du PDF reçoivent leurs lettres, et la seule page sans texte est lue et reçoit du texte. Le PDF garde son apparence.
-    [many] Les polices du PDF reçoivent leurs lettres, et les { $without } pages sans texte sont lues et reçoivent du texte. Le PDF garde son apparence.
-   *[other] Les polices du PDF reçoivent leurs lettres, et les { $without } pages sans texte sont lues et reçoivent du texte. Le PDF garde son apparence.
-}
 ocr-searchable-make-readable = Rendre lisible
 ocr-searchable-readable-done = { $count ->
     [one] Le texte du PDF est désormais lisible : une police a reçu ses lettres
@@ -195,7 +117,6 @@ ocr-shape-hint = Les titres, les lignes gardées telles quelles, les numéros en
 # How a PDF read with its shape kept becomes a map: the document's own tree, or an element for each page.
 ocr-structure = Éléments
 ocr-structure-headings = D’après ses titres
-ocr-structure-pages = D’après ses pages
 ocr-page-marks = Marquer où commence chaque page
 ocr-page-marks-hint = Une marque de référence portant le numéro de la page, là où elle commençait.
 # The outline shown before a PDF read by its headings is made into a map.
