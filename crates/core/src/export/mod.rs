@@ -639,7 +639,7 @@ fn letter_of(n: u32) -> String {
 /// at level 0) under a heading of the element's name at level 1, which the
 /// kind's look may leave out, and its children a level deeper. Appendices
 /// and their like are lettered in the order they are printed.
-fn part_sections(converter: &Converter, part: &Part, letters: &mut u32, out: &mut Vec<Value>) {
+fn part_sections(converter: &Converter, part: &Part, letters: &mut u32) -> Vec<Section> {
     let look = converter.extras.parts.get(&part.kind).map(|i| &i.look);
     let mut title = part.title.clone();
     if look.is_some_and(|l| l.lettered && l.heading) && !crate::document::plain(&title).is_empty() {
@@ -655,10 +655,90 @@ fn part_sections(converter: &Converter, part: &Part, letters: &mut u32, out: &mu
         element: part.element.clone(),
         kind: Some(part.kind.clone()),
     };
-    converter.section(&head, out);
-    for s in part.sections.iter().filter(|s| s.level > 0) {
-        let deeper = Section { level: s.level.saturating_add(1), ..s.clone() };
-        converter.section(&deeper, out);
+    let mut out = vec![head];
+    out.extend(
+        part.sections.iter().filter(|s| s.level > 0).map(|s| Section { level: s.level.saturating_add(1), ..s.clone() }),
+    );
+    out
+}
+
+/// The stretches of the elements that have a look of their own, as the
+/// sections are written (ADR 0059): an element's stretch is its section
+/// and the deeper ones after it. A stack, since a chapter within a part
+/// may have a look within the part's.
+struct Stretches<'a> {
+    looks: std::collections::HashMap<&'a str, &'a DocumentFormat>,
+    base: &'a DocumentFormat,
+    stack: Vec<(u8, &'a DocumentFormat)>,
+}
+
+impl<'a> Stretches<'a> {
+    fn new(doc: &'a Document, base: &'a DocumentFormat) -> Self {
+        let looks = doc.looks.iter().map(|l| (l.element.as_str(), &l.format)).collect();
+        Stretches { looks, base, stack: Vec::new() }
+    }
+
+    fn current(&self) -> &'a DocumentFormat {
+        self.stack.last().map(|(_, f)| *f).unwrap_or(self.base)
+    }
+
+    /// Where a section begins: the look it leaves, the look it comes to, and
+    /// whether it is the beginning of a stretch; nothing where the look
+    /// stays.
+    fn before(&mut self, section: &Section) -> Option<(&'a DocumentFormat, &'a DocumentFormat, bool)> {
+        let from = self.current();
+        while self.stack.last().is_some_and(|(level, _)| *level >= section.level) {
+            self.stack.pop();
+        }
+        let own = section.element.as_deref().and_then(|e| self.looks.get(e).copied());
+        if let Some(f) = own {
+            self.stack.push((section.level, f));
+        }
+        let to = self.current();
+        (!std::ptr::eq(from, to) || own.is_some()).then_some((from, to, own.is_some()))
+    }
+
+    /// Where a run of sections ends: back to the document's look.
+    fn end(&mut self) -> Option<(&'a DocumentFormat, &'a DocumentFormat)> {
+        let from = self.current();
+        self.stack.clear();
+        (!std::ptr::eq(from, self.base)).then_some((from, self.base))
+    }
+}
+
+/// What a target writes where the look changes between two stretches (ADR
+/// 0059): in Typst, the rules of the look it comes to, and a new page where
+/// the pages differ.
+fn look_switch(
+    target: Target,
+    from: &DocumentFormat,
+    to: &DocumentFormat,
+    entering: bool,
+    p: &Particulars,
+) -> Vec<Value> {
+    match target {
+        Target::Pdf | Target::Typst => vec![raw("typst", typst::switch(from, to, p, entering))],
+        _ => Vec::new(),
+    }
+}
+
+/// Writes a run of sections, with the looks of the elements among them.
+fn write_sections(
+    converter: &Converter,
+    sections: &[Section],
+    stretches: &mut Stretches,
+    target: Target,
+    p: &Particulars,
+    out: &mut Vec<Value>,
+) {
+    for s in sections {
+        if let Some((from, to, entering)) = stretches.before(s) {
+            out.extend(look_switch(target, from, to, entering, p));
+        }
+        converter.section(s, out);
+    }
+    if let Some((from, to)) = stretches.end() {
+        out.extend(look_switch(target, from, to, false, p));
     }
 }
 
@@ -859,6 +939,9 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
         *titled = false;
     };
     let (mut toc, mut lof, mut lot) = (false, false, false);
+    // The looks of the elements that have their own, and what their rules are made with.
+    let mut stretches = Stretches::new(doc, f);
+    let looked = particulars(doc, f);
     let mut letters = 0u32;
     let mut bibliography_placed = false;
     let wants_bibliography = has_citations && style_has_bibliography && !keep_citations;
@@ -997,9 +1080,7 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
                 if let Some((open, _)) = &columns {
                     blocks.push(json!({"t": "RawBlock", "c": ["latex", open]}));
                 }
-                for s in &doc.sections {
-                    converter.section(s, &mut blocks);
-                }
+                write_sections(&converter, &doc.sections, &mut stretches, target, &looked, &mut blocks);
                 if let Some((_, close)) = &columns {
                     blocks.push(json!({"t": "RawBlock", "c": ["latex", close]}));
                 }
@@ -1049,7 +1130,8 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
             }
             Item::Part(p) => {
                 flush(&mut front, &mut blocks, &mut titled);
-                part_sections(&converter, p, &mut letters, &mut blocks);
+                let sections = part_sections(&converter, p, &mut letters);
+                write_sections(&converter, &sections, &mut stretches, target, &looked, &mut blocks);
             }
         }
     }
@@ -2640,6 +2722,58 @@ mod tests {
         let typ = out.join("marked.typ");
         export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
         assert!(fs::read_to_string(&typ).unwrap().contains("#metadata(\"e1\") <gk-el-e1>"));
+    }
+
+    #[test]
+    fn an_element_with_a_look_of_its_own_has_it_in_the_document() {
+        use crate::document::fixtures::text;
+        use crate::document::{Block, ElementLook, Section};
+        let Some(s) = setup() else { return };
+        let mut r = request("chicago-author-date");
+        let section = |level: u8, heading: &str| Section {
+            level,
+            heading: Some(vec![text(heading)]),
+            blocks: vec![Block::paragraph(vec![text(&format!("Words of {heading}."))])],
+            element: Some(heading.to_lowercase()),
+            kind: None,
+        };
+        r.document.sections = vec![section(1, "One"), section(1, "Two"), section(2, "Within"), section(1, "Three")];
+        r.format.title.placement = TitlePlacement::Top;
+        // Two in larger type, without its footer, its pages counted anew.
+        let mut two = r.format.clone();
+        two.font.size = 14.0;
+        two.footer.shown = false;
+        two.page.restart = true;
+        r.document.looks = vec![ElementLook { element: "two".into(), format: two }];
+        r.key = "looks".into();
+        let p = preview(&s.ctx(), &r).unwrap();
+        assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+        let t = fs::read_to_string(s.work.join("looks/preview/document.typ")).unwrap();
+        let at = |w: &str| t.find(w).unwrap_or_else(|| panic!("{w} in {t}"));
+        let switch = at("#pagebreak(weak: true)\n#set page(");
+        assert!(at("= One") < switch && switch < at("= Two"), "{t}");
+        let into = &t[switch..at("= Two")];
+        assert!(into.contains("footer: none,") && into.contains("#counter(page).update(1)"), "{into}");
+        assert!(into.contains("size: 14pt"), "{into}");
+        // Back to the document's look after Within, which is Two's.
+        let back = &t[at("= Within")..at("= Three")];
+        assert!(back.contains("#set page(") && back.contains("size: 12pt") && !back.contains("update(1)"), "{back}");
+        assert_eq!(t.matches("#set page(").count(), 3, "no look elsewhere: {t}");
+
+        // The pages: One, Two on a page of its own without its footer, numbered anew, Three on the next.
+        let words = |n: usize| p.pages[n].texts.iter().map(|t| t.text.trim().to_owned()).collect::<Vec<_>>();
+        assert_eq!(p.count, 3, "{:?}", (0..p.count).map(words).collect::<Vec<_>>());
+        assert!(words(0).contains(&"One".to_owned()) && words(0).contains(&"1".to_owned()), "{:?}", words(0));
+        assert!(words(1).contains(&"Two".to_owned()) && !words(1).contains(&"2".to_owned()), "{:?}", words(1));
+        assert!(words(1).contains(&"Within".to_owned()));
+        assert!(
+            words(2).contains(&"Three".to_owned()) && words(2).contains(&"2".to_owned()),
+            "counted on from Two's one: {:?}",
+            words(2)
+        );
+        // The places of the elements are still found.
+        let places: Vec<(&str, u32)> = p.places.iter().map(|pl| (pl.element.as_str(), pl.page)).collect();
+        assert_eq!(places, [("one", 1), ("two", 2), ("within", 2), ("three", 3)], "{:?}", p.places);
     }
 
     #[test]

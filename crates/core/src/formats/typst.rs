@@ -373,12 +373,17 @@ fn refmark_rule(f: &DocumentFormat) -> String {
 
 /// The opening of the document: everything up to where Pandoc's text begins.
 pub fn preamble(format: &DocumentFormat, p: &Particulars) -> String {
+    let mut out = opening(format, p);
+    out.push_str(&page(format, p));
+    out.push_str(&rules(format, p));
+    out
+}
+
+/// What the document says once, whatever its elements set: what it is,
+/// and what the header and the footer ask of the pages.
+pub fn opening(format: &DocumentFormat, p: &Particulars) -> String {
     let mut out = String::new();
     let f = format;
-    let (lang, region) = language(p.language.as_deref());
-    let body_leading = leading(f.text.line_spacing);
-    let justify = f.text.align == Align::Justified;
-
     let _ = writeln!(out, "// Made by Glaukopis from the format “{}”.", f.name.replace('\n', " "));
     let authors: Vec<String> =
         if f.title.anonymous { Vec::new() } else { p.authors.iter().map(|a| string(a)).collect() };
@@ -388,8 +393,21 @@ pub fn preamble(format: &DocumentFormat, p: &Particulars) -> String {
         string(&p.title),
         authors.iter().map(|a| format!("{a},")).collect::<String>()
     );
+    // Where something begins, and the blank pages before a right-hand page:
+    // the header and the footer ask of each page.
+    let _ = writeln!(
+        out,
+        "#let gk-on(label, p) = query(label).any(o => o.location().page() == p)
+#let gk-blank(p) = gk-on(<gk-before-right>, p - 1) and gk-on(<gk-opener>, p + 1) and not gk-on(<gk-opener>, p)"
+    );
+    out
+}
 
-    // The page.
+/// The page: its size, its margins, its header and footer, its columns. A
+/// `#set page` begins a new page where it stands in the text.
+pub fn page(format: &DocumentFormat, p: &Particulars) -> String {
+    let mut out = String::new();
+    let f = format;
     let paper = match f.page.size.to_ascii_lowercase().as_str() {
         "a4" => "paper: \"a4\"".to_owned(),
         "a5" => "paper: \"a5\"".to_owned(),
@@ -401,13 +419,6 @@ pub fn preamble(format: &DocumentFormat, p: &Particulars) -> String {
             format!("width: {}, height: {}", pt(w), pt(h))
         }
     };
-    // Where something begins, and the blank pages before a right-hand page:
-    // the header and the footer ask of each page.
-    let _ = writeln!(
-        out,
-        "#let gk-on(label, p) = query(label).any(o => o.location().page() == p)
-#let gk-blank(p) = gk-on(<gk-before-right>, p - 1) and gk-on(<gk-opener>, p + 1) and not gk-on(<gk-opener>, p)"
-    );
     let header = margin(&f.header, f, p);
     let footer = margin(&f.footer, f, p);
     let _ = writeln!(
@@ -431,6 +442,55 @@ pub fn preamble(format: &DocumentFormat, p: &Particulars) -> String {
     if f.page.columns > 1 {
         let _ = writeln!(out, "#set columns(gutter: {})", f.page.column_gap);
     }
+    out
+}
+
+/// Whether two layouts set the pages otherwise: their size, margins and
+/// columns, their header and footer. Where they do, the stretch of one
+/// begins on a new page (ADR 0059).
+pub fn pages_differ(a: &DocumentFormat, b: &DocumentFormat) -> bool {
+    let of = |f: &DocumentFormat| {
+        let mut page = serde_json::to_value(&f.page).unwrap_or_default();
+        // Whether the count begins anew is said where a stretch begins, not of the page.
+        if let Some(o) = page.as_object_mut() {
+            o.remove("restart");
+        }
+        (page, serde_json::to_value(&f.header).ok(), serde_json::to_value(&f.footer).ok())
+    };
+    of(a) != of(b)
+}
+
+/// Where the stretch of an element with a look of its own begins or ends
+/// (ADR 0059): the rules of the layout it comes to, and where the pages
+/// differ, or the count begins anew, a new page set as that layout has it.
+/// `entering` says it is the stretch's beginning, where the count of the
+/// pages may begin anew; at its end the enclosing look's count goes on.
+pub fn switch(from: &DocumentFormat, to: &DocumentFormat, p: &Particulars, entering: bool) -> String {
+    let mut out = String::new();
+    let restart = entering && to.page.restart;
+    if pages_differ(from, to) || restart {
+        out.push_str("#pagebreak(weak: true)\n");
+        if pages_differ(from, to) {
+            out.push_str(&page(to, p));
+        }
+        if restart {
+            out.push_str("#counter(page).update(1)\n");
+        }
+    }
+    out.push_str(&rules(to, p));
+    out
+}
+
+/// How the text is set: the type, the paragraphs, the headings, the kinds,
+/// the notes, the figures, the parts and the title; all the rest of the
+/// opening, which the stretch of an element with a look of its own sets
+/// again (ADR 0059).
+pub fn rules(format: &DocumentFormat, p: &Particulars) -> String {
+    let mut out = String::new();
+    let f = format;
+    let (lang, region) = language(p.language.as_deref());
+    let body_leading = leading(f.text.line_spacing);
+    let justify = f.text.align == Align::Justified;
 
     // The text.
     let _ = writeln!(

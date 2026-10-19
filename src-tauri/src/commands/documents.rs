@@ -8,7 +8,9 @@ use std::sync::{Arc, Mutex};
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
-use glaukopis_core::document::{Author, Block, CarriedReference, Document, Inline, OwnKind, Part, Section};
+use glaukopis_core::document::{
+    Author, Block, CarriedReference, Document, ElementLook, Inline, OwnKind, Part, Section,
+};
 use glaukopis_core::export::{self, Context, ExportOptions, Exported, Page, Preview, Request, Target, Tools};
 use glaukopis_core::formats::kinds::{self, KindLook};
 use glaukopis_core::formats::{DocumentFormat, FormatSummary};
@@ -190,6 +192,9 @@ pub struct LeanDocument {
     pub references: Vec<CarriedReference>,
     /// The kinds of paragraph and of words that are the writer's own.
     pub kinds: Vec<OwnKind>,
+    /// The looks of the elements under the one printed that have their own (ADR 0059).
+    #[serde(default)]
+    pub looks: Vec<ElementLook>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -282,7 +287,10 @@ fn whole(request: LeanRequest) -> CommandResult<(Request, Arc<AtomicBool>)> {
         sections,
         references: request.document.references,
         kinds: request.document.kinds,
+        looks: request.document.looks,
     };
+    let mut document = document;
+    document.ready_looks();
     let mut format = request.format;
     format.readied(document.language.as_deref());
     Ok((
@@ -356,6 +364,7 @@ pub fn document_export(
     ticket: Option<String>,
 ) -> CommandResult<Exported> {
     request.format.readied(request.document.language.as_deref());
+    request.document.ready_looks();
     let work = Work::begin(ticket);
     with_context(&state, Of::Copy, &state.exporting, |ctx| {
         export::export_until(ctx, &request, target, Path::new(&path), &options.unwrap_or_default(), &work.stop)

@@ -561,6 +561,31 @@ pub struct Document {
     /// the project carries, with what each is based on and how it differs.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub kinds: Vec<OwnKind>,
+    /// The layouts of the elements under the one printed that have a look
+    /// of their own, each as that element uses it (ADR 0059): what holds
+    /// for its stretch of the document.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub looks: Vec<ElementLook>,
+}
+
+/// The layout an element under the one printed uses, with its changes
+/// (ADR 0059): what holds for its stretch of the document.
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ElementLook {
+    pub element: String,
+    pub format: crate::formats::DocumentFormat,
+}
+
+impl Document {
+    /// Readies the looks of the elements as the document's own layout is
+    /// readied: within bounds, in the document's language.
+    pub fn ready_looks(&mut self) {
+        let language = self.language.clone();
+        for look in &mut self.looks {
+            look.format.readied(language.as_deref());
+        }
+    }
 }
 
 /// Goes through blocks and what they hold, in the order of the text: every
