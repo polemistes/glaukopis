@@ -39,6 +39,11 @@ ocr-tried-nothing = Ingen tekst ble lest på side { $label }.
 ocr-tried-changed = Språkene eller innstillingene er endret siden: prøv igjen for å se hva de leser.
 # The alternative text of the picture of the page tried.
 ocr-tried-picture = Side { $label } slik Tesseract så den
+ocr-tried-blocks = { $count ->
+    [one] Vis tekstblokken Tesseract fant
+   *[other] Vis de { $count } tekstblokkene Tesseract fant, nummerert i den rekkefølgen den leser dem
+}
+ocr-tried-blocks-hint = To spalter tatt som én, eller noter tatt inn i teksten, leses i feil rekkefølge: et annet oppsett av siden kan skille dem.
 
 ocr-read = Les teksten
 ocr-read-text-pages = Ta sidene som har tekst

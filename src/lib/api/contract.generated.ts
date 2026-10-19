@@ -198,6 +198,14 @@ export const looked: ocr.Looked = {
 };
 
 export const tried: ocr.Tried = {
+  "blocks": [
+    {
+      "height": 1300.25,
+      "left": 90.5,
+      "top": 120.0,
+      "width": 950.0
+    }
+  ],
   "confidence": 91.5,
   "height": 1600,
   "label": "iii",

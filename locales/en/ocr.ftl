@@ -39,6 +39,11 @@ ocr-tried-nothing = No text was read on page { $label }.
 ocr-tried-changed = The languages or settings have changed since: try again to see what they read.
 # The alternative text of the picture of the page tried.
 ocr-tried-picture = Page { $label } as Tesseract saw it
+ocr-tried-blocks = { $count ->
+    [one] Show the block of text Tesseract found
+   *[other] Show the { $count } blocks of text Tesseract found, numbered in the order it reads them
+}
+ocr-tried-blocks-hint = Two columns taken as one, or notes taken into the text, read in the wrong order: another layout may part them.
 
 ocr-read = Read the text
 ocr-read-text-pages = Take the pages that have text

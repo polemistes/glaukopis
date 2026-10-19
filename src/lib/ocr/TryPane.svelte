@@ -89,6 +89,10 @@
   /** Whether the languages or settings have changed since the page shown was read. */
   const changed = $derived(!!tried && triedWith !== JSON.stringify(asked));
   const confidence = $derived(tried?.confidence == null ? null : Math.round(tried.confidence));
+  /** Whether the blocks Tesseract found are drawn over the picture. */
+  let showBlocks = $state(true);
+  /** The size of the numbers of the blocks, in the dots of the picture: about 12 points as it is shown. */
+  const figure = $derived(tried ? Math.max(tried.width, tried.height) / 45 : 0);
 </script>
 
 <div class="try" data-ocr-try-pane>
@@ -142,15 +146,49 @@
       {/if}
       {#if changed}<span class="changed" data-ocr-tried-changed>{t('ocr-tried-changed')}</span>{/if}
     </p>
+    {#if tried.blocks.length}
+      <label class="check">
+        <input type="checkbox" bind:checked={showBlocks} data-ocr-tried-show-blocks />
+        <span>
+          {t('ocr-tried-blocks', { count: tried.blocks.length })}
+          <small>{t('ocr-tried-blocks-hint')}</small>
+        </span>
+      </label>
+    {/if}
     <div class="result">
       <div class="picture">
-        <img
-          src="data:image/png;base64,{tried.png}"
-          width={tried.width}
-          height={tried.height}
-          alt={t('ocr-tried-picture', { label: tried.label })}
-          data-ocr-tried-picture
-        />
+        <div class="sheet">
+          <img
+            src="data:image/png;base64,{tried.png}"
+            width={tried.width}
+            height={tried.height}
+            alt={t('ocr-tried-picture', { label: tried.label })}
+            data-ocr-tried-picture
+          />
+          {#if showBlocks && tried.blocks.length}
+            <!-- The blocks Tesseract found, numbered in the order it read them. -->
+            <svg
+              class="blocks"
+              viewBox="0 0 {tried.width} {tried.height}"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+              data-ocr-tried-blocks={tried.blocks.length}
+            >
+              {#each tried.blocks as block, i (i)}
+                <rect
+                  x={block.left}
+                  y={block.top}
+                  width={block.width}
+                  height={block.height}
+                  vector-effect="non-scaling-stroke"
+                />
+                <text x={block.left + figure * 0.3} y={block.top + figure * 1.05} font-size={figure}
+                  >{i + 1}</text
+                >
+              {/each}
+            </svg>
+          {/if}
+        </div>
       </div>
       <div class="text selectable" data-ocr-tried-text>
         {#each tried.paragraphs as paragraph, i (i)}
@@ -249,10 +287,53 @@
   .picture {
     position: relative;
   }
+  .sheet {
+    position: relative;
+  }
   .picture img {
     display: block;
     width: 100%;
     height: auto;
+  }
+  .blocks {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+  .blocks rect {
+    fill: color-mix(in srgb, var(--accent) 10%, transparent);
+    stroke: var(--accent);
+    stroke-width: 1.5;
+  }
+  .blocks text {
+    fill: var(--accent);
+    font-family: var(--font-ui, sans-serif);
+    font-weight: 650;
+    paint-order: stroke;
+    stroke: var(--paper);
+    stroke-width: 6px;
+  }
+  .check {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+    cursor: pointer;
+  }
+  .check input {
+    accent-color: var(--accent);
+    margin: 2px 0 0;
+  }
+  .check span {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .check small {
+    color: var(--ink-3);
   }
   .text {
     padding: 10px 14px;

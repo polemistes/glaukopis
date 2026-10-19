@@ -130,6 +130,45 @@ pub fn tsv_paragraphs(tsv: &str) -> Vec<Vec<Line>> {
     tsv_page(tsv).0
 }
 
+/// A block of text as Tesseract found it on a page, in the dots of the
+/// picture it read: where it took one column, one note, one heading to be.
+#[derive(Debug, Clone, Copy, Default, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct TextBlock {
+    pub left: f32,
+    pub top: f32,
+    pub width: f32,
+    pub height: f32,
+}
+
+/// The blocks of a page in what Tesseract read of it (its TSV, level 2), in
+/// the order it reads them, those in which it read no word left out.
+pub fn tsv_blocks(tsv: &str) -> Vec<TextBlock> {
+    let mut blocks: Vec<([u32; 2], TextBlock, bool)> = Vec::new();
+    for row in tsv.lines().skip(1) {
+        let columns: Vec<&str> = row.split('\t').collect();
+        if columns.len() < 12 {
+            continue;
+        }
+        let number = |i: usize| columns[i].trim().parse::<u32>().unwrap_or(0);
+        let measure = |i: usize| columns[i].trim().parse::<f32>().unwrap_or(0.0);
+        let at = [number(1), number(2)];
+        match columns[0] {
+            "2" => blocks.push((
+                at,
+                TextBlock { left: measure(6), top: measure(7), width: measure(8), height: measure(9) },
+                false,
+            )),
+            "5" if !columns[11..].join(" ").trim().is_empty() => {
+                if let Some(block) = blocks.iter_mut().rev().find(|(b, _, _)| *b == at) {
+                    block.2 = true;
+                }
+            }
+            _ => {}
+        }
+    }
+    blocks.into_iter().filter(|(_, _, words)| *words).map(|(_, block, _)| block).collect()
+}
+
 /// How sure Tesseract was of what it read of a page, from 0 to 100: the
 /// mean of its words' confidences, the lines that are only marks left out,
 /// as `tsv_paragraphs` leaves them out. Nothing where no word has one, as
@@ -787,6 +826,27 @@ mod tests {
         assert_eq!(pages[2], vec!["Ends here, con-"]);
         assert_eq!(pages[4], vec!["wordalone"]);
         assert_eq!(pages[5], vec!["Next."]);
+    }
+
+    /// The blocks Tesseract found, in its order, without those of no word.
+    #[test]
+    fn the_blocks_tesseract_found() {
+        let tsv = "level\tpage_num\tblock_num\tpar_num\tline_num\tword_num\tleft\ttop\twidth\theight\tconf\ttext\n\
+                   1\t1\t0\t0\t0\t0\t0\t0\t1000\t1400\t-1\t\n\
+                   2\t1\t1\t0\t0\t0\t100\t100\t800\t600\t-1\t\n\
+                   5\t1\t1\t1\t1\t1\t100\t100\t200\t40\t90\tWords\n\
+                   2\t1\t2\t0\t0\t0\t100\t800\t800\t300\t-1\t\n\
+                   5\t1\t2\t1\t1\t1\t100\t800\t20\t20\t10\t \n\
+                   2\t1\t3\t0\t0\t0\t100\t1200\t400\t50\t-1\t\n\
+                   5\t1\t3\t1\t1\t1\t100\t1200\t100\t50\t95\tNote\n";
+        assert_eq!(
+            tsv_blocks(tsv),
+            vec![
+                TextBlock { left: 100.0, top: 100.0, width: 800.0, height: 600.0 },
+                TextBlock { left: 100.0, top: 1200.0, width: 400.0, height: 50.0 },
+            ]
+        );
+        assert!(tsv_blocks("").is_empty());
     }
 
     /// How sure Tesseract was of a page is the mean of its words, the line

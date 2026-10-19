@@ -131,6 +131,16 @@ export interface Tried {
   png: string;
   width: number;
   height: number;
+  /** The blocks of text Tesseract found, in the order it read them, in the dots of the picture as shown. */
+  blocks: TextBlock[];
+}
+
+/** A block of text as Tesseract found it on a page. */
+export interface TextBlock {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
 }
 
 /** What came of making a PDF of the library searchable. */

@@ -1003,6 +1003,12 @@ fn a_page_is_tried() {
     assert!(tried.width.max(tried.height) <= 1600, "{}×{}", tried.width, tried.height);
     // 150 mm at 300 dots to the inch is 1772 dots, made 1600 wide.
     assert_eq!(tried.width, 1600);
+    // The text is found in blocks, laid on the picture as it is shown.
+    assert!(!tried.blocks.is_empty());
+    for block in &tried.blocks {
+        assert!(block.left >= 0.0 && block.left + block.width <= tried.width as f32 + 1.0, "{block:?}");
+        assert!(block.top >= 0.0 && block.top + block.height <= tried.height as f32 + 1.0, "{block:?}");
+    }
 
     // A page the file does not have is said to be none.
     let none = try_page(&scan, &kit.tools, &kit.work(), &kit.asked(), 2, None, &never()).unwrap_err();

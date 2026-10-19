@@ -940,6 +940,9 @@ pub struct Tried {
     pub png: String,
     pub width: u32,
     pub height: u32,
+    /// The blocks of text Tesseract found on it, in the order it read them,
+    /// in the dots of the picture as it is shown (`text::tsv_blocks`).
+    pub blocks: Vec<text::TextBlock>,
 }
 
 /// Tries a page of a PDF, counted from one, before the whole is read: draws
@@ -975,6 +978,16 @@ pub fn try_page(
         _ => return Err(Error::invalid("the page was not tried")),
     };
     let (groups, confidence) = text::tsv_page(&tried.tsv);
+    let scale = tried.scale;
+    let blocks = text::tsv_blocks(&tried.tsv)
+        .into_iter()
+        .map(|b| text::TextBlock {
+            left: b.left * scale,
+            top: b.top * scale,
+            width: b.width * scale,
+            height: b.height * scale,
+        })
+        .collect();
     let greek = reader.with.languages.iter().any(|l| matches!(l.as_str(), "grc" | "ell" | "script/Greek"));
     let paragraphs = text::page_paragraphs(groups, is_word);
     let paragraphs = if greek { paragraphs.iter().map(|p| schemes::mend_sigmas(p)).collect() } else { paragraphs };
@@ -988,6 +1001,7 @@ pub fn try_page(
         png: tried.png,
         width: tried.width,
         height: tried.height,
+        blocks,
     })
 }
 

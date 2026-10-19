@@ -524,6 +524,7 @@ fn what_is_sent_is_what_the_interface_declares() {
         png: "iVBORw0KGgo=".into(),
         width: 1131,
         height: 1600,
+        blocks: vec![glaukopis_core::ocr::text::TextBlock { left: 90.5, top: 120.0, width: 950.0, height: 1300.25 }],
     };
     put("tried", "ocr.Tried", &tried);
     put("shapedImport", "imported.Imported", &shaped_import);
