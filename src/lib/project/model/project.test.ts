@@ -1161,3 +1161,37 @@ describe('the changes of a document to its layout', () => {
     expect(p.yNodes.get(chapter)!.has('document')).toBe(false);
   });
 });
+
+describe('what a document sets otherwise than its template', () => {
+  it('reaches down the tree path by path, each said by the element that sets it', () => {
+    const { p, root } = project();
+    const book = p.addChild(root, { title: 'Book' })!;
+    const chapter = p.addChild(book, { title: 'Chapter' })!;
+    const other = p.addChild(book, { title: 'Another chapter' })!;
+    p.setDocument(book, { composition: { parts: { contents: false } } });
+    p.setDocument(chapter, {
+      composition: { parts: { 'list-of-figures': true }, requirements: { words: null } },
+    });
+    const { changes, from } = p.compositionOf(chapter);
+    expect(changes).toEqual({
+      parts: { contents: false, 'list-of-figures': true },
+      requirements: { words: null },
+    });
+    expect(from.get('parts.contents')).toBe(book);
+    expect(from.get('parts.list-of-figures')).toBe(chapter);
+    expect(from.get('requirements.words')).toBe(chapter);
+    expect(p.compositionOf(book).changes).toEqual({ parts: { contents: false } });
+    expect(p.compositionOf(other).changes).toEqual({ parts: { contents: false } });
+    expect(p.compositionOf(root).changes).toEqual({});
+    // A chapter that says otherwise than the book says it for itself.
+    p.setDocument(other, { composition: { parts: { contents: true } } });
+    expect(p.compositionOf(other).changes).toEqual({ parts: { contents: true } });
+    expect(p.compositionOf(other).from.get('parts.contents')).toBe(other);
+    // What is read is a copy: changing it changes nothing in the project.
+    changes.parts!.contents = true;
+    expect(p.compositionOf(chapter).changes.parts?.contents).toBe(false);
+    // Every change taken back leaves nothing behind.
+    p.setDocument(chapter, { composition: {} });
+    expect(p.yNodes.get(chapter)!.has('document')).toBe(false);
+  });
+});

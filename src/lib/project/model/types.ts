@@ -1,4 +1,5 @@
 import type { KindFamily, Look } from '$lib/api/documents';
+import type { CompositionChanges } from '$lib/document/composition';
 import type { LookChanges } from '$lib/look/changes';
 import type { When } from '$lib/timeline/solve';
 import type { SetOff } from './text';
@@ -52,6 +53,12 @@ export interface DocumentSettings {
   lineNumbers?: boolean;
   /** What the document sets otherwise than its layout, laid over the changes of the elements above it (ADR 0042). */
   look?: LookChanges;
+  /**
+   * What the document sets otherwise than its template: parts turned on or
+   * off, requirements; laid over the changes of the elements above it, as
+   * the look is (ADR 0054). The name is kept in projects: never change it.
+   */
+  composition?: CompositionChanges;
 }
 
 /** The settings an element has of its own, never from one over it: a chapter printed alone is not titled as the book. */

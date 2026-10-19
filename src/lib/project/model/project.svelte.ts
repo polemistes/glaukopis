@@ -41,6 +41,11 @@ import {
 import { isCatalogueKind } from '$lib/project/parts';
 import { gather, ReadableCopy } from '$lib/org/folder';
 import { getAt, pathsOf, setAt, type LookChanges, type LookPath } from '$lib/look/changes';
+import {
+  compositionPaths,
+  type CompositionChanges,
+  type CompositionPath,
+} from '$lib/document/composition';
 import { migrate, needsMigration } from './migrate';
 import {
   BodyReading,
@@ -1029,6 +1034,28 @@ export class Project {
     for (const at of this.pathTo(id)) {
       const own = this.nodes.get(at)?.document?.look;
       for (const path of pathsOf(own)) {
+        setAt(changes, path, structuredClone(getAt(own, path)));
+        from.set(path, at);
+      }
+    }
+    return { changes, from };
+  }
+
+  /**
+   * What an element's document sets otherwise than its template: the parts
+   * turned on or off and the requirements set by the elements over it,
+   * laid over by its own, path by path; and which element sets each path
+   * (ADR 0054). As `lookOf` has the changes to the layout.
+   */
+  compositionOf(id: string): {
+    changes: CompositionChanges;
+    from: Map<CompositionPath, string>;
+  } {
+    const changes: CompositionChanges = {};
+    const from = new Map<CompositionPath, string>();
+    for (const at of this.pathTo(id)) {
+      const own = this.nodes.get(at)?.document?.composition;
+      for (const path of compositionPaths(own)) {
         setAt(changes, path, structuredClone(getAt(own, path)));
         from.set(path, at);
       }
