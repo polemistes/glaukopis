@@ -242,14 +242,12 @@ try {
   check('pressed, the text of the element over it is shown', list[0] === 'Icons:0', list.join(' | '));
   check('with no button to go up from the project', !(await app.exists('.text-view .section.level-0 .corner')));
 
-  // The button to enter, by the name of any other element.
+  // No button to enter by the name of an element in the text: the menu and the key do it.
   const betaSection = await section('Beta');
-  const textEnter = await app.exec(`return arguments[0].querySelector('.gutter .corner.enter')`, betaSection);
-  await app.hover(await app.exec(`return arguments[0].querySelector('.heading')`, betaSection));
-  await sleep(350);
-  check('in the text, the button to enter shows by the name of an element', Number(await opacity(textEnter)) === 1);
-  await app.screenshot('map-icons-5-text-enter');
-  await app.click(textEnter);
+  check('in the text, no button to enter stands by the name of an element', !(await app.exists('.text-view .gutter .corner.enter')));
+  await app.click(await app.exec(`return arguments[0].querySelector('.heading .prose') ?? arguments[0].querySelector('.heading')`, betaSection));
+  await sleep(250);
+  await app.keys(['Alt', 'Shift', 'ArrowDown']);
   await sleep(700);
   list = await sections();
   check('pressed, the element is entered', list[0] === 'Beta:0', list.join(' | '));

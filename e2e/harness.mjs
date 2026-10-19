@@ -735,16 +735,18 @@ export class App {
       `return Array.from(document.querySelectorAll('.side .look .chips button')).find((b) => b.textContent.trim() === arguments[0])?.dataset.section ?? null`,
       section,
     );
-    // Until the part stands at the top of the panel, under the chips.
-    await this.waitUntil(
-      `const f = document.querySelector('.side .look .through');
+    // Until the part stands at the top of the panel, under the chips; pressed
+    // once more where the panel had not begun to move, as a hand would.
+    const there = `const f = document.querySelector('.side .look .through');
        const p = f?.querySelector('.part[data-part="${this.lookPart}"]');
        if (!f || !p) return false;
        const d = p.getBoundingClientRect().top - f.getBoundingClientRect().top - f.querySelector('.chips').offsetHeight;
-       return Math.abs(d) < 40 || f.scrollTop + f.clientHeight >= f.scrollHeight - 2;`,
-      4000,
-      'the part to be brought into view',
-    ).catch(() => {});
+       return Math.abs(d) < 40 || f.scrollTop + f.clientHeight >= f.scrollHeight - 2;`;
+    const arrived = await this.waitUntil(there, 4000, 'the part to be brought into view').then(() => true, () => false);
+    if (!arrived) {
+      await this.clickText('.side .look .chips button', section);
+      await this.waitUntil(there, 6000, 'the part to be brought into view').catch(() => {});
+    }
     await sleep(150);
   }
 

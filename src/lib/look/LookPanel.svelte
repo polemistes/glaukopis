@@ -519,7 +519,42 @@
     'Gentium Plus',
     'New Athena Unicode',
   ];
-  const fontChoices = $derived([...new Set([...usual, ...fonts])]);
+  /**
+   * The fonts to choose from, in groups: those this document uses, its
+   * layout's and those its elements and the elements over it set; those set
+   * elsewhere in the project, in a look or by a layout chosen there; then
+   * every other one, by name. The font in use is always among them.
+   */
+  const fontGroups = $derived.by(() => {
+    const named = (family: unknown) =>
+      typeof family === 'string' && family.trim() ? family.trim() : null;
+    const here = new Set<string>();
+    const add = (set: Set<string>, family: unknown) => {
+      const n = named(family);
+      if (n) set.add(n);
+    };
+    add(here, effective?.font.family);
+    add(here, layout?.font.family);
+    add(here, changes.changes.font?.family);
+    for (const id of project.tree(at).sequence)
+      add(here, project.node(id)?.document.look?.font?.family);
+    const elsewhere = new Set<string>();
+    for (const node of project.nodes.values()) {
+      add(elsewhere, node.document.look?.font?.family);
+      if (node.document.format)
+        add(elsewhere, documents.formatCached(node.document.format)?.font.family);
+    }
+    for (const n of here) elsewhere.delete(n);
+    const by = (a: string, b: string) => a.localeCompare(b, languages.current);
+    const rest = [...new Set([...usual, ...fonts])].filter(
+      (n) => !here.has(n) && !elsewhere.has(n),
+    );
+    return [
+      { label: t('look-fonts-document'), fonts: [...here].sort(by) },
+      { label: t('look-fonts-project'), fonts: [...elsewhere].sort(by) },
+      { label: t('look-fonts-all'), fonts: rest.sort(by) },
+    ].filter((g) => g.fonts.length);
+  });
 
   const aligns: Choices = $derived([
     ['left', t('format-align-left')],
@@ -1243,10 +1278,17 @@
 {#snippet fontRow(f: F)}
   <label class="row">
     <span class="what">{t('format-typeface')}<small>{t('format-typeface-hint')}</small></span>
-    <input list="look-fonts" bind:value={f.font.family} />
-    <datalist id="look-fonts">
-      {#each fontChoices as family (family)}<option value={family}></option>{/each}
-    </datalist>
+    <select
+      value={f.font.family}
+      onchange={(e) => (f.font.family = e.currentTarget.value)}
+      data-font
+    >
+      {#each fontGroups as group (group.label)}
+        <optgroup label={group.label}>
+          {#each group.fonts as family (family)}<option value={family}>{family}</option>{/each}
+        </optgroup>
+      {/each}
+    </select>
   </label>
   {@render fromLine('font.family')}
 {/snippet}

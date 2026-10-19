@@ -31,7 +31,6 @@
   import FileInput from '@lucide/svelte/icons/file-input';
   import GripVertical from '@lucide/svelte/icons/grip-vertical';
   import Maximize2 from '@lucide/svelte/icons/maximize-2';
-  import Minimize2 from '@lucide/svelte/icons/minimize-2';
   import MessageSquare from '@lucide/svelte/icons/message-square';
   import type { EditorView } from 'prosemirror-view';
   import type { KeyAction } from '$lib/editor/plugins';
@@ -365,19 +364,8 @@
     >
       <GripVertical size={15} />
     </button>
-    {#if level > 0}
-      <button
-        type="button"
-        class="corner enter"
-        aria-label={t('text-open-as-map')}
-        use:tooltip={{ text: t('text-open-as-map'), shortcut: keysFor('text-enter'), side: 'top' }}
-        tabindex="-1"
-        onmousedown={(e) => e.preventDefault()}
-        onclick={() => onenter(node.id)}
-      >
-        <Minimize2 size={11} />
-      </button>
-    {:else if onleave}
+    <!-- No button to open an element as a map by its name: the menu of the element and Alt+Shift+Down do it. -->
+    {#if level === 0 && onleave}
       <button
         type="button"
         class="corner leave"

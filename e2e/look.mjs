@@ -129,7 +129,7 @@ try {
     `return Array.from(document.querySelectorAll('.side .look .finds .row .what')).map((w) => w.firstChild.textContent.trim())`,
   );
   check('the search finds the font by its words', found.includes('Font') && found.length <= 3, found.join(' | '));
-  await app.lookWrite('Font', 'Gentium Plus');
+  await app.lookChoose('Font', 'Gentium Plus');
   await sleep(800);
   check('the font changed says it is changed here', /^Changed here · take Manuscript’s again$/.test((await fromOf('Font')) ?? ''), await fromOf('Font'));
   top = await app.lookTop();

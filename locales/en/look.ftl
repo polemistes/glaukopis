@@ -103,3 +103,8 @@ look-style-change = Change this reference style…
 # The switch of the title page, first in the part of the front page.
 look-front-title-page = A title page
 look-front-title-page-hint = Whether the document has one at all; the same switch as under What the document contains
+
+# The groups of the fonts to choose from.
+look-fonts-document = In this document
+look-fonts-project = Elsewhere in this project
+look-fonts-all = All fonts
