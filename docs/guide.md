@@ -2053,8 +2053,12 @@ document*), and the button with the sliders opens *About this document*.
 Every line of the pages knows what it is. Rest the pointer on one, and a
 small chip in the margin beside it names it: *Text*, *Quotation*, *Verse*
 or another kind, *Heading 2*, *Note*, *Bibliography*, *Figure*, *Table*, the
-*Front page*, or a part such as the *Abstract*. Pressing the chip opens Look
-at the look of that line. The chips are turned off and on by the button
+*Front page*, or a part such as the *Abstract*. What the layout puts in the
+margins has its chip too, *Running head* and *Page number*, and where the
+pointer rests a moment on the page and on no line, a chip says *Page*.
+Pressing the chip opens Look at that line: for what the layout or the
+template puts on the page, at the row that says whether it is shown at all,
+with how it is set under it. The chips are turned off and on by the button
 with the tag at the foot of the preview, and by **Name what a line of the
 preview is** under *Settings* › *New documents*; the text of the pages is
 selected and copied the same either way.
@@ -2148,11 +2152,15 @@ is, the **reference style**. Each of them is also in its part below, where
 it says and sets the same.
 
 The parts follow one after another, in the order of the page from the
-outside in, each under its heading. The chips over them stay at the top as
+outside in, each under its heading. Where a part sets something the page
+carries besides the text, it begins with whether that is shown, and goes on
+to how it looks. The chips over them stay at the top as
 you scroll, mark the part you are in, and go to each:
 
 - **Page**: its size, the margins, the **Columns** and the **Gap between
-  columns**, the page numbers and the running head.
+  columns**, the page numbers and the running head, each beginning with
+  whether it is shown: **Pages are numbered**, and **At the top of every
+  page**, whose first choice is *Nothing*.
 - **Type**: the font, its size, the spacing, how italics and reference
   marks are set.
 - **Paragraphs**: how they begin and are spaced; **Long quotations**, those
@@ -2168,8 +2176,10 @@ you scroll, mark the part you are in, and go to each:
   **reference style**; and the bibliography.
 - **Figures and tables**: what they are called, how their captions are set,
   and where they stand.
-- **Front page**: where the title stands and how it is set, and what stands
-  with it: the authors, their affiliations, the date, the abstract.
+- **Front page**: first **A title page**, whether the document has one at
+  all, the same switch as under *What the document contains*; then what it
+  shows, the authors, their affiliations, the date, the abstract; then how
+  it is set, where the title stands, its size and its letters.
 - **What the document contains**: the parts it is made of, what has a
   place of its own in it, and what it requires (below).
 - **The layout**: the layout itself (below).

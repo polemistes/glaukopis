@@ -138,6 +138,86 @@ try {
   shown = await chipAfterHover();
   check('and the chip is back', shown?.words === 'Quotation', JSON.stringify(shown));
 
+  // --- What the layout puts in the margins has its chip, which lands where it is turned off (ADR 0056) ---
+  /** Whether a heading of Look, by its name, stands at the top of the panel, under its chips. */
+  const atTop = (name) =>
+    app.exec(
+      `const f = document.querySelector('.side .look .through');
+       const h = f?.querySelector('[data-at="' + arguments[0] + '"]');
+       if (!f || !h) return null;
+       return Math.round(h.getBoundingClientRect().top - f.querySelector('.chips').getBoundingClientRect().bottom);`,
+      name,
+    );
+  const numberLine = '.preview .page .line[data-what="page-number"]';
+  await app.waitFor(numberLine, 15000);
+  await app.exec(`document.querySelector(arguments[0]).scrollIntoView({ block: 'center' });`, numberLine);
+  await sleep(400);
+  await app.hover(numberLine);
+  shown = await chipAfterHover();
+  check('the number of the page has a chip that names it', shown?.words === 'Page number' && shown?.what === 'page-number', JSON.stringify(shown));
+  await app.click('.preview .page .chip');
+  await sleep(600);
+  let near = await atTop('page-numbers');
+  check('which opens Look at the rows of the page numbers', near !== null && near >= -4 && near < 120, `${near}`);
+
+  // A play: the running head with the title, at the top of every page but the first.
+  await app.chooseWhat('Play');
+  const headLine = '.preview .page .line[data-what="running-head"]';
+  await app.waitFor(headLine, 30000).catch(() => {});
+  check('a play has a running head, named as one', await app.exists(headLine));
+  await app.exec(`document.querySelector(arguments[0]).scrollIntoView({ block: 'center' });`, headLine);
+  await sleep(400);
+  await app.hover(headLine);
+  shown = await chipAfterHover();
+  check('the running head has a chip that names it', shown?.words === 'Running head', JSON.stringify(shown));
+  await app.screenshot('what-6-running-head');
+  await app.click('.preview .page .chip');
+  await sleep(600);
+  near = await atTop('running-head');
+  check('which opens Look at the rows of the running head', near !== null && near >= -4 && near < 120, `${near}`);
+  check('the first of which turns it off', await app.lookChoose('At the top of every page', 'none'));
+  await app
+    .waitUntil(`return !document.querySelector(${JSON.stringify(headLine)}) && !!document.querySelector('.preview .page .line[data-what]')`, 20000, 'the running head to go')
+    .catch(() => {});
+  check('and the running head is gone from the pages', !(await app.exists(headLine)));
+
+  // The title: its chip lands on the switch of the title page, first in the front page.
+  const titleLine = '.preview .page .line[data-what="front"]';
+  await app.waitFor(titleLine, 15000);
+  await app.exec(`document.querySelector(arguments[0]).scrollIntoView({ block: 'center' });`, titleLine);
+  await sleep(400);
+  await app.hover(titleLine);
+  shown = await chipAfterHover();
+  check('the title has its chip', shown?.what === 'front', JSON.stringify(shown));
+  await app.click('.preview .page .chip');
+  await sleep(600);
+  const first = await app.exec(
+    `const part = document.querySelector('.side .look .part[data-part="front"]');
+     const row = part?.querySelector('.row');
+     return { switch: !!row?.querySelector('[data-part-switch="title-page"]'), on: !!row?.querySelector('input')?.checked };`,
+  );
+  check('which opens the front page, whose first row is the switch of the title page, on', first.switch && first.on, JSON.stringify(first));
+  await app.click('.side .look .part[data-part="front"] [data-part-switch="title-page"]');
+  await app
+    .waitUntil(`return !document.querySelector(${JSON.stringify(titleLine)}) && !!document.querySelector('.preview .page .line[data-what]')`, 20000, 'the title page to go')
+    .catch(() => {});
+  check('turned off there, the title page is gone from the pages', !(await app.exists(titleLine)));
+
+  // The page itself: where the pointer rests on no line, a chip for the page.
+  await app.exec(`document.querySelector('.preview .page[data-page="1"]').scrollIntoView({ block: 'start' });`);
+  await sleep(400);
+  const lower = await app.exec(`return Math.round(document.querySelector('.preview .page[data-page="1"]').getBoundingClientRect().height * 0.3)`);
+  await app.hover('.preview .page[data-page="1"]', 0, lower);
+  shown = await chipAfterHover();
+  check('resting on the page and on no line shows a chip for the page', shown?.words === 'Page' && shown?.what === 'page', JSON.stringify(shown));
+  await app.screenshot('what-7-page');
+  await app.click('.preview .page .chip');
+  await sleep(600);
+  check(
+    'which opens Look at the page',
+    (await app.exec(`return document.querySelector('.side .look .chips button.current')?.dataset.section`)) === 'page',
+  );
+
   const errors = await app.pageErrors();
   check('no errors in the page', errors.length === 0, errors.join(' | '));
 } catch (e) {
