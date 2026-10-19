@@ -48,9 +48,9 @@ settings-sample-third = Et tredje nivå
 settings-new-documents = Nye dokumenter
 settings-new-project-view = Nye prosjekter åpnes i
 settings-new-project-view-hint = Visningen et prosjekt åpnes i når det nettopp er laget.
-settings-template = Mal
-settings-document-format = Oppsett
-settings-reference-style = Referansestil
+settings-template = Hva nye dokumenter er
+settings-document-format = Hvordan sidene ser ut
+settings-reference-style = Hvordan de siterer
 
 ## Om deg
 

@@ -4,7 +4,7 @@
 ## Gruppene av maler, slik velgeren viser dem.
 
 template-group-own = Dine egne
-template-group-plain = Enkle
+template-group-plain = Til å begynne med
 template-group-article = Artikler og oppgaver
 template-group-book = Bøker og avhandlinger
 template-group-fiction = Skjønnlitteratur

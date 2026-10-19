@@ -66,6 +66,8 @@ export interface TemplateSummary {
   own: boolean;
   confidence: string;
   checked: string;
+  /** What it was made from: the template it is based on. */
+  basedOn?: string;
 }
 
 /** A template whole: what a built-in one leaves to its base is filled in by the core on reading. */

@@ -58,9 +58,9 @@ settings-new-documents = New documents
 # Whether a new project opens in its diagram or in its text; the choices are the names of the two views.
 settings-new-project-view = New projects open in
 settings-new-project-view-hint = The view a project opens in when it has just been made.
-settings-template = Template
-settings-document-format = Layout
-settings-reference-style = Reference style
+settings-template = What new documents are
+settings-document-format = How their pages look
+settings-reference-style = How they cite
 
 ## You
 

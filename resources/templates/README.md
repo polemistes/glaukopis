@@ -17,7 +17,13 @@ The generic ones are written by hand: `paper`, `article`, `book`, `thesis`,
 `report`, `novel`, `novel-manuscript`, `short-story`, `story-collection`,
 `play`, `screenplay`, `poems`, `news-article`, `blog-post` and `letter`.
 Those that leave `layout` and `style` out take the writer's usual ones from
-the settings.
+the settings. `paper` stands with the articles. The chooser ("What are you
+writing?") shows the plain document alone at its top, as what every document
+begins as, then the generic ones by their groups; the journals, the
+publishers and the style guides are its second step, narrowed to those based
+on the kind of text chosen, and found by its search whatever is chosen. The
+layouts of fiction, stage and poetry bring no reference style: a document of
+those kinds that cites does so in the writer's usual style.
 
 The templates of the journals, the publishers and the style guides are made
 from the format files of those kinds in `../formats/` by

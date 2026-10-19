@@ -1,7 +1,7 @@
 {
   "id": "paper",
   "name": "Paper",
-  "group": "plain",
+  "group": "article",
   "description": "A student's or a conference paper: a title page, the text, the notes and the bibliography, as the writer's usual layout and citation style set them.",
   "source": {
     "name": "The common shape of a term paper or a conference paper, as the student style guides have it",

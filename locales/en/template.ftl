@@ -5,7 +5,7 @@
 ## The groups of templates, as the chooser lists them.
 
 template-group-own = Your own
-template-group-plain = Plain
+template-group-plain = To begin with
 template-group-article = Articles and papers
 template-group-book = Books and theses
 template-group-fiction = Fiction

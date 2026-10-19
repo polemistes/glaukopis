@@ -2578,7 +2578,7 @@ export const template: templates.Template = {
       "part": "bibliography"
     }
   ],
-  "description": "A document of nothing but its text: the title, the body, the notes and the bibliography.",
+  "description": "Text with a title, for anything: what every document is until you say what you are writing. The title, the text, the notes and the bibliography.",
   "group": "plain",
   "id": "plain",
   "kinds": [],
@@ -2611,24 +2611,16 @@ export const template: templates.Template = {
 
 export const templateSummaries: templates.TemplateSummary[] = [
   {
-    "checked": "2026-10-11",
-    "confidence": "medium",
-    "description": "A student's or a conference paper: a title page, the text, the notes and the bibliography, as the writer's usual layout and citation style set them.",
-    "group": "plain",
-    "id": "paper",
-    "name": "Paper",
-    "own": false
-  },
-  {
     "checked": "",
     "confidence": "",
-    "description": "A document of nothing but its text: the title, the body, the notes and the bibliography.",
+    "description": "Text with a title, for anything: what every document is until you say what you are writing. The title, the text, the notes and the bibliography.",
     "group": "plain",
     "id": "plain",
     "name": "Plain document",
     "own": false
   },
   {
+    "basedOn": "plain",
     "checked": "2026-10-11",
     "confidence": "medium",
     "description": "An article for a journal: a title page, the abstract and keywords, the text, then appendices, acknowledgements, notes and bibliography, with no limits until a journal's template sets them.",
@@ -2638,6 +2630,17 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "plain",
+    "checked": "2026-10-11",
+    "confidence": "medium",
+    "description": "A student's or a conference paper: a title page, the text, the notes and the bibliography, as the writer's usual layout and citation style set them.",
+    "group": "article",
+    "id": "paper",
+    "name": "Paper",
+    "own": false
+  },
+  {
+    "basedOn": "plain",
     "checked": "2026-10-11",
     "confidence": "medium",
     "description": "A report: a title page, an abstract, the contents, the text, then appendices and bibliography.",
@@ -2647,6 +2650,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "plain",
     "checked": "2026-10-11",
     "confidence": "medium",
     "description": "An academic book: half-title and title page, copyright, dedication and epigraph, the contents, foreword, preface and acknowledgements, the chapters, then appendices, glossary, notes, bibliography and a note on the author.",
@@ -2656,6 +2660,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "plain",
     "checked": "2026-10-11",
     "confidence": "medium",
     "description": "A thesis or dissertation: a title page, the abstract and acknowledgements, the table of contents with the lists of figures and tables, the chapters, then appendices and bibliography.",
@@ -2665,6 +2670,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "plain",
     "checked": "2026-10-11",
     "confidence": "medium",
     "description": "A collection of stories as a book: the cover, title page, copyright and dedication, the contents, each story an element, then acknowledgements and a note on the author.",
@@ -2674,6 +2680,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "plain",
     "checked": "2026-10-11",
     "confidence": "medium",
     "description": "A novel as a printed book or an e-book: the cover, half-title and title page, copyright, dedication and epigraph, the contents, the chapters, then acknowledgements and a note on the author.",
@@ -2683,6 +2690,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "plain",
     "checked": "2026-10-11",
     "confidence": "medium",
     "description": "A novel as a manuscript for an agent or a publisher: a title page and the chapters, in the standard manuscript format.",
@@ -2692,6 +2700,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "plain",
     "checked": "2026-10-11",
     "confidence": "medium",
     "description": "A short story for submission to a magazine or a competition: a title page and the text, in the standard manuscript format.",
@@ -2701,6 +2710,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "plain",
     "checked": "2026-10-11",
     "confidence": "low",
     "description": "A stage play: a title page, the cast and the setting, then the acts and scenes, with the speeches written as verse, each with its speaker and its directions.",
@@ -2710,6 +2720,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "plain",
     "checked": "2026-10-11",
     "confidence": "low",
     "description": "A screenplay: a title page and the script, with its scene headings, action, characters, dialogue, parentheticals and transitions on the standard page.",
@@ -2719,6 +2730,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "plain",
     "checked": "2026-10-11",
     "confidence": "low",
     "description": "A collection of poems: a title page and dedication, the contents, each poem an element with its lines written as verse, then acknowledgements and a note on the poet.",
@@ -2728,6 +2740,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "plain",
     "checked": "2026-10-11",
     "confidence": "medium",
     "description": "A blog post: the text alone, as a web page or as Markdown for a site that makes its own pages.",
@@ -2737,6 +2750,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "plain",
     "checked": "2026-10-11",
     "confidence": "medium",
     "description": "A letter: the text and a signature.",
@@ -2746,6 +2760,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "plain",
     "checked": "2026-10-11",
     "confidence": "medium",
     "description": "A news article: a standfirst above the text, for the web, a word processor or print.",
@@ -2755,6 +2770,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "article",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "Manuscripts for American Anthropologist: Times New Roman 12, double-spaced and aligned left, endnotes and not footnotes, Chicago author-date references; anonymised, and at most 8,000 words at first submission.",
@@ -2764,6 +2780,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "article",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "Manuscripts for the American Economic Review: 11-point type with spacing of 1.5 and one-inch margins, the layout by which the journal measures length; sections numbered in roman numerals, footnotes, no title page, and an abstract of 100 words or fewer.",
@@ -2773,6 +2790,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "article",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "Manuscripts for the American Political Science Review: 12-point type, double-spaced main text, footnotes and not endnotes, page numbers on all pages, Chicago author-date references; anonymised, with an abstract of 150 words or less.",
@@ -2782,6 +2800,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "article",
     "checked": "2025-07-18",
     "confidence": "medium",
     "description": "Articles for the American Sociological Review: Times New Roman 12, everything double-spaced, notes and references included, margins of at least one inch, endnotes under the heading NOTES, no page numbers, ASA references; anonymised, at most 15,000 words.",
@@ -2791,6 +2810,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "article",
     "checked": "2025-07-06",
     "confidence": "medium",
     "description": "Articles for Classical Philology: 12-point type, everything double-spaced, footnotes and not endnotes, author-date references given in the notes with a list of literature cited; anonymised, at most 45 pages.",
@@ -2800,6 +2820,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "article",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "Articles for History and Theory: footnotes in a house style based on the Chicago Manual, with no bibliography; quotations of more than seventy words set off; an abstract of 200 to 300 words and six to eight keywords. The journal prescribes no page layout.",
@@ -2809,6 +2830,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "article",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "Articles for the Journal of Biblical Literature: a standard 12-point font, double-spaced, footnotes included; block quotations of five or more lines single-spaced; footnotes in SBL style with no bibliography and no cover page; anonymised, at most 10,000 words.",
@@ -2818,6 +2840,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "article",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "Accepted manuscripts for Language (Linguistic Society of America) by the LSA Journals Style Sheet: letter paper with one-inch margins, 12-point type and spacing of 1.5 throughout, aligned left, two levels of numbered headings in small capitals that run into the text, and endnotes after the references.",
@@ -2827,6 +2850,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "article",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "Manuscripts sent to Language (Linguistic Society of America) for review: double-spaced throughout and anonymised, with an abstract of at most 200 words and five to seven keywords; at most 18,000 words.",
@@ -2836,6 +2860,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "article",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "Papers for Mind: line spacing of 1.15 or 1.5 and never double, continuous line numbers, sections numbered in arabic numerals with bold headings and italic sub-headings, quotations of about thirty words or more set off; anonymised.",
@@ -2845,6 +2870,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "article",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "Manuscripts for Nature: a standard font, preferably Times New Roman 12, double-spaced, with line numbers; a summary paragraph of ideally no more than 200 words in place of an abstract, and numbered references in the journal's own style.",
@@ -2854,6 +2880,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "article",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "Articles for Past & Present: Times New Roman 12, double-spaced, indented paragraphs, sections numbered in roman numerals, footnotes only and no bibliography, quotations of 50 words or more inset from both margins; anonymised.",
@@ -2863,6 +2890,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "article",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "Manuscripts for PLOS ONE: double-spaced in any standard font, with page numbers and continuous line numbers, a title page as the first page, at most three levels of heading, no footnotes, and an abstract of at most 300 words.",
@@ -2872,6 +2900,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "article",
     "checked": "2025-09-06",
     "confidence": "medium",
     "description": "Manuscripts for Psychological Review (American Psychological Association): the professional paper of APA 7, double-spaced throughout with five levels of unnumbered headings, an abstract of at most 250 words on a page of its own and up to five keywords.",
@@ -2881,6 +2910,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "article",
     "checked": "2025-08-10",
     "confidence": "medium",
     "description": "Research articles for Science: letter paper, Times New Roman, single-spaced throughout, references and notes in one numbered list, an abstract of 125 words or less and at most 3,000 words of main text.",
@@ -2890,6 +2920,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "article",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "Articles for the American Historical Review: Times New Roman 12, double-spaced, on letter paper with one-inch margins; no headings, only section breaks; all references in footnotes of 10 points, with no bibliography; fully anonymised.",
@@ -2899,6 +2930,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "article",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "Articles for The Art Bulletin (College Art Association): Times New Roman 12 for everything, all copy double-spaced and aligned left, endnotes in Chicago style with no bibliography, quotations of 50 words or more set off; anonymised, at most 16,000 words.",
@@ -2908,6 +2940,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "article",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "Articles for The Classical Quarterly: Times New Roman 12 throughout, footnotes included, double-spaced and justified; section titles in capitals and centred, sub-section titles in italics, nothing in bold; footnotes and no bibliography; anonymised.",
@@ -2917,6 +2950,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "article",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "Articles for The Journal of Hellenic Studies: a generic font, three levels of heading numbered by hand, footnotes with author-date references and a bibliography, quotations of more than four lines set off; anonymised, at most 9,000 words.",
@@ -2926,6 +2960,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "book",
     "checked": "2026-09-27",
     "confidence": "medium",
     "description": "Typescripts for Bloomsbury Academic: at least double-spaced throughout, margins of at least 2.5 cm, page numbers centred at the foot in one sequence, endnotes, and quotations of over sixty words set off as a block.",
@@ -2935,6 +2970,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "book",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "Book manuscripts for Brill: indented paragraphs, headings numbered decimally in arabic numerals, footnotes numbered anew in every chapter, a separate bibliography, and a manuscript anonymised for review.",
@@ -2944,6 +2980,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "book",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "The series Kunst og kultur i opplæring from Cappelen Damm Forskning (NOASP): Calibri 11, double-spaced and justified, headings in the APA form in at most three levels, quotations of over 40 words set off, and APA 7 references.",
@@ -2953,6 +2990,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "book",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "The series Libelli from Cappelen Damm Forskning (NOASP): Calibri 12 with spacing of 1.5, headings of 16 and 14 points, endnotes, quotations of over three lines set off in single-spaced 10-point type, and Chicago short notes with a full bibliography.",
@@ -2962,6 +3000,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "book",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "Book chapters for Routledge and Taylor & Francis: a blank line between paragraphs and no indent, at most three levels of unnumbered subheading, notes as endnotes numbered by chapter, and an abstract of 100 to 200 words for every chapter.",
@@ -2971,6 +3010,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "book",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "Book manuscripts for SAGE: Times New Roman 12, double-spaced, paragraphs parted by a blank line without indent, no page numbers, headers or footers, at most four levels of heading, notes at the end of each chapter, and APA references.",
@@ -2980,6 +3020,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "article",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "The general layout for articles sent to Taylor & Francis journals: Times New Roman 12, double spacing, margins of at least 2.5 cm, and five levels of heading of which the fourth and fifth run into the paragraph.",
@@ -2989,6 +3030,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "book",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "Book manuscripts for Universitetsforlaget (Scandinavian University Press) by its general guide for authors: the simplest possible formatting, a blank line between paragraphs, a ragged right margin, no hyphenation, and quotations of more than two lines set off as paragraphs of their own.",
@@ -2998,6 +3040,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "book",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "Chapters for open access monographs and anthologies from Universitetsforlaget (Scandinavian University Press): Times New Roman 12 with spacing of 1.5, at most three levels of unnumbered heading, and for every chapter an English abstract of 150 to 250 words and four or five keywords.",
@@ -3007,6 +3050,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "book",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "Book manuscripts for the University of Chicago Press: minimal formatting, headings told apart by size (18, 16 and 14 points, bold), notes made with the word processor's note function, a title page, and Chicago style for references.",
@@ -3016,6 +3060,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "book",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "Book manuscripts for Yale University Press: endnotes numbered anew in each chapter, subheads used sparingly and never numbered, quotations set off as a block only from 100 words, and Chicago notes and bibliography.",
@@ -3025,6 +3070,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "article",
     "checked": "2026-09-18",
     "confidence": "high",
     "description": "The professional paper of the APA Publication Manual, 7th edition, for manuscripts sent to journals: a title page with author note, a running head of the shortened title in capitals, an abstract of at most 250 words; double spacing throughout and five levels of unnumbered headings.",
@@ -3034,6 +3080,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "paper",
     "checked": "2026-09-18",
     "confidence": "high",
     "description": "The student paper of the APA Publication Manual, 7th edition: a title page with course, instructor and due date, no running head and normally no abstract; double spacing throughout, five levels of unnumbered headings, and block quotations from 40 words.",
@@ -3043,6 +3090,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "paper",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "The paper format of Turabian's Manual for Writers, 9th edition, which follows the Chicago Manual of Style: double-spaced text with single-spaced block quotations, notes and bibliography entries, margins of at least one inch, and a title page of its own.",
@@ -3052,6 +3100,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "paper",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "Copy prepared as the MHRA Style Guide, 4th edition (2024) asks: a serif font in one size throughout, double or one-and-a-half spacing, few levels of heading, and prose quotations of more than forty words set off as a block without quotation marks.",
@@ -3061,6 +3110,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "paper",
     "checked": "2025-01-19",
     "confidence": "high",
     "description": "The research paper format of the MLA Handbook, 9th edition: everything double-spaced, one-inch margins, no title page, the writer's surname before the page number at the top right, and a list headed Works Cited.",
@@ -3070,6 +3120,7 @@ export const templateSummaries: templates.TemplateSummary[] = [
     "own": false
   },
   {
+    "basedOn": "paper",
     "checked": "2026-09-27",
     "confidence": "high",
     "description": "The term paper of the Student Supplement to the SBL Handbook of Style, 2nd edition: 12-point type, double-spaced text with single-spaced block quotations and bibliography, footnotes, a title page in capitals, and five forms of heading.",

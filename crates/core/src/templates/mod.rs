@@ -181,7 +181,8 @@ impl Template {
             id: PLAIN.into(),
             name: "Plain document".into(),
             group: Group::Plain,
-            description: "A document of nothing but its text: the title, the body, the notes and the bibliography."
+            description: "Text with a title, for anything: what every document is until you say what you are \
+                          writing. The title, the text, the notes and the bibliography."
                 .into(),
             contents: [TitlePage, Body, Notes, Bibliography]
                 .into_iter()
@@ -253,6 +254,10 @@ pub struct TemplateSummary {
     pub own: bool,
     pub confidence: String,
     pub checked: String,
+    /// What it was made from: the template it is based on, for offering the
+    /// templates of journals, publishers and style guides by the kind of text.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub based_on: Option<String>,
 }
 
 pub struct Templates {
@@ -394,6 +399,7 @@ impl Templates {
                 own,
                 confidence: t.source.as_ref().map(|s| s.confidence.clone()).unwrap_or_default(),
                 checked: t.source.as_ref().map(|s| s.checked.clone()).unwrap_or_default(),
+                based_on: t.based_on,
             })
             .collect()
     }
