@@ -44,3 +44,34 @@ unpaper itself has no Windows build and depends on ffmpeg, and the program that 
 Decided by the owner on 2026-10-19: the long s (ſ) is an s in another shape, never another letter. It is written as s wherever Glaukopis takes text, not only in what Tesseract reads into elements: in the text a PDF has, as each character is taken (the text and the translation, and the fonts' maps written when a PDF is made readable), and in the text Tesseract lays unseen under a PDF made searchable, whose words are strings of two-byte codes that are the letters' own (`Identity-H`, every glyph as wide as the next), so that the code of ſ is made that of s and nothing moves. A page of a searchable PDF whose text is kept as it was is not touched, and keeps what it had.
 
 Found the same day: Tesseract's Fraktur model (`deu_latf`) was made for German and has no æ, ø or å; in Norwegian and Danish books it reads them as e, o and a, at a confidence as high as any, and Norwegian chosen beside it does not bring them back. The hint and the remark say so. A model of the Gothic type of Danish and Norwegian books is left for the owner to decide on.
+
+## Addendum of 2026-10-19: a Fraktur model that knows æ, ø and å
+
+Made the same night: `dan_latf`, *Fraktur, Danish and Norwegian (Gothic
+type)*, which is Tesseract's `deu_latf` (tessdata_best, Apache 2.0)
+fine-tuned with `lstmtraining` on the Danish pages of
+pvorb/tesseract-training-fraktur (Apache 2.0, 2013: 891 lines of real
+scans and Fraktur fonts, with æ ø å Æ Ø Å and one German page), its
+unicharset widened by those six letters, in two runs of 15,000 and 10,000
+iterations. `packaging/languages/fraktur/` holds the scripts and the
+README that says how it is made again and measured; the model and the
+lines are under `packaging/build/fraktur/`, out of git, and the owner
+uploads the package by hand with the others.
+
+Measured, not judged by eye, on 42 lines from seven pages of the owner's
+Norwegian novel in Gothic type, written out letter by letter (2060
+characters, 53 of them æ ø å), and on two real-scan pages of the
+repository never trained on: on the owner's lines it gets 50 of the 53 æ ø
+å where `deu_latf` gets none, errs in 3.45 % of the characters against
+`deu_latf`'s 4.85 % with æ ø å left out of the count, and is sure of the
+owner's pages at 84.5 against 85.9, every page over 80 but the palest
+(77.5). On the held-out pages, one character in a hundred and 37 of 38.
+The old legacy `dan_frak` got 34 of 53 at a confidence of 69.5.
+
+The application counts it as a model of Gothic type wherever `deu_latf`
+is, and where Norwegian or Danish is among the languages, the line under
+the language picker and the remark on pages read poorly name it rather
+than the model made for German. What would be tried next, were it not
+enough: lines set by `text2image` in the free Fraktur fonts from Danish
+and Norwegian text of before 1900, and real Norwegian pages with their
+text.

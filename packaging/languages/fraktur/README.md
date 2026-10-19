@@ -130,7 +130,50 @@ out right; conf the mean confidence.
 | owner | pilot (300 iterations) | 9.17 | 7.72 | 0/53 | 62.0 |
 | heldout | deu_latf | 3.46 | 2.40 | 0/38 | 88.8 |
 | heldout | dan_frak (legacy) | 2.53 | 2.10 | 25/38 | 84.5 |
+| owner | run 1 (15,000 iterations) | 3.88 | 3.88 | 48/53 | 79.4 |
+| owner | **run 2 (10,000 more)** | **3.45** | **3.45** | **50/53** | **81.3** |
 | heldout | pilot (300 iterations) | 6.36 | 5.90 | 0/38 | 69.1 |
+| heldout | run 1 | 0.97 | 0.97 | 38/38 | 88.7 |
+| heldout | run 2 | 1.17 | 1.17 | 37/38 | 89.5 |
+
+The confidence of the owner's whole pages, read as the application reads
+them (`--psm 3`, the mean of the words' confidences), which is what the
+threshold of 80 is set against:
+
+| page | deu_latf | run 1 | run 2 |
+|---|---|---|---|
+| 30 | 87.1 | 83.9 | 85.3 |
+| 120 | 86.0 | 82.5 | 86.6 |
+| 200 | 84.2 | 82.0 | 86.4 |
+| 280 | 86.9 | 86.1 | 87.1 |
+| 350 | 85.2 | 82.8 | 83.6 |
+| 450 | 85.1 | 75.1 | 77.5 |
+| 520 | 86.9 | 82.4 | 84.9 |
+| mean | 85.9 | 82.1 | 84.5 |
+
+Page 450 is the palest scan of the seven; the new model is less sure of
+it than `deu_latf`, which was sure of *vere* and *mode*.
+
+**Run 2 is the model** (`packaging/build/fraktur/dan_latf.traineddata`,
+chosen with `make-model.sh choose run2`; 7.5 MB). On the owner's lines it
+gets 50 of 53 æ ø å (94 %) where `deu_latf` gets none; its errors in the
+other letters are fewer (3.45 % against 4.85 %); its confidence stays
+over 80 (81.3 on the lines, 84.5 on the pages). On the held-out pages of
+the repository it errs in one character of a hundred and gets 37 of 38.
+
+Run 1 was 15,000 iterations from `deu_latf` at a learning rate of 0.0001
+(17 minutes on 16 cores; training error 0.59 % at the end, still
+falling); run 2 continued from its last checkpoint for 10,000 more at the
+same rate. A pilot of 300 iterations proved the pipeline first.
+
+## What would be tried next
+
+More lines: the model has seen only 891 lines of Danish, from one kind of
+scan and eighteen fonts. Lines set by `text2image` in the free Fraktur
+fonts UnifrakturMaguntia and UnifrakturCook from Danish and Norwegian
+text of before 1900 would widen it, and real pages of Norwegian books
+with their text would do more. Page 450 shows where it is weakest: pale,
+thin print.
 
 `deu_latf` writes the em dash as `-=-` or `=`; those count against it on
 the owner's lines (a few characters), the same for every model.
