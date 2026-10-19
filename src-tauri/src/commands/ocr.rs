@@ -4,8 +4,18 @@
 //! A reading takes a while. It is asked for with a ticket, by which it can
 //! be stopped, and the interface is told how far it has come by the event
 //! `ocr-progress`, which carries the ticket.
+//!
+//! A PDF read into elements is kept after the reading, under a token: what
+//! is made of it, the shape kept or plain paragraphs, the tree by its
+//! headings or by its pages, the pages marked, is chosen after the reading,
+//! and the tree is made anew from the reading kept (`ocr_assemble`) without
+//! reading the file again. One reading is kept at a time: a new one takes
+//! its place when it is done, and the dialog lets it go when it closes
+//! (`ocr_forget`).
 
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Mutex, PoisonError};
 
 use serde::Serialize;
 use tauri::{AppHandle, State};
@@ -21,7 +31,7 @@ use glaukopis_core::tr;
 
 use super::work::{self, Work};
 use crate::error::CommandResult;
-use crate::state::AppState;
+use crate::state::{AppState, KeptReading};
 
 /// What tells the page how far a reading has come, as `ocr-progress`.
 fn teller<'a>(work: &'a Work, app: &'a AppHandle) -> impl FnMut(Progress) + 'a {
@@ -126,22 +136,61 @@ pub fn ocr_read(
     let read = ocr::read_pdf(&path, &tools, &work, &asked, is_word, &mut teller(&reading, &app), &reading.stop)?;
     // The title the file gives itself, as the look at it found.
     let title = read.named.clone().unwrap_or_else(|| stem(&file));
-    Ok(ReadDone { imported: ocr::imported_pdf(&file, &title, &read, Making::default()), kept: None })
+    // At first by its headings, the shape kept, the pages marked.
+    let imported = ocr::imported_pdf(&file, &title, &read, Making::default());
+    let kept = keep(&state.reading, file, title, read);
+    Ok(ReadDone { imported, kept: Some(kept) })
+}
+
+/// Keeps a reading of a PDF into elements in `slot`, in the place of the
+/// one kept there before, and gives the token it is kept under: one that
+/// was not given before while the application runs.
+fn keep(slot: &Mutex<Option<KeptReading>>, file: String, title: String, read: ocr::ReadPdf) -> String {
+    static GIVEN: AtomicU64 = AtomicU64::new(0);
+    let token = format!("reading-{}", GIVEN.fetch_add(1, Ordering::Relaxed) + 1);
+    *slot.lock().unwrap_or_else(PoisonError::into_inner) =
+        Some(KeptReading { token: token.clone(), file, title, read });
+    token
+}
+
+/// What is said where a reading asked for is not the one kept: it was let
+/// go, or another took its place.
+fn gone() -> glaukopis_core::Error {
+    glaukopis_core::Error::Refused { kind: "not-found", message: tr!("ocr-reading-gone") }
+}
+
+/// The tree made from the reading kept in `slot` under `token`, as `making`
+/// says; or that it is gone.
+fn assemble(slot: &Mutex<Option<KeptReading>>, token: &str, making: Making) -> glaukopis_core::Result<Imported> {
+    match slot.lock().unwrap_or_else(PoisonError::into_inner).as_ref() {
+        Some(kept) if kept.token == token => Ok(ocr::imported_pdf(&kept.file, &kept.title, &kept.read, making)),
+        _ => Err(gone()),
+    }
+}
+
+/// Lets the reading kept in `slot` go, where it is the one under `token`:
+/// a dialog that closes after another reading took the place of its own
+/// lets nothing go.
+fn forget(slot: &Mutex<Option<KeptReading>>, token: &str) {
+    let mut kept = slot.lock().unwrap_or_else(PoisonError::into_inner);
+    if kept.as_ref().is_some_and(|k| k.token == token) {
+        *kept = None;
+    }
 }
 
 /// The tree made anew from the reading kept under `kept`, as `making` says:
 /// the shape kept or plain paragraphs, by its headings or by its pages, the
-/// pages marked or not. The pages are not read again.
+/// pages marked or not. The pages are not read again. Where the reading is
+/// not the one kept, it is said to be gone, by the kind `not-found`.
 #[tauri::command(async)]
-pub fn ocr_assemble(kept: String, making: Making) -> CommandResult<Imported> {
-    let _ = (kept, making);
-    Err(glaukopis_core::Error::not_found(tr!("ocr-reading-gone")).into())
+pub fn ocr_assemble(state: State<'_, AppState>, kept: String, making: Making) -> CommandResult<Imported> {
+    Ok(assemble(&state.reading, &kept, making)?)
 }
 
-/// Lets the reading kept under `kept` go.
+/// Lets the reading kept under `kept` go, where it is the one kept.
 #[tauri::command(async)]
-pub fn ocr_forget(kept: String) {
-    let _ = kept;
+pub fn ocr_forget(state: State<'_, AppState>, kept: String) {
+    forget(&state.reading, &kept);
 }
 
 /// Stops a reading that goes on.
@@ -234,10 +283,11 @@ pub fn ocr_text(
     Ok(ocr::text_of_pages(&path, from, count.min(50))?)
 }
 
-/// Tries a page of a PDF, counted from one, before the whole is read: what
-/// Tesseract reads of it with the languages and settings asked, how sure it
-/// was, and the picture it read. With `stored`, the path is that of a file
-/// of the library. Stopped by `ocr_stop` with its ticket, as a reading is.
+/// Tries a page of a PDF, counted from one, before the whole is read, or a
+/// picture as its one page: what Tesseract reads of it with the languages
+/// and settings asked, word by word, how sure it was, and the picture it
+/// read. With `stored`, the path is that of a file of the library. Stopped
+/// by `ocr_stop` with its ticket, as a reading is.
 #[tauri::command(async)]
 pub fn ocr_try(
     state: State<'_, AppState>,
@@ -249,9 +299,7 @@ pub fn ocr_try(
 ) -> CommandResult<ocr::Tried> {
     let path = if stored.unwrap_or(false) { state.library().attachment_path(&path)? } else { PathBuf::from(path) };
     let trying = Work::begin(ticket);
-    let words = words_of(&state, &asked);
-    let is_word = words.as_ref().map(|w| w as &IsWord);
-    Ok(ocr::try_page(&path, &state.tools(), &state.data.work(), &asked, page, is_word, &trying.stop)?)
+    Ok(ocr::try_page(&path, &state.tools(), &state.data.work(), &asked, page, &trying.stop)?)
 }
 
 /// Reads the text of a picture of the store, to be shown, or made a map of.
@@ -316,4 +364,57 @@ pub fn ocr_pages(
     let pictures =
         ocr::pages_pictures(&path, &state.tools(), &state.data.work(), from, count.min(100), width, &drawing.stop)?;
     Ok(pictures.into_iter().map(PagePicture::from).collect())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use glaukopis_core::document::Inline;
+    use glaukopis_core::ocr::Structure;
+
+    /// A reading of a page for each text, each a paragraph, read by Tesseract.
+    fn reading(texts: &[&str]) -> ocr::ReadPdf {
+        let pages = texts
+            .iter()
+            .enumerate()
+            .map(|(i, text)| ocr::PageText {
+                number: i + 1,
+                label: (i + 1).to_string(),
+                paragraphs: vec![(*text).to_owned()],
+                read: true,
+                ..Default::default()
+            })
+            .collect();
+        ocr::ReadPdf { pages, ..Default::default() }
+    }
+
+    fn plain(content: &[Inline]) -> String {
+        content.iter().map(|i| if let Inline::Text { text, .. } = i { text.as_str() } else { "" }).collect()
+    }
+
+    /// A reading is kept under a token, made into a tree as often as asked,
+    /// until another takes its place or it is let go; a token of a reading
+    /// gone is said to be so.
+    #[test]
+    fn a_reading_is_kept_until_another_takes_its_place_or_it_is_let_go() {
+        let slot = Mutex::new(None);
+        let first = keep(&slot, "a.pdf".into(), "Alpha".into(), reading(&["One.", "Two."]));
+        let imported = assemble(&slot, &first, Making::default()).unwrap();
+        assert_eq!((imported.file.as_str(), plain(&imported.title).as_str()), ("a.pdf", "Alpha"));
+        let headings: Vec<String> = imported.sections.iter().map(|s| plain(&s.heading)).collect();
+        assert_eq!(headings, ["1", "2"]);
+        let by_pages = Making { shape: false, structure: Structure::Pages, page_marks: false };
+        assert_eq!(assemble(&slot, &first, by_pages).unwrap().sections.len(), 2);
+
+        let second = keep(&slot, "b.pdf".into(), "Beta".into(), reading(&["Three."]));
+        assert_ne!(first, second);
+        let err = assemble(&slot, &first, Making::default()).unwrap_err();
+        assert_eq!((err.kind(), err.to_string()), ("not-found", tr!("ocr-reading-gone")));
+        // The first let go after the second took its place: the second stays.
+        forget(&slot, &first);
+        assert_eq!(assemble(&slot, &second, Making::default()).unwrap().file, "b.pdf");
+        forget(&slot, &second);
+        assert!(assemble(&slot, &second, Making::default()).is_err());
+        assert!(slot.lock().unwrap().is_none());
+    }
 }

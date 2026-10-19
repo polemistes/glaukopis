@@ -152,7 +152,7 @@ pub enum Structure {
 }
 
 /// What a reading is asked to do.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Asked {
     /// Tesseract's names of the languages the text is in, the likeliest
@@ -160,9 +160,9 @@ pub struct Asked {
     pub languages: Vec<String>,
     /// What becomes of the text the PDF has (ADR 0044): kept, translated by
     /// what its fonts say of their glyphs, or not taken from any page, every
-    /// page read anew by Tesseract. In a PDF made searchable, reading anew
-    /// takes the unseen text the pages had away, and translating puts the
-    /// PDF's own tables right.
+    /// page read anew by Tesseract (where `read` is not given). In a PDF
+    /// made searchable, a page that is read loses the unseen text it had,
+    /// and translating puts the PDF's own tables right.
     pub text: TextChoice,
     /// The dots to the inch the pages are drawn at for Tesseract: nought
     /// for 300, else held within 150 and 600. A picture is not drawn, and
@@ -229,21 +229,6 @@ pub struct Making {
 impl Default for Making {
     fn default() -> Self {
         Making { shape: true, structure: Structure::Headings, page_marks: true }
-    }
-}
-
-impl Default for Asked {
-    fn default() -> Self {
-        Asked {
-            languages: Vec::new(),
-            text: TextChoice::default(),
-            dpi: 0,
-            layout: String::new(),
-            contrast: false,
-            shape: false,
-            stretches: Vec::new(),
-            read: None,
-        }
     }
 }
 
@@ -489,15 +474,37 @@ struct Reader<'t> {
     with: tesseract::With,
     quality: Quality,
     /// The stretches of pages read otherwise: the page each begins at,
-    /// counted from nought, and what it is read with, in order.
-    stretches: Vec<(usize, tesseract::With)>,
+    /// counted from nought, what it is read with and how it is drawn, in
+    /// order.
+    stretches: Vec<(usize, tesseract::With, Quality)>,
 }
 
 impl Reader<'_> {
-    /// What a page, counted from nought, is read with: that of the last
-    /// stretch that begins at it or before, else the reader's own.
+    /// The last stretch that begins at a page, counted from nought, or before it.
+    fn stretch_at(&self, index: usize) -> Option<&(usize, tesseract::With, Quality)> {
+        self.stretches.iter().rev().find(|(from, ..)| *from <= index)
+    }
+
+    /// What a page, counted from nought, is read with: that of its stretch,
+    /// else the reader's own.
     fn with_at(&self, index: usize) -> &tesseract::With {
-        self.stretches.iter().rev().find(|(from, _)| *from <= index).map_or(&self.with, |(_, with)| with)
+        self.stretch_at(index).map_or(&self.with, |(_, with, _)| with)
+    }
+
+    /// How a page, counted from nought, is drawn: as its stretch asks, else
+    /// as the reader's own quality does.
+    fn quality_at(&self, index: usize) -> Quality {
+        self.stretch_at(index).map_or(self.quality, |(_, _, quality)| *quality)
+    }
+
+    /// Of the pages given, the quality that draws them with the most dots:
+    /// what decides how many are drawn at once.
+    fn finest(&self, pages: &[usize]) -> Quality {
+        pages
+            .iter()
+            .map(|&index| self.quality_at(index))
+            .max_by(|a, b| a.dots().total_cmp(&b.dots()))
+            .unwrap_or(self.quality)
     }
 
     /// Has Tesseract read a picture that is drawn already, with `with`: its
@@ -522,7 +529,7 @@ impl Reader<'_> {
         wanted: (bool, bool),
         stop: &AtomicBool,
     ) -> Result<tesseract::Read> {
-        let (picture, dpi) = pages.draw(index, place, self.quality, stop)?;
+        let (picture, dpi) = pages.draw(index, place, self.quality_at(index), stop)?;
         let read = self.read(self.with_at(index), &picture, dpi, wanted, stop).map(|mut read| {
             read.dpi = dpi;
             read
@@ -536,17 +543,19 @@ impl Reader<'_> {
 
 /// Tesseract, and the languages it is to read with: those asked for, each of
 /// which it must have data for; English where none are asked for, or the
-/// first it has.
+/// first it has. Each stretch the same, with its layout, its resolution and
+/// whether it is read in black and white.
 fn ready<'t>(tools: &'t Tools, asked: &Asked) -> Result<Reader<'t>> {
     let tesseract = tools.tesseract()?;
     let with = with_of(tools, &asked.languages, &asked.layout)?;
     let mut stretches = Vec::new();
     for stretch in &asked.stretches {
         if stretch.from > 1 {
-            stretches.push((stretch.from - 1, with_of(tools, &stretch.languages, &stretch.layout)?));
+            let with = with_of(tools, &stretch.languages, &stretch.layout)?;
+            stretches.push((stretch.from - 1, with, Quality { dpi: stretch.dpi, contrast: stretch.contrast }));
         }
     }
-    stretches.sort_by_key(|(from, _)| *from);
+    stretches.sort_by_key(|(from, ..)| *from);
     Ok(Reader { tesseract, with, quality: asked.quality(), stretches })
 }
 
@@ -765,13 +774,39 @@ fn failures(failed: &[(usize, String)]) -> Vec<String> {
     out
 }
 
-/// Reads a PDF, page by page. With `Keep` and `Translate`, the pages that
-/// have text are taken as the PDF has them, or as translated, and the others
-/// are read by Tesseract; with `Anew`, every page is read by Tesseract, and
-/// the text the PDF has is not taken from any. A page that cannot be read
-/// says so in a line of its own, and is never given the PDF's text instead.
-/// `is_word` is the dictionary of the language, where there is one, by
-/// which words broken at the end of a line are joined again.
+/// The pages Tesseract reads, of `count`, counted from nought and in order.
+/// Where `asked.read` is given, the pages it names (counted from one there,
+/// those past the end left out), and every page without text, which cannot
+/// take what is not there. Where it is not, as `asked.text` says: every page
+/// with `Anew`, those without text otherwise.
+fn wanted_pages(asked: &Asked, count: usize, has_text: impl Fn(usize) -> bool) -> Vec<usize> {
+    let Some(read) = &asked.read else {
+        return (0..count).filter(|i| asked.text == TextChoice::Anew || !has_text(*i)).collect();
+    };
+    let mut wanted: Vec<usize> = read
+        .iter()
+        .filter(|page| (1..=count).contains(*page))
+        .map(|page| page - 1)
+        .chain((0..count).filter(|i| !has_text(*i)))
+        .collect();
+    wanted.sort_unstable();
+    wanted.dedup();
+    wanted
+}
+
+/// Reads a PDF, page by page. The pages Tesseract is to read are read by it
+/// (`wanted_pages`: those of `asked.read`, or, where it is not given, every
+/// page with `Anew` and those without text otherwise); the others take the
+/// text the PDF has, as it has it or, with `Translate`, as translated. A
+/// page that cannot be read says so in a line of its own, and is never
+/// given the PDF's text instead. `is_word` is the dictionary of the
+/// language, where there is one, by which words broken at the end of a line
+/// are joined again.
+///
+/// With `asked.shape`, the shape of the pages is found as well, and each
+/// page has both: what it was found to be made of (`pieces`), and the plain
+/// paragraphs a reading without the shape gives (`paragraphs`), so that
+/// what is made of the reading can be either without reading it again.
 pub fn read_pdf(
     path: &Path,
     tools: &Tools,
@@ -789,8 +824,7 @@ pub fn read_pdf(
     if count == 0 {
         return Err(drawing.err().unwrap_or_else(|| Error::invalid(tr!("ocr-no-pages", file = &file_name(path)))));
     }
-    let anew = asked.text == TextChoice::Anew;
-    let wanted: Vec<usize> = (0..count).filter(|i| anew || !layer.has_text(*i)).collect();
+    let wanted = wanted_pages(asked, count, |i| layer.has_text(i));
     let to_take = count - wanted.len();
 
     let mut remarks = Vec::new();
@@ -821,7 +855,7 @@ pub fn read_pdf(
                         }
                     }
                     Ok(_) => return Err(Error::invalid("the pages were not read")),
-                    Err(e) if e.kind() == tools::STOPPED || anew || to_take == 0 => return Err(e),
+                    Err(e) if e.kind() == tools::STOPPED || to_take == 0 => return Err(e),
                     // The pages that have text are taken all the same.
                     Err(e) => failed.extend(wanted.iter().map(|i| (i + 1, e.to_string()))),
                 }
@@ -835,7 +869,7 @@ pub fn read_pdf(
             }
             // Nothing can be read by Tesseract: that is the answer where every
             // page was to be read by it, and where no page has text to take.
-            Err(e) if anew || to_take == 0 => return Err(e),
+            Err(e) if to_take == 0 => return Err(e),
             Err(e) => {
                 let why = match &e {
                     Error::MissingProgram { .. } => tr!("ocr-why-no-tesseract"),
@@ -860,9 +894,9 @@ pub fn read_pdf(
     let mut pages_lines: Vec<shape::PageLines> = Vec::with_capacity(count);
     // How sure Tesseract was of each page it read.
     let mut confidences: Vec<Option<f32>> = vec![None; count];
-    for index in 0..count {
+    for (index, sure) in confidences.iter_mut().enumerate() {
         let (page, lines, size) = if let Some((groups, size, confidence)) = read.remove(&index) {
-            confidences[index] = confidence;
+            *sure = confidence;
             let lines = groups.iter().flatten().cloned().collect();
             (Got::Read(groups), lines, size)
         } else if let Some((_, why)) = failed.iter().find(|(page, _)| *page == index + 1) {
@@ -875,46 +909,42 @@ pub fn read_pdf(
         got.push(page);
         pages_lines.push(shape::PageLines { lines, width: size.0, height: size.1 });
     }
-    let (mut paragraphs, mut pieces, styles): (Vec<Vec<String>>, Vec<Vec<shaped::Shaped>>, Vec<shape::StyleFound>) =
-        if asked.shape {
-            let (shaped_pages, styles) = shape::shape_with(pages_lines, &layer.outline);
-            let mut pieces: Vec<Vec<shaped::Shaped>> = shaped_pages
-                .into_iter()
-                .zip(&got)
-                .enumerate()
-                .map(|(index, (page, got))| match got {
-                    Got::Failed(why) => {
-                        vec![shaped::Shaped::failure(tr!("ocr-page-failed-line", message = why.as_str()))]
-                    }
-                    Got::Read(_) => shaped::of(page, is_word, greek(index)),
-                    Got::Taken(_) => shaped::of(page, is_word, false),
-                })
-                .collect();
-            shaped::mend_across(&mut pieces, is_word);
-            let paragraphs = pieces.iter().map(|page| page.iter().map(shaped::Shaped::plain).collect()).collect();
-            (paragraphs, pieces, styles)
-        } else {
-            let paragraphs = got
-                .into_iter()
-                .enumerate()
-                .map(|(index, page)| match page {
-                    Got::Read(groups) => {
-                        let paragraphs = text::page_paragraphs(groups, is_word);
-                        if greek(index) {
-                            paragraphs.iter().map(|p| schemes::mend_sigmas(p)).collect()
-                        } else {
-                            paragraphs
-                        }
-                    }
-                    Got::Failed(why) => vec![tr!("ocr-page-failed-line", message = why.as_str())],
-                    Got::Taken(lines) => text::page_paragraphs(text::by_place(lines), is_word),
-                })
-                .collect();
-            (paragraphs, vec![Vec::new(); count], Vec::new())
-        };
-    if !asked.shape {
-        text::mend_across(&mut paragraphs, is_word);
-    }
+    // The shape, where it is to be found: what each page is made of.
+    let (mut pieces, styles): (Vec<Vec<shaped::Shaped>>, Vec<shape::StyleFound>) = if asked.shape {
+        let (shaped_pages, styles) = shape::shape_with(pages_lines, &layer.outline);
+        let mut pieces: Vec<Vec<shaped::Shaped>> = shaped_pages
+            .into_iter()
+            .zip(&got)
+            .enumerate()
+            .map(|(index, (page, got))| match got {
+                Got::Failed(why) => {
+                    vec![shaped::Shaped::failure(tr!("ocr-page-failed-line", message = why.as_str()))]
+                }
+                Got::Read(_) => shaped::of(page, is_word, greek(index)),
+                Got::Taken(_) => shaped::of(page, is_word, false),
+            })
+            .collect();
+        shaped::mend_across(&mut pieces, is_word);
+        (pieces, styles)
+    } else {
+        (vec![Vec::new(); count], Vec::new())
+    };
+    // And the plain paragraphs of each page, the shape found or not: what
+    // the pages are made of where the shape is not kept, the same as a
+    // reading without it gives.
+    let mut paragraphs: Vec<Vec<String>> = got
+        .into_iter()
+        .enumerate()
+        .map(|(index, page)| match page {
+            Got::Read(groups) => {
+                let paragraphs = text::page_paragraphs(groups, is_word);
+                if greek(index) { paragraphs.iter().map(|p| schemes::mend_sigmas(p)).collect() } else { paragraphs }
+            }
+            Got::Failed(why) => vec![tr!("ocr-page-failed-line", message = why.as_str())],
+            Got::Taken(lines) => text::page_paragraphs(text::by_place(lines), is_word),
+        })
+        .collect();
+    text::mend_across(&mut paragraphs, is_word);
     let done = wanted.len() - failed.len();
     let poorly: Vec<usize> = (0..count).filter(|i| read_poorly(confidences[*i])).map(|i| i + 1).collect();
     let judged = confidences.iter().flatten().count();
@@ -936,13 +966,22 @@ pub fn read_pdf(
         text = ?asked.text,
         "a PDF was read"
     );
+    let mut was_read = vec![false; count];
+    for index in &wanted {
+        was_read[*index] = true;
+    }
+    for (page, _) in &failed {
+        if let Some(read) = page.checked_sub(1).and_then(|index| was_read.get_mut(index)) {
+            *read = false;
+        }
+    }
     let pages: Vec<PageText> = paragraphs
         .into_iter()
         .enumerate()
         .map(|(index, paragraphs)| PageText {
             number: index + 1,
             label: layer.label(index),
-            read: wanted.contains(&index) && !failed.iter().any(|(page, _)| *page == index + 1),
+            read: was_read[index],
             confidence: confidences[index],
             paragraphs,
             pieces: std::mem::take(&mut pieces[index]),
@@ -1043,6 +1082,20 @@ pub fn read_picture(
     is_word: Option<&IsWord>,
     stop: &AtomicBool,
 ) -> Result<Vec<String>> {
+    let (_, tsv, _) = picture_read(bytes, tools, work, asked, stop)?;
+    Ok(text::page_paragraphs(text::tsv_paragraphs(&tsv), is_word))
+}
+
+/// A picture as it is read: drawn grey on white, or black and white where
+/// that is asked, and what Tesseract read of it with the languages asked,
+/// as its TSV, with what it read it with.
+fn picture_read(
+    bytes: &[u8],
+    tools: &Tools,
+    work: &Path,
+    asked: &Asked,
+    stop: &AtomicBool,
+) -> Result<(Drawn, String, tesseract::With)> {
     if crate::pictures::is_svg(bytes) {
         return Err(Error::invalid(tr!("ocr-drawing")));
     }
@@ -1055,11 +1108,12 @@ pub fn read_picture(
     if stop.load(Ordering::Relaxed) {
         return Err(stopped());
     }
-    Ok(text::page_paragraphs(text::tsv_paragraphs(read.tsv.as_deref().unwrap_or_default()), is_word))
+    Ok((drawn, read.tsv.unwrap_or_default(), reader.with))
 }
 
-/// A page tried before a PDF is read: what Tesseract read of it with the
-/// languages and settings asked, how sure it was, and the picture it read.
+/// A page tried before a PDF is read, or a picture before it is: what
+/// Tesseract read of it with the languages and settings asked, word by
+/// word, how sure it was, and the picture it read.
 #[derive(Debug, Clone, Default, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Tried {
@@ -1089,17 +1143,20 @@ pub struct Tried {
 }
 
 /// Tries a page of a PDF, counted from one, before the whole is read: draws
-/// it as `asked` says, has Tesseract read it with the languages asked, and
-/// gives what was read beside the picture that was read.
+/// it as `asked` says for it, has Tesseract read it with the languages of
+/// its stretch, and gives what was read beside the picture that was read.
+/// A picture is tried as its one page, drawn as it is read.
 pub fn try_page(
     path: &Path,
     tools: &Tools,
     work: &Path,
     asked: &Asked,
     page: usize,
-    is_word: Option<&IsWord>,
     stop: &AtomicBool,
 ) -> Result<Tried> {
+    if is_picture(path) {
+        return try_picture(path, tools, work, asked, page, stop);
+    }
     let size = checked_pdf(path)?;
     let seen = seen_of(path, size, tools.pdftoppm.as_ref())?;
     let count = seen.layer.pages.len().max(*seen.drawable(&file_name(path)).as_ref().unwrap_or(&0));
@@ -1120,9 +1177,53 @@ pub fn try_page(
         child::Done::Tried(tried) => tried,
         _ => return Err(Error::invalid("the page was not tried")),
     };
-    let (groups, confidence) = text::tsv_page(&tried.tsv);
-    let scale = tried.scale;
-    let blocks = text::tsv_blocks(&tried.tsv)
+    let with = reader.with_at(page - 1);
+    let greek = with.languages.iter().any(|l| is_greek(l));
+    let shown = (tried.png, tried.width, tried.height, tried.scale);
+    let tried = tried_of(page, seen.layer.label(page - 1), &tried.tsv, greek, shown);
+    tracing::info!(page, confidence = ?tried.confidence, unsure = tried.unsure, words = tried.words, languages = ?with.languages, "a page was tried");
+    Ok(tried)
+}
+
+/// A picture tried as its one page: drawn as `read_picture` draws it, read
+/// here with the languages asked, and made smaller to be shown as a page of
+/// a PDF tried is.
+fn try_picture(
+    path: &Path,
+    tools: &Tools,
+    work: &Path,
+    asked: &Asked,
+    page: usize,
+    stop: &AtomicBool,
+) -> Result<Tried> {
+    use base64::Engine as _;
+    if page != 1 {
+        return Err(Error::invalid(tr!("ocr-no-such-page", page = page, pages = 1)));
+    }
+    let bytes = std::fs::read(path).context(|| tr!("io-reading", path = path))?;
+    let (drawn, tsv, with) = picture_read(&bytes, tools, work, asked, stop)?;
+    let shown = drawn.shown(child::SHOWN)?;
+    let png = base64::engine::general_purpose::STANDARD.encode(&shown.png);
+    let greek = with.languages.iter().any(|l| is_greek(l));
+    let tried = tried_of(1, "1".to_owned(), &tsv, greek, (png, shown.width, shown.height, shown.scale));
+    tracing::info!(confidence = ?tried.confidence, unsure = tried.unsure, words = tried.words, languages = ?with.languages, "a picture was tried");
+    Ok(tried)
+}
+
+/// What Tesseract read of a page tried, from its TSV, beside the picture it
+/// read as it is shown (`shown`: the PNG in base64, its width and height,
+/// and what the places of the TSV are multiplied by to be places on it).
+/// The words by paragraph, each composed (NFC), its sigmas mended where
+/// Greek was read (`greek`), counted with those Tesseract was unsure of;
+/// the words and the blocks placed on the picture as it is shown.
+fn tried_of(page: usize, label: String, tsv: &str, greek: bool, shown: (String, u32, u32, f32)) -> Tried {
+    let (png, width, height, scale) = shown;
+    let paragraphs: Vec<Vec<text::Word>> =
+        text::tsv_words(tsv).into_iter().map(|words| shown_words(words, scale, greek)).collect();
+    let words = paragraphs.iter().map(Vec::len).sum();
+    let unsure = paragraphs.iter().flatten().filter(|w| is_unsure(w.confidence)).count();
+    let confidence = text::page_confidence(tsv);
+    let blocks = text::tsv_blocks(tsv)
         .into_iter()
         .map(|b| text::TextBlock {
             left: b.left * scale,
@@ -1131,28 +1232,52 @@ pub fn try_page(
             height: b.height * scale,
         })
         .collect();
-    let greek = reader.with_at(page - 1).languages.iter().any(|l| is_greek(l));
-    let paragraphs = text::page_paragraphs(groups, is_word);
-    let paragraphs: Vec<String> =
-        if greek { paragraphs.iter().map(|p| schemes::mend_sigmas(p)).collect() } else { paragraphs };
-    tracing::info!(page, confidence = ?confidence, languages = ?reader.with_at(page - 1).languages, "a page was tried");
-    // Until the words are told one by one: each paragraph as one word.
-    let words = paragraphs.len();
-    let paragraphs =
-        paragraphs.into_iter().map(|text| vec![text::Word { text, line: true, ..Default::default() }]).collect();
-    Ok(Tried {
+    Tried {
         page,
-        label: seen.layer.label(page - 1),
+        label,
         paragraphs,
         words,
-        unsure: 0,
+        unsure,
         confidence,
         poorly: read_poorly(confidence),
-        png: tried.png,
-        width: tried.width,
-        height: tried.height,
+        png,
+        width,
+        height,
         blocks,
-    })
+    }
+}
+
+/// Whether a word Tesseract gave `confidence` is one it was unsure of
+/// (`UNSURE`). A word it gave none is not.
+pub fn is_unsure(confidence: Option<f32>) -> bool {
+    confidence.is_some_and(|c| c < UNSURE)
+}
+
+/// The words of a paragraph tried as they are shown: each composed, placed
+/// on the picture shown by `scale`, and, where Greek was read, its sigmas
+/// mended as the words of the paragraph together say (a sigma before an
+/// elision mark is ς where a quotation opened before it closes there).
+fn shown_words(mut words: Vec<text::Word>, scale: f32, greek: bool) -> Vec<text::Word> {
+    for word in &mut words {
+        word.text = text::composed(&word.text);
+        for v in [&mut word.left, &mut word.top, &mut word.width, &mut word.height] {
+            *v *= scale;
+        }
+    }
+    if greek {
+        let joined = words.iter().map(|w| w.text.as_str()).collect::<Vec<_>>().join(" ");
+        let mended: Vec<char> = schemes::mend_sigmas(&joined).chars().collect();
+        // A sigma is mended into a sigma: the words are where they were.
+        if mended.len() == joined.chars().count() {
+            let mut at = 0;
+            for word in &mut words {
+                let count = word.text.chars().count();
+                word.text = mended[at..at + count].iter().collect();
+                at += count + 1;
+            }
+        }
+    }
+    words
 }
 
 /// The text of the first pages of a PDF, as Tesseract reads it in the first
@@ -1185,12 +1310,14 @@ pub fn first_pages(path: &Path, tools: &Tools, work: &Path, count: usize, stop: 
         .collect()
 }
 
-/// Makes a PDF searchable: the pages that have no text are read, and what
-/// is read is laid over them, unseen. Pages that have text are left as they
-/// are, unless all are asked to be read anew: then the unseen text the
-/// pages had is taken away, so that only what is read stays. The file itself is not touched: the one that has the text is
-/// given back, and has been read again to be sure it holds as many pages as
-/// the file.
+/// Makes a PDF searchable: the pages Tesseract is to read (`wanted_pages`:
+/// those of `asked.read`, or, where it is not given, every page with `Anew`
+/// and those without text otherwise) are read, and what is read is laid
+/// over them, unseen. A page that is read has the unseen text it had taken
+/// away first, so that only what is read stays; the pages that are not read
+/// are left as they are. The file itself is not touched: the one that has
+/// the text is given back, and has been read again to be sure it holds as
+/// many pages as the file.
 pub fn make_searchable(
     path: &Path,
     tools: &Tools,
@@ -1226,15 +1353,17 @@ pub fn make_searchable(
     } else {
         Vec::new()
     };
-    let wanted: Vec<usize> = (0..count).filter(|i| asked.text == TextChoice::Anew || !layer.has_text(*i)).collect();
+    let wanted = wanted_pages(asked, count, |i| layer.has_text(i));
     if wanted.is_empty() && maps.is_empty() {
         return Ok(Searchable { pdf: None, read: 0, with_text, failed: Vec::new(), remapped: 0, poorly: Vec::new() });
     }
+    // Of the pages read, those that have any text to take away, however
+    // little: the others are left as they were drawn.
+    let strip: Vec<usize> = wanted.iter().copied().filter(|i| layer.has_any_text(*i)).collect();
     let reader = if wanted.is_empty() { None } else { Some(ready(tools, asked)?) };
     let place = place_in(work)?;
     let output = place.path().join("searchable.pdf");
-    let task =
-        child::Task::Searchable { pages: wanted, strip: asked.text == TextChoice::Anew, maps, output: output.clone() };
+    let task = child::Task::Searchable { pages: wanted, strip, maps, output: output.clone() };
     let job = child::Job::new(path, reader.as_ref(), tools.pdftoppm.as_ref(), place.path(), task);
     let made = match child::work(job, size, place.path(), told, stop)? {
         child::Done::Made(made) => made,

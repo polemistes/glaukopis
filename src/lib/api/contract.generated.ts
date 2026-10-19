@@ -210,7 +210,7 @@ export const tried: ocr.Tried = {
       "width": 950.0
     }
   ],
-  "confidence": 91.5,
+  "confidence": 68.75,
   "height": 1600,
   "label": "iii",
   "page": 3,
@@ -226,21 +226,30 @@ export const tried: ocr.Tried = {
         "width": 20.0
       },
       {
-        "confidence": null,
+        "confidence": 41.5,
         "height": 30.5,
         "left": 120.0,
         "line": false,
-        "text": "paragraph.",
+        "text": "paragnaph",
         "top": 120.0,
         "width": 160.0
+      },
+      {
+        "confidence": null,
+        "height": 30.5,
+        "left": 90.5,
+        "line": true,
+        "text": "read.",
+        "top": 160.0,
+        "width": 80.0
       }
     ]
   ],
   "png": "iVBORw0KGgo=",
-  "poorly": false,
-  "unsure": 0,
+  "poorly": true,
+  "unsure": 1,
   "width": 1131,
-  "words": 2
+  "words": 3
 };
 
 export const readDone: ocr.ReadDone = {

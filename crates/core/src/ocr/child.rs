@@ -173,8 +173,9 @@ pub enum Task {
     First { count: usize },
     /// The file made searchable: the fonts of `maps` given their letters,
     /// these pages drawn and read and what was read laid over them, the text
-    /// they had taken away first where `strip`, and the file written to `output`.
-    Searchable { pages: Vec<usize>, strip: bool, maps: Vec<searchable::FontMap>, output: PathBuf },
+    /// of those of them in `strip` taken away first (counted from nought),
+    /// and the file written to `output`.
+    Searchable { pages: Vec<usize>, strip: Vec<usize>, maps: Vec<searchable::FontMap>, output: PathBuf },
     /// One page, counted from nought, drawn and read, to be tried: its TSV,
     /// and the picture Tesseract read, made smaller to be shown.
     Try { page: usize },
@@ -192,9 +193,9 @@ pub struct Job {
     tesseract: Option<Given>,
     with: tesseract::With,
     /// The stretches of pages read otherwise: the page each begins at,
-    /// counted from nought, and what it is read with.
+    /// counted from nought, what it is read with, and how it is drawn.
     #[serde(default)]
-    stretches: Vec<(usize, tesseract::With)>,
+    stretches: Vec<(usize, tesseract::With, Quality)>,
     quality: Quality,
     pdftoppm: Option<PathBuf>,
     /// Where the pictures of the pages are made, a folder of the application's.
@@ -279,8 +280,9 @@ pub struct Made {
     pub poorly: Vec<usize>,
 }
 
-/// The longest side of the picture of a page tried, as it is shown.
-const SHOWN: u32 = 1600;
+/// The longest side of the picture of a page tried, as it is shown: of a
+/// picture tried too.
+pub(super) const SHOWN: u32 = 1600;
 
 /// A page tried: what Tesseract read of it, and the picture it read, made
 /// smaller to be shown.
@@ -386,19 +388,9 @@ fn work_here(job: &Job, told: &mut dyn FnMut(Progress), stop: &AtomicBool) -> st
             Ok(Done::Pages(read_pages(job, &reader, &drawing, &pages, size, told, stop)))
         }
         Task::Searchable { pages, strip, maps, output } => {
-            let made = searchable_here(
-                job,
-                reader.as_ref(),
-                pdftoppm.as_ref(),
-                bytes,
-                pages,
-                *strip,
-                maps,
-                output,
-                told,
-                stop,
-            )
-            .map_err(failure)?;
+            let made =
+                searchable_here(job, reader.as_ref(), pdftoppm.as_ref(), bytes, pages, strip, maps, output, told, stop)
+                    .map_err(failure)?;
             Ok(Done::Made(made))
         }
         Task::Try { page } => {
@@ -417,7 +409,7 @@ fn work_here(job: &Job, told: &mut dyn FnMut(Progress), stop: &AtomicBool) -> st
 /// Draws a page and has Tesseract read it, keeping the picture to be shown.
 fn try_here(reader: &Reader<'_>, drawing: &Pages, page: usize, work: &Path, stop: &AtomicBool) -> Result<Tried> {
     use base64::Engine as _;
-    let (picture, dpi) = drawing.draw(page, work, reader.quality, stop)?;
+    let (picture, dpi) = drawing.draw(page, work, reader.quality_at(page), stop)?;
     let read = reader.read(reader.with_at(page), &picture, dpi, (true, false), stop);
     let shown = read.as_ref().ok().map(|_| drawing::Drawn::read_back(&picture, dpi).and_then(|d| d.shown(SHOWN)));
     for made in [picture.clone(), picture.with_extension("tsv")] {
@@ -467,7 +459,7 @@ fn read_pages(
         let read = reader.draw_and_read(drawing, index, &job.work, (true, false), stop)?;
         Ok((read.tsv.unwrap_or_default(), read.dpi))
     };
-    let at_once = at_once(drawing, pages, reader.quality, job.memory, bytes);
+    let at_once = at_once(drawing, pages, reader.finest(pages), job.memory, bytes);
     tracing::info!(pages = pages.len(), at_once, "pages read by Tesseract");
     several(pages, at_once, &one, told, stop)
         .into_iter()
@@ -509,7 +501,7 @@ fn searchable_here(
     pdftoppm: Option<&Tool>,
     bytes: Vec<u8>,
     wanted: &[usize],
-    strip: bool,
+    strip: &[usize],
     maps: &[searchable::FontMap],
     output: &Path,
     told: &mut dyn FnMut(Progress),
@@ -549,7 +541,7 @@ fn searchable_here(
     let mut layers = Vec::new();
     let mut failed = Vec::new();
     let mut poorly = Vec::new();
-    let at_once = at_once(&pages, wanted, reader.quality, job.memory, size);
+    let at_once = at_once(&pages, wanted, reader.finest(wanted), job.memory, size);
     tracing::info!(pages = wanted.len(), at_once, "pages made searchable by Tesseract");
     for (index, result) in several(wanted, at_once, &one, told, stop) {
         match result {

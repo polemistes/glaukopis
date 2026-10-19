@@ -450,6 +450,22 @@ fn pages_that_have_text_are_left_as_they_are() {
     assert!(has(&read.pages[1].paragraphs[1], "Milman Parry"), "{:?}", read.pages[1]);
     assert_eq!(read.remarks, vec![tr!("ocr-remark-counts", read = 1, taken = 1, failed = 0)]);
 
+    // The pages read asked for: both, the page with text among them; none,
+    // and the page without text is read all the same, the other taken; and
+    // a page past the end is no page.
+    let pages_read = |read: Vec<usize>| -> (Vec<bool>, usize, usize) {
+        let asked = Asked { read: Some(read), ..kit.asked() };
+        let done = read_pdf(&mixed, &kit.tools, &kit.work(), &asked, None, &mut nothing, &never()).unwrap();
+        (done.pages.iter().map(|p| p.read).collect(), done.read, done.taken)
+    };
+    assert_eq!(pages_read(vec![1, 2]), (vec![true, true], 2, 0));
+    assert_eq!(pages_read(vec![]), (vec![false, true], 1, 1));
+    assert_eq!(pages_read(vec![1, 9, 0]), (vec![true, true], 2, 0));
+    let both = Asked { read: Some(vec![2, 1]), ..kit.asked() };
+    let read = read_pdf(&mixed, &kit.tools, &kit.work(), &both, None, &mut nothing, &never()).unwrap();
+    assert!(read.pages[0].confidence.is_some(), "the page with text was read: {:?}", read.pages[0]);
+    assert!(has(&read.pages[0].paragraphs.join(" "), "Milman Parry"), "{:?}", read.pages[0]);
+
     // Without Tesseract, a page that is to be read is never given the PDF's
     // text: the page without text says it could not be read, and every page
     // read anew cannot be had at all.
@@ -486,6 +502,12 @@ fn pages_that_have_text_are_left_as_they_are() {
     let made = make_searchable(&mixed, &kit.tools, &kit.work(), &all, &mut nothing, &never()).unwrap();
     assert_eq!(made.read, 2);
     assert_eq!(laid(made.pdf.as_ref().unwrap()), vec![true, true]);
+    // Or the pages read are asked for: the page without text is read whatever is asked.
+    for (read, expected) in [(vec![1, 2], vec![true, true]), (vec![], vec![false, true]), (vec![1], vec![true, true])] {
+        let asked = Asked { read: Some(read), ..kit.asked() };
+        let made = make_searchable(&mixed, &kit.tools, &kit.work(), &asked, &mut nothing, &never()).unwrap();
+        assert_eq!(laid(made.pdf.as_ref().unwrap()), expected);
+    }
     // The font of the text is taken in once.
     let doc = Document::load_mem(made.pdf.as_ref().unwrap()).unwrap();
     let fonts = doc
@@ -581,6 +603,26 @@ fn what_is_not_a_pdf_is_said_to_be_none() {
     assert_eq!(err.to_string(), tr!("ocr-not-pdf", file = "letter.pdf"));
     let looked = look(Path::new("photo.JPG"), &Tools::default()).unwrap();
     assert!(looked.picture && looked.pages == 1);
+}
+
+/// The pages Tesseract reads: those asked for, counted from one, each page
+/// without text with them, those past the end left out; where none are
+/// asked for, as the choice of text says.
+#[test]
+fn the_pages_read_are_those_asked_for_and_those_without_text() {
+    // Five pages; the second and the fourth have no text.
+    let has_text = |i: usize| i != 1 && i != 3;
+    let wanted = |read: Option<Vec<usize>>, text: TextChoice| {
+        wanted_pages(&Asked { read, text, ..Asked::default() }, 5, has_text)
+    };
+    assert_eq!(wanted(None, TextChoice::Keep), vec![1, 3]);
+    assert_eq!(wanted(None, TextChoice::Translate), vec![1, 3]);
+    assert_eq!(wanted(None, TextChoice::Anew), vec![0, 1, 2, 3, 4]);
+    assert_eq!(wanted(Some(vec![]), TextChoice::Keep), vec![1, 3]);
+    assert_eq!(wanted(Some(vec![5, 1, 1]), TextChoice::Keep), vec![0, 1, 3, 4]);
+    // Asked for, the pages are those given, whatever the choice of text.
+    assert_eq!(wanted(Some(vec![3]), TextChoice::Anew), vec![1, 2, 3]);
+    assert_eq!(wanted(Some(vec![0, 6, 99]), TextChoice::Keep), vec![1, 3]);
 }
 
 #[test]
@@ -823,11 +865,22 @@ fn the_shape_of_a_file_is_found() {
     );
     assert!(page_marks(&by_pages.sections).is_empty());
 
-    // Without the shape kept: one section a page, plain paragraphs.
-    let read = read_pdf(&pdf, &Tools::default(), tmp.path(), &Asked::default(), None, &mut nothing, &never()).unwrap();
-    let imported = imported_pdf("shape.pdf", "Shape", &read, Making { shape: false, ..Making::default() });
+    // Without the shape kept: one section a page, plain paragraphs, the
+    // same of a reading with the shape found as of one without it.
+    let plain_making = Making { shape: false, ..Making::default() };
+    let without =
+        read_pdf(&pdf, &Tools::default(), tmp.path(), &Asked::default(), None, &mut nothing, &never()).unwrap();
+    let imported = imported_pdf("shape.pdf", "Shape", &without, plain_making);
     assert_eq!(imported.sections.len(), 4);
     assert!(imported.styles.is_empty());
+    assert!(!imported.structured);
+    let of_shaped = imported_pdf("shape.pdf", "Shape", &read, plain_making);
+    assert_eq!(of_shaped.sections, imported.sections);
+    assert_eq!((of_shaped.title, of_shaped.styles.len()), (imported.title, 0));
+    assert_eq!(
+        read.pages.iter().map(|p| &p.paragraphs).collect::<Vec<_>>(),
+        without.pages.iter().map(|p| &p.paragraphs).collect::<Vec<_>>()
+    );
 }
 
 /// A file made from a written document, with an outline of its own
@@ -883,6 +936,22 @@ fn the_structure_of_a_file_with_an_outline() {
         !imported.sections.iter().flat_map(blocks).any(|b| b.trim() == "1" || b.trim() == "2"),
         "page numbers left out"
     );
+
+    // Made again from the same reading: by its pages, a section for each
+    // page; without the shape, plain paragraphs as a reading without it
+    // gives them; and back by its headings, the tree as it was.
+    let by_pages =
+        imported_pdf("structure.pdf", "structure", &read, Making { structure: Structure::Pages, ..Making::default() });
+    assert_eq!(by_pages.sections.iter().filter(|s| s.level == 1).count(), read.pages.len());
+    assert!(!by_pages.structured && imported.structured);
+    let plain_making = Making { shape: false, ..Making::default() };
+    let without =
+        read_pdf(&pdf, &Tools::default(), tmp.path(), &Asked::default(), None, &mut nothing, &never()).unwrap();
+    assert_eq!(
+        imported_pdf("structure.pdf", "structure", &read, plain_making).sections,
+        imported_pdf("structure.pdf", "structure", &without, plain_making).sections
+    );
+    assert_eq!(imported_pdf("structure.pdf", "structure", &read, Making::default()).sections, imported.sections);
 }
 
 #[test]
@@ -937,6 +1006,32 @@ fn a_reading_says_how_well_it_went() {
     assert_eq!((made.read, made.poorly.clone()), (1, vec![1]));
     let made = make_searchable(&scan, &kit.tools, &kit.work(), &kit.asked(), &mut nothing, &never()).unwrap();
     assert_eq!((made.read, made.poorly.clone()), (1, Vec::new()));
+}
+
+/// The words of a page tried, as they are shown: each letter one character
+/// with its marks, placed on the picture as it is shown, and, where Greek
+/// is read, each sigma as the words of the paragraph together say.
+#[test]
+fn the_words_of_a_page_tried_as_they_are_shown() {
+    let word = |text: &str, left: f32| text::Word {
+        text: text.into(),
+        confidence: Some(90.0),
+        left,
+        top: 10.0,
+        width: 40.0,
+        height: 20.0,
+        line: false,
+    };
+    let words = vec![word("\u{3b1}\u{313}\u{301}λλα", 0.0), word("‘λόγοσ", 50.0), word("σοφὸσ’", 100.0)];
+    let shown = shown_words(words.clone(), 0.5, true);
+    let texts: Vec<&str> = shown.iter().map(|w| w.text.as_str()).collect();
+    // The ’ closes the quotation the ‘ opened two words before: the sigma ends the word.
+    assert_eq!(texts, ["ἄλλα", "‘λόγος", "σοφὸς’"]);
+    assert_eq!((shown[1].left, shown[1].top, shown[1].width, shown[1].height), (25.0, 5.0, 20.0, 10.0));
+    // Read in another language, the sigmas are as read.
+    let shown = shown_words(words, 1.0, false);
+    assert_eq!(shown[2].text, "σοφὸσ’");
+    assert!(is_unsure(Some(69.9)) && !is_unsure(Some(UNSURE)) && !is_unsure(None));
 }
 
 #[test]
@@ -997,7 +1092,7 @@ fn a_page_is_tried() {
     use base64::Engine as _;
     let Some(kit) = kit(true) else { return };
     let scan = kit.scan("scan.pdf");
-    let tried = try_page(&scan, &kit.tools, &kit.work(), &kit.asked(), 1, None, &never()).unwrap();
+    let tried = try_page(&scan, &kit.tools, &kit.work(), &kit.asked(), 1, &never()).unwrap();
     assert_eq!((tried.page, tried.label.as_str()), (1, "1"));
     let text = tried.paragraphs.iter().flatten().map(|w| w.text.as_str()).collect::<Vec<_>>().join(" ");
     assert!(has(&text, "The wrath of Achilles") && has(&text, "Milman Parry"), "{text}");
@@ -1015,13 +1110,72 @@ fn a_page_is_tried() {
         assert!(block.left >= 0.0 && block.left + block.width <= tried.width as f32 + 1.0, "{block:?}");
         assert!(block.top >= 0.0 && block.top + block.height <= tried.height as f32 + 1.0, "{block:?}");
     }
+    // Word by word: each with how sure Tesseract was of it, on the picture as
+    // it is shown, the first of each paragraph beginning a line, the words
+    // counted with those it was unsure of; read well, few are.
+    let words: Vec<&text::Word> = tried.paragraphs.iter().flatten().collect();
+    assert_eq!(tried.words, words.len());
+    assert!(tried.words > 30, "{}", tried.words);
+    assert_eq!(tried.unsure, words.iter().filter(|w| is_unsure(w.confidence)).count());
+    assert!(tried.unsure * 10 < tried.words, "{} of {} unsure", tried.unsure, tried.words);
+    assert!(tried.paragraphs.iter().all(|p| p.first().is_some_and(|w| w.line)), "{:?}", tried.paragraphs);
+    assert!(words.iter().filter(|w| w.line).count() >= 3, "a line for each line read");
+    for word in &words {
+        assert!(word.confidence.is_some_and(|c| (0.0..=100.0).contains(&c)), "{word:?}");
+        assert!(word.left >= 0.0 && word.left + word.width <= tried.width as f32 + 1.0, "{word:?}");
+        assert!(word.top >= 0.0 && word.top + word.height <= tried.height as f32 + 1.0, "{word:?}");
+    }
+    // Not joined at hyphens: the word broken at the end of its line stands as read.
+    assert!(words.windows(2).any(|w| w[0].text.ends_with('-') && w[1].line), "{text}");
 
     // A page the file does not have is said to be none.
-    let none = try_page(&scan, &kit.tools, &kit.work(), &kit.asked(), 2, None, &never()).unwrap_err();
+    let none = try_page(&scan, &kit.tools, &kit.work(), &kit.asked(), 2, &never()).unwrap_err();
     assert_eq!(none.to_string(), tr!("ocr-no-such-page", page = 2, pages = 1));
     // And a language Tesseract has no data for is refused, as in a reading.
     let asked = Asked { languages: vec!["xyz".into()], ..kit.asked() };
-    assert!(try_page(&scan, &kit.tools, &kit.work(), &asked, 1, None, &never()).is_err());
+    assert!(try_page(&scan, &kit.tools, &kit.work(), &asked, 1, &never()).is_err());
+}
+
+/// A picture is tried as its one page: what Tesseract read of it word by
+/// word, and the picture made smaller to be shown, the words and blocks on it.
+#[test]
+fn a_picture_is_tried() {
+    use base64::Engine as _;
+    let Some(kit) = kit(true) else { return };
+    let page = kit.typeset("page.png", PAGE);
+    let tried = try_page(&page, &kit.tools, &kit.work(), &kit.asked(), 1, &never()).unwrap();
+    assert_eq!((tried.page, tried.label.as_str()), (1, "1"));
+    let text = tried.paragraphs.iter().flatten().map(|w| w.text.as_str()).collect::<Vec<_>>().join(" ");
+    assert!(has(&text, "The wrath of Achilles") && has(&text, "Milman Parry"), "{text}");
+    assert!(tried.words > 30 && tried.unsure * 10 < tried.words, "{} of {}", tried.unsure, tried.words);
+    assert!(tried.confidence.is_some_and(|c| c >= POORLY) && !tried.poorly, "{:?}", tried.confidence);
+    let png = base64::engine::general_purpose::STANDARD.decode(&tried.png).unwrap();
+    let picture = image::load_from_memory(&png).unwrap();
+    assert_eq!((picture.width(), picture.height()), (tried.width, tried.height));
+    // 150 mm at 300 dots to the inch is 1772 dots, made 1600 wide.
+    assert_eq!(tried.width, 1600);
+    for word in tried.paragraphs.iter().flatten() {
+        assert!(word.left + word.width <= tried.width as f32 + 1.0, "{word:?}");
+        assert!(word.top + word.height <= tried.height as f32 + 1.0, "{word:?}");
+    }
+    assert!(!tried.blocks.is_empty());
+    for block in &tried.blocks {
+        assert!(block.left + block.width <= tried.width as f32 + 1.0, "{block:?}");
+    }
+    // In black and white, read all the same.
+    let contrast = Asked { contrast: true, ..kit.asked() };
+    let tried = try_page(&page, &kit.tools, &kit.work(), &contrast, 1, &never()).unwrap();
+    let text = tried.paragraphs.iter().flatten().map(|w| w.text.as_str()).collect::<Vec<_>>().join(" ");
+    assert!(has(&text, "Milman Parry"), "{text}");
+
+    // A picture has one page; a drawing is not read.
+    let none = try_page(&page, &kit.tools, &kit.work(), &kit.asked(), 2, &never()).unwrap_err();
+    assert_eq!(none.to_string(), tr!("ocr-no-such-page", page = 2, pages = 1));
+    let svg = kit.path("drawing.svg.png");
+    std::fs::write(&svg, br#"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><text>Hi</text></svg>"#)
+        .unwrap();
+    let drawing = try_page(&svg, &kit.tools, &kit.work(), &kit.asked(), 1, &never()).unwrap_err();
+    assert_eq!(drawing.to_string(), tr!("ocr-drawing"));
 }
 
 /// A stretch of pages is read with languages of its own: the second page of
@@ -1053,10 +1207,12 @@ fn a_stretch_of_pages_is_read_with_languages_of_its_own() {
     assert!(!read_poorly(read.pages[0].confidence), "{:?}", read.pages[0].confidence);
     assert_eq!(read.poorly, vec![2]);
 
-    // The page tried is read with the languages of its stretch.
-    let tried = try_page(&scan, &kit.tools, &kit.work(), &asked, 2, None, &never()).unwrap();
+    // The page tried is read with the languages of its stretch; English read
+    // as Greek, Tesseract is unsure of many of its words.
+    let tried = try_page(&scan, &kit.tools, &kit.work(), &asked, 2, &never()).unwrap();
     assert!(tried.poorly, "{:?}", tried.confidence);
-    let tried = try_page(&scan, &kit.tools, &kit.work(), &asked, 1, None, &never()).unwrap();
+    assert!(tried.unsure > 0, "{} of {} unsure", tried.unsure, tried.words);
+    let tried = try_page(&scan, &kit.tools, &kit.work(), &asked, 1, &never()).unwrap();
     assert!(!tried.poorly, "{:?}", tried.confidence);
 
     // Made searchable, the same.
@@ -1065,6 +1221,46 @@ fn a_stretch_of_pages_is_read_with_languages_of_its_own() {
 
     let unknown = Asked { stretches: vec![Stretch { languages: vec!["xyz".into()], ..greek }], ..kit.asked() };
     let refused = read_pdf(&scan, &kit.tools, &kit.work(), &unknown, None, &mut nothing, &never()).unwrap_err();
+    assert_eq!(refused.to_string(), tr!("ocr-no-language", language = "xyz"));
+
+    // A stretch drawn at fewer dots: its page is drawn so, the other as the
+    // whole is; 150 mm at 150 dots to the inch is 886 dots, shown as drawn.
+    let coarse = Stretch { from: 2, languages: vec!["eng".into()], dpi: 150, ..Stretch::default() };
+    let asked = Asked { stretches: vec![coarse], ..kit.asked() };
+    let tried = try_page(&scan, &kit.tools, &kit.work(), &asked, 2, &never()).unwrap();
+    assert!(tried.width.abs_diff(886) <= 2, "{}", tried.width);
+    let tried = try_page(&scan, &kit.tools, &kit.work(), &asked, 1, &never()).unwrap();
+    assert_eq!(tried.width, 1600);
+    let read = read_pdf(&scan, &kit.tools, &kit.work(), &asked, None, &mut nothing, &never()).unwrap();
+    assert!(read.pages.iter().all(|p| p.read && has(&p.paragraphs.join(" "), "Milman Parry")), "{:?}", read.pages);
+}
+
+/// Each stretch is drawn with its own resolution and black and white, as
+/// it is read with its own languages and layout; the pages before the first
+/// as the whole asks; and as many pages are drawn at once as fit drawn with
+/// the most dots any of them takes.
+#[test]
+fn a_stretch_carries_its_resolution_and_its_black_and_white() {
+    let tesseract = Tool { path: "tesseract".into(), version: "5.5".into(), least: None, data: None };
+    let tools =
+        Tools { tesseract: Some(tesseract), ocr_languages: vec!["eng".into(), "grc".into()], ..Tools::default() };
+    let fine = Stretch { from: 2, languages: vec!["grc".into()], dpi: 600, layout: "block".into(), contrast: true };
+    let plain = Stretch { from: 4, languages: vec!["eng".into()], ..Stretch::default() };
+    let asked = Asked { languages: vec!["eng".into()], dpi: 200, stretches: vec![plain, fine], ..Asked::default() };
+    let reader = ready(&tools, &asked).unwrap();
+    assert_eq!(reader.quality_at(0), Quality { dpi: 200, contrast: false });
+    assert_eq!(reader.quality_at(1), Quality { dpi: 600, contrast: true });
+    assert_eq!(reader.quality_at(2).dpi, 600);
+    assert_eq!(reader.quality_at(3), Quality { dpi: 0, contrast: false }, "300 dots, in grey");
+    assert_eq!(reader.with_at(1), &tesseract::With { languages: vec!["grc".into()], psm: tesseract::psm_of("block") });
+    assert_eq!(reader.with_at(5).languages, ["eng"]);
+    assert_eq!(reader.finest(&[0, 3]).dots(), 300.0);
+    assert_eq!(reader.finest(&[0, 1, 3]).dpi, 600);
+    assert_eq!(reader.finest(&[]), reader.quality);
+    // A stretch's language that Tesseract has no data for is refused, naming it.
+    let unknown =
+        Asked { stretches: vec![Stretch { from: 3, languages: vec!["xyz".into()], ..Stretch::default() }], ..asked };
+    let refused = ready(&tools, &unknown).err().expect("refused");
     assert_eq!(refused.to_string(), tr!("ocr-no-language", language = "xyz"));
 }
 
