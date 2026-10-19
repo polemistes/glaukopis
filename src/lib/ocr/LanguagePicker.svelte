@@ -1,11 +1,13 @@
 <script lang="ts">
   /**
    * The languages a text is read in, the likeliest first: each chosen one
-   * can be taken away, and another added from those Tesseract has.
+   * can be taken away, and another added from those Tesseract has. Where a
+   * model of Gothic type is among them, a line says what it is for, since
+   * its name is not that of the language a book is in.
    */
   import X from '@lucide/svelte/icons/x';
   import { t } from '$lib/i18n';
-  import { ocrLanguageName } from './languages';
+  import { hasFrakturModel, ocrLanguageName } from './languages';
 
   interface Props {
     /** Tesseract's names of the languages chosen, in order. */
@@ -22,6 +24,7 @@
 
   const uid = $props.id();
   const others = $derived(installed.filter((code) => !value.includes(code)));
+  const fraktur = $derived(hasFrakturModel(installed));
 </script>
 
 <div class="picker" data-languages>
@@ -61,6 +64,9 @@
     {/if}
   </div>
   {#if hint}<p class="hint">{hint}</p>{/if}
+  {#if fraktur}
+    <p class="hint" data-ocr-fraktur-hint>{t('ocr-languages-fraktur-hint')}</p>
+  {/if}
 </div>
 
 <style>

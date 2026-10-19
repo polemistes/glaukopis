@@ -97,20 +97,37 @@ const AS_TAG: Record<string, string> = {
   aze_cyrl: 'aze-Cyrl',
   srp_latn: 'srp-Latn',
   uzb_cyrl: 'uzb-Cyrl',
-  deu_latf: 'deu',
   frk: 'deu',
   ita_old: 'ita',
   spa_old: 'spa',
 };
 
+/**
+ * The models that read a type rather than a language: Tesseract's Fraktur
+ * model, and its model of the Fraktur script. They read the Gothic type of
+ * books in German, Norwegian, Danish or Swedish alike, so they are named
+ * for the type, not for the language they were trained on.
+ */
+const FRAKTUR_MODELS = ['deu_latf', 'script/Fraktur'];
+
+/**
+ * Whether Gothic type can be read with what is installed: the Fraktur model,
+ * its model of the script, or the older German one, `frk`.
+ */
+export function hasFrakturModel(installed: string[]): boolean {
+  return installed.some((code) => FRAKTUR_MODELS.includes(code) || code === 'frk');
+}
+
 /** The name of a language Tesseract reads, in the language of the interface. */
 export function ocrLanguageName(code: string, inText = false): string {
+  if (FRAKTUR_MODELS.includes(code)) return t('ocr-language-fraktur-model');
   if (code.startsWith('script/')) return t('ocr-language-script', { script: code.slice(7) });
   const tag = AS_TAG[code] ?? code.split('_')[0];
   // Standing alone, a name begins with a capital; in a sentence, it is as
   // the language writes it there: "English", but "engelsk".
   const name = inText ? inSentence(tag) : languageName(tag);
-  if (code === 'frk' || code === 'deu_latf' || code.endsWith('_frak'))
+  // The older Fraktur models were each of one language, and are named by it.
+  if (code === 'frk' || code.endsWith('_frak'))
     return t('ocr-language-fraktur', { language: name });
   if (code.endsWith('_old')) return t('ocr-language-old', { language: name });
   if (code.endsWith('_vert')) return t('ocr-language-vertical', { language: name });

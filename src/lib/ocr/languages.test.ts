@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { languages } from '$lib/i18n';
-import { byName, firstLanguages, ocrLanguageName, tesseractLanguage } from './languages';
+import { languages, load } from '$lib/i18n';
+import {
+  byName,
+  firstLanguages,
+  hasFrakturModel,
+  ocrLanguageName,
+  tesseractLanguage,
+} from './languages';
 
 describe('the languages Tesseract reads', () => {
   it('are found for the tags of texts, and the names BibLaTeX gives them', () => {
@@ -25,6 +31,38 @@ describe('the languages Tesseract reads', () => {
     expect(ocrLanguageName('deu')).toBe('German');
     expect(ocrLanguageName('script/Latin')).toBe('Latin script');
     expect(byName(['nor', 'grc', 'eng'])).toEqual(['grc', 'eng', 'nor']);
+  });
+
+  it('name the Fraktur model for the type it reads, not for a language', async () => {
+    expect(ocrLanguageName('deu_latf')).toBe('Fraktur (Gothic type)');
+    expect(ocrLanguageName('deu_latf', true)).toBe('Fraktur (Gothic type)');
+    expect(ocrLanguageName('script/Fraktur')).toBe('Fraktur (Gothic type)');
+    // The older models of one language are still named by it.
+    expect(ocrLanguageName('frk')).toBe('German, Fraktur');
+    // So it stands under F, not under G with German.
+    expect(byName(['nor', 'deu', 'deu_latf', 'eng', 'grc'])).toEqual([
+      'grc',
+      'eng',
+      'deu_latf',
+      'deu',
+      'nor',
+    ]);
+    const was = languages.current;
+    try {
+      await load('nb');
+      languages.current = 'nb';
+      expect(ocrLanguageName('deu_latf')).toBe('Fraktur (gotisk skrift)');
+    } finally {
+      languages.current = was;
+    }
+  });
+
+  it('say whether Gothic type can be read with what is installed', () => {
+    expect(hasFrakturModel(['eng', 'deu_latf'])).toBe(true);
+    expect(hasFrakturModel(['frk'])).toBe(true);
+    expect(hasFrakturModel(['script/Fraktur', 'nor'])).toBe(true);
+    expect(hasFrakturModel(['eng', 'deu', 'nor'])).toBe(false);
+    expect(hasFrakturModel([])).toBe(false);
   });
 
   it('are written in a sentence as the language of the interface writes them there', () => {

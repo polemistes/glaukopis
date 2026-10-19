@@ -35,6 +35,14 @@ ocr-grc.zip
   LICENSE
 ```
 
+A model of type rather than of a language is a package like any other. It
+is put under the language it was trained on, and its title says what it is,
+since it has no language of its own to be named in. Tesseract's Fraktur
+model, which reads the Gothic type of German, Norwegian, Danish and Swedish
+books of before about 1900 whatever their language, is `deu_latf`, under
+the language `de`, with the title `Fraktur`; the application calls it
+*Fraktur (Gothic type)*.
+
 Files whose names have *licence*, *license*, *copying*, *readme*,
 *authors*, *notice* or *copyright* in them go along with the language and
 are kept beside it in the data directory, under `languages/licences/`.
@@ -61,7 +69,7 @@ Whatever else the zip holds is left out.
 | `kind` | needed | `spelling` or `ocr` |
 | `language` | needed | the language, as a tag of BCP 47: `nb-NO`, `en-GB`, `de`, `grc`, `sr-Latn` |
 | `name` | | the name the files are given when imported: for spelling the name of a dictionary, `nb_NO`, `de_DE`, `fr`, which must begin with the language; for OCR Tesseract's name of the language, `nor`, `grc`, `chi_sim`. Without it, spelling takes the language with `_` for `-`, and OCR the name of the `.traineddata` file |
-| `title` | | what the package is called, in its own language |
+| `title` | | what the package is called, in its own language; for a model of type, what it is: `Fraktur` |
 | `version` | | a version of one's own choosing; a language whose version differs from the one the server offers can be updated |
 | `licence` | | the licences of the files, as SPDX names them where they can be |
 | `source` | | where the files were taken from |
