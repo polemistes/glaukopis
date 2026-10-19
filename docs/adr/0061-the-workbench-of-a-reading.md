@@ -74,3 +74,16 @@ A picture file brought in, one page without text of its own, gets the same workb
 - `ReadStep`, `SearchableDialog`, `DocumentDialog` and `PdfMapDialog` are rebuilt around the workbench; `TryPane`, `Stretches`, `HowDisclosure`, `TextPart` and `TextPreview` go.
 - The guide's sections on trying a page, stretches and the shape are rewritten; the end-to-end script of the reading is rewritten in its dialog parts.
 - The words are written in English and Bokmål; the other languages lag, as usual.
+
+## Addendum of 2026-10-20: as built
+
+Built the same day from the plan, the core, the strip and the panes by three worktree agents at once, the rest in the main session; the end-to-end script of the reading passes 111 checks, and the workbench was tried by hand on two of the owner's books (a novel of 559 pages in Gothic type, and a scan of the Nasjonalbiblioteket of 271 pages with text on most of them). Where it departs from the plan:
+
+- The text Tesseract read of a page tried keeps its lines, as the text the PDF has is shown beside it, so that the two are compared line by line; a word broken at a line's end stays at its end.
+- Translation is a box over the pane of the PDF's text, *Translated by what the fonts say*, ticked at first where a scheme applies; the application has no switch.
+- A picture brought in is tried at once when the workbench opens, since nothing of it is shown until it is read.
+- The workbench stays while the pages are read: a reading stopped or failed comes back to it with its trials and marks, the failure said over it.
+- Where a tree by the headings was asked for and none were found, the choice after the reading says *No headings found*, disabled, and shows the tree by its pages.
+- In a PDF made searchable, a page read loses whatever unseen text it had, however little, not only text enough to count as text: an old poor reading too short to count is taken away too.
+- A trial joins nothing, so it is read without a dictionary.
+- The picture of a library file read as text (the dialog of a picture of the library) gets the workbench as well.
