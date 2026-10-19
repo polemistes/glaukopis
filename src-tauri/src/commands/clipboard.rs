@@ -24,8 +24,12 @@ pub struct PastedPicture {
     /// The file's name; empty for a picture copied as one.
     pub name: String,
     pub mime: String,
-    /// The bytes, in base64.
+    /// The bytes, in base64, of a picture copied as one; empty for a file.
     pub data: String,
+    /// Where the file is, of one copied in a file manager, which the page
+    /// takes in from there (`picture_add_file`): its bytes do not travel to
+    /// the page and back, three times their size in base64.
+    pub path: Option<String>,
 }
 
 /// The clipboard, or with `primary` the text last selected anywhere, which
@@ -60,8 +64,6 @@ mod linux {
 
     /// How long a program that holds the clipboard is waited for.
     const WAIT: Duration = Duration::from_secs(10);
-    /// No file larger than this is pasted as a picture.
-    const LARGEST: u64 = 200 * 1024 * 1024;
 
     pub fn read(app: &AppHandle, primary: bool) -> Pasted {
         let (tx, rx) = mpsc::channel();
@@ -150,6 +152,7 @@ mod linux {
                         name: String::new(),
                         mime: "image/png".into(),
                         data: B64.encode(bytes),
+                        path: None,
                     }),
                     Some(Err(error)) => tracing::warn!(%error, "a picture on the clipboard could not be read"),
                     None => {}
@@ -185,7 +188,8 @@ mod linux {
         text.trim_end_matches('\0').to_owned()
     }
 
-    /// A file copied in a file manager, where it is a picture.
+    /// A file copied in a file manager, where it is a picture: by its path,
+    /// from which the page takes it in.
     fn picture_file(path: &std::path::Path) -> Option<PastedPicture> {
         let extension = path.extension()?.to_str()?.to_ascii_lowercase();
         let mime = match extension.as_str() {
@@ -198,14 +202,14 @@ mod linux {
             "svg" => "image/svg+xml",
             _ => return None,
         };
-        if std::fs::metadata(path).ok()?.len() > LARGEST {
+        if !std::fs::metadata(path).ok()?.is_file() {
             return None;
         }
-        let bytes = std::fs::read(path).ok()?;
         Some(PastedPicture {
             name: path.file_name()?.to_string_lossy().into_owned(),
             mime: mime.into(),
-            data: B64.encode(bytes),
+            data: String::new(),
+            path: Some(path.to_str()?.to_owned()),
         })
     }
 }

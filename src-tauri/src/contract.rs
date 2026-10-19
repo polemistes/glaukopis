@@ -234,11 +234,20 @@ fn what_is_sent_is_what_the_interface_declares() {
     let pasted = crate::commands::clipboard::Pasted {
         text: Some("Wrath".into()),
         html: None,
-        pictures: vec![crate::commands::clipboard::PastedPicture {
-            name: "dot.png".into(),
-            mime: "image/png".into(),
-            data: "iVBORw0KGgo=".into(),
-        }],
+        pictures: vec![
+            crate::commands::clipboard::PastedPicture {
+                name: String::new(),
+                mime: "image/png".into(),
+                data: "iVBORw0KGgo=".into(),
+                path: None,
+            },
+            crate::commands::clipboard::PastedPicture {
+                name: "dot.png".into(),
+                mime: "image/png".into(),
+                data: String::new(),
+                path: Some("/home/someone/dot.png".into()),
+            },
+        ],
     };
     let trashed =
         vec![crate::commands::projects::Trashed { entry: "20260101T000000Z-wrath".into(), info: project_info.clone() }];

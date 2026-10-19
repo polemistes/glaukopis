@@ -50,6 +50,7 @@
   import { RefMarkView } from './refmarks';
   import { topOf } from '$lib/figures/numbering.svelte';
   import { pictures, PICTURES_DRAGGED } from '$lib/figures/pictures.svelte';
+  import { pastedPaths } from '$lib/util/paste';
   import { choosePicture, CrossRefView, FigureView, FormulaView } from '$lib/figures/views.svelte';
   import { insertCrossRef, insertFigure } from './commands';
   import { hooksOf, viewsByDom } from './ui.svelte';
@@ -353,16 +354,20 @@
   /** Pictures that were pasted become figures. Returns whether there were any. */
   function pasted(v: EditorView, event: ClipboardEvent): boolean {
     if (pastedOrg(v, event)) return true;
-    const files = [...(event.clipboardData?.files ?? [])].filter((f) =>
-      f.type.startsWith('image/'),
-    );
+    // A picture copied as a file in a file manager is taken in from where it is.
+    const paths = pastedPaths(event.clipboardData);
+    const files = [...(event.clipboardData?.files ?? [])]
+      .map((file, i) => ({ file, path: paths[i] ?? null }))
+      .filter(({ file }) => file.type.startsWith('image/'));
     if (!files.length) return false;
     // With text beside them, as when something is copied from a page, the text is what is wanted.
     if (event.clipboardData?.getData('text/plain')?.trim()) return false;
     event.preventDefault();
     void (async () => {
-      for (const file of files) {
-        const taken = await pictures.addBlob(file, file.name || t('editor-pasted-picture'));
+      for (const { file, path } of files) {
+        const taken = path
+          ? await pictures.addFile(path)
+          : await pictures.addBlob(file, file.name || t('editor-pasted-picture'));
         if (!taken || v.isDestroyed) continue;
         insertFigure(taken)(v.state, v.dispatch);
       }
