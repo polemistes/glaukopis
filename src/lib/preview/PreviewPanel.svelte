@@ -16,8 +16,10 @@
     type Place,
     type Preview,
     type PreviewPage,
+    type Spot,
     type TextRun,
   } from '$lib/api/documents';
+  import { spotsOn, whatIs } from './spots';
   import type { Template } from '$lib/api/templates';
   import { documentSettingsUi } from '$lib/document/document-settings.svelte';
   import { layoutName, styleName } from '$lib/look/choosing.svelte';
@@ -63,7 +65,9 @@
    * selected and copied. Its place is in percent of the page; the runs on it
    * follow one another, each as wide as it was set, with the room before it
    * as a margin, so that the browser copies a line as one line. Sizes of
-   * type are in hundredths of the width of the page (`cqw`).
+   * type are in hundredths of the width of the page (`cqw`). What the line
+   * is (a quotation, a heading, a note…) is read from the spots of its page
+   * by its baseline, in points.
    */
   interface Line {
     left: number;
@@ -71,11 +75,21 @@
     width: number;
     height: number;
     size: number;
+    baseline: number;
+    what: string;
     runs: { gap: number; width: number; size: number; text: string }[];
   }
 
-  /** Lays the runs of a page in lines: those on one baseline are one line. */
-  function linesOf(texts: TextRun[], page: { width: number; height: number }): Line[] {
+  /**
+   * Lays the runs of a page in lines: those on one baseline are one line,
+   * named by the spots of the page (`number`) that hold the baseline of its first run.
+   */
+  function linesOf(
+    texts: TextRun[],
+    page: { width: number; height: number },
+    number: number,
+    spots: Spot[],
+  ): Line[] {
     const runs = texts
       .filter((r) => r.text && r.width > 0 && r.size > 0)
       .sort((a, b) => a.baseline - b.baseline || a.x - b.x);
@@ -93,12 +107,15 @@
       const bottom = Math.max(...group.map((r) => r.baseline + r.size * 0.3));
       const wide = Math.max(right - left, 0.01);
       let end = left;
+      const baseline = group[0].baseline;
       return {
         left: (left / page.width) * 100,
         top: (top / page.height) * 100,
         width: (wide / page.width) * 100,
         height: (Math.max(bottom - top, 0.01) / page.height) * 100,
         size: (Math.max(...group.map((r) => r.size)) / page.width) * 100,
+        baseline,
+        what: whatIs(spots, number, baseline),
         runs: group.map((r, i) => {
           const gap = ((r.x - end) / wide) * 100;
           end = r.x + r.width;
@@ -136,6 +153,8 @@
   let shown = $state.raw(new Map<number, Shown>());
   /** Where each element of the document begins in the pages, in the order of the text. */
   let places = $state.raw<Place[]>([]);
+  /** What stands where on the pages: by these each line is named. */
+  let spots = $state.raw<Spot[]>([]);
   /** The page that is pointed out for a moment, when the place of the text is shown. */
   let marked = $state<number | null>(null);
   let marking: ReturnType<typeof setTimeout> | undefined;
@@ -245,19 +264,37 @@
     return out.length ? out : [1, 2, 3].filter((n) => !count || n <= count);
   }
 
+  /**
+   * The lines of a page named again by its spots; the same lines where
+   * none is named otherwise. A page may look as it did and hold other
+   * kinds: a passage given a kind that looks as the one before.
+   */
+  function renamed(lines: Line[], number: number, on: Spot[]): Line[] {
+    let changed = false;
+    const out = lines.map((line) => {
+      const what = whatIs(on, number, line.baseline);
+      if (what === line.what) return line;
+      changed = true;
+      return { ...line, what };
+    });
+    return changed ? out : lines;
+  }
+
   /** Takes pages that were made. A page that is as it was is left as it is, so that only what has changed is drawn again. */
   function take(pages: PreviewPage[]) {
     const next = new Map(shown);
     const let_go: string[] = [];
     for (const page of pages) {
       const before = next.get(page.number);
+      const on = spotsOn(spots, page.number);
       if (before?.svg === page.svg) {
-        next.set(page.number, { ...before, made });
+        next.set(page.number, { ...before, made, lines: renamed(before.lines, page.number, on) });
         continue;
       }
       if (before) let_go.push(before.url);
       const url = URL.createObjectURL(new Blob([page.svg], { type: 'image/svg+xml' }));
-      next.set(page.number, { svg: page.svg, url, made, lines: linesOf(page.texts ?? [], size) });
+      const lines = linesOf(page.texts ?? [], size, page.number, on);
+      next.set(page.number, { svg: page.svg, url, made, lines });
     }
     // Pages that are no longer there, and those farthest from what is looked at.
     const wanted = near();
@@ -325,6 +362,7 @@
         count = preview.count;
         size = { width: preview.width, height: preview.height };
         places = preview.places ?? [];
+        spots = preview.spots ?? [];
         take(preview.pages);
         shownFrom = from;
         warnings = preview.warnings;
@@ -554,6 +592,7 @@
             <div class="texts">
               {#each page.lines as line}<div
                   class="line"
+                  data-what={line.what}
                   style:left="{line.left}%"
                   style:top="{line.top}%"
                   style:width="{line.width}%"
