@@ -62,7 +62,6 @@
   import type { DocumentFormat } from '$lib/api/documents';
   import { selectedPassage } from '$lib/comments/marks';
   import { commentsUi } from '$lib/comments/ui.svelte';
-  import { documentSettingsUi } from '$lib/document/document-settings.svelte';
   import { languageName, t, TEXT_LANGUAGES } from '$lib/i18n';
   import { keysFor } from '$lib/shell/keys.svelte';
   import { showPictures } from '$lib/pictures/store.svelte';

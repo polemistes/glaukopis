@@ -46,3 +46,13 @@ look-keep-save = Behalten
 look-put-into = Diese Änderungen in „{ $name }“ übernehmen
 look-delete-layout = Dieses eigene Layout löschen…
 look-bundled = Die Layouts, die Glaukopis mitbringt, bleiben, wie sie sind. Was Sie hier ändern, wird beim Dokument aufbewahrt oder, wenn Sie es wählen, als eigenes Layout.
+
+# A layout, a style or a template that is neither chosen nor inherited: the one from the settings, named.
+look-usual = Wie gewohnt ({ $name })
+# The first choice of a layout or a style: what the template brings, named.
+look-as-template = Wie die Vorlage es vorsieht ({ $name })
+# The first choice where an element over this one has chosen: the element, and what it chose.
+look-from-with = Von { $name } ({ $what })
+look-layout = Layout
+look-style = Zitierstil
+look-style-change = Diesen Zitierstil ändern…

@@ -77,3 +77,13 @@ look-contents-limit-words = Ord i teksten, høyst
 look-contents-limit-abstract-words = Ord i sammendraget, høyst
 look-contents-limit-keywords = Nøkkelord, høyst
 look-contents-requirements-note = Hva grensene teller: { $note }
+
+# Et oppsett, en stil eller en mal som verken er valgt eller arvet: den fra innstillingene, med navn.
+look-usual = Den vanlige ({ $name })
+# Det første valget av oppsett eller stil: det malen bringer med seg, med navn.
+look-as-template = Som malen har det ({ $name })
+# Det første valget der et element over dette har valgt: elementet, og det det valgte.
+look-from-with = Fra { $name } ({ $what })
+look-layout = Oppsett
+look-style = Referansestil
+look-style-change = Endre denne referansestilen …

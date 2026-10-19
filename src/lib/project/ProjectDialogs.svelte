@@ -3,15 +3,15 @@
   place that lasts while the project is open: what is asked from the menu of
   an element (a copy compared, a kind, a kind of one's own, when it is, the
   kinds managed) is done in the project of the pane that has the focus; the
-  document settings and the chooser of what a document is in the project
-  they were asked for; and the template
+  window about a document and the chooser of what a document is in the
+  project they were asked for; and the template
   editor, of which a template saved anew is copied afresh into the project
   of the view where that carries it.
 -->
 <script lang="ts">
   import type { Template } from '$lib/api/templates';
-  import DocumentSettingsWindow from '$lib/document/DocumentSettingsWindow.svelte';
-  import { documentSettingsUi } from '$lib/document/document-settings.svelte';
+  import AboutDocumentWindow from '$lib/document/AboutDocumentWindow.svelte';
+  import { aboutDocumentUi } from '$lib/document/about-document.svelte';
   import TemplateChooser from '$lib/document/TemplateChooser.svelte';
   import { templateChooserUi } from '$lib/document/chooser.svelte';
   import TemplateEditor from '$lib/document/TemplateEditor.svelte';
@@ -92,15 +92,15 @@
   {/key}
 {/if}
 
-{#if documentSettingsUi.request}
-  {@const asked = documentSettingsUi.request}
+{#if aboutDocumentUi.request}
+  {@const asked = aboutDocumentUi.request}
   {#key asked}
-    <DocumentSettingsWindow
+    <AboutDocumentWindow
       project={asked.project}
       at={asked.at}
       section={asked.section}
       {ongo}
-      onclose={() => documentSettingsUi.close()}
+      onclose={() => aboutDocumentUi.close()}
     />
   {/key}
 {/if}

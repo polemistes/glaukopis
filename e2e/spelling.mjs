@@ -339,9 +339,9 @@ try {
   await newProject('Vreden');
   await app.keys(['Control', 'p']);
   await app.waitFor('.preview', 8000);
-  await app.openDocumentSettings('Language');
+  await app.openAbout('Language');
   await app.documentChoose('Language of the text', 'nb');
-  await app.closeDocumentSettings();
+  await app.closeAbout();
   await app.keys(['Control', 'p']);
   await app.keys(['Control', 'd']);
   await app.waitFor('.text-view .section');
@@ -390,9 +390,9 @@ try {
   // A language without a dictionary: nothing is underlined, and F7 says why.
   await app.keys(['Control', 'p']);
   await app.waitFor('.preview', 8000);
-  await app.openDocumentSettings('Language');
+  await app.openAbout('Language');
   await app.documentChoose('Language of the text', 'la');
-  await app.closeDocumentSettings();
+  await app.closeAbout();
   await app.keys(['Control', 'p']);
   await until('the underlines to go', async () => (await underlined()).length === 0);
   await app.click('.text-view .section .body');

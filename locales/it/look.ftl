@@ -47,3 +47,13 @@ look-keep-save = Tieni
 look-put-into = Metti queste modifiche in «{ $name }»
 look-delete-layout = Elimina questa mia impaginazione…
 look-bundled = Le impaginazioni che vengono con Glaukopis restano come sono. Ciò che cambi qui è tenuto con il documento, o, se scegli, come un'impaginazione tua.
+
+# A layout, a style or a template that is neither chosen nor inherited: the one from the settings, named.
+look-usual = Il tuo solito ({ $name })
+# The first choice of a layout or a style: what the template brings, named.
+look-as-template = Come vuole il modello ({ $name })
+# The first choice where an element over this one has chosen: the element, and what it chose.
+look-from-with = Da { $name } ({ $what })
+look-layout = Impaginazione
+look-style = Stile di citazione
+look-style-change = Modifica questo stile di citazione…

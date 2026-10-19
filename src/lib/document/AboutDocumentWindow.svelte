@@ -1,52 +1,46 @@
 <script lang="ts">
   /**
-   * The settings of an element's document (ADR 0038), one window per
-   * element: the details that stand on its first page and in the metadata
-   * of its files, its parts, where its look is set, its language, and the
-   * checklist of what its template requires. What the document is, its
-   * template, is chosen in the chooser of what you are writing. What the
-   * element does not set it takes from the elements over it (ADR 0037):
-   * that is shown, and left for it to set its own.
+   * About this document: what an element's document says of itself, one
+   * window per element (ADR 0038, as it stands since 2026-10-19): the
+   * details that stand on its first page and in the metadata of its files,
+   * its language, and the checklist of what its template requires, as the
+   * document uses it. What the document is, its template, is chosen in the
+   * chooser of what you are writing; how it looks and what it contains, in
+   * Look. What the element does not set it takes from the elements over it
+   * (ADR 0037): that is shown, and left for it to set its own.
    *
-   * The language is written as it is chosen, a step of undo of its own, as
-   * a part is made; the details are written together when the window is
-   * saved.
+   * The language is written as it is chosen, a step of undo of its own; the
+   * details are written together when the window is saved.
    */
   import { untrack } from 'svelte';
-  import ArrowRight from '@lucide/svelte/icons/arrow-right';
   import Plus from '@lucide/svelte/icons/plus';
   import X from '@lucide/svelte/icons/x';
   import type { DocumentFormat } from '$lib/api/documents';
-  import type { Template } from '$lib/api/templates';
   import { languageName, newTextLanguage, t, TEXT_LANGUAGES } from '$lib/i18n';
-  import { layoutName, styleName } from '$lib/look/choosing.svelte';
-  import { lookUi } from '$lib/look/look.svelte';
   import { countWords } from '$lib/project/model/document';
   import type { Project } from '$lib/project/model/project.svelte';
   import { PROJECT, type DocumentSettings, type Person } from '$lib/project/model/types';
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
-  import { DOCUMENT_SECTIONS, type DocumentSection } from './document-settings.svelte';
+  import { ABOUT_SECTIONS, type AboutSection } from './about-document.svelte';
   import { checklist, type Remark } from './checklist';
-  import { documents, templateFor } from '$lib/preview/documents.svelte';
-  import { partOf, type PartSpec as PartKind } from '$lib/project/parts';
-  import { partGroupWords } from './templates';
+  import { documents, templateUsedCached } from '$lib/preview/documents.svelte';
 
   interface Props {
     project: Project;
     /** The element whose document is set. */
     at: string;
     /** The part of the window to open at. */
-    section?: DocumentSection;
-    /** Shows an element in the text: a part of the document, from its line here. */
+    section?: AboutSection;
+    /** Shows an element in the text: one the checklist names, from its line here. */
     ongo: (element: string) => void;
     onclose: () => void;
   }
 
   let { project, at, section: openAt, ongo, onclose }: Props = $props();
 
-  let section = $state<DocumentSection>(untrack(() => openAt ?? 'details'));
+  let section = $state<AboutSection>(untrack(() => openAt ?? 'details'));
   const node = $derived(project.node(at));
   /** What the element says of its own. */
   const own = $derived(node?.document ?? {});
@@ -58,25 +52,14 @@
     documents.load();
   });
 
-  /** The template and the layout in use, whole: for what they bring, require and set. */
-  let template = $state.raw<Template | null>(null);
+  /**
+   * The template as the document uses it, with what the document requires
+   * otherwise (set in Look, under what the document contains): for what it
+   * requires. Nothing until it has been read.
+   */
+  const template = $derived(templateUsedCached(project, at) ?? null);
+  /** The layout in use, whole. */
   let format = $state.raw<DocumentFormat | null>(null);
-  $effect(() => {
-    const id = choice.template;
-    void documents.changed;
-    void project.templates;
-    untrack(() =>
-      templateFor(project, id)
-        .then((loaded) => {
-          if (id === choice.template) template = loaded;
-        })
-        .catch((error) => {
-          // The window goes on without what the template brings; the log says why.
-          console.error(`the template ${id} could not be read for the document window`, error);
-          if (id === choice.template) template = null;
-        }),
-    );
-  });
   $effect(() => {
     const id = choice.format;
     void documents.changed;
@@ -137,7 +120,7 @@
   let newIdentifier = $state('');
 
   function identifierWords(key: string): string {
-    return USUAL_IDENTIFIERS.includes(key) ? t(`document-window-identifier-${key}`) : key;
+    return USUAL_IDENTIFIERS.includes(key) ? t(`about-identifier-${key}`) : key;
   }
 
   function addIdentifier() {
@@ -186,39 +169,6 @@
     onclose();
   }
 
-  // ---- the parts ----
-
-  /** The kinds the template gives the document a place for: those of its contents in order, then the rest it puts in hand. */
-  const partKinds = $derived.by(() => {
-    if (!template) return [] as PartKind[];
-    const ids: string[] = [];
-    for (const item of template.contents)
-      if ('kind' in item && !ids.includes(item.kind)) ids.push(item.kind);
-    for (const id of template.kinds) if (!ids.includes(id)) ids.push(id);
-    return ids.map((id) => partOf(project, id)).filter((k): k is PartKind => !!k);
-  });
-  /** The elements under this one, of each kind: by the kind itself, or a kind of the project based on it. */
-  const partsOf = $derived.by(() => {
-    const children = project.tree().children.get(at) ?? [];
-    const out = new Map<string, string[]>();
-    for (const child of children) {
-      const kind = partOf(project, project.node(child)?.kind)?.id;
-      if (kind) out.set(kind, [...(out.get(kind) ?? []), child]);
-    }
-    return out;
-  });
-
-  /** Makes an element of a kind under this one, named as the kind is: first among the children for the front, last for the back and the cover. */
-  function makePart(kind: PartKind) {
-    project.checkpoint();
-    const id = project.addChild(at, {
-      title: kind.label(),
-      index: kind.group === 'front' ? 0 : undefined,
-    });
-    if (id) project.setKind([id], kind.id);
-    project.checkpoint();
-  }
-
   function go(element: string) {
     onclose();
     ongo(element);
@@ -248,14 +198,12 @@
   const words = $derived(countWords(project, at));
   const wordsMost = $derived(template?.requirements.words ?? null);
 
-  const sections = $derived(
-    DOCUMENT_SECTIONS.map((key) => [key, t(`document-window-section-${key}`)] as const),
-  );
+  const sections = $derived(ABOUT_SECTIONS.map((key) => [key, t(`about-section-${key}`)] as const));
 </script>
 
 <Dialog
   open
-  title={t('document-window')}
+  title={t('about-window')}
   subtitle={node?.title || t('project-untitled')}
   width={760}
   tall
@@ -263,7 +211,7 @@
   {onclose}
 >
   <div class="window">
-    <nav aria-label={t('document-window-sections')}>
+    <nav aria-label={t('about-sections')}>
       {#each sections as [key, label] (key)}
         <button type="button" class:current={section === key} onclick={() => (section = key)}
           >{label}</button
@@ -273,48 +221,46 @@
 
     <div class="form settings">
       {#if section === 'details'}
-        <h3>{t('document-window-section-details')}</h3>
-        <p class="hint top">{t('document-window-details-hint')}</p>
+        <h3>{t('about-section-details')}</h3>
+        <p class="hint top">{t('about-details-hint')}</p>
         <div class="details">
           <label class="field">
-            <span>{t('document-window-title')}</span>
+            <span>{t('about-title')}</span>
             <input
               bind:value={draft.title}
               class="serif"
-              placeholder={node?.title || t('document-window-title-placeholder')}
+              placeholder={node?.title || t('about-title-placeholder')}
             />
-            <small>{t('document-window-title-hint')}</small>
+            <small>{t('about-title-hint')}</small>
           </label>
           <label class="field">
-            <span>{t('document-window-subtitle')}</span>
+            <span>{t('about-subtitle')}</span>
             <input bind:value={draft.subtitle} class="serif" />
           </label>
 
           <div class="field">
-            <span>{t('document-window-authors')}</span>
+            <span>{t('about-authors')}</span>
             {#each draft.authors ?? [] as author, i (i)}
               <div class="author">
                 <input
                   bind:value={author.name}
-                  placeholder={i === 0 && authorsFrom
-                    ? inheritedAuthors
-                    : t('document-window-name')}
-                  aria-label={t('document-window-author-name', { number: i + 1 })}
+                  placeholder={i === 0 && authorsFrom ? inheritedAuthors : t('about-name')}
+                  aria-label={t('about-author-name', { number: i + 1 })}
                 />
                 <input
                   bind:value={author.affiliation}
-                  placeholder={t('document-window-affiliation')}
-                  aria-label={t('document-window-author-affiliation', { number: i + 1 })}
+                  placeholder={t('about-affiliation')}
+                  aria-label={t('about-author-affiliation', { number: i + 1 })}
                 />
                 <input
                   bind:value={author.email}
-                  placeholder={t('document-window-email')}
-                  aria-label={t('document-window-author-email', { number: i + 1 })}
+                  placeholder={t('about-email')}
+                  aria-label={t('about-author-email', { number: i + 1 })}
                 />
                 <input
                   bind:value={author.orcid}
-                  placeholder={t('document-window-orcid')}
-                  aria-label={t('document-window-author-orcid', { number: i + 1 })}
+                  placeholder={t('about-orcid')}
+                  aria-label={t('about-author-orcid', { number: i + 1 })}
                   spellcheck="false"
                 />
                 <IconButton
@@ -332,7 +278,7 @@
             {/each}
             <button type="button" class="add" onclick={() => draft.authors?.push({ name: '' })}>
               <Plus size={12} />
-              {t('document-window-add-author')}
+              {t('about-add-author')}
             </button>
             {#if authorsFrom}<small>{t('documents-inherited-from', { name: authorsFrom })}</small
               >{/if}
@@ -340,29 +286,27 @@
 
           <div class="pair">
             <label class="field">
-              <span>{t('document-window-date')}</span>
+              <span>{t('about-date')}</span>
               <input
                 bind:value={draft.date}
-                placeholder={dateFrom
-                  ? inherited.settings.date
-                  : t('document-window-date-placeholder')}
+                placeholder={dateFrom ? inherited.settings.date : t('about-date-placeholder')}
               />
               {#if dateFrom}<small>{t('documents-inherited-from', { name: dateFrom })}</small>{/if}
             </label>
             <label class="field">
               <span>
-                {t('document-window-keywords')}
+                {t('about-keywords')}
                 <em class:over={!!keywordsMost && keywordCount > keywordsMost}>
                   {keywordsMost
-                    ? t('document-window-keywords-of', { count: keywordCount, limit: keywordsMost })
-                    : t('document-window-keywords-count', { count: keywordCount })}
+                    ? t('about-keywords-of', { count: keywordCount, limit: keywordsMost })
+                    : t('about-keywords-count', { count: keywordCount })}
                 </em>
               </span>
               <input
                 bind:value={keywords}
                 placeholder={keywordsFrom
                   ? (inherited.settings.keywords ?? []).join(', ')
-                  : t('document-window-keywords-placeholder')}
+                  : t('about-keywords-placeholder')}
               />
               {#if keywordsFrom}<small
                   >{t('documents-inherited-from', { name: keywordsFrom })}</small
@@ -371,7 +315,7 @@
           </div>
 
           <div class="field">
-            <span>{t('document-window-identifiers')}</span>
+            <span>{t('about-identifiers')}</span>
             <table class="identifiers">
               <tbody>
                 {#each identifiers as identifier (identifier.key)}
@@ -393,8 +337,8 @@
                   <th scope="row">
                     <input
                       bind:value={newIdentifier}
-                      placeholder={t('document-window-identifier-name-placeholder')}
-                      aria-label={t('document-window-identifier-name')}
+                      placeholder={t('about-identifier-name-placeholder')}
+                      aria-label={t('about-identifier-name')}
                       onkeydown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
@@ -411,7 +355,7 @@
                       onclick={addIdentifier}
                     >
                       <Plus size={12} />
-                      {t('document-window-identifier-add')}
+                      {t('about-identifier-add')}
                     </button>
                   </td>
                 </tr>
@@ -422,57 +366,10 @@
               >{/if}
           </div>
         </div>
-      {:else if section === 'parts'}
-        <h3>{t('document-window-section-parts')}</h3>
-        <p class="hint top">{t('document-window-parts-hint')}</p>
-        {#each partKinds as kind (kind.id)}
-          {@const elements = partsOf.get(kind.id) ?? []}
-          <div class="part">
-            <div class="part-head">
-              <strong>{kind.label()}</strong>
-              <span class="group">{partGroupWords(kind.group)}</span>
-              <Button size="sm" onclick={() => makePart(kind)}>
-                {#snippet icon()}<Plus size={13} />{/snippet}
-                {t('document-window-parts-make')}
-              </Button>
-            </div>
-            {#each elements as element, i (element)}
-              <button type="button" class="element" onclick={() => go(element)}>
-                <span class="truncate">{nameOf(element)}</span>
-                {#if kind.one && i > 0}
-                  <span class="doubled">{t('document-window-parts-doubled')}</span>
-                {/if}
-                <ArrowRight size={13} />
-              </button>
-            {:else}
-              <p class="none">{t('document-window-parts-missing')}</p>
-            {/each}
-          </div>
-        {:else}
-          <p class="hint">{t('document-window-parts-none')}</p>
-        {/each}
-      {:else if section === 'look'}
-        <h3>{t('document-window-section-look')}</h3>
-        <p class="hint top">{t('document-window-look-hint')}</p>
-        <div class="row">
-          <span class="what"
-            >{t('document-window-look-now', {
-              layout: layoutName(choice.format),
-              style: styleName(choice.style),
-            })}</span
-          >
-          <Button
-            size="sm"
-            onclick={() => {
-              lookUi.open();
-              onclose();
-            }}>{t('document-window-look-open')}</Button
-          >
-        </div>
       {:else if section === 'language'}
-        <h3>{t('document-window-section-language')}</h3>
+        <h3>{t('about-section-language')}</h3>
         <label class="row">
-          <span class="what">{t('document-window-language')}</span>
+          <span class="what">{t('about-language')}</span>
           <select value={own.language ?? ''} onchange={(e) => setLanguage(e.currentTarget.value)}>
             <option value="">{noLanguage}</option>
             {#each TEXT_LANGUAGES as tag (tag)}
@@ -495,11 +392,11 @@
           <p class="hint">{t('languages-project-hint')}</p>
         {/if}
       {:else if section === 'checklist'}
-        <h3>{t('document-window-section-checklist')}</h3>
-        <p class="hint top">{t('document-window-checklist-hint')}</p>
+        <h3>{t('about-section-checklist')}</h3>
+        <p class="hint top">{t('about-checklist-hint')}</p>
         <div class="row">
           <span class="what"
-            >{t('document-window-requirement-words')}{#if template?.requirements.note}<small
+            >{t('about-requirement-words')}{#if template?.requirements.note}<small
                 >{template.requirements.note}</small
               >{/if}</span
           >
@@ -510,7 +407,7 @@
           </span>
         </div>
         {#if template?.requirements.anonymous}
-          <p class="hint">{t('document-window-requirement-anonymous')}</p>
+          <p class="hint">{t('about-requirement-anonymous')}</p>
         {/if}
         <ul class="remarks">
           {#each remarks as remark, i (i)}
@@ -527,7 +424,7 @@
               {/if}
             </li>
           {:else}
-            <li class="clear">{t('document-window-checklist-clear')}</li>
+            <li class="clear">{t('about-checklist-clear')}</li>
           {/each}
         </ul>
       {/if}
@@ -700,59 +597,6 @@
   }
   .identifiers .new th input {
     font-weight: 400;
-  }
-
-  /* The parts: each kind with the elements that fill it. */
-  .part {
-    padding: 8px 0;
-    border-bottom: 1px solid var(--line);
-  }
-  .part-head {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-height: 30px;
-  }
-  .part-head strong {
-    font-weight: 600;
-  }
-  .part-head .group {
-    flex: 1;
-    font-size: var(--text-xs);
-    color: var(--ink-4);
-  }
-  .element {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    margin-top: 2px;
-    padding: 4px 8px;
-    border: none;
-    border-radius: var(--radius-s);
-    background: transparent;
-    color: var(--ink);
-    font-family: var(--font-text);
-    font-size: 14.5px;
-    text-align: left;
-    cursor: pointer;
-  }
-  .element:hover {
-    background: var(--paper-hover);
-    color: var(--accent-strong);
-  }
-  .element .truncate {
-    flex: 1;
-  }
-  .doubled {
-    font-family: var(--font-ui);
-    font-size: var(--text-xs);
-    color: var(--warn);
-  }
-  .none {
-    margin: 2px 0 0 8px;
-    font-size: var(--text-sm);
-    color: var(--ink-4);
   }
 
   /* The checklist. */

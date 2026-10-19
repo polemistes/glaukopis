@@ -36,6 +36,7 @@
     type OwnKind,
   } from '$lib/api/documents';
   import type { Template } from '$lib/api/templates';
+  import { aboutDocumentUi } from '$lib/document/about-document.svelte';
   import { templateChooserUi } from '$lib/document/chooser.svelte';
   import { CATALOGUE, GROUPS, specOf } from '$lib/editor/kinds';
   import { languages, t } from '$lib/i18n';
@@ -62,6 +63,7 @@
   } from './changes';
   import { formatGroups, layoutName, styleGroups, styleName } from './choosing.svelte';
   import { LOOK_SECTIONS, lookUi, type LookRequest, type LookSection } from './look.svelte';
+  import ContentsSection from './ContentsSection.svelte';
   import { lengthsOk, lookRows, lookWords, resolvedWords, setKindLook } from './rows.svelte';
 
   interface Props {
@@ -74,12 +76,14 @@
     previewing: boolean;
     /** Opens the preview. */
     onpreview: () => void;
+    /** Shows an element in the text: one that fills a place of its own in the document. */
+    ongo: (element: string) => void;
     onclose: () => void;
     /** What stands at the head in place of the title: the tabs of the panel at the side. */
     head?: Snippet;
   }
 
-  let { project, at, passageKinds, previewing, onpreview, onclose, head }: Props = $props();
+  let { project, at, passageKinds, previewing, onpreview, ongo, onclose, head }: Props = $props();
 
   // ---- what the document uses ----
 
@@ -262,16 +266,14 @@
   const usualLayout = $derived(layoutName(documents.choice({}).format));
   const usualStyle = $derived(styleName(documents.choice({}).style));
   const broughtLayout = $derived(
-    template?.layout
-      ? layoutName(template.layout)
-      : t('document-window-usual', { name: usualLayout }),
+    template?.layout ? layoutName(template.layout) : t('look-usual', { name: usualLayout }),
   );
   const broughtStyle = $derived(
     template?.style
       ? styleName(template.style)
       : layout?.style
         ? styleName(layout.style)
-        : t('document-window-usual', { name: usualStyle }),
+        : t('look-usual', { name: usualStyle }),
   );
   const formatFrom = $derived(own.format ? null : fromAbove('format'));
   const styleFrom = $derived(own.style ? null : fromAbove('style'));
@@ -379,7 +381,7 @@
   // ---- the parts, and finding a setting ----
 
   /** The parts the panel shows, in their order. */
-  const SHOWN: readonly LookSection[] = LOOK_SECTIONS.filter((key) => key !== 'contents');
+  const SHOWN: readonly LookSection[] = LOOK_SECTIONS;
   /** The part at the top of the panel as it is scrolled: its chip is marked. */
   let section = $state<LookSection | null>(null);
   let kindInView = $state<string | undefined>(undefined);
@@ -1161,7 +1163,7 @@
     searching ? kindGroups.flatMap((g) => g.kinds).filter((k) => fits(k.label)) : [],
   );
   const foundStyle = $derived(
-    searching && (fits(t('document-window-style')) || fits(t('look-citations-hint'))),
+    searching && (fits(t('look-style')) || fits(t('look-citations-hint'))),
   );
   const foundNothing = $derived(
     searching && !foundRows.length && !foundFont && !foundKinds.length && !foundStyle,
@@ -1310,7 +1312,7 @@
 
 {#snippet styleRow()}
   <label class="row" data-style-row>
-    <span class="what">{t('document-window-style')}<small>{t('look-citations-hint')}</small></span>
+    <span class="what">{t('look-style')}<small>{t('look-citations-hint')}</small></span>
     <select
       value={own.style ?? ''}
       onchange={(e) => {
@@ -1323,8 +1325,8 @@
     >
       <option value="">
         {styleFrom
-          ? t('document-window-from-with', { name: styleFrom, what: styleName(choice.style) })
-          : t('document-window-as-template', { name: broughtStyle })}
+          ? t('look-from-with', { name: styleFrom, what: styleName(choice.style) })
+          : t('look-as-template', { name: broughtStyle })}
       </option>
       {#each styleGroups() as [name, styles] (name)}
         <optgroup label={name}>
@@ -1507,7 +1509,7 @@
           {@render styleRow()}
           <div class="actions">
             <Button size="sm" onclick={() => (editingStyle = choice.style)}
-              >{t('document-window-style-change')}</Button
+              >{t('look-style-change')}</Button
             >
           </div>
           <h4 data-at="bibliography">{t('look-at-bibliography')}</h4>
@@ -1532,21 +1534,24 @@
           <Settings target={f} rows={titleRows} {from} />
         </section>
 
+        <section class="part" data-part="contents">
+          <h3>{sectionWords.contents}</h3>
+          <ContentsSection {project} {at} {ongo} />
+        </section>
+
         <!-- The layout itself: chosen here, with what this document changes of it. -->
         <section class="part" data-part="layout">
           <h3>{sectionWords.layout}</h3>
           <label class="row">
-            <span class="what"
-              >{t('document-window-layout')}<small>{t('look-layout-hint')}</small></span
-            >
+            <span class="what">{t('look-layout')}<small>{t('look-layout-hint')}</small></span>
             <select
               value={own.format ?? ''}
               onchange={(e) => setOwn({ format: e.currentTarget.value || undefined })}
             >
               <option value="">
                 {formatFrom
-                  ? t('document-window-from-with', { name: formatFrom, what: nameOfLayout })
-                  : t('document-window-as-template', { name: broughtLayout })}
+                  ? t('look-from-with', { name: formatFrom, what: nameOfLayout })
+                  : t('look-as-template', { name: broughtLayout })}
               </option>
               {#each formatGroups() as group (group.name)}
                 <optgroup label={group.name}>
@@ -1676,6 +1681,11 @@
               <p class="hint">{t('look-bundled')}</p>
             {/if}
           {/if}
+          <div class="actions about">
+            <Button size="sm" onclick={() => aboutDocumentUi.open({ project, at })}
+              >{t('about-menu')}</Button
+            >
+          </div>
         </section>
       {/if}
     {/if}

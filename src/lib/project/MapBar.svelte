@@ -28,7 +28,7 @@
   import Mark from '$lib/shell/Mark.svelte';
   import { router } from '$lib/state/router.svelte';
   import { countFound } from '$lib/found/gather';
-  import { documentSettingsUi } from '$lib/document/document-settings.svelte';
+  import { aboutDocumentUi } from '$lib/document/about-document.svelte';
   import { templateChooserUi } from '$lib/document/chooser.svelte';
   import { t } from '$lib/i18n';
   import { keysFor } from '$lib/shell/keys.svelte';
@@ -150,10 +150,10 @@
         action: () => templateChooserUi.open({ project, at }),
       },
       {
-        label: t('document-window-menu'),
+        label: t('about-menu'),
         icon: FileText,
         shortcut: keysFor('document-settings'),
-        action: () => documentSettingsUi.open({ project, at }),
+        action: () => aboutDocumentUi.open({ project, at }),
       },
       {
         label: t('project-found'),
@@ -164,7 +164,7 @@
       {
         label: t('languages-menu'),
         icon: Languages,
-        action: () => documentSettingsUi.open({ project, at, section: 'language' }),
+        action: () => aboutDocumentUi.open({ project, at, section: 'language' }),
       },
       { kind: 'separator' },
       { label: t('project-new-element-under'), icon: CornerDownRight, action: addUnder },

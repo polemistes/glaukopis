@@ -140,34 +140,57 @@ try {
   await app.screenshot('templates-3-chosen');
   await app.closeChooser();
 
-  // --- The parts it gives a place to ---
-  await app.openDocumentSettings('Parts');
-  const parts = await app.exec(
-    `return Array.from(document.querySelectorAll('dialog[open] .part')).map((p) => ({
-       name: p.querySelector('.part-head strong').textContent.trim(),
-       make: Array.from(p.querySelectorAll('.part-head button')).some((b) => b.textContent.trim() === 'Make one'),
+  // --- What the document contains, in Look: the parts, the places of their own, what is required ---
+  await app.click('.preview header [data-look]');
+  await app.openLook('What the document contains');
+  const places = await app.exec(
+    `return Array.from(document.querySelectorAll('.side .look .place')).map((p) => ({
+       name: p.querySelector('.place-head strong').textContent.trim(),
+       make: !!p.querySelector('[data-make]'),
        none: !!p.querySelector('.none'),
      }))`,
   );
   check(
-    'the parts are the abstract, the appendix and the acknowledgements, none made, each with "Make one"',
-    ['Abstract', 'Appendix', 'Acknowledgements'].every((n) => parts.some((p) => p.name === n && p.make && p.none)),
+    'the places of their own are the abstract, the appendix and the acknowledgements, none filled, each with "Make one"',
+    ['Abstract', 'Appendix', 'Acknowledgements'].every((n) => places.some((p) => p.name === n && p.make && p.none)),
+    JSON.stringify(places),
+  );
+  const switches = () =>
+    app.exec(
+      `return Object.fromEntries(Array.from(document.querySelectorAll('.side .look [data-part-switch]')).map((i) => [i.dataset.partSwitch, { on: i.checked, fixed: i.disabled }]))`,
+    );
+  let parts = await switches();
+  check(
+    'the parts the program makes have switches: for an article the keywords on, the table of contents off, the text always there',
+    parts.keywords?.on && !parts.contents?.on && parts.body?.on && parts.body?.fixed,
     JSON.stringify(parts),
   );
   await app.screenshot('templates-4-parts');
-  await app.click(
-    await app.exec(
-      `const p = Array.from(document.querySelectorAll('dialog[open] .part')).find((p) => p.querySelector('.part-head strong').textContent.trim() === 'Abstract');
-       return Array.from(p.querySelectorAll('.part-head button')).find((b) => b.textContent.trim() === 'Make one');`,
-    ),
+  // The table of contents turned on is the document's own change, and printed; turned off again, nothing is left.
+  const contentsSwitch = `document.querySelector('.side .look [data-part-switch="contents"]')`;
+  await app.click(await app.exec(`return ${contentsSwitch}`));
+  await sleep(600);
+  const changedHere = await app.exec(`return ${contentsSwitch}.closest('.row').nextElementSibling?.matches('.from') ? ${contentsSwitch}.closest('.row').nextElementSibling.textContent.replace(/\\s+/g, ' ').trim() : null`);
+  check('a part turned on says it is changed here', (await switches()).contents?.on && /^Changed here/.test(changedHere ?? ''), changedHere);
+  const preview = () => {
+    const work = join(app.dataDir, 'work');
+    return readFileSync(join(work, readdirSync(work)[0], 'preview', 'document.typ'), 'utf8');
+  };
+  let waited = Date.now();
+  while (!/#outline\(/.test(preview()) && Date.now() - waited < 15000) await sleep(300);
+  check('and the preview prints the table of contents', /#outline\(/.test(preview()));
+  await app.click(await app.exec(`return ${contentsSwitch}`));
+  await sleep(600);
+  check(
+    'turned off again, it is as the template has it, with nothing said',
+    !(await switches()).contents?.on && !(await app.exec(`return ${contentsSwitch}.closest('.row').nextElementSibling?.matches('.from') ?? false`)),
   );
-  await app.waitFor('dialog[open] .part .element', 3000);
+  await app.click(await app.exec(`return document.querySelector('.side .look .place[data-kind="abstract"] [data-make]')`));
+  await app.waitFor('.side .look .place[data-kind="abstract"] .element', 3000);
   const filled = await app.exec(
-    `const p = Array.from(document.querySelectorAll('dialog[open] .part')).find((p) => p.querySelector('.part-head strong').textContent.trim() === 'Abstract');
-     return Array.from(p.querySelectorAll('.element')).map((e) => e.textContent.trim());`,
+    `return Array.from(document.querySelectorAll('.side .look .place[data-kind="abstract"] .element')).map((e) => e.textContent.trim())`,
   );
-  check('made, the abstract is listed under its part', filled.length === 1 && filled[0] === 'Abstract', JSON.stringify(filled));
-  await app.closeDocumentSettings();
+  check('made, the abstract is listed under its place', filled.length === 1 && filled[0] === 'Abstract', JSON.stringify(filled));
 
   // --- In the text, the abstract is the first child, with the grey label of a part ---
   await app.keys(['Control', 'd']);
@@ -221,13 +244,13 @@ try {
   await app.screenshot('templates-6-preview-abstract');
 
   // --- The checklist of a small document is empty ---
-  await app.openDocumentSettings('Checklist');
+  await app.openAbout('Checklist');
   check(
     'the checklist has nothing to remark on in a small document',
     (await app.count('dialog[open] .remarks li')) === 1 && (await app.exists('dialog[open] .remarks li.clear')),
     (await app.text('dialog[open] .remarks')).replace(/\s+/g, ' '),
   );
-  await app.closeDocumentSettings();
+  await app.closeAbout();
 
   // --- The kind menu offers the template's kinds; a second abstract is given there ---
   await app.keys(['Control', 'd']);
@@ -266,7 +289,7 @@ try {
     JSON.stringify(seen),
   );
 
-  await app.openDocumentSettings('Checklist');
+  await app.openAbout('Checklist');
   const remarks = await app.exec(
     `return Array.from(document.querySelectorAll('dialog[open] .remarks li')).map((l) => l.textContent.replace(/\\s+/g, ' ').trim())`,
   );
@@ -276,12 +299,12 @@ try {
     remarks.join(' | '),
   );
   await app.screenshot('templates-8-checklist');
-  await app.documentSection('Parts');
+  await app.closeAbout();
+  await app.openLook('What the document contains');
   check(
-    'and the parts say that only the first is used',
-    (await app.text('dialog[open] .part')).includes('Only the first is used'),
+    'and what the document contains says that only the first is used',
+    (await app.text('.side .look .place[data-kind="abstract"]')).includes('Only the first is used'),
   );
-  await app.closeDocumentSettings();
 
   // --- A document is made of it: Word ---
   // The dialog of the system, which asks where, cannot be driven, nor

@@ -247,10 +247,10 @@ try {
   );
 
   // --- The particulars of the document ---
-  await app.openDocumentSettings('Details');
+  await app.openAbout('Details');
   await app.type('dialog[open] input[aria-label="Name of author 1"]', 'A. Scholar');
   await app.screenshot('preview-3-details');
-  await app.closeDocumentSettings(true);
+  await app.closeAbout(true);
   await sleep(4500);
   typ = source();
   check('the author is on the first page', /A\. Scholar/.test(typ));

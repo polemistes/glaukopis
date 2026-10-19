@@ -105,7 +105,7 @@
   import PreviewPanel from '$lib/preview/PreviewPanel.svelte';
   import LookPanel from '$lib/look/LookPanel.svelte';
   import { lookUi } from '$lib/look/look.svelte';
-  import { documentSettingsUi } from '$lib/document/document-settings.svelte';
+  import { aboutDocumentUi } from '$lib/document/about-document.svelte';
   import { templateChooserUi } from '$lib/document/chooser.svelte';
   import { templateEditorUi } from '$lib/document/template-editor.svelte';
   import { historyOf } from '$lib/history/history.svelte';
@@ -197,6 +197,18 @@
   const previewPane = $derived(panes[previewIndex]);
   const previewOf = $derived(projectOf(previewPane));
   const previewId = $derived(previewPane?.project ?? projectId);
+
+  /**
+   * Shows an element of the document the preview shows, in the text: in the
+   * text of the element the preview follows where it is shown; else the pane
+   * it follows turns to the text. From the preview and from Look.
+   */
+  function toTextOfPreview(element: string) {
+    const i = panes.findIndex(
+      (p) => p.project === previewPane.project && p.at === previewPane.at && p.mode === 'text',
+    );
+    goTo(element, { mode: 'text', pane: i >= 0 ? i : previewIndex });
+  }
 
   /** The project of the pane that has the focus: what the keys, the undo and the dialogs act on. */
   const focusedProject = $derived(projectOf(pane) ?? project);
@@ -486,7 +498,7 @@
       .setTitle('Glaukopis')
       .catch(() => {});
     document.getElementById('passage-kinds')?.remove();
-    documentSettingsUi.close();
+    aboutDocumentUi.close();
     templateChooserUi.close();
     templateEditorUi.close();
     ownKindsUi.editing = null;
@@ -764,7 +776,7 @@
       'document-settings': {
         run: () => {
           if (pane && focusedProject)
-            documentSettingsUi.open({ project: focusedProject, at: pane.at });
+            aboutDocumentUi.open({ project: focusedProject, at: pane.at });
         },
         when: () => !!pane && !!focusedProject,
       },
@@ -1177,16 +1189,7 @@
               projectId={previewId}
               at={previewPane.at}
               onclose={() => (showPreview = false)}
-              ongo={(element) => {
-                // In the text of this element where it is shown; else the pane it follows turns to the text.
-                const i = panes.findIndex(
-                  (p) =>
-                    p.project === previewPane.project &&
-                    p.at === previewPane.at &&
-                    p.mode === 'text',
-                );
-                goTo(element, { mode: 'text', pane: i >= 0 ? i : previewIndex });
-              }}
+              ongo={toTextOfPreview}
               current={() => {
                 const i =
                   previewPane.mode === 'text'
@@ -1247,6 +1250,7 @@
                 at={previewPane.at}
                 passageKinds={lookOf.passageKinds}
                 previewing={showPreview}
+                ongo={toTextOfPreview}
                 onpreview={() => (showPreview = true)}
                 head={tabs}
                 onclose={closeSide}

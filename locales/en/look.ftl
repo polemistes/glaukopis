@@ -91,3 +91,13 @@ look-contents-limit-abstract-words = Words of the abstract, at most
 look-contents-limit-keywords = Keywords, at most
 # What the limits count, as what the document is says it.
 look-contents-requirements-note = What the limits count: { $note }
+
+# A layout, a style or a template that is neither chosen nor inherited: the one from the settings, named.
+look-usual = Your usual ({ $name })
+# The first choice of a layout or a style: what the template brings, named.
+look-as-template = As the template has it ({ $name })
+# The first choice where an element over this one has chosen: the element, and what it chose.
+look-from-with = From { $name } ({ $what })
+look-layout = Layout
+look-style = Reference style
+look-style-change = Change this reference style…

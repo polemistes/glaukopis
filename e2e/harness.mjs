@@ -651,17 +651,17 @@ export class App {
     await sleep(150);
   }
 
-  // ---- the document settings of an element (ADR 0038) ----
+  // ---- about this document: the details, the language and the checklist of an element's document ----
 
-  /** Opens the document settings of the element in view by Ctrl+Shift+D, at a part of the window named as it names it. */
-  async openDocumentSettings(section) {
+  /** Opens About this document for the element in view by Ctrl+Shift+D, at a part of the window named as it names it. */
+  async openAbout(section) {
     await this.keys(['Control', 'Shift', 'd']);
-    await this.waitForText('dialog[open] h2', 'Document settings', 5000);
+    await this.waitForText('dialog[open] h2', 'About this document', 5000);
     await sleep(200);
     if (section) await this.documentSection(section);
   }
 
-  /** Turns to a part of the open document settings: "Template", "Details", "Parts", "Look", "Language", "Checklist". */
+  /** Turns to a part of About this document: "Details", "Language", "Checklist". */
   async documentSection(section) {
     await this.clickText('dialog[open] .window nav button', section);
     await this.waitForText('dialog[open] .window .settings h3', section, 3000);
@@ -669,7 +669,7 @@ export class App {
   }
 
   /**
-   * Chooses in a chooser of the document settings, found by the words of its
+   * Chooses in a chooser of About this document, found by the words of its
    * label ("Layout", "Reference style", "Language of the text"), the value
    * given: written as it is chosen. Says whether the chooser offered it.
    */
@@ -694,7 +694,7 @@ export class App {
     );
   }
 
-  /** What a chooser of the document settings holds, found as `documentChoose` finds it. */
+  /** What a chooser of About this document holds, found as `documentChoose` finds it. */
   async documentChosen(label) {
     return this.exec(
       `const row = Array.from(document.querySelectorAll('dialog[open] .window label.row'))
@@ -704,8 +704,8 @@ export class App {
     );
   }
 
-  /** Closes the document settings: saved, which writes the details, or left. */
-  async closeDocumentSettings(save = false) {
+  /** Closes About this document: saved, which writes the details, or left. */
+  async closeAbout(save = false) {
     await this.clickText('dialog[open] footer button', save ? 'Save' : 'Cancel');
     await this.waitGone('dialog[open] .window nav', 5000);
     await sleep(150);

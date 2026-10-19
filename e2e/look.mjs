@@ -99,9 +99,9 @@ try {
      return Array.from(through.children).map((e) => e.dataset.part ?? (e.matches('.whole') ? 'whole' : e.matches('.search') ? 'search' : e.matches('.first') ? 'first' : e.matches('.chips') ? 'chips' : e.tagName.toLowerCase()));`,
   );
   check(
-    'then the search, the first rows, the chips, and the parts from the page inwards, with the layout last',
+    'then the search, the first rows, the chips, and the parts from the page inwards, with what the document contains and the layout last',
     JSON.stringify(order.filter((o) => o !== 'p')) ===
-      JSON.stringify(['whole', 'search', 'first', 'chips', 'page', 'type', 'paragraphs', 'headings', 'numbers', 'notes', 'figures', 'front', 'layout']),
+      JSON.stringify(['whole', 'search', 'first', 'chips', 'page', 'type', 'paragraphs', 'headings', 'numbers', 'notes', 'figures', 'front', 'contents', 'layout']),
     order.join(' '),
   );
   const first = await app.exec(
@@ -230,15 +230,19 @@ try {
   );
   await app.screenshot('look-5-inherited');
 
-  // --- The document settings send to Look ---
-  await app.openDocumentSettings('Look');
-  check(
-    'the document settings say where the look is set, with a way there',
-    await app.exists('dialog[open] .window button') &&
-      /Open Look/.test(await app.text('dialog[open] .window .settings')),
+  // --- The foot of Look opens what the document says of itself ---
+  await app.lookSection('The layout');
+  await app.clickText('.side .look .actions.about button', 'About this document…');
+  await app.waitForText('dialog[open] h2', 'About this document', 5000);
+  const about = await app.exec(
+    `return Array.from(document.querySelectorAll('dialog[open] .window nav button')).map((b) => b.textContent.trim())`,
   );
-  await app.clickText('dialog[open] .window .settings button', 'Open Look');
-  await app.waitGone('dialog[open]', 3000);
+  check(
+    'the foot of Look opens About this document, with its details, its language and its checklist',
+    JSON.stringify(about) === JSON.stringify(['Details', 'Language', 'Checklist']),
+    about.join(' | '),
+  );
+  await app.closeAbout();
 
   // --- The palette changes the font ---
   await app.lookSection('Page');

@@ -46,3 +46,13 @@ look-keep-save = Ta vare på
 look-put-into = Legg desse endringane inn i «{ $name }»
 look-delete-layout = Slett dette oppsettet mitt …
 look-bundled = Oppsetta som følgjer med Glaukopis, blir verande som dei er. Det du endrar her, blir teke vare på saman med dokumentet, eller, når du vel det, som eit eige oppsett.
+
+# A layout, a style or a template that is neither chosen nor inherited: the one from the settings, named.
+look-usual = Som vanleg ({ $name })
+# The first choice of a layout or a style: what the template brings, named.
+look-as-template = Som malen har det ({ $name })
+# The first choice where an element over this one has chosen: the element, and what it chose.
+look-from-with = Frå { $name } ({ $what })
+look-layout = Oppsett
+look-style = Referansestil
+look-style-change = Endre denne referansestilen …

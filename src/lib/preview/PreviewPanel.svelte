@@ -21,7 +21,7 @@
     type TextRun,
   } from '$lib/api/documents';
   import type { Template } from '$lib/api/templates';
-  import { documentSettingsUi } from '$lib/document/document-settings.svelte';
+  import { aboutDocumentUi } from '$lib/document/about-document.svelte';
   import { templateChooserUi } from '$lib/document/chooser.svelte';
   import { lookUi } from '$lib/look/look.svelte';
   import { documents } from './documents.svelte';
@@ -35,7 +35,7 @@
   import Popover from '$lib/ui/Popover.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError } from '$lib/ui/toast.svelte';
-  import { documentRequest, templateFor, templateName } from './documents.svelte';
+  import { documentRequest, templateName, templateUsed } from './documents.svelte';
   import ExportDialog from './ExportDialog.svelte';
 
   interface Props {
@@ -193,9 +193,9 @@
   /** The document whole, for what is made of all of it: an export, the sample of a layout. */
   const request = () => documentRequest(project, projectId, at);
 
-  /** Opens the settings of the element's document: its template, layout, style and the rest. */
-  function openSettings() {
-    documentSettingsUi.open({ project, at });
+  /** Opens what the element's document says of itself: its details, its language, its checklist. */
+  function openAbout() {
+    aboutDocumentUi.open({ project, at });
   }
 
   /** The room between two pages, and around all of them, as the style sheet has them. */
@@ -300,7 +300,8 @@
         force = false;
         // The layout as the document uses it: with its changes, and its lines numbered where it says.
         const f = await documents.formatFor(project, at);
-        const tp = $state.snapshot(await templateFor(project, choice.template)) as Template;
+        // The template as the document uses it: with what it turns on or off and requires otherwise.
+        const tp = $state.snapshot(await templateUsed(project, at)) as Template;
         let document = leanDocument(project, at, sent);
         // With what has been changed under the same name: a style saved anew is made anew.
         const from = `${documents.changed}\n${choice.style}\n${JSON.stringify(f)}\n${JSON.stringify(tp)}\n${documentMark(document)}`;
@@ -491,11 +492,7 @@
     <IconButton label={t('preview-show-text')} disabled={!places.length} onclick={showText}>
       <ScanEye size={15} />
     </IconButton>
-    <IconButton
-      label={t('document-window-menu')}
-      shortcut={keysFor('document-settings')}
-      onclick={openSettings}
-    >
+    <IconButton label={t('about-menu')} shortcut={keysFor('document-settings')} onclick={openAbout}>
       <SlidersHorizontal size={15} />
     </IconButton>
     <Button variant="primary" size="sm" onclick={() => (exporting = true)}>
