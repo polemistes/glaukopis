@@ -95,10 +95,61 @@ pub struct Options {
     pub collection: Option<String>,
 }
 
+/// A copy of a Zotero database, made once for all that is asked of it
+/// while one dialog is open: what it holds, the collections of a library,
+/// its references. Made under a directory the application gives, and
+/// removed when this is dropped.
+pub struct ZoteroCopy(database::Opened);
+
+impl ZoteroCopy {
+    /// Copies the database at `path`, the data directory or the database
+    /// in it, into a directory of its own under `temp`.
+    pub fn open(path: &Path, temp: &Path) -> Result<ZoteroCopy> {
+        database::Opened::open(path, temp).map(ZoteroCopy)
+    }
+
+    /// Zotero's data directory.
+    pub fn dir(&self) -> &Path {
+        &self.0.dir
+    }
+
+    /// Whether Zotero has changed its database since the copy was made,
+    /// which a new copy then has to be made of.
+    pub fn is_current(&self) -> bool {
+        self.0.is_current()
+    }
+
+    /// What the database holds, without importing anything.
+    pub fn inspect(&mut self) -> Result<ZoteroInfo> {
+        let (mut info, warnings) = self.0.run(info_of)?;
+        info.warnings = warnings;
+        Ok(info)
+    }
+
+    /// The collections of a library, each after the one it is in, for
+    /// choosing one to import. None: the user's own library.
+    pub fn collections(&mut self, library: Option<i64>) -> Result<Vec<ZoteroCollection>> {
+        Ok(self.0.run(|db, _| collections_of(db, library))?.0)
+    }
+
+    /// The references of a library as candidates for import. The second
+    /// value holds warnings.
+    pub fn read(&mut self, options: &Options) -> Result<(Vec<Candidate>, Vec<String>)> {
+        let bases = places::linked_file_bases();
+        self.0.run(|db, warnings| candidates(db, options, &bases, warnings))
+    }
+}
+
 /// What a directory holds, without importing anything. `dir` is the data
 /// directory, or the database in it.
 pub fn inspect(dir: &Path) -> Result<ZoteroInfo> {
-    let (mut info, warnings) = database::with_database(dir, |db, _| {
+    let (mut info, warnings) = database::with_database(dir, |db, _| info_of(db, &mut Vec::new()))?;
+    info.warnings = warnings;
+    Ok(info)
+}
+
+fn info_of(db: &Database, _: &mut Vec<String>) -> Result<ZoteroInfo> {
+    {
         let mut info = ZoteroInfo { path: db.dir.display().to_string(), ..Default::default() };
         for library in db.libraries()? {
             let references = db.references(library.id)?;
@@ -114,15 +165,17 @@ pub fn inspect(dir: &Path) -> Result<ZoteroInfo> {
             });
         }
         Ok(info)
-    })?;
-    info.warnings = warnings;
-    Ok(info)
+    }
 }
 
 /// The collections of a library, each after the one it is in, for choosing
 /// one to import. None: the user's own library.
 pub fn collections(dir: &Path, library: Option<i64>) -> Result<Vec<ZoteroCollection>> {
-    let (found, _) = database::with_database(dir, |db, _| {
+    Ok(database::with_database(dir, |db, _| collections_of(db, library))?.0)
+}
+
+fn collections_of(db: &Database, library: Option<i64>) -> Result<Vec<ZoteroCollection>> {
+    {
         let library = library_of(db, library)?;
         let references = db.references(library.id)?;
         let mut counts: HashMap<i64, usize> = HashMap::new();
@@ -144,8 +197,7 @@ pub fn collections(dir: &Path, library: Option<i64>) -> Result<Vec<ZoteroCollect
             .collect();
         found.sort_by_cached_key(|c| c.path.iter().map(|name| name.to_lowercase()).collect::<Vec<_>>());
         Ok(found)
-    })?;
-    Ok(found)
+    }
 }
 
 /// Reads the references of a Zotero library as candidates for import. The

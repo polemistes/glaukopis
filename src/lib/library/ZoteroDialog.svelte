@@ -1,11 +1,12 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import FolderOpen from '@lucide/svelte/icons/folder-open';
   import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
   import { open as chooseFolder } from '@tauri-apps/plugin-dialog';
   import {
     importZotero,
     zoteroCollections,
+    zoteroDone,
     zoteroFind,
     zoteroInspect,
     type ZoteroCollection,
@@ -54,6 +55,12 @@
       findFailed = true;
       error = describeError(e) ?? t('library-zotero-unread');
     }
+  });
+
+  // Each step of the dialog reads one copy of the database, made at the
+  // first; it is removed when the dialog closes, however it closes.
+  onDestroy(() => {
+    zoteroDone().catch((e) => console.error('the copies of Zotero could not be removed', e));
   });
 
   async function take(next: ZoteroInfo) {

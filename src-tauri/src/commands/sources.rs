@@ -1,7 +1,7 @@
 //! Commands for what comes from outside: databases of books and articles,
 //! PDF files, and the libraries of Zotero.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
@@ -266,12 +266,17 @@ pub fn lookup_acknowledgements() -> Vec<Acknowledgement> {
 /// The libraries of Zotero on this computer. One that is there and cannot
 /// be read (locked while Zotero runs, of a form not known here) is given
 /// with what was wrong as its warning, not left out as if there were none.
+///
+/// The dialog of Zotero asks for what a library holds, for its collections
+/// and for its references, in steps; each is answered from one copy of the
+/// database, made at the first step and removed by `zotero_done` when the
+/// dialog closes (`AppState::with_zotero`).
 #[tauri::command(async)]
-pub fn zotero_find() -> Vec<ZoteroInfo> {
+pub fn zotero_find(state: State<'_, AppState>) -> Vec<ZoteroInfo> {
     zotero::find()
         .iter()
         .map(|dir| {
-            zotero::inspect(dir).unwrap_or_else(|e| {
+            state.with_zotero(dir, |copy| copy.inspect()).unwrap_or_else(|e| {
                 tracing::warn!(dir = %dir.display(), %e, "a library of Zotero was found, and could not be read");
                 ZoteroInfo { path: dir.display().to_string(), warnings: vec![e.to_string()], ..Default::default() }
             })
@@ -280,19 +285,29 @@ pub fn zotero_find() -> Vec<ZoteroInfo> {
 }
 
 #[tauri::command(async)]
-pub fn zotero_inspect(path: String) -> CommandResult<ZoteroInfo> {
-    Ok(zotero::inspect(&PathBuf::from(path))?)
+pub fn zotero_inspect(state: State<'_, AppState>, path: String) -> CommandResult<ZoteroInfo> {
+    Ok(state.with_zotero(Path::new(&path), |copy| copy.inspect())?)
 }
 
 #[tauri::command(async)]
-pub fn zotero_collections(path: String, library: Option<i64>) -> CommandResult<Vec<ZoteroCollection>> {
-    Ok(zotero::collections(&PathBuf::from(path), library)?)
+pub fn zotero_collections(
+    state: State<'_, AppState>,
+    path: String,
+    library: Option<i64>,
+) -> CommandResult<Vec<ZoteroCollection>> {
+    Ok(state.with_zotero(Path::new(&path), |copy| copy.collections(library))?)
 }
 
 #[tauri::command(async)]
 pub fn import_zotero(state: State<'_, AppState>, path: String, options: Options) -> CommandResult<Plan> {
-    let (candidates, warnings) = zotero::read(&PathBuf::from(path), &options)?;
+    let (candidates, warnings) = state.with_zotero(Path::new(&path), |copy| copy.read(&options))?;
     let mut library = state.library();
     library.refresh()?;
     Ok(import::plan(&library, candidates, "Zotero", warnings))
+}
+
+/// The dialog of Zotero is closed: the copies it read are removed.
+#[tauri::command]
+pub fn zotero_done(state: State<'_, AppState>) {
+    state.zotero_done();
 }

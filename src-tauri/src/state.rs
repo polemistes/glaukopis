@@ -6,6 +6,7 @@ use std::sync::{Mutex, MutexGuard, RwLock};
 use glaukopis_core::export::Tools;
 use glaukopis_core::export::tools::{self, Configured};
 use glaukopis_core::formats::Formats;
+use glaukopis_core::import::zotero::ZoteroCopy;
 use glaukopis_core::library::Library;
 use glaukopis_core::net::Client;
 use glaukopis_core::paths::{Claim, DataDir};
@@ -36,6 +37,10 @@ pub struct AppState {
     pub making: Mutex<()>,
     /// And one file, beside them, in a place of its own.
     pub exporting: Mutex<()>,
+    /// The copies of Zotero's databases that the dialog of Zotero reads,
+    /// each by the path it was asked for: made once while the dialog is
+    /// open, for every step of it, and removed when it closes.
+    zotero: Mutex<Vec<(PathBuf, ZoteroCopy)>>,
 }
 
 /// Where the resources are: where the environment says, where the
@@ -68,6 +73,11 @@ pub fn find_resources(installed: Option<PathBuf>) -> PathBuf {
         .unwrap_or_else(|| candidates[0].clone())
 }
 
+/// Where the copies of Zotero's databases are made.
+fn zotero_copies(data: &DataDir) -> PathBuf {
+    data.work().join("zotero")
+}
+
 impl AppState {
     pub fn open(data: DataDir, claim: Claim, installed_resources: Option<PathBuf>) -> glaukopis_core::Result<Self> {
         let library = Library::open(&data)?;
@@ -89,6 +99,14 @@ impl AppState {
         let formats = Formats::new(&resources, &data.formats());
         let templates = Templates::new(&resources, &data.templates());
         let spelling = Spelling::open(&data, &resources);
+        // Copies of Zotero's databases that a run which ended without
+        // closing its dialog left behind.
+        match std::fs::remove_dir_all(zotero_copies(&data)) {
+            Err(error) if error.kind() != std::io::ErrorKind::NotFound => {
+                tracing::warn!(%error, "copies of Zotero's databases left behind could not be removed")
+            }
+            _ => {}
+        }
         let state = AppState {
             projects,
             pictures,
@@ -101,6 +119,7 @@ impl AppState {
             tools: RwLock::new(Tools::default()),
             making: Mutex::new(()),
             exporting: Mutex::new(()),
+            zotero: Mutex::new(Vec::new()),
             data,
             _claim: claim,
         };
@@ -112,6 +131,37 @@ impl AppState {
     /// file on disk is always whole, and is read again when it has changed.
     pub fn library(&self) -> MutexGuard<'_, Library> {
         self.library.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+    }
+
+    /// Runs `work` on the copy of the Zotero database at `path` (its data
+    /// directory, or the database in it), made when there is none yet or
+    /// Zotero has changed its database since. The copies are made in the
+    /// application's own folder for work, on the disk, and not in the
+    /// system's temporary directory, which is often held in memory: a
+    /// database of Zotero may be larger than a gigabyte.
+    pub fn with_zotero<T>(
+        &self,
+        path: &std::path::Path,
+        work: impl FnOnce(&mut ZoteroCopy) -> glaukopis_core::Result<T>,
+    ) -> glaukopis_core::Result<T> {
+        let mut copies = self.zotero.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        if let Some(at) = copies.iter().position(|(asked, copy)| asked == path || copy.dir() == path) {
+            if copies[at].1.is_current() {
+                return work(&mut copies[at].1);
+            }
+            tracing::info!(path = %path.display(), "Zotero changed its database since it was copied: it is copied anew");
+            copies.remove(at);
+        }
+        let mut copy = ZoteroCopy::open(path, &zotero_copies(&self.data))?;
+        let done = work(&mut copy);
+        copies.push((path.to_owned(), copy));
+        done
+    }
+
+    /// Removes the copies of Zotero's databases: the dialog that read them
+    /// is closed, or the application ends.
+    pub fn zotero_done(&self) {
+        self.zotero.lock().unwrap_or_else(|poisoned| poisoned.into_inner()).clear();
     }
 
     pub fn setting(&self, key: &str) -> Option<String> {

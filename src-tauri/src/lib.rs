@@ -176,6 +176,7 @@ pub fn run() {
             commands::sources::zotero_inspect,
             commands::sources::zotero_collections,
             commands::sources::import_zotero,
+            commands::sources::zotero_done,
             commands::projects::project_list,
             commands::projects::project_create,
             commands::projects::project_rename,
@@ -301,7 +302,7 @@ pub fn run() {
             std::process::exit(1);
         }
     };
-    app.run(|_, event| match event {
+    app.run(|app, event| match event {
         tauri::RunEvent::WindowEvent { label, event: tauri::WindowEvent::CloseRequested { .. }, .. } => {
             tracing::info!(window = label, "the window is asked to close")
         }
@@ -309,7 +310,12 @@ pub fn run() {
             tracing::info!(window = label, "the window is destroyed")
         }
         tauri::RunEvent::ExitRequested { code, .. } => tracing::info!(?code, "the application is asked to end"),
-        tauri::RunEvent::Exit => tracing::info!("the application ends"),
+        tauri::RunEvent::Exit => {
+            tracing::info!("the application ends");
+            if let Some(state) = app.try_state::<state::AppState>() {
+                state.zotero_done();
+            }
+        }
         _ => {}
     });
 }

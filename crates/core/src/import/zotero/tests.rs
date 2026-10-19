@@ -1260,3 +1260,46 @@ fn the_zotero_of_this_machine() {
         }
     }
 }
+
+#[test]
+fn one_copy_serves_every_step_of_a_dialog() {
+    let z = a_library();
+    let temp = tempfile::tempdir().unwrap();
+    let copies = || fs::read_dir(temp.path()).unwrap().count();
+    let mut copy = ZoteroCopy::open(z.path(), temp.path()).unwrap();
+    assert_eq!(copies(), 1);
+    assert_eq!(copy.dir(), z.path());
+    // Each step reads the one copy, and finds what a copy of its own finds.
+    let info = copy.inspect().unwrap();
+    let collections = copy.collections(None).unwrap();
+    let read_once = copy.read(&EVERYTHING).unwrap();
+    assert_eq!(copies(), 1);
+    assert_eq!(format!("{info:?}"), format!("{:?}", inspect(z.path()).unwrap()));
+    assert_eq!(format!("{collections:?}"), format!("{:?}", super::collections(z.path(), None).unwrap()));
+    assert_eq!(format!("{read_once:?}"), format!("{:?}", read(z.path(), &EVERYTHING).unwrap()));
+    // What Zotero changes afterwards is seen, so that a copy is made anew.
+    assert!(copy.is_current());
+    z.item("book", "LATER001", &[("title", "Later")]);
+    assert!(!copy.is_current());
+    // The copy goes with what holds it.
+    drop(copy);
+    assert_eq!(copies(), 0);
+}
+
+#[test]
+fn one_copy_of_the_backup_when_the_database_cannot_be_read() {
+    let Zotero { dir, conn } = a_library();
+    drop(conn);
+    let z = Folder(dir);
+    let database = z.path().join("zotero.sqlite");
+    fs::copy(&database, z.path().join("zotero.sqlite.bak")).unwrap();
+    fs::write(&database, b"This is no database, whatever its name.").unwrap();
+    let temp = tempfile::tempdir().unwrap();
+    let mut copy = ZoteroCopy::open(z.path(), temp.path()).unwrap();
+    assert_eq!(fs::read_dir(temp.path()).unwrap().count(), 1);
+    let info = copy.inspect().unwrap();
+    assert!(info.warnings[0].contains("zotero.sqlite.bak, was read instead"), "{:?}", info.warnings);
+    let (candidates, warnings) = copy.read(&EVERYTHING).unwrap();
+    assert_eq!((candidates.len(), &warnings[0]), (7, &info.warnings[0]));
+    assert_eq!(fs::read_dir(temp.path()).unwrap().count(), 1);
+}
