@@ -29,18 +29,8 @@ export const TEMPLATE_GROUPS: readonly TemplateGroup[] = [
   'style-guide',
 ];
 
-/** The parts the core makes itself, in the order a document usually has them. */
-export const GENERATED_PARTS: readonly GeneratedPart[] = [
-  'half-title',
-  'title-page',
-  'keywords',
-  'contents',
-  'list-of-figures',
-  'list-of-tables',
-  'body',
-  'notes',
-  'bibliography',
-];
+// The order of the parts the core makes itself, kept apart from the words so that what is pure can know it.
+export { GENERATED_PARTS } from './parts-order';
 
 /** The kinds of file a document can be made as, in the order the export offers them. */
 export const TARGETS: readonly OutputTarget[] = [

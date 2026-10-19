@@ -54,3 +54,26 @@ look-keep-save = Behold
 look-put-into = Legg disse endringene inn i «{ $name }»
 look-delete-layout = Slett dette oppsettet mitt …
 look-bundled = Oppsettene som følger med Glaukopis, forblir som de er. Det du endrer her, holdes sammen med dokumentet, eller, når du vil, som et eget oppsett.
+
+## Hva dokumentet inneholder, en del av Utseende: delene programmet lager
+## selv, slagene elementer som får en egen plass, og hva som kreves. Det som
+## endres der, holdes som dokumentets egne endringer.
+
+look-contents-parts = Delene av dokumentet
+look-contents-parts-hint = Slik «{ $template }» har dem. Slår du en del på eller av her, endres den for dette dokumentet og dem under det, og ingen andre steder.
+look-contents-part-body = Alltid med i dokumentet
+look-contents-part-notes = Der teksten har noter
+look-contents-part-bibliography = Der teksten viser til et verk
+look-contents-part-keywords = Skrives ut der dokumentet har nøkkelord
+look-contents-kinds = Elementer med en egen plass
+look-contents-kinds-hint = Slagene elementer «{ $template }» gir plass til, og elementene under dette som fyller hvert av dem. Hvert av dem er et element som alle andre: teksten skrives i treet.
+look-contents-kinds-none = «{ $template }» gir ikke noe slag element en egen plass.
+look-contents-kinds-missing = Ingen ennå
+look-contents-kinds-make = Lag en
+look-contents-kinds-doubled = Bare det første brukes
+look-contents-requirements = Hva som kreves
+look-contents-requirements-hint = Slik «{ $template }» krever det, om det ikke endres her. Sjekklisten og forhåndsvisningen teller mot disse grensene; ingenting kuttes.
+look-contents-limit-words = Ord i teksten, høyst
+look-contents-limit-abstract-words = Ord i sammendraget, høyst
+look-contents-limit-keywords = Nøkkelord, høyst
+look-contents-requirements-note = Hva grensene teller: { $note }
