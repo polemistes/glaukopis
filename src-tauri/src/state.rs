@@ -9,6 +9,7 @@ use glaukopis_core::formats::Formats;
 use glaukopis_core::import::zotero::ZoteroCopy;
 use glaukopis_core::library::Library;
 use glaukopis_core::net::Client;
+use glaukopis_core::ocr;
 use glaukopis_core::paths::{Claim, DataDir};
 use glaukopis_core::pictures::Pictures;
 use glaukopis_core::projects::Projects;
@@ -41,6 +42,19 @@ pub struct AppState {
     /// each by the path it was asked for: made once while the dialog is
     /// open, for every step of it, and removed when it closes.
     zotero: Mutex<Vec<(PathBuf, ZoteroCopy)>>,
+    /// The last reading of a PDF into elements, kept so that what is made
+    /// of it can be changed without reading the file again: one at a time,
+    /// a new reading taking its place, until it is let go.
+    pub reading: Mutex<Option<KeptReading>>,
+}
+
+/// A reading of a PDF into elements, kept under a token of its own: the
+/// file's name, the title it was given, and what was read.
+pub struct KeptReading {
+    pub token: String,
+    pub file: String,
+    pub title: String,
+    pub read: ocr::ReadPdf,
 }
 
 /// Where the resources are: where the environment says, where the
@@ -120,6 +134,7 @@ impl AppState {
             making: Mutex::new(()),
             exporting: Mutex::new(()),
             zotero: Mutex::new(Vec::new()),
+            reading: Mutex::new(None),
             data,
             _claim: claim,
         };

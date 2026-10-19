@@ -865,11 +865,22 @@ fn the_shape_of_a_file_is_found() {
     );
     assert!(page_marks(&by_pages.sections).is_empty());
 
-    // Without the shape kept: one section a page, plain paragraphs.
-    let read = read_pdf(&pdf, &Tools::default(), tmp.path(), &Asked::default(), None, &mut nothing, &never()).unwrap();
-    let imported = imported_pdf("shape.pdf", "Shape", &read, Making { shape: false, ..Making::default() });
+    // Without the shape kept: one section a page, plain paragraphs, the
+    // same of a reading with the shape found as of one without it.
+    let plain_making = Making { shape: false, ..Making::default() };
+    let without =
+        read_pdf(&pdf, &Tools::default(), tmp.path(), &Asked::default(), None, &mut nothing, &never()).unwrap();
+    let imported = imported_pdf("shape.pdf", "Shape", &without, plain_making);
     assert_eq!(imported.sections.len(), 4);
     assert!(imported.styles.is_empty());
+    assert!(!imported.structured);
+    let of_shaped = imported_pdf("shape.pdf", "Shape", &read, plain_making);
+    assert_eq!(of_shaped.sections, imported.sections);
+    assert_eq!((of_shaped.title, of_shaped.styles.len()), (imported.title, 0));
+    assert_eq!(
+        read.pages.iter().map(|p| &p.paragraphs).collect::<Vec<_>>(),
+        without.pages.iter().map(|p| &p.paragraphs).collect::<Vec<_>>()
+    );
 }
 
 /// A file made from a written document, with an outline of its own
@@ -925,6 +936,22 @@ fn the_structure_of_a_file_with_an_outline() {
         !imported.sections.iter().flat_map(blocks).any(|b| b.trim() == "1" || b.trim() == "2"),
         "page numbers left out"
     );
+
+    // Made again from the same reading: by its pages, a section for each
+    // page; without the shape, plain paragraphs as a reading without it
+    // gives them; and back by its headings, the tree as it was.
+    let by_pages =
+        imported_pdf("structure.pdf", "structure", &read, Making { structure: Structure::Pages, ..Making::default() });
+    assert_eq!(by_pages.sections.iter().filter(|s| s.level == 1).count(), read.pages.len());
+    assert!(!by_pages.structured && imported.structured);
+    let plain_making = Making { shape: false, ..Making::default() };
+    let without =
+        read_pdf(&pdf, &Tools::default(), tmp.path(), &Asked::default(), None, &mut nothing, &never()).unwrap();
+    assert_eq!(
+        imported_pdf("structure.pdf", "structure", &read, plain_making).sections,
+        imported_pdf("structure.pdf", "structure", &without, plain_making).sections
+    );
+    assert_eq!(imported_pdf("structure.pdf", "structure", &read, Making::default()).sections, imported.sections);
 }
 
 #[test]

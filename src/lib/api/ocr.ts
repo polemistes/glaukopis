@@ -242,16 +242,23 @@ export const ocrText = (path: string, stored: boolean, from: number, count: numb
 export const ocrRead = (path: string, asked: Asked, ticket?: string, stored?: boolean) =>
   call<ReadDone>('ocr_read', { path, asked, ticket, stored });
 
-/** The tree assembled anew from a reading kept, with other choices; the reading is not done again. */
+/**
+ * The tree assembled anew from a reading kept, with other choices; the reading
+ * is not done again. One reading is kept at a time: where another has taken
+ * its place, or it was let go, this fails with the kind `not-found`.
+ */
 export const ocrAssemble = (kept: string, making: Making) =>
   call<Imported>('ocr_assemble', { kept, making });
 
-/** Lets a reading kept go. */
+/** Lets a reading kept go; nothing, where another has taken its place. */
 export const ocrForget = (kept: string) => call<void>('ocr_forget', { kept });
 
 export const ocrStop = (ticket: string) => call<void>('ocr_stop', { ticket });
 
-/** Tries a page, counted from one, with the languages and settings asked, before the whole is read. */
+/**
+ * Tries a page, counted from one, with the languages and settings that hold
+ * for it, before the whole is read; a picture as its one page.
+ */
 export const ocrTry = (
   path: string,
   stored: boolean,
