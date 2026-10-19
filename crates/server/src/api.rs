@@ -752,18 +752,31 @@ async fn end(mut socket: WebSocket, code: u16, reason: &'static str) {
 }
 
 async fn attend(server: Shared, id: String, member: Option<String>, socket: WebSocket) {
-    let entered = {
-        // Held while entering, so that no one enters a room that is being
-        // taken off the server, or after having been removed from it.
-        let mut registry = server.registry.lock().await;
-        if !still_admitted(&registry, &id, &member) {
-            drop(registry);
-            return end(socket, close::REMOVED, "you are no longer among the collaborators").await;
+    let entered = loop {
+        let room = {
+            // Held while the room is found, so that no one finds a room that
+            // is being taken off the server, or after having been removed from it.
+            let mut registry = server.registry.lock().await;
+            if !still_admitted(&registry, &id, &member) {
+                drop(registry);
+                return end(socket, close::REMOVED, "you are no longer among the collaborators").await;
+            }
+            if let Some(member) = &member {
+                registry.seen(&id, member);
+            }
+            match server.rooms.open(&id).await {
+                Ok(room) => room,
+                Err(e) => break Err(e),
+            }
+        };
+        // Not held while entering, which waits for the room: a room busy
+        // with a large change would hold up every call and every connection.
+        match room.enter(member.clone()).await {
+            Ok(Some(entered)) => break Ok((room, entered)),
+            // Put away, or taken off the server, after it was found.
+            Ok(None) => continue,
+            Err(e) => break Err(e),
         }
-        if let Some(member) = &member {
-            registry.seen(&id, member);
-        }
-        server.rooms.enter(&id, member).await
     };
     let (room, mut entered) = match entered {
         Ok(entered) => entered,
@@ -774,6 +787,13 @@ async fn attend(server: Shared, id: String, member: Option<String>, socket: WebS
         }
     };
     let peer = entered.peer;
+    // One removed from the room after it was found and before they were in
+    // it was not among those the room let go: the list is asked again. One
+    // removed after this is let go by the room, which then holds them.
+    if !still_admitted(&*server.registry.lock().await, &id, &member) {
+        room.aside(move |room| room.leave(peer)).await;
+        return end(socket, close::REMOVED, "you are no longer among the collaborators").await;
+    }
     let (mut sink, mut stream) = socket.split();
     let mut asking = tokio::time::interval(ASKING);
     let mut heard = Instant::now();
@@ -793,7 +813,9 @@ async fn attend(server: Shared, id: String, member: Option<String>, socket: WebS
             frame = stream.next() => match frame {
                 Some(Ok(Frame::Binary(data))) => {
                     heard = Instant::now();
-                    room.receive(peer, &data);
+                    // Taken in aside, and waited for, so that what one sends is
+                    // taken in in the order sent and no faster than it is.
+                    room.aside(move |room| room.receive(peer, &data)).await;
                     continue;
                 }
                 Some(Ok(Frame::Ping(_) | Frame::Pong(_) | Frame::Text(_))) => {
@@ -815,7 +837,7 @@ async fn attend(server: Shared, id: String, member: Option<String>, socket: WebS
             _ => break,
         }
     }
-    room.leave(peer);
+    room.aside(move |room| room.leave(peer)).await;
 }
 
 // ---------------------------------------------------------------------------

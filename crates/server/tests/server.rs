@@ -3,10 +3,11 @@
 
 use std::net::SocketAddr;
 use std::path::Path;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use futures_util::{SinkExt, StreamExt};
 use glaukopis_server::files::hash_of;
+use glaukopis_server::rooms::MOST_PRESENT;
 use glaukopis_server::{Config, Server, serve};
 use serde_json::{Value, json};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -18,7 +19,7 @@ use yrs::encoding::read::Cursor;
 use yrs::sync::{Message, MessageReader, SyncMessage};
 use yrs::updates::decoder::{Decode, DecoderV1};
 use yrs::updates::encoder::{Encode, Encoder, EncoderV1};
-use yrs::{Doc, GetString, ReadTxn, Text, Transact, Update};
+use yrs::{Doc, GetString, ReadTxn, StateVector, Text, Transact, Update};
 
 const ROOM: &str = "0a1b2c3d-0000-4000-8000-000000000001";
 const OTHER: &str = "0a1b2c3d-0000-4000-8000-000000000002";
@@ -163,7 +164,11 @@ impl Running {
     }
 
     async fn ticket(&self, token: &str) -> String {
-        let (status, body) = self.call("POST", &format!("/api/rooms/{ROOM}/tickets"), Some(token), None).await;
+        self.ticket_for(ROOM, token).await
+    }
+
+    async fn ticket_for(&self, room: &str, token: &str) -> String {
+        let (status, body) = self.call("POST", &format!("/api/rooms/{room}/tickets"), Some(token), None).await;
         assert_eq!(status, 200, "{body}");
         body["ticket"].as_str().unwrap().to_owned()
     }
@@ -226,8 +231,12 @@ fn encode(message: &Message) -> Vec<u8> {
 
 impl Side {
     async fn connect(server: &Running, token: &str) -> Side {
-        let ticket = server.ticket(token).await;
-        let url = format!("ws://{}/ws/{ROOM}?ticket={ticket}", server.addr);
+        Side::connect_to(server, ROOM, token).await
+    }
+
+    async fn connect_to(server: &Running, room: &str, token: &str) -> Side {
+        let ticket = server.ticket_for(room, token).await;
+        let url = format!("ws://{}/ws/{room}?ticket={ticket}", server.addr);
         let (socket, _) = tokio_tungstenite::connect_async(url).await.expect("the ticket opens the door");
         let mut side = Side { doc: Doc::new(), socket, answers: 0 };
         let sv = side.doc.transact().state_vector();
@@ -749,4 +758,133 @@ async fn what_happens_while_a_file_arrives() {
     assert!(answered.starts_with("HTTP/1.1 404") && answered.contains("no-room"), "{answered}");
     assert!(!tmp.path().join("rooms").join(ROOM).exists());
     server.stop().await;
+}
+
+/// How many pieces the large project of the next test is made of.
+const PIECES: usize = 1_000_000;
+
+/// While one room is busy taking in a large change, those in another room
+/// are answered as before. The work of the library on a room is done off the
+/// threads that serve the connections, of which there are two here: were it
+/// done on them, the room's other connections, waiting for the room to be
+/// free, would hold every one of them, and nothing anywhere else would be
+/// answered until the change was in.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_busy_room_holds_up_no_other() {
+    let tmp = tempfile::tempdir().unwrap();
+    let server = Running::start(tmp.path(), None).await;
+    let (owner, _) = server.shared(ROOM).await;
+    let (other, _) = server.shared(OTHER).await;
+
+    // A project of many small pieces, as one written over a long time is,
+    // brought whole to the server: much for the library to take in.
+    let large = tokio::task::spawn_blocking(|| {
+        let doc = Doc::new();
+        let text = doc.get_or_insert_text("text");
+        let mut txn = doc.transact_mut();
+        for _ in 0..PIECES {
+            text.insert(&mut txn, 0, "a");
+        }
+        drop(txn);
+        doc.transact().encode_state_as_update_v1(&StateVector::default())
+    })
+    .await
+    .unwrap();
+    let change = encode(&Message::Sync(SyncMessage::Update(large)));
+    let length = change.len();
+
+    let mut bringer = Side::connect_to(&server, ROOM, &owner).await;
+    let mut hearer = Side::connect_to(&server, ROOM, &owner).await;
+    let mut talker = Side::connect_to(&server, ROOM, &owner).await;
+    let mut elsewhere = Side::connect_to(&server, OTHER, &other).await;
+    for side in [&mut bringer, &mut hearer, &mut talker, &mut elsewhere] {
+        side.settle().await;
+    }
+
+    let begun = Instant::now();
+    bringer.socket.send(Frame::Binary(change.into())).await.unwrap();
+    // The change has been taken in when it is passed on to the others.
+    let heard = tokio::spawn(async move {
+        loop {
+            match hearer.socket.next().await {
+                Some(Ok(Frame::Binary(bytes))) if bytes.len() >= length => return begun.elapsed(),
+                Some(Ok(_)) => {}
+                other => panic!("the connection ended: {other:?}"),
+            }
+        }
+    });
+    // Meanwhile another of the room speaks, as the application does now and
+    // then, and one in the other room asks and is answered, again and again.
+    // Each round is timed whole: what is held up may be any part of it.
+    let mut longest = Duration::ZERO;
+    let mut asked = 0;
+    while !heard.is_finished() {
+        let round = Instant::now();
+        talker.send(&Message::AwarenessQuery).await;
+        elsewhere.settle().await;
+        asked += 1;
+        tokio::time::sleep(Duration::from_millis(5)).await;
+        longest = longest.max(round.elapsed());
+    }
+    let busy = tokio::time::timeout(Duration::from_secs(60), heard).await.expect("the change was taken in").unwrap();
+    eprintln!("the room was busy for {busy:?}; the longest of {asked} answers elsewhere took {longest:?}");
+    // Taken in on the threads that serve the connections, the change held
+    // up the other room for nearly as long as the room was busy (some 300 ms
+    // with the tests' build on a machine of 2026, of which a round took 290);
+    // taken in off them, a round there takes some 10 to 35 ms, most of it the
+    // pause in it and the passing of the large change to the others.
+    assert!(longest * 2 < busy, "a round in the other room took {longest:?}, while the room was busy for {busy:?}");
+    assert!(asked >= 3, "the other room was asked {asked} times while the room was busy for {busy:?}");
+    drop(talker);
+    server.stop().await;
+}
+
+/// As many may have a project open as the server allows, and one more is
+/// told why the door is closed; once one has left, another may come.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn one_too_many_is_told_the_room_is_crowded() {
+    let tmp = tempfile::tempdir().unwrap();
+    let server = Running::start(tmp.path(), None).await;
+    let (owner, _) = server.shared(ROOM).await;
+    let mut present = Vec::new();
+    for _ in 0..MOST_PRESENT {
+        let mut side = Side::connect(&server, &owner).await;
+        side.settle().await;
+        present.push(side);
+    }
+    assert_eq!(entering(&server, &owner).await.err(), Some(4005));
+
+    let mut gone = present.pop().unwrap();
+    gone.socket.close(None).await.unwrap();
+    assert_eq!(gone.until(None).await, Some(0), "the connection ended");
+    // The server lets go of one who has left as soon as it hears of it, but
+    // the hearing is its own: asked until it has.
+    let mut again = None;
+    for _ in 0..100 {
+        match entering(&server, &owner).await {
+            Ok(socket) => {
+                again = Some(socket);
+                break;
+            }
+            Err(code) => assert_eq!(code, 4005),
+        }
+        tokio::time::sleep(Duration::from_millis(20)).await;
+    }
+    assert!(again.is_some(), "one may come once another has left");
+    server.stop().await;
+}
+
+/// Opens a connection to the room and reads what comes first: the server's
+/// asking for what one has, by which one is in, or the closing, whose code
+/// is returned. Nothing is sent, so that a door closed is not written to.
+async fn entering(server: &Running, token: &str) -> Result<Socket, u16> {
+    let ticket = server.ticket(token).await;
+    let url = format!("ws://{}/ws/{ROOM}?ticket={ticket}", server.addr);
+    let (mut socket, _) = tokio_tungstenite::connect_async(url).await.expect("the ticket opens the door");
+    let first = tokio::time::timeout(Duration::from_secs(10), socket.next()).await.expect("the server spoke");
+    match first {
+        Some(Ok(Frame::Binary(_))) => Ok(socket),
+        Some(Ok(Frame::Close(frame))) => Err(frame.map(|f| u16::from(f.code)).unwrap_or(0)),
+        other => panic!("the server said {other:?}"),
+    }
 }
