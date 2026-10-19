@@ -58,7 +58,7 @@ python3 -I packaging/languages/fraktur/measure.py \
 The sets:
 
 - `owner`: 42 lines from seven pages (30, 120, 200, 280, 350, 450, 520)
-  of a Norwegian novel of 1897 in Gothic type, scanned at 329 dpi and
+  of a Norwegian novel in Gothic type, scanned at 329 dpi and
   drawn at 300 dpi as the application draws pages; 2060 characters, 53
   of them æ ø å. Written out letter by letter from the pictures; old
   spelling as printed, ſ as s, ligatures as letters, the em dash as —.
