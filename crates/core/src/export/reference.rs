@@ -15,7 +15,7 @@ use crate::formats::{
 };
 use crate::tr;
 
-fn xml(text: &str) -> String {
+pub(crate) fn xml(text: &str) -> String {
     text.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
 }
 
@@ -449,6 +449,22 @@ pub fn docx_styles(f: &DocumentFormat, language: Option<&str>, own: &[OwnKind]) 
             &none(),
         ));
     }
+    // The lines under the authors, a little smaller, as the preview sets them.
+    s.push_str(&paragraph_style(
+        "Affiliation",
+        "Affiliation",
+        Some("Normal"),
+        Some("BodyText"),
+        None,
+        &Para {
+            after: 60,
+            line: Some(line(f.text.line_spacing.min(1.5))),
+            align: title_align,
+            keep_next: true,
+            ..Default::default()
+        },
+        &Run { size: Some((f.font.size - 1.0).max(8.0)), ..Default::default() },
+    ));
     s.push_str(&paragraph_style(
         "AbstractTitle",
         "Abstract Title",
@@ -1373,6 +1389,16 @@ pub fn odt_styles(default: &str, f: &DocumentFormat, p: &Particulars) -> String 
             text: String::new(),
         });
     }
+    // The lines under the authors, a little smaller, as the preview sets them.
+    put(OdtStyle {
+        name: "Affiliation",
+        display: None,
+        parent: Some("Standard"),
+        next: None,
+        outline: None,
+        paragraph: odt_paragraph(0.0, 3.0, body.min(1.5), title_align, 0.0, 0.0, 0.0, false),
+        text: odt_text(Some((size - 1.0).max(8.0)), None, None, Case::None),
+    });
     put(OdtStyle {
         name: "AbstractTitle",
         display: None,

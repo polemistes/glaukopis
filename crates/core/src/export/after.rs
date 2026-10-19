@@ -11,7 +11,62 @@
 use crate::error::Result;
 use crate::formats::{DocumentFormat, Rules};
 
-use super::reference::{put, rewrite, text_of};
+use super::reference::{put, rewrite, text_of, xml};
+
+/// What a file of Word or Writer says of itself outside its pages: its
+/// title and who made it. Pandoc is given neither for these, so that it
+/// sets no title block of its own at the head of the document (the core
+/// writes the title page where the template puts it, ADR 0055); they are
+/// written into the file's properties here instead.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct Properties {
+    pub title: String,
+    pub creators: Vec<String>,
+}
+
+/// An element of the properties given a text: where Pandoc wrote it empty,
+/// or wrote it as an empty element, or did not write it at all, in which
+/// case it is put before `close`. One that holds a text of its own is left.
+fn property(xml_text: &str, tag: &str, value: &str, close: &str) -> String {
+    let value = value.trim();
+    if value.is_empty() {
+        return xml_text.to_owned();
+    }
+    let (open, end, empty) = (format!("<{tag}>"), format!("</{tag}>"), format!("<{tag}/>"));
+    let text = xml(value);
+    if let Some(start) = xml_text.find(&open) {
+        let inner = start + open.len();
+        if let Some(stop) = xml_text[inner..].find(&end).map(|e| inner + e) {
+            if xml_text[inner..stop].trim().is_empty() {
+                return format!("{}{text}{}", &xml_text[..inner], &xml_text[stop..]);
+            }
+            return xml_text.to_owned();
+        }
+    }
+    if xml_text.contains(&empty) {
+        return xml_text.replacen(&empty, &format!("{open}{text}{end}"), 1);
+    }
+    match xml_text.rfind(close) {
+        Some(at) => format!("{}{open}{text}{end}{}", &xml_text[..at], &xml_text[at..]),
+        None => xml_text.to_owned(),
+    }
+}
+
+/// The properties of a document of Word (`docProps/core.xml`) with its title and its makers.
+pub fn docx_properties(core: &str, p: &Properties) -> String {
+    let close = "</cp:coreProperties>";
+    let core = property(core, "dc:title", &p.title, close);
+    property(&core, "dc:creator", &p.creators.join("; "), close)
+}
+
+/// The properties of a document of Writer (`meta.xml`) with its title and its makers.
+pub fn odt_properties(meta: &str, p: &Properties) -> String {
+    let close = "</office:meta>";
+    let creators = p.creators.join("; ");
+    let meta = property(meta, "dc:title", &p.title, close);
+    let meta = property(&meta, "meta:initial-creator", &creators, close);
+    property(&meta, "dc:creator", &creators, close)
+}
 
 /// A remark, and where it ends.
 struct Remark<'a> {
@@ -267,20 +322,27 @@ fn table_header_rows(table: &str) -> usize {
     }
 }
 
-/// A document of Word, set right.
-pub fn docx(bytes: &[u8]) -> Result<Vec<u8>> {
+/// A document of Word, set right, with its title and makers in its properties.
+pub fn docx(bytes: &[u8], properties: &Properties) -> Result<Vec<u8>> {
     rewrite(bytes, |files| {
         let document = text_of(files, "word/document.xml")?;
         put(files, "word/document.xml", docx_document(&document));
+        // Pandoc writes the properties; where it did not, nothing is made up.
+        if let Ok(core) = text_of(files, "docProps/core.xml") {
+            put(files, "docProps/core.xml", docx_properties(&core, properties));
+        }
         Ok(())
     })
 }
 
-/// A document of Writer, set right.
-pub fn odt(bytes: &[u8], format: &DocumentFormat) -> Result<Vec<u8>> {
+/// A document of Writer, set right, with its title and makers in its properties.
+pub fn odt(bytes: &[u8], format: &DocumentFormat, properties: &Properties) -> Result<Vec<u8>> {
     rewrite(bytes, |files| {
         let content = text_of(files, "content.xml")?;
         put(files, "content.xml", odt_content(&content, format));
+        if let Ok(meta) = text_of(files, "meta.xml") {
+            put(files, "meta.xml", odt_properties(&meta, properties));
+        }
         Ok(())
     })
 }
@@ -288,6 +350,43 @@ pub fn odt(bytes: &[u8], format: &DocumentFormat) -> Result<Vec<u8>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_properties_are_given_the_title_and_the_makers() {
+        let p =
+            Properties { title: "Wrath & the hero".into(), creators: vec!["A. Scholar".into(), "B. Reader".into()] };
+        let ns = "xmlns:cp=\"http://schemas.openxmlformats.org/package/2006/metadata/core-properties\" \
+                  xmlns:dc=\"http://purl.org/dc/elements/1.1/\"";
+        // As Pandoc writes them when it is given no title and no author: empty.
+        let core = format!(
+            "<cp:coreProperties {ns}><dc:title>\n</dc:title><dc:creator>\n</dc:creator>\
+             <cp:keywords>wrath</cp:keywords></cp:coreProperties>"
+        );
+        let out = docx_properties(&core, &p);
+        roxmltree::Document::parse(&out).unwrap();
+        assert!(out.contains("<dc:title>Wrath &amp; the hero</dc:title>"), "{out}");
+        assert!(out.contains("<dc:creator>A. Scholar; B. Reader</dc:creator>"), "{out}");
+        assert!(out.contains("<cp:keywords>wrath</cp:keywords>"), "{out}");
+        // Not written at all, or written empty: put in. One with a text of its own: left.
+        let bare = format!("<cp:coreProperties {ns}><dc:title/></cp:coreProperties>");
+        let out = docx_properties(&bare, &p);
+        roxmltree::Document::parse(&out).unwrap();
+        assert!(out.contains("<dc:title>Wrath &amp; the hero</dc:title>") && out.contains("<dc:creator>"), "{out}");
+        let own = format!("<cp:coreProperties {ns}><dc:title>Its own</dc:title></cp:coreProperties>");
+        assert!(docx_properties(&own, &p).contains("<dc:title>Its own</dc:title>"));
+        // Nothing to say: nothing said.
+        assert_eq!(docx_properties(&core, &Properties::default()), core);
+
+        let meta = "<office:document-meta xmlns:office=\"urn:oasis:names:tc:opendocument:xmlns:office:1.0\" \
+                    xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:meta=\"urn:oasis:names:tc:opendocument:xmlns:meta:1.0\">\
+                    <office:meta><dc:title>\n</dc:title><meta:initial-creator>\n</meta:initial-creator>\
+                    <dc:creator>\n</dc:creator></office:meta></office:document-meta>";
+        let out = odt_properties(meta, &p);
+        roxmltree::Document::parse(&out).unwrap();
+        assert!(out.contains("<dc:title>Wrath &amp; the hero</dc:title>"), "{out}");
+        assert!(out.contains("<meta:initial-creator>A. Scholar; B. Reader</meta:initial-creator>"), "{out}");
+        assert!(out.contains("<dc:creator>A. Scholar; B. Reader</dc:creator>"), "{out}");
+    }
 
     #[test]
     fn a_table_of_word_stands_where_it_is_said_to() {

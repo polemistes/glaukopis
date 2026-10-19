@@ -334,6 +334,97 @@ fn para_text(text: &str) -> Value {
     json!({"t": "Para", "c": v["c"]})
 }
 
+/// What a file says of itself outside its pages (ADR 0055): its title, and
+/// who made it, every author with a name, whether the layout shows them on
+/// the title page or not; none where it is anonymous, for review.
+fn properties(doc: &Document, f: &DocumentFormat) -> after::Properties {
+    after::Properties {
+        title: doc.title_plain(),
+        creators: if f.title.anonymous {
+            Vec::new()
+        } else {
+            doc.authors.iter().map(|a| a.name.trim().to_owned()).filter(|n| !n.is_empty()).collect()
+        },
+    }
+}
+
+/// Blocks in a paragraph style of the reference document of Word or Writer.
+fn styled(style: &str, blocks: Vec<Value>) -> Value {
+    json!({"t": "Div", "c": [["", [], [["custom-style", style]]], blocks]})
+}
+
+/// The names of the authors on the title page, in one line, as the preview sets them.
+fn names_of(authors: &[&crate::document::Author]) -> String {
+    authors.iter().map(|a| a.name.trim()).collect::<Vec<_>>().join(", ")
+}
+
+/// The lines under the authors on the title page: each author's
+/// affiliation, e-mail and ORCID, in one line, and a line that two authors
+/// share once.
+fn affiliation_lines(authors: &[&crate::document::Author]) -> Vec<String> {
+    let mut lines: Vec<String> = Vec::new();
+    for a in authors {
+        let line = [a.affiliation.as_deref(), a.email.as_deref()]
+            .into_iter()
+            .flatten()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>()
+            .join(", ");
+        let line = match a.orcid.as_deref().map(str::trim).filter(|o| !o.is_empty()) {
+            Some(o) if line.is_empty() => format!("ORCID {o}"),
+            Some(o) => format!("{line}, ORCID {o}"),
+            None => line,
+        };
+        if !line.is_empty() && !lines.contains(&line) {
+            lines.push(line);
+        }
+    }
+    lines
+}
+
+/// The title page of a document that is not set by Typst, as the core
+/// writes it where the template puts it (ADR 0055): the title, the
+/// subtitle, the authors in one line, the lines of their affiliations and
+/// the date, as the preview sets them; nothing where there is nothing to
+/// say. For Word and Writer, paragraphs in the styles of the reference
+/// document.
+fn title_page(
+    target: Target,
+    title: &[Value],
+    subtitle: Option<&str>,
+    authors: &[&crate::document::Author],
+    affiliations: &[String],
+    date: Option<&str>,
+) -> Vec<Value> {
+    if title.is_empty() && subtitle.is_none() && authors.is_empty() && date.is_none() {
+        return Vec::new();
+    }
+    let mut out = Vec::new();
+    match target {
+        Target::Docx | Target::Odt => {
+            if !title.is_empty() {
+                out.push(styled("Title", vec![json!({"t": "Para", "c": title})]));
+            }
+            if let Some(s) = subtitle {
+                out.push(styled("Subtitle", vec![para_text(s)]));
+            }
+            if !authors.is_empty() {
+                out.push(styled("Author", vec![para_text(&names_of(authors))]));
+                if !affiliations.is_empty() {
+                    out.push(styled("Affiliation", affiliations.iter().map(|l| para_text(l)).collect()));
+                }
+            }
+            if let Some(d) = date {
+                out.push(styled("Date", vec![para_text(d)]));
+            }
+        }
+        // The others are given the title as metadata, until their own pieces.
+        _ => {}
+    }
+    out
+}
+
 struct Prepared {
     json: Value,
     bibliography: Bibliography,
@@ -663,8 +754,12 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
                 }
             }
             Item::Made(GeneratedPart::TitlePage) => {
+                let subtitle = doc.subtitle.as_deref().map(str::trim).filter(|s| !s.is_empty());
+                let affiliations = if f.title.show_affiliations { affiliation_lines(&authors) } else { Vec::new() };
                 if !typst {
-                    // The title block is metadata, which Pandoc sets at the head of the document.
+                    // The title page where the template puts it, and nowhere where it puts none, as the
+                    // preview has it: Pandoc is given no title to set a block of its own from (ADR 0055).
+                    blocks.extend(title_page(target, &title, subtitle, &authors, &affiliations, date));
                     if f.title.placement == TitlePlacement::OwnPage
                         && let Some(b) = target.page_break()
                     {
@@ -676,34 +771,13 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
                 if !title.is_empty() {
                     parts.push(div("gk-title", vec![json!({"t": "Para", "c": title.clone()})]));
                 }
-                if let Some(s) = doc.subtitle.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+                if let Some(s) = subtitle {
                     parts.push(div("gk-subtitle", vec![para_text(s)]));
                 }
                 if !authors.is_empty() {
-                    let names = authors.iter().map(|a| a.name.trim()).collect::<Vec<_>>().join(", ");
-                    parts.push(div("gk-authors", vec![para_text(&names)]));
-                    if f.title.show_affiliations {
-                        let mut lines: Vec<String> = Vec::new();
-                        for a in &authors {
-                            let line = [a.affiliation.as_deref(), a.email.as_deref(), a.orcid.as_deref().map(|_| "")]
-                                .into_iter()
-                                .flatten()
-                                .map(str::trim)
-                                .filter(|s| !s.is_empty())
-                                .collect::<Vec<_>>()
-                                .join(", ");
-                            let line = match a.orcid.as_deref().map(str::trim).filter(|o| !o.is_empty()) {
-                                Some(o) if line.is_empty() => format!("ORCID {o}"),
-                                Some(o) => format!("{line}, ORCID {o}"),
-                                None => line,
-                            };
-                            if !line.is_empty() && !lines.contains(&line) {
-                                lines.push(line);
-                            }
-                        }
-                        if !lines.is_empty() {
-                            parts.push(div("gk-affiliations", lines.iter().map(|l| para_text(l)).collect()));
-                        }
+                    parts.push(div("gk-authors", vec![para_text(&names_of(&authors))]));
+                    if !affiliations.is_empty() {
+                        parts.push(div("gk-affiliations", affiliations.iter().map(|l| para_text(l)).collect()));
                     }
                 }
                 if let Some(d) = date {
@@ -778,10 +852,9 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
                 if typst {
                     front.push(div("gk-abstract-title", vec![para_text(&f.title.abstract_label)]));
                     front.push(div("gk-abstract", a.clone()));
-                } else if target == Target::Odt {
-                    // Pandoc's pattern for ODT sets an abstract of one paragraph as
-                    // bare text; here it is given as paragraphs with their styles.
-                    let styled = |style: &str, blocks: Vec<Value>| json!({"t": "Div", "c": [["", [], [["custom-style", style]]], blocks]});
+                } else if matches!(target, Target::Docx | Target::Odt) {
+                    // In its place, as paragraphs with the styles the reference document defines, where
+                    // the template puts it: not as metadata, which Pandoc sets at the head (ADR 0055).
                     blocks.push(styled("AbstractTitle", vec![para_text(&f.title.abstract_label)]));
                     blocks.push(styled("Abstract", a.clone()));
                 } else {
@@ -801,7 +874,13 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
         bibliography_blocks(&mut blocks);
     }
 
-    if !typst {
+    // The title, the subtitle, the authors and the date as metadata only where
+    // the core writes no title page of its own: elsewhere a writer of Pandoc's
+    // would set a title block of its own from them, at the head, whatever the
+    // template says (ADR 0055). Word and Writer have them in their properties,
+    // written after (`after::Properties`).
+    let title_as_meta = !typst && !matches!(target, Target::Docx | Target::Odt);
+    if title_as_meta {
         if !title.is_empty() {
             meta.insert("title".into(), meta_inlines(title));
         }
@@ -814,6 +893,8 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
         if let Some(d) = date {
             meta.insert("date".into(), meta_text(d));
         }
+    }
+    if !typst {
         if !keywords.is_empty() {
             meta.insert("keywords".into(), meta_list(keywords.iter().map(|k| meta_text(k)).collect()));
         }
@@ -1369,8 +1450,8 @@ pub fn export_until(
     let bytes = fs::read(&made).context(|| tr!("core-export-reading-made"))?;
     // What Pandoc cannot be told, of a document for a word processor, is set right after.
     let bytes = match target {
-        Target::Docx => after::docx(&bytes)?,
-        Target::Odt => after::odt(&bytes, &request.format)?,
+        Target::Docx => after::docx(&bytes, &properties(&request.document, &request.format))?,
+        Target::Odt => after::odt(&bytes, &request.format, &properties(&request.document, &request.format))?,
         _ => bytes,
     };
     write_atomic(path, &bytes)?;
@@ -2553,6 +2634,86 @@ mod tests {
     }
 
     #[test]
+    fn the_title_page_stands_where_the_template_puts_it_or_nowhere() {
+        let Some(s) = setup() else { return };
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        use GeneratedPart::{Bibliography, Body, HalfTitle, TitlePage};
+        let made = |part| ContentsItem::Part { part };
+        let styles = ["Title", "Subtitle", "Author", "Affiliation", "Date"];
+        let mut r = request("chicago-author-date");
+        r.document.subtitle = Some("A study of the Iliad".into());
+        r.document.date = Some("2026".into());
+        r.document.authors[0].affiliation = Some("The University".into());
+        r.format.title.show_date = true;
+
+        // A book's order: the half title, a page, then the title page with all that stands on
+        // it, then the text; as the preview has it, not the title block at the head.
+        r.template = Template {
+            contents: vec![made(HalfTitle), made(TitlePage), made(Body), made(Bibliography)],
+            ..Template::plain()
+        };
+        let docx = out.join("book.docx");
+        export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        let x = unzip(&docx, "word/document.xml");
+        roxmltree::Document::parse(&x).unwrap();
+        assert_eq!(x.matches("w:val=\"Title\"").count(), 2, "the half title and the title: {x}");
+        let half = at(&x, "w:val=\"Title\"");
+        let title = half + 1 + at(&x[half + 1..], "w:val=\"Title\"");
+        let page = at(&x, "w:br w:type=\"page\"");
+        assert!(half < page && page < title, "{x}");
+        for style in &styles[1..] {
+            let found = at(&x, &format!("w:val=\"{style}\""));
+            assert!(title < found && found < at(&x, "Before the first section."), "{style}: {x}");
+        }
+        assert!(x.contains("A study of the Iliad") && x.contains("The University") && x.contains(">2026<"), "{x}");
+        let odt = out.join("book.odt");
+        export(&s.ctx(), &r, Target::Odt, &odt, &ExportOptions::default()).unwrap();
+        let c = unzip(&odt, "content.xml");
+        assert_eq!(c.matches("text:style-name=\"Title\"").count(), 2, "{c}");
+        assert!(at(&c, "text:style-name=\"Affiliation\"") < at(&c, "Before the first section."), "{c}");
+
+        // No title page in the template: none in the document, and the title and the
+        // author in the file's properties all the same.
+        r.template = Template { contents: vec![made(Body), made(Bibliography)], ..Template::plain() };
+        let docx = out.join("none.docx");
+        export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        let x = unzip(&docx, "word/document.xml");
+        for style in styles {
+            assert!(!x.contains(&format!("w:val=\"{style}\"")), "{style}: {x}");
+        }
+        assert!(!x.contains("A study of the Iliad"), "{x}");
+        let core = unzip(&docx, "docProps/core.xml");
+        assert!(core.contains("<dc:title>Wrath and the hero</dc:title>"), "{core}");
+        assert!(core.contains("<dc:creator>A. Scholar</dc:creator>"), "{core}");
+        let odt = out.join("none.odt");
+        export(&s.ctx(), &r, Target::Odt, &odt, &ExportOptions::default()).unwrap();
+        let c = unzip(&odt, "content.xml");
+        for style in styles {
+            assert!(!c.contains(&format!("text:style-name=\"{style}\"")), "{style}: {c}");
+        }
+        let meta = unzip(&odt, "meta.xml");
+        assert!(meta.contains("<dc:title>Wrath and the hero</dc:title>"), "{meta}");
+        assert!(meta.contains("<dc:creator>A. Scholar</dc:creator>"), "{meta}");
+
+        // Anonymous, for review: the author neither on the page nor in the properties.
+        r.template = Template::plain();
+        r.format.title.anonymous = true;
+        let docx = out.join("anonymous.docx");
+        export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        assert!(!unzip(&docx, "word/document.xml").contains("w:val=\"Author\""));
+        let core = unzip(&docx, "docProps/core.xml");
+        assert!(!core.contains("A. Scholar"), "{core}");
+        // The authors not shown on the page: still named in the properties, which are no page.
+        r.format.title.anonymous = false;
+        r.format.title.show_authors = false;
+        let docx = out.join("unnamed.docx");
+        export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        assert!(!unzip(&docx, "word/document.xml").contains("w:val=\"Author\""));
+        assert!(unzip(&docx, "docProps/core.xml").contains("<dc:creator>A. Scholar</dc:creator>"));
+    }
+
+    #[test]
     fn documents_for_word_processors() {
         let Some(s) = setup() else { return };
         let out = s.work.join("out");
@@ -2575,8 +2736,20 @@ mod tests {
         assert!(document.contains("w:headerReference"));
         assert!(document.contains("w:br w:type=\"page\""));
         assert!(document.contains("w:pStyle w:val=\"Bibliography\""));
+        // The title page, written where the template puts it, in the styles of the reference
+        // document, before the text; the abstract in its place after it, in its styles.
+        assert_eq!(document.matches("w:pStyle w:val=\"Title\"").count(), 1, "{document}");
+        assert_eq!(document.matches("w:pStyle w:val=\"Author\"").count(), 1, "{document}");
+        assert!(at(&document, "w:val=\"Title\"") < at(&document, "w:val=\"AbstractTitle\""), "{document}");
+        assert!(at(&document, "What the wrath of Achilles is.") < at(&document, "Before the first section."));
+        // And the title and the author in the file's properties, which Pandoc was not given them for.
+        let core = unzip(&docx, "docProps/core.xml");
+        roxmltree::Document::parse(&core).unwrap();
+        assert!(core.contains("<dc:title>Wrath and the hero</dc:title>"), "{core}");
+        assert!(core.contains("<dc:creator>A. Scholar</dc:creator>"), "{core}");
         let styles = unzip(&docx, "word/styles.xml");
         assert!(styles.contains("w:line=\"480\""));
+        assert!(styles.contains("w:styleId=\"Affiliation\""));
         assert!(unzip(&docx, "word/header1.xml").contains(" PAGE "));
 
         let odt = out.join("wrath.odt");
@@ -2594,8 +2767,15 @@ mod tests {
             "{content}"
         );
         assert!(content.contains("<text:p text:style-name=\"AbstractTitle\">Abstract</text:p>"));
+        assert_eq!(content.matches("text:style-name=\"Title\"").count(), 1, "{content}");
+        assert!(at(&content, "text:style-name=\"Title\"") < at(&content, "AbstractTitle"), "{content}");
+        let meta = unzip(&odt, "meta.xml");
+        roxmltree::Document::parse(&meta).unwrap();
+        assert!(meta.contains("<dc:title>Wrath and the hero</dc:title>"), "{meta}");
+        assert!(meta.contains("<meta:initial-creator>A. Scholar</meta:initial-creator>"), "{meta}");
         let styles = unzip(&odt, "styles.xml");
         roxmltree::Document::parse(&styles).unwrap();
+        assert!(styles.contains("style:name=\"Affiliation\""));
         assert!(styles.contains("fo:page-width=\"8.5000in\""));
         assert!(styles.contains("style:name=\"Bibliography\""));
         assert!(styles.contains("fo:line-height=\"200%\""));
