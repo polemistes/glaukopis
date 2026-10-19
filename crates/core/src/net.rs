@@ -194,12 +194,7 @@ impl Client {
             .call()
             .map_err(|e| Error::Network(describe(url, &e)))?;
         let status = response.status().as_u16();
-        let body = response
-            .body_mut()
-            .with_config()
-            .limit(limit)
-            .read_to_vec()
-            .map_err(|e| Error::Network(describe(url, &e)))?;
+        let body = bounded(response.body_mut(), limit).map_err(|e| Error::Network(describe(url, &e)))?;
         Ok(Bytes { status, body })
     }
 
@@ -214,12 +209,7 @@ impl Client {
             .send(content)
             .map_err(|e| Error::Network(describe(url, &e)))?;
         let status = response.status().as_u16();
-        let body = response
-            .body_mut()
-            .with_config()
-            .limit(1024 * 1024)
-            .read_to_vec()
-            .map_err(|e| Error::Network(describe(url, &e)))?;
+        let body = bounded(response.body_mut(), 1024 * 1024).map_err(|e| Error::Network(describe(url, &e)))?;
         Ok(Bytes { status, body })
     }
 
@@ -274,12 +264,7 @@ impl Client {
         let header = |name: &str| response.headers().get(name).and_then(|v| v.to_str().ok()).map(str::to_owned);
         let content_type = header("content-type").unwrap_or_default();
         let retry_after = header("retry-after");
-        let body = response
-            .body_mut()
-            .with_config()
-            .limit(32 * 1024 * 1024)
-            .read_to_string()
-            .map_err(|e| Error::Network(describe(url, &e)));
+        let body = bounded_text(response.body_mut(), 32 * 1024 * 1024, url);
         (body.map(|body| Response { status, body, content_type }), retry_after)
     }
 
@@ -318,12 +303,7 @@ impl Client {
         let status = response.status().as_u16();
         let content_type =
             response.headers().get("content-type").and_then(|v| v.to_str().ok()).unwrap_or("").to_owned();
-        let body = response
-            .body_mut()
-            .with_config()
-            .limit(4 * 1024 * 1024)
-            .read_to_string()
-            .map_err(|e| Error::Network(describe(url, &e)))?;
+        let body = bounded_text(response.body_mut(), 4 * 1024 * 1024, url)?;
         Ok(Response { status, body, content_type })
     }
 
@@ -337,6 +317,28 @@ impl Client {
             s => Err(Error::Network(tr!("network-status", host = host(url), status = s))),
         }
     }
+}
+
+/// What an answer holds, decompressed, to at most `limit` bytes. The limit
+/// of ureq itself counts the bytes as they come, before what is compressed
+/// is decompressed (its `LimitReader` stands under the decoder, in ureq
+/// 3.4), so that 32 MB of gzip from a service gone wrong could become many
+/// gigabytes in memory. Here what is decompressed is counted; ureq's limit
+/// stays as well, on what comes.
+fn bounded(body: &mut ureq::Body, limit: u64) -> std::result::Result<Vec<u8>, ureq::Error> {
+    use std::io::Read;
+    let mut out = Vec::new();
+    body.with_config().limit(limit).reader().take(limit + 1).read_to_end(&mut out)?;
+    if out.len() as u64 > limit {
+        return Err(ureq::Error::BodyExceedsLimit(limit));
+    }
+    Ok(out)
+}
+
+/// As `bounded`, for an answer of text.
+fn bounded_text(body: &mut ureq::Body, limit: u64, url: &str) -> Result<String> {
+    let bytes = bounded(body, limit).map_err(|e| Error::Network(describe(url, &e)))?;
+    String::from_utf8(bytes).map_err(|_| Error::Network(tr!("network-not-understood", host = host(url))))
 }
 
 pub fn host(url: &str) -> String {
@@ -454,6 +456,43 @@ mod tests {
         let start = Instant::now();
         through_gate(&gate, millis(10), || ((), None));
         assert!(start.elapsed() >= millis(70), "the next request waited for what the service asked");
+    }
+
+    /// A server of one answer, on this computer: its address.
+    fn answering(head: &'static str, body: Vec<u8>) -> String {
+        use std::io::{Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut asked = Vec::new();
+            let mut byte = [0u8; 1];
+            while !asked.ends_with(b"\r\n\r\n") && stream.read(&mut byte).unwrap_or(0) == 1 {
+                asked.push(byte[0]);
+            }
+            let head = format!("HTTP/1.1 200 OK\r\n{head}Content-Length: {}\r\nConnection: close\r\n\r\n", body.len());
+            let _ = stream.write_all(head.as_bytes()).and_then(|()| stream.write_all(&body));
+        });
+        format!("http://{address}/")
+    }
+
+    #[test]
+    fn a_compressed_answer_is_bounded_by_what_it_holds() {
+        use std::io::Write;
+        // 40 MB of text, which gzip makes some 40 kB of.
+        let mut gzip = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::best());
+        gzip.write_all(&vec![b'a'; 40 * 1024 * 1024]).unwrap();
+        let small = gzip.finish().unwrap();
+        assert!(small.len() < 1024 * 1024);
+        let url = answering("Content-Type: text/plain\r\nContent-Encoding: gzip\r\n", small);
+        let Err(Error::Network(said)) = Client::new().get(&url, None) else { panic!("read whole") };
+        assert_eq!(said, tr!("network-too-large", host = host(&url), most = 32));
+
+        // What is within the limit, decompressed, is read.
+        let mut gzip = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::best());
+        gzip.write_all(b"the wrath of Achilles").unwrap();
+        let url = answering("Content-Type: text/plain\r\nContent-Encoding: gzip\r\n", gzip.finish().unwrap());
+        assert_eq!(Client::new().get(&url, None).unwrap().body, "the wrath of Achilles");
     }
 
     #[test]
