@@ -160,9 +160,9 @@ pub struct Asked {
     pub languages: Vec<String>,
     /// What becomes of the text the PDF has (ADR 0044): kept, translated by
     /// what its fonts say of their glyphs, or not taken from any page, every
-    /// page read anew by Tesseract. In a PDF made searchable, reading anew
-    /// takes the unseen text the pages had away, and translating puts the
-    /// PDF's own tables right.
+    /// page read anew by Tesseract (where `read` is not given). In a PDF
+    /// made searchable, a page that is read loses the unseen text it had,
+    /// and translating puts the PDF's own tables right.
     pub text: TextChoice,
     /// The dots to the inch the pages are drawn at for Tesseract: nought
     /// for 300, else held within 150 and 600. A picture is not drawn, and
