@@ -321,27 +321,54 @@ try {
   );
   await app.clickText('dialog[open] footer button', 'Cancel');
   await app.waitGone('dialog[open]', 5000);
+  /** Makes a Word document of an article, as the export dialog asks for one: with the template's title page, or with it turned off. */
+  const makeWord = (path, titled) =>
+    app
+      .execAsync(
+        `const invoke = window.__TAURI_INTERNALS__.invoke;
+         const template = await invoke('templates_get', { id: 'article' });
+         if (!arguments[1]) template.contents = template.contents.filter((item) => item.part !== 'title-page');
+         const format = await invoke('formats_get', { id: 'manuscript' });
+         const t = (text) => ({ kind: 'text', text, marks: {} });
+         const paragraph = (text) => ({ kind: 'paragraph', content: [t(text)] });
+         const document = {
+           title: [t('Wrath and the hero')], authors: [], keywords: [], references: [],
+           parts: [{ kind: 'abstract', element: null, title: [t('Abstract')],
+             sections: [{ level: 0, heading: null, element: null, blocks: [paragraph('This study reads the wrath of Achilles as a word of the gods.')] }] }],
+           sections: [{ level: 1, heading: [t('The word')], element: null, blocks: [paragraph('It names a wrath that is more than anger.')] }],
+         };
+         const request = { document, style: 'chicago-author-date', format, template, output: 'document', key: 'templates' };
+         return await invoke('document_export', { request, target: 'docx', path: arguments[0], options: {} });`,
+        path,
+        titled,
+      )
+      .catch((e) => ({ error: String(e.message ?? e) }));
+  const inWord = (path, part) => execFileSync('unzip', ['-p', path, part], { encoding: 'utf8' });
   const docx = join(out, 'wrath.docx');
-  const made = await app.execAsync(
-    `const invoke = window.__TAURI_INTERNALS__.invoke;
-     const template = await invoke('templates_get', { id: 'article' });
-     const format = await invoke('formats_get', { id: 'manuscript' });
-     const t = (text) => ({ kind: 'text', text, marks: {} });
-     const paragraph = (text) => ({ kind: 'paragraph', content: [t(text)] });
-     const document = {
-       title: [t('Wrath and the hero')], authors: [], keywords: [], references: [],
-       parts: [{ kind: 'abstract', element: null, title: [t('Abstract')],
-         sections: [{ level: 0, heading: null, element: null, blocks: [paragraph('This study reads the wrath of Achilles as a word of the gods.')] }] }],
-       sections: [{ level: 1, heading: [t('The word')], element: null, blocks: [paragraph('It names a wrath that is more than anger.')] }],
-     };
-     const request = { document, style: 'chicago-author-date', format, template, output: 'document', key: 'templates' };
-     return await invoke('document_export', { request, target: 'docx', path: arguments[0], options: {} });`,
-    docx,
-  ).catch((e) => ({ error: String(e.message ?? e) }));
+  const made = await makeWord(docx, true);
   check('a Word document is made with the template', !made.error && existsSync(docx), JSON.stringify(made).slice(0, 300));
   if (existsSync(docx)) {
-    const xml = execFileSync('unzip', ['-p', docx, 'word/document.xml'], { encoding: 'utf8' });
+    const xml = inWord(docx, 'word/document.xml');
     check('with the abstract, printed once, before the text', xml.split('wrath of Achilles as a word').length === 2 && xml.indexOf('wrath of Achilles as a word') < xml.indexOf('more than anger'));
+    check(
+      'with the title page where the template puts it, before the abstract, as the preview has it',
+      xml.split('w:val="Title"').length === 2 && xml.indexOf('w:val="Title"') < xml.indexOf('wrath of Achilles as a word'),
+    );
+    const core = inWord(docx, 'docProps/core.xml');
+    check('and the title in the properties of the file', core.includes('<dc:title>Wrath and the hero</dc:title>'), core.slice(0, 300));
+  }
+  // The title page turned off: none in Word either, and the title in the properties all the same.
+  const untitled = join(out, 'untitled.docx');
+  const madeUntitled = await makeWord(untitled, false);
+  if (!madeUntitled.error && existsSync(untitled)) {
+    const xml = inWord(untitled, 'word/document.xml');
+    const core = inWord(untitled, 'docProps/core.xml');
+    check(
+      'a title page turned off is off in Word too, and the title stays in the properties',
+      !xml.includes('w:val="Title"') && xml.includes('wrath of Achilles as a word') && core.includes('<dc:title>Wrath and the hero</dc:title>'),
+    );
+  } else {
+    check('a title page turned off is off in Word too, and the title stays in the properties', false, JSON.stringify(madeUntitled).slice(0, 300));
   }
 
   // --- A template of one's own, made from the one in use ---
