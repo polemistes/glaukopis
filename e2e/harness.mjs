@@ -366,6 +366,17 @@ export class App {
       await this.cmd('DELETE', '/actions');
       return;
     }
+    // Where something stands over the middle of the element, as a bar that
+    // stays at the top of what it scrolls, the element is brought to the
+    // middle of what scrolls it first, as a hand would scroll before pressing.
+    await this.exec(
+      `const el = arguments[0];
+       if (!el?.getBoundingClientRect) return;
+       const r = el.getBoundingClientRect();
+       const over = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+       if (!over || !(over === el || el.contains(over))) el.scrollIntoView({ block: 'center', inline: 'nearest' });`,
+      { [ELEMENT]: id },
+    );
     await this.cmd('POST', `/element/${id}/click`, {});
   }
 
@@ -702,7 +713,7 @@ export class App {
 
   // ---- the look of a document, in the panel at the side (ADR 0042) ----
 
-  /** Opens the look of the document the preview shows by Ctrl+Shift+A, at a part named as its chips name it. */
+  /** Opens the look of the document the preview shows by Ctrl+Shift+A, and goes to a part named as its chips name it. */
   async openLook(section) {
     if (!(await this.exists('.side .look'))) await this.keys(['Control', 'Shift', 'a']);
     await this.waitFor('.side .look', 5000);
@@ -711,17 +722,43 @@ export class App {
     if (section) await this.lookSection(section);
   }
 
-  /** Turns to a part of the look: "Type", "Page", "Kinds", "Numbers"… */
+  /**
+   * Goes to a part of the look by its chip: "Page", "Type", "Paragraphs",
+   * "Notes and citations", "The layout"… Every part is on the panel at once;
+   * the rows are looked for in this part first after it (see `lookRow`).
+   */
   async lookSection(section) {
     await this.exec(`const q = document.querySelector('.side .look .search input'); if (q.value) { q.value = ''; q.dispatchEvent(new Event('input', { bubbles: true })); }`);
     await this.waitFor('.side .look .chips', 3000);
     await this.clickText('.side .look .chips button', section);
-    await sleep(200);
+    this.lookPart = await this.exec(
+      `return Array.from(document.querySelectorAll('.side .look .chips button')).find((b) => b.textContent.trim() === arguments[0])?.dataset.section ?? null`,
+      section,
+    );
+    // Until the part stands at the top of the panel, under the chips.
+    await this.waitUntil(
+      `const f = document.querySelector('.side .look .through');
+       const p = f?.querySelector('.part[data-part="${this.lookPart}"]');
+       if (!f || !p) return false;
+       const d = p.getBoundingClientRect().top - f.getBoundingClientRect().top - f.querySelector('.chips').offsetHeight;
+       return Math.abs(d) < 40 || f.scrollTop + f.clientHeight >= f.scrollHeight - 2;`,
+      4000,
+      'the part to be brought into view',
+    ).catch(() => {});
+    await sleep(150);
   }
 
-  /** A row of the look, found by the words of its label, as a script finds it in the page: an expression. */
+  /**
+   * A row of the look, found by the words of its label, as a script finds it
+   * in the page: an expression. In the part last gone to first, then
+   * anywhere in the panel: the first rows, the parts and what is found.
+   */
   lookRow(label) {
-    return `Array.from(document.querySelectorAll('.side .look .row')).find((r) => r.querySelector('.what')?.firstChild?.textContent.trim() === ${JSON.stringify(label)})`;
+    const named = `(r) => r.querySelector('.what')?.firstChild?.textContent.trim() === ${JSON.stringify(label)}`;
+    const scoped = this.lookPart
+      ? `Array.from(document.querySelectorAll('.side .look .part[data-part="${this.lookPart}"] .row')).find(${named}) ?? `
+      : '';
+    return `(${scoped}Array.from(document.querySelectorAll('.side .look .row')).find(${named}))`;
   }
 
   /** Chooses in a chooser of the look, found by the words of its label, the value given. Says whether it was offered. */
@@ -764,9 +801,14 @@ export class App {
     );
   }
 
-  /** The line at the top of the look: "Template → Layout · 2 changes → Style". */
-  async lookMap() {
-    return this.exec(`return document.querySelector('.side .look .map')?.textContent.replace(/\\s+/g, ' ').trim() ?? ''`);
+  /** The top of the look: what the document is, and the layout in a line, "Layout: Manuscript · 2 changes". */
+  async lookTop() {
+    return this.exec(
+      `const w = document.querySelector('.side .look .whole');
+       return { what: w?.querySelector('.what .name')?.textContent.trim() ?? '',
+                layout: w?.querySelector('.layout-line')?.textContent.replace(/\\s+/g, ' ').trim() ?? '',
+                changes: Number(w?.querySelector('.layout-line')?.dataset.changes ?? 0) };`,
+    );
   }
 
   async pageErrors() {

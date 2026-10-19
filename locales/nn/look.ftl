@@ -7,8 +7,6 @@ look-open = Utsjånaden til dette dokumentet: mal, oppsett og kjeldetilvisingar
 look-between = Mellom teksten og utsjånaden til dokumentet
 look-whole = Det som gir utsjånaden
 
-look-template = Mal
-look-template-hint = Kva dokumentet består av: delane, og kva dei krev
 look-layout-hint = Korleis sida ser ut: side, skrift, avstand, overskrifter, utsjånaden til slaga
 look-citations-hint = Korleis kjeldetilvisingane og litteraturlista blir skrivne
 
@@ -34,14 +32,9 @@ look-section-type = Skrift
 look-section-page = Side
 look-section-paragraphs = Avsnitt
 look-section-headings = Overskrifter
-look-section-kinds = Slag
-look-section-quotations = Sitat
 look-section-numbers = Nummer
 look-section-notes = Notar
-look-section-bibliography = Litteraturliste
 look-section-figures = Figurar og tabellar
-look-section-title = Tittel og samandrag
-look-section-about = Om oppsettet
 
 look-kinds-in-use = I dette dokumentet
 look-heading-levels = Overskriftsnivå

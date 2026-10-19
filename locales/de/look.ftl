@@ -7,8 +7,6 @@ look-open = Das Aussehen dieses Dokuments: Vorlage, Layout und Zitationen
 look-between = Zwischen dem Text und dem Aussehen des Dokuments
 look-whole = Was das Aussehen bestimmt
 
-look-template = Vorlage
-look-template-hint = Woraus das Dokument besteht: seine Teile und was sie verlangen
 look-layout-hint = Wie die Seite aussieht: Seite, Schrift, Abstände, Überschriften, das Aussehen der Arten
 look-citations-hint = Wie Zitationen und das Literaturverzeichnis geschrieben werden
 
@@ -34,14 +32,9 @@ look-section-type = Schrift
 look-section-page = Seite
 look-section-paragraphs = Absätze
 look-section-headings = Überschriften
-look-section-kinds = Arten
-look-section-quotations = Zitate
 look-section-numbers = Nummern
 look-section-notes = Anmerkungen
-look-section-bibliography = Literaturverzeichnis
 look-section-figures = Abbildungen und Tabellen
-look-section-title = Titel und Zusammenfassung
-look-section-about = Über das Layout
 
 look-kinds-in-use = In diesem Dokument
 look-heading-levels = Ebenen der Überschriften

@@ -35,6 +35,7 @@ const DATA = [
   '.fonts',
   // The names of templates, layouts and styles, and what the built-in templates say of themselves.
   '.preview header .what',
+  '.side .look .whole .what',
   '.template',
 ].join(', ');
 

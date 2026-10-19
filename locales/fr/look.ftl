@@ -7,8 +7,6 @@ look-open = L’aspect de ce document : modèle, mise en page et citations
 look-between = Entre le texte et l’aspect du document
 look-whole = Ce qui fait l’aspect
 
-look-template = Modèle
-look-template-hint = Ce dont se compose le document : ses parties, et ce qu’elles exigent
 look-layout-hint = L’aspect de la page : page, caractères, espacement, titres, aspects des types
 look-citations-hint = Comment s’écrivent les citations et la bibliographie
 
@@ -35,14 +33,9 @@ look-section-type = Caractères
 look-section-page = Page
 look-section-paragraphs = Paragraphes
 look-section-headings = Titres
-look-section-kinds = Types
-look-section-quotations = Citations en retrait
 look-section-numbers = Numérotation
 look-section-notes = Notes
-look-section-bibliography = Bibliographie
 look-section-figures = Figures et tableaux
-look-section-title = Titre et résumé
-look-section-about = À propos de la mise en page
 
 look-kinds-in-use = Dans ce document
 look-heading-levels = Niveaux de titres

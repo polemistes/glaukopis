@@ -528,7 +528,7 @@
 
   /** Opens the look of the document at the look of the kind the cursor is in. */
   function changeLook() {
-    lookUi.open({ section: 'kinds', kind });
+    lookUi.open({ section: 'paragraphs', kind });
   }
 
   function kinds(event: MouseEvent) {

@@ -7,8 +7,6 @@ look-open = Dokumentets utseende: mall, layout och källhänvisningar
 look-between = Mellan texten och dokumentets utseende
 look-whole = Det som avgör utseendet
 
-look-template = Mall
-look-template-hint = Vad dokumentet består av: dess delar, och vad de kräver
 look-layout-hint = Hur sidan ser ut: sida, typografi, avstånd, rubriker, slagens utseenden
 look-citations-hint = Hur källhänvisningar och litteraturförteckningen skrivs
 
@@ -34,14 +32,9 @@ look-section-type = Typografi
 look-section-page = Sida
 look-section-paragraphs = Stycken
 look-section-headings = Rubriker
-look-section-kinds = Slag
-look-section-quotations = Citat
 look-section-numbers = Numrering
 look-section-notes = Noter
-look-section-bibliography = Litteraturförteckning
 look-section-figures = Figurer och tabeller
-look-section-title = Titel och sammanfattning
-look-section-about = Om layouten
 
 look-kinds-in-use = I det här dokumentet
 look-heading-levels = Rubriknivåer

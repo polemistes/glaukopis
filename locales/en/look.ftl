@@ -7,9 +7,11 @@ look-open = The look of this document: template, layout and citations
 look-between = Between the text and the look of the document
 look-whole = What makes the look
 
-look-template = Template
-look-template-hint = What the document consists of: its parts, and what they require
-look-layout-hint = How the page looks: page, type, spacing, headings, the looks of the kinds
+# Under the button at the top of Look that names what the document is.
+look-what-hint = What you are writing decides the parts, the pages and the citations; any of them is changed below.
+# The line under it, which goes down to the layout at the foot of Look; the count of changes follows it.
+look-layout-line = Layout: { $layout }
+look-layout-hint = How the pages look: the page, the type, the spacing, the headings, the looks of the kinds
 look-citations-hint = How citations and the bibliography are written
 
 # After the name of the layout at the top of the panel: "Manuscript · 2 changes".
@@ -30,22 +32,30 @@ look-search = Find a setting: font, margins, page numbers…
 look-search-nothing = No setting has these words.
 look-sections = Parts of the look
 
-look-section-type = Type
 look-section-page = Page
+look-section-type = Type
 look-section-paragraphs = Paragraphs
 look-section-headings = Headings
-look-section-kinds = Kinds
-look-section-quotations = Quotations
 look-section-numbers = Numbers
-look-section-notes = Notes
-look-section-bibliography = Bibliography
+look-section-notes = Notes and citations
 look-section-figures = Figures and tables
-look-section-title = Title and abstract
-look-section-about = About the layout
+look-section-front = Front page
+look-section-contents = What the document contains
+look-section-layout = The layout
 
 look-kinds-in-use = In this document
 look-heading-levels = Levels of headings
-look-quotations-hint = Quotations that are set off from the text by their length, wherever they are not marked as quotations themselves. The kind Quotation is set in the part of the kinds.
+look-quotations-hint = Quotations that are set off from the text by their length, wherever they are not marked as quotations themselves. The kind Quotation is set under the kinds of paragraph and of words, below.
+# The first rows of Look, which most writers reach for; each is also in its part further down.
+look-first-type-size = Type size
+look-first-page-size = Page size
+look-first-headings-numbered = Headings are numbered
+# Headings within the parts of Look.
+look-at-quotations = Long quotations
+look-at-kinds = Kinds of paragraph and of words
+look-at-citations = Citations
+look-at-bibliography = Bibliography
+look-layout-changes = What this document changes
 
 look-keep = Keep these changes as a layout of my own…
 look-keep-save = Keep

@@ -7,8 +7,6 @@ look-open = Dokumentets udseende: skabelon, opsætning og kildehenvisninger
 look-between = Mellem teksten og dokumentets udseende
 look-whole = Det, der giver udseendet
 
-look-template = Skabelon
-look-template-hint = Hvad dokumentet består af: dets dele, og hvad de kræver
 look-layout-hint = Hvordan siden ser ud: side, skrift, afstand, overskrifter, arternes udseende
 look-citations-hint = Hvordan kildehenvisninger og litteraturlisten skrives
 
@@ -34,14 +32,9 @@ look-section-type = Skrift
 look-section-page = Side
 look-section-paragraphs = Afsnit
 look-section-headings = Overskrifter
-look-section-kinds = Arter
-look-section-quotations = Citater
 look-section-numbers = Numre
 look-section-notes = Noter
-look-section-bibliography = Litteraturliste
 look-section-figures = Figurer og tabeller
-look-section-title = Titel og resumé
-look-section-about = Om opsætningen
 
 look-kinds-in-use = I dette dokument
 look-heading-levels = Overskriftsniveauer

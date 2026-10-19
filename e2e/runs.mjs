@@ -313,7 +313,7 @@ try {
   await sleep(300);
   const nav = await app.exec(`return Array.from(document.querySelectorAll('.side .look .chips button')).map((b) => b.textContent.trim())`);
   check('the look has a part for the numbers', nav.includes('Numbers'), nav.join(' | '));
-  await app.lookSection('Kinds');
+  await app.lookSection('Paragraphs');
   await app
     .waitUntil(`return !!document.querySelector('.side .look details[data-kind="scene"] p.resolved[data-resolved]')`, 8000, 'the looks as resolved')
     .catch(() => {});
@@ -351,8 +351,8 @@ try {
     !gapBefore && gapAfter === '1cm',
     `${gapBefore} ${gapAfter}`,
   );
-  const lookMap = await app.lookMap();
-  check('the columns are the document’s change, not a new layout', /Manuscript · 1 change →/.test(lookMap), lookMap);
+  const lookTop = await app.lookTop();
+  check('the columns are the document’s change, not a new layout', lookTop.layout === 'Layout: Manuscript · 1 change', lookTop.layout);
   await app.exec(`${row('Columns')}.scrollIntoView({ block: 'center' });`);
   await sleep(150);
   await app.screenshot('runs-9-layout-columns');

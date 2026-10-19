@@ -47,10 +47,11 @@ try {
   await app.keys(['Control', 'p']);
   await app.waitFor('.preview .page', 20000);
 
-  /** The template, the layout and the style in use, as the bar over the preview names them. */
-  const inUse = () => app.exec(`return document.querySelector('.preview .in-use .names')?.textContent.trim() ?? ''`);
-  // The look of the document opens from the bar over the preview, and the editor of the style from it.
-  await app.click('.preview button.in-use');
+  /** The name of the reference style in use, as its row in Look shows it. */
+  const styleShown = () =>
+    app.exec(`return ${app.lookRow('Reference style')}?.querySelector('select')?.selectedOptions[0]?.textContent.trim() ?? ''`);
+  // The look of the document opens from its button over the preview, and the editor of the style from it.
+  await app.click('.preview header [data-look]');
   await app.waitFor('.side .look .chips', 15000);
   await sleep(300);
   /** Whether the editor of the style has gone. */
@@ -69,13 +70,13 @@ try {
   await sleep(300);
   await app.exec(
     `const set = (el, value) => { el.value = value; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); };
-     const fields = Array.from(document.querySelectorAll('.side .look .part input[type="text"], .side .look .part input:not([type])'));
+     const fields = Array.from(document.querySelectorAll('.side .look .part[data-part="figures"] input[type="text"], .side .look .part[data-part="figures"] input:not([type])'));
      set(fields.find((i) => i.value === 'Figure'), 'Fig.');
-     const selects = Array.from(document.querySelectorAll('.side .look .part select'));
+     const selects = Array.from(document.querySelectorAll('.side .look .part[data-part="figures"] select'));
      set(selects.find((s) => Array.from(s.options).some((o) => o.value === 'at-end')), 'at-end');`,
   );
   await sleep(600);
-  const told = await app.exec(`return document.querySelector('.side .look .part').textContent`);
+  const told = await app.exec(`return document.querySelector('.side .look .part[data-part="figures"]').textContent`);
   check(
     'the layout says what a figure is called, and shows it',
     /Fig\. 1/.test(told),
@@ -86,24 +87,25 @@ try {
     /Heading over the figures/.test(told) && /about here/.test(told),
   );
   await app.screenshot('editors-2b-format-figures');
-  await app.lookSection('About the layout');
+  await app.lookSection('The layout');
   await sleep(200);
   await app.screenshot('editors-3-format-about');
-  await app.clickText('.side .look footer button', 'Keep these changes as a layout of my own');
-  await app.waitFor('.side .look footer input.kept-name', 3000);
+  await app.clickText('.side .look .keep button', 'Keep these changes as a layout of my own');
+  await app.waitFor('.side .look .keep input.kept-name', 3000);
   await app.exec(
-    `const n = document.querySelector('.side .look footer input.kept-name'); n.value = 'My publisher'; n.dispatchEvent(new Event('input', { bubbles: true }));`,
+    `const n = document.querySelector('.side .look .keep input.kept-name'); n.value = 'My publisher'; n.dispatchEvent(new Event('input', { bubbles: true }));`,
   );
-  await app.clickText('.side .look footer button', 'Keep');
+  await app.clickText('.side .look .keep button', 'Keep');
   await app
-    .waitUntil(`return /My publisher · no changes/.test(document.querySelector('.side .look .map')?.textContent ?? '')`, 8000, 'the layout kept')
+    .waitUntil(`return document.querySelector('.side .look .layout-line')?.textContent.replace(/\\s+/g, ' ').trim() === 'Layout: My publisher'`, 8000, 'the layout kept')
     .catch(() => {});
   await sleep(3500);
   const format = await app.lookChosen('Layout');
+  const kept = await app.lookTop();
   check(
     'a changed layout is saved as one’s own and taken into use',
-    format === 'my-publisher' && (await inUse()).includes('My publisher'),
-    `${format}: ${await inUse()}`,
+    format === 'my-publisher' && kept.layout === 'Layout: My publisher',
+    `${format}: ${kept.layout}`,
   );
   const saved = JSON.parse(readFileSync(join(app.dataDir, 'formats', 'my-publisher.json'), 'utf8'));
   check(
@@ -211,8 +213,8 @@ try {
   const style = await app.lookChosen('Reference style');
   check(
     'a changed style is saved as one’s own and taken into use',
-    style === 'chicago-with-initials' && (await inUse()).includes('Chicago with initials'),
-    `${style}: ${await inUse()}`,
+    style === 'chicago-with-initials' && (await styleShown()).includes('Chicago with initials'),
+    `${style}: ${await styleShown()}`,
   );
   check('the preview uses it', /Nagy, G\./.test(typ()), typ().match(/Nagy[^\n]{0,40}/)?.[0]);
 

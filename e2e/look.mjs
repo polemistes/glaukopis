@@ -81,22 +81,44 @@ try {
     (await app.exec(`return Array.from(document.querySelectorAll(arguments[0] + ' .prose > p')).map((p) => p.getAttribute('data-kind') ?? 'text').join(' ')`, book)) === 'text quote',
   );
 
-  // --- The names over the preview open Look ---
+  // --- Look, from its button over the preview, in the order of the page ---
   await app.keys(['Control', 'p']);
   await app.waitFor('.preview .page', 30000);
   await sleep(800);
-  await app.click('.preview button.in-use');
+  await app.click('.preview header [data-look]');
   await app.waitFor('.side .look .chips', 15000);
   await sleep(500);
-  let map = await app.lookMap();
+  let top = await app.lookTop();
   check(
-    'the names over the preview open Look, whose top line names the template, the layout with its changes, and the citations',
-    /^.+ → Manuscript · no changes → .+$/.test(map),
-    map,
+    'Look opens from its button over the preview, with what the document is at its top and the layout in a line',
+    top.what === 'Plain document' && top.layout === 'Layout: Manuscript' && top.changes === 0,
+    JSON.stringify(top),
+  );
+  const order = await app.exec(
+    `const through = document.querySelector('.side .look .through');
+     return Array.from(through.children).map((e) => e.dataset.part ?? (e.matches('.whole') ? 'whole' : e.matches('.search') ? 'search' : e.matches('.first') ? 'first' : e.matches('.chips') ? 'chips' : e.tagName.toLowerCase()));`,
   );
   check(
-    'the layout and the reference style are chosen in Look',
-    (await app.lookChosen('Layout')) === '' && (await app.lookChosen('Reference style')) === '',
+    'then the search, the first rows, the chips, and the parts from the page inwards, with the layout last',
+    JSON.stringify(order.filter((o) => o !== 'p')) ===
+      JSON.stringify(['whole', 'search', 'first', 'chips', 'page', 'type', 'paragraphs', 'headings', 'numbers', 'notes', 'figures', 'front', 'layout']),
+    order.join(' '),
+  );
+  const first = await app.exec(
+    `return Array.from(document.querySelectorAll('.side .look .first .row .what')).map((w) => w.firstChild.textContent.trim())`,
+  );
+  check(
+    'the first rows are the font, its size, the line spacing, the page, its numbers and the numbers of headings, and no reference style in a document that cites nothing',
+    JSON.stringify(first) ===
+      JSON.stringify(['Font', 'Type size', 'Line spacing', 'Page size', 'Pages are numbered', 'Headings are numbered']),
+    first.join(' | '),
+  );
+  check(
+    'the layout and the reference style are chosen in Look, the style under the notes',
+    (await app.lookChosen('Layout')) === '' &&
+      (await app.lookChosen('Reference style')) === '' &&
+      (await app.exists('.side .look .part[data-part="notes"] [data-style-row]')) &&
+      (await app.exists('.side .look .part[data-part="layout"] select')),
   );
   await app.screenshot('look-1-panel');
 
@@ -110,8 +132,8 @@ try {
   await app.lookWrite('Font', 'Gentium Plus');
   await sleep(800);
   check('the font changed says it is changed here', /^Changed here · take Manuscript’s again$/.test((await fromOf('Font')) ?? ''), await fromOf('Font'));
-  map = await app.lookMap();
-  check('and the top line counts the change', /Manuscript · 1 change →/.test(map), map);
+  top = await app.lookTop();
+  check('and the line of the layout counts the change', top.layout === 'Layout: Manuscript · 1 change' && top.changes === 1, top.layout);
   check('the preview is made in that font', await typstHas(/Gentium Plus/));
   await app.screenshot('look-2-from');
   await app.exec(
@@ -119,11 +141,11 @@ try {
      row.nextElementSibling.querySelector('button.again').click();`,
   );
   await sleep(800);
-  map = await app.lookMap();
+  top = await app.lookTop();
   check(
     'taking the layout’s again leaves no change, and the font is the layout’s',
-    /Manuscript · no changes/.test(map) && (await fromOf('Font')) === null && (await typstHas(/Gentium Plus/, false)),
-    map,
+    top.changes === 0 && (await fromOf('Font')) === null && (await typstHas(/Gentium Plus/, false)),
+    top.layout,
   );
 
   // --- The foot of the kind menu opens Look at the kind ---
@@ -134,9 +156,16 @@ try {
   await sleep(800);
   const quote = await app.exec(
     `const d = document.querySelector('.side .look details[data-kind="quote"]');
-     return { open: !!d?.open, part: document.querySelector('.side .look .part')?.dataset.part };`,
+     const f = document.querySelector('.side .look .through');
+     return { open: !!d?.open, part: d?.closest('.part')?.dataset.part,
+              chip: document.querySelector('.side .look .chips button.current')?.dataset.section,
+              near: d ? Math.round(d.getBoundingClientRect().top - f.getBoundingClientRect().top) : null };`,
   );
-  check('the foot of the kind menu opens Look at the look of the kind', quote.open && quote.part === 'kinds', JSON.stringify(quote));
+  check(
+    'the foot of the kind menu opens Look at the look of the kind, under the paragraphs, brought into view',
+    quote.open && quote.part === 'paragraphs' && quote.chip === 'paragraphs' && quote.near !== null && quote.near < 120,
+    JSON.stringify(quote),
+  );
   check(
     'the kinds this document uses come first',
     (await app.exec(`return Array.from(document.querySelectorAll('.side .look .part details[data-kind]')).slice(0, 2).map((d) => d.dataset.kind).sort().join(' ')`)) === 'quote text',
@@ -153,8 +182,8 @@ try {
     'a change of a kind is said in its look',
     await app.exec(`return document.querySelector('.side .look details[data-kind="quote"]').hasAttribute('data-changed') && /Changed here/.test(document.querySelector('.side .look details[data-kind="quote"] .from')?.textContent ?? '')`),
   );
-  map = await app.lookMap();
-  check('and counted at the top', /· 1 change →/.test(map), map);
+  top = await app.lookTop();
+  check('and counted in the line of the layout', top.changes === 1, top.layout);
   check(
     'and the preview sets the quotation so',
     await typstHas(/#show quote\.where\(block: true\): it => \{\s*set text\([^)]*style: "italic"/),
@@ -163,14 +192,15 @@ try {
   await app.screenshot('look-3-kinds');
 
   // --- Kept as a layout of one's own ---
-  await app.clickText('.side .look footer button', 'Keep these changes as a layout of my own');
-  await app.waitFor('.side .look footer input.kept-name', 3000);
+  await app.lookSection('The layout');
+  await app.clickText('.side .look .keep button', 'Keep these changes as a layout of my own');
+  await app.waitFor('.side .look .keep input.kept-name', 3000);
   await app.exec(
-    `const i = document.querySelector('.side .look footer input.kept-name'); i.value = 'Mine'; i.dispatchEvent(new Event('input', { bubbles: true }));`,
+    `const i = document.querySelector('.side .look .keep input.kept-name'); i.value = 'Mine'; i.dispatchEvent(new Event('input', { bubbles: true }));`,
   );
-  await app.clickText('.side .look footer button', 'Keep');
-  await app.waitUntil(`return /^.+ → Mine · no changes → /.test(document.querySelector('.side .look .map')?.textContent.replace(/\\s+/g, ' ').trim() ?? '')`, 10000, 'the layout kept').catch(() => {});
-  map = await app.lookMap();
+  await app.clickText('.side .look .keep button', 'Keep');
+  await app.waitUntil(`return document.querySelector('.side .look .layout-line')?.textContent.replace(/\\s+/g, ' ').trim() === 'Layout: Mine'`, 10000, 'the layout kept').catch(() => {});
+  top = await app.lookTop();
   const mine = join(app.dataDir, 'formats', 'mine.json');
   const kept = existsSync(mine) ? JSON.parse(readFileSync(mine, 'utf8')) : null;
   check(
@@ -178,11 +208,9 @@ try {
     kept?.kinds?.quote?.italic === true && kept?.basedOn === 'manuscript' && kept?.kind === 'own',
     JSON.stringify(kept?.kinds?.quote),
   );
-  check('which the document uses, with no changes of its own', /→ Mine · no changes →/.test(map), map);
-  await app.waitUntil(`return (document.querySelector('.preview .in-use .names')?.textContent ?? '').includes('Mine')`, 8000, 'the names over the preview').catch(() => {});
-  const names = await app.exec(`return document.querySelector('.preview .in-use .names')?.textContent.trim() ?? ''`);
-  check('the names over the preview say so', names.includes('Mine'), names);
-  check('a layout of one’s own offers to take changes into itself', await app.exists('.side .look footer button:nth-child(2)'));
+  check('which the document uses, with no changes of its own', top.layout === 'Layout: Mine' && top.changes === 0, top.layout);
+  check('the button over the preview still names only what the document is', (await app.whatIs()) === 'Plain document', await app.whatIs());
+  check('a layout of one’s own offers to take changes into itself', await app.exists('.side .look .keep button:nth-child(2)'));
   await app.screenshot('look-4-kept');
 
   // --- A change made on the project is said in an element under it ---
@@ -224,8 +252,37 @@ try {
   await sleep(400);
   check(
     'the palette’s “Change the font…” opens Look at the type',
-    (await app.exec(`return document.querySelector('.side .look .part')?.dataset.part`)) === 'type',
+    (await app.exec(`return document.querySelector('.side .look .chips button.current')?.dataset.section`)) === 'type',
   );
+
+  // --- The chips go to their parts; the line of the layout goes to the layout ---
+  await app.lookSection('Notes and citations');
+  const notes = await app.exec(
+    `const f = document.querySelector('.side .look .through');
+     const p = f.querySelector('.part[data-part="notes"]');
+     return { chip: f.querySelector('.chips button.current')?.dataset.section,
+              near: Math.round(p.getBoundingClientRect().top - f.getBoundingClientRect().top - f.querySelector('.chips').offsetHeight) };`,
+  );
+  check('a chip brings its part to the top, under the chips, and is marked', notes.chip === 'notes' && Math.abs(notes.near) < 40, JSON.stringify(notes));
+  await app.exec(`document.querySelector('.side .look .through').scrollTop = 0;`);
+  await sleep(300);
+  await app.click('.side .look .layout-line');
+  await sleep(500);
+  check(
+    'the line of the layout goes to the layout at the foot',
+    (await app.exec(`return document.querySelector('.side .look .chips button.current')?.dataset.section`)) === 'layout',
+  );
+
+  // --- What the document is decides whether the reference style is among the first rows ---
+  await app.chooseWhat('Nature');
+  await app.waitFor('.side .look .first [data-style-row]', 8000).catch(() => {});
+  top = await app.lookTop();
+  check(
+    'for a journal that names its style, the reference style is among the first rows, and Look names what the document is',
+    top.what === 'Nature' && (await app.exists('.side .look .first [data-style-row]')),
+    JSON.stringify(top),
+  );
+  await app.screenshot('look-6-cites');
 
   const errors = await app.pageErrors();
   check('no errors in the page', errors.length === 0, errors.join(' | '));

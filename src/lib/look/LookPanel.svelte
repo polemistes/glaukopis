@@ -1,18 +1,23 @@
 <script lang="ts">
   /**
-   * The look of a document, in one place (ADR 0042): everything that
-   * decides how its pages look, in the order a writer reaches for it, with
-   * the template, the layout and the reference style that make it in one
-   * line at the top. What is changed here is kept as the document's own
-   * changes over its layout, never in the layout: every row that is
-   * changed says where, and offers the layout's value again. A layout of
-   * the writer's own is made on purpose, from the changes.
+   * The look of a document, in one place (ADR 0042), in the order of the
+   * page (2026-10-19): at the top what the document is, which opens the
+   * chooser of what you are writing, and the layout in a line; then the
+   * search; then the few rows most writers reach for; then every part, from
+   * the page inwards, each with its heading, the chips above them going to
+   * each; and at the foot the layout itself, with the document's changes to
+   * it. The reference style is a row under the notes, and among the first
+   * rows only where the document cites. What is changed here is kept as the
+   * document's own changes over its layout, never in the layout: every row
+   * that is changed says where, and offers the layout's value again. A
+   * layout of the writer's own is made on purpose, from the changes.
    *
    * The rows set a copy of the layout as the document uses it; a moment
    * after each change, what differs from what the elements above give is
    * written as the element's changes, each a step of undo of its own.
    */
   import { tick, untrack, type Snippet } from 'svelte';
+  import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import ExternalLink from '@lucide/svelte/icons/external-link';
   import Minus from '@lucide/svelte/icons/minus';
   import Plus from '@lucide/svelte/icons/plus';
@@ -56,7 +61,7 @@
     type LookPath,
   } from './changes';
   import { formatGroups, layoutName, styleGroups, styleName } from './choosing.svelte';
-  import { LOOK_SECTIONS, lookUi, type LookSection } from './look.svelte';
+  import { LOOK_SECTIONS, lookUi, type LookRequest, type LookSection } from './look.svelte';
   import { lengthsOk, lookRows, lookWords, resolvedWords, setKindLook } from './rows.svelte';
 
   interface Props {
@@ -273,8 +278,6 @@
 
   let browsing = $state(false);
   let editingStyle = $state<string | null>(null);
-  /** Whether the list of what is changed is open, under the line at the top. */
-  let listing = $state(false);
 
   // ---- keeping the changes as a layout ----
 
@@ -375,53 +378,122 @@
 
   // ---- the parts, and finding a setting ----
 
-  let section = $state<LookSection>('type');
+  /** The parts the panel shows, in their order. */
+  const SHOWN: readonly LookSection[] = LOOK_SECTIONS.filter((key) => key !== 'contents');
+  /** The part at the top of the panel as it is scrolled: its chip is marked. */
+  let section = $state<LookSection | null>(null);
   let kindInView = $state<string | undefined>(undefined);
   let form = $state<HTMLDivElement>();
   let query = $state('');
   const searching = $derived(query.trim().length > 0);
+  /** What the panel was last asked to bring into view, until the rows are there to bring it. */
+  let aim = $state.raw<LookRequest | null>(null);
 
-  // Asked for at a part, or at a kind: the kind is opened and brought into view.
+  // Asked for at a part, a kind, a level of heading or a heading within a part: the search is left, and it is brought into view.
   $effect(() => {
     void lookUi.asked;
     const asked = untrack(() => lookUi.request);
     untrack(() => {
-      if (asked.section) section = asked.section;
-      if (asked.kind) {
-        section = 'kinds';
-        query = '';
-      }
-      kindInView = asked.kind;
+      if (asked.section || asked.kind || asked.level || asked.at) query = '';
+      if (asked.kind) kindInView = asked.kind;
+      aim = asked;
     });
   });
   $effect(() => {
-    const wanted = kindInView;
+    const wanted = aim;
     const f = form;
-    if (!effective || !wanted || !f || !/^[\w-]+$/.test(wanted)) return;
+    if (!effective || !wanted || !f) return;
     untrack(() => {
-      if (section !== 'kinds') return;
-      void tick().then(() => {
-        const d = f.querySelector<HTMLDetailsElement>(`details[data-kind="${wanted}"]`);
-        if (!d) return;
-        d.open = true;
-        d.scrollIntoView({ block: 'start' });
-      });
+      aim = null;
+      void tick().then(() => bring(f, wanted));
     });
   });
 
+  /** Brings what is asked for into view at the top of the panel, under the chips: a kind, a level, a heading, a part. */
+  function bring(f: HTMLElement, wanted: LookRequest) {
+    const safe = (id: string | undefined) => !!id && /^[\w-]+$/.test(id);
+    let target: HTMLElement | null = null;
+    if (safe(wanted.kind)) {
+      const d = f.querySelector<HTMLDetailsElement>(`.part details[data-kind="${wanted.kind}"]`);
+      if (d) d.open = true;
+      target = d;
+    }
+    if (!target && wanted.level) {
+      const d = f.querySelector<HTMLDetailsElement>(`details.level[data-level="${wanted.level}"]`);
+      if (d) d.open = true;
+      target = d;
+    }
+    if (!target && safe(wanted.at)) target = f.querySelector(`[data-at="${wanted.at}"]`);
+    if (!target && wanted.section) target = f.querySelector(`.part[data-part="${wanted.section}"]`);
+    if (!target) return;
+    scrollTo(f, target, 'auto');
+    const part = target.closest<HTMLElement>('.part[data-part]')?.dataset.part as LookSection;
+    if (part) section = part;
+  }
+
+  /** Scrolls the panel so that an element stands at its top, under the chips. */
+  function scrollTo(f: HTMLElement, target: HTMLElement, behavior: ScrollBehavior) {
+    const chips = f.querySelector<HTMLElement>('.chips');
+    const by =
+      target.getBoundingClientRect().top -
+      f.getBoundingClientRect().top -
+      (chips?.offsetHeight ?? 0) -
+      6;
+    f.scrollTo({ top: f.scrollTop + by, behavior });
+  }
+
+  /** Goes to a part, from its chip. */
+  function go(key: LookSection) {
+    const f = form;
+    const part = f?.querySelector<HTMLElement>(`.part[data-part="${key}"]`);
+    if (!f || !part) return;
+    section = key;
+    scrollTo(f, part, 'smooth');
+  }
+
+  /** Marks the chip of the part at the top of the panel, as the panel is scrolled. */
+  function follow() {
+    const f = form;
+    if (!f || searching) return;
+    const chips = f.querySelector<HTMLElement>('.chips');
+    const line = f.getBoundingClientRect().top + (chips?.offsetHeight ?? 0) + 12;
+    const parts = Array.from(f.querySelectorAll<HTMLElement>('.part[data-part]'));
+    let at: LookSection | null = null;
+    for (const part of parts) {
+      if (part.getBoundingClientRect().top > line) break;
+      at = part.dataset.part as LookSection;
+    }
+    // At the very foot the last part is the one in view, though it never reaches the top.
+    if (at && f.scrollTop + f.clientHeight >= f.scrollHeight - 2)
+      at = (parts[parts.length - 1]?.dataset.part as LookSection) ?? at;
+    if (at !== section) section = at;
+  }
+
+  // The marked chip is kept within the bar of chips, which is moved and not the panel.
+  $effect(() => {
+    const key = section;
+    const f = form;
+    if (!key || !f) return;
+    const chip = f.querySelector<HTMLElement>(`.chips [data-section="${key}"]`);
+    const bar = chip?.parentElement;
+    if (!chip || !bar) return;
+    const c = chip.getBoundingClientRect();
+    const b = bar.getBoundingClientRect();
+    if (c.left < b.left) bar.scrollLeft -= b.left - c.left + 12;
+    else if (c.right > b.right) bar.scrollLeft += c.right - b.right + 12;
+  });
+
   const sectionWords = $derived<Record<LookSection, string>>({
-    type: t('look-section-type'),
     page: t('look-section-page'),
+    type: t('look-section-type'),
     paragraphs: t('look-section-paragraphs'),
     headings: t('look-section-headings'),
-    kinds: t('look-section-kinds'),
-    quotations: t('look-section-quotations'),
     numbers: t('look-section-numbers'),
     notes: t('look-section-notes'),
-    bibliography: t('look-section-bibliography'),
     figures: t('look-section-figures'),
-    title: t('look-section-title'),
-    about: t('look-section-about'),
+    front: t('look-section-front'),
+    contents: t('look-section-contents'),
+    layout: t('look-section-layout'),
   });
 
   // ---- the rows ----
@@ -587,15 +659,29 @@
     ),
   ]);
 
+  const pageSizes: Choices = $derived([
+    ['a4', 'A4'],
+    ['letter', 'US Letter'],
+    ['a5', 'A5'],
+    ['b5', 'B5'],
+    ['legal', 'US Legal'],
+    ['custom', t('format-page-custom')],
+  ]);
+
+  /**
+   * The first rows: the few most writers reach for, each also in its part
+   * below, where it says the same and sets the same.
+   */
+  const firstRows: Row<F>[] = $derived([
+    number(t('look-first-type-size'), 'font.size', pt(6, 36)),
+    chosen(t('format-line-spacing'), 'text.lineSpacing', spacings),
+    chosen(t('look-first-page-size'), 'page.size', pageSizes),
+    toggle(t('format-page-numbers-show'), 'pageNumbers.show'),
+    toggle(t('look-first-headings-numbered'), 'headings.numbered', { hint: '1, 1.1, 1.1.1' }),
+  ]);
+
   const pageRows: Row<F>[] = $derived([
-    chosen(t('format-size'), 'page.size', [
-      ['a4', 'A4'],
-      ['letter', 'US Letter'],
-      ['a5', 'A5'],
-      ['b5', 'B5'],
-      ['legal', 'US Legal'],
-      ['custom', t('format-page-custom')],
-    ]),
+    chosen(t('format-size'), 'page.size', pageSizes),
     length(t('format-page-width'), 'page.width', { when: custom }),
     length(t('format-page-height'), 'page.height', { when: custom }),
     { subheading: t('format-margins') },
@@ -899,16 +985,33 @@
     return family === 'words' ? t('editor-plain-words') : t('editor-text');
   }
 
-  // The kinds of paragraph this document uses, gathered a moment after the
-  // text changes, not at every key.
+  // The kinds of paragraph this document uses, and whether it cites a work,
+  // gathered a moment after the text changes, not at every key.
   let inUse = $state.raw<string[]>([]);
+  let cites = $state(false);
   function gatherKinds() {
     const found = new Set<string>();
     for (const id of project.tree(at).sequence)
       for (const b of project.blocksOf(id)) if (b.kind === 'paragraph') found.add(b.name);
     const list = [...found];
     if (list.join('\n') !== inUse.join('\n')) inUse = list;
+    const now = project.usedReferences(at).length > 0;
+    if (now !== cites) cites = now;
   }
+
+  /**
+   * Whether the reference style stands among the first rows: where the
+   * document cites a work, where a reference style is chosen for it, or
+   * where what it is, or the layout that brings, names one. A document that
+   * does not cite has the style under the notes only, where it is there
+   * for whoever looks.
+   */
+  const citing = $derived(
+    cites ||
+      !!inherited.settings.style ||
+      !!template?.style ||
+      !!(template?.layout && documents.formatCached(template.layout)?.style),
+  );
   $effect(() => {
     void at;
     untrack(gatherKinds);
@@ -1040,16 +1143,14 @@
   const foundRows = $derived.by(() => {
     if (!searching) return [];
     const parts: [LookSection, Row<F>[]][] = [
-      ['type', typeRows],
       ['page', pageRows],
-      ['paragraphs', paragraphRows],
+      ['type', typeRows],
+      ['paragraphs', [...paragraphRows, ...quotationRows]],
       ['headings', headingRows],
-      ['quotations', quotationRows],
       ['numbers', numbersRows],
-      ['notes', noteRows],
-      ['bibliography', bibliographyRows],
+      ['notes', [...noteRows, ...bibliographyRows]],
       ['figures', tableRows],
-      ['title', titleRows],
+      ['front', titleRows],
     ];
     return parts.map(([key, rows]) => ({ key, rows: found(rows) })).filter((p) => p.rows.length);
   });
@@ -1059,7 +1160,12 @@
   const foundKinds = $derived(
     searching ? kindGroups.flatMap((g) => g.kinds).filter((k) => fits(k.label)) : [],
   );
-  const foundNothing = $derived(searching && !foundRows.length && !foundFont && !foundKinds.length);
+  const foundStyle = $derived(
+    searching && (fits(t('document-window-style')) || fits(t('look-citations-hint'))),
+  );
+  const foundNothing = $derived(
+    searching && !foundRows.length && !foundFont && !foundKinds.length && !foundStyle,
+  );
 
   // ---- what is changed, in words ----
 
@@ -1202,124 +1308,69 @@
   {/if}
 {/snippet}
 
+{#snippet styleRow()}
+  <label class="row" data-style-row>
+    <span class="what">{t('document-window-style')}<small>{t('look-citations-hint')}</small></span>
+    <select
+      value={own.style ?? ''}
+      onchange={(e) => {
+        const v = e.currentTarget.value;
+        if (v === '…') {
+          e.currentTarget.value = own.style ?? '';
+          browsing = true;
+        } else setOwn({ style: v || undefined });
+      }}
+    >
+      <option value="">
+        {styleFrom
+          ? t('document-window-from-with', { name: styleFrom, what: styleName(choice.style) })
+          : t('document-window-as-template', { name: broughtStyle })}
+      </option>
+      {#each styleGroups() as [name, styles] (name)}
+        <optgroup label={name}>
+          {#each styles as s (s.id)}
+            <option value={s.id}>{s.title}</option>
+          {/each}
+        </optgroup>
+      {/each}
+      {#if own.style && !documents.style(own.style)}
+        <option value={own.style}>{own.style}</option>
+      {/if}
+      <option value="…">{t('preview-style-more')}</option>
+    </select>
+  </label>
+{/snippet}
+
 <aside class="panel look" aria-label={t('look-title')}>
   <header>
     {#if head}{@render head()}{:else}<h2>{t('look-title')}</h2>{/if}
     <IconButton label={t('common-close')} size="sm" onclick={onclose}><X size={15} /></IconButton>
   </header>
 
-  <div class="through settings" bind:this={form}>
-    <!-- What makes the look: the template, the layout with the document's changes, the citations. -->
+  <div class="through settings" bind:this={form} onscroll={follow}>
+    <!-- What the document is, which opens the chooser of what you are writing; and the layout, in a line. -->
     <section class="whole" aria-label={t('look-whole')}>
-      <p class="map" data-map>
-        <button
-          type="button"
-          class="link"
-          title={t('look-template-hint')}
-          onclick={() => templateChooserUi.open({ project, at })}
-          >{templateName(project, choice.template)}</button
-        >
-        <span class="arrow" aria-hidden="true">→</span>
-        <span class="layout-name">{nameOfLayout}</span>
-        {#if changed}
-          <button
-            type="button"
-            class="link changes"
-            data-changes={changed}
-            aria-expanded={listing}
-            onclick={() => (listing = !listing)}>· {t('look-changes', { count: changed })}</button
-          >
-        {:else}
-          <span class="changes none" data-changes="0">· {t('look-no-changes')}</span>
-        {/if}
-        <span class="arrow" aria-hidden="true">→</span>
-        <span class="style-name">{styleName(choice.style)}</span>
-      </p>
-      {#if listing && changed}
-        <ul class="changed">
-          {#each changeList as c (c.path)}
-            <li>
-              <span>{c.words}</span>
-              <small
-                >{c.who === at
-                  ? t('look-changed-here')
-                  : t('look-changed-in', { name: nameOf(c.who) })}</small
-              >
-              <button type="button" class="again" onclick={() => takeAgain(c.who, c.path)}
-                >{t('look-take-again', { layout: nameOfLayout })}</button
-              >
-            </li>
-          {/each}
-        </ul>
-      {/if}
-
-      <div class="row">
-        <span class="what">{t('look-template')}<small>{t('look-template-hint')}</small></span>
-        <Button size="sm" onclick={() => templateChooserUi.open({ project, at })}
-          >{templateName(project, choice.template)}</Button
-        >
-      </div>
-      <label class="row">
-        <span class="what">{t('document-window-layout')}<small>{t('look-layout-hint')}</small></span
-        >
-        <select
-          value={own.format ?? ''}
-          onchange={(e) => setOwn({ format: e.currentTarget.value || undefined })}
-        >
-          <option value="">
-            {formatFrom
-              ? t('document-window-from-with', { name: formatFrom, what: nameOfLayout })
-              : t('document-window-as-template', { name: broughtLayout })}
-          </option>
-          {#each formatGroups() as group (group.name)}
-            <optgroup label={group.name}>
-              {#each group.formats as f (f.id)}
-                <option value={f.id}>{f.name}</option>
-              {/each}
-            </optgroup>
-          {/each}
-          {#if own.format && !documents.formatSummary(own.format)}
-            <option value={own.format}>{own.format}</option>
-          {/if}
-        </select>
-      </label>
-      <label class="row">
-        <span class="what"
-          >{t('document-window-style')}<small>{t('look-citations-hint')}</small></span
-        >
-        <select
-          value={own.style ?? ''}
-          onchange={(e) => {
-            const v = e.currentTarget.value;
-            if (v === '…') {
-              e.currentTarget.value = own.style ?? '';
-              browsing = true;
-            } else setOwn({ style: v || undefined });
-          }}
-        >
-          <option value="">
-            {styleFrom
-              ? t('document-window-from-with', { name: styleFrom, what: styleName(choice.style) })
-              : t('document-window-as-template', { name: broughtStyle })}
-          </option>
-          {#each styleGroups() as [name, styles] (name)}
-            <optgroup label={name}>
-              {#each styles as s (s.id)}
-                <option value={s.id}>{s.title}</option>
-              {/each}
-            </optgroup>
-          {/each}
-          {#if own.style && !documents.style(own.style)}
-            <option value={own.style}>{own.style}</option>
-          {/if}
-          <option value="…">{t('preview-style-more')}</option>
-        </select>
-      </label>
-      <div class="actions">
-        <Button size="sm" onclick={() => (editingStyle = choice.style)}
-          >{t('document-window-style-change')}</Button
-        >
-      </div>
+      <button
+        type="button"
+        class="what"
+        data-template={choice.template}
+        title={t('preview-what-title')}
+        onclick={() => templateChooserUi.open({ project, at })}
+      >
+        <span class="name">{templateName(project, choice.template)}</span>
+        <ChevronDown size={14} />
+      </button>
+      <p class="hint">{t('look-what-hint')}</p>
+      <button
+        type="button"
+        class="link layout-line"
+        data-layout={choice.format}
+        data-changes={changed}
+        onclick={() => form && bring(form, { section: 'layout' })}
+        >{t('look-layout-line', { layout: nameOfLayout })}{#if changed}{' · '}{t('look-changes', {
+            count: changed,
+          })}{/if}</button
+      >
     </section>
 
     {#if !previewing}
@@ -1359,89 +1410,221 @@
             <Settings target={f} rows={part.rows} {from} />
           {/each}
           {#if foundKinds.length}
-            <h4>{sectionWords.kinds}</h4>
+            <h4>{t('look-at-kinds')}</h4>
             {#each foundKinds as k (k.id)}{@render kindLook(f, k)}{/each}
+          {/if}
+          {#if foundStyle}
+            <h4>{t('look-at-citations')}</h4>
+            {@render styleRow()}
           {/if}
           {#if foundNothing}<p class="hint">{t('look-search-nothing')}</p>{/if}
         </div>
       {:else}
+        <!-- The rows most writers reach for, each also in its part below. -->
+        <section class="first" data-first>
+          {@render fontRow(f)}
+          <Settings target={f} rows={firstRows} {from} />
+          {#if citing}{@render styleRow()}{/if}
+        </section>
+
         <nav class="chips" aria-label={t('look-sections')}>
-          {#each LOOK_SECTIONS as key (key)}
+          {#each SHOWN as key (key)}
             <button
               type="button"
               class:current={section === key}
               data-section={key}
-              onclick={() => (section = key)}>{sectionWords[key]}</button
+              onclick={() => go(key)}>{sectionWords[key]}</button
             >
           {/each}
         </nav>
 
-        <div class="part" data-part={section}>
-          {#if section === 'type'}
-            {@render fontRow(f)}
-            <Settings target={f} rows={typeRows} {from} />
-          {:else if section === 'page'}
-            <Settings target={f} rows={pageRows} {from} />
-          {:else if section === 'paragraphs'}
-            <Settings target={f} rows={paragraphRows} {from} />
-          {:else if section === 'headings'}
-            <Settings target={f} rows={headingRows} {from} />
-            <h4>{t('look-heading-levels')}</h4>
-            {@render fromLine('headings.levels')}
-            {#each f.headings.levels as level, i (i)}
-              <details class="level" open={i === 0}>
-                <summary>
-                  <strong>{t('format-level', { number: i + 1 })}</strong>
-                  <span class="said">{levelWords(level)}</span>
-                </summary>
-                <Settings target={level} rows={levelRows} />
-              </details>
-            {/each}
-            <div class="actions">
-              <Button size="sm" disabled={f.headings.levels.length >= 6} onclick={addLevel}>
-                {#snippet icon()}<Plus size={13} />{/snippet}
-                {t('format-level-add')}
-              </Button>
+        <section class="part" data-part="page">
+          <h3>{sectionWords.page}</h3>
+          <Settings target={f} rows={pageRows} {from} />
+        </section>
+
+        <section class="part" data-part="type">
+          <h3>{sectionWords.type}</h3>
+          {@render fontRow(f)}
+          <Settings target={f} rows={typeRows} {from} />
+        </section>
+
+        <section class="part" data-part="paragraphs">
+          <h3>{sectionWords.paragraphs}</h3>
+          <Settings target={f} rows={paragraphRows} {from} />
+          <h4 data-at="quotations">{t('look-at-quotations')}</h4>
+          <p class="hint top">{t('look-quotations-hint')}</p>
+          <Settings target={f} rows={quotationRows} {from} />
+          <h4 data-at="kinds">{t('look-at-kinds')}</h4>
+          <p class="hint top">{t('format-kinds-hint')}</p>
+          {#each kindGroups as group (group.id)}
+            <h5>{group.label}</h5>
+            {#each group.kinds as k (k.id)}{@render kindLook(f, k)}{/each}
+          {/each}
+          <p class="hint" class:bad={!kindsOk}>{t('format-lengths-hint')}</p>
+        </section>
+
+        <section class="part" data-part="headings">
+          <h3>{sectionWords.headings}</h3>
+          <Settings target={f} rows={headingRows} {from} />
+          <h4>{t('look-heading-levels')}</h4>
+          {@render fromLine('headings.levels')}
+          {#each f.headings.levels as level, i (i)}
+            <details class="level" data-level={i + 1} open={i === 0}>
+              <summary>
+                <strong>{t('format-level', { number: i + 1 })}</strong>
+                <span class="said">{levelWords(level)}</span>
+              </summary>
+              <Settings target={level} rows={levelRows} />
+            </details>
+          {/each}
+          <div class="actions">
+            <Button size="sm" disabled={f.headings.levels.length >= 6} onclick={addLevel}>
+              {#snippet icon()}<Plus size={13} />{/snippet}
+              {t('format-level-add')}
+            </Button>
+            <Button
+              size="sm"
+              disabled={f.headings.levels.length <= 1}
+              onclick={() => f.headings.levels.pop()}
+            >
+              {#snippet icon()}<Minus size={13} />{/snippet}
+              {t('format-level-remove')}
+            </Button>
+          </div>
+          <p class="hint">{t('format-levels-hint')}</p>
+        </section>
+
+        <section class="part" data-part="numbers">
+          <h3>{sectionWords.numbers}</h3>
+          <Settings target={f} rows={numbersRows} {from} />
+        </section>
+
+        <section class="part" data-part="notes">
+          <h3>{sectionWords.notes}</h3>
+          <Settings target={f} rows={noteRows} {from} />
+          <h4 data-at="citations">{t('look-at-citations')}</h4>
+          {@render styleRow()}
+          <div class="actions">
+            <Button size="sm" onclick={() => (editingStyle = choice.style)}
+              >{t('document-window-style-change')}</Button
+            >
+          </div>
+          <h4 data-at="bibliography">{t('look-at-bibliography')}</h4>
+          <Settings target={f} rows={bibliographyRows} {from} />
+        </section>
+
+        <section class="part" data-part="figures">
+          <h3>{sectionWords.figures}</h3>
+          <h4>{t('format-figures')}</h4>
+          {@render captioned(f.figures, 'figure', figureNaming, figurePlacing)}
+          <h4>{t('format-tables')}</h4>
+          {@render captioned(f.tables, 'table', tableNaming, tablePlacing)}
+          <Settings target={f} rows={tableRows} {from} />
+          <div class="row">
+            <span class="what">{t('format-as-it-will-stand')}</span>
+            <span class="example">{f.equations.beforeNumber}1{f.equations.afterNumber}</span>
+          </div>
+        </section>
+
+        <section class="part" data-part="front">
+          <h3>{sectionWords.front}</h3>
+          <Settings target={f} rows={titleRows} {from} />
+        </section>
+
+        <!-- The layout itself: chosen here, with what this document changes of it. -->
+        <section class="part" data-part="layout">
+          <h3>{sectionWords.layout}</h3>
+          <label class="row">
+            <span class="what"
+              >{t('document-window-layout')}<small>{t('look-layout-hint')}</small></span
+            >
+            <select
+              value={own.format ?? ''}
+              onchange={(e) => setOwn({ format: e.currentTarget.value || undefined })}
+            >
+              <option value="">
+                {formatFrom
+                  ? t('document-window-from-with', { name: formatFrom, what: nameOfLayout })
+                  : t('document-window-as-template', { name: broughtLayout })}
+              </option>
+              {#each formatGroups() as group (group.name)}
+                <optgroup label={group.name}>
+                  {#each group.formats as fm (fm.id)}
+                    <option value={fm.id}>{fm.name}</option>
+                  {/each}
+                </optgroup>
+              {/each}
+              {#if own.format && !documents.formatSummary(own.format)}
+                <option value={own.format}>{own.format}</option>
+              {/if}
+            </select>
+          </label>
+
+          {#if changed}
+            <h4>{t('look-layout-changes')}</h4>
+            <ul class="changed">
+              {#each changeList as c (c.path)}
+                <li>
+                  <span>{c.words}</span>
+                  <small
+                    >{c.who === at
+                      ? t('look-changed-here')
+                      : t('look-changed-in', { name: nameOf(c.who) })}</small
+                  >
+                  <button type="button" class="again" onclick={() => takeAgain(c.who, c.path)}
+                    >{t('look-take-again', { layout: nameOfLayout })}</button
+                  >
+                </li>
+              {/each}
+            </ul>
+          {/if}
+
+          <div class="keep">
+            {#if keeping}
+              <form
+                class="name"
+                onsubmit={(e) => {
+                  e.preventDefault();
+                  if (keptName.trim()) void keep(keptName);
+                }}
+              >
+                <input
+                  bind:value={keptName}
+                  placeholder={t('format-name')}
+                  aria-label={t('format-name')}
+                  class="kept-name"
+                />
+                <Button
+                  type="submit"
+                  size="sm"
+                  variant="primary"
+                  disabled={saving || !keptName.trim()}>{t('look-keep-save')}</Button
+                >
+                <Button size="sm" variant="ghost" onclick={() => (keeping = false)}
+                  >{t('common-cancel')}</Button
+                >
+              </form>
+            {:else}
               <Button
                 size="sm"
-                disabled={f.headings.levels.length <= 1}
-                onclick={() => f.headings.levels.pop()}
+                disabled={!changed || !kindsOk || saving}
+                onclick={() => {
+                  keeping = true;
+                  keptName = t('format-name-changed', { name: nameOfLayout });
+                }}>{t('look-keep')}</Button
               >
-                {#snippet icon()}<Minus size={13} />{/snippet}
-                {t('format-level-remove')}
-              </Button>
-            </div>
-            <p class="hint">{t('format-levels-hint')}</p>
-          {:else if section === 'kinds'}
-            <p class="hint top">{t('format-kinds-hint')}</p>
-            {#each kindGroups as group (group.id)}
-              <h4>{group.label}</h4>
-              {#each group.kinds as k (k.id)}{@render kindLook(f, k)}{/each}
-            {/each}
-            <p class="hint" class:bad={!kindsOk}>{t('format-lengths-hint')}</p>
-          {:else if section === 'quotations'}
-            <p class="hint top">{t('look-quotations-hint')}</p>
-            <Settings target={f} rows={quotationRows} {from} />
-          {:else if section === 'numbers'}
-            <Settings target={f} rows={numbersRows} {from} />
-          {:else if section === 'notes'}
-            <Settings target={f} rows={noteRows} {from} />
-          {:else if section === 'bibliography'}
-            <Settings target={f} rows={bibliographyRows} {from} />
-          {:else if section === 'figures'}
-            <h4>{t('format-figures')}</h4>
-            {@render captioned(f.figures, 'figure', figureNaming, figurePlacing)}
-            <h4>{t('format-tables')}</h4>
-            {@render captioned(f.tables, 'table', tableNaming, tablePlacing)}
-            <Settings target={f} rows={tableRows} {from} />
-            <div class="row">
-              <span class="what">{t('format-as-it-will-stand')}</span>
-              <span class="example">{f.equations.beforeNumber}1{f.equations.afterNumber}</span>
-            </div>
-          {:else if section === 'title'}
-            <Settings target={f} rows={titleRows} {from} />
-          {:else if section === 'about' && layout}
-            <h4>{nameOfLayout}</h4>
+              {#if ownLayout}
+                <Button
+                  size="sm"
+                  disabled={!changed || !kindsOk || saving}
+                  onclick={() => keep(null)}>{t('look-put-into', { name: nameOfLayout })}</Button
+                >
+              {/if}
+            {/if}
+          </div>
+
+          {#if layout}
             {#if ownLayout}
               <label class="row tall">
                 <span class="what">{t('format-description')}</span>
@@ -1493,49 +1676,10 @@
               <p class="hint">{t('look-bundled')}</p>
             {/if}
           {/if}
-        </div>
+        </section>
       {/if}
     {/if}
   </div>
-
-  <footer class="keep">
-    {#if keeping}
-      <form
-        class="name"
-        onsubmit={(e) => {
-          e.preventDefault();
-          if (keptName.trim()) void keep(keptName);
-        }}
-      >
-        <input
-          bind:value={keptName}
-          placeholder={t('format-name')}
-          aria-label={t('format-name')}
-          class="kept-name"
-        />
-        <Button type="submit" size="sm" variant="primary" disabled={saving || !keptName.trim()}
-          >{t('look-keep-save')}</Button
-        >
-        <Button size="sm" variant="ghost" onclick={() => (keeping = false)}
-          >{t('common-cancel')}</Button
-        >
-      </form>
-    {:else}
-      <Button
-        size="sm"
-        disabled={!changed || !kindsOk || saving}
-        onclick={() => {
-          keeping = true;
-          keptName = t('format-name-changed', { name: nameOfLayout });
-        }}>{t('look-keep')}</Button
-      >
-      {#if ownLayout}
-        <Button size="sm" disabled={!changed || !kindsOk || saving} onclick={() => keep(null)}
-          >{t('look-put-into', { name: nameOfLayout })}</Button
-        >
-      {/if}
-    {/if}
-  </footer>
 </aside>
 
 {#if browsing}
@@ -1598,31 +1742,52 @@
   .through :global(.row.check) {
     grid-template-columns: minmax(0, 1fr) auto;
   }
+  /* What the document is, and the layout in a line under it. */
   .whole {
     margin: 0 -16px 10px;
-    padding: 4px 16px 10px;
+    padding: 8px 16px 10px;
     border-bottom: 1px solid var(--line);
     background: var(--paper);
   }
-  .map {
+  .whole .what {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    gap: 4px 6px;
-    margin: 0 0 6px;
+    gap: 6px;
+    max-width: 100%;
+    padding: 4px 8px 4px 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    background: var(--paper-raised);
+    color: var(--ink);
     font-family: var(--font-text);
-    font-size: 15px;
-    line-height: 1.4;
+    font-size: 16px;
+    text-align: left;
+    cursor: pointer;
   }
-  .arrow {
-    color: var(--ink-4);
+  .whole .what:hover {
+    border-color: var(--line-strong);
+    background: var(--paper-hover);
   }
-  .changes {
+  .whole .what .name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .whole .what :global(svg) {
+    flex: none;
+    color: var(--ink-3);
+  }
+  .whole .hint {
+    margin: 6px 0 4px;
+    font-size: var(--text-xs);
+  }
+  .layout-line {
     font-size: var(--text-sm);
-    color: var(--accent-strong);
+    color: var(--ink-3);
   }
-  .changes.none {
-    color: var(--ink-4);
+  .layout-line:hover {
+    color: var(--accent-strong);
   }
   .link {
     padding: 0;
@@ -1694,13 +1859,40 @@
   .search input {
     flex: 1;
   }
+  /* The first rows, before the parts. */
+  .first {
+    margin: 0 0 6px;
+  }
+  /* The chips that go to each part: one line, which stays at the top of the
+     panel as it is scrolled and is moved sideways where it is too long. */
   .chips {
+    position: sticky;
+    top: -4px;
+    z-index: 2;
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 4px;
-    margin: 0 0 12px;
+    margin: 0 -16px 4px;
+    padding: 8px 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-bottom: 1px solid var(--line);
+    background: var(--paper-raised);
+  }
+  /* The chips that do not fit fade at the right edge of the bar, which is moved sideways. */
+  .chips::after {
+    content: '';
+    position: sticky;
+    right: -16px;
+    flex: none;
+    width: 32px;
+    margin-left: -32px;
+    background: linear-gradient(to right, transparent, var(--paper-raised));
+    pointer-events: none;
   }
   .chips button {
+    flex: none;
+    white-space: nowrap;
     padding: 3px 9px;
     border: 1px solid var(--line);
     border-radius: 999px;
@@ -1719,9 +1911,25 @@
     color: var(--accent-strong);
     font-weight: 500;
   }
-  .finds h4:first-child,
-  .part > :global(h4:first-child) {
+  .finds h4:first-child {
     margin-top: 4px;
+  }
+  /* Each part under its heading, one after another. */
+  .part {
+    padding: 4px 0 10px;
+  }
+  .part + .part {
+    border-top: 1px solid var(--line);
+  }
+  .part h3 {
+    margin: 12px 0 6px;
+    font-size: var(--text-lg);
+  }
+  .part h5 {
+    margin: 14px 0 2px;
+    font-size: var(--text-xs);
+    font-weight: 500;
+    color: var(--ink-3);
   }
   .centre {
     display: flex;
@@ -1841,10 +2049,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    flex: none;
-    padding: 10px 16px;
-    border-top: 1px solid var(--line);
-    background: var(--paper);
+    margin: 10px 0 14px;
   }
   .keep .name {
     display: flex;
