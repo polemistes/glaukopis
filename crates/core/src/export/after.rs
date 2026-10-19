@@ -52,6 +52,90 @@ fn property(xml_text: &str, tag: &str, value: &str, close: &str) -> String {
     }
 }
 
+/// The lists Pandoc makes, the contents and the lists of figures and of
+/// tables, moved from the head of the document, where Pandoc puts them, to
+/// where the template places them, which the core marked (`<!--gk:toc-->`,
+/// `<!--gk:lof-->`, `<!--gk:lot-->`). A list without its mark stays where
+/// Pandoc put it; a mark without its list goes. `found` are the lists as
+/// they stand, by name, with where each begins and ends.
+fn placed_lists(text: &str, mut found: Vec<(&'static str, usize, usize)>) -> String {
+    found.sort_by_key(|(_, start, _)| *start);
+    let mut out = text.to_owned();
+    let mut lists: Vec<(&str, String)> = Vec::new();
+    // From the last, so that where the others stand does not move.
+    for (name, start, end) in found.into_iter().rev() {
+        if !out.contains(&format!("<!--gk:{name}-->")) {
+            continue;
+        }
+        lists.push((name, out[start..end].to_owned()));
+        out.replace_range(start..end, "");
+    }
+    for (name, list) in lists {
+        out = out.replacen(&format!("<!--gk:{name}-->"), &list, 1);
+    }
+    for name in ["toc", "lof", "lot"] {
+        out = out.replace(&format!("<!--gk:{name}-->"), "");
+    }
+    out
+}
+
+/// The lists of a document of Word: each a block of content of its own
+/// (`w:sdt`), told apart by the field it holds.
+pub fn docx_lists(xml: &str) -> String {
+    let mut found = Vec::new();
+    let mut at = 0;
+    while let Some(start) = xml[at..].find("<w:sdt>").map(|i| at + i) {
+        let Some(end) = xml[start..].find("</w:sdt>").map(|i| start + i + "</w:sdt>".len()) else { break };
+        let block = &xml[start..end];
+        let name = if block.contains("Image Caption") {
+            Some("lof")
+        } else if block.contains("Table Caption") {
+            Some("lot")
+        } else if block.contains("TOC \\o") {
+            Some("toc")
+        } else {
+            None
+        };
+        if let Some(name) = name {
+            found.push((name, start, end));
+        }
+        at = end;
+    }
+    placed_lists(xml, found)
+}
+
+/// The lists of a document of Writer: each an element of its own.
+pub fn odt_lists(xml: &str) -> String {
+    let mut found = Vec::new();
+    for (name, tag) in
+        [("toc", "text:table-of-content"), ("lof", "text:illustration-index"), ("lot", "text:table-index")]
+    {
+        let (open, close) = (format!("<{tag}"), format!("</{tag}>"));
+        // The element itself, not one whose name begins as its does (`…-source`).
+        let start = xml
+            .match_indices(&open)
+            .map(|(i, _)| i)
+            .find(|&i| matches!(xml.as_bytes().get(i + open.len()), Some(b' ' | b'>' | b'/')));
+        if let Some(start) = start
+            && let Some(end) = xml[start..].find(&close).map(|i| start + i + close.len())
+        {
+            found.push((name, start, end));
+        }
+    }
+    placed_lists(xml, found)
+}
+
+/// The contents of a page of the web, which Pandoc writes as a `nav` at the head of the body.
+pub fn html_lists(html: &str) -> String {
+    let mut found = Vec::new();
+    if let Some(start) = html.find("<nav id=\"TOC\"")
+        && let Some(end) = html[start..].find("</nav>").map(|i| start + i + "</nav>".len())
+    {
+        found.push(("toc", start, end));
+    }
+    placed_lists(html, found)
+}
+
 /// The properties of a document of Word (`docProps/core.xml`) with its title and its makers.
 pub fn docx_properties(core: &str, p: &Properties) -> String {
     let close = "</cp:coreProperties>";
@@ -326,7 +410,8 @@ fn table_header_rows(table: &str) -> usize {
 pub fn docx(bytes: &[u8], properties: &Properties) -> Result<Vec<u8>> {
     rewrite(bytes, |files| {
         let document = text_of(files, "word/document.xml")?;
-        put(files, "word/document.xml", docx_document(&document));
+        // The lists first: what sets the rest right takes every mark it does not know away.
+        put(files, "word/document.xml", docx_document(&docx_lists(&document)));
         // Pandoc writes the properties; where it did not, nothing is made up.
         if let Ok(core) = text_of(files, "docProps/core.xml") {
             put(files, "docProps/core.xml", docx_properties(&core, properties));
@@ -339,7 +424,7 @@ pub fn docx(bytes: &[u8], properties: &Properties) -> Result<Vec<u8>> {
 pub fn odt(bytes: &[u8], format: &DocumentFormat, properties: &Properties) -> Result<Vec<u8>> {
     rewrite(bytes, |files| {
         let content = text_of(files, "content.xml")?;
-        put(files, "content.xml", odt_content(&content, format));
+        put(files, "content.xml", odt_content(&odt_lists(&content), format));
         if let Ok(meta) = text_of(files, "meta.xml") {
             put(files, "meta.xml", odt_properties(&meta, properties));
         }
@@ -350,6 +435,35 @@ pub fn odt(bytes: &[u8], format: &DocumentFormat, properties: &Properties) -> Re
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_lists_are_moved_from_the_head_to_their_marks() {
+        let toc = "<w:sdt><w:sdtContent><w:instrText>TOC \\o &quot;1-3&quot;</w:instrText></w:sdtContent></w:sdt>";
+        let lof = "<w:sdt><w:sdtContent><w:instrText>TOC \\h \\t &quot;Image Caption&quot;</w:instrText></w:sdtContent></w:sdt>";
+        let xml = format!("<w:body>{toc}{lof}<w:p>Title</w:p><!--gk:toc--><w:p>Text</w:p></w:body>");
+        let out = docx_lists(&xml);
+        // The contents to their mark; the list of figures, which has none, where Pandoc put it.
+        assert_eq!(out, format!("<w:body>{lof}<w:p>Title</w:p>{toc}<w:p>Text</w:p></w:body>"));
+        // A mark without its list goes.
+        assert_eq!(docx_lists("<w:body><!--gk:lot--><w:p/></w:body>"), "<w:body><w:p/></w:body>");
+
+        let odt = "<office:text><text:table-of-content><text:table-of-content-source text:outline-level=\"3\">\
+                   </text:table-of-content-source><text:index-body/></text:table-of-content>\
+                   <text:p text:style-name=\"Title\">Wrath</text:p><!--gk:toc--><text:p>Text</text:p></office:text>";
+        let out = odt_lists(odt);
+        let title = out.find("Wrath").unwrap();
+        let contents = out.find("<text:table-of-content>").unwrap();
+        assert!(title < contents && contents < out.find(">Text<").unwrap(), "{out}");
+        assert!(out.ends_with("</text:table-of-content><text:p>Text</text:p></office:text>"), "{out}");
+
+        let html = "<body><nav id=\"TOC\" role=\"doc-toc\"><ul><li>One</li></ul></nav><div class=\"gk-front\">W</div>\
+                    <!--gk:toc--><h1>One</h1></body>";
+        let out = html_lists(html);
+        assert_eq!(
+            out,
+            "<body><div class=\"gk-front\">W</div><nav id=\"TOC\" role=\"doc-toc\"><ul><li>One</li></ul></nav><h1>One</h1></body>"
+        );
+    }
 
     #[test]
     fn the_properties_are_given_the_title_and_the_makers() {

@@ -348,6 +348,11 @@ fn properties(doc: &Document, f: &DocumentFormat) -> after::Properties {
     }
 }
 
+/// A block in the language of one target, as it stands.
+fn raw(format: &str, text: impl Into<String>) -> Value {
+    json!({"t": "RawBlock", "c": [format, text.into()]})
+}
+
 /// Blocks in a paragraph style of the reference document of Word or Writer.
 fn styled(style: &str, blocks: Vec<Value>) -> Value {
     json!({"t": "Div", "c": [["", [], [["custom-style", style]]], blocks]})
@@ -419,10 +424,52 @@ fn title_page(
                 out.push(styled("Date", vec![para_text(d)]));
             }
         }
+        // LaTeX's own title, set where the template puts it: the title with the subtitle under
+        // it, the authors with the lines of their affiliations, the date, and `\maketitle`.
+        Target::Latex | Target::PdfLatex => {
+            let tex = |s: &str| json!({"t": "RawInline", "c": ["latex", s]});
+            let words = |s: &str| meta_text(s)["c"].as_array().cloned().unwrap_or_default();
+            let mut line: Vec<Value> = vec![tex("\\title{")];
+            line.extend(title.iter().cloned());
+            if let Some(s) = subtitle {
+                line.push(tex("\\\\[0.35em]{\\large "));
+                line.extend(words(s));
+                line.push(tex("}"));
+            }
+            line.push(tex("}\\author{"));
+            if !authors.is_empty() {
+                line.extend(words(&names_of(authors)));
+                for l in affiliations {
+                    line.push(tex("\\\\{\\small "));
+                    line.extend(words(l));
+                    line.push(tex("}"));
+                }
+            }
+            line.push(tex("}\\date{"));
+            if let Some(d) = date {
+                line.extend(words(d));
+            }
+            line.push(tex("}\\maketitle"));
+            out.push(json!({"t": "Plain", "c": line}));
+        }
         // The others are given the title as metadata, until their own pieces.
         _ => {}
     }
     out
+}
+
+/// Where the template places a list that Pandoc makes at the head of the
+/// document, the contents (`toc`) or the list of figures (`lof`) or of
+/// tables (`lot`): a mark, to which it is moved after Pandoc has written the
+/// document (`after::placed_lists`). Nothing where it is not moved.
+fn list_mark(target: Target, name: &str) -> Option<Value> {
+    let format = match target {
+        Target::Docx => "openxml",
+        Target::Odt => "opendocument",
+        Target::Html => "html",
+        _ => return None,
+    };
+    Some(raw(format, format!("<!--gk:{name}-->")))
 }
 
 struct Prepared {
@@ -706,6 +753,7 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
         })
         .filter(|b| !b.is_empty());
     let typst = matches!(target, Target::Pdf | Target::Typst);
+    let latex = matches!(target, Target::Latex | Target::PdfLatex);
     let words = |id: &str| crate::document::term(doc.language.as_deref(), id);
 
     // The title block of Typst: blocks with labels, gathered in one block
@@ -714,10 +762,26 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
     // page, as they did before the parts were the writer's.
     let mut front: Vec<Value> = Vec::new();
     let mut blocks: Vec<Value> = Vec::new();
-    let flush = |front: &mut Vec<Value>, blocks: &mut Vec<Value>| {
+    // In every other document what stands with the title page is gathered so
+    // too, and ends with a page break where the title has a page of its own,
+    // after the abstract and the keywords that follow it, as in the preview.
+    let own_page = f.title.placement == TitlePlacement::OwnPage;
+    let mut titled = false;
+    let flush = |front: &mut Vec<Value>, blocks: &mut Vec<Value>, titled: &mut bool| {
         if !front.is_empty() {
-            blocks.push(div("gk-front", std::mem::take(front)));
+            if typst {
+                blocks.push(div("gk-front", std::mem::take(front)));
+            } else {
+                blocks.append(front);
+                if *titled
+                    && own_page
+                    && let Some(b) = target.page_break()
+                {
+                    blocks.push(b);
+                }
+            }
         }
+        *titled = false;
     };
     let (mut toc, mut lof, mut lot) = (false, false, false);
     let mut letters = 0u32;
@@ -740,7 +804,7 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
     for item in order(&request.template, &doc.parts) {
         match item {
             Item::Made(GeneratedPart::HalfTitle) => {
-                flush(&mut front, &mut blocks);
+                flush(&mut front, &mut blocks, &mut titled);
                 if !title.is_empty() {
                     let para = json!({"t": "Para", "c": title.clone()});
                     if typst {
@@ -759,12 +823,9 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
                 if !typst {
                     // The title page where the template puts it, and nowhere where it puts none, as the
                     // preview has it: Pandoc is given no title to set a block of its own from (ADR 0055).
-                    blocks.extend(title_page(target, &title, subtitle, &authors, &affiliations, date));
-                    if f.title.placement == TitlePlacement::OwnPage
-                        && let Some(b) = target.page_break()
-                    {
-                        blocks.push(b);
-                    }
+                    let page = title_page(target, &title, subtitle, &authors, &affiliations, date);
+                    titled |= !page.is_empty();
+                    front.extend(page);
                     continue;
                 }
                 let mut parts: Vec<Value> = Vec::new();
@@ -790,39 +851,71 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
                 if typst {
                     front.push(div("gk-keywords", vec![k.clone()]));
                 } else {
-                    blocks.push(k.clone());
+                    front.push(k.clone());
                 }
             }
             // The lists: in Typst outlines where they are listed; elsewhere
             // Pandoc makes them, and places them where its pattern has them,
             // after the title block, whatever the template's order says.
+            // Elsewhere where the template places them too (ADR 0055): LaTeX is
+            // given its commands there; Pandoc makes them for Word, Writer and the
+            // web at the head, whence they are moved to the mark left here
+            // (`after::placed_lists`).
             Item::Made(GeneratedPart::Contents) => {
-                flush(&mut front, &mut blocks);
+                flush(&mut front, &mut blocks, &mut titled);
+                let named = words("document-contents");
                 if typst {
-                    blocks.push(outline(&words("document-contents"), None));
+                    blocks.push(outline(&named, None));
+                } else if latex {
+                    blocks.push(raw(
+                        "latex",
+                        format!(
+                            "\\renewcommand*\\contentsname{{{}}}{{\\setcounter{{tocdepth}}{{3}}\\tableofcontents}}",
+                            latex::escape(&named)
+                        ),
+                    ));
                 } else {
                     toc = true;
-                    meta.insert("toc-title".into(), meta_text(&words("document-contents")));
+                    meta.insert("toc-title".into(), meta_text(&named));
+                    blocks.extend(list_mark(target, "toc"));
                 }
             }
             Item::Made(GeneratedPart::ListOfFigures) => {
-                flush(&mut front, &mut blocks);
+                flush(&mut front, &mut blocks, &mut titled);
                 if typst {
                     blocks.push(outline(&f.figures.end_title, Some("figure.where(kind: image)")));
+                } else if latex {
+                    blocks.push(raw(
+                        "latex",
+                        format!(
+                            "\\renewcommand*\\listfigurename{{{}}}\\listoffigures",
+                            latex::escape(&f.figures.end_title)
+                        ),
+                    ));
                 } else {
                     lof = true;
+                    blocks.extend(list_mark(target, "lof"));
                 }
             }
             Item::Made(GeneratedPart::ListOfTables) => {
-                flush(&mut front, &mut blocks);
+                flush(&mut front, &mut blocks, &mut titled);
                 if typst {
                     blocks.push(outline(&f.tables.end_title, Some("figure.where(kind: table)")));
+                } else if latex {
+                    blocks.push(raw(
+                        "latex",
+                        format!(
+                            "\\renewcommand*\\listtablename{{{}}}\\listoftables",
+                            latex::escape(&f.tables.end_title)
+                        ),
+                    ));
                 } else {
                     lot = true;
+                    blocks.extend(list_mark(target, "lot"));
                 }
             }
             Item::Made(GeneratedPart::Body) => {
-                flush(&mut front, &mut blocks);
+                flush(&mut front, &mut blocks, &mut titled);
                 // In LaTeX the columns are an environment around the body.
                 let columns = crate::export::latex::columns_around(f)
                     .filter(|_| matches!(target, Target::Latex | Target::PdfLatex));
@@ -839,9 +932,9 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
             // The notes are placed by the filter (`resources/pandoc/notes.lua`),
             // before the bibliography or at the end, as before: the item
             // has no place of its own in this piece.
-            Item::Made(GeneratedPart::Notes) => flush(&mut front, &mut blocks),
+            Item::Made(GeneratedPart::Notes) => flush(&mut front, &mut blocks, &mut titled),
             Item::Made(GeneratedPart::Bibliography) => {
-                flush(&mut front, &mut blocks);
+                flush(&mut front, &mut blocks, &mut titled);
                 if wants_bibliography {
                     bibliography_blocks(&mut blocks);
                 }
@@ -855,20 +948,31 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
                 } else if matches!(target, Target::Docx | Target::Odt) {
                     // In its place, as paragraphs with the styles the reference document defines, where
                     // the template puts it: not as metadata, which Pandoc sets at the head (ADR 0055).
-                    blocks.push(styled("AbstractTitle", vec![para_text(&f.title.abstract_label)]));
-                    blocks.push(styled("Abstract", a.clone()));
+                    front.push(styled("AbstractTitle", vec![para_text(&f.title.abstract_label)]));
+                    front.push(styled("Abstract", a.clone()));
+                } else if latex {
+                    // The environment of the class, under the layout's label.
+                    front.push(raw(
+                        "latex",
+                        format!(
+                            "\\renewcommand*\\abstractname{{{}}}\\begin{{abstract}}",
+                            latex::escape(&f.title.abstract_label)
+                        ),
+                    ));
+                    front.extend(a.iter().cloned());
+                    front.push(raw("latex", "\\end{abstract}"));
                 } else {
                     meta.insert("abstract".into(), json!({"t": "MetaBlocks", "c": a}));
                     meta.insert("abstract-title".into(), meta_text(&f.title.abstract_label));
                 }
             }
             Item::Part(p) => {
-                flush(&mut front, &mut blocks);
+                flush(&mut front, &mut blocks, &mut titled);
                 part_sections(&converter, p, &mut letters, &mut blocks);
             }
         }
     }
-    flush(&mut front, &mut blocks);
+    flush(&mut front, &mut blocks, &mut titled);
     // The bibliography is never lost: where the template has no place for it, it stands at the end.
     if wants_bibliography && !bibliography_placed {
         bibliography_blocks(&mut blocks);
@@ -879,7 +983,17 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
     // would set a title block of its own from them, at the head, whatever the
     // template says (ADR 0055). Word and Writer have them in their properties,
     // written after (`after::Properties`).
-    let title_as_meta = !typst && !matches!(target, Target::Docx | Target::Odt);
+    let title_as_meta = !typst && !latex && !matches!(target, Target::Docx | Target::Odt);
+    // What the PDF says of itself, from the variables that set `\hypersetup` and nothing on a page.
+    if latex {
+        let p = properties(doc, f);
+        if !p.title.is_empty() {
+            meta.insert("title-meta".into(), meta_text(&p.title));
+        }
+        if !p.creators.is_empty() {
+            meta.insert("author-meta".into(), meta_list(p.creators.iter().map(|c| meta_text(c)).collect()));
+        }
+    }
     if title_as_meta {
         if !title.is_empty() {
             meta.insert("title".into(), meta_inlines(title));
@@ -1452,6 +1566,8 @@ pub fn export_until(
     let bytes = match target {
         Target::Docx => after::docx(&bytes, &properties(&request.document, &request.format))?,
         Target::Odt => after::odt(&bytes, &request.format, &properties(&request.document, &request.format))?,
+        // The contents where the template places them.
+        Target::Html => after::html_lists(&String::from_utf8_lossy(&bytes)).into_bytes(),
         _ => bytes,
     };
     write_atomic(path, &bytes)?;
@@ -2711,6 +2827,91 @@ mod tests {
         export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
         assert!(!unzip(&docx, "word/document.xml").contains("w:val=\"Author\""));
         assert!(unzip(&docx, "docProps/core.xml").contains("<dc:creator>A. Scholar</dc:creator>"));
+    }
+
+    #[test]
+    fn the_title_page_and_the_lists_stand_where_the_template_puts_them_in_latex() {
+        let Some(s) = setup() else { return };
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        use GeneratedPart::{Bibliography, Body, HalfTitle, TitlePage};
+        let made = |part| ContentsItem::Part { part };
+        // An article: the title page, the abstract and the keywords, the contents, then the text.
+        let mut r = with_parts();
+        r.document.subtitle = Some("A study of the Iliad".into());
+        r.document.authors[0].affiliation = Some("The University".into());
+        let tex = out.join("article.tex");
+        export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
+        let l = fs::read_to_string(&tex).unwrap();
+        let begin = at(&l, "\\begin{document}");
+        let title = at(&l, "\\title{Wrath and the hero");
+        let made_title = at(&l, "\\maketitle");
+        let abstract_at = at(&l, "\\begin{abstract}");
+        let contents = at(&l, "\\tableofcontents");
+        let body = at(&l, "Before the first section.");
+        assert!(begin < title && title < made_title && made_title < abstract_at, "{l}");
+        assert!(abstract_at < at(&l, "What the wrath of Achilles is.") && at(&l, "\\end{abstract}") < contents, "{l}");
+        assert!(contents < body, "{l}");
+        assert!(
+            l[title..made_title].contains("A study of the Iliad") && l[title..made_title].contains("The University"),
+            "{l}"
+        );
+        // The PDF says what it is, from the preamble, without printing it again.
+        assert!(
+            l[..begin].contains("pdftitle={Wrath and the hero}") && l[..begin].contains("pdfauthor={A. Scholar}"),
+            "{l}"
+        );
+        assert_eq!(l.matches("\\maketitle").count(), 1, "{l}");
+        assert_eq!(l.matches("\\tableofcontents").count(), 1, "{l}");
+
+        // No title page in the template: none in the document, and the PDF's title all the same.
+        r.template = Template { contents: vec![made(Body), made(Bibliography)], ..Template::plain() };
+        let tex = out.join("untitled.tex");
+        export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
+        let l = fs::read_to_string(&tex).unwrap();
+        assert!(!l.contains("\\maketitle") && !l.contains("\\title{"), "{l}");
+        assert!(l.contains("pdftitle={Wrath and the hero}"), "{l}");
+
+        // A book's order: the half title, a page, then the title.
+        r.template = Template { contents: vec![made(HalfTitle), made(TitlePage), made(Body)], ..Template::plain() };
+        let tex = out.join("book.tex");
+        export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
+        let l = fs::read_to_string(&tex).unwrap();
+        let begin = at(&l, "\\begin{document}");
+        let half = begin + at(&l[begin..], "Wrath and the hero");
+        assert!(half < at(&l, "\\clearpage") && at(&l, "\\clearpage") < at(&l, "\\maketitle"), "{l}");
+        if s.tools.latex_engine().is_ok() {
+            let pdf = out.join("book.pdf");
+            let e = export(&s.ctx(), &r, Target::PdfLatex, &pdf, &ExportOptions::default()).unwrap();
+            assert!(fs::read(&pdf).unwrap().starts_with(b"%PDF"), "{:?}", e.warnings);
+        }
+    }
+
+    #[test]
+    fn the_contents_stand_where_the_template_puts_them_in_word_and_writer() {
+        let Some(s) = setup() else { return };
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        // An article: the title page, the abstract and the keywords, then the contents, then the text.
+        let r = with_parts();
+        let docx = out.join("contents.docx");
+        export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        let x = unzip(&docx, "word/document.xml");
+        roxmltree::Document::parse(&x).unwrap();
+        let contents = at(&x, "TOC \\o");
+        assert!(at(&x, "w:val=\"Title\"") < contents, "the contents after the title page: {x}");
+        assert!(at(&x, "What the wrath of Achilles is.") < contents, "and after the abstract: {x}");
+        assert!(contents < at(&x, "Before the first section."), "{x}");
+        assert!(!x.contains("<!--gk:"), "{x}");
+        let odt = out.join("contents.odt");
+        export(&s.ctx(), &r, Target::Odt, &odt, &ExportOptions::default()).unwrap();
+        let c = unzip(&odt, "content.xml");
+        roxmltree::Document::parse(&c).unwrap();
+        let contents = at(&c, "<text:table-of-content>");
+        assert!(at(&c, "text:style-name=\"Title\"") < contents, "{c}");
+        assert!(at(&c, "What the wrath of Achilles is.") < contents, "{c}");
+        assert!(contents < at(&c, "Before the first section."), "{c}");
+        assert!(!c.contains("<!--gk:"), "{c}");
     }
 
     #[test]
