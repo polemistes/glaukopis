@@ -250,7 +250,7 @@ fn text_page(pdf: &[u8]) -> Result<Text> {
         .and_then(|m| rectangle(&doc, m))
         .ok_or_else(|| unreadable("the text has no size"))?;
     let resources = inherited(&doc, dict, b"Resources").and_then(|r| r.as_dict().ok()).cloned().unwrap_or_default();
-    let content = doc.get_page_content(page).map_err(unreadable)?;
+    let content = long_s_as_s(doc.get_page_content(page).map_err(unreadable)?);
     // Text alone begins at nought: Tesseract makes it so.
     let content = if x0 != 0.0 || y0 != 0.0 {
         let mut moved = format!("1 0 0 1 {} {} cm\n", -x0, -y0).into_bytes();
@@ -260,6 +260,41 @@ fn text_page(pdf: &[u8]) -> Result<Text> {
         content
     };
     Ok(Text { size: (x1 - x0, y1 - y0), content, resources, doc })
+}
+
+/// Tesseract's page of text with every long s (ſ) written as s: the long s
+/// is a form of s that Gothic type prints, and a reader searching the PDF
+/// for *samme* must find what was printed *ſamme*. Tesseract writes each word
+/// as a string of two-byte codes that are the letters' own (its font is
+/// `Identity-H`, and each glyph as wide as the next), so the code of ſ,
+/// `017F`, is made that of s, `0073`, and nothing moves on the page.
+fn long_s_as_s(content: Vec<u8>) -> Vec<u8> {
+    let Ok(mut decoded) = Content::decode(&content) else { return content };
+    let mut changed = false;
+    let mut mend = |object: &mut Object| {
+        if let Object::String(bytes, _) = object {
+            for pair in bytes.chunks_exact_mut(2) {
+                if pair == [0x01, 0x7F] {
+                    pair.copy_from_slice(&[0x00, 0x73]);
+                    changed = true;
+                }
+            }
+        }
+    };
+    for op in &mut decoded.operations {
+        if matches!(op.operator.as_str(), "Tj" | "TJ" | "'" | "\"") {
+            for operand in &mut op.operands {
+                match operand {
+                    Object::Array(items) => items.iter_mut().for_each(&mut mend),
+                    other => mend(other),
+                }
+            }
+        }
+    }
+    if !changed {
+        return content;
+    }
+    decoded.encode().unwrap_or(content)
 }
 
 /// The contents of a page as a list of streams.
@@ -755,6 +790,32 @@ mod tests {
 
     fn near(a: (f32, f32), b: (f32, f32)) -> bool {
         (a.0 - b.0).abs() < 0.01 && (a.1 - b.1).abs() < 0.01
+    }
+
+    /// The long s that Tesseract's Fraktur model reads is written as s in the
+    /// text laid under the page, code by code, and nothing else is touched.
+    #[test]
+    fn the_long_s_is_laid_as_s() {
+        let content = b"BT 3 Tr /f-0-0 11 Tf 86.4 Tz [ <006f0067017f006100610020> ] TJ <017f> Tj ET".to_vec();
+        let mended = long_s_as_s(content);
+        let ops = Content::decode(&mended).unwrap().operations;
+        let strings: Vec<Vec<u8>> = ops
+            .iter()
+            .flat_map(|op| op.operands.iter())
+            .flat_map(|o| match o {
+                Object::Array(items) => items.clone(),
+                other => vec![other.clone()],
+            })
+            .filter_map(|o| o.as_str().ok().map(<[u8]>::to_vec))
+            .collect();
+        assert_eq!(strings, vec![b"\x00o\x00g\x00s\x00a\x00a\x00 ".to_vec(), b"\x00s".to_vec()]);
+        assert!(ops.iter().any(|op| op.operator == "Tz"), "the rest is kept");
+        // A code that only looks like it across two letters, and text without
+        // the long s, are left as they were, byte for byte.
+        let across = b"BT [ <00017f00> ] TJ ET".to_vec();
+        assert_eq!(long_s_as_s(across.clone()), across);
+        let plain = b"BT [ <0073> ] TJ ET".to_vec();
+        assert_eq!(long_s_as_s(plain.clone()), plain);
     }
 
     #[test]

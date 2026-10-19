@@ -1661,7 +1661,10 @@ the best data there is for English, Norwegian, Swedish, Danish, German,
 French, Italian, Ancient Greek and Latin, for now, and **Fraktur (Gothic
 type)**, which reads the Gothic type that many Norwegian, Danish, Swedish
 and German books were set in before about 1900, whatever their language:
-choose it first, or alone, for such a book. The list of **OCR
+choose it first, or alone, for such a book. It was made for German, and
+knows no *æ*, *ø* or *å*: in a Norwegian or Danish book it reads them as
+*e*, *o* and *a* (*vere* for *være*), and choosing Norwegian beside it does
+not bring them back. The list of **OCR
 languages** says of each whether it is the system's or imported, and **×**
 takes an imported one away. A language you have imported is read with
 before the computer's of the same name. **Default OCR settings**, below,
@@ -1742,7 +1745,10 @@ data does not know: a book in Gothic type read as Norwegian comes out as
 words that look right and are not (*ogfaa*, *famme* for *ogsaa*, *samme*).
 Where half of the pages or more were read poorly in a language once set in
 Gothic type, the window says that such books are read with the Fraktur
-model. The long *ſ* that model reads is written as *s*.
+model. A long *ſ* is an *s* printed in another shape, and Glaukopis writes it
+as *s* wherever it takes text: in what Tesseract reads, in the text a PDF
+has, and in the text laid unseen under a PDF made searchable, so that a
+search for *samme* finds what was printed *ſamme*.
 
 Where the pages of a PDF are pictures of fewer than 150 dots to the inch, the
 window says so before anything is read: their letters are too few to be read

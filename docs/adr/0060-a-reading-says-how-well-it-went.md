@@ -38,3 +38,9 @@ unpaper itself has no Windows build and depends on ffmpeg, and the program that 
 - The child process gains tasks: one page tried, with its picture; small pictures of pages.
 - The language packages gain `deu_latf`; the names of models of type are the model's, not a language's.
 - The guide says how a reading tells of itself, how a page is tried, and what the Fraktur model is for.
+
+## Addendum of 2026-10-19: an s is an s
+
+Decided by the owner on 2026-10-19: the long s (ſ) is an s in another shape, never another letter. It is written as s wherever Glaukopis takes text, not only in what Tesseract reads into elements: in the text a PDF has, as each character is taken (the text and the translation, and the fonts' maps written when a PDF is made readable), and in the text Tesseract lays unseen under a PDF made searchable, whose words are strings of two-byte codes that are the letters' own (`Identity-H`, every glyph as wide as the next), so that the code of ſ is made that of s and nothing moves. A page of a searchable PDF whose text is kept as it was is not touched, and keeps what it had.
+
+Found the same day: Tesseract's Fraktur model (`deu_latf`) was made for German and has no æ, ø or å; in Norwegian and Danish books it reads them as e, o and a, at a confidence as high as any, and Norwegian chosen beside it does not bring them back. The hint and the remark say so. A model of the Gothic type of Danish and Norwegian books is left for the owner to decide on.

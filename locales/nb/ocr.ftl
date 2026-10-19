@@ -281,7 +281,7 @@ ocr-languages-scripts-alike = Det { $a } alfabetet leses sammen med det { $b }: 
 # Tesseracts frakturmodell, blant språkene i teksten: oppkalt etter skriften den leser, ikke etter et språk.
 ocr-language-fraktur-model = Fraktur (gotisk skrift)
 # Under språkene i teksten, der frakturmodellen er installert.
-ocr-languages-fraktur-hint = Bøker trykt med gotisk skrift, slik norske, danske, svenske og tyske bøker ofte ble før omkring 1900, leses med frakturmodellen, valgt først eller alene, uansett språk.
+ocr-languages-fraktur-hint = Bøker trykt med gotisk skrift, slik norske, danske, svenske og tyske bøker ofte ble før omkring 1900, leses med frakturmodellen, valgt først eller alene, uansett språk. Den kjenner ikke æ, ø og å, og leser dem som e, o og a.
 
 ## Stripen med sidene i en PDF, tegnet små, til å velge en side fra.
 

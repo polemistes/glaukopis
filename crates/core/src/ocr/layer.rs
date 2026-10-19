@@ -544,6 +544,15 @@ fn over_letter(mark: &str, before: &str) -> String {
 /// some hundred times the largest page there is.
 const FARTHEST: f64 = 1e6;
 
+/// A text with its long s (ſ) written as s, which it is.
+fn as_s(text: &str) -> std::borrow::Cow<'_, str> {
+    if text.contains('ſ') {
+        std::borrow::Cow::Owned(text.replace('ſ', "s"))
+    } else {
+        std::borrow::Cow::Borrowed(text)
+    }
+}
+
 /// A place or a size on a page as the layer carries it: within
 /// [`FARTHEST`], and nought for one that is no number. The layer crosses
 /// from the process that reads it as JSON, which has no number for an
@@ -584,6 +593,11 @@ impl Gatherer {
         mark: bool,
         look: (&str, bool),
     ) {
+        // The long s (ſ) of Gothic type and old books is a form of s, not a
+        // letter of its own: what is taken from a PDF is searched, checked
+        // and quoted as s.
+        let (char, shown) = (as_s(char), as_s(shown));
+        let (char, shown) = (char.as_ref(), shown.as_ref());
         let stretch = trm.m11.hypot(trm.m12);
         let size = (font_size * trm.m21.hypot(trm.m22)).abs();
         let direction = if stretch > 0.0 { (trm.m11 / stretch, trm.m12 / stretch) } else { (1.0, 0.0) };
@@ -699,6 +713,9 @@ impl OutputDev for Gatherer {
             if let Some(id) = glyph.font {
                 self.translated_fonts.insert(id);
             }
+        }
+        if shown.contains('ſ') {
+            shown = shown.replace('ſ', "s");
         }
         if let Some(id) = glyph.font
             && !shown.is_empty()

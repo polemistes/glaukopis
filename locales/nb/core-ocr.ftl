@@ -45,7 +45,7 @@ ocr-remark-poorly = { $count ->
     [one] Én side ble lest dårlig: { $pages }. Et annet språk, frakturmodellen for gotisk skrift eller et annet oppsett av siden kan lese den bedre; prøv den før du leser den på nytt.
    *[other] { $count } sider ble lest dårlig: { $pages }. Et annet språk, frakturmodellen for gotisk skrift eller et annet oppsett av siden kan lese dem bedre; prøv en side før du leser alle på nytt.
 }
-ocr-remark-fraktur = Bøker med gotisk skrift, slik mange norske, danske, svenske og tyske bøker hadde før omkring 1900, leses med frakturmodellen, valgt først eller alene, uansett språk.
+ocr-remark-fraktur = Bøker med gotisk skrift, slik mange norske, danske, svenske og tyske bøker hadde før omkring 1900, leses med frakturmodellen, valgt først eller alene, uansett språk. Den kjenner ikke æ, ø og å, og leser dem som e, o og a.
 
 ## Hva en lesning av en PDF ga.
 

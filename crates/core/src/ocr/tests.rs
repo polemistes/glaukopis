@@ -1155,3 +1155,17 @@ fn the_pages_are_drawn_small_for_the_strip() {
     std::fs::write(&text, "no PDF").unwrap();
     assert!(pages_pictures(&text, &Tools::default(), &work, 0, 40, 120, &never()).is_err());
 }
+
+/// A PDF whose own text has the long s (ſ), as editions in Gothic type and
+/// old books have, is taken with s, in what is seen before and what is read.
+#[test]
+fn the_long_s_of_a_pdf_is_taken_as_s() {
+    let Some(kit) = kit(false) else { return };
+    let pdf = kit.typeset("old.pdf", &PAGE.replace("subject of the Iliad", "ſubject of the Iliad, ogſaa ſamme"));
+    let looked = look(&pdf, &kit.tools).unwrap();
+    let sample = looked.sample.expect("the PDF has text").lines.join(" ");
+    assert!(has(&sample, "subject of the Iliad, ogsaa samme") && !sample.contains('ſ'), "{sample}");
+    let read = read_pdf(&pdf, &kit.tools, &kit.work(), &Asked::default(), None, &mut nothing, &never()).unwrap();
+    let text = read.pages[0].paragraphs.join(" ");
+    assert!(has(&text, "ogsaa samme") && !text.contains('ſ'), "{text}");
+}
