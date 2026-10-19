@@ -238,3 +238,14 @@ ocr-script = { $script ->
 }
 # $alike: the letters that look alike, in pairs, the first script's first: "ϲ c, ο o, ν v".
 ocr-languages-scripts-alike = The { $a } script is read together with the { $b }: letters that look alike in the two ({ $alike }) are often read as the other, and whole words come out wrong. For one script alone, take the others away.
+
+## The strip of the pages of a PDF, drawn small, to choose a page from.
+
+ocr-strip = The pages
+ocr-strip-page = Page { $number }
+# A page that could not be drawn, where nothing more is said of why.
+ocr-strip-page-failed = Not drawn
+# $from and $to: the first and the last of the pages, counted from one, that were to be drawn together.
+ocr-strip-failed = Pages { $from }–{ $to } could not be drawn.
+# On the page chosen in the strip: the pages from it on are read with languages and a layout of their own.
+ocr-strip-begin = Begin a stretch here

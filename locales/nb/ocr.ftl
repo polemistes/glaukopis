@@ -238,3 +238,14 @@ ocr-script = { $script ->
 }
 # $alike: bokstavene som ligner hverandre, parvis, det første alfabetets først: «ϲ c, ο o, ν v».
 ocr-languages-scripts-alike = Det { $a } alfabetet leses sammen med det { $b }: bokstaver som ligner hverandre i de to ({ $alike }), leses ofte som hverandre, og hele ord blir feil. For bare ett alfabet, ta de andre bort.
+
+## Stripen med sidene i en PDF, tegnet små, til å velge en side fra.
+
+ocr-strip = Sidene
+ocr-strip-page = Side { $number }
+# En side som ikke kunne tegnes, der ikke mer er sagt om hvorfor.
+ocr-strip-page-failed = Ikke tegnet
+# $from og $to: den første og den siste av sidene, talt fra én, som skulle tegnes sammen.
+ocr-strip-failed = Side { $from }–{ $to } kunne ikke tegnes.
+# På siden som er valgt i stripen: sidene fra den av leses med egne språk og et eget oppsett.
+ocr-strip-begin = Begynn en strekning her
