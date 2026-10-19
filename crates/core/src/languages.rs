@@ -202,6 +202,11 @@ impl Bundle {
     /// The files of a zip, without their folders. A file of the same name
     /// in two folders is taken once, the first.
     fn from_zip(bytes: &[u8], file: &str) -> Result<Bundle> {
+        Bundle::from_zip_within(bytes, file, LIMIT)
+    }
+
+    /// As `from_zip`, holding no more than `limit` bytes of what it holds.
+    fn from_zip_within(bytes: &[u8], file: &str, limit: u64) -> Result<Bundle> {
         let mut archive = zip::ZipArchive::new(Cursor::new(bytes))
             .map_err(|e| Error::invalid(tr!("core-packages-not-zip", file = file, message = e.to_string())))?;
         let mut bundle = Bundle::default();
@@ -217,15 +222,22 @@ impl Bundle {
             if name.is_empty() || bundle.files.iter().any(|(n, _)| *n == name) {
                 continue;
             }
-            total += entry.size();
-            if total > LIMIT {
+            // What an entry says it holds is a claim of the file, which a
+            // file made to do harm makes small: what it does hold is counted
+            // as it is read, and no more is read than the limit leaves room for.
+            if total + entry.size() > limit {
                 return Err(Error::invalid(tr!("core-packages-too-large", file = file)));
             }
-            let mut content = Vec::with_capacity(entry.size().min(LIMIT) as usize);
+            let room = limit - total;
+            let mut content = Vec::with_capacity(entry.size().min(room) as usize);
             (&mut entry)
-                .take(LIMIT)
+                .take(room + 1)
                 .read_to_end(&mut content)
                 .map_err(|e| Error::invalid(tr!("core-packages-not-zip", file = file, message = e.to_string())))?;
+            total += content.len() as u64;
+            if total > limit {
+                return Err(Error::invalid(tr!("core-packages-too-large", file = file)));
+            }
             bundle.add(&name, content)?;
         }
         Ok(bundle)

@@ -61,8 +61,7 @@ pub struct ReadHead {
 /// before it, as `project_load` gives a project.
 #[tauri::command(async)]
 pub fn project_file_read(state: State<'_, AppState>, path: String) -> CommandResult<Response> {
-    let opened = projectfile::read(Path::new(&path))?;
-    let added = projectfile::take_pictures(&state.pictures, &opened.pictures);
+    let (opened, added) = projectfile::read_into(Path::new(&path), &state.pictures)?;
     let head = serde_json::to_vec(&ReadHead { manifest: opened.manifest, pictures: added })
         .map_err(glaukopis_core::Error::from)?;
     let mut out = Vec::with_capacity(head.len() + opened.state.len() + 8);
