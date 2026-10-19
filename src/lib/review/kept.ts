@@ -14,6 +14,9 @@
  *
  * When nothing is left that they have not accepted, the review becomes simply
  * the moment the changes were worked out at, with nothing accepted since.
+ * Until then the stretches are kept few: what is accepted in a block is
+ * kept with what was accepted there before (`combine`), and what accepts
+ * nothing any more is forgotten when the changes are worked out.
  *
  * Each writes only their own review. It is not part of undo: it is not the
  * writing of the project.
@@ -21,6 +24,7 @@
 
 import * as Y from 'yjs';
 import type { Accepted, Moment, Reference } from '$lib/history/types';
+import { combine } from './accepting';
 
 export const REVIEWS = 'reviews';
 
@@ -136,8 +140,14 @@ export function accept(
     }
     const stretches = kept.get('accepted');
     const changes = kept.get('settled');
-    if (stretches instanceof Y.Array) stretches.push(accepted);
-    else kept.set('accepted', Y.Array.from(accepted));
+    if (stretches instanceof Y.Array) {
+      // What lies within what is accepted now, or beside it, is kept with it.
+      const moment = kept.get('moment');
+      const list = (stretches.toArray() as unknown[]).map((a) => (isAccepted(a) ? a : null));
+      const combined = combine(doc, moment instanceof Uint8Array ? moment : null, list, accepted);
+      for (const i of combined.removed.sort((x, y) => y - x)) stretches.delete(i, 1);
+      stretches.push(combined.added);
+    } else kept.set('accepted', Y.Array.from(accepted));
     // A change settled anew replaces what was kept of it.
     if (changes instanceof Y.Array) {
       const keys = new Set(settled.map((s) => s.key));
@@ -178,6 +188,25 @@ export function forgetAccepted(doc: Y.Doc, person: string) {
   doc.transact(() => {
     kept.set('accepted', new Y.Array<Accepted>());
     kept.set('settled', new Y.Array<Settled>());
+  }, REVIEWING);
+}
+
+/**
+ * Forgets the stretches a person accepted that accept nothing any more, as
+ * the history found them when it worked the changes out: those whose text
+ * is as the moment they review from had it, and those that stand for
+ * nowhere. They are known by what was read of the review (`readReview`),
+ * so that what was accepted since, or kept anew, is not touched.
+ */
+export function forgetIdle(doc: Y.Doc, person: string, idle: Accepted[]) {
+  const kept = reviews(doc).get(person);
+  const stretches = kept instanceof Y.Map ? kept.get('accepted') : null;
+  if (!idle.length || !(stretches instanceof Y.Array)) return;
+  const forgotten = new Set<unknown>(idle);
+  const list = stretches.toArray() as unknown[];
+  if (!list.some((a) => forgotten.has(a))) return;
+  doc.transact(() => {
+    for (let i = list.length - 1; i >= 0; i--) if (forgotten.has(list[i])) stretches.delete(i, 1);
   }, REVIEWING);
 }
 

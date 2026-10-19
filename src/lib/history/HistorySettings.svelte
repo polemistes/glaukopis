@@ -13,6 +13,7 @@
   import Button from '$lib/ui/Button.svelte';
   import { confirm } from '$lib/ui/confirm.svelte';
   import { notify, notifyError } from '$lib/ui/toast.svelte';
+  import { safeFileName } from '$lib/util/file-name';
   import type { ProjectHistory } from './history.svelte';
   import type { Looking } from './looking';
 
@@ -109,11 +110,12 @@
       if (archiving) {
         path = await save({
           title: t('history-archive'),
-          defaultPath:
-            `${project.name} ${t('history-archive-until', { when: at })}.glaukopis-history`.replace(
-              /[/\\:]/g,
-              ' ',
-            ),
+          // A name every system takes: a title with a question mark is
+          // common, and Windows refuses it in the save dialog.
+          defaultPath: `${safeFileName(
+            `${project.name} ${t('history-archive-until', { when: at })}`,
+            t('history-archive-kind'),
+          )}.glaukopis-history`,
           filters: [{ name: t('history-archive-kind'), extensions: ['glaukopis-history'] }],
         });
         if (!path) return;

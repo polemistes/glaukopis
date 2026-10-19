@@ -110,7 +110,8 @@ export function ocrLanguageName(code: string, inText = false): string {
   // Standing alone, a name begins with a capital; in a sentence, it is as
   // the language writes it there: "English", but "engelsk".
   const name = inText ? inSentence(tag) : languageName(tag);
-  if (code === 'frk' || code === 'deu_latf') return t('ocr-language-fraktur', { language: name });
+  if (code === 'frk' || code === 'deu_latf' || code.endsWith('_frak'))
+    return t('ocr-language-fraktur', { language: name });
   if (code.endsWith('_old')) return t('ocr-language-old', { language: name });
   if (code.endsWith('_vert')) return t('ocr-language-vertical', { language: name });
   return name;

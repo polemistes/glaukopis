@@ -24,7 +24,15 @@ import type { Project } from '$lib/project/model/project.svelte';
 import { PROJECT } from '$lib/project/model/types';
 import { acceptBetween, acceptStretch, blockAt, edgesOf, itemsOfPieces, nodeAt } from './accepting';
 import { changed, group, type Change, type Stretch, type Unit } from './grouping';
-import { accept, forgetAccepted, readReview, referenceOf, settle, type Settled } from './kept';
+import {
+  accept,
+  forgetAccepted,
+  forgetIdle,
+  readReview,
+  referenceOf,
+  settle,
+  type Settled,
+} from './kept';
 import { colourOf } from '$lib/sharing/connection.svelte';
 import { markChanges, NOBODY, type Marked } from './marks';
 import type { Choice, Source } from './source';
@@ -32,11 +40,30 @@ import type { Choice, Source } from './source';
 /** How long after the project has changed the changes are worked out again. */
 const CHANGED = 600;
 
-/** What a change to an element or an object is now, to tell whether it changed again once accepted. */
+/**
+ * A value written as JSON with the keys of every object in order, so that
+ * the same value reads the same however its object was put together.
+ */
+function canonical(value: unknown): string {
+  return JSON.stringify(value, (_key, v: unknown) =>
+    v && typeof v === 'object' && !Array.isArray(v) && !ArrayBuffer.isView(v)
+      ? Object.fromEntries(
+          Object.entries(v as Record<string, unknown>).sort(([a], [b]) =>
+            a < b ? -1 : a > b ? 1 : 0,
+          ),
+        )
+      : v,
+  );
+}
+
+/**
+ * What a change to an element or an object is now, to tell whether it
+ * changed again once accepted. The same on every computer: the order of
+ * the keys of its records is not that in which a copy received them.
+ */
 export function stateOf(c: Change): string {
-  if (c.change)
-    return JSON.stringify([c.change.kind, c.change.after ?? null, c.change.before ?? null]);
-  if (c.object) return JSON.stringify([c.object.status, c.object.after ?? null]);
+  if (c.change) return canonical([c.change.kind, c.change.after ?? null, c.change.before ?? null]);
+  if (c.object) return canonical([c.object.status, c.object.after ?? null]);
   return '';
 }
 
@@ -224,17 +251,23 @@ export class Review {
     return { reference: { moment: first.snapshot, accepted: [] }, settled: [], since: first };
   }
 
-  /** The changes within an element, grouped, without those settled already. */
+  /**
+   * The changes within an element, grouped, without those settled already;
+   * and the stretches of the reference that accept nothing any more.
+   */
   async #changesOf(
     history: History,
     at: string,
     reference: Reference,
     settled: Settled[],
     options: { own: boolean; unit: Unit },
-  ): Promise<Change[]> {
+  ): Promise<{ changes: Change[]; idle: Accepted[] }> {
     const compared = await history.compare(at, reference);
     const done = new Set(settled.map((s) => `${s.key}\u0000${s.state}`));
-    return group(compared, {
+    const idle = (compared.idle ?? [])
+      .map((i) => reference.accepted[i])
+      .filter((a): a is Accepted => !!a);
+    const changes = group(compared, {
       unit: options.unit,
       // The language of the text, as the element says it or inherits it.
       language: this.project.documentOf(at).settings.language ?? null,
@@ -242,6 +275,20 @@ export class Review {
       own: options.own,
       sequence: this.project.tree(at).sequence,
     }).filter((c) => !settles(c) || !done.has(`${c.key}\u0000${stateOf(c)}`));
+    return { changes, idle };
+  }
+
+  /**
+   * Forgets what accepts nothing any more, in what it was read from: the
+   * review from a chosen moment, or what this person keeps in the project.
+   * It would only be read again at every working-out, and synced and saved.
+   */
+  #forgetIdle(reference: Reference, idle: Accepted[]) {
+    if (!idle.length) return;
+    if (reference.accepted === this.#session) {
+      const forgotten = new Set(idle);
+      this.#session = this.#session.filter((a) => !forgotten.has(a));
+    } else if (this.me) forgetIdle(this.project.doc, this.me, idle);
   }
 
   async #work(round: number) {
@@ -261,7 +308,7 @@ export class Review {
         this.#now = now;
         return;
       }
-      const [changes, people] = await Promise.all([
+      const [{ changes, idle }, people] = await Promise.all([
         this.#changesOf(history, this.at, found.reference, found.settled, {
           own: this.own,
           unit: this.unit,
@@ -273,6 +320,12 @@ export class Review {
       this.since = found.since;
       this.#revision = revision;
       this.#now = now;
+      // What is kept of the review changes no text: the changes are still those of the text.
+      if (idle.length) {
+        const fresh = this.project.revision === revision;
+        this.#forgetIdle(found.reference, idle);
+        if (fresh) this.#revision = this.project.revision;
+      }
       this.#keepLooked(changes);
       this.changes = changes;
       this.failure = null;
@@ -283,7 +336,7 @@ export class Review {
         void this.#settleIfDone();
       }
       // What was written while they were worked out is worked out next.
-      if (this.project.revision !== revision) this.later();
+      if (this.project.revision !== this.#revision) this.later();
     } catch (error) {
       if (round !== this.#round) return;
       this.failure = error instanceof Error ? error.message : String(error);
@@ -628,7 +681,7 @@ export class Review {
     if (this.at !== PROJECT) {
       // What is left is what this review shows: with one's own changes
       // shown, those elsewhere are left to review as well.
-      const left = await this.#changesOf(history, PROJECT, reference, kept.settled, {
+      const { changes: left } = await this.#changesOf(history, PROJECT, reference, kept.settled, {
         own: this.own,
         unit: 'paragraph',
       });

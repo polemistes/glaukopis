@@ -18,6 +18,11 @@ describe('the languages Tesseract reads', () => {
     expect(ocrLanguageName('grc')).toBe('Ancient Greek');
     expect(ocrLanguageName('chi_sim')).toBe('Simplified Chinese');
     expect(ocrLanguageName('frk')).toBe('German, Fraktur');
+    // The Fraktur data of a language are told from its plain data.
+    expect(ocrLanguageName('deu_frak')).toBe('German, Fraktur');
+    expect(ocrLanguageName('dan_frak')).toBe('Danish, Fraktur');
+    expect(ocrLanguageName('slk_frak')).toBe('Slovak, Fraktur');
+    expect(ocrLanguageName('deu')).toBe('German');
     expect(ocrLanguageName('script/Latin')).toBe('Latin script');
     expect(byName(['nor', 'grc', 'eng'])).toEqual(['grc', 'eng', 'nor']);
   });

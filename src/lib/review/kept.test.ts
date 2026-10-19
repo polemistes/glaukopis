@@ -31,7 +31,7 @@ function text() {
   const note = new Y.XmlElement('footnote');
   note.insert(0, [new Y.XmlText('A note.')]);
   second.insert(0, [new Y.XmlText('Second.'), note]);
-  return { doc, body, first, second, before, after, note };
+  return { doc, body, first, second, before, citation, after, note };
 }
 
 function resolve(doc: Y.Doc, bytes: Uint8Array) {
@@ -236,6 +236,25 @@ describe('what a person has reviewed', () => {
     const review = readReview(doc, 'anna')!;
     expect(review.time).toBe(1000);
     expect(review.accepted.map((a) => a.place.path[0])).toEqual([1, 2, 3]);
+  });
+
+  it('replaces what lies within what is accepted, where not all of a block can be counted', () => {
+    const { doc, first, before, citation } = text();
+    // A citation deleted: its content is collected, and what it held could be counted no more.
+    first.delete(1, 1);
+    expect(citation._item!.content).toBeInstanceOf(Y.ContentDeleted);
+    const then = moment(doc, 1000);
+    before.insert(4, 'very ');
+    const inner = acceptStretch(first, place([0]), 4, 9, []);
+    accept(doc, 'anna', then, [inner]);
+    // Apart from it, so not within: kept beside it.
+    const apart = acceptStretch(first, place([0]), 15, 17, []);
+    accept(doc, 'anna', then, [apart]);
+    expect(readReview(doc, 'anna')!.accepted).toEqual([inner, apart]);
+    // Around the first: it replaces it.
+    const outer = acceptStretch(first, place([0]), 2, 12, []);
+    accept(doc, 'anna', then, [outer]);
+    expect(readReview(doc, 'anna')!.accepted).toEqual([apart, outer]);
   });
 
   it('keeps a change to an element once, as it was last accepted', () => {

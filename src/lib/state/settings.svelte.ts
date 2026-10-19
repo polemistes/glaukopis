@@ -6,6 +6,7 @@ import {
   type Settings,
 } from '$lib/api/system';
 import type { KindFamily, Look } from '$lib/api/documents';
+import type { Person } from '$lib/project/model/types';
 import { t } from '$lib/i18n';
 import { notifyError } from '$lib/ui/toast.svelte';
 import { beforeClose } from './closing';
@@ -35,6 +36,28 @@ const more = (kept: Partial<AllSettings> = {}): MoreSettings => ({
     ? kept.passageKinds.filter((k) => k && typeof k.name === 'string')
     : [],
 });
+
+/**
+ * The writer as an author of a document, from their details in the
+ * settings: the name, the organisation, the email and the ORCID, as the
+ * settings of a document take an author. Nothing where no name is given.
+ * The position, the address and the phone have no place there yet.
+ */
+export function authorOf(value: Settings): Person | null {
+  const name = [value.firstName, value.lastName]
+    .map((part) => part?.trim())
+    .filter(Boolean)
+    .join(' ');
+  if (!name) return null;
+  const author: Person = { name };
+  const organisation = value.organization?.trim();
+  const email = value.contactEmail?.trim();
+  const orcid = value.orcid?.trim();
+  if (organisation) author.affiliation = organisation;
+  if (email) author.email = email;
+  if (orcid) author.orcid = orcid;
+  return author;
+}
 
 class SettingsState {
   value = $state<AllSettings>({

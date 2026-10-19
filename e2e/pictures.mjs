@@ -22,6 +22,16 @@ async function until(what, fn, ms = 8000) {
   }
 }
 
+/** Whether something comes true within a while: false where it does not, rather than the script stopping. */
+async function soon(fn, ms = 5000) {
+  try {
+    await until('it', fn, ms);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** A picture of rings, as PNG. */
 function png(width, height, shade = 0) {
   const crcTable = new Int32Array(256).map((_, n) => {
@@ -169,7 +179,8 @@ try {
   await app.press('Enter');
   await until('the name to be kept', () => !!called('The shield of Achilles'));
   check('what a picture is called is kept on Enter', true);
-  check('and said under it', (await tiles()).includes('The shield of Achilles'));
+  // The tiles are read anew from the store once the name is kept: what is said under them follows a moment later.
+  check('and said under it', await soon(async () => (await tiles()).includes('The shield of Achilles')), (await tiles()).join('|'));
 
   // ---- what is said of it ----
   await app.click('.detail .caption-field .ProseMirror');

@@ -7,7 +7,9 @@ import { applyEdits } from './applying';
 import { Engine } from './engine';
 import { ProjectHistory } from './history.svelte';
 import { writeRecords, type HistoryRecord } from './records';
-import type { Passage, Piece, Reference } from './types';
+import { acceptStretch, blockAt } from '$lib/review/accepting';
+import { accept, forgetIdle, readReview, referenceOf } from '$lib/review/kept';
+import type { Accepted, Passage, Piece, Reference } from './types';
 
 /** A store of history as the core keeps one: see `crates/core/src/history.rs`. */
 class Store implements Persistence {
@@ -626,5 +628,120 @@ describe('a history with a record that cannot be applied', () => {
     );
     history.stop();
     error.mockRestore();
+  });
+});
+
+describe('what a person accepts, kept few', () => {
+  /** The stretch of each piece that is not the same, as it stands now in the text: from and to in its signs. */
+  const stretches = (passage: Passage) => {
+    const out: { piece: Piece; from: number; to: number }[] = [];
+    let at = 0;
+    for (const piece of passage.pieces) {
+      const length = piece.status === 'removed' ? 0 : [...piece.text].length;
+      if (piece.status !== 'same') out.push({ piece, from: at, to: at + length });
+      at += length;
+    }
+    return out;
+  };
+
+  it('stays one entry for a block over many decisions, and compares as all of them would', async () => {
+    const { a, b, ann, at, root, flush } = await two();
+    paragraph(a, root, 'Sing goddess the wrath of the son of Peleus that brought pains.');
+    await flush();
+    const since = engineOf(ann, 'ann').moment(Infinity);
+    // Bo writes in many places of the paragraph, apart from each other.
+    b.transact(() => {
+      const t = textOf(b, root);
+      for (const [i, word] of [
+        [61, ' countless'],
+        [45, ' great'],
+        [24, ' grim'],
+        [10, ' divine'],
+        [4, ' O'],
+      ] as const)
+        t.insert(i, word);
+    });
+    await flush();
+    const appended: Accepted[] = [];
+    let decisions = 0;
+    while (decisions < 20) {
+      const e = engineOf(ann, 'ann');
+      const kept = readReview(a.doc, 'ann');
+      const reference = kept ? referenceOf(kept) : { moment: since.snapshot, accepted: [] };
+      const passages = e.compare(at, reference).passages;
+      // As the entries would have it had every decision been kept by itself.
+      const unkept = e.compare(at, { moment: since.snapshot, accepted: appended }).passages;
+      expect(passages).toEqual(unkept);
+      if (!passages.length) break;
+      const passage = passages[0];
+      const [first] = stretches(passage);
+      const block = blockAt(a.fragment(root, 'body'), passage.place)!;
+      const accepted = acceptStretch(block, passage.place, first.from, first.to, [first.piece]);
+      appended.push(accepted);
+      accept(a.doc, 'ann', since, [accepted]);
+      decisions++;
+      expect(readReview(a.doc, 'ann')!.accepted).toHaveLength(1);
+      await flush();
+    }
+    expect(decisions).toBe(5);
+  });
+
+  it('forgets what accepts nothing any more when the changes are worked out', async () => {
+    const { a, b, ann, at, root, flush } = await two();
+    paragraph(a, root, 'Sing, goddess, the wrath.');
+    await flush();
+    const since = engineOf(ann, 'ann').moment(Infinity);
+    b.transact(() => textOf(b, root).insert(4, ' now'));
+    await flush();
+    const acceptFirst = () => {
+      const kept = readReview(a.doc, 'ann');
+      const reference = kept ? referenceOf(kept) : { moment: since.snapshot, accepted: [] };
+      const [passage] = engineOf(ann, 'ann').compare(at, reference).passages;
+      const [first] = stretches(passage);
+      const block = blockAt(a.fragment(root, 'body'), passage.place)!;
+      accept(a.doc, 'ann', since, [
+        acceptStretch(block, passage.place, first.from, first.to, [first.piece]),
+      ]);
+    };
+    // Ann accepts what Bo wrote; Bo takes it out again, and Ann accepts that too.
+    acceptFirst();
+    await flush();
+    b.transact(() => textOf(b, root).delete(4, 4));
+    await flush();
+    acceptFirst();
+    await flush();
+    const kept = readReview(a.doc, 'ann')!;
+    expect(kept.accepted).toHaveLength(1);
+    // The text is as it was at the moment: what was accepted accepts nothing.
+    const compared = engineOf(ann, 'ann').compare(at, referenceOf(kept));
+    expect(compared.passages).toEqual([]);
+    expect(compared.idle).toEqual([0]);
+    forgetIdle(
+      a.doc,
+      'ann',
+      compared.idle!.map((i) => kept.accepted[i]),
+    );
+    const left = readReview(a.doc, 'ann')!;
+    expect(left.accepted).toEqual([]);
+    expect(engineOf(ann, 'ann').compare(at, referenceOf(left)).passages).toEqual([]);
+  });
+
+  it('takes an entry that stands for nowhere as accepting nothing, and one it does not know yet as not', async () => {
+    const { a, ann, at, root, flush } = await two();
+    paragraph(a, root, 'Sing.');
+    await flush();
+    const e = engineOf(ann, 'ann');
+    const since = e.moment(Infinity);
+    const nowhere: Accepted = {
+      place: { element: root, part: 'body', path: [0] },
+      from: new Uint8Array([1, 2, 3]),
+      to: new Uint8Array([1, 2, 3]),
+      visible: {},
+    };
+    const unknown = Y.encodeRelativePosition(
+      Y.createRelativePositionFromJSON({ item: { client: 424242, clock: 7 }, assoc: 0 }),
+    );
+    const later: Accepted = { ...nowhere, from: unknown, to: unknown };
+    expect(e.compare(at, { moment: since.snapshot, accepted: [later, nowhere] }).idle).toEqual([1]);
   });
 });

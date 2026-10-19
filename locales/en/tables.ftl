@@ -86,6 +86,8 @@ tables-choose = A table
 # What the files that can be chosen there are called.
 tables-files = Tables
 tables-unreadable = { $file } could not be read as a table
+tables-paste-rows = The text has { $rows } rows. A table in a text can have { $most } at most: it is not a spreadsheet. Nothing was pasted.
+tables-paste-columns = The text has { $columns } columns. A table in a text can have { $most } at most: it is not a spreadsheet. Nothing was pasted.
 tables-cannot-stand = A table cannot stand here
 tables-drop-on-text = Drop a table on the text it belongs to
 

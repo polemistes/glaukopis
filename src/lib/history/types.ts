@@ -171,6 +171,12 @@ export interface BranchChanges {
   passages: Passage[];
   objects: ObjectChange[];
   elements: ElementChange[];
+  /**
+   * The indices in `reference.accepted` of what accepts nothing any more:
+   * stretches whose text is as the moment had it, and those that stand for
+   * nowhere. They can be forgotten without changing any comparison.
+   */
+  idle?: number[];
 }
 
 /** A version of a stretch of text between the moment compared with and now. */

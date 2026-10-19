@@ -6,8 +6,12 @@
 import { keymap } from 'prosemirror-keymap';
 import { Plugin, PluginKey } from 'prosemirror-state';
 import { isInTable, tableEditing } from 'prosemirror-tables';
+import { t } from '$lib/i18n';
+import { notify } from '$lib/ui/toast.svelte';
 import { askForTable } from './ask';
 import {
+  PASTED_COLUMNS,
+  PASTED_ROWS,
   leaveByArrow,
   pasteText,
   removeBlankTable,
@@ -61,7 +65,13 @@ export function tablePlugins(): Plugin[] {
       handlePaste(view, event) {
         const data = event.clipboardData;
         if (!data || !isInTable(view.state) || data.getData('text/html')) return false;
-        return pasteText(data.getData('text/plain'))(view.state, view.dispatch);
+        return pasteText(data.getData('text/plain'), ({ rows, columns }) =>
+          notify(
+            rows > PASTED_ROWS
+              ? t('tables-paste-rows', { rows, most: PASTED_ROWS })
+              : t('tables-paste-columns', { columns, most: PASTED_COLUMNS }),
+          ),
+        )(view.state, view.dispatch);
       },
       handleDOMEvents: {
         focus: () => {

@@ -28,6 +28,7 @@ import {
 import { t } from '$lib/i18n';
 import { Project, type Persistence, type Summary } from '$lib/project/model/project.svelte';
 import { notifyError } from '$lib/ui/toast.svelte';
+import { authorOf, settings } from './settings.svelte';
 
 class ProjectsState {
   list = $state.raw<ProjectInfo[]>([]);
@@ -187,7 +188,8 @@ export async function openProject(id: string): Promise<OpenProject> {
   // written before is brought into one tree (ADR 0037). One that was joined
   // and has not been fetched is left empty: what it holds is on its way.
   if (!(loaded.info.sharing && project.nodes.size === 0)) {
-    project.begin(loaded.info.name);
+    // A new project is the writer's own, as their details in the settings say.
+    project.begin(loaded.info.name, authorOf(settings.value));
     project.undoManager.clear();
   }
   return { info: loaded.info, project };

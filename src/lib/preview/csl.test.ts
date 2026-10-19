@@ -110,6 +110,8 @@ group('reading a style', () => {
     );
     expect(bib).toEqual(['author', 'title']);
     expect(usesOf(s, 'title')).toBe(2);
+    // Once in the entry and once in the sort of the bibliography.
+    expect(usesOf(s, 'author')).toBe(2);
     expect(usesOf(s, 'unused')).toBe(0);
   });
 

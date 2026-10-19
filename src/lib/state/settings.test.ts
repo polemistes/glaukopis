@@ -12,7 +12,7 @@ vi.mock('$lib/api/system', async (original) => ({
   ),
 }));
 
-const { settings } = await import('./settings.svelte');
+const { authorOf, settings } = await import('./settings.svelte');
 const { settingsLoad } = await import('$lib/api/system');
 const { toasts } = await import('$lib/ui/toast.svelte');
 const { finishBeforeClose } = await import('./closing');
@@ -136,5 +136,31 @@ describe('the settings as they are read', () => {
     );
     expect(settings.loaded).toBe(true);
     error.mockRestore();
+  });
+});
+
+describe('the writer as an author', () => {
+  it('is their name, organisation, email and ORCID, and nobody without a name', async () => {
+    const { defaultSettings } = await import('$lib/api/system');
+    expect(
+      authorOf({
+        ...defaultSettings,
+        firstName: ' Anna ',
+        lastName: 'Lind',
+        organization: 'University of Oslo',
+        position: 'Professor',
+        address: 'Blindern',
+        phone: '+47 22 85 50 50',
+        contactEmail: 'anna@example.org',
+        orcid: '0000-0002-1825-0097',
+      }),
+    ).toEqual({
+      name: 'Anna Lind',
+      affiliation: 'University of Oslo',
+      email: 'anna@example.org',
+      orcid: '0000-0002-1825-0097',
+    });
+    expect(authorOf({ ...defaultSettings, lastName: 'Lind' })).toEqual({ name: 'Lind' });
+    expect(authorOf({ ...defaultSettings, organization: 'Oslo', firstName: ' ' })).toBeNull();
   });
 });

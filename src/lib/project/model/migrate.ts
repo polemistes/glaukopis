@@ -13,7 +13,7 @@ import { generateKeyBetween } from 'fractional-indexing';
 import * as Y from 'yjs';
 import { str } from './origins';
 import { fillBody, fillTitle, inlineText, readTitle } from './text';
-import { PROJECT, type DocumentSettings, type TimelineSettings } from './types';
+import { PROJECT, type DocumentSettings, type Person, type TimelineSettings } from './types';
 
 type YNode = Y.Map<unknown>;
 
@@ -46,6 +46,9 @@ export function needsMigration(doc: Y.Doc): boolean {
  * share it. `word` gives a word of documents in a language (`term` of the
  * words of the interface), left out where this runs in a thread of its own
  * that must not take the interface in (the search through everything).
+ * `author` is the writer as the settings name them, the author of a
+ * project that begins now, with nothing in it yet: a new document is
+ * theirs until they say otherwise in its settings.
  * Returns whether anything was changed.
  */
 export function migrate(
@@ -53,12 +56,14 @@ export function migrate(
   name: string,
   language?: string,
   word?: (language: string | null | undefined, id: string) => string | null,
+  author?: Person | null,
 ): boolean {
   const yMaps = doc.getMap<YNode>('maps');
   const yNodes = doc.getMap<YNode>('nodes');
   const yMeta = doc.getMap<unknown>('meta');
   let changed = false;
   let made = false;
+  const empty = yNodes.size === 0 && yMaps.size === 0;
 
   if (!yNodes.has(PROJECT)) {
     const n = new Y.Map<unknown>();
@@ -85,6 +90,12 @@ export function migrate(
     // A project that begins now: in the language new texts are given.
     const own = record(project.get('document')) ?? {};
     if (!own.language) project.set('document', { ...own, language });
+  }
+
+  if (made && empty && author?.name.trim()) {
+    const own = record(project.get('document')) ?? {};
+    if (!Array.isArray(own.authors) || !own.authors.length)
+      project.set('document', { ...own, authors: [author] });
   }
 
   if (yMaps.size) {

@@ -461,6 +461,7 @@
 
     <section data-your-details>
       <h2>{t('settings-you')}</h2>
+      <p class="about">{t('settings-you-about')}</p>
       <div class="fields two">
         <TextField
           bind:value={firstName}

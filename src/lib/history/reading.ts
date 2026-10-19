@@ -158,6 +158,59 @@ function marksOf(attributes: Map<string, unknown>): Record<string, unknown> {
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
+/** A stretch that was accepted takes in what formats it at its ends. */
+function widened(list: Unit[], override: Override[]): Override[] {
+  return override.map((o) => {
+    let from = o.from;
+    while (from > 0 && list[from - 1].kind === 'format') from--;
+    let to = o.to;
+    while (to < list.length && list[to].kind === 'format') to++;
+    return { from, to, visible: o.visible };
+  });
+}
+
+/**
+ * Whether a unit of a block was to be seen in what is compared with: as the
+ * stretch accepted last that holds it has it, or as the moment had it. The
+ * last, since a later acceptance is what the person decided of the text as
+ * it stood after the earlier one.
+ */
+function seenBefore(list: Unit[], stretches: Override[], index: number, before: At): boolean {
+  for (let k = stretches.length - 1; k >= 0; k--) {
+    const s = stretches[k];
+    if (index >= s.from && index < s.to) return has(s.visible, list[index].item.id);
+  }
+  return before.seen(list[index].item);
+}
+
+/**
+ * Which of the stretches accepted in a block accept nothing any more: the
+ * block is compared with the same without them, every unit seen before as
+ * with them, because what they hold to be seen is what the moment saw.
+ * They are taken away one by one, each against those left, so that two
+ * that would each be needed without the other are not both taken.
+ * The indices are those of `override`.
+ */
+export function idleStretches(block: Y.XmlElement, override: Override[], before: At): number[] {
+  const list = units(block);
+  const all = widened(list, override);
+  const left = all.map((_, i) => i);
+  const idle: number[] = [];
+  for (let k = 0; k < all.length; k++) {
+    const without = left.filter((i) => i !== k);
+    const others = without.map((i) => all[i]);
+    const kept = left.map((i) => all[i]);
+    let same = true;
+    for (let i = all[k].from; i < all[k].to && same; i++)
+      same = seenBefore(list, kept, i, before) === seenBefore(list, others, i, before);
+    if (same) {
+      idle.push(k);
+      left.splice(left.indexOf(k), 1);
+    }
+  }
+  return idle;
+}
+
 /** Where a unit stands in the text: whether it was to be seen before and after. */
 interface Seen {
   before: boolean;
@@ -180,21 +233,11 @@ export function readPieces(
   range?: [number, number],
 ): Piece[] {
   const list = units(block);
-  // A stretch that was accepted takes in what formats it at its ends.
-  const stretches = override.map((o) => {
-    let from = o.from;
-    while (from > 0 && list[from - 1].kind === 'format') from--;
-    let to = o.to;
-    while (to < list.length && list[to].kind === 'format') to++;
-    return { from, to, visible: o.visible };
+  const stretches = widened(list, override);
+  const seen = (unit: Unit, index: number): Seen => ({
+    before: seenBefore(list, stretches, index, before),
+    after: after.seen(unit.item),
   });
-  const seen = (unit: Unit, index: number): Seen => {
-    const stretch = stretches.find((s) => index >= s.from && index < s.to);
-    return {
-      before: stretch ? has(stretch.visible, unit.item.id) : before.seen(unit.item),
-      after: after.seen(unit.item),
-    };
-  };
 
   const pieces: Piece[] = [];
   let attrsBefore = new Map<string, unknown>();

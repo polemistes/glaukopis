@@ -79,6 +79,27 @@ describe('a project brought into one tree', () => {
     expect(migrate(doc, 'Other')).toBe(false);
   });
 
+  it('a new document is the writer’s own, as their details in the settings say; one written before is not', () => {
+    const author = { name: 'Anna Lind', affiliation: 'Oslo', orcid: '0000-0002-1825-0097' };
+    const doc = new Y.Doc();
+    expect(migrate(doc, 'Wrath', undefined, undefined, author)).toBe(true);
+    const p = new Project(null);
+    Y.applyUpdate(p.doc, Y.encodeStateAsUpdate(doc));
+    expect(p.node(PROJECT)?.document.authors).toEqual([author]);
+    // Written before, as maps: whoever wrote it, it is not made the writer's.
+    const old = oldDocument();
+    migrate(old, 'ignored', undefined, undefined, author);
+    const q = new Project(null);
+    Y.applyUpdate(q.doc, Y.encodeStateAsUpdate(old));
+    expect(q.node(PROJECT)?.document.authors).toBeUndefined();
+    // Without a name, nobody.
+    const unnamed = new Y.Doc();
+    migrate(unnamed, 'Wrath', undefined, undefined, { name: ' ' });
+    const r = new Project(null);
+    Y.applyUpdate(r.doc, Y.encodeStateAsUpdate(unnamed));
+    expect(r.node(PROJECT)?.document.authors).toBeUndefined();
+  });
+
   it('maps become children of the project, in order, with their settings; loose elements after them', () => {
     const doc = oldDocument();
     expect(migrate(doc, 'ignored')).toBe(true);
