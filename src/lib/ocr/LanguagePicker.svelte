@@ -7,7 +7,7 @@
    */
   import X from '@lucide/svelte/icons/x';
   import { t } from '$lib/i18n';
-  import { hasFrakturModel, ocrLanguageName } from './languages';
+  import { frakturHint, ocrLanguageName } from './languages';
 
   interface Props {
     /** Tesseract's names of the languages chosen, in order. */
@@ -24,7 +24,7 @@
 
   const uid = $props.id();
   const others = $derived(installed.filter((code) => !value.includes(code)));
-  const fraktur = $derived(hasFrakturModel(installed));
+  const fraktur = $derived(frakturHint(installed, value));
 </script>
 
 <div class="picker" data-languages>
@@ -65,7 +65,7 @@
   </div>
   {#if hint}<p class="hint">{hint}</p>{/if}
   {#if fraktur}
-    <p class="hint" data-ocr-fraktur-hint>{t('ocr-languages-fraktur-hint')}</p>
+    <p class="hint" data-ocr-fraktur-hint>{t(fraktur)}</p>
   {/if}
 </div>
 

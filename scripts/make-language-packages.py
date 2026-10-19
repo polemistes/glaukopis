@@ -122,6 +122,15 @@ OCR = [
 ]
 TESSDATA_VERSION = "4.1.0"
 
+# Fraktur, Danish and Norwegian: Tesseract's Fraktur model taught æ ø å Æ Ø
+# Å, made here (packaging/languages/fraktur/README.md says how) and not
+# fetched; its version is the day it was made.
+DAN_LATF = ROOT / "packaging" / "build" / "fraktur" / "dan_latf.traineddata"
+DAN_LATF_VERSION = "2026.10.19"
+DAN_LATF_SOURCE = ("deu_latf of tessdata_best 4.1.0 fine-tuned with lstmtraining on the Danish pages of "
+                   "pvorb/tesseract-training-fraktur (Apache 2.0), its unicharset widened by æ ø å Æ Ø Å; "
+                   "packaging/languages/fraktur in the repository of Glaukopis says how")
+
 # The time every file of a package is given, so that the same files make
 # the same zip.
 STAMP = (1980, 1, 1, 0, 0, 0)
@@ -241,6 +250,23 @@ def main() -> None:
         }
         packages.append(package(args.out, f"ocr-{name}-{TESSDATA_VERSION}.zip", manifest,
                                 [(f"{name}.traineddata", data), ("LICENSE", licence)]))
+
+    if DAN_LATF.exists():
+        manifest = {
+            "format": 1,
+            "kind": "ocr",
+            "language": "da",
+            "name": "dan_latf",
+            "title": "Fraktur, dansk og norsk",
+            "version": DAN_LATF_VERSION,
+            "licence": "Apache-2.0",
+            "source": DAN_LATF_SOURCE,
+        }
+        packages.append(package(args.out, f"ocr-dan_latf-{DAN_LATF_VERSION}.zip", manifest,
+                                [("dan_latf.traineddata", DAN_LATF.read_bytes()), ("LICENSE", licence)]))
+    else:
+        print(f"  no {DAN_LATF}: Fraktur, Danish and Norwegian is not packaged "
+              "(packaging/languages/fraktur/README.md says how it is made)", file=sys.stderr)
 
     index = {"format": 1, "packages": packages}
     (args.out / "index.json").write_text(json.dumps(index, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

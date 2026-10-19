@@ -104,11 +104,26 @@ const AS_TAG: Record<string, string> = {
 
 /**
  * The models that read a type rather than a language: Tesseract's Fraktur
- * model, and its model of the Fraktur script. They read the Gothic type of
- * books in German, Norwegian, Danish or Swedish alike, so they are named
- * for the type, not for the language they were trained on.
+ * model, its model of the Fraktur script, and Glaukopis's own Fraktur model
+ * for Danish and Norwegian, which is Tesseract's taught æ, ø and å. They
+ * read the Gothic type of books in German, Norwegian, Danish or Swedish
+ * alike, so they are named for the type, not for the language they were
+ * trained on.
  */
-const FRAKTUR_MODELS = ['deu_latf', 'script/Fraktur'];
+const FRAKTUR_MODELS = ['deu_latf', 'dan_latf', 'script/Fraktur'];
+
+/**
+ * The line under the languages chosen where a model of Gothic type is
+ * installed: which model such books are read with. Where Norwegian or
+ * Danish is among the languages, it is the model that knows æ, ø and å;
+ * otherwise the Fraktur model made for German. Nothing where no model of
+ * Gothic type is installed.
+ */
+export function frakturHint(installed: string[], chosen: string[]): string | null {
+  if (!hasFrakturModel(installed)) return null;
+  const nordic = chosen.some((code) => code === 'nor' || code === 'dan');
+  return nordic ? 'ocr-languages-fraktur-hint-dan' : 'ocr-languages-fraktur-hint';
+}
 
 /**
  * Whether Gothic type can be read with what is installed: the Fraktur model,
@@ -120,6 +135,7 @@ export function hasFrakturModel(installed: string[]): boolean {
 
 /** The name of a language Tesseract reads, in the language of the interface. */
 export function ocrLanguageName(code: string, inText = false): string {
+  if (code === 'dan_latf') return t('ocr-language-fraktur-dan-model');
   if (FRAKTUR_MODELS.includes(code)) return t('ocr-language-fraktur-model');
   if (code.startsWith('script/')) return t('ocr-language-script', { script: code.slice(7) });
   const tag = AS_TAG[code] ?? code.split('_')[0];

@@ -3,6 +3,7 @@ import { languages, load } from '$lib/i18n';
 import {
   byName,
   firstLanguages,
+  frakturHint,
   hasFrakturModel,
   ocrLanguageName,
   tesseractLanguage,
@@ -37,6 +38,7 @@ describe('the languages Tesseract reads', () => {
     expect(ocrLanguageName('deu_latf')).toBe('Fraktur (Gothic type)');
     expect(ocrLanguageName('deu_latf', true)).toBe('Fraktur (Gothic type)');
     expect(ocrLanguageName('script/Fraktur')).toBe('Fraktur (Gothic type)');
+    expect(ocrLanguageName('dan_latf')).toBe('Fraktur, Danish and Norwegian (Gothic type)');
     // The older models of one language are still named by it.
     expect(ocrLanguageName('frk')).toBe('German, Fraktur');
     // So it stands under F, not under G with German.
@@ -52,6 +54,7 @@ describe('the languages Tesseract reads', () => {
       await load('nb');
       languages.current = 'nb';
       expect(ocrLanguageName('deu_latf')).toBe('Fraktur (gotisk skrift)');
+      expect(ocrLanguageName('dan_latf')).toBe('Fraktur, dansk og norsk (gotisk skrift)');
     } finally {
       languages.current = was;
     }
@@ -61,8 +64,17 @@ describe('the languages Tesseract reads', () => {
     expect(hasFrakturModel(['eng', 'deu_latf'])).toBe(true);
     expect(hasFrakturModel(['frk'])).toBe(true);
     expect(hasFrakturModel(['script/Fraktur', 'nor'])).toBe(true);
+    expect(hasFrakturModel(['dan_latf'])).toBe(true);
     expect(hasFrakturModel(['eng', 'deu', 'nor'])).toBe(false);
     expect(hasFrakturModel([])).toBe(false);
+  });
+
+  it('name the model of Gothic type that knows æ, ø and å where Norwegian or Danish is read', () => {
+    expect(frakturHint(['eng', 'deu_latf'], ['nor'])).toBe('ocr-languages-fraktur-hint-dan');
+    expect(frakturHint(['dan_latf'], ['eng', 'dan'])).toBe('ocr-languages-fraktur-hint-dan');
+    expect(frakturHint(['eng', 'deu_latf'], ['deu'])).toBe('ocr-languages-fraktur-hint');
+    expect(frakturHint(['dan_latf'], ['deu_latf'])).toBe('ocr-languages-fraktur-hint');
+    expect(frakturHint(['eng', 'nor'], ['nor'])).toBeNull();
   });
 
   it('are written in a sentence as the language of the interface writes them there', () => {

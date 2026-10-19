@@ -46,6 +46,8 @@ ocr-remark-poorly = { $count ->
    *[other] { $count } pages were read poorly: { $pages }. Another language, the Fraktur model for Gothic type, or another layout may read them better; try a page before reading them all again.
 }
 ocr-remark-fraktur = Books in Gothic type, as many Norwegian, Danish, Swedish and German ones were before about 1900, are read with the Fraktur model, chosen first or alone, whatever their language. It knows no æ, ø or å, and reads them as e, o and a.
+# The same, where Norwegian or Danish was read: the Fraktur model of Glaukopis's server that knows æ, ø and å.
+ocr-remark-fraktur-dan = Norwegian and Danish books in Gothic type, as many were before about 1900, are read with Fraktur, Danish and Norwegian, imported from the server of Glaukopis and chosen first or alone, whatever the languages beside it: it knows æ, ø and å, which the Fraktur model made for German does not.
 
 ## What a reading of a PDF came to (ADR 0044).
 

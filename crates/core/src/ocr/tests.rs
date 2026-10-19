@@ -945,11 +945,18 @@ fn what_is_said_of_pages_read_poorly() {
     let nor = vec!["nor".to_owned()];
     assert!(poorly_remarks(&[], 5, &nor).is_empty());
     let said = poorly_remarks(&[2, 3, 4, 9], 8, &nor);
-    assert_eq!(said, vec![tr!("ocr-remark-poorly", count = 4, pages = "2–4, 9"), tr!("ocr-remark-fraktur")]);
+    // Norwegian or Danish: the Fraktur model that knows æ, ø and å is named.
+    assert_eq!(said, vec![tr!("ocr-remark-poorly", count = 4, pages = "2–4, 9"), tr!("ocr-remark-fraktur-dan")]);
+    let deu = vec!["deu".to_owned()];
+    assert_eq!(
+        poorly_remarks(&[1, 2], 3, &deu),
+        vec![tr!("ocr-remark-poorly", count = 2, pages = "1–2"), tr!("ocr-remark-fraktur")]
+    );
     // Fewer than half of the pages read: the type is not what is wrong.
     assert_eq!(poorly_remarks(&[2, 3, 4], 8, &nor).len(), 1);
-    // Read with the Fraktur model already, or in a language never set in it.
+    // Read with a Fraktur model already, or in a language never set in it.
     assert_eq!(poorly_remarks(&[1], 1, &["nor".to_owned(), "deu_latf".to_owned()]).len(), 1);
+    assert_eq!(poorly_remarks(&[1], 1, &["nor".to_owned(), "dan_latf".to_owned()]).len(), 1);
     assert_eq!(poorly_remarks(&[1], 1, &["grc".to_owned()]).len(), 1);
     assert_eq!(poorly_remarks(&[1], 1, &["eng".to_owned(), "deu".to_owned()]).len(), 2);
 

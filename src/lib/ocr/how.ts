@@ -104,6 +104,7 @@ const SCRIPTS: Record<Script, readonly string[]> = {
     'cym',
     'dan',
     'dan_frak',
+    'dan_latf',
     'deu',
     'deu_frak',
     'deu_latf',

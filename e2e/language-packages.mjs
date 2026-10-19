@@ -85,6 +85,10 @@ try {
     `return document.querySelector('[data-packages="ocr"] [data-offered-name="deu_latf"]')?.textContent.replace(/\\s+/g, ' ').trim() ?? null`,
   );
   check('the Fraktur model is offered, named for the type it reads', /Fraktur \(Gothic type\)/.test(fraktur ?? ''), fraktur);
+  const danishFraktur = await app.exec(
+    `return document.querySelector('[data-packages="ocr"] [data-offered-name="dan_latf"]')?.textContent.replace(/\\s+/g, ' ').trim() ?? null`,
+  );
+  check('and the one for Danish and Norwegian, by its own name', /Fraktur, Danish and Norwegian \(Gothic type\)/.test(danishFraktur ?? ''), danishFraktur);
   await press(app, '[data-packages="ocr"] [data-offered-name="nor"]', 'Import');
   await app.waitFor('[data-ocr-languages] [data-language="nor"][data-source="imported"]', 30000);
   check('the Norwegian of Tesseract is imported', true);

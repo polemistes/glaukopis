@@ -11,6 +11,8 @@
 #                                         nohup and wait for it to end
 #   make-model.sh finish RUN              the traineddata of a run's best
 #                                         checkpoint, under models/RUN/
+#   make-model.sh choose RUN              copies that traineddata to where
+#                                         make-language-packages.py takes it
 #
 # Everything is written under packaging/build/fraktur/ (not in git).
 set -euo pipefail
@@ -94,9 +96,15 @@ finish() {
     echo "$MODELS/$run/$NAME.traineddata"
 }
 
+choose() {
+    cp "$MODELS/$1/$NAME.traineddata" "$BUILD/$NAME.traineddata"
+    echo "$BUILD/$NAME.traineddata"
+}
+
 case "${1:-}" in
     prepare) prepare ;;
     train) train "$2" "$3" "${4:-}" "${5:-}" ;;
     finish) finish "$2" ;;
-    *) sed -n '2,16p' "$0"; exit 1 ;;
+    choose) choose "$2" ;;
+    *) sed -n '2,18p' "$0"; exit 1 ;;
 esac

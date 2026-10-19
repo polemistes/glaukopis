@@ -95,25 +95,28 @@ pub fn stretches_of(pages: &[usize]) -> String {
 const GOTHIC_ONCE: [&str; 15] =
     ["deu", "nor", "dan", "swe", "fin", "isl", "est", "lav", "lit", "ces", "slk", "pol", "hun", "slv", "nld"];
 
-/// Whether the Fraktur model is worth naming to one who read with
+/// Whether a Fraktur model is worth naming to one who read with
 /// `languages`: one of them was often set in Gothic type, and no model of
-/// Gothic type is among them already.
+/// Gothic type is among them already (Tesseract's `deu_latf`, Glaukopis's
+/// own `dan_latf` that knows æ, ø and å, the script's, or the old ones).
 fn fraktur_might_help(languages: &[String]) -> bool {
-    let fraktur = |l: &str| l == "frk" || l == "deu_latf" || l == "script/Fraktur" || l.ends_with("_frak");
+    let fraktur = |l: &str| l == "frk" || l.ends_with("_latf") || l == "script/Fraktur" || l.ends_with("_frak");
     !languages.iter().any(|l| fraktur(l)) && languages.iter().any(|l| GOTHIC_ONCE.contains(&l.as_str()))
 }
 
 /// What is said of the pages that were read poorly, where any were: which
 /// they were, and, where half or more of those read were, and the languages
 /// were of books once set in Gothic type, that such books are read with the
-/// Fraktur model.
+/// Fraktur model: the one for Danish and Norwegian where either was read,
+/// since it knows æ, ø and å; Tesseract's otherwise.
 fn poorly_remarks(poorly: &[usize], judged: usize, languages: &[String]) -> Vec<String> {
     if poorly.is_empty() {
         return Vec::new();
     }
     let mut said = vec![tr!("ocr-remark-poorly", count = poorly.len(), pages = stretches_of(poorly))];
     if poorly.len() * 2 >= judged && fraktur_might_help(languages) {
-        said.push(tr!("ocr-remark-fraktur"));
+        let nordic = languages.iter().any(|l| l == "nor" || l == "dan");
+        said.push(if nordic { tr!("ocr-remark-fraktur-dan") } else { tr!("ocr-remark-fraktur") });
     }
     said
 }
