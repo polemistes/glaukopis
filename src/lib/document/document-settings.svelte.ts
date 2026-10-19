@@ -8,10 +8,9 @@
 import type { Project } from '$lib/project/model/project.svelte';
 
 /** The parts of the window, as they stand down its left. */
-export type DocumentSection = 'template' | 'details' | 'parts' | 'look' | 'language' | 'checklist';
+export type DocumentSection = 'details' | 'parts' | 'look' | 'language' | 'checklist';
 
 export const DOCUMENT_SECTIONS: readonly DocumentSection[] = [
-  'template',
   'details',
   'parts',
   'look',
@@ -24,7 +23,7 @@ export interface DocumentSettingsRequest {
   project: Project;
   /** The element whose document is set. */
   at: string;
-  /** The part of the window to open at; the template where nothing is said. */
+  /** The part of the window to open at; the details where nothing is said. */
   section?: DocumentSection;
 }
 

@@ -3,7 +3,8 @@
   place that lasts while the project is open: what is asked from the menu of
   an element (a copy compared, a kind, a kind of one's own, when it is, the
   kinds managed) is done in the project of the pane that has the focus; the
-  document settings in the project they were asked for; and the template
+  document settings and the chooser of what a document is in the project
+  they were asked for; and the template
   editor, of which a template saved anew is copied afresh into the project
   of the view where that carries it.
 -->
@@ -11,6 +12,8 @@
   import type { Template } from '$lib/api/templates';
   import DocumentSettingsWindow from '$lib/document/DocumentSettingsWindow.svelte';
   import { documentSettingsUi } from '$lib/document/document-settings.svelte';
+  import TemplateChooser from '$lib/document/TemplateChooser.svelte';
+  import { templateChooserUi } from '$lib/document/chooser.svelte';
   import TemplateEditor from '$lib/document/TemplateEditor.svelte';
   import { templateEditorUi } from '$lib/document/template-editor.svelte';
   import { ownKindsUi } from '$lib/editor/own-kinds.svelte';
@@ -98,6 +101,17 @@
       section={asked.section}
       {ongo}
       onclose={() => documentSettingsUi.close()}
+    />
+  {/key}
+{/if}
+
+{#if templateChooserUi.request}
+  {@const asked = templateChooserUi.request}
+  {#key asked}
+    <TemplateChooser
+      project={asked.project}
+      at={asked.at}
+      onclose={() => templateChooserUi.close()}
     />
   {/key}
 {/if}

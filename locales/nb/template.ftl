@@ -51,6 +51,7 @@ template-editor = Mal
 template-name = Navnet på malen
 # Navnet en egen mal først får, laget av navnet på malen den lages av.
 template-name-changed = { $name }, endret
+template-name-own = { $name }, min egen
 # Navnet en ny mal først får.
 template-new-name = Ny mal
 template-sections = Delene av malen

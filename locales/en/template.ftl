@@ -52,6 +52,8 @@ template-editor = Template
 template-name = Name of the template
 # The name a template of one's own is first given, made from that of the template it is made from.
 template-name-changed = { $name }, changed
+# A template of the writer's own made from another, before it is named: by the other's name.
+template-name-own = { $name }, my own
 # The name a new template is first given.
 template-new-name = New template
 template-sections = Parts of the template

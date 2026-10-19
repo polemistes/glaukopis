@@ -31,7 +31,7 @@
     type OwnKind,
   } from '$lib/api/documents';
   import type { Template } from '$lib/api/templates';
-  import { documentSettingsUi } from '$lib/document/document-settings.svelte';
+  import { templateChooserUi } from '$lib/document/chooser.svelte';
   import { CATALOGUE, GROUPS, specOf } from '$lib/editor/kinds';
   import { languages, t } from '$lib/i18n';
   import { documents, templateFor, templateName } from '$lib/preview/documents.svelte';
@@ -1216,7 +1216,7 @@
           type="button"
           class="link"
           title={t('look-template-hint')}
-          onclick={() => documentSettingsUi.open({ project, at, section: 'template' })}
+          onclick={() => templateChooserUi.open({ project, at })}
           >{templateName(project, choice.template)}</button
         >
         <span class="arrow" aria-hidden="true">→</span>
@@ -1255,9 +1255,7 @@
 
       <div class="row">
         <span class="what">{t('look-template')}<small>{t('look-template-hint')}</small></span>
-        <Button
-          size="sm"
-          onclick={() => documentSettingsUi.open({ project, at, section: 'template' })}
+        <Button size="sm" onclick={() => templateChooserUi.open({ project, at })}
           >{templateName(project, choice.template)}</Button
         >
       </div>

@@ -6,6 +6,9 @@
 preview = Preview
 # Small, over the names of the template, the layout and the reference style in use, which open the document settings.
 preview-made-by = Template, layout, references
+# The button over the pages that names what the document is and opens the chooser of what you are writing.
+preview-what-title = What you are writing: choose…
+preview-what-label = What this document is: { $name }. Choose what you are writing
 # The last among the reference styles, which opens the search for more.
 preview-style-more = More styles…
 # Shows in the text the element whose place in the pages is looked at.

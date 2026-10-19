@@ -33,6 +33,7 @@ keys-projects-pane = Prosjektlisten til venstre
 keys-up = Opp til elementet over dette
 keys-preview = Forhåndsvisning og eksport
 keys-document-settings = Dokumentinnstillinger
+keys-what-document = Hva skriver du …
 keys-side-look = Utseende
 keys-look-type = Endre skriften …
 keys-side-references = Referanser

@@ -584,6 +584,62 @@ export class App {
     await this.clickText('.menu [role="menuitem"]', item);
   }
 
+  // ---- what you are writing: the chooser over the preview ----
+
+  /** What the button over the preview names the document as. */
+  async whatIs() {
+    return this.exec(`return document.querySelector('.preview header .what .name')?.textContent.trim() ?? ''`);
+  }
+
+  /** Opens the chooser of what you are writing from the button over the preview, where it is not open. */
+  async openChooser() {
+    if (!(await this.exists('dialog[open] .chooser'))) {
+      await this.click('.preview header .what');
+      await this.waitFor('dialog[open] .chooser .templates', 5000);
+      await sleep(200);
+    }
+  }
+
+  /** The entry of the chooser named so, as a script finds it in the page: an expression. */
+  chooserEntry(name) {
+    return `Array.from(document.querySelectorAll('dialog[open] .chooser .template')).find((e) => e.querySelector('.name')?.textContent.trim() === ${JSON.stringify(name)})`;
+  }
+
+  /**
+   * Chooses what the document is, by the name the chooser gives it, from the
+   * button over the preview (the second step is opened where it is in
+   * there), waits until the button names it, and closes the chooser unless
+   * told not to. Says whether the chooser offered it.
+   */
+  async chooseWhat(name, { close = true } = {}) {
+    await this.openChooser();
+    const found = await this.exec(
+      `const e = ${this.chooserEntry(name)};
+       if (!e) return false;
+       const step = e.closest('details');
+       if (step && !step.open) step.open = true;
+       e.scrollIntoView({ block: 'center' });
+       return true;`,
+    );
+    if (!found) return false;
+    await sleep(150);
+    await this.click(await this.exec(`return ${this.chooserEntry(name)}.querySelector('.choose')`));
+    await this.waitUntil(
+      `return document.querySelector('.preview header .what .name')?.textContent.trim() === ${JSON.stringify(name)}`,
+      8000,
+      'the button over the preview to name what the document is',
+    );
+    if (close) await this.closeChooser();
+    return true;
+  }
+
+  /** Closes the chooser by its button. */
+  async closeChooser() {
+    await this.clickText('dialog[open] footer button', 'Close');
+    await this.waitGone('dialog[open] .chooser', 5000);
+    await sleep(150);
+  }
+
   // ---- the document settings of an element (ADR 0038) ----
 
   /** Opens the document settings of the element in view by Ctrl+Shift+D, at a part of the window named as it names it. */

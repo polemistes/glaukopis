@@ -82,7 +82,7 @@
         original = JSON.stringify(loaded);
         template = loaded;
         name = fresh
-          ? t('template-new-name')
+          ? t('template-name-own', { name: loaded.name })
           : loaded.group === 'own'
             ? loaded.name
             : t('template-name-changed', { name: loaded.name });

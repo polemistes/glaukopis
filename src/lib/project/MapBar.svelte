@@ -11,6 +11,7 @@
    * Where the two panes show two projects, the project's name stands first,
    * in full, with its badge.
    */
+  import BookOpenText from '@lucide/svelte/icons/book-open-text';
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import CornerDownRight from '@lucide/svelte/icons/corner-down-right';
@@ -28,6 +29,7 @@
   import { router } from '$lib/state/router.svelte';
   import { countFound } from '$lib/found/gather';
   import { documentSettingsUi } from '$lib/document/document-settings.svelte';
+  import { templateChooserUi } from '$lib/document/chooser.svelte';
   import { t } from '$lib/i18n';
   import { keysFor } from '$lib/shell/keys.svelte';
   import { openMenu, type MenuItem } from '$lib/ui/menu.svelte';
@@ -142,6 +144,11 @@
     const found = countFound(project, at);
     const items: MenuItem[] = [
       { label: t('common-rename'), icon: Pencil, shortcut: 'F2', action: () => void rename(at) },
+      {
+        label: t('chooser-menu'),
+        icon: BookOpenText,
+        action: () => templateChooserUi.open({ project, at }),
+      },
       {
         label: t('document-window-menu'),
         icon: FileText,

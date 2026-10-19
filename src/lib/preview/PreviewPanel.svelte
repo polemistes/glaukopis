@@ -1,6 +1,8 @@
 <script lang="ts">
   import { untrack } from 'svelte';
+  import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import PackageX from '@lucide/svelte/icons/package-x';
+  import Palette from '@lucide/svelte/icons/palette';
   import ScanEye from '@lucide/svelte/icons/scan-eye';
   import Share from '@lucide/svelte/icons/share';
   import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
@@ -20,7 +22,7 @@
   } from '$lib/api/documents';
   import type { Template } from '$lib/api/templates';
   import { documentSettingsUi } from '$lib/document/document-settings.svelte';
-  import { layoutName, styleName } from '$lib/look/choosing.svelte';
+  import { templateChooserUi } from '$lib/document/chooser.svelte';
   import { lookUi } from '$lib/look/look.svelte';
   import { documents } from './documents.svelte';
   import { t } from '$lib/i18n';
@@ -451,12 +453,8 @@
     void documentPreviewStop(projectId).catch(() => {});
   });
 
-  /** What the document is made by, named: its template, its layout and its reference style. */
-  const inUse = $derived([
-    templateName(project, choice.template),
-    layoutName(choice.format),
-    styleName(choice.style),
-  ]);
+  /** What the document is, by the name of its template: all the header says of how it is made. */
+  const what = $derived(templateName(project, choice.template));
 
   /** The most words the template allows; nothing where it says none. */
   const wordsMost = $derived(template?.requirements.words ?? null);
@@ -470,17 +468,23 @@
 
 <aside class="preview" aria-label={t('preview')}>
   <header>
-    <!-- The template, the layout and the style in use; the look of the document opens from them. -->
+    <!-- What the document is; what you are writing is chosen from it. -->
     <button
       type="button"
-      class="in-use"
-      aria-label={t('look-open')}
-      title={t('look-open')}
-      onclick={() => lookUi.open()}
+      class="what"
+      data-template={choice.template}
+      aria-label={t('preview-what-label', { name: what })}
+      title={t('preview-what-title')}
+      onclick={() => templateChooserUi.open({ project, at })}
     >
-      <span class="small">{t('preview-made-by')}</span>
-      <span class="names truncate">{inUse.join(' · ')}</span>
+      <span class="name truncate">{what}</span>
+      <ChevronDown size={13} />
     </button>
+    <span class="grow"></span>
+    <Button size="sm" variant="ghost" data-look onclick={() => lookUi.open()}>
+      {#snippet icon()}<Palette size={13} />{/snippet}
+      {t('look-title')}
+    </Button>
     <IconButton label={t('preview-go-to-text')} disabled={!places.length} onclick={goToText}>
       <TextCursorInput size={15} />
     </IconButton>
@@ -678,47 +682,47 @@
   }
   header {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     gap: 4px;
     flex: none;
     padding: 8px 8px 8px 14px;
     border-bottom: 1px solid var(--line);
     background: var(--paper);
   }
-  /* What the document is made by, as a line that opens the settings. */
-  .in-use {
-    flex: 1;
+  /* What the document is, as a button that opens the chooser of what you are writing. */
+  .what {
+    flex: 0 1 auto;
     min-width: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1px;
-    padding: 2px 6px 2px 0;
-    border: none;
-    border-bottom: 1px solid transparent;
-    background: transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: var(--control-h);
+    padding: 0 8px 0 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    background: var(--paper);
     color: var(--ink);
     font: inherit;
+    font-weight: 500;
     text-align: left;
     cursor: pointer;
   }
-  .in-use:hover,
-  .in-use:focus-visible {
-    border-bottom-color: var(--accent);
+  .what:hover {
+    border-color: var(--line-strong);
+    background: var(--paper-hover);
+  }
+  .what:focus-visible {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--focus-ring);
     outline: none;
   }
-  .in-use .small {
-    font-size: 10.5px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--ink-4);
+  .what :global(svg) {
+    flex: none;
+    color: var(--ink-3);
   }
-  .in-use .names {
-    max-width: 100%;
-    height: 22px;
-    line-height: 22px;
-    font-weight: 500;
+  .grow {
+    flex: 1;
+    min-width: 4px;
   }
   /* The pages are a region of their own: what is written in the text
      beside them changes nothing in them, and they are not laid out and

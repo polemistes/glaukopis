@@ -1,23 +1,22 @@
 <script lang="ts">
   /**
    * The settings of an element's document (ADR 0038), one window per
-   * element: its template, the details that stand on its first page and in
-   * the metadata of its files, its parts, its layout and reference style,
-   * its language, and the checklist of what the template requires. What
-   * the element does not set it takes from the elements over it (ADR
-   * 0037): that is shown, and left for it to set its own.
+   * element: the details that stand on its first page and in the metadata
+   * of its files, its parts, where its look is set, its language, and the
+   * checklist of what its template requires. What the document is, its
+   * template, is chosen in the chooser of what you are writing. What the
+   * element does not set it takes from the elements over it (ADR 0037):
+   * that is shown, and left for it to set its own.
    *
-   * The template, the layout, the style and the language are written as
-   * they are chosen, each a step of undo of its own, as a part is made; the
-   * details are written together when the window is saved.
+   * The language is written as it is chosen, a step of undo of its own, as
+   * a part is made; the details are written together when the window is
+   * saved.
    */
   import { untrack } from 'svelte';
   import ArrowRight from '@lucide/svelte/icons/arrow-right';
-  import ExternalLink from '@lucide/svelte/icons/external-link';
   import Plus from '@lucide/svelte/icons/plus';
-  import Search from '@lucide/svelte/icons/search';
   import X from '@lucide/svelte/icons/x';
-  import { openPath, type DocumentFormat } from '$lib/api/documents';
+  import type { DocumentFormat } from '$lib/api/documents';
   import type { Template } from '$lib/api/templates';
   import { languageName, newTextLanguage, t, TEXT_LANGUAGES } from '$lib/i18n';
   import { layoutName, styleName } from '$lib/look/choosing.svelte';
@@ -27,19 +26,12 @@
   import { PROJECT, type DocumentSettings, type Person } from '$lib/project/model/types';
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
-  import { notifyError } from '$lib/ui/toast.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
   import { DOCUMENT_SECTIONS, type DocumentSection } from './document-settings.svelte';
   import { checklist, type Remark } from './checklist';
-  import { documents, templateFor, templateName } from '$lib/preview/documents.svelte';
+  import { documents, templateFor } from '$lib/preview/documents.svelte';
   import { partOf, type PartSpec as PartKind } from '$lib/project/parts';
-  import { templateEditorUi } from './template-editor.svelte';
-  import {
-    confidenceWords,
-    partGroupWords,
-    templateGroupWords,
-    TEMPLATE_GROUPS,
-  } from './templates';
+  import { partGroupWords } from './templates';
 
   interface Props {
     project: Project;
@@ -54,7 +46,7 @@
 
   let { project, at, section: openAt, ongo, onclose }: Props = $props();
 
-  let section = $state<DocumentSection>(untrack(() => openAt ?? 'template'));
+  let section = $state<DocumentSection>(untrack(() => openAt ?? 'details'));
   const node = $derived(project.node(at));
   /** What the element says of its own. */
   const own = $derived(node?.document ?? {});
@@ -110,11 +102,6 @@
     if (!who || who === at) return null;
     return project.node(who)?.title || t('project-untitled');
   }
-  /** The nearest element over this one that sets a setting itself, whatever this one says; nothing where none does. */
-  function over(key: keyof DocumentSettings): string | null {
-    const way = project.pathTo(at).filter((id) => id !== at);
-    return [...way].reverse().find((id) => project.node(id)?.document[key] !== undefined) ?? null;
-  }
   const nameOf = (id: string) => project.node(id)?.title || t('project-untitled');
 
   /** Writes one setting as its own step of undo. */
@@ -122,93 +109,6 @@
     project.checkpoint();
     project.setDocument(at, patch);
     project.checkpoint();
-  }
-
-  // ---- the template ----
-
-  let query = $state('');
-  const templateFrom = $derived(own.template ? null : from('template'));
-  /** A template the chooser lists: as the application lists it, or the project's copy that the application lacks. */
-  interface Listed {
-    id: string;
-    name: string;
-    description: string;
-    ofProject?: boolean;
-  }
-  /**
-   * The templates the project carries a copy of that the application
-   * lacks: brought by a shared project or a file from a computer that has
-   * them. They stand among the writer's own.
-   */
-  const ofProject = $derived<Listed[]>(
-    project.templates
-      .filter((tp) => !documents.templateSummary(tp.id))
-      .map((tp) => ({ id: tp.id, name: tp.name, description: tp.description, ofProject: true })),
-  );
-  const templateGroups = $derived.by(() => {
-    const q = query.trim().toLocaleLowerCase();
-    const fits = (s: { name: string; description: string }) =>
-      !q || `${s.name}\n${s.description}`.toLocaleLowerCase().includes(q);
-    return TEMPLATE_GROUPS.map((group) => ({
-      group,
-      label: templateGroupWords(group),
-      templates: [
-        ...documents.templates.filter((s) => s.group === group && fits(s)),
-        ...(group === 'own' ? ofProject.filter(fits) : []),
-      ] as Listed[],
-    })).filter((g) => g.templates.length);
-  });
-  /** The usual layout and style, from the settings, by name. */
-  const usualLayout = $derived(layoutName(documents.choice({}).format));
-  const usualStyle = $derived(styleName(documents.choice({}).style));
-  /** What the template brings: its layout, and its style or the layout's. */
-  const broughtLayout = $derived(
-    template?.layout
-      ? layoutName(template.layout)
-      : t('document-window-usual', { name: usualLayout }),
-  );
-  const broughtStyle = $derived(
-    template?.style
-      ? styleName(template.style)
-      : format?.style
-        ? styleName(format.style)
-        : t('document-window-usual', { name: usualStyle }),
-  );
-
-  /**
-   * Chooses a template for the element. One of the writer's own is copied
-   * into the project, so that a shared project and a file carry it; one
-   * that came with the application is on every computer already.
-   */
-  function setTemplate(id: string) {
-    if (id === choice.template && own.template) return;
-    write({ template: id });
-    keep(id);
-  }
-
-  function keep(id: string) {
-    if (!documents.templateSummary(id)?.own) return;
-    documents
-      .templateOf(id)
-      .then((tp) => project.keepTemplate($state.snapshot(tp) as Template))
-      // Chosen but not kept: the writer is told, since a shared project and a
-      // file of it would fall back to the usual template without a word.
-      .catch((error) => notifyError(t('template-keep-failed'), error));
-  }
-
-  function editTemplate(fresh: boolean) {
-    const id = choice.template;
-    templateEditorUi.open({
-      id,
-      fresh,
-      // Where the application lacks it, the editor begins from the project's copy.
-      copy: documents.templateSummary(id) ? undefined : project.templateCopy(id),
-      onsaved: (saved) => {
-        documents.forgetTemplate(saved);
-        write({ template: saved });
-        keep(saved);
-      },
-    });
   }
 
   // ---- the details ----
@@ -372,100 +272,7 @@
     </nav>
 
     <div class="form settings">
-      {#if section === 'template'}
-        <h3>{t('document-window-section-template')}</h3>
-        <p class="hint top">{t('document-window-template-hint')}</p>
-        {#if templateFrom}
-          <p class="from">
-            {t('documents-inherited-from', { name: templateFrom })} · {templateName(
-              project,
-              choice.template,
-            )}
-          </p>
-        {/if}
-        {#if own.template}
-          {@const setter = over('template')}
-          <div class="actions">
-            <Button size="sm" onclick={() => write({ template: undefined })}>
-              {setter
-                ? t('document-window-template-again', { name: nameOf(setter) })
-                : t('document-window-template-usual-again')}
-            </Button>
-          </div>
-        {/if}
-        <div class="search">
-          <Search size={14} />
-          <input
-            bind:value={query}
-            placeholder={t('document-window-template-search-placeholder')}
-            aria-label={t('document-window-template-search')}
-            spellcheck="false"
-          />
-        </div>
-        <div class="templates" role="radiogroup" aria-label={t('document-window-section-template')}>
-          {#each templateGroups as group (group.group)}
-            <h4>{group.label}</h4>
-            {#each group.templates as s (s.id)}
-              {@const chosen = s.id === choice.template}
-              <div class="template" class:chosen>
-                <button
-                  type="button"
-                  class="choose"
-                  role="radio"
-                  aria-checked={chosen}
-                  onclick={() => setTemplate(s.id)}
-                >
-                  <span class="name">{s.name}</span>
-                  {#if s.description}<span class="description">{s.description}</span>{/if}
-                  {#if s.ofProject}
-                    <span class="description">{t('document-window-template-of-project')}</span>
-                  {/if}
-                </button>
-                {#if chosen && template && template.id === s.id}
-                  <div class="about">
-                    {#if template.source?.name}
-                      {@const source = template.source}
-                      <p class="selectable">
-                        <span class="overline">{t('format-source')}</span>
-                        {source.name}
-                        {#if source.url}
-                          <button
-                            type="button"
-                            class="link"
-                            onclick={() =>
-                              openPath(source.url).catch((e) =>
-                                notifyError(t('common-link-open-failed'), e),
-                              )}
-                          >
-                            {source.url}
-                            <ExternalLink size={11} />
-                          </button>
-                        {/if}
-                      </p>
-                      <p class="read">
-                        {#if source.checked}{t('format-source-read', { date: source.checked })}{/if}
-                        {confidenceWords(source.confidence)}
-                      </p>
-                    {/if}
-                    <p>{t('document-window-template-layout', { layout: broughtLayout })}</p>
-                    <p>{t('document-window-template-style', { style: broughtStyle })}</p>
-                    <div class="actions">
-                      <Button size="sm" onclick={() => editTemplate(false)}
-                        >{t('document-window-template-change')}</Button
-                      >
-                      <Button size="sm" variant="ghost" onclick={() => editTemplate(true)}
-                        >{t('document-window-template-new')}</Button
-                      >
-                    </div>
-                  </div>
-                {/if}
-              </div>
-            {/each}
-          {:else}
-            <p class="hint">{t('document-window-template-none-found')}</p>
-          {/each}
-        </div>
-      {:else if section === 'details'}
+      {#if section === 'details'}
         <h3>{t('document-window-section-details')}</h3>
         <p class="hint top">{t('document-window-details-hint')}</p>
         <div class="details">
@@ -780,88 +587,6 @@
     margin: 0 0 10px;
     font-size: var(--text-sm);
     color: var(--ink-3);
-  }
-  .actions {
-    display: flex;
-    gap: 8px;
-    margin: 10px 0 14px;
-  }
-
-  /* The template: a search, and the templates in their groups. */
-  .search {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    height: 32px;
-    padding: 0 10px;
-    border: 1px solid var(--line-strong);
-    border-radius: var(--radius-s);
-    color: var(--ink-3);
-  }
-  .search:focus-within {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--focus-ring);
-  }
-  .settings .search input {
-    height: auto;
-    padding: 0;
-    border: none;
-    background: transparent;
-    box-shadow: none;
-  }
-  .templates {
-    margin-top: 6px;
-  }
-  .template {
-    border-radius: var(--radius-m);
-  }
-  .template.chosen {
-    background: var(--accent-soft);
-  }
-  .choose {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    width: 100%;
-    padding: 7px 10px;
-    border: none;
-    border-radius: var(--radius-m);
-    background: transparent;
-    text-align: left;
-    cursor: pointer;
-  }
-  .choose:hover {
-    background: var(--paper-hover);
-  }
-  .chosen .choose {
-    color: var(--accent-strong);
-  }
-  .choose .name {
-    font-weight: 500;
-  }
-  .choose .description {
-    font-size: var(--text-sm);
-    color: var(--ink-3);
-    line-height: 1.4;
-  }
-  .about {
-    padding: 2px 10px 10px;
-    font-size: var(--text-sm);
-    color: var(--ink-2);
-    line-height: 1.5;
-  }
-  .about p {
-    margin: 0 0 2px;
-  }
-  .about .overline {
-    display: block;
-    margin-top: 6px;
-  }
-  .about .read {
-    color: var(--ink-3);
-  }
-  .about .actions {
-    margin: 8px 0 0;
   }
   .link {
     display: inline-flex;

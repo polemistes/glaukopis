@@ -1,9 +1,13 @@
-// Templates (ADR 0038): the document settings of an element, opened by its
-// key; a template chosen from its groups, found by a search, and named over
-// the preview; the parts it gives a place to, made from the window as
-// elements of a kind of the catalogue; the kind menu that offers them; the
-// checklist; a document made of it; the template editor, which saves a
-// template of the writer's own; and the usual template in the settings.
+// What you are writing (ADR 0038, as the chooser of 2026-10-19 offers it):
+// the button over the preview names what the document is, the plain
+// document until something else is chosen, and opens the chooser; the
+// plain document stands first and alone, the kinds of text follow in their
+// groups, and the journals, publishers and style guides are a second step,
+// narrowed to what is made for the kind of text in use and found by the
+// search whatever is chosen. Then the parts the template gives a place to,
+// made as elements of a kind of the catalogue; the kind menu that offers
+// them; the checklist; a document made of it; a template of the writer's
+// own made from the one in use; and the usual template in the settings.
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
@@ -41,79 +45,103 @@ try {
   await sleep(200);
 
   await app.keys(['Control', 'p']);
-  await app.waitFor('.preview .in-use', 15000);
+  await app.waitFor('.preview header .what', 15000);
   await app.waitFor('.preview .page', 20000);
-  /** The template, the layout and the style in use, as the bar over the preview names them. */
-  const inUse = () => app.exec(`return document.querySelector('.preview .in-use .names')?.textContent.trim() ?? ''`);
-  check('the bar over the preview names the usual template first', /^Plain document · /.test(await inUse()), await inUse());
+  const header = async () => (await app.text('.preview header')).replace(/\s+/g, ' ');
+  check(
+    'the button over the preview names the plain document, and nothing else of how it is made',
+    (await app.whatIs()) === 'Plain document' && !/Chicago|Manuscript/.test(await header()),
+    await header(),
+  );
 
-  // --- The window, by its key, at the element in view ---
-  await app.openDocumentSettings();
+  // --- The chooser, from the button over the preview ---
+  await app.openChooser();
+  const top = (await app.text('dialog[open] header')).replace(/\s+/g, ' ');
   check(
-    'Ctrl+Shift+D opens the document settings of the element in view, at its template',
-    (await app.text('dialog[open] header')).includes('Wrath and the hero') &&
-      (await app.exists('dialog[open] .window .templates')),
-    (await app.text('dialog[open] header')).replace(/\s+/g, ' '),
+    'the button opens the chooser of what you are writing, for the element in view',
+    top.includes('What are you writing?') && top.includes('Wrath and the hero'),
+    top,
   );
+  const first = await app.exec(
+    `const t = document.querySelector('dialog[open] .chooser .templates .template');
+     return t ? { name: t.querySelector('.name').textContent.trim(), chosen: t.classList.contains('chosen'), alone: !!t.closest('.alone') } : null;`,
+  );
+  check('the plain document stands first, alone, and chosen', first?.name === 'Plain document' && first.chosen && first.alone, JSON.stringify(first));
   const groups = await app.exec(
-    `return Array.from(document.querySelectorAll('dialog[open] .templates h4')).map((h) => h.textContent.trim())`,
+    `return Array.from(document.querySelectorAll('dialog[open] .chooser .templates > h4')).map((h) => h.textContent.trim())`,
   );
   check(
-    'the templates are offered in groups',
-    ['Plain', 'Articles and papers', 'Books and theses', 'Fiction', 'Journals', 'Publishers', 'Style guides'].every((g) =>
-      groups.includes(g),
-    ),
+    'the kinds of text follow in their groups, with no group of plain documents',
+    JSON.stringify(groups) ===
+      JSON.stringify(['Articles and papers', 'Books and theses', 'Fiction', 'Poetry', 'Stage and screen', 'Other kinds of text']),
     groups.join(' | '),
+  );
+  const step = await app.exec(
+    `const d = document.querySelector('dialog[open] .chooser details[data-step]');
+     return d ? { open: d.open, groups: Array.from(d.querySelectorAll('h4')).map((h) => h.textContent.trim()) } : null;`,
+  );
+  check(
+    'journals, publishers and style guides are a second step, closed',
+    !!step && !step.open && ['Journals', 'Publishers', 'Style guides'].every((g) => step.groups.includes(g)),
+    JSON.stringify(step),
   );
   await app.screenshot('templates-1-chooser');
 
   const names = () =>
     app.exec(
-      `return Array.from(document.querySelectorAll('dialog[open] .templates [role="radio"] .name')).map((n) => n.textContent.trim())`,
+      `return Array.from(document.querySelectorAll('dialog[open] .chooser [role="radio"] .name')).map((n) => n.textContent.trim())`,
     );
-  await app.type('dialog[open] input[aria-label="Search the templates"]', 'Classical Quarterly');
+  const search = 'dialog[open] .chooser input[aria-label="Search what can be written"]';
+  const stepOpen = () => app.exec(`return !!document.querySelector('dialog[open] .chooser details[data-step]')?.open`);
+  const clear = () =>
+    app.exec(
+      `const i = document.querySelector(arguments[0]); i.value = ''; i.dispatchEvent(new Event('input', { bubbles: true }));`,
+      search,
+    );
+  await app.type(search, 'Classical Quarterly');
   await sleep(250);
   const found = await names();
   check(
-    'a search finds a journal by its name',
-    found.includes('The Classical Quarterly') && found.length <= 3,
+    'a search finds a journal by its name, and opens the second step',
+    found.includes('The Classical Quarterly') && found.length <= 3 && (await stepOpen()),
     found.join(' | '),
   );
   await app.screenshot('templates-2-search');
-  await app.exec(
-    `const i = document.querySelector('dialog[open] input[aria-label="Search the templates"]');
-     i.value = '';
-     i.dispatchEvent(new Event('input', { bubbles: true }));`,
-  );
+  await clear();
   await sleep(200);
   check('emptied, the search shows them all again', (await names()).length > 40, `${(await names()).length}`);
 
-  await app.exec(
-    `const b = Array.from(document.querySelectorAll('dialog[open] .templates [role="radio"]'))
-       .find((r) => r.querySelector('.name').textContent.trim() === 'Journal article');
-     b.scrollIntoView({ block: 'center' });`,
+  await app.chooseWhat('Journal article', { close: false });
+  check('chosen, the journal article is named over the preview', (await app.whatIs()) === 'Journal article', await app.whatIs());
+  await app.waitFor('dialog[open] .chooser .template.chosen [data-brings]', 5000).catch(() => {});
+  const brings = await app.exec(
+    `return document.querySelector('dialog[open] .chooser .template.chosen [data-brings]')?.textContent.trim() ?? ''`,
   );
-  await app.click(
-    await app.exec(
-      `return Array.from(document.querySelectorAll('dialog[open] .templates [role="radio"]'))
-         .find((r) => r.querySelector('.name').textContent.trim() === 'Journal article')`,
-    ),
+  check('under it, what it brings, in the words of pages', /^Pages as /.test(brings) && !/template|layout/i.test(brings), brings);
+  // The second step, narrowed to what is made for an article.
+  await app.exec(`document.querySelector('dialog[open] .chooser details[data-step]').open = true;`);
+  await sleep(200);
+  const narrowed = await app.exec(
+    `const d = document.querySelector('dialog[open] .chooser details[data-step]');
+     return { hint: d.querySelector('.hint')?.textContent.trim() ?? '', names: Array.from(d.querySelectorAll('.name')).map((n) => n.textContent.trim()) };`,
   );
-  await app.waitUntil(
-    `return document.querySelector('dialog[open] .templates [role="radio"][aria-checked="true"] .name')?.textContent.trim() === 'Journal article'`,
-    4000,
-    'the template to be chosen',
+  check(
+    'the second step offers what is made for an article: the journals, not the publishers of books',
+    narrowed.names.includes('The Classical Quarterly') &&
+      !narrowed.names.includes('Yale University Press (books)') &&
+      /Journal article/.test(narrowed.hint),
+    `${narrowed.hint} | ${narrowed.names.length} offered`,
   );
-  await app.waitUntil(
-    `return /^Journal article · /.test(document.querySelector('.preview .in-use .names')?.textContent.trim() ?? '')`,
-    8000,
-    'the bar to name the template',
-  );
-  check('chosen, the template is named over the preview', /^Journal article · /.test(await inUse()), await inUse());
+  await app.type(search, 'Yale');
+  await sleep(250);
+  check('the search finds the publishers of books all the same', (await names()).includes('Yale University Press (books)'), (await names()).join(' | '));
+  await clear();
+  await sleep(200);
   await app.screenshot('templates-3-chosen');
+  await app.closeChooser();
 
   // --- The parts it gives a place to ---
-  await app.documentSection('Parts');
+  await app.openDocumentSettings('Parts');
   const parts = await app.exec(
     `return Array.from(document.querySelectorAll('dialog[open] .part')).map((p) => ({
        name: p.querySelector('.part-head strong').textContent.trim(),
@@ -293,12 +321,11 @@ try {
     check('with the abstract, printed once, before the text', xml.split('wrath of Achilles as a word').length === 2 && xml.indexOf('wrath of Achilles as a word') < xml.indexOf('more than anger'));
   }
 
-  // --- The template editor makes a template of one's own ---
-  await app.openDocumentSettings();
-  await app.waitFor('dialog[open] .template.chosen .about', 5000);
-  await app.clickText('dialog[open] .template.chosen .about button', 'Change this template…');
+  // --- A template of one's own, made from the one in use ---
+  await app.openChooser();
+  await app.clickText('dialog[open] footer button', 'Make a template of my own from this…');
   await app.waitFor('dialog[open] .editor nav', 8000);
-  await app.waitUntil(`return document.querySelector('dialog[open] input.name')?.value === 'Journal article, changed'`, 5000, 'the editor to be read');
+  await app.waitUntil(`return document.querySelector('dialog[open] input.name')?.value === 'Journal article, my own'`, 5000, 'the editor to be read');
   await app.screenshot('templates-10-editor');
   await app.clickText('dialog[open] footer button', 'Save as my own');
   await app.waitUntil(`return document.querySelectorAll('dialog[open]').length === 1`, 8000, 'the editor to go');
@@ -308,33 +335,35 @@ try {
   const listed = await app.exec(
     `const out = [];
      let group = '';
-     for (const e of document.querySelectorAll('dialog[open] .templates h4, dialog[open] .templates .template')) {
+     for (const e of document.querySelectorAll('dialog[open] .chooser .templates h4, dialog[open] .chooser .templates .template')) {
        if (e.tagName === 'H4') group = e.textContent.trim();
        else out.push({ group, name: e.querySelector('.name').textContent.trim(), chosen: e.classList.contains('chosen') });
      }
      return out;`,
   );
-  const mine = listed.find((t) => t.name === 'Journal article, changed');
+  const mine = listed.find((t) => t.name === 'Journal article, my own');
   check(
     'it is in the chooser under "Your own", and chosen',
     !!mine && mine.group === 'Your own' && mine.chosen,
     JSON.stringify(mine ?? listed.slice(0, 3)),
   );
   await app.screenshot('templates-11-own');
-  await app.closeDocumentSettings();
-  await app.waitUntil(
-    `return /^Journal article, changed · /.test(document.querySelector('.preview .in-use .names')?.textContent.trim() ?? '')`,
-    8000,
-    'the bar to name the template',
-  ).catch(() => {});
-  check('and named over the preview', /^Journal article, changed · /.test(await inUse()), await inUse());
+  await app.closeChooser();
+  await app
+    .waitUntil(
+      `return document.querySelector('.preview header .what .name')?.textContent.trim() === 'Journal article, my own'`,
+      8000,
+      'the button to name the template',
+    )
+    .catch(() => {});
+  check('and named over the preview', (await app.whatIs()) === 'Journal article, my own', await app.whatIs());
 
   // --- The settings offer the usual template ---
   await app.keys(['Control', ',']);
   await app.waitForText('dialog[open] header h2', 'Settings', 5000);
   await sleep(300);
   const usual = await app.exec(
-    `const label = Array.from(document.querySelectorAll('dialog[open] label')).find((l) => l.textContent.trim() === 'Template');
+    `const label = Array.from(document.querySelectorAll('dialog[open] label')).find((l) => l.textContent.trim() === 'What new documents are');
      const s = label && document.getElementById(label.htmlFor);
      if (!s) return null;
      s.scrollIntoView({ block: 'center' });

@@ -36,6 +36,7 @@ keys-projects-pane = The list of projects at the left
 keys-up = Up to the element over this one
 keys-preview = Preview and export
 keys-document-settings = Document settings
+keys-what-document = What are you writing…
 keys-side-look = Look
 keys-look-type = Change the font…
 keys-side-references = References

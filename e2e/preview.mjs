@@ -189,23 +189,24 @@ try {
   check('the preview follows what is written', /written while the preview is open/.test(typ));
 
   // --- Another template, which brings its layout and its reference style ---
-  /** The template, the layout and the style in use, as the bar over the preview names them. */
-  const inUse = () => app.exec(`return document.querySelector('.preview .in-use .names')?.textContent.trim() ?? ''`);
   check(
-    'the bar over the preview names the template, the layout and the style in use',
-    (await inUse()).split(' · ').length === 3,
-    await inUse(),
+    'the button over the preview names what the document is, and nothing of its layout or style',
+    (await app.whatIs()) === 'Plain document' && !/·/.test(await app.text('.preview header')),
+    (await app.text('.preview header')).replace(/\s+/g, ' '),
   );
-  await app.openDocumentSettings();
-  await app.type('dialog[open] input[aria-label="Search the templates"]', 'APA 7');
+  await app.openChooser();
+  await app.type('dialog[open] .chooser input[aria-label="Search what can be written"]', 'APA 7');
   await sleep(200);
-  await app.clickText('dialog[open] .templates [role="radio"]', 'APA 7 (professional paper)');
+  await app.chooseWhat('APA 7 (professional paper)', { close: false });
+  await app.waitFor('dialog[open] .chooser .template.chosen [data-brings]', 5000).catch(() => {});
+  const brings = await app.exec(`return document.querySelector('dialog[open] .chooser .template.chosen [data-brings]')?.textContent.trim() ?? ''`);
+  await app.closeChooser();
   await sleep(4500);
   typ = source();
   check(
     'choosing a template takes the layout and the reference style that go with it',
-    /^APA 7 \(professional paper\) · APA 7 \(professional paper\) · APA Style 7th/.test(await inUse()),
-    await inUse(),
+    (await app.whatIs()) === 'APA 7 (professional paper)' && /APA 7 \(professional paper\)/.test(brings) && /APA Style 7th/.test(brings),
+    `${await app.whatIs()} | ${brings}`,
   );
   check(
     'the preview is in the layout chosen',
@@ -215,8 +216,7 @@ try {
   await app.screenshot('preview-2-apa');
 
   // --- The layouts are in groups, and a novel is a book: chosen in the look of the document ---
-  await app.closeDocumentSettings();
-  await app.click('.preview button.in-use');
+  await app.click('.preview header [data-look]');
   await app.openLook();
   const groups = await app.exec(
     `return Array.from(${app.lookRow('Layout')}.querySelectorAll('optgroup')).map((g) => g.label)`,
@@ -239,7 +239,12 @@ try {
   // The layout of the template again.
   await app.lookChoose('Layout', '');
   await sleep(4500);
-  check('left to the template, the layout is the template’s again', /^APA 7 \(professional paper\) · APA 7 \(professional paper\) · /.test(await inUse()), await inUse());
+  typ = source();
+  check(
+    'left to the template, the layout is the template’s again',
+    (await app.lookChosen('Layout')) === '' && /us-letter/.test(typ) && !/a5/.test(typ),
+    typ.match(/paper: "[^"]*"/)?.[0],
+  );
 
   // --- The particulars of the document ---
   await app.openDocumentSettings('Details');
@@ -311,7 +316,7 @@ try {
   await app.click('header button[aria-label="Preview and export"]');
   await sleep(300);
   await app.click('header button[aria-label="Preview and export"]');
-  await app.waitFor('.preview .in-use', 8000);
+  await app.waitFor('.preview header .what', 8000);
   await sleep(500);
   await app.openLook();
   await app.lookChoose('Layout', own);
