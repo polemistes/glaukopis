@@ -40,15 +40,16 @@
     scriptsAlike,
   } from './how';
   import HowDisclosure from './HowDisclosure.svelte';
+  import { ocrLanguageName } from './languages';
   import LanguagePicker from './LanguagePicker.svelte';
   import { reader } from './reader.svelte';
   import TextPart from './TextPart.svelte';
   import TextPreview from './TextPreview.svelte';
   import PageStrip from './PageStrip.svelte';
+  import { firstPlan } from './plan';
   import Stretches from './Stretches.svelte';
   import {
     askedOf,
-    beginStretch,
     firstStretch,
     removeStretch,
     stretchesAtOutline,
@@ -208,24 +209,19 @@
     how = { ...how, layout: stretch.layout };
   }
 
-  /** A stretch begun at a page, with the languages and layout as they stand. */
-  function beginAt(page: number) {
-    const begun = beginStretch(listed, page, { languages: chosen, layout: how.layout });
-    editStretch(begun.index, begun.list);
-  }
-
   function removeAt(index: number) {
     const list = removeStretch(listed, index);
     editStretch(current === index ? index - 1 : current > index ? current - 1 : current, list);
   }
 
-  /** Where each stretch begins, marked in the strip with the languages it is read with. */
-  const marks = $derived(
-    new Map(
-      listed.length > 1
-        ? listed.map((stretch) => [stretch.from, stretch.languages.join('+') || 'eng'] as const)
-        : [],
-    ),
+  /**
+   * What the strip shows of each page, until the workbench keeps a plan of
+   * its own: all one way, as the choice of text says, read as chosen.
+   */
+  const stripPlan = $derived(
+    looked
+      ? firstPlan(looked.verdicts, { ...how, languages: chosen }, text === 'anew' ? 'read' : 'pdf')
+      : [],
   );
 
   /** A page of the strip chosen: it is the page tried, and its stretch is the one edited. */
@@ -384,10 +380,14 @@
             {path}
             {stored}
             pages={looked.pages}
-            {marks}
-            selected={tryPage}
-            onselect={choosePage}
-            onbegin={beginAt}
+            plan={stripPlan}
+            verdicts={looked.verdicts}
+            outline={looked.outline}
+            selection={[]}
+            inView={tryPage}
+            onview={choosePage}
+            onselect={() => {}}
+            nameOf={(code) => ocrLanguageName(code)}
           />
         </div>
       {/if}
