@@ -23,7 +23,7 @@ TRAIN=$BUILD/train
 MODELS=$BUILD/models
 NAME=dan_latf
 START=deu_latf
-SETS="dan deu swe"
+SETS="dan german"
 JOBS=$(nproc)
 
 prepare() {
@@ -39,7 +39,19 @@ prepare() {
     # word lists (the start model's are German).
     combine_lang_model --input_unicharset "$TRAIN/unicharset" --script_dir "$BUILD/clones" \
         --output_dir "$MODELS" --lang "$NAME"
-    # One lstmf beside every line image.
+    # A WordStr box beside every line image, from its text and size, as
+    # tesstrain makes it; then an lstmf beside it.
+    find $(for s in $SETS; do echo "$LINES/$s"; done) -name '*.png' -print0 | sort -z \
+        | xargs -0 python3 -I -c '
+import sys
+from PIL import Image
+for f in sys.argv[1:]:
+    b = f[:-4]
+    w, h = Image.open(f).size
+    text = open(b + ".gt.txt", encoding="utf-8").read().strip()
+    with open(b + ".box", "w", encoding="utf-8") as out:
+        out.write(f"WordStr 0 0 {w} {h} 0 #{text}\n\t 0 0 {w} {h} 0\n")
+'
     find $(for s in $SETS; do echo "$LINES/$s"; done) -name '*.png' -print0 \
         | xargs -0 -P "$JOBS" -I{} sh -c 'f="{}"; b="${f%.png}"; [ -s "$b.lstmf" ] || tesseract "$f" "$b" --psm 7 lstm.train >/dev/null 2>&1 || echo "failed: $f"'
     # Nine lines in ten to train on, one to evaluate on, shuffled the same every time.
