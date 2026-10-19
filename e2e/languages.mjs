@@ -183,9 +183,9 @@ try {
   await app.waitFor('.preview', 8000);
   await sleep(1500);
   await english('the preview');
-  // The document settings are a window; the preview's button with the sliders opens it.
-  await app.click('.preview header button[aria-label="Dokumentinnstillinger …"]');
-  await app.waitForText('dialog[open] h2', 'Dokumentinnstillinger', 5000);
+  // About this document is a window; the preview's button with the sliders opens it.
+  await app.click('.preview header button[aria-label="Om dette dokumentet …"]');
+  await app.waitForText('dialog[open] h2', 'Om dette dokumentet', 5000);
   await sleep(300);
   await english('the document settings');
   await app.screenshot('languages-4-details');
@@ -213,7 +213,7 @@ try {
   const openLanguages = async () => {
     await app.openThisMap();
     await app.clickText('.menu [role="menuitem"]', 'Språk …');
-    await app.waitForText('dialog[open] h2', 'Dokumentinnstillinger', 5000);
+    await app.waitForText('dialog[open] h2', 'Om dette dokumentet', 5000);
     await app.waitFor('dialog select');
     await sleep(200);
   };
