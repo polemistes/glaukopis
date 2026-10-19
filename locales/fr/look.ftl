@@ -3,7 +3,6 @@
 ## is kept as the document's own changes over its layout.
 
 look-title = Aspect
-look-open = L’aspect de ce document : modèle, mise en page et citations
 look-between = Entre le texte et l’aspect du document
 look-whole = Ce qui fait l’aspect
 
@@ -16,7 +15,6 @@ look-changes = { $count ->
     [many] { $count } modifications
    *[other] { $count } modifications
   }
-look-no-changes = aucune modification
 # Under a setting the document sets otherwise than its layout.
 look-changed-here = Modifié ici
 # A change made on an element over this one, as a book over its chapters.

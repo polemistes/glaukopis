@@ -52,8 +52,6 @@ template-name = Navnet på malen
 # Navnet en egen mal først får, laget av navnet på malen den lages av.
 template-name-changed = { $name }, endret
 template-name-own = { $name }, min egen
-# Navnet en ny mal først får.
-template-new-name = Ny mal
 template-sections = Delene av malen
 template-bundled = Malene som følger med Glaukopis, forblir som de er. Endringene dine lagres som en egen mal.
 template-delete = Slett denne malen
@@ -134,3 +132,23 @@ template-outputs-hint = Filtypene dokumentet tilbys som når det eksporteres.
 template-output-document = Dokumentet
 template-output-cover = Omslaget
 template-output-cover-note = Et eget omslag lages i en senere utgave; det malen sier om det, beholdes som det er.
+
+## Navnene på teksttypene som følger med Glaukopis, slik velgeren av hva du skriver og knappen
+## over forhåndsvisningen gir dem; tidsskrifter, forlag og stilguider beholder sine egne.
+
+template-called-plain = Vanlig dokument
+template-called-paper = Oppgave
+template-called-article = Tidsskriftartikkel
+template-called-report = Rapport
+template-called-book = Fagbok
+template-called-thesis = Avhandling
+template-called-novel = Roman
+template-called-novel-manuscript = Romanmanus
+template-called-short-story = Novelle
+template-called-story-collection = Novellesamling
+template-called-poems = Dikt
+template-called-play = Skuespill
+template-called-screenplay = Filmmanus
+template-called-letter = Brev
+template-called-blog-post = Blogginnlegg
+template-called-news-article = Nyhetsartikkel

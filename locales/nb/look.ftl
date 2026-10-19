@@ -2,7 +2,6 @@
 ## forhåndsvisningen der alt som avgjør hvordan sidene ser ut, stilles inn.
 
 look-title = Utseende
-look-open = Utseendet til dette dokumentet: mal, oppsett og kildehenvisninger
 look-between = Mellom teksten og utseendet til dokumentet
 look-whole = Det som gir utseendet
 
@@ -15,7 +14,6 @@ look-changes = { $count ->
     [one] { $count } endring
    *[other] { $count } endringer
   }
-look-no-changes = ingen endringer
 look-changed-here = Endret her
 look-changed-in = Endret i «{ $name }»
 look-take-again = ta { $layout } sitt igjen

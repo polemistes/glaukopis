@@ -52,8 +52,6 @@ template-editor = Skabelon
 template-name = Skabelonens navn
 # The name a template of one's own is first given, made from that of the template it is made from.
 template-name-changed = { $name }, ændret
-# The name a new template is first given.
-template-new-name = Ny skabelon
 template-sections = Skabelonens dele
 template-bundled = De skabeloner, der følger med Glaukopis, bliver, som de er. Dine ændringer gemmes som din egen skabelon.
 template-delete = Slet denne skabelon

@@ -3,7 +3,6 @@
 ## is kept as the document's own changes over its layout.
 
 look-title = Udseende
-look-open = Dokumentets udseende: skabelon, opsætning og kildehenvisninger
 look-between = Mellem teksten og dokumentets udseende
 look-whole = Det, der giver udseendet
 
@@ -15,7 +14,6 @@ look-changes = { $count ->
     [one] { $count } ændring
    *[other] { $count } ændringer
   }
-look-no-changes = ingen ændringer
 # Under a setting the document sets otherwise than its layout.
 look-changed-here = Ændret her
 # A change made on an element over this one, as a book over its chapters.

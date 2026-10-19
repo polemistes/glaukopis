@@ -52,8 +52,6 @@ template-editor = Mall
 template-name = Mallens namn
 # The name a template of one's own is first given, made from that of the template it is made from.
 template-name-changed = { $name }, ändrad
-# The name a new template is first given.
-template-new-name = Ny mall
 template-sections = Mallens delar
 template-bundled = Mallarna som följer med Glaukopis förblir som de är. Dina ändringar sparas som en egen mall.
 template-delete = Radera den här mallen

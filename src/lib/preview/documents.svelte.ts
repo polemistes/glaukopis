@@ -18,7 +18,7 @@ import {
   type TemplateSummary,
 } from '$lib/api/templates';
 import { composed, type CompositionChanges } from '$lib/document/composition';
-import { t } from '$lib/i18n';
+import { has, t } from '$lib/i18n';
 import { laidOver } from '$lib/look/changes';
 import { buildDocument } from '$lib/project/model/document';
 import type { Project } from '$lib/project/model/project.svelte';
@@ -306,11 +306,23 @@ export function templateUsedCached(
 const madeUsed = new Map<string, { template: Template; used: Template }>();
 
 /**
- * The name of a template, for a document of a project: as the application
+ * The name of a template, for a document of a project: for one that comes
+ * with the application, in the words of the interface where they name it
+ * (`template-called-<id>`: the kinds of text, not the journals, publishers
+ * and style guides, whose names are their own); else as the application
  * lists it, else as the project's copy has it, else its id.
  */
 export function templateName(project: Project | null | undefined, id: string): string {
-  return documents.templateSummary(id)?.name || project?.templateCopy(id)?.name || id;
+  const summary = documents.templateSummary(id);
+  if (summary) return calledName(summary);
+  return project?.templateCopy(id)?.name || id;
+}
+
+/** The name of a template as listed: in the words of the interface where they name one that comes with the application, else its own. */
+export function calledName(summary: { id: string; name: string; own?: boolean }): string {
+  return !summary.own && has(`template-called-${summary.id}`)
+    ? t(`template-called-${summary.id}`)
+    : summary.name || summary.id;
 }
 
 /**

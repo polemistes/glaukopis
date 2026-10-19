@@ -28,6 +28,7 @@
   } from '$lib/api/documents';
   import { templatesList, type TemplateSummary } from '$lib/api/templates';
   import { templateGroupWords, TEMPLATE_GROUPS } from '$lib/document/templates';
+  import { calledName } from '$lib/preview/documents.svelte';
   import { languageName, languages, t, TEXT_LANGUAGES } from '$lib/i18n';
   import { apart, PLACE } from '$lib/util/words';
   import {
@@ -215,8 +216,8 @@
     TEMPLATE_GROUPS.flatMap((group) =>
       templates
         .filter((s) => s.group === group)
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .map((s) => ({ value: s.id, label: s.name, group: templateGroupWords(group) })),
+        .map((s) => ({ value: s.id, label: calledName(s), group: templateGroupWords(group) }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
     ),
   );
 

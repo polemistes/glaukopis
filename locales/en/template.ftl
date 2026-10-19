@@ -54,8 +54,6 @@ template-name = Name of the template
 template-name-changed = { $name }, changed
 # A template of the writer's own made from another, before it is named: by the other's name.
 template-name-own = { $name }, my own
-# The name a new template is first given.
-template-new-name = New template
 template-sections = Parts of the template
 template-bundled = Templates that come with Glaukopis stay as they are. Your changes are saved as a template of your own.
 template-delete = Delete this template
@@ -136,3 +134,23 @@ template-outputs-hint = The kinds of file the document is offered as when it is 
 template-output-document = The document
 template-output-cover = The cover
 template-output-cover-note = A cover of its own is made by a later version; what the template says of it is kept as it is.
+
+## The names of the kinds of text that come with Glaukopis, as the chooser of what you are writing
+## and the button over the preview give them; journals, publishers and style guides keep their own.
+
+template-called-plain = Plain document
+template-called-paper = Paper
+template-called-article = Journal article
+template-called-report = Report
+template-called-book = Academic book
+template-called-thesis = Thesis
+template-called-novel = Novel
+template-called-novel-manuscript = Novel manuscript
+template-called-short-story = Short story
+template-called-story-collection = Collection of stories
+template-called-poems = Poems
+template-called-play = Play
+template-called-screenplay = Screenplay
+template-called-letter = Letter
+template-called-blog-post = Blog post
+template-called-news-article = News article

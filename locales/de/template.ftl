@@ -52,8 +52,6 @@ template-editor = Vorlage
 template-name = Name der Vorlage
 # The name a template of one's own is first given, made from that of the template it is made from.
 template-name-changed = { $name }, geändert
-# The name a new template is first given.
-template-new-name = Neue Vorlage
 template-sections = Bereiche der Vorlage
 template-bundled = Die Vorlagen, die Glaukopis mitbringt, bleiben, wie sie sind. Ihre Änderungen werden als eigene Vorlage gespeichert.
 template-delete = Diese Vorlage löschen

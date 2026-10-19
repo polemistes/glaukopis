@@ -4,8 +4,6 @@
 ## The panel beside the map, and what is chosen over it.
 
 preview = Aperçu
-# Small, over the names of the template, the layout and the reference style in use, which open the document settings.
-preview-made-by = Modèle, mise en page, références
 # The last among the reference styles, which opens the search for more.
 preview-style-more = Plus de styles…
 # Shows in the text the element whose place in the pages is looked at.

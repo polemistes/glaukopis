@@ -4,8 +4,6 @@
 ## Panelet ved siden av kartet, og det som velges over det.
 
 preview = Forhåndsvisning
-# Med små bokstaver, over navnene på malen, oppsettet og referansestilen som brukes, som åpner dokumentinnstillingene.
-preview-made-by = Mal, oppsett, referanser
 preview-what-title = Hva du skriver: velg …
 preview-what-label = Hva dette dokumentet er: { $name }. Velg hva du skriver
 # Det siste blant referansestilene, som åpner søket etter flere.

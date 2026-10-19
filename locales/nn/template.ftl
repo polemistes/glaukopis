@@ -52,8 +52,6 @@ template-editor = Mal
 template-name = Namnet på malen
 # The name a template of one's own is first given, made from that of the template it is made from.
 template-name-changed = { $name }, endra
-# The name a new template is first given.
-template-new-name = Ny mal
 template-sections = Delane av malen
 template-bundled = Malane som følgjer med Glaukopis, blir verande som dei er. Endringane dine blir lagra som ein eigen mal.
 template-delete = Slett denne malen

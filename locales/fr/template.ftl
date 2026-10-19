@@ -52,8 +52,6 @@ template-editor = Modèle
 template-name = Nom du modèle
 # The name a template of one's own is first given, made from that of the template it is made from.
 template-name-changed = { $name }, modifié
-# The name a new template is first given.
-template-new-name = Nouveau modèle
 template-sections = Rubriques du modèle
 template-bundled = Les modèles fournis avec Glaukopis restent tels quels. Vos modifications sont enregistrées comme un modèle à vous.
 template-delete = Supprimer ce modèle

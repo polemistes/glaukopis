@@ -4,8 +4,6 @@
 ## The panel beside the map, and what is chosen over it.
 
 preview = Anteprima
-# Small, over the names of the template, the layout and the reference style in use, which open the document settings.
-preview-made-by = Modello, impaginazione, riferimenti
 # The last among the reference styles, which opens the search for more.
 preview-style-more = Altri stili…
 # Shows in the text the element whose place in the pages is looked at.
