@@ -43,6 +43,7 @@
   import { reader } from './reader.svelte';
   import TextPart from './TextPart.svelte';
   import TextPreview from './TextPreview.svelte';
+  import PageStrip from './PageStrip.svelte';
   import Stretches from './Stretches.svelte';
   import {
     askedOf,
@@ -222,6 +223,15 @@
     editStretch(current === index ? index - 1 : current > index ? current - 1 : current, list);
   }
 
+  /** Where each stretch begins, marked in the strip with the languages it is read with. */
+  const marks = $derived(
+    new Map(
+      listed.length > 1
+        ? listed.map((stretch) => [stretch.from, stretch.languages.join('+') || 'eng'] as const)
+        : [],
+    ),
+  );
+
   /** A page of the strip chosen: it is the page tried, and its stretch is the one edited. */
   function choosePage(page: number) {
     tryPage = page;
@@ -347,7 +357,15 @@
                 onremove={removeAt}
                 onoutline={beginAtOutline}
               />
-              <!-- PAGE STRIP -->
+              <PageStrip
+                path={file.path}
+                stored
+                pages={looked.pages}
+                {marks}
+                selected={tryPage}
+                onselect={choosePage}
+                onbegin={beginAt}
+              />
             </div>
           {/if}
         </div>

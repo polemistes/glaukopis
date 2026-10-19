@@ -227,7 +227,7 @@
           </div>
           <span class="number">{n}</span>
         </div>
-        {#if onbegin && selected === n}
+        {#if onbegin && selected === n && n > 1}
           <button type="button" class="begin" data-ocr-begin-stretch onclick={() => onbegin(n)}
             >{t('ocr-strip-begin')}</button
           >

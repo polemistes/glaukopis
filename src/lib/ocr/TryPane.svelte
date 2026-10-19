@@ -91,8 +91,12 @@
   const confidence = $derived(tried?.confidence == null ? null : Math.round(tried.confidence));
   /** Whether the blocks Tesseract found are drawn over the picture. */
   let showBlocks = $state(true);
-  /** The size of the numbers of the blocks, in the dots of the picture: about 12 points as it is shown. */
-  const figure = $derived(tried ? Math.max(tried.width, tried.height) / 45 : 0);
+  /**
+   * The size of the numbers of the blocks, in the dots of the picture: the
+   * picture is shown a few hundred pixels wide, so a twentieth of its width
+   * is a number of about twelve pixels.
+   */
+  const figure = $derived(tried ? tried.width / 20 : 0);
 </script>
 
 <div class="try" data-ocr-try-pane>

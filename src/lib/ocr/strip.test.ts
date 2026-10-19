@@ -240,6 +240,13 @@ describe('the strip of pages', () => {
     expect(target.querySelector('[data-ocr-begin-stretch]')).toBeNull();
   });
 
+  it('offers no stretch at the first page, where the whole begins', async () => {
+    ocr.ocrPages.mockImplementation(drawing());
+    const { target } = strip({ pages: 2, selected: 1, onbegin: vi.fn() });
+    await settled();
+    expect(target.querySelector('[data-ocr-begin-stretch]')).toBeNull();
+  });
+
   it('stops the batch it is drawing when it is left', async () => {
     ocr.ocrPages.mockImplementation(() => new Promise(() => {}));
     ocr.ocrStop.mockResolvedValue(undefined);
