@@ -81,6 +81,10 @@ try {
   await app.waitFor('[data-packages="ocr"]', 8000);
   await press(app, '[data-packages="ocr"]', 'Import OCR language files');
   await app.waitFor('[data-packages="ocr"] [data-offered-name="nor"]', 8000);
+  const fraktur = await app.exec(
+    `return document.querySelector('[data-packages="ocr"] [data-offered-name="deu_latf"]')?.textContent.replace(/\\s+/g, ' ').trim() ?? null`,
+  );
+  check('the Fraktur model is offered, named for the type it reads', /Fraktur \(Gothic type\)/.test(fraktur ?? ''), fraktur);
   await press(app, '[data-packages="ocr"] [data-offered-name="nor"]', 'Import');
   await app.waitFor('[data-ocr-languages] [data-language="nor"][data-source="imported"]', 30000);
   check('the Norwegian of Tesseract is imported', true);

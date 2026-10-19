@@ -1658,7 +1658,10 @@ not always better. The data of more languages is imported under *Settings* ›
 *Language* › *OCR*, by **Import OCR language files**, as the dictionaries of
 spelling are (see *Spelling*): from the server of Glaukopis, which offers
 the best data there is for English, Norwegian, Swedish, Danish, German,
-French, Italian, Ancient Greek and Latin, for now. The list of **OCR
+French, Italian, Ancient Greek and Latin, for now, and **Fraktur (Gothic
+type)**, which reads the Gothic type that many Norwegian, Danish, Swedish
+and German books were set in before about 1900, whatever their language:
+choose it first, or alone, for such a book. The list of **OCR
 languages** says of each whether it is the system's or imported, and **×**
 takes an imported one away. A language you have imported is read with
 before the computer's of the same name. **Default OCR settings**, below,
@@ -1729,13 +1732,60 @@ Reading is not faultless: letters that are faint, worn, or in a type or a
 script the data of the language does not know are misread. Check what is
 read against the page where it matters.
 
-**When a reading goes badly**, three things can be tried, under **How it is
-read** in the dialog, for that reading, or under Tesseract in *Settings*, for
-every reading: a higher **resolution** (400 or 600 dots to the inch in place
-of 300) where the print is small; the **layout** told, one column where
-columns are muddled together, one block of text for a single paragraph, or
-sparse text where words stand apart on the page; and **black and white**
-where the print is faint or uneven, so that what is pale is read as ink.
+**How well it went.** Tesseract says of every word it reads how sure it is,
+and Glaukopis keeps, for every page, how sure it was of the whole, out of
+100. A page under 80 was *read poorly*. When a reading is done, the window
+says which pages were read poorly, as stretches (*pages 3–42, 57*), and so
+does the notice when a PDF has been made searchable. Most often the
+language chosen is not that of the book, or its type is one the language's
+data does not know: a book in Gothic type read as Norwegian comes out as
+words that look right and are not (*ogfaa*, *famme* for *ogsaa*, *samme*).
+Where half of the pages or more were read poorly in a language once set in
+Gothic type, the window says that such books are read with the Fraktur
+model. The long *ſ* that model reads is written as *s*.
+
+Where the pages of a PDF are pictures of fewer than 150 dots to the inch, the
+window says so before anything is read: their letters are too few to be read
+well, whatever is chosen, and reading them anew will not better the text the
+PDF has. It does not propose reading them anew.
+
+**Trying a page.** Before the whole is read, a page can be tried. Beside the
+choices, under **Try a page** where the PDF has text of its own and the window
+shows that text too, give the page and press **Try**: it is read in a few
+seconds with the languages and the settings as they stand, and the picture
+Tesseract read is shown beside the text it read, with how sure it was. Change
+a language, choose the Fraktur model, tell the layout, and try again, until
+the page reads well; then read the whole. The page tried at first is the
+first that is to be read. Over the picture stand the **blocks of text**
+Tesseract found, numbered in the order it reads them: two columns in one
+block, or notes taken into the text, will be read in the wrong order, and
+another layout may part them. The blocks can be hidden.
+
+**Stretches.** A book that changes language or type part way, an English
+introduction before a Greek text, or a body in Gothic type with notes in
+roman, can be read in stretches, each with its languages and its layout.
+Under the choices stand all the pages, small, drawn as they are scrolled to.
+Choose a page, and **Begin a stretch here**: from that page to the next
+stretch, or to the end, it is read with the languages and the layout chosen
+now. The stretches stand as chips over the pages, each saying its pages and
+what it is read with; the one marked is what the languages and the layout
+you choose hold for, and choosing a page makes its stretch the one marked
+and the page the one tried. **×** on a chip takes a stretch away, and its
+pages are read as those before them. Where the PDF has an outline of its
+parts, a stretch can be begun at each of them at once, to be set part by
+part. The pages read poorly are named by their numbers in the file, as the
+strip numbers them.
+
+**When a reading goes badly** in other ways, three things can be tried,
+under **How it is read** in the dialog, for that reading, or under Tesseract
+in *Settings*, for every reading: a higher **resolution** (400 or 600 dots to
+the inch in place of 300) where the print is small; the **layout** told, one
+column where columns are muddled together, one block of text for a single
+paragraph, or sparse text where words stand apart on the page; and **black
+and white** where the print is faint or uneven, so that what is pale is read
+as ink. Measured on scans of many kinds, none of these bettered a page that
+was read with the right language and type; try a page before reading the
+whole with them.
 
 A PDF that is locked with a password cannot be made searchable, since what
 is added would have to be locked in the same way. Its text can still be

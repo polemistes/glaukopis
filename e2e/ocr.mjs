@@ -252,6 +252,62 @@ try {
     await app.exists('dialog [data-ocr-dpi] [role="radio"][aria-label="400"][aria-checked="true"]'),
   );
   await app.screenshot('ocr-1-asking');
+
+  // ---- a page tried before the whole is read ----
+  check(
+    'a page can be tried beside the choices, the first to be read',
+    (await app.exists('dialog [data-ocr-try-pane]')) &&
+      (await app.exec(`return document.querySelector('dialog [data-ocr-try-page]').value`)) === '1',
+  );
+  await app.click('dialog [data-ocr-try]');
+  const sure = await until(
+    'the page tried to be shown',
+    () =>
+      app.exec(
+        `const v = document.querySelector('dialog [data-ocr-tried-confidence]'); return v ? v.dataset.ocrTriedConfidence : null`,
+      ),
+    60000,
+  );
+  check('it is read, and said how sure the reading was', Number(sure) >= 80, sure);
+  const triedText = await app.text('dialog [data-ocr-tried-text]');
+  check('its text stands beside its picture', /wrath of Achilles/.test(triedText), triedText.slice(0, 80));
+  check(
+    'the picture Tesseract read is shown, with the blocks it found over it',
+    (await app.exec(
+      `const i = document.querySelector('dialog [data-ocr-tried-picture]'); return !!i && i.naturalWidth > 0`,
+    )) && Number(await app.exec(`return document.querySelector('dialog [data-ocr-tried-blocks]')?.dataset.ocrTriedBlocks ?? 0`)) >= 1,
+  );
+  check(
+    'a page read well is not said to be poor',
+    (await app.exec(`return document.querySelector('dialog [data-ocr-tried-confidence]').dataset.poorly`)) === 'false',
+  );
+  await app.screenshot('ocr-1b-tried');
+  await app.setTheme('dark');
+  await app.screenshot('ocr-1b-tried-dark');
+  await app.setTheme('light');
+
+  // ---- the pages, and a stretch begun at the second ----
+  await app.waitFor('dialog [data-strip-page="2"] img', 30000);
+  check('the pages are shown, small, under the choices', await app.exists('dialog [data-strip-page="1"] img'));
+  await app.click('dialog [data-strip-page="2"]');
+  await sleep(200);
+  check(
+    'a page chosen is the page tried',
+    (await app.exec(`return document.querySelector('dialog [data-ocr-try-page]').value`)) === '2',
+  );
+  await app.click('dialog [data-ocr-begin-stretch]');
+  await app.waitFor('dialog [data-ocr-stretch="2"]', 3000);
+  check(
+    'a stretch begun there stands as a chip, chosen, beside the whole',
+    (await app.exists('dialog [data-ocr-stretch="1"]')) &&
+      (await app.exec(`return document.querySelector('dialog [data-ocr-stretch="2"]').getAttribute('aria-selected')`)) ===
+        'true',
+  );
+  await app.screenshot('ocr-1c-stretch');
+  await app.click('dialog [data-ocr-stretch-remove="2"]');
+  await sleep(200);
+  check('taken away, its pages fall to the whole again', !(await app.exists('dialog [data-ocr-stretch="2"]')));
+
   await app.click('dialog [data-ocr-read]');
   await app.waitFor('dialog [data-fact="words"]', 60000);
   await sleep(300);
@@ -271,6 +327,7 @@ try {
     told.includes('2 pages read by Tesseract, none taken from the PDF\'s own text, none that could not be read.'),
     told.join(' ‖ '),
   );
+  check('and no page was read poorly', !told.some((r) => /read poorly/.test(r)), told.join(' ‖ '));
   await app.screenshot('ocr-2-read');
   await app.clickText('dialog footer button', 'Bring it in');
   await app.waitGone('dialog[open]', 15000);
@@ -637,6 +694,45 @@ try {
   await app.click('.maps .up');
   await inView('Homer');
   await sleep(300);
+
+  // ---- an English scan read as Ancient Greek: its pages are said to be read poorly ----
+  if (/^grc$/m.test(langs)) {
+    await dropOnTabs(scan);
+    await app.waitFor('dialog [data-ocr="asking"]', 15000);
+    await app.exec(
+      `const s = document.querySelector('dialog [data-languages] select'); s.value = 'grc'; s.dispatchEvent(new Event('change', { bubbles: true }));`,
+    );
+    await sleep(200);
+    await app.click('dialog [data-languages] .chip[data-language="eng"] button');
+    await sleep(200);
+    check('read as Greek alone', JSON.stringify(await chips()) === '["grc"]', JSON.stringify(await chips()));
+    await app.click('dialog [data-ocr-try]');
+    const poor = await until(
+      'the page tried as Greek',
+      () => app.exec(`return document.querySelector('dialog [data-ocr-tried-confidence]')?.dataset.poorly ?? null`),
+      60000,
+    );
+    check('the page tried is said to be read poorly', poor === 'true', poor);
+    await app.screenshot('ocr-1d-tried-poorly');
+    await app.click('dialog [data-ocr-read]');
+    await app.waitFor('dialog [data-fact="words"]', 60000);
+    const saidPoorly = await remarks();
+    check(
+      'the reading names the pages read poorly',
+      saidPoorly.some((r) => /^2 pages were read poorly: 1–2\./.test(r)),
+      saidPoorly.join(' ‖ '),
+    );
+    check(
+      'and, Greek never having been set in Gothic type, does not name the Fraktur model',
+      !saidPoorly.some((r) => /Fraktur model, chosen first/.test(r)),
+    );
+    await app.screenshot('ocr-2e-read-poorly');
+    await app.clickText('dialog footer button', 'Cancel');
+    await app.waitGone('dialog[open]', 5000);
+    await sleep(300);
+  } else {
+    console.log('Tesseract has no Ancient Greek: a reading in the wrong language is not tried.');
+  }
 
   // ---- a reading stopped ----
   await dropOnTabs(long);
