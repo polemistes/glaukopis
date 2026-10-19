@@ -8,6 +8,12 @@ look-whole = What makes the look
 
 # Under the button at the top of Look that names what the document is.
 look-what-hint = What you are writing decides the parts, the pages and the citations; any of them is changed below.
+look-scope = These changes hold for
+# The whole document, by the name of its element.
+look-scope-document = The whole document: { $name }
+# Only one element under the document, by its name.
+look-scope-only = Only { $name }
+look-scope-hint = Changes here hold for { $name }, wherever it is printed. Page settings begin it on a new page.
 # The line under it, which goes down to the layout at the foot of Look; the count of changes follows it.
 look-layout-line = Layout: { $layout }
 look-layout-hint = How the pages look: the page, the type, the spacing, the headings, the looks of the kinds

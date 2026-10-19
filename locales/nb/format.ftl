@@ -345,6 +345,7 @@ format-number-roman = I, II, III
 format-number-roman-lower = i, ii, iii
 format-number-letters = A, B, C
 format-number-letters-lower = a, b, c
+format-page-restart = Begynner å telle sidene på nytt her
 format-margin-header = Topptekst
 format-margin-footer = Bunntekst
 format-margin-shown = Vises

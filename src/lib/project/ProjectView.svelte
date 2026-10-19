@@ -198,6 +198,18 @@
   const previewOf = $derived(projectOf(previewPane));
   const previewId = $derived(previewPane?.project ?? projectId);
 
+  /** The element the text is at, in the pane of the document the preview shows; nothing where no text is open on it. */
+  function previewCurrent(): string | null {
+    const i =
+      previewPane.mode === 'text'
+        ? previewIndex
+        : panes.findIndex(
+            (p) =>
+              p.project === previewPane.project && p.at === previewPane.at && p.mode === 'text',
+          );
+    return texts[i]?.currentElement() ?? null;
+  }
+
   /**
    * Shows an element of the document the preview shows, in the text: in the
    * text of the element the preview follows where it is shown; else the pane
@@ -1190,18 +1202,7 @@
               at={previewPane.at}
               onclose={() => (showPreview = false)}
               ongo={toTextOfPreview}
-              current={() => {
-                const i =
-                  previewPane.mode === 'text'
-                    ? previewIndex
-                    : panes.findIndex(
-                        (p) =>
-                          p.project === previewPane.project &&
-                          p.at === previewPane.at &&
-                          p.mode === 'text',
-                      );
-                return texts[i]?.currentElement() ?? null;
-              }}
+              current={previewCurrent}
             />
           {/key}
         </div>
@@ -1254,6 +1255,7 @@
                 onpreview={() => (showPreview = true)}
                 head={tabs}
                 onclose={closeSide}
+                current={previewCurrent}
               />
             {/key}
           {:else if side.kind === 'changes' && side.review}

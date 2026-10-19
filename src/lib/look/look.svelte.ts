@@ -41,6 +41,8 @@ export interface LookRequest {
   level?: number;
   /** A heading within a part to bring into view: `quotations`, `kinds`, `citations`, `bibliography`. */
   at?: string;
+  /** The element a chip was pressed in, whose look the changes may be set on alone (ADR 0059). */
+  element?: string;
 }
 
 class LookUi {

@@ -44,7 +44,7 @@
   import Popover from '$lib/ui/Popover.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError } from '$lib/ui/toast.svelte';
-  import { documentRequest, templateName, templateUsed } from './documents.svelte';
+  import { documentRequest, looksWithin, templateName, templateUsed } from './documents.svelte';
   import ExportDialog from './ExportDialog.svelte';
 
   interface Props {
@@ -355,9 +355,15 @@
         const f = await documents.formatFor(project, at);
         // The template as the document uses it: with what it turns on or off and requires otherwise.
         const tp = $state.snapshot(await templateUsed(project, at)) as Template;
-        let document = leanDocument(project, at, sent);
+        // The looks of the elements under it that have their own (ADR 0059).
+        const looks = await looksWithin(project, at);
+        const lean = () => ({
+          ...leanDocument(project, at, sent),
+          ...(looks.length ? { looks } : {}),
+        });
+        let document = lean();
         // With what has been changed under the same name: a style saved anew is made anew.
-        const from = `${documents.changed}\n${choice.style}\n${JSON.stringify(f)}\n${JSON.stringify(tp)}\n${documentMark(document)}`;
+        const from = `${documents.changed}\n${choice.style}\n${JSON.stringify(f)}\n${JSON.stringify(tp)}\n${JSON.stringify(looks)}\n${documentMark(document)}`;
         if (!must && from === shownFrom && status === 'shown') continue;
         status = count ? 'working' : 'waiting';
         format = f;
@@ -371,7 +377,7 @@
           if (!isBackendError(e) || e.kind !== 'lacking') throw e;
           // What was sent before is not kept: all of it is sent.
           sent = new Set();
-          document = leanDocument(project, at, sent);
+          document = lean();
           preview = await documentPreview({ ...asked, document }, near());
         }
         if (gone) return;
@@ -543,10 +549,19 @@
     }
   }
 
-  /** Opens Look at what a line is. */
+  /** The element a place on a page stands in: the last that begins before it (ADR 0059). */
+  function elementAt(page: number, y: number): string | undefined {
+    let found: string | undefined;
+    for (const p of places) if (p.page < page || (p.page === page && p.y <= y)) found = p.element;
+    return found;
+  }
+
+  /** Opens Look at what a line is, with the element it stands in. */
   function lookAt(what: string) {
+    const at = pointed;
     pointed = null;
-    lookUi.open(lookFor(what));
+    const element = at ? elementAt(at.page, (at.top / 100) * size.height) : undefined;
+    lookUi.open({ ...lookFor(what), ...(element ? { element } : {}) });
   }
 
   // The preview follows the text, a moment behind it: the longer the pages

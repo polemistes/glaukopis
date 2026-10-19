@@ -350,6 +350,7 @@ format-number-roman = I, II, III
 format-number-roman-lower = i, ii, iii
 format-number-letters = A, B, C
 format-number-letters-lower = a, b, c
+format-page-restart = Begins counting the pages anew here
 format-margin-header = Header
 format-margin-footer = Footer
 format-margin-shown = Shown

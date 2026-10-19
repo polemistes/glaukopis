@@ -407,6 +407,14 @@ export interface ExportDocument {
   references: ExportReference[];
   /** The kinds of paragraph and of words that are the writer's own, which the project carries. */
   kinds?: OwnKind[];
+  /** The looks of the elements under the one printed that have their own: what holds for each one's stretch (ADR 0059). */
+  looks?: ElementLook[];
+}
+
+/** The layout an element under the one printed uses, with its changes (ADR 0059). */
+export interface ElementLook {
+  element: string;
+  format: DocumentFormat;
 }
 
 export interface DocumentRequest {

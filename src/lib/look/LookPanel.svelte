@@ -85,22 +85,49 @@
     onclose: () => void;
     /** What stands at the head in place of the title: the tabs of the panel at the side. */
     head?: Snippet;
+    /** The element the text is at, where the text is open on this document. */
+    current?: () => string | null;
   }
 
-  let { project, at, passageKinds, previewing, onpreview, ongo, onclose, head }: Props = $props();
+  let { project, at, passageKinds, previewing, onpreview, ongo, onclose, head, current }: Props =
+    $props();
+
+  // ---- where the changes hold (ADR 0059) ----
+
+  /** The element under the document's that the changes are written on; nothing for the document's own. */
+  let scope = $state<string | null>(null);
+  /** Whether an element is under the document's, and not it. */
+  const within = (id: string | null | undefined): id is string =>
+    !!id && id !== at && project.tree(at).sequence.includes(id);
+  /** The element whose look the rows show and set: the one chosen in the line of where they hold, or the document's. */
+  const target = $derived(within(scope) ? scope : at);
+  /** The element the text is at, as it was when Look was last asked for or the line was opened. */
+  let here = $state<string | null>(null);
+  function lookHere() {
+    here = current?.() ?? null;
+  }
+  /** The elements the changes may be written on in place of the document's: where the chip pressed last stood, and where the text is. */
+  const candidates = $derived(
+    [...new Set([scope, lookUi.request.element, here])].filter((id) => within(id)) as string[],
+  );
+  /** Writes what waits to be written where it was meant for, then sets the changes on another element. */
+  function chooseScope(id: string | null) {
+    if (pending) write();
+    scope = within(id) ? id : null;
+  }
 
   // ---- what the document uses ----
 
-  const node = $derived(project.node(at));
+  const node = $derived(project.node(target));
   /** What the element says of its own. */
   const own = $derived<DocumentSettings>(node?.document ?? {});
   /** What is said of the element with what it inherits, and which element says each thing. */
-  const inherited = $derived(project.documentOf(at));
+  const inherited = $derived(project.documentOf(target));
   const choice = $derived(documents.choice(inherited.settings, project));
   /** The layout as it comes, before the changes. */
   const layout = $derived(documents.formatCached(choice.format));
   /** The changes of the document, with the element that makes each. */
-  const changes = $derived(project.lookOf(at));
+  const changes = $derived(project.lookOf(target));
   const changed = $derived(countOf(changes.changes));
   const nameOfLayout = $derived(layoutName(choice.format) || layout?.name || choice.format);
   const ownLayout = $derived(layout?.kind === 'own');
@@ -114,13 +141,13 @@
 
   /** The changes of the elements over this one: what its own are laid over. */
   function changesAbove(): LookChanges {
-    const way = project.pathTo(at);
+    const way = project.pathTo(target);
     return way.length > 1 ? project.lookOf(way[way.length - 2]).changes : {};
   }
 
   /** Whether the lines of the page are numbered, where the elements over this one say. */
   function lineNumbersAbove(): boolean | undefined {
-    const way = project.pathTo(at);
+    const way = project.pathTo(target);
     return way.length > 1
       ? project.documentOf(way[way.length - 2]).settings.lineNumbers
       : undefined;
@@ -185,7 +212,8 @@
   function write() {
     clearTimeout(pending);
     pending = undefined;
-    if (!effective || !layout || !project.node(at)) return;
+    const to = target;
+    if (!effective || !layout || !project.node(to)) return;
     const now = $state.snapshot(effective) as DocumentFormat;
     const base = laidOver($state.snapshot(layout) as DocumentFormat, changesAbove());
     const mine = changesBetween(base, now);
@@ -196,7 +224,7 @@
     if (lineNumbers !== own.lineNumbers) patch.lineNumbers = lineNumbers;
     if (Object.keys(patch).length) {
       project.checkpoint();
-      project.setDocument(at, patch);
+      project.setDocument(to, patch);
       project.checkpoint();
     }
     // What is written may say it otherwise than the rows: they take it.
@@ -210,7 +238,7 @@
   function setOwn(patch: Partial<DocumentSettings>) {
     if (pending) write();
     project.checkpoint();
-    project.setDocument(at, patch);
+    project.setDocument(target, patch);
     project.checkpoint();
   }
 
@@ -232,7 +260,7 @@
     const who = path === 'lineNumbers' ? inherited.from.get('lineNumbers') : changes.from.get(path);
     if (!who) return null;
     return {
-      words: who === at ? t('look-changed-here') : t('look-changed-in', { name: nameOf(who) }),
+      words: who === target ? t('look-changed-here') : t('look-changed-in', { name: nameOf(who) }),
       again: {
         label: t('look-take-again', { layout: nameOfLayout }),
         take: () => takeAgain(who, path),
@@ -264,7 +292,7 @@
   /** The element over this one that a setting is taken from, by name; nothing where it is this one's. */
   function fromAbove(key: keyof DocumentSettings): string | null {
     const who = inherited.from.get(key);
-    if (!who || who === at) return null;
+    if (!who || who === target) return null;
     return nameOf(who);
   }
   const usualLayout = $derived(layoutName(documents.choice({}).format));
@@ -297,7 +325,7 @@
    * the layout is set on: the highest that makes a change, or this one.
    */
   function makers(): { on: string; clear: string[] } {
-    const way = project.pathTo(at);
+    const way = project.pathTo(target);
     const first = way.findIndex((id) => countOf(project.node(id)?.document.look) > 0);
     const from = first < 0 ? way.length - 1 : first;
     return { on: way[from], clear: way.slice(from) };
@@ -353,7 +381,7 @@
       await formatsDelete(gone.id);
       documents.forgetFormat(gone.id);
       await documents.reload();
-      const who = inherited.from.get('format') ?? at;
+      const who = inherited.from.get('format') ?? target;
       // Back to the layout it was made from; one made from nothing gives the
       // element nothing of its own, so it takes the writer's usual again.
       setOwnAt(who, { format: gone.basedOn });
@@ -403,6 +431,9 @@
       if (asked.section || asked.kind || asked.level || asked.at) query = '';
       if (asked.kind) kindInView = asked.kind;
       aim = asked;
+      lookHere();
+      // Asked for from a chip on a line of an element under the document's: the changes hold for it.
+      if (asked.element) chooseScope(asked.element);
     });
   });
   $effect(() => {
@@ -920,6 +951,8 @@
       ['letters', t('format-number-letters')],
       ['letters-lower', t('format-number-letters-lower')],
     ]),
+    // Where the changes hold for an element under the document's: its pages may be counted anew.
+    toggle(t('format-page-restart'), 'page.restart', { when: () => target !== at }),
     { note: t('format-lengths-hint') },
   ]);
 
@@ -1686,6 +1719,27 @@
             count: changed,
           })}{/if}</button
       >
+      <!-- Where the changes hold: the whole document, or only an element under it (ADR 0059). -->
+      {#if candidates.length}
+        <label class="scope-line">
+          <span>{t('look-scope')}</span>
+          <select
+            class="scope"
+            data-scope={target === at ? '' : target}
+            value={target === at ? '' : target}
+            onfocus={lookHere}
+            onchange={(e) => chooseScope(e.currentTarget.value || null)}
+          >
+            <option value="">{t('look-scope-document', { name: nameOf(at) })}</option>
+            {#each candidates as id (id)}
+              <option value={id}>{t('look-scope-only', { name: nameOf(id) })}</option>
+            {/each}
+          </select>
+        </label>
+        {#if target !== at}
+          <p class="hint" data-scope-hint>{t('look-scope-hint', { name: nameOf(target) })}</p>
+        {/if}
+      {/if}
     </section>
 
     {#if !previewing}
@@ -2179,6 +2233,20 @@
   }
   .layout-line:hover {
     color: var(--accent-strong);
+  }
+  /* Where the changes hold: a line of its own under the layout. */
+  .scope-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    margin-top: 8px;
+    font-size: var(--text-sm);
+    color: var(--ink-2);
+  }
+  .scope-line select {
+    flex: 1 1 12em;
+    min-width: 0;
   }
   .link {
     padding: 0;

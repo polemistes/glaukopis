@@ -7,6 +7,7 @@ import {
   toolsInfo,
   type DocumentFormat,
   type DocumentRequest,
+  type ElementLook,
   type FormatSummary,
   type StyleSummary,
   type ToolsInfo,
@@ -19,7 +20,7 @@ import {
 } from '$lib/api/templates';
 import { composed, type CompositionChanges } from '$lib/document/composition';
 import { has, t } from '$lib/i18n';
-import { laidOver } from '$lib/look/changes';
+import { laidOver, pathsOf } from '$lib/look/changes';
 import { buildDocument } from '$lib/project/model/document';
 import type { Project } from '$lib/project/model/project.svelte';
 import { settings } from '$lib/state/settings.svelte';
@@ -331,6 +332,24 @@ export function calledName(summary: { id: string; name: string; own?: boolean })
  * pages of a format. The key is that of the project, by which the core
  * knows one making from another.
  */
+/**
+ * The looks of the elements under `at` that have changes, a layout or line
+ * numbers of their own (ADR 0059): what holds for each one's stretch of the
+ * document. Each is the layout as that element uses it, with the changes of
+ * the elements over it too.
+ */
+export async function looksWithin(project: Project, at: string): Promise<ElementLook[]> {
+  const out: ElementLook[] = [];
+  for (const id of project.tree(at).sequence) {
+    if (id === at) continue;
+    const own = project.nodes.get(id)?.document;
+    if (!own) continue;
+    if (!pathsOf(own.look).length && !own.format && own.lineNumbers === undefined) continue;
+    out.push({ element: id, format: await documents.formatFor(project, id) });
+  }
+  return out;
+}
+
 export async function documentRequest(
   project: Project,
   projectId: string,
@@ -342,8 +361,9 @@ export async function documentRequest(
   // The choice again, with the template read: it may bring the style or the format.
   const choice = documents.choice(settings, project);
   const format = await documents.formatFor(project, at);
+  const looks = await looksWithin(project, at);
   return {
-    document: buildDocument(project, at),
+    document: { ...buildDocument(project, at), ...(looks.length ? { looks } : {}) },
     style: choice.style,
     format,
     template,

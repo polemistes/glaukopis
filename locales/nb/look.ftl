@@ -6,6 +6,12 @@ look-between = Mellom teksten og utseendet til dokumentet
 look-whole = Det som gir utseendet
 
 look-what-hint = Det du skriver, avgjør delene, sidene og kildehenvisningene; alt sammen kan endres nedenfor.
+look-scope = Disse endringene gjelder for
+# Hele dokumentet, ved navnet på elementet.
+look-scope-document = Hele dokumentet: { $name }
+# Bare ett element under dokumentet, ved navnet.
+look-scope-only = Bare { $name }
+look-scope-hint = Endringer her gjelder for { $name }, uansett hvor det skrives ut. Sideinnstillinger får det til å begynne på en ny side.
 look-layout-line = Oppsett: { $layout }
 look-layout-hint = Hvordan sidene ser ut: siden, skriften, avstanden, overskriftene, hvordan slagene settes
 look-citations-hint = Hvordan kildehenvisningene og litteraturlisten skrives
