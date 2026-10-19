@@ -223,3 +223,49 @@ pub fn ocr_picture(
     let name = if picture.name.trim().is_empty() { hash.chars().take(8).collect() } else { picture.name.clone() };
     Ok(ocr::imported_picture(&name, &stem(&name), paragraphs))
 }
+
+/// A small picture of a page, for the strip of pages: drawn, or why it
+/// could not be.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PagePicture {
+    /// Counted from one.
+    pub number: usize,
+    /// The page in grey, as a data URL of a PNG, where it could be drawn.
+    pub picture: Option<String>,
+    /// Why it could not be drawn, where it could not.
+    pub failed: Option<String>,
+}
+
+impl From<(usize, Result<String, String>)> for PagePicture {
+    /// A page counted from nought, and its PNG in base64 or why it was not drawn.
+    fn from((index, drawn): (usize, Result<String, String>)) -> PagePicture {
+        match drawn {
+            Ok(png) => {
+                PagePicture { number: index + 1, picture: Some(format!("data:image/png;base64,{png}")), failed: None }
+            }
+            Err(why) => PagePicture { number: index + 1, picture: None, failed: Some(why) },
+        }
+    }
+}
+
+/// Small pictures of `count` pages of a PDF from `from` (counted from
+/// nought), as many as it has, each `width` dots wide, in grey: for the
+/// strip of pages. At most a hundred at a time. With `stored`, the path is
+/// that of a file of the library; with a ticket, it is stopped by `ocr_stop`.
+#[tauri::command(async)]
+pub fn ocr_pages(
+    state: State<'_, AppState>,
+    path: String,
+    stored: Option<bool>,
+    from: usize,
+    count: usize,
+    width: u32,
+    ticket: Option<String>,
+) -> CommandResult<Vec<PagePicture>> {
+    let path = if stored.unwrap_or(false) { state.library().attachment_path(&path)? } else { PathBuf::from(path) };
+    let drawing = Work::begin(ticket);
+    let pictures =
+        ocr::pages_pictures(&path, &state.tools(), &state.data.work(), from, count.min(100), width, &drawing.stop)?;
+    Ok(pictures.into_iter().map(PagePicture::from).collect())
+}
