@@ -1301,9 +1301,20 @@ pub fn preview_made(
     warnings.extend(set.warnings);
     let (count, pages) = pages_from(&set.document, wanted);
     let places = typeset::places(&set.document);
-    // The text stands between the margins the opening of the document sets on every page.
-    let margins = (request.format.page.margin_top.points(), request.format.page.margin_bottom.points());
-    let spots = typeset::spots(&set.document, margins);
+    // The text stands between the margins the opening of the document sets on
+    // every page; in them, the running head and the number of the page, as
+    // the layout puts them there (ADR 0056). Where both stand at the head, the
+    // head is named for the running head.
+    let f = &request.format;
+    let numbered_at = |top: bool| f.page_numbers.show && f.page_numbers.position.is_top() == top;
+    let heads = f.running_head.content != crate::formats::HeadContent::None;
+    let margins = typeset::Margins {
+        top: f.page.margin_top.points(),
+        bottom: f.page.margin_bottom.points(),
+        head: if heads { Some("running-head") } else { numbered_at(true).then_some("page-number") },
+        foot: numbered_at(false).then_some("page-number"),
+    };
+    let spots = typeset::spots(&set.document, &margins);
     tracing::debug!(pandoc = ?written, typst = ?(began.elapsed() - written), count, "the pages of the preview are made");
     let (width, height) = request.format.page.dimensions();
     Ok(Preview {
@@ -2479,6 +2490,20 @@ mod tests {
         assert_eq!(names("Before the first section."), [None]);
         assert_eq!(names("Of"), [None]);
         assert!(!p.spots.iter().any(|s| s.what.contains("foreign")), "{:?}", p.spots);
+        // The numbers of the pages, in the margin at the foot, as the layout puts them there; no running head.
+        assert!(
+            p.spots.iter().any(|s| s.page == 1 && s.what == "page-number" && s.bottom > p.height - 1.0),
+            "{:?}",
+            p.spots
+        );
+        assert!(!p.spots.iter().any(|s| s.what == "running-head"), "{:?}", p.spots);
+        // A running head, and the numbers at the head too: the head is the running head's.
+        r.format.running_head.content = crate::formats::HeadContent::Title;
+        r.format.page_numbers.position = crate::formats::Position::TopRight;
+        r.key = "spots-head".into();
+        let p = preview(&s.ctx(), &r).unwrap();
+        assert!(p.spots.iter().any(|s| s.page == 1 && s.what == "running-head" && s.top < 1.0), "{:?}", p.spots);
+        assert!(!p.spots.iter().any(|s| s.what == "page-number"), "{:?}", p.spots);
     }
 
     #[test]

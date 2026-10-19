@@ -384,7 +384,18 @@ fn tags_in<'a>(frame: &'a Frame, ts: Transform, out: &mut Vec<(f32, &'a Tag)>) {
 /// goes on to the next page is named on its first page only: what goes on
 /// stands among the notes at the foot of the next, which nothing tells
 /// apart from the text above them.
-pub fn spots(document: &PagedDocument, margins: (f32, f32)) -> Vec<Spot> {
+/// The margins of the pages, in points, and what the layout puts in them:
+/// at the head of every page and at its foot (`running-head`,
+/// `page-number`); nothing where it puts nothing there.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Margins {
+    pub top: f32,
+    pub bottom: f32,
+    pub head: Option<&'static str>,
+    pub foot: Option<&'static str>,
+}
+
+pub fn spots(document: &PagedDocument, margins: &Margins) -> Vec<Spot> {
     struct Open {
         location: Location,
         what: String,
@@ -396,7 +407,7 @@ pub fn spots(document: &PagedDocument, margins: (f32, f32)) -> Vec<Spot> {
     let text = |page: usize| {
         let p = &pages[page];
         let top = p.bleed.top.to_pt() as f32;
-        (top + margins.0, top + p.frame.height().to_pt() as f32 - margins.1)
+        (top + margins.top, top + p.frame.height().to_pt() as f32 - margins.bottom)
     };
     let mut out: Vec<Spot> = Vec::new();
     let mut close = |Open { what, page: from, top, .. }: Open, page: usize, y: f32| {
@@ -448,6 +459,20 @@ pub fn spots(document: &PagedDocument, margins: (f32, f32)) -> Vec<Spot> {
         let (_, foot) = text(last);
         while let Some(o) = open.pop() {
             close(o, last, foot);
+        }
+    }
+    // What the layout puts in the margins, above and below the text of every
+    // page: the running head and the number of the page (ADR 0056).
+    for (i, p) in pages.iter().enumerate() {
+        let top = p.bleed.top.to_pt() as f32;
+        let bottom = top + p.frame.height().to_pt() as f32;
+        let (head, foot) = text(i);
+        let page = i as u32 + 1;
+        if let Some(what) = margins.head.filter(|_| head > top) {
+            out.push(Spot { page, top, bottom: head, what: what.into() });
+        }
+        if let Some(what) = margins.foot.filter(|_| bottom > foot) {
+            out.push(Spot { page, top: foot, bottom, what: what.into() });
         }
     }
     out.sort_by(|a, b| a.page.cmp(&b.page).then(a.top.total_cmp(&b.top)));
@@ -568,7 +593,8 @@ mod tests {
         let set = set(tmp.path(), "document.typ").unwrap();
         let count = set.document.pages().len();
         let height = 80.0 * 72.0 / 25.4;
-        let found = spots(&set.document, (30.0, 30.0));
+        let margins = Margins { top: 30.0, bottom: 30.0, head: Some("running-head"), foot: Some("page-number") };
+        let found = spots(&set.document, &margins);
         for s in &found {
             assert!(s.page >= 1 && s.page as usize <= count, "{s:?}");
             assert!(s.top >= 0.0 && s.top < s.bottom && s.bottom <= height + 0.01, "{s:?}");
@@ -611,16 +637,17 @@ mod tests {
         assert_eq!(names("Nagy 1979."), [Some("bibliography")]);
         assert!(names("Bibliography").ends_with(&[Some("bibliography")]), "{:?}", names("Bibliography"));
         assert_eq!(names("A note."), [Some("note")]);
-        // A plain paragraph is in no spot, nor are words of a kind or a quotation within a line,
-        // nor the running head and the numbers of the pages.
+        // A plain paragraph is in no spot, nor are words of a kind or a quotation within a line.
         assert_eq!(names("Words before."), [None]);
         assert_eq!(names("Within a line"), [None]);
         assert_eq!(names("Words with a long"), [None]);
-        assert_eq!(names("Running head"), [None]);
-        for (page, run) in
-            runs.iter().filter(|(_, r)| r.baseline > height - 30.0 && r.text.trim().parse::<usize>().is_ok())
-        {
-            assert_eq!(named(*page, run.baseline), None, "the number of page {page}");
+        // The running head and the numbers of the pages, in the margins, are named as the layout puts them there.
+        assert_eq!(names("Running head"), [Some("running-head")]);
+        let numbers: Vec<_> =
+            runs.iter().filter(|(_, r)| r.baseline > height - 30.0 && r.text.trim().parse::<usize>().is_ok()).collect();
+        assert_eq!(numbers.len(), count, "{runs:?}");
+        for (page, run) in numbers {
+            assert_eq!(named(*page, run.baseline), Some("page-number"), "the number of page {page}");
         }
         assert_eq!(found.iter().filter(|s| s.what == "kind:quote").count(), 1, "{found:?}");
         assert!(!found.iter().any(|s| s.what.contains("foreign")), "{found:?}");
@@ -672,7 +699,7 @@ mod tests {
         std::fs::write(tmp.path().join("document.typ"), "#set page(width: 100mm, height: 80mm)\nWords.\n\nMore words.")
             .unwrap();
         let plain = super::set(tmp.path(), "document.typ").unwrap();
-        assert!(spots(&plain.document, (30.0, 30.0)).is_empty());
+        assert!(spots(&plain.document, &Margins { top: 30.0, bottom: 30.0, ..Default::default() }).is_empty());
     }
 
     #[test]
