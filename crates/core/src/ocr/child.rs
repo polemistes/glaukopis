@@ -173,8 +173,9 @@ pub enum Task {
     First { count: usize },
     /// The file made searchable: the fonts of `maps` given their letters,
     /// these pages drawn and read and what was read laid over them, the text
-    /// they had taken away first where `strip`, and the file written to `output`.
-    Searchable { pages: Vec<usize>, strip: bool, maps: Vec<searchable::FontMap>, output: PathBuf },
+    /// of those of them in `strip` taken away first (counted from nought),
+    /// and the file written to `output`.
+    Searchable { pages: Vec<usize>, strip: Vec<usize>, maps: Vec<searchable::FontMap>, output: PathBuf },
     /// One page, counted from nought, drawn and read, to be tried: its TSV,
     /// and the picture Tesseract read, made smaller to be shown.
     Try { page: usize },
@@ -386,19 +387,9 @@ fn work_here(job: &Job, told: &mut dyn FnMut(Progress), stop: &AtomicBool) -> st
             Ok(Done::Pages(read_pages(job, &reader, &drawing, &pages, size, told, stop)))
         }
         Task::Searchable { pages, strip, maps, output } => {
-            let made = searchable_here(
-                job,
-                reader.as_ref(),
-                pdftoppm.as_ref(),
-                bytes,
-                pages,
-                *strip,
-                maps,
-                output,
-                told,
-                stop,
-            )
-            .map_err(failure)?;
+            let made =
+                searchable_here(job, reader.as_ref(), pdftoppm.as_ref(), bytes, pages, strip, maps, output, told, stop)
+                    .map_err(failure)?;
             Ok(Done::Made(made))
         }
         Task::Try { page } => {
@@ -509,7 +500,7 @@ fn searchable_here(
     pdftoppm: Option<&Tool>,
     bytes: Vec<u8>,
     wanted: &[usize],
-    strip: bool,
+    strip: &[usize],
     maps: &[searchable::FontMap],
     output: &Path,
     told: &mut dyn FnMut(Progress),

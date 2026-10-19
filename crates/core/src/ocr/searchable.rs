@@ -13,7 +13,7 @@
 //! read back as whole, the file is written anew with the same changes.
 //!
 //! Where the text a page has is poor, as an old OCR's may be, it can be
-//! taken away as the new is laid over ([`lay_over`] with `strip`): the
+//! taken away as the new is laid over ([`lay_over`], the page in `strip`): the
 //! page's content is written anew without the text that is unseen, as
 //! scanners and OCR programs lay it, and without a text laid over it here
 //! before; what is seen stays, letters among it.
@@ -576,9 +576,10 @@ fn number(n: f32) -> String {
 const OF_THE_STREAM: [&[u8]; 8] = [b"DecodeParms", b"Filter", b"XRefStm", b"Type", b"W", b"Index", b"Length", b"Prev"];
 
 /// Lays the pages of text over the pages of `doc`, which was read from
-/// `bytes`, and gives the file that has them. With `strip`, the text each
-/// of those pages had is taken away first ([`stripped`]).
-pub fn lay_over(bytes: Vec<u8>, doc: Document, layers: &[Layer], strip: bool) -> Result<Vec<u8>> {
+/// `bytes`, and gives the file that has them. A page in `strip` (counted
+/// from nought) has the text it had taken away first ([`stripped`]); the
+/// others keep theirs.
+pub fn lay_over(bytes: Vec<u8>, doc: Document, layers: &[Layer], strip: &[usize]) -> Result<Vec<u8>> {
     let pages = doc.get_pages();
     let count = pages.len();
     let largest = doc.trailer.get(b"Size").and_then(Object::as_i64).unwrap_or(0).max(1) as u32 - 1;
@@ -613,7 +614,7 @@ pub fn lay_over(bytes: Vec<u8>, doc: Document, layers: &[Layer], strip: bool) ->
         let mut resources = own_resources(&doc, page);
         let xobjects = resources.get_mut(b"XObject").and_then(Object::as_dict_mut).map_err(unreadable)?;
         let mut contents = vec![Object::Reference(begin)];
-        match strip.then(|| stripped(&doc, page, xobjects)) {
+        match strip.contains(&layer.page).then(|| stripped(&doc, page, xobjects)) {
             Some(Some(without_text)) => {
                 let mut stream = Stream::new(Dictionary::new(), without_text);
                 stream.compress().map_err(unreadable)?;
@@ -847,21 +848,29 @@ mod tests {
 
     /// A PDF of one page, 200 by 100 points, with `content` and Helvetica as `F1`.
     fn page_of(content: &[u8]) -> Vec<u8> {
+        pages_of(&[content])
+    }
+
+    /// A PDF of a page for each content, as `page_of` makes one.
+    fn pages_of(contents: &[&[u8]]) -> Vec<u8> {
         let mut doc = Document::with_version("1.5");
         let pages = doc.new_object_id();
         let font = doc.add_object(dictionary! { "Type" => "Font", "Subtype" => "Type1", "BaseFont" => "Helvetica" });
-        let stream = doc.add_object(Stream::new(Dictionary::new(), content.to_vec()));
-        let page = doc.add_object(dictionary! {
-            "Type" => "Page",
-            "Parent" => pages,
-            "MediaBox" => vec![0.into(), 0.into(), 200.into(), 100.into()],
-            "Resources" => dictionary! { "Font" => dictionary! { "F1" => font } },
-            "Contents" => stream,
-        });
-        doc.objects.insert(
-            pages,
-            Object::Dictionary(dictionary! { "Type" => "Pages", "Kids" => vec![page.into()], "Count" => 1 }),
-        );
+        let mut kids: Vec<Object> = Vec::new();
+        for content in contents {
+            let stream = doc.add_object(Stream::new(Dictionary::new(), content.to_vec()));
+            let page = doc.add_object(dictionary! {
+                "Type" => "Page",
+                "Parent" => pages,
+                "MediaBox" => vec![0.into(), 0.into(), 200.into(), 100.into()],
+                "Resources" => dictionary! { "Font" => dictionary! { "F1" => font } },
+                "Contents" => stream,
+            });
+            kids.push(page.into());
+        }
+        let count = kids.len() as i64;
+        doc.objects
+            .insert(pages, Object::Dictionary(dictionary! { "Type" => "Pages", "Kids" => kids, "Count" => count }));
         let catalog = doc.add_object(dictionary! { "Type" => "Catalog", "Pages" => pages });
         doc.trailer.set("Root", catalog);
         let mut bytes = Vec::new();
@@ -904,7 +913,7 @@ mod tests {
         let laid = page_of(b"BT 3 Tr /F1 12 Tf 72 70 Td (NORGES DAEMRING) Tj ET\n");
         let layers = [Layer { page: 0, pdf: laid }];
         let doc = open(&before).unwrap();
-        let stripped = lay_over(before.clone(), doc, &layers, true).unwrap();
+        let stripped = lay_over(before.clone(), doc, &layers, &[0]).unwrap();
         assert!(holds(&stripped, 1, &layers));
         let text = pdf_text::extract_text_from_mem(&stripped).unwrap();
         assert!(!text.contains("DAE1t"), "the old reading is gone: {text}");
@@ -934,7 +943,7 @@ mod tests {
         let laid = page_of(b"BT 3 Tr /F1 12 Tf 72 70 Td (Laid) Tj ET\n");
         let layers = [Layer { page: 0, pdf: laid }];
         let doc = open(&large).unwrap();
-        let kept = lay_over(large.clone(), doc, &layers, true).unwrap();
+        let kept = lay_over(large.clone(), doc, &layers, &[0]).unwrap();
         assert!(holds(&kept, 1, &layers));
     }
 
@@ -1018,7 +1027,7 @@ mod tests {
         let layers = [Layer { page: 0, pdf: laid.clone() }];
 
         let doc = open(&before).unwrap();
-        let kept = lay_over(before.clone(), doc, &layers, false).unwrap();
+        let kept = lay_over(before.clone(), doc, &layers, &[]).unwrap();
         assert!(holds(&kept, 1, &layers));
         let ops = operators(&kept);
         assert!(ops.contains(&"Tj".to_owned()) && ops.contains(&"re".to_owned()), "{ops:?}");
@@ -1026,7 +1035,7 @@ mod tests {
         assert!(text.contains("Hello") && text.contains("Laid"), "{text}");
 
         let doc = open(&before).unwrap();
-        let stripped = lay_over(before.clone(), doc, &layers, true).unwrap();
+        let stripped = lay_over(before.clone(), doc, &layers, &[0]).unwrap();
         assert!(holds(&stripped, 1, &layers));
         let ops = operators(&stripped);
         assert!(!ops.iter().any(|o| SHOWING.contains(&o.as_str())), "{ops:?}");
@@ -1047,7 +1056,7 @@ mod tests {
         let again = page_of(b"BT 3 Tr /F1 12 Tf 72 70 Td (Again) Tj ET\n");
         let layers = [Layer { page: 0, pdf: again }];
         let doc = open(&kept).unwrap();
-        let twice = lay_over(kept.clone(), doc, &layers, true).unwrap();
+        let twice = lay_over(kept.clone(), doc, &layers, &[0]).unwrap();
         assert!(holds(&twice, 1, &layers));
         assert_eq!(xobject_names(&twice), vec!["GlaukopisText"]);
         assert_eq!(operators(&twice).iter().filter(|o| *o == "Do").count(), 1);
@@ -1055,8 +1064,43 @@ mod tests {
         assert!(!text.contains("Hello") && !text.contains("Laid") && text.contains("Again"), "{text}");
         // Without strip, both texts stay, the second under a name of its own.
         let doc = open(&kept).unwrap();
-        let both = lay_over(kept.clone(), doc, &layers, false).unwrap();
+        let both = lay_over(kept.clone(), doc, &layers, &[]).unwrap();
         assert_eq!(xobject_names(&both), vec!["GlaukopisText", "GlaukopisText1"]);
+    }
+
+    /// The text a page had is taken away only where the page is to be
+    /// stripped: of two pages read, the one not in `strip` keeps its own
+    /// text under the text laid over it.
+    #[test]
+    fn only_the_pages_to_be_stripped_lose_their_text() {
+        let before = pages_of(&[
+            b"BT 3 Tr /F1 12 Tf 72 70 Td (Hidden) Tj ET\n0 0 10 10 re f\n",
+            b"BT 3 Tr /F1 12 Tf 72 70 Td (Kept) Tj ET\n0 0 10 10 re f\n",
+        ]);
+        let layers = [
+            Layer { page: 0, pdf: page_of(b"BT 3 Tr /F1 12 Tf 72 70 Td (First) Tj ET\n") },
+            Layer { page: 1, pdf: page_of(b"BT 3 Tr /F1 12 Tf 72 70 Td (Second) Tj ET\n") },
+        ];
+        let doc = open(&before).unwrap();
+        let made = lay_over(before.clone(), doc, &layers, &[0]).unwrap();
+        assert!(holds(&made, 2, &layers));
+        let text = pdf_text::extract_text_from_mem(&made).unwrap();
+        assert!(!text.contains("Hidden"), "the first page's text is gone: {text}");
+        for word in ["Kept", "First", "Second"] {
+            assert!(text.contains(word), "{word} is gone: {text}");
+        }
+        // The second page's content is the one it had, referred to as it was.
+        let doc = Document::load_mem(&made).unwrap();
+        let second = doc.get_page_content(doc.get_pages()[&2]).unwrap();
+        assert!(second.windows(11).any(|w| w == b"(Kept) Tj E"), "{}", String::from_utf8_lossy(&second));
+        // With no page to strip, both keep theirs; with both, neither does.
+        let doc = open(&before).unwrap();
+        let text = pdf_text::extract_text_from_mem(&lay_over(before.clone(), doc, &layers, &[]).unwrap()).unwrap();
+        assert!(text.contains("Hidden") && text.contains("Kept"), "{text}");
+        let doc = open(&before).unwrap();
+        let text = pdf_text::extract_text_from_mem(&lay_over(before.clone(), doc, &layers, &[0, 1]).unwrap()).unwrap();
+        assert!(!text.contains("Hidden") && !text.contains("Kept"), "{text}");
+        assert!(text.contains("First") && text.contains("Second"), "{text}");
     }
 
     /// Letters that are seen stay; only text that is unseen is taken away,
@@ -1074,7 +1118,7 @@ mod tests {
         let laid = page_of(b"BT 3 Tr /F1 12 Tf 72 70 Td (Laid) Tj ET\n");
         let layers = [Layer { page: 0, pdf: laid }];
         let doc = open(&before).unwrap();
-        let stripped = lay_over(before.clone(), doc, &layers, true).unwrap();
+        let stripped = lay_over(before.clone(), doc, &layers, &[0]).unwrap();
         assert!(holds(&stripped, 1, &layers));
         let text = pdf_text::extract_text_from_mem(&stripped).unwrap();
         for word in ["Shown", "Restored", "Also", "Laid"] {
@@ -1103,7 +1147,7 @@ mod tests {
         let laid = page_of(b"BT 3 Tr /F1 12 Tf 72 70 Td (Laid) Tj ET\n");
         let layers = [Layer { page: 0, pdf: laid }];
         let doc = open(&before).unwrap();
-        let made = lay_over(before.clone(), doc, &layers, true).unwrap();
+        let made = lay_over(before.clone(), doc, &layers, &[0]).unwrap();
         assert!(holds(&made, 1, &layers));
         // Its own text stays in its content, and the text laid is over it.
         let doc = Document::load_mem(&made).unwrap();

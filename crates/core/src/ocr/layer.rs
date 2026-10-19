@@ -337,6 +337,17 @@ impl Layer {
                 >= TEXT_PAGE
     }
 
+    /// Whether a page has any text at all, however little, to be taken away
+    /// where it is read anew: a sign in what the PDF has, or the text laid
+    /// over it here. A page whose text could not be read may have some.
+    pub fn has_any_text(&self, index: usize) -> bool {
+        self.laid.get(index).copied().unwrap_or(false)
+            || self
+                .pages
+                .get(index)
+                .is_none_or(|lines| lines.as_ref().is_none_or(|lines| lines.iter().any(|l| !l.text.trim().is_empty())))
+    }
+
     /// The dots to the inch of the pictures the pages are, where they are
     /// scans: the middle of those of the pages that are pictures, where half
     /// the pages or more are; nothing where fewer are.

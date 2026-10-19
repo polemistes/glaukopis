@@ -450,6 +450,22 @@ fn pages_that_have_text_are_left_as_they_are() {
     assert!(has(&read.pages[1].paragraphs[1], "Milman Parry"), "{:?}", read.pages[1]);
     assert_eq!(read.remarks, vec![tr!("ocr-remark-counts", read = 1, taken = 1, failed = 0)]);
 
+    // The pages read asked for: both, the page with text among them; none,
+    // and the page without text is read all the same, the other taken; and
+    // a page past the end is no page.
+    let pages_read = |read: Vec<usize>| -> (Vec<bool>, usize, usize) {
+        let asked = Asked { read: Some(read), ..kit.asked() };
+        let done = read_pdf(&mixed, &kit.tools, &kit.work(), &asked, None, &mut nothing, &never()).unwrap();
+        (done.pages.iter().map(|p| p.read).collect(), done.read, done.taken)
+    };
+    assert_eq!(pages_read(vec![1, 2]), (vec![true, true], 2, 0));
+    assert_eq!(pages_read(vec![]), (vec![false, true], 1, 1));
+    assert_eq!(pages_read(vec![1, 9, 0]), (vec![true, true], 2, 0));
+    let both = Asked { read: Some(vec![2, 1]), ..kit.asked() };
+    let read = read_pdf(&mixed, &kit.tools, &kit.work(), &both, None, &mut nothing, &never()).unwrap();
+    assert!(read.pages[0].confidence.is_some(), "the page with text was read: {:?}", read.pages[0]);
+    assert!(has(&read.pages[0].paragraphs.join(" "), "Milman Parry"), "{:?}", read.pages[0]);
+
     // Without Tesseract, a page that is to be read is never given the PDF's
     // text: the page without text says it could not be read, and every page
     // read anew cannot be had at all.
@@ -486,6 +502,12 @@ fn pages_that_have_text_are_left_as_they_are() {
     let made = make_searchable(&mixed, &kit.tools, &kit.work(), &all, &mut nothing, &never()).unwrap();
     assert_eq!(made.read, 2);
     assert_eq!(laid(made.pdf.as_ref().unwrap()), vec![true, true]);
+    // Or the pages read are asked for: the page without text is read whatever is asked.
+    for (read, expected) in [(vec![1, 2], vec![true, true]), (vec![], vec![false, true]), (vec![1], vec![true, true])] {
+        let asked = Asked { read: Some(read), ..kit.asked() };
+        let made = make_searchable(&mixed, &kit.tools, &kit.work(), &asked, &mut nothing, &never()).unwrap();
+        assert_eq!(laid(made.pdf.as_ref().unwrap()), expected);
+    }
     // The font of the text is taken in once.
     let doc = Document::load_mem(made.pdf.as_ref().unwrap()).unwrap();
     let fonts = doc
@@ -581,6 +603,26 @@ fn what_is_not_a_pdf_is_said_to_be_none() {
     assert_eq!(err.to_string(), tr!("ocr-not-pdf", file = "letter.pdf"));
     let looked = look(Path::new("photo.JPG"), &Tools::default()).unwrap();
     assert!(looked.picture && looked.pages == 1);
+}
+
+/// The pages Tesseract reads: those asked for, counted from one, each page
+/// without text with them, those past the end left out; where none are
+/// asked for, as the choice of text says.
+#[test]
+fn the_pages_read_are_those_asked_for_and_those_without_text() {
+    // Five pages; the second and the fourth have no text.
+    let has_text = |i: usize| i != 1 && i != 3;
+    let wanted = |read: Option<Vec<usize>>, text: TextChoice| {
+        wanted_pages(&Asked { read, text, ..Asked::default() }, 5, has_text)
+    };
+    assert_eq!(wanted(None, TextChoice::Keep), vec![1, 3]);
+    assert_eq!(wanted(None, TextChoice::Translate), vec![1, 3]);
+    assert_eq!(wanted(None, TextChoice::Anew), vec![0, 1, 2, 3, 4]);
+    assert_eq!(wanted(Some(vec![]), TextChoice::Keep), vec![1, 3]);
+    assert_eq!(wanted(Some(vec![5, 1, 1]), TextChoice::Keep), vec![0, 1, 3, 4]);
+    // Asked for, the pages are those given, whatever the choice of text.
+    assert_eq!(wanted(Some(vec![3]), TextChoice::Anew), vec![1, 2, 3]);
+    assert_eq!(wanted(Some(vec![0, 6, 99]), TextChoice::Keep), vec![1, 3]);
 }
 
 #[test]
