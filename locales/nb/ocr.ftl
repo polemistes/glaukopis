@@ -44,6 +44,18 @@ ocr-tried-blocks = { $count ->
    *[other] Vis de { $count } tekstblokkene Tesseract fant, nummerert i den rekkefølgen den leser dem
 }
 ocr-tried-blocks-hint = To spalter tatt som én, eller noter tatt inn i teksten, leses i feil rekkefølge: et annet oppsett av siden kan skille dem.
+# Stretches of pages read with languages and a layout of their own, as chips over the strip of pages.
+ocr-stretches = Strekk av sider
+ocr-stretch-page = Side { $page }
+ocr-stretch-pages = Sidene { $from }–{ $to }
+# $languages: the languages, with commas between them; $layout: the layout of the page, as the settings name it.
+ocr-stretch-with-layout = { $languages } · { $layout }
+ocr-stretch-no-language = Engelsk, der ingen er valgt
+ocr-stretch-remove = Les sidene fra { $page } som sidene før dem
+ocr-stretches-hint = En bok som skifter språk eller skrift underveis, kan leses i strekk: velg en side nedenfor, og begynn et strekk der.
+ocr-stretches-editing = Språkene og oppsettet som er valgt, gjelder strekket som er merket: velg et annet for å gi det sine egne.
+ocr-stretches-outline = Begynn et strekk ved hver av de { $count } delene i filens innholdsfortegnelse
+ocr-begin-stretch = Begynn et strekk her
 
 ocr-read = Les teksten
 ocr-read-text-pages = Ta sidene som har tekst

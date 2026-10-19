@@ -164,6 +164,7 @@ export const looked: ocr.Looked = {
     "PorsonGreekSF"
   ],
   "locked": false,
+  "outline": [],
   "pages": 1,
   "picture": false,
   "poor": 0,

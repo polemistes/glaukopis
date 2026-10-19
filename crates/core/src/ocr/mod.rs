@@ -176,6 +176,25 @@ pub struct Asked {
     /// By its headings, whether a reference mark with the page's label
     /// stands where each page begins.
     pub page_marks: bool,
+    /// Stretches of the pages read with languages and a layout of their
+    /// own, in the order of their pages: a book that changes language or
+    /// type part way. The pages before the first, and all where there are
+    /// none, are read with `languages` and `layout`.
+    #[serde(default)]
+    pub stretches: Vec<Stretch>,
+}
+
+/// A stretch of a PDF's pages read with languages and a layout of its own:
+/// from its page to the page before the next stretch, or to the end.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Stretch {
+    /// The page it begins at, counted from one.
+    pub from: usize,
+    /// As `Asked::languages`.
+    pub languages: Vec<String>,
+    /// As `Asked::layout`.
+    pub layout: String,
 }
 
 impl Default for Asked {
@@ -189,11 +208,29 @@ impl Default for Asked {
             shape: false,
             structure: Structure::Headings,
             page_marks: true,
+            stretches: Vec::new(),
         }
     }
 }
 
 impl Asked {
+    /// The languages a page, counted from nought, is read with: those of the
+    /// last stretch that begins at it or before, else those asked for.
+    pub fn languages_at(&self, index: usize) -> &[String] {
+        self.stretches.iter().rev().find(|s| s.from <= index + 1).map_or(&self.languages, |s| &s.languages)
+    }
+
+    /// Every language asked for, of the whole and of the stretches, once each.
+    pub fn all_languages(&self) -> Vec<String> {
+        let mut all: Vec<String> = Vec::new();
+        for language in self.languages.iter().chain(self.stretches.iter().flat_map(|s| &s.languages)) {
+            if !all.contains(language) {
+                all.push(language.clone());
+            }
+        }
+        all
+    }
+
     /// How the pages are drawn, as asked.
     pub fn quality(&self) -> Quality {
         Quality { dpi: self.dpi, contrast: self.contrast }
@@ -248,6 +285,35 @@ pub struct Looked {
     /// The first page without text, counted from one, which Tesseract reads
     /// first where the text is kept; nothing where every page has text.
     pub first_without_text: Option<usize>,
+    /// The top entries of the outline the file carries of its headings, with
+    /// the pages they lead to: places where a stretch of pages read
+    /// otherwise may begin.
+    pub outline: Vec<OutlinePart>,
+}
+
+/// An entry of the top of a file's outline, and the page it leads to,
+/// counted from one.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OutlinePart {
+    pub title: String,
+    pub page: usize,
+}
+
+/// The most entries of an outline offered as places to begin a stretch.
+const OUTLINE_PARTS: usize = 60;
+
+/// The top entries of an outline that lead to a page, in their order.
+fn outline_parts(outline: &[shape::OutlineEntry]) -> Vec<OutlinePart> {
+    let Some(top) = outline.iter().filter(|e| e.page.is_some()).map(|e| e.depth).min() else {
+        return Vec::new();
+    };
+    outline
+        .iter()
+        .filter(|e| e.depth == top)
+        .filter_map(|e| Some(OutlinePart { title: e.title.trim().to_owned(), page: e.page? }))
+        .take(OUTLINE_PARTS)
+        .collect()
 }
 
 /// The first lines of the text a page has.
@@ -370,6 +436,13 @@ fn file_name(path: &Path) -> String {
     path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| path.display().to_string())
 }
 
+/// Whether one of Tesseract's languages is Greek: Tesseract reads the
+/// lunate sigma as ς within words too, and each sigma is then made what its
+/// place in the word says.
+fn is_greek(language: &str) -> bool {
+    matches!(language, "grc" | "ell" | "script/Greek")
+}
+
 fn stopped() -> Error {
     Error::Refused { kind: tools::STOPPED, message: tr!("ocr-stopped") }
 }
@@ -380,19 +453,29 @@ struct Reader<'t> {
     tesseract: &'t Tool,
     with: tesseract::With,
     quality: Quality,
+    /// The stretches of pages read otherwise: the page each begins at,
+    /// counted from nought, and what it is read with, in order.
+    stretches: Vec<(usize, tesseract::With)>,
 }
 
 impl Reader<'_> {
-    /// Has Tesseract read a picture that is drawn already: its TSV, its page
-    /// of text, or both.
+    /// What a page, counted from nought, is read with: that of the last
+    /// stretch that begins at it or before, else the reader's own.
+    fn with_at(&self, index: usize) -> &tesseract::With {
+        self.stretches.iter().rev().find(|(from, _)| *from <= index).map_or(&self.with, |(_, with)| with)
+    }
+
+    /// Has Tesseract read a picture that is drawn already, with `with`: its
+    /// TSV, its page of text, or both.
     fn read(
         &self,
+        with: &tesseract::With,
         picture: &Path,
         dpi: u32,
         (text, layer): (bool, bool),
         stop: &AtomicBool,
     ) -> Result<tesseract::Read> {
-        tesseract::read(self.tesseract, picture, dpi, &self.with, text, layer, stop)
+        tesseract::read(self.tesseract, picture, dpi, with, text, layer, stop)
     }
 
     /// Draws a page and has Tesseract read it.
@@ -405,7 +488,7 @@ impl Reader<'_> {
         stop: &AtomicBool,
     ) -> Result<tesseract::Read> {
         let (picture, dpi) = pages.draw(index, place, self.quality, stop)?;
-        let read = self.read(&picture, dpi, wanted, stop).map(|mut read| {
+        let read = self.read(self.with_at(index), &picture, dpi, wanted, stop).map(|mut read| {
             read.dpi = dpi;
             read
         });
@@ -421,9 +504,24 @@ impl Reader<'_> {
 /// first it has.
 fn ready<'t>(tools: &'t Tools, asked: &Asked) -> Result<Reader<'t>> {
     let tesseract = tools.tesseract()?;
+    let with = with_of(tools, &asked.languages, &asked.layout)?;
+    let mut stretches = Vec::new();
+    for stretch in &asked.stretches {
+        if stretch.from > 1 {
+            stretches.push((stretch.from - 1, with_of(tools, &stretch.languages, &stretch.layout)?));
+        }
+    }
+    stretches.sort_by_key(|(from, _)| *from);
+    Ok(Reader { tesseract, with, quality: asked.quality(), stretches })
+}
+
+/// What Tesseract is to read with: the languages given, each of which it
+/// must have data for, English where none are given, or the first it has;
+/// and the layout.
+fn with_of(tools: &Tools, asked: &[String], layout: &str) -> Result<tesseract::With> {
     let has = &tools.ocr_languages;
     let mut languages: Vec<String> = Vec::new();
-    for language in &asked.languages {
+    for language in asked {
         let language = language.trim();
         if !tesseract::is_language(language) || (!has.is_empty() && !has.iter().any(|h| h == language)) {
             return Err(Error::invalid(tr!("ocr-no-language", language = language)));
@@ -436,8 +534,7 @@ fn ready<'t>(tools: &'t Tools, asked: &Asked) -> Result<Reader<'t>> {
         let first = has.iter().find(|l| *l == "eng").or_else(|| has.first());
         languages.push(first.ok_or_else(|| Error::invalid(tr!("ocr-no-languages")))?.clone());
     }
-    let with = tesseract::With { languages, psm: tesseract::psm_of(&asked.layout) };
-    Ok(Reader { tesseract, with, quality: asked.quality() })
+    Ok(tesseract::With { languages, psm: tesseract::psm_of(layout) })
 }
 
 /// How many pages are read at once: one less than there are cores, so that
@@ -605,6 +702,7 @@ pub fn look(path: &Path, tools: &Tools) -> Result<Looked> {
         locked: layer.locked,
         resolution: layer.resolution(),
         first_without_text: (0..pages).find(|i| !layer.has_text(*i)).map(|i| i + 1),
+        outline: outline_parts(&layer.outline),
     })
 }
 
@@ -714,7 +812,7 @@ pub fn read_pdf(
 
     // Tesseract reads the lunate sigma as ς within words too: with Greek among
     // the languages, each sigma is made what its place in the word says.
-    let greek = asked.languages.iter().any(|l| matches!(l.as_str(), "grc" | "ell" | "script/Greek"));
+    let greek = |index: usize| asked.languages_at(index).iter().any(|l| is_greek(l));
     let mut taken = 0;
     // Each page: what it is, and its lines and size for the shape.
     enum Got {
@@ -747,11 +845,12 @@ pub fn read_pdf(
             let mut pieces: Vec<Vec<shaped::Shaped>> = shaped_pages
                 .into_iter()
                 .zip(&got)
-                .map(|(page, got)| match got {
+                .enumerate()
+                .map(|(index, (page, got))| match got {
                     Got::Failed(why) => {
                         vec![shaped::Shaped::failure(tr!("ocr-page-failed-line", message = why.as_str()))]
                     }
-                    Got::Read(_) => shaped::of(page, is_word, greek),
+                    Got::Read(_) => shaped::of(page, is_word, greek(index)),
                     Got::Taken(_) => shaped::of(page, is_word, false),
                 })
                 .collect();
@@ -761,10 +860,15 @@ pub fn read_pdf(
         } else {
             let paragraphs = got
                 .into_iter()
-                .map(|page| match page {
+                .enumerate()
+                .map(|(index, page)| match page {
                     Got::Read(groups) => {
                         let paragraphs = text::page_paragraphs(groups, is_word);
-                        if greek { paragraphs.iter().map(|p| schemes::mend_sigmas(p)).collect() } else { paragraphs }
+                        if greek(index) {
+                            paragraphs.iter().map(|p| schemes::mend_sigmas(p)).collect()
+                        } else {
+                            paragraphs
+                        }
                     }
                     Got::Failed(why) => vec![tr!("ocr-page-failed-line", message = why.as_str())],
                     Got::Taken(lines) => text::page_paragraphs(text::by_place(lines), is_word),
@@ -782,7 +886,7 @@ pub fn read_pdf(
     if !wanted.is_empty() {
         remarks.push(tr!("ocr-remark-counts", read = done, taken = taken, failed = failed.len()));
     }
-    remarks.extend(poorly_remarks(&poorly, judged, &asked.languages));
+    remarks.extend(poorly_remarks(&poorly, judged, &asked.all_languages()));
     remarks.extend(failures(&failed));
     if paragraphs.iter().all(Vec::is_empty) {
         remarks.push(tr!("ocr-remark-empty"));
@@ -913,7 +1017,7 @@ pub fn read_picture(
     let place = place_in(work)?;
     let picture = place.path().join("picture.pgm");
     drawn.write(&picture)?;
-    let read = reader.read(&picture, drawn.dpi, (true, false), stop)?;
+    let read = reader.read(&reader.with, &picture, drawn.dpi, (true, false), stop)?;
     if stop.load(Ordering::Relaxed) {
         return Err(stopped());
     }
@@ -988,10 +1092,10 @@ pub fn try_page(
             height: b.height * scale,
         })
         .collect();
-    let greek = reader.with.languages.iter().any(|l| matches!(l.as_str(), "grc" | "ell" | "script/Greek"));
+    let greek = reader.with_at(page - 1).languages.iter().any(|l| is_greek(l));
     let paragraphs = text::page_paragraphs(groups, is_word);
     let paragraphs = if greek { paragraphs.iter().map(|p| schemes::mend_sigmas(p)).collect() } else { paragraphs };
-    tracing::info!(page, confidence = ?confidence, languages = ?reader.with.languages, "a page was tried");
+    tracing::info!(page, confidence = ?confidence, languages = ?reader.with_at(page - 1).languages, "a page was tried");
     Ok(Tried {
         page,
         label: seen.layer.label(page - 1),

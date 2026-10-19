@@ -42,6 +42,20 @@ export interface Asked extends How {
   structure?: 'headings' | 'pages';
   /** By its headings: whether a mark with the page's number stands where each page begins. */
   pageMarks?: boolean;
+  /**
+   * Stretches of the pages read with languages and a layout of their own, in
+   * the order of their pages; the pages before the first are read with
+   * `languages` and `layout`.
+   */
+  stretches?: Stretch[];
+}
+
+/** A stretch of a PDF's pages read with languages and a layout of its own, to the next stretch or the end. */
+export interface Stretch {
+  /** The page it begins at, counted from one. */
+  from: number;
+  languages: string[];
+  layout: Layout;
 }
 
 /** What becomes of the text a PDF has. */
@@ -114,6 +128,14 @@ export interface Looked {
   resolution: number | null;
   /** The first page without text, counted from one; nothing where every page has text. */
   firstWithoutText: number | null;
+  /** The top entries of the outline the file carries, with the pages they lead to: where stretches may begin. */
+  outline: OutlinePart[];
+}
+
+/** An entry of the top of a file's outline, and the page it leads to, counted from one. */
+export interface OutlinePart {
+  title: string;
+  page: number;
 }
 
 /** A page tried before a PDF is read: what Tesseract read of it, how sure it was, and the picture it read. */

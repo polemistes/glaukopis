@@ -1017,3 +1017,68 @@ fn a_page_is_tried() {
     let asked = Asked { languages: vec!["xyz".into()], ..kit.asked() };
     assert!(try_page(&scan, &kit.tools, &kit.work(), &asked, 1, None, &never()).is_err());
 }
+
+/// A stretch of pages is read with languages of its own: the second page of
+/// an English scan, read as Ancient Greek from page 2 on, is read poorly,
+/// and the first, read in English, is read well. A stretch in a language
+/// Tesseract has no data for is refused, as the languages of the whole are.
+#[test]
+fn a_stretch_of_pages_is_read_with_languages_of_its_own() {
+    let Some(kit) = kit(true) else { return };
+    if !kit.tools.ocr_languages.iter().any(|l| l == "grc") {
+        crate::testing::passed_over("Tesseract has no Ancient Greek to read a stretch with");
+        return;
+    }
+    kit.typeset("page.png", PAGE);
+    let scan = kit.typeset(
+        "two.pdf",
+        "#set page(width: 150mm, height: 100mm, margin: 0pt)\n\
+         #image(\"page.png\", width: 100%, height: 100%)\n#pagebreak()\n\
+         #image(\"page.png\", width: 100%, height: 100%)\n",
+    );
+    let greek = Stretch { from: 2, languages: vec!["grc".into()], layout: String::new() };
+    let asked = Asked { stretches: vec![greek.clone()], ..kit.asked() };
+    assert_eq!(asked.languages_at(0), ["eng".to_owned()]);
+    assert_eq!(asked.languages_at(1), ["grc".to_owned()]);
+    assert_eq!(asked.all_languages(), vec!["eng".to_owned(), "grc".to_owned()]);
+
+    let read = read_pdf(&scan, &kit.tools, &kit.work(), &asked, None, &mut nothing, &never()).unwrap();
+    assert_eq!(read.pages.len(), 2);
+    assert!(!read_poorly(read.pages[0].confidence), "{:?}", read.pages[0].confidence);
+    assert_eq!(read.poorly, vec![2]);
+
+    // The page tried is read with the languages of its stretch.
+    let tried = try_page(&scan, &kit.tools, &kit.work(), &asked, 2, None, &never()).unwrap();
+    assert!(tried.poorly, "{:?}", tried.confidence);
+    let tried = try_page(&scan, &kit.tools, &kit.work(), &asked, 1, None, &never()).unwrap();
+    assert!(!tried.poorly, "{:?}", tried.confidence);
+
+    // Made searchable, the same.
+    let made = make_searchable(&scan, &kit.tools, &kit.work(), &asked, &mut nothing, &never()).unwrap();
+    assert_eq!(made.poorly, vec![2]);
+
+    let unknown = Asked { stretches: vec![Stretch { languages: vec!["xyz".into()], ..greek }], ..kit.asked() };
+    let refused = read_pdf(&scan, &kit.tools, &kit.work(), &unknown, None, &mut nothing, &never()).unwrap_err();
+    assert_eq!(refused.to_string(), tr!("ocr-no-language", language = "xyz"));
+}
+
+#[test]
+fn the_top_of_an_outline_offers_places_to_begin_a_stretch() {
+    let entry = |title: &str, page: Option<usize>, depth: u8| shape::OutlineEntry { title: title.into(), page, depth };
+    let outline = vec![
+        entry("Preface", Some(5), 0),
+        entry("1. The poem", Some(9), 1),
+        entry("Part One ", Some(12), 0),
+        entry("Lost", None, 0),
+        entry("Part Two", Some(80), 0),
+    ];
+    assert_eq!(
+        outline_parts(&outline),
+        vec![
+            OutlinePart { title: "Preface".into(), page: 5 },
+            OutlinePart { title: "Part One".into(), page: 12 },
+            OutlinePart { title: "Part Two".into(), page: 80 },
+        ]
+    );
+    assert!(outline_parts(&[]).is_empty());
+}

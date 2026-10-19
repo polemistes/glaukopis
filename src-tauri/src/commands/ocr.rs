@@ -63,7 +63,7 @@ fn dictionary_tag(tesseract: &str) -> Option<&'static str> {
 /// dictionary.
 fn words_of<'a>(state: &'a AppState, asked: &Asked) -> Option<impl Fn(&str) -> bool + Sync + 'a> {
     let tags: Vec<&'static str> = asked
-        .languages
+        .all_languages()
         .iter()
         .filter_map(|l| dictionary_tag(l))
         .filter(|tag| !state.spelling.chosen(Some(tag)).is_empty())

@@ -19,6 +19,7 @@
     onProgress,
     type Asked,
     type Looked,
+    type Stretch,
     type Progress,
     type TextChoice,
   } from '$lib/api/ocr';
@@ -42,6 +43,16 @@
   import { reader } from './reader.svelte';
   import TextPart from './TextPart.svelte';
   import TextPreview from './TextPreview.svelte';
+  import Stretches from './Stretches.svelte';
+  import {
+    askedOf,
+    beginStretch,
+    firstStretch,
+    removeStretch,
+    stretchesAtOutline,
+    stretchOf,
+    withCurrent,
+  } from './stretches';
   import TryPane from './TryPane.svelte';
 
   interface Props {
@@ -63,6 +74,13 @@
   let text = $state<TextChoice>('keep');
   /** How the pages are read, as the settings say until this reading says otherwise. */
   let how = $state(howFromSettings());
+  /**
+   * The stretches of pages read otherwise, the first the whole file's; the
+   * picker (`chosen`) and the layout (`how.layout`) hold what the current one
+   * is read with until another is chosen.
+   */
+  let stretches = $state.raw<Stretch[]>([]);
+  let current = $state(0);
   /** Beside the choices, where the PDF has text: that text, or a page tried. */
   let view = $state<'text' | 'try'>('text');
   /** The page tried, counted from one. */
@@ -99,6 +117,8 @@
       // The language of the work, where the reference says it.
       const language = reference?.fields.langid ?? reference?.fields.language ?? null;
       chosen = reader.first(language, languages.current);
+      stretches = firstStretch({ languages: chosen, layout: how.layout });
+      current = 0;
       phase = 'asking';
     } catch (error) {
       if (!gone) fail(error);
@@ -115,10 +135,10 @@
         reference?.id ?? null,
         file.path,
         {
-          languages: $state.snapshot(chosen),
           text,
           shape: false,
           ...$state.snapshot(how),
+          ...askedOf(listed),
         },
         ticket,
       );
@@ -176,7 +196,47 @@
   /** Whether a page can be tried: there are pages to be read, and Tesseract to read them. */
   const tryable = $derived(!!looked?.searchable && scanning && reader.installed);
   /** What a page is tried with, as the file would be made searchable. */
-  const asked = $derived<Asked>({ languages: chosen, text, shape: false, ...how });
+  /** The stretches, the current one with what the picker and the layout hold. */
+  const listed = $derived(
+    withCurrent(stretches, current, { languages: chosen, layout: how.layout }),
+  );
+  const asked = $derived<Asked>({ ...how, text, shape: false, ...askedOf(listed) });
+
+  /** Makes a stretch the one the picker and the layout edit. */
+  function editStretch(index: number, list: Stretch[] = listed) {
+    stretches = list;
+    current = Math.min(Math.max(0, index), list.length - 1);
+    const stretch = list[current];
+    chosen = [...stretch.languages];
+    how = { ...how, layout: stretch.layout };
+  }
+
+  /** A stretch begun at a page, with the languages and layout as they stand. */
+  function beginAt(page: number) {
+    const begun = beginStretch(listed, page, { languages: chosen, layout: how.layout });
+    editStretch(begun.index, begun.list);
+  }
+
+  function removeAt(index: number) {
+    const list = removeStretch(listed, index);
+    editStretch(current === index ? index - 1 : current > index ? current - 1 : current, list);
+  }
+
+  /** A page of the strip chosen: it is the page tried, and its stretch is the one edited. */
+  function choosePage(page: number) {
+    tryPage = page;
+    view = 'try';
+    editStretch(stretchOf(listed, page));
+  }
+
+  function beginAtOutline() {
+    if (!looked) return;
+    const list = stretchesAtOutline(listed, looked.outline, looked.pages, {
+      languages: chosen,
+      layout: how.layout,
+    });
+    editStretch(current, list);
+  }
   /** Room for what stands beside the choices: the text the PDF has, or a page tried. */
   const wide = $derived(!!looked?.searchable && (looked.withText > 0 || tryable));
 </script>
@@ -276,6 +336,20 @@
               {/if}
             </div>
           {/if}
+          {#if tryable && looked.pages > 1}
+            <div class="pages">
+              <Stretches
+                list={listed}
+                {current}
+                pages={looked.pages}
+                outline={looked.outline}
+                onselect={(i) => editStretch(i)}
+                onremove={removeAt}
+                onoutline={beginAtOutline}
+              />
+              <!-- PAGE STRIP -->
+            </div>
+          {/if}
         </div>
       {/if}
     {:else if phase === 'reading'}
@@ -329,6 +403,13 @@
     .asking.split {
       grid-template-columns: minmax(0, 1fr);
     }
+  }
+  .pages {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
   }
   .beside {
     display: flex;

@@ -188,6 +188,10 @@ pub struct Job {
     language: String,
     tesseract: Option<Given>,
     with: tesseract::With,
+    /// The stretches of pages read otherwise: the page each begins at,
+    /// counted from nought, and what it is read with.
+    #[serde(default)]
+    stretches: Vec<(usize, tesseract::With)>,
     quality: Quality,
     pdftoppm: Option<PathBuf>,
     /// Where the pictures of the pages are made, a folder of the application's.
@@ -212,6 +216,7 @@ impl Job {
             language: crate::i18n::language().to_owned(),
             tesseract: reader.map(|r| Given { path: r.tesseract.path.clone(), data: r.tesseract.data.clone() }),
             with: reader.map(|r| r.with.clone()).unwrap_or_default(),
+            stretches: reader.map(|r| r.stretches.clone()).unwrap_or_default(),
             quality: reader.map(|r| r.quality).unwrap_or_default(),
             pdftoppm: pdftoppm.map(|t| t.path.clone()),
             work: work.to_owned(),
@@ -353,7 +358,12 @@ fn work_here(job: &Job, told: &mut dyn FnMut(Progress), stop: &AtomicBool) -> st
     let tesseract = job.tesseract.as_ref().map(Given::tool);
     let pdftoppm =
         job.pdftoppm.as_ref().map(|p| Tool { path: p.clone(), version: String::new(), least: None, data: None });
-    let reader = tesseract.as_ref().map(|t| Reader { tesseract: t, with: job.with.clone(), quality: job.quality });
+    let reader = tesseract.as_ref().map(|t| Reader {
+        tesseract: t,
+        with: job.with.clone(),
+        quality: job.quality,
+        stretches: job.stretches.clone(),
+    });
     let size = bytes.len() as u64;
     match &job.task {
         Task::Read { pages } => {
@@ -395,7 +405,7 @@ fn work_here(job: &Job, told: &mut dyn FnMut(Progress), stop: &AtomicBool) -> st
 fn try_here(reader: &Reader<'_>, drawing: &Pages, page: usize, work: &Path, stop: &AtomicBool) -> Result<Tried> {
     use base64::Engine as _;
     let (picture, dpi) = drawing.draw(page, work, reader.quality, stop)?;
-    let read = reader.read(&picture, dpi, (true, false), stop);
+    let read = reader.read(reader.with_at(page), &picture, dpi, (true, false), stop);
     let shown = read.as_ref().ok().map(|_| drawing::Drawn::read_back(&picture, dpi).and_then(|d| d.shown(SHOWN)));
     for made in [picture.clone(), picture.with_extension("tsv")] {
         let _ = std::fs::remove_file(made);

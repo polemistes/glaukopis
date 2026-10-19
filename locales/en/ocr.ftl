@@ -44,6 +44,18 @@ ocr-tried-blocks = { $count ->
    *[other] Show the { $count } blocks of text Tesseract found, numbered in the order it reads them
 }
 ocr-tried-blocks-hint = Two columns taken as one, or notes taken into the text, read in the wrong order: another layout may part them.
+# Stretches of pages read with languages and a layout of their own, as chips over the strip of pages.
+ocr-stretches = Stretches of pages
+ocr-stretch-page = Page { $page }
+ocr-stretch-pages = Pages { $from }–{ $to }
+# $languages: the languages, with commas between them; $layout: the layout of the page, as the settings name it.
+ocr-stretch-with-layout = { $languages } · { $layout }
+ocr-stretch-no-language = English, where none is chosen
+ocr-stretch-remove = Read the pages from { $page } as those before them
+ocr-stretches-hint = A book that changes language or type part way can be read in stretches: choose a page below, and begin a stretch there.
+ocr-stretches-editing = The languages and the layout chosen hold for the stretch that is marked: choose another to set its own.
+ocr-stretches-outline = Begin a stretch at each of the { $count } parts of the file's outline
+ocr-begin-stretch = Begin a stretch here
 
 ocr-read = Read the text
 ocr-read-text-pages = Take the pages that have text
