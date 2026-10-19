@@ -814,14 +814,17 @@ pub fn docx_styles(f: &DocumentFormat, language: Option<&str>, own: &[OwnKind]) 
     s
 }
 
-/// The switch of Word's `PAGE` field and the format of a section's page numbers, for a style of numbers.
-fn docx_numbers(style: NumberStyle) -> (&'static str, &'static str) {
+/// The format of a section's page numbers in Word, for a style of numbers.
+/// The `PAGE` field of the header and the footer takes it from the section
+/// it stands in, with no switch of its own, so that an element with a look
+/// of its own numbers its pages as its section says (ADR 0059).
+fn docx_numbers(style: NumberStyle) -> &'static str {
     match style {
-        NumberStyle::Arabic => ("", "decimal"),
-        NumberStyle::Roman => (" \\* ROMAN", "upperRoman"),
-        NumberStyle::RomanLower => (" \\* roman", "lowerRoman"),
-        NumberStyle::Letters => (" \\* ALPHABETIC", "upperLetter"),
-        NumberStyle::LettersLower => (" \\* alphabetic", "lowerLetter"),
+        NumberStyle::Arabic => "decimal",
+        NumberStyle::Roman => "upperRoman",
+        NumberStyle::RomanLower => "lowerRoman",
+        NumberStyle::Letters => "upperLetter",
+        NumberStyle::LettersLower => "lowerLetter",
     }
 }
 
@@ -851,7 +854,7 @@ fn docx_margin(kind: &str, sides: Option<&Sides>, m: &Margin, f: &DocumentFormat
     };
     let run = |item: &Item| -> Option<String> {
         Some(match item {
-            Item::PageNumber => field(&plain, &format!("PAGE{}", docx_numbers(f.page.numbering).0)),
+            Item::PageNumber => field(&plain, "PAGE"),
             Item::Chapter => field(&words, "STYLEREF \"heading 1\""),
             _ => format!("<w:r>{words}<w:t xml:space=\"preserve\">{}</w:t></w:r>", xml(&p.words(item, f)?)),
         })
@@ -886,6 +889,71 @@ pub fn opener_relation(kind: &str) -> String {
     format!("rIdGk{kind}Openerxml")
 }
 
+/// The relation of the empty part of a header or footer in Word
+/// (`headerEmpty.xml`, `footerEmpty.xml`), which a section whose element
+/// leaves the margin off points to (ADR 0059).
+pub fn empty_relation(kind: &str) -> String {
+    format!("rIdGk{kind}Emptyxml")
+}
+
+/// What a section of Word says of its pages: their size and orientation,
+/// their margins, the numbers of the lines, the style of the page numbers
+/// and whether they begin anew at the section, and the columns, in the order
+/// Word wants them.
+pub fn docx_page(f: &DocumentFormat, restart: bool) -> String {
+    let (w, h) = f.page.dimensions();
+    let mut out = String::new();
+    let orient = if w > h { " w:orient=\"landscape\"" } else { "" };
+    let _ = write!(
+        out,
+        "<w:pgSz w:w=\"{}\" w:h=\"{}\"{orient}/><w:pgMar w:top=\"{}\" w:right=\"{}\" w:bottom=\"{}\" w:left=\"{}\" w:header=\"{}\" w:footer=\"{}\" w:gutter=\"0\"/>",
+        (w * 20.0).round() as i32,
+        (h * 20.0).round() as i32,
+        f.page.margin_top.twips(),
+        f.page.margin_right.twips(),
+        f.page.margin_bottom.twips(),
+        f.page.margin_left.twips(),
+        (f.page.margin_top.twips() / 2).max(360),
+        (f.page.margin_bottom.twips() / 2).max(360),
+    );
+    if f.line_numbers {
+        out.push_str("<w:lnNumType w:countBy=\"1\" w:restart=\"continuous\"/>");
+    }
+    let arabic = f.page.numbering == NumberStyle::Arabic;
+    if !arabic || restart {
+        out.push_str("<w:pgNumType");
+        if !arabic {
+            let _ = write!(out, " w:fmt=\"{}\"", docx_numbers(f.page.numbering));
+        }
+        out.push_str(if restart { " w:start=\"1\"/>" } else { "/>" });
+    }
+    // The columns the text is set in.
+    if f.page.columns > 1 {
+        let _ = write!(out, "<w:cols w:num=\"{}\" w:space=\"{}\"/>", f.page.columns, f.page.column_gap.twips().max(0));
+    }
+    out
+}
+
+/// The mark the converter writes in Word where the stretch of an element
+/// with a look of its own begins or ends (ADR 0059): a paragraph that ends
+/// the section before it, saying how the section after it is set, its pages
+/// as the look has them and, for a margin the look leaves off, every page of
+/// it pointing at the empty part. `after::docx_sections` makes the sections
+/// whole from the document's own.
+pub fn docx_section_mark(f: &DocumentFormat, restart: bool) -> String {
+    let mut out = String::from("<w:p><w:pPr><w:sectPr><w:type w:val=\"nextPage\"/>");
+    for (m, kind) in [(&f.header, "header"), (&f.footer, "footer")] {
+        if !m.is_visible() {
+            for which in ["default", "even", "first"] {
+                let _ = write!(out, "<w:{kind}Reference w:type=\"{which}\" r:id=\"{}\"/>", empty_relation(kind));
+            }
+        }
+    }
+    out.push_str(&docx_page(f, restart));
+    out.push_str("</w:sectPr></w:pPr></w:p>");
+    out
+}
+
 /// The pattern for DOCX: Pandoc's own, with the styles and the page of the format.
 pub fn docx(default: &[u8], f: &DocumentFormat, p: &Particulars) -> Result<Vec<u8>> {
     let first_differs = first_differs(f);
@@ -915,6 +983,9 @@ pub fn docx(default: &[u8], f: &DocumentFormat, p: &Particulars) -> Result<Vec<u
         // off it, and of the openers, which the document's sections that
         // begin at one point to (empty where the margin is left off them).
         for (m, kind, short) in [(&f.header, "header", "hdr"), (&f.footer, "footer", "ftr")] {
+            // An empty one, which the sections of the elements that leave the
+            // margin off point to (ADR 0059, `after::docx_sections`).
+            add(&format!("{kind}Empty.xml"), kind, "default", docx_margin(short, None, m, f, p), files);
             if !m.is_visible() {
                 continue;
             }
@@ -942,7 +1013,6 @@ pub fn docx(default: &[u8], f: &DocumentFormat, p: &Particulars) -> Result<Vec<u
         put(files, "[Content_Types].xml", types);
 
         // The page.
-        let (w, h) = f.page.dimensions();
         let mut section = String::from("<w:sectPr>");
         section.push_str(&references);
         section.push_str(if p.lettered_footnotes {
@@ -950,33 +1020,7 @@ pub fn docx(default: &[u8], f: &DocumentFormat, p: &Particulars) -> Result<Vec<u
         } else {
             "<w:footnotePr><w:numRestart w:val=\"continuous\"/></w:footnotePr>"
         });
-        let _ = write!(
-            section,
-            "<w:pgSz w:w=\"{}\" w:h=\"{}\"/><w:pgMar w:top=\"{}\" w:right=\"{}\" w:bottom=\"{}\" w:left=\"{}\" w:header=\"{}\" w:footer=\"{}\" w:gutter=\"0\"/>",
-            (w * 20.0).round() as i32,
-            (h * 20.0).round() as i32,
-            f.page.margin_top.twips(),
-            f.page.margin_right.twips(),
-            f.page.margin_bottom.twips(),
-            f.page.margin_left.twips(),
-            (f.page.margin_top.twips() / 2).max(360),
-            (f.page.margin_bottom.twips() / 2).max(360),
-        );
-        if f.line_numbers {
-            section.push_str("<w:lnNumType w:countBy=\"1\" w:restart=\"continuous\"/>");
-        }
-        if f.page.numbering != NumberStyle::Arabic {
-            let _ = write!(section, "<w:pgNumType w:fmt=\"{}\"/>", docx_numbers(f.page.numbering).1);
-        }
-        // The columns the text is set in.
-        if f.page.columns > 1 {
-            let _ = write!(
-                section,
-                "<w:cols w:num=\"{}\" w:space=\"{}\"/>",
-                f.page.columns,
-                f.page.column_gap.twips().max(0)
-            );
-        }
+        section.push_str(&docx_page(f, false));
         if first_differs {
             section.push_str("<w:titlePg/>");
         }
@@ -1225,6 +1269,12 @@ fn odt_margin(sides: &Sides, m: &Margin, style: &str, f: &DocumentFormat, p: &Pa
 }
 
 pub fn odt_styles(default: &str, f: &DocumentFormat, p: &Particulars) -> String {
+    odt_styles_with_looks(default, f, p, &[])
+}
+
+/// The styles of Writer for a format, with the master pages of the looks of
+/// the elements that have their own (ADR 0059).
+pub fn odt_styles_with_looks(default: &str, f: &DocumentFormat, p: &Particulars, looks: &[&DocumentFormat]) -> String {
     let mut s = default.to_owned();
     let font = xml(&family(f));
     let size = f.font.size;
@@ -1667,7 +1717,74 @@ pub fn odt_styles(default: &str, f: &DocumentFormat, p: &Particulars) -> String 
         );
     }
 
-    // The page, and what stands in its margins.
+    // The page, and what stands in its margins; and the pages of the
+    // elements with a look of their own (ADR 0059).
+    let (mut automatic, mut master) = odt_pages(f, p, None);
+    let own = odt_master_name(f);
+    let mut named: Vec<String> = Vec::new();
+    // The document's own among them, which the end of a stretch goes back to.
+    let all: Vec<&DocumentFormat> =
+        if looks.is_empty() { Vec::new() } else { std::iter::once(f).chain(looks.iter().copied()).collect() };
+    for look in all {
+        let name = odt_look_name(look, p);
+        if named.contains(&name) {
+            continue;
+        }
+        // A paragraph that brings the look's master page, and one that begins the count anew there.
+        let page = if name == odt_look_name(f, p) {
+            own.to_owned()
+        } else {
+            let (a, m) = odt_pages(look, p, Some(&name));
+            automatic.push_str(&a);
+            master.push_str(&m);
+            name.clone()
+        };
+        for (style, restart) in [(name.clone(), false), (format!("{name}Restart"), true)] {
+            let number = if restart { " style:page-number=\"1\"" } else { "" };
+            replace_style(
+                &mut s,
+                &style,
+                &format!(
+                    "<style:style style:name=\"{style}\" style:family=\"paragraph\" style:parent-style-name=\"Standard\" \
+                     style:master-page-name=\"{page}\"><style:paragraph-properties{number}/></style:style>"
+                ),
+            );
+        }
+        named.push(name);
+    }
+    let automatic = format!("<office:automatic-styles>{automatic}</office:automatic-styles>");
+    let master = format!("<office:master-styles>{master}</office:master-styles>");
+
+    for (open, close, new) in [
+        ("<office:automatic-styles>", "</office:automatic-styles>", automatic),
+        ("<office:master-styles>", "</office:master-styles>", master),
+    ] {
+        if let (Some(a), Some(b)) = (s.find(open), s.find(close))
+            && a < b
+        {
+            s.replace_range(a..b + close.len(), &new);
+        }
+    }
+    if f.line_numbers {
+        let numbering = "<text:linenumbering-configuration text:number-lines=\"true\" text:offset=\"0.1965in\" style:num-format=\"1\" text:number-position=\"left\" text:increment=\"1\"/>";
+        if let Some(a) = s.find("<text:linenumbering-configuration") {
+            if let Some(b) = s[a..].find("/>") {
+                s.replace_range(a..a + b + 2, numbering);
+            }
+        } else if let Some(at) = s.find("</office:styles>") {
+            s.insert_str(at, numbering);
+        }
+    }
+    s
+}
+
+/// The page of Writer as a format sets it, and what stands in its margins:
+/// the automatic styles (the styles of the header and the footer, the page
+/// layouts) and the master pages. The document's are `Standard`, and
+/// `Following` where its first page differs; a look's (ADR 0059) is one
+/// master page of the look's name, whose header and footer are the look's.
+fn odt_pages(f: &DocumentFormat, p: &Particulars, look: Option<&str>) -> (String, String) {
+    let size = f.font.size;
     let (w, h) = f.page.dimensions();
     let (top, foot) = (&f.header, &f.footer);
     let text_width = w - f.page.margin_left.points() - f.page.margin_right.points();
@@ -1684,7 +1801,11 @@ pub fn odt_styles(default: &str, f: &DocumentFormat, p: &Particulars) -> String 
             if m.case == Case::Smallcaps { " fo:font-variant=\"small-caps\"" } else { "" },
         )
     };
-    let margin_style = format!("{}{}", margin_style("GkHeader", top), margin_style("GkFooter", foot));
+    let (header_style, footer_style) = match look {
+        Some(name) => (format!("{name}Header"), format!("{name}Footer")),
+        None => ("GkHeader".to_owned(), "GkFooter".to_owned()),
+    };
+    let margin_style = format!("{}{}", margin_style(&header_style, top), margin_style(&footer_style, foot));
     let head_style = |present: bool, which: &str| {
         if present {
             format!(
@@ -1712,7 +1833,7 @@ pub fn odt_styles(default: &str, f: &DocumentFormat, p: &Particulars) -> String 
         let bottom_margin = (f.page.margin_bottom.points() - if footer { 32.0 } else { 0.0 }).max(18.0);
         format!(
             "<style:page-layout style:name=\"{name}\"><style:page-layout-properties fo:page-width=\"{}\" fo:page-height=\"{}\" \
-             style:num-format=\"{numbers}\" style:print-orientation=\"portrait\" fo:margin-top=\"{}\" fo:margin-bottom=\"{}\" \
+             style:num-format=\"{numbers}\" style:print-orientation=\"{orientation}\" fo:margin-top=\"{}\" fo:margin-bottom=\"{}\" \
              fo:margin-left=\"{}\" fo:margin-right=\"{}\" style:writing-mode=\"lr-tb\" style:footnote-max-height=\"0in\">\
              {}<style:footnote-sep style:width=\"0.0071in\" style:distance-before-sep=\"0.0398in\" style:distance-after-sep=\"0.0398in\" \
              style:line-style=\"solid\" style:adjustment=\"left\" style:rel-width=\"25%\" style:color=\"#000000\"/>\
@@ -1727,14 +1848,20 @@ pub fn odt_styles(default: &str, f: &DocumentFormat, p: &Particulars) -> String 
             head_style(header, "header"),
             head_style(footer, "footer"),
             numbers = odt_numbers(f.page.numbering),
+            orientation = if w > h { "landscape" } else { "portrait" },
         )
     };
-    let first_differs = first_differs(f);
+    // A look's pages have no first page of their own: theirs is no first page of the document.
+    let first_differs = look.is_none() && first_differs(f);
     let (header, footer) = (top.is_visible(), foot.is_visible());
     let (first_header, first_footer) = (header && top.first_page, footer && foot.first_page);
+    let main_layout = match look {
+        Some(name) => format!("{name}Layout"),
+        None => "Mpm1".to_owned(),
+    };
     let automatic = format!(
-        "<office:automatic-styles>{margin_style}{}{}</office:automatic-styles>",
-        layout("Mpm1", header, footer),
+        "{margin_style}{}{}",
+        layout(&main_layout, header, footer),
         if first_differs { layout("Mpm2", first_header, first_footer) } else { String::new() },
     );
     // A master page with the header and the footer where they are shown, and
@@ -1745,7 +1872,9 @@ pub fn odt_styles(default: &str, f: &DocumentFormat, p: &Particulars) -> String 
             let _ = write!(out, " style:next-style-name=\"{n}\"");
         }
         out.push('>');
-        for (m, shown, which, style) in [(top, header, "header", "GkHeader"), (foot, footer, "footer", "GkFooter")] {
+        for (m, shown, which, style) in
+            [(top, header, "header", header_style.as_str()), (foot, footer, "footer", footer_style.as_str())]
+        {
             if shown {
                 let _ = write!(out, "<style:{which}>{}</style:{which}>", odt_margin(&m.places, m, style, f, p));
                 if m.alternate {
@@ -1760,38 +1889,45 @@ pub fn odt_styles(default: &str, f: &DocumentFormat, p: &Particulars) -> String 
         out.push_str("</style:master-page>");
         out
     };
-    let master = if first_differs {
+    let master = if let Some(name) = look {
+        page(name, &main_layout, None, header, footer)
+    } else if first_differs {
         // The first page is of its own kind, and is followed by the usual one.
         format!(
-            "<office:master-styles>{}{}</office:master-styles>",
+            "{}{}",
             page("Standard", "Mpm2", Some("Following"), first_header, first_footer),
             page("Following", "Mpm1", None, header, footer)
         )
     } else {
-        format!("<office:master-styles>{}</office:master-styles>", page("Standard", "Mpm1", None, header, footer))
+        page("Standard", "Mpm1", None, header, footer)
     };
+    (automatic, master)
+}
 
-    for (open, close, new) in [
-        ("<office:automatic-styles>", "</office:automatic-styles>", automatic),
-        ("<office:master-styles>", "</office:master-styles>", master),
-    ] {
-        if let (Some(a), Some(b)) = (s.find(open), s.find(close))
-            && a < b
-        {
-            s.replace_range(a..b + close.len(), &new);
-        }
-    }
-    if f.line_numbers {
-        let numbering = "<text:linenumbering-configuration text:number-lines=\"true\" text:offset=\"0.1965in\" style:num-format=\"1\" text:number-position=\"left\" text:increment=\"1\"/>";
-        if let Some(a) = s.find("<text:linenumbering-configuration") {
-            if let Some(b) = s[a..].find("/>") {
-                s.replace_range(a..a + b + 2, numbering);
-            }
-        } else if let Some(at) = s.find("</office:styles>") {
-            s.insert_str(at, numbering);
-        }
-    }
-    s
+/// The master page the document's text goes on in Writer, past its first page.
+fn odt_master_name(f: &DocumentFormat) -> &'static str {
+    if first_differs(f) { "Following" } else { "Standard" }
+}
+
+/// The name of the master page of Writer that a look sets, and of the
+/// paragraph style that brings it (ADR 0059): drawn from what the master
+/// page says, so that looks whose pages are alike share it, and the
+/// converter, which knows the look and not the others, names the same.
+pub fn odt_look_name(f: &DocumentFormat, p: &Particulars) -> String {
+    let (automatic, master) = odt_pages(f, p, Some("GkLook"));
+    // FNV-1a: the same in every build.
+    let hash = format!("{automatic}{master}")
+        .bytes()
+        .fold(0xcbf2_9ce4_8422_2325u64, |h, b| (h ^ u64::from(b)).wrapping_mul(0x0100_0000_01b3));
+    format!("GkLook{:08x}", hash >> 32)
+}
+
+/// The paragraph the converter writes in Writer where the stretch of an
+/// element with a look of its own begins or ends (ADR 0059): empty, of the
+/// style that begins a page of the look's master page, and counts the
+/// pages anew where it says so.
+pub fn odt_look_mark(f: &DocumentFormat, p: &Particulars, restart: bool) -> String {
+    format!("<text:p text:style-name=\"{}{}\"/>", odt_look_name(f, p), if restart { "Restart" } else { "" })
 }
 
 /// The pattern for ODT.
@@ -1826,9 +1962,20 @@ fn odt_lettered_footnotes(styles: &str) -> String {
 }
 
 pub fn odt(default: &[u8], f: &DocumentFormat, p: &Particulars) -> Result<Vec<u8>> {
+    odt_with_looks(default, f, p, &[])
+}
+
+/// The pattern for ODT, with the master pages of the looks of the elements
+/// that have their own (ADR 0059), which `odt_look_mark` brings.
+pub fn odt_with_looks(
+    default: &[u8],
+    f: &DocumentFormat,
+    p: &Particulars,
+    looks: &[&DocumentFormat],
+) -> Result<Vec<u8>> {
     rewrite(default, |files| {
         let styles = text_of(files, "styles.xml")?;
-        let styles = odt_styles(&styles, f, p);
+        let styles = odt_styles_with_looks(&styles, f, p, looks);
         let styles = if p.lettered_footnotes { odt_lettered_footnotes(&styles) } else { styles };
         put(files, "styles.xml", styles);
         Ok(())
@@ -2030,7 +2177,8 @@ mod tests {
         let header = docx_margin("hdr", Some(&two.header.places), &two.header, &two, &p);
         assert!(header.contains("A. Scholar</w:t></w:r><w:r><w:rPr><w:caps/>"), "{header}");
         assert!(header.contains("> · </w:t>"), "{header}");
-        assert!(header.contains(" PAGE \\* roman "), "{header}");
+        assert!(header.contains(" PAGE ") && !header.contains("\\*"), "the section says the style: {header}");
+        assert!(docx_page(&two, false).contains("<w:pgNumType w:fmt=\"lowerRoman\"/>"));
         assert!(header.contains(" STYLEREF \"heading 1\" "), "{header}");
 
         let mut anonymous = two.clone();
