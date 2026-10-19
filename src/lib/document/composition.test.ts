@@ -7,6 +7,9 @@ import {
   withCompositionPath,
   withoutCompositionPath,
 } from './composition';
+import { documents, templateUsed, templateUsedCached } from '$lib/preview/documents.svelte';
+import { Project } from '$lib/project/model/project.svelte';
+import { PROJECT } from '$lib/project/model/types';
 import articleFile from '../../../resources/templates/article.json';
 import plainFile from '../../../resources/templates/plain.json';
 
@@ -172,5 +175,78 @@ describe('what a document sets otherwise than its template', () => {
       parts: { keywords: true },
     });
     expect(changes).toEqual({ parts: { contents: true } });
+  });
+});
+
+describe('the template a document is made with', () => {
+  /** A book that chooses a template of the writer's own, which the project carries, and a chapter of it. */
+  function aBook() {
+    const p = new Project(null);
+    p.begin('Wrath');
+    p.keepTemplate({
+      ...article(),
+      id: 'my-article',
+      name: 'My article',
+      group: 'own',
+      basedOn: 'article',
+    });
+    const book = p.addChild(PROJECT, { title: 'Book' })!;
+    const chapter = p.addChild(book, { title: 'Chapter' })!;
+    p.setDocument(book, { template: 'my-article', composition: { parts: { contents: true } } });
+    p.setDocument(chapter, {
+      composition: { parts: { keywords: false }, requirements: { words: 5000 } },
+    });
+    return { p, book, chapter };
+  }
+
+  it('is the template with the changes of the element and of those over it laid over it', async () => {
+    const { p, book, chapter } = aBook();
+    // Nothing is to be loaded from the application in a test.
+    const loaded = documents.loaded;
+    documents.loaded = true;
+    try {
+      const used = await templateUsed(p, chapter);
+      expect(used.id).toBe('my-article');
+      expect(hasPart(used, 'contents')).toBe(true);
+      expect(hasPart(used, 'keywords')).toBe(false);
+      expect(used.requirements.words).toBe(5000);
+      const forBook = await templateUsed(p, book);
+      expect(hasPart(forBook, 'contents')).toBe(true);
+      expect(hasPart(forBook, 'keywords')).toBe(true);
+      expect(forBook.requirements.words).toBeNull();
+      // The project's copy is not touched.
+      expect(hasPart(p.templateCopy('my-article')!, 'contents')).toBe(false);
+    } finally {
+      documents.loaded = loaded;
+    }
+  });
+
+  it('is had at once where it has been read, the same object while nothing changes', () => {
+    const { p, book, chapter } = aBook();
+    const used = templateUsedCached(p, chapter)!;
+    expect(order(used)).toEqual([
+      'title-page',
+      'kind:abstract',
+      'contents',
+      'body',
+      'kind:appendix',
+      'kind:acknowledgements',
+      'notes',
+      'bibliography',
+    ]);
+    expect(templateUsedCached(p, chapter)).toBe(used);
+    // With other changes in place of the element's: here, what it has from the book.
+    const fromAbove = templateUsedCached(p, chapter, p.compositionOf(book).changes)!;
+    expect(hasPart(fromAbove, 'contents')).toBe(true);
+    expect(hasPart(fromAbove, 'keywords')).toBe(true);
+    // A change is laid over as soon as it is made.
+    p.setDocument(chapter, { composition: { parts: { 'title-page': false } } });
+    const now = templateUsedCached(p, chapter)!;
+    expect(now).not.toBe(used);
+    expect(hasPart(now, 'title-page')).toBe(false);
+    expect(hasPart(now, 'keywords')).toBe(true);
+    // Nothing where the template is not to be had.
+    p.setDocument(book, { template: 'no-such-template' });
+    expect(templateUsedCached(p, chapter)).toBeUndefined();
   });
 });

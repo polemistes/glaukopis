@@ -17,6 +17,7 @@ import {
   type Template,
   type TemplateSummary,
 } from '$lib/api/templates';
+import { composed, type CompositionChanges } from '$lib/document/composition';
 import { t } from '$lib/i18n';
 import { laidOver } from '$lib/look/changes';
 import { buildDocument } from '$lib/project/model/document';
@@ -262,6 +263,49 @@ export async function templateFor(
 }
 
 /**
+ * The template of an element's document as it is to be used (ADR 0054): the
+ * template, with the document's changes laid over it, those of the elements
+ * over it and its own (`Project.compositionOf`). What the preview, every
+ * export and the checklist are made with; the core knows nothing of changes.
+ */
+export async function templateUsed(project: Project, at: string): Promise<Template> {
+  const { settings } = project.documentOf(at);
+  const template = await templateFor(project, documents.choice(settings, project).template);
+  return composed(template, project.compositionOf(at).changes);
+}
+
+/**
+ * The same, as read already: reactive in the changes; nothing until the
+ * template has arrived. The template is the application's, or the
+ * project's copy where the application lacks it, as `templateFor` has it.
+ * With `changes`, those are laid over the template in place of the
+ * document's: what an element has without a change of its own, for one.
+ * The same changes over the same template give the same object.
+ */
+export function templateUsedCached(
+  project: Project,
+  at: string,
+  changes?: CompositionChanges,
+): Template | undefined {
+  const id = documents.choice(project.documentOf(at).settings, project).template;
+  const copy = project.templateCopy(id);
+  const template =
+    copy && !documents.templateSummary(id) ? copy : (documents.templateCached(id) ?? copy);
+  if (!template) return undefined;
+  const over = changes ?? project.compositionOf(at).changes;
+  const key = `${id}\n${JSON.stringify(over)}`;
+  const kept = madeUsed.get(key);
+  if (kept && kept.template === template) return kept.used;
+  const used = composed(template, over);
+  if (madeUsed.size > 32) madeUsed.clear();
+  madeUsed.set(key, { template, used });
+  return used;
+}
+
+/** What `templateUsedCached` has made, by what it was made of, so that the same is the same object. */
+const madeUsed = new Map<string, { template: Template; used: Template }>();
+
+/**
  * The name of a template, for a document of a project: as the application
  * lists it, else as the project's copy has it, else its id.
  */
@@ -281,7 +325,8 @@ export async function documentRequest(
   at: string,
 ): Promise<DocumentRequest> {
   const { settings } = project.documentOf(at);
-  const template = await templateFor(project, documents.choice(settings, project).template);
+  // As it is to be used, with the document's changes: a copy of its own, made of plain data.
+  const template = await templateUsed(project, at);
   // The choice again, with the template read: it may bring the style or the format.
   const choice = documents.choice(settings, project);
   const format = await documents.formatFor(project, at);
@@ -289,7 +334,7 @@ export async function documentRequest(
     document: buildDocument(project, at),
     style: choice.style,
     format,
-    template: $state.snapshot(template) as Template,
+    template,
     output: 'document',
     key: projectId,
   };
