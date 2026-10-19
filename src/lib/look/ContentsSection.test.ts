@@ -213,6 +213,12 @@ describe('what the document contains, in Look', () => {
     type(view.field('keywords'), '-4');
     expect(p.node(book)!.document.composition).toEqual({ requirements: { keywords: 6 } });
     expect(view.field('keywords').value).toBe('6');
+    // A limit is a whole number, and shown as it is written.
+    type(view.field('abstractWords'), '300.4');
+    expect(p.node(book)!.document.composition?.requirements?.abstractWords).toBe(300);
+    expect(view.field('abstractWords').value).toBe('300');
+    type(view.field('abstractWords'), '250');
+    expect(p.node(book)!.document.composition).toEqual({ requirements: { keywords: 6 } });
 
     press(view.field('anonymous'));
     expect(p.node(book)!.document.composition?.requirements?.anonymous).toBe(true);
