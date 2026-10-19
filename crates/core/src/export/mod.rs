@@ -34,7 +34,7 @@ use crate::templates::{ContentsItem, GeneratedPart, Output, Template};
 use crate::tr;
 
 pub use tools::{Tool, Tools};
-pub use typeset::{Place, TextRun};
+pub use typeset::{Place, Spot, TextRun};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -177,6 +177,10 @@ pub struct Preview {
     /// Where each element of the document begins on the pages, in the order
     /// of the text, for keeping the text and the pages side by side.
     pub places: Vec<Place>,
+    /// What stands where on the pages: the stretches of the quotations, the
+    /// headings, the notes and the rest, page by page, so that the preview
+    /// can say what a line is and open its look.
+    pub spots: Vec<Spot>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -1051,6 +1055,9 @@ pub fn preview_made(
     warnings.extend(set.warnings);
     let (count, pages) = pages_from(&set.document, wanted);
     let places = typeset::places(&set.document);
+    // The text stands between the margins the opening of the document sets on every page.
+    let margins = (request.format.page.margin_top.points(), request.format.page.margin_bottom.points());
+    let spots = typeset::spots(&set.document, margins);
     tracing::debug!(pandoc = ?written, typst = ?(began.elapsed() - written), count, "the pages of the preview are made");
     let (width, height) = request.format.page.dimensions();
     Ok(Preview {
@@ -1062,6 +1069,7 @@ pub fn preview_made(
         missing: prepared.bibliography.missing,
         substitute: reference::substitute(&request.format, ctx.fonts),
         places,
+        spots,
     })
 }
 
@@ -2107,6 +2115,40 @@ mod tests {
         export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
         let xml = unzip(&docx, "word/document.xml");
         assert!(xml.contains("Summary") && xml.contains("Zzsummaryzz"), "{xml}");
+    }
+
+    #[test]
+    fn zz_probe_the_typst_of_every_spot() {
+        use crate::document::fixtures::{lines, mark, text};
+        use crate::document::{Block, Section};
+        use std::collections::BTreeMap;
+        let Some(s) = setup() else { return };
+        let mut r = with_figures(&s);
+        let parts = with_parts();
+        r.document.parts = parts.document.parts;
+        r.template = parts.template;
+        r.key = "probe".into();
+        let marked = |words: &str, mark: &str, value: Value| Inline::Text {
+            text: words.into(),
+            marks: BTreeMap::from([(mark.to_owned(), value)]),
+        };
+        r.document.sections.push(Section {
+            level: 2,
+            heading: Some(vec![text("Deeper")]),
+            blocks: vec![
+                Block::of_kind("epigraph", vec![text("Sing, goddess.")]),
+                lines("line", vec![(Some(mark().number("1").done()), "Sing, goddess, the wrath"), (None, "of Achilles")]),
+                Block::paragraph(vec![text("The word "), marked("μῆνις", "kind", json!({"name": "foreign", "lang": "el"})), text(" is wrath.")]),
+                Block::Table(poems("t-poems", "The poems")),
+            ],
+            element: Some("e3".into()),
+            kind: None,
+        });
+        let p = preview(&s.ctx(), &r).unwrap();
+        let source = fs::read_to_string(s.work.join("probe/preview/document.typ")).unwrap();
+        let out = std::env::var("PROBE_OUT").unwrap_or_else(|_| "/tmp/probe.typ".into());
+        fs::write(&out, &source).unwrap();
+        eprintln!("pages {} warnings {:?}", p.count, p.warnings);
     }
 
     #[test]

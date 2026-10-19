@@ -13,9 +13,13 @@ use std::sync::OnceLock;
 
 use serde::Serialize;
 use typst::diag::{FileError, FileResult, Severity, SourceDiagnostic, Warned};
-use typst::foundations::{Bytes, Datetime, NativeElement, Value};
-use typst::introspection::{Introspector, MetadataElem};
-use typst::layout::{Frame, FrameItem, Point, Transform};
+use typst::foundations::{Bytes, Content, Datetime, NativeElement, Selector, Smart, StyleChain, Value};
+use typst::introspection::{Introspector, Location, MetadataElem, Tag};
+use typst::layout::{BlockElem, Frame, FrameItem, Point, Transform};
+use typst::model::{
+    EnumElem, FigureElem, FigureKind, FootnoteEntry, HeadingElem, ListElem, OutlineElem, QuoteElem, TableElem,
+};
+use typst::text::RawElem;
 use typst::syntax::{FileId, RootedPath, Source, VirtualPath, VirtualRoot};
 use typst::text::{Font, FontBook};
 use typst::utils::LazyHash;
@@ -253,6 +257,197 @@ pub fn places(document: &PagedDocument) -> Vec<Place> {
             })
         })
         .collect()
+}
+
+/// A stretch of a page and what stands in it, for the preview to say what a
+/// line is and to open its look: the page, the first being 1, the top and
+/// the bottom in points from the top of the page, as the SVG of the page
+/// has them, and what it is.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Spot {
+    pub page: u32,
+    pub top: f32,
+    pub bottom: f32,
+    /// `kind:<id>` for a kind of paragraph, `part:<id>` for an element of a
+    /// kind that makes a document or a part the core makes (the contents,
+    /// the lists of figures and of tables), `heading:<level>`, `note`,
+    /// `bibliography`, `figure`, `table` or `front`.
+    pub what: String,
+}
+
+/// What a block that was set is, where the preview names it; nothing for
+/// the rest, which is text. Only blocks are named: a run of words of a kind
+/// lies within a line, and would name the whole line.
+fn what_of(content: &Content) -> Option<String> {
+    // Typst copies what the styles say into an element as it prepares it:
+    // the fields of one that was set are read without them.
+    let styles = StyleChain::default();
+    // The divisions of the document, which Pandoc writes as blocks with
+    // labels: `#block[…] <gk-kind-epigraph>`.
+    if content.elem() == BlockElem::ELEM {
+        let label = content.label()?.resolve();
+        let label: &str = &label;
+        if let Some(id) = label.strip_prefix("gk-kind-") {
+            return Some(format!("kind:{id}"));
+        }
+        if let Some(id) = label.strip_prefix("gk-part-") {
+            return Some(format!("part:{id}"));
+        }
+        let placed = |side: &str| matches!(side, "left" | "center" | "right" | "within");
+        return match label {
+            "gk-front" | "gk-half-title" => Some("front".into()),
+            "refs" => Some("bibliography".into()),
+            "gk-notes" => Some("note".into()),
+            _ if label.strip_prefix("gk-figure-").is_some_and(placed) => Some("figure".into()),
+            _ if label.strip_prefix("gk-table-").is_some_and(placed) => Some("table".into()),
+            _ => None,
+        };
+    }
+    if let Some(heading) = content.to_packed::<HeadingElem>() {
+        // The title of a list of contents is a heading that is not listed: it is the list's.
+        if !heading.outlined.get(styles) {
+            return None;
+        }
+        let label = content.label().map(|l| l.resolve());
+        return Some(match label.as_deref() {
+            Some("bibliography") => "bibliography".into(),
+            Some("notes") => "note".into(),
+            _ => format!("heading:{}", heading.resolve_level(styles)),
+        });
+    }
+    if content.is::<FootnoteEntry>() {
+        return Some("note".into());
+    }
+    // A quotation set off from the text, as Pandoc writes one; a quotation within a line is not.
+    if let Some(quote) = content.to_packed::<QuoteElem>() {
+        return quote.block.get(styles).then(|| "kind:quote".into());
+    }
+    if let Some(raw) = content.to_packed::<RawElem>() {
+        return raw.block.get(styles).then(|| "kind:code".into());
+    }
+    if content.is::<ListElem>() {
+        return Some("kind:item".into());
+    }
+    if content.is::<EnumElem>() {
+        return Some("kind:numbered".into());
+    }
+    if content.is::<TableElem>() {
+        return Some("table".into());
+    }
+    if let Some(figure) = content.to_packed::<FigureElem>() {
+        let table =
+            matches!(figure.kind.get_cloned(styles), Smart::Custom(FigureKind::Elem(e)) if e == TableElem::ELEM);
+        return Some(if table { "table" } else { "figure" }.into());
+    }
+    if let Some(outline) = content.to_packed::<OutlineElem>() {
+        // The lists of figures and of tables are outlines of figures of a kind.
+        let listed = match &outline.target.get_cloned(styles).0 {
+            Selector::Elem(elem, Some(fields)) if *elem == FigureElem::ELEM => {
+                let tables =
+                    fields.iter().any(|(_, v)| matches!(v, Value::Func(f) if f.element() == Some(TableElem::ELEM)));
+                if tables { "list-of-tables" } else { "list-of-figures" }
+            }
+            _ => "contents",
+        };
+        return Some(format!("part:{listed}"));
+    }
+    None
+}
+
+/// The tags of a frame and of what is within it, each with its y on the
+/// page, in the order Typst set them: where an element begins, where it ends.
+fn tags_in<'a>(frame: &'a Frame, ts: Transform, out: &mut Vec<(f32, &'a Tag)>) {
+    for (pos, item) in frame.items() {
+        match item {
+            FrameItem::Group(group) => {
+                let ts = ts.pre_concat(Transform::translate(pos.x, pos.y)).pre_concat(group.transform);
+                tags_in(&group.frame, ts, out);
+            }
+            FrameItem::Tag(tag) => out.push((pos.transform(ts).y.to_pt() as f32, tag)),
+            _ => {}
+        }
+    }
+}
+
+/// What stands where on the pages of a document that was set: the stretch
+/// of every block the preview names (see [`Spot`]), page by page, from the
+/// top. Typst marks where each element begins and ends among what it set.
+/// An element that goes on to the next page goes on there from the top of
+/// the text, below the margin at the head (`margins.0`, in points), and
+/// fills the pages between to the margin at the foot (`margins.1`): the
+/// running head and the number of the page stand outside it. A note that
+/// goes on to the next page is named on its first page only: what goes on
+/// stands among the notes at the foot of the next, which nothing tells
+/// apart from the text above them.
+pub fn spots(document: &PagedDocument, margins: (f32, f32)) -> Vec<Spot> {
+    struct Open {
+        location: Location,
+        what: String,
+        page: usize,
+        top: f32,
+    }
+    let pages = document.pages();
+    // Where the text of a page stands, between its margins.
+    let text = |page: usize| {
+        let p = &pages[page];
+        let top = p.bleed.top.to_pt() as f32;
+        (top + margins.0, top + p.frame.height().to_pt() as f32 - margins.1)
+    };
+    let mut out: Vec<Spot> = Vec::new();
+    let mut close = |Open { what, page: from, top, .. }: Open, page: usize, y: f32| {
+        let mut add = |at: usize, top: f32, bottom: f32| {
+            // What has no height holds no line: an end found at the top of the next page.
+            if bottom - top >= 0.5 {
+                out.push(Spot { page: at as u32 + 1, top, bottom, what: what.clone() });
+            }
+        };
+        if from == page && y >= top {
+            add(page, top, y);
+            return;
+        }
+        // An end above the beginning on the same page: it went on in the next column.
+        let (_, foot) = text(from);
+        add(from, top, foot);
+        if from != page && what == "note" {
+            return;
+        }
+        for between in from + 1..page {
+            let (head, foot) = text(between);
+            add(between, head, foot);
+        }
+        let (head, _) = text(page);
+        add(page, head, y);
+    };
+    let mut open: Vec<Open> = Vec::new();
+    for (i, page) in pages.iter().enumerate() {
+        let mut tags = Vec::new();
+        // Moved by the bleed, as the SVG of the page is drawn.
+        tags_in(&page.frame, Transform::translate(page.bleed.left, page.bleed.top), &mut tags);
+        for (y, tag) in tags {
+            match tag {
+                Tag::Start(content, _) => {
+                    if let (Some(location), Some(what)) = (content.location(), what_of(content)) {
+                        open.push(Open { location, what, page: i, top: y });
+                    }
+                }
+                Tag::End(location, ..) => {
+                    if let Some(at) = open.iter().rposition(|o| o.location == *location) {
+                        close(open.remove(at), i, y);
+                    }
+                }
+            }
+        }
+    }
+    // Typst ends every element it begins; one that was not ended ends with the text.
+    if let Some(last) = pages.len().checked_sub(1) {
+        let (_, foot) = text(last);
+        while let Some(o) = open.pop() {
+            close(o, last, foot);
+        }
+    }
+    out.sort_by(|a, b| a.page.cmp(&b.page).then(a.top.total_cmp(&b.top)));
+    out
 }
 
 /// A document that was set, as a PDF.
