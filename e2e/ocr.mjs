@@ -1,6 +1,9 @@
 // Text read from PDFs and pictures by Tesseract (ADR 0018): a scanned PDF
 // and a picture brought into a project as trees under the element in view
-// (ADR 0037), a reading stopped, a PDF
+// (ADR 0037), through the workbench of a reading (ADR 0061): the pages, the
+// panes of the page in view, a page tried and tried again, stretches made by
+// selecting, what each page takes, and what is made of it chosen after the
+// reading; a reading stopped, a PDF
 // attached to a reference made searchable (with how it is read changed, and
 // the text it has taken away), a map from a PDF of the library, the text of a
 // picture of the store, and Tesseract in the settings.
@@ -158,6 +161,24 @@ try {
     app.exec(
       `return Array.from(document.querySelectorAll('dialog .remarks li')).map((e) => e.textContent.trim())`,
     );
+  /** Clicks the button at the foot of the dialog that reads, once it can. */
+  const readIt = async () => {
+    await app.waitUntil(
+      `const b = document.querySelector('dialog [data-ocr-read]'); return !!b && !b.disabled`,
+      15000,
+      'the button that reads',
+    );
+    await app.click('dialog [data-ocr-read]');
+  };
+  /** What the line over the pages says each page gets. */
+  const said = () => app.text('dialog [data-pages-said]');
+  /** What the pages of the strip are marked to get, in order. */
+  const sources = () =>
+    app.exec(
+      `return Array.from(document.querySelectorAll('dialog [data-strip-page] [data-strip-source]')).map((b) => b.dataset.stripSource)`,
+    );
+  const footLabel = () =>
+    app.exec(`return document.querySelector('dialog [data-ocr-read]')?.textContent.trim() ?? ''`);
   const chips = () =>
     app.exec(
       `return Array.from(document.querySelectorAll('dialog [data-languages] .chip')).map((e) => e.dataset.language)`,
@@ -195,7 +216,7 @@ try {
       await app.exec(`return document.querySelector('dialog').textContent`),
     ),
   );
-  await app.click('dialog [data-ocr-read]');
+  await readIt();
   await app.waitFor('dialog [data-fact="words"]', 60000);
   await sleep(200);
   await app.clickText('dialog footer button', 'Make the project');
@@ -222,13 +243,18 @@ try {
   await sleep(300);
 
   await dropOnTabs(scan);
-  await app.waitFor('dialog [data-ocr="asking"]', 15000);
-  await sleep(300);
-  const about = await app.text('dialog [data-ocr="asking"] .about');
+  await app.waitFor('dialog [data-workbench]', 15000);
+  await sleep(400);
+  const about = await said();
   check(
-    'a scan is looked at, and said to be read from pictures of its pages',
-    /None of the 2 pages has text/.test(about),
+    'a scan is looked at, and every page is said to be read with Tesseract',
+    /All 2 pages are read with Tesseract/.test(about),
     about,
+  );
+  check(
+    'and marked so in the strip',
+    JSON.stringify(await sources()) === '["read","read"]',
+    JSON.stringify(await sources()),
   );
   check(
     'it is to be read in the language of the text, English',
@@ -239,32 +265,32 @@ try {
     'in words, not by the name Tesseract has for it',
     (await app.text('dialog [data-languages] .chip')).trim() === 'English',
   );
-  check('how it is read is closed at first', (await app.exists('dialog [data-ocr-dpi]')) === false);
-  await app.click('dialog [data-ocr-how]');
-  await app.waitFor('dialog [data-ocr-dpi]', 3000);
   check(
-    'opened, it offers the resolution, with 300 chosen',
-    await app.exists('dialog [data-ocr-dpi] [role="radio"][aria-label="300"][aria-checked="true"]'),
+    'the settings stand beside the pages, not folded away, with 300 dots to the inch',
+    await app.exists(
+      'dialog [data-read-settings] [data-ocr-dpi] [role="radio"][aria-label="300"][aria-checked="true"]',
+    ),
   );
-  await app.click('dialog [data-ocr-dpi] [role="radio"][aria-label="400"]');
   check(
-    'and the resolution can be changed',
-    await app.exists('dialog [data-ocr-dpi] [role="radio"][aria-label="400"][aria-checked="true"]'),
+    'the first page to be read is the page in view, and the one selected',
+    (await app.exists('dialog [data-strip-page="1"][data-strip-view="true"]')) &&
+      /page 1/.test(await app.text('dialog [data-settings-scope]')),
+    await app.text('dialog [data-settings-scope]'),
   );
-  await app.screenshot('ocr-1-asking');
+  check(
+    'a scan has no text of its own to stand beside: two panes',
+    (await app.exec(`return document.querySelector('dialog [data-page-panes]')?.dataset.pagePanes`)) === '2',
+  );
+  check('the button at the foot says what it does', (await footLabel()) === 'Read 2 pages', await footLabel());
+  await app.screenshot('ocr-1-workbench');
 
-  // ---- a page tried before the whole is read ----
-  check(
-    'a page can be tried beside the choices, the first to be read',
-    (await app.exists('dialog [data-ocr-try-pane]')) &&
-      (await app.exec(`return document.querySelector('dialog [data-ocr-try-page]').value`)) === '1',
-  );
+  // ---- a page tried, and tried again otherwise ----
   await app.click('dialog [data-ocr-try]');
   const sure = await until(
     'the page tried to be shown',
     () =>
       app.exec(
-        `const v = document.querySelector('dialog [data-ocr-tried-confidence]'); return v ? v.dataset.ocrTriedConfidence : null`,
+        `const v = document.querySelector('dialog [data-ocr-tried-confidence]'); return v && v.dataset.ocrTriedConfidence ? v.dataset.ocrTriedConfidence : null`,
       ),
     60000,
   );
@@ -275,40 +301,85 @@ try {
     'the picture Tesseract read is shown, with the blocks it found over it',
     (await app.exec(
       `const i = document.querySelector('dialog [data-ocr-tried-picture]'); return !!i && i.naturalWidth > 0`,
-    )) && Number(await app.exec(`return document.querySelector('dialog [data-ocr-tried-blocks]')?.dataset.ocrTriedBlocks ?? 0`)) >= 1,
+    )) &&
+      Number(
+        await app.exec(
+          `return document.querySelector('dialog [data-ocr-tried-blocks]')?.dataset.ocrTriedBlocks ?? 0`,
+        ),
+      ) >= 1,
   );
   check(
     'a page read well is not said to be poor',
     (await app.exec(`return document.querySelector('dialog [data-ocr-tried-confidence]').dataset.poorly`)) === 'false',
   );
+  check(
+    'how many of its words Tesseract was unsure of is said',
+    await app.exists('dialog [data-unsure]'),
+  );
+  check('the trial is kept', (await app.exec(`return document.querySelectorAll('dialog [data-trial]').length`)) === 1);
   await app.screenshot('ocr-1b-tried');
   await app.setTheme('dark');
+  await sleep(200);
   await app.screenshot('ocr-1b-tried-dark');
   await app.setTheme('light');
 
-  // ---- the pages, and a stretch begun at the second ----
+  // ---- a setting changed for the page selected makes a stretch ----
+  await app.click('dialog [data-ocr-dpi] [role="radio"][aria-label="400"]');
+  await sleep(200);
+  check(
+    'a resolution chosen for the first page alone makes two stretches, shown over the strip',
+    (await app.exists('dialog [data-strip-stretch="1"]')) &&
+      (await app.exists('dialog [data-strip-stretch="2"]')),
+  );
   await app.waitFor('dialog [data-strip-page="2"] img', 30000);
-  check('the pages are shown, small, under the choices', await app.exists('dialog [data-strip-page="1"] img'));
-  await app.click('dialog [data-strip-page="2"]');
+  check('the pages are shown, small, at the top', await app.exists('dialog [data-strip-page="1"] img'));
+  await app.screenshot('ocr-1c-stretches');
+  await app.click('dialog [data-ocr-try]');
+  await until(
+    'the page to be tried again',
+    () => app.exec(`return document.querySelectorAll('dialog [data-trial]').length === 2`),
+    60000,
+  );
+  check(
+    'tried again, both trials are kept, the newest shown',
+    (await app.exec(`return document.querySelector('dialog [data-trial="1"]').getAttribute('aria-selected')`)) === 'true',
+  );
+  check(
+    'the older is said to be read otherwise than the page is now',
+    await app.exists('dialog [data-trial="2"] [data-trial-differs]'),
+  );
+  await app.click('dialog [data-trial="2"]');
   await sleep(200);
   check(
-    'a page chosen is the page tried',
-    (await app.exec(`return document.querySelector('dialog [data-ocr-try-page]').value`)) === '2',
+    'and can be shown again',
+    (await app.exec(`return document.querySelector('dialog [data-trial="2"]').getAttribute('aria-selected')`)) === 'true',
   );
-  await app.click('dialog [data-ocr-begin-stretch]');
-  await app.waitFor('dialog [data-ocr-stretch="2"]', 3000);
-  check(
-    'a stretch begun there stands as a chip, chosen, beside the whole',
-    (await app.exists('dialog [data-ocr-stretch="1"]')) &&
-      (await app.exec(`return document.querySelector('dialog [data-ocr-stretch="2"]').getAttribute('aria-selected')`)) ===
-        'true',
-  );
-  await app.screenshot('ocr-1c-stretch');
-  await app.click('dialog [data-ocr-stretch-remove="2"]');
+  await app.click('dialog [data-trial="2"] [data-trial-use]');
   await sleep(200);
-  check('taken away, its pages fall to the whole again', !(await app.exists('dialog [data-ocr-stretch="2"]')));
+  check(
+    'its settings taken again, the page is read as the others, in one stretch',
+    !(await app.exists('dialog [data-strip-stretch="2"]')) &&
+      (await app.exists('dialog [data-ocr-dpi] [role="radio"][aria-label="300"][aria-checked="true"]')),
+  );
 
-  await app.click('dialog [data-ocr-read]');
+  // ---- pages chosen in the strip ----
+  await app.click('dialog [data-strip-page="2"]');
+  await sleep(300);
+  check(
+    'a page chosen is the page in view, and the settings hold for it',
+    (await app.exists('dialog [data-strip-page="2"][data-strip-view="true"]')) &&
+      /page 2/.test(await app.text('dialog [data-settings-scope]')),
+    await app.text('dialog [data-settings-scope]'),
+  );
+  await app.click('dialog [data-pages-all]');
+  await sleep(200);
+  check(
+    'or for every page',
+    /all 2 pages/i.test(await app.text('dialog [data-settings-scope]')),
+    await app.text('dialog [data-settings-scope]'),
+  );
+
+  await readIt();
   await app.waitFor('dialog [data-fact="words"]', 60000);
   await sleep(300);
   const counted = await facts();
@@ -328,7 +399,8 @@ try {
     told.join(' ‖ '),
   );
   check('and no page was read poorly', !told.some((r) => /read poorly/.test(r)), told.join(' ‖ '));
-  await app.screenshot('ocr-2-read');
+  check('what is made of it is asked after the reading', await app.exists('dialog [data-made-of] [data-made-shape]'));
+  await app.screenshot('ocr-2-made');
   await app.clickText('dialog footer button', 'Bring it in');
   await app.waitGone('dialog[open]', 15000);
   await app.waitFor('.text-view .section', 8000);
@@ -369,12 +441,15 @@ try {
   await inView('Homer');
   await sleep(300);
   await dropOnTabs(picture);
-  await app.waitFor('dialog [data-ocr="asking"]', 15000);
+  await app.waitFor('dialog [data-workbench]', 15000);
   check(
-    'a picture is to be read as it is',
-    /The text is read from the picture/.test(await app.text('dialog [data-ocr="asking"] .about')),
+    'a picture is read in the workbench too, without pages to choose from, and is tried at once',
+    !(await app.exists('dialog [data-page-strip]')) &&
+      (await app.exec(`return document.querySelector('dialog [data-page-panes]')?.dataset.pagePanes`)) === '2',
   );
-  await app.click('dialog [data-ocr-read]');
+  await app.waitFor('dialog [data-ocr-tried-text]', 60000);
+  check('what it reads is shown', /Many a brave soul/.test(await app.text('dialog [data-ocr-tried-text]')));
+  await readIt();
   await app.waitFor('dialog [data-fact="words"]', 60000);
   await sleep(200);
   check(
@@ -403,43 +478,47 @@ try {
   await inView('Homer');
   await sleep(300);
   await dropOnTabs(written);
-  await app.waitFor('dialog [data-ocr="asking"]', 15000);
-  const aboutText = await app.text('dialog [data-ocr="asking"] .about');
+  await app.waitFor('dialog [data-workbench]', 15000);
+  await sleep(300);
   check(
-    'a PDF that has text is said to be taken as it is',
-    /The page has text, which is taken as it is/.test(aboutText),
-    aboutText,
+    'a PDF that has text is said to take it',
+    /The page takes the text the PDF has/.test(await said()),
+    await said(),
   );
-  check('no languages are asked for', !(await app.exists('dialog [data-languages]')));
-  await app.waitFor('dialog [data-text-preview] [data-text-page]', 10000);
-  const previewed = await app.text('dialog [data-text-preview]');
-  check('the whole of its text is shown beside', /The wrath of Achilles/.test(previewed), previewed);
+  await app.waitFor('dialog [data-pane-pdf] [data-text-page]', 10000);
+  const previewed = await app.text('dialog [data-pane-pdf]');
+  check('the text it has is shown beside the picture', /The wrath of Achilles/.test(previewed), previewed);
   check(
-    'and what was found is said',
-    /Text on 1 of 1 pages/.test(await app.text('dialog [data-text-found]')),
-    await app.text('dialog [data-text-found]'),
+    'it reads as text, and that is said',
+    await app.exists('dialog [data-text-verdict="sound"]'),
   );
+  check('as it is, its text is taken', (await footLabel()) === 'Take the text', await footLabel());
+  await app.click('dialog [data-ocr-try]');
+  await app.waitFor('dialog [data-ocr-tried-text]', 60000);
   check(
-    'and it reads as text, so it is kept at first',
-    !(await app.exists('dialog [data-text-poor]')) &&
-      (await app.exec(`return document.querySelector('dialog [data-choice="keep"]').checked`)),
+    'a page that takes its text can be tried all the same, the two texts side by side',
+    /wrath of Achilles/.test(await app.text('dialog [data-ocr-tried-text]')) &&
+      (await app.exec(`return document.querySelector('dialog [data-page-panes]')?.dataset.pagePanes`)) === '3',
   );
-  await app.click('dialog [data-choice="anew"]');
-  check('unless its pages are to be read anew', await app.exists('dialog [data-languages]'));
+  await app.screenshot('ocr-2b-side-by-side');
+  await app.click('dialog [data-pages-read]');
+  await sleep(200);
   check(
-    'which is said',
-    /read anew/.test(await app.text('dialog [data-ocr="asking"] .about')),
-    await app.text('dialog [data-ocr="asking"] .about'),
+    'it can be read with Tesseract instead, which the strip and the button say',
+    JSON.stringify(await sources()) === '["read"]' && (await footLabel()) === 'Read one page',
+    `${JSON.stringify(await sources())} ${await footLabel()}`,
   );
-  await app.click('dialog [data-choice="keep"]');
+  await app.click('dialog [data-pane-use-pdf]');
+  await sleep(200);
   check(
-    'as it is, its text is taken',
-    (await app.text('dialog [data-ocr-read]')).trim() === 'Take the text',
+    'and given its own text again from the pane of that text',
+    JSON.stringify(await sources()) === '["pdf"]' && (await footLabel()) === 'Take the text',
+    `${JSON.stringify(await sources())} ${await footLabel()}`,
   );
-  await app.click('dialog [data-ocr-read]');
+  await readIt();
   await app.waitFor('dialog [data-fact="words"]', 30000);
   check(
-    'and it is read at once',
+    'and it is taken at once',
     (await facts()).parts === '1' && (await remarks()).length === 0,
     JSON.stringify(await facts()),
   );
@@ -448,21 +527,21 @@ try {
 
   // ---- Greek kept by the names of its glyphs: translated ----
   await dropOnTabs(porson);
-  await app.waitFor('dialog [data-ocr="asking"] [data-text-preview] [data-text-page]', 15000);
+  await app.waitFor('dialog [data-workbench] [data-pane-pdf] [data-text-page]', 15000);
   check(
     'the scheme of the font is said',
     /glyph names of PorsonGreekSF/.test(await app.text('dialog [data-text-scheme="greek-names"]')),
-    await app.text('dialog [data-text-found]'),
   );
   check(
-    'and translating is chosen at first, with no languages to read with',
-    (await app.exec(`return document.querySelector('dialog [data-choice="translate"]').checked`)) &&
-      !(await app.exists('dialog [data-languages]')),
+    'its text is taken as translated at first, and nothing read',
+    (await app.exec(`return document.querySelector('dialog [data-text-translated]').checked`)) &&
+      JSON.stringify(await sources()) === '["pdf"]',
+    JSON.stringify(await sources()),
   );
   check(
-    'the preview shows the text as translated',
-    /ἥσθην ἀπειλαῖς, ἐγέλασα ψολοκομπίαις/.test(await app.text('dialog [data-text-preview]')),
-    await app.text('dialog [data-text-preview]'),
+    'the pane shows the text as translated',
+    /ἥσθην ἀπειλαῖς, ἐγέλασα ψολοκομπίαις/.test(await app.text('dialog [data-pane-pdf]')),
+    await app.text('dialog [data-pane-pdf]'),
   );
   await sleep(300);
   await app.screenshot('ocr-2d-translate');
@@ -470,13 +549,14 @@ try {
   await sleep(200);
   await app.screenshot('ocr-2d-translate-dark');
   await app.setTheme('light');
-  await app.click('dialog [data-choice="keep"]');
+  await app.click('dialog [data-text-translated]');
+  await sleep(200);
   check(
-    'and as it is, when it is to be kept',
-    !/ἐγέλασα/.test(await app.text('dialog [data-text-preview]')),
-    await app.text('dialog [data-text-preview]'),
+    'and as it is, when it is not to be translated',
+    !/ἐγέλασα/.test(await app.text('dialog [data-pane-pdf]')),
+    await app.text('dialog [data-pane-pdf]'),
   );
-  await app.click('dialog [data-choice="translate"]');
+  await app.click('dialog [data-text-translated]');
   await app.clickText('dialog footer button', 'Cancel');
   await app.waitGone('dialog[open]', 5000);
   const translated = await invoke('ocr_read', {
@@ -485,41 +565,55 @@ try {
   });
   check(
     'read with translation, the text is Greek, and nothing is read from a picture',
-    /ἐγέλασα ψολοκομπίαις/.test(JSON.stringify(translated.sections)) &&
-      translated.remarks.length === 0,
-    JSON.stringify(translated.remarks),
+    /ἐγέλασα ψολοκομπίαις/.test(JSON.stringify(translated.imported.sections)) &&
+      translated.imported.remarks.length === 0,
+    JSON.stringify(translated.imported.remarks),
   );
 
   // ---- Beta Code: translated as well ----
   await dropOnTabs(betaCode);
-  await app.waitFor('dialog [data-ocr="asking"] [data-text-preview] [data-text-page]', 15000);
+  await app.waitFor('dialog [data-workbench] [data-pane-pdf] [data-text-page]', 15000);
   check(
     'Beta Code is said to be that',
     await app.exists('dialog [data-text-scheme="beta-code"]'),
   );
   check(
     'and is shown in Greek',
-    /μῆνιν ἄειδε θεὰ/.test(await app.text('dialog [data-text-preview]')),
-    await app.text('dialog [data-text-preview]'),
+    /μῆνιν ἄειδε θεὰ/.test(await app.text('dialog [data-pane-pdf]')),
+    await app.text('dialog [data-pane-pdf]'),
   );
   await app.clickText('dialog footer button', 'Cancel');
   await app.waitGone('dialog[open]', 5000);
 
   // ---- text that does not read as text, in no scheme ----
   await dropOnTabs(junk);
-  await app.waitFor('dialog [data-ocr="asking"] [data-text-preview] [data-text-page]', 15000);
-  check('text that does not read as text is said to be so', await app.exists('dialog [data-text-poor]'));
+  await app.waitFor('dialog [data-workbench] [data-pane-pdf] [data-text-page]', 15000);
   check(
-    'and every page is to be read anew at first, with languages to read with',
-    (await app.exec(`return document.querySelector('dialog [data-choice="anew"]').checked`)) &&
-      (await app.exists('dialog [data-languages]')),
+    'text that does not read as text is said to be so',
+    (await app.exists('dialog [data-text-verdict="poor"]')) &&
+      (await app.exists('dialog [data-strip-page="1"] [data-strip-verdict="poor"]')),
+  );
+  check(
+    'and its page is to be read anew at first',
+    JSON.stringify(await sources()) === '["read"]' && /read with Tesseract/.test(await said()),
+    await said(),
   );
   check(
     'what the PDF has is shown, to judge by',
-    /ÌÞíéí/.test(await app.text('dialog [data-text-preview]')),
-    await app.text('dialog [data-text-preview]'),
+    /ÌÞíéí/.test(await app.text('dialog [data-pane-pdf]')),
+    await app.text('dialog [data-pane-pdf]'),
   );
-  check('there is nothing to translate', !(await app.exists('dialog [data-choice="translate"]')));
+  check('there is nothing to translate', !(await app.exists('dialog [data-text-translated]')));
+  await app.click('dialog [data-pages-pdf]');
+  await sleep(200);
+  check('it can take its own text all the same', JSON.stringify(await sources()) === '["pdf"]');
+  await app.click('dialog [data-pages-decide]');
+  await sleep(200);
+  check(
+    'and decided by the quality of its text, it is read',
+    JSON.stringify(await sources()) === '["read"]',
+    JSON.stringify(await sources()),
+  );
   await sleep(300);
   await app.screenshot('ocr-2c-poor-text');
   await app.setTheme('dark');
@@ -532,13 +626,25 @@ try {
   // ---- the shape of the pages: headings, kept lines, a style named ----
   const shapePdf = join(root, 'e2e', 'fixtures', 'shape.pdf');
   await dropOnTabs(shapePdf);
-  await app.waitFor('dialog [data-ocr="asking"]', 15000);
+  await app.waitFor('dialog [data-workbench]', 15000);
+  await readIt();
+  await app.waitFor('dialog [data-styles-found] [data-style]', 30000);
+  await sleep(300);
   check(
     'the shape of the pages is kept at first',
-    await app.exec(`return document.querySelector('dialog [data-choice="shape"]')?.checked === true`),
+    await app.exec(`return document.querySelector('dialog [data-made-shape]')?.checked === true`),
   );
-  await app.click('dialog [data-ocr-read]');
-  await app.waitFor('dialog [data-styles-found] [data-style]', 30000);
+  await app.click('dialog [data-made-shape]');
+  await app.waitGone('dialog [data-styles-found]', 10000);
+  check(
+    'without it, the same reading is plain paragraphs, a part a page, at once and without reading again',
+    !(await app.exists('dialog [data-outline]')) &&
+      (await facts()).parts === '4' &&
+      !(await app.exists('dialog [data-ocr="reading"]')),
+    JSON.stringify(await facts()),
+  );
+  await app.click('dialog [data-made-shape]');
+  await app.waitFor('dialog [data-styles-found] [data-style]', 10000);
   await sleep(300);
   const styles = await app.exec(
     `return Array.from(document.querySelectorAll('dialog [data-style]')).map((s) => s.textContent.replace(/\\s+/g, ' ').trim())`,
@@ -624,12 +730,16 @@ try {
   const structurePdf = join(root, 'e2e', 'fixtures', 'structure.pdf');
   const readStructure = async (pages) => {
     await dropOnTabs(structurePdf);
-    await app.waitFor('dialog [data-ocr="asking"]', 15000);
-    if (pages) await app.clickText('dialog [data-choice="structure"] [role="radio"]', 'By its pages');
-    await sleep(200);
-    await app.click('dialog [data-ocr-read]');
+    await app.waitFor('dialog [data-workbench]', 15000);
+    await readIt();
     await app.waitFor('dialog form input', 30000);
     await sleep(400);
+    if (pages) {
+      // Chosen after the reading, and made anew from it.
+      await app.click(await app.findByText('dialog [data-made-structure] [role="radio"]', 'By its 2 pages'));
+      await app.waitGone('dialog [data-outline]', 10000);
+      await sleep(200);
+    }
   };
   await readStructure(false);
   const treatise = await app.exec(
@@ -643,6 +753,11 @@ try {
   );
   const titleField = () => app.exec(`return document.querySelector('dialog form input').value`);
   check('the title found is the title offered', (await titleField()) === 'A Short Treatise', await titleField());
+  check(
+    'the tree is said to be by its headings, counted',
+    /By its 4 headings/.test(await app.text('dialog [data-made-structure]')),
+    await app.text('dialog [data-made-structure]'),
+  );
   await app.screenshot('ocr-6b-outline');
   await app.setTheme('dark');
   await sleep(200);
@@ -698,7 +813,11 @@ try {
   // ---- an English scan read as Ancient Greek: its pages are said to be read poorly ----
   if (/^grc$/m.test(langs)) {
     await dropOnTabs(scan);
-    await app.waitFor('dialog [data-ocr="asking"]', 15000);
+    await app.waitFor('dialog [data-workbench]', 15000);
+    await sleep(300);
+    // The languages hold for every page.
+    await app.click('dialog [data-pages-all]');
+    await sleep(200);
     await app.exec(
       `const s = document.querySelector('dialog [data-languages] select'); s.value = 'grc'; s.dispatchEvent(new Event('change', { bubbles: true }));`,
     );
@@ -714,7 +833,7 @@ try {
     );
     check('the page tried is said to be read poorly', poor === 'true', poor);
     await app.screenshot('ocr-1d-tried-poorly');
-    await app.click('dialog [data-ocr-read]');
+    await readIt();
     await app.waitFor('dialog [data-fact="words"]', 60000);
     const saidPoorly = await remarks();
     check(
@@ -736,8 +855,8 @@ try {
 
   // ---- a reading stopped ----
   await dropOnTabs(long);
-  await app.waitFor('dialog [data-ocr="asking"]', 15000);
-  await app.click('dialog [data-ocr-read]');
+  await app.waitFor('dialog [data-workbench]', 15000);
+  await readIt();
   const shown = await until(
     'the pages to be shown as they are read',
     () =>
@@ -770,18 +889,19 @@ try {
   await app.waitFor('.pane [data-searchable]', 5000);
   const before = (await invoke('library_get', { id: singer.id })).files[0];
   await app.click('.pane [data-searchable]');
-  await app.waitFor('dialog [data-ocr="asking"]', 15000);
-  const aboutPdf = await app.text('dialog [data-ocr="asking"] .about');
+  await app.waitFor('dialog [data-workbench="searchable"]', 15000);
+  await sleep(300);
+  const aboutPdf = await said();
   check(
-    'a PDF of the library is looked at before it is made searchable',
-    /2 of the 2 pages have no text/.test(aboutPdf),
+    'a PDF of the library is looked at in the same workbench before it is made searchable',
+    /All 2 pages are read with Tesseract/.test(aboutPdf),
     aboutPdf,
   );
   check(
-    'no page has text, so there is nothing to keep or read anew',
-    !(await app.exists('dialog [data-text-choice]')),
+    'no page has text, so there is no text of its own to show',
+    !(await app.exists('dialog [data-pane-pdf]')),
   );
-  check('how it is read can be opened here too', await app.exists('dialog [data-ocr-how]'));
+  check('how it is read stands beside the pages here too', await app.exists('dialog [data-read-settings] [data-ocr-dpi]'));
   await app.screenshot('ocr-5-searchable');
   await app.click('dialog [data-ocr-make]');
   await app.waitGone('dialog[open]', 90000);
@@ -828,23 +948,25 @@ try {
     await app.exists('.pane [data-searchable]'),
   );
   await app.click('.pane [data-searchable]');
-  await app.waitFor('dialog [data-ocr="asking"]', 15000);
+  await app.waitFor('dialog [data-workbench="searchable"]', 15000);
+  await sleep(300);
   check(
-    'with text on every page, it is said to be searchable already',
-    /Every page has text/.test(await app.text('dialog [data-ocr="asking"] .about')),
+    'with text on every page, the text it has, which was read here, is kept at first',
+    /All 2 pages take the text the PDF has/.test(await said()) &&
+      JSON.stringify(await sources()) === '["pdf","pdf"]',
+    await said(),
   );
   check(
-    'the text it has, which was read here, is kept at first',
-    await app.exec(`return document.querySelector('dialog [data-choice="keep"]').checked`),
+    'and there is nothing to do',
+    await app.exec(`return document.querySelector('dialog [data-ocr-make]').disabled`),
   );
-  await app.click('dialog [data-choice="anew"]');
+  await app.click('dialog [data-pages-read]');
+  await sleep(200);
   check(
-    'read anew, the text it has is taken away, and that is said',
-    /unseen text the pages have is taken away/.test(await app.text('dialog [data-ocr="asking"]')),
-  );
-  check(
-    'and so is what is done',
-    /read anew/.test(await app.text('dialog [data-ocr="asking"] .about')),
+    'the page selected can be read anew, which the strip says',
+    JSON.stringify(await sources()) === '["read","pdf"]' &&
+      !(await app.exec(`return document.querySelector('dialog [data-ocr-make]').disabled`)),
+    JSON.stringify(await sources()),
   );
   await app.screenshot('ocr-5b-anew');
   await app.clickText('dialog footer button', 'Cancel');
@@ -888,10 +1010,11 @@ try {
     intoOptions[0] === 'A new project, named after it' && intoOptions.includes('Homer'),
     JSON.stringify(intoOptions),
   );
+  await app.waitFor('dialog [data-workbench]', 15000);
   check(
     'and the PDF is looked at where it is stored',
-    /Every page has text/.test(await app.text('dialog [data-ocr="asking"] .about')),
-    await app.text('dialog [data-ocr="asking"] .about'),
+    /take the text the PDF has/.test(await said()),
+    await said(),
   );
   await app.screenshot('ocr-5c-map');
   await app.clickText('dialog footer button', 'Cancel');

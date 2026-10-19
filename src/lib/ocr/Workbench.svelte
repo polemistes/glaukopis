@@ -23,7 +23,7 @@
    * while the dialog is open. The text and the picture of the page in view
    * are fetched as it comes into view, and a few are kept.
    */
-  import { onDestroy } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import { SvelteMap } from 'svelte/reactivity';
   import { isBackendError } from '$lib/api/backend';
   import {
@@ -244,6 +244,11 @@
       }
     }
   }
+
+  // A picture is one page, and nothing of it is shown until it is read: it is tried at once.
+  onMount(() => {
+    if (looked.picture && reader.installed) void attempt();
+  });
 
   onDestroy(() => {
     gone = true;
