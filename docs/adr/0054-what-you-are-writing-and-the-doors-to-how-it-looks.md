@@ -1,0 +1,64 @@
+# 0054 — What you are writing, and the doors to how it looks
+
+Date: 2026-10-19. Status: accepted by the owner on 2026-10-19; to be built from `docs/plans/what-you-are-writing.md`. Amends 0038 (templates and the document settings window), 0042 (Look) and 0029 (kinds and their looks) in what the writer is shown and where. The model of templates, layouts, styles and kinds is not changed.
+
+## Context
+
+The owner walked through the application as a new writer would, and as the owner who knows it well, and found the same thing both times. The projects, the trees, the library and the citing are understood at once. Then, to see how the text will look, the writer opens the preview and meets a header that reads "Plain document · Manuscript · Chicago Manual of Style 18th edition": a template, a layout and a reference style, before any page. A poet sees a citation style first. To change the template the writer opens a window of six tabs; to change anything in the template the writer must make a new one; the tab *Parts* names a thing nobody asked for; the tab *Look* has a button that does nothing when Look is already open. Look itself begins with the same three names in a line, repeats them as three rows, and then offers twelve chips in no visible order. The template list has a group *Plain* with *Paper* and *Plain document* in it, which are the roots the other templates are based on, not choices anyone would frame, and thirty journals, publishers and style guides that a novelist scrolls past. The owner's words: it feels like hitting a wall, where the wish was an interface that takes the writer by the hand until the writer wants to go and fix things alone.
+
+Read with fresh eyes, the trouble is not the model. A template says what a document consists of, a layout says how its pages look, a reference style says how it cites, a kind says what a piece of text is, and a document's changes lie over its layout without copying it: each of these is right. The trouble is that the interface shows the writer the storage, not the questions. The writer has three questions, in this order: what am I writing, how will it look, and what does the document say of itself. The interface answers with nine nouns (template, layout, reference style, look, changes, kind of element, kind of paragraph, kind of words, part), offers the same choice in four places, leads with citing for everyone, mixes two axes in one list (what kind of text, and whom it is for), and never once asks the first question.
+
+The owner set conditions for the answer. Nothing is asked when a project is made: a project may hold many kinds of text, and any element may be a document of its own kind, so the choice belongs to the element, not the project. Every document begins as a generic kind. The way to choosing what a document is must be obvious at once. Most things must be possible in most kinds of document: every document may cite, and so has a reference style, but a writer who does not cite must never have to attend to it.
+
+## Decision
+
+The three questions, in the writer's order, each with one door. Underneath, the same template, layout, style and kinds as before.
+
+### 1. What you are writing
+
+- **The template is shown to the writer as what the document is**, under a plain name: *Plain document*, *Novel*, *Poems*, *The Classical Quarterly*. The words *template*, *layout* and *reference style* are not said until the foot of Look, where each is explained in one sentence.
+- **Nothing is asked at the start.** A new project is a plain document, as now, and so is every element until it or an element over it says otherwise. The plain document is described as what every document begins as: text with a title, for anything.
+- **One button, everywhere the document is seen.** The first thing over the preview is a button named for what the document is, with a chevron; pressing it opens the chooser, not a window of tabs. The same button stands at the top of Look. The element's menu has *What this document is…*, and the palette has it. Until a document has been given a kind, a line over the pages says what it is and offers the choice; it is dismissed with one press and does not return in that project. Nothing is forced.
+- **The chooser asks "What are you writing?"** It has a search at its top; the plain document first; then the kinds of text in groups: articles and papers, books and theses, fiction, poetry, stage and screen, other kinds of text; the writer's own first where there are any. The one in use is marked, and under it, in small print, what it brings: the layout and, where the template or its layout names one, the reference style. A second step, *Writing for a journal, a publisher or a style guide?*, opens the catalogue of journals, publishers and style guides, narrowed to those based on the kind chosen (the journals under an article, the publishers under a book, the style guides under a paper), and the search finds them all whatever is chosen. Where the kind is inherited from an element above, the chooser says so and offers to choose for this element alone, and to take the inherited one again. At its foot, *Make a template of my own from this…* opens the template editor and saves what is made as the writer's own. *Change this template…*, which made "Journal article, changed" on the first touch, goes.
+- **The header of the preview names only what the document is.** The layout and the reference style are not named there. Beside the button stand *Look*, the two buttons that keep the text and the pages together, *About this document*, *Export* and the closing cross.
+
+### 2. How it looks: Look, in the order of the page
+
+- **One scroll, in a fixed order.** At the top, the button of what the document is, and under it one small line, *Layout: Manuscript · 2 changes*, which jumps to the layout at the foot. Then the search. Then **the first rows**, the handful most writers reach for: the typeface, its size, the line spacing, the page size, whether pages are numbered, whether headings are numbered, and the reference style where it applies (below). Then the sections, each with a heading, all rendered, in the order of the page from the outside in: *Page*, *Type*, *Paragraphs* (the text, the quotations, and every kind of paragraph and of words with its look, the kinds in use first), *Headings*, *Numbers*, *Notes and citations*, *Figures and tables*, *Front page*, *What the document contains*, *The layout*. A row of chips under the search jumps to a section; it no longer hides the others. The rows and their *from* lines are as 0042 has them.
+- **The reference style is one row among others.** It stands in *Notes and citations* always, with *Change this reference style…* and the browsing of styles by name beside it. It stands among the first rows only where the document holds a citation, or the template or the layout in use brings a style. It is never over the preview.
+- **The layout at the foot.** *The layout* names the layout in use, offers another, lists the document's changes to it with *take … again* beside each, keeps the changes as a layout of the writer's own or puts them into one that is, deletes a layout of the writer's own, and tells where the layout came from. Under it, *About this document…*.
+- **Pointing at the page.** Every line of the preview knows what it is: text, a quotation or another kind, a heading of a level, a note, the bibliography, a figure, a table, the front page. A chip at the edge of the page names it where the pointer rests, and pressing the chip opens Look at it. The core tells the preview what stands where (`Preview.spots`) from the labels its Typst already carries. This is what 0042 left for later.
+
+### 3. What the document says of itself: About this document
+
+- **The document settings window becomes *About this document***: the details (title, subtitle, authors, date, keywords, identifiers), the language, and the checklist. It opens from the element's menu, from the preview's header, from the foot of Look and by its key. The tabs *Template*, *Parts* and *Look* leave it: the first is the chooser, the second is in Look under *What the document contains*, the third was a dead end.
+
+### What the document contains, and changes that belong to the document
+
+- **Look's section *What the document contains*** lists what the template gives the document: the parts the core makes itself (half title, title page, keywords, table of contents, lists of figures and tables, the text, notes, bibliography), each with a switch; the kinds of elements the template gives a place to, each with where it is printed, the elements under this one that fill it, and *Make one* where there is none; and what the template requires (words, words of the abstract, keywords, anonymity), as rows.
+- **A change there belongs to the document**, as a change to the look does (0042): `DocumentSettings.composition` holds the parts turned on or off and the requirements set otherwise than the template, each present only where set, inherited down the tree path by path, and laid over the template before anything is made of it. The core receives a template as it is to be used and knows nothing of changes. In the Org form the changes stand as one property of the element's drawer, `COMPOSITION`, one line of JSON, as `LOOK` does. The template editor stays, as the editor of templates of the writer's own, reached from the chooser.
+
+### The catalogue
+
+- *Paper* moves to the group of articles and papers. The plain document stands alone at the top of the chooser, under no heading, as what every document begins as. The journals, the publishers and the style guides are the second step of the chooser, not groups in the first list.
+- The layouts of fiction, stage and poetry (`novel-book`, `novel-manuscript`, `play-script`, `screenplay`, `poetry`) bring no reference style: a novelist who cites does so in the usual style of the settings, and sees no style until then.
+- The settings keep the writer's usual template, layout and reference style, worded as what new documents are, how their pages look and how they cite.
+
+## Why not otherwise
+
+- *Asking what you are writing when a project is made*: refused by the owner. A project may hold a thesis, the letters about it and a play; the choice sits on the element whose document it is, where 0038 put it. The line over the pages asks without forcing, once.
+- *One noun in the interface, with the layout and the style folded into it for good*: the three stay underneath, because a scholar sends one chapter to a journal with the journal's template and the book's layout, and the foot of Look shows them. The writer sees one noun until going there.
+- *No reference style for fiction, stage and poetry*: refused. Every document may cite. What changes is where the style is shown, not whether the document has one.
+- *A template copied on the first change, as layouts were before 0042*: the same objection holds, a copy to be named, kept and chosen; and a copy would not inherit down the tree as changes do.
+- *Rebuilding the template editor as one more place of changes*: the editor edits templates; the document's changes are the few things a writer changes in a document (which parts, what is required). What is in hand in the kind menu already learns from use.
+
+## Consequences
+
+- `DocumentSettings` gains `composition`; `Project` gains `compositionOf(id)`; the Org form gains `COMPOSITION`; what is made of a document uses `templateUsed(project, at)`, the template with the document's changes over it.
+- `Preview` gains `spots`, what stands where on the pages; the contract is written again.
+- `DocumentSettingsWindow` becomes `AboutDocumentWindow`, with the sections details, language and checklist; the key `document-settings` keeps its id and changes its words.
+- `LookSection` is renamed to the sections above; `lookUi.open` learns to open at a heading's level.
+- A chooser of its own, `TemplateChooser`, with its ui store; the preview's header, the element's menu and the palette open it.
+- Words in English and Bokmål; the other languages keep theirs until read by a speaker, and the keys that go are removed from every language.
+- The guide's sections on what goes into the document, the templates, the document settings, the preview and the look are written again.
+- The e2e scripts that drove the document settings window and Look's chips are written to the new doors, and a script of its own drives the chooser, the first rows, the chips of the pages and About this document.
