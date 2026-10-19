@@ -83,17 +83,10 @@
   import type { Camera } from './diagram/camera';
   import MapDiagram from './diagram/MapDiagram.svelte';
   import { comparing } from './copies.svelte';
-  import CopyDialog from './CopyDialog.svelte';
-  import KindDialog from './KindDialog.svelte';
-  import PassageKindDialog from './PassageKindDialog.svelte';
   import TimelineView from '$lib/timeline/TimelineView.svelte';
   import Outline from './text/Outline.svelte';
   import { outlineItems } from './outline';
-  import WhenDialog from '$lib/timeline/WhenDialog.svelte';
-  import { whenUi } from '$lib/timeline/when.svelte';
   import Clock from '@lucide/svelte/icons/clock';
-  import KindsDialog from './KindsDialog.svelte';
-  import { kindsUi } from './kinds.svelte';
   import { filesDropped, mapOfIt } from './drops';
   import type { ElementsPayload } from './elements';
   import { closedHere, openHere } from './elsewhere';
@@ -110,6 +103,7 @@
     type StoredView,
     GIVEN,
   } from './layout';
+  import ProjectDialogs from './ProjectDialogs.svelte';
   import MapBar from './MapBar.svelte';
   import WritingTools from '$lib/editor/WritingTools.svelte';
   import ListTree from '@lucide/svelte/icons/list-tree';
@@ -119,13 +113,9 @@
   import SideTabs, { type SideKind } from './SideTabs.svelte';
   import MapText from './text/MapText.svelte';
   import PreviewPanel from '$lib/preview/PreviewPanel.svelte';
-  import { documents } from '$lib/preview/documents.svelte';
   import LookPanel from '$lib/look/LookPanel.svelte';
   import { lookUi } from '$lib/look/look.svelte';
-  import type { Template } from '$lib/api/templates';
-  import DocumentSettingsWindow from '$lib/document/DocumentSettingsWindow.svelte';
   import { documentSettingsUi } from '$lib/document/document-settings.svelte';
-  import TemplateEditor from '$lib/document/TemplateEditor.svelte';
   import { templateEditorUi } from '$lib/document/template-editor.svelte';
   import { historyOf } from '$lib/history/history.svelte';
   import { me } from '$lib/history/me.svelte';
@@ -583,21 +573,6 @@
     }
     sheet.textContent = css;
   });
-
-  /**
-   * A template of the writer's own saved anew: where the project carries a
-   * copy of it, or an element has chosen it, the copy is made afresh (ADR
-   * 0038).
-   */
-  function templateSaved(id: string) {
-    if (!project || !documents.templateSummary(id)?.own) return;
-    if (!project.templateCopy(id) && !project.usesTemplate(id)) return;
-    const p = project;
-    documents
-      .templateOf(id)
-      .then((tp) => p.keepTemplate($state.snapshot(tp) as Template))
-      .catch((error) => notifyError(t('project-template-not-renewed'), error));
-  }
 
   onDestroy(() => {
     // What is still being opened in onMount sees this after its awaits.
@@ -1540,82 +1515,12 @@
 {/if}
 
 <!-- What is asked from the menu of an element is done in the project of the pane that has the focus. -->
-{#if comparing.copy && focusedProject}
-  <CopyDialog
-    project={focusedProject}
-    id={comparing.copy}
-    onclose={() => (comparing.copy = null)}
-    ongo={(element) => goTo(element, { pane: Math.min(focused, panes.length - 1) })}
-  />
-{/if}
-
-{#if kindsUi.editing && focusedProject}
-  {#key kindsUi.editing.id}
-    <KindDialog
-      project={focusedProject}
-      id={kindsUi.editing.id}
-      assign={kindsUi.editing.assign}
-      onclose={() => (kindsUi.editing = null)}
-    />
-  {/key}
-{/if}
-
-{#if ownKindsUi.editing && focusedProject}
-  {#key ownKindsUi.editing.id}
-    <PassageKindDialog
-      project={focusedProject}
-      id={ownKindsUi.editing.id}
-      family={ownKindsUi.editing.family}
-      apply={ownKindsUi.editing.apply}
-      onclose={() => (ownKindsUi.editing = null)}
-    />
-  {/key}
-{/if}
-
-{#if documentSettingsUi.request}
-  {@const asked = documentSettingsUi.request}
-  {#key asked}
-    <DocumentSettingsWindow
-      project={asked.project}
-      at={asked.at}
-      section={asked.section}
-      ongo={(element) => goTo(element, { pane: Math.min(focused, panes.length - 1) })}
-      onclose={() => documentSettingsUi.close()}
-    />
-  {/key}
-{/if}
-
-{#if templateEditorUi.request}
-  {@const asked = templateEditorUi.request}
-  <TemplateEditor
-    id={asked.id}
-    fresh={asked.fresh}
-    copy={asked.copy}
-    onsaved={(id) => {
-      // Held before the editor goes: what it was asked for goes with it.
-      const given = asked.onsaved;
-      templateEditorUi.close();
-      given?.(id);
-      templateSaved(id);
-    }}
-    onclose={() => templateEditorUi.close()}
-  />
-{/if}
-
-{#if whenUi.element && focusedProject}
-  {#key whenUi.element}
-    <WhenDialog
-      project={focusedProject}
-      id={whenUi.element}
-      at={pane.at}
-      onclose={() => (whenUi.element = null)}
-    />
-  {/key}
-{/if}
-
-{#if kindsUi.managing && focusedProject}
-  <KindsDialog project={focusedProject} onclose={() => (kindsUi.managing = false)} />
-{/if}
+<ProjectDialogs
+  {project}
+  focused={focusedProject}
+  at={pane?.at}
+  ongo={(element) => goTo(element, { pane: Math.min(focused, panes.length - 1) })}
+/>
 
 {#if showShare && shared && project}
   <SharePanel {shared} {projectId} projectName={project.name} onclose={() => (showShare = false)} />
