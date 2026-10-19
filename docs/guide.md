@@ -2060,7 +2060,9 @@ thing is pressed again, something else is pressed and the chip goes there,
 the page is left, or Escape is pressed; dragging to select text shows none.
 Pressing the chip opens Look at that line: for what the layout or the
 template puts on the page, at the row that says whether it is shown at all,
-with how it is set under it. The chips are turned off and on by the button
+with how it is set under it. The chip knows the element its line stands
+in: pressed on a line of a chapter, Look opens with the changes set to hold
+for that chapter alone (see *Where changes hold*). The chips are turned off and on by the button
 with the tag at the foot of the preview, and by **Name what a line of the
 preview is** under *Settings* › *New documents*; the text of the pages is
 selected and copied the same either way.
@@ -2283,6 +2285,42 @@ Where the layout is already one of your own, **Put these changes into** it
 does the same without a new name, for every document that uses it, and
 **Delete this layout of mine…** takes it away. The layouts that come with
 Glaukopis stay as they are.
+
+### Where changes hold
+
+A change made in Look holds for the element it is made on, wherever that
+element is printed: a chapter set in smaller type is smaller inside the
+book as well as printed alone. Where the text is at an element under the
+document's, or a chip was pressed on one of its lines, Look has a line
+under the layout's, **These changes hold for**, offering **The whole
+document** or **Only** that element. Chosen, every row shows and sets that
+element's look; the chooser of what you are writing and *What the document
+contains* stay the document's. An element with nothing changed of its own
+has the document's look throughout.
+
+What changes the pages, their size, margins or columns, the header or the
+footer, or the style of the page numbers, begins the element on a new page,
+since no program that sets pages can change them in the middle of one; and
+the document's pages begin again after it. Under **Page numbers** such an
+element may **Begin counting the pages anew here**: the front matter in
+roman, the body from 1. To leave the number off a few pages and still count
+them, turn the footer off for the element they are in.
+
+What each kind of document follows:
+
+- The **preview** and the **PDF** follow every change.
+- **LaTeX** follows the pages (their size, landscape too, the margins, the
+  header and the footer, the numbers), the size of the type, the spacing of
+  the lines and how paragraphs are set; not another font, nor columns of
+  the element's own.
+- **Word** follows the pages, the margins, the columns, the line numbers,
+  the style and new count of the numbers, and whether the header and the
+  footer are shown; not what stands in them, which is the document's, nor
+  other type.
+- **Writer** follows the pages, the margins, the header and the footer with
+  what stands in them, and the numbers; not other type.
+- The **web page** and the **e-book** have no pages, and follow none of
+  it.
 
 ## Working together
 
