@@ -357,3 +357,70 @@ ocr-trial-confidence = { $confidence } of 100
 ocr-trial-nothing = Nothing read
 ocr-trial-differs = Not what holds for the page now
 ocr-trial-use = Use these settings
+
+# The pages of the workbench
+
+# The line over the strip of pages says what each page gets: the text the PDF has, or what Tesseract reads.
+ocr-pages-said-pdf = { $pages ->
+    [one] The page takes the text the PDF has.
+   *[other] All { $pages } pages take the text the PDF has.
+}
+ocr-pages-said-read = { $pages ->
+    [one] The page is read with Tesseract.
+   *[other] All { $pages } pages are read with Tesseract.
+}
+ocr-pages-said-both = { $pdf ->
+    [one] One page takes the text the PDF has;
+   *[other] { $pdf } pages take the text the PDF has;
+} { $read ->
+    [one] one is read with Tesseract.
+   *[other] { $read } are read with Tesseract.
+}
+# Where Tesseract is not installed, and pages are to be read.
+ocr-pages-said-unreadable = { $pages ->
+    [one] The page cannot be read: Tesseract is not installed.
+   *[other] None of the { $pages } pages can be read: Tesseract is not installed.
+}
+ocr-pages-said-both-unreadable = { $pdf ->
+    [one] One page takes the text the PDF has;
+   *[other] { $pdf } pages take the text the PDF has;
+} { $read ->
+    [one] one cannot be read without Tesseract.
+   *[other] { $read } cannot be read without Tesseract.
+}
+ocr-pages-said-picture = The text is read from the picture.
+ocr-pages-said-picture-unreadable = The text of the picture cannot be read without Tesseract.
+# What the actions beside it hold for: every page, or those selected ($pages: "pages 39–120", as ocr-pages-selection says them).
+ocr-pages-scope-all = { $pages ->
+    [one] For the page
+   *[other] For all { $pages } pages
+}
+ocr-pages-scope = For { $pages }
+# Pages selected, as they stand in a sentence: "page 280", "pages 3–5, 9".
+ocr-pages-selection = { $count ->
+    [one] page { $pages }
+   *[other] pages { $pages }
+}
+ocr-pages-all = All pages
+ocr-pages-pdf = The PDF's text
+ocr-pages-pdf-hint = These pages take the text the PDF has. Pages without text are read all the same.
+ocr-pages-read = Read with Tesseract
+ocr-pages-read-hint = These pages are read anew from pictures of them, whatever text they have.
+ocr-pages-decide = Decide by the text's quality
+ocr-pages-decide-hint = Page by page: text that reads as text is taken; text that does not, and pages without text, are read.
+
+# The mark in the corner of a page in the strip, saying what it gets.
+ocr-strip-source-pdf = PDF
+ocr-strip-source-read = Read
+ocr-strip-source-pdf-hint = Takes the text the PDF has.
+ocr-strip-source-read-hint = Is read with Tesseract.
+ocr-strip-poor = The text it has does not read as text.
+# The band over a stretch of pages read alike: its languages, the resolution where it is not 300, the layout where it is told, and black and white.
+ocr-strip-band-none = English, where none is chosen
+ocr-strip-band-dpi = { $dpi } dots to the inch
+# Black and white, in short.
+ocr-strip-band-contrast = B/W
+ocr-strip-band-hint = { $count ->
+    [one] Page { $from }: { $said }
+   *[other] Pages { $from }–{ $to }: { $said }
+}

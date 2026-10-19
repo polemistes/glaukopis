@@ -357,3 +357,69 @@ ocr-trial-confidence = { $confidence } av 100
 ocr-trial-nothing = Ingenting lest
 ocr-trial-differs = Ikke det som gjelder for siden nå
 ocr-trial-use = Bruk disse innstillingene
+
+# The pages of the workbench
+
+# Linjen over stripen med sider sier hva hver side får: teksten PDF-en har, eller det Tesseract leser.
+ocr-pages-said-pdf = { $pages ->
+    [one] Siden tar teksten PDF-en har.
+   *[other] Alle de { $pages } sidene tar teksten PDF-en har.
+}
+ocr-pages-said-read = { $pages ->
+    [one] Siden leses med Tesseract.
+   *[other] Alle de { $pages } sidene leses med Tesseract.
+}
+ocr-pages-said-both = { $pdf ->
+    [one] Én side tar teksten PDF-en har;
+   *[other] { $pdf } sider tar teksten PDF-en har;
+} { $read ->
+    [one] én leses med Tesseract.
+   *[other] { $read } leses med Tesseract.
+}
+# Der Tesseract ikke er installert, og sider skal leses.
+ocr-pages-said-unreadable = { $pages ->
+    [one] Siden kan ikke leses: Tesseract er ikke installert.
+   *[other] Ingen av de { $pages } sidene kan leses: Tesseract er ikke installert.
+}
+ocr-pages-said-both-unreadable = { $pdf ->
+    [one] Én side tar teksten PDF-en har;
+   *[other] { $pdf } sider tar teksten PDF-en har;
+} { $read ->
+    [one] én kan ikke leses uten Tesseract.
+   *[other] { $read } kan ikke leses uten Tesseract.
+}
+ocr-pages-said-picture = Teksten leses fra bildet.
+ocr-pages-said-picture-unreadable = Teksten i bildet kan ikke leses uten Tesseract.
+# Hva handlingene ved siden av gjelder: hver side, eller dem som er valgt ($pages: «sidene 39–120», slik ocr-pages-selection sier dem).
+ocr-pages-scope-all = { $pages ->
+    [one] For siden
+   *[other] For alle de { $pages } sidene
+}
+ocr-pages-scope = For { $pages }
+# Valgte sider, slik de står i en setning: «side 280», «sidene 3–5, 9».
+ocr-pages-selection = { $count ->
+    [one] side { $pages }
+   *[other] sidene { $pages }
+}
+ocr-pages-all = Alle sidene
+ocr-pages-pdf = PDF-ens tekst
+ocr-pages-pdf-hint = Disse sidene tar teksten PDF-en har. Sider uten tekst leses likevel.
+ocr-pages-read = Les med Tesseract
+ocr-pages-read-hint = Disse sidene leses på nytt fra bilder av dem, uansett hvilken tekst de har.
+ocr-pages-decide = Avgjør etter hvor god teksten er
+ocr-pages-decide-hint = Side for side: tekst som leses som tekst, tas; tekst som ikke gjør det, og sider uten tekst, leses.
+# Merket i hjørnet av en side i stripen, som sier hva den får.
+ocr-strip-source-pdf = PDF
+ocr-strip-source-read = Leses
+ocr-strip-source-pdf-hint = Tar teksten PDF-en har.
+ocr-strip-source-read-hint = Leses med Tesseract.
+ocr-strip-poor = Teksten den har, leses ikke som tekst.
+# Båndet over en bolk av sider som leses likt: språkene, oppløsningen der den ikke er 300, oppsettet der det er gitt, og svart-hvitt.
+ocr-strip-band-none = Engelsk, der ingen er valgt
+ocr-strip-band-dpi = { $dpi } punkter per tomme
+# Svart-hvitt, forkortet.
+ocr-strip-band-contrast = S/H
+ocr-strip-band-hint = { $count ->
+    [one] Side { $from }: { $said }
+   *[other] Sidene { $from }–{ $to }: { $said }
+}
