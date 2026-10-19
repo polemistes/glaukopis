@@ -554,7 +554,7 @@ mod tests {
             = A heading\n\
             == A deeper one\n\
             #block[#rect(width: 10pt, height: 10pt) #block[Figure 1.] <gk-figure-caption>] <gk-figure-center>\n\
-            #figure(table(columns: 2)[a][b], caption: [The poems])\n\n\
+            #figure(table(columns: 2)[Iliad][Odyssey], caption: [The poems])\n\n\
             - One\n- Two\n\n\
             #block[#lorem(400)] <gk-part-appendix>\n\n\
             Words with a long note.#footnote[#lorem(250)]\n\n\
@@ -600,8 +600,8 @@ mod tests {
         assert_eq!(names("Sing, goddess."), [Some("kind:epigraph")]);
         assert_eq!(names("The wrath of Achilles."), [Some("kind:quote")]);
         assert_eq!(names("Figure 1."), [Some("figure")]);
-        assert_eq!(names("a"), [Some("table")]);
-        assert_eq!(names("b"), [Some("table")]);
+        assert_eq!(names("Iliad"), [Some("table")]);
+        assert_eq!(names("Odyssey"), [Some("table")]);
         assert_eq!(names("One"), [Some("kind:item")]);
         assert_eq!(names("Two"), [Some("kind:item")]);
         assert_eq!(names("Nagy 1979."), [Some("bibliography")]);
