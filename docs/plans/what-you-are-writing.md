@@ -34,7 +34,7 @@ Six stages. Stages 0 to 3 and 6 are the main session's, in order, since they all
 | --- | --- | --- |
 | Main session | 0 catalogue → 1 chooser and header → 2 Look in order → 3 About → merges → 6 words, guide, e2e, cleanup | `resources/templates`, `resources/formats`, `src/lib/document/*`, `src/lib/look/LookPanel.svelte`, `look.svelte.ts`, `src/lib/preview/PreviewPanel.svelte` (header), `MapBar.svelte`, `ProjectView.svelte`, `locales/en`, `locales/nb`, `docs/guide.md`, `e2e/*` |
 | Agent B (worktree) | 4 composition | `src/lib/document/composition.ts` (+ test), `src/lib/project/model/types.ts`, `project.svelte.ts` (+ test), `src/lib/org/properties.ts`, `fixtures.ts`, `org.test.ts`, `src/lib/preview/documents.svelte.ts` (`templateUsed`), `src/lib/look/ContentsSection.svelte` (new), `locales/en/look.ftl` (its own keys only, at the end of the file) |
-| Agent C (worktree) | 5 spots | `crates/core/src/export/typeset.rs`, `export/mod.rs` (`Preview.spots`), `src/lib/api/documents.ts`, `contract.generated.ts`, `src/lib/preview/PreviewPanel.svelte` (the pages and lines only, not the header), `src/lib/preview/spots.ts` (new, + test), `locales/en/preview.ftl` (its own keys, at the end) |
+| Agent C (worktree) | 5 spots | `crates/core/src/export/typeset.rs`, `export/mod.rs` (`Preview.spots`), `src/lib/api/documents.ts`, `contract.generated.ts`, `src/lib/preview/PreviewPanel.svelte` (the pages, the lines and the foot only, not the header), `src/lib/preview/spots.ts` (new, + test), `src/lib/state/settings.svelte.ts` (`pageChips`), `src/lib/settings/SettingsView.svelte` (one row), `locales/en/preview.ftl` and `settings.ftl` (its own keys, at the end) |
 
 Order of merging: B after stage 2 (its section is mounted in Look, and stage 3 needs its *Make one*), C after stage 3. Then stage 6. If an agent is not done when the main session reaches its merge, the main session goes on with stage 3 and waits, rather than doing the agent's work twice.
 
@@ -67,7 +67,7 @@ If the night runs short, the order of what may be left is: the chips on the page
 
 Verify: `node scripts/check-templates.mjs`; `cargo test -p glaukopis-core`; `pnpm test`. Commit.
 
-## Stage 1 — what you are writing: the chooser, the header, the menu, the line over the pages (main session)
+## Stage 1 — what you are writing: the chooser, the header, the menu (main session)
 
 ### 1.1 The chooser — `src/lib/document/TemplateChooser.svelte`, `src/lib/document/chooser.svelte.ts`
 
@@ -109,27 +109,13 @@ Replace the `.in-use` button with:
 
 (`Palette` from `@lucide/svelte/icons/palette`, or `Brush`; one icon, the same one the side tabs use for Look — look in `SideTabs.svelte` and reuse it.) The sliders button keeps its place and becomes "About this document…" (`aboutDocumentUi.open({ project, at })`, key `document-settings`). The `inUse` derived and `preview-made-by` go. The header's words: `preview-what-title = What you are writing: choose…`, `preview-what-label = What this document is: { $name }`. Keep the header to one line at the widths the e2e scripts use (1440 wide, the preview beside the text): shorten with `truncate` on the name, never wrap.
 
-### 1.3 The line over the pages — `PreviewPanel.svelte`, `src/lib/project/view-store.svelte.ts`
-
-Over the pages, under the header, while all three hold: no element on the path sets a template (`project.documentOf(at).from.get('template') === undefined`), the project's stored view has not `askedWhat`, and the preview has pages or is making them:
-
-```svelte
-<div class="begin" data-begin>
-  <span>{t('preview-begin', { name })}</span>   <!-- "A plain document, as every document begins. Say what you are writing, and its parts, its pages and its citations follow." -->
-  <Button size="sm" onclick={() => templateChooserUi.open({ project, at })}>{t('preview-begin-choose')}</Button>  <!-- "Choose…" -->
-  <IconButton label={t('common-dismiss')} onclick={dismiss}><X size={13} /></IconButton>
-</div>
-```
-
-`dismiss` sets `askedWhat: true` in the stored view of the project (`StoredView` in `view-store.svelte.ts`, saved as the panes and sizes are; the field is local to this computer, never in the project document). Choosing a template anywhere also sets it. Keep it quiet: one line, the panel's muted colours, no icon but the cross.
-
-### 1.4 The menu and the palette — `src/lib/project/MapBar.svelte`, `src/lib/project/ProjectView.svelte`
+### 1.3 The menu and the palette — `src/lib/project/MapBar.svelte`, `src/lib/project/ProjectView.svelte`
 
 - `MapBar.svelte`: the entry "Document settings…" becomes two: `t('chooser-menu')` "What this document is…" → `templateChooserUi.open({ project, at })`; `t('about-menu')` "About this document…" → `aboutDocumentUi.open({ project, at })` (until stage 3, `documentSettingsUi.open` with section `details`). "Language…" opens About at `language`.
 - `ProjectView.svelte`: palette command `what-document` → the chooser on the focused pane's element, words `palette-what-document = What are you writing…`; `document-settings` keeps its id, its words become "About this document…" in `keys.ftl` and wherever its label is read.
 - Look's two buttons that opened the window at `template` (lines ~1219 and ~1260 of `LookPanel.svelte`) open the chooser instead; stage 2 reshapes them.
 
-### 1.5 e2e — `e2e/harness.mjs`, `e2e/templates.mjs`
+### 1.4 e2e — `e2e/harness.mjs`, `e2e/templates.mjs`
 
 Harness: `async chooseWhat(name)`: clicks `.preview header .what`, waits for `dialog[open] .templates`, clicks `.templates .choose` whose `.name` text is `name` (opening `[data-step]` first where the name is not in the list), waits until `.preview header .what .name` reads `name`, closes with the footer's Close. `async whatIs()`: the header's name. `templates.mjs`: every `openDocumentSettings('Template')`/`documentSection('Template')` becomes `chooseWhat`; the screenshots `templates-1-chooser`, `templates-2-search`, `templates-3-chosen` are of the chooser; add a check that the second step is narrowed under *Journal article* (the journals are listed, the publishers of books are not) and that the search finds "Yale" all the same.
 
@@ -320,26 +306,36 @@ export function lookFor(what: string): LookRequest;   // kind:ID → { section: 
 
 ### 5.3 The chip — `PreviewPanel.svelte`, words
 
-On `pointerenter` of a `.line`, show one `button.chip` per page, absolutely placed at the line's top and at the page's right edge (outside the text block, inside the page; `right: 0; transform: translateX(…)` so that it does not cover text), reading the words of `what`; it stays while the pointer is on the line or on the chip, and goes a moment after. Press → `lookUi.open(lookFor(what))`. Words of `what` (`src/lib/preview/spots.ts` may take a `words` function from the panel to stay pure): `kind:ID` → the kind's name as `WritingTools.svelte`'s `nameOf` gives it (the catalogue's `specOf(id)?.label()` or the project's own kind's name); `part:ID` → `partOf(project, ID)`'s words; `heading:N` → `t('format-level', { number: N })`; `note` → `preview-what-note = Note`; `bibliography` → `preview-what-bibliography = Bibliography`; `figure` → `preview-what-figure = Figure`; `table` → `preview-what-table = Table`; `front` → `preview-what-front = Front page`; `text` → `preview-what-text = Text`. The chip's `aria-label`: `preview-what-open = How “{ $what }” looks…`. Keys appended at the end of `locales/en/preview.ftl`.
+While `settings.value.pageChips` is on (5.4), on `pointerenter` of a `.line`, show one `button.chip` per page, absolutely placed at the line's top and at the page's right edge (outside the text block, inside the page; `right: 0; transform: translateX(…)` so that it does not cover text), reading the words of `what`; it stays while the pointer is on the line or on the chip, and goes a moment after. Press → `lookUi.open(lookFor(what))`. Words of `what` (`src/lib/preview/spots.ts` may take a `words` function from the panel to stay pure): `kind:ID` → the kind's name as `WritingTools.svelte`'s `nameOf` gives it (the catalogue's `specOf(id)?.label()` or the project's own kind's name); `part:ID` → `partOf(project, ID)`'s words; `heading:N` → `t('format-level', { number: N })`; `note` → `preview-what-note = Note`; `bibliography` → `preview-what-bibliography = Bibliography`; `figure` → `preview-what-figure = Figure`; `table` → `preview-what-table = Table`; `front` → `preview-what-front = Front page`; `text` → `preview-what-text = Text`. The chip's `aria-label`: `preview-what-open = How “{ $what }” looks…`. Keys appended at the end of `locales/en/preview.ftl`.
 
 Selecting and copying text on the page must work as before: the chip is beside the lines, not over them, and no handler is added to the lines but `pointerenter`/`pointerleave`.
 
-### 5.4 e2e — `e2e/what.mjs` (new), stage 6 merges it
+### 5.4 The switch — `src/lib/state/settings.svelte.ts`, `PreviewPanel.svelte`, `src/lib/settings/SettingsView.svelte`
 
-In the Odyssey of `look.mjs`: after the preview has pages, `.line[data-what="kind:quote"]` exists for the quotation and `.line[data-what="text"]` for the text and `.line[data-what="heading:1"]` for *Book one*; hovering the quotation's line (`app.hover`) shows `.chip` reading "Quotation"; pressing it opens `.side .look` with `details[data-kind="quote"][open]`. Screenshot `what-3-chip`.
+The writer's settings gain `pageChips: boolean`, true by default, kept as the other settings are. Two places turn it:
 
-Verify: `cargo test -p glaukopis-core`, `cargo test -p glaukopis contract`, `pnpm check`, `pnpm test`. Commit in the worktree at 5.1, 5.2, 5.3.
+- the foot of the preview (the bar with the pages, the words and the remarks): an `IconButton` `.chip-switch` with `aria-pressed={settings.value.pageChips}`, icon `Tag` (or `Tags`) from lucide, label `preview-chips = Name the lines of the page` and, pressed, `preview-chips-off = Stop naming the lines`; pressing it sets the setting;
+- the settings view, in the section that holds the writer's usual template, layout and reference style: a toggle row `settings-page-chips = Name what a line of the preview is` with the hint `settings-page-chips-hint = When the pointer rests on a line of the preview, a chip at the edge of the page says what the line is (text, a quotation, a heading…) and opens Look at it.`
+
+With the setting off, no chip is shown and no handler runs on the lines; `data-what` stays on them, so that the scripts and anything later can still read what a line is.
+
+### 5.5 e2e — `e2e/what.mjs` (new), stage 6 merges it
+
+In the Odyssey of `look.mjs`: after the preview has pages, `.line[data-what="kind:quote"]` exists for the quotation and `.line[data-what="text"]` for the text and `.line[data-what="heading:1"]` for *Book one*; hovering the quotation's line (`app.hover`) shows `.chip` reading "Quotation"; pressing it opens `.side .look` with `details[data-kind="quote"][open]`. Screenshot `what-3-chip`. Then press `.chip-switch`: hovering the line shows no `.chip`, `data-what` is still there; press it again and the chip is back.
+
+Verify: `cargo test -p glaukopis-core`, `cargo test -p glaukopis contract`, `pnpm check`, `pnpm test`. Commit in the worktree at 5.1, 5.2, 5.3, 5.4.
 
 ## Stage 6 — words, guide, scripts, cleanup (main session, after both merges)
 
 1. **Bokmål** for every new key, in `locales/nb/`, in the same files; the owner reads both. The other languages keep theirs; the keys removed in stages 1–3 are removed from every language's file (`grep -rl` over `locales/`).
 2. **Dead words and code**: `look-open`, `look-whole`, `look-template`, `look-template-hint`, `look-layout-hint`, `look-citations-hint`, `preview-made-by`, `document-window-section-template`, `-parts`, `-look`, `document-window-look-*`, `document-window-parts-*` (moved), `document-window-template-*` (moved); `documentSettingsUi`, `DocumentSection`, `DOCUMENT_SECTIONS`; the old `LookSection` names. `pnpm check` and a grep for each key over `src/` and `locales/` must find nothing.
-3. **The guide** — `docs/guide.md`: write again *What goes into the document*, *Templates* (now "What you are writing"), *The document settings* (now "About this document"), *The preview, and the manuscript* (the header, the line over the pages, the chips) and *The look of a document* (the order, the first rows, the reference style's place, the layout at the foot, what the document contains); and the line in *Kinds of paragraph and of words* that names Look's part for kinds. Say in each what a new writer does first, then what a writer who wants to go further does. Keep the guide's voice.
+3. **The guide** — `docs/guide.md`: write again *What goes into the document*, *Templates* (now "What you are writing"), *The document settings* (now "About this document"), *The preview, and the manuscript* (the header, the chips and their switch) and *The look of a document* (the order, the first rows, the reference style's place, the layout at the foot, what the document contains); and the line in *Kinds of paragraph and of words* that names Look's part for kinds. Say in each what a new writer does first, then what a writer who wants to go further does. Keep the guide's voice.
 4. **e2e**: `pnpm e2e:build`; run `templates.mjs`, `look.mjs`, `preview.mjs`, `editors.mjs`, `kinds.mjs`, `kinds-of-passage.mjs`, `found.mjs`, `runs.mjs`, `spelling.mjs`, `figures.mjs`, `languages.mjs`, `what.mjs`, `smoke.mjs`; then `pnpm e2e` whole once, and read `e2e/output/`: `look-1-panel.png`, `templates-1-chooser.png`, `what-*.png`, `preview-*`. Judge them as the owner would: one name over the preview, no citation style there; the chooser's first entry the plain document; Look's top as 2.2 says.
-5. **Memory and records**: nothing to write in the records beyond this plan's departures; the report carries them.
+5. **The names of the templates in the writer's language** — `src/lib/preview/documents.svelte.ts`, `locales/en/template.ftl`, `locales/nb/template.ftl`: `templateName(project, id)` returns the words' `template-name-<id>` where the words have that key (`has()` from `$lib/i18n`), else as now. Keys for the sixteen templates that come with the application and are not a journal's, a publisher's or a style guide's (`plain`, `paper`, `article`, `report`, `book`, `thesis`, `novel`, `novel-manuscript`, `short-story`, `story-collection`, `poems`, `play`, `screenplay`, `letter`, `blog-post`, `news-article`), in English as the files have them and in Bokmål (`template-name-plain = Vanlig dokument`, and so on). The journals, the publishers and the style guides keep the names of their files in every language. The chooser's descriptions stay as the files have them tonight.
+6. **Memory and records**: nothing to write in the records beyond this plan's departures; the report carries them.
 
 Verify: every check; commit.
 
 ## Report
 
-For the owner, in plain words: what a new writer now meets, in the order they meet it; what was built, with paths; the DOM of the doors (`.preview header .what`, `.begin`, `dialog .templates .choose[data-template]`, `[data-step]`, `.side .look .what`, `.layout-line[data-changes]`, `.first`, `.chips [data-section]`, `.part[data-part]`, `[data-part-switch]`, `.line[data-what]`, `.chip`); what was left or doubtful; every departure from the record; the counts of every check, verbatim; the scripts run and their results. Do not push; do not bump packages; do not touch the installers.
+For the owner, in plain words: what a new writer now meets, in the order they meet it; what was built, with paths; the DOM of the doors (`.preview header .what`, `dialog .templates .choose[data-template]`, `[data-step]`, `.side .look .what`, `.layout-line[data-changes]`, `.first`, `.chips [data-section]`, `.part[data-part]`, `[data-part-switch]`, `.line[data-what]`, `.chip`, `.chip-switch`); what was left or doubtful; every departure from the record; the counts of every check, verbatim; the scripts run and their results. Do not push; do not bump packages; do not touch the installers.
