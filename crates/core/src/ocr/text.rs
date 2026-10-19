@@ -193,12 +193,76 @@ pub fn page_confidence(tsv: &str) -> Option<f32> {
     tsv_page(tsv).1
 }
 
-/// What Tesseract read of a page, as `tsv_paragraphs` gives it, and how sure
-/// it was of it, as `page_confidence` does.
-pub fn tsv_page(tsv: &str) -> (Vec<Vec<Line>>, Option<f32>) {
-    let mut paragraphs: Vec<Vec<Line>> = Vec::new();
-    // Beside each line, the sum and the count of its words' confidences.
-    let mut sureness: Vec<Vec<(f32, u32)>> = Vec::new();
+/// A word of what Tesseract read, as its TSV tells it: its text, the long s
+/// made s; how sure Tesseract was of it, from 0 to 100, where it said; and
+/// where it stands, in the dots of the picture it read.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct ParsedWord {
+    pub text: String,
+    pub confidence: Option<f32>,
+    pub left: f32,
+    pub top: f32,
+    pub width: f32,
+    pub height: f32,
+}
+
+/// A line of what Tesseract read: its words, in the order read.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct ParsedLine {
+    pub words: Vec<ParsedWord>,
+}
+
+impl ParsedLine {
+    /// The sum of its words' confidences, and how many of them have one.
+    fn sureness(&self) -> (f32, u32) {
+        self.words.iter().filter_map(|w| w.confidence).fold((0.0, 0), |(sum, count), c| (sum + c, count + 1))
+    }
+
+    /// How sure Tesseract was of the line: the mean of its words' confidences.
+    pub fn confidence(&self) -> Option<f32> {
+        let (sum, count) = self.sureness();
+        (count > 0).then(|| sum / count as f32)
+    }
+
+    /// Its words, a space between each two.
+    pub fn text(&self) -> String {
+        self.words.iter().map(|w| w.text.as_str()).collect::<Vec<_>>().join(" ")
+    }
+
+    /// The line as the lines of a page are kept: its text, where it stands,
+    /// and the spaces between its words. Tesseract tells no fonts: the size
+    /// of a line is its height.
+    fn line(&self) -> Line {
+        let mut line = Line { gaps: Some(Vec::new()), ..Default::default() };
+        for (i, word) in self.words.iter().enumerate() {
+            let (left, right, top, bottom) = (word.left, word.left + word.width, word.top, word.top + word.height);
+            if i == 0 {
+                (line.left, line.right, line.top, line.bottom) = (left, right, top, bottom);
+            } else {
+                line.text.push(' ');
+                if left > line.right
+                    && let Some(gaps) = line.gaps.as_mut()
+                {
+                    gaps.push(Gap { at: line.text.len(), from: line.right, to: left });
+                }
+            }
+            line.text.push_str(&word.text);
+            line.left = line.left.min(left);
+            line.right = line.right.max(right);
+            line.top = line.top.min(top);
+            line.bottom = line.bottom.max(bottom);
+        }
+        line.style.size = line.height();
+        line
+    }
+}
+
+/// What Tesseract read of a page, from its TSV, as paragraphs of lines of
+/// words, in the order read. A row of the TSV is a page, a block, a
+/// paragraph, a line or a word, by its level; the words (level 5) say which
+/// of the others they are in. A word with no text is left out.
+pub fn parsed(tsv: &str) -> Vec<Vec<ParsedLine>> {
+    let mut paragraphs: Vec<Vec<ParsedLine>> = Vec::new();
     // The page, block, paragraph and line of the word before.
     let mut last: Option<[u32; 4]> = None;
     for row in tsv.lines().skip(1) {
@@ -217,72 +281,73 @@ pub fn tsv_page(tsv: &str) -> (Vec<Vec<Line>>, Option<f32>) {
         let number = |i: usize| columns[i].trim().parse::<u32>().unwrap_or(0);
         let measure = |i: usize| columns[i].trim().parse::<f32>().unwrap_or(0.0);
         let at = [number(1), number(2), number(3), number(4)];
-        let (left, top, width, height) = (measure(6), measure(7), measure(8), measure(9));
         if last.is_none_or(|l| l[..3] != at[..3]) {
             paragraphs.push(Vec::new());
-            sureness.push(Vec::new());
         }
         let lines = paragraphs.last_mut().expect("a paragraph was begun");
-        let sure = sureness.last_mut().expect("a paragraph was begun");
         if last != Some(at) || lines.is_empty() {
-            lines.push(Line {
-                text: String::new(),
-                left,
-                right: left + width,
-                top,
-                bottom: top + height,
-                gaps: Some(Vec::new()),
-                ..Default::default()
-            });
-            sure.push((0.0, 0));
+            lines.push(ParsedLine::default());
         }
-        // The word's confidence, from 0 to 100; -1 where there is none.
-        if let Ok(conf) = columns[10].trim().parse::<f32>()
-            && conf >= 0.0
-            && let Some((sum, count)) = sure.last_mut()
-        {
-            *sum += conf;
-            *count += 1;
-        }
-        let line = lines.last_mut().expect("a line was begun");
-        if !line.text.is_empty() {
-            line.text.push(' ');
-            if left > line.right
-                && let Some(gaps) = line.gaps.as_mut()
-            {
-                gaps.push(Gap { at: line.text.len(), from: line.right, to: left });
-            }
-        }
-        line.text.push_str(text);
-        line.left = line.left.min(left);
-        line.right = line.right.max(left + width);
-        line.top = line.top.min(top);
-        line.bottom = line.bottom.max(top + height);
+        lines.last_mut().expect("a line was begun").words.push(ParsedWord {
+            text: text.to_owned(),
+            // From 0 to 100; -1 where there is none.
+            confidence: columns[10].trim().parse::<f32>().ok().filter(|c| *c >= 0.0),
+            left: measure(6),
+            top: measure(7),
+            width: measure(8),
+            height: measure(9),
+        });
         last = Some(at);
     }
-    // Tesseract tells no fonts: the size of a line is its height.
-    for line in paragraphs.iter_mut().flatten() {
-        line.style.size = line.height();
-    }
-    let (mut all, mut words) = (0.0f32, 0u32);
-    let paragraphs = paragraphs
+    paragraphs
+}
+
+/// The paragraphs of what Tesseract read, the lines that are only marks
+/// (`only_marks`) left out, by what they say and by how sure Tesseract was
+/// of their words, and so a paragraph left with no line.
+fn kept(paragraphs: Vec<Vec<ParsedLine>>) -> Vec<Vec<ParsedLine>> {
+    paragraphs
         .into_iter()
-        .zip(sureness)
-        .map(|(lines, sure)| {
+        .map(|lines| lines.into_iter().filter(|line| !only_marks(&line.text(), line.confidence())).collect::<Vec<_>>())
+        .filter(|lines| !lines.is_empty())
+        .collect()
+}
+
+/// What Tesseract read of a page, as `tsv_paragraphs` gives it, and how sure
+/// it was of it, as `page_confidence` does.
+pub fn tsv_page(tsv: &str) -> (Vec<Vec<Line>>, Option<f32>) {
+    let paragraphs = kept(parsed(tsv));
+    let (all, words) =
+        paragraphs.iter().flatten().map(ParsedLine::sureness).fold((0.0f32, 0u32), |(a, n), (s, c)| (a + s, n + c));
+    let lines = paragraphs.iter().map(|lines| lines.iter().map(ParsedLine::line).collect()).collect();
+    (lines, (words > 0).then(|| all / words as f32))
+}
+
+/// The words of what Tesseract read of a page, from its TSV, paragraph by
+/// paragraph: the paragraphs and lines `tsv_page` gives, those that are
+/// only marks left out, each paragraph its words in the order read, the
+/// first of each line marked so, each where it stands in the dots of the
+/// picture read. Not joined at hyphens: what was read, as it was read.
+pub fn tsv_words(tsv: &str) -> Vec<Vec<Word>> {
+    kept(parsed(tsv))
+        .into_iter()
+        .map(|lines| {
             lines
                 .into_iter()
-                .zip(sure)
-                .filter(|(line, (sum, count))| !only_marks(&line.text, (*count > 0).then(|| sum / *count as f32)))
-                .map(|(line, (sum, count))| {
-                    all += sum;
-                    words += count;
-                    line
+                .flat_map(|line| {
+                    line.words.into_iter().enumerate().map(|(i, word)| Word {
+                        text: word.text,
+                        confidence: word.confidence,
+                        left: word.left,
+                        top: word.top,
+                        width: word.width,
+                        height: word.height,
+                        line: i == 0,
+                    })
                 })
-                .collect::<Vec<_>>()
+                .collect()
         })
-        .filter(|lines| !lines.is_empty())
-        .collect();
-    (paragraphs, (words > 0).then(|| all / words as f32))
+        .collect()
 }
 
 /// A combining mark of the block of combining diacritics.
@@ -763,6 +828,54 @@ mod tests {
         assert_eq!(read.len(), 1);
         assert_eq!(read[0].iter().map(|l| l.text.as_str()).collect::<Vec<_>>(), vec!["ἀπεπυδάρισα μόθωνα,"]);
         assert_eq!(read[0][0].top, 130.0);
+    }
+
+    /// The words of a page tried: in the order read, each with how sure
+    /// Tesseract was of it and where it stands, the first of each line
+    /// marked; a word of no text, and a line that is only marks, left out.
+    #[test]
+    fn the_words_tesseract_read() {
+        let tsv = "level\tpage_num\tblock_num\tpar_num\tline_num\tword_num\tleft\ttop\twidth\theight\tconf\ttext\n\
+                   1\t1\t0\t0\t0\t0\t0\t0\t1654\t1181\t-1\t\n\
+                   4\t1\t1\t1\t1\t0\t142\t140\t1369\t43\t-1\t\n\
+                   5\t1\t1\t1\t1\t1\t142\t140\t233\t43\t91.8\tForskningen\n\
+                   5\t1\t1\t1\t1\t2\t393\t141\t44\t42\t92.7\tpå\n\
+                   5\t1\t1\t1\t2\t1\t143\t200\t143\t32\t52.2\tHomer.\n\
+                   5\t1\t1\t2\t1\t1\t200\t300\t143\t32\t-1\tDen\n\
+                   5\t1\t1\t2\t1\t2\t350\t300\t10\t32\t12.0\t \n\
+                   5\t1\t1\t2\t1\t3\t380\t300\t143\t32\t92.2\tandre\n\
+                   5\t1\t1\t2\t2\t1\t100\t400\t40\t20\t21.5\t΄,ὔ\n\
+                   5\t1\t1\t2\t2\t2\t150\t400\t40\t20\t12.0\t΄\n";
+        let words = tsv_words(tsv);
+        let said: Vec<Vec<(&str, Option<f32>, bool)>> =
+            words.iter().map(|p| p.iter().map(|w| (w.text.as_str(), w.confidence, w.line)).collect()).collect();
+        assert_eq!(
+            said,
+            vec![
+                vec![("Forskningen", Some(91.8), true), ("på", Some(92.7), false), ("Homer.", Some(52.2), true)],
+                vec![("Den", None, true), ("andre", Some(92.2), false)],
+            ]
+        );
+        assert_eq!(
+            words[0][1],
+            Word {
+                text: "på".into(),
+                confidence: Some(92.7),
+                left: 393.0,
+                top: 141.0,
+                width: 44.0,
+                height: 42.0,
+                line: false
+            }
+        );
+        // The same paragraphs and lines as the text of the page, the same words in them.
+        let (lines, _) = tsv_page(tsv);
+        let joined: Vec<String> =
+            words.iter().map(|p| p.iter().map(|w| w.text.as_str()).collect::<Vec<_>>().join(" ")).collect();
+        let texts: Vec<String> =
+            lines.iter().map(|p| p.iter().map(|l| l.text.as_str()).collect::<Vec<_>>().join(" ")).collect();
+        assert_eq!(joined, texts);
+        assert!(tsv_words("").is_empty());
     }
 
     impl Line {

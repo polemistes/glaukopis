@@ -981,6 +981,32 @@ fn a_reading_says_how_well_it_went() {
     assert_eq!((made.read, made.poorly.clone()), (1, Vec::new()));
 }
 
+/// The words of a page tried, as they are shown: each letter one character
+/// with its marks, placed on the picture as it is shown, and, where Greek
+/// is read, each sigma as the words of the paragraph together say.
+#[test]
+fn the_words_of_a_page_tried_as_they_are_shown() {
+    let word = |text: &str, left: f32| text::Word {
+        text: text.into(),
+        confidence: Some(90.0),
+        left,
+        top: 10.0,
+        width: 40.0,
+        height: 20.0,
+        line: false,
+    };
+    let words = vec![word("\u{3b1}\u{313}\u{301}λλα", 0.0), word("‘λόγοσ", 50.0), word("σοφὸσ’", 100.0)];
+    let shown = shown_words(words.clone(), 0.5, true);
+    let texts: Vec<&str> = shown.iter().map(|w| w.text.as_str()).collect();
+    // The ’ closes the quotation the ‘ opened two words before: the sigma ends the word.
+    assert_eq!(texts, ["ἄλλα", "‘λόγος", "σοφὸς’"]);
+    assert_eq!((shown[1].left, shown[1].top, shown[1].width, shown[1].height), (25.0, 5.0, 20.0, 10.0));
+    // Read in another language, the sigmas are as read.
+    let shown = shown_words(words, 1.0, false);
+    assert_eq!(shown[2].text, "σοφὸσ’");
+    assert!(is_unsure(Some(69.9)) && !is_unsure(Some(UNSURE)) && !is_unsure(None));
+}
+
 #[test]
 fn what_is_said_of_pages_read_poorly() {
     let nor = vec!["nor".to_owned()];
@@ -1039,7 +1065,7 @@ fn a_page_is_tried() {
     use base64::Engine as _;
     let Some(kit) = kit(true) else { return };
     let scan = kit.scan("scan.pdf");
-    let tried = try_page(&scan, &kit.tools, &kit.work(), &kit.asked(), 1, None, &never()).unwrap();
+    let tried = try_page(&scan, &kit.tools, &kit.work(), &kit.asked(), 1, &never()).unwrap();
     assert_eq!((tried.page, tried.label.as_str()), (1, "1"));
     let text = tried.paragraphs.iter().flatten().map(|w| w.text.as_str()).collect::<Vec<_>>().join(" ");
     assert!(has(&text, "The wrath of Achilles") && has(&text, "Milman Parry"), "{text}");
@@ -1057,13 +1083,72 @@ fn a_page_is_tried() {
         assert!(block.left >= 0.0 && block.left + block.width <= tried.width as f32 + 1.0, "{block:?}");
         assert!(block.top >= 0.0 && block.top + block.height <= tried.height as f32 + 1.0, "{block:?}");
     }
+    // Word by word: each with how sure Tesseract was of it, on the picture as
+    // it is shown, the first of each paragraph beginning a line, the words
+    // counted with those it was unsure of; read well, few are.
+    let words: Vec<&text::Word> = tried.paragraphs.iter().flatten().collect();
+    assert_eq!(tried.words, words.len());
+    assert!(tried.words > 30, "{}", tried.words);
+    assert_eq!(tried.unsure, words.iter().filter(|w| is_unsure(w.confidence)).count());
+    assert!(tried.unsure * 10 < tried.words, "{} of {} unsure", tried.unsure, tried.words);
+    assert!(tried.paragraphs.iter().all(|p| p.first().is_some_and(|w| w.line)), "{:?}", tried.paragraphs);
+    assert!(words.iter().filter(|w| w.line).count() >= 3, "a line for each line read");
+    for word in &words {
+        assert!(word.confidence.is_some_and(|c| (0.0..=100.0).contains(&c)), "{word:?}");
+        assert!(word.left >= 0.0 && word.left + word.width <= tried.width as f32 + 1.0, "{word:?}");
+        assert!(word.top >= 0.0 && word.top + word.height <= tried.height as f32 + 1.0, "{word:?}");
+    }
+    // Not joined at hyphens: the word broken at the end of its line stands as read.
+    assert!(words.windows(2).any(|w| w[0].text.ends_with('-') && w[1].line), "{text}");
 
     // A page the file does not have is said to be none.
-    let none = try_page(&scan, &kit.tools, &kit.work(), &kit.asked(), 2, None, &never()).unwrap_err();
+    let none = try_page(&scan, &kit.tools, &kit.work(), &kit.asked(), 2, &never()).unwrap_err();
     assert_eq!(none.to_string(), tr!("ocr-no-such-page", page = 2, pages = 1));
     // And a language Tesseract has no data for is refused, as in a reading.
     let asked = Asked { languages: vec!["xyz".into()], ..kit.asked() };
-    assert!(try_page(&scan, &kit.tools, &kit.work(), &asked, 1, None, &never()).is_err());
+    assert!(try_page(&scan, &kit.tools, &kit.work(), &asked, 1, &never()).is_err());
+}
+
+/// A picture is tried as its one page: what Tesseract read of it word by
+/// word, and the picture made smaller to be shown, the words and blocks on it.
+#[test]
+fn a_picture_is_tried() {
+    use base64::Engine as _;
+    let Some(kit) = kit(true) else { return };
+    let page = kit.typeset("page.png", PAGE);
+    let tried = try_page(&page, &kit.tools, &kit.work(), &kit.asked(), 1, &never()).unwrap();
+    assert_eq!((tried.page, tried.label.as_str()), (1, "1"));
+    let text = tried.paragraphs.iter().flatten().map(|w| w.text.as_str()).collect::<Vec<_>>().join(" ");
+    assert!(has(&text, "The wrath of Achilles") && has(&text, "Milman Parry"), "{text}");
+    assert!(tried.words > 30 && tried.unsure * 10 < tried.words, "{} of {}", tried.unsure, tried.words);
+    assert!(tried.confidence.is_some_and(|c| c >= POORLY) && !tried.poorly, "{:?}", tried.confidence);
+    let png = base64::engine::general_purpose::STANDARD.decode(&tried.png).unwrap();
+    let picture = image::load_from_memory(&png).unwrap();
+    assert_eq!((picture.width(), picture.height()), (tried.width, tried.height));
+    // 150 mm at 300 dots to the inch is 1772 dots, made 1600 wide.
+    assert_eq!(tried.width, 1600);
+    for word in tried.paragraphs.iter().flatten() {
+        assert!(word.left + word.width <= tried.width as f32 + 1.0, "{word:?}");
+        assert!(word.top + word.height <= tried.height as f32 + 1.0, "{word:?}");
+    }
+    assert!(!tried.blocks.is_empty());
+    for block in &tried.blocks {
+        assert!(block.left + block.width <= tried.width as f32 + 1.0, "{block:?}");
+    }
+    // In black and white, read all the same.
+    let contrast = Asked { contrast: true, ..kit.asked() };
+    let tried = try_page(&page, &kit.tools, &kit.work(), &contrast, 1, &never()).unwrap();
+    let text = tried.paragraphs.iter().flatten().map(|w| w.text.as_str()).collect::<Vec<_>>().join(" ");
+    assert!(has(&text, "Milman Parry"), "{text}");
+
+    // A picture has one page; a drawing is not read.
+    let none = try_page(&page, &kit.tools, &kit.work(), &kit.asked(), 2, &never()).unwrap_err();
+    assert_eq!(none.to_string(), tr!("ocr-no-such-page", page = 2, pages = 1));
+    let svg = kit.path("drawing.svg.png");
+    std::fs::write(&svg, br#"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><text>Hi</text></svg>"#)
+        .unwrap();
+    let drawing = try_page(&svg, &kit.tools, &kit.work(), &kit.asked(), 1, &never()).unwrap_err();
+    assert_eq!(drawing.to_string(), tr!("ocr-drawing"));
 }
 
 /// A stretch of pages is read with languages of its own: the second page of
@@ -1095,10 +1180,12 @@ fn a_stretch_of_pages_is_read_with_languages_of_its_own() {
     assert!(!read_poorly(read.pages[0].confidence), "{:?}", read.pages[0].confidence);
     assert_eq!(read.poorly, vec![2]);
 
-    // The page tried is read with the languages of its stretch.
-    let tried = try_page(&scan, &kit.tools, &kit.work(), &asked, 2, None, &never()).unwrap();
+    // The page tried is read with the languages of its stretch; English read
+    // as Greek, Tesseract is unsure of many of its words.
+    let tried = try_page(&scan, &kit.tools, &kit.work(), &asked, 2, &never()).unwrap();
     assert!(tried.poorly, "{:?}", tried.confidence);
-    let tried = try_page(&scan, &kit.tools, &kit.work(), &asked, 1, None, &never()).unwrap();
+    assert!(tried.unsure > 0, "{} of {} unsure", tried.unsure, tried.words);
+    let tried = try_page(&scan, &kit.tools, &kit.work(), &asked, 1, &never()).unwrap();
     assert!(!tried.poorly, "{:?}", tried.confidence);
 
     // Made searchable, the same.
@@ -1113,9 +1200,9 @@ fn a_stretch_of_pages_is_read_with_languages_of_its_own() {
     // whole is; 150 mm at 150 dots to the inch is 886 dots, shown as drawn.
     let coarse = Stretch { from: 2, languages: vec!["eng".into()], dpi: 150, ..Stretch::default() };
     let asked = Asked { stretches: vec![coarse], ..kit.asked() };
-    let tried = try_page(&scan, &kit.tools, &kit.work(), &asked, 2, None, &never()).unwrap();
+    let tried = try_page(&scan, &kit.tools, &kit.work(), &asked, 2, &never()).unwrap();
     assert!(tried.width.abs_diff(886) <= 2, "{}", tried.width);
-    let tried = try_page(&scan, &kit.tools, &kit.work(), &asked, 1, None, &never()).unwrap();
+    let tried = try_page(&scan, &kit.tools, &kit.work(), &asked, 1, &never()).unwrap();
     assert_eq!(tried.width, 1600);
     let read = read_pdf(&scan, &kit.tools, &kit.work(), &asked, None, &mut nothing, &never()).unwrap();
     assert!(read.pages.iter().all(|p| p.read && has(&p.paragraphs.join(" "), "Milman Parry")), "{:?}", read.pages);

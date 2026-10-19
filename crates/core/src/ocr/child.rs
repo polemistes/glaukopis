@@ -280,8 +280,9 @@ pub struct Made {
     pub poorly: Vec<usize>,
 }
 
-/// The longest side of the picture of a page tried, as it is shown.
-const SHOWN: u32 = 1600;
+/// The longest side of the picture of a page tried, as it is shown: of a
+/// picture tried too.
+pub(super) const SHOWN: u32 = 1600;
 
 /// A page tried: what Tesseract read of it, and the picture it read, made
 /// smaller to be shown.

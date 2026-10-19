@@ -1097,6 +1097,20 @@ pub fn read_picture(
     is_word: Option<&IsWord>,
     stop: &AtomicBool,
 ) -> Result<Vec<String>> {
+    let (_, tsv, _) = picture_read(bytes, tools, work, asked, stop)?;
+    Ok(text::page_paragraphs(text::tsv_paragraphs(&tsv), is_word))
+}
+
+/// A picture as it is read: drawn grey on white, or black and white where
+/// that is asked, and what Tesseract read of it with the languages asked,
+/// as its TSV, with what it read it with.
+fn picture_read(
+    bytes: &[u8],
+    tools: &Tools,
+    work: &Path,
+    asked: &Asked,
+    stop: &AtomicBool,
+) -> Result<(Drawn, String, tesseract::With)> {
     if crate::pictures::is_svg(bytes) {
         return Err(Error::invalid(tr!("ocr-drawing")));
     }
@@ -1109,11 +1123,12 @@ pub fn read_picture(
     if stop.load(Ordering::Relaxed) {
         return Err(stopped());
     }
-    Ok(text::page_paragraphs(text::tsv_paragraphs(read.tsv.as_deref().unwrap_or_default()), is_word))
+    Ok((drawn, read.tsv.unwrap_or_default(), reader.with))
 }
 
-/// A page tried before a PDF is read: what Tesseract read of it with the
-/// languages and settings asked, how sure it was, and the picture it read.
+/// A page tried before a PDF is read, or a picture before it is: what
+/// Tesseract read of it with the languages and settings asked, word by
+/// word, how sure it was, and the picture it read.
 #[derive(Debug, Clone, Default, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Tried {
@@ -1143,17 +1158,20 @@ pub struct Tried {
 }
 
 /// Tries a page of a PDF, counted from one, before the whole is read: draws
-/// it as `asked` says, has Tesseract read it with the languages asked, and
-/// gives what was read beside the picture that was read.
+/// it as `asked` says for it, has Tesseract read it with the languages of
+/// its stretch, and gives what was read beside the picture that was read.
+/// A picture is tried as its one page, drawn as it is read.
 pub fn try_page(
     path: &Path,
     tools: &Tools,
     work: &Path,
     asked: &Asked,
     page: usize,
-    is_word: Option<&IsWord>,
     stop: &AtomicBool,
 ) -> Result<Tried> {
+    if is_picture(path) {
+        return try_picture(path, tools, work, asked, page, stop);
+    }
     let size = checked_pdf(path)?;
     let seen = seen_of(path, size, tools.pdftoppm.as_ref())?;
     let count = seen.layer.pages.len().max(*seen.drawable(&file_name(path)).as_ref().unwrap_or(&0));
@@ -1174,9 +1192,53 @@ pub fn try_page(
         child::Done::Tried(tried) => tried,
         _ => return Err(Error::invalid("the page was not tried")),
     };
-    let (groups, confidence) = text::tsv_page(&tried.tsv);
-    let scale = tried.scale;
-    let blocks = text::tsv_blocks(&tried.tsv)
+    let with = reader.with_at(page - 1);
+    let greek = with.languages.iter().any(|l| is_greek(l));
+    let shown = (tried.png, tried.width, tried.height, tried.scale);
+    let tried = tried_of(page, seen.layer.label(page - 1), &tried.tsv, greek, shown);
+    tracing::info!(page, confidence = ?tried.confidence, unsure = tried.unsure, words = tried.words, languages = ?with.languages, "a page was tried");
+    Ok(tried)
+}
+
+/// A picture tried as its one page: drawn as `read_picture` draws it, read
+/// here with the languages asked, and made smaller to be shown as a page of
+/// a PDF tried is.
+fn try_picture(
+    path: &Path,
+    tools: &Tools,
+    work: &Path,
+    asked: &Asked,
+    page: usize,
+    stop: &AtomicBool,
+) -> Result<Tried> {
+    use base64::Engine as _;
+    if page != 1 {
+        return Err(Error::invalid(tr!("ocr-no-such-page", page = page, pages = 1)));
+    }
+    let bytes = std::fs::read(path).context(|| tr!("io-reading", path = path))?;
+    let (drawn, tsv, with) = picture_read(&bytes, tools, work, asked, stop)?;
+    let shown = drawn.shown(child::SHOWN)?;
+    let png = base64::engine::general_purpose::STANDARD.encode(&shown.png);
+    let greek = with.languages.iter().any(|l| is_greek(l));
+    let tried = tried_of(1, "1".to_owned(), &tsv, greek, (png, shown.width, shown.height, shown.scale));
+    tracing::info!(confidence = ?tried.confidence, unsure = tried.unsure, words = tried.words, languages = ?with.languages, "a picture was tried");
+    Ok(tried)
+}
+
+/// What Tesseract read of a page tried, from its TSV, beside the picture it
+/// read as it is shown (`shown`: the PNG in base64, its width and height,
+/// and what the places of the TSV are multiplied by to be places on it).
+/// The words by paragraph, each composed (NFC), its sigmas mended where
+/// Greek was read (`greek`), counted with those Tesseract was unsure of;
+/// the words and the blocks placed on the picture as it is shown.
+fn tried_of(page: usize, label: String, tsv: &str, greek: bool, shown: (String, u32, u32, f32)) -> Tried {
+    let (png, width, height, scale) = shown;
+    let paragraphs: Vec<Vec<text::Word>> =
+        text::tsv_words(tsv).into_iter().map(|words| shown_words(words, scale, greek)).collect();
+    let words = paragraphs.iter().map(Vec::len).sum();
+    let unsure = paragraphs.iter().flatten().filter(|w| is_unsure(w.confidence)).count();
+    let confidence = text::page_confidence(tsv);
+    let blocks = text::tsv_blocks(tsv)
         .into_iter()
         .map(|b| text::TextBlock {
             left: b.left * scale,
@@ -1185,28 +1247,52 @@ pub fn try_page(
             height: b.height * scale,
         })
         .collect();
-    let greek = reader.with_at(page - 1).languages.iter().any(|l| is_greek(l));
-    let paragraphs = text::page_paragraphs(groups, is_word);
-    let paragraphs: Vec<String> =
-        if greek { paragraphs.iter().map(|p| schemes::mend_sigmas(p)).collect() } else { paragraphs };
-    tracing::info!(page, confidence = ?confidence, languages = ?reader.with_at(page - 1).languages, "a page was tried");
-    // Until the words are told one by one: each paragraph as one word.
-    let words = paragraphs.len();
-    let paragraphs =
-        paragraphs.into_iter().map(|text| vec![text::Word { text, line: true, ..Default::default() }]).collect();
-    Ok(Tried {
+    Tried {
         page,
-        label: seen.layer.label(page - 1),
+        label,
         paragraphs,
         words,
-        unsure: 0,
+        unsure,
         confidence,
         poorly: read_poorly(confidence),
-        png: tried.png,
-        width: tried.width,
-        height: tried.height,
+        png,
+        width,
+        height,
         blocks,
-    })
+    }
+}
+
+/// Whether a word Tesseract gave `confidence` is one it was unsure of
+/// (`UNSURE`). A word it gave none is not.
+pub fn is_unsure(confidence: Option<f32>) -> bool {
+    confidence.is_some_and(|c| c < UNSURE)
+}
+
+/// The words of a paragraph tried as they are shown: each composed, placed
+/// on the picture shown by `scale`, and, where Greek was read, its sigmas
+/// mended as the words of the paragraph together say (a sigma before an
+/// elision mark is ς where a quotation opened before it closes there).
+fn shown_words(mut words: Vec<text::Word>, scale: f32, greek: bool) -> Vec<text::Word> {
+    for word in &mut words {
+        word.text = text::composed(&word.text);
+        for v in [&mut word.left, &mut word.top, &mut word.width, &mut word.height] {
+            *v *= scale;
+        }
+    }
+    if greek {
+        let joined = words.iter().map(|w| w.text.as_str()).collect::<Vec<_>>().join(" ");
+        let mended: Vec<char> = schemes::mend_sigmas(&joined).chars().collect();
+        // A sigma is mended into a sigma: the words are where they were.
+        if mended.len() == joined.chars().count() {
+            let mut at = 0;
+            for word in &mut words {
+                let count = word.text.chars().count();
+                word.text = mended[at..at + count].iter().collect();
+                at += count + 1;
+            }
+        }
+    }
+    words
 }
 
 /// The text of the first pages of a PDF, as Tesseract reads it in the first
