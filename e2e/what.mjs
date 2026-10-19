@@ -168,38 +168,40 @@ try {
        return Math.round(h.getBoundingClientRect().top - f.querySelector('.chips').getBoundingClientRect().bottom);`,
       name,
     );
-  const numberLine = '.preview .page .line[data-what="page-number"]';
+  const numberLine = '.preview .page .line[data-what="footer"]';
   await app.waitFor(numberLine, 15000);
   await app.exec(`document.querySelector(arguments[0]).scrollIntoView({ block: 'center' });`, numberLine);
   await sleep(400);
   await app.click(numberLine);
   shown = await chipAfter();
-  check('the number of the page has a chip that names it', shown?.words === 'Page number' && shown?.what === 'page-number', JSON.stringify(shown));
+  check('the footer, which holds the number of the page, has a chip that names it', shown?.words === 'Footer' && shown?.what === 'footer', JSON.stringify(shown));
   await app.click('.preview .page .chip');
   await sleep(600);
-  let near = await atTop('page-numbers');
-  check('which opens Look at the rows of the page numbers', near !== null && near >= -4 && near < 120, `${near}`);
+  let near = await atTop('footer');
+  check('which opens Look at the rows of the footer', near !== null && near >= -4 && near < 120, `${near}`);
 
-  // A play: the running head with the title, at the top of every page but the first.
+  // A play: the header with the title, at the top of every page but the first.
   await app.chooseWhat('Play');
-  const headLine = '.preview .page .line[data-what="running-head"]';
+  const headLine = '.preview .page .line[data-what="header"]';
   await app.waitFor(headLine, 30000).catch(() => {});
-  check('a play has a running head, named as one', await app.exists(headLine));
+  check('a play has a header, named as one', await app.exists(headLine));
   await app.exec(`document.querySelector(arguments[0]).scrollIntoView({ block: 'center' });`, headLine);
   await sleep(400);
   await app.click(headLine);
   shown = await chipAfter();
-  check('the running head has a chip that names it', shown?.words === 'Running head', JSON.stringify(shown));
-  await app.screenshot('what-6-running-head');
+  check('the header has a chip that names it', shown?.words === 'Header', JSON.stringify(shown));
+  await app.screenshot('what-6-header');
   await app.click('.preview .page .chip');
   await sleep(600);
-  near = await atTop('running-head');
-  check('which opens Look at the rows of the running head', near !== null && near >= -4 && near < 120, `${near}`);
-  check('the first of which turns it off', await app.lookChoose('At the top of every page', 'none'));
+  near = await atTop('header');
+  check('which opens Look at the rows of the header', near !== null && near >= -4 && near < 120, `${near}`);
+  const shownRow = '.side .look h4[data-at="header"] + label.row input[type="checkbox"]';
+  check('the first of which says it is shown', (await app.exec(`return document.querySelector(arguments[0])?.checked ?? null`, shownRow)) === true);
+  await app.click(shownRow);
   await app
-    .waitUntil(`return !document.querySelector(${JSON.stringify(headLine)}) && !!document.querySelector('.preview .page .line[data-what]')`, 20000, 'the running head to go')
+    .waitUntil(`return !document.querySelector(${JSON.stringify(headLine)}) && !!document.querySelector('.preview .page .line[data-what]')`, 20000, 'the header to go')
     .catch(() => {});
-  check('and the running head is gone from the pages', !(await app.exists(headLine)));
+  check('and turns it off: the header is gone from the pages', !(await app.exists(headLine)));
 
   // The title: its chip lands on the switch of the title page, first in the front page.
   const titleLine = '.preview .page .line[data-what="front"]';

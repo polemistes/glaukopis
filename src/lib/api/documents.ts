@@ -57,8 +57,13 @@ export interface FormatSummary {
 
 export type Align = 'left' | 'center' | 'right' | 'justified';
 export type Case = 'none' | 'upper' | 'smallcaps';
-export type Position =
-  'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
+/** Where a heading begins: in the text, on a new page, or on a right-hand page (ADR 0057). */
+export type Begins = 'text' | 'page' | 'right-page';
+/** How a level of heading is numbered (ADR 0058). */
+export type LevelNumbering =
+  'as-above' | 'none' | 'arabic' | 'alpha' | 'alpha-lower' | 'roman' | 'roman-lower';
+/** How the pages are numbered. */
+export type NumberStyle = 'arabic' | 'roman' | 'roman-lower' | 'letters' | 'letters-lower';
 
 export interface HeadingLevel {
   size: number;
@@ -67,11 +72,43 @@ export interface HeadingLevel {
   align: Align;
   case: Case;
   runIn: boolean;
-  /** The heading begins a new page: a chapter of a book. */
-  newPage: boolean;
+  /** Where the heading begins: a chapter of a book on a new page. */
+  begins: Begins;
+  numbering: LevelNumbering;
   indent: boolean;
   spaceBefore: string;
   spaceAfter: string;
+}
+
+/** What stands in a place of the header or the footer (ADR 0057). */
+export type MarginItem =
+  | { kind: 'page-number' }
+  | { kind: 'title' }
+  | { kind: 'author' }
+  | { kind: 'chapter' }
+  | { kind: 'date' }
+  | { kind: 'text'; text: string };
+
+export interface Sides {
+  left: MarginItem[];
+  center: MarginItem[];
+  right: MarginItem[];
+}
+
+/** The header or the footer of the pages (ADR 0057). */
+export interface Margin extends Sides {
+  shown: boolean;
+  firstPage: boolean;
+  /** On the pages where a heading that begins a page, or a part on a page of its own, begins. */
+  openers: boolean;
+  /** Different on left pages: `even` holds their places. */
+  alternate: boolean;
+  even?: Sides;
+  separator: string;
+  /** In points; nought is the text's. */
+  size: number;
+  italic: boolean;
+  case: Case;
 }
 
 /** See `crates/core/src/formats/mod.rs`, where every parameter is explained. */
@@ -197,6 +234,9 @@ export interface DocumentFormat {
     columns: number;
     /** The room between two columns. */
     columnGap: string;
+    numbering: NumberStyle;
+    /** The pages begin to be counted anew where the element this is set on begins (ADR 0059). */
+    restart: boolean;
   };
   font: { family: string; size: number };
   text: {
@@ -304,13 +344,8 @@ export interface DocumentFormat {
     rules: 'horizontal' | 'grid' | 'none';
     headerBold: boolean;
   };
-  pageNumbers: { show: boolean; position: Position; firstPage: boolean };
-  runningHead: {
-    content: 'none' | 'title' | 'author' | 'author-title' | 'text';
-    text: string;
-    align: Align;
-    case: Case;
-  };
+  header: Margin;
+  footer: Margin;
   lineNumbers: boolean;
   style?: string;
   /** Gone with ADR 0038: limits are the template's requirements. Tolerated in old files. */

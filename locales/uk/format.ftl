@@ -25,7 +25,6 @@ format-delete-confirm = Видалити формат
 
 ## The parts of a format, as they are chosen at the left.
 
-
 ## Words that stand in several parts.
 
 format-size = Розмір
@@ -103,8 +102,6 @@ format-level-run-in = у рядок із текстом
 format-level-indent = З відступом, як абзац
 format-level-run-in-label = У рядок із текстом
 format-level-run-in-hint = Заголовок починає абзац і закінчується крапкою
-format-level-new-page = Починає нову сторінку
-format-level-new-page-hint = Як розділи книжки
 format-level-new-page-said = з нової сторінки
 format-space-before = Проміжок перед
 format-space-after = Проміжок після
@@ -303,22 +300,6 @@ format-equations-after = Після номера
 
 format-page-numbers = Номери сторінок
 format-page-numbers-show = Сторінки нумеруються
-format-page-numbers-where = Де
-format-page-numbers-first = І на першій сторінці
-format-position-top-left = Угорі ліворуч
-format-position-top-center = Угорі посередині
-format-position-top-right = Угорі праворуч
-format-position-bottom-left = Унизу ліворуч
-format-position-bottom-center = Унизу посередині
-format-position-bottom-right = Унизу праворуч
-format-running-head = Колонтитул
-format-running-head-content = Угорі кожної сторінки
-format-running-head-none = Нічого
-format-running-head-title = Назва
-format-running-head-author = Автори
-format-running-head-author-title = Автори й назва
-format-running-head-text = Власні слова
-format-running-head-words = Слова
 
 ## About the format: where its requirements are from.
 

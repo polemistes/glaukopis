@@ -25,7 +25,6 @@ format-delete-confirm = Slett oppsettet
 
 ## Delene av et oppsett, slik de velges til venstre.
 
-
 ## Ord som står i flere deler.
 
 format-size = Størrelse
@@ -118,8 +117,12 @@ format-level-run-in = går inn i teksten
 format-level-indent = Rykket inn som et avsnitt
 format-level-run-in-label = Går inn i teksten
 format-level-run-in-hint = Overskriften innleder avsnittet og slutter med punktum
-format-level-new-page = Begynner på ny side
-format-level-new-page-hint = Som kapitlene i en bok
+format-level-begins = Begynner
+format-level-begins-hint = På en høyreside settes det inn en tom venstreside der det trengs, uten noe i topp- eller bunnteksten
+format-level-begins-text = I teksten
+format-level-begins-page = På ny side
+format-level-begins-right-page = På en høyreside
+format-level-right-page-said = på en høyreside
 format-level-new-page-said = på ny side
 format-space-before = Luft før
 format-space-after = Luft etter
@@ -324,22 +327,35 @@ format-equations-after = Etter nummeret
 
 format-page-numbers = Sidetall
 format-page-numbers-show = Sidene nummereres
-format-page-numbers-where = Hvor
-format-page-numbers-first = Også på første side
-format-position-top-left = Øverst, til venstre
-format-position-top-center = Øverst, i midten
-format-position-top-right = Øverst, til høyre
-format-position-bottom-left = Nederst, til venstre
-format-position-bottom-center = Nederst, i midten
-format-position-bottom-right = Nederst, til høyre
-format-running-head = Topptekst
-format-running-head-content = Øverst på hver side
-format-running-head-none = Ingenting
-format-running-head-title = Tittelen
-format-running-head-author = Forfatterne
-format-running-head-author-title = Forfattere og tittel
-format-running-head-text = Egne ord
-format-running-head-words = Ordene
+format-page-numbering = Tallenes form
+format-number-arabic = 1, 2, 3
+format-number-roman = I, II, III
+format-number-roman-lower = i, ii, iii
+format-number-letters = A, B, C
+format-number-letters-lower = a, b, c
+format-margin-header = Topptekst
+format-margin-footer = Bunntekst
+format-margin-shown = Vises
+format-margin-first-page = Også på første side
+format-margin-openers = Også på sidene der et kapittel eller en del begynner
+format-margin-openers-hint = En overskrift som begynner en side, eller en del på egen side
+format-margin-alternate = Ulik på venstre- og høyresider
+format-margin-right-pages = På høyresider
+format-margin-left-pages = På venstresider
+format-margin-place-left = Venstre
+format-margin-place-center = Midten
+format-margin-place-right = Høyre
+format-margin-add = Legg til …
+# Sagt om noe som står i topp- eller bunnteksten.
+format-margin-remove = Ta bort { $item }
+format-margin-separator = Mellom det som står
+format-margin-text-placeholder = Dine egne ord
+format-item-page-number = Sidetall
+format-item-title = Tittel
+format-item-author = Forfatter
+format-item-chapter = Kapittel
+format-item-date = Dato
+format-item-text = Egne ord
 
 ## Om oppsettet: hvor kravene kommer fra.
 

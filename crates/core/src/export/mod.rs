@@ -21,10 +21,12 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
 
 use crate::document::bibliography::{Bibliography, gather};
-use crate::document::pandoc::{Converter, Extras, Flavour, meta_inlines, meta_list, meta_string, meta_text};
+use crate::document::pandoc::{
+    Converter, Extras, Flavour, PageBegins, meta_inlines, meta_list, meta_string, meta_text,
+};
 use crate::document::{Block, Document, Inline, NotePlace, OwnKind, Part, Section};
 use crate::error::{Error, IoContext, Result};
-use crate::formats::typst::{Particulars, preamble};
+use crate::formats::typst::{self, Particulars, preamble};
 use crate::formats::{DocumentFormat, NoteKind, TitlePlacement};
 use crate::fsutil::write_atomic;
 use crate::library::Library;
@@ -89,6 +91,51 @@ impl Target {
             Target::Latex | Target::PdfLatex => Some(raw("latex", "\\clearpage")),
             Target::Markdown | Target::Html | Target::Epub => None,
         }
+    }
+
+    /// Where headings begin a page, and how a target begins one where
+    /// something was told to (ADR 0057): Typst marks the opener and finds the
+    /// blank left page by its marks; Word begins a section, whose first page
+    /// takes the opener's header and footer, where the layout leaves either
+    /// off the openers or a heading begins on a right-hand page; LaTeX gives
+    /// the opener its own style of page; Writer begins a plain new page.
+    fn page_begins(self, f: &DocumentFormat) -> PageBegins {
+        let raw = |format: &str, text: &str| json!({"t": "RawBlock", "c": [format, text]});
+        let levels = f
+            .headings
+            .levels
+            .iter()
+            .enumerate()
+            .filter(|(_, l)| l.begins_page())
+            .map(|(i, l)| (i as u8 + 1, l.begins))
+            .collect();
+        let off_openers = [&f.header, &f.footer].iter().any(|m| m.is_visible() && !m.openers);
+        let section = |kind: &str| {
+            raw("openxml", &format!("<w:p><w:pPr><w:sectPr><w:type w:val=\"{kind}\"/></w:sectPr></w:pPr></w:p>"))
+        };
+        let (opener, right) = match self {
+            Target::Pdf | Target::Typst => (
+                vec![raw("typst", &format!("#pagebreak(weak: true)\n{}", typst::OPENER))],
+                vec![raw(
+                    "typst",
+                    &format!("{}\n#pagebreak(weak: true, to: \"odd\")\n{}", typst::BEFORE_RIGHT, typst::OPENER),
+                )],
+            ),
+            Target::Docx => (
+                vec![if off_openers { section("nextPage") } else { self.page_break().expect("Word has pages") }],
+                vec![section("oddPage")],
+            ),
+            Target::Latex | Target::PdfLatex => (
+                vec![raw("latex", "\\clearpage\\thispagestyle{opener}")],
+                vec![raw(
+                    "latex",
+                    "\\clearpage\\ifodd\\value{page}\\else\\hbox{}\\thispagestyle{empty}\\newpage\\fi\\thispagestyle{opener}",
+                )],
+            ),
+            Target::Odt => (self.page_break().into_iter().collect(), Vec::new()),
+            Target::Markdown | Target::Html | Target::Epub => (Vec::new(), Vec::new()),
+        };
+        PageBegins { levels, opener, right }
     }
 }
 
@@ -311,6 +358,7 @@ fn particulars(doc: &Document, f: &DocumentFormat) -> Particulars {
     Particulars {
         title: doc.title_plain(),
         authors: doc.authors.iter().map(|a| a.name.trim().to_owned()).filter(|n| !n.is_empty()).collect(),
+        date: doc.date.as_deref().map(str::trim).filter(|d| !d.is_empty()).map(str::to_owned),
         language: doc.language.clone(),
         lettered_footnotes: f.notes.kind == NoteKind::Endnotes && doc.placed_notes().contains(&NotePlace::Foot),
         flows,
@@ -706,7 +754,7 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
             .filter(|(_, l)| l.run_in)
             .map(|(i, l)| crate::document::pandoc::RunIn { level: i as u8 + 1, bold: l.bold, italic: l.italic })
             .collect(),
-        new_page: f.headings.levels.iter().enumerate().filter(|(_, l)| l.new_page).map(|(i, _)| i as u8 + 1).collect(),
+        begins: target.page_begins(f),
         page_break: target.page_break(),
         deepest: f.headings.levels.len().clamp(1, 6) as u8,
         extras: Extras::new(
@@ -1302,17 +1350,14 @@ pub fn preview_made(
     let (count, pages) = pages_from(&set.document, wanted);
     let places = typeset::places(&set.document);
     // The text stands between the margins the opening of the document sets on
-    // every page; in them, the running head and the number of the page, as
-    // the layout puts them there (ADR 0056). Where both stand at the head, the
-    // head is named for the running head.
+    // every page; in them, the header and the footer, where the layout shows
+    // them (ADRs 0056 and 0057).
     let f = &request.format;
-    let numbered_at = |top: bool| f.page_numbers.show && f.page_numbers.position.is_top() == top;
-    let heads = f.running_head.content != crate::formats::HeadContent::None;
     let margins = typeset::Margins {
         top: f.page.margin_top.points(),
         bottom: f.page.margin_bottom.points(),
-        head: if heads { Some("running-head") } else { numbered_at(true).then_some("page-number") },
-        foot: numbered_at(false).then_some("page-number"),
+        head: f.header.shown.then_some("header"),
+        foot: f.footer.shown.then_some("footer"),
     };
     let spots = typeset::spots(&set.document, &margins);
     tracing::debug!(pandoc = ?written, typst = ?(began.elapsed() - written), count, "the pages of the preview are made");
@@ -1942,7 +1987,7 @@ pub fn style_sample(
         keys: &bibliography.keys,
         language,
         run_in: Vec::new(),
-        new_page: Vec::new(),
+        begins: Default::default(),
         page_break: None,
         deepest: 6,
         extras: Default::default(),
@@ -2490,20 +2535,28 @@ mod tests {
         assert_eq!(names("Before the first section."), [None]);
         assert_eq!(names("Of"), [None]);
         assert!(!p.spots.iter().any(|s| s.what.contains("foreign")), "{:?}", p.spots);
-        // The numbers of the pages, in the margin at the foot, as the layout puts them there; no running head.
+        // The footer, in the margin at the foot, as the layout puts it there; no header.
         assert!(
-            p.spots.iter().any(|s| s.page == 1 && s.what == "page-number" && s.bottom > p.height - 1.0),
+            p.spots.iter().any(|s| s.page == 1 && s.what == "footer" && s.bottom > p.height - 1.0),
             "{:?}",
             p.spots
         );
-        assert!(!p.spots.iter().any(|s| s.what == "running-head"), "{:?}", p.spots);
-        // A running head, and the numbers at the head too: the head is the running head's.
-        r.format.running_head.content = crate::formats::HeadContent::Title;
-        r.format.page_numbers.position = crate::formats::Position::TopRight;
+        assert!(!p.spots.iter().any(|s| s.what == "header"), "{:?}", p.spots);
+        // A header with the title and the number, and no footer.
+        r.format.header = crate::formats::Margin {
+            shown: true,
+            places: crate::formats::Sides {
+                left: vec![crate::formats::Item::Title],
+                right: vec![crate::formats::Item::PageNumber],
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        r.format.footer.shown = false;
         r.key = "spots-head".into();
         let p = preview(&s.ctx(), &r).unwrap();
-        assert!(p.spots.iter().any(|s| s.page == 1 && s.what == "running-head" && s.top < 1.0), "{:?}", p.spots);
-        assert!(!p.spots.iter().any(|s| s.what == "page-number"), "{:?}", p.spots);
+        assert!(p.spots.iter().any(|s| s.page == 1 && s.what == "header" && s.top < 1.0), "{:?}", p.spots);
+        assert!(!p.spots.iter().any(|s| s.what == "footer"), "{:?}", p.spots);
     }
 
     #[test]
@@ -2585,6 +2638,90 @@ mod tests {
     }
 
     #[test]
+    fn chapters_begin_on_right_hand_pages_with_bare_openers() {
+        use crate::document::fixtures::text;
+        use crate::document::{Block, Section};
+        use crate::formats::{Begins, Item, Margin, Sides};
+        let Some(s) = setup() else { return };
+        let mut r = request("chicago-author-date");
+        // Three chapters, the second long enough for pages that are no openers.
+        let para = |w: &str| Block::paragraph(vec![text(&w.repeat(40))]);
+        r.document.sections = (1..=3)
+            .map(|n| Section {
+                level: 1,
+                heading: Some(vec![text(&format!("Chapter {n}"))]),
+                blocks: if n == 2 {
+                    (0..30).map(|_| para("Many words follow. ")).collect()
+                } else {
+                    vec![para("One. ")]
+                },
+                element: Some(format!("c{n}")),
+                kind: None,
+            })
+            .collect();
+        r.format.headings.levels[0].begins = Begins::RightPage;
+        r.format.footer.openers = false;
+        r.format.header = Margin {
+            shown: true,
+            openers: false,
+            places: Sides { right: vec![Item::Text { text: "Running".into() }], ..Default::default() },
+            ..Default::default()
+        };
+        r.key = "right-hand".into();
+        let p = preview(&s.ctx(), &r).unwrap();
+        assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+        let source = fs::read_to_string(s.work.join("right-hand/preview/document.typ")).unwrap();
+        assert_eq!(
+            source.matches("#pagebreak(weak: true, to: \"odd\")\n#metadata(\"opener\") <gk-opener>").count(),
+            3,
+            "{source}"
+        );
+
+        let (mut blank, mut plain) = (0, 0);
+        for page in &p.pages {
+            let words: Vec<&str> = page.texts.iter().map(|t| t.text.trim()).collect();
+            let number = page.number.to_string();
+            if words.iter().any(|w| w.starts_with("Chapter")) {
+                assert!(page.number % 2 == 1, "a chapter on a left page: {} {words:?}", page.number);
+                assert!(
+                    !words.contains(&"Running") && !words.contains(&number.as_str()),
+                    "an opener is bare: {words:?}"
+                );
+            } else if words.is_empty() {
+                assert!(page.number % 2 == 0, "a blank page on the right: {}", page.number);
+                blank += 1;
+            } else {
+                assert!(words.contains(&"Running") && words.contains(&number.as_str()), "{} {words:?}", page.number);
+                plain += 1;
+            }
+        }
+        assert!(blank >= 1 && plain >= 1, "{blank} blank, {plain} plain, of {}", p.count);
+
+        // Word: the chapters begin sections on odd pages, whose first page has the openers' header.
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let docx = out.join("right-hand.docx");
+        export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        let document = unzip(&docx, "word/document.xml");
+        roxmltree::Document::parse(&document).unwrap();
+        assert_eq!(document.matches("<w:type w:val=\"oddPage\"/>").count(), 3, "{document}");
+        assert!(document.contains("<w:headerReference w:type=\"first\" r:id=\"rIdGkheaderOpenerxml\"/>"), "{document}");
+        assert!(unzip(&docx, "word/headerOpener.xml").contains("<w:tab/>"));
+        assert!(!unzip(&docx, "word/headerOpener.xml").contains("Running"));
+        assert!(unzip(&docx, "word/header1.xml").contains("Running"));
+        // LaTeX: a right-hand page before each, and the openers' style of page.
+        let tex = out.join("right-hand.tex");
+        export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
+        let l = fs::read_to_string(&tex).unwrap();
+        assert_eq!(
+            l.matches("\\ifodd\\value{page}\\else\\hbox{}\\thispagestyle{empty}\\newpage\\fi\\thispagestyle{opener}")
+                .count(),
+            3,
+            "{l}"
+        );
+    }
+
+    #[test]
     fn every_format_that_comes_with_the_application_makes_pages() {
         let Some(s) = setup() else { return };
         let formats = crate::formats::Formats::new(&s.resources, &s.work.join("formats"));
@@ -2651,7 +2788,7 @@ mod tests {
         let Some(s) = setup() else { return };
         let formats = crate::formats::Formats::new(&s.resources, &s.work.join("formats"));
         let novel = formats.all().into_iter().map(|(f, _)| f).find(|f| f.id == "novel-manuscript").unwrap();
-        assert!(novel.headings.levels[0].new_page);
+        assert_eq!(novel.headings.levels[0].begins, crate::formats::Begins::Page);
         let mut r = request("chicago-notes-bibliography");
         r.format = novel;
         let out = s.work.join("out");
@@ -2660,13 +2797,17 @@ mod tests {
         export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
         let t = fs::read_to_string(&typ).unwrap();
         let heading = t.find("= The word").expect("a heading of the first level");
-        // The break of the page, then the mark of the element, then the heading.
+        // The break of the page and the mark of the opener, then the mark of the element, then the heading.
         let before = t[..heading].trim_end().trim_end_matches("#metadata(\"e1\") <gk-el-e1>").trim_end();
-        assert!(before.ends_with("#pagebreak(weak: true)"), "{}", &t[heading.saturating_sub(80)..heading]);
+        assert!(
+            before.ends_with("#pagebreak(weak: true)\n#metadata(\"opener\") <gk-opener>"),
+            "{}",
+            &t[heading.saturating_sub(80)..heading]
+        );
         let tex = out.join("novel.tex");
         export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
         let l = fs::read_to_string(&tex).unwrap();
-        assert!(l.contains("\\clearpage\n\n\\section"), "{l}");
+        assert!(l.contains("\\clearpage\\thispagestyle{opener}\n\n\\section"), "{l}");
     }
 
     #[test]
@@ -3092,7 +3233,9 @@ mod tests {
         fs::create_dir_all(&out).unwrap();
         let mut r = request("chicago-author-date");
         r.format.page.size = "letter".into();
-        r.format.page_numbers.position = crate::formats::Position::TopRight;
+        r.format.footer.shown = false;
+        r.format.header.shown = true;
+        r.format.header.places.right = vec![crate::formats::Item::PageNumber];
         r.format.title.placement = TitlePlacement::OwnPage;
         r.format.bibliography.new_page = true;
 

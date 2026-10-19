@@ -213,6 +213,34 @@ try {
   check('a layout of one’s own offers to take changes into itself', await app.exists('.side .look .keep button:nth-child(2)'));
   await app.screenshot('look-4-kept');
 
+  // --- The header and the footer are places, and a chapter may begin on a right-hand page ---
+  await app.lookSection('Page');
+  await app.exec(
+    `const s = document.querySelector('.side .look [data-place="footer.left"] select.add');
+     s.value = 'title';
+     s.dispatchEvent(new Event('change', { bubbles: true }));`,
+  );
+  await sleep(300);
+  check(
+    'the title added at the left of the footer stands there as an item, beside the page number in the middle',
+    (await app.exists('.side .look [data-place="footer.left"] [data-item="title"]')) &&
+      (await app.exists('.side .look [data-place="footer.center"] [data-item="page-number"]')),
+  );
+  check('and is in the footer of the preview', await typstHas(/footer: context \{[\s\S]*?align\(left, text\("/));
+  await app.exec(`document.querySelector('.side .look [data-place="footer.left"]').scrollIntoView({ block: 'center' });`);
+  await sleep(300);
+  await app.screenshot('look-6-footer');
+  await app.lookWrite('On the pages where a chapter or a part begins too', false);
+  check('the footer kept off the openers and the blank pages', await typstHas(/if gk-blank\(at\) or gk-on\(<gk-opener>, at\) \{ none \}/));
+  await app.lookSection('Headings');
+  check('a level begins in the text, on a new page or on a right-hand page', (await app.lookChoose('Begins', 'right-page')) === true);
+  check('and the level says so', (await app.exec(`return document.querySelector('.side .look details.level[data-level="1"] .said')?.textContent ?? ''`)).includes('on a right-hand page'));
+  check(
+    'the preview breaks to a right-hand page before a heading of that level, and marks the opener',
+    await typstHas(/#pagebreak\(weak: true, to: "odd"\)\n#metadata\("opener"\) <gk-opener>/),
+  );
+  await app.lookChoose('Begins', 'text');
+
   // --- A change made on the project is said in an element under it ---
   await app.lookSection('Type');
   await app.lookWrite('Size', '13');

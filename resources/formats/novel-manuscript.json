@@ -15,7 +15,9 @@
     "marginTop": "2.5cm",
     "marginBottom": "2.5cm",
     "marginLeft": "2.5cm",
-    "marginRight": "2.5cm"
+    "marginRight": "2.5cm",
+    "numbering": "arabic",
+    "restart": false
   },
   "font": {
     "family": "Times New Roman",
@@ -39,9 +41,10 @@
         "italic": false,
         "align": "center",
         "case": "upper",
-        "newPage": true,
+        "begins": "page",
         "spaceBefore": "96pt",
-        "spaceAfter": "48pt"
+        "spaceAfter": "48pt",
+        "numbering": "as-above"
       },
       {
         "size": 12,
@@ -49,7 +52,9 @@
         "italic": false,
         "align": "center",
         "spaceBefore": "24pt",
-        "spaceAfter": "24pt"
+        "spaceAfter": "24pt",
+        "begins": "text",
+        "numbering": "as-above"
       },
       {
         "size": 12,
@@ -57,7 +62,9 @@
         "italic": true,
         "align": "left",
         "spaceBefore": "12pt",
-        "spaceAfter": "12pt"
+        "spaceAfter": "12pt",
+        "begins": "text",
+        "numbering": "as-above"
       }
     ]
   },
@@ -92,15 +99,7 @@
     "entrySpacing": "0pt",
     "newPage": true
   },
-  "pageNumbers": {
-    "show": true,
-    "position": "top-right",
-    "firstPage": false
-  },
-  "runningHead": {
-    "content": "author-title",
-    "align": "right",
-    "case": "none"
-  },
+  "header": { "shown": true, "firstPage": false, "openers": true, "alternate": false, "left": [], "center": [], "right": [{ "kind": "author" }, { "kind": "title" }, { "kind": "page-number" }], "separator": " / ", "size": 0, "italic": false, "case": "none" },
+  "footer": { "shown": false, "firstPage": false, "openers": true, "alternate": false, "left": [], "center": [], "right": [], "separator": " · ", "size": 0, "italic": false, "case": "none" },
   "lineNumbers": false
 }

@@ -231,8 +231,8 @@ try {
   typ = source();
   check(
     'a chapter of a novel begins a new page',
-    // The mark of the element may stand between the page break and the heading.
-    /#pagebreak\(weak: true\)\s*(#metadata\("[^"]*"\) <gk-el-[^>]*>\s*)?= /.test(typ) &&
+    // The mark of the opener and of the element may stand between the page break and the heading.
+    /#pagebreak\(weak: true\)\s*(#metadata\("[^"]*"\) <gk-[^>]*>\s*)*= /.test(typ) &&
       /a5/.test(typ),
   );
   await app.screenshot('preview-2b-novel');

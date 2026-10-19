@@ -15,7 +15,9 @@
     "marginTop": "2.5cm",
     "marginBottom": "2.5cm",
     "marginLeft": "2.5cm",
-    "marginRight": "2.5cm"
+    "marginRight": "2.5cm",
+    "numbering": "arabic",
+    "restart": false
   },
   "font": { "family": "Calibri", "size": 12 },
   "text": {
@@ -30,8 +32,8 @@
   "headings": {
     "numbered": false,
     "levels": [
-      { "size": 16, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" },
-      { "size": 14, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt" }
+      { "size": 16, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt", "begins": "text", "numbering": "as-above" },
+      { "size": 14, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt", "begins": "text", "numbering": "as-above" }
     ]
   },
   "title": {
@@ -66,8 +68,8 @@
     "newPage": false,
     "size": 0
   },
-  "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
-  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "header": { "shown": false, "firstPage": true, "openers": true, "alternate": false, "left": [], "center": [], "right": [], "separator": " · ", "size": 0, "italic": false, "case": "none" },
+  "footer": { "shown": true, "firstPage": true, "openers": true, "alternate": false, "left": [], "center": [{ "kind": "page-number" }], "right": [], "separator": " · ", "size": 0, "italic": false, "case": "none" },
   "lineNumbers": false,
   "style": "chicago-shortened-notes-bibliography"
 }

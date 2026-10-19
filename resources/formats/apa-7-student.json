@@ -15,7 +15,9 @@
     "marginTop": "1in",
     "marginBottom": "1in",
     "marginLeft": "1in",
-    "marginRight": "1in"
+    "marginRight": "1in",
+    "numbering": "arabic",
+    "restart": false
   },
   "font": {
     "family": "Times New Roman",
@@ -42,7 +44,9 @@
         "runIn": false,
         "indent": false,
         "spaceBefore": "16.8pt",
-        "spaceAfter": "16.8pt"
+        "spaceAfter": "16.8pt",
+        "begins": "text",
+        "numbering": "as-above"
       },
       {
         "size": 12,
@@ -53,7 +57,9 @@
         "runIn": false,
         "indent": false,
         "spaceBefore": "16.8pt",
-        "spaceAfter": "16.8pt"
+        "spaceAfter": "16.8pt",
+        "begins": "text",
+        "numbering": "as-above"
       },
       {
         "size": 12,
@@ -64,7 +70,9 @@
         "runIn": false,
         "indent": false,
         "spaceBefore": "16.8pt",
-        "spaceAfter": "16.8pt"
+        "spaceAfter": "16.8pt",
+        "begins": "text",
+        "numbering": "as-above"
       },
       {
         "size": 12,
@@ -75,7 +83,9 @@
         "runIn": true,
         "indent": true,
         "spaceBefore": "16.8pt",
-        "spaceAfter": "16.8pt"
+        "spaceAfter": "16.8pt",
+        "begins": "text",
+        "numbering": "as-above"
       },
       {
         "size": 12,
@@ -86,7 +96,9 @@
         "runIn": true,
         "indent": true,
         "spaceBefore": "16.8pt",
-        "spaceAfter": "16.8pt"
+        "spaceAfter": "16.8pt",
+        "begins": "text",
+        "numbering": "as-above"
       }
     ]
   },
@@ -162,17 +174,8 @@
     "rules": "horizontal",
     "headerBold": false
   },
-  "pageNumbers": {
-    "show": true,
-    "position": "top-right",
-    "firstPage": true
-  },
-  "runningHead": {
-    "content": "none",
-    "text": "",
-    "align": "left",
-    "case": "none"
-  },
+  "header": { "shown": true, "firstPage": true, "openers": true, "alternate": false, "left": [], "center": [], "right": [{ "kind": "page-number" }], "separator": " · ", "size": 0, "italic": false, "case": "none" },
+  "footer": { "shown": false, "firstPage": true, "openers": true, "alternate": false, "left": [], "center": [], "right": [], "separator": " · ", "size": 0, "italic": false, "case": "none" },
   "lineNumbers": false,
   "style": "apa"
 }

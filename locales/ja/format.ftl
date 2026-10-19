@@ -25,7 +25,6 @@ format-delete-confirm = 書式を削除
 
 ## The parts of a format, as they are chosen at the left.
 
-
 ## Words that stand in several parts.
 
 format-size = サイズ
@@ -103,8 +102,6 @@ format-level-run-in = 本文に続ける
 format-level-indent = 段落と同じく字下げ
 format-level-run-in-label = 本文に続ける
 format-level-run-in-hint = 見出しが段落の頭に来て、ピリオドで終わります
-format-level-new-page = 改ページする
-format-level-new-page-hint = 書籍の章のように
 format-level-new-page-said = 改ページ
 format-space-before = 前のスペース
 format-space-after = 後のスペース
@@ -303,22 +300,6 @@ format-equations-after = 番号の後
 
 format-page-numbers = ページ番号
 format-page-numbers-show = ページ番号を振る
-format-page-numbers-where = 位置
-format-page-numbers-first = 最初のページにも
-format-position-top-left = 上・左
-format-position-top-center = 上・中央
-format-position-top-right = 上・右
-format-position-bottom-left = 下・左
-format-position-bottom-center = 下・中央
-format-position-bottom-right = 下・右
-format-running-head = 柱
-format-running-head-content = 各ページの上部
-format-running-head-none = なし
-format-running-head-title = タイトル
-format-running-head-author = 著者
-format-running-head-author-title = 著者とタイトル
-format-running-head-text = 自分で書く語句
-format-running-head-words = 語句
 
 ## About the format: where its requirements are from.
 

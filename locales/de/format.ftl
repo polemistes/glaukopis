@@ -118,8 +118,6 @@ format-level-run-in = läuft in den Text
 format-level-indent = Eingezogen wie ein Absatz
 format-level-run-in-label = Läuft in den Text
 format-level-run-in-hint = Die Überschrift beginnt den Absatz und endet mit einem Punkt
-format-level-new-page = Beginnt eine neue Seite
-format-level-new-page-hint = Wie die Kapitel eines Buches
 format-level-new-page-said = auf neuer Seite
 format-space-before = Abstand davor
 format-space-after = Abstand danach
@@ -326,22 +324,6 @@ format-equations-after = Nach der Nummer
 
 format-page-numbers = Seitenzahlen
 format-page-numbers-show = Seiten werden nummeriert
-format-page-numbers-where = Wo
-format-page-numbers-first = Auch auf der ersten Seite
-format-position-top-left = Oben links
-format-position-top-center = Oben Mitte
-format-position-top-right = Oben rechts
-format-position-bottom-left = Unten links
-format-position-bottom-center = Unten Mitte
-format-position-bottom-right = Unten rechts
-format-running-head = Kopfzeile
-format-running-head-content = Oben auf jeder Seite
-format-running-head-none = Nichts
-format-running-head-title = Der Titel
-format-running-head-author = Die Autoren
-format-running-head-author-title = Autoren und Titel
-format-running-head-text = Eigene Worte
-format-running-head-words = Die Worte
 
 ## About the layout: where its requirements are from.
 

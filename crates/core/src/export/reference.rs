@@ -11,7 +11,8 @@ use crate::error::{Error, Result};
 use crate::formats::kinds::{self, Family, OwnKind, Resolved};
 use crate::formats::typst::Particulars;
 use crate::formats::{
-    Align, CaptionPosition, Case, DocumentFormat, HeadingLevel, Length, NoteKind, Paragraphs, Rules, fallbacks,
+    Align, CaptionPosition, Case, DocumentFormat, HeadingLevel, Item, Length, Margin, NoteKind, NumberStyle,
+    Paragraphs, Rules, Sides, fallbacks,
 };
 use crate::tr;
 
@@ -813,61 +814,53 @@ pub fn docx_styles(f: &DocumentFormat, language: Option<&str>, own: &[OwnKind]) 
     s
 }
 
-/// What stands in the margin at the top or the foot of the page.
-struct Margin {
-    left: Vec<Piece>,
-    center: Vec<Piece>,
-    right: Vec<Piece>,
-}
-
-enum Piece {
-    Words(String),
-    Number,
-}
-
-fn margins(f: &DocumentFormat, p: &Particulars) -> (Margin, Margin) {
-    let mut top = Margin { left: vec![], center: vec![], right: vec![] };
-    let mut foot = Margin { left: vec![], center: vec![], right: vec![] };
-    let slot = |m: &mut Margin, a: Align, piece: Piece| match a {
-        Align::Left | Align::Justified => m.left.push(piece),
-        Align::Center => m.center.push(piece),
-        Align::Right => m.right.push(piece),
-    };
-    if let Some(words) = p.running_head_cased(f) {
-        slot(&mut top, f.running_head.align, Piece::Words(words));
-    }
-    if f.page_numbers.show {
-        let pos = f.page_numbers.position;
-        slot(if pos.is_top() { &mut top } else { &mut foot }, pos.align(), Piece::Number);
-    }
-    (top, foot)
-}
-
-impl Margin {
-    fn is_empty(&self) -> bool {
-        self.left.is_empty() && self.center.is_empty() && self.right.is_empty()
+/// The switch of Word's `PAGE` field and the format of a section's page numbers, for a style of numbers.
+fn docx_numbers(style: NumberStyle) -> (&'static str, &'static str) {
+    match style {
+        NumberStyle::Arabic => ("", "decimal"),
+        NumberStyle::Roman => (" \\* ROMAN", "upperRoman"),
+        NumberStyle::RomanLower => (" \\* roman", "lowerRoman"),
+        NumberStyle::Letters => (" \\* ALPHABETIC", "upperLetter"),
+        NumberStyle::LettersLower => (" \\* alphabetic", "lowerLetter"),
     }
 }
 
-fn docx_margin(kind: &str, m: &Margin, f: &DocumentFormat, with_number: bool) -> String {
+/// A part of Word holding a header or a footer (ADR 0057): the three places
+/// of the margin in one line, at the left, at a tab in the middle and at a
+/// tab at the right; each place's items as runs, the separator between them.
+fn docx_margin(kind: &str, sides: Option<&Sides>, m: &Margin, f: &DocumentFormat, p: &Particulars) -> String {
     let (w, _) = f.page.dimensions();
     let text_width = ((w - f.page.margin_left.points() - f.page.margin_right.points()) * 20.0).round() as i32;
-    let size = half_points(f.font.size);
-    let run = |piece: &Piece| match piece {
-        Piece::Words(t) => {
-            format!("<w:r><w:rPr><w:sz w:val=\"{size}\"/></w:rPr><w:t xml:space=\"preserve\">{}</w:t></w:r>", xml(t))
-        }
-        Piece::Number if with_number => format!(
-            "<w:r><w:rPr><w:sz w:val=\"{size}\"/></w:rPr><w:fldChar w:fldCharType=\"begin\"/></w:r>\
-             <w:r><w:rPr><w:sz w:val=\"{size}\"/></w:rPr><w:instrText xml:space=\"preserve\"> PAGE </w:instrText></w:r>\
-             <w:r><w:rPr><w:sz w:val=\"{size}\"/></w:rPr><w:fldChar w:fldCharType=\"separate\"/></w:r>\
-             <w:r><w:rPr><w:sz w:val=\"{size}\"/></w:rPr><w:t>1</w:t></w:r>\
-             <w:r><w:rPr><w:sz w:val=\"{size}\"/></w:rPr><w:fldChar w:fldCharType=\"end\"/></w:r>"
-        ),
-        Piece::Number => String::new(),
+    let size = half_points(if m.size > 0.0 { m.size } else { f.font.size });
+    let italic = if m.italic { "<w:i/>" } else { "" };
+    let case = match m.case {
+        Case::None => "",
+        Case::Upper => "<w:caps/>",
+        Case::Smallcaps => "<w:smallCaps/>",
     };
-    let group = |pieces: &Vec<Piece>| {
-        pieces.iter().map(run).collect::<Vec<_>>().join("<w:r><w:t xml:space=\"preserve\">  </w:t></w:r>")
+    let words = format!("<w:rPr>{italic}{case}<w:sz w:val=\"{size}\"/></w:rPr>");
+    let plain = format!("<w:rPr>{italic}<w:sz w:val=\"{size}\"/></w:rPr>");
+    let field = |look: &str, instruction: &str| {
+        format!(
+            "<w:r>{look}<w:fldChar w:fldCharType=\"begin\"/></w:r>\
+             <w:r>{look}<w:instrText xml:space=\"preserve\"> {instruction} </w:instrText></w:r>\
+             <w:r>{look}<w:fldChar w:fldCharType=\"separate\"/></w:r>\
+             <w:r>{look}<w:t>1</w:t></w:r>\
+             <w:r>{look}<w:fldChar w:fldCharType=\"end\"/></w:r>"
+        )
+    };
+    let run = |item: &Item| -> Option<String> {
+        Some(match item {
+            Item::PageNumber => field(&plain, &format!("PAGE{}", docx_numbers(f.page.numbering).0)),
+            Item::Chapter => field(&words, "STYLEREF \"heading 1\""),
+            _ => format!("<w:r>{words}<w:t xml:space=\"preserve\">{}</w:t></w:r>", xml(&p.words(item, f)?)),
+        })
+    };
+    let separator = format!("<w:r>{words}<w:t xml:space=\"preserve\">{}</w:t></w:r>", xml(&m.separator));
+    let place = |items: &[Item]| items.iter().filter_map(run).collect::<Vec<_>>().join(&separator);
+    let (left, center, right) = match sides {
+        Some(s) => (place(&s.left), place(&s.center), place(&s.right)),
+        None => Default::default(),
     };
     let tab = "<w:r><w:tab/></w:r>";
     format!(
@@ -878,16 +871,25 @@ fn docx_margin(kind: &str, m: &Margin, f: &DocumentFormat, with_number: bool) ->
          {left}{tab}{center}{tab}{right}</w:p></w:{kind}>",
         c = text_width / 2,
         r = text_width,
-        left = group(&m.left),
-        center = group(&m.center),
-        right = group(&m.right),
     )
+}
+
+/// Whether the first page of the document has a header or footer of its own: one is left off it.
+fn first_differs(f: &DocumentFormat) -> bool {
+    [&f.header, &f.footer].iter().any(|m| m.is_visible() && !m.first_page)
+}
+
+/// The relation of the part that holds a header or footer on the openers in
+/// Word (`headerOpener.xml`, `footerOpener.xml`): the sections that begin
+/// at an opener point their first page at it (`after::docx_sections`).
+pub fn opener_relation(kind: &str) -> String {
+    format!("rIdGk{kind}Openerxml")
 }
 
 /// The pattern for DOCX: Pandoc's own, with the styles and the page of the format.
 pub fn docx(default: &[u8], f: &DocumentFormat, p: &Particulars) -> Result<Vec<u8>> {
-    let (top, foot) = margins(f, p);
-    let first_differs = f.page_numbers.show && !f.page_numbers.first_page;
+    let first_differs = first_differs(f);
+    let alternate = [&f.header, &f.footer].iter().any(|m| m.is_visible() && m.alternate);
     rewrite(default, |files| {
         put(files, "word/styles.xml", docx_styles(f, p.language.as_deref(), &p.own_kinds));
 
@@ -906,21 +908,37 @@ pub fn docx(default: &[u8], f: &DocumentFormat, p: &Particulars) -> Result<Vec<u
                 "<Override PartName=\"/word/{name}\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.{kind}+xml\"/>"
             );
             types = types.replace("</Types>", &format!("{part}</Types>"));
-            let _ = write!(references, "<w:{kind}Reference w:type=\"{which}\" r:id=\"{id}\"/>");
+            format!("<w:{kind}Reference w:type=\"{which}\" r:id=\"{id}\"/>")
         };
-        if !top.is_empty() {
-            add("header1.xml", "header", "default", docx_margin("hdr", &top, f, true), files);
-            if first_differs {
-                add("header2.xml", "header", "first", docx_margin("hdr", &top, f, false), files);
+        // For each margin shown: the part of every page, of left pages where
+        // either margin differs on them, of the first page where either is left
+        // off it, and of the openers, which the document's sections that
+        // begin at one point to (empty where the margin is left off them).
+        for (m, kind, short) in [(&f.header, "header", "hdr"), (&f.footer, "footer", "ftr")] {
+            if !m.is_visible() {
+                continue;
             }
-        }
-        if !foot.is_empty() {
-            add("footer1.xml", "footer", "default", docx_margin("ftr", &foot, f, true), files);
-            if first_differs {
-                add("footer2.xml", "footer", "first", docx_margin("ftr", &foot, f, false), files);
+            let part = docx_margin(short, Some(&m.places), m, f, p);
+            references.push_str(&add(&format!("{kind}1.xml"), kind, "default", part, files));
+            if alternate {
+                let part = docx_margin(short, Some(m.even_places()), m, f, p);
+                references.push_str(&add(&format!("{kind}2.xml"), kind, "even", part, files));
             }
+            if first_differs {
+                let part = docx_margin(short, m.first_page.then_some(&m.places), m, f, p);
+                references.push_str(&add(&format!("{kind}3.xml"), kind, "first", part, files));
+            }
+            let part = docx_margin(short, m.openers.then_some(&m.places), m, f, p);
+            add(&format!("{kind}Opener.xml"), kind, "first", part, files);
         }
         put(files, "word/_rels/document.xml.rels", relations);
+        if alternate {
+            let mut settings = text_of(files, "word/settings.xml")?;
+            if !settings.contains("<w:evenAndOddHeaders") {
+                settings = settings.replacen("</w:settings>", "<w:evenAndOddHeaders/></w:settings>", 1);
+                put(files, "word/settings.xml", settings);
+            }
+        }
         put(files, "[Content_Types].xml", types);
 
         // The page.
@@ -946,6 +964,9 @@ pub fn docx(default: &[u8], f: &DocumentFormat, p: &Particulars) -> Result<Vec<u
         );
         if f.line_numbers {
             section.push_str("<w:lnNumType w:countBy=\"1\" w:restart=\"continuous\"/>");
+        }
+        if f.page.numbering != NumberStyle::Arabic {
+            let _ = write!(section, "<w:pgNumType w:fmt=\"{}\"/>", docx_numbers(f.page.numbering).1);
         }
         // The columns the text is set in.
         if f.page.columns > 1 {
@@ -1175,20 +1196,31 @@ fn replace_style(styles: &mut String, name: &str, new: &str) {
     }
 }
 
-fn odt_margin(m: &Margin, with_number: bool) -> String {
-    let piece = |p: &Piece| match p {
-        Piece::Words(t) => xml(t),
-        Piece::Number if with_number => {
-            "<text:page-number text:select-page=\"current\">1</text:page-number>".to_owned()
-        }
-        Piece::Number => String::new(),
+/// Writer's pattern of numbers for a style of numbers.
+fn odt_numbers(style: NumberStyle) -> &'static str {
+    crate::formats::typst::number_pattern(style)
+}
+
+/// A header or footer of Writer (ADR 0057): the three places in one
+/// paragraph of the margin's style, at the left and at two tabs.
+fn odt_margin(sides: &Sides, m: &Margin, style: &str, f: &DocumentFormat, p: &Particulars) -> String {
+    let piece = |item: &Item| -> Option<String> {
+        Some(match item {
+            Item::PageNumber => format!(
+                "<text:page-number text:select-page=\"current\" style:num-format=\"{}\">1</text:page-number>",
+                odt_numbers(f.page.numbering)
+            ),
+            Item::Chapter => "<text:chapter text:display=\"name\" text:outline-level=\"1\"/>".to_owned(),
+            _ => xml(&p.words_cased(item, f, m.case)?),
+        })
     };
-    let group = |v: &Vec<Piece>| v.iter().map(piece).collect::<Vec<_>>().join("  ");
+    let separator = xml(&m.separator);
+    let place = |items: &[Item]| items.iter().filter_map(piece).collect::<Vec<_>>().join(&separator);
     format!(
-        "<text:p text:style-name=\"GkMargin\">{}<text:tab/>{}<text:tab/>{}</text:p>",
-        group(&m.left),
-        group(&m.center),
-        group(&m.right)
+        "<text:p text:style-name=\"{style}\">{}<text:tab/>{}<text:tab/>{}</text:p>",
+        place(&sides.left),
+        place(&sides.center),
+        place(&sides.right)
     )
 }
 
@@ -1637,16 +1669,22 @@ pub fn odt_styles(default: &str, f: &DocumentFormat, p: &Particulars) -> String 
 
     // The page, and what stands in its margins.
     let (w, h) = f.page.dimensions();
-    let (top, foot) = margins(f, p);
+    let (top, foot) = (&f.header, &f.footer);
     let text_width = w - f.page.margin_left.points() - f.page.margin_right.points();
-    let margin_style = format!(
-        "<style:style style:name=\"GkMargin\" style:family=\"paragraph\" style:parent-style-name=\"Standard\">\
-         <style:paragraph-properties fo:text-align=\"start\" fo:text-indent=\"0in\" fo:line-height=\"100%\">\
-         <style:tab-stops><style:tab-stop style:position=\"{}\" style:type=\"center\"/><style:tab-stop style:position=\"{}\" style:type=\"right\"/></style:tab-stops>\
-         </style:paragraph-properties><style:text-properties fo:font-size=\"{size}pt\"/></style:style>",
-        inches_pt(text_width / 2.0),
-        inches_pt(text_width),
-    );
+    let margin_style = |name: &str, m: &Margin| {
+        format!(
+            "<style:style style:name=\"{name}\" style:family=\"paragraph\" style:parent-style-name=\"Standard\">\
+             <style:paragraph-properties fo:text-align=\"start\" fo:text-indent=\"0in\" fo:line-height=\"100%\">\
+             <style:tab-stops><style:tab-stop style:position=\"{}\" style:type=\"center\"/><style:tab-stop style:position=\"{}\" style:type=\"right\"/></style:tab-stops>\
+             </style:paragraph-properties><style:text-properties fo:font-size=\"{}pt\"{}{}/></style:style>",
+            inches_pt(text_width / 2.0),
+            inches_pt(text_width),
+            if m.size > 0.0 { m.size } else { size },
+            if m.italic { " fo:font-style=\"italic\"" } else { "" },
+            if m.case == Case::Smallcaps { " fo:font-variant=\"small-caps\"" } else { "" },
+        )
+    };
+    let margin_style = format!("{}{}", margin_style("GkHeader", top), margin_style("GkFooter", foot));
     let head_style = |present: bool, which: &str| {
         if present {
             format!(
@@ -1674,7 +1712,7 @@ pub fn odt_styles(default: &str, f: &DocumentFormat, p: &Particulars) -> String 
         let bottom_margin = (f.page.margin_bottom.points() - if footer { 32.0 } else { 0.0 }).max(18.0);
         format!(
             "<style:page-layout style:name=\"{name}\"><style:page-layout-properties fo:page-width=\"{}\" fo:page-height=\"{}\" \
-             style:num-format=\"1\" style:print-orientation=\"portrait\" fo:margin-top=\"{}\" fo:margin-bottom=\"{}\" \
+             style:num-format=\"{numbers}\" style:print-orientation=\"portrait\" fo:margin-top=\"{}\" fo:margin-bottom=\"{}\" \
              fo:margin-left=\"{}\" fo:margin-right=\"{}\" style:writing-mode=\"lr-tb\" style:footnote-max-height=\"0in\">\
              {}<style:footnote-sep style:width=\"0.0071in\" style:distance-before-sep=\"0.0398in\" style:distance-after-sep=\"0.0398in\" \
              style:line-style=\"solid\" style:adjustment=\"left\" style:rel-width=\"25%\" style:color=\"#000000\"/>\
@@ -1688,39 +1726,51 @@ pub fn odt_styles(default: &str, f: &DocumentFormat, p: &Particulars) -> String 
             columns,
             head_style(header, "header"),
             head_style(footer, "footer"),
+            numbers = odt_numbers(f.page.numbering),
         )
     };
-    let first_differs = f.page_numbers.show && !f.page_numbers.first_page;
+    let first_differs = first_differs(f);
+    let (header, footer) = (top.is_visible(), foot.is_visible());
+    let (first_header, first_footer) = (header && top.first_page, footer && foot.first_page);
     let automatic = format!(
         "<office:automatic-styles>{margin_style}{}{}</office:automatic-styles>",
-        layout("Mpm1", !top.is_empty(), !foot.is_empty()),
-        if first_differs { layout("Mpm2", !top.is_empty(), !foot.is_empty()) } else { String::new() },
+        layout("Mpm1", header, footer),
+        if first_differs { layout("Mpm2", first_header, first_footer) } else { String::new() },
     );
-    let page = |name: &str, layout: &str, next: Option<&str>, with_number: bool| {
-        let mut m = format!("<style:master-page style:name=\"{name}\" style:page-layout-name=\"{layout}\"");
+    // A master page with the header and the footer where they are shown, and
+    // their left pages where they differ.
+    let page = |name: &str, layout: &str, next: Option<&str>, header: bool, footer: bool| {
+        let mut out = format!("<style:master-page style:name=\"{name}\" style:page-layout-name=\"{layout}\"");
         if let Some(n) = next {
-            let _ = write!(m, " style:next-style-name=\"{n}\"");
+            let _ = write!(out, " style:next-style-name=\"{n}\"");
         }
-        m.push('>');
-        if !top.is_empty() {
-            let _ = write!(m, "<style:header>{}</style:header>", odt_margin(&top, with_number));
+        out.push('>');
+        for (m, shown, which, style) in [(top, header, "header", "GkHeader"), (foot, footer, "footer", "GkFooter")] {
+            if shown {
+                let _ = write!(out, "<style:{which}>{}</style:{which}>", odt_margin(&m.places, m, style, f, p));
+                if m.alternate {
+                    let _ = write!(
+                        out,
+                        "<style:{which}-left>{}</style:{which}-left>",
+                        odt_margin(m.even_places(), m, style, f, p)
+                    );
+                }
+            }
         }
-        if !foot.is_empty() {
-            let _ = write!(m, "<style:footer>{}</style:footer>", odt_margin(&foot, with_number));
-        }
-        m.push_str("</style:master-page>");
-        m
+        out.push_str("</style:master-page>");
+        out
     };
     let master = if first_differs {
         // The first page is of its own kind, and is followed by the usual one.
         format!(
             "<office:master-styles>{}{}</office:master-styles>",
-            page("Standard", "Mpm2", Some("Following"), false),
-            page("Following", "Mpm1", None, true)
+            page("Standard", "Mpm2", Some("Following"), first_header, first_footer),
+            page("Following", "Mpm1", None, header, footer)
         )
     } else {
-        format!("<office:master-styles>{}</office:master-styles>", page("Standard", "Mpm1", None, true))
+        format!("<office:master-styles>{}</office:master-styles>", page("Standard", "Mpm1", None, header, footer))
     };
+
     for (open, close, new) in [
         ("<office:automatic-styles>", "</office:automatic-styles>", automatic),
         ("<office:master-styles>", "</office:master-styles>", master),
@@ -1803,18 +1853,21 @@ pub fn substitute(f: &DocumentFormat, installed: &[String]) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::formats::HeadContent;
 
+    /// The title at the left of the header, the number at the right, neither on the first page.
     fn format() -> DocumentFormat {
         let mut f = DocumentFormat { name: "Test".into(), ..Default::default() };
         f.page.size = "letter".into();
         f.page.margin_left = Length::inch(1.0);
         f.page.margin_right = Length::inch(1.0);
-        f.page_numbers.position = crate::formats::Position::TopRight;
-        f.page_numbers.first_page = false;
-        f.running_head.content = HeadContent::Title;
-        f.running_head.align = Align::Left;
-        f.running_head.case = Case::Upper;
+        f.footer.shown = false;
+        f.header = Margin {
+            shown: true,
+            first_page: false,
+            case: Case::Upper,
+            places: Sides { left: vec![Item::Title], right: vec![Item::PageNumber], ..Default::default() },
+            ..Default::default()
+        };
         f
     }
 
@@ -1961,20 +2014,57 @@ mod tests {
     #[test]
     fn the_margins_of_the_page() {
         let f = format();
-        let (top, foot) = margins(&f, &particulars());
-        assert!(foot.is_empty());
-        let header = docx_margin("hdr", &top, &f, true);
+        let p = particulars();
+        let header = docx_margin("hdr", Some(&f.header.places), &f.header, &f, &p);
         roxmltree::Document::parse(&header).unwrap();
-        assert!(header.contains("WRATH &amp; THE HERO"));
+        assert!(header.contains("Wrath &amp; the hero") && header.contains("<w:caps/>"), "{header}");
         assert!(header.contains(" PAGE "));
         assert!(header.contains("w:pos=\"9360\""), "the text is six and a half inches wide");
-        assert!(!docx_margin("hdr", &top, &f, false).contains(" PAGE "));
+        assert!(!docx_margin("hdr", None, &f.header, &f, &p).contains(" PAGE "), "the first page's is empty");
 
-        let mut anonymous = format();
+        // Two items at the left, joined; the number in roman; the chapter.
+        let mut two = format();
+        two.header.places.left = vec![Item::Author, Item::Title];
+        two.header.places.center = vec![Item::Chapter];
+        two.page.numbering = NumberStyle::RomanLower;
+        let header = docx_margin("hdr", Some(&two.header.places), &two.header, &two, &p);
+        assert!(header.contains("A. Scholar</w:t></w:r><w:r><w:rPr><w:caps/>"), "{header}");
+        assert!(header.contains("> · </w:t>"), "{header}");
+        assert!(header.contains(" PAGE \\* roman "), "{header}");
+        assert!(header.contains(" STYLEREF \"heading 1\" "), "{header}");
+
+        let mut anonymous = two.clone();
         anonymous.title.anonymous = true;
-        anonymous.running_head.content = HeadContent::AuthorTitle;
-        let (top, _) = margins(&anonymous, &particulars());
-        assert!(!docx_margin("hdr", &top, &anonymous, true).contains("Scholar"));
+        assert!(
+            !docx_margin("hdr", Some(&anonymous.header.places), &anonymous.header, &anonymous, &p).contains("Scholar")
+        );
+    }
+
+    #[test]
+    fn the_margins_of_writer() {
+        let mut f = format();
+        f.header.alternate = true;
+        f.header.even = Some(Sides { left: vec![Item::PageNumber], right: vec![Item::Chapter], ..Default::default() });
+        f.page.numbering = NumberStyle::Roman;
+        let styles = odt_styles(
+            "<office:document-styles><office:styles></office:styles><office:automatic-styles></office:automatic-styles><office:master-styles></office:master-styles></office:document-styles>",
+            &f,
+            &particulars(),
+        );
+        assert!(styles.contains("<style:header><text:p text:style-name=\"GkHeader\">WRATH &amp; THE HERO<text:tab/><text:tab/><text:page-number text:select-page=\"current\" style:num-format=\"I\">"), "{styles}");
+        assert!(
+            styles.contains("<style:header-left><text:p text:style-name=\"GkHeader\"><text:page-number"),
+            "{styles}"
+        );
+        assert!(
+            styles.contains(
+                "<text:chapter text:display=\"name\" text:outline-level=\"1\"/></text:p></style:header-left>"
+            ),
+            "{styles}"
+        );
+        assert!(styles.contains("style:num-format=\"I\" style:print-orientation"), "{styles}");
+        // Not on the first page: a master page of its own without the header.
+        assert!(styles.contains("<style:master-page style:name=\"Standard\" style:page-layout-name=\"Mpm2\" style:next-style-name=\"Following\"></style:master-page>"), "{styles}");
     }
 
     #[test]

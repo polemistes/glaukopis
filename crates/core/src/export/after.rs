@@ -11,7 +11,8 @@
 use crate::error::Result;
 use crate::formats::{DocumentFormat, Rules};
 
-use super::reference::{put, rewrite, text_of, xml};
+use super::reference::{self, put, rewrite, text_of, xml};
+use std::fmt::Write as _;
 
 /// What a file of Word or Writer says of itself outside its pages: its
 /// title and who made it. Pandoc is given neither for these, so that it
@@ -406,10 +407,97 @@ fn table_header_rows(table: &str) -> usize {
     }
 }
 
+/// What the converter writes where a section of Word begins at an opener
+/// (ADR 0057): a paragraph that ends the section before it, saying only how
+/// the next begins, `nextPage` or `oddPage`.
+const SECTION_MARK: &str = "<w:sectPr><w:type w:val=\"";
+
+/// The sections of a document of Word made whole (ADR 0057). Each mark the
+/// converter left ends a section; the section it ends has the properties of
+/// the document's own (`reference::docx`, the last in the body), and the
+/// sections after the first begin as their mark says, with a first page of
+/// their own that takes the header and the footer of the openers. In Word
+/// the properties of a section stand where it ends, so each section's are
+/// written at the next mark, the last at the end of the body.
+pub fn docx_sections(xml: &str, header: bool, footer: bool) -> String {
+    let Some(base_at) = xml.rfind("<w:sectPr") else { return xml.to_owned() };
+    let Some(base_end) = xml[base_at..].find("</w:sectPr>").map(|e| base_at + e + "</w:sectPr>".len()) else {
+        return xml.to_owned();
+    };
+    let base = &xml[base_at..base_end];
+    // The marks, each with how the section after it begins.
+    let mut marks: Vec<(usize, usize, &str)> = Vec::new();
+    let mut from = 0;
+    while let Some(found) = xml[from..base_at].find(SECTION_MARK) {
+        let at = from + found;
+        let kind_at = at + SECTION_MARK.len();
+        let Some(kind_end) = xml[kind_at..].find('"').map(|e| kind_at + e) else { break };
+        let Some(end) = xml[at..].find("</w:sectPr>").map(|e| at + e + "</w:sectPr>".len()) else { break };
+        marks.push((at, end, &xml[kind_at..kind_end]));
+        from = end;
+    }
+    if marks.is_empty() {
+        return xml.to_owned();
+    }
+    // A section that begins at an opener: the document's, beginning as it
+    // says, its first page with the openers' header and footer.
+    let opener = |kind: &str| {
+        let mut s = base.to_owned();
+        for which in ["header", "footer"] {
+            let tag = format!("<w:{which}Reference w:type=\"first\"");
+            while let Some(a) = s.find(&tag) {
+                let Some(b) = s[a..].find("/>") else { break };
+                s.replace_range(a..a + b + 2, "");
+            }
+        }
+        s = s.replace("<w:titlePg/>", "");
+        let mut references = String::new();
+        if header {
+            let _ = write!(
+                references,
+                "<w:headerReference w:type=\"first\" r:id=\"{}\"/>",
+                reference::opener_relation("header")
+            );
+        }
+        if footer {
+            let _ = write!(
+                references,
+                "<w:footerReference w:type=\"first\" r:id=\"{}\"/>",
+                reference::opener_relation("footer")
+            );
+        }
+        if let Some(open) = s.find('>') {
+            s.insert_str(open + 1, &references);
+        }
+        if let Some(at) = s.find("<w:pgSz") {
+            s.insert_str(at, &format!("<w:type w:val=\"{kind}\"/>"));
+        }
+        let at = s.find("<w:docGrid").unwrap_or(s.len() - "</w:sectPr>".len());
+        s.insert_str(at, "<w:titlePg/>");
+        s
+    };
+    let mut out = String::with_capacity(xml.len() + base.len() * (marks.len() + 1));
+    let mut at = 0;
+    let mut before: Option<&str> = None;
+    for (start, end, kind) in &marks {
+        out.push_str(&xml[at..*start]);
+        out.push_str(&before.map(opener).unwrap_or_else(|| base.to_owned()));
+        before = Some(kind);
+        at = *end;
+    }
+    out.push_str(&xml[at..base_at]);
+    out.push_str(&before.map(opener).unwrap_or_else(|| base.to_owned()));
+    out.push_str(&xml[base_end..]);
+    out
+}
+
 /// A document of Word, set right, with its title and makers in its properties.
 pub fn docx(bytes: &[u8], properties: &Properties) -> Result<Vec<u8>> {
     rewrite(bytes, |files| {
         let document = text_of(files, "word/document.xml")?;
+        let relations = text_of(files, "word/_rels/document.xml.rels").unwrap_or_default();
+        let has = |kind: &str| relations.contains(&format!("Id=\"{}\"", reference::opener_relation(kind)));
+        let document = docx_sections(&document, has("header"), has("footer"));
         // The lists first: what sets the rest right takes every mark it does not know away.
         put(files, "word/document.xml", docx_document(&docx_lists(&document)));
         // Pandoc writes the properties; where it did not, nothing is made up.
@@ -435,6 +523,38 @@ pub fn odt(bytes: &[u8], format: &DocumentFormat, properties: &Properties) -> Re
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sections_begin_at_the_openers() {
+        let base = "<w:sectPr><w:headerReference w:type=\"default\" r:id=\"h1\"/><w:headerReference w:type=\"first\" r:id=\"h3\"/><w:pgSz w:w=\"1\"/><w:titlePg/></w:sectPr>";
+        let mark = |kind: &str| format!("<w:p><w:pPr><w:sectPr><w:type w:val=\"{kind}\"/></w:sectPr></w:pPr></w:p>");
+        let xml = format!(
+            "<w:body><w:p>A</w:p>{}<w:p>B</w:p>{}<w:p>C</w:p>{base}</w:body>",
+            mark("oddPage"),
+            mark("nextPage")
+        );
+        let out = docx_sections(&xml, true, false);
+        // The first section is the document's as it was, ended where the first chapter begins.
+        let first = out.find("<w:p>B</w:p>").unwrap();
+        assert!(out[..first].contains(base), "{out}");
+        // The second begins on an odd page, the third on the next; each with the openers' first page.
+        let opener = |kind: &str| {
+            format!(
+                "<w:sectPr><w:headerReference w:type=\"first\" r:id=\"rIdGkheaderOpenerxml\"/><w:headerReference w:type=\"default\" r:id=\"h1\"/><w:type w:val=\"{kind}\"/><w:pgSz w:w=\"1\"/><w:titlePg/></w:sectPr>"
+            )
+        };
+        assert_eq!(
+            out,
+            format!(
+                "<w:body><w:p>A</w:p><w:p><w:pPr>{base}</w:pPr></w:p><w:p>B</w:p><w:p><w:pPr>{}</w:pPr></w:p><w:p>C</w:p>{}</w:body>",
+                opener("oddPage"),
+                opener("nextPage")
+            )
+        );
+        // Without marks, nothing changes.
+        let plain = format!("<w:body><w:p>A</w:p>{base}</w:body>");
+        assert_eq!(docx_sections(&plain, true, true), plain);
+    }
 
     #[test]
     fn the_lists_are_moved_from_the_head_to_their_marks() {

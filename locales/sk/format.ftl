@@ -25,7 +25,6 @@ format-delete-confirm = Odstrániť formát
 
 ## The parts of a format, as they are chosen at the left.
 
-
 ## Words that stand in several parts.
 
 format-size = Veľkosť
@@ -103,8 +102,6 @@ format-level-run-in = vbieha do textu
 format-level-indent = Odsadený ako odsek
 format-level-run-in-label = Vbieha do textu
 format-level-run-in-hint = Nadpis začína odsek a končí sa bodkou
-format-level-new-page = Začína novú stranu
-format-level-new-page-hint = Ako kapitoly knihy
 format-level-new-page-said = na novej strane
 format-space-before = Medzera pred
 format-space-after = Medzera za
@@ -303,22 +300,6 @@ format-equations-after = Za číslom
 
 format-page-numbers = Čísla strán
 format-page-numbers-show = Strany sú číslované
-format-page-numbers-where = Kde
-format-page-numbers-first = Aj na prvej strane
-format-position-top-left = Hore vľavo
-format-position-top-center = Hore v strede
-format-position-top-right = Hore vpravo
-format-position-bottom-left = Dole vľavo
-format-position-bottom-center = Dole v strede
-format-position-bottom-right = Dole vpravo
-format-running-head = Živé záhlavie
-format-running-head-content = Navrchu každej strany
-format-running-head-none = Nič
-format-running-head-title = Názov
-format-running-head-author = Autori
-format-running-head-author-title = Autori a názov
-format-running-head-text = Vlastné slová
-format-running-head-words = Slová
 
 ## About the format: where its requirements are from.
 

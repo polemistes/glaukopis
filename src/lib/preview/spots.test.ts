@@ -76,8 +76,8 @@ describe('what a line is, taken apart', () => {
       'figure',
       'table',
       'front',
-      'running-head',
-      'page-number',
+      'header',
+      'footer',
       'page',
       'text',
     ] as const)
@@ -122,8 +122,8 @@ describe('where Look opens', () => {
   });
 
   it('opens at the rows that say whether what stands in the margins is shown, and at the page', () => {
-    expect(lookFor('running-head')).toEqual({ section: 'page', at: 'running-head' });
-    expect(lookFor('page-number')).toEqual({ section: 'page', at: 'page-numbers' });
+    expect(lookFor('header')).toEqual({ section: 'page', at: 'header' });
+    expect(lookFor('footer')).toEqual({ section: 'page', at: 'footer' });
     expect(lookFor('page')).toEqual({ section: 'page' });
   });
 

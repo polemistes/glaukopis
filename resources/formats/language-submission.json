@@ -15,7 +15,9 @@
     "marginTop": "1in",
     "marginBottom": "1in",
     "marginLeft": "1in",
-    "marginRight": "1in"
+    "marginRight": "1in",
+    "numbering": "arabic",
+    "restart": false
   },
   "font": { "family": "Times New Roman", "size": 12 },
   "text": {
@@ -30,8 +32,8 @@
   "headings": {
     "numbered": true,
     "levels": [
-      { "size": 12, "bold": false, "italic": false, "align": "left", "case": "smallcaps", "runIn": true, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" },
-      { "size": 12, "bold": false, "italic": false, "align": "left", "case": "smallcaps", "runIn": true, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt" }
+      { "size": 12, "bold": false, "italic": false, "align": "left", "case": "smallcaps", "runIn": true, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt", "begins": "text", "numbering": "as-above" },
+      { "size": 12, "bold": false, "italic": false, "align": "left", "case": "smallcaps", "runIn": true, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt", "begins": "text", "numbering": "as-above" }
     ]
   },
   "title": {
@@ -66,8 +68,8 @@
     "newPage": false,
     "size": 0
   },
-  "pageNumbers": { "show": true, "position": "top-right", "firstPage": true },
-  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "header": { "shown": true, "firstPage": true, "openers": true, "alternate": false, "left": [], "center": [], "right": [{ "kind": "page-number" }], "separator": " · ", "size": 0, "italic": false, "case": "none" },
+  "footer": { "shown": false, "firstPage": true, "openers": true, "alternate": false, "left": [], "center": [], "right": [], "separator": " · ", "size": 0, "italic": false, "case": "none" },
   "lineNumbers": false,
   "style": "language"
 }

@@ -32,6 +32,9 @@
     type DocumentFormat,
     type HeadingLevel,
     type KindFamily,
+    type Margin,
+    type MarginItem,
+    type Sides,
     type KindLooks,
     type OwnKind,
   } from '$lib/api/documents';
@@ -640,7 +643,11 @@
           ? t('format-level-right')
           : '',
       l.runIn ? t('format-level-run-in') : '',
-      l.newPage ? t('format-level-new-page-said') : '',
+      l.begins === 'page'
+        ? t('format-level-new-page-said')
+        : l.begins === 'right-page'
+          ? t('format-level-right-page-said')
+          : '',
     ]
       .filter(Boolean)
       .join(', ');
@@ -671,8 +678,157 @@
   const indented = (f: F) => f.text.paragraphs === 'indent';
   const named = (f: F) => !f.title.anonymous;
   const withAbstract = (f: F) => f.title.showAbstract;
-  const numbered = (f: F) => f.pageNumbers.show;
-  const headed = (f: F) => f.runningHead.content !== 'none';
+
+  // ---- the header and the footer (ADR 0057) ----
+
+  type Which = 'header' | 'footer';
+  type Side = keyof Sides;
+  const SIDES: Side[] = ['left', 'center', 'right'];
+  const ITEMS: MarginItem['kind'][] = ['page-number', 'title', 'author', 'chapter', 'date', 'text'];
+
+  function itemWords(kind: MarginItem['kind']): string {
+    return t(`format-item-${kind}`);
+  }
+
+  /** The margin that holds the page number, the footer first; none where neither shows it. */
+  function numberedMargin(f: F): Which | null {
+    const holds = (m: Margin) =>
+      [
+        m.left,
+        m.center,
+        m.right,
+        ...(m.alternate && m.even ? [m.even.left, m.even.center, m.even.right] : []),
+      ]
+        .flat()
+        .some((i) => i.kind === 'page-number');
+    if (holds(f.footer)) return 'footer';
+    if (holds(f.header)) return 'header';
+    return null;
+  }
+
+  /**
+   * Whether the pages are numbered, as the first rows say it: the margin
+   * that holds the number is shown. Turned on where none holds it, the
+   * number goes in the middle of the footer.
+   */
+  const pagesNumbered = {
+    get: (f: F) => {
+      const which = numberedMargin(f);
+      return which !== null && f[which].shown;
+    },
+    set: (f: F, on: boolean) => {
+      const which = numberedMargin(f);
+      if (which) f[which].shown = on;
+      else if (on) {
+        f.footer.center = [...f.footer.center, { kind: 'page-number' }];
+        f.footer.shown = true;
+      }
+    },
+  };
+
+  /** The places of a margin as they are set: a list taken whole. */
+  function setPlace(sides: Sides, side: Side, items: MarginItem[]) {
+    sides[side] = items;
+  }
+  function addItem(sides: Sides, side: Side, kind: string) {
+    if (!ITEMS.includes(kind as MarginItem['kind'])) return;
+    const item = (kind === 'text' ? { kind, text: '' } : { kind }) as MarginItem;
+    setPlace(sides, side, [...sides[side], item]);
+  }
+  function removeItem(sides: Sides, side: Side, i: number) {
+    setPlace(
+      sides,
+      side,
+      sides[side].filter((_, j) => j !== i),
+    );
+  }
+  function setWords(sides: Sides, side: Side, i: number, text: string) {
+    setPlace(
+      sides,
+      side,
+      sides[side].map((item, j) => (j === i ? { kind: 'text', text } : item)),
+    );
+  }
+
+  const sideWords: Record<Side, string> = $derived({
+    left: t('format-margin-place-left'),
+    center: t('format-margin-place-center'),
+    right: t('format-margin-place-right'),
+  });
+
+  /** Whether a margin is shown, and where: first whether, then how (ADR 0056). */
+  function marginSwitches(which: Which): Row<F>[] {
+    const shown = (f: F) => f[which].shown;
+    return [
+      toggle(
+        t('format-margin-shown'),
+        { get: (f) => f[which].shown, set: (f, v) => (f[which].shown = v) },
+        { path: `${which}.shown` },
+      ),
+      toggle(
+        t('format-margin-first-page'),
+        { get: (f) => f[which].firstPage, set: (f, v) => (f[which].firstPage = v) },
+        { path: `${which}.firstPage`, when: shown },
+      ),
+      toggle(
+        t('format-margin-openers'),
+        { get: (f) => f[which].openers, set: (f, v) => (f[which].openers = v) },
+        { path: `${which}.openers`, when: shown, hint: t('format-margin-openers-hint') },
+      ),
+      toggle(
+        t('format-margin-alternate'),
+        {
+          get: (f) => f[which].alternate,
+          set: (f, v) => {
+            const m = f[which];
+            m.alternate = v;
+            // Left pages begin as the right ones are, to be changed from there.
+            if (v && !m.even)
+              m.even = JSON.parse(
+                JSON.stringify({ left: m.left, center: m.center, right: m.right }),
+              );
+          },
+        },
+        { path: `${which}.alternate`, when: shown },
+      ),
+    ];
+  }
+
+  /** How a margin is set: what stands between its items, its size, italics and letters. */
+  function marginLook(which: Which): Row<F>[] {
+    return [
+      text(
+        t('format-margin-separator'),
+        { get: (f) => f[which].separator, set: (f, v) => (f[which].separator = v) },
+        { path: `${which}.separator`, literal: true },
+      ),
+      number(
+        t('format-size'),
+        { get: (f) => f[which].size, set: (f, v) => (f[which].size = v ?? 0) },
+        { ...ptOrText(false), path: `${which}.size` },
+      ),
+      toggle(
+        t('format-italic'),
+        { get: (f) => f[which].italic, set: (f, v) => (f[which].italic = v) },
+        { path: `${which}.italic` },
+      ),
+      chosen(
+        t('format-letters'),
+        { get: (f) => f[which].case, set: (f, v) => (f[which].case = v as F['header']['case']) },
+        cases,
+        { path: `${which}.case` },
+      ),
+    ];
+  }
+
+  const headerSwitches = $derived(marginSwitches('header'));
+  const footerSwitches = $derived(marginSwitches('footer'));
+  const headerLook = $derived(marginLook('header'));
+  const footerLook = $derived(marginLook('footer'));
+  const marginWords: Record<Which, string> = $derived({
+    header: t('format-margin-header'),
+    footer: t('format-margin-footer'),
+  });
 
   const typeRows: Row<F>[] = $derived([
     number(t('format-size'), 'font.size', pt(6, 36)),
@@ -714,7 +870,7 @@
     number(t('look-first-type-size'), 'font.size', pt(6, 36)),
     chosen(t('format-line-spacing'), 'text.lineSpacing', spacings),
     chosen(t('look-first-page-size'), 'page.size', pageSizes),
-    toggle(t('format-page-numbers-show'), 'pageNumbers.show'),
+    toggle(t('format-page-numbers-show'), pagesNumbered, { path: 'footer.shown' }),
     toggle(t('look-first-headings-numbered'), 'headings.numbered', { hint: '1, 1.1, 1.1.1' }),
   ]);
 
@@ -745,35 +901,18 @@
       },
       { when: (f) => (f.page.columns ?? 1) > 1, path: 'page.columnGap' },
     ),
+  ]);
+
+  /** The numbers of the pages: their style. Whether they are shown is the header's or the footer's. */
+  const numberingRows: Row<F>[] = $derived([
     { subheading: t('format-page-numbers'), at: 'page-numbers' },
-    toggle(t('format-page-numbers-show'), 'pageNumbers.show'),
-    chosen(
-      t('format-page-numbers-where'),
-      'pageNumbers.position',
-      [
-        ['top-left', t('format-position-top-left')],
-        ['top-center', t('format-position-top-center')],
-        ['top-right', t('format-position-top-right')],
-        ['bottom-left', t('format-position-bottom-left')],
-        ['bottom-center', t('format-position-bottom-center')],
-        ['bottom-right', t('format-position-bottom-right')],
-      ],
-      { when: numbered },
-    ),
-    toggle(t('format-page-numbers-first'), 'pageNumbers.firstPage', { when: numbered }),
-    { subheading: t('format-running-head'), at: 'running-head' },
-    chosen(t('format-running-head-content'), 'runningHead.content', [
-      ['none', t('format-running-head-none')],
-      ['title', t('format-running-head-title')],
-      ['author', t('format-running-head-author')],
-      ['author-title', t('format-running-head-author-title')],
-      ['text', t('format-running-head-text')],
+    chosen(t('format-page-numbering'), 'page.numbering', [
+      ['arabic', t('format-number-arabic')],
+      ['roman', t('format-number-roman')],
+      ['roman-lower', t('format-number-roman-lower')],
+      ['letters', t('format-number-letters')],
+      ['letters-lower', t('format-number-letters-lower')],
     ]),
-    text(t('format-running-head-words'), 'runningHead.text', {
-      when: (f) => f.runningHead.content === 'text',
-    }),
-    chosen(t('format-alignment'), 'runningHead.align', aligns, { when: headed }),
-    chosen(t('format-letters'), 'runningHead.case', cases.slice(0, 2), { when: headed }),
     { note: t('format-lengths-hint') },
   ]);
 
@@ -802,7 +941,16 @@
     level.choice(t('format-alignment'), 'align', aligns),
     level.toggle(t('format-level-indent'), 'indent'),
     level.toggle(t('format-level-run-in-label'), 'runIn', { hint: t('format-level-run-in-hint') }),
-    level.toggle(t('format-level-new-page'), 'newPage', { hint: t('format-level-new-page-hint') }),
+    level.choice(
+      t('format-level-begins'),
+      'begins',
+      [
+        ['text', t('format-level-begins-text')],
+        ['page', t('format-level-begins-page')],
+        ['right-page', t('format-level-begins-right-page')],
+      ],
+      { hint: t('format-level-begins-hint') },
+    ),
     level.length(t('format-space-before'), 'spaceBefore', { when: (l) => !l.runIn }),
     level.length(t('format-space-after'), 'spaceAfter', { when: (l) => !l.runIn }),
   ]);
@@ -1192,7 +1340,17 @@
   const foundRows = $derived.by(() => {
     if (!searching) return [];
     const parts: [LookSection, Row<F>[]][] = [
-      ['page', pageRows],
+      [
+        'page',
+        [
+          ...pageRows,
+          ...headerSwitches,
+          ...headerLook,
+          ...footerSwitches,
+          ...footerLook,
+          ...numberingRows,
+        ],
+      ],
       ['type', typeRows],
       ['paragraphs', [...paragraphRows, ...quotationRows]],
       ['headings', headingRows],
@@ -1227,9 +1385,17 @@
       return `${kindName(kind[1])}: ${row && 'label' in row ? row.label : kind[2]}`;
     }
     if (path === 'headings.levels') return t('look-heading-levels');
+    const place = /^(header|footer)\.(even\.)?(left|center|right)$/.exec(path);
+    if (place) {
+      const which = marginWords[place[1] as Which];
+      const where = place[2] ? `${t('format-margin-left-pages')}, ` : '';
+      return `${which}: ${where}${sideWords[place[3] as Side]}`;
+    }
+    const margin = /^(header|footer)\./.exec(path);
     for (const rows of [
       typeRows,
       pageRows,
+      numberingRows,
       paragraphRows,
       headingRows,
       quotationRows,
@@ -1241,6 +1407,15 @@
     ] as Row<F>[][]) {
       const row = rows.find((r) => 'kind' in r && (r.path ?? r.at) === path);
       if (row && 'label' in row) return row.label;
+    }
+    if (margin) {
+      const which = margin[1] as Which;
+      const rows =
+        which === 'header'
+          ? [...headerSwitches, ...headerLook]
+          : [...footerSwitches, ...footerLook];
+      const row = rows.find((r) => 'kind' in r && r.path === path);
+      if (row && 'label' in row) return `${marginWords[which]}: ${row.label}`;
     }
     for (const [prefix, rows] of [
       ['figures.', [...figureNaming, ...figurePlacing]],
@@ -1273,6 +1448,65 @@
         >{/if}
     </p>
   {/if}
+{/snippet}
+
+<!-- The header or the footer (ADR 0057): first whether it is shown, then
+     its three places, each a list of items, then how it is set. -->
+{#snippet marginRows(f: F, which: Which, switches: Row<F>[], look: Row<F>[])}
+  {@const m = f[which]}
+  <h4 data-at={which}>{marginWords[which]}</h4>
+  <Settings target={f} rows={switches} {from} />
+  {#if m.shown}
+    {#if m.alternate}<h5>{t('format-margin-right-pages')}</h5>{/if}
+    {@render placeRows(m, which, '')}
+    {#if m.alternate && m.even}
+      <h5>{t('format-margin-left-pages')}</h5>
+      {@render placeRows(m.even, which, 'even.')}
+    {/if}
+    <Settings target={f} rows={look} {from} />
+  {/if}
+{/snippet}
+
+{#snippet placeRows(sides: Sides, which: Which, even: string)}
+  {#each SIDES as side (side)}
+    <div class="row margin-place" data-place="{which}.{even}{side}">
+      <span class="what">{sideWords[side]}</span>
+      <span class="items">
+        {#each sides[side] as item, i (i)}
+          <span class="item" data-item={item.kind}>
+            {#if item.kind === 'text'}
+              <input
+                class="words"
+                value={item.text}
+                placeholder={t('format-margin-text-placeholder')}
+                aria-label={itemWords('text')}
+                oninput={(e) => setWords(sides, side, i, e.currentTarget.value)}
+              />
+            {:else}{itemWords(item.kind)}{/if}
+            <button
+              type="button"
+              class="remove"
+              aria-label={t('format-margin-remove', { item: itemWords(item.kind) })}
+              onclick={() => removeItem(sides, side, i)}>×</button
+            >
+          </span>
+        {/each}
+        <select
+          class="add"
+          aria-label="{sideWords[side]}: {t('format-margin-add')}"
+          value=""
+          onchange={(e) => {
+            addItem(sides, side, e.currentTarget.value);
+            e.currentTarget.value = '';
+          }}
+        >
+          <option value="">{t('format-margin-add')}</option>
+          {#each ITEMS as kind (kind)}<option value={kind}>{itemWords(kind)}</option>{/each}
+        </select>
+      </span>
+    </div>
+    {@render fromLine(`${which}.${even}${side}`)}
+  {/each}
 {/snippet}
 
 {#snippet fontRow(f: F)}
@@ -1497,6 +1731,9 @@
         <section class="part" data-part="page">
           <h3>{sectionWords.page}</h3>
           <Settings target={f} rows={pageRows} {from} />
+          {@render marginRows(f, 'header', headerSwitches, headerLook)}
+          {@render marginRows(f, 'footer', footerSwitches, footerLook)}
+          <Settings target={f} rows={numberingRows} {from} />
         </section>
 
         <section class="part" data-part="type">
@@ -1825,6 +2062,48 @@
   .through :global(.row) {
     grid-template-columns: minmax(0, 1fr) minmax(0, 140px);
     gap: 10px;
+  }
+  /* A place of the header or the footer: its items as chips, and a menu to add one. */
+  .margin-place {
+    align-items: start;
+  }
+  .items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    min-width: 0;
+  }
+  .item {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 1px 2px 1px 8px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: var(--text-sm);
+    background: var(--paper);
+  }
+  .item .words {
+    width: 9em;
+    padding: 0 4px;
+    border: none;
+    background: transparent;
+  }
+  .item .remove {
+    width: 18px;
+    height: 18px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--ink-3);
+    cursor: pointer;
+  }
+  .item .remove:hover {
+    background: var(--paper-hover);
+    color: var(--ink);
+  }
+  .items .add {
+    flex: 1 0 100%;
   }
   .through :global(.row.check) {
     grid-template-columns: minmax(0, 1fr) auto;

@@ -2054,7 +2054,7 @@ Every line of the pages knows what it is. Press one, without dragging, and
 a small chip in the margin beside it names it: *Text*, *Quotation*, *Verse*
 or another kind, *Heading 2*, *Note*, *Bibliography*, *Figure*, *Table*, the
 *Front page*, or a part such as the *Abstract*. What the layout puts in the
-margins has its chip too, *Running head* and *Page number*, and pressed on
+margins has its chip too, *Header* and *Footer*, and pressed on
 the page where no line is, a chip says *Page*. The chip stays until the same
 thing is pressed again, something else is pressed and the chip goes there,
 the page is left, or Escape is pressed; dragging to select text shows none.
@@ -2160,16 +2160,33 @@ to how it looks. The chips over them stay at the top as
 you scroll, mark the part you are in, and go to each:
 
 - **Page**: its size, the margins, the **Columns** and the **Gap between
-  columns**, the page numbers and the running head, each beginning with
-  whether it is shown: **Pages are numbered**, and **At the top of every
-  page**, whose first choice is *Nothing*.
+  columns**; then the **Header** and the **Footer**, each beginning with
+  whether it is **Shown**, whether **On the first page too**, and whether
+  **On the pages where a chapter or a part begins too**, the pages where a
+  heading that begins a page, or a part on a page of its own, begins; and
+  whether it is **Different on left and right pages**. Each has three
+  places, **Left**, **Centre** and **Right**, and in each place stand any
+  of the page number, the title, the author, the chapter (the heading of
+  the first level the page is in), the date, or words of your own, in the
+  order you add them with **Add…**, with what stands **Between the items**
+  (" · " unless you change it); where it differs on left pages, three more
+  places for those. Then the **Page numbers**, with the **Style of the
+  numbers**: 1, 2, 3, roman or letters. A layout that says nothing has the
+  page number in the middle of the footer; **Pages are numbered** among the
+  first rows shows or hides the margin that holds it. A book puts the
+  author on the left pages and the chapter on the right, the number
+  outside, and leaves both off the pages where a chapter begins.
 - **Type**: the font, its size, the spacing, how italics and reference
   marks are set.
 - **Paragraphs**: how they begin and are spaced; **Long quotations**, those
   set off from the text by their length; and **Kinds of paragraph and of
   words**, every kind with its look.
-- **Headings**: whether they are numbered, and each level, with whether it
-  **begins a new page**, as the chapters of a book do.
+- **Headings**: whether they are numbered, and each level, with where it
+  **Begins**: *In the text*, *On a new page*, as the chapters of a book do,
+  or *On a right-hand page*, where a blank left page, with nothing in its
+  header or footer, is put in where one is needed. The blank page is
+  counted. Word begins such a chapter on an odd page itself; Writer begins
+  it on a new page only.
 - **Numbers**: how the numbers of lines you number are shown where they do
   not say otherwise, **Show a number every** and **Numbers on the** left or
   the right, and whether the lines of the page are numbered, as some

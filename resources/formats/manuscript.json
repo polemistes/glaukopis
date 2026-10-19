@@ -10,7 +10,7 @@
     "confidence": "high",
     "notes": "See docs/research/formats-publishers.md and formats-journals.md, under Observations. Paragraphs are indented rather than spaced, which is the more common of two conflicting conventions."
   },
-  "page": { "size": "a4", "marginTop": "2.5cm", "marginBottom": "2.5cm", "marginLeft": "2.5cm", "marginRight": "2.5cm" },
+  "page": { "size": "a4", "marginTop": "2.5cm", "marginBottom": "2.5cm", "marginLeft": "2.5cm", "marginRight": "2.5cm", "numbering": "arabic", "restart": false },
   "font": { "family": "Times New Roman", "size": 12 },
   "text": {
     "lineSpacing": 2,
@@ -24,9 +24,9 @@
   "headings": {
     "numbered": false,
     "levels": [
-      { "size": 14, "bold": true, "italic": false, "align": "left", "spaceBefore": "24pt", "spaceAfter": "12pt" },
-      { "size": 12, "bold": true, "italic": false, "align": "left", "spaceBefore": "18pt", "spaceAfter": "6pt" },
-      { "size": 12, "bold": false, "italic": true, "align": "left", "spaceBefore": "12pt", "spaceAfter": "6pt" }
+      { "size": 14, "bold": true, "italic": false, "align": "left", "spaceBefore": "24pt", "spaceAfter": "12pt", "begins": "text", "numbering": "as-above" },
+      { "size": 12, "bold": true, "italic": false, "align": "left", "spaceBefore": "18pt", "spaceAfter": "6pt", "begins": "text", "numbering": "as-above" },
+      { "size": 12, "bold": false, "italic": true, "align": "left", "spaceBefore": "12pt", "spaceAfter": "6pt", "begins": "text", "numbering": "as-above" }
     ]
   },
   "title": {
@@ -44,8 +44,8 @@
   "quote": { "indentLeft": "1.27cm", "indentRight": "0pt", "size": 0, "lineSpacing": 0 },
   "notes": { "kind": "footnotes", "size": 10, "lineSpacing": 1, "title": "Notes" },
   "bibliography": { "title": "Bibliography", "hangingIndent": "1.27cm", "lineSpacing": 0, "entrySpacing": "0pt", "newPage": false },
-  "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
-  "runningHead": { "content": "none" },
+  "header": { "shown": false, "firstPage": true, "openers": true, "alternate": false, "left": [], "center": [], "right": [], "separator": " · ", "size": 0, "italic": false, "case": "none" },
+  "footer": { "shown": true, "firstPage": true, "openers": true, "alternate": false, "left": [], "center": [{ "kind": "page-number" }], "right": [], "separator": " · ", "size": 0, "italic": false, "case": "none" },
   "lineNumbers": false,
   "style": "chicago-notes-bibliography"
 }

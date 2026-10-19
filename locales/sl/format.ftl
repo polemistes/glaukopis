@@ -25,7 +25,6 @@ format-delete-confirm = Izbriši format
 
 ## The parts of a format, as they are chosen at the left.
 
-
 ## Words that stand in several parts.
 
 format-size = Velikost
@@ -103,8 +102,6 @@ format-level-run-in = teče v besedilo
 format-level-indent = Zamaknjen kakor odstavek
 format-level-run-in-label = Teče v besedilo
 format-level-run-in-hint = Naslov začne odstavek in se konča s piko
-format-level-new-page = Začne novo stran
-format-level-new-page-hint = Kakor poglavja knjige
 format-level-new-page-said = na novi strani
 format-space-before = Presledek pred
 format-space-after = Presledek za
@@ -303,22 +300,6 @@ format-equations-after = Za številko
 
 format-page-numbers = Številke strani
 format-page-numbers-show = Strani so oštevilčene
-format-page-numbers-where = Kje
-format-page-numbers-first = Tudi na prvi strani
-format-position-top-left = Zgoraj levo
-format-position-top-center = Zgoraj na sredini
-format-position-top-right = Zgoraj desno
-format-position-bottom-left = Spodaj levo
-format-position-bottom-center = Spodaj na sredini
-format-position-bottom-right = Spodaj desno
-format-running-head = Živa pagina
-format-running-head-content = Na vrhu vsake strani
-format-running-head-none = Nič
-format-running-head-title = Naslov
-format-running-head-author = Avtorji
-format-running-head-author-title = Avtorji in naslov
-format-running-head-text = Moje besede
-format-running-head-words = Besede
 
 ## About the format: where its requirements are from.
 

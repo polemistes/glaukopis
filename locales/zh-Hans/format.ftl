@@ -25,7 +25,6 @@ format-delete-confirm = 删除格式
 
 ## The parts of a format, as they are chosen at the left.
 
-
 ## Words that stand in several parts.
 
 format-size = 字号
@@ -103,8 +102,6 @@ format-level-run-in = 接排正文
 format-level-indent = 与段落一样缩进
 format-level-run-in-label = 接排正文
 format-level-run-in-hint = 标题作为段落的开头，以句号结束
-format-level-new-page = 另起一页
-format-level-new-page-hint = 如书中各章那样
 format-level-new-page-said = 另起一页
 format-space-before = 段前间距
 format-space-after = 段后间距
@@ -303,22 +300,6 @@ format-equations-after = 编号后
 
 format-page-numbers = 页码
 format-page-numbers-show = 为页面编号
-format-page-numbers-where = 位置
-format-page-numbers-first = 第一页也编号
-format-position-top-left = 顶部靠左
-format-position-top-center = 顶部居中
-format-position-top-right = 顶部靠右
-format-position-bottom-left = 底部靠左
-format-position-bottom-center = 底部居中
-format-position-bottom-right = 底部靠右
-format-running-head = 页眉
-format-running-head-content = 每页顶部
-format-running-head-none = 无
-format-running-head-title = 题名
-format-running-head-author = 作者
-format-running-head-author-title = 作者和题名
-format-running-head-text = 自己的文字
-format-running-head-words = 文字
 
 ## About the format: where its requirements are from.
 

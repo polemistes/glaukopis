@@ -25,7 +25,6 @@ format-delete-confirm = Eliminar el formato
 
 ## The parts of a format, as they are chosen at the left.
 
-
 ## Words that stand in several parts.
 
 format-size = Tamaño
@@ -103,8 +102,6 @@ format-level-run-in = sigue en el texto
 format-level-indent = Sangrado como un párrafo
 format-level-run-in-label = Sigue en el texto
 format-level-run-in-hint = El encabezado empieza el párrafo y termina con punto
-format-level-new-page = Empieza página nueva
-format-level-new-page-hint = Como los capítulos de un libro
 format-level-new-page-said = en página nueva
 format-space-before = Espacio antes
 format-space-after = Espacio después
@@ -303,22 +300,6 @@ format-equations-after = Después del número
 
 format-page-numbers = Números de página
 format-page-numbers-show = Las páginas se numeran
-format-page-numbers-where = Dónde
-format-page-numbers-first = También en la primera página
-format-position-top-left = Arriba, izquierda
-format-position-top-center = Arriba, centro
-format-position-top-right = Arriba, derecha
-format-position-bottom-left = Abajo, izquierda
-format-position-bottom-center = Abajo, centro
-format-position-bottom-right = Abajo, derecha
-format-running-head = Cabecera
-format-running-head-content = Arriba en cada página
-format-running-head-none = Nada
-format-running-head-title = El título
-format-running-head-author = Los autores
-format-running-head-author-title = Autores y título
-format-running-head-text = Palabras propias
-format-running-head-words = Las palabras
 
 ## About the format: where its requirements are from.
 

@@ -15,7 +15,9 @@
     "marginTop": "2.4cm",
     "marginBottom": "2.4cm",
     "marginLeft": "2.4cm",
-    "marginRight": "2cm"
+    "marginRight": "2cm",
+    "numbering": "arabic",
+    "restart": false
   },
   "font": {
     "family": "Libertinus Serif",
@@ -38,9 +40,10 @@
         "bold": false,
         "italic": false,
         "align": "left",
-        "newPage": true,
+        "begins": "page",
         "spaceBefore": "36pt",
-        "spaceAfter": "24pt"
+        "spaceAfter": "24pt",
+        "numbering": "as-above"
       },
       {
         "size": 11,
@@ -48,7 +51,9 @@
         "italic": true,
         "align": "left",
         "spaceBefore": "18pt",
-        "spaceAfter": "12pt"
+        "spaceAfter": "12pt",
+        "begins": "text",
+        "numbering": "as-above"
       },
       {
         "size": 11,
@@ -56,7 +61,9 @@
         "italic": true,
         "align": "left",
         "spaceBefore": "12pt",
-        "spaceAfter": "6pt"
+        "spaceAfter": "6pt",
+        "begins": "text",
+        "numbering": "as-above"
       }
     ]
   },
@@ -92,13 +99,7 @@
     "newPage": true,
     "size": 9.5
   },
-  "pageNumbers": {
-    "show": true,
-    "position": "bottom-center",
-    "firstPage": false
-  },
-  "runningHead": {
-    "content": "none"
-  },
+  "header": { "shown": false, "firstPage": false, "openers": true, "alternate": false, "left": [], "center": [], "right": [], "separator": " · ", "size": 0, "italic": false, "case": "none" },
+  "footer": { "shown": true, "firstPage": false, "openers": true, "alternate": false, "left": [], "center": [{ "kind": "page-number" }], "right": [], "separator": " · ", "size": 0, "italic": false, "case": "none" },
   "lineNumbers": false
 }

@@ -25,7 +25,6 @@ format-delete-confirm = Обриши формат
 
 ## The parts of a format, as they are chosen at the left.
 
-
 ## Words that stand in several parts.
 
 format-size = Величина
@@ -103,8 +102,6 @@ format-level-run-in = улива се у текст
 format-level-indent = Увучен као пасус
 format-level-run-in-label = Улива се у текст
 format-level-run-in-hint = Наслов почиње пасус и завршава се тачком
-format-level-new-page = Почиње нову страну
-format-level-new-page-hint = Као поглавља књиге
 format-level-new-page-said = на новој страни
 format-space-before = Размак испред
 format-space-after = Размак иза
@@ -303,22 +300,6 @@ format-equations-after = Иза броја
 
 format-page-numbers = Бројеви страна
 format-page-numbers-show = Стране су нумерисане
-format-page-numbers-where = Где
-format-page-numbers-first = И на првој страни
-format-position-top-left = Горе, лево
-format-position-top-center = Горе, у средини
-format-position-top-right = Горе, десно
-format-position-bottom-left = Доле, лево
-format-position-bottom-center = Доле, у средини
-format-position-bottom-right = Доле, десно
-format-running-head = Живо заглавље
-format-running-head-content = На врху сваке стране
-format-running-head-none = Ништа
-format-running-head-title = Наслов
-format-running-head-author = Аутори
-format-running-head-author-title = Аутори и наслов
-format-running-head-text = Моје речи
-format-running-head-words = Речи
 
 ## About the format: where its requirements are from.
 

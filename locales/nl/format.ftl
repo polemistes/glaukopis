@@ -25,7 +25,6 @@ format-delete-confirm = Formaat wissen
 
 ## The parts of a format, as they are chosen at the left.
 
-
 ## Words that stand in several parts.
 
 format-size = Grootte
@@ -103,8 +102,6 @@ format-level-run-in = loopt door in de tekst
 format-level-indent = Ingesprongen als een alinea
 format-level-run-in-label = Loopt door in de tekst
 format-level-run-in-hint = De kop begint de alinea en eindigt met een punt
-format-level-new-page = Begint een nieuwe pagina
-format-level-new-page-hint = Zoals de hoofdstukken van een boek
 format-level-new-page-said = op een nieuwe pagina
 format-space-before = Witruimte ervoor
 format-space-after = Witruimte erna
@@ -303,22 +300,6 @@ format-equations-after = Na het nummer
 
 format-page-numbers = Paginanummers
 format-page-numbers-show = Pagina's worden genummerd
-format-page-numbers-where = Waar
-format-page-numbers-first = Ook op de eerste pagina
-format-position-top-left = Boven, links
-format-position-top-center = Boven, midden
-format-position-top-right = Boven, rechts
-format-position-bottom-left = Onder, links
-format-position-bottom-center = Onder, midden
-format-position-bottom-right = Onder, rechts
-format-running-head = Kopregel
-format-running-head-content = Bovenaan elke pagina
-format-running-head-none = Niets
-format-running-head-title = De titel
-format-running-head-author = De auteurs
-format-running-head-author-title = Auteurs en titel
-format-running-head-text = Eigen woorden
-format-running-head-words = De woorden
 
 ## About the format: where its requirements are from.
 

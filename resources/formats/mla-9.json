@@ -15,7 +15,9 @@
     "marginTop": "1in",
     "marginBottom": "1in",
     "marginLeft": "1in",
-    "marginRight": "1in"
+    "marginRight": "1in",
+    "numbering": "arabic",
+    "restart": false
   },
   "font": { "family": "Times New Roman", "size": 12 },
   "text": {
@@ -30,9 +32,9 @@
   "headings": {
     "numbered": false,
     "levels": [
-      { "size": 14, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "24pt" },
-      { "size": 12, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "24pt" },
-      { "size": 12, "bold": false, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "24pt" }
+      { "size": 14, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "24pt", "begins": "text", "numbering": "as-above" },
+      { "size": 12, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "24pt", "begins": "text", "numbering": "as-above" },
+      { "size": 12, "bold": false, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "24pt", "begins": "text", "numbering": "as-above" }
     ]
   },
   "title": {
@@ -102,8 +104,8 @@
     "rules": "horizontal",
     "headerBold": false
   },
-  "pageNumbers": { "show": true, "position": "top-right", "firstPage": true },
-  "runningHead": { "content": "author", "text": "", "align": "right", "case": "none" },
+  "header": { "shown": true, "firstPage": true, "openers": true, "alternate": false, "left": [], "center": [], "right": [{ "kind": "author" }, { "kind": "page-number" }], "separator": " · ", "size": 0, "italic": false, "case": "none" },
+  "footer": { "shown": false, "firstPage": true, "openers": true, "alternate": false, "left": [], "center": [], "right": [], "separator": " · ", "size": 0, "italic": false, "case": "none" },
   "lineNumbers": false,
   "style": "modern-language-association"
 }

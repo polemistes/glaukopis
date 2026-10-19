@@ -25,7 +25,6 @@ format-delete-confirm = Διαγραφή μορφής
 
 ## The parts of a format, as they are chosen at the left.
 
-
 ## Words that stand in several parts.
 
 format-size = Μέγεθος
@@ -103,8 +102,6 @@ format-level-run-in = συνεχίζει στο κείμενο
 format-level-indent = Με εσοχή, όπως μια παράγραφος
 format-level-run-in-label = Συνεχίζει στο κείμενο
 format-level-run-in-hint = Η επικεφαλίδα αρχίζει την παράγραφο και τελειώνει με τελεία
-format-level-new-page = Αρχίζει νέα σελίδα
-format-level-new-page-hint = Όπως τα κεφάλαια ενός βιβλίου
 format-level-new-page-said = σε νέα σελίδα
 format-space-before = Διάστημα πριν
 format-space-after = Διάστημα μετά
@@ -303,22 +300,6 @@ format-equations-after = Μετά τον αριθμό
 
 format-page-numbers = Αριθμοί σελίδων
 format-page-numbers-show = Οι σελίδες αριθμούνται
-format-page-numbers-where = Πού
-format-page-numbers-first = Και στην πρώτη σελίδα
-format-position-top-left = Πάνω, αριστερά
-format-position-top-center = Πάνω, στο κέντρο
-format-position-top-right = Πάνω, δεξιά
-format-position-bottom-left = Κάτω, αριστερά
-format-position-bottom-center = Κάτω, στο κέντρο
-format-position-bottom-right = Κάτω, δεξιά
-format-running-head = Κεφαλίδα
-format-running-head-content = Στην κορυφή κάθε σελίδας
-format-running-head-none = Τίποτα
-format-running-head-title = Ο τίτλος
-format-running-head-author = Οι συγγραφείς
-format-running-head-author-title = Συγγραφείς και τίτλος
-format-running-head-text = Δικά μου λόγια
-format-running-head-words = Τα λόγια
 
 ## About the format: where its requirements are from.
 

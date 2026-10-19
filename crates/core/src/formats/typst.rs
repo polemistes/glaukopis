@@ -8,15 +8,17 @@ use std::fmt::Write;
 
 use super::kinds::{self, Family, OwnKind, Resolved};
 use super::{
-    Align, Case, DocumentFormat, HeadContent, HeadingLevel, MATH_FONTS, NoteKind, Paragraphs, Position, RefMarks,
-    Rules, TitlePlacement, fallbacks,
+    Align, Case, DocumentFormat, HeadingLevel, Item, MATH_FONTS, Margin, NoteKind, NumberStyle, Paragraphs, RefMarks,
+    Rules, Sides, TitlePlacement, fallbacks,
 };
 
-/// What the running head and the properties of the file are made from.
+/// What the header, the footer and the properties of the file are made from.
 #[derive(Debug, Clone, Default)]
 pub struct Particulars {
     pub title: String,
     pub authors: Vec<String>,
+    /// The date the document carries, as words.
+    pub date: Option<String>,
     pub language: Option<String>,
     /// The notes at the foot of the page are those that were set against the
     /// format, which has its notes at the end: they are lettered, to be told
@@ -31,30 +33,31 @@ pub struct Particulars {
 }
 
 impl Particulars {
-    /// The words of the running head as the format asks for them, trimmed,
-    /// without their case: None where the head is off or would be empty. An
-    /// anonymous manuscript names no author, so "author: title" is then the
-    /// title alone. Typst, LaTeX, DOCX and ODT all take their head from here.
-    pub fn running_head(&self, format: &DocumentFormat) -> Option<String> {
-        let authors = if format.title.anonymous { String::new() } else { self.authors.join(", ") };
-        let words = match format.running_head.content {
-            HeadContent::None => return None,
-            HeadContent::Title => self.title.clone(),
-            HeadContent::Author => authors,
-            HeadContent::AuthorTitle if authors.is_empty() => self.title.clone(),
-            HeadContent::AuthorTitle => format!("{authors}: {}", self.title),
-            HeadContent::Text => format.running_head.text.clone(),
+    /// The words an item of the header or the footer stands for, where it
+    /// stands for words the document has: the title, the authors, the date,
+    /// words of one's own; trimmed, without their case. None for the page
+    /// number and the chapter, which each target sets itself, and where the
+    /// words would be empty. An anonymous manuscript names no author.
+    /// Typst, LaTeX, Word and Writer all take their words from here.
+    pub fn words(&self, item: &Item, format: &DocumentFormat) -> Option<String> {
+        let words = match item {
+            Item::Title => self.title.clone(),
+            Item::Author if format.title.anonymous => String::new(),
+            Item::Author => self.authors.join(", "),
+            Item::Date => self.date.clone().unwrap_or_default(),
+            Item::Text { text } => text.clone(),
+            Item::PageNumber | Item::Chapter => return None,
         };
         let words = words.trim();
         (!words.is_empty()).then(|| words.to_owned())
     }
 
-    /// The words of the running head with capitals already in them where
-    /// the format asks for capitals, for a target that sets the head as
-    /// plain text. Small capitals are left to a target that can set them.
-    pub fn running_head_cased(&self, format: &DocumentFormat) -> Option<String> {
-        let words = self.running_head(format)?;
-        Some(if format.running_head.case == Case::Upper { words.to_uppercase() } else { words })
+    /// The words of an item with capitals already in them where the margin
+    /// asks for capitals, for a target that sets them as plain text. Small
+    /// capitals are left to a target that can set them.
+    pub fn words_cased(&self, item: &Item, format: &DocumentFormat, case: Case) -> Option<String> {
+        let words = self.words(item, format)?;
+        Some(if case == Case::Upper { words.to_uppercase() } else { words })
     }
 }
 
@@ -207,77 +210,122 @@ fn heading_rule(out: &mut String, level: usize, h: &HeadingLevel, format: &Docum
     );
 }
 
-fn margin_item(position: Position, wanted_top: bool, content: &str, slots: &mut [Vec<String>; 3]) {
-    if position.is_top() != wanted_top {
-        return;
+/// The pattern of Typst's `numbering` for a style of numbers.
+pub fn number_pattern(style: NumberStyle) -> &'static str {
+    match style {
+        NumberStyle::Arabic => "1",
+        NumberStyle::Roman => "I",
+        NumberStyle::RomanLower => "i",
+        NumberStyle::Letters => "A",
+        NumberStyle::LettersLower => "a",
     }
-    let slot = match position.align() {
-        Align::Left | Align::Justified => 0,
-        Align::Center => 1,
-        Align::Right => 2,
-    };
-    slots[slot].push(content.to_owned());
 }
 
-fn margin_row(format: &DocumentFormat, p: &Particulars, top: bool) -> Option<String> {
-    let mut slots: [Vec<String>; 3] = [Vec::new(), Vec::new(), Vec::new()];
+/// An item of a margin as Typst content, or None where it stands for nothing.
+fn margin_item(item: &Item, m: &Margin, format: &DocumentFormat, p: &Particulars) -> Option<String> {
+    Some(match item {
+        Item::PageNumber => format!("counter(page).display({})", string(number_pattern(format.page.numbering))),
+        // The heading of the first level the page is in: one that begins on
+        // the page, else the last before it.
+        Item::Chapter => format!(
+            "{{ let here = here(); let on = query(heading.where(level: 1).after(here)).filter(h => h.location().page() == here.page()); \
+             let before = query(heading.where(level: 1).before(here)); \
+             if on.len() > 0 {{ {} }} else if before.len() > 0 {{ {} }} }}",
+            cased(m.case, "on.first().body"),
+            cased(m.case, "before.last().body"),
+        ),
+        _ => cased(m.case, &format!("text({})", string(&p.words(item, format)?))),
+    })
+}
 
-    // The running head, which stands at the top.
-    if top && let Some(words) = p.running_head(format) {
-        let body = cased(format.running_head.case, &format!("text({})", string(&words)));
-        let slot = match format.running_head.align {
-            Align::Left | Align::Justified => 0,
-            Align::Center => 1,
-            Align::Right => 2,
-        };
-        slots[slot].push(body);
-    }
-
-    if format.page_numbers.show {
-        let number = if format.page_numbers.first_page {
-            "counter(page).display(\"1\")".to_owned()
-        } else {
-            "if counter(page).get().first() > 1 { counter(page).display(\"1\") }".to_owned()
-        };
-        margin_item(format.page_numbers.position, top, &number, &mut slots);
-    }
-
-    if slots.iter().all(Vec::is_empty) {
+/// The three places of a margin as a row of Typst: None where all are empty.
+fn margin_grid(sides: &Sides, m: &Margin, format: &DocumentFormat, p: &Particulars) -> Option<String> {
+    let place = |items: &[Item]| -> Vec<String> { items.iter().filter_map(|i| margin_item(i, m, format, p)).collect() };
+    let places = [place(&sides.left), place(&sides.center), place(&sides.right)];
+    if places.iter().all(Vec::is_empty) {
         return None;
     }
-    let cell = |items: &Vec<String>, a: &str| {
-        if items.is_empty() {
-            "[]".to_owned()
-        } else {
-            // The number goes outermost on its side.
-            format!("align({a}, {{ {} }})", items.join("; h(1em); "))
-        }
+    let cell = |items: &Vec<String>, a: &str| match items.len() {
+        0 => "[]".to_owned(),
+        1 => format!("align({a}, {})", items[0]),
+        // Items that stand for nothing (a chapter before the first) leave no separator behind.
+        _ => format!(
+            "align({a}, {{ let items = ({},).filter(i => i != none); items.join(text({})) }})",
+            items.join(", "),
+            string(&m.separator)
+        ),
     };
     // With nothing in the middle, the sides may take all the width they need.
-    let grid = if slots[1].is_empty() {
+    Some(if places[1].is_empty() {
         format!(
             "grid(columns: (1fr, auto), column-gutter: 2em, {}, {})",
-            cell(&slots[0], "left"),
-            cell(&slots[2], "right")
+            cell(&places[0], "left"),
+            cell(&places[2], "right")
         )
     } else {
         format!(
             "grid(columns: (1fr, auto, 1fr), column-gutter: 1em, {}, {}, {})",
-            cell(&slots[0], "left"),
-            cell(&slots[1], "center"),
-            cell(&slots[2], "right")
+            cell(&places[0], "left"),
+            cell(&places[1], "center"),
+            cell(&places[2], "right")
+        )
+    })
+}
+
+/// The header or the footer as Typst (ADR 0057): None where it is not shown
+/// or nothing stands in it. Nothing stands in it on the first page where it
+/// is not to, on the openers where it is not to, and on the blank pages put
+/// in before a right-hand page; left pages take their own places where it
+/// alternates.
+fn margin(m: &Margin, format: &DocumentFormat, p: &Particulars) -> Option<String> {
+    if !m.is_visible() {
+        return None;
+    }
+    let odd = margin_grid(&m.places, m, format, p);
+    let even = if m.alternate { margin_grid(m.even_places(), m, format, p) } else { odd.clone() };
+    if odd.is_none() && even.is_none() {
+        return None;
+    }
+    let body = if odd == even {
+        odd.unwrap_or_else(|| "none".into())
+    } else {
+        format!(
+            "if calc.even(at) {{ {} }} else {{ {} }}",
+            even.as_deref().unwrap_or("none"),
+            odd.as_deref().unwrap_or("none")
         )
     };
+    let mut skip = vec!["gk-blank(at)".to_owned()];
+    if !m.first_page {
+        skip.push("at == 1".into());
+    }
+    if !m.openers {
+        skip.push("gk-on(<gk-opener>, at)".into());
+    }
+    let size = if m.size > 0.0 { m.size } else { format.font.size };
     Some(format!(
         "context {{
-    set text(size: {size})
-    set par(first-line-indent: 0pt, leading: {leading}, justify: false)
-    {grid}
+    let at = here().page()
+    if {skip} {{ none }} else {{
+      set text(size: {size}{italic})
+      set par(first-line-indent: 0pt, leading: {leading}, justify: false)
+      {body}
+    }}
   }}",
-        size = pt(format.font.size),
+        skip = skip.join(" or "),
+        size = pt(size),
+        italic = if m.italic { ", style: \"italic\"" } else { "" },
         leading = leading(1.0),
     ))
 }
+
+/// What marks the pages where something begins (ADR 0057): the opener after
+/// the break of a page, and the mark before a break to a right-hand page,
+/// from which a blank left page is known. The header and the footer ask
+/// these of every page.
+pub const OPENER: &str = "#metadata(\"opener\") <gk-opener>";
+/// Before the break to a right-hand page.
+pub const BEFORE_RIGHT: &str = "#metadata(\"right\") <gk-before-right>";
 
 /// How a reference mark is set (ADR 0039): raised in the line, or in the
 /// margin at the right of its line, found from where the mark stands on the
@@ -326,8 +374,15 @@ pub fn preamble(format: &DocumentFormat, p: &Particulars) -> String {
             format!("width: {}, height: {}", pt(w), pt(h))
         }
     };
-    let header = margin_row(f, p, true);
-    let footer = margin_row(f, p, false);
+    // Where something begins, and the blank pages before a right-hand page:
+    // the header and the footer ask of each page.
+    let _ = writeln!(
+        out,
+        "#let gk-on(label, p) = query(label).any(o => o.location().page() == p)
+#let gk-blank(p) = gk-on(<gk-before-right>, p - 1) and gk-on(<gk-opener>, p + 1) and not gk-on(<gk-opener>, p)"
+    );
+    let header = margin(&f.header, f, p);
+    let footer = margin(&f.footer, f, p);
     let _ = writeln!(
         out,
         "#set page(
@@ -697,7 +752,7 @@ pub fn preamble(format: &DocumentFormat, p: &Particulars) -> String {
             style = if look.italic { "\"italic\"" } else { "\"normal\"" },
             justify = look.align == Align::Justified,
             align = align(look.align),
-            down = if look.own_page { "v(25%)\n  " } else { "" },
+            down = if look.own_page { "[#metadata(\"opener\") <gk-opener>]\n  v(25%)\n  " } else { "" },
         );
     }
     // The half-title: the title alone on the first leaf.
@@ -707,6 +762,7 @@ pub fn preamble(format: &DocumentFormat, p: &Particulars) -> String {
   set text(size: {size}, weight: \"regular\", style: \"normal\", hyphenate: false)
   set par(first-line-indent: 0pt, justify: false)
   set align(center)
+  [#metadata(\"opener\") <gk-opener>]
   v(30%)
   block(width: 100%, it.body)
   pagebreak(weak: true)
@@ -775,7 +831,7 @@ pub fn preamble(format: &DocumentFormat, p: &Particulars) -> String {
         TitlePlacement::OwnPage => {
             let _ = writeln!(
                 out,
-                "#show <gk-front>: it => {{ v(18%); block(width: 100%, it.body); pagebreak(weak: true) }}"
+                "#show <gk-front>: it => {{ [#metadata(\"opener\") <gk-opener>]; v(18%); block(width: 100%, it.body); pagebreak(weak: true) }}"
             );
         }
         TitlePlacement::Top => {
@@ -825,10 +881,14 @@ mod tests {
     fn the_preamble_says_what_the_format_says() {
         let mut f = DocumentFormat { name: "Test".into(), ..Default::default() };
         f.page.size = "letter".into();
-        f.page_numbers.position = Position::TopRight;
-        f.page_numbers.first_page = false;
-        f.running_head.content = HeadContent::Title;
-        f.running_head.case = Case::Upper;
+        f.footer.shown = false;
+        f.header = Margin {
+            shown: true,
+            first_page: false,
+            case: Case::Upper,
+            places: Sides { left: vec![Item::Title], right: vec![Item::PageNumber], ..Default::default() },
+            ..Default::default()
+        };
         f.headings.numbered = true;
         f.line_numbers = true;
         f.title.placement = TitlePlacement::OwnPage;
@@ -843,7 +903,7 @@ mod tests {
         assert!(out.contains("paper: \"us-letter\""));
         assert!(out.contains("leading: 1.4em"));
         assert!(out.contains("upper(text(\"Wrath \\\"and\\\" the hero\"))"));
-        assert!(out.contains("if counter(page).get().first() > 1"));
+        assert!(out.contains("if gk-blank(at) or at == 1 { none }"), "{out}");
         assert!(out.contains("#set heading(numbering: \"1.1\")"));
         assert!(out.contains("#set par.line(numbering: \"1\")"));
         assert!(out.contains("pagebreak(weak: true)"));
@@ -873,41 +933,84 @@ mod tests {
         assert!(!out.contains("<gk-kind-draft>"), "a note to oneself has no look");
 
         f.title.anonymous = true;
-        f.running_head.content = HeadContent::AuthorTitle;
+        f.header.places.left = vec![Item::Author, Item::Title];
         let out = preamble(&f, &p);
         assert!(!out.contains("A. Scholar"), "an anonymous manuscript does not name its author anywhere");
     }
 
     #[test]
-    fn the_running_head_is_worked_out_once() {
-        let mut f = DocumentFormat::default();
+    fn the_words_of_the_items_are_worked_out_once() {
+        let f = DocumentFormat::default();
         let p = Particulars {
             title: "Wrath".into(),
             authors: vec!["A. Scholar".into(), "B. Other".into()],
+            date: Some("1 May".into()),
             ..Default::default()
         };
-        f.running_head.content = HeadContent::None;
-        assert_eq!(p.running_head(&f), None);
-        f.running_head.content = HeadContent::Title;
-        assert_eq!(p.running_head(&f).as_deref(), Some("Wrath"));
-        f.running_head.content = HeadContent::Author;
-        assert_eq!(p.running_head(&f).as_deref(), Some("A. Scholar, B. Other"));
-        f.running_head.content = HeadContent::AuthorTitle;
-        assert_eq!(p.running_head(&f).as_deref(), Some("A. Scholar, B. Other: Wrath"));
-        f.running_head.case = Case::Upper;
-        assert_eq!(p.running_head_cased(&f).as_deref(), Some("A. SCHOLAR, B. OTHER: WRATH"));
-        assert_eq!(p.running_head(&f).as_deref(), Some("A. Scholar, B. Other: Wrath"), "Typst sets its own capitals");
-        f.running_head.case = Case::Smallcaps;
-        assert_eq!(p.running_head_cased(&f).as_deref(), Some("A. Scholar, B. Other: Wrath"));
-        // An anonymous manuscript names no author, so the head is the title.
+        assert_eq!(p.words(&Item::Title, &f).as_deref(), Some("Wrath"));
+        assert_eq!(p.words(&Item::Author, &f).as_deref(), Some("A. Scholar, B. Other"));
+        assert_eq!(p.words(&Item::Date, &f).as_deref(), Some("1 May"));
+        assert_eq!(p.words(&Item::PageNumber, &f), None, "each target sets the number itself");
+        assert_eq!(p.words_cased(&Item::Title, &f, Case::Upper).as_deref(), Some("WRATH"));
+        assert_eq!(p.words_cased(&Item::Title, &f, Case::Smallcaps).as_deref(), Some("Wrath"));
+        assert_eq!(p.words(&Item::Text { text: "  R&D ".into() }, &f).as_deref(), Some("R&D"));
+        assert_eq!(p.words(&Item::Text { text: "   ".into() }, &f), None);
+        // An anonymous manuscript names no author.
+        let anonymous =
+            DocumentFormat { title: super::super::TitleBlock { anonymous: true, ..Default::default() }, ..f };
+        assert_eq!(p.words(&Item::Author, &anonymous), None);
+    }
+
+    #[test]
+    fn the_header_and_the_footer_are_set_from_their_places() {
+        let p = Particulars { title: "Wrath".into(), authors: vec!["A. Scholar".into()], ..Default::default() };
+        // As layouts have them where they say nothing: the number in the middle of the footer, nothing at the head.
+        let f = DocumentFormat::default();
+        let out = preamble(&f, &p);
+        assert!(out.contains("header: none,"), "{out}");
+        assert!(out.contains("grid(columns: (1fr, auto, 1fr), column-gutter: 1em, [], align(center, counter(page).display(\"1\")), [])"), "{out}");
+        assert!(out.contains("if gk-blank(at) { none }"), "the blank page before a right-hand one is bare: {out}");
+
+        // The title and the author at the left, the number at the right; on
+        // left pages the number at the left; nothing on the openers.
+        let mut f = DocumentFormat::default();
+        f.footer.shown = false;
+        f.header = Margin {
+            shown: true,
+            openers: false,
+            alternate: true,
+            size: 9.0,
+            italic: true,
+            places: Sides {
+                left: vec![Item::Author, Item::Title],
+                right: vec![Item::PageNumber],
+                ..Default::default()
+            },
+            even: Some(Sides { left: vec![Item::PageNumber], right: vec![Item::Chapter], ..Default::default() }),
+            ..Default::default()
+        };
+        f.page.numbering = crate::formats::NumberStyle::RomanLower;
+        let out = preamble(&f, &p);
+        assert!(out.contains("footer: none,"), "{out}");
+        assert!(out.contains("if gk-blank(at) or gk-on(<gk-opener>, at) { none }"), "{out}");
+        assert!(out.contains("set text(size: 9pt, style: \"italic\")"), "{out}");
+        assert!(
+            out.contains(
+                "let items = (text(\"A. Scholar\"), text(\"Wrath\"),).filter(i => i != none); items.join(text(\" · \"))"
+            ),
+            "the items of a place joined by the separator: {out}"
+        );
+        assert!(out.contains("if calc.even(at) { grid(columns: (1fr, auto), column-gutter: 2em, align(left, counter(page).display(\"i\")), align(right, { let here = here();"), "{out}");
+        assert!(out.contains("} else { grid(columns: (1fr, auto), column-gutter: 2em, align(left, "), "{out}");
+        assert!(out.contains("#let gk-blank(p)"), "{out}");
+
+        // An anonymous layout names no author, in the head or anywhere.
         f.title.anonymous = true;
-        assert_eq!(p.running_head(&f).as_deref(), Some("Wrath"));
-        f.running_head.content = HeadContent::Author;
-        assert_eq!(p.running_head(&f), None);
-        f.running_head.content = HeadContent::Text;
-        f.running_head.text = "  R&D ".into();
-        assert_eq!(p.running_head(&f).as_deref(), Some("R&D"));
-        f.running_head.text = "   ".into();
-        assert_eq!(p.running_head(&f), None);
+        let out = preamble(&f, &p);
+        assert!(!out.contains("A. Scholar"), "{out}");
+        // A header shown with nothing in it is none.
+        f.header.places = Sides::default();
+        f.header.even = None;
+        assert!(preamble(&f, &p).contains("header: none,"));
     }
 }

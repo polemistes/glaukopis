@@ -70,6 +70,11 @@ pub struct Page {
     pub columns: u8,
     /// The room between two columns.
     pub column_gap: Length,
+    /// How the pages are numbered (ADR 0057).
+    pub numbering: NumberStyle,
+    /// The pages begin to be counted anew where the element this is set on
+    /// begins (ADR 0059).
+    pub restart: bool,
 }
 
 impl Default for Page {
@@ -84,6 +89,8 @@ impl Default for Page {
             margin_right: Length::cm(2.5),
             columns: 1,
             column_gap: Length::cm(1.0),
+            numbering: NumberStyle::Arabic,
+            restart: false,
         }
     }
 }
@@ -214,10 +221,50 @@ pub struct HeadingLevel {
     pub run_in: bool,
     /// Indented as a paragraph is.
     pub indent: bool,
-    /// The heading begins a new page: a chapter of a book.
-    pub new_page: bool,
+    /// Where the heading begins: in the text, on a new page (a chapter of a
+    /// book), or on a right-hand page (ADR 0057).
+    pub begins: Begins,
+    /// How the level is numbered (ADR 0058).
+    pub numbering: LevelNumbering,
     pub space_before: Length,
     pub space_after: Length,
+    /// The switch the level had before it had `begins`, read from layouts
+    /// written then; never written.
+    #[serde(default, skip_serializing)]
+    pub new_page: Option<bool>,
+}
+
+impl HeadingLevel {
+    /// Whether the heading begins a page, new or right-hand.
+    pub fn begins_page(&self) -> bool {
+        self.begins != Begins::Text
+    }
+}
+
+/// Where a heading begins (ADR 0057).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Begins {
+    #[default]
+    Text,
+    Page,
+    /// On a right-hand (odd) page, with a blank left page put in where one is needed.
+    RightPage,
+}
+
+/// How a level of heading is numbered (ADR 0058).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum LevelNumbering {
+    /// As the level above: numbered where it is, in its style, under its number.
+    #[default]
+    AsAbove,
+    None,
+    Arabic,
+    Alpha,
+    AlphaLower,
+    Roman,
+    RomanLower,
 }
 
 impl Default for HeadingLevel {
@@ -230,9 +277,11 @@ impl Default for HeadingLevel {
             case: Case::None,
             run_in: false,
             indent: false,
-            new_page: false,
+            begins: Begins::Text,
+            numbering: LevelNumbering::AsAbove,
             space_before: Length::pt(24.0),
             space_after: Length::pt(12.0),
+            new_page: None,
         }
     }
 }
@@ -405,6 +454,126 @@ impl Default for BibliographyFormat {
     }
 }
 
+/// What stands in a place of the header or the footer (ADR 0057).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case", tag = "kind")]
+pub enum Item {
+    PageNumber,
+    Title,
+    Author,
+    /// The heading of the chapter the page is in: the nearest heading of the first level before it.
+    Chapter,
+    Date,
+    Text {
+        #[serde(default)]
+        text: String,
+    },
+}
+
+/// The three places of a margin, each a list of items in order.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Sides {
+    pub left: Vec<Item>,
+    pub center: Vec<Item>,
+    pub right: Vec<Item>,
+}
+
+impl Sides {
+    pub fn is_empty(&self) -> bool {
+        self.left.is_empty() && self.center.is_empty() && self.right.is_empty()
+    }
+
+    /// Every item, wherever it stands.
+    pub fn items(&self) -> impl Iterator<Item = &Item> {
+        self.left.iter().chain(&self.center).chain(&self.right)
+    }
+}
+
+/// The header or the footer of the pages (ADR 0057): shown or not, on the
+/// first page and on the openers or not, three places of items, and three
+/// more for left pages where they differ.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Margin {
+    pub shown: bool,
+    /// On the first page of the document too.
+    pub first_page: bool,
+    /// On the openers too: the pages where a heading that begins a page, or
+    /// a part on a page of its own, begins.
+    pub openers: bool,
+    /// Different on left (even) pages: `even` holds their places.
+    pub alternate: bool,
+    #[serde(flatten)]
+    pub places: Sides,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub even: Option<Sides>,
+    /// What stands between two items of a place.
+    pub separator: String,
+    /// In points; nought is the text's.
+    pub size: f32,
+    pub italic: bool,
+    pub case: Case,
+}
+
+impl Default for Margin {
+    fn default() -> Self {
+        Margin {
+            shown: false,
+            first_page: true,
+            openers: true,
+            alternate: false,
+            places: Sides::default(),
+            even: None,
+            separator: " · ".into(),
+            size: 0.0,
+            italic: false,
+            case: Case::None,
+        }
+    }
+}
+
+impl Margin {
+    /// The footer as a layout has it where it says nothing: the number of the page in the middle.
+    pub fn footer() -> Self {
+        Margin {
+            shown: true,
+            places: Sides { center: vec![Item::PageNumber], ..Default::default() },
+            ..Default::default()
+        }
+    }
+
+    /// Whether anything stands in it on some page.
+    pub fn is_visible(&self) -> bool {
+        self.shown && (!self.places.is_empty() || (self.alternate && self.even.as_ref().is_some_and(|e| !e.is_empty())))
+    }
+
+    /// The places of left pages: their own where they differ, else the same.
+    pub fn even_places(&self) -> &Sides {
+        match &self.even {
+            Some(even) if self.alternate => even,
+            _ => &self.places,
+        }
+    }
+
+    /// Whether the number of the page stands in it.
+    pub fn has_number(&self) -> bool {
+        self.places.items().chain(self.even_places().items()).any(|i| *i == Item::PageNumber)
+    }
+}
+
+/// How the pages are numbered (ADR 0057).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum NumberStyle {
+    #[default]
+    Arabic,
+    Roman,
+    RomanLower,
+    Letters,
+    LettersLower,
+}
+
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Position {
@@ -431,6 +600,7 @@ impl Position {
     }
 }
 
+/// The page numbers as a layout had them before the footer (ADR 0057): read, never written.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct PageNumbers {
@@ -458,6 +628,7 @@ pub enum HeadContent {
     Text,
 }
 
+/// The running head as a layout had it before the header (ADR 0057): read, never written.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct RunningHead {
@@ -693,7 +864,7 @@ impl Default for Equations {
     }
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct DocumentFormat {
     pub id: String,
@@ -718,8 +889,10 @@ pub struct DocumentFormat {
     pub figures: Figures,
     pub tables: Tables,
     pub equations: Equations,
-    pub page_numbers: PageNumbers,
-    pub running_head: RunningHead,
+    /// What stands at the top of the pages (ADR 0057).
+    pub header: Margin,
+    /// What stands at the foot of the pages: the page number in the middle, unless the layout says otherwise.
+    pub footer: Margin,
     pub line_numbers: bool,
     /// The reference style that goes with the format, by id.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -734,9 +907,110 @@ pub struct DocumentFormat {
     /// the kind. See `templates/kinds.rs` and ADR 0038.
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub parts: BTreeMap<String, crate::templates::PartLook>,
+    /// The page numbers as layouts had them before the footer: read from
+    /// such a layout and turned into the header and the footer by
+    /// `modernise`; never written.
+    #[serde(default, skip_serializing)]
+    pub page_numbers: Option<PageNumbers>,
+    /// The running head as layouts had it before the header: likewise.
+    #[serde(default, skip_serializing)]
+    pub running_head: Option<RunningHead>,
+}
+
+impl Default for DocumentFormat {
+    fn default() -> Self {
+        DocumentFormat {
+            id: String::new(),
+            name: String::new(),
+            kind: Kind::default(),
+            description: String::new(),
+            source: None,
+            based_on: None,
+            page: Page::default(),
+            font: Font::default(),
+            text: Text::default(),
+            headings: Headings::default(),
+            title: TitleBlock::default(),
+            quote: Quote::default(),
+            verse: Verse::default(),
+            notes: Notes::default(),
+            bibliography: BibliographyFormat::default(),
+            figures: Figures::default(),
+            tables: Tables::default(),
+            equations: Equations::default(),
+            header: Margin::default(),
+            footer: Margin::footer(),
+            line_numbers: false,
+            style: None,
+            kinds: BTreeMap::new(),
+            parts: BTreeMap::new(),
+            page_numbers: None,
+            running_head: None,
+        }
+    }
 }
 
 impl DocumentFormat {
+    /// Turns what a layout written before the header and the footer said of
+    /// its page numbers and running head into its header and footer (ADR
+    /// 0057), and the old switch of a level that began a new page into where
+    /// it begins. Where the layout has a header or a footer of its own, those
+    /// stand and the old names are let go.
+    pub fn modernise(&mut self) {
+        let numbers = self.page_numbers.take();
+        let head = self.running_head.take();
+        if (numbers.is_some() || head.is_some()) && self.header == Margin::default() && self.footer == Margin::footer()
+        {
+            let numbers = numbers.unwrap_or_default();
+            let head = head.unwrap_or_default();
+            let mut header = Margin::default();
+            let mut footer = Margin { places: Sides::default(), ..Margin::default() };
+            fn at(sides: &mut Sides, align: Align) -> &mut Vec<Item> {
+                match align {
+                    Align::Left | Align::Justified => &mut sides.left,
+                    Align::Center => &mut sides.center,
+                    Align::Right => &mut sides.right,
+                }
+            }
+            let items = match head.content {
+                HeadContent::None => vec![],
+                HeadContent::Title => vec![Item::Title],
+                HeadContent::Author => vec![Item::Author],
+                HeadContent::AuthorTitle => vec![Item::Author, Item::Title],
+                HeadContent::Text if head.text.trim().is_empty() => vec![],
+                HeadContent::Text => vec![Item::Text { text: head.text.trim().to_owned() }],
+            };
+            if items.len() == 2 {
+                header.separator = " / ".into();
+            }
+            at(&mut header.places, head.align).extend(items);
+            header.case = head.case;
+            if numbers.show {
+                let margin = if numbers.position.is_top() { &mut header } else { &mut footer };
+                at(&mut margin.places, numbers.position.align()).push(Item::PageNumber);
+            }
+            for m in [&mut header, &mut footer] {
+                m.shown = !m.places.is_empty();
+                m.first_page = numbers.first_page;
+            }
+            self.header = header;
+            self.footer = footer;
+        }
+        for l in &mut self.headings.levels {
+            if let Some(old) = l.new_page.take()
+                && l.begins == Begins::Text
+                && old
+            {
+                l.begins = Begins::Page;
+            }
+        }
+    }
+
+    /// Where the number of the page stands: the footer where it holds it, else the header where that does.
+    pub fn numbered_margin(&self) -> Option<&Margin> {
+        [&self.footer, &self.header].into_iter().find(|m| m.shown && m.has_number())
+    }
+
     /// The description of a level of heading; the last one serves for deeper levels.
     pub fn heading(&self, level: usize) -> HeadingLevel {
         let levels = &self.headings.levels;
@@ -782,6 +1056,7 @@ impl DocumentFormat {
     /// Puts values that make no sense back within bounds, so that a format
     /// made by hand cannot break the making of a document.
     pub fn sanitise(&mut self) {
+        self.modernise();
         let clamp = |v: &mut f32, lo: f32, hi: f32, or: f32| {
             if !v.is_finite() || *v < lo || *v > hi {
                 *v = or;
@@ -813,6 +1088,12 @@ impl DocumentFormat {
         }
         for l in &mut self.headings.levels {
             clamp(&mut l.size, 6.0, 72.0, 12.0);
+        }
+        for m in [&mut self.header, &mut self.footer] {
+            clamp(&mut m.size, 0.0, 36.0, 0.0);
+            if m.separator.chars().count() > 12 {
+                m.separator = " · ".into();
+            }
         }
         self.headings.levels.truncate(6);
         if self.headings.levels.is_empty() {
@@ -1048,6 +1329,48 @@ pub fn slug(name: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_layout_in_the_old_shape_reads_as_the_new() {
+        let old = r#"{"pageNumbers": {"show": true, "position": "top-right", "firstPage": false},
+                      "runningHead": {"content": "author-title", "align": "right", "case": "upper"},
+                      "headings": {"levels": [{"size": 14, "newPage": true}, {"size": 12}]}}"#;
+        let mut f: DocumentFormat = serde_json::from_str(old).unwrap();
+        f.sanitise();
+        let header = Margin {
+            shown: true,
+            first_page: false,
+            case: Case::Upper,
+            separator: " / ".into(),
+            places: Sides { right: vec![Item::Author, Item::Title, Item::PageNumber], ..Default::default() },
+            ..Default::default()
+        };
+        assert_eq!(f.header, header);
+        assert_eq!(f.footer, Margin { first_page: false, ..Default::default() });
+        assert!(!f.footer.shown);
+        assert_eq!(f.headings.levels[0].begins, Begins::Page);
+        assert_eq!(f.headings.levels[1].begins, Begins::Text);
+        let written = serde_json::to_value(&f).unwrap();
+        for old in ["pageNumbers", "runningHead"] {
+            assert!(written.get(old).is_none(), "{old} is not written");
+        }
+        assert!(written["headings"]["levels"][0].get("newPage").is_none());
+        assert_eq!(written["header"]["right"][2], serde_json::json!({"kind": "page-number"}));
+        // Read again, it is the same.
+        let mut again: DocumentFormat = serde_json::from_value(written).unwrap();
+        again.sanitise();
+        assert_eq!(again, f);
+
+        // A layout with no word of the margins has the number in the middle of the footer.
+        let mut plain: DocumentFormat = serde_json::from_str("{}").unwrap();
+        plain.sanitise();
+        assert_eq!(plain.footer, Margin::footer());
+        assert!(!plain.header.shown);
+        // The page numbers turned off leave the footer empty and hidden.
+        let mut off: DocumentFormat = serde_json::from_str(r#"{"pageNumbers": {"show": false}}"#).unwrap();
+        off.sanitise();
+        assert!(!off.footer.shown && off.footer.places.is_empty() && off.numbered_margin().is_none());
+    }
 
     #[test]
     fn a_format_with_nothing_said_is_whole() {

@@ -25,7 +25,6 @@ format-delete-confirm = Șterge formatul
 
 ## The parts of a format, as they are chosen at the left.
 
-
 ## Words that stand in several parts.
 
 format-size = Mărime
@@ -103,8 +102,6 @@ format-level-run-in = intră în text
 format-level-indent = Retras ca un paragraf
 format-level-run-in-label = Intră în text
 format-level-run-in-hint = Titlul începe paragraful și se încheie cu punct
-format-level-new-page = Începe o pagină nouă
-format-level-new-page-hint = Cum fac capitolele unei cărți
 format-level-new-page-said = pe pagină nouă
 format-space-before = Spațiu înainte
 format-space-after = Spațiu după
@@ -303,22 +300,6 @@ format-equations-after = După număr
 
 format-page-numbers = Numerele paginilor
 format-page-numbers-show = Paginile sunt numerotate
-format-page-numbers-where = Unde
-format-page-numbers-first = Și pe prima pagină
-format-position-top-left = Sus, la stânga
-format-position-top-center = Sus, la mijloc
-format-position-top-right = Sus, la dreapta
-format-position-bottom-left = Jos, la stânga
-format-position-bottom-center = Jos, la mijloc
-format-position-bottom-right = Jos, la dreapta
-format-running-head = Colontitlu
-format-running-head-content = În capul fiecărei pagini
-format-running-head-none = Nimic
-format-running-head-title = Titlul
-format-running-head-author = Autorii
-format-running-head-author-title = Autorii și titlul
-format-running-head-text = Cuvinte ale mele
-format-running-head-words = Cuvintele
 
 ## About the format: where its requirements are from.
 

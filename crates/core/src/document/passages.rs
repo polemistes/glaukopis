@@ -813,7 +813,7 @@ mod tests {
             keys,
             language: Some("en-GB"),
             run_in: vec![],
-            new_page: vec![],
+            begins: Default::default(),
             page_break: None,
             deepest: 6,
             extras,

@@ -118,8 +118,6 @@ format-level-run-in = löper in i texten
 format-level-indent = Indragen som ett stycke
 format-level-run-in-label = Löper in i texten
 format-level-run-in-hint = Rubriken inleder stycket och slutar med punkt
-format-level-new-page = Börjar en ny sida
-format-level-new-page-hint = Som kapitlen i en bok
 format-level-new-page-said = på ny sida
 format-space-before = Mellanrum före
 format-space-after = Mellanrum efter
@@ -326,22 +324,6 @@ format-equations-after = Efter numret
 
 format-page-numbers = Sidnummer
 format-page-numbers-show = Sidorna numreras
-format-page-numbers-where = Var
-format-page-numbers-first = Också på första sidan
-format-position-top-left = Överst, vänster
-format-position-top-center = Överst, mitten
-format-position-top-right = Överst, höger
-format-position-bottom-left = Nederst, vänster
-format-position-bottom-center = Nederst, mitten
-format-position-bottom-right = Nederst, höger
-format-running-head = Kolumntitel
-format-running-head-content = Överst på varje sida
-format-running-head-none = Inget
-format-running-head-title = Titeln
-format-running-head-author = Författarna
-format-running-head-author-title = Författare och titel
-format-running-head-text = Egna ord
-format-running-head-words = Orden
 
 ## About the layout: where its requirements are from.
 

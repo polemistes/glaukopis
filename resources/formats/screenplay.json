@@ -15,7 +15,9 @@
     "marginTop": "2.5cm",
     "marginBottom": "2.5cm",
     "marginLeft": "3.8cm",
-    "marginRight": "2.5cm"
+    "marginRight": "2.5cm",
+    "numbering": "arabic",
+    "restart": false
   },
   "font": {
     "family": "Courier New",
@@ -39,9 +41,10 @@
         "italic": false,
         "align": "center",
         "case": "upper",
-        "newPage": true,
+        "begins": "page",
         "spaceBefore": "48pt",
-        "spaceAfter": "36pt"
+        "spaceAfter": "36pt",
+        "numbering": "as-above"
       },
       {
         "size": 12,
@@ -50,7 +53,9 @@
         "align": "left",
         "case": "upper",
         "spaceBefore": "24pt",
-        "spaceAfter": "12pt"
+        "spaceAfter": "12pt",
+        "begins": "text",
+        "numbering": "as-above"
       },
       {
         "size": 12,
@@ -59,7 +64,9 @@
         "align": "left",
         "case": "upper",
         "spaceBefore": "12pt",
-        "spaceAfter": "12pt"
+        "spaceAfter": "12pt",
+        "begins": "text",
+        "numbering": "as-above"
       }
     ]
   },
@@ -94,13 +101,7 @@
     "entrySpacing": "0pt",
     "newPage": true
   },
-  "pageNumbers": {
-    "show": true,
-    "position": "top-right",
-    "firstPage": false
-  },
-  "runningHead": {
-    "content": "none"
-  },
+  "header": { "shown": true, "firstPage": false, "openers": true, "alternate": false, "left": [], "center": [], "right": [{ "kind": "page-number" }], "separator": " · ", "size": 0, "italic": false, "case": "none" },
+  "footer": { "shown": false, "firstPage": false, "openers": true, "alternate": false, "left": [], "center": [], "right": [], "separator": " · ", "size": 0, "italic": false, "case": "none" },
   "lineNumbers": false
 }

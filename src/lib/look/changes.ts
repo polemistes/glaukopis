@@ -61,6 +61,16 @@ const NOT_LOOK = new Set([
   'limits',
 ]);
 
+/**
+ * What layouts said of the margins of the page before the header and the
+ * footer (ADR 0057). Changes a document made under these names are passed
+ * over: they were few, and days old.
+ */
+const OLD = new Set(['pageNumbers', 'runningHead']);
+
+/** The changes already said to be passed over, so that the log says it once. */
+const toldOld = new Set<string>();
+
 /** Where a change left unsaid takes the measure away: the looks of kinds and of parts. */
 const UNSAID_AWAY = /^(kinds|parts)\./;
 
@@ -80,7 +90,7 @@ export function pathsOf(changes: LookChanges | undefined): LookPath[] {
       for (const [key, inner] of Object.entries(value)) {
         if (inner !== undefined) walk(inner, path ? `${path}.${key}` : key);
       }
-    } else if (path) out.push(path);
+    } else if (path && !OLD.has(path.split('.')[0])) out.push(path);
   };
   walk(changes, '');
   return out;
@@ -130,11 +140,28 @@ export function withoutPath(changes: LookChanges | undefined, path: LookPath): L
 /** A copy of a layout with changes laid over it, path by path; lists replaced whole. */
 export function laidOver(layout: DocumentFormat, changes: LookChanges | undefined): DocumentFormat {
   const out = copy(layout) as DocumentFormat;
+  const old = Object.keys((changes ?? {}) as object).filter((key) => OLD.has(key));
+  if (old.length) {
+    const said = JSON.stringify(old.map((key) => (changes as Record<string, unknown>)[key]));
+    if (!toldOld.has(said)) {
+      toldOld.add(said);
+      console.info(
+        `changes to ${old.join(' and ')}, of the shape before the header and the footer, passed over`,
+      );
+    }
+  }
   for (const path of pathsOf(changes)) {
     if (NOT_LOOK.has(path.split('.')[0])) continue;
     const value = getAt(changes, path);
     if (value === null && UNSAID_AWAY.test(path)) removeAt(out as never, path);
     else setAt(out, path, copy(value));
+  }
+  // Levels of heading taken whole from before they said where they begin.
+  for (const level of out.headings?.levels ?? []) {
+    const was = level as typeof level & { newPage?: boolean };
+    if (was.begins === undefined) was.begins = was.newPage ? 'page' : 'text';
+    if (was.numbering === undefined) was.numbering = 'as-above';
+    delete was.newPage;
   }
   return out;
 }

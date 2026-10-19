@@ -36,6 +36,41 @@ describe('the changes of a document over its layout', () => {
     expect(changesBetween(layout, effective)).toEqual({ headings: { levels } });
   });
 
+  it('take the places of the header and the footer whole', () => {
+    const layout = manuscript();
+    const effective = laidOver(layout, {
+      header: { shown: true, left: [{ kind: 'author' }, { kind: 'title' }] },
+    });
+    expect(effective.header.left).toEqual([{ kind: 'author' }, { kind: 'title' }]);
+    expect(effective.header.right).toEqual(layout.header.right);
+    expect(pathsOf(changesBetween(layout, effective))).toEqual(['header.shown', 'header.left']);
+  });
+
+  it('pass over changes made under the names the margins had before', () => {
+    const layout = manuscript();
+    const old = {
+      pageNumbers: { show: false },
+      runningHead: { content: 'title' },
+      font: { size: 13 },
+    } as never;
+    const effective = laidOver(layout, old);
+    expect(effective.font.size).toBe(13);
+    expect(effective.footer).toEqual(layout.footer);
+    expect('pageNumbers' in effective).toBe(false);
+    expect(pathsOf(old)).toEqual(['font.size']);
+    expect(countOf(old)).toBe(1);
+  });
+
+  it('read levels taken whole before they said where they begin', () => {
+    const layout = manuscript();
+    const { begins: _b, numbering: _n, ...before } = layout.headings.levels[0];
+    const levels = [{ ...before, newPage: true }] as never;
+    const level = laidOver(layout, { headings: { levels } }).headings.levels[0];
+    expect(level.begins).toBe('page');
+    expect(level.numbering).toBe('as-above');
+    expect('newPage' in level).toBe(false);
+  });
+
   it('leave unsaid what the layout says of a kind, by a change that is nothing', () => {
     const layout = laidOver(manuscript(), { kinds: { epigraph: { italic: true, size: 10 } } });
     const effective = JSON.parse(JSON.stringify(layout)) as DocumentFormat;

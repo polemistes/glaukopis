@@ -25,7 +25,6 @@ format-delete-confirm = Удалить формат
 
 ## The parts of a format, as they are chosen at the left.
 
-
 ## Words that stand in several parts.
 
 format-size = Размер
@@ -103,8 +102,6 @@ format-level-run-in = в подбор с текстом
 format-level-indent = С отступом, как абзац
 format-level-run-in-label = В подбор с текстом
 format-level-run-in-hint = Заголовок начинает абзац и заканчивается точкой
-format-level-new-page = С новой страницы
-format-level-new-page-hint = Как главы книги
 format-level-new-page-said = с новой страницы
 format-space-before = Отступ сверху
 format-space-after = Отступ снизу
@@ -303,22 +300,6 @@ format-equations-after = После номера
 
 format-page-numbers = Номера страниц
 format-page-numbers-show = Страницы нумеруются
-format-page-numbers-where = Где
-format-page-numbers-first = И на первой странице
-format-position-top-left = Вверху слева
-format-position-top-center = Вверху посередине
-format-position-top-right = Вверху справа
-format-position-bottom-left = Внизу слева
-format-position-bottom-center = Внизу посередине
-format-position-bottom-right = Внизу справа
-format-running-head = Колонтитул
-format-running-head-content = Вверху каждой страницы
-format-running-head-none = Ничего
-format-running-head-title = Заглавие
-format-running-head-author = Авторы
-format-running-head-author-title = Авторы и заглавие
-format-running-head-text = Свои слова
-format-running-head-words = Слова
 
 ## About the format: where its requirements are from.
 

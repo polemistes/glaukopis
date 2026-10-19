@@ -907,15 +907,46 @@ export const format: documents.DocumentFormat = {
     "family": "Times New Roman",
     "size": 12.0
   },
+  "footer": {
+    "alternate": false,
+    "case": "none",
+    "center": [
+      {
+        "kind": "page-number"
+      }
+    ],
+    "firstPage": true,
+    "italic": false,
+    "left": [],
+    "openers": true,
+    "right": [],
+    "separator": " · ",
+    "shown": true,
+    "size": 0.0
+  },
+  "header": {
+    "alternate": false,
+    "case": "none",
+    "center": [],
+    "firstPage": true,
+    "italic": false,
+    "left": [],
+    "openers": true,
+    "right": [],
+    "separator": " · ",
+    "shown": false,
+    "size": 0.0
+  },
   "headings": {
     "levels": [
       {
         "align": "left",
+        "begins": "text",
         "bold": true,
         "case": "none",
         "indent": false,
         "italic": false,
-        "newPage": false,
+        "numbering": "as-above",
         "runIn": false,
         "size": 14.0,
         "spaceAfter": "12pt",
@@ -923,11 +954,12 @@ export const format: documents.DocumentFormat = {
       },
       {
         "align": "left",
+        "begins": "text",
         "bold": true,
         "case": "none",
         "indent": false,
         "italic": false,
-        "newPage": false,
+        "numbering": "as-above",
         "runIn": false,
         "size": 12.0,
         "spaceAfter": "6pt",
@@ -935,11 +967,12 @@ export const format: documents.DocumentFormat = {
       },
       {
         "align": "left",
+        "begins": "text",
         "bold": false,
         "case": "none",
         "indent": false,
         "italic": true,
-        "newPage": false,
+        "numbering": "as-above",
         "runIn": false,
         "size": 12.0,
         "spaceAfter": "6pt",
@@ -966,13 +999,10 @@ export const format: documents.DocumentFormat = {
     "marginLeft": "2.5cm",
     "marginRight": "2.5cm",
     "marginTop": "2.5cm",
+    "numbering": "arabic",
+    "restart": false,
     "size": "a4",
     "width": "210mm"
-  },
-  "pageNumbers": {
-    "firstPage": true,
-    "position": "bottom-center",
-    "show": true
   },
   "quote": {
     "fromLines": null,
@@ -982,12 +1012,6 @@ export const format: documents.DocumentFormat = {
     "italic": false,
     "lineSpacing": 0.0,
     "size": 0.0
-  },
-  "runningHead": {
-    "align": "left",
-    "case": "none",
-    "content": "none",
-    "text": ""
   },
   "source": {
     "checked": "2026-09-27",

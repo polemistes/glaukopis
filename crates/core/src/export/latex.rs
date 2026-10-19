@@ -5,7 +5,7 @@ use std::fmt::Write;
 
 use crate::formats::kinds::Resolved;
 use crate::formats::typst::Particulars;
-use crate::formats::{Align, Case, DocumentFormat, NoteKind, Paragraphs, Position};
+use crate::formats::{Align, Case, DocumentFormat, Item, Margin, NoteKind, NumberStyle, Paragraphs, Sides};
 
 /// Text as LaTeX, with the characters that mean something to it made harmless.
 pub fn escape(text: &str) -> String {
@@ -91,6 +91,9 @@ pub fn settings(f: &DocumentFormat, p: &Particulars) -> Settings {
     let mut h = String::new();
 
     v.push(("documentclass".into(), "article".into()));
+    if alternates(f) {
+        v.push(("classoption".into(), "twoside".into()));
+    }
     match f.page.size.to_ascii_lowercase().as_str() {
         "a4" | "a5" | "b5" | "letter" | "legal" => v.push(("papersize".into(), f.page.size.to_ascii_lowercase())),
         _ => {
@@ -247,32 +250,30 @@ pub fn settings(f: &DocumentFormat, p: &Particulars) -> Settings {
         h,
         "\\usepackage{{fancyhdr}}\n\\pagestyle{{fancy}}\n\\fancyhf{{}}\n\\renewcommand{{\\headrulewidth}}{{0pt}}"
     );
-    if let Some(words) = p.running_head_cased(f) {
-        let slot = match f.running_head.align {
-            Align::Left | Align::Justified => "L",
-            Align::Center => "C",
-            Align::Right => "R",
-        };
-        let _ = writeln!(h, "\\fancyhead[{slot}]{{{}}}", escape(&words));
+    let _ = writeln!(h, "\\renewcommand{{\\sectionmark}}[1]{{\\markboth{{#1}}{{}}}}");
+    let page = match f.page.numbering {
+        NumberStyle::Arabic => None,
+        NumberStyle::Roman => Some("\\Roman{page}"),
+        NumberStyle::RomanLower => Some("\\roman{page}"),
+        NumberStyle::Letters => Some("\\Alph{page}"),
+        NumberStyle::LettersLower => Some("\\alph{page}"),
+    };
+    if let Some(page) = page {
+        let _ = writeln!(h, "\\renewcommand{{\\thepage}}{{{page}}}");
     }
-    if f.page_numbers.show {
-        let (place, slot) = match f.page_numbers.position {
-            Position::TopLeft => ("head", "L"),
-            Position::TopCenter => ("head", "C"),
-            Position::TopRight => ("head", "R"),
-            Position::BottomLeft => ("foot", "L"),
-            Position::BottomCenter => ("foot", "C"),
-            Position::BottomRight => ("foot", "R"),
-        };
-        let _ = writeln!(h, "\\fancy{place}[{slot}]{{\\thepage}}");
-        if f.page_numbers.first_page {
-            let _ = writeln!(h, "\\fancypagestyle{{plain}}{{\\fancyhf{{}}\\fancy{place}[{slot}]{{\\thepage}}}}");
-        } else {
-            let _ = writeln!(
-                h,
-                "\\fancypagestyle{{plain}}{{\\fancyhf{{}}}}\n\\AtBeginDocument{{\\thispagestyle{{plain}}}}"
-            );
-        }
+    let twoside = alternates(f);
+    let fancy = margin_commands(f, p, twoside, |_| true);
+    let _ = writeln!(h, "{fancy}");
+    // The first page of the document, which the title sets in the style
+    // `plain`; the openers, in a style of their own (ADR 0057).
+    let _ = writeln!(
+        h,
+        "\\fancypagestyle{{plain}}{{\\fancyhf{{}}{}}}\n\\fancypagestyle{{opener}}{{\\fancyhf{{}}{}}}",
+        margin_commands(f, p, twoside, |m| m.first_page),
+        margin_commands(f, p, twoside, |m| m.openers),
+    );
+    if [&f.header, &f.footer].iter().any(|m| m.is_visible() && !m.first_page) {
+        let _ = writeln!(h, "\\AtBeginDocument{{\\thispagestyle{{plain}}}}");
     }
     if f.line_numbers {
         let _ = writeln!(h, "\\usepackage{{lineno}}\n\\linenumbers");
@@ -298,6 +299,61 @@ pub fn settings(f: &DocumentFormat, p: &Particulars) -> Settings {
     }
 
     Settings { variables: v, header: h, number_sections: f.headings.numbered }
+}
+
+/// Whether the header or the footer differs on left pages: the document is then set two-sided.
+fn alternates(f: &DocumentFormat) -> bool {
+    [&f.header, &f.footer].iter().any(|m| m.is_visible() && m.alternate)
+}
+
+/// The commands of `fancyhdr` that set the header and the footer (ADR 0057),
+/// each margin only where `wanted` says so of it: every place from its
+/// items, joined by the separator; on left (`E`) and right (`O`) pages apart
+/// where the document is two-sided.
+fn margin_commands(f: &DocumentFormat, p: &Particulars, twoside: bool, wanted: impl Fn(&Margin) -> bool) -> String {
+    let mut out = String::new();
+    for (m, which) in [(&f.header, "head"), (&f.footer, "foot")] {
+        if !m.is_visible() || !wanted(m) {
+            continue;
+        }
+        let size = if m.size > 0.0 { m.size } else { f.font.size };
+        let look = format!(
+            "\\fontsize{{{size}}}{{{}}}\\selectfont{}",
+            (size * 1.2 * 10.0).round() / 10.0,
+            if m.italic { "\\itshape" } else { "" }
+        );
+        let item = |i: &Item| -> Option<String> {
+            let words = match i {
+                Item::PageNumber => return Some("\\thepage".into()),
+                Item::Chapter => "\\leftmark".to_owned(),
+                _ => escape(&p.words(i, f)?),
+            };
+            Some(match m.case {
+                Case::None => words,
+                Case::Upper => format!("\\MakeUppercase{{{words}}}"),
+                Case::Smallcaps => format!("\\textsc{{{words}}}"),
+            })
+        };
+        let place = |items: &[Item]| {
+            let items: Vec<String> = items.iter().filter_map(item).collect();
+            items.join(&escape(&m.separator))
+        };
+        let mut set = |sides: &Sides, pages: &str| {
+            for (slot, items) in [("L", &sides.left), ("C", &sides.center), ("R", &sides.right)] {
+                let words = place(items);
+                if !words.is_empty() {
+                    let _ = write!(out, "\\fancy{which}[{slot}{pages}]{{{{{look} {words}}}}}");
+                }
+            }
+        };
+        if twoside {
+            set(&m.places, "O");
+            set(m.even_places(), "E");
+        } else {
+            set(&m.places, "");
+        }
+    }
+    out
 }
 
 /// What is written around the body of the document where its text is set
@@ -412,7 +468,6 @@ pub fn biblatex_style(style: &str, kind: &str) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::formats::HeadContent;
 
     #[test]
     fn escaping() {
@@ -427,9 +482,9 @@ mod tests {
         let mut f = DocumentFormat::default();
         f.font.size = 11.5;
         f.headings.numbered = true;
-        f.running_head.content = HeadContent::Text;
-        f.running_head.text = "R&D".into();
-        f.page_numbers.first_page = false;
+        f.header.shown = true;
+        f.header.places.left = vec![Item::Text { text: "R&D".into() }];
+        f.footer.first_page = false;
         let s = settings(&f, &Particulars::default());
         let get =
             |name: &str| s.variables.iter().filter(|(n, _)| n == name).map(|(_, v)| v.as_str()).collect::<Vec<_>>();
@@ -440,9 +495,31 @@ mod tests {
         assert!(s.header.contains("\\fontsize{11.5}{13.8}"));
         assert!(s.header.contains("\\titleformat{\\section}"));
         assert!(s.header.contains("\\thesection"));
-        assert!(s.header.contains("\\fancyhead[L]{R\\&D}"));
+        assert!(s.header.contains("\\fancyhead[L]{{\\fontsize{11.5}{13.8}\\selectfont R\\&D}}"), "{}", s.header);
+        assert!(s.header.contains("\\fancyfoot[C]{{\\fontsize{11.5}{13.8}\\selectfont \\thepage}}"), "{}", s.header);
         assert!(s.header.contains("\\thispagestyle{plain}"));
+        // The first page has the header but not the footer; the openers both.
+        assert!(s.header.contains("\\fancypagestyle{plain}{\\fancyhf{}\\fancyhead[L]"), "{}", s.header);
+        assert!(!s.header.contains("\\fancypagestyle{plain}{\\fancyhf{}\\fancyhead[L]{{\\fontsize{11.5}{13.8}\\selectfont R\\&D}}\\fancyfoot"), "{}", s.header);
+        assert!(s.header.contains("\\fancypagestyle{opener}{\\fancyhf{}\\fancyhead[L]{{\\fontsize{11.5}{13.8}\\selectfont R\\&D}}\\fancyfoot[C]"), "{}", s.header);
         assert!(s.number_sections);
+
+        // Different on left pages: two-sided, each side its own; the chapter and the number's style.
+        f.footer.alternate = true;
+        f.footer.places = Sides { right: vec![Item::PageNumber], ..Default::default() };
+        f.footer.even = Some(Sides { left: vec![Item::PageNumber, Item::Chapter], ..Default::default() });
+        f.footer.openers = false;
+        f.page.numbering = NumberStyle::RomanLower;
+        let s = settings(&f, &Particulars::default());
+        assert!(s.variables.contains(&("classoption".into(), "twoside".into())));
+        assert!(s.header.contains("\\fancyfoot[RO]{{\\fontsize{11.5}{13.8}\\selectfont \\thepage}}"), "{}", s.header);
+        assert!(
+            s.header.contains("\\fancyfoot[LE]{{\\fontsize{11.5}{13.8}\\selectfont \\thepage · \\leftmark}}"),
+            "{}",
+            s.header
+        );
+        assert!(s.header.contains("\\renewcommand{\\thepage}{\\roman{page}}"));
+        assert!(!s.header.contains("\\fancypagestyle{opener}{\\fancyhf{}\\fancyhead[LO]{{\\fontsize{11.5}{13.8}\\selectfont R\\&D}}\\fancyhead[LE]{{\\fontsize{11.5}{13.8}\\selectfont R\\&D}}\\fancyfoot"), "{}", s.header);
     }
 
     #[test]

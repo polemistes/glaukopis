@@ -26,8 +26,8 @@ export type What =
         | 'figure'
         | 'table'
         | 'front'
-        | 'running-head'
-        | 'page-number'
+        | 'header'
+        | 'footer'
         | 'page'
         | 'text';
     };
@@ -95,8 +95,8 @@ export function readWhat(what: string): What {
     case 'figure':
     case 'table':
     case 'front':
-    case 'running-head':
-    case 'page-number':
+    case 'header':
+    case 'footer':
     case 'page':
       return colon < 0 ? { sort } : { sort: 'text' };
     default:
@@ -124,10 +124,10 @@ export function lookFor(what: string): LookRequest {
     case 'front':
       return { section: 'front' };
     // At the rows that say whether it is shown, and how (ADR 0056).
-    case 'running-head':
-      return { section: 'page', at: 'running-head' };
-    case 'page-number':
-      return { section: 'page', at: 'page-numbers' };
+    case 'header':
+      return { section: 'page', at: 'header' };
+    case 'footer':
+      return { section: 'page', at: 'footer' };
     case 'page':
       return { section: 'page' };
     case 'text':

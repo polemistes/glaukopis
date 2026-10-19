@@ -118,8 +118,6 @@ format-level-run-in = løber ind i teksten
 format-level-indent = Indrykket som et afsnit
 format-level-run-in-label = Løber ind i teksten
 format-level-run-in-hint = Overskriften indleder afsnittet og ender med punktum
-format-level-new-page = Begynder på en ny side
-format-level-new-page-hint = Som kapitlerne i en bog
 format-level-new-page-said = på ny side
 format-space-before = Luft før
 format-space-after = Luft efter
@@ -326,22 +324,6 @@ format-equations-after = Efter nummeret
 
 format-page-numbers = Sidetal
 format-page-numbers-show = Siderne nummereres
-format-page-numbers-where = Hvor
-format-page-numbers-first = Også på første side
-format-position-top-left = Øverst, til venstre
-format-position-top-center = Øverst, i midten
-format-position-top-right = Øverst, til højre
-format-position-bottom-left = Nederst, til venstre
-format-position-bottom-center = Nederst, i midten
-format-position-bottom-right = Nederst, til højre
-format-running-head = Sidehoved
-format-running-head-content = Øverst på hver side
-format-running-head-none = Intet
-format-running-head-title = Titlen
-format-running-head-author = Forfatterne
-format-running-head-author-title = Forfattere og titel
-format-running-head-text = Egne ord
-format-running-head-words = Ordene
 
 ## About the layout: where its requirements are from.
 

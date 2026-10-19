@@ -230,14 +230,39 @@ pub(crate) fn typst_text(text: &str) -> String {
     out
 }
 
+/// Where headings begin a page, and what a target writes to begin one (ADR 0057).
+#[derive(Debug, Clone, Default)]
+pub struct PageBegins {
+    /// The levels of heading that begin a page, new or right-hand.
+    pub levels: Vec<(u8, crate::formats::Begins)>,
+    /// What begins a page where something was told to begin one, which
+    /// makes the page an opener: a heading of such a level, a part on a page
+    /// of its own. Empty where the document has no pages.
+    pub opener: Vec<Value>,
+    /// What begins a right-hand page for a heading; the opener's where empty.
+    pub right: Vec<Value>,
+}
+
+impl PageBegins {
+    /// What is written before a heading of the level.
+    pub fn before(&self, level: u8) -> &[Value] {
+        match self.levels.iter().find(|(l, _)| *l == level).map(|(_, b)| *b) {
+            Some(crate::formats::Begins::RightPage) if !self.right.is_empty() => &self.right,
+            Some(crate::formats::Begins::Page | crate::formats::Begins::RightPage) => &self.opener,
+            _ => &[],
+        }
+    }
+}
+
 pub struct Converter<'a> {
     /// From the id of a reference to its key in the bibliography.
     pub keys: &'a HashMap<String, String>,
     pub language: Option<&'a str>,
     /// Levels of heading that run into the text that follows them.
     pub run_in: Vec<RunIn>,
-    /// Levels of heading that begin a new page, where the document has pages: `page_break` before them.
-    pub new_page: Vec<u8>,
+    /// Where headings begin a page, and what begins it, where the document has pages.
+    pub begins: PageBegins,
+    /// A new page, nothing more, where the document has pages.
     pub page_break: Option<Value>,
     /// Headings deeper than this are printed at this level.
     pub deepest: u8,
@@ -695,11 +720,7 @@ impl Converter<'_> {
                 }
             }
             (Some(h), None) if section.level > 0 => {
-                if self.new_page.contains(&level)
-                    && let Some(b) = &self.page_break
-                {
-                    out.push(b.clone());
-                }
+                out.extend(self.begins.before(level).iter().cloned());
                 out.extend(mark.take());
                 let place = section.element.as_deref().and_then(|id| self.extras.anchor(id));
                 let named = match place.as_ref().and_then(|p| p["c"][0][0].as_str()) {
@@ -726,10 +747,8 @@ impl Converter<'_> {
         let level = section.level.clamp(1, self.deepest.max(1));
         let heading =
             section.heading.as_ref().filter(|_| look.heading).map(|h| self.inlines(h)).filter(|h| !h.is_empty());
-        if (look.own_page || look.new_page)
-            && let Some(b) = &self.page_break
-        {
-            out.push(b.clone());
+        if look.own_page || look.new_page {
+            out.extend(self.begins.opener.iter().cloned());
         }
         out.extend(self.mark(section));
         if let Some(h) = heading {
@@ -1008,7 +1027,7 @@ mod tests {
             keys,
             language: Some("en-GB"),
             run_in: vec![],
-            new_page: vec![],
+            begins: PageBegins::default(),
             page_break: None,
             deepest: 6,
             extras: Extras::default(),
@@ -1237,8 +1256,11 @@ mod tests {
         let mut c = converter(&keys);
         c.extras.flavour = Flavour::Typst;
         c.run_in = vec![RunIn { level: 2, bold: true, italic: false }];
-        c.new_page = vec![1];
-        c.page_break = Some(page_break.clone());
+        c.begins = PageBegins {
+            levels: vec![(1, crate::formats::Begins::Page)],
+            opener: vec![page_break.clone()],
+            right: vec![],
+        };
         let out = c.document(&doc, &[1, 23, 1], serde_json::Map::new());
         let blocks = out["blocks"].as_array().unwrap();
         // After the break of the page, before the heading.

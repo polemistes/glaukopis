@@ -3,7 +3,7 @@
   "name": "For reading",
   "kind": "general",
   "description": "Not for submission: a page that is pleasant to read, for sharing a draft or reading one's own text afresh. Close spacing, justified, with hyphenation.",
-  "page": { "size": "a4", "marginTop": "3cm", "marginBottom": "3.2cm", "marginLeft": "3.4cm", "marginRight": "3.4cm" },
+  "page": { "size": "a4", "marginTop": "3cm", "marginBottom": "3.2cm", "marginLeft": "3.4cm", "marginRight": "3.4cm", "numbering": "arabic", "restart": false },
   "font": { "family": "Libertinus Serif", "size": 11.5 },
   "text": {
     "lineSpacing": 1.25,
@@ -17,9 +17,9 @@
   "headings": {
     "numbered": false,
     "levels": [
-      { "size": 15, "bold": true, "italic": false, "align": "left", "spaceBefore": "26pt", "spaceAfter": "10pt" },
-      { "size": 12.5, "bold": true, "italic": false, "align": "left", "spaceBefore": "18pt", "spaceAfter": "6pt" },
-      { "size": 11.5, "bold": false, "italic": true, "align": "left", "spaceBefore": "12pt", "spaceAfter": "4pt" }
+      { "size": 15, "bold": true, "italic": false, "align": "left", "spaceBefore": "26pt", "spaceAfter": "10pt", "begins": "text", "numbering": "as-above" },
+      { "size": 12.5, "bold": true, "italic": false, "align": "left", "spaceBefore": "18pt", "spaceAfter": "6pt", "begins": "text", "numbering": "as-above" },
+      { "size": 11.5, "bold": false, "italic": true, "align": "left", "spaceBefore": "12pt", "spaceAfter": "4pt", "begins": "text", "numbering": "as-above" }
     ]
   },
   "title": {
@@ -37,7 +37,7 @@
   "quote": { "indentLeft": "0.8cm", "indentRight": "0.8cm", "size": 10.5, "lineSpacing": 1.2 },
   "notes": { "kind": "footnotes", "size": 9.5, "lineSpacing": 1.1, "title": "Notes" },
   "bibliography": { "title": "Bibliography", "hangingIndent": "0.8cm", "lineSpacing": 1.2, "entrySpacing": "3pt", "newPage": false, "size": 10.5 },
-  "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": false },
-  "runningHead": { "content": "none" },
+  "header": { "shown": false, "firstPage": false, "openers": true, "alternate": false, "left": [], "center": [], "right": [], "separator": " · ", "size": 0, "italic": false, "case": "none" },
+  "footer": { "shown": true, "firstPage": false, "openers": true, "alternate": false, "left": [], "center": [{ "kind": "page-number" }], "right": [], "separator": " · ", "size": 0, "italic": false, "case": "none" },
   "lineNumbers": false
 }
