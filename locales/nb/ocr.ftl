@@ -297,3 +297,51 @@ ocr-strip-page-failed = Ikke tegnet
 ocr-strip-failed = Side { $from }–{ $to } kunne ikke tegnes.
 # På siden som er valgt i stripen: sidene fra den av leses med egne språk og et eget oppsett.
 ocr-strip-begin = Begynn en bolk her
+
+# The panes of the workbench: the picture of the page in view, the text the
+# PDF has for it, what Tesseract read of it with the page's trials, and the
+# column of the reading settings beside them. The panes' titles and their
+# lines on a page without text are ocr-text-page, ocr-text-title and
+# ocr-text-page-none above; the blocks drawn on the picture, ocr-tried-blocks.
+
+ocr-settings-heading = Slik leser Tesseract
+# The button under the reading settings: the page in view is read with them.
+ocr-settings-try = Prøv side { $page }
+# A trial's settings said in a line, where no language was chosen: Tesseract then reads English.
+ocr-settings-said-no-language = Engelsk, siden ingen er valgt
+# A trial's settings said in a line, where the page was made black and white before it was read.
+ocr-settings-said-contrast = svart-hvitt
+# How large the picture of the page is shown: the whole page in the pane, or its own size, or twice that.
+ocr-picture-size = Størrelsen på bildet
+ocr-picture-fit = Hele siden
+ocr-picture-actual = 100 %
+ocr-picture-double = 200 %
+# The alternative text of the picture of the page in view.
+ocr-picture-alt = Side { $label }
+# The button in the header of a pane of text: that text is what the pages get. $scope: which pages, "denne siden", "sidene 3–5", "alle sidene".
+ocr-pane-use = Bruk på { $scope }
+ocr-pane-translated = Oversatt etter det skriftene sier
+ocr-pane-sound = Leses som tekst
+ocr-pane-poor = Leses ikke som tekst: bokstaver i en skrift som ikke sier hvilke de er, eller en dårlig lesning
+ocr-pane-tesseract = Det Tesseract leste
+ocr-pane-try-hint = Trykk «Prøv side { $page }» for å lese denne siden med innstillingene ved siden av.
+# Of the words Tesseract read on the page tried, those it was unsure of, which are underlined.
+ocr-pane-unsure = { $unsure ->
+    [0] { $words ->
+        [one] Tesseract var sikker på det ene ordet
+       *[other] Tesseract var sikker på alle de { $words } ordene
+    }
+    [one] { $words ->
+        [one] Tesseract var usikker på det ene ordet
+       *[other] Ett av { $words } ord usikkert
+    }
+   *[other] { $unsure } av { $words } ord usikre
+}
+# The tooltip of a word Tesseract was unsure of.
+ocr-pane-unsure-word = Lest med en sikkerhet på { $confidence } av 100
+# Over the list of the page's trials, each said by the settings it was read with.
+ocr-trials = Prøvd med
+ocr-trial-confidence = { $confidence } av 100
+ocr-trial-nothing = Ingenting lest
+ocr-trial-differs = Ikke det som gjelder for siden nå
+ocr-trial-use = Bruk disse innstillingene
