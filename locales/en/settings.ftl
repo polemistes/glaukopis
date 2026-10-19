@@ -114,3 +114,10 @@ settings-language-error-load = The words of { $language } could not be loaded
 
 settings-logs = The log
 settings-logs-hint = What Glaukopis tells of itself in each run, of the last { $count } runs: what it did, what went wrong, and what became of its window. Of use when something has gone wrong and no one saw why.
+
+## What a line of the preview is: whether a chip at the edge of a page names it.
+
+settings-page-chips = Name what a line of the preview is
+settings-page-chips-hint = When the pointer rests on a line of the preview, a chip at the edge of the page says what the line is (text, a quotation, a heading…) and opens Look at it.
+settings-page-chips-on = On
+settings-page-chips-off = Off
