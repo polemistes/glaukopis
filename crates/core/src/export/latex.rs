@@ -70,8 +70,18 @@ pub struct Settings {
     pub number_sections: bool,
 }
 
+/// A size of the type as LaTeX is told it: the leading 1.2 times the size, to a tenth of a point.
+fn fontsize(size: f32) -> String {
+    format!("\\fontsize{{{size}}}{{{}}}\\selectfont", leading(size))
+}
+
+/// The leading of a size of the type: 1.2 times it, to a tenth of a point.
+fn leading(size: f32) -> f32 {
+    (size * 1.2 * 10.0).round() / 10.0
+}
+
 fn font_command(size: f32, bold: bool, italic: bool, case: Case, align: Align) -> String {
-    let mut s = format!("\\normalfont\\fontsize{{{size}}}{{{}}}\\selectfont", (size * 1.2 * 10.0).round() / 10.0);
+    let mut s = format!("\\normalfont{}", fontsize(size));
     s.push_str(if bold { "\\bfseries" } else { "\\mdseries" });
     s.push_str(if italic { "\\itshape" } else { "\\upshape" });
     match case {
@@ -86,30 +96,27 @@ fn font_command(size: f32, bold: bool, italic: bool, case: Case, align: Align) -
     s
 }
 
-pub fn settings(f: &DocumentFormat, p: &Particulars) -> Settings {
+/// The settings of a layout for LaTeX. `looks` are the layouts the elements
+/// under the one printed use where they have their own (ADR 0059): the
+/// preamble defines what their stretches are switched to (`switch`).
+pub fn settings(f: &DocumentFormat, looks: &[&DocumentFormat], p: &Particulars) -> Settings {
     let mut v: Vec<(String, String)> = Vec::new();
     let mut h = String::new();
 
     v.push(("documentclass".into(), "article".into()));
-    if alternates(f) {
+    let twoside = alternates(f) || looks.iter().any(|l| alternates(l));
+    if twoside {
         v.push(("classoption".into(), "twoside".into()));
     }
     match f.page.size.to_ascii_lowercase().as_str() {
         "a4" | "a5" | "b5" | "letter" | "legal" => v.push(("papersize".into(), f.page.size.to_ascii_lowercase())),
         _ => {
-            let (w, ht) = f.page.dimensions();
-            v.push(("geometry".into(), format!("paperwidth={w}pt")));
-            v.push(("geometry".into(), format!("paperheight={ht}pt")));
+            let (w, ht) = paper(f);
+            v.push(("geometry".into(), format!("paperwidth={w}bp")));
+            v.push(("geometry".into(), format!("paperheight={ht}bp")));
         }
     }
-    for (side, m) in [
-        ("top", f.page.margin_top),
-        ("bottom", f.page.margin_bottom),
-        ("left", f.page.margin_left),
-        ("right", f.page.margin_right),
-    ] {
-        v.push(("geometry".into(), format!("{side}={m}")));
-    }
+    v.extend(page_margins(f).into_iter().map(|m| ("geometry".to_owned(), m)));
 
     // The classes know three sizes; any other is set by hand.
     let class_size = [10.0_f32, 11.0, 12.0]
@@ -118,38 +125,29 @@ pub fn settings(f: &DocumentFormat, p: &Particulars) -> Settings {
         .unwrap_or(12.0);
     v.push(("fontsize".into(), format!("{class_size}pt")));
     if (class_size - f.font.size).abs() > 0.01 {
-        let _ = writeln!(
-            h,
-            "\\AtBeginDocument{{\\fontsize{{{}}}{{{}}}\\selectfont}}",
-            f.font.size,
-            (f.font.size * 1.2 * 10.0).round() / 10.0
-        );
+        let _ = writeln!(h, "\\AtBeginDocument{{{}}}", fontsize(f.font.size));
     }
     v.push(("mainfont".into(), f.font.family.clone()));
     v.push(("linestretch".into(), format!("{}", f.text.line_spacing)));
 
-    match f.text.paragraphs {
-        Paragraphs::Indent => {
-            v.push(("indent".into(), "true".into()));
-            let _ = writeln!(h, "\\setlength{{\\parindent}}{{{}}}", f.text.indent);
-            let _ = writeln!(h, "\\setlength{{\\parskip}}{{0pt}}");
-            if f.text.indent_first {
-                let _ = writeln!(h, "\\usepackage{{indentfirst}}");
-            }
-        }
-        Paragraphs::Spaced => {
-            let _ = writeln!(h, "\\setlength{{\\parindent}}{{0pt}}");
-            let _ = writeln!(h, "\\setlength{{\\parskip}}{{{}}}", f.text.space_between);
-        }
+    if f.text.paragraphs == Paragraphs::Indent {
+        v.push(("indent".into(), "true".into()));
+    }
+    let _ = writeln!(h, "{}", paragraph_lengths(f));
+    if f.text.paragraphs == Paragraphs::Indent && f.text.indent_first {
+        let _ = writeln!(h, "\\usepackage{{indentfirst}}");
     }
     if f.text.align != Align::Justified {
         let _ = writeln!(h, "\\usepackage[document]{{ragged2e}}");
-        if f.text.paragraphs == Paragraphs::Indent {
-            let _ = writeln!(h, "\\setlength{{\\RaggedRightParindent}}{{{}}}", f.text.indent);
-        }
+    } else if looks.iter().any(|l| l.text.align != Align::Justified) {
+        // For the stretches that are set ragged.
+        let _ = writeln!(h, "\\usepackage{{ragged2e}}");
+    }
+    if f.text.align != Align::Justified && f.text.paragraphs == Paragraphs::Indent {
+        let _ = writeln!(h, "\\setlength{{\\RaggedRightParindent}}{{{}}}", f.text.indent);
     }
     if !f.text.hyphenate {
-        let _ = writeln!(h, "\\hyphenpenalty=10000\n\\exhyphenpenalty=10000");
+        let _ = writeln!(h, "{}", hyphenation(f));
     }
 
     // The title.
@@ -217,12 +215,7 @@ pub fn settings(f: &DocumentFormat, p: &Particulars) -> Settings {
         let _ = write!(quote, "\\setstretch{{{}}}", f.quote.line_spacing);
     }
     if f.quote.size > 0.0 {
-        let _ = write!(
-            quote,
-            "\\fontsize{{{}}}{{{}}}\\selectfont",
-            f.quote.size,
-            (f.quote.size * 1.2 * 10.0).round() / 10.0
-        );
+        quote.push_str(&fontsize(f.quote.size));
     }
     if f.quote.italic {
         quote.push_str("\\itshape");
@@ -252,17 +245,9 @@ pub fn settings(f: &DocumentFormat, p: &Particulars) -> Settings {
         "\\usepackage{{fancyhdr}}\n\\pagestyle{{fancy}}\n\\fancyhf{{}}\n\\renewcommand{{\\headrulewidth}}{{0pt}}"
     );
     let _ = writeln!(h, "\\renewcommand{{\\sectionmark}}[1]{{\\markboth{{#1}}{{}}}}");
-    let page = match f.page.numbering {
-        NumberStyle::Arabic => None,
-        NumberStyle::Roman => Some("\\Roman{page}"),
-        NumberStyle::RomanLower => Some("\\roman{page}"),
-        NumberStyle::Letters => Some("\\Alph{page}"),
-        NumberStyle::LettersLower => Some("\\alph{page}"),
-    };
-    if let Some(page) = page {
-        let _ = writeln!(h, "\\renewcommand{{\\thepage}}{{{page}}}");
+    if f.page.numbering != NumberStyle::Arabic {
+        let _ = writeln!(h, "\\renewcommand{{\\thepage}}{{\\{}{{page}}}}", numbering(f.page.numbering));
     }
-    let twoside = alternates(f);
     let fancy = margin_commands(f, p, twoside, |_| true);
     let _ = writeln!(h, "{fancy}");
     // The first page of the document, which the title sets in the style
@@ -278,11 +263,25 @@ pub fn settings(f: &DocumentFormat, p: &Particulars) -> Settings {
     }
     if f.line_numbers {
         let _ = writeln!(h, "\\usepackage{{lineno}}\n\\linenumbers");
+    } else if looks.iter().any(|l| l.line_numbers) {
+        let _ = writeln!(h, "\\usepackage{{lineno}}");
     }
     // The columns the text is set in: the body stands in a `multicols`
     // environment (`columns_around`), and a break of the column ends one.
     if f.page.columns > 1 {
         let _ = writeln!(h, "\\usepackage{{multicol}}\n\\setlength{{\\columnsep}}{{{}}}", f.page.column_gap);
+    }
+    if f.page.columns > 1 || !looks.is_empty() {
+        // Whether the body's columns are begun, which a new page of a look
+        // ends and begins again (`switch`).
+        let _ = writeln!(
+            h,
+            "\\newif\\ifgkcolumns\n\\newcommand{{\\gkcolumnsend}}{{\\ifgkcolumns\\end{{multicols}}\\fi}}\n\\newcommand{{\\gkcolumnsagain}}{{\\ifgkcolumns\\begin{{multicols}}{{{}}}\\fi}}",
+            f.page.columns.min(4)
+        );
+    }
+    if !looks.is_empty() {
+        let _ = writeln!(h, "{}", look_styles(f, looks, p, twoside));
     }
 
     // Figures stand where they are written, and mathematics has what it needs.
@@ -308,6 +307,160 @@ fn alternates(f: &DocumentFormat) -> bool {
     [&f.header, &f.footer].iter().any(|m| m.is_visible() && m.alternate)
 }
 
+/// The width and the height of the paper in LaTeX's big points, which are
+/// the points of the layout, to a hundredth.
+fn paper(f: &DocumentFormat) -> (f32, f32) {
+    let (w, h) = f.page.dimensions();
+    ((w * 100.0).round() / 100.0, (h * 100.0).round() / 100.0)
+}
+
+/// The margins of the page, as `geometry` is told them.
+fn page_margins(f: &DocumentFormat) -> [String; 4] {
+    let p = &f.page;
+    [
+        format!("top={}", p.margin_top),
+        format!("bottom={}", p.margin_bottom),
+        format!("left={}", p.margin_left),
+        format!("right={}", p.margin_right),
+    ]
+}
+
+/// How far a paragraph is indented and how far apart paragraphs stand.
+fn paragraph_lengths(f: &DocumentFormat) -> String {
+    let (indent, skip) = match f.text.paragraphs {
+        Paragraphs::Indent => (f.text.indent.to_string(), "0pt".to_owned()),
+        Paragraphs::Spaced => ("0pt".to_owned(), f.text.space_between.to_string()),
+    };
+    format!("\\setlength{{\\parindent}}{{{indent}}}\n\\setlength{{\\parskip}}{{{skip}}}")
+}
+
+/// Whether words are broken at the end of a line: LaTeX's own penalties, or
+/// so high that it never does.
+fn hyphenation(f: &DocumentFormat) -> &'static str {
+    if f.text.hyphenate {
+        "\\hyphenpenalty=50\n\\exhyphenpenalty=50"
+    } else {
+        "\\hyphenpenalty=10000\n\\exhyphenpenalty=10000"
+    }
+}
+
+/// LaTeX's name of a style of the page numbers: `\roman{page}`, `\pagenumbering{roman}`.
+fn numbering(style: NumberStyle) -> &'static str {
+    match style {
+        NumberStyle::Arabic => "arabic",
+        NumberStyle::Roman => "Roman",
+        NumberStyle::RomanLower => "roman",
+        NumberStyle::Letters => "Alph",
+        NumberStyle::LettersLower => "alph",
+    }
+}
+
+/// The name of the style of page a look's header and footer are set in
+/// (ADR 0059): the same for looks whose header, footer and size are the
+/// same, so that the preamble and the switches name it alike without a
+/// list between them. Its openers have the style of the name and `opener`.
+fn look_style(f: &DocumentFormat) -> String {
+    let said = serde_json::to_string(&(&f.header, &f.footer, f.font.size)).unwrap_or_default();
+    // FNV-1a: the same name in every run.
+    let hash = said.bytes().fold(0x811c_9dc5_u32, |h, b| (h ^ u32::from(b)).wrapping_mul(0x0100_0193));
+    format!("gklook{hash:08x}")
+}
+
+/// What the preamble defines for the looks of the elements (ADR 0059): a
+/// style of page for the header and the footer of each look and of the
+/// document, and one for its openers; how the openers are given a look's
+/// style; how the size of the paper is changed.
+fn look_styles(f: &DocumentFormat, looks: &[&DocumentFormat], p: &Particulars, twoside: bool) -> String {
+    let mut out = String::new();
+    let mut named: Vec<String> = Vec::new();
+    for look in std::iter::once(&f).chain(looks) {
+        let name = look_style(look);
+        if named.contains(&name) {
+            continue;
+        }
+        let _ = writeln!(
+            out,
+            "\\fancypagestyle{{{name}}}{{\\fancyhf{{}}{}}}\n\\fancypagestyle{{{name}opener}}{{\\fancyhf{{}}{}}}",
+            margin_commands(look, p, twoside, |_| true),
+            margin_commands(look, p, twoside, |m| m.openers),
+        );
+        named.push(name);
+    }
+    out.push_str(
+        "\\newcommand{\\gkopener}[1]{\\expandafter\\global\\expandafter\\let\\csname ps@opener\\expandafter\\endcsname\\csname ps@#1\\endcsname}\n",
+    );
+    out.push_str("\\makeatletter\n\\newcommand{\\gktype}[2]{\\renewcommand{\\normalsize}{\\@setfontsize\\normalsize{#1}{#2}}\\normalsize}\n\\makeatother\n");
+    out.push_str("\\newcommand{\\gkpaper}[2]{\\global\\paperwidth=#1\\relax\\global\\paperheight=#2\\relax\\ifdefined\\pdfpagewidth\\global\\pdfpagewidth=#1\\relax\\global\\pdfpageheight=#2\\relax\\fi\\ifdefined\\pagewidth\\global\\pagewidth=#1\\relax\\global\\pageheight=#2\\relax\\fi}");
+    out
+}
+
+/// The size of the type, the spacing of the lines and how the paragraphs
+/// are set, all of them, so that a switch holds however it is grouped.
+fn text_commands(f: &DocumentFormat) -> String {
+    // The text's size is the normal size from here on, which a figure, or a
+    // kind with a spacing of its own, comes back to.
+    let mut out =
+        format!("\\gktype{{{}}}{{{}}}\\setstretch{{{}}}\n", f.font.size, leading(f.font.size), f.text.line_spacing);
+    // Ragged or justified first: either sets the indent, which follows.
+    if f.text.align == Align::Justified {
+        out.push_str("\\ifdefined\\justifying\\justifying\\fi\n");
+    } else {
+        if f.text.paragraphs == Paragraphs::Indent {
+            let _ = writeln!(out, "\\setlength{{\\RaggedRightParindent}}{{{}}}", f.text.indent);
+        }
+        out.push_str("\\RaggedRight\n");
+    }
+    let _ = writeln!(out, "{}\n{}", paragraph_lengths(f), hyphenation(f));
+    out.push_str(if f.line_numbers { "\\linenumbers" } else { "\\ifdefined\\nolinenumbers\\nolinenumbers\\fi" });
+    out
+}
+
+/// What LaTeX is told where the stretch of an element with a look of its
+/// own begins or ends (ADR 0059), as Typst is (`typst::switch`): where the
+/// pages differ, or the count begins anew, a new page, with the size, the
+/// margins, the header and the footer and the numbering of the look it
+/// comes to; then the size of its type and its paragraphs. `entering` says
+/// it is the stretch's beginning, where the count may begin anew. The body's
+/// columns are ended for the new page and begun again after it: they are
+/// the document's throughout, since a break of the page within the body
+/// ends and begins them as the document has them.
+pub fn switch(from: &DocumentFormat, to: &DocumentFormat, entering: bool) -> String {
+    let mut out = String::new();
+    let pages = crate::formats::typst::pages_differ(from, to);
+    let restart = entering && to.page.restart;
+    if pages || restart {
+        out.push_str("\\gkcolumnsend\n\\clearpage\n");
+    }
+    if pages {
+        let (w, h) = paper(to);
+        if paper(from) != (w, h) || page_margins(from) != page_margins(to) {
+            // `geometry` keeps the paper of the preamble: the text is laid out
+            // on a layout of the look's size, and the paper made that size
+            // after. The header and the footer are as wide as the text.
+            let _ = writeln!(
+                out,
+                "\\newgeometry{{layoutwidth={w}bp,layoutheight={h}bp,{}}}\\setlength{{\\headwidth}}{{\\textwidth}}",
+                page_margins(to).join(",")
+            );
+        }
+        if paper(from) != (w, h) {
+            let _ = writeln!(out, "\\gkpaper{{{w}bp}}{{{h}bp}}");
+        }
+        let name = look_style(to);
+        let _ = writeln!(out, "\\pagestyle{{{name}}}\\gkopener{{{name}opener}}");
+    }
+    if restart {
+        let _ = writeln!(out, "\\pagenumbering{{{}}}", numbering(to.page.numbering));
+    } else if from.page.numbering != to.page.numbering {
+        let _ = writeln!(out, "\\gdef\\thepage{{\\{}{{page}}}}", numbering(to.page.numbering));
+    }
+    if pages || restart {
+        out.push_str("\\gkcolumnsagain\n");
+    }
+    out.push_str(&text_commands(to));
+    out
+}
+
 /// The commands of `fancyhdr` that set the header and the footer (ADR 0057),
 /// each margin only where `wanted` says so of it: every place from its
 /// items, joined by the separator; on left (`E`) and right (`O`) pages apart
@@ -319,11 +472,7 @@ fn margin_commands(f: &DocumentFormat, p: &Particulars, twoside: bool, wanted: i
             continue;
         }
         let size = if m.size > 0.0 { m.size } else { f.font.size };
-        let look = format!(
-            "\\fontsize{{{size}}}{{{}}}\\selectfont{}",
-            (size * 1.2 * 10.0).round() / 10.0,
-            if m.italic { "\\itshape" } else { "" }
-        );
+        let look = format!("{}{}", fontsize(size), if m.italic { "\\itshape" } else { "" });
         let item = |i: &Item| -> Option<String> {
             let words = match i {
                 Item::PageNumber => return Some("\\thepage".into()),
@@ -361,8 +510,12 @@ fn margin_commands(f: &DocumentFormat, p: &Particulars, twoside: bool, wanted: i
 /// What is written around the body of the document where its text is set
 /// in more than one column: the beginning and the end of `multicols`.
 pub fn columns_around(f: &DocumentFormat) -> Option<(String, String)> {
-    (f.page.columns > 1)
-        .then(|| (format!("\\begin{{multicols}}{{{}}}", f.page.columns.min(4)), "\\end{multicols}".to_owned()))
+    (f.page.columns > 1).then(|| {
+        (
+            format!("\\gkcolumnstrue\\begin{{multicols}}{{{}}}", f.page.columns.min(4)),
+            "\\end{multicols}\\gkcolumnsfalse".to_owned(),
+        )
+    })
 }
 
 /// What is written around a paragraph of a kind, from the kind's look: the
@@ -386,7 +539,7 @@ pub fn around_part(look: &crate::templates::kinds::Resolved) -> (String, String)
         open.push_str("\\itshape");
     }
     if look.size > 0.0 {
-        let _ = write!(open, "\\fontsize{{{}}}{{{}}}\\selectfont", look.size, (look.size * 1.2 * 10.0).round() / 10.0);
+        open.push_str(&fontsize(look.size));
     }
     open.push('\n');
     (open, "\\par}".into())
@@ -403,7 +556,7 @@ pub fn around(look: &Resolved, text: Option<&Resolved>) -> (String, String) {
         let _ = write!(open, "\\setstretch{{{}}}", look.line_spacing);
     }
     if look.size > 0.0 && text.is_none_or(|t| (t.size - look.size).abs() > 0.01) {
-        let _ = write!(open, "\\fontsize{{{}}}{{{}}}\\selectfont", look.size, (look.size * 1.2 * 10.0).round() / 10.0);
+        open.push_str(&fontsize(look.size));
     }
     if look.bold {
         open.push_str("\\bfseries");
@@ -487,7 +640,7 @@ mod tests {
         f.header.shown = true;
         f.header.places.left = vec![Item::Text { text: "R&D".into() }];
         f.footer.first_page = false;
-        let s = settings(&f, &Particulars::default());
+        let s = settings(&f, &[], &Particulars::default());
         let get =
             |name: &str| s.variables.iter().filter(|(n, _)| n == name).map(|(_, v)| v.as_str()).collect::<Vec<_>>();
         assert_eq!(get("papersize"), vec!["a4"]);
@@ -512,7 +665,7 @@ mod tests {
         f.footer.even = Some(Sides { left: vec![Item::PageNumber, Item::Chapter], ..Default::default() });
         f.footer.openers = false;
         f.page.numbering = NumberStyle::RomanLower;
-        let s = settings(&f, &Particulars::default());
+        let s = settings(&f, &[], &Particulars::default());
         assert!(s.variables.contains(&("classoption".into(), "twoside".into())));
         assert!(s.header.contains("\\fancyfoot[RO]{{\\fontsize{11.5}{13.8}\\selectfont \\thepage}}"), "{}", s.header);
         assert!(
@@ -522,6 +675,76 @@ mod tests {
         );
         assert!(s.header.contains("\\renewcommand{\\thepage}{\\roman{page}}"));
         assert!(!s.header.contains("\\fancypagestyle{opener}{\\fancyhf{}\\fancyhead[LO]{{\\fontsize{11.5}{13.8}\\selectfont R\\&D}}\\fancyhead[LE]{{\\fontsize{11.5}{13.8}\\selectfont R\\&D}}\\fancyfoot"), "{}", s.header);
+    }
+
+    #[test]
+    fn the_looks_of_elements_in_the_preamble_and_at_their_switches() {
+        let f = DocumentFormat::default();
+        // A look in smaller type only: no new page, the type and the paragraphs.
+        let mut small = f.clone();
+        small.font.size = 10.0;
+        small.text.line_spacing = 1.0;
+        let s = switch(&f, &small, true);
+        assert!(!s.contains("\\clearpage") && !s.contains("\\pagestyle"), "{s}");
+        assert!(s.starts_with("\\gktype{10}{12}\\setstretch{1}\n"), "{s}");
+        assert!(s.contains("\\setlength{\\parindent}{") && s.contains("\\setlength{\\parskip}{0pt}"), "{s}");
+        assert!(s.contains("\\setlength{\\RaggedRightParindent}{1.27cm}\n\\RaggedRight\n"), "{s}");
+        let mut justified = small.clone();
+        justified.text.align = Align::Justified;
+        justified.text.hyphenate = true;
+        let s = switch(&f, &justified, true);
+        assert!(s.contains("\\ifdefined\\justifying\\justifying\\fi") && s.contains("\\hyphenpenalty=50\n"), "{s}");
+        // And back.
+        assert!(switch(&small, &f, false).starts_with("\\gktype{12}{14.4}\\setstretch{2}\n"));
+
+        // A look in landscape, without its footer, numbered anew in roman: a new page set as it has them.
+        let mut appendix = f.clone();
+        appendix.page.size = "custom".into();
+        appendix.page.width = crate::formats::Length::mm(297.0);
+        appendix.page.height = crate::formats::Length::mm(210.0);
+        appendix.page.margin_left = crate::formats::Length::cm(1.5);
+        appendix.footer.shown = false;
+        appendix.page.numbering = NumberStyle::RomanLower;
+        appendix.page.restart = true;
+        appendix.text.paragraphs = Paragraphs::Spaced;
+        let into = switch(&f, &appendix, true);
+        let name = look_style(&appendix);
+        assert!(
+            into.starts_with("\\gkcolumnsend\n\\clearpage\n\\newgeometry{layoutwidth=841.89bp,layoutheight=595.28bp,"),
+            "{into}"
+        );
+        assert!(into.contains("\\gkpaper{841.89bp}{595.28bp}") && into.contains(",left=1.5cm,right=2.5cm}"), "{into}");
+        assert!(into.contains(&format!("\\pagestyle{{{name}}}\\gkopener{{{name}opener}}")), "{into}");
+        assert!(into.contains("\\pagenumbering{roman}\n\\gkcolumnsagain\n"), "{into}");
+        assert!(into.contains("\\setlength{\\parindent}{0pt}"), "{into}");
+        // Back to the document's: its paper, its style, its numbers counted on.
+        let back = switch(&appendix, &f, false);
+        assert!(back.contains("\\gkpaper{595.28bp}{841.89bp}"), "{back}");
+        assert!(back.contains(&format!("\\pagestyle{{{}}}", look_style(&f))), "{back}");
+        assert!(back.contains("\\gdef\\thepage{\\arabic{page}}") && !back.contains("\\pagenumbering"), "{back}");
+        // Counted anew without another page: a new page all the same, nothing of the page set.
+        let mut anew = f.clone();
+        anew.page.restart = true;
+        let s = switch(&f, &anew, true);
+        assert!(s.contains("\\clearpage\n\\pagenumbering{arabic}\n") && !s.contains("\\pagestyle"), "{s}");
+        assert!(!switch(&anew, &f, false).contains("\\clearpage"), "nothing at its end");
+
+        // The preamble: a style for each look and the document, the same look named once.
+        assert_ne!(look_style(&f), look_style(&small), "the header of the text's size is set in it");
+        assert_eq!(look_style(&appendix), look_style(&appendix.clone()));
+        let s = settings(&f, &[&appendix, &appendix, &small], &Particulars::default());
+        assert_eq!(
+            s.header.matches(&format!("\\fancypagestyle{{{name}}}{{\\fancyhf{{}}}}")).count(),
+            1,
+            "{}",
+            s.header
+        );
+        assert!(s.header.contains(&format!("\\fancypagestyle{{{}}}{{\\fancyhf{{}}\\fancyfoot[C]", look_style(&f))));
+        assert!(s.header.contains("\\newcommand{\\gkopener}") && s.header.contains("\\newcommand{\\gkpaper}"));
+        assert!(s.header.contains("\\newcommand{\\gkcolumnsagain}{\\ifgkcolumns\\begin{multicols}{1}\\fi}"));
+        // Without looks, none of it.
+        let s = settings(&f, &[], &Particulars::default());
+        assert!(!s.header.contains("gklook") && !s.header.contains("\\ifgkcolumns"), "{}", s.header);
     }
 
     #[test]
