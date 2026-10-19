@@ -298,7 +298,10 @@ fn a_scan_is_read_and_made_searchable_in_the_child_page_by_page() {
     let made = ocr::make_searchable(&pdf, &tools, &work, &anew, &mut |_| told += 1, &never()).unwrap();
     assert_eq!((made.read, made.failed.len(), told), (1, 0, 1));
     let text = pdf_text::extract_text_from_mem(&made.pdf.unwrap()).unwrap();
-    assert!(text.contains("Milman Parry"), "{text}");
+    // Tesseract's versions lay the words over with one space or two between
+    // them; what is asked is that the words are there, in their order.
+    let plain = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    assert!(plain.contains("Milman Parry"), "{text}");
 
     // Stopped, it is not done.
     let stop = AtomicBool::new(true);
