@@ -1108,6 +1108,46 @@ fn a_stretch_of_pages_is_read_with_languages_of_its_own() {
     let unknown = Asked { stretches: vec![Stretch { languages: vec!["xyz".into()], ..greek }], ..kit.asked() };
     let refused = read_pdf(&scan, &kit.tools, &kit.work(), &unknown, None, &mut nothing, &never()).unwrap_err();
     assert_eq!(refused.to_string(), tr!("ocr-no-language", language = "xyz"));
+
+    // A stretch drawn at fewer dots: its page is drawn so, the other as the
+    // whole is; 150 mm at 150 dots to the inch is 886 dots, shown as drawn.
+    let coarse = Stretch { from: 2, languages: vec!["eng".into()], dpi: 150, ..Stretch::default() };
+    let asked = Asked { stretches: vec![coarse], ..kit.asked() };
+    let tried = try_page(&scan, &kit.tools, &kit.work(), &asked, 2, None, &never()).unwrap();
+    assert!(tried.width.abs_diff(886) <= 2, "{}", tried.width);
+    let tried = try_page(&scan, &kit.tools, &kit.work(), &asked, 1, None, &never()).unwrap();
+    assert_eq!(tried.width, 1600);
+    let read = read_pdf(&scan, &kit.tools, &kit.work(), &asked, None, &mut nothing, &never()).unwrap();
+    assert!(read.pages.iter().all(|p| p.read && has(&p.paragraphs.join(" "), "Milman Parry")), "{:?}", read.pages);
+}
+
+/// Each stretch is drawn with its own resolution and black and white, as
+/// it is read with its own languages and layout; the pages before the first
+/// as the whole asks; and as many pages are drawn at once as fit drawn with
+/// the most dots any of them takes.
+#[test]
+fn a_stretch_carries_its_resolution_and_its_black_and_white() {
+    let tesseract = Tool { path: "tesseract".into(), version: "5.5".into(), least: None, data: None };
+    let tools =
+        Tools { tesseract: Some(tesseract), ocr_languages: vec!["eng".into(), "grc".into()], ..Tools::default() };
+    let fine = Stretch { from: 2, languages: vec!["grc".into()], dpi: 600, layout: "block".into(), contrast: true };
+    let plain = Stretch { from: 4, languages: vec!["eng".into()], ..Stretch::default() };
+    let asked = Asked { languages: vec!["eng".into()], dpi: 200, stretches: vec![plain, fine], ..Asked::default() };
+    let reader = ready(&tools, &asked).unwrap();
+    assert_eq!(reader.quality_at(0), Quality { dpi: 200, contrast: false });
+    assert_eq!(reader.quality_at(1), Quality { dpi: 600, contrast: true });
+    assert_eq!(reader.quality_at(2).dpi, 600);
+    assert_eq!(reader.quality_at(3), Quality { dpi: 0, contrast: false }, "300 dots, in grey");
+    assert_eq!(reader.with_at(1), &tesseract::With { languages: vec!["grc".into()], psm: tesseract::psm_of("block") });
+    assert_eq!(reader.with_at(5).languages, ["eng"]);
+    assert_eq!(reader.finest(&[0, 3]).dots(), 300.0);
+    assert_eq!(reader.finest(&[0, 1, 3]).dpi, 600);
+    assert_eq!(reader.finest(&[]), reader.quality);
+    // A stretch's language that Tesseract has no data for is refused, naming it.
+    let unknown =
+        Asked { stretches: vec![Stretch { from: 3, languages: vec!["xyz".into()], ..Stretch::default() }], ..asked };
+    let refused = ready(&tools, &unknown).err().expect("refused");
+    assert_eq!(refused.to_string(), tr!("ocr-no-language", language = "xyz"));
 }
 
 #[test]

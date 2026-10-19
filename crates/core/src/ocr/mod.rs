@@ -489,15 +489,37 @@ struct Reader<'t> {
     with: tesseract::With,
     quality: Quality,
     /// The stretches of pages read otherwise: the page each begins at,
-    /// counted from nought, and what it is read with, in order.
-    stretches: Vec<(usize, tesseract::With)>,
+    /// counted from nought, what it is read with and how it is drawn, in
+    /// order.
+    stretches: Vec<(usize, tesseract::With, Quality)>,
 }
 
 impl Reader<'_> {
-    /// What a page, counted from nought, is read with: that of the last
-    /// stretch that begins at it or before, else the reader's own.
+    /// The last stretch that begins at a page, counted from nought, or before it.
+    fn stretch_at(&self, index: usize) -> Option<&(usize, tesseract::With, Quality)> {
+        self.stretches.iter().rev().find(|(from, ..)| *from <= index)
+    }
+
+    /// What a page, counted from nought, is read with: that of its stretch,
+    /// else the reader's own.
     fn with_at(&self, index: usize) -> &tesseract::With {
-        self.stretches.iter().rev().find(|(from, _)| *from <= index).map_or(&self.with, |(_, with)| with)
+        self.stretch_at(index).map_or(&self.with, |(_, with, _)| with)
+    }
+
+    /// How a page, counted from nought, is drawn: as its stretch asks, else
+    /// as the reader's own quality does.
+    fn quality_at(&self, index: usize) -> Quality {
+        self.stretch_at(index).map_or(self.quality, |(_, _, quality)| *quality)
+    }
+
+    /// Of the pages given, the quality that draws them with the most dots:
+    /// what decides how many are drawn at once.
+    fn finest(&self, pages: &[usize]) -> Quality {
+        pages
+            .iter()
+            .map(|&index| self.quality_at(index))
+            .max_by(|a, b| a.dots().total_cmp(&b.dots()))
+            .unwrap_or(self.quality)
     }
 
     /// Has Tesseract read a picture that is drawn already, with `with`: its
@@ -522,7 +544,7 @@ impl Reader<'_> {
         wanted: (bool, bool),
         stop: &AtomicBool,
     ) -> Result<tesseract::Read> {
-        let (picture, dpi) = pages.draw(index, place, self.quality, stop)?;
+        let (picture, dpi) = pages.draw(index, place, self.quality_at(index), stop)?;
         let read = self.read(self.with_at(index), &picture, dpi, wanted, stop).map(|mut read| {
             read.dpi = dpi;
             read
@@ -536,17 +558,19 @@ impl Reader<'_> {
 
 /// Tesseract, and the languages it is to read with: those asked for, each of
 /// which it must have data for; English where none are asked for, or the
-/// first it has.
+/// first it has. Each stretch the same, with its layout, its resolution and
+/// whether it is read in black and white.
 fn ready<'t>(tools: &'t Tools, asked: &Asked) -> Result<Reader<'t>> {
     let tesseract = tools.tesseract()?;
     let with = with_of(tools, &asked.languages, &asked.layout)?;
     let mut stretches = Vec::new();
     for stretch in &asked.stretches {
         if stretch.from > 1 {
-            stretches.push((stretch.from - 1, with_of(tools, &stretch.languages, &stretch.layout)?));
+            let with = with_of(tools, &stretch.languages, &stretch.layout)?;
+            stretches.push((stretch.from - 1, with, Quality { dpi: stretch.dpi, contrast: stretch.contrast }));
         }
     }
-    stretches.sort_by_key(|(from, _)| *from);
+    stretches.sort_by_key(|(from, ..)| *from);
     Ok(Reader { tesseract, with, quality: asked.quality(), stretches })
 }
 
