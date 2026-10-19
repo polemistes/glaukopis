@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import CircleAlert from '@lucide/svelte/icons/circle-alert';
   import { documentForget, documentRead, documentReadStop, type Imported } from '$lib/api/imported';
   import { isBackendError } from '$lib/api/backend';
@@ -17,7 +17,8 @@
   import TextField from '$lib/ui/TextField.svelte';
   import { describeError } from '$lib/ui/toast.svelte';
   import { newId } from '$lib/util/id';
-  import { isReadPath } from '$lib/api/ocr';
+  import { isReadPath, ocrForget, type Making } from '$lib/api/ocr';
+  import MadeOf from '$lib/ocr/MadeOf.svelte';
   import ReadStep from '$lib/ocr/ReadStep.svelte';
   import Outline from '$lib/ocr/Outline.svelte';
   import StylesFound from '$lib/ocr/StylesFound.svelte';
@@ -42,6 +43,17 @@
   const styles = new SvelteMap<number, StyleChoice>();
   /** The dialog was left while the file was being read: what is read then is not wanted. */
   let left = false;
+  /** The reading of a PDF, kept so that what is made of it can be made anew, and how many pages it has. */
+  let kept = $state<string | null>(null);
+  let pages = $state(0);
+  let madeOf = $state<Making>({ shape: true, structure: 'headings', pageMarks: true });
+
+  onDestroy(() => {
+    if (kept)
+      ocrForget(kept).catch((error) =>
+        console.error('the reading kept could not be let go', error),
+      );
+  });
 
   onMount(() => {
     if (!scanned) void begin();
@@ -181,9 +193,11 @@
       stored={!!request.stored}
       name={request.name}
       bind:wide
-      onread={(imported) => {
+      onread={(imported, token, count) => {
         read = imported;
         title = titleOf(imported);
+        kept = token ?? null;
+        pages = count ?? 0;
       }}
     />
   {:else if !read}
@@ -222,6 +236,16 @@
       {/each}
     </dl>
     {#if cited}<p class="cited" data-fact="cited">{cited}</p>{/if}
+    {#if kept && pages > 1}
+      <MadeOf
+        {kept}
+        {pages}
+        imported={read}
+        bind:making={madeOf}
+        disabled={making}
+        onmade={(made) => (read = made)}
+      />
+    {/if}
     {#if read.structured}
       <Outline imported={read} {title} />
     {/if}

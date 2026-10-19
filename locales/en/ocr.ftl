@@ -224,6 +224,18 @@ ocr-structure-headings = By its headings
 ocr-structure-pages = By its pages
 ocr-page-marks = Mark where each page begins
 ocr-page-marks-hint = A reference mark with the page's number, where it began.
+# What is made of a PDF that was read, asked after the reading: the same reading made anew.
+ocr-made-title = What is made of it
+ocr-made-headings = { $count ->
+    [one] By its one heading
+   *[other] By its { $count } headings
+}
+ocr-made-pages = { $count ->
+    [one] By its one page
+   *[other] By its { $count } pages
+}
+ocr-made-no-headings = No headings were found: an element is made for each page.
+ocr-made-failed = The elements could not be made anew
 # The outline shown before a PDF read by its headings is made into a map.
 ocr-outline-title = What will be made
 ocr-outline-all = Show all { $count }

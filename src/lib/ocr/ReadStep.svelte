@@ -63,8 +63,11 @@
     stored?: boolean;
     /** What the file is called, where its path does not say. */
     name?: string;
-    /** What was read. */
-    onread: (imported: Imported) => void;
+    /**
+     * What was read; for a PDF, the token of the reading kept, by which what
+     * is made of it is made anew (`MadeOf.svelte`), and how many pages it has.
+     */
+    onread: (imported: Imported, kept?: string | null, pages?: number) => void;
     /** Whether the step wants room for the preview of the text the PDF has: the dialog widens. */
     wide?: boolean;
   }
@@ -155,7 +158,7 @@
         ticket,
         stored,
       );
-      if (!gone) onread(done.imported);
+      if (!gone) onread(done.imported, done.kept, looked?.pages ?? 0);
     } catch (error) {
       if (gone) return;
       if (isBackendError(error) && error.kind === 'stopped') phase = 'asking';

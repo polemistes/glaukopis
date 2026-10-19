@@ -221,6 +221,18 @@ ocr-structure-headings = Etter overskriftene
 ocr-structure-pages = Etter sidene
 ocr-page-marks = Merk hvor hver side begynner
 ocr-page-marks-hint = Et referansemerke med sidetallet, der siden begynte.
+# What is made of a PDF that was read, asked after the reading: the same reading made anew.
+ocr-made-title = Hva som lages av den
+ocr-made-headings = { $count ->
+    [one] Etter den ene overskriften
+   *[other] Etter de { $count } overskriftene
+}
+ocr-made-pages = { $count ->
+    [one] Etter den ene siden
+   *[other] Etter de { $count } sidene
+}
+ocr-made-no-headings = Ingen overskrifter ble funnet: det lages et element for hver side.
+ocr-made-failed = Elementene kunne ikke lages på nytt
 # The outline shown before a PDF read by its headings is made into a map.
 ocr-outline-title = Dette blir laget
 ocr-outline-all = Vis alle { $count }

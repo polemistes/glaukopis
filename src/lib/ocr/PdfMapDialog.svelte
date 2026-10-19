@@ -7,10 +7,11 @@
    * of another, or of a new one named after the PDF. The title is the one
    * the PDF gives itself, or the file's name.
    */
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import CircleAlert from '@lucide/svelte/icons/circle-alert';
   import type { Imported } from '$lib/api/imported';
   import type { StoredFile } from '$lib/api/library';
+  import { ocrForget, type Making } from '$lib/api/ocr';
   import { t } from '$lib/i18n';
   import { SvelteMap } from 'svelte/reactivity';
   import { makeImported, titleOf, type StyleChoice } from '$lib/project/model/import';
@@ -23,6 +24,7 @@
   import Select from '$lib/ui/Select.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError } from '$lib/ui/toast.svelte';
+  import MadeOf from './MadeOf.svelte';
   import ReadStep from './ReadStep.svelte';
   import Outline from './Outline.svelte';
   import StylesFound from './StylesFound.svelte';
@@ -54,8 +56,19 @@
   /** What each style found was said to be, by its number; text where nothing is said. */
   const styles = new SvelteMap<number, StyleChoice>();
 
+  /** The reading kept, so that what is made of it can be made anew, and how many pages it has. */
+  let kept = $state<string | null>(null);
+  let pages = $state(0);
+  let madeOf = $state<Making>({ shape: true, structure: 'headings', pageMarks: true });
+
   onMount(() => {
     if (!projects.loaded) void projects.load();
+  });
+  onDestroy(() => {
+    if (kept)
+      ocrForget(kept).catch((error) =>
+        console.error('the reading kept could not be let go', error),
+      );
   });
 
   const options = $derived([
@@ -63,10 +76,15 @@
     ...projects.list.map((p) => ({ value: p.id, label: p.name })),
   ]);
 
-  /** What was read is made into elements at once, or once the styles found in it are named. */
-  function readDone(imported: Imported) {
-    // Where there is something to see or say first: the outline, or the styles found.
-    if (imported.styles.length || imported.structured) read = imported;
+  /**
+   * What was read is made into elements at once, or once what is made of it
+   * is chosen and the styles found in it are named.
+   */
+  function readDone(imported: Imported, token?: string | null, count?: number) {
+    kept = token ?? null;
+    pages = count ?? 0;
+    // Where there is something to see or choose first: what is made of it, the outline, or the styles found.
+    if ((kept && pages > 1) || imported.styles.length || imported.structured) read = imported;
     else void made(imported);
   }
 
@@ -133,6 +151,15 @@
         <div class="doing">{t('ocr-map-making')}</div>
       </div>
     {:else if read}
+      {#if kept && pages > 1}
+        <MadeOf
+          {kept}
+          {pages}
+          imported={read}
+          bind:making={madeOf}
+          onmade={(next) => (read = next)}
+        />
+      {/if}
       {#if read.structured}
         <Outline imported={read} title={titleOf(read) || file.name.replace(/\.pdf$/i, '')} />
       {/if}
