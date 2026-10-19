@@ -245,6 +245,9 @@ pub struct Looked {
     /// The dots to the inch of its pages, where they are pictures, as
     /// scans are (`Layer::resolution`); nothing where they are not.
     pub resolution: Option<u32>,
+    /// The first page without text, counted from one, which Tesseract reads
+    /// first where the text is kept; nothing where every page has text.
+    pub first_without_text: Option<usize>,
 }
 
 /// The first lines of the text a page has.
@@ -601,6 +604,7 @@ pub fn look(path: &Path, tools: &Tools) -> Result<Looked> {
         searchable,
         locked: layer.locked,
         resolution: layer.resolution(),
+        first_without_text: (0..pages).find(|i| !layer.has_text(*i)).map(|i| i + 1),
     })
 }
 
@@ -682,7 +686,7 @@ pub fn read_pdf(
                             }
                         }
                     }
-                    Ok(child::Done::Made(_)) => return Err(Error::invalid("the pages were not read")),
+                    Ok(_) => return Err(Error::invalid("the pages were not read")),
                     Err(e) if e.kind() == tools::STOPPED || anew || to_take == 0 => return Err(e),
                     // The pages that have text are taken all the same.
                     Err(e) => failed.extend(wanted.iter().map(|i| (i + 1, e.to_string()))),
@@ -916,6 +920,77 @@ pub fn read_picture(
     Ok(text::page_paragraphs(text::tsv_paragraphs(read.tsv.as_deref().unwrap_or_default()), is_word))
 }
 
+/// A page tried before a PDF is read: what Tesseract read of it with the
+/// languages and settings asked, how sure it was, and the picture it read.
+#[derive(Debug, Clone, Default, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Tried {
+    /// Counted from one.
+    pub page: usize,
+    /// The number it has in print, or counted from one.
+    pub label: String,
+    /// What was read, as paragraphs, as a page read without its shape is.
+    pub paragraphs: Vec<String>,
+    /// How sure Tesseract was of the page (`text::page_confidence`); nothing
+    /// where it read no word.
+    pub confidence: Option<f32>,
+    /// Whether it was read poorly (`POORLY`).
+    pub poorly: bool,
+    /// The picture Tesseract read, made smaller to be shown: PNG in base64.
+    pub png: String,
+    pub width: u32,
+    pub height: u32,
+}
+
+/// Tries a page of a PDF, counted from one, before the whole is read: draws
+/// it as `asked` says, has Tesseract read it with the languages asked, and
+/// gives what was read beside the picture that was read.
+pub fn try_page(
+    path: &Path,
+    tools: &Tools,
+    work: &Path,
+    asked: &Asked,
+    page: usize,
+    is_word: Option<&IsWord>,
+    stop: &AtomicBool,
+) -> Result<Tried> {
+    let size = checked_pdf(path)?;
+    let seen = seen_of(path, size, tools.pdftoppm.as_ref())?;
+    let count = seen.layer.pages.len().max(*seen.drawable(&file_name(path)).as_ref().unwrap_or(&0));
+    if page == 0 || page > count {
+        return Err(Error::invalid(tr!("ocr-no-such-page", page = page, pages = count)));
+    }
+    let reader = ready(tools, asked)?;
+    seen.drawable(&file_name(path))?;
+    let place = place_in(work)?;
+    let job = child::Job::new(
+        path,
+        Some(&reader),
+        tools.pdftoppm.as_ref(),
+        place.path(),
+        child::Task::Try { page: page - 1 },
+    );
+    let tried = match child::work(job, size, place.path(), &mut |_| {}, stop)? {
+        child::Done::Tried(tried) => tried,
+        _ => return Err(Error::invalid("the page was not tried")),
+    };
+    let (groups, confidence) = text::tsv_page(&tried.tsv);
+    let greek = reader.with.languages.iter().any(|l| matches!(l.as_str(), "grc" | "ell" | "script/Greek"));
+    let paragraphs = text::page_paragraphs(groups, is_word);
+    let paragraphs = if greek { paragraphs.iter().map(|p| schemes::mend_sigmas(p)).collect() } else { paragraphs };
+    tracing::info!(page, confidence = ?confidence, languages = ?reader.with.languages, "a page was tried");
+    Ok(Tried {
+        page,
+        label: seen.layer.label(page - 1),
+        paragraphs,
+        confidence,
+        poorly: read_poorly(confidence),
+        png: tried.png,
+        width: tried.width,
+        height: tried.height,
+    })
+}
+
 /// The text of the first pages of a PDF, as Tesseract reads it in the first
 /// language it has, line by line: to find in it what the file is, its DOI
 /// or its ISBN, where it has no text (`import::pdf::identify_scan`).
@@ -927,7 +1002,7 @@ pub fn first_pages(path: &Path, tools: &Tools, work: &Path, count: usize, stop: 
     let job = child::Job::new(path, Some(&reader), tools.pdftoppm.as_ref(), place.path(), child::Task::First { count });
     let pages = match child::work(job, size, place.path(), &mut |_| {}, stop) {
         Ok(child::Done::Pages(pages)) => pages,
-        Ok(child::Done::Made(_)) => Vec::new(),
+        Ok(_) => Vec::new(),
         Err(e) => {
             tracing::warn!(%e, "the first pages of the PDF could not be read");
             Vec::new()
@@ -999,7 +1074,7 @@ pub fn make_searchable(
     let job = child::Job::new(path, reader.as_ref(), tools.pdftoppm.as_ref(), place.path(), task);
     let made = match child::work(job, size, place.path(), told, stop)? {
         child::Done::Made(made) => made,
-        child::Done::Pages(_) => return Err(Error::invalid("the file was not made searchable")),
+        _ => return Err(Error::invalid("the file was not made searchable")),
     };
     if made.remapped > 0 {
         tracing::info!(fonts = made.remapped, "the fonts of a PDF were given their letters");

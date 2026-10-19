@@ -294,6 +294,66 @@ impl Drawn {
             .into_luma8();
         Ok(Drawn { width: picture.width(), height: picture.height(), dpi, grey: picture.into_raw() })
     }
+
+    /// A page as it was drawn for Tesseract, read back from its file: PGM as
+    /// [`Drawn::write`] writes it, or PNG as Poppler draws it.
+    pub fn read_back(path: &Path, dpi: u32) -> Result<Drawn> {
+        if path.extension().is_some_and(|e| e == "png") {
+            return Drawn::of_png(path, dpi);
+        }
+        let unreadable = || Error::invalid(tr!("ocr-picture-unreadable", message = path.display().to_string()));
+        let bytes = std::fs::read(path).context(|| tr!("io-reading", path = path))?;
+        // `P5`, the width, the height and 255, each followed by one white space.
+        let mut fields = Vec::new();
+        let mut at = 0;
+        while fields.len() < 4 {
+            let start = at;
+            while at < bytes.len() && !bytes[at].is_ascii_whitespace() {
+                at += 1;
+            }
+            fields.push(std::str::from_utf8(&bytes[start..at]).map_err(|_| unreadable())?.to_owned());
+            at += 1;
+        }
+        let number = |i: usize| fields[i].parse::<u32>().map_err(|_| unreadable());
+        let (width, height) = (number(1)?, number(2)?);
+        let grey = bytes.get(at..).ok_or_else(unreadable)?.to_vec();
+        if fields[0] != "P5" || number(3)? != 255 || grey.len() != width as usize * height as usize {
+            return Err(unreadable());
+        }
+        Ok(Drawn { width, height, dpi, grey })
+    }
+
+    /// The picture made smaller, where its longer side is longer than
+    /// `longest` dots, to be shown: as PNG, with its width and height, and
+    /// the scale it was made smaller by (1 where it was not).
+    pub fn shown(&self, longest: u32) -> Result<Shown> {
+        let failed = |e: image::ImageError| Error::invalid(tr!("ocr-picture-unreadable", message = e.to_string()));
+        let picture = image::GrayImage::from_raw(self.width, self.height, self.grey.clone())
+            .ok_or_else(|| Error::invalid(tr!("ocr-picture-unreadable", message = "the picture is not whole")))?;
+        let side = self.width.max(self.height).max(1);
+        let scale = if side > longest { longest as f32 / side as f32 } else { 1.0 };
+        let picture = if scale < 1.0 {
+            let width = ((self.width as f32 * scale).round() as u32).max(1);
+            let height = ((self.height as f32 * scale).round() as u32).max(1);
+            image::imageops::resize(&picture, width, height, image::imageops::FilterType::Triangle)
+        } else {
+            picture
+        };
+        let mut png = std::io::Cursor::new(Vec::new());
+        picture.write_to(&mut png, image::ImageFormat::Png).map_err(failed)?;
+        Ok(Shown { png: png.into_inner(), width: picture.width(), height: picture.height(), scale })
+    }
+}
+
+/// A picture of a page made to be shown (`Drawn::shown`).
+#[derive(Debug, Clone, PartialEq)]
+pub struct Shown {
+    pub png: Vec<u8>,
+    pub width: u32,
+    pub height: u32,
+    /// What the places on the picture as it was drawn are multiplied by to
+    /// be places on this one.
+    pub scale: f32,
 }
 
 /// Draws a page with hayro, as `quality` asks. A page it loses itself in is
@@ -413,6 +473,30 @@ mod tests {
         let drawn =
             Drawn { width: 2, height: 1, dpi: 300, grey: vec![40, 220] }.as_asked(Quality { dpi: 0, contrast: false });
         assert_eq!(drawn.grey, vec![40, 220]);
+    }
+
+    /// A page drawn for Tesseract is read back as it was written, and made
+    /// smaller to be shown, its longer side no longer than asked.
+    #[test]
+    fn a_page_is_read_back_and_shown_smaller() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("page.pgm");
+        let grey: Vec<u8> = (0..400u32 * 300).map(|i| (i % 256) as u8).collect();
+        let drawn = Drawn { width: 400, height: 300, dpi: 300, grey };
+        drawn.write(&path).unwrap();
+        assert_eq!(Drawn::read_back(&path, 300).unwrap(), drawn);
+
+        let shown = drawn.shown(100).unwrap();
+        assert_eq!((shown.width, shown.height, shown.scale), (100, 75, 0.25));
+        assert!(shown.png.starts_with(b"\x89PNG"));
+        let back = image::load_from_memory(&shown.png).unwrap();
+        assert_eq!((back.width(), back.height()), (100, 75));
+        // Small enough already, it is shown as it is.
+        let whole = drawn.shown(1600).unwrap();
+        assert_eq!((whole.width, whole.height, whole.scale), (400, 300, 1.0));
+
+        std::fs::write(&path, b"P5\n4 4\n255\nshort").unwrap();
+        assert!(Drawn::read_back(&path, 300).is_err());
     }
 
     #[test]

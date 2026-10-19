@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { firstTextChoice, lowResolution, scriptOf, scriptsAlike, stretchesOf } from './how';
+import {
+  firstPageToTry,
+  firstTextChoice,
+  lowResolution,
+  scriptOf,
+  scriptsAlike,
+  stretchesOf,
+} from './how';
 
 describe('what becomes of the text a PDF has, at first', () => {
   it('is translated where a scheme applies', () => {
@@ -14,6 +21,15 @@ describe('what becomes of the text a PDF has, at first', () => {
   it('is kept where the pages are pictures of too few dots, poor as it is', () => {
     expect(firstTextChoice({ withText: 4, poor: 4, schemes: [], resolution: 72 })).toBe('keep');
     expect(firstTextChoice({ withText: 4, poor: 4, schemes: [], resolution: 300 })).toBe('anew');
+  });
+});
+
+describe('the page tried at first', () => {
+  it('is the first Tesseract is to read', () => {
+    expect(firstPageToTry({ firstWithoutText: 4 }, 'keep')).toBe(4);
+    expect(firstPageToTry({ firstWithoutText: 4 }, 'translate')).toBe(4);
+    expect(firstPageToTry({ firstWithoutText: 4 }, 'anew')).toBe(1);
+    expect(firstPageToTry({ firstWithoutText: null }, 'keep')).toBe(1);
   });
 });
 

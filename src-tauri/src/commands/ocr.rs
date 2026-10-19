@@ -209,6 +209,26 @@ pub fn ocr_text(
     Ok(ocr::text_of_pages(&path, from, count.min(50))?)
 }
 
+/// Tries a page of a PDF, counted from one, before the whole is read: what
+/// Tesseract reads of it with the languages and settings asked, how sure it
+/// was, and the picture it read. With `stored`, the path is that of a file
+/// of the library. Stopped by `ocr_stop` with its ticket, as a reading is.
+#[tauri::command(async)]
+pub fn ocr_try(
+    state: State<'_, AppState>,
+    path: String,
+    stored: Option<bool>,
+    page: usize,
+    asked: Asked,
+    ticket: Option<String>,
+) -> CommandResult<ocr::Tried> {
+    let path = if stored.unwrap_or(false) { state.library().attachment_path(&path)? } else { PathBuf::from(path) };
+    let trying = Work::begin(ticket);
+    let words = words_of(&state, &asked);
+    let is_word = words.as_ref().map(|w| w as &IsWord);
+    Ok(ocr::try_page(&path, &state.tools(), &state.data.work(), &asked, page, is_word, &trying.stop)?)
+}
+
 /// Reads the text of a picture of the store, to be shown, or made a map of.
 #[tauri::command(async)]
 pub fn ocr_picture(

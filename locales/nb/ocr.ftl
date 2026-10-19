@@ -24,6 +24,22 @@ ocr-about-text = { $pages ->
 # Where the pages of a PDF are pictures of too few dots to the inch to be read well.
 ocr-low-resolution = Sidene er bilder med { $dpi } punkter per tomme: for få til at bokstavene kan leses godt, uansett hva som velges.
 ocr-low-resolution-text = Å lese dem på nytt vil ikke gjøre teksten PDF-en har, bedre.
+
+# A page tried before the whole is read: shown beside the choices, in place of the text the PDF has.
+ocr-view-text = Teksten den har
+ocr-view-try = Prøv en side
+ocr-try-page = Side
+ocr-try-of = av { $pages }
+ocr-try = Prøv
+ocr-try-hint = Les én side med språkene og innstillingene som er valgt, og se hva Tesseract får ut av den før det hele leses. En side tar noen sekunder; bytt et språk eller en innstilling og prøv igjen.
+ocr-trying = Leser side { $page } …
+ocr-tried-confidence = Side { $label } ble lest med en sikkerhet på { $confidence } av 100.
+ocr-tried-poorly = Det er dårlig: prøv et annet språk, frakturmodellen for gotisk skrift eller et annet oppsett av siden.
+ocr-tried-nothing = Ingen tekst ble lest på side { $label }.
+ocr-tried-changed = Språkene eller innstillingene er endret siden: prøv igjen for å se hva de leser.
+# The alternative text of the picture of the page tried.
+ocr-tried-picture = Side { $label } slik Tesseract så den
+
 ocr-read = Les teksten
 ocr-read-text-pages = Ta sidene som har tekst
 ocr-take-text = Ta teksten

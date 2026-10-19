@@ -273,6 +273,7 @@ pub fn run() {
             commands::ocr::ocr_searchable,
             commands::ocr::ocr_text,
             commands::ocr::ocr_picture,
+            commands::ocr::ocr_try,
             commands::languages::languages_installed,
             commands::words::words_read,
             commands::words::words_write,

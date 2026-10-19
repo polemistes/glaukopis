@@ -24,6 +24,22 @@ ocr-about-text = { $pages ->
 # Where the pages of a PDF are pictures of too few dots to the inch to be read well.
 ocr-low-resolution = The pages are pictures at { $dpi } dots to the inch: too few for their letters to be read well, whatever is chosen.
 ocr-low-resolution-text = Reading them anew will not better the text the PDF has.
+
+# A page tried before the whole is read: shown beside the choices, in place of the text the PDF has.
+ocr-view-text = The text it has
+ocr-view-try = Try a page
+ocr-try-page = Page
+ocr-try-of = of { $pages }
+ocr-try = Try
+ocr-try-hint = Read one page with the languages and settings chosen, and see what Tesseract makes of it before the whole is read. A page takes a few seconds; change a language or a setting and try again.
+ocr-trying = Reading page { $page }…
+ocr-tried-confidence = Page { $label } was read with a confidence of { $confidence } out of 100.
+ocr-tried-poorly = That is poor: try another language, the Fraktur model for Gothic type, or another layout.
+ocr-tried-nothing = No text was read on page { $label }.
+ocr-tried-changed = The languages or settings have changed since: try again to see what they read.
+# The alternative text of the picture of the page tried.
+ocr-tried-picture = Page { $label } as Tesseract saw it
+
 ocr-read = Read the text
 ocr-read-text-pages = Take the pages that have text
 ocr-take-text = Take the text

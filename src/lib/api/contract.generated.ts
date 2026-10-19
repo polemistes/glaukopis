@@ -159,6 +159,7 @@ export const listing: library.LibraryListing = {
 
 export const looked: ocr.Looked = {
   "file": "porson.pdf",
+  "firstWithoutText": null,
   "fonts": [
     "PorsonGreekSF"
   ],
@@ -194,6 +195,19 @@ export const looked: ocr.Looked = {
   "searchable": true,
   "title": null,
   "withText": 1
+};
+
+export const tried: ocr.Tried = {
+  "confidence": 91.5,
+  "height": 1600,
+  "label": "iii",
+  "page": 3,
+  "paragraphs": [
+    "A paragraph."
+  ],
+  "png": "iVBORw0KGgo=",
+  "poorly": false,
+  "width": 1131
 };
 
 export const shapedImport: imported.Imported = {

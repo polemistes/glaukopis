@@ -983,3 +983,31 @@ fn the_look_tells_the_resolution_of_a_scan() {
     let text = kit.typeset("text.pdf", PAGE);
     assert_eq!(look(&text, &kit.tools).unwrap().resolution, None);
 }
+
+/// A page is tried before the whole is read: what Tesseract read of it,
+/// how sure it was, and the picture it read, made smaller to be shown.
+#[test]
+fn a_page_is_tried() {
+    use base64::Engine as _;
+    let Some(kit) = kit(true) else { return };
+    let scan = kit.scan("scan.pdf");
+    let tried = try_page(&scan, &kit.tools, &kit.work(), &kit.asked(), 1, None, &never()).unwrap();
+    assert_eq!((tried.page, tried.label.as_str()), (1, "1"));
+    let text = tried.paragraphs.join(" ");
+    assert!(has(&text, "The wrath of Achilles") && has(&text, "Milman Parry"), "{text}");
+    assert!(tried.confidence.is_some_and(|c| c >= POORLY) && !tried.poorly, "{:?}", tried.confidence);
+    let png = base64::engine::general_purpose::STANDARD.decode(&tried.png).unwrap();
+    assert!(png.starts_with(b"\x89PNG"));
+    let picture = image::load_from_memory(&png).unwrap();
+    assert_eq!((picture.width(), picture.height()), (tried.width, tried.height));
+    assert!(tried.width.max(tried.height) <= 1600, "{}×{}", tried.width, tried.height);
+    // 150 mm at 300 dots to the inch is 1772 dots, made 1600 wide.
+    assert_eq!(tried.width, 1600);
+
+    // A page the file does not have is said to be none.
+    let none = try_page(&scan, &kit.tools, &kit.work(), &kit.asked(), 2, None, &never()).unwrap_err();
+    assert_eq!(none.to_string(), tr!("ocr-no-such-page", page = 2, pages = 1));
+    // And a language Tesseract has no data for is refused, as in a reading.
+    let asked = Asked { languages: vec!["xyz".into()], ..kit.asked() };
+    assert!(try_page(&scan, &kit.tools, &kit.work(), &asked, 1, None, &never()).is_err());
+}

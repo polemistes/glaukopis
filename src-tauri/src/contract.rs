@@ -515,6 +515,17 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("reference", "library.Reference", &full(&library, &work));
     put("listing", "library.LibraryListing", &listing(&library));
     put("looked", "ocr.Looked", &looked);
+    let tried = glaukopis_core::ocr::Tried {
+        page: 3,
+        label: "iii".into(),
+        paragraphs: vec!["A paragraph.".into()],
+        confidence: Some(91.5),
+        poorly: false,
+        png: "iVBORw0KGgo=".into(),
+        width: 1131,
+        height: 1600,
+    };
+    put("tried", "ocr.Tried", &tried);
     put("shapedImport", "imported.Imported", &shaped_import);
     put("pageText", "ocr.PageTextView[]", &page_text);
     put("filesListing", "files.FilesListing", &crate::commands::files::files_listing(&library));

@@ -20,6 +20,7 @@
     ocrRead,
     ocrStop,
     onProgress,
+    type Asked,
     type Looked,
     type Progress,
     type TextChoice,
@@ -30,12 +31,19 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError } from '$lib/ui/toast.svelte';
   import { newId } from '$lib/util/id';
-  import { firstTextChoice, howFromSettings, lowResolution, scriptsAlike } from './how';
+  import {
+    firstPageToTry,
+    firstTextChoice,
+    howFromSettings,
+    lowResolution,
+    scriptsAlike,
+  } from './how';
   import HowDisclosure from './HowDisclosure.svelte';
   import LanguagePicker from './LanguagePicker.svelte';
   import { reader } from './reader.svelte';
   import TextPart from './TextPart.svelte';
   import TextPreview from './TextPreview.svelte';
+  import TryPane from './TryPane.svelte';
 
   interface Props {
     path: string;
@@ -68,6 +76,10 @@
   let pageMarks = $state(true);
   /** How the pages are read, as the settings say until this reading says otherwise. */
   let how = $state(howFromSettings());
+  /** Beside the choices, where the PDF has text: that text, or a page tried. */
+  let view = $state<'text' | 'try'>('text');
+  /** The page tried, counted from one. */
+  let tryPage = $state(1);
   let progress = $state.raw<Progress | null>(null);
   let failure = $state<string | null>(null);
   /** The dialog was left: what comes back is not wanted. */
@@ -96,7 +108,7 @@
       if (gone) return;
       looked = found;
       text = firstTextChoice(found);
-      wide = !found.picture && found.withText > 0;
+      tryPage = firstPageToTry(found, text);
       chosen = reader.first(newTextLanguage(), languages.current);
       phase = 'asking';
     } catch (error) {
@@ -159,6 +171,14 @@
   });
   /** Scripts whose letters look alike among the languages chosen, whose letters are read as each other's. */
   const alike = $derived(scanning ? scriptsAlike(chosen) : []);
+  /** Whether a page can be tried: a PDF with pages to be read by Tesseract, which is there. */
+  const tryable = $derived(!!looked && !looked.picture && scanning && reader.installed);
+  /** What a page is tried with, as the reading would be asked. */
+  const asked = $derived<Asked>({ languages: chosen, text, shape: false, ...how });
+  // The dialog widens for what stands beside the choices: the text the PDF has, or a page tried.
+  $effect(() => {
+    wide = !!looked && !looked.picture && (looked.withText > 0 || tryable);
+  });
   const go = $derived(
     !scanning ? t('ocr-take-text') : reader.installed ? t('ocr-read') : t('ocr-read-text-pages'),
   );
@@ -254,7 +274,32 @@
         </div>
       </div>
       {#if wide}
-        <TextPreview {path} {stored} pages={looked.pages} translated={text === 'translate'} />
+        <div class="beside">
+          {#if looked.withText > 0 && tryable}
+            <div data-ocr-view={view}>
+              <Segmented
+                value={view}
+                label={t('ocr-view-try')}
+                size="sm"
+                options={[
+                  { value: 'text', label: t('ocr-view-text') },
+                  { value: 'try', label: t('ocr-view-try') },
+                ]}
+                onchange={(v: 'text' | 'try') => (view = v)}
+              />
+            </div>
+          {/if}
+          {#if tryable}
+            <div hidden={looked.withText > 0 && view !== 'try'}>
+              <TryPane {path} {stored} pages={looked.pages} bind:page={tryPage} {asked} />
+            </div>
+          {/if}
+          {#if looked.withText > 0}
+            <div hidden={tryable && view === 'try'}>
+              <TextPreview {path} {stored} pages={looked.pages} translated={text === 'translate'} />
+            </div>
+          {/if}
+        </div>
       {/if}
     </div>
   {:else if phase === 'reading'}
@@ -313,6 +358,12 @@
     .asking.split {
       grid-template-columns: minmax(0, 1fr);
     }
+  }
+  .beside {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 10px);
+    min-width: 0;
   }
   .warn {
     margin: 0;

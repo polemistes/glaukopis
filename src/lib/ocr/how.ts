@@ -62,6 +62,18 @@ export function firstTextChoice(looked: {
   return anewAtFirst(looked) && !lowResolution(looked) ? 'anew' : 'keep';
 }
 
+/**
+ * The page tried at first: the first Tesseract is to read, which is the
+ * first page without text where the text is kept, and the first page where
+ * every page is read anew.
+ */
+export function firstPageToTry(
+  looked: { firstWithoutText?: number | null },
+  text: 'keep' | 'translate' | 'anew',
+): number {
+  return text === 'anew' ? 1 : (looked.firstWithoutText ?? 1);
+}
+
 /** Pages, counted from one and in order, said as stretches, `3–5, 9`, as the core says them; past ten stretches, the rest are not named. */
 export function stretchesOf(pages: number[]): string {
   const stretches: [number, number][] = [];

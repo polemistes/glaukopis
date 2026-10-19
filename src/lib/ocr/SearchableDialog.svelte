@@ -17,6 +17,7 @@
     ocrSearchable,
     ocrStop,
     onProgress,
+    type Asked,
     type Looked,
     type Progress,
     type TextChoice,
@@ -24,10 +25,12 @@
   import { languages, t } from '$lib/i18n';
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
+  import Segmented from '$lib/ui/Segmented.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError, notifyOk } from '$lib/ui/toast.svelte';
   import { newId } from '$lib/util/id';
   import {
+    firstPageToTry,
     firstTextChoice,
     howFromSettings,
     lowResolution,
@@ -39,6 +42,7 @@
   import { reader } from './reader.svelte';
   import TextPart from './TextPart.svelte';
   import TextPreview from './TextPreview.svelte';
+  import TryPane from './TryPane.svelte';
 
   interface Props {
     /** The reference the file is made searchable from, where it is: its language is the first guess. */
@@ -59,6 +63,10 @@
   let text = $state<TextChoice>('keep');
   /** How the pages are read, as the settings say until this reading says otherwise. */
   let how = $state(howFromSettings());
+  /** Beside the choices, where the PDF has text: that text, or a page tried. */
+  let view = $state<'text' | 'try'>('text');
+  /** The page tried, counted from one. */
+  let tryPage = $state(1);
   let progress = $state.raw<Progress | null>(null);
   let failure = $state<string | null>(null);
   let gone = false;
@@ -87,6 +95,7 @@
       if (gone) return;
       looked = found;
       text = firstTextChoice(found);
+      tryPage = firstPageToTry(found, text);
       // The language of the work, where the reference says it.
       const language = reference?.fields.langid ?? reference?.fields.language ?? null;
       chosen = reader.first(language, languages.current);
@@ -164,8 +173,12 @@
   );
   /** Scripts whose letters look alike among the languages chosen, whose letters are read as each other's. */
   const alike = $derived(scanning ? scriptsAlike(chosen) : []);
-  /** Room for the preview of the text the PDF has. */
-  const wide = $derived(!!looked?.searchable && looked.withText > 0);
+  /** Whether a page can be tried: there are pages to be read, and Tesseract to read them. */
+  const tryable = $derived(!!looked?.searchable && scanning && reader.installed);
+  /** What a page is tried with, as the file would be made searchable. */
+  const asked = $derived<Asked>({ languages: chosen, text, shape: false, ...how });
+  /** Room for what stands beside the choices: the text the PDF has, or a page tried. */
+  const wide = $derived(!!looked?.searchable && (looked.withText > 0 || tryable));
 </script>
 
 <Dialog
@@ -225,12 +238,43 @@
             {/if}
           </div>
           {#if wide}
-            <TextPreview
-              path={file.path}
-              stored
-              pages={looked.pages}
-              translated={text === 'translate'}
-            />
+            <div class="beside">
+              {#if looked.withText > 0 && tryable}
+                <div data-ocr-view={view}>
+                  <Segmented
+                    value={view}
+                    label={t('ocr-view-try')}
+                    size="sm"
+                    options={[
+                      { value: 'text', label: t('ocr-view-text') },
+                      { value: 'try', label: t('ocr-view-try') },
+                    ]}
+                    onchange={(v: 'text' | 'try') => (view = v)}
+                  />
+                </div>
+              {/if}
+              {#if tryable}
+                <div hidden={looked.withText > 0 && view !== 'try'}>
+                  <TryPane
+                    path={file.path}
+                    stored
+                    pages={looked.pages}
+                    bind:page={tryPage}
+                    {asked}
+                  />
+                </div>
+              {/if}
+              {#if looked.withText > 0}
+                <div hidden={tryable && view === 'try'}>
+                  <TextPreview
+                    path={file.path}
+                    stored
+                    pages={looked.pages}
+                    translated={text === 'translate'}
+                  />
+                </div>
+              {/if}
+            </div>
           {/if}
         </div>
       {/if}
@@ -285,6 +329,12 @@
     .asking.split {
       grid-template-columns: minmax(0, 1fr);
     }
+  }
+  .beside {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 10px);
+    min-width: 0;
   }
   .warn {
     margin: 0;

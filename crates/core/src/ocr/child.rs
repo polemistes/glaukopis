@@ -175,6 +175,9 @@ pub enum Task {
     /// these pages drawn and read and what was read laid over them, the text
     /// they had taken away first where `strip`, and the file written to `output`.
     Searchable { pages: Vec<usize>, strip: bool, maps: Vec<searchable::FontMap>, output: PathBuf },
+    /// One page, counted from nought, drawn and read, to be tried: its TSV,
+    /// and the picture Tesseract read, made smaller to be shown.
+    Try { page: usize },
 }
 
 /// What the child is asked to do with the pages of a PDF.
@@ -222,6 +225,7 @@ impl Job {
         match &self.task {
             Task::Read { pages } | Task::Searchable { pages, .. } => pages.len(),
             Task::First { count } => *count,
+            Task::Try { .. } => 1,
         }
     }
 }
@@ -267,11 +271,30 @@ pub struct Made {
     pub poorly: Vec<usize>,
 }
 
+/// The longest side of the picture of a page tried, as it is shown.
+const SHOWN: u32 = 1600;
+
+/// A page tried: what Tesseract read of it, and the picture it read, made
+/// smaller to be shown.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Tried {
+    pub tsv: String,
+    /// The dots to the inch it was drawn at: what the places of the TSV are counted in.
+    pub dpi: u32,
+    /// The picture, as PNG in base64.
+    pub png: String,
+    pub width: u32,
+    pub height: u32,
+    /// What the places of the TSV are multiplied by to be places on the picture.
+    pub scale: f32,
+}
+
 /// What a job came to.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Done {
     Pages(Vec<PageRead>),
     Made(Made),
+    Tried(Tried),
 }
 
 /// How long the work on a file of `bytes` may take, with `pages` to draw and
@@ -360,7 +383,33 @@ fn work_here(job: &Job, told: &mut dyn FnMut(Progress), stop: &AtomicBool) -> st
             .map_err(failure)?;
             Ok(Done::Made(made))
         }
+        Task::Try { page } => {
+            let reader = reader.ok_or_else(|| failure(Error::invalid("no Tesseract was given")))?;
+            let drawing = Pages::open(&job.pdf, Arc::new(bytes), pdftoppm.as_ref()).map_err(failure)?;
+            try_here(&reader, &drawing, *page, &job.work, stop).map(Done::Tried).map_err(failure)
+        }
     }
+}
+
+/// Draws a page and has Tesseract read it, keeping the picture to be shown.
+fn try_here(reader: &Reader<'_>, drawing: &Pages, page: usize, work: &Path, stop: &AtomicBool) -> Result<Tried> {
+    use base64::Engine as _;
+    let (picture, dpi) = drawing.draw(page, work, reader.quality, stop)?;
+    let read = reader.read(&picture, dpi, (true, false), stop);
+    let shown = read.as_ref().ok().map(|_| drawing::Drawn::read_back(&picture, dpi).and_then(|d| d.shown(SHOWN)));
+    for made in [picture.clone(), picture.with_extension("tsv")] {
+        let _ = std::fs::remove_file(made);
+    }
+    let read = read?;
+    let shown = shown.expect("a page that was read was drawn")?;
+    Ok(Tried {
+        tsv: read.tsv.unwrap_or_default(),
+        dpi,
+        png: base64::engine::general_purpose::STANDARD.encode(&shown.png),
+        width: shown.width,
+        height: shown.height,
+        scale: shown.scale,
+    })
 }
 
 /// How many pages are drawn at once: as many as there are cores and as fit

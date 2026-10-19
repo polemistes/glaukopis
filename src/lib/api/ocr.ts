@@ -112,6 +112,25 @@ export interface Looked {
   locked: boolean;
   /** The dots to the inch of its pages, where they are pictures, as scans are. */
   resolution: number | null;
+  /** The first page without text, counted from one; nothing where every page has text. */
+  firstWithoutText: number | null;
+}
+
+/** A page tried before a PDF is read: what Tesseract read of it, how sure it was, and the picture it read. */
+export interface Tried {
+  /** Counted from one. */
+  page: number;
+  /** The number it has in print, or counted from one. */
+  label: string;
+  paragraphs: string[];
+  /** How sure Tesseract was of the page, from 0 to 100; nothing where it read no word. */
+  confidence: number | null;
+  /** Whether it was read poorly: under 80. */
+  poorly: boolean;
+  /** The picture Tesseract read, made smaller to be shown: PNG in base64. */
+  png: string;
+  width: number;
+  height: number;
 }
 
 /** What came of making a PDF of the library searchable. */
@@ -154,6 +173,15 @@ export const ocrRead = (path: string, asked: Asked, ticket?: string, stored?: bo
   call<Imported>('ocr_read', { path, asked, ticket, stored });
 
 export const ocrStop = (ticket: string) => call<void>('ocr_stop', { ticket });
+
+/** Tries a page, counted from one, with the languages and settings asked, before the whole is read. */
+export const ocrTry = (
+  path: string,
+  stored: boolean,
+  page: number,
+  asked: Asked,
+  ticket?: string,
+) => call<Tried>('ocr_try', { path, stored, page, asked, ticket });
 
 /** Makes a PDF attached to a reference searchable, by its path in the store. */
 export const ocrSearchable = (id: string | null, path: string, asked: Asked, ticket?: string) =>
