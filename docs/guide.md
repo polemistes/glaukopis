@@ -1555,16 +1555,19 @@ reads text in pictures, in four places.
   Among the projects, **A project from a document…**, or drop the file
   there. An element is made for the PDF under the element in view, named by
   the title found on its pages, else as the PDF names itself, else after its
-  file. With the shape of the pages kept (below), the document becomes a map
-  **by its headings**: the headings of the text are elements under it, each
-  level under the one above, holding what follows each; what stands before
-  the first heading, an author or a date, is the document element's own
-  text; and a mark with the page's number as it is printed (*xiv*, *23*)
-  stands where each page began, so that what you quote can still be found on
-  its page, unless **Mark where each page begins** is turned off. **By its
-  pages** makes an element of each page instead, named by its number, with
-  the headings under it, as an edition cited by its pages may want; it is
-  what is made where no heading is found. Before anything is made, the
+  file. What is made of it is chosen after the reading, under **What is
+  made of it**, when the headings of the book are known: with the shape of
+  the pages kept (below), the document becomes a map **by its headings**:
+  the headings of the text are elements under it, each level under the one
+  above, holding what follows each; what stands before the first heading,
+  an author or a date, is the document element's own text; and a mark with
+  the page's number as it is printed (*xiv*, *23*) stands where each page
+  began, so that what you quote can still be found on its page, unless
+  **Mark where each page begins** is turned off. **By its pages** makes an
+  element of each page instead, named by its number, with the headings
+  under it, as an edition cited by its pages may want; it is what is made
+  where no heading is found. Each choice there makes the elements anew from
+  what was read, in a moment, without reading the pages again, and the
   window shows the title and the headings as they will nest. The text of a
   picture becomes the text of the one element made of it.
 - **A PDF of the library is made searchable.** In the files of a reference,
@@ -1585,37 +1588,52 @@ reads text in pictures, in four places.
   is looked at in a project, beside the map, **Make an element of it** makes
   an element of the text there, under the element in view.
 
+**The window of a reading** is the same wherever a PDF is read, into
+elements or to be made searchable. At the top stand **all the pages**,
+small, drawn as they are scrolled to; under them, **the page in view**, in
+three panes side by side: the picture of the page, to judge against; **the
+text the PDF has** on that page, where it has any; and **what Tesseract
+read** of it, once it has been tried. Beside the panes stand the settings it
+is read with: the languages, the resolution, the layout, black and white,
+and **Try page …**. The button at the foot of the window says what will be
+done: *Read 147 pages*, *Take the text*, or *Make it searchable*.
+
 Many PDFs have text already: those made from a written document, and scans
-that a scanner or another program has read. Where a PDF has text, the window
-grows wide: beside the choices stands **the whole text the PDF has**, page by
-page under the numbers the pages have in print, to be scrolled through before
-anything is decided. A line above the choices says what was found: on how
-many pages there is text, in which fonts, and how the text keeps its letters
-where Glaukopis can tell.
+that a scanner or another program has read. The first line of the window
+says what each page will get, *412 pages take the text the PDF has; 147 are
+read with Tesseract*, and the small badge on each page in the strip says the
+same of that page. A page whose text does not read as text, as when a font
+does not say which letters it shows or a scanner read the page poorly, is
+tinted.
 
-Then one choice, in the same words wherever a PDF is read, into elements or
-to be made searchable:
+**Which pages take which text.** Each page takes the text the PDF has, or is
+read from a picture of it by Tesseract; a page without text is always read.
+At first every page is marked the same way: read where most of the text the
+PDF has does not read as text, and the pages are not too coarse to read
+anew; the PDF's text otherwise. Three buttons over the strip change it, for
+the pages selected, or for every page where none are:
 
-- **Keep the text the PDF has.** Its pages with text are taken as they are,
-  and only the pages without text are read.
-- **Translate it into readable text.** Offered where the text keeps its
-  letters in a way Glaukopis knows (below). The text is made readable by
-  what the fonts say of their letters; no page is read from a picture for
-  it, and the preview shows the text as it will be. In a searchable PDF,
-  the PDF's own tables are put right instead (**Make readable**), so that
-  every reader copies and searches the text rightly; nothing that is shown
-  changes.
-- **Read every page anew with Tesseract.** Only what Tesseract reads from
-  pictures of the pages is kept, and the text the PDF has is taken from no
-  page. In a searchable PDF its unseen text is taken away, and what is read
-  is laid in its place; the pages look as they did.
+- **The PDF's text**: these pages take the text the PDF has.
+- **Read with Tesseract**: these pages are read anew from pictures of them.
+- **Decide by the text's quality**: page by page, a page whose text reads as
+  text keeps it, and a page whose text does not, or that has none, is read.
 
-What is chosen at first follows what was found: translating where the text
-can be translated, reading anew where it does not read as text and cannot
-be, and keeping otherwise. A page that Tesseract cannot read is never given
-the PDF's text in its place: it says, in a line of its own, that it could
-not be read, and the window says how many pages were read, taken and not
-read.
+The panes of the page in view have the same choice in their headers: **Use
+for this page** (or for the pages selected) under the text the PDF has, or
+under what Tesseract read. In a searchable PDF, a page that is read loses
+the unseen text it had, and what is read is laid in its place; the pages
+look as they did, and the pages that keep their text are not touched.
+
+Where the text keeps its letters in a way Glaukopis knows (below), the text
+the PDF has is taken **as translated by what its fonts say**, a switch in
+the header of its pane, on at first: no page is read from a picture for it,
+and the pane shows the text as it will be. In a searchable PDF the PDF's
+own tables are put right instead (**Make readable**), so that every reader
+copies and searches the text rightly; nothing that is shown changes.
+
+A page that Tesseract cannot read is never given the PDF's text in its
+place: it says, in a line of its own, that it could not be read, and the
+window says how many pages were read, taken and not read.
 
 **How a text may keep its letters.** Many scholarly editions set their
 Greek in fonts that keep the letters under other names, so that a PDF
@@ -1648,8 +1666,7 @@ wrong. For one script alone, take the others away. Rows of accents over
 closely set Greek, which Tesseract may read as lines of their own, are left
 out of what it reads.
 
-Before anything is read, you are asked for the languages of the text, the
-likeliest first. Those chosen under *Settings* are given at first; where
+Beside the pages stand the languages of the text, the likeliest first. Those chosen under *Settings* are given at first; where
 none are chosen there, the language of the text, as far as it is known (that
 of new texts, of the project, or of the reference), and that of the
 interface. Tesseract reads only the
@@ -1687,8 +1704,8 @@ stands alone at the head or the foot of a page, which is its number, is left
 out, and so are lines without a letter or a digit, which are what is read
 of a rule or a picture on the page.
 
-**The shape of the pages.** Where **Keep the shape of the pages** is chosen,
-as it is at first, the shape of each page is read from where its lines stand
+**The shape of the pages.** Where **Keep the shape of the pages** is chosen
+under **What is made of it**, as it is at first, the shape of each page is read from where its lines stand
 and how large they are, the same for the text a PDF has and for what
 Tesseract reads, and kept in the elements made:
 
@@ -1763,35 +1780,44 @@ window says so before anything is read: their letters are too few to be read
 well, whatever is chosen, and reading them anew will not better the text the
 PDF has. It does not propose reading them anew.
 
-**Trying a page.** Before the whole is read, a page can be tried. Beside the
-choices, under **Try a page** where the PDF has text of its own and the window
-shows that text too, give the page and press **Try**: it is read in a few
-seconds with the languages and the settings as they stand, and the picture
-Tesseract read is shown beside the text it read, with how sure it was. Change
-a language, choose the Fraktur model, tell the layout, and try again, until
-the page reads well; then read the whole. The page tried at first is the
-first that is to be read. Over the picture stand the **blocks of text**
-Tesseract found, numbered in the order it reads them: two columns in one
-block, or notes taken into the text, will be read in the wrong order, and
-another layout may part them. The blocks can be hidden.
+**Trying a page.** Before the whole is read, any page can be tried, whatever
+it is marked to take: that is how you find out whether reading it anew is
+worth it. Choose the page in the strip and press **Try page …** beside the
+panes: it is read in a few seconds with the settings that hold for it, and
+what Tesseract read stands beside the text the PDF has and the picture, with
+how sure it was out of 100. The words it was unsure of are underlined, and
+marked faintly on the picture, and the pane says how many there were (*14 of
+312 words unsure*): where the reading is weak shows at a glance. Over the
+picture stand the **blocks of text** Tesseract found, numbered in the order
+it reads them: two columns in one block, or notes taken into the text, will
+be read in the wrong order, and another layout may part them. The blocks can
+be hidden, and the picture zoomed.
 
-**Stretches.** A book that changes language or type part way, an English
-introduction before a Greek text, or a body in Gothic type with notes in
-roman, can be read in stretches, each with its languages and its layout.
-Under the choices stand all the pages, small, drawn as they are scrolled to.
-Choose a page, and **Begin a stretch here**: from that page to the next
-stretch, or to the end, it is read with the languages and the layout chosen
-now. The stretches stand as chips over the pages, each saying its pages and
-what it is read with; the one marked is what the languages and the layout
-you choose hold for, and choosing a page makes its stretch the one marked
-and the page the one tried. **×** on a chip takes a stretch away, and its
-pages are read as those before them. Where the PDF has an outline of its
-parts, a stretch can be begun at each of them at once, to be set part by
-part. The pages read poorly are named by their numbers in the file, as the
-strip numbers them.
+Change a language, choose the Fraktur model, tell the layout, and try
+again. Each trial of a page is kept while the window is open, the last six
+of them, listed under what Tesseract read with what it was read with and how
+sure it was: choose one to see its text again, and **Use these settings** to
+read the pages selected with the settings that read best.
+
+**Selecting pages, and stretches.** A click on a page in the strip brings
+it into view and selects it. **Shift**-click selects every page from the
+last one clicked; **Ctrl**-click adds a page to the selection or takes it
+away; the arrow keys go from page to page, and with **Shift** they widen the
+selection. The line over the settings says what they hold for: *all 559
+pages*, *pages 39–120*, *page 280*; **All pages** selects none, which is the
+same as all. A setting changed holds for the pages selected, so that a book
+that changes language or type part way, an English introduction before a
+Greek text, or a body in Gothic type with notes in roman, is read in
+**stretches**, each with its own languages, resolution, layout and black and
+white. Where the pages are read in more than one way, a band over the strip
+shows where each stretch begins and what it is read with; a click on the
+band selects its pages. Where the PDF has an outline of its parts, a mark
+under the strip stands at each part's first page; a click on it selects the
+part's pages. The pages read poorly are named by their numbers in the file,
+as the strip numbers them.
 
 **When a reading goes badly** in other ways, three things can be tried,
-under **How it is read** in the dialog, for that reading, or under Tesseract
+beside the pages in the window, for the pages selected, or under Tesseract
 in *Settings*, for every reading: a higher **resolution** (400 or 600 dots to
 the inch in place of 300) where the print is small; the **layout** told, one
 column where columns are muddled together, one block of text for a single
