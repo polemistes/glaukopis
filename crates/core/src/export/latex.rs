@@ -192,8 +192,9 @@ pub fn settings(f: &DocumentFormat, p: &Particulars) -> Settings {
     let _ = writeln!(h, "\\usepackage{{titlesec}}");
     for (i, command) in ["section", "subsection", "subsubsection", "paragraph", "subparagraph"].iter().enumerate() {
         let level = f.heading(i + 1);
-        let label = if f.headings.numbered { format!("\\the{command}") } else { String::new() };
-        let sep = if f.headings.numbered { "0.6em" } else { "0pt" };
+        let numbered = f.headings.plain_numbering();
+        let label = if numbered { format!("\\the{command}") } else { String::new() };
+        let sep = if numbered { "0.6em" } else { "0pt" };
         let upper = if level.case == Case::Upper { "\\MakeUppercase" } else { "" };
         let _ = writeln!(
             h,
@@ -298,7 +299,8 @@ pub fn settings(f: &DocumentFormat, p: &Particulars) -> Settings {
         );
     }
 
-    Settings { variables: v, header: h, number_sections: f.headings.numbered }
+    // Numbered levels in styles of their own are numbered by the core, in the text of the headings (ADR 0058).
+    Settings { variables: v, header: h, number_sections: f.headings.plain_numbering() }
 }
 
 /// Whether the header or the footer differs on left pages: the document is then set two-sided.

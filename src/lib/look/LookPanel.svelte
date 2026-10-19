@@ -628,7 +628,14 @@
   }
 
   function levelWords(l: HeadingLevel): string {
+    const numbering =
+      !effective?.headings.numbered || !l.numbering || l.numbering === 'as-above'
+        ? ''
+        : l.numbering === 'none'
+          ? t('format-level-not-numbered')
+          : t('format-level-numbered-as', { style: t(`format-level-numbering-${l.numbering}`) });
     return [
+      numbering,
       t('format-level-size', { size: l.size }),
       l.bold ? t('format-level-bold') : '',
       l.italic ? t('format-level-italic') : '',
@@ -934,6 +941,24 @@
   ]);
 
   const levelRows: Row<HeadingLevel>[] = $derived([
+    // First how it is numbered (ADR 0058), where the headings are: then its look.
+    level.choice(
+      t('format-level-numbering'),
+      {
+        get: (l) => l.numbering ?? 'as-above',
+        set: (l, v) => (l.numbering = v as HeadingLevel['numbering']),
+      },
+      [
+        ['as-above', t('format-level-numbering-as-above')],
+        ['none', t('format-level-numbering-none')],
+        ['arabic', t('format-level-numbering-arabic')],
+        ['alpha', t('format-level-numbering-alpha')],
+        ['alpha-lower', t('format-level-numbering-alpha-lower')],
+        ['roman', t('format-level-numbering-roman')],
+        ['roman-lower', t('format-level-numbering-roman-lower')],
+      ],
+      { hint: t('format-level-numbering-hint'), when: () => !!effective?.headings.numbered },
+    ),
     level.number(t('format-size'), 'size', pt()),
     level.toggle(t('format-bold'), 'bold'),
     level.toggle(t('format-italic'), 'italic'),

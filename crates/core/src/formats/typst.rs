@@ -182,8 +182,9 @@ fn language(tag: Option<&str>) -> (String, Option<String>) {
 
 fn heading_rule(out: &mut String, level: usize, h: &HeadingLevel, format: &DocumentFormat) {
     let indent = if h.indent { format.text.indent.to_string() } else { "0pt".into() };
+    // A level not numbered under a numbering function is given no number, nor the room after one.
     let number = if format.headings.numbered {
-        "if it.numbering != none { counter(heading).display(it.numbering); h(0.6em) }; "
+        "if it.numbering != none { let n = counter(heading).display(it.numbering); if n != none { n; h(0.6em) } }; "
     } else {
         ""
     };
@@ -208,6 +209,32 @@ fn heading_rule(out: &mut String, level: usize, h: &HeadingLevel, format: &Docum
         extra = pt(((format.text.line_spacing - 1.0) * 1.2 * format.font.size).max(0.0)),
         body = cased(h.case, "it.body"),
     );
+}
+
+/// How Typst numbers the headings (ADR 0058): "1.1" where every level is
+/// numbered in arabic, as before; a function where the levels differ, which
+/// numbers a heading by the numbered levels above it and its own, and gives
+/// none where its own level is not numbered; nothing where nothing is.
+fn heading_numbering(f: &DocumentFormat) -> String {
+    let numbering = f.headings.resolved_numbering();
+    if f.headings.plain_numbering() {
+        return "#set heading(numbering: \"1.1\")".into();
+    }
+    if numbering.iter().all(Option::is_none) {
+        return String::new();
+    }
+    let styles: Vec<String> =
+        numbering.iter().map(|s| s.map(|s| string(number_pattern(s))).unwrap_or_else(|| "none".into())).collect();
+    format!(
+        "#set heading(numbering: (..nums) => {{
+  let styles = ({},)
+  let style(i) = styles.at(calc.min(i, styles.len() - 1))
+  let n = nums.pos()
+  if style(n.len() - 1) == none {{ return none }}
+  n.enumerate().filter(((i, x)) => style(i) != none).map(((i, x)) => numbering(style(i), x)).join(\".\")
+}})",
+        styles.join(", ")
+    )
 }
 
 /// The pattern of Typst's `numbering` for a style of numbers.
@@ -439,9 +466,7 @@ pub fn preamble(format: &DocumentFormat, p: &Particulars) -> String {
     let _ = writeln!(out, "#set list(indent: 1em)\n#set enum(indent: 1em)\n#set terms(hanging-indent: 1.5em)");
 
     // Headings.
-    if f.headings.numbered {
-        let _ = writeln!(out, "#set heading(numbering: \"1.1\")");
-    }
+    let _ = writeln!(out, "{}", heading_numbering(f));
     for level in 1..=6 {
         heading_rule(&mut out, level, &f.heading(level), f);
     }

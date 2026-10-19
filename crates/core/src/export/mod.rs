@@ -776,7 +776,12 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
     converter.extras.flows = particulars(doc, f).flows;
     converter.extras.text_width =
         f64::from(f.page.dimensions().0 - f.page.margin_left.points() - f.page.margin_right.points()).max(72.0);
-    converter.extras.targets = converter.targets(doc, f.headings.numbered);
+    // The numbers of the headings: the core writes them where the levels are
+    // numbered otherwise than 1, 1.1, 1.1.1, which Typst does itself and
+    // the others are asked to (ADR 0058).
+    converter.extras.numbering = f.headings.resolved_numbering();
+    converter.extras.written_numbers = !matches!(target, Target::Pdf | Target::Typst) && !f.headings.plain_numbering();
+    converter.extras.targets = converter.targets(doc, &converter.extras.numbering);
     converter.extras.kinds = crate::formats::kinds::table(f, &doc.kinds);
     converter.extras.parts = crate::templates::kinds::table(f);
     converter.extras.italics_underlined = f.text.italics == crate::formats::Italics::Underline;
@@ -1191,7 +1196,7 @@ fn arguments(
         args.push("--lua-filter".into());
         args.push(filters.join("tables.lua").display().to_string());
     }
-    if request.format.headings.numbered
+    if request.format.headings.plain_numbering()
         && !matches!(target, Target::Pdf | Target::Typst | Target::Latex | Target::PdfLatex)
     {
         args.push("--number-sections".into());
@@ -2635,6 +2640,52 @@ mod tests {
         let typ = out.join("marked.typ");
         export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
         assert!(fs::read_to_string(&typ).unwrap().contains("#metadata(\"e1\") <gk-el-e1>"));
+    }
+
+    #[test]
+    fn headings_are_numbered_level_by_level_in_every_document() {
+        use crate::document::fixtures::text;
+        use crate::document::{Block, Section};
+        use crate::formats::LevelNumbering;
+        let Some(s) = setup() else { return };
+        let mut r = request("chicago-author-date");
+        let section = |level: u8, heading: &str| Section {
+            level,
+            heading: Some(vec![text(heading)]),
+            blocks: vec![Block::paragraph(vec![text("Words.")])],
+            element: Some(heading.to_lowercase()),
+            kind: None,
+        };
+        r.document.sections = vec![section(1, "One"), section(2, "Inner"), section(1, "Two")];
+        r.format.headings.numbered = true;
+        r.format.headings.levels[0].numbering = LevelNumbering::Roman;
+        r.format.headings.levels[1].numbering = LevelNumbering::None;
+        r.key = "numbered-levels".into();
+        let p = preview(&s.ctx(), &r).unwrap();
+        assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+        let source = fs::read_to_string(s.work.join("numbered-levels/preview/document.typ")).unwrap();
+        assert!(
+            source.contains("#set heading(numbering: (..nums) => {\n  let styles = (\"I\", none, none,)"),
+            "{source}"
+        );
+        let words: Vec<&str> = p.pages.iter().flat_map(|p| p.texts.iter().map(|t| t.text.trim())).collect();
+        let place = |w: &str| words.iter().position(|x| *x == w).unwrap_or_else(|| panic!("{w} in {words:?}"));
+        assert!(place("I") < place("One") && place("One") < place("Inner") && place("II") < place("Two"), "{words:?}");
+        assert_eq!(words[place("Inner") - 1], "Words.", "the second level is not numbered: {words:?}");
+
+        // Word and LaTeX: the numbers written into the headings by the core.
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let docx = out.join("numbered.docx");
+        export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        let document = unzip(&docx, "word/document.xml");
+        assert!(at(&document, ">II<") < at(&document, "Two"), "{document}");
+        assert!(!document.contains(">1<"), "{document}");
+        let tex = out.join("numbered.tex");
+        export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
+        let l = fs::read_to_string(&tex).unwrap();
+        assert!(l.contains("II Two"), "{l}");
+        assert!(!l.contains("\\thesection"), "LaTeX numbers nothing itself: {l}");
     }
 
     #[test]

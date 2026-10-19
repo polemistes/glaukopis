@@ -107,6 +107,13 @@ pub struct Extras {
     pub first_indented: bool,
     /// What can be pointed to, by its id.
     pub targets: HashMap<String, Pointed>,
+    /// How each level of heading is numbered (ADR 0058), and whether the
+    /// numbers are written into the headings, where the target would not
+    /// number them so itself.
+    pub numbering: Vec<Option<crate::formats::NumberStyle>>,
+    pub written_numbers: bool,
+    /// How many headings of each level have been written, for their numbers.
+    pub(super) counts: RefCell<Vec<u32>>,
     /// How wide the text is on the page, in points.
     pub text_width: f64,
     /// Text flows around something in the document.
@@ -273,7 +280,11 @@ impl Converter<'_> {
     /// What can be pointed to in a document, with the numbers it has there.
     /// The order is that in which the document is written, and the numbers
     /// those that are given as it is written.
-    pub fn targets(&self, doc: &Document, numbered_headings: bool) -> HashMap<String, Pointed> {
+    pub fn targets(
+        &self,
+        doc: &Document,
+        numbering: &[Option<crate::formats::NumberStyle>],
+    ) -> HashMap<String, Pointed> {
         fn inlines(list: &[Inline], to: &mut HashSet<String>) {
             for inline in list {
                 match inline {
@@ -371,11 +382,13 @@ impl Converter<'_> {
                 inlines(heading, counted.to);
                 let level = section.level.clamp(1, self.deepest.max(1)) as usize;
                 let set_as_heading = !self.run_in.iter().any(|r| r.level as usize == level);
-                let number = (numbered_headings && set_as_heading).then(|| {
+                let number = if set_as_heading {
                     levels[level - 1] += 1;
                     levels[level..].fill(0);
-                    levels[..level].iter().map(u32::to_string).collect::<Vec<_>>().join(".")
-                });
+                    crate::formats::heading_number(&levels[..level], numbering)
+                } else {
+                    None
+                };
                 if let Some(id) = section.element.as_deref().filter(|id| !id.is_empty()) {
                     counted.found.entry(id.to_owned()).or_insert(Pointed {
                         kind: PointedKind::Part,
@@ -719,7 +732,24 @@ impl Converter<'_> {
                     _ => body.insert(0, json!({"t": "Para", "c": [lead]})),
                 }
             }
-            (Some(h), None) if section.level > 0 => {
+            (Some(mut h), None) if section.level > 0 => {
+                // The number of the heading, where the core writes it (ADR 0058).
+                let number = {
+                    let mut counts = self.extras.counts.borrow_mut();
+                    let at = level as usize;
+                    if counts.len() < at {
+                        counts.resize(at, 0);
+                    }
+                    counts[at - 1] += 1;
+                    counts.truncate(at);
+                    crate::formats::heading_number(&counts, &self.extras.numbering)
+                };
+                if self.extras.written_numbers
+                    && let Some(n) = number
+                {
+                    let span = json!({"t": "Span", "c": [["", ["header-section-number"], []], [{"t": "Str", "c": n}]]});
+                    h.splice(0..0, [span, json!({"t": "Space"})]);
+                }
                 out.extend(self.begins.before(level).iter().cloned());
                 out.extend(mark.take());
                 let place = section.element.as_deref().and_then(|id| self.extras.anchor(id));

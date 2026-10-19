@@ -307,6 +307,100 @@ impl Default for Headings {
     }
 }
 
+impl Headings {
+    /// The numbering of each level as it comes to be (ADR 0058): its style,
+    /// None where it is not numbered. Nothing is numbered where the headings
+    /// are not; the first level as above is arabic; a level as above takes
+    /// the numbering of the level above it.
+    pub fn resolved_numbering(&self) -> Vec<Option<NumberStyle>> {
+        let mut out: Vec<Option<NumberStyle>> = Vec::with_capacity(self.levels.len());
+        for level in &self.levels {
+            let style = if !self.numbered {
+                None
+            } else {
+                match level.numbering {
+                    LevelNumbering::AsAbove => out.last().copied().unwrap_or(Some(NumberStyle::Arabic)),
+                    LevelNumbering::None => None,
+                    LevelNumbering::Arabic => Some(NumberStyle::Arabic),
+                    LevelNumbering::Alpha => Some(NumberStyle::Letters),
+                    LevelNumbering::AlphaLower => Some(NumberStyle::LettersLower),
+                    LevelNumbering::Roman => Some(NumberStyle::Roman),
+                    LevelNumbering::RomanLower => Some(NumberStyle::RomanLower),
+                }
+            };
+            out.push(style);
+        }
+        out
+    }
+
+    /// Whether the headings are numbered 1, 1.1, 1.1.1 and no otherwise, as
+    /// Pandoc and LaTeX number them of themselves.
+    pub fn plain_numbering(&self) -> bool {
+        self.numbered && self.resolved_numbering().iter().all(|s| *s == Some(NumberStyle::Arabic))
+    }
+}
+
+/// The number of a heading from how many headings of each level have been
+/// counted down to it (ADR 0058): the numbers of the numbered levels above
+/// it and its own, in their styles, with full stops between; None where its
+/// own level is not numbered. Levels deeper than the numbering says are
+/// numbered as its last.
+pub fn heading_number(counts: &[u32], numbering: &[Option<NumberStyle>]) -> Option<String> {
+    let style = |i: usize| numbering.get(i.min(numbering.len().saturating_sub(1))).copied().flatten();
+    let own = counts.len().checked_sub(1)?;
+    style(own)?;
+    let parts: Vec<String> =
+        counts.iter().enumerate().filter_map(|(i, n)| style(i).map(|s| styled_number(*n, s))).collect();
+    Some(parts.join("."))
+}
+
+/// A number in a style: 4 as 4, IV, iv, D or d.
+pub fn styled_number(n: u32, style: NumberStyle) -> String {
+    fn roman(mut n: u32) -> String {
+        const NUMERALS: [(u32, &str); 13] = [
+            (1000, "M"),
+            (900, "CM"),
+            (500, "D"),
+            (400, "CD"),
+            (100, "C"),
+            (90, "XC"),
+            (50, "L"),
+            (40, "XL"),
+            (10, "X"),
+            (9, "IX"),
+            (5, "V"),
+            (4, "IV"),
+            (1, "I"),
+        ];
+        let mut out = String::new();
+        for (value, numeral) in NUMERALS {
+            while n >= value {
+                out.push_str(numeral);
+                n -= value;
+            }
+        }
+        out
+    }
+    // A, …, Z, AA, AB, … as Typst letters them.
+    fn letters(mut n: u32) -> String {
+        let mut out = Vec::new();
+        while n > 0 {
+            n -= 1;
+            out.push(char::from(b'A' + (n % 26) as u8));
+            n /= 26;
+        }
+        out.iter().rev().collect()
+    }
+    match style {
+        NumberStyle::Arabic => n.to_string(),
+        NumberStyle::Roman if n > 0 => roman(n),
+        NumberStyle::RomanLower if n > 0 => roman(n).to_lowercase(),
+        NumberStyle::Letters if n > 0 => letters(n),
+        NumberStyle::LettersLower if n > 0 => letters(n).to_lowercase(),
+        _ => n.to_string(),
+    }
+}
+
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum TitlePlacement {
@@ -1329,6 +1423,39 @@ pub fn slug(name: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn headings_are_numbered_level_by_level() {
+        let mut h = Headings { numbered: true, ..Default::default() };
+        let arabic = Some(NumberStyle::Arabic);
+        assert_eq!(h.resolved_numbering(), [arabic, arabic, arabic]);
+        assert!(h.plain_numbering());
+        assert_eq!(heading_number(&[2, 1, 3], &h.resolved_numbering()).as_deref(), Some("2.1.3"));
+        // Level 3 none: not numbered, the deeper as it.
+        h.levels[2].numbering = LevelNumbering::None;
+        assert_eq!(h.resolved_numbering(), [arabic, arabic, None]);
+        assert!(!h.plain_numbering());
+        assert_eq!(heading_number(&[2, 1, 3], &h.resolved_numbering()), None);
+        assert_eq!(heading_number(&[2, 1], &h.resolved_numbering()).as_deref(), Some("2.1"));
+        // Level 1 roman, level 2 as above: in its style, under its number.
+        h.levels[2].numbering = LevelNumbering::AsAbove;
+        h.levels[0].numbering = LevelNumbering::Roman;
+        assert_eq!(heading_number(&[4, 2], &h.resolved_numbering()).as_deref(), Some("IV.II"));
+        h.levels[1].numbering = LevelNumbering::Arabic;
+        assert_eq!(heading_number(&[4, 2], &h.resolved_numbering()).as_deref(), Some("IV.2"));
+        assert_eq!(heading_number(&[4, 2, 1], &h.resolved_numbering()).as_deref(), Some("IV.2.1"));
+        // A level not numbered between: the numbers of the numbered levels.
+        h.levels[1].numbering = LevelNumbering::None;
+        h.levels[2].numbering = LevelNumbering::AlphaLower;
+        assert_eq!(heading_number(&[4, 2, 3], &h.resolved_numbering()).as_deref(), Some("IV.c"));
+        // Not numbered at all, whatever the levels say.
+        h.numbered = false;
+        assert_eq!(h.resolved_numbering(), [None, None, None]);
+        assert!(!h.plain_numbering());
+        assert_eq!(styled_number(1994, NumberStyle::Roman), "MCMXCIV");
+        assert_eq!(styled_number(28, NumberStyle::Letters), "AB");
+        assert_eq!(styled_number(3, NumberStyle::RomanLower), "iii");
+    }
 
     #[test]
     fn a_layout_in_the_old_shape_reads_as_the_new() {

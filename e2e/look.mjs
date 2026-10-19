@@ -240,6 +240,15 @@ try {
     await typstHas(/#pagebreak\(weak: true, to: "odd"\)\n#metadata\("opener"\) <gk-opener>/),
   );
   await app.lookChoose('Begins', 'text');
+  // Numbered level by level: the chapters in roman.
+  await app.lookWrite('Numbered', true);
+  await sleep(300);
+  check('each level, once the headings are numbered, says how first', (await app.lookChosen('Numbering')) === 'as-above');
+  await app.lookChoose('Numbering', 'roman');
+  check('a level numbered in roman is said so', (await app.exec(`return document.querySelector('.side .look details.level[data-level="1"] .said')?.textContent ?? ''`)).includes('numbered I, II, III'));
+  check('and the preview numbers the chapters so', await typstHas(/#set heading\(numbering: \(\.\.nums\) => \{\n  let styles = \("I", "I", "I",\)/));
+  await app.lookChoose('Numbering', 'as-above');
+  await app.lookWrite('Numbered', false);
 
   // --- A change made on the project is said in an element under it ---
   await app.lookSection('Type');

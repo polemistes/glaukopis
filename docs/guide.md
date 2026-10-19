@@ -2181,7 +2181,13 @@ you scroll, mark the part you are in, and go to each:
 - **Paragraphs**: how they begin and are spaced; **Long quotations**, those
   set off from the text by their length; and **Kinds of paragraph and of
   words**, every kind with its look.
-- **Headings**: whether they are numbered, and each level, with where it
+- **Headings**: whether they are **Numbered**, and each level: first its
+  **Numbering**, *As the level above*, *None*, or a style of its own, 1, A,
+  a, I or i. A level as the level above is numbered in that level's style,
+  under its number, so that with nothing changed the headings run 1, 1.1,
+  1.1.1; chapters in roman and sections in arabic are level 1 at *I, II,
+  III* and level 2 at *1, 2, 3*, giving I.1. A level at *None* has no
+  number, nor have the levels under it that follow it. Then where the level
   **Begins**: *In the text*, *On a new page*, as the chapters of a book do,
   or *On a right-hand page*, where a blank left page, with nothing in its
   header or footer, is put in where one is needed. The blank page is
