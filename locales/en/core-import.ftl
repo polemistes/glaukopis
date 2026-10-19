@@ -74,6 +74,7 @@ core-import-zotero-no-group-names = the names of group libraries are not known
 
 core-import-pdf-empty = The file “{ $name }” is empty.
 core-import-pdf-not-a-pdf = The file “{ $name }” is not a PDF.
+core-import-pdf-not-started = “{ $name }” could not be read, since no process could be started to read it in: { $message }
 core-import-pdf-unreadable = The file could not be read: it is damaged, protected by a password, or too large.
 core-import-pdf-scan = The file has no text layer: it is a scan.
 core-import-pdf-from-file = The details are from the file itself, not from a catalogue, and should be checked.

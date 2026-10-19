@@ -1298,26 +1298,30 @@ fn file_name(path: &Path) -> String {
 /// hand.
 pub fn identify(path: &Path) -> Result<PdfFacts> {
     let name = checked(path)?;
-    Ok(facts(&read_guarded(path), &name))
+    Ok(facts(&read_guarded(path, &name)?, &name))
 }
 
-/// Reads the file in a process of its own where the application has one to
-/// give (`isolated.rs`), killed when its time is up or it takes more memory
-/// than it may; else on a thread ([`read`]). A file whose reading was given
-/// up is one that could not be read.
-fn read_guarded(path: &Path) -> Raw {
+/// Reads the file in a process of its own (`isolated.rs`), killed when its
+/// time is up or it takes more memory than it may. A file whose reading was
+/// given up is one that could not be read. The application never takes a
+/// PDF apart itself, since one made to do harm would take the application
+/// with it: where no process can be started to read it in, that is said, and
+/// the file is not read. Only where no program for such processes was given
+/// at all, as in the tests of the core, is the file read here, on a thread
+/// ([`read`]).
+fn read_guarded(path: &Path, name: &str) -> Result<Raw> {
     let size = std::fs::metadata(path).map_or(0, |m| m.len());
     let limits = crate::isolated::Limits::for_file(size, PATIENCE);
     match crate::isolated::run::<Raw>("pdf-facts", path, limits) {
-        None => read(path),
-        Some(Ok(raw)) => raw,
+        None => Ok(read(path)),
+        Some(Ok(raw)) => Ok(raw),
         Some(Err(crate::isolated::Ended::NotStarted(why))) => {
-            tracing::warn!(%why, "no process could be started for reading the PDF; it is read here");
-            read(path)
+            tracing::error!(%why, path = %path.display(), "no process could be started for reading the PDF; it is not read");
+            Err(Error::invalid(tr!("core-import-pdf-not-started", name = name, message = why.as_str())))
         }
         Some(Err(ended)) => {
             tracing::warn!(%ended, path = %path.display(), "reading the PDF was given up");
-            Raw::default()
+            Ok(Raw::default())
         }
     }
 }
@@ -1356,7 +1360,7 @@ fn checked(path: &Path) -> Result<String> {
 /// how many pages to read. The file is still said to have no text.
 pub fn identify_scan(path: &Path, first: impl FnOnce(usize) -> Vec<String>) -> Result<PdfFacts> {
     let name = checked(path)?;
-    let mut raw = read_guarded(path);
+    let mut raw = read_guarded(path, &name)?;
     let found = facts(&raw, &name);
     if found.has_text || raw.pages == 0 {
         return Ok(found);

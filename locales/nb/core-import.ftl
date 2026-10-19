@@ -72,6 +72,7 @@ core-import-zotero-no-group-names = navnene på gruppebibliotekene er ikke kjent
 
 core-import-pdf-empty = Filen «{ $name }» er tom.
 core-import-pdf-not-a-pdf = Filen «{ $name }» er ikke en PDF.
+core-import-pdf-not-started = «{ $name }» kunne ikke leses, fordi ingen prosess kunne startes for å lese den i: { $message }
 core-import-pdf-unreadable = Filen kunne ikke leses: den er skadet, beskyttet med passord eller for stor.
 core-import-pdf-scan = Filen har ikke noe tekstlag: den er skannet.
 core-import-pdf-from-file = Opplysningene er hentet fra selve filen, ikke fra en katalog, og bør kontrolleres.
