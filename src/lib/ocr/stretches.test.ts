@@ -10,8 +10,8 @@ import {
   withCurrent,
 } from './stretches';
 
-const eng = { languages: ['eng'], layout: '' as const };
-const grc = { languages: ['grc', 'eng'], layout: 'column' as const };
+const eng = { languages: ['eng'], layout: '' as const, dpi: 0, contrast: false };
+const grc = { languages: ['grc', 'eng'], layout: 'column' as const, dpi: 0, contrast: false };
 
 describe('stretches of pages read otherwise', () => {
   it('begin with the whole, and a stretch begun is put in its place', () => {
@@ -19,8 +19,8 @@ describe('stretches of pages read otherwise', () => {
     const { list: two, index } = beginStretch(list, 39, grc);
     expect(index).toBe(1);
     expect(two).toEqual([
-      { from: 1, languages: ['eng'], layout: '' },
-      { from: 39, languages: ['grc', 'eng'], layout: 'column' },
+      { from: 1, languages: ['eng'], layout: '', dpi: 0, contrast: false },
+      { from: 39, languages: ['grc', 'eng'], layout: 'column', dpi: 0, contrast: false },
     ]);
     const { list: three, index: middle } = beginStretch(two, 12, eng);
     expect(middle).toBe(1);
@@ -79,7 +79,9 @@ describe('stretches of pages read otherwise', () => {
     ).toEqual({
       languages: ['eng'],
       layout: '',
-      stretches: [{ from: 39, languages: ['grc', 'eng'], layout: 'column' }],
+      stretches: [
+        { from: 39, languages: ['grc', 'eng'], layout: 'column', dpi: 0, contrast: false },
+      ],
     });
   });
 });

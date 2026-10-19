@@ -158,7 +158,7 @@ fn what_is_sent_is_what_the_interface_declares() {
             &std::sync::atomic::AtomicBool::new(false),
         )
         .unwrap();
-        glaukopis_core::ocr::imported_pdf("shape.pdf", "Shape", read)
+        glaukopis_core::ocr::imported_pdf("shape.pdf", "Shape", &read, glaukopis_core::ocr::Making::default())
     };
     let pictures = Pictures::open(data.pictures()).unwrap();
     let picture = pictures.add("dot.png", DOT).unwrap();
@@ -523,7 +523,28 @@ fn what_is_sent_is_what_the_interface_declares() {
     let tried = glaukopis_core::ocr::Tried {
         page: 3,
         label: "iii".into(),
-        paragraphs: vec!["A paragraph.".into()],
+        paragraphs: vec![vec![
+            glaukopis_core::ocr::text::Word {
+                text: "A".into(),
+                confidence: Some(96.0),
+                left: 90.5,
+                top: 120.0,
+                width: 20.0,
+                height: 30.5,
+                line: true,
+            },
+            glaukopis_core::ocr::text::Word {
+                text: "paragraph.".into(),
+                confidence: None,
+                left: 120.0,
+                top: 120.0,
+                width: 160.0,
+                height: 30.5,
+                line: false,
+            },
+        ]],
+        words: 2,
+        unsure: 0,
         confidence: Some(91.5),
         poorly: false,
         png: "iVBORw0KGgo=".into(),
@@ -532,6 +553,13 @@ fn what_is_sent_is_what_the_interface_declares() {
         blocks: vec![glaukopis_core::ocr::text::TextBlock { left: 90.5, top: 120.0, width: 950.0, height: 1300.25 }],
     };
     put("tried", "ocr.Tried", &tried);
+    let read_done = crate::commands::ocr::ReadDone {
+        imported: glaukopis_core::ocr::imported_picture("dot.png", "dot", vec!["A line.".into()]),
+        kept: Some("reading-1".into()),
+    };
+    put("readDone", "ocr.ReadDone", &read_done);
+    let making = glaukopis_core::ocr::Making::default();
+    put("making", "ocr.Making", &making);
     put("shapedImport", "imported.Imported", &shaped_import);
     put("pageText", "ocr.PageTextView[]", &page_text);
     put("filesListing", "files.FilesListing", &crate::commands::files::files_listing(&library));

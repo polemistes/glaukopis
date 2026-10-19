@@ -67,6 +67,11 @@ pub fn read_poorly(confidence: Option<f32>) -> bool {
     confidence.is_some_and(|c| c < POORLY)
 }
 
+/// A word Tesseract was less sure of than this, from 0 to 100, is unsure:
+/// underlined where a page tried is shown, and counted. Its words on pages
+/// read well mostly stand over 90; under 70 they are wrong as often as not.
+pub const UNSURE: f32 = 70.0;
+
 /// Pages, counted from one and in order, said as stretches: `3–5, 9`. Past
 /// ten stretches, the rest are not named.
 pub fn stretches_of(pages: &[usize]) -> String {
@@ -169,35 +174,62 @@ pub struct Asked {
     /// Whether the page is made black and white before it is read, for
     /// faint or uneven print.
     pub contrast: bool,
-    /// Whether the shape of the pages is kept (ADR 0045): headings, lines
-    /// kept as lines, numbers in the margin, the styles that recur. Without
-    /// it, the pages become plain paragraphs.
+    /// Whether the shape of the pages is found as they are read (ADR 0045):
+    /// headings, lines kept as lines, numbers in the margin, the styles that
+    /// recur. What is made of it, the shape kept or plain paragraphs, is
+    /// chosen after the reading (`Making`).
     pub shape: bool,
-    /// With the shape kept, whether the document is made by its headings or
-    /// by its pages.
-    pub structure: Structure,
-    /// By its headings, whether a reference mark with the page's label
-    /// stands where each page begins.
-    pub page_marks: bool,
-    /// Stretches of the pages read with languages and a layout of their
-    /// own, in the order of their pages: a book that changes language or
-    /// type part way. The pages before the first, and all where there are
-    /// none, are read with `languages` and `layout`.
+    /// Stretches of the pages read with settings of their own, in the order
+    /// of their pages: a book that changes language or type part way. The
+    /// pages before the first, and all where there are none, are read with
+    /// `languages`, `dpi`, `layout` and `contrast`.
     #[serde(default)]
     pub stretches: Vec<Stretch>,
+    /// The pages Tesseract reads, counted from one. Where given, exactly
+    /// these, and any page without text, which cannot take what is not
+    /// there; the others take the text the PDF has, as `text` says (kept or
+    /// translated). Where not given, as `text` says for every page: all
+    /// with `Anew`, those without text otherwise.
+    #[serde(default)]
+    pub read: Option<Vec<usize>>,
 }
 
-/// A stretch of a PDF's pages read with languages and a layout of its own:
-/// from its page to the page before the next stretch, or to the end.
+/// A stretch of a PDF's pages read with settings of their own: from its
+/// page to the page before the next stretch, or to the end.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", default)]
 pub struct Stretch {
     /// The page it begins at, counted from one.
     pub from: usize,
     /// As `Asked::languages`.
     pub languages: Vec<String>,
+    /// As `Asked::dpi`.
+    pub dpi: u32,
     /// As `Asked::layout`.
     pub layout: String,
+    /// As `Asked::contrast`.
+    pub contrast: bool,
+}
+
+/// What is made of a PDF read with its shape found, chosen after the
+/// reading and changed without reading it again: the shape kept or plain
+/// paragraphs, the tree by its headings or by its pages, and the marks
+/// where pages begin.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Making {
+    /// Whether the shape found is kept; without it, plain paragraphs, a part for each page.
+    pub shape: bool,
+    /// With the shape kept, whether the document is made by its headings or by its pages.
+    pub structure: Structure,
+    /// By its headings, whether a reference mark with the page's label stands where each page begins.
+    pub page_marks: bool,
+}
+
+impl Default for Making {
+    fn default() -> Self {
+        Making { shape: true, structure: Structure::Headings, page_marks: true }
+    }
 }
 
 impl Default for Asked {
@@ -209,9 +241,8 @@ impl Default for Asked {
             layout: String::new(),
             contrast: false,
             shape: false,
-            structure: Structure::Headings,
-            page_marks: true,
             stretches: Vec::new(),
+            read: None,
         }
     }
 }
@@ -292,6 +323,10 @@ pub struct Looked {
     /// the pages they lead to: places where a stretch of pages read
     /// otherwise may begin.
     pub outline: Vec<OutlinePart>,
+    /// What the text of each page is like, in the order of the pages: none
+    /// worth taking, text that does not read as text, or sound. Empty for a
+    /// picture.
+    pub verdicts: Vec<layer::Verdict>,
 }
 
 /// An entry of the top of a file's outline, and the page it leads to,
@@ -390,9 +425,6 @@ pub struct ReadPdf {
     pub title: Option<Vec<Inline>>,
     /// The title the file gives itself, where it looks like one.
     pub named: Option<String>,
-    /// How it is to become a map, and whether the pages are marked, as asked.
-    pub structure: Structure,
-    pub page_marks: bool,
     /// The pages read by Tesseract, those taken from the PDF, and those that could not be read.
     pub read: usize,
     pub taken: usize,
@@ -706,6 +738,7 @@ pub fn look(path: &Path, tools: &Tools) -> Result<Looked> {
         resolution: layer.resolution(),
         first_without_text: (0..pages).find(|i| !layer.has_text(*i)).map(|i| i + 1),
         outline: outline_parts(&layer.outline),
+        verdicts: (0..pages).map(|i| layer.verdict(i)).collect(),
     })
 }
 
@@ -925,8 +958,6 @@ pub fn read_pdf(
         styles,
         title,
         named: seen.title.clone(),
-        structure: asked.structure,
-        page_marks: asked.page_marks,
         read: done,
         taken,
         failed: failed.len(),
@@ -1036,8 +1067,13 @@ pub struct Tried {
     pub page: usize,
     /// The number it has in print, or counted from one.
     pub label: String,
-    /// What was read, as paragraphs, as a page read without its shape is.
-    pub paragraphs: Vec<String>,
+    /// What was read, as paragraphs of words in the order read, each word
+    /// with how sure Tesseract was of it and where it stands on the picture
+    /// as it is shown. Not joined at hyphens: a trial shows what was read.
+    pub paragraphs: Vec<Vec<text::Word>>,
+    /// How many words were read, and how many of them are unsure (`UNSURE`).
+    pub words: usize,
+    pub unsure: usize,
     /// How sure Tesseract was of the page (`text::page_confidence`); nothing
     /// where it read no word.
     pub confidence: Option<f32>,
@@ -1097,12 +1133,19 @@ pub fn try_page(
         .collect();
     let greek = reader.with_at(page - 1).languages.iter().any(|l| is_greek(l));
     let paragraphs = text::page_paragraphs(groups, is_word);
-    let paragraphs = if greek { paragraphs.iter().map(|p| schemes::mend_sigmas(p)).collect() } else { paragraphs };
+    let paragraphs: Vec<String> =
+        if greek { paragraphs.iter().map(|p| schemes::mend_sigmas(p)).collect() } else { paragraphs };
     tracing::info!(page, confidence = ?confidence, languages = ?reader.with_at(page - 1).languages, "a page was tried");
+    // Until the words are told one by one: each paragraph as one word.
+    let words = paragraphs.len();
+    let paragraphs =
+        paragraphs.into_iter().map(|text| vec![text::Word { text, line: true, ..Default::default() }]).collect();
     Ok(Tried {
         page,
         label: seen.layer.label(page - 1),
         paragraphs,
+        words,
+        unsure: 0,
         confidence,
         poorly: read_poorly(confidence),
         png: tried.png,
@@ -1248,37 +1291,39 @@ fn counts(sections: &[Section]) -> Counts {
     Counts { parts: sections.iter().filter(|s| s.level > 0).count(), words, ..Default::default() }
 }
 
-/// A PDF as it was read, as a document that becomes a map: its title the
-/// centre, and under it a part for each page, named by its number as it is
-/// printed, holding what was read of the page.
-pub fn imported_pdf(file: &str, title: &str, read: ReadPdf) -> Imported {
-    let shaped = read.pages.iter().any(|p| !p.pieces.is_empty());
+/// A PDF as it was read, as a document that becomes a map, made as `making`
+/// says: by its headings, its title the centre and its headings the parts;
+/// or a part for each page, named by its number as it is printed, holding
+/// what was read of the page. The reading is not consumed: the same reading
+/// can be made into a map again, otherwise.
+pub fn imported_pdf(file: &str, title: &str, read: &ReadPdf, making: Making) -> Imported {
+    let shaped = making.shape && read.pages.iter().any(|p| !p.pieces.is_empty());
     let headed = read
         .pages
         .iter()
         .flat_map(|p| &p.pieces)
         .any(|piece| matches!(piece, shaped::Shaped::Heading { level, .. } if *level > 0));
-    let mut remarks = read.remarks;
+    let mut remarks = read.remarks.clone();
     // Said where there are pages to be the elements: a single page has nothing to choose.
-    if shaped && read.structure == Structure::Headings && !headed && read.pages.len() > 1 {
+    if shaped && making.structure == Structure::Headings && !headed && read.pages.len() > 1 {
         remarks.push(tr!("ocr-no-headings"));
     }
-    let named = read.title.clone();
-    let by_headings = shaped && headed && read.structure == Structure::Headings;
+    let named = if shaped { read.title.clone() } else { None };
+    let by_headings = shaped && headed && making.structure == Structure::Headings;
     let sections: Vec<Section> = if by_headings {
-        let marks = read.page_marks;
-        shaped::structure(read.pages.into_iter().map(|p| (p.label, p.pieces)).collect(), marks)
+        let marks = making.page_marks;
+        shaped::structure(read.pages.iter().map(|p| (p.label.clone(), p.pieces.clone())).collect(), marks)
     } else {
         read.pages
-            .into_iter()
+            .iter()
             .flat_map(|page| {
                 if shaped {
-                    shaped::sections(page.label, page.pieces)
+                    shaped::sections(page.label.clone(), page.pieces.clone())
                 } else {
                     vec![Section {
                         level: 1,
-                        heading: vec![Inline::Text { text: page.label, marks: BTreeMap::new() }],
-                        blocks: page.paragraphs.into_iter().map(paragraph).collect(),
+                        heading: vec![Inline::Text { text: page.label.clone(), marks: BTreeMap::new() }],
+                        blocks: page.paragraphs.iter().cloned().map(paragraph).collect(),
                     }]
                 }
             })
@@ -1291,7 +1336,7 @@ pub fn imported_pdf(file: &str, title: &str, read: ReadPdf) -> Imported {
         title: named.unwrap_or_else(|| vec![Inline::Text { text: title.to_owned(), marks: BTreeMap::new() }]),
         counts: counts(&sections),
         sections,
-        styles: shaped::views(&read.styles),
+        styles: if shaped { shaped::views(&read.styles) } else { Vec::new() },
         structured: by_headings,
         remarks,
         ..Default::default()

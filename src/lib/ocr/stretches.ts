@@ -13,12 +13,23 @@ import type { Asked, Layout, OutlinePart, Stretch } from '$lib/api/ocr';
 export interface Choices {
   languages: string[];
   layout: Layout;
+  /** As `How.dpi` and `How.contrast`: where not given, kept, or 300 and in colour for a new stretch. */
+  dpi?: number;
+  contrast?: boolean;
 }
 
 /** The list with the current stretch given `choices`. */
 export function withCurrent(list: Stretch[], current: number, choices: Choices): Stretch[] {
   return list.map((s, i) =>
-    i === current ? { from: s.from, languages: [...choices.languages], layout: choices.layout } : s,
+    i === current
+      ? {
+          from: s.from,
+          languages: [...choices.languages],
+          layout: choices.layout,
+          dpi: choices.dpi ?? s.dpi,
+          contrast: choices.contrast ?? s.contrast,
+        }
+      : s,
   );
 }
 
@@ -47,6 +58,8 @@ export function beginStretch(
     from: page,
     languages: [...choices.languages],
     layout: choices.layout,
+    dpi: choices.dpi ?? 0,
+    contrast: choices.contrast ?? false,
   };
   const next = [...list, stretch].sort((a, b) => a.from - b.from);
   return { list: next, index: next.indexOf(stretch) };
@@ -77,7 +90,15 @@ export function stretchesAtOutline(
 
 /** The first stretch of the whole file, at page 1, with `choices`. */
 export function firstStretch(choices: Choices): Stretch[] {
-  return [{ from: 1, languages: [...choices.languages], layout: choices.layout }];
+  return [
+    {
+      from: 1,
+      languages: [...choices.languages],
+      layout: choices.layout,
+      dpi: choices.dpi ?? 0,
+      contrast: choices.contrast ?? false,
+    },
+  ];
 }
 
 /** What is asked of a reading by the stretches: the first as the whole's languages and layout, the rest as stretches. */

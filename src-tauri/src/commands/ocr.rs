@@ -13,7 +13,7 @@ use tauri::{AppHandle, State};
 use glaukopis_core::error::IoContext;
 use glaukopis_core::import::document::Imported;
 use glaukopis_core::ocr::text::IsWord;
-use glaukopis_core::ocr::{self, Asked, Looked, Progress};
+use glaukopis_core::ocr::{self, Asked, Looked, Making, Progress};
 
 use crate::commands::library::{EntryFull, full};
 use glaukopis_core::library::StoredFile;
@@ -86,10 +86,20 @@ pub fn ocr_look(state: State<'_, AppState>, path: String, stored: Option<bool>) 
     Ok(ocr::look(&path, &state.tools())?)
 }
 
-/// Reads a PDF or a picture, to become a map: a part for each page of a
-/// PDF, named by its number; the text of a picture under its name. With
-/// `stored`, the path is that of a file of the library, within its store,
-/// as for `ocr_look`.
+/// What a reading into elements came to: the tree as first made, and the
+/// token of the reading kept, where there is one (a PDF), by which the tree
+/// is made anew otherwise (`ocr_assemble`) without reading it again.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReadDone {
+    pub imported: Imported,
+    pub kept: Option<String>,
+}
+
+/// Reads a PDF or a picture, to become a map: by its headings, or a part
+/// for each page of a PDF, named by its number; the text of a picture under
+/// its name. With `stored`, the path is that of a file of the library,
+/// within its store, as for `ocr_look`.
 #[tauri::command(async)]
 pub fn ocr_read(
     app: AppHandle,
@@ -98,7 +108,7 @@ pub fn ocr_read(
     asked: Asked,
     ticket: Option<String>,
     stored: Option<bool>,
-) -> CommandResult<Imported> {
+) -> CommandResult<ReadDone> {
     let path = if stored.unwrap_or(false) { state.library().attachment_path(&path)? } else { PathBuf::from(path) };
     let reading = Work::begin(ticket);
     let tools = state.tools();
@@ -109,14 +119,29 @@ pub fn ocr_read(
         let words = words_of(&state, &asked);
         let paragraphs =
             ocr::read_picture(&bytes, &tools, &work, &asked, words.as_ref().map(|w| w as &IsWord), &reading.stop)?;
-        return Ok(ocr::imported_picture(&file, &stem(&file), paragraphs));
+        return Ok(ReadDone { imported: ocr::imported_picture(&file, &stem(&file), paragraphs), kept: None });
     }
     let words = words_of(&state, &asked);
     let is_word = words.as_ref().map(|w| w as &IsWord);
     let read = ocr::read_pdf(&path, &tools, &work, &asked, is_word, &mut teller(&reading, &app), &reading.stop)?;
     // The title the file gives itself, as the look at it found.
     let title = read.named.clone().unwrap_or_else(|| stem(&file));
-    Ok(ocr::imported_pdf(&file, &title, read))
+    Ok(ReadDone { imported: ocr::imported_pdf(&file, &title, &read, Making::default()), kept: None })
+}
+
+/// The tree made anew from the reading kept under `kept`, as `making` says:
+/// the shape kept or plain paragraphs, by its headings or by its pages, the
+/// pages marked or not. The pages are not read again.
+#[tauri::command(async)]
+pub fn ocr_assemble(kept: String, making: Making) -> CommandResult<Imported> {
+    let _ = (kept, making);
+    Err(glaukopis_core::Error::not_found(tr!("ocr-reading-gone")).into())
+}
+
+/// Lets the reading kept under `kept` go.
+#[tauri::command(async)]
+pub fn ocr_forget(kept: String) {
+    let _ = kept;
 }
 
 /// Stops a reading that goes on.

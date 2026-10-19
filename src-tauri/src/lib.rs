@@ -269,6 +269,8 @@ pub fn run() {
             commands::reading::document_forget,
             commands::ocr::ocr_look,
             commands::ocr::ocr_read,
+            commands::ocr::ocr_assemble,
+            commands::ocr::ocr_forget,
             commands::ocr::ocr_stop,
             commands::ocr::ocr_pages,
             commands::ocr::ocr_searchable,

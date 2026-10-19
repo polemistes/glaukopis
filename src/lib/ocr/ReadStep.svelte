@@ -143,21 +143,19 @@
     progress = null;
     const stopListening = await onProgress(ticket, (told) => (progress = told));
     try {
-      const imported = await ocrRead(
+      const done = await ocrRead(
         path,
         {
           text,
           // A picture is one page: there is no shape across pages to keep.
           shape: !looked?.picture && shape,
-          structure,
-          pageMarks: structure === 'headings' && pageMarks,
           ...$state.snapshot(how),
           ...askedOf(listed),
         },
         ticket,
         stored,
       );
-      if (!gone) onread(imported);
+      if (!gone) onread(done.imported);
     } catch (error) {
       if (gone) return;
       if (isBackendError(error) && error.kind === 'stopped') phase = 'asking';

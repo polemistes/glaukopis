@@ -114,7 +114,7 @@ fn a_scan_is_read_into_paragraphs() {
     assert!(has(&page.paragraphs[1], "the oral theory of Milman Parry"), "{:?}", page.paragraphs);
     assert_eq!(read.remarks, vec![tr!("ocr-remark-counts", read = 1, taken = 0, failed = 0)]);
 
-    let imported = imported_pdf("scan.pdf", "A scan", read);
+    let imported = imported_pdf("scan.pdf", "A scan", &read, Making::default());
     assert_eq!(imported.sections.len(), 1);
     assert_eq!(imported.sections[0].level, 1);
     assert_eq!(imported.sections[0].heading, vec![Inline::Text { text: "1".into(), marks: BTreeMap::new() }]);
@@ -731,7 +731,7 @@ fn the_shape_of_a_file_is_found() {
     let tmp = tempfile::tempdir().unwrap();
     let asked = Asked { shape: true, ..Asked::default() };
     let read = read_pdf(&pdf, &Tools::default(), tmp.path(), &asked, None, &mut nothing, &never()).unwrap();
-    let imported = imported_pdf("shape.pdf", "Shape", read);
+    let imported = imported_pdf("shape.pdf", "Shape", &read, Making::default());
     let plain = |content: &[Inline]| -> String {
         content
             .iter()
@@ -806,9 +806,8 @@ fn the_shape_of_a_file_is_found() {
     assert_eq!(named, 4);
 
     // By its pages: a section for each page, the headings under it, the title among them, no marks.
-    let asked = Asked { shape: true, structure: Structure::Pages, ..Asked::default() };
-    let read = read_pdf(&pdf, &Tools::default(), tmp.path(), &asked, None, &mut nothing, &never()).unwrap();
-    let by_pages = imported_pdf("shape.pdf", "Shape", read);
+    let by_pages =
+        imported_pdf("shape.pdf", "Shape", &read, Making { structure: Structure::Pages, ..Making::default() });
     let headings: Vec<(u8, String)> = by_pages.sections.iter().map(|s| (s.level, plain(&s.heading))).collect();
     assert_eq!(
         headings,
@@ -826,7 +825,7 @@ fn the_shape_of_a_file_is_found() {
 
     // Without the shape kept: one section a page, plain paragraphs.
     let read = read_pdf(&pdf, &Tools::default(), tmp.path(), &Asked::default(), None, &mut nothing, &never()).unwrap();
-    let imported = imported_pdf("shape.pdf", "Shape", read);
+    let imported = imported_pdf("shape.pdf", "Shape", &read, Making { shape: false, ..Making::default() });
     assert_eq!(imported.sections.len(), 4);
     assert!(imported.styles.is_empty());
 }
@@ -843,7 +842,7 @@ fn the_structure_of_a_file_with_an_outline() {
     let tmp = tempfile::tempdir().unwrap();
     let asked = Asked { shape: true, ..Asked::default() };
     let read = read_pdf(&pdf, &Tools::default(), tmp.path(), &asked, None, &mut nothing, &never()).unwrap();
-    let imported = imported_pdf("structure.pdf", "structure", read);
+    let imported = imported_pdf("structure.pdf", "structure", &read, Making::default());
     let plain = |content: &[Inline]| -> String {
         content
             .iter()
@@ -1000,7 +999,7 @@ fn a_page_is_tried() {
     let scan = kit.scan("scan.pdf");
     let tried = try_page(&scan, &kit.tools, &kit.work(), &kit.asked(), 1, None, &never()).unwrap();
     assert_eq!((tried.page, tried.label.as_str()), (1, "1"));
-    let text = tried.paragraphs.join(" ");
+    let text = tried.paragraphs.iter().flatten().map(|w| w.text.as_str()).collect::<Vec<_>>().join(" ");
     assert!(has(&text, "The wrath of Achilles") && has(&text, "Milman Parry"), "{text}");
     assert!(tried.confidence.is_some_and(|c| c >= POORLY) && !tried.poorly, "{:?}", tried.confidence);
     let png = base64::engine::general_purpose::STANDARD.decode(&tried.png).unwrap();
@@ -1043,7 +1042,7 @@ fn a_stretch_of_pages_is_read_with_languages_of_its_own() {
          #image(\"page.png\", width: 100%, height: 100%)\n#pagebreak()\n\
          #image(\"page.png\", width: 100%, height: 100%)\n",
     );
-    let greek = Stretch { from: 2, languages: vec!["grc".into()], layout: String::new() };
+    let greek = Stretch { from: 2, languages: vec!["grc".into()], ..Stretch::default() };
     let asked = Asked { stretches: vec![greek.clone()], ..kit.asked() };
     assert_eq!(asked.languages_at(0), ["eng".to_owned()]);
     assert_eq!(asked.languages_at(1), ["grc".to_owned()]);

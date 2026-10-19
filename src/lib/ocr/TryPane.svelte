@@ -196,7 +196,7 @@
       </div>
       <div class="text selectable" data-ocr-tried-text>
         {#each tried.paragraphs as paragraph, i (i)}
-          <p>{paragraph}</p>
+          <p>{paragraph.map((word) => word.text).join(' ')}</p>
         {:else}
           <p class="none">{t('ocr-text-page-none')}</p>
         {/each}

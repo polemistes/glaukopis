@@ -195,6 +195,9 @@ export const looked: ocr.Looked = {
   ],
   "searchable": true,
   "title": null,
+  "verdicts": [
+    "sound"
+  ],
   "withText": 1
 };
 
@@ -212,11 +215,95 @@ export const tried: ocr.Tried = {
   "label": "iii",
   "page": 3,
   "paragraphs": [
-    "A paragraph."
+    [
+      {
+        "confidence": 96.0,
+        "height": 30.5,
+        "left": 90.5,
+        "line": true,
+        "text": "A",
+        "top": 120.0,
+        "width": 20.0
+      },
+      {
+        "confidence": null,
+        "height": 30.5,
+        "left": 120.0,
+        "line": false,
+        "text": "paragraph.",
+        "top": 120.0,
+        "width": 160.0
+      }
+    ]
   ],
   "png": "iVBORw0KGgo=",
   "poorly": false,
-  "width": 1131
+  "unsure": 0,
+  "width": 1131,
+  "words": 2
+};
+
+export const readDone: ocr.ReadDone = {
+  "imported": {
+    "abstract": null,
+    "authors": [],
+    "counts": {
+      "cited": 0,
+      "equations": 0,
+      "figures": 0,
+      "found": 0,
+      "foundMade": 0,
+      "notFound": 0,
+      "notes": 0,
+      "parts": 0,
+      "tables": 0,
+      "words": 2
+    },
+    "date": null,
+    "file": "dot.png",
+    "keywords": [],
+    "kind": "Picture",
+    "language": null,
+    "pictures": [],
+    "remarks": [],
+    "sections": [
+      {
+        "blocks": [
+          {
+            "content": [
+              {
+                "kind": "text",
+                "marks": {},
+                "text": "A line."
+              }
+            ],
+            "indent": 0,
+            "kind": "paragraph",
+            "name": "text"
+          }
+        ],
+        "heading": [],
+        "level": 0
+      }
+    ],
+    "structured": false,
+    "styles": [],
+    "subtitle": null,
+    "title": [
+      {
+        "kind": "text",
+        "marks": {},
+        "text": "dot"
+      }
+    ]
+  },
+  "kept": "reading-1"
+};
+
+export const making: ocr.Making = {
+  "pageMarks": true,
+  "shape": true,
+  "structure": "headings"
 };
 
 export const shapedImport: imported.Imported = {

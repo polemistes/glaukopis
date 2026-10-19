@@ -34,32 +34,51 @@ export interface Asked extends How {
    */
   text: TextChoice;
   /**
-   * Whether the shape of the pages is kept: headings, lines kept as lines,
-   * numbers in the margin, the styles that recur. Without it, plain paragraphs.
+   * Whether the shape of the pages is found as they are read: headings, lines
+   * kept as lines, numbers in the margin, the styles that recur. What is made
+   * of it is chosen after the reading (`Making`).
    */
   shape: boolean;
-  /** With the shape kept: the document's tree by its headings, or an element for each page. */
-  structure?: 'headings' | 'pages';
-  /** By its headings: whether a mark with the page's number stands where each page begins. */
-  pageMarks?: boolean;
   /**
-   * Stretches of the pages read with languages and a layout of their own, in
-   * the order of their pages; the pages before the first are read with
-   * `languages` and `layout`.
+   * Stretches of the pages read with settings of their own, in the order of
+   * their pages; the pages before the first are read with the settings of
+   * the whole.
    */
   stretches?: Stretch[];
+  /**
+   * The pages Tesseract reads, counted from one. Where given, exactly these,
+   * and any page without text, which cannot take what is not there; the
+   * others take the text the PDF has, as `text` says. Where not given, as
+   * `text` says for every page: all with `anew`, those without text otherwise.
+   */
+  read?: number[] | null;
 }
 
-/** A stretch of a PDF's pages read with languages and a layout of its own, to the next stretch or the end. */
-export interface Stretch {
+/** A stretch of a PDF's pages read with settings of their own, to the next stretch or the end. */
+export interface Stretch extends How {
   /** The page it begins at, counted from one. */
   from: number;
   languages: string[];
-  layout: Layout;
+}
+
+/** What is made of a reading kept: the shape kept or plain paragraphs, the tree by its headings or its pages, the marks where pages begin. */
+export interface Making {
+  shape: boolean;
+  structure: 'headings' | 'pages';
+  pageMarks: boolean;
+}
+
+/** What a reading into elements came to: the tree as first made, and the token of the reading kept, where there is one (a PDF). */
+export interface ReadDone {
+  imported: Imported;
+  kept: string | null;
 }
 
 /** What becomes of the text a PDF has. */
 export type TextChoice = 'keep' | 'translate' | 'anew';
+
+/** What the text a page has is like: none worth taking, text that does not read as text, or sound. */
+export type Verdict = 'none' | 'poor' | 'sound';
 
 /** How a font or a text keeps its letters, where it can be translated (ADR 0044). */
 export type Scheme = 'greek-names' | 'expert-names' | 'beta-code';
@@ -130,6 +149,8 @@ export interface Looked {
   firstWithoutText: number | null;
   /** The top entries of the outline the file carries, with the pages they lead to: where stretches may begin. */
   outline: OutlinePart[];
+  /** Each page's verdict, in the order of the pages; empty for a picture. */
+  verdicts: Verdict[];
 }
 
 /** An entry of the top of a file's outline, and the page it leads to, counted from one. */
@@ -144,7 +165,11 @@ export interface Tried {
   page: number;
   /** The number it has in print, or counted from one. */
   label: string;
-  paragraphs: string[];
+  /** What was read, as paragraphs of words, in the order read. */
+  paragraphs: TriedWord[][];
+  /** How many words, and how many of them unsure (a confidence under 70). */
+  words: number;
+  unsure: number;
   /** How sure Tesseract was of the page, from 0 to 100; nothing where it read no word. */
   confidence: number | null;
   /** Whether it was read poorly: under 80. */
@@ -155,6 +180,19 @@ export interface Tried {
   height: number;
   /** The blocks of text Tesseract found, in the order it read them, in the dots of the picture as shown. */
   blocks: TextBlock[];
+}
+
+/** A word Tesseract read on a page tried, in the dots of the picture as shown. */
+export interface TriedWord {
+  text: string;
+  /** From 0 to 100; nothing where Tesseract gave none. */
+  confidence: number | null;
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  /** Whether a line of the paragraph begins with it. */
+  line: boolean;
 }
 
 /** A block of text as Tesseract found it on a page. */
@@ -202,7 +240,14 @@ export const ocrText = (path: string, stored: boolean, from: number, count: numb
  * and tells how far it has come; with `stored`, the path is one of the library.
  */
 export const ocrRead = (path: string, asked: Asked, ticket?: string, stored?: boolean) =>
-  call<Imported>('ocr_read', { path, asked, ticket, stored });
+  call<ReadDone>('ocr_read', { path, asked, ticket, stored });
+
+/** The tree assembled anew from a reading kept, with other choices; the reading is not done again. */
+export const ocrAssemble = (kept: string, making: Making) =>
+  call<Imported>('ocr_assemble', { kept, making });
+
+/** Lets a reading kept go. */
+export const ocrForget = (kept: string) => call<void>('ocr_forget', { kept });
 
 export const ocrStop = (ticket: string) => call<void>('ocr_stop', { ticket });
 

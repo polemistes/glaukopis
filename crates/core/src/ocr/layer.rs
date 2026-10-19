@@ -31,7 +31,8 @@ const SAMPLE_LINES: usize = 5;
 const SAMPLE_WIDTH: usize = 110;
 
 /// What the text a page has is like.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Verdict {
     /// Too little to count as text: the page is read.
     None,

@@ -130,6 +130,22 @@ pub fn tsv_paragraphs(tsv: &str) -> Vec<Vec<Line>> {
     tsv_page(tsv).0
 }
 
+/// A word Tesseract read on a page, where it stands, and how sure it was of
+/// it: for a page tried, whose unsure words are shown. Its place is in the
+/// dots of the picture as it is shown.
+#[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct Word {
+    pub text: String,
+    /// From 0 to 100; nothing where Tesseract gave none.
+    pub confidence: Option<f32>,
+    pub left: f32,
+    pub top: f32,
+    pub width: f32,
+    pub height: f32,
+    /// Whether a line of its paragraph begins with it.
+    pub line: bool,
+}
+
 /// A block of text as Tesseract found it on a page, in the dots of the
 /// picture it read: where it took one column, one note, one heading to be.
 #[derive(Debug, Clone, Copy, Default, PartialEq, serde::Serialize, serde::Deserialize)]

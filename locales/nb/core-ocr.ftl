@@ -18,6 +18,7 @@ ocr-locked = «{ $file }» er låst med passord, og sidene kan ikke tegnes.
 ocr-unreadable = «{ $file }» kunne ikke leses som PDF. Den kan være skadet.
 ocr-page-not-drawn = Side { $page } kunne ikke tegnes.
 ocr-no-such-page = PDF-en har ingen side { $page }: den har { $pages }.
+ocr-reading-gone = Lesingen er ikke lenger tatt vare på: les filen på nytt.
 ocr-picture-unreadable = Bildet kunne ikke leses: { $message }
 ocr-not-made = Tesseract laget ikke { $path }.
 ocr-not-made-said = Tesseract laget ikke { $path }. Den sa: { $message }
