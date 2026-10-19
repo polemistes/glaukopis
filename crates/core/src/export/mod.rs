@@ -452,7 +452,29 @@ fn title_page(
             line.push(tex("}\\maketitle"));
             out.push(json!({"t": "Plain", "c": line}));
         }
-        // The others are given the title as metadata, until their own pieces.
+        // A page of the web and a book for e-readers: blocks with classes, set by the style
+        // sheet as the layout's look of the title says (`front_styles`).
+        Target::Html | Target::Epub => {
+            let classed = |class: &str, blocks: Vec<Value>| json!({"t": "Div", "c": [["", [class], []], blocks]});
+            let mut parts = Vec::new();
+            if !title.is_empty() {
+                parts.push(classed("gk-title", vec![json!({"t": "Para", "c": title})]));
+            }
+            if let Some(s) = subtitle {
+                parts.push(classed("gk-subtitle", vec![para_text(s)]));
+            }
+            if !authors.is_empty() {
+                parts.push(classed("gk-authors", vec![para_text(&names_of(authors))]));
+                if !affiliations.is_empty() {
+                    parts.push(classed("gk-affiliations", affiliations.iter().map(|l| para_text(l)).collect()));
+                }
+            }
+            if let Some(d) = date {
+                parts.push(classed("gk-date", vec![para_text(d)]));
+            }
+            out.push(classed("gk-front", parts));
+        }
+        // Markdown keeps the title as metadata at its head: it has no page to place it on.
         _ => {}
     }
     out
@@ -961,6 +983,12 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
                     ));
                     front.extend(a.iter().cloned());
                     front.push(raw("latex", "\\end{abstract}"));
+                } else if matches!(target, Target::Html | Target::Epub) {
+                    let mut inner = vec![
+                        json!({"t": "Div", "c": [["", ["abstract-title"], []], [para_text(&f.title.abstract_label)]]}),
+                    ];
+                    inner.extend(a.iter().cloned());
+                    front.push(json!({"t": "Div", "c": [["", ["abstract"], []], inner]}));
                 } else {
                     meta.insert("abstract".into(), json!({"t": "MetaBlocks", "c": a}));
                     meta.insert("abstract-title".into(), meta_text(&f.title.abstract_label));
@@ -983,7 +1011,20 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
     // would set a title block of its own from them, at the head, whatever the
     // template says (ADR 0055). Word and Writer have them in their properties,
     // written after (`after::Properties`).
-    let title_as_meta = !typst && !latex && !matches!(target, Target::Docx | Target::Odt);
+    let title_as_meta = matches!(target, Target::Markdown | Target::Epub);
+    // What a page of the web says of itself in its head: its title, its authors, its date.
+    if target == Target::Html {
+        let p = properties(doc, f);
+        if !p.title.is_empty() {
+            meta.insert("pagetitle".into(), meta_text(&p.title));
+        }
+        if !p.creators.is_empty() {
+            meta.insert("author-meta".into(), meta_list(p.creators.iter().map(|c| meta_text(c)).collect()));
+        }
+        if let Some(d) = doc.date.as_deref().map(str::trim).filter(|d| !d.is_empty()) {
+            meta.insert("date-meta".into(), meta_text(d));
+        }
+    }
     // What the PDF says of itself, from the variables that set `\hypersetup` and nothing on a page.
     if latex {
         let p = properties(doc, f);
@@ -1001,10 +1042,20 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
         if let Some(s) = doc.subtitle.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
             meta.insert("subtitle".into(), meta_text(s));
         }
-        if !authors.is_empty() {
-            meta.insert("author".into(), meta_list(authors.iter().map(|a| meta_text(a.name.trim())).collect()));
+        // The e-book's are its properties, in its package, printed nowhere: every author with a
+        // name, unless anonymous, and the date the document has. Markdown's stand at its head
+        // as its title block, as the page shows them.
+        let names: Vec<String> = if target == Target::Epub {
+            properties(doc, f).creators
+        } else {
+            authors.iter().map(|a| a.name.trim().to_owned()).collect()
+        };
+        if !names.is_empty() {
+            meta.insert("author".into(), meta_list(names.iter().map(|n| meta_text(n)).collect()));
         }
-        if let Some(d) = date {
+        let day =
+            if target == Target::Epub { doc.date.as_deref().map(str::trim).filter(|d| !d.is_empty()) } else { date };
+        if let Some(d) = day {
             meta.insert("date".into(), meta_text(d));
         }
     }
@@ -1578,6 +1629,39 @@ pub fn export_until(
 }
 
 /// The styles of figures, tables and rows for a page of the web.
+/// How the title page stands on a page of the web and in a book for
+/// e-readers, as the layout's look of the title sets it in the preview:
+/// its size against the text's, its weight, its slant, its letters, and
+/// where it stands (ADR 0055).
+fn front_styles(f: &DocumentFormat) -> String {
+    use crate::formats::{Align, Case};
+    let t = &f.title;
+    let align = match t.align {
+        Align::Left | Align::Justified => "left",
+        Align::Center => "center",
+        Align::Right => "right",
+    };
+    let text = f.font.size.max(1.0);
+    let letters = match t.case {
+        Case::Upper => "text-transform: uppercase; ",
+        Case::Smallcaps => "font-variant: small-caps; ",
+        Case::None => "",
+    };
+    format!(
+        ".gk-front {{ margin: 2em 0 2.5em; text-align: {align}; }}\n\
+         .gk-front p {{ text-indent: 0; }}\n\
+         .gk-title p {{ font-size: {title:.2}em; font-weight: {weight}; font-style: {slant}; {letters}line-height: 1.2; margin: 0 0 0.4em; }}\n\
+         .gk-subtitle p {{ font-size: {sub:.2}em; margin: 0 0 0.6em; }}\n\
+         .gk-authors p {{ margin: 0.8em 0 0.2em; }}\n\
+         .gk-affiliations p {{ font-size: 0.85em; margin: 0; }}\n\
+         .gk-date p {{ margin: 0.6em 0 0; }}\n",
+        title = t.size / text,
+        sub = (t.size * 0.8).max(f.font.size) / text,
+        weight = if t.bold { "bold" } else { "normal" },
+        slant = if t.italic { "italic" } else { "normal" },
+    )
+}
+
 /// What a book for e-readers says of its parts: little, as the reader sets
 /// the text; what the format says of headings, quotations and verse.
 fn epub_styles(f: &DocumentFormat, own: &[OwnKind]) -> String {
@@ -1616,6 +1700,7 @@ table.gk-parallel td {{ vertical-align: top; width: 50%; padding: 0 0.5em; borde
     );
     css.push_str(&kind_styles(f, own));
     css.push_str(&part_styles(f));
+    css.push_str(&front_styles(f));
     css
 }
 
@@ -1706,6 +1791,7 @@ fn html_styles(f: &DocumentFormat, own: &[OwnKind]) -> String {
     );
     css.push_str(&kind_styles(f, own));
     css.push_str(&part_styles(f));
+    css.push_str(&front_styles(f));
     css
 }
 
@@ -2912,6 +2998,66 @@ mod tests {
         assert!(at(&c, "What the wrath of Achilles is.") < contents, "{c}");
         assert!(contents < at(&c, "Before the first section."), "{c}");
         assert!(!c.contains("<!--gk:"), "{c}");
+    }
+
+    #[test]
+    fn the_title_page_stands_where_the_template_puts_it_on_the_web_and_in_a_book() {
+        let Some(s) = setup() else { return };
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        use GeneratedPart::{Bibliography, Body};
+        let made = |part| ContentsItem::Part { part };
+        // An article: the title page, the abstract and the keywords, then the contents, then the text.
+        let mut r = with_parts();
+        r.document.date = Some("2026".into());
+        let html = out.join("article.html");
+        export(&s.ctx(), &r, Target::Html, &html, &ExportOptions::default()).unwrap();
+        let h = fs::read_to_string(&html).unwrap();
+        assert!(!h.contains("title-block-header"), "no title block of Pandoc's: {h}");
+        assert!(h.contains("<title>Wrath and the hero</title>"), "the page's title in its head: {h}");
+        assert!(h.contains("<meta name=\"author\" content=\"A. Scholar\""), "{h}");
+        assert!(h.contains("<meta name=\"dcterms.date\" content=\"2026\""), "{h}");
+        assert_eq!(h.matches("class=\"gk-title\"").count(), 1, "{h}");
+        let front = at(&h, "class=\"gk-front\"");
+        let abstract_at = at(&h, "class=\"abstract\"");
+        let contents = at(&h, "<nav id=\"TOC\"");
+        assert!(front < abstract_at && abstract_at < contents && contents < at(&h, "Before the first section."), "{h}");
+        assert!(h.contains(".gk-title p {"), "the title page set as the layout's look of the title says: {h}");
+        assert!(!h.contains("<!--gk:"), "{h}");
+
+        let epub = out.join("article.epub");
+        export(&s.ctx(), &r, Target::Epub, &epub, &ExportOptions::default()).unwrap();
+        let archive = zip::ZipArchive::new(fs::File::open(&epub).unwrap()).unwrap();
+        let names: Vec<String> = archive.file_names().map(str::to_owned).collect();
+        let text: String = names.iter().filter(|n| n.starts_with("EPUB/text/")).map(|n| unzip(&epub, n)).collect();
+        assert_eq!(text.matches("class=\"gk-title\"").count(), 1, "{text}");
+        assert!(at(&text, "class=\"gk-title\"") < at(&text, "class=\"abstract\""), "{text}");
+        let opf = unzip(&epub, "EPUB/content.opf");
+        assert!(opf.contains("Wrath and the hero</dc:title>") && opf.contains("A. Scholar</dc:creator>"), "{opf}");
+        let css: String = names.iter().filter(|n| n.ends_with(".css")).map(|n| unzip(&epub, n)).collect();
+        assert!(css.contains(".gk-title p {"), "{css}");
+
+        // Markdown keeps the title as metadata at its head, and writes no title page.
+        let md = out.join("article.md");
+        export(&s.ctx(), &r, Target::Markdown, &md, &ExportOptions::default()).unwrap();
+        let m = fs::read_to_string(&md).unwrap();
+        assert!(m.starts_with("---") && m.contains("title: Wrath and the hero") && m.contains("A. Scholar"), "{m}");
+        assert!(!m.contains("gk-front"), "{m}");
+
+        // No title page in the template: none on the page or in the book; their titles all the same.
+        r.template = Template { contents: vec![made(Body), made(Bibliography)], ..Template::plain() };
+        let html = out.join("untitled.html");
+        export(&s.ctx(), &r, Target::Html, &html, &ExportOptions::default()).unwrap();
+        let h = fs::read_to_string(&html).unwrap();
+        assert!(!h.contains("class=\"gk-title\"") && !h.contains("class=\"gk-front\""), "{h}");
+        assert!(h.contains("<title>Wrath and the hero</title>"), "{h}");
+        let epub = out.join("untitled.epub");
+        export(&s.ctx(), &r, Target::Epub, &epub, &ExportOptions::default()).unwrap();
+        let archive = zip::ZipArchive::new(fs::File::open(&epub).unwrap()).unwrap();
+        let names: Vec<String> = archive.file_names().map(str::to_owned).collect();
+        let text: String = names.iter().filter(|n| n.starts_with("EPUB/text/")).map(|n| unzip(&epub, n)).collect();
+        assert!(!text.contains("gk-title"), "{text}");
+        assert!(unzip(&epub, "EPUB/content.opf").contains("Wrath and the hero</dc:title>"));
     }
 
     #[test]
