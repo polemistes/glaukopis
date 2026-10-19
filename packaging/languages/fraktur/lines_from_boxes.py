@@ -17,7 +17,8 @@ line is split where a gap is wider than COLUMN_SHARE times its height (columns).
 space is written where a gap is wider than SPACE_SHARE times the line's height, the
 height being the median height of the line's boxes, but never before , . ; : ! ? ) ].
 Lines of fewer than MIN_BOXES
-boxes, lines with a box outside the image, and lines with a junk label (~) are
+boxes, lines whose boxes cover less than SPARSE_SHARE of their width (boxes are
+missing), lines with a box outside the image, and lines with a junk label (~) are
 dropped and counted. Ligature characters U+FB00-U+FB06 in labels become letters.
 At the end a summary is printed: pages, lines written, lines dropped by reason,
 column splits, characters, the multi-letter labels and the non-ASCII characters.
@@ -47,6 +48,10 @@ OVERLAP_SHARE = 0.5
 MARGIN_SHARE = 0.2
 SIDE_SHARE = 0.1
 MIN_BOXES = 3
+# A line whose boxes cover less than this share of its width has boxes missing
+# (its text would lack letters) and is dropped. Full lines cover 0.6-0.9 of
+# their width, widely tracked type 0.5; lines with boxes missing 0.2-0.4.
+SPARSE_SHARE = 0.45
 
 LIGATURES = {
     "ﬀ": "ff",
@@ -224,6 +229,10 @@ def main():
             for line in pieces:
                 if len(line) < MIN_BOXES:
                     dropped["fewer than %d boxes" % MIN_BOXES] += 1
+                    continue
+                span = max(b.right for b in line) - min(b.left for b in line)
+                if sum(b.right - b.left for b in line) < SPARSE_SHARE * span:
+                    dropped["boxes cover under %d %% of the line" % round(100 * SPARSE_SHARE)] += 1
                     continue
                 if any(b.left < 0 or b.bottom < 0 or b.right > width or b.top > height for b in line):
                     dropped["box outside the image"] += 1
