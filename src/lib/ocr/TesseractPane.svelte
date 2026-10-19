@@ -159,8 +159,10 @@
     color: var(--ink);
     overflow-wrap: anywhere;
   }
+  /* Each line as Tesseract read it, as the text the PDF has is shown beside. */
   .text p {
     margin: 0 0 8px;
+    white-space: pre-line;
   }
   /* A word Tesseract was unsure of: to be checked, quietly. */
   mark {

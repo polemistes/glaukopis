@@ -92,11 +92,13 @@ export function unsureOf(tried: Tried | null | undefined): TriedWord[] {
 }
 
 /**
- * A paragraph as text: its words with spaces between, a line's first word
- * after a space too, since the pane does not keep the lines' breaks.
+ * A paragraph as text: its words with spaces between, and each line on a
+ * line of its own, as Tesseract read it and as the text the PDF has is
+ * shown beside it, so that the two are compared line by line and a word
+ * broken at a line's end stays at its end.
  */
 export function paragraphText(paragraph: TriedWord[]): string {
-  return paragraph.map((word) => word.text).join(' ');
+  return paragraph.map((word, i) => (i > 0 ? (word.line ? '\n' : ' ') : '') + word.text).join('');
 }
 
 /** A piece of a paragraph as it is shown: sure words together as text, or one unsure word, to be marked. */
@@ -119,7 +121,7 @@ export function pieces(paragraph: TriedWord[]): Piece[] {
     else out.push({ text, unsure: null });
   };
   paragraph.forEach((word, i) => {
-    if (i > 0) plain(' ');
+    if (i > 0) plain(word.line ? '\n' : ' ');
     if (isUnsure(word)) out.push({ text: word.text, unsure: word });
     else plain(word.text);
   });

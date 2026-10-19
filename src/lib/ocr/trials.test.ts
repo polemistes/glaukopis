@@ -141,9 +141,16 @@ describe('a paragraph read', () => {
     word('Mai.', 88),
   ];
 
-  it('is its words with spaces between, the lines not kept', () => {
-    expect(paragraphText(paragraph)).toBe('Det var en Morgen i Mai.');
+  it('is its words with spaces between, each line on a line of its own', () => {
+    expect(paragraphText(paragraph)).toBe('Det var en\nMorgen i Mai.');
     expect(paragraphText([])).toBe('');
+    const broken = [
+      { ...word('quar-', 90), line: true },
+      { ...word('rel', 90), line: true },
+      word('between', 90),
+    ];
+    expect(paragraphText(broken)).toBe('quar-\nrel between');
+    expect(pieces(broken).map((p) => p.text)).toEqual(['quar-\nrel between']);
   });
 
   it('is shown in pieces, the sure words together and each unsure word alone', () => {
@@ -151,7 +158,7 @@ describe('a paragraph read', () => {
     expect(shown.map((p) => [p.text, p.unsure?.confidence ?? null])).toEqual([
       ['Det var ', null],
       ['en', 55],
-      [' Morgen ', null],
+      ['\nMorgen ', null],
       ['i', 30],
       [' Mai.', null],
     ]);

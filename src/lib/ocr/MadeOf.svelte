@@ -40,10 +40,17 @@
   /**
    * The headings found, counted while the tree is by them: kept when the
    * tree is made otherwise, so that the choice can say how many there are.
+   * Where a tree by them was asked for and none were found, the tree is by
+   * the pages, and the choice says so.
    */
   let headings = $state<number | null>(null);
   $effect(() => {
+    if (!making.shape || making.structure !== 'headings') return;
     if (imported.structured) headings = imported.sections.filter((s) => s.level > 0).length;
+    else {
+      headings = 0;
+      making = { ...making, structure: 'pages' };
+    }
   });
 
   async function change(next: Making) {
@@ -65,8 +72,6 @@
   const byHeadings = $derived(
     headings === null ? t('ocr-structure-headings') : t('ocr-made-headings', { count: headings }),
   );
-  /** Whether no headings were found: the tree is by its pages whatever is chosen. */
-  const none = $derived(making.shape && making.structure === 'headings' && !imported.structured);
 </script>
 
 <fieldset class="made" data-made-of aria-busy={working} disabled={disabled || working}>
@@ -94,15 +99,12 @@
           label={t('ocr-structure')}
           size="sm"
           options={[
-            { value: 'headings', label: byHeadings },
+            { value: 'headings', label: byHeadings, disabled: headings === 0 },
             { value: 'pages', label: t('ocr-made-pages', { count: pages }) },
           ]}
           onchange={(v: 'headings' | 'pages') => change({ ...making, structure: v })}
         />
       </div>
-      {#if none}
-        <p class="hint" data-made-no-headings>{t('ocr-made-no-headings')}</p>
-      {/if}
       <label class="option" class:off={making.structure !== 'headings'}>
         <input
           type="checkbox"
@@ -125,7 +127,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    margin: var(--space-4) 0 0;
+    margin: var(--space-4) 0 var(--space-3);
     padding: 0;
     border: 0;
     min-width: 0;
@@ -157,14 +159,10 @@
     flex-direction: column;
     gap: 2px;
   }
-  small,
-  .hint {
+  small {
     font-size: var(--text-sm);
     color: var(--ink-3);
     line-height: 1.45;
-  }
-  .hint {
-    margin: 0;
   }
   .under {
     display: flex;
