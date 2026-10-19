@@ -152,7 +152,7 @@ pub enum Structure {
 }
 
 /// What a reading is asked to do.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Asked {
     /// Tesseract's names of the languages the text is in, the likeliest
@@ -229,21 +229,6 @@ pub struct Making {
 impl Default for Making {
     fn default() -> Self {
         Making { shape: true, structure: Structure::Headings, page_marks: true }
-    }
-}
-
-impl Default for Asked {
-    fn default() -> Self {
-        Asked {
-            languages: Vec::new(),
-            text: TextChoice::default(),
-            dpi: 0,
-            layout: String::new(),
-            contrast: false,
-            shape: false,
-            stretches: Vec::new(),
-            read: None,
-        }
     }
 }
 
@@ -909,9 +894,9 @@ pub fn read_pdf(
     let mut pages_lines: Vec<shape::PageLines> = Vec::with_capacity(count);
     // How sure Tesseract was of each page it read.
     let mut confidences: Vec<Option<f32>> = vec![None; count];
-    for index in 0..count {
+    for (index, sure) in confidences.iter_mut().enumerate() {
         let (page, lines, size) = if let Some((groups, size, confidence)) = read.remove(&index) {
-            confidences[index] = confidence;
+            *sure = confidence;
             let lines = groups.iter().flatten().cloned().collect();
             (Got::Read(groups), lines, size)
         } else if let Some((_, why)) = failed.iter().find(|(page, _)| *page == index + 1) {

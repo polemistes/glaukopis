@@ -273,9 +273,9 @@ fn long_s_as_s(content: Vec<u8>) -> Vec<u8> {
     let mut changed = false;
     let mut mend = |object: &mut Object| {
         if let Object::String(bytes, _) = object {
-            for pair in bytes.chunks_exact_mut(2) {
-                if pair == [0x01, 0x7F] {
-                    pair.copy_from_slice(&[0x00, 0x73]);
+            for pair in bytes.as_chunks_mut::<2>().0 {
+                if *pair == [0x01, 0x7F] {
+                    *pair = [0x00, 0x73];
                     changed = true;
                 }
             }
