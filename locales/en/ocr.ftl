@@ -309,3 +309,51 @@ ocr-strip-page-failed = Not drawn
 ocr-strip-failed = Pages { $from }–{ $to } could not be drawn.
 # On the page chosen in the strip: the pages from it on are read with languages and a layout of their own.
 ocr-strip-begin = Begin a stretch here
+
+# The panes of the workbench: the picture of the page in view, the text the
+# PDF has for it, what Tesseract read of it with the page's trials, and the
+# column of the reading settings beside them. The panes' titles and their
+# lines on a page without text are ocr-text-page, ocr-text-title and
+# ocr-text-page-none above; the blocks drawn on the picture, ocr-tried-blocks.
+
+ocr-settings-heading = How Tesseract reads
+# The button under the reading settings: the page in view is read with them.
+ocr-settings-try = Try page { $page }
+# A trial's settings said in a line, where no language was chosen: Tesseract then reads English.
+ocr-settings-said-no-language = English, as none is chosen
+# A trial's settings said in a line, where the page was made black and white before it was read.
+ocr-settings-said-contrast = B/W
+# How large the picture of the page is shown: the whole page in the pane, or its own size, or twice that.
+ocr-picture-size = Size of the picture
+ocr-picture-fit = Fit
+ocr-picture-actual = 100%
+ocr-picture-double = 200%
+# The alternative text of the picture of the page in view.
+ocr-picture-alt = Page { $label }
+# The button in the header of a pane of text: that text is what the pages get. $scope: which pages, "this page", "pages 3–5", "all pages".
+ocr-pane-use = Use for { $scope }
+ocr-pane-translated = Translated by what the fonts say
+ocr-pane-sound = Reads as text
+ocr-pane-poor = Does not read as text: letters of a font that does not say which they are, or a poor reading
+ocr-pane-tesseract = What Tesseract read
+ocr-pane-try-hint = Press “Try page { $page }” to read this page with the settings beside.
+# Of the words Tesseract read on the page tried, those it was unsure of, which are underlined.
+ocr-pane-unsure = { $unsure ->
+    [0] { $words ->
+        [one] Tesseract was sure of the one word
+       *[other] Tesseract was sure of all { $words } words
+    }
+    [one] { $words ->
+        [one] Tesseract was unsure of the one word
+       *[other] One of { $words } words unsure
+    }
+   *[other] { $unsure } of { $words } words unsure
+}
+# The tooltip of a word Tesseract was unsure of.
+ocr-pane-unsure-word = Read with a confidence of { $confidence } out of 100
+# Over the list of the page's trials, each said by the settings it was read with.
+ocr-trials = Tried with
+ocr-trial-confidence = { $confidence } of 100
+ocr-trial-nothing = Nothing read
+ocr-trial-differs = Not what holds for the page now
+ocr-trial-use = Use these settings
