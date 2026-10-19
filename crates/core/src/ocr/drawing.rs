@@ -422,6 +422,112 @@ pub fn page_sizes(said: &str) -> Vec<(f32, f32)> {
     sizes
 }
 
+// ---------------------------------------------------------------------------
+// Small pictures of the pages, to be shown
+// ---------------------------------------------------------------------------
+
+/// How large a small picture of a page of `width` by `height` points is,
+/// drawn `wide` dots wide: as wide as asked, and as high as the page's shape
+/// makes it; smaller, where its longer side would be longer than any picture
+/// of a page may be. Nothing, where the page has no size.
+pub fn small_size(width: f32, height: f32, wide: u32) -> Option<(u32, u32)> {
+    if !(width > 0.0 && height > 0.0) {
+        return None;
+    }
+    let mut scale = (wide.max(1) as f32).min(LONGEST) / width;
+    if height * scale > LONGEST {
+        scale = LONGEST / height;
+    }
+    Some((((width * scale).round() as u32).max(1), ((height * scale).round() as u32).max(1)))
+}
+
+/// Draws a page with hayro `wide` dots wide, in grey: at the dots to the
+/// inch that make it so, however few. Not as a page is drawn for Tesseract,
+/// at 150 to 600 dots: a picture 120 dots wide of a page of A4 is drawn at
+/// about 15. A page it loses itself in is an error of that page alone.
+pub fn draw_small_with_hayro(pdf: &Pdf, index: usize, wide: u32) -> Result<Drawn> {
+    let not_drawn = || Error::invalid(tr!("ocr-page-not-drawn", page = index + 1));
+    let page = pdf.pages().get(index).ok_or_else(not_drawn)?;
+    let (width, height) = page.render_dimensions();
+    let (across, down) = small_size(width, height, wide).ok_or_else(not_drawn)?;
+    let settings = RenderSettings {
+        x_scale: across as f32 / width,
+        y_scale: down as f32 / height,
+        width: u16::try_from(across).ok(),
+        height: u16::try_from(down).ok(),
+        bg_color: WHITE,
+    };
+    let drawn = catch_unwind(AssertUnwindSafe(|| {
+        let cache = RenderCache::new();
+        hayro::render(page, &cache, &InterpreterSettings::default(), &settings)
+    }))
+    .map_err(|_| not_drawn())?;
+    let grey = drawn.data_as_u8_slice().as_chunks::<4>().0.iter().map(|p| luma(p[0], p[1], p[2])).collect();
+    let dpi = (across as f32 * 72.0 / width).round() as u32;
+    Ok(Drawn { width: u32::from(drawn.width()), height: u32::from(drawn.height()), dpi, grey })
+}
+
+impl Drawn {
+    /// The picture as a PNG, in grey.
+    pub fn png(&self) -> Result<Vec<u8>> {
+        use image::ImageEncoder;
+        let mut out = Vec::new();
+        image::codecs::png::PngEncoder::new(&mut out)
+            .write_image(&self.grey, self.width, self.height, image::ExtendedColorType::L8)
+            .map_err(|e| Error::invalid(e.to_string()))?;
+        Ok(out)
+    }
+}
+
+impl Pages {
+    /// A small picture of a page, counted from nought, `wide` dots wide, in
+    /// grey, as a PNG: to be shown, not read. Poppler draws it, in `dir`,
+    /// where hayro cannot open the file.
+    pub fn small(&self, index: usize, wide: u32, dir: &Path, stop: &AtomicBool) -> Result<Vec<u8>> {
+        match self {
+            Pages::Hayro(pdf) => draw_small_with_hayro(pdf, index, wide)?.png(),
+            Pages::Poppler { pdftoppm, file, sizes } => {
+                let not_drawn = || Error::invalid(tr!("ocr-page-not-drawn", page = index + 1));
+                let (width, height) = sizes.get(index).copied().ok_or_else(not_drawn)?;
+                let (across, down) = small_size(width, height, wide).ok_or_else(not_drawn)?;
+                // At the dots to the inch that make it as wide as asked: Poppler
+                // would scale to a width the page before it is turned.
+                let dpi = across as f32 * 72.0 / width;
+                let base = dir.join(format!("small-{}", index + 1));
+                let number = (index + 1).to_string();
+                let args: Vec<std::ffi::OsString> = vec![
+                    "-png".into(),
+                    "-gray".into(),
+                    "-cropbox".into(),
+                    "-r".into(),
+                    dpi.to_string().into(),
+                    "-f".into(),
+                    number.clone().into(),
+                    "-l".into(),
+                    number.into(),
+                    "-singlefile".into(),
+                    file.into(),
+                    base.clone().into(),
+                ];
+                tools::run_until(pdftoppm, "pdftoppm", &args, None, None, stop)?;
+                // Read back and written again, of the size asked for: Poppler's
+                // grey may come as colour, and its size a dot more or less.
+                let png = base.with_extension("png");
+                let drawn = Drawn::of_png(&png, dpi.round() as u32).map_err(|_| not_drawn());
+                let _ = std::fs::remove_file(&png);
+                let mut drawn = drawn?;
+                if (drawn.width, drawn.height) != (across, down) {
+                    let picture =
+                        image::GrayImage::from_raw(drawn.width, drawn.height, drawn.grey).ok_or_else(not_drawn)?;
+                    let sized = image::imageops::resize(&picture, across, down, image::imageops::FilterType::Triangle);
+                    drawn = Drawn { width: across, height: down, dpi: drawn.dpi, grey: sized.into_raw() };
+                }
+                drawn.png()
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -588,5 +694,85 @@ mod tests {
         let dots = &pgm[pgm.len() - (small_width as usize * 10)..];
         assert!(dots.iter().all(|d| *d == 0 || *d == 255));
         assert!(!tmp.path().join("page-1.png").exists());
+    }
+
+    #[test]
+    fn a_small_picture_is_as_wide_as_asked() {
+        // A4, 595 by 842 points, 120 dots wide: drawn at some 15 dots to the inch.
+        assert_eq!(small_size(595.276, 841.89, 120), Some((120, 170)));
+        assert_eq!(small_size(841.89, 595.276, 120), Some((120, 85)));
+        // A strip of paper far higher than it is wide is held within the longest side.
+        assert_eq!(small_size(100.0, 100_000.0, 120), Some((10, 10_000)));
+        assert_eq!(small_size(595.0, 842.0, 0), Some((1, 1)));
+        assert_eq!(small_size(0.0, 842.0, 120), None);
+    }
+
+    /// A page 100 by 150 mm with a black band over its top, shown turned a
+    /// quarter, so that the band stands at the right: set by Typst, in `dir`.
+    fn turned_page(dir: &Path) -> PathBuf {
+        let pdf = dir.join("turned.pdf");
+        std::fs::write(
+            dir.join("turned.typ"),
+            "#set page(width: 100mm, height: 150mm, margin: 10mm)\n#rect(width: 100%, height: 30%, fill: black)\n",
+        )
+        .unwrap();
+        let (made, _) = crate::export::typeset::pdf_of(dir, "turned.typ").unwrap();
+        std::fs::write(&pdf, made).unwrap();
+        let mut doc = lopdf::Document::load(&pdf).unwrap();
+        let id = doc.get_pages()[&1];
+        doc.get_dictionary_mut(id).unwrap().set("Rotate", 90);
+        doc.save(&pdf).unwrap();
+        pdf
+    }
+
+    /// The grey of a PNG, its width and its height.
+    fn grey_of(png: &[u8]) -> image::GrayImage {
+        assert!(png.starts_with(b"\x89PNG\r\n\x1a\n"), "a PNG");
+        let picture = image::load_from_memory(png).unwrap();
+        assert_eq!(picture.color(), image::ColorType::L8, "in grey");
+        picture.into_luma8()
+    }
+
+    /// hayro draws a small picture of a page as wide as it is asked, turned
+    /// as the page is shown, at far fewer dots to the inch than Tesseract
+    /// is given.
+    #[test]
+    fn hayro_draws_a_small_picture_of_a_page() {
+        let tmp = tempfile::tempdir().unwrap();
+        let pdf = turned_page(tmp.path());
+        let pages = Pdf::new(std::fs::read(&pdf).unwrap()).unwrap();
+        let drawn = draw_small_with_hayro(&pages, 0, 120).unwrap();
+        // 150 by 100 mm as it is shown: 120 by 80 dots, at 120 / (150 / 25.4) = 20 dots to the inch.
+        assert_eq!((drawn.width, drawn.height, drawn.dpi), (120, 80, 20));
+        let picture = grey_of(&drawn.png().unwrap());
+        assert_eq!((picture.width(), picture.height()), (120, 80));
+        let dark = |x: u32, y: u32| picture.get_pixel(x, y).0[0] < 128;
+        assert!(dark(100, 40) && !dark(20, 40), "the band is at the right");
+
+        let opened = Pages::Hayro(Box::new(pages));
+        let png = opened.small(0, 120, tmp.path(), &AtomicBool::new(false)).unwrap();
+        assert_eq!(grey_of(&png).dimensions(), (120, 80));
+        assert!(opened.small(1, 120, tmp.path(), &AtomicBool::new(false)).is_err(), "there is no second page");
+    }
+
+    /// Poppler draws a small picture of a page as hayro does. Passed over
+    /// where Poppler is not installed.
+    #[test]
+    fn poppler_draws_a_small_picture_as_hayro_does() {
+        let tools = tools::discover(&tools::Configured::default());
+        let Some(pdftoppm) = tools.pdftoppm else {
+            crate::testing::passed_over("Poppler is not installed");
+            return;
+        };
+        let tmp = tempfile::tempdir().unwrap();
+        let pdf = turned_page(tmp.path());
+        let sizes = poppler_sizes(&pdftoppm.path, &pdf).expect("pdfinfo is beside pdftoppm");
+        let poppler = Pages::Poppler { pdftoppm: pdftoppm.path.clone(), file: pdf.clone(), sizes };
+        let picture = grey_of(&poppler.small(0, 120, tmp.path(), &AtomicBool::new(false)).unwrap());
+        assert_eq!(picture.width(), 120);
+        assert!(picture.height().abs_diff(80) <= 1, "{}", picture.height());
+        let dark = |x: u32, y: u32| picture.get_pixel(x, y).0[0] < 128;
+        assert!(dark(100, 40) && !dark(20, 40), "the band is at the right");
+        assert!(!tmp.path().join("small-1.png").exists(), "the file Poppler drew is gone");
     }
 }

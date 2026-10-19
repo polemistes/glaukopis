@@ -45,17 +45,16 @@ ocr-tried-blocks = { $count ->
 }
 ocr-tried-blocks-hint = To spalter tatt som én, eller noter tatt inn i teksten, leses i feil rekkefølge: et annet oppsett av siden kan skille dem.
 # Stretches of pages read with languages and a layout of their own, as chips over the strip of pages.
-ocr-stretches = Strekk av sider
+ocr-stretches = Bolker av sider
 ocr-stretch-page = Side { $page }
 ocr-stretch-pages = Sidene { $from }–{ $to }
 # $languages: the languages, with commas between them; $layout: the layout of the page, as the settings name it.
 ocr-stretch-with-layout = { $languages } · { $layout }
 ocr-stretch-no-language = Engelsk, der ingen er valgt
 ocr-stretch-remove = Les sidene fra { $page } som sidene før dem
-ocr-stretches-hint = En bok som skifter språk eller skrift underveis, kan leses i strekk: velg en side nedenfor, og begynn et strekk der.
-ocr-stretches-editing = Språkene og oppsettet som er valgt, gjelder strekket som er merket: velg et annet for å gi det sine egne.
-ocr-stretches-outline = Begynn et strekk ved hver av de { $count } delene i filens innholdsfortegnelse
-ocr-begin-stretch = Begynn et strekk her
+ocr-stretches-hint = En bok som skifter språk eller skrift underveis, kan leses i bolker: velg en side nedenfor, og begynn en bolk der.
+ocr-stretches-editing = Språkene og oppsettet som er valgt, gjelder bolken som er merket: velg en annen for å gi den sine egne.
+ocr-stretches-outline = Begynn en bolk ved hver av de { $count } delene i filens innholdsfortegnelse
 
 ocr-read = Les teksten
 ocr-read-text-pages = Ta sidene som har tekst
@@ -283,3 +282,14 @@ ocr-languages-scripts-alike = Det { $a } alfabetet leses sammen med det { $b }: 
 ocr-language-fraktur-model = Fraktur (gotisk skrift)
 # Under språkene i teksten, der frakturmodellen er installert.
 ocr-languages-fraktur-hint = Bøker trykt med gotisk skrift, slik norske, danske, svenske og tyske bøker ofte ble før omkring 1900, leses med frakturmodellen, valgt først eller alene, uansett språk.
+
+## Stripen med sidene i en PDF, tegnet små, til å velge en side fra.
+
+ocr-strip = Sidene
+ocr-strip-page = Side { $number }
+# En side som ikke kunne tegnes, der ikke mer er sagt om hvorfor.
+ocr-strip-page-failed = Ikke tegnet
+# $from og $to: den første og den siste av sidene, talt fra én, som skulle tegnes sammen.
+ocr-strip-failed = Side { $from }–{ $to } kunne ikke tegnes.
+# På siden som er valgt i stripen: sidene fra den av leses med egne språk og et eget oppsett.
+ocr-strip-begin = Begynn en bolk her

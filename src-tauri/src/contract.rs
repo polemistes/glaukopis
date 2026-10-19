@@ -394,6 +394,11 @@ fn what_is_sent_is_what_the_interface_declares() {
         poorly: vec![2],
     };
     let synced = glaukopis_core::sharing::Synced { sent: 1, fetched: 0, problems: vec!["A remark.".into()] };
+    let page_pictures: Vec<crate::commands::ocr::PagePicture> =
+        vec![(0, Ok("iVBORw0KGgo=".to_owned())), (1, Err("A remark.".to_owned()))]
+            .into_iter()
+            .map(Into::into)
+            .collect();
     let rendered = vec![
         glaukopis_core::export::math::Rendered { mathml: Some("<math/>".into()), problem: None },
         glaukopis_core::export::math::Rendered { mathml: None, problem: Some("A remark.".into()) },
@@ -572,6 +577,7 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("suggestions", "found.Suggestion[][]", &suggestions);
     put("madeSearchable", "ocr.MadeSearchable", &searchable);
     put("synced", "pictures.Synced", &synced);
+    put("pagePictures", "ocr.PagePicture[]", &page_pictures);
     put("rendered", "pictures.Rendered[]", &rendered);
     put("sheets", "tables.Sheet[]", &sheets);
     put("server", "sharing.ServerInfo", &server);

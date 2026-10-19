@@ -223,6 +223,31 @@ export const ocrSearchable = (id: string | null, path: string, asked: Asked, tic
 export const ocrPicture = (hash: string, asked: Asked, ticket?: string) =>
   call<Imported>('ocr_picture', { hash, asked, ticket });
 
+/** A small picture of a page, for the strip of pages: drawn, or why it could not be. */
+export interface PagePicture {
+  /** Counted from one. */
+  number: number;
+  /** The page in grey, as a data URL of a PNG (`data:image/png;base64,…`), where it could be drawn. */
+  picture: string | null;
+  /** Why it could not be drawn, where it could not. */
+  failed: string | null;
+}
+
+/**
+ * Small pictures of `count` pages of a PDF from `from` (counted from nought),
+ * as many as it has, each `width` dots wide, in grey: at most a hundred at a
+ * time. With `stored`, the path is one of the library; with a ticket, it can
+ * be stopped by `ocrStop`.
+ */
+export const ocrPages = (
+  path: string,
+  stored: boolean,
+  from: number,
+  count: number,
+  width: number,
+  ticket?: string,
+) => call<PagePicture[]>('ocr_pages', { path, stored, from, count, width, ticket });
+
 /** Listens to how far the reading with a ticket has come. Gives what ends the listening. */
 export async function onProgress(
   ticket: string,

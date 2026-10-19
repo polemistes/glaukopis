@@ -270,6 +270,7 @@ pub fn run() {
             commands::ocr::ocr_look,
             commands::ocr::ocr_read,
             commands::ocr::ocr_stop,
+            commands::ocr::ocr_pages,
             commands::ocr::ocr_searchable,
             commands::ocr::ocr_text,
             commands::ocr::ocr_picture,

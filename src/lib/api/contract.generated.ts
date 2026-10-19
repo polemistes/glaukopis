@@ -3963,6 +3963,19 @@ export const synced: pictures.Synced = {
   "sent": 1
 };
 
+export const pagePictures: ocr.PagePicture[] = [
+  {
+    "failed": null,
+    "number": 1,
+    "picture": "data:image/png;base64,iVBORw0KGgo="
+  },
+  {
+    "failed": "A remark.",
+    "number": 2,
+    "picture": null
+  }
+];
+
 export const rendered: pictures.Rendered[] = [
   {
     "mathml": "<math/>",

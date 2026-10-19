@@ -55,7 +55,6 @@ ocr-stretch-remove = Read the pages from { $page } as those before them
 ocr-stretches-hint = A book that changes language or type part way can be read in stretches: choose a page below, and begin a stretch there.
 ocr-stretches-editing = The languages and the layout chosen hold for the stretch that is marked: choose another to set its own.
 ocr-stretches-outline = Begin a stretch at each of the { $count } parts of the file's outline
-ocr-begin-stretch = Begin a stretch here
 
 ocr-read = Read the text
 ocr-read-text-pages = Take the pages that have text
@@ -283,3 +282,14 @@ ocr-languages-scripts-alike = The { $a } script is read together with the { $b }
 ocr-language-fraktur-model = Fraktur (Gothic type)
 # Under the languages of the text, where the Fraktur model is installed.
 ocr-languages-fraktur-hint = Books in Gothic type, as Norwegian, Danish, Swedish and German ones often were before about 1900, are read with the Fraktur model, chosen first or alone, whatever their language.
+
+## The strip of the pages of a PDF, drawn small, to choose a page from.
+
+ocr-strip = The pages
+ocr-strip-page = Page { $number }
+# A page that could not be drawn, where nothing more is said of why.
+ocr-strip-page-failed = Not drawn
+# $from and $to: the first and the last of the pages, counted from one, that were to be drawn together.
+ocr-strip-failed = Pages { $from }–{ $to } could not be drawn.
+# On the page chosen in the strip: the pages from it on are read with languages and a layout of their own.
+ocr-strip-begin = Begin a stretch here
