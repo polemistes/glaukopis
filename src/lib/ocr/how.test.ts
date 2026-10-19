@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { firstTextChoice, scriptOf, scriptsAlike } from './how';
+import { firstTextChoice, lowResolution, scriptOf, scriptsAlike, stretchesOf } from './how';
 
 describe('what becomes of the text a PDF has, at first', () => {
   it('is translated where a scheme applies', () => {
@@ -10,6 +10,30 @@ describe('what becomes of the text a PDF has, at first', () => {
   });
   it('is kept otherwise', () => {
     expect(firstTextChoice({ withText: 4, poor: 1, schemes: [] })).toBe('keep');
+  });
+  it('is kept where the pages are pictures of too few dots, poor as it is', () => {
+    expect(firstTextChoice({ withText: 4, poor: 4, schemes: [], resolution: 72 })).toBe('keep');
+    expect(firstTextChoice({ withText: 4, poor: 4, schemes: [], resolution: 300 })).toBe('anew');
+  });
+});
+
+describe('the resolution of a scan', () => {
+  it('is too low under 150 dots to the inch, and nothing is said of pages that are no pictures', () => {
+    expect(lowResolution({ resolution: 72 })).toBe(true);
+    expect(lowResolution({ resolution: 150 })).toBe(false);
+    expect(lowResolution({ resolution: null })).toBe(false);
+    expect(lowResolution({})).toBe(false);
+  });
+});
+
+describe('pages said as stretches', () => {
+  it('joins pages that follow each other, as the core does', () => {
+    expect(stretchesOf([3, 4, 5, 9])).toBe('3–5, 9');
+    expect(stretchesOf([7])).toBe('7');
+    expect(stretchesOf([])).toBe('');
+    expect(stretchesOf(Array.from({ length: 12 }, (_, i) => (i + 1) * 2))).toBe(
+      '2, 4, 6, 8, 10, 12, 14, 16, 18, 20, …',
+    );
   });
 });
 

@@ -166,6 +166,7 @@ export const looked: ocr.Looked = {
   "pages": 1,
   "picture": false,
   "poor": 0,
+  "resolution": null,
   "sample": {
     "lines": [
       ">\u0013θην \\πειλα9\u0013, %γ%λα\u0013α ψολοκομπ9αι\u0013,",
@@ -3858,6 +3859,9 @@ export const madeSearchable: ocr.MadeSearchable = {
     "path": "attachments/e1/e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e/Nagy 1979 - The Best of the Achaeans.pdf",
     "size": 8
   },
+  "poorly": [
+    2
+  ],
   "read": 2,
   "reference": {
     "added": "2026-01-01T00:00:00Z",

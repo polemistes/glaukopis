@@ -21,6 +21,9 @@ ocr-about-text = { $pages ->
     [one] Siden har tekst, som tas slik den er.
    *[other] Alle sidene har tekst, som tas slik den er.
 }
+# Where the pages of a PDF are pictures of too few dots to the inch to be read well.
+ocr-low-resolution = Sidene er bilder med { $dpi } punkter per tomme: for få til at bokstavene kan leses godt, uansett hva som velges.
+ocr-low-resolution-text = Å lese dem på nytt vil ikke gjøre teksten PDF-en har, bedre.
 ocr-read = Les teksten
 ocr-read-text-pages = Ta sidene som har tekst
 ocr-take-text = Ta teksten
@@ -74,6 +77,10 @@ ocr-searchable-failed = { $count ->
     [one] Én side kunne ikke leses.
    *[other] { $count } sider kunne ikke leses.
 }
+ocr-searchable-poorly = { $count ->
+    [one] Én side ble lest dårlig: { $pages }.
+   *[other] { $count } sider ble lest dårlig: { $pages }.
+} Prøv en side med et annet språk, eller med frakturmodellen for gotisk skrift.
 
 ## En PDF i biblioteket lest inn i et prosjekt, som et tre av elementer
 

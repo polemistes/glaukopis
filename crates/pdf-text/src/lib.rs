@@ -1993,6 +1993,12 @@ impl<'a> Processor<'a> {
                     // and a picture has no text, and is not unpacked to look for it.
                     let key = xf as *const Stream;
                     let picture = xf.dict.get(b"Subtype").and_then(Object::as_name).is_ok_and(|s| s != b"Form");
+                    // Glaukopis: a picture is told with its size and where it is drawn,
+                    // which tells the resolution of a scanned page.
+                    if xf.dict.get(b"Subtype").and_then(Object::as_name).is_ok_and(|s| s == b"Image") {
+                        let dots = |key: &[u8]| xf.dict.get(key).and_then(Object::as_i64).unwrap_or(0);
+                        output.picture(&gs.ctm, dots(b"Width"), dots(b"Height"))?;
+                    }
                     if picture || self.forms.contains(&key) || self.forms.len() >= DEEPEST_FORMS {
                         dlog!("a form within itself, or too deep, is passed over");
                     } else {
@@ -2039,6 +2045,8 @@ pub trait OutputDev {
     fn end_line(&mut self)-> Result<(), OutputError>;
     fn stroke(&mut self, _ctm: &Transform, _colorspace: &ColorSpace, _color: &[f64], _path: &Path)-> Result<(), OutputError> {Ok(())}
     fn fill(&mut self, _ctm: &Transform, _colorspace: &ColorSpace, _color: &[f64], _path: &Path)-> Result<(), OutputError> {Ok(())}
+    /// Glaukopis: a picture drawn, `width` by `height` dots, into the unit square that `ctm` places on the page.
+    fn picture(&mut self, _ctm: &Transform, _width: i64, _height: i64) -> Result<(), OutputError> {Ok(())}
 }
 
 

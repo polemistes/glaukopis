@@ -110,6 +110,8 @@ export interface Looked {
   searchable: boolean;
   /** Whether it is locked (encrypted), and cannot be made searchable for that. */
   locked: boolean;
+  /** The dots to the inch of its pages, where they are pictures, as scans are. */
+  resolution: number | null;
 }
 
 /** What came of making a PDF of the library searchable. */
@@ -124,6 +126,8 @@ export interface MadeSearchable {
   failed: [number, string][];
   /** How many fonts were given their letters, where the text was translated. */
   remapped: number;
+  /** The pages Tesseract read poorly, counted from one. */
+  poorly: number[];
 }
 
 /** The endings of the names of the pictures whose text is read. */

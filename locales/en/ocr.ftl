@@ -21,6 +21,9 @@ ocr-about-text = { $pages ->
     [one] The page has text, which is taken as it is.
    *[other] Every page has text, which is taken as it is.
 }
+# Where the pages of a PDF are pictures of too few dots to the inch to be read well.
+ocr-low-resolution = The pages are pictures at { $dpi } dots to the inch: too few for their letters to be read well, whatever is chosen.
+ocr-low-resolution-text = Reading them anew will not better the text the PDF has.
 ocr-read = Read the text
 ocr-read-text-pages = Take the pages that have text
 ocr-take-text = Take the text
@@ -74,6 +77,10 @@ ocr-searchable-failed = { $count ->
     [one] One page could not be read.
    *[other] { $count } pages could not be read.
 }
+ocr-searchable-poorly = { $count ->
+    [one] One page was read poorly: { $pages }.
+   *[other] { $count } pages were read poorly: { $pages }.
+} Try a page with another language, or with the Fraktur model for Gothic type.
 
 ## A PDF of the library read into a project, as a tree of elements
 

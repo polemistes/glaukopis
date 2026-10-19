@@ -262,6 +262,9 @@ pub struct Made {
     pub remapped: usize,
     /// Whether a file was written: none where nothing was changed.
     pub written: bool,
+    /// The pages Tesseract read poorly, counted from one.
+    #[serde(default)]
+    pub poorly: Vec<usize>,
 }
 
 /// What a job came to.
@@ -431,24 +434,33 @@ fn searchable_here(
         if remapped > 0 {
             write(&bytes)?;
         }
-        return Ok(Made { read: 0, failed: Vec::new(), remapped, written: remapped > 0 });
+        return Ok(Made { read: 0, failed: Vec::new(), remapped, written: remapped > 0, poorly: Vec::new() });
     }
     let reader = reader.ok_or_else(|| Error::invalid("no Tesseract was given"))?;
     let size = bytes.len() as u64;
     let bytes = Arc::new(bytes);
     let pages = Pages::open(&job.pdf, bytes.clone(), pdftoppm)?;
     let drawn_by_hayro = matches!(pages, Pages::Hayro(_));
+    // The words are asked for beside the page of text, in the same run of
+    // Tesseract, to tell how sure it was of the page.
     let one = |index: usize| {
-        let read = reader.draw_and_read(&pages, index, &job.work, (false, true), stop)?;
-        Ok(searchable::Layer { page: index, pdf: read.layer.unwrap_or_default() })
+        let read = reader.draw_and_read(&pages, index, &job.work, (true, true), stop)?;
+        let confidence = read.tsv.as_deref().and_then(super::text::page_confidence);
+        Ok((searchable::Layer { page: index, pdf: read.layer.unwrap_or_default() }, confidence))
     };
     let mut layers = Vec::new();
     let mut failed = Vec::new();
+    let mut poorly = Vec::new();
     let at_once = at_once(&pages, wanted, reader.quality, job.memory, size);
     tracing::info!(pages = wanted.len(), at_once, "pages made searchable by Tesseract");
     for (index, result) in several(wanted, at_once, &one, told, stop) {
         match result {
-            Ok(layer) => layers.push(layer),
+            Ok((layer, confidence)) => {
+                if super::read_poorly(confidence) {
+                    poorly.push(index + 1);
+                }
+                layers.push(layer);
+            }
             Err(e) => failed.push((index + 1, e.to_string())),
         }
     }
@@ -473,7 +485,7 @@ fn searchable_here(
         }
     }
     write(&pdf)?;
-    Ok(Made { read: layers.len(), failed, remapped, written: true })
+    Ok(Made { read: layers.len(), failed, remapped, written: true, poorly })
 }
 
 // ---------------------------------------------------------------------------

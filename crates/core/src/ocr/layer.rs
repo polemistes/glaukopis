@@ -317,6 +317,10 @@ pub struct Layer {
     /// after are not read.
     #[serde(default)]
     pub unfinished: bool,
+    /// The dots to the inch of each page that is a picture, as a scan is;
+    /// nothing for a page of text, or one that was not read.
+    #[serde(default)]
+    pub resolutions: Vec<Option<u32>>,
 }
 
 impl Layer {
@@ -330,6 +334,18 @@ impl Layer {
             || letters(self.pages.get(index).and_then(Option::as_ref))
                 .max(letters(self.translated.get(index).and_then(Option::as_ref)))
                 >= TEXT_PAGE
+    }
+
+    /// The dots to the inch of the pictures the pages are, where they are
+    /// scans: the middle of those of the pages that are pictures, where half
+    /// the pages or more are; nothing where fewer are.
+    pub fn resolution(&self) -> Option<u32> {
+        let mut found: Vec<u32> = self.resolutions.iter().flatten().copied().collect();
+        if found.is_empty() || found.len() * 2 < self.pages.len() {
+            return None;
+        }
+        found.sort_unstable();
+        Some(found[found.len() / 2])
     }
 
     /// The lines of a page as translated, where the schemes applied on it;
@@ -455,6 +471,11 @@ struct Gatherer {
     size: f64,
     /// Whether a run of characters begins: only there are spaces and lines told.
     begins: bool,
+    /// The area of the page, in square points.
+    area: f64,
+    /// The largest picture drawn on the page: the area it is drawn over, in
+    /// square points, and its dots to the inch as it is drawn.
+    picture: Option<(f64, f64)>,
 }
 
 /// A part of a line: where it begins and ends, and its text in runs of one
@@ -632,6 +653,16 @@ impl OutputDev for Gatherer {
     fn begin_page(&mut self, _: u32, media_box: &MediaBox, _: Option<(f64, f64, f64, f64)>) -> Told {
         self.top = media_box.ury.max(media_box.lly);
         self.width = (media_box.urx - media_box.llx).abs();
+        self.area = self.width * (media_box.ury - media_box.lly).abs();
+        Ok(())
+    }
+
+    /// A picture drawn on the page: the unit square, `ctm` maps it onto the
+    /// page, so the lengths of its two sides are the picture's width and
+    /// height as drawn, in points, however it is turned.
+    fn picture(&mut self, ctm: &Transform, width: i64, height: i64) -> Told {
+        let drawn = picture_drawn([ctm.m11, ctm.m12, ctm.m21, ctm.m22], width, height);
+        self.picture = larger(self.picture, drawn);
         Ok(())
     }
 
@@ -801,6 +832,8 @@ struct PageRead {
     size: (f32, f32),
     /// Whether it could not be read to its end.
     broken: bool,
+    /// The dots to the inch of the picture the page is, where it is one.
+    resolution: Option<u32>,
 }
 
 /// The lines of a page, as far as they can be read, as the PDF has them and
@@ -824,6 +857,11 @@ fn page_lines(doc: &Document, number: u32) -> Option<PageRead> {
         }
     };
     let size = (on_page(gatherer.width), on_page(gatherer.top));
+    let picture = match gatherer.picture {
+        None if broken => doc.get_pages().get(&number).and_then(|page| largest_picture(doc, *page)),
+        seen => seen,
+    };
+    let resolution = scan_resolution(picture, gatherer.area);
     let Gatherer { lines, parts, named, fonts, mut schemes, maps, translated_fonts, font_counts, .. } = gatherer;
     let mut out_lines = Vec::new();
     let mut out_translated = Vec::new();
@@ -882,7 +920,103 @@ fn page_lines(doc: &Document, number: u32) -> Option<PageRead> {
         fonts: font_counts,
         size,
         broken,
+        resolution,
     })
+}
+
+/// A picture of `width` by `height` dots drawn into the unit square that a
+/// matrix `[a, b, c, d]` (its translation left out) places on the page: the
+/// lengths of the square's two sides are the picture's width and height as
+/// drawn, in points, however it is turned. The area it is drawn over, and its
+/// dots to the inch; nothing for a picture of no size.
+fn picture_drawn([a, b, c, d]: [f64; 4], width: i64, height: i64) -> Option<(f64, f64)> {
+    let (across, down, area) = (a.hypot(b), c.hypot(d), (a * d - b * c).abs());
+    if width <= 0 || height <= 0 || across <= 0.0 || down <= 0.0 || !area.is_finite() {
+        return None;
+    }
+    let dpi = (width as f64 * 72.0 / across).min(height as f64 * 72.0 / down);
+    dpi.is_finite().then_some((area, dpi))
+}
+
+/// The larger of two pictures drawn, by the area they are drawn over.
+fn larger(one: Option<(f64, f64)>, other: Option<(f64, f64)>) -> Option<(f64, f64)> {
+    match (one, other) {
+        (Some(a), Some(b)) => Some(if b.0 > a.0 { b } else { a }),
+        (a, b) => a.or(b),
+    }
+}
+
+/// The largest picture drawn on a page, by its drawing alone, followed
+/// through `q`, `Q` and `cm`: for a page whose text could not be read to its
+/// end, where the reading may have given up before the picture was drawn,
+/// as on a scan whose unseen text is in an encoding the reading does not
+/// know. Pictures within forms are not followed.
+fn largest_picture(doc: &Document, page: ObjectId) -> Option<(f64, f64)> {
+    let content = doc.get_and_decode_page_content(page).ok()?;
+    let (direct, inherited) = doc.get_page_resources(page).ok()?;
+    let resources = direct.into_iter().chain(inherited.iter().filter_map(|id| doc.get_dictionary(*id).ok()));
+    let xobjects: Vec<&pdf_text::Dictionary> = resources
+        .filter_map(|r| match r.get(b"XObject").ok()? {
+            Object::Reference(id) => doc.get_dictionary(*id).ok(),
+            Object::Dictionary(d) => Some(d),
+            _ => None,
+        })
+        .collect();
+    let picture = |name: &[u8]| -> Option<(i64, i64)> {
+        let found = xobjects.iter().find_map(|x| x.get(name).ok())?;
+        let stream = match found {
+            Object::Reference(id) => doc.get_object(*id).ok()?.as_stream().ok()?,
+            Object::Stream(s) => s,
+            _ => return None,
+        };
+        let dict = &stream.dict;
+        if dict.get(b"Subtype").and_then(Object::as_name).ok()? != b"Image" {
+            return None;
+        }
+        let dots = |key: &[u8]| dict.get(key).and_then(Object::as_i64).ok();
+        Some((dots(b"Width")?, dots(b"Height")?))
+    };
+    // [a b c d e f], as `cm` gives it.
+    let mut ctm = [1.0, 0.0, 0.0, 1.0, 0.0, 0.0];
+    let mut saved: Vec<[f64; 6]> = Vec::new();
+    let mut largest = None;
+    for op in &content.operations {
+        match op.operator.as_str() {
+            "q" => saved.push(ctm),
+            "Q" => ctm = saved.pop().unwrap_or(ctm),
+            "cm" => {
+                let m: Vec<f64> = op.operands.iter().filter_map(|o| o.as_float().ok()).map(f64::from).collect();
+                if let [a, b, c, d, e, f] = m[..] {
+                    let [ca, cb, cc, cd, ce, cf] = ctm;
+                    ctm = [
+                        a * ca + b * cc,
+                        a * cb + b * cd,
+                        c * ca + d * cc,
+                        c * cb + d * cd,
+                        e * ca + f * cc + ce,
+                        e * cb + f * cd + cf,
+                    ];
+                }
+            }
+            "Do" => {
+                if let Some(Ok(name)) = op.operands.first().map(Object::as_name)
+                    && let Some((width, height)) = picture(name)
+                {
+                    largest = larger(largest, picture_drawn([ctm[0], ctm[1], ctm[2], ctm[3]], width, height));
+                }
+            }
+            _ => {}
+        }
+    }
+    largest
+}
+
+/// The dots to the inch of the picture a page is: of its largest picture,
+/// where that is drawn over half the page or more, as a scan is. A figure
+/// in a page of text is not a scan, and tells nothing of the page.
+fn scan_resolution(picture: Option<(f64, f64)>, page: f64) -> Option<u32> {
+    let (area, dpi) = picture?;
+    (page > 0.0 && area * 2.0 >= page && dpi >= 1.0).then(|| dpi.round().min(100_000.0) as u32)
 }
 
 // ---------------------------------------------------------------------------
@@ -1174,6 +1308,7 @@ fn read_into(bytes: &[u8], layer: &Mutex<Layer>) {
         l.translated = vec![None; count];
         l.schemes = vec![Vec::new(); count];
         l.sizes = vec![(0.0, 0.0); count];
+        l.resolutions = vec![None; count];
     });
     for number in 1..=count {
         let read = page_lines(&doc, number as u32);
@@ -1186,6 +1321,7 @@ fn read_into(bytes: &[u8], layer: &Mutex<Layer>) {
                 l.translated[number - 1] = page.translated;
                 l.schemes[number - 1] = page.schemes;
                 l.sizes[number - 1] = page.size;
+                l.resolutions[number - 1] = page.resolution;
                 for (font, count) in page.fonts {
                     *l.fonts.entry(font).or_default() += count;
                 }
@@ -1330,6 +1466,26 @@ mod tests {
         let layer = read(Arc::new(large), Duration::from_secs(60));
         assert_eq!(layer.pages, vec![None]);
         assert!(started.elapsed() < Duration::from_secs(10), "{:?}", started.elapsed());
+    }
+
+    /// The resolution of the file is that of the pages that are pictures,
+    /// the middle one, where half of the pages or more are.
+    #[test]
+    fn the_resolution_of_the_pages_that_are_pictures() {
+        let layer = |resolutions: Vec<Option<u32>>| Layer {
+            pages: vec![None; resolutions.len()],
+            resolutions,
+            ..Layer::default()
+        };
+        assert_eq!(layer(vec![Some(300), Some(300), Some(400)]).resolution(), Some(300));
+        assert_eq!(layer(vec![Some(72), None]).resolution(), Some(72));
+        assert_eq!(layer(vec![Some(72), None, None]).resolution(), None);
+        assert_eq!(layer(Vec::new()).resolution(), None);
+        // A picture over half the page or more is a scan; a figure is not.
+        assert_eq!(scan_resolution(Some((500.0, 299.6)), 1000.0), Some(300));
+        assert_eq!(scan_resolution(Some((499.0, 300.0)), 1000.0), None);
+        assert_eq!(scan_resolution(None, 1000.0), None);
+        assert_eq!(scan_resolution(Some((1000.0, 300.0)), 0.0), None);
     }
 
     #[test]

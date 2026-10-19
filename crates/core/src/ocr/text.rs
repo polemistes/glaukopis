@@ -127,6 +127,20 @@ pub fn tsv_page_size(tsv: &str) -> Option<(f32, f32)> {
 /// and by how sure Tesseract was of its words, and so is a paragraph left
 /// with no line.
 pub fn tsv_paragraphs(tsv: &str) -> Vec<Vec<Line>> {
+    tsv_page(tsv).0
+}
+
+/// How sure Tesseract was of what it read of a page, from 0 to 100: the
+/// mean of its words' confidences, the lines that are only marks left out,
+/// as `tsv_paragraphs` leaves them out. Nothing where no word has one, as
+/// on a blank page.
+pub fn page_confidence(tsv: &str) -> Option<f32> {
+    tsv_page(tsv).1
+}
+
+/// What Tesseract read of a page, as `tsv_paragraphs` gives it, and how sure
+/// it was of it, as `page_confidence` does.
+pub fn tsv_page(tsv: &str) -> (Vec<Vec<Line>>, Option<f32>) {
     let mut paragraphs: Vec<Vec<Line>> = Vec::new();
     // Beside each line, the sum and the count of its words' confidences.
     let mut sureness: Vec<Vec<(f32, u32)>> = Vec::new();
@@ -137,7 +151,10 @@ pub fn tsv_paragraphs(tsv: &str) -> Vec<Vec<Line>> {
         if columns.len() < 12 || columns[0] != "5" {
             continue;
         }
-        let text = columns[11..].join(" ");
+        // The long s (ſ) of old books, which the Fraktur model reads, is a
+        // form of s and not a letter of its own: what is read is searched,
+        // checked and quoted as s.
+        let text = columns[11..].join(" ").replace('ſ', "s");
         let text = text.trim();
         if text.is_empty() {
             continue;
@@ -192,7 +209,8 @@ pub fn tsv_paragraphs(tsv: &str) -> Vec<Vec<Line>> {
     for line in paragraphs.iter_mut().flatten() {
         line.style.size = line.height();
     }
-    paragraphs
+    let (mut all, mut words) = (0.0f32, 0u32);
+    let paragraphs = paragraphs
         .into_iter()
         .zip(sureness)
         .map(|(lines, sure)| {
@@ -200,11 +218,16 @@ pub fn tsv_paragraphs(tsv: &str) -> Vec<Vec<Line>> {
                 .into_iter()
                 .zip(sure)
                 .filter(|(line, (sum, count))| !only_marks(&line.text, (*count > 0).then(|| sum / *count as f32)))
-                .map(|(line, _)| line)
+                .map(|(line, (sum, count))| {
+                    all += sum;
+                    words += count;
+                    line
+                })
                 .collect::<Vec<_>>()
         })
         .filter(|lines| !lines.is_empty())
-        .collect()
+        .collect();
+    (paragraphs, (words > 0).then(|| all / words as f32))
 }
 
 /// A combining mark of the block of combining diacritics.
@@ -764,5 +787,25 @@ mod tests {
         assert_eq!(pages[2], vec!["Ends here, con-"]);
         assert_eq!(pages[4], vec!["wordalone"]);
         assert_eq!(pages[5], vec!["Next."]);
+    }
+
+    /// How sure Tesseract was of a page is the mean of its words, the line
+    /// of marks left out as it is left out of the text; and the long s of
+    /// the Fraktur model is read as s, with the spaces measured after it.
+    #[test]
+    fn how_sure_tesseract_was_of_a_page() {
+        let tsv = "level\tpage_num\tblock_num\tpar_num\tline_num\tword_num\tleft\ttop\twidth\theight\tconf\ttext\n\
+                   5\t1\t1\t1\t1\t1\t100\t100\t200\t40\t90\togſaa\n\
+                   5\t1\t1\t1\t1\t2\t320\t100\t200\t40\t70\tſamme\n\
+                   5\t1\t1\t2\t1\t1\t100\t300\t20\t20\t5\t~\n";
+        let (read, confidence) = tsv_page(tsv);
+        assert_eq!(read.len(), 1, "the line of marks is left out: {read:?}");
+        assert_eq!(read[0][0].text, "ogsaa samme");
+        assert_eq!(read[0][0].gaps, Some(vec![Gap { at: "ogsaa ".len(), from: 300.0, to: 320.0 }]));
+        assert_eq!(confidence, Some(80.0));
+        assert_eq!(page_confidence(tsv), Some(80.0));
+        // A blank page has no confidence.
+        assert_eq!(page_confidence("level\tpage_num\n1\t1\t0\t0\t0\t0\t0\t0\t1\t1\t-1\t\n"), None);
+        assert_eq!(page_confidence(""), None);
     }
 }

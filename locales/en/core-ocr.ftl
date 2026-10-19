@@ -40,6 +40,11 @@ ocr-remark-more-failed = { $count ->
    *[other] { $count } more pages could not be read.
 }
 ocr-remark-empty = No text was found.
+ocr-remark-poorly = { $count ->
+    [one] One page was read poorly: { $pages }. Another language, the Fraktur model for Gothic type, or another layout may read it better; try it before reading it again.
+   *[other] { $count } pages were read poorly: { $pages }. Another language, the Fraktur model for Gothic type, or another layout may read them better; try a page before reading them all again.
+}
+ocr-remark-fraktur = Books in Gothic type, as many Norwegian, Danish, Swedish and German ones were before about 1900, are read with the Fraktur model, chosen first or alone, whatever their language.
 
 ## What a reading of a PDF came to (ADR 0044).
 

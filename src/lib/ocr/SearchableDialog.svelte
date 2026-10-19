@@ -27,7 +27,13 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError, notifyOk } from '$lib/ui/toast.svelte';
   import { newId } from '$lib/util/id';
-  import { firstTextChoice, howFromSettings, scriptsAlike } from './how';
+  import {
+    firstTextChoice,
+    howFromSettings,
+    lowResolution,
+    scriptsAlike,
+    stretchesOf,
+  } from './how';
   import HowDisclosure from './HowDisclosure.svelte';
   import LanguagePicker from './LanguagePicker.svelte';
   import { reader } from './reader.svelte';
@@ -108,13 +114,20 @@
         ticket,
       );
       if (gone) return;
-      const failed = made.failed.length
-        ? t('ocr-searchable-failed', { count: made.failed.length })
-        : undefined;
+      const said = [
+        made.failed.length ? t('ocr-searchable-failed', { count: made.failed.length }) : '',
+        made.poorly.length
+          ? t('ocr-searchable-poorly', {
+              count: made.poorly.length,
+              pages: stretchesOf(made.poorly),
+            })
+          : '',
+      ].filter(Boolean);
+      const detail = said.length ? said.join(' ') : undefined;
       if (made.remapped > 0 && made.read === 0) {
-        notifyOk(t('ocr-searchable-readable-done', { count: made.remapped }), failed);
+        notifyOk(t('ocr-searchable-readable-done', { count: made.remapped }), detail);
       } else {
-        notifyOk(t('ocr-searchable-done', { count: made.read }), failed);
+        notifyOk(t('ocr-searchable-done', { count: made.read }), detail);
       }
       ondone(made.file, made.reference);
       onclose();
@@ -178,6 +191,12 @@
         <div class="asking" class:split={wide}>
           <div class="side">
             <p class="about">{about}</p>
+            {#if lowResolution(looked)}
+              <p class="warn" data-ocr-low-resolution={looked.resolution}>
+                {t('ocr-low-resolution', { dpi: looked.resolution ?? 0 })}
+                {#if looked.withText > 0}{t('ocr-low-resolution-text')}{/if}
+              </p>
+            {/if}
             {#if looked.withText > 0}
               <TextPart {looked} bind:choice={text} searchable canRead={reader.installed} />
             {/if}

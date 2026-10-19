@@ -30,7 +30,7 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError } from '$lib/ui/toast.svelte';
   import { newId } from '$lib/util/id';
-  import { firstTextChoice, howFromSettings, scriptsAlike } from './how';
+  import { firstTextChoice, howFromSettings, lowResolution, scriptsAlike } from './how';
   import HowDisclosure from './HowDisclosure.svelte';
   import LanguagePicker from './LanguagePicker.svelte';
   import { reader } from './reader.svelte';
@@ -174,6 +174,12 @@
     <div class="asking" class:split={wide}>
       <div class="side">
         <p class="about">{about}</p>
+        {#if lowResolution(looked)}
+          <p class="warn" data-ocr-low-resolution={looked.resolution}>
+            {t('ocr-low-resolution', { dpi: looked.resolution ?? 0 })}
+            {#if looked.withText > 0}{t('ocr-low-resolution-text')}{/if}
+          </p>
+        {/if}
         {#if !looked.picture && looked.withText > 0}
           <TextPart {looked} bind:choice={text} canRead={reader.installed} />
         {/if}

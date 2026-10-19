@@ -391,6 +391,7 @@ fn what_is_sent_is_what_the_interface_declares() {
         with_text: 1,
         failed: vec![(3, "A remark.".into())],
         remapped: 1,
+        poorly: vec![2],
     };
     let synced = glaukopis_core::sharing::Synced { sent: 1, fetched: 0, problems: vec!["A remark.".into()] };
     let rendered = vec![

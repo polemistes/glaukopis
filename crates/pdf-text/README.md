@@ -23,6 +23,9 @@ is the crate as it was):
   read from their three numbers, the last code within the range; they were
   all read from the first, so that lines of such fonts ended in the wrong place.
 - A CID font tells its name and its object, as a simple font does.
+- `OutputDev` has `picture`, which is told of each picture drawn (`Do` of
+  an image), with its size in dots and where it is drawn: the resolution of
+  a scanned page is told by it.
 
 The changes are to be offered to pdf-extract; when it has them, this folder
 can go.

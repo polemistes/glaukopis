@@ -36,16 +36,43 @@ export function anewAtFirst(looked: { withText: number; poor: number }): boolean
 }
 
 /**
+ * Fewer dots to the inch than this, and the letters of a scan are too few
+ * to be read well, whatever is chosen.
+ */
+export const LOW_RESOLUTION = 150;
+
+/** Whether the pages of a PDF are pictures at too few dots to the inch to be read well. */
+export function lowResolution(looked: { resolution?: number | null }): boolean {
+  return looked.resolution != null && looked.resolution < LOW_RESOLUTION;
+}
+
+/**
  * What becomes of the text a PDF has at first: translated where a scheme
  * applies, read anew where the text is poor and none does, kept otherwise.
+ * A scan of too few dots to the inch is not read anew at first, poor as its
+ * text may be: what is read would be no better.
  */
 export function firstTextChoice(looked: {
   withText: number;
   poor: number;
   schemes: unknown[];
+  resolution?: number | null;
 }): 'keep' | 'translate' | 'anew' {
   if (looked.schemes.length) return 'translate';
-  return anewAtFirst(looked) ? 'anew' : 'keep';
+  return anewAtFirst(looked) && !lowResolution(looked) ? 'anew' : 'keep';
+}
+
+/** Pages, counted from one and in order, said as stretches, `3–5, 9`, as the core says them; past ten stretches, the rest are not named. */
+export function stretchesOf(pages: number[]): string {
+  const stretches: [number, number][] = [];
+  for (const page of pages) {
+    const last = stretches.at(-1);
+    if (last && page === last[1] + 1) last[1] = page;
+    else stretches.push([page, page]);
+  }
+  const said = stretches.slice(0, 10).map(([a, b]) => (a === b ? `${a}` : `${a}–${b}`));
+  if (stretches.length > 10) said.push('…');
+  return said.join(', ');
 }
 
 /** The scripts some of whose letters look alike. Those of other scripts are never warned of. */

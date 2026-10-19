@@ -906,3 +906,80 @@ fn as_many_pages_at_once_as_the_memory_free_will_hold() {
     // Not known: the cores decide.
     assert_eq!(by_memory(5, a4_fine, None), 5);
 }
+
+/// A reading says how sure Tesseract was of each page: an English scan read
+/// in English was read well; read as Ancient Greek, every page was read
+/// poorly, and the reading says which.
+#[test]
+fn a_reading_says_how_well_it_went() {
+    let Some(kit) = kit(true) else { return };
+    let scan = kit.scan("scan.pdf");
+    let read = read_pdf(&scan, &kit.tools, &kit.work(), &kit.asked(), None, &mut nothing, &never()).unwrap();
+    let confidence = read.pages[0].confidence.expect("a page read has a confidence");
+    assert!(confidence >= POORLY, "{confidence}");
+    assert!(read.poorly.is_empty());
+    assert!(!read.remarks.iter().any(|r| r.contains(&stretches_of(&[1]))), "{:?}", read.remarks);
+
+    if !kit.tools.ocr_languages.iter().any(|l| l == "grc") {
+        crate::testing::passed_over("Tesseract has no Ancient Greek to read English poorly with");
+        return;
+    }
+    let asked = Asked { languages: vec!["grc".into()], ..kit.asked() };
+    let read = read_pdf(&scan, &kit.tools, &kit.work(), &asked, None, &mut nothing, &never()).unwrap();
+    let confidence = read.pages[0].confidence.expect("a page read has a confidence");
+    assert!(confidence < POORLY, "{confidence}");
+    assert_eq!(read.poorly, vec![1]);
+    assert!(read.remarks.contains(&tr!("ocr-remark-poorly", count = 1, pages = "1")), "{:?}", read.remarks);
+    // Greek was never set in Gothic type: the Fraktur model is not named.
+    assert!(!read.remarks.contains(&tr!("ocr-remark-fraktur")), "{:?}", read.remarks);
+
+    // Made searchable, the same is said.
+    let made = make_searchable(&scan, &kit.tools, &kit.work(), &asked, &mut nothing, &never()).unwrap();
+    assert_eq!((made.read, made.poorly.clone()), (1, vec![1]));
+    let made = make_searchable(&scan, &kit.tools, &kit.work(), &kit.asked(), &mut nothing, &never()).unwrap();
+    assert_eq!((made.read, made.poorly.clone()), (1, Vec::new()));
+}
+
+#[test]
+fn what_is_said_of_pages_read_poorly() {
+    let nor = vec!["nor".to_owned()];
+    assert!(poorly_remarks(&[], 5, &nor).is_empty());
+    let said = poorly_remarks(&[2, 3, 4, 9], 8, &nor);
+    assert_eq!(said, vec![tr!("ocr-remark-poorly", count = 4, pages = "2–4, 9"), tr!("ocr-remark-fraktur")]);
+    // Fewer than half of the pages read: the type is not what is wrong.
+    assert_eq!(poorly_remarks(&[2, 3, 4], 8, &nor).len(), 1);
+    // Read with the Fraktur model already, or in a language never set in it.
+    assert_eq!(poorly_remarks(&[1], 1, &["nor".to_owned(), "deu_latf".to_owned()]).len(), 1);
+    assert_eq!(poorly_remarks(&[1], 1, &["grc".to_owned()]).len(), 1);
+    assert_eq!(poorly_remarks(&[1], 1, &["eng".to_owned(), "deu".to_owned()]).len(), 2);
+
+    assert_eq!(stretches_of(&[3, 4, 5, 9]), "3–5, 9");
+    assert_eq!(stretches_of(&[7]), "7");
+    assert_eq!(stretches_of(&[]), "");
+    let scattered: Vec<usize> = (1..=12).map(|n| n * 2).collect();
+    assert_eq!(stretches_of(&scattered), "2, 4, 6, 8, 10, 12, 14, 16, 18, 20, …");
+    assert!(!read_poorly(None) && read_poorly(Some(79.9)) && !read_poorly(Some(POORLY)));
+}
+
+/// The look tells the resolution of a scan: the scan made here is a picture
+/// at 300 dots to the inch; drawn over a page four times as large, it is a
+/// picture at 75; a page of text is no picture.
+#[test]
+fn the_look_tells_the_resolution_of_a_scan() {
+    let Some(kit) = kit(false) else { return };
+    let scan = kit.scan("scan.pdf");
+    let looked = look(&scan, &kit.tools).unwrap();
+    let dpi = looked.resolution.expect("a scan has a resolution");
+    assert!(dpi.abs_diff(300) <= 2, "{dpi}");
+
+    let large = kit.typeset(
+        "large.pdf",
+        "#set page(width: 600mm, height: 400mm, margin: 0pt)\n#image(\"page.png\", width: 100%, height: 100%)\n",
+    );
+    let looked = look(&large, &kit.tools).unwrap();
+    let dpi = looked.resolution.expect("a scan has a resolution");
+    assert!(dpi.abs_diff(75) <= 1, "{dpi}");
+
+    let text = kit.typeset("text.pdf", PAGE);
+    assert_eq!(look(&text, &kit.tools).unwrap().resolution, None);
+}

@@ -55,6 +55,69 @@ use drawing::{Drawn, Pages, Quality};
 use layer::Layer;
 use text::{IsWord, Line};
 
+/// A page Tesseract was less sure of than this, from 0 to 100, was read
+/// poorly. Measured on scans of many kinds on 2026-10-18: pages read with
+/// the right model came to 87–91, Gothic type read with a model of Latin
+/// type 65–72, a scan at 72 dots to the inch 80–84.
+pub const POORLY: f32 = 80.0;
+
+/// Whether a page whose confidence is `confidence` was read poorly. A page
+/// with none, on which no word was read, was not.
+pub fn read_poorly(confidence: Option<f32>) -> bool {
+    confidence.is_some_and(|c| c < POORLY)
+}
+
+/// Pages, counted from one and in order, said as stretches: `3–5, 9`. Past
+/// ten stretches, the rest are not named.
+pub fn stretches_of(pages: &[usize]) -> String {
+    const NAMED: usize = 10;
+    let mut stretches: Vec<(usize, usize)> = Vec::new();
+    for &page in pages {
+        match stretches.last_mut() {
+            Some((_, last)) if page == *last + 1 => *last = page,
+            _ => stretches.push((page, page)),
+        }
+    }
+    let mut said: Vec<String> = stretches
+        .iter()
+        .take(NAMED)
+        .map(|&(first, last)| if first == last { first.to_string() } else { format!("{first}–{last}") })
+        .collect();
+    if stretches.len() > NAMED {
+        said.push("…".to_owned());
+    }
+    said.join(", ")
+}
+
+/// The languages of books that were often set in Gothic type, by
+/// Tesseract's names for them: where these were read poorly, the Fraktur
+/// model may read them well.
+const GOTHIC_ONCE: [&str; 15] =
+    ["deu", "nor", "dan", "swe", "fin", "isl", "est", "lav", "lit", "ces", "slk", "pol", "hun", "slv", "nld"];
+
+/// Whether the Fraktur model is worth naming to one who read with
+/// `languages`: one of them was often set in Gothic type, and no model of
+/// Gothic type is among them already.
+fn fraktur_might_help(languages: &[String]) -> bool {
+    let fraktur = |l: &str| l == "frk" || l == "deu_latf" || l == "script/Fraktur" || l.ends_with("_frak");
+    !languages.iter().any(|l| fraktur(l)) && languages.iter().any(|l| GOTHIC_ONCE.contains(&l.as_str()))
+}
+
+/// What is said of the pages that were read poorly, where any were: which
+/// they were, and, where half or more of those read were, and the languages
+/// were of books once set in Gothic type, that such books are read with the
+/// Fraktur model.
+fn poorly_remarks(poorly: &[usize], judged: usize, languages: &[String]) -> Vec<String> {
+    if poorly.is_empty() {
+        return Vec::new();
+    }
+    let mut said = vec![tr!("ocr-remark-poorly", count = poorly.len(), pages = stretches_of(poorly))];
+    if poorly.len() * 2 >= judged && fraktur_might_help(languages) {
+        said.push(tr!("ocr-remark-fraktur"));
+    }
+    said
+}
+
 /// What becomes of the text a PDF has.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -179,6 +242,9 @@ pub struct Looked {
     pub searchable: bool,
     /// Whether it is locked (encrypted), and cannot be made searchable for that.
     pub locked: bool,
+    /// The dots to the inch of its pages, where they are pictures, as
+    /// scans are (`Layer::resolution`); nothing where they are not.
+    pub resolution: Option<u32>,
 }
 
 /// The first lines of the text a page has.
@@ -230,6 +296,9 @@ pub struct PageText {
     pub paragraphs: Vec<String>,
     /// Whether Tesseract read it, or its text was taken as the file has it.
     pub read: bool,
+    /// How sure Tesseract was of what it read, from 0 to 100, where it read
+    /// the page and any word on it (`text::page_confidence`).
+    pub confidence: Option<f32>,
     /// What the page was found to be made of, where its shape was kept
     /// (ADR 0045): what the document is made of then, in the place of the
     /// paragraphs.
@@ -256,6 +325,8 @@ pub struct ReadPdf {
     pub read: usize,
     pub taken: usize,
     pub failed: usize,
+    /// The pages Tesseract read poorly (`POORLY`), counted from one.
+    pub poorly: Vec<usize>,
 }
 
 /// What making a PDF searchable came to.
@@ -271,6 +342,8 @@ pub struct Searchable {
     pub failed: Vec<(usize, String)>,
     /// How many fonts were given their letters (`Translate`).
     pub remapped: usize,
+    /// The pages Tesseract read poorly (`POORLY`), counted from one.
+    pub poorly: Vec<usize>,
 }
 
 /// The endings of the names of the pictures whose text is read.
@@ -527,6 +600,7 @@ pub fn look(path: &Path, tools: &Tools) -> Result<Looked> {
         title,
         searchable,
         locked: layer.locked,
+        resolution: layer.resolution(),
     })
 }
 
@@ -646,8 +720,11 @@ pub fn read_pdf(
     }
     let mut got: Vec<Got> = Vec::with_capacity(count);
     let mut pages_lines: Vec<shape::PageLines> = Vec::with_capacity(count);
+    // How sure Tesseract was of each page it read.
+    let mut confidences: Vec<Option<f32>> = vec![None; count];
     for index in 0..count {
-        let (page, lines, size) = if let Some((groups, size)) = read.remove(&index) {
+        let (page, lines, size) = if let Some((groups, size, confidence)) = read.remove(&index) {
+            confidences[index] = confidence;
             let lines = groups.iter().flatten().cloned().collect();
             (Got::Read(groups), lines, size)
         } else if let Some((_, why)) = failed.iter().find(|(page, _)| *page == index + 1) {
@@ -695,15 +772,26 @@ pub fn read_pdf(
         text::mend_across(&mut paragraphs, is_word);
     }
     let done = wanted.len() - failed.len();
+    let poorly: Vec<usize> = (0..count).filter(|i| read_poorly(confidences[*i])).map(|i| i + 1).collect();
+    let judged = confidences.iter().flatten().count();
     // Said where Tesseract was asked to read: a PDF whose text is all taken needs no counting.
     if !wanted.is_empty() {
         remarks.push(tr!("ocr-remark-counts", read = done, taken = taken, failed = failed.len()));
     }
+    remarks.extend(poorly_remarks(&poorly, judged, &asked.languages));
     remarks.extend(failures(&failed));
     if paragraphs.iter().all(Vec::is_empty) {
         remarks.push(tr!("ocr-remark-empty"));
     }
-    tracing::info!(pages = count, read = done, taken, failed = failed.len(), text = ?asked.text, "a PDF was read");
+    tracing::info!(
+        pages = count,
+        read = done,
+        taken,
+        failed = failed.len(),
+        poorly = %stretches_of(&poorly),
+        text = ?asked.text,
+        "a PDF was read"
+    );
     let pages: Vec<PageText> = paragraphs
         .into_iter()
         .enumerate()
@@ -711,6 +799,7 @@ pub fn read_pdf(
             number: index + 1,
             label: layer.label(index),
             read: wanted.contains(&index) && !failed.iter().any(|(page, _)| *page == index + 1),
+            confidence: confidences[index],
             paragraphs,
             pieces: std::mem::take(&mut pieces[index]),
         })
@@ -730,11 +819,13 @@ pub fn read_pdf(
         read: done,
         taken,
         failed: failed.len(),
+        poorly,
     })
 }
 
-/// What Tesseract read of a page, in groups of lines, and the page's size in points.
-type ReadPage = (Vec<Vec<Line>>, (f32, f32));
+/// What Tesseract read of a page, in groups of lines, the page's size in
+/// points, and how sure Tesseract was of it.
+type ReadPage = (Vec<Vec<Line>>, (f32, f32), Option<f32>);
 
 /// What Tesseract read of a page drawn at `dpi`, as its TSV says it: in
 /// points, as the text a PDF has is, so that its pages and Tesseract's are
@@ -742,7 +833,7 @@ type ReadPage = (Vec<Vec<Line>>, (f32, f32));
 fn read_page(tsv: &str, dpi: u32) -> ReadPage {
     let scale = if dpi > 0 { 72.0 / dpi as f32 } else { 1.0 };
     let size = text::tsv_page_size(tsv).map_or((0.0, 0.0), |(w, h)| (w * scale, h * scale));
-    let mut groups = text::tsv_paragraphs(tsv);
+    let (mut groups, confidence) = text::tsv_page(tsv);
     for group in &mut groups {
         // The lines of one of Tesseract's paragraphs are one size of type,
         // whatever their letters reach above and below: their height is the
@@ -764,7 +855,7 @@ fn read_page(tsv: &str, dpi: u32) -> ReadPage {
             }
         }
     }
-    (groups, size)
+    (groups, size, confidence)
 }
 
 /// The lines of a page that are taken from the PDF, not read by Tesseract:
@@ -898,7 +989,7 @@ pub fn make_searchable(
     };
     let wanted: Vec<usize> = (0..count).filter(|i| asked.text == TextChoice::Anew || !layer.has_text(*i)).collect();
     if wanted.is_empty() && maps.is_empty() {
-        return Ok(Searchable { pdf: None, read: 0, with_text, failed: Vec::new(), remapped: 0 });
+        return Ok(Searchable { pdf: None, read: 0, with_text, failed: Vec::new(), remapped: 0, poorly: Vec::new() });
     }
     let reader = if wanted.is_empty() { None } else { Some(ready(tools, asked)?) };
     let place = place_in(work)?;
@@ -916,9 +1007,23 @@ pub fn make_searchable(
     let pdf =
         if made.written { Some(std::fs::read(&output).context(|| tr!("io-reading", path = &output))?) } else { None };
     if made.read > 0 {
-        tracing::info!(pages = count, read = made.read, failed = made.failed.len(), text = ?asked.text, "a PDF was made searchable");
+        tracing::info!(
+            pages = count,
+            read = made.read,
+            failed = made.failed.len(),
+            poorly = %stretches_of(&made.poorly),
+            text = ?asked.text,
+            "a PDF was made searchable"
+        );
     }
-    Ok(Searchable { pdf, read: made.read, with_text, failed: made.failed, remapped: made.remapped })
+    Ok(Searchable {
+        pdf,
+        read: made.read,
+        with_text,
+        failed: made.failed,
+        remapped: made.remapped,
+        poorly: made.poorly,
+    })
 }
 
 // ---------------------------------------------------------------------------

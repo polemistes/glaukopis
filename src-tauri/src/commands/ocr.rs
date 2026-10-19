@@ -140,6 +140,8 @@ pub struct MadeSearchable {
     pub failed: Vec<(usize, String)>,
     /// How many fonts were given their letters, where the text was translated.
     pub remapped: usize,
+    /// The pages Tesseract read poorly, counted from one.
+    pub poorly: Vec<usize>,
 }
 
 /// Makes a PDF of the library searchable: the file in the store is
@@ -187,6 +189,7 @@ pub fn ocr_searchable(
         with_text: made.with_text,
         failed: made.failed,
         remapped: made.remapped,
+        poorly: made.poorly,
     })
 }
 
