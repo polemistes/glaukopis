@@ -22,7 +22,7 @@ options=(!lto !debug)
 
 url='https://github.com/polemistes/glaukopis'
 source=("$pkgbase-$pkgver.tar.gz::https://github.com/polemistes/glaukopis/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('884bf7319d06a7d1f1eb81a31eab403ae8641050fbbb97ea5d986b5c1fc010bd')
+sha256sums=('f630c5e219f9b36d47539c085bb50559f37719194c82dd28748862ab5f9187f9')
 
 prepare() {
   cd "$srcdir/$pkgbase-$pkgver"

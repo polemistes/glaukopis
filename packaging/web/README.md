@@ -2,7 +2,9 @@
 
 `packages/index.html` is the page that lists the packages put out for testing,
 with what each file is, and the language packages of spelling and of OCR;
-`packages/SHA256SUMS` holds the checksums of the installers and packages. Both
+`packages/SHA256SUMS` holds the checksums of the installers and packages. `packages/releases.html` holds what was new in every version,
+the latest first; the page shows only what is new in the present one and links
+to it. When a release is made, its list goes at the top of both. Both
 go into the folder `glaukopis/` of robertemilberge.no, beside the installers,
 the packages, and what `scripts/make-language-packages.py` makes
 (`index.json` and the language packages; see `packaging/languages/README.md`).
@@ -26,8 +28,8 @@ sha256sum Glaukopis_*-setup.exe Glaukopis_*.msi Glaukopis_*.dmg glaukopis-*.pkg.
   PKGBUILD Glaukopis_*.deb Glaukopis-*.rpm > SHA256SUMS
 ```
 
-Change the names and the sizes in the page, copy it and `SHA256SUMS` back
-here, and upload the whole folder into `glaukopis/` of the site.
+Change the names and the sizes in the page, copy it, `releases.html` and
+`SHA256SUMS` back here, and upload the whole folder into `glaukopis/` of the site.
 
 The page stands on its own: one file, no scripts, its own styles, light and
 dark with the system.

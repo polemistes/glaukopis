@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Glaukopis — release notes</title>
+    <meta
+      name="description"
+      content="What was new in each version of Glaukopis put out for testing, from 0.1.0 on."
+    />
+    <style>
+      :root {
+        --paper: #fbf8f2;
+        --ink: #2a2622;
+        --ink-soft: #625b53;
+        --line: #d9d1c4;
+        --accent: #2d4b86;
+        --accent-soft: #e6ebf4;
+        --warn: #8a5a1b;
+        --warn-soft: #f7efe0;
+        color-scheme: light dark;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --paper: #1d1b19;
+          --ink: #ebe5dc;
+          --ink-soft: #a89f93;
+          --line: #3c3732;
+          --accent: #9db5e3;
+          --accent-soft: #262d3b;
+          --warn: #e0b36a;
+          --warn-soft: #2e2719;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font:
+          17px/1.55 'EB Garamond',
+          Garamond,
+          'Times New Roman',
+          Georgia,
+          serif;
+      }
+      main {
+        max-width: 46rem;
+        margin: 0 auto;
+        padding: 2.5rem 1rem 4rem;
+      }
+      h1 {
+        font-weight: 500;
+        font-size: 2.1rem;
+        line-height: 1.15;
+        margin: 0 0 0.25rem;
+      }
+      .lede {
+        color: var(--ink-soft);
+        margin: 0 0 2rem;
+      }
+      h2 {
+        font-weight: 500;
+        font-size: 1.45rem;
+        margin: 2.4rem 0 0.6rem;
+        padding-top: 0.6rem;
+        border-top: 1px solid var(--line);
+      }
+      h3 {
+        font-weight: 500;
+        font-size: 1.1rem;
+        margin: 1.4rem 0 0.3rem;
+      }
+      p {
+        margin: 0.5rem 0;
+      }
+      a {
+        color: var(--accent);
+      }
+      .new {
+        margin: 0.6rem 0 1.6rem;
+        padding-left: 1.2rem;
+      }
+      .new li {
+        margin: 0.35rem 0;
+      }
+      .files {
+        list-style: none;
+        margin: 0.8rem 0 0;
+        padding: 0;
+      }
+      .files li {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0 1rem;
+        padding: 0.7rem 0;
+        border-top: 1px solid var(--line);
+      }
+      .files li:first-child {
+        border-top: 0;
+      }
+      .files .name {
+        font-family: ui-monospace, 'DejaVu Sans Mono', Menlo, Consolas, monospace;
+        font-size: 0.92rem;
+        word-break: break-all;
+      }
+      .files .size {
+        color: var(--ink-soft);
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+      .files .what {
+        grid-column: 1 / -1;
+        margin: 0.15rem 0 0;
+      }
+      .files .what p {
+        margin: 0.2rem 0;
+      }
+      .note {
+        margin: 1rem 0;
+        padding: 0.7rem 1rem;
+        border-left: 3px solid var(--warn);
+        background: var(--warn-soft);
+      }
+      .note strong {
+        color: var(--warn);
+        font-weight: 600;
+      }
+      .aside {
+        margin: 1rem 0;
+        padding: 0.7rem 1rem;
+        border-left: 3px solid var(--accent);
+        background: var(--accent-soft);
+      }
+      code,
+      pre {
+        font-family: ui-monospace, 'DejaVu Sans Mono', Menlo, Consolas, monospace;
+        font-size: 0.9rem;
+      }
+      pre {
+        overflow-x: auto;
+        padding: 0.7rem 1rem;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        background: var(--accent-soft);
+        line-height: 1.45;
+      }
+      kbd {
+        font-family: inherit;
+        font-weight: 600;
+      }
+      .back {
+        display: inline-block;
+        margin: 0 0 1.6rem;
+        color: var(--ink-soft);
+        text-decoration: none;
+      }
+      .back:hover {
+        color: var(--accent);
+      }
+      table.languages {
+        width: 100%;
+        margin: 0.8rem 0 0;
+        border-collapse: collapse;
+        font-variant-numeric: tabular-nums;
+      }
+      table.languages th {
+        text-align: left;
+        font-weight: 500;
+        color: var(--ink-soft);
+        border-bottom: 1px solid var(--line);
+        padding: 0.3rem 0.6rem 0.3rem 0;
+      }
+      table.languages td {
+        padding: 0.35rem 0.6rem 0.35rem 0;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      table.languages td.size {
+        white-space: nowrap;
+        color: var(--ink-soft);
+        text-align: right;
+        padding-right: 0;
+      }
+      table.languages a {
+        font-family: ui-monospace, 'DejaVu Sans Mono', Menlo, Consolas, monospace;
+        font-size: 0.85rem;
+        word-break: break-all;
+      }
+      table.languages .licence {
+        color: var(--ink-soft);
+        font-size: 0.9rem;
+      }
+      @media (max-width: 34rem) {
+        table.languages .licence {
+          display: none;
+        }
+      }
+      footer {
+        margin-top: 3rem;
+        padding-top: 0.8rem;
+        border-top: 1px solid var(--line);
+        color: var(--ink-soft);
+        font-size: 0.95rem;
+      }
+      .when {
+        margin-left: 0.4em;
+        font-size: 0.8em;
+        font-weight: 400;
+        color: var(--ink-soft);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <a class="back" href="index.html">← The packages</a>
+      <h1>Glaukopis, what is new in each version</h1>
+      <p><em>Be aware: The text below is AI generated, as is the code of Glaukopis. 
+          AI code can be good. AI text cannot. The first non-beta release of Glaukopis 
+          will not have AI generated texts, except for standard short text for features 
+          in the user interface.</em></p>
+      <p class="lede">
+        Every version so far is put out for testing. The packages of the latest are on
+        <a href="index.html">the page of packages</a>; the earlier ones are kept on GitHub, under
+        <a href="https://github.com/polemistes/glaukopis/releases">Releases</a>, with their source.
+      </p>
+
+      <section id="v0.2.3">
+        <h2>0.2.3 <span class="when">20 October 2026</span></h2>
+        <ul class="new">
+        <li>
+          <strong>Reading PDFs and scans, made over.</strong> The window opens as a short summary:
+          what the file is, whether its pages take the text they have or are read anew (or each by
+          the quality of its text), and how Tesseract reads them. <em>Look at the pages and try
+          them</em> shows every page, the text a page has beside what Tesseract reads of it, and
+          how sure Tesseract was (low, good or high, in percent), with the words it doubted
+          underlined. Settings can differ from page to page, each trial is kept to compare, and
+          whether a PDF becomes a tree by its headings or by its pages is chosen after it is read.
+        </li>
+        <li>
+          <strong>Books in Gothic type.</strong> Two new languages for reading scans: Tesseract's
+          Fraktur model, and Fraktur, Danish and Norwegian, taught <em>æ</em>, <em>ø</em> and
+          <em>å</em> for books printed in Norway and Denmark before about 1900. The long s (ſ) is
+          read and kept as s.
+        </li>
+        <li>
+          <strong>What you are writing is chosen from one button</strong> over the preview, and the
+          Look panel follows the page from top to bottom. <em>About this document</em> holds a
+          document's details and its language.
+        </li>
+        <li>
+          <strong>The title page, the abstract and the contents</strong> stand where the template
+          puts them, in every format: PDF, Word, Writer, LaTeX, the web page and the e-book.
+        </li>
+        <li>
+          <strong>Every line of the preview says what it is.</strong> Pressing a line shows a chip
+          naming it, a quotation, a heading, the running head, a page number, and the chip opens
+          Look at it.
+        </li>
+        <li>
+          <strong>Headers and footers</strong> hold what you put in them, left, centre and right,
+          on the first page and the rest; headings are numbered level by level; and an element
+          with a look of its own keeps it wherever it is printed.
+        </li>
+        <li>
+          <strong>Every window can be moved</strong> by dragging its title; a double-click on the
+          title puts it back in the middle.
+        </li>
+        <li>
+          <strong>The interface is complete in eight languages again:</strong> Danish, German,
+          English, French, Italian, Norwegian Bokmål and Nynorsk, and Swedish, with every word of
+          what is new.
+        </li>
+        <li>
+          <strong>Faster and steadier.</strong> Long texts take typing without delay, large BibTeX
+          files and libraries with many files open at once, and a review of the code fixed some two
+          hundred faults.
+        </li>
+      </ul>
+      </section>
+      <section id="v0.2.2">
+        <h2>0.2.2 <span class="when">18 October 2026</span></h2>
+        <ul class="new">
+        <li>
+          <strong>PDFs can no longer take the computer down.</strong> The text of a PDF is read in a process of its own, which is stopped when it takes too long or too much memory, so that a file the reader loses itself in, as some with an old reading of their text do, costs nothing but its own text. Pages are read by Tesseract only as many at once as the memory free will hold.
+        </li>
+        <li>
+          <strong>Reading a PDF anew</strong> no longer leaves its old text under the new on pages with pictures the PDF library cannot read, such as those Acrobat's Paper Capture writes.
+        </li>
+        <li>
+          <strong>New projects open in the diagram.</strong> The settings say whether a new project opens in its diagram or on its text, under New documents. A project opened again opens where it was left.
+        </li>
+        <li>
+          <strong>An empty text takes no room.</strong> The name of the next element follows closely; a click under a name, or Enter in it, opens its text for writing.
+        </li>
+        <li>
+          <strong>The interface is offered in the languages that are complete:</strong> Danish, German, English, French, Italian, Norwegian Bokmål and Nynorsk, and Swedish. A system in another language has English until its translation is finished.
+        </li>
+        </ul>
+      </section>
+      <section id="v0.2.1">
+        <h2>0.2.1 <span class="when">17 October 2026</span></h2>
+        <ul class="new">
+        <li>
+          <strong>The map of the projects, worked as a map.</strong> Above every project stands the map of all of them. Projects are drawn as the top elements of their own maps and open as elements do, showing their trees one level at a time; a project is opened at any of its elements from there. Folders and projects are selected, made and named in place, renamed, moved by the keys or by dragging, folded, deleted and put where you like, and the elements of a project's map are moved there as in the project's own map. Every change can be undone from its message or with Ctrl+Z.
+        </li>
+        <li>
+          <strong>Pasting on Linux</strong> no longer ends the application when the clipboard is empty or the program that holds it does not answer.
+        </li>
+        <li>
+          <strong>Menus on Linux</strong> no longer flicker on desktops where WebKitGTK 2.54's new compositor showed stale frames: the previous compositor is used.
+        </li>
+        <li>
+          <strong>Making a PDF searchable on Windows</strong> no longer fails with a missing page file; and where Tesseract cannot make what it was asked for, the message says what Tesseract said.
+        </li>
+        <li>
+          <strong>A project is made in a folder</strong>, and a folder deleted is brought back whole by undo.
+        </li>
+        </ul>
+      </section>
+      <section id="v0.2.0">
+        <h2>0.2.0 <span class="when">15 October 2026</span></h2>
+        <ul class="new">
+        <li>
+          <strong>The files of the library.</strong> PDFs, pictures and documents kept in folders of their own, with or without a reference, and gone through to find the reference each belongs to. Removing, moving and giving many files is done in one step, and nothing gives one reference to many files at once.
+        </li>
+        <li>
+          <strong>Text from PDFs.</strong> The text a PDF has is taken, or translated where its fonts keep their letters under other names, as many editions of Greek do, or read anew from pictures of the pages.
+        </li>
+        <li>
+          <strong>The structure of a document.</strong> A PDF is imported as a map by its title and headings, from the file's own outline, numbered headings or sizes, with lines of verse and numbers in the margin kept, paragraphs joined across pages, and a mark where each page began.
+        </li>
+        <li>
+          <strong>The settings</strong> ordered anew, with a font of your own for the editor, your details, and credits and licences behind a button.
+        </li>
+        <li>
+          <strong>Nothing personal is sent.</strong> Glaukopis sends no name or address anywhere by itself.
+        </li>
+        </ul>
+      </section>
+      <section id="v0.1.0">
+        <h2>0.1.0 <span class="when">6 October 2026</span></h2>
+        <p>
+          The first version put out for testing: references in a library of their own, ideas in
+          maps that are the documents they become, writing, and the manuscript made in the form a
+          publisher asks for. The installers for Windows and macOS brought the dictionaries of
+          spelling and Tesseract's languages with them; from 0.2.0 on they are imported in
+          Glaukopis itself.
+        </p>
+      </section>
+
+      <footer>
+        Glaukopis is free software under the GPL, version 3 or later.
+      </footer>
+    </main>
+  </body>
+</html>
