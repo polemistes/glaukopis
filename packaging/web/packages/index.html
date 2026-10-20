@@ -6,7 +6,7 @@
     <title>Glaukopis — packages to test</title>
     <meta
       name="description"
-      content="Glaukopis 0.2.2, a version for testing: installers for Windows and macOS, packages for Linux, and the languages of spelling and of reading text."
+      content="Glaukopis 0.2.3, a version for testing: installers for Windows and macOS, packages for Linux, and the languages of spelling and of reading text."
     />
     <style>
       :root {
@@ -216,38 +216,56 @@
           will not have AI generated texts, except for standard short text for features 
           in the user interface.</em></p>
       <p class="lede">      
-        Version 0.2.2, built 18 October 2026. Glaukopis is where the work on an academic book or
+        Version 0.2.3, built 20 October 2026. Glaukopis is where the work on an academic book or
         article is done: references, ideas in mind maps, writing, and the manuscript. Everything
         here is for testing: it will have faults, and your project files may not open in a later
         version. Keep what matters elsewhere as well.
       </p>
 
-      <h2>New in 0.2.2</h2>
+      <h2>New in 0.2.3</h2>
       <ul class="new">
         <li>
-          <strong>PDFs can no longer take the computer down.</strong> The text of a PDF is read in a
-          process of its own, which is stopped when it takes too long or too much memory, so that a
-          file the reader loses itself in, as some with an old reading of their text do, costs
-          nothing but its own text. Pages are read by Tesseract only as many at once as the memory
-          free will hold.
+          <strong>Reading PDFs and scans, made over.</strong> The window opens as a short summary:
+          what the file is, whether its pages take the text they have or are read anew (or each by
+          the quality of its text), and how Tesseract reads them. <em>Look at the pages and try
+          them</em> shows every page, the text a page has beside what Tesseract reads of it, and
+          how sure Tesseract was (low, good or high, in percent), with the words it doubted
+          underlined. Settings can differ from page to page, each trial is kept to compare, and
+          whether a PDF becomes a tree by its headings or by its pages is chosen after it is read.
         </li>
         <li>
-          <strong>Reading a PDF anew</strong> no longer leaves its old text under the new on pages
-          with pictures the PDF library cannot read, such as those Acrobat's Paper Capture writes.
+          <strong>Books in Gothic type.</strong> Two new languages for reading scans: Tesseract's
+          Fraktur model, and Fraktur, Danish and Norwegian, taught <em>æ</em>, <em>ø</em> and
+          <em>å</em> for books printed in Norway and Denmark before about 1900. The long s (ſ) is
+          read and kept as s.
         </li>
         <li>
-          <strong>New projects open in the diagram.</strong> The settings say whether a new project
-          opens in its diagram or on its text, under New documents. A project opened again opens
-          where it was left.
+          <strong>What you are writing is chosen from one button</strong> over the preview, and the
+          Look panel follows the page from top to bottom. <em>About this document</em> holds a
+          document's details and its language.
         </li>
         <li>
-          <strong>An empty text takes no room.</strong> The name of the next element follows closely;
-          a click under a name, or Enter in it, opens its text for writing.
+          <strong>The title page, the abstract and the contents</strong> stand where the template
+          puts them, in every format: PDF, Word, Writer, LaTeX, the web page and the e-book.
         </li>
         <li>
-          <strong>The interface is offered in the languages that are complete:</strong> Danish,
-          German, English, French, Italian, Norwegian Bokmål and Nynorsk, and Swedish. A system in
-          another language has English until its translation is finished.
+          <strong>Every line of the preview says what it is.</strong> Pressing a line shows a chip
+          naming it, a quotation, a heading, the running head, a page number, and the chip opens
+          Look at it.
+        </li>
+        <li>
+          <strong>Headers and footers</strong> hold what you put in them, left, centre and right,
+          on the first page and the rest; headings are numbered level by level; and an element
+          with a look of its own keeps it wherever it is printed.
+        </li>
+        <li>
+          <strong>Every window can be moved</strong> by dragging its title; a double-click on the
+          title puts it back in the middle.
+        </li>
+        <li>
+          <strong>Faster and steadier.</strong> Long texts take typing without delay, large BibTeX
+          files and libraries with many files open at once, and a review of the code fixed some two
+          hundred faults.
         </li>
       </ul>
 
@@ -277,8 +295,8 @@
       </p>
       <ul class="files">
         <li>
-          <a class="name" href="Glaukopis_0.2.2_x64-setup.exe">Glaukopis_0.2.2_x64-setup.exe</a>
-          <span class="size">91 MB</span>
+          <a class="name" href="Glaukopis_0.2.3_x64-setup.exe">Glaukopis_0.2.3_x64-setup.exe</a>
+          <span class="size">92 MB</span>
           <div class="what">
             <p>
               The usual installer. Installs for the person who runs it, without asking for an
@@ -288,8 +306,8 @@
           </div>
         </li>
         <li>
-          <a class="name" href="Glaukopis_0.2.2_x64_en-US.msi">Glaukopis_0.2.2_x64_en-US.msi</a>
-          <span class="size">135 MB</span>
+          <a class="name" href="Glaukopis_0.2.3_x64_en-US.msi">Glaukopis_0.2.3_x64_en-US.msi</a>
+          <span class="size">136 MB</span>
           <div class="what">
             <p>
               The same application as a Windows Installer package, for installing for every user of
@@ -306,8 +324,8 @@
       </p>
       <ul class="files">
         <li>
-          <a class="name" href="Glaukopis_0.2.2_aarch64.dmg">Glaukopis_0.2.2_aarch64.dmg</a>
-          <span class="size">85 MB</span>
+          <a class="name" href="Glaukopis_0.2.3_aarch64.dmg">Glaukopis_0.2.3_aarch64.dmg</a>
+          <span class="size">86 MB</span>
           <div class="what">
             <p>
               A disk image. Open it and drag Glaukopis into <em>Applications</em>. Then open it the
@@ -324,13 +342,13 @@
         dictionaries of Hunspell and the rest are optional, and <code>pacman -Qi glaukopis</code>
         says what each is for.
       </p>
-      <pre>sudo pacman -U glaukopis-0.2.2-1-x86_64.pkg.tar.zst</pre>
+      <pre>sudo pacman -U glaukopis-0.2.3-1-x86_64.pkg.tar.zst</pre>
       <ul class="files">
         <li>
-          <a class="name" href="glaukopis-0.2.2-1-x86_64.pkg.tar.zst"
-            >glaukopis-0.2.2-1-x86_64.pkg.tar.zst</a
+          <a class="name" href="glaukopis-0.2.3-1-x86_64.pkg.tar.zst"
+            >glaukopis-0.2.3-1-x86_64.pkg.tar.zst</a
           >
-          <span class="size">28 MB</span>
+          <span class="size">29 MB</span>
           <div class="what">
             <p>
               The application. Depends on <code>pandoc-cli</code> and <code>otf-libertinus</code>,
@@ -342,8 +360,8 @@
           </div>
         </li>
         <li>
-          <a class="name" href="glaukopis-server-0.2.2-1-x86_64.pkg.tar.zst"
-            >glaukopis-server-0.2.2-1-x86_64.pkg.tar.zst</a
+          <a class="name" href="glaukopis-server-0.2.3-1-x86_64.pkg.tar.zst"
+            >glaukopis-server-0.2.3-1-x86_64.pkg.tar.zst</a
           >
           <span class="size">1.8 MB</span>
           <div class="what">
@@ -377,22 +395,22 @@
       </p>
       <ul class="files">
         <li>
-          <a class="name" href="Glaukopis_0.2.2_amd64.deb">Glaukopis_0.2.2_amd64.deb</a>
+          <a class="name" href="Glaukopis_0.2.3_amd64.deb">Glaukopis_0.2.3_amd64.deb</a>
           <span class="size">73 MB</span>
           <div class="what">
             <p>
               For Ubuntu 24.04 or newer and Debian 13 or newer. Install with
-              <code>sudo apt install ./Glaukopis_0.2.2_amd64.deb</code>, from the folder it is in.
+              <code>sudo apt install ./Glaukopis_0.2.3_amd64.deb</code>, from the folder it is in.
             </p>
           </div>
         </li>
         <li>
-          <a class="name" href="Glaukopis-0.2.2-1.x86_64.rpm">Glaukopis-0.2.2-1.x86_64.rpm</a>
+          <a class="name" href="Glaukopis-0.2.3-1.x86_64.rpm">Glaukopis-0.2.3-1.x86_64.rpm</a>
           <span class="size">73 MB</span>
           <div class="what">
             <p>
               For Fedora 40 or newer. Install with
-              <code>sudo dnf install ./Glaukopis-0.2.2-1.x86_64.rpm</code>, from the folder it is
+              <code>sudo dnf install ./Glaukopis-0.2.3-1.x86_64.rpm</code>, from the folder it is
               in.
             </p>
           </div>
@@ -485,7 +503,11 @@
       <h3>Languages for reading scans and pictures</h3>
       <p>
         The best data there is for Tesseract, <code>tessdata_best</code> 4.1.0, under the Apache
-        License 2.0. Tesseract has one Norwegian, for Bokmål and Nynorsk both, and one English.
+        License 2.0. Tesseract has one Norwegian, for Bokmål and Nynorsk both, and one English. The
+        Fraktur model reads books in Gothic type, whatever their language; it was made for German,
+        and knows no <em>æ</em>, <em>ø</em> or <em>å</em>. Fraktur, Danish and Norwegian is the
+        same model taught those letters for Glaukopis, from Danish pages in Gothic type (Apache
+        2.0); choose it first, or alone, for a Norwegian or Danish book of before about 1900.
       </p>
       <table class="languages">
         <thead>
@@ -550,6 +572,18 @@
             <td><a href="ocr-lat-4.1.0.zip">ocr-lat-4.1.0.zip</a></td>
             <td class="licence">Apache 2.0</td>
             <td class="size">7.7 MB</td>
+          </tr>
+          <tr>
+            <td>Fraktur (Gothic type)</td>
+            <td><a href="ocr-deu_latf-4.1.0.zip">ocr-deu_latf-4.1.0.zip</a></td>
+            <td class="licence">Apache 2.0</td>
+            <td class="size">9.2 MB</td>
+          </tr>
+          <tr>
+            <td>Fraktur, Danish and Norwegian (Gothic type)</td>
+            <td><a href="ocr-dan_latf-2026.10.19.zip">ocr-dan_latf-2026.10.19.zip</a></td>
+            <td class="licence">Apache 2.0</td>
+            <td class="size">3.9 MB</td>
           </tr>
         </tbody>
       </table>
