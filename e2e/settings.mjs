@@ -228,6 +228,51 @@ try {
     JSON.stringify(kept),
   );
 
+  // ---- every dialog is moved by its header, kept in the window, and put back by a double-click ----
+  const where = () =>
+    app.exec(
+      `const r = document.querySelector('dialog[open]').getBoundingClientRect(); return { x: Math.round(r.left), y: Math.round(r.top) }`,
+    );
+  const dragHeader = async (dx, dy) => {
+    const at = await app.exec(
+      `const r = document.querySelector('dialog[open] [data-dialog-header] h2').getBoundingClientRect(); return { x: Math.round(r.left + 10), y: Math.round(r.top + r.height / 2) }`,
+    );
+    await app.cmd('POST', '/actions', {
+      actions: [
+        {
+          type: 'pointer',
+          id: 'mouse',
+          parameters: { pointerType: 'mouse' },
+          actions: [
+            { type: 'pointerMove', origin: 'viewport', x: at.x, y: at.y },
+            { type: 'pointerDown', button: 0 },
+            { type: 'pointerMove', origin: 'viewport', x: at.x + dx, y: Math.max(0, at.y + dy), duration: 120 },
+            { type: 'pointerUp', button: 0 },
+          ],
+        },
+      ],
+    });
+    await app.cmd('DELETE', '/actions');
+    await sleep(150);
+  };
+  const unmoved = await where();
+  await dragHeader(120, 60);
+  const dragged = await where();
+  check(
+    'a dialog is moved by its header',
+    dragged.x - unmoved.x === 120 && dragged.y - unmoved.y === 60,
+    `${JSON.stringify(unmoved)} → ${JSON.stringify(dragged)}`,
+  );
+  await dragHeader(0, -2000);
+  check('its header is never dragged out of the window', (await where()).y >= 0, JSON.stringify(await where()));
+  await app.doubleClick('dialog[open] [data-dialog-header] h2');
+  await sleep(150);
+  check(
+    'and a double-click on it puts it back in the middle',
+    JSON.stringify(await where()) === JSON.stringify(unmoved),
+    JSON.stringify(await where()),
+  );
+
   // Closed, the window leaves the library as it was.
   await app.press('Escape');
   await app.waitGone('dialog[open]');

@@ -9,6 +9,10 @@ It has two places, reached from the left edge of the window: the **projects**,
 one for each piece of writing, and the **library**, which holds your
 references and is the same for all projects.
 
+Every window that opens over the others, such as the settings or the window
+that reads a PDF, can be moved by dragging its title, to see what lies under
+it; a double-click on the title puts it back in the middle.
+
 ## The idea
 
 You do not write a document in Glaukopis. You make a **map** of your ideas,

@@ -231,7 +231,6 @@
   title={t('when-title')}
   subtitle={node?.title || t('project-untitled')}
   width={460}
-  movable
   {onclose}
 >
   <!-- svelte-ignore a11y_no_static_element_interactions -->

@@ -15,7 +15,11 @@
     tall?: boolean;
     /** When false, Escape and clicking outside do not close it. */
     dismissable?: boolean;
-    /** Can be dragged about by its header, to see what lies under it. */
+    /**
+     * Can be dragged about by its header, to see what lies under it: every
+     * dialog can, unless it says otherwise. A double-click on the header
+     * puts it back in the middle.
+     */
     movable?: boolean;
     padded?: boolean;
     onclose: () => void;
@@ -31,7 +35,7 @@
     width = 520,
     tall = false,
     dismissable = true,
-    movable = false,
+    movable = true,
     padded = true,
     onclose,
     header,
@@ -111,14 +115,32 @@
   $effect(() => {
     if (open) moved = { x: 0, y: 0 };
   });
+  /** How much of the header stays in the window, at the least, sideways: enough to take hold of it again. */
+  const KEPT = 80;
+  /** Whether a press on the header is on something of its own: a button, a field. */
+  const onControl = (event: Event) =>
+    !!(event.target as HTMLElement).closest('button, a, input, select, textarea');
   function grab(event: PointerEvent) {
-    if (!movable || event.button !== 0) return;
-    if ((event.target as HTMLElement).closest('button, a, input, select, textarea')) return;
+    if (!movable || !el || event.button !== 0 || onControl(event)) return;
     const header = event.currentTarget as HTMLElement;
     const from = { x: event.clientX - moved.x, y: event.clientY - moved.y };
+    // Where the dialog stands unmoved, and the header's height: the header is
+    // never dragged out of the window, so that it can always be taken again.
+    const box = el.getBoundingClientRect();
+    const still = { left: box.left - moved.x, top: box.top - moved.y };
+    const high = header.getBoundingClientRect().height;
+    const within = (value: number, least: number, most: number) =>
+      Math.min(Math.max(value, least), Math.max(least, most));
     header.setPointerCapture(event.pointerId);
     const onmove = (e: PointerEvent) => {
-      moved = { x: e.clientX - from.x, y: e.clientY - from.y };
+      moved = {
+        x: within(
+          e.clientX - from.x,
+          KEPT - still.left - box.width,
+          window.innerWidth - KEPT - still.left,
+        ),
+        y: within(e.clientY - from.y, -still.top, window.innerHeight - high - still.top),
+      };
     };
     const onup = () => {
       header.removeEventListener('pointermove', onmove);
@@ -152,7 +174,14 @@
     <div class="frame">
       {#if title || header}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <header class:movable onpointerdown={grab}>
+        <header
+          class:movable
+          onpointerdown={grab}
+          ondblclick={(event) => {
+            if (movable && !onControl(event)) moved = { x: 0, y: 0 };
+          }}
+          data-dialog-header
+        >
           <div class="titles">
             {#if header}
               {@render header()}
