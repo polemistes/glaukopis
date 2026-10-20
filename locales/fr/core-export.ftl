@@ -4,6 +4,13 @@
 ## Making a document.
 
 core-export-picture-missing = L’image « { $name } » n’est pas sur cet ordinateur ; le document se fait sans elle.
+# Pictures that are in the store, and could not be put where the document is made: $error is why the first could not.
+core-export-files-not-placed = { $count ->
+    [one] Le fichier d’une image n’a pas pu être placé là où le document se fait, et l’image en est laissée de côté : { $error }
+    [many] Les fichiers de { $count } images n’ont pas pu être placés là où le document se fait, et les images en sont laissées de côté : { $error }
+   *[other] Les fichiers de { $count } images n’ont pas pu être placés là où le document se fait, et les images en sont laissées de côté : { $error }
+}
+core-export-cover-left-out = L’image de la couverture n’a pas pu être placée là où le livre se fait, et le livre n’a pas de couverture : { $error }
 core-export-astray = { $count ->
     [one] Un renvoi du texte vise quelque chose qui n’est pas dans le document. Il apparaît sous la forme [?].
     [many] { $count } renvois du texte visent ce qui n’est pas dans le document. Ils apparaissent sous la forme [?].

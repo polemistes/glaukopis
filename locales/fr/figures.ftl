@@ -86,6 +86,8 @@ figures-formula-empty = Ce qui est écrit s’affiche ici tel qu’il se présen
 figures-formula-hint = Écrite comme en TeX. Entrée quand c’est fini, Échap pour la laisser comme elle était.
 figures-equation-hint = Écrite comme en TeX. Entrée quand c’est fini, Maj+Entrée pour une nouvelle ligne, Échap pour la laisser comme elle était.
 figures-formula-unread = La formule n’a pas pu être lue.
+# Where no formula could be made, as when Pandoc is not there: the reason is what the program said.
+figures-formula-failed = Les formules ne peuvent pas être affichées : { $reason }
 # Shown in the text where a formula has nothing written in it yet.
 figures-formula-blank = formule
 figures-equation-blank = Une équation
@@ -146,4 +148,6 @@ figures-targets-hint = Un renvoi suit ce qu’il désigne : son numéro, et le
 ## Shown by the stylesheet, where the page has no element for the words.
 
 figures-picture-absent = L’image n’est pas sur cet ordinateur
+# A picture that is on this computer and could not be read: the reason is what the reading said.
+figures-picture-unread = L’image n’a pas pu être lue : { $reason }
 figures-caption-placeholder = Ce qui est dit de l’image

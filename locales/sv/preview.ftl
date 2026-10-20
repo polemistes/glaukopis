@@ -4,6 +4,9 @@
 ## The panel beside the map, and what is chosen over it.
 
 preview = Förhandsvisning
+# The button over the pages that names what the document is and opens the chooser of what you are writing.
+preview-what-title = Vad du skriver: välj…
+preview-what-label = Vad det här dokumentet är: { $name }. Välj vad du skriver
 # The last among the reference styles, which opens the search for more.
 preview-style-more = Fler stilar…
 # Shows in the text the element whose place in the pages is looked at.
@@ -95,3 +98,25 @@ preview-export-show-in-folder = Visa i mappen
 preview-export-open-failed = Filen kunde inte öppnas
 preview-export-folder-failed = Mappen kunde inte öppnas
 preview-export-another = Exportera ett till
+
+## What a line of a page is: the chip at the edge of the page that names the
+## line the pointer rests on and opens Look at it, and its switch at the foot.
+
+# On the chip: what the line is.
+preview-what-text = Text
+# A heading, by its level: Heading 1, Heading 2.
+preview-what-heading = Rubrik { $level }
+preview-what-note = Not
+preview-what-bibliography = Litteraturförteckning
+preview-what-figure = Figur
+preview-what-table = Tabell
+preview-what-front = Framsida
+# What the chip does, as it is told to those who cannot see it; what the line is: Quotation, Heading 1.
+preview-what-open = Hur ”{ $what }” ser ut…
+# The switch at the foot of the preview, while the chips are not shown and while they are.
+preview-chips = Visa vad sidans rader är
+preview-chips-off = Sluta visa vad raderna är
+
+preview-what-page = Sida
+preview-what-header = Sidhuvud
+preview-what-footer = Sidfot

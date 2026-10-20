@@ -272,6 +272,10 @@ editor-citation-after-placeholder = og passim
 editor-citation-locator-kind = Stad i verket
 editor-citation-suppress-author = Forfattaren er nemnd i setninga mi: vis berre årstalet
 editor-citation-remove-work = Fjern dette verket
+# A reference was dropped where a citation cannot stand, and the cursor is in no such place either.
+editor-citation-no-place = Ei kjeldetilvising kan ikkje stå der
+# The project keeps a copy of every reference it cites; this one could not be read from the library.
+editor-reference-not-kept = Referansen kunne ikkje takast vare på i prosjektet
 # Stands in the text in place of a citation of a work that is in neither the library nor the project.
 editor-citation-missing = [fann ikkje referansen]
 # Stands in the text in place of a citation of no work.

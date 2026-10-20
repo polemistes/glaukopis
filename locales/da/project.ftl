@@ -45,6 +45,7 @@ project-unshared = Projektet deles ikke længere
 project-unshared-this = Dette projekt deles ikke længere
 project-left-out = Du er ikke længere blandt deltagerne
 project-unshared-unfetched = Det var ikke hentet, så der er intet af det på denne computer.
+project-unshared-not-removed = Projektet var ikke hentet og kunne ikke fjernes fra projektlisten
 project-unshared-kept = Den, der delte det, har taget det af serveren. Du beholder projektet, som det er nu, og kan arbejde videre på det på egen hånd.
 project-left-out-kept = Du beholder projektet, som det er nu, og kan arbejde videre på det på egen hånd. Det, de andre skriver efter dette, når ikke frem til dig.
 project-understood = Forstået
@@ -82,7 +83,9 @@ project-badge-shared = { $name }, delt af dig
 project-badge-joined = { $name }, som du deltager i
 # Two projects side by side.
 project-beside-failed = Projektet kunne ikke åbnes ved siden af dette
-project-beside-no-comments = Kommentarerne er dem fra det projekt, du åbnede: åbn det andet for sig for at kommentere i det
+project-beside-no-comments = Kommentarerne er dem fra det projekt, du åbnede: åbn det andet for sig for at kommentere
+# A template of the writer's own was saved anew, and the copy of it the project carries could not be made afresh.
+project-template-not-renewed = Projektets kopi af skabelonen kunne ikke bringes ajour i det
 # Said over the other pane while elements of one project are dragged over it.
 project-copy-to-project = Kopiér til »{ $name }«
 project-move-to-project = Flyt til »{ $name }«

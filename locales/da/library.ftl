@@ -30,6 +30,11 @@ library-names-prefix = Præfiks: van, de la
 library-names-prefix-of = { $role }: præfiks
 library-names-suffix = Suffiks: jr., III
 library-names-suffix-of = { $role }: suffiks
+# The button under a field of names. Its own words, not the field's label
+# put in small letters, which is wrong in a language that writes nouns with
+# a capital.
+library-names-add = Tilføj et navn
+library-names-add-of = { $role }: tilføj et navn
 
 ## Words for references, wherever they are shown.
 
@@ -269,6 +274,7 @@ library-copy-key = Kopiér nøglen
 library-copied-key = Kopierede »{ $key }«
 library-copy-biblatex = Kopiér som BibLaTeX
 library-copied = Kopieret
+library-copy-failed = Intet blev kopieret
 library-delete-one-title = Slet »{ $name }«?
 library-delete-many-title = { $count ->
     [one] Slet { $count } reference?
@@ -402,6 +408,9 @@ library-zotero-lead = Det, der importeres, kopieres ind i dit bibliotek, med det
 library-zotero-choose = Zoteros datamappe
 library-zotero-none-there = Der er ingen Zotero der.
 library-zotero-unread = Zotero kunne ikke læses.
+# Looking in the places where Zotero usually keeps its data failed; the reason is shown under it.
+library-zotero-find-failed = De steder, hvor Zotero plejer at have sine data, kunne ikke gennemsøges. Ved du, hvor den har dem, så vis hvor.
+library-zotero-collections-unread = Samlingerne kunne ikke læses, så alt importeres: { $reason }
 library-zotero-library = Bibliotek
 # A library of Zotero, with the number of its references.
 library-zotero-library-option = { $name } ({ $count })
@@ -478,6 +487,8 @@ library-lookup-label = Slå en reference op
 library-lookup-failed = Intet kunne slås op.
 # Where the reference came from: a service such as Crossref.
 library-lookup-filled = Udfyldt fra { $source }.
+library-lookup-filled-empty = Kun de felter, der stadig var tomme, blev udfyldt fra { $source }, da du havde skrevet i de andre i mellemtiden.
+library-lookup-fill-all = Udfyld alt, hvad den har
 library-lookup-others = { $count ->
     [one] { $count } anden post
    *[other] { $count } andre poster

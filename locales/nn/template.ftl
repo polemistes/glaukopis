@@ -5,7 +5,7 @@
 ## The groups of templates, as the chooser lists them.
 
 template-group-own = Dine eigne
-template-group-plain = Enkle
+template-group-plain = Til å byrje med
 template-group-article = Artiklar og oppgåver
 template-group-book = Bøker og avhandlingar
 template-group-fiction = Skjønnlitteratur
@@ -52,6 +52,8 @@ template-editor = Mal
 template-name = Namnet på malen
 # The name a template of one's own is first given, made from that of the template it is made from.
 template-name-changed = { $name }, endra
+# A template of the writer's own made from another, before it is named: by the other's name.
+template-name-own = { $name }, min eigen
 template-sections = Delane av malen
 template-bundled = Malane som følgjer med Glaukopis, blir verande som dei er. Endringane dine blir lagra som ein eigen mal.
 template-delete = Slett denne malen
@@ -60,6 +62,7 @@ template-saved = «{ $name }» er lagra blant dine eigne malar
 template-read-failed = Malen kunne ikkje lesast.
 template-save-failed = Malen kunne ikkje lagrast.
 template-delete-failed = Malen kunne ikkje slettast.
+template-keep-failed = Malen kunne ikkje takast vare på i prosjektet. På ei anna datamaskin, og i ei fil av prosjektet, får dokumentet den vanlege malen i staden.
 template-delete-title = Slette malen «{ $name }»?
 template-delete-message = Element som bruker den, vil bruke malen den vart laga av, i staden.
 template-delete-confirm = Slett malen
@@ -131,3 +134,23 @@ template-outputs-hint = Filtypane dokumentet blir tilbode som når det blir eksp
 template-output-document = Dokumentet
 template-output-cover = Omslaget
 template-output-cover-note = Eit eige omslag blir laga i ein seinare versjon; det malen seier om det, blir teke vare på som det er.
+
+## The names of the kinds of text that come with Glaukopis, as the chooser of what you are writing
+## and the button over the preview give them; journals, publishers and style guides keep their own.
+
+template-called-plain = Vanleg dokument
+template-called-paper = Oppgåve
+template-called-article = Tidsskriftartikkel
+template-called-report = Rapport
+template-called-book = Fagbok
+template-called-thesis = Avhandling
+template-called-novel = Roman
+template-called-novel-manuscript = Romanmanus
+template-called-short-story = Novelle
+template-called-story-collection = Novellesamling
+template-called-poems = Dikt
+template-called-play = Skodespel
+template-called-screenplay = Filmmanus
+template-called-letter = Brev
+template-called-blog-post = Blogginnlegg
+template-called-news-article = Nyheitsartikkel

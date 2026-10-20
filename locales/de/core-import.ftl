@@ -43,16 +43,20 @@ core-import-zotero-alone = { $count ->
 }
 # The role is Zotero's own name for it: "recipient", "reviewed author".
 core-import-zotero-not-a-field = Zotero nennt { $name } als { $role }, wofür BibLaTeX kein Feld hat. Der Name wurde weggelassen.
+core-import-zotero-collaborator = Zotero nennt { $name } als { $role }, wofür BibLaTeX kein Feld hat. Der Name wurde unter die Mitarbeitenden gestellt (ein Herausgeber vom Typ „collaborator“), und die Rolle bleibt nicht erhalten.
+core-import-zotero-collaborator-unnamed = Zotero nennt { $name } in einer Rolle, der es keinen Namen gibt, und BibLaTeX hat dafür kein Feld. Der Name wurde unter die Mitarbeitenden gestellt (ein Herausgeber vom Typ „collaborator“).
 core-import-zotero-left-out = Zoteros Feld „{ $field }“ hat in BibLaTeX keine Entsprechung und wurde weggelassen: { $value }
 
 ## Zotero's database.
 
 core-import-zotero-no-database = eine Zotero-Datenbank ({ $file }) in { $path }
 core-import-zotero-copying = Kopieren von { $path } in einen temporären Ordner
+core-import-zotero-locked = Zotero hält { $path } gesperrt, solange es läuft, daher konnte es nicht gelesen werden. Schließen Sie Zotero und importieren Sie erneut
 core-import-zotero-empty = die Datei ist leer
 core-import-zotero-disturbed = Zotero schrieb in seine Datenbank, während sie gelesen wurde. Wenn etwas fehlt, schließen Sie Zotero und importieren Sie noch einmal.
 core-import-zotero-backup-read = Zoteros Datenbank konnte nicht gelesen werden ({ $error }). Stattdessen wurde ihre Sicherung gelesen, { $backup }: was in Zotero seit der Sicherung geändert wurde, fehlt.
-core-import-zotero-not-a-database = { $path } ist keine Datenbank von Zotero.
+core-import-zotero-backup-read-locked = Zotero hält seine Datenbank gesperrt, solange es läuft, daher konnte die Datenbank nicht gelesen werden. Stattdessen wurde ihre Sicherung gelesen, { $backup }: was in Zotero seit der Sicherung geändert wurde, fehlt. Schließen Sie Zotero und importieren Sie erneut, um die Datenbank selbst zu lesen.
+core-import-zotero-not-a-database ={ $path } ist keine Datenbank von Zotero.
 core-import-zotero-unreadable = Die Zotero-Datenbank hat eine Form, die hier nicht gelesen werden kann: { $what }. Wenn eine alte Version von Zotero sie geschrieben hat, bringt ein einmaliges Öffnen in einer aktuellen sie auf den neuesten Stand.
 core-import-zotero-unreadable-version = Die Zotero-Datenbank hat eine Form, die hier nicht gelesen werden kann (Version { $version } von Zoteros Datenbank): { $what }. Wenn eine alte Version von Zotero sie geschrieben hat, bringt ein einmaliges Öffnen in einer aktuellen sie auf den neuesten Stand.
 core-import-zotero-no-table = die Tabelle „{ $table }“ fehlt
@@ -70,6 +74,7 @@ core-import-zotero-no-group-names = die Namen der Gruppenbibliotheken sind nicht
 
 core-import-pdf-empty = Die Datei „{ $name }“ ist leer.
 core-import-pdf-not-a-pdf = Die Datei „{ $name }“ ist kein PDF.
+core-import-pdf-not-started = „{ $name }“ konnte nicht gelesen werden, da kein Prozess gestartet werden konnte, der sie einliest: { $message }
 core-import-pdf-unreadable = Die Datei konnte nicht gelesen werden: sie ist beschädigt, durch ein Passwort geschützt oder zu groß.
 core-import-pdf-scan = Die Datei hat keine Textebene: sie ist ein Scan.
 core-import-pdf-from-file = Die Angaben stammen aus der Datei selbst, nicht aus einem Katalog, und sollten geprüft werden.
@@ -92,6 +97,7 @@ core-import-document-stopped = Das Einlesen wurde abgebrochen.
 core-import-pdfs-stopped = Das Feststellen, was die Dateien sind, wurde abgebrochen. Nichts wurde hinzugefügt.
 core-import-document-kind = „{ $file }“ ist von keiner Art, die als Dokument eingelesen werden kann. Eingelesen werden Word (DOCX), OpenDocument (ODT), Markdown, HTML, LaTeX, RTF, EPUB, Org, reStructuredText, Typst und reiner Text.
 core-import-document-too-large = „{ $file }“ ist größer als 50 MB; mehr kann nicht als Dokument eingelesen werden.
+core-import-document-too-deep = „{ $file }“ ist zu tief verschachtelt, um eingelesen zu werden: seine Teile liegen tiefer ineinander, als gelesen werden kann, einige hundert Ebenen. Eine von einer Website gespeicherte Seite lässt sich als einfaches HTML neu speichern, oder ihr Text in ein neues Dokument kopieren.
 # The kind is the kind of file: Word (DOCX), plain text.
 core-import-document-unreadable = „{ $file }“ konnte nicht als { $kind } gelesen werden. Die Datei ist vielleicht beschädigt oder von anderer Art, als ihr Name sagt. Pandoc, das sie liest, sagte: { $message }
 core-import-document-pandoc-unreadable = was Pandoc aus „{ $file }“ gemacht hat, konnte nicht gelesen werden: { $error }
@@ -173,6 +179,26 @@ core-import-document-picture-unreadable = es konnte nicht gelesen werden
 core-import-document-picture-network = es liegt im Netz, und von dort wird nichts geholt
 core-import-document-picture-not-taken-out = es konnte nicht aus der Datei herausgelöst werden
 core-import-document-picture-outside = es ist nicht in der Datei, sondern anderswo auf diesem Computer, und wird von dort nicht genommen
+core-import-document-picture-outside-folder = es liegt außerhalb des Ordners des Dokuments, und ein eingelesenes Dokument nimmt nur die Dateien in seinem eigenen Ordner und darunter
 core-import-document-picture-not-found = die Datei wurde nicht gefunden, wo das Dokument sie angibt
 core-import-document-picture-too-large = es ist größer als 50 MB
 core-import-document-picture-file-unreadable = die Datei konnte nicht gelesen werden
+
+## What a document takes in from other files (LaTeX's \input, the includes
+## of reStructuredText, Org, AsciiDoc and Typst), and what was left out.
+## $name is the file as the document names it.
+
+core-import-document-include-outside = Die Datei „{ $name }“, die das Dokument einbindet, liegt außerhalb des Ordners des Dokuments und wurde weggelassen: ein eingelesenes Dokument liest nur die Dateien in seinem eigenen Ordner und darunter.
+core-import-document-include-not-found = Die Datei „{ $name }“, die das Dokument einbindet, wurde im Ordner des Dokuments nicht gefunden und wurde weggelassen.
+core-import-document-include-network = „{ $name }“, das das Dokument einbindet, liegt im Netz, und von dort wird nichts geholt: es wurde weggelassen.
+core-import-document-include-unreadable = Die Datei „{ $name }“, die das Dokument einbindet, konnte nicht als Text (UTF-8) gelesen werden und wurde weggelassen.
+core-import-document-include-circle = Die Datei „{ $name }“ bindet über die Dateien, die sie einbindet, sich selbst ein; sie wurde einmal gelesen.
+core-import-document-include-too-deep = Die Datei „{ $name }“ wurde weggelassen: die Dateien, die das Dokument einbindet, binden andere tiefer als { $count } Ebenen ein.
+core-import-document-include-too-large = Die Datei „{ $name }“ wurde weggelassen: mit den Dateien, die das Dokument einbindet, wäre es größer als 50 MB.
+# A Typst module imported as a whole (#import "file.typ" or #import "file.typ" as name).
+core-import-document-include-module = Die Typst-Datei „{ $name }“ wird als Ganzes unter einem eigenen Namen importiert, und das wird hier nicht gelesen; sie wurde weggelassen. Was daraus mit Namen importiert wird, wird gelesen.
+
+## A file of text that is neither UTF-8 nor UTF-16, brought in as references, a document or a table.
+
+# $name is the name of the file.
+core-import-read-as-western = „{ $name }“ ist weder in UTF-8 noch in UTF-16 geschrieben und wurde als Westeuropäisch (Windows-1252) gelesen. Buchstaben anderer Alphabete sind vielleicht falsch herausgekommen: um sicherzugehen, speichern Sie die Datei als UTF-8 und lesen Sie sie erneut ein.

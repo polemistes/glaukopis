@@ -27,6 +27,7 @@ comments-edit = Ändern
 comments-edited = geändert
 comments-someone = Jemand
 comments-note-deleted = Die Notiz wurde gelöscht
+comments-passage-gone = Diese Passage steht nicht mehr im Text: sie wurde gelöscht oder ausgeschnitten und anderswo eingefügt.
 # On an element in the diagram, and in the margin of the text.
 comments-element-hint = Klicken, um zum Element zu gehen; zweimal klicken, um darin zu schreiben
 comments-mark = { $count ->

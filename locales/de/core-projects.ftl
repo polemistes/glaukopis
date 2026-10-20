@@ -7,6 +7,7 @@ core-projects-name-too-long = Dieser Name ist zu lang.
 core-projects-id-taken = Es gibt schon ein Projekt mit dieser Kennung.
 core-projects-folder-id-taken = Es gibt schon einen Ordner mit dieser Kennung.
 core-projects-id-exists = Ein Projekt mit dieser Kennung besteht schon.
+core-projects-restored-anew = Ein Projekt mit der Kennung von „{ $name }“ war schon da, wie wenn man einem geteilten Projekt erneut beitritt: es wurde als eigenes Projekt aus dem Papierkorb zurückgeholt, mit allem, was es enthielt, und ist nicht geteilt.
 core-projects-not-in-history = Das ist kein Eintrag des Verlaufs.
 core-projects-no-token = Der Server hat kein Token gegeben.
 core-projects-not-shared = Das Projekt ist nicht geteilt.

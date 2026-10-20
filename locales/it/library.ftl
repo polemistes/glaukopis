@@ -30,6 +30,11 @@ library-names-prefix = Prefisso: van, de la
 library-names-prefix-of = { $role }: prefisso
 library-names-suffix = Suffisso: Jr., III
 library-names-suffix-of = { $role }: suffisso
+# The button under a field of names. Its own words, not the field's label
+# put in small letters, which is wrong in a language that writes nouns with
+# a capital.
+library-names-add = Aggiungi un nome
+library-names-add-of = { $role }: aggiungi un nome
 
 ## Words for references, wherever they are shown.
 
@@ -283,6 +288,7 @@ library-copy-key = Copia la chiave di citazione
 library-copied-key = Copiata «{ $key }»
 library-copy-biblatex = Copia come BibLaTeX
 library-copied = Copiato
+library-copy-failed = Non si è copiato nulla
 library-delete-one-title = Eliminare «{ $name }»?
 library-delete-many-title = { $count ->
     [one] Eliminare { $count } riferimento?
@@ -432,6 +438,9 @@ library-zotero-lead = Ciò che si importa è copiato nella tua biblioteca, con i
 library-zotero-choose = La cartella dei dati di Zotero
 library-zotero-none-there = Lì non c'è nessuno Zotero.
 library-zotero-unread = Zotero non si è potuto leggere.
+# Looking in the places where Zotero usually keeps its data failed; the reason is shown under it.
+library-zotero-find-failed = Non si sono potuti esaminare i luoghi dove Zotero di solito tiene i suoi dati. Se sai dove li tiene, indicalo.
+library-zotero-collections-unread = Le raccolte non si sono potute leggere, perciò si importa tutto: { $reason }
 library-zotero-library = Biblioteca
 # A library of Zotero, with the number of its references.
 library-zotero-library-option = { $name } ({ $count })
@@ -509,6 +518,8 @@ library-lookup-label = Cerca un riferimento in rete
 library-lookup-failed = Non si è potuto cercare nulla.
 # Where the reference came from: a service such as Crossref.
 library-lookup-filled = Compilato da { $source }.
+library-lookup-filled-empty = Da { $source } sono stati compilati solo i campi ancora vuoti, perché negli altri avevi scritto nel frattempo.
+library-lookup-fill-all = Compila con tutto ciò che ha
 library-lookup-others = { $count ->
     [one] { $count } altro record
     [many] { $count } altri record

@@ -27,6 +27,7 @@ comments-edit = Endre
 comments-edited = endra
 comments-someone = Nokon
 comments-note-deleted = Merknaden vart sletta
+comments-passage-gone = Dette stykket står ikkje lenger i teksten: det vart sletta, eller klipt ut og lima inn ein annan stad.
 # On an element in the diagram, and in the margin of the text.
 comments-element-hint = Trykk for å gå til elementet; trykk to gonger for å skrive i det
 comments-mark = { $count ->

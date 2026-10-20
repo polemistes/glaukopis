@@ -46,15 +46,19 @@ core-import-zotero-alone = { $count ->
 }
 # The role is Zotero's own name for it: "recipient", "reviewed author".
 core-import-zotero-not-a-field = Zotero anger { $name } som { $role }, vilket BibLaTeX inte har något fält för. Namnet utelämnades.
+core-import-zotero-collaborator = Zotero anger { $name } som { $role }, vilket BibLaTeX inte har något fält för. Namnet lades bland dem som medverkat (en redaktör av typen ”collaborator”, medarbetare), och rollen behålls inte.
+core-import-zotero-collaborator-unnamed = Zotero anger { $name } i en roll som det inte ger något namn, och BibLaTeX har inget fält för det. Namnet lades bland dem som medverkat (en redaktör av typen ”collaborator”, medarbetare).
 core-import-zotero-left-out = Zoteros fält ”{ $field }” har ingen motsvarighet i BibLaTeX och utelämnades: { $value }
 
 ## Zotero's database.
 
 core-import-zotero-no-database = en Zotero-databas ({ $file }) i { $path }
 core-import-zotero-copying = kopieringen av { $path } till en tillfällig mapp
+core-import-zotero-locked = Zotero håller { $path } låst medan det körs, så den kunde inte läsas. Stäng Zotero och importera igen
 core-import-zotero-empty = filen är tom
 core-import-zotero-disturbed = Zotero skrev i sin databas medan den lästes. Om något saknas, stäng Zotero och importera igen.
 core-import-zotero-backup-read = Zoteros databas kunde inte läsas ({ $error }). Dess säkerhetskopia, { $backup }, lästes i stället: det som ändrats i Zotero sedan kopian gjordes saknas.
+core-import-zotero-backup-read-locked = Zotero håller sin databas låst medan det körs, så databasen kunde inte läsas. Dess säkerhetskopia, { $backup }, lästes i stället: det som ändrats i Zotero sedan kopian gjordes saknas. Stäng Zotero och importera igen för att läsa själva databasen.
 core-import-zotero-not-a-database = { $path } är inte en databas från Zotero.
 core-import-zotero-unreadable = Zotero-databasen har en form som inte kan läsas här: { $what }. Om den skrevs av en gammal version av Zotero, räcker det att öppna den en gång i en aktuell version för att föra den à jour.
 core-import-zotero-unreadable-version = Zotero-databasen har en form som inte kan läsas här (version { $version } av Zoteros databas): { $what }. Om den skrevs av en gammal version av Zotero, räcker det att öppna den en gång i en aktuell version för att föra den à jour.
@@ -73,6 +77,7 @@ core-import-zotero-no-group-names = gruppbibliotekens namn är inte kända
 
 core-import-pdf-empty = Filen ”{ $name }” är tom.
 core-import-pdf-not-a-pdf = Filen ”{ $name }” är inte en PDF.
+core-import-pdf-not-started = ”{ $name }” kunde inte läsas, eftersom ingen process kunde startas för att läsa in den: { $message }
 core-import-pdf-unreadable = Filen kunde inte läsas: den är skadad, skyddad av ett lösenord, eller för stor.
 core-import-pdf-scan = Filen har inget textlager: den är en inskanning.
 core-import-pdf-from-file = Uppgifterna kommer från själva filen, inte från någon katalog, och bör kontrolleras.
@@ -95,6 +100,7 @@ core-import-document-stopped = Läsningen avbröts.
 core-import-pdfs-stopped = Utrönandet av vad filerna är avbröts. Inget lades till.
 core-import-document-kind = ”{ $file }” är inte av ett slag som kan hämtas in som dokument. De som kan är Word (DOCX), OpenDocument (ODT), Markdown, HTML, LaTeX, RTF, EPUB, Org, reStructuredText, Typst och ren text.
 core-import-document-too-large = ”{ $file }” är större än 50 MB, vilket är mer än vad som kan hämtas in som dokument.
+core-import-document-too-deep = ”{ $file }” är för djupt kapslad för att hämtas in: dess delar ligger inuti varandra djupare än vad som kan läsas, några hundra nivåer. En sida som sparats från en webbplats kan sparas igen som enkel HTML, eller dess text kopieras till ett nytt dokument.
 # The kind is the kind of file: Word (DOCX), plain text.
 core-import-document-unreadable = ”{ $file }” kunde inte läsas som { $kind }. Den kan vara skadad, eller av ett annat slag än namnet säger. Pandoc, som läser den, sade: { $message }
 core-import-document-pandoc-unreadable = det Pandoc gjorde av ”{ $file }” kunde inte läsas: { $error }
@@ -176,6 +182,26 @@ core-import-document-picture-unreadable = den kunde inte läsas
 core-import-document-picture-network = den ligger på nätet, och därifrån hämtas inget
 core-import-document-picture-not-taken-out = den kunde inte tas ut ur filen
 core-import-document-picture-outside = den ligger inte i filen utan på annat håll på den här datorn, och tas inte därifrån
+core-import-document-picture-outside-folder = den ligger utanför dokumentets mapp, och ett dokument som hämtas in tar bara filerna i sin egen mapp och under den
 core-import-document-picture-not-found = filen hittades inte där dokumentet säger att den ligger
 core-import-document-picture-too-large = den är större än 50 MB
 core-import-document-picture-file-unreadable = filen kunde inte läsas
+
+## What a document takes in from other files (LaTeX's \input, the includes
+## of reStructuredText, Org, AsciiDoc and Typst), and what was left out.
+## $name is the file as the document names it.
+
+core-import-document-include-outside = Filen ”{ $name }”, som dokumentet tar in, ligger utanför dokumentets mapp och utelämnades: ett dokument som hämtas in läser bara filerna i sin egen mapp och under den.
+core-import-document-include-not-found = Filen ”{ $name }”, som dokumentet tar in, hittades inte i dokumentets mapp och utelämnades.
+core-import-document-include-network = ”{ $name }”, som dokumentet tar in, ligger på nätet, och inget hämtas därifrån: den utelämnades.
+core-import-document-include-unreadable = Filen ”{ $name }”, som dokumentet tar in, kunde inte läsas som text (UTF-8) och utelämnades.
+core-import-document-include-circle = Filen ”{ $name }” tar in sig själv, genom de filer den tar in; den lästes en gång.
+core-import-document-include-too-deep = Filen ”{ $name }” utelämnades: filerna som dokumentet tar in tar in andra i mer än { $count } led.
+core-import-document-include-too-large = Filen ”{ $name }” utelämnades: med filerna som dokumentet tar in skulle den bli större än 50 MB.
+# A Typst module imported as a whole (#import "file.typ" or #import "file.typ" as name).
+core-import-document-include-module = Typst-filen ”{ $name }” importeras som helhet, under ett eget namn, vilket inte läses här; den utelämnades. Det som importeras från den med namn läses.
+
+## A file of text that is neither UTF-8 nor UTF-16, brought in as references, a document or a table.
+
+# $name is the name of the file.
+core-import-read-as-western = ”{ $name }” är varken skriven i UTF-8 eller i UTF-16, och lästes som västeuropeisk (Windows-1252). Bokstäver i andra alfabet kan ha blivit fel: för att vara säker, spara filen som UTF-8 och hämta in den igen.

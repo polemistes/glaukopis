@@ -93,6 +93,40 @@ prosjekt hadde vorte eitt tre.
   *import* (språkpakkar, ordbøker, «Import the text as a map»), står
   **importere**, som i bokmål
 
+## Nytt 2026-10-20: kva du skriv, sidene i førehandsvisinga, lesinga
+
+- **what you are writing** — **kva du skriv**: knappen over
+  førehandsvisinga som seier kva dokumentet er («Kva du skriv: vel …»), og
+  **veljaren** (ein veljar, veljaren) av malane han opnar; «Kva skriv du?».
+  Som i bokmål («Hva du skriver», «velgeren»)
+- **About this document** — **Om dette dokumentet**: vindauget med
+  opplysningane, språket og sjekklista til eit dokument; før heitte det
+  *Dokumentinnstillingar*. Som i bokmål
+- **front page** — **framside** (framsida); **title page** — tittelside
+- **chip** — **brikke** (ei brikke, brikka, brikker, brikkene): den vesle
+  merkelappen ved kanten av sida som seier kva ei linje i
+  førehandsvisinga er, og opnar Utsjånad ved den. Som i bokmål
+- **running head**, **header** — **topptekst** (toppteksten); **footer**
+  — **botntekst** (botnteksten), som nynorskfilene alt seier; plassane i
+  dei er *venstre*, *midten* og *høgre*
+- **the summary** (av ei lesing) — **oversikta** (ei oversikt): det
+  dialogen opnar med; «Tilbake til oversikta»
+- **the pages** (av ei lesing) — **sidene**: stripa med små sider øvst,
+  sida du ser på i tre ruter, og innstillingane ved sida av
+- **try**, **tried** — **prøve**, **prøvd**: ei side blir lesen éin gong
+  med innstillingane som gjeld for den; **trial** — **prøving** (ei
+  prøving, prøvinga, prøvingar, prøvingane); «Prøvd med»
+- **confidence** — **sikkerheit** (kor sikker Tesseract var): **Låg
+  sikkerheit (73 %)**, **God sikkerheit**, **Høg sikkerheit**. Som i
+  bokmål («sikkerhet»)
+- **unsure words** — **usikre ord**
+- **stretch** (av sider) — **bolk** (ein bolk, bolken, bolkar, bolkane):
+  sider som blir lesne likt, viste som band over stripa. Som i bokmål
+- **read poorly** — **lesen dårleg** (under 80 %)
+- **Gothic type** — **gotisk skrift**; **the Fraktur model** —
+  **frakturmodellen**; som namn på modellen «Fraktur (gotisk skrift)»
+- **percentages** — med mellomrom: «73 %»
+
 ## Referansar og tilvisingar
 
 - **the library** — biblioteket

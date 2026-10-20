@@ -4,6 +4,12 @@
 ## Making a document.
 
 core-export-picture-missing = Billedet »{ $name }« findes ikke på denne computer og er udeladt af dokumentet.
+# Pictures that are in the store, and could not be put where the document is made: $error is why the first could not.
+core-export-files-not-placed = { $count ->
+    [one] Filen til et billede kunne ikke lægges der, hvor dokumentet laves, og billedet er udeladt af det: { $error }
+   *[other] Filerne til { $count } billeder kunne ikke lægges der, hvor dokumentet laves, og billederne er udeladt af det: { $error }
+}
+core-export-cover-left-out = Omslagets billede kunne ikke lægges der, hvor bogen laves, og bogen har intet omslag: { $error }
 core-export-astray = { $count ->
     [one] En krydshenvisning i teksten henviser til noget, der ikke er i dokumentet. Den er sat som [?].
    *[other] { $count } krydshenvisninger i teksten henviser til noget, der ikke er i dokumentet. De er sat som [?].

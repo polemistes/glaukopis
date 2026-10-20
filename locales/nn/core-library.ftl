@@ -60,5 +60,11 @@ core-library-the-folder = mappa
 core-library-needs-name = Det trengst eit namn.
 core-library-name-too-long = Det namnet er for langt.
 core-library-folder-in-itself = Ei mappe kan ikkje leggjast i seg sjølv.
+# Why a file was not given to the reference chosen for it, when files are gone through.
+core-library-assign-file-gone = Ei fil vart ikkje gitt til referansen sin: den er ikkje lenger mellom filene i biblioteket.
+core-library-assign-reference-gone = «{ $name }» vart ikkje gitt til referansen sin: referansen er ikkje lenger i biblioteket.
+core-library-assign-stored-gone = «{ $name }» vart ikkje gitt til referansen sin: fila er ikkje lenger der biblioteket har den, { $path }.
 # The record of the files could not be read; it was put aside under another name.
 core-library-files-unreadable = Oversynet over filene i biblioteket kunne ikkje lesast, og vart lagt til side som { $path }: { $message }
+# The library file has bytes that are not UTF-8, as an editor that saves in Latin-1 writes them; $aside is the name of the copy kept in the same folder.
+core-library-not-utf8 = { $path } har bokstavar som ikkje er i UTF-8, slik eit redigeringsprogram som lagrar i ei anna teiknkoding, skriv dei. Dei blir lesne som �, og blir skrivne slik; fila slik den var, er teken vare på som { $aside } i same mappe.

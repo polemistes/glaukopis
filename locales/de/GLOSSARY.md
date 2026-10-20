@@ -179,7 +179,9 @@ Bild ab, Einfg.
 - **break** (Absatzart) — die Zäsur; **epigraph** — das Motto; **draft
   note** — die Arbeitsnotiz; **headword/gloss** — Stichwort/Erklärung
 - **lane** (Zeitleiste) — die Bahn; **chronology** — die Chronologie
-- **running head** — die Kopfzeile; **style guides** — Richtlinien
+- **running head** — der Kolumnentitel (der Text, der oben über den Seiten
+  mitläuft); **header** / **footer** — die Kopfzeile / die Fußzeile (die
+  Orte, links, Mitte, rechts); **style guides** — Richtlinien
 - **reference mark** — die Stellenmarke (3:16, 327a, 1094a1: eine Stelle in
   Prosa, nach Vers, Seite oder Nummer einer Ausgabe); **label** (einer
   Stellenmarke, einer Zeile) — die Bezeichnung
@@ -198,6 +200,45 @@ Bild ab, Einfg.
   **a message** (einer Fluent-Datei) — der Eintrag
 - **your usual** (Layout, Zitierstil, Vorlage aus den Einstellungen) — wie
   gewohnt
+
+## Seit 0.2.2 (2026-10-20)
+
+- **what you are writing** — was Sie schreiben; die Frage des Fensters:
+  „Was schreiben Sie?“. **the chooser** (der Vorlagen) — die Vorlagenwahl;
+  im Menü „Was dieses Dokument ist…“. Nicht „Auswahl“, das ist *selected*.
+- **About this document** — Über dieses Dokument (das Fenster der
+  Dokumenteinstellungen eines Elements, früher selbst so genannt)
+- **chip** — das Etikett (das kleine Schild, das auf einer Zeile der
+  Vorschau sagt, was sie ist, und das Aussehen dort öffnet; auch die Leiste
+  der Etiketten oben in *Aussehen*). „Chip“ ist in deutscher Software kaum
+  ein Wort; ein *Etikett* klebt an etwas und sagt, was es ist.
+- **running head** — der Kolumnentitel; **header** / **footer** — die
+  Kopfzeile / die Fußzeile (siehe oben)
+- **summary** (einer Lesung, wie der Dialog sich öffnet) — die Übersicht
+  (nicht „Zusammenfassung“, das ist *abstract*); „Zurück zur Übersicht“
+- **the pages** (einer Lesung: der Streifen, die drei Bereiche, die
+  Einstellungen) — die Seiten; **the strip** — der Streifen
+- **try** (eine Seite) — ausprobieren („Seite 40 ausprobieren“); **a page
+  tried** — eine ausprobierte Seite; **trial** — der Versuch; **Tried
+  with** — „Versucht mit“. *Versuch* passt zu „Was zu versuchen ist, wenn
+  eine Lesung schlecht ausfällt“.
+- **confidence** — die Sicherheit (wie sicher Tesseract war; nicht das
+  Fachwort „Konfidenz“): **Geringe**, **Gute**, **Hohe Sicherheit (73 %)**
+- **unsure words** — unsichere Wörter
+- **stretch** (Seiten, die mit eigenen Einstellungen gelesen werden) — der
+  Bereich, der Seitenbereich (wie im Druckdialog)
+- **read poorly** — schlecht gelesen
+- **what the pages take** — als Überschrift „Woher der Text der Seiten
+  kommt“; eine Seite *übernimmt* den Text des PDF oder *wird mit Tesseract
+  gelesen*
+- **front page** (Bereich von *Aussehen*, Etikett der Vorschau) — die erste
+  Seite; **title page** — die Titelseite
+- **Gothic type** — die Fraktur, gebrochene Schrift: auf Deutsch heißt die
+  Schrift der alten deutschen und skandinavischen Drucke selbst *Fraktur*;
+  „Bücher in Fraktur“. Wo das Englische *Fraktur (Gothic type)* sagt, steht
+  „Fraktur (gebrochene Schrift)“. **the Fraktur model** — das
+  Fraktur-Modell
+- Prozente mit Leerzeichen: „73 %“
 
 ## Namen, die nicht übersetzt werden
 

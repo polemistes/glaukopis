@@ -30,6 +30,11 @@ library-names-prefix = Forledd: van, de la
 library-names-prefix-of = { $role }: forledd
 library-names-suffix = Etterledd: Jr., III
 library-names-suffix-of = { $role }: etterledd
+# The button under a field of names. Its own words, not the field's label
+# put in small letters, which is wrong in a language that writes nouns with
+# a capital.
+library-names-add = Legg til eit namn
+library-names-add-of = { $role }: legg til eit namn
 
 ## Words for references, wherever they are shown.
 
@@ -269,6 +274,7 @@ library-copy-key = Kopier referansenøkkelen
 library-copied-key = Kopierte «{ $key }»
 library-copy-biblatex = Kopier som BibLaTeX
 library-copied = Kopiert
+library-copy-failed = Ingenting vart kopiert
 library-delete-one-title = Slette «{ $name }»?
 library-delete-many-title = { $count ->
     [one] Slette { $count } referanse?
@@ -402,6 +408,9 @@ library-zotero-lead = Det som blir importert, blir kopiert inn i biblioteket dit
 library-zotero-choose = Datamappa til Zotero
 library-zotero-none-there = Det er ingen Zotero der.
 library-zotero-unread = Zotero kunne ikkje lesast.
+# Looking in the places where Zotero usually keeps its data failed; the reason is shown under it.
+library-zotero-find-failed = Det gjekk ikkje å gå gjennom stadene der Zotero vanlegvis har dataa sine. Veit du kvar dei er, så vis kvar.
+library-zotero-collections-unread = Samlingane kunne ikkje lesast, så alt blir importert: { $reason }
 library-zotero-library = Bibliotek
 # A library of Zotero, with the number of its references.
 library-zotero-library-option = { $name } ({ $count })
@@ -478,6 +487,8 @@ library-lookup-label = Slå opp ein referanse
 library-lookup-failed = Ingenting kunne slåast opp.
 # Where the reference came from: a service such as Crossref.
 library-lookup-filled = Fylt ut frå { $source }.
+library-lookup-filled-empty = Berre felta som framleis var tomme, vart fylte ut frå { $source }, sidan du hadde skrive i dei andre i mellomtida.
+library-lookup-fill-all = Fyll ut alt det har
 library-lookup-others = { $count ->
     [one] { $count } annan post
    *[other] { $count } andre postar

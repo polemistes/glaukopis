@@ -275,6 +275,10 @@ editor-citation-after-placeholder = et passim
 editor-citation-locator-kind = Type de repère
 editor-citation-suppress-author = L’auteur est nommé dans ma phrase : donner l’année seulement
 editor-citation-remove-work = Retirer cette œuvre
+# A reference was dropped where a citation cannot stand, and the cursor is in no such place either.
+editor-citation-no-place = Une citation ne peut pas se placer là
+# The project keeps a copy of every reference it cites; this one could not be read from the library.
+editor-reference-not-kept = La référence n’a pas pu être gardée avec le projet
 # Stands in the text in place of a citation of a work that is in neither the library nor the project.
 editor-citation-missing = [référence introuvable]
 # Stands in the text in place of a citation of no work.

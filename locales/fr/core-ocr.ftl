@@ -17,10 +17,16 @@ ocr-no-pages = « { $file } » n’a pas de pages.
 ocr-locked = « { $file } » est verrouillé par un mot de passe, et ses pages ne peuvent pas être dessinées.
 ocr-unreadable = « { $file } » n’a pas pu être lu comme PDF. Il est peut-être abîmé.
 ocr-page-not-drawn = La page { $page } n’a pas pu être dessinée.
+ocr-no-such-page = Le PDF n’a pas de page { $page } : il en a { $pages }.
+ocr-reading-gone = La lecture n’est plus gardée : lisez le fichier de nouveau.
 ocr-picture-unreadable = L’image n’a pas pu être lue : { $message }
 ocr-not-made = Tesseract n’a pas produit { $path }.
 ocr-not-made-said = Tesseract n’a pas produit { $path }. Il a dit : { $message }
 ocr-drawing = Un dessin (SVG) ne contient pas d’image où lire du texte.
+ocr-child-time = La lecture de « { $file } » a pris plus de temps qu’elle n’en a le droit, et a été arrêtée. Le fichier est peut-être abîmé, ou fait d’une manière qui ne peut pas être lue.
+ocr-child-memory = La lecture de « { $file } » a pris plus de mémoire qu’elle n’en a le droit, et a été arrêtée. Le fichier est peut-être abîmé, ou fait d’une manière qui ne peut pas être lue.
+ocr-child-failed = « { $file } » n’a pas pu être lu : { $message }
+ocr-child-not-started = « { $file } » n’a pas pu être lu, faute d’avoir pu lancer le processus qui devait le lire : { $message }
 
 ## Making a PDF searchable.
 
@@ -37,6 +43,14 @@ ocr-remark-more-failed = { $count ->
    *[other] { $count } pages de plus n’ont pas pu être lues.
 }
 ocr-remark-empty = Aucun texte n’a été trouvé.
+ocr-remark-poorly = { $count ->
+    [one] Une page a été mal lue : { $pages }. Une autre langue, le modèle Fraktur pour les caractères gothiques, ou une autre mise en page peuvent mieux la lire ; essayez-la avant de la lire de nouveau.
+    [many] { $count } pages ont été mal lues : { $pages }. Une autre langue, le modèle Fraktur pour les caractères gothiques, ou une autre mise en page peuvent mieux les lire ; essayez une page avant de les lire toutes de nouveau.
+   *[other] { $count } pages ont été mal lues : { $pages }. Une autre langue, le modèle Fraktur pour les caractères gothiques, ou une autre mise en page peuvent mieux les lire ; essayez une page avant de les lire toutes de nouveau.
+}
+ocr-remark-fraktur = Les livres en caractères gothiques, comme l’étaient beaucoup de livres norvégiens, danois, suédois et allemands avant 1900 environ, se lisent avec le modèle Fraktur, choisi en premier ou seul, quelle que soit leur langue. Il ne connaît ni æ, ni ø, ni å, et les lit comme e, o et a.
+# The same, where Norwegian or Danish was read: the Fraktur model of Glaukopis's server that knows æ, ø and å.
+ocr-remark-fraktur-dan = Les livres norvégiens et danois en caractères gothiques, comme l’étaient beaucoup avant 1900 environ, se lisent avec Fraktur, danois et norvégien, importé du serveur de Glaukopis et choisi en premier ou seul, quelles que soient les langues à côté : il connaît æ, ø et å, ce que ne fait pas le modèle Fraktur fait pour l’allemand.
 
 ## What a reading of a PDF came to (ADR 0044).
 

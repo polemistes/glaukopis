@@ -88,6 +88,8 @@ tables-choose = Un tableau
 # What the files that can be chosen there are called.
 tables-files = Tableaux
 tables-unreadable = { $file } n’a pas pu être lu comme tableau
+tables-paste-rows = Le texte a { $rows } lignes. Un tableau dans un texte peut en avoir { $most } au plus : ce n’est pas un tableur. Rien n’a été collé.
+tables-paste-columns = Le texte a { $columns } colonnes. Un tableau dans un texte peut en avoir { $most } au plus : ce n’est pas un tableur. Rien n’a été collé.
 tables-cannot-stand = Un tableau ne peut pas se placer ici
 tables-drop-on-text = Déposez un tableau sur le texte auquel il appartient
 

@@ -7,6 +7,7 @@ spelling-no-suggestions = Inget liknande i ordlistan
 spelling-add-word = Lägg till bland mina ord
 spelling-ignore = Ignorera i det här projektet
 spelling-add-failed = Ordet kunde inte läggas till
+spelling-suggest-failed = Vad det kan vara kunde inte slås upp
 
 ## What the menu says where there is no misspelt word (F7).
 
@@ -14,6 +15,8 @@ spelling-nothing = Inget är felstavat här.
 # $language is the name of the language of the map: Latin.
 # $language is the name of the language of the map: Latin.
 spelling-no-dictionary = Det finns ingen ordlista för { $language }: dess stavning kontrolleras inte. Ordlistor importeras under Inställningar › Språk › Stavning.
+# $language is the name of the language of the map: Latin.
+spelling-failed = Ordlistan för { $language } kunde inte läsas, så dess stavning kontrolleras inte.
 spelling-not-ready = Ordlistan läses in. Försök igen om en stund.
 spelling-off = Stavningen kontrolleras inte. Det slås på i inställningarna.
 
@@ -41,3 +44,5 @@ spelling-add-word-here = Lägg till
 spelling-remove-word = Ta bort ”{ $word }”
 spelling-settings-failed = Ordlistorna kunde inte listas
 spelling-remove-failed = Ordet kunde inte tas bort
+# $language is the name of a language: German. $reason is why, as the log has it.
+spelling-dictionary-failed = Ordlistan för { $language } kunde inte läsas: { $reason }

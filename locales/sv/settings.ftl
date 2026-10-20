@@ -4,6 +4,11 @@ settings-title = Inställningar
 settings-error-system = Något om programmet kunde inte läsas
 settings-error-read = Inställningarna kunde inte läsas
 settings-error-save = Inställningarna kunde inte sparas
+settings-error-fonts = Typsnitten på den här datorn kunde inte listas
+settings-error-templates = Mallarna kunde inte listas
+# A damaged file of settings was renamed and left beside where it was; $path is where it is now.
+settings-set-aside = Inställningarna kunde inte läsas, och har lagts undan som { $path }; standardinställningarna används
+settings-set-aside-person = Inställningarna kunde inte läsas, och har lagts undan som { $path }; standardinställningarna används, och den här datorn är en ny person i projektens historik
 
 ## Appearance
 
@@ -53,13 +58,14 @@ settings-new-documents = Nya dokument
 # Whether a new project opens in its diagram or in its text; the choices are the names of the two views.
 settings-new-project-view = Nya projekt öppnas i
 settings-new-project-view-hint = Vyn som ett projekt öppnas i när det just har skapats.
-settings-template = Mall
-settings-document-format = Layout
-settings-reference-style = Referensstil
+settings-template = Vad nya dokument är
+settings-document-format = Hur deras sidor ser ut
+settings-reference-style = Hur de hänvisar
 
 ## You
 
 settings-you = Dina uppgifter
+settings-you-about = Ditt namn är det som ett projekts historik och de du delar det med kallar dig. Ett nytt projekt har dig som författare, med din organisation, e-post och ORCID; det ändras i projektets dokumentinställningar. Titel, adress och telefon sparas för dokument som kommer att fråga efter dem; inget använder dem ännu. Glaukopis skickar inget av detta någonstans av sig självt: det som står i ett projekts dokumentinställningar följer med projektet när du delar eller exporterar det.
 settings-first-name = Förnamn
 settings-last-name = Efternamn
 settings-organization = Organisation
@@ -101,8 +107,17 @@ settings-language = Språk
 settings-language-interface = Gränssnittet
 settings-language-system = Som systemet ({ $language })
 settings-language-texts = Språk för nya texter
+# The words of the language chosen for the interface could not be read; it stays in the one it was in.
+settings-language-error-load = Orden på { $language } kunde inte läsas in
 
 ## The log of the runs.
 
 settings-logs = Loggen
 settings-logs-hint = Vad Glaukopis berättar om sig självt varje gång det körs, för de senaste { $count } körningarna: vad det gjorde, vad som gick fel, och vad som hände med dess fönster. Till nytta när något har gått fel och ingen såg varför.
+
+## What a line of the preview is: whether a chip at the edge of a page names it.
+
+settings-page-chips = Visa vad en rad i förhandsvisningen är
+settings-page-chips-hint = När du trycker på en rad i förhandsvisningen visar en etikett vid sidans kant vad raden är (text, ett citat, en rubrik…) och öppnar Utseende vid den; trycker du igen försvinner etiketten.
+settings-page-chips-on = På
+settings-page-chips-off = Av

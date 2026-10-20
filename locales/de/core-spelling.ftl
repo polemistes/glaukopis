@@ -7,3 +7,7 @@ spelling-encoding = Das Wörterbuch { $name } ist in einer Kodierung geschrieben
 spelling-dictionary-for = ein Wörterbuch für „{ $language }“
 spelling-not-a-word = „{ $word }“ kann nicht zu Ihren Wörtern hinzugefügt werden.
 spelling-not-a-language = Für „{ $language }“ können keine eigenen Wörter geführt werden.
+# $language is the language of the list (en, nb); $message says why.
+spelling-own-unreadable = Ihre eigenen Wörter für „{ $language }“ konnten nicht gelesen werden: { $message }
+# $path is where the file was moved to, beside where it was.
+spelling-own-set-aside = Ihre eigenen Wörter für „{ $language }“ konnten nicht gelesen werden ({ $message }), daher wurde das Wort nicht geändert. Die Datei ist als { $path } beiseitegelegt; ein jetzt hinzugefügtes Wort beginnt eine neue Liste.

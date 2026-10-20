@@ -86,6 +86,8 @@ tables-choose = Eine Tabelle
 # What the files that can be chosen there are called.
 tables-files = Tabellen
 tables-unreadable = { $file } konnte nicht als Tabelle gelesen werden
+tables-paste-rows = Der Text hat { $rows } Zeilen. Eine Tabelle in einem Text kann höchstens { $most } haben: sie ist keine Tabellenkalkulation. Nichts wurde eingefügt.
+tables-paste-columns = Der Text hat { $columns } Spalten. Eine Tabelle in einem Text kann höchstens { $most } haben: sie ist keine Tabellenkalkulation. Nichts wurde eingefügt.
 tables-cannot-stand = Hier kann keine Tabelle stehen
 tables-drop-on-text = Lassen Sie eine Tabelle auf den Text fallen, zu dem sie gehört
 

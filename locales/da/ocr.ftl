@@ -9,7 +9,23 @@ ocr-no-tesseract = Tesseract, som læser tekst i billeder, er ikke installeret e
 ocr-failed = Teksten kunne ikke læses.
 ocr-looking = Ser på { $file }…
 ocr-about-picture = Teksten læses fra billedet.
+# Where the pages of a PDF are pictures of too few dots to the inch to be read well.
+ocr-low-resolution = Siderne er billeder med { $dpi } punkter pr. tomme: for få til, at deres bogstaver kan læses godt, hvad der end vælges.
+ocr-low-resolution-text = At læse dem igen gør ikke den tekst, PDF'en har, bedre.
+
+ocr-trying = Læser side { $page }…
+ocr-tried-nothing = Der blev ikke læst nogen tekst på side { $label }.
+ocr-tried-blocks = { $count ->
+    [one] Vis tekstblokken
+   *[other] Vis de { $count } tekstblokke
+}
+ocr-tried-blocks-hint = De tekstblokke, Tesseract fandt, nummereret i den rækkefølge, det læser dem. To spalter taget som én, eller noter taget ind i teksten, læses i forkert rækkefølge: en anden opsætning af siden kan skille dem ad.
+
 ocr-read = Læs teksten
+ocr-read-pages = { $count ->
+    [one] Læs én side
+   *[other] Læs { $count } sider
+}
 ocr-read-text-pages = Tag de sider, der har tekst
 ocr-take-text = Tag teksten
 ocr-reading = Læser { $file }…
@@ -53,6 +69,10 @@ ocr-searchable-failed = { $count ->
     [one] Én side kunne ikke læses.
    *[other] { $count } sider kunne ikke læses.
 }
+ocr-searchable-poorly = { $count ->
+    [one] Én side blev læst dårligt: { $pages }.
+   *[other] { $count } sider blev læst dårligt: { $pages }.
+} Prøv en side med et andet sprog eller med frakturmodellen til gotisk skrift.
 
 ## A PDF of the library read into a project, as a tree of elements
 
@@ -71,6 +91,7 @@ ocr-picture-title = Teksten i billedet
 ocr-picture-empty = Der blev ikke fundet nogen tekst i billedet.
 ocr-picture-copy = Kopiér
 ocr-picture-copied = Teksten er kopieret
+ocr-picture-copy-failed = Teksten kunne ikke kopieres
 ocr-picture-map = Lav et element af den
 
 ## Tesseract in the settings
@@ -101,6 +122,7 @@ ocr-text-scheme-expert-names = Kapitæler og minuskeltal i { $fonts } er gemt ve
 ocr-text-scheme-beta-code = Græsk er skrevet i Beta Code og kan gøres til græske bogstaver.
 ocr-text-page = Side { $label }
 ocr-text-page-none = Ingen tekst på denne side: den læses fra et billede af den.
+ocr-text-rest-failed = Siderne efter disse kunne ikke læses.
 ocr-searchable-make-readable = Gør læsbar
 ocr-searchable-readable-done = { $count ->
     [one] PDF'ens tekst er læsbar nu: én skrift fik sine bogstaver
@@ -116,6 +138,18 @@ ocr-structure = Elementer
 ocr-structure-headings = Efter overskrifterne
 ocr-page-marks = Angiv, hvor hver side begynder
 ocr-page-marks-hint = Et stedmærke med sidens nummer, der hvor den begyndte.
+# What is made of a PDF that was read, asked after the reading: the same reading made anew.
+ocr-made-title = Hvad der laves af den
+ocr-made-headings = { $count ->
+    [0] Ingen overskrifter fundet
+    [one] Efter dens ene overskrift
+   *[other] Efter dens { $count } overskrifter
+}
+ocr-made-pages = { $count ->
+    [one] Efter dens ene side
+   *[other] Efter dens { $count } sider
+}
+ocr-made-failed = Elementerne kunne ikke laves igen
 # The outline shown before a PDF read by its headings is made into a map.
 ocr-outline-title = Det, der bliver lavet
 ocr-outline-all = Vis alle { $count }
@@ -172,3 +206,166 @@ ocr-script = { $script ->
 }
 # $alike: the letters that look alike, in pairs, the first script's first: "ϲ c, ο o, ν v".
 ocr-languages-scripts-alike = Det { $a } alfabet læses sammen med det { $b }: bogstaver, der ligner hinanden i de to ({ $alike }), læses ofte som hinanden, og hele ord bliver forkerte. Vil du kun have ét alfabet, så fjern de andre.
+
+# Tesseract's Fraktur model, among the languages of the text: named for the type it reads, not for a language.
+ocr-language-fraktur-model = Fraktur (gotisk skrift)
+# Glaukopis's own Fraktur model for Danish and Norwegian: Tesseract's taught æ, ø and å.
+ocr-language-fraktur-dan-model = Fraktur, dansk og norsk (gotisk skrift)
+# Under the languages of the text, where a model of Gothic type is installed and neither Norwegian nor Danish is chosen.
+ocr-languages-fraktur-hint = Bøger med gotisk skrift, som norske, danske, svenske og tyske bøger ofte var trykt med før omkring 1900, læses med frakturmodellen, valgt først eller alene, uanset deres sprog. Den kender ikke æ, ø og å; danske og norske bøger læses med Fraktur, dansk og norsk, som gør.
+# The same, where Norwegian or Danish is chosen.
+ocr-languages-fraktur-hint-dan = Danske og norske bøger med gotisk skrift, som mange var trykt med før omkring 1900, læses med Fraktur, dansk og norsk, valgt først eller alene, uanset hvilke sprog der står ved siden af: den kender æ, ø og å, hvilket frakturmodellen, der er lavet til tysk, ikke gør.
+
+## The strip of the pages of a PDF, drawn small, to choose a page from.
+
+ocr-strip = Siderne
+ocr-strip-page = Side { $number }
+# A page that could not be drawn, where nothing more is said of why.
+ocr-strip-page-failed = Ikke tegnet
+# $from and $to: the first and the last of the pages, counted from one, that were to be drawn together.
+ocr-strip-failed = Siderne { $from }–{ $to } kunne ikke tegnes.
+
+# The panes of the workbench: the picture of the page in view, the text the
+# PDF has for it, what Tesseract read of it with the page's trials, and the
+# column of the reading settings beside them. The panes' titles and their
+# lines on a page without text are ocr-text-page, ocr-text-title and
+# ocr-text-page-none above; the blocks drawn on the picture, ocr-tried-blocks.
+
+ocr-settings-heading = Sådan læser Tesseract
+# The button under the reading settings: the page in view is read with them.
+ocr-settings-try = Prøv side { $page }
+# A trial's settings said in a line, where no language was chosen: Tesseract then reads English.
+ocr-settings-said-no-language = Engelsk, da intet er valgt
+# A trial's settings said in a line, where the page was made black and white before it was read.
+ocr-settings-said-contrast = s/h
+# How large the picture of the page is shown: the whole page in the pane, or its own size, or twice that.
+ocr-picture-size = Billedets størrelse
+ocr-picture-fit = Hele siden
+ocr-picture-actual = 100 %
+ocr-picture-double = 200 %
+# The alternative text of the picture of the page in view.
+ocr-picture-alt = Side { $label }
+ocr-pane-translated = Oversat efter det, skrifterne siger
+ocr-pane-sound = Læses som tekst
+ocr-pane-poor = Læses ikke som tekst: bogstaver i en skrift, der ikke siger, hvilke de er, eller en dårlig læsning
+ocr-pane-tesseract = Det, Tesseract læste
+ocr-pane-try-hint = Tryk på »Prøv side { $page }« for at læse denne side med indstillingerne ved siden af.
+# How sure Tesseract was of a page tried, in one line: "Page 40: Low confidence (73%) · 89 of 251 words unsure". Low is under 80, good up to 89, high from 90.
+ocr-tried-page = Side { $label }:
+ocr-confidence-low = Lav sikkerhed ({ $confidence } %)
+ocr-confidence-good = God sikkerhed ({ $confidence } %)
+ocr-confidence-high = Høj sikkerhed ({ $confidence } %)
+ocr-tried-unsure = { $unsure ->
+    [0] intet ord usikkert
+    [one] { $unsure } af { $words } ord usikkert
+   *[other] { $unsure } af { $words } ord usikre
+}
+ocr-tried-low-hint = Under 80 %: prøv et andet sprog, frakturmodellen til gotisk skrift eller en anden opsætning af siden.
+# The tooltip of a word Tesseract was unsure of.
+ocr-pane-unsure-word = Læst med en sikkerhed på { $confidence } %
+# Said after the line over the settings, where the pages selected are read in different ways: a change holds for all of them.
+ocr-settings-scope-differ = (læses på forskellige måder)
+# Over the list of the page's trials, each said by the settings it was read with.
+ocr-trials = Prøvet med
+ocr-trial-confidence = { $confidence } %
+ocr-trial-nothing = Intet læst
+ocr-trial-use = Brug disse indstillinger
+
+# The pages of the workbench
+
+# The line over the strip of pages says what each page gets: the text the PDF has, or what Tesseract reads.
+ocr-pages-said-pdf = { $pages ->
+    [one] Siden tager den tekst, PDF'en har.
+   *[other] Alle { $pages } sider tager den tekst, PDF'en har.
+}
+ocr-pages-said-read = { $pages ->
+    [one] Siden læses med Tesseract.
+   *[other] Alle { $pages } sider læses med Tesseract.
+}
+ocr-pages-said-both = { $pdf ->
+    [one] Én side tager den tekst, PDF'en har;
+   *[other] { $pdf } sider tager den tekst, PDF'en har;
+} { $read ->
+    [one] én læses med Tesseract.
+   *[other] { $read } læses med Tesseract.
+}
+# Where Tesseract is not installed, and pages are to be read.
+ocr-pages-said-unreadable = { $pages ->
+    [one] Siden kan ikke læses: Tesseract er ikke installeret.
+   *[other] Ingen af de { $pages } sider kan læses: Tesseract er ikke installeret.
+}
+ocr-pages-said-both-unreadable = { $pdf ->
+    [one] Én side tager den tekst, PDF'en har;
+   *[other] { $pdf } sider tager den tekst, PDF'en har;
+} { $read ->
+    [one] én kan ikke læses uden Tesseract.
+   *[other] { $read } kan ikke læses uden Tesseract.
+}
+ocr-pages-said-picture = Teksten læses fra billedet.
+ocr-pages-said-picture-unreadable = Teksten i billedet kan ikke læses uden Tesseract.
+# What the actions beside it hold for: every page, or those selected ($pages: "pages 39–120", as ocr-pages-selection says them).
+ocr-pages-scope-all = { $pages ->
+    [one] For siden
+   *[other] For alle { $pages } sider
+}
+ocr-pages-scope = For { $pages }
+# Pages selected, as they stand in a sentence: "page 280", "pages 3–5, 9".
+ocr-pages-selection = { $count ->
+    [one] side { $pages }
+   *[other] siderne { $pages }
+}
+ocr-pages-all = Alle sider
+ocr-pages-pdf = PDF'ens tekst
+ocr-pages-pdf-hint = Disse sider tager den tekst, PDF'en har. Sider uden tekst læses alligevel.
+ocr-pages-read = Læs med Tesseract
+ocr-pages-read-hint = Disse sider læses på ny ud fra billeder af dem, hvilken tekst de end har.
+ocr-pages-decide = Afgør efter tekstens kvalitet
+ocr-pages-decide-hint = Side for side: tekst, der læses som tekst, tages; tekst, der ikke gør, og sider uden tekst læses.
+
+# The mark in the corner of a page in the strip, saying what it gets.
+ocr-strip-source-pdf = PDF
+ocr-strip-source-read = Læses
+ocr-strip-source-pdf-hint = Tager den tekst, PDF'en har.
+ocr-strip-source-read-hint = Læses med Tesseract.
+ocr-strip-poor = Den tekst, den har, læses ikke som tekst.
+# The band over a stretch of pages read alike: its languages, the resolution where it is not 300, the layout where it is told, and black and white.
+ocr-strip-band-none = Engelsk, hvor intet er valgt
+ocr-strip-band-dpi = { $dpi } punkter pr. tomme
+# Black and white, in short.
+ocr-strip-band-contrast = s/h
+ocr-strip-band-hint = { $count ->
+    [one] Side { $from }: { $said }
+   *[other] Siderne { $from }–{ $to }: { $said }
+}
+
+# The summary of a reading, as the dialog opens: what the file is, said in parts joined by commas.
+ocr-summary-pages = { $pages ->
+    [one] Én side
+   *[other] { $pages } sider
+}
+ocr-summary-scanned = skannet med { $dpi } punkter pr. tomme
+ocr-summary-no-text = { $pages ->
+    [one] uden egen tekst
+   *[other] uden egen tekst
+}
+ocr-summary-text-all = { $pages ->
+    [one] med egen tekst
+   *[other] alle med egen tekst
+}
+ocr-summary-text-some = { $with ->
+    [one] én af dem med egen tekst
+   *[other] { $with } af dem med egen tekst
+}
+ocr-summary-poor = { $poor ->
+    [one] hvoraf én ikke læses som tekst
+   *[other] hvoraf { $poor } ikke læses som tekst
+}
+ocr-summary-poor-all = som ikke læses som tekst
+# Over the choice of what every page takes.
+ocr-summary-whole = Hvad siderne tager
+ocr-summary-mixed = Valgt side for side. Et valg her gælder alle sider igen.
+# Under the reading settings, where no page is to be read with Tesseract.
+ocr-summary-idle = De gælder de sider, der læses med Tesseract; det gør ingen nu.
+ocr-summary-pages-open = Se på siderne, og prøv dem…
+ocr-summary-picture-open = Prøv det…
+ocr-summary-back = Tilbage til oversigten

@@ -32,8 +32,16 @@ io-copying = kunne ikkje kopiere { $path }
 io-flushing = kunne ikkje skrive { $path } ferdig til disken
 io-replacing = kunne ikkje erstatte { $path }
 io-backing-up = kunne ikkje ta tryggingskopi av { $path }
+io-setting-aside = kunne ikkje leggje { $path } til side
 io-storing = kunne ikkje lagre { $path }
 io-no-directory = { $path } ligg ikkje i noka mappe
+
+## A file of the application's own that could not be read: it is set aside,
+## under its name with the time added, and the application goes on without
+## it. Shown at the foot of the window.
+
+# $path is where the file was; $aside the name it has now, in the same folder; $cause what was wrong with it.
+core-set-aside = { $path } kunne ikkje lesast, og er lagd til side som { $aside } i same mappe; Glaukopis held fram utan det fila heldt. Feilen: { $cause }
 
 ## The network. Shown after "network: ".
 
@@ -44,6 +52,14 @@ network-unreachable-because = fekk ikkje kontakt med { $host }: { $error }
 network-nothing-there = { $host } har ingenting på den adressa
 network-wait = { $host } ber oss vente før vi spør igjen
 network-status = { $host } svarte med ein feil ({ $status })
+# $most is in megabytes.
+network-too-large = { $host } svarte med meir enn Glaukopis tek imot ({ $most } MB)
+network-tls = fekk ikkje eit trygt samband med { $host }: datamaskina stolar kanskje ikkje på sertifikatet, eller noko imellom, som ein proxy eller ein brannmur, står i vegen
+network-redirects = { $host } sende spørsmålet vidare frå éi adresse til ei anna for mange gonger
+network-stalled = svaret frå { $host } stoppa opp
+network-not-understood = { $host } svarte på ein måte som ikkje kunne forståast
+# What else went wrong; what was said of it is in the log of the run.
+network-failed = { $host } kunne ikkje spørjast; loggen for køyringa seier kvifor
 # A way of asking, GET or POST, that the application does not use.
 network-method = { $method } er ikkje ein måte å spørje på som blir brukt her
 
@@ -51,3 +67,16 @@ network-method = { $method } er ikkje ein måte å spørje på som blir brukt he
 
 core-in-use-title = Glaukopis er allereie ope
 core-in-use = Glaukopis er allereie ope, og arbeider i { $path }. Berre eitt kan arbeide der om gongen, elles skriv dei over det den andre har skrive. Hald fram i det som er ope.
+
+## When the application cannot start: its data cannot be made or read.
+
+core-start-failed-title = Glaukopis kunne ikkje starte
+# What went wrong is given after the colon, as "creating /home/…/library: Permission denied".
+core-start-failed = Glaukopis kunne ikkje starte. Det som gjekk gale: { $error }
+# Said after core-start-failed, where the log of the run could be written.
+core-start-failed-log = Meir om kva som hende, står i loggen for køyringa, { $log }
+
+## When something goes wrong inside Glaukopis itself.
+
+# What the program said of itself is given after the colon, in English.
+core-worker-panicked = Noko gjekk gale inne i Glaukopis, og det som vart gjort, vart gitt opp: { $message }. Loggen for køyringa har meir.

@@ -27,6 +27,7 @@ comments-edit = Ændr
 comments-edited = ændret
 comments-someone = Nogen
 comments-note-deleted = Indlægget blev slettet
+comments-passage-gone = Denne passage står ikke længere i teksten: den blev slettet eller klippet ud og sat ind et andet sted.
 # On an element in the diagram, and in the margin of the text.
 comments-element-hint = Tryk for at gå til elementet; tryk to gange for at skrive i det
 comments-mark = { $count ->

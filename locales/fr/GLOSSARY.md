@@ -224,6 +224,51 @@ personne qui écrit. Un mot choisi ici est le même dans tous les fichiers.
 - **press** (a button, a key) → **appuyer sur** ; **click** → **cliquer**
 - **drag** → **glisser**, **faire glisser** ; **drop** → **déposer**
 
+## Ce que vous écrivez, l’aperçu et l’aspect (0.2.3)
+
+- **what you are writing** → **ce que vous écrivez** : le bouton au-dessus de
+  l’aperçu nomme ce qu’est le document (« Article de revue », « Thèse ») ;
+  la question du **sélecteur** (chooser) est « Qu’écrivez-vous ? ». Ce
+  qu’est le document, c’est le modèle de son élément.
+- **About this document** → **À propos de ce document** : la fenêtre de ce
+  que le document dit de lui-même (informations, langue, liste de contrôle).
+  Les « réglages du document » restent le nom de ce qu’on y règle.
+- **chip** → la **pastille** : la petite étiquette au bord de la page de
+  l’aperçu qui nomme la ligne pressée (texte, citation, titre, titre
+  courant…) et ouvre l’Aspect à sa ligne. Pas « étiquette », que la carte
+  de la chouette emploie déjà pour les dossiers. Le réglage dit « nommer
+  les lignes ».
+- **running head** → le **titre courant** ; **header** / **footer** → l’**en-tête**
+  / le **pied de page** ; leurs **places** (left, centre, right) → les
+  **emplacements** (gauche, centre, droite).
+- **scope** (where the changes of Look hold) → « Ces modifications valent
+  pour » : tout le document, ou seulement un élément.
+
+## La lecture des PDF et des numérisations (0.2.3)
+
+- **the summary** (of a reading, as the dialog opens) → la **vue
+  d’ensemble** (« Retour à la vue d’ensemble »). Jamais « résumé », qui est
+  l’abstract d’un document.
+- **the pages** (the workbench) → les **pages** : la **bande** des petites
+  pages en haut (strip), et les trois **panneaux** de la page affichée.
+- **what the pages take** → **ce que prennent les pages** (le texte du PDF,
+  une lecture par Tesseract, ou selon la qualité du texte) ; **how Tesseract
+  reads** → **comment Tesseract lit**.
+- **try** (a page) → **essayer** ; a page **tried** → une page **essayée** ;
+  a **trial** → un **essai** ; **Tried with** → « Essayée avec ».
+- **confidence** → la **confiance** de Tesseract : **Confiance faible**,
+  **Bonne confiance**, **Confiance élevée** (73 %), avec une espace fine
+  insécable avant %.
+- **unsure words** → les **mots incertains**.
+- **stretch** (pages read alike) → la **plage** (de pages), dessinée en
+  **bandeau** au-dessus de la bande des pages.
+- **read poorly** → **mal lue** (une page sous 80 %).
+- **what is made of it** → **ce qu’on en fait** (la forme gardée, un arbre
+  par ses titres ou par ses pages, les marques de page).
+- **Gothic type** → les **caractères gothiques** (l’impression allemande et
+  scandinave d’autrefois) ; **Fraktur** reste le nom du caractère et du
+  modèle : « le modèle Fraktur », « Fraktur (caractères gothiques) ».
+
 ## Les noms qui ne se traduisent pas
 
 Glaukopis ; Pandoc, Typst, Tesseract, Hunspell, LaTeX, LuaLaTeX, BibLaTeX,

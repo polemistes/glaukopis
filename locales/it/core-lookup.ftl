@@ -43,6 +43,7 @@ core-lookup-crossref-in-book = Una ricerca non dà i curatori e l'ISBN del libro
 core-lookup-book-unreadable = Ciò che Crossref ha sul libro non si è potuto leggere: possono mancare i curatori.
 core-lookup-book-not-fetched = Ciò che Crossref ha sul libro non si è potuto scaricare: possono mancare i curatori.
 core-lookup-chapter-author = Crossref non nomina un autore per il capitolo. Come suo autore è stato inserito l'autore del libro.
+core-lookup-chapter-not-found = Il capitolo non è stato trovato fra le parti del libro in ciò che Crossref ha: le sue pagine e i suoi autori non sono stati presi da lì.
 core-lookup-group-name = «{ $name }» era dato come nome di persona, «{ $family }, { $given }», ed è stato preso come nome di un ente.
 core-lookup-kind-none = Il record non dice di che tipo di pubblicazione si tratti. È stato inserito come «misc»: scegli il tipo giusto.
 core-lookup-kind = Il record chiama il tipo di pubblicazione «{ $kind }». È stato inserito come «misc»: scegli il tipo giusto.

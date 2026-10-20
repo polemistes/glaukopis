@@ -66,7 +66,20 @@ Page Down, piltangenterna. Pluralformer: one, other.
   *Preface* (författarens eget) heter förord, *foreword* (av någon annan)
   företal, så att de två slagen hålls isär.
 - **the Look panel** — Utseende: panelen bredvid förhandsvisningen där
-  dokumentets utseende ställs in (*Öppna Utseende*)
+  dokumentets utseende ställs in (*Öppna Utseende*). Den följer sidan
+  uppifrån och ner.
+- **what you are writing** — vad du skriver (*Vad skriver du?*): knappen
+  över förhandsvisningen som säger vad dokumentet är (ett vanligt
+  dokument, en tidskriftsartikel, en avhandling…), alltså elementets mall;
+  **the chooser** — väljaren (väljaren av vad du skriver)
+- **About this document** — Om det här dokumentet: fönstret med ett
+  elements dokumentinställningar (uppgifterna, språket, checklistan)
+- **chip** — etikett (etiketten): den lilla lappen vid sidans kant som
+  säger vad en rad i förhandsvisningen är och öppnar Utseende vid den.
+  *Name the lines of the page* = visa vad sidans rader är.
+- **running head** — kolumntitel (kolumntiteln), som i svensk typografi;
+  **header** / **footer** — sidhuvud / sidfot, med platserna vänster,
+  mitten och höger, på första sidan och på de övriga
 - **checklist** — checklista (checklistan): vad mallen kräver, mot det
   texten och trädet har
 - **style** — stil, bara om referensstilen (referensstil). De stilar som
@@ -141,6 +154,24 @@ Page Down, piltangenterna. Pluralformer: one, other.
 - **dictionary** — ordlista (ordlistan); **own words** — egna ord
 - **reading text** / **OCR** — läsa texten; textigenkänning; en PDF
   *görs sökbar*
+- **the summary of a reading** — översikten (dialogens första vy: vad
+  filen är, *vad sidorna får*, *hur Tesseract läser*); *Tillbaka till
+  översikten*. Inte ”sammanfattning”, som är dokumentets abstract.
+- **the pages of a reading** — sidorna (*Titta på sidorna och pröva
+  dem…*): remsan med små sidor överst, sidan som visas i tre rutor och
+  inställningarna bredvid; **the strip** — remsan
+- **try a page** — pröva en sida (*Pröva sida 40*); **a page tried** — en
+  prövad sida; **trial** — försök (försöket, försöken): en läsning av en
+  sida med vissa inställningar, som sparas och listas (*Prövad med*)
+- **confidence** — säkerhet: hur säker Tesseract var, *Låg säkerhet
+  (73 %)*, *God säkerhet*, *Hög säkerhet*; **unsure words** — osäkra ord
+- **stretch** — sträcka (sträckan, sträckor): sidor i följd som läses med
+  egna inställningar, ritade som band över remsan
+- **read poorly** — dåligt läst (under 80 %)
+- **Gothic type** — gotisk skrift (bruten skrift, som i äldre tyska och
+  nordiska tryck); typen heter **fraktur**, och Tesseracts modell
+  *frakturmodellen*; *Fraktur (gotisk skrift)*
+- Procent skrivs med mellanrum: *73 %*.
 - **language package** — språkpaket (språkpaketet): ordlistor för
   stavning och språkfiler för textigenkänning, som importeras från en
   server

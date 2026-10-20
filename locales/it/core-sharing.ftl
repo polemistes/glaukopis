@@ -34,6 +34,8 @@ core-sharing-bad-id = L'identificativo del progetto non è uno che il server pos
 core-sharing-many-invitations = Ci sono già cinquanta inviti aperti; ritirane qualcuno.
 core-sharing-no-collaborator = Non c'è un collaboratore così.
 core-sharing-not-whole = Il file non è arrivato intero.
+core-sharing-bad-file-name = Un file ha per nome lo SHA-256 di ciò che contiene: 64 caratteri, ciascuno da 0 a 9 o da a a f.
+core-sharing-not-as-named = Ciò che è stato mandato non è ciò che il suo nome dice: il suo SHA-256 è un altro.
 # The most is in the server's words: "25 MB".
 core-sharing-file-too-large = Il file è più grande di quanto questo server accetti: un file può pesare al massimo { $most }.
 core-sharing-project-full = Non c'è spazio per il file: su questo server i file di un progetto possono pesare insieme al massimo { $most }.
@@ -44,6 +46,8 @@ core-sharing-picture-too-large = { $host } non accetta un'immagine grande così.
 core-sharing-picture-larger = Un'immagine è più grande di quanto { $host } accetti ({ $most } MB al massimo), e non arriva agli altri.
 core-sharing-picture-not-sent = Un'immagine non si è potuta mandare: { $error }.
 core-sharing-picture-not-fetched = Un'immagine non si è potuta scaricare: { $error }.
+# The server gave a picture whose content is not what its name says: damaged on the way or where the server keeps it.
+core-sharing-picture-not-as-listed = Un'immagine data da { $host } non è quella che aveva elencato: si è danneggiata per strada o dove è tenuta.
 
 ## Publishing and joining.
 

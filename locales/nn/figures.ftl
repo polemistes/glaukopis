@@ -86,6 +86,8 @@ figures-formula-empty = Det som blir skrive, blir vist her slik det vil stå.
 figures-formula-hint = Skriv som i TeX. Enter når du er ferdig, Escape for å la den vere som den var.
 figures-equation-hint = Skriv som i TeX. Enter når du er ferdig, Shift+Enter for ny linje, Escape for å la den vere som den var.
 figures-formula-unread = Formelen kunne ikkje lesast.
+# Where no formula could be made, as when Pandoc is not there: the reason is what the program said.
+figures-formula-failed = Formlar kan ikkje visast: { $reason }
 # Shown in the text where a formula has nothing written in it yet.
 figures-formula-blank = formel
 figures-equation-blank = Ei likning
@@ -146,4 +148,6 @@ figures-targets-hint = Ein kryssreferanse følgjer det den viser til: nummeret, 
 ## Shown by the stylesheet, where the page has no element for the words.
 
 figures-picture-absent = Biletet finst ikkje på denne datamaskina
+# A picture that is on this computer and could not be read: the reason is what the reading said.
+figures-picture-unread = Biletet kunne ikkje lesast: { $reason }
 figures-caption-placeholder = Bilettekst

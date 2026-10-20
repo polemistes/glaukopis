@@ -86,6 +86,8 @@ tables-choose = En tabell
 # What the files that can be chosen there are called.
 tables-files = Tabeller
 tables-unreadable = { $file } kunde inte läsas som en tabell
+tables-paste-rows = Texten har { $rows } rader. En tabell i en text kan ha högst { $most }: den är inget kalkylblad. Inget klistrades in.
+tables-paste-columns = Texten har { $columns } kolumner. En tabell i en text kan ha högst { $most }: den är inget kalkylblad. Inget klistrades in.
 tables-cannot-stand = En tabell kan inte stå här
 tables-drop-on-text = Släpp en tabell på den text den hör till
 

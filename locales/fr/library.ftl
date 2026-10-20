@@ -30,6 +30,11 @@ library-names-prefix = Particule : van, de la
 library-names-prefix-of = { $role } : particule
 library-names-suffix = Suffixe : Jr., III
 library-names-suffix-of = { $role } : suffixe
+# The button under a field of names. Its own words, not the field's label
+# put in small letters, which is wrong in a language that writes nouns with
+# a capital.
+library-names-add = Ajouter un nom
+library-names-add-of = { $role } : ajouter un nom
 
 ## Words for references, wherever they are shown.
 
@@ -283,6 +288,7 @@ library-copy-key = Copier la clé de citation
 library-copied-key = « { $key } » copié
 library-copy-biblatex = Copier en BibLaTeX
 library-copied = Copié
+library-copy-failed = Rien n’a été copié
 library-delete-one-title = Supprimer « { $name } » ?
 library-delete-many-title = { $count ->
     [one] Supprimer { $count } référence ?
@@ -432,6 +438,9 @@ library-zotero-lead = Ce qui est importé est copié dans votre bibliothèque, a
 library-zotero-choose = Le dossier des données de Zotero
 library-zotero-none-there = Il n’y a pas de Zotero là.
 library-zotero-unread = Zotero n’a pas pu être lu.
+# Looking in the places where Zotero usually keeps its data failed; the reason is shown under it.
+library-zotero-find-failed = Les endroits où Zotero garde d’habitude ses données n’ont pas pu être parcourus. Si vous savez où il les garde, indiquez l’endroit.
+library-zotero-collections-unread = Les collections n’ont pas pu être lues, et tout est donc importé : { $reason }
 library-zotero-library = Bibliothèque
 # A library of Zotero, with the number of its references.
 library-zotero-library-option = { $name } ({ $count })
@@ -509,6 +518,8 @@ library-lookup-label = Chercher une référence en ligne
 library-lookup-failed = Rien n’a pu être cherché.
 # Where the reference came from: a service such as Crossref.
 library-lookup-filled = Rempli d’après { $source }.
+library-lookup-filled-empty = Seuls les champs encore vides ont été remplis d’après { $source }, puisque vous aviez écrit dans les autres entre-temps.
+library-lookup-fill-all = Remplir avec tout ce qu’il a
 library-lookup-others = { $count ->
     [one] { $count } autre notice
     [many] { $count } autres notices

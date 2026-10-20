@@ -57,5 +57,11 @@ core-library-the-folder = der Ordner
 core-library-needs-name = Ein Name ist nötig.
 core-library-name-too-long = Dieser Name ist zu lang.
 core-library-folder-in-itself = Ein Ordner kann nicht in sich selbst gelegt werden.
+# Why a file was not given to the reference chosen for it, when files are gone through.
+core-library-assign-file-gone = Eine Datei wurde ihrer Quelle nicht zugeordnet: sie ist nicht mehr unter den Dateien der Bibliothek.
+core-library-assign-reference-gone = „{ $name }“ wurde seiner Quelle nicht zugeordnet: die Quelle ist nicht mehr in der Bibliothek.
+core-library-assign-stored-gone = „{ $name }“ wurde seiner Quelle nicht zugeordnet: die Datei ist nicht mehr dort, wo die Bibliothek sie aufbewahrt, { $path }.
 # The record of the files could not be read; it was put aside under another name.
 core-library-files-unreadable = Die Liste der Dateien der Bibliothek konnte nicht gelesen werden und wurde als { $path } beiseitegelegt: { $message }
+# The library file has bytes that are not UTF-8, as an editor that saves in Latin-1 writes them; $aside is the name of the copy kept in the same folder.
+core-library-not-utf8 = { $path } hat Buchstaben, die nicht in UTF-8 sind, wie ein Editor sie schreibt, der in einer anderen Kodierung speichert. Sie werden als � gelesen und so geschrieben; die Datei, wie sie war, ist als { $aside } im selben Ordner aufbewahrt.

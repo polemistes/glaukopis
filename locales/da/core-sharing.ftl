@@ -34,6 +34,8 @@ core-sharing-bad-id = Projektets id er ikke et, serveren kan bruge.
 core-sharing-many-invitations = Der er allerede halvtreds åbne invitationer; træk nogle tilbage.
 core-sharing-no-collaborator = Der er ingen sådan deltager.
 core-sharing-not-whole = Filen kom ikke helt frem.
+core-sharing-bad-file-name = En fil har navn efter SHA-256 af det, den indeholder: 64 tegn, hvert af dem 0 til 9 eller a til f.
+core-sharing-not-as-named = Det, der blev sendt, er ikke det, dets navn siger, det er: dets SHA-256 er en anden.
 # The most is in the server's words: "25 MB".
 core-sharing-file-too-large = Filen er større, end denne server tager imod: én fil må højst fylde { $most }.
 core-sharing-project-full = Der er ikke plads til filen: ét projekts filer må tilsammen højst fylde { $most } på denne server.
@@ -44,6 +46,8 @@ core-sharing-picture-too-large = { $host } tager ikke imod et så stort billede.
 core-sharing-picture-larger = Et billede er større, end { $host } tager imod (højst { $most } MB), og når ikke frem til de andre.
 core-sharing-picture-not-sent = Et billede kunne ikke sendes: { $error }.
 core-sharing-picture-not-fetched = Et billede kunne ikke hentes: { $error }.
+# The server gave a picture whose content is not what its name says: damaged on the way or where the server keeps it.
+core-sharing-picture-not-as-listed = Et billede, { $host } gav, er ikke det, den anførte: det blev beskadiget på vejen eller der, hvor det opbevares.
 
 ## Publishing and joining.
 

@@ -163,6 +163,8 @@ files-pdf-pages = { $count ->
 }
 files-pdf-has-text = har tekst
 files-pdf-no-text = ingen tekst
+# Shown as the pages of a PDF that could not be looked at; the reason is what the reading said.
+files-pdf-unread = kunne ikkje lesast: { $reason }
 files-pdf-some-text = { $count ->
     [one] éi side utan tekst
    *[other] { $count } sider utan tekst
@@ -309,6 +311,11 @@ files-going-nothing = Ingenting funne
 files-going-chosen = Vald
 files-going-made-here = Laga her
 files-going-none = Det gjekk ikkje å gå gjennom nokon av filene.
+# The files the going-through did not reach, as when it was stopped: they keep no reference, and the bar offers them again.
+files-going-not-reached = { $count ->
+    [one] Éi fil vart ikkje sett på. Den blir ståande som den er, til ein annan gong.
+   *[other] { $count } filer vart ikkje sette på. Dei blir ståande som dei er, til ein annan gong.
+}
 files-going-counts = { $assign } å gi til referansar, { $later } til seinare
 files-going-done = { $count ->
     [0] Ingenting å gi

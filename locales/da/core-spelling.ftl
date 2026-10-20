@@ -7,3 +7,7 @@ spelling-encoding = Ordbogen { $name } er skrevet i en tegnkodning, der ikke kan
 spelling-dictionary-for = en ordbog for »{ $language }«
 spelling-not-a-word = »{ $word }« kan ikke føjes til dine ord.
 spelling-not-a-language = Der kan ikke gemmes egne ord for »{ $language }«.
+# $language is the language of the list (en, nb); $message says why.
+spelling-own-unreadable = Dine egne ord for »{ $language }« kunne ikke læses: { $message }
+# $path is where the file was moved to, beside where it was.
+spelling-own-set-aside = Dine egne ord for »{ $language }« kunne ikke læses ({ $message }), så ordet blev ikke ændret. Filen er lagt til side som { $path }; et ord, der føjes til nu, begynder en ny liste.

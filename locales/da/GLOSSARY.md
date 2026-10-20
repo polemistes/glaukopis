@@ -218,6 +218,46 @@ kildehenvisninger.
 Annuller, Luk, Færdig, Gem, Anvend, Fjern, Slet, Omdøb, Fortryd, Gentag,
 Vis, Åbn, Søg, Prøv igen, Vælg…
 
+## Nyt i 0.2.3 (2026-10-20)
+
+- **what you are writing** — hvad du skriver; knappen over
+  forhåndsvisningen: »Hvad du skriver: vælg…«; *the chooser* — vælgeren
+  (titel: »Hvad skriver du?«). Det, der vælges, er elementets skabelon.
+- **About this document** (vinduet med et elements oplysninger, sprog og
+  tjekliste) — Om dette dokument. Hed før »Dokumentindstillinger«; ordet
+  *document settings* i løbende tekst er stadig dokumentindstillinger.
+- **chip** (den lille mærkat i kanten af siden i forhåndsvisningen, der
+  siger, hvad en linje er, og åbner Udseende ved den) — skilt (skiltet,
+  skilte). Ikke »mærke«, som er kursiv, fed osv., og ikke »mærkat«, som er
+  mapperne på uglekortet.
+- **running head** — klummetitel (klummetitlen, klummetitler), som dansk
+  typografi kalder den; *header / footer* — sidehoved / sidefod;
+  *page number* — sidetal. Hvor en sætning blot siger, at noget står eller
+  udelades øverst på siderne, er »sidehovedet« godt nok (som i
+  format-title-anonymous-hint og ocr-shape-hint).
+- **the summary** (det, læsningens dialog åbner med) — oversigten;
+  *Back to the summary* — Tilbage til oversigten
+- **the pages** (af en læsning: strimlen af små sider, ruderne og
+  indstillingerne) — siderne; *the strip* — strimlen; *the workbench* —
+  arbejdsbordet (kun i kommentarer)
+- **try a page / a page tried** — prøve en side / en prøvet side;
+  *trial* — prøve (prøven, prøver); *Tried with* — Prøvet med
+- **confidence** — sikkerhed: *Low / Good / High confidence (73%)* — Lav /
+  God / Høj sikkerhed (73 %); *with a confidence of* — med en sikkerhed på
+- **unsure words** — usikre ord
+- **read poorly** — læst dårligt (en side under 80 %)
+- **stretch** (sider læst med de samme egne indstillinger, vist som et bånd
+  over strimlen) — stræk (strækket, stræk); *band* — bånd
+- **Gothic type** — gotisk skrift; skrifttypen hedder **fraktur** med lille
+  begyndelsesbogstav i løbende tekst; Tesseracts model: *the Fraktur model*
+  — frakturmodellen; navnene i sproglisten: »Fraktur (gotisk skrift)« og
+  »Fraktur, dansk og norsk (gotisk skrift)«
+- **percent** — med mellemrum: 73 %
+- **template names** (hvad et dokument er): almindeligt dokument, opgave,
+  tidsskriftsartikel, rapport, videnskabelig bog, afhandling, roman,
+  romanmanuskript, novelle, novellesamling, digte, skuespil, filmmanuskript,
+  brev, blogindlæg, nyhedsartikel
+
 ## Navne, der ikke oversættes
 
 Glaukopis; Pandoc, Typst, Tesseract, Hunspell, LaTeX, LuaLaTeX, BibLaTeX,

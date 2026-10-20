@@ -1,10 +1,11 @@
-# The window of an element's document settings (ADR 0038): its template,
-# the details that stand on its first page, its parts, its layout and
-# reference style, its language, and the checklist.
+# About this document: what an element's document says of itself, its
+# details, its language and the checklist of what its template requires.
+# What the document is, how it looks and what it contains are chosen in the
+# chooser of what you are writing and in Look.
 
-about-window = Impostazioni del documento
-# In the menu of an element, and the button over the preview.
-about-menu = Impostazioni del documento…
+about-window = Informazioni sul documento
+# In the menu of an element, at the foot of Look, and the button over the preview.
+about-menu = Informazioni sul documento…
 about-sections = Parti della finestra
 
 ## The parts of the window, as they stand down its left.

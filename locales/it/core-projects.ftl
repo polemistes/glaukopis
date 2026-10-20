@@ -7,6 +7,7 @@ core-projects-name-too-long = Quel nome è troppo lungo.
 core-projects-id-taken = C'è già un progetto con quell'identificativo.
 core-projects-folder-id-taken = C'è già una cartella con quell'identificativo.
 core-projects-id-exists = Un progetto con quell'identificativo esiste già.
+core-projects-restored-anew = Un progetto con l'identificativo di «{ $name }» c'era già, come quando si entra di nuovo in un progetto condiviso: è stato riportato dal cestino come un progetto a sé, con tutto ciò che conteneva, e non è condiviso.
 core-projects-not-in-history = Questa non è una voce della cronologia.
 core-projects-no-token = Il server non ha dato un token.
 core-projects-not-shared = Il progetto non è condiviso.

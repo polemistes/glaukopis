@@ -5,7 +5,7 @@
 ## The groups of templates, as the chooser lists them.
 
 template-group-own = I tuoi
-template-group-plain = Semplici
+template-group-plain = Per cominciare
 template-group-article = Articoli e saggi
 template-group-book = Libri e tesi
 template-group-fiction = Narrativa
@@ -52,6 +52,8 @@ template-editor = Modello
 template-name = Nome del modello
 # The name a template of one's own is first given, made from that of the template it is made from.
 template-name-changed = { $name }, modificato
+# A template of the writer's own made from another, before it is named: by the other's name.
+template-name-own = { $name }, mio
 template-sections = Parti del modello
 template-bundled = I modelli che vengono con Glaukopis restano come sono. Le tue modifiche si salvano come un modello tuo.
 template-delete = Elimina questo modello
@@ -60,6 +62,7 @@ template-saved = «{ $name }» è salvato tra i tuoi modelli
 template-read-failed = Il modello non si è potuto leggere.
 template-save-failed = Il modello non si è potuto salvare.
 template-delete-failed = Il modello non si è potuto eliminare.
+template-keep-failed = Il modello non si è potuto tenere nel progetto. Su un altro computer, e in un file del progetto, il documento avrà invece il modello solito.
 template-delete-title = Eliminare il modello «{ $name }»?
 template-delete-message = Gli elementi che lo usano useranno invece il modello da cui è stato fatto.
 template-delete-confirm = Elimina il modello
@@ -131,3 +134,23 @@ template-outputs-hint = I tipi di file in cui il documento è offerto quando si 
 template-output-document = Il documento
 template-output-cover = La copertina
 template-output-cover-note = Una copertina a sé la farà una versione futura; ciò che il modello ne dice è tenuto com'è.
+
+## The names of the kinds of text that come with Glaukopis, as the chooser of what you are writing
+## and the button over the preview give them; journals, publishers and style guides keep their own.
+
+template-called-plain = Documento semplice
+template-called-paper = Saggio
+template-called-article = Articolo di rivista
+template-called-report = Rapporto
+template-called-book = Monografia
+template-called-thesis = Tesi
+template-called-novel = Romanzo
+template-called-novel-manuscript = Manoscritto di romanzo
+template-called-short-story = Racconto
+template-called-story-collection = Raccolta di racconti
+template-called-poems = Poesie
+template-called-play = Opera teatrale
+template-called-screenplay = Sceneggiatura
+template-called-letter = Lettera
+template-called-blog-post = Articolo di blog
+template-called-news-article = Articolo di giornale

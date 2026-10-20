@@ -118,6 +118,24 @@ format-level-run-in = løber ind i teksten
 format-level-indent = Indrykket som et afsnit
 format-level-run-in-label = Løber ind i teksten
 format-level-run-in-hint = Overskriften indleder afsnittet og ender med punktum
+format-level-begins = Begynder
+format-level-begins-hint = På en højreside indsættes en tom venstreside, hvor der er brug for det, uden noget i dens sidehoved eller sidefod
+format-level-begins-text = I teksten
+format-level-begins-page = På en ny side
+format-level-begins-right-page = På en højreside
+format-level-right-page-said = på en højreside
+format-level-numbering = Nummerering
+format-level-numbering-hint = Et niveau »som niveauet over« nummereres på samme måde som det, under dets nummer
+format-level-numbering-as-above = Som niveauet over
+format-level-numbering-none = Ingen
+format-level-numbering-arabic = 1, 2, 3
+format-level-numbering-alpha = A, B, C
+format-level-numbering-alpha-lower = a, b, c
+format-level-numbering-roman = I, II, III
+format-level-numbering-roman-lower = i, ii, iii
+# How a level is numbered, said among its look: "numbered I, II, III".
+format-level-numbered-as = nummereret { $style }
+format-level-not-numbered = ikke nummereret
 format-level-new-page-said = på ny side
 format-space-before = Luft før
 format-space-after = Luft efter
@@ -131,6 +149,7 @@ format-title-placement = Titlen står
 format-title-top = Øverst på første side
 format-title-own-page = På en side for sig
 format-title-shown = Hvad der vises
+format-title-how = Hvordan den sættes
 format-title-anonymous = Uden forfatternes navne
 format-title-anonymous-hint = Til fagfællebedømmelse: forfatterne udelades overalt, også i sidehovedet
 format-title-authors = Forfattere
@@ -171,6 +190,7 @@ format-kind-text-note = som opsætningens skrift og afsnit har det
 format-kind-as-base = som grundlaget
 format-kind-resolved = Som det kommer til at stå: { $look }
 format-kind-resolved-nothing = Som det kommer til at stå: som teksten omkring det
+format-kind-resolved-failed = Hvordan det kommer til at stå, kunne ikke regnes ud: { $reason }
 format-as-the-base = Som grundlaget
 # "As the base", with what the base comes to: "As the base (Yes)", "As the base (11 pt)".
 format-as-the-base-is = Som grundlaget ({ $value })
@@ -324,6 +344,36 @@ format-equations-after = Efter nummeret
 
 format-page-numbers = Sidetal
 format-page-numbers-show = Siderne nummereres
+format-page-numbering = Tallenes form
+format-number-arabic = 1, 2, 3
+format-number-roman = I, II, III
+format-number-roman-lower = i, ii, iii
+format-number-letters = A, B, C
+format-number-letters-lower = a, b, c
+format-page-restart = Begynder at tælle siderne forfra her
+format-margin-header = Sidehoved
+format-margin-footer = Sidefod
+format-margin-shown = Vises
+format-margin-first-page = Også på første side
+format-margin-openers = Også på de sider, hvor et kapitel eller en del begynder
+format-margin-openers-hint = En overskrift, der begynder en side, eller en del på en side for sig
+format-margin-alternate = Forskelligt på venstre- og højresider
+format-margin-right-pages = På højresider
+format-margin-left-pages = På venstresider
+format-margin-place-left = Venstre
+format-margin-place-center = Midten
+format-margin-place-right = Højre
+format-margin-add = Tilføj…
+# Said of an item in a place of the header or the footer.
+format-margin-remove = Fjern { $item }
+format-margin-separator = Mellem det, der står
+format-margin-text-placeholder = Dine ord
+format-item-page-number = Sidetal
+format-item-title = Titel
+format-item-author = Forfatter
+format-item-chapter = Kapitel
+format-item-date = Dato
+format-item-text = Mine egne ord
 
 ## About the layout: where its requirements are from.
 

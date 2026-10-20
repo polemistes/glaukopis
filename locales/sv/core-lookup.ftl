@@ -43,6 +43,7 @@ core-lookup-crossref-in-book = En sökning ger inte bokens redaktörer och ISBN.
 core-lookup-book-unreadable = Det Crossref har om boken kunde inte läsas: dess redaktörer kan saknas.
 core-lookup-book-not-fetched = Det Crossref har om boken kunde inte hämtas: dess redaktörer kan saknas.
 core-lookup-chapter-author = Crossref anger ingen författare till kapitlet. Bokens författare har förts in som dess författare.
+core-lookup-chapter-not-found = Kapitlet hittades inte bland bokens delar i det som Crossref har: dess sidor och dess författare har inte hämtats därifrån.
 core-lookup-group-name = ”{ $name }” angavs som namnet på en person, ”{ $family }, { $given }”, och har tagits som namnet på en grupp.
 core-lookup-kind-none = Posten kallar slaget av publikation ingenting. Den har förts in som ”misc”: välj rätt typ.
 core-lookup-kind = Posten kallar slaget av publikation ”{ $kind }”. Den har förts in som ”misc”: välj rätt typ.

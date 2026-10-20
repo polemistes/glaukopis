@@ -45,6 +45,7 @@ project-unshared = Le projet n’est plus partagé
 project-unshared-this = Ce projet n’est plus partagé
 project-left-out = Vous n’êtes plus parmi les collaborateurs
 project-unshared-unfetched = Il n’avait pas été récupéré, il n’y en a donc rien sur cet ordinateur.
+project-unshared-not-removed = Le projet n’avait pas été récupéré, et n’a pas pu être retiré de la liste des projets
 project-unshared-kept = La personne qui le partageait l’a retiré du serveur. Vous gardez le projet tel qu’il est maintenant, et pouvez continuer à y travailler de votre côté.
 project-left-out-kept = Vous gardez le projet tel qu’il est maintenant, et pouvez continuer à y travailler de votre côté. Ce que les autres écrivent après cela ne vous parvient pas.
 project-understood = Compris
@@ -85,6 +86,8 @@ project-badge-joined = { $name }, rejoint
 # Two projects side by side.
 project-beside-failed = Le projet n’a pas pu être ouvert à côté de celui-ci
 project-beside-no-comments = Les commentaires sont ceux du projet que vous avez ouvert : ouvrez l’autre seul pour y commenter
+# A template of the writer's own was saved anew, and the copy of it the project carries could not be made afresh.
+project-template-not-renewed = La copie du modèle que garde le projet n’a pas pu être mise à jour
 # Said over the other pane while elements of one project are dragged over it.
 project-copy-to-project = Copier dans « { $name } »
 project-move-to-project = Déplacer dans « { $name } »

@@ -9,6 +9,8 @@ core-projectfile-unreadable = Die Projektdatei kann nicht gelesen werden: { $err
 core-projectfile-unwritable = Die Projektdatei konnte nicht geschrieben werden: { $error }
 # $name is the name of a part of the file.
 core-projectfile-too-large = Ein Teil der Projektdatei ist zu groß: { $name }
+# What the file says of its pictures could not be read; $cause is what was wrong.
+core-projectfile-pictures-unreadable = Was die Projektdatei über ihre Bilder sagt, konnte nicht gelesen werden; sie kommen daher ohne ihre Namen, Beschriftungen und Beschreibungen: { $cause }
 
 ## What was being done when the system said no, shown before what it said.
 

@@ -118,6 +118,24 @@ format-level-run-in = entra nel testo
 format-level-indent = Rientrato come un paragrafo
 format-level-run-in-label = Entra nel testo
 format-level-run-in-hint = Il titolo comincia il paragrafo e finisce con un punto
+format-level-begins = Comincia
+format-level-begins-hint = Su una pagina destra, dove serve si inserisce una pagina sinistra bianca, senza niente nell'intestazione né nel piè di pagina
+format-level-begins-text = Nel testo
+format-level-begins-page = Su una nuova pagina
+format-level-begins-right-page = Su una pagina destra
+format-level-right-page-said = su una pagina destra
+format-level-numbering = Numerazione
+format-level-numbering-hint = Un livello impostato come quello sopra è numerato nello stesso stile, sotto il numero di quello
+format-level-numbering-as-above = Come il livello sopra
+format-level-numbering-none = Nessuna
+format-level-numbering-arabic = 1, 2, 3
+format-level-numbering-alpha = A, B, C
+format-level-numbering-alpha-lower = a, b, c
+format-level-numbering-roman = I, II, III
+format-level-numbering-roman-lower = i, ii, iii
+# How a level is numbered, said among its look: "numbered I, II, III".
+format-level-numbered-as = numerato { $style }
+format-level-not-numbered = non numerato
 format-level-new-page-said = su una nuova pagina
 format-space-before = Spazio prima
 format-space-after = Spazio dopo
@@ -131,6 +149,7 @@ format-title-placement = Il titolo sta
 format-title-top = In cima alla prima pagina
 format-title-own-page = Su una pagina a sé
 format-title-shown = Che cosa è mostrato
+format-title-how = Come è composto
 format-title-anonymous = Senza i nomi degli autori
 format-title-anonymous-hint = Per la revisione: gli autori sono lasciati fuori dappertutto, anche dalla testatina
 format-title-authors = Autori
@@ -171,6 +190,7 @@ format-kind-text-note = come stabiliscono i caratteri e i paragrafi dell'impagin
 format-kind-as-base = come la base
 format-kind-resolved = Come apparirà: { $look }
 format-kind-resolved-nothing = Come apparirà: come il testo intorno
+format-kind-resolved-failed = Come apparirà non si è potuto stabilire: { $reason }
 format-as-the-base = Come la base
 # "As the base", with what the base comes to: "As the base (Yes)", "As the base (11 pt)".
 format-as-the-base-is = Come la base ({ $value })
@@ -324,6 +344,36 @@ format-equations-after = Dopo il numero
 
 format-page-numbers = Numeri di pagina
 format-page-numbers-show = Le pagine sono numerate
+format-page-numbering = Stile dei numeri
+format-number-arabic = 1, 2, 3
+format-number-roman = I, II, III
+format-number-roman-lower = i, ii, iii
+format-number-letters = A, B, C
+format-number-letters-lower = a, b, c
+format-page-restart = Qui si ricomincia a contare le pagine
+format-margin-header = Intestazione
+format-margin-footer = Piè di pagina
+format-margin-shown = Visibile
+format-margin-first-page = Anche sulla prima pagina
+format-margin-openers = Anche sulle pagine dove comincia un capitolo o una parte
+format-margin-openers-hint = Un titolo che comincia una pagina, o una parte su una pagina a sé
+format-margin-alternate = Cambia fra pagine sinistre e destre
+format-margin-right-pages = Sulle pagine destre
+format-margin-left-pages = Sulle pagine sinistre
+format-margin-place-left = Sinistra
+format-margin-place-center = Centro
+format-margin-place-right = Destra
+format-margin-add = Aggiungi…
+# Said of an item in a place of the header or the footer.
+format-margin-remove = Togli { $item }
+format-margin-separator = Fra gli elementi
+format-margin-text-placeholder = Le tue parole
+format-item-page-number = Numero di pagina
+format-item-title = Titolo
+format-item-author = Autore
+format-item-chapter = Capitolo
+format-item-date = Data
+format-item-text = Parole mie
 
 ## About the layout: where its requirements are from.
 

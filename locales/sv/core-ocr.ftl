@@ -17,10 +17,16 @@ ocr-no-pages = ”{ $file }” har inga sidor.
 ocr-locked = ”{ $file }” är låst med ett lösenord, och dess sidor kan inte ritas upp.
 ocr-unreadable = ”{ $file }” kunde inte läsas som PDF. Den kan vara skadad.
 ocr-page-not-drawn = Sidan { $page } kunde inte ritas upp.
+ocr-no-such-page = PDF:en har ingen sida { $page }: den har { $pages }.
+ocr-reading-gone = Läsningen finns inte längre kvar: läs filen igen.
 ocr-picture-unreadable = Bilden kunde inte läsas: { $message }
 ocr-not-made = Tesseract gjorde inte { $path }.
 ocr-not-made-said = Tesseract gjorde inte { $path }. Det sa: { $message }
 ocr-drawing = En ritning (SVG) har ingen bild i sig att läsa text ur.
+ocr-child-time = Läsningen av ”{ $file }” tog längre tid än den får, och stoppades. Filen kan vara skadad, eller gjord på ett sätt som inte kan läsas.
+ocr-child-memory = Läsningen av ”{ $file }” tog mer minne än den får, och stoppades. Filen kan vara skadad, eller gjord på ett sätt som inte kan läsas.
+ocr-child-failed = ”{ $file }” kunde inte läsas: { $message }
+ocr-child-not-started = ”{ $file }” kunde inte läsas, eftersom ingen process kunde startas för att läsa in den: { $message }
 
 ## Making a PDF searchable.
 
@@ -36,6 +42,13 @@ ocr-remark-more-failed = { $count ->
    *[other] Ytterligare { $count } sidor kunde inte läsas.
 }
 ocr-remark-empty = Ingen text hittades.
+ocr-remark-poorly = { $count ->
+    [one] En sida lästes dåligt: { $pages }. Ett annat språk, frakturmodellen för gotisk skrift eller en annan layout kan läsa den bättre; pröva den innan du läser den igen.
+   *[other] { $count } sidor lästes dåligt: { $pages }. Ett annat språk, frakturmodellen för gotisk skrift eller en annan layout kan läsa dem bättre; pröva en sida innan du läser om alla.
+}
+ocr-remark-fraktur = Böcker i gotisk skrift, som många norska, danska, svenska och tyska böcker var före omkring 1900, läses med frakturmodellen, vald först eller ensam, vilket språk de än är på. Den känner inte till æ, ø och å, och läser dem som e, o och a.
+# The same, where Norwegian or Danish was read: the Fraktur model of Glaukopis's server that knows æ, ø and å.
+ocr-remark-fraktur-dan = Norska och danska böcker i gotisk skrift, som många var före omkring 1900, läses med Fraktur, danska och norska, importerad från Glaukopis server och vald först eller ensam, vilka språk som än står bredvid: den känner till æ, ø och å, vilket frakturmodellen som gjordes för tyska inte gör.
 
 ## What a reading of a PDF came to (ADR 0044).
 

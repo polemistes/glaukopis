@@ -4,6 +4,12 @@
 ## Making a document.
 
 core-export-picture-missing = Biletet «{ $name }» finst ikkje på denne datamaskina, og er utelate frå dokumentet.
+# Pictures that are in the store, and could not be put where the document is made: $error is why the first could not.
+core-export-files-not-placed = { $count ->
+    [one] Fila til eit bilete kunne ikkje leggjast der dokumentet blir laga, og biletet er utelate frå det: { $error }
+   *[other] Filene til { $count } bilete kunne ikkje leggjast der dokumentet blir laga, og bileta er utelatne frå det: { $error }
+}
+core-export-cover-left-out = Biletet på omslaget kunne ikkje leggjast der boka blir laga, og boka har ikkje noko omslag: { $error }
 core-export-astray = { $count ->
     [one] Ein kryssreferanse i teksten viser til noko som ikkje er i dokumentet. Han er sett som [?].
    *[other] Kryssreferansar i teksten viser, på { $count } stader, til noko som ikkje er i dokumentet. Dei er sette som [?].

@@ -7,6 +7,7 @@ core-projects-name-too-long = Det namnet är för långt.
 core-projects-id-taken = Det finns redan ett projekt med det id:t.
 core-projects-folder-id-taken = Det finns redan en mapp med det id:t.
 core-projects-id-exists = Ett projekt med det id:t finns redan.
+core-projects-restored-anew = Ett projekt med id:t för ”{ $name }” fanns redan, som när man går med i ett delat projekt igen: det har tagits tillbaka ur papperskorgen som ett eget projekt, med allt det innehöll, och är inte delat.
 core-projects-not-in-history = Det är inte en post i historiken.
 core-projects-no-token = Servern gav ingen nyckel.
 core-projects-not-shared = Projektet är inte delat.

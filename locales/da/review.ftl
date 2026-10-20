@@ -11,6 +11,10 @@ review-since-named = Siden »{ $name }«
 # When the moment compared with was, under what it is.
 review-since-when = Fra { $when }
 review-choose-since = Gennemgå fra et andet tidspunkt
+# Mends a review that has gone wrong: what was accepted since the moment
+# reviewed from is forgotten, and those changes are shown again.
+review-forget-accepted = Glem det, du har godtaget
+review-forget-accepted-hint = De ændringer, du har godtaget siden da, vises igen, så de kan gennemgås på ny.
 review-own = Også dine egne ændringer
 review-show-org = Vis som Org
 review-unit = Gennemgå efter
@@ -80,6 +84,7 @@ review-versions-count = { $count ->
 }
 review-versions-reading = Læser dens historik…
 review-versions-none = Intet skete mellem de to ender.
+review-versions-failed = Dens historik kunne ikke læses.
 review-version-by = { $who }, { $when }
 review-accept-up-to = Godtag hertil
 review-use-version = Brug denne version

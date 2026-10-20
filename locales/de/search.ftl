@@ -71,3 +71,7 @@ search-where-note = Was Sie von { $work } halten
 search-in-note = Anmerkung
 search-untitled = Ohne Titel
 search-could-not-read = { $name } konnte nicht gelesen werden.
+search-read-in-part = { $name } wurde nur zum Teil gelesen und wird ohne { $count ->
+    [one] eine Änderung
+   *[other] { $count } Änderungen
+} durchsucht, die nicht gelesen werden konnten.

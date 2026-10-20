@@ -4,6 +4,11 @@ settings-title = Réglages
 settings-error-system = Quelque chose de l’application n’a pas pu être lu
 settings-error-read = Les réglages n’ont pas pu être lus
 settings-error-save = Les réglages n’ont pas pu être enregistrés
+settings-error-fonts = Les polices de cet ordinateur n’ont pas pu être énumérées
+settings-error-templates = Les modèles n’ont pas pu être énumérés
+# A damaged file of settings was renamed and left beside where it was; $path is where it is now.
+settings-set-aside = Les réglages n’ont pas pu être lus, et sont mis de côté sous le nom { $path } ; les réglages par défaut sont utilisés
+settings-set-aside-person = Les réglages n’ont pas pu être lus, et sont mis de côté sous le nom { $path } ; les réglages par défaut sont utilisés, et cet ordinateur est une nouvelle personne dans l’historique des projets
 
 ## Appearance
 
@@ -53,13 +58,14 @@ settings-new-documents = Nouveaux documents
 # Whether a new project opens in its diagram or in its text; the choices are the names of the two views.
 settings-new-project-view = Vue des nouveaux projets
 settings-new-project-view-hint = La vue dans laquelle s’ouvre un projet qui vient d’être créé.
-settings-template = Modèle
-settings-document-format = Mise en page
-settings-reference-style = Style de référence
+settings-template = Ce que sont les nouveaux documents
+settings-document-format = L’aspect de leurs pages
+settings-reference-style = Leur façon de citer
 
 ## You
 
 settings-you = Vos coordonnées
+settings-you-about = Votre nom est celui sous lequel vous connaissent l’historique d’un projet et ceux avec qui vous le partagez. Un nouveau projet vous a pour auteur, avec votre organisme, votre adresse électronique et votre ORCID ; cela se change dans les réglages du document du projet. Le titre, l’adresse et le téléphone sont gardés pour les documents qui les demanderont ; rien ne s’en sert encore. Glaukopis n’envoie rien de tout cela nulle part de lui-même : ce qui figure dans les réglages du document d’un projet part avec le projet quand vous le partagez ou l’exportez.
 settings-first-name = Prénom
 settings-last-name = Nom
 settings-organization = Organisation
@@ -101,6 +107,8 @@ settings-language = Langue
 settings-language-interface = L’interface
 settings-language-system = Comme le système ({ $language })
 settings-language-texts = Langue des nouveaux textes
+# The words of the language chosen for the interface could not be read; it stays in the one it was in.
+settings-language-error-load = Les mots de l’interface en { $language } n’ont pas pu être chargés
 
 ## The log of the runs.
 
@@ -110,3 +118,10 @@ settings-logs-hint = { $count ->
     [many] Ce que Glaukopis a dit de lui-même à chacun de ses { $count } derniers lancements : ce qu’il a fait, ce qui s’est mal passé, et ce qu’est devenue sa fenêtre. Utile quand quelque chose s’est mal passé sans que personne ne voie pourquoi.
    *[other] Ce que Glaukopis a dit de lui-même à chacun de ses { $count } derniers lancements : ce qu’il a fait, ce qui s’est mal passé, et ce qu’est devenue sa fenêtre. Utile quand quelque chose s’est mal passé sans que personne ne voie pourquoi.
 }
+
+## What a line of the preview is: whether a chip at the edge of a page names it.
+
+settings-page-chips = Nommer ce qu’est une ligne de l’aperçu
+settings-page-chips-hint = Quand on appuie sur une ligne de l’aperçu, une pastille au bord de la page dit ce qu’est la ligne (texte, citation, titre…) et ouvre le volet Aspect là où elle se règle ; un nouvel appui fait disparaître la pastille.
+settings-page-chips-on = Activé
+settings-page-chips-off = Désactivé

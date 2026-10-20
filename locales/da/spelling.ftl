@@ -7,6 +7,7 @@ spelling-no-suggestions = Intet lignende i ordbogen
 spelling-add-word = Føj til mine ord
 spelling-ignore = Ignorer i dette projekt
 spelling-add-failed = Ordet kunne ikke tilføjes
+spelling-suggest-failed = Hvad det kan være, kunne ikke slås op
 
 ## What the menu says where there is no misspelt word (F7).
 
@@ -14,6 +15,8 @@ spelling-nothing = Intet er stavet forkert her.
 # $language is the name of the language of the map: Latin.
 # $language is the name of the language of the map: Latin.
 spelling-no-dictionary = Der er ingen ordbog for { $language }: stavningen kontrolleres ikke. Ordbøger importeres under Indstillinger › Sprog › Stavning.
+# $language is the name of the language of the map: Latin.
+spelling-failed = Ordbogen for { $language } kunne ikke læses, så stavningen kontrolleres ikke.
 spelling-not-ready = Ordbogen indlæses. Prøv igen om et øjeblik.
 spelling-off = Stavningen kontrolleres ikke. Det slås til i indstillingerne.
 
@@ -41,3 +44,5 @@ spelling-add-word-here = Tilføj
 spelling-remove-word = Fjern »{ $word }«
 spelling-settings-failed = Ordbøgerne kunne ikke vises
 spelling-remove-failed = Ordet kunne ikke fjernes
+# $language is the name of a language: German. $reason is why, as the log has it.
+spelling-dictionary-failed = Ordbogen for { $language } kunne ikke læses: { $reason }

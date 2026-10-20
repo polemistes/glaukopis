@@ -17,10 +17,16 @@ ocr-no-pages = „{ $file }“ hat keine Seiten.
 ocr-locked = „{ $file }“ ist mit einem Passwort gesperrt, und seine Seiten können nicht gezeichnet werden.
 ocr-unreadable = „{ $file }“ konnte nicht als PDF gelesen werden. Es ist vielleicht beschädigt.
 ocr-page-not-drawn = Seite { $page } konnte nicht gezeichnet werden.
+ocr-no-such-page = Das PDF hat keine Seite { $page }: es hat { $pages }.
+ocr-reading-gone = Die Lesung wird nicht mehr aufbewahrt: lesen Sie die Datei erneut.
 ocr-picture-unreadable = Das Bild konnte nicht gelesen werden: { $message }
 ocr-not-made = Tesseract hat { $path } nicht erzeugt.
 ocr-not-made-said = Tesseract hat { $path } nicht erzeugt. Es sagte: { $message }
 ocr-drawing = Eine Zeichnung (SVG) hat kein Bild in sich, aus dem Text gelesen werden könnte.
+ocr-child-time = Das Lesen von „{ $file }“ dauerte länger, als es darf, und wurde abgebrochen. Die Datei ist vielleicht beschädigt oder so gemacht, dass sie nicht gelesen werden kann.
+ocr-child-memory = Das Lesen von „{ $file }“ brauchte mehr Speicher, als es darf, und wurde abgebrochen. Die Datei ist vielleicht beschädigt oder so gemacht, dass sie nicht gelesen werden kann.
+ocr-child-failed = „{ $file }“ konnte nicht gelesen werden: { $message }
+ocr-child-not-started = „{ $file }“ konnte nicht gelesen werden, da kein Prozess gestartet werden konnte, der es einliest: { $message }
 
 ## Making a PDF searchable.
 
@@ -36,6 +42,13 @@ ocr-remark-more-failed = { $count ->
    *[other] { $count } weitere Seiten konnten nicht gelesen werden.
 }
 ocr-remark-empty = Es wurde kein Text gefunden.
+ocr-remark-poorly = { $count ->
+    [one] Eine Seite wurde schlecht gelesen: { $pages }. Eine andere Sprache, das Fraktur-Modell für gebrochene Schrift oder ein anderer Aufbau der Seite liest sie vielleicht besser; probieren Sie es aus, bevor Sie sie erneut lesen.
+   *[other] { $count } Seiten wurden schlecht gelesen: { $pages }. Eine andere Sprache, das Fraktur-Modell für gebrochene Schrift oder ein anderer Aufbau der Seite liest sie vielleicht besser; probieren Sie eine Seite aus, bevor Sie alle erneut lesen.
+}
+ocr-remark-fraktur = Bücher in Fraktur, wie viele norwegische, dänische, schwedische und deutsche vor etwa 1900, werden mit dem Fraktur-Modell gelesen, zuerst oder allein gewählt, welche Sprache sie auch haben. Es kennt kein æ, ø oder å und liest sie als e, o und a.
+# The same, where Norwegian or Danish was read: the Fraktur model of Glaukopis's server that knows æ, ø and å.
+ocr-remark-fraktur-dan = Norwegische und dänische Bücher in Fraktur, wie viele vor etwa 1900, werden mit „Fraktur, Dänisch und Norwegisch“ gelesen, vom Server von Glaukopis importiert und zuerst oder allein gewählt, welche Sprachen auch daneben stehen: es kennt æ, ø und å, die das für Deutsch gemachte Fraktur-Modell nicht kennt.
 
 ## What a reading of a PDF came to (ADR 0044).
 

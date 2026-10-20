@@ -15,6 +15,7 @@ common-open = Opne
 common-search = Søk
 common-try-again = Prøv igjen
 common-choose = Vel …
+common-link-open-failed = Lenkja kunne ikkje opnast
 
 ## How long ago something was: "Changed { $ago }".
 

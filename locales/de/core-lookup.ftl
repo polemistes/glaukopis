@@ -43,6 +43,7 @@ core-lookup-crossref-in-book = Eine Suche gibt die Herausgeber und die ISBN des 
 core-lookup-book-unreadable = Was Crossref über das Buch hat, konnte nicht gelesen werden: seine Herausgeber fehlen vielleicht.
 core-lookup-book-not-fetched = Was Crossref über das Buch hat, konnte nicht geholt werden: seine Herausgeber fehlen vielleicht.
 core-lookup-chapter-author = Crossref nennt keinen Autor für das Kapitel. Der Autor des Buches wurde als sein Autor eingetragen.
+core-lookup-chapter-not-found = Das Kapitel wurde in dem, was Crossref hat, nicht unter den Teilen des Buches gefunden: seine Seiten und seine Autoren wurden nicht von dort übernommen.
 core-lookup-group-name = „{ $name }“ war als Name einer Person angegeben, „{ $family }, { $given }“, und wurde als Name einer Gruppe genommen.
 core-lookup-kind-none = Der Datensatz nennt die Art der Veröffentlichung nicht. Sie wurde als „misc“ eingetragen: wählen Sie den richtigen Typ.
 core-lookup-kind = Der Datensatz nennt die Art der Veröffentlichung „{ $kind }“. Sie wurde als „misc“ eingetragen: wählen Sie den richtigen Typ.

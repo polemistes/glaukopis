@@ -7,6 +7,7 @@ spelling-no-suggestions = Nichts Ähnliches im Wörterbuch
 spelling-add-word = Zu meinen Wörtern hinzufügen
 spelling-ignore = In diesem Projekt übergehen
 spelling-add-failed = Das Wort konnte nicht hinzugefügt werden
+spelling-suggest-failed = Was es sein könnte, ließ sich nicht nachschlagen
 
 ## What the menu says where there is no misspelt word (F7).
 
@@ -14,6 +15,8 @@ spelling-nothing = Hier ist nichts falsch geschrieben.
 # $language is the name of the language of the map: Latin.
 # $language is the name of the language of the map: Latin.
 spelling-no-dictionary = Für { $language } gibt es kein Wörterbuch: die Rechtschreibung wird nicht geprüft. Wörterbücher werden unter Einstellungen › Sprache › Rechtschreibung importiert.
+# $language is the name of the language of the map: Latin.
+spelling-failed = Das Wörterbuch für { $language } konnte nicht gelesen werden, daher wird die Rechtschreibung nicht geprüft.
 spelling-not-ready = Das Wörterbuch wird gelesen. Versuchen Sie es gleich noch einmal.
 spelling-off = Die Rechtschreibung wird nicht geprüft. Sie wird in den Einstellungen eingeschaltet.
 
@@ -41,3 +44,5 @@ spelling-add-word-here = Hinzufügen
 spelling-remove-word = „{ $word }“ wegnehmen
 spelling-settings-failed = Die Wörterbücher konnten nicht aufgelistet werden
 spelling-remove-failed = Das Wort konnte nicht weggenommen werden
+# $language is the name of a language: German. $reason is why, as the log has it.
+spelling-dictionary-failed = Das Wörterbuch für { $language } konnte nicht gelesen werden: { $reason }

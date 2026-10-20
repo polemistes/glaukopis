@@ -43,6 +43,7 @@ core-lookup-crossref-in-book = Une recherche ne donne pas les directeurs de publ
 core-lookup-book-unreadable = Ce que Crossref a sur le livre n’a pas pu être lu : ses directeurs de publication manquent peut-être.
 core-lookup-book-not-fetched = Ce que Crossref a sur le livre n’a pas pu être récupéré : ses directeurs de publication manquent peut-être.
 core-lookup-chapter-author = Crossref ne nomme pas d’auteur pour le chapitre. L’auteur du livre a été entré comme son auteur.
+core-lookup-chapter-not-found = Le chapitre n’a pas été trouvé parmi les parties du livre dans ce que Crossref en a : ses pages et ses auteurs n’en ont pas été pris.
 core-lookup-group-name = « { $name } » était donné comme le nom d’une personne, « { $family }, { $given } », et a été pris comme le nom d’un groupe.
 core-lookup-kind-none = La notice ne dit pas de quel type de publication il s’agit. Elle a été entrée comme « misc » : choisissez le bon type.
 core-lookup-kind = La notice appelle le type de publication « { $kind } ». Elle a été entrée comme « misc » : choisissez le bon type.

@@ -4,6 +4,11 @@ settings-title = Innstillingar
 settings-error-system = Opplysningane om programmet kunne ikkje lesast
 settings-error-read = Innstillingane kunne ikkje lesast
 settings-error-save = Innstillingane kunne ikkje lagrast
+settings-error-fonts = Skriftene på denne datamaskina kunne ikkje listast opp
+settings-error-templates = Malane kunne ikkje listast opp
+# A damaged file of settings was renamed and left beside where it was; $path is where it is now.
+settings-set-aside = Innstillingane kunne ikkje lesast, og er lagde til side som { $path }; standardinnstillingane blir brukte
+settings-set-aside-person = Innstillingane kunne ikkje lesast, og er lagde til side som { $path }; standardinnstillingane blir brukte, og denne datamaskina er ein ny person i historikken til prosjekta
 
 ## Appearance
 
@@ -53,13 +58,14 @@ settings-new-documents = Nye dokument
 # Whether a new project opens in its diagram or in its text; the choices are the names of the two views.
 settings-new-project-view = Nye prosjekt blir opna i
 settings-new-project-view-hint = Visinga eit prosjekt blir opna i når det nettopp er laga.
-settings-template = Mal
-settings-document-format = Oppsett
-settings-reference-style = Referansestil
+settings-template = Kva nye dokument er
+settings-document-format = Korleis sidene ser ut
+settings-reference-style = Korleis dei viser til kjelder
 
 ## You
 
 settings-you = Opplysningar om deg
+settings-you-about = Namnet ditt er det historikken til eit prosjekt og dei du deler det med, kallar deg. Eit nytt prosjekt har deg som forfattar, med organisasjon, e-post og ORCID; det blir endra i dokumentinnstillingane til prosjektet. Tittel, adresse og telefon blir tekne vare på for dokument som vil be om dei; ingenting bruker dei enno. Glaukopis sender ikkje noko av dette nokon stad av seg sjølv: det som står i dokumentinnstillingane til eit prosjekt, følgjer med prosjektet når du deler eller eksporterer det.
 settings-first-name = Førenamn
 settings-last-name = Etternamn
 settings-organization = Organisasjon
@@ -101,8 +107,17 @@ settings-language = Språk
 settings-language-interface = Grensesnittet
 settings-language-system = Som systemet ({ $language })
 settings-language-texts = Språk for nye tekstar
+# The words of the language chosen for the interface could not be read; it stays in the one it was in.
+settings-language-error-load = Orda på { $language } kunne ikkje lastast inn
 
 ## The log of the runs.
 
 settings-logs = Loggen
 settings-logs-hint = Det Glaukopis fortel om seg sjølv i kvar køyring, for dei siste { $count } køyringane: kva det gjorde, kva som gjekk gale, og kva som vart av vindauget. Til nytte når noko har gått gale og ingen såg kvifor.
+
+## What a line of the preview is: whether a chip at the edge of a page names it.
+
+settings-page-chips = Vis kva ei linje i førehandsvisinga er
+settings-page-chips-hint = Trykkjer du på ei linje i førehandsvisinga, viser ei brikke ved kanten av sida kva linja er (tekst, eit sitat, ei overskrift …) og opnar Utsjånad der; trykkjer du igjen, forsvinn brikka.
+settings-page-chips-on = På
+settings-page-chips-off = Av

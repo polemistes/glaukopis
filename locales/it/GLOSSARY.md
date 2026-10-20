@@ -201,6 +201,32 @@ Il senso di ciascuna parola è in `locales/GLOSSARY.md`.
 | the home page | la pagina dei progetti | |
 | the words of Glaukopis (words.ftl) | le parole di Glaukopis | un progetto di parole, per tradurle e correggerle; «file Fluent» |
 
+## Nuovo nella 0.2.3 (2026-10-20)
+
+| inglese | italiano | note |
+| --- | --- | --- |
+| what you are writing | che cosa stai scrivendo | il pulsante sopra l'anteprima e il titolo della scelta: «Che cosa stai scrivendo?»; ciò che il documento è, cioè il suo modello |
+| the chooser (of what you are writing) | la scelta di che cosa scrivi | la finestra dei modelli; «selettore» no, è parola da informatici |
+| About this document | Informazioni sul documento | la finestra delle impostazioni del documento di un elemento (dettagli, lingua, lista di controllo); fino al 2026-10-20 «Impostazioni del documento» |
+| chip | cartellino | la piccola etichetta al bordo della pagina dell'anteprima che dice che cos'è una riga; non «etichetta», che è già delle citazioni e delle associazioni |
+| name the lines | dare un nome alle righe | l'interruttore dei cartellini |
+| running head | testatina | come già in `format.ftl` e `ocr.ftl` |
+| header, footer (as places) | intestazione, piè di pagina | a sinistra, al centro, a destra; sulla prima pagina e sulle altre |
+| the summary (of a reading) | il riepilogo | la finestra di una lettura come si apre: «Torna al riepilogo» |
+| the pages (of a reading), the workbench | le pagine | «Guarda le pagine e provale…»; la striscia in alto e i tre riquadri |
+| the strip | la striscia | delle pagine in piccolo |
+| try a page, a page tried | provare una pagina, pagina provata | letta una volta con le impostazioni che valgono per essa: «Prova la pagina 40» |
+| trial, Tried with | prova, Provata con | le prove di una pagina, tenute ed elencate |
+| confidence | affidabilità | quanto Tesseract era sicuro: «Affidabilità bassa (73%)», «Affidabilità buona (85%)», «Affidabilità alta (93%)»; il numero con `%` attaccato, come negli altri file |
+| unsure words | parole incerte | «89 parole incerte su 251» |
+| read poorly | letta male | una pagina sotto l'80% |
+| stretch | tratto | pagine lette con impostazioni proprie, mostrate come fasce sopra la striscia; «un tratto di pagine» |
+| band | fascia | sopra la striscia |
+| Gothic type | caratteri gotici | la stampa dei libri tedeschi e scandinavi di un tempo; *Fraktur* resta il nome del carattere |
+| the Fraktur model | il modello Fraktur | il modello di Tesseract per i caratteri gotici; «modello» qui solo insieme con *Fraktur*, mai da solo, per non confonderlo con il modello di un documento |
+| What the pages take | Che cosa prendono le pagine | il testo del PDF, una lettura di Tesseract, o la qualità del testo decide pagina per pagina |
+| What is made of it | Che cosa se ne fa | scelto dopo la lettura |
+
 ## Nomi che non si traducono
 
 Glaukopis; Pandoc, Typst, Tesseract, Hunspell, LaTeX, LuaLaTeX, BibLaTeX,

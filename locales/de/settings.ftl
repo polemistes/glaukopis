@@ -4,6 +4,11 @@ settings-title = Einstellungen
 settings-error-system = Etwas an der Anwendung konnte nicht gelesen werden
 settings-error-read = Die Einstellungen konnten nicht gelesen werden
 settings-error-save = Die Einstellungen konnten nicht gespeichert werden
+settings-error-fonts = Die Schriften dieses Computers konnten nicht aufgelistet werden
+settings-error-templates = Die Vorlagen konnten nicht aufgelistet werden
+# A damaged file of settings was renamed and left beside where it was; $path is where it is now.
+settings-set-aside = Die Einstellungen konnten nicht gelesen werden und sind als { $path } beiseitegelegt; die Standardeinstellungen gelten
+settings-set-aside-person = Die Einstellungen konnten nicht gelesen werden und sind als { $path } beiseitegelegt; die Standardeinstellungen gelten, und dieser Computer ist im Verlauf der Projekte eine neue Person
 
 ## Appearance
 
@@ -53,13 +58,14 @@ settings-new-documents = Neue Dokumente
 # Whether a new project opens in its diagram or in its text; the choices are the names of the two views.
 settings-new-project-view = Ansicht neuer Projekte
 settings-new-project-view-hint = Die Ansicht, in der sich ein Projekt öffnet, das gerade angelegt wurde.
-settings-template = Vorlage
-settings-document-format = Layout
-settings-reference-style = Zitierstil
+settings-template = Was neue Dokumente sind
+settings-document-format = Wie ihre Seiten aussehen
+settings-reference-style = Wie sie zitieren
 
 ## You
 
 settings-you = Ihre Angaben
+settings-you-about = Ihr Name ist, wie der Verlauf eines Projekts und die, mit denen Sie es teilen, Sie nennen. Ein neues Projekt hat Sie als Autor, mit Ihrer Organisation, E-Mail und ORCID; das wird in den Dokumenteinstellungen des Projekts geändert. Titel, Adresse und Telefon werden für Dokumente aufbewahrt, die danach fragen werden; noch verwendet sie nichts. Glaukopis sendet nichts davon von selbst irgendwohin: was in den Dokumenteinstellungen eines Projekts steht, geht mit dem Projekt, wenn Sie es teilen oder exportieren.
 settings-first-name = Vorname
 settings-last-name = Nachname
 settings-organization = Organisation
@@ -101,8 +107,17 @@ settings-language = Sprache
 settings-language-interface = Die Oberfläche
 settings-language-system = Wie das System ({ $language })
 settings-language-texts = Sprache neuer Texte
+# The words of the language chosen for the interface could not be read; it stays in the one it was in.
+settings-language-error-load = Die Texte der Oberfläche für { $language } konnten nicht geladen werden
 
 ## The log of the runs.
 
 settings-logs = Das Protokoll
 settings-logs-hint = Was Glaukopis in jeder Sitzung über sich selbst festhält, aus den letzten { $count } Sitzungen: was es getan hat, was schiefging und was aus seinem Fenster wurde. Nützlich, wenn etwas schiefgegangen ist und niemand sah, warum.
+
+## What a line of the preview is: whether a chip at the edge of a page names it.
+
+settings-page-chips = Benennen, was eine Zeile der Vorschau ist
+settings-page-chips-hint = Beim Klicken zeigt eine Zeile der Vorschau am Rand der Seite ein Etikett, das sagt, was die Zeile ist (Text, ein Zitat, eine Überschrift…), und das Aussehen dort öffnet; beim nächsten Klicken verschwindet das Etikett.
+settings-page-chips-on = Ein
+settings-page-chips-off = Aus

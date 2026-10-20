@@ -11,6 +11,10 @@ review-since-named = Seit „{ $name }“
 # When the moment compared with was, under what it is.
 review-since-when = Ab { $when }
 review-choose-since = Ab einem anderen Zeitpunkt durchsehen
+# Mends a review that has gone wrong: what was accepted since the moment
+# reviewed from is forgotten, and those changes are shown again.
+review-forget-accepted = Vergessen, was Sie angenommen haben
+review-forget-accepted-hint = Die Änderungen, die Sie seitdem angenommen haben, werden wieder gezeigt, um neu durchgesehen zu werden.
 review-own = Auch Ihre eigenen Änderungen
 review-show-org = Als Org zeigen
 review-unit = Durchsehen nach
@@ -80,6 +84,7 @@ review-versions-count = { $count ->
 }
 review-versions-reading = Der Verlauf dieser Änderung wird gelesen…
 review-versions-none = Zwischen den beiden Enden ist nichts geschehen.
+review-versions-failed = Der Verlauf dieser Änderung konnte nicht gelesen werden.
 review-version-by = { $who }, { $when }
 review-accept-up-to = Bis hierher annehmen
 review-use-version = Diese Fassung nehmen

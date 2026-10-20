@@ -4,6 +4,9 @@
 ## The panel beside the map, and what is chosen over it.
 
 preview = Forhåndsvisning
+# The button over the pages that names what the document is and opens the chooser of what you are writing.
+preview-what-title = Hvad du skriver: vælg…
+preview-what-label = Hvad dette dokument er: { $name }. Vælg, hvad du skriver
 # The last among the reference styles, which opens the search for more.
 preview-style-more = Flere stile…
 # Shows in the text the element whose place in the pages is looked at.
@@ -95,3 +98,25 @@ preview-export-show-in-folder = Vis i mappen
 preview-export-open-failed = Filen kunne ikke åbnes
 preview-export-folder-failed = Mappen kunne ikke åbnes
 preview-export-another = Eksporter en til
+
+## What a line of a page is: the chip at the edge of the page that names the
+## line the pointer rests on and opens Look at it, and its switch at the foot.
+
+# On the chip: what the line is.
+preview-what-text = Tekst
+# A heading, by its level: Heading 1, Heading 2.
+preview-what-heading = Overskrift { $level }
+preview-what-note = Note
+preview-what-bibliography = Litteraturliste
+preview-what-figure = Figur
+preview-what-table = Tabel
+preview-what-front = Forside
+# What the chip does, as it is told to those who cannot see it; what the line is: Quotation, Heading 1.
+preview-what-open = Hvordan »{ $what }« ser ud…
+# The switch at the foot of the preview, while the chips are not shown and while they are.
+preview-chips = Navngiv sidens linjer
+preview-chips-off = Hold op med at navngive linjerne
+
+preview-what-page = Side
+preview-what-header = Sidehoved
+preview-what-footer = Sidefod

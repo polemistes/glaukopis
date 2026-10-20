@@ -71,3 +71,7 @@ search-where-note = Vad du tycker om { $work }
 search-in-note = not
 search-untitled = Utan titel
 search-could-not-read = { $name } kunde inte läsas.
+search-read-in-part = { $name } lästes bara delvis, och genomsöks utan { $count ->
+    [one] en ändring
+   *[other] { $count } ändringar
+} som inte kunde läsas.

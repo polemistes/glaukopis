@@ -4,6 +4,12 @@
 ## Making a document.
 
 core-export-picture-missing = Das Bild „{ $name }“ ist nicht auf diesem Computer und bleibt im Dokument weg.
+# Pictures that are in the store, and could not be put where the document is made: $error is why the first could not.
+core-export-files-not-placed = { $count ->
+    [one] Die Datei eines Bildes konnte nicht dorthin gelegt werden, wo das Dokument erzeugt wird, und das Bild bleibt darin weg: { $error }
+   *[other] Die Dateien von { $count } Bildern konnten nicht dorthin gelegt werden, wo das Dokument erzeugt wird, und die Bilder bleiben darin weg: { $error }
+}
+core-export-cover-left-out = Das Bild des Umschlags konnte nicht dorthin gelegt werden, wo das Buch erzeugt wird, und das Buch hat keinen Umschlag: { $error }
 core-export-astray = { $count ->
     [one] Ein Verweis im Text zeigt auf etwas, das nicht im Dokument ist. Er wird als [?] gesetzt.
    *[other] { $count } Verweise im Text zeigen auf etwas, das nicht im Dokument ist. Sie werden als [?] gesetzt.

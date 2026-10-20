@@ -71,3 +71,7 @@ search-where-note = Det du tenkjer om { $work }
 search-in-note = note
 search-untitled = Utan namn
 search-could-not-read = { $name } kunne ikkje lesast.
+search-read-in-part = { $name } vart berre delvis lesen, og blir søkt i utan { $count ->
+    [one] éi endring
+   *[other] { $count } endringar
+} som ikkje kunne lesast.

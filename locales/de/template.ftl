@@ -5,7 +5,7 @@
 ## The groups of templates, as the chooser lists them.
 
 template-group-own = Eigene
-template-group-plain = Schlicht
+template-group-plain = Für den Anfang
 template-group-article = Artikel und Aufsätze
 template-group-book = Bücher und Abschlussarbeiten
 template-group-fiction = Belletristik
@@ -52,6 +52,8 @@ template-editor = Vorlage
 template-name = Name der Vorlage
 # The name a template of one's own is first given, made from that of the template it is made from.
 template-name-changed = { $name }, geändert
+# A template of the writer's own made from another, before it is named: by the other's name.
+template-name-own = { $name }, eigene
 template-sections = Bereiche der Vorlage
 template-bundled = Die Vorlagen, die Glaukopis mitbringt, bleiben, wie sie sind. Ihre Änderungen werden als eigene Vorlage gespeichert.
 template-delete = Diese Vorlage löschen
@@ -60,6 +62,7 @@ template-saved = „{ $name }“ ist unter Ihren eigenen Vorlagen gespeichert
 template-read-failed = Die Vorlage konnte nicht gelesen werden.
 template-save-failed = Die Vorlage konnte nicht gespeichert werden.
 template-delete-failed = Die Vorlage konnte nicht gelöscht werden.
+template-keep-failed = Die Vorlage konnte nicht im Projekt aufbewahrt werden. Auf einem anderen Computer und in einer Datei des Projekts hat das Dokument stattdessen die gewohnte Vorlage.
 template-delete-title = Die Vorlage „{ $name }“ löschen?
 template-delete-message = Elemente, die sie verwenden, verwenden stattdessen die Vorlage, aus der sie gemacht wurde.
 template-delete-confirm = Vorlage löschen
@@ -131,3 +134,23 @@ template-outputs-hint = Die Dateiarten, als die das Dokument beim Export angebot
 template-output-document = Das Dokument
 template-output-cover = Der Umschlag
 template-output-cover-note = Einen eigenen Umschlag erzeugt eine spätere Version; was die Vorlage darüber sagt, bleibt erhalten, wie es ist.
+
+## The names of the kinds of text that come with Glaukopis, as the chooser of what you are writing
+## and the button over the preview give them; journals, publishers and style guides keep their own.
+
+template-called-plain = Einfaches Dokument
+template-called-paper = Aufsatz
+template-called-article = Zeitschriftenartikel
+template-called-report = Bericht
+template-called-book = Wissenschaftliches Buch
+template-called-thesis = Abschlussarbeit
+template-called-novel = Roman
+template-called-novel-manuscript = Romanmanuskript
+template-called-short-story = Kurzgeschichte
+template-called-story-collection = Erzählband
+template-called-poems = Gedichte
+template-called-play = Theaterstück
+template-called-screenplay = Drehbuch
+template-called-letter = Brief
+template-called-blog-post = Blogbeitrag
+template-called-news-article = Zeitungsartikel

@@ -44,15 +44,19 @@ core-import-zotero-alone = { $count ->
 }
 # The role is Zotero's own name for it: "recipient", "reviewed author".
 core-import-zotero-not-a-field = Zotero indica { $name } come { $role }, per cui BibLaTeX non ha un campo. Il nome è stato lasciato fuori.
+core-import-zotero-collaborator = Zotero indica { $name } come { $role }, per cui BibLaTeX non ha un campo. Il nome è stato messo fra quelli che vi hanno collaborato (un curatore del tipo «collaboratore»), e il ruolo non si conserva.
+core-import-zotero-collaborator-unnamed = Zotero indica { $name } in un ruolo a cui non dà nome, e BibLaTeX non ha un campo per questo. Il nome è stato messo fra quelli che vi hanno collaborato (un curatore del tipo «collaboratore»).
 core-import-zotero-left-out = Il campo «{ $field }» di Zotero non ha un corrispondente in BibLaTeX ed è stato lasciato fuori: { $value }
 
 ## Zotero's database.
 
 core-import-zotero-no-database = una banca dati di Zotero ({ $file }) in { $path }
 core-import-zotero-copying = copia di { $path } in una cartella temporanea
+core-import-zotero-locked = Zotero tiene { $path } bloccato mentre è aperto, perciò non si è potuto leggere. Chiudi Zotero e importa di nuovo
 core-import-zotero-empty = il file è vuoto
 core-import-zotero-disturbed = Zotero stava scrivendo nella sua banca dati mentre veniva letta. Se manca qualcosa, chiudi Zotero e importa di nuovo.
 core-import-zotero-backup-read = La banca dati di Zotero non si è potuta leggere ({ $error }). È stata letta invece la sua copia di sicurezza, { $backup }: manca ciò che è cambiato in Zotero da quando la copia è stata fatta.
+core-import-zotero-backup-read-locked = Zotero tiene la sua banca dati bloccata mentre è aperto, perciò la banca dati non si è potuta leggere. È stata letta invece la sua copia di sicurezza, { $backup }: manca ciò che è cambiato in Zotero da quando la copia è stata fatta. Chiudi Zotero e importa di nuovo per leggere la banca dati stessa.
 core-import-zotero-not-a-database = { $path } non è una banca dati di Zotero.
 core-import-zotero-unreadable = La banca dati di Zotero ha una forma che qui non si può leggere: { $what }. Se è stata scritta da una vecchia versione di Zotero, basta aprirla una volta in una versione attuale per aggiornarla.
 core-import-zotero-unreadable-version = La banca dati di Zotero ha una forma che qui non si può leggere (versione { $version } della banca dati di Zotero): { $what }. Se è stata scritta da una vecchia versione di Zotero, basta aprirla una volta in una versione attuale per aggiornarla.
@@ -71,6 +75,7 @@ core-import-zotero-no-group-names = i nomi delle biblioteche di gruppo non si co
 
 core-import-pdf-empty = Il file «{ $name }» è vuoto.
 core-import-pdf-not-a-pdf = Il file «{ $name }» non è un PDF.
+core-import-pdf-not-started = «{ $name }» non si è potuto leggere, perché non si è potuto avviare un processo che lo leggesse: { $message }
 core-import-pdf-unreadable = Il file non si è potuto leggere: è danneggiato, protetto da una password, o troppo grande.
 core-import-pdf-scan = Il file non ha uno strato di testo: è una scansione.
 core-import-pdf-from-file = I dati vengono dal file stesso, non da un catalogo, e vanno controllati.
@@ -93,6 +98,7 @@ core-import-document-stopped = La lettura è stata fermata.
 core-import-pdfs-stopped = Il riconoscimento dei file è stato fermato. Non è stato aggiunto nulla.
 core-import-document-kind = «{ $file }» non è di un tipo che si possa portare dentro come documento. Si possono portare dentro Word (DOCX), OpenDocument (ODT), Markdown, HTML, LaTeX, RTF, EPUB, Org, reStructuredText, Typst e testo semplice.
 core-import-document-too-large = «{ $file }» è più grande di 50 MB, più di quanto si possa portare dentro come documento.
+core-import-document-too-deep = «{ $file }» è annidato troppo a fondo per essere portato dentro: le sue parti stanno l'una dentro l'altra più a fondo di quanto si possa leggere, alcune centinaia di livelli. Una pagina salvata da un sito web si può salvare di nuovo come semplice HTML, oppure se ne può copiare il testo in un nuovo documento.
 # The kind is the kind of file: Word (DOCX), plain text.
 core-import-document-unreadable = «{ $file }» non si è potuto leggere come { $kind }. Può essere danneggiato, o di un altro tipo rispetto a quello che il nome dice. Pandoc, che lo legge, ha detto: { $message }
 core-import-document-pandoc-unreadable = ciò che Pandoc ha fatto di «{ $file }» non si è potuto leggere: { $error }
@@ -190,6 +196,26 @@ core-import-document-picture-unreadable = non si è potuta leggere
 core-import-document-picture-network = è in rete, e da lì non si prende nulla
 core-import-document-picture-not-taken-out = non si è potuta estrarre dal file
 core-import-document-picture-outside = non è nel file, ma altrove su questo computer, e da lì non si prende
+core-import-document-picture-outside-folder = è fuori dalla cartella del documento, e un documento portato dentro prende soltanto i file della sua cartella e di quelle sotto
 core-import-document-picture-not-found = il file non è stato trovato dove il documento dice che sia
 core-import-document-picture-too-large = è più grande di 50 MB
 core-import-document-picture-file-unreadable = il file non si è potuto leggere
+
+## What a document takes in from other files (LaTeX's \input, the includes
+## of reStructuredText, Org, AsciiDoc and Typst), and what was left out.
+## $name is the file as the document names it.
+
+core-import-document-include-outside = Il file «{ $name }», che il documento include, è fuori dalla cartella del documento ed è stato lasciato fuori: un documento portato dentro legge soltanto i file della sua cartella e di quelle sotto.
+core-import-document-include-not-found = Il file «{ $name }», che il documento include, non è stato trovato nella cartella del documento ed è stato lasciato fuori.
+core-import-document-include-network = «{ $name }», che il documento include, è in rete, e da lì non si prende nulla: è stato lasciato fuori.
+core-import-document-include-unreadable = Il file «{ $name }», che il documento include, non si è potuto leggere come testo (UTF-8) ed è stato lasciato fuori.
+core-import-document-include-circle = Il file «{ $name }» include sé stesso, attraverso i file che include; è stato letto una volta.
+core-import-document-include-too-deep = Il file «{ $name }» è stato lasciato fuori: i file che il documento include ne includono altri per più di { $count } livelli.
+core-import-document-include-too-large = Il file «{ $name }» è stato lasciato fuori: con i file che il documento include, supererebbe i 50 MB.
+# A Typst module imported as a whole (#import "file.typ" or #import "file.typ" as name).
+core-import-document-include-module = Il file Typst «{ $name }» è importato per intero, sotto un nome suo, che qui non si legge; è stato lasciato fuori. Ciò che se ne importa per nome si legge.
+
+## A file of text that is neither UTF-8 nor UTF-16, brought in as references, a document or a table.
+
+# $name is the name of the file.
+core-import-read-as-western = «{ $name }» non è scritto né in UTF-8 né in UTF-16, ed è stato letto come europeo occidentale (Windows-1252). Le lettere di altri alfabeti possono essere venute fuori sbagliate: per esserne certo, salva il file come UTF-8 e portalo dentro di nuovo.

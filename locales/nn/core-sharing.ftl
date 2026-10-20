@@ -34,6 +34,8 @@ core-sharing-bad-id = Tenaren kan ikkje bruke id-en til prosjektet.
 core-sharing-many-invitations = Det er allereie femti opne invitasjonar; trekk tilbake nokre.
 core-sharing-no-collaborator = Det finst ingen slik medarbeidar.
 core-sharing-not-whole = Fila kom ikkje heilt fram.
+core-sharing-bad-file-name = Ei fil har namn etter SHA-256 av det den inneheld: 64 teikn, kvart av dei 0 til 9 eller a til f.
+core-sharing-not-as-named = Det som vart sendt, er ikkje det namnet seier at det er: SHA-256 av det er ein annan.
 # The most is in the server's words: "25 MB".
 core-sharing-file-too-large = Fila er større enn denne tenaren tek imot: éi fil kan vere på høgst { $most }.
 core-sharing-project-full = Det er ikkje plass til fila: filene i eitt prosjekt kan til saman vere på høgst { $most } på denne tenaren.
@@ -44,6 +46,8 @@ core-sharing-picture-too-large = { $host } tek ikkje imot eit så stort bilete.
 core-sharing-picture-larger = Eit bilete er større enn { $host } tek imot (høgst { $most } MB), og kjem ikkje fram til dei andre.
 core-sharing-picture-not-sent = Eit bilete kunne ikkje sendast: { $error }.
 core-sharing-picture-not-fetched = Eit bilete kunne ikkje hentast: { $error }.
+# The server gave a picture whose content is not what its name says: damaged on the way or where the server keeps it.
+core-sharing-picture-not-as-listed = Eit bilete { $host } gav, er ikkje det den oppgav: det vart skadd på vegen eller der det blir lagra.
 
 ## Publishing and joining.
 

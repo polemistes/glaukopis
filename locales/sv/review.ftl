@@ -11,6 +11,10 @@ review-since-named = Sedan ”{ $name }”
 # When the moment compared with was, under what it is.
 review-since-when = Från { $when }
 review-choose-since = Granska från ett annat ögonblick
+# Mends a review that has gone wrong: what was accepted since the moment
+# reviewed from is forgotten, and those changes are shown again.
+review-forget-accepted = Glöm det du godtog
+review-forget-accepted-hint = Ändringarna du godtog sedan dess visas igen, för att granskas på nytt.
 review-own = Dina egna ändringar också
 review-show-org = Visa som Org
 review-unit = Granska per
@@ -80,6 +84,7 @@ review-versions-count = { $count ->
 }
 review-versions-reading = Läser dess historik…
 review-versions-none = Inget hände mellan de två ändarna.
+review-versions-failed = Dess historik kunde inte läsas.
 review-version-by = { $who }, { $when }
 review-accept-up-to = Godta fram till hit
 review-use-version = Använd den här versionen

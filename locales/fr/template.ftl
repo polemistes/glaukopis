@@ -5,7 +5,7 @@
 ## The groups of templates, as the chooser lists them.
 
 template-group-own = Les vôtres
-template-group-plain = Simples
+template-group-plain = Pour commencer
 template-group-article = Articles et communications
 template-group-book = Livres et thèses
 template-group-fiction = Fiction
@@ -52,6 +52,8 @@ template-editor = Modèle
 template-name = Nom du modèle
 # The name a template of one's own is first given, made from that of the template it is made from.
 template-name-changed = { $name }, modifié
+# A template of the writer's own made from another, before it is named: by the other's name.
+template-name-own = { $name }, à moi
 template-sections = Rubriques du modèle
 template-bundled = Les modèles fournis avec Glaukopis restent tels quels. Vos modifications sont enregistrées comme un modèle à vous.
 template-delete = Supprimer ce modèle
@@ -60,6 +62,7 @@ template-saved = « { $name } » est enregistré parmi vos propres modèles
 template-read-failed = Le modèle n’a pas pu être lu.
 template-save-failed = Le modèle n’a pas pu être enregistré.
 template-delete-failed = Le modèle n’a pas pu être supprimé.
+template-keep-failed = Le modèle n’a pas pu être gardé dans le projet. Sur un autre ordinateur, et dans un fichier de projet, le document aura à la place le modèle habituel.
 template-delete-title = Supprimer le modèle « { $name } » ?
 template-delete-message = Les éléments qui l’utilisent prendront à la place le modèle à partir duquel il a été fait.
 template-delete-confirm = Supprimer le modèle
@@ -131,3 +134,23 @@ template-outputs-hint = Les formats de fichier sous lesquels le document est pro
 template-output-document = Le document
 template-output-cover = La couverture
 template-output-cover-note = Une couverture à part sera faite par une version ultérieure ; ce que le modèle en dit est gardé tel quel.
+
+## The names of the kinds of text that come with Glaukopis, as the chooser of what you are writing
+## and the button over the preview give them; journals, publishers and style guides keep their own.
+
+template-called-plain = Document simple
+template-called-paper = Communication
+template-called-article = Article de revue
+template-called-report = Rapport
+template-called-book = Ouvrage universitaire
+template-called-thesis = Thèse
+template-called-novel = Roman
+template-called-novel-manuscript = Manuscrit de roman
+template-called-short-story = Nouvelle
+template-called-story-collection = Recueil de nouvelles
+template-called-poems = Poèmes
+template-called-play = Pièce de théâtre
+template-called-screenplay = Scénario
+template-called-letter = Lettre
+template-called-blog-post = Billet de blog
+template-called-news-article = Article de presse

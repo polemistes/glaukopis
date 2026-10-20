@@ -2,9 +2,9 @@
 # the details that stand on its first page, its parts, its layout and
 # reference style, its language, and the checklist.
 
-about-window = Dokumenteinstellungen
+about-window = Über dieses Dokument
 # In the menu of an element, and the button over the preview.
-about-menu = Dokumenteinstellungen…
+about-menu = Über dieses Dokument…
 about-sections = Bereiche des Fensters
 
 ## The parts of the window, as they stand down its left.

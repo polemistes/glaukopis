@@ -30,6 +30,11 @@ library-names-prefix = Namensvorsatz: van, de la
 library-names-prefix-of = { $role }: Namensvorsatz
 library-names-suffix = Namenszusatz: Jr., III
 library-names-suffix-of = { $role }: Namenszusatz
+# The button under a field of names. Its own words, not the field's label
+# put in small letters, which is wrong in a language that writes nouns with
+# a capital.
+library-names-add = Einen Namen hinzufügen
+library-names-add-of = { $role }: einen Namen hinzufügen
 
 ## Words for references, wherever they are shown.
 
@@ -269,6 +274,7 @@ library-copy-key = Zitierschlüssel kopieren
 library-copied-key = „{ $key }“ kopiert
 library-copy-biblatex = Als BibLaTeX kopieren
 library-copied = Kopiert
+library-copy-failed = Nichts wurde kopiert
 library-delete-one-title = „{ $name }“ löschen?
 library-delete-many-title = { $count ->
     [one] { $count } Quelle löschen?
@@ -402,6 +408,9 @@ library-zotero-lead = Was importiert wird, wird mit seinen Dateien in Ihre Bibli
 library-zotero-choose = Der Datenordner von Zotero
 library-zotero-none-there = Dort ist kein Zotero.
 library-zotero-unread = Zotero konnte nicht gelesen werden.
+# Looking in the places where Zotero usually keeps its data failed; the reason is shown under it.
+library-zotero-find-failed = Die Orte, an denen Zotero seine Daten gewöhnlich aufbewahrt, konnten nicht durchsucht werden. Wenn Sie wissen, wo es sie aufbewahrt, zeigen Sie es.
+library-zotero-collections-unread = Die Sammlungen konnten nicht gelesen werden, daher wird alles importiert: { $reason }
 library-zotero-library = Bibliothek
 # A library of Zotero, with the number of its references.
 library-zotero-library-option = { $name } ({ $count })
@@ -478,6 +487,8 @@ library-lookup-label = Eine Quelle nachschlagen
 library-lookup-failed = Es konnte nichts nachgeschlagen werden.
 # Where the reference came from: a service such as Crossref.
 library-lookup-filled = Ausgefüllt nach { $source }.
+library-lookup-filled-empty = Nach { $source } wurden nur die Felder ausgefüllt, die noch leer waren, da Sie in die anderen inzwischen geschrieben hatten.
+library-lookup-fill-all = Alles ausfüllen, was es hat
 library-lookup-others = { $count ->
     [one] { $count } weiterer Datensatz
    *[other] { $count } weitere Datensätze

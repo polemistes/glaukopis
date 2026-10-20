@@ -86,6 +86,8 @@ figures-formula-empty = Det, der skrives, vises her, som det kommer til at stå.
 figures-formula-hint = Skrives som i TeX. Enter, når du er færdig, Esc for at lade den stå, som den var.
 figures-equation-hint = Skrives som i TeX. Enter, når du er færdig, Skift+Enter for en ny linje, Esc for at lade den stå, som den var.
 figures-formula-unread = Formlen kunne ikke læses.
+# Where no formula could be made, as when Pandoc is not there: the reason is what the program said.
+figures-formula-failed = Formler kan ikke vises: { $reason }
 # Shown in the text where a formula has nothing written in it yet.
 figures-formula-blank = formel
 figures-equation-blank = En ligning
@@ -146,4 +148,6 @@ figures-targets-hint = En krydshenvisning følger det, den henviser til: dets nu
 ## Shown by the stylesheet, where the page has no element for the words.
 
 figures-picture-absent = Billedet er ikke på denne computer
+# A picture that is on this computer and could not be read: the reason is what the reading said.
+figures-picture-unread = Billedet kunne ikke læses: { $reason }
 figures-caption-placeholder = Det, der siges om billedet

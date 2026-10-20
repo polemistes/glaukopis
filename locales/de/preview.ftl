@@ -4,6 +4,9 @@
 ## The panel beside the map, and what is chosen over it.
 
 preview = Vorschau
+# The button over the pages that names what the document is and opens the chooser of what you are writing.
+preview-what-title = Was Sie schreiben: wählen…
+preview-what-label = Was dieses Dokument ist: { $name }. Wählen, was Sie schreiben
 # The last among the reference styles, which opens the search for more.
 preview-style-more = Mehr Stile…
 # Shows in the text the element whose place in the pages is looked at.
@@ -95,3 +98,25 @@ preview-export-show-in-folder = Im Ordner zeigen
 preview-export-open-failed = Die Datei konnte nicht geöffnet werden
 preview-export-folder-failed = Der Ordner konnte nicht geöffnet werden
 preview-export-another = Noch eines exportieren
+
+## What a line of a page is: the chip at the edge of the page that names the
+## line the pointer rests on and opens Look at it, and its switch at the foot.
+
+# On the chip: what the line is.
+preview-what-text = Text
+# A heading, by its level: Heading 1, Heading 2.
+preview-what-heading = Überschrift { $level }
+preview-what-note = Anmerkung
+preview-what-bibliography = Literaturverzeichnis
+preview-what-figure = Abbildung
+preview-what-table = Tabelle
+preview-what-front = Erste Seite
+# What the chip does, as it is told to those who cannot see it; what the line is: Quotation, Heading 1.
+preview-what-open = Wie „{ $what }“ aussieht…
+# The switch at the foot of the preview, while the chips are not shown and while they are.
+preview-chips = Die Zeilen der Seite benennen
+preview-chips-off = Die Zeilen nicht mehr benennen
+
+preview-what-page = Seite
+preview-what-header = Kopfzeile
+preview-what-footer = Fußzeile

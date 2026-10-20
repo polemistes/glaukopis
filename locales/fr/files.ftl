@@ -180,6 +180,8 @@ files-pdf-pages = { $count ->
 }
 files-pdf-has-text = avec texte
 files-pdf-no-text = sans texte
+# Shown as the pages of a PDF that could not be looked at; the reason is what the reading said.
+files-pdf-unread = n’a pas pu être lu : { $reason }
 files-pdf-some-text = { $count ->
     [one] une page sans texte
     [many] { $count } pages sans texte
@@ -343,6 +345,12 @@ files-going-nothing = Rien trouvé
 files-going-chosen = Choisie
 files-going-made-here = Créée ici
 files-going-none = Aucun des fichiers n’a pu être passé en revue.
+# The files the going-through did not reach, as when it was stopped: they keep no reference, and the bar offers them again.
+files-going-not-reached = { $count ->
+    [one] Un fichier n’a pas été examiné. Il reste tel quel, pour une autre fois.
+    [many] { $count } fichiers n’ont pas été examinés. Ils restent tels quels, pour une autre fois.
+   *[other] { $count } fichiers n’ont pas été examinés. Ils restent tels quels, pour une autre fois.
+}
 files-going-counts = { $assign } à attribuer, { $later } plus tard
 files-going-done = { $count ->
     [0] Rien à donner
