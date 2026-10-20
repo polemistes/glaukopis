@@ -17,7 +17,7 @@
   import Button from '$lib/ui/Button.svelte';
   import { newId } from '$lib/util/id';
   import { lowResolution } from './how';
-  import { counted, type PagePlan, type Source } from './plan';
+  import { pagesSaid, type PagePlan, type Source } from './plan';
   import { selectionSaid } from './select';
 
   interface Props {
@@ -41,20 +41,7 @@
   const id = `pages-${newId()}`;
   const pages = $derived(plan.length);
 
-  const said = $derived.by(() => {
-    if (looked.picture)
-      return canRead ? t('ocr-pages-said-picture') : t('ocr-pages-said-picture-unreadable');
-    if (!pages) return '';
-    const { pdf, read } = counted(plan);
-    if (!read) return t('ocr-pages-said-pdf', { pages: pdf });
-    if (!pdf)
-      return canRead
-        ? t('ocr-pages-said-read', { pages: read })
-        : t('ocr-pages-said-unreadable', { pages: read });
-    return canRead
-      ? t('ocr-pages-said-both', { pdf, read })
-      : t('ocr-pages-said-both-unreadable', { pdf, read });
-  });
+  const said = $derived(pagesSaid(looked, plan, canRead, t));
 
   /** The selection in words, nothing where it is every page. */
   const scoped = $derived(selectionSaid(selection, pages, t));

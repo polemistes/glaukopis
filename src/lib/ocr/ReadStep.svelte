@@ -35,8 +35,10 @@
      * is made of it is made anew (`MadeOf.svelte`), and how many pages it has.
      */
     onread: (imported: Imported, kept?: string | null, pages?: number) => void;
-    /** Whether the workbench is shown: the dialog is wide and tall for it. */
+    /** Whether the workbench is shown, its summary or its pages. */
     showing?: boolean;
+    /** Whether its pages are open, to be looked at and tried: the dialog is wide and tall for them. */
+    pages?: boolean;
     /** What the dialog's main button does while the workbench is shown: nothing otherwise. */
     action?: { label: string; enabled: boolean; run: () => void } | null;
   }
@@ -47,6 +49,7 @@
     name,
     onread,
     showing = $bindable(false),
+    pages = $bindable(false),
     action = $bindable(null),
   }: Props = $props();
 
@@ -59,6 +62,7 @@
   /** The languages read with at first. */
   let first = $state<string[]>([]);
   let status = $state.raw<WorkbenchState | undefined>(undefined);
+  let view = $state<'summary' | 'pages'>('summary');
   let progress = $state.raw<Progress | null>(null);
   /** Why the file could not be looked at: the end of the dialog's work. */
   let failure = $state<string | null>(null);
@@ -117,6 +121,7 @@
 
   $effect(() => {
     showing = phase === 'asking' && !!looked;
+    pages = showing && view === 'pages';
   });
   $effect(() => {
     action =
@@ -162,7 +167,7 @@
       </p>
     {/if}
     <div class="holder" hidden={phase !== 'asking'}>
-      <Workbench {path} {stored} {looked} mode="tree" {first} bind:status />
+      <Workbench {path} {stored} {looked} mode="tree" {first} bind:status bind:view />
     </div>
   {/if}
 </div>

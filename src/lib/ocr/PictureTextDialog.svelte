@@ -56,6 +56,7 @@
   let gone = false;
   /** Whether the reading step of a file of the library shows the workbench: the dialog is wide and tall for it. */
   let showing = $state(false);
+  let pagesOpen = $state(false);
   let action = $state<{ label: string; enabled: boolean; run: () => void } | null>(null);
   const bench = $derived(showing && phase === 'asking' && !!file);
 
@@ -141,8 +142,9 @@
   open
   title={t('ocr-picture-title')}
   subtitle={name}
-  width={bench ? 1240 : 560}
-  tall={bench}
+  width={bench ? (pagesOpen ? 1240 : 640) : 560}
+  tall={bench && pagesOpen}
+  inline={bench && pagesOpen}
   padded={!bench}
   onclose={cancel}
 >
@@ -158,6 +160,7 @@
           phase = 'shown';
         }}
         bind:showing
+        bind:pages={pagesOpen}
         bind:action
       />
     {:else if phase === 'asking'}

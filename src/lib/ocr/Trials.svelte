@@ -8,22 +8,20 @@
    */
   import { t } from '$lib/i18n';
   import type { PageSettings } from './plan';
-  import { settingsSaid, triedAsNow, type Trial } from './trials';
+  import { settingsSaid, type Trial } from './trials';
 
   interface Props {
     /** The page's trials, the newest first. */
     trials: Trial[];
     /** The trial shown in the pane. */
     shown: Trial | null;
-    /** The settings that hold for the page now. */
-    current: PageSettings;
     /** The name of a language, from Tesseract's name of it. */
     nameOf: (code: string) => string;
     onshow: (trial: Trial) => void;
     onsettings: (settings: PageSettings) => void;
   }
 
-  let { trials, shown, current, nameOf, onshow, onsettings }: Props = $props();
+  let { trials, shown, nameOf, onshow, onsettings }: Props = $props();
 
   const uid = $props.id();
 
@@ -58,7 +56,9 @@
         onclick={() => onshow(trial)}
         onkeydown={(e) => onkeydown(e, trial)}
       >
-        <span class="said">{settingsSaid(trial.settings, nameOf, t)}</span>
+        <span class="said" title={settingsSaid(trial.settings, nameOf, t)}
+          >{settingsSaid(trial.settings, nameOf, t)}</span
+        >
         <span
           class="confidence"
           class:poorly={trial.tried.poorly}
@@ -66,9 +66,6 @@
         >
           {confidence == null ? t('ocr-trial-nothing') : t('ocr-trial-confidence', { confidence })}
         </span>
-        {#if !triedAsNow(trial, current)}
-          <span class="differs" data-trial-differs>{t('ocr-trial-differs')}</span>
-        {/if}
         <button
           type="button"
           class="use"
@@ -89,8 +86,8 @@
   .trials {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    padding: 8px 10px 10px;
+    gap: 2px;
+    padding: 6px 8px 8px;
   }
   h4 {
     margin: 0;
@@ -100,20 +97,25 @@
     text-transform: uppercase;
     color: var(--ink-3);
   }
+  /* At most three rows in sight, the rest scrolled to: the text above keeps its room. */
   ul {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 1px;
+    max-height: calc(3 * 2.6em);
     margin: 0;
     padding: 0;
+    overflow-y: auto;
     list-style: none;
   }
+  /* A row: its settings, on two lines at the most, how sure, and the way to read so again. */
   li {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     align-items: baseline;
-    gap: 2px 10px;
-    padding: 5px 8px;
+    gap: 0 10px;
+    flex: none;
+    padding: 3px 8px;
     border-radius: var(--radius-s);
     border-left: 2px solid transparent;
     font-size: var(--text-sm);
@@ -133,8 +135,13 @@
     color: var(--ink);
   }
   .said {
+    display: -webkit-box;
     min-width: 0;
+    overflow: hidden;
     overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
   .confidence {
     font-variant-numeric: tabular-nums;
@@ -145,14 +152,7 @@
     color: var(--warn);
     font-weight: 550;
   }
-  .differs {
-    grid-column: 1;
-    font-size: var(--text-xs);
-    font-style: italic;
-    color: var(--ink-3);
-  }
   .use {
-    grid-column: 2;
     justify-self: end;
     margin: 0;
     padding: 1px 4px;

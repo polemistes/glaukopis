@@ -35,22 +35,42 @@
     canTry: boolean;
     /** Whether Tesseract is not installed. */
     missing: boolean;
+    /**
+     * Whether no page is to be read now: the settings are shown greyed, with
+     * the line that says so, and can still be set, for when pages are.
+     */
+    idle?: boolean;
     onchange: (settings: PageSettings) => void;
-    ontry: () => void;
+    /** Where it is given, *Try page n* stands under the settings. */
+    ontry?: () => void;
   }
 
-  let { value, scope, installed, page, trying, canTry, missing, onchange, ontry }: Props = $props();
+  let {
+    value,
+    scope,
+    installed,
+    page,
+    trying,
+    canTry,
+    missing,
+    idle = false,
+    onchange,
+    ontry,
+  }: Props = $props();
 
   /** Scripts whose letters look alike among the languages chosen, whose letters are read as each other's. */
   const alike = $derived(missing ? [] : scriptsAlike(value.languages));
   const how = $derived({ dpi: value.dpi, layout: value.layout, contrast: value.contrast });
 </script>
 
-<aside class="settings" data-read-settings>
+<aside class="settings" class:idle data-read-settings>
   <div class="controls">
     <div class="top">
       <h3>{t('ocr-settings-heading')}</h3>
       <p class="scope" data-settings-scope>{scope}</p>
+      {#if idle && !missing}
+        <p class="idle" data-settings-idle>{t('ocr-summary-idle')}</p>
+      {/if}
     </div>
     {#if missing}
       <p class="failure selectable" role="alert" data-ocr-missing>
@@ -79,28 +99,30 @@
       <HowControls value={how} onchange={(next) => onchange({ ...value, ...next })} />
     </fieldset>
   </div>
-  <div class="try">
-    <Button
-      variant="primary"
-      size="sm"
-      onclick={() => ontry()}
-      disabled={missing || !canTry || trying}
-      aria-busy={trying}
-      data-ocr-try
-    >
-      {#snippet icon()}
-        {#if trying}<Spinner size={13} />{:else}<ScanSearch size={14} />{/if}
-      {/snippet}
-      {t('ocr-settings-try', { page })}
-    </Button>
-  </div>
+  {#if ontry}
+    <div class="try">
+      <Button
+        variant="primary"
+        size="sm"
+        onclick={() => ontry()}
+        disabled={missing || !canTry || trying}
+        aria-busy={trying}
+        data-ocr-try
+      >
+        {#snippet icon()}
+          {#if trying}<Spinner size={13} />{:else}<ScanSearch size={14} />{/if}
+        {/snippet}
+        {t('ocr-settings-try', { page })}
+      </Button>
+    </div>
+  {/if}
 </aside>
 
 <style>
   .settings {
     display: flex;
     flex-direction: column;
-    width: 260px;
+    width: 100%;
     min-width: 0;
     min-height: 0;
     max-height: 100%;
@@ -123,6 +145,15 @@
     font-size: var(--text-sm);
     font-weight: 600;
     color: var(--ink-2);
+  }
+  /* Nothing is to be read: the settings wait, greyed, for pages that are. */
+  .idle .controls > :global(:not(.top)) {
+    opacity: 0.55;
+  }
+  .idle p.idle {
+    margin: 2px 0 0;
+    font-size: var(--text-sm);
+    color: var(--ink-3);
   }
   .scope {
     margin: 0;

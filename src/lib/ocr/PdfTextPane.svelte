@@ -9,8 +9,8 @@
   import CircleAlert from '@lucide/svelte/icons/circle-alert';
   import type { PageTextView, Verdict } from '$lib/api/ocr';
   import { t } from '$lib/i18n';
-  import Button from '$lib/ui/Button.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
+  import { tooltip } from '$lib/ui/tooltip';
   import Pane from './Pane.svelte';
 
   interface Props {
@@ -25,11 +25,8 @@
     /** Whether a scheme applies in the file, by which its text can be translated. */
     canTranslate: boolean;
     ontranslated: (on: boolean) => void;
-    /** Whether the pages selected can be given this text: some of them have text. */
-    canUse: boolean;
-    onuse: () => void;
-    /** The pages the button gives the text to, in words: *this page*, *pages 3–5*, *all pages*. */
-    scope: string;
+    /** What the fonts were found to say of their letters, in words: the tooltip of the translation. */
+    scheme?: string;
   }
 
   let {
@@ -40,9 +37,7 @@
     translated,
     canTranslate,
     ontranslated,
-    canUse,
-    onuse,
-    scope,
+    scheme = '',
   }: Props = $props();
 
   const lines = $derived(
@@ -51,14 +46,9 @@
 </script>
 
 <Pane title={t('ocr-text-title')} padded data-pane-pdf>
-  {#snippet actions()}
-    <Button size="sm" disabled={!canUse} onclick={() => onuse()} data-pane-use-pdf>
-      {t('ocr-pane-use', { scope })}
-    </Button>
-  {/snippet}
   {#snippet bar()}
     {#if canTranslate}
-      <label class="check">
+      <label class="check" use:tooltip={scheme || null}>
         <input
           type="checkbox"
           checked={translated}

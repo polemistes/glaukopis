@@ -87,3 +87,11 @@ Built the same day from the plan, the core, the strip and the panes by three wor
 - In a PDF made searchable, a page read loses whatever unseen text it had, however little, not only text enough to count as text: an old poor reading too short to count is taken away too.
 - A trial joins nothing, so it is read without a dictionary.
 - The picture of a library file read as text (the dialog of a picture of the library) gets the workbench as well.
+
+## Addendum of 2026-10-20: the workbench on demand
+
+After trying the workbench, the owner asked for it to open on demand, and for it to be quieter (plan: `docs/plans/the-workbench-on-demand.md`, its three open questions answered as planned: Low, Good and High; the settings greyed where nothing is read; a dialog moved opens in the middle again). Built the same day:
+
+- The dialog of a reading opens as a summary: what the file is, in a line; what the pages take, chosen for the whole PDF among the three; the translation; and the four settings, for every page, greyed where nothing is to be read. *Look at the pages and try them…* opens the workbench in the same dialog; *Back to the summary* closes it; nothing is lost either way. Where pages were marked one by one, the summary says so, and a choice there holds for every page again.
+- The workbench: the way back and the line of what the pages take in one row; the scheme of the fonts in the tooltip of the translation; the strip without its box, its height following the shape of the pages; the title and the file's name on one line; the picture moved by dragging, without scroll bars; the verdict in one line, *Page 40: Low confidence (73%) · 89 of 251 words unsure*, low under 80, good to 89, high from 90; the trials in percent, a row each with *Use these settings* on its first line, three in sight; no buttons of use in the panes.
+- Every dialog of the program is moved by its title, which never leaves the window; a double-click on it puts it back in the middle.

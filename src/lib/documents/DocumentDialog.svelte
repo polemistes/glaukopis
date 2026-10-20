@@ -27,6 +27,8 @@
   let { request, onclose }: { request: Bringing; onclose: () => void } = $props();
   /** Whether the reading step shows the workbench of a reading: the dialog is wide and tall for it. */
   let showing = $state(false);
+  /** Whether its pages are open, to be looked at and tried. */
+  let pages_ = $state(false);
   /** What the main button does while the workbench is shown. */
   let action = $state<{ label: string; enabled: boolean; run: () => void } | null>(null);
 
@@ -183,8 +185,9 @@
   open
   title={request.project ? t('documents-title-element') : t('documents-title-project')}
   subtitle={read ? `${read.file} · ${read.kind}` : file}
-  width={showing && !read ? 1240 : 560}
-  tall={showing && !read}
+  width={showing && !read ? (pages_ ? 1240 : 640) : 560}
+  tall={showing && !read && pages_}
+  inline={showing && !read && pages_}
   padded={!(showing && !read)}
   dismissable={!making}
   onclose={cancel}
@@ -197,6 +200,7 @@
       stored={!!request.stored}
       name={request.name}
       bind:showing
+      bind:pages={pages_}
       bind:action
       onread={(imported, token, count) => {
         read = imported;

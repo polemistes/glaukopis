@@ -8,12 +8,11 @@
    */
   import CircleAlert from '@lucide/svelte/icons/circle-alert';
   import { t } from '$lib/i18n';
-  import Button from '$lib/ui/Button.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import Pane from './Pane.svelte';
   import type { PageSettings } from './plan';
-  import { pieces, type Trial } from './trials';
+  import { HIGH, pieces, type Trial } from './trials';
   import Trials from './Trials.svelte';
 
   interface Props {
@@ -27,41 +26,25 @@
     trying: boolean;
     /** Why the trial failed, where it did. */
     failure: string | null;
-    /** The settings that hold for the page now. */
-    current: PageSettings;
     /** The name of a language, from Tesseract's name of it. */
     nameOf: (code: string) => string;
-    /** Whether the pages selected can be read by Tesseract: it is installed. */
-    canUse: boolean;
-    onuse: () => void;
     onshow: (trial: Trial) => void;
     onsettings: (settings: PageSettings) => void;
-    /** The pages the button has read, in words: *this page*, *pages 3–5*, *all pages*. */
-    scope: string;
   }
 
-  let {
-    page,
-    shown,
-    trials,
-    trying,
-    failure,
-    current,
-    nameOf,
-    canUse,
-    onuse,
-    onshow,
-    onsettings,
-    scope,
-  }: Props = $props();
+  let { page, shown, trials, trying, failure, nameOf, onshow, onsettings }: Props = $props();
 
   const tried = $derived(trying || failure ? null : (shown?.tried ?? null));
   const confidence = $derived(tried?.confidence == null ? null : Math.round(tried.confidence));
+  /** How the confidence is said: low where the page was read poorly (under 80), high from 90. */
+  const level = $derived(
+    !tried || tried.poorly ? 'low' : (confidence ?? 0) >= HIGH ? 'high' : 'good',
+  );
   const round = (n: number | null) => Math.round(n ?? 0);
 </script>
 
 {#snippet kept()}
-  <Trials {trials} {shown} {current} {nameOf} {onshow} {onsettings} />
+  <Trials {trials} {shown} {nameOf} {onshow} {onsettings} />
 {/snippet}
 
 <Pane
@@ -70,31 +53,29 @@
   foot={trials.length ? kept : undefined}
   data-pane-tesseract
 >
-  {#snippet actions()}
-    <Button size="sm" disabled={!canUse} onclick={() => onuse()} data-pane-use-read>
-      {t('ocr-pane-use', { scope })}
-    </Button>
-  {/snippet}
   {#snippet bar()}
     {#if tried}
+      <!-- How sure Tesseract was, in a line: Page 40: Low confidence (73%) · 89 of 251 words unsure. -->
       <p
         class="verdict"
-        class:poorly={tried.poorly}
         data-ocr-tried-confidence={confidence ?? ''}
         data-poorly={tried.poorly}
+        data-level={level}
       >
         {#if confidence == null}
           {t('ocr-tried-nothing', { label: tried.label })}
         {:else}
-          {t('ocr-tried-confidence', { label: tried.label, confidence })}
-          {#if tried.poorly}{t('ocr-tried-poorly')}{/if}
+          <span>{t('ocr-tried-page', { label: tried.label })}</span>
+          <span class="level {level}" use:tooltip={tried.poorly ? t('ocr-tried-low-hint') : null}
+            >{t(`ocr-confidence-${level}`, { confidence })}</span
+          >
+          {#if tried.words > 0}
+            <span class="count" data-unsure={tried.unsure}
+              >· {t('ocr-tried-unsure', { unsure: tried.unsure, words: tried.words })}</span
+            >
+          {/if}
         {/if}
       </p>
-      {#if tried.words > 0}
-        <p class="count" data-unsure={tried.unsure}>
-          {t('ocr-pane-unsure', { unsure: tried.unsure, words: tried.words })}
-        </p>
-      {/if}
     {/if}
   {/snippet}
   {#if trying}
@@ -120,18 +101,34 @@
 </Pane>
 
 <style>
-  .verdict,
-  .count {
+  .verdict {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 6px;
     margin: 0;
     font-size: var(--text-sm);
     line-height: 1.4;
     color: var(--ink-2);
   }
-  .verdict.poorly {
-    padding: 6px 9px;
+  /* The word of confidence, in the colour of what it says: gold for low. */
+  .level {
+    padding: 0 6px;
     border-radius: var(--radius-s);
+    font-weight: 550;
+    font-variant-numeric: tabular-nums;
+  }
+  .level.low {
     background: var(--gold-soft);
     color: var(--ink);
+    cursor: help;
+  }
+  .level.good {
+    color: var(--ink);
+  }
+  .level.high {
+    background: var(--accent-softer);
+    color: var(--accent-strong);
   }
   .count {
     color: var(--ink-3);

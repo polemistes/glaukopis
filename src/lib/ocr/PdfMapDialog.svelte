@@ -43,6 +43,8 @@
   let { file, project = null, projectId = null, at = null, onenter, onclose }: Props = $props();
   /** Whether the reading step shows the workbench of a reading: the dialog is wide and tall for it. */
   let showing = $state(false);
+  /** Whether its pages are open, to be looked at and tried. */
+  let pagesOpen = $state(false);
   /** What the main button does while the workbench is shown. */
   let action = $state<{ label: string; enabled: boolean; run: () => void } | null>(null);
 
@@ -141,8 +143,9 @@
   open
   title={t('ocr-map-title')}
   subtitle={file.name}
-  width={bench ? 1240 : 520}
-  tall={bench}
+  width={bench ? (pagesOpen ? 1240 : 640) : 520}
+  tall={bench && pagesOpen}
+  inline={bench && pagesOpen}
   padded={!bench}
   dismissable={!making}
   {onclose}
@@ -180,6 +183,7 @@
           name={file.name}
           onread={readDone}
           bind:showing
+          bind:pages={pagesOpen}
           bind:action
         />
       </div>
@@ -218,8 +222,8 @@
     gap: 0;
   }
   .body.bench [data-ocr-into] {
-    padding: var(--space-3) var(--space-4) 0;
-    max-width: 420px;
+    padding: var(--space-2) var(--space-5) 0;
+    max-width: 440px;
   }
   .step {
     flex: 1 1 auto;

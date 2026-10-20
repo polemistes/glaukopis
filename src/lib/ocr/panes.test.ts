@@ -132,9 +132,7 @@ function panes(
       translated: true,
       canTranslate: true,
       ontranslated: call('translated'),
-      canUse: true,
-      onuse: call('use-pdf'),
-      scope: 'pages 3–5',
+      scheme: 'The Greek is stored as the glyph names of PorsonGreekSF.',
     },
     tesseract: {
       page: 3,
@@ -142,13 +140,9 @@ function panes(
       trials: [newer, older],
       trying: false,
       failure: null,
-      current: newer.settings,
       nameOf: (code: string) => ocrLanguageName(code),
-      canUse: true,
-      onuse: call('use-read'),
       onshow: call('show'),
       onsettings: call('settings'),
-      scope: 'pages 3–5',
     },
   };
   const laid = {
@@ -184,23 +178,19 @@ describe('the panes of the page in view', () => {
 });
 
 describe('the pane of the text the PDF has', () => {
-  it('shows the page as translated, with its verdict, and gives the text to the pages', () => {
+  it('shows the page as translated, with its verdict, and no button of its own to give the text', () => {
     const { host, calls } = panes();
     const pane = q(host, '[data-pane-pdf]')!;
     expect(pane.querySelector('h3')!.textContent).toBe('The text the PDF has');
     expect(q(pane, '.lines')!.textContent).toContain('Μῆνιν ἄειδε');
     expect(q(pane, '[data-text-verdict]')!.dataset.textVerdict).toBe('poor');
     expect(q(pane, '[data-text-verdict]')!.textContent!.trim()).toMatch(/^Does not read as text/);
-    const use = q(pane, '[data-pane-use-pdf]') as HTMLButtonElement;
-    expect(use.textContent!.trim()).toBe('Use for pages 3–5');
-    use.click();
+    // The buttons over the strip give the pages their text: the pane has none.
+    expect(q(pane, '[data-pane-use-pdf]')).toBeNull();
     const translated = q(pane, '[data-text-translated]') as HTMLInputElement;
     expect(translated.checked).toBe(true);
     translated.click();
-    expect(calls).toEqual([
-      ['use-pdf', undefined],
-      ['translated', false],
-    ]);
+    expect(calls).toEqual([['translated', false]]);
   });
 
   it('shows the lines as the PDF has them where the switch is off, and none where the page has none', () => {
@@ -208,11 +198,10 @@ describe('the pane of the text the PDF has', () => {
     expect(q(off.host, '[data-pane-pdf] .lines')!.textContent).toContain('Mnvlp Ijkr');
     again();
     const none = panes({
-      pdf: { page: { ...textPage, hasText: false, lines: [] }, canUse: false },
+      pdf: { page: { ...textPage, hasText: false, lines: [] } },
     });
     expect(q(none.host, '[data-text-none]')!.textContent).toBe(t('ocr-text-page-none'));
     expect(q(none.host, '[data-text-verdict]')).toBeNull();
-    expect((q(none.host, '[data-pane-use-pdf]') as HTMLButtonElement).disabled).toBe(true);
     again();
     const plain = panes({ pdf: { canTranslate: false, verdict: 'sound' } });
     expect(q(plain.host, '[data-text-translated]')).toBeNull();
@@ -226,8 +215,13 @@ describe('the pane of what Tesseract read', () => {
     const pane = q(host, '[data-pane-tesseract]')!;
     expect(q(pane, '[data-ocr-tried-confidence]')!.dataset.ocrTriedConfidence).toBe('88');
     expect(q(pane, '[data-ocr-tried-confidence]')!.dataset.poorly).toBe('false');
+    // In one line: Page iii: Good confidence (88%) · 2 of 6 words unsure.
+    expect(q(pane, '[data-ocr-tried-confidence]')!.textContent!.replace(/\s+/g, ' ').trim()).toBe(
+      'Page iii: Good confidence (88%) · 2 of 6 words unsure',
+    );
+    expect(q(pane, '[data-ocr-tried-confidence]')!.dataset.level).toBe('good');
     expect(q(pane, '[data-unsure]')!.dataset.unsure).toBe('2');
-    expect(q(pane, '[data-unsure]')!.textContent!.trim()).toBe('2 of 6 words unsure');
+    expect(q(pane, '[data-pane-use-read]')).toBeNull();
     const marks = [...pane.querySelectorAll<HTMLElement>('mark[data-unsure-word]')];
     expect(marks.map((m) => [m.textContent, m.dataset.unsureWord])).toEqual([
       ['var', '40'],
@@ -240,18 +234,20 @@ describe('the pane of what Tesseract read', () => {
 
   it('lists the trials, the newest first, the one shown selected', () => {
     const { host, calls } = panes({
-      tesseract: { shown: older, current: newer.settings },
+      tesseract: { shown: older },
     });
     const rows = [...host.querySelectorAll<HTMLElement>('[data-trial]')];
     expect(rows.map((r) => r.dataset.trial)).toEqual(['1', '2']);
     expect(rows.map((r) => r.getAttribute('aria-selected'))).toEqual(['false', 'true']);
     expect(q(rows[0], '.said')!.textContent).toBe('English · 400 · One column');
     expect(q(rows[1], '[data-trial-confidence]')!.dataset.trialConfidence).toBe('62');
-    // The older was read otherwise than the page is now.
-    expect(q(rows[0], '[data-trial-differs]')).toBeNull();
-    expect(q(rows[1], '[data-trial-differs]')).not.toBeNull();
-    // The poorly read trial shown says so.
+    expect(q(rows[1], '[data-trial-confidence]')!.textContent!.trim()).toBe('62%');
+    // The poorly read trial shown says so, low.
     expect(q(host, '[data-ocr-tried-confidence]')!.dataset.poorly).toBe('true');
+    expect(q(host, '[data-ocr-tried-confidence]')!.dataset.level).toBe('low');
+    expect(q(host, '[data-ocr-tried-confidence] .level')!.textContent!.trim()).toBe(
+      'Low confidence (62%)',
+    );
     rows[0].click();
     (q(rows[1], '[data-trial-use]') as HTMLButtonElement).click();
     expect(calls).toEqual([

@@ -14,14 +14,12 @@ ocr-low-resolution = Sidene er bilder med { $dpi } punkter per tomme: for få ti
 ocr-low-resolution-text = Å lese dem på nytt vil ikke gjøre teksten PDF-en har, bedre.
 
 ocr-trying = Leser side { $page } …
-ocr-tried-confidence = Side { $label } ble lest med en sikkerhet på { $confidence } av 100.
-ocr-tried-poorly = Det er dårlig: prøv et annet språk, frakturmodellen for gotisk skrift eller et annet oppsett av siden.
 ocr-tried-nothing = Ingen tekst ble lest på side { $label }.
 ocr-tried-blocks = { $count ->
-    [one] Vis tekstblokken Tesseract fant
-   *[other] Vis de { $count } tekstblokkene Tesseract fant, nummerert i den rekkefølgen den leser dem
+    [one] Vis tekstblokken
+   *[other] Vis de { $count } tekstblokkene
 }
-ocr-tried-blocks-hint = To spalter tatt som én, eller noter tatt inn i teksten, leses i feil rekkefølge: et annet oppsett av siden kan skille dem.
+ocr-tried-blocks-hint = Tekstblokkene Tesseract fant, nummerert i den rekkefølgen den leser dem. To spalter tatt som én, eller noter tatt inn i teksten, leses i feil rekkefølge: et annet oppsett av siden kan skille dem.
 
 ocr-read = Les teksten
 ocr-read-pages = { $count ->
@@ -247,37 +245,29 @@ ocr-picture-actual = 100 %
 ocr-picture-double = 200 %
 # The alternative text of the picture of the page in view.
 ocr-picture-alt = Side { $label }
-# The button in the header of a pane of text: that text is what the pages get. $scope: which pages, "denne siden", "sidene 3–5", "alle sidene".
-ocr-pane-use = Bruk på { $scope }
 ocr-pane-translated = Oversatt etter det skriftene sier
 ocr-pane-sound = Leses som tekst
 ocr-pane-poor = Leses ikke som tekst: bokstaver i en skrift som ikke sier hvilke de er, eller en dårlig lesning
 ocr-pane-tesseract = Det Tesseract leste
 ocr-pane-try-hint = Trykk «Prøv side { $page }» for å lese denne siden med innstillingene ved siden av.
-# Of the words Tesseract read on the page tried, those it was unsure of, which are underlined.
-ocr-pane-unsure = { $unsure ->
-    [0] { $words ->
-        [one] Tesseract var sikker på det ene ordet
-       *[other] Tesseract var sikker på alle de { $words } ordene
-    }
-    [one] { $words ->
-        [one] Tesseract var usikker på det ene ordet
-       *[other] Ett av { $words } ord usikkert
-    }
+# How sure Tesseract was of a page tried, in one line: "Page 40: Low confidence (73%) · 89 of 251 words unsure". Low is under 80, good up to 89, high from 90.
+ocr-tried-page = Side { $label }:
+ocr-confidence-low = Lav sikkerhet ({ $confidence } %)
+ocr-confidence-good = God sikkerhet ({ $confidence } %)
+ocr-confidence-high = Høy sikkerhet ({ $confidence } %)
+ocr-tried-unsure = { $unsure ->
+    [0] ingen usikre ord
    *[other] { $unsure } av { $words } ord usikre
 }
+ocr-tried-low-hint = Under 80 %: prøv et annet språk, frakturmodellen for gotisk skrift eller et annet oppsett av siden.
 # The tooltip of a word Tesseract was unsure of.
-ocr-pane-unsure-word = Lest med en sikkerhet på { $confidence } av 100
-# The pages the buttons of the panes act on, after "Use for": the page in view alone, or every page.
-ocr-pane-scope-page = denne siden
-ocr-pane-scope-all = alle sidene
+ocr-pane-unsure-word = Lest med en sikkerhet på { $confidence } %
 # Said after the line over the settings, where the pages selected are read in different ways: a change holds for all of them.
 ocr-settings-scope-differ = (leses på ulike måter)
 # Over the list of the page's trials, each said by the settings it was read with.
 ocr-trials = Prøvd med
-ocr-trial-confidence = { $confidence } av 100
+ocr-trial-confidence = { $confidence } %
 ocr-trial-nothing = Ingenting lest
-ocr-trial-differs = Ikke det som gjelder for siden nå
 ocr-trial-use = Bruk disse innstillingene
 
 # The pages of the workbench
@@ -345,3 +335,35 @@ ocr-strip-band-hint = { $count ->
     [one] Side { $from }: { $said }
    *[other] Sidene { $from }–{ $to }: { $said }
 }
+
+# The summary of a reading, as the dialog opens: what the file is, said in parts joined by commas.
+ocr-summary-pages = { $pages ->
+    [one] Én side
+   *[other] { $pages } sider
+}
+ocr-summary-scanned = skannet med { $dpi } punkter per tomme
+ocr-summary-no-text = { $pages ->
+    [one] uten egen tekst
+   *[other] uten egen tekst
+}
+ocr-summary-text-all = { $pages ->
+    [one] med egen tekst
+   *[other] alle med egen tekst
+}
+ocr-summary-text-some = { $with ->
+    [one] én av dem med egen tekst
+   *[other] { $with } av dem med egen tekst
+}
+ocr-summary-poor = { $poor ->
+    [one] hvorav én ikke leses som tekst
+   *[other] hvorav { $poor } ikke leses som tekst
+}
+ocr-summary-poor-all = som ikke leses som tekst
+# Over the choice of what every page takes.
+ocr-summary-whole = Hva sidene får
+ocr-summary-mixed = Valgt side for side. Et valg her gjelder alle sidene igjen.
+# Under the reading settings, where no page is to be read with Tesseract.
+ocr-summary-idle = De gjelder sidene som leses med Tesseract; ingen gjør det nå.
+ocr-summary-pages-open = Se på sidene og prøv dem …
+ocr-summary-picture-open = Prøv det …
+ocr-summary-back = Tilbake til oversikten

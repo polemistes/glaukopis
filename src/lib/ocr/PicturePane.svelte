@@ -63,6 +63,35 @@
    * pixels on the screen whatever the zoom, from the width it is shown at.
    */
   const figure = $derived(shownWidth > 0 ? (13 * width) / shownWidth : 0);
+
+  /** The room the picture is moved in, by dragging it, as a hand moves a sheet. */
+  let room = $state<HTMLDivElement>();
+  /** Whether the picture is being dragged. */
+  let dragging = $state(false);
+  /** Whether there is anything to move: the picture is larger than its room. */
+  const movable = $derived(zoom !== 'fit' && !!picture);
+
+  function grab(event: PointerEvent) {
+    if (!movable || !room || event.button !== 0) return;
+    const at = room;
+    const from = { x: event.clientX, y: event.clientY, left: at.scrollLeft, top: at.scrollTop };
+    at.setPointerCapture(event.pointerId);
+    dragging = true;
+    const onmove = (e: PointerEvent) => {
+      at.scrollLeft = from.left - (e.clientX - from.x);
+      at.scrollTop = from.top - (e.clientY - from.y);
+    };
+    const onup = () => {
+      dragging = false;
+      at.removeEventListener('pointermove', onmove);
+      at.removeEventListener('pointerup', onup);
+      at.removeEventListener('pointercancel', onup);
+    };
+    at.addEventListener('pointermove', onmove);
+    at.addEventListener('pointerup', onup);
+    at.addEventListener('pointercancel', onup);
+    event.preventDefault();
+  }
 </script>
 
 <Pane title={t('ocr-text-page', { label })} data-pane-picture>
@@ -94,7 +123,17 @@
       <CircleAlert size={15} /> <span>{failure}</span>
     </p>
   {:else}
-    <div class="room" bind:clientWidth={roomWidth} bind:clientHeight={roomHeight}>
+    <!-- svelte-ignore a11y_no_static_element_interactions: the picture is moved by the pointer; the wheel and the keys scroll it as well -->
+    <div
+      class="room"
+      class:movable
+      class:dragging
+      bind:this={room}
+      bind:clientWidth={roomWidth}
+      bind:clientHeight={roomHeight}
+      onpointerdown={grab}
+      data-picture-room
+    >
       <div class="canvas" style:padding="{MARGIN}px">
         {#if picture && shownWidth > 0}
           <div class="sheet" style:width="{shownWidth}px" style:height="{shownHeight}px">
@@ -178,6 +217,18 @@
     overflow: auto;
     overscroll-behavior: contain;
     background: var(--picture-ground);
+    /* The picture is moved by dragging it, and by the wheel: no bars at its edges. */
+    scrollbar-width: none;
+  }
+  .room::-webkit-scrollbar {
+    display: none;
+  }
+  .room.movable {
+    cursor: grab;
+    touch-action: none;
+  }
+  .room.dragging {
+    cursor: grabbing;
   }
   .canvas {
     box-sizing: border-box;

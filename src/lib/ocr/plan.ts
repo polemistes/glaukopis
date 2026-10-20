@@ -193,3 +193,56 @@ export function sameAcross(plan: PagePlan[], pages: number[]): boolean {
   }
   return true;
 }
+
+/** What every page takes, chosen for the whole PDF: the PDF's text, a reading, or each by its text's quality. */
+export type Whole = Source | 'decide';
+
+/** The plan with `whole` laid on every page. */
+export function withWhole(plan: PagePlan[], whole: Whole, verdicts: Verdict[]): PagePlan[] {
+  return whole === 'decide' ? decided(plan, [], verdicts) : withSource(plan, [], whole, verdicts);
+}
+
+/**
+ * The choice for the whole PDF that the pages are marked as now: the one
+ * chosen last (`preferred`) where it still holds, else the first that does,
+ * else none, where pages were marked one by one. Where two hold, as the
+ * PDF's text and deciding by quality do where every page's text is sound,
+ * the one chosen last is said.
+ */
+export function wholeOf(
+  plan: PagePlan[],
+  verdicts: Verdict[],
+  preferred: Whole | null,
+): Whole | null {
+  const holds = (whole: Whole) =>
+    withWhole(plan, whole, verdicts).every((page, i) => page.source === plan[i].source);
+  const order: Whole[] = ['pdf', 'read', 'decide'];
+  return [...(preferred ? [preferred] : []), ...order].find(holds) ?? null;
+}
+
+/** What the interface says by a name, given so that what is said here can be tested. */
+type Say = (id: string, args?: Record<string, string | number>) => string;
+
+/**
+ * What the pages will take, in a sentence: *412 pages take the text the PDF
+ * has; 147 are read with Tesseract.* Of a picture, that it is read.
+ */
+export function pagesSaid(
+  looked: { picture: boolean },
+  plan: PagePlan[],
+  canRead: boolean,
+  t: Say,
+): string {
+  if (looked.picture)
+    return canRead ? t('ocr-pages-said-picture') : t('ocr-pages-said-picture-unreadable');
+  if (!plan.length) return '';
+  const { pdf, read } = counted(plan);
+  if (!read) return t('ocr-pages-said-pdf', { pages: pdf });
+  if (!pdf)
+    return canRead
+      ? t('ocr-pages-said-read', { pages: read })
+      : t('ocr-pages-said-unreadable', { pages: read });
+  return canRead
+    ? t('ocr-pages-said-both', { pdf, read })
+    : t('ocr-pages-said-both-unreadable', { pdf, read });
+}

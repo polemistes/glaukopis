@@ -49,6 +49,8 @@
   /** The languages read with at first. */
   let first = $state<string[]>([]);
   let status = $state.raw<WorkbenchState | undefined>(undefined);
+  /** The summary, or the pages, opened to be looked at and tried. */
+  let view = $state<'summary' | 'pages'>('summary');
   let progress = $state.raw<Progress | null>(null);
   let failure = $state<string | null>(null);
   /** Why the last attempt failed, said over the workbench, which stays to try again. */
@@ -132,14 +134,16 @@
 
   /** Whether the workbench is shown: the dialog is wide and tall for it. */
   const bench = $derived(phase === 'asking' && !!looked?.searchable);
+  const pagesOpen = $derived(bench && view === 'pages');
 </script>
 
 <Dialog
   open
   title={t('ocr-searchable-title')}
   subtitle={file.name}
-  width={bench ? 1240 : 520}
-  tall={bench}
+  width={bench ? (pagesOpen ? 1240 : 640) : 520}
+  tall={pagesOpen}
+  inline={pagesOpen}
   padded={!bench}
   onclose={cancel}
 >
@@ -184,7 +188,15 @@
         </p>
       {/if}
       <div class="holder" hidden={phase !== 'asking'}>
-        <Workbench path={file.path} stored {looked} mode="searchable" {first} bind:status />
+        <Workbench
+          path={file.path}
+          stored
+          {looked}
+          mode="searchable"
+          {first}
+          bind:status
+          bind:view
+        />
       </div>
     {/if}
   </div>

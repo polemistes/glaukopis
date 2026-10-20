@@ -23,7 +23,9 @@
    * while the dialog is open. The text and the picture of the page in view
    * are fetched as it comes into view, and a few are kept.
    */
-  import { onDestroy, onMount } from 'svelte';
+  import { onDestroy } from 'svelte';
+  import ChevronLeft from '@lucide/svelte/icons/chevron-left';
+  import Button from '$lib/ui/Button.svelte';
   import { SvelteMap } from 'svelte/reactivity';
   import { isBackendError } from '$lib/api/backend';
   import {
@@ -42,6 +44,7 @@
   import { ocrLanguageName } from './languages';
   import PagePanes from './PagePanes.svelte';
   import PagesBar from './PagesBar.svelte';
+  import ReadSummary from './ReadSummary.svelte';
   import PageStrip from './PageStrip.svelte';
   import {
     askedOf,
@@ -50,9 +53,13 @@
     firstPlan,
     sameAcross,
     settingsAt,
+    runsOf,
+    wholeOf,
     withSettings,
     withSource,
+    withWhole,
     type PagePlan,
+    type Whole,
     type PageSettings,
     type Source,
   } from './plan';
@@ -72,9 +79,23 @@
     first: string[];
     /** What the dialog's button asks, whether it can, and what it says. */
     status?: WorkbenchState;
+    /**
+     * The summary, as the dialog opens: what the file is, what its pages take
+     * and how they are read; or the pages, to be looked at and tried, opened
+     * on demand. What is done in either holds in both.
+     */
+    view?: 'summary' | 'pages';
   }
 
-  let { path, stored, looked, mode, first, status = $bindable() }: Props = $props();
+  let {
+    path,
+    stored,
+    looked,
+    mode,
+    first,
+    status = $bindable(),
+    view = $bindable('summary'),
+  }: Props = $props();
 
   const nameOf = (code: string) => ocrLanguageName(code);
   /** How many pages there are: a picture is one. */
@@ -89,6 +110,11 @@
     looked.picture
       ? []
       : firstPlan(looked.verdicts, startSettings, firstSource(looked, reader.installed)),
+  );
+  /** The choice for the whole PDF made last, which is said where two choices come to the same. */
+  // svelte-ignore state_referenced_locally
+  let preferred = $state<Whole | null>(
+    looked.picture ? null : firstSource(looked, reader.installed),
   );
   /** What a picture is read with. */
   let pictureSettings = $state.raw<PageSettings>(startSettings);
@@ -180,7 +206,7 @@
   // The page in view is fetched once it has stayed in view a moment, so that
   // going through the pages by the keys does not draw every one passed.
   $effect(() => {
-    if (looked.picture) return;
+    if (looked.picture || view !== 'pages') return;
     const page = inView;
     const wait = setTimeout(() => {
       if (looked.withText > 0) void fetchText(page);
@@ -245,9 +271,13 @@
     }
   }
 
-  // A picture is one page, and nothing of it is shown until it is read: it is tried at once.
-  onMount(() => {
-    if (looked.picture && reader.installed) void attempt();
+  // A picture is one page, and nothing of it is shown until it is read: it is
+  // tried as soon as it is opened to be looked at, once.
+  let pictureTried = false;
+  $effect(() => {
+    if (view !== 'pages' || !looked.picture || !reader.installed || pictureTried) return;
+    pictureTried = true;
+    void attempt();
   });
 
   onDestroy(() => {
@@ -266,10 +296,38 @@
 
   function setSource(source: Source) {
     plan = withSource(plan, acted, source, looked.verdicts);
+    if (!acted.length) preferred = source;
   }
 
   function decide() {
     plan = decided(plan, acted, looked.verdicts);
+    if (!acted.length) preferred = 'decide';
+  }
+
+  /** What every page takes, chosen in the summary. */
+  function setWhole(choice: Whole) {
+    plan = withWhole(plan, choice, looked.verdicts);
+    preferred = choice;
+  }
+
+  /** A setting changed in the summary: only what changed is laid on every page. */
+  function changeAll(next: PageSettings) {
+    if (looked.picture) {
+      pictureSettings = next;
+      return;
+    }
+    plan = withSettings(plan, [], changeOf(settingsOf(1), next));
+  }
+
+  /** What differs between two settings, to be laid on pages that may differ in the rest. */
+  function changeOf(was: PageSettings, next: PageSettings): Partial<PageSettings> {
+    const change: Partial<PageSettings> = {};
+    if (JSON.stringify(next.languages) !== JSON.stringify(was.languages))
+      change.languages = [...next.languages];
+    if (next.dpi !== was.dpi) change.dpi = next.dpi;
+    if (next.layout !== was.layout) change.layout = next.layout;
+    if (next.contrast !== was.contrast) change.contrast = next.contrast;
+    return change;
   }
 
   /** The settings changed: only what differs from what was shown is laid on the pages selected. */
@@ -278,14 +336,7 @@
       pictureSettings = next;
       return;
     }
-    const was = settingsOf(inView);
-    const change: Partial<PageSettings> = {};
-    if (JSON.stringify(next.languages) !== JSON.stringify(was.languages))
-      change.languages = [...next.languages];
-    if (next.dpi !== was.dpi) change.dpi = next.dpi;
-    if (next.layout !== was.layout) change.layout = next.layout;
-    if (next.contrast !== was.contrast) change.contrast = next.contrast;
-    plan = withSettings(plan, acted, change);
+    plan = withSettings(plan, acted, changeOf(settingsOf(inView), next));
   }
 
   function useSettings(settings: PageSettings) {
@@ -295,14 +346,6 @@
 
   // ---- what is said ----
 
-  /** The pages the buttons of the panes act on, in the words after "Use for". */
-  const paneScope = $derived(
-    !selection.length
-      ? t('ocr-pane-scope-all')
-      : selection.length === 1 && selection[0] === inView
-        ? t('ocr-pane-scope-page')
-        : selectionSaid(selection, pages, t) || t('ocr-pane-scope-all'),
-  );
   /** The line over the settings: which pages they hold for. */
   const settingsScope = $derived.by(() => {
     if (looked.picture) return '';
@@ -316,6 +359,14 @@
     'expert-names': 'ocr-text-scheme-expert-names',
     'beta-code': 'ocr-text-scheme-beta-code',
   };
+  /** What the fonts were found to say of their letters, in words: the tooltip of the translation. */
+  const schemeSaid = $derived(
+    looked.schemes
+      .map((found) =>
+        t(schemeWords[found.scheme], { fonts: found.fonts.join(', '), pages: found.pages }),
+      )
+      .join(' '),
+  );
 
   // ---- what is asked ----
 
@@ -356,99 +407,118 @@
   const drawn = $derived(pictures.get(inView) ?? null);
   const verdict = $derived(looked.verdicts[inView - 1] ?? 'none');
   const hasPdfText = $derived(!looked.picture && looked.withText > 0);
+  /** What every page takes, as the summary says it; nothing where pages were marked one by one. */
+  const whole = $derived(looked.picture ? null : wholeOf(plan, looked.verdicts, preferred));
+  /** Whether the pages are read in more than one way. */
+  const mixed = $derived(!looked.picture && runsOf(plan).length > 1);
 </script>
 
-<div class="workbench" class:picture={looked.picture} data-workbench={mode}>
-  {#if !looked.picture}
-    <div class="top">
-      <PagesBar
-        {looked}
-        {plan}
-        {selection}
-        canRead={reader.installed}
-        onsource={setSource}
-        ondecide={decide}
-        onall={() => (selection = [])}
-      />
-      {#if hasPdfText}
-        {#each looked.schemes as found (found.scheme)}
-          <p class="scheme" data-text-scheme={found.scheme}>
-            {t(schemeWords[found.scheme], { fonts: found.fonts.join(', '), pages: found.pages })}
-          </p>
-        {/each}
-      {/if}
-      <PageStrip
-        {path}
-        {stored}
-        pages={looked.pages}
-        {plan}
-        verdicts={looked.verdicts}
-        outline={looked.outline}
-        {selection}
-        {inView}
-        onview={(page) => (inView = page)}
-        onselect={(next) => (selection = next)}
-        {nameOf}
-      />
-    </div>
-  {/if}
-  <div class="row">
-    <PagePanes
-      {hasPdfText}
-      picture={{
-        picture: shown ? `data:image/png;base64,${shown.tried.png}` : (drawn?.url ?? null),
-        width: shown ? shown.tried.width : (drawn?.width ?? 0),
-        height: shown ? shown.tried.height : (drawn?.height ?? 0),
-        label: shown?.tried.label ?? texts.get(inView)?.label ?? String(inView),
-        blocks: shown?.tried.blocks ?? [],
-        unsure: shown ? unsureOf(shown.tried) : [],
-        loading: !shown && !drawn && !pictureFailed.has(inView) && !looked.picture,
-        failure: shown ? null : (pictureFailed.get(inView) ?? null),
-      }}
-      pdf={hasPdfText
-        ? {
-            page: texts.get(inView) ?? null,
-            loading: !texts.has(inView) && !textFailed.has(inView),
-            failure: textFailed.get(inView) ?? null,
-            verdict,
-            translated,
-            canTranslate: looked.schemes.length > 0,
-            ontranslated: (on: boolean) => (translated = on),
-            canUse: (selection.length ? selection : [inView]).some(
-              (page) => (looked.verdicts[page - 1] ?? 'none') !== 'none',
-            ),
-            onuse: () => setSource('pdf'),
-            scope: paneScope,
-          }
-        : null}
-      tesseract={{
-        page: inView,
-        shown,
-        trials: trials.get(inView) ?? [],
-        trying: trying === inView,
-        failure: tryFailed.get(inView) ?? null,
-        current: settingsOf(inView),
-        nameOf,
-        canUse: reader.installed && !looked.picture,
-        onuse: () => setSource('read'),
-        onshow: (trial: Trial) => shownAt.set(inView, trial.at),
-        onsettings: useSettings,
-        scope: paneScope,
-      }}
-    />
-    <ReadSettings
-      value={settingsOf(inView)}
-      scope={settingsScope}
+{#if view === 'summary'}
+  <div class="workbench summary" data-workbench={mode} data-view="summary">
+    <ReadSummary
+      {looked}
+      {plan}
+      {whole}
+      {mixed}
+      settings={settingsOf(1)}
+      {translated}
+      {toRead}
+      canRead={reader.installed}
       installed={reader.languages}
-      page={inView}
-      trying={trying !== null}
-      canTry={reader.installed && trying === null}
-      missing={!reader.installed}
-      onchange={changeSettings}
-      ontry={attempt}
+      onwhole={setWhole}
+      ontranslated={(on) => (translated = on)}
+      onsettings={changeAll}
+      onpages={() => (view = 'pages')}
     />
   </div>
-</div>
+{:else}
+  <div class="workbench" class:picture={looked.picture} data-workbench={mode} data-view="pages">
+    <div class="top">
+      <div class="bar-row">
+        <Button variant="ghost" size="sm" onclick={() => (view = 'summary')} data-close-pages>
+          {#snippet icon()}<ChevronLeft size={14} />{/snippet}
+          {t('ocr-summary-back')}
+        </Button>
+        {#if !looked.picture}
+          <div class="bar">
+            <PagesBar
+              {looked}
+              {plan}
+              {selection}
+              canRead={reader.installed}
+              onsource={setSource}
+              ondecide={decide}
+              onall={() => (selection = [])}
+            />
+          </div>
+        {/if}
+      </div>
+      {#if !looked.picture}
+        <PageStrip
+          {path}
+          {stored}
+          pages={looked.pages}
+          {plan}
+          verdicts={looked.verdicts}
+          outline={looked.outline}
+          {selection}
+          {inView}
+          onview={(page) => (inView = page)}
+          onselect={(next) => (selection = next)}
+          {nameOf}
+        />
+      {/if}
+    </div>
+    <div class="row">
+      <PagePanes
+        {hasPdfText}
+        picture={{
+          picture: shown ? `data:image/png;base64,${shown.tried.png}` : (drawn?.url ?? null),
+          width: shown ? shown.tried.width : (drawn?.width ?? 0),
+          height: shown ? shown.tried.height : (drawn?.height ?? 0),
+          label: shown?.tried.label ?? texts.get(inView)?.label ?? String(inView),
+          blocks: shown?.tried.blocks ?? [],
+          unsure: shown ? unsureOf(shown.tried) : [],
+          loading: !shown && !drawn && !pictureFailed.has(inView) && !looked.picture,
+          failure: shown ? null : (pictureFailed.get(inView) ?? null),
+        }}
+        pdf={hasPdfText
+          ? {
+              page: texts.get(inView) ?? null,
+              loading: !texts.has(inView) && !textFailed.has(inView),
+              failure: textFailed.get(inView) ?? null,
+              verdict,
+              translated,
+              canTranslate: looked.schemes.length > 0,
+              ontranslated: (on: boolean) => (translated = on),
+              scheme: schemeSaid,
+            }
+          : null}
+        tesseract={{
+          page: inView,
+          shown,
+          trials: trials.get(inView) ?? [],
+          trying: trying === inView,
+          failure: tryFailed.get(inView) ?? null,
+          nameOf,
+          onshow: (trial: Trial) => shownAt.set(inView, trial.at),
+          onsettings: useSettings,
+        }}
+      />
+      <ReadSettings
+        value={settingsOf(inView)}
+        scope={settingsScope}
+        installed={reader.languages}
+        page={inView}
+        trying={trying !== null}
+        canTry={reader.installed && trying === null}
+        missing={!reader.installed}
+        onchange={changeSettings}
+        ontry={attempt}
+      />
+    </div>
+  </div>
+{/if}
 
 <style>
   .workbench {
@@ -461,6 +531,10 @@
     padding: var(--space-3) var(--space-4) var(--space-4);
     box-sizing: border-box;
   }
+  .workbench.summary {
+    height: auto;
+    padding: 0;
+  }
   .top {
     display: flex;
     flex-direction: column;
@@ -468,14 +542,16 @@
     flex: none;
     min-width: 0;
   }
-  .scheme {
-    margin: 0;
-    padding: 6px 10px;
-    border-radius: var(--radius-m);
-    background: var(--accent-softer);
-    color: var(--ink);
-    font-size: var(--text-sm);
-    line-height: 1.45;
+  /* The way back to the summary, and the line of what the pages take, in one row. */
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 0;
+  }
+  .bar {
+    flex: 1 1 auto;
+    min-width: 0;
   }
   .row {
     display: grid;

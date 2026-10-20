@@ -14,14 +14,12 @@ ocr-low-resolution = The pages are pictures at { $dpi } dots to the inch: too fe
 ocr-low-resolution-text = Reading them anew will not better the text the PDF has.
 
 ocr-trying = Reading page { $page }…
-ocr-tried-confidence = Page { $label } was read with a confidence of { $confidence } out of 100.
-ocr-tried-poorly = That is poor: try another language, the Fraktur model for Gothic type, or another layout.
 ocr-tried-nothing = No text was read on page { $label }.
 ocr-tried-blocks = { $count ->
-    [one] Show the block of text Tesseract found
-   *[other] Show the { $count } blocks of text Tesseract found, numbered in the order it reads them
+    [one] Show the block of text
+   *[other] Show the { $count } blocks of text
 }
-ocr-tried-blocks-hint = Two columns taken as one, or notes taken into the text, read in the wrong order: another layout may part them.
+ocr-tried-blocks-hint = The blocks of text Tesseract found, numbered in the order it reads them. Two columns taken as one, or notes taken into the text, are read in the wrong order: another layout may part them.
 
 ocr-read = Read the text
 ocr-read-pages = { $count ->
@@ -244,37 +242,29 @@ ocr-picture-actual = 100%
 ocr-picture-double = 200%
 # The alternative text of the picture of the page in view.
 ocr-picture-alt = Page { $label }
-# The button in the header of a pane of text: that text is what the pages get. $scope: which pages, "this page", "pages 3–5", "all pages".
-ocr-pane-use = Use for { $scope }
 ocr-pane-translated = Translated by what the fonts say
 ocr-pane-sound = Reads as text
 ocr-pane-poor = Does not read as text: letters of a font that does not say which they are, or a poor reading
 ocr-pane-tesseract = What Tesseract read
 ocr-pane-try-hint = Press “Try page { $page }” to read this page with the settings beside.
-# Of the words Tesseract read on the page tried, those it was unsure of, which are underlined.
-ocr-pane-unsure = { $unsure ->
-    [0] { $words ->
-        [one] Tesseract was sure of the one word
-       *[other] Tesseract was sure of all { $words } words
-    }
-    [one] { $words ->
-        [one] Tesseract was unsure of the one word
-       *[other] One of { $words } words unsure
-    }
+# How sure Tesseract was of a page tried, in one line: "Page 40: Low confidence (73%) · 89 of 251 words unsure". Low is under 80, good up to 89, high from 90.
+ocr-tried-page = Page { $label }:
+ocr-confidence-low = Low confidence ({ $confidence }%)
+ocr-confidence-good = Good confidence ({ $confidence }%)
+ocr-confidence-high = High confidence ({ $confidence }%)
+ocr-tried-unsure = { $unsure ->
+    [0] no word unsure
    *[other] { $unsure } of { $words } words unsure
 }
+ocr-tried-low-hint = Under 80%: try another language, the Fraktur model for Gothic type, or another layout.
 # The tooltip of a word Tesseract was unsure of.
-ocr-pane-unsure-word = Read with a confidence of { $confidence } out of 100
-# The pages the buttons of the panes act on, after "Use for": the page in view alone, or every page.
-ocr-pane-scope-page = this page
-ocr-pane-scope-all = all pages
+ocr-pane-unsure-word = Read with a confidence of { $confidence }%
 # Said after the line over the settings, where the pages selected are read in different ways: a change holds for all of them.
 ocr-settings-scope-differ = (read in different ways)
 # Over the list of the page's trials, each said by the settings it was read with.
 ocr-trials = Tried with
-ocr-trial-confidence = { $confidence } of 100
+ocr-trial-confidence = { $confidence }%
 ocr-trial-nothing = Nothing read
-ocr-trial-differs = Not what holds for the page now
 ocr-trial-use = Use these settings
 
 # The pages of the workbench
@@ -343,3 +333,35 @@ ocr-strip-band-hint = { $count ->
     [one] Page { $from }: { $said }
    *[other] Pages { $from }–{ $to }: { $said }
 }
+
+# The summary of a reading, as the dialog opens: what the file is, said in parts joined by commas.
+ocr-summary-pages = { $pages ->
+    [one] One page
+   *[other] { $pages } pages
+}
+ocr-summary-scanned = scanned at { $dpi } dots to the inch
+ocr-summary-no-text = { $pages ->
+    [one] without text of its own
+   *[other] without text of their own
+}
+ocr-summary-text-all = { $pages ->
+    [one] with text of its own
+   *[other] all with text of their own
+}
+ocr-summary-text-some = { $with ->
+    [one] one of them with text of its own
+   *[other] { $with } of them with text of their own
+}
+ocr-summary-poor = { $poor ->
+    [one] one of which does not read as text
+   *[other] { $poor } of which do not read as text
+}
+ocr-summary-poor-all = which does not read as text
+# Over the choice of what every page takes.
+ocr-summary-whole = What the pages take
+ocr-summary-mixed = Chosen page by page. A choice here holds for every page again.
+# Under the reading settings, where no page is to be read with Tesseract.
+ocr-summary-idle = They hold for the pages read with Tesseract; none are now.
+ocr-summary-pages-open = Look at the pages and try them…
+ocr-summary-picture-open = Try it…
+ocr-summary-back = Back to the summary

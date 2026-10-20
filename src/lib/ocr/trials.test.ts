@@ -11,7 +11,6 @@ import {
   pieces,
   remembered,
   settingsSaid,
-  triedAsNow,
   unsureOf,
   type Trial,
 } from './trials';
@@ -68,16 +67,6 @@ describe('the trials of a page', () => {
     expect(KEPT).toBe(6);
     expect(kept.map((t) => t.at)).toEqual([8, 7, 6, 5, 4, 3]);
     expect(remembered(kept, trial(9), 2).map((t) => t.at)).toEqual([9, 8]);
-  });
-
-  it('say whether they were read with the settings that hold now', () => {
-    const was = trial(1, { languages: ['eng', 'grc'], dpi: 0 });
-    expect(triedAsNow(was, settings({ languages: ['eng', 'grc'], dpi: 300 }))).toBe(true);
-    expect(triedAsNow(was, settings({ languages: ['grc', 'eng'] }))).toBe(false);
-    expect(triedAsNow(was, settings({ languages: ['eng'] }))).toBe(false);
-    expect(triedAsNow(was, settings({ languages: ['eng', 'grc'], dpi: 400 }))).toBe(false);
-    expect(triedAsNow(was, settings({ languages: ['eng', 'grc'], layout: 'column' }))).toBe(false);
-    expect(triedAsNow(was, settings({ languages: ['eng', 'grc'], contrast: true }))).toBe(false);
   });
 });
 

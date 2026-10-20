@@ -271,9 +271,24 @@
   }
 
   const inBatch = (n: number) => !!drawing && n > drawing.from && n <= drawing.from + drawing.count;
+
+  /**
+   * The height of a page in the strip, from the shape of the first page
+   * drawn: as tall as the page is, at its width, from 40 to 90 pixels, so
+   * that a book of landscape pages leaves no empty room over and under them.
+   * Until a page is drawn, that of an upright page.
+   */
+  let aspect = $state<number | null>(null);
+  function measure(image: HTMLImageElement) {
+    if (aspect === null && image.naturalWidth > 0)
+      aspect = image.naturalHeight / image.naturalWidth;
+  }
+  const sheetHeight = $derived(
+    aspect === null ? undefined : `${Math.min(90, Math.max(40, Math.round(64 * aspect)))}px`,
+  );
 </script>
 
-<div class="strip" data-page-strip>
+<div class="strip" data-page-strip style:--sheet-h={sheetHeight}>
   {#if failure}
     <p class="failed" data-strip-failed role="alert">
       <span class="said">
@@ -347,7 +362,13 @@
         >
           <div class="sheet">
             {#if page?.picture}
-              <img src={page.picture} alt="" draggable="false" data-strip-picture />
+              <img
+                src={page.picture}
+                alt=""
+                draggable="false"
+                data-strip-picture
+                onload={(e) => measure(e.currentTarget as HTMLImageElement)}
+              />
             {:else if page}
               <span class="paper why" title={page.failed || undefined} data-strip-page-failed
                 >{page.failed || t('ocr-strip-page-failed')}</span
@@ -445,12 +466,10 @@
     align-items: flex-start;
     gap: 2px;
     min-width: 0;
-    padding: 4px 6px;
+    padding: 2px 0;
     overflow-x: auto;
     overflow-y: hidden;
-    border: 1px solid var(--line);
     border-radius: var(--radius-m);
-    background: var(--paper-sunken);
   }
   .row:has(.pages:focus-visible) {
     box-shadow: 0 0 0 3px var(--focus-ring);

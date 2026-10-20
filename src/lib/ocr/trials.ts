@@ -16,6 +16,9 @@ import type { PageSettings } from './plan';
 /** Under this confidence, out of 100, Tesseract was unsure of a word: as the core counts them. */
 export const UNSURE = 70;
 
+/** From this confidence, out of 100, a page tried was read with high confidence; under 80 (the core's `POORLY`), low; between, good. */
+export const HIGH = 90;
+
 /** How many trials of a page are kept. */
 export const KEPT = 6;
 
@@ -63,22 +66,6 @@ export function settingsSaid(
   if (settings.layout) parts.push(LAYOUT_SAID[settings.layout](t));
   if (settings.contrast) parts.push(t('ocr-settings-said-contrast'));
   return parts.join(' · ');
-}
-
-/**
- * Whether a trial was read with the settings that hold for its page now:
- * the same languages in the same order, the same layout and black and
- * white, and the same resolution, where 0 is 300.
- */
-export function triedAsNow(trial: Trial, now: PageSettings): boolean {
-  const was = trial.settings;
-  return (
-    was.languages.length === now.languages.length &&
-    was.languages.every((code, i) => code === now.languages[i]) &&
-    shownDpi(was.dpi) === shownDpi(now.dpi) &&
-    was.layout === now.layout &&
-    was.contrast === now.contrast
-  );
 }
 
 /** Whether Tesseract was unsure of a word: a confidence under `UNSURE`. A word it gave none is not counted. */

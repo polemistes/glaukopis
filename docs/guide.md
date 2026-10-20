@@ -1593,28 +1593,38 @@ reads text in pictures, in four places.
   an element of the text there, under the element in view.
 
 **The window of a reading** is the same wherever a PDF is read, into
-elements or to be made searchable. At the top stand **all the pages**,
-small, drawn as they are scrolled to; under them, **the page in view**, in
-three panes side by side: the picture of the page, to judge against; **the
-text the PDF has** on that page, where it has any; and **what Tesseract
-read** of it, once it has been tried. Beside the panes stand the settings it
-is read with: the languages, the resolution, the layout, black and white,
-and **Try page …**. The button at the foot of the window says what will be
-done: *Read 147 pages*, *Take the text*, or *Make it searchable*.
+elements or to be made searchable. It opens as a **summary**: what the file
+is (*271 pages, scanned at 400 dots to the inch, 257 of them with text of
+their own, 30 of which do not read as text*); **what the pages take**, chosen
+for the whole PDF; and **how Tesseract reads**: the languages, the
+resolution, the layout, and black and white, for every page. Where nothing
+is to be read with Tesseract, the settings stand greyed, to be set for when
+something is. Most readings need nothing more. The button at the foot of the
+window says what will be done: *Read 147 pages*, *Take the text*, or *Make
+searchable*.
+
+**Look at the pages and try them…** opens the pages themselves, in the same
+window, which grows for them; **Back to the summary** closes them again, and
+nothing done in either is lost. At the top stand **all the pages**, small,
+drawn as they are scrolled to; under them, **the page in view**, in three
+panes side by side: the picture of the page, to judge against; **the text
+the PDF has** on that page, where it has any; and **what Tesseract read** of
+it, once it has been tried. Beside the panes stand the settings again, for
+the pages selected, and **Try page …**.
 
 Many PDFs have text already: those made from a written document, and scans
-that a scanner or another program has read. The first line of the window
-says what each page will get, *412 pages take the text the PDF has; 147 are
-read with Tesseract*, and the small badge on each page in the strip says the
-same of that page. A page whose text does not read as text, as when a font
-does not say which letters it shows or a scanner read the page poorly, is
-tinted.
+that a scanner or another program has read. A line says what each page will
+get, *412 pages take the text the PDF has; 147 are read with Tesseract*, and
+the small badge on each page in the strip says the same of that page. A
+page whose text does not read as text, as when a font does not say which
+letters it shows or a scanner read the page poorly, is tinted.
 
 **Which pages take which text.** Each page takes the text the PDF has, or is
 read from a picture of it by Tesseract; a page without text is always read.
 At first every page is marked the same way: read where most of the text the
 PDF has does not read as text, and the pages are not too coarse to read
-anew; the PDF's text otherwise. Three buttons over the strip change it, for
+anew; the PDF's text otherwise. In the summary, three choices change it for
+the whole PDF; over the strip, three buttons of the same names change it for
 the pages selected, or for every page where none are:
 
 - **The PDF's text**: these pages take the text the PDF has.
@@ -1622,16 +1632,16 @@ the pages selected, or for every page where none are:
 - **Decide by the text's quality**: page by page, a page whose text reads as
   text keeps it, and a page whose text does not, or that has none, is read.
 
-The panes of the page in view have the same choice in their headers: **Use
-for this page** (or for the pages selected) under the text the PDF has, or
-under what Tesseract read. In a searchable PDF, a page that is read loses
+Where pages were marked one by one, the summary says so, and a choice made
+there holds for every page again. In a searchable PDF, a page that is read loses
 the unseen text it had, and what is read is laid in its place; the pages
 look as they did, and the pages that keep their text are not touched.
 
 Where the text keeps its letters in a way Glaukopis knows (below), the text
 the PDF has is taken as translated by what its fonts say (**Translated by
-what the fonts say**, over its pane, is ticked at first): no page is read
-from a picture for it, and the pane shows the text as it will be. In a searchable PDF the PDF's
+what the fonts say**, in the summary and over the pane of that text, is
+ticked at first): no page is read from a picture for it, and the pane shows
+the text as it will be. In a searchable PDF the PDF's
 own tables are put right instead (**Make readable**), so that every reader
 copies and searches the text rightly; nothing that is shown changes.
 
@@ -1789,19 +1799,23 @@ it is marked to take: that is how you find out whether reading it anew is
 worth it. Choose the page in the strip and press **Try page …** beside the
 panes: it is read in a few seconds with the settings that hold for it, and
 what Tesseract read stands beside the text the PDF has and the picture, with
-how sure it was out of 100. The words it was unsure of are underlined, and
-marked faintly on the picture, and the pane says how many there were (*14 of
-312 words unsure*): where the reading is weak shows at a glance. Over the
+how sure it was, in a line: *Page 40: Low confidence (73%) · 89 of 251 words
+unsure*. Low is under 80%, where a page counts as read poorly, and what to
+try then is said when the pointer rests on it; good is 80 to 89%, and high
+90% and over. The words it was unsure of are underlined, and marked faintly
+on the picture: where the reading is weak shows at a glance. Over the
 picture stand the **blocks of text** Tesseract found, numbered in the order
 it reads them: two columns in one block, or notes taken into the text, will
 be read in the wrong order, and another layout may part them. The blocks can
-be hidden, and the picture zoomed.
+be hidden, and the picture zoomed; at 100% and 200% it is moved by dragging
+it.
 
 Change a language, choose the Fraktur model, tell the layout, and try
 again. Each trial of a page is kept while the window is open, the last six
 of them, listed under what Tesseract read with what it was read with and how
-sure it was: choose one to see its text again, and **Use these settings** to
-read the pages selected with the settings that read best.
+sure it was, three in sight: choose one to see its text again, and **Use
+these settings** to read the pages selected with the settings that read
+best.
 
 **Selecting pages, and stretches.** A click on a page in the strip brings
 it into view and selects it. **Shift**-click selects every page from the

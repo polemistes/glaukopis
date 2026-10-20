@@ -11,6 +11,8 @@ import {
   settingsAt,
   withSettings,
   withSource,
+  withWhole,
+  wholeOf,
   type PageSettings,
 } from './plan';
 
@@ -235,5 +237,29 @@ describe('the settings of a page', () => {
     expect(sameAcross(plan, [1])).toBe(true);
     expect(sameAcross(firstPlan(verdicts, eng, 'pdf'), [])).toBe(true);
     expect(sameAcross([], [])).toBe(true);
+  });
+});
+
+describe('the choice for the whole PDF', () => {
+  it('is laid on every page', () => {
+    const plan = firstPlan(verdicts, eng, 'pdf');
+    expect(withWhole(plan, 'read', verdicts).map((p) => p.source)).toEqual(Array(5).fill('read'));
+    expect(withWhole(plan, 'decide', verdicts).map((p) => p.source)).toEqual([
+      'pdf',
+      'read',
+      'read',
+      'pdf',
+      'read',
+    ]);
+  });
+  it('is said as the pages are marked, the one chosen last first, and none where they were marked one by one', () => {
+    const plan = firstPlan(verdicts, eng, 'pdf');
+    expect(wholeOf(plan, verdicts, null)).toBe('pdf');
+    expect(wholeOf(withWhole(plan, 'decide', verdicts), verdicts, 'decide')).toBe('decide');
+    expect(wholeOf(withSource(plan, [4], 'read', verdicts), verdicts, 'pdf')).toBeNull();
+    const sound: Verdict[] = ['sound', 'sound'];
+    const both = firstPlan(sound, eng, 'pdf');
+    expect(wholeOf(both, sound, 'decide')).toBe('decide');
+    expect(wholeOf(both, sound, 'pdf')).toBe('pdf');
   });
 });

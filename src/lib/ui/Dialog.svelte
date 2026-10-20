@@ -22,6 +22,8 @@
      */
     movable?: boolean;
     padded?: boolean;
+    /** The subtitle on the title's line, and the header lower: for a dialog whose body needs the height. */
+    inline?: boolean;
     onclose: () => void;
     header?: Snippet;
     children: Snippet;
@@ -37,6 +39,7 @@
     dismissable = true,
     movable = true,
     padded = true,
+    inline = false,
     onclose,
     header,
     children,
@@ -176,6 +179,7 @@
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <header
           class:movable
+          class:inline
           onpointerdown={grab}
           ondblclick={(event) => {
             if (movable && !onControl(event)) moved = { x: 0, y: 0 };
@@ -274,6 +278,27 @@
   .subtitle {
     margin-top: 2px;
     color: var(--ink-3);
+  }
+  header.inline {
+    padding-top: var(--space-3);
+    padding-bottom: var(--space-2);
+  }
+  header.inline .titles {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    padding-top: 1px;
+  }
+  header.inline h2 {
+    font-size: var(--text-lg);
+  }
+  header.inline .subtitle {
+    margin-top: 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .body {
     flex: 1 1 auto;
