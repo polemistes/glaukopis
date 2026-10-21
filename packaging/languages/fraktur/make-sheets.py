@@ -34,7 +34,7 @@ RULES = """<h2>How to correct</h2>
 <li>Write what is printed, with the spelling of the time: <i>faa</i>, <i>gaar</i>, <i>Kjærlighed</i>. Never modernise.</li>
 <li>ſ is s. Ligatures of type are their letters (ff, fi, ſt, ch, ck, tz). æ ø å Æ Ø Å ß and &amp; stay themselves.</li>
 <li>Spaced-out emphasis is written as an ordinary word, without the spaces.</li>
-<li>A hyphen at the end of a line is a hyphen. Dashes and quotation marks as printed: — „ “ » «.</li>
+<li>A hyphen at the end of a line is a hyphen; a dash is —. For quotation marks just type <b>"</b>, for an apostrophe <b>'</b>: they become „ “ and ’ as these books print them.</li>
 <li>Antiqua words, numbers and punctuation exactly as they stand. One printed line is one box; nothing joined or split.</li>
 <li>Where a letter cannot be told, tick <b>unsure</b>: the line is then left out rather than guessed.</li>
 <li>A line that is not text, or cut wrongly, gets <b>skip</b>.</li>

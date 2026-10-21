@@ -8,7 +8,7 @@ flag, text), as the sheets save it (`human`, `truth`) or a reader by eye
 writes it (`claude`). Lines are compared where the first reader's flag is
 empty (checked, not unsure, skip or unchecked) and the second's is not
 `skip`. Text is normalised as measure.py normalises it: ſ is s, spaces
-single, none before . , ; : ! ?
+single, none before . , ; : ! ?, and quotation marks as `quotes` makes them
 
     compare-readers.py BOOKS-DIR [--truth human] [--other claude] [--show N]
 
@@ -23,8 +23,18 @@ import re
 import unicodedata
 
 
+def quotes(text):
+    """Quotation marks as these books print them, whatever was typed: a
+    plain or high double quote that opens (at the start, after a space or
+    an opening bracket) is „, one that closes is “; ” is “ too, the two
+    being one mark in this type; ' and ‘ are ’."""
+    text = text.replace("”", "“").replace("‘", "’").replace("'", "’")
+    text = re.sub(r'(^|[\s(\[—-])["“]', lambda m: m.group(1) + "„", text)
+    return text.replace('"', "“")
+
+
 def normalise(text):
-    text = unicodedata.normalize("NFC", text).replace("ſ", "s")
+    text = quotes(unicodedata.normalize("NFC", text).replace("ſ", "s"))
     text = re.sub(r"\s+", " ", text).strip()
     return re.sub(r" ([.,;:!?])", r"\1", text)
 

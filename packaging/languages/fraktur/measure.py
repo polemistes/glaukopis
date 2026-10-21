@@ -36,8 +36,18 @@ LETTERS = "æøåÆØÅ"
 FOLD = str.maketrans("æøåÆØÅ", "eoaEOA")
 
 
+def quotes(text):
+    """Quotation marks as these books print them, whatever was typed: a
+    plain or high double quote that opens (at the start, after a space or
+    an opening bracket) is „, one that closes is “; ” is “ too, the two
+    being one mark in this type; ' and ‘ are ’."""
+    text = text.replace("”", "“").replace("‘", "’").replace("'", "’")
+    text = re.sub(r'(^|[\s(\[—-])["“]', lambda m: m.group(1) + "„", text)
+    return text.replace('"', "“")
+
+
 def normalise(text):
-    text = unicodedata.normalize("NFC", text).replace("ſ", "s")
+    text = quotes(unicodedata.normalize("NFC", text).replace("ſ", "s"))
     text = re.sub(r"\s+", " ", text).strip()
     text = re.sub(r" ([.,;:!?])", r"\1", text)
     return text
