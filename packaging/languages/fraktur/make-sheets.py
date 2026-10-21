@@ -144,10 +144,13 @@ def read_batch(paths, tessdata, lang):
     return [" ".join(p.split()).replace("ſ", "s") for p in pages[: len(paths)]] + [""] * (len(paths) - len(pages))
 
 
-def sheet(book, page, lines, folder):
+def sheet(book, page, lines, folder, blank=False):
+    """The sheet of a page; blank, one with empty boxes and no reading of
+    anyone's, for a reader who is to read independently: it saves as
+    `page-NNNN.human.tsv`."""
     link = next((p.get("link") for p in book.get("pages", []) if p.get("page") == page and p.get("link")), book["link"])
     parts = [f"<!doctype html><html lang='en'><head><meta charset='utf-8'><title>{html.escape(book['title'][:60])} p. {page}</title>",
-             f"<style>{STYLE}</style></head><body data-file='page-{page}.truth.tsv'>",
+             f"<style>{STYLE}</style></head><body data-file='page-{page}.{'human' if blank else 'truth'}.tsv'>",
              f"<div class='top'><h1>{html.escape(book['title'][:80])}, {html.escape(str(book['issued']))} — page {page} of the scan</h1>",
              "<span id='count'></span> <button id='save'>Save</button><label>Load <input id='load' type='file' accept='.tsv,.txt'></label>",
              f"<a href='{link}' target='_blank'>at nb.no</a></div>", RULES]
@@ -155,10 +158,11 @@ def sheet(book, page, lines, folder):
         with open(l["png"], "rb") as f:
             data = base64.b64encode(f.read()).decode()
         name = os.path.basename(l["png"])[:-4]
+        draft = "" if blank else html.escape(l["model"])
+        library = "" if blank else f"<div class='alt'><button data-take=\"{html.escape(l['alto'], quote=True)}\">take</button>library: {html.escape(l['alto'])}</div>"
         parts.append(f"<div class='line' data-line='{i}' data-name='{name}'><span class='num'>{name}</span>"
                      f"<img src='data:image/png;base64,{data}' alt=''>"
-                     f"<textarea rows='1' spellcheck='false'>{html.escape(l['model'])}</textarea>"
-                     f"<div class='alt'><button data-take=\"{html.escape(l['alto'], quote=True)}\">take</button>library: {html.escape(l['alto'])}</div>"
+                     f"<textarea rows='1' spellcheck='false'>{draft}</textarea>{library}"
                      f"<div class='flags'><label><input type='checkbox' class='unsure'> unsure</label> &nbsp; <label><input type='checkbox' class='skip'{' checked' if l.get('tall') else ''}> skip</label>"
                      f"{' <i>(more than one line? skipped)</i>' if l.get('tall') else ''}</div></div>")
     parts.append(f"<script>{SCRIPT}</script></body></html>")
@@ -166,7 +170,7 @@ def sheet(book, page, lines, folder):
         f.write("\n".join(parts))
 
 
-def do_book(folder, tessdata, lang):
+def do_book(folder, tessdata, lang, blank=False):
     with open(os.path.join(folder, "book.json"), encoding="utf-8") as f:
         book = json.load(f)
     linedir = os.path.join(folder, "lines")
@@ -190,7 +194,7 @@ def do_book(folder, tessdata, lang):
             json.dump([{"name": os.path.basename(l["png"])[:-4], "box": l["box"], "alto": l["alto"], "model": l["model"],
                         "tall": l.get("tall", False)} for l in lines],
                       f, ensure_ascii=False, indent=1)
-        sheet(book, page, lines, folder)
+        sheet(book, page, lines, folder, blank)
         made.append((page, len(lines)))
     return book, made
 
@@ -202,10 +206,19 @@ def main():
     p.add_argument("--lang", default="dan_latf")
     p.add_argument("--only", help="book folder prefixes, comma-separated, as 01,04")
     p.add_argument("--again", action="store_true", help="make the sheets of books that have them already")
+    p.add_argument("--blank", action="store_true",
+                   help="sheets with empty boxes and no reading shown, saving as page-NNNN.human.tsv")
     p.add_argument("--html-only", action="store_true",
                    help="write the sheets anew from the lines already cut and read, without reading them again")
     a = p.parse_args()
     only = set(a.only.split(",")) if a.only else None
+    # The books held out for measuring (heldout.json beside the books: a
+    # list of folder names) always get blank sheets, since they are read
+    # independently of any model; they are marked and listed first.
+    heldout = set()
+    if os.path.exists(os.path.join(a.books, "heldout.json")):
+        with open(os.path.join(a.books, "heldout.json"), encoding="utf-8") as f:
+            heldout = set(json.load(f))
     entries = []
     for folder in sorted(glob.glob(os.path.join(a.books, "*", "book.json"))):
         folder = os.path.dirname(folder)
@@ -222,7 +235,7 @@ def main():
                     lines = json.load(f)
                 for l in lines:
                     l["png"] = os.path.join(folder, "lines", l["name"] + ".png")
-                sheet(book, page, lines, folder)
+                sheet(book, page, lines, folder, a.blank or os.path.basename(folder) in heldout)
                 made.append((page, len(lines)))
             entries.append((os.path.basename(folder), book, made))
             continue
@@ -233,7 +246,7 @@ def main():
             entries.append((os.path.basename(folder), book, made))
             continue
         try:
-            book, made = do_book(folder, a.tessdata, a.lang)
+            book, made = do_book(folder, a.tessdata, a.lang, os.path.basename(folder) in heldout)
         except Exception as e:  # one book failing must not end the run
             print(f"{os.path.basename(folder)}: failed: {type(e).__name__}: {str(e)[:100]}", flush=True)
             continue
@@ -252,13 +265,6 @@ def main():
     if os.path.exists(os.path.join(a.books, "types.json")):
         with open(os.path.join(a.books, "types.json"), encoding="utf-8") as f:
             types = {k: v["type"] for k, v in json.load(f).items()}
-    # The books held out for measuring (heldout.json beside the books: a
-    # list of folder names): marked, and listed first, as they are
-    # corrected first.
-    heldout = set()
-    if os.path.exists(os.path.join(a.books, "heldout.json")):
-        with open(os.path.join(a.books, "heldout.json"), encoding="utf-8") as f:
-            heldout = set(json.load(f))
     label = {"fraktur": "Fraktur", "antiqua": "roman type: not for this model", "hybrid": "roman with Fraktur capitals"}
     for name, book, made in entries:
         kind = types.get(name, "")
