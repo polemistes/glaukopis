@@ -20,7 +20,9 @@ the readings beside the page, in this order:
 
 The text is written as the application takes text: ſ as s, ligature
 characters as their letters, quotation marks as these books print them,
-the capital I or J the word has, spaces single.
+the plain quotation marks a person types as these books print
+them, the marks a reader wrote kept as written, the capital I or J the
+word has, spaces single.
 
     gather.py BOOKS-DIR TRAIN-DIR HELDOUT-DIR
 
@@ -41,8 +43,12 @@ LIGATURES = {"ﬀ": "ff", "ﬁ": "fi", "ﬂ": "fl", "ﬃ": "ffi", "ﬄ": "ffl", 
 
 
 def quotes(text):
-    text = text.replace("”", "“").replace("‘", "’").replace("'", "’")
-    text = re.sub(r'(^|[\s(\[—-])["“]', lambda m: m.group(1) + "„", text)
+    """The plain quotation marks a person types, made those the books
+    print most: " that opens is „, " that closes is “, ' is ’. Marks a
+    reader wrote as it saw them (” before and after in some books) are
+    kept, since the line is to teach the mark on the page."""
+    text = text.replace("'", "’")
+    text = re.sub(r'(^|[\s(\[—-])"', lambda m: m.group(1) + "„", text)
     return text.replace('"', "“")
 
 
