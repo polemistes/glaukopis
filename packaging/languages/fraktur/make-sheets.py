@@ -62,6 +62,7 @@ img{display:block;max-width:100%;border:1px solid #ccc;background:#fff}
 textarea{width:100%;font-size:1.25em;font-family:serif;margin-top:.3em;box-sizing:border-box}
 .alt{color:#666;font-size:.95em;font-family:serif}
 .alt button{font-size:.8em;margin-right:.5em}
+.mode{background:#fff4d6;padding:.5em;border-radius:4px}
 .flags{font-size:.9em;color:#444}
 .top{position:sticky;top:0;background:#faf8f3;padding:.5em 0;border-bottom:1px solid #ccc;display:flex;gap:1em;align-items:center}
 h1{font-size:1.2em;margin:0}
@@ -144,27 +145,68 @@ def read_batch(paths, tessdata, lang):
     return [" ".join(p.split()).replace("ſ", "s") for p in pages[: len(paths)]] + [""] * (len(paths) - len(pages))
 
 
+def read_tsv(path):
+    """A reader's file (line, flag, text) as {line: (flag, text)}; empty
+    where there is none."""
+    rows = {}
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            for row in f:
+                parts = row.rstrip("\n").split("\t")
+                if len(parts) >= 2 and parts[0]:
+                    rows[parts[0]] = (parts[1].strip(), parts[2] if len(parts) > 2 else "")
+    return rows
+
+
 def sheet(book, page, lines, folder, blank=False):
-    """The sheet of a page; blank, one with empty boxes and no reading of
-    anyone's, for a reader who is to read independently: it saves as
+    """The sheet of a page. As a rule its boxes hold the model's reading,
+    with the library's beside it, and it saves as `page-NNNN.truth.tsv`.
+    Where a reader by eye has read the page (`page-NNNN.claude.tsv`) and
+    the book is held out (`blank`), the boxes hold that reading with its
+    flags, to be checked against the pictures, the person's own earlier
+    reading (`page-NNNN.human.tsv`) beside it where it differs, and it
+    saves as `page-NNNN.checked.tsv`, the reader's file untouched. Held
+    out and not yet read by eye, the boxes are empty, and it saves as
     `page-NNNN.human.tsv`."""
+    reader = read_tsv(os.path.join(folder, f"page-{page}.claude.tsv")) if blank else {}
+    human = read_tsv(os.path.join(folder, f"page-{page}.human.tsv")) if reader else {}
+    mode = "checked" if reader else "human" if blank else "truth"
     link = next((p.get("link") for p in book.get("pages", []) if p.get("page") == page and p.get("link")), book["link"])
+    intro = ("<p class='mode'>The boxes hold a reading by eye. Check each line against its picture and fix what is wrong; "
+             "the ticks for unsure and skip are the reader's, change them where you disagree.</p>") if reader else ""
     parts = [f"<!doctype html><html lang='en'><head><meta charset='utf-8'><title>{html.escape(book['title'][:60])} p. {page}</title>",
-             f"<style>{STYLE}</style></head><body data-file='page-{page}.{'human' if blank else 'truth'}.tsv'>",
+             f"<style>{STYLE}</style></head><body data-file='page-{page}.{mode}.tsv'>",
              f"<div class='top'><h1>{html.escape(book['title'][:80])}, {html.escape(str(book['issued']))} — page {page} of the scan</h1>",
              "<span id='count'></span> <button id='save'>Save</button><label>Load <input id='load' type='file' accept='.tsv,.txt'></label>",
-             f"<a href='{link}' target='_blank'>at nb.no</a></div>", RULES]
+             f"<a href='{link}' target='_blank'>at nb.no</a></div>", intro, RULES]
     for i, l in enumerate(lines):
         with open(l["png"], "rb") as f:
             data = base64.b64encode(f.read()).decode()
         name = os.path.basename(l["png"])[:-4]
-        draft = "" if blank else html.escape(l["model"])
-        library = "" if blank else f"<div class='alt'><button data-take=\"{html.escape(l['alto'], quote=True)}\">take</button>library: {html.escape(l['alto'])}</div>"
+        unsure = skip = False
+        alt = ""
+        if reader:
+            flag, text = reader.get(name, ("skip", ""))
+            unsure, skip = flag == "unsure", flag == "skip"
+            draft = html.escape(text)
+            if name in human and human[name][1].strip() and human[name][1].strip() != text.strip():
+                mine = human[name][1]
+                alt = (f"<div class='alt'><button data-take=\"{html.escape(mine, quote=True)}\">take</button>"
+                       f"your earlier reading: {html.escape(mine)}</div>")
+        elif blank:
+            draft = ""
+            skip = bool(l.get("tall"))
+        else:
+            draft = html.escape(l["model"])
+            skip = bool(l.get("tall"))
+            alt = (f"<div class='alt'><button data-take=\"{html.escape(l['alto'], quote=True)}\">take</button>"
+                   f"library: {html.escape(l['alto'])}</div>")
+        note = " <i>(more than one line? skipped)</i>" if l.get("tall") and not reader else ""
         parts.append(f"<div class='line' data-line='{i}' data-name='{name}'><span class='num'>{name}</span>"
                      f"<img src='data:image/png;base64,{data}' alt=''>"
-                     f"<textarea rows='1' spellcheck='false'>{draft}</textarea>{library}"
-                     f"<div class='flags'><label><input type='checkbox' class='unsure'> unsure</label> &nbsp; <label><input type='checkbox' class='skip'{' checked' if l.get('tall') else ''}> skip</label>"
-                     f"{' <i>(more than one line? skipped)</i>' if l.get('tall') else ''}</div></div>")
+                     f"<textarea rows='1' spellcheck='false'>{draft}</textarea>{alt}"
+                     f"<div class='flags'><label><input type='checkbox' class='unsure'{' checked' if unsure else ''}> unsure</label> &nbsp; "
+                     f"<label><input type='checkbox' class='skip'{' checked' if skip else ''}> skip</label>{note}</div></div>")
     parts.append(f"<script>{SCRIPT}</script></body></html>")
     with open(os.path.join(folder, f"sheet-{page}.html"), "w", encoding="utf-8") as f:
         f.write("\n".join(parts))
