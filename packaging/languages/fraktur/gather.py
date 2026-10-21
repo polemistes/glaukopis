@@ -62,6 +62,9 @@ def normalise(text):
     for lig, letters in LIGATURES.items():
         text = text.replace(lig, letters)
     text = i_or_j(quotes(text))
+    # The sign for etc., an r rotunda with c, written ꝛc. by some readers
+    # and rc. by others: one mark for one glyph.
+    text = re.sub(r"(?<![A-Za-zÆØÅæøåÄÖÜäöü])rc\.", "ꝛc.", text)
     text = re.sub(r"\s+", " ", text).strip()
     return re.sub(r" ([.,;:!?])", r"\1", text)
 
