@@ -63,9 +63,11 @@ h1{font-size:1.2em;margin:0}
 
 
 def alto_lines(xml, img_w, img_h):
-    page = re.search(r'<Page\b[^>]*WIDTH="(\d+)"[^>]*HEIGHT="(\d+)"', xml)
-    sx = img_w / int(page.group(1))
-    sy = img_h / int(page.group(2))
+    # The page's size in the ALTO's own units, its attributes in any order
+    # (the library's texts were made by more than one program).
+    page = dict(re.findall(r'\b(WIDTH|HEIGHT)="(\d+)"', re.search(r'<Page\b[^>]*>', xml).group(0)))
+    sx = img_w / int(page["WIDTH"])
+    sy = img_h / int(page["HEIGHT"])
     out = []
     for m in re.finditer(r'<TextLine\b([^>]*)>(.*?)</TextLine>', xml, re.S):
         attrs, body = m.group(1), m.group(2)
@@ -160,6 +162,7 @@ def main():
     p.add_argument("--tessdata", required=True)
     p.add_argument("--lang", default="dan_latf")
     p.add_argument("--only", help="book folder prefixes, comma-separated, as 01,04")
+    p.add_argument("--again", action="store_true", help="make the sheets of books that have them already")
     a = p.parse_args()
     only = set(a.only.split(",")) if a.only else None
     entries = []
@@ -167,7 +170,18 @@ def main():
         folder = os.path.dirname(folder)
         if only and os.path.basename(folder).split("-")[0] not in only:
             continue
-        book, made = do_book(folder, a.tessdata, a.lang)
+        pages = glob.glob(os.path.join(folder, "page-*.jpg"))
+        if not a.again and pages and all(os.path.exists(os.path.join(folder, "sheet-" + os.path.basename(j)[5:-4] + ".html")) for j in pages):
+            book = json.load(open(os.path.join(folder, "book.json"), encoding="utf-8"))
+            made = [(os.path.basename(j)[5:-4], len(json.load(open(os.path.join(folder, "lines", "page-" + os.path.basename(j)[5:-4] + ".lines.json"), encoding="utf-8"))))
+                    for j in sorted(pages)]
+            entries.append((os.path.basename(folder), book, made))
+            continue
+        try:
+            book, made = do_book(folder, a.tessdata, a.lang)
+        except Exception as e:  # one book failing must not end the run
+            print(f"{os.path.basename(folder)}: failed: {type(e).__name__}: {str(e)[:100]}", flush=True)
+            continue
         print(f"{os.path.basename(folder)}: {len(made)} sheets, {sum(n for _, n in made)} lines", flush=True)
         entries.append((os.path.basename(folder), book, made))
     index = os.path.join(a.books, "index.html")
