@@ -220,3 +220,20 @@ the lines already cut and read.
 
 Books in roman type are moved out of the books folder, to `aside/`
 beside it: they cannot teach a Fraktur model.
+
+## Reading by eye, and measuring the reader
+
+A model (Claude) can read the lines from pictures, as a reader in place
+of or beside the people. `make-strips.py` makes strips of twelve lines
+each, numbered, under `strips/` in every book's folder;
+`reading-brief.md` is the brief a reader follows, and the reading goes
+to `page-NNNN.claude.tsv` beside `book.json`, in the form the sheets
+save (line, flag, text). One reader per book, or per newspaper page,
+each with a scratch folder of its own: a shared one lost rows twice.
+
+The reader is measured before it is trusted: the held-out books are read
+by people on blank sheets, which save as `page-NNNN.human.tsv`, and
+`compare-readers.py` gives the reader's character error rate against the
+people's, per book, with the lines that differ most. On 2026-10-22 the
+ten held-out books were read: 4,072 lines, 91 flagged unsure, 67 skipped
+(a cut that took two lines), in about 400 tokens a line.
