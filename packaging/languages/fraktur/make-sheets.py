@@ -217,7 +217,8 @@ def main():
     if os.path.exists(index):
         with open(index, encoding="utf-8") as f:
             for m in re.finditer(r"<li data-book='([^']*)'>(.*?)</li>", f.read(), re.S):
-                old[m.group(1)] = m.group(2)
+                if os.path.isdir(os.path.join(a.books, m.group(1))):  # books moved away are dropped
+                    old[m.group(1)] = m.group(2)
     # The type of each book, where it has been judged (types.json beside the
     # books: fraktur, antiqua or hybrid); the Fraktur books are listed first.
     types = {}
