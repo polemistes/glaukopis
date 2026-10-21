@@ -237,3 +237,39 @@ by people on blank sheets, which save as `page-NNNN.human.tsv`, and
 people's, per book, with the lines that differ most. On 2026-10-22 the
 ten held-out books were read: 4,072 lines, 91 flagged unsure, 67 skipped
 (a cut that took two lines), in about 400 tokens a line.
+
+### The Norwegian set of 2026-10-22
+
+81 Fraktur books from the National Library (65 from the owner's list,
+16 chosen to fill gaps: newspapers of Bergen, Christiania, Drammen and
+Stavanger, periodicals, and late Fraktur to 1920), six pages each, 484
+pages, 20,499 lines. Every line was read by eye by Opus 5.5 (97 readers
+in waves, each with its own scratch folder); the ten held-out books were
+also read by Fable 5.1, and the owner checked one page of each.
+
+Measured on the owner's checked lines, the two readers agree with each
+other on 529 of 539 lines; of the ten disagreements, the pictures showed
+Opus right in seven and Fable in two. Fable's errors were normalising
+(Pølser for the printed Polser); Opus wrote what is printed. Over all
+held-out lines the two readers disagree on 37 of some 3,900: those are
+left out until a person settles them (`make-settle.py`).
+
+`gather.py` then gives 15,522 training lines (a single clean reading by
+Opus) and 3,825 held-out lines (two agreeing readings, or checked); 905
+training lines and 210 held-out ones were left out for a flag of
+unsure or skip. The model is trained on the Norwegian lines with the
+Danish and German lines of pvorb mixed in (`SETS="nor dan german"`),
+from `deu_latf`, its character set widened to 148.
+
+```
+python3 -I packaging/languages/fraktur/gather.py ~/glaukopis-fraktur/books \
+  packaging/build/fraktur/lines/nor packaging/build/fraktur/lines/heldout-nor
+EXPERIMENT=train-nor SETS="nor dan german" packaging/languages/fraktur/make-model.sh prepare
+EXPERIMENT=train-nor SETS="nor dan german" nohup packaging/languages/fraktur/make-model.sh train runA 60000 > packaging/build/fraktur/logs/runA.log 2>&1 &
+python3 -I packaging/languages/fraktur/measure.py --psm 13 --tessdata ... --lang ... packaging/build/fraktur/lines/heldout-nor
+```
+
+The held-out lines are cut with slivers of the lines around them, so
+they are measured as raw lines (`--psm 13`); the training files are made
+the same way, since told to find the line Tesseract silently gave up on
+one picture in six.
