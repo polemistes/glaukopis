@@ -62,10 +62,11 @@ h1{font-size:1.2em;margin:0}
 li{margin:.6em 0}
 [data-type]{font-size:.8em;padding:1px 5px;border-radius:3px;background:#e8e2d0}
 [data-type=antiqua]{background:#eee;color:#888}
+[data-heldout]{font-size:.8em;padding:1px 5px;border-radius:3px;background:#2d5a8a;color:#fff}
 .num{color:#999;font-size:.85em}"""
 
 
-def alto_lines(xml, img_w, img_h):
+def alto_lines(xml, img_w, img_h, in_reading_order=False):
     # The page's size in the ALTO's own units, its attributes in any order
     # (the library's texts were made by more than one program).
     page = dict(re.findall(r'\b(WIDTH|HEIGHT)="(\d+)"', re.search(r'<Page\b[^>]*>', xml).group(0)))
@@ -92,7 +93,10 @@ def alto_lines(xml, img_w, img_h):
             continue
         x, y, w, h = box["HPOS"] * sx, box["VPOS"] * sy, box["WIDTH"] * sx, box["HEIGHT"] * sy
         out.append({"box": [round(x), round(y), round(w), round(h)], "alto": " ".join(words)})
-    out.sort(key=lambda l: (l["box"][1], l["box"][0]))
+    # Top to bottom for a book; a newspaper keeps the library's reading
+    # order, column by column, so that a sheet does not jump between them.
+    if not in_reading_order:
+        out.sort(key=lambda l: (l["box"][1], l["box"][0]))
     # A line much taller than the page's others is several lines the
     # library's text took for one: skipped unless one unticks it.
     heights = sorted(l["box"][3] for l in out)
@@ -135,11 +139,12 @@ def read_batch(paths, tessdata, lang):
 
 
 def sheet(book, page, lines, folder):
+    link = next((p.get("link") for p in book.get("pages", []) if p.get("page") == page and p.get("link")), book["link"])
     parts = [f"<!doctype html><html lang='en'><head><meta charset='utf-8'><title>{html.escape(book['title'][:60])} p. {page}</title>",
              f"<style>{STYLE}</style></head><body data-file='page-{page}.truth.tsv'>",
              f"<div class='top'><h1>{html.escape(book['title'][:80])}, {html.escape(str(book['issued']))} — page {page} of the scan</h1>",
              "<button id='save'>Save</button><label>Load <input id='load' type='file' accept='.tsv,.txt'></label>",
-             f"<a href='{book['link']}' target='_blank'>at nb.no</a></div>", RULES]
+             f"<a href='{link}' target='_blank'>at nb.no</a></div>", RULES]
     for i, l in enumerate(lines):
         with open(l["png"], "rb") as f:
             data = base64.b64encode(f.read()).decode()
@@ -166,7 +171,7 @@ def do_book(folder, tessdata, lang):
         with open(jpg[:-4] + ".alto.xml", encoding="utf-8") as f:
             xml = f.read()
         im = Image.open(jpg).convert("L")
-        lines = alto_lines(xml, im.width, im.height)
+        lines = alto_lines(xml, im.width, im.height, book.get("kind") == "newspaper")
         for i, l in enumerate(lines):
             x, y, w, h = l["box"]
             my, mx = int(h * 0.25), int(w * 0.01) + 4
@@ -225,16 +230,24 @@ def main():
     if os.path.exists(os.path.join(a.books, "types.json")):
         with open(os.path.join(a.books, "types.json"), encoding="utf-8") as f:
             types = {k: v["type"] for k, v in json.load(f).items()}
+    # The books held out for measuring (heldout.json beside the books: a
+    # list of folder names): marked, and listed first, as they are
+    # corrected first.
+    heldout = set()
+    if os.path.exists(os.path.join(a.books, "heldout.json")):
+        with open(os.path.join(a.books, "heldout.json"), encoding="utf-8") as f:
+            heldout = set(json.load(f))
     label = {"fraktur": "Fraktur", "antiqua": "roman type: not for this model", "hybrid": "roman with Fraktur capitals"}
     for name, book, made in entries:
         kind = types.get(name, "")
         links = " ".join(f"<a href='{name}/sheet-{page}.html'>{page}</a> <small>({n})</small>" for page, n in made)
-        old[name] = (f"<span data-type='{kind}'>{label.get(kind, '')}</span> <b>{html.escape(book['title'][:90])}</b>, {html.escape(str(book['issued']))} "
+        mark = "<span data-heldout>held out for measuring</span> " if name in heldout else ""
+        old[name] = (f"{mark}<span data-type='{kind}'>{label.get(kind, '')}</span> <b>{html.escape(book['title'][:90])}</b>, {html.escape(str(book['issued']))} "
                      f"<small>{html.escape(str(book['access']['accessAllowedFrom']))}{', public domain' if book['access']['isPublicDomain'] else ''}</small><br>pages: {links}")
     with open(index, "w", encoding="utf-8") as f:
         f.write("<!doctype html><html lang='en'><head><meta charset='utf-8'><title>Fraktur ground truth</title>"
                 f"<style>{STYLE}</style></head><body><h1>Books fetched from nb.no, with their correction sheets</h1><ul>"
-                + "".join(f"<li data-book='{k}'>{v}</li>" for k, v in sorted(old.items(), key=lambda kv: (types.get(kv[0], "") != "fraktur", kv[0])))
+                + "".join(f"<li data-book='{k}'>{v}</li>" for k, v in sorted(old.items(), key=lambda kv: (kv[0] not in heldout, types.get(kv[0], "") != "fraktur", kv[0])))
                 + "</ul></body></html>")
 
 

@@ -15,6 +15,10 @@ folder exists already are skipped, so a run can be taken up again.
 
     fetch-nb.py LIST.csv OUT-DIR [--pages 6] [--only 1,5,12]
 
+A row may give the library's `id` of the edition wanted, which is then
+taken as it is, and `kind` = `newspaper`, which takes one page from each
+of as many issues as pages are asked, spread over the years of the row.
+
 One request at a time, with a pause between, and the project named in the
 request. Nothing of the person is sent.
 """
@@ -122,23 +126,30 @@ def fetch_book(row, out, pages):
     folder = os.path.join(out, f"{nr:02d}-{slug}")
     if os.path.exists(os.path.join(folder, "book.json")):
         return {"nr": nr, "status": "done before"}
+    if (row.get("kind") or "").strip() == "newspaper":
+        return fetch_newspaper(row, folder, lo, hi, pages)
     t, a = clean_title(title), clean_author(author)
-    tries = [f"{t} {a}".strip(), t, " ".join(t.split()[:3] + [a]).strip()]
-    hits, used = [], ""
-    for q in tries:
-        if not q:
-            continue
-        hits = search(q, lo, hi)
-        if hits:
-            used = q
-            break
-    pick = choose(hits, title, lo)
-    if not pick:
-        return {"nr": nr, "status": "no hit", "query": tries[0], "years": f"{lo}-{hi}"}
-    # A hit without the title's first word in its own title is a guess:
-    # taken, but marked for review.
-    first = t.split()[0].lower() if t else ""
-    review = bool(first) and first not in (pick["metadata"].get("title") or "").lower()
+    review = False
+    if (row.get("id") or "").strip():
+        # The edition chosen by hand, by the library's id.
+        pick, used = get(f"{API}/items/{row['id'].strip()}"), "id " + row["id"].strip()
+    else:
+        tries = [f"{t} {a}".strip(), t, " ".join(t.split()[:3] + [a]).strip()]
+        hits, used = [], ""
+        for q in tries:
+            if not q:
+                continue
+            hits = search(q, lo, hi)
+            if hits:
+                used = q
+                break
+        pick = choose(hits, title, lo)
+        if not pick:
+            return {"nr": nr, "status": "no hit", "query": tries[0], "years": f"{lo}-{hi}"}
+        # A hit without the title's first word in its own title is a guess:
+        # taken, but marked for review.
+        first = t.split()[0].lower() if t else ""
+        review = bool(first) and first not in (pick["metadata"].get("title") or "").lower()
     m, acc = pick["metadata"], pick["accessInfo"]
     manifest = get(pick["_links"]["presentation"]["href"])
     canvases = manifest["sequences"][0]["canvases"]
@@ -187,6 +198,62 @@ def fetch_book(row, out, pages):
     return {"nr": nr, "status": status, "query": used,
             "chosen": f"{m.get('title')} | {book['issued']} | {acc.get('accessAllowedFrom')}"
                       f"{' | public domain' if acc.get('isPublicDomain') else ' | ' + str(acc.get('license'))}",
+            "pages": " ".join(p["page"] for p in chosen), "folder": os.path.basename(folder)}
+
+
+def fetch_newspaper(row, folder, lo, hi, pages):
+    """One page from each of `pages` issues of a newspaper, spread over the
+    years asked: a newspaper page holds hundreds of lines, so issues give
+    more variety than pages of one. The page taken is the second of the
+    issue where it has text enough, else the first."""
+    nr, title = int(row["nr"]), row["title"]
+    params = urllib.parse.urlencode([("q", title), ("filter", "mediatype:aviser"),
+                                     ("filter", f"date:[{lo}0101 TO {hi}1231]"), ("size", "100")])
+    items = [it for it in get(f"{API}/items?{params}").get("_embedded", {}).get("items", [])
+             if it.get("accessInfo", {}).get("isDigital")
+             and clean_title(title).split()[0].lower() in (it["metadata"].get("title") or "").lower()]
+    if not items:
+        return {"nr": nr, "status": "no hit", "query": title, "years": f"{lo}-{hi}"}
+    items.sort(key=lambda it: str(it["metadata"].get("originInfo", {}).get("issued", "")))
+    issues = [items[k * (len(items) - 1) // max(1, pages - 1)] for k in range(min(pages, len(items)))]
+    os.makedirs(folder, exist_ok=True)
+    chosen = []
+    for it in issues:
+        canvases = get(it["_links"]["presentation"]["href"])["sequences"][0]["canvases"]
+        for idx in [1, 0, 2, 3]:
+            if idx >= len(canvases):
+                continue
+            c = canvases[idx]
+            urn = c["@id"].rsplit("/", 1)[-1]
+            try:
+                xml = get(f"{API}/metadata/{it['id']}/altos/{urn}")
+            except urllib.error.HTTPError:
+                continue
+            if alto_lines(xml) < 30:
+                continue
+            issued = str(it["metadata"].get("originInfo", {}).get("issued", ""))
+            page = f"{issued}-{urn.rsplit('_', 1)[-1]}"
+            jpg = get(f"{c['images'][0]['resource']['service']['@id']}/full/full/0/default.jpg", binary=True)
+            with open(os.path.join(folder, f"page-{page}.jpg"), "wb") as f:
+                f.write(jpg)
+            with open(os.path.join(folder, f"page-{page}.alto.xml"), "w", encoding="utf-8") as f:
+                f.write(xml)
+            chosen.append({"page": page, "urn": urn, "id": it["id"], "issued": issued,
+                           "width": c["width"], "height": c["height"], "lines": alto_lines(xml),
+                           "link": f"https://www.nb.no/items/{it['id']}"})
+            break
+    first = issues[0]
+    acc = first["accessInfo"]
+    book = {
+        "nr": nr, "kind": "newspaper", "list_title": title, "list_author": row.get("author", ""), "list_year": row["year"],
+        "id": first["id"], "title": first["metadata"].get("title"), "issued": f"{chosen[0]['issued'][:4]}–{chosen[-1]['issued'][:4]}" if chosen else "",
+        "access": {k: acc.get(k) for k in ("isPublicDomain", "accessAllowedFrom", "license")},
+        "query": title, "pages": chosen, "link": f"https://www.nb.no/items/{first['id']}",
+    }
+    with open(os.path.join(folder, "book.json"), "w", encoding="utf-8") as f:
+        json.dump(book, f, ensure_ascii=False, indent=1)
+    return {"nr": nr, "status": "ok" if len(chosen) == pages else f"ok, {len(chosen)} pages", "query": title,
+            "chosen": f"{book['title']} | {book['issued']} | {acc.get('accessAllowedFrom')}",
             "pages": " ".join(p["page"] for p in chosen), "folder": os.path.basename(folder)}
 
 
