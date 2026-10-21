@@ -44,13 +44,18 @@ fn a_child_that_takes_too_much_memory_is_killed() {
 /// A child whose application is gone, killed or forced to quit, ends
 /// itself, as it must on macOS where nothing else ends it. Started by a
 /// shell that ends at once, and without the signal the application asks for
-/// on Linux, it is left to another as such a child is.
+/// on Linux, it is left to another as such a child is; the shell tells it
+/// its number as the application does, so that the child knows its parent
+/// even where the shell is gone before the child first looks (as in a
+/// systemd unit, where it was).
 #[cfg(unix)]
 #[test]
 fn a_child_whose_parent_is_gone_ends_itself() {
     let out = std::process::Command::new("sh")
         .arg("-c")
-        .arg("\"$0\" --glaukopis-isolated test-sleep . /dev/null >/dev/null 2>&1 & echo $!")
+        .arg(
+            "GLAUKOPIS_ISOLATED_PARENT=$$ \"$0\" --glaukopis-isolated test-sleep . /dev/null >/dev/null 2>&1 & echo $!",
+        )
         .arg(program())
         .output()
         .unwrap();

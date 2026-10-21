@@ -224,11 +224,11 @@ fn a_file_that_loads_without_end_ends_the_child_and_not_the_application() {
     // and give up the stream that would not unpack, so that the child answers
     // within its bound with what is left, a page without text. Elsewhere the
     // child is watched from outside, and killed when it holds too much.
-    if cfg!(windows) {
-        if let Ok(looked) = ocr::look(&pdf, &Tools::default()) {
-            assert_eq!((looked.pages, looked.with_text), (1, 0), "{looked:?}");
-            return;
-        }
+    if cfg!(windows)
+        && let Ok(looked) = ocr::look(&pdf, &Tools::default())
+    {
+        assert_eq!((looked.pages, looked.with_text), (1, 0), "{looked:?}");
+        return;
     }
     let err = ocr::look(&pdf, &Tools::default()).unwrap_err();
     assert_eq!(err.to_string(), memory_error(&pdf));

@@ -34,6 +34,12 @@ use serde::de::DeserializeOwned;
 /// What the program is started with to do a task: `FLAG task input output`.
 pub const FLAG: &str = "--glaukopis-isolated";
 
+/// The number of the process that started the child, in its environment:
+/// the child ends when its parent is no longer that one (`end_with_parent`).
+/// Told rather than read at the start, since a parent gone before the child
+/// first looks would have handed it to another already.
+pub const PARENT: &str = "GLAUKOPIS_ISOLATED_PARENT";
+
 static PROGRAM: OnceLock<PathBuf> = OnceLock::new();
 
 /// The program that does the tasks: the application's own. Set once, at its start.
@@ -151,6 +157,7 @@ fn run_in<T: DeserializeOwned>(
     let output = dir.path().join("out.json");
     let mut c = crate::export::tools::command(program);
     c.arg(FLAG).arg(task).arg(input).arg(&output);
+    c.env(PARENT, std::process::id().to_string());
     c.stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped());
     unix_child(&mut c);
     let mut child = c.spawn().map_err(|e| Ended::NotStarted(e.to_string()))?;
@@ -372,12 +379,15 @@ pub fn serve(args: &[OsString]) -> Option<i32> {
 /// killed or forced to quit must not leave a reader of PDFs eating the
 /// machine's memory. The child looks about once a second; a parent that is
 /// gone has given it to another (launchd, on macOS), and the parent's
-/// number it is told is no longer the one it was.
+/// number it is told is no longer the one it was. The parent's number is
+/// the one in [`PARENT`], where the parent put it; where none is there, the
+/// one the child has as it starts.
 fn end_with_parent() {
     #[cfg(unix)]
     {
+        let told = std::env::var(PARENT).ok().and_then(|v| v.parse::<libc::pid_t>().ok());
         // SAFETY: getppid has no preconditions and cannot fail.
-        let parent = unsafe { libc::getppid() };
+        let parent = told.unwrap_or_else(|| unsafe { libc::getppid() });
         let gone = move || {
             // SAFETY: as above.
             let now = unsafe { libc::getppid() };
