@@ -6,8 +6,9 @@ For every page of every book folder, each line cut by make-sheets.py
 the readings beside the page, in this order:
 
 0. a line settled by looking at its picture, where readers or a person
-   disagreed: `page-NNNN.settled.tsv` (line, flag, text), a flag there
-   leaving the line out;
+   disagreed: `page-NNNN.settled.tsv` (line, flag, text) in the book's
+   folder, or BOOKS-DIR/settled.tsv (book, line, flag, text) as the
+   sheet of make-settle.py saves it; a flag there leaves the line out;
 1. a person's check: `page-NNNN.checked.tsv` or `.truth.tsv`, the line
    seen and not flagged: taken as it is;
 2. readers by eye, `page-NNNN.claude.tsv` and `page-NNNN.opus.tsv`: where
@@ -86,6 +87,13 @@ def main():
         shutil.rmtree(d, ignore_errors=True)
         os.makedirs(d)
     disagreements = []
+    settled_all = {}
+    if os.path.exists(os.path.join(books, "settled.tsv")):
+        with open(os.path.join(books, "settled.tsv"), encoding="utf-8") as f:
+            for row in f:
+                parts = row.rstrip("\n").split("\t")
+                if len(parts) >= 3:
+                    settled_all[(parts[0], parts[1])] = (parts[2].strip(), parts[3] if len(parts) > 3 else "")
     totals = collections.Counter()
     print(f"{'book':<44} {'taken':>6} {'person':>6} {'two':>5} {'one':>5} {'flag':>5} {'differ':>6} {'unread':>6}")
     for bj in sorted(glob.glob(os.path.join(books, "*", "book.json"))):
@@ -101,6 +109,7 @@ def main():
             person = {**read(os.path.join(folder, f"page-{page}.truth.tsv")),
                       **read(os.path.join(folder, f"page-{page}.checked.tsv"))}
             settled = read(os.path.join(folder, f"page-{page}.settled.tsv"))
+            settled.update({line: v for (b, line), v in settled_all.items() if b == book})
             readers = [read(os.path.join(folder, f"page-{page}.{r}.tsv")) for r in ("claude", "opus")]
             for l in lines:
                 name = l["name"]
