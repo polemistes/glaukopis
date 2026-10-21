@@ -21,11 +21,16 @@ ROOT=$(git -C "$(dirname "$0")" rev-parse --show-toplevel)
 BUILD=$ROOT/packaging/build/fraktur
 BEST=$ROOT/packaging/build/languages/tessdata_best
 LINES=$BUILD/lines
-TRAIN=$BUILD/train
+# An experiment is a folder of its own under packaging/build/fraktur
+# (EXPERIMENT, train by default) with the sets of lines it is made from
+# (SETS, folders under lines/); its proto model lives in it, so that one
+# experiment does not overwrite another's.
+TRAIN=$BUILD/${EXPERIMENT:-train}
 MODELS=$BUILD/models
 NAME=dan_latf
-START=deu_latf
-SETS="dan german"
+START=${START:-deu_latf}
+SETS=${SETS:-dan german}
+PROTO=$TRAIN/proto
 JOBS=$(nproc)
 
 prepare() {
@@ -40,7 +45,7 @@ prepare() {
     # The proto model: a traineddata with the widened unicharset and no
     # word lists (the start model's are German).
     combine_lang_model --input_unicharset "$TRAIN/unicharset" --script_dir "$BUILD/clones" \
-        --output_dir "$MODELS" --lang "$NAME"
+        --output_dir "$PROTO" --lang "$NAME"
     # A WordStr box beside every line image, from its text and size, as
     # tesstrain makes it; then an lstmf beside it.
     find $(for s in $SETS; do echo "$LINES/$s"; done) -name '*.png' -print0 | sort -z \
@@ -75,7 +80,7 @@ train() {
         old=()
     fi
     lstmtraining --debug_interval 0 \
-        --traineddata "$MODELS/$NAME/$NAME.traineddata" \
+        --traineddata "$PROTO/$NAME/$NAME.traineddata" \
         "${old[@]}" \
         --continue_from "$continue_from" \
         --learning_rate "$rate" \
@@ -91,7 +96,7 @@ finish() {
     mkdir -p "$MODELS/$run"
     lstmtraining --stop_training \
         --continue_from "$TRAIN/$run/${NAME}_checkpoint" \
-        --traineddata "$MODELS/$NAME/$NAME.traineddata" \
+        --traineddata "$PROTO/$NAME/$NAME.traineddata" \
         --model_output "$MODELS/$run/$NAME.traineddata"
     echo "$MODELS/$run/$NAME.traineddata"
 }
