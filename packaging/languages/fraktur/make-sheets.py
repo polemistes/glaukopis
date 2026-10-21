@@ -59,6 +59,9 @@ textarea{width:100%;font-size:1.25em;font-family:serif;margin-top:.3em;box-sizin
 .flags{font-size:.9em;color:#444}
 .top{position:sticky;top:0;background:#faf8f3;padding:.5em 0;border-bottom:1px solid #ccc;display:flex;gap:1em;align-items:center}
 h1{font-size:1.2em;margin:0}
+li{margin:.6em 0}
+[data-type]{font-size:.8em;padding:1px 5px;border-radius:3px;background:#e8e2d0}
+[data-type=antiqua]{background:#eee;color:#888}
 .num{color:#999;font-size:.85em}"""
 
 
@@ -90,12 +93,35 @@ def alto_lines(xml, img_w, img_h):
         x, y, w, h = box["HPOS"] * sx, box["VPOS"] * sy, box["WIDTH"] * sx, box["HEIGHT"] * sy
         out.append({"box": [round(x), round(y), round(w), round(h)], "alto": " ".join(words)})
     out.sort(key=lambda l: (l["box"][1], l["box"][0]))
+    # A line much taller than the page's others is several lines the
+    # library's text took for one: skipped unless one unticks it.
+    heights = sorted(l["box"][3] for l in out)
+    if heights:
+        median = heights[len(heights) // 2]
+        for l in out:
+            l["tall"] = l["box"][3] > 1.6 * median
     return out
 
 
+def read_one(path, tessdata, lang):
+    r = subprocess.run(["tesseract", path, "-", "--tessdata-dir", tessdata, "-l", lang, "--psm", "7"],
+                       capture_output=True, text=True)
+    return " ".join(r.stdout.split()).replace("ſ", "s") if r.returncode == 0 else ""
+
+
 def read_lines(paths, tessdata, lang):
+    """The model's reading of every line, all in one run of Tesseract; one
+    by one where that run fails (a few cuts make it crash), with nothing
+    for a line it cannot read."""
     if not paths:
         return []
+    try:
+        return read_batch(paths, tessdata, lang)
+    except subprocess.CalledProcessError:
+        return [read_one(p, tessdata, lang) for p in paths]
+
+
+def read_batch(paths, tessdata, lang):
     with tempfile.TemporaryDirectory() as tmp:
         listing = os.path.join(tmp, "list.txt")
         with open(listing, "w") as f:
@@ -122,7 +148,8 @@ def sheet(book, page, lines, folder):
                      f"<img src='data:image/png;base64,{data}' alt=''>"
                      f"<textarea rows='1' spellcheck='false'>{html.escape(l['model'])}</textarea>"
                      f"<div class='alt'><button data-take=\"{html.escape(l['alto'], quote=True)}\">take</button>library: {html.escape(l['alto'])}</div>"
-                     f"<div class='flags'><label><input type='checkbox' class='unsure'> unsure</label> &nbsp; <label><input type='checkbox' class='skip'> skip</label></div></div>")
+                     f"<div class='flags'><label><input type='checkbox' class='unsure'> unsure</label> &nbsp; <label><input type='checkbox' class='skip'{' checked' if l.get('tall') else ''}> skip</label>"
+                     f"{' <i>(more than one line? skipped)</i>' if l.get('tall') else ''}</div></div>")
     parts.append(f"<script>{SCRIPT}</script></body></html>")
     with open(os.path.join(folder, f"sheet-{page}.html"), "w", encoding="utf-8") as f:
         f.write("\n".join(parts))
@@ -149,7 +176,8 @@ def do_book(folder, tessdata, lang):
         for l, text in zip(lines, read_lines([l["png"] for l in lines], tessdata, lang)):
             l["model"] = text
         with open(os.path.join(linedir, f"page-{page}.lines.json"), "w", encoding="utf-8") as f:
-            json.dump([{"name": os.path.basename(l["png"])[:-4], "box": l["box"], "alto": l["alto"], "model": l["model"]} for l in lines],
+            json.dump([{"name": os.path.basename(l["png"])[:-4], "box": l["box"], "alto": l["alto"], "model": l["model"],
+                        "tall": l.get("tall", False)} for l in lines],
                       f, ensure_ascii=False, indent=1)
         sheet(book, page, lines, folder)
         made.append((page, len(lines)))
@@ -190,14 +218,23 @@ def main():
         with open(index, encoding="utf-8") as f:
             for m in re.finditer(r"<li data-book='([^']*)'>(.*?)</li>", f.read(), re.S):
                 old[m.group(1)] = m.group(2)
+    # The type of each book, where it has been judged (types.json beside the
+    # books: fraktur, antiqua or hybrid); the Fraktur books are listed first.
+    types = {}
+    if os.path.exists(os.path.join(a.books, "types.json")):
+        with open(os.path.join(a.books, "types.json"), encoding="utf-8") as f:
+            types = {k: v["type"] for k, v in json.load(f).items()}
+    label = {"fraktur": "Fraktur", "antiqua": "roman type: not for this model", "hybrid": "roman with Fraktur capitals"}
     for name, book, made in entries:
+        kind = types.get(name, "")
         links = " ".join(f"<a href='{name}/sheet-{page}.html'>{page}</a> <small>({n})</small>" for page, n in made)
-        old[name] = (f"<b>{html.escape(book['title'][:90])}</b>, {html.escape(str(book['issued']))} "
+        old[name] = (f"<span data-type='{kind}'>{label.get(kind, '')}</span> <b>{html.escape(book['title'][:90])}</b>, {html.escape(str(book['issued']))} "
                      f"<small>{html.escape(str(book['access']['accessAllowedFrom']))}{', public domain' if book['access']['isPublicDomain'] else ''}</small><br>pages: {links}")
     with open(index, "w", encoding="utf-8") as f:
         f.write("<!doctype html><html lang='en'><head><meta charset='utf-8'><title>Fraktur ground truth</title>"
                 f"<style>{STYLE}</style></head><body><h1>Books fetched from nb.no, with their correction sheets</h1><ul>"
-                + "".join(f"<li data-book='{k}'>{v}</li>" for k, v in sorted(old.items())) + "</ul></body></html>")
+                + "".join(f"<li data-book='{k}'>{v}</li>" for k, v in sorted(old.items(), key=lambda kv: (types.get(kv[0], "") != "fraktur", kv[0])))
+                + "</ul></body></html>")
 
 
 if __name__ == "__main__":
