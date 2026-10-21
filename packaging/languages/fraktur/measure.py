@@ -86,7 +86,7 @@ def align(truth, read):
     return d[n][m], aligned
 
 
-def read_set(folder, tessdata, lang, legacy):
+def read_set(folder, tessdata, lang, legacy, psm="7"):
     names = sorted(
         f[: -len(".gt.txt")] for f in os.listdir(folder) if f.endswith(".gt.txt")
     )
@@ -103,7 +103,7 @@ def read_set(folder, tessdata, lang, legacy):
         with open(listing, "w") as f:
             f.write("\n".join(images) + "\n")
         cmd = ["tesseract", listing, os.path.join(tmp, "out"), "--tessdata-dir", tessdata,
-               "-l", lang, "--psm", "7", "-c", "tessedit_create_tsv=1"]
+               "-l", lang, "--psm", psm, "-c", "tessedit_create_tsv=1"]
         if legacy:
             cmd += ["--oem", "0"]
         subprocess.run(cmd, check=True, capture_output=True)
@@ -163,12 +163,14 @@ def main():
     p.add_argument("--lang", required=True)
     p.add_argument("--legacy", action="store_true")
     p.add_argument("--worst", type=int, default=0, help="print the N worst lines of each set")
+    p.add_argument("--psm", default="7", help="7 to find the line in each picture, 13 to take it as one raw line "
+                   "(for pictures cut with slivers of the lines around them)")
     p.add_argument("sets", nargs="+")
     a = p.parse_args()
     print(f"{'set':<12} {'lines':>5} {'chars':>6} {'CER%':>6} {'CER%-æøå':>9} {'æøå':>7} {'right%':>6} {'conf':>5}")
     for folder in a.sets:
         name = os.path.basename(os.path.normpath(folder))
-        m = measure(read_set(folder, a.tessdata, a.lang, a.legacy))
+        m = measure(read_set(folder, a.tessdata, a.lang, a.legacy, a.psm))
         right = 100 * m["letters_right"] / m["letters"] if m["letters"] else float("nan")
         print(f"{name:<12} {m['lines']:>5} {m['chars']:>6} {m['cer']:>6.2f} {m['cer_but_letters']:>9.2f} "
               f"{m['letters_right']:>3}/{m['letters']:<3} {right:>6.1f} {m['confidence']:>5.1f}")

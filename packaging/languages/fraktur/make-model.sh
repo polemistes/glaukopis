@@ -34,7 +34,7 @@ PROTO=$TRAIN/proto
 JOBS=$(nproc)
 
 prepare() {
-    mkdir -p "$MODELS/$START" "$TRAIN"
+    mkdir -p "$MODELS/$START" "$TRAIN" "$PROTO"
     # The start model's LSTM and unicharset, taken apart.
     combine_tessdata -u "$BEST/$START.traineddata" "$MODELS/$START/$START."
     # The unicharset of the training lines, merged into the start model's.
@@ -60,7 +60,7 @@ for f in sys.argv[1:]:
         out.write(f"WordStr 0 0 {w} {h} 0 #{text}\n\t 0 0 {w} {h} 0\n")
 '
     find $(for s in $SETS; do echo "$LINES/$s"; done) -name '*.png' -print0 \
-        | xargs -0 -P "$JOBS" -I{} sh -c 'f="{}"; b="${f%.png}"; [ -s "$b.lstmf" ] || tesseract "$f" "$b" --psm 7 lstm.train >/dev/null 2>&1 || echo "failed: $f"'
+        | xargs -0 -P "$JOBS" -I{} sh -c 'f="{}"; b="${f%.png}"; [ -s "$b.lstmf" ] || tesseract "$f" "$b" --psm 13 lstm.train >/dev/null 2>&1 || echo "failed: $f"'
     # Nine lines in ten to train on, one to evaluate on, shuffled the same every time.
     find $(for s in $SETS; do echo "$LINES/$s"; done) -name '*.lstmf' | sort | shuf --random-source=<(yes) > "$TRAIN/all.lstmf.txt"
     local n; n=$(wc -l < "$TRAIN/all.lstmf.txt")
