@@ -42,10 +42,13 @@ it is; if a strip is hard to read, you may crop a single line from
 5. Antiqua (roman) words inside the Fraktur, numbers, and punctuation
    exactly as they stand. Keep a space before a colon or semicolon only
    where one is clearly set.
-6. One printed line is one row. If the picture shows parts of two lines
-   (the cut was wrong), flag it `skip` and leave the text empty. If it is
-   not text at all (a rule, an ornament, a page number alone is fine as
-   text), flag `skip`.
+6. One printed line is one row. Every picture is cut with a margin, so
+   slivers of the lines above and below often show at its top and
+   bottom: that is normal, read the whole line in the middle. Flag
+   `skip` (text empty) only when the line itself is not whole: cut off
+   at the top or bottom so that letters are missing, two full lines in
+   one picture, or no text at all (a rule, an ornament). A page number
+   alone is text, and is written.
 7. Where you cannot tell a letter, flag the whole line `unsure` and write
    your best reading anyway. Never guess silently: an unsure line is
    left out of training, a wrongly guessed one poisons it.
