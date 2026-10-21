@@ -46,8 +46,15 @@ def quotes(text):
     return text.replace('"', "“")
 
 
+def i_or_j(text):
+    """The capital I and J are one glyph in Fraktur, read as J; it is the
+    letter the word has: I before a consonant or standing alone
+    (Indbyggere, Israel, I Lissabon), J before a vowel (Jeg, Jo)."""
+    return re.sub(r"J(?![aeiouyæøåAEIOUYÆØÅ])", "I", text)
+
+
 def normalise(text):
-    text = quotes(unicodedata.normalize("NFC", text).replace("ſ", "s"))
+    text = i_or_j(quotes(unicodedata.normalize("NFC", text).replace("ſ", "s")))
     text = re.sub(r"\s+", " ", text).strip()
     text = re.sub(r" ([.,;:!?])", r"\1", text)
     return text
