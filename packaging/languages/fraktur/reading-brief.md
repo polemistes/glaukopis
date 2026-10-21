@@ -41,8 +41,9 @@ it is; if a strip is hard to read, you may crop a single line from
 3. Spaced-out letters used for emphasis (S p e r r s a t z) are written as
    an ordinary word, without the spaces.
 4. A hyphen at the end of a line (often printed as a double stroke =) is
-   written as a plain hyphen -. Dashes as —. Quotation marks as „ at the
-   start and “ at the end, as these books print them; an apostrophe as ’.
+   written as a plain hyphen -. Dashes as —. Quotation marks as the book prints
+   them: most print „ at the start and “ at the end, some a high ” at
+   both ends, a few » «; an apostrophe as ’.
 5. Antiqua (roman) words inside the Fraktur, numbers, and punctuation
    exactly as they stand. Keep a space before a colon or semicolon only
    where one is clearly set.
