@@ -234,11 +234,11 @@ each with a scratch folder of its own: a shared one lost rows twice.
 The reader is measured before it is trusted: the held-out books are read
 by people on blank sheets, which save as `page-NNNN.human.tsv`, and
 `compare-readers.py` gives the reader's character error rate against the
-people's, per book, with the lines that differ most. On 2026-10-22 the
+people's, per book, with the lines that differ most. On 2026-10-21 the
 ten held-out books were read: 4,072 lines, 91 flagged unsure, 67 skipped
 (a cut that took two lines), in about 400 tokens a line.
 
-### The Norwegian set of 2026-10-22
+### The Norwegian set of 2026-10-21
 
 81 Fraktur books from the National Library (65 from the owner's list,
 16 chosen to fill gaps: newspapers of Bergen, Christiania, Drammen and
@@ -273,3 +273,27 @@ The held-out lines are cut with slivers of the lines around them, so
 they are measured as raw lines (`--psm 13`); the training files are made
 the same way, since told to find the line Tesseract silently gave up on
 one picture in six.
+
+### Run A, the model of 2026-10-21
+
+60,000 iterations from `deu_latf` at a learning rate of 0.0001, about an
+hour on 16 cores; the training error at the end 1.0 %. Made with
+`make-model.sh finish runA` and chosen with `make-model.sh choose runA`;
+packaged as `ocr-dan_latf-2026.10.21.zip`.
+
+| set | deu_latf | dan_latf of 2026-10-19 | run A |
+|---|---|---|---|
+| held-out Norwegian, 3,857 lines, CER (`--psm 13`) | 4.12 | 2.53 | **0.36** |
+| same, CER without æøå | 3.03 | 2.46 | **0.34** |
+| same, æøå right | 0/2530 | 2358/2530 | **2494/2530** |
+| same, mean confidence | 84.5 | 84.1 | **89.9** |
+| owner's novel, 42 lines, CER | 6.70 | 3.45 | **1.60** |
+| same, æøå right | 0/53 | 50/53 | **51/53** |
+| owner's novel, mean confidence of 7 whole pages | 85.9 | 84.5 | **86.6** |
+| pvorb held-out pages, CER | 3.46 | 1.17 | **0.80** |
+
+Read the held-out lines with `--psm 7` and every model errs in a third of
+the characters: Tesseract then looks for a line in each picture and often
+takes a sliver of the next one. The application reads whole pages, where
+this does not arise.
+

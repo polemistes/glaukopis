@@ -1696,11 +1696,12 @@ choose it first, or alone, for such a book. It was made for German, and
 knows no *æ*, *ø* or *å*: in a Norwegian or Danish book it reads them as
 *e*, *o* and *a* (*vere* for *være*), and choosing Norwegian beside it does
 not bring them back. For such books the server offers **Fraktur, Danish and
-Norwegian (Gothic type)**: the same model taught those letters, from pages
-of Danish books and Fraktur fonts of the 1800s, and measured on lines of a
-Norwegian novel in Gothic type, where it reads nineteen in twenty of the
-*æ*, *ø* and *å* right and the other letters a little better than the
-Fraktur model, a little less sure of itself on a pale page. Choose it
+Norwegian (Gothic type)**: the same model taught on some fifteen thousand
+lines of Norwegian books and newspapers in Gothic type of 1811 to 1920 from
+the National Library, read by eye. On lines of books it never saw it gets
+about one letter in three hundred wrong, against one in twenty-five for
+the Fraktur model made for German, and nearly every *æ*, *ø* and *å* right;
+on a pale page it is as sure of itself as on a clean one. Choose it
 first, or alone, for a Norwegian or Danish book; the line under the
 languages names it where Norwegian or Danish is chosen. The list of **OCR
 languages** says of each whether it is the system's or imported, and **×**

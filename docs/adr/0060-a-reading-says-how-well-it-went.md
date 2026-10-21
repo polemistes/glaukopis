@@ -75,3 +75,27 @@ than the model made for German. What would be tried next, were it not
 enough: lines set by `text2image` in the free Fraktur fonts from Danish
 and Norwegian text of before 1900, and real Norwegian pages with their
 text.
+
+## Addendum of 2026-10-21: the Fraktur model trained on Norwegian books
+
+The first `dan_latf`, taught æ ø å from Danish pages of 2013, was not yet
+usable on the owner's books. It is replaced by one trained on Norwegian
+print: 81 books, periodicals and newspapers in Gothic type of 1811–1920
+from the National Library of Norway (nb.no, public domain), six pages
+each, every line read by eye by a language model from pictures of twelve
+lines at a time. Ten books were held out as the yardstick and read twice,
+by two models independently; where the two disagreed, under one line in a
+hundred, the owner settled the line from its picture. Where the owner
+checked lines against the readings, the readings were right but for the
+silent normalising of one model (*Pølser* for the printed *Polser*), and
+the other model was chosen for the rest. 15,522 lines trained the model,
+from `deu_latf`, with the Danish lines of 2013 mixed in.
+
+On the 3,857 held-out lines the model errs in 0.36 % of the characters,
+against 2.53 % for the first `dan_latf` and 4.12 % for `deu_latf`, and gets
+98.6 % of the æ ø å right; on the owner's novel, 1.60 % against 3.45 % and
+6.70 %, with a mean page confidence of 86.6, every page over the
+threshold of 80. `packaging/languages/fraktur/` holds the scripts and the
+README of the work; the pages, the readings and the lines are in the
+owner's folder and the build folder, out of git.
+
