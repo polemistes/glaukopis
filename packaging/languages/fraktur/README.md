@@ -177,3 +177,36 @@ thin print.
 
 `deu_latf` writes the em dash as `-=-` or `=`; those count against it on
 the owner's lines (a few characters), the same for every model.
+
+## Norwegian ground truth from the National Library
+
+The next model is to be trained on Norwegian books, corrected by people.
+The pages come from the National Library (nb.no), whose API needs no
+login: a catalogue search, the page pictures through IIIF at the scan's
+full size, and an ALTO file per page with the library's own OCR and the
+place of every line. The pages and everything made from them stay
+outside the repository, in a folder of the owner's
+(`~/glaukopis-fraktur/`); only the scripts are here.
+
+```
+python3 -I packaging/languages/fraktur/fetch-nb.py LIST.csv ~/glaukopis-fraktur/books --pages 6
+python3 -I packaging/languages/fraktur/make-sheets.py ~/glaukopis-fraktur/books \
+  --tessdata packaging/build/fraktur --lang dan_latf
+```
+
+`fetch-nb.py` takes a list of books (columns `nr,title,author,year,…`),
+chooses an edition of each (public domain and readable from everywhere
+first), and fetches pages spread through the body of the book, each
+with its ALTO; a folder per book holds `book.json` saying what was
+chosen, and `report.tsv` says what became of every row, with `review:`
+where the edition found may not be the book asked for. A run can be
+taken up again; books fetched before are skipped.
+
+`make-sheets.py` cuts every page into lines where the ALTO places them,
+reads each with the model, and writes a correction sheet per page, a
+single HTML file that works offline in any browser: every line's
+picture over a box with the model's reading, the library's reading
+beside it to take instead, the rules of transcription at the top, and
+flags for *unsure* (left out of training) and *skip* (not text, or cut
+wrongly). **Save** downloads `page-NNNN.truth.tsv`, which goes back into
+the book's folder; `index.html` in the books folder lists all sheets.
