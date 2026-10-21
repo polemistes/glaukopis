@@ -30,7 +30,11 @@ it is; if a strip is hard to read, you may crop a single line from
 
 1. Write what is printed, with the spelling of the time: *faa*, *gaar*,
    *Kjærlighed*, *Huus*, *Troe*. Never modernise, never "correct" a
-   spelling that looks odd: old books spell as they spell.
+   spelling that looks odd: old books spell as they spell. Write the
+   letter on the page even where you know the word otherwise: a printer
+   may set *Polser* for *Pølser*, *Rissengryn* with two long s,
+   *Kønigsberg* with ø, *gientage* with i and *skjære* with j in the same
+   book. Look at the letter, not at the word you expect.
 2. The long s (ſ) is written as s. Ligatures of type are their letters:
    ff, fi, fl, ſt → st, ch, ck, tz, sk. The letters æ ø å Æ Ø Å ß and &
    stay themselves.
@@ -53,9 +57,13 @@ it is; if a strip is hard to read, you may crop a single line from
    your best reading anyway. Never guess silently: an unsure line is
    left out of training, a wrongly guessed one poisons it.
 8. Letters that look alike in Fraktur and are often confused: B and V,
-   K and R and N, u and n, c and e, k and t, r and x, f and ſ (s), the
-   capital I and J (written J in the common Fraktur form, but as I where
-   the printer clearly has an I). Slow down on these.
+   K and R and N, u and n, c and e, k and t, r and x, f and ſ (s), i and
+   j (j drops below the line), o and ø (a worn ø loses its stroke). Slow
+   down on these, and enlarge the line from `lines/` whenever one of them
+   is in doubt; flag `unsure` rather than choose.
+9. The capital I and J are one glyph in Fraktur. Write the letter the
+   word has: I before a consonant or standing alone (*Indbyggere*,
+   *Israel*, *I Lissabon*), J before a vowel (*Jeg*, *Jo*).
 
 ## Saving and reporting
 

@@ -39,7 +39,7 @@ RULES = """<h2>How to correct</h2>
 <li>Where a letter cannot be told, tick <b>unsure</b>: the line is then left out rather than guessed.</li>
 <li>A line that is not text, or cut wrongly, gets <b>skip</b>.</li>
 </ol>
-<p>A line counts as checked once the cursor has been in it; it turns white. Lines never visited are saved as <i>unchecked</i> and left out, so a sheet may be done in parts. Enter moves to the next line. <b>Save</b> downloads the file of this page; put it in the book's folder, or send it on. <b>Load</b> takes a saved file back in.</p>"""
+<p>A line counts as checked once the cursor has been in it; it turns white. Having read a whole page through, press <b>All read</b>. Lines never visited are saved as <i>unchecked</i> and left out, so a sheet may be done in parts. Enter moves to the next line. <b>Save</b> downloads the file of this page; put it in the book's folder, or send it on. <b>Load</b> takes a saved file back in.</p>"""
 
 SCRIPT = """
 function seen(li){li.classList.add('seen');count();}
@@ -49,6 +49,7 @@ function next(i){const t=document.querySelector('[data-line="'+(i+1)+'"] textare
 document.querySelectorAll('textarea').forEach(t=>{t.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();next(+t.closest('[data-line]').dataset.line);}});});
 document.querySelectorAll('[data-take]').forEach(b=>{b.addEventListener('click',()=>{const li=b.closest('[data-line]');li.querySelector('textarea').value=b.dataset.take;});});
 function rows(){return [...document.querySelectorAll('[data-line]')].map(li=>{const f=!li.classList.contains('seen')?'unchecked':li.querySelector('.skip').checked?'skip':li.querySelector('.unsure').checked?'unsure':'';return [li.dataset.name,f,li.querySelector('textarea').value.replace(/\\s+/g,' ').trim()];});}
+document.getElementById('allread').addEventListener('click',()=>{document.querySelectorAll('[data-line]').forEach(li=>li.classList.add('seen'));count();});
 document.getElementById('save').addEventListener('click',()=>{const text=rows().map(r=>r.join('\\t')).join('\\n')+'\\n';const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/tab-separated-values'}));a.download=document.body.dataset.file;a.click();});
 document.getElementById('load').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{t.split('\\n').forEach(l=>{const [name,flag,text]=l.split('\\t');const li=document.querySelector('[data-name="'+name+'"]');if(!li)return;li.querySelector('textarea').value=text||'';li.querySelector('.skip').checked=flag==='skip';li.querySelector('.unsure').checked=flag==='unsure';if(flag!=='unchecked')li.classList.add('seen');});count();});});
 count();
@@ -169,6 +170,9 @@ def sheet(book, page, lines, folder, blank=False):
     out and not yet read by eye, the boxes are empty, and it saves as
     `page-NNNN.human.tsv`."""
     reader = read_tsv(os.path.join(folder, f"page-{page}.claude.tsv")) if blank else {}
+    # A page checked before opens as it was saved: its lines, its flags,
+    # and those already checked counted so.
+    checked = read_tsv(os.path.join(folder, f"page-{page}.checked.tsv")) if reader else {}
     human = read_tsv(os.path.join(folder, f"page-{page}.human.tsv")) if reader else {}
     mode = "checked" if reader else "human" if blank else "truth"
     link = next((p.get("link") for p in book.get("pages", []) if p.get("page") == page and p.get("link")), book["link"])
@@ -177,7 +181,7 @@ def sheet(book, page, lines, folder, blank=False):
     parts = [f"<!doctype html><html lang='en'><head><meta charset='utf-8'><title>{html.escape(book['title'][:60])} p. {page}</title>",
              f"<style>{STYLE}</style></head><body data-file='page-{page}.{mode}.tsv'>",
              f"<div class='top'><h1>{html.escape(book['title'][:80])}, {html.escape(str(book['issued']))} — page {page} of the scan</h1>",
-             "<span id='count'></span> <button id='save'>Save</button><label>Load <input id='load' type='file' accept='.tsv,.txt'></label>",
+             "<span id='count'></span> <button id='allread' title='Count every line as checked, having read the page through'>All read</button> <button id='save'>Save</button><label>Load <input id='load' type='file' accept='.tsv,.txt'></label>",
              f"<a href='{link}' target='_blank'>at nb.no</a></div>", intro, RULES]
     for i, l in enumerate(lines):
         with open(l["png"], "rb") as f:
@@ -185,8 +189,12 @@ def sheet(book, page, lines, folder, blank=False):
         name = os.path.basename(l["png"])[:-4]
         unsure = skip = False
         alt = ""
+        seen = False
         if reader:
             flag, text = reader.get(name, ("skip", ""))
+            if name in checked and checked[name][0] != "unchecked":
+                flag, text = checked[name]
+                seen = True
             unsure, skip = flag == "unsure", flag == "skip"
             draft = html.escape(text)
             if name in human and human[name][1].strip() and human[name][1].strip() != text.strip():
@@ -202,7 +210,7 @@ def sheet(book, page, lines, folder, blank=False):
             alt = (f"<div class='alt'><button data-take=\"{html.escape(l['alto'], quote=True)}\">take</button>"
                    f"library: {html.escape(l['alto'])}</div>")
         note = " <i>(more than one line? skipped)</i>" if l.get("tall") and not reader else ""
-        parts.append(f"<div class='line' data-line='{i}' data-name='{name}'><span class='num'>{name}</span>"
+        parts.append(f"<div class='line{' seen' if seen else ''}' data-line='{i}' data-name='{name}'><span class='num'>{name}</span>"
                      f"<img src='data:image/png;base64,{data}' alt=''>"
                      f"<textarea rows='1' spellcheck='false'>{draft}</textarea>{alt}"
                      f"<div class='flags'><label><input type='checkbox' class='unsure'{' checked' if unsure else ''}> unsure</label> &nbsp; "
