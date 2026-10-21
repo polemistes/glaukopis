@@ -39,20 +39,26 @@ RULES = """<h2>How to correct</h2>
 <li>Where a letter cannot be told, tick <b>unsure</b>: the line is then left out rather than guessed.</li>
 <li>A line that is not text, or cut wrongly, gets <b>skip</b>.</li>
 </ol>
-<p>Enter moves to the next line. <b>Save</b> downloads the file of this page; put it in the book's folder, or send it on. <b>Load</b> takes a saved file back in.</p>"""
+<p>A line counts as checked once the cursor has been in it; it turns white. Lines never visited are saved as <i>unchecked</i> and left out, so a sheet may be done in parts. Enter moves to the next line. <b>Save</b> downloads the file of this page; put it in the book's folder, or send it on. <b>Load</b> takes a saved file back in.</p>"""
 
 SCRIPT = """
+function seen(li){li.classList.add('seen');count();}
+function count(){const all=document.querySelectorAll('[data-line]').length,s=document.querySelectorAll('[data-line].seen').length;document.getElementById('count').textContent=s+' of '+all+' checked';}
+document.querySelectorAll('textarea').forEach(t=>t.addEventListener('focus',()=>seen(t.closest('[data-line]'))));
 function next(i){const t=document.querySelector('[data-line="'+(i+1)+'"] textarea');if(t){t.focus();t.select();}}
 document.querySelectorAll('textarea').forEach(t=>{t.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();next(+t.closest('[data-line]').dataset.line);}});});
 document.querySelectorAll('[data-take]').forEach(b=>{b.addEventListener('click',()=>{const li=b.closest('[data-line]');li.querySelector('textarea').value=b.dataset.take;});});
-function rows(){return [...document.querySelectorAll('[data-line]')].map(li=>{const f=li.querySelector('.skip').checked?'skip':li.querySelector('.unsure').checked?'unsure':'';return [li.dataset.name,f,li.querySelector('textarea').value.replace(/\\s+/g,' ').trim()];});}
+function rows(){return [...document.querySelectorAll('[data-line]')].map(li=>{const f=!li.classList.contains('seen')?'unchecked':li.querySelector('.skip').checked?'skip':li.querySelector('.unsure').checked?'unsure':'';return [li.dataset.name,f,li.querySelector('textarea').value.replace(/\\s+/g,' ').trim()];});}
 document.getElementById('save').addEventListener('click',()=>{const text=rows().map(r=>r.join('\\t')).join('\\n')+'\\n';const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/tab-separated-values'}));a.download=document.body.dataset.file;a.click();});
-document.getElementById('load').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{t.split('\\n').forEach(l=>{const [name,flag,text]=l.split('\\t');const li=document.querySelector('[data-name="'+name+'"]');if(!li)return;li.querySelector('textarea').value=text||'';li.querySelector('.skip').checked=flag==='skip';li.querySelector('.unsure').checked=flag==='unsure';});});});
+document.getElementById('load').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{t.split('\\n').forEach(l=>{const [name,flag,text]=l.split('\\t');const li=document.querySelector('[data-name="'+name+'"]');if(!li)return;li.querySelector('textarea').value=text||'';li.querySelector('.skip').checked=flag==='skip';li.querySelector('.unsure').checked=flag==='unsure';if(flag!=='unchecked')li.classList.add('seen');});count();});});
+count();
 """
 
 STYLE = """body{font-family:sans-serif;max-width:1400px;margin:1em auto;padding:0 1em;background:#faf8f3;color:#222}
 img{display:block;max-width:100%;border:1px solid #ccc;background:#fff}
-.line{margin:1.2em 0;padding:.5em;background:#fff;border-radius:4px}
+.line{margin:1.2em 0;padding:.5em;background:#ece8dc;border-radius:4px}
+.line.seen{background:#fff}
+#count{color:#555;font-size:.9em}
 textarea{width:100%;font-size:1.25em;font-family:serif;margin-top:.3em;box-sizing:border-box}
 .alt{color:#666;font-size:.95em;font-family:serif}
 .alt button{font-size:.8em;margin-right:.5em}
@@ -143,7 +149,7 @@ def sheet(book, page, lines, folder):
     parts = [f"<!doctype html><html lang='en'><head><meta charset='utf-8'><title>{html.escape(book['title'][:60])} p. {page}</title>",
              f"<style>{STYLE}</style></head><body data-file='page-{page}.truth.tsv'>",
              f"<div class='top'><h1>{html.escape(book['title'][:80])}, {html.escape(str(book['issued']))} — page {page} of the scan</h1>",
-             "<button id='save'>Save</button><label>Load <input id='load' type='file' accept='.tsv,.txt'></label>",
+             "<span id='count'></span> <button id='save'>Save</button><label>Load <input id='load' type='file' accept='.tsv,.txt'></label>",
              f"<a href='{link}' target='_blank'>at nb.no</a></div>", RULES]
     for i, l in enumerate(lines):
         with open(l["png"], "rb") as f:
@@ -196,6 +202,8 @@ def main():
     p.add_argument("--lang", default="dan_latf")
     p.add_argument("--only", help="book folder prefixes, comma-separated, as 01,04")
     p.add_argument("--again", action="store_true", help="make the sheets of books that have them already")
+    p.add_argument("--html-only", action="store_true",
+                   help="write the sheets anew from the lines already cut and read, without reading them again")
     a = p.parse_args()
     only = set(a.only.split(",")) if a.only else None
     entries = []
@@ -204,6 +212,20 @@ def main():
         if only and os.path.basename(folder).split("-")[0] not in only:
             continue
         pages = glob.glob(os.path.join(folder, "page-*.jpg"))
+        if a.html_only:
+            with open(os.path.join(folder, "book.json"), encoding="utf-8") as f:
+                book = json.load(f)
+            made = []
+            for j in sorted(pages):
+                page = os.path.basename(j)[5:-4]
+                with open(os.path.join(folder, "lines", f"page-{page}.lines.json"), encoding="utf-8") as f:
+                    lines = json.load(f)
+                for l in lines:
+                    l["png"] = os.path.join(folder, "lines", l["name"] + ".png")
+                sheet(book, page, lines, folder)
+                made.append((page, len(lines)))
+            entries.append((os.path.basename(folder), book, made))
+            continue
         if not a.again and pages and all(os.path.exists(os.path.join(folder, "sheet-" + os.path.basename(j)[5:-4] + ".html")) for j in pages):
             book = json.load(open(os.path.join(folder, "book.json"), encoding="utf-8"))
             made = [(os.path.basename(j)[5:-4], len(json.load(open(os.path.join(folder, "lines", "page-" + os.path.basename(j)[5:-4] + ".lines.json"), encoding="utf-8"))))

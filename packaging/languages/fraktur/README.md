@@ -208,5 +208,15 @@ single HTML file that works offline in any browser: every line's
 picture over a box with the model's reading, the library's reading
 beside it to take instead, the rules of transcription at the top, and
 flags for *unsure* (left out of training) and *skip* (not text, or cut
-wrongly). **Save** downloads `page-NNNN.truth.tsv`, which goes back into
-the book's folder; `index.html` in the books folder lists all sheets.
+wrongly). A line counts as checked once the cursor has been in it; lines never
+visited are saved as *unchecked* and left out, so a long sheet (a
+newspaper page has some 350 lines) may be done in parts. **Save**
+downloads `page-NNNN.truth.tsv` (line, flag, text), which goes back into
+the book's folder; **Load** takes it back in to go on. `index.html` in
+the books folder lists all sheets, the books held out for measuring
+first (`heldout.json`), and says of each book whether it is Fraktur
+(`types.json`, judged by eye). `--html-only` writes the sheets anew from
+the lines already cut and read.
+
+Books in roman type are moved out of the books folder, to `aside/`
+beside it: they cannot teach a Fraktur model.
