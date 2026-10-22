@@ -49,8 +49,6 @@ home-pane-toggle = La liste des projets
 home-pane-close = Fermer la liste des projets
 home-pane-between = Entre la liste des projets et le projet
 # On the chevron before an element of the open project, in the pane: what is under it is shown, or hidden.
-home-tree-unfold = Afficher ce qui est dessous
-home-tree-fold = Cacher ce qui est dessous
 # Why the project that is open cannot be renamed or deleted from its menu.
 home-open-now = Il est ouvert en ce moment
 # On the menu of a project, or of an element of one, in the pane: shows it in a second pane, beside the project that is open.
@@ -65,13 +63,9 @@ home-tree-empty = Rien dedans pour l’instant
 # The button that shows all of the map at once.
 home-owl-fit = Tout afficher
 # On a folder of the map: its projects are hidden, or shown.
-home-owl-fold = Cacher les projets qu’il contient
-home-owl-unfold = Afficher les projets qu’il contient
 # The map itself, as a list read aloud.
 home-owl-label = La carte des projets
 # The corner of a card that opens the project, and of a folder that shows it at the centre of the map.
-home-owl-open = Ouvrir le projet
-home-owl-enter = Ouvrir le dossier comme carte
 # The corner of the folder at the centre: up to what holds it.
 home-owl-leave = Remonter à « { $name } »
 # The menus of the map and of a folder on it: a new one made here, its name written in place.
@@ -86,13 +80,8 @@ home-owl-dragged = { $count ->
    *[other] { $count } dossiers ou projets
 }
 # On a card: the map of the project, shown under it on the map of the projects, or hidden.
-home-owl-map-show = Afficher sa carte ici
-home-owl-map-hide = Cacher sa carte
 home-owl-map-reading = Lecture de sa carte…
 # On an element of a project's map: the project opened there.
-home-owl-jump = Ouvrir le projet ici
-home-owl-fold-element = Cacher ce qui est dessous
-home-owl-unfold-element = Afficher ce qui est dessous
 # The menu of the map: what was put by hand is placed by itself again.
 home-owl-tidy = Tout replacer automatiquement
 home-owl-tidied = Tout sur la carte a repris sa place automatique

@@ -7,6 +7,8 @@
  */
 
 import { open as chooseFile, save } from '@tauri-apps/plugin-dialog';
+import ChevronRight from '@lucide/svelte/icons/chevron-right';
+import Columns2 from '@lucide/svelte/icons/columns-2';
 import Copy from '@lucide/svelte/icons/copy';
 import FileDown from '@lucide/svelte/icons/file-down';
 import FilePlus from '@lucide/svelte/icons/file-plus';
@@ -15,6 +17,7 @@ import FolderInput from '@lucide/svelte/icons/folder-input';
 import FolderOutput from '@lucide/svelte/icons/folder-output';
 import FolderPlus from '@lucide/svelte/icons/folder-plus';
 import History from '@lucide/svelte/icons/history';
+import Minimize2 from '@lucide/svelte/icons/minimize-2';
 import Pencil from '@lucide/svelte/icons/pencil';
 import Trash2 from '@lucide/svelte/icons/trash-2';
 import type { FileChoice, Folder, FoundWork, ProjectInfo } from '$lib/api/projects';
@@ -94,6 +97,56 @@ export interface ActionsPlace {
   open: (p: ProjectInfo, mode?: MapMode) => void;
   /** A project was moved to the trash. */
   deleted?: () => void;
+}
+
+/** Whether a thing's tree or contents are folded where it is shown, and the toggle. */
+export interface Folding {
+  folded: boolean;
+  toggle: () => void;
+}
+
+/** Where a project's menu is shown, and what that place adds to it. */
+export interface ProjectPlace {
+  /** The project that is open, if any: it is not entered, renamed or deleted from here; the others are entered beside it. */
+  current?: string | null;
+  /** Shows a project beside the open one. Given only where a project is open. */
+  beside?: (project: string) => void;
+  /** Where the place shows the project's map under it: whether it is folded, and the toggle. */
+  fold?: Folding;
+  /** Where the place renames in place; else the dialog asks. */
+  rename?: () => void;
+}
+
+/** Where a folder's menu is shown, and what that place adds to it. */
+export interface FolderPlace {
+  enter: () => void;
+  /** The folder is the one in view, which is not entered again. */
+  here?: boolean;
+  fold?: Folding;
+  /** Where new things are named in place, the maker; else the dialog asks. */
+  make?: (kind: 'project' | 'folder') => void;
+  /** Where the place renames in place; else the dialog asks. */
+  rename?: () => void;
+}
+
+/** Where the menu of an element of a project's map is shown. */
+export interface ElementPlace {
+  enter: () => void;
+  beside?: () => void;
+  fold?: Folding;
+}
+
+/** Fold or unfold, as one item, where the place folds. */
+function foldItem(fold: Folding | undefined): MenuItem[] {
+  if (!fold) return [];
+  return [
+    {
+      label: fold.folded ? t('home-unfold') : t('home-fold'),
+      icon: ChevronRight,
+      shortcut: keysFor('owl-fold'),
+      action: fold.toggle,
+    },
+  ];
 }
 
 export class ProjectActions {
@@ -224,40 +277,33 @@ export class ProjectActions {
   }
 
   /**
-   * The menu of a project with the moving into folders, before the last
-   * part, which deletes; and what the place adds after Open.
+   * The menu of a folder, the same wherever folders are shown: enter it,
+   * fold it, make in it, rename it, move it, delete it. Where the place
+   * names new things in place, `make` does it; else the dialog asks.
    */
-  itemsWithMoves(p: ProjectInfo, options: { here?: boolean; afterOpen?: MenuItem[] } = {}) {
-    const base = this.items(p, options);
-    if (options.afterOpen?.length && !options.here) base.splice(1, 0, ...options.afterOpen);
-    const cut = base.findIndex((item, i) => item.kind === 'separator' && i === base.length - 2);
-    const moving: MenuItem[] = [{ kind: 'separator' }, ...this.moveItems(p)];
-    return cut < 0 ? [...base, ...moving] : [...base.slice(0, cut), ...moving, ...base.slice(cut)];
-  }
-
-  /**
-   * The menu of a folder; what the place adds stands first. Where `make` is
-   * given, a new project or folder in it is made in place, not by a dialog.
-   */
-  folderItems(
-    f: Folder,
-    first: MenuItem[] = [],
-    make?: (kind: 'project' | 'folder') => void,
-  ): MenuItem[] {
+  folderItems(f: Folder, place: FolderPlace): MenuItem[] {
     const parent = f.parent ?? null;
     const move = (into: string | null) => void moveThings({ projects: [], folders: [f.id] }, into);
     const into = this.#intoFolders(foldersOpenTo(projects.folders, f.id), parent, move);
+    const make = place.make;
     return [
-      ...first,
-      ...(first.length ? [{ kind: 'separator' } as MenuItem] : []),
       {
-        label: make ? t('home-owl-new-project') : t('home-folder-new-project'),
+        label: t('home-enter'),
+        icon: Minimize2,
+        shortcut: keysFor('owl-open'),
+        disabled: !!place.here,
+        action: place.enter,
+      },
+      ...foldItem(place.fold),
+      { kind: 'separator' },
+      {
+        label: t('home-owl-new-project'),
         icon: FilePlus,
         shortcut: make ? keysFor('owl-new-project') : undefined,
         action: () => (make ? make('project') : this.newProject(f.id)),
       },
       {
-        label: make ? t('home-owl-new-folder') : t('home-folder-new-inside'),
+        label: t('home-owl-new-folder'),
         icon: FolderPlus,
         shortcut: make ? keysFor('owl-new-folder') : undefined,
         action: () => (make ? make('folder') : this.newFolder(f.id)),
@@ -266,7 +312,7 @@ export class ProjectActions {
         label: t('common-rename'),
         icon: Pencil,
         shortcut: keysFor('owl-rename'),
-        action: () => this.renameFolder(f),
+        action: () => (place.rename ? place.rename() : this.renameFolder(f)),
       },
       { kind: 'separator' },
       {
@@ -286,6 +332,22 @@ export class ProjectActions {
         danger: true,
         action: () => void this.removeFolder(f),
       },
+    ];
+  }
+
+  /** The menu of an element of a project's map, shown on the map of all projects or in the list: enter it, beside, fold it. */
+  elementItems(place: ElementPlace): MenuItem[] {
+    return [
+      {
+        label: t('home-enter'),
+        icon: Minimize2,
+        shortcut: keysFor('owl-open'),
+        action: place.enter,
+      },
+      ...(place.beside
+        ? [{ label: t('home-open-beside'), icon: Columns2, action: place.beside } as MenuItem]
+        : []),
+      ...foldItem(place.fold),
     ];
   }
 
@@ -413,23 +475,41 @@ export class ProjectActions {
   }
 
   /**
-   * The menu of a project. The project that is open (`here`) is not opened
-   * again, and is neither renamed nor deleted while it is open: what is
-   * written in it goes to its folder on disk.
+   * The menu of a project, the same wherever projects are shown: enter it,
+   * beside the one that is open, fold its map; rename, copy, its history,
+   * save it; move it among the folders; delete it. The project that is open
+   * (`place.current`) is neither entered, renamed nor deleted from here:
+   * what is written in it goes to its folder on disk.
    */
-  items(p: ProjectInfo, options: { here?: boolean } = {}): MenuItem[] {
-    const here = !!options.here;
-    const open: MenuItem[] = here
-      ? []
-      : [{ label: t('common-open'), action: () => this.open(p) }, { kind: 'separator' }];
+  items(p: ProjectInfo, place: ProjectPlace = {}): MenuItem[] {
+    const here = !!place.current && place.current === p.id;
+    const beside = place.beside;
     return [
-      ...open,
+      {
+        label: t('home-enter'),
+        icon: Minimize2,
+        shortcut: keysFor('owl-open'),
+        hint: here ? t('home-open-now') : undefined,
+        disabled: here,
+        action: () => this.open(p),
+      },
+      ...(beside && place.current && !here
+        ? [
+            {
+              label: t('home-open-beside'),
+              icon: Columns2,
+              action: () => beside(p.id),
+            } as MenuItem,
+          ]
+        : []),
+      ...foldItem(place.fold),
+      { kind: 'separator' },
       {
         label: t('home-menu-rename'),
         icon: Pencil,
         hint: here ? t('home-open-now') : undefined,
         disabled: here,
-        action: () => this.rename(p),
+        action: () => (place.rename ? place.rename() : this.rename(p)),
       },
       { label: t('home-menu-duplicate'), icon: Copy, action: () => this.duplicate(p) },
       { label: t('home-menu-history'), icon: History, action: () => (this.earlier = p) },
@@ -445,6 +525,8 @@ export class ProjectActions {
         disabled: this.filing,
         action: () => void this.saveAsOrg(p, here),
       },
+      { kind: 'separator' },
+      ...this.moveItems(p),
       { kind: 'separator' },
       {
         label: t('common-delete'),

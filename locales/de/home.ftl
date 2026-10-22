@@ -48,8 +48,6 @@ home-pane-toggle = Die Liste der Projekte
 home-pane-close = Die Liste der Projekte schließen
 home-pane-between = Zwischen der Liste der Projekte und dem Projekt
 # On the chevron before an element of the open project, in the pane: what is under it is shown, or hidden.
-home-tree-unfold = Zeigen, was darunter ist
-home-tree-fold = Verbergen, was darunter ist
 # Why the project that is open cannot be renamed or deleted from its menu.
 home-open-now = Es ist gerade geöffnet
 # On the menu of a project, or of an element of one, in the pane: shows it in a second pane, beside the project that is open.
@@ -64,13 +62,9 @@ home-tree-empty = Noch nichts darin
 # The button that shows all of the map at once.
 home-owl-fit = Alles zeigen
 # On a folder of the map: its projects are hidden, or shown.
-home-owl-fold = Die Projekte darin verbergen
-home-owl-unfold = Die Projekte darin zeigen
 # The map itself, as a list read aloud.
 home-owl-label = Die Karte der Projekte
 # The corner of a card that opens the project, and of a folder that shows it at the centre of the map.
-home-owl-open = Das Projekt öffnen
-home-owl-enter = Den Ordner als Karte öffnen
 # The corner of the folder at the centre: up to what holds it.
 home-owl-leave = Hinauf zu „{ $name }“
 # The menus of the map and of a folder on it: a new one made here, its name written in place.
@@ -84,13 +78,8 @@ home-owl-dragged = { $count ->
    *[other] { $count } Einträge
 }
 # On a card: the map of the project, shown under it on the map of the projects, or hidden.
-home-owl-map-show = Seine Karte hier zeigen
-home-owl-map-hide = Seine Karte verbergen
 home-owl-map-reading = Seine Karte wird gelesen…
 # On an element of a project's map: the project opened there.
-home-owl-jump = Das Projekt hier öffnen
-home-owl-fold-element = Verbergen, was darunter ist
-home-owl-unfold-element = Zeigen, was darunter ist
 # The menu of the map: what was put by hand is placed by itself again.
 home-owl-tidy = Alles von selbst anordnen
 home-owl-tidied = Alles auf der Karte ist wieder von selbst angeordnet

@@ -154,10 +154,10 @@ projects*.
 
 In the list at the left of a project, a project that is not open can be
 unfolded too: its trees are read from the disk and shown, and a click on one
-of them opens the project there. **Open beside**, in the menu of another
+of them opens the project there. **Enter beside**, in the menu of another
 project or of one of its elements, shows it beside the project you are in.
 
-**A map of the projects…**, in the menu at the head of the page, makes a new
+**A project of all the projects…**, in the menu at the head of the page, makes a new
 project of the projects themselves: the folders as elements, nested as the
 folders are, and under each the projects in it, with their descriptions as
 text. With **everything in them**, each project has its whole tree of
@@ -186,7 +186,7 @@ project opens on its text.
 | Select several | **Ctrl**-click or **Shift**-click, or drag a frame around them |
 | Delete | **Delete** |
 | Undo, redo | **Ctrl+Z**, **Ctrl+Shift+Z** |
-| Enter an element: it comes to the centre, with what is under it, and the rest is out of the way | The small round button at its corner, which shows when the pointer is on it or it is selected; **Alt+Shift+Down**; or **Open as a map** in its menu |
+| Enter an element: it comes to the centre, with what is under it, and the rest is out of the way | The small round button at its corner, which shows when the pointer is on it or it is selected; **Alt+Shift+Down**; or **Enter** in its menu |
 | Go up, to the element over the one in view | **Alt+Shift+Up**; the small round button at the corner of the element in view; or its name, small, at the left of the bar |
 | Move about the map | Drag the background; scroll to zoom |
 | Everything else | Right-click an element, or **Shift+F10** |
@@ -265,7 +265,7 @@ Everything the tools do can be done from the keys, and much of it by typing:
 | Make the element deeper or less deep | **Alt+Right**, **Alt+Left**; or **Tab**, **Shift+Tab** in its name |
 | Move the element up or down among those beside it | **Alt+Up**, **Alt+Down**; the cursor stays where it is |
 | Join an element to the one above | Right-click: **Join to the element above** |
-| Enter an element, to see it alone with what is under it | **Alt+Shift+Down**; the small round button before its heading, which shows when the pointer is on the heading; or **Open as a map**, from the grip beside it |
+| Enter an element, to see it alone with what is under it | **Alt+Shift+Down**; the small round button before its heading, which shows when the pointer is on the heading; or **Enter**, from the grip beside it |
 | Go up, to the element over the one in view | **Alt+Shift+Up**, with the cursor anywhere in the text; the small round button before the title, which shows when the pointer is on it; or its name, small, at the left of the bar |
 | Move an element to another place | Drag it by the grip beside its heading: the line shows where it goes, and how far to the right the pointer is says how deep, under the element above, after it, or as far out as before the element below |
 
@@ -1364,7 +1364,7 @@ new project opens there, with everything in it. Enter an element with the
 small round button that appears at its corner in the diagram, when the
 pointer is on it or it is selected, and before its heading in the text, when
 the pointer is on the heading; with **Alt+Shift+Down**; or with
-**Open as a map** in its menu, in the diagram and from the grip beside its
+**Enter** in its menu, in the diagram and from the grip beside its
 heading in the text. Go up with **Alt+Shift+Up**; with the button of the same kind
 on the element in view, at its corner in the diagram and before the title in
 the text; or by pressing the name of the element over it, which stands small
@@ -1438,7 +1438,7 @@ consumed by the writing:
   and as text beside one another; enter another element on either side to
   see two parts of the project, and move elements between them, by dragging
   or by cutting and pasting. Each side can be diagram, text or timeline.
-- **Another project beside**: **Open beside**, in the list of projects at
+- **Another project beside**: **Enter beside**, in the list of projects at
   the left, shows another project in the second side. Then both bars begin
   with the name of their project, with its sign, and the line between them is
   doubled, so that the two are not taken for one. Elements dragged from one
@@ -2864,7 +2864,7 @@ what is to be done by its name, and does it.
 | **Ctrl+Enter** | In the diagram and the text: a new element after this one; in a text, from the cursor on |
 | **Ctrl+Shift+Enter** | In the diagram and the text: a new element under this one; in a text, the first under it, from the cursor on |
 | **Enter**, **Tab** | In the diagram: a new element after, or under |
-| **Alt+Shift+Down** | In the diagram and the text: open the element as a map, with what is under it |
+| **Alt+Shift+Down** | In the diagram and the text: enter the element, to see it alone with what is under it |
 | **Alt+Up**, **Alt+Down** | In the diagram and the text: move the element up or down among those beside it |
 | **Alt+Right**, **Alt+Left** | In the text: the element deeper, or less deep; in the diagram, as the arrow points |
 | **Alt** and the arrows | In the text: move the element, or make it deeper or less deep, as in Org mode |

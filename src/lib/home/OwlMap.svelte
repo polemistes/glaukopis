@@ -817,59 +817,42 @@
   /** The folders and projects on the map that were put by hand. */
   const placedByHand = () => lay.order.filter((k) => !!projects.places[k]);
 
+  /** The menu of what a key stands for: the one menu of a folder, a project or an element, as the list has it; else the map's. */
   function itemsOf(key: string): MenuItem[] {
     const f = folderOfKey(key);
     if (f) {
-      // The folder at the centre is where one is: it is not entered again.
-      const first: MenuItem[] =
-        key === owl.tree.root
-          ? []
-          : [
-              {
-                label: t('home-owl-enter'),
-                icon: Minimize2,
-                shortcut: keysFor('owl-open'),
-                action: () => open(key),
-              },
-            ];
-      return actions.folderItems(f, first, (kind) => {
-        selection = [key];
-        make(kind);
+      const item = owl.items.get(key);
+      const centre = key === owl.tree.root;
+      return actions.folderItems(f, {
+        enter: () => open(key),
+        here: centre,
+        fold:
+          !centre && item?.kind === 'folder' && item.holds
+            ? { folded: item.folded, toggle: () => fold(key) }
+            : undefined,
+        make: (kind) => {
+          selection = [key];
+          make(kind);
+        },
+        rename: () => rename(key),
       });
     }
     const p = projectOfKey(key);
     if (p) {
-      const shown = !!listUi.owlMaps.has(p.id);
-      return actions.itemsWithMoves(p, {
-        afterOpen: [
-          {
-            label: shown ? t('home-owl-map-hide') : t('home-owl-map-show'),
-            icon: ChevronRight,
-            shortcut: keysFor('owl-fold'),
-            action: () => fold(key),
-          },
-        ],
+      return actions.items(p, {
+        fold: { folded: !listUi.owlMaps.has(p.id), toggle: () => fold(key) },
+        rename: () => rename(key),
       });
     }
     if (keyed(key).kind === 'element') {
       const item = owl.items.get(key);
-      return [
-        {
-          label: t('home-owl-jump'),
-          icon: Minimize2,
-          shortcut: keysFor('owl-open'),
-          action: () => open(key),
-        },
-        ...(item?.kind === 'element' && item.holds
-          ? [
-              {
-                label: item.folded ? t('home-owl-unfold-element') : t('home-owl-fold-element'),
-                shortcut: keysFor('owl-fold'),
-                action: () => fold(key),
-              } as MenuItem,
-            ]
-          : []),
-      ];
+      return actions.elementItems({
+        enter: () => open(key),
+        fold:
+          item?.kind === 'element' && item.holds
+            ? { folded: item.folded, toggle: () => fold(key) }
+            : undefined,
+      });
     }
     return mapItems();
   }
@@ -1225,10 +1208,10 @@
                     class="fold"
                     tabindex="-1"
                     disabled={!item.holds}
-                    aria-label={item.folded ? t('home-owl-unfold') : t('home-owl-fold')}
+                    aria-label={item.folded ? t('home-unfold') : t('home-fold')}
                     use:tooltip={item.holds
                       ? {
-                          text: item.folded ? t('home-owl-unfold') : t('home-owl-fold'),
+                          text: item.folded ? t('home-unfold') : t('home-fold'),
                           shortcut: keysFor('owl-fold'),
                         }
                       : null}
@@ -1281,8 +1264,8 @@
                     type="button"
                     class="corner enter"
                     tabindex="-1"
-                    aria-label={t('home-owl-enter')}
-                    use:tooltip={{ text: t('home-owl-enter'), shortcut: keysFor('owl-open') }}
+                    aria-label={t('home-enter')}
+                    use:tooltip={{ text: t('home-enter'), shortcut: keysFor('owl-open') }}
                     onclick={(e) => {
                       e.stopPropagation();
                       open(key);
@@ -1343,8 +1326,8 @@
                     aria-label={item.map === 'failed'
                       ? t('home-tree-unreadable')
                       : item.folded
-                        ? t('home-owl-map-show')
-                        : t('home-owl-map-hide')}
+                        ? t('home-unfold')
+                        : t('home-fold')}
                     use:tooltip={{
                       text:
                         item.map === 'reading'
@@ -1352,8 +1335,8 @@
                           : item.map === 'failed'
                             ? t('home-tree-unreadable')
                             : item.folded
-                              ? t('home-owl-map-show')
-                              : t('home-owl-map-hide'),
+                              ? t('home-unfold')
+                              : t('home-fold'),
                       shortcut: keysFor('owl-fold'),
                     }}
                     onclick={(e) => {
@@ -1371,8 +1354,8 @@
                     type="button"
                     class="corner enter"
                     tabindex="-1"
-                    aria-label={t('home-owl-open')}
-                    use:tooltip={{ text: t('home-owl-open'), shortcut: keysFor('owl-open') }}
+                    aria-label={t('home-enter')}
+                    use:tooltip={{ text: t('home-enter'), shortcut: keysFor('owl-open') }}
                     onclick={(e) => {
                       e.stopPropagation();
                       open(key);
@@ -1417,11 +1400,9 @@
                     class="fold"
                     class:folded={item.folded}
                     tabindex="-1"
-                    aria-label={item.folded
-                      ? t('home-owl-unfold-element')
-                      : t('home-owl-fold-element')}
+                    aria-label={item.folded ? t('home-unfold') : t('home-fold')}
                     use:tooltip={{
-                      text: item.folded ? t('home-owl-unfold-element') : t('home-owl-fold-element'),
+                      text: item.folded ? t('home-unfold') : t('home-fold'),
                       shortcut: keysFor('owl-fold'),
                     }}
                     onclick={(e) => {
@@ -1437,8 +1418,8 @@
                   type="button"
                   class="corner enter"
                   tabindex="-1"
-                  aria-label={t('home-owl-jump')}
-                  use:tooltip={{ text: t('home-owl-jump'), shortcut: keysFor('owl-open') }}
+                  aria-label={t('home-enter')}
+                  use:tooltip={{ text: t('home-enter'), shortcut: keysFor('owl-open') }}
                   onclick={(e) => {
                     e.stopPropagation();
                     open(key);

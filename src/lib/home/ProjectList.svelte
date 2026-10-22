@@ -15,8 +15,6 @@
 
 <script lang="ts">
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
-  import Columns2 from '@lucide/svelte/icons/columns-2';
-  import Minimize2 from '@lucide/svelte/icons/minimize-2';
   import Ellipsis from '@lucide/svelte/icons/ellipsis';
   import Folder from '@lucide/svelte/icons/folder';
   import FolderPlus from '@lucide/svelte/icons/folder-plus';
@@ -110,25 +108,24 @@
     });
   });
 
-  /** The menu of a project in the list: with Open beside while another is open, and the moves. */
+  /** The menu of a project in the list: the one menu of a project, with its tree folded or not where the list unfolds it. */
   function projectItems(p: ProjectInfo): MenuItem[] {
-    const beside: MenuItem[] =
-      current && p.id !== current
-        ? [{ label: t('home-open-beside'), icon: Columns2, action: () => viewing.beside?.(p.id) }]
-        : [];
-    return actions.itemsWithMoves(p, { here: p.id === current, afterOpen: beside });
+    return actions.items(p, {
+      current,
+      beside: current ? (id) => viewing.beside?.(id) : undefined,
+      fold: unfoldable(p)
+        ? { folded: !closedUnfolded.has(p.id), toggle: () => toggleClosed(p) }
+        : undefined,
+    });
   }
 
   const openAsMap = (f: FolderInfo) => router.go({ view: 'owl', at: f.id });
   const folderItems = (f: FolderInfo) =>
-    actions.folderItems(f, [
-      {
-        label: t('home-owl-enter'),
-        icon: Minimize2,
-        disabled: owlAt === f.id,
-        action: () => openAsMap(f),
-      },
-    ]);
+    actions.folderItems(f, {
+      enter: () => openAsMap(f),
+      here: owlAt === f.id,
+      fold: { folded: listUi.collapsed.has(f.id), toggle: () => toggle(f.id) },
+    });
 
   // The folder in view on the owl map is shown: the folders it lies in open.
   $effect(() => {
@@ -242,20 +239,14 @@
     }
   }
 
-  /** The menu of an element of a project that is not open: open it there, or beside. */
+  /** The menu of an element of a project that is not open: enter it, beside, fold it. */
   function elementItems(src: Shown, id: string): MenuItem[] {
-    return [
-      { label: t('common-open'), action: () => src.enter(id) },
-      ...(current
-        ? [
-            {
-              label: t('home-open-beside'),
-              icon: Columns2,
-              action: () => viewing.beside?.(src.project, id),
-            } as MenuItem,
-          ]
-        : []),
-    ];
+    const holds = (src.tree.children.get(id)?.length ?? 0) > 0;
+    return actions.elementItems({
+      enter: () => src.enter(id),
+      beside: current ? () => viewing.beside?.(src.project, id) : undefined,
+      fold: holds ? { folded: !isUnfolded(src, id), toggle: () => toggleFold(src, id) } : undefined,
+    });
   }
 
   // Entering an element unfolds the way to it, whatever was folded by hand before.
@@ -415,7 +406,7 @@
             class:open={unfolded}
             class:hidden={!unfoldable(p)}
             tabindex="-1"
-            aria-label={unfolded ? t('home-tree-fold') : t('home-tree-unfold')}
+            aria-label={unfolded ? t('home-fold') : t('home-unfold')}
             aria-expanded={unfoldable(p) ? unfolded : undefined}
             onclick={(e) => {
               e.stopPropagation();
@@ -516,7 +507,7 @@
         class:open
         class:hidden={!holds}
         tabindex="-1"
-        aria-label={open ? t('home-tree-fold') : t('home-tree-unfold')}
+        aria-label={open ? t('home-fold') : t('home-unfold')}
         aria-expanded={holds ? open : undefined}
         onclick={(e) => {
           e.stopPropagation();

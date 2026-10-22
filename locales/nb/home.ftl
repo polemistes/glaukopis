@@ -45,23 +45,20 @@ home-pane = Prosjektlisten
 home-pane-toggle = Prosjektlisten
 home-pane-close = Lukk prosjektlisten
 home-pane-between = Mellom prosjektlisten og prosjektet
-home-tree-unfold = Vis det som står under
-home-tree-fold = Skjul det som står under
 home-open-now = Det er åpent nå
-home-open-beside = Åpne ved siden av
+home-open-beside = Gå inn ved siden av
+home-enter = Gå inn
+home-fold = Brett sammen
+home-unfold = Brett ut
 home-tree-unreadable = Det kunne ikke leses
 home-tree-empty = Ingenting i det ennå
 
 ## Uglekartet: prosjektene tegnet rundt uglen, mappene som enkle merkelapper
 
 home-owl-fit = Vis alt
-home-owl-fold = Skjul prosjektene i den
-home-owl-unfold = Vis prosjektene i den
 # Selve kartet, som en liste lest høyt.
 home-owl-label = Kartet over prosjektene
 # Hjørnet på et kort som åpner prosjektet, og på en mappe som viser den midt i kartet.
-home-owl-open = Åpne prosjektet
-home-owl-enter = Åpne mappen som kart
 # Hjørnet på mappen i midten: opp til det som rommer den.
 home-owl-leave = Opp til «{ $name }»
 # Menyene i kartet og på en mappe i det: noe nytt laget her, med navnet skrevet på stedet.
@@ -75,13 +72,8 @@ home-owl-dragged = { $count ->
    *[other] { $count } ting
 }
 # På et kort: kartet til prosjektet, vist under det på kartet over prosjektene, eller skjult.
-home-owl-map-show = Vis kartet her
-home-owl-map-hide = Skjul kartet
 home-owl-map-reading = Leser kartet …
 # På et element i kartet til et prosjekt: prosjektet åpnet der.
-home-owl-jump = Åpne prosjektet her
-home-owl-fold-element = Skjul det som er under
-home-owl-unfold-element = Vis det som er under
 # Menyen i kartet: det som ble plassert for hånd, plasseres av seg selv igjen.
 home-owl-tidy = Plasser alt av seg selv
 home-owl-tidied = Alt på kartet plasseres av seg selv igjen
@@ -104,8 +96,8 @@ home-owl-in = I «{ $name }»
 
 ## Et kart over prosjektene
 
-home-map-menu = Et kart over prosjektene …
-home-map-title = Et kart over prosjektene
+home-map-menu = Et prosjekt av alle prosjektene …
+home-map-title = Et prosjekt av alle prosjektene
 home-map-about = Et nytt prosjekt: mappene som elementer, og under hver mappe prosjektene i den.
 home-map-name-default = Prosjekter
 home-map-what = Hva kartet rommer

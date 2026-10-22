@@ -13,7 +13,7 @@ text-drop-before = Foran «{ $name }»
 text-split = Del her
 text-split-hint = Det som står etter markøren, blir et nytt element
 text-join = Slå sammen med elementet over
-text-open-as-map = Åpne som kart
+text-open-as-map = Gå inn
 text-open-as-map-hint = Det vises alene, med det som står under
 
 ## Å brette sammen det som står under et element, og teksten til elementet

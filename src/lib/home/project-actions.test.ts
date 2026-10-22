@@ -156,11 +156,11 @@ describe('what is done with a project from a list of them', () => {
     expect(deleted).toHaveBeenCalledTimes(1);
   });
 
-  it('gives the menu of a project, without opening, renaming or deleting the one that is open', () => {
+  it('gives the one menu of a project, without entering, renaming or deleting the one that is open', () => {
     const p = project('p', 'Notes');
     const menu = actions.items(p);
     expect(labels(menu)).toEqual([
-      t('common-open'),
+      t('home-enter'),
       '—',
       t('home-menu-rename'),
       t('home-menu-duplicate'),
@@ -168,20 +168,48 @@ describe('what is done with a project from a list of them', () => {
       t('home-menu-save-file'),
       t('home-menu-save-org'),
       '—',
+      t('home-menu-move'),
+      '—',
       t('common-delete'),
     ]);
-    item(menu, t('common-open')).action();
+    item(menu, t('home-enter')).action();
     expect(open).toHaveBeenCalledWith(p, undefined);
     item(menu, t('home-menu-history')).action();
     expect(actions.earlier).toBe(p);
 
-    const here = actions.items(p, { here: true });
-    expect(labels(here)[0]).toBe(t('home-menu-rename'));
+    const here = actions.items(p, { current: 'p', beside: () => {} });
+    expect(item(here, t('home-enter')).disabled).toBe(true);
+    expect(labels(here)).not.toContain(t('home-open-beside'));
     expect(item(here, t('home-menu-rename')).disabled).toBe(true);
     expect(item(here, t('common-delete')).disabled).toBe(true);
     expect(item(here, t('home-menu-duplicate')).disabled).toBeFalsy();
-    // The last part of the menu, which deletes, is behind a separator, where folders put theirs before it.
-    expect(here[here.length - 2].kind).toBe('separator');
+
+    // Another project, while one is open, is entered beside it; one whose map the place shows folds.
+    const beside = vi.fn();
+    const toggle = vi.fn();
+    const other = actions.items(p, { current: 'q', beside, fold: { folded: true, toggle } });
+    expect(labels(other).slice(0, 3)).toEqual([
+      t('home-enter'),
+      t('home-open-beside'),
+      t('home-unfold'),
+    ]);
+    item(other, t('home-open-beside')).action();
+    expect(beside).toHaveBeenCalledWith('p');
+    item(other, t('home-unfold')).action();
+    expect(toggle).toHaveBeenCalled();
+  });
+
+  it('gives the one menu of a folder and of an element', () => {
+    const enter = vi.fn();
+    const f = { id: 'f', name: 'Greek', parent: null, order: 0 } as never;
+    const menu = actions.folderItems(f, { enter, fold: { folded: false, toggle: () => {} } });
+    expect(labels(menu).slice(0, 2)).toEqual([t('home-enter'), t('home-fold')]);
+    item(menu, t('home-enter')).action();
+    expect(enter).toHaveBeenCalled();
+    expect(item(actions.folderItems(f, { enter, here: true }), t('home-enter')).disabled).toBe(
+      true,
+    );
+    expect(labels(actions.elementItems({ enter }))).toEqual([t('home-enter')]);
   });
 
   it('names the dialog and its button by what it asks', () => {

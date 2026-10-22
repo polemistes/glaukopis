@@ -189,7 +189,7 @@
                 class:open={row.open}
                 class:hidden={!row.holds}
                 tabindex="-1"
-                aria-label={row.open ? t('home-tree-fold') : t('home-tree-unfold')}
+                aria-label={row.open ? t('home-fold') : t('home-unfold')}
                 onclick={(e) => {
                   e.stopPropagation();
                   toggle(row.id);

@@ -147,7 +147,7 @@ try {
 
   // --- A map of the projects ---
   await app.click('header button[aria-label="More"]');
-  await app.clickText('[role="menuitem"]', 'A map of the projects');
+  await app.clickText('[role="menuitem"]', 'A project of all the projects');
   await app.waitFor('dialog input');
   await sleep(200);
   await app.screenshot('projects-3-map-dialog');

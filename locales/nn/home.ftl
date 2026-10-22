@@ -48,8 +48,6 @@ home-pane-toggle = Prosjektlista
 home-pane-close = Lukk prosjektlista
 home-pane-between = Mellom prosjektlista og prosjektet
 # On the chevron before an element of the open project, in the pane: what is under it is shown, or hidden.
-home-tree-unfold = Vis det som står under
-home-tree-fold = Gøym det som står under
 # Why the project that is open cannot be renamed or deleted from its menu.
 home-open-now = Det er ope no
 # On the menu of a project, or of an element of one, in the pane: shows it in a second pane, beside the project that is open.
@@ -64,13 +62,9 @@ home-tree-empty = Ingenting i det enno
 # The button that shows all of the map at once.
 home-owl-fit = Vis alt
 # On a folder of the map: its projects are hidden, or shown.
-home-owl-fold = Gøym prosjekta i den
-home-owl-unfold = Vis prosjekta i den
 # The map itself, as a list read aloud.
 home-owl-label = Kartet over prosjekta
 # The corner of a card that opens the project, and of a folder that shows it at the centre of the map.
-home-owl-open = Opne prosjektet
-home-owl-enter = Opne mappa som kart
 # The corner of the folder at the centre: up to what holds it.
 home-owl-leave = Opp til «{ $name }»
 # The menus of the map and of a folder on it: a new one made here, its name written in place.
@@ -84,13 +78,8 @@ home-owl-dragged = { $count ->
    *[other] { $count } ting
 }
 # On a card: the map of the project, shown under it on the map of the projects, or hidden.
-home-owl-map-show = Vis kartet her
-home-owl-map-hide = Gøym kartet
 home-owl-map-reading = Les kartet …
 # On an element of a project's map: the project opened there.
-home-owl-jump = Opne prosjektet her
-home-owl-fold-element = Gøym det som står under
-home-owl-unfold-element = Vis det som står under
 # The menu of the map: what was put by hand is placed by itself again.
 home-owl-tidy = La alt bli plassert av seg sjølv
 home-owl-tidied = Alt på kartet blir plassert av seg sjølv att

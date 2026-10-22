@@ -15,7 +15,7 @@ text-drop-before = Before “{ $name }”
 text-split = Split here
 text-split-hint = What follows the cursor becomes a new element
 text-join = Join to the element above
-text-open-as-map = Open as a map
+text-open-as-map = Enter
 text-open-as-map-hint = It is shown alone, with what is under it
 
 ## Folding away what is under an element, and its text

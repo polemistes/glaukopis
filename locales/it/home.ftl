@@ -49,8 +49,6 @@ home-pane-toggle = L'elenco dei progetti
 home-pane-close = Chiudi l'elenco dei progetti
 home-pane-between = Tra l'elenco dei progetti e il progetto
 # On the chevron before an element of the open project, in the pane: what is under it is shown, or hidden.
-home-tree-unfold = Mostra ciò che sta sotto
-home-tree-fold = Nascondi ciò che sta sotto
 # Why the project that is open cannot be renamed or deleted from its menu.
 home-open-now = Ora è aperto
 # On the menu of a project, or of an element of one, in the pane: shows it in a second pane, beside the project that is open.
@@ -65,13 +63,9 @@ home-tree-empty = Ancora vuoto
 # The button that shows all of the map at once.
 home-owl-fit = Mostrala tutta
 # On a folder of the map: its projects are hidden, or shown.
-home-owl-fold = Nascondi i progetti che contiene
-home-owl-unfold = Mostra i progetti che contiene
 # The map itself, as a list read aloud.
 home-owl-label = La mappa dei progetti
 # The corner of a card that opens the project, and of a folder that shows it at the centre of the map.
-home-owl-open = Apri il progetto
-home-owl-enter = Apri la cartella come mappa
 # The corner of the folder at the centre: up to what holds it.
 home-owl-leave = Risali a «{ $name }»
 # The menus of the map and of a folder on it: a new one made here, its name written in place.
@@ -86,13 +80,8 @@ home-owl-dragged = { $count ->
    *[other] { $count } cose
 }
 # On a card: the map of the project, shown under it on the map of the projects, or hidden.
-home-owl-map-show = Mostra qui la sua mappa
-home-owl-map-hide = Nascondi la sua mappa
 home-owl-map-reading = Lettura della sua mappa…
 # On an element of a project's map: the project opened there.
-home-owl-jump = Apri il progetto qui
-home-owl-fold-element = Nascondi ciò che sta sotto
-home-owl-unfold-element = Mostra ciò che sta sotto
 # The menu of the map: what was put by hand is placed by itself again.
 home-owl-tidy = Disponi tutto automaticamente
 home-owl-tidied = Tutto sulla mappa è di nuovo disposto automaticamente

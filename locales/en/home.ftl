@@ -48,12 +48,13 @@ home-pane-toggle = The list of projects
 home-pane-close = Close the list of projects
 home-pane-between = Between the list of projects and the project
 # On the chevron before an element of the open project, in the pane: what is under it is shown, or hidden.
-home-tree-unfold = Show what is under it
-home-tree-fold = Hide what is under it
 # Why the project that is open cannot be renamed or deleted from its menu.
 home-open-now = It is open now
 # On the menu of a project, or of an element of one, in the pane: shows it in a second pane, beside the project that is open.
-home-open-beside = Open beside
+home-open-beside = Enter beside
+home-enter = Enter
+home-fold = Fold
+home-unfold = Unfold
 # Under a project that is not open, in the pane, when what it holds could not be read.
 home-tree-unreadable = It could not be read
 # Under a project that is not open, in the pane, when it holds no elements yet.
@@ -64,13 +65,9 @@ home-tree-empty = Nothing in it yet
 # The button that shows all of the map at once.
 home-owl-fit = Show all of it
 # On a folder of the map: its projects are hidden, or shown.
-home-owl-fold = Hide the projects in it
-home-owl-unfold = Show the projects in it
 # The map itself, as a list read aloud.
 home-owl-label = The map of the projects
 # The corner of a card that opens the project, and of a folder that shows it at the centre of the map.
-home-owl-open = Open the project
-home-owl-enter = Open the folder as a map
 # The corner of the folder at the centre: up to what holds it.
 home-owl-leave = Up to “{ $name }”
 # The menus of the map and of a folder on it: a new one made here, its name written in place.
@@ -84,13 +81,8 @@ home-owl-dragged = { $count ->
    *[other] { $count } things
 }
 # On a card: the map of the project, shown under it on the map of the projects, or hidden.
-home-owl-map-show = Show its map here
-home-owl-map-hide = Hide its map
 home-owl-map-reading = Reading its map…
 # On an element of a project's map: the project opened there.
-home-owl-jump = Open the project here
-home-owl-fold-element = Hide what is under it
-home-owl-unfold-element = Show what is under it
 # The menu of the map: what was put by hand is placed by itself again.
 home-owl-tidy = Place everything by itself
 home-owl-tidied = Everything on the map is placed by itself again
@@ -113,8 +105,8 @@ home-owl-in = In “{ $name }”
 
 ## A map of the projects
 
-home-map-menu = A map of the projects…
-home-map-title = A map of the projects
+home-map-menu = A project of all the projects…
+home-map-title = A project of all the projects
 home-map-about = A new project: the folders as elements, and under each folder the projects in it.
 home-map-name-default = Projects
 home-map-what = What the map holds
