@@ -987,3 +987,36 @@ What this settles (ADR 0051, amended):
 - All the files, the page, `SHA256SUMS` and the language packages are in
   `packaging/release-0.2.1/`, to be uploaded into `glaukopis/` of the site.
   No release on GitHub is made yet.
+
+
+## 2026-10-22 — one home, one tree, one set of keys
+
+> I am still not happy with how the hierarchy owl->project->element works (with possibility of folders between the project and the owl. Why can I not move a project into another? I know that it is possible to open two projects side by side, but I forget how to do it, and am not able to understand what to do intuitively. Based on this, could you make a general assessment of how the interface handles this hierachy, with focus on simplicity, making it intuitive av obvious how to do things, and that things should just make sense. Give me some suggestions for how to fix it, and I will choose what ideas I think are good.
+
+The assessment found two homes (the page and the map, with crossing ways
+between them), the same folders and projects shown three times with
+different menus, the seam at the project hidden by the picture, four
+meanings of *All projects*, the list at the left off by default yet the
+only door to a project beside, and several keys for one thing. Twelve
+suggestions were made.
+
+> We leave aside moving projects into projects. Do 1, 5, 7, 9, 10. Another suggestion I have is to let orgmode keyboard shortcuts for navigating the tree of elements/projects should be the one way. It is confusing with several ways of doing the same thing. Could you make a plan for this, which I can give to Opus 5.5, so it must be quite detailed.
+
+What this settles (ADR 0062, to be built from
+`docs/plans/one-home-one-tree-one-set-of-keys.md`):
+
+- The map of all projects is the home; the page of cards and list goes,
+  with the back arrows. *Last used* is a form of the list at the left.
+- Folders are drawn as regions around what is in them; a project takes no
+  project dropped on it.
+- One menu for a project and one for a folder, the same everywhere; going
+  in is *Enter* everywhere, and *Enter beside* opens a project in the
+  second side.
+- *Side by side* is a menu: this element as diagram and text, another
+  element, another project; Ctrl+Shift+S.
+- Org's keys are the one way through the tree, in the diagram, the text,
+  the map and the list alike: Alt+Enter new, Tab fold (and, in an empty
+  name just made, deeper), Shift+Tab all, Alt and the arrows move,
+  Alt+Shift+Down and Up go in and up, Enter does what a double click does.
+  Every other key for the same thing goes.
+- Moving a project into another is set aside.
