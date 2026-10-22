@@ -84,7 +84,6 @@ project-add-under = Een element eronder toevoegen
 project-add = Een element toevoegen
 project-add-after = Een element erna toevoegen
 project-write-text = De tekst schrijven
-project-double-click = Dubbelklik
 project-associate = Verbinden met…
 project-associate-hint = Klik daarna op het andere element
 project-heading = De naam als kop drukken

@@ -84,7 +84,6 @@ project-add-under = Προσθήκη στοιχείου από κάτω του
 project-add = Προσθήκη στοιχείου
 project-add-after = Προσθήκη στοιχείου μετά από αυτό
 project-write-text = Γραφή του κειμένου του
-project-double-click = Διπλό κλικ
 project-associate = Συσχέτιση με…
 project-associate-hint = Έπειτα κάντε κλικ στο άλλο στοιχείο
 project-heading = Το όνομα τυπώνεται ως επικεφαλίδα

@@ -6,7 +6,6 @@ diagram-show-all = Bütün haritayı göster
 diagram-tidy = Bütün haritayı düzenle
 diagram-tidy-hint = Her öğe kendiliğinden aldığı yere geri döner
 # The keys are shown as keys, where the variables stand.
-diagram-hint-empty = { $tab } seçili öğenin altına bir öğe ekler · { $enter } yanına bir öğe ekler · yazmak için çift tıklayın
 diagram-hint-linking = İlişkilendirilecek öğeye tıklayın ya da oklarla ona gidip { $enter } tuşuna basın · çıkmak için { $esc }
 diagram-show-under = Altındakileri göster
 diagram-hide-under = Altındakileri gizle

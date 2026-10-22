@@ -90,7 +90,6 @@ project-add-under = Pridať prvok pod neho
 project-add = Pridať prvok
 project-add-after = Pridať prvok za neho
 project-write-text = Písať jeho text
-project-double-click = Dvojklik
 project-associate = Spojiť s…
 project-associate-hint = Potom kliknite na druhý prvok
 project-heading = Tlačiť názov ako nadpis

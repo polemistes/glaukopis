@@ -90,7 +90,6 @@ project-add-under = Adaugă un element sub el
 project-add = Adaugă un element
 project-add-after = Adaugă un element după el
 project-write-text = Scrie-i textul
-project-double-click = Dublu clic
 project-associate = Asociază cu…
 project-associate-hint = Apoi faceți clic pe celălalt element
 project-heading = Tipărește numele ca titlu

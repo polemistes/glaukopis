@@ -93,7 +93,6 @@ project-add-under = Dodaj element pod njim
 project-add = Dodaj element
 project-add-after = Dodaj element za njim
 project-write-text = Piši njegovo besedilo
-project-double-click = Dvoklik
 project-associate = Poveži z…
 project-associate-hint = Nato kliknite drugi element
 project-heading = Natisni ime kot naslov

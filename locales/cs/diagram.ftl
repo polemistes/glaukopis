@@ -10,7 +10,6 @@ diagram-show-all = Zobrazit celou mapu
 diagram-tidy = Uspořádat celou mapu
 diagram-tidy-hint = Každý prvek se vrátí na své automatické místo
 # The keys are shown as keys, where the variables stand.
-diagram-hint-empty = { $tab } přidá prvek pod vybraný · { $enter } přidá prvek vedle něj · dvojklikem se píše
 diagram-hint-linking = Klepněte na prvek, s nímž má být spojen, nebo k němu přejděte šipkami a stiskněte { $enter } · { $esc } to ukončí
 diagram-show-under = Zobrazit, co je pod ním
 diagram-hide-under = Skrýt, co je pod ním

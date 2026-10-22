@@ -10,7 +10,6 @@ diagram-show-all = Visa hela kartan
 diagram-tidy = Snygga till hela kartan
 diagram-tidy-hint = Varje element går tillbaka till sin automatiska plats
 # The keys are shown as keys, where the variables stand.
-diagram-hint-empty = { $tab } lägger till ett element under det markerade · { $enter } lägger till ett bredvid · dubbelklicka för att skriva
 diagram-hint-linking = Klicka på elementet att associera med, eller gå till det med pilarna och tryck { $enter } · { $esc } för att låta bli
 diagram-show-under = Visa det som står under
 diagram-hide-under = Dölj det som står under

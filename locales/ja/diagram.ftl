@@ -6,7 +6,6 @@ diagram-show-all = マップ全体を表示
 diagram-tidy = マップ全体を整理
 diagram-tidy-hint = すべての要素が自動の位置に戻ります
 # The keys are shown as keys, where the variables stand.
-diagram-hint-empty = { $tab }で選択した要素の下に追加 · { $enter }で隣に追加 · ダブルクリックで書き込み
 diagram-hint-linking = 関連付ける要素をクリックするか、矢印キーで移動して{ $enter }を押します · { $esc }でやめる
 diagram-show-under = 下にあるものを表示
 diagram-hide-under = 下にあるものを隠す

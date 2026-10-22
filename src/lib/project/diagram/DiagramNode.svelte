@@ -240,6 +240,10 @@
       class="fold"
       class:folded={node.collapsed}
       aria-label={node.collapsed ? t('diagram-show-under') : t('diagram-hide-under')}
+      use:tooltip={{
+        text: node.collapsed ? t('diagram-show-under') : t('diagram-hide-under'),
+        shortcut: keysFor('tree-fold'),
+      }}
       tabindex="-1"
       onpointerdown={(e) => e.stopPropagation()}
       onclick={(e) => {

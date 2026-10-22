@@ -6,7 +6,6 @@ diagram-show-all = Pokaži ves miselni vzorec
 diagram-tidy = Uredi ves miselni vzorec
 diagram-tidy-hint = Vsak element se vrne na svoje samodejno mesto
 # The keys are shown as keys, where the variables stand.
-diagram-hint-empty = { $tab } doda element pod izbranega · { $enter } doda element ob njem · dvoklik za pisanje
 diagram-hint-linking = Kliknite element, s katerim ga želite povezati, ali pojdite nanj s smernimi tipkami in pritisnite { $enter } · { $esc } za izhod
 diagram-show-under = Pokaži, kar je pod njim
 diagram-hide-under = Skrij, kar je pod njim

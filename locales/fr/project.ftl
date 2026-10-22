@@ -116,7 +116,6 @@ project-add-under = Ajouter un élément dessous
 project-add = Ajouter un élément
 project-add-after = Ajouter un élément après
 project-write-text = Écrire son texte
-project-double-click = Double-clic
 project-associate = Associer à…
 project-associate-hint = Puis cliquez sur l’autre élément
 project-heading = Imprimer le nom comme titre

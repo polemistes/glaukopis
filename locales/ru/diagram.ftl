@@ -6,7 +6,6 @@ diagram-show-all = Показать всю карту
 diagram-tidy = Прибрать всю карту
 diagram-tidy-hint = Каждый элемент возвращается на своё автоматическое место
 # The keys are shown as keys, where the variables stand.
-diagram-hint-empty = { $tab } добавляет элемент под выделенным · { $enter } — рядом с ним · двойной щелчок — писать
 diagram-hint-linking = Щёлкните элемент, с которым связать, или перейдите к нему стрелками и нажмите { $enter } · { $esc } — выйти
 diagram-show-under = Показать, что под ним
 diagram-hide-under = Скрыть, что под ним

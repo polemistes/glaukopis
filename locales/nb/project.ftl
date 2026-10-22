@@ -103,7 +103,6 @@ project-add-under = Legg til et element under
 project-add = Legg til et element
 project-add-after = Legg til et element etter
 project-write-text = Skriv teksten
-project-double-click = Dobbeltklikk
 project-associate = Knytt til …
 project-associate-hint = Klikk så på det andre elementet
 project-heading = Skriv ut navnet som overskrift

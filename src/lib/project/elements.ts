@@ -435,7 +435,7 @@ export function elementMenu(
       items.push({
         label: t('project-write-text'),
         icon: Pencil,
-        shortcut: t('project-double-click'),
+        shortcut: keysFor('tree-open'),
         action: () => actions.edit!(one.id),
       });
     if (actions.rename)

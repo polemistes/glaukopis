@@ -10,7 +10,6 @@ diagram-show-all = Mostrar todo el mapa
 diagram-tidy = Ordenar todo el mapa
 diagram-tidy-hint = Cada elemento vuelve a su sitio automático
 # The keys are shown as keys, where the variables stand.
-diagram-hint-empty = { $tab } añade un elemento bajo el seleccionado · { $enter } añade uno a su lado · doble clic para escribir
 diagram-hint-linking = Haga clic en el elemento con el que asociar, o vaya a él con las flechas y pulse { $enter } · { $esc } para dejarlo
 diagram-show-under = Mostrar lo que hay debajo
 diagram-hide-under = Ocultar lo que hay debajo
