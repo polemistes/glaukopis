@@ -12,7 +12,6 @@ Read before you begin: `src/App.svelte`, `src/lib/state/router.svelte.ts`, `src/
 - *A row*: a folder, a project, or an element of a project's tree in the list.
 - *A thing*: a folder or a project, on the map or in the list, as `changes.ts` has `Things`.
 - *The tree's keys*: the one set of the record, place `tree` in the table of keys.
-- *A name just made*: the name field of an element, a project or a folder made by Alt+Enter or Alt+Shift+Enter, while it is still empty; Org's rule for Tab.
 - *Region*: a folder drawn as a box around what is in it.
 
 ## What exists, and what each piece becomes
@@ -29,9 +28,9 @@ Read before you begin: `src/App.svelte`, `src/lib/state/router.svelte.ts`, `src/
 | `project-actions.svelte.ts`: `items(p, { here })`, `itemsWithMoves`, `folderItems(f, first, make)` | `items(p, place)`, `folderItems(f, place)`, `elementItems(project, id, place)`: the one menus, in the record's order |
 | `OwlMap.svelte`: cards and labels; menus of its own; `dropOnCard` takes things; the empty state | regions (stage 5); the one menus; a project refuses things; Enter opens in the text; the surface grows (`foldAll`, `write`); the empty state moves to `OwlView` |
 | `owl-keys.ts` | the tree's keys over `OwlSurface` |
-| `diagram/keys.ts` | the tree's keys over `Diagram`; Enter writes; Space, Tab-as-child, Enter-as-sibling, Ctrl+Enter, Ctrl+Shift+Enter, Alt+Enter-as-write go |
-| `MapDiagram.svelte`, `DiagramNode.svelte`: the name field of a new element | Tab, Shift+Tab, Alt+arrows while a name just made is empty change its level |
-| `text/MapText.svelte` `onkeydown` | Alt+Enter is the new element; Ctrl+Enter, Ctrl+Shift+Enter, Ctrl+Alt+U, Ctrl+Alt+Shift+U go; the hooks `tab` and `shift-tab` in a name fold, or change the level of a name just made |
+| `diagram/keys.ts` | the tree's keys over `Diagram`: Alt+Enter after, Alt+Shift+Enter under, Tab folds, Shift+Tab all, Enter opens the text; Space, Tab-as-child, Enter-as-sibling, Ctrl+Enter, Ctrl+Shift+Enter, Alt+Enter-as-write go |
+| `text/MapText.svelte` `onkeydown`, `split` | Alt+Enter and Alt+Shift+Enter make a heading at the cursor by the record's rule; Ctrl+Enter, Ctrl+Shift+Enter, Ctrl+Alt+U, Ctrl+Alt+Shift+U go; the hooks `tab` and `shift-tab` in a name fold; F2 goes to the name |
+| `text/heading.ts` (new) | the pure splitting of a text at the cursor into a name and a body, tested |
 | `editor/plugins.ts`: `keys['Mod-Enter'] = hardBreak` | goes; Shift+Enter is the one line break |
 | `shell/keys.svelte.ts`: places `diagram`, `owl`, `text` with their own entries; `up`; `writing-break`; `side-by-side` with no key | a place `tree` with the one set; the entries it replaces go; `side-by-side` is Ctrl+Shift+S |
 | `ProjectView.svelte`: the back arrow; `sideBySide` as a toggle | the arrow goes; the button opens a menu; `BesideDialog.svelte` (new) chooses a project |
@@ -81,7 +80,7 @@ export interface ElementPlace {
 elementItems(place: ElementPlace): MenuItem[]
 ```
 
-- `items`: *Enter* (`common-enter`, new in `common.ftl`? no: `common.ftl` is not added to; put `home-enter` in `home.ftl`), shortcut `keysFor('tree-enter')` after stage 3, disabled with the hint `home-open-now` when `p.id === place.current`; *Enter beside* (`home-open-beside` reworded) when `place.beside && place.current && p.id !== place.current`; *Unfold*/*Fold* when `place.fold`; separator; Rename, Duplicate, History…, Save as a file…, Save as Org…; separator; the move items (`moveItems`, as today); separator; Delete. `itemsWithMoves` goes; the callers call `items`.
+- `items`: *Enter* (`home-enter`, new in `home.ftl`, since `common.ftl` is not added to), shortcut `keysFor('tree-enter')` after stage 3, disabled with the hint `home-open-now` when `p.id === place.current`; *Enter beside* (`home-open-beside` reworded) when `place.beside && place.current && p.id !== place.current`; *Unfold*/*Fold* when `place.fold`; separator; Rename, Duplicate, History…, Save as a file…, Save as Org…; separator; the move items (`moveItems`, as today); separator; Delete. `itemsWithMoves` goes; the callers call `items`.
 - `folderItems`: *Enter* (disabled when `here`); *Unfold*/*Fold*; separator; *New project here*, *New folder here*, *Rename*; separator; the move items; separator; *Delete the folder*.
 - `elementItems`: *Enter*; *Enter beside* when given; *Unfold*/*Fold* when given.
 - Every item that has a key names it with `keysFor`, so that the menus teach the keys; until stage 3 the old ids are used and stage 3 replaces them.
@@ -150,12 +149,12 @@ Verify: `pnpm check`, `pnpm test`, `pnpm e2e:build`, then `e2e/projects.mjs`, `e
 ### 3.1 The table — `src/lib/shell/keys.svelte.ts`, `locales/*/keys.ftl`
 
 - `Place` gains `'tree'`. `TOGETHER`: `tree` is in force with `everywhere`, `project`, `review`, `diagram`, `text`, `writing`, `owl`, and is named on their sides. The test of the table that two keys do not clash where they hold together will fail until the entries below are right: let it guide you.
-- Entries, in this order, replacing `up`, `diagram-new-after`, `diagram-sibling`, `diagram-new-under`, `diagram-child`, `diagram-enter`, `diagram-shift`, `diagram-depth`, `diagram-open`, `diagram-rename`, `diagram-fold`, `diagram-delete`, `diagram-go`, `diagram-more`, `diagram-menu`, `diagram-all`, all of `owl-*` but `owl-undo`, `owl-redo`, `owl-whole`, `owl-closer`, `owl-farther`, and `text-new-after`, `text-new-under`, `text-enter`, `text-shift`, `text-depth`, `text-deeper`, `text-shallower`, `text-fold`, `text-unfold-all`, and `writing-break`:
+- Entries, in this order, replacing `up`, `diagram-new-after`, `diagram-sibling`, `diagram-new-under`, `diagram-child`, `diagram-enter`, `diagram-shift`, `diagram-depth`, `diagram-open`, `diagram-rename`, `diagram-fold`, `diagram-delete`, `diagram-go`, `diagram-more`, `diagram-menu`, `diagram-all`, all of `owl-*` but `owl-undo`, `owl-redo`, `owl-whole`, `owl-closer`, `owl-farther`, and `text-new-after`, `text-new-under`, `text-enter`, `text-shift`, `text-depth`, `text-deeper`, `text-shallower`, `text-fold`, `text-unfold-all`, and `writing-break`. `redo-y` and `writing-redo-y` stay, and so do `text-found-next` and `text-found-previous`.
 
 ```ts
 // In the tree, wherever it is shown: the diagram, the text, the map of all projects, the list at the left.
 { id: 'tree-new', keys: 'Alt+Enter', place: 'tree' },
-{ id: 'tree-new-folder', keys: 'Alt+Shift+Enter', place: 'tree' },
+{ id: 'tree-new-under', keys: 'Alt+Shift+Enter', place: 'tree' },
 { id: 'tree-fold', keys: 'Tab', place: 'tree', over: ['writing-list-in'] },
 { id: 'tree-fold-all', keys: 'Shift+Tab', place: 'tree', over: ['writing-list-out'] },
 { id: 'tree-shift', keys: 'Alt+↑↓', place: 'tree' },
@@ -171,7 +170,7 @@ Verify: `pnpm check`, `pnpm test`, `pnpm e2e:build`, then `e2e/projects.mjs`, `e
 { id: 'tree-all', keys: 'Ctrl+A', place: 'tree' },
 ```
 
-- `keys-place-tree = In the tree: the diagram, the text, the map of all projects, the list at the left`, and the words of each entry as the record's table has them, short. `keys-diagram-*`, `keys-owl-*` and `keys-text-*` that remain keep their words.
+- `keys-place-tree = In the tree: the diagram, the text, the map of all projects, the list at the left`, and the words of each entry as the record's table has them, short: `keys-tree-new = A new element after this one; in a text, a heading at the cursor; on the map, a new project`, `keys-tree-new-under = A new element under this one, the first; on the map, a new folder`, `keys-tree-open = Open: the text of the element; on the map, the project in its text`, and so on. `keys-diagram-*`, `keys-owl-*` and `keys-text-*` that remain keep their words.
 - `grep -rn "keysFor('up')\|keysFor('diagram-\|keysFor('owl-\|keysFor('text-" src` and send each to the new id; the sheet and the palette read the table.
 
 ### 3.2 The diagram — `src/lib/project/diagram/keys.ts`, `MapDiagram.svelte`, `DiagramNode.svelte`
@@ -181,28 +180,51 @@ Verify: `pnpm check`, `pnpm test`, `pnpm e2e:build`, then `e2e/projects.mjs`, `e
 | Key | Does |
 | --- | --- |
 | Alt+Enter | `after(one)`; with nothing selected `d.add('child', tree.root)`; with an association begun, nothing |
-| Alt+Shift+Enter | nothing (returns false) |
-| Tab | `project.setCollapsed(one, !collapsed)` when `one` has children; else nothing; `preventDefault` always, so the focus does not leave the diagram |
+| Alt+Shift+Enter | `d.add('child', one)`; with nothing selected `d.add('child', tree.root)` |
+| Tab | `project.setCollapsed(one, !collapsed)` when `one` has children; else nothing; `preventDefault` always, so that the focus does not leave the diagram |
 | Shift+Tab | `d.foldAll()`: new on `Diagram`: where any element under the one in view is collapsed, `setCollapsed(id, false)` for all of them in one step; else `setCollapsed(id, true)` for each child of the one in view that has children, in one step |
 | Alt+↑↓←→ | as today |
 | Alt+Shift+↓ | `d.enter(one)` as today; Alt+Shift+↑ is the view's, as today |
-| Enter | with an association begun, ends it, as today; else `d.open(one)` (the text box); with nothing selected, `d.select([tree.root])` as today |
+| Enter | with an association begun, ends it, as today; else `d.open(one)`, the text box; with nothing selected, `d.select([tree.root])` as today |
 | F2, a letter, Delete, Backspace, Escape, the arrows, Shift+arrows, Shift+F10, ContextMenu, Ctrl+A/C/X/V/Z/Y/0/=/- | as today |
-| Space, Ctrl+Enter, Ctrl+Shift+Enter, Alt+Enter as open | go |
+| Space, Ctrl+Enter, Ctrl+Shift+Enter, Enter as new, Tab as new, Alt+Enter as open | go |
 
-- The name field of a new element (`DiagramNode.svelte`, `renaming`): while the name is empty, Tab → `indent(project, tree, id)` and Shift+Tab → `outdent(...)`, Alt+Right/Left the same by the side of the screen as `keys.ts` maps it, Alt+Up/Down → `shift`; the field keeps the focus and the element its provisional state. Once the name has text, Tab commits it, as Enter does, which is what a field does; it folds nothing, since the field is modal. The guide says so; the key sheet's words stay short.
 - `Diagram` gains `foldAll(): void`; `MapDiagram.svelte` provides it, as one `checkpoint`-bounded step so that Ctrl+Z takes it back whole.
-- `DiagramNode.svelte`: the corners say *Enter* and *Up to “…”* with `keysFor('tree-enter')` and `keysFor('tree-up')`.
-- Tests in `keys.test.ts` of the diagram (if there is none, make `src/lib/project/diagram/keys.test.ts` with a stub `Diagram` as `owl-keys.test.ts` has): one per row, and that Space, Ctrl+Enter and Tab-with-nothing-to-fold do nothing.
+- The name field of a new element (`DiagramNode.svelte`, `renaming`) is as today: Enter keeps the name, Escape lets go; Tab in it commits the name as Enter does, since a field is modal.
+- `DiagramNode.svelte`: the corners say *Enter* and *Up to “…”* with `keysFor('tree-enter')` and `keysFor('tree-up')`; the menu's *New element after*, *New element under*, *Fold* and *Enter* show the new keys.
+- Tests: make `src/lib/project/diagram/keys.test.ts` with a stub `Diagram`, as `owl-keys.test.ts` has a stub surface, if there is none; one test per row, and that Space, Ctrl+Enter, Enter with one selected and no association, and Tab with nothing to fold do what the table says and no more.
 
-### 3.3 The text — `src/lib/project/text/MapText.svelte`, `TextSection.svelte`, `src/lib/editor/plugins.ts`
+### 3.3 The text — `src/lib/project/text/MapText.svelte`, `TextSection.svelte`, `text/heading.ts` (new), `src/lib/editor/plugins.ts`
 
-- `onkeydown` of `MapText`: `Alt+Enter` (no Ctrl) → `addHere(id, part, false)`, the new element after, from the cursor on, as Ctrl+Enter did; `Ctrl+Enter` and `Ctrl+Shift+Enter` are no longer taken (remove the branch, and the branch that swallowed Alt+Enter); `Ctrl+Alt+U` goes. Alt and the arrows, Alt+Shift and the arrows: as today.
-- The hooks `tab` and `shift-tab` of the name's editor (`plugins.ts` lines 395–402, handled in `MapText` or `TextSection`, find where): in a name that is empty and whose element was made by `addHere` in this view and not yet named, Tab → `indent(id)`, Shift+Tab → `outdent(id)`, as today; in any other name, Tab → `fold(id, false)` toggles the element's fold, Shift+Tab → fold all under the element in view or unfold all, the same rule as the diagram's `foldAll`. Keep a `justMade: string | null` in `MapText`, set by `addHere`, cleared when the name gets text, the cursor leaves it, or the view changes.
-- The Tab of the body (`plugins.ts` line 336): lists as today; nothing else changes there.
-- `keys['Mod-Enter'] = hardBreak` goes (line 345) and `writing-break` from the table; Shift+Enter is the line break.
-- The hint at the foot of the text, `text-keys` in `text.ftl`: `{ $alt }+{ $enter } new element · { $tab } to put it under · { $at } cite`, and `MapText.svelte` line 260 passes `alt` and `tab` from `keyLabel`.
-- The text's menu items *Fold*/*Open*, *Enter* show `keysFor('tree-fold')`, `keysFor('tree-enter')`.
+- `onkeydown` of `MapText`: `Alt+Enter` (no Ctrl) → `addHere(id, part, false)`; `Alt+Shift+Enter` → `addHere(id, part, true)`; the branch that took Ctrl+Enter and Ctrl+Shift+Enter goes, and the branch that swallowed Alt+Enter; `Ctrl+Alt+U` goes; `F2` → `go(id, 'title', 'all')` or whatever `go` offers to put the cursor in the name with the name selected (add a `'all'` if it has `'start'` and `'end'` only). Alt and the arrows, Alt+Shift and the arrows: as today.
+- **A heading at the cursor.** `split(id, view, under)` is rewritten to the record's rule through a pure function in `src/lib/project/text/heading.ts`:
+
+```ts
+/** What a name may hold: text with the title's marks (em, smallcaps, sup, sub) and nothing else. */
+export function nameable(fragment: Fragment): boolean
+/**
+ * A text parted at the cursor for a new element: the tail of the paragraph
+ * the cursor is in as the name, where a name can hold it, and the paragraphs
+ * after that paragraph as the body. `keptAsParagraph` says the tail held what
+ * a name cannot and stands first in the body instead, with an empty name.
+ */
+export function headingAt(doc: Node, from: number): {
+  name: Fragment | null;
+  body: Fragment;
+  keptAsParagraph: boolean;
+  /** The position from which the old text is cut: the cursor, or the start of its paragraph when the whole paragraph goes. */
+  cutFrom: number;
+}
+```
+
+  `split` calls `headingAt`, makes the new element where it does today (`under || isRoot || hasChildren ? addChild(id, { index: 0 }) : addSibling(id)`), writes the name into the new element's `title` fragment (through `project.setTitle` or the title fragment, as `TextSection` writes a name) and the body into its `body` fragment, deletes from `cutFrom` to the end in the old editor, and goes to the new name: at its end where it has text, else into it. Where `keptAsParagraph`, `notify(t('text-heading-kept'))`: *What follows the cursor holds what a name cannot, and is the first paragraph of the new element.* With the cursor at the very end of the text, nothing is cut and the name is empty, as today.
+  `heading.test.ts`: the start, the middle and the end of a paragraph; the last paragraph; a tail with italics (named); a tail with a citation, a note, a bold word (kept as a paragraph); an empty text.
+- In a name (`part === 'title'`): at its end, `addAfter` or `addUnder` as today; in the middle, the rest of the name becomes the new element's name and is cut from the old; at the start, the whole name moves and the old element is left unnamed. Do it in `addHere` with the title editor's selection.
+- The buttons over the text, *New element* (`newElement('after' | 'under' | 'split')`), keep their three ways but say the new keys; `text-split-hint` and `editor-new-split-hint` are reworded to the rule: *What follows the cursor becomes the name of a new element, and the paragraphs below its text*.
+- The hooks `tab` and `shift-tab` of the name's editor (`plugins.ts` lines 395–402, handled where `MapText` or `TextSection` takes the hooks): Tab → `fold(id, false)` toggles the element's fold; Shift+Tab → fold all under the element in view or unfold all, the same rule as the diagram's `foldAll`. The Tab of the body (`plugins.ts` line 336): lists as today; nothing else changes there.
+- `keys['Mod-Enter'] = hardBreak` goes (line 345), and `writing-break` from the table; Shift+Enter is the line break.
+- The hint at the foot of the text, `text-keys` in `text.ftl`: `{ $alt }+{ $enter } new element · { $alt }+{ $shift }+{ $enter } one under it · { $at } cite`; `MapText.svelte` line 260 passes `alt` from `keyLabel`.
+- The text's menu items *Fold*/*Open*, *Enter*, *New element after*, *New element under* show `keysFor('tree-fold')`, `keysFor('tree-enter')`, `keysFor('tree-new')`, `keysFor('tree-new-under')`.
 
 ### 3.4 The map — `src/lib/home/owl-keys.ts`, `owl-keys.test.ts`, `OwlMap.svelte`
 
@@ -213,14 +235,13 @@ Verify: `pnpm check`, `pnpm test`, `pnpm e2e:build`, then `e2e/projects.mjs`, `e
 | Alt+Enter | `owl.make('project')`, unless the last selected is an element |
 | Alt+Shift+Enter | `owl.make('folder')`, unless on an element |
 | Tab | `owl.fold(last)` for a folder, a project (its map) or an element; `preventDefault` always |
-| Shift+Tab | `owl.foldAll()`: new on `OwlSurface`: where any folder shown or any project's map is unfolded, folds them all (`listUi.owlFold`, `listUi` map shown); else unfolds every folder at the first level |
+| Shift+Tab | `owl.foldAll()`: new on `OwlSurface`: where any folder shown or any project's map is unfolded, folds them all (`listUi.owlFold`, the maps shown); else unfolds every folder at the first level |
 | Alt+↑↓←→, Alt+Shift+↓, Alt+Shift+↑ | as today |
 | Enter | `owl.write(last)`: new on `OwlSurface`: a project opens at its top in the text (`router.go({ view: 'project', project, mode: 'text' })`), an element opens its project at it in the text, a folder is entered (`owl.open`) |
 | F2, a letter, Delete, Backspace, Escape, the arrows, Shift+F10, ContextMenu, Ctrl+A/Z/Y/0/=/- | as today |
 | Enter as make, Tab as make, Ctrl+Enter, Ctrl+Shift+Enter, Space | go |
 
-- The double click on a card or an element does what Enter does (in the text); the corner and Alt+Shift+Down open in the diagram, as today. Update the tooltips.
-- The name field of a provisional thing (`NameField.svelte` in `OwlMap`): while the name is empty, Tab puts the provisional thing into the folder before it among its siblings (`folderBefore`), Shift+Tab out of the folder it is in, Alt+Left/Right the same by the side of the screen; the map lays it out anew and the field keeps the focus.
+- The double click on a card or an element does what Enter does, in the text; the corner and Alt+Shift+Down open in the diagram, as today. Update the tooltips.
 - `owl-keys.test.ts`: one test per row, and that the old keys do nothing.
 
 ### 3.5 The list — `src/lib/home/ProjectList.svelte`
@@ -249,15 +270,15 @@ Today rows are focusable one by one and have a few keys of their own. Make the l
 | Shift+F10 | the row's menu |
 
 - The rows' own `onkeydown` handlers go. The `TextField` of the search keeps its keys: Tab there goes to the list.
-- `home-owl-*` words that the map used for the name field hold here too.
+- The `home-owl-*` words that the map uses for the name field hold here too.
 
 ### 3.6 The guide and the scripts of this stage
 
-- `docs/guide.md`: *A first project* steps 2 and 3 (Alt+Enter for an element, Tab while its name is empty to put it under, Alt+Enter again for one beside it); *The diagram* table; *The text* table; *The map of the projects* (Making, Renaming, Moving, Folding, The maps of the projects); the list's paragraph under *A first project* and in *One tree, entered anywhere*; the *Keys* table. Everywhere a key is named, the new one; nowhere two.
-- `e2e/tree-keys.mjs` (new): one project with a few elements; part 1 the diagram, part 2 the text, part 3 the map, part 4 the list, each pressing the one set and checking the same outcomes by the tree's shape (`aria-level`, the names, `data-folded` or whatever the place exposes); part 5 that the old keys do nothing: Ctrl+Enter in the diagram, Space, Tab on a card. Screenshots `tree-keys-<n>-<place>`.
-- `grep -ln "'Control', 'Enter'\|Key.Enter\|Key.Tab\|Key.Space\|'Alt', 'Enter'" e2e/*.mjs` and read each press: where it pressed Ctrl+Enter or Enter or Tab or Space for a new element, a fold or a name, change it to the one set. The list is long (`text-structure.mjs`, `maps.mjs`, `tables.mjs`, `timeline.mjs`, `map-icons.mjs`, `owl.mjs`, `sharing.mjs`, `verse.mjs`, and more); Enter in a name field and in dialogs stays Enter.
+- `docs/guide.md`: *A first project* steps 2 and 3 (Alt+Shift+Enter for an element under the project, Alt+Enter for one beside it); *The diagram* table; *The text* table, with the rule of a heading at the cursor in a sentence; *The map of the projects* (Making, Renaming, Moving, Folding, The maps of the projects); the list's paragraph under *A first project* and in *One tree, entered anywhere*; the *Keys* table. Everywhere a key is named, the new one; nowhere two, but for Ctrl+Y and F3, which the record keeps.
+- `e2e/tree-keys.mjs` (new): one project with a few elements; part 1 the diagram, part 2 the text (with a heading made at the start, the middle and the end of a paragraph, and one kept as a paragraph for a citation), part 3 the map, part 4 the list, each pressing the one set and checking the same outcomes by the tree's shape (`aria-level`, the names, what the place exposes of folding); part 5 that the old keys do nothing: Ctrl+Enter in the diagram, Space, Tab on a card. Screenshots `tree-keys-<n>-<place>`.
+- `grep -ln "'Control', 'Enter'\|Key.Enter\|Key.Tab\|Key.Space\|'Alt', 'Enter'" e2e/*.mjs` and read each press: where it pressed Ctrl+Enter, Ctrl+Shift+Enter, Enter, Tab or Space for a new element, a fold or a name, change it to the one set. The list is long (`text-structure.mjs`, `maps.mjs`, `tables.mjs`, `timeline.mjs`, `map-icons.mjs`, `owl.mjs`, `sharing.mjs`, `verse.mjs`, and more); Enter in a name field and in dialogs stays Enter.
 
-Verify: `pnpm check`, `pnpm test` (the table's test, the new key tests), `pnpm e2e:build`, then `tree-keys.mjs`, `keys.mjs`, `owl.mjs`, `maps.mjs`, `text-structure.mjs`, `folding.mjs`, `new-project-view.mjs`, each with `timeout 300`; then every script you changed. Commit after 3.2, 3.3, 3.4, 3.5 each.
+Verify: `pnpm check`, `pnpm test` (the table's test, `heading.test.ts`, the key tests), `pnpm e2e:build`, then `tree-keys.mjs`, `keys.mjs`, `owl.mjs`, `maps.mjs`, `text-structure.mjs`, `folding.mjs`, `new-project-view.mjs`, each with `timeout 300`; then every script you changed. Commit after 3.2, 3.3, 3.4, 3.5 each.
 
 ## Stage 4 — side by side is a menu
 

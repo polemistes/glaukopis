@@ -1,6 +1,6 @@
 # 0062 — One home, one tree, one set of keys
 
-Date: 2026-10-22. Status: accepted by the owner on 2026-10-22 in outline, from an assessment of how the interface handles the hierarchy of the owl, the folders, the projects and the elements; to be built from `docs/plans/one-home-one-tree-one-set-of-keys.md`. Amends 0031 (folders of projects), 0033 (the pane of projects), 0037 (the owl map and side by side), 0050 (the owl map behaves as a tree) and 0051 (the map of the projects as one map). The key scheme of 2026-10-12, in the brief, is superseded where this record differs from it.
+Date: 2026-10-22. Status: accepted by the owner on 2026-10-22 in outline, from an assessment of how the interface handles the hierarchy of the owl, the folders, the projects and the elements; the keys revised the same day, after the owner set aside following Org mode strictly; to be built from `docs/plans/one-home-one-tree-one-set-of-keys.md`. Amends 0031 (folders of projects), 0033 (the pane of projects), 0037 (the owl map and side by side), 0050 (the owl map behaves as a tree) and 0051 (the map of the projects as one map). The key scheme of 2026-10-12, in the brief, is superseded where this record differs from it.
 
 ## Context
 
@@ -15,7 +15,7 @@ What the assessment found, from the code, the records and the screenshots of the
 - **The list at the left is off by default**, yet it is the only door to a project beside.
 - **Several keys for one thing.** A new element after: Enter and Ctrl+Enter in the diagram, Ctrl+Enter in the text. A new element under: Tab and Ctrl+Shift+Enter in the diagram, Ctrl+Shift+Enter in the text. On the map of all projects Enter and Ctrl+Enter make a project, Tab and Ctrl+Shift+Enter a folder. Folding is Space in the diagram and on the map, Ctrl+Alt+U in the text. Tab in the name of an element in the text makes it deeper, as Alt+Right does. Ctrl+Enter is also a line break in the editors. The list at the left has keys of its own kind: Enter and Space open or toggle a row, Left and Right fold.
 
-The owner chose five of the suggestions, left moving a project into another aside, and added a sixth: the keys of Org mode for going through and shaping the tree, as the one way, because several ways of doing the same thing confuse.
+The owner chose five of the suggestions, left moving a project into another aside, and added a sixth: one way of going through and shaping the tree from the keys, because several ways of doing the same thing confuse. A first draft took Org mode's keys whole; the owner set that aside, since Org's logic is that of a linear text with one cursor and not the diagram's, and asked instead for a scheme in which each thing has one key, with Org's Alt+Enter for a new element, the same in the text and the diagram where it makes sense, and with a rule of their own: Alt+Enter at the start of a paragraph makes the paragraph the name of a new element at the same level, with the text below inside it. One key for each thing is the principle, not a rule: what makes sense wins.
 
 ## Decision
 
@@ -50,46 +50,52 @@ The owner chose five of the suggestions, left moving a project into another asid
 - *Enter beside* in the menu of a project or of one of its elements, wherever that menu is shown while a project is open, does what *Another project…* does for that project.
 - What 0037 says of two projects side by side holds: both bars begin with the project's name and badge, the line between them is doubled, a drop across it says what it will do.
 
-### Org's keys are the one way through the tree
+### One key for each act, through the tree
 
-The tree is shown in four places: the diagram, the text, the map of all projects and the list at the left. One set of keys goes through it and shapes it in all four, and it is the set of Org mode where Org has a key: `M-RET` for a new heading, `M-↑` `M-↓` to move it, `M-←` `M-→` to make it less and more deep, `TAB` to fold and unfold, `S-TAB` for all at once, and Org's rule that `TAB` in an empty heading just made changes its level. Where Org has no key of its kind, the application keeps one key, the same in all four places. Every other key for the same thing goes.
+The tree is shown in four places: the diagram, the text, the map of all projects and the list at the left. Each act has one key, the same in every place where the act exists, and an act that exists in one place only has its key there. Org mode gives the shape where it fits, Alt+Enter for a new element and Alt with the arrows for moving, and nothing more. Every other key for the same act goes, but for two habits of every system that harm nothing.
 
 | Key | Does, wherever the tree is shown |
 | --- | --- |
-| **Alt+Enter** | A new element after the one selected, or after the one the cursor is in, named in place; in a text, what follows the cursor goes into it. On the map of all projects and in the list: a new project beside the one selected or in the folder selected, or at the top. With nothing selected in the diagram: under the element in view. |
-| **Alt+Shift+Enter** | On the map of all projects and in the list: a new folder, in the folder selected or beside the thing selected. Nothing in the diagram and the text. |
-| **Tab** | Folds what is under the element, the folder or the project's map, or unfolds it. While the name of an element or a project just made is being written and is still empty: the new thing goes one level deeper, under the one before it, or into the folder before it; so Alt+Enter, Tab is a new element under. In a list item of a text: one level in, as today. |
-| **Shift+Tab** | Where anything under the element in view is folded, unfolds all of it; else folds everything at the first level. On the map of all projects: every folder and every project's map. In an empty name just made: one level less deep, or out of the folder. In a list item of a text: one level out. |
+| **Alt+Enter** | A new element after the one selected, named in place; in the text, a heading at the cursor, as below. On the map of all projects and in the list: a new project beside the one selected or in the folder selected, or at the top. With nothing selected in the diagram: under the element in view. |
+| **Alt+Shift+Enter** | A new element under the one selected, the first; in the text, a heading at the cursor, under the element the cursor is in. On the map of all projects and in the list: a new folder, in the folder selected or beside the thing selected. |
 | **Alt+Up**, **Alt+Down** | Moves the element among those beside it, with all under it; in the text the cursor stays. Folders and projects stand by their names and do not move; elements of a project's map shown on the top map or in the list move as in their own map. |
 | **Alt+Right**, **Alt+Left** | Deeper and less deep. In the diagram and on the map, as the arrow points on the screen: away from the centre is deeper. In the text and in the list, Right is deeper. On the map and in the list a folder or a project goes into the folder before it, or out of the one it is in. |
 | **Alt+Shift+Down** | Enters: the element selected or the cursor's becomes the one in view; a folder comes to the centre; a project opens at its top or at the element selected, in the diagram. |
 | **Alt+Shift+Up** | Up: to the element over the one in view; from a project's top, to the map at its folder with the project selected; from a folder, to what holds it. |
-| **Enter** | What a double click does. In the diagram: write the text of the element selected. On the map of all projects: open the project at the project or at the element selected, in the text; on a folder, which has no text, enter it. In the list: what a click on the row does. In a text: the paragraph's own Enter. |
-| **F2**, a letter | Rename what is selected; a letter begins a new name. In the diagram, on the map, in the list. |
-| **Delete** | Delete what is selected, after the question the place asks. |
-| **The arrows** | From one to the next: in the diagram and on the map by direction, in the list up and down the rows, Left to the row it stands under and Right to the first row under it. With Shift, more are selected where the place selects several. |
+| **Enter** | Opens, as a double click does. In the diagram: the text box of the element selected. On the map of all projects: the project opens at the project or at the element selected, in its text; a folder, which has no text, is entered. In the list: what a click on the row does. In a text: a new paragraph, as today. |
+| **Tab** | Folds what is under the element, the folder or the project's map, or unfolds it. In the text, with the cursor in a name; in a list item of a text, one level in, as today. |
+| **Shift+Tab** | Where anything under the element in view is folded, unfolds all of it; else folds everything at the first level. On the map of all projects: every folder and every project's map. In a list item of a text: one level out. |
+| **F2**, a letter | Rename what is selected; a letter begins a new name. In the text, F2 puts the cursor in the name of the element it is in, the name selected. |
+| **Delete** | Delete what is selected, after the question the place asks. In a text, a letter; the element goes from its menu. |
+| **The arrows** | From one to the next: in the diagram and on the map by direction, in the list up and down the rows, Left to the row it stands under and Right to the first row under it. With Shift, more are selected where the place selects several. In a text, the cursor. |
 | **Shift+F10** | The menu of what is selected. |
 | **Ctrl+A** | Select all, where the place selects several. |
 
-What goes: Enter and Tab as new, in the diagram and on the map; Ctrl+Enter and Ctrl+Shift+Enter as new, in the diagram, the text and on the map; Space as fold; Alt+Enter as write the text; Ctrl+Alt+U and Ctrl+Alt+Shift+U; Tab and Shift+Tab as deeper and less deep in a name that has text; Ctrl+Enter as a line break in the editors, since Shift+Enter is the line break; Left and Right as fold in the list. The key sheet shows the set once, under *In the tree*, and says where it holds; what remains of each place's own keys stands under that place as today. The hints at the foot of the text say the new keys.
+**A heading at the cursor.** In the text, Alt+Enter makes a new element at the cursor: what follows the cursor in its paragraph becomes the element's name, and the paragraphs below it, to the end of the text of the element the cursor is in, become its text. So at the start of a paragraph the whole paragraph is the name; at the end of a paragraph the name is empty and the paragraphs below go in; in the middle, the tail of the paragraph is the name. In a name, at its end, a new element after it with nothing in it, as today; in the middle, the rest of the name becomes the new name and the text stays where it is. Alt+Shift+Enter does the same with the new element the first under the one the cursor is in. A name holds italics, small capitals, raised and lowered text and nothing else: where what would become the name holds a citation, a note, a picture, a formula, a reference mark or a mark a name cannot hold, it becomes the first paragraph of the new element's text instead, the name stays empty, and a message says why. Where the element the cursor is in has sub-elements, the new element after it is made first among them, so that it stands in the text where the cursor was and the sub-elements stay with their element; the text does this today, and the project at the top, which has nothing beside it, is treated the same.
+
+What goes: Enter and Tab as new, in the diagram and on the map; Ctrl+Enter and Ctrl+Shift+Enter as new, in the diagram, the text and on the map; Ctrl+Enter as a line break in the editors, since Shift+Enter is the line break; Space as fold; Alt+Enter as write the text; Tab and Shift+Tab as deeper and less deep in a name; Ctrl+Alt+U and Ctrl+Alt+Shift+U; Enter, Space, Left and Right as fold in the list. What stays, though it is a second key: Ctrl+Y beside Ctrl+Shift+Z for redo, and F3 in the text beside Enter in the search field. The key sheet shows the set once, under *In the tree*, and says where it holds; what remains of each place's own keys stands under that place as today. The hints at the foot of the text say the new keys.
 
 ## Choices made in writing this, which the owner has not been asked about
 
-1. **A new element under is Alt+Enter, then Tab**, as in Org, and no single key. A single key would be a second way.
-2. **Enter writes the text in the diagram**, and opens a project in its text from the top map, while Alt+Shift+Down enters in the diagram. The two are not the same act: one opens the text, the other the map. On a folder, which has no text, Enter enters, so a folder has two keys for it; and in the list Enter does what a click does, since that is what Enter does in every list.
-3. **Alt+Shift+Down and Up stay as the pair that goes in and up.** Org has no key of its own for narrowing to a subtree that is not an Emacs chord, and the owner chose this pair on 2026-10-12.
-4. **Shift+Tab is two states, not Org's three**: the fold of an element is one flag, kept in the project and shared, and a middle state of children shown and grandchildren folded would need another.
-5. **Tab folds in a name only, in the text**; in a paragraph it stays the key of lists. Folding from the middle of a text goes to the menu of the element.
-6. **The list at the left gets the keys of the tree**, with one row selected at a time and Up and Down between rows, so that it is the fourth place of the one set rather than a list of its own kind.
-7. **The Side by side menu has the key Ctrl+Shift+S**, one key for the menu, none for its items.
-8. **Last used lives in the list at the left**, as a form of it, since the list is the one list and the map shows no order of time.
-9. **A project dropped on a project is refused with a word**, since a project is not a folder and the owner has set aside moving projects into projects.
+1. **A new element under has a key of its own, Alt+Shift+Enter**, rather than Org's new heading and a change of level: a child and a sibling are two acts, and the key is the one the text has for it today, with Alt for Ctrl.
+2. **Enter opens**: the text box in the diagram, a project in its text from the map. Alt+Shift+Down enters the map. The two are not the same act. On a folder, which has no text, Enter enters, so a folder has two keys for it; and in the list Enter does what a click does, since that is what Enter does in every list.
+3. **Alt+Shift+Down and Up stay as the pair that goes in and up**, which the owner chose on 2026-10-12.
+4. **Tab folds**, because it works with the cursor in a name of the text as well as in the diagram; Space, nicer in the diagram, is a space in a text and would need a second key beside it.
+5. **Shift+Tab is two states, not Org's three**: the fold of an element is one flag, kept in the project and shared.
+6. **The new element goes first among the sub-elements** of the element the cursor is in, where it has any. After the whole element would put the heading out of sight below them; taking them along, as Org does, would reparent them in the diagram unasked. This is what the text does today.
+7. **The tail of a paragraph becomes the name** when Alt+Enter is pressed in its middle, so that one rule covers the start, the middle and the end of a paragraph. Today the tail goes into the text and the name is empty.
+8. **Alt+Shift+Enter makes a folder on the map and in the list**: it is the other new thing there, as the element under is the other new thing in the diagram.
+9. **Ctrl+Y and F3 stay** as second keys, since the owner made the one key a principle and not a rule, and both are habits of every system.
+10. **The list at the left gets the keys of the tree**, with one row selected at a time and Up and Down between rows, so that it is the fourth place of the one set rather than a list of its own kind.
+11. **The Side by side menu has the key Ctrl+Shift+S**, one key for the menu, none for its items.
+12. **Last used lives in the list at the left**, as a form of it, since the list is the one list and the map shows no order of time.
+13. **A project dropped on a project is refused with a word**, since a project is not a folder and the owner has set aside moving projects into projects.
 
 ## Why not otherwise
 
 - *Keep the page as the home and put the map back as its third form*: cheaper, but the map stays a picture one visits rather than the place one works from, against the owner's aim of one big map from the owl down.
 - *Let projects nest, as folders do*: the one-big-map wish taken whole, but every view, the printing, the search and the sharing would meet a foreign document inside a tree. Set aside by the owner.
-- *Keep a single key for a new element under*: a second way of doing what Alt+Enter, Tab does, which is what the owner asked to be rid of.
+- *Take Org mode's keys whole*: its logic is that of a linear text with one cursor; its trick of Tab changing the level of a fresh heading has no home in a diagram with a selection; and its keys for going about are Emacs chords. Set aside by the owner.
 - *Enter as the key that enters, everywhere*: then writing the text of an element from the keys would need a key with no convention behind it, and the pair of 2026-10-12 would lose its down.
 
 ## Consequences
@@ -98,6 +104,7 @@ What goes: Enter and Tab as new, in the diagram and on the map; Ctrl+Enter and C
 - `projects_shown` of the core is kept as the form of the list at the left: `recent` is *Last used*, `list` is *Folders*.
 - The layout gains a margin per node, so that the regions of sibling folders do not touch; the owl map draws the regions and skips the lines inside them.
 - The table of keys gains a place `tree`, in force with the diagram, the text, the map and the list; the entries of the diagram, the text and the map that it replaces go; `writing-break` goes.
+- The splitting of a text at the cursor changes: the tail of the paragraph becomes the name, where a name can hold it.
 - The guide's sections *A first project*, *Many projects*, *The map of the projects*, *The diagram*, *The text*, *One tree, entered anywhere* and *Keys* are rewritten where they name the keys, the page or the words.
 - The scripts that press the old keys are revisited; a script of its own, `e2e/tree-keys.mjs`, presses the one set in all four places.
 - The words of the other languages lag, as usual; English and Norwegian Bokmål are done with the build.

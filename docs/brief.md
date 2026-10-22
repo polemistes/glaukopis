@@ -1014,9 +1014,22 @@ What this settles (ADR 0062, to be built from
   second side.
 - *Side by side* is a menu: this element as diagram and text, another
   element, another project; Ctrl+Shift+S.
-- Org's keys are the one way through the tree, in the diagram, the text,
-  the map and the list alike: Alt+Enter new, Tab fold (and, in an empty
-  name just made, deeper), Shift+Tab all, Alt and the arrows move,
-  Alt+Shift+Down and Up go in and up, Enter does what a double click does.
-  Every other key for the same thing goes.
 - Moving a project into another is set aside.
+
+A first draft took Org mode's keys whole. The owner:
+
+> No, I think I retract the idea of following orgmode so strictly. The logic is not really the same. Could you just suggest a keyboard shortcut scheme where each thing has only one combination, and I prefer the orgmode alt+enter for new element, and that it is the same in text mode and diagram mode where it makes sense? Also when pressing alt+enter at the start of a paragraph, it should make it into the title of an element at the same level, with the text below inside it. What do you think?
+
+A scheme was proposed: one key per act, the same in the diagram, the text,
+the map and the list where the act exists; Alt+Enter a new element after,
+Alt+Shift+Enter one under (on the map, a folder), Alt and the arrows move,
+Alt+Shift+Down and Up go in and up, Enter opens, Tab folds, Shift+Tab all,
+F2 renames; in the text Alt+Enter makes a heading at the cursor, the tail
+of the paragraph its name and the paragraphs below its text, first among
+the sub-elements where there are any.
+
+> Yes, I agree. The only one key for each thing is a general principle, but not a rule. We should do what makes sense. So make the new plan.
+
+- One key for each act through the tree, as proposed; Ctrl+Y and F3 stay
+  as second keys that harm nothing. The record's key section and the
+  plan's stage 3 are rewritten to it.
