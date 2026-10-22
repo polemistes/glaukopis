@@ -897,7 +897,7 @@
       extra.push({
         label: t('text-split'),
         icon: SplitSquareVertical,
-        shortcut: keysFor('text-new-after'),
+        shortcut: keysFor('tree-new'),
         hint: t('text-split-hint'),
         action: () => split(id, view),
       });
@@ -913,7 +913,7 @@
       extra.push({
         label: t('text-open-as-map'),
         icon: MapIcon,
-        shortcut: keysFor('text-enter'),
+        shortcut: keysFor('tree-enter'),
         hint: t('text-open-as-map-hint'),
         action: () => onenter(id),
       });
@@ -925,14 +925,13 @@
       folds.push({
         label: folded ? t('text-open') : t('text-fold'),
         icon: folded ? UnfoldVertical : FoldVertical,
-        shortcut: keysFor('text-fold'),
+        shortcut: keysFor('tree-fold'),
         action: () => fold(id),
       });
       if (folding.anyFolded(tree, id))
         folds.push({
           label: t('text-open-all-under'),
           icon: ChevronsUpDown,
-          shortcut: keysFor('text-unfold-all'),
           action: () => fold(id, true),
         });
       if (folding.anyOpen(tree, id))

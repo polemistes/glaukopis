@@ -830,7 +830,7 @@
         label: t('diagram-open-as-map'),
         hint: t('diagram-open-as-map-hint'),
         icon: Minimize2,
-        shortcut: keysFor('diagram-enter'),
+        shortcut: keysFor('tree-enter'),
         action: () => onenter(one),
       },
       { kind: 'separator' },

@@ -23,6 +23,7 @@ export type Place =
   | 'everywhere'
   | 'project'
   | 'review'
+  | 'tree'
   | 'diagram'
   | 'owl'
   | 'text'
@@ -54,6 +55,7 @@ export const TOGETHER: Readonly<Record<Place, readonly Place[]>> = {
     'everywhere',
     'project',
     'review',
+    'tree',
     'diagram',
     'owl',
     'text',
@@ -62,12 +64,13 @@ export const TOGETHER: Readonly<Record<Place, readonly Place[]>> = {
     'store',
     'files',
   ],
-  project: ['everywhere', 'project', 'review', 'diagram', 'text', 'writing'],
-  review: ['everywhere', 'project', 'review', 'text', 'writing'],
-  diagram: ['everywhere', 'project', 'diagram'],
+  project: ['everywhere', 'project', 'review', 'tree', 'diagram', 'text', 'writing'],
+  review: ['everywhere', 'project', 'review', 'tree', 'text', 'writing'],
+  tree: ['everywhere', 'project', 'review', 'tree', 'diagram', 'text', 'writing'],
+  diagram: ['everywhere', 'project', 'tree', 'diagram'],
   owl: ['everywhere', 'owl'],
-  text: ['everywhere', 'project', 'review', 'text', 'writing'],
-  writing: ['everywhere', 'project', 'review', 'text', 'writing'],
+  text: ['everywhere', 'project', 'review', 'tree', 'text', 'writing'],
+  writing: ['everywhere', 'project', 'review', 'tree', 'text', 'writing'],
   library: ['everywhere', 'library'],
   store: ['everywhere', 'store'],
   files: ['everywhere', 'files'],
@@ -88,8 +91,6 @@ const ENTRIES = [
   { id: 'diagram-or-text', keys: 'Ctrl+D', place: 'project', bound: true },
   // L for the list of projects.
   { id: 'projects-pane', keys: 'Ctrl+Shift+L', place: 'project', bound: true },
-  // Bound by the project view itself: the table cannot match an arrow. It holds in the text as well.
-  { id: 'up', keys: 'Alt+Shift+↑', place: 'project' },
   { id: 'preview', keys: 'Ctrl+P', place: 'project', bound: true },
   { id: 'document-settings', keys: 'Ctrl+Shift+D', place: 'project', bound: true },
   { id: 'what-document', keys: '', place: 'project', bound: true },
@@ -118,23 +119,26 @@ const ENTRIES = [
   { id: 'review-accept', keys: 'Ctrl+Alt+Y', place: 'review', bound: true },
   { id: 'review-reject', keys: 'Ctrl+Alt+N', place: 'review', bound: true },
 
-  // In the diagram: the keys of the text that make, enter and move elements,
-  // and Enter and Tab besides.
-  { id: 'diagram-new-after', keys: 'Ctrl+Enter', place: 'diagram' },
-  { id: 'diagram-sibling', keys: 'Enter', place: 'diagram' },
-  { id: 'diagram-new-under', keys: 'Ctrl+Shift+Enter', place: 'diagram' },
-  { id: 'diagram-child', keys: 'Tab', place: 'diagram' },
-  { id: 'diagram-enter', keys: 'Alt+Shift+↓', place: 'diagram' },
-  { id: 'diagram-shift', keys: 'Alt+↑↓', place: 'diagram' },
-  { id: 'diagram-depth', keys: 'Alt+←→', place: 'diagram' },
-  { id: 'diagram-open', keys: 'Alt+Enter', place: 'diagram' },
-  { id: 'diagram-rename', keys: 'F2', place: 'diagram' },
-  { id: 'diagram-fold', keys: 'Space', place: 'diagram' },
-  { id: 'diagram-delete', keys: 'Delete', place: 'diagram' },
-  { id: 'diagram-go', keys: '↑↓←→', place: 'diagram' },
-  { id: 'diagram-more', keys: 'Shift+↑↓←→', place: 'diagram' },
-  { id: 'diagram-menu', keys: 'Shift+F10', place: 'diagram' },
-  { id: 'diagram-all', keys: 'Ctrl+A', place: 'diagram' },
+  // In the tree, wherever it is shown: the diagram, the text, the map of
+  // all projects, the list at the left. One key for each act; Alt+Shift+Up
+  // is bound by the project view itself, since the table cannot match an arrow.
+  { id: 'tree-new', keys: 'Alt+Enter', place: 'tree' },
+  { id: 'tree-new-under', keys: 'Alt+Shift+Enter', place: 'tree' },
+  { id: 'tree-fold', keys: 'Tab', place: 'tree', over: ['writing-list-in'] },
+  { id: 'tree-fold-all', keys: 'Shift+Tab', place: 'tree', over: ['writing-list-out'] },
+  { id: 'tree-shift', keys: 'Alt+↑↓', place: 'tree' },
+  { id: 'tree-depth', keys: 'Alt+←→', place: 'tree' },
+  { id: 'tree-enter', keys: 'Alt+Shift+↓', place: 'tree' },
+  { id: 'tree-up', keys: 'Alt+Shift+↑', place: 'tree' },
+  { id: 'tree-open', keys: 'Enter', place: 'tree' },
+  { id: 'tree-rename', keys: 'F2', place: 'tree' },
+  { id: 'tree-delete', keys: 'Delete', place: 'tree' },
+  { id: 'tree-go', keys: '↑↓←→', place: 'tree' },
+  { id: 'tree-more', keys: 'Shift+↑↓←→', place: 'tree' },
+  { id: 'tree-menu', keys: 'Shift+F10', place: 'tree' },
+  { id: 'tree-all', keys: 'Ctrl+A', place: 'tree' },
+
+  // In the diagram, besides the keys of the tree.
   { id: 'diagram-copy', keys: 'Ctrl+C', place: 'diagram' },
   { id: 'diagram-cut', keys: 'Ctrl+X', place: 'diagram' },
   { id: 'diagram-paste', keys: 'Ctrl+V', place: 'diagram' },
@@ -163,17 +167,8 @@ const ENTRIES = [
   { id: 'owl-closer', keys: 'Ctrl+=', place: 'owl' },
   { id: 'owl-farther', keys: 'Ctrl+-', place: 'owl' },
 
-  // In the text of a map: the keys of the diagram, and Tab in a name.
-  { id: 'text-new-after', keys: 'Ctrl+Enter', place: 'text', over: ['writing-break'] },
-  { id: 'text-new-under', keys: 'Ctrl+Shift+Enter', place: 'text' },
-  { id: 'text-enter', keys: 'Alt+Shift+↓', place: 'text' },
-  { id: 'text-shift', keys: 'Alt+↑↓', place: 'text' },
-  { id: 'text-depth', keys: 'Alt+←→', place: 'text' },
-  { id: 'text-deeper', keys: 'Tab', place: 'text', over: ['writing-list-in'] },
-  { id: 'text-shallower', keys: 'Shift+Tab', place: 'text', over: ['writing-list-out'] },
+  // In the text of a map, besides the keys of the tree.
   { id: 'text-outline', keys: 'Ctrl+Shift+O', place: 'project', bound: true },
-  { id: 'text-fold', keys: 'Ctrl+Alt+U', place: 'text' },
-  { id: 'text-unfold-all', keys: 'Ctrl+Alt+Shift+U', place: 'text' },
   { id: 'text-found-next', keys: 'F3', place: 'text' },
   { id: 'text-found-previous', keys: 'Shift+F3', place: 'text' },
 
@@ -192,7 +187,6 @@ const ENTRIES = [
   { id: 'writing-numbered', keys: 'Ctrl+Shift+7', place: 'writing' },
   { id: 'writing-list-in', keys: 'Tab', place: 'writing' },
   { id: 'writing-list-out', keys: 'Shift+Tab', place: 'writing' },
-  { id: 'writing-break', keys: 'Ctrl+Enter', place: 'writing' },
   { id: 'writing-line', keys: 'Shift+Enter', place: 'writing' },
   { id: 'writing-note', keys: 'Ctrl+Alt+F', place: 'writing' },
   { id: 'writing-picture', keys: 'Ctrl+Alt+P', place: 'writing' },

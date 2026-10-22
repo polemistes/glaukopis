@@ -372,7 +372,7 @@
         aria-label={t('project-leave-map', { name: above })}
         use:tooltip={{
           text: t('project-leave-map', { name: above }),
-          shortcut: keysFor('up'),
+          shortcut: keysFor('tree-up'),
           side: 'top',
         }}
         tabindex="-1"
