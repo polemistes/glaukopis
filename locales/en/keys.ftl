@@ -47,7 +47,7 @@ keys-side-history = History
 keys-side-changes = Review changes
 keys-side-found = Loose citations
 keys-side-panel = Open or close the panel at the side
-keys-side-by-side = Side by side…
+keys-side-by-side = Split view…
 keys-share = Share the project
 keys-find = Search the text
 keys-replace = Search and replace
@@ -115,3 +115,7 @@ keys-store-find = Search the pictures
 keys-files-find = Search the files
 keys-list-undo = Undo what was done to folders and projects
 keys-list-redo = Redo what was done to folders and projects
+
+## The sides (stage 4 of the list, the path and the window as it was left)
+keys-close-side = Close this side
+keys-switch-sides = Switch sides

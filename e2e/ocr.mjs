@@ -146,7 +146,7 @@ try {
     );
   /** Drops a file on the tabs of the maps, where it becomes a map of its own. */
   const dropOnTabs = async (path) => {
-    const at = await middleOf('.pane-bar .maps');
+    const at = await middleOf('.pane-bar');
     await drop([path], at.x, at.y);
   };
   const tabs = () => app.mapNames();
@@ -517,7 +517,7 @@ try {
   await app.screenshot('ocr-3-map');
 
   // ---- a picture becomes a tree under the project ----
-  await app.click('.maps .up');
+  await app.up();
   await inView('Homer');
   await sleep(300);
   await dropOnTabs(picture);
@@ -560,7 +560,7 @@ try {
   );
 
   // ---- a PDF that has text: taken as it is, or read anew ----
-  await app.click('.maps .up');
+  await app.up();
   await inView('Homer');
   await sleep(300);
   await dropOnTabs(written);
@@ -842,7 +842,7 @@ try {
   await app.screenshot('ocr-6-shape-dark');
   await app.setTheme('light');
 
-  await app.click('.maps .up');
+  await app.up();
   await inView('Homer');
   await sleep(300);
 
@@ -907,7 +907,7 @@ try {
     JSON.stringify(beginnings),
   );
   // By its pages: an element for each page, the headings under them, and no marks.
-  await app.click('.maps .up');
+  await app.up();
   await inView('Homer');
   await sleep(300);
   await readStructure(true);
@@ -926,7 +926,7 @@ try {
   const byPages = (await sections()).filter((s) => s.level === '1').map((s) => s.name);
   check('by its pages, the pages are the elements', JSON.stringify(byPages) === '["1","2"]', JSON.stringify(byPages));
   check('and no mark stands in the text', (await pageMarks()).length === 0, JSON.stringify(await pageMarks()));
-  await app.click('.maps .up');
+  await app.up();
   await inView('Homer');
   await sleep(300);
 

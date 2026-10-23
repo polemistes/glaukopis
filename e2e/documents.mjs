@@ -352,8 +352,7 @@ try {
   await sleep(400);
   check(
     'entered, it is the element in view',
-    (await app.exec(`return document.querySelector('.maps .map .name').textContent.trim()`)) ===
-      'The wrath of Achilles',
+    (await app.inView()) === 'The wrath of Achilles',
   );
   const order = await parts();
   check(
@@ -665,10 +664,8 @@ try {
     );
     await app.screenshot('documents-8-word-text');
     // Back up to the project, under which the documents that follow are to go.
-    await app.click('.maps .up');
-    await until('the project in view', () =>
-      app.exec(`return document.querySelector('.maps .map .name')?.textContent.trim() === 'Homer'`),
-    );
+    await app.up();
+    await until('the project in view', async () => (await app.inView()) === 'Homer');
     await sleep(300);
   } else {
     console.log('Pandoc is not installed: the document from Word is passed over');

@@ -110,6 +110,9 @@ const ENTRIES = [
   { id: 'redo', keys: 'Ctrl+Shift+Z', place: 'project', bound: true, notInFields: true },
   { id: 'redo-y', keys: 'Ctrl+Y', place: 'project', bound: true, notInFields: true },
   { id: 'side-by-side', keys: 'Ctrl+Shift+S', place: 'project', bound: true },
+  // The side that has the focus closes, as a document closes in every program; with one, the project.
+  { id: 'close-side', keys: 'Ctrl+W', place: 'project', bound: true },
+  { id: 'switch-sides', keys: '', place: 'project', bound: true },
   { id: 'side-panel', keys: '', place: 'project', bound: true },
   { id: 'share', keys: '', place: 'project', bound: true },
 

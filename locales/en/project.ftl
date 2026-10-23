@@ -21,8 +21,8 @@ project-view-this = View of this map
 project-diagram = Diagram
 project-text = Text
 project-one-at-a-time = One at a time
-project-side-by-side = Side by side
-# The menu of the Side by side button: what the second side shows.
+project-side-by-side = Split view
+# The menu of the Split view button: what the second side shows.
 project-beside-this = This element, as diagram and text
 project-beside-element = Another element…
 project-beside-project = Another project…
@@ -75,14 +75,10 @@ project-cited-in-element = { $count ->
 # The name of an element that has none.
 project-untitled = Untitled
 project-where = Where you are
-# The small button before the name of the element in view: its parent's name.
-project-up = Up
+# The tooltip of the crumb of the parent of the element in view, in the path over a side.
 project-up-hint = Up to “{ $name }” · Alt+Shift+Up
 # The small round button by the element in view, in the diagram and the text: up to the element over it.
 project-leave-map = Up to “{ $name }”
-project-siblings-hint = The elements beside this one: choose one to show it
-project-trees-hint = The elements under the project: choose one to show it
-project-shown-beside = beside this one
 # The owl before the name of the project itself, in the first pane: up to all the projects.
 # The sign of a project, read aloud, where it is shared.
 project-badge-shared = { $name }, shared by you
@@ -102,7 +98,7 @@ project-document-into = A document into it…
 project-drop-on-map = Drop on a map to move there · hold Ctrl to copy
 project-open-beside = Open beside
 project-open-beside-hint = Two maps side by side, to move elements between them
-project-side-by-side-short = Side by side
+project-side-by-side-short = Split
 project-preview-short = Preview
 project-found = Loose citations…
 # The count is of those found in the element in view, and under it.
@@ -308,3 +304,10 @@ status-words-written = { $count ->
    *[other] { $count } words written
 }
 status-progress = How far the map has come
+
+## The path over each side, and the sides (stage 4 of the list, the path and the window as it was left)
+# The chevron at the start of a path, which opens the menu of all projects.
+project-all-projects-menu = All projects
+# The crumb … in a path too long for its cell, whose menu has the crumbs hidden behind it.
+project-path-hidden = More of the path
+project-switch-sides = Switch sides

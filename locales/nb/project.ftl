@@ -20,7 +20,7 @@ project-view-this = Visning av dette kartet
 project-diagram = Diagram
 project-text = Tekst
 project-one-at-a-time = Ett om gangen
-project-side-by-side = Side om side
+project-side-by-side = Delt visning
 project-beside-this = Dette elementet, som diagram og tekst
 project-beside-element = Et annet element …
 project-beside-project = Et annet prosjekt …
@@ -71,12 +71,8 @@ project-cited-in-element = { $count ->
 
 project-untitled = Uten navn
 project-where = Hvor du er
-project-up = Opp
 project-up-hint = Opp til «{ $name }» · Alt+Shift+Pil opp
 project-leave-map = Opp til «{ $name }»
-project-siblings-hint = Elementene ved siden av dette: velg ett for å vise det
-project-trees-hint = Elementene under prosjektet: velg ett for å vise det
-project-shown-beside = ved siden av dette
 project-badge-shared = { $name }, delt av deg
 project-badge-joined = { $name }, som du har blitt med i
 project-beside-failed = Prosjektet kunne ikke åpnes ved siden av dette
@@ -91,7 +87,7 @@ project-document-into = Et dokument inn i det …
 project-drop-on-map = Slipp på et kart for å flytte dit · hold Ctrl for å kopiere
 project-open-beside = Åpne ved siden av
 project-open-beside-hint = To kart side om side, for å flytte elementer mellom dem
-project-side-by-side-short = Side om side
+project-side-by-side-short = Del
 project-preview-short = Forhåndsvisning
 project-found = Løse kildehenvisninger …
 project-found-hint = { $count } å gå gjennom og gjøre om til kildehenvisninger
@@ -259,3 +255,10 @@ status-count-draft = { $count } utkast
 status-count-done = { $count } ferdig
 status-words-written = { $count } ord skrevet
 status-progress = Hvor langt kartet er kommet
+
+## The path over each side, and the sides (stage 4 of the list, the path and the window as it was left)
+# The chevron at the start of a path, which opens the menu of all projects.
+project-all-projects-menu = Alle prosjekter
+# The crumb … in a path too long for its cell, whose menu has the crumbs hidden behind it.
+project-path-hidden = Mer av stien
+project-switch-sides = Bytt side

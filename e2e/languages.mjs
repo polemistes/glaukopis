@@ -218,7 +218,7 @@ try {
     await sleep(200);
   };
   const up = async () => {
-    await app.click('.maps .up');
+    await app.up();
     await sleep(300);
   };
   await app.openThisMap();
@@ -256,11 +256,11 @@ try {
   await up();
   await app.openThisMap();
   await app.clickText('.menu [role="menuitem"]', 'Nytt element under');
-  await app.waitFor('.maps .naming');
+  await app.waitFor('[data-path] .naming');
   await sleep(150);
   await app.keys('Annen sang');
   await app.press('Enter');
-  await app.waitGone('.maps .naming');
+  await app.waitGone('[data-path] .naming');
   await sleep(300);
   await app.openMap('Annen sang');
   await openLanguages();

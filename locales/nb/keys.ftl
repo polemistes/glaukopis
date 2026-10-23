@@ -44,7 +44,7 @@ keys-side-history = Historikk
 keys-side-changes = Gjennomgå endringer
 keys-side-found = Løse kildehenvisninger
 keys-side-panel = Åpne eller lukke sidepanelet
-keys-side-by-side = Side om side …
+keys-side-by-side = Delt visning …
 keys-share = Del prosjektet
 keys-find = Søk i teksten
 keys-replace = Søk og erstatt
@@ -112,3 +112,7 @@ keys-store-find = Søk i bildene
 keys-files-find = Søk i filene
 keys-list-undo = Angre det som ble gjort med mapper og prosjekter
 keys-list-redo = Gjør om det som ble gjort med mapper og prosjekter
+
+## The sides (stage 4 of the list, the path and the window as it was left)
+keys-close-side = Lukk denne siden
+keys-switch-sides = Bytt side

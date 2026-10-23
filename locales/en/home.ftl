@@ -259,3 +259,7 @@ home-delete-many-title = { $count ->
 home-delete-many-message = The projects are moved to the trash of Glaukopis, from which they can be brought back. Your references are not touched.
 home-delete-many-shared = The projects are moved to the trash of Glaukopis, from which they can be brought back. Those you share stay on the server and with the others.
 home-delete-many-confirm = Delete projects
+
+## The path over a side (stage 4 of the list, the path and the window as it was left)
+# In the menu of all projects, under a folder with nothing in it.
+home-folder-empty = Nothing in it
