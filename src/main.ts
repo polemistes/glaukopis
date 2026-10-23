@@ -5,6 +5,7 @@ import './app.css';
 import './placing.css';
 import './settings.css';
 import { mount } from 'svelte';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import App from './App.svelte';
 import { showCatalogueKinds } from '$lib/editor/kinds';
 import { nameLanguagesBy } from '$lib/editor/schema';
@@ -27,6 +28,23 @@ if (inTauri) forwardToLog(logPage);
 
 // WebKitGTK does not paste safely; the Rust side reads the clipboard instead (record 0048).
 if (inTauri && pastesThroughGtk) guardPaste();
+
+// The window is made hidden, and shown by the page once it is drawn where it
+// was left (App.svelte). Should the page never get so far, it is shown all
+// the same after a few seconds, rather than staying hidden; before the page
+// is mounted, so that a fault in mounting it does not keep this from coming.
+if (inTauri)
+  setTimeout(() => {
+    const window = getCurrentWindow();
+    window
+      .isVisible()
+      .then((visible) => {
+        if (visible) return;
+        console.warn('The window was not shown by the page: it is shown now');
+        return window.show();
+      })
+      .catch((error) => console.error('The window could not be shown', error));
+  }, 5000);
 
 const app = mount(App, { target: document.getElementById('app')! });
 

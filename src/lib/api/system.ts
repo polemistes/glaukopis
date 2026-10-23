@@ -70,6 +70,20 @@ export interface FoundSettings {
 /** How the text shows how deep each element stands: see `Settings.textDepth`. */
 export type TextDepth = 'numbers' | 'dots' | 'indent';
 
+/**
+ * The window's size and place on the screen as it was closed, in logical
+ * pixels, and whether it was maximised: given back before it is shown
+ * (ADR 0063). The size is that of what is inside the frame, as it is set;
+ * the place that of the frame's corner.
+ */
+export interface WindowPlace {
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+  maximized: boolean;
+}
+
 /** Settings kept in `settings.json` in the data directory. */
 export interface Settings {
   theme: Theme;
@@ -155,6 +169,13 @@ export interface Settings {
   projectsList: boolean;
   /** The projects last opened, by id, the latest first: the start screen shows them (ADR 0063). */
   recentProjects: string[];
+  /**
+   * The place the window was at, as the address writes it (`formatRoute`):
+   * gone to at start where the address names none (ADR 0063).
+   */
+  lastPlace: string | null;
+  /** The window's size and place as it was closed; none until it has been closed once. */
+  window: WindowPlace | null;
   /** How wide it is, in pixels. */
   projectsPaneWidth: number;
   /** How wide the collections or folders of the library are, in pixels; the same for references and files. */
@@ -200,6 +221,8 @@ export const defaultSettings: Settings = {
   kinds: [],
   projectsList: true,
   recentProjects: [],
+  lastPlace: null,
+  window: null,
   projectsPaneWidth: 240,
   librarySideWidth: 224,
   libraryDetailWidth: 400,

@@ -1,13 +1,18 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, tick, untrack } from 'svelte';
   import { getCurrentWebview } from '@tauri-apps/api/webview';
+  import { getCurrentWindow } from '@tauri-apps/api/window';
+  import { inTauri } from '$lib/api/backend';
   import { languageSet, languagesInfo } from '$lib/api/system';
   import { noticesTake, onNotices } from '$lib/api/notices';
   import { languageName, languages, load, t } from '$lib/i18n';
   import { notifyError, toasts } from '$lib/ui/toast.svelte';
   import { readOwnWords } from '$lib/words/own';
   import { library } from '$lib/state/library.svelte';
-  import { router, type Route } from '$lib/state/router.svelte';
+  import { formatRoute, parseRoute, router, type Route } from '$lib/state/router.svelte';
+  import { projects } from '$lib/state/projects.svelte';
+  import { asItCloses } from '$lib/state/closing';
+  import { placeWindow, windowPlace } from '$lib/state/window-place';
   import { keysUi, shortcuts } from '$lib/shell/keys.svelte';
   import KeySheet from '$lib/shell/KeySheet.svelte';
   import Palette from '$lib/shell/Palette.svelte';
@@ -37,6 +42,19 @@
   let ready = $state(false);
 
   onMount(async () => {
+    try {
+      await begin();
+    } finally {
+      // Whatever came of it, the page is drawn and the window shown: a window
+      // that stays hidden is the worst there is.
+      ready = true;
+      await tick();
+      await showWindow();
+    }
+  });
+
+  /** What is known before anything is shown: the settings, the languages, and the place to begin at. */
+  async function begin() {
     const known = languagesInfo()
       .then((info) => {
         languages.system = info.system;
@@ -60,8 +78,64 @@
       () => false,
     );
     if (spoken) languages.current = tag;
-    ready = true;
+    await goToPlaceKept().catch((error) => console.warn('The place kept was not gone to', error));
+  }
+
+  /**
+   * At start, where the address names no place: the place the window was at
+   * when it was closed (ADR 0063). An address that names one wins, as a
+   * link does. A project that is gone gives the start screen.
+   */
+  async function goToPlaceKept() {
+    if (location.hash && location.hash !== '#' && location.hash !== '#/') return;
+    const kept = settings.value.lastPlace;
+    if (typeof kept !== 'string' || !kept) return;
+    const place = parseRoute(kept);
+    if (place.view === 'home' || place.view === 'settings') return;
+    if (place.view === 'project') {
+      await projects.load();
+      if (!projects.list.some((p) => p.id === place.project)) return;
+      // The project alone: its view is laid out as it was left, both sides
+      // with it, where a place that names an element would show that one alone.
+      router.replace({ view: 'project', project: place.project });
+      return;
+    }
+    router.replace(place);
+  }
+
+  // The place is kept, a moment after it changes and before the window
+  // closes, to be gone to at the next start. Not the settings, which stand
+  // over another place and are replaced at once. It depends on the place.
+  $effect(() => {
+    if (!ready || route.view === 'settings') return;
+    const place = formatRoute(route);
+    if (untrack(() => settings.value.lastPlace) !== place) settings.set('lastPlace', place);
   });
+
+  /**
+   * The window, made hidden, is put where it was left and shown once the page
+   * is drawn, so that it neither jumps nor flashes white. A failure to place
+   * it is logged; it is shown whatever came before.
+   */
+  async function showWindow() {
+    if (!inTauri) return;
+    const window = getCurrentWindow();
+    try {
+      await placeWindow(window, settings.value.window);
+    } catch (error) {
+      console.warn('The window could not be put where it was left', error);
+    } finally {
+      await window.show().catch((error) => console.error('The window could not be shown', error));
+    }
+  }
+
+  // Its size and place are kept as it closes, and written with the other settings.
+  onMount(() =>
+    asItCloses(async () => {
+      const place = await windowPlace(getCurrentWindow(), settings.value.window);
+      if (place) settings.set('window', place);
+    }),
+  );
 
   /** The language of the interface: the one chosen, or that of the system. */
   function interfaceTag(): string {
