@@ -7,7 +7,15 @@
 // Usage: see e2e/run.mjs.
 
 import { spawn } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
+import {
+  mkdtempSync,
+  mkdirSync,
+  writeFileSync,
+  rmSync,
+  existsSync,
+  readdirSync,
+  readFileSync,
+} from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
@@ -76,6 +84,15 @@ function waitForLine(child, pattern, ms, what) {
       reject(new Error(`${what} exited with ${code}`));
     });
   });
+}
+
+/** Whether a process is there and not only waiting to be reaped. */
+function alive(pid) {
+  try {
+    return !/\) Z /.test(readFileSync(`/proc/${pid}/stat`, 'utf8'));
+  } catch {
+    return false;
+  }
 }
 
 export class App {
@@ -867,6 +884,53 @@ export class App {
           original.apply(console, a);
         };
       }`);
+  }
+
+  /** The processes of the application the driver started: the driver's children. */
+  appPids() {
+    const pids = [];
+    const pid = this.driver?.pid;
+    if (!pid) return pids;
+    try {
+      for (const task of readdirSync(`/proc/${pid}/task`)) {
+        const children = readFileSync(`/proc/${pid}/task/${task}/children`, 'utf8');
+        pids.push(...children.split(' ').filter(Boolean).map(Number));
+      }
+    } catch {
+      // The driver is gone.
+    }
+    return pids;
+  }
+
+  /**
+   * Closes the window as the user does, through its close request, so that
+   * what is done before it closes is done (the projects saved, the settings
+   * written with the place and the window's size), waits until the
+   * application has ended, and then ends the rest as `close` does. `close`
+   * alone ends the driver, which takes the application with it without
+   * asking the window.
+   */
+  async quit(ms = 30000) {
+    const pids = this.appPids();
+    await this.exec(
+      `window.__TAURI_INTERNALS__.invoke('plugin:window|close', { label: 'main' }).catch(() => {}); return null;`,
+    ).catch(() => {});
+    const until = Date.now() + ms;
+    let ended = false;
+    while (Date.now() < until) {
+      // Where its processes are not known, the page that no longer answers says it.
+      const gone = pids.length
+        ? !pids.some(alive)
+        : await Promise.race([this.exec('return 1').then(() => false, () => true), sleep(1000).then(() => false)]);
+      if (gone) {
+        ended = true;
+        break;
+      }
+      await sleep(150);
+    }
+    this.session = null;
+    await this.close();
+    if (!ended) throw new Error(`the application did not end within ${ms} ms of its window being closed`);
   }
 
   async close() {
