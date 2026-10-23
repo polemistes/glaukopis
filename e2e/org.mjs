@@ -93,8 +93,9 @@ try {
   await app.clickText('header [role="radio"]', 'Diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(400);
-  const add = async (key, name) => {
-    await app.press(key);
+  const add = async (where, name) => {
+    // A new element under the one selected, or after it: the keys of the tree.
+    await app.keys(where === 'under' ? ['Alt', 'Shift', 'Enter'] : ['Alt', 'Enter']);
     await app.waitFor('.diagram .node.renaming .prose', 3000);
     await sleep(120);
     await app.keys(name);
@@ -103,8 +104,8 @@ try {
     await sleep(80);
   };
   await app.click('.diagram .node.root');
-  await add('Tab', 'The prologue');
-  await add('Enter', 'Nurse');
+  await add('under', 'The prologue');
+  await add('after', 'Nurse');
   await app.rightClick(await app.findByText('.diagram .node', 'Nurse'));
   await app.waitFor('.menu');
   await sleep(150);

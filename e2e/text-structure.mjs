@@ -75,29 +75,30 @@ try {
   await sleep(700);
 
   // ==== The text ====
-  // From the empty text of the project: Ctrl+Enter the first element.
-  await app.keys(['Control', 'Enter']);
+  // From the empty text of the project: Alt+Enter the first element.
+  await app.keys(['Alt', 'Enter']);
   await sleep(400);
   await app.keys('One');
   await app.press('Enter');
   await sleep(250);
   await app.keys('Alpha beta');
   for (let i = 0; i < 4; i++) await app.press('ArrowLeft');
-  await app.keys(['Control', 'Shift', 'Enter']);
+  await app.keys(['Alt', 'Shift', 'Enter']);
   await sleep(400);
-  await app.keys('One A');
-  await sleep(250);
   let list = await sections();
   check(
-    'Ctrl+Shift+Enter in a text makes the first element under it, from the cursor on',
-    JSON.stringify(list) === JSON.stringify(['Structure:0', 'One:1', 'One A:2']) &&
-      (await bodyOf('One')) === 'Alpha' &&
-      (await bodyOf('One A')) === 'beta',
-    `${list.join(' | ')} / ${await bodyOf('One')} / ${await bodyOf('One A')}`,
+    'Alt+Shift+Enter in a text makes the first element under it, the rest of the paragraph its name',
+    JSON.stringify(list) === JSON.stringify(['Structure:0', 'One:1', 'beta:2']) &&
+      (await bodyOf('One')) === 'Alpha',
+    `${list.join(' | ')} / ${await bodyOf('One')}`,
   );
+  // The cursor is at the end of the new name: it is written anew.
+  for (let i = 0; i < 4; i++) await app.press('Backspace');
+  await app.keys('One A');
+  await sleep(250);
 
-  // In a name: Ctrl+Enter one after; Alt+Left less deep, the cursor staying where it was.
-  await app.keys(['Control', 'Enter']);
+  // In a name: Alt+Enter one after; Alt+Left less deep, the cursor staying where it was.
+  await app.keys(['Alt', 'Enter']);
   await sleep(400);
   await app.keys('Two');
   await sleep(200);
@@ -116,12 +117,12 @@ try {
 
   await app.press('Enter');
   await sleep(250);
-  await app.keys(['Control', 'Shift', 'Enter']);
+  await app.keys(['Alt', 'Shift', 'Enter']);
   await sleep(400);
   await app.keys('Two A');
   await app.press('Enter');
   await sleep(250);
-  await app.keys(['Control', 'Enter']);
+  await app.keys(['Alt', 'Enter']);
   await sleep(400);
   await app.keys('Two B');
   await sleep(200);
@@ -135,12 +136,10 @@ try {
   await sleep(400);
   list = await sections();
   check('and Alt+Down down again', list.indexOf('Two B:2') > list.indexOf('Two A:2'), list.join(' | '));
-  // Tab in a name, as before.
+  // Tab in a name folds what is under the element, of which Two B has nothing: it no longer makes it deeper.
   await app.press('Tab');
   await sleep(300);
-  check('Tab in a name makes it deeper', (await sections()).includes('Two B:3'));
-  await app.keys(['Shift', 'Tab']);
-  await sleep(300);
+  check('Tab in a name no longer makes the element deeper', (await sections()).includes('Two B:2'));
   // Alt and the arrows in a text move the element, not the cursor.
   await app.press('Enter');
   await sleep(250);
@@ -162,7 +161,7 @@ try {
   await app.keys(['Alt', 'ArrowDown']);
   await sleep(400);
   await clickTitle('Two B');
-  await app.keys(['Control', 'Enter']);
+  await app.keys(['Alt', 'Enter']);
   await sleep(400);
   await app.keys('Three');
   await app.keys(['Alt', 'ArrowLeft']);
@@ -174,10 +173,10 @@ try {
       JSON.stringify(['Structure:0', 'One:1', 'One A:2', 'Two:1', 'Two A:2', 'Two B:2', 'Three:1']),
     list.join(' | '),
   );
-  // Alt+Enter makes nothing in the text any more.
-  await app.keys(['Alt', 'Enter']);
+  // Ctrl+Enter makes nothing in the text any more.
+  await app.keys(['Control', 'Enter']);
   await sleep(300);
-  check('Alt+Enter makes no element in the text', (await sections()).length === 7);
+  check('Ctrl+Enter makes no element in the text', (await sections()).length === 7);
 
   // --- In and out: Alt+Shift+Down and Alt+Shift+Up, from a name and from a text ---
   await clickTitle('Two');
@@ -292,14 +291,14 @@ try {
   };
   await app.click(await node('Three'));
   await sleep(150);
-  await name(['Control', 'Enter'], 'Four');
-  await name(['Control', 'Shift', 'Enter'], 'Four A');
+  await name(['Alt', 'Enter'], 'Four');
+  await name(['Alt', 'Shift', 'Enter'], 'Four A');
   await app.clickText('header [role="radio"]', 'Text');
   await app.waitFor('.text-view .section', 8000);
   await sleep(500);
   list = await sections();
   check(
-    'in the diagram, Ctrl+Enter makes one after the element selected, Ctrl+Shift+Enter one under it',
+    'in the diagram, Alt+Enter makes one after the element selected, Alt+Shift+Enter one under it',
     list.slice(-3).join(' | ') === 'Three:1 | Four:1 | Four A:2',
     list.join(' | '),
   );

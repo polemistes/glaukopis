@@ -93,7 +93,7 @@ try {
 
   // Two states, so that the first of them is kept as an earlier version.
   await app.click('.diagram .node.root');
-  await app.press('Tab');
+  await app.keys(['Alt', 'Shift', 'Enter']);
   await app.waitFor('.diagram .node.renaming .prose', 3000);
   await sleep(120);
   await app.keys('The word mênis');
@@ -105,7 +105,7 @@ try {
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
   await app.click('.diagram .node.root');
-  await app.press('Tab');
+  await app.keys(['Alt', 'Shift', 'Enter']);
   await app.waitFor('.diagram .node.renaming .prose', 3000);
   await sleep(120);
   await app.keys('Reception');

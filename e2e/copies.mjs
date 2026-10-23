@@ -29,8 +29,9 @@ try {
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(400);
 
-  const add = async (key, name) => {
-    await app.press(key);
+  const add = async (where, name) => {
+    // A new element under the one selected, or after it: the keys of the tree.
+    await app.keys(where === 'under' ? ['Alt', 'Shift', 'Enter'] : ['Alt', 'Enter']);
     await app.waitFor('.diagram .node.renaming .prose', 3000);
     await sleep(120);
     await app.keys(name);
@@ -39,7 +40,7 @@ try {
     await sleep(80);
   };
   await app.click('.diagram .node.root');
-  await add('Tab', 'The word menis');
+  await add('under', 'The word menis');
 
   // A second tree under the project, beside the first; the view stays at the project.
   await app.newMap();

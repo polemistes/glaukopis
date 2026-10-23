@@ -59,13 +59,13 @@ try {
   await app.clickText('dialog footer button', 'Create');
   await app.waitFor('.text-view .section', 8000);
   await sleep(700);
-  await app.keys(['Control', 'Enter']);
+  await app.keys(['Alt', 'Enter']);
   await sleep(400);
   await app.keys('Book one');
   await app.press('Enter');
   await sleep(250);
   await app.keys('Tell me, Muse, of the man of many ways.');
-  await app.keys(['Control', 'Enter']);
+  await app.keys(['Alt', 'Enter']);
   await sleep(400);
   await app.keys('Book two');
   await app.press('Enter');

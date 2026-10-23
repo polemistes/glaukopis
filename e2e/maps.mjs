@@ -50,8 +50,9 @@ try {
 
   // --- Building the map from the keyboard ---
   await app.click('.diagram .node.root');
-  const add = async (key, name) => {
-    await app.press(key);
+  const add = async (where, name) => {
+    // A new element under the one selected, or after it: the keys of the tree.
+    await app.keys(where === 'under' ? ['Alt', 'Shift', 'Enter'] : ['Alt', 'Enter']);
     await app.waitFor('.diagram .node.renaming .prose', 3000);
     await sleep(120);
     await app.keys(name);
@@ -59,13 +60,13 @@ try {
     await app.waitGone('.diagram .node.renaming', 3000);
     await sleep(80);
   };
-  await add('Tab', 'The word mênis');
-  await add('Enter', 'Achilles and Apollo');
-  await add('Enter', 'The economy of honour');
-  await add('Enter', 'Reception');
+  await add('under', 'The word mênis');
+  await add('after', 'Achilles and Apollo');
+  await add('after', 'The economy of honour');
+  await add('after', 'Reception');
   // Under the last one.
-  await add('Tab', 'Virgil');
-  await add('Enter', 'Milton');
+  await add('under', 'Virgil');
+  await add('after', 'Milton');
   const names = await titles(app);
   check(
     'Tab and Enter build the tree',
@@ -341,7 +342,7 @@ try {
   );
   await sleep(200);
   await app.keys('Honour is counted in prizes. ');
-  await app.keys(['Control', 'Enter']);
+  await app.keys(['Alt', 'Enter']);
   await sleep(400);
   await app.keys('The prize of Briseis');
   await app.press('Enter');
@@ -352,17 +353,17 @@ try {
     `return Array.from(document.querySelectorAll('.text-view .section .heading .title')).map((e) => e.textContent.trim())`,
   );
   check(
-    'Ctrl+Enter begins a new element after the one written in',
+    'Alt+Enter at the end of a text begins a new element after the one written in',
     after[4] === 'The prize of Briseis',
     after.join(' | '),
   );
 
-  // Ctrl+Enter one after, Ctrl+Shift+Enter one under.
-  await app.keys(['Control', 'Enter']);
+  // Alt+Enter one after, Alt+Shift+Enter one under.
+  await app.keys(['Alt', 'Enter']);
   await sleep(400);
   await app.keys('The gifts of Agamemnon');
   await sleep(150);
-  await app.keys(['Control', 'Shift', 'Enter']);
+  await app.keys(['Alt', 'Shift', 'Enter']);
   await sleep(400);
   await app.keys('The embassy');
   await sleep(300);
@@ -370,7 +371,7 @@ try {
     `return Array.from(document.querySelectorAll('.text-view .section')).map((s) => s.querySelector('.heading .title').textContent.trim() + ':' + (s.className.match(/level-(\\d)/) || [])[1])`,
   );
   check(
-    'Ctrl+Enter at the end of a text begins a new element after this one',
+    'Alt+Enter at the end of a text begins a new element after this one',
     org[5]?.startsWith('The gifts of Agamemnon:'),
     org.join(' | '),
   );
