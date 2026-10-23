@@ -10,6 +10,10 @@
  * written then is lost; one of the second is only logged, since what it
  * would have written is in the log already.
  *
+ * Before either, what is to be read of the window as it is asked to close
+ * is read (`asItCloses`): its size and place, which the settings then
+ * write with the rest.
+ *
  * Nothing here waits with a limit of time: a slow disk is waited for, and
  * the window says so after a moment. Asked to close again while it waits,
  * or after a failure was told, the window closes all the same.
@@ -26,6 +30,8 @@ type Task = () => Promise<void> | void;
 export type Stage = 'first' | 'then';
 
 const tasks: Record<Stage, Set<Task>> = { first: new Set(), then: new Set() };
+/** What is read of the window each time it is asked to close, before the tasks. */
+const reading = new Set<Task>();
 let installed = false;
 
 /** How long closing is waited for before the window says that it is still saving. */
@@ -67,6 +73,29 @@ export async function finishBeforeClose(anyway = false): Promise<unknown[]> {
   return failures;
 }
 
+/**
+ * Reads something of the window each time it is asked to close, before
+ * anything is saved, so that what it keeps is saved with the rest. A failure
+ * is logged and keeps nothing from closing.
+ */
+export function asItCloses(read: Task): () => void {
+  reading.add(read);
+  install();
+  return () => reading.delete(read);
+}
+
+async function read() {
+  await Promise.all(
+    [...reading].map(async (task) => {
+      try {
+        await task();
+      } catch (error) {
+        console.warn('the window could not be read as it closed', error);
+      }
+    }),
+  );
+}
+
 function install() {
   if (installed || !inTauri) return;
   installed = true;
@@ -76,6 +105,7 @@ function install() {
   /** Whether a failure to save was told, and the window left open. */
   let toldFailure = false;
   window.onCloseRequested(async (event) => {
+    await read();
     if (!tasks.first.size && !tasks.then.size) return;
     if (waiting) {
       // Asked again while it waits: the window goes now, without waiting any longer.

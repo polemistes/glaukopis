@@ -394,9 +394,30 @@ fn make_windows(app: &tauri::App) -> tauri::Result<()> {
         watch(&window);
         if config.visible {
             window.show()?;
+        } else {
+            show_late(&window);
         }
     }
     Ok(())
+}
+
+/// A window made hidden is shown by its page, once the page is drawn where the
+/// window was left (`App.svelte`, and `main.ts` after a few seconds). One whose
+/// page never ran so far, as when its scripts could not be loaded, is shown
+/// here all the same after a while: a window that stays hidden cannot even
+/// be closed.
+fn show_late(window: &tauri::WebviewWindow) {
+    let window = window.clone();
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_secs(10));
+        if window.is_visible().unwrap_or(true) {
+            return;
+        }
+        tracing::warn!(window = window.label(), "the page did not show its window: it is shown now");
+        if let Err(error) = window.show() {
+            tracing::error!(%error, "the window could not be shown");
+        }
+    });
 }
 
 /// Shows a message, and ends the program with `code` when it has been read.

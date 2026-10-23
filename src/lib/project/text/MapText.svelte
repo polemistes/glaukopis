@@ -99,8 +99,16 @@
     folding: Folding;
     /** Whether the outline of the map stands beside the text, which then wants to know what is at the top. */
     outline?: boolean;
-    /** Called with the element at the top of what is in view, for the outline. */
+    /**
+     * Called with the element at the top of what is in view, for the outline
+     * and for the view as it is kept: when it changes, not at every scroll.
+     */
     ontop?: (id: string | null) => void;
+    /**
+     * The element the text was read at when the view was left: brought to the
+     * top as the text is first shown, neither selected nor marked; once.
+     */
+    top?: string | null;
     /**
      * Another project, shown in the other pane: elements dragged from it
      * are carried here, copied, or moved and taken away there (ADR 0037).
@@ -119,6 +127,7 @@
     folding,
     outline = false,
     ontop,
+    top = null,
     besideProject = null,
   }: Props = $props();
 
@@ -130,6 +139,9 @@
   /** How wide the outline is, as it was last dragged. */
 
   const KEPT_ACTIVE = 10;
+
+  /** What the reader does in the text that ends the holding of the element it was left at. */
+  const READING = ['wheel', 'pointerdown', 'keydown', 'touchstart'] as const;
 
   interface DropSlot {
     /** Where the elements go: under which, at which place among those under it. */
@@ -228,6 +240,43 @@
     const top = atTop;
     untrack(() => ontop?.(top));
   });
+
+  /** How long the element the text was left at is held at the top while what is around it is laid out. */
+  const SETTLING_MS = 3000;
+
+  /**
+   * As the text is first shown: the element it was read at when the view was
+   * left, at the top, as the outline brings it there but neither selected nor
+   * unfolded; not where another element is to be shown. What is laid out
+   * after it, as the fonts come and the window takes its size, moves the text
+   * under it: it is brought back to the top whenever the text changes its
+   * height, for a moment or until the reader scrolls. One look-up, and one
+   * watch of the column, however long the text.
+   */
+  async function readFromTop() {
+    const id = untrack(() => top);
+    if (!id || untrack(() => reveal)) return;
+    await tick();
+    const scrolling = scroller;
+    const section = scrolling?.querySelector(`[data-section="${id}"]`);
+    if (!scrolling || !section || !column) return;
+    const align = () => {
+      heldUntil = performance.now() + 400;
+      section.scrollIntoView({ block: 'start' });
+      atTop = id;
+    };
+    align();
+    const watch = new ResizeObserver(align);
+    watch.observe(column);
+    watch.observe(scrolling);
+    const stop = () => {
+      watch.disconnect();
+      clearTimeout(timer);
+      for (const name of READING) scrolling.removeEventListener(name, stop);
+    };
+    const timer = setTimeout(stop, SETTLING_MS);
+    for (const name of READING) scrolling.addEventListener(name, stop, { passive: true });
+  }
 
   /** From the outline: the element, at the top of the view, unfolded where it was folded away. */
   export async function goTo(id: string) {
@@ -809,7 +858,10 @@
   onMount(() => {
     const jump = takeJump(at);
     if (jump) void tick().then(() => jumpTo(jump));
-    else beginEmpty();
+    else {
+      beginEmpty();
+      void readFromTop();
+    }
   });
 
   /**
@@ -1263,7 +1315,12 @@
   }}
 />
 
-<div class="text-view" bind:this={root} style:--margin="{marginWidth}px">
+<div
+  class="text-view"
+  bind:this={root}
+  style:--margin="{marginWidth}px"
+  data-at-top={atTop ?? undefined}
+>
   {#if searching}
     <SearchBar bind:this={bar} search={searching} onclose={() => closeSearch(true)} />
   {/if}
@@ -1273,7 +1330,8 @@
     class="scroller"
     onscroll={() => {
       searching?.scrolled();
-      if (outline) findTop();
+      // What is at the top is kept with the view, whether the outline is there or not.
+      findTop();
     }}
     use:dropTarget={{
       accepts: (p) =>

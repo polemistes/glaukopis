@@ -139,7 +139,7 @@
   let failure = $state<string | null>(null);
   let panes = $state<Pane[]>([]);
   let focused = $state(0);
-  // Whether the sides are drawn the other way round: kept with the view.
+  /** Whether the sides are switched: the second pane drawn at the left, the indices as they are. Kept with the view. */
   let mirrored = $state(false);
   let cameras = $state<Record<string, Camera>>({});
   let showOutline = $state(false);
@@ -158,8 +158,14 @@
   let folding = $state.raw(new Folding());
   /** The texts in the panes, where a pane shows the text: to be searched. */
   let texts = $state<(ReturnType<typeof MapText> | undefined)[]>([]);
-  /** The element at the top of the text of each pane, for the outline. */
+  /** The element at the top of the text of each pane, for the outline, and kept with the view. */
   let tops = $state<(string | null)[]>([]);
+  /**
+   * The element each text is to be read from when it is first shown, as the
+   * view was left: taken once by the text, and given up once it has said what
+   * is at its top, so that a text shown anew in the pane begins at its top.
+   */
+  let restoring = $state.raw<(string | null)[]>([]);
   const OUTLINE_WIDTH = 240;
   /** How wide the outline stands, as it was last dragged. */
   let outlineWidth = $state(OUTLINE_WIDTH);
@@ -372,6 +378,9 @@
       outline: showOutline,
       preview: showPreview,
       sizes,
+      tops,
+      focused,
+      mirrored,
     }),
     apply: (laid) => {
       panes = laid.panes;
@@ -381,6 +390,10 @@
       showOutline = laid.outline;
       showPreview = laid.preview;
       sizes = laid.sizes;
+      tops = laid.tops;
+      restoring = [...laid.tops];
+      focused = laid.focused;
+      mirrored = laid.mirrored;
     },
     project: () => project,
     folding: () => folding,
@@ -1384,7 +1397,11 @@
                         focused={i === focused}
                         folding={paneFolding}
                         outline={showOutline}
-                        ontop={(id) => (tops[i] = id)}
+                        top={restoring[i] ?? null}
+                        ontop={(id) => {
+                          tops[i] = id;
+                          if (id) restoring[i] = null;
+                        }}
                         besideProject={across ? projectOf(panes[1 - i]) : null}
                       />
                     {/if}

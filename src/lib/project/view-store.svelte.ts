@@ -6,7 +6,8 @@
  *
  * What is kept is the view's own state (the panes, the cameras, the panel
  * at the side, the outline, the preview, the room each part has, what is
- * folded away); this reads it and lays it out through `ViewParts`, so that
+ * folded away, the element at the top of each text, the side with the focus
+ * and whether the sides are switched); this reads it and lays it out through `ViewParts`, so that
  * the state stays where the view shows it. What is kept, and how, is
  * `layout.ts`.
  */
@@ -81,6 +82,9 @@ export class ViewStore {
       outline: shown.outline,
       preview: shown.preview,
       sizes: $state.snapshot(shown.sizes),
+      tops: $state.snapshot(shown.tops),
+      focused: shown.focused,
+      mirrored: shown.mirrored,
     };
     return toStore(
       layout,
@@ -109,7 +113,9 @@ export class ViewStore {
     // the element in view and the way of each pane, what the panel at the
     // side shows and showed last, the outline and the preview, each camera
     // (not the record of them: one is written by its entry, which reading the
-    // record alone would not see), each size, and what is folded. Each run
+    // record alone would not see), each size, what is folded, the element at
+    // the top of each text, the side with the focus and whether the sides are
+    // switched. Each run
     // puts off the save that was waiting.
     $effect(() => {
       if (!this.#parts.project()) return;
@@ -123,6 +129,9 @@ export class ViewStore {
       void shown.sizes.split;
       void shown.sizes.preview;
       void shown.sizes.references;
+      void shown.tops.join('\n');
+      void shown.focused;
+      void shown.mirrored;
       const folding = this.#parts.folding();
       void folding.folded.size;
       void [...folding.folded];

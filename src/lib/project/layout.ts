@@ -2,7 +2,8 @@
  * How the view of a project is laid out, and kept from one opening to the
  * next: which elements the panes show and how, what the panel at the side
  * shows, whether the outline and the preview stand beside the text, how the
- * room is shared, and where each diagram was looked at.
+ * room is shared, where each diagram was looked at, where each text was read,
+ * which side had the focus and whether the sides were switched.
  */
 
 import type { MapMode } from '$lib/state/router.svelte';
@@ -59,6 +60,16 @@ export interface StoredView {
   preview?: boolean;
   /** The elements under which the text is folded away. */
   folded?: string[];
+  /**
+   * The element at the top of the text of each pane, by its place among the
+   * panes; none where the pane shows no text. An element, not a pixel: a
+   * pixel does not hold across sizes of the window, fonts and edits.
+   */
+  tops?: (string | null)[];
+  /** Which pane had the focus, by its place among the panes. */
+  focused?: number;
+  /** Whether the two sides were switched, the second shown at the left. */
+  mirrored?: boolean;
 }
 
 /** The view as it is shown. */
@@ -70,6 +81,12 @@ export interface Layout {
   outline: boolean;
   preview: boolean;
   sizes: Sizes;
+  /** The element at the top of the text of each pane, where it shows the text. */
+  tops: (string | null)[];
+  /** The pane that has the focus. */
+  focused: number;
+  /** Whether the sides are switched: the second pane is drawn at the left. */
+  mirrored: boolean;
 }
 
 /** Whether an element can be in view: the project itself always can, before its element has arrived. */
@@ -100,6 +117,21 @@ export function arranged(
     panes.push({ at: second.at || PROJECT, mode: guestMode(second.mode), project: second.project });
   else if (!route?.at && second && known(second.at))
     panes.push({ at: second.at, mode: second.mode });
+  // The text of a pane is read again where it was, while the pane shows the
+  // element and the text it showed; an element of another project beside is
+  // looked for there.
+  const keptTops = Array.isArray(stored.tops) ? stored.tops : [];
+  const tops = panes.map((pane, i) => {
+    const was = stored.panes?.[i];
+    const top = keptTops[i];
+    if (typeof top !== 'string' || pane.mode !== 'text' || !was) return null;
+    if (pane.at !== was.at || pane.mode !== was.mode) return null;
+    return pane.project || inView(elements, top) ? top : null;
+  });
+  const focused =
+    Number.isInteger(stored.focused) && stored.focused! > 0
+      ? Math.min(stored.focused!, panes.length - 1)
+      : 0;
   // The changes are gone through when asked for, not when the project opens.
   const kept =
     stored.side !== undefined
@@ -120,10 +152,18 @@ export function arranged(
     outline: stored.outline ?? false,
     preview: stored.preview ?? false,
     sizes: { ...GIVEN, ...stored.sizes },
+    tops,
+    focused,
+    // One side has nothing to be switched with.
+    mirrored: panes.length > 1 && stored.mirrored === true,
   };
 }
 
-/** What is kept of a view: the cameras of elements that are there, and not the changes, which are opened when asked for. */
+/**
+ * What is kept of a view: the cameras of elements that are there, and not
+ * the changes, which are opened when asked for; the element at the top of
+ * the text only of a pane that shows the text.
+ */
 export function toStore(layout: Layout, elements: Elements, folded: string[]): StoredView {
   const cameras: Record<string, Camera> = {};
   for (const [id, c] of Object.entries(layout.cameras)) {
@@ -138,6 +178,13 @@ export function toStore(layout: Layout, elements: Elements, folded: string[]): S
     outline: layout.outline,
     preview: layout.preview,
     folded,
+    tops: layout.panes.map((pane, i) => {
+      const top = layout.tops[i] ?? null;
+      if (!top || pane.mode !== 'text') return null;
+      return pane.project || inView(elements, top) ? top : null;
+    }),
+    focused: clamp(layout.focused, 0, Math.max(0, layout.panes.length - 1)),
+    mirrored: layout.panes.length > 1 && layout.mirrored,
   };
 }
 
