@@ -22,13 +22,16 @@
   import { tick } from 'svelte';
   import type { ProjectInfo } from '$lib/api/projects';
   import ProjectBadge from '$lib/home/ProjectBadge.svelte';
-  import { projectsMenu } from '$lib/home/projects-menu';
+  import { ProjectActions } from '$lib/home/project-actions.svelte';
+  import ProjectList from '$lib/home/ProjectList.svelte';
   import { t } from '$lib/i18n';
   import { projects } from '$lib/state/projects.svelte';
   import { openMenu, type MenuItem } from '$lib/ui/menu.svelte';
+  import Popover from '$lib/ui/Popover.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import type { Project } from './model/project.svelte';
   import { PROJECT } from './model/types';
+  import { viewing } from './ProjectView.svelte';
   import { crumbsOf, fitCrumbs, type Crumb } from './path';
 
   interface Props {
@@ -37,8 +40,6 @@
     info: ProjectInfo;
     /** The element in view in this side. */
     at: string;
-    /** The projects shown in the sides, by id: marked in the menu of all projects. */
-    shown: readonly string[];
     /** How the project is shared, and how it is connected, for its badge. */
     sharing?: { owner: boolean; status?: 'connected' | 'offline' | 'refused' } | null;
     /** Whether the project's changes are on disk; where they could not be written, the fault. */
@@ -46,15 +47,14 @@
     fault?: string;
     /** Enters an element of this project, or its top (`PROJECT`). */
     onselect: (id: string) => void;
-    /** Shows another project in this side, at its top. */
-    onproject: (id: string) => void;
+    /** Shows another project in this side, at its top or at an element of it. */
+    onproject: (id: string, at?: string) => void;
   }
 
   let {
     project,
     info,
     at,
-    shown,
     sharing = null,
     status = 'saved',
     fault,
@@ -136,14 +136,26 @@
 
   // ---- what the crumbs do ----
 
+  /**
+   * The tree of all projects, which the chevron opens (ADR 0064): the list
+   * of projects as the list at the left has it, with its field, unfolded
+   * along the path to the element in view, which is marked; a folder's crumb
+   * opens it unfolded at that folder. A project chosen opens at its top, an
+   * element chosen is entered, in this side.
+   */
+  let treeAt = $state<{ anchor: HTMLElement; folder: string | null } | null>(null);
+  // The list asks for the actions of its place; where it chooses, none of them is offered.
+  const listActions = new ProjectActions({ open: () => {} });
+
   function allProjects(anchor: HTMLElement, folder: string | null = null) {
-    openMenu(
-      anchor,
-      projectsMenu(projects.folders, projects.list, { shown, choose: onproject, at: folder }),
-      {
-        align: 'start',
-      },
-    );
+    if (!projects.loaded) void projects.load();
+    treeAt = { anchor, folder };
+  }
+
+  function choose(id: string, element?: string) {
+    treeAt = null;
+    if (id === info.id) onselect(element ?? PROJECT);
+    else onproject(id, element);
   }
 
   function go(c: Crumb, anchor: HTMLElement) {
@@ -152,28 +164,20 @@
     else onselect(c.id);
   }
 
-  /** The menu of the crumbs hidden behind …, each doing what it does. */
+  /** The menu of the crumbs hidden behind …, each doing what it does: a folder opens the tree there. */
   function openHidden(event: MouseEvent, hidden: number[]) {
+    const anchor = event.currentTarget as HTMLElement;
     const items: MenuItem[] = hidden.map((i): MenuItem => {
       const c = crumbs[i];
       if (c.kind === 'folder')
-        return {
-          kind: 'submenu',
-          label: c.name,
-          icon: FolderIcon,
-          items: projectsMenu(projects.folders, projects.list, {
-            shown,
-            choose: onproject,
-            at: c.id,
-          }),
-        };
+        return { label: c.name, icon: FolderIcon, action: () => allProjects(anchor, c.id) };
       return {
         label: labelOf(c),
         icon: c.kind === 'project' ? Book : undefined,
         action: () => onselect(c.kind === 'project' ? PROJECT : c.id),
       };
     });
-    openMenu(event.currentTarget as HTMLElement, items, { align: 'start' });
+    openMenu(anchor, items, { align: 'start' });
   }
 </script>
 
@@ -239,7 +243,8 @@
     type="button"
     class="all"
     data-path-all
-    aria-haspopup="menu"
+    aria-haspopup="dialog"
+    aria-expanded={!!treeAt}
     aria-label={t('project-all-projects-menu')}
     use:tooltip={{ text: t('project-all-projects-menu'), side: 'bottom' }}
     onclick={(e) => allProjects(e.currentTarget)}
@@ -267,6 +272,25 @@
       {@render crumb(crumbs[i], i, false)}
     {/each}
   </div>
+  <Popover
+    open={!!treeAt}
+    anchor={treeAt?.anchor}
+    width={340}
+    label={t('project-all-projects-menu')}
+    onclose={() => (treeAt = null)}
+  >
+    <div class="tree" data-path-tree>
+      {#if projects.loaded}
+        <ProjectList
+          actions={listActions}
+          sides={viewing.sides}
+          {choose}
+          revealAt={treeAt?.folder ? { folder: treeAt.folder } : { project: info.id, element: at }}
+          focusField
+        />
+      {/if}
+    </div>
+  </Popover>
   <!-- Every crumb drawn whole, out of sight, to be measured; and the crumb … last. -->
   <div class="measuring" bind:this={measuring} aria-hidden="true">
     {#each crumbs as c, i (c.kind + c.id)}
@@ -377,6 +401,12 @@
     font-family: var(--font-text);
     font-size: 15px;
     font-weight: 600;
+  }
+  /* The tree of all projects, under the chevron. */
+  .tree {
+    max-height: min(480px, 70vh);
+    overflow-y: auto;
+    padding: 8px 6px 0;
   }
   /* The project's changes could not be written. */
   .unsaved {

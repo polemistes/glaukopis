@@ -546,14 +546,14 @@
     openMenu(sideBySideButton, items, { align: 'start' });
   }
 
-  /** Shows a project in a side, at its top, as it is chosen in the menu of all projects of the side's path. */
-  function projectIn(spec: SideSpec, id: string) {
+  /** Shows a project in a side, at its top or at an element of it, as it is chosen in the tree of all projects of the side's path. */
+  function projectIn(spec: SideSpec, id: string, at?: string) {
     if (spec.project === id) {
-      sideApis.get(spec.key)?.show(PROJECT);
+      sideApis.get(spec.key)?.show(at ?? PROJECT);
       return;
     }
     sides.focus(spec.key);
-    sides.open(id, PROJECT);
+    sides.open(id, at ?? PROJECT);
   }
 
   /** The project of a side, as the list has it, for its path: the folder it lies in. */
@@ -859,12 +859,11 @@
               project={of}
               info={infoOf(spec, of)}
               at={spec.at}
-              shown={shownIds}
               sharing={sharingOf(spec)}
               status={of.status === 'error' ? 'error' : 'saved'}
               fault={of.saveError ?? undefined}
               onselect={(id) => sideApis.get(spec.key)?.show(id)}
-              onproject={(id) => projectIn(spec, id)}
+              onproject={(id, element) => projectIn(spec, id, element)}
             />
           {/if}
         </div>
@@ -1172,7 +1171,6 @@
     justify-content: flex-end;
     flex: 1 0 auto;
     padding: 0 10px 0 8px;
-    container-type: inline-size;
   }
   /* The list's button, at the far left, over the side that stands there. */
   .list {
@@ -1215,12 +1213,6 @@
   .switch:hover {
     color: var(--ink);
     border-color: var(--accent);
-  }
-  /* In a narrow window Split view keeps its picture only; the tooltip still names it. */
-  @container (max-width: 110px) {
-    .tool > span {
-      display: none;
-    }
   }
   .tool {
     display: inline-flex;

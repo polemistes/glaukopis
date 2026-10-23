@@ -60,12 +60,31 @@
      * an element of the tree unfolded under a project, calls it with the
      * project and the element, and nothing is opened or entered. The menus,
      * the dragging and the making of things are off; the field and the
-     * folding stay. A project that is shown (`sides`) cannot be chosen.
+     * folding stay.
      */
     choose?: (project: string, at?: string) => void;
+    /** What cannot be chosen, where the list chooses: greyed, said to be open. */
+    unavailable?: readonly string[];
+    /**
+     * Where the list opens at a place, as the dropdown of a path does (ADR
+     * 0064): an element of a project, whose folders and tree are unfolded
+     * along the way to it and which is marked and scrolled to; or a folder,
+     * unfolded.
+     */
+    revealAt?: { project: string; element: string } | { folder: string };
+    /** Whether the field that finds a project has the cursor when the list is shown. */
+    focusField?: boolean;
   }
 
-  let { actions, sides = [], onenter, choose }: Props = $props();
+  let {
+    actions,
+    sides = [],
+    onenter,
+    choose,
+    unavailable = [],
+    revealAt,
+    focusField = false,
+  }: Props = $props();
 
   /** The projects shown in the sides, by id. */
   const shownIds = $derived(sides.map((side) => side.id));
@@ -87,8 +106,42 @@
 
   function open(p: ProjectInfo) {
     if (!choose) actions.open(p);
-    else if (!shownIds.includes(p.id)) choose(p.id);
+    else if (!unavailable.includes(p.id)) choose(p.id);
   }
+
+  /** The element the list is opened at, where it is: of a project, which is then marked and its way unfolded. */
+  const revealed = $derived(revealAt && 'project' in revealAt ? revealAt : null);
+
+  // Opened at a place, the list unfolds the way to it, and scrolls to it once
+  // it is drawn; the field has the cursor where it is to. It depends on the
+  // place and on whether the projects are read; the tree of a project that
+  // is not shown is read from disk.
+  $effect(() => {
+    const place = revealAt;
+    if (!projects.loaded) return;
+    untrack(() => {
+      let key: string | null = null;
+      if (place && 'folder' in place) {
+        listUi.reveal([...ancestors(projects.folders, place.folder), place.folder]);
+        key = `f:${place.folder}`;
+      } else if (place) {
+        const p = projects.list.find((x) => x.id === place.project);
+        if (p) {
+          reveal(folderOf(projects.folders, p));
+          if (!shownIds.includes(p.id)) {
+            closedUnfolded.add(p.id);
+            closedTrees.want(p);
+          }
+        }
+        key =
+          place.element === PROJECT ? `p:${place.project}` : `e:${place.project}/${place.element}`;
+      }
+      void tick().then(() => {
+        if (focusField) listEl?.querySelector<HTMLInputElement>('.tools input')?.focus();
+        if (key) rowEl(key)?.scrollIntoView({ block: 'center' });
+      });
+    });
+  });
   const toggle = (id: string) => listUi.toggle(id);
   const reveal = (id: string | null) => listUi.reveal(ancestors(projects.folders, id));
 
@@ -190,13 +243,15 @@
     for (const side of sides) {
       const pr = side.project;
       if (!pr || out.has(side.id)) continue;
+      // Where the list is opened at an element of this project, that one is marked and its way unfolded.
+      const at = revealed?.project === side.id ? revealed.element : side.at;
       out.set(side.id, {
         project: side.id,
         tree: pr.tree(),
         name: (id) => pr.node(id)?.title || '',
-        way: new Set(pr.pathTo(side.at)),
-        at: side.at,
-        enter: (id) => onenter?.(side.id, id),
+        way: new Set(pr.pathTo(at)),
+        at,
+        enter: (id) => (choose ? choose(side.id, id) : onenter?.(side.id, id)),
         live: pr,
       });
     }
@@ -205,14 +260,23 @@
 
   const nowhere = new Set<string>();
 
+  /** The elements from the top of a tree read from disk down to one, that one too. */
+  function wayIn(tree: Tree, id: string): Set<string> {
+    const way = new Set<string>();
+    for (let at: string | null | undefined = id; at && !way.has(at); at = tree.parent.get(at))
+      way.add(at);
+    return way;
+  }
+
   /** The tree of a project that is not open, as it was read from disk: folded but for its top-level trees. */
   function closedShown(p: ProjectInfo, read: Tree, names: Map<string, string>): Shown {
+    const at = revealed?.project === p.id ? revealed.element : null;
     return {
       project: p.id,
       tree: read,
       name: (id) => names.get(id) || '',
-      way: nowhere,
-      at: null,
+      way: at ? wayIn(read, at) : nowhere,
+      at,
       enter: (id) =>
         choose ? choose(p.id, id) : router.go({ view: 'project', project: p.id, at: id }),
       live: null,
@@ -566,10 +630,11 @@
       <!-- svelte-ignore a11y_click_events_have_key_events -->
       <div
         class="row project"
-        class:current={p.id === current && !choose}
+        class:current={(p.id === current && !choose) ||
+          (revealed?.project === p.id && revealed.element === PROJECT)}
         class:shown={isShown && p.id !== current && !choose}
-        class:unavailable={isShown && !!choose}
-        aria-disabled={isShown && choose ? true : undefined}
+        class:unavailable={!!choose && unavailable.includes(p.id)}
+        aria-disabled={choose && unavailable.includes(p.id) ? true : undefined}
         role="treeitem"
         tabindex={tabOf(pk)}
         aria-selected={selected === pk}
@@ -617,7 +682,7 @@
           size={14}
         />
         <span class="name serif truncate">{p.name}</span>
-        {#if choose && isShown}
+        {#if choose && unavailable.includes(p.id)}
           <span class="when">{t('home-open-now')}</span>
         {/if}
         {#if !choose}

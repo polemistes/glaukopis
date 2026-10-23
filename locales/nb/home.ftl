@@ -245,7 +245,6 @@ home-delete-many-confirm = Slett prosjektene
 
 ## The path over a side (stage 4 of the list, the path and the window as it was left)
 # In the menu of all projects, under a folder with nothing in it.
-home-folder-empty = Ingenting i den
 
 ## Stage 3 of the sides, the panes and the bars (agent "bars")
 home-share = Del …

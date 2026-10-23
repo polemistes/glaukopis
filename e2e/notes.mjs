@@ -181,7 +181,8 @@ try {
   await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
-  await app.keys(['Control', 'Shift', 'r']);
+  // The panel is the window's: it may be open still from the project before.
+  if (!(await app.exists('.panel'))) await app.keys(['Control', 'Shift', 'r']);
   await app.waitFor('.panel', 5000);
   await app.clickText('.panel [role="radio"]', 'Library');
   await app.waitFor('.panel .item', 5000);
