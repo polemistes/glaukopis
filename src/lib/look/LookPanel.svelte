@@ -1,8 +1,9 @@
 <script lang="ts">
   /**
    * The look of a document, in one place (ADR 0042), in the order of the
-   * page (2026-10-19): at the top what the document is, which opens the
-   * chooser of what you are writing, and the layout in a line; then the
+   * page (2026-10-19), a column of the typesetting pane beside the pages
+   * (2026-10-23): at the top what the document is, with the button that
+   * opens Document properties at its type, and the layout in a line; then the
    * search; then the few rows most writers reach for; then every part, from
    * the page inwards, each with its heading, the chips above them going to
    * each; and at the foot the layout itself, with the document's changes to
@@ -16,8 +17,7 @@
    * after each change, what differs from what the elements above give is
    * written as the element's changes, each a step of undo of its own.
    */
-  import { tick, untrack, type Snippet } from 'svelte';
-  import ChevronDown from '@lucide/svelte/icons/chevron-down';
+  import { tick, untrack } from 'svelte';
   import ExternalLink from '@lucide/svelte/icons/external-link';
   import Minus from '@lucide/svelte/icons/minus';
   import Plus from '@lucide/svelte/icons/plus';
@@ -40,7 +40,6 @@
   } from '$lib/api/documents';
   import type { Template } from '$lib/api/templates';
   import { aboutDocumentUi } from '$lib/document/about-document.svelte';
-  import { templateChooserUi } from '$lib/document/chooser.svelte';
   import { CATALOGUE, GROUPS, specOf } from '$lib/editor/kinds';
   import { languages, t } from '$lib/i18n';
   import { documents, templateFor, templateName } from '$lib/preview/documents.svelte';
@@ -76,21 +75,15 @@
     at: string;
     /** The kinds of paragraph and of words of the writer's own. */
     passageKinds: PassageKindRecord[];
-    /** Whether the preview is open beside the panel. */
-    previewing: boolean;
-    /** Opens the preview. */
-    onpreview: () => void;
     /** Shows an element in the text: one that fills a place of its own in the document. */
     ongo: (element: string) => void;
+    /** Closes the Look column. */
     onclose: () => void;
-    /** What stands at the head in place of the title: the tabs of the panel at the side. */
-    head?: Snippet;
     /** The element the text is at, where the text is open on this document. */
     current?: () => string | null;
   }
 
-  let { project, at, passageKinds, previewing, onpreview, ongo, onclose, head, current }: Props =
-    $props();
+  let { project, at, passageKinds, ongo, onclose, current }: Props = $props();
 
   // ---- where the changes hold (ADR 0059) ----
 
@@ -1691,23 +1684,22 @@
 
 <aside class="panel look" aria-label={t('look-title')}>
   <header>
-    {#if head}{@render head()}{:else}<h2>{t('look-title')}</h2>{/if}
-    <IconButton label={t('common-close')} size="sm" onclick={onclose}><X size={15} /></IconButton>
+    <h2>{t('look-title')}</h2>
+    <IconButton label={t('look-hide')} size="sm" onclick={onclose}><X size={15} /></IconButton>
   </header>
 
   <div class="through settings" bind:this={form} onscroll={follow}>
-    <!-- What the document is, which opens the chooser of what you are writing; and the layout, in a line. -->
+    <!-- What the document is, with the button that opens Document properties at its type; and the layout, in a line. -->
     <section class="whole" aria-label={t('look-whole')}>
-      <button
-        type="button"
-        class="what"
-        data-template={choice.template}
-        title={t('preview-what-title')}
-        onclick={() => templateChooserUi.open({ project, at })}
-      >
+      <div class="type-line" data-template={choice.template}>
         <span class="name">{templateName(project, choice.template)}</span>
-        <ChevronDown size={14} />
-      </button>
+        <Button
+          size="sm"
+          data-document-type
+          onclick={() => aboutDocumentUi.open({ project, at, section: 'type' })}
+          >{t('look-document-type')}</Button
+        >
+      </div>
       <p class="hint">{t('look-what-hint')}</p>
       <button
         type="button"
@@ -1741,13 +1733,6 @@
         {/if}
       {/if}
     </section>
-
-    {#if !previewing}
-      <p class="no-preview">
-        {t('look-open-preview')}
-        <Button size="sm" onclick={onpreview}>{t('look-open-preview-button')}</Button>
-      </p>
-    {/if}
 
     <label class="search">
       <Search size={14} />
@@ -2194,34 +2179,25 @@
     border-bottom: 1px solid var(--line);
     background: var(--paper);
   }
-  .whole .what {
+  /* What the document is, by name, and the plain button that opens its type in Document properties. */
+  .type-line {
     display: flex;
     align-items: center;
-    gap: 6px;
-    max-width: 100%;
-    padding: 4px 8px 4px 10px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-s);
-    background: var(--paper-raised);
-    color: var(--ink);
-    font-family: var(--font-text);
-    font-size: 16px;
-    text-align: left;
-    cursor: pointer;
+    gap: 10px;
+    min-width: 0;
   }
-  .whole .what:hover {
-    border-color: var(--line-strong);
-    background: var(--paper-hover);
-  }
-  .whole .what .name {
+  .type-line .name {
+    flex: 1;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    color: var(--ink);
+    font-family: var(--font-text);
+    font-size: 16px;
   }
-  .whole .what :global(svg) {
+  .type-line :global(button) {
     flex: none;
-    color: var(--ink-3);
   }
   .whole .hint {
     margin: 6px 0 4px;
@@ -2296,17 +2272,6 @@
     flex-wrap: wrap;
     gap: 8px;
     margin: 8px 0 4px;
-  }
-  .no-preview {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin: 0 0 10px;
-    padding: 8px 10px;
-    border-radius: var(--radius-m);
-    background: var(--accent-soft);
-    font-size: var(--text-sm);
   }
   .search {
     display: flex;

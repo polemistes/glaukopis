@@ -1,10 +1,11 @@
 <!--
-  What you are writing: the chooser of what a document is (the template of
-  its element). The plain document first, alone, as what every document is
-  until something else is chosen; then the kinds of text in their groups;
-  then, as a second step, the templates of journals, publishers and style
-  guides, narrowed to those made for the kind of text in use. The search
-  finds every one. Choosing writes at once, as a step of undo of its own.
+  The type of a document, a tab of Document properties: what you are
+  writing, the template of its element. The plain document first, alone, as
+  what every document is until something else is chosen; then the kinds of
+  text in their groups; then, as a second step, the templates of journals,
+  publishers and style guides, narrowed to those made for the kind of text in
+  use. The search finds every one. Choosing writes at once, as a step of
+  undo of its own.
 -->
 <script lang="ts">
   import { untrack } from 'svelte';
@@ -24,7 +25,6 @@
   import type { DocumentSettings } from '$lib/project/model/types';
   import { settings } from '$lib/state/settings.svelte';
   import Button from '$lib/ui/Button.svelte';
-  import Dialog from '$lib/ui/Dialog.svelte';
   import { notifyError } from '$lib/ui/toast.svelte';
   import { templateEditorUi } from './template-editor.svelte';
   import { confidenceWords, templateGroupWords } from './templates';
@@ -33,6 +33,7 @@
     project: Project;
     /** The element whose document is chosen for: it and what is under it. */
     at: string;
+    /** Closes Document properties: a template chosen by a double click is done with. */
     onclose: () => void;
   }
 
@@ -261,90 +262,78 @@
   }
 </script>
 
-<Dialog
-  open
-  title={t('chooser-title')}
-  subtitle={node?.title || t('project-untitled')}
-  width={720}
-  tall
-  padded={false}
-  {onclose}
->
-  <div class="chooser settings">
-    <div class="top">
-      <div class="search">
-        <Search size={14} />
-        <input
-          bind:value={query}
-          placeholder={t('chooser-search-placeholder')}
-          aria-label={t('chooser-search')}
-          spellcheck="false"
-        />
-      </div>
-      {#if own.template}
-        {@const setter = over()}
-        <p class="from">
-          <button type="button" class="link" onclick={() => write({ template: undefined })}>
-            {setter
-              ? t('chooser-again', { name: nameOf(setter) })
-              : t('chooser-usual-again', { name: templateName(project, usual) })}
-          </button>
-        </p>
-      {:else if templateFrom}
-        <p class="from" data-from>
-          {t('chooser-from', {
-            name: templateFrom,
-            template: templateName(project, choice.template),
-          })}
-        </p>
-      {/if}
+<div class="chooser">
+  <div class="top">
+    <div class="search">
+      <Search size={14} />
+      <input
+        bind:value={query}
+        placeholder={t('chooser-search-placeholder')}
+        aria-label={t('chooser-search')}
+        spellcheck="false"
+      />
     </div>
-
-    <div class="templates" role="radiogroup" aria-label={t('chooser-title')}>
-      {#if ownTemplates.length}
-        <h4>{templateGroupWords('own')}</h4>
-        {#each ownTemplates as s (s.id)}{@render entry(s)}{/each}
-      {/if}
-      {#if plain && fits(plain)}
-        <div class="alone">{@render entry(plain)}</div>
-      {/if}
-      {#each kindGroups as group (group.group)}
-        <h4>{group.label}</h4>
-        {#each group.templates as s (s.id)}{@render entry(s)}{/each}
-      {/each}
-
-      {#if submissionGroups.length}
-        <details
-          class="step"
-          data-step
-          open={stepOpen}
-          ontoggle={(e) => (stepOpened = e.currentTarget.open)}
-        >
-          <summary>{t('chooser-submission')}</summary>
-          <p class="hint">
-            {narrowed && narrowedTo
-              ? t('chooser-submission-narrowed', { name: templateName(project, narrowedTo) })
-              : t('chooser-submission-all')}
-          </p>
-          {#each submissionGroups as group (group.group)}
-            <h4>{group.label}</h4>
-            {#each group.templates as s (s.id)}{@render entry(s)}{/each}
-          {/each}
-        </details>
-      {/if}
-
-      {#if nothingFound}
-        <p class="hint">{t('chooser-none-found')}</p>
-      {/if}
-    </div>
+    {#if own.template}
+      {@const setter = over()}
+      <p class="from">
+        <button type="button" class="link" onclick={() => write({ template: undefined })}>
+          {setter
+            ? t('chooser-again', { name: nameOf(setter) })
+            : t('chooser-usual-again', { name: templateName(project, usual) })}
+        </button>
+      </p>
+    {:else if templateFrom}
+      <p class="from" data-from>
+        {t('chooser-from', {
+          name: templateFrom,
+          template: templateName(project, choice.template),
+        })}
+      </p>
+    {/if}
   </div>
 
-  {#snippet footer()}
-    <Button variant="ghost" onclick={() => editTemplate(true)}>{t('chooser-own-from')}</Button>
-    <span class="grow"></span>
-    <Button variant="primary" onclick={onclose}>{t('common-close')}</Button>
-  {/snippet}
-</Dialog>
+  <div class="templates" role="radiogroup" aria-label={t('chooser-title')}>
+    {#if ownTemplates.length}
+      <h4>{templateGroupWords('own')}</h4>
+      {#each ownTemplates as s (s.id)}{@render entry(s)}{/each}
+    {/if}
+    {#if plain && fits(plain)}
+      <div class="alone">{@render entry(plain)}</div>
+    {/if}
+    {#each kindGroups as group (group.group)}
+      <h4>{group.label}</h4>
+      {#each group.templates as s (s.id)}{@render entry(s)}{/each}
+    {/each}
+
+    {#if submissionGroups.length}
+      <details
+        class="step"
+        data-step
+        open={stepOpen}
+        ontoggle={(e) => (stepOpened = e.currentTarget.open)}
+      >
+        <summary>{t('chooser-submission')}</summary>
+        <p class="hint">
+          {narrowed && narrowedTo
+            ? t('chooser-submission-narrowed', { name: templateName(project, narrowedTo) })
+            : t('chooser-submission-all')}
+        </p>
+        {#each submissionGroups as group (group.group)}
+          <h4>{group.label}</h4>
+          {#each group.templates as s (s.id)}{@render entry(s)}{/each}
+        {/each}
+      </details>
+    {/if}
+
+    {#if nothingFound}
+      <p class="hint">{t('chooser-none-found')}</p>
+    {/if}
+  </div>
+
+  <div class="actions own">
+    <Button size="sm" onclick={() => editTemplate(true)}>{t('chooser-own-from')}</Button>
+  </div>
+</div>
 
 {#snippet entry(s: Listed)}
   {@const chosen = s.id === choice.template}
@@ -403,19 +392,12 @@
   .chooser {
     display: flex;
     flex-direction: column;
-    height: 100%;
-    min-height: 0;
-    border-top: 1px solid var(--line);
   }
   .top {
-    flex: none;
-    padding: 14px 24px 6px;
+    padding: 0 0 6px;
   }
   .templates {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    padding: 4px 24px 24px;
+    padding: 4px 0 12px;
   }
   .from {
     margin: 8px 0 0;
@@ -436,7 +418,7 @@
     border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--focus-ring);
   }
-  .settings .search input {
+  .chooser .search input {
     flex: 1;
     min-width: 0;
     height: auto;
@@ -548,7 +530,7 @@
   .link:hover {
     text-decoration: underline;
   }
-  .grow {
-    flex: 1;
+  .own {
+    margin: 12px 0 0;
   }
 </style>

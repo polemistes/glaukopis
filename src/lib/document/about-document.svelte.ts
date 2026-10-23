@@ -1,19 +1,19 @@
 /**
- * The window "About this document": what an element's document says of
- * itself, its details, its language and the checklist of what its template
- * requires, as it is asked for from anywhere in the view of a project: from
- * the menu of the element in view, from the bar over the preview, from the
- * foot of Look and by its key. The view mounts it once (`ProjectDialogs.svelte`).
- * What the document is, its template, is chosen in the chooser of what you
- * are writing; how it looks, and what it contains, in Look.
+ * The window Document properties: what an element's document says of
+ * itself, its details, its type (what you are writing, its template), its
+ * language and the checklist of what its template requires, as it is asked
+ * for from anywhere in the window: from the menu of an element, from the
+ * Document type button in Look and by its keys. The window mounts it once
+ * (`ProjectDialogs.svelte`). How the document looks, and what it contains,
+ * is set in Look.
  */
 
 import type { Project } from '$lib/project/model/project.svelte';
 
 /** The parts of the window, as they stand down its left. */
-export type AboutSection = 'details' | 'language' | 'checklist';
+export type AboutSection = 'details' | 'type' | 'language' | 'checklist';
 
-export const ABOUT_SECTIONS: readonly AboutSection[] = ['details', 'language', 'checklist'];
+export const ABOUT_SECTIONS: readonly AboutSection[] = ['details', 'type', 'language', 'checklist'];
 
 export interface AboutDocumentRequest {
   /** The project the element is of: that of the pane that asked. */

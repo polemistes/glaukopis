@@ -1,16 +1,18 @@
 <script lang="ts">
   /**
-   * About this document: what an element's document says of itself, one
-   * window per element (ADR 0038, as it stands since 2026-10-19): the
+   * Document properties: what an element's document says of itself, one
+   * window per element (ADR 0038, as it stands since 2026-10-23): the
    * details that stand on its first page and in the metadata of its files,
-   * its language, and the checklist of what its template requires, as the
-   * document uses it. What the document is, its template, is chosen in the
-   * chooser of what you are writing; how it looks and what it contains, in
-   * Look. What the element does not set it takes from the elements over it
-   * (ADR 0037): that is shown, and left for it to set its own.
+   * with whether the lines of its pages are numbered; its type, what you are
+   * writing, which is its template; its language; and the checklist of what
+   * its template requires, as the document uses it. How it looks and what it
+   * contains is set in Look. What the element does not set it takes from the
+   * elements over it (ADR 0037): that is shown, and left for it to set its
+   * own.
    *
-   * The language is written as it is chosen, a step of undo of its own; the
-   * details are written together when the window is saved.
+   * The type and the language are written as they are chosen, each a step
+   * of undo of its own; the details are written together when the window is
+   * saved.
    */
   import { untrack } from 'svelte';
   import Plus from '@lucide/svelte/icons/plus';
@@ -25,6 +27,7 @@
   import IconButton from '$lib/ui/IconButton.svelte';
   import { ABOUT_SECTIONS, type AboutSection } from './about-document.svelte';
   import { checklist, type Remark } from './checklist';
+  import DocumentType from './DocumentType.svelte';
   import { documents, templateUsedCached } from '$lib/preview/documents.svelte';
 
   interface Props {
@@ -141,6 +144,12 @@
   const inheritedAuthors = $derived(
     (inherited.settings.authors ?? []).map((a) => a.name).join(', '),
   );
+  /** Whether the lines of the pages are numbered: as the element says, else as those over it, else as its layout. */
+  const linesNumbered = $derived(
+    draft.lineNumbers ?? inherited.settings.lineNumbers ?? format?.lineNumbers ?? false,
+  );
+  /** Where the numbering of the lines comes from while the element says nothing of its own: an element over it, or the layout. */
+  const linesFrom = $derived(draft.lineNumbers === undefined ? from('lineNumbers') : null);
   const keywordCount = $derived(keywords.split(/[,;\n]/).filter((k) => k.trim()).length);
   const keywordsMost = $derived(template?.requirements.keywords ?? null);
 
@@ -165,6 +174,7 @@
         .filter(Boolean),
       date: draft.date?.trim(),
       identifiers: Object.keys(named).length ? named : undefined,
+      lineNumbers: draft.lineNumbers,
     });
     onclose();
   }
@@ -365,7 +375,26 @@
                 >{t('documents-inherited-from', { name: identifiersFrom })}</small
               >{/if}
           </div>
+
+          <div class="field">
+            <label class="check" data-line-numbers>
+              <input
+                type="checkbox"
+                checked={linesNumbered}
+                onchange={(e) => (draft.lineNumbers = e.currentTarget.checked)}
+              />
+              <span>{t('about-line-numbers')}</span>
+            </label>
+            <small
+              >{t('about-line-numbers-hint')}{#if linesFrom}{' '}{t('documents-inherited-from', {
+                  name: linesFrom,
+                })}{/if}</small
+            >
+          </div>
         </div>
+      {:else if section === 'type'}
+        <h3>{t('about-section-type')}</h3>
+        <DocumentType {project} {at} {onclose} />
       {:else if section === 'language'}
         <h3>{t('about-section-language')}</h3>
         <label class="row">
@@ -597,6 +626,14 @@
   }
   .identifiers .new th input {
     font-weight: 400;
+  }
+  .check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--text-md);
+    color: var(--ink);
+    cursor: pointer;
   }
 
   /* The checklist. */

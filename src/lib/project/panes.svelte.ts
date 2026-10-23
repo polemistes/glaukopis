@@ -24,8 +24,10 @@ export class Panes {
   tab = $state<DocumentTab>('references');
   /** Whether the marks of whitespace are shown in the texts. */
   marks = $state(true);
+  /** The widths of the panes, and of the Look column, in pixels; nought for what is given. */
   typesettingWidth = $state(0);
   documentWidth = $state(0);
+  lookWidth = $state(0);
 
   /**
    * What a side's Typesetting button does: opens the pane for the side where
@@ -44,6 +46,16 @@ export class Panes {
   openLook(key: string) {
     this.typesetting ??= key;
     this.look = true;
+  }
+
+  /**
+   * What the Look button and its key do for a side: open the Look column
+   * (and the typesetting pane for the side where it is closed), or close the
+   * column where it is open on the pane that shows this side.
+   */
+  toggleLook(key: string) {
+    if (this.look && this.typesetting === key) this.look = false;
+    else this.openLook(key);
   }
 
   toggleDocument() {
@@ -75,6 +87,7 @@ export class Panes {
       marks: this.marks,
       typesettingWidth: this.typesettingWidth,
       documentWidth: this.documentWidth,
+      lookWidth: this.lookWidth,
     };
   }
 
@@ -88,6 +101,7 @@ export class Panes {
     this.marks = p.marks;
     this.typesettingWidth = p.typesettingWidth;
     this.documentWidth = p.documentWidth;
+    this.lookWidth = p.lookWidth;
   }
 }
 

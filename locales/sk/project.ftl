@@ -24,9 +24,7 @@ project-one-at-a-time = Po jednej
 project-side-by-side = Dve vedľa seba
 project-close-side = Zavrieť túto stranu
 project-references = Záznamy
-project-pictures = Obrázky
 project-side = Záznamy, obrázky, história a zmeny
-project-side-tabs = Čo bočný panel zobrazuje
 project-side-map = Mapa
 project-preview = Náhľad a export
 project-share = Zdieľať
@@ -34,9 +32,6 @@ project-shared = Zdieľaný
 project-shared-offline = Zdieľaný · server je nedostupný
 project-shared-too-large = Zdieľaný · server neprijíma najnovšie zmeny
 project-between-maps = Medzi dvoma mapami
-project-between-preview = Medzi mapou a náhľadom
-project-between-pictures = Medzi mapou a obrázkami
-project-between-references = Medzi mapou a záznamami
 
 ## When the sharing ends from the other side
 

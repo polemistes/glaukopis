@@ -24,9 +24,7 @@ project-one-at-a-time = Eén tegelijk
 project-side-by-side = Twee naast elkaar
 project-close-side = Deze kant sluiten
 project-references = Referenties
-project-pictures = Afbeeldingen
 project-side = Referenties, afbeeldingen, geschiedenis en wijzigingen
-project-side-tabs = Wat het zijpaneel toont
 project-side-map = Mindmap
 project-preview = Voorbeeld en exporteren
 project-share = Delen
@@ -34,9 +32,6 @@ project-shared = Gedeeld
 project-shared-offline = Gedeeld · de server kan niet worden bereikt
 project-shared-too-large = Gedeeld · de server neemt de laatste wijzigingen niet aan
 project-between-maps = Tussen de twee mindmaps
-project-between-preview = Tussen de mindmap en het voorbeeld
-project-between-pictures = Tussen de mindmap en de afbeeldingen
-project-between-references = Tussen de mindmap en de referenties
 
 ## When the sharing ends from the other side
 

@@ -2,9 +2,8 @@
   The dialogs of the view of a project, mounted with it because it is the one
   place that lasts while the project is open: what is asked from the menu of
   an element (a copy compared, a kind, a kind of one's own, when it is, the
-  kinds managed) is done in the project of the pane that has the focus; the
-  window about a document and the chooser of what a document is in the
-  project they were asked for; and the template
+  kinds managed) is done in the project of the pane that has the focus;
+  Document properties in the project it was asked for; and the template
   editor, of which a template saved anew is copied afresh into the project
   of the view where that carries it.
 -->
@@ -12,8 +11,6 @@
   import type { Template } from '$lib/api/templates';
   import AboutDocumentWindow from '$lib/document/AboutDocumentWindow.svelte';
   import { aboutDocumentUi } from '$lib/document/about-document.svelte';
-  import TemplateChooser from '$lib/document/TemplateChooser.svelte';
-  import { templateChooserUi } from '$lib/document/chooser.svelte';
   import TemplateEditor from '$lib/document/TemplateEditor.svelte';
   import { templateEditorUi } from '$lib/document/template-editor.svelte';
   import { ownKindsUi } from '$lib/editor/own-kinds.svelte';
@@ -101,17 +98,6 @@
       section={asked.section}
       {ongo}
       onclose={() => aboutDocumentUi.close()}
-    />
-  {/key}
-{/if}
-
-{#if templateChooserUi.request}
-  {@const asked = templateChooserUi.request}
-  {#key asked}
-    <TemplateChooser
-      project={asked.project}
-      at={asked.at}
-      onclose={() => templateChooserUi.close()}
     />
   {/key}
 {/if}

@@ -1,9 +1,9 @@
-## The look of a document, in one place: the panel beside the preview where
+## The look of a document, in one place: the column of the typesetting pane where
 ## everything is set that decides how the pages look. What is changed there
 ## is kept as the document's own changes over its layout.
 
 look-title = Look
-look-between = Between the text and the look of the document
+look-between = Between the pages and the look of the document
 look-whole = What makes the look
 
 # Under the button at the top of Look that names what the document is.
@@ -30,8 +30,6 @@ look-changed-here = Changed here
 look-changed-in = Changed in “{ $name }”
 look-take-again = take { $layout }’s again
 
-look-open-preview = Open the preview to see the changes as you make them.
-look-open-preview-button = Open the preview
 look-search = Find a setting: font, margins, page numbers…
 look-search-nothing = No setting has these words.
 look-sections = Parts of the look
@@ -114,3 +112,9 @@ look-front-title-page-hint = Whether the document has one at all; the same switc
 look-fonts-document = In this document
 look-fonts-project = Elsewhere in this project
 look-fonts-all = All fonts
+
+## The sides, the panes and the bars, stage 2: the typesetting pane, the document pane, Document properties.
+
+# Opens Document properties at what the document is.
+look-document-type = Document type…
+look-hide = Hide the look

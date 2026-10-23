@@ -3,17 +3,12 @@
 
 ## The panel beside the map, and what is chosen over it.
 
-preview = Vorschau
-# The button over the pages that names what the document is and opens the chooser of what you are writing.
-preview-what-title = Was Sie schreiben: wählen…
-preview-what-label = Was dieses Dokument ist: { $name }. Wählen, was Sie schreiben
 # The last among the reference styles, which opens the search for more.
 preview-style-more = Mehr Stile…
 # Shows in the text the element whose place in the pages is looked at.
 preview-go-to-text = Zu dieser Stelle im Text gehen
 # Moves the pages to where the element the text is at begins.
 preview-show-text = Zeigen, wo der Text ist
-preview-hide = Vorschau verbergen
 # The name of the program is Pandoc, Typst or LaTeX.
 preview-program-missing = { $program } ist nicht installiert
 preview-programs-needed = Vorschau und Export werden mit Pandoc und Typst erzeugt. Installieren Sie sie mit der Paketverwaltung Ihres Systems, oder geben Sie in den Einstellungen an, wo sie sind.

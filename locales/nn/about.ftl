@@ -3,9 +3,6 @@
 # What the document is, how it looks and what it contains are chosen in the
 # chooser of what you are writing and in Look.
 
-about-window = Om dette dokumentet
-# In the menu of an element, at the foot of Look, and the button over the preview.
-about-menu = Om dette dokumentet …
 about-sections = Delane av vindauget
 
 ## The parts of the window, as they stand down its left.

@@ -1,43 +1,32 @@
 <!--
-  The head of the panel at the side of a project: what it can show, as tabs.
-  The references, the pictures, the comments, the citations that were found,
-  the history and the changes have the one place, and are one at a time. A
-  tab may carry a count, as of the citations that are left to go through.
-  The panel puts its own tools, and the way to close it, after these.
+  The head of the document pane: what it can show, as tabs. The references,
+  the images, the comments, the citations that were found, the history and
+  the changes have the one place, and are one at a time. A tab may carry a
+  count, as of the citations that are left to go through. The pane puts its
+  own tools, and the way to close it, after these.
 -->
-<script lang="ts" module>
-  export type SideKind =
-    'look' | 'references' | 'pictures' | 'comments' | 'found' | 'history' | 'changes';
-</script>
-
 <script lang="ts">
   import BookMarked from '@lucide/svelte/icons/book-marked';
   import FileDiff from '@lucide/svelte/icons/file-diff';
   import HistoryIcon from '@lucide/svelte/icons/history';
   import Images from '@lucide/svelte/icons/images';
-  import Palette from '@lucide/svelte/icons/palette';
   import MessageSquare from '@lucide/svelte/icons/message-square';
   import TextSearch from '@lucide/svelte/icons/text-search';
   import { t } from '$lib/i18n';
   import { keysFor } from '$lib/shell/keys.svelte';
   import { tooltip } from '$lib/ui/tooltip';
+  import type { DocumentTab } from './sides.svelte';
 
   interface Props {
-    current: SideKind;
-    onpick: (kind: SideKind) => void;
+    current: DocumentTab;
+    onpick: (kind: DocumentTab) => void;
     /** What a tab counts, where it counts anything: shown beside it. */
-    counts?: Partial<Record<SideKind, number>>;
+    counts?: Partial<Record<DocumentTab, number>>;
   }
 
   let { current, onpick, counts = {} }: Props = $props();
 
   const kinds = $derived([
-    {
-      kind: 'look' as const,
-      label: t('look-title'),
-      icon: Palette,
-      shortcut: keysFor('side-look'),
-    },
     {
       kind: 'references' as const,
       label: t('project-references'),
@@ -45,7 +34,7 @@
       shortcut: keysFor('side-references'),
     },
     {
-      kind: 'pictures' as const,
+      kind: 'images' as const,
       label: t('project-pictures'),
       icon: Images,
       shortcut: keysFor('side-pictures'),

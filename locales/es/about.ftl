@@ -2,9 +2,6 @@
 # the details that stand on its first page, its parts, its layout and
 # reference style, its language, and the checklist.
 
-about-window = Ajustes del documento
-# In the menu of an element, and the button over the preview.
-about-menu = Ajustes del documento…
 about-sections = Partes de la ventana
 
 ## The parts of the window, as they stand down its left.

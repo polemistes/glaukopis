@@ -31,7 +31,6 @@
   import { tick } from 'svelte';
   import type { ProjectInfo } from '$lib/api/projects';
   import { aboutDocumentUi } from '$lib/document/about-document.svelte';
-  import { templateChooserUi } from '$lib/document/chooser.svelte';
   import { goThrough } from '$lib/found/found.svelte';
   import { countFound } from '$lib/found/gather';
   import ProjectBadge from '$lib/home/ProjectBadge.svelte';
@@ -240,7 +239,7 @@
       {
         label: t('chooser-menu'),
         icon: BookOpenText,
-        action: () => templateChooserUi.open({ project, at }),
+        action: () => aboutDocumentUi.open({ project, at, section: 'type' }),
       },
       {
         label: t('about-menu'),

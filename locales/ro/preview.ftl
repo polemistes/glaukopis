@@ -3,14 +3,12 @@
 
 ## The panel beside the map, and what is chosen over it.
 
-preview = Previzualizare
 # The last among the reference styles, which opens the search for more.
 preview-style-more = Mai multe stiluri…
 # Shows in the text the element whose place in the pages is looked at.
 preview-go-to-text = Mergi la acest loc în text
 # Moves the pages to where the element the text is at begins.
 preview-show-text = Arată unde este textul
-preview-hide = Ascunde previzualizarea
 # The name of the program is Pandoc, Typst or LaTeX.
 preview-program-missing = { $program } nu este instalat
 preview-programs-needed = Previzualizarea și exportul se fac cu Pandoc și Typst. Instalați-le cu gestionarul de pachete al sistemului, sau spuneți în setări unde sunt.

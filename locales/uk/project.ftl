@@ -24,9 +24,7 @@ project-one-at-a-time = По одній
 project-side-by-side = Дві поруч
 project-close-side = Закрити цю частину
 project-references = Джерела
-project-pictures = Зображення
 project-side = Джерела, зображення, історія та зміни
-project-side-tabs = Що показує бічна панель
 project-side-map = Мапа
 project-preview = Перегляд та експорт
 project-share = Поділитися
@@ -34,9 +32,6 @@ project-shared = Спільний
 project-shared-offline = Спільний · сервер недосяжний
 project-shared-too-large = Спільний · сервер не приймає останніх змін
 project-between-maps = Між двома мапами
-project-between-preview = Між мапою та переглядом
-project-between-pictures = Між мапою та зображеннями
-project-between-references = Між мапою та джерелами
 
 ## When the sharing ends from the other side
 

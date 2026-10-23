@@ -24,9 +24,7 @@ project-one-at-a-time = Ένας κάθε φορά
 project-side-by-side = Δύο δίπλα δίπλα
 project-close-side = Κλείσιμο αυτής της πλευράς
 project-references = Αναφορές
-project-pictures = Εικόνες
 project-side = Αναφορές, εικόνες, ιστορικό και αλλαγές
-project-side-tabs = Τι δείχνει το πλαϊνό πλαίσιο
 project-side-map = Χάρτης
 project-preview = Προεπισκόπηση και εξαγωγή
 project-share = Κοινή χρήση
@@ -34,9 +32,6 @@ project-shared = Κοινό
 project-shared-offline = Κοινό · δεν υπάρχει πρόσβαση στον διακομιστή
 project-shared-too-large = Κοινό · ο διακομιστής δεν δέχεται τις τελευταίες αλλαγές
 project-between-maps = Ανάμεσα στους δύο χάρτες
-project-between-preview = Ανάμεσα στον χάρτη και στην προεπισκόπηση
-project-between-pictures = Ανάμεσα στον χάρτη και στις εικόνες
-project-between-references = Ανάμεσα στον χάρτη και στις αναφορές
 
 ## When the sharing ends from the other side
 

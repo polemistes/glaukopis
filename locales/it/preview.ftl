@@ -3,17 +3,12 @@
 
 ## The panel beside the map, and what is chosen over it.
 
-preview = Anteprima
-# The button over the pages that names what the document is and opens the chooser of what you are writing.
-preview-what-title = Che cosa stai scrivendo: scegli…
-preview-what-label = Che cosa è questo documento: { $name }. Scegli che cosa stai scrivendo
 # The last among the reference styles, which opens the search for more.
 preview-style-more = Altri stili…
 # Shows in the text the element whose place in the pages is looked at.
 preview-go-to-text = Vai a questo punto nel testo
 # Moves the pages to where the element the text is at begins.
 preview-show-text = Mostra dove sta il testo
-preview-hide = Nascondi l'anteprima
 # The name of the program is Pandoc, Typst or LaTeX.
 preview-program-missing = { $program } non è installato
 preview-programs-needed = Anteprima ed esportazione si fanno con Pandoc e Typst. Installali con il gestore dei pacchetti del tuo sistema, oppure di' nelle impostazioni dove si trovano.

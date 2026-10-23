@@ -3,14 +3,12 @@
 
 ## The panel beside the map, and what is chosen over it.
 
-preview = Voorbeeld
 # The last among the reference styles, which opens the search for more.
 preview-style-more = Meer stijlen…
 # Shows in the text the element whose place in the pages is looked at.
 preview-go-to-text = Naar deze plaats in de tekst gaan
 # Moves the pages to where the element the text is at begins.
 preview-show-text = Tonen waar de tekst is
-preview-hide = Het voorbeeld verbergen
 # The name of the program is Pandoc, Typst or LaTeX.
 preview-program-missing = { $program } is niet geïnstalleerd
 preview-programs-needed = Voorbeeld en export worden gemaakt met Pandoc en Typst. Installeer ze met de pakketbeheerder van je systeem, of zeg in de instellingen waar ze staan.

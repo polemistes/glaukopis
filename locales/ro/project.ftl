@@ -24,9 +24,7 @@ project-one-at-a-time = Una pe rând
 project-side-by-side = Două alăturate
 project-close-side = Închide această parte
 project-references = Referințe
-project-pictures = Imagini
 project-side = Referințe, imagini, istoric și modificări
-project-side-tabs = Ce arată panoul lateral
 project-side-map = Hartă
 project-preview = Previzualizare și export
 project-share = Partajează
@@ -34,9 +32,6 @@ project-shared = Partajat
 project-shared-offline = Partajat · serverul nu poate fi atins
 project-shared-too-large = Partajat · serverul nu primește ultimele modificări
 project-between-maps = Între cele două hărți
-project-between-preview = Între hartă și previzualizare
-project-between-pictures = Între hartă și imagini
-project-between-references = Între hartă și referințe
 
 ## When the sharing ends from the other side
 

@@ -3,14 +3,12 @@
 
 ## The panel beside the map, and what is chosen over it.
 
-preview = Náhled
 # The last among the reference styles, which opens the search for more.
 preview-style-more = Další styly…
 # Shows in the text the element whose place in the pages is looked at.
 preview-go-to-text = Přejít na toto místo v textu
 # Moves the pages to where the element the text is at begins.
 preview-show-text = Ukázat, kde text je
-preview-hide = Skrýt náhled
 # The name of the program is Pandoc, Typst or LaTeX.
 preview-program-missing = { $program } není nainstalován
 preview-programs-needed = Náhled a export se vytvářejí Pandocem a Typstem. Nainstalujte je správcem balíčků svého systému, nebo řekněte v nastavení, kde jsou.

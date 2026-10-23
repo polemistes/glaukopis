@@ -1,19 +1,15 @@
-# The preview, and the making of documents: the panel beside the text, and
-# the export.
+# The typesetting pane, and the making of documents: the pages as the
+# document is set, with its Look beside them, and the export.
 
-## The panel beside the map, and what is chosen over it.
+## The head of the typesetting pane.
 
-preview = Preview
-# The button over the pages that names what the document is and opens the chooser of what you are writing.
-preview-what-title = What you are writing: choose…
-preview-what-label = What this document is: { $name }. Choose what you are writing
 # The last among the reference styles, which opens the search for more.
 preview-style-more = More styles…
 # Shows in the text the element whose place in the pages is looked at.
 preview-go-to-text = Go to this place in the text
 # Moves the pages to where the element the text is at begins.
 preview-show-text = Show where the text is
-preview-hide = Hide the preview
+preview-hide = Hide the typesetting
 # The name of the program is Pandoc, Typst or LaTeX.
 preview-program-missing = { $program } is not installed
 preview-programs-needed = Preview and export are made with Pandoc and Typst. Install them with the package manager of your system, or say in the settings where they are.
@@ -120,3 +116,8 @@ preview-chips-off = Stop naming the lines
 preview-what-page = Page
 preview-what-header = Header
 preview-what-footer = Footer
+
+## The sides, the panes and the bars, stage 2: the typesetting pane, the document pane, Document properties.
+
+# The pane where the document is set into pages, with its Look beside them.
+preview-title = Typesetting

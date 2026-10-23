@@ -24,9 +24,7 @@ project-one-at-a-time = Jedna po jedna
 project-side-by-side = Dvije uporedo
 project-close-side = Zatvori ovu stranu
 project-references = Reference
-project-pictures = Slike
 project-side = Reference, slike, historija i izmjene
-project-side-tabs = Šta bočni panel prikazuje
 project-side-map = Mapa
 project-preview = Pregled i izvoz
 project-share = Dijeli
@@ -34,9 +32,6 @@ project-shared = Dijeljen
 project-shared-offline = Dijeljen · server nije dostupan
 project-shared-too-large = Dijeljen · server ne prima posljednje izmjene
 project-between-maps = Između dviju mapa
-project-between-preview = Između mape i pregleda
-project-between-pictures = Između mape i slika
-project-between-references = Između mape i referenci
 
 ## When the sharing ends from the other side
 

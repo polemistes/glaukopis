@@ -3,7 +3,6 @@
 ## is kept as the document's own changes over its layout.
 
 look-title = Aussehen
-look-between = Zwischen dem Text und dem Aussehen des Dokuments
 look-whole = Was das Aussehen bestimmt
 
 # Under the button at the top of Look that names what the document is.
@@ -30,8 +29,6 @@ look-changed-here = Hier geändert
 look-changed-in = Geändert in „{ $name }“
 look-take-again = wieder wie in { $layout }
 
-look-open-preview = Öffnen Sie die Vorschau, um die Änderungen zu sehen, während Sie sie machen.
-look-open-preview-button = Vorschau öffnen
 look-search = Eine Einstellung finden: Schrift, Ränder, Seitenzahlen…
 look-search-nothing = Keine Einstellung hat diese Wörter.
 look-sections = Bereiche des Aussehens

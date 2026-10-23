@@ -1,11 +1,9 @@
 <script lang="ts">
   import { untrack } from 'svelte';
-  import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import PackageX from '@lucide/svelte/icons/package-x';
   import Palette from '@lucide/svelte/icons/palette';
   import ScanEye from '@lucide/svelte/icons/scan-eye';
   import Share from '@lucide/svelte/icons/share';
-  import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
   import Tag from '@lucide/svelte/icons/tag';
   import TextCursorInput from '@lucide/svelte/icons/text-cursor-input';
   import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
@@ -30,8 +28,6 @@
   import { settings as writerSettings } from '$lib/state/settings.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import type { Template } from '$lib/api/templates';
-  import { aboutDocumentUi } from '$lib/document/about-document.svelte';
-  import { templateChooserUi } from '$lib/document/chooser.svelte';
   import { lookUi } from '$lib/look/look.svelte';
   import { documents } from './documents.svelte';
   import { t } from '$lib/i18n';
@@ -44,7 +40,7 @@
   import Popover from '$lib/ui/Popover.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError } from '$lib/ui/toast.svelte';
-  import { documentRequest, looksWithin, templateName, templateUsed } from './documents.svelte';
+  import { documentRequest, looksWithin, templateUsed } from './documents.svelte';
   import ExportDialog from './ExportDialog.svelte';
 
   interface Props {
@@ -53,13 +49,17 @@
     /** The element in view: its branch is the document. */
     at: string;
     onclose: () => void;
+    /** Whether the Look column stands beside the pages. */
+    look: boolean;
+    /** Opens or closes the Look column. */
+    onlook: () => void;
     /** Shows an element in the text: the one at the place in the pages that is looked at. */
     ongo: (element: string) => void;
     /** The element the text is at, so that its place in the pages can be shown. */
     current: () => string | null;
   }
 
-  let { project, projectId, at, onclose, ongo, current }: Props = $props();
+  let { project, projectId, at, onclose, look, onlook, ongo, current }: Props = $props();
 
   /**
    * A page as it is shown: what it holds, the address it is shown from, the
@@ -224,11 +224,6 @@
 
   /** The document whole, for what is made of all of it: an export, the sample of a layout. */
   const request = () => documentRequest(project, projectId, at);
-
-  /** Opens what the element's document says of itself: its details, its language, its checklist. */
-  function openAbout() {
-    aboutDocumentUi.open({ project, at });
-  }
 
   /** The room between two pages, and around all of them, as the style sheet has them. */
   const GAP = 16;
@@ -595,9 +590,6 @@
     void documentPreviewStop(projectId).catch(() => {});
   });
 
-  /** What the document is, by the name of its template: all the header says of how it is made. */
-  const what = $derived(templateName(project, choice.template));
-
   /** The most words the template allows; nothing where it says none. */
   const wordsMost = $derived(template?.requirements.words ?? null);
   const over = $derived(!!wordsMost && words.text > wordsMost);
@@ -610,33 +602,27 @@
 
 <svelte:document onpointerdown={leave} onkeydown={leave} />
 
-<aside class="preview" aria-label={t('preview')}>
+<aside class="preview" aria-label={t('preview-title')} data-template={choice.template}>
   <header>
-    <!-- What the document is; what you are writing is chosen from it. -->
+    <!-- The Look column beside the pages, opened and closed. -->
     <button
       type="button"
-      class="what"
-      data-template={choice.template}
-      aria-label={t('preview-what-label', { name: what })}
-      title={t('preview-what-title')}
-      onclick={() => templateChooserUi.open({ project, at })}
+      class="look"
+      class:on={look}
+      aria-pressed={look}
+      data-look
+      use:tooltip={{ text: t('look-title'), shortcut: keysFor('side-look') }}
+      onclick={onlook}
     >
-      <span class="name truncate">{what}</span>
-      <ChevronDown size={13} />
+      <Palette size={14} />
+      <span>{t('look-title')}</span>
     </button>
     <span class="grow"></span>
-    <Button size="sm" variant="ghost" data-look onclick={() => lookUi.open()}>
-      {#snippet icon()}<Palette size={13} />{/snippet}
-      {t('look-title')}
-    </Button>
     <IconButton label={t('preview-go-to-text')} disabled={!places.length} onclick={goToText}>
       <TextCursorInput size={15} />
     </IconButton>
     <IconButton label={t('preview-show-text')} disabled={!places.length} onclick={showText}>
       <ScanEye size={15} />
-    </IconButton>
-    <IconButton label={t('about-menu')} shortcut={keysFor('document-settings')} onclick={openAbout}>
-      <SlidersHorizontal size={15} />
     </IconButton>
     <Button variant="primary" size="sm" onclick={() => (exporting = true)}>
       {#snippet icon()}<Share size={13} />{/snippet}
@@ -858,36 +844,30 @@
     border-bottom: 1px solid var(--line);
     background: var(--paper);
   }
-  /* What the document is, as a button that opens the chooser of what you are writing. */
-  .what {
-    flex: 0 1 auto;
-    min-width: 0;
+  /* The Look column's button, lit while the column is open. */
+  .look {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    height: var(--control-h);
-    padding: 0 8px 0 10px;
-    border: 1px solid var(--line);
+    flex: none;
+    height: 28px;
+    padding: 0 9px;
+    border: 1px solid transparent;
     border-radius: var(--radius-s);
-    background: var(--paper);
-    color: var(--ink);
+    background: transparent;
+    color: var(--ink-2);
     font: inherit;
-    font-weight: 500;
-    text-align: left;
+    font-size: var(--text-sm);
     cursor: pointer;
   }
-  .what:hover {
-    border-color: var(--line-strong);
+  .look:hover {
     background: var(--paper-hover);
+    color: var(--ink);
   }
-  .what:focus-visible {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--focus-ring);
-    outline: none;
-  }
-  .what :global(svg) {
-    flex: none;
-    color: var(--ink-3);
+  .look.on {
+    background: var(--accent-soft);
+    border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+    color: var(--accent-strong);
   }
   .grow {
     flex: 1;

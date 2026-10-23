@@ -3,9 +3,6 @@
 # What the document is, how it looks and what it contains are chosen in the
 # chooser of what you are writing and in Look.
 
-about-window = Informazioni sul documento
-# In the menu of an element, at the foot of Look, and the button over the preview.
-about-menu = Informazioni sul documento…
 about-sections = Parti della finestra
 
 ## The parts of the window, as they stand down its left.

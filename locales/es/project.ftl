@@ -24,9 +24,7 @@ project-one-at-a-time = Uno a la vez
 project-side-by-side = Dos en paralelo
 project-close-side = Cerrar este lado
 project-references = Referencias
-project-pictures = Imágenes
 project-side = Referencias, imágenes, historial y cambios
-project-side-tabs = Qué muestra el panel lateral
 project-side-map = Mapa
 project-preview = Vista previa y exportación
 project-share = Compartir
@@ -34,9 +32,6 @@ project-shared = Compartido
 project-shared-offline = Compartido · no se puede conectar con el servidor
 project-shared-too-large = Compartido · el servidor no admite los últimos cambios
 project-between-maps = Entre los dos mapas
-project-between-preview = Entre el mapa y la vista previa
-project-between-pictures = Entre el mapa y las imágenes
-project-between-references = Entre el mapa y las referencias
 
 ## When the sharing ends from the other side
 

@@ -3,14 +3,12 @@
 
 ## The panel beside the map, and what is chosen over it.
 
-preview = Перегляд
 # The last among the reference styles, which opens the search for more.
 preview-style-more = Більше стилів…
 # Shows in the text the element whose place in the pages is looked at.
 preview-go-to-text = Перейти до цього місця в тексті
 # Moves the pages to where the element the text is at begins.
 preview-show-text = Показати, де текст
-preview-hide = Сховати перегляд
 # The name of the program is Pandoc, Typst or LaTeX.
 preview-program-missing = { $program } не встановлено
 preview-programs-needed = Перегляд та експорт роблять Pandoc і Typst. Встановіть їх менеджером пакунків вашої системи або вкажіть у налаштуваннях, де вони є.
