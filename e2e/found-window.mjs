@@ -166,7 +166,7 @@ try {
   await app.clickText('dialog footer button', 'Create');
   // A new project opens as text: the diagram is turned to.
   await app.waitFor('.text-view .section', 8000);
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
   const id = (await app.exec(`return location.hash`)).split('/')[2].split('?')[0];
@@ -295,17 +295,8 @@ try {
   await app.screenshot('found-1-text');
 
   // ---- where the panel is reached from ----
-  await app.openThisMap();
-  const ofTab = await menu();
-  check(
-    'the menu of the element in view has it, with how many there are',
-    ofTab.some((m) => /^Loose citations…\s*7 to go through/.test(m)),
-    ofTab.join(' ‖ '),
-  );
-  await app.press('Escape');
-  await app.waitGone('.menu');
-
-  await app.thisMap('Loose citations…');
+  // The loose citations are a tab of the panel at the side, which its key opens.
+  await app.keys(['Control', 'Shift', 't']);
   await opened();
 
   // ---- the panel ----
@@ -642,7 +633,7 @@ try {
   await app.openProject('Homer');
   await app.waitFor('.text-view .section, .diagram .node.root', 8000);
   await sleep(500);
-  await app.thisMap('Loose citations…');
+  await app.keys(['Control', 'Shift', 't']);
   await opened();
   check(
     'opened again later, the panel has what was left',

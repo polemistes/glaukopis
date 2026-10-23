@@ -145,6 +145,8 @@ export interface ProjectPlace {
   fold?: Folding;
   /** Where the place renames in place; else the dialog asks. */
   rename?: () => void;
+  /** Opens the window of the project's sharing, opening the project first where it is not shown. */
+  share?: (project: string) => void;
 }
 
 /** Where a folder's menu is shown, and what that place adds to it. */
@@ -589,8 +591,8 @@ export class ProjectActions {
 
   /**
    * The menu of a project (ADR 0063): open it, beside what is shown, close
-   * it, fold its tree; rename, copy, its history, save it; move it among the
-   * folders; delete it. A project shown in a side (`place.shown`) is
+   * it, fold its tree; rename, copy, its history, save it, share it; move it
+   * among the folders; delete it. A project shown in a side (`place.shown`) is
    * neither opened, renamed nor deleted from here: what is written in it
    * goes to its folder on disk.
    */
@@ -641,6 +643,9 @@ export class ProjectActions {
         disabled: this.filing,
         action: () => void this.saveAsOrg(p, here),
       },
+      ...(place.share
+        ? [{ label: t('home-share'), icon: Users, action: () => place.share?.(p.id) } as MenuItem]
+        : []),
       { kind: 'separator' },
       ...this.moveItems(p),
       { kind: 'separator' },

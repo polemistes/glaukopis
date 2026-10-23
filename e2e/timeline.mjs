@@ -22,7 +22,7 @@ try {
   await app.clickText('dialog footer button', 'Create');
   // A new project opens as text: the diagram is turned to.
   await app.waitFor('.text-view .section', 8000);
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(400);
 
@@ -120,12 +120,12 @@ try {
   check(
     'the Timeline view appears once something says when it is',
     await app.exec(
-      `return Array.from(document.querySelectorAll('.segmented button')).some((b) => b.textContent.trim() === 'Timeline')`,
+      `return !!document.querySelector('[data-bar] [data-view="timeline"]')`,
     ),
   );
 
   // --- The map as a timeline ---
-  await app.clickText('.segmented button', 'Timeline');
+  await app.view('timeline');
   await app.waitFor('.timeline .lane', 5000);
   await sleep(500);
   const laneNames = await app.exec(
@@ -379,7 +379,7 @@ try {
   await sleep(150);
 
   // --- A contradiction is told ---
-  await app.clickText('.segmented button', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 5000);
   await sleep(300);
   // The plague after the expedition, which is after the peace, and before the peace: nowhere.
@@ -389,7 +389,7 @@ try {
     await choose(1, 'The Sicilian expedition');
     await choose(2, 'The peace of Nicias');
   });
-  await app.clickText('.segmented button', 'Timeline');
+  await app.view('timeline');
   await app.waitFor('.timeline .lane', 5000);
   await sleep(400);
   check('what cannot be where it says is marked', await app.exists('.timeline .event.trouble'));

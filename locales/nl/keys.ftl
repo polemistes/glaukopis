@@ -36,7 +36,6 @@ keys-side-history = Geschiedenis
 keys-side-changes = Wijzigingen nakijken
 keys-side-found = Gevonden verwijzingen
 keys-side-by-side = Twee naast elkaar
-keys-share = Het project delen
 keys-find = In de tekst zoeken
 keys-replace = Zoeken en vervangen
 keys-undo = Ongedaan maken

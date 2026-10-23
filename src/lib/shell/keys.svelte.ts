@@ -114,7 +114,8 @@ const ENTRIES = [
   { id: 'close-side', keys: 'Ctrl+W', place: 'project', bound: true },
   { id: 'switch-sides', keys: '', place: 'project', bound: true },
   { id: 'side-panel', keys: '', place: 'project', bound: true },
-  { id: 'share', keys: '', place: 'project', bound: true },
+  // The marks of whitespace, shown or not in every text of the window: from the palette, and the button of the bar.
+  { id: 'writing-marks', keys: '', place: 'project', bound: true },
 
   // While changes are reviewed.
   { id: 'review-next', keys: 'F8', place: 'review', bound: true },
@@ -175,6 +176,8 @@ const ENTRIES = [
   { id: 'writing-list-in', keys: 'Tab', place: 'writing' },
   { id: 'writing-list-out', keys: 'Shift+Tab', place: 'writing' },
   { id: 'writing-line', keys: 'Shift+Enter', place: 'writing' },
+  // A space at which a line does not break, as every word processor has it.
+  { id: 'writing-hard-space', keys: 'Ctrl+Shift+Space', place: 'writing' },
   { id: 'writing-note', keys: 'Ctrl+Alt+F', place: 'writing' },
   { id: 'writing-picture', keys: 'Ctrl+Alt+P', place: 'writing' },
   { id: 'writing-table', keys: 'Ctrl+Alt+T', place: 'writing' },

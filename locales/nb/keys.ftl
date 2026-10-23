@@ -16,7 +16,7 @@ keys-place-list = I lista over prosjekter til venstre
 keys-place-text = I teksten til et kart
 keys-place-writing = Skriving
 keys-place-library = I biblioteket
-keys-place-store = I bildelageret
+keys-place-store = Blant bildene
 keys-place-files = Blant filene i biblioteket
 
 ## Hva de gjør
@@ -45,7 +45,6 @@ keys-side-changes = Gjennomgå endringer
 keys-side-found = Løse kildehenvisninger
 keys-side-panel = Åpne eller lukke dokumentpanelet
 keys-side-by-side = Delt visning …
-keys-share = Del prosjektet
 keys-find = Søk i teksten
 keys-replace = Søk og erstatt
 keys-undo = Angre
@@ -100,7 +99,7 @@ keys-writing-table = En tabell
 keys-writing-formula = En formel i linjen
 keys-writing-equation = En ligning
 keys-writing-crossref = En kryssreferanse
-keys-writing-refmark = Et referansemerke
+keys-writing-refmark = Et tall i linjen
 keys-writing-spelling = Neste feilstavede ord
 keys-writing-spelling-back = Det feilstavede ordet før
 keys-writing-undo = Angre
@@ -116,3 +115,7 @@ keys-list-redo = Gjør om det som ble gjort med mapper og prosjekter
 ## The sides (stage 4 of the list, the path and the window as it was left)
 keys-close-side = Lukk denne siden
 keys-switch-sides = Bytt side
+
+## Stage 3 of the sides, the panes and the bars (agent "bars")
+keys-writing-marks = Vise eller skjule tegn for mellomrom og avsnitt
+keys-writing-hard-space = Et hardt mellomrom, der linjen ikke brytes

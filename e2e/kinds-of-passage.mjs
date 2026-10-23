@@ -54,7 +54,7 @@ try {
   await app.clickText('dialog footer button', 'Create');
   // A new project opens as text: the diagram is turned to.
   await app.waitFor('.text-view .section', 8000);
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(400);
   await app.click('.diagram .node.root');
@@ -134,7 +134,7 @@ try {
   /** Whether the kind button over the text comes to read so. */
   const buttonReads = async (word) => {
     try {
-      await app.waitForText('.pane-bar .tools .style', word, 3000);
+      await app.waitForText('.pane-bar [data-paragraph-kind]', word, 3000);
       return true;
     } catch {
       return false;
@@ -143,7 +143,7 @@ try {
 
   /** Opens the kind menu over the text and chooses a kind: at its head where the run has it in hand, else under More…. */
   const chooseKind = async (name) => {
-    await app.click('.pane-bar .tools .style');
+    await app.click('.pane-bar [data-paragraph-kind]');
     await app.waitFor('.menu');
     await sleep(150);
     const pick = () =>
@@ -259,7 +259,7 @@ try {
   );
   check('Ctrl+U underlines the word', underlined === 'calm', underlined);
   await selectWord('morning');
-  await app.click('.pane-bar .tools .words');
+  await app.click('.pane-bar [data-words-kind]');
   await app.waitFor('.menu');
   await sleep(150);
   await app.clickText('.menu [role="menuitem"]', 'Term');
@@ -267,13 +267,13 @@ try {
   const term = await app.exec(
     `return Array.from(document.querySelectorAll('.text-view .body span.kind[data-kind="term"]')).map((s) => s.textContent).join('|')`,
   );
-  check('a word is marked as a term from Words', term === 'morning', term);
+  check('a word is marked as a term from Words kind', term === 'morning', term);
   await selectWord('Dear');
-  await app.click('.pane-bar .tools .words');
+  await app.click('.pane-bar [data-words-kind]');
   await app.waitFor('.menu');
   await sleep(150);
   check(
-    'the Words menu lists a speaker and a stage direction after the kinds of words',
+    'the Words kind menu lists a speaker and a stage direction after the kinds of words',
     await app.exec(
       `const words = Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((i) => (i.querySelector('.label > .truncate') ?? i).textContent.trim());
        const term = words.indexOf('Term'), speaker = words.indexOf('Speaker'), direction = words.indexOf('Stage direction');
@@ -290,7 +290,7 @@ try {
 
   // --- A kind of one's own, made from the menu and given at once ---
   await cursorAtEnd('Dear reader');
-  await app.click('.pane-bar .tools .style');
+  await app.click('.pane-bar [data-paragraph-kind]');
   await app.waitFor('.menu');
   await sleep(150);
   await app.clickText('.menu [role="menuitem"]', 'More…');

@@ -53,7 +53,7 @@ try {
   await app.type('dialog input', 'Odyssey');
   await app.clickText('dialog footer button', 'Create');
   await app.waitFor('.text-view .section', 8000);
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(400);
   await app.click('.diagram .node.root');
@@ -189,7 +189,7 @@ try {
   // --- The foot of the kind menu opens Look at the kind ---
   await app.click(await app.exec(`return document.querySelectorAll(arguments[0] + ' .prose > p')[1]`, book));
   await sleep(300);
-  await app.click('.pane-bar .tools .style');
+  await app.click('.pane-bar [data-paragraph-kind]');
   await app.clickText('[role="menuitem"]', 'How “Quotation” looks…');
   await sleep(800);
   const quote = await app.exec(

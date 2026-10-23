@@ -62,11 +62,8 @@ editor-line-number-press = Den här radens nummer: tryck för att ändra det
 
 ## Numbers belong to what they number (ADR 0041): the Numbers menu offers
 ## the three, each saying what it numbers.
-editor-numbers = Nummer
-editor-numbers-hint = Numrera raderna du skriver, märk ut ett ställe i prosa, eller numrera sidans rader
 editor-numbers-lines = Numrera de här raderna…
 editor-numbers-lines-hint = Raderna i styckena där markören står, eller i de markerade: från vilket nummer, var hur mångte, på vilken sida
-editor-numbers-refmark-hint = Ett ställe i prosa, efter en vers, en sida eller en utgåvas nummer: 3:16, 327a
 editor-numbers-page = Numrera sidans rader
 editor-numbers-page-hint = Varje rad på den tryckta sidan, numrerad i marginalen, i det här dokumentet och dem under det
 
@@ -117,7 +114,6 @@ editor-highlight = Överstrykning
 editor-highlight-hint = För ögat på skärmen: den hamnar inte i något dokument
 editor-underline = Understruken
 editor-code-words = Kod i raden
-editor-code-words-hint = Lika breda tecken, inne i raden
 editor-scene = Scenrubrik
 editor-scene-hint = Var och när en scen utspelar sig: INT. HUS – NATT
 editor-action = Handling
@@ -131,14 +127,9 @@ editor-parenthetical-hint = Hur en replik sägs
 editor-transition = Övergång
 editor-transition-hint = Hur en scen går över i nästa: KLIPP TILL:
 editor-comment = Kommentar
-editor-comment-hint = En kommentar till det markerade
-editor-comment-element-hint = En kommentar till det här elementet; markera ord för att kommentera dem
 editor-parallel = Två texter sida vid sida
-editor-parallel-hint = Ett original och dess översättning, var och en som egen text
 editor-page-break = Sidbrytning
-editor-page-break-hint = Det som följer börjar på en ny sida
 editor-column-break = Spaltbrytning
-editor-column-break-hint = Det som följer börjar överst i nästa spalt, där layouten sätter texten i spalter
 editor-paragraph-kind = Slag av stycke
 # Said of the button that shows the kind of paragraph the cursor is in.
 editor-paragraph-kind-now = Slag av stycke: { $kind }
@@ -156,8 +147,6 @@ editor-kinds-change-own = Ändra ett eget slag…
 editor-kinds-set-by = Satta som ”{ $format }” har dem
 editor-kinds-change-look = Hur ”{ $kind }” ser ut…
 editor-kinds-change-look-hint = Dess utseende i det här dokumentet, och resten av sidan
-editor-words = Ord
-editor-words-hint = Understrykning, upphöjt, kod; en passages språk, främmande ord, verktitel, term, talare inne i en rad
 editor-words-make = Skapa ett slag av ord…
 # Beside the language of the map, first among the languages foreign words may be in.
 editor-foreign-of-text = Textens språk
@@ -192,40 +181,17 @@ editor-own-kind-delete-message = { $count ->
 
 ## Citing, notes, and what is put into the text.
 
-editor-cite = Hänvisa
 editor-cite-here = Hänvisa till ett verk här
-editor-cite-at-cursor = Hänvisa till ett verk där markören står
 editor-note = Not
 editor-note-selection = Gör det markerade till en not
-editor-note-hint = En not, längst ner på sidan eller i slutet
 editor-insert = Infoga
-editor-insert-hint = En bild, en tabell, matematik, en korshänvisning
-editor-new-element = Nytt element
-editor-new-element-hint = Ett nytt element efter det här, eller under det
-editor-new-after = Nytt element efter det här
-editor-new-under = Nytt element under det här
-editor-new-split = Dela här
 editor-spelling-on = Stavningen kontrolleras medan du skriver · tryck för att sluta
 editor-spelling-off = Stavningen kontrolleras inte · tryck för att kontrollera den
-editor-break-signs = Tecknet för en radbrytning inne i ett stycke
-editor-break-signs-on = En radbrytning inne i ett stycke visas med ↵ · tryck för att dölja tecknet
-editor-break-signs-off = En radbrytning inne i ett stycke visas inte · tryck för att visa den med ↵
-editor-picture-file = Bild från en fil…
-editor-picture-file-hint = En figur, med det som sägs om den
-editor-picture-store = Bild från förrådet…
-editor-picture-store-hint = De du har visas vid sidan
 editor-equation = Ekvation
-editor-equation-hint = Matematik på en egen rad
 editor-table = Tabell…
-editor-table-hint = Med så och så många rader och kolumner
 editor-table-file = Tabell från en fil…
-editor-table-file-hint = CSV, eller ett kalkylblad från LibreOffice eller Excel
 editor-formula = Formel
-editor-formula-hint = Matematik i raden
 editor-pointer = Korshänvisning…
-editor-pointer-hint = Till en figur, en tabell, en ekvation eller en del: ”se figur 2”
-editor-refmark = Referensmärke…
-editor-refmark-hint = En vers, en sida eller en utgåvas nummer: 3:16, 327a
 editor-refmark-title = Referensmärke
 editor-refmark-label = Beteckning
 editor-refmark-placeholder = 3:16, 327a, 1094a1

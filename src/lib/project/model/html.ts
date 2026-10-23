@@ -23,6 +23,9 @@ type Notes = { n: number };
 /** A line break, as an editor draws it: the style sheet puts a faint sign at the end of the line. */
 const BREAK = '<span class="hard-break"><br></span>';
 
+/** A hard space, ringed as the editor rings it. */
+const HARD_SPACE_HTML = '<span class="hard-space">\u00a0</span>';
+
 function escape(text: string): string {
   return text
     .replace(/&/g, '&amp;')
@@ -36,7 +39,8 @@ function inlines(list: Inline[], notes: Notes): string {
   for (const i of list) {
     switch (i.kind) {
       case 'text': {
-        let html = escape(i.text);
+        // A hard space is ringed as the editor rings it, for the marks of whitespace (`editor/hard-space.ts`).
+        let html = escape(i.text).replace(/\u00a0/g, HARD_SPACE_HTML);
         if (i.marks.em) html = `<em>${html}</em>`;
         if (i.marks.strong) html = `<strong>${html}</strong>`;
         if (i.marks.smallcaps) html = `<span class="smallcaps">${html}</span>`;

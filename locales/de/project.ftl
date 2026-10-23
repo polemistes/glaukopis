@@ -16,7 +16,6 @@ project-name = Name des Projekts
 project-rename = Projekt umbenennen
 project-not-saved = Nicht gespeichert
 project-redo = Wiederherstellen
-project-view = Ansicht der Karte
 project-view-this = Ansicht dieser Karte
 project-diagram = Diagramm
 project-text = Text
@@ -24,13 +23,7 @@ project-one-at-a-time = Eine auf einmal
 project-side-by-side = Zwei nebeneinander
 project-close-side = Diese Seite schließen
 project-references = Quellen
-project-side = Quellen, Bilder, Verlauf und Änderungen
 project-side-map = Karte
-project-preview = Vorschau und Export
-project-share = Teilen
-project-shared = Geteilt
-project-shared-offline = Geteilt · der Server ist nicht zu erreichen
-project-shared-too-large = Geteilt · der Server nimmt die letzten Änderungen nicht an
 project-between-maps = Zwischen den beiden Karten
 
 ## When the sharing ends from the other side
@@ -78,19 +71,13 @@ project-template-not-renewed = Die Kopie der Vorlage im Projekt konnte nicht auf
 # Said over the other pane while elements of one project are dragged over it.
 project-copy-to-project = Nach „{ $name }“ kopieren
 project-move-to-project = Nach „{ $name }“ verschieben
-project-element-name = Name des Elements
-project-this-element-actions = Dieses Element
-project-new-element-under = Neues Element darunter
 project-document-into = Ein Dokument hinein…
 project-drop-on-map = Auf eine Karte fallen lassen, um dorthin zu verschieben · Strg halten, um zu kopieren
 project-open-beside = Daneben öffnen
 project-open-beside-hint = Zwei Karten nebeneinander, um Elemente zwischen ihnen zu verschieben
 project-side-by-side-short = Nebeneinander
-project-preview-short = Vorschau
-project-found = Lose Zitationen…
 # The count is of those found in the element in view, and under it.
 project-found-hint = { $count } durchzugehen und zu Zitationen zu machen
-project-found-none = Und Text, der wie Zitationen aussieht
 project-copied-to = Nach „{ $name }“ kopiert
 project-moved-to = Nach „{ $name }“ verschoben
 project-other-projects = Andere Projekte

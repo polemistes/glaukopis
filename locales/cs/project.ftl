@@ -16,7 +16,6 @@ project-name = Název projektu
 project-rename = Přejmenovat projekt
 project-not-saved = Neuloženo
 project-redo = Znovu
-project-view = Zobrazení mapy
 project-view-this = Zobrazení této mapy
 project-diagram = Diagram
 project-text = Text
@@ -24,13 +23,7 @@ project-one-at-a-time = Po jedné
 project-side-by-side = Dvě vedle sebe
 project-close-side = Zavřít tuto stranu
 project-references = Záznamy
-project-side = Záznamy, obrázky, historie a změny
 project-side-map = Mapa
-project-preview = Náhled a export
-project-share = Sdílet
-project-shared = Sdílený
-project-shared-offline = Sdílený · server je nedostupný
-project-shared-too-large = Sdílený · server nepřijímá poslední změny
 project-between-maps = Mezi oběma mapami
 
 ## When the sharing ends from the other side
@@ -66,11 +59,8 @@ project-drop-on-map = Pusťte na mapu, kam se má přesunout · s Ctrl se kopír
 project-open-beside = Otevřít vedle
 project-open-beside-hint = Dvě mapy vedle sebe, pro přesouvání prvků mezi nimi
 project-side-by-side-short = Vedle sebe
-project-preview-short = Náhled
-project-found = Nalezené citace…
 # The count is of those found in the map.
 project-found-hint = { $count } k projití a převedení na citace
-project-found-none = A text, který vypadá jako citace
 project-copied-to = Zkopírováno do „{ $name }“
 project-moved-to = Přesunuto do „{ $name }“
 

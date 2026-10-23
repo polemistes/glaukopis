@@ -17,7 +17,7 @@ function check(name, ok, detail = '') {
 // Words that English has and Norwegian has not. A few that Norwegian has
 // as well ("element", "format", "note", "tekst") are not among them.
 const ENGLISH =
-  /\b(the|and|of|with|this|that|your|from|what|which|where|when|there|will|not|add|remove|delete|save|cancel|close|show|hide|new|name|text|maps?|projects?|library|references?|citations?|notes|figures?|tables?|pictures?|settings|search|words|pages?|documents?|preview|export|styles?|untitled|here|before|after|none|write|open|The|And|Of|With|This|That|Your|From|What|Which|Where|When|There|Add|Remove|Delete|Save|Cancel|Close|Show|Hide|New|Name|Text|Maps?|Projects?|Library|References?|Citations?|Notes|Figures?|Tables?|Pictures?|Settings|Search|Words|Pages?|Documents?|Preview|Export|Styles?|Untitled|Here|Before|After|None|Write|Open)\b/;
+  /\b(the|and|of|with|this|that|your|from|what|which|where|when|there|will|not|add|remove|delete|save|cancel|close|show|hide|new|name|text|maps?|projects?|library|references?|citations?|notes|figures?|tables?|pictures?|images?|settings|search|words|pages?|documents?|preview|export|styles?|untitled|here|before|after|none|write|open|The|And|Of|With|This|That|Your|From|What|Which|Where|When|There|Add|Remove|Delete|Save|Cancel|Close|Show|Hide|New|Name|Text|Maps?|Projects?|Library|References?|Citations?|Notes|Figures?|Tables?|Pictures?|Images?|Settings|Search|Words|Pages?|Documents?|Preview|Export|Styles?|Untitled|Here|Before|After|None|Write|Open)\b/;
 
 // What is shown of the writer's own: texts, names, references, and the names
 // of styles, formats and fonts, which are names.
@@ -116,7 +116,7 @@ try {
   await app.clickText('dialog footer button', 'Opprett');
   // Et nytt prosjekt åpnes som tekst: diagrammet velges.
   await app.waitFor('.text-view .section', 8000);
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(400);
   await english('the diagram');
@@ -211,10 +211,11 @@ try {
        s.value = arguments[0]; s.dispatchEvent(new Event('change', { bubbles: true }));`,
       value,
     );
+  // The languages are in the window of the document, which the menu of the element opens.
   const openLanguages = async () => {
-    await app.openThisMap();
-    await app.clickText('.menu [role="menuitem"]', 'Språk …');
+    await app.thisElement('Dokumentegenskaper …');
     await app.waitForText('dialog[open] h2', 'Dokumentegenskaper', 5000);
+    await settingsSection('Språk');
     await app.waitFor('dialog select');
     await sleep(200);
   };
@@ -222,9 +223,9 @@ try {
     await app.up();
     await sleep(300);
   };
-  await app.openThisMap();
+  await app.thisElement();
   await english('the menu of the element in view');
-  await app.press('Escape');
+  await app.closeMenu();
   await sleep(200);
   await openLanguages();
   await english('the language of the project');
@@ -255,14 +256,11 @@ try {
   await closeSettings();
   // Up to the project, and a new element made under it, in the language of the project.
   await up();
-  await app.openThisMap();
-  await app.clickText('.menu [role="menuitem"]', 'Nytt element under');
-  await app.waitFor('[data-path] .naming');
-  await sleep(150);
+  await app.thisElement('Legg til et element under');
+  await sleep(300);
   await app.keys('Annen sang');
   await app.press('Enter');
-  await app.waitGone('[data-path] .naming');
-  await sleep(300);
+  await sleep(500);
   await app.openMap('Annen sang');
   await openLanguages();
   check(
@@ -435,7 +433,7 @@ try {
   await sleep(300);
   check(
     'English is chosen, and the interface changes at once',
-    (await rail()).join(' ') === 'Projects Library Pictures Search Keys Settings',
+    (await rail()).join(' ') === 'Projects Library Images Search Keys Settings',
     (await rail()).join(' '),
   );
   check('the page says so', (await app.exec(`return document.documentElement.lang`)) === 'en');

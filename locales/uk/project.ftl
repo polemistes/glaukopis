@@ -16,7 +16,6 @@ project-name = Назва проєкту
 project-rename = Перейменувати проєкт
 project-not-saved = Не збережено
 project-redo = Повторити дію
-project-view = Вигляд мапи
 project-view-this = Вигляд цієї мапи
 project-diagram = Схема
 project-text = Текст
@@ -24,13 +23,7 @@ project-one-at-a-time = По одній
 project-side-by-side = Дві поруч
 project-close-side = Закрити цю частину
 project-references = Джерела
-project-side = Джерела, зображення, історія та зміни
 project-side-map = Мапа
-project-preview = Перегляд та експорт
-project-share = Поділитися
-project-shared = Спільний
-project-shared-offline = Спільний · сервер недосяжний
-project-shared-too-large = Спільний · сервер не приймає останніх змін
 project-between-maps = Між двома мапами
 
 ## When the sharing ends from the other side
@@ -68,11 +61,8 @@ project-drop-on-map = Киньте на мапу, щоб перемістити 
 project-open-beside = Відкрити поруч
 project-open-beside-hint = Дві мапи поруч, щоб переносити елементи між ними
 project-side-by-side-short = Поруч
-project-preview-short = Перегляд
-project-found = Знайдені цитування…
 # The count is of those found in the map.
 project-found-hint = Переглянути й зробити цитуваннями: { $count }
-project-found-none = І текст, схожий на цитування
 project-copied-to = Скопійовано до «{ $name }»
 project-moved-to = Переміщено до «{ $name }»
 

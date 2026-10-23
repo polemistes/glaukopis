@@ -16,7 +16,6 @@ project-name = Naziv projekta
 project-rename = Preimenuj projekt
 project-not-saved = Nije spremljeno
 project-redo = Ponovi
-project-view = Prikaz mape
 project-view-this = Prikaz ove mape
 project-diagram = Dijagram
 project-text = Tekst
@@ -24,13 +23,7 @@ project-one-at-a-time = Jedna po jedna
 project-side-by-side = Dvije usporedo
 project-close-side = Zatvori ovu stranu
 project-references = Reference
-project-side = Reference, slike, povijest i izmjene
 project-side-map = Mapa
-project-preview = Pretpregled i izvoz
-project-share = Dijeli
-project-shared = Dijeljen
-project-shared-offline = Dijeljen · poslužitelj nije dostupan
-project-shared-too-large = Dijeljen · poslužitelj ne prima najnovije izmjene
 project-between-maps = Između dviju mapa
 
 ## When the sharing ends from the other side
@@ -68,11 +61,8 @@ project-drop-on-map = Ispustite na mapu da se premjesti onamo · držite Ctrl za
 project-open-beside = Otvori pokraj
 project-open-beside-hint = Dvije mape usporedo, za premještanje elemenata između njih
 project-side-by-side-short = Usporedo
-project-preview-short = Pretpregled
-project-found = Pronađeni citati…
 # The count is of those found in the map.
 project-found-hint = { $count } za proći i pretvoriti u citate
-project-found-none = I tekst koji nalikuje citatima
 project-copied-to = Kopirano u „{ $name }”
 project-moved-to = Premješteno u „{ $name }”
 

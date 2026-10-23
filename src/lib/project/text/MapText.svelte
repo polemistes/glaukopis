@@ -21,13 +21,14 @@
   import Merge from '@lucide/svelte/icons/merge';
   import Pencil from '@lucide/svelte/icons/pencil';
   import SplitSquareVertical from '@lucide/svelte/icons/split-square-vertical';
+  import Hash from '@lucide/svelte/icons/hash';
   import Trash2 from '@lucide/svelte/icons/trash-2';
   import { widthFor } from '$lib/editor/commands';
   import type { KeyAction } from '$lib/editor/plugins';
   import type RichText from '$lib/editor/RichText.svelte';
   import type { FocusAt } from '$lib/editor/RichText.svelte';
   import { bodySchema } from '$lib/editor/schema';
-  import { editorUi, viewsByDom } from '$lib/editor/ui.svelte';
+  import { editorUi, hooksOf, viewsByDom } from '$lib/editor/ui.svelte';
   import { citationLabel } from '$lib/editor/references.svelte';
   import { numbering, pointerText } from '$lib/figures/numbering.svelte';
   import { pictures, PICTURES_DRAGGED } from '$lib/figures/pictures.svelte';
@@ -989,7 +990,12 @@
     if (made[0]) void go(made[0], 'title', 'start');
   }
 
-  function menuFor(id: string, anchor: HTMLElement | null): MenuItem[] {
+  /**
+   * The menu of an element in the text. Where it is opened in a paragraph of
+   * the element's text, it begins with numbering the lines of the paragraphs
+   * there, the cursor's or those selected, which the editor's dialog asks.
+   */
+  function menuFor(id: string, anchor: HTMLElement | null, inParagraph = false): MenuItem[] {
     const view = editors.get(id)?.body?.getView();
     // Text selected where the menu is opened is what a comment is on: taken now, before the menu takes the focus.
     const passage = view && view.hasFocus() ? selectedPassage(view) : null;
@@ -1000,6 +1006,18 @@
         (item.label !== t('project-write-text') && item.label !== t('common-rename')),
     );
     const extra: MenuItem[] = [];
+    if (inParagraph) {
+      extra.push({
+        label: t('editor-numbers-lines'),
+        icon: Hash,
+        hint: t('editor-numbers-lines-hint'),
+        // The editor is made where the text was pressed, if it was not there: it is looked for when chosen.
+        action: () => {
+          const v = editors.get(id)?.body?.getView();
+          if (v) hooksOf.get(v)?.askNumbers?.(v);
+        },
+      });
+    }
     if (view && view.hasFocus()) {
       extra.push({
         label: t('text-split'),
@@ -1072,7 +1090,11 @@
     // Within text that is selected, the menu is about the text: left to the system.
     const id = section.dataset.section!;
     current = id;
-    openContextMenu(event, menuFor(id, section));
+    // A paragraph of the text itself: not a caption, a cell of a table or a note.
+    const target = event.target as HTMLElement;
+    const inParagraph =
+      !!target.closest('.body p') && !target.closest('figure, figcaption, table, .footnote');
+    openContextMenu(event, menuFor(id, section, inParagraph));
   }
 
   // ---- dragging ----

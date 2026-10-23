@@ -62,11 +62,8 @@ editor-line-number-press = Numer tego wiersza: naciśnij, by go zmienić
 
 ## Numbers belong to what they number (ADR 0041): the Numbers menu offers
 ## the three, each saying what it numbers.
-editor-numbers = Numery
-editor-numbers-hint = Numeruj pisane wiersze, oznacz miejsce w prozie albo numeruj wiersze strony
 editor-numbers-lines = Numeruj te wiersze…
 editor-numbers-lines-hint = Wiersze akapitów, w których jest kursor, albo zaznaczonych: od jakiego numeru, co ile, po której stronie
-editor-numbers-refmark-hint = Miejsce w prozie, według wersetu, strony lub numeru wydania: 3:16, 327a
 editor-numbers-page = Numeruj wiersze strony
 editor-numbers-page-hint = Każdy wiersz drukowanej strony, numerowany na marginesie, w tym dokumencie i w tych pod nim
 
@@ -117,7 +114,6 @@ editor-highlight = Zakreślenie
 editor-highlight-hint = Dla oka na ekranie: nie trafia do żadnego dokumentu
 editor-underline = Podkreślenie
 editor-code-words = Kod w wierszu
-editor-code-words-hint = Pismo o stałej szerokości, wewnątrz wiersza
 editor-scene = Nagłówek sceny
 editor-scene-hint = Gdzie i kiedy toczy się scena: WN. DOM – NOC
 editor-action = Akcja
@@ -131,14 +127,9 @@ editor-parenthetical-hint = Jak kwestia jest wypowiadana
 editor-transition = Przejście
 editor-transition-hint = Jak jedna scena ustępuje następnej: CIĘCIE:
 editor-comment = Komentarz
-editor-comment-hint = Komentarz do zaznaczenia
-editor-comment-element-hint = Komentarz do tego elementu; zaznacz słowa, by skomentować właśnie je
 editor-parallel = Dwa teksty obok siebie
-editor-parallel-hint = Oryginał i jego przekład, każdy jako osobny tekst
 editor-page-break = Podział strony
-editor-page-break-hint = To, co dalej, zaczyna się na nowej stronie
 editor-column-break = Podział kolumny
-editor-column-break-hint = To, co dalej, zaczyna się u góry następnej kolumny, gdy układ składa tekst w kolumnach
 editor-paragraph-kind = Rodzaj akapitu
 # Said of the button that shows the kind of paragraph the cursor is in.
 editor-paragraph-kind-now = Rodzaj akapitu: { $kind }
@@ -156,8 +147,6 @@ editor-kinds-change-own = Zmień własny rodzaj…
 editor-kinds-set-by = Składane tak, jak ma je „{ $format }”
 editor-kinds-change-look = Jak wygląda „{ $kind }”…
 editor-kinds-change-look-hint = Jego wygląd w tym dokumencie i reszta strony
-editor-words = Słowa
-editor-words-hint = Podkreślenie, indeks górny, kod; język fragmentu, słowa obcojęzyczne, tytuł dzieła, termin, mówiący w obrębie wersu
 editor-words-make = Utwórz rodzaj słów…
 # Beside the language of the map, first among the languages foreign words may be in.
 editor-foreign-of-text = Język tekstu
@@ -194,40 +183,17 @@ editor-own-kind-delete-message = { $count ->
 
 ## Citing, notes, and what is put into the text.
 
-editor-cite = Cytuj
 editor-cite-here = Cytuj dzieło tutaj
-editor-cite-at-cursor = Cytuj dzieło w miejscu kursora
 editor-note = Przypis
 editor-note-selection = Zrób z zaznaczenia przypis
-editor-note-hint = Przypis, u dołu strony lub na końcu
 editor-insert = Wstaw
-editor-insert-hint = Obraz, tabelę, matematykę, odsyłacz
-editor-new-element = Nowy element
-editor-new-element-hint = Nowy element po tym albo pod nim
-editor-new-after = Nowy element po tym
-editor-new-under = Nowy element pod tym
-editor-new-split = Podziel tutaj
 editor-spelling-on = Pisownia jest sprawdzana w trakcie pisania · naciśnij, by przestać
 editor-spelling-off = Pisownia nie jest sprawdzana · naciśnij, by ją sprawdzać
-editor-break-signs = Znak podziału wiersza w akapicie
-editor-break-signs-on = Podział wiersza w akapicie jest pokazany jako ↵ · naciśnij, by ukryć znak
-editor-break-signs-off = Podział wiersza w akapicie nie jest pokazany · naciśnij, by pokazać go jako ↵
-editor-picture-file = Obraz z pliku…
-editor-picture-file-hint = Rycina z tym, co się o niej mówi
-editor-picture-store = Obraz ze zbioru…
-editor-picture-store-hint = Te, które masz, są pokazane z boku
 editor-equation = Równanie
-editor-equation-hint = Matematyka w osobnym wierszu
 editor-table = Tabela…
-editor-table-hint = O tylu wierszach i kolumnach
 editor-table-file = Tabela z pliku…
-editor-table-file-hint = CSV albo arkusz LibreOffice lub Excela
 editor-formula = Wzór
-editor-formula-hint = Matematyka w wierszu
 editor-pointer = Odsyłacz…
-editor-pointer-hint = Do ryciny, tabeli, równania lub części: „zob. ryc. 2”
-editor-refmark = Znacznik miejsca…
-editor-refmark-hint = Werset, strona lub numer wydania: 3:16, 327a
 editor-refmark-title = Znacznik miejsca
 editor-refmark-label = Etykieta
 editor-refmark-placeholder = 3:16, 327a, 1094a1

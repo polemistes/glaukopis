@@ -36,7 +36,6 @@ keys-side-history = Istoric
 keys-side-changes = Revizuiește modificările
 keys-side-found = Citări găsite
 keys-side-by-side = Două alăturate
-keys-share = Partajează proiectul
 keys-find = Caută în text
 keys-replace = Caută și înlocuiește
 keys-undo = Anulează acțiunea

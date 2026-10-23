@@ -243,7 +243,7 @@ try {
   await app.clickText('dialog footer button', 'Create');
   // A new project opens as text: the diagram is turned to.
   await app.waitFor('.text-view .section', 8000);
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
 
@@ -524,7 +524,7 @@ try {
   await app.waitFor('dialog [data-workbench][data-view="summary"]', 15000);
   check(
     'a picture opens on its summary: that it is read, and how',
-    /The text is read from the picture/.test(await app.text('dialog [data-summary-facts]')) &&
+    /The text is read from the image/.test(await app.text('dialog [data-summary-facts]')) &&
       (await app.exists('dialog [data-read-settings]')),
   );
   await openPages();

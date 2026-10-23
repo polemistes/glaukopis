@@ -17,14 +17,18 @@
    * What the list of projects, which stands outside the view, is told of
    * what is shown: the projects of the sides, each once, with the element in
    * view there; how an element of one is entered; how another project, or
-   * an element of it, is opened beside, in the other side; and how the
-   * sides that show a project are closed. Nothing while no project is open.
+   * an element of it, is opened beside, in the other side; how the sides
+   * that show a project are closed; and how the window of a project's
+   * sharing is opened. Nothing while no project is open; a sharing asked
+   * for then is `shareWanted`, which the view opens once it is there.
    */
   class Viewing {
     sides = $state.raw<ShownSide[]>([]);
     enter: ((project: string, id: string) => void) | null = null;
     beside: ((projectId: string, at?: string) => void) | null = null;
     close: ((projectId: string) => void) | null = null;
+    share: ((projectId: string) => void) | null = null;
+    shareWanted: string | null = null;
   }
 
   export const viewing = new Viewing();
@@ -44,20 +48,12 @@
   import { testHook } from '$lib/shell/testing';
   import WordsBar from '$lib/words/WordsBar.svelte';
   import { onDestroy, onMount, tick, untrack } from 'svelte';
-  import BookOpenText from '@lucide/svelte/icons/book-open-text';
-  import CircleAlert from '@lucide/svelte/icons/circle-alert';
   import Columns2 from '@lucide/svelte/icons/columns-2';
-  import FileText from '@lucide/svelte/icons/file-text';
-  import Network from '@lucide/svelte/icons/network';
-  import PanelRight from '@lucide/svelte/icons/panel-right';
-  import Redo2 from '@lucide/svelte/icons/redo-2';
-  import Undo2 from '@lucide/svelte/icons/undo-2';
-  import Users from '@lucide/svelte/icons/users';
+  import PanelLeft from '@lucide/svelte/icons/panel-left';
   import X from '@lucide/svelte/icons/x';
   import Presence from '$lib/sharing/Presence.svelte';
   import SharePanel from '$lib/sharing/SharePanel.svelte';
   import type { ProjectSharing } from '$lib/sharing/sharing.svelte';
-  import { chooseDocument } from '$lib/documents/bringing.svelte';
   import { goThrough, takeWaiting } from '$lib/found/found.svelte';
   import DocumentHost from '$lib/documents/DocumentHost.svelte';
   import FoundPanel from '$lib/found/FoundPanel.svelte';
@@ -86,11 +82,9 @@
   import { settings } from '$lib/state/settings.svelte';
   import Divider from '$lib/ui/Divider.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
-  import Segmented from '$lib/ui/Segmented.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import { t } from '$lib/i18n';
   import { comparing } from './copies.svelte';
-  import Clock from '@lucide/svelte/icons/clock';
   import { clamp, sideWidth } from './layout';
   import { DocumentPane } from './document-pane.svelte';
   import ProjectDialogs from './ProjectDialogs.svelte';
@@ -255,6 +249,7 @@
     };
     viewing.beside = (id, element) => sides.beside(id, element ?? null);
     viewing.close = closeShown;
+    viewing.share = shareProject;
   });
 
   // ---- the document pane, of the active side's document ----
@@ -471,6 +466,7 @@
     viewing.enter = null;
     viewing.beside = null;
     viewing.close = null;
+    viewing.share = null;
     pictures.open(null);
   });
 
@@ -554,14 +550,14 @@
     openMenu(sideBySideButton, items, { align: 'start' });
   }
 
-  /** Shows a project in a side, at its top, as it is chosen in the menu of all projects of the side's path. */
-  function projectIn(spec: SideSpec, id: string) {
+  /** Shows a project in a side, at its top or at an element of it, as it is chosen in the tree of all projects of the side's path. */
+  function projectIn(spec: SideSpec, id: string, at?: string) {
     if (spec.project === id) {
-      sideApis.get(spec.key)?.show(PROJECT);
+      sideApis.get(spec.key)?.show(at ?? PROJECT);
       return;
     }
     sides.focus(spec.key);
-    sides.open(id, PROJECT);
+    sides.open(id, at ?? PROJECT);
   }
 
   /** The project of a side, as the list has it, for its path: the folder it lies in. */
@@ -581,18 +577,59 @@
     );
   }
 
-  /** How the project of a side is shared, for the badge of its path. */
-  function sharingOf(spec: SideSpec): { owner: boolean } | null {
-    const sharing = openOf(spec)?.sharing?.sharing;
-    return sharing ? { owner: sharing.owner } : null;
+  /** How the project of a side is shared, and how it is connected, for the badge of its path. */
+  function sharingOf(
+    spec: SideSpec,
+  ): { owner: boolean; status: 'connected' | 'offline' | 'refused' } | null {
+    const shared = openOf(spec)?.sharing as ProjectSharing | null | undefined;
+    const sharing = shared?.sharing;
+    if (!sharing) return null;
+    const connection = shared?.connection;
+    const status = connection?.tooLarge
+      ? 'refused'
+      : connection?.status === 'connected'
+        ? 'connected'
+        : 'offline';
+    return { owner: sharing.owner, status };
   }
 
   /** The sharing window, while it is open, for a project. */
   let showShare = $state<OpenProject | null>(null);
+  /** The project whose sharing window is to open once it is open. */
+  let sharingWanted = $state<string | null>(viewing.shareWanted);
+  viewing.shareWanted = null;
+
+  /**
+   * Share… in the menu of a project in the list: the sharing window of a
+   * project shown in a side; one that is not is opened in the active side
+   * first, since the sharing needs the project open.
+   */
+  function shareProject(id: string) {
+    if (!sides.sides.some((s) => s.project === id)) sides.open(id);
+    sharingWanted = id;
+  }
+
+  // The sharing window opens once its project is open, with what it is
+  // shared by. It depends on the project asked for and on its state.
+  $effect(() => {
+    const id = sharingWanted;
+    if (!id) return;
+    const open = openProjects.get(id);
+    if (open?.state === 'failed') sharingWanted = null;
+    if (open?.state !== 'open' || !open.sharing || !open.project) return;
+    untrack(() => {
+      showShare = open;
+      sharingWanted = null;
+    });
+  });
 
   // ---- the top row: a cell over each side, as wide as it ----
 
   let panesEl = $state<HTMLDivElement>();
+  /** The width of the list's button at the far left, which the cell at the left gives up. */
+  let listWidth = $state(0);
+  /** The side whose cell stands at the left: the first, unless the sides are switched. */
+  const leftmost = $derived(sides.mirrored ? sides.sides.length - 1 : 0);
   /** The widths of the sides, and of the row of them, as drawn. */
   let paneWidths = $state.raw<number[]>([]);
   let panesWidth = $state(0);
@@ -709,15 +746,6 @@
     }
   }
 
-  /** Whether the element in view of the active side has anything to show as a timeline. */
-  function timed(element: string): boolean {
-    if (!project) return false;
-    const settings = project.node(element)?.timeline;
-    if (settings && (settings.axis || settings.lanes?.length)) return true;
-    for (const id of project.tree(element).sequence) if (project.node(id)?.when) return true;
-    return false;
-  }
-
   // The keys of a project, while one is shown: see `shell/keys`. They act in the active side.
   onMount(() => {
     const reviewing = () => !!documentPane.review;
@@ -767,7 +795,7 @@
         when: shown,
       },
       'switch-sides': { run: () => sides.switchSides(), when: () => sides.sides.length > 1 },
-      share: { run: () => (showShare = activeOpen ?? null), when: () => !!activeOpen },
+      'writing-marks': () => (panes.marks = !panes.marks),
       'text-outline': {
         run: () => {
           if (active) sides.toggleOutline(active.key);
@@ -792,23 +820,55 @@
 <svelte:window {onblur} {onkeydown} />
 
 <div class="project">
-  <!-- the top row: over each side a cell with its path, as wide as the side; Split view at the right end. -->
+  <!-- the top row: the list's button at the far left; over each side a cell with its path, as wide as the side, and on the join of two the button that switches them; Split view at the right end. -->
   <div class="top" data-top>
+    <div class="list" bind:offsetWidth={listWidth}>
+      <IconButton
+        label={t('home-pane-toggle')}
+        shortcut={keysFor('projects-pane')}
+        size="sm"
+        active={settings.value.projectsList}
+        data-projects-button
+        onclick={toggleProjectsPane}
+      >
+        <PanelLeft size={15} />
+      </IconButton>
+    </div>
     <div
       class="cells"
       class:mirrored={sides.mirrored}
-      style:gap="{between}px"
-      style:flex-basis="{panesWidth}px"
+      style:gap="{between / 2}px"
+      style:flex-basis="{Math.max(0, panesWidth - listWidth)}px"
     >
       {#each sides.sides as spec, i (spec.key)}
         {@const of = openOf(spec)?.project}
+        {#if i === 1}
+          <!-- On the join of the two cells, over the line between the sides. -->
+          <div class="join">
+            <button
+              type="button"
+              class="switch"
+              aria-label={t('project-switch-sides')}
+              data-switch-sides
+              use:tooltip={{ text: t('project-switch-sides'), side: 'bottom' }}
+              onclick={() => sides.switchSides()}
+            >
+              <ArrowLeftRight size={13} />
+            </button>
+          </div>
+        {/if}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
           class="cell"
           class:active={sides.sides.length > 1 && i === sides.index}
           class:other={sides.sides.length > 1 && i !== sides.index}
+          class:before-join={sides.sides.length > 1 && i === (sides.mirrored ? 1 : 0)}
+          class:after-join={sides.sides.length > 1 && i === (sides.mirrored ? 0 : 1)}
           data-side={i}
-          style:flex-basis="{paneWidths[i] ?? 0}px"
+          style:flex-basis="{Math.max(
+            0,
+            (paneWidths[i] ?? 0) - (i === leftmost ? listWidth : 0),
+          )}px"
           style:flex-shrink={i === (sides.mirrored ? 0 : sides.sides.length - 1) ? 1 : 0}
           onpointerdowncapture={() => sides.focus(spec.key)}
           onfocusin={() => sides.focus(spec.key)}
@@ -818,11 +878,11 @@
               project={of}
               info={infoOf(spec, of)}
               at={spec.at}
-              shown={shownIds}
               sharing={sharingOf(spec)}
+              status={of.status === 'error' ? 'error' : 'saved'}
+              fault={of.saveError ?? undefined}
               onselect={(id) => sideApis.get(spec.key)?.show(id)}
-              onproject={(id) => projectIn(spec, id)}
-              ondocument={async () => sideApis.get(spec.key)?.documentsIn([await chooseDocument()])}
+              onproject={(id, element) => projectIn(spec, id, element)}
             />
           {/if}
         </div>
@@ -852,107 +912,6 @@
   </div>
   <!-- /the top row -->
   {#if active && project}
-    {@const shared = activeOpen?.sharing as ProjectSharing | null | undefined}
-    <header>
-      <Segmented
-        value={active?.mode ?? 'diagram'}
-        label={t('project-view')}
-        options={[
-          { value: 'diagram', label: t('project-diagram'), icon: Network },
-          { value: 'text', label: t('project-text'), icon: FileText },
-          ...(timed(at) || active?.mode === 'timeline'
-            ? [{ value: 'timeline' as const, label: t('timeline-title'), icon: Clock }]
-            : []),
-        ]}
-        onchange={(mode) => {
-          if (active) sides.setMode(active.key, mode);
-        }}
-      />
-      <button
-        type="button"
-        class="tool"
-        class:on={panes.typesetting === active?.key}
-        aria-pressed={panes.typesetting === active?.key}
-        aria-label={t('project-preview')}
-        use:tooltip={{ text: t('project-preview'), shortcut: keysFor('preview'), side: 'bottom' }}
-        onclick={togglePreview}
-      >
-        <BookOpenText size={15} />
-        <span>{t('project-preview-short')}</span>
-      </button>
-      <span
-        class="share"
-        class:shared={shared?.shared}
-        data-status={shared?.connection?.tooLarge
-          ? 'refused'
-          : (shared?.connection?.status ?? 'none')}
-      >
-        <button
-          type="button"
-          class="tool"
-          class:on={!!showShare}
-          aria-label={!shared?.shared
-            ? t('project-share')
-            : shared.connection?.tooLarge
-              ? t('project-shared-too-large')
-              : shared.connection?.status === 'connected'
-                ? t('project-shared')
-                : t('project-shared-offline')}
-          use:tooltip={{
-            text: !shared?.shared
-              ? t('project-share')
-              : shared.connection?.tooLarge
-                ? t('project-shared-too-large')
-                : shared.connection?.status === 'connected'
-                  ? t('project-shared')
-                  : t('project-shared-offline'),
-            side: 'bottom',
-          }}
-          onclick={() => (showShare = activeOpen ?? null)}
-        >
-          <Users size={15} />
-          <span>{shared?.shared ? t('project-shared') : t('project-share')}</span>
-        </button>
-      </span>
-      {#if shared?.connection}
-        <Presence people={project.others} />
-      {/if}
-
-      <div class="status" aria-live="polite">
-        {#if project.status === 'error'}
-          <span class="failed" use:tooltip={project.saveError ?? ''}>
-            <CircleAlert size={14} />
-            {t('project-not-saved')}
-          </span>
-        {/if}
-      </div>
-
-      <!-- In the project of the active side, as the keys. -->
-      <IconButton
-        label={t('common-undo')}
-        shortcut={keysFor('undo')}
-        disabled={!project.canUndo}
-        onclick={() => project?.undo()}
-      >
-        <Undo2 size={16} />
-      </IconButton>
-      <IconButton
-        label={t('project-redo')}
-        shortcut={keysFor('redo')}
-        disabled={!project.canRedo}
-        onclick={() => project?.redo()}
-      >
-        <Redo2 size={16} />
-      </IconButton>
-      <IconButton
-        label={t('project-side')}
-        active={panes.document}
-        onclick={() => panes.toggleDocument()}
-      >
-        <PanelRight size={16} />
-      </IconButton>
-    </header>
-
     <WordsBar {project} />
   {/if}
 
@@ -1255,35 +1214,47 @@
     flex: 1 0 auto;
     padding: 0 10px 0 8px;
   }
-  header {
+  /* The list's button, at the far left, over the side that stands there. */
+  .list {
     display: flex;
     align-items: center;
-    gap: 4px;
-    height: var(--bar-h);
     flex: none;
-    padding: 0 10px 0 8px;
-    border-bottom: 1px solid var(--line);
-    background: var(--paper);
-    container-type: inline-size;
+    padding: 0 2px 0 8px;
   }
-  /* In a narrow window the buttons of the bar keep their pictures only; the tooltips still name them. */
-  @container (max-width: 700px) {
-    .tool > span,
-    header :global(.segmented span) {
-      display: none;
-    }
+  /* Where two sides are shown, the cells leave room on the join for the button that switches them. */
+  .cell.before-join {
+    padding-right: 16px;
   }
-  .status {
-    flex: none;
-    font-size: var(--text-sm);
+  .cell.after-join {
+    padding-left: 18px;
   }
-  .failed {
+  .join {
+    position: relative;
+    flex: 0 0 0;
+    width: 0;
+    z-index: 2;
+  }
+  .switch {
+    position: absolute;
+    top: 50%;
+    left: 50%;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    margin-right: 6px;
-    color: var(--danger);
-    font-weight: 500;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    transform: translate(-50%, -50%);
+    border: 1px solid var(--line-strong);
+    border-radius: 50%;
+    background: var(--paper-raised);
+    color: var(--ink-3);
+    cursor: pointer;
+    box-shadow: var(--shadow-1);
+  }
+  .switch:hover {
+    color: var(--ink);
+    border-color: var(--accent);
   }
   .tool {
     display: inline-flex;
@@ -1308,33 +1279,6 @@
     background: var(--accent-soft);
     border-color: color-mix(in srgb, var(--accent) 35%, transparent);
     color: var(--accent-strong);
-  }
-  .share {
-    position: relative;
-    display: inline-flex;
-    flex: none;
-  }
-  /* A dot that tells whether the others are within reach. */
-  .share.shared::after {
-    content: '';
-    position: absolute;
-    top: 4px;
-    right: 3px;
-    width: 7px;
-    height: 7px;
-    border: 1.5px solid var(--paper);
-    border-radius: 50%;
-    background: var(--ink-4);
-    pointer-events: none;
-  }
-  .share.shared[data-status='connected']::after {
-    background: var(--ok);
-  }
-  .share.shared[data-status='offline']::after {
-    background: var(--warn);
-  }
-  .share.shared[data-status='refused']::after {
-    background: var(--danger);
   }
   .work {
     flex: 1;

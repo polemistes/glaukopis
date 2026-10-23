@@ -16,7 +16,6 @@ project-name = Nom du projet
 project-rename = Renommer le projet
 project-not-saved = Non enregistré
 project-redo = Rétablir
-project-view = Vue de la carte
 project-view-this = Vue de cette carte
 project-diagram = Diagramme
 project-text = Texte
@@ -24,13 +23,7 @@ project-one-at-a-time = Une à la fois
 project-side-by-side = Deux côte à côte
 project-close-side = Fermer ce côté
 project-references = Références
-project-side = Références, images, historique et modifications
 project-side-map = Carte
-project-preview = Aperçu et exportation
-project-share = Partager
-project-shared = Partagé
-project-shared-offline = Partagé · le serveur ne peut pas être joint
-project-shared-too-large = Partagé · le serveur n’accepte pas les dernières modifications
 project-between-maps = Entre les deux cartes
 
 ## When the sharing ends from the other side
@@ -80,19 +73,13 @@ project-template-not-renewed = La copie du modèle que garde le projet n’a pas
 # Said over the other pane while elements of one project are dragged over it.
 project-copy-to-project = Copier dans « { $name } »
 project-move-to-project = Déplacer dans « { $name } »
-project-element-name = Nom de l’élément
-project-this-element-actions = Cet élément
-project-new-element-under = Nouvel élément dessous
 project-document-into = Importer un document dedans…
 project-drop-on-map = Déposez sur une carte pour y déplacer · maintenez Ctrl pour copier
 project-open-beside = Ouvrir à côté
 project-open-beside-hint = Deux cartes côte à côte, pour déplacer des éléments de l’une à l’autre
 project-side-by-side-short = Côte à côte
-project-preview-short = Aperçu
-project-found = Citations non liées…
 # The count is of those found in the element in view, and under it.
 project-found-hint = { $count } à passer en revue, pour en faire des citations
-project-found-none = Et du texte qui ressemble à des citations
 project-copied-to = Copié dans « { $name } »
 project-moved-to = Déplacé dans « { $name } »
 project-other-projects = Autres projets

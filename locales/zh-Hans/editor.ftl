@@ -64,7 +64,6 @@ editor-highlight = 高亮
 editor-highlight-hint = 只为屏幕上醒目：不会进入任何文档
 editor-underline = 下划线
 editor-code-words = 行内代码
-editor-code-words-hint = 行内的等宽字体
 editor-scene = 场景标题
 editor-scene-hint = 内景 房子 – 夜
 editor-action = 动作
@@ -78,10 +77,7 @@ editor-parenthetical-hint = 怎么说，放在括号里
 editor-transition = 转场
 editor-transition-hint = 切至：，靠右
 editor-comment = 批注
-editor-comment-hint = 对所选内容的批注
-editor-comment-element-hint = 对此元素的批注；选中词语可对其批注
 editor-parallel = 两种文本并排
-editor-parallel-hint = 原文及其译文，各自成为独立的文本
 editor-paragraph-kind = 段落类型
 # Said of the button that shows the kind of paragraph the cursor is in.
 editor-paragraph-kind-now = 段落类型：{ $kind }
@@ -96,8 +92,6 @@ editor-kinds-make = 新建类型…
 editor-kinds-change-own = 修改自定义类型…
 # Over the item that opens the format editor: the format sets how each kind looks.
 editor-kinds-set-by = 按“{ $format }”的规定排印
-editor-words = 词语
-editor-words-hint = 下划线、上标、代码；外文词、作品名、术语
 editor-words-make = 新建词语类型…
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = 普通词语
@@ -119,35 +113,17 @@ editor-own-kind-delete-message = { $count ->
 
 ## Citing, notes, and what is put into the text.
 
-editor-cite = 引用
 editor-cite-here = 在此引用著作
-editor-cite-at-cursor = 在光标处引用著作
 editor-note = 注释
 editor-note-selection = 把所选内容变为注释
-editor-note-hint = 注释，位于页脚或文末
 editor-insert = 插入
-editor-insert-hint = 图片、表格、数学公式、交叉引用
-editor-new-element = 新建元素
-editor-new-element-hint = 在此元素之后或之下新建元素
-editor-new-after = 在此元素之后新建元素
-editor-new-under = 在此元素之下新建元素
-editor-new-split = 在此拆分
 editor-spelling-on = 书写时检查拼写 · 单击停止
 editor-spelling-off = 不检查拼写 · 单击开始检查
-editor-picture-file = 来自文件的图片…
-editor-picture-file-hint = 一幅插图，连同对它的说明
-editor-picture-store = 来自图库的图片…
-editor-picture-store-hint = 你已有的图片显示在侧边
 editor-equation = 公式块
-editor-equation-hint = 单独成行的数学公式
 editor-table = 表格…
-editor-table-hint = 指定行数和列数
 editor-table-file = 来自文件的表格…
-editor-table-file-hint = CSV，或 LibreOffice、Excel 的工作表
 editor-formula = 公式
-editor-formula-hint = 行内的数学公式
 editor-pointer = 交叉引用…
-editor-pointer-hint = 指向插图、表格、公式或某一部分：“见图 2”
 # What a picture that was pasted without a name of its own is called in the store of pictures.
 editor-pasted-picture = 图片
 

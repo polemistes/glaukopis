@@ -112,7 +112,7 @@ try {
     else await sleep(200);
   };
   const insert = async (words) => {
-    await app.clickText('.pane-bar .tools button', 'Insert');
+    await app.click('.pane-bar [data-insert]');
     await app.waitFor('.menu');
     await app.clickText('.menu [role="menuitem"], .menu button', words);
   };
@@ -139,7 +139,7 @@ try {
   await app.clickText('dialog footer button', 'Create');
   // A new project opens as text: the diagram is turned to.
   await app.waitFor('.text-view .section', 8000);
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
   const project = (await invoke('project_list'))[0].id;
@@ -455,9 +455,10 @@ try {
   await app.press('End');
   check(
     'the tools for writing act in a cell',
-    await app.exists('.pane-bar .tools button[aria-label="Italic"]:not(:disabled)'),
+    await app.exists('.pane-bar [data-marks]:not(:disabled)'),
   );
-  await app.clickText('.pane-bar .tools button', 'Note');
+  await app.click('.pane-bar [data-insert]');
+  await app.clickText('.menu [role="menuitem"]', 'Note');
   await app.waitFor('.note-panel .prose');
   await sleep(150);
   await app.keys('Counted by hand.');

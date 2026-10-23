@@ -16,7 +16,6 @@ project-name = Name of the project
 project-rename = Rename the project
 project-not-saved = Not saved
 project-redo = Redo
-project-view = View of the map
 project-view-this = View of this map
 project-diagram = Diagram
 project-text = Text
@@ -33,14 +32,8 @@ project-beside-subtitle = A project, or an element in its tree, to show beside t
 project-close-side = Close this side
 project-references = References
 project-pictures = Images
-project-side = References, pictures, history and changes
 project-side-tabs = What the document pane shows
 project-side-map = Map
-project-preview = Preview and export
-project-share = Share
-project-shared = Shared
-project-shared-offline = Shared · the server cannot be reached
-project-shared-too-large = Shared · the server does not take the latest changes
 project-between-maps = Between the two maps
 project-between-preview = Between the sides and the typesetting
 project-between-pictures = Between the sides and the images
@@ -59,7 +52,7 @@ project-understood = Understood
 
 ## Files dropped on the project
 
-project-drop-picture = Drop a picture on the element it belongs to
+project-drop-picture = Drop an image on the element it belongs to
 project-cited-in = { $count ->
     [one] The reference is cited in “{ $name }”
    *[other] { $count } references are cited in “{ $name }”
@@ -91,19 +84,13 @@ project-template-not-renewed = The project's copy of the template could not be b
 # Said over the other pane while elements of one project are dragged over it.
 project-copy-to-project = Copy to “{ $name }”
 project-move-to-project = Move to “{ $name }”
-project-element-name = Name of the element
-project-this-element-actions = This element
-project-new-element-under = New element under it
 project-document-into = A document into it…
 project-drop-on-map = Drop on a map to move there · hold Ctrl to copy
 project-open-beside = Open beside
 project-open-beside-hint = Two maps side by side, to move elements between them
 project-side-by-side-short = Split
-project-preview-short = Preview
-project-found = Loose citations…
 # The count is of those found in the element in view, and under it.
 project-found-hint = { $count } to go through, and make citations of
-project-found-none = And text that looks like citations
 project-copied-to = Copied to “{ $name }”
 project-moved-to = Moved to “{ $name }”
 project-other-projects = Other projects
@@ -224,19 +211,19 @@ project-references-foreign = { $count ->
 project-store = Store
 project-open-picture = Open…
 project-put-into-text = Put it into the text
-project-add-pictures = Add pictures from files
-project-which-pictures = Which pictures
-project-search-pictures = Search pictures
-project-a-picture = A picture
+project-add-pictures = Add images from files
+project-which-pictures = Which images
+project-search-pictures = Search images
+project-a-picture = An image
 project-with-notes = With notes
 project-not-on-computer = Not on this computer
 project-nothing-said = Nothing is said of it yet
 project-store-empty = The store is empty
-project-store-empty-hint = Add pictures from files, or drop them on a text.
-project-no-pictures = No pictures yet
-project-no-pictures-map = The pictures of the figures of this map are listed here. Those of the store are under Store.
-project-no-pictures-project = The pictures of the figures of the project are listed here. Those of the store are under Store.
-project-pictures-drag = Drag a picture into a text to make a figure of it there, or onto an element to put it at the end of its text.
+project-store-empty-hint = Add images from files, or drop them on a text.
+project-no-pictures = No images yet
+project-no-pictures-map = The images of the figures of this map are listed here. Those of the store are under Store.
+project-no-pictures-project = The images of the figures of the project are listed here. Those of the store are under Store.
+project-pictures-drag = Drag an image into a text to make a figure of it there, or onto an element to put it at the end of its text.
 # The count is of the pictures that are used and are not in the store of this computer.
 project-pictures-absent-map = { $count ->
     [one] { $count } in this map is not on this computer.
@@ -267,7 +254,7 @@ copy-original-same = The original is as it was when it was copied.
 copy-original-unknown = Whether the original has changed since it was copied is not known: the copy was made before that was kept.
 copy-original-gone = The original is no longer there.
 copy-how-shown = Below, struck through, is what only the original has, and marked, what only this copy has.
-copy-alike = Their names and texts are alike. They may differ in what is not words: citations, pictures, marks.
+copy-alike = Their names and texts are alike. They may differ in what is not words: citations, images, marks.
 copy-only-original = Only in the original
 copy-only-copy = Only in this copy
 copy-go = Go to the original
@@ -311,3 +298,9 @@ project-all-projects-menu = All projects
 # The crumb … in a path too long for its cell, whose menu has the crumbs hidden behind it.
 project-path-hidden = More of the path
 project-switch-sides = Switch sides
+
+## Stage 3 of the sides, the panes and the bars (agent "bars")
+project-bar-typesetting = Typesetting
+project-bar-document = Document
+project-badge-offline = the server cannot be reached
+project-badge-refused = the server does not take the latest changes

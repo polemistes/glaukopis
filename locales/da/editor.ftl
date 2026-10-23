@@ -62,11 +62,8 @@ editor-line-number-press = Denne linjes nummer: tryk for at ændre det
 
 ## Numbers belong to what they number (ADR 0041): the Numbers menu offers
 ## the three, each saying what it numbers.
-editor-numbers = Numre
-editor-numbers-hint = Nummerer de linjer, du skriver, angiv et sted i prosa, eller nummerer sidens linjer
 editor-numbers-lines = Nummerer disse linjer…
 editor-numbers-lines-hint = Linjerne i de afsnit, hvor markøren står, eller i de markerede: fra hvilket nummer, for hver hvor mange, i hvilken side
-editor-numbers-refmark-hint = Et sted i prosa, angivet ved et vers, en side eller et nummer i en udgave: 3:16, 327a
 editor-numbers-page = Nummerer sidens linjer
 editor-numbers-page-hint = Hver linje på den trykte side, nummereret i margenen, i dette dokument og dem under det
 
@@ -117,7 +114,6 @@ editor-highlight = Fremhævning
 editor-highlight-hint = For øjet på skærmen: det kommer ikke med i noget dokument
 editor-underline = Understreget
 editor-code-words = Kode i linjen
-editor-code-words-hint = Bogstaver af samme bredde, inde i linjen
 editor-scene = Sceneoverskrift
 editor-scene-hint = Hvor og hvornår en scene foregår: INT. HUS – NAT
 editor-action = Handling
@@ -131,14 +127,9 @@ editor-parenthetical-hint = Hvordan en replik siges
 editor-transition = Overgang
 editor-transition-hint = Hvordan én scene går over i den næste: KLIP TIL:
 editor-comment = Kommentar
-editor-comment-hint = En kommentar til det markerede
-editor-comment-element-hint = En kommentar til dette element; markér ord for at kommentere dem
 editor-parallel = To tekster side om side
-editor-parallel-hint = En original og dens oversættelse, hver sin tekst
 editor-page-break = Sideskift
-editor-page-break-hint = Det, der følger, begynder på en ny side
 editor-column-break = Spalteskift
-editor-column-break-hint = Det, der følger, begynder øverst i næste spalte, hvor opsætningen sætter teksten i spalter
 editor-paragraph-kind = Afsnittets art
 # Said of the button that shows the kind of paragraph the cursor is in.
 editor-paragraph-kind-now = Afsnittets art: { $kind }
@@ -156,8 +147,6 @@ editor-kinds-change-own = Ændr en af dine egne…
 editor-kinds-set-by = Sat, som »{ $format }« har dem
 editor-kinds-change-look = Hvordan »{ $kind }« ser ud…
 editor-kinds-change-look-hint = Dens udseende i dette dokument og resten af siden
-editor-words = Ord
-editor-words-hint = Understregning, hævet skrift, kode; sproget i en passage, ord på et andet sprog, titlen på et værk, en term, en taler inde i en linje
 editor-words-make = Lav en art ord…
 # Beside the language of the map, first among the languages foreign words may be in.
 editor-foreign-of-text = Tekstens sprog
@@ -192,40 +181,17 @@ editor-own-kind-delete-message = { $count ->
 
 ## Citing, notes, and what is put into the text.
 
-editor-cite = Henvis
 editor-cite-here = Henvis til et værk her
-editor-cite-at-cursor = Henvis til et værk, hvor markøren står
 editor-note = Note
 editor-note-selection = Gør det markerede til en note
-editor-note-hint = En note, nederst på siden eller til sidst
 editor-insert = Indsæt
-editor-insert-hint = Et billede, en tabel, matematik, en krydshenvisning
-editor-new-element = Nyt element
-editor-new-element-hint = Et nyt element efter dette, eller under det
-editor-new-after = Nyt element efter dette
-editor-new-under = Nyt element under dette
-editor-new-split = Del her
 editor-spelling-on = Stavningen kontrolleres, mens du skriver · tryk for at stoppe
 editor-spelling-off = Stavningen kontrolleres ikke · tryk for at kontrollere den
-editor-break-signs = Tegnet for et linjeskift i et afsnit
-editor-break-signs-on = Et linjeskift i et afsnit vises med ↵ · tryk for at skjule tegnet
-editor-break-signs-off = Et linjeskift i et afsnit vises ikke · tryk for at vise det med ↵
-editor-picture-file = Billede fra en fil…
-editor-picture-file-hint = En figur, med det, der siges om den
-editor-picture-store = Billede fra billedlageret…
-editor-picture-store-hint = Dem, du har, vises i siden
 editor-equation = Ligning
-editor-equation-hint = Matematik på en linje for sig
 editor-table = Tabel…
-editor-table-hint = Med så og så mange rækker og kolonner
 editor-table-file = Tabel fra en fil…
-editor-table-file-hint = CSV, eller et regneark fra LibreOffice eller Excel
 editor-formula = Formel
-editor-formula-hint = Matematik i linjen
 editor-pointer = Krydshenvisning…
-editor-pointer-hint = Til en figur, en tabel, en ligning eller en del: »se figur 2«
-editor-refmark = Stedmærke…
-editor-refmark-hint = Et vers, en side eller et nummer i en udgave: 3:16, 327a
 editor-refmark-title = Stedmærke
 editor-refmark-label = Betegnelse
 editor-refmark-placeholder = 3:16, 327a, 1094a1

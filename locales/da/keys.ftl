@@ -41,7 +41,6 @@ keys-side-history = Historik
 keys-side-changes = Gennemgå ændringer
 keys-side-found = Løse kildehenvisninger
 keys-side-by-side = To side om side
-keys-share = Del projektet
 keys-find = Søg i teksten
 keys-replace = Søg og erstat
 keys-undo = Fortryd

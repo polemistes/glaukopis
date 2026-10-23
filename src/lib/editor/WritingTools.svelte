@@ -1,15 +1,21 @@
 <script lang="ts">
   /**
-   * The tools for writing, where they can be seen: the kind of paragraph,
-   * the marks and the kinds of words, citing and notes. They act on the text
-   * that has the cursor.
+   * The tools for writing, where they can be seen: in a side's bar and in
+   * the box of an element (ADR 0064). Three menus, Paragraph kind, Words
+   * kind and Marks, the first two naming the kind the cursor is in; what
+   * stands between them and the rest, where the bar gives it (undo and
+   * redo); spelling and the marks of whitespace; and Insert, which holds
+   * citing, notes, comments and what stands in the text and is not text.
+   * They act on the text that has the cursor; while the side shows no text
+   * they are disabled, not hidden, so that the bar does not shift.
    *
    * The kind menu shows the kinds written together with the run the cursor
    * is in, then the kinds at hand, then the whole catalogue under "More…",
-   * and at its foot names the layout that sets them (ADR 0041). The bar that appears over a
-   * selection does the same as the marks for what is selected; the keys do
-   * it without either.
+   * and at its foot names the layout that sets them (ADR 0041). The bar that
+   * appears over a selection does the same as the marks for what is
+   * selected; the keys do it without either.
    */
+  import type { Snippet } from 'svelte';
   import AlignLeft from '@lucide/svelte/icons/align-left';
   import Bold from '@lucide/svelte/icons/bold';
   import BookType from '@lucide/svelte/icons/book-type';
@@ -20,19 +26,14 @@
   import Columns3 from '@lucide/svelte/icons/columns-3';
   import Drama from '@lucide/svelte/icons/drama';
   import FileMinus from '@lucide/svelte/icons/file-minus';
-  import FileDigit from '@lucide/svelte/icons/file-digit';
   import Globe from '@lucide/svelte/icons/globe';
-  import Hash from '@lucide/svelte/icons/hash';
   import Highlighter from '@lucide/svelte/icons/highlighter';
-  import ImagePlus from '@lucide/svelte/icons/image-plus';
   import Images from '@lucide/svelte/icons/images';
   import Italic from '@lucide/svelte/icons/italic';
   import Languages from '@lucide/svelte/icons/languages';
-  import CornerDownRight from '@lucide/svelte/icons/corner-down-right';
   import Link2 from '@lucide/svelte/icons/link-2';
   import List from '@lucide/svelte/icons/list';
   import ListOrdered from '@lucide/svelte/icons/list-ordered';
-  import ListPlus from '@lucide/svelte/icons/list-plus';
   import MessageSquare from '@lucide/svelte/icons/message-square';
   import Milestone from '@lucide/svelte/icons/milestone';
   import Pencil from '@lucide/svelte/icons/pencil';
@@ -43,9 +44,7 @@
   import Sheet from '@lucide/svelte/icons/sheet';
   import Sigma from '@lucide/svelte/icons/sigma';
   import Palette from '@lucide/svelte/icons/palette';
-  import CornerDownLeft from '@lucide/svelte/icons/corner-down-left';
   import SpellCheck from '@lucide/svelte/icons/spell-check';
-  import SplitSquareVertical from '@lucide/svelte/icons/split-square-vertical';
   import SquareFunction from '@lucide/svelte/icons/square-function';
   import StickyNote from '@lucide/svelte/icons/sticky-note';
   import Strikethrough from '@lucide/svelte/icons/strikethrough';
@@ -67,6 +66,7 @@
   import { showPictures } from '$lib/pictures/store.svelte';
   import { documents } from '$lib/preview/documents.svelte';
   import { lookUi } from '$lib/look/look.svelte';
+  import { panes } from '$lib/project/panes.svelte';
   import type { Project } from '$lib/project/model/project.svelte';
   import { spelling } from '$lib/spelling/spelling.svelte';
   import { settings } from '$lib/state/settings.svelte';
@@ -83,7 +83,6 @@
     kindOf,
     kindsIn,
     languageOf,
-    paragraphAt,
     setKind,
     setLanguage,
     toggle,
@@ -103,17 +102,16 @@
     scope?: HTMLElement | null;
     /** The element in view: whose document sets the tools, where no text has the cursor. */
     at?: string | null;
-    /**
-     * Makes a new element, where the tools stand over the text of a whole
-     * branch: after the one the cursor is in, under it, or from the cursor on.
-     * Without it there is no button for it, as in the box of one element.
-     */
-    onelement?: (what: 'after' | 'under' | 'split') => void;
+    /** Whether the side shows no text, as when it shows the diagram: the menus are disabled. */
+    disabled?: boolean;
+    /** What stands between the menus and spelling, where the bar has it: undo and redo. */
+    middle?: Snippet;
   }
 
-  let { project, scope = null, at = null, onelement }: Props = $props();
+  let { project, scope = null, at = null, disabled = false, middle }: Props = $props();
 
   const s = $derived.by(() => {
+    if (disabled) return null;
     const selection = editorUi.selection;
     if (!selection) return null;
     // A note is written in a panel of its own, which belongs to no part of the window.
@@ -129,19 +127,57 @@
   const mixed = $derived(s && body ? kindsIn(s.view.state).length > 1 : false);
   /** What the kind is called: by the catalogue, or by the writer; or "Mixed". */
   const kindLabel = $derived(mixed ? t('editor-kinds-mixed') : nameOf(kind));
-  /** Whether the cursor is in a paragraph, whose lines the Numbers menu can number: the dialog says which. */
-  const numberable = $derived(!!s && body && paragraphAt(s.view.state) !== null);
   /** The kind of words at the cursor, or the first in what is selected. */
   const wordKind = $derived(s ? kindMarkOf(s.view.state) : null);
+  /** What the button of the words kind says: the kind at the cursor, foreign words with their language; else the menu's name. */
+  const wordsLabel = $derived(
+    wordKind
+      ? wordKind.name === 'foreign' && wordKind.lang
+        ? `${nameOf('foreign')}: ${languageName(wordKind.lang)}`
+        : nameOf(wordKind.name)
+      : t('editor-words-kind'),
+  );
   /** The language of the passage at the cursor, or the first in what is selected, where it has one of its own. */
   const passageLanguage = $derived(s ? languageOf(s.view.state) : null);
-  /** Whether what is selected has any of what the words menu holds. */
-  const wordsOn = $derived(
-    !!s &&
-      (!!wordKind ||
-        !!passageLanguage ||
-        ['underline', 'sup', 'sub', 'strike', 'code'].some((name) => s.marks[name])),
-  );
+
+  /** The marks, in the order of their menu, each with its icon and its key. */
+  const MARKS = [
+    { name: 'em', label: () => t('editor-italic'), icon: Italic, key: keysFor('writing-italic') },
+    { name: 'strong', label: () => t('editor-bold'), icon: Bold, key: keysFor('writing-bold') },
+    {
+      name: 'smallcaps',
+      label: () => t('editor-small-capitals'),
+      icon: Type,
+      key: keysFor('writing-smallcaps'),
+    },
+    {
+      name: 'underline',
+      label: () => t('editor-underline'),
+      icon: Underline,
+      key: keysFor('writing-underline'),
+    },
+    {
+      name: 'sup',
+      label: () => t('editor-superscript'),
+      icon: Superscript,
+      key: keysFor('writing-raised'),
+    },
+    {
+      name: 'sub',
+      label: () => t('editor-subscript'),
+      icon: Subscript,
+      key: keysFor('writing-lowered'),
+    },
+    {
+      name: 'strike',
+      label: () => t('editor-struck'),
+      icon: Strikethrough,
+      key: keysFor('writing-strike'),
+    },
+    { name: 'code', label: () => t('editor-code-words'), icon: Code, key: undefined },
+  ] as const;
+  /** Whether what is selected has any of the marks. */
+  const marked = $derived(!!s && MARKS.some((m) => s.marks[m.name]));
 
   /** The element whose text has the cursor, or, where none has it, the one in view: its document sets the tools. */
   const element = $derived(elementOf(s?.view) ?? at ?? null);
@@ -155,8 +191,6 @@
   });
   const choice = $derived(documents.choice(ofDocument?.settings ?? {}, project));
   let format = $state.raw<DocumentFormat | null>(null);
-  /** Whether the lines of the page are numbered: as the document says, else as its layout does. */
-  const pageNumbered = $derived(ofDocument?.settings.lineNumbers ?? format?.lineNumbers ?? false);
   $effect(() => {
     const id = choice.format;
     void documents.changed;
@@ -227,61 +261,9 @@
   }
 
   /** A comment on what is selected, or on the element where nothing is. */
-  function comment() {
-    const view = s?.view;
+  function comment(view: EditorView) {
     const element = elementOf(view);
-    if (!view || !element) return;
-    commentsUi.begin(element, selectedPassage(view));
-  }
-
-  /**
-   * Numbers belong to what they number (ADR 0041): the lines one writes to
-   * a numbered stretch, a place in prose to a reference mark, the lines the
-   * page makes to the layout. The menu offers the three, each saying what
-   * it numbers. The dialog of the numbers is the editor's own, reached
-   * through its hooks, and says which lines it numbers; the layout's line
-   * numbering is in the document settings.
-   */
-  function numbers(event: MouseEvent) {
-    const view = s?.view;
-    if (!view) return;
-    const hooks = hooksOf.get(view);
-    const settingsAt = at ?? element;
-    openMenu(
-      event.currentTarget as HTMLElement,
-      [
-        {
-          label: t('editor-numbers-lines'),
-          hint: t('editor-numbers-lines-hint'),
-          icon: Hash,
-          disabled: !numberable || !hooks?.askNumbers,
-          action: () => hooks?.askNumbers?.(view),
-        },
-        {
-          label: t('editor-refmark'),
-          hint: t('editor-numbers-refmark-hint'),
-          icon: Milestone,
-          shortcut: keysFor('writing-refmark'),
-          action: () => void askRefMark(view),
-        },
-        { kind: 'separator' },
-        {
-          // Said of the document of the element in view, and of all under it, over what its layout says.
-          label: t('editor-numbers-page'),
-          hint: t('editor-numbers-page-hint'),
-          icon: FileDigit,
-          checked: pageNumbered,
-          disabled: !settingsAt,
-          action: () => {
-            if (!settingsAt) return;
-            const on = ofDocument?.from.get('lineNumbers') ?? settingsAt;
-            project.setDocument(on, { lineNumbers: !pageNumbered });
-            view.focus();
-          },
-        },
-      ],
-      { align: 'start' },
-    );
+    if (element) commentsUi.begin(element, selectedPassage(view));
   }
 
   /** The language of what is selected, by its tag, asked for in a dialog. */
@@ -293,18 +275,12 @@
     view.focus();
   }
 
-  /** A note opens a panel of its own, which takes the cursor: it is not taken back. */
-  function note() {
-    const view = s?.view;
-    if (view) insertFootnote(view.state, view.dispatch, view);
-  }
-
-  function cite() {
-    const view = s?.view;
-    if (view) hooksOf.get(view)?.cite?.(view, false);
-  }
-
-  /** What stands in the text and is not text: pictures and mathematics. */
+  /**
+   * What is put in the text: a citation, a note, a comment; then what stands
+   * in the text and is not text. The names say what each is. An image is
+   * chosen among the images, which the document pane shows, and put in at
+   * the cursor from there, where an image from a file is taken in as well.
+   */
   function insert(event: MouseEvent) {
     const view = s?.view;
     if (!view) return;
@@ -312,133 +288,121 @@
     openMenu(
       event.currentTarget as HTMLElement,
       [
-        ...(body
-          ? [
-              {
-                label: t('editor-picture-file'),
-                hint: t('editor-picture-file-hint'),
-                icon: ImagePlus,
-                shortcut: keysFor('writing-picture'),
-                action: () => hooks?.picture?.(view),
-              },
-              {
-                label: t('editor-picture-store'),
-                hint: t('editor-picture-store-hint'),
-                icon: Images,
-                action: () => {
-                  // The cursor stays where the picture is to go.
-                  showPictures('store');
-                  view.focus();
-                },
-              },
-              {
-                label: t('editor-equation'),
-                hint: t('editor-equation-hint'),
-                icon: SquareFunction,
-                shortcut: keysFor('writing-equation'),
-                // It opens a panel of its own, which takes the cursor.
-                action: () => void insertEquation(view.state, view.dispatch, view),
-              },
-              {
-                label: t('editor-table'),
-                hint: t('editor-table-hint'),
-                icon: Table,
-                shortcut: keysFor('writing-table'),
-                action: () => void askForTable(view),
-              },
-              {
-                label: t('editor-table-file'),
-                hint: t('editor-table-file-hint'),
-                icon: Sheet,
-                action: () => void chooseTable(view),
-              },
-              {
-                label: t('editor-parallel'),
-                hint: t('editor-parallel-hint'),
-                icon: Columns2,
-                action: () => run(insertParallel, view),
-              },
-              { kind: 'separator' as const },
-              {
-                label: t('editor-page-break'),
-                hint: t('editor-page-break-hint'),
-                icon: FileMinus,
-                action: () => run(insertBreak('page'), view),
-              },
-              {
-                label: t('editor-column-break'),
-                hint: t('editor-column-break-hint'),
-                icon: Columns3,
-                action: () => run(insertBreak('column'), view),
-              },
-            ]
-          : []),
+        {
+          label: t('editor-citation'),
+          icon: Quote,
+          shortcut: keysFor('writing-cite-keys'),
+          action: () => hooks?.cite?.(view, false),
+        },
+        {
+          label: t('editor-note'),
+          icon: StickyNote,
+          shortcut: keysFor('writing-note'),
+          disabled: !body,
+          // A note opens a panel of its own, which takes the cursor: it is not taken back.
+          action: () => insertFootnote(view.state, view.dispatch, view),
+        },
+        {
+          label: t('editor-comment'),
+          icon: MessageSquare,
+          shortcut: keysFor('comment'),
+          disabled: !body || !elementOf(view),
+          action: () => comment(view),
+        },
+        { kind: 'separator' },
+        {
+          label: t('editor-image'),
+          icon: Images,
+          disabled: !body,
+          action: () => {
+            // The cursor stays where the image is to go.
+            showPictures('store');
+            view.focus();
+          },
+        },
+        {
+          label: t('editor-table'),
+          icon: Table,
+          shortcut: keysFor('writing-table'),
+          disabled: !body,
+          action: () => void askForTable(view),
+        },
+        {
+          label: t('editor-table-file'),
+          icon: Sheet,
+          disabled: !body,
+          action: () => void chooseTable(view),
+        },
         {
           label: t('editor-formula'),
-          hint: t('editor-formula-hint'),
           icon: Sigma,
           shortcut: keysFor('writing-formula'),
           action: () => void insertMath(view.state, view.dispatch, view),
         },
         {
-          label: t('editor-refmark'),
-          hint: t('editor-refmark-hint'),
+          label: t('editor-equation'),
+          icon: SquareFunction,
+          shortcut: keysFor('writing-equation'),
+          disabled: !body,
+          // It opens a panel of its own, which takes the cursor.
+          action: () => void insertEquation(view.state, view.dispatch, view),
+        },
+        {
+          label: t('editor-pointer'),
+          icon: Link2,
+          shortcut: keysFor('writing-crossref'),
+          disabled: !hooks?.point,
+          action: () => hooks?.point?.(view),
+        },
+        {
+          label: t('editor-inline-number'),
           icon: Milestone,
           shortcut: keysFor('writing-refmark'),
           action: () => void askRefMark(view),
         },
-        ...(hooks?.point
-          ? [
-              { kind: 'separator' as const },
-              {
-                label: t('editor-pointer'),
-                hint: t('editor-pointer-hint'),
-                icon: Link2,
-                shortcut: keysFor('writing-crossref'),
-                action: () => hooks.point?.(view),
-              },
-            ]
-          : []),
+        {
+          label: t('editor-parallel'),
+          icon: Columns2,
+          disabled: !body,
+          action: () => run(insertParallel, view),
+        },
+        { kind: 'separator' },
+        {
+          label: t('editor-page-break'),
+          icon: FileMinus,
+          disabled: !body,
+          action: () => run(insertBreak('page'), view),
+        },
+        {
+          label: t('editor-column-break'),
+          icon: Columns3,
+          disabled: !body,
+          action: () => run(insertBreak('column'), view),
+        },
       ],
       { align: 'start' },
     );
   }
 
-  /** A new element, by the menu of the button: the keys do the same. */
-  function newElement(event: MouseEvent) {
-    if (!onelement) return;
-    const add = onelement;
+  /** The marks: a look chosen by hand, on any run of letters. Those a name cannot have are disabled in a name. */
+  function marks(event: MouseEvent) {
+    const view = s?.view;
+    const on = s?.marks;
+    if (!view || !on) return;
+    const schema = view.state.schema;
     openMenu(
       event.currentTarget as HTMLElement,
-      [
-        {
-          label: t('editor-new-after'),
-          icon: Plus,
-          // In a text, the keys make a heading at the cursor: the last of these.
-          shortcut: body ? undefined : keysFor('tree-new'),
-          action: () => add('after'),
-        },
-        {
-          label: t('editor-new-under'),
-          icon: CornerDownRight,
-          shortcut: body ? undefined : keysFor('tree-new-under'),
-          action: () => add('under'),
-        },
-        {
-          label: t('editor-new-split'),
-          hint: t('editor-new-split-hint'),
-          icon: SplitSquareVertical,
-          shortcut: keysFor('tree-new'),
-          disabled: !body,
-          action: () => add('split'),
-        },
-      ],
+      MARKS.map((m): MenuItem => ({
+        label: m.label(),
+        icon: m.icon,
+        shortcut: m.key,
+        checked: !!on[m.name],
+        disabled: !schema.marks[m.name],
+        action: () => run(toggle(m.name), view),
+      })),
       { align: 'start' },
     );
   }
-
-  /** Whether the sign of a break within a paragraph is shown, everywhere. */
-  const breakSigns = $derived(settings.value.breakSigns !== false);
 
   /** Turns the checking of spelling off or on, for everything, as the settings do. */
   function turnSpelling() {
@@ -561,26 +525,17 @@
     );
   }
 
-  // ---- the words ----
+  // ---- the kinds of words ----
 
-  function words(event: MouseEvent) {
+  /**
+   * The kinds of words: roles whose look the format gives, so that a term
+   * is a term in every format. Foreign words with their language, those of
+   * the catalogue, the writer's own; then the language of the passage, which
+   * is no kind but is said of words as well; then the making of a kind.
+   */
+  function wordsKind(event: MouseEvent) {
     const view = s?.view;
-    const marks = s?.marks;
-    if (!view || !marks) return;
-    const mark = (
-      name: 'underline' | 'sup' | 'sub' | 'strike' | 'code',
-      label: string,
-      icon: typeof Pilcrow,
-      shortcut?: string,
-      hint?: string,
-    ): MenuItem => ({
-      label,
-      hint,
-      icon,
-      shortcut,
-      checked: !!marks[name],
-      action: () => run(toggle(name), view),
-    });
+    if (!view) return;
     const ofWords = (id: string): MenuItem => ({
       label: nameOf(id),
       hint: specOf(id)?.hint(),
@@ -617,18 +572,12 @@
     openMenu(
       event.currentTarget as HTMLElement,
       [
-        mark('underline', t('editor-underline'), Underline, keysFor('writing-underline')),
-        mark('sup', t('editor-superscript'), Superscript, keysFor('writing-raised')),
-        mark('sub', t('editor-subscript'), Subscript, keysFor('writing-lowered')),
-        mark('strike', t('editor-struck'), Strikethrough, keysFor('writing-strike')),
-        mark('code', t('editor-code-words'), Code, undefined, t('editor-code-words-hint')),
-        { kind: 'separator' },
-        ofPassage,
-        { kind: 'separator' },
         foreign,
         // The kinds of words, then a speaker and a direction within a line.
         ...WORD_KINDS.filter((id) => id !== 'foreign').map((id) => ofWords(id)),
         ...ownWords.map((k) => ofWords(k.id)),
+        { kind: 'separator' },
+        ofPassage,
         { kind: 'separator' },
         {
           label: t('editor-words-make'),
@@ -652,30 +601,11 @@
   tabindex="-1"
   onmousedown={(e) => e.preventDefault()}
 >
-  {#if onelement}
-    <button
-      type="button"
-      class="word element"
-      aria-label={t('editor-new-element')}
-      use:tooltip={{
-        text: t('editor-new-element-hint'),
-        shortcut: keysFor('tree-new'),
-        side: 'bottom',
-      }}
-      onclick={newElement}
-    >
-      <ListPlus size={14} />
-      {t('editor-new-element')}
-      <ChevronDown size={13} />
-    </button>
-
-    <span class="rule"></span>
-  {/if}
-
   <button
     type="button"
-    class="style"
+    class="kind"
     disabled={!body}
+    data-paragraph-kind
     aria-label={t('editor-paragraph-kind-now', { kind: kindLabel })}
     use:tooltip={{ text: t('editor-paragraph-kind'), side: 'bottom' }}
     onclick={kinds}
@@ -683,132 +613,47 @@
     <span class="truncate">{kindLabel}</span>
     <ChevronDown size={13} />
   </button>
-
   <button
     type="button"
-    class="lines"
-    disabled={!body}
-    aria-label={t('editor-numbers')}
-    use:tooltip={{ text: t('editor-numbers-hint'), side: 'bottom' }}
-    onclick={numbers}
+    class="kind"
+    class:on={!!wordKind}
+    disabled={!s || s.kind === 'title'}
+    data-words-kind
+    aria-label={wordKind
+      ? t('editor-words-kind-now', { kind: wordsLabel })
+      : t('editor-words-kind')}
+    use:tooltip={{ text: t('editor-words-kind'), side: 'bottom' }}
+    onclick={wordsKind}
   >
-    <Hash size={14} />
+    <span class="truncate">{wordsLabel}</span>
     <ChevronDown size={13} />
   </button>
-
-  <span class="rule"></span>
-
   <button
     type="button"
-    class:on={s?.marks.em}
+    class="opens"
+    class:on={marked}
     disabled={!s}
-    aria-label={t('editor-italic')}
-    use:tooltip={{ text: t('editor-italic'), shortcut: keysFor('writing-italic'), side: 'bottom' }}
-    onclick={() => run(toggle('em'))}
+    data-marks
+    aria-haspopup="menu"
+    aria-label={t('editor-marks')}
+    use:tooltip={{ text: t('editor-marks'), side: 'bottom' }}
+    onclick={marks}
   >
     <Italic size={15} />
-  </button>
-  <button
-    type="button"
-    class:on={s?.marks.strong}
-    disabled={!s || s.kind === 'title'}
-    aria-label={t('editor-bold')}
-    use:tooltip={{ text: t('editor-bold'), shortcut: keysFor('writing-bold'), side: 'bottom' }}
-    onclick={() => run(toggle('strong'))}
-  >
-    <Bold size={15} />
-  </button>
-  <button
-    type="button"
-    class="caps"
-    class:on={s?.marks.smallcaps}
-    disabled={!s}
-    aria-label={t('editor-small-capitals')}
-    use:tooltip={{
-      text: t('editor-small-capitals'),
-      shortcut: keysFor('writing-smallcaps'),
-      side: 'bottom',
-    }}
-    onclick={() => run(toggle('smallcaps'))}
-  >
-    <span>Sc</span>
-  </button>
-  <button
-    type="button"
-    class="words"
-    class:on={wordsOn}
-    disabled={!s || s.kind === 'title'}
-    aria-label={t('editor-words')}
-    use:tooltip={{ text: t('editor-words-hint'), side: 'bottom' }}
-    onclick={words}
-  >
-    <WholeWord size={15} />
-    {t('editor-words')}
-    <ChevronDown size={13} />
+    <ChevronDown size={12} />
   </button>
 
-  <span class="rule"></span>
+  {#if middle}
+    <span class="rule" role="separator"></span>
+    {@render middle()}
+  {/if}
 
-  <button
-    type="button"
-    class="word cite"
-    disabled={!s || s.kind === 'title'}
-    use:tooltip={{
-      text: t('editor-cite-at-cursor'),
-      shortcut: keysFor('writing-cite'),
-      side: 'bottom',
-    }}
-    onclick={cite}
-  >
-    <Quote size={13} />
-    {t('editor-cite')}
-  </button>
-  <button
-    type="button"
-    class="word"
-    disabled={!body}
-    use:tooltip={{
-      text: t('editor-note-hint'),
-      shortcut: keysFor('writing-note'),
-      side: 'bottom',
-    }}
-    onclick={note}
-  >
-    <StickyNote size={13} />
-    {t('editor-note')}
-  </button>
-  <button
-    type="button"
-    class="word"
-    disabled={!body || !elementOf(s?.view)}
-    use:tooltip={{
-      text: s?.empty ? t('editor-comment-element-hint') : t('editor-comment-hint'),
-      shortcut: keysFor('comment'),
-      side: 'bottom',
-    }}
-    onclick={comment}
-  >
-    <MessageSquare size={13} />
-    {t('editor-comment')}
-  </button>
-
-  <button
-    type="button"
-    class="word"
-    disabled={!s || s.kind === 'title'}
-    use:tooltip={{ text: t('editor-insert-hint'), side: 'bottom' }}
-    onclick={insert}
-  >
-    <Plus size={13} />
-    {t('editor-insert')}
-  </button>
-
-  <span class="rule"></span>
+  <span class="rule" role="separator"></span>
 
   <!-- Spelling is turned off and on from here as from the settings: it holds everywhere, cursor or no cursor. -->
   <button
     type="button"
-    class="spelling"
+    class="always"
     class:on={spelling.on}
     aria-pressed={spelling.on}
     aria-label={t('spelling-check')}
@@ -820,21 +665,39 @@
   >
     <SpellCheck size={15} />
   </button>
-  <!-- The sign of a break within a paragraph, ↵, shown or not: everywhere, as spelling. -->
+  <!-- The marks of whitespace, ¶ ↵ and the ring of a hard space, shown or not: in every text of the window. -->
   <button
     type="button"
-    class="spelling"
-    class:on={breakSigns}
-    aria-pressed={breakSigns}
-    aria-label={t('editor-break-signs')}
-    data-break-signs-button
+    class="always"
+    class:on={panes.marks}
+    aria-pressed={panes.marks}
+    aria-label={t('editor-marks-shown')}
+    data-whitespace
+    {disabled}
     use:tooltip={{
-      text: breakSigns ? t('editor-break-signs-on') : t('editor-break-signs-off'),
+      text: t('editor-marks-shown'),
+      shortcut: keysFor('writing-marks'),
       side: 'bottom',
     }}
-    onclick={() => settings.set('breakSigns', !breakSigns)}
+    onclick={() => (panes.marks = !panes.marks)}
   >
-    <CornerDownLeft size={15} />
+    <Pilcrow size={15} />
+  </button>
+
+  <span class="rule" role="separator"></span>
+
+  <button
+    type="button"
+    class="opens"
+    disabled={!s || s.kind === 'title'}
+    data-insert
+    aria-haspopup="menu"
+    aria-label={t('editor-insert')}
+    use:tooltip={{ text: t('editor-insert'), side: 'bottom' }}
+    onclick={insert}
+  >
+    <Plus size={15} />
+    <ChevronDown size={12} />
   </button>
 </div>
 
@@ -862,9 +725,9 @@
     align-items: center;
     justify-content: center;
     gap: 5px;
-    min-width: 28px;
+    min-width: 26px;
     height: 26px;
-    padding: 0 6px;
+    padding: 0 5px;
     border: none;
     border-radius: var(--radius-s);
     background: transparent;
@@ -892,46 +755,27 @@
   .tools.idle button:disabled {
     opacity: 0.3;
   }
-  .style {
+  /* The two menus of kinds name the kind: that is what they tell. */
+  .kind {
     justify-content: space-between;
-    width: 118px;
-    padding: 0 6px 0 9px;
-    font-weight: 500;
-  }
-  .word {
-    padding: 0 9px 0 8px;
-    font-weight: 500;
-  }
-  .words {
-    gap: 4px;
-    padding: 0 5px 0 7px;
-    font-weight: 500;
-  }
-  .lines {
-    gap: 2px;
-    padding: 0 4px 0 6px;
-  }
-  .element {
-    gap: 4px;
+    width: 112px;
     padding: 0 5px 0 8px;
+    font-weight: 500;
+  }
+  /* A menu by its icon: the classname "menu" is the menus' own. */
+  .opens {
+    gap: 1px;
+    padding: 0 3px 0 5px;
   }
   /* Not about the cursor: as plain while there is none as while there is. */
-  .tools.idle .spelling {
+  .tools.idle .always:not(:disabled) {
     opacity: 1;
-  }
-  .cite:not(:disabled) {
-    color: var(--accent-strong);
-  }
-  .caps span {
-    font-variant-caps: small-caps;
-    font-weight: 600;
-    font-size: 13px;
   }
   .rule {
     flex: none;
     width: 1px;
     height: 16px;
-    margin: 0 5px;
+    margin: 0 4px;
     background: var(--line);
   }
 </style>

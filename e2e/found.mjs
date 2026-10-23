@@ -198,7 +198,8 @@ try {
     await sleep(300);
   };
   const openWindow = async () => {
-    await app.thisMap('Loose citations…');
+    // The loose citations are a tab of the panel at the side, which its key opens.
+    await app.keys(['Control', 'Shift', 't']);
     await opened();
   };
 
@@ -271,7 +272,7 @@ try {
   await app.clickText('dialog footer button', 'Create');
   // A new project opens as text: the diagram is turned to.
   await app.waitFor('.text-view .section', 8000);
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
 

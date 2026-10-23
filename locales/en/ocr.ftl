@@ -4,13 +4,13 @@
 
 ## Reading
 
-ocr-filter = PDFs and pictures
-ocr-no-tesseract = Tesseract, which reads text in pictures, is not installed or could not be found. Install it with the package manager of your system, with the data of the languages you read (on Arch: tesseract and tesseract-data-eng, tesseract-data-nor and so on), or say in the settings where it is.
+ocr-filter = PDFs and images
+ocr-no-tesseract = Tesseract, which reads text in images, is not installed or could not be found. Install it with the package manager of your system, with the data of the languages you read (on Arch: tesseract and tesseract-data-eng, tesseract-data-nor and so on), or say in the settings where it is.
 ocr-failed = The text could not be read.
 ocr-looking = Looking at { $file }…
-ocr-about-picture = The text is read from the picture.
+ocr-about-picture = The text is read from the image.
 # Where the pages of a PDF are pictures of too few dots to the inch to be read well.
-ocr-low-resolution = The pages are pictures at { $dpi } dots to the inch: too few for their letters to be read well, whatever is chosen.
+ocr-low-resolution = The pages are images at { $dpi } dots to the inch: too few for their letters to be read well, whatever is chosen.
 ocr-low-resolution-text = Reading them anew will not better the text the PDF has.
 
 ocr-trying = Reading page { $page }…
@@ -87,8 +87,8 @@ ocr-map-failed = The elements could not be made.
 ## The text of a picture of the store
 
 ocr-picture-read = Read the text in it…
-ocr-picture-title = The text in the picture
-ocr-picture-empty = No text was found in the picture.
+ocr-picture-title = The text in the image
+ocr-picture-empty = No text was found in the image.
 ocr-picture-copy = Copy
 ocr-picture-copied = The text is copied
 ocr-picture-copy-failed = The text could not be copied
@@ -97,7 +97,7 @@ ocr-picture-map = Make an element of it
 ## Tesseract in the settings
 
 ocr-settings-looking = Looking…
-ocr-settings-missing = Not found. Needed to read text from scans and pictures. Install tesseract with the package manager of your system, with the data of the languages you read (tesseract-data-eng for English on Arch, tesseract-data-nor for Norwegian, tesseract-data-grc for Ancient Greek, …), or say below where it is.
+ocr-settings-missing = Not found. Needed to read text from scans and images. Install tesseract with the package manager of your system, with the data of the languages you read (tesseract-data-eng for English on Arch, tesseract-data-nor for Norwegian, tesseract-data-grc for Ancient Greek, …), or say below where it is.
 ocr-settings-by-itself = Found by itself
 ocr-settings-where = Where Tesseract is
 ocr-settings-look-failed = Tesseract could not be looked for
@@ -121,7 +121,7 @@ ocr-text-scheme-greek-names = The Greek is stored as the glyph names of { $fonts
 ocr-text-scheme-expert-names = Small capitals and old-style figures of { $fonts } are stored by name, and can be made into their letters and digits.
 ocr-text-scheme-beta-code = Greek is written in Beta Code, and can be made into Greek letters.
 ocr-text-page = Page { $label }
-ocr-text-page-none = No text on this page: it is read from a picture of it.
+ocr-text-page-none = No text on this page: it is read from an image of it.
 ocr-text-rest-failed = The pages after these could not be read.
 ocr-searchable-make-readable = Make readable
 ocr-searchable-readable-done = { $count ->
@@ -236,7 +236,7 @@ ocr-settings-said-no-language = English, as none is chosen
 # A trial's settings said in a line, where the page was made black and white before it was read.
 ocr-settings-said-contrast = B/W
 # How large the picture of the page is shown: the whole page in the pane, or its own size, or twice that.
-ocr-picture-size = Size of the picture
+ocr-picture-size = Size of the image
 ocr-picture-fit = Fit
 ocr-picture-actual = 100%
 ocr-picture-double = 200%
@@ -297,8 +297,8 @@ ocr-pages-said-both-unreadable = { $pdf ->
     [one] one cannot be read without Tesseract.
    *[other] { $read } cannot be read without Tesseract.
 }
-ocr-pages-said-picture = The text is read from the picture.
-ocr-pages-said-picture-unreadable = The text of the picture cannot be read without Tesseract.
+ocr-pages-said-picture = The text is read from the image.
+ocr-pages-said-picture-unreadable = The text of the image cannot be read without Tesseract.
 # What the actions beside it hold for: every page, or those selected ($pages: "pages 39–120", as ocr-pages-selection says them).
 ocr-pages-scope-all = { $pages ->
     [one] For the page
@@ -314,7 +314,7 @@ ocr-pages-all = All pages
 ocr-pages-pdf = The PDF's text
 ocr-pages-pdf-hint = These pages take the text the PDF has. Pages without text are read all the same.
 ocr-pages-read = Read with Tesseract
-ocr-pages-read-hint = These pages are read anew from pictures of them, whatever text they have.
+ocr-pages-read-hint = These pages are read anew from images of them, whatever text they have.
 ocr-pages-decide = Decide by the text's quality
 ocr-pages-decide-hint = Page by page: text that reads as text is taken; text that does not, and pages without text, are read.
 

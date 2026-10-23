@@ -16,7 +16,6 @@ project-name = Ime projekta
 project-rename = Preimenuj projekt
 project-not-saved = Ni shranjeno
 project-redo = Uveljavi
-project-view = Pogled na miselni vzorec
 project-view-this = Pogled na ta miselni vzorec
 project-diagram = Diagram
 project-text = Besedilo
@@ -24,13 +23,7 @@ project-one-at-a-time = Eden naenkrat
 project-side-by-side = Dva vzporedno
 project-close-side = Zapri to stran
 project-references = Viri
-project-side = Viri, slike, zgodovina in spremembe
 project-side-map = Miselni vzorec
-project-preview = Predogled in izvoz
-project-share = Deli
-project-shared = Deljen
-project-shared-offline = Deljen · strežnik ni dosegljiv
-project-shared-too-large = Deljen · strežnik ne sprejme zadnjih sprememb
 project-between-maps = Med obema miselnima vzorcema
 
 ## When the sharing ends from the other side
@@ -68,8 +61,6 @@ project-drop-on-map = Spustite na miselni vzorec, da premaknete tja · držite C
 project-open-beside = Odpri ob strani
 project-open-beside-hint = Dva miselna vzorca vzporedno, da premikate elemente med njima
 project-side-by-side-short = Vzporedno
-project-preview-short = Predogled
-project-found = Najdene navedbe…
 # The count is of those found in the map.
 project-found-hint = { $count ->
     [one] { $count } za pregled, da iz nje nastane navedba
@@ -77,7 +68,6 @@ project-found-hint = { $count ->
     [few] { $count } za pregled, da iz njih nastanejo navedbe
    *[other] { $count } za pregled, da iz njih nastanejo navedbe
 }
-project-found-none = In besedilo, ki je videti kot navedbe
 project-copied-to = Kopirano v »{ $name }«
 project-moved-to = Premaknjeno v »{ $name }«
 

@@ -202,6 +202,15 @@ describe('what is done with a project from a list of them', () => {
     expect(beside).toHaveBeenCalledWith('p');
     item(other, t('home-unfold')).action();
     expect(toggle).toHaveBeenCalled();
+
+    // Where the place can share, Share… stands after saving, for a project shown or not.
+    const share = vi.fn();
+    const sharing = actions.items(p, { shown: ['p'], share });
+    const at = labels(sharing).indexOf(t('home-share'));
+    expect(labels(sharing)[at - 1]).toBe(t('home-menu-save-org'));
+    item(sharing, t('home-share')).action();
+    expect(share).toHaveBeenCalledWith('p');
+    expect(labels(menu)).not.toContain(t('home-share'));
   });
 
   it('gives the one menu of a folder, which is not entered, and of an element', () => {

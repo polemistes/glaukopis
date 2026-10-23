@@ -1,14 +1,15 @@
 // The top row over the sides (record 0063): a cell over each side with its
 // path, and Split view at the right end. The path: the folders the project
 // lies in, the project, the elements down to the one in view, the last in the
-// strongest type; a crumb entered goes there; the chevron opens the menu of
-// all projects, the folders as submenus and the project shown marked; in a
-// narrow window the crumbs in the middle hide behind one, whose menu has
-// them. Two sides: the active cell in the accent, the other sunken, in the
+// strongest type; a crumb entered goes there; the chevron opens the tree of
+// all projects, unfolded down to the element in view, which is marked, and
+// an element or a project chosen in it opens in that side, the other side
+// staying as it was; in a narrow window the crumbs in the middle hide behind
+// one, whose menu has them. Two sides: the active cell in the accent, the other sunken, in the
 // light, the dark and the mellow theme; the colour follows the focus;
 // Switch sides draws them the other way round; another project beside, both
 // marked in the list, the panel at the side naming its project; the bar of
-// the project under the row; a side closed by its ×, by Ctrl+W, by Close in
+// each side; a side closed by its ×, by Ctrl+W, by Close in
 // the list; the first side closed, the other project becomes the project of
 // the view; the one side closed, the start screen.
 
@@ -46,12 +47,24 @@ const crumbs = (app, side = 0) =>
 /** The labels of the menus that are open, the innermost last. */
 const menus = (app) =>
   app.exec(
-    `return Array.from(document.querySelectorAll('.menu')).map((m) => Array.from(m.querySelectorAll(':scope > [role="menuitem"]')).map((i) => i.querySelector('.label')?.textContent.trim() + (i.querySelector('.check svg') ? ' *' : '')))`,
+    `return Array.from(document.querySelectorAll('.menu')).map((m) => Array.from(m.querySelectorAll('[role="menuitem"]')).map((i) => (i.querySelector('.label') ?? i).textContent.trim()))`,
+  );
+/** The rows of the tree under the chevron, as `kind:name`, ` *` after the one marked. */
+const treeRows = (app) =>
+  app.exec(
+    `return Array.from(document.querySelectorAll('[data-path-tree] [data-row]')).map((r) => r.dataset.rowKind + ':' + (r.querySelector('.name')?.textContent.trim() ?? '') + (r.classList.contains('current') ? ' *' : ''))`,
+  );
+/** A row of the tree under the chevron, by its kind and name. */
+const treeRow = (app, kind, name) =>
+  app.exec(
+    `return Array.from(document.querySelectorAll('[data-path-tree] [data-row-kind="' + arguments[0] + '"]')).find((r) => r.querySelector('.name')?.textContent.trim() === arguments[1]) ?? null`,
+    kind,
+    name,
   );
 const menuItem = (app, label) =>
   app.exec(
     `const all = Array.from(document.querySelectorAll('.menu [role="menuitem"]'));
-     return all.reverse().find((i) => i.querySelector('.label')?.textContent.trim() === arguments[0]) ?? null`,
+     return all.reverse().find((i) => (i.querySelector('.label') ?? i).textContent.trim() === arguments[0]) ?? null`,
     label,
   );
 const cellClasses = (app) =>
@@ -89,12 +102,16 @@ try {
   await app.waitFor('.top [data-path]', 10000);
   await sleep(400);
 
-  check('the top row stands over the bar of the project', await app.exec(`return document.querySelector('.project > .top')?.nextElementSibling?.tagName === 'HEADER'`));
+  check(
+    'the top row stands over the sides, with the list\'s button at its left, and no bar of the project under it',
+    await app.exec(`const top = document.querySelector('.project > .top');
+      return !!top && top.firstElementChild?.querySelector('[data-projects-button]') !== null && !document.querySelector('.project > header') && !!document.querySelector('.pane [data-bar]');`),
+  );
   check('at the project itself, the path is the folders and the project', JSON.stringify(await crumbs(app)) === JSON.stringify(['folder:Greek', 'folder:Epic', `project:${PROJECT}`]), JSON.stringify(await crumbs(app)));
 
-  // A tree five deep, each made under the one in view from ⋯ This element and entered from the list.
+  // A tree five deep, each made under the one in view from its menu and entered from the list.
   for (const name of NAMES) {
-    await app.newMap();
+    await app.newElementUnder();
     await app.keys(name);
     await app.press('Enter');
     await sleep(300);
@@ -131,35 +148,59 @@ try {
   await app.go(deepest);
   await until(async () => (await app.inView()) === NAMES[4]);
 
-  // The chevron: the menu of all projects.
+  // The chevron: the tree of all projects, unfolded along the path to the element in view, which is marked.
   await app.click('.top [data-path-all]');
-  await app.waitFor('.menu [role="menuitem"]', 3000);
-  await sleep(150);
-  const top = (await menus(app))[0];
-  check('the chevron opens the menu of all projects: folders, then the projects in none', JSON.stringify(top) === JSON.stringify(['Greek', 'Nothing yet', 'Notes']), JSON.stringify(top));
-  await app.click(await menuItem(app, 'Greek'));
-  await sleep(300);
-  await app.click(await menuItem(app, 'Epic'));
-  await sleep(300);
-  const deep = await menus(app);
-  check('a folder is a submenu, and the project shown is marked in it', JSON.stringify(deep[deep.length - 1]) === JSON.stringify([`${PROJECT} *`]), JSON.stringify(deep));
+  await app.waitFor('[data-path-tree] .row', 3000);
+  await sleep(500);
+  const rows = await treeRows(app);
+  const want = ['folder:Greek', 'folder:Epic', `project:${PROJECT}`, ...NAMES.slice(0, 4).map((n) => `element:${n}`), `element:${NAMES[4]} *`, 'project:Notes'];
+  check(
+    'the chevron opens the tree of all projects, unfolded down to the element in view, which is marked',
+    want.every((r) => rows.includes(r)) && rows.filter((r) => r.endsWith(' *')).length === 1,
+    JSON.stringify(rows),
+  );
+  check('its field has the cursor', await app.exec(`return !!document.activeElement?.closest('[data-path-tree]') && document.activeElement.tagName === 'INPUT'`));
   await app.screenshot('path-2-all-projects');
-  await app.press('Escape');
-  await app.press('Escape');
-  await app.press('Escape');
-  await sleep(200);
-  // A folder crumb opens the menu at that folder.
+  // An element chosen in it is entered, in this side.
+  await app.click(await treeRow(app, 'element', NAMES[1]));
+  await until(async () => (await app.inView()) === NAMES[1], 5000);
+  check('an element chosen in the tree is entered', (await app.inView()) === NAMES[1] && !(await app.exists('[data-path-tree]')), await app.inView());
+  await app.go(deepest);
+  await until(async () => (await app.inView()) === NAMES[4]);
+  // A folder crumb opens the tree at that folder.
   await app.click('.top [data-crumb="folder"]');
-  await app.waitFor('.menu [role="menuitem"]', 3000);
-  await sleep(150);
-  check('a folder crumb opens the menu of that folder', JSON.stringify((await menus(app))[0]) === JSON.stringify(['Epic']), JSON.stringify(await menus(app)));
+  await app.waitFor('[data-path-tree] .row', 3000);
+  await sleep(300);
+  check(
+    'a folder crumb opens the tree, unfolded at that folder',
+    await app.exec(`const g = Array.from(document.querySelectorAll('[data-path-tree] .row.folder')).find((r) => r.textContent.includes('Greek'));
+      return !!g && g.hasAttribute('data-row-open') && Array.from(document.querySelectorAll('[data-path-tree] .row.folder')).some((r) => r.textContent.includes('Epic'));`),
+  );
   await app.press('Escape');
-  await sleep(200);
-  // Another project chosen from it is shown in this side.
+  await app.waitGone('[data-path-tree]', 3000);
+  // With another project beside, an element of this project chosen in the tree of that side opens there; the first side stays.
+  await splitMenu(app, 'Another project…');
+  await app.waitFor('dialog [data-beside-chooser] .row.project', 5000);
+  await app.clickText('dialog [data-beside-chooser] .row.project', 'Notes');
+  await app.waitGone('dialog [data-beside-chooser]', 3000);
+  await until(async () => (await crumbs(app, 1))[0] === 'project:Notes', 8000);
+  await app.click('.top .cell[data-side="1"] [data-path-all]');
+  await app.waitFor('[data-path-tree] .row', 3000);
+  await sleep(400);
+  await app.click(await treeRow(app, 'element', NAMES[2]));
+  await until(async () => (await crumbs(app, 1)).at(-1) === `element:${NAMES[2]}`, 8000);
+  check(
+    'an element of another project chosen in the tree opens there, in this side; the other side stays',
+    (await crumbs(app, 1)).at(-1) === `element:${NAMES[2]}` && (await crumbs(app, 0)).at(-1) === `element:${NAMES[4]}`,
+    `${JSON.stringify(await crumbs(app, 0))} | ${JSON.stringify(await crumbs(app, 1))}`,
+  );
+  await app.click(await app.exec(`return document.querySelectorAll('.pane')[1].querySelector('[data-close-side]')`));
+  await until(async () => (await app.count('.pane')) === 1, 5000);
+  // Another project chosen from it is shown in this side, at its top.
   await app.click('.top [data-path-all]');
-  await app.waitFor('.menu [role="menuitem"]', 3000);
-  await sleep(150);
-  await app.click(await menuItem(app, 'Notes'));
+  await app.waitFor('[data-path-tree] .row', 3000);
+  await sleep(300);
+  await app.click(await treeRow(app, 'project', 'Notes'));
   await until(async () => JSON.stringify(await crumbs(app)) === JSON.stringify(['project:Notes']), 8000);
   check('another project chosen from it is shown in this side, at its top', JSON.stringify(await crumbs(app)) === JSON.stringify(['project:Notes']), JSON.stringify(await crumbs(app)));
   await app.go(deepest);
@@ -193,21 +234,21 @@ try {
   );
   const fits = await app.exec(
     `const cell = document.querySelector('.top .cell'); const room = cell.querySelector('.room');
-     return { cell: Math.round(cell.getBoundingClientRect().right), more: Math.round(cell.querySelector('[data-this-element]').getBoundingClientRect().right), scroll: room.scrollWidth <= room.clientWidth + 1 };`,
+     return { cell: Math.round(cell.getBoundingClientRect().right), room: Math.round(room.getBoundingClientRect().right), scroll: room.scrollWidth <= room.clientWidth + 1 };`,
   );
-  check('and fits its cell, ⋯ within it', fits.more <= fits.cell && fits.scroll, JSON.stringify(fits));
+  check('and fits its cell', fits.room <= fits.cell && fits.scroll, JSON.stringify(fits));
   await app.screenshot('path-3-elided');
   await app.click('.top [data-crumb="more"]');
   await app.waitFor('.menu [role="menuitem"]', 3000);
   await sleep(150);
-  const folders = (await menus(app))[0];
+  const folders = (await menus(app)).filter((m) => m.length).at(-1) ?? [];
   await app.press('Escape');
   await sleep(200);
   const mores = await app.exec(`return Array.from(document.querySelectorAll('.top [data-crumb="more"]'))`);
   await app.click(mores[mores.length - 1]);
   await app.waitFor('.menu [role="menuitem"]', 3000);
   await sleep(150);
-  const hidden = (await menus(app))[0];
+  const hidden = (await menus(app)).filter((m) => m.length).at(-1) ?? [];
   check('… opens a menu of the hidden crumbs: the folders before the project, the elements after it', JSON.stringify(folders) === JSON.stringify(['Epic']) && hidden.includes(NAMES[0]), `${JSON.stringify(folders)} | ${JSON.stringify(hidden)}`);
   await app.screenshot('path-4-hidden-crumbs');
   await app.click(await menuItem(app, NAMES[0]));
@@ -240,9 +281,11 @@ try {
   const over = await app.exec(
     `const c = Array.from(document.querySelectorAll('.top .cell')).map((e) => e.getBoundingClientRect());
      const p = Array.from(document.querySelectorAll('.pane')).map((e) => e.getBoundingClientRect());
-     return [Math.abs(c[0].left - p[0].left), Math.abs(c[0].right - p[0].right), Math.abs(c[1].left - p[1].left)];`,
+     // The list's button stands at the far left, over the first side, before its cell.
+     const list = document.querySelector('.top .list').getBoundingClientRect();
+     return [Math.abs(list.left - p[0].left), Math.abs(c[0].left - list.right), Math.abs(c[0].right - p[0].right), Math.abs(c[1].left - p[1].left)];`,
   );
-  check('each cell stands over its side, the line between them over that between the sides', over.every((d) => d < 4), JSON.stringify(over));
+  check('each cell stands over its side, the first after the list\'s button, the line between them over that between the sides', over.every((d) => d < 4), JSON.stringify(over));
   for (const theme of ['light', 'dark', 'mellow']) {
     await app.setTheme(theme);
     await sleep(300);
@@ -289,19 +332,32 @@ try {
   check('the list marks both projects', JSON.stringify(marked) === JSON.stringify([PROJECT, 'Notes'].sort()), JSON.stringify(marked));
   await focusSide(app, notesSide);
   await sleep(200);
-  await app.click('header button[aria-label="References, pictures, history and changes"]');
+  // The Document button of the side that has the focus opens the document pane, of that side
+  // (where the pane does not obey it yet, before the panes are built, its key).
+  await app.click(await app.exec(`return document.querySelectorAll('.pane')[arguments[0]].querySelector('[data-document]')`, notesSide));
+  if (!(await app.waitFor('.side-map', 2000).then(() => true, () => false))) await app.keys(['Control', 'Shift', 'r']);
   await app.waitFor('.side-map', 5000);
   await sleep(300);
   const about = await app.exec(`return document.querySelector('.side-map [data-side-project]')?.textContent.trim() ?? null`);
   check('the panel at the side is of the active side, and names its project', about === 'Notes', String(about));
   await app.screenshot('path-7-two-projects');
-  const header = await app.exec(
-    `const h = document.querySelector('.project > header');
-     const has = (label) => !!h.querySelector('button[aria-label="' + label + '"]');
-     return { preview: has('Preview and export'), share: has('Share'), undo: has('Undo'), redo: has('Redo'), split: !!h.querySelector('[data-side-by-side]') };`,
+  const bars = await app.exec(
+    `return Array.from(document.querySelectorAll('.pane [data-bar]')).map((b) => ({
+       views: b.querySelectorAll('[data-view]').length,
+       undo: !!b.querySelector('[data-undo]'), redo: !!b.querySelector('[data-redo]'),
+       typeset: !!b.querySelector('[data-typeset]'), document: !!b.querySelector('[data-document]'),
+       close: !!b.querySelector('[data-close-side]'), split: !!b.querySelector('[data-side-by-side]'),
+     }));`,
   );
-  check('the bar of the project under the row has Preview, Share, undo and redo, and no Split view', header.preview && header.share && header.undo && header.redo && !header.split, JSON.stringify(header));
-  await app.click('header button[aria-label="References, pictures, history and changes"]');
+  check(
+    'each side has its bar, with its views, undo and redo, Typesetting, Document and ×, and no Split view',
+    bars.length === 2 && bars.every((b) => b.views >= 2 && b.undo && b.redo && b.typeset && b.document && b.close && !b.split),
+    JSON.stringify(bars),
+  );
+  check('between the two cells, a button switches the sides', await app.exists('.top [data-switch-sides]'));
+  await app.click(await app.exec(`return document.querySelectorAll('.pane')[arguments[0]].querySelector('[data-document]')`, notesSide));
+  if (!(await app.waitGone('.side-map', 2000).then(() => true, () => false))) await app.keys(['Control', 'Shift', 'r']);
+  await app.waitGone('.side-map', 3000);
   await sleep(200);
 
   // The × in the bar of the other project's side closes it.

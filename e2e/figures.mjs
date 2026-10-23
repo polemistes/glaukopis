@@ -95,7 +95,8 @@ try {
       selector,
     );
   const menu = async (words) => {
-    await app.clickText('.box .tools button, .tools button', 'Insert');
+    // The box's own Insert while it is open; the bar's is disabled over the diagram.
+    await app.click((await app.exists('.box [data-insert]')) ? '.box [data-insert]' : '.pane-bar [data-insert]');
     await app.waitFor('.menu');
     await app.clickText('.menu [role="menuitem"], .menu button', words);
   };
@@ -106,7 +107,7 @@ try {
   await app.clickText('dialog footer button', 'Create');
   // A new project opens as text: the diagram is turned to.
   await app.waitFor('.text-view .section', 8000);
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
   const project = (await invoke('project_list'))[0].id;
@@ -354,7 +355,7 @@ try {
   rmSync(out, { recursive: true, force: true });
 
   // What was refused on purpose is written to the console, as every failure is.
-  const errors = (await app.pageErrors()).filter((e) => !/not a picture of a kind/.test(e));
+  const errors = (await app.pageErrors()).filter((e) => !/not an image of a kind/.test(e));
   check('no errors in the window', errors.length === 0, errors.join(' ‖ '));
 } catch (error) {
   console.error(error);

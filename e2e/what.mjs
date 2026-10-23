@@ -53,7 +53,7 @@ try {
   await app.type('dialog input', 'Odyssey');
   await app.clickText('dialog footer button', 'Create');
   await app.waitFor('.text-view .section', 8000);
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(400);
   await app.click('.diagram .node.root');

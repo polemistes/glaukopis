@@ -64,7 +64,6 @@ editor-highlight = Επισήμανση
 editor-highlight-hint = Για το μάτι στην οθόνη: δεν μπαίνει σε κανένα έγγραφο
 editor-underline = Υπογραμμισμένα
 editor-code-words = Κώδικας στη γραμμή
-editor-code-words-hint = Γράμματα ίσου πλάτους, μέσα στη γραμμή
 editor-scene = Επικεφαλίδα σκηνής
 editor-scene-hint = ΕΣ. ΣΠΙΤΙ – ΝΥΧΤΑ
 editor-action = Δράση
@@ -78,10 +77,7 @@ editor-parenthetical-hint = Πώς λέγεται, σε παρένθεση
 editor-transition = Μετάβαση
 editor-transition-hint = CUT TO:, δεξιά
 editor-comment = Σχόλιο
-editor-comment-hint = Ένα σχόλιο σε ό,τι είναι επιλεγμένο
-editor-comment-element-hint = Ένα σχόλιο σε αυτό το στοιχείο· επιλέξτε λέξεις για να σχολιάσετε εκείνες
 editor-parallel = Δύο κείμενα δίπλα δίπλα
-editor-parallel-hint = Ένα πρωτότυπο και η μετάφρασή του, το καθένα δικό του κείμενο
 editor-paragraph-kind = Είδος παραγράφου
 # Said of the button that shows the kind of paragraph the cursor is in.
 editor-paragraph-kind-now = Είδος παραγράφου: { $kind }
@@ -96,8 +92,6 @@ editor-kinds-make = Δημιουργία είδους…
 editor-kinds-change-own = Αλλαγή δικού σας είδους…
 # Over the item that opens the format editor: the format sets how each kind looks.
 editor-kinds-set-by = Όπως τα ορίζει η μορφή «{ $format }»
-editor-words = Λέξεις
-editor-words-hint = Υπογράμμιση, εκθέτης, κώδικας· ξένες λέξεις, τίτλος έργου, όρος
 editor-words-make = Δημιουργία είδους λέξεων…
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = Απλές λέξεις
@@ -120,35 +114,17 @@ editor-own-kind-delete-message = { $count ->
 
 ## Citing, notes, and what is put into the text.
 
-editor-cite = Παραπομπή
 editor-cite-here = Παραπομπή σε έργο εδώ
-editor-cite-at-cursor = Παραπομπή σε έργο εκεί που είναι ο δρομέας
 editor-note = Σημείωση
 editor-note-selection = Η επιλογή να γίνει σημείωση
-editor-note-hint = Μια σημείωση, στο κάτω μέρος της σελίδας ή στο τέλος
 editor-insert = Εισαγωγή
-editor-insert-hint = Μια εικόνα, ένας πίνακας, μαθηματικά, μια εσωτερική παραπομπή
-editor-new-element = Νέο στοιχείο
-editor-new-element-hint = Ένα νέο στοιχείο μετά από αυτό, ή κάτω από αυτό
-editor-new-after = Νέο στοιχείο μετά από αυτό
-editor-new-under = Νέο στοιχείο κάτω από αυτό
-editor-new-split = Διαίρεση εδώ
 editor-spelling-on = Η ορθογραφία ελέγχεται καθώς γράφετε · πατήστε για να σταματήσει
 editor-spelling-off = Η ορθογραφία δεν ελέγχεται · πατήστε για να ελέγχεται
-editor-picture-file = Εικόνα από αρχείο…
-editor-picture-file-hint = Ένα σχήμα, με όσα λέγονται γι’ αυτό
-editor-picture-store = Εικόνα από την αποθήκη…
-editor-picture-store-hint = Όσες έχετε εμφανίζονται στο πλάι
 editor-equation = Εξίσωση
-editor-equation-hint = Μαθηματικά σε δική τους γραμμή
 editor-table = Πίνακας…
-editor-table-hint = Με τόσες γραμμές και στήλες
 editor-table-file = Πίνακας από αρχείο…
-editor-table-file-hint = CSV, ή φύλλο του LibreOffice ή του Excel
 editor-formula = Τύπος
-editor-formula-hint = Μαθηματικά μέσα στη γραμμή
 editor-pointer = Εσωτερική παραπομπή…
-editor-pointer-hint = Σε σχήμα, πίνακα, εξίσωση ή μέρος: «βλ. σχήμα 2»
 # What a picture that was pasted without a name of its own is called in the store of pictures.
 editor-pasted-picture = εικόνα
 

@@ -62,9 +62,7 @@ async function fill(selector, words) {
 /** Opens the window of the numbers of the lines, for the line the cursor is in. */
 async function numbersWindow() {
   // The # button is a menu: the lines where the cursor is are its first item.
-  await app.click('.pane-bar .tools button.lines');
-  await app.waitFor('.menu', 3000);
-  await app.clickText('.menu [role="menuitem"]', 'Number these lines…');
+  await app.numberTheseLines();
   await app.waitForText('dialog[open] h2', 'Numbers', 3000);
   await sleep(200);
 }
@@ -85,7 +83,7 @@ try {
   await app.type('dialog input', 'Medea');
   await app.clickText('dialog footer button', 'Create');
   await app.waitFor('.text-view .section', 8000);
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(400);
   await app.click('.diagram .node.root');
@@ -130,7 +128,7 @@ try {
   }
   await sleep(200);
   await app.keys(['Control', 'a']);
-  await app.click('.pane-bar .tools .style');
+  await app.click('.pane-bar [data-paragraph-kind]');
   await app.clickText('[role="menuitem"]', 'More…');
   await sleep(200);
   await app.clickText('[role="menuitem"]', 'Verse');
@@ -257,7 +255,7 @@ try {
   await app.press('Enter');
   await sleep(200);
   await app.keys(['Control', 'Alt', 'k']);
-  await app.waitForText('dialog[open] h2', 'Reference mark', 3000);
+  await app.waitForText('dialog[open] h2', 'Inline number', 3000);
   await sleep(150);
   check(
     'the first mark has no label proposed',
@@ -268,10 +266,10 @@ try {
   await app.waitGone('dialog[open]', 3000);
   await sleep(200);
   await app.keys('In the beginning God created the heaven. ');
-  await app.clickText('.pane-bar .tools button', 'Insert');
+  await app.click('.pane-bar [data-insert]');
   await app.waitFor('.menu');
-  await app.clickText('.menu [role="menuitem"]', 'Reference mark');
-  await app.waitForText('dialog[open] h2', 'Reference mark', 3000);
+  await app.clickText('.menu [role="menuitem"]', 'Inline number');
+  await app.waitForText('dialog[open] h2', 'Inline number', 3000);
   await sleep(150);
   const proposed = await app.exec(`return document.querySelector('dialog[open] input').value`);
   check('the next label is proposed from the one before', proposed === '1:2', proposed);
@@ -285,7 +283,7 @@ try {
 
   // Pressed, a mark's label is changed.
   await app.click('.text-view .body .refmark');
-  await app.waitForText('dialog[open] h2', 'Reference mark', 3000);
+  await app.waitForText('dialog[open] h2', 'Inline number', 3000);
   await sleep(150);
   await fill('dialog[open] input', '1:1a');
   await app.press('Enter');

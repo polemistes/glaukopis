@@ -36,7 +36,6 @@ keys-side-history = Historial
 keys-side-changes = Revisar los cambios
 keys-side-found = Citas encontradas
 keys-side-by-side = Dos en paralelo
-keys-share = Compartir el proyecto
 keys-find = Buscar en el texto
 keys-replace = Buscar y reemplazar
 keys-undo = Deshacer

@@ -36,7 +36,6 @@ keys-side-history = História
 keys-side-changes = Revidovať zmeny
 keys-side-found = Nájdené citácie
 keys-side-by-side = Dva vedľa seba
-keys-share = Zdieľať projekt
 keys-find = Hľadať v texte
 keys-replace = Hľadať a nahradiť
 keys-undo = Späť

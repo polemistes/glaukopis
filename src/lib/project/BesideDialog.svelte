@@ -51,6 +51,7 @@
       <ProjectList
         {actions}
         sides={[{ id: current, project: null, at: PROJECT, focused: true }]}
+        unavailable={[current]}
         {choose}
       />
     {:else}

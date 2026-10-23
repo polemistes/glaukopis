@@ -64,7 +64,7 @@ try {
   await app.clickText('dialog footer button', 'Create');
   // A new project opens as text: the diagram is turned to.
   await app.waitFor('.text-view .section', 8000);
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(400);
   check(
@@ -161,7 +161,7 @@ try {
   await sleep(250);
   check(
     'the box for writing has the tools too',
-    await app.exists('.box .tools button[aria-label="Italic"]:not(:disabled)'),
+    await app.exists('.box [data-marks]:not(:disabled)'),
   );
   await app.keys('The first word of the Iliad names a wrath that is more than anger ');
   await app.keys('@');
@@ -331,7 +331,7 @@ try {
   );
 
   // --- The same map as text ---
-  await app.clickText('header [role="radio"]', 'Text');
+  await app.view('text');
   await app.waitFor('.text-view .section');
   await sleep(400);
   const headings = await app.exec(
@@ -405,8 +405,8 @@ try {
     org[6] === 'The embassy:' + (Number(org[5]?.split(':')[1]) + 1),
     org.join(' | '),
   );
-  const hasNew = await app.exists('.writing button[aria-label="New element"]');
-  check('the tools over the text have a button for a new element', hasNew);
+  // A new element is made by the keys and the menu of an element, not from the bar.
+  check('the bar over the text has no button for a new element', !(await app.exists('.pane-bar button[aria-label="New element"]')));
 
   // Text pasted as text keeps every line break: into the text of the new element.
   await app.press('Enter');
@@ -479,16 +479,19 @@ try {
     /\*Iliad\* 1 has it/.test(await written()),
     await written(),
   );
-  await app.click('.pane-bar .tools button[aria-label="Italic"]');
+  await app.click('.pane-bar [data-marks]');
+  await app.clickText('.menu [role="menuitem"]', 'Italic');
   await app.keys('kleos');
-  await app.click('.pane-bar .tools button[aria-label="Italic"]');
+  await app.click('.pane-bar [data-marks]');
+  await app.clickText('.menu [role="menuitem"]', 'Italic');
   await app.keys(' is what is at stake.');
   check(
     'the tools set what is typed next',
     /<em>kleos<\/em> is what/.test(await written()),
     await written(),
   );
-  await app.clickText('.pane-bar .tools button', 'Cite');
+  await app.click('.pane-bar [data-insert]');
+  await app.clickText('.menu [role="menuitem"]', 'Citation');
   await app.waitFor('.picker input', 3000);
   await app.keys('lord singer');
   await sleep(250);
@@ -504,7 +507,8 @@ try {
     (await written()).replace(/<[^>]+>/g, ''),
   );
   // The tool for notes opens a note that stays open to be written in.
-  await app.clickText('.pane-bar .tools button', 'Note');
+  await app.click('.pane-bar [data-insert]');
+  await app.clickText('.menu [role="menuitem"]', 'Note');
   await app.waitFor('.note-panel .prose', 3000);
   await sleep(700);
   check(
@@ -557,7 +561,7 @@ try {
   await app.press('Escape');
   await app.waitGone('.note-panel');
 
-  await app.click('.pane-bar .tools .style');
+  await app.click('.pane-bar [data-paragraph-kind]');
   await app.clickText('[role="menuitem"]', 'Quotation');
   await sleep(200);
   // A paragraph set to a quotation is labelled so, and seen as a run of quotations (ADR 0041).
@@ -566,10 +570,10 @@ try {
     /<p[^>]*data-kind="quote"/.test(await written()) && /<p[^>]*data-run="quote"/.test(await written()),
     await written(),
   );
-  await app.waitForText('.pane-bar .tools .style', 'Quotation', 3000);
+  await app.waitForText('.pane-bar [data-paragraph-kind]', 'Quotation', 3000);
   check('and shown', true);
   await app.screenshot('maps-11b-tools');
-  await app.click('.pane-bar .tools .style');
+  await app.click('.pane-bar [data-paragraph-kind]');
   await app.clickText('[role="menuitem"]', 'Text');
   await sleep(200);
   check('and changed back', !/data-run=|data-kind="quote"/.test(await written()), await written());
@@ -647,9 +651,9 @@ try {
   await app.screenshot('maps-12-diagram-again');
 
   // --- A second tree under the project, entered and left; then two side by side ---
-  // "New element under it" in the bar adds a child of the element in view, the
-  // project, and names it there; the view stays where it was.
-  await app.newMap();
+  // "Add an element under it" in the menu of the element in view adds a child
+  // of it, the project, and names it there; the view stays where it was.
+  await app.newElementUnder();
   await app.keys('Article');
   await app.press('Enter');
   await app.waitFor('.diagram .node.root', 8000);
@@ -814,7 +818,7 @@ try {
   await app.type('dialog input', 'Odyssey');
   await app.clickText('dialog footer button', 'Create');
   await app.waitFor('.text-view .section', 8000);
-  await app.newMap();
+  await app.newElementUnder();
   await app.keys('Ithaca');
   await app.press('Enter');
   await sleep(500);

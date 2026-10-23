@@ -64,7 +64,6 @@ editor-highlight = Markering
 editor-highlight-hint = Voor het oog op het scherm: komt in geen enkel document
 editor-underline = Onderstreept
 editor-code-words = Code in de regel
-editor-code-words-hint = Letters van gelijke breedte, binnen de regel
 editor-scene = Scènekop
 editor-scene-hint = INT. HUIS – NACHT
 editor-action = Actie
@@ -78,10 +77,7 @@ editor-parenthetical-hint = Hoe het wordt gezegd, tussen haakjes
 editor-transition = Overgang
 editor-transition-hint = CUT TO:, rechts
 editor-comment = Opmerking
-editor-comment-hint = Een opmerking bij wat is geselecteerd
-editor-comment-element-hint = Een opmerking bij dit element; selecteer woorden om bij die een opmerking te maken
 editor-parallel = Twee teksten naast elkaar
-editor-parallel-hint = Een origineel en zijn vertaling, elk een eigen tekst
 editor-paragraph-kind = Soort alinea
 # Said of the button that shows the kind of paragraph the cursor is in.
 editor-paragraph-kind-now = Soort alinea: { $kind }
@@ -96,8 +92,6 @@ editor-kinds-make = Een soort maken…
 editor-kinds-change-own = Een eigen soort wijzigen…
 # Over the item that opens the format editor: the format sets how each kind looks.
 editor-kinds-set-by = Gezet zoals ‘{ $format }’ ze heeft
-editor-words = Woorden
-editor-words-hint = Onderstrepen, superscript, code; anderstalige woorden, de titel van een werk, een term
 editor-words-make = Een soort woorden maken…
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = Gewone woorden
@@ -120,35 +114,17 @@ editor-own-kind-delete-message = { $count ->
 
 ## Citing, notes, and what is put into the text.
 
-editor-cite = Citeren
 editor-cite-here = Hier een werk citeren
-editor-cite-at-cursor = Een werk citeren waar de cursor staat
 editor-note = Noot
 editor-note-selection = Van de selectie een noot maken
-editor-note-hint = Een noot, onderaan de pagina of aan het eind
 editor-insert = Invoegen
-editor-insert-hint = Een afbeelding, een tabel, wiskunde, een kruisverwijzing
-editor-new-element = Nieuw element
-editor-new-element-hint = Een nieuw element na dit, of eronder
-editor-new-after = Nieuw element na dit
-editor-new-under = Nieuw element onder dit
-editor-new-split = Hier splitsen
 editor-spelling-on = De spelling wordt gecontroleerd terwijl je schrijft · druk om te stoppen
 editor-spelling-off = De spelling wordt niet gecontroleerd · druk om ze te controleren
-editor-picture-file = Afbeelding uit een bestand…
-editor-picture-file-hint = Een figuur, met wat erover wordt gezegd
-editor-picture-store = Afbeelding uit de beeldbank…
-editor-picture-store-hint = Die je hebt, worden opzij getoond
 editor-equation = Vergelijking
-editor-equation-hint = Wiskunde op een eigen regel
 editor-table = Tabel…
-editor-table-hint = Met zoveel rijen en kolommen
 editor-table-file = Tabel uit een bestand…
-editor-table-file-hint = CSV, of een werkblad van LibreOffice of Excel
 editor-formula = Formule
-editor-formula-hint = Wiskunde in de regel
 editor-pointer = Kruisverwijzing…
-editor-pointer-hint = Naar een figuur, een tabel, een vergelijking of een deel: ‘zie figuur 2’
 # What a picture that was pasted without a name of its own is called in the store of pictures.
 editor-pasted-picture = afbeelding
 

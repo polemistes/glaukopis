@@ -19,14 +19,14 @@ keys-place-list = In the list of projects at the left
 keys-place-text = In the text of a map
 keys-place-writing = Writing
 keys-place-library = In the library
-keys-place-store = In the store of pictures
+keys-place-store = Among the images
 keys-place-files = Among the files of the library
 
 ## What they do
 
 keys-projects = The projects
 keys-library = The library
-keys-pictures = The pictures
+keys-pictures = The images
 keys-files = The files of the library
 keys-settings = Settings
 keys-search-everything = Search through everything
@@ -48,7 +48,6 @@ keys-side-changes = Review changes
 keys-side-found = Loose citations
 keys-side-panel = Open or close the document pane
 keys-side-by-side = Split view…
-keys-share = Share the project
 keys-find = Search the text
 keys-replace = Search and replace
 keys-undo = Undo
@@ -98,12 +97,12 @@ keys-writing-list-in = In a list: one level in
 keys-writing-list-out = In a list: one level out
 keys-writing-line = A new line in the same paragraph
 keys-writing-note = A note
-keys-writing-picture = A picture
+keys-writing-picture = An image
 keys-writing-table = A table
 keys-writing-formula = A formula in the line
 keys-writing-equation = An equation
 keys-writing-crossref = A cross-reference
-keys-writing-refmark = A reference mark
+keys-writing-refmark = An inline number
 keys-writing-spelling = The next misspelt word
 keys-writing-spelling-back = The misspelt word before
 keys-writing-undo = Undo
@@ -111,7 +110,7 @@ keys-writing-redo = Redo
 keys-writing-redo-y = Redo
 keys-library-find = Search the library
 keys-library-new = A new reference
-keys-store-find = Search the pictures
+keys-store-find = Search the images
 keys-files-find = Search the files
 keys-list-undo = Undo what was done to folders and projects
 keys-list-redo = Redo what was done to folders and projects
@@ -119,3 +118,7 @@ keys-list-redo = Redo what was done to folders and projects
 ## The sides (stage 4 of the list, the path and the window as it was left)
 keys-close-side = Close this side
 keys-switch-sides = Switch sides
+
+## Stage 3 of the sides, the panes and the bars (agent "bars")
+keys-writing-marks = Show or hide the marks of whitespace
+keys-writing-hard-space = A hard space, at which the line does not break

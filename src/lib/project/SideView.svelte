@@ -10,31 +10,20 @@
    */
   import { onDestroy, tick, untrack } from 'svelte';
   import CircleAlert from '@lucide/svelte/icons/circle-alert';
-  import Clock from '@lucide/svelte/icons/clock';
   import CloudDownload from '@lucide/svelte/icons/cloud-download';
-  import FileText from '@lucide/svelte/icons/file-text';
-  import ListTree from '@lucide/svelte/icons/list-tree';
-  import PanelLeft from '@lucide/svelte/icons/panel-left';
-  import Network from '@lucide/svelte/icons/network';
-  import X from '@lucide/svelte/icons/x';
   import { bringIn } from '$lib/documents/bringing.svelte';
-  import WritingTools from '$lib/editor/WritingTools.svelte';
   import { keepReference } from '$lib/editor/references.svelte';
   import { goThrough } from '$lib/found/found.svelte';
   import PastView from '$lib/history/PastView.svelte';
   import type { Looking } from '$lib/history/looking';
-  import { toggleProjectsPane, toList } from '$lib/home/list.svelte';
-  import { settings } from '$lib/state/settings.svelte';
+  import { toList } from '$lib/home/list.svelte';
   import { t } from '$lib/i18n';
-  import { keysFor } from '$lib/shell/keys.svelte';
   import type { MapMode } from '$lib/state/router.svelte';
   import TimelineView from '$lib/timeline/TimelineView.svelte';
   import Button from '$lib/ui/Button.svelte';
   import Divider from '$lib/ui/Divider.svelte';
   import { drag, dropTarget } from '$lib/ui/drag.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
-  import IconButton from '$lib/ui/IconButton.svelte';
-  import Segmented from '$lib/ui/Segmented.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import MapDiagram from './diagram/MapDiagram.svelte';
   import { filesDropped, mapOfIt } from './drops';
@@ -44,6 +33,7 @@
   import { openProjects } from './open-projects.svelte';
   import { outlineItems } from './outline';
   import { panes } from './panes.svelte';
+  import SideBar from './SideBar.svelte';
   import { sideApis, type SideApi } from './side-api.svelte';
   import { sides, type SideSpec } from './sides.svelte';
   import MapText from './text/MapText.svelte';
@@ -277,67 +267,16 @@
       ondrop: (e) => documentsIn((e.payload.data as string[]).filter(mapOfIt)),
     }}
   >
-    <!-- The list of projects is one for the window: its button is in the first bar, nearest it (stage 3 moves it to the top row). -->
-    {#if index === 0}
-      <IconButton
-        label={t('home-pane-toggle')}
-        shortcut={keysFor('projects-pane')}
-        size="sm"
-        active={settings.value.projectsList}
-        data-projects-button
-        onclick={toggleProjectsPane}
-      >
-        <PanelLeft size={15} />
-      </IconButton>
-    {/if}
-    <IconButton
-      label={t('text-outline')}
-      shortcut={keysFor('text-outline')}
-      size="sm"
-      active={spec.outline}
-      onclick={() => sides.toggleOutline(key)}
-    >
-      <ListTree size={15} />
-    </IconButton>
-    {#if spec.mode === 'text' && project}
-      <span class="bar-divider"></span>
-      <div class="writing">
-        <WritingTools {project} scope={el} {at} onelement={(what) => text?.newElement(what)} />
-      </div>
-    {/if}
-    <span class="spring"></span>
-    {#if count > 1}
-      <Segmented
-        value={spec.mode}
-        label={t('project-view-this')}
-        size="sm"
-        options={[
-          { value: 'diagram', label: t('project-diagram'), icon: Network, iconOnly: true },
-          { value: 'text', label: t('project-text'), icon: FileText, iconOnly: true },
-          ...(timed(at) || spec.mode === 'timeline'
-            ? [
-                {
-                  value: 'timeline' as const,
-                  label: t('timeline-title'),
-                  icon: Clock,
-                  iconOnly: true,
-                },
-              ]
-            : []),
-        ]}
-        onchange={(mode) => sides.setMode(key, mode)}
-      />
-    {/if}
-    <!-- Shown always: one side closes alone, and the one side there is closes the project. -->
-    <IconButton
-      label={t('project-close-side')}
-      shortcut={keysFor('close-side')}
-      size="sm"
-      data-close-side
-      onclick={onclose}
-    >
-      <X size={14} />
-    </IconButton>
+    <SideBar
+      {spec}
+      project={project ?? null}
+      focused={active}
+      scope={el}
+      timed={timed(at)}
+      onview={(mode) => sides.setMode(key, mode)}
+      onoutline={() => sides.toggleOutline(key)}
+      {onclose}
+    />
   </div>
   <!-- /the bar -->
   <div class="pane-body">
@@ -457,22 +396,6 @@
   }
   .pane-bar :global([data-drop-over]) {
     box-shadow: inset 0 0 0 2px var(--accent);
-  }
-  .bar-divider {
-    width: 1px;
-    height: 18px;
-    margin: 0 4px;
-    flex: none;
-    background: var(--line);
-  }
-  /* The tools take the room there is before anything springs. Where there is
-     too little beside the name, they go to a line of their own under it. */
-  .writing {
-    flex: 1000 1 0;
-    min-width: min(100%, 520px);
-  }
-  .spring {
-    flex: 1;
   }
   .pane-body {
     display: flex;

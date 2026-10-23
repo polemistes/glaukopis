@@ -153,8 +153,6 @@ export interface Settings {
   found: FoundSettings;
   /** Whether spelling is checked as one writes. */
   spelling: boolean;
-  /** Whether a break within a paragraph is shown by its sign, ↵ (ADR 0033). */
-  breakSigns: boolean;
   /**
    * Where languages of spelling and of OCR are imported from: the address
    * of a server, or a folder; none for the project's own (ADR 0032).
@@ -219,7 +217,6 @@ export const defaultSettings: Settings = {
   defaultTemplate: 'plain',
   found: { years: false, named: false, notes: false, atOnce: true, goThrough: true, inNotes: '' },
   spelling: true,
-  breakSigns: true,
   languagesServer: null,
   kinds: [],
   projectsList: true,

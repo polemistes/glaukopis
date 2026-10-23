@@ -16,7 +16,6 @@ project-name = Projektets namn
 project-rename = Byt namn på projektet
 project-not-saved = Inte sparat
 project-redo = Gör om
-project-view = Kartans vy
 project-view-this = Den här kartans vy
 project-diagram = Diagram
 project-text = Text
@@ -24,13 +23,7 @@ project-one-at-a-time = En i taget
 project-side-by-side = Två sida vid sida
 project-close-side = Stäng den här sidan
 project-references = Referenser
-project-side = Referenser, bilder, historik och ändringar
 project-side-map = Karta
-project-preview = Förhandsvisning och export
-project-share = Dela
-project-shared = Delat
-project-shared-offline = Delat · servern kan inte nås
-project-shared-too-large = Delat · servern tar inte emot de senaste ändringarna
 project-between-maps = Mellan de två kartorna
 
 ## When the sharing ends from the other side
@@ -78,19 +71,13 @@ project-template-not-renewed = Projektets kopia av mallen kunde inte uppdateras
 # Said over the other pane while elements of one project are dragged over it.
 project-copy-to-project = Kopiera till ”{ $name }”
 project-move-to-project = Flytta till ”{ $name }”
-project-element-name = Elementets namn
-project-this-element-actions = Det här elementet
-project-new-element-under = Nytt element under det
 project-document-into = Hämta in ett dokument i det…
 project-drop-on-map = Släpp på en karta för att flytta dit · håll Ctrl för att kopiera
 project-open-beside = Öppna bredvid
 project-open-beside-hint = Två kartor sida vid sida, för att flytta element mellan dem
 project-side-by-side-short = Sida vid sida
-project-preview-short = Förhandsvisning
-project-found = Lösa källhänvisningar…
 # The count is of those found in the element in view, and under it.
 project-found-hint = { $count } att gå igenom och göra till källhänvisningar
-project-found-none = Och text som ser ut som källhänvisningar
 project-copied-to = Kopierat till ”{ $name }”
 project-moved-to = Flyttat till ”{ $name }”
 project-other-projects = Andra projekt

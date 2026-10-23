@@ -16,7 +16,6 @@ project-name = Όνομα του έργου
 project-rename = Μετονομασία του έργου
 project-not-saved = Δεν αποθηκεύτηκε
 project-redo = Επανάληψη
-project-view = Προβολή του χάρτη
 project-view-this = Προβολή αυτού του χάρτη
 project-diagram = Διάγραμμα
 project-text = Κείμενο
@@ -24,13 +23,7 @@ project-one-at-a-time = Ένας κάθε φορά
 project-side-by-side = Δύο δίπλα δίπλα
 project-close-side = Κλείσιμο αυτής της πλευράς
 project-references = Αναφορές
-project-side = Αναφορές, εικόνες, ιστορικό και αλλαγές
 project-side-map = Χάρτης
-project-preview = Προεπισκόπηση και εξαγωγή
-project-share = Κοινή χρήση
-project-shared = Κοινό
-project-shared-offline = Κοινό · δεν υπάρχει πρόσβαση στον διακομιστή
-project-shared-too-large = Κοινό · ο διακομιστής δεν δέχεται τις τελευταίες αλλαγές
 project-between-maps = Ανάμεσα στους δύο χάρτες
 
 ## When the sharing ends from the other side
@@ -64,11 +57,8 @@ project-drop-on-map = Αφήστε πάνω σε χάρτη για μετακί�
 project-open-beside = Άνοιγμα δίπλα
 project-open-beside-hint = Δύο χάρτες δίπλα δίπλα, για να μετακινείτε στοιχεία ανάμεσά τους
 project-side-by-side-short = Δίπλα δίπλα
-project-preview-short = Προεπισκόπηση
-project-found = Παραπομπές που βρέθηκαν…
 # The count is of those found in the map.
 project-found-hint = { $count } προς εξέταση, για να γίνουν παραπομπές
-project-found-none = Και κείμενο που μοιάζει με παραπομπές
 project-copied-to = Αντιγράφηκε στο «{ $name }»
 project-moved-to = Μετακινήθηκε στο «{ $name }»
 

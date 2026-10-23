@@ -6,43 +6,32 @@
    * the elements from the top of the project down to the element in view,
    * the last in the strongest type. A folder opens the menu of all projects
    * at that folder, the project shows the project at its top, an element
-   * enters it. After the last crumb, ⋯ with what can be done with the
-   * element in view: rename, what the document is, about it, the citations
-   * that were found, its language, a new element under it, a document into
-   * it, delete.
+   * enters it. What can be done with an element is in its menu, in the
+   * diagram and the text (ADR 0064). Where the project could not be saved,
+   * its crumb has a sign, Not saved, with the fault in its tooltip.
    *
    * Where the path does not fit, the crumbs in the middle hide behind one,
    * …, whose menu has them (`fitCrumbs`). The crumbs are measured when the
    * room changes, or the crumbs or their names do; never on a keystroke in
    * the text, which changes neither.
    */
-  import BookOpenText from '@lucide/svelte/icons/book-open-text';
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
-  import CornerDownRight from '@lucide/svelte/icons/corner-down-right';
-  import Ellipsis from '@lucide/svelte/icons/ellipsis';
-  import FileInput from '@lucide/svelte/icons/file-input';
-  import FileText from '@lucide/svelte/icons/file-text';
+  import CircleAlert from '@lucide/svelte/icons/circle-alert';
   import FolderIcon from '@lucide/svelte/icons/folder';
-  import Languages from '@lucide/svelte/icons/languages';
-  import Pencil from '@lucide/svelte/icons/pencil';
-  import TextSearch from '@lucide/svelte/icons/text-search';
-  import Trash2 from '@lucide/svelte/icons/trash-2';
   import Book from '@lucide/svelte/icons/book';
   import { tick } from 'svelte';
   import type { ProjectInfo } from '$lib/api/projects';
-  import { aboutDocumentUi } from '$lib/document/about-document.svelte';
-  import { goThrough } from '$lib/found/found.svelte';
-  import { countFound } from '$lib/found/gather';
   import ProjectBadge from '$lib/home/ProjectBadge.svelte';
-  import { projectsMenu } from '$lib/home/projects-menu';
+  import { ProjectActions } from '$lib/home/project-actions.svelte';
+  import ProjectList from '$lib/home/ProjectList.svelte';
   import { t } from '$lib/i18n';
-  import { keysFor } from '$lib/shell/keys.svelte';
   import { projects } from '$lib/state/projects.svelte';
   import { openMenu, type MenuItem } from '$lib/ui/menu.svelte';
+  import Popover from '$lib/ui/Popover.svelte';
   import { tooltip } from '$lib/ui/tooltip';
-  import { removeElements } from './elements';
   import type { Project } from './model/project.svelte';
   import { PROJECT } from './model/types';
+  import { viewing } from './ProjectView.svelte';
   import { crumbsOf, fitCrumbs, type Crumb } from './path';
 
   interface Props {
@@ -51,27 +40,26 @@
     info: ProjectInfo;
     /** The element in view in this side. */
     at: string;
-    /** The projects shown in the sides, by id: marked in the menu of all projects. */
-    shown: readonly string[];
-    /** How the project is shared, for its badge. */
-    sharing?: { owner: boolean } | null;
+    /** How the project is shared, and how it is connected, for its badge. */
+    sharing?: { owner: boolean; status?: 'connected' | 'offline' | 'refused' } | null;
+    /** Whether the project's changes are on disk; where they could not be written, the fault. */
+    status?: 'saved' | 'error';
+    fault?: string;
     /** Enters an element of this project, or its top (`PROJECT`). */
     onselect: (id: string) => void;
-    /** Shows another project in this side, at its top. */
-    onproject: (id: string) => void;
-    /** A document is to be brought in, under the element in view. */
-    ondocument?: () => void;
+    /** Shows another project in this side, at its top or at an element of it. */
+    onproject: (id: string, at?: string) => void;
   }
 
   let {
     project,
     info,
     at,
-    shown,
     sharing = null,
+    status = 'saved',
+    fault,
     onselect,
     onproject,
-    ondocument,
   }: Props = $props();
 
   // The crumbs as a string first, so that what follows them, the drawing and
@@ -97,8 +85,7 @@
 
   let room = $state<HTMLDivElement>();
   let measuring = $state<HTMLDivElement>();
-  let more = $state<HTMLButtonElement>();
-  /** The width the crumbs have, beside ⋯. */
+  /** The width the crumbs have. */
   let roomWidth = $state(0);
   /** The widths of the crumbs drawn whole, with their separators; and of the crumb … */
   let widths = $state.raw<number[]>([]);
@@ -142,22 +129,33 @@
     const all = crumbs.map((_, i) => i);
     // Until the crumbs are measured, all are drawn: the room cuts what does not fit.
     if (widths.length !== crumbs.length || !roomWidth) return { shown: all, hidden: [] };
-    const beside = (more?.offsetWidth ?? 26) + 4;
     // The project always shows, so that each path says which project it is in.
     const project = crumbs.findIndex((c) => c.kind === 'project');
-    return fitCrumbs(widths, roomWidth - beside, ellipsisWidth, [project]);
+    return fitCrumbs(widths, roomWidth, ellipsisWidth, [project]);
   });
 
   // ---- what the crumbs do ----
 
+  /**
+   * The tree of all projects, which the chevron opens (ADR 0064): the list
+   * of projects as the list at the left has it, with its field, unfolded
+   * along the path to the element in view, which is marked; a folder's crumb
+   * opens it unfolded at that folder. A project chosen opens at its top, an
+   * element chosen is entered, in this side.
+   */
+  let treeAt = $state<{ anchor: HTMLElement; folder: string | null } | null>(null);
+  // The list asks for the actions of its place; where it chooses, none of them is offered.
+  const listActions = new ProjectActions({ open: () => {} });
+
   function allProjects(anchor: HTMLElement, folder: string | null = null) {
-    openMenu(
-      anchor,
-      projectsMenu(projects.folders, projects.list, { shown, choose: onproject, at: folder }),
-      {
-        align: 'start',
-      },
-    );
+    if (!projects.loaded) void projects.load();
+    treeAt = { anchor, folder };
+  }
+
+  function choose(id: string, element?: string) {
+    treeAt = null;
+    if (id === info.id) onselect(element ?? PROJECT);
+    else onproject(id, element);
   }
 
   function go(c: Crumb, anchor: HTMLElement) {
@@ -166,117 +164,20 @@
     else onselect(c.id);
   }
 
-  /** The menu of the crumbs hidden behind …, each doing what it does. */
+  /** The menu of the crumbs hidden behind …, each doing what it does: a folder opens the tree there. */
   function openHidden(event: MouseEvent, hidden: number[]) {
+    const anchor = event.currentTarget as HTMLElement;
     const items: MenuItem[] = hidden.map((i): MenuItem => {
       const c = crumbs[i];
       if (c.kind === 'folder')
-        return {
-          kind: 'submenu',
-          label: c.name,
-          icon: FolderIcon,
-          items: projectsMenu(projects.folders, projects.list, {
-            shown,
-            choose: onproject,
-            at: c.id,
-          }),
-        };
+        return { label: c.name, icon: FolderIcon, action: () => allProjects(anchor, c.id) };
       return {
         label: labelOf(c),
         icon: c.kind === 'project' ? Book : undefined,
         action: () => onselect(c.kind === 'project' ? PROJECT : c.id),
       };
     });
-    openMenu(event.currentTarget as HTMLElement, items, { align: 'start' });
-  }
-
-  // ---- what can be done with the element in view ----
-
-  /** The element that is being named in the path, and what is written. */
-  let naming = $state<{ id: string; value: string } | null>(null);
-  let input = $state<HTMLInputElement>();
-
-  /** Names an element in the path: the one in view, or one just made under it. */
-  async function rename(id: string) {
-    naming = { id, value: project.node(id)?.title ?? '' };
-    await tick();
-    input?.select();
-  }
-
-  function commit() {
-    if (!naming) return;
-    const { id, value } = naming;
-    naming = null;
-    if (!value.trim()) return;
-    project.checkpoint();
-    // The project's name is written beside its element as well.
-    if (id === PROJECT) project.setName(value);
-    else project.setTitle(id, value);
-    project.checkpoint();
-  }
-
-  /** A new element under the one in view, named in the path. */
-  function addUnder() {
-    project.checkpoint();
-    const id = project.addChild(at);
-    project.checkpoint();
-    if (id) void rename(id);
-  }
-
-  /** Deletes the element in view, with all under it; the view goes up. */
-  function remove() {
-    const up = parent;
-    if (!up) return;
-    const gone = removeElements(project, [at]);
-    if (gone) onselect(up);
-  }
-
-  /** What can be done with the element in view. */
-  function openActions(event: MouseEvent) {
-    const found = countFound(project, at);
-    const items: MenuItem[] = [
-      { label: t('common-rename'), icon: Pencil, shortcut: 'F2', action: () => void rename(at) },
-      {
-        label: t('chooser-menu'),
-        icon: BookOpenText,
-        action: () => aboutDocumentUi.open({ project, at, section: 'type' }),
-      },
-      {
-        label: t('about-menu'),
-        icon: FileText,
-        shortcut: keysFor('document-settings'),
-        action: () => aboutDocumentUi.open({ project, at }),
-      },
-      {
-        label: t('project-found'),
-        icon: TextSearch,
-        hint: found ? t('project-found-hint', { count: found }) : t('project-found-none'),
-        action: () => goThrough(at),
-      },
-      {
-        label: t('languages-menu'),
-        icon: Languages,
-        action: () => aboutDocumentUi.open({ project, at, section: 'language' }),
-      },
-      { kind: 'separator' },
-      { label: t('project-new-element-under'), icon: CornerDownRight, action: addUnder },
-      ...(ondocument
-        ? [
-            {
-              label: t('project-document-into'),
-              icon: FileInput,
-              action: () => ondocument?.(),
-            } as MenuItem,
-          ]
-        : []),
-      ...(parent
-        ? ([
-            { kind: 'separator' },
-            { label: t('common-delete'), icon: Trash2, danger: true, action: remove },
-          ] as MenuItem[])
-        : []),
-    ];
-    openMenu(event.currentTarget as HTMLElement, items, { align: 'start' });
+    openMenu(anchor, items, { align: 'start' });
   }
 </script>
 
@@ -290,6 +191,9 @@
       <span class="crumb {c.kind}" class:last>
         {#if c.kind === 'project'}<ProjectBadge name={c.name} {sharing} size={15} />{/if}
         <span class="name">{labelOf(c)}</span>
+        {#if c.kind === 'project' && status === 'error'}<span class="unsaved"
+            ><CircleAlert size={14} /></span
+          >{/if}
       </span>
     {:else}
       <button
@@ -306,20 +210,28 @@
           side: 'bottom',
         }}
         onclick={(e) => go(c, e.currentTarget)}
-        onkeydown={(e) => {
-          if (last && e.key === 'F2') {
-            e.preventDefault();
-            void rename(at);
-          }
-        }}
       >
         {#if c.kind === 'project'}<ProjectBadge name={c.name} {sharing} size={15} />{/if}
         <span class="name">{labelOf(c)}</span>
+        {#if c.kind === 'project' && status === 'error'}
+          <!-- The changes could not be written: what went wrong is told on hover. -->
+          <span
+            class="unsaved"
+            role="status"
+            aria-label={t('project-not-saved')}
+            data-not-saved
+            use:tooltip={{
+              text: fault ? `${t('project-not-saved')}: ${fault}` : t('project-not-saved'),
+              side: 'bottom',
+            }}
+          >
+            <CircleAlert size={14} />
+          </span>
+        {/if}
       </button>
     {/if}
   </span>
 {/snippet}
-
 <nav
   class="path"
   aria-label={t('project-where')}
@@ -331,7 +243,8 @@
     type="button"
     class="all"
     data-path-all
-    aria-haspopup="menu"
+    aria-haspopup="dialog"
+    aria-expanded={!!treeAt}
     aria-label={t('project-all-projects-menu')}
     use:tooltip={{ text: t('project-all-projects-menu'), side: 'bottom' }}
     onclick={(e) => allProjects(e.currentTarget)}
@@ -339,55 +252,45 @@
     <ChevronDown size={14} />
   </button>
   <div class="room" bind:this={room}>
-    {#if naming}
-      <input
-        bind:this={input}
-        bind:value={naming.value}
-        class="naming"
-        aria-label={t('project-element-name')}
-        placeholder={t('project-name-placeholder')}
-        size={Math.max(8, naming.value.length + 1)}
-        onblur={commit}
-        onkeydown={(e) => {
-          e.stopPropagation();
-          if (e.key === 'Enter') commit();
-          else if (e.key === 'Escape') naming = null;
-        }}
-      />
-    {:else}
-      {#each fitted.shown as i, k (crumbs[i].kind + crumbs[i].id)}
-        {@const before = k > 0 ? fitted.shown[k - 1] : i - 1}
-        {#if i - before > 1}
-          {@const hidden = crumbs.map((_, j) => j).filter((j) => j > before && j < i)}
-          <span class="step">
-            <span class="sep" aria-hidden="true">›</span>
-            <button
-              type="button"
-              class="crumb more"
-              data-crumb="more"
-              aria-haspopup="menu"
-              aria-label={t('project-path-hidden')}
-              use:tooltip={{ text: t('project-path-hidden'), side: 'bottom' }}
-              onclick={(e) => openHidden(e, hidden)}>…</button
-            >
-          </span>
-        {/if}
-        {@render crumb(crumbs[i], i, false)}
-      {/each}
-    {/if}
-    <button
-      type="button"
-      class="this-element"
-      bind:this={more}
-      data-this-element
-      aria-haspopup="menu"
-      aria-label={t('project-this-element-actions')}
-      use:tooltip={{ text: t('project-this-element-actions'), side: 'bottom' }}
-      onclick={openActions}
-    >
-      <Ellipsis size={15} />
-    </button>
+    {#each fitted.shown as i, k (crumbs[i].kind + crumbs[i].id)}
+      {@const before = k > 0 ? fitted.shown[k - 1] : i - 1}
+      {#if i - before > 1}
+        {@const hidden = crumbs.map((_, j) => j).filter((j) => j > before && j < i)}
+        <span class="step">
+          <span class="sep" aria-hidden="true">›</span>
+          <button
+            type="button"
+            class="crumb more"
+            data-crumb="more"
+            aria-haspopup="menu"
+            aria-label={t('project-path-hidden')}
+            use:tooltip={{ text: t('project-path-hidden'), side: 'bottom' }}
+            onclick={(e) => openHidden(e, hidden)}>…</button
+          >
+        </span>
+      {/if}
+      {@render crumb(crumbs[i], i, false)}
+    {/each}
   </div>
+  <Popover
+    open={!!treeAt}
+    anchor={treeAt?.anchor}
+    width={340}
+    label={t('project-all-projects-menu')}
+    onclose={() => (treeAt = null)}
+  >
+    <div class="tree" data-path-tree>
+      {#if projects.loaded}
+        <ProjectList
+          actions={listActions}
+          sides={viewing.sides}
+          {choose}
+          revealAt={treeAt?.folder ? { folder: treeAt.folder } : { project: info.id, element: at }}
+          focusField
+        />
+      {/if}
+    </div>
+  </Popover>
   <!-- Every crumb drawn whole, out of sight, to be measured; and the crumb … last. -->
   <div class="measuring" bind:this={measuring} aria-hidden="true">
     {#each crumbs as c, i (c.kind + c.id)}
@@ -439,8 +342,7 @@
     color: var(--ink-4);
     font-size: var(--text-sm);
   }
-  .all,
-  .this-element {
+  .all {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -454,8 +356,7 @@
     color: var(--ink-3);
     cursor: pointer;
   }
-  .all:hover,
-  .this-element:hover {
+  .all:hover {
     background: var(--paper-hover);
     color: var(--ink);
   }
@@ -501,18 +402,16 @@
     font-size: 15px;
     font-weight: 600;
   }
-  .naming {
-    height: 28px;
-    min-width: 0;
-    padding: 0 8px;
-    border: none;
-    border-radius: var(--radius-s);
-    background: var(--paper-raised);
-    box-shadow: 0 0 0 1.5px var(--accent);
-    font-family: var(--font-text);
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--ink);
-    outline: none;
+  /* The tree of all projects, under the chevron. */
+  .tree {
+    max-height: min(480px, 70vh);
+    overflow-y: auto;
+    padding: 8px 6px 0;
+  }
+  /* The project's changes could not be written. */
+  .unsaved {
+    display: inline-flex;
+    flex: none;
+    color: var(--danger);
   }
 </style>

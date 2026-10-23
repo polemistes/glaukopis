@@ -16,7 +16,6 @@ project-name = Naam van het project
 project-rename = Het project hernoemen
 project-not-saved = Niet opgeslagen
 project-redo = Opnieuw
-project-view = Weergave van de mindmap
 project-view-this = Weergave van deze mindmap
 project-diagram = Diagram
 project-text = Tekst
@@ -24,13 +23,7 @@ project-one-at-a-time = Eén tegelijk
 project-side-by-side = Twee naast elkaar
 project-close-side = Deze kant sluiten
 project-references = Referenties
-project-side = Referenties, afbeeldingen, geschiedenis en wijzigingen
 project-side-map = Mindmap
-project-preview = Voorbeeld en exporteren
-project-share = Delen
-project-shared = Gedeeld
-project-shared-offline = Gedeeld · de server kan niet worden bereikt
-project-shared-too-large = Gedeeld · de server neemt de laatste wijzigingen niet aan
 project-between-maps = Tussen de twee mindmaps
 
 ## When the sharing ends from the other side
@@ -64,11 +57,8 @@ project-drop-on-map = Laat vallen op een mindmap om ernaartoe te verplaatsen · 
 project-open-beside = Ernaast openen
 project-open-beside-hint = Twee mindmaps naast elkaar, om elementen ertussen te verplaatsen
 project-side-by-side-short = Naast elkaar
-project-preview-short = Voorbeeld
-project-found = Gevonden verwijzingen…
 # The count is of those found in the map.
 project-found-hint = { $count } om door te nemen en verwijzingen van te maken
-project-found-none = En tekst die op verwijzingen lijkt
 project-copied-to = Gekopieerd naar ‘{ $name }’
 project-moved-to = Verplaatst naar ‘{ $name }’
 

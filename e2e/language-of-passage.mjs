@@ -73,9 +73,9 @@ async function choose(label) {
   await sleep(250);
 }
 
-/** Opens Words › Language over the text. */
+/** Opens Words kind › Language over the text. */
 async function languageMenu() {
-  await app.click('.pane-bar .tools .words');
+  await app.click('.pane-bar [data-words-kind]');
   await app.waitFor('.menu');
   await sleep(150);
   await choose('Language');
@@ -179,8 +179,8 @@ try {
     JSON.stringify(found),
   );
   check(
-    'the Words button tells that the words have something of it',
-    await app.exec(`return document.querySelector('.pane-bar .tools .words').classList.contains('on')`),
+    'a language is no kind of words: the button of Words kind is not lit for it, and names no kind',
+    await app.exec(`const b = document.querySelector('.pane-bar [data-words-kind]'); return !b.classList.contains('on') && b.textContent.trim() === 'Words kind';`),
   );
 
   // --- A Greek word given Ancient Greek by its tag ---

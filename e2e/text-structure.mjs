@@ -272,7 +272,7 @@ try {
   check('and undone, it is back', list[2] === 'One A:2', list.join(' | '));
 
   // ==== The diagram: the same keys ====
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(500);
   const node = (name) =>
@@ -293,7 +293,7 @@ try {
   await sleep(150);
   await name(['Alt', 'Enter'], 'Four');
   await name(['Alt', 'Shift', 'Enter'], 'Four A');
-  await app.clickText('header [role="radio"]', 'Text');
+  await app.view('text');
   await app.waitFor('.text-view .section', 8000);
   await sleep(500);
   list = await sections();
@@ -302,7 +302,7 @@ try {
     list.slice(-3).join(' | ') === 'Three:1 | Four:1 | Four A:2',
     list.join(' | '),
   );
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(500);
   // Alt+Up and Alt+Down among those beside it.
@@ -310,12 +310,12 @@ try {
   await sleep(150);
   await app.keys(['Alt', 'ArrowUp']);
   await sleep(400);
-  await app.clickText('header [role="radio"]', 'Text');
+  await app.view('text');
   await app.waitFor('.text-view .section', 8000);
   await sleep(500);
   list = await sections();
   check('Alt+Up moves the element selected up', list.indexOf('Four:1') < list.indexOf('Three:1'), list.join(' | '));
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(500);
   // Sideways, as the arrow points: deeper on the right of the map, less deep on the left.
@@ -347,7 +347,7 @@ try {
   void shown;
 
   // ==== Dots, and setting in, as the settings say ====
-  await app.clickText('header [role="radio"]', 'Text');
+  await app.view('text');
   await app.waitFor('.text-view .section', 8000);
   await sleep(500);
   const choose = async (label) => {

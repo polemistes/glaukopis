@@ -63,11 +63,8 @@ editor-line-number-press = Le numéro de cette ligne : appuyez pour le changer
 ## Numbers belong to what they number (ADR 0041): the Numbers menu offers
 ## the three, each saying what it numbers.
 
-editor-numbers = Numéros
-editor-numbers-hint = Numéroter les lignes que vous écrivez, marquer un endroit de la prose, ou numéroter les lignes de la page
 editor-numbers-lines = Numéroter ces lignes…
 editor-numbers-lines-hint = Les lignes des paragraphes où est le curseur, ou de ceux qui sont sélectionnés : à partir de quel numéro, tous les combien, de quel côté
-editor-numbers-refmark-hint = Un endroit de la prose, repéré par un verset, une page ou un numéro d’édition : 3:16, 327a
 editor-numbers-page = Numéroter les lignes de la page
 editor-numbers-page-hint = Chaque ligne de la page imprimée, numérotée dans la marge, dans ce document et ceux du dessous
 
@@ -119,7 +116,6 @@ editor-highlight = Surlignage
 editor-highlight-hint = Pour l’œil, à l’écran : il ne va dans aucun document
 editor-underline = Souligné
 editor-code-words = Code dans la ligne
-editor-code-words-hint = Des lettres de même largeur, dans la ligne
 editor-scene = Intitulé de scène
 editor-scene-hint = Où et quand se passe une scène : INT. MAISON – NUIT
 editor-action = Action
@@ -133,14 +129,9 @@ editor-parenthetical-hint = Comment une réplique est dite
 editor-transition = Transition
 editor-transition-hint = Comment une scène fait place à la suivante : FONDU AU NOIR
 editor-comment = Commentaire
-editor-comment-hint = Un commentaire sur ce qui est sélectionné
-editor-comment-element-hint = Un commentaire sur cet élément ; sélectionnez des mots pour les commenter
 editor-parallel = Deux textes côte à côte
-editor-parallel-hint = Un original et sa traduction, chacun un texte à part
 editor-page-break = Saut de page
-editor-page-break-hint = Ce qui suit commence sur une nouvelle page
 editor-column-break = Saut de colonne
-editor-column-break-hint = Ce qui suit commence en haut de la colonne suivante, là où la mise en page compose le texte en colonnes
 editor-paragraph-kind = Type de paragraphe
 # Said of the button that shows the kind of paragraph the cursor is in.
 editor-paragraph-kind-now = Type de paragraphe : { $kind }
@@ -158,8 +149,6 @@ editor-kinds-change-own = Modifier un type à vous…
 editor-kinds-set-by = Composés comme « { $format } » le veut
 editor-kinds-change-look = L’aspect de « { $kind } »…
 editor-kinds-change-look-hint = Son aspect dans ce document, et le reste de la page
-editor-words = Mots
-editor-words-hint = Souligné, exposant, code ; la langue d’un passage, mots étrangers, titre d’œuvre, terme, locuteur dans une ligne
 editor-words-make = Créer un type de mots…
 # Beside the language of the map, first among the languages foreign words may be in.
 editor-foreign-of-text = La langue du texte
@@ -195,40 +184,17 @@ editor-own-kind-delete-message = { $count ->
 
 ## Citing, notes, and what is put into the text.
 
-editor-cite = Citer
 editor-cite-here = Citer une œuvre ici
-editor-cite-at-cursor = Citer une œuvre là où est le curseur
 editor-note = Note
 editor-note-selection = Faire de la sélection une note
-editor-note-hint = Une note, en bas de page ou en fin de texte
 editor-insert = Insérer
-editor-insert-hint = Une image, un tableau, des mathématiques, un renvoi
-editor-new-element = Nouvel élément
-editor-new-element-hint = Un nouvel élément après celui-ci, ou dessous
-editor-new-after = Nouvel élément après celui-ci
-editor-new-under = Nouvel élément sous celui-ci
-editor-new-split = Scinder ici
 editor-spelling-on = L’orthographe est vérifiée pendant que vous écrivez · appuyez pour arrêter
 editor-spelling-off = L’orthographe n’est pas vérifiée · appuyez pour la vérifier
-editor-break-signs = Le signe d’un saut de ligne dans un paragraphe
-editor-break-signs-on = Un saut de ligne dans un paragraphe est montré par ↵ · appuyez pour cacher le signe
-editor-break-signs-off = Un saut de ligne dans un paragraphe n’est pas montré · appuyez pour le montrer par ↵
-editor-picture-file = Image depuis un fichier…
-editor-picture-file-hint = Une figure, avec ce qu’on en dit
-editor-picture-store = Image de la réserve…
-editor-picture-store-hint = Celles que vous avez sont affichées sur le côté
 editor-equation = Équation
-editor-equation-hint = Des mathématiques sur une ligne à part
 editor-table = Tableau…
-editor-table-hint = De tant de lignes et de colonnes
 editor-table-file = Tableau depuis un fichier…
-editor-table-file-hint = CSV, ou une feuille de LibreOffice ou d’Excel
 editor-formula = Formule
-editor-formula-hint = Des mathématiques dans la ligne
 editor-pointer = Renvoi…
-editor-pointer-hint = À une figure, un tableau, une équation ou une partie : « voir figure 2 »
-editor-refmark = Marque de référence…
-editor-refmark-hint = Un verset, une page ou un numéro d’édition : 3:16, 327a
 editor-refmark-title = Marque de référence
 editor-refmark-label = Étiquette
 editor-refmark-placeholder = 3:16, 327a, 1094a1

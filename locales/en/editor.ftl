@@ -62,11 +62,8 @@ editor-line-number-press = The number of this line: press to change it
 
 ## Numbers belong to what they number (ADR 0041): the Numbers menu offers
 ## the three, each saying what it numbers.
-editor-numbers = Numbers
-editor-numbers-hint = Number the lines you write, mark a place in prose, or number the lines of the page
 editor-numbers-lines = Number these lines…
 editor-numbers-lines-hint = The lines of the paragraphs where the cursor is, or of those selected: from which number, every how many, on which side
-editor-numbers-refmark-hint = A place in prose, by a verse, a page or a number of an edition: 3:16, 327a
 editor-numbers-page = Number the lines of the page
 editor-numbers-page-hint = Every line of the printed page, numbered in the margin, in this document and those under it
 
@@ -117,7 +114,6 @@ editor-highlight = Highlight
 editor-highlight-hint = For the eye on the screen: it goes into no document
 editor-underline = Underlined
 editor-code-words = Code in the line
-editor-code-words-hint = Letters of equal width, within the line
 editor-scene = Scene heading
 editor-scene-hint = Where and when a scene is: INT. HOUSE – NIGHT
 editor-action = Action
@@ -131,17 +127,12 @@ editor-parenthetical-hint = How a line is said
 editor-transition = Transition
 editor-transition-hint = How one scene gives way to the next: CUT TO:
 editor-comment = Comment
-editor-comment-hint = A comment on what is selected
-editor-comment-element-hint = A comment on this element; select words to comment on them
 editor-parallel = Two texts side by side
-editor-parallel-hint = An original and its translation, each a text of its own
 editor-page-break = Page break
-editor-page-break-hint = What follows begins on a new page
 editor-column-break = Column break
-editor-column-break-hint = What follows begins at the top of the next column, where the layout sets the text in columns
-editor-paragraph-kind = Kind of paragraph
+editor-paragraph-kind = Paragraph kind
 # Said of the button that shows the kind of paragraph the cursor is in.
-editor-paragraph-kind-now = Kind of paragraph: { $kind }
+editor-paragraph-kind-now = Paragraph kind: { $kind }
 
 ## The kind menu: the kinds written with those where the cursor is, the kinds at hand,
 ## the whole catalogue under "More…", and the layout that sets them at its foot.
@@ -156,8 +147,6 @@ editor-kinds-change-own = Change a kind of your own…
 editor-kinds-set-by = Set as “{ $format }” has them
 editor-kinds-change-look = How “{ $kind }” looks…
 editor-kinds-change-look-hint = Its look in this document, and the rest of the page
-editor-words = Words
-editor-words-hint = Underlining, superscript, code; the language of a passage, foreign words, the title of a work, a term, a speaker within a line
 editor-words-make = Make a kind of words…
 # Beside the language of the map, first among the languages foreign words may be in.
 editor-foreign-of-text = The language of the text
@@ -192,47 +181,23 @@ editor-own-kind-delete-message = { $count ->
 
 ## Citing, notes, and what is put into the text.
 
-editor-cite = Cite
 editor-cite-here = Cite a work here
-editor-cite-at-cursor = Cite a work where the cursor is
 editor-note = Note
 editor-note-selection = Make the selection a note
-editor-note-hint = A note, at the foot of the page or the end
 editor-insert = Insert
-editor-insert-hint = A picture, a table, mathematics, a cross-reference
-editor-new-element = New element
-editor-new-element-hint = A new element after this one, or under it
-editor-new-after = New element after this one
-editor-new-under = New element under this one
-editor-new-split = Split here
-editor-new-split-hint = What follows the cursor becomes the name of a new element, and the paragraphs below its text
 editor-spelling-on = Spelling is checked as you write · press to stop
 editor-spelling-off = Spelling is not checked · press to check it
-editor-break-signs = The sign of a break within a paragraph
-editor-break-signs-on = A break within a paragraph is shown by ↵ · press to hide the sign
-editor-break-signs-off = A break within a paragraph is not shown · press to show it by ↵
-editor-picture-file = Picture from a file…
-editor-picture-file-hint = A figure, with what is said of it
-editor-picture-store = Picture from the store…
-editor-picture-store-hint = Those you have are shown at the side
 editor-equation = Equation
-editor-equation-hint = Mathematics on a line of its own
 editor-table = Table…
-editor-table-hint = Of so many rows and columns
 editor-table-file = Table from a file…
-editor-table-file-hint = CSV, or a sheet of LibreOffice or Excel
 editor-formula = Formula
-editor-formula-hint = Mathematics in the line
 editor-pointer = Cross-reference…
-editor-pointer-hint = To a figure, a table, an equation or a part: “see figure 2”
-editor-refmark = Reference mark…
-editor-refmark-hint = A verse, a page or a number of an edition: 3:16, 327a
-editor-refmark-title = Reference mark
+editor-refmark-title = Inline number
 editor-refmark-label = Label
 editor-refmark-placeholder = 3:16, 327a, 1094a1
 editor-refmark-dialog-hint = The mark is no part of the words: spelling, search and the count of words pass over it. The layout says whether it is raised in the line or set in the margin.
 # What a picture that was pasted without a name of its own is called in the store of pictures.
-editor-pasted-picture = picture
+editor-pasted-picture = image
 
 ## More.
 
@@ -309,3 +274,11 @@ editor-note-place-format = Where the layout has its notes
 editor-note-place-foot = At the foot of the page
 editor-note-place-end = At the end of the text
 editor-note-placeholder = The text of the note
+
+## Stage 3 of the sides, the panes and the bars (agent "bars")
+editor-words-kind = Words kind
+editor-words-kind-now = Words kind: { $kind }
+editor-marks = Marks
+editor-marks-shown = Marks of whitespace
+editor-image = Image
+editor-inline-number = Inline number…

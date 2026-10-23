@@ -55,7 +55,7 @@ async function cursorAfter(words) {
 
 /** Opens the kind menu and chooses a kind; under More… where it is not in hand. */
 async function chooseKind(name, more = false) {
-  await app.click('.pane-bar .tools .style');
+  await app.click('.pane-bar [data-paragraph-kind]');
   await app.waitFor('.menu', 3000);
   await sleep(150);
   if (more) {
@@ -84,7 +84,7 @@ try {
   await app.clickText('dialog footer button', 'Create');
   // A new project opens as text: the diagram is turned to.
   await app.waitFor('.text-view .section', 8000);
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(400);
   await app.click('.diagram .node.root');
@@ -142,7 +142,7 @@ try {
     'the editor makes no passages, no lines of their own, no lists',
     !(await app.exists(`${prose} .passage, ${prose} .verse-line, ${prose} blockquote, ${prose} ul, ${prose} ol`)),
   );
-  await app.waitForText('.pane-bar .tools .style', 'Verse', 3000);
+  await app.waitForText('.pane-bar [data-paragraph-kind]', 'Verse', 3000);
   const label = await app.exec(
     `const first = document.querySelectorAll(arguments[0] + ' > p[data-run="line"]');
      return { run: first.length, head: document.querySelector(arguments[0] + ' > p[data-run-first] .run-label')?.textContent.trim() ?? null };`,
@@ -174,9 +174,7 @@ try {
 
   // --- Numbered through the speaker and across the stanza, every 2, from 1 ---
   await cursorAfter('Nurse');
-  await app.click('.pane-bar .tools button.lines');
-  await app.waitFor('.menu', 3000);
-  await app.clickText('.menu [role="menuitem"]', 'Number these lines…');
+  await app.numberTheseLines();
   await app.waitForText('dialog[open] h2', 'Numbers', 3000);
   await sleep(200);
   const numbering = await app.exec(`return document.querySelector('dialog[open] select').value`);
@@ -233,7 +231,7 @@ try {
   );
 
   // --- Two texts side by side ---
-  await app.clickText('.pane-bar .tools button', 'Insert');
+  await app.click('.pane-bar [data-insert]');
   await app.waitFor('.menu');
   await app.clickText('.menu [role="menuitem"]', 'Two texts side by side');
   await sleep(300);
@@ -286,7 +284,7 @@ try {
     script === 'scene:Int. Palace – night | action:Medea paces. | character:Nurse | dialogue:If only the Argo had never flown.',
     script,
   );
-  await app.waitForText('.pane-bar .tools .style', 'Dialogue', 3000);
+  await app.waitForText('.pane-bar [data-paragraph-kind]', 'Dialogue', 3000);
   await app.screenshot('verse-2b-script');
 
   // --- The preview sets them ---

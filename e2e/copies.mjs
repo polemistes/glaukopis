@@ -25,7 +25,7 @@ try {
   await app.clickText('dialog footer button', 'Create');
   // A new project opens as text: the diagram is turned to.
   await app.waitFor('.text-view .section', 8000);
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(400);
 
@@ -43,7 +43,7 @@ try {
   await add('under', 'The word menis');
 
   // A second tree under the project, beside the first; the view stays at the project.
-  await app.newMap();
+  await app.newElementUnder();
   await app.keys('Article');
   await app.press('Enter');
   await app.waitForText('.diagram .node .caption', 'Article', 5000);
