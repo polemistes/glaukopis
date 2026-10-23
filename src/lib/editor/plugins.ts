@@ -48,6 +48,7 @@ import { kindName } from './kinds';
 import { LAYOUT_NUMBERS, stretchNumbersPlugin, type NumbersLayout } from './numbers';
 import { acrossParallel, backOutOfParallel } from './parallel';
 import { refMarkKey } from './refmarks';
+import { hardSpaces, insertHardSpace } from './hard-space';
 
 export type KeyAction =
   | 'enter'
@@ -280,6 +281,7 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
     'Mod-,': toggle('sub'),
     'Shift-Mod-k': toggle('smallcaps'),
     'Shift-Mod-x': toggle('strike'),
+    'Shift-Mod-Space': insertHardSpace,
     "Mod-'": (state, dispatch, view) =>
       setKind(kindOf(state) === 'quote' ? 'text' : 'quote', own())(state, dispatch, view),
     'Shift-Mod-8': (state, dispatch, view) =>
@@ -364,6 +366,8 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
     cite,
     ids(),
     rows(),
+    // The rings of the hard spaces: see `hard-space.ts`.
+    hardSpaces(),
     // The marks of lines kept at the start of their lines: see `keys.ts`.
     lineMarks(),
     // The numbers of the lines of a numbered stretch: see `numbers.ts`.
@@ -388,6 +392,7 @@ export function titlePlugins(hooks: EditorHooks): Plugin[] {
     'Mod-.': toggle('sup'),
     'Mod-,': toggle('sub'),
     'Shift-Mod-k': toggle('smallcaps'),
+    'Shift-Mod-Space': insertHardSpace,
     Enter: chainCommands(
       openSelected,
       (_state, _dispatch, view) =>
@@ -404,5 +409,5 @@ export function titlePlugins(hooks: EditorHooks): Plugin[] {
       act(hooks, 'backspace-at-start', (state) => isAtStart(state)),
     ),
   };
-  return [passes(), inputRules({ rules: dashes }), keymap(keys), keymap(baseKeymap)];
+  return [passes(), inputRules({ rules: dashes }), hardSpaces(), keymap(keys), keymap(baseKeymap)];
 }

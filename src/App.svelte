@@ -32,6 +32,7 @@
   import FilesView from '$lib/files/FilesView.svelte';
   import ProjectView, { viewing } from '$lib/project/ProjectView.svelte';
   import { PROJECT } from '$lib/project/model/types';
+  import { panes } from '$lib/project/panes.svelte';
   import SearchView from '$lib/search/SearchView.svelte';
   import SettingsDialog from '$lib/settings/SettingsDialog.svelte';
   import { settingsUi } from '$lib/settings/settings-ui.svelte';
@@ -204,10 +205,9 @@
     document.documentElement.dataset.theme = settings.theme;
   });
 
-  // Whether the sign of a break within a paragraph is shown (app.css).
+  // Whether the marks of whitespace are shown in the texts (app.css): the window's, kept with its arrangement.
   $effect(() => {
-    document.documentElement.dataset.breakSigns =
-      settings.value.breakSigns === false ? 'off' : 'on';
+    document.documentElement.dataset.marks = panes.marks ? 'on' : 'off';
   });
 
   // A colouring of the writer's own: its tokens are derived from the four colours chosen and laid on the root.

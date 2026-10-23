@@ -610,11 +610,16 @@ body.dragging * {
   border-radius: 2px 2px 0 0;
 }
 
-/* The break within a paragraph (ADR 0033): a faint sign at the end of its
-   line. It is the style sheet's and no text, so it is not copied, searched
-   or printed. It takes no room, so the line wraps as it would without it,
-   and it is no taller than the line. */
-.hard-break::before {
+/* The marks of whitespace (ADR 0064), shown or not by the toggle with the
+   pilcrow in a side's bar: ¶ at the end of every paragraph of a text, ↵ at
+   a break within one, and a ring over a hard space. Ordinary spaces are not
+   marked: the ring alone tells the hard from the soft. The marks are the
+   style sheet's and no text, so they are not copied, searched or printed;
+   they take no room, so the lines wrap as they would without them.
+
+   The break within a paragraph (ADR 0033): a faint sign at the end of its
+   line, no taller than the line. */
+:root[data-marks='on'] .hard-break::before {
   content: '↵';
   display: inline-block;
   width: 0;
@@ -631,13 +636,54 @@ body.dragging * {
   user-select: none;
   -webkit-user-select: none;
 }
-/* Turned off in the writing tools, or by the settings. */
-:root[data-break-signs='off'] .hard-break::before {
+/* The end of a paragraph of a text: not of a name, a caption or a cell of a
+   table. Not where the paragraph ends in the break the editor keeps in an
+   empty one, or after a break within it: the sign would stand on a line of
+   its own there, and ::before is the bullet's and the kind's. */
+:root[data-marks='on'] .prose.body p:not(td p, th p, figure p)::after {
+  content: '¶';
+  display: inline-block;
+  width: 0;
+  overflow: visible;
+  transform: translateX(0.2em);
+  white-space: nowrap;
+  color: var(--ink-4);
+  font-family: var(--font-ui);
+  font-size: 0.8em;
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: none;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+:root[data-marks='on'] .prose.body p:has(> br.ProseMirror-trailingBreak)::after {
   content: none;
 }
+/* A hard space: a small ring over it, as word processors show one. */
+:root[data-marks='on'] .hard-space {
+  position: relative;
+}
+:root[data-marks='on'] .hard-space::after {
+  content: '°';
+  position: absolute;
+  top: -0.05em;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--ink-4);
+  font-family: var(--font-ui);
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: none;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
 @media print {
-  .hard-break::before {
-    content: none;
+  .hard-break::before,
+  .prose.body p::after,
+  .hard-space::after {
+    content: none !important;
   }
 }
 
