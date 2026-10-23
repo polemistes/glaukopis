@@ -163,16 +163,38 @@ try {
   );
   await app.screenshot('list-3-beside');
 
+  // ---- opening into the active side, and closing either ----
+  // The projects of the sides, in their order.
+  const sideProjects = () =>
+    app.exec(`return Array.from(document.querySelectorAll('.top .cell [data-path]')).map((p) => p.querySelector('[data-crumb="project"] .name')?.textContent.trim() ?? '')`);
+  // Iliad has the focus, in the second side: Odyssey, opened from the list, takes its place; Notes stays.
+  await app.click(await rowEl(app, 'project', 'Odyssey'));
+  await until(async () => (await sideProjects()).includes('Odyssey'), 10000);
+  await sleep(500);
+  check('a project opened from the list goes into the active side, and the other stays as it was', JSON.stringify(await sideProjects()) === JSON.stringify(['Notes', 'Odyssey']), JSON.stringify(await sideProjects()));
+  // Close on the project of the side without the focus closes that side.
+  await app.rightClick(await rowEl(app, 'project', 'Notes'));
+  await app.waitFor('.menu');
+  await app.clickText('.menu [role="menuitem"]', 'Close');
+  await until(async () => (await app.count('.pane')) === 1, 5000);
+  check('Close in the list closes the side of either project', JSON.stringify(await sideProjects()) === JSON.stringify(['Odyssey']), JSON.stringify(await sideProjects()));
+  // Notes again beside, for what follows.
+  await app.rightClick(await rowEl(app, 'project', 'Notes'));
+  await app.waitFor('.menu');
+  await app.clickText('.menu [role="menuitem"]', 'Open beside');
+  await until(async () => (await app.count('.pane')) === 2, 10000);
+  await sleep(500);
+
   // ---- up from the top of a project ----
-  // The first side, Notes, at its top: Alt+Shift+Up comes to its row in the list.
+  // The first side, Odyssey, at its top: Alt+Shift+Up comes to its row in the list.
   await app.click('.pane:first-of-type .pane-body');
   await sleep(300);
   await app.exec(`document.activeElement?.blur?.()`);
   await app.keys(['Alt', 'Shift', 'ArrowUp']);
-  const notes = await projectId(app, 'Notes');
-  await until(async () => (await selectedRow(app)) === `p:${notes}`);
-  check('up from the top of a project comes to its row in the list', (await selectedRow(app)) === `p:${notes}`, String(await selectedRow(app)));
-  check('and the row has the focus', (await app.exec(`return document.activeElement?.dataset?.row ?? null`)) === `p:${notes}`);
+  const first = await projectId(app, 'Odyssey');
+  await until(async () => (await selectedRow(app)) === `p:${first}`);
+  check('up from the top of a project comes to its row in the list', (await selectedRow(app)) === `p:${first}`, String(await selectedRow(app)));
+  check('and the row has the focus', (await app.exec(`return document.activeElement?.dataset?.row ?? null`)) === `p:${first}`);
 
   // The list hidden, up from the top shows it again.
   await app.keys(['Control', 'Shift', 'l']);
@@ -188,7 +210,7 @@ try {
   await app.home();
   await sleep(400);
   const recent = await app.exec(`return Array.from(document.querySelectorAll('[data-start-recent] [data-start-project] .name')).map((n) => n.textContent.trim())`);
-  check('the start screen shows the projects last opened, newest first', JSON.stringify(recent) === JSON.stringify(['Iliad', 'Notes']), JSON.stringify(recent));
+  check('the start screen shows the projects last opened, newest first', JSON.stringify(recent) === JSON.stringify(['Notes', 'Odyssey', 'Iliad']), JSON.stringify(recent));
   check('with no project marked in the list', !(await app.exists(`${LIST} [data-current]`)));
   await app.screenshot('list-4-start');
   await app.click('[data-start-project]');

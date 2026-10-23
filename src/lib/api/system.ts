@@ -1,5 +1,6 @@
 import { call } from './backend';
 import type { Layout } from './ocr';
+import type { Arrangement } from '$lib/project/sides.svelte';
 
 export interface SystemInfo {
   version: string;
@@ -176,6 +177,8 @@ export interface Settings {
   lastPlace: string | null;
   /** The window's size and place as it was closed; none until it has been closed once. */
   window: WindowPlace | null;
+  /** The sides of the window and its panes, as they were left (ADR 0064): see `project/sides.svelte.ts`. */
+  arrangement: Partial<Arrangement> | null;
   /** How wide it is, in pixels. */
   projectsPaneWidth: number;
   /** How wide the collections or folders of the library are, in pixels; the same for references and files. */
@@ -223,6 +226,7 @@ export const defaultSettings: Settings = {
   recentProjects: [],
   lastPlace: null,
   window: null,
+  arrangement: null,
   projectsPaneWidth: 240,
   librarySideWidth: 224,
   libraryDetailWidth: 400,

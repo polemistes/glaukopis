@@ -846,7 +846,10 @@ try {
   let sides = await shownIn();
   check('a project chosen is shown beside, at its top', sides.length === 2 && sides[1].endsWith(':Odyssey') && sides[0].endsWith(':Wrath and the hero'), sides.join(' | '));
   await app.screenshot('maps-15b-project-beside');
-  // At an element of its tree, unfolded under it in the chooser.
+  // At an element of its tree, unfolded under it in the chooser, from the first side:
+  // what is chosen goes into the side without the focus.
+  await app.exec(`document.querySelectorAll('.panes > .pane')[0].querySelector('.pane-body').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))`);
+  await sleep(200);
   await beside('Another project…');
   await app.waitFor('dialog [data-beside-chooser] .row.project', 5000);
   await unfoldRow('dialog [data-beside-chooser]', 'Odyssey');
@@ -859,7 +862,10 @@ try {
   check('the path of the other side has its project', (await app.exec(`return document.querySelector('.top .cell[data-side="1"] [data-crumb="project"] .name')?.textContent.trim() ?? ''`)) === 'Odyssey');
   await app.screenshot('maps-15c-element-beside');
   // One at a time closes the other project; in the list at the left, Enter beside on an
-  // element of its tree, and Open beside on the project, open it again.
+  // element of its tree, and Open beside on the project, open it again. One at a time
+  // closes the side without the focus: the focus goes to the first side first.
+  await app.exec(`document.querySelectorAll('.panes > .pane')[0].querySelector('.pane-body').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))`);
+  await sleep(200);
   await beside('One at a time');
   await sleep(400);
   check('one at a time closes the project beside', (await app.count('.pane')) === 1);
@@ -873,14 +879,16 @@ try {
   await app.waitUntil(`return document.querySelector('.top .cell[data-side="1"] [data-crumb-last] .name')?.textContent.trim() === 'Ithaca'`, 8000, 'Ithaca beside').catch(() => {});
   sides = await shownIn();
   check('Enter beside, in the menu of an element of a tree in the list, shows it beside', sides.length === 2 && sides[1].endsWith(':Ithaca'), sides.join(' | '));
+  await app.exec(`document.querySelectorAll('.panes > .pane')[0].querySelector('.pane-body').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))`);
+  await sleep(200);
   await beside('One at a time');
   await sleep(400);
   await app.rightClick(await app.findByText('[data-projects-pane] .row.project', 'Odyssey'));
   await offered();
   await app.clickText('.menu [role="menuitem"]', 'Open beside');
-  await app.waitUntil(`return document.querySelector('.top .cell[data-side="1"] [data-crumb-last] .name')?.textContent.trim() === 'Odyssey'`, 8000, 'Odyssey beside').catch(() => {});
+  await app.waitUntil(`return document.querySelector('.top .cell[data-side="1"] [data-crumb-last] .name')?.textContent.trim() === 'Ithaca'`, 8000, 'Odyssey beside, where it was left').catch(() => {});
   sides = await shownIn();
-  check('and Open beside, in the menu of a project', sides.length === 2 && sides[1].endsWith(':Odyssey'), sides.join(' | '));
+  check('and Open beside, in the menu of a project, where it was left', sides.length === 2 && sides[1].endsWith(':Ithaca'), sides.join(' | '));
   await app.screenshot('maps-15d-enter-beside');
 
   const errors = await app.pageErrors();

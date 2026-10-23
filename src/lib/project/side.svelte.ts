@@ -20,7 +20,7 @@ import { picturesUi, type PictureScope } from '$lib/pictures/store.svelte';
 import { Review } from '$lib/review/review.svelte';
 import { sourceFor } from '$lib/review/source';
 import { notify } from '$lib/ui/toast.svelte';
-import type { Pane } from './layout';
+import type { MapMode } from '$lib/state/router.svelte';
 import type { Project } from './model/project.svelte';
 import type { SideKind } from './SideTabs.svelte';
 
@@ -31,7 +31,7 @@ export interface SideHost {
   /** The project of the view, once it is open. */
   project(): Project | null;
   /** The pane of the project of the view that the panels follow. */
-  ownPane(): Pane | undefined;
+  ownPane(): { at: string; mode: MapMode } | undefined;
   /** Whether the pane that has the focus shows another project, beside. */
   besideInFocus(): boolean;
   /** The element in view that pane has to be at to show an element. */

@@ -302,9 +302,8 @@
             />
           {/if}
           <div class="project-view">
-            {#key route.project}
-              <ProjectView projectId={route.project} />
-            {/key}
+            <!-- Made once while projects are shown: its sides open and close projects as they change. -->
+            <ProjectView />
           </div>
         </div>
       {:else if route.view === 'home' || route.view === 'settings'}

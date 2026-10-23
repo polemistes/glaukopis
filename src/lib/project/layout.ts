@@ -1,197 +1,113 @@
 /**
- * How the view of a project is laid out, and kept from one opening to the
- * next: which elements the panes show and how, what the panel at the side
- * shows, whether the outline and the preview stand beside the text, how the
- * room is shared, where each diagram was looked at, where each text was read,
- * which side had the focus and whether the sides were switched.
+ * What a project keeps of how it was looked at, from one opening to the next
+ * (ADR 0064): where each diagram was looked at, what is folded away in its
+ * text, where the text of each element was read, how wide its outline
+ * stands, and where it was left, the element and the way it was shown. What
+ * the window shows, its sides and its panes, is the window's, kept with the
+ * settings (`sides.svelte.ts`).
  */
 
 import type { MapMode } from '$lib/state/router.svelte';
 import type { Camera } from './diagram/camera';
 import { PROJECT } from './model/types';
-import type { SideKind } from './SideTabs.svelte';
-
-export interface Pane {
-  /** The element in view. */
-  at: string;
-  mode: MapMode;
-  /**
-   * Another project the pane shows, beside the one of the view: the second
-   * pane only. None for the project of the view.
-   */
-  project?: string;
-}
-
-/** What a pane showing another project shows: its diagram or its text. */
-export const guestMode = (mode: MapMode): MapMode => (mode === 'text' ? 'text' : 'diagram');
 
 /** The elements there are, by id: `project.nodes` will do. */
 export interface Elements {
   has(id: string): boolean;
 }
 
-/** How the room is shared between the parts of the view. Nought for what is given. */
-export interface Sizes {
-  /** The part of the width the first of two panes has. */
-  split: number;
-  preview: number;
-  /** The panel at the side, whether it shows the references or the pictures. */
-  references: number;
+/** Where a project was left: the element in view of the side that showed it last, and how. */
+export interface Left {
+  at: string;
+  mode: MapMode;
 }
 
-export const GIVEN: Sizes = { split: 0.5, preview: 0, references: 0 };
-
-/** The view as it is kept with the project. */
+/** What a project keeps of how it was looked at, as it is written with it. */
 export interface StoredView {
-  sizes?: Partial<Sizes>;
-  panes?: Pane[];
   /** By the element in view. */
   cameras?: Record<string, Camera>;
-  /** What the panel at the side shows; none where it is closed. */
-  side?: SideKind | null;
-  /** What it showed last, and shows when it is opened again. */
-  lastSide?: SideKind;
-  /** Whether the outline stands beside the text. */
-  outline?: boolean;
-  /** As the view was kept before the panel at the side had tabs. */
-  references?: boolean;
-  pictures?: boolean;
-  history?: boolean;
-  preview?: boolean;
   /** The elements under which the text is folded away. */
   folded?: string[];
   /**
-   * The element at the top of the text of each pane, by its place among the
-   * panes; none where the pane shows no text. An element, not a pixel: a
-   * pixel does not hold across sizes of the window, fonts and edits.
+   * The element at the top of the text of each element in view, by that
+   * element. An element, not a pixel: a pixel does not hold across sizes of
+   * the window, fonts and edits. Kept by the place of a pane before
+   * 2026-10-23: such a list is passed over.
    */
-  tops?: (string | null)[];
-  /** Which pane had the focus, by its place among the panes. */
-  focused?: number;
-  /** Whether the two sides were switched, the second shown at the left. */
-  mirrored?: boolean;
+  tops?: Record<string, string> | unknown[];
+  outlineWidth?: number;
+  /** Where the project was left. */
+  at?: string;
+  mode?: MapMode;
+  /** As the view was kept before the sides were the window's: the first pane says where it was left. */
+  panes?: { at?: string; mode?: MapMode }[];
 }
 
-/** The view as it is shown. */
-export interface Layout {
-  panes: Pane[];
+/** What a project keeps of how it was looked at, as it is held while it is open. */
+export interface Memory {
   cameras: Record<string, Camera>;
-  side: SideKind | null;
-  lastSide: SideKind;
-  outline: boolean;
-  preview: boolean;
-  sizes: Sizes;
-  /** The element at the top of the text of each pane, where it shows the text. */
-  tops: (string | null)[];
-  /** The pane that has the focus. */
-  focused: number;
-  /** Whether the sides are switched: the second pane is drawn at the left. */
-  mirrored: boolean;
+  tops: Record<string, string>;
+  outlineWidth: number;
+  left: Left | null;
 }
+
+export const OUTLINE_WIDTH = 240;
+const MODES: readonly MapMode[] = ['diagram', 'text', 'timeline'];
 
 /** Whether an element can be in view: the project itself always can, before its element has arrived. */
 const inView = (elements: Elements, id: string | undefined): id is string =>
   !!id && (id === PROJECT || elements.has(id));
 
-/**
- * The view as it was left, or as a project is first met. An element the
- * place in the application names is shown first, and then alone; where
- * nothing names one, the project itself. A view kept before the project
- * was one tree (ADR 0037) named maps, which are gone: it opens at the
- * project.
- */
-export function arranged(
-  elements: Elements,
-  stored: StoredView,
-  route: { at?: string; mode?: MapMode } | null,
-): Layout {
-  const known = (id: string | undefined) => (inView(elements, id) ? id : undefined);
-  const first: Pane = {
-    at: known(route?.at) ?? known(stored.panes?.[0]?.at) ?? PROJECT,
-    mode: route?.mode ?? stored.panes?.[0]?.mode ?? 'diagram',
-  };
-  const panes = [first];
-  const second = stored.panes?.[1];
-  // Another project is opened beside as it was left: what is in view there is looked for when it is open.
-  if (!route?.at && second?.project)
-    panes.push({ at: second.at || PROJECT, mode: guestMode(second.mode), project: second.project });
-  else if (!route?.at && second && known(second.at))
-    panes.push({ at: second.at, mode: second.mode });
-  // The text of a pane is read again where it was, while the pane shows the
-  // element and the text it showed; an element of another project beside is
-  // looked for there.
-  const keptTops = Array.isArray(stored.tops) ? stored.tops : [];
-  const tops = panes.map((pane, i) => {
-    const was = stored.panes?.[i];
-    const top = keptTops[i];
-    if (typeof top !== 'string' || pane.mode !== 'text' || !was) return null;
-    if (pane.at !== was.at || pane.mode !== was.mode) return null;
-    return pane.project || inView(elements, top) ? top : null;
-  });
-  const focused =
-    Number.isInteger(stored.focused) && stored.focused! > 0
-      ? Math.min(stored.focused!, panes.length - 1)
-      : 0;
-  // The changes are gone through when asked for, not when the project opens.
-  const kept =
-    stored.side !== undefined
-      ? stored.side
-      : stored.references
-        ? 'references'
-        : stored.pictures
-          ? 'pictures'
-          : stored.history
-            ? 'history'
-            : null;
-  const side = kept === 'changes' ? null : kept;
+/** What was kept, read with care: what cannot be read is as a project first met. */
+export function readMemory(stored: unknown): Memory {
+  const s = (stored && typeof stored === 'object' ? stored : {}) as StoredView;
+  const cameras: Record<string, Camera> = {};
+  if (s.cameras && typeof s.cameras === 'object')
+    for (const [id, c] of Object.entries(s.cameras))
+      if (c && Number.isFinite(c.cx) && Number.isFinite(c.cy) && Number.isFinite(c.k))
+        cameras[id] = c;
+  const tops: Record<string, string> = {};
+  if (s.tops && typeof s.tops === 'object' && !Array.isArray(s.tops))
+    for (const [at, top] of Object.entries(s.tops)) if (typeof top === 'string') tops[at] = top;
+  const at = typeof s.at === 'string' ? s.at : s.panes?.[0]?.at;
+  const mode = MODES.includes(s.mode as MapMode) ? s.mode : s.panes?.[0]?.mode;
   return {
-    panes,
-    cameras: stored.cameras ?? {},
-    side,
-    lastSide: stored.lastSide ?? side ?? 'references',
-    outline: stored.outline ?? false,
-    preview: stored.preview ?? false,
-    sizes: { ...GIVEN, ...stored.sizes },
+    cameras,
     tops,
-    focused,
-    // One side has nothing to be switched with.
-    mirrored: panes.length > 1 && stored.mirrored === true,
+    outlineWidth:
+      typeof s.outlineWidth === 'number' && s.outlineWidth >= 160 && s.outlineWidth <= 520
+        ? s.outlineWidth
+        : OUTLINE_WIDTH,
+    left: at ? { at, mode: MODES.includes(mode as MapMode) ? (mode as MapMode) : 'diagram' } : null,
   };
 }
 
-/**
- * What is kept of a view: the cameras of elements that are there, and not
- * the changes, which are opened when asked for; the element at the top of
- * the text only of a pane that shows the text.
- */
-export function toStore(layout: Layout, elements: Elements, folded: string[]): StoredView {
+/** Where the project is to be shown, of what was kept: the element it was left at, where it is still there. */
+export function leftAt(memory: Memory, elements: Elements): Left {
+  const left = memory.left;
+  return left && inView(elements, left.at) ? left : { at: PROJECT, mode: left?.mode ?? 'diagram' };
+}
+
+/** What is kept: the cameras and the tops of elements that are there, and the folds given. */
+export function toStore(memory: Memory, elements: Elements, folded: string[]): StoredView {
   const cameras: Record<string, Camera> = {};
-  for (const [id, c] of Object.entries(layout.cameras)) {
-    if (inView(elements, id)) cameras[id] = c;
-  }
+  for (const [id, c] of Object.entries(memory.cameras)) if (inView(elements, id)) cameras[id] = c;
+  const tops: Record<string, string> = {};
+  for (const [at, top] of Object.entries(memory.tops))
+    if (inView(elements, at) && inView(elements, top)) tops[at] = top;
   return {
-    sizes: layout.sizes,
-    panes: layout.panes,
     cameras,
-    side: layout.side === 'changes' ? null : layout.side,
-    lastSide: layout.lastSide,
-    outline: layout.outline,
-    preview: layout.preview,
     folded,
-    tops: layout.panes.map((pane, i) => {
-      const top = layout.tops[i] ?? null;
-      if (!top || pane.mode !== 'text') return null;
-      return pane.project || inView(elements, top) ? top : null;
-    }),
-    focused: clamp(layout.focused, 0, Math.max(0, layout.panes.length - 1)),
-    mirrored: layout.panes.length > 1 && layout.mirrored,
+    tops,
+    outlineWidth: memory.outlineWidth,
+    ...(memory.left && inView(elements, memory.left.at) ? memory.left : {}),
   };
 }
 
 export const clamp = (value: number, least: number, most: number) =>
   Math.min(Math.max(value, least), most);
 
-/** The width of a panel at the side, dragged by so much, within what the room of the view allows. */
+/** The width of a pane beside the sides, dragged by so much, within what the room of the window allows. */
 export function sideWidth(
   which: 'preview' | 'references',
   width: number,

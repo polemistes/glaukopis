@@ -177,9 +177,10 @@ try {
   await app.quit();
 
   const kept = settingsKept();
+  // The place names the active side: the second, at the project's top, in its text.
   check(
-    'the place is kept: the project at Part 2, in its text',
-    kept.lastPlace === `#/project/${encodeURIComponent(projectId)}/${encodeURIComponent(ids['Part 2'])}?mode=text`,
+    'the place is kept: the active side, at the top of the project, in its text',
+    kept.lastPlace === `#/project/${encodeURIComponent(projectId)}/project?mode=text`,
     kept.lastPlace,
   );
   check(
@@ -205,8 +206,8 @@ try {
   await app.screenshot('as-left-2-first');
   const hash = await app.exec('return location.hash');
   check(
-    'it opens at the project, at the element of the first side and in its text',
-    hash === `#/project/${encodeURIComponent(projectId)}/${encodeURIComponent(ids['Part 2'])}?mode=text`,
+    'it opens at the project, at the element of the active side and in its text',
+    hash === `#/project/${encodeURIComponent(projectId)}/project?mode=text`,
     hash,
   );
   const shown = await panes(app);

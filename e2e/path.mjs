@@ -279,19 +279,21 @@ try {
   await app.waitFor('dialog [data-beside-chooser] .row.project', 5000);
   await app.clickText('dialog [data-beside-chooser] .row.project', 'Notes');
   await app.waitGone('dialog [data-beside-chooser]', 3000);
-  await until(async () => (await crumbs(app, 1))[0] === 'project:Notes', 8000);
-  const first = await crumbs(app, 0);
-  const second = await crumbs(app, 1);
+  // The other project goes into the side without the focus, whichever that is.
+  await until(async () => (await crumbs(app, 0))[0] === 'project:Notes' || (await crumbs(app, 1))[0] === 'project:Notes', 8000);
+  const notesSide = (await crumbs(app, 0))[0] === 'project:Notes' ? 0 : 1;
+  const first = await crumbs(app, 1 - notesSide);
+  const second = await crumbs(app, notesSide);
   check('two projects: each path has its own project', first.includes(`project:${PROJECT}`) && second[0] === 'project:Notes', `${JSON.stringify(first)} | ${JSON.stringify(second)}`);
   const marked = await app.exec(`return Array.from(document.querySelectorAll('[data-projects-pane] .row.project[data-shown]')).map((r) => r.querySelector('.name').textContent.trim()).sort()`);
   check('the list marks both projects', JSON.stringify(marked) === JSON.stringify([PROJECT, 'Notes'].sort()), JSON.stringify(marked));
-  await focusSide(app, 1);
+  await focusSide(app, notesSide);
   await sleep(200);
   await app.click('header button[aria-label="References, pictures, history and changes"]');
   await app.waitFor('.side-map', 5000);
   await sleep(300);
   const about = await app.exec(`return document.querySelector('.side-map [data-side-project]')?.textContent.trim() ?? null`);
-  check('the panel at the side names the project it is about while the other has the focus', about === PROJECT, String(about));
+  check('the panel at the side is of the active side, and names its project', about === 'Notes', String(about));
   await app.screenshot('path-7-two-projects');
   const header = await app.exec(
     `const h = document.querySelector('.project > header');
@@ -303,7 +305,7 @@ try {
   await sleep(200);
 
   // The × in the bar of the other project's side closes it.
-  await app.click(await app.exec(`return document.querySelectorAll('.pane')[1].querySelector('[data-close-side]')`));
+  await app.click(await app.exec(`return document.querySelectorAll('.pane')[arguments[0]].querySelector('[data-close-side]')`, notesSide));
   await sleep(500);
   check('the × of the side beside closes it', (await app.count('.pane')) === 1 && (await crumbs(app, 0)).includes(`project:${PROJECT}`));
 
