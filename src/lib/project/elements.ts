@@ -4,6 +4,7 @@ import Copy from '@lucide/svelte/icons/copy';
 import ClipboardPaste from '@lucide/svelte/icons/clipboard-paste';
 import CornerDownRight from '@lucide/svelte/icons/corner-down-right';
 import EyeOff from '@lucide/svelte/icons/eye-off';
+import FileText from '@lucide/svelte/icons/file-text';
 import FileInput from '@lucide/svelte/icons/file-input';
 import GitCompare from '@lucide/svelte/icons/git-compare';
 import CircleDashed from '@lucide/svelte/icons/circle-dashed';
@@ -22,6 +23,9 @@ import Trash2 from '@lucide/svelte/icons/trash-2';
 import { languages, t } from '$lib/i18n';
 import { keysFor } from '$lib/shell/keys.svelte';
 import { commentsUi } from '$lib/comments/ui.svelte';
+import { aboutDocumentUi } from '$lib/document/about-document.svelte';
+import { bringIn, chooseDocument } from '$lib/documents/bringing.svelte';
+import { goThrough } from '$lib/found/found.svelte';
 import { truncate } from '$lib/library/format';
 import { confirm } from '$lib/ui/confirm.svelte';
 import { describeWhen } from '$lib/timeline/solve';
@@ -43,6 +47,8 @@ import type { Project } from './model/project.svelte';
 import { PROJECT, STATUSES } from './model/types';
 import { subtree, topmost, type Tree } from './model/tree';
 import { carriedWithin, pickElement } from './picker.svelte';
+import { sideApis } from './side-api.svelte';
+import { sides } from './sides.svelte';
 
 /** What is dragged when elements are. */
 export interface ElementsPayload {
@@ -78,6 +84,26 @@ export interface ElementActions {
   comment?: (id: string) => void;
   /** The element in view where the menu is opened: the picker of a target opens the way to it. */
   at?: string;
+  /** Brings a document in, as a branch under the element; where the view does not say, the menu does it itself. */
+  documentInto?: (id: string) => void;
+}
+
+/**
+ * A document chosen among the files is brought in as a branch under an
+ * element, and shown in the text of the side that shows the project, the
+ * active one where both do; a document of found citations is gone through.
+ */
+async function documentInto(project: Project, id: string) {
+  const path = await chooseDocument();
+  if (!path) return;
+  const brought = await bringIn(path, project, id);
+  if (!brought) return;
+  const spec = [sides.active, ...sides.sides].find((s) => {
+    const api = s ? sideApis.get(s.key) : undefined;
+    return api?.open.project === project;
+  });
+  if (spec) sideApis.get(spec.key)?.goTo(brought.top, { mode: 'text' });
+  if (brought.goThrough) goThrough(brought.top);
 }
 
 /** The words with which a placement in time is said. */
@@ -444,6 +470,21 @@ export function elementMenu(
         shortcut: keysFor('tree-rename'),
         action: () => actions.rename!(one.id),
       });
+    // What the document of the element is, and a document brought in under it.
+    items.push(
+      {
+        label: t('about-menu'),
+        icon: FileText,
+        shortcut: keysFor('document-settings'),
+        action: () => aboutDocumentUi.open({ project, at: one.id }),
+      },
+      {
+        label: t('project-document-into'),
+        icon: FileInput,
+        action: () =>
+          actions.documentInto ? actions.documentInto(one.id) : void documentInto(project, one.id),
+      },
+    );
     if (actions.link)
       items.push({
         label: t('project-associate'),
