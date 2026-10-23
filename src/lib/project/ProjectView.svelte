@@ -991,8 +991,8 @@
 
     <!-- the typesetting pane -->
     {#if previewSpec && previewOpen?.project && previewSpec.at}
-      {@const of = previewOpen.project}
-      {@const typesetAt = previewSpec.at}
+      {@const of = previewOpen?.project as Project}
+      {@const typesetAt = previewSpec?.at ?? PROJECT}
       <Divider
         label={t('project-between-preview')}
         onstart={() => measure('preview')}
@@ -1002,15 +1002,15 @@
       <!-- Of the side whose Typesetting button was pressed, not of the focus. -->
       <div
         class="side typesetting"
-        data-typesetting={previewSpec.key}
+        data-typesetting={previewSpec?.key}
         style:width={typesettingWidth}
       >
         <div class="pages-part" bind:this={previewEl}>
           <!-- Of the project of the side it shows: made anew when that is another. -->
-          {#key previewSpec.project}
+          {#key previewSpec?.project}
             <PreviewPanel
               project={of}
-              projectId={previewSpec.project}
+              projectId={previewSpec?.project ?? ''}
               at={typesetAt}
               look={panes.look}
               onlook={() => {
@@ -1035,7 +1035,7 @@
             style:width={panes.lookWidth ? `${panes.lookWidth}px` : undefined}
           >
             <!-- The look of the document the pages show. -->
-            {#key `${previewSpec.project}\n${typesetAt}`}
+            {#key `${previewSpec?.project}\n${typesetAt}`}
               <LookPanel
                 project={of}
                 at={typesetAt}
@@ -1081,13 +1081,13 @@
         bind:this={referencesEl}
         style:width={panes.documentWidth ? `${panes.documentWidth}px` : undefined}
       >
-        {#if sideElement || (shared?.connection && project.others.length)}
+        {#if sideElement || (shared?.connection && project?.others.length)}
           <div class="side-map" class:split={sides.sides.length > 1}>
             {#if sideElement}
               <span class="overline">{t('project-side-map')}</span>
               <!-- Where two projects are shown, which one the pane is about. -->
               {#if sides.across}
-                <span class="of" data-side-project>{project.name}</span>
+                <span class="of" data-side-project>{project?.name}</span>
                 <span class="sep" aria-hidden="true">›</span>
               {/if}
               <strong>{sideElement.title || t('project-untitled')}</strong>
@@ -1095,7 +1095,7 @@
             <span class="grow"></span>
             <!-- Who else is in the project: a small sign, the names on hover. -->
             {#if shared?.connection}
-              <Presence people={project.others} compact />
+              <Presence people={project?.others ?? []} compact />
             {/if}
           </div>
         {/if}

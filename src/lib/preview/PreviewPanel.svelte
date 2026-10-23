@@ -607,7 +607,7 @@
     <!-- The Look column beside the pages, opened and closed. -->
     <button
       type="button"
-      class="look"
+      class="look-button"
       class:on={look}
       aria-pressed={look}
       data-look
@@ -845,7 +845,7 @@
     background: var(--paper);
   }
   /* The Look column's button, lit while the column is open. */
-  .look {
+  .look-button {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -860,11 +860,11 @@
     font-size: var(--text-sm);
     cursor: pointer;
   }
-  .look:hover {
+  .look-button:hover {
     background: var(--paper-hover);
     color: var(--ink);
   }
-  .look.on {
+  .look-button.on {
     background: var(--accent-soft);
     border-color: color-mix(in srgb, var(--accent) 35%, transparent);
     color: var(--accent-strong);
