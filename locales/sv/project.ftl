@@ -67,14 +67,10 @@ project-cited-in-element = { $count ->
 # The name of an element that has none.
 project-untitled = Utan titel
 project-where = Var du är
-# The small button before the name of the element in view: its parent's name.
-project-up = Upp
+# The tooltip of the crumb of the parent of the element in view, in the path over a side.
 project-up-hint = Upp till ”{ $name }” · Alt+Skift+↑
 # The small round button by the element in view, in the diagram and the text: up to the element over it.
 project-leave-map = Upp till ”{ $name }”
-project-siblings-hint = Elementen bredvid det här: välj ett för att visa det
-project-trees-hint = Elementen under projektet: välj ett för att visa det
-project-shown-beside = bredvid det här
 # The owl before the name of the project itself, in the first pane: up to all the projects.
 # The sign of a project, read aloud, where it is shared.
 project-badge-shared = { $name }, delat av dig

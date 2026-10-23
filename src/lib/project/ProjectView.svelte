@@ -109,7 +109,9 @@
   import { pickElement } from './picker.svelte';
   import { openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import FolderTree from '@lucide/svelte/icons/folder-tree';
-  import MapBar from './MapBar.svelte';
+  import Path from './Path.svelte';
+  import type { ProjectInfo } from '$lib/api/projects';
+  import ArrowLeftRight from '@lucide/svelte/icons/arrow-left-right';
   import WritingTools from '$lib/editor/WritingTools.svelte';
   import ListTree from '@lucide/svelte/icons/list-tree';
   import { PROJECT } from './model/types';
@@ -137,6 +139,8 @@
   let failure = $state<string | null>(null);
   let panes = $state<Pane[]>([]);
   let focused = $state(0);
+  // Whether the sides are drawn the other way round: kept with the view.
+  let mirrored = $state(false);
   let cameras = $state<Record<string, Camera>>({});
   let showOutline = $state(false);
   let showPreview = $state(false);
@@ -318,6 +322,7 @@
       if (i >= 0) show(element, { pane: id === projectId ? ownIndex : i });
     };
     viewing.beside = besideProject;
+    viewing.close = closeShown;
   });
 
   // ---- the panel at the side ----
@@ -727,16 +732,134 @@
     if (panes.length > 1)
       items.push(
         { kind: 'separator' },
+        { label: t('project-switch-sides'), icon: ArrowLeftRight, action: switchSides },
         { label: t('project-one-at-a-time'), icon: X, action: oneAtATime },
       );
     openMenu(sideBySideButton, items, { align: 'start' });
   }
 
+  /**
+   * The sides change places. Only how they are drawn: the first is still
+   * that of the project of the view, with its panels, its sharing and its
+   * history.
+   */
+  function switchSides() {
+    if (panes.length > 1) mirrored = !mirrored;
+  }
+
+  /** The project is closed: the start screen comes, and the house no longer goes back to it. */
+  function closeProject() {
+    router.forgetProject(ownId);
+    router.go({ view: 'home' });
+  }
+
+  /**
+   * Closes a side, by its × or by Ctrl+W. The one side there is closes the
+   * project. The side of the project of the view, where the other shows
+   * another project, closes that of the view, and the other becomes it,
+   * opened anew at the element it was at, in a side of its own.
+   */
+  async function closeSideAt(i: number) {
+    if (panes.length < 2) {
+      closeProject();
+      return;
+    }
+    const other = panes[1 - i];
+    if (other.project && !panes[i].project) {
+      // The view is kept with one side, as it is when opened again; the
+      // place follows it before it is left for the other project.
+      panes = [panes[i]];
+      focused = 0;
+      mirrored = false;
+      await tick();
+      router.forgetProject(ownId);
+      router.go({ view: 'project', project: other.project, at: other.at, mode: other.mode });
+      return;
+    }
+    closePane(i);
+  }
+
+  /** The sides that show a project close, as Close in the list's menu of a project asks. */
+  function closeShown(id: string) {
+    // Both sides of the project of the view close with it; one of another beside stays, and becomes it.
+    if (id === ownId && across) void closeSideAt(0);
+    else if (id === ownId) closeProject();
+    else if (panes[1]?.project === id) closePane(1);
+  }
+
+  /**
+   * Shows a project in a side, at its top, as it is chosen in the menu of
+   * all projects of the side's path: the project of the view in the first
+   * side, or another, which then is gone to as a click in the list opens
+   * it; any in the second, as Another project… does.
+   */
+  function projectIn(i: number, id: string) {
+    if (i === 0 && id === ownId) show(PROJECT, { pane: 0 });
+    else if (i === 0) router.go({ view: 'project', project: id });
+    else besideProject(id);
+  }
+
+  /** The project of a side, as the list has it, for its path: the folder it lies in. */
+  function infoOf(p: Pane, of: Project): ProjectInfo {
+    const id = p.project ?? ownId;
+    return (
+      projects.list.find((x) => x.id === id) ??
+      (p.project ? guest.current?.info : undefined) ?? {
+        id,
+        name: of.name,
+        description: '',
+        created: '',
+        modified: '',
+        maps: [],
+        words: 0,
+        references: 0,
+      }
+    );
+  }
+
+  /** How the project of a side is shared, for the badge of its path. */
+  function sharingOf(p: Pane): { owner: boolean } | null {
+    const sharing = p.project ? guest.current?.sharing.sharing : shared?.sharing;
+    return sharing ? { owner: sharing.owner } : null;
+  }
+
+  /** The projects the sides show, by id: marked in the menu of all projects. */
+  const shownIds = $derived([...new Set(panes.map((p) => p.project ?? ownId))]);
+
+  // ---- the top row: a cell over each side, as wide as it ----
+
+  let panesEl = $state<HTMLDivElement>();
+  /** The widths of the sides, and of the row of them, as drawn. */
+  let paneWidths = $state.raw<number[]>([]);
+  let panesWidth = $state(0);
+  /** What stands between the cells: the width of the line between the sides. */
+  const between = $derived(
+    paneWidths.length > 1 ? Math.max(0, panesWidth - paneWidths[0] - paneWidths[1]) : 0,
+  );
+
+  // The sides are measured as they change width. It depends on the elements
+  // of the sides and on how many there are.
+  $effect(() => {
+    const box = panesEl;
+    const els = paneEls.slice(0, panes.length).filter((el): el is HTMLDivElement => !!el);
+    if (!box) return;
+    const measure = () => {
+      paneWidths = els.map((el) => el.getBoundingClientRect().width);
+      panesWidth = box.getBoundingClientRect().width;
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(box);
+    for (const el of els) observer.observe(el);
+    measure();
+    return () => observer.disconnect();
+  });
+
   // ---- the room each part has ----
 
   function moveSplit(dx: number) {
     const width = work?.querySelector<HTMLElement>('.panes')?.offsetWidth ?? 0;
-    if (width) sizes.split = clamp(sizes.split + dx / width, 0.2, 0.8);
+    // Where the sides are switched, the first stands at the right: the line follows the pointer still.
+    if (width) sizes.split = clamp(sizes.split + (mirrored ? -dx : dx) / width, 0.2, 0.8);
   }
 
   /** The panels at the side are measured when the dragging begins: until then they have what they are given. */
@@ -804,6 +927,7 @@
     const going = i === 0 && panes[1]?.project ? 1 : i;
     panes = panes.filter((_, j) => j !== going);
     focused = 0;
+    mirrored = false;
   }
 
   function keep(id: string) {
@@ -872,6 +996,11 @@
       'side-changes': () => side.toggleReview(),
       'side-panel': () => side.toggle(),
       'side-by-side': sideBySideMenu,
+      'close-side': {
+        run: () => void closeSideAt(Math.min(focused, panes.length - 1)),
+        when: () => !!pane,
+      },
+      'switch-sides': { run: switchSides, when: () => panes.length > 1 },
       share: () => (showShare = true),
       'text-outline': {
         run: () => (showOutline = !showOutline),
@@ -916,6 +1045,60 @@
   <div class="centre"><Spinner size={22} /></div>
 {:else}
   <div class="project">
+    <!-- The top row: over each side a cell with its path, as wide as the side; Split view at the right end. -->
+    <div class="top" data-top>
+      <div class="cells" class:mirrored style:gap="{between}px">
+        {#each panes as p, i (i)}
+          {@const of = projectOf(p)}
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <div
+            class="cell"
+            class:active={panes.length > 1 && i === focused}
+            class:other={panes.length > 1 && i !== focused}
+            data-side={i}
+            style:flex-basis="{paneWidths[i] ?? 0}px"
+            onpointerdowncapture={() => (focused = i)}
+            onfocusin={() => (focused = i)}
+          >
+            {#if of && of.node(PROJECT)}
+              <Path
+                project={of}
+                info={infoOf(p, of)}
+                at={p.at}
+                shown={shownIds}
+                sharing={sharingOf(p)}
+                onselect={(id) => show(id, { pane: i })}
+                onproject={(id) => projectIn(i, id)}
+                ondocument={p.project
+                  ? undefined
+                  : async () => documentsIn([await chooseDocument()])}
+              />
+            {/if}
+          </div>
+        {/each}
+      </div>
+      <div class="split">
+        <!-- Lit while two sides are shown; its menu chooses what the other side shows. -->
+        <button
+          type="button"
+          class="tool"
+          class:on={panes.length > 1}
+          bind:this={sideBySideButton}
+          aria-haspopup="menu"
+          aria-label={t('project-side-by-side')}
+          data-side-by-side
+          use:tooltip={{
+            text: t('project-side-by-side'),
+            shortcut: keysFor('side-by-side'),
+            side: 'bottom',
+          }}
+          onclick={sideBySideMenu}
+        >
+          <Columns2 size={15} />
+          <span>{t('project-side-by-side-short')}</span>
+        </button>
+      </div>
+    </div>
     <header>
       <Segmented
         value={pane.mode}
@@ -929,25 +1112,6 @@
         ]}
         onchange={(mode) => (panes[focused] = { ...pane, mode })}
       />
-      <!-- Lit while two sides are shown; its menu chooses what the other side shows. -->
-      <button
-        type="button"
-        class="tool"
-        class:on={panes.length > 1}
-        bind:this={sideBySideButton}
-        aria-haspopup="menu"
-        aria-label={t('project-side-by-side')}
-        data-side-by-side
-        use:tooltip={{
-          text: t('project-side-by-side'),
-          shortcut: keysFor('side-by-side'),
-          side: 'bottom',
-        }}
-        onclick={sideBySideMenu}
-      >
-        <Columns2 size={15} />
-        <span>{t('project-side-by-side-short')}</span>
-      </button>
       <button
         type="button"
         class="tool"
@@ -1041,7 +1205,13 @@
         ondrop: (e) => filesDropped(e, { project, documentsIn, keep }),
       }}
     >
-      <div class="panes" class:two={panes.length > 1} class:across>
+      <div
+        class="panes"
+        class:two={panes.length > 1}
+        class:across
+        class:mirrored
+        bind:this={panesEl}
+      >
         {#each panes as p, i (i)}
           {@const of = projectOf(p)}
           {#if i === 1}
@@ -1090,19 +1260,6 @@
               >
                 <ListTree size={15} />
               </IconButton>
-              {#if of}
-                <MapBar
-                  project={of}
-                  at={p.at}
-                  beside={panes.length > 1 && !across ? panes[1 - i]?.at : null}
-                  onselect={(id, mode) => show(id, { pane: i, mode })}
-                  onbeside={p.project ? (id) => show(id, { pane: i }) : beside}
-                  ondocument={p.project
-                    ? undefined
-                    : async () => documentsIn([await chooseDocument()])}
-                  named={namedIn(p)}
-                />
-              {/if}
               {#if p.mode === 'text' && of}
                 <span class="bar-divider"></span>
                 <div class="writing">
@@ -1141,17 +1298,17 @@
                   ]}
                   onchange={(mode) => (panes[i] = { ...p, mode })}
                 />
-                <!-- The first pane stays where the second shows another project. -->
-                {#if !(across && i === 0)}
-                  <IconButton
-                    label={t('project-close-side')}
-                    size="sm"
-                    onclick={() => closePane(i)}
-                  >
-                    <X size={14} />
-                  </IconButton>
-                {/if}
               {/if}
+              <!-- Shown always: one side closes alone, and the one side there is closes the project. -->
+              <IconButton
+                label={t('project-close-side')}
+                shortcut={keysFor('close-side')}
+                size="sm"
+                data-close-side
+                onclick={() => void closeSideAt(i)}
+              >
+                <X size={14} />
+              </IconButton>
             </div>
             <div class="pane-body">
               {#if !of || !of.node(PROJECT)}
@@ -1295,6 +1452,13 @@
           {#if sideElement}
             <div class="side-map" class:split={panes.length > 1}>
               <span class="overline">{t('project-side-map')}</span>
+              <!-- Where two projects are shown, which one the panel is about. -->
+              {#if across}
+                <span class="of" data-side-project
+                  >{(side.kind === 'look' ? (previewOf ?? project) : project).name}</span
+                >
+                <span class="sep" aria-hidden="true">›</span>
+              {/if}
               <strong>{sideElement.title || t('project-untitled')}</strong>
             </div>
           {/if}
@@ -1408,6 +1572,57 @@
     height: 100%;
     min-height: 0;
   }
+  /* The top row: the paths of the sides, and Split view. */
+  .top {
+    display: flex;
+    align-items: stretch;
+    height: var(--bar-h);
+    flex: none;
+    border-bottom: 1px solid var(--line);
+    background: var(--paper);
+  }
+  .cells {
+    display: flex;
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+  .cells.mirrored,
+  .panes.mirrored {
+    flex-direction: row-reverse;
+  }
+  .cell {
+    display: flex;
+    align-items: center;
+    flex-grow: 0;
+    flex-shrink: 1;
+    min-width: 0;
+    padding: 0 6px 0 8px;
+    overflow: hidden;
+  }
+  /* Of two sides, that with the focus in the accent, with the accent's ink for all in it; the other sunken and grey. */
+  .cell.active {
+    background: var(--accent);
+    color: var(--accent-ink);
+    --ink: var(--accent-ink);
+    --ink-2: var(--accent-ink);
+    --ink-3: color-mix(in srgb, var(--accent-ink) 78%, transparent);
+    --ink-4: color-mix(in srgb, var(--accent-ink) 55%, transparent);
+    --paper-hover: color-mix(in srgb, var(--accent-ink) 14%, transparent);
+    --line: color-mix(in srgb, var(--accent-ink) 30%, transparent);
+  }
+  .cell.other {
+    background: var(--paper-sunken);
+    color: var(--ink-3);
+    --ink: var(--ink-3);
+    --ink-2: var(--ink-3);
+  }
+  .split {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex: 1 0 auto;
+    padding: 0 10px 0 8px;
+  }
   header {
     display: flex;
     align-items: center;
@@ -1517,9 +1732,6 @@
     border-bottom: 1px solid var(--line);
     background: var(--paper);
   }
-  .pane.focused .pane-bar {
-    background: var(--accent-softer);
-  }
   /* Two projects side by side: the line between them is doubled. */
   .panes.across > :global(.divider) {
     width: 5px;
@@ -1609,6 +1821,13 @@
   }
   .side-map.split {
     background: var(--accent-softer);
+  }
+  .side-map .of {
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .side-map .sep {
+    color: var(--ink-4);
   }
   .side-map strong {
     overflow: hidden;
