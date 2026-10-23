@@ -390,9 +390,10 @@ try {
   await sleep(300);
   const icons = await app.exec(
     `const s = Array.from(document.querySelectorAll('.text-view .section')).find((s) => (s.querySelector('.heading .title')?.textContent ?? '').trim() === 'Two A');
-     return ['.grip', '.corner'].map((q) => getComputedStyle(s.querySelector(q)).opacity);`,
+     return ['.grip'].map((q) => getComputedStyle(s.querySelector(q)).opacity);`,
   );
-  check('the grip and the button to enter show under the pointer', icons.every((o) => o === '1'), icons.join(' '));
+  // No button to enter stands by a name in the text: the menu and Alt+Shift+Down do it.
+  check('the grip shows under the pointer', icons.every((o) => o === '1'), icons.join(' '));
   await app.screenshot('text-structure-5-indent-hover');
 
   // --- A narrow window: nothing runs out of it ---
