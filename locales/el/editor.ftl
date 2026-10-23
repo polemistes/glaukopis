@@ -133,7 +133,6 @@ editor-new-element-hint = Ένα νέο στοιχείο μετά από αυτ�
 editor-new-after = Νέο στοιχείο μετά από αυτό
 editor-new-under = Νέο στοιχείο κάτω από αυτό
 editor-new-split = Διαίρεση εδώ
-editor-new-split-hint = Ό,τι ακολουθεί τον δρομέα γίνεται νέο στοιχείο
 editor-spelling-on = Η ορθογραφία ελέγχεται καθώς γράφετε · πατήστε για να σταματήσει
 editor-spelling-off = Η ορθογραφία δεν ελέγχεται · πατήστε για να ελέγχεται
 editor-picture-file = Εικόνα από αρχείο…

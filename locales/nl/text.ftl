@@ -6,7 +6,6 @@ text-not-printed = niet gedrukt
 text-grip = Dit element verplaatsen of wijzigen
 text-include-open = Openen
 text-split = Hier splitsen
-text-split-hint = Wat na de cursor komt, wordt een nieuw element
 text-join = Aan het element erboven vastmaken
 
 ## Folding away what is under an element, and its text
@@ -59,4 +58,3 @@ text-notes = { $count ->
    *[other] { $count } noten
 }
 # The keys are shown as keys, where the variables stand.
-text-keys = { $ctrl }+{ $enter } nieuw element · { $ctrl }+{ $shift }+{ $enter } een eronder · { $at } citeren

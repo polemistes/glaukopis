@@ -6,7 +6,6 @@ text-not-printed = niedrukowane
 text-grip = Przenieś lub zmień ten element
 text-include-open = Otwórz ją
 text-split = Podziel tutaj
-text-split-hint = To, co za kursorem, staje się nowym elementem
 text-join = Połącz z elementem powyżej
 
 ## Folding away what is under an element, and its text
@@ -67,4 +66,3 @@ text-notes = { $count ->
    *[other] { $count } przypisów
 }
 # The keys are shown as keys, where the variables stand.
-text-keys = { $ctrl }+{ $enter } nowy element · { $ctrl }+{ $shift }+{ $enter } element pod nim · { $at } cytuj

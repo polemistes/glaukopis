@@ -134,7 +134,6 @@ editor-new-element-hint = Um novo elemento depois deste, ou sob ele
 editor-new-after = Novo elemento depois deste
 editor-new-under = Novo elemento sob este
 editor-new-split = Dividir aqui
-editor-new-split-hint = O que se segue ao cursor passa a ser um novo elemento
 editor-spelling-on = A ortografia é verificada enquanto escreve · clique para parar
 editor-spelling-off = A ortografia não é verificada · clique para a verificar
 editor-picture-file = Imagem de um ficheiro…

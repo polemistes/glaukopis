@@ -414,14 +414,14 @@
         {
           label: t('editor-new-after'),
           icon: Plus,
-          // In a text, the key makes the new element from the cursor on: the last of these.
+          // In a text, the keys make a heading at the cursor: the last of these.
           shortcut: body ? undefined : keysFor('tree-new'),
           action: () => add('after'),
         },
         {
           label: t('editor-new-under'),
           icon: CornerDownRight,
-          shortcut: keysFor('tree-new-under'),
+          shortcut: body ? undefined : keysFor('tree-new-under'),
           action: () => add('under'),
         },
         {

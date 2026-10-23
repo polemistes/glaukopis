@@ -13,7 +13,6 @@ text-drop-under = Under «{ $name }»
 text-drop-after = Etter «{ $name }»
 text-drop-before = Framfor «{ $name }»
 text-split = Del her
-text-split-hint = Det som står etter markøren, blir eit nytt element
 text-join = Slå saman med elementet over
 text-open-as-map = Opne som kart
 text-open-as-map-hint = Det blir vist åleine, med det som står under
@@ -68,4 +67,3 @@ text-notes = { $count ->
    *[other] { $count } notar
 }
 # The keys are shown as keys, where the variables stand.
-text-keys = { $ctrl }+{ $enter } nytt element · { $ctrl }+{ $shift }+{ $enter } eitt under · { $at } kjeldetilvising

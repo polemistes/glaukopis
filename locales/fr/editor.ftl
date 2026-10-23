@@ -208,7 +208,6 @@ editor-new-element-hint = Un nouvel élément après celui-ci, ou dessous
 editor-new-after = Nouvel élément après celui-ci
 editor-new-under = Nouvel élément sous celui-ci
 editor-new-split = Scinder ici
-editor-new-split-hint = Ce qui suit le curseur devient un nouvel élément
 editor-spelling-on = L’orthographe est vérifiée pendant que vous écrivez · appuyez pour arrêter
 editor-spelling-off = L’orthographe n’est pas vérifiée · appuyez pour la vérifier
 editor-break-signs = Le signe d’un saut de ligne dans un paragraphe

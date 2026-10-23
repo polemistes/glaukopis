@@ -206,7 +206,6 @@ editor-new-element-hint = Un nuovo elemento dopo questo, o sotto di esso
 editor-new-after = Nuovo elemento dopo questo
 editor-new-under = Nuovo elemento sotto questo
 editor-new-split = Dividi qui
-editor-new-split-hint = Ciò che segue il cursore diventa un nuovo elemento
 editor-spelling-on = L'ortografia è controllata mentre scrivi · premi per smettere
 editor-spelling-off = L'ortografia non è controllata · premi per controllarla
 editor-break-signs = Il segno di un a capo dentro un paragrafo

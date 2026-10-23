@@ -132,7 +132,6 @@ editor-new-element-hint = 在此元素之后或之下新建元素
 editor-new-after = 在此元素之后新建元素
 editor-new-under = 在此元素之下新建元素
 editor-new-split = 在此拆分
-editor-new-split-hint = 光标之后的内容成为一个新元素
 editor-spelling-on = 书写时检查拼写 · 单击停止
 editor-spelling-off = 不检查拼写 · 单击开始检查
 editor-picture-file = 来自文件的图片…

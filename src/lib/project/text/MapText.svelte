@@ -58,6 +58,7 @@
   import { isAncestor } from '../model/tree';
   import { pieces } from '../pieces';
   import type { Folding } from './folding.svelte';
+  import { headingAt, nameDoc } from './heading';
   import {
     bracketsOf,
     depthAt,
@@ -255,7 +256,7 @@
   // What is said under the text besides the count, with the keys shown as keys.
   const keysHint = $derived(
     pieces((m) => t('text-keys', m), {
-      ctrl: keyLabel('Ctrl'),
+      alt: keyLabel('Alt'),
       shift: keyLabel('Shift'),
       enter: keyLabel('Enter'),
       at: '@',
@@ -330,15 +331,36 @@
     if (everything) folding.openAll(tree, id);
     else folding.toggle(tree, id);
     if (!folding.hides(tree, id)) return;
-    // The cursor does not stay in what is no longer shown.
-    if (current && (current === id || folding.under(tree, id).includes(current))) {
-      const at = document.activeElement as HTMLElement | null;
+    // The cursor does not stay in what is no longer shown: in the name of
+    // the element folded, as after Tab there, it stays.
+    const at = document.activeElement as HTMLElement | null;
+    const inName =
+      current === id &&
+      at?.closest<HTMLElement>('[data-part]')?.dataset.part === 'title' &&
+      at.closest<HTMLElement>('[data-section]')?.dataset.section === id;
+    if (current && !inName && (current === id || folding.under(tree, id).includes(current))) {
       if (at && scroller?.contains(at)) at.blur();
       current = id;
     }
     tick().then(() =>
       scroller?.querySelector(`[data-section="${id}"]`)?.scrollIntoView({ block: 'nearest' }),
     );
+  }
+
+  /**
+   * Shift+Tab: where anything under the element in view is folded, unfolds
+   * all of it; else folds everything at the first level, as the diagram
+   * does. The cursor, where it would be folded away, goes to the name it is
+   * folded under.
+   */
+  function foldEverything() {
+    const root = tree.root;
+    if (folding.anyFoldedUnder(tree, root)) folding.openAll(tree, root);
+    else
+      for (const child of tree.children.get(root) ?? [])
+        if (folding.can(tree, child)) folding.fold(child);
+    const under = current ? folding.hiddenUnder(tree, current) : null;
+    if (under) void go(under, 'title', 'end');
   }
 
   /** Whether its text is not shown: folded away, or empty, when it is closed until it is pressed or Enter is pressed in the name. */
@@ -368,38 +390,73 @@
   const outdent = (id: string) => outdentElement(project, tree, id);
   const shift = (id: string, by: -1 | 1) => shiftElement(project, tree, id, by);
 
+  /** Where a new element made from the text of another goes: the first under it, where it has elements under it or is the one in view, so that it stands where the cursor was; else after it. */
+  function madeFrom(id: string, under: boolean): string | null {
+    const hasChildren = (tree.children.get(id)?.length ?? 0) > 0;
+    return under || id === tree.root || hasChildren
+      ? project.addChild(id, { index: 0 })
+      : project.addSibling(id);
+  }
+
   /**
-   * What follows the cursor becomes a new element, after this one; with
-   * `under`, the first under it, which comes right after its text.
+   * A heading at the cursor (see `heading.ts`): what follows the cursor in
+   * its paragraph becomes the name of a new element, where a name can hold
+   * it, and the paragraphs below it the new element's text; after this
+   * element, or with `under` the first under it.
    */
   function split(id: string, view: EditorView, under = false) {
     const { state } = view;
-    const { from } = state.selection;
-    const end = state.doc.content.size;
-    const atEnd = from >= TextSelection.atEnd(state.doc).from;
-    const rest = atEnd ? null : state.doc.slice(from, end);
+    const heading = headingAt(state.doc, state.selection.from);
+    const body = heading.body.size
+      ? bodySchema.topNodeType.createAndFill(null, heading.body)
+      : null;
+    // What could not be made a text of its own is not cut from this one.
+    if (heading.body.size && !body) return;
+    const name = heading.name?.size ? heading.name : null;
 
     project.checkpoint();
     const made = project.transact(() => {
-      const hasChildren = (tree.children.get(id)?.length ?? 0) > 0;
-      const isRoot = id === tree.root;
-      const newId =
-        under || isRoot || hasChildren
-          ? project.addChild(id, { index: 0 })
-          : project.addSibling(id);
+      const newId = madeFrom(id, under);
       if (!newId) return null;
-      if (rest && rest.content.size) {
-        const doc = bodySchema.topNodeType.createAndFill(null, rest.content);
-        const target = project.fragment(newId, 'body');
-        if (doc && target) prosemirrorToYXmlFragment(doc, target);
-      }
+      const title = name ? project.fragment(newId, 'title') : null;
+      if (name && title) prosemirrorToYXmlFragment(nameDoc(name), title);
+      const target = body ? project.fragment(newId, 'body') : null;
+      if (body && target) prosemirrorToYXmlFragment(body, target);
       return newId;
     });
-    if (made && rest) {
-      view.dispatch(state.tr.delete(from, end));
+    if (made && heading.cutFrom < TextSelection.atEnd(state.doc).from) {
+      view.dispatch(state.tr.delete(heading.cutFrom, state.doc.content.size));
     }
     project.checkpoint();
+    if (!made) return;
+    if (heading.keptAsParagraph) notify(t('text-heading-kept'));
+    go(made, 'title', name ? 'end' : 'start');
+  }
+
+  /**
+   * In a name, with the cursor before its end: the rest of the name becomes
+   * the name of a new element after this one, or the first under it, and
+   * the text stays where it is. Whether there was a rest to take.
+   */
+  function splitName(id: string, view: EditorView, under: boolean): boolean {
+    const { state } = view;
+    const { from } = state.selection;
+    const cursor = state.selection.$from;
+    if (!cursor.parent.isTextblock) return false;
+    const rest = cursor.parent.content.cut(cursor.parentOffset);
+    if (!rest.size) return false;
+    project.checkpoint();
+    const made = project.transact(() => {
+      const newId =
+        under || id === tree.root ? project.addChild(id, { index: 0 }) : project.addSibling(id);
+      const title = newId ? project.fragment(newId, 'title') : null;
+      if (title) prosemirrorToYXmlFragment(nameDoc(rest), title);
+      return newId;
+    });
+    if (made) view.dispatch(state.tr.delete(from, cursor.end()));
+    project.checkpoint();
     if (made) go(made, 'title', 'start');
+    return true;
   }
 
   /** A new element after this one, the cursor in its name. The centre has nothing beside it: the first under it. */
@@ -420,12 +477,14 @@
 
   /**
    * A new element where the cursor is, after the element or under it: in a
-   * text, from the cursor on; in a name, with nothing in it.
+   * text, a heading at the cursor; in a name, with the rest of the name, or
+   * at its end with nothing in it.
    */
   function addHere(id: string, part: Part | undefined, under = false) {
-    const view = editors.get(id)?.body?.getView();
-    if (part === 'body' && view) split(id, view, under);
-    else if (under) addUnder(id);
+    const view = part ? editors.get(id)?.[part]?.getView() : undefined;
+    if (part === 'body' && view) return split(id, view, under);
+    if (part === 'title' && view && splitName(id, view, under)) return;
+    if (under) addUnder(id);
     else addAfter(id);
   }
 
@@ -523,12 +582,14 @@
       }
       case 'delete-at-end':
         return false;
-      // In a text, Tab that nothing else takes does nothing: the cursor stays in the text.
+      // In a name, Tab folds what is under the element, or unfolds it, and
+      // Shift+Tab all under the element in view; in a text, Tab that nothing
+      // else takes does nothing: the cursor stays in the text.
       case 'tab':
-        if (part === 'title') return indent(id) || true;
+        if (part === 'title') fold(id);
         return true;
       case 'shift-tab':
-        if (part === 'title') return outdent(id) || true;
+        if (part === 'title') foldEverything();
         return true;
       case 'escape':
         if (editorUi.picking || editorUi.citation) return false;
@@ -561,9 +622,9 @@
     const id = section?.dataset.section;
     if (!id) return;
 
-    // Ctrl+Enter a new element after this one, and Ctrl+Shift+Enter one under
-    // it, as in the diagram: in a text, from the cursor on.
-    if (event.key === 'Enter' && mod && !event.altKey) {
+    // Alt+Enter a new element after this one, and Alt+Shift+Enter one under
+    // it, as in the diagram: in a text, a heading at the cursor.
+    if (event.key === 'Enter' && event.altKey && !mod) {
       const part = (event.target as HTMLElement).closest<HTMLElement>('[data-part]')?.dataset
         .part as Part | undefined;
       event.preventDefault();
@@ -571,18 +632,12 @@
       addHere(id, part, event.shiftKey);
       return;
     }
-    // Alt+Enter makes nothing here: it is not let through to the text either.
-    if (event.key === 'Enter' && event.altKey && !mod) {
-      event.preventDefault();
-      event.stopPropagation();
-      return;
-    }
 
-    // Ctrl+Alt+U folds away what is under the element, or opens it; with Shift, opens all under it.
-    if (mod && event.altKey && event.code === 'KeyU') {
+    // F2 goes to the name of the element the cursor is in, the name selected.
+    if (event.key === 'F2' && !mod && !event.altKey && !event.shiftKey) {
       event.preventDefault();
       event.stopPropagation();
-      fold(id, event.shiftKey);
+      void go(id, 'title', 'all');
       return;
     }
 

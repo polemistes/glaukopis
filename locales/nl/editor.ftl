@@ -133,7 +133,6 @@ editor-new-element-hint = Een nieuw element na dit, of eronder
 editor-new-after = Nieuw element na dit
 editor-new-under = Nieuw element onder dit
 editor-new-split = Hier splitsen
-editor-new-split-hint = Wat na de cursor komt, wordt een nieuw element
 editor-spelling-on = De spelling wordt gecontroleerd terwijl je schrijft · druk om te stoppen
 editor-spelling-off = De spelling wordt niet gecontroleerd · druk om ze te controleren
 editor-picture-file = Afbeelding uit een bestand…

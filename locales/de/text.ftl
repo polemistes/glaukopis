@@ -13,7 +13,6 @@ text-drop-under = Unter „{ $name }“
 text-drop-after = Nach „{ $name }“
 text-drop-before = Vor „{ $name }“
 text-split = Hier teilen
-text-split-hint = Was auf den Cursor folgt, wird ein neues Element
 text-join = Mit dem Element darüber zusammenfügen
 text-open-as-map = Als Karte öffnen
 text-open-as-map-hint = Es wird allein gezeigt, mit dem, was darunter ist
@@ -68,4 +67,3 @@ text-notes = { $count ->
    *[other] { $count } Anmerkungen
 }
 # The keys are shown as keys, where the variables stand.
-text-keys = { $ctrl }+{ $enter } neues Element · { $ctrl }+{ $shift }+{ $enter } eines darunter · { $at } zitieren

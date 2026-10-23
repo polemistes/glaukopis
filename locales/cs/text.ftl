@@ -6,7 +6,6 @@ text-not-printed = netiskne se
 text-grip = Přesunout nebo změnit tento prvek
 text-include-open = Otevřít ji
 text-split = Rozdělit zde
-text-split-hint = Co následuje za kurzorem, se stane novým prvkem
 text-join = Připojit k prvku nad ním
 
 ## Folding away what is under an element, and its text
@@ -63,4 +62,3 @@ text-notes = { $count ->
    *[other] { $count } poznámek
 }
 # The keys are shown as keys, where the variables stand.
-text-keys = { $ctrl }+{ $enter } nový prvek · { $ctrl }+{ $shift }+{ $enter } prvek pod ním · { $at } citovat

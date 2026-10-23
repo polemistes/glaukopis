@@ -134,7 +134,6 @@ editor-new-element-hint = Нови елемент после овог, или п
 editor-new-after = Нови елемент после овог
 editor-new-under = Нови елемент под овим
 editor-new-split = Подели овде
-editor-new-split-hint = Што следи после курсора постаје нови елемент
 editor-spelling-on = Правопис се проверава док пишете · притисните да престане
 editor-spelling-off = Правопис се не проверава · притисните да се проверава
 editor-picture-file = Слика из датотеке…

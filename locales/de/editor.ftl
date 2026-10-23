@@ -205,7 +205,6 @@ editor-new-element-hint = Ein neues Element nach diesem oder darunter
 editor-new-after = Neues Element nach diesem
 editor-new-under = Neues Element unter diesem
 editor-new-split = Hier teilen
-editor-new-split-hint = Was auf den Cursor folgt, wird ein neues Element
 editor-spelling-on = Die Rechtschreibung wird beim Schreiben geprüft · klicken, um damit aufzuhören
 editor-spelling-off = Die Rechtschreibung wird nicht geprüft · klicken, um sie zu prüfen
 editor-break-signs = Das Zeichen eines Zeilenumbruchs im Absatz

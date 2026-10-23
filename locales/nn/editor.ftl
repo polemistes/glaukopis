@@ -205,7 +205,6 @@ editor-new-element-hint = Eit nytt element etter dette, eller under det
 editor-new-after = Nytt element etter dette
 editor-new-under = Nytt element under dette
 editor-new-split = Del her
-editor-new-split-hint = Det som står etter markøren, blir eit nytt element
 editor-spelling-on = Stavinga blir kontrollert medan du skriv · trykk for å slutte
 editor-spelling-off = Stavinga blir ikkje kontrollert · trykk for å kontrollere den
 editor-break-signs = Teiknet for linjeskift i eit avsnitt

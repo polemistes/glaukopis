@@ -346,6 +346,7 @@
             : openable
               ? t('text-fold-shift')
               : t('text-fold-hint'),
+          shortcut: keysFor('tree-fold'),
           side: 'top',
         }}
         onmousedown={(e) => e.preventDefault()}
