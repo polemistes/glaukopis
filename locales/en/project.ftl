@@ -22,7 +22,15 @@ project-view-this = View of this map
 project-diagram = Diagram
 project-text = Text
 project-one-at-a-time = One at a time
-project-side-by-side = Two side by side
+project-side-by-side = Side by side
+# The menu of the Side by side button: what the second side shows.
+project-beside-this = This element, as diagram and text
+project-beside-element = Another element…
+project-beside-project = Another project…
+project-beside-element-title = Beside: choose an element
+project-beside-show = Show beside
+project-beside-title = Beside: choose a project
+project-beside-subtitle = A project, or an element in its tree, to show beside this one
 project-close-side = Close this side
 project-references = References
 project-pictures = Pictures

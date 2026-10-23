@@ -65,6 +65,16 @@
      * is marked, or a folder's id where one is entered, whose row is marked.
      */
     owlAt?: string | null;
+    /**
+     * Where the list chooses rather than opens, as the chooser of a project
+     * to show beside the open one does: a click or Enter on a project, or on
+     * an element of the tree unfolded under a project, calls it with the
+     * project and the element, and nothing is opened or entered. The owl
+     * row, the menus, the dragging and the making of things are off; the
+     * field and the folding stay. The project that is open (`current`)
+     * cannot be chosen.
+     */
+    choose?: (project: string, at?: string) => void;
   }
 
   let {
@@ -74,6 +84,7 @@
     at = null,
     onenter,
     owlAt = undefined,
+    choose,
   }: Props = $props();
   const owlHere = $derived(owlAt === null);
 
@@ -102,7 +113,10 @@
   /** Where the folders and projects begin: a step in from the owl, which holds them all; in the projects last used, at the edge. */
   const left = $derived(recent ? 4 : 4 + step);
 
-  const open = (p: ProjectInfo) => actions.open(p);
+  function open(p: ProjectInfo) {
+    if (!choose) actions.open(p);
+    else if (p.id !== current) choose(p.id);
+  }
   const toggle = (id: string) => listUi.toggle(id);
   const reveal = (id: string | null) => listUi.reveal(ancestors(projects.folders, id));
 
@@ -150,6 +164,7 @@
   /** Whether what is dragged may be dropped into a folder, or at the top. */
   function accepts(target: string | null) {
     return (payload: DragPayload) => {
+      if (choose) return false;
       const things = thingsOf(payload);
       return !!things && wouldMove(things, target);
     };
@@ -205,7 +220,8 @@
       name: (id) => names.get(id) || '',
       way: nowhere,
       at: null,
-      enter: (id) => router.go({ view: 'project', project: p.id, at: id }),
+      enter: (id) =>
+        choose ? choose(p.id, id) : router.go({ view: 'project', project: p.id, at: id }),
       own: false,
     };
   }
@@ -283,6 +299,8 @@
   }
 
   function onfolderkey(event: KeyboardEvent, f: FolderInfo) {
+    // Where the list chooses, folders are not renamed or deleted from it.
+    if (choose && (event.key === 'F2' || event.key === 'Delete')) return;
     if (event.key === 'F2') actions.renameFolder(f);
     else if (event.key === 'Delete') removeFolder(f);
     else if (event.key === 'Enter' || event.key === ' ') toggle(f.id);
@@ -312,13 +330,15 @@
       size="sm"
       onchange={(kind) => projects.show(kind)}
     />
-    <IconButton label={t('home-new-folder')} size="sm" onclick={() => actions.newFolder(null)}>
-      <FolderPlus size={15} />
-    </IconButton>
+    {#if !choose}
+      <IconButton label={t('home-new-folder')} size="sm" onclick={() => actions.newFolder(null)}>
+        <FolderPlus size={15} />
+      </IconButton>
+    {/if}
   </div>
 
   <!-- The owl map, at the top: all the projects, as one map. Not among the projects last used, which are no tree. -->
-  {#if !recent}
+  {#if !recent && !choose}
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <div
       class="row owl"
@@ -357,10 +377,12 @@
         style:padding-left="{left + row.depth * step}px"
         use:dropTarget={{ accepts: accepts(f.id), ondrop: (e) => drop(e, f.id) }}
         onclick={() => toggle(f.id)}
-        ondblclick={() => openAsMap(f)}
-        oncontextmenu={(e) => openContextMenu(e, folderItems(f))}
+        ondblclick={choose ? undefined : () => openAsMap(f)}
+        oncontextmenu={choose ? undefined : (e) => openContextMenu(e, folderItems(f))}
         onkeydown={(e) => onfolderkey(e, f)}
-        onpointerdown={(e) => startDrag(e, () => ({ kind: 'folder', data: f.id, label: f.name }))}
+        onpointerdown={choose
+          ? undefined
+          : (e) => startDrag(e, () => ({ kind: 'folder', data: f.id, label: f.name }))}
       >
         <span class="twisty" class:open={row.open} class:hidden={!row.holds}>
           <ChevronRight size={13} />
@@ -368,25 +390,29 @@
         <Folder size={15} strokeWidth={1.6} />
         <span class="name truncate">{f.name}</span>
         <span class="count">{row.projects}</span>
-        <button
-          type="button"
-          class="menu"
-          aria-label={t('home-more-for', { name: f.name })}
-          onclick={(e) => {
-            e.stopPropagation();
-            openMenu(e.currentTarget, folderItems(f), { align: 'end' });
-          }}
-          onpointerdown={(e) => e.stopPropagation()}
-        >
-          <Ellipsis size={15} />
-        </button>
+        {#if !choose}
+          <button
+            type="button"
+            class="menu"
+            aria-label={t('home-more-for', { name: f.name })}
+            onclick={(e) => {
+              e.stopPropagation();
+              openMenu(e.currentTarget, folderItems(f), { align: 'end' });
+            }}
+            onpointerdown={(e) => e.stopPropagation()}
+          >
+            <Ellipsis size={15} />
+          </button>
+        {/if}
       </div>
     {:else}
       {@const p = row.project}
       <!-- svelte-ignore a11y_click_events_have_key_events -->
       <div
         class="row project"
-        class:current={p.id === current}
+        class:current={p.id === current && !choose}
+        class:unavailable={p.id === current && !!choose}
+        aria-disabled={p.id === current && choose ? true : undefined}
         role="button"
         tabindex="0"
         aria-current={p.id === current ? 'page' : undefined}
@@ -397,8 +423,10 @@
         style:padding-left="{left + row.depth * step}px"
         onclick={() => open(p)}
         onkeydown={(e) => onprojectkey(e, p)}
-        oncontextmenu={(e) => openContextMenu(e, projectItems(p))}
-        onpointerdown={(e) => startDrag(e, () => ({ kind: 'project', data: p.id, label: p.name }))}
+        oncontextmenu={choose ? undefined : (e) => openContextMenu(e, projectItems(p))}
+        onpointerdown={choose
+          ? undefined
+          : (e) => startDrag(e, () => ({ kind: 'project', data: p.id, label: p.name }))}
       >
         {#if !recent}
           {@const unfolded = unfoldable(p) && closedUnfolded.has(p.id)}
@@ -425,21 +453,25 @@
           size={14}
         />
         <span class="name serif truncate">{p.name}</span>
-        {#if recent}
+        {#if choose && p.id === current}
+          <span class="when">{t('home-open-now')}</span>
+        {:else if recent}
           <span class="when">{ago(p.modified)}</span>
         {/if}
-        <button
-          type="button"
-          class="menu"
-          aria-label={t('home-more-for', { name: p.name })}
-          onclick={(e) => {
-            e.stopPropagation();
-            openMenu(e.currentTarget, projectItems(p), { align: 'end' });
-          }}
-          onpointerdown={(e) => e.stopPropagation()}
-        >
-          <Ellipsis size={15} />
-        </button>
+        {#if !choose}
+          <button
+            type="button"
+            class="menu"
+            aria-label={t('home-more-for', { name: p.name })}
+            onclick={(e) => {
+              e.stopPropagation();
+              openMenu(e.currentTarget, projectItems(p), { align: 'end' });
+            }}
+            onpointerdown={(e) => e.stopPropagation()}
+          >
+            <Ellipsis size={15} />
+          </button>
+        {/if}
       </div>
       {#if p.id === current && ownShown && (ownShown.tree.children.get(PROJECT)?.length ?? 0) > 0}
         <div class="tree" data-project-tree={p.id}>
@@ -500,7 +532,9 @@
       style:padding-left="{indent + depth * step}px"
       onclick={() => src.enter(id)}
       onkeydown={(e) => onelementkey(e, src, id, holds)}
-      oncontextmenu={src.own ? undefined : (e) => openContextMenu(e, elementItems(src, id))}
+      oncontextmenu={src.own || choose
+        ? undefined
+        : (e) => openContextMenu(e, elementItems(src, id))}
     >
       <button
         type="button"
@@ -580,6 +614,16 @@
   .row.project .name {
     color: var(--ink);
     font-size: var(--text-md);
+  }
+  /* The project that is open, where the list chooses one to show beside it. */
+  .row.project.unavailable {
+    cursor: default;
+  }
+  .row.project.unavailable:hover {
+    background: none;
+  }
+  .row.project.unavailable .name {
+    color: var(--ink-4);
   }
   .name {
     flex: 1;
