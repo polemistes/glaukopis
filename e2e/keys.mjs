@@ -54,11 +54,22 @@ try {
   await app.keys(['Control', 'k']);
   await app.waitFor('dialog[open] .query', 3000);
   await sleep(200);
-  await app.keys('two side');
+  await app.keys('open or close the panel');
   await app.press('Enter');
   await app.waitGone('dialog[open]');
   await sleep(300);
-  check('what has no key is there as well', (await app.count('.pane')) === 2);
+  check('what has no key is there as well', !(await app.exists('.panel[aria-label="References"]')));
+
+  // Side by side, from the palette, opens its menu at its button.
+  await app.keys(['Control', 'k']);
+  await app.waitFor('dialog[open] .query', 3000);
+  await sleep(200);
+  await app.keys('side by side');
+  await app.press('Enter');
+  await app.waitGone('dialog[open]');
+  await app.clickText('.menu [role="menuitem"]', 'This element, as diagram and text');
+  await sleep(300);
+  check('Side by side, from the palette, opens its menu', (await app.count('.pane')) === 2);
 
   await app.keys(['Control', 'k']);
   await app.waitFor('dialog[open] .query', 3000);
