@@ -837,22 +837,24 @@
     {@const shared = activeOpen?.sharing as ProjectSharing | null | undefined}
     <header>
       <Segmented
-        value={active.mode}
+        value={active?.mode ?? 'diagram'}
         label={t('project-view')}
         options={[
           { value: 'diagram', label: t('project-diagram'), icon: Network },
           { value: 'text', label: t('project-text'), icon: FileText },
-          ...(timed(at) || active.mode === 'timeline'
+          ...(timed(at) || active?.mode === 'timeline'
             ? [{ value: 'timeline' as const, label: t('timeline-title'), icon: Clock }]
             : []),
         ]}
-        onchange={(mode) => sides.setMode(active.key, mode)}
+        onchange={(mode) => {
+          if (active) sides.setMode(active.key, mode);
+        }}
       />
       <button
         type="button"
         class="tool"
-        class:on={panes.typesetting === active.key}
-        aria-pressed={panes.typesetting === active.key}
+        class:on={panes.typesetting === active?.key}
+        aria-pressed={panes.typesetting === active?.key}
         aria-label={t('project-preview')}
         use:tooltip={{ text: t('project-preview'), shortcut: keysFor('preview'), side: 'bottom' }}
         onclick={togglePreview}
@@ -966,7 +968,7 @@
     </div>
 
     <!-- the typesetting pane -->
-    {#if previewSpec && previewOpen?.project && previewSpec.at}
+    {#if previewSpec && previewOpen?.project && previewSpec?.at}
       {@const of = previewOpen.project}
       <Divider
         label={t('project-between-preview')}
@@ -980,11 +982,11 @@
         style:width={panes.typesettingWidth ? `${panes.typesettingWidth}px` : undefined}
       >
         <!-- Of the project of the side it shows: made anew when that is another. -->
-        {#key previewSpec.project}
+        {#key previewSpec?.project}
           <PreviewPanel
             project={of}
-            projectId={previewSpec.project}
-            at={previewSpec.at}
+            projectId={previewSpec?.project ?? ''}
+            at={previewSpec?.at ?? PROJECT}
             onclose={() => panes.closeTypesetting()}
             ongo={toTextOfPreview}
             current={previewCurrent}
@@ -1040,7 +1042,7 @@
           <!-- The look of the document the preview shows, else of the active side's. -->
           {@const lookOf = previewOpen?.project ?? project}
           {@const lookAt = (previewOpen?.project ? previewSpec?.at : null) ?? at}
-          {#key `${previewSpec?.project ?? active.project}\n${lookAt}`}
+          {#key `${previewSpec?.project ?? active?.project}\n${lookAt}`}
             <LookPanel
               project={lookOf}
               at={lookAt}
@@ -1061,7 +1063,7 @@
         {:else if side.kind === 'history'}
           <HistoryPanel
             {project}
-            history={historyOf(project, active.project)}
+            history={historyOf(project, active?.project ?? '')}
             looking={side.looking}
             pane={sides.index}
             onlook={(l) => (side.looking = l)}
@@ -1083,7 +1085,7 @@
             }}
           />
         {:else if side.kind === 'found'}
-          {#key `${active.project}:${at}`}
+          {#key `${active?.project}:${at}`}
             <FoundPanel
               {project}
               {at}
@@ -1135,7 +1137,7 @@
 
 {#if choosingBeside && active}
   <BesideDialog
-    current={active.project}
+    current={active?.project ?? ''}
     onchoose={(id, element) => sides.beside(id, element ?? null)}
     onclose={() => (choosingBeside = false)}
   />

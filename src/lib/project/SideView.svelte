@@ -14,6 +14,7 @@
   import CloudDownload from '@lucide/svelte/icons/cloud-download';
   import FileText from '@lucide/svelte/icons/file-text';
   import ListTree from '@lucide/svelte/icons/list-tree';
+  import PanelLeft from '@lucide/svelte/icons/panel-left';
   import Network from '@lucide/svelte/icons/network';
   import X from '@lucide/svelte/icons/x';
   import { bringIn } from '$lib/documents/bringing.svelte';
@@ -22,7 +23,8 @@
   import { goThrough } from '$lib/found/found.svelte';
   import PastView from '$lib/history/PastView.svelte';
   import type { Looking } from '$lib/history/looking';
-  import { toList } from '$lib/home/list.svelte';
+  import { toggleProjectsPane, toList } from '$lib/home/list.svelte';
+  import { settings } from '$lib/state/settings.svelte';
   import { t } from '$lib/i18n';
   import { keysFor } from '$lib/shell/keys.svelte';
   import type { MapMode } from '$lib/state/router.svelte';
@@ -275,6 +277,19 @@
       ondrop: (e) => documentsIn((e.payload.data as string[]).filter(mapOfIt)),
     }}
   >
+    <!-- The list of projects is one for the window: its button is in the first bar, nearest it (stage 3 moves it to the top row). -->
+    {#if index === 0}
+      <IconButton
+        label={t('home-pane-toggle')}
+        shortcut={keysFor('projects-pane')}
+        size="sm"
+        active={settings.value.projectsList}
+        data-projects-button
+        onclick={toggleProjectsPane}
+      >
+        <PanelLeft size={15} />
+      </IconButton>
+    {/if}
     <IconButton
       label={t('text-outline')}
       shortcut={keysFor('text-outline')}
