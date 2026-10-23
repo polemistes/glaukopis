@@ -1471,9 +1471,9 @@ consumed by the writing:
   project is grey in the list, since its elements are chosen through
   **Another element…**. **Enter beside**, in the menu of another project,
   or of an element of its tree, in the list of projects at the left, does
-  the same at once. Then both bars begin
-  with the name of their project, with its sign, and the line between them is
-  doubled, so that the two are not taken for one. Elements dragged from one
+  the same at once. Then both bars begin with the name of their project,
+  with its sign, and the line between them is doubled, so that the two are
+  not taken for one. Elements dragged from one
   to the other are copied there, or moved with a plain drop, as **Copy to**
   and **Move to** another project do; undo takes a move back in both. The
   keys, and undo, work in the side you are in. The panel at the side, the
