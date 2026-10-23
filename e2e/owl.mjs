@@ -182,7 +182,19 @@ try {
   await app.keys(['Control', 'z']);
   check('and Ctrl+Z brings it back', await waitUntil(async () => (await parentOfCard(app, 'Notes')) === 'owl'), await parentOfCard(app, 'Notes'));
   await app.drag(await cardEl(app, 'Notes'), await cardEl(app, 'Iliad'));
-  check('a card dragged onto a card goes into its folder', await waitUntil(async () => (await parentOfCard(app, 'Notes')) === `folder:${greek.id}`), await parentOfCard(app, 'Notes'));
+  await sleep(500);
+  check('a project dropped on a project is refused: it goes into no project, and stays where it was', (await parentOfCard(app, 'Notes')) === 'owl', await parentOfCard(app, 'Notes'));
+  // A folder that is open is a region around what is in it; a drop on its ground goes into the folder.
+  check('an open folder is drawn as a region around what is in it', await app.exists(`[data-owl-region="${greek.id}"]`));
+  await app.drag(await cardEl(app, 'Notes'), `[data-owl-region="${greek.id}"]`);
+  check('a card dropped in a folder’s region goes into the folder', await waitUntil(async () => (await parentOfCard(app, 'Notes')) === `folder:${greek.id}`), await parentOfCard(app, 'Notes'));
+  check(
+    'and stands inside the region',
+    await app.exec(`const r = document.querySelector('[data-owl-region="${greek.id}"]').getBoundingClientRect();
+      const c = ${card('Notes')}.getBoundingClientRect();
+      return c.left >= r.left && c.right <= r.right && c.top >= r.top && c.bottom <= r.bottom;`),
+  );
+  await app.screenshot('owl-3b-regions');
   await app.drag(await cardEl(app, 'Notes'), '[data-owl-key="owl"]');
   check('and onto the owl, out of all folders', await waitUntil(async () => (await parentOfCard(app, 'Notes')) === 'owl'), await parentOfCard(app, 'Notes'));
   await app.click(await cardEl(app, 'Scratch'));

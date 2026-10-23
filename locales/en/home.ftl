@@ -73,6 +73,7 @@ home-owl-new-folder = New folder here
 # What a new folder or project is called until its name is written.
 home-owl-name = Name
 # Beside the pointer, while several folders and projects are dragged.
+home-owl-not-into-project = A project goes into a folder, not into a project
 home-owl-dragged = { $count ->
     [one] { $count } thing
    *[other] { $count } things

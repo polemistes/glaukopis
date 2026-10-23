@@ -109,9 +109,11 @@ long as Glaukopis runs.
 ### The map of the projects
 
 Above every project stands the map of all of them: the owl at the centre,
-the folders as plain names, nested as they are, and the projects under
-them, each drawn as the top element of its own map, those in no folder
-hanging from the owl itself. It is the home: the house in the rail and **Ctrl+1** come here, and so do
+each folder that is open as a faint box around what is in it, with its name
+at its inner edge and the boxes of the folders in it inside, and the
+projects, each drawn as the top element of its own map, those in no folder
+hanging from the owl itself. A folder that is folded is its name alone,
+with the number of projects in it. It is the home: the house in the rail and **Ctrl+1** come here, and so do
 the owl at the top of the list of projects, **All projects** at the left of
 the bar at the top of any project, and **Alt+Shift+Up** there; from a
 project, each comes to the folder the project is in, with the project
@@ -140,8 +142,10 @@ It is worked as a project's diagram is, in a look of its own:
   letter typed begins a new name; **Escape** keeps the old one.
 - **Moving.** **Alt** and the arrow that points away from the owl put what
   is selected into the folder before it; the arrow towards the owl takes it
-  out of the folder it is in. Or drag it: onto a folder, into it; onto a
-  card, into that card's folder; onto the owl, out of all folders. What is
+  out of the folder it is in. Or drag it: onto a folder's name or anywhere
+  in its box, into it; onto the owl, out of all folders. A project goes into
+  a folder, never into another project: dropped on a project, it is
+  refused, and the label by the pointer says so. What is
   dragged from the map can be dropped on the list, and the other way.
 - **Placing.** A folder or a project dragged onto the ground of the map
   stays where it is let go, and nothing else moves; the places are kept on

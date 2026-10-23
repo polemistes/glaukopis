@@ -58,9 +58,16 @@ export function layout(
      * must not shift the rest about.
      */
     keepRoom?: boolean;
+    /**
+     * Room kept around the branch of an element, by its id: those beside it
+     * stand that much further away, above and below. For the folders of the
+     * map of the projects, drawn as regions around what is in them.
+     */
+    margin?: ReadonlyMap<string, number>;
   } = {},
 ): Layout {
   const keepRoom = !!options.keepRoom;
+  const margin = (id: string) => options.margin?.get(id) ?? 0;
   const placed = new Map<string, Placed>();
   const order: string[] = [];
   const size = (id: string): Size => sizes.get(id) ?? DEFAULT_SIZE;
@@ -89,7 +96,7 @@ export function layout(
     flowing.forEach((c, i) => {
       kids += blockHeight(c) + (i ? V_GAP : 0);
     });
-    const h = Math.max(size(id).h, kids);
+    const h = Math.max(size(id).h, kids) + 2 * margin(id);
     heights.set(id, h);
     return h;
   };

@@ -18,6 +18,10 @@ import {
   projectCounts,
   projectKey,
   PROVISIONAL,
+  REGION_PAD,
+  REGION_ROOM,
+  regionFolders,
+  regionsOf,
   siblingsOf,
   startsFolded,
   whereNew,
@@ -270,5 +274,59 @@ describe('the owl map', () => {
       openMaps: new Set(['1']),
     });
     expect(whereNew([elementKey('1', 'quarrel')], tree)).toBe('e');
+  });
+});
+
+describe('the folders as regions', () => {
+  const folders = [folder('g', 'Greek'), folder('e', 'Epic', 'g'), folder('l', 'Latin')];
+  const projects = [
+    project('1', 'Odyssey', 'e'),
+    project('2', 'Iliad', 'e'),
+    project('4', 'Lyric', 'g'),
+    project('5', 'Aeneis', 'l'),
+    project('6', 'Lucan', 'l'),
+  ];
+  const opened = new Map([
+    ['g', false],
+    ['e', false],
+    ['l', false],
+  ]);
+  const { tree, items, nodes } = owlTree(folders, projects, opened);
+  const room = new Map(regionFolders(tree, items).map((k) => [k, REGION_ROOM]));
+  const lay = layout(
+    tree,
+    nodes as unknown as ReadonlyMap<string, NodeRecord>,
+    new Map(),
+    new Map(),
+    {
+      keepRoom: true,
+      margin: room,
+    },
+  );
+  const regions = regionsOf(lay, tree, new Set(room.keys()));
+
+  it('draws the open folders that hold something as regions, not the owl', () => {
+    expect([...room.keys()].sort()).toEqual([folderKey('e'), folderKey('g'), folderKey('l')]);
+    const shut = owlTree(folders, projects, new Map([['l', true]]));
+    expect(regionFolders(shut.tree, shut.items)).not.toContain(folderKey('l'));
+  });
+
+  it('holds the folder, what is in it and the regions in it, with room to spare', () => {
+    const g = regions.get(folderKey('g'))!;
+    const e = regions.get(folderKey('e'))!;
+    for (const key of [folderKey('g'), folderKey('e'), projectKey('1'), projectKey('4')]) {
+      const p = lay.placed.get(key)!;
+      expect(p.x - p.w / 2).toBeGreaterThanOrEqual(g.left + REGION_PAD - 0.01);
+      expect(p.y + p.h / 2).toBeLessThanOrEqual(g.bottom - REGION_PAD + 0.01);
+    }
+    expect(e.left).toBeGreaterThanOrEqual(g.left + REGION_PAD - 0.01);
+    expect(e.bottom).toBeLessThanOrEqual(g.bottom - REGION_PAD + 0.01);
+  });
+
+  it('keeps the regions of folders side by side apart', () => {
+    const g = regions.get(folderKey('g'))!;
+    const l = regions.get(folderKey('l'))!;
+    const apart = g.bottom <= l.top || l.bottom <= g.top || g.right <= l.left || l.right <= g.left;
+    expect(apart).toBe(true);
   });
 });

@@ -34,6 +34,12 @@ export interface DropTargetOptions {
   disabled?: boolean;
   /** The target shows what is dragged itself; the label beside the pointer is not wanted over it. */
   quiet?: boolean | ((payload: DragPayload) => boolean);
+  /**
+   * Why the target will not take what is dragged, where it says so: the
+   * label beside the pointer says it, and nothing around the target takes
+   * the drop in its place.
+   */
+  refuses?: (payload: DragPayload) => string | null;
 }
 
 class DragState {
@@ -46,6 +52,8 @@ class DragState {
   welcome = $state(false);
   /** Whether the label beside the pointer is hidden. */
   quiet = $state(false);
+  /** Why what the pointer is over will not take the drop, where it says so. */
+  refused = $state<string | null>(null);
 }
 
 export const drag = new DragState();
@@ -62,9 +70,16 @@ function accepts(options: DropTargetOptions, payload: DragPayload): boolean {
 
 function targetAt(x: number, y: number, payload: DragPayload): HTMLElement | null {
   let el = document.elementFromPoint(x, y) as HTMLElement | null;
+  drag.refused = null;
   while (el) {
     const options = targets.get(el);
     if (options && accepts(options, payload)) return el;
+    // A target that says why it will not take it keeps what is around it from taking it.
+    const why = options && !options.disabled ? (options.refuses?.(payload) ?? null) : null;
+    if (why) {
+      drag.refused = why;
+      return null;
+    }
     el = el.parentElement;
   }
   return null;
@@ -161,6 +176,7 @@ export function startDrag(
     }
     drag.payload = null;
     drag.quiet = false;
+    drag.refused = null;
     finish();
     if (started) {
       // The click that follows a drag must not act.
@@ -207,6 +223,7 @@ export function outsideLeave() {
   setOver(null);
   drag.payload = null;
   drag.quiet = false;
+  drag.refused = null;
   document.body.classList.remove('dragging');
 }
 

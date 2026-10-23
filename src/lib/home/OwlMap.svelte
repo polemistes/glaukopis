@@ -75,6 +75,9 @@
     parentKey,
     projectKey,
     PROVISIONAL,
+    REGION_ROOM,
+    regionFolders,
+    regionsOf,
     whereNew,
     type Provisional,
   } from './owl';
@@ -171,19 +174,31 @@
     return out;
   });
 
+  /** The folders drawn as regions around what is in them, with room kept around each. */
+  const regioned = $derived(new Set(regionFolders(owl.tree, owl.items)));
+  const room = $derived(new Map([...regioned].map((k) => [k, REGION_ROOM])));
   // What is put somewhere keeps its room among the rest, so that placing one thing moves no other.
   const lay = $derived(
     layout(owl.tree, owl.nodes as unknown as ReadonlyMap<string, NodeRecord>, sizes, held, {
       keepRoom: true,
+      margin: room,
     }),
   );
   /** The map as it is without what is dragged: where things were, and where the parents are. */
   const resting = $derived(
     layout(owl.tree, owl.nodes as unknown as ReadonlyMap<string, NodeRecord>, sizes, new Map(), {
       keepRoom: true,
+      margin: room,
     }),
   );
-  const lines = $derived(linesOf(lay, new Set()));
+  const regions = $derived(regionsOf(lay, owl.tree, regioned));
+  // The box says what is in a folder: no line is drawn from a folder to what is in it.
+  const lines = $derived(
+    linesOf(lay, new Set()).filter((l) => {
+      const parent = lay.placed.get(l.id)?.parent;
+      return !parent || !regions.has(parent);
+    }),
+  );
 
   // Elements dropped stand where they were let go until their project's map is read anew.
   $effect(() => {
@@ -357,7 +372,13 @@
 
   /** What the map takes up: where something has no place that is a number, about the centre alone. */
   function bounds() {
-    const b = lay.bounds;
+    const b = { ...lay.bounds };
+    for (const r of regions.values()) {
+      b.left = Math.min(b.left, r.left);
+      b.top = Math.min(b.top, r.top);
+      b.right = Math.max(b.right, r.right);
+      b.bottom = Math.max(b.bottom, r.bottom);
+    }
     return [b.left, b.top, b.right, b.bottom].every(Number.isFinite)
       ? b
       : { left: -100, top: -100, right: 100, bottom: 100 };
@@ -1126,14 +1147,18 @@
   }
 
   /** A project takes folders and projects into its folder, and elements under its own element, the top of its map. */
+  /** A project takes elements under its own element, the top of its map; a folder or a project it refuses, and says why. */
   function dropOnCard(key: string) {
-    const things = dropInto(intoOf(key));
     const elements = dropUnder(key);
     return {
-      accepts: (payload: DragPayload) =>
-        payload.kind === ELEMENTS ? elements.accepts(payload) : things.accepts(payload),
-      ondrop: (e: { payload: DragPayload }) =>
-        e.payload.kind === ELEMENTS ? elements.ondrop(e) : things.ondrop(e),
+      accepts: (payload: DragPayload) => payload.kind === ELEMENTS && elements.accepts(payload),
+      refuses: (payload: DragPayload) => {
+        const things = thingsOf(payload);
+        if (!things || things.projects.concat(things.folders).every((id) => key === projectKey(id)))
+          return null;
+        return t('home-owl-not-into-project');
+      },
+      ondrop: (e: { payload: DragPayload }) => elements.ondrop(e),
     };
   }
 
@@ -1170,6 +1195,21 @@
     class:hidden={!fitted}
     style:transform="translate({cam.x}px, {cam.y}px) scale({cam.k})"
   >
+    <!-- The folders, as regions around what is in them, under all else; a drop in one goes into the folder. -->
+    {#each [...regions] as [key, r] (key)}
+      {@const id = key.slice('folder:'.length)}
+      <div
+        class="region"
+        class:selected={selected.has(key)}
+        data-owl-region={id}
+        role="presentation"
+        style:transform="translate({Math.round(r.left)}px, {Math.round(r.top)}px)"
+        style:width="{Math.round(r.right - r.left)}px"
+        style:height="{Math.round(r.bottom - r.top)}px"
+        use:dropTarget={dropInto(id)}
+      ></div>
+    {/each}
+
     <svg class="lines" aria-hidden="true">
       {#each lines as l (l.id)}
         <line x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} />
@@ -1209,7 +1249,8 @@
               class="folder"
               class:centre
               class:folded={item.folded}
-              class:selected={selected.has(key)}
+              class:selected={selected.has(key) && !regions.has(key)}
+              class:regioned={regions.has(key)}
               id={domId(key)}
               role="treeitem"
               aria-level={p.depth + 1}
@@ -1658,6 +1699,26 @@
   }
   .owl-map:not(:focus-within) .selected {
     outline-color: var(--line-strong);
+  }
+  /* A folder that is open: a box around what is in it, faint, and a shade deeper within another. */
+  .region {
+    position: absolute;
+    left: 0;
+    top: 0;
+    border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--ink) 3%, transparent);
+  }
+  .region.selected {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .owl-map:not(:focus-within) .region.selected {
+    outline-color: var(--line-strong);
+  }
+  .region:global([data-drop-over]) {
+    border: 2px dashed var(--accent);
+    background: var(--accent-soft);
   }
   /* What would take what is dragged. */
   .owl:global([data-drop-over]),

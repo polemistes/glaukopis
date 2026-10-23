@@ -9,6 +9,7 @@
 import type { Folder, Place, ProjectInfo } from '$lib/api/projects';
 import type { Tree } from '$lib/project/model/tree';
 import { buildTree, type FlatNode } from '$lib/project/model/tree';
+import type { Layout } from '$lib/project/diagram/layout';
 import { PROJECT, type Position } from '$lib/project/model/types';
 import type { ClosedTree } from './closed.svelte';
 import { byName, descendants, folderOf, parentOf } from './folders';
@@ -339,4 +340,76 @@ export function whereNew(selection: string[], tree: Tree): string | null {
     at = tree.parent.get(at) ?? null;
   }
   return null;
+}
+
+/** The room between what a folder holds and the edge of its region. */
+export const REGION_PAD = 12;
+/** The room kept around a folder's branch in the layout: its pad, and a little between regions. */
+export const REGION_ROOM = REGION_PAD + 6;
+
+export interface Rect {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+/** The folders drawn as regions: those that are open, hold something, and are not at the centre. */
+export function regionFolders(tree: Tree, items: ReadonlyMap<string, OwlItem>): string[] {
+  const out: string[] = [];
+  for (const [key, item] of items) {
+    if (item.kind !== 'folder' || key === tree.root) continue;
+    if (item.folded || !(tree.children.get(key)?.length ?? 0)) continue;
+    out.push(key);
+  }
+  return out;
+}
+
+/**
+ * The region of each folder drawn as one: the box around its name and all
+ * that is shown under it, regions of the folders in it included, with a pad.
+ * What is placed by hand within the folder is inside it, wherever it stands.
+ */
+export function regionsOf(
+  lay: Layout,
+  tree: Tree,
+  folders: ReadonlySet<string>,
+  pad = REGION_PAD,
+): Map<string, Rect> {
+  const out = new Map<string, Rect>();
+  const union = (a: Rect | null, b: Rect | null): Rect | null =>
+    !a
+      ? b
+      : !b
+        ? a
+        : {
+            left: Math.min(a.left, b.left),
+            top: Math.min(a.top, b.top),
+            right: Math.max(a.right, b.right),
+            bottom: Math.max(a.bottom, b.bottom),
+          };
+  /** What a key takes on the map: itself and all shown under it; a region, where it is one. */
+  const extent = (key: string): Rect | null => {
+    const p = lay.placed.get(key);
+    if (!p) return null;
+    let box: Rect | null = {
+      left: p.x - p.w / 2,
+      top: p.y - p.h / 2,
+      right: p.x + p.w / 2,
+      bottom: p.y + p.h / 2,
+    };
+    for (const c of tree.children.get(key) ?? []) box = union(box, extent(c));
+    if (box && folders.has(key)) {
+      box = {
+        left: box.left - pad,
+        top: box.top - pad,
+        right: box.right + pad,
+        bottom: box.bottom + pad,
+      };
+      out.set(key, box);
+    }
+    return box;
+  };
+  extent(tree.root);
+  return out;
 }

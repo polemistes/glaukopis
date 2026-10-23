@@ -64,6 +64,7 @@ home-owl-new-folder = Ny mappe her
 # Det en ny mappe eller et nytt prosjekt heter til navnet er skrevet.
 home-owl-name = Navn
 # Ved pekeren, mens flere mapper og prosjekter dras.
+home-owl-not-into-project = Et prosjekt legges i en mappe, ikke i et prosjekt
 home-owl-dragged = { $count ->
     [one] { $count } ting
    *[other] { $count } ting

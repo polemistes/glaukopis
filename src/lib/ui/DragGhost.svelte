@@ -6,10 +6,15 @@
   <div
     class="ghost"
     class:welcome={drag.welcome}
+    class:refused={!!drag.refused}
     style:transform="translate({drag.x + 14}px, {drag.y + 12}px)"
   >
-    {#if drag.copy && drag.welcome}<span class="plus">+</span>{/if}
-    {drag.payload.label}
+    {#if drag.refused}
+      {drag.refused}
+    {:else}
+      {#if drag.copy && drag.welcome}<span class="plus">+</span>{/if}
+      {drag.payload.label}
+    {/if}
   </div>
 {/if}
 
@@ -36,6 +41,14 @@
   .ghost.welcome {
     background: var(--accent);
     color: var(--accent-ink);
+  }
+  /* Over what will not take it: the reason, quietly. */
+  .ghost.refused {
+    background: var(--paper-raised);
+    color: var(--ink-2);
+    box-shadow:
+      var(--shadow-2),
+      inset 0 0 0 1px var(--line);
   }
   .plus {
     font-weight: 700;
