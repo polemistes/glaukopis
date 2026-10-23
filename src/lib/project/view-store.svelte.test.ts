@@ -43,6 +43,9 @@ function view(project: Project | null, saving?: (view: StoredView) => Promise<vo
     outline: false,
     preview: false,
     sizes: { ...GIVEN } as Sizes,
+    tops: [] as (string | null)[],
+    focused: 0,
+    mirrored: false,
     project,
   });
   const folding = new Folding();
@@ -58,6 +61,9 @@ function view(project: Project | null, saving?: (view: StoredView) => Promise<vo
         outline: state.outline,
         preview: state.preview,
         sizes: state.sizes,
+        tops: state.tops,
+        focused: state.focused,
+        mirrored: state.mirrored,
       }),
       apply: (laid) => {
         state.panes = laid.panes;
@@ -67,6 +73,9 @@ function view(project: Project | null, saving?: (view: StoredView) => Promise<vo
         state.outline = laid.outline;
         state.preview = laid.preview;
         state.sizes = laid.sizes;
+        state.tops = laid.tops;
+        state.focused = laid.focused;
+        state.mirrored = laid.mirrored;
       },
       project: () => state.project,
       folding: () => folding,
@@ -176,6 +185,9 @@ describe('the view of a project as it is kept', () => {
     v.state.lastSide = 'found';
     v.state.outline = true;
     v.state.sizes = { split: 0.4, preview: 500, references: 300 };
+    v.state.tops = ['b-top', 'theirs'];
+    v.state.focused = 1;
+    v.state.mirrored = true;
     v.folding.folded.add(a);
     const kept = JSON.parse(JSON.stringify(v.store.toStore()));
 
@@ -188,6 +200,29 @@ describe('the view of a project as it is kept', () => {
     expect(again.state.outline).toBe(true);
     expect(again.state.sizes).toEqual({ split: 0.4, preview: 500, references: 300 });
     expect(again.store.folded).toEqual([a]);
+    // The top of the text of the project's own pane is one of its elements, else nothing; the other project's is its own.
+    expect(again.state.tops).toEqual([null, null]);
+    expect(again.state.focused).toBe(1);
+    expect(again.state.mirrored).toBe(true);
+  });
+
+  it('reads each text back where it was read', () => {
+    const { p, a, b } = made();
+    const v = view(p);
+    v.state.panes = [
+      { at: PROJECT, mode: 'text' },
+      { at: PROJECT, mode: 'text', project: 'odyssey' },
+    ];
+    v.state.tops = [b, 'their-element'];
+    const kept = JSON.parse(JSON.stringify(v.store.toStore()));
+    expect(kept.tops).toEqual([b, 'their-element']);
+    const again = view(p);
+    again.store.read(kept);
+    again.store.arrange(p);
+    expect(again.state.tops).toEqual([b, 'their-element']);
+    // A side that shows the diagram keeps no place in a text.
+    v.state.panes[0] = { at: a, mode: 'diagram' };
+    expect(v.store.toStore().tops).toEqual([null, 'their-element']);
   });
 });
 
@@ -247,6 +282,10 @@ describe('the saving of the view', () => {
       () => (v.state.sizes.preview = 400),
       () => (v.state.sizes.references = 300),
       () => v.folding.folded.add(a),
+      () => (v.state.tops = [b]),
+      () => (v.state.tops[0] = a),
+      () => (v.state.focused = 1),
+      () => (v.state.mirrored = true),
     ];
     for (const [i, change] of changes.entries()) {
       change();
