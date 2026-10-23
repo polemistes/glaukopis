@@ -1113,3 +1113,42 @@ What this settles (ADR 0064, to be built from
   line numbering in Document properties and the text's right-click menu;
   Share… in the project's menu; Not saved on the crumb; Images.
 - The path's dropdown is a tree unfolded to the current element.
+
+## 2026-10-24 — the owl, the top row, the menus' hints, and the Look pane in plain words
+
+> We are reworking the interface of Glaukopis to make it more intuitive and simple to use. We have come quite far. In the other session, just finished, the model ended by mentioning three things left for later:
+>
+> - Some words still say "picture" in the parts about documents, formats, styles, files and credits, and in some of the core's messages.
+> - The text's right-click menu loses the focus, so Escape does not close it.
+> - No script checks that a review in progress closes when the focus moves to the other side.
+>
+> Please read the last section of the brief and the newest record first.
+>
+> Here are my further comments and suggestions for improvement:
+>
+> The We will sacrifice the owl in the upper left corner, and put the project list toggle button there. Don't put a count on the number of projects in a folder in the project lists. Put the view close button on the top bar to the right in both views, but before the Split button. The split button should have a different background than the rest of the top bar, also when there is only one view.
+>
+> I want to to remove all the help texts in these menus:
+>
+> - Right click on a diagram where there is not element
+> - Right click on an element (here we remove the "Print the name as a heading" option too. This is not a feature we want. And I don't understand what the "Stand for another element" means. I think we can get rid of it. But tell me what it is first.)
+> - The "New reference" button
+> - Every help text in the Look pane
+>
+> All of these help texts say obvious things, and I assume that everything is also explained in the documentation.
+>
+> Here are some more suggestions for chagnes in the Look pane: Instead of writing "Paragraphs are told apart by", just present two setting with cm: Indent first line and Space between paragraphs. Are the settings for the Long quotations only for the quotations that are transformed into quotations? That would be strange. Should they not just be styled as any other paragraph with the quotation kind? Or have I misunderstood? If these settigs are needed here, I suggest that the heading should just be "Quotations", and the "When a quatation is set off" should be "Warn about long inline quotations". It is also confising that the kinds of paragraphs and of words come under the same heading. Who can know what is a kind of paragraph or a kind of word here? "Runs into the text" should be called "Begins the paragraph". "Begins" should then just be "Placement". The heading "Numbers" should be "Line numbers". The preview "As it stands" for figure and table captions is uneccesary. I don't understand what is meant by "The table itself". It looks like the heading "Front page" is smaller than "Equations". "What is shown" should be "Include". "Without the names of the authors" should be "Anonymize the front page". This should also make sure that the identifying information is left out of the metadata of whatever exported version of the document.  Her we could perhaps use "Formatting" instead of "How it is set"? Instead of "What the document contains" write " "Parts of document type", and "Moveable parts" for "The pars of the document" and "Placed parts" instead of "Elements with a place of their own". I still disagree that some elements should be hard coded with either printed front or back. This should be up to the layout, even though the abstract often is placed in front, and appendix in the back. But here "you" have decided that "Acknowledgements" are always printed in the back, which is often not the case. Why do we need to introduce the distinction between front and back matter? "What is required" should be "Requirements of document type". It looks strange to have "The layout" as a heading for a section with only one element "Layout". Let the heading be "Layout" and the option "Choose a layout". "What this document changes" should be "Modifications to the Template", or is it "Layout"?. Remove the "Where the requirements are from" section.
+>
+> In the Loose Ciations in the document pane, say "Plain text citations" instead of "What is taken for citations". Remove the "What a program made, and tags".
+>
+> I think this is it for now. Please tell me if anything is unclear, or if you have reservations about any of my suggestions. If not, make a plan for Opus 5.5 to implement this.
+
+The assessment, in short: *Stand for another element* lets one element print another element's tree in its place, which is how a book is assembled from chapters kept elsewhere in the project, and the only way a text can be printed in two documents; it is kept until the owner says otherwise. *Print the name as a heading* goes, and the flag behind it is no longer read. The rows under *Long quotations* are nothing but the base look of the kind Quotation, which the kinds list sets too, so they go, and the two thresholds under them, which did nothing, become a warning of the checklist. The order of the parts is the document type's already (its contents list; Bloomsbury's type prints the acknowledgements in the front); the catalogue's front and back are only the fallback for a kind the type does not place, the grouping of a menu and the words "printed at the back", and these words go: the parts are shown in one list in print order. The metadata of every export is already without the authors while the front page is anonymous; the checklist will say so where a type requires it and the switch is off. The help texts of the named menus and all of Look go, the renamings are taken as asked, the lengths are shown in centimetres. No help text was found on a *New reference* button.
+
+What this settles (ADR 0065, proposed; to be built from `docs/plans/fewer-words-the-top-row-the-menus-and-the-look-pane.md`):
+
+- The list's button takes the owl's place at the top of the rail; each side's × stands in the top row at the right end of its cell, before Split view; Split view has a background of its own; no count of projects on a folder.
+- No help texts in the diagram's and the element's menus, nor anywhere in Look; *Print the name as a heading* goes.
+- Look in plain words: two lengths for paragraphs, in centimetres; *Quotations* as a warning; *Paragraph kinds* and *Words kinds* apart; *Begins the paragraph*, *Placement*, *Line numbers*, *Inside the table*, *Include*, *Formatting*, *Anonymize the front page*; the parts of the document type in one list in print order; *Requirements of the document type*; *Layout*, *Choose a layout*, *Modifications to the layout*; the source of a layout's requirements out of Look.
+- *Plain text citations* in the loose citations, without the line about programs and tags.
+- The three things left: *image* for *picture* everywhere the user reads, Escape closes any menu, and a script for the review that closes when the other side takes the focus.
