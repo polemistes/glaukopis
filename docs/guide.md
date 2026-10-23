@@ -1491,14 +1491,26 @@ consumed by the writing:
   document hold itself cannot be chosen. The tree of the book then has one element for each chapter, each
   of which stands for the tree of that chapter, written elsewhere in the
   project. The preview of the book shows the book.
-- **Side by side**, in the bar of the project, shows the project as diagram
-  and as text beside one another; enter another element on either side to
-  see two parts of the project, and move elements between them, by dragging
-  or by cutting and pasting. Each side can be diagram, text or timeline.
-- **Another project beside**: **Enter beside**, in the list of projects at
-  the left, shows another project in the second side. Then both bars begin
-  with the name of their project, with its sign, and the line between them is
-  doubled, so that the two are not taken for one. Elements dragged from one
+- **Side by side**, in the bar of the project (**Ctrl+Shift+S**), opens a
+  menu of what the second side shows. **This element, as diagram and text**
+  shows the element in view both ways, beside one another. **Another
+  element…** shows the tree of the project, with a field that finds an
+  element by its name, and the element chosen stands in the second side.
+  Enter another element on either side to see two parts of the project, and
+  move elements between them, by dragging or by cutting and pasting. Each
+  side can be diagram, text or timeline. The button is lit while two sides
+  are shown, and **One at a time**, at the foot of its menu, closes the
+  second.
+- **Another project beside**: **Another project…**, in the same menu, shows
+  the list of projects, with its folders and its field; choose a project to
+  see it at its top in the second side, or unfold it with the chevron before
+  its name and choose an element of its tree to see it there. Your own
+  project is grey in the list, since its elements are chosen through
+  **Another element…**. **Enter beside**, in the menu of another project,
+  or of an element of its tree, in the list of projects at the left, does
+  the same at once. Then both bars begin with the name of their project,
+  with its sign, and the line between them is doubled, so that the two are
+  not taken for one. Elements dragged from one
   to the other are copied there, or moved with a plain drop, as **Copy to**
   and **Move to** another project do; undo takes a move back in both. The
   keys, and undo, work in the side you are in. The panel at the side, the
@@ -2910,6 +2922,7 @@ what is to be done by its name, and does it.
 | **Ctrl+Shift+O** | The outline beside the text |
 | **Ctrl+Shift+L** | The list of projects at the left of a project |
 | **Ctrl+P** | The preview |
+| **Ctrl+Shift+S** | Side by side: this element as diagram and text, another element or another project beside it, or one at a time |
 | **Ctrl+Shift+D** | About this document: the details, the language and the checklist of the element in view |
 | **Ctrl+Shift+A** | The look of the document: font, page, the looks of the kinds |
 | **Ctrl+Shift+R** | The references |

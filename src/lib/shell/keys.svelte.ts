@@ -109,7 +109,7 @@ const ENTRIES = [
   { id: 'undo', keys: 'Ctrl+Z', place: 'project', bound: true, notInFields: true },
   { id: 'redo', keys: 'Ctrl+Shift+Z', place: 'project', bound: true, notInFields: true },
   { id: 'redo-y', keys: 'Ctrl+Y', place: 'project', bound: true, notInFields: true },
-  { id: 'side-by-side', keys: '', place: 'project', bound: true },
+  { id: 'side-by-side', keys: 'Ctrl+Shift+S', place: 'project', bound: true },
   { id: 'side-panel', keys: '', place: 'project', bound: true },
   { id: 'share', keys: '', place: 'project', bound: true },
 

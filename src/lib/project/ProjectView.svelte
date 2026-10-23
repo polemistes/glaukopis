@@ -93,6 +93,10 @@
   import { Side } from './side.svelte';
   import { ViewStore } from './view-store.svelte';
   import ProjectDialogs from './ProjectDialogs.svelte';
+  import BesideDialog from './BesideDialog.svelte';
+  import { pickElement } from './picker.svelte';
+  import { openMenu, type MenuItem } from '$lib/ui/menu.svelte';
+  import FolderTree from '@lucide/svelte/icons/folder-tree';
   import MapBar from './MapBar.svelte';
   import WritingTools from '$lib/editor/WritingTools.svelte';
   import ListTree from '@lucide/svelte/icons/list-tree';
@@ -661,14 +665,49 @@
 
   /** Two side by side: the element in view as diagram and as text, until another is chosen for a side. */
   function sideBySide() {
-    if (panes.length > 1) {
-      // The project of the view stays in the first pane: one beside it goes.
-      closePane(across ? 1 : 1 - focused);
-      return;
-    }
-    const one = panes[0];
+    const one = ownPane ?? panes[0];
     panes = [one, { at: one.at, mode: one.mode === 'diagram' ? 'text' : 'diagram' }];
     focused = 0;
+  }
+
+  /** One side again: the project of the view stays in the first pane, and one beside it goes; of two of its own, the one without the focus. */
+  function oneAtATime() {
+    if (panes.length > 1) closePane(across ? 1 : 1 - focused);
+  }
+
+  /** Another element of the project, chosen in its tree, in the other side. */
+  async function besideElement() {
+    if (!project) return;
+    const id = await pickElement(project, {
+      title: t('project-beside-element-title'),
+      action: t('project-beside-show'),
+      at: ownPane?.at,
+    });
+    if (id) beside(id);
+  }
+
+  let sideBySideButton = $state<HTMLButtonElement>();
+  /** Whether the chooser of another project to show beside is open. */
+  let choosingBeside = $state(false);
+
+  /** The menu of the Side by side button: what the other side shows, and one side again. */
+  function sideBySideMenu() {
+    if (!sideBySideButton || !project) return;
+    const items: MenuItem[] = [
+      { label: t('project-beside-this'), icon: Columns2, action: sideBySide },
+      { label: t('project-beside-element'), icon: ListTree, action: () => void besideElement() },
+      {
+        label: t('project-beside-project'),
+        icon: FolderTree,
+        action: () => (choosingBeside = true),
+      },
+    ];
+    if (panes.length > 1)
+      items.push(
+        { kind: 'separator' },
+        { label: t('project-one-at-a-time'), icon: X, action: oneAtATime },
+      );
+    openMenu(sideBySideButton, items, { align: 'start' });
   }
 
   // ---- the room each part has ----
@@ -810,7 +849,7 @@
       'side-history': () => side.show('history'),
       'side-changes': () => side.toggleReview(),
       'side-panel': () => side.toggle(),
-      'side-by-side': sideBySide,
+      'side-by-side': sideBySideMenu,
       share: () => (showShare = true),
       'text-outline': {
         run: () => (showOutline = !showOutline),
@@ -868,17 +907,21 @@
         ]}
         onchange={(mode) => (panes[focused] = { ...pane, mode })}
       />
+      <!-- Lit while two sides are shown; its menu chooses what the other side shows. -->
       <button
         type="button"
         class="tool"
         class:on={panes.length > 1}
-        aria-pressed={panes.length > 1}
-        aria-label={panes.length > 1 ? t('project-one-at-a-time') : t('project-side-by-side')}
+        bind:this={sideBySideButton}
+        aria-haspopup="menu"
+        aria-label={t('project-side-by-side')}
+        data-side-by-side
         use:tooltip={{
-          text: panes.length > 1 ? t('project-one-at-a-time') : t('project-side-by-side'),
+          text: t('project-side-by-side'),
+          shortcut: keysFor('side-by-side'),
           side: 'bottom',
         }}
-        onclick={sideBySide}
+        onclick={sideBySideMenu}
       >
         <Columns2 size={15} />
         <span>{t('project-side-by-side-short')}</span>
@@ -1323,6 +1366,10 @@
   at={pane?.at}
   ongo={(element) => goTo(element, { pane: Math.min(focused, panes.length - 1) })}
 />
+
+{#if choosingBeside && project}
+  <BesideDialog current={ownId} onchoose={besideProject} onclose={() => (choosingBeside = false)} />
+{/if}
 
 {#if showShare && shared && project}
   <SharePanel {shared} {projectId} projectName={project.name} onclose={() => (showShare = false)} />
