@@ -242,3 +242,7 @@ home-delete-many-title = { $count ->
 home-delete-many-message = Prosjektene flyttes til papirkurven i Glaukopis, og kan hentes tilbake derfra. Referansene dine blir ikke rørt.
 home-delete-many-shared = Prosjektene flyttes til papirkurven i Glaukopis, og kan hentes tilbake derfra. De du deler, blir liggende på serveren og hos de andre.
 home-delete-many-confirm = Slett prosjektene
+
+## The path over a side (stage 4 of the list, the path and the window as it was left)
+# In the menu of all projects, under a folder with nothing in it.
+home-folder-empty = Ingenting i den
