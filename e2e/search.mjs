@@ -398,7 +398,7 @@ $$E = mc^2$$
     `const r = document.querySelector('.project .work .panes').getBoundingClientRect(); return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) }`,
   );
   // Up to the project, so that the document becomes a tree beside the first, and then into it.
-  await app.click('.maps .up');
+  await app.up();
   await until('the project in view', async () => (await names())[0] === 'Wrath', 8000);
   await sleep(300);
   await drop([join(desk, 'table.md')], middleOfPanes.x, middleOfPanes.y);

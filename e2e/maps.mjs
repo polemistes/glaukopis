@@ -15,16 +15,16 @@ const titles = (app) =>
     `return Array.from(document.querySelectorAll('.diagram .node .caption')).map((e) => e.textContent.trim())`,
   );
 
-// Side by side: the items of the menu that is open, what each pane shows, and whether the button is lit.
+// Split view: the items of the menu that is open, what each side shows (the element by the last crumb of its path), and whether the button is lit.
 const offered = async () => {
   await app.waitFor('.menu [role="menuitem"]', 3000);
   return app.exec(`return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((m) => m.textContent.trim())`);
 };
 const shownIn = () =>
   app.exec(
-    `return Array.from(document.querySelectorAll('.pane')).map((p) => (p.querySelector('.diagram') ? 'diagram' : p.querySelector('.text-view') ? 'text' : '?') + ':' + (p.querySelector('.maps .map .name')?.textContent.trim() ?? ''))`,
+    `return Array.from(document.querySelectorAll('.pane')).map((p, i) => (p.querySelector('.diagram') ? 'diagram' : p.querySelector('.text-view') ? 'text' : '?') + ':' + (document.querySelector('.top .cell[data-side="' + i + '"] [data-crumb-last] .name')?.textContent.trim() ?? ''))`,
   );
-const lit = () => app.exec(`return document.querySelector('header button[data-side-by-side]').classList.contains('on')`);
+const lit = () => app.exec(`return document.querySelector('.top button[data-side-by-side]').classList.contains('on')`);
 /** Unfolds the tree under a project's row in a list, where it is folded: the folds of the list at the left and of the chooser are one. */
 const unfoldRow = (list, name) =>
   app.exec(
@@ -35,7 +35,7 @@ const unfoldRow = (list, name) =>
     name,
   );
 const beside = async (item) => {
-  await app.click('header button[aria-label="Side by side"]');
+  await app.click('.top button[data-side-by-side]');
   await offered();
   await app.clickText('.menu [role="menuitem"]', item);
 };
@@ -666,25 +666,25 @@ try {
     (await titles(app)).includes('Article') && (await rootName()) === 'Wrath and the hero',
     (await titles(app)).join(' | '),
   );
-  // Entered from the bar: the name of the project pulls down its trees.
+  // Entered from the list, where the trees of the project stand under it.
   await app.openMap('Article');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
-  check('entered from the bar, it is the element in view', (await rootName()) === 'Article', await rootName());
-  // And left by the parent's name, small, before it.
-  await app.click('.maps .up');
+  check('entered from the list, it is the element in view', (await rootName()) === 'Article', await rootName());
+  // And left by the crumb of its parent, before it in the path.
+  await app.up();
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
   check(
-    "the parent's name in the bar goes up",
+    "the parent's crumb in the path goes up",
     (await rootName()) === 'Wrath and the hero',
     await rootName(),
   );
-  // Side by side is a menu of what the other side shows; the other pane shows the element chosen in its own bar.
-  await app.click('header button[aria-label="Side by side"]');
+  // Split view is a menu of what the other side shows; the other side shows the element chosen in its own path.
+  await app.click('.top button[data-side-by-side]');
   const one = await offered();
   check(
-    'Side by side is a menu: this element, another element, another project',
+    'Split view is a menu: this element, another element, another project',
     JSON.stringify(one) === JSON.stringify(['This element, as diagram and text', 'Another element…', 'Another project…']),
     one.join(' | '),
   );
@@ -692,7 +692,7 @@ try {
   await app.screenshot('maps-13a-beside-menu');
   await app.clickText('.menu [role="menuitem"]', 'This element, as diagram and text');
   await sleep(500);
-  check('two maps side by side, from the bar', (await app.count('.pane')) === 2);
+  check('two sides, from Split view', (await app.count('.pane')) === 2);
   check('and the button is lit while two sides are shown', await lit());
   await app.screenshot('maps-13-beside');
 
@@ -720,14 +720,14 @@ try {
   await app.screenshot('maps-13b-resized');
 
   // One at a time, at the foot of the menu while two are shown, and two again by its key: the same map as diagram and as text.
-  await app.click('header button[aria-label="Side by side"]');
+  await app.click('.top button[data-side-by-side]');
   const two = await offered();
   check('with two sides the menu ends in One at a time', two[two.length - 1] === 'One at a time', two.join(' | '));
   await app.clickText('.menu [role="menuitem"]', 'One at a time');
   await sleep(300);
   check('one at a time', (await app.count('.pane')) === 1);
   await app.keys(['Control', 'Shift', 's']);
-  check('Ctrl+Shift+S opens the menu of Side by side', (await offered()).includes('Another element…'));
+  check('Ctrl+Shift+S opens the menu of Split view', (await offered()).includes('Another element…'));
   await app.clickText('.menu [role="menuitem"]', 'This element, as diagram and text');
   await sleep(500);
   const both = await shownIn();
@@ -743,7 +743,7 @@ try {
   await app.screenshot('maps-13c-diagram-and-text');
 
   // Another element of the project, chosen in its tree, in the other side.
-  await app.click('header button[aria-label="Side by side"]');
+  await app.click('.top button[data-side-by-side]');
   await offered();
   await app.clickText('.menu [role="menuitem"]', 'Another element…');
   await app.waitFor('dialog [data-pick]', 3000);
@@ -760,7 +760,7 @@ try {
   await app.screenshot('maps-13d-another-element');
   // And back to this element as diagram and as text, as it is left: the element in view of the side with the focus, the first.
   await app.exec(`document.querySelector('.pane').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))`);
-  await app.click('header button[aria-label="Side by side"]');
+  await app.click('.top button[data-side-by-side]');
   await offered();
   await app.clickText('.menu [role="menuitem"]', 'This element, as diagram and text');
   await sleep(500);
@@ -809,7 +809,7 @@ try {
     `${count} elements shown`,
   );
 
-  // --- Another project beside: chosen in the menu of Side by side, at its top or at an element of its tree; and by Enter beside in the list at the left ---
+  // --- Another project beside: chosen in the menu of Split view, at its top or at an element of its tree; and by Enter beside in the list at the left ---
   await app.beginProject();
   await app.type('dialog input', 'Odyssey');
   await app.clickText('dialog footer button', 'Create');
@@ -842,7 +842,7 @@ try {
   check('the open project cannot be chosen', await app.exists('dialog [data-beside-chooser]'));
   await app.clickText('dialog [data-beside-chooser] .row.project', 'Odyssey');
   await app.waitGone('dialog [data-beside-chooser]', 3000);
-  await app.waitUntil(`return document.querySelectorAll('.pane')[1]?.querySelector('.maps .map .name')?.textContent.trim() === 'Odyssey'`, 8000, 'Odyssey beside').catch(() => {});
+  await app.waitUntil(`return document.querySelector('.top .cell[data-side="1"] [data-crumb-last] .name')?.textContent.trim() === 'Odyssey'`, 8000, 'Odyssey beside').catch(() => {});
   let sides = await shownIn();
   check('a project chosen is shown beside, at its top', sides.length === 2 && sides[1].endsWith(':Odyssey') && sides[0].endsWith(':Wrath and the hero'), sides.join(' | '));
   await app.screenshot('maps-15b-project-beside');
@@ -853,10 +853,10 @@ try {
   await app.waitForText('dialog [data-closed-tree] .row.element', 'Ithaca', 5000);
   await app.clickText('dialog [data-closed-tree] .row.element', 'Ithaca');
   await app.waitGone('dialog [data-beside-chooser]', 3000);
-  await app.waitUntil(`return document.querySelectorAll('.pane')[1]?.querySelector('.maps .map .name')?.textContent.trim() === 'Ithaca'`, 8000, 'Ithaca beside').catch(() => {});
+  await app.waitUntil(`return document.querySelector('.top .cell[data-side="1"] [data-crumb-last] .name')?.textContent.trim() === 'Ithaca'`, 8000, 'Ithaca beside').catch(() => {});
   sides = await shownIn();
   check('or at the element of its tree chosen', sides.length === 2 && sides[1].endsWith(':Ithaca'), sides.join(' | '));
-  check('the bar of the other side begins with its project', (await app.exec(`return document.querySelectorAll('.pane')[1]?.querySelector('.maps .project-name')?.textContent.trim() ?? ''`)) === 'Odyssey');
+  check('the path of the other side has its project', (await app.exec(`return document.querySelector('.top .cell[data-side="1"] [data-crumb="project"] .name')?.textContent.trim() ?? ''`)) === 'Odyssey');
   await app.screenshot('maps-15c-element-beside');
   // One at a time closes the other project; in the list at the left, Enter beside on an
   // element of its tree, and Open beside on the project, open it again.
@@ -870,7 +870,7 @@ try {
   await app.rightClick(await app.findByText('[data-projects-pane] [data-closed-tree] .row.element', 'Ithaca'));
   await offered();
   await app.clickText('.menu [role="menuitem"]', 'Enter beside');
-  await app.waitUntil(`return document.querySelectorAll('.pane')[1]?.querySelector('.maps .map .name')?.textContent.trim() === 'Ithaca'`, 8000, 'Ithaca beside').catch(() => {});
+  await app.waitUntil(`return document.querySelector('.top .cell[data-side="1"] [data-crumb-last] .name')?.textContent.trim() === 'Ithaca'`, 8000, 'Ithaca beside').catch(() => {});
   sides = await shownIn();
   check('Enter beside, in the menu of an element of a tree in the list, shows it beside', sides.length === 2 && sides[1].endsWith(':Ithaca'), sides.join(' | '));
   await beside('One at a time');
@@ -878,7 +878,7 @@ try {
   await app.rightClick(await app.findByText('[data-projects-pane] .row.project', 'Odyssey'));
   await offered();
   await app.clickText('.menu [role="menuitem"]', 'Open beside');
-  await app.waitUntil(`return document.querySelectorAll('.pane')[1]?.querySelector('.maps .map .name')?.textContent.trim() === 'Odyssey'`, 8000, 'Odyssey beside').catch(() => {});
+  await app.waitUntil(`return document.querySelector('.top .cell[data-side="1"] [data-crumb-last] .name')?.textContent.trim() === 'Odyssey'`, 8000, 'Odyssey beside').catch(() => {});
   sides = await shownIn();
   check('and Open beside, in the menu of a project', sides.length === 2 && sides[1].endsWith(':Odyssey'), sides.join(' | '));
   await app.screenshot('maps-15d-enter-beside');

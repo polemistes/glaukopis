@@ -586,43 +586,74 @@ export class App {
 
   /** Messages the page wrote to the console as errors, collected by a hook installed at launch. */
   /** Each different message once, with how often it came. */
-  // ---- the maps of a project, which pull down from the name of the map in view ----
+  // ---- the path over a side (record 0063): the crumbs, and ⋯ This element ----
 
-  /** Opens the menu of maps. */
-  async openMaps() {
-    await this.click('.maps .map');
-    await this.waitFor('.menu');
+  /** The path of the side that has the focus, else of the first, as a script finds it in the page: an expression. */
+  get path() {
+    return `(document.querySelector('.top .cell.active [data-path]') ?? document.querySelector('.top [data-path]'))`;
+  }
+
+  /** The name of the element in view, as the last crumb of the path says it. */
+  async inView() {
+    return this.exec(`return ${this.path}?.querySelector('[data-crumb-last] .name')?.textContent.trim() ?? null`);
+  }
+
+  /** Goes up from the element in view by the crumb of its parent; says whether there was one. */
+  async up() {
+    const crumb = await this.exec(`return ${this.path}?.querySelector('[data-up]') ?? null`);
+    if (!crumb) return false;
+    const was = await this.inView();
+    await this.click(crumb);
+    await this.waitUntil(`return ${this.path}?.querySelector('[data-crumb-last] .name')?.textContent.trim() !== ${JSON.stringify(was)}`, 5000, 'up');
     await sleep(150);
+    return true;
   }
 
-  /** The names of the maps, in their order, as the menu of maps has them. */
+  /** The names of the elements beside the one in view, or under the project where it is in view. */
   async mapNames() {
-    return this.exec(`return JSON.parse(document.querySelector('.maps')?.dataset.maps ?? '[]')`);
+    return this.exec(`return JSON.parse(${this.path}?.dataset.siblings ?? '[]')`);
   }
 
-  /** Opens the map of this name. */
+  /**
+   * Enters the element of this name: by its row in the list, under the
+   * project of the side, which shows the elements beside the way down to
+   * the one in view; else by a crumb of the path.
+   */
   async openMap(name) {
-    await this.openMaps();
-    await this.clickText('.menu [role="menuitem"]', name);
+    const find = `const p = ${this.path}; const id = p?.dataset.project;
+       const rows = Array.from(document.querySelectorAll('[data-projects-pane] .row.element')).filter((r) => r.dataset.row.startsWith('e:' + id + '/'));
+       return rows.find((r) => r.querySelector('.name')?.textContent.trim() === arguments[0])
+         ?? Array.from(p?.querySelectorAll('[data-crumb="element"]') ?? []).find((c) => c.querySelector('.name')?.textContent.trim() === arguments[0])
+         ?? null;`;
+    let target = await this.exec(find, name);
+    if (!target && !(await this.exists('[data-projects-pane]'))) {
+      await this.click('[data-projects-button]');
+      await this.waitFor('[data-projects-pane] .row', 5000);
+      await sleep(200);
+      target = await this.exec(find, name);
+    }
+    if (!target) throw new Error(`no element named ${name} in the list or the path`);
+    await this.click(target);
+    await this.waitUntil(`return ${this.path}?.querySelector('[data-crumb-last] .name')?.textContent.trim() === ${JSON.stringify(name)}`, 5000, `${name} in view`).catch(() => {});
     await sleep(300);
   }
 
-  /** Opens the menu of what can be done with the map in view, and with the maps. */
+  /** Opens the menu of what can be done with the element in view. */
   async openThisMap() {
-    await this.click('.maps .this-map');
+    await this.click(await this.exec(`return ${this.path}?.querySelector('[data-this-element]') ?? null`));
     await this.waitFor('.menu');
     await sleep(150);
   }
 
-  /** Makes a new element under the one in view, and leaves its name being typed in the bar. */
+  /** Makes a new element under the one in view, and leaves its name being typed in the path. */
   async newMap() {
     await this.openThisMap();
     await this.clickText('.menu [role="menuitem"]', 'New element under it');
-    await this.waitFor('.maps .naming');
+    await this.waitFor('[data-path] .naming');
     await sleep(150);
   }
 
-  /** Chooses in the menu of what can be done with the map in view. */
+  /** Chooses in the menu of what can be done with the element in view. */
   async thisMap(item) {
     await this.openThisMap();
     await this.clickText('.menu [role="menuitem"]', item);

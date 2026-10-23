@@ -308,7 +308,13 @@
   </span>
 {/snippet}
 
-<nav class="path" aria-label={t('project-where')} data-path data-siblings={siblings}>
+<nav
+  class="path"
+  aria-label={t('project-where')}
+  data-path
+  data-project={info.id}
+  data-siblings={siblings}
+>
   <button
     type="button"
     class="all"

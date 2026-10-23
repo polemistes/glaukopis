@@ -217,30 +217,16 @@ try {
     );
   /** The trees under the project, as the bar lists them while the project is in view. */
   const tabs = () => app.mapNames();
-  /** Enters a tree under the project from the bar, by its whole name, so that its text is read alone. */
+  /** Enters a tree under the project from the list, by its whole name, so that its text is read alone. */
   const enter = async (name) => {
-    await app.openMaps();
-    await press(
-      await until(`${name} among the trees`, () =>
-        app.exec(
-          `return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).find((m) => m.textContent.trim() === arguments[0]) || null`,
-          name,
-        ),
-      ),
-    );
-    await until(
-      `${name} in view`,
-      async () =>
-        (await app.exec(`return document.querySelector('.maps .map .name')?.textContent.trim()`)) ===
-        name,
-    );
+    await until(`${name} among the trees`, async () => (await app.mapNames()).includes(name));
+    await app.openMap(name);
+    await until(`${name} in view`, async () => (await app.inView()) === name);
     await sleep(400);
   };
   /** Back up to the project, under which the next document is to go. */
   const up = async () => {
-    if (!(await app.exists('.maps .up:not(.home)'))) return;
-    await app.click('.maps .up:not(.home)');
-    await until('the project in view', async () => !(await app.exists('.maps .up:not(.home)')));
+    while (await app.up());
     await sleep(300);
   };
   const fact = (name) =>
@@ -823,7 +809,7 @@ try {
   await app.home();
   await sleep(900);
   await app.openProject('Homer');
-  await app.waitFor('.maps .map', 8000);
+  await app.waitFor('[data-path] [data-crumb-last]', 8000);
   await sleep(600);
   await app.openMap('The wrath, from LibreOffice');
   await sleep(600);
@@ -880,7 +866,7 @@ try {
   await app.home();
   await sleep(900);
   await app.openProject('Homer');
-  await app.waitFor('.maps .map', 8000);
+  await app.waitFor('[data-path] [data-crumb-last]', 8000);
   await sleep(600);
   await up();
 
