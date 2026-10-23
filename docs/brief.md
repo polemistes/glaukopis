@@ -1065,3 +1065,16 @@ What this settles (ADR 0063, proposed; to be built from
   accent, × and Ctrl+W close a side, *Switch sides* mirrors them.
 - The top row holds the path with a chevron that opens the menu of all
   projects, elided in the middle when it does not fit.
+
+After the assessment, the owner:
+
+> The real decisions about the tools of the window will come afterwards. The top bar will only have the current element path with a dropdown, except perhaps the split views button. Let the rest be on a bar under that again for now. I will think hard on how to rearrange things afterwards. Is that ok? If it makes the changes simpler, I agree to let the second project stay a guest for now, but in the end both projects will be of the same status. I guess the two projects will need its own history (but two projects can be open now, too, and they keep their history, so I am not able to see why that should be a problem now). Perhaps, also only one of the open projects can be a shared project? I am not sure, perhaps it does not matter if both are shared with others? Now, those questions are for the next phase, if that is what you think is best. Could you adjust the plan according to this?
+
+- The top row holds the paths and *Split view* alone; the bar of the
+  project, less *Side by side*, stands under it as it is, and the bars of
+  the sides stay, with × always; nothing else moves until the
+  rearrangement.
+- The second project stays a guest for now; in the end both are of the
+  same status, decided with the rearrangement. Each project has its own
+  history on disk and its own connection already; the questions of the
+  history and of two shared projects are for the next record.
