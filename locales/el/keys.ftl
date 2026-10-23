@@ -39,7 +39,6 @@ keys-side-changes = Επισκόπηση αλλαγών
 keys-side-found = Παραπομπές που βρέθηκαν
 keys-side-panel = Άνοιγμα ή κλείσιμο του πλαϊνού πλαισίου
 keys-side-by-side = Δύο δίπλα δίπλα
-keys-share = Κοινή χρήση του έργου
 keys-find = Αναζήτηση στο κείμενο
 keys-replace = Αναζήτηση και αντικατάσταση
 keys-undo = Αναίρεση

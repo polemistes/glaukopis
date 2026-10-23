@@ -64,7 +64,6 @@ editor-highlight = ハイライト
 editor-highlight-hint = 画面上で目立たせるだけ。どの文書にも入りません
 editor-underline = 下線
 editor-code-words = 行内コード
-editor-code-words-hint = 行の中で等幅の文字にする
 editor-scene = シーン見出し
 editor-scene-hint = 屋内　家　夜
 editor-action = ト書き（アクション）
@@ -78,10 +77,7 @@ editor-parenthetical-hint = 話し方。括弧で囲む
 editor-transition = 場面転換
 editor-transition-hint = 「カット：」など。右寄せ
 editor-comment = コメント
-editor-comment-hint = 選択した箇所へのコメント
-editor-comment-element-hint = この要素へのコメント。語句を選択すると、その語句にコメントできます
 editor-parallel = 二つのテキストを並べる
-editor-parallel-hint = 原文と訳文。それぞれ独立したテキスト
 editor-paragraph-kind = 段落の種類
 # Said of the button that shows the kind of paragraph the cursor is in.
 editor-paragraph-kind-now = 段落の種類：{ $kind }
@@ -96,8 +92,6 @@ editor-kinds-make = 種類を作る…
 editor-kinds-change-own = 独自の種類を変更…
 # Over the item that opens the format editor: the format sets how each kind looks.
 editor-kinds-set-by = 「{ $format }」の設定どおり
-editor-words = 語句
-editor-words-hint = 下線、上付き、コード、外国語、作品名、用語
 editor-words-make = 語句の種類を作る…
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = 普通の語句
@@ -119,35 +113,17 @@ editor-own-kind-delete-message = { $count ->
 
 ## Citing, notes, and what is put into the text.
 
-editor-cite = 引用
 editor-cite-here = ここで作品を引用
-editor-cite-at-cursor = カーソルの位置で作品を引用
 editor-note = 注
 editor-note-selection = 選択範囲を注にする
-editor-note-hint = 脚注または文末注
 editor-insert = 挿入
-editor-insert-hint = 画像、表、数式、相互参照
-editor-new-element = 新しい要素
-editor-new-element-hint = この要素の後、または下に新しい要素を追加
-editor-new-after = この要素の後に新しい要素
-editor-new-under = この要素の下に新しい要素
-editor-new-split = ここで分割
 editor-spelling-on = 入力中にスペルチェックしています · 押すと止めます
 editor-spelling-off = スペルチェックしていません · 押すとチェックします
-editor-picture-file = ファイルから画像…
-editor-picture-file-hint = 説明付きの図
-editor-picture-store = 画像庫から画像…
-editor-picture-store-hint = 手持ちの画像をサイドに表示します
 editor-equation = 別行立ての数式
-editor-equation-hint = 独立した行に置く数式
 editor-table = 表…
-editor-table-hint = 行数と列数を指定して
 editor-table-file = ファイルから表…
-editor-table-file-hint = CSV、またはLibreOfficeやExcelのシート
 editor-formula = 数式
-editor-formula-hint = 行内の数式
 editor-pointer = 相互参照…
-editor-pointer-hint = 図、表、数式、部分を指す：「図2を参照」
 # What a picture that was pasted without a name of its own is called in the store of pictures.
 editor-pasted-picture = 画像
 

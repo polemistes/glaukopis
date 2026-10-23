@@ -16,7 +16,6 @@ project-name = Numele proiectului
 project-rename = Redenumește proiectul
 project-not-saved = Nesalvat
 project-redo = Refă acțiunea
-project-view = Vederea hărții
 project-view-this = Vederea acestei hărți
 project-diagram = Diagramă
 project-text = Text
@@ -25,14 +24,8 @@ project-side-by-side = Două alăturate
 project-close-side = Închide această parte
 project-references = Referințe
 project-pictures = Imagini
-project-side = Referințe, imagini, istoric și modificări
 project-side-tabs = Ce arată panoul lateral
 project-side-map = Hartă
-project-preview = Previzualizare și export
-project-share = Partajează
-project-shared = Partajat
-project-shared-offline = Partajat · serverul nu poate fi atins
-project-shared-too-large = Partajat · serverul nu primește ultimele modificări
 project-between-maps = Între cele două hărți
 project-between-preview = Între hartă și previzualizare
 project-between-pictures = Între hartă și imagini
@@ -71,15 +64,12 @@ project-drop-on-map = Trageți pe o hartă ca să mutați acolo · țineți Ctrl
 project-open-beside = Deschide alături
 project-open-beside-hint = Două hărți alăturate, ca să mutați elemente între ele
 project-side-by-side-short = Alăturate
-project-preview-short = Previzualizare
-project-found = Citări găsite…
 # The count is of those found in the map.
 project-found-hint = { $count ->
     [one] Una de parcurs, din care să se facă o citare
     [few] { $count } de parcurs, din care să se facă citări
    *[other] { $count } de parcurs, din care să se facă citări
 }
-project-found-none = Și text care seamănă a citări
 project-copied-to = Copiat în „{ $name }”
 project-moved-to = Mutat în „{ $name }”
 

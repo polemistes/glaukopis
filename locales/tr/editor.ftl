@@ -64,7 +64,6 @@ editor-highlight = Vurgu
 editor-highlight-hint = Ekranda göz için: hiçbir belgeye girmez
 editor-underline = Altı çizili
 editor-code-words = Satır içi kod
-editor-code-words-hint = Satırın içinde, eşit genişlikte harfler
 editor-scene = Sahne başlığı
 editor-scene-hint = İÇ. EV – GECE
 editor-action = Eylem
@@ -78,10 +77,7 @@ editor-parenthetical-hint = Nasıl söylendiği, parantez içinde
 editor-transition = Geçiş
 editor-transition-hint = KESME:, sağda
 editor-comment = Yorum
-editor-comment-hint = Seçili olan üzerine bir yorum
-editor-comment-element-hint = Bu öğe üzerine bir yorum; sözcükler üzerine yorum yapmak için onları seçin
 editor-parallel = Yan yana iki metin
-editor-parallel-hint = Bir asıl metin ve çevirisi, her biri ayrı bir metin
 editor-paragraph-kind = Paragraf türü
 # Said of the button that shows the kind of paragraph the cursor is in.
 editor-paragraph-kind-now = Paragraf türü: { $kind }
@@ -96,8 +92,6 @@ editor-kinds-make = Tür oluştur…
 editor-kinds-change-own = Kendi türünüzü değiştir…
 # Over the item that opens the format editor: the format sets how each kind looks.
 editor-kinds-set-by = “{ $format }” formatına göre dizilir
-editor-words = Sözler
-editor-words-hint = Altı çizme, üst simge, kod; yabancı sözcükler, eser adı, terim
 editor-words-make = Söz türü oluştur…
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = Düz sözler
@@ -120,35 +114,17 @@ editor-own-kind-delete-message = { $count ->
 
 ## Citing, notes, and what is put into the text.
 
-editor-cite = Atıf yap
 editor-cite-here = Buraya bir esere atıf ekle
-editor-cite-at-cursor = İmlecin olduğu yere bir esere atıf ekle
 editor-note = Not
 editor-note-selection = Seçimi not yap
-editor-note-hint = Sayfanın altında ya da sonda bir not
 editor-insert = Ekle
-editor-insert-hint = Bir resim, bir tablo, matematik, bir gönderme
-editor-new-element = Yeni öğe
-editor-new-element-hint = Bundan sonra ya da bunun altında yeni bir öğe
-editor-new-after = Bundan sonra yeni öğe
-editor-new-under = Bunun altında yeni öğe
-editor-new-split = Buradan böl
 editor-spelling-on = Yazım, yazdıkça denetleniyor · durdurmak için basın
 editor-spelling-off = Yazım denetlenmiyor · denetlemek için basın
-editor-picture-file = Dosyadan resim…
-editor-picture-file-hint = Hakkında söylenenlerle birlikte bir şekil
-editor-picture-store = Depodan resim…
-editor-picture-store-hint = Elinizdekiler yanda gösterilir
 editor-equation = Denklem
-editor-equation-hint = Kendi satırında matematik
 editor-table = Tablo…
-editor-table-hint = Belli sayıda satır ve sütunla
 editor-table-file = Dosyadan tablo…
-editor-table-file-hint = CSV ya da bir LibreOffice veya Excel sayfası
 editor-formula = Formül
-editor-formula-hint = Satır içinde matematik
 editor-pointer = Gönderme…
-editor-pointer-hint = Bir şekle, tabloya, denkleme ya da bölüme: “bkz. şekil 2”
 # What a picture that was pasted without a name of its own is called in the store of pictures.
 editor-pasted-picture = resim
 

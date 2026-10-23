@@ -62,11 +62,8 @@ editor-line-number-press = Die Nummer dieser Zeile: klicken, um sie zu ändern
 
 ## Numbers belong to what they number (ADR 0041): the Numbers menu offers
 ## the three, each saying what it numbers.
-editor-numbers = Nummern
-editor-numbers-hint = Die Zeilen nummerieren, die Sie schreiben, eine Stelle in Prosa bezeichnen oder die Zeilen der Seite nummerieren
 editor-numbers-lines = Diese Zeilen nummerieren…
 editor-numbers-lines-hint = Die Zeilen der Absätze, in denen der Cursor steht, oder der ausgewählten: ab welcher Nummer, jede wievielte, auf welcher Seite
-editor-numbers-refmark-hint = Eine Stelle in Prosa, nach Vers, Seite oder Nummer einer Ausgabe: 3:16, 327a
 editor-numbers-page = Die Zeilen der Seite nummerieren
 editor-numbers-page-hint = Jede Zeile der gedruckten Seite, am Rand nummeriert, in diesem Dokument und denen darunter
 
@@ -117,7 +114,6 @@ editor-highlight = Markierung
 editor-highlight-hint = Für das Auge am Bildschirm: sie kommt in kein Dokument
 editor-underline = Unterstrichen
 editor-code-words = Code in der Zeile
-editor-code-words-hint = Buchstaben gleicher Breite, innerhalb der Zeile
 editor-scene = Szenenüberschrift
 editor-scene-hint = Wo und wann eine Szene spielt: INNEN. HAUS – NACHT
 editor-action = Handlung
@@ -131,14 +127,9 @@ editor-parenthetical-hint = Wie ein Satz gesprochen wird
 editor-transition = Übergang
 editor-transition-hint = Wie eine Szene in die nächste übergeht: SCHNITT AUF:
 editor-comment = Kommentar
-editor-comment-hint = Ein Kommentar zum Ausgewählten
-editor-comment-element-hint = Ein Kommentar zu diesem Element; wählen Sie Wörter aus, um sie zu kommentieren
 editor-parallel = Zwei Texte nebeneinander
-editor-parallel-hint = Ein Original und seine Übersetzung, jedes ein eigener Text
 editor-page-break = Seitenumbruch
-editor-page-break-hint = Was folgt, beginnt auf einer neuen Seite
 editor-column-break = Spaltenumbruch
-editor-column-break-hint = Was folgt, beginnt oben in der nächsten Spalte, wo das Layout den Text in Spalten setzt
 editor-paragraph-kind = Absatzart
 # Said of the button that shows the kind of paragraph the cursor is in.
 editor-paragraph-kind-now = Absatzart: { $kind }
@@ -156,8 +147,6 @@ editor-kinds-change-own = Eigene Art ändern…
 editor-kinds-set-by = Gesetzt, wie „{ $format }“ es vorgibt
 editor-kinds-change-look = Wie „{ $kind }“ aussieht…
 editor-kinds-change-look-hint = Ihr Aussehen in diesem Dokument und der Rest der Seite
-editor-words = Wörter
-editor-words-hint = Unterstreichung, Hochstellung, Code; die Sprache einer Passage, fremdsprachige Wörter, ein Werktitel, ein Begriff, ein Sprecher in einer Zeile
 editor-words-make = Art für Wörter anlegen…
 # Beside the language of the map, first among the languages foreign words may be in.
 editor-foreign-of-text = Die Sprache des Textes
@@ -192,40 +181,17 @@ editor-own-kind-delete-message = { $count ->
 
 ## Citing, notes, and what is put into the text.
 
-editor-cite = Zitieren
 editor-cite-here = Hier ein Werk zitieren
-editor-cite-at-cursor = Ein Werk zitieren, wo der Cursor steht
 editor-note = Anmerkung
 editor-note-selection = Die Auswahl zur Anmerkung machen
-editor-note-hint = Eine Anmerkung, am Fuß der Seite oder am Ende
 editor-insert = Einfügen
-editor-insert-hint = Ein Bild, eine Tabelle, Mathematik, ein Verweis
-editor-new-element = Neues Element
-editor-new-element-hint = Ein neues Element nach diesem oder darunter
-editor-new-after = Neues Element nach diesem
-editor-new-under = Neues Element unter diesem
-editor-new-split = Hier teilen
 editor-spelling-on = Die Rechtschreibung wird beim Schreiben geprüft · klicken, um damit aufzuhören
 editor-spelling-off = Die Rechtschreibung wird nicht geprüft · klicken, um sie zu prüfen
-editor-break-signs = Das Zeichen eines Zeilenumbruchs im Absatz
-editor-break-signs-on = Ein Zeilenumbruch im Absatz wird mit ↵ gezeigt · klicken, um das Zeichen zu verbergen
-editor-break-signs-off = Ein Zeilenumbruch im Absatz wird nicht gezeigt · klicken, um ihn mit ↵ zu zeigen
-editor-picture-file = Bild aus einer Datei…
-editor-picture-file-hint = Eine Abbildung, mit dem, was zu ihr gesagt wird
-editor-picture-store = Bild aus dem Fundus…
-editor-picture-store-hint = Die, die Sie haben, werden an der Seite gezeigt
 editor-equation = Gleichung
-editor-equation-hint = Mathematik in einer eigenen Zeile
 editor-table = Tabelle…
-editor-table-hint = Mit so vielen Zeilen und Spalten
 editor-table-file = Tabelle aus einer Datei…
-editor-table-file-hint = CSV oder ein Tabellenblatt von LibreOffice oder Excel
 editor-formula = Formel
-editor-formula-hint = Mathematik in der Zeile
 editor-pointer = Verweis…
-editor-pointer-hint = Auf eine Abbildung, eine Tabelle, eine Gleichung oder einen Teil: „siehe Abbildung 2“
-editor-refmark = Stellenmarke…
-editor-refmark-hint = Ein Vers, eine Seite oder eine Nummer einer Ausgabe: 3:16, 327a
 editor-refmark-title = Stellenmarke
 editor-refmark-label = Bezeichnung
 editor-refmark-placeholder = 3:16, 327a, 1094a1

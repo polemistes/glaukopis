@@ -39,7 +39,6 @@ keys-side-changes = Проверить изменения
 keys-side-found = Найденные ссылки
 keys-side-panel = Открыть или закрыть боковую панель
 keys-side-by-side = Две рядом
-keys-share = Открыть проект другим
 keys-find = Поиск по тексту
 keys-replace = Поиск и замена
 keys-undo = Отменить

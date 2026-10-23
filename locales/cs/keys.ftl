@@ -39,7 +39,6 @@ keys-side-changes = Revize změn
 keys-side-found = Nalezené citace
 keys-side-panel = Otevřít nebo zavřít postranní panel
 keys-side-by-side = Dvě vedle sebe
-keys-share = Sdílet projekt
 keys-find = Hledat v textu
 keys-replace = Hledat a nahradit
 keys-undo = Zpět

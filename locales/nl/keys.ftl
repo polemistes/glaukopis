@@ -39,7 +39,6 @@ keys-side-changes = Wijzigingen nakijken
 keys-side-found = Gevonden verwijzingen
 keys-side-panel = Het zijpaneel openen of sluiten
 keys-side-by-side = Twee naast elkaar
-keys-share = Het project delen
 keys-find = In de tekst zoeken
 keys-replace = Zoeken en vervangen
 keys-undo = Ongedaan maken

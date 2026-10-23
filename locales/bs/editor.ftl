@@ -64,7 +64,6 @@ editor-highlight = Isticanje
 editor-highlight-hint = Za oko na ekranu: ne ide ni u jedan dokument
 editor-underline = Podvučeno
 editor-code-words = Kod u redu
-editor-code-words-hint = Slova jednake širine, unutar reda
 editor-scene = Naslov scene
 editor-scene-hint = INT. KUĆA – NOĆ
 editor-action = Radnja
@@ -78,10 +77,7 @@ editor-parenthetical-hint = Kako se govori, u zagradama
 editor-transition = Prijelaz
 editor-transition-hint = REZ NA:, desno
 editor-comment = Komentiraj
-editor-comment-hint = Komentar na odabrano
-editor-comment-element-hint = Komentar na ovaj element; odaberite riječi da ih komentirate
 editor-parallel = Dva teksta uporedo
-editor-parallel-hint = Original i njegov prijevod, svaki kao zaseban tekst
 editor-paragraph-kind = Vrsta pasusa
 # Said of the button that shows the kind of paragraph the cursor is in.
 editor-paragraph-kind-now = Vrsta pasusa: { $kind }
@@ -96,8 +92,6 @@ editor-kinds-make = Napravi vrstu…
 editor-kinds-change-own = Izmijeni vlastitu vrstu…
 # Over the item that opens the format editor: the format sets how each kind looks.
 editor-kinds-set-by = Složeno kako ih postavlja „{ $format }“
-editor-words = Riječi
-editor-words-hint = Podvlačenje, eksponent, kod; riječi na stranom jeziku, naslov djela, termin
 editor-words-make = Napravi vrstu riječi…
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = Obične riječi
@@ -121,35 +115,17 @@ editor-own-kind-delete-message = { $count ->
 
 ## Citing, notes, and what is put into the text.
 
-editor-cite = Citiraj
 editor-cite-here = Citiraj djelo ovdje
-editor-cite-at-cursor = Citiraj djelo na mjestu kursora
 editor-note = Napomena
 editor-note-selection = Pretvori odabrano u napomenu
-editor-note-hint = Napomena, na dnu stranice ili na kraju
 editor-insert = Umetni
-editor-insert-hint = Slika, tabela, matematika, uputnica
-editor-new-element = Novi element
-editor-new-element-hint = Novi element iza ovog ili pod njim
-editor-new-after = Novi element iza ovog
-editor-new-under = Novi element pod ovim
-editor-new-split = Podijeli ovdje
 editor-spelling-on = Pravopis se provjerava dok pišete · pritisnite da prestane
 editor-spelling-off = Pravopis se ne provjerava · pritisnite da se provjerava
-editor-picture-file = Slika iz datoteke…
-editor-picture-file-hint = Ilustracija, s onim što se o njoj kaže
-editor-picture-store = Slika iz spremišta…
-editor-picture-store-hint = One koje imate prikazane su sa strane
 editor-equation = Jednačina
-editor-equation-hint = Matematika u vlastitom redu
 editor-table = Tabela…
-editor-table-hint = S toliko redova i kolona
 editor-table-file = Tabela iz datoteke…
-editor-table-file-hint = CSV ili proračunska tabela LibreOfficea ili Excela
 editor-formula = Formula
-editor-formula-hint = Matematika u redu
 editor-pointer = Uputnica…
-editor-pointer-hint = Na ilustraciju, tabelu, jednačinu ili dio: „v. sliku 2“
 # What a picture that was pasted without a name of its own is called in the store of pictures.
 editor-pasted-picture = slika
 

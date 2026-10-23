@@ -16,7 +16,6 @@ project-name = Name of the project
 project-rename = Rename the project
 project-not-saved = Not saved
 project-redo = Redo
-project-view = View of the map
 project-view-this = View of this map
 project-diagram = Diagram
 project-text = Text
@@ -33,14 +32,8 @@ project-beside-subtitle = A project, or an element in its tree, to show beside t
 project-close-side = Close this side
 project-references = References
 project-pictures = Pictures
-project-side = References, pictures, history and changes
 project-side-tabs = What the panel at the side shows
 project-side-map = Map
-project-preview = Preview and export
-project-share = Share
-project-shared = Shared
-project-shared-offline = Shared · the server cannot be reached
-project-shared-too-large = Shared · the server does not take the latest changes
 project-between-maps = Between the two maps
 project-between-preview = Between the map and the preview
 project-between-pictures = Between the map and the pictures
@@ -91,19 +84,13 @@ project-template-not-renewed = The project's copy of the template could not be b
 # Said over the other pane while elements of one project are dragged over it.
 project-copy-to-project = Copy to “{ $name }”
 project-move-to-project = Move to “{ $name }”
-project-element-name = Name of the element
-project-this-element-actions = This element
-project-new-element-under = New element under it
 project-document-into = A document into it…
 project-drop-on-map = Drop on a map to move there · hold Ctrl to copy
 project-open-beside = Open beside
 project-open-beside-hint = Two maps side by side, to move elements between them
 project-side-by-side-short = Split
-project-preview-short = Preview
-project-found = Loose citations…
 # The count is of those found in the element in view, and under it.
 project-found-hint = { $count } to go through, and make citations of
-project-found-none = And text that looks like citations
 project-copied-to = Copied to “{ $name }”
 project-moved-to = Moved to “{ $name }”
 project-other-projects = Other projects
@@ -311,3 +298,7 @@ project-all-projects-menu = All projects
 # The crumb … in a path too long for its cell, whose menu has the crumbs hidden behind it.
 project-path-hidden = More of the path
 project-switch-sides = Switch sides
+
+## Stage 3 of the sides, the panes and the bars (agent "bars")
+project-bar-typesetting = Typesetting
+project-bar-document = Document

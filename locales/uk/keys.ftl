@@ -39,7 +39,6 @@ keys-side-changes = Переглянути зміни
 keys-side-found = Знайдені цитування
 keys-side-panel = Відкрити або закрити бічну панель
 keys-side-by-side = Дві поруч
-keys-share = Поділитися проєктом
 keys-find = Шукати в тексті
 keys-replace = Знайти й замінити
 keys-undo = Скасувати дію

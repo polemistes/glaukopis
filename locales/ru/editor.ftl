@@ -64,7 +64,6 @@ editor-highlight = Подсветка
 editor-highlight-hint = Для глаза на экране: в документ не попадает
 editor-underline = Подчёркнутый
 editor-code-words = Код в строке
-editor-code-words-hint = Моноширинным шрифтом, внутри строки
 editor-scene = Заголовок сцены
 editor-scene-hint = ИНТ. ДОМ – НОЧЬ
 editor-action = Действие
@@ -78,10 +77,7 @@ editor-parenthetical-hint = Как это говорится, в скобках
 editor-transition = Переход
 editor-transition-hint = «CUT TO:», справа
 editor-comment = Комментарий
-editor-comment-hint = Комментарий к выделенному
-editor-comment-element-hint = Комментарий к этому элементу; выделите слова, чтобы комментировать их
 editor-parallel = Два текста рядом
-editor-parallel-hint = Оригинал и перевод, каждый — отдельный текст
 editor-paragraph-kind = Вид абзаца
 # Said of the button that shows the kind of paragraph the cursor is in.
 editor-paragraph-kind-now = Вид абзаца: { $kind }
@@ -96,8 +92,6 @@ editor-kinds-make = Создать вид…
 editor-kinds-change-own = Изменить свой вид…
 # Over the item that opens the format editor: the format sets how each kind looks.
 editor-kinds-set-by = Оформление по формату «{ $format }»
-editor-words = Слова
-editor-words-hint = Подчёркивание, надстрочный, код; иностранные слова, название произведения, термин
 editor-words-make = Создать вид слов…
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = Обычные слова
@@ -122,35 +116,17 @@ editor-own-kind-delete-message = { $count ->
 
 ## Citing, notes, and what is put into the text.
 
-editor-cite = Сослаться
 editor-cite-here = Сослаться на работу здесь
-editor-cite-at-cursor = Сослаться на работу там, где курсор
 editor-note = Сноска
 editor-note-selection = Сделать выделенное сноской
-editor-note-hint = Сноска внизу страницы или в конце
 editor-insert = Вставить
-editor-insert-hint = Изображение, таблицу, формулу, перекрёстную ссылку
-editor-new-element = Новый элемент
-editor-new-element-hint = Новый элемент после этого или под ним
-editor-new-after = Новый элемент после этого
-editor-new-under = Новый элемент под этим
-editor-new-split = Разделить здесь
 editor-spelling-on = Орфография проверяется при письме · нажмите, чтобы перестать
 editor-spelling-off = Орфография не проверяется · нажмите, чтобы проверять
-editor-picture-file = Изображение из файла…
-editor-picture-file-hint = Рисунок с текстом к нему
-editor-picture-store = Изображение из хранилища…
-editor-picture-store-hint = Те, что у вас есть, показаны сбоку
 editor-equation = Уравнение
-editor-equation-hint = Математика отдельной строкой
 editor-table = Таблица…
-editor-table-hint = Из стольких-то строк и столбцов
 editor-table-file = Таблица из файла…
-editor-table-file-hint = CSV или таблица LibreOffice или Excel
 editor-formula = Формула
-editor-formula-hint = Математика в строке
 editor-pointer = Перекрёстная ссылка…
-editor-pointer-hint = На рисунок, таблицу, уравнение или часть: «см. рисунок 2»
 # What a picture that was pasted without a name of its own is called in the store of pictures.
 editor-pasted-picture = изображение
 

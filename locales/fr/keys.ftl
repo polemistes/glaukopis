@@ -46,7 +46,6 @@ keys-side-changes = Réviser les modifications
 keys-side-found = Citations non liées
 keys-side-panel = Ouvrir ou fermer le volet
 keys-side-by-side = Deux côte à côte
-keys-share = Partager le projet
 keys-find = Rechercher dans le texte
 keys-replace = Rechercher et remplacer
 keys-undo = Annuler

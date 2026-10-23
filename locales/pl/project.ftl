@@ -16,7 +16,6 @@ project-name = Nazwa projektu
 project-rename = Zmień nazwę projektu
 project-not-saved = Niezapisane
 project-redo = Ponów
-project-view = Widok mapy
 project-view-this = Widok tej mapy
 project-diagram = Diagram
 project-text = Tekst
@@ -25,14 +24,8 @@ project-side-by-side = Dwie obok siebie
 project-close-side = Zamknij tę stronę
 project-references = Pozycje
 project-pictures = Obrazy
-project-side = Pozycje, obrazy, historia i zmiany
 project-side-tabs = Co pokazuje panel boczny
 project-side-map = Mapa
-project-preview = Podgląd i eksport
-project-share = Udostępnij
-project-shared = Udostępniony
-project-shared-offline = Udostępniony · nie można połączyć się z serwerem
-project-shared-too-large = Udostępniony · serwer nie przyjmuje ostatnich zmian
 project-between-maps = Między dwiema mapami
 project-between-preview = Między mapą a podglądem
 project-between-pictures = Między mapą a obrazami
@@ -73,8 +66,6 @@ project-drop-on-map = Upuść na mapę, by tam przenieść · przytrzymaj Ctrl, 
 project-open-beside = Otwórz obok
 project-open-beside-hint = Dwie mapy obok siebie, by przenosić elementy między nimi
 project-side-by-side-short = Obok siebie
-project-preview-short = Podgląd
-project-found = Znalezione cytowania…
 # The count is of those found in the map.
 project-found-hint = { $count ->
     [one] { $count } do przejrzenia i zrobienia z niego cytowania
@@ -82,7 +73,6 @@ project-found-hint = { $count ->
     [many] { $count } do przejrzenia i zrobienia z nich cytowań
    *[other] { $count } do przejrzenia i zrobienia z nich cytowań
 }
-project-found-none = Oraz tekst, który wygląda jak cytowania
 project-copied-to = Skopiowano do „{ $name }”
 project-moved-to = Przeniesiono do „{ $name }”
 

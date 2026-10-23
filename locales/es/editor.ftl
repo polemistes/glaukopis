@@ -64,7 +64,6 @@ editor-highlight = Resaltado
 editor-highlight-hint = Para la vista en pantalla: no va a ningún documento
 editor-underline = Subrayado
 editor-code-words = Código en la línea
-editor-code-words-hint = Letras de igual anchura, dentro de la línea
 editor-scene = Encabezado de escena
 editor-scene-hint = INT. CASA – NOCHE
 editor-action = Acción
@@ -78,10 +77,7 @@ editor-parenthetical-hint = Cómo se dice, entre paréntesis
 editor-transition = Transición
 editor-transition-hint = CORTE A:, a la derecha
 editor-comment = Comentario
-editor-comment-hint = Un comentario sobre lo seleccionado
-editor-comment-element-hint = Un comentario sobre este elemento; seleccione palabras para comentarlas
 editor-parallel = Dos textos en paralelo
-editor-parallel-hint = Un original y su traducción, cada uno un texto propio
 editor-paragraph-kind = Tipo de párrafo
 # Said of the button that shows the kind of paragraph the cursor is in.
 editor-paragraph-kind-now = Tipo de párrafo: { $kind }
@@ -96,8 +92,6 @@ editor-kinds-make = Crear un tipo…
 editor-kinds-change-own = Cambiar un tipo propio…
 # Over the item that opens the format editor: the format sets how each kind looks.
 editor-kinds-set-by = Compuestos como los tiene «{ $format }»
-editor-words = Palabras
-editor-words-hint = Subrayado, superíndice, código; palabras en otro idioma, el título de una obra, un término
 editor-words-make = Crear un tipo de palabras…
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = Palabras corrientes
@@ -121,35 +115,17 @@ editor-own-kind-delete-message = { $count ->
 
 ## Citing, notes, and what is put into the text.
 
-editor-cite = Citar
 editor-cite-here = Citar una obra aquí
-editor-cite-at-cursor = Citar una obra donde está el cursor
 editor-note = Nota
 editor-note-selection = Convertir la selección en nota
-editor-note-hint = Una nota, a pie de página o al final
 editor-insert = Insertar
-editor-insert-hint = Una imagen, una tabla, matemáticas, una remisión
-editor-new-element = Nuevo elemento
-editor-new-element-hint = Un elemento nuevo después de este, o debajo
-editor-new-after = Nuevo elemento después de este
-editor-new-under = Nuevo elemento debajo de este
-editor-new-split = Dividir aquí
 editor-spelling-on = La ortografía se comprueba mientras escribe · pulse para dejar de comprobarla
 editor-spelling-off = La ortografía no se comprueba · pulse para comprobarla
-editor-picture-file = Imagen de un archivo…
-editor-picture-file-hint = Una figura, con lo que se dice de ella
-editor-picture-store = Imagen del almacén…
-editor-picture-store-hint = Las que tiene se muestran al lado
 editor-equation = Ecuación
-editor-equation-hint = Matemáticas en una línea propia
 editor-table = Tabla…
-editor-table-hint = De tantas filas y columnas
 editor-table-file = Tabla de un archivo…
-editor-table-file-hint = CSV, o una hoja de LibreOffice o Excel
 editor-formula = Fórmula
-editor-formula-hint = Matemáticas en la línea
 editor-pointer = Remisión…
-editor-pointer-hint = A una figura, una tabla, una ecuación o una parte: «véase la figura 2»
 # What a picture that was pasted without a name of its own is called in the store of pictures.
 editor-pasted-picture = imagen
 

@@ -62,11 +62,8 @@ editor-line-number-press = Numărul acestui rând: apăsați ca să-l schimbați
 
 ## Numbers belong to what they number (ADR 0041): the Numbers menu offers
 ## the three, each saying what it numbers.
-editor-numbers = Numere
-editor-numbers-hint = Numerotează rândurile pe care le scrieți, marchează un loc în proză sau numerotează rândurile paginii
 editor-numbers-lines = Numerotează aceste rânduri…
 editor-numbers-lines-hint = Rândurile paragrafelor în care este cursorul sau ale celor selectate: de la ce număr, din câte în câte, pe ce parte
-editor-numbers-refmark-hint = Un loc în proză, după un verset, o pagină sau un număr al unei ediții: 3:16, 327a
 editor-numbers-page = Numerotează rândurile paginii
 editor-numbers-page-hint = Fiecare rând al paginii tipărite, numerotat pe margine, în acest document și în cele de sub el
 
@@ -117,7 +114,6 @@ editor-highlight = Evidențiere
 editor-highlight-hint = Pentru ochi, pe ecran: nu intră în niciun document
 editor-underline = Subliniat
 editor-code-words = Cod în rând
-editor-code-words-hint = Litere de lățime egală, în rând
 editor-scene = Titlu de scenă
 editor-scene-hint = Unde și când are loc o scenă: INT. CASĂ – NOAPTE
 editor-action = Acțiune
@@ -131,14 +127,9 @@ editor-parenthetical-hint = Cum se spune o replică
 editor-transition = Tranziție
 editor-transition-hint = Cum se trece de la o scenă la următoarea: TRECERE LA:
 editor-comment = Comentariu
-editor-comment-hint = Un comentariu la ce este selectat
-editor-comment-element-hint = Un comentariu la acest element; selectați cuvinte ca să le comentați
 editor-parallel = Două texte alăturate
-editor-parallel-hint = Un original și traducerea lui, fiecare un text al lui
 editor-page-break = Sfârșit de pagină
-editor-page-break-hint = Ce urmează începe pe o pagină nouă
 editor-column-break = Sfârșit de coloană
-editor-column-break-hint = Ce urmează începe în capul coloanei următoare, acolo unde macheta așază textul pe coloane
 editor-paragraph-kind = Tip de paragraf
 # Said of the button that shows the kind of paragraph the cursor is in.
 editor-paragraph-kind-now = Tip de paragraf: { $kind }
@@ -156,8 +147,6 @@ editor-kinds-change-own = Modifică un tip propriu…
 editor-kinds-set-by = Așezate cum le are „{ $format }”
 editor-kinds-change-look = Cum arată „{ $kind }”…
 editor-kinds-change-look-hint = Aspectul lui în acest document și restul paginii
-editor-words = Cuvinte
-editor-words-hint = Subliniere, exponent, cod; limba unui pasaj, cuvinte străine, titlul unei lucrări, un termen, un vorbitor în rând
 editor-words-make = Fă un tip de cuvinte…
 # Beside the language of the map, first among the languages foreign words may be in.
 editor-foreign-of-text = Limba textului
@@ -193,40 +182,17 @@ editor-own-kind-delete-message = { $count ->
 
 ## Citing, notes, and what is put into the text.
 
-editor-cite = Citează
 editor-cite-here = Citează o lucrare aici
-editor-cite-at-cursor = Citează o lucrare acolo unde este cursorul
 editor-note = Notă
 editor-note-selection = Fă din selecție o notă
-editor-note-hint = O notă, la subsolul paginii sau la sfârșit
 editor-insert = Inserează
-editor-insert-hint = O imagine, un tabel, matematică, o trimitere
-editor-new-element = Element nou
-editor-new-element-hint = Un element nou după acesta, sau sub el
-editor-new-after = Element nou după acesta
-editor-new-under = Element nou sub acesta
-editor-new-split = Desparte aici
 editor-spelling-on = Ortografia se verifică în timp ce scrieți · apăsați ca să opriți
 editor-spelling-off = Ortografia nu se verifică · apăsați ca să o verificați
-editor-break-signs = Semnul unui rând nou în paragraf
-editor-break-signs-on = Un rând nou în paragraf se arată cu ↵ · apăsați ca să ascundeți semnul
-editor-break-signs-off = Un rând nou în paragraf nu se arată · apăsați ca să-l arătați cu ↵
-editor-picture-file = Imagine dintr-un fișier…
-editor-picture-file-hint = O figură, cu ce se spune despre ea
-editor-picture-store = Imagine din depozit…
-editor-picture-store-hint = Cele pe care le aveți se arată în lateral
 editor-equation = Ecuație
-editor-equation-hint = Matematică pe un rând al ei
 editor-table = Tabel…
-editor-table-hint = Cu atâtea rânduri și coloane
 editor-table-file = Tabel dintr-un fișier…
-editor-table-file-hint = CSV, sau o foaie de calcul LibreOffice ori Excel
 editor-formula = Formulă
-editor-formula-hint = Matematică în rând
 editor-pointer = Trimitere…
-editor-pointer-hint = La o figură, un tabel, o ecuație sau o parte: „vezi figura 2”
-editor-refmark = Reper…
-editor-refmark-hint = Un verset, o pagină sau un număr al unei ediții: 3:16, 327a
 editor-refmark-title = Reper
 editor-refmark-label = Etichetă
 editor-refmark-placeholder = 3:16, 327a, 1094a1

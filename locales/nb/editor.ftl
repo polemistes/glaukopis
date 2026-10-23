@@ -62,11 +62,8 @@ editor-line-number-press = Nummeret til denne linjen: trykk for å endre det
 
 ## Numrene hører til det de nummererer (ADR 0041): Nummer-menyen tilbyr de
 ## tre, og hver sier hva den nummererer.
-editor-numbers = Nummer
-editor-numbers-hint = Nummerer linjene du skriver, merk et sted i prosa, eller nummerer linjene på siden
 editor-numbers-lines = Nummerer disse linjene …
 editor-numbers-lines-hint = Linjene i avsnittene der markøren står, eller i dem som er merket: fra hvilket nummer, hver hvor mange, på hvilken side
-editor-numbers-refmark-hint = Et sted i prosa, ved et vers, en side eller et nummer i en utgave: 3:16, 327a
 editor-numbers-page = Nummerer linjene på siden
 editor-numbers-page-hint = Hver linje på den trykte siden, nummerert i margen, i dette dokumentet og dem under det
 
@@ -117,7 +114,6 @@ editor-highlight = Utheving
 editor-highlight-hint = For øyet på skjermen: det kommer ikke med i noe dokument
 editor-underline = Understreket
 editor-code-words = Kode i linjen
-editor-code-words-hint = Bokstaver med lik bredde, inne i linjen
 editor-scene = Sceneoverskrift
 editor-scene-hint = Hvor og når en scene er: INT. HUS – NATT
 editor-action = Handling
@@ -131,17 +127,12 @@ editor-parenthetical-hint = Hvordan en replikk sies
 editor-transition = Overgang
 editor-transition-hint = Hvordan en scene går over i den neste: KLIPP TIL:
 editor-comment = Kommentar
-editor-comment-hint = En kommentar til det som er merket
-editor-comment-element-hint = En kommentar til dette elementet; merk ord for å kommentere dem
 editor-parallel = To tekster side om side
-editor-parallel-hint = En original og dens oversettelse, hver sin tekst
 editor-page-break = Sideskift
-editor-page-break-hint = Det som følger, begynner på en ny side
 editor-column-break = Spalteskift
-editor-column-break-hint = Det som følger, begynner øverst i neste spalte, der oppsettet setter teksten i spalter
-editor-paragraph-kind = Slags avsnitt
+editor-paragraph-kind = Avsnittstype
 # Sies om knappen som viser hva slags avsnitt markøren står i.
-editor-paragraph-kind-now = Slags avsnitt: { $kind }
+editor-paragraph-kind-now = Avsnittstype: { $kind }
 
 ## Menyen over slagene: slagene som skrives med dem markøren står i, slagene for hånden,
 ## hele katalogen under «Mer …», og oppsettet som setter dem, nederst. Menyen
@@ -156,8 +147,6 @@ editor-kinds-change-own = Endre et av dine egne …
 editor-kinds-set-by = Satt slik «{ $format }» har dem
 editor-kinds-change-look = Hvordan «{ $kind }» ser ut …
 editor-kinds-change-look-hint = Utseendet i dette dokumentet, og resten av siden
-editor-words = Ord
-editor-words-hint = Understreking, hevet skrift, kode; språket i et stykke, ord på et annet språk, tittelen på et verk, en term, en taler i en linje
 editor-words-make = Lag et slag ord …
 # Først blant språkene ord på et annet språk kan være på: det teksten selv er på.
 editor-foreign-of-text = Språket i teksten
@@ -192,42 +181,18 @@ editor-own-kind-delete-message = { $count ->
 
 ## Kildehenvisninger, noter og det som settes inn i teksten.
 
-editor-cite = Henvis
 editor-cite-here = Henvis til et verk her
-editor-cite-at-cursor = Henvis til et verk der markøren står
 editor-note = Note
 editor-note-selection = Gjør det merkede til en note
-editor-note-hint = En note, nederst på siden eller til slutt
 editor-insert = Sett inn
-editor-insert-hint = Et bilde, en tabell, matematikk, en kryssreferanse til en figur
-editor-new-element = Nytt element
-editor-new-element-hint = Et nytt element etter dette, eller under det
-editor-new-after = Nytt element etter dette
-editor-new-under = Nytt element under dette
-editor-new-split = Del her
-editor-new-split-hint = Det som står etter markøren, blir navnet på et nytt element, og avsnittene under blir teksten i det
 editor-spelling-on = Stavingen kontrolleres mens du skriver · trykk for å slutte
 editor-spelling-off = Stavingen kontrolleres ikke · trykk for å kontrollere den
-editor-break-signs = Tegnet for linjeskift i et avsnitt
-editor-break-signs-on = Linjeskift i et avsnitt vises med ↵ · trykk for å skjule tegnet
-editor-break-signs-off = Linjeskift i et avsnitt vises ikke · trykk for å vise dem med ↵
-editor-picture-file = Bilde fra en fil …
-editor-picture-file-hint = En figur, med bildetekst
-editor-picture-store = Bilde fra bildelageret …
-editor-picture-store-hint = De du har, vises ved siden av
 editor-equation = Ligning
-editor-equation-hint = Matematikk på en egen linje
 editor-table = Tabell …
-editor-table-hint = Med så mange rader og kolonner
 editor-table-file = Tabell fra en fil …
-editor-table-file-hint = CSV, eller et ark fra LibreOffice eller Excel
 editor-formula = Formel
-editor-formula-hint = Matematikk i linjen
 editor-pointer = Kryssreferanse …
-editor-pointer-hint = Til figur, tabell, ligning eller del: «se figur 2»
-editor-refmark = Referansemerke …
-editor-refmark-hint = Et vers, en side eller et nummer i en utgave: 3:16, 327a
-editor-refmark-title = Referansemerke
+editor-refmark-title = Tall i linjen
 editor-refmark-label = Merke
 editor-refmark-placeholder = 3:16, 327a, 1094a1
 editor-refmark-dialog-hint = Merket er ingen del av ordene: stavekontroll, søk og ordtelling går forbi det. Oppsettet bestemmer om det heves i linjen eller settes i margen.
@@ -307,3 +272,11 @@ editor-note-place-format = Der oppsettet har notene sine
 editor-note-place-foot = Nederst på siden
 editor-note-place-end = Til slutt i teksten
 editor-note-placeholder = Teksten i noten
+
+## Stage 3 of the sides, the panes and the bars (agent "bars")
+editor-words-kind = Ordtype
+editor-words-kind-now = Ordtype: { $kind }
+editor-marks = Markeringer
+editor-marks-shown = Tegn for mellomrom og avsnitt
+editor-image = Bilde
+editor-inline-number = Tall i linjen …

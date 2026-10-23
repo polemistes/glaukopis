@@ -64,7 +64,6 @@ editor-highlight = Zvýraznenie
 editor-highlight-hint = Pre oko na obrazovke: do dokumentu nejde
 editor-underline = Podčiarknuté
 editor-code-words = Kód v riadku
-editor-code-words-hint = Písmo rovnakej šírky, vnútri riadku
 editor-scene = Nadpis scény
 editor-scene-hint = INT. DOM – NOC
 editor-action = Akcia
@@ -78,10 +77,7 @@ editor-parenthetical-hint = Ako sa to hovorí, v zátvorkách
 editor-transition = Prechod
 editor-transition-hint = STRIH NA:, vpravo
 editor-comment = Komentár
-editor-comment-hint = Komentár k vybranému
-editor-comment-element-hint = Komentár k tomuto prvku; vyberte slová, ak chcete komentovať ich
 editor-parallel = Dva texty vedľa seba
-editor-parallel-hint = Originál a jeho preklad, každý ako vlastný text
 editor-paragraph-kind = Druh odseku
 # Said of the button that shows the kind of paragraph the cursor is in.
 editor-paragraph-kind-now = Druh odseku: { $kind }
@@ -96,8 +92,6 @@ editor-kinds-make = Vytvoriť druh…
 editor-kinds-change-own = Zmeniť vlastný druh…
 # Over the item that opens the format editor: the format sets how each kind looks.
 editor-kinds-set-by = Vysádzané, ako ich má „{ $format }“
-editor-words = Slová
-editor-words-hint = Podčiarknutie, horný index, kód; cudzojazyčné slová, názov diela, termín
 editor-words-make = Vytvoriť druh slov…
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = Obyčajné slová
@@ -121,35 +115,17 @@ editor-own-kind-delete-message = { $count ->
 
 ## Citing, notes, and what is put into the text.
 
-editor-cite = Citovať
 editor-cite-here = Citovať dielo tu
-editor-cite-at-cursor = Citovať dielo tam, kde je kurzor
 editor-note = Poznámka
 editor-note-selection = Urobiť z výberu poznámku
-editor-note-hint = Poznámka pod čiarou alebo na konci
 editor-insert = Vložiť
-editor-insert-hint = Obrázok, tabuľka, matematika, odkaz
-editor-new-element = Nový prvok
-editor-new-element-hint = Nový prvok za týmto alebo pod ním
-editor-new-after = Nový prvok za týmto
-editor-new-under = Nový prvok pod týmto
-editor-new-split = Rozdeliť tu
 editor-spelling-on = Pravopis sa kontroluje pri písaní · stlačením vypnete
 editor-spelling-off = Pravopis sa nekontroluje · stlačením zapnete
-editor-picture-file = Obrázok zo súboru…
-editor-picture-file-hint = Vyobrazenie s popiskou
-editor-picture-store = Obrázok z úložiska…
-editor-picture-store-hint = Tie, ktoré máte, sa zobrazia na boku
 editor-equation = Rovnica
-editor-equation-hint = Matematika na vlastnom riadku
 editor-table = Tabuľka…
-editor-table-hint = S toľkými riadkami a stĺpcami
 editor-table-file = Tabuľka zo súboru…
-editor-table-file-hint = CSV alebo hárok LibreOffice či Excelu
 editor-formula = Vzorec
-editor-formula-hint = Matematika v riadku
 editor-pointer = Odkaz…
-editor-pointer-hint = Na vyobrazenie, tabuľku, rovnicu alebo časť: „pozri obrázok 2“
 # What a picture that was pasted without a name of its own is called in the store of pictures.
 editor-pasted-picture = obrázok
 

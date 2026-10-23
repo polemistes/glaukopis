@@ -46,7 +46,6 @@ keys-side-changes = Gå gjennom endringar
 keys-side-found = Lause kjeldetilvisingar
 keys-side-panel = Opne eller lukke sidepanelet
 keys-side-by-side = To side om side
-keys-share = Del prosjektet
 keys-find = Søk i teksten
 keys-replace = Søk og byt ut
 keys-undo = Angre

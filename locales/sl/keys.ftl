@@ -39,7 +39,6 @@ keys-side-changes = Preglej spremembe
 keys-side-found = Najdene navedbe
 keys-side-panel = Odpri ali zapri stransko ploščo
 keys-side-by-side = Dva vzporedno
-keys-share = Deli projekt
 keys-find = Išči po besedilu
 keys-replace = Išči in zamenjaj
 keys-undo = Razveljavi

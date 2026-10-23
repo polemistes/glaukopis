@@ -16,7 +16,6 @@ project-name = Nombre del proyecto
 project-rename = Renombrar el proyecto
 project-not-saved = Sin guardar
 project-redo = Rehacer
-project-view = Vista del mapa
 project-view-this = Vista de este mapa
 project-diagram = Diagrama
 project-text = Texto
@@ -25,14 +24,8 @@ project-side-by-side = Dos en paralelo
 project-close-side = Cerrar este lado
 project-references = Referencias
 project-pictures = Imágenes
-project-side = Referencias, imágenes, historial y cambios
 project-side-tabs = Qué muestra el panel lateral
 project-side-map = Mapa
-project-preview = Vista previa y exportación
-project-share = Compartir
-project-shared = Compartido
-project-shared-offline = Compartido · no se puede conectar con el servidor
-project-shared-too-large = Compartido · el servidor no admite los últimos cambios
 project-between-maps = Entre los dos mapas
 project-between-preview = Entre el mapa y la vista previa
 project-between-pictures = Entre el mapa y las imágenes
@@ -71,15 +64,12 @@ project-drop-on-map = Suelte sobre un mapa para moverlo allí · mantenga Ctrl p
 project-open-beside = Abrir al lado
 project-open-beside-hint = Dos mapas en paralelo, para mover elementos entre ellos
 project-side-by-side-short = En paralelo
-project-preview-short = Vista previa
-project-found = Citas encontradas…
 # The count is of those found in the map.
 project-found-hint = { $count ->
     [one] { $count } por repasar y convertir en cita
     [many] { $count } de citas por repasar y convertir en citas
    *[other] { $count } por repasar y convertir en citas
 }
-project-found-none = Y texto que parece citas
 project-copied-to = Copiado a «{ $name }»
 project-moved-to = Movido a «{ $name }»
 

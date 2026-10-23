@@ -39,7 +39,6 @@ keys-side-changes = Прегледај измене
 keys-side-found = Пронађени цитати
 keys-side-panel = Отвори или затвори бочни панел
 keys-side-by-side = Две упоредо
-keys-share = Подели пројекат
 keys-find = Претражи текст
 keys-replace = Претражи и замени
 keys-undo = Опозови
