@@ -34,8 +34,7 @@ const DATA = [
   '.work .title',
   '.fonts',
   // The names of templates, layouts and styles, and what the built-in templates say of themselves.
-  '.preview header .what',
-  '.side .look .whole .what',
+  '.side .look .whole .type-line .name',
   '.template',
 ].join(', ');
 
@@ -183,12 +182,14 @@ try {
   await app.waitFor('.preview', 8000);
   await sleep(1500);
   await english('the preview');
-  // About this document is a window; the preview's button with the sliders opens it.
-  await app.click('.preview header button[aria-label="Om dette dokumentet …"]');
-  await app.waitForText('dialog[open] h2', 'Om dette dokumentet', 5000);
+  // Document properties is a window, opened by its key.
+  await app.keys(['Control', 'Shift', 'd']);
+  await app.waitForText('dialog[open] h2', 'Dokumentegenskaper', 5000);
   await sleep(300);
   await english('the document settings');
   await app.screenshot('languages-4-details');
+  await settingsSection('Dokumenttype');
+  await english('the type in the document settings');
   await settingsSection('Språk');
   await english('the language in the document settings');
   const written = await app.exec(`return document.querySelector('dialog select').value`);
@@ -213,7 +214,7 @@ try {
   const openLanguages = async () => {
     await app.openThisMap();
     await app.clickText('.menu [role="menuitem"]', 'Språk …');
-    await app.waitForText('dialog[open] h2', 'Om dette dokumentet', 5000);
+    await app.waitForText('dialog[open] h2', 'Dokumentegenskaper', 5000);
     await app.waitFor('dialog select');
     await sleep(200);
   };

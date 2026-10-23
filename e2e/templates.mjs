@@ -1,6 +1,7 @@
-// What you are writing (ADR 0038, as the chooser of 2026-10-19 offers it):
-// the button over the preview names what the document is, the plain
-// document until something else is chosen, and opens the chooser; the
+// What you are writing (ADR 0038, as the chooser of 2026-10-19 offers it,
+// the Document type tab of Document properties since record 0064): the tab
+// marks what the document is, the plain document until something else is
+// chosen; the
 // plain document stands first and alone, the kinds of text follow in their
 // groups, and the journals, publishers and style guides are a second step,
 // narrowed to what is made for the kind of text in use and found by the
@@ -45,21 +46,29 @@ try {
   await sleep(200);
 
   await app.keys(['Control', 'p']);
-  await app.waitFor('.preview header .what', 15000);
+  await app.waitFor('.preview header [data-look]', 15000);
   await app.waitFor('.preview .page', 20000);
   const header = async () => (await app.text('.preview header')).replace(/\s+/g, ' ');
   check(
-    'the button over the preview names the plain document, and nothing else of how it is made',
-    (await app.whatIs()) === 'Plain document' && !/Chicago|Manuscript/.test(await header()),
+    'the head of the typesetting pane says nothing of how the document is made',
+    !/Plain document|Chicago|Manuscript/.test(await header()),
     await header(),
   );
 
-  // --- The chooser, from the button over the preview ---
+  // --- The chooser, the Document type tab of Document properties ---
+  await app.keys(['Control', 'Shift', 'd']);
+  await app.waitForText('dialog[open] h2', 'Document properties', 5000);
+  const tabs = await app.exec(
+    `return Array.from(document.querySelectorAll('dialog[open] .window nav button')).map((b) => b.textContent.trim())`,
+  );
+  check('Document properties has a tab of what the document is, after its details', tabs[1] === 'Document type', tabs.join(' | '));
   await app.openChooser();
   const top = (await app.text('dialog[open] header')).replace(/\s+/g, ' ');
   check(
-    'the button opens the chooser of what you are writing, for the element in view',
-    top.includes('What are you writing?') && top.includes('Wrath and the hero'),
+    'it is the chooser of what you are writing, for the element in view',
+    top.includes('Document properties') &&
+      top.includes('Wrath and the hero') &&
+      (await app.attr('dialog[open] .chooser .templates', 'aria-label')) === 'What are you writing?',
     top,
   );
   const first = await app.exec(
@@ -112,7 +121,7 @@ try {
   check('emptied, the search shows them all again', (await names()).length > 40, `${(await names()).length}`);
 
   await app.chooseWhat('Journal article', { close: false });
-  check('chosen, the journal article is named over the preview', (await app.whatIs()) === 'Journal article', await app.whatIs());
+  check('chosen, the journal article is marked', (await app.whatIs()) === 'Journal article', await app.whatIs());
   await app.waitFor('dialog[open] .chooser .template.chosen [data-brings]', 5000).catch(() => {});
   const brings = await app.exec(
     `return document.querySelector('dialog[open] .chooser .template.chosen [data-brings]')?.textContent.trim() ?? ''`,
@@ -377,7 +386,7 @@ try {
 
   // --- A template of one's own, made from the one in use ---
   await app.openChooser();
-  await app.clickText('dialog[open] footer button', 'Make a template of my own from this…');
+  await app.clickText('dialog[open] .chooser .own button', 'Make a template of my own from this…');
   await app.waitFor('dialog[open] .editor nav', 8000);
   await app.waitUntil(`return document.querySelector('dialog[open] input.name')?.value === 'Journal article, my own'`, 5000, 'the editor to be read');
   await app.screenshot('templates-10-editor');
@@ -403,14 +412,7 @@ try {
   );
   await app.screenshot('templates-11-own');
   await app.closeChooser();
-  await app
-    .waitUntil(
-      `return document.querySelector('.preview header .what .name')?.textContent.trim() === 'Journal article, my own'`,
-      8000,
-      'the button to name the template',
-    )
-    .catch(() => {});
-  check('and named over the preview', (await app.whatIs()) === 'Journal article, my own', await app.whatIs());
+  check('and it is what the document is', (await app.whatIs()) === 'Journal article, my own', await app.whatIs());
 
   // --- The settings offer the usual template ---
   await app.keys(['Control', ',']);

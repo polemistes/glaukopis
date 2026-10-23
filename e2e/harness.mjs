@@ -681,17 +681,64 @@ export class App {
     await this.clickText('.menu [role="menuitem"]', item);
   }
 
-  // ---- what you are writing: the chooser over the preview ----
+  // ---- the panes beside the sides: the typesetting pane and the document pane (record 0064) ----
 
-  /** What the button over the preview names the document as. */
-  async whatIs() {
-    return this.exec(`return document.querySelector('.preview header .what .name')?.textContent.trim() ?? ''`);
+  /**
+   * Presses the Typesetting button of the active side: in its bar where it
+   * has one, else by its key. It opens the pane for that side, turns the pane
+   * to it, or closes it. Says whether the pane is open after.
+   */
+  async typeset() {
+    const button = await this.exec(
+      `const side = document.querySelector('[data-side-key].focused') ?? document.querySelector('[data-side-key]');
+       return side?.querySelector('[data-typeset]') ?? null;`,
+    );
+    if (button) await this.click(button);
+    else await this.keys(['Control', 'p']);
+    await sleep(400);
+    return this.exists('.side.typesetting .preview');
   }
 
-  /** Opens the chooser of what you are writing from the button over the preview, where it is not open. */
+  /** The key of each tab of the document pane, which opens the pane at it. */
+  static TAB_KEYS = { references: 'r', images: 'p', comments: 'm', found: 't', history: 'h', changes: 'e' };
+
+  /** Opens the document pane at a tab ("references", "images", "comments", "found", "history", "changes"), where it is not shown. */
+  async documentPane(tab = 'references') {
+    const tabButton = `[data-document-pane] .side-tabs [data-kind="${tab}"]`;
+    if (await this.exists(`${tabButton}[aria-selected="true"]`)) return;
+    if (await this.exists(tabButton)) await this.click(tabButton);
+    else await this.keys(['Control', 'Shift', App.TAB_KEYS[tab]]);
+    await this.waitFor(`${tabButton}[aria-selected="true"]`, 5000);
+    await sleep(200);
+  }
+
+  // ---- what you are writing: the Document type tab of Document properties ----
+
+  /**
+   * What the document of the element in view is, by the name of its
+   * template: as the Document type tab marks it where that is open, else as
+   * the Look column names it where that is open, else as the tab marks it,
+   * opened for the asking and closed again.
+   */
+  async whatIs() {
+    const chosen = `return document.querySelector('dialog[open] .chooser .template.chosen .name')?.textContent.trim() ?? null`;
+    const open = await this.exec(chosen);
+    if (open !== null) return open;
+    const look = await this.exec(`return document.querySelector('.side .look .whole .type-line .name')?.textContent.trim() ?? null`);
+    if (look !== null) return look;
+    if (await this.exists('dialog[open]')) return '';
+    await this.openChooser();
+    await this.waitFor('dialog[open] .chooser .template.chosen', 5000).catch(() => {});
+    const named = (await this.exec(chosen)) ?? '';
+    await this.closeChooser();
+    return named;
+  }
+
+  /** Opens Document properties for the element in view at its Document type tab, where that is not open. */
   async openChooser() {
     if (!(await this.exists('dialog[open] .chooser'))) {
-      await this.click('.preview header .what');
+      if (!(await this.exists('dialog[open] .window nav'))) await this.openAbout();
+      await this.documentSection('Document type');
       await this.waitFor('dialog[open] .chooser .templates', 5000);
       await sleep(200);
     }
@@ -703,10 +750,10 @@ export class App {
   }
 
   /**
-   * Chooses what the document is, by the name the chooser gives it, from the
-   * button over the preview (the second step is opened where it is in
-   * there), waits until the button names it, and closes the chooser unless
-   * told not to. Says whether the chooser offered it.
+   * Chooses what the document is, by the name the chooser gives it, in the
+   * Document type tab of Document properties (the second step is opened
+   * where it is in there), waits until it is the one chosen, and closes the
+   * window unless told not to. Says whether the chooser offered it.
    */
   async chooseWhat(name, { close = true } = {}) {
     await this.openChooser();
@@ -722,32 +769,32 @@ export class App {
     await sleep(150);
     await this.click(await this.exec(`return ${this.chooserEntry(name)}.querySelector('.choose')`));
     await this.waitUntil(
-      `return document.querySelector('.preview header .what .name')?.textContent.trim() === ${JSON.stringify(name)}`,
+      `return document.querySelector('dialog[open] .chooser .template.chosen .name')?.textContent.trim() === ${JSON.stringify(name)}`,
       8000,
-      'the button over the preview to name what the document is',
+      'the Document type tab to mark what the document is',
     );
     if (close) await this.closeChooser();
     return true;
   }
 
-  /** Closes the chooser by its button. */
+  /** Closes Document properties from its Document type tab, which writes as it is chosen: its details are left as they were. */
   async closeChooser() {
-    await this.clickText('dialog[open] footer button', 'Close');
+    await this.clickText('dialog[open] footer button', 'Cancel');
     await this.waitGone('dialog[open] .chooser', 5000);
     await sleep(150);
   }
 
-  // ---- about this document: the details, the language and the checklist of an element's document ----
+  // ---- Document properties: the details, the type, the language and the checklist of an element's document ----
 
-  /** Opens About this document for the element in view by Ctrl+Shift+D, at a part of the window named as it names it. */
+  /** Opens Document properties for the element in view by Ctrl+Shift+D, at a part of the window named as it names it. */
   async openAbout(section) {
     await this.keys(['Control', 'Shift', 'd']);
-    await this.waitForText('dialog[open] h2', 'About this document', 5000);
+    await this.waitForText('dialog[open] h2', 'Document properties', 5000);
     await sleep(200);
     if (section) await this.documentSection(section);
   }
 
-  /** Turns to a part of About this document: "Details", "Language", "Checklist". */
+  /** Turns to a part of Document properties: "Details", "Document type", "Language", "Checklist". */
   async documentSection(section) {
     await this.clickText('dialog[open] .window nav button', section);
     await this.waitForText('dialog[open] .window .settings h3', section, 3000);
@@ -755,7 +802,7 @@ export class App {
   }
 
   /**
-   * Chooses in a chooser of About this document, found by the words of its
+   * Chooses in a chooser of Document properties, found by the words of its
    * label ("Layout", "Reference style", "Language of the text"), the value
    * given: written as it is chosen. Says whether the chooser offered it.
    */
@@ -780,7 +827,7 @@ export class App {
     );
   }
 
-  /** What a chooser of About this document holds, found as `documentChoose` finds it. */
+  /** What a chooser of Document properties holds, found as `documentChoose` finds it. */
   async documentChosen(label) {
     return this.exec(
       `const row = Array.from(document.querySelectorAll('dialog[open] .window label.row'))
@@ -790,16 +837,20 @@ export class App {
     );
   }
 
-  /** Closes About this document: saved, which writes the details, or left. */
+  /** Closes Document properties: saved, which writes the details, or left. */
   async closeAbout(save = false) {
     await this.clickText('dialog[open] footer button', save ? 'Save' : 'Cancel');
     await this.waitGone('dialog[open] .window nav', 5000);
     await sleep(150);
   }
 
-  // ---- the look of a document, in the panel at the side (ADR 0042) ----
+  // ---- the look of a document, the Look column of the typesetting pane (ADR 0042, 0064) ----
 
-  /** Opens the look of the document the preview shows by Ctrl+Shift+A, and goes to a part named as its chips name it. */
+  /**
+   * Opens the Look column of the typesetting pane by Ctrl+Shift+A, which
+   * opens the pane for the active side where it is closed, and goes to a
+   * part named as its chips name it.
+   */
   async openLook(section) {
     if (!(await this.exists('.side .look'))) await this.keys(['Control', 'Shift', 'a']);
     await this.waitFor('.side .look', 5000);
@@ -893,7 +944,7 @@ export class App {
   async lookTop() {
     return this.exec(
       `const w = document.querySelector('.side .look .whole');
-       return { what: w?.querySelector('.what .name')?.textContent.trim() ?? '',
+       return { what: w?.querySelector('.type-line .name')?.textContent.trim() ?? '',
                 layout: w?.querySelector('.layout-line')?.textContent.replace(/\\s+/g, ' ').trim() ?? '',
                 changes: Number(w?.querySelector('.layout-line')?.dataset.changes ?? 0) };`,
     );

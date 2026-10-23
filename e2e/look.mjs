@@ -1,6 +1,7 @@
-// The look of a document, in one place (ADR 0042). The names over the
-// preview open Look in the panel at the side: the template, the layout and
-// the citations stand in one line at its top. A setting is found by its
+// The look of a document, in one place (ADR 0042). The Look button in the
+// head of the typesetting pane opens Look as a column beside the pages
+// (record 0064): what the document is, with a plain button that opens it in
+// Document properties, and the layout in a line stand at its top. A setting is found by its
 // words; the font changed there is the document's change, said under its
 // row and in the line at the top, and is in the Typst of the preview; the
 // layout's is taken again from the row. The foot of the kind menu opens
@@ -81,7 +82,7 @@ try {
     (await app.exec(`return Array.from(document.querySelectorAll(arguments[0] + ' .prose > p')).map((p) => p.getAttribute('data-kind') ?? 'text').join(' ')`, book)) === 'text quote',
   );
 
-  // --- Look, from its button over the preview, in the order of the page ---
+  // --- Look, from its button in the head of the typesetting pane, in the order of the page ---
   await app.keys(['Control', 'p']);
   await app.waitFor('.preview .page', 30000);
   await sleep(800);
@@ -90,10 +91,47 @@ try {
   await sleep(500);
   let top = await app.lookTop();
   check(
-    'Look opens from its button over the preview, with what the document is at its top and the layout in a line',
+    'Look opens from its button in the head of the typesetting pane, with what the document is at its top and the layout in a line',
     top.what === 'Plain document' && top.layout === 'Layout: Manuscript' && top.changes === 0,
     JSON.stringify(top),
   );
+  check(
+    'it is a column of the typesetting pane, beside the pages, and its button is lit',
+    (await app.exists('.side.typesetting .look-column .look')) &&
+      (await app.exists('.side.typesetting .pages-part .preview')) &&
+      (await app.attr('.preview header [data-look]', 'aria-pressed')) === 'true',
+  );
+  await app.documentPane('references');
+  const tabs = await app.exec(`return Array.from(document.querySelectorAll('[data-document-pane] .side-tabs [data-kind]')).map((b) => b.dataset.kind)`);
+  check(
+    'the document pane beside it has no tab of Look: its tabs are the references, the images, the comments, the loose citations, the history and the changes',
+    JSON.stringify(tabs) === JSON.stringify(['references', 'images', 'comments', 'found', 'history', 'changes']),
+    tabs.join(' '),
+  );
+  await app.keys(['Control', 'Shift', 'r']);
+  await app.waitGone('[data-document-pane]', 3000).catch(() => {});
+  check(
+    'what the document is has a plain button, Document type…, that does not look like a choice to drop down',
+    (await app.text('.side .look .whole [data-document-type]')).trim() === 'Document type…' &&
+      !(await app.exists('.side .look .whole [data-document-type] svg')) &&
+      !(await app.exists('.side .look .whole .what')),
+  );
+  await app.click('.side .look .whole [data-document-type]');
+  await app.waitForText('dialog[open] h2', 'Document properties', 5000);
+  await app.waitFor('dialog[open] .chooser .template.chosen', 5000).catch(() => {});
+  check(
+    'which opens Document properties at the Document type tab, the type in use marked',
+    (await app.text('dialog[open] .window nav button.current')).trim() === 'Document type' &&
+      (await app.text('dialog[open] .chooser .template.chosen .name')).trim() === 'Plain document',
+  );
+  await app.closeChooser();
+  await app.keys(['Control', 'Shift', 'a']);
+  await app.waitGone('.side .look', 3000).catch(() => {});
+  check(
+    'Ctrl+Shift+A closes the Look column and leaves the pages',
+    !(await app.exists('.side .look')) && (await app.exists('.side.typesetting .preview')),
+  );
+  await app.openLook();
   const order = await app.exec(
     `const through = document.querySelector('.side .look .through');
      return Array.from(through.children).map((e) => e.dataset.part ?? (e.matches('.whole') ? 'whole' : e.matches('.search') ? 'search' : e.matches('.first') ? 'first' : e.matches('.chips') ? 'chips' : e.tagName.toLowerCase()));`,
@@ -209,7 +247,7 @@ try {
     JSON.stringify(kept?.kinds?.quote),
   );
   check('which the document uses, with no changes of its own', top.layout === 'Layout: Mine' && top.changes === 0, top.layout);
-  check('the button over the preview still names only what the document is', (await app.whatIs()) === 'Plain document', await app.whatIs());
+  check('Look still names only what the document is', (await app.whatIs()) === 'Plain document', await app.whatIs());
   check('a layout of one’s own offers to take changes into itself', await app.exists('.side .look .keep button:nth-child(2)'));
   await app.screenshot('look-4-kept');
 
@@ -269,14 +307,14 @@ try {
 
   // --- The foot of Look opens what the document says of itself ---
   await app.lookSection('The layout');
-  await app.clickText('.side .look .actions.about button', 'About this document…');
-  await app.waitForText('dialog[open] h2', 'About this document', 5000);
+  await app.clickText('.side .look .actions.about button', 'Document properties…');
+  await app.waitForText('dialog[open] h2', 'Document properties', 5000);
   const about = await app.exec(
     `return Array.from(document.querySelectorAll('dialog[open] .window nav button')).map((b) => b.textContent.trim())`,
   );
   check(
-    'the foot of Look opens About this document, with its details, its language and its checklist',
-    JSON.stringify(about) === JSON.stringify(['Details', 'Language', 'Checklist']),
+    'the foot of Look opens Document properties, with its details, its type, its language and its checklist',
+    JSON.stringify(about) === JSON.stringify(['Details', 'Document type', 'Language', 'Checklist']),
     about.join(' | '),
   );
   await app.closeAbout();

@@ -280,9 +280,9 @@ try {
   await app.keys(['Control', 'Shift', 'r']);
   await app.waitFor('.panel[aria-label="References"]', 5000);
   await picturesKey();
-  await app.waitFor('.panel[aria-label="Pictures"]', 5000);
+  await app.waitFor('.panel[aria-label="Images"]', 5000);
   check('the panel of pictures takes the place of that of the references', !(await app.exists('.panel[aria-label="References"]')));
-  check('its tab is the one chosen', await app.exists('.side-tabs [role="tab"][aria-label="Pictures"][aria-selected="true"]'));
+  check('its tab is the one chosen', await app.exists('.side-tabs [role="tab"][aria-label="Images"][aria-selected="true"]'));
   check('the project has no pictures yet', /No pictures yet/.test(await app.text('.panel .body')));
   await app.clickText('.panel [role="radio"]', 'This map');
   await sleep(200);
@@ -382,7 +382,7 @@ try {
   const insert = await app.exec(`return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((m) => m.textContent.trim().replace(/\\s+/g, ' ')).join('|')`);
   check('the tools have a picture from a file, and one from the store', /Picture from a file…/.test(insert) && /Picture from the store…/.test(insert), insert);
   await app.clickText('.menu [role="menuitem"]', 'Picture from the store…');
-  await app.waitFor('.panel[aria-label="Pictures"] .list .row', 5000);
+  await app.waitFor('.panel[aria-label="Images"] .list .row', 5000);
   const chosen = await app.exec(`return document.querySelector('.panel [role="radio"][aria-checked="true"]').textContent.trim()`);
   check('which opens the panel on the store', chosen === 'Store' && (await rows()).length === 3, chosen);
   check('and leaves the cursor in the text', await app.exec(`return !!document.activeElement && !!document.activeElement.closest('.text-view .ProseMirror')`));
@@ -426,8 +426,8 @@ try {
   await app.keys(['Control', 'Shift', 'r']);
   await app.waitFor('.panel[aria-label="References"]', 5000);
   check('a note on a picture marks no reference', (await app.count('.panel .note-button.has')) === 0);
-  await app.click('.side-tabs [role="tab"][aria-label="Pictures"]');
-  await app.waitFor('.panel[aria-label="Pictures"] .list .row', 5000);
+  await app.click('.side-tabs [role="tab"][aria-label="Images"]');
+  await app.waitFor('.panel[aria-label="Images"] .list .row', 5000);
   await app.doubleClick(await row('The shield of Achilles'));
   await app.waitFor('dialog .picture-pane', 5000);
   await sleep(400);

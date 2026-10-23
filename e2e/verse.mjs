@@ -290,7 +290,7 @@ try {
   await app.screenshot('verse-2b-script');
 
   // --- The preview sets them ---
-  await app.click('header button[aria-label="Preview and export"]');
+  await app.typeset();
   await app.waitFor('.preview .page', 30000);
   await sleep(1500);
   check('the preview is made without remark', !(await app.exists('.preview footer .issues')));
