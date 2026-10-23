@@ -300,10 +300,10 @@ try {
     again.join(' '),
   );
 
-  // The button at the end of the tools over the text turns it off and on as well.
-  const toggle = '.writing button[aria-label="Check spelling as you write"]';
+  // The button in the bar of the side turns it off and on as well.
+  const toggle = '[data-bar] button[aria-label="Check spelling as you write"]';
   check(
-    'the tools over the text have the button, pressed in',
+    'the bar of the side has the button, pressed in',
     (await app.exec(
       `return document.querySelector(arguments[0])?.getAttribute('aria-pressed')`,
       toggle,
