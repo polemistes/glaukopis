@@ -24,9 +24,7 @@ project-one-at-a-time = Ét ad gangen
 project-side-by-side = To side om side
 project-close-side = Luk denne side
 project-references = Referencer
-project-pictures = Billeder
 project-side = Referencer, billeder, historik og ændringer
-project-side-tabs = Hvad sidepanelet viser
 project-side-map = Kort
 project-preview = Forhåndsvisning og eksport
 project-share = Del
@@ -34,9 +32,6 @@ project-shared = Delt
 project-shared-offline = Delt · serveren kan ikke nås
 project-shared-too-large = Delt · serveren tager ikke imod de seneste ændringer
 project-between-maps = Mellem de to kort
-project-between-preview = Mellem kortet og forhåndsvisningen
-project-between-pictures = Mellem kortet og billederne
-project-between-references = Mellem kortet og referencerne
 
 ## When the sharing ends from the other side
 

@@ -2,9 +2,6 @@
 # the details that stand on its first page, its parts, its layout and
 # reference style, its language, and the checklist.
 
-about-window = Documentinstellingen
-# In the menu of an element, and the button over the preview.
-about-menu = Documentinstellingen…
 about-sections = Delen van het venster
 
 ## The parts of the window, as they stand down its left.

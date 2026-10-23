@@ -1,6 +1,5 @@
-# Hva du skriver: velgeren av hva et dokument er, som er malen til elementet.
-# Åpnes fra knappen over forhåndsvisningen, fra toppen av Utseende, fra menyen
-# til et element og fra paletten.
+# Hva du skriver: velgeren av hva et dokument er, som er malen til elementet,
+# fanen Dokumenttype i Dokumentegenskaper.
 
 chooser-title = Hva skriver du?
 chooser-search = Søk i det som kan skrives
@@ -18,4 +17,4 @@ chooser-submission-all = Hver er laget for en teksttype over, med det tidsskrift
 chooser-own-from = Lag en egen mal av denne …
 chooser-change-own = Endre denne malen min …
 chooser-of-project = Lagret i prosjektet: ikke blant dine egne maler på denne datamaskinen.
-chooser-menu = Hva dette dokumentet er …
+chooser-menu = Dokumenttype …

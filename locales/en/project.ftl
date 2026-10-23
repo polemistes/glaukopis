@@ -32,9 +32,9 @@ project-beside-title = Beside: choose a project
 project-beside-subtitle = A project, or an element in its tree, to show beside this one
 project-close-side = Close this side
 project-references = References
-project-pictures = Pictures
+project-pictures = Images
 project-side = References, pictures, history and changes
-project-side-tabs = What the panel at the side shows
+project-side-tabs = What the document pane shows
 project-side-map = Map
 project-preview = Preview and export
 project-share = Share
@@ -42,9 +42,9 @@ project-shared = Shared
 project-shared-offline = Shared · the server cannot be reached
 project-shared-too-large = Shared · the server does not take the latest changes
 project-between-maps = Between the two maps
-project-between-preview = Between the map and the preview
-project-between-pictures = Between the map and the pictures
-project-between-references = Between the map and the references
+project-between-preview = Between the sides and the typesetting
+project-between-pictures = Between the sides and the images
+project-between-references = Between the sides and the document pane
 
 ## When the sharing ends from the other side
 

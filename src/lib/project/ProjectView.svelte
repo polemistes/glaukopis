@@ -34,8 +34,9 @@
   /**
    * The window while projects are shown (ADR 0064): the top row with the
    * path of each side and Split view; the sides, each a project of its own
-   * (`SideView`); the preview of the side it was opened for; the panel at
-   * the side, of the active side's document. What is of the window (the
+   * (`SideView`); the typesetting pane, with its Look column, of the side
+   * whose button was pressed; the document pane, of the active side's
+   * document. What is of the window (the
    * keys, the dialogs, the title, the pictures, the editor's dialogs) reads
    * the active side, the one that has the focus. The window's arrangement is
    * laid out as it was kept, and kept as it changes.
@@ -91,7 +92,7 @@
   import { comparing } from './copies.svelte';
   import Clock from '@lucide/svelte/icons/clock';
   import { clamp, sideWidth } from './layout';
-  import { Side } from './side.svelte';
+  import { DocumentPane } from './document-pane.svelte';
   import ProjectDialogs from './ProjectDialogs.svelte';
   import BesideDialog from './BesideDialog.svelte';
   import { pickElement } from './picker.svelte';
@@ -110,7 +111,6 @@
   import LookPanel from '$lib/look/LookPanel.svelte';
   import { lookUi } from '$lib/look/look.svelte';
   import { aboutDocumentUi } from '$lib/document/about-document.svelte';
-  import { templateChooserUi } from '$lib/document/chooser.svelte';
   import { templateEditorUi } from '$lib/document/template-editor.svelte';
   import { historyOf } from '$lib/history/history.svelte';
   import { me } from '$lib/history/me.svelte';
@@ -221,11 +221,11 @@
   // shown with the references; the library asked where a work is cited; the
   // citations of a document it was made of are gone through.
   openProjects.onopened = (open) => {
-    if (jumpFor(open.id)?.references) side.show('references', true);
+    if (jumpFor(open.id)?.references) documentPane.show('references', true);
     const citations = takeCitations(open.id);
     if (citations) {
-      side.citationsOf = citations;
-      side.show('references', true);
+      documentPane.citationsOf = citations;
+      documentPane.show('references', true);
     }
     const found = takeWaiting(open.id);
     if (found && open.project?.node(found)) goThrough(found);
@@ -257,16 +257,18 @@
     viewing.close = closeShown;
   });
 
-  // ---- the panel at the side, of the active side's document ----
+  // ---- the document pane, of the active side's document ----
 
-  /** The panel at the side and what it shows: see `side.svelte`. */
-  const side = new Side({
+  /** What the document pane does: see `document-pane.svelte`. Whether it is open, and its tab, are `panes`'. */
+  const documentPane = new DocumentPane({
+    get key() {
+      return active?.key;
+    },
     get id() {
       return active?.project ?? '';
     },
     project: () => project,
     ownPane: () => (active?.at ? { at: active.at, mode: active.mode } : undefined),
-    besideInFocus: () => false,
     holding: (element) => activeApi?.holding(element) ?? PROJECT,
     show: (target) => activeApi?.show(target),
     toText: (target) => {
@@ -276,61 +278,63 @@
   });
   provideReviewing({
     get review() {
-      return side.review;
+      return documentPane.review;
     },
   });
-  // The panel is the window's: it is opened and shown as the arrangement kept it.
-  if (panes.document && panes.tab !== 'changes') side.show(panes.tab, true);
-  else side.last = panes.tab === 'changes' ? 'references' : panes.tab;
-  $effect(() => {
-    const kind = side.kind;
-    const last = side.last;
-    untrack(() => {
-      panes.document = !!kind;
-      panes.tab = kind ?? last;
-    });
-  });
-
-  /** Closes the panel at the side, whatever it shows. */
-  function closeSide() {
-    side.close();
+  // A review is not begun as the window opens: the tab of changes kept is left closed.
+  if (panes.tab === 'changes') {
+    panes.tab = 'references';
+    panes.document = false;
   }
 
-  /** The side the preview shows, and its project. */
+  /** A moment of the history looked at, in the active side. */
+  const looking = $derived<Looking | null>(documentPane.looking);
+
+  /** The element the document pane is about: that whose changes are reviewed, else the one in view. */
+  const sideElement = $derived(
+    documentPane.kind === 'history'
+      ? undefined
+      : project?.node((documentPane.kind === 'changes' && documentPane.review?.at) || at),
+  );
+
+  // ---- the typesetting pane, of the side whose button was pressed ----
+
+  /** The side the typesetting pane shows, and its project. It does not follow the focus. */
   const previewSpec = $derived(sides.byKey(panes.typesetting));
   const previewOpen = $derived(previewSpec ? openOf(previewSpec) : undefined);
 
-  /** A moment of the history looked at, in the side it was looked at in. */
-  const looking = $derived<Looking | null>(side.looking);
-
-  /** The element the panel at the side is about: that whose changes are reviewed, else the one in view. */
-  const sideElement = $derived(
-    side.kind === 'history'
-      ? undefined
-      : side.kind === 'look'
-        ? previewOpen?.project?.node(previewSpec?.at ?? PROJECT)
-        : project?.node((side.kind === 'changes' && side.review?.at) || at),
-  );
-
-  // ---- the preview, of the side it was opened for ----
-
-  /** Opens the preview for the active side, turns it to it, or closes it. */
+  /** What the Typesetting button of the active side does: opens the pane for it, turns it to it, or closes it. */
   function togglePreview() {
     if (active) panes.typesetFor(active.key);
   }
 
-  /** The element the text of the side the preview shows is at; nothing where it shows no text. */
+  /** The element the text of the side the typesetting pane shows is at; nothing where it shows no text. */
   function previewCurrent(): string | null {
     const spec = previewSpec;
     if (!spec || spec.mode !== 'text') return null;
     return sideApis.get(spec.key)?.text()?.currentElement() ?? null;
   }
 
-  /** Shows an element of the document the preview shows, in the text of its side. From the preview and from Look. */
+  /** Shows an element of the document the typesetting pane shows, in the text of its side. From the pages and from Look. */
   function toTextOfPreview(element: string) {
     const spec = previewSpec;
     if (spec) sideApis.get(spec.key)?.goTo(element, { mode: 'text' });
   }
+
+  // The look of the document is asked for from elsewhere: a chip on the
+  // pages, the foot of the kind menu, the palette. The Look column opens, and
+  // the typesetting pane for the active side where it is closed. It depends
+  // on the count of the asks alone, and one asked before the window was made
+  // is not for it.
+  let lookAsked = untrack(() => lookUi.asked);
+  $effect(() => {
+    const asked = lookUi.asked;
+    if (asked === lookAsked) return;
+    lookAsked = asked;
+    untrack(() => {
+      if (active) panes.openLook(active.key);
+    });
+  });
 
   // ---- the window, while projects are shown ----
 
@@ -387,7 +391,7 @@
       history: historyOf(p, id),
       positions,
       get review() {
-        return side.review;
+        return documentPane.review;
       },
     });
   });
@@ -458,10 +462,9 @@
       .catch(() => {});
     document.getElementById('passage-kinds')?.remove();
     aboutDocumentUi.close();
-    templateChooserUi.close();
     templateEditorUi.close();
     ownKindsUi.editing = null;
-    side.review?.close();
+    documentPane.review?.close();
     comparing.copy = null;
     openProjects.onopened = null;
     viewing.sides = [];
@@ -628,7 +631,9 @@
   // ---- the room each part has ----
 
   let work = $state<HTMLDivElement>();
+  /** The pages of the typesetting pane, its Look column, and the document pane, as drawn. */
   let previewEl = $state<HTMLDivElement>();
+  let lookEl = $state<HTMLDivElement>();
   let referencesEl = $state<HTMLDivElement>();
 
   function moveSplit(dx: number) {
@@ -638,19 +643,27 @@
   }
 
   /** The panes are measured when the dragging begins: until then they have what they are given. */
-  function measure(which: 'preview' | 'references') {
-    const el = which === 'preview' ? previewEl : referencesEl;
+  function measure(which: 'preview' | 'look' | 'references') {
+    const el = which === 'preview' ? previewEl : which === 'look' ? lookEl : referencesEl;
     if (!el) return;
     if (which === 'preview' && !panes.typesettingWidth) panes.typesettingWidth = el.offsetWidth;
+    if (which === 'look' && !panes.lookWidth) panes.lookWidth = el.offsetWidth;
     if (which === 'references' && !panes.documentWidth) panes.documentWidth = el.offsetWidth;
   }
 
-  function moveSide(which: 'preview' | 'references', dx: number) {
+  function moveSide(which: 'preview' | 'look' | 'references', dx: number) {
     const room = work?.offsetWidth ?? 1200;
     if (which === 'preview')
       panes.typesettingWidth = sideWidth(which, panes.typesettingWidth, dx, room);
+    else if (which === 'look') panes.lookWidth = sideWidth('references', panes.lookWidth, dx, room);
     else panes.documentWidth = sideWidth(which, panes.documentWidth, dx, room);
   }
+
+  /** How wide the typesetting pane is: its pages, as dragged or as given, and its Look column where it is open. */
+  const typesettingWidth = $derived.by(() => {
+    const pages = panes.typesettingWidth ? `${panes.typesettingWidth}px` : 'min(46%, 640px)';
+    return panes.look ? `calc(${pages} + ${panes.lookWidth || 340}px + 1px)` : pages;
+  });
 
   // ---- what the panel and the keys ask of the active side ----
 
@@ -675,10 +688,10 @@
     if (chosen.length === 1) commentsUi.begin(chosen[0]);
   }
 
-  // What is asked of the panel at the side from elsewhere (the comments, the
-  // citations found, the look, the pictures) is answered, and the review
-  // follows the element in view: the effects are those of `side.svelte`.
-  side.follow();
+  // What is asked of the document pane from elsewhere (the comments, the
+  // citations found, the images) is answered, and the review follows the
+  // element in view: the effects are those of `document-pane.svelte`.
+  documentPane.follow();
 
   /**
    * How many citations that were found the element in view has left, for
@@ -707,7 +720,7 @@
 
   // The keys of a project, while one is shown: see `shell/keys`. They act in the active side.
   onMount(() => {
-    const reviewing = () => !!side.review;
+    const reviewing = () => !!documentPane.review;
     const shown = () => !!active;
     return shortcuts.bind({
       'diagram-or-text': {
@@ -725,22 +738,27 @@
       },
       'what-document': {
         run: () => {
-          if (project) templateChooserUi.open({ project, at });
+          if (project) aboutDocumentUi.open({ project, at, section: 'type' });
         },
         when: () => !!project,
       },
       'projects-pane': toggleProjectsPane,
-      'side-look': () => side.show('look'),
+      'side-look': {
+        run: () => {
+          if (active) panes.toggleLook(active.key);
+        },
+        when: shown,
+      },
       'look-type': () => lookUi.open({ section: 'type' }),
-      'side-references': () => side.show('references'),
+      'side-references': () => documentPane.show('references'),
       // Not Ctrl+Shift+I, which the window keeps for itself while the application is being developed.
-      'side-pictures': () => side.show('pictures'),
-      'side-comments': () => side.show('comments'),
-      'side-found': () => side.show('found'),
+      'side-pictures': () => documentPane.show('images'),
+      'side-comments': () => documentPane.show('comments'),
+      'side-found': () => documentPane.show('found'),
       comment: { run: beginComment, when: () => !!project },
-      'side-history': () => side.show('history'),
-      'side-changes': () => side.toggleReview(),
-      'side-panel': () => side.toggle(),
+      'side-history': () => documentPane.show('history'),
+      'side-changes': () => documentPane.toggleReview(),
+      'side-panel': () => panes.toggleDocument(),
       'side-by-side': sideBySideMenu,
       'close-side': {
         run: () => {
@@ -762,10 +780,10 @@
       undo: { run: () => project?.undo(), when: () => !!project },
       redo: { run: () => project?.redo(), when: () => !!project },
       'redo-y': { run: () => project?.redo(), when: () => !!project },
-      'review-next': { run: () => side.review?.next(), when: reviewing },
-      'review-previous': { run: () => side.review?.previous(), when: reviewing },
-      'review-accept': { run: () => void side.review?.accept(), when: reviewing },
-      'review-reject': { run: () => void side.review?.reject(), when: reviewing },
+      'review-next': { run: () => documentPane.review?.next(), when: reviewing },
+      'review-previous': { run: () => documentPane.review?.previous(), when: reviewing },
+      'review-accept': { run: () => void documentPane.review?.accept(), when: reviewing },
+      'review-reject': { run: () => void documentPane.review?.reject(), when: reviewing },
     });
   });
 </script>
@@ -926,7 +944,11 @@
       >
         <Redo2 size={16} />
       </IconButton>
-      <IconButton label={t('project-side')} active={!!side.kind} onclick={() => side.toggle()}>
+      <IconButton
+        label={t('project-side')}
+        active={panes.document}
+        onclick={() => panes.toggleDocument()}
+      >
         <PanelRight size={16} />
       </IconButton>
     </header>
@@ -961,121 +983,144 @@
             : null}
           grow={sides.sides.length > 1 ? (i === 0 ? sides.split : 1 - sides.split) : 1}
           looking={i === sides.index ? looking : null}
-          onlooked={() => (side.looking = null)}
+          onlooked={() => (documentPane.looking = null)}
           onclose={() => closeSideOf(spec.key)}
         />
       {/each}
     </div>
 
     <!-- the typesetting pane -->
-    {#if previewSpec && previewOpen?.project && previewSpec?.at}
-      {@const of = previewOpen.project}
+    {#if previewSpec && previewOpen?.project && previewSpec.at}
+      {@const of = previewOpen?.project as Project}
+      {@const typesetAt = previewSpec?.at ?? PROJECT}
       <Divider
         label={t('project-between-preview')}
         onstart={() => measure('preview')}
         onmove={(dx) => moveSide('preview', dx)}
         onreset={() => (panes.typesettingWidth = 0)}
       />
+      <!-- Of the side whose Typesetting button was pressed, not of the focus. -->
       <div
-        class="side wide"
-        bind:this={previewEl}
-        style:width={panes.typesettingWidth ? `${panes.typesettingWidth}px` : undefined}
+        class="side typesetting"
+        data-typesetting={previewSpec?.key}
+        style:width={typesettingWidth}
       >
-        <!-- Of the project of the side it shows: made anew when that is another. -->
-        {#key previewSpec?.project}
-          <PreviewPanel
-            project={of}
-            projectId={previewSpec?.project ?? ''}
-            at={previewSpec?.at ?? PROJECT}
-            onclose={() => panes.closeTypesetting()}
-            ongo={toTextOfPreview}
-            current={previewCurrent}
+        <div class="pages-part" bind:this={previewEl}>
+          <!-- Of the project of the side it shows: made anew when that is another. -->
+          {#key previewSpec?.project}
+            <PreviewPanel
+              project={of}
+              projectId={previewSpec?.project ?? ''}
+              at={typesetAt}
+              look={panes.look}
+              onlook={() => {
+                if (previewSpec) panes.toggleLook(previewSpec.key);
+              }}
+              onclose={() => panes.closeTypesetting()}
+              ongo={toTextOfPreview}
+              current={previewCurrent}
+            />
+          {/key}
+        </div>
+        {#if panes.look}
+          <Divider
+            label={t('look-between')}
+            onstart={() => measure('look')}
+            onmove={(dx) => moveSide('look', dx)}
+            onreset={() => (panes.lookWidth = 0)}
           />
-        {/key}
+          <div
+            class="look-column"
+            bind:this={lookEl}
+            style:width={panes.lookWidth ? `${panes.lookWidth}px` : undefined}
+          >
+            <!-- The look of the document the pages show. -->
+            {#key `${previewSpec?.project}\n${typesetAt}`}
+              <LookPanel
+                project={of}
+                at={typesetAt}
+                passageKinds={of.passageKinds}
+                ongo={toTextOfPreview}
+                onclose={() => (panes.look = false)}
+                current={previewCurrent}
+              />
+            {/key}
+          </div>
+        {/if}
       </div>
     {/if}
     <!-- /the typesetting pane -->
     <!-- the document pane -->
-    {#if side.kind && project && active}
+    {#if documentPane.kind && project && active}
+      {@const kind = documentPane.kind}
+      {@const shared = activeOpen?.sharing as ProjectSharing | null | undefined}
       {#snippet tabs()}
         <SideTabs
-          current={side.kind ?? side.last}
+          current={kind}
           counts={{ found: foundCount }}
-          onpick={(kind) => side.show(kind, true)}
+          onpick={(tab) => documentPane.show(tab, true)}
         />
       {/snippet}
       <Divider
-        label={side.kind === 'look'
-          ? t('look-between')
-          : side.kind === 'pictures'
-            ? t('project-between-pictures')
-            : side.kind === 'history'
-              ? t('history-between')
-              : side.kind === 'comments'
-                ? t('comments-between')
-                : side.kind === 'found'
-                  ? t('found-between')
-                  : t('project-between-references')}
+        label={kind === 'images'
+          ? t('project-between-pictures')
+          : kind === 'history'
+            ? t('history-between')
+            : kind === 'comments'
+              ? t('comments-between')
+              : kind === 'found'
+                ? t('found-between')
+                : t('project-between-references')}
         onstart={() => measure('references')}
         onmove={(dx) => moveSide('references', dx)}
         onreset={() => (panes.documentWidth = 0)}
       />
       <div
         class="side"
+        data-document-pane
         bind:this={referencesEl}
         style:width={panes.documentWidth ? `${panes.documentWidth}px` : undefined}
       >
-        {#if sideElement}
+        {#if sideElement || (shared?.connection && project?.others.length)}
           <div class="side-map" class:split={sides.sides.length > 1}>
-            <span class="overline">{t('project-side-map')}</span>
-            <!-- Where two projects are shown, which one the panel is about. -->
-            {#if sides.across}
-              <span class="of" data-side-project
-                >{(side.kind === 'look' ? (previewOpen?.project ?? project) : project).name}</span
-              >
-              <span class="sep" aria-hidden="true">›</span>
+            {#if sideElement}
+              <span class="overline">{t('project-side-map')}</span>
+              <!-- Where two projects are shown, which one the pane is about. -->
+              {#if sides.across}
+                <span class="of" data-side-project>{project?.name}</span>
+                <span class="sep" aria-hidden="true">›</span>
+              {/if}
+              <strong>{sideElement.title || t('project-untitled')}</strong>
             {/if}
-            <strong>{sideElement.title || t('project-untitled')}</strong>
+            <span class="grow"></span>
+            <!-- Who else is in the project: a small sign, the names on hover. -->
+            {#if shared?.connection}
+              <Presence people={project?.others ?? []} compact />
+            {/if}
           </div>
         {/if}
-        {#if side.kind === 'look'}
-          <!-- The look of the document the preview shows, else of the active side's. -->
-          {@const lookOf = previewOpen?.project ?? project}
-          {@const lookAt = (previewOpen?.project ? previewSpec?.at : null) ?? at}
-          {#key `${previewSpec?.project ?? active?.project}\n${lookAt}`}
-            <LookPanel
-              project={lookOf}
-              at={lookAt}
-              passageKinds={lookOf.passageKinds}
-              previewing={!!previewSpec}
-              ongo={(element) =>
-                previewSpec ? toTextOfPreview(element) : activeApi?.goTo(element, { mode: 'text' })}
-              onpreview={() => {
-                if (!previewSpec) togglePreview();
-              }}
-              head={tabs}
-              onclose={closeSide}
-              current={previewCurrent}
-            />
-          {/key}
-        {:else if side.kind === 'changes' && side.review}
-          <ReviewPanel review={side.review} head={tabs} onclose={closeSide} />
-        {:else if side.kind === 'history'}
+        {#if kind === 'changes' && documentPane.review}
+          <ReviewPanel
+            review={documentPane.review}
+            head={tabs}
+            onclose={() => documentPane.close()}
+          />
+        {:else if kind === 'history'}
           <HistoryPanel
             {project}
             history={historyOf(project, active?.project ?? '')}
-            looking={side.looking}
+            looking={documentPane.looking}
             pane={sides.index}
-            onlook={(l) => (side.looking = l)}
+            onlook={(l) => (documentPane.looking = l)}
             head={tabs}
-            onclose={closeSide}
+            onclose={() => documentPane.close()}
           />
-        {:else if side.kind === 'comments'}
+        {:else if kind === 'comments'}
           <CommentsPanel
             {project}
             {at}
             head={tabs}
-            onclose={closeSide}
+            onclose={() => documentPane.close()}
             ongo={(element) => activeApi?.goTo(element)}
             onopen={(element) => {
               // In the diagram, where the element is within view, its box opens; else the text is gone to.
@@ -1084,24 +1129,24 @@
               else activeApi?.goTo(element, { mode: 'text' });
             }}
           />
-        {:else if side.kind === 'found'}
+        {:else if kind === 'found'}
           {#key `${active?.project}:${at}`}
             <FoundPanel
               {project}
               {at}
               head={tabs}
-              onclose={closeSide}
+              onclose={() => documentPane.close()}
               onkeep={keep}
               onshow={(entry) => showFound(at, entry)}
             />
           {/key}
-        {:else if side.kind === 'pictures'}
+        {:else if kind === 'images'}
           <PicturePanel
             {project}
             {at}
-            bind:scope={side.pictureScope}
+            bind:scope={documentPane.pictureScope}
             head={tabs}
-            onclose={closeSide}
+            onclose={() => documentPane.close()}
             onenter={(id) => activeApi?.show(id)}
           />
         {:else}
@@ -1109,8 +1154,8 @@
             {project}
             {at}
             head={tabs}
-            onclose={closeSide}
-            show={side.citationsOf}
+            onclose={() => documentPane.close()}
+            show={documentPane.citationsOf}
             ongo={(element) => activeApi?.goTo(element)}
           />
         {/if}
@@ -1350,7 +1395,34 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .side.wide {
-    width: min(46%, 640px);
+  .side-map .grow {
+    flex: 1;
+  }
+  /* The typesetting pane: its pages, and its Look column beside them. */
+  .side.typesetting {
+    flex-direction: row;
+    max-width: 85%;
+  }
+  .pages-part {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+  }
+  .pages-part > :global(.preview) {
+    flex: 1;
+    min-height: 0;
+  }
+  .look-column {
+    display: flex;
+    flex-direction: column;
+    flex: none;
+    width: 340px;
+    min-height: 0;
+  }
+  .look-column > :global(.panel) {
+    flex: 1;
+    min-height: 0;
   }
 </style>

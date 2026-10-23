@@ -26,9 +26,8 @@ export interface SideSpec {
   fresh?: boolean;
 }
 
-/** What the document pane shows. Look is the typesetting pane's (stage 2 takes it out of here). */
-export type DocumentTab =
-  'look' | 'references' | 'pictures' | 'comments' | 'found' | 'history' | 'changes';
+/** What the document pane shows. Look is a column of the typesetting pane. */
+export type DocumentTab = 'references' | 'images' | 'comments' | 'found' | 'history' | 'changes';
 
 /** What the window keeps of its sides and its panes, with the settings. */
 export interface Arrangement {
@@ -46,21 +45,23 @@ export interface Arrangement {
   tab: DocumentTab;
   /** Whether the marks of whitespace are shown. */
   marks: boolean;
-  /** The widths of the panes, in pixels; nought for what is given. */
+  /** The widths of the panes, and of the Look column, in pixels; nought for what is given. */
   typesettingWidth: number;
   documentWidth: number;
+  lookWidth: number;
 }
 
 const MODES: readonly MapMode[] = ['diagram', 'text', 'timeline'];
 const TABS: readonly DocumentTab[] = [
-  'look',
   'references',
-  'pictures',
+  'images',
   'comments',
   'found',
   'history',
   'changes',
 ];
+/** Tabs as an older arrangement kept them: Look went to the typesetting pane, the pictures are the images. */
+const OLD_TABS: Readonly<Record<string, DocumentTab>> = { look: 'references', pictures: 'images' };
 
 let made = 0;
 /** A key of a side, new each time: two sides of one project are told apart by it. */
@@ -93,6 +94,7 @@ export interface PaneParts {
   marks: boolean;
   typesettingWidth: number;
   documentWidth: number;
+  lookWidth: number;
 }
 
 export class Sides {
@@ -308,6 +310,7 @@ export class Sides {
       marks: panes.marks,
       typesettingWidth: panes.typesettingWidth,
       documentWidth: panes.documentWidth,
+      lookWidth: panes.lookWidth,
     };
   }
 }
@@ -320,10 +323,13 @@ export function paneParts(kept: Partial<Arrangement> | null | undefined, sides: 
     typesetting: sides.sides[at]?.key ?? null,
     look: kept?.look === true,
     document: kept?.document === true,
-    tab: TABS.includes(kept?.tab as DocumentTab) ? (kept!.tab as DocumentTab) : 'references',
+    tab: TABS.includes(kept?.tab as DocumentTab)
+      ? (kept!.tab as DocumentTab)
+      : (OLD_TABS[String(kept?.tab)] ?? 'references'),
     marks: kept?.marks !== false,
     typesettingWidth: width(kept?.typesettingWidth),
     documentWidth: width(kept?.documentWidth),
+    lookWidth: width(kept?.lookWidth),
   };
 }
 

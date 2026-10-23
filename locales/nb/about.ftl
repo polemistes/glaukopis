@@ -1,11 +1,11 @@
-# Om dette dokumentet: det et elements dokument sier om seg selv,
-# opplysningene, språket og sjekklisten over det malen krever. Hva
-# dokumentet er, hvordan det ser ut og hva det inneholder, velges i velgeren
-# av hva du skriver og i Utseende.
+# Dokumentegenskaper: det et elements dokument sier om seg selv,
+# opplysningene, typen (hva du skriver, malen), språket og sjekklisten over
+# det malen krever. Hvordan det ser ut og hva det inneholder, settes i
+# Utseende.
 
-about-window = Om dette dokumentet
-# I menyen til et element, nederst i Utseende og knappen over forhåndsvisningen.
-about-menu = Om dette dokumentet …
+about-window = Dokumentegenskaper
+# I menyen til et element, og nederst i Utseende.
+about-menu = Dokumentegenskaper …
 about-sections = Delene av vinduet
 
 ## Delene av vinduet, slik de står nedover til venstre.
@@ -70,3 +70,9 @@ about-checklist-hint = Det malen krever, mot teksten og treet. Ingenting kuttes.
 about-checklist-clear = Ingenting å bemerke.
 about-requirement-words = Ord i teksten
 about-requirement-anonymous = Til fagfellevurdering: forfatterne utelates fra dokumentet.
+
+## The sides, the panes and the bars, stage 2: the typesetting pane, the document pane, Document properties.
+
+about-section-type = Dokumenttype
+about-line-numbers = Nummerer linjene på siden
+about-line-numbers-hint = Hver linje på den trykte siden, nummerert i margen, i dette dokumentet og dem under det.

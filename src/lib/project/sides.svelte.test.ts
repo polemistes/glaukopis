@@ -10,6 +10,7 @@ const panes = {
   marks: true,
   typesettingWidth: 0,
   documentWidth: 0,
+  lookWidth: 0,
 };
 
 describe('the sides of the window', () => {
@@ -87,5 +88,16 @@ describe('the sides of the window', () => {
     expect(s.sides.map((x) => x.project)).toEqual(['a']);
     s.arrange({ sides: 'nonsense' } as never, route('a'));
     expect(s.sides.map((x) => x.project)).toEqual(['a']);
+  });
+
+  it('read the tabs of an older arrangement: Look as the references, the pictures as the images', () => {
+    const s = new Sides();
+    s.open('a');
+    expect(paneParts({ tab: 'look' } as never, s).tab).toBe('references');
+    expect(paneParts({ tab: 'pictures' } as never, s).tab).toBe('images');
+    expect(paneParts({ tab: 'history', lookWidth: 300 }, s)).toMatchObject({
+      tab: 'history',
+      lookWidth: 300,
+    });
   });
 });

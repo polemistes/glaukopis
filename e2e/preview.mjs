@@ -86,7 +86,7 @@ try {
   check('a citation can be made within a note', (await app.count('.text-view .footnote')) === 1);
 
   // --- The preview ---
-  await app.click('header button[aria-label="Preview and export"]');
+  await app.typeset();
   await app.waitFor('.preview .page', 20000);
   await sleep(500);
   /** How many pages the document has. Of many, only those that are looked at have a place in the window. */
@@ -190,10 +190,14 @@ try {
 
   // --- Another template, which brings its layout and its reference style ---
   check(
-    'the button over the preview names what the document is, and nothing of its layout or style',
-    (await app.whatIs()) === 'Plain document' && !/·/.test(await app.text('.preview header')),
+    'the head of the typesetting pane has the Look button, and nothing of what the document is, its layout or style',
+    (await app.exists('.side.typesetting .preview header [data-look]')) &&
+      !(await app.exists('.preview header .what')) &&
+      !/Plain document|·/.test(await app.text('.preview header')),
     (await app.text('.preview header')).replace(/\s+/g, ' '),
   );
+  check('the pane is called Typesetting', (await app.attr('.side.typesetting .preview', 'aria-label')) === 'Typesetting');
+  check('what the document is is named in Document properties, at its type', (await app.whatIs()) === 'Plain document');
   await app.openChooser();
   await app.type('dialog[open] .chooser input[aria-label="Search what can be written"]', 'APA 7');
   await sleep(200);
@@ -313,10 +317,10 @@ try {
      const map = JSON.parse(JSON.stringify(saved));
      return map.id;`,
   );
-  await app.click('header button[aria-label="Preview and export"]');
+  await app.typeset();
   await sleep(300);
-  await app.click('header button[aria-label="Preview and export"]');
-  await app.waitFor('.preview header .what', 8000);
+  await app.typeset();
+  await app.waitFor('.preview header [data-look]', 8000);
   await sleep(500);
   await app.openLook();
   await app.lookChoose('Layout', own);

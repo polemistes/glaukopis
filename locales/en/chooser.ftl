@@ -1,6 +1,5 @@
 # What you are writing: the chooser of what a document is, which is the
-# template of its element. Opened from the button over the preview, from the
-# top of Look, from the menu of an element and from the palette.
+# template of its element, the Document type tab of Document properties.
 
 chooser-title = What are you writing?
 chooser-search = Search what can be written
@@ -23,4 +22,4 @@ chooser-own-from = Make a template of my own from this…
 chooser-change-own = Change this template of mine…
 chooser-of-project = Kept in the project: not among your own templates on this computer.
 # In the menu of an element.
-chooser-menu = What this document is…
+chooser-menu = Document type…

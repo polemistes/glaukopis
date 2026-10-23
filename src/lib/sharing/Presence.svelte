@@ -1,10 +1,16 @@
 <script lang="ts">
+  /**
+   * Who else is in a project while it is shared: a ring of their initials;
+   * or, `compact`, a small sign with how many they are, which names them on
+   * hover, as the head of the document pane shows it.
+   */
+  import Users from '@lucide/svelte/icons/users';
   import { t } from '$lib/i18n';
   import { tooltip } from '$lib/ui/tooltip';
   import type { Other } from '$lib/project/model/project.svelte';
   import { initials } from './connection.svelte';
 
-  let { people }: { people: Other[] } = $props();
+  let { people, compact = false }: { people: Other[]; compact?: boolean } = $props();
 
   /** One for each person, though they may have the project open in two windows. */
   const persons = $derived.by(() => {
@@ -20,7 +26,13 @@
   const more = $derived(persons.slice(4));
 </script>
 
-{#if persons.length}
+{#if persons.length && compact}
+  {@const names = t('sharing-present', { names: persons.map((p) => p.name).join(', ') })}
+  <span class="sign" data-presence={persons.length} aria-label={names} use:tooltip={names}>
+    <Users size={13} />
+    <span>{persons.length}</span>
+  </span>
+{:else if persons.length}
   <div
     class="presence"
     aria-label={t('sharing-present', { names: persons.map((p) => p.name).join(', ') })}
@@ -60,6 +72,16 @@
     font-size: 9.5px;
     font-weight: 650;
     letter-spacing: 0.02em;
+    cursor: default;
+  }
+  .sign {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    flex: none;
+    color: var(--ink-3);
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
     cursor: default;
   }
   .avatar.more {

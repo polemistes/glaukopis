@@ -139,6 +139,11 @@ try {
   await app.waitFor('.side .look', 8000);
   await app.waitUntil(`return !!document.querySelector('.side .look details[data-kind="quote"][open]')`, 8000, 'the look of the quotation').catch(() => {});
   check('pressing the chip opens Look at the look of the quotation', await app.exists('.side .look details[data-kind="quote"][open]'));
+  check(
+    'Look opens as the column beside the pages of the typesetting pane, its button lit',
+    (await app.exists('.side.typesetting .look-column .look')) &&
+      (await app.attr('.preview header [data-look]', 'aria-pressed')) === 'true',
+  );
   check('and the chip goes', (await chip()) === null);
   await sleep(600);
   await app.screenshot('what-4-look');

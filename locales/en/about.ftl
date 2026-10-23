@@ -1,11 +1,11 @@
-# About this document: what an element's document says of itself, its
-# details, its language and the checklist of what its template requires.
-# What the document is, how it looks and what it contains are chosen in the
-# chooser of what you are writing and in Look.
+# Document properties: what an element's document says of itself, its
+# details, its type (what you are writing, its template), its language and
+# the checklist of what its template requires. How it looks and what it
+# contains are set in Look.
 
-about-window = About this document
-# In the menu of an element, at the foot of Look, and the button over the preview.
-about-menu = About this document…
+about-window = Document properties
+# In the menu of an element, and at the foot of Look.
+about-menu = Document properties…
 about-sections = Parts of the window
 
 ## The parts of the window, as they stand down its left.
@@ -70,3 +70,11 @@ about-checklist-hint = What the template requires, against the text and the tree
 about-checklist-clear = Nothing to remark on.
 about-requirement-words = Words of text
 about-requirement-anonymous = For review: the authors are left out of the document.
+
+## The sides, the panes and the bars, stage 2: the typesetting pane, the document pane, Document properties.
+
+# The tab of what the document is: what you are writing, its template.
+about-section-type = Document type
+# Under the details: whether every line of the printed page is numbered in the margin.
+about-line-numbers = Number the lines of the page
+about-line-numbers-hint = Every line of the printed page, numbered in the margin, in this document and those under it.

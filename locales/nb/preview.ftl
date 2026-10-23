@@ -1,18 +1,15 @@
-# Forhåndsvisningen og dokumentene som lages: panelet ved siden av teksten,
-# og eksporten.
+# Ombrekkingen og dokumentene som lages: sidene slik dokumentet brytes om,
+# med Utseende ved siden av, og eksporten.
 
-## Panelet ved siden av kartet, og det som velges over det.
+## Hodet på ombrekkingspanelet.
 
-preview = Forhåndsvisning
-preview-what-title = Hva du skriver: velg …
-preview-what-label = Hva dette dokumentet er: { $name }. Velg hva du skriver
 # Det siste blant referansestilene, som åpner søket etter flere.
 preview-style-more = Flere stiler …
 # Viser i teksten elementet som står der i sidene det ses på.
 preview-go-to-text = Gå til dette stedet i teksten
 # Flytter sidene dit elementet teksten står i, begynner.
 preview-show-text = Vis hvor teksten er
-preview-hide = Skjul forhåndsvisningen
+preview-hide = Skjul ombrekkingen
 # Programmet er Pandoc, Typst eller LaTeX.
 preview-program-missing = { $program } er ikke installert
 preview-programs-needed = Forhåndsvisning og eksport lages med Pandoc og Typst. Installer dem med pakkebehandleren på systemet ditt, eller oppgi i innstillingene hvor de ligger.
@@ -110,3 +107,7 @@ preview-chips-off = Skjul hva linjene er
 preview-what-page = Side
 preview-what-header = Topptekst
 preview-what-footer = Bunntekst
+
+## The sides, the panes and the bars, stage 2: the typesetting pane, the document pane, Document properties.
+
+preview-title = Ombrekking

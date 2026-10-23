@@ -3,14 +3,12 @@
 
 ## The panel beside the map, and what is chosen over it.
 
-preview = Προεπισκόπηση
 # The last among the reference styles, which opens the search for more.
 preview-style-more = Περισσότερα στυλ…
 # Shows in the text the element whose place in the pages is looked at.
 preview-go-to-text = Μετάβαση σε αυτό το σημείο του κειμένου
 # Moves the pages to where the element the text is at begins.
 preview-show-text = Εμφάνιση του σημείου όπου είναι το κείμενο
-preview-hide = Απόκρυψη της προεπισκόπησης
 # The name of the program is Pandoc, Typst or LaTeX.
 preview-program-missing = Το { $program } δεν είναι εγκατεστημένο
 preview-programs-needed = Η προεπισκόπηση και η εξαγωγή γίνονται με το Pandoc και το Typst. Εγκαταστήστε τα με τον διαχειριστή πακέτων του συστήματός σας, ή πείτε στις ρυθμίσεις πού βρίσκονται.

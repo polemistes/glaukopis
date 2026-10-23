@@ -3,14 +3,12 @@
 
 ## The panel beside the map, and what is chosen over it.
 
-preview = Predogled
 # The last among the reference styles, which opens the search for more.
 preview-style-more = Več slogov…
 # Shows in the text the element whose place in the pages is looked at.
 preview-go-to-text = Pojdi na to mesto v besedilu
 # Moves the pages to where the element the text is at begins.
 preview-show-text = Pokaži, kje je besedilo
-preview-hide = Skrij predogled
 # The name of the program is Pandoc, Typst or LaTeX.
 preview-program-missing = { $program } ni nameščen
 preview-programs-needed = Predogled in izvoz se naredita s Pandocom in Typstom. Namestite ju z upraviteljem paketov svojega sistema ali pa v nastavitvah povejte, kje sta.

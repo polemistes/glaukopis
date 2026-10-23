@@ -162,10 +162,28 @@ try {
   await guest.screenshot('sharing-5-joined');
 
   // ---- each sees the other ----
-  await until('the owner to see the guest', () => owner.exists('header .presence .avatar'));
-  await until('the guest to see the owner', () => guest.exists('header .presence .avatar'));
-  check('the owner sees who is here', (await owner.text('header .presence .avatar')).trim() === 'AL');
-  check('and so does the guest', (await guest.text('header .presence .avatar')).trim() === 'R');
+  // In the head of the document pane, a small sign of how many others are here, which names them on hover.
+  await owner.documentPane('references');
+  await guest.documentPane('references');
+  await until('the owner to see the guest', () => owner.exists('[data-document-pane] [data-presence]'));
+  await until('the guest to see the owner', () => guest.exists('[data-document-pane] [data-presence]'));
+  const sign = (app) =>
+    app.exec(
+      `const s = document.querySelector('[data-document-pane] [data-presence]');
+       return { count: s.dataset.presence, names: s.getAttribute('aria-label') };`,
+    );
+  const ownerSees = await sign(owner);
+  const guestSees = await sign(guest);
+  check(
+    'the owner sees, in the head of the document pane, that one other is here, and who',
+    ownerSees.count === '1' && /^Here now: \S/.test(ownerSees.names) && !(await owner.exists('[data-document-pane] .presence .avatar')),
+    JSON.stringify(ownerSees),
+  );
+  check('and so does the guest', guestSees.count === '1' && /^Here now: \S/.test(guestSees.names), JSON.stringify(guestSees));
+  await owner.keys(['Control', 'Shift', 'r']);
+  await guest.keys(['Control', 'Shift', 'r']);
+  await owner.waitGone('[data-document-pane]', 3000).catch(() => {});
+  await guest.waitGone('[data-document-pane]', 3000).catch(() => {});
 
   // ---- what one writes, the other sees ----
   await guest.click(await guest.findByText('.diagram .node', 'Reception'));

@@ -1,8 +1,11 @@
 // The window opens as it was left (record 0063): the place it was at, a
 // project with both its sides, the element at the top of a text, the side
-// that had the focus, and the window's size; the library where it was left
-// there; the start screen where the project left at is gone, without it
-// among the projects last opened.
+// that had the focus, and the window's size; the typesetting pane for the
+// side it showed, with its Look column, and the document pane at its tab
+// (record 0064); the library where it was left there; the start screen
+// where the project left at is gone, without it among the projects last
+// opened. The typesetting pane closes with the side it shows, and the
+// project shown again does not bring it back.
 //
 //     node e2e/as-left.mjs            in a data folder of its own, removed after
 //     node e2e/as-left.mjs <dir>      in that folder, made anew and kept
@@ -64,6 +67,14 @@ const focusedPane = (app) =>
      const cell = document.querySelector('[data-side].active');
      return cell ? Number(cell.dataset.side) : -1;`,
   );
+
+/** The focus given to a side, by its place, as a press in it gives it. */
+const focusSide = (app, i) =>
+  app.exec(`document.querySelectorAll('.panes > .pane')[arguments[0]].dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))`, i);
+
+/** The key of a side, by its place; and the side the typesetting pane shows, by its key. */
+const sideKey = (app, i) => app.exec(`return document.querySelectorAll('.panes > .pane')[arguments[0]]?.dataset.sideKey ?? null`, i);
+const typesetFor = (app) => app.exec(`return document.querySelector('.side.typesetting')?.dataset.typesetting ?? null`);
 
 /** How far the heading of an element stands under the top of the text of a pane, in pixels; null where it is not there. */
 const fromTop = (app, pane, id) =>
@@ -165,6 +176,27 @@ try {
     JSON.stringify(left),
   );
   check('the second side has the focus', (await focusedPane(app)) === 1, String(await focusedPane(app)));
+
+  // The typesetting pane, for the first side; the focus back in the second.
+  await focusSide(app, 0);
+  await sleep(150);
+  await app.typeset();
+  await app.waitFor('.side.typesetting .preview', 8000);
+  await focusSide(app, 1);
+  await sleep(300);
+  check(
+    'the typesetting pane shows the side whose button was pressed, and does not follow the focus',
+    (await typesetFor(app)) === (await sideKey(app, 0)) && (await focusedPane(app)) === 1,
+    `${await typesetFor(app)} for ${await sideKey(app, 0)}`,
+  );
+  await app.keys(['Control', 'Shift', 'a']);
+  await app.waitFor('.side.typesetting .look-column .look', 8000);
+  check(
+    'Ctrl+Shift+A in the other side opens Look beside the pages the pane shows, and leaves it on its side',
+    (await typesetFor(app)) === (await sideKey(app, 0)),
+  );
+  await app.documentPane('history');
+  check('the document pane, at the history of the active side', await app.exists('[data-document-pane] .side-tabs [data-kind="history"][aria-selected="true"]'));
   // The view is saved a moment after it changes; the window made smaller, to be kept as it closes.
   await sleep(2000);
   await app.cmd('POST', '/window/rect', { width: 1100, height: 760 }).catch((error) => console.log(`      the window could not be made smaller: ${error.message}`));
@@ -182,6 +214,11 @@ try {
     'the place is kept: the active side, at the top of the project, in its text',
     kept.lastPlace === `#/project/${encodeURIComponent(projectId)}/project?mode=text`,
     kept.lastPlace,
+  );
+  check(
+    'the arrangement keeps the typesetting pane by the side it shows, its Look, and the document pane at its tab',
+    kept.arrangement?.typesetting === 0 && kept.arrangement?.look === true && kept.arrangement?.document === true && kept.arrangement?.tab === 'history',
+    JSON.stringify({ ...kept.arrangement, sides: undefined }),
   );
   check(
     "the window's size is kept as it closed",
@@ -224,6 +261,27 @@ try {
   const size = await app.exec('return [window.outerWidth, window.outerHeight]');
   check('the window at the size it was closed at', size[0] === 1100 && size[1] === 760, size.join('×'));
   check('and shown', await app.exec('return document.visibilityState === "visible"'));
+  await app.waitFor('.side.typesetting .preview', 8000).catch(() => {});
+  check(
+    'the typesetting pane comes back for the first side, with its Look column',
+    (await typesetFor(app)) === (await sideKey(app, 0)) && (await app.exists('.side.typesetting .look-column .look')),
+    `${await typesetFor(app)} for ${await sideKey(app, 0)}`,
+  );
+  check('and the document pane at the history', await app.exists('[data-document-pane] .side-tabs [data-kind="history"][aria-selected="true"]'));
+
+  // The side the pane shows closes: the pane closes with it, and the project shown again does not bring it.
+  await focusSide(app, 0);
+  await sleep(150);
+  await app.keys(['Control', 'w']);
+  await until(async () => (await panes(app)).length === 1, 5000);
+  check('the side the typesetting pane showed closes, and the pane with it', (await panes(app)).length === 1 && !(await app.exists('.side.typesetting')));
+  check('the document pane stays, of the side that is left', await app.exists('[data-document-pane]'));
+  await app.click('button[data-side-by-side]');
+  await app.waitFor('.menu [role="menuitem"]', 3000);
+  await app.clickText('.menu [role="menuitem"]', 'This element, as diagram and text');
+  await until(async () => (await panes(app)).length === 2, 5000);
+  await sleep(500);
+  check('the project shown again in a side does not bring the typesetting pane back', !(await app.exists('.side.typesetting')));
 
   await app.go('#/library');
   await app.waitFor('.library', 8000);

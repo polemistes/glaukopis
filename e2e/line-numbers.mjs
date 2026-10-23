@@ -317,7 +317,7 @@ try {
     () => true,
     () => false,
   );
-  if (!opened) await app.click('header button[aria-label="Preview and export"]');
+  if (!opened) await app.typeset();
   await app.waitFor('.preview .page', 30000);
   await sleep(1500);
   check('the preview is made without remark', !(await app.exists('.preview footer .issues')));

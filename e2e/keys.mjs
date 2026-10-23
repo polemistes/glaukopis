@@ -54,7 +54,7 @@ try {
   await app.keys(['Control', 'k']);
   await app.waitFor('dialog[open] .query', 3000);
   await sleep(200);
-  await app.keys('open or close the panel');
+  await app.keys('open or close the document pane');
   await app.press('Enter');
   await app.waitGone('dialog[open]');
   await sleep(300);

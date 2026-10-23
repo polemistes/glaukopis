@@ -24,9 +24,7 @@ project-one-at-a-time = En i taget
 project-side-by-side = Två sida vid sida
 project-close-side = Stäng den här sidan
 project-references = Referenser
-project-pictures = Bilder
 project-side = Referenser, bilder, historik och ändringar
-project-side-tabs = Vad sidopanelen visar
 project-side-map = Karta
 project-preview = Förhandsvisning och export
 project-share = Dela
@@ -34,9 +32,6 @@ project-shared = Delat
 project-shared-offline = Delat · servern kan inte nås
 project-shared-too-large = Delat · servern tar inte emot de senaste ändringarna
 project-between-maps = Mellan de två kartorna
-project-between-preview = Mellan kartan och förhandsvisningen
-project-between-pictures = Mellan kartan och bilderna
-project-between-references = Mellan kartan och referenserna
 
 ## When the sharing ends from the other side
 

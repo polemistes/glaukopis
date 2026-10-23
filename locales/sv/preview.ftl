@@ -3,17 +3,12 @@
 
 ## The panel beside the map, and what is chosen over it.
 
-preview = Förhandsvisning
-# The button over the pages that names what the document is and opens the chooser of what you are writing.
-preview-what-title = Vad du skriver: välj…
-preview-what-label = Vad det här dokumentet är: { $name }. Välj vad du skriver
 # The last among the reference styles, which opens the search for more.
 preview-style-more = Fler stilar…
 # Shows in the text the element whose place in the pages is looked at.
 preview-go-to-text = Gå till det här stället i texten
 # Moves the pages to where the element the text is at begins.
 preview-show-text = Visa var texten är
-preview-hide = Dölj förhandsvisningen
 # The name of the program is Pandoc, Typst or LaTeX.
 preview-program-missing = { $program } är inte installerat
 preview-programs-needed = Förhandsvisning och export görs med Pandoc och Typst. Installera dem med systemets pakethanterare, eller ange i inställningarna var de finns.

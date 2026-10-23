@@ -1,8 +1,8 @@
-## Utseendet til et dokument, på ett sted: panelet ved siden av
-## forhåndsvisningen der alt som avgjør hvordan sidene ser ut, stilles inn.
+## Utseendet til et dokument, på ett sted: kolonnen i ombrekkingspanelet
+## der alt som avgjør hvordan sidene ser ut, stilles inn.
 
 look-title = Utseende
-look-between = Mellom teksten og utseendet til dokumentet
+look-between = Mellom sidene og utseendet til dokumentet
 look-whole = Det som gir utseendet
 
 look-what-hint = Det du skriver, avgjør delene, sidene og kildehenvisningene; alt sammen kan endres nedenfor.
@@ -24,8 +24,6 @@ look-changed-here = Endret her
 look-changed-in = Endret i «{ $name }»
 look-take-again = ta { $layout } sitt igjen
 
-look-open-preview = Åpne forhåndsvisningen for å se endringene mens du gjør dem.
-look-open-preview-button = Åpne forhåndsvisningen
 look-search = Finn en innstilling: skrift, marger, sidetall …
 look-search-nothing = Ingen innstilling har disse ordene.
 look-sections = Delene av utseendet
@@ -100,3 +98,8 @@ look-front-title-page-hint = Om dokumentet har en i det hele tatt; den samme bry
 look-fonts-document = I dette dokumentet
 look-fonts-project = Andre steder i prosjektet
 look-fonts-all = Alle skrifter
+
+## The sides, the panes and the bars, stage 2: the typesetting pane, the document pane, Document properties.
+
+look-document-type = Dokumenttype …
+look-hide = Skjul utseendet

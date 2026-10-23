@@ -3,7 +3,6 @@
 ## is kept as the document's own changes over its layout.
 
 look-title = Aspect
-look-between = Entre le texte et l’aspect du document
 look-whole = Ce qui fait l’aspect
 
 # Under the button at the top of Look that names what the document is.
@@ -31,8 +30,6 @@ look-changed-here = Modifié ici
 look-changed-in = Modifié dans « { $name } »
 look-take-again = revenir à « { $layout } »
 
-look-open-preview = Ouvrez l’aperçu pour voir les modifications à mesure que vous les faites.
-look-open-preview-button = Ouvrir l’aperçu
 look-search = Trouver un réglage : police, marges, numéros de page…
 look-search-nothing = Aucun réglage ne contient ces mots.
 look-sections = Rubriques de l’aspect

@@ -703,7 +703,7 @@ try {
 
   // ---- the preview ----
   await closeWindow();
-  await app.click('header button[aria-label="Preview and export"]');
+  await app.typeset();
   await app.waitFor('.preview .page', 30000);
   await sleep(1500);
   await app.openLook();
@@ -740,7 +740,7 @@ try {
   );
   await app.screenshot('found-doc-7-preview');
   typ = await style(was);
-  await app.click('header button[aria-label="Preview and export"]');
+  await app.typeset();
   await sleep(300);
 
   // ---- the rest, and what is left for later ----
@@ -1117,7 +1117,7 @@ try {
 
   // ---- the preview ----
   await closeWindow();
-  await app.click('header button[aria-label="Preview and export"]');
+  await app.typeset();
   await app.waitFor('.preview .page', 30000);
   await until(
     'the preview of this map',
@@ -1139,7 +1139,7 @@ try {
     shown,
   );
   await app.screenshot('found-doc-10-preview');
-  await app.click('header button[aria-label="Preview and export"]');
+  await app.typeset();
   await sleep(300);
 
   // ---- opened anew ----

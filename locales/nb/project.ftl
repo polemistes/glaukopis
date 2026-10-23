@@ -32,7 +32,7 @@ project-close-side = Lukk denne siden
 project-references = Referanser
 project-pictures = Bilder
 project-side = Referanser, bilder, historikk og endringer
-project-side-tabs = Hva sidepanelet viser
+project-side-tabs = Hva dokumentpanelet viser
 project-side-map = Kart
 project-preview = Forhåndsvisning og eksport
 project-share = Del
@@ -40,9 +40,9 @@ project-shared = Delt
 project-shared-offline = Delt · serveren kan ikke nås
 project-shared-too-large = Delt · serveren tar ikke imot de siste endringene
 project-between-maps = Mellom de to kartene
-project-between-preview = Mellom kartet og forhåndsvisningen
-project-between-pictures = Mellom kartet og bildene
-project-between-references = Mellom kartet og referansene
+project-between-preview = Mellom sidene og ombrekkingen
+project-between-pictures = Mellom sidene og bildene
+project-between-references = Mellom sidene og dokumentpanelet
 
 ## Når delingen avsluttes fra den andre siden
 
