@@ -14,25 +14,25 @@ figures-width-of-text = Of the width of the text, in the document.
 figures-shows = Shows
 figures-shows-placeholder = In words, for those who cannot see it
 figures-numbered = Numbered, as “Figure 1”
-figures-keep-caption = Keep the caption with the picture
-figures-keep-caption-hint = Figures made with this picture then begin with what is said here
-figures-take-caption = Use the picture’s own
-figures-take-caption-hint = What is kept with the picture is said here, in place of what is said now
-figures-another-picture = Another picture…
+figures-keep-caption = Keep the caption with the image
+figures-keep-caption-hint = Figures made with this image then begin with what is said here
+figures-take-caption = Use the image’s own
+figures-take-caption-hint = What is kept with the image is said here, in place of what is said now
+figures-another-picture = Another image…
 figures-remove = Remove the figure
-figures-caption-kept = Kept with the picture
+figures-caption-kept = Kept with the image
 figures-caption-kept-detail = Figures made with it begin with these words.
 # The title of the window in which a picture is chosen among the files of the computer.
-figures-choose-picture = A picture
+figures-choose-picture = An image
 # What the files that can be chosen there are called.
-figures-picture-files = Pictures
+figures-picture-files = Images
 
 ## The store of pictures, as the text reads it.
 
-figures-pictures-unread = The pictures could not be read
-figures-picture-not-taken = The picture could not be added
-figures-picture-not-kept = What was said of the picture could not be kept
-figures-picture-not-removed = The picture could not be removed
+figures-pictures-unread = The images could not be read
+figures-picture-not-taken = The image could not be added
+figures-picture-not-kept = What was said of the image could not be kept
+figures-picture-not-removed = The image could not be removed
 
 ## Where a figure, a table or an equation stands.
 
@@ -147,7 +147,7 @@ figures-targets-hint = A cross-reference follows what it refers to: its number, 
 
 ## Shown by the stylesheet, where the page has no element for the words.
 
-figures-picture-absent = The picture is not on this computer
+figures-picture-absent = The image is not on this computer
 # A picture that is on this computer and could not be read: the reason is what the reading said.
-figures-picture-unread = The picture could not be read: { $reason }
-figures-caption-placeholder = What is said of the picture
+figures-picture-unread = The image could not be read: { $reason }
+figures-caption-placeholder = What is said of the image

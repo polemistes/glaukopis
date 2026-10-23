@@ -16,7 +16,7 @@ keys-place-list = I lista over prosjekter til venstre
 keys-place-text = I teksten til et kart
 keys-place-writing = Skriving
 keys-place-library = I biblioteket
-keys-place-store = I bildelageret
+keys-place-store = Blant bildene
 keys-place-files = Blant filene i biblioteket
 
 ## Hva de gjør

@@ -31,12 +31,12 @@ project-beside-title = Beside: choose a project
 project-beside-subtitle = A project, or an element in its tree, to show beside this one
 project-close-side = Close this side
 project-references = References
-project-pictures = Pictures
+project-pictures = Images
 project-side-tabs = What the panel at the side shows
 project-side-map = Map
 project-between-maps = Between the two maps
 project-between-preview = Between the map and the preview
-project-between-pictures = Between the map and the pictures
+project-between-pictures = Between the map and the images
 project-between-references = Between the map and the references
 
 ## When the sharing ends from the other side
@@ -52,7 +52,7 @@ project-understood = Understood
 
 ## Files dropped on the project
 
-project-drop-picture = Drop a picture on the element it belongs to
+project-drop-picture = Drop an image on the element it belongs to
 project-cited-in = { $count ->
     [one] The reference is cited in “{ $name }”
    *[other] { $count } references are cited in “{ $name }”
@@ -211,19 +211,19 @@ project-references-foreign = { $count ->
 project-store = Store
 project-open-picture = Open…
 project-put-into-text = Put it into the text
-project-add-pictures = Add pictures from files
-project-which-pictures = Which pictures
-project-search-pictures = Search pictures
-project-a-picture = A picture
+project-add-pictures = Add images from files
+project-which-pictures = Which images
+project-search-pictures = Search images
+project-a-picture = An image
 project-with-notes = With notes
 project-not-on-computer = Not on this computer
 project-nothing-said = Nothing is said of it yet
 project-store-empty = The store is empty
-project-store-empty-hint = Add pictures from files, or drop them on a text.
-project-no-pictures = No pictures yet
-project-no-pictures-map = The pictures of the figures of this map are listed here. Those of the store are under Store.
-project-no-pictures-project = The pictures of the figures of the project are listed here. Those of the store are under Store.
-project-pictures-drag = Drag a picture into a text to make a figure of it there, or onto an element to put it at the end of its text.
+project-store-empty-hint = Add images from files, or drop them on a text.
+project-no-pictures = No images yet
+project-no-pictures-map = The images of the figures of this map are listed here. Those of the store are under Store.
+project-no-pictures-project = The images of the figures of the project are listed here. Those of the store are under Store.
+project-pictures-drag = Drag an image into a text to make a figure of it there, or onto an element to put it at the end of its text.
 # The count is of the pictures that are used and are not in the store of this computer.
 project-pictures-absent-map = { $count ->
     [one] { $count } in this map is not on this computer.
@@ -254,7 +254,7 @@ copy-original-same = The original is as it was when it was copied.
 copy-original-unknown = Whether the original has changed since it was copied is not known: the copy was made before that was kept.
 copy-original-gone = The original is no longer there.
 copy-how-shown = Below, struck through, is what only the original has, and marked, what only this copy has.
-copy-alike = Their names and texts are alike. They may differ in what is not words: citations, pictures, marks.
+copy-alike = Their names and texts are alike. They may differ in what is not words: citations, images, marks.
 copy-only-original = Only in the original
 copy-only-copy = Only in this copy
 copy-go = Go to the original

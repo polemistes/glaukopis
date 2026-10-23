@@ -134,6 +134,14 @@
       shown: shownIds,
       close: viewing.close ?? undefined,
       beside: shownIds.length ? (id) => viewing.beside?.(id) : undefined,
+      // Where no project is shown, the project is opened, and its view opens the sharing window.
+      share: (id) => {
+        if (viewing.share) viewing.share(id);
+        else {
+          viewing.shareWanted = id;
+          actions.open(p);
+        }
+      },
       fold: unfoldable(p)
         ? { folded: !closedUnfolded.has(p.id), toggle: () => toggleClosed(p) }
         : undefined,

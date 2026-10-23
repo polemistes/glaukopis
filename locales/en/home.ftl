@@ -263,3 +263,6 @@ home-delete-many-confirm = Delete projects
 ## The path over a side (stage 4 of the list, the path and the window as it was left)
 # In the menu of all projects, under a folder with nothing in it.
 home-folder-empty = Nothing in it
+
+## Stage 3 of the sides, the panes and the bars (agent "bars")
+home-share = Share…

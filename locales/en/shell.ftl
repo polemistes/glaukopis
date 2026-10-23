@@ -2,7 +2,7 @@
 
 shell-projects = Projects
 shell-library = Library
-shell-pictures = Pictures
+shell-pictures = Images
 shell-settings = Settings
 # What the rail is called to those who do not see it.
 shell-main = Main

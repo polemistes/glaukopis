@@ -197,7 +197,7 @@ editor-refmark-label = Label
 editor-refmark-placeholder = 3:16, 327a, 1094a1
 editor-refmark-dialog-hint = The mark is no part of the words: spelling, search and the count of words pass over it. The layout says whether it is raised in the line or set in the margin.
 # What a picture that was pasted without a name of its own is called in the store of pictures.
-editor-pasted-picture = picture
+editor-pasted-picture = image
 
 ## More.
 

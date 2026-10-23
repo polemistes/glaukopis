@@ -17,14 +17,18 @@
    * What the list of projects, which stands outside the view, is told of
    * what is shown: the projects of the sides, each once, with the element in
    * view there; how an element of one is entered; how another project, or
-   * an element of it, is opened beside, in the other side; and how the
-   * sides that show a project are closed. Nothing while no project is open.
+   * an element of it, is opened beside, in the other side; how the sides
+   * that show a project are closed; and how the window of a project's
+   * sharing is opened. Nothing while no project is open; a sharing asked
+   * for then is `shareWanted`, which the view opens once it is there.
    */
   class Viewing {
     sides = $state.raw<ShownSide[]>([]);
     enter: ((project: string, id: string) => void) | null = null;
     beside: ((projectId: string, at?: string) => void) | null = null;
     close: ((projectId: string) => void) | null = null;
+    share: ((projectId: string) => void) | null = null;
+    shareWanted: string | null = null;
   }
 
   export const viewing = new Viewing();
@@ -244,6 +248,7 @@
     };
     viewing.beside = (id, element) => sides.beside(id, element ?? null);
     viewing.close = closeShown;
+    viewing.share = shareProject;
   });
 
   // ---- the panel at the side, of the active side's document ----
@@ -457,6 +462,7 @@
     viewing.enter = null;
     viewing.beside = null;
     viewing.close = null;
+    viewing.share = null;
     pictures.open(null);
   });
 
@@ -575,6 +581,33 @@
 
   /** The sharing window, while it is open, for a project. */
   let showShare = $state<OpenProject | null>(null);
+  /** The project whose sharing window is to open once it is open. */
+  let sharingWanted = $state<string | null>(viewing.shareWanted);
+  viewing.shareWanted = null;
+
+  /**
+   * Share… in the menu of a project in the list: the sharing window of a
+   * project shown in a side; one that is not is opened in the active side
+   * first, since the sharing needs the project open.
+   */
+  function shareProject(id: string) {
+    if (!sides.sides.some((s) => s.project === id)) sides.open(id);
+    sharingWanted = id;
+  }
+
+  // The sharing window opens once its project is open, with what it is
+  // shared by. It depends on the project asked for and on its state.
+  $effect(() => {
+    const id = sharingWanted;
+    if (!id) return;
+    const open = openProjects.get(id);
+    if (open?.state === 'failed') sharingWanted = null;
+    if (open?.state !== 'open' || !open.sharing || !open.project) return;
+    untrack(() => {
+      showShare = open;
+      sharingWanted = null;
+    });
+  });
 
   // ---- the top row: a cell over each side, as wide as it ----
 
