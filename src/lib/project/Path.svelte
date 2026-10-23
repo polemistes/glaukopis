@@ -39,8 +39,8 @@
     at: string;
     /** The projects shown in the sides, by id: marked in the menu of all projects. */
     shown: readonly string[];
-    /** How the project is shared, for its badge. */
-    sharing?: { owner: boolean } | null;
+    /** How the project is shared, and how it is connected, for its badge. */
+    sharing?: { owner: boolean; status?: 'connected' | 'offline' | 'refused' } | null;
     /** Whether the project's changes are on disk; where they could not be written, the fault. */
     status?: 'saved' | 'error';
     fault?: string;

@@ -81,7 +81,7 @@ try {
   await owner.clickText('dialog footer button', 'Create');
   // A new project opens as text: the diagram is turned to.
   await owner.waitFor('.text-view .section', 8000);
-  await owner.clickText('header [role="radio"]', 'Diagram');
+  await owner.view('diagram');
   await owner.waitFor('.diagram .node.root', 8000);
   await sleep(300);
   await owner.click('.diagram .node.root');
@@ -98,7 +98,7 @@ try {
   await add(owner, 'under', 'The word mênis');
   await add(owner, 'after', 'Reception');
 
-  await owner.click('header .share button');
+  await owner.shareWindow();
   await owner.waitForText('dialog h2', 'Share this project');
   await owner.screenshot('sharing-1-share');
   await owner.type('dialog input[placeholder="glaukopis.example.org"]', address);
@@ -162,10 +162,10 @@ try {
   await guest.screenshot('sharing-5-joined');
 
   // ---- each sees the other ----
-  await until('the owner to see the guest', () => owner.exists('header .presence .avatar'));
-  await until('the guest to see the owner', () => guest.exists('header .presence .avatar'));
-  check('the owner sees who is here', (await owner.text('header .presence .avatar')).trim() === 'AL');
-  check('and so does the guest', (await guest.text('header .presence .avatar')).trim() === 'R');
+  await until('the owner to see the guest', () => owner.exists('.presence .avatar'));
+  await until('the guest to see the owner', () => guest.exists('.presence .avatar'));
+  check('the owner sees who is here', (await owner.text('.presence .avatar')).trim() === 'AL');
+  check('and so does the guest', (await guest.text('.presence .avatar')).trim() === 'R');
 
   // ---- what one writes, the other sees ----
   await guest.click(await guest.findByText('.diagram .node', 'Reception'));
@@ -233,7 +233,8 @@ try {
   await owner.doubleClick(await owner.findByText('.diagram .node', 'Reception'));
   await owner.waitFor('.box .text .prose');
   await sleep(300);
-  await owner.clickText('.box .tools button', 'Cite');
+  await owner.click('.box [data-insert]');
+  await owner.clickText('.menu [role="menuitem"]', 'Citation');
   await owner.waitFor('.picker input');
   await owner.keys('singer');
   await sleep(400);
@@ -337,8 +338,8 @@ try {
 
   // ---- without the server ----
   server.kill('SIGTERM');
-  await until('the owner to notice', async () => (await owner.attr('header .share', 'data-status')) === 'offline', 15000);
-  await until('the guest to notice', async () => (await guest.attr('header .share', 'data-status')) === 'offline', 15000);
+  await until('the owner to notice', async () => (await owner.attr('.top [data-path] [data-crumb="project"] .badge', 'data-status')) === 'offline', 15000);
+  await until('the guest to notice', async () => (await guest.attr('.top [data-path] [data-crumb="project"] .badge', 'data-status')) === 'offline', 15000);
   check('both notice that the server is gone', true);
   await owner.click(await owner.findByText('.diagram .node', 'Reception'));
   await add(owner, 'under', 'Milton');
@@ -354,7 +355,7 @@ try {
   check('when the server is back, each is given what the other wrote meanwhile', true);
 
   // ---- the owner sees who has the project, and removes the guest ----
-  await owner.click('header .share button');
+  await owner.shareWindow();
   await owner.waitForText('dialog .people', 'Anna Lind', 8000);
   await owner.screenshot('sharing-9-people');
   await owner.click('dialog .people button[aria-label="Remove Anna Lind"]');
@@ -366,7 +367,8 @@ try {
   await guest.clickText('dialog footer button', 'Understood');
   await guest.waitGone('dialog[open]');
   check('the one removed is told, and keeps the project', (await titles(guest)).includes('Milton'));
-  check('which is no longer shared there', (await guest.attr('header .share', 'class')).includes('shared') === false);
+  // The badge of the project in the path says how it is shared, and nothing where it is not.
+  check('which is no longer shared there', !(await guest.attr('.top [data-path] [data-crumb="project"] .badge', 'data-status')));
 
   // ---- the owner stops sharing ----
   await owner.waitGone('dialog .people button[aria-label="Remove Anna Lind"]', 8000);
@@ -377,7 +379,7 @@ try {
   await owner.exec(`
     const asked = Array.from(document.querySelectorAll('dialog[open]')).find((d) => d.textContent.includes('Stop sharing this project?'));
     Array.from(asked.querySelectorAll('footer button')).find((b) => b.textContent.includes('Stop sharing')).click();`);
-  await until('the sharing to end', async () => !(await owner.attr('header .share', 'class')).includes('shared'));
+  await until('the sharing to end', async () => !(await owner.attr('.top [data-path] [data-crumb="project"] .badge', 'data-status')));
   const info = await fetch(`http://${address}/api/info`).then((r) => r.json());
   check('the server is still there', info.name === 'glaukopis-server');
   check('and holds the project no more', !existsSync(join(serverData, 'rooms', JSON.parse(told)[0].id)));

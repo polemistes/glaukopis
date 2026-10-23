@@ -125,14 +125,14 @@ try {
   };
 
   // ---- the place ----
-  await app.click('nav.rail a[aria-label="Pictures"]');
+  await app.click('nav.rail a[aria-label="Images"]');
   await app.waitFor('.pictures', 5000);
   check('the store of pictures has a place in the rail', (await app.exec(`return location.hash`)) === '#/pictures');
   await app.keys(['Control', '1']);
   await app.waitGone('.pictures');
   await app.keys(['Control', '3']);
   await app.waitFor('.pictures', 5000);
-  check('and a key', await app.exists('nav.rail a[aria-label="Pictures"].current'));
+  check('and a key', await app.exists('nav.rail a[aria-label="Images"].current'));
   await app.waitForText('.pictures .empty h3', 'The store is empty');
   check('empty, it says so', await app.exists('.pictures .empty .button.primary'));
   await both('pictures-1-empty');
@@ -272,7 +272,7 @@ try {
   await app.clickText('dialog footer button', 'Create');
   // A new project opens as text: the diagram is turned to.
   await app.waitFor('.text-view .section', 8000);
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
 
@@ -280,13 +280,13 @@ try {
   await app.keys(['Control', 'Shift', 'r']);
   await app.waitFor('.panel[aria-label="References"]', 5000);
   await picturesKey();
-  await app.waitFor('.panel[aria-label="Pictures"]', 5000);
+  await app.waitFor('.panel[aria-label="Images"]', 5000);
   check('the panel of pictures takes the place of that of the references', !(await app.exists('.panel[aria-label="References"]')));
-  check('its tab is the one chosen', await app.exists('.side-tabs [role="tab"][aria-label="Pictures"][aria-selected="true"]'));
-  check('the project has no pictures yet', /No pictures yet/.test(await app.text('.panel .body')));
+  check('its tab is the one chosen', await app.exists('.side-tabs [role="tab"][aria-label="Images"][aria-selected="true"]'));
+  check('the project has no pictures yet', /No images yet/.test(await app.text('.panel .body')));
   await app.clickText('.panel [role="radio"]', 'This map');
   await sleep(200);
-  check('nor has the map', /No pictures yet/.test(await app.text('.panel .body')));
+  check('nor has the map', /No images yet/.test(await app.text('.panel .body')));
   await app.clickText('.panel [role="radio"]', 'Store');
   await app.waitFor('.panel .list .row', 5000);
   check('the store has all of them', (await rows()).length === 3, (await rows()).join('|'));
@@ -377,12 +377,12 @@ try {
   await app.click('.text-view .section .body .prose');
   await app.waitFor('.text-view .section .body .ProseMirror', 5000);
   await sleep(300);
-  await app.clickText('.pane-bar .tools button', 'Insert');
+  await app.click('.pane-bar [data-insert]');
   await app.waitFor('.menu');
   const insert = await app.exec(`return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((m) => m.textContent.trim().replace(/\\s+/g, ' ')).join('|')`);
-  check('the tools have a picture from a file, and one from the store', /Picture from a file…/.test(insert) && /Picture from the store…/.test(insert), insert);
-  await app.clickText('.menu [role="menuitem"]', 'Picture from the store…');
-  await app.waitFor('.panel[aria-label="Pictures"] .list .row', 5000);
+  check('Insert has an image, which opens the images', /Image/.test(insert) && !/Picture/.test(insert), insert);
+  await app.clickText('.menu [role="menuitem"]', 'Image');
+  await app.waitFor('.panel[aria-label="Images"] .list .row', 5000);
   const chosen = await app.exec(`return document.querySelector('.panel [role="radio"][aria-checked="true"]').textContent.trim()`);
   check('which opens the panel on the store', chosen === 'Store' && (await rows()).length === 3, chosen);
   check('and leaves the cursor in the text', await app.exec(`return !!document.activeElement && !!document.activeElement.closest('.text-view .ProseMirror')`));
@@ -426,8 +426,8 @@ try {
   await app.keys(['Control', 'Shift', 'r']);
   await app.waitFor('.panel[aria-label="References"]', 5000);
   check('a note on a picture marks no reference', (await app.count('.panel .note-button.has')) === 0);
-  await app.click('.side-tabs [role="tab"][aria-label="Pictures"]');
-  await app.waitFor('.panel[aria-label="Pictures"] .list .row', 5000);
+  await app.click('.side-tabs [role="tab"][aria-label="Images"]');
+  await app.waitFor('.panel[aria-label="Images"] .list .row', 5000);
   await app.doubleClick(await row('The shield of Achilles'));
   await app.waitFor('dialog .picture-pane', 5000);
   await sleep(400);
@@ -459,7 +459,7 @@ try {
   await app.clickText('dialog .picture-pane button', 'Remove from the store');
   await app.waitForText('dialog h2', 'Remove “The shield of Achilles” from the store?', 5000);
   const question = await app.exec(`return Array.from(document.querySelectorAll('dialog .message')).pop().textContent`);
-  check('before a picture is removed it is asked, and said who uses it', /^1 project uses the picture\. Its figures will be left without the picture\./.test(question), question);
+  check('before a picture is removed it is asked, and said who uses it', /^1 project uses the image\. Its figures will be left without the image\./.test(question), question);
   await sleep(300);
   await app.screenshot('pictures-9-question');
   await app.clickText('dialog footer button', 'Cancel');
@@ -504,7 +504,7 @@ try {
   await app.clickText('.menu [role="menuitem"]', 'Remove');
   await app.waitForText('dialog h2', 'Remove “A wide frieze.png” from the store?', 5000);
   const unused = await app.exec(`return Array.from(document.querySelectorAll('dialog .message')).pop().textContent`);
-  check('of a picture that no project uses, that is said', /^No project uses the picture\./.test(unused), unused);
+  check('of a picture that no project uses, that is said', /^No project uses the image\./.test(unused), unused);
   await app.clickText('dialog footer button', 'Remove');
   await until('it to be gone', async () => files().length === 2 && (await app.count('.pictures .tile')) === 2);
   check('a picture is removed from its menu, when that has been confirmed', (await tiles()).join('|') === 'forms.svg|Rings.png', (await tiles()).join('|'));
@@ -514,7 +514,7 @@ try {
   await app.waitFor('.project', 8000);
   check('the name of a project leads to it', /^#\/project\//.test(await app.exec(`return location.hash`)));
 
-  const errors = (await app.pageErrors()).filter((e) => !/not a picture of a kind/.test(e));
+  const errors = (await app.pageErrors()).filter((e) => !/not an image of a kind/.test(e));
   check('no errors in the window', errors.length === 0, errors.join(' ‖ '));
 } catch (error) {
   console.error(error);

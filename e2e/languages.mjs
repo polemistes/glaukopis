@@ -117,7 +117,7 @@ try {
   await app.clickText('dialog footer button', 'Opprett');
   // Et nytt prosjekt åpnes som tekst: diagrammet velges.
   await app.waitFor('.text-view .section', 8000);
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(400);
   await english('the diagram');
@@ -210,10 +210,11 @@ try {
        s.value = arguments[0]; s.dispatchEvent(new Event('change', { bubbles: true }));`,
       value,
     );
+  // The languages are in the window of the document, which the menu of the element opens.
   const openLanguages = async () => {
-    await app.openThisMap();
-    await app.clickText('.menu [role="menuitem"]', 'Språk …');
-    await app.waitForText('dialog[open] h2', 'Om dette dokumentet', 5000);
+    await app.thisElement('Om dette dokumentet …');
+    await app.waitFor('dialog[open] .window nav', 5000);
+    await settingsSection('Språk');
     await app.waitFor('dialog select');
     await sleep(200);
   };
@@ -221,7 +222,7 @@ try {
     await app.up();
     await sleep(300);
   };
-  await app.openThisMap();
+  await app.thisElement();
   await english('the menu of the element in view');
   await app.press('Escape');
   await sleep(200);
@@ -254,14 +255,11 @@ try {
   await closeSettings();
   // Up to the project, and a new element made under it, in the language of the project.
   await up();
-  await app.openThisMap();
-  await app.clickText('.menu [role="menuitem"]', 'Nytt element under');
-  await app.waitFor('[data-path] .naming');
-  await sleep(150);
+  await app.thisElement('Legg til et element under');
+  await sleep(300);
   await app.keys('Annen sang');
   await app.press('Enter');
-  await app.waitGone('[data-path] .naming');
-  await sleep(300);
+  await sleep(500);
   await app.openMap('Annen sang');
   await openLanguages();
   check(

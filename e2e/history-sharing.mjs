@@ -81,7 +81,7 @@ try {
   await owner.clickText('dialog footer button', 'Create');
   // A new project opens as text: the diagram is turned to.
   await owner.waitFor('.text-view .section', 8000);
-  await owner.clickText('header [role="radio"]', 'Diagram');
+  await owner.view('diagram');
   await owner.waitFor('.diagram .node.root', 8000);
   await sleep(300);
   await owner.keys(['Control', 'd']);
@@ -92,7 +92,7 @@ try {
   await sleep(800);
   await ask(owner, `await h.turnOn();`);
 
-  await owner.click('header .share button');
+  await owner.shareWindow();
   await owner.waitForText('dialog h2', 'Share this project');
   await owner.type('dialog input[placeholder="glaukopis.example.org"]', address);
   await owner.click('dialog input[placeholder="As the others know you"]');

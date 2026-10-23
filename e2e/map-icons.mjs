@@ -165,7 +165,7 @@ try {
   await app.screenshot('map-icons-1-text');
 
   // --- The diagram: the button to enter shows under the pointer ---
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(500);
   const beta = await app.findByText('.diagram .node', 'Beta');
@@ -212,7 +212,7 @@ try {
   await app.keys(['Alt', 'Shift', 'ArrowDown']);
   await sleep(600);
   check('Alt+Shift+Down enters it', (await rootName()) === 'Alpha', await rootName());
-  await app.clickText('header [role="radio"]', 'Text');
+  await app.view('text');
   await app.waitFor('.text-view .section', 8000);
   await sleep(600);
   at = await where();
@@ -253,10 +253,10 @@ try {
   check('pressed, the element is entered', list[0] === 'Beta:0', list.join(' | '));
 
   // --- An empty text not yet written in takes no room, and pressed under its name, takes the cursor ---
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
-  await app.clickText('header [role="radio"]', 'Text');
+  await app.view('text');
   await app.waitFor('.text-view .section', 8000);
   await sleep(600);
   const blanks = await app.exec(

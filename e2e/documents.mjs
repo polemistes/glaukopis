@@ -222,10 +222,10 @@ try {
   await app.clickText('dialog footer button', 'Create');
   // A new project opens as text: the diagram is turned to.
   await app.waitFor('.text-view .section', 8000);
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
-  await app.openThisMap();
+  await app.thisElement();
   check(
     'in the menu of the element in view, a document can be brought into it',
     await app.exec(
@@ -550,7 +550,7 @@ try {
   await app.screenshot('documents-5-diagram');
 
   // ---- undo takes the whole tree back; the view, in it, goes up to the project ----
-  await app.click('header button[aria-label^="Undo"]');
+  await app.click('.pane-bar [data-undo]');
   await sleep(500);
   check(
     'undo takes the whole tree back, in one step',
@@ -563,7 +563,7 @@ try {
       `return document.querySelector('.diagram .node.root .caption')?.textContent.trim()`,
     )) === 'Homer',
   );
-  await app.click('header button[aria-label^="Redo"]');
+  await app.click('.pane-bar [data-redo]');
   await sleep(500);
   check(
     'redo makes it again',
@@ -746,7 +746,7 @@ try {
      return list[0].maps;`,
   );
   await app.screenshot('documents-10-long');
-  await app.click('header button[aria-label^="Undo"]');
+  await app.click('.pane-bar [data-undo]');
   await sleep(800);
   check(
     'and taken back as one',
@@ -807,7 +807,7 @@ try {
   check(
     'there is nothing to take back: the project begins with it',
     (await app.exec(
-      `return document.querySelector('header button[aria-label^="Undo"]').disabled`,
+      `return document.querySelector('.pane-bar [data-undo]').disabled`,
     )) === true,
   );
   await app.screenshot('documents-12-project-made');

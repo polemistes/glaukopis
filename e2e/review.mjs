@@ -106,7 +106,7 @@ try {
   await robert.clickText('dialog footer button', 'Create');
   // A new project opens as text: the diagram is turned to.
   await robert.waitFor('.text-view .section', 8000);
-  await robert.clickText('header [role="radio"]', 'Diagram');
+  await robert.view('diagram');
   await robert.waitFor('.diagram .node.root', 8000);
   await sleep(300);
   await robert.keys(['Control', 'd']);
@@ -137,7 +137,7 @@ try {
   check('the panel offers to keep the history, and then has nothing to review', true);
 
   // ---- Robert shares, Anna joins ----
-  await robert.click('header .share button');
+  await robert.shareWindow();
   await robert.waitForText('dialog h2', 'Share this project');
   await robert.type('dialog input[placeholder="glaukopis.example.org"]', address);
   await robert.click('dialog input[placeholder="As the others know you"]');

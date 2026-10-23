@@ -198,7 +198,8 @@ try {
     await sleep(300);
   };
   const openWindow = async () => {
-    await app.thisMap('Loose citations…');
+    // The loose citations are a tab of the panel at the side, which its key opens.
+    await app.keys(['Control', 'Shift', 't']);
     await opened();
   };
 
@@ -271,7 +272,7 @@ try {
   await app.clickText('dialog footer button', 'Create');
   // A new project opens as text: the diagram is turned to.
   await app.waitFor('.text-view .section', 8000);
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
 
@@ -703,7 +704,7 @@ try {
 
   // ---- the preview ----
   await closeWindow();
-  await app.click('header button[aria-label="Preview and export"]');
+  await app.click('.pane-bar [data-typeset]');
   await app.waitFor('.preview .page', 30000);
   await sleep(1500);
   await app.openLook();
@@ -740,7 +741,7 @@ try {
   );
   await app.screenshot('found-doc-7-preview');
   typ = await style(was);
-  await app.click('header button[aria-label="Preview and export"]');
+  await app.click('.pane-bar [data-typeset]');
   await sleep(300);
 
   // ---- the rest, and what is left for later ----
@@ -1117,7 +1118,7 @@ try {
 
   // ---- the preview ----
   await closeWindow();
-  await app.click('header button[aria-label="Preview and export"]');
+  await app.click('.pane-bar [data-typeset]');
   await app.waitFor('.preview .page', 30000);
   await until(
     'the preview of this map',
@@ -1139,7 +1140,7 @@ try {
     shown,
   );
   await app.screenshot('found-doc-10-preview');
-  await app.click('header button[aria-label="Preview and export"]');
+  await app.click('.pane-bar [data-typeset]');
   await sleep(300);
 
   // ---- opened anew ----

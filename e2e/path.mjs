@@ -89,12 +89,16 @@ try {
   await app.waitFor('.top [data-path]', 10000);
   await sleep(400);
 
-  check('the top row stands over the bar of the project', await app.exec(`return document.querySelector('.project > .top')?.nextElementSibling?.tagName === 'HEADER'`));
+  check(
+    'the top row stands over the sides, with the list\'s button at its left, and no bar of the project under it',
+    await app.exec(`const top = document.querySelector('.project > .top');
+      return !!top && top.firstElementChild?.querySelector('[data-projects-button]') !== null && !document.querySelector('.project > header') && !!document.querySelector('.pane [data-bar]');`),
+  );
   check('at the project itself, the path is the folders and the project', JSON.stringify(await crumbs(app)) === JSON.stringify(['folder:Greek', 'folder:Epic', `project:${PROJECT}`]), JSON.stringify(await crumbs(app)));
 
-  // A tree five deep, each made under the one in view from ⋯ This element and entered from the list.
+  // A tree five deep, each made under the one in view from its menu and entered from the list.
   for (const name of NAMES) {
-    await app.newMap();
+    await app.newElementUnder();
     await app.keys(name);
     await app.press('Enter');
     await sleep(300);
@@ -193,9 +197,9 @@ try {
   );
   const fits = await app.exec(
     `const cell = document.querySelector('.top .cell'); const room = cell.querySelector('.room');
-     return { cell: Math.round(cell.getBoundingClientRect().right), more: Math.round(cell.querySelector('[data-this-element]').getBoundingClientRect().right), scroll: room.scrollWidth <= room.clientWidth + 1 };`,
+     return { cell: Math.round(cell.getBoundingClientRect().right), room: Math.round(room.getBoundingClientRect().right), scroll: room.scrollWidth <= room.clientWidth + 1 };`,
   );
-  check('and fits its cell, ⋯ within it', fits.more <= fits.cell && fits.scroll, JSON.stringify(fits));
+  check('and fits its cell', fits.room <= fits.cell && fits.scroll, JSON.stringify(fits));
   await app.screenshot('path-3-elided');
   await app.click('.top [data-crumb="more"]');
   await app.waitFor('.menu [role="menuitem"]', 3000);
@@ -289,19 +293,28 @@ try {
   check('the list marks both projects', JSON.stringify(marked) === JSON.stringify([PROJECT, 'Notes'].sort()), JSON.stringify(marked));
   await focusSide(app, notesSide);
   await sleep(200);
-  await app.click('header button[aria-label="References, pictures, history and changes"]');
+  await app.keys(['Control', 'Shift', 'r']);
   await app.waitFor('.side-map', 5000);
   await sleep(300);
   const about = await app.exec(`return document.querySelector('.side-map [data-side-project]')?.textContent.trim() ?? null`);
   check('the panel at the side is of the active side, and names its project', about === 'Notes', String(about));
   await app.screenshot('path-7-two-projects');
-  const header = await app.exec(
-    `const h = document.querySelector('.project > header');
-     const has = (label) => !!h.querySelector('button[aria-label="' + label + '"]');
-     return { preview: has('Preview and export'), share: has('Share'), undo: has('Undo'), redo: has('Redo'), split: !!h.querySelector('[data-side-by-side]') };`,
+  const bars = await app.exec(
+    `return Array.from(document.querySelectorAll('.pane [data-bar]')).map((b) => ({
+       views: b.querySelectorAll('[data-view]').length,
+       undo: !!b.querySelector('[data-undo]'), redo: !!b.querySelector('[data-redo]'),
+       typeset: !!b.querySelector('[data-typeset]'), document: !!b.querySelector('[data-document]'),
+       close: !!b.querySelector('[data-close-side]'), split: !!b.querySelector('[data-side-by-side]'),
+     }));`,
   );
-  check('the bar of the project under the row has Preview, Share, undo and redo, and no Split view', header.preview && header.share && header.undo && header.redo && !header.split, JSON.stringify(header));
-  await app.click('header button[aria-label="References, pictures, history and changes"]');
+  check(
+    'each side has its bar, with its views, undo and redo, Typesetting, Document and ×, and no Split view',
+    bars.length === 2 && bars.every((b) => b.views >= 2 && b.undo && b.redo && b.typeset && b.document && b.close && !b.split),
+    JSON.stringify(bars),
+  );
+  check('between the two cells, a button switches the sides', await app.exists('.top [data-switch-sides]'));
+  await app.keys(['Control', 'Shift', 'r']);
+  await app.waitGone('.side-map', 3000);
   await sleep(200);
 
   // The × in the bar of the other project's side closes it.

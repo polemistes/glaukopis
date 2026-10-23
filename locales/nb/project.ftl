@@ -253,3 +253,5 @@ project-switch-sides = Bytt side
 ## Stage 3 of the sides, the panes and the bars (agent "bars")
 project-bar-typesetting = Ombrekking
 project-bar-document = Dokument
+project-badge-offline = serveren kan ikke nås
+project-badge-refused = serveren tar ikke imot de siste endringene

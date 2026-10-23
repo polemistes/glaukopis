@@ -243,7 +243,7 @@ try {
   await app.clickText('dialog footer button', 'Create');
   // A new project opens as text: the diagram is turned to.
   await app.waitFor('.text-view .section', 8000);
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
 

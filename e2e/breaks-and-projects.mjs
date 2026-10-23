@@ -164,9 +164,9 @@ try {
   // ---- an element copied in one project is pasted in another ----
   await app.click(await row('Wrath'));
   await until('Wrath open', async () => (await app.exec(`return document.querySelector('[data-projects-pane] [data-current]')?.textContent ?? ''`)).includes('Wrath'));
-  await app.waitFor('header [role="radio"]', 8000);
+  await app.waitFor('[data-bar] [data-view]', 8000);
   await sleep(500);
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(400);
   await app.click(await app.findByText('.diagram .node', 'One'));
@@ -177,7 +177,7 @@ try {
   await until('Odyssey open', async () => (await app.exec(`return document.querySelector('[data-projects-pane] [data-current]')?.textContent ?? ''`)).includes('Odyssey'));
   await sleep(500);
   if (!(await app.exists('.diagram .node.root'))) {
-    await app.clickText('header [role="radio"]', 'Diagram');
+    await app.view('diagram');
     await app.waitFor('.diagram .node.root', 8000);
   }
   await sleep(300);
@@ -187,7 +187,7 @@ try {
   await sleep(600);
   const pasted = await app.exec(`return Array.from(document.querySelectorAll('.diagram .node')).some((n) => n.textContent.includes('One'))`);
   check('an element copied in one project is pasted in another', pasted);
-  await app.clickText('header [role="radio"]', 'Text');
+  await app.view('text');
   await app.waitFor('.text-view .section', 8000);
   await sleep(500);
   const text = await app.exec(
@@ -197,7 +197,7 @@ try {
   await app.screenshot('breaks-4-pasted');
 
   // ---- the menu of an element offers the project, its trees and the other projects ----
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
   await app.rightClick(await app.findByText('.diagram .node', 'One'));

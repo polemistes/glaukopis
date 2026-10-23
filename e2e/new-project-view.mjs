@@ -23,15 +23,13 @@ try {
     await app.waitFor('.project', 8000);
     await sleep(800);
   };
-  const view = () =>
-    app.exec(
-      `return document.querySelector('header [role="radio"][aria-checked="true"]')?.textContent.trim() ?? null`,
-    );
+  // The view the bar of the side says is shown.
+  const view = () => app.viewShown();
 
   // ---- at first, in the diagram ----
   await begin('First');
   check('a new project opens in its diagram', (await app.exists('.diagram .node.root')) && !(await app.exists('.text-view .section')), String(await view()));
-  check('and the diagram is the view chosen', (await view()) === 'Diagram', String(await view()));
+  check('and the diagram is the view chosen', (await view()) === 'diagram', String(await view()));
   await app.screenshot('new-project-view-1-diagram');
 
   // ---- the setting ----
@@ -56,7 +54,7 @@ try {
   // ---- then, on its text ----
   await begin('Second');
   await app.waitFor('.text-view .section', 8000);
-  check('a new project then opens on its text', (await view()) === 'Text', String(await view()));
+  check('a new project then opens on its text', (await view()) === 'text', String(await view()));
 
   // ---- a project that is opened again opens as it was left ----
   await app.go('#/');
@@ -64,7 +62,7 @@ try {
   await sleep(1500);
   await app.openProject('First');
   await sleep(800);
-  check('a project opened again opens where it was left', (await view()) === 'Diagram', String(await view()));
+  check('a project opened again opens where it was left', (await view()) === 'diagram', String(await view()));
 
   const errors = await app.pageErrors();
   check('no errors in the page', errors.length === 0, errors.join(' | '));

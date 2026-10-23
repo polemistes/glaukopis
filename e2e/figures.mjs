@@ -95,7 +95,7 @@ try {
       selector,
     );
   const menu = async (words) => {
-    await app.clickText('.box .tools button, .tools button', 'Insert');
+    await app.click('.box [data-insert], .pane-bar [data-insert]');
     await app.waitFor('.menu');
     await app.clickText('.menu [role="menuitem"], .menu button', words);
   };
@@ -106,7 +106,7 @@ try {
   await app.clickText('dialog footer button', 'Create');
   // A new project opens as text: the diagram is turned to.
   await app.waitFor('.text-view .section', 8000);
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
   const project = (await invoke('project_list'))[0].id;

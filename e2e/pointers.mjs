@@ -71,7 +71,7 @@ try {
   await app.clickText('dialog footer button', 'Create');
   // A new project opens as text: the diagram is turned to.
   await app.waitFor('.text-view .section', 8000);
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
   const project = (await invoke('project_list'))[0].id;
@@ -141,7 +141,7 @@ try {
   await until('the words that point', async () => (await pointers()).length === 1);
   check('the words say what the document calls the figure', (await pointers()).join('|') === 'Figure 1', (await pointers()).join('|'));
   await app.keys(', and by ');
-  await app.clickText('.pane-bar .tools button', 'Insert');
+  await app.click('.pane-bar [data-insert]');
   await app.waitFor('.menu');
   await app.clickText('.menu [role="menuitem"], .menu button', 'Cross-reference');
   await app.waitFor('.targets input', 3000);

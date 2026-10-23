@@ -42,7 +42,7 @@ try {
   await app.clickText('dialog footer button', 'Create');
   // A new project opens as text: the diagram is turned to.
   await app.waitFor('.text-view .section', 8000);
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
 
   // Write in the text view.
@@ -86,7 +86,7 @@ try {
   check('a citation can be made within a note', (await app.count('.text-view .footnote')) === 1);
 
   // --- The preview ---
-  await app.click('header button[aria-label="Preview and export"]');
+  await app.click('.pane-bar [data-typeset]');
   await app.waitFor('.preview .page', 20000);
   await sleep(500);
   /** How many pages the document has. Of many, only those that are looked at have a place in the window. */
@@ -313,9 +313,9 @@ try {
      const map = JSON.parse(JSON.stringify(saved));
      return map.id;`,
   );
-  await app.click('header button[aria-label="Preview and export"]');
+  await app.click('.pane-bar [data-typeset]');
   await sleep(300);
-  await app.click('header button[aria-label="Preview and export"]');
+  await app.click('.pane-bar [data-typeset]');
   await app.waitFor('.preview header .what', 8000);
   await sleep(500);
   await app.openLook();

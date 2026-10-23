@@ -3,7 +3,10 @@
    * The sign of a project, the same wherever a project is named: on the
    * home page, in the pane of projects, and in the bar of a pane that shows
    * another project beside (ADR 0037). A book; with a small sign of people
-   * for a project its owner shares, and of a link for one joined.
+   * for a project its owner shares, and of a link for one joined. Where the
+   * state of the connection is known, as in the path of a side, the sign
+   * says it as well: warm where the server cannot be reached, red where it
+   * does not take the latest changes (ADR 0064).
    */
   import Book from '@lucide/svelte/icons/book';
   import Link2 from '@lucide/svelte/icons/link-2';
@@ -13,20 +16,22 @@
 
   interface Props {
     name: string;
-    /** How it is shared: by its owner, or joined; none where it is not. */
-    sharing?: { owner: boolean } | null;
+    /** How it is shared: by its owner, or joined, and how it is connected where that is known; none where it is not. */
+    sharing?: { owner: boolean; status?: 'connected' | 'offline' | 'refused' } | null;
     size?: number;
   }
 
   let { name, sharing = null, size = 16 }: Props = $props();
 
-  const said = $derived(
-    !sharing
-      ? name
-      : sharing.owner
-        ? t('project-badge-shared', { name })
-        : t('project-badge-joined', { name }),
-  );
+  const said = $derived.by(() => {
+    if (!sharing) return name;
+    const how = sharing.owner
+      ? t('project-badge-shared', { name })
+      : t('project-badge-joined', { name });
+    if (sharing.status === 'offline') return `${how} · ${t('project-badge-offline')}`;
+    if (sharing.status === 'refused') return `${how} · ${t('project-badge-refused')}`;
+    return how;
+  });
   const sign = $derived(Math.max(8, Math.round(size * 0.62)));
 </script>
 
@@ -34,6 +39,7 @@
   class="badge"
   role="img"
   aria-label={said}
+  data-status={sharing?.status}
   use:tooltip={{ text: said, side: 'bottom' }}
   style:width="{size}px"
   style:height="{size}px"
@@ -75,5 +81,11 @@
   }
   .sign.joined {
     color: var(--accent);
+  }
+  [data-status='offline'] .sign {
+    color: var(--warn);
+  }
+  [data-status='refused'] .sign {
+    color: var(--danger);
   }
 </style>

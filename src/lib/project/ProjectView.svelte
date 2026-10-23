@@ -573,10 +573,20 @@
     );
   }
 
-  /** How the project of a side is shared, for the badge of its path. */
-  function sharingOf(spec: SideSpec): { owner: boolean } | null {
-    const sharing = openOf(spec)?.sharing?.sharing;
-    return sharing ? { owner: sharing.owner } : null;
+  /** How the project of a side is shared, and how it is connected, for the badge of its path. */
+  function sharingOf(
+    spec: SideSpec,
+  ): { owner: boolean; status: 'connected' | 'offline' | 'refused' } | null {
+    const shared = openOf(spec)?.sharing as ProjectSharing | null | undefined;
+    const sharing = shared?.sharing;
+    if (!sharing) return null;
+    const connection = shared?.connection;
+    const status = connection?.tooLarge
+      ? 'refused'
+      : connection?.status === 'connected'
+        ? 'connected'
+        : 'offline';
+    return { owner: sharing.owner, status };
   }
 
   /** The sharing window, while it is open, for a project. */

@@ -92,14 +92,15 @@ try {
   await app.clickText('dialog footer button', 'Create');
   // A new project opens as text: the diagram is turned to.
   await app.waitFor('.text-view .section', 8000);
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
   await app.doubleClick('.diagram .node.root');
   await app.waitFor('.box .text .prose');
   await sleep(250);
   await app.keys('The poem is composed in performance ');
-  await app.clickText('.box .tools button', 'Cite');
+  await app.click('.box [data-insert]');
+  await app.clickText('.menu [role="menuitem"]', 'Citation');
   await app.waitFor('.picker input');
   await app.keys('singer');
   await sleep(300);
@@ -177,7 +178,7 @@ try {
   await app.clickText('dialog footer button', 'Create');
   // A new project opens as text: the diagram is turned to.
   await app.waitFor('.text-view .section', 8000);
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
   await app.keys(['Control', 'Shift', 'r']);

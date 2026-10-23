@@ -608,7 +608,7 @@ export class App {
 
   /** Messages the page wrote to the console as errors, collected by a hook installed at launch. */
   /** Each different message once, with how often it came. */
-  // ---- the path over a side (record 0063): the crumbs, and ⋯ This element ----
+  // ---- the path over a side (record 0063): the crumbs ----
 
   /** The path of the side that has the focus, else of the first, as a script finds it in the page: an expression. */
   get path() {
@@ -660,25 +660,127 @@ export class App {
     await sleep(300);
   }
 
-  /** Opens the menu of what can be done with the element in view. */
-  async openThisMap() {
-    await this.click(await this.exec(`return ${this.path}?.querySelector('[data-this-element]') ?? null`));
+  // ---- a side's bar (record 0064): the views, the menus of kinds and marks, Insert ----
+
+  /** The side that has the focus, else the only one, as a script finds it in the page: an expression. */
+  get side() {
+    return `(document.querySelector('.pane.focused') ?? document.querySelector('.pane'))`;
+  }
+
+  /** The bar of the side that has the focus: an expression. */
+  get bar() {
+    return `${this.side}?.querySelector('[data-bar]')`;
+  }
+
+  /** Shows the element in view of the side that has the focus as "diagram", "text" or "timeline", by the button in its bar. */
+  async view(name) {
+    const button = `${this.bar}?.querySelector('[data-view="${name}"]')`;
+    await this.waitUntil(`return !!${button}`, 8000, `the button of the ${name} in the bar`);
+    if (await this.exec(`return ${button}.getAttribute('aria-checked') === 'true'`)) return;
+    await this.click(await this.exec(`return ${button}`));
+    await this.waitUntil(`return ${button}?.getAttribute('aria-checked') === 'true'`, 5000, `the ${name} shown`);
+  }
+
+  /** Which view the side that has the focus shows, as its bar says: "diagram", "text" or "timeline". */
+  async viewShown() {
+    return this.exec(`return ${this.bar}?.querySelector('[role="radio"][aria-checked="true"]')?.dataset.view ?? null`);
+  }
+
+  /** Opens a menu of the bar of the side that has the focus, by its button (`data-insert`, `data-marks` …), and chooses in it. */
+  async barMenu(button, item) {
+    await this.click(await this.exec(`return ${this.bar}?.querySelector('[${button}]') ?? null`));
     await this.waitFor('.menu');
     await sleep(150);
+    if (item) await this.clickText('.menu [role="menuitem"]', item);
   }
 
-  /** Makes a new element under the one in view, and leaves its name being typed in the path. */
-  async newMap() {
-    await this.openThisMap();
-    await this.clickText('.menu [role="menuitem"]', 'New element under it');
-    await this.waitFor('[data-path] .naming');
+  /** Chooses in Insert: "Citation", "Note", "Comment", "Image", "Table…", "Inline number…" … */
+  async insert(item) {
+    await this.barMenu('data-insert', item);
+  }
+
+  /** Chooses in Marks: "Italic", "Bold", "Small capitals" … */
+  async marks(item) {
+    await this.barMenu('data-marks', item);
+  }
+
+  /** Chooses in Paragraph kind. */
+  async paragraphKind(item) {
+    await this.barMenu('data-paragraph-kind', item);
+  }
+
+  /** Chooses in Words kind. */
+  async wordsKind(item) {
+    await this.barMenu('data-words-kind', item);
+  }
+
+  /**
+   * Opens the menu of the element in view, by a right click on its name in
+   * the text, or on its node in the diagram, and chooses in it where told.
+   */
+  async thisElement(item) {
+    const target = await this.exec(
+      `const side = ${this.side};
+       return side?.querySelector('.text-view .section.level-0 .heading') ?? side?.querySelector('.diagram .node.root') ?? null;`,
+    );
+    if (!target) throw new Error('no element in view to open the menu of');
+    await this.rightClick(target);
+    await this.waitFor('.menu');
     await sleep(150);
+    if (item) await this.clickText('.menu [role="menuitem"]', item);
   }
 
-  /** Chooses in the menu of what can be done with the element in view. */
-  async thisMap(item) {
-    await this.openThisMap();
-    await this.clickText('.menu [role="menuitem"]', item);
+  /** Opens the menu of the text where the cursor is, by a right click there, and chooses Number these lines…: the window of the numbers opens. */
+  async numberTheseLines() {
+    const at = await this.exec(
+      `const s = getSelection();
+       if (!s.rangeCount) return null;
+       const range = s.getRangeAt(0);
+       const r = range.getClientRects()[0] ?? range.getBoundingClientRect();
+       const node = s.anchorNode.nodeType === 1 ? s.anchorNode : s.anchorNode.parentElement;
+       const p = node.closest('p')?.getBoundingClientRect();
+       return r && r.height ? { x: Math.round(r.left), y: Math.round((r.top + r.bottom) / 2) } : p ? { x: Math.round(p.left + 4), y: Math.round(p.top + 6) } : null;`,
+    );
+    if (!at) throw new Error('no cursor in a text');
+    await this.exec(
+      `const x = arguments[0], y = arguments[1];
+       const common = { bubbles: true, cancelable: true, composed: true, clientX: x, clientY: y, screenX: x, screenY: y, view: window };
+       const send = (event) => document.elementFromPoint(x, y)?.dispatchEvent(event);
+       send(new PointerEvent('pointerdown', { ...common, button: 2, buttons: 2, pointerType: 'mouse', isPrimary: true }));
+       send(new MouseEvent('mousedown', { ...common, button: 2, buttons: 2 }));
+       send(new MouseEvent('contextmenu', { ...common, button: 2, buttons: 2 }));
+       send(new PointerEvent('pointerup', { ...common, button: 2, buttons: 0, pointerType: 'mouse', isPrimary: true }));
+       send(new MouseEvent('mouseup', { ...common, button: 2, buttons: 0 }));`,
+      at.x,
+      at.y,
+    );
+    await this.waitFor('.menu', 3000);
+    await sleep(150);
+    await this.clickText('.menu [role="menuitem"]', 'Number these lines…');
+  }
+
+  /** Opens the window of the sharing of the project of the side that has the focus, by Share… in its menu in the list. */
+  async shareWindow() {
+    if (!(await this.exists('[data-projects-pane]'))) {
+      await this.click('[data-projects-button]');
+      await this.waitFor('[data-projects-pane] .row.project', 5000);
+      await sleep(200);
+    }
+    const id = await this.exec(`return ${this.path}?.dataset.project ?? null`);
+    const row = await this.exec(
+      `return document.querySelector('[data-projects-pane] .row.project[data-row="p:' + arguments[0] + '"]') ?? document.querySelector('[data-projects-pane] .row.project[data-current]')`,
+      id,
+    );
+    await this.rightClick(row);
+    await this.waitFor('.menu');
+    await sleep(150);
+    await this.clickText('.menu [role="menuitem"]', 'Share…');
+  }
+
+  /** Makes a new element under the one in view, from its menu, and leaves its name being written: the keys write it. */
+  async newElementUnder() {
+    await this.thisElement('Add an element under it');
+    await sleep(300);
   }
 
   // ---- what you are writing: the chooser over the preview ----

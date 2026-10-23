@@ -99,7 +99,7 @@ try {
   await app.type('dialog input', 'Odes');
   await app.clickText('dialog footer button', 'Create');
   await app.waitFor('.text-view .section', 8000);
-  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.view('diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(400);
   await app.click('.diagram .node.root');
@@ -139,7 +139,7 @@ try {
   }
   await sleep(200);
   await app.keys(['Control', 'a']);
-  await app.click('.pane-bar .tools .style');
+  await app.click('.pane-bar [data-paragraph-kind]');
   await app.clickText('[role="menuitem"]', 'More…');
   await sleep(200);
   await app.clickText('[role="menuitem"]', 'Verse');
@@ -166,9 +166,7 @@ try {
 
   // --- Numbers in place: counted from 1, then a number given in the margin ---
   await toLine(0);
-  await app.click('.pane-bar .tools button.lines');
-  await app.waitFor('.menu', 3000);
-  await app.clickText('.menu [role="menuitem"]', 'Number these lines…');
+  await app.numberTheseLines();
   await app.waitForText('dialog[open] h2', 'Numbers', 3000);
   await sleep(200);
   await app.exec(
@@ -250,41 +248,31 @@ try {
     `${await shape()}; ${(await labels()).join(' | ')}; ${await shownNumbers()}`,
   );
 
-  // --- The Numbers menu: the lines of the page, a switch said of the document ---
+  // --- Numbers belong where they are done: these lines in the right-click menu of the text, an inline number in Insert ---
+  // (The lines of the page are numbered in the properties of the document.)
   await toLine(0);
-  await app.click('.pane-bar .tools button.lines');
+  check('the bar has no menu of numbers', !(await app.exists('.pane-bar .tools button.lines')));
+  await app.click('.pane-bar [data-insert]');
   await app.waitFor('.menu', 3000);
-  const numbersItems = await menuItems();
-  check(
-    'the Numbers menu offers these lines, a reference mark and the page',
-    numbersItems.some((w) => w.startsWith('Number these lines')) &&
-      numbersItems.some((w) => w.startsWith('Reference mark')) &&
-      numbersItems.some((w) => w.startsWith('Number the lines of the page')),
-    numbersItems.join(' | '),
-  );
-  await app.clickText('.menu [role="menuitem"]', 'Number the lines of the page');
-  await sleep(300);
+  const insertItems = await menuItems();
+  check('Insert offers an inline number', insertItems.some((w) => w.startsWith('Inline number')), insertItems.join(' | '));
+  await app.press('Escape');
+  await app.waitGone('.menu', 3000);
   await toLine(0);
-  await app.click('.pane-bar .tools button.lines');
-  await app.waitFor('.menu');
-  await sleep(150);
-  const page = await app.exec(
-    `const m = Array.from(document.querySelectorAll('.menu [role="menuitem"], .menu [role="menuitemcheckbox"]')).find((m) => m.textContent.includes('Number the lines of the page'));
-     return m ? (m.getAttribute('aria-checked') ?? (m.querySelector('.check svg') ? 'true' : 'false')) : null;`,
-  );
-  check('the lines of the page are numbered from the Numbers menu, which shows it', page === 'true', String(page));
-  await app.screenshot('runs-6-page-numbers');
-  // Turned off again, so that the preview below has the numbers of the verse alone.
-  await app.clickText('.menu [role="menuitem"]', 'Number the lines of the page');
-  await sleep(300);
+  await app.numberTheseLines();
+  await app.waitForText('dialog[open] h2', 'Numbers', 3000);
+  check('the right-click menu of a paragraph numbers its lines', true);
+  await app.press('Escape');
+  await app.waitGone('dialog[open]', 3000);
+  await sleep(200);
 
   // --- A page break and a column break, from Insert ---
   await toLine(5);
-  await app.clickText('.pane-bar .tools button', 'Insert');
+  await app.click('.pane-bar [data-insert]');
   await app.waitFor('.menu');
   await choose('Page break');
   await app.keys('After the page break.');
-  await app.clickText('.pane-bar .tools button', 'Insert');
+  await app.click('.pane-bar [data-insert]');
   await app.waitFor('.menu');
   await choose('Column break');
   await app.keys('After the column break.');
@@ -307,7 +295,7 @@ try {
 
   // --- The look of the document: a part for the numbers, every kind with its look, and the columns ---
   await toLine(0);
-  await app.click('.pane-bar .tools .style');
+  await app.click('.pane-bar [data-paragraph-kind]');
   await app.clickText('[role="menuitem"]', 'looks…');
   await app.waitFor('.side .look .chips', 8000);
   await sleep(300);
@@ -364,7 +352,7 @@ try {
     () => true,
     () => false,
   );
-  if (!opened) await app.click('header button[aria-label="Preview and export"]');
+  if (!opened) await app.click('.pane-bar [data-typeset]');
   await app.waitFor('.preview .page', 30000);
   await sleep(2000);
   check('the preview is made without remark', !(await app.exists('.preview footer .issues')));

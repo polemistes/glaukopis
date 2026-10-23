@@ -302,3 +302,5 @@ project-switch-sides = Switch sides
 ## Stage 3 of the sides, the panes and the bars (agent "bars")
 project-bar-typesetting = Typesetting
 project-bar-document = Document
+project-badge-offline = the server cannot be reached
+project-badge-refused = the server does not take the latest changes

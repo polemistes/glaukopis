@@ -83,12 +83,12 @@ try {
     await sleep(100);
   };
   const toText = async () => {
-    await app.clickText('header [role="radio"]', 'Text');
+    await app.view('text');
     await app.waitFor('.text-view .section', 8000);
     await sleep(500);
   };
   const toDiagram = async () => {
-    await app.clickText('header [role="radio"]', 'Diagram');
+    await app.view('diagram');
     await app.waitFor('.diagram .node.root', 8000);
     await sleep(500);
   };
