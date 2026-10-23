@@ -32,7 +32,8 @@ writeFileSync(
   Array.from({ length: 2001 }, (_, i) => `${i},x`).join('\n'),
 );
 
-const app = await App.launch({ width: 1360, height: 900 });
+// Wide enough that the text, beside the list of projects and the preview, has room for a table with text around it.
+const app = await App.launch({ width: 1600, height: 900 });
 try {
   await app.installErrorHook();
   const invoke = (command, args = {}) =>

@@ -284,7 +284,8 @@ try {
     'with checking turned off, nothing is underlined',
     (await drawnUnderlined()).length === 0 && (await underlined()).length === 0,
   );
-  await app.keys(['Control', ',']);
+  await app.click('nav.rail button[aria-label="Settings"]');
+  await sleep(500);
   await app.click(
     '[role="radiogroup"][aria-label="Check spelling as you write"] button[aria-label="On"]',
   );

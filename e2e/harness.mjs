@@ -558,6 +558,11 @@ export class App {
 
   /** To the start screen, where no project is open (record 0063): the project open is let go. */
   async home() {
+    // A dialog over the view, such as the settings, is closed first, as Ctrl+1 used to close it.
+    if (await this.exists('dialog[open]')) {
+      await this.press('Escape');
+      await this.waitGone('dialog[open]', 3000).catch(() => {});
+    }
     await this.go('#/');
     await this.waitFor('[data-start]', 10000);
   }
