@@ -88,3 +88,21 @@ What the assessment found, and the owner confirmed:
 - `WritingTools.svelte` becomes the bar of a side; `Path.svelte` loses the ⋯ and gains the Not saved sign and the tree dropdown; `MapText.svelte`'s right-click menu gains the numbering of lines; the schema gains the hard space; the sign of breaks becomes the marks.
 - The words: *Typesetting*, *Document*, *Document properties*, *Document type*, *Image*, *Inline number*, *Marks*, *Paragraph kind*, *Words kind*, in English and Norwegian Bokmål; *picture* becomes *image* wherever the user sees it.
 - The scripts find the view chooser in a side's bar, not in a header over both; the harness's helpers change with it.
+
+## Addendum, 2026-10-23: as built
+
+Built on 2026-10-23 from the plan: stage 1 on main, stage 2 and stages 3–4 by two agents in worktrees, merged into main, stage 5 on main. Where the build departs from the plan:
+
+- **A project is opened once, however many sides show it** (`open-projects.svelte.ts`): two sides of one project share one opened copy, its sharing and its folds, and the last side to let it go saves it and closes it. The plan had each side open its project.
+- **The other project goes into the side without the focus**, whichever that is; *One at a time* closes the side without the focus; *Open beside* and a project opened from the list open where the project was left, not at its top, as opening a project does anywhere.
+- **What a project keeps of where its text was read is kept by element**: each element in view has the element that stood at the top of its text, so that a side coming back to an element is read where it was, unless a jump names another.
+- **A side asked for in a view keeps it**; one asked for with nothing named takes the view the project was left in.
+- **The Look column has a width of its own** in the arrangement; the typesetting pane is the pages and the column together, at most 85 % of the window.
+- **Ctrl+Shift+A toggles the Look column**; where the pane shows the other side, it opens Look there and does not turn the pane.
+- **The Document type tab writes at once**, as the chooser did; the details are kept with *Save*, and the numbering of the page's lines is one of the details, written on the element itself.
+- **The presence sign** stands in the head of the document pane while the active project is shared and others are in it; the state of the connection, offline or refused, is now on the project's badge in the list and in the path, where only the header's Share button showed it.
+- **The hard space is the character U+00A0 itself**, neither a mark nor a node, ringed by a decoration of the editor that is looked for once and then only in the paragraphs a change touches; nothing new is stored, and older versions, the core, the exports and the Org form keep it as it is. **An empty paragraph shows no ¶.**
+- **A press on the Document button of the side without the focus**, while the pane is open, only moves the focus, and the pane turns with it, rather than closing it.
+- **Loose citations** left the element's menu; the document pane's tab and Ctrl+Shift+T open them.
+- **The list's button** stands at the far left of the top row, and the cell over the first side gives up that width, so that the cells stay over their sides.
+- **Words still saying *picture*** in the words of documents, formats, styles, files, credits and some of the core's messages are left for a later pass.

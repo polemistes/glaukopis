@@ -32,7 +32,7 @@ it is the same element in all of them:
 | --- | --- |
 | **Diagram** | Seeing the whole, and moving ideas about. The element stands at the centre, and what is under it about it: this is its map. |
 | **Text** | Writing. The name of the element is the title, and the names of those under it are the headings. |
-| **Preview** | Seeing the manuscript as it will be sent. |
+| **Typesetting** | Seeing the manuscript as it will be sent. |
 
 So there is no moment at which the outline is put away and the writing
 begins. An element with a name and nothing else is a thought to come back to;
@@ -127,7 +127,7 @@ to the start screen.
 same sides, each at the element and in the view it showed, the text at the
 heading that stood at its top and the diagram where it was looked at, the
 side you were in, and the sides switched if they were; or in the library, the
-pictures, the files or the search, if that is where you were. The window has
+images, the files or the search, if that is where you were. The window has
 the size and the place it had, where your screen allows. A project that has
 been deleted since gives the start screen.
 
@@ -208,33 +208,53 @@ only the names printed as headings), by a dot for each level, or by setting
 each level further in, with a faint line down from the element it is under.
 Choose which under **Document structure** in the settings, where **Editor
 font** chooses the font your text is set in while you write, and the size
-beside it how large; neither touches the preview or what is exported.
+beside it how large; neither touches the typesetting or what is exported.
 
-Write as in any editor. The tools are over the text: the kind of the
-paragraph the cursor is in, a button that opens the kinds (text, quotation,
-list, numbered list, and the rest under **More…**); italics, bold and small
-capitals, and **Words**, which has the other marks and the kinds of words;
-**Cite**, **Note** and **Insert**, which has pictures, tables and
-mathematics; and **Comment**. They act where the cursor is, or on what is
-selected. The same tools are in the box that opens when an element is
-double-clicked in the diagram. Before them, over the text, stands
-**New element**, which adds an element after the one the cursor is in, or
-under it; and at their end a button that turns the checking of spelling off
-and on.
+Write as in any editor. Each side has a bar of its own, of icons, each
+named when the pointer rests on it: the outline; **Diagram**, **Text**, and
+**Timeline** where the element has times; then three menus, **Paragraph
+kind**, **Words kind** and **Marks**; undo and redo; spelling, and the marks
+of whitespace; **Insert**; and **Typesetting** and **Document**, which open
+the two panes (see *Typesetting* and *The document pane*); and at the right
+the **×** that closes the side. The menus act where the cursor is, or on
+what is selected, and are greyed while the side shows the diagram; the box
+that opens when an element is double-clicked in the diagram has the same
+three menus and **Insert**.
+
+- **Paragraph kind** says what the paragraph the cursor is in is, and
+  changes it: text, quotation, list, numbered list, verse, and the rest under
+  **More…**, and kinds of your own (see *Kinds of paragraph and of words*).
+- **Words kind** says what some words are: foreign words, in a language; the
+  title of a work; a term; a mention of a word; a highlight; a speaker or a
+  stage direction within a line; and kinds of your own. The format gives
+  each kind its look, so a term is a term in every format. The language of
+  a passage is set here too.
+- **Marks** set a look by hand, on any letters: italic, bold, small
+  capitals, underline, superscript, subscript, struck, and code. Italic and
+  bold have **Ctrl+I** and **Ctrl+B**.
+- **Insert** puts in what is not typed: a **Citation**, a **Note**, a
+  **Comment**, an **Image**, a **Table**, a table from a file, a
+  **Formula** in the line, an **Equation** on a line of its own, a
+  **Cross-reference**, an **Inline number**, two texts side by side, a page
+  break and a column break.
+
+A new element is made from the keys, below, or from the right-click menu of
+an element.
 
 Everything the tools do can be done from the keys, and much of it by typing:
 
 | To | Do this |
 | --- | --- |
-| Cite a reference | **Cite**, or type **@**, and begin to type an author or a title |
+| Cite a reference | **Insert** › **Citation**, or type **@**, and begin to type an author or a title |
 | Give the page | Type it when the citation has been chosen: `73`, `73–75` |
-| Write a note | **Note**, or **Ctrl+Alt+F** |
-| Put in a picture | **Insert**, or **Ctrl+Alt+P**; or drop the file on the text; or paste |
+| Write a note | **Insert** › **Note**, or **Ctrl+Alt+F** |
+| Put in an image | **Insert** › **Image**, or **Ctrl+Alt+P**; or drop the file on the text; or paste |
 | Write a formula in the line | **Insert**, or **Ctrl+Alt+M** |
 | Write an equation on a line of its own | **Insert**, or **Ctrl+Alt+E** |
-| Set words in italics or bold | The tools, or **Ctrl+I**, **Ctrl+B** |
-| Underline words | **Words**, or **Ctrl+U** |
-| Choose the kind of a paragraph, or make a kind of your own | The kind button; **Make a kind…** under **More…** in its menu |
+| Set words in italics or bold | **Marks**, or **Ctrl+I**, **Ctrl+B** |
+| Underline words | **Marks**, or **Ctrl+U** |
+| Write a space no line breaks at | **Ctrl+Shift+Space** |
+| Choose the kind of a paragraph, or make a kind of your own | **Paragraph kind**; **Make a kind…** under **More…** in its menu |
 | Begin a quotation or a list | Type `> `, `- ` or `1. ` at the start of a line |
 | Make a dash | Type `--` for –, `---` for — |
 | Make a heading at the cursor: a new element after the one the cursor is in | **Alt+Enter**; or right-click there: **Split here** |
@@ -246,7 +266,7 @@ Everything the tools do can be done from the keys, and much of it by typing:
 | Move the element up or down among those beside it | **Alt+Up**, **Alt+Down**; the cursor stays where it is |
 | Join an element to the one above | Right-click: **Join to the element above** |
 | Enter an element, to see it alone with what is under it | **Alt+Shift+Down**; the small round button before its heading, which shows when the pointer is on the heading; or **Enter**, from the grip beside it |
-| Go up, to the element over the one in view | **Alt+Shift+Up**, with the cursor anywhere in the text; the small round button before the title, which shows when the pointer is on it; or its name, small, at the left of the bar |
+| Go up, to the element over the one in view | **Alt+Shift+Up**, with the cursor anywhere in the text; the small round button before the title, which shows when the pointer is on it; or its name in the path at the top |
 | Move an element to another place | Drag it by the grip beside its heading: the line shows where it goes, and how far to the right the pointer is says how deep, under the element above, after it, or as far out as before the element below |
 
 **A heading at the cursor.** **Alt+Enter** makes a new element where the
@@ -256,7 +276,7 @@ its text. So at the start of a paragraph the whole paragraph is the name; at
 its end the name is empty, and the paragraphs below go in; in its middle,
 the rest of the paragraph is the name. A name holds italics, small capitals,
 raised and lowered text and nothing else: where what follows the cursor
-holds a citation, a note, a picture, a formula, a reference mark, a line
+holds a citation, a note, an image, a formula, an inline number, a line
 break or bold, it becomes the first paragraph of the new element's text
 instead, the name is left empty, and a message says why. Where the element
 the cursor is in has elements under it, the new one is made first among
@@ -267,10 +287,13 @@ this with the new element under the one the cursor is in.
 
 A text has two breaks: **Enter** begins a new paragraph, and
 **Shift+Enter** breaks the line within the paragraph, as in an address or a
-title of two lines. A break within a paragraph is shown by a faint **↵** at
-the end of its line, on the screen only: it is not printed, copied or
-searched. The button with the sign, beside that of spelling at the end of the
-writing tools, hides it and shows it again, everywhere.
+title of two lines. **The marks of whitespace**, the button with **¶** in
+the bar, show a faint **¶** at the end of every paragraph, **↵** at a break
+within a paragraph, and a small ring over a **hard space**, a space that no
+line is broken at, as between a number and its unit, written with
+**Ctrl+Shift+Space**. The marks are on the screen only: they are not
+printed, copied or searched. The button hides them and shows them again,
+everywhere.
 
 Text pasted as text keeps every line break: a lone one as a break within
 the paragraph, an empty line between paragraphs, and each further empty line
@@ -335,7 +358,7 @@ and down go past a text that is folded away.
 What is folded away is remembered with the project on this computer, and is
 as you left it when you open the project again. It is about what you see,
 and not about the document: nothing is folded for those you share the
-project with, the diagram is not changed by it, and the preview and the
+project with, the diagram is not changed by it, and the typesetting and the
 documents that are made hold the whole text. The words counted under the
 text are those of the whole text as well.
 
@@ -363,10 +386,10 @@ A *picture* is a file: a photograph, a drawing. A *figure* is a picture as
 it stands in a text, with what is said of it there, its caption, and its
 number in the document. The same picture can be a figure in many texts.
 
-Put a figure in with **Insert**, from a file or from the store of pictures;
+Put a figure in with **Insert** › **Image**, from the images of the project or of the store, or a new one from a file;
 by dropping a file on the text where it is to stand; by pasting a picture
-that was copied; or by dragging a picture from the pictures beside the map
-(see *Pictures* below). A picture dropped
+that was copied; or by dragging an image from the images in the document
+pane (see *Images* below). A picture dropped
 on an element in the diagram becomes a figure at the end of its text.
 
 What is said of the figure is written under the picture, where the cursor is
@@ -477,16 +500,15 @@ between the two. Tab indents the line the cursor is in a step, for the
 shorter lines of lyric, and Shift+Tab takes it back; over several lines
 selected, each of them. A **Speaker** or a **Stage direction** is a paragraph
 of its own kind among the lines, and does not part them from each other; the
-same two are kinds of words as well, under **Words**, for a name or a
+same two are kinds of words as well, under **Words kind**, for a name or a
 direction within a line, as editions set them.
 
-Numbers belong to what they number. **Numbers**, the **#** button among
-the tools, offers the three things that number, each saying what it
-numbers: **Number these lines…**, the lines you write; **Reference mark…**,
-a place in prose (see *Reference marks*); and **Number the lines of the
-page**, every line of the printed page, numbered in the margin, which is
-marked when it is on and is said of the document of the element in view and
-of all under it, over what its layout says.
+Numbers belong to what they number. **Number these lines…**, in the
+right-click menu of the text, numbers the lines you write; **Inline
+number…**, under **Insert**, marks a place in prose (see *Inline numbers*);
+and **Number the lines of the page**, in *Document properties* under
+**Details**, numbers every line of the printed page in the margin, for the
+document and all under it, over what its layout says.
 
 **Number these lines…** numbers the paragraphs selected, or, where nothing
 is selected, the paragraphs of the cursor's kind standing together with the
@@ -579,8 +601,8 @@ where you write, the editor shows each kind by cues of its own — a
 quotation set in, a speaker in small capitals, a direction in italics —
 which go into no document.
 
-You choose one thing: the kind of a paragraph. The button at the left of
-the tools shows the kind of the paragraph the cursor is in, or **Mixed**
+You choose one thing: the kind of a paragraph. **Paragraph kind**, in the
+bar, shows the kind of the paragraph the cursor is in, or **Mixed**
 over a selection of several kinds, and a kind chosen from its menu is given
 to the paragraphs selected, or to the one the cursor is in: never more,
 never less. Only the kind changes: the lines, the words, the numbering and
@@ -600,7 +622,7 @@ pointer rests on the first, the head of the bracket names their kind:
 is said there: press the name for its menu. **Numbers…** numbers their
 lines (see *Lines and paragraphs, verse, and texts side by side*);
 **Language** gives them all a language of its own, as *Language* under
-*Words* gives one to what is selected; **Select these paragraphs** selects
+*Words kind* gives one to what is selected; **Select these paragraphs** selects
 them; **Make it text** makes the paragraphs of the kind text, and changes
 nothing else, so that a poem keeps its lines; **Begin a new run here** makes
 the paragraph the cursor is in begin a bracket of its own, though the one
@@ -629,10 +651,13 @@ Typing `> `, `- ` or `1. ` at the start of a paragraph of text makes it a
 quotation, a point or a numbered point, as Markdown has it; `7. ` begins a
 numbered list at 7.
 
-**Words**, among the tools, has the marks beyond italics, bold and small
-capitals — **Underlined** (**Ctrl+U**), **Superscript**, **Subscript**,
-**Struck through** and **Code in the line** — and then the kinds of words,
-which say what the words are: **Foreign words**, with their language,
+**Marks**, in the bar, are a look set by hand on any letters, from one to
+many paragraphs: **Italic** (**Ctrl+I**), **Bold** (**Ctrl+B**), **Small
+capitals**, **Underlined** (**Ctrl+U**), **Superscript**, **Subscript**,
+**Struck through** and **Code in the line**. They are only looks.
+
+**Words kind**, beside it, has the kinds of words, which say what the words
+are, and whose look the layout gives: **Foreign words**, with their language,
 which the spelling follows and which goes into every document; the
 **Title of a work**; a **Term** where it is first used; a **Mention** of a
 word spoken of as a word, which stands in the quotation marks of the
@@ -642,7 +667,7 @@ direction** within a line, as an edition sets *Me.* before the words of
 Medea or *aside* among them. Select the words first; with nothing selected,
 what you type next is of the kind.
 
-**Language**, under **Words**, gives what is selected a language of its
+**Language**, under **Words kind**, gives what is selected a language of its
 own, from one word to many paragraphs: a Greek quotation, a Latin phrase, a
 German paragraph in a Norwegian text; from a bracket it is given to all the
 paragraphs beside it at once. It has no look: the words keep their
@@ -659,7 +684,7 @@ the words around them another, the latter holds: foreign words are a kind, and
 italic, while words in another language are only that.
 
 **Make a kind…**, at the foot of **More…**, makes a kind of paragraph of
-your own, and **Make a kind of words…**, under **Words**, a kind of words.
+your own, and **Make a kind of words…**, under **Words kind**, a kind of words.
 Give it a name, say what it is based on, and say only how it differs:
 italic, bold, underlined, letters, alignment, indents, space before and
 after, size; what you do not say is as the base has it. A kind of your own
@@ -675,7 +700,7 @@ your other projects when a kind is named there.
 The foot of the kind menu says where the looks come from: **Set as
 “Manuscript” has them**, naming the layout of the document, and under it
 **How “Quotation” looks…**, named for the kind the cursor is in, which
-opens Look beside the preview at the look of that kind, where it is
+opens Look in the typesetting pane at the look of that kind, where it is
 changed; see *The look of a document*. A draft note and a highlight are for
 the screen alone, and go into no document.
 
@@ -741,15 +766,15 @@ to something else.
 In a PDF and on a web page a cross-reference leads to what it refers to when
 it is pressed. If that is taken away, or left out of the document, it is
 shown as **?** in red where you write and as **[?]** in the document, and
-the preview remarks on it.
+the typesetting remarks on it.
 
-### Reference marks
+### Inline numbers
 
 Some texts are cited by numbers of their own that run through the prose:
 the verses of the Bible (*3:16*), the pages of Stephanus in Plato (*327a*),
-the numbers of Bekker in Aristotle. Put one in with **Reference mark…**,
-under **Numbers** or under **Insert**, or **Ctrl+Alt+K**, and give its
-label; the window proposes the one
+the numbers of Bekker in Aristotle. Put one in with **Inline number…**,
+under **Insert**, or **Ctrl+Alt+K**, and give its label, which may hold
+letters; the window proposes the one
 that follows the mark before it, *3:17* after *3:16* and *327b* after
 *327a*. Press a mark to change its label, or to take it away.
 
@@ -761,22 +786,23 @@ the margin beside their line**, the right one. Word and Writer have no room
 in the margin, and raise them; the character style *Reference Mark* can be
 changed there.
 
-## Pictures
+## Images
 
-Pictures are kept in one store for the whole of Glaukopis, as references are
-kept in the library. A picture that is used in several texts or projects
-is the same picture in all of them, and is kept once.
+Images are kept in one store for the whole of Glaukopis, as references are
+kept in the library. An image that is used in several texts or projects is
+the same image in all of them, and is kept once.
 
-**Ctrl+3**, or the pictures in the rail at the left, shows the store: every
-picture, to be searched by what it is called and by what is said of it. Add
-pictures with **Add pictures…**, or drop files on the view.
+**Ctrl+3**, or the images in the rail at the left, shows the store: every
+image, to be searched by what it is called and by what is said of it. Add
+images with **Add images…**, or drop files on the view.
 
-In a project, **Ctrl+Shift+P** opens the pictures beside the map, where the
-references are otherwise. They can be shown for **this map**, which is the
-element in view with all under it, for the **project**, or for the whole
-**store**. Drag one into a text to make a figure of it there.
+In a project, **Insert** › **Image** or **Ctrl+Shift+P** opens the images in
+the document pane (see *The document pane*). They can be shown for **this
+map**, which is the element in view with all under it, for the **project**,
+or for the whole **store**, and new ones are added there from a file. Drag
+one into a text to make a figure of it there.
 
-Of each picture you can say:
+Of each image you can say:
 
 - what it is **called**;
 - its **caption**: what figures made with it begin with. What is said of a
@@ -787,8 +813,8 @@ Of each picture you can say:
   and for the project when it is written in a project, where it is with
   everyone the project is shared with, until you keep it for all projects.
 
-The store also says in which projects a picture is used. A picture that is
-removed from the store leaves the figures made with it without a picture.
+The store also says in which projects an image is used. An image that is
+removed from the store leaves the figures made with it without an image.
 
 ## Citations
 
@@ -868,12 +894,10 @@ citation at once stands in the text as the text it was, with a line of dots
 under it. It is a *loose* citation, and waits to be tied to a reference of
 your library.
 
-They are gone through in the panel at the side, under its tab with the
+They are gone through in the document pane, under its tab with the
 magnifying glass, which says how many are left in the element in view and
-under it (**Ctrl+Shift+T**). **Loose citations…** in the menu of
-the element in view (**This element**, beside its name in the bar) opens it
-as well, and says how many there are; and pressing loose text in the text
-opens the panel at that one. The panel is there for any element, whether its
+under it (**Ctrl+Shift+T**); pressing loose text in the text opens the pane
+at that one. The panel is there for any element, whether its
 text was brought in or written here: what is to be taken for a citation is
 said at its top, as below.
 
@@ -1172,18 +1196,19 @@ become collections here.
 Before anything is added you are shown what was found and what is already
 there. Importing the same a second time adds nothing.
 
-## The panel at the side
+## The document pane
 
-The look of the document, the references, the pictures, the comments, the
-loose citations, the history and the changes to review share one panel at
-the side of the map, one at a time. The button with the panel on it, in the bar over the
-map, opens it as it was last, and closes it; the tabs at its head change
-what it shows. Each has its key as well: **Ctrl+Shift+A**, **Ctrl+Shift+R**, **Ctrl+Shift+P**,
+The references, the images, the comments, the loose citations, the history
+and the changes to review of a document share one pane beside the sides, one
+at a time. **Document**, the button with the pane on it in the bar of a side,
+opens it as it was last, and closes it; the tabs at its head change what it
+shows. Each has its key as well: **Ctrl+Shift+R**, **Ctrl+Shift+P**,
 **Ctrl+Shift+M**, **Ctrl+Shift+T**, **Ctrl+Shift+H** and **Ctrl+Shift+E**.
-What the panel shows is of the element in view, with all under it, named in
-the line over its tabs: with two views side by side, that of the pane in
-view, whose head is marked the same way, and the line is marked with it. The
-history alone is of the whole project, and has no such line.
+The pane always shows the document of the active side, the element in view
+there with all under it, named in the line over its tabs, with its project
+where two are shown; it turns with the focus. The history alone is of the
+whole project. While others are in a shared project, a small sign with
+people in the pane's head says how many; rest the pointer on it to see who.
 
 ## Kinds of elements
 
@@ -1355,7 +1380,7 @@ in its history like everything else.
 
 A project is one tree, and any element of it can be **entered**: it is then
 the element in view, at the centre of the diagram, the title of the text and
-the document of the preview, with all that is under it, and the rest of the
+the document of the typesetting, with all that is under it, and the rest of the
 project is out of the way. The project itself is an element, at the top: a
 new project opens there, with everything in it. Enter an element with the
 small round button that appears at its corner in the diagram, when the
@@ -1371,23 +1396,22 @@ comes to its row in the list of projects.
 **The path** at the top of the window says where you are: the folders the
 project lies in, small; the project, in bold with its sign; and the
 elements from the top of the project down to the element in view, the last
-the strongest. Each is a button: a folder opens the menu of the projects in
-it, the project goes to its top, an element enters it. The chevron at the
-start of the path opens a menu of all projects, the folders as submenus,
-and the project chosen is shown in that side. Where the path does not fit,
-the names in the middle make way for **…**, which lists them; the first
-name, the project and the element in view always show. After the path,
-**⋯** has what can be done with the element in view: **Rename**, **What
-this document is…**, which opens the chooser of what you are writing,
-**About this document…**, **Loose citations…**, **Languages…**, which opens
-*About this document* at the language, **New element under it**, **A
-document into it…** and **Delete**, which takes the element with all under
-it, and goes up. The project itself is not deleted here, but from the list.
+the strongest. Each is a button: the project goes to its top, an element
+enters it, and a folder opens the tree at that folder. The chevron at the
+start of the path opens the tree of all projects, unfolded down to the
+element in view, which is marked, with a field that finds a project by its
+name: a project chosen opens at its top in that side, an element is
+entered. Where the path does not fit, the names in the middle make way for
+**…**, which lists them; the first name, the project and the element in
+view always show. Where the project could not be saved, its name in the
+path has a red sign, and the pointer on it says why. What is done with an
+element is in its right-click menu, in the diagram and in the text:
+**Rename**, **Document properties…**, **A document into it…**, **New
+element under it**, **Delete**, and the rest.
 
-Under the path, for now, stand the bar of the project, with **Diagram**,
-**Text**, **Preview**, **Share**, undo, redo and the panel at the side, and
-the bar of each side, with the outline, the tools of writing and the **×**
-that closes the side.
+At the far left of the top row stands the button of the list of projects;
+at its right end, **Split view**. Under the path, each side has its bar
+(see *The text*).
 
 This is what makes it safe to write. A tree that is valuable as it is, the
 first sketch of the argument, or the plan for the whole book, need not be
@@ -1431,43 +1455,41 @@ consumed by the writing:
   project, and **Choose an element…** any element of it; what would make the
   document hold itself cannot be chosen. The tree of the book then has one element for each chapter, each
   of which stands for the tree of that chapter, written elsewhere in the
-  project. The preview of the book shows the book.
+  project. The typesetting of the book shows the book.
 - **Split view**, at the right end of the top of the window
-  (**Ctrl+Shift+S**), opens a menu of what the second side shows. **This
+  (**Ctrl+Shift+S**), opens a menu of what the other side shows. **This
   element, as diagram and text** shows the element in view both ways,
   beside one another. **Another element…** shows the tree of the project,
   with a field that finds an element by its name, and the element chosen
-  stands in the second side. Enter another element on either side to see
+  stands in the other side. Enter another element on either side to see
   two parts of the project, and move elements between them, by dragging or
-  by cutting and pasting. Each side can be diagram, text or timeline. The
-  window is split all the way up: each side has its own path at the top.
-  The side you are in has its path in the colour of the buttons, the other
-  in grey; the keys, undo and the preview act in the side you are in.
-  **Switch sides**, in the same menu, puts the two the other way round.
-  **One at a time** closes the side you are not in; the **×** in the bar of
-  a side, or **Ctrl+W**, closes the side you are in. With one side, they
-  close the project, and the start screen comes.
+  by cutting and pasting. Each side can be diagram, text or timeline, and
+  has its own outline. The window is split all the way up: each side has
+  its own path at the top. The side you are in has its path in the colour
+  of the buttons, the other in grey; the keys, undo, the document pane and
+  the dialogs act in the side you are in. The round button with arrows on
+  the line between the two paths, or **Switch sides** in the menu, puts the
+  two the other way round. **One at a time** closes the side you are not
+  in; the **×** in the bar of a side, or **Ctrl+W**, closes that side. With
+  one side, they close the project, and the start screen comes.
 - **Another project beside**: **Another project…**, in the same menu, shows
   the list of projects, with its folders and its field; choose a project to
-  see it at its top in the second side, or unfold it with the chevron before
-  its name and choose an element of its tree to see it there. Your own
-  project is grey in the list, since its elements are chosen through
-  **Another element…**. **Open beside**, in the menu of a project in the
-  list at the left, and **Enter beside**, in the menu of an element of its
-  tree, do the same at once. Then each path begins with its own project, so
-  that two names say two projects and one name twice says one; the list
-  marks both, and the line between the sides is doubled. Elements dragged
-  from one to the other are copied there, or moved with a plain drop, as
-  **Copy to** and **Move to** another project do; undo takes a move back in
-  both. For now, the panel at the side, the preview's own settings, sharing
-  and the history are those of the project you opened first; the panel says
-  which project it is about. The other is shown as diagram or text, and
-  closes with its side. Closing the first side instead leaves the other
-  project as the one open.
+  see it in the other side, or unfold it with the chevron before its name
+  and choose an element of its tree to see it there. **Open beside**, in
+  the menu of a project in the list at the left, and **Enter beside**, in
+  the menu of an element of its tree, do the same at once. Then each path
+  begins with its own project, so that two names say two projects and one
+  name twice says one; the list marks both, and the line between the sides
+  is doubled. The two sides are alike: each project has its own sharing,
+  history and panes. Elements dragged from one to the other are copied
+  there, or moved with a plain drop, as **Copy to** and **Move to** another
+  project do; undo takes a move back in both.
+- **A project opened** from the list, from the path or from a link goes into
+  the side you are in, where it was left; the other side stays as it was.
 
 The line between the two sides can be dragged, as can those beside the
-preview, the references and the outline. A double click on a line puts it
-back.
+typesetting, its Look and the document pane, and the outline. A double click
+on a line puts it back.
 
 A project made before this version, with maps, opens as one tree: each map
 is a tree under the project, folded, with the map's settings on it, and the
@@ -1479,9 +1501,8 @@ A text that was written elsewhere can be brought in, and becomes a tree of
 elements under the element in view. The file it came from is read and not
 changed.
 
-- In a project, **A document into it…** in the menu of the element in view
-  (**This element**, in the bar over the map), or drop the file on the bar,
-  or on the window.
+- In a project, **A document into it…** in the right-click menu of an
+  element, or drop the file on the bar of a side, or on the side.
 - Among the projects, **A project from a document…**, or drop the file
   there. The project is named after the document.
 
@@ -1523,7 +1544,7 @@ What becomes of what is in the document:
 
 - **Notes** become notes. A note on a heading stands at the beginning of the
   text under it.
-- **Pictures** are taken into the store of pictures, and stand in the text as
+- **Pictures** are taken into the store of images, and stand in the text as
   figures, with what is said of them. Those that a Word or OpenDocument file
   holds are called after the document. A picture that is to be fetched from
   the network is left out: nothing is fetched.
@@ -1960,7 +1981,7 @@ everything under it that sets none of its own: set once on the project,
 they hold for every chapter printed alone. The title and the subtitle are an
 element's own, and never taken from above: a chapter printed alone is not
 titled as the book. See *What you are writing*, *The look of a document* and
-*About this document*.
+*Document properties*.
 
 An element can also be a **part** of the document: the abstract, the
 dedication, an appendix, the acknowledgements, the cover. Such an element is
@@ -1976,7 +1997,7 @@ is chapter three's, printed at the head of the chapter when the book is
 printed and as the abstract of the document when the chapter is printed
 alone. Of a kind a document has one of, such as the abstract, the first
 among the elements beside one another is used; the others are marked on
-their label, and the checklist of *About this document* names them. Nothing
+their label, and the checklist of *Document properties* names them. Nothing
 is lost: a part the template has no place for is printed all the same, after
 the parts the template lists in front or at the back.
 
@@ -1989,13 +2010,11 @@ a play, each an element that prints as a document of its own. When you know
 what you are writing, say so, and the parts, the pages and the citations
 follow.
 
-The button at the left over the preview names what the document is,
-*Plain document* until you choose something else; pressing it opens the
-chooser, **What are you writing?**. The same button stands at the top of
-Look; **What this document is…** opens it from the menu of the element in
-view (**This element**, beside its name in the bar), and **What are you
-writing…** from the palette. The
-chooser has a search at its top, by the kind of text, a journal or a
+What the document is, *Plain document* until you choose something else, is
+chosen under **Document type** in *Document properties*. **Document type…**
+at the top of Look opens it there, and so do **Document properties…** in
+the right-click menu of an element, and **What are you writing…** in the
+palette. The tab has a search at its top, by the kind of text, a journal or a
 publisher; under it the plain document, alone; then the kinds of text in
 their groups:
 
@@ -2028,7 +2047,7 @@ their groups:
 
 The one in use is marked, and under it a line says how its pages are set
 and, where it brings a reference style, how it cites. Choosing takes effect
-at once, as a step of undo, and the preview follows; a double click chooses
+at once, as a step of undo, and the typesetting follows; a double click chooses
 and closes.
 
 **Writing for a journal, a publisher or a style guide?**, under the kinds of
@@ -2103,12 +2122,16 @@ the template it was made from. A template is copied into the project when it
 is chosen there, so that those you share the project with, and a
 `.glaukopis` file, have it.
 
-## About this document
+## Document properties
 
-**About this document** is a window of what a document says of itself, for
-the element in view. **Ctrl+Shift+D** opens it, and so do **About this
-document…** in the menu of the element in view, the button with the sliders
-over the preview, and the foot of Look. Down its left stand three parts. The
+**Document properties** is a window of what a document says of itself, for
+an element. **Ctrl+Shift+D** opens it for the element in view of the side
+you are in, and **Document properties…** in the right-click menu of any
+element, in the diagram and in the text, for that element; **Document
+type…** in Look opens it at what the document is. Down its left stand its
+parts: **Details**, **Document type** (see *What you are writing*),
+**Language** and the checklist. **Number the lines of the page**, among the
+details, numbers every line of the printed page in the margin. The
 language takes effect as it is chosen, a step of undo; the details are kept
 with **Save**.
 
@@ -2153,14 +2176,22 @@ of a kind the document has one of, beside the first, and elements of the
 kind **Cover** where the template makes no cover. Each names its elements,
 which open in the text; otherwise it says **Nothing to remark on**.
 
-## The preview, and the manuscript
+## Typesetting
 
-**Ctrl+P** opens the preview beside the map, and closes it. It shows the
-pages of the element in view, with all under it, as they will be, and follows
-as you write, a moment behind: it waits until the writing pauses. Any
-element is a document: enter a chapter, and the preview shows the chapter
+**Typesetting**, the button with the open book in the bar of a side, or
+**Ctrl+P**, opens the typesetting pane beside the sides, for that side: the
+pages of its element in view, with all under it, as they will be, set by
+Typst. The button is lit in the bar of the side the pages are of. Pressed in
+the other side's bar, it turns the pane to that side; pressed again in the
+same, it closes the pane. The pane does not follow the focus: write in one
+side while the pages of the other are set. When the side it shows closes,
+the pane closes with it. Whether it is open is kept with the window, not
+with the project.
+
+The pages follow as you write, a moment behind: it waits until the writing pauses. Any
+element is a document: enter a chapter, and the typesetting shows the chapter
 alone, and exports it so. Of a long document the pages take a few seconds to be
-made, and the preview waits the longer for it; the writing is not held up
+made, and the typesetting waits the longer for it; the writing is not held up
 meanwhile. The pages that are looked at are the ones that are drawn, and
 the others as they are moved to.
 
@@ -2171,10 +2202,8 @@ place. **Go to this place in the text** shows in the text the element whose
 pages are in view; **Show where the text is** moves the pages to where the
 element you are writing in begins, and points its page out for a moment.
 
-Over the pages, the button at the left names what the document is; pressing
-it opens the chooser of what you are writing (see *What you are writing*).
-**Look**, beside it, opens the look of the document (see *The look of a
-document*), and the button with the sliders opens *About this document*.
+Over the pages, **Look** opens the look of the document in a column beside
+them (see *The look of a document*).
 
 Every line of the pages knows what it is. Press one, without dragging, and
 a small chip in the margin beside it names it: *Text*, *Quotation*, *Verse*
@@ -2189,7 +2218,7 @@ template puts on the page, at the row that says whether it is shown at all,
 with how it is set under it. The chip knows the element its line stands
 in: pressed on a line of a chapter, Look opens with the changes set to hold
 for that chapter alone (see *Where changes hold*). The chips are turned off and on by the button
-with the tag at the foot of the preview, and by **Name what a line of the
+with the tag at the foot of the typesetting, and by **Name what a line of the
 preview is** under *Settings* › *New documents*; the text of the pages is
 selected and copied the same either way.
 
@@ -2217,7 +2246,7 @@ goes into the document*). Where the document is given as it is written, in
 LaTeX, Typst or Markdown, its pictures are put in a folder beside it, named
 after it.
 
-Every document that is made follows the preview in what it holds and in
+Every document that is made follows the typesetting in what it holds and in
 what order: the half title, the title page, the abstract, the keywords and
 the contents stand where the template puts them, in Word, Writer, LaTeX and
 the web page as in the PDF, and a part turned off in Look is left out of
@@ -2245,31 +2274,32 @@ which numbers lines only by the section: they stand at the head of their
 lines, small, and the words in the margin of a line at its end. Reference
 marks are raised there, whatever the layout says.
 
-There are two kinds of PDF. **PDF** is what the preview shows. **PDF, set by
+There are two kinds of PDF. **PDF** is what the typesetting pane shows. **PDF, set by
 LaTeX** is the same document in the typesetting of LaTeX, for those who
 prefer its pages or are asked for them; it needs LaTeX (TeX Live) on the
 computer, and takes a little longer. The two are alike in everything the
 layout says, and differ in how lines and pages are broken.
 
 What there is to remark about a document, such as a font the layout asks for
-and the computer does not have, is said at the foot of the preview, with
+and the computer does not have, is said at the foot of the typesetting, with
 the words of the text against what the template allows.
 
 Two programs do the work. Pandoc turns the text into the document, and sets
 every citation and the bibliography in the reference style. Typst sets the
-pages: those of the preview, and those of the PDF, which are the same.
+pages: those of the typesetting, and those of the PDF, which are the same.
 
 ## The look of a document
 
 Everything that decides how the pages look is in one place: **Look**, a
-panel at the side, beside the preview. It opens from its button over the
-preview, from the foot of the kind menu, from a chip on the pages, from the
-palette, where **Change the font…** opens it at the type, and by
-**Ctrl+Shift+A**. It is the look of the document the preview shows: of the
-element in view, with all under it.
+column of the typesetting pane, beside the pages. It opens from its button
+over the pages, from the foot of the paragraph kind menu, from a chip on the
+pages, from the palette, where **Change the font…** opens it at the type,
+and by **Ctrl+Shift+A**, which opens the typesetting pane as well where it
+is closed. It is the look of the document the pane shows: of the element in
+view of that side, with all under it.
 
-At its top stands what the document is, the button that opens the chooser
-of what you are writing, and under it one line, the layout with the number
+At its top stands what the document is, with **Document type…**, which
+opens *Document properties* to choose it, and under it one line, the layout with the number
 of changes the document makes to it: *Layout: Manuscript · 2 changes*.
 Pressing the line goes down to the layout, at the foot. Then a field finds
 any setting by its words: *font*, *margins*, *page numbers*, *citations*.
@@ -2379,7 +2409,7 @@ kind and more are there, the second and the later say **Only the first is
 used**. **What is required** are the words of the text, the words of the
 abstract and the keywords, each at most, an empty field for no limit, and
 whether the names of the authors are left out, for review; the checklist of
-*About this document* and the preview count against them, and nothing is
+*Document properties* and the typesetting count against them, and nothing is
 cut. A part turned on or off, or a limit changed, holds for the element it
 is changed on and those under it, says **Changed here** under its row, and
 is taken back by **take … again**, as a change of the look is.
@@ -2392,10 +2422,10 @@ template has it** first, naming what what you are writing brings, or
 your own first. Under it is listed what this document changes of it, each
 change with where it was made and **take Manuscript’s again**; then what
 the layout is, and where its requirements were found, and when; and at the
-end **About this document…**.
+end **Document properties…**.
 
 What you change in Look is the document's own: the layout and the template
-stay as they are, and the change is shown at once in the preview. Under a
+stay as they are, and the change is shown at once in the typesetting. Under a
 row you have changed it says **Changed here**, and beside it **take
 Manuscript’s again**, which takes the change away. The changes reach every
 element under the one they are made on, as the language does: in a chapter,
@@ -2453,21 +2483,24 @@ What each kind of document follows:
 A project can be shared, so that several write in it at the same time. This
 needs a server, which you or your institution runs: see `server.md`.
 
-**To share a project**, open it and click the two figures at the top right.
-Enter the address of the server, and the password of the server if it asks
+**To share a project**, choose **Share…** in its menu in the list of
+projects at the left. Enter the address of the server, and the password of the server if it asks
 for one. Then **Make an invitation code**, and send the code and the address
 of the server to the one you invite. A code is shown only once, when it is
 made; to invite someone later, make a new one.
 
-**To join a project**, choose **Join a shared project** among the projects,
-and enter the address and the code. An invitation that is pasted whole is
+**To join a project**, choose **Join a shared project…** under the **+** at
+the head of the list of projects, and enter the address and the code. An invitation that is pasted whole is
 taken apart for you.
 
 From then on:
 
 - What one writes is seen by the others at once, with a cursor that carries
   the name of who is writing.
-- Those who have the project open are shown at the top right.
+- Those who have the project open are counted by a small sign with people
+  in the head of the document pane; rest the pointer on it to see who. The
+  sign of the project in the list and in the path says whether the server
+  is within reach.
 - Each has the whole project on their own computer. Without the network, or
   without the server, the work goes on; what was written meanwhile is brought
   together when the server is reached again.
@@ -2488,7 +2521,7 @@ when. The project can then be looked at as it was at any moment, and what
 stood there brought back. It is off at first, and turned on for one project
 at a time.
 
-**To open the history**, choose its tab in the panel at the side, or press
+**To open the history**, choose its tab in the document pane, or press
 **Ctrl+Shift+H**. While the history is not kept, the panel says so and has one
 button, **Keep the history**: from that moment the history begins with the
 project as it is, and nothing written after it is thrown away. The setting
@@ -2562,7 +2595,7 @@ the text at once, and the review comes after. It needs the history of the
 project, which tells who changed what, and when; where the history is not
 kept, the panel says so, and offers to keep it from then on.
 
-**Changes**, in the panel at the side (**Ctrl+Shift+E**), is where the
+**Changes**, in the document pane (**Ctrl+Shift+E**), is where the
 changes of the element in view, and of all under it, are reviewed, beside
 its text. It lists them in the order of the text, says how many are left,
 and shows one at a time: where it is, as it was and as it is, with the words
@@ -2641,7 +2674,7 @@ of the computer, where it has it, and English where it does not.
 *Settings* › *Language* changes it, at once.
 
 Your texts have a language of their own, which need not be that of
-Glaukopis. It is chosen under **Language** in *About this document* for an
+Glaukopis. It is chosen under **Language** in *Document properties* for an
 element (**Ctrl+Shift+D**, or **Languages…** in the menu of the element in
 view, which opens it there): that of the project, for everyone it is shared
 with, and that of an element written in another language than the rest,
@@ -2863,19 +2896,20 @@ what is to be done by its name, and does it.
 | --- | --- |
 | **Ctrl+/** | All the keys, by where they hold; also the keyboard in the rail |
 | **Ctrl+K** | What is to be done: anything that has a key, and some that have none, found by its name |
-| **Ctrl+1**, **Ctrl+2**, **Ctrl+3** | The projects, the library, the pictures |
+| **Ctrl+1**, **Ctrl+2**, **Ctrl+3** | The projects, the library, the images |
 | **Ctrl+,** | Settings, in a window over what is open; closing it leaves you where you were |
 | **Ctrl+D** | Diagram or text |
 | **Alt+Shift+Up** | Up to the element over this one, in the diagram and in the text; from the top of a project, to its row in the list of projects |
 | **Ctrl+Shift+O** | The outline beside the text |
 | **Ctrl+Shift+L** | The list of projects at the left: hide it, or show it again |
-| **Ctrl+P** | The preview |
+| **Ctrl+P** | Typesetting: the pages of the side you are in, beside the sides |
 | **Ctrl+Shift+S** | Split view: this element as diagram and text, another element or another project beside it, switch sides, or one at a time |
 | **Ctrl+W** | Close the side you are in; with one side, the project |
-| **Ctrl+Shift+D** | About this document: the details, the language and the checklist of the element in view |
+| **Ctrl+Shift+D** | Document properties: the details, the document type, the language and the checklist of the element in view |
+| **Ctrl+Shift+Space** | In the text: a hard space |
 | **Ctrl+Shift+A** | The look of the document: font, page, the looks of the kinds |
 | **Ctrl+Shift+R** | The references |
-| **Ctrl+Shift+P** | The pictures of the project |
+| **Ctrl+Shift+P** | The images of the project |
 | **Ctrl+Shift+M** | The comments |
 | **Ctrl+Alt+C** | A comment on the passage selected, or on the element |
 | **Ctrl+Shift+H** | The history of the project |
@@ -2897,7 +2931,7 @@ what is to be done by its name, and does it.
 | **Ctrl+Alt+T** | In the text: a table |
 | **Ctrl+Alt+M**, **Ctrl+Alt+E** | In the text: a formula in the line, an equation |
 | **Ctrl+Alt+R** | In the text: a cross-reference to a figure, a table, an equation, a part |
-| **Ctrl+Alt+K** | In the text: a reference mark, a verse or a page of an edition |
+| **Ctrl+Alt+K** | In the text: an inline number, a verse or a page of an edition |
 | **Ctrl+F**, **Ctrl+H** | In the text and in the edit box of an element: search; search and replace |
 | **Enter**, **Shift+Enter** | In the search: the next that is found, the one before; **F3** and **Shift+F3** as well |
 | **Ctrl+Shift+F** | Search through everything |
@@ -2930,7 +2964,7 @@ Glaukopis the first time by right-clicking it in *Applications* and choosing
 Pandoc makes the documents: Pandoc 3.1.10 or newer. One that is older is said
 to be so under *Settings*. It is installed with Glaukopis when Glaukopis is
 installed as a package, and where it is found is shown under *Settings*.
-Typst, which sets the pages of the preview and of the PDF, is part of
+Typst, which sets the pages of the typesetting and of the PDF, is part of
 Glaukopis; it sets with the fonts of the computer, and on Windows and macOS
 with those it brings itself as well. On Arch the same fonts are packages:
 `otf-libertinus`, the serif it falls back on and the font mathematics is set
