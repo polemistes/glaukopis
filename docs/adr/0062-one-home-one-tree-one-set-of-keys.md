@@ -108,3 +108,19 @@ What goes: Enter and Tab as new, in the diagram and on the map; Ctrl+Enter and C
 - The guide's sections *A first project*, *Many projects*, *The map of the projects*, *The diagram*, *The text*, *One tree, entered anywhere* and *Keys* are rewritten where they name the keys, the page or the words.
 - The scripts that press the old keys are revisited; a script of its own, `e2e/tree-keys.mjs`, presses the one set in all four places.
 - The words of the other languages lag, as usual; English and Norwegian Bokmål are done with the build.
+
+## Addendum, 2026-10-23: as built
+
+Built on 2026-10-23 in six stages, two of them by agents in worktrees (the keys of the diagram and the text; the Side by side menu), merged into main. Where the build departs from the plan:
+
+- **The plus of the map's bar begins a project as Begin a project did**: it asks the name and opens the project. A folder made from it is named in place, and Alt+Enter and Alt+Shift+Enter on the map make both in place, as planned. Beginning a project is mostly the wish to write in it.
+- **The list's first form is called Folders**, so that *All projects* names the map alone, and it is the default; the core's command answered *recent* where nothing was chosen, and answers *list* now. The list keeps its button for a new folder beside the field.
+- **In the list, Alt+Enter, Alt+Shift+Enter and F2 ask by the dialog**, not in a field on the row; the map names in place.
+- **Enter in the list does what a click does**, and on a folder that is to enter it on the map, as on the map; a click on a folder still folds it.
+- **A folder's name stays at the middle of its region's inner edge**, where the layout puts it, not at its upper edge: there it would leave a gap where the layout keeps room for it.
+- **A drop target may say why it refuses** (`refuses` in `ui/drag.svelte.ts`), and nothing around it then takes the drop; the label by the pointer says the reason. A project says that a project goes into a folder, not into a project.
+- **In the diagram's name field, Alt+Enter and Alt+Shift+Enter keep the name and make the next element**, as they do in the text.
+- **A heading at the cursor leaves a block of parallel text or a table whole**: inside one, the name is empty and the new element's text begins at the block after it. Spaces are trimmed at the ends of the new name.
+- **Shift+Tab is known by where Tab is on the keyboard**, since under X it arrives by another name.
+- **This element, as diagram and text always gives two sides**; one is closed only by *One at a time*. Unfolding a project's tree in the chooser of a project beside unfolds it in the list too: the two share their folds.
+- **The other languages** lose the messages whose meaning changed and show English for them until they are translated anew; English and Norwegian Bokmål are complete.
