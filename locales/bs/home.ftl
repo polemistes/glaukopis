@@ -11,7 +11,6 @@ home-shown = Šta se prikazuje
 home-recent = Posljednje korišteni
 home-all = Svi projekti
 # Under the cards, when there are more projects than they show.
-home-show-all = Prikaži sve projekte ({ $count })
 # The button that opens the menu of the page.
 home-page-menu = Više
 home-search = Pronađi projekat
@@ -21,7 +20,6 @@ home-list-none = Nema projekata.
 ## Folders of projects
 
 home-new-folder = Novi folder
-home-folder-new-inside = Novi folder unutra…
 home-folder-rename-title = Preimenuj folder
 home-folder-name-placeholder = Šta folder sadrži
 home-folder-name-missing = Dajte folderu naziv.
@@ -65,31 +63,11 @@ home-begin = Započni projekat
 ## A project in the list
 
 # Under the names of the first four maps.
-home-more-maps = i još { $count }
-home-maps = { $count ->
-    [one] { $count } mapa
-    [few] { $count } mape
-   *[other] { $count } mapa
 }
-home-elements = { $count ->
-    [one] { $count } element
-    [few] { $count } elementa
-   *[other] { $count } elemenata
 }
-home-words = { $count ->
-    [one] { $count } riječ
-    [few] { $count } riječi
-   *[other] { $count } riječi
 }
-home-references = { $count ->
-    [one] { $count } referenca
-    [few] { $count } reference
-   *[other] { $count } referenci
 }
-home-not-begun = Nije započet
-home-shared = Dijeljen
 # "ago" is how long ago it was: "3 hours ago", "yesterday", "12 March".
-home-changed = Izmijenjen { $ago }
 # The button that opens the menu of a project.
 home-more-for = Više za { $name }
 home-deleted-projects = { $count ->

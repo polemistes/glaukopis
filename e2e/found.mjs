@@ -279,7 +279,7 @@ try {
   );
 
   await app.waitForText('h2', 'Welcome to Glaukopis');
-  await app.clickText('button', 'Begin a project');
+  await app.beginProject();
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Homer');
   await app.clickText('dialog footer button', 'Create');
@@ -820,10 +820,9 @@ try {
   await closeWindow().catch(() => {});
 
   // ---- opened again later ----
-  await app.click('header button[aria-label="All projects"]');
-  await app.waitFor('.card', 8000);
+  await app.home();
   await sleep(900);
-  await app.clickText('.card h3', 'Homer');
+  await app.openProject('Homer');
   await app.waitFor('.maps .map', 8000);
   await sleep(600);
   await app.openMap('The wrath, from LibreOffice');
@@ -840,12 +839,11 @@ try {
   // =====================================================================
   // A project that is made of a document
   // =====================================================================
-  await app.click('header button[aria-label="All projects"]');
-  await app.waitForText('h1', 'Projects');
+  await app.home();
   await sleep(900);
   {
     const among = await app.exec(
-      `const r = document.querySelector('.home').getBoundingClientRect();
+      `const r = document.querySelector('[data-owl-map]').getBoundingClientRect();
        return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };`,
     );
     await drop([join(documents, 'cited.docx')], among.x, among.y);
@@ -879,10 +877,9 @@ try {
     JSON.stringify(text),
   );
   await closeWindow();
-  await app.click('header button[aria-label="All projects"]');
-  await app.waitForText('h1', 'Projects');
+  await app.home();
   await sleep(900);
-  await app.clickText('.card h3', 'Homer');
+  await app.openProject('Homer');
   await app.waitFor('.maps .map', 8000);
   await sleep(600);
   await up();

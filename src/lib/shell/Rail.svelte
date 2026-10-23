@@ -28,7 +28,7 @@
   <a
     href="#/"
     class="place"
-    class:current={view === 'projects' || view === 'project' || view === 'owl'}
+    class:current={view === 'project' || view === 'owl'}
     aria-label={t('shell-projects')}
     use:tooltip={{ text: t('shell-projects'), shortcut: keysFor('projects'), side: 'right' }}
   >

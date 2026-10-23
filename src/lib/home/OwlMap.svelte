@@ -94,9 +94,13 @@
     onup?: () => void;
     /** The name of what holds the folder at the centre, for its corner. */
     above?: string;
+    /** Where something from outside is dropped on the ground: a document, which becomes a project. */
+    ondocument?: (path: string) => void;
+    /** Which paths dropped from outside are taken as documents. */
+    accepts?: (path: string) => boolean;
   }
 
-  let { actions, at = OWL, onopen, onup, above = '' }: Props = $props();
+  let { actions, at = OWL, onopen, onup, above = '', ondocument, accepts }: Props = $props();
 
   /** What is selected, by key; the last is where the keys go from. */
   let selection = $state<string[]>([]);
@@ -134,7 +138,6 @@
       elementFolds: listUi.owlElementFolds,
     }),
   );
-  const empty = $derived(!projects.folders.length && !projects.list.length && at === OWL);
   const selected = $derived(new Set(selection));
   const last = $derived(selection[selection.length - 1] ?? null);
 
@@ -551,12 +554,24 @@
     };
   }
 
-  /** What is dropped on the ground of the map: put there, as in the diagram, under what holds it. */
+  /** A document dropped from outside, which becomes a project: the first the view takes. */
+  function documentOf(payload: DragPayload): string | null {
+    if (payload.kind !== 'files' || !ondocument || !accepts) return null;
+    return (payload.data as string[]).find(accepts) ?? null;
+  }
+
+  /** What is dropped on the ground of the map: put there, as in the diagram, under what holds it; a document becomes a project. */
   const ground = {
     accepts: (payload: DragPayload) =>
-      !!dragging && (payload.kind === ELEMENTS || !!thingsOf(payload)),
+      documentOf(payload) !== null ||
+      (!!dragging && (payload.kind === ELEMENTS || !!thingsOf(payload))),
     quiet: true,
     ondrop: (e: { payload: DragPayload; x: number; y: number }) => {
+      const document = documentOf(e.payload);
+      if (document !== null) {
+        ondocument?.(document);
+        return;
+      }
       const was = dragging;
       if (!was) return;
       const world = toWorld(e.x, e.y);
@@ -656,6 +671,24 @@
     renaming = null;
     provisional = { of: kind, parent };
     selection = [PROVISIONAL];
+  }
+
+  /** From the bar of the view: a project or a folder made in the folder in view, named in place. */
+  export function makeHere(kind: 'project' | 'folder') {
+    selection = [];
+    make(kind);
+  }
+
+  /** From the bar of the view: all of the map in view. */
+  export function fitAll() {
+    fit();
+  }
+
+  /** From the bar of the view: everything placed by hand is placed by itself again. */
+  export function tidyAll() {
+    const keys = placedByHand();
+    if (keys.length)
+      void placeThings(Object.fromEntries(keys.map((k) => [k, null])), t('home-owl-tidied'));
   }
 
   async function made(name: string) {
@@ -1115,305 +1148,142 @@
   const domId = (key: string) => `owl-${key.replace(/[^\w-]/g, '_')}`;
 </script>
 
-{#if empty}
-  <div class="alone">
-    <Mark size={140} />
-    <h2>{t('home-welcome')}</h2>
-    <p>{t('home-welcome-text')}</p>
-  </div>
-{:else}
+<div
+  bind:this={viewport}
+  class="owl-map"
+  class:panning
+  data-owl-map
+  role="tree"
+  tabindex="0"
+  aria-label={t('home-owl-label')}
+  aria-multiselectable="true"
+  aria-activedescendant={last ? domId(last) : undefined}
+  onpointerdown={pointerdown}
+  onclickcapture={clickcapture}
+  ondblclick={dblclick}
+  oncontextmenu={contextmenu}
+  {onkeydown}
+  use:dropTarget={ground}
+>
   <div
-    bind:this={viewport}
-    class="owl-map"
-    class:panning
-    data-owl-map
-    role="tree"
-    tabindex="0"
-    aria-label={t('home-owl-label')}
-    aria-multiselectable="true"
-    aria-activedescendant={last ? domId(last) : undefined}
-    onpointerdown={pointerdown}
-    onclickcapture={clickcapture}
-    ondblclick={dblclick}
-    oncontextmenu={contextmenu}
-    {onkeydown}
-    use:dropTarget={ground}
+    class="world"
+    class:hidden={!fitted}
+    style:transform="translate({cam.x}px, {cam.y}px) scale({cam.k})"
   >
-    <div
-      class="world"
-      class:hidden={!fitted}
-      style:transform="translate({cam.x}px, {cam.y}px) scale({cam.k})"
-    >
-      <svg class="lines" aria-hidden="true">
-        {#each lines as l (l.id)}
-          <line x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} />
-        {/each}
-      </svg>
+    <svg class="lines" aria-hidden="true">
+      {#each lines as l (l.id)}
+        <line x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} />
+      {/each}
+    </svg>
 
-      {#each lay.order as key (key)}
-        {@const item = owl.items.get(key)}
-        {@const p = lay.placed.get(key)}
-        {#if item && p}
-          {@const centre = key === owl.tree.root}
-          {@const parent = owl.tree.parent.get(key) ?? null}
-          <div
-            class="place"
-            class:lifted={lifted.has(key)}
-            style:transform="translate({Math.round(p.x - p.w / 2)}px, {Math.round(
-              p.y - p.h / 2,
-            )}px)"
-          >
-            {#if item.kind === 'owl'}
-              <div
-                class="owl"
-                class:selected={selected.has(key)}
-                id={domId(key)}
-                role="treeitem"
-                aria-level={1}
-                aria-selected={selected.has(key)}
-                data-owl-key={key}
-                data-selected={selected.has(key) ? '' : undefined}
-                use:measured={key}
-                use:dropTarget={dropInto(null)}
-                title={t('home-title')}
-              >
-                <Mark size={110} />
-              </div>
-            {:else if item.kind === 'folder'}
-              {@const f = item.folder}
-              <div
-                class="folder"
-                class:centre
-                class:folded={item.folded}
-                class:selected={selected.has(key)}
-                id={domId(key)}
-                role="treeitem"
-                aria-level={p.depth + 1}
-                aria-selected={selected.has(key)}
-                aria-expanded={item.holds ? !item.folded : undefined}
-                data-owl-key={key}
-                data-owl-folder={f.id}
-                data-owl-parent={parent ?? undefined}
-                data-side={p.side}
-                data-selected={selected.has(key) ? '' : undefined}
-                use:measured={key}
-                use:dropTarget={dropInto(f.id)}
-              >
-                {#if centre}
-                  <FolderOpen size={20} strokeWidth={1.6} />
-                {:else}
-                  <!-- The folder's own sign folds it, and unfolds it. -->
-                  <button
-                    type="button"
-                    class="fold"
-                    tabindex="-1"
-                    disabled={!item.holds}
-                    aria-label={item.folded ? t('home-unfold') : t('home-fold')}
-                    use:tooltip={item.holds
-                      ? {
-                          text: item.folded ? t('home-unfold') : t('home-fold'),
-                          shortcut: keysFor('owl-fold'),
-                        }
-                      : null}
-                    onclick={(e) => {
-                      e.stopPropagation();
-                      fold(key);
-                    }}
-                    ondblclick={(e) => e.stopPropagation()}
-                  >
-                    {#if item.folded}
-                      <FolderIcon size={15} strokeWidth={1.7} />
-                    {:else}
-                      <FolderOpen size={15} strokeWidth={1.7} />
-                    {/if}
-                  </button>
-                {/if}
-                {#if renaming?.key === key}
-                  <NameField
-                    value={f.name}
-                    startingWith={renaming.startingWith}
-                    oncommit={(name) => renamed(key, name)}
-                    oncancel={unrenamed}
-                  />
-                {:else}
-                  <span class="label">{f.name}</span>
-                {/if}
-                {#if item.folded && !centre}
-                  <span class="count">{t('home-folder-projects', { count: item.projects })}</span>
-                {/if}
-                {#if centre && onup}
-                  <button
-                    type="button"
-                    class="corner leave"
-                    tabindex="-1"
-                    aria-label={t('home-owl-leave', { name: above })}
-                    use:tooltip={{
-                      text: t('home-owl-leave', { name: above }),
-                      shortcut: keysFor('owl-up'),
-                    }}
-                    onclick={(e) => {
-                      e.stopPropagation();
-                      onup();
-                    }}
-                    ondblclick={(e) => e.stopPropagation()}
-                  >
-                    <Maximize2 size={11} />
-                  </button>
-                {:else if !centre && renaming?.key !== key}
-                  <button
-                    type="button"
-                    class="corner enter"
-                    tabindex="-1"
-                    aria-label={t('home-enter')}
-                    use:tooltip={{ text: t('home-enter'), shortcut: keysFor('owl-open') }}
-                    onclick={(e) => {
-                      e.stopPropagation();
-                      open(key);
-                    }}
-                    ondblclick={(e) => e.stopPropagation()}
-                  >
-                    <Minimize2 size={11} />
-                  </button>
-                {/if}
-              </div>
-            {:else if item.kind === 'project'}
-              {@const pr = item.project}
-              <!-- The project, as the top element of its map is drawn; its trees under it, folded away or shown. -->
-              <div
-                class="node root project {p.side}"
-                class:selected={selected.has(key)}
-                class:folded={item.folded}
-                id={domId(key)}
-                role="treeitem"
-                aria-level={p.depth + 1}
-                aria-selected={selected.has(key)}
-                aria-expanded={item.holds ? !item.folded : undefined}
-                data-owl-key={key}
-                data-owl-project={pr.id}
-                data-owl-parent={parent ?? undefined}
-                data-owl-folded={item.folded ? '' : undefined}
-                data-side={p.side}
-                data-selected={selected.has(key) ? '' : undefined}
-                use:measured={key}
-                use:dropTarget={dropOnCard(key)}
-              >
-                <span class="caption">
-                  <ProjectBadge
-                    name={pr.name}
-                    sharing={pr.sharing ? { owner: pr.sharing.owner } : null}
-                    size={18}
-                  />
-                  {#if renaming?.key === key}
-                    <span class="name">
-                      <NameField
-                        value={pr.name}
-                        startingWith={renaming.startingWith}
-                        oncommit={(name) => renamed(key, name)}
-                        oncancel={unrenamed}
-                      />
-                    </span>
+    {#each lay.order as key (key)}
+      {@const item = owl.items.get(key)}
+      {@const p = lay.placed.get(key)}
+      {#if item && p}
+        {@const centre = key === owl.tree.root}
+        {@const parent = owl.tree.parent.get(key) ?? null}
+        <div
+          class="place"
+          class:lifted={lifted.has(key)}
+          style:transform="translate({Math.round(p.x - p.w / 2)}px, {Math.round(p.y - p.h / 2)}px)"
+        >
+          {#if item.kind === 'owl'}
+            <div
+              class="owl"
+              class:selected={selected.has(key)}
+              id={domId(key)}
+              role="treeitem"
+              aria-level={1}
+              aria-selected={selected.has(key)}
+              data-owl-key={key}
+              data-selected={selected.has(key) ? '' : undefined}
+              use:measured={key}
+              use:dropTarget={dropInto(null)}
+              title={t('home-title')}
+            >
+              <Mark size={110} />
+            </div>
+          {:else if item.kind === 'folder'}
+            {@const f = item.folder}
+            <div
+              class="folder"
+              class:centre
+              class:folded={item.folded}
+              class:selected={selected.has(key)}
+              id={domId(key)}
+              role="treeitem"
+              aria-level={p.depth + 1}
+              aria-selected={selected.has(key)}
+              aria-expanded={item.holds ? !item.folded : undefined}
+              data-owl-key={key}
+              data-owl-folder={f.id}
+              data-owl-parent={parent ?? undefined}
+              data-side={p.side}
+              data-selected={selected.has(key) ? '' : undefined}
+              use:measured={key}
+              use:dropTarget={dropInto(f.id)}
+            >
+              {#if centre}
+                <FolderOpen size={20} strokeWidth={1.6} />
+              {:else}
+                <!-- The folder's own sign folds it, and unfolds it. -->
+                <button
+                  type="button"
+                  class="fold"
+                  tabindex="-1"
+                  disabled={!item.holds}
+                  aria-label={item.folded ? t('home-unfold') : t('home-fold')}
+                  use:tooltip={item.holds
+                    ? {
+                        text: item.folded ? t('home-unfold') : t('home-fold'),
+                        shortcut: keysFor('owl-fold'),
+                      }
+                    : null}
+                  onclick={(e) => {
+                    e.stopPropagation();
+                    fold(key);
+                  }}
+                  ondblclick={(e) => e.stopPropagation()}
+                >
+                  {#if item.folded}
+                    <FolderIcon size={15} strokeWidth={1.7} />
                   {:else}
-                    <span class="name">{pr.name}</span>
+                    <FolderOpen size={15} strokeWidth={1.7} />
                   {/if}
-                </span>
-                {#if (item.holds || item.map === 'reading' || item.map === 'failed') && renaming?.key !== key}
-                  <!-- Opens the project's map under it, or folds it away, as an element's is. -->
-                  <button
-                    type="button"
-                    class="fold"
-                    class:folded={item.folded}
-                    tabindex="-1"
-                    aria-label={item.map === 'failed'
-                      ? t('home-tree-unreadable')
-                      : item.folded
-                        ? t('home-unfold')
-                        : t('home-fold')}
-                    use:tooltip={{
-                      text:
-                        item.map === 'reading'
-                          ? t('home-owl-map-reading')
-                          : item.map === 'failed'
-                            ? t('home-tree-unreadable')
-                            : item.folded
-                              ? t('home-unfold')
-                              : t('home-fold'),
-                      shortcut: keysFor('owl-fold'),
-                    }}
-                    onclick={(e) => {
-                      e.stopPropagation();
-                      fold(key);
-                    }}
-                    ondblclick={(e) => e.stopPropagation()}
-                  >
-                    {#if item.map === 'reading'}…{:else if item.map === 'failed'}!{:else if item.folded}{p.hidden ||
-                        item.elements}{:else}–{/if}
-                  </button>
-                {/if}
-                {#if renaming?.key !== key}
-                  <button
-                    type="button"
-                    class="corner enter"
-                    tabindex="-1"
-                    aria-label={t('home-enter')}
-                    use:tooltip={{ text: t('home-enter'), shortcut: keysFor('owl-open') }}
-                    onclick={(e) => {
-                      e.stopPropagation();
-                      open(key);
-                    }}
-                    ondblclick={(e) => e.stopPropagation()}
-                  >
-                    <Minimize2 size={11} />
-                  </button>
-                {/if}
-              </div>
-            {:else if item.kind === 'element'}
-              <!-- An element of a project's map, drawn as the project's own map draws it; not changed here. -->
-              <div
-                class="node depth-{Math.min(item.depth, 2)} {p.side}"
-                class:selected={selected.has(key)}
-                class:plain={!item.heading}
-                class:excluded={item.excluded}
-                id={domId(key)}
-                role="treeitem"
-                aria-level={p.depth + 1}
-                aria-selected={selected.has(key)}
-                aria-expanded={item.holds ? !item.folded : undefined}
-                data-owl-key={key}
-                data-owl-element={item.id}
-                data-owl-of={item.project}
-                data-owl-parent={parent ?? undefined}
-                data-side={p.side}
-                data-selected={selected.has(key) ? '' : undefined}
-                use:measured={key}
-                use:dropTarget={dropUnder(key)}
-              >
-                <span class="caption">
-                  {#if item.name}
-                    <span class="name">{item.name}</span>
-                  {:else}
-                    <span class="name unnamed">{t('project-untitled')}</span>
-                  {/if}
-                </span>
-                {#if item.holds}
-                  <button
-                    type="button"
-                    class="fold"
-                    class:folded={item.folded}
-                    tabindex="-1"
-                    aria-label={item.folded ? t('home-unfold') : t('home-fold')}
-                    use:tooltip={{
-                      text: item.folded ? t('home-unfold') : t('home-fold'),
-                      shortcut: keysFor('owl-fold'),
-                    }}
-                    onclick={(e) => {
-                      e.stopPropagation();
-                      fold(key);
-                    }}
-                    ondblclick={(e) => e.stopPropagation()}
-                  >
-                    {item.folded ? p.hidden : '–'}
-                  </button>
-                {/if}
+                </button>
+              {/if}
+              {#if renaming?.key === key}
+                <NameField
+                  value={f.name}
+                  startingWith={renaming.startingWith}
+                  oncommit={(name) => renamed(key, name)}
+                  oncancel={unrenamed}
+                />
+              {:else}
+                <span class="label">{f.name}</span>
+              {/if}
+              {#if item.folded && !centre}
+                <span class="count">{t('home-folder-projects', { count: item.projects })}</span>
+              {/if}
+              {#if centre && onup}
+                <button
+                  type="button"
+                  class="corner leave"
+                  tabindex="-1"
+                  aria-label={t('home-owl-leave', { name: above })}
+                  use:tooltip={{
+                    text: t('home-owl-leave', { name: above }),
+                    shortcut: keysFor('owl-up'),
+                  }}
+                  onclick={(e) => {
+                    e.stopPropagation();
+                    onup();
+                  }}
+                  ondblclick={(e) => e.stopPropagation()}
+                >
+                  <Maximize2 size={11} />
+                </button>
+              {:else if !centre && renaming?.key !== key}
                 <button
                   type="button"
                   class="corner enter"
@@ -1428,25 +1298,190 @@
                 >
                   <Minimize2 size={11} />
                 </button>
-              </div>
-            {:else if item.kind === 'provisional'}
-              <!-- Not yet made: its name is being written. -->
-              <div
-                class={item.of === 'folder'
-                  ? 'folder provisional selected'
-                  : 'node root project provisional selected'}
-                id={domId(key)}
-                role="treeitem"
-                aria-level={p.depth + 1}
-                aria-selected="true"
-                data-owl-key={key}
-                data-owl-provisional={item.of}
-                data-owl-parent={parent ?? undefined}
-                use:measured={key}
+              {/if}
+            </div>
+          {:else if item.kind === 'project'}
+            {@const pr = item.project}
+            <!-- The project, as the top element of its map is drawn; its trees under it, folded away or shown. -->
+            <div
+              class="node root project {p.side}"
+              class:selected={selected.has(key)}
+              class:folded={item.folded}
+              id={domId(key)}
+              role="treeitem"
+              aria-level={p.depth + 1}
+              aria-selected={selected.has(key)}
+              aria-expanded={item.holds ? !item.folded : undefined}
+              data-owl-key={key}
+              data-owl-project={pr.id}
+              data-owl-parent={parent ?? undefined}
+              data-owl-folded={item.folded ? '' : undefined}
+              data-side={p.side}
+              data-selected={selected.has(key) ? '' : undefined}
+              use:measured={key}
+              use:dropTarget={dropOnCard(key)}
+            >
+              <span class="caption">
+                <ProjectBadge
+                  name={pr.name}
+                  sharing={pr.sharing ? { owner: pr.sharing.owner } : null}
+                  size={18}
+                />
+                {#if renaming?.key === key}
+                  <span class="name">
+                    <NameField
+                      value={pr.name}
+                      startingWith={renaming.startingWith}
+                      oncommit={(name) => renamed(key, name)}
+                      oncancel={unrenamed}
+                    />
+                  </span>
+                {:else}
+                  <span class="name">{pr.name}</span>
+                {/if}
+              </span>
+              {#if (item.holds || item.map === 'reading' || item.map === 'failed') && renaming?.key !== key}
+                <!-- Opens the project's map under it, or folds it away, as an element's is. -->
+                <button
+                  type="button"
+                  class="fold"
+                  class:folded={item.folded}
+                  tabindex="-1"
+                  aria-label={item.map === 'failed'
+                    ? t('home-tree-unreadable')
+                    : item.folded
+                      ? t('home-unfold')
+                      : t('home-fold')}
+                  use:tooltip={{
+                    text:
+                      item.map === 'reading'
+                        ? t('home-owl-map-reading')
+                        : item.map === 'failed'
+                          ? t('home-tree-unreadable')
+                          : item.folded
+                            ? t('home-unfold')
+                            : t('home-fold'),
+                    shortcut: keysFor('owl-fold'),
+                  }}
+                  onclick={(e) => {
+                    e.stopPropagation();
+                    fold(key);
+                  }}
+                  ondblclick={(e) => e.stopPropagation()}
+                >
+                  {#if item.map === 'reading'}…{:else if item.map === 'failed'}!{:else if item.folded}{p.hidden ||
+                      item.elements}{:else}–{/if}
+                </button>
+              {/if}
+              {#if renaming?.key !== key}
+                <button
+                  type="button"
+                  class="corner enter"
+                  tabindex="-1"
+                  aria-label={t('home-enter')}
+                  use:tooltip={{ text: t('home-enter'), shortcut: keysFor('owl-open') }}
+                  onclick={(e) => {
+                    e.stopPropagation();
+                    open(key);
+                  }}
+                  ondblclick={(e) => e.stopPropagation()}
+                >
+                  <Minimize2 size={11} />
+                </button>
+              {/if}
+            </div>
+          {:else if item.kind === 'element'}
+            <!-- An element of a project's map, drawn as the project's own map draws it; not changed here. -->
+            <div
+              class="node depth-{Math.min(item.depth, 2)} {p.side}"
+              class:selected={selected.has(key)}
+              class:plain={!item.heading}
+              class:excluded={item.excluded}
+              id={domId(key)}
+              role="treeitem"
+              aria-level={p.depth + 1}
+              aria-selected={selected.has(key)}
+              aria-expanded={item.holds ? !item.folded : undefined}
+              data-owl-key={key}
+              data-owl-element={item.id}
+              data-owl-of={item.project}
+              data-owl-parent={parent ?? undefined}
+              data-side={p.side}
+              data-selected={selected.has(key) ? '' : undefined}
+              use:measured={key}
+              use:dropTarget={dropUnder(key)}
+            >
+              <span class="caption">
+                {#if item.name}
+                  <span class="name">{item.name}</span>
+                {:else}
+                  <span class="name unnamed">{t('project-untitled')}</span>
+                {/if}
+              </span>
+              {#if item.holds}
+                <button
+                  type="button"
+                  class="fold"
+                  class:folded={item.folded}
+                  tabindex="-1"
+                  aria-label={item.folded ? t('home-unfold') : t('home-fold')}
+                  use:tooltip={{
+                    text: item.folded ? t('home-unfold') : t('home-fold'),
+                    shortcut: keysFor('owl-fold'),
+                  }}
+                  onclick={(e) => {
+                    e.stopPropagation();
+                    fold(key);
+                  }}
+                  ondblclick={(e) => e.stopPropagation()}
+                >
+                  {item.folded ? p.hidden : '–'}
+                </button>
+              {/if}
+              <button
+                type="button"
+                class="corner enter"
+                tabindex="-1"
+                aria-label={t('home-enter')}
+                use:tooltip={{ text: t('home-enter'), shortcut: keysFor('owl-open') }}
+                onclick={(e) => {
+                  e.stopPropagation();
+                  open(key);
+                }}
+                ondblclick={(e) => e.stopPropagation()}
               >
-                {#if item.of === 'folder'}
-                  <FolderOpen size={15} strokeWidth={1.7} />
-                  <span class="label">
+                <Minimize2 size={11} />
+              </button>
+            </div>
+          {:else if item.kind === 'provisional'}
+            <!-- Not yet made: its name is being written. -->
+            <div
+              class={item.of === 'folder'
+                ? 'folder provisional selected'
+                : 'node root project provisional selected'}
+              id={domId(key)}
+              role="treeitem"
+              aria-level={p.depth + 1}
+              aria-selected="true"
+              data-owl-key={key}
+              data-owl-provisional={item.of}
+              data-owl-parent={parent ?? undefined}
+              use:measured={key}
+            >
+              {#if item.of === 'folder'}
+                <FolderOpen size={15} strokeWidth={1.7} />
+                <span class="label">
+                  <NameField
+                    value=""
+                    placeholder={t('home-owl-name')}
+                    oncommit={made}
+                    oncancel={unmade}
+                  />
+                </span>
+              {:else}
+                <span class="caption">
+                  <ProjectBadge name="" sharing={null} size={18} />
+                  <span class="name">
                     <NameField
                       value=""
                       placeholder={t('home-owl-name')}
@@ -1454,87 +1489,54 @@
                       oncancel={unmade}
                     />
                   </span>
-                {:else}
-                  <span class="caption">
-                    <ProjectBadge name="" sharing={null} size={18} />
-                    <span class="name">
-                      <NameField
-                        value=""
-                        placeholder={t('home-owl-name')}
-                        oncommit={made}
-                        oncancel={unmade}
-                      />
-                    </span>
-                  </span>
-                {/if}
-              </div>
-            {/if}
-          </div>
-        {/if}
-      {/each}
-    </div>
-
-    <div class="controls" role="group" aria-label={t('diagram-view')}>
-      <button
-        type="button"
-        aria-label={t('diagram-zoom-out')}
-        use:tooltip={{ text: t('diagram-zoom-out'), side: 'top' }}
-        onclick={() => zoomBy(1 / 1.25)}
-      >
-        <Minus size={14} />
-      </button>
-      <button
-        type="button"
-        class="level"
-        aria-label={t('diagram-actual-size')}
-        use:tooltip={{ text: t('diagram-actual-size'), side: 'top' }}
-        onclick={() => zoomBy(1 / cam.k)}
-      >
-        {t('diagram-zoom', { percent: Math.round(cam.k * 100) })}
-      </button>
-      <button
-        type="button"
-        aria-label={t('diagram-zoom-in')}
-        use:tooltip={{ text: t('diagram-zoom-in'), side: 'top' }}
-        onclick={() => zoomBy(1.25)}
-      >
-        <Plus size={14} />
-      </button>
-      <span class="rule"></span>
-      <button
-        type="button"
-        aria-label={t('home-owl-fit')}
-        use:tooltip={{ text: t('home-owl-fit'), side: 'top', shortcut: keysFor('owl-whole') }}
-        onclick={fit}
-      >
-        <Scan size={14} />
-      </button>
-    </div>
+                </span>
+              {/if}
+            </div>
+          {/if}
+        </div>
+      {/if}
+    {/each}
   </div>
-{/if}
+
+  <div class="controls" role="group" aria-label={t('diagram-view')}>
+    <button
+      type="button"
+      aria-label={t('diagram-zoom-out')}
+      use:tooltip={{ text: t('diagram-zoom-out'), side: 'top' }}
+      onclick={() => zoomBy(1 / 1.25)}
+    >
+      <Minus size={14} />
+    </button>
+    <button
+      type="button"
+      class="level"
+      aria-label={t('diagram-actual-size')}
+      use:tooltip={{ text: t('diagram-actual-size'), side: 'top' }}
+      onclick={() => zoomBy(1 / cam.k)}
+    >
+      {t('diagram-zoom', { percent: Math.round(cam.k * 100) })}
+    </button>
+    <button
+      type="button"
+      aria-label={t('diagram-zoom-in')}
+      use:tooltip={{ text: t('diagram-zoom-in'), side: 'top' }}
+      onclick={() => zoomBy(1.25)}
+    >
+      <Plus size={14} />
+    </button>
+    <span class="rule"></span>
+    <button
+      type="button"
+      aria-label={t('home-owl-fit')}
+      use:tooltip={{ text: t('home-owl-fit'), side: 'top', shortcut: keysFor('owl-whole') }}
+      onclick={fit}
+    >
+      <Scan size={14} />
+    </button>
+  </div>
+</div>
 
 <style>
-  .alone {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 14px;
-    padding: 70px 0 40px;
-    text-align: center;
-  }
-  .alone h2 {
-    margin-top: 10px;
-    font-family: var(--font-text);
-    font-size: 28px;
-    font-weight: 500;
-  }
-  .alone p {
-    max-width: 46ch;
-    color: var(--ink-2);
-    font-family: var(--font-text);
-    font-size: 16px;
-    line-height: 1.6;
-  }
   .owl-map {
     position: relative;
     width: 100%;

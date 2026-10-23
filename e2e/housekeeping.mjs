@@ -80,7 +80,7 @@ try {
   // ---- deleted projects ----
   await app.keys(['Control', '1']);
   await app.waitForText('h2', 'Welcome to Glaukopis');
-  await app.clickText('button', 'Begin a project');
+  await app.beginProject();
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Wrath and the hero');
   await app.clickText('dialog footer button', 'Create');
@@ -99,9 +99,8 @@ try {
   await app.keys('The word mênis');
   await app.press('Enter');
   await app.waitGone('.diagram .node.renaming', 3000);
-  await app.click('header button[aria-label="All projects"]');
-  await app.waitFor('.card', 8000);
-  await app.click('.card');
+  await app.home();
+  await app.openProject('Wrath and the hero');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
   await app.click('.diagram .node.root');
@@ -111,11 +110,11 @@ try {
   await app.keys('Reception');
   await app.press('Enter');
   await app.waitGone('.diagram .node.renaming', 3000);
-  await app.click('header button[aria-label="All projects"]');
-  await app.waitFor('.card', 8000);
+  await app.home();
+  await app.waitFor('[data-owl-project]', 8000);
   await sleep(400);
 
-  await app.rightClick('.card');
+  await app.rightClick('[data-owl-project]');
   await app.clickText('[role="menuitem"]', 'Earlier versions');
   await app.waitFor('dialog li', 8000);
   await sleep(200);
@@ -134,26 +133,35 @@ try {
     then.includes('The word mênis') && !then.includes('Reception') && (await app.exec(`return location.hash.split('/')[2]`)) !== id,
     then.join(' | '),
   );
-  await app.click('header button[aria-label="All projects"]');
-  await app.waitFor('.card', 8000);
+  await app.home();
+  await app.waitFor('[data-owl-project]', 8000);
   await sleep(300);
-  check('beside the one it was taken from', (await app.count('.card')) === 2);
+  check('beside the one it was taken from', (await app.count('[data-owl-project]')) === 2);
 
-  await app.rightClick(await app.findByText('.card', 'as of'));
+  await app.rightClick(await app.findByText('[data-owl-project]', 'as of'));
   await app.clickText('[role="menuitem"]', 'Delete');
   await app.waitForText('dialog h2', 'Delete');
   await sleep(250);
   await app.clickText('dialog footer button', 'Delete project');
-  await app.waitForText('.under button', '1 deleted project', 8000);
-  check('a project that is deleted is in the trash', (await app.count('.card')) === 1);
-  await app.click('.under button');
+  await until(async () => (await app.count('[data-owl-project]')) === 1);
+  check('a project that is deleted is in the trash', (await app.count('[data-owl-project]')) === 1);
+  await app.click('[data-owl-more]');
+  await app.clickText('[role="menuitem"]', '1 deleted project');
   await app.waitFor('dialog li', 5000);
   await sleep(250);
   await app.screenshot('housekeeping-4-trash');
   await app.clickText('dialog li button', 'Bring back');
-  await until(async () => (await app.count('.card')) === 2);
+  await until(async () => (await app.count('[data-owl-project]')) === 2);
   check('and can be brought back', true);
-  check('after which the trash is empty, and not shown', !(await app.exists('.under button')));
+  await app.click('[data-owl-more]');
+  await sleep(200);
+  check(
+    'after which the trash is empty, and offered no more',
+    await app.exec(
+      `const i = Array.from(document.querySelectorAll('[role="menuitem"]')).find((b) => /deleted project/.test(b.textContent)); return !!i && (i.disabled || i.getAttribute('aria-disabled') === 'true');`,
+    ),
+  );
+  await app.press('Escape');
 
   const errors = await app.pageErrors();
   check('no errors in the window', errors.length === 0, errors.join(' ‖ '));

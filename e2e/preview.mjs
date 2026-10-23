@@ -36,7 +36,7 @@ try {
     `${formats.length}`,
   );
 
-  await app.clickText('button', 'Begin a project');
+  await app.beginProject();
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Wrath and the hero');
   await app.clickText('dialog footer button', 'Create');
@@ -482,8 +482,7 @@ try {
   );
 
   // --- No copies are written beside the project ---
-  await app.click('header button[aria-label="All projects"]');
-  await app.waitFor('.card', 5000);
+  await app.home();
   await sleep(1500);
   const projects = join(app.dataDir, 'projects');
   const id = readdirSync(projects).find((n) => !n.startsWith('.'));

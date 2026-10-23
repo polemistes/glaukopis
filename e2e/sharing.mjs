@@ -75,7 +75,7 @@ try {
   );
 
   // ---- the owner makes a project and shares it ----
-  await owner.clickText('button', 'Begin a project');
+  await owner.beginProject();
   await owner.waitFor('dialog input');
   await owner.type('dialog input', 'Wrath and the hero');
   await owner.clickText('dialog footer button', 'Create');

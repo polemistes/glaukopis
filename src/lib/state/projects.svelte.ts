@@ -34,8 +34,8 @@ class ProjectsState {
   list = $state.raw<ProjectInfo[]>([]);
   /** The folders the projects are put in on this computer (ADR 0031). */
   folders = $state.raw<Folder[]>([]);
-  /** Which form the page of projects shows. */
-  shown = $state<ProjectsShown>('recent');
+  /** Which form the list of projects shows: the folders, unless the projects last used were chosen. */
+  shown = $state<ProjectsShown>('list');
   loaded = $state(false);
   /** Where folders and projects were put by hand on the map of the projects, by key. */
   places = $state.raw<Record<string, Place>>({});
@@ -69,7 +69,7 @@ class ProjectsState {
       this.list = list;
       this.folders = folders;
       this.places = places;
-      this.shown = shown === 'list' ? shown : 'recent';
+      this.shown = shown === 'recent' ? shown : 'list';
     } catch (error) {
       notifyError(t('project-list-unreadable'), error);
     }

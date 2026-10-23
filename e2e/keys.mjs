@@ -29,7 +29,7 @@ try {
   await app.waitGone('dialog[open]');
 
   // --- The palette, in a project ---
-  await app.clickText('button', 'Begin a project');
+  await app.beginProject();
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Wrath');
   await app.clickText('dialog footer button', 'Create');

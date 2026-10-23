@@ -22,7 +22,7 @@ const bodyText = (app) =>
 const app = await App.launch({ width: 1360, height: 880 });
 try {
   await app.installErrorHook();
-  await app.clickText('button', 'Begin a project');
+  await app.beginProject();
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Wrath');
   await app.clickText('dialog footer button', 'Create');
@@ -118,9 +118,9 @@ try {
   check('a stretch is made as it was at a moment', (await bodyText(app)) === 'Sing, goddess, the wrath.', await bodyText(app));
 
   // ---- kept through saving and opening again ----
-  await app.click('button[aria-label="All projects"]');
+  await app.home();
   await sleep(1500);
-  await app.clickText('.home .card', 'Wrath');
+  await app.openProject('Wrath');
   await app.waitFor('.text-view .section .body', 8000);
   await sleep(500);
   const sessions = await ask(app, `return (await h.sessions()).map((s) => [s.person, s.added, s.removed]);`);

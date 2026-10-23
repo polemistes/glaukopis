@@ -11,11 +11,6 @@ home-shown = Що показано
 home-recent = Останні
 home-all = Усі проєкти
 # Under the cards, when there are more projects than they show.
-home-show-all = { $count ->
-    [one] Показати всі { $count } проєкт
-    [few] Показати всі { $count } проєкти
-    [many] Показати всі { $count } проєктів
-   *[other] Показати всі { $count } проєкту
 }
 # The button that opens the menu of the page.
 home-page-menu = Більше
@@ -26,7 +21,6 @@ home-list-none = Проєктів немає.
 ## Folders of projects
 
 home-new-folder = Нова тека
-home-folder-new-inside = Нова тека всередині…
 home-folder-rename-title = Перейменувати теку
 home-folder-name-placeholder = Що містить тека
 home-folder-name-missing = Дайте теці назву.
@@ -71,35 +65,11 @@ home-begin = Почати проєкт
 ## A project in the list
 
 # Under the names of the first four maps.
-home-more-maps = і ще { $count }
-home-maps = { $count ->
-    [one] { $count } мапа
-    [few] { $count } мапи
-    [many] { $count } мап
-   *[other] { $count } мапи
 }
-home-elements = { $count ->
-    [one] { $count } елемент
-    [few] { $count } елементи
-    [many] { $count } елементів
-   *[other] { $count } елемента
 }
-home-words = { $count ->
-    [one] { $count } слово
-    [few] { $count } слова
-    [many] { $count } слів
-   *[other] { $count } слова
 }
-home-references = { $count ->
-    [one] { $count } джерело
-    [few] { $count } джерела
-    [many] { $count } джерел
-   *[other] { $count } джерела
 }
-home-not-begun = Не розпочато
-home-shared = Спільний
 # "ago" is how long ago it was: "3 hours ago", "yesterday", "12 March".
-home-changed = Змінено { $ago }
 # The button that opens the menu of a project.
 home-more-for = Більше для { $name }
 home-deleted-projects = { $count ->

@@ -22,7 +22,6 @@
   import { testHook } from '$lib/shell/testing';
   import WordsBar from '$lib/words/WordsBar.svelte';
   import { onDestroy, onMount, tick, untrack } from 'svelte';
-  import ArrowLeft from '@lucide/svelte/icons/arrow-left';
   import BookOpenText from '@lucide/svelte/icons/book-open-text';
   import CircleAlert from '@lucide/svelte/icons/circle-alert';
   import CloudDownload from '@lucide/svelte/icons/cloud-download';
@@ -431,7 +430,7 @@
         () => notify(title, t('project-unshared-unfetched')),
         (error) => notifyError(t('project-unshared-not-removed'), error),
       );
-      router.go({ view: 'projects' });
+      router.go({ view: 'owl' });
       return;
     }
     void confirm({
@@ -840,7 +839,7 @@
     title={t('project-open-failed')}
     text={failure || t('project-open-failed-detail')}
   >
-    <Button onclick={() => router.go({ view: 'projects' })}>{t('project-back')}</Button>
+    <Button onclick={() => router.go({ view: 'owl' })}>{t('project-back')}</Button>
   </EmptyState>
 {:else if project && !pane && shared?.shared}
   <EmptyState
@@ -850,19 +849,13 @@
       ? t('project-fetching-offline')
       : t('project-fetching-on-the-way')}
   >
-    <Button onclick={() => router.go({ view: 'projects' })}>{t('project-back')}</Button>
+    <Button onclick={() => router.go({ view: 'owl' })}>{t('project-back')}</Button>
   </EmptyState>
 {:else if !project || !pane}
   <div class="centre"><Spinner size={22} /></div>
 {:else}
   <div class="project">
     <header>
-      <IconButton label={t('project-all-projects')} onclick={() => router.go({ view: 'projects' })}>
-        <ArrowLeft size={16} />
-      </IconButton>
-
-      <span class="divider"></span>
-
       <Segmented
         value={pane.mode}
         label={t('project-view')}
@@ -1365,13 +1358,6 @@
     header :global(.segmented span) {
       display: none;
     }
-  }
-  .divider {
-    width: 1px;
-    height: 18px;
-    margin: 0 6px;
-    flex: none;
-    background: var(--line);
   }
   .status {
     flex: none;

@@ -80,7 +80,7 @@ async function bringBack(id: string) {
  */
 async function trash(id: string) {
   if (openedHere(id)) {
-    router.go({ view: 'projects' });
+    router.go({ view: 'owl' });
     if (!(await goneHere(id, 10_000))) throw new NotNow(t('home-open-now'));
   }
   await projects.closed(id);

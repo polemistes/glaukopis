@@ -68,7 +68,7 @@ try {
     app.exec(`return document.querySelector('.diagram .node.root .caption')?.textContent.trim() ?? null`);
   const blur = () => app.exec(`document.activeElement?.blur?.()`);
 
-  await app.clickText('button', 'Begin a project');
+  await app.beginProject();
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Icons');
   await app.clickText('dialog footer button', 'Create');

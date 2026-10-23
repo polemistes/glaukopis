@@ -2,10 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { formatRoute, parseRoute } from './router.svelte';
 
 describe('where one is', () => {
-  it('names the owl map, and a folder entered on it', () => {
+  it('names the map of all projects, the home, and a folder entered on it', () => {
     expect(parseRoute('#/owl')).toEqual({ view: 'owl' });
     expect(parseRoute('#/owl/abc')).toEqual({ view: 'owl', at: 'abc' });
-    expect(formatRoute({ view: 'owl' })).toBe('#/owl');
+    expect(formatRoute({ view: 'owl' })).toBe('#/');
+    // The map is the home: the empty place, the old place of the page of projects, and what is not known.
+    expect(parseRoute('')).toEqual({ view: 'owl' });
+    expect(parseRoute('#/')).toEqual({ view: 'owl' });
+    expect(parseRoute('#/projects')).toEqual({ view: 'owl' });
+    expect(parseRoute('#/project')).toEqual({ view: 'owl' });
     expect(formatRoute({ view: 'owl', at: 'a b' })).toBe('#/owl/a%20b');
     expect(parseRoute(formatRoute({ view: 'owl', at: 'a b' }))).toEqual({ view: 'owl', at: 'a b' });
   });

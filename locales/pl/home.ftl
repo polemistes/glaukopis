@@ -11,11 +11,6 @@ home-shown = Co jest pokazane
 home-recent = Ostatnio używane
 home-all = Wszystkie projekty
 # Under the cards, when there are more projects than they show.
-home-show-all = { $count ->
-    [one] Pokaż { $count } projekt
-    [few] Pokaż wszystkie { $count } projekty
-    [many] Pokaż wszystkie { $count } projektów
-   *[other] Pokaż wszystkie { $count } projektów
 }
 # The button that opens the menu of the page.
 home-page-menu = Więcej
@@ -26,7 +21,6 @@ home-list-none = Nie ma projektów.
 ## Folders of projects
 
 home-new-folder = Nowy folder
-home-folder-new-inside = Nowy folder w środku…
 home-folder-rename-title = Zmień nazwę folderu
 home-folder-name-placeholder = Co folder zawiera
 home-folder-name-missing = Nadaj folderowi nazwę.
@@ -71,40 +65,12 @@ home-begin = Zacznij projekt
 ## A project in the list
 
 # Under the names of the first four maps.
-home-more-maps = { $count ->
-    [one] i jeszcze jedna
-    [few] i jeszcze { $count }
-    [many] i jeszcze { $count }
-   *[other] i jeszcze { $count }
 }
-home-maps = { $count ->
-    [one] { $count } mapa
-    [few] { $count } mapy
-    [many] { $count } map
-   *[other] { $count } map
 }
-home-elements = { $count ->
-    [one] { $count } element
-    [few] { $count } elementy
-    [many] { $count } elementów
-   *[other] { $count } elementów
 }
-home-words = { $count ->
-    [one] { $count } słowo
-    [few] { $count } słowa
-    [many] { $count } słów
-   *[other] { $count } słów
 }
-home-references = { $count ->
-    [one] { $count } pozycja
-    [few] { $count } pozycje
-    [many] { $count } pozycji
-   *[other] { $count } pozycji
 }
-home-not-begun = Nierozpoczęty
-home-shared = Udostępniony
 # "ago" is how long ago it was: "3 hours ago", "yesterday", "12 March".
-home-changed = Zmieniony { $ago }
 # The button that opens the menu of a project.
 home-more-for = Więcej dla { $name }
 home-deleted-projects = { $count ->

@@ -9,9 +9,8 @@ home-new = Nytt prosjekt
 
 home-shown = Hva som vises
 home-recent = Sist brukt
-home-all = Alle prosjekter
+home-all = Mapper
 home-owl = Kart
-home-show-all = Vis alle { $count } prosjektene
 home-page-menu = Mer
 home-search = Finn et prosjekt
 home-search-none = Ingen prosjekter har det navnet.
@@ -20,8 +19,6 @@ home-list-none = Det er ingen prosjekter.
 ## Mapper med prosjekter
 
 home-new-folder = Ny mappe
-home-folder-new-project = Nytt prosjekt inni …
-home-folder-new-inside = Ny mappe inni …
 home-folder-rename-title = Gi mappen nytt navn
 home-folder-name-placeholder = Det mappen rommer
 home-folder-name-missing = Gi mappen et navn.
@@ -119,26 +116,10 @@ home-begin = Begynn på et prosjekt
 
 ## Et prosjekt i listen
 
-home-more-maps = og { $count } til
-home-maps = { $count ->
-    [one] { $count } tre
-   *[other] { $count } trær
 }
-home-elements = { $count ->
-    [one] { $count } element
-   *[other] { $count } elementer
 }
-home-words = { $count ->
-    [one] { $count } ord
-   *[other] { $count } ord
 }
-home-references = { $count ->
-    [one] { $count } referanse
-   *[other] { $count } referanser
 }
-home-not-begun = Ikke påbegynt
-home-shared = Delt
-home-changed = Endret { $ago }
 home-more-for = Flere valg for { $name }
 home-deleted-projects = { $count ->
     [one] { $count } slettet prosjekt

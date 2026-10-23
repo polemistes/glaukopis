@@ -11,10 +11,6 @@ home-shown = Ce se arată
 home-recent = Folosite de curând
 home-all = Toate proiectele
 # Under the cards, when there are more projects than they show.
-home-show-all = { $count ->
-    [one] Arată toate proiectele: unul
-    [few] Arată toate cele { $count } proiecte
-   *[other] Arată toate cele { $count } de proiecte
 }
 # The button that opens the menu of the page.
 home-page-menu = Mai mult
@@ -25,7 +21,6 @@ home-list-none = Nu există proiecte.
 ## Folders of projects
 
 home-new-folder = Dosar nou
-home-folder-new-inside = Dosar nou înăuntru…
 home-folder-rename-title = Redenumește dosarul
 home-folder-name-placeholder = Ce cuprinde dosarul
 home-folder-name-missing = Dați dosarului un nume.
@@ -69,35 +64,12 @@ home-begin = Începeți un proiect
 ## A project in the list
 
 # Under the names of the first four maps.
-home-more-maps = { $count ->
-    [one] și încă una
-    [few] și încă { $count }
-   *[other] și încă { $count }
 }
-home-maps = { $count ->
-    [one] { $count } hartă
-    [few] { $count } hărți
-   *[other] { $count } de hărți
 }
-home-elements = { $count ->
-    [one] { $count } element
-    [few] { $count } elemente
-   *[other] { $count } de elemente
 }
-home-words = { $count ->
-    [one] { $count } cuvânt
-    [few] { $count } cuvinte
-   *[other] { $count } de cuvinte
 }
-home-references = { $count ->
-    [one] { $count } referință
-    [few] { $count } referințe
-   *[other] { $count } de referințe
 }
-home-not-begun = Neînceput
-home-shared = Partajat
 # "ago" is how long ago it was: "3 hours ago", "yesterday", "12 March".
-home-changed = Modificat { $ago }
 # The button that opens the menu of a project.
 home-more-for = Mai mult pentru { $name }
 home-deleted-projects = { $count ->

@@ -213,10 +213,10 @@ try {
   await app.waitForText('h2', 'Welcome to Glaukopis');
   check(
     'where a project is begun, one can be made from a document',
-    /from a document/.test(await app.exec(`return document.querySelector('.welcome').textContent`)),
+    /from a document/.test(await app.exec(`return document.querySelector('.owl-view .welcome').textContent`)),
   );
 
-  await app.clickText('button', 'Begin a project');
+  await app.beginProject();
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Homer');
   await app.clickText('dialog footer button', 'Create');
@@ -772,17 +772,19 @@ try {
   );
 
   // ---- a project from a document ----
-  await app.click('header button[aria-label="All projects"]');
-  await app.waitForText('h1', 'Projects');
+  await app.home();
   await sleep(400);
+  await app.click('[data-owl-new]');
+  await sleep(200);
   check(
     'where projects are made, one can be made from a document',
     await app.exec(
-      `return Array.from(document.querySelectorAll('.home .welcome button')).some((b) => b.textContent.includes('A project from a document…'))`,
+      `return Array.from(document.querySelectorAll('[role="menuitem"]')).some((b) => b.textContent.includes('A project from a document…'))`,
     ),
   );
-  // The dialog that asks for a file cannot be driven: the file is dropped among the projects.
-  const among = await middleOf('.home');
+  await app.press('Escape');
+  // The dialog that asks for a file cannot be driven: the file is dropped on the map of the projects.
+  const among = await middleOf('[data-owl-map]');
   await drop([join(desk, 'wrath.md')], among.x, among.y);
   await app.waitFor('dialog [data-fact="words"]', 15000);
   await sleep(200);

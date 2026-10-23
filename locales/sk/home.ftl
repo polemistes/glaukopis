@@ -11,10 +11,6 @@ home-shown = Čo sa zobrazuje
 home-recent = Naposledy použité
 home-all = Všetky projekty
 # Under the cards, when there are more projects than they show.
-home-show-all = { $count ->
-    [one] Zobraziť { $count } projekt
-    [few] Zobraziť všetky { $count } projekty
-   *[other] Zobraziť všetkých { $count } projektov
 }
 # The button that opens the menu of the page.
 home-page-menu = Viac
@@ -25,7 +21,6 @@ home-list-none = Nie sú žiadne projekty.
 ## Folders of projects
 
 home-new-folder = Nový priečinok
-home-folder-new-inside = Nový priečinok vnútri…
 home-folder-rename-title = Premenovať priečinok
 home-folder-name-placeholder = Čo priečinok obsahuje
 home-folder-name-missing = Dajte priečinku názov.
@@ -69,35 +64,12 @@ home-begin = Začať projekt
 ## A project in the list
 
 # Under the names of the first four maps.
-home-more-maps = { $count ->
-    [one] a ešte { $count } ďalšia
-    [few] a ešte { $count } ďalšie
-   *[other] a ešte { $count } ďalších
 }
-home-maps = { $count ->
-    [one] { $count } mapa
-    [few] { $count } mapy
-   *[other] { $count } máp
 }
-home-elements = { $count ->
-    [one] { $count } prvok
-    [few] { $count } prvky
-   *[other] { $count } prvkov
 }
-home-words = { $count ->
-    [one] { $count } slovo
-    [few] { $count } slová
-   *[other] { $count } slov
 }
-home-references = { $count ->
-    [one] { $count } záznam
-    [few] { $count } záznamy
-   *[other] { $count } záznamov
 }
-home-not-begun = Nezačatý
-home-shared = Zdieľaný
 # "ago" is how long ago it was: "3 hours ago", "yesterday", "12 March".
-home-changed = Zmenený { $ago }
 # The button that opens the menu of a project.
 home-more-for = Viac pre { $name }
 home-deleted-projects = { $count ->

@@ -11,7 +11,6 @@ home-shown = Τι εμφανίζεται
 home-recent = Πρόσφατα
 home-all = Όλα τα έργα
 # Under the cards, when there are more projects than they show.
-home-show-all = Εμφάνιση και των { $count } έργων
 # The button that opens the menu of the page.
 home-page-menu = Περισσότερα
 home-search = Εύρεση έργου
@@ -21,7 +20,6 @@ home-list-none = Δεν υπάρχουν έργα.
 ## Folders of projects
 
 home-new-folder = Νέος φάκελος
-home-folder-new-inside = Νέος φάκελος μέσα…
 home-folder-rename-title = Μετονομασία φακέλου
 home-folder-name-placeholder = Τι περιέχει ο φάκελος
 home-folder-name-missing = Δώστε όνομα στον φάκελο.
@@ -64,27 +62,11 @@ home-begin = Ξεκινήστε ένα έργο
 ## A project in the list
 
 # Under the names of the first four maps.
-home-more-maps = και { $count } ακόμη
-home-maps = { $count ->
-    [one] { $count } χάρτης
-   *[other] { $count } χάρτες
 }
-home-elements = { $count ->
-    [one] { $count } στοιχείο
-   *[other] { $count } στοιχεία
 }
-home-words = { $count ->
-    [one] { $count } λέξη
-   *[other] { $count } λέξεις
 }
-home-references = { $count ->
-    [one] { $count } αναφορά
-   *[other] { $count } αναφορές
 }
-home-not-begun = Δεν έχει αρχίσει
-home-shared = Κοινό
 # "ago" is how long ago it was: "3 hours ago", "yesterday", "12 March".
-home-changed = Άλλαξε { $ago }
 # The button that opens the menu of a project.
 home-more-for = Περισσότερα για το { $name }
 home-deleted-projects = { $count ->

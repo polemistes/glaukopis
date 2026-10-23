@@ -15,15 +15,9 @@ try {
   await app.installErrorHook();
   const begin = async (name) => {
     await app.go('#/');
-    await app.waitFor('.home', 8000);
     await sleep(600);
-    // From the welcome at first, then by the button for a new one: the one that is seen.
-    await app.click(
-      await app.exec(
-        `return Array.from(document.querySelectorAll('button')).find((b) => b.offsetParent !== null && /^(New project|Begin a project)$/.test(b.textContent.trim())) || null`,
-      ),
-    );
-    await app.waitFor('dialog input');
+    // From the welcome at first, then by the plus of the map's bar: the one that is seen.
+    await app.beginProject();
     await app.type('dialog input', name);
     await app.clickText('dialog footer button', 'Create');
     await app.waitFor('.project', 8000);
@@ -66,10 +60,9 @@ try {
 
   // ---- a project that is opened again opens as it was left ----
   await app.go('#/');
-  await app.waitFor('.home', 8000);
+  await app.waitFor('[data-owl-map]', 8000);
   await sleep(1500);
-  await app.clickText('.home .card', 'First');
-  await app.waitFor('.project', 8000);
+  await app.openProject('First');
   await sleep(800);
   check('a project opened again opens where it was left', (await view()) === 'Diagram', String(await view()));
 

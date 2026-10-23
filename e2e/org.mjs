@@ -85,7 +85,7 @@ try {
   // --- A project, an element with a kind, and its text pasted as Org ---
   await app.go('#/');
   await app.waitForText('h2', 'Welcome to Glaukopis');
-  await app.clickText('button', 'Begin a project');
+  await app.beginProject();
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Medea');
   await app.clickText('dialog footer button', 'Create');
@@ -207,7 +207,7 @@ try {
   // --- Saved: the folder holds the Org form and the works ---
   // The project is closed by going home, which saves it and writes its copy at once.
   await app.go('#/');
-  await app.waitForText('h2', 'Welcome to Glaukopis');
+  await app.waitFor('[data-owl-map]', 8000);
   const first = await until('project.org in the folder of the project', () =>
     projectFolders(app.dataDir).find((f) => f.org && f.org.includes(':COMMENTS:')),
   );
@@ -235,7 +235,10 @@ try {
   // --- Opened as an Org file: a new project with the same Org form ---
   // As Open an Org file… does once the folder of the first is chosen: the
   // dialog that chooses a file cannot be answered from here.
-  check('the home page offers to open an Org file', await app.exists('button') && (await app.findByText('button', 'Open an Org file…')) !== null);
+  await app.click('[data-owl-new]');
+  await sleep(200);
+  check('the home offers to open an Org file', (await app.findByText('[role="menuitem"]', 'Open an Org file…').catch(() => null)) !== null);
+  await app.press('Escape');
   await app.exec(`void window.__glaukopisOrg.open(arguments[0])`, first.dir);
   // The work is in the library already: what to do with it may be asked.
   const opened = await until('the new project, or the question about its works', async () =>

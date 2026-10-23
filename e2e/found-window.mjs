@@ -160,7 +160,7 @@ try {
   await invoke('import_apply', { plan: await invoke('import_bib_text', { text: bib }) });
 
   await app.waitForText('h2', 'Welcome to Glaukopis');
-  await app.clickText('button', 'Begin a project');
+  await app.beginProject();
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Homer');
   await app.clickText('dialog footer button', 'Create');
@@ -172,8 +172,7 @@ try {
   const id = (await app.exec(`return location.hash`)).split('/')[2].split('?')[0];
 
   // The project is closed, the text is written into it, and it is opened again.
-  await app.click('header button[aria-label="All projects"]');
-  await app.waitFor('.card', 8000);
+  await app.home();
   await sleep(800);
   {
     const loaded = await app.projectLoad(id);
@@ -185,7 +184,7 @@ try {
     doc.transact(() => top.get('body').insert(0, written()));
     await app.projectAppend(id, toBase64(Y.encodeStateAsUpdate(doc, before)));
   }
-  await app.clickText('.card h3', 'Homer');
+  await app.openProject('Homer');
   await app.waitFor('.diagram .node.root', 8000);
   await app.keys(['Control', 'd']);
   await app.waitFor('.text-view .section', 8000);
@@ -638,10 +637,9 @@ try {
   await closePanel();
 
   // ---- opened again later ----
-  await app.click('header button[aria-label="All projects"]');
-  await app.waitFor('.card', 8000);
+  await app.home();
   await sleep(800);
-  await app.clickText('.card h3', 'Homer');
+  await app.openProject('Homer');
   await app.waitFor('.text-view .section, .diagram .node.root', 8000);
   await sleep(500);
   await app.thisMap('Loose citations…');

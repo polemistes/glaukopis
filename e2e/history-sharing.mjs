@@ -75,7 +75,7 @@ try {
   await guest.installErrorHook();
 
   // ---- the owner writes, keeps the history, and shares ----
-  await owner.clickText('button', 'Begin a project');
+  await owner.beginProject();
   await owner.waitFor('dialog input');
   await owner.type('dialog input', 'Wrath');
   await owner.clickText('dialog footer button', 'Create');

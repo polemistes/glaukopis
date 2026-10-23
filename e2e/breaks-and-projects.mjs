@@ -73,7 +73,7 @@ try {
   };
 
   // ---- a project of the document ----
-  await app.clickText('button', 'Begin a project');
+  await app.beginProject();
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Wrath');
   await app.clickText('dialog footer button', 'Create');
@@ -148,11 +148,7 @@ try {
   // A second project, made from the home page.
   await app.keys(['Control', '1']);
   await sleep(400);
-  const begin = await until('the button that begins a project', () =>
-    app.exec(`return Array.from(document.querySelectorAll('button')).find((b) => /^(New project|Begin a project)$/.test(b.textContent.trim())) || null`),
-  );
-  await app.click(begin[ELEMENT]);
-  await app.waitFor('dialog input');
+  await app.beginProject();
   await app.type('dialog input', 'Odyssey');
   await app.clickText('dialog footer button', 'Create');
   await app.waitFor('.text-view .section', 8000);

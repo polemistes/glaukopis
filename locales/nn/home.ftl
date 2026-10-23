@@ -12,7 +12,6 @@ home-recent = Sist brukte
 home-all = Alle prosjekt
 home-owl = Kart
 # Under the cards, when there are more projects than they show.
-home-show-all = Vis alle { $count } prosjekta
 # The button that opens the menu of the page.
 home-page-menu = Meir
 home-search = Finn eit prosjekt
@@ -22,8 +21,6 @@ home-list-none = Det er ingen prosjekt.
 ## Folders of projects
 
 home-new-folder = Ny mappe
-home-folder-new-project = Nytt prosjekt inni …
-home-folder-new-inside = Ny mappe inni …
 home-folder-rename-title = Gi mappa nytt namn
 home-folder-name-placeholder = Det mappa rommar
 home-folder-name-missing = Gi mappa eit namn.
@@ -126,27 +123,11 @@ home-begin = Byrj på eit prosjekt
 ## A project in the list
 
 # Under the names of the first four maps.
-home-more-maps = og { $count } til
-home-maps = { $count ->
-    [one] { $count } tre
-   *[other] { $count } tre
 }
-home-elements = { $count ->
-    [one] { $count } element
-   *[other] { $count } element
 }
-home-words = { $count ->
-    [one] { $count } ord
-   *[other] { $count } ord
 }
-home-references = { $count ->
-    [one] { $count } referanse
-   *[other] { $count } referansar
 }
-home-not-begun = Ikkje byrja på
-home-shared = Delt
 # "ago" is how long ago it was: "3 hours ago", "yesterday", "12 March".
-home-changed = Endra { $ago }
 # The button that opens the menu of a project.
 home-more-for = Fleire val for { $name }
 home-deleted-projects = { $count ->

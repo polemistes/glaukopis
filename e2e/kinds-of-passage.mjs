@@ -48,7 +48,7 @@ const app = await App.launch({ width: 1360, height: 900 });
 try {
   await app.installErrorHook();
   await app.waitForText('h2', 'Welcome to Glaukopis');
-  await app.clickText('button', 'Begin a project');
+  await app.beginProject();
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Letters from the island');
   await app.clickText('dialog footer button', 'Create');

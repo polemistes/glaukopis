@@ -55,7 +55,7 @@ try {
   check('and ends when its message has been read', ended === 0, `exit ${ended}`);
 
   // The first goes on as before.
-  await app.clickText('button', 'Begin a project');
+  await app.beginProject();
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Still here');
   await app.clickText('dialog footer button', 'Create');

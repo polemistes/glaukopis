@@ -161,13 +161,11 @@ try {
   await app.keys(['Control', 'Shift', 'z']);
   check('Ctrl+Shift+Z makes it again', await waitUntil(() => hasCard(app, 'Scratch')));
   await app.screenshot('owl-2-made');
-  await app.go('#/');
-  await app.waitForText('h1', 'Projects', 5000);
-  await app.click('[role="radio"][aria-label="All projects"]').catch(() => {});
-  await app.waitFor('.list .row.folder', 5000);
-  check('the list has the folder made on the map', await app.exec(`return Array.from(document.querySelectorAll('.list .row.folder .name')).some((n) => n.textContent.trim() === 'Latin')`));
-  await app.go('#/owl');
-  await app.waitFor('[data-owl-map]', 5000);
+  if (!(await app.exists('[data-projects-pane]'))) await app.click('[data-projects-button]');
+  await app.waitFor('[data-projects-pane] .list .row.folder', 5000);
+  check('the list has the folder made on the map', await app.exec(`return Array.from(document.querySelectorAll('[data-projects-pane] .list .row.folder .name')).some((n) => n.textContent.trim() === 'Latin')`));
+  await app.click('[data-projects-button]');
+  await app.waitGone('[data-projects-pane]', 3000);
   await sleep(600);
 
   // --- 3. Moving and deleting ---
@@ -216,7 +214,7 @@ try {
   check('the bar says where one is', (await app.exec(`return document.querySelector('[data-owl-here]')?.textContent.trim()`)) === 'Greek');
   await app.click('[data-owl-map]');
   await app.keys(['Alt', 'Shift', 'ArrowUp']);
-  check('Alt+Shift+Up goes up', await waitUntil(async () => (await app.exec('return location.hash')) === '#/owl'));
+  check('Alt+Shift+Up goes up', await waitUntil(async () => (await app.exec('return location.hash')) === '#/'));
   check('with the folder selected', await waitUntil(async () => (await selectedName(app)) === 'Greek'));
   await app.press('ArrowRight');
   await app.click(await labelEl(app, 'Greek'));

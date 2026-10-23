@@ -226,8 +226,8 @@ pub fn project_move_to_folder(
     Ok(state.projects.move_to_folder(&id, folder.as_deref())?)
 }
 
-/// Which form of the page of projects is shown, "recent" or "list": with
-/// `kind`, remembers it; without, says which was remembered, or "recent".
+/// Which form the list of projects shows, "list" (the folders) or "recent":
+/// with `kind`, remembers it; without, says which was remembered, or "list".
 #[tauri::command(async)]
 pub fn projects_shown(state: State<'_, AppState>, kind: Option<String>) -> CommandResult<String> {
     if let Some(kind) = kind {
@@ -235,7 +235,7 @@ pub fn projects_shown(state: State<'_, AppState>, kind: Option<String>) -> Comma
         return Ok(kind);
     }
     let shown = state.projects.shown()?;
-    Ok(if shown.is_empty() { "recent".to_owned() } else { shown })
+    Ok(if shown.is_empty() { "list".to_owned() } else { shown })
 }
 
 #[tauri::command(async)]

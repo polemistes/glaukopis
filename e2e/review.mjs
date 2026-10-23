@@ -100,7 +100,7 @@ try {
   await anna.installErrorHook();
 
   // ---- Robert writes the text ----
-  await robert.clickText('button', 'Begin a project');
+  await robert.beginProject();
   await robert.waitFor('dialog input');
   await robert.type('dialog input', 'Wrath');
   await robert.clickText('dialog footer button', 'Create');

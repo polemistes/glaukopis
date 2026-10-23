@@ -114,7 +114,7 @@ try {
       `return Array.from(document.querySelectorAll('.text-view .section')).map((s) => (s.querySelector('.heading .prose.title')?.textContent ?? '').trim())`,
     );
 
-  await app.clickText('button', 'Begin a project');
+  await app.beginProject();
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Wrath');
   await app.clickText('dialog footer button', 'Create');
@@ -310,9 +310,9 @@ try {
 
   // ---- through everything: a second project, and both searched ----
   await app.keys(['Control', '1']);
-  await app.waitFor('.home', 8000);
+  await app.waitFor('[data-owl-map]', 8000);
   await sleep(600);
-  await app.clickText('button', 'Begin a project');
+  await app.beginProject();
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Second');
   await app.clickText('dialog footer button', 'Create');

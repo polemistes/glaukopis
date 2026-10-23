@@ -6,8 +6,7 @@
 export type MapMode = 'diagram' | 'text' | 'timeline';
 
 export type Route =
-  | { view: 'projects' }
-  /** The owl map: all the projects, as the map above them; at a folder, where one was entered. */
+  /** The map of all projects, the home: at the owl, or at a folder that was entered. */
   | { view: 'owl'; at?: string }
   | { view: 'library'; collection?: string; entry?: string }
   | { view: 'pictures'; picture?: string }
@@ -52,7 +51,7 @@ export function parseRoute(hash: string): Route {
         file: params.get('file') ?? undefined,
       };
     case 'project':
-      if (!parts[1]) return { view: 'projects' };
+      if (!parts[1]) return { view: 'owl' };
       return {
         view: 'project',
         project: parts[1],
@@ -66,17 +65,16 @@ export function parseRoute(hash: string): Route {
     case 'search':
       return { view: 'search' };
     default:
-      return { view: 'projects' };
+      // The home: the map of all projects, as `#/`, `#/projects` and anything not known.
+      return { view: 'owl' };
   }
 }
 
 export function formatRoute(route: Route): string {
   const e = encodeURIComponent;
   switch (route.view) {
-    case 'projects':
-      return '#/';
     case 'owl':
-      return '#/owl' + (route.at ? `/${e(route.at)}` : '');
+      return route.at ? `#/owl/${e(route.at)}` : '#/';
     case 'library': {
       const params = new URLSearchParams();
       if (route.collection) params.set('collection', route.collection);

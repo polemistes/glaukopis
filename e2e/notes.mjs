@@ -86,8 +86,7 @@ try {
 
   // ---- in a project: for the project ----
   await app.keys(['Control', '1']);
-  await app.waitForText('button', 'Begin a project', 8000);
-  await app.clickText('button', 'Begin a project');
+  await app.beginProject();
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Wrath and the hero');
   await app.clickText('dialog footer button', 'Create');
@@ -170,10 +169,9 @@ try {
   check('it is in the project', inProject > 0);
 
   // In another project the note for all is there, and the other is not.
-  await app.click('header button[aria-label="All projects"]');
-  await app.waitFor('.card', 8000);
+  await app.home();
   await sleep(400);
-  await app.clickText('button', 'Begin a project');
+  await app.beginProject();
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Another book');
   await app.clickText('dialog footer button', 'Create');

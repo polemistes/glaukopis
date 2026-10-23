@@ -16,7 +16,7 @@ const api = vi.hoisted(() => ({
     folder: vi.fn(),
     folders: [],
   },
-  router: { go: vi.fn(), route: { view: 'projects' } },
+  router: { go: vi.fn(), route: { view: 'owl' } },
   openProject: vi.fn(),
 }));
 

@@ -87,7 +87,7 @@
   </header>
   <div class="body">
     {#if projects.loaded}
-      <ProjectList {actions} {current} {project} {at} {onenter} {owlAt} compact />
+      <ProjectList {actions} {current} {project} {at} {onenter} {owlAt} />
     {:else}
       <div class="centre"><Spinner size={18} /></div>
     {/if}

@@ -28,14 +28,16 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import { PROJECT } from '$lib/project/model/types';
   import { projects } from '$lib/state/projects.svelte';
-  import Button from '$lib/ui/Button.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
+  import Segmented from '$lib/ui/Segmented.svelte';
+  import Clock from '@lucide/svelte/icons/clock';
+  import FolderTree from '@lucide/svelte/icons/folder-tree';
   import { dropTarget, startDrag, type DragPayload, type DropEvent } from '$lib/ui/drag.svelte';
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import TextField from '$lib/ui/TextField.svelte';
   import { tick, untrack } from 'svelte';
   import { ago } from '$lib/util/time';
-  import { ancestors, folderOf, rows as makeRows } from './folders';
+  import { ancestors, folderOf, rows as makeRows, type Row } from './folders';
   import { moveThings, thingsOf, wouldMove } from './changes';
   import { closedTrees } from './closed.svelte';
   import { listUi } from './list.svelte';
@@ -46,8 +48,6 @@
   interface Props {
     /** What opens a project, its menu, and the dialog that asks for a name: the place's own. */
     actions: ProjectActions;
-    /** A narrow column, as in the pane of projects: the names only. */
-    compact?: boolean;
     /** The project that is open, marked in the list and scrolled into view. */
     current?: string | null;
     /**
@@ -69,7 +69,6 @@
 
   let {
     actions,
-    compact = false,
     current = null,
     project = null,
     at = null,
@@ -81,13 +80,27 @@
   let filter = $state('');
   let listEl = $state<HTMLDivElement>();
 
-  const rows = $derived(
-    makeRows(projects.folders, projects.list, { collapsed: listUi.collapsed, filter }),
-  );
+  /** Which form the list shows: the folders, or the projects last used, the newest first. */
+  const recent = $derived(projects.shown === 'recent');
+  /** How many of the projects last used are shown. */
+  const RECENT = 12;
+  const rows = $derived.by((): Row[] => {
+    if (!recent)
+      return makeRows(projects.folders, projects.list, { collapsed: listUi.collapsed, filter });
+    const words = filter.trim().toLocaleLowerCase();
+    return projects.list
+      .filter((p) => !words || p.name.toLocaleLowerCase().includes(words))
+      .slice(0, RECENT)
+      .map((project) => ({ kind: 'project', project, depth: 0 }));
+  });
+  const forms = $derived([
+    { value: 'list' as const, label: t('home-all'), icon: FolderTree, iconOnly: true },
+    { value: 'recent' as const, label: t('home-recent'), icon: Clock, iconOnly: true },
+  ]);
   /** How far each step deeper is drawn in. */
-  const step = $derived(compact ? 14 : 20);
-  /** Where the folders and projects begin: a step in from the owl, which holds them all. */
-  const left = $derived((compact ? 4 : 8) + step);
+  const step = 14;
+  /** Where the folders and projects begin: a step in from the owl, which holds them all; in the projects last used, at the edge. */
+  const left = $derived(recent ? 4 : 4 + step);
 
   const open = (p: ProjectInfo) => actions.open(p);
   const toggle = (id: string) => listUi.toggle(id);
@@ -147,13 +160,6 @@
     if (things) void moveThings(things, target);
   }
 
-  function facts(p: ProjectInfo): string {
-    const parts: string[] = [];
-    if (p.maps.length > 1) parts.push(t('home-maps', { count: p.maps.length }));
-    if (p.words) parts.push(t('home-words', { count: p.words }));
-    return parts.join(' · ');
-  }
-
   // ---- the trees of the projects: the open one, and those unfolded in the pane ----
 
   /** A tree shown under the row of its project. */
@@ -205,7 +211,7 @@
   }
 
   /** Whether the tree of a project that is not open can be unfolded under its row: in the pane. */
-  const unfoldable = (p: ProjectInfo) => compact && p.id !== current;
+  const unfoldable = (p: ProjectInfo) => p.id !== current;
 
   function toggleClosed(p: ProjectInfo) {
     if (closedUnfolded.has(p.id)) closedUnfolded.delete(p.id);
@@ -214,7 +220,6 @@
 
   // What is unfolded is read from disk, and again when the project has changed.
   $effect(() => {
-    if (!compact) return;
     for (const p of projects.list) {
       if (p.id !== current && closedUnfolded.has(p.id)) closedTrees.want(p);
     }
@@ -288,7 +293,6 @@
 
 <div
   class="list"
-  class:compact
   bind:this={listEl}
   use:dropTarget={{ accepts: accepts(null), ondrop: (e) => drop(e, null) }}
 >
@@ -301,39 +305,41 @@
     >
       {#snippet leading()}<Search size={14} />{/snippet}
     </TextField>
-    {#if compact}
-      <IconButton label={t('home-new-folder')} size="sm" onclick={() => actions.newFolder(null)}>
-        <FolderPlus size={15} />
-      </IconButton>
-    {:else}
-      <Button size="sm" onclick={() => actions.newFolder(null)}>
-        {#snippet icon()}<FolderPlus size={14} />{/snippet}
-        {t('home-new-folder')}
-      </Button>
-    {/if}
+    <Segmented
+      value={projects.shown}
+      options={forms}
+      label={t('home-shown')}
+      size="sm"
+      onchange={(kind) => projects.show(kind)}
+    />
+    <IconButton label={t('home-new-folder')} size="sm" onclick={() => actions.newFolder(null)}>
+      <FolderPlus size={15} />
+    </IconButton>
   </div>
 
-  <!-- The owl map, at the top: all the projects, as one map. -->
-  <!-- svelte-ignore a11y_click_events_have_key_events -->
-  <div
-    class="row owl"
-    class:current={owlHere}
-    role="button"
-    tabindex="0"
-    aria-current={owlHere ? 'page' : undefined}
-    data-owl
-    data-current={owlHere ? '' : undefined}
-    style:padding-left="{compact ? 4 : 8}px"
-    onclick={() => router.go({ view: 'owl' })}
-    onkeydown={(e) => {
-      if (e.key !== 'Enter' && e.key !== ' ') return;
-      e.preventDefault();
-      router.go({ view: 'owl' });
-    }}
-  >
-    <Mark size={compact ? 15 : 17} />
-    <span class="name serif truncate">{t('project-all-projects')}</span>
-  </div>
+  <!-- The owl map, at the top: all the projects, as one map. Not among the projects last used, which are no tree. -->
+  {#if !recent}
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <div
+      class="row owl"
+      class:current={owlHere}
+      role="button"
+      tabindex="0"
+      aria-current={owlHere ? 'page' : undefined}
+      data-owl
+      data-current={owlHere ? '' : undefined}
+      style:padding-left="4px"
+      onclick={() => router.go({ view: 'owl' })}
+      onkeydown={(e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        router.go({ view: 'owl' });
+      }}
+    >
+      <Mark size={15} />
+      <span class="name serif truncate">{t('project-all-projects')}</span>
+    </div>
+  {/if}
 
   {#each rows as row (row.kind === 'folder' ? `f:${row.folder.id}` : `p:${row.project.id}`)}
     {#if row.kind === 'folder'}
@@ -361,11 +367,7 @@
         </span>
         <Folder size={15} strokeWidth={1.6} />
         <span class="name truncate">{f.name}</span>
-        {#if compact}
-          <span class="count">{row.projects}</span>
-        {:else}
-          <span class="count">{t('home-folder-projects', { count: row.projects })}</span>
-        {/if}
+        <span class="count">{row.projects}</span>
         <button
           type="button"
           class="menu"
@@ -391,14 +393,14 @@
         data-depth={row.depth}
         data-project={p.id}
         data-current={p.id === current ? '' : undefined}
-        title={compact ? p.name : undefined}
-        style:padding-left="{left + row.depth * step + (compact ? 0 : 22)}px"
+        title={p.name}
+        style:padding-left="{left + row.depth * step}px"
         onclick={() => open(p)}
         onkeydown={(e) => onprojectkey(e, p)}
         oncontextmenu={(e) => openContextMenu(e, projectItems(p))}
         onpointerdown={(e) => startDrag(e, () => ({ kind: 'project', data: p.id, label: p.name }))}
       >
-        {#if compact}
+        {#if !recent}
           {@const unfolded = unfoldable(p) && closedUnfolded.has(p.id)}
           <button
             type="button"
@@ -420,12 +422,11 @@
         <ProjectBadge
           name={p.name}
           sharing={p.sharing ? { owner: p.sharing.owner } : null}
-          size={compact ? 14 : 16}
+          size={14}
         />
         <span class="name serif truncate">{p.name}</span>
-        {#if !compact}
-          <span class="facts truncate">{facts(p)}</span>
-          <span class="when">{t('home-changed', { ago: ago(p.modified) })}</span>
+        {#if recent}
+          <span class="when">{ago(p.modified)}</span>
         {/if}
         <button
           type="button"
@@ -449,7 +450,7 @@
             left + row.depth * step + 22,
           )}
         </div>
-      {:else if unfoldable(p) && closedUnfolded.has(p.id)}
+      {:else if !recent && unfoldable(p) && closedUnfolded.has(p.id)}
         {@const reading = closedTrees.get(p.id)}
         {@const indent = left + row.depth * step + 22}
         <div class="tree closed" data-closed-tree={p.id}>
@@ -495,7 +496,7 @@
       aria-current={id === src.at ? 'location' : undefined}
       data-element={id}
       data-current={id === src.at ? '' : undefined}
-      title={compact ? name || undefined : undefined}
+      title={name || undefined}
       style:padding-left="{indent + depth * step}px"
       onclick={() => src.enter(id)}
       onkeydown={(e) => onelementkey(e, src, id, holds)}
@@ -526,12 +527,12 @@
 {/snippet}
 
 <style>
+  /* A narrow column: rows as the outline has them. */
   .list {
     display: flex;
     flex-direction: column;
-    gap: 1px;
+    gap: 0;
     padding-bottom: 12px;
-    border-radius: var(--radius-m);
   }
   .list:global([data-drop-over]) {
     box-shadow: inset 0 0 0 1.5px var(--accent);
@@ -539,19 +540,20 @@
   .tools {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 10px;
+    gap: 4px;
+    margin-bottom: 6px;
   }
   .tools :global(.field) {
-    width: 280px;
+    flex: 1;
+    width: auto;
+    min-width: 0;
   }
   .row {
     display: flex;
     align-items: center;
-    gap: 8px;
-    min-height: 34px;
-    padding-right: 6px;
+    gap: 6px;
+    min-height: 28px;
+    padding-right: 2px;
     border-radius: var(--radius-s);
     color: var(--ink-2);
     cursor: pointer;
@@ -569,12 +571,15 @@
     background: var(--accent-soft);
     box-shadow: inset 0 0 0 1.5px var(--accent);
   }
+  .row .name {
+    font-size: var(--text-sm);
+  }
   .row.folder .name {
     font-weight: 500;
   }
   .row.project .name {
     color: var(--ink);
-    font-size: 15px;
+    font-size: var(--text-md);
   }
   .name {
     flex: 1;
@@ -597,24 +602,15 @@
     visibility: hidden;
   }
   .count,
-  .facts,
   .when {
     flex: none;
-    font-size: var(--text-sm);
+    font-size: var(--text-xs);
     color: var(--ink-4);
     font-variant-numeric: tabular-nums;
   }
-  .facts {
-    max-width: 220px;
-    color: var(--ink-3);
-  }
-  .when {
-    width: 150px;
-    text-align: right;
-  }
   .menu {
     display: inline-flex;
-    padding: 5px;
+    padding: 3px;
     border: none;
     border-radius: var(--radius-s);
     background: transparent;
@@ -632,8 +628,9 @@
     color: var(--ink);
   }
   .none {
-    padding: 20px 8px;
+    padding: 14px 6px;
     color: var(--ink-4);
+    font-size: var(--text-sm);
     text-align: center;
   }
   /* The project that is open, as the outline marks the element in view. */
@@ -678,7 +675,7 @@
   }
   .row.element {
     gap: 2px;
-    min-height: 26px;
+    min-height: 24px;
     color: var(--ink-3);
   }
   .row.element .name {
@@ -718,41 +715,5 @@
   }
   .fold.hidden {
     visibility: hidden;
-  }
-
-  /* A narrow column, as in the pane of projects: rows as the outline has them. */
-  .compact {
-    gap: 0;
-    border-radius: 0;
-  }
-  .compact .tools {
-    gap: 4px;
-    margin-bottom: 6px;
-  }
-  .compact .tools :global(.field) {
-    flex: 1;
-    width: auto;
-    min-width: 0;
-  }
-  .compact .row {
-    gap: 6px;
-    min-height: 28px;
-    padding-right: 2px;
-  }
-  .compact .row .name {
-    font-size: var(--text-sm);
-  }
-  .compact .row.project .name {
-    font-size: var(--text-md);
-  }
-  .compact .row.element {
-    min-height: 24px;
-  }
-  .compact .menu {
-    padding: 3px;
-  }
-  .compact .none {
-    padding: 14px 6px;
-    font-size: var(--text-sm);
   }
 </style>

@@ -11,7 +11,6 @@ home-shown = Что показывать
 home-recent = Недавние
 home-all = Все проекты
 # Under the cards, when there are more projects than they show.
-home-show-all = Показать все проекты ({ $count })
 # The button that opens the menu of the page.
 home-page-menu = Ещё
 home-search = Найти проект
@@ -21,7 +20,6 @@ home-list-none = Проектов нет.
 ## Folders of projects
 
 home-new-folder = Новая папка
-home-folder-new-inside = Новая папка внутри…
 home-folder-rename-title = Переименовать папку
 home-folder-name-placeholder = Что лежит в папке
 home-folder-name-missing = Дайте папке название.
@@ -66,35 +64,11 @@ home-begin = Начать проект
 ## A project in the list
 
 # Under the names of the first four maps.
-home-more-maps = и ещё { $count }
-home-maps = { $count ->
-    [one] { $count } карта
-    [few] { $count } карты
-    [many] { $count } карт
-   *[other] { $count } карты
 }
-home-elements = { $count ->
-    [one] { $count } элемент
-    [few] { $count } элемента
-    [many] { $count } элементов
-   *[other] { $count } элемента
 }
-home-words = { $count ->
-    [one] { $count } слово
-    [few] { $count } слова
-    [many] { $count } слов
-   *[other] { $count } слова
 }
-home-references = { $count ->
-    [one] { $count } источник
-    [few] { $count } источника
-    [many] { $count } источников
-   *[other] { $count } источника
 }
-home-not-begun = Не начат
-home-shared = Совместный
 # "ago" is how long ago it was: "3 hours ago", "yesterday", "12 March".
-home-changed = Изменён { $ago }
 # The button that opens the menu of a project.
 home-more-for = Ещё для { $name }
 home-deleted-projects = { $count ->

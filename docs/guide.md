@@ -56,29 +56,48 @@ printed as a document of its own (see *One tree, entered anywhere*).
 
 Everything is saved as you work. There is nothing to press.
 
-To go from one project to another without the home page, open **the list of
-projects** at the left of a project, with the button at the left of the bar
-over the map or **Ctrl+Shift+L**. It is the list of the home page, with its
-folders and its search; a click opens a project, and the one that is open is
-marked. Under the open project stands its whole tree, folded but for the way
+To go from one project to another without going home, open **the list of
+projects** at the left, with the button at the left of the bar over the map
+or **Ctrl+Shift+L**. It has the folders and a field that finds a project by
+its name; a click opens a project, and the one that is open is marked. Under the open project stands its whole tree, folded but for the way
 down to the element in view, which is marked; a click on an element enters
 it (see *One tree, entered anywhere*). The list stays open from project to
 project until you close it, and its edge can be dragged to make it wider.
 
 ### Many projects
 
-The page of projects has two forms, chosen at its head and remembered.
-**Last used** shows the twelve projects last worked on, as cards. **All
-projects** is a line for each, in folders: make a folder with **New folder**,
-or inside another from that folder's menu; drag a project onto a folder, or
-choose **Move to folder** in its menu, and **Out of folders** to take it out
-again. A folder shows how many projects it holds, and is opened and closed
-with a click; a double click shows it as a map. Deleting a folder keeps what
-is in it, which moves up to where the folder was. The folders are kept on
-this computer alone, not in the projects: a project you share is in your
-folders, not in the others'. The field above the list finds a project by its
-name. Folders and projects stand in the order of their names, here and on
-the map.
+The home of Glaukopis is the map of all projects (see *The map of the
+projects*): the house in the rail and **Ctrl+1** come to it, from a project
+to the folder the project is in, with the project selected. With no project
+yet, it welcomes you, with **Begin a project** and the other ways to begin.
+Afterwards the **+** at the right of its bar has them: **New project…**,
+**New folder**, **Join a shared project…**, **A project from a document…**,
+**Open a project file…** and **Open an Org file…**; a document dropped on
+the map becomes a project as well, in the folder in view. The **⋯** beside
+it has the deleted projects, with their number, and **A project of all the
+projects…**.
+
+The list of projects at the left has two forms, chosen at its head and
+remembered. **Folders** is a line for each project, in folders: make a
+folder with the button beside the field, or inside another from that
+folder's menu; drag a project onto a folder, or choose **Move to folder**
+in its menu, and **Out of folders** to take it out again. A folder shows how
+many projects it holds, and is opened and closed with a click; a double
+click enters it on the map. **Last used** shows the twelve projects last
+worked on, the newest first, each with when it was changed. Deleting a
+folder keeps what is in it, which moves up to where the folder was. The
+folders are kept on this computer alone, not in the projects: a project you
+share is in your folders, not in the others'. Folders and projects stand in
+the order of their names, in the list and on the map.
+
+A project and a folder have one menu each, the same in the list and on the
+map. A project's begins with **Enter**, which opens it; **Enter beside**,
+while another project is open, which shows it in the second side (see
+*Another project beside*); and **Fold** or **Unfold**, where its map is
+shown under it. Then come renaming, copying, its earlier versions and saving
+it as a file; moving it among the folders; and deleting it. A folder's
+begins with **Enter** and **Fold**, then what is made in it, renaming,
+moving and deleting.
 
 Every change to folders and projects, wherever it is made, says itself in a
 message at the foot of the window with **Undo**: a name, a move, a new
@@ -92,10 +111,11 @@ long as Glaukopis runs.
 Above every project stands the map of all of them: the owl at the centre,
 the folders as plain names, nested as they are, and the projects under
 them, each drawn as the top element of its own map, those in no folder
-hanging from the owl itself. It is reached
-from the owl at the top of the list of projects, and from the top of any
-project with **All projects** at the left of the bar, or **Alt+Shift+Up**,
-which comes to the folder the project is in, with the project selected. The
+hanging from the owl itself. It is the home: the house in the rail and **Ctrl+1** come here, and so do
+the owl at the top of the list of projects, **All projects** at the left of
+the bar at the top of any project, and **Alt+Shift+Up** there; from a
+project, each comes to the folder the project is in, with the project
+selected. The
 map is moved by dragging its ground and turned larger and smaller as the
 diagram is. A project you share has a sign of people beside its name, and
 one you joined a sign of a link, here, in the list and in the bar over the
@@ -157,7 +177,7 @@ unfolded too: its trees are read from the disk and shown, and a click on one
 of them opens the project there. **Enter beside**, in the menu of another
 project or of one of its elements, shows it beside the project you are in.
 
-**A project of all the projects…**, in the menu at the head of the page, makes a new
+**A project of all the projects…**, in the **⋯** of the map's bar, makes a new
 project of the projects themselves: the folders as elements, nested as the
 folders are, and under each the projects in it, with their descriptions as
 text. With **everything in them**, each project has its whole tree of
@@ -1382,7 +1402,7 @@ this document…**, **Loose citations…**, **Languages…**, which opens
 *About this document* at the language, **New element under it**, **A
 document into it…** and **Delete**, which takes the element
 with all under it, and goes up. The project itself is not deleted here, but
-from the home page. Over that bar, the bar of the project has **Diagram**,
+from the map of the projects or the list. Over that bar, the bar of the project has **Diagram**,
 **Text**, **Side by side**, **Preview** and **Share**; side by side, each
 side has a bar of its own.
 
@@ -2762,12 +2782,12 @@ on a desk of another shade, so that where the text goes is seen.
   open one as a project of its own.
 - **The whole history.** A project can keep every change, with who made it
   and when: see *The history of a project*.
-- **Deleted projects** can be brought back, from the line under the projects.
-- **A project as one file.** Right-click a project, on the home page or in the
-  list of projects, and choose **Save as a file…**: a `.glaukopis` file holds
+- **Deleted projects** can be brought back, from the **⋯** of the map of the projects.
+- **A project as one file.** Right-click a project, on the map of the projects or in
+  the list of projects, and choose **Save as a file…**: a `.glaukopis` file holds
   the project, its comments, the pictures its figures show and the works it
   cites, to keep, to move to another computer, or to send. **Open a project
-  file…**, on the home page and at the head of the list of projects, makes a
+  file…**, in the **+** of the map's bar and at the head of the list of projects, makes a
   new project of one, never in the place of one you have. The works it cites
   are compared with your library: those that are the same need nothing, new
   ones are added, and where the file's differs from yours, or looks like a
@@ -2812,10 +2832,10 @@ what Glaukopis works from:
 It is written anew a few seconds after the project is saved, and Glaukopis
 never reads it back: it cannot get your project wrong, and nothing is lost
 if you change it or delete it. To have it somewhere else, right-click a
-project, on the home page or in the list of projects, and choose **Save as
+project, on the map of the projects or in the list of projects, and choose **Save as
 Org…**, and choose a folder: the same three are written into it.
 
-**Open an Org file…**, on the home page, makes a new project of an Org file,
+**Open an Org file…**, in the **+** of the map's bar, makes a new project of an Org file,
 or of a folder that holds `project.org`, as a project file does: its works
 are compared with your library, and you choose where they differ. A file
 written by Glaukopis comes back as the project it was; one you wrote

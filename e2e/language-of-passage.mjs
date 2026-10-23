@@ -139,7 +139,7 @@ const passages = (within = '.text-view .body .ProseMirror') =>
 try {
   await app.installErrorHook();
   await app.waitForText('h2', 'Welcome to Glaukopis');
-  await app.clickText('button', 'Begin a project');
+  await app.beginProject();
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Longing');
   await app.clickText('dialog footer button', 'Create');
@@ -250,9 +250,7 @@ try {
   await app.screenshot('language-4-spelling');
 
   // --- The same in the text drawn without an editor: opened anew, it is drawn until it is clicked ---
-  await app.keys(['Control', '1']);
-  await sleep(300);
-  await app.clickText('.card', 'Longing');
+  await app.openProject('Longing');
   await app.waitFor('.diagram .node.root, .text-view .section', 8000);
   if (!(await app.exists('.text-view .section'))) await app.keys(['Control', 'd']);
   await app.waitFor('.text-view .section .body .static', 8000);

@@ -91,13 +91,7 @@ async function rightClickAt(x, y) {
 
 async function newProject(name) {
   await app.keys(['Control', '1']);
-  const begin = await until('the button that begins a project', () =>
-    app.exec(
-      `return Array.from(document.querySelectorAll('button')).find((b) => /^(New project|Begin a project)$/.test(b.textContent.trim())) || null`,
-    ),
-  );
-  await app.click(begin[ELEMENT]);
-  await app.waitFor('dialog input');
+  await app.beginProject();
   await app.type('dialog input', name);
   await app.clickText('dialog footer button', 'Create');
   // A new project opens as text: the diagram is turned to.
@@ -223,9 +217,7 @@ try {
 
   // ---- drawn without an editor ----
   // Opened anew, the text is drawn, and not written, until it is clicked.
-  await app.keys(['Control', '1']);
-  await sleep(300);
-  await app.clickText('.card', 'The wrath');
+  await app.openProject('The wrath');
   await app.waitFor('.diagram .node.root, .text-view .section', 8000);
   if (!(await app.exists('.text-view .section'))) await app.keys(['Control', 'd']);
   await app.waitFor('.text-view .section .body .static', 8000);
@@ -257,8 +249,7 @@ try {
 
   // ---- the settings ----
   const openWrath = async () => {
-    await app.keys(['Control', '1']);
-    await app.clickText('.card', 'The wrath');
+    await app.openProject('The wrath');
     await app.waitFor('.text-view .section .body .static', 8000);
     await sleep(800);
   };

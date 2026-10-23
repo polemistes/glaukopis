@@ -11,7 +11,6 @@ home-shown = Wat wordt getoond
 home-recent = Laatst gebruikt
 home-all = Alle projecten
 # Under the cards, when there are more projects than they show.
-home-show-all = Alle { $count } projecten tonen
 # The button that opens the menu of the page.
 home-page-menu = Meer
 home-search = Een project zoeken
@@ -21,7 +20,6 @@ home-list-none = Er zijn geen projecten.
 ## Folders of projects
 
 home-new-folder = Nieuwe map
-home-folder-new-inside = Nieuwe map hierin…
 home-folder-rename-title = Map hernoemen
 home-folder-name-placeholder = Wat de map bevat
 home-folder-name-missing = Geef de map een naam.
@@ -64,27 +62,11 @@ home-begin = Een project beginnen
 ## A project in the list
 
 # Under the names of the first four maps.
-home-more-maps = en nog { $count }
-home-maps = { $count ->
-    [one] { $count } mindmap
-   *[other] { $count } mindmaps
 }
-home-elements = { $count ->
-    [one] { $count } element
-   *[other] { $count } elementen
 }
-home-words = { $count ->
-    [one] { $count } woord
-   *[other] { $count } woorden
 }
-home-references = { $count ->
-    [one] { $count } referentie
-   *[other] { $count } referenties
 }
-home-not-begun = Nog niet begonnen
-home-shared = Gedeeld
 # "ago" is how long ago it was: "3 hours ago", "yesterday", "12 March".
-home-changed = Gewijzigd { $ago }
 # The button that opens the menu of a project.
 home-more-for = Meer voor { $name }
 home-deleted-projects = { $count ->

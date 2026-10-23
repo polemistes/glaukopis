@@ -266,8 +266,7 @@ try {
 
   // ---- a project ----
   await app.keys(['Control', '1']);
-  await app.waitForText('button', 'Begin a project', 8000);
-  await app.clickText('button', 'Begin a project');
+  await app.beginProject();
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Wrath and the hero');
   await app.clickText('dialog footer button', 'Create');
@@ -486,8 +485,7 @@ try {
   await app.screenshot('pictures-10-removed');
 
   // ---- removal, from the store ----
-  await app.click('header button[aria-label="All projects"]');
-  await app.waitFor('.card', 8000);
+  await app.home();
   await sleep(1200);
   const forms = known().find((p) => p.name === 'forms.svg').hash;
   await app.go(`#/pictures?picture=${forms}`);

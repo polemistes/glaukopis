@@ -94,7 +94,7 @@ async function choose(words) {
 try {
   await app.installErrorHook();
   await app.waitForText('h2', 'Welcome to Glaukopis');
-  await app.clickText('button', 'Begin a project');
+  await app.beginProject();
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Odes');
   await app.clickText('dialog footer button', 'Create');

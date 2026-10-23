@@ -21,8 +21,8 @@
   import Toaster from '$lib/ui/Toaster.svelte';
   import Rail from '$lib/shell/Rail.svelte';
   import ProjectsPane from '$lib/home/ProjectsPane.svelte';
-  import ProjectsView from '$lib/home/ProjectsView.svelte';
   import OwlView from '$lib/home/OwlView.svelte';
+  import { upFromProject } from '$lib/home/list.svelte';
   import LibraryView from '$lib/library/LibraryView.svelte';
   import PicturesView from '$lib/pictures/PicturesView.svelte';
   import FilesView from '$lib/files/FilesView.svelte';
@@ -169,7 +169,7 @@
   $effect(() => {
     if (route.view !== 'settings') return;
     settingsUi.show();
-    router.replace({ view: 'projects' });
+    router.replace({ view: 'owl' });
   });
 
   // The keys that hold wherever one is. Going to a place closes the settings,
@@ -180,7 +180,13 @@
   };
   onMount(() =>
     shortcuts.bind({
-      projects: () => go({ view: 'projects' }),
+      // To the map of all projects: from a project, at its folder with it selected.
+      projects: () => {
+        const here = router.route;
+        settingsUi.hide();
+        if (here.view === 'project') upFromProject(here.project);
+        else router.go({ view: 'owl' });
+      },
       library: () => go({ view: 'library' }),
       pictures: () => go({ view: 'pictures' }),
       files: () => go({ view: 'files' }),
@@ -208,9 +214,7 @@
   <div class="app">
     <Rail />
     <main>
-      {#if route.view === 'projects' || route.view === 'settings'}
-        <ProjectsView />
-      {:else if route.view === 'library'}
+      {#if route.view === 'library'}
         <LibraryView />
       {:else if route.view === 'pictures'}
         <PicturesView />
@@ -233,13 +237,13 @@
             {/key}
           </div>
         </div>
-      {:else if route.view === 'owl'}
+      {:else if route.view === 'owl' || route.view === 'settings'}
         <div class="in-project">
           {#if settings.value.projectsPane}
-            <ProjectsPane owlAt={route.at ?? null} />
+            <ProjectsPane owlAt={route.view === 'owl' ? (route.at ?? null) : null} />
           {/if}
           <div class="project-view">
-            <OwlView at={route.at} />
+            <OwlView at={route.view === 'owl' ? route.at : undefined} />
           </div>
         </div>
       {:else if route.view === 'search'}

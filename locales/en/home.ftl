@@ -9,10 +9,9 @@ home-new = New project
 
 home-shown = What is shown
 home-recent = Last used
-home-all = All projects
+home-all = Folders
 home-owl = Map
 # Under the cards, when there are more projects than they show.
-home-show-all = Show all { $count } projects
 # The button that opens the menu of the page.
 home-page-menu = More
 home-search = Find a project
@@ -22,8 +21,6 @@ home-list-none = There are no projects.
 ## Folders of projects
 
 home-new-folder = New folder
-home-folder-new-project = New project inside…
-home-folder-new-inside = New folder inside…
 home-folder-rename-title = Rename folder
 home-folder-name-placeholder = What the folder holds
 home-folder-name-missing = Give the folder a name.
@@ -129,27 +126,11 @@ home-begin = Begin a project
 ## A project in the list
 
 # Under the names of the first four maps.
-home-more-maps = and { $count } more
-home-maps = { $count ->
-    [one] { $count } tree
-   *[other] { $count } trees
 }
-home-elements = { $count ->
-    [one] { $count } element
-   *[other] { $count } elements
 }
-home-words = { $count ->
-    [one] { $count } word
-   *[other] { $count } words
 }
-home-references = { $count ->
-    [one] { $count } reference
-   *[other] { $count } references
 }
-home-not-begun = Not begun
-home-shared = Shared
 # "ago" is how long ago it was: "3 hours ago", "yesterday", "12 March".
-home-changed = Changed { $ago }
 # The button that opens the menu of a project.
 home-more-for = More for { $name }
 home-deleted-projects = { $count ->

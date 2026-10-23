@@ -33,7 +33,7 @@ try {
   await app.screenshot('maps-1-welcome');
 
   // --- A new project opens on a map with one element ---
-  await app.clickText('button', 'Begin a project');
+  await app.beginProject();
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Wrath and the hero');
   await app.clickText('dialog footer button', 'Create');
@@ -704,8 +704,7 @@ try {
   await app.screenshot('maps-13c-diagram-and-text');
 
   // Leaving the project puts it in order on disk.
-  await app.click('header button[aria-label="All projects"]');
-  await app.waitFor('.card', 5000);
+  await app.home();
   await sleep(600);
 
   const errors = await app.pageErrors();
@@ -723,16 +722,13 @@ try {
 app = await App.launch({ dataDir });
 try {
   await app.installErrorHook();
-  await app.waitFor('.card', 8000);
-  const facts = await app.exec(`return document.querySelector('.card .facts').textContent`);
-  // The trees under the project: the five made here and Article.
-  check(
-    'the list of projects tells what is in the project',
-    /6 trees/.test(facts) && /words/.test(facts),
-    facts,
-  );
+  await app.waitFor('[data-owl-project]', 8000);
+  await sleep(400);
+  const facts = await app.exec(`return document.querySelector('[data-owl-project] .fold')?.textContent.trim() ?? ''`);
+  // The trees under the project, folded away: the five made here and Article, and what is under them.
+  check('the map of the projects tells how much is folded under the project', Number(facts) >= 6, facts);
   await app.screenshot('maps-14-projects');
-  await app.click('.card');
+  await app.openProject('Wrath');
   await app.waitFor('.pane', 8000);
   await sleep(600);
   const count = await app.exec(

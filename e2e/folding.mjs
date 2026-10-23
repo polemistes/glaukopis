@@ -113,7 +113,7 @@ try {
   };
   const words = () => app.exec(`return document.querySelector('.text-view footer span').textContent.trim()`);
 
-  await app.clickText('button', 'Begin a project');
+  await app.beginProject();
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Folding');
   await app.clickText('dialog footer button', 'Create');
@@ -175,10 +175,9 @@ try {
 
   // ---- it is as it was left when the project is opened again ----
   const before = JSON.stringify(await shown());
-  await app.click('button[aria-label="All projects"]');
-  await app.waitFor('.home', 8000);
+  await app.home();
   await sleep(2000);
-  await app.clickText('.home .card', 'Folding');
+  await app.openProject('Folding');
   await app.waitFor('.text-view .section', 10000);
   await sleep(600);
   check('the project opened again has the text as it was left', JSON.stringify(await shown()) === before, `${JSON.stringify(await shown())} / ${before}`);
@@ -187,8 +186,8 @@ try {
   await app.close();
   app = await App.launch({ width: 1360, height: 900, dataDir: data });
   await app.installErrorHook();
-  await app.waitFor('.home', 10000);
-  await app.clickText('.home .card', 'Folding');
+  await app.waitFor('[data-owl-map]', 10000);
+  await app.openProject('Folding');
   await app.waitFor('.text-view .section', 10000);
   await sleep(600);
   check('and so when the application is started again', JSON.stringify(await shown()) === before, `${JSON.stringify(await shown())} / ${before}`);

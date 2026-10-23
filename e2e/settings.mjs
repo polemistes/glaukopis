@@ -288,7 +288,7 @@ try {
   await app.waitForText('dialog[open] header h2', 'Settings');
   check(
     'the old place #/settings opens the window over the projects',
-    (await app.exists('.home')) && (await app.exec(`return location.hash`)) === '#/',
+    (await app.exists('.owl-view')) && (await app.exec(`return location.hash`)) === '#/',
     await app.exec(`return location.hash`),
   );
   await app.press('Escape');

@@ -539,6 +539,44 @@ export class App {
     await sleep(150);
   }
 
+  /** To the home, the map of all projects, by the house in the rail; it is there when the map or the welcome is. */
+  async home() {
+    await this.click('nav.rail a.place[href="#/"]');
+    await this.waitFor('[data-owl-map], .owl-view .welcome', 10000);
+  }
+
+  /** Begins a project from the home: Begin a project on the welcome, or New project in the plus of the map's bar. The dialog that asks its name is then open. */
+  async beginProject() {
+    if (!(await this.exists('.owl-view'))) await this.home();
+    await this.waitFor('[data-owl-new], .owl-view .welcome', 10000);
+    if (await this.exists('.owl-view .welcome')) {
+      await this.clickText('.owl-view .welcome button', 'Begin a project');
+    } else {
+      await this.click('[data-owl-new]');
+      await this.clickText('[role="menuitem"]', 'New project');
+    }
+    await this.waitFor('dialog input');
+  }
+
+  /** Opens the project of that name, as a click on it on the map does: at its top, where it was left. */
+  async openProject(name, ms = 10000) {
+    const id = await this.execAsync(
+      `const name = arguments[0];
+       const list = await window.__TAURI_INTERNALS__.invoke('project_list');
+       return (list.find((p) => p.name === name) ?? list.find((p) => p.name.includes(name)))?.id ?? null;`,
+      name,
+    );
+    if (!id) throw new Error(`no project named ${name}`);
+    // From within a project, home first, so that the project is let go and opened anew, as it is from the map.
+    if ((await this.exec('return location.hash')).startsWith('#/project/')) {
+      await this.keys(['Control', '1']);
+      await this.waitFor('.owl-view', ms);
+      await sleep(300);
+    }
+    await this.go(`#/project/${encodeURIComponent(id)}`);
+    await this.waitFor('.project', ms);
+  }
+
   async setTheme(theme) {
     await this.exec(`document.documentElement.dataset.theme = arguments[0];`, theme);
   }

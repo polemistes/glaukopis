@@ -124,7 +124,7 @@ try {
     await app.cmd('DELETE', '/actions');
   };
 
-  await app.clickText('button', 'Begin a project');
+  await app.beginProject();
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Closing');
   await app.clickText('dialog footer button', 'Create');
