@@ -351,7 +351,7 @@ try {
   await sleep(700);
   await english('the map of the projects');
   await app.click('[data-owl-key="owl"]');
-  await app.press('Tab');
+  await app.keys(['Alt', 'Shift', 'Enter']);
   await app.waitFor('[data-name-field]', 3000);
   await sleep(200);
   await english('a folder being named on the map');
