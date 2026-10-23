@@ -49,10 +49,11 @@ printed as a document of its own (see *One tree, entered anywhere*).
    project: a new project begins with writing. Write under the heading, or
    press **Ctrl+D** for the diagram, a map with one element, the project
    itself.
-2. In the diagram, press **Tab**. A new element appears under the project:
-   type its name and press **Enter**.
-3. Press **Enter** again for one beside it, **Tab** for one under it.
-4. Double-click an element to write its text.
+2. In the diagram, press **Alt+Shift+Enter**. A new element appears under
+   the project: type its name and press **Enter**.
+3. Press **Alt+Enter** for one beside it, **Alt+Shift+Enter** for one under
+   it.
+4. Double-click an element, or press **Enter**, to write its text.
 
 Everything is saved as you work. There is nothing to press.
 
@@ -170,10 +171,12 @@ project opens on its text.
 
 | To | Do this |
 | --- | --- |
-| Add an element under the one selected | **Ctrl+Shift+Enter**, or **Tab** |
-| Add one after it | **Ctrl+Enter**, or **Enter** |
+| Add an element after the one selected | **Alt+Enter** |
+| Add one under it, the first | **Alt+Shift+Enter** |
 | Add an element under the one in view, where you click | Double-click the background, or **New element here** in its menu |
-| Write the text of an element | Double-click it |
+| Write the text of an element | **Enter**, or double-click it |
+| Fold away what is under an element, or unfold it | **Tab**, or the sign beside it |
+| Unfold all that is folded under the element in view; where nothing is, fold everything at the first level | **Shift+Tab** |
 | Rename an element | **F2**, or begin to type |
 | Read its text without opening it | Rest the pointer on it |
 | Move an element, with all that is under it | Drag it onto another element |
@@ -194,7 +197,9 @@ project opens on its text.
 The element in view stands at the centre of the map, never folded, and what
 is under it is laid out to both sides of it. A project opens with the
 project itself in view, and its whole tree about it. With nothing selected,
-**Tab** adds an element under the element in view, and **Enter** selects it.
+**Alt+Enter** adds an element under the element in view, and **Enter** selects it.
+In the name of a new element, **Enter** keeps the name, and **Alt+Enter**
+keeps it and makes the next.
 See *One tree, entered anywhere*.
 
 Lines between an element and what is under it are straight. **Associations**
@@ -259,15 +264,33 @@ Everything the tools do can be done from the keys, and much of it by typing:
 | Choose the kind of a paragraph, or make a kind of your own | The kind button; **Make a kind…** under **More…** in its menu |
 | Begin a quotation or a list | Type `> `, `- ` or `1. ` at the start of a line |
 | Make a dash | Type `--` for –, `---` for — |
-| Divide an element in two | Right-click where it is to be divided: **Split here**; or **Ctrl+Enter** |
-| Add an element after the one the cursor is in | **Ctrl+Enter**; in a text, what follows the cursor goes into it |
-| Add an element under it, the first, right after its text | **Ctrl+Shift+Enter**; in a text, what follows the cursor goes into it |
-| Make the element deeper or less deep | **Alt+Right**, **Alt+Left**; or **Tab**, **Shift+Tab** in its name |
+| Make a heading at the cursor: a new element after the one the cursor is in | **Alt+Enter**; or right-click there: **Split here** |
+| The same, with the new element under the one the cursor is in, the first | **Alt+Shift+Enter** |
+| Make the element deeper or less deep | **Alt+Right**, **Alt+Left** |
+| Fold away what is under the element, or unfold it | **Tab** in its name, or the arrow beside it |
+| Unfold all that is folded under the element in view; where nothing is, fold everything at the first level | **Shift+Tab** in a name |
+| Go to the name of the element the cursor is in, the name selected | **F2** |
 | Move the element up or down among those beside it | **Alt+Up**, **Alt+Down**; the cursor stays where it is |
 | Join an element to the one above | Right-click: **Join to the element above** |
 | Enter an element, to see it alone with what is under it | **Alt+Shift+Down**; the small round button before its heading, which shows when the pointer is on the heading; or **Enter**, from the grip beside it |
 | Go up, to the element over the one in view | **Alt+Shift+Up**, with the cursor anywhere in the text; the small round button before the title, which shows when the pointer is on it; or its name, small, at the left of the bar |
 | Move an element to another place | Drag it by the grip beside its heading: the line shows where it goes, and how far to the right the pointer is says how deep, under the element above, after it, or as far out as before the element below |
+
+**A heading at the cursor.** **Alt+Enter** makes a new element where the
+cursor is: what follows the cursor in its paragraph becomes the new
+element's name, and the paragraphs below it, to the end of the text, become
+its text. So at the start of a paragraph the whole paragraph is the name; at
+its end the name is empty, and the paragraphs below go in; in its middle,
+the rest of the paragraph is the name. A name holds italics, small capitals,
+raised and lowered text and nothing else: where what follows the cursor
+holds a citation, a note, a picture, a formula, a reference mark, a line
+break or bold, it becomes the first paragraph of the new element's text
+instead, the name is left empty, and a message says why. Where the element
+the cursor is in has elements under it, the new one is made first among
+them, so that it stands in the text where the cursor was. In a name,
+**Alt+Enter** at its end makes an empty element after it, and in its middle
+gives the rest of the name to the new element. **Alt+Shift+Enter** does all
+this with the new element under the one the cursor is in.
 
 A text has two breaks: **Enter** begins a new paragraph, and
 **Shift+Enter** breaks the line within the paragraph, as in an address or a
@@ -314,7 +337,9 @@ the way. Every element that has text, or other elements under it, has a
 small arrow beside its name. Press it, and the element is folded away: its
 name stays, and its own text and all that is under it are hidden. A line
 under the name says how much that is. Press the arrow or the line to open
-it again. **Ctrl+Alt+U** does the same for the element the cursor is in.
+it again. **Tab**, with the cursor in the element's name, does the same,
+and **Shift+Tab** there unfolds all that is folded or, where nothing is,
+folds everything at the first level.
 
 Each element is folded by itself. What was folded under an element is
 folded still when the element over it is folded and opened again, so the
@@ -323,7 +348,6 @@ it at once, however deep:
 
 - **Open all**, in the line that says what is folded away; or
 - press the arrow with **Shift** held down; or
-- **Ctrl+Alt+Shift+U**; or
 - **Open all that is folded under it**, in the menu of the element. From
   the title of the document, that opens the whole text.
 
@@ -2861,15 +2885,16 @@ what is to be done by its name, and does it.
 | **Ctrl+Alt+C** | A comment on the passage selected, or on the element |
 | **Ctrl+Shift+H** | The history of the project |
 | **Ctrl+Z**, **Ctrl+Shift+Z** | Undo, redo |
-| **Ctrl+Enter** | In the diagram and the text: a new element after this one; in a text, from the cursor on |
-| **Ctrl+Shift+Enter** | In the diagram and the text: a new element under this one; in a text, the first under it, from the cursor on |
-| **Enter**, **Tab** | In the diagram: a new element after, or under |
+| **Alt+Enter** | In the diagram: a new element after the one selected; in the text, a heading at the cursor |
+| **Alt+Shift+Enter** | In the diagram: a new element under the one selected, the first; in the text, a heading at the cursor, under the element it is in |
+| **Tab** | In the diagram, and in a name in the text: fold away what is under the element, or unfold it |
+| **Shift+Tab** | In the diagram, and in a name in the text: unfold all that is folded under the element in view, or fold everything at the first level |
+| **Enter** | In the diagram: write the text of the element selected |
 | **Alt+Shift+Down** | In the diagram and the text: enter the element, to see it alone with what is under it |
 | **Alt+Up**, **Alt+Down** | In the diagram and the text: move the element up or down among those beside it |
 | **Alt+Right**, **Alt+Left** | In the text: the element deeper, or less deep; in the diagram, as the arrow points |
-| **Alt** and the arrows | In the text: move the element, or make it deeper or less deep, as in Org mode |
 | **Shift+F10** | In the diagram: the menu of what is selected |
-| **F2** | Rename |
+| **F2** | Rename; in the text, go to the name of the element the cursor is in |
 | **@** | In the text: cite |
 | **Ctrl+I**, **Ctrl+B**, **Ctrl+U** | In the text: italics, bold, underlined |
 | **Ctrl+Alt+F** | In the text: a note |
@@ -2878,7 +2903,6 @@ what is to be done by its name, and does it.
 | **Ctrl+Alt+M**, **Ctrl+Alt+E** | In the text: a formula in the line, an equation |
 | **Ctrl+Alt+R** | In the text: a cross-reference to a figure, a table, an equation, a part |
 | **Ctrl+Alt+K** | In the text: a reference mark, a verse or a page of an edition |
-| **Ctrl+Alt+U**, **Ctrl+Alt+Shift+U** | In the text: fold the element away, or open it; open all that is folded under it |
 | **Ctrl+F**, **Ctrl+H** | In the text and in the edit box of an element: search; search and replace |
 | **Enter**, **Shift+Enter** | In the search: the next that is found, the one before; **F3** and **Shift+F3** as well |
 | **Ctrl+Shift+F** | Search through everything |
