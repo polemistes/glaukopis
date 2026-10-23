@@ -330,7 +330,8 @@ try {
   check('the list marks both projects', JSON.stringify(marked) === JSON.stringify([PROJECT, 'Notes'].sort()), JSON.stringify(marked));
   await focusSide(app, notesSide);
   await sleep(200);
-  await app.keys(['Control', 'Shift', 'r']);
+  // The Document button of the side that has the focus opens the document pane, of that side.
+  await app.click(await app.exec(`return document.querySelectorAll('.pane')[arguments[0]].querySelector('[data-document]')`, notesSide));
   await app.waitFor('.side-map', 5000);
   await sleep(300);
   const about = await app.exec(`return document.querySelector('.side-map [data-side-project]')?.textContent.trim() ?? null`);
@@ -350,7 +351,7 @@ try {
     JSON.stringify(bars),
   );
   check('between the two cells, a button switches the sides', await app.exists('.top [data-switch-sides]'));
-  await app.keys(['Control', 'Shift', 'r']);
+  await app.click(await app.exec(`return document.querySelectorAll('.pane')[arguments[0]].querySelector('[data-document]')`, notesSide));
   await app.waitGone('.side-map', 3000);
   await sleep(200);
 
