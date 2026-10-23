@@ -1078,3 +1078,38 @@ After the assessment, the owner:
   same status, decided with the rearrangement. Each project has its own
   history on disk and its own connection already; the questions of the
   history and of two shared projects are for the next record.
+
+## 2026-10-23 — equal sides, the typesetting pane, the document pane, and the bars
+
+> Some comments on what has been done now: The top bar dropdown should go down to the deepest elements, so one can choose to enter any element in any project. When opening the dropdown, the path to the current element should be opened and shown. I cannot see a way to make the views switch sides. That should be possible. The outline now opens and closes for both views no matter on which side one clicks the button. They should be independent. Opening a project from the left pane should open it in the active view, and leave the other view as it was.
+>
+> Now for some reworking. The preview pane is wrongly named. It is the place where the typesetting happens, and it conains a preview and a looks pane. The "About this document" does not belong here anymore. There is also a conceptual mixup which must be fixed with the pane which has Look as a tab. Look does not belong on this pane. "Look" should be directly connected to the typesetting pane, the other tabs should not. The others should be reachable as info and options of the document in view. So they should be on a pane of their own, reachable also when the typesetting pane is closed, by clicking the pane button in the toolbar. Contrary to the typesetting panes, the document pane always shows what pertains to the document in the active view. I am not sure what to call typesetting (if that is the correct in English...) in Norwegian. Ombrekking or perhaps typografi, but I hope there exists a better term. I would like you to suggest what it should be called, both in English and Norwegian, and choose what to go for. A project should not remember its typesetting pane window status when it is closed (but if it was open when the program closed, it should still be open when the program starts again). Each view should have a typesetting button which opens the pane if it is closed, and sets the preview to the view where the button was clicked. The preview does not change if the focus goes from view to view, but the user must select it. If the view that is previewed closes, the typesetting pane closes too.
+>
+> Now to the general reworking of the toolbars and menus: The menu after the element path in the top bar goes away. "What this document is" is moved inside the "About this document" window (again) as a tab. "About this document" changes name to "Document properties" and is reachable from the context menu of whichever element we are in. "What this document is" is renamed "Document type". The "Document type" tab can also be reached from the "Looks" pane where this is set now. The button should not look like a dropdown menu, since it opens a window. The button over the preview window that also goes there now, should be removed. Move the "Look" button that opens the Look pane there.
+>
+> The button for opening and closing the projects pane should be all the way to the left on the top toolbar. The next toolbar should be duplicated for each view. I think we should go for icons without text with tooltips. First the outline button. A separator. Then the Diagram and Text icons. Then as separator. New element goes away. It is in the context menu. I find the kind of paragraph menu and the other menu (kind of words?) confusing. We must be clear about what they are (which does not meant to write a helpful explanation text). What is the difference between what is in the "Words" menu and the bold, italics and smallcaps buttons? Can they only apply to words? So a letter in a word can be bold, but not underlined? If they are not something else than what is in the Words menu, they can all move in there. But both menus must be made clearer. It must be intuitive. Also the line numbering must be moved to the context menu(s), perhaps of the element, or the top element, which is the document. At least, it does not belong in the toolbar, and we have to figure out how it should work. Separator. Spell check. See linebreaks. This should show all the common marks for different types of whitespace, so also tabs, paragraphs and differenciate between soft and hard spaces (if we allow that. We should probably allow that). A separator before the insert menu. We should move "Citation" "Note" and "Comment" into the insert menu. Remove the help texts in the menu. The menu item names are self-explanatory. But rename some of them: "Image", remove the dots from "Table", Reference mark should be someting like "Inline number", altough it can contain letters. Only one "Image" item. The user can add images from the Images store (which should also be renamed Images). Separator. Then Typesetting and Document pane. Share does not belong on the toolbar. Sharing should be a choice in the context menu of projects in the project pane. I think this could be a good start to make this clear and intuitive. Say what you think of this, and come with suggestions for what is still not fully worked out.
+
+The assessment: four of the points run into the guest model of the second
+side, so the sides must be made equal first; the marks and the kinds of
+words are two things, which the toolbar hid; the "#" menu held three things;
+*Typesetting* and *Ombrekking* for the pane. The owner:
+
+> No, all the marks in the menu. No buttons. Bold and italics, alt least, should have shortcuts. The others are rare. Document type is in the Document properties. I do not think we need it as a tab on the document pane. That would be a tab opening the document properties, would it not? Not very intuitive. Undo/Redo come before spell check. The "Not saved" text I have never seen. A crumb sounds good. People present when hovering the head? Yes, typesetting button lit. Yes, timeline also, of course. I confirm equal sides also. Is everything clear then? If it is, make the build plan.
+
+What this settles (ADR 0064, to be built from
+`docs/plans/the-sides-the-panes-and-the-bars.md`):
+
+- Equal sides: each with its project, its sharing, its saved view and its
+  outline; the window keeps its arrangement; a project opens in the active
+  side; the place names the active side.
+- The typesetting pane (*Ombrekking*), with the Look column, shows the side
+  whose button was pressed; the document pane follows the active side with
+  the references, the images, the comments, the loose citations, the
+  history and the changes; Document properties with a Document type tab.
+- The top row: the list's button, the paths, a switch button, Split view.
+  A bar of icons per side, in the owner's order; all marks in one menu;
+  Paragraph kind and Words kind; Insert with Citation, Note, Comment,
+  Image, Table, Inline number; the whitespace marks with a hard space;
+  line numbering in Document properties and the text's right-click menu;
+  Share… in the project's menu; Not saved on the crumb; Images.
+- The path's dropdown is a tree unfolded to the current element.
