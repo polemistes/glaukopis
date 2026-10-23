@@ -1033,3 +1033,35 @@ the sub-elements where there are any.
 - One key for each act through the tree, as proposed; Ctrl+Y and F3 stay
   as second keys that harm nothing. The record's key section and the
   plan's stage 3 are rewritten to it.
+
+## 2026-10-23 — the list is the tree, the path says where you are, the window as it was left
+
+> The last interface reworking of Glaukopus does not work. We must simplify and clarifay a lot. I think we must give up on the idea of a mindmap going from the owl to the inmost element. We lose the owl and its digagram. The left pane with the tree of projects, with folders, and with the possibility to display the whole tree under the projects, that will be the thing. When Glaukopis is opened, it should look as much as possible as it was when it was closed. The same project(s) open, the same map(s) open. If possible, the text view should be where it was in the text when closing. That also goes for the diagram view. It is possible to close open projects. If no project is open, the screen shows the owl, a "Create new project" button, a list of the last opened projects, if any. The "Side by side" button is renamed "Split view". It must be much easier to see whether the two views are from the same project or from two different. Let us copletely redesign the tool bars. They are in serious need of tidying up anyway. The top bar should contain the full path of the open element, with a dropdown icon, with a hierarchical menu of all projects. When the view is split, it is split all the way up to the top bar, where both sides will show the path to the current element. If the whole path cannot fit, it must be elided so the topmost levels and the bottommost levels still are visible. There must be a quite high contrast colour difference between the active view and the other view. It should be possible for the views to switch sides. After this is done, we can start to plan how to completely rearrange the toolbars. Please tell me what you think of what I have proposed. Are there any concerns? If not, make a plan for it that I can gove to Opus 5.5.
+
+The assessment agreed: the map promised one tree and could not keep the
+promise at the project, and the list at the left already does what is
+wanted; the proposal is the shape every program with documents and folders
+has. Concerns raised, none against the proposal: what is open is what is
+shown (no tabs); the second project stays a guest of the first for the
+panels, the preview, the sharing and the history until the toolbars are
+rearranged; the text keeps the element at its top, not a pixel; a project
+is opened and closed, an element entered and left; the tools of the window
+stand outside the cells of the sides; the *Last used* form of the list
+goes; the window's size is kept by the application, not a plugin.
+
+What this settles (ADR 0063, proposed; to be built from
+`docs/plans/the-list-the-path-and-the-window-as-it-was-left.md`):
+
+- The owl map goes; the list at the left is the one tree, on by default,
+  with the ways to begin, the deleted projects and the project of all the
+  projects in its head; a project is opened, shown beside and closed from
+  its menu; the list marks the project of each side.
+- `#/` is the start screen: the owl, *New project*, the projects last
+  opened.
+- The settings keep the place, the projects last opened and the window's
+  size; the view keeps the element at the top of the text, the focused side
+  and whether the sides are switched.
+- *Split view*: a cell per side in the top row, the active one in the
+  accent, × and Ctrl+W close a side, *Switch sides* mirrors them.
+- The top row holds the path with a chevron that opens the menu of all
+  projects, elided in the middle when it does not fit.
