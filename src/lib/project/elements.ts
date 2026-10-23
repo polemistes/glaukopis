@@ -420,13 +420,13 @@ export function elementMenu(
       {
         label: t('project-add-under'),
         icon: CornerDownRight,
-        shortcut: keysFor('diagram-new-under'),
+        shortcut: keysFor('tree-new-under'),
         action: () => add('under'),
       },
       {
         label: isProject ? t('project-add') : t('project-add-after'),
         icon: Plus,
-        shortcut: keysFor('diagram-new-after'),
+        shortcut: keysFor('tree-new'),
         action: () => add('after'),
       },
       { kind: 'separator' },
@@ -435,13 +435,13 @@ export function elementMenu(
       items.push({
         label: t('project-write-text'),
         icon: Pencil,
-        shortcut: t('project-double-click'),
+        shortcut: keysFor('tree-open'),
         action: () => actions.edit!(one.id),
       });
     if (actions.rename)
       items.push({
         label: t('common-rename'),
-        shortcut: keysFor('diagram-rename'),
+        shortcut: keysFor('tree-rename'),
         action: () => actions.rename!(one.id),
       });
     if (actions.link)
@@ -675,7 +675,7 @@ export function elementMenu(
       label: t('common-delete'),
       icon: Trash2,
       danger: true,
-      shortcut: keysFor('diagram-delete'),
+      shortcut: keysFor('tree-delete'),
       action: () => removeElements(project, ids),
     });
   }

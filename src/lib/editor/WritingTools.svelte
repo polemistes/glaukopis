@@ -414,21 +414,21 @@
         {
           label: t('editor-new-after'),
           icon: Plus,
-          // In a text, the key makes the new element from the cursor on: the last of these.
-          shortcut: body ? undefined : keysFor('text-new-after'),
+          // In a text, the keys make a heading at the cursor: the last of these.
+          shortcut: body ? undefined : keysFor('tree-new'),
           action: () => add('after'),
         },
         {
           label: t('editor-new-under'),
           icon: CornerDownRight,
-          shortcut: keysFor('text-new-under'),
+          shortcut: body ? undefined : keysFor('tree-new-under'),
           action: () => add('under'),
         },
         {
           label: t('editor-new-split'),
           hint: t('editor-new-split-hint'),
           icon: SplitSquareVertical,
-          shortcut: keysFor('text-new-after'),
+          shortcut: keysFor('tree-new'),
           disabled: !body,
           action: () => add('split'),
         },
@@ -659,7 +659,7 @@
       aria-label={t('editor-new-element')}
       use:tooltip={{
         text: t('editor-new-element-hint'),
-        shortcut: keysFor('text-new-after'),
+        shortcut: keysFor('tree-new'),
         side: 'bottom',
       }}
       onclick={newElement}

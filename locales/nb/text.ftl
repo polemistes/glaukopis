@@ -11,7 +11,8 @@ text-drop-under = Under «{ $name }»
 text-drop-after = Etter «{ $name }»
 text-drop-before = Foran «{ $name }»
 text-split = Del her
-text-split-hint = Det som står etter markøren, blir et nytt element
+text-split-hint = Det som står etter markøren, blir navnet på et nytt element, og avsnittene under blir teksten i det
+text-heading-kept = Det som står etter markøren, har noe et navn ikke kan romme, som en kildehenvisning eller en note, og er blitt første avsnitt i det nye elementet
 text-join = Slå sammen med elementet over
 text-open-as-map = Gå inn
 text-open-as-map-hint = Det vises alene, med det som står under
@@ -61,4 +62,4 @@ text-notes = { $count ->
     [one] { $count } note
    *[other] { $count } noter
 }
-text-keys = { $ctrl }+{ $enter } nytt element · { $ctrl }+{ $shift }+{ $enter } ett under · { $at } kildehenvisning
+text-keys = { $alt }+{ $enter } nytt element · { $alt }+{ $shift }+{ $enter } ett under · { $at } kildehenvisning

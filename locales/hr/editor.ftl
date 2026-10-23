@@ -135,7 +135,6 @@ editor-new-element-hint = Novi element iza ovoga, ili ispod njega
 editor-new-after = Novi element iza ovoga
 editor-new-under = Novi element ispod ovoga
 editor-new-split = Razdvoji ovdje
-editor-new-split-hint = Što slijedi iza pokazivača postaje novi element
 editor-spelling-on = Pravopis se provjerava dok pišete · pritisnite da prestane
 editor-spelling-off = Pravopis se ne provjerava · pritisnite da se provjerava
 editor-picture-file = Slika iz datoteke…

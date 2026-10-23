@@ -85,8 +85,9 @@ try {
   await owner.waitFor('.diagram .node.root', 8000);
   await sleep(300);
   await owner.click('.diagram .node.root');
-  const add = async (app, key, name) => {
-    await app.press(key);
+  const add = async (app, where, name) => {
+    // A new element under the one selected, or after it: the keys of the tree.
+    await app.keys(where === 'under' ? ['Alt', 'Shift', 'Enter'] : ['Alt', 'Enter']);
     await app.waitFor('.diagram .node.renaming .prose', 3000);
     await sleep(120);
     await app.keys(name);
@@ -94,8 +95,8 @@ try {
     await app.waitGone('.diagram .node.renaming', 3000);
     await sleep(80);
   };
-  await add(owner, 'Tab', 'The word mênis');
-  await add(owner, 'Enter', 'Reception');
+  await add(owner, 'under', 'The word mênis');
+  await add(owner, 'after', 'Reception');
 
   await owner.click('header .share button');
   await owner.waitForText('dialog h2', 'Share this project');
@@ -168,7 +169,7 @@ try {
 
   // ---- what one writes, the other sees ----
   await guest.click(await guest.findByText('.diagram .node', 'Reception'));
-  await add(guest, 'Tab', 'Virgil');
+  await add(guest, 'under', 'Virgil');
   await until('the owner to see what the guest added', async () => (await titles(owner)).includes('Virgil'));
   check('an element added by one appears with the other', true);
   const where = await until('the owner to see where the guest is', () =>
@@ -340,9 +341,9 @@ try {
   await until('the guest to notice', async () => (await guest.attr('header .share', 'data-status')) === 'offline', 15000);
   check('both notice that the server is gone', true);
   await owner.click(await owner.findByText('.diagram .node', 'Reception'));
-  await add(owner, 'Tab', 'Milton');
+  await add(owner, 'under', 'Milton');
   await guest.click(await guest.findByText('.diagram .node', 'The word mênis'));
-  await add(guest, 'Tab', 'The scholia');
+  await add(guest, 'under', 'The scholia');
   check('work goes on without it', (await titles(owner)).includes('Milton') && (await titles(guest)).includes('The scholia'));
   await owner.screenshot('sharing-8-offline');
 

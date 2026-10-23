@@ -88,24 +88,24 @@ try {
   );
 
   // --- The keys that make elements, from an empty text ---
-  await app.keys(['Control', 'Enter']);
+  await app.keys(['Alt', 'Enter']);
   await sleep(400);
   await app.keys('Alpha');
   await app.press('Enter');
   await sleep(250);
   at = await where();
-  check('Ctrl+Enter in the empty text of the element in view begins the first element', at.section === 'Alpha' && at.part === 'body', JSON.stringify(at));
-  await app.keys(['Control', 'Enter']);
+  check('Alt+Enter in the empty text of the element in view begins the first element', at.section === 'Alpha' && at.part === 'body', JSON.stringify(at));
+  await app.keys(['Alt', 'Enter']);
   await sleep(400);
   await app.keys('Beta');
   await app.press('Enter');
   await sleep(250);
-  await app.keys(['Control', 'Shift', 'Enter']);
+  await app.keys(['Alt', 'Shift', 'Enter']);
   await sleep(400);
   await app.keys('Beta one');
   await app.press('Enter');
   await sleep(250);
-  await app.keys(['Control', 'Enter']);
+  await app.keys(['Alt', 'Enter']);
   await sleep(400);
   await app.keys('Beta two');
   await app.press('Enter');
@@ -122,12 +122,12 @@ try {
   await sleep(200);
   at = await where();
   check('Tab in an empty text leaves the cursor in it', at.section === 'Beta two' && at.part === 'body' && at.editor, JSON.stringify(at));
-  await app.keys(['Control', 'Enter']);
+  await app.keys(['Alt', 'Enter']);
   await sleep(400);
   await app.keys('Beta three');
   await sleep(250);
   list = await sections();
-  check('and Ctrl+Enter after it makes one', list.includes('Beta three:2'), list.join(' | '));
+  check('and Alt+Enter after it makes one', list.includes('Beta three:2'), list.join(' | '));
 
   // A press in the gutter beside an empty text puts the cursor in it.
   await blur();
@@ -143,7 +143,7 @@ try {
   await sleep(300);
   at = await where();
   check('a press beside an empty text puts the cursor in it', at.section === 'Alpha' && at.part === 'body' && at.editor, JSON.stringify(at));
-  await app.keys(['Control', 'Enter']);
+  await app.keys(['Alt', 'Enter']);
   await sleep(400);
   await app.keys('Alpha two');
   await sleep(250);
@@ -269,12 +269,12 @@ try {
   await sleep(300);
   at = await where();
   check('and pressed, has the cursor', at.section === 'Beta one' && at.part === 'body' && at.editor, JSON.stringify(at));
-  await app.keys(['Control', 'Shift', 'Enter']);
+  await app.keys(['Alt', 'Shift', 'Enter']);
   await sleep(400);
   await app.keys('Beta one a');
   await sleep(250);
   list = await sections();
-  check('where Ctrl+Shift+Enter makes one under it', list.includes('Beta one a:2'), list.join(' | '));
+  check('where Alt+Shift+Enter makes one under it', list.includes('Beta one a:2'), list.join(' | '));
 
   const errors = await app.pageErrors();
   check('no errors in the page', errors.length === 0, errors.join(' | '));

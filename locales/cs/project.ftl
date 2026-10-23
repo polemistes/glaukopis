@@ -86,7 +86,6 @@ project-add-under = Přidat prvek pod něj
 project-add = Přidat prvek
 project-add-after = Přidat prvek za něj
 project-write-text = Psát jeho text
-project-double-click = Dvojklik
 project-associate = Spojit s…
 project-associate-hint = Pak klepněte na druhý prvek
 project-heading = Tisknout název jako nadpis

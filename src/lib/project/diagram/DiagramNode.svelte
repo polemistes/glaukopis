@@ -240,6 +240,10 @@
       class="fold"
       class:folded={node.collapsed}
       aria-label={node.collapsed ? t('diagram-show-under') : t('diagram-hide-under')}
+      use:tooltip={{
+        text: node.collapsed ? t('diagram-show-under') : t('diagram-hide-under'),
+        shortcut: keysFor('tree-fold'),
+      }}
       tabindex="-1"
       onpointerdown={(e) => e.stopPropagation()}
       onclick={(e) => {
@@ -256,7 +260,7 @@
       type="button"
       class="corner enter"
       aria-label={t('diagram-open-as-map')}
-      use:tooltip={{ text: t('diagram-open-as-map'), shortcut: keysFor('diagram-enter') }}
+      use:tooltip={{ text: t('diagram-open-as-map'), shortcut: keysFor('tree-enter') }}
       tabindex="-1"
       onpointerdown={(e) => e.stopPropagation()}
       ondblclick={(e) => e.stopPropagation()}
@@ -272,7 +276,7 @@
       type="button"
       class="corner leave"
       aria-label={t('project-leave-map', { name: above })}
-      use:tooltip={{ text: t('project-leave-map', { name: above }), shortcut: keysFor('up') }}
+      use:tooltip={{ text: t('project-leave-map', { name: above }), shortcut: keysFor('tree-up') }}
       tabindex="-1"
       onpointerdown={(e) => e.stopPropagation()}
       ondblclick={(e) => e.stopPropagation()}

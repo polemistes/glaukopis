@@ -9,6 +9,7 @@
   const places: Place[] = [
     'everywhere',
     'project',
+    'tree',
     'diagram',
     'owl',
     'text',

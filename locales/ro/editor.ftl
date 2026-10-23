@@ -206,7 +206,6 @@ editor-new-element-hint = Un element nou după acesta, sau sub el
 editor-new-after = Element nou după acesta
 editor-new-under = Element nou sub acesta
 editor-new-split = Desparte aici
-editor-new-split-hint = Ce urmează după cursor devine un element nou
 editor-spelling-on = Ortografia se verifică în timp ce scrieți · apăsați ca să opriți
 editor-spelling-off = Ortografia nu se verifică · apăsați ca să o verificați
 editor-break-signs = Semnul unui rând nou în paragraf

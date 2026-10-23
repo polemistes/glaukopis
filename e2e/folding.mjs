@@ -164,11 +164,11 @@ try {
 
   // ---- by the keys, from where the text is written ----
   await section('Two');
-  await app.click('.text-view .section[data-named="Two"] .body');
+  await app.click('.text-view .section[data-named="Two"] .heading .title');
   await sleep(300);
-  await app.keys(['Control', 'Alt', 'u']);
+  await app.press('Tab');
   await sleep(300);
-  check('Ctrl+Alt+U folds away the element the cursor is in', !(await shown()).includes('Two A') && (await folded()).length === 2, JSON.stringify(await shown()));
+  check('Tab in its name folds away the element the cursor is in', !(await shown()).includes('Two A') && (await folded()).length === 2, JSON.stringify(await shown()));
   await fold('One');
   check('three are folded, of which one is hidden', JSON.stringify(await folded()) === JSON.stringify(['One: Its text and 3 elements folded away, 18 words', 'Two: Its text and 1 element folded away, 6 words']), JSON.stringify(await folded()));
   await app.screenshot('folding-2-several');
@@ -253,7 +253,7 @@ try {
 
   // ---- what is written under a folded element is shown ----
   await app.keys(['Control', 'End']);
-  await app.keys(['Control', 'Enter']);
+  await app.keys(['Alt', 'Enter']);
   await sleep(500);
   await app.keys('Two first');
   await sleep(300);

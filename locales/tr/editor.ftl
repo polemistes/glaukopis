@@ -133,7 +133,6 @@ editor-new-element-hint = Bundan sonra ya da bunun altında yeni bir öğe
 editor-new-after = Bundan sonra yeni öğe
 editor-new-under = Bunun altında yeni öğe
 editor-new-split = Buradan böl
-editor-new-split-hint = İmleçten sonrası yeni bir öğe olur
 editor-spelling-on = Yazım, yazdıkça denetleniyor · durdurmak için basın
 editor-spelling-off = Yazım denetlenmiyor · denetlemek için basın
 editor-picture-file = Dosyadan resim…

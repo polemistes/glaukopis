@@ -10,7 +10,6 @@ diagram-show-all = Die ganze Karte zeigen
 diagram-tidy = Die ganze Karte aufräumen
 diagram-tidy-hint = Jedes Element geht an seinen automatischen Platz zurück
 # The keys are shown as keys, where the variables stand.
-diagram-hint-empty = { $tab } fügt ein Element unter dem ausgewählten hinzu · { $enter } eines daneben · Doppelklick zum Schreiben
 diagram-hint-linking = Klicken Sie das Element an, mit dem verbunden werden soll, oder gehen Sie mit den Pfeilen hin und drücken Sie { $enter } · { $esc } zum Verlassen
 diagram-show-under = Zeigen, was darunter ist
 diagram-hide-under = Verbergen, was darunter ist

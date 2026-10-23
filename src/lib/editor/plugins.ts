@@ -341,8 +341,8 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
   );
   if (br) {
     const hardBreak: Command = chainCommands(exitCode, breakKey);
+    // Shift+Enter is the one line break: Ctrl+Enter is not a second.
     keys['Shift-Enter'] = hardBreak;
-    keys['Mod-Enter'] = hardBreak;
   }
 
   const cite = new Plugin({

@@ -88,7 +88,6 @@ project-add-under = Добавить элемент под ним
 project-add = Добавить элемент
 project-add-after = Добавить элемент после него
 project-write-text = Писать его текст
-project-double-click = Двойной щелчок
 project-associate = Связать с…
 project-associate-hint = Затем щёлкните другой элемент
 project-heading = Печатать название как заголовок

@@ -207,7 +207,6 @@ editor-new-element-hint = Nowy element po tym albo pod nim
 editor-new-after = Nowy element po tym
 editor-new-under = Nowy element pod tym
 editor-new-split = Podziel tutaj
-editor-new-split-hint = To, co za kursorem, staje się nowym elementem
 editor-spelling-on = Pisownia jest sprawdzana w trakcie pisania · naciśnij, by przestać
 editor-spelling-off = Pisownia nie jest sprawdzana · naciśnij, by ją sprawdzać
 editor-break-signs = Znak podziału wiersza w akapicie

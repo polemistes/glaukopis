@@ -135,7 +135,6 @@ editor-new-element-hint = Nov element za tem ali pod njim
 editor-new-after = Nov element za tem
 editor-new-under = Nov element pod tem
 editor-new-split = Razdeli tukaj
-editor-new-split-hint = Kar sledi kazalki, postane nov element
 editor-spelling-on = Črkovanje se preverja med pisanjem · pritisnite, da nehate
 editor-spelling-off = Črkovanje se ne preverja · pritisnite, da se preverja
 editor-picture-file = Slika iz datoteke…

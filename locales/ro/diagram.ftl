@@ -10,7 +10,6 @@ diagram-show-all = Arată toată harta
 diagram-tidy = Ordonează toată harta
 diagram-tidy-hint = Fiecare element se întoarce la locul lui automat
 # The keys are shown as keys, where the variables stand.
-diagram-hint-empty = { $tab } adaugă un element sub cel selectat · { $enter } adaugă unul alături · dublu clic pentru a scrie
 diagram-hint-linking = Faceți clic pe elementul cu care să-l asociați, sau mergeți la el cu săgețile și apăsați { $enter } · { $esc } ca să renunțați
 diagram-show-under = Arată ce este sub el
 diagram-hide-under = Ascunde ce este sub el

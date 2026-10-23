@@ -122,7 +122,7 @@ try {
   await sleep(400);
   await english('the diagram');
   await app.click('.diagram .node.root');
-  await app.press('Tab');
+  await app.keys(['Alt', 'Shift', 'Enter']);
   await app.waitFor('.diagram .node.renaming .prose', 3000);
   await sleep(120);
   await app.keys('Første sang');

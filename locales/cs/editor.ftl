@@ -134,7 +134,6 @@ editor-new-element-hint = Nový prvek za tímto, nebo pod ním
 editor-new-after = Nový prvek za tímto
 editor-new-under = Nový prvek pod tímto
 editor-new-split = Rozdělit zde
-editor-new-split-hint = Co následuje za kurzorem, se stane novým prvkem
 editor-spelling-on = Pravopis se kontroluje při psaní · stisknutím vypnete
 editor-spelling-off = Pravopis se nekontroluje · stisknutím zapnete
 editor-picture-file = Obrázek ze souboru…

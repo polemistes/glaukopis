@@ -49,21 +49,25 @@ describe('the words of a project', () => {
 
 describe('the words of a diagram', () => {
   it('have the keys where the language puts them', () => {
-    const hint = () => pieces((m) => t('diagram-hint-empty', m), { tab: 'Tab', enter: 'Enter' });
+    const hint = () =>
+      pieces((m) => t('diagram-hint-empty', m), { alt: 'Alt', shift: 'Shift', enter: 'Enter' });
     expect(
       hint()
         .map((p) => p.text)
         .join(''),
     ).toBe(
-      'Tab adds an element under the one selected · Enter adds one beside it · double-click to write',
+      'Alt+Enter adds an element after the one selected · Alt+Shift+Enter one under it · double-click to write',
     );
     expect(hint().filter((p) => p.name)).toEqual([
-      { text: 'Tab', name: 'tab' },
+      { text: 'Alt', name: 'alt' },
+      { text: 'Enter', name: 'enter' },
+      { text: 'Alt', name: 'alt' },
+      { text: 'Shift', name: 'shift' },
       { text: 'Enter', name: 'enter' },
     ]);
     languages.current = 'nb';
-    expect(hint()[0]).toEqual({ text: 'Tab', name: 'tab' });
-    expect(hint().filter((p) => p.name)).toHaveLength(2);
+    expect(hint()[0]).toEqual({ text: 'Alt', name: 'alt' });
+    expect(hint().filter((p) => p.name)).toHaveLength(5);
   });
 
   it('say how large the map is shown in the way of the language', () => {
@@ -98,13 +102,13 @@ describe('the words of a text', () => {
   it('count what is under the text', () => {
     expect(t('text-notes', { count: 2 })).toBe('2 notes');
     const keys = pieces((m) => t('text-keys', m), {
-      ctrl: 'Ctrl',
+      alt: 'Alt',
       shift: 'Shift',
       enter: 'Enter',
       at: '@',
     });
     expect(keys.map((p) => (p.name ? `[${p.text}]` : p.text)).join('')).toBe(
-      '[Ctrl]+[Enter] new element · [Ctrl]+[Shift]+[Enter] one under it · [@] cite',
+      '[Alt]+[Enter] new element · [Alt]+[Shift]+[Enter] one under it · [@] cite',
     );
   });
 });

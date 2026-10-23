@@ -6,7 +6,6 @@ text-not-printed = nu se tipărește
 text-grip = Mută sau modifică acest element
 text-include-open = Deschide-o
 text-split = Desparte aici
-text-split-hint = Ce urmează după cursor devine un element nou
 text-join = Unește cu elementul de deasupra
 
 ## Folding away what is under an element, and its text
@@ -63,4 +62,3 @@ text-notes = { $count ->
    *[other] { $count } de note
 }
 # The keys are shown as keys, where the variables stand.
-text-keys = { $ctrl }+{ $enter } element nou · { $ctrl }+{ $shift }+{ $enter } unul sub el · { $at } citează

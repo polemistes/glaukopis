@@ -132,7 +132,6 @@ editor-new-element-hint = この要素の後、または下に新しい要素を
 editor-new-after = この要素の後に新しい要素
 editor-new-under = この要素の下に新しい要素
 editor-new-split = ここで分割
-editor-new-split-hint = カーソルより後が新しい要素になります
 editor-spelling-on = 入力中にスペルチェックしています · 押すと止めます
 editor-spelling-off = スペルチェックしていません · 押すとチェックします
 editor-picture-file = ファイルから画像…

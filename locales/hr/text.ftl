@@ -6,7 +6,6 @@ text-not-printed = ne tiska se
 text-grip = Premjesti ili izmijeni ovaj element
 text-include-open = Otvori je
 text-split = Razdvoji ovdje
-text-split-hint = Što slijedi iza pokazivača postaje novi element
 text-join = Spoji s elementom iznad
 
 ## Folding away what is under an element, and its text
@@ -63,4 +62,3 @@ text-notes = { $count ->
    *[other] { $count } bilježaka
 }
 # The keys are shown as keys, where the variables stand.
-text-keys = { $ctrl }+{ $enter } novi element · { $ctrl }+{ $shift }+{ $enter } jedan ispod njega · { $at } citiraj

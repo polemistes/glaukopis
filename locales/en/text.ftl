@@ -13,7 +13,8 @@ text-drop-under = Under “{ $name }”
 text-drop-after = After “{ $name }”
 text-drop-before = Before “{ $name }”
 text-split = Split here
-text-split-hint = What follows the cursor becomes a new element
+text-split-hint = What follows the cursor becomes the name of a new element, and the paragraphs below its text
+text-heading-kept = What follows the cursor holds what a name cannot, such as a citation or a note, and is the first paragraph of the new element
 text-join = Join to the element above
 text-open-as-map = Enter
 text-open-as-map-hint = It is shown alone, with what is under it
@@ -68,4 +69,4 @@ text-notes = { $count ->
    *[other] { $count } notes
 }
 # The keys are shown as keys, where the variables stand.
-text-keys = { $ctrl }+{ $enter } new element · { $ctrl }+{ $shift }+{ $enter } one under it · { $at } cite
+text-keys = { $alt }+{ $enter } new element · { $alt }+{ $shift }+{ $enter } one under it · { $at } cite

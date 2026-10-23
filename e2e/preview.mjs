@@ -51,7 +51,7 @@ try {
   await app.click('.text-view .section .body');
   await sleep(300);
   await app.keys('The poem begins with a word. ');
-  await app.keys(['Control', 'Enter']);
+  await app.keys(['Alt', 'Enter']);
   await sleep(400);
   await app.keys('The word');
   await app.press('Enter');

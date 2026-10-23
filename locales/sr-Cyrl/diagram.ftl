@@ -6,7 +6,6 @@ diagram-show-all = Прикажи целу мапу
 diagram-tidy = Среди целу мапу
 diagram-tidy-hint = Сваки елемент се враћа на своје аутоматско место
 # The keys are shown as keys, where the variables stand.
-diagram-hint-empty = { $tab } додаје елемент под изабраним · { $enter } додаје један поред њега · двоструки клик за писање
 diagram-hint-linking = Кликните на елемент с којим се повезује, или дођите до њега стрелицама и притисните { $enter } · { $esc } за одустајање
 diagram-show-under = Прикажи шта је под њим
 diagram-hide-under = Сакриј шта је под њим

@@ -346,6 +346,7 @@
             : openable
               ? t('text-fold-shift')
               : t('text-fold-hint'),
+          shortcut: keysFor('tree-fold'),
           side: 'top',
         }}
         onmousedown={(e) => e.preventDefault()}
@@ -372,7 +373,7 @@
         aria-label={t('project-leave-map', { name: above })}
         use:tooltip={{
           text: t('project-leave-map', { name: above }),
-          shortcut: keysFor('up'),
+          shortcut: keysFor('tree-up'),
           side: 'top',
         }}
         tabindex="-1"

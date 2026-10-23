@@ -23,8 +23,9 @@ try {
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(400);
 
-  const add = async (key, name) => {
-    await app.press(key);
+  const add = async (where, name) => {
+    // A new element under the one selected, or after it: the keys of the tree.
+    await app.keys(where === 'under' ? ['Alt', 'Shift', 'Enter'] : ['Alt', 'Enter']);
     await app.waitFor('.diagram .node.renaming .prose', 3000);
     await sleep(120);
     await app.keys(name);
@@ -33,9 +34,9 @@ try {
     await sleep(80);
   };
   await app.click('.diagram .node.root');
-  await add('Tab', 'The quarrel');
-  await add('Enter', 'The embassy');
-  await add('Enter', 'The return');
+  await add('under', 'The quarrel');
+  await add('after', 'The embassy');
+  await add('after', 'The return');
   await sleep(300);
   check(
     'no element says how far it has come, and the map says nothing of it',

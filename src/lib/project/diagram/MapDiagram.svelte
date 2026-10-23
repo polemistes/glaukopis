@@ -46,7 +46,7 @@
     type View,
   } from './camera';
   import DiagramNode from './DiagramNode.svelte';
-  import { pressed, type Diagram } from './keys';
+  import { foldAll, pressed, type Diagram } from './keys';
   import { progressOf, progressWords } from '../status';
   import { associationsOf, drawing, linesOf } from './lines';
   import { layout, type Layout, type Placed, type Size } from './layout';
@@ -536,9 +536,6 @@
       const parent = tree.parent.get(id) ?? null;
       project.remove([id]);
       select(parent ? [parent] : []);
-    } else if (action === 'tab') {
-      add('child', id);
-      return;
     }
     if (action !== 'blur') viewport?.focus({ preventScroll: true });
   }
@@ -830,7 +827,7 @@
         label: t('diagram-open-as-map'),
         hint: t('diagram-open-as-map-hint'),
         icon: Minimize2,
-        shortcut: keysFor('diagram-enter'),
+        shortcut: keysFor('tree-enter'),
         action: () => onenter(one),
       },
       { kind: 'separator' },
@@ -893,8 +890,17 @@
   }
 
   function onkeydown(event: KeyboardEvent) {
-    if (event.target !== viewport) return;
     const mod = event.ctrlKey || event.metaKey;
+    // Alt+Enter in a name keeps it and makes a new element after, and with
+    // Shift one under it, as the keys do on the element selected.
+    if (renaming && event.target !== viewport && event.key === 'Enter' && event.altKey && !mod) {
+      const id = renaming;
+      event.preventDefault();
+      finishRename(id, 'enter');
+      if (project.node(id)) add(event.shiftKey || id === tree.root ? 'child' : 'sibling', id);
+      return;
+    }
+    if (event.target !== viewport) return;
     // A name has begun, and cannot be written in yet: what is typed waits for it.
     if (typedAhead !== null) {
       const ends: Record<string, KeyAction> = { Enter: 'enter', Escape: 'escape', Tab: 'tab' };
@@ -948,6 +954,20 @@
     cut: () => hold(selection, true),
     paste: () => paste(),
     open: (id) => open(id),
+    foldAll() {
+      project.checkpoint();
+      foldAll(project, tree);
+      project.checkpoint();
+      // What is selected and now folded away gives the selection to the element it is folded under.
+      const shown = selection.map((id) => {
+        let at = id;
+        for (let up = tree.parent.get(id); up && up !== tree.root; up = tree.parent.get(up)) {
+          if (project.node(up)?.collapsed) at = up;
+        }
+        return at;
+      });
+      if (shown.some((id, i) => id !== selection[i])) select([...new Set(shown)]);
+    },
     enter: (id) => onenter(id),
     rename,
     menu: menuFor,
@@ -1094,7 +1114,11 @@
 
   // What is said at the foot of the map, with the keys shown as keys.
   const emptyHint = $derived(
-    pieces((m) => t('diagram-hint-empty', m), { tab: keyLabel('Tab'), enter: keyLabel('Enter') }),
+    pieces((m) => t('diagram-hint-empty', m), {
+      alt: keyLabel('Alt'),
+      shift: keyLabel('Shift'),
+      enter: keyLabel('Enter'),
+    }),
   );
   const linkingHint = $derived(
     pieces((m) => t('diagram-hint-linking', m), { enter: keyLabel('Enter'), esc: keyLabel('Esc') }),

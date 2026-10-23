@@ -143,8 +143,9 @@ try {
   await sleep(300);
   const project = (await invoke('project_list'))[0].id;
   await app.click('.diagram .node.root');
-  const add = async (key, name) => {
-    await app.press(key);
+  const add = async (where, name) => {
+    // A new element under the one selected, or after it: the keys of the tree.
+    await app.keys(where === 'under' ? ['Alt', 'Shift', 'Enter'] : ['Alt', 'Enter']);
     await app.waitFor('.diagram .node.renaming .prose', 3000);
     await sleep(120);
     await app.keys(name);
@@ -152,8 +153,8 @@ try {
     await app.waitGone('.diagram .node.renaming', 3000);
     await sleep(80);
   };
-  await add('Tab', 'The catalogue');
-  await add('Enter', 'The ships');
+  await add('under', 'The catalogue');
+  await add('after', 'The ships');
   await app.keys(['Control', 'd']);
   await app.waitFor('.text-view .section', 5000);
   await sleep(300);

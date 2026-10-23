@@ -26,8 +26,9 @@ try {
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(400);
 
-  const add = async (key, name) => {
-    await app.press(key);
+  const add = async (where, name) => {
+    // A new element under the one selected, or after it: the keys of the tree.
+    await app.keys(where === 'under' ? ['Alt', 'Shift', 'Enter'] : ['Alt', 'Enter']);
     await app.waitFor('.diagram .node.renaming .prose', 3000);
     await sleep(120);
     await app.keys(name);
@@ -37,20 +38,20 @@ try {
   };
   // Athens with two events, Sparta with one.
   await app.click('.diagram .node.root');
-  await add('Tab', 'Athens');
-  await add('Tab', 'The plague');
-  await add('Enter', 'The Sicilian expedition');
+  await add('under', 'Athens');
+  await add('under', 'The plague');
+  await add('after', 'The Sicilian expedition');
   // And one under the expedition that says nothing of its time: shown, when asked for, in a box under the expedition.
-  await add('Tab', 'Nicias');
+  await add('under', 'Nicias');
   await app.click(await app.findByText('.diagram .node', 'Athens'));
-  await add('Enter', 'Sparta');
-  await add('Tab', 'The peace of Nicias');
+  await add('after', 'Sparta');
+  await add('under', 'The peace of Nicias');
   // And one under Sparta that says nothing of its time: shown only when asked for, at the foot of Sparta's lane.
-  await add('Enter', 'The ephors');
+  await add('after', 'The ephors');
   // And a branch that says nothing of its time.
   await app.click(await app.findByText('.diagram .node', 'Sparta'));
-  await add('Enter', 'Sources');
-  await add('Tab', 'Thucydides');
+  await add('after', 'Sources');
+  await add('under', 'Thucydides');
 
   /** Says when an element is, through its dialog. */
   const say = async (name, fill) => {
