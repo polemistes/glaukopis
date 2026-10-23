@@ -145,7 +145,10 @@ export function pressed(event: KeyboardEvent, d: Diagram): boolean {
     return true;
   }
 
-  switch (event.key) {
+  // Shift+Tab is another key by name on some systems (ISO_Left_Tab under
+  // X): Tab is known by where it is.
+  const key = event.code === 'Tab' || event.keyCode === 9 ? 'Tab' : event.key;
+  switch (key) {
     case 'Tab':
       // Tab folds what is under the element, or unfolds it; with Shift, all
       // under the element in view. The focus stays in the diagram either way.
