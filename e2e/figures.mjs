@@ -256,6 +256,9 @@ try {
   check('what is no picture is not taken for one', files().length === before && (await app.count('.box .text figure')) === 1);
 
   // ---- a picture that is pasted ----
+  // The message of the file refused may lie over the box, beside the list at the left: it is dismissed.
+  await app.exec(`document.querySelectorAll('.toaster button.close').forEach((b) => b.click())`);
+  await sleep(300);
   await app.click('.box .text .prose p:last-of-type');
   await app.keys(['Control', 'End']);
   const bytes = [...png(200, 120, 40)];

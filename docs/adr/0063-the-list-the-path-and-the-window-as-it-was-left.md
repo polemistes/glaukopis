@@ -93,3 +93,24 @@ The map of all projects and all that was only for it: its view and its diagram, 
 - The words of the map go from `home.ftl` in both languages; the new words are written in English and Norwegian Bokmål together; the other languages lag, as usual.
 - `docs/guide.md`: *Many projects* and *The map of the projects* become *The list of projects* and *The start screen*; *One tree, entered anywhere* says the path and Split view; *Keys* loses the map; a short section says what comes back at start.
 - `e2e/owl.mjs` becomes `e2e/list.mjs`; `projects.mjs`, `tree-keys.mjs`, `housekeeping.mjs`, `maps.mjs`, `languages.mjs`, `new-project-view.mjs`, `keys.mjs` and `look.mjs` are revised where they used the map or *Side by side*; `e2e/as-left.mjs` and `e2e/path.mjs` are new.
+
+## Addendum, 2026-10-23: as built
+
+Built on 2026-10-23 from the plan: stages 1 and 2 on main, stages 3 and 4 by two agents in worktrees, merged into main, stage 5 on main. The choices under *Choices made in writing this* stand as written; the owner has not yet been asked about them. Where the build departs from the plan:
+
+- **The setting of the list has a new name**, `projectsList` for `projectsPane`. The settings are written whole, so every installation had the list kept as hidden; a new default alone would not have shown it. The new name shows it once to everyone, and then it stays as it is left.
+- **A row of the list that takes the focus is the one the keys act on**, by a click or by Tab, and Shift+Tab is known by where Tab is, as in the diagram.
+- **A project's menu says *Open beside*, an element's *Enter beside***: the pair of *Open* and *Enter*.
+- **The projects last opened are remembered when a side shows them**, not whenever a project is read: the search and the copying between projects read projects without showing them.
+- **A double click on a folder folds it**, as a click does: a folder is not entered.
+- **The list's ⋯ buttons and a text field's frame have class names of their own**, since the scripts took the old ones, now always on the screen with the list, for an open menu and an element's box.
+- **At start, a kept place in a project opens the project alone**; its element, its view and its second side come back from the project's own view. A place naming an element would show that element alone and lose the second side.
+- **The text is given the element at its top once**, and holds it there for three seconds or until the reader scrolls, presses or types, while the fonts load and the window takes its size. The element at the top is looked up on every scroll, one point a frame.
+- **The window's inner size is kept**, not its outer size: setting a size sets the inner one, and keeping the outer would grow the window by its frame each time. A maximised window keeps the size it had before it was maximised; the place is used only where it lies on a screen that is there. The window starts hidden and is shown by the page once it is placed, by the page again after five seconds, and by the core after ten, whatever happens.
+- **The path always shows the project's own crumb** where it is shortened, as well as the first and the last, so that each path says which project it is in; a hidden stretch on either side of it has its own *…*.
+- **Of the two cells, only the right-hand one gives way to *Split view***, so that the line between the cells stays over the line between the sides.
+- **A project chosen in the chevron's menu** opens in the first side, in the place of what was open there, or is shown beside in the second.
+- ***Close* in the list on the project of the view while another is beside** leaves the other as the project open, as closing the first side does.
+- **The closing of a side is `closeSideAt`**, since `closeSide` already closes the panel at the side.
+- **The other languages keep their word for *Side by side*** until translated: the meaning did not change, only the English name.
+- **`e2e/harness.mjs` gained `app.quit()`**, which closes the window as the user does, through its close request; `close()` only ends the driver.

@@ -123,6 +123,14 @@ The house in the rail and **Ctrl+1** go back to the project you were in, at
 the element and in the view you left; from there, closing the project comes
 to the start screen.
 
+**Glaukopis opens as you left it**: in the project you were in, with the
+same sides, each at the element and in the view it showed, the text at the
+heading that stood at its top and the diagram where it was looked at, the
+side you were in, and the sides switched if they were; or in the library, the
+pictures, the files or the search, if that is where you were. The window has
+the size and the place it had, where your screen allows. A project that has
+been deleted since gives the start screen.
+
 **A project of all the projects…**, in the **⋯** at the head of the list,
 makes a new project of the projects themselves: the folders as elements,
 nested as the folders are, and under each the projects in it, with their
@@ -1356,35 +1364,30 @@ the pointer is on the heading; with **Alt+Shift+Down**; or with
 **Enter** in its menu, in the diagram and from the grip beside its
 heading in the text. Go up with **Alt+Shift+Up**; with the button of the same kind
 on the element in view, at its corner in the diagram and before the title in
-the text; or by pressing the name of the element over it, which stands small
-at the left of the bar over the map. The project itself has no such button:
-the owl at the left of the bar goes up from it, to the map of the projects,
-at the folder the project is in.
+the text; or by pressing the name of the element over it in the path at the
+top. The project itself has no such button: **Alt+Shift+Up** at its top
+comes to its row in the list of projects.
 
-The bar says where you are: the name of the element over the one in view,
-small, which goes up; then the name of the element in view, which pulls down
-the elements beside it, to show one of them in its place, or, for the
-project itself, the trees under it. Beside the name is **This element**,
-with what can be done with the element in view: **Rename**, **What this
-document is…**, which opens the chooser of what you are writing, **About
-this document…**, **Loose citations…**, **Languages…**, which opens
+**The path** at the top of the window says where you are: the folders the
+project lies in, small; the project, in bold with its sign; and the
+elements from the top of the project down to the element in view, the last
+the strongest. Each is a button: a folder opens the menu of the projects in
+it, the project goes to its top, an element enters it. The chevron at the
+start of the path opens a menu of all projects, the folders as submenus,
+and the project chosen is shown in that side. Where the path does not fit,
+the names in the middle make way for **…**, which lists them; the first
+name, the project and the element in view always show. After the path,
+**⋯** has what can be done with the element in view: **Rename**, **What
+this document is…**, which opens the chooser of what you are writing,
+**About this document…**, **Loose citations…**, **Languages…**, which opens
 *About this document* at the language, **New element under it**, **A
-document into it…** and **Delete**, which takes the element
-with all under it, and goes up. The project itself is not deleted here, but
-from the map of the projects or the list. Over that bar, the bar of the project has **Diagram**,
-**Text**, **Side by side**, **Preview** and **Share**; side by side, each
-side has a bar of its own.
+document into it…** and **Delete**, which takes the element with all under
+it, and goes up. The project itself is not deleted here, but from the list.
 
-**The list of projects** (**Ctrl+Shift+L**) shows the whole tree of the open
-project under its name, folded but for the way down to the element in view,
-which is marked; press an element to enter it, and the chevron before one
-to show or hide what is under it. The list has the keys of the tree: the
-arrows go from row to row, **Left** to the row it stands under and
-**Right** to the first under it; **Tab** folds and **Shift+Tab** folds all;
-**Alt+Enter** makes a project and **Alt+Shift+Enter** a folder; **Alt** and
-the arrows move a project into a folder or out, and an element of the open
-project as in its map; **Alt+Shift+Down** and **Enter** do what a click
-does; **F2** renames and **Delete** deletes.
+Under the path, for now, stand the bar of the project, with **Diagram**,
+**Text**, **Preview**, **Share**, undo, redo and the panel at the side, and
+the bar of each side, with the outline, the tools of writing and the **×**
+that closes the side.
 
 This is what makes it safe to write. A tree that is valuable as it is, the
 first sketch of the argument, or the plan for the whole book, need not be
@@ -1429,31 +1432,38 @@ consumed by the writing:
   document hold itself cannot be chosen. The tree of the book then has one element for each chapter, each
   of which stands for the tree of that chapter, written elsewhere in the
   project. The preview of the book shows the book.
-- **Side by side**, in the bar of the project (**Ctrl+Shift+S**), opens a
-  menu of what the second side shows. **This element, as diagram and text**
-  shows the element in view both ways, beside one another. **Another
-  element…** shows the tree of the project, with a field that finds an
-  element by its name, and the element chosen stands in the second side.
-  Enter another element on either side to see two parts of the project, and
-  move elements between them, by dragging or by cutting and pasting. Each
-  side can be diagram, text or timeline. The button is lit while two sides
-  are shown, and **One at a time**, at the foot of its menu, closes the
-  second.
+- **Split view**, at the right end of the top of the window
+  (**Ctrl+Shift+S**), opens a menu of what the second side shows. **This
+  element, as diagram and text** shows the element in view both ways,
+  beside one another. **Another element…** shows the tree of the project,
+  with a field that finds an element by its name, and the element chosen
+  stands in the second side. Enter another element on either side to see
+  two parts of the project, and move elements between them, by dragging or
+  by cutting and pasting. Each side can be diagram, text or timeline. The
+  window is split all the way up: each side has its own path at the top.
+  The side you are in has its path in the colour of the buttons, the other
+  in grey; the keys, undo and the preview act in the side you are in.
+  **Switch sides**, in the same menu, puts the two the other way round.
+  **One at a time** closes the side you are not in; the **×** in the bar of
+  a side, or **Ctrl+W**, closes the side you are in. With one side, they
+  close the project, and the start screen comes.
 - **Another project beside**: **Another project…**, in the same menu, shows
   the list of projects, with its folders and its field; choose a project to
   see it at its top in the second side, or unfold it with the chevron before
   its name and choose an element of its tree to see it there. Your own
   project is grey in the list, since its elements are chosen through
-  **Another element…**. **Enter beside**, in the menu of another project,
-  or of an element of its tree, in the list of projects at the left, does
-  the same at once. Then both bars begin with the name of their project,
-  with its sign, and the line between them is doubled, so that the two are
-  not taken for one. Elements dragged from one
-  to the other are copied there, or moved with a plain drop, as **Copy to**
-  and **Move to** another project do; undo takes a move back in both. The
-  keys, and undo, work in the side you are in. The panel at the side, the
-  preview and the history stay with your own project; the other is shown as
-  diagram or text, and closes with its side.
+  **Another element…**. **Open beside**, in the menu of a project in the
+  list at the left, and **Enter beside**, in the menu of an element of its
+  tree, do the same at once. Then each path begins with its own project, so
+  that two names say two projects and one name twice says one; the list
+  marks both, and the line between the sides is doubled. Elements dragged
+  from one to the other are copied there, or moved with a plain drop, as
+  **Copy to** and **Move to** another project do; undo takes a move back in
+  both. For now, the panel at the side, the preview's own settings, sharing
+  and the history are those of the project you opened first; the panel says
+  which project it is about. The other is shown as diagram or text, and
+  closes with its side. Closing the first side instead leaves the other
+  project as the one open.
 
 The line between the two sides can be dragged, as can those beside the
 preview, the references and the outline. A double click on a line puts it
@@ -2860,7 +2870,8 @@ what is to be done by its name, and does it.
 | **Ctrl+Shift+O** | The outline beside the text |
 | **Ctrl+Shift+L** | The list of projects at the left: hide it, or show it again |
 | **Ctrl+P** | The preview |
-| **Ctrl+Shift+S** | Side by side: this element as diagram and text, another element or another project beside it, or one at a time |
+| **Ctrl+Shift+S** | Split view: this element as diagram and text, another element or another project beside it, switch sides, or one at a time |
+| **Ctrl+W** | Close the side you are in; with one side, the project |
 | **Ctrl+Shift+D** | About this document: the details, the language and the checklist of the element in view |
 | **Ctrl+Shift+A** | The look of the document: font, page, the looks of the kinds |
 | **Ctrl+Shift+R** | The references |
