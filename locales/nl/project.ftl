@@ -12,7 +12,6 @@ project-back = Terug naar de projecten
 project-fetching = Het project wordt opgehaald
 project-fetching-offline = De server kan niet worden bereikt. Het project wordt opgehaald zodra dat kan.
 project-fetching-on-the-way = Het is onderweg van de server.
-project-all-projects = Alle projecten
 project-name = Naam van het project
 project-rename = Het project hernoemen
 project-not-saved = Niet opgeslagen

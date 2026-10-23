@@ -174,7 +174,7 @@ async function measure() {
   const app = await App.launch({ width: 1360, height: 900, dataDir: data });
   try {
     await app.installErrorHook();
-    await app.waitFor('[data-owl-map]', 15000);
+    await app.waitFor('[data-start], .project', 15000);
     let began = Date.now();
     await app.openProject('Large', 60000);
     await until(

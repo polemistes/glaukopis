@@ -7,9 +7,6 @@ home-new = Novo projeto
 
 ## The two forms of the page: the last used projects as cards, all of them as a list
 
-home-shown = O que se mostra
-home-recent = Usados há pouco
-home-all = Todos os projetos
 # Under the cards, when there are more projects than they show.
 # The button that opens the menu of the page.
 home-page-menu = Mais
@@ -23,10 +20,6 @@ home-new-folder = Nova pasta
 home-folder-rename-title = Mudar o nome da pasta
 home-folder-name-placeholder = O que a pasta contém
 home-folder-name-missing = Dê um nome à pasta.
-home-folder-projects = { $count ->
-    [one] { $count } projeto
-    [many] { $count } projetos
-   *[other] { $count } projetos
 }
 home-menu-move = Mover para a pasta
 home-menu-out = Fora das pastas

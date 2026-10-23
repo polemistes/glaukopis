@@ -7,9 +7,6 @@ home-new = Nový projekt
 
 ## The two forms of the page: the last used projects as cards, all of them as a list
 
-home-shown = Co se zobrazuje
-home-recent = Naposledy použité
-home-all = Všechny projekty
 # Under the cards, when there are more projects than they show.
 }
 # The button that opens the menu of the page.
@@ -24,10 +21,6 @@ home-new-folder = Nová složka
 home-folder-rename-title = Přejmenovat složku
 home-folder-name-placeholder = Co složka obsahuje
 home-folder-name-missing = Dejte složce název.
-home-folder-projects = { $count ->
-    [one] { $count } projekt
-    [few] { $count } projekty
-   *[other] { $count } projektů
 }
 home-menu-move = Přesunout do složky
 home-menu-out = Mimo složky

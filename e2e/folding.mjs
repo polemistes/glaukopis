@@ -186,7 +186,7 @@ try {
   await app.close();
   app = await App.launch({ width: 1360, height: 900, dataDir: data });
   await app.installErrorHook();
-  await app.waitFor('[data-owl-map]', 10000);
+  await app.waitFor('[data-start], .project', 10000);
   await app.openProject('Folding');
   await app.waitFor('.text-view .section', 10000);
   await sleep(600);

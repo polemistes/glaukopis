@@ -7,9 +7,6 @@ home-new = Nieuw project
 
 ## The two forms of the page: the last used projects as cards, all of them as a list
 
-home-shown = Wat wordt getoond
-home-recent = Laatst gebruikt
-home-all = Alle projecten
 # Under the cards, when there are more projects than they show.
 # The button that opens the menu of the page.
 home-page-menu = Meer
@@ -23,9 +20,6 @@ home-new-folder = Nieuwe map
 home-folder-rename-title = Map hernoemen
 home-folder-name-placeholder = Wat de map bevat
 home-folder-name-missing = Geef de map een naam.
-home-folder-projects = { $count ->
-    [one] { $count } project
-   *[other] { $count } projecten
 }
 home-menu-move = Naar map verplaatsen
 home-menu-out = Uit de mappen

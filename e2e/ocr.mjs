@@ -213,7 +213,7 @@ try {
 
   // ---- a scanned PDF becomes a project, among the projects ----
   await app.waitForText('h2', 'Welcome to Glaukopis');
-  const onProjects = await middleOf('.owl-view .welcome');
+  const onProjects = await middleOf('[data-start] .welcome');
   await drop([scan], onProjects.x, onProjects.y);
   await app.waitFor('dialog [data-ocr="asking"]', 15000);
   check(
@@ -233,8 +233,7 @@ try {
     JSON.stringify(await tabs()) === '["The Wrath of Achilles"]',
     JSON.stringify(await tabs()),
   );
-  await app.keys(['Control', '1']);
-  await app.waitFor('[data-owl-map]', 5000);
+  await app.home();
   await sleep(300);
 
   // ---- a scanned PDF becomes a tree under the element in view, in a project ----

@@ -60,7 +60,7 @@ try {
 
   // ---- a project that is opened again opens as it was left ----
   await app.go('#/');
-  await app.waitFor('[data-owl-map]', 8000);
+  await app.waitFor('[data-start]', 8000);
   await sleep(1500);
   await app.openProject('First');
   await sleep(800);

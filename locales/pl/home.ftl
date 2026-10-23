@@ -7,9 +7,6 @@ home-new = Nowy projekt
 
 ## The two forms of the page: the last used projects as cards, all of them as a list
 
-home-shown = Co jest pokazane
-home-recent = Ostatnio używane
-home-all = Wszystkie projekty
 # Under the cards, when there are more projects than they show.
 }
 # The button that opens the menu of the page.
@@ -24,11 +21,6 @@ home-new-folder = Nowy folder
 home-folder-rename-title = Zmień nazwę folderu
 home-folder-name-placeholder = Co folder zawiera
 home-folder-name-missing = Nadaj folderowi nazwę.
-home-folder-projects = { $count ->
-    [one] { $count } projekt
-    [few] { $count } projekty
-    [many] { $count } projektów
-   *[other] { $count } projektów
 }
 home-menu-move = Przenieś do folderu
 home-menu-out = Poza foldery

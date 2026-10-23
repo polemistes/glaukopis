@@ -256,6 +256,10 @@ try {
   await app.keys(['Control', 'd']);
   await app.waitFor('.diagram .node.root', 5000);
   await sleep(400);
+  // The list at the left leaves the diagram narrow beside the preview and the panel: all of it is shown first.
+  await app.click('.diagram');
+  await app.keys(['Control', '0']);
+  await sleep(400);
   await app.rightClick(await app.findByText('.diagram .node', 'The word'));
   await app.waitFor('.menu');
   await sleep(150);

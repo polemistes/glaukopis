@@ -111,10 +111,10 @@ try {
   await app.press('Enter');
   await app.waitGone('.diagram .node.renaming', 3000);
   await app.home();
-  await app.waitFor('[data-owl-project]', 8000);
+  await app.waitFor('[data-projects-pane] .row.project', 8000);
   await sleep(400);
 
-  await app.rightClick('[data-owl-project]');
+  await app.rightClick('[data-projects-pane] .row.project');
   await app.clickText('[role="menuitem"]', 'Earlier versions');
   await app.waitFor('dialog li', 8000);
   await sleep(200);
@@ -134,26 +134,26 @@ try {
     then.join(' | '),
   );
   await app.home();
-  await app.waitFor('[data-owl-project]', 8000);
+  await app.waitFor('[data-projects-pane] .row.project', 8000);
   await sleep(300);
-  check('beside the one it was taken from', (await app.count('[data-owl-project]')) === 2);
+  check('beside the one it was taken from', (await app.count('[data-projects-pane] .row.project')) === 2);
 
-  await app.rightClick(await app.findByText('[data-owl-project]', 'as of'));
+  await app.rightClick(await app.findByText('[data-projects-pane] .row.project', 'as of'));
   await app.clickText('[role="menuitem"]', 'Delete');
   await app.waitForText('dialog h2', 'Delete');
   await sleep(250);
   await app.clickText('dialog footer button', 'Delete project');
-  await until(async () => (await app.count('[data-owl-project]')) === 1);
-  check('a project that is deleted is in the trash', (await app.count('[data-owl-project]')) === 1);
-  await app.click('[data-owl-more]');
+  await until(async () => (await app.count('[data-projects-pane] .row.project')) === 1);
+  check('a project that is deleted is in the trash', (await app.count('[data-projects-pane] .row.project')) === 1);
+  await app.click('[data-projects-more]');
   await app.clickText('[role="menuitem"]', '1 deleted project');
   await app.waitFor('dialog li', 5000);
   await sleep(250);
   await app.screenshot('housekeeping-4-trash');
   await app.clickText('dialog li button', 'Bring back');
-  await until(async () => (await app.count('[data-owl-project]')) === 2);
+  await until(async () => (await app.count('[data-projects-pane] .row.project')) === 2);
   check('and can be brought back', true);
-  await app.click('[data-owl-more]');
+  await app.click('[data-projects-more]');
   await sleep(200);
   check(
     'after which the trash is empty, and offered no more',

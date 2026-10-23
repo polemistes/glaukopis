@@ -147,8 +147,14 @@ export interface Settings {
   languagesServer: string | null;
   /** The kinds of elements made in any project, by name, with the colour each had last: offered when a kind is named. */
   kinds: { name: string; colour: string }[];
-  /** Whether the pane of projects stands at the left of a project (ADR 0033). */
-  projectsPane: boolean;
+  /**
+   * Whether the list of projects stands at the left (ADR 0033, 0063). Called
+   * `projectsPane` while it was hidden unless asked for; the new name shows it
+   * once to everyone, as the one tree it now is.
+   */
+  projectsList: boolean;
+  /** The projects last opened, by id, the latest first: the start screen shows them (ADR 0063). */
+  recentProjects: string[];
   /** How wide it is, in pixels. */
   projectsPaneWidth: number;
   /** How wide the collections or folders of the library are, in pixels; the same for references and files. */
@@ -192,7 +198,8 @@ export const defaultSettings: Settings = {
   breakSigns: true,
   languagesServer: null,
   kinds: [],
-  projectsPane: false,
+  projectsList: true,
+  recentProjects: [],
   projectsPaneWidth: 240,
   librarySideWidth: 224,
   libraryDetailWidth: 400,

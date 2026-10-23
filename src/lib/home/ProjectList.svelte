@@ -23,144 +23,127 @@
   import { t } from '$lib/i18n';
   import type { Project } from '$lib/project/model/project.svelte';
   import type { Tree } from '$lib/project/model/tree';
-  import { viewing } from '$lib/project/ProjectView.svelte';
+  import { viewing, type ShownSide } from '$lib/project/ProjectView.svelte';
   import { router } from '$lib/state/router.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { PROJECT } from '$lib/project/model/types';
   import { projects } from '$lib/state/projects.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
-  import Segmented from '$lib/ui/Segmented.svelte';
-  import Clock from '@lucide/svelte/icons/clock';
-  import FolderTree from '@lucide/svelte/icons/folder-tree';
   import { dropTarget, startDrag, type DragPayload, type DropEvent } from '$lib/ui/drag.svelte';
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import TextField from '$lib/ui/TextField.svelte';
   import { tick, untrack } from 'svelte';
-  import { ago } from '$lib/util/time';
   import { ancestors, folderOf, rows as makeRows, type Row } from './folders';
   import { moveThings, thingsOf, wouldMove } from './changes';
   import { closedTrees } from './closed.svelte';
-  import { listUi, upFromProject } from './list.svelte';
+  import { listUi } from './list.svelte';
   import { pressed, type ListRow, type ListSurface } from './list-keys';
   import { indent, outdent, shift as shiftElement } from '$lib/project/elements';
   import type { ProjectActions } from './project-actions.svelte';
   import ProjectBadge from './ProjectBadge.svelte';
-  import Mark from '$lib/shell/Mark.svelte';
+  import { homeUndo } from './undo.svelte';
 
   interface Props {
     /** What opens a project, its menu, and the dialog that asks for a name: the place's own. */
     actions: ProjectActions;
-    /** The project that is open, marked in the list and scrolled into view. */
-    current?: string | null;
     /**
-     * The open project itself, where the view gives it: its tree stands
-     * under its row, folded but along the way to the element in view, which
-     * is marked (ADR 0037).
+     * The sides of the window and the projects they show (ADR 0063): each
+     * is marked, the one with the focus most, and its tree stands under its
+     * row, folded but along the way to the element in view there.
      */
-    project?: Project | null;
-    /** The element in view in the open project. */
-    at?: string | null;
-    /** Enters an element of the open project. */
-    onenter?: (id: string) => void;
-    /**
-     * Where the owl map is in view: null at the owl, whose row at the top
-     * is marked, or a folder's id where one is entered, whose row is marked.
-     */
-    owlAt?: string | null;
+    sides?: readonly ShownSide[];
+    /** Enters an element of a project shown in a side. */
+    onenter?: (project: string, id: string) => void;
     /**
      * Where the list chooses rather than opens, as the chooser of a project
      * to show beside the open one does: a click or Enter on a project, or on
      * an element of the tree unfolded under a project, calls it with the
-     * project and the element, and nothing is opened or entered. The owl
-     * row, the menus, the dragging and the making of things are off; the
-     * field and the folding stay. The project that is open (`current`)
-     * cannot be chosen.
+     * project and the element, and nothing is opened or entered. The menus,
+     * the dragging and the making of things are off; the field and the
+     * folding stay. A project that is shown (`sides`) cannot be chosen.
      */
     choose?: (project: string, at?: string) => void;
   }
 
-  let {
-    actions,
-    current = null,
-    project = null,
-    at = null,
-    onenter,
-    owlAt = undefined,
-    choose,
-  }: Props = $props();
-  const owlHere = $derived(owlAt === null);
+  let { actions, sides = [], onenter, choose }: Props = $props();
+
+  /** The projects shown in the sides, by id. */
+  const shownIds = $derived(sides.map((side) => side.id));
+  /** The project of the side that has the focus: the keys of the tree act in it. */
+  const current = $derived(sides.find((side) => side.focused)?.id ?? sides[0]?.id ?? null);
+  /** The element in view in the side that has the focus. */
+  const at = $derived(sides.find((side) => side.id === current)?.at ?? null);
 
   let filter = $state('');
   let listEl = $state<HTMLDivElement>();
 
-  /** Which form the list shows: the folders, or the projects last used, the newest first. */
-  const recent = $derived(projects.shown === 'recent');
-  /** How many of the projects last used are shown. */
-  const RECENT = 12;
-  const rows = $derived.by((): Row[] => {
-    if (!recent)
-      return makeRows(projects.folders, projects.list, { collapsed: listUi.collapsed, filter });
-    const words = filter.trim().toLocaleLowerCase();
-    return projects.list
-      .filter((p) => !words || p.name.toLocaleLowerCase().includes(words))
-      .slice(0, RECENT)
-      .map((project) => ({ kind: 'project', project, depth: 0 }));
-  });
-  const forms = $derived([
-    { value: 'list' as const, label: t('home-all'), icon: FolderTree, iconOnly: true },
-    { value: 'recent' as const, label: t('home-recent'), icon: Clock, iconOnly: true },
-  ]);
+  const rows = $derived(
+    makeRows(projects.folders, projects.list, { collapsed: listUi.collapsed, filter }),
+  );
   /** How far each step deeper is drawn in. */
   const step = 14;
-  /** Where the folders and projects begin: a step in from the owl, which holds them all; in the projects last used, at the edge. */
-  const left = $derived(recent ? 4 : 4 + step);
+  /** Where the folders and projects at the top begin. */
+  const left = 4;
 
   function open(p: ProjectInfo) {
     if (!choose) actions.open(p);
-    else if (p.id !== current) choose(p.id);
+    else if (!shownIds.includes(p.id)) choose(p.id);
   }
   const toggle = (id: string) => listUi.toggle(id);
   const reveal = (id: string | null) => listUi.reveal(ancestors(projects.folders, id));
 
-  // The project that is open is shown: the folders it lies in open, and its row scrolled to.
+  // The projects that are shown are seen: the folders they lie in open, and
+  // the row of the one with the focus scrolled to. It depends on which
+  // projects are shown and which has the focus.
   $effect(() => {
+    const ids = shownIds.join('\n');
     const id = current;
-    if (!id || !projects.loaded) return;
+    if (!ids || !projects.loaded) return;
     untrack(() => {
-      const p = projects.list.find((x) => x.id === id);
+      for (const shown of ids.split('\n')) {
+        const p = projects.list.find((x) => x.id === shown);
+        if (p) reveal(folderOf(projects.folders, p));
+      }
+      if (id)
+        void tick().then(() =>
+          listEl
+            ?.querySelector(`[data-project="${CSS.escape(id)}"]`)
+            ?.scrollIntoView({ block: 'nearest' }),
+        );
+    });
+  });
+
+  // A row asked for from elsewhere, as by Alt+Shift+Up at the top of a
+  // project, is selected and takes the focus once it is drawn. It depends on
+  // what is asked for and on whether the projects are read.
+  $effect(() => {
+    const key = listUi.focusRow;
+    if (!key || !projects.loaded) return;
+    untrack(() => {
+      listUi.focusRow = null;
+      const p = projectOf(key);
       if (p) reveal(folderOf(projects.folders, p));
-      void tick().then(() =>
-        listEl
-          ?.querySelector(`[data-project="${CSS.escape(id)}"]`)
-          ?.scrollIntoView({ block: 'nearest' }),
-      );
+      surface.select(key);
+      void tick().then(() => surface.bringIntoView(key));
     });
   });
 
   /** The menu of a project in the list: the one menu of a project, with its tree folded or not where the list unfolds it. */
   function projectItems(p: ProjectInfo): MenuItem[] {
     return actions.items(p, {
-      current,
-      beside: current ? (id) => viewing.beside?.(id) : undefined,
+      shown: shownIds,
+      close: viewing.close ?? undefined,
+      beside: shownIds.length ? (id) => viewing.beside?.(id) : undefined,
       fold: unfoldable(p)
         ? { folded: !closedUnfolded.has(p.id), toggle: () => toggleClosed(p) }
         : undefined,
     });
   }
 
-  const openAsMap = (f: FolderInfo) => router.go({ view: 'owl', at: f.id });
   const folderItems = (f: FolderInfo) =>
     actions.folderItems(f, {
-      enter: () => openAsMap(f),
-      here: owlAt === f.id,
       fold: { folded: listUi.collapsed.has(f.id), toggle: () => toggle(f.id) },
     });
-
-  // The folder in view on the owl map is shown: the folders it lies in open.
-  $effect(() => {
-    const id = owlAt;
-    if (id) untrack(() => listUi.reveal(ancestors(projects.folders, id).slice(1)));
-  });
 
   /** Whether what is dragged may be dropped into a folder, or at the top. */
   function accepts(target: string | null) {
@@ -186,29 +169,30 @@
     name: (id: string) => string;
     /** The way down to the element in view: unfolded, unless folded by hand. */
     way: Set<string>;
-    /** The element in view, marked; none in a project that is not open. */
+    /** The element in view, marked; none in a project that is not shown. */
     at: string | null;
     enter: (id: string) => void;
-    /** Whether it is the project that is open, rather than one read from disk. */
-    own: boolean;
+    /** The project itself, where it is shown in a side, rather than read from disk: its elements move as in its map. */
+    live: Project | null;
   }
 
-  const tree = $derived(project ? project.tree() : null);
-  /** The way from the project down to the element in view: unfolded, unless folded by hand. */
-  const way = $derived(new Set(project && at ? project.pathTo(at) : []));
-
-  const ownShown = $derived.by((): Shown | null => {
-    const pr = project;
-    if (!pr || !tree || !current) return null;
-    return {
-      project: current,
-      tree,
-      name: (id) => pr.node(id)?.title || '',
-      way,
-      at,
-      enter: (id) => onenter?.(id),
-      own: true,
-    };
+  /** The trees of the projects shown in the sides, by project: live, as the sides show them. */
+  const liveShown = $derived.by(() => {
+    const out = new Map<string, Shown>();
+    for (const side of sides) {
+      const pr = side.project;
+      if (!pr || out.has(side.id)) continue;
+      out.set(side.id, {
+        project: side.id,
+        tree: pr.tree(),
+        name: (id) => pr.node(id)?.title || '',
+        way: new Set(pr.pathTo(side.at)),
+        at: side.at,
+        enter: (id) => onenter?.(side.id, id),
+        live: pr,
+      });
+    }
+    return out;
   });
 
   const nowhere = new Set<string>();
@@ -223,12 +207,12 @@
       at: null,
       enter: (id) =>
         choose ? choose(p.id, id) : router.go({ view: 'project', project: p.id, at: id }),
-      own: false,
+      live: null,
     };
   }
 
-  /** Whether the tree of a project that is not open can be unfolded under its row: in the pane. */
-  const unfoldable = (p: ProjectInfo) => p.id !== current;
+  /** Whether the tree of a project that is not shown can be unfolded under its row: that of one shown always stands. */
+  const unfoldable = (p: ProjectInfo) => !shownIds.includes(p.id);
 
   function toggleClosed(p: ProjectInfo) {
     if (closedUnfolded.has(p.id)) closedUnfolded.delete(p.id);
@@ -238,7 +222,7 @@
   // What is unfolded is read from disk, and again when the project has changed.
   $effect(() => {
     for (const p of projects.list) {
-      if (p.id !== current && closedUnfolded.has(p.id)) closedTrees.want(p);
+      if (!shownIds.includes(p.id) && closedUnfolded.has(p.id)) closedTrees.want(p);
     }
   });
 
@@ -266,28 +250,31 @@
     const holds = (src.tree.children.get(id)?.length ?? 0) > 0;
     return actions.elementItems({
       enter: () => src.enter(id),
-      beside: current ? () => viewing.beside?.(src.project, id) : undefined,
+      beside: shownIds.length ? () => viewing.beside?.(src.project, id) : undefined,
       fold: holds ? { folded: !isUnfolded(src, id), toggle: () => toggleFold(src, id) } : undefined,
     });
   }
 
-  // Entering an element unfolds the way to it, whatever was folded by hand before.
+  // Entering an element unfolds the way to it, whatever was folded by hand
+  // before. It depends on the element in view in each side.
   $effect(() => {
-    if (!project || !at) return;
-    const ids = project.pathTo(at);
-    const id = current;
+    const ways = [...liveShown.values()].map((src) => ({ id: src.project, way: [...src.way] }));
     untrack(() => {
-      for (const element of ids) foldedByHand.delete(`${id}:${element}`);
+      for (const { id, way } of ways)
+        for (const element of way) foldedByHand.delete(`${id}:${element}`);
     });
   });
 
   // ---- the keys of the tree, in the list (ADR 0062): see `list-keys` ----
 
-  /** The row selected, by its key: `owl`, `f:<folder>`, `p:<project>`, `e:<project>/<element>`. */
+  /** The row selected, by its key: `f:<folder>`, `p:<project>`, `e:<project>/<element>`. */
   let selected = $state<string | null>(null);
   const elementRow = (src: Shown, id: string) => `e:${src.project}/${id}`;
+  const rowKey = (row: Row) =>
+    row.kind === 'folder' ? `f:${row.folder.id}` : `p:${row.project.id}`;
   /** The row the Tab key comes to: the one selected, or the first. */
-  const tabOf = (key: string) => (selected === key || (!selected && key === 'owl') ? 0 : -1);
+  const tabOf = (key: string) =>
+    selected === key || (!selected && rows[0] && key === rowKey(rows[0])) ? 0 : -1;
 
   /** The rows as they stand, read from the page, top to bottom. */
   function rowsNow(): ListRow[] {
@@ -314,7 +301,8 @@
     const cut = rest.indexOf('/');
     const owner = rest.slice(0, cut);
     const id = rest.slice(cut + 1);
-    if (owner === current && ownShown) return { src: ownShown, id };
+    const live = liveShown.get(owner);
+    if (live) return { src: live, id };
     const p = projects.list.find((x) => x.id === owner);
     const reading = closedTrees.get(owner);
     if (!p || reading?.state !== 'read') return null;
@@ -371,19 +359,19 @@
       } else listUi.collapsed = new Set();
     },
     make(kind) {
-      const key = selected ?? 'owl';
-      const into = folderOfRow(key)?.id ?? holderOf(key);
+      const key = selected;
+      const into = key ? (folderOfRow(key)?.id ?? holderOf(key)) : null;
       if (kind === 'project') actions.newProject(into);
       else actions.newFolder(into);
     },
     shift(key, by) {
       const e = elementOf(key);
-      if (e?.src.own && project) shiftElement(project, e.src.tree, e.id, by);
+      if (e?.src.live) shiftElement(e.src.live, e.src.tree, e.id, by);
     },
     deeper(key) {
       const e = elementOf(key);
       if (e) {
-        if (e.src.own && project) indent(project, e.src.tree, e.id);
+        if (e.src.live) indent(e.src.live, e.src.tree, e.id);
         return;
       }
       const into = folderBeforeRow(key);
@@ -392,34 +380,28 @@
     shallower(key) {
       const e = elementOf(key);
       if (e) {
-        if (e.src.own && project) outdent(project, e.src.tree, e.id);
+        if (e.src.live) outdent(e.src.live, e.src.tree, e.id);
         return;
       }
       const holder = holderOf(key);
       if (holder) void moveThings(thingOf(key), projects.folder(holder)?.parent ?? null);
     },
     open(key) {
-      if (key === 'owl') return router.go({ view: 'owl' });
       const f = folderOfRow(key);
       const p = projectOf(key);
       const e = elementOf(key);
-      // Where the list chooses, a folder is folded and unfolded, and not entered.
-      if (f) {
-        if (choose) toggle(f.id);
-        else openAsMap(f);
-      } else if (p) open(p);
+      // A folder is not entered: it is folded and unfolded.
+      if (f) toggle(f.id);
+      else if (p) open(p);
       else if (e) e.src.enter(e.id);
     },
     up() {
-      const route = router.route;
-      if (route.view === 'owl' && route.at) {
-        const f = projects.folder(route.at);
-        const parent = f?.parent && projects.folder(f.parent) ? f.parent : null;
-        router.go(parent ? { view: 'owl', at: parent } : { view: 'owl' });
-      } else if (current && at && ownShown) {
-        if (at === PROJECT) upFromProject(current);
-        else onenter?.(ownShown.tree.parent.get(at) ?? PROJECT);
-      }
+      // Over the element in view in the side that has the focus; from the
+      // top of its project, to the project's row.
+      const live = current ? liveShown.get(current) : undefined;
+      if (!current || !at || !live) return;
+      if (at === PROJECT) surface.select(`p:${current}`);
+      else live.enter(live.tree.parent.get(at) ?? PROJECT);
     },
     rename(key) {
       const f = folderOfRow(key);
@@ -442,7 +424,7 @@
         ? folderItems(f)
         : p
           ? projectItems(p)
-          : e && !e.src.own
+          : e && !e.src.live
             ? elementItems(e.src, e.id)
             : null;
       if (el && items) openMenu(el, items, { align: 'start' });
@@ -464,6 +446,13 @@
   function onlistkey(event: KeyboardEvent) {
     // The field that finds a project keeps its keys.
     if ((event.target as HTMLElement).closest('input, textarea, [contenteditable="true"]')) return;
+    // The changes of folders and projects are undone here, not those of the project beside.
+    if (!choose && (event.ctrlKey || event.metaKey) && !event.altKey && event.code === 'KeyZ') {
+      event.preventDefault();
+      event.stopPropagation();
+      void (event.shiftKey ? homeUndo.redo() : homeUndo.undo());
+      return;
+    }
     // Where the list chooses, it is gone through, folded and chosen from, and nothing is changed.
     if (choose && !choosing(event)) return;
     if (!selected) {
@@ -484,6 +473,11 @@
   tabindex="-1"
   aria-label={t('home-pane')}
   onkeydown={onlistkey}
+  onfocusin={(e) => {
+    // The row that takes the focus, by a click or Tab, is the one the keys act on.
+    const focusedRow = (e.target as HTMLElement).closest<HTMLElement>('[data-row]');
+    if (focusedRow) selected = focusedRow.dataset.row!;
+  }}
   bind:this={listEl}
   use:dropTarget={{ accepts: accepts(null), ondrop: (e) => drop(e, null) }}
 >
@@ -496,46 +490,12 @@
     >
       {#snippet leading()}<Search size={14} />{/snippet}
     </TextField>
-    <Segmented
-      value={projects.shown}
-      options={forms}
-      label={t('home-shown')}
-      size="sm"
-      onchange={(kind) => projects.show(kind)}
-    />
     {#if !choose}
       <IconButton label={t('home-new-folder')} size="sm" onclick={() => actions.newFolder(null)}>
         <FolderPlus size={15} />
       </IconButton>
     {/if}
   </div>
-
-  <!-- The owl map, at the top: all the projects, as one map. Not among the projects last used, which are no tree. -->
-  {#if !recent && !choose}
-    <!-- svelte-ignore a11y_click_events_have_key_events -->
-    <div
-      class="row owl"
-      class:current={owlHere}
-      role="treeitem"
-      tabindex={tabOf('owl')}
-      aria-selected={selected === 'owl'}
-      aria-current={owlHere ? 'page' : undefined}
-      data-owl
-      data-row="owl"
-      data-row-kind="owl"
-      data-row-holds=""
-      data-row-open=""
-      data-current={owlHere ? '' : undefined}
-      style:padding-left="4px"
-      onclick={() => {
-        selected = 'owl';
-        router.go({ view: 'owl' });
-      }}
-    >
-      <Mark size={15} />
-      <span class="name serif truncate">{t('project-all-projects')}</span>
-    </div>
-  {/if}
 
   {#each rows as row (row.kind === 'folder' ? `f:${row.folder.id}` : `p:${row.project.id}`)}
     {#if row.kind === 'folder'}
@@ -550,22 +510,18 @@
         aria-expanded={row.holds ? row.open : undefined}
         data-row={fk}
         data-row-kind="folder"
-        data-row-parent={f.parent && projects.folder(f.parent) ? `f:${f.parent}` : 'owl'}
+        data-row-parent={f.parent && projects.folder(f.parent) ? `f:${f.parent}` : undefined}
         data-row-holds={row.holds ? '' : undefined}
         data-row-open={row.open ? '' : undefined}
         data-row-changeable=""
         data-depth={row.depth}
         data-folder={f.id}
-        class:current={owlAt === f.id}
-        aria-current={owlAt === f.id ? 'page' : undefined}
-        data-current={owlAt === f.id ? '' : undefined}
         style:padding-left="{left + row.depth * step}px"
         use:dropTarget={{ accepts: accepts(f.id), ondrop: (e) => drop(e, f.id) }}
         onclick={() => {
           selected = fk;
           toggle(f.id);
         }}
-        ondblclick={choose ? undefined : () => openAsMap(f)}
         oncontextmenu={choose ? undefined : (e) => openContextMenu(e, folderItems(f))}
         onpointerdown={choose
           ? undefined
@@ -580,7 +536,7 @@
         {#if !choose}
           <button
             type="button"
-            class="menu"
+            class="row-menu"
             aria-label={t('home-more-for', { name: f.name })}
             onclick={(e) => {
               e.stopPropagation();
@@ -596,27 +552,30 @@
       {@const p = row.project}
       {@const pk = `p:${p.id}`}
       {@const pf = folderOf(projects.folders, p)}
+      {@const isShown = shownIds.includes(p.id)}
+      {@const live = liveShown.get(p.id)}
+      {@const unfolded = unfoldable(p) && closedUnfolded.has(p.id)}
       <!-- svelte-ignore a11y_click_events_have_key_events -->
       <div
         class="row project"
         class:current={p.id === current && !choose}
-        class:unavailable={p.id === current && !!choose}
-        aria-disabled={p.id === current && choose ? true : undefined}
+        class:shown={isShown && p.id !== current && !choose}
+        class:unavailable={isShown && !!choose}
+        aria-disabled={isShown && choose ? true : undefined}
         role="treeitem"
         tabindex={tabOf(pk)}
         aria-selected={selected === pk}
         data-row={pk}
         data-row-kind="project"
-        data-row-parent={recent ? undefined : pf ? `f:${pf}` : 'owl'}
-        data-row-holds={!recent && (unfoldable(p) || (p.id === current && !!ownShown))
-          ? ''
-          : undefined}
-        data-row-open={p.id === current || closedUnfolded.has(p.id) ? '' : undefined}
-        data-row-changeable={p.id !== current && !choose ? '' : undefined}
+        data-row-parent={pf ? `f:${pf}` : undefined}
+        data-row-holds={unfoldable(p) || live ? '' : undefined}
+        data-row-open={live || closedUnfolded.has(p.id) ? '' : undefined}
+        data-row-changeable={!isShown && !choose ? '' : undefined}
         aria-current={p.id === current ? 'page' : undefined}
         data-depth={row.depth}
         data-project={p.id}
         data-current={p.id === current ? '' : undefined}
+        data-shown={isShown ? '' : undefined}
         title={p.name}
         style:padding-left="{left + row.depth * step}px"
         onclick={() => {
@@ -628,40 +587,35 @@
           ? undefined
           : (e) => startDrag(e, () => ({ kind: 'project', data: p.id, label: p.name }))}
       >
-        {#if !recent}
-          {@const unfolded = unfoldable(p) && closedUnfolded.has(p.id)}
-          <button
-            type="button"
-            class="fold"
-            class:open={unfolded}
-            class:hidden={!unfoldable(p)}
-            tabindex="-1"
-            aria-label={unfolded ? t('home-fold') : t('home-unfold')}
-            aria-expanded={unfoldable(p) ? unfolded : undefined}
-            onclick={(e) => {
-              e.stopPropagation();
-              toggleClosed(p);
-            }}
-            onpointerdown={(e) => e.stopPropagation()}
-          >
-            <ChevronRight size={12} />
-          </button>
-        {/if}
+        <button
+          type="button"
+          class="fold"
+          class:open={unfolded}
+          class:hidden={!unfoldable(p)}
+          tabindex="-1"
+          aria-label={unfolded ? t('home-fold') : t('home-unfold')}
+          aria-expanded={unfoldable(p) ? unfolded : undefined}
+          onclick={(e) => {
+            e.stopPropagation();
+            toggleClosed(p);
+          }}
+          onpointerdown={(e) => e.stopPropagation()}
+        >
+          <ChevronRight size={12} />
+        </button>
         <ProjectBadge
           name={p.name}
           sharing={p.sharing ? { owner: p.sharing.owner } : null}
           size={14}
         />
         <span class="name serif truncate">{p.name}</span>
-        {#if choose && p.id === current}
+        {#if choose && isShown}
           <span class="when">{t('home-open-now')}</span>
-        {:else if recent}
-          <span class="when">{ago(p.modified)}</span>
         {/if}
         {#if !choose}
           <button
             type="button"
-            class="menu"
+            class="row-menu"
             aria-label={t('home-more-for', { name: p.name })}
             onclick={(e) => {
               e.stopPropagation();
@@ -673,16 +627,16 @@
           </button>
         {/if}
       </div>
-      {#if p.id === current && ownShown && (ownShown.tree.children.get(PROJECT)?.length ?? 0) > 0}
+      {#if live && (live.tree.children.get(PROJECT)?.length ?? 0) > 0}
         <div class="tree" data-project-tree={p.id}>
           {@render branch(
-            ownShown,
-            ownShown.tree.children.get(PROJECT) ?? [],
+            live,
+            live.tree.children.get(PROJECT) ?? [],
             0,
             left + row.depth * step + 22,
           )}
         </div>
-      {:else if !recent && unfoldable(p) && closedUnfolded.has(p.id)}
+      {:else if unfoldable(p) && closedUnfolded.has(p.id)}
         {@const reading = closedTrees.get(p.id)}
         {@const indent = left + row.depth * step + 22}
         <div class="tree closed" data-closed-tree={p.id}>
@@ -734,7 +688,7 @@
         : elementRow(src, src.tree.parent.get(id)!)}
       data-row-holds={holds ? '' : undefined}
       data-row-open={open ? '' : undefined}
-      data-row-own={src.own ? '' : undefined}
+      data-row-own={src.live ? '' : undefined}
       aria-current={id === src.at ? 'location' : undefined}
       data-element={id}
       data-current={id === src.at ? '' : undefined}
@@ -744,7 +698,7 @@
         selected = elementRow(src, id);
         src.enter(id);
       }}
-      oncontextmenu={src.own || choose
+      oncontextmenu={src.live || choose
         ? undefined
         : (e) => openContextMenu(e, elementItems(src, id))}
     >
@@ -864,7 +818,7 @@
     color: var(--ink-4);
     font-variant-numeric: tabular-nums;
   }
-  .menu {
+  .row-menu {
     display: inline-flex;
     padding: 3px;
     border: none;
@@ -875,11 +829,11 @@
     opacity: 0;
     transition: opacity var(--fast) var(--ease);
   }
-  .row:hover .menu,
-  .row:focus-within .menu {
+  .row:hover .row-menu,
+  .row:focus-within .row-menu {
     opacity: 1;
   }
-  .menu:hover {
+  .row-menu:hover {
     background: var(--paper-raised);
     color: var(--ink);
   }
@@ -889,28 +843,19 @@
     font-size: var(--text-sm);
     text-align: center;
   }
-  /* The project that is open, as the outline marks the element in view. */
-  .row.owl .name {
-    color: var(--ink);
-    font-size: 15px;
-    font-weight: 500;
-  }
-  .row.owl.current,
-  .row.folder.current,
+  /* The project of the side that has the focus, as the outline marks the element in view. */
   .row.project.current {
     background: var(--accent-soft);
   }
-  /* The folder in view on the map of the projects. */
-  .row.folder.current .name {
-    color: var(--accent-strong);
-    font-weight: 550;
-  }
-  .row.owl.current .name {
-    color: var(--accent-strong);
-    font-weight: 550;
-  }
   .row.project.current .name {
     color: var(--accent-strong);
+    font-weight: 550;
+  }
+  /* The project of the other side: marked, quietly. */
+  .row.project.shown {
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+  .row.project.shown .name {
     font-weight: 550;
   }
 

@@ -785,11 +785,9 @@ try {
 app = await App.launch({ dataDir });
 try {
   await app.installErrorHook();
-  await app.waitFor('[data-owl-project]', 8000);
+  await app.waitFor('[data-projects-pane] .row.project', 8000);
   await sleep(400);
-  const facts = await app.exec(`return document.querySelector('[data-owl-project] .fold')?.textContent.trim() ?? ''`);
-  // The trees under the project, folded away: the five made here and Article, and what is under them.
-  check('the map of the projects tells how much is folded under the project', Number(facts) >= 6, facts);
+  check('the project is in the list when the application is opened again', !!(await app.findByText('[data-projects-pane] .row.project', 'Wrath').catch(() => null)));
   await app.screenshot('maps-14-projects');
   await app.openProject('Wrath');
   await app.waitFor('.pane', 8000);
@@ -832,7 +830,7 @@ try {
        own: !!own && own.classList.contains('unavailable') && own.textContent.includes('It is open now'),
        field: !!d.querySelector('input'),
        owl: !!d.querySelector('[data-owl]'),
-       menus: d.querySelectorAll('button.menu').length,
+       menus: d.querySelectorAll('button.row-menu').length,
      };`,
   );
   check('Another project… shows the list of projects, the open one greyed as open now', chooser.own && chooser.field, JSON.stringify(chooser));
@@ -860,19 +858,13 @@ try {
   check('or at the element of its tree chosen', sides.length === 2 && sides[1].endsWith(':Ithaca'), sides.join(' | '));
   check('the bar of the other side begins with its project', (await app.exec(`return document.querySelectorAll('.pane')[1]?.querySelector('.maps .project-name')?.textContent.trim() ?? ''`)) === 'Odyssey');
   await app.screenshot('maps-15c-element-beside');
-  // One at a time closes the other project; Enter beside, in the list at the left, opens it again.
+  // One at a time closes the other project; in the list at the left, Enter beside on an
+  // element of its tree, and Open beside on the project, open it again.
   await beside('One at a time');
   await sleep(400);
   check('one at a time closes the project beside', (await app.count('.pane')) === 1);
   if (!(await app.exists('[data-projects-pane]'))) await app.click('[data-projects-button]');
   await app.waitFor('[data-projects-pane] [data-project]', 5000);
-  await app.rightClick(await app.findByText('[data-projects-pane] .row.project', 'Odyssey'));
-  await offered();
-  await app.clickText('.menu [role="menuitem"]', 'Enter beside');
-  await app.waitUntil(`return document.querySelectorAll('.pane')[1]?.querySelector('.maps .map .name')?.textContent.trim() === 'Odyssey'`, 8000, 'Odyssey beside').catch(() => {});
-  sides = await shownIn();
-  check('Enter beside, in the menu of a project in the list, shows it beside', sides.length === 2 && sides[1].endsWith(':Odyssey'), sides.join(' | '));
-  // And of an element of its tree, unfolded under it in the list.
   await unfoldRow('[data-projects-pane]', 'Odyssey');
   await app.waitForText('[data-projects-pane] [data-closed-tree] .row.element', 'Ithaca', 5000);
   await app.rightClick(await app.findByText('[data-projects-pane] [data-closed-tree] .row.element', 'Ithaca'));
@@ -880,7 +872,15 @@ try {
   await app.clickText('.menu [role="menuitem"]', 'Enter beside');
   await app.waitUntil(`return document.querySelectorAll('.pane')[1]?.querySelector('.maps .map .name')?.textContent.trim() === 'Ithaca'`, 8000, 'Ithaca beside').catch(() => {});
   sides = await shownIn();
-  check('and in the menu of an element of its tree', sides.length === 2 && sides[1].endsWith(':Ithaca'), sides.join(' | '));
+  check('Enter beside, in the menu of an element of a tree in the list, shows it beside', sides.length === 2 && sides[1].endsWith(':Ithaca'), sides.join(' | '));
+  await beside('One at a time');
+  await sleep(400);
+  await app.rightClick(await app.findByText('[data-projects-pane] .row.project', 'Odyssey'));
+  await offered();
+  await app.clickText('.menu [role="menuitem"]', 'Open beside');
+  await app.waitUntil(`return document.querySelectorAll('.pane')[1]?.querySelector('.maps .map .name')?.textContent.trim() === 'Odyssey'`, 8000, 'Odyssey beside').catch(() => {});
+  sides = await shownIn();
+  check('and Open beside, in the menu of a project', sides.length === 2 && sides[1].endsWith(':Odyssey'), sides.join(' | '));
   await app.screenshot('maps-15d-enter-beside');
 
   const errors = await app.pageErrors();

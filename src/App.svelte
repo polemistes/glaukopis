@@ -21,12 +21,12 @@
   import Toaster from '$lib/ui/Toaster.svelte';
   import Rail from '$lib/shell/Rail.svelte';
   import ProjectsPane from '$lib/home/ProjectsPane.svelte';
-  import OwlView from '$lib/home/OwlView.svelte';
-  import { upFromProject } from '$lib/home/list.svelte';
+  import StartView from '$lib/home/StartView.svelte';
   import LibraryView from '$lib/library/LibraryView.svelte';
   import PicturesView from '$lib/pictures/PicturesView.svelte';
   import FilesView from '$lib/files/FilesView.svelte';
   import ProjectView, { viewing } from '$lib/project/ProjectView.svelte';
+  import { PROJECT } from '$lib/project/model/types';
   import SearchView from '$lib/search/SearchView.svelte';
   import SettingsDialog from '$lib/settings/SettingsDialog.svelte';
   import { settingsUi } from '$lib/settings/settings-ui.svelte';
@@ -165,11 +165,11 @@
   });
 
   // The settings are a window over the view that is open. The old place
-  // `#/settings` opens it over the projects, so that old links still work.
+  // `#/settings` opens it over the start screen, so that old links still work.
   $effect(() => {
     if (route.view !== 'settings') return;
     settingsUi.show();
-    router.replace({ view: 'owl' });
+    router.replace({ view: 'home' });
   });
 
   // The keys that hold wherever one is. Going to a place closes the settings,
@@ -180,13 +180,8 @@
   };
   onMount(() =>
     shortcuts.bind({
-      // To the map of all projects: from a project, at its folder with it selected.
-      projects: () => {
-        const here = router.route;
-        settingsUi.hide();
-        if (here.view === 'project') upFromProject(here.project);
-        else router.go({ view: 'owl' });
-      },
+      // To the projects: the one shown last, where it was; else the start screen.
+      projects: () => go(router.lastProject ?? { view: 'home' }),
       library: () => go({ view: 'library' }),
       pictures: () => go({ view: 'pictures' }),
       files: () => go({ view: 'files' }),
@@ -223,12 +218,13 @@
       {:else if route.view === 'project'}
         <!-- The pane of projects stands outside the view of a project, which is made anew for each. -->
         <div class="in-project">
-          {#if settings.value.projectsPane}
+          {#if settings.value.projectsList}
+            <!-- Until the view says what its sides show, the project of the place is the one shown. -->
             <ProjectsPane
-              current={route.project}
-              project={viewing.project}
-              at={viewing.at}
-              onenter={(id) => viewing.enter?.(id)}
+              sides={viewing.sides.length
+                ? viewing.sides
+                : [{ id: route.project, project: null, at: route.at ?? PROJECT, focused: true }]}
+              onenter={(project, id) => viewing.enter?.(project, id)}
             />
           {/if}
           <div class="project-view">
@@ -237,13 +233,13 @@
             {/key}
           </div>
         </div>
-      {:else if route.view === 'owl' || route.view === 'settings'}
+      {:else if route.view === 'home' || route.view === 'settings'}
         <div class="in-project">
-          {#if settings.value.projectsPane}
-            <ProjectsPane owlAt={route.view === 'owl' ? (route.at ?? null) : null} />
+          {#if settings.value.projectsList}
+            <ProjectsPane />
           {/if}
           <div class="project-view">
-            <OwlView at={route.view === 'owl' ? route.at : undefined} />
+            <StartView />
           </div>
         </div>
       {:else if route.view === 'search'}

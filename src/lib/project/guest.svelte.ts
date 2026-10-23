@@ -15,7 +15,7 @@ import { untrack } from 'svelte';
 import type { ProjectInfo, Sharing } from '$lib/api/projects';
 import { me } from '$lib/history/me.svelte';
 import { ProjectSharing } from '$lib/sharing/sharing.svelte';
-import { openProject, projects } from '$lib/state/projects.svelte';
+import { openProject, projects, rememberOpened } from '$lib/state/projects.svelte';
 import { closedHere, openHere } from './elsewhere';
 import type { Pane } from './layout';
 import type { Project } from './model/project.svelte';
@@ -67,6 +67,8 @@ export const opener: Opener = {
     const last = projects.lastOpened;
     const opened = await openProject(id);
     projects.lastOpened = last;
+    // It is shown, and the start screen counts it among those last opened.
+    rememberOpened(id);
     return opened;
   },
   share: (id, project, info) => new ProjectSharing(id, project, info),

@@ -213,7 +213,7 @@ try {
   await app.waitForText('h2', 'Welcome to Glaukopis');
   check(
     'where a project is begun, one can be made from a document',
-    /from a document/.test(await app.exec(`return document.querySelector('.owl-view .welcome').textContent`)),
+    /from a document/.test(await app.exec(`return document.querySelector('[data-start] .welcome').textContent`)),
   );
 
   await app.beginProject();
@@ -774,7 +774,7 @@ try {
   // ---- a project from a document ----
   await app.home();
   await sleep(400);
-  await app.click('[data-owl-new]');
+  await app.click('[data-projects-new]');
   await sleep(200);
   check(
     'where projects are made, one can be made from a document',
@@ -783,8 +783,8 @@ try {
     ),
   );
   await app.press('Escape');
-  // The dialog that asks for a file cannot be driven: the file is dropped on the map of the projects.
-  const among = await middleOf('[data-owl-map]');
+  // The dialog that asks for a file cannot be driven: the file is dropped on the start screen.
+  const among = await middleOf('[data-start]');
   await drop([join(desk, 'wrath.md')], among.x, among.y);
   await app.waitFor('dialog [data-fact="words"]', 15000);
   await sleep(200);

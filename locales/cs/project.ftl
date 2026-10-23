@@ -12,7 +12,6 @@ project-back = Zpět k projektům
 project-fetching = Stahuje se projekt
 project-fetching-offline = Server je nedostupný. Projekt se stáhne, až to půjde.
 project-fetching-on-the-way = Je na cestě ze serveru.
-project-all-projects = Všechny projekty
 project-name = Název projektu
 project-rename = Přejmenovat projekt
 project-not-saved = Neuloženo

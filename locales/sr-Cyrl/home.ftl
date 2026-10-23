@@ -7,9 +7,6 @@ home-new = Нови пројекат
 
 ## The two forms of the page: the last used projects as cards, all of them as a list
 
-home-shown = Шта се приказује
-home-recent = Последње коришћени
-home-all = Сви пројекти
 # Under the cards, when there are more projects than they show.
 }
 # The button that opens the menu of the page.
@@ -24,10 +21,6 @@ home-new-folder = Нова фасцикла
 home-folder-rename-title = Преименуј фасциклу
 home-folder-name-placeholder = Шта фасцикла садржи
 home-folder-name-missing = Дајте фасцикли назив.
-home-folder-projects = { $count ->
-    [one] { $count } пројекат
-    [few] { $count } пројекта
-   *[other] { $count } пројеката
 }
 home-menu-move = Премести у фасциклу
 home-menu-out = Ван фасцикли

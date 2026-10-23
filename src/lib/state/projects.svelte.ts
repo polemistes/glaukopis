@@ -8,9 +8,6 @@ import {
   foldersList,
   projectAppend,
   projectCreate,
-  owlPlaces,
-  owlPlacesSet,
-  type Place,
   projectRestore,
   projectDelete,
   projectDuplicate,
@@ -20,10 +17,8 @@ import {
   projectReadableWrite,
   projectRename,
   projectSaveState,
-  projectsShown,
   type Folder,
   type ProjectInfo,
-  type ProjectsShown,
 } from '$lib/api/projects';
 import { t } from '$lib/i18n';
 import { Project, type Persistence, type Summary } from '$lib/project/model/project.svelte';
@@ -34,11 +29,7 @@ class ProjectsState {
   list = $state.raw<ProjectInfo[]>([]);
   /** The folders the projects are put in on this computer (ADR 0031). */
   folders = $state.raw<Folder[]>([]);
-  /** Which form the list of projects shows: the folders, unless the projects last used were chosen. */
-  shown = $state<ProjectsShown>('list');
   loaded = $state(false);
-  /** Where folders and projects were put by hand on the map of the projects, by key. */
-  places = $state.raw<Record<string, Place>>({});
   /** The project that was opened last while the application has run. */
   lastOpened = $state<string | null>(null);
   /** Projects that are being closed, until what was written in them is on disk. */
@@ -60,26 +51,13 @@ class ProjectsState {
 
   async load() {
     try {
-      const [list, folders, shown, places] = await Promise.all([
-        projectList(),
-        foldersList(),
-        projectsShown(),
-        owlPlaces().catch(() => ({})),
-      ]);
+      const [list, folders] = await Promise.all([projectList(), foldersList()]);
       this.list = list;
       this.folders = folders;
-      this.places = places;
-      this.shown = shown === 'recent' ? shown : 'list';
     } catch (error) {
       notifyError(t('project-list-unreadable'), error);
     }
     this.loaded = true;
-  }
-
-  /** Shows a form of the page, and remembers it. Failing to remember it is no matter. */
-  show(kind: ProjectsShown) {
-    this.shown = kind;
-    projectsShown(kind).catch(() => {});
   }
 
   /** Makes a project, in the folder given or in none. */
@@ -153,11 +131,6 @@ class ProjectsState {
     this.folders = folders;
   }
 
-  /** Puts things on the map of the projects, or (null) lets them be placed by themselves. */
-  async setPlaces(changes: Record<string, Place | null>) {
-    this.places = await owlPlacesSet(changes);
-  }
-
   async moveToFolder(id: string, folder: string | null) {
     this.put(await projectMoveToFolder(id, folder));
   }
@@ -168,6 +141,16 @@ export const projects = new ProjectsState();
 export interface OpenProject {
   info: ProjectInfo;
   project: Project;
+}
+
+/** How many of the projects last opened are remembered. */
+const REMEMBERED = 20;
+
+/** A project was opened in a side of the window: the start screen shows it first among those last opened. */
+export function rememberOpened(id: string) {
+  const recent = settings.value.recentProjects ?? [];
+  if (recent[0] !== id)
+    settings.set('recentProjects', [id, ...recent.filter((x) => x !== id)].slice(0, REMEMBERED));
 }
 
 export async function openProject(id: string): Promise<OpenProject> {

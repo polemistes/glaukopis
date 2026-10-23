@@ -6,8 +6,7 @@
    * be shown, or, for the project itself, the trees under it; and beside it
    * a button with what can be done with the element:
    * rename, the settings of its document, the citations that were found, its
-   * language, a new element under it, a document into it, delete. At the
-   * project itself, before all, the owl, which goes up to all the projects.
+   * language, a new element under it, a document into it, delete.
    * Where the two panes show two projects, the project's name stands first,
    * in full, with its badge.
    */
@@ -25,8 +24,6 @@
   import { tick } from 'svelte';
   import { goThrough } from '$lib/found/found.svelte';
   import ProjectBadge from '$lib/home/ProjectBadge.svelte';
-  import Mark from '$lib/shell/Mark.svelte';
-  import { router } from '$lib/state/router.svelte';
   import { countFound } from '$lib/found/gather';
   import { aboutDocumentUi } from '$lib/document/about-document.svelte';
   import { templateChooserUi } from '$lib/document/chooser.svelte';
@@ -52,10 +49,6 @@
     ondocument?: () => void;
     /** The project named first, with its badge: where the two panes show two projects. */
     named?: { name: string; sharing?: { owner: boolean } | null } | null;
-    /** Whether the owl at the project goes up to all the projects: in the first pane. */
-    home?: boolean;
-    /** Goes up from the project, to the map of the projects; where it is not given, to the owl. */
-    onhome?: () => void;
   }
 
   let {
@@ -66,8 +59,6 @@
     onbeside,
     ondocument,
     named = null,
-    home = true,
-    onhome,
   }: Props = $props();
 
   const tree = $derived(project.tree());
@@ -82,12 +73,6 @@
   /** The element that is being named in the bar, and what is written. */
   let naming = $state<{ id: string; value: string } | null>(null);
   let input = $state<HTMLInputElement>();
-
-  /** Up from the project: to all the projects, as the owl's map shows them. */
-  function goHome() {
-    if (onhome) onhome();
-    else router.go({ view: 'owl' });
-  }
 
   function nameOf(id: string): string {
     return project.node(id)?.title || t('project-untitled');
@@ -210,19 +195,6 @@
       }}
     />
   {:else}
-    {#if at === PROJECT && home}
-      <button
-        type="button"
-        class="up home"
-        aria-label={t('project-all-projects')}
-        use:tooltip={{ text: t('project-up-home-hint'), side: 'bottom' }}
-        onclick={goHome}
-      >
-        <Mark size={16} />
-        <span>{t('project-all-projects')}</span>
-        <ChevronRight size={12} />
-      </button>
-    {/if}
     {#if named}
       {#if at === PROJECT}
         <ProjectBadge name={named.name} sharing={named.sharing} />
@@ -330,12 +302,6 @@
   .up:hover {
     background: var(--paper-hover);
     color: var(--ink);
-  }
-  .up.home {
-    gap: 5px;
-    max-width: none;
-    padding-left: 4px;
-    white-space: nowrap;
   }
   /* The project, named first where two are side by side: its name whole, never cut. */
   .project {

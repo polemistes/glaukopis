@@ -843,7 +843,7 @@ try {
   await sleep(900);
   {
     const among = await app.exec(
-      `const r = document.querySelector('[data-owl-map]').getBoundingClientRect();
+      `const r = document.querySelector('[data-start]').getBoundingClientRect();
        return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };`,
     );
     await drop([join(documents, 'cited.docx')], among.x, among.y);

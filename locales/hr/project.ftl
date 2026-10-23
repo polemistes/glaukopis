@@ -12,7 +12,6 @@ project-back = Natrag na projekte
 project-fetching = Dohvaćanje projekta
 project-fetching-offline = Poslužitelj nije dostupan. Projekt će se dohvatiti kad bude moguće.
 project-fetching-on-the-way = Na putu je s poslužitelja.
-project-all-projects = Svi projekti
 project-name = Naziv projekta
 project-rename = Preimenuj projekt
 project-not-saved = Nije spremljeno

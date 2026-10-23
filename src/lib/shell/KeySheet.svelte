@@ -11,7 +11,7 @@
     'project',
     'tree',
     'diagram',
-    'owl',
+    'list',
     'text',
     'writing',
     'review',

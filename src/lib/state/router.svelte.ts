@@ -6,8 +6,8 @@
 export type MapMode = 'diagram' | 'text' | 'timeline';
 
 export type Route =
-  /** The map of all projects, the home: at the owl, or at a folder that was entered. */
-  | { view: 'owl'; at?: string }
+  /** The start screen, while no project is open (ADR 0063). */
+  | { view: 'home' }
   | { view: 'library'; collection?: string; entry?: string }
   | { view: 'pictures'; picture?: string }
   /** The files of the library, in the library's place: the folder in view, and the file selected. */
@@ -51,30 +51,29 @@ export function parseRoute(hash: string): Route {
         file: params.get('file') ?? undefined,
       };
     case 'project':
-      if (!parts[1]) return { view: 'owl' };
+      if (!parts[1]) return { view: 'home' };
       return {
         view: 'project',
         project: parts[1],
         at: parts[2],
         mode: (['text', 'diagram', 'timeline'] as const).find((m) => m === params.get('mode')),
       };
-    case 'owl':
-      return parts[1] ? { view: 'owl', at: parts[1] } : { view: 'owl' };
     case 'settings':
       return { view: 'settings', section: parts[1] };
     case 'search':
       return { view: 'search' };
     default:
-      // The home: the map of all projects, as `#/`, `#/projects` and anything not known.
-      return { view: 'owl' };
+      // The start screen, as `#/`; and the old places of the home, `#/owl` and
+      // `#/projects`, and anything not known.
+      return { view: 'home' };
   }
 }
 
 export function formatRoute(route: Route): string {
   const e = encodeURIComponent;
   switch (route.view) {
-    case 'owl':
-      return route.at ? `#/owl/${e(route.at)}` : '#/';
+    case 'home':
+      return '#/';
     case 'library': {
       const params = new URLSearchParams();
       if (route.collection) params.set('collection', route.collection);
@@ -106,13 +105,30 @@ export function formatRoute(route: Route): string {
 
 class Router {
   route = $state<Route>(parseRoute(typeof location === 'undefined' ? '' : location.hash));
+  /**
+   * The project shown last while the application has run, at its element and
+   * in its view: where the house in the rail goes back to. None once it is
+   * closed.
+   */
+  lastProject = $state<Extract<Route, { view: 'project' }> | null>(null);
 
   constructor() {
+    this.#follow(this.route);
     if (typeof window !== 'undefined') {
       window.addEventListener('hashchange', () => {
         this.route = parseRoute(location.hash);
+        this.#follow(this.route);
       });
     }
+  }
+
+  #follow(route: Route) {
+    if (route.view === 'project') this.lastProject = route;
+  }
+
+  /** The project shown last was closed: the house goes to the start screen. */
+  forgetProject(id?: string) {
+    if (!id || this.lastProject?.project === id) this.lastProject = null;
   }
 
   go(route: Route) {
@@ -127,6 +143,7 @@ class Router {
     if (location.hash === hash) return;
     history.replaceState(null, '', hash);
     this.route = route;
+    this.#follow(route);
   }
 }
 

@@ -7,10 +7,6 @@ home-new = Nytt prosjekt
 
 ## Sidens tre former: de sist brukte prosjektene som kort, alle som en liste, alle som et kart rundt uglen
 
-home-shown = Hva som vises
-home-recent = Sist brukt
-home-all = Mapper
-home-owl = Kart
 home-page-menu = Mer
 home-search = Finn et prosjekt
 home-search-none = Ingen prosjekter har det navnet.
@@ -22,9 +18,6 @@ home-new-folder = Ny mappe
 home-folder-rename-title = Gi mappen nytt navn
 home-folder-name-placeholder = Det mappen rommer
 home-folder-name-missing = Gi mappen et navn.
-home-folder-projects = { $count ->
-    [one] { $count } prosjekt
-   *[other] { $count } prosjekter
 }
 home-menu-move = Flytt til mappe
 home-menu-out = Ut av mappene
@@ -43,8 +36,13 @@ home-pane-toggle = Prosjektlisten
 home-pane-close = Lukk prosjektlisten
 home-pane-between = Mellom prosjektlisten og prosjektet
 home-open-now = Det er åpent nå
-home-open-beside = Gå inn ved siden av
+home-open-beside = Åpne ved siden av
+home-enter-beside = Gå inn ved siden av
 home-enter = Gå inn
+home-open = Åpne
+home-close = Lukk
+home-new-menu = Nytt prosjekt, ny mappe, eller bli med i eller åpne et
+home-start-recent = Sist åpnet
 home-fold = Brett sammen
 home-unfold = Brett ut
 home-tree-unreadable = Det kunne ikke leses
@@ -52,45 +50,23 @@ home-tree-empty = Ingenting i det ennå
 
 ## Uglekartet: prosjektene tegnet rundt uglen, mappene som enkle merkelapper
 
-home-owl-fit = Vis alt
 # Selve kartet, som en liste lest høyt.
-home-owl-label = Kartet over prosjektene
 # Hjørnet på et kort som åpner prosjektet, og på en mappe som viser den midt i kartet.
 # Hjørnet på mappen i midten: opp til det som rommer den.
-home-owl-leave = Opp til «{ $name }»
 # Menyene i kartet og på en mappe i det: noe nytt laget her, med navnet skrevet på stedet.
 home-owl-new-project = Nytt prosjekt her
 home-owl-new-folder = Ny mappe her
 # Det en ny mappe eller et nytt prosjekt heter til navnet er skrevet.
-home-owl-name = Navn
 # Ved pekeren, mens flere mapper og prosjekter dras.
-home-owl-not-into-project = Et prosjekt legges i en mappe, ikke i et prosjekt
-home-owl-dragged = { $count ->
-    [one] { $count } ting
-   *[other] { $count } ting
 }
 # På et kort: kartet til prosjektet, vist under det på kartet over prosjektene, eller skjult.
-home-owl-map-reading = Leser kartet …
 # På et element i kartet til et prosjekt: prosjektet åpnet der.
 # Menyen i kartet: det som ble plassert for hånd, plasseres av seg selv igjen.
-home-owl-tidy = Plasser alt av seg selv
-home-owl-tidied = Alt på kartet plasseres av seg selv igjen
 # Det en endring i kartet sier, med en vei tilbake.
-home-owl-placed = «{ $name }» ble satt der
-home-owl-placed-many = { $count ->
-    [one] { $count } ting ble satt der
-   *[other] { $count } ting ble satt der
 }
-home-owl-elements-moved = { $count ->
-    [one] Et element i «{ $project }» ble flyttet
-   *[other] { $count } elementer i «{ $project }» ble flyttet
 }
-home-owl-elements-carried = { $count ->
-    [one] Et element ble flyttet til «{ $to }»
-   *[other] { $count } elementer ble flyttet til «{ $to }»
 }
 # Linjen over kartet, ved en mappe: det som rommer den.
-home-owl-in = I «{ $name }»
 
 ## Et kart over prosjektene
 

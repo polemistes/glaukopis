@@ -80,7 +80,7 @@ function view(project: Project | null, saving?: (view: StoredView) => Promise<vo
 }
 
 afterEach(() => {
-  router.route = { view: 'owl' };
+  router.route = { view: 'home' };
 });
 
 describe('the view of a project as it is kept', () => {

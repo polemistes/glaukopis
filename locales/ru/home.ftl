@@ -7,9 +7,6 @@ home-new = Новый проект
 
 ## The two forms of the page: the last used projects as cards, all of them as a list
 
-home-shown = Что показывать
-home-recent = Недавние
-home-all = Все проекты
 # Under the cards, when there are more projects than they show.
 # The button that opens the menu of the page.
 home-page-menu = Ещё
@@ -23,11 +20,6 @@ home-new-folder = Новая папка
 home-folder-rename-title = Переименовать папку
 home-folder-name-placeholder = Что лежит в папке
 home-folder-name-missing = Дайте папке название.
-home-folder-projects = { $count ->
-    [one] { $count } проект
-    [few] { $count } проекта
-    [many] { $count } проектов
-   *[other] { $count } проекта
 }
 home-menu-move = Переместить в папку
 home-menu-out = Вне папок

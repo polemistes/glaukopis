@@ -7,10 +7,6 @@ home-new = Nuovo progetto
 
 ## The three forms of the page: the last used projects as cards, all of them as a list, all of them as a map around the owl
 
-home-shown = Che cosa è mostrato
-home-recent = Usati di recente
-home-all = Tutti i progetti
-home-owl = Mappa
 # Under the cards, when there are more projects than they show.
 # The button that opens the menu of the page.
 home-page-menu = Altro
@@ -24,10 +20,6 @@ home-new-folder = Nuova cartella
 home-folder-rename-title = Rinomina la cartella
 home-folder-name-placeholder = Che cosa contiene la cartella
 home-folder-name-missing = Dai un nome alla cartella.
-home-folder-projects = { $count ->
-    [one] { $count } progetto
-    [many] { $count } progetti
-   *[other] { $count } progetti
 }
 home-menu-move = Sposta nella cartella
 home-menu-out = Fuori dalle cartelle
@@ -49,7 +41,6 @@ home-pane-between = Tra l'elenco dei progetti e il progetto
 # Why the project that is open cannot be renamed or deleted from its menu.
 home-open-now = Ora è aperto
 # On the menu of a project, or of an element of one, in the pane: shows it in a second pane, beside the project that is open.
-home-open-beside = Apri accanto
 # Under a project that is not open, in the pane, when what it holds could not be read.
 home-tree-unreadable = Non si è potuto leggere
 # Under a project that is not open, in the pane, when it holds no elements yet.
@@ -58,49 +49,24 @@ home-tree-empty = Ancora vuoto
 ## The owl map: the projects drawn around the owl, the folders as plain labels
 
 # The button that shows all of the map at once.
-home-owl-fit = Mostrala tutta
 # On a folder of the map: its projects are hidden, or shown.
 # The map itself, as a list read aloud.
-home-owl-label = La mappa dei progetti
 # The corner of a card that opens the project, and of a folder that shows it at the centre of the map.
 # The corner of the folder at the centre: up to what holds it.
-home-owl-leave = Risali a «{ $name }»
 # The menus of the map and of a folder on it: a new one made here, its name written in place.
 home-owl-new-project = Nuovo progetto qui
 home-owl-new-folder = Nuova cartella qui
 # What a new folder or project is called until its name is written.
-home-owl-name = Nome
 # Beside the pointer, while several folders and projects are dragged.
-home-owl-dragged = { $count ->
-    [one] { $count } cosa
-    [many] { $count } cose
-   *[other] { $count } cose
 }
 # On a card: the map of the project, shown under it on the map of the projects, or hidden.
-home-owl-map-reading = Lettura della sua mappa…
 # On an element of a project's map: the project opened there.
 # The menu of the map: what was put by hand is placed by itself again.
-home-owl-tidy = Disponi tutto automaticamente
-home-owl-tidied = Tutto sulla mappa è di nuovo disposto automaticamente
 # What a change of the map says, with a way back.
-home-owl-placed = «{ $name }» ora sta lì
-home-owl-placed-many = { $count ->
-    [one] { $count } cosa è stata messa lì
-    [many] { $count } cose sono state messe lì
-   *[other] { $count } cose sono state messe lì
 }
-home-owl-elements-moved = { $count ->
-    [one] Un elemento di «{ $project }» è stato spostato
-    [many] { $count } elementi di «{ $project }» sono stati spostati
-   *[other] { $count } elementi di «{ $project }» sono stati spostati
 }
-home-owl-elements-carried = { $count ->
-    [one] Un elemento è stato spostato in «{ $to }»
-    [many] { $count } elementi sono stati spostati in «{ $to }»
-   *[other] { $count } elementi sono stati spostati in «{ $to }»
 }
 # The bar over the map, at a folder: what holds it.
-home-owl-in = In «{ $name }»
 
 ## A map of the projects
 

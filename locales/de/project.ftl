@@ -12,7 +12,6 @@ project-back = Zurück zu den Projekten
 project-fetching = Das Projekt wird geholt
 project-fetching-offline = Der Server ist nicht zu erreichen. Das Projekt wird geholt, sobald es geht.
 project-fetching-on-the-way = Es ist vom Server unterwegs.
-project-all-projects = Alle Projekte
 project-name = Name des Projekts
 project-rename = Projekt umbenennen
 project-not-saved = Nicht gespeichert
@@ -77,7 +76,6 @@ project-siblings-hint = Die Elemente neben diesem: wählen Sie eines, um es zu z
 project-trees-hint = Die Elemente unter dem Projekt: wählen Sie eines, um es zu zeigen
 project-shown-beside = neben diesem
 # The owl before the name of the project itself, in the first pane: up to all the projects.
-project-up-home-hint = Hinauf zu allen Projekten · Alt+Umschalt+↑
 # The sign of a project, read aloud, where it is shared.
 project-badge-shared = { $name }, von Ihnen geteilt
 project-badge-joined = { $name }, beigetreten

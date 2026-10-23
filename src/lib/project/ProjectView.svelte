@@ -1,18 +1,31 @@
 <script module lang="ts">
   import type { Project } from './model/project.svelte';
 
+  /** A side of the view, as the list of projects is told of it (ADR 0063). */
+  export interface ShownSide {
+    /** The project's id. */
+    id: string;
+    /** The project itself, once it is open: the list shows its tree from it. */
+    project: Project | null;
+    /** The element in view in that side. */
+    at: string;
+    /** Whether the side has the focus. */
+    focused: boolean;
+  }
+
   /**
-   * What the pane of projects, which stands outside the view and lasts from
-   * one project to the next, is told of the one that is open: the project,
-   * the element in view of the pane that has the focus, and how an element
-   * is entered; and how another project, or an element of it, is opened
-   * beside, in the second pane. Nothing while no project is open.
+   * What the list of projects, which stands outside the view and lasts from
+   * one project to the next, is told of what is shown: the projects of the
+   * sides, each once, with the element in view there; how an element of one
+   * is entered; how another project, or an element of it, is opened beside,
+   * in the second side; and how the sides that show a project are closed.
+   * Nothing while no project is open.
    */
   class Viewing {
-    project = $state.raw<Project | null>(null);
-    at = $state<string | null>(null);
-    enter: ((id: string) => void) | null = null;
+    sides = $state.raw<ShownSide[]>([]);
+    enter: ((project: string, id: string) => void) | null = null;
     beside: ((projectId: string, at?: string) => void) | null = null;
+    close: ((projectId: string) => void) | null = null;
   }
 
   export const viewing = new Viewing();
@@ -59,14 +72,13 @@
   import { editorUi, hooksOf } from '$lib/editor/ui.svelte';
   import { beforeClose } from '$lib/state/closing';
   import { library } from '$lib/state/library.svelte';
-  import { openProject, projects } from '$lib/state/projects.svelte';
+  import { openProject, projects, rememberOpened } from '$lib/state/projects.svelte';
   import { jumpFor } from '$lib/search/everything.svelte';
   import { takeCitations } from '$lib/library/citing.svelte';
   import { router, type MapMode } from '$lib/state/router.svelte';
-  import { upFromProject } from '$lib/home/list.svelte';
+  import { toggleProjectsPane, toList } from '$lib/home/list.svelte';
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import { keysFor, shortcuts } from '$lib/shell/keys.svelte';
-  import { toggleProjectsPane } from '$lib/home/list.svelte';
   import { settings } from '$lib/state/settings.svelte';
   import Button from '$lib/ui/Button.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
@@ -259,11 +271,6 @@
     focused = 1;
   }
 
-  /** Up from the project: to the map of the projects, at the folder it lies in. */
-  function goHome() {
-    upFromProject(projectId);
-  }
-
   /** Elements dragged from the other pane, of another project, over a pane: where, and what a drop will do. */
   const carrying = $derived.by(() => {
     const d = drag.payload;
@@ -289,13 +296,27 @@
     if (p) await keepReference(p, id);
   }
 
-  // The pane of projects, outside the view, shows the project and where one
-  // is in it. It depends on the project and on the element in view of the
-  // pane of the project of the view.
+  // The list of projects, outside the view, shows the projects of the sides
+  // and where one is in each. It depends on the project, the project beside,
+  // the panes and which has the focus. Two sides of the project of the view
+  // are one project to the list, at the element of the one with the focus.
   $effect(() => {
-    viewing.project = project;
-    viewing.at = ownPane?.at ?? null;
-    viewing.enter = (id) => show(id);
+    const sides: ShownSide[] = [];
+    panes.forEach((p, i) => {
+      const id = p.project ?? projectId;
+      const has = i === Math.min(focused, panes.length - 1);
+      const there = sides.find((s) => s.id === id);
+      if (there) {
+        if (has) Object.assign(there, { at: p.at, focused: true });
+        return;
+      }
+      sides.push({ id, project: p.project ? projectOf(p) : project, at: p.at, focused: has });
+    });
+    viewing.sides = sides;
+    viewing.enter = (id, element) => {
+      const i = panes.findIndex((p) => (p.project ?? projectId) === id);
+      if (i >= 0) show(element, { pane: id === projectId ? ownIndex : i });
+    };
     viewing.beside = besideProject;
   });
 
@@ -371,6 +392,7 @@
       // svelte-ignore state_referenced_locally
       const opened = await openProject(projectId);
       const p = opened.project;
+      rememberOpened(ownId);
       // Gone while it was read: what was opened is let go at once, before it
       // is shared, turns the store of pictures to it, or is counted as open
       // here, since nothing would ever close it after.
@@ -434,7 +456,7 @@
         () => notify(title, t('project-unshared-unfetched')),
         (error) => notifyError(t('project-unshared-not-removed'), error),
       );
-      router.go({ view: 'owl' });
+      router.go({ view: 'home' });
       return;
     }
     void confirm({
@@ -520,11 +542,11 @@
     side.review?.close();
     comparing.copy = null;
     release?.();
-    if (viewing.project === project) {
-      viewing.project = null;
-      viewing.at = null;
+    if (viewing.sides.some((s) => s.id === ownId)) {
+      viewing.sides = [];
       viewing.enter = null;
       viewing.beside = null;
+      viewing.close = null;
     }
     if (project) closedHere(ownId, project);
     void guest.leave();
@@ -625,7 +647,7 @@
   /**
    * Goes up in a pane, the one that has the focus unless one is named: enters the parent of the
    * element in view, with the element one came from shown; from the
-   * project itself, in the first pane, to all the projects.
+   * project itself, into the list of projects, at its row.
    */
   function up(i = Math.min(focused, panes.length - 1)) {
     const p = panes[i];
@@ -633,7 +655,7 @@
     if (!of || !p) return;
     const parent = of.tree().parent.get(p.at);
     if (parent) show(parent, { pane: i, element: p.at });
-    else if (i === 0 && p.at === PROJECT) goHome();
+    else if (p.at === PROJECT) toList(p.project ?? projectId);
   }
 
   /**
@@ -878,7 +900,7 @@
     title={t('project-open-failed')}
     text={failure || t('project-open-failed-detail')}
   >
-    <Button onclick={() => router.go({ view: 'owl' })}>{t('project-back')}</Button>
+    <Button onclick={() => router.go({ view: 'home' })}>{t('project-back')}</Button>
   </EmptyState>
 {:else if project && !pane && shared?.shared}
   <EmptyState
@@ -888,7 +910,7 @@
       ? t('project-fetching-offline')
       : t('project-fetching-on-the-way')}
   >
-    <Button onclick={() => router.go({ view: 'owl' })}>{t('project-back')}</Button>
+    <Button onclick={() => router.go({ view: 'home' })}>{t('project-back')}</Button>
   </EmptyState>
 {:else if !project || !pane}
   <div class="centre"><Spinner size={22} /></div>
@@ -1052,7 +1074,7 @@
                   label={t('home-pane-toggle')}
                   shortcut={keysFor('projects-pane')}
                   size="sm"
-                  active={settings.value.projectsPane}
+                  active={settings.value.projectsList}
                   data-projects-button
                   onclick={toggleProjectsPane}
                 >
@@ -1079,8 +1101,6 @@
                     ? undefined
                     : async () => documentsIn([await chooseDocument()])}
                   named={namedIn(p)}
-                  home={i === 0}
-                  onhome={goHome}
                 />
               {/if}
               {#if p.mode === 'text' && of}

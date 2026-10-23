@@ -7,9 +7,6 @@ home-new = Νέο έργο
 
 ## The two forms of the page: the last used projects as cards, all of them as a list
 
-home-shown = Τι εμφανίζεται
-home-recent = Πρόσφατα
-home-all = Όλα τα έργα
 # Under the cards, when there are more projects than they show.
 # The button that opens the menu of the page.
 home-page-menu = Περισσότερα
@@ -23,9 +20,6 @@ home-new-folder = Νέος φάκελος
 home-folder-rename-title = Μετονομασία φακέλου
 home-folder-name-placeholder = Τι περιέχει ο φάκελος
 home-folder-name-missing = Δώστε όνομα στον φάκελο.
-home-folder-projects = { $count ->
-    [one] { $count } έργο
-   *[other] { $count } έργα
 }
 home-menu-move = Μετακίνηση σε φάκελο
 home-menu-out = Έξω από τους φακέλους

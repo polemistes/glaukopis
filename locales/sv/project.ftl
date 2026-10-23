@@ -12,7 +12,6 @@ project-back = Tillbaka till projekten
 project-fetching = Hämtar projektet
 project-fetching-offline = Servern kan inte nås. Projektet hämtas när det går.
 project-fetching-on-the-way = Det är på väg från servern.
-project-all-projects = Alla projekt
 project-name = Projektets namn
 project-rename = Byt namn på projektet
 project-not-saved = Inte sparat
@@ -77,7 +76,6 @@ project-siblings-hint = Elementen bredvid det här: välj ett för att visa det
 project-trees-hint = Elementen under projektet: välj ett för att visa det
 project-shown-beside = bredvid det här
 # The owl before the name of the project itself, in the first pane: up to all the projects.
-project-up-home-hint = Upp till alla projekt · Alt+Skift+↑
 # The sign of a project, read aloud, where it is shared.
 project-badge-shared = { $name }, delat av dig
 project-badge-joined = { $name }, som du gått med i

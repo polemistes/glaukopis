@@ -25,7 +25,7 @@ export type Place =
   | 'review'
   | 'tree'
   | 'diagram'
-  | 'owl'
+  | 'list'
   | 'text'
   | 'writing'
   | 'library'
@@ -57,18 +57,18 @@ export const TOGETHER: Readonly<Record<Place, readonly Place[]>> = {
     'review',
     'tree',
     'diagram',
-    'owl',
+    'list',
     'text',
     'writing',
     'library',
     'store',
     'files',
   ],
-  project: ['everywhere', 'project', 'review', 'tree', 'diagram', 'text', 'writing'],
+  project: ['everywhere', 'project', 'review', 'tree', 'diagram', 'list', 'text', 'writing'],
   review: ['everywhere', 'project', 'review', 'tree', 'text', 'writing'],
-  tree: ['everywhere', 'project', 'review', 'tree', 'diagram', 'owl', 'text', 'writing'],
+  tree: ['everywhere', 'project', 'review', 'tree', 'diagram', 'list', 'text', 'writing'],
   diagram: ['everywhere', 'project', 'tree', 'diagram'],
-  owl: ['everywhere', 'tree', 'owl'],
+  list: ['everywhere', 'project', 'tree', 'list'],
   text: ['everywhere', 'project', 'review', 'tree', 'text', 'writing'],
   writing: ['everywhere', 'project', 'review', 'tree', 'text', 'writing'],
   library: ['everywhere', 'library'],
@@ -119,8 +119,8 @@ const ENTRIES = [
   { id: 'review-accept', keys: 'Ctrl+Alt+Y', place: 'review', bound: true },
   { id: 'review-reject', keys: 'Ctrl+Alt+N', place: 'review', bound: true },
 
-  // In the tree, wherever it is shown: the diagram, the text, the map of
-  // all projects, the list at the left. One key for each act; Alt+Shift+Up
+  // In the tree, wherever it is shown: the diagram, the text, the list at
+  // the left. One key for each act; Alt+Shift+Up
   // is bound by the project view itself, since the table cannot match an arrow.
   { id: 'tree-new', keys: 'Alt+Enter', place: 'tree' },
   { id: 'tree-new-under', keys: 'Alt+Shift+Enter', place: 'tree' },
@@ -146,12 +146,10 @@ const ENTRIES = [
   { id: 'diagram-closer', keys: 'Ctrl+=', place: 'diagram' },
   { id: 'diagram-farther', keys: 'Ctrl+-', place: 'diagram' },
 
-  // On the map of the projects: the keys of the diagram, over folders and projects.
-  { id: 'owl-undo', keys: 'Ctrl+Z', place: 'owl' },
-  { id: 'owl-redo', keys: 'Ctrl+Shift+Z', place: 'owl' },
-  { id: 'owl-whole', keys: 'Ctrl+0', place: 'owl' },
-  { id: 'owl-closer', keys: 'Ctrl+=', place: 'owl' },
-  { id: 'owl-farther', keys: 'Ctrl+-', place: 'owl' },
+  // In the list of projects at the left: the changes of folders and
+  // projects are undone there, not those of the project open beside it.
+  { id: 'list-undo', keys: 'Ctrl+Z', place: 'list', over: ['undo'] },
+  { id: 'list-redo', keys: 'Ctrl+Shift+Z', place: 'list', over: ['redo'] },
 
   // In the text of a map, besides the keys of the tree.
   { id: 'text-outline', keys: 'Ctrl+Shift+O', place: 'project', bound: true },

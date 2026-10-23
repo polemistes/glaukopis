@@ -1,6 +1,6 @@
 /**
  * What the keys do in the list of projects at the left, as they do in the
- * diagram, the text and on the map of all projects (ADR 0062): one row is
+ * diagram and the text (ADR 0062, 0063): one row is
  * selected, and the keys go about the rows, fold, make, move, enter, rename,
  * delete and open the menu. Pure, over a surface the list gives, so that it
  * can be tested without the interface.
@@ -9,16 +9,16 @@
 /** A row of the list as the keys see it. */
 export interface ListRow {
   key: string;
-  kind: 'owl' | 'folder' | 'project' | 'element';
+  kind: 'folder' | 'project' | 'element';
   /** The row it stands under; none at the top. */
   parent: string | null;
   /** Whether anything can be shown under it. */
   holds: boolean;
   /** Whether what is under it is shown. */
   unfolded: boolean;
-  /** Whether it can be renamed and deleted from here: not the open project, not an element. */
+  /** Whether it can be renamed and deleted from here: not a project that is shown, not an element. */
   changeable: boolean;
-  /** An element of the open project, which moves as it does in the project. */
+  /** An element of a project shown in a side, which moves as it does in the project. */
   own: boolean;
 }
 
@@ -40,9 +40,9 @@ export interface ListSurface {
   deeper(key: string): void;
   /** Out of its folder, or one level less deep. */
   shallower(key: string): void;
-  /** What a click on the row does: open a project, enter an element or a folder. */
+  /** What a click on the row does: open a project, enter an element, fold a folder. */
   open(key: string): void;
-  /** Up from where one is: to what holds the folder in view, or over the element in view. */
+  /** Up from where one is: over the element in view in the side that has the focus. */
   up(): void;
   rename(key: string, startingWith?: string): void;
   remove(key: string): void;
@@ -72,14 +72,14 @@ export function pressed(event: KeyboardEvent, list: ListSurface): boolean {
   // Alt+Shift and the arrows up and down go in and out.
   if (event.altKey && event.shiftKey && event.key.startsWith('Arrow')) {
     if (event.key === 'ArrowUp') list.up();
-    else if (event.key === 'ArrowDown' && row && row.kind !== 'owl') list.open(row.key);
+    else if (event.key === 'ArrowDown' && row) list.open(row.key);
     return true;
   }
 
   // Alt and the arrows move what is selected: up and down an element of the
   // open project; right deeper, left less deep.
   if (event.altKey && event.key.startsWith('Arrow')) {
-    if (!row || row.kind === 'owl') return true;
+    if (!row) return true;
     if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
       if (row.own) list.shift(row.key, event.key === 'ArrowUp' ? -1 : 1);
     } else if (row.changeable || row.own) {
@@ -95,7 +95,9 @@ export function pressed(event: KeyboardEvent, list: ListSurface): boolean {
     return true;
   }
 
-  switch (event.key) {
+  // Under X, Shift+Tab arrives by another name: Tab is known by where it is on the keyboard.
+  const key = event.code === 'Tab' ? 'Tab' : event.key;
+  switch (key) {
     case 'ArrowUp':
       go(row ? rows[at - 1]?.key : rows[0]?.key);
       break;

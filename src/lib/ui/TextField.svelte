@@ -36,7 +36,7 @@
 
 <div class="field {size}" class:invalid={!!error}>
   {#if label}<label for={fieldId}>{label}</label>{/if}
-  <div class="box">
+  <div class="frame">
     {#if leading}<span class="adornment">{@render leading()}</span>{/if}
     <input
       bind:this={el}
@@ -68,7 +68,7 @@
     font-weight: 500;
     color: var(--ink-2);
   }
-  .box {
+  .frame {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -81,20 +81,20 @@
       border-color var(--fast) var(--ease),
       box-shadow var(--fast) var(--ease);
   }
-  .sm .box {
+  .sm .frame {
     height: 26px;
     padding: 0 7px;
   }
-  .lg .box {
+  .lg .frame {
     height: 38px;
     padding: 0 12px;
     font-size: var(--text-lg);
   }
-  .box:focus-within {
+  .frame:focus-within {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--focus-ring);
   }
-  .invalid .box {
+  .invalid .frame {
     border-color: var(--danger);
   }
   input {

@@ -57,142 +57,80 @@ printed as a document of its own (see *One tree, entered anywhere*).
 
 Everything is saved as you work. There is nothing to press.
 
-To go from one project to another without going home, open **the list of
-projects** at the left, with the button at the left of the bar over the map
-or **Ctrl+Shift+L**. It has the folders and a field that finds a project by
-its name; a click opens a project, and the one that is open is marked. Under the open project stands its whole tree, folded but for the way
-down to the element in view, which is marked; a click on an element enters
-it (see *One tree, entered anywhere*). The list stays open from project to
-project until you close it, and its edge can be dragged to make it wider.
+**The list of projects** stands at the left: the folders, the projects in
+them, and under the project you are in its whole tree, folded but for the
+way down to the element in view, which is marked. A click on a project opens
+it, and a click on an element enters it (see *One tree, entered anywhere*).
+**Ctrl+Shift+L**, the × at its head or the button at the left of the bar
+over the map hides it and shows it again; its edge can be dragged to make it
+wider. It stays as you leave it.
 
 ### Many projects
 
-The home of Glaukopis is the map of all projects (see *The map of the
-projects*): the house in the rail and **Ctrl+1** come to it, from a project
-to the folder the project is in, with the project selected. With no project
-yet, it welcomes you, with **Begin a project** and the other ways to begin.
-Afterwards the **+** at the right of its bar has them: **New project…**,
-**New folder**, **Join a shared project…**, **A project from a document…**,
-**Open a project file…** and **Open an Org file…**; a document dropped on
-the map becomes a project as well, in the folder in view. The **⋯** beside
-it has the deleted projects, with their number, and **A project of all the
-projects…**.
+The list is where projects are kept, opened and closed. At its head, the
+**+** has **New project…**, **New folder**, **Join a shared project…**, **A
+project from a document…**, **Open a project file…** and **Open an Org
+file…**; the **⋯** beside it has the deleted projects, with their number,
+and **A project of all the projects…**. Under the head, a field finds a
+project by its name, and the button beside it makes a folder.
 
-The list of projects at the left has two forms, chosen at its head and
-remembered. **Folders** is a line for each project, in folders: make a
-folder with the button beside the field, or inside another from that
-folder's menu; drag a project onto a folder, or choose **Move to folder**
-in its menu, and **Out of folders** to take it out again. A folder shows how
-many projects it holds, and is opened and closed with a click; a double
-click enters it on the map. **Last used** shows the twelve projects last
-worked on, the newest first, each with when it was changed. Deleting a
-folder keeps what is in it, which moves up to where the folder was. The
-folders are kept on this computer alone, not in the projects: a project you
-share is in your folders, not in the others'. Folders and projects stand in
-the order of their names, in the list and on the map.
+A folder is opened and closed with a click, and shows how many projects it
+holds. Make one inside another from that folder's menu; drag a project onto
+a folder, or choose **Move to folder** in its menu, and **Out of folders**
+to take it out again. Deleting a folder keeps what is in it, which moves up
+to where the folder was. The folders are kept on this computer alone, not in
+the projects: a project you share is in your folders, not in the others'.
+Folders and projects stand in the order of their names.
 
-A project and a folder have one menu each, the same in the list and on the
-map. A project's begins with **Enter**, which opens it; **Enter beside**,
-while another project is open, which shows it in the second side (see
-*Another project beside*); and **Fold** or **Unfold**, where its map is
-shown under it. Then come renaming, copying, its earlier versions and saving
-it as a file; moving it among the folders; and deleting it. A folder's
-begins with **Enter** and **Fold**, then what is made in it, renaming,
-moving and deleting.
+A project and a folder have one menu each. A project's begins with
+**Open**; **Open beside**, while another project is open, which shows it in
+the second side (see *Another project beside*); **Close**, for a project
+that is shown, which closes its side; and **Fold** or **Unfold**, which
+shows its tree under it, read from the disk for a project that is not open.
+Then come renaming, copying, its earlier versions and saving it as a file;
+moving it among the folders; and deleting it. A project that is open is not
+renamed or deleted from here. A folder's menu has **Fold**, then what is
+made in it, renaming, moving and deleting. The menu of an element under a
+project that is not open has **Enter**, which opens the project there, and
+**Enter beside**.
 
-Every change to folders and projects, wherever it is made, says itself in a
-message at the foot of the window with **Undo**: a name, a move, a new
-folder or project, a deletion. A project deleted is brought back from the
-trash, and a folder deleted is made again with what was in it. On the map,
-**Ctrl+Z** and **Ctrl+Shift+Z** undo and redo them, one after another, as
-long as Glaukopis runs.
+The list has the keys of the tree, as the diagram and the text have them:
+the arrows go from row to row, **Left** to the row it stands under and
+**Right** to the first under it; **Tab** folds and **Shift+Tab** folds all;
+**Alt+Enter** makes a project and **Alt+Shift+Enter** a folder, in the
+folder selected or beside the project selected; **Alt** and the arrows move
+a project into the folder before it or out, and an element of an open
+project as in its map; **Enter** and **Alt+Shift+Down** do what a click
+does; **F2** renames, a letter begins a new name, **Delete** deletes, and
+**Shift+F10** opens the menu.
 
-### The map of the projects
+Every change to folders and projects says itself in a message at the foot
+of the window with **Undo**: a name, a move, a new folder or project, a
+deletion. A project deleted is brought back from the trash, and a folder
+deleted is made again with what was in it. In the list, **Ctrl+Z** and
+**Ctrl+Shift+Z** undo and redo them, one after another, as long as
+Glaukopis runs; in a project they undo what was written.
 
-Above every project stands the map of all of them: the owl at the centre,
-each folder that is open as a faint box around what is in it, with its name
-at its inner edge and the boxes of the folders in it inside, and the
-projects, each drawn as the top element of its own map, those in no folder
-hanging from the owl itself. A folder that is folded is its name alone,
-with the number of projects in it. It is the home: the house in the rail and **Ctrl+1** come here, and so do
-the owl at the top of the list of projects, **All projects** at the left of
-the bar at the top of any project, and **Alt+Shift+Up** there; from a
-project, each comes to the folder the project is in, with the project
-selected. The
-map is moved by dragging its ground and turned larger and smaller as the
-diagram is. A project you share has a sign of people beside its name, and
-one you joined a sign of a link, here, in the list and in the bar over the
-map.
+### The start screen
 
-It is worked as a project's diagram is, in a look of its own:
+While no project is open, the start screen stands beside the list: the owl,
+**New project**, and the projects you opened last, the newest first, each
+with its folder and when it was changed; a click opens one. With no project
+at all, it welcomes you, with **Begin a project** and the other ways to
+begin. A document dropped on it becomes a project of its own.
 
-- **Selecting.** A click selects a folder or a project, ringed in the colour
-  of the buttons; **Ctrl** and a click add one or take it away, **Shift**
-  adds, **Ctrl+A** selects all, **Escape** lets go. The arrows go from one to
-  the next, and with **Shift** select more.
-- **Opening.** A double click on a project, or **Enter** with it selected,
-  opens it in its text; the small button at its corner, or
-  **Alt+Shift+Down**, opens it at its map. The same on a folder shows the folder
-  at the centre, with what is in it; the bar says what holds it, and
-  **Alt+Shift+Up**, the button at its corner or a name in the bar goes up.
-- **Making.** **Alt+Enter** makes a new project and **Alt+Shift+Enter** a new folder, in the
-  folder selected, beside the project selected, or at the top; its name is
-  written where it stands, and **Enter** keeps it. **Escape**, or no name,
-  and nothing is made. The menu of a folder and of the map's ground has the
-  same, as **New project here** and **New folder here**.
-- **Renaming.** **F2** opens the name of what is selected for writing; a
-  letter typed begins a new name; **Escape** keeps the old one.
-- **Moving.** **Alt** and the arrow that points away from the owl put what
-  is selected into the folder before it; the arrow towards the owl takes it
-  out of the folder it is in. Or drag it: onto a folder's name or anywhere
-  in its box, into it; onto the owl, out of all folders. A project goes into
-  a folder, never into another project: dropped on a project, it is
-  refused, and the label by the pointer says so. What is
-  dragged from the map can be dropped on the list, and the other way.
-- **Placing.** A folder or a project dragged onto the ground of the map
-  stays where it is let go, and nothing else moves; the places are kept on
-  this computer. **Place everything by itself**, in the map's menu, puts
-  them back in order. Dropped on a folder, it goes into it; on the owl, out
-  of all folders.
-- **Folding.** **Tab**, or the sign before a folder's name, hides the
-  projects in it or shows them; **Shift+Tab** folds everything, or, where
-  nothing is unfolded, opens the folders. A folder of many projects begins
-  folded.
-- **The maps of the projects.** A project stands on the map as the top
-  element of its own map stands in it, and opens as an element does: the
-  small button at its side, with the number of what is folded away, or
-  **Tab** with the project selected, shows its trees under it, each
-  folded; every unfolding shows one more level. A double click on an
-  element, or **Enter**, opens the project there in its text; the button at
-  its corner or **Alt+Shift+Down** opens it there at its map. The elements are moved as in the project's own map: dragged onto
-  the ground they stand where they are let go, onto another element they go
-  under it, onto another project they are carried there; **Alt** and the
-  arrows move them up and down, under the one before, and out. Each move is
-  made in the project itself, and **Ctrl+Z** undoes it. Renaming, making
-  and deleting elements is done in the project.
-- **Deleting.** **Delete** deletes what is selected, after asking: a
-  project goes to the trash, and what is in a folder moves up.
+The house in the rail and **Ctrl+1** go back to the project you were in, at
+the element and in the view you left; from there, closing the project comes
+to the start screen.
 
-**Show all of it**, at the foot of the map, or **Ctrl+0**, shows all of the
-map at once, however far apart what is on it stands.
-
-**Shift+F10**, or a right click, opens the menu of what is selected, and the
-keyboard in the rail lists all of these keys under *On the map of the
-projects*.
-
-In the list at the left of a project, a project that is not open can be
-unfolded too: its trees are read from the disk and shown, and a click on one
-of them opens the project there. **Enter beside**, in the menu of another
-project or of one of its elements, shows it beside the project you are in.
-
-**A project of all the projects…**, in the **⋯** of the map's bar, makes a new
-project of the projects themselves: the folders as elements, nested as the
-folders are, and under each the projects in it, with their descriptions as
-text. With **everything in them**, each project has its whole tree of
-elements under it, names and texts, so that all your work can be seen and
-searched as one map. The citations keep their references; a cross-reference
-points at nothing in the new project, and comments stay behind. The new
-project opens on its text.
+**A project of all the projects…**, in the **⋯** at the head of the list,
+makes a new project of the projects themselves: the folders as elements,
+nested as the folders are, and under each the projects in it, with their
+descriptions as text. With **everything in them**, each project has its
+whole tree of elements under it, names and texts, so that all your work can
+be seen and searched as one map. The citations keep their references; a
+cross-reference points at nothing in the new project, and comments stay
+behind. The new project opens on its text.
 
 ## The diagram
 
@@ -2831,12 +2769,12 @@ on a desk of another shade, so that where the text goes is seen.
   open one as a project of its own.
 - **The whole history.** A project can keep every change, with who made it
   and when: see *The history of a project*.
-- **Deleted projects** can be brought back, from the **⋯** of the map of the projects.
-- **A project as one file.** Right-click a project, on the map of the projects or in
-  the list of projects, and choose **Save as a file…**: a `.glaukopis` file holds
+- **Deleted projects** can be brought back, from the **⋯** at the head of the list of projects.
+- **A project as one file.** Right-click a project in the list of projects,
+  and choose **Save as a file…**: a `.glaukopis` file holds
   the project, its comments, the pictures its figures show and the works it
   cites, to keep, to move to another computer, or to send. **Open a project
-  file…**, in the **+** of the map's bar and at the head of the list of projects, makes a
+  file…**, in the **+** at the head of the list of projects, makes a
   new project of one, never in the place of one you have. The works it cites
   are compared with your library: those that are the same need nothing, new
   ones are added, and where the file's differs from yours, or looks like a
@@ -2881,10 +2819,10 @@ what Glaukopis works from:
 It is written anew a few seconds after the project is saved, and Glaukopis
 never reads it back: it cannot get your project wrong, and nothing is lost
 if you change it or delete it. To have it somewhere else, right-click a
-project, on the map of the projects or in the list of projects, and choose **Save as
+project in the list of projects, and choose **Save as
 Org…**, and choose a folder: the same three are written into it.
 
-**Open an Org file…**, in the **+** of the map's bar, makes a new project of an Org file,
+**Open an Org file…**, in the **+** at the head of the list of projects, makes a new project of an Org file,
 or of a folder that holds `project.org`, as a project file does: its works
 are compared with your library, and you choose where they differ. A file
 written by Glaukopis comes back as the project it was; one you wrote
@@ -2918,9 +2856,9 @@ what is to be done by its name, and does it.
 | **Ctrl+1**, **Ctrl+2**, **Ctrl+3** | The projects, the library, the pictures |
 | **Ctrl+,** | Settings, in a window over what is open; closing it leaves you where you were |
 | **Ctrl+D** | Diagram or text |
-| **Alt+Shift+Up** | Up to the element over this one, in the diagram and in the text |
+| **Alt+Shift+Up** | Up to the element over this one, in the diagram and in the text; from the top of a project, to its row in the list of projects |
 | **Ctrl+Shift+O** | The outline beside the text |
-| **Ctrl+Shift+L** | The list of projects at the left of a project |
+| **Ctrl+Shift+L** | The list of projects at the left: hide it, or show it again |
 | **Ctrl+P** | The preview |
 | **Ctrl+Shift+S** | Side by side: this element as diagram and text, another element or another project beside it, or one at a time |
 | **Ctrl+Shift+D** | About this document: the details, the language and the checklist of the element in view |
@@ -2930,7 +2868,7 @@ what is to be done by its name, and does it.
 | **Ctrl+Shift+M** | The comments |
 | **Ctrl+Alt+C** | A comment on the passage selected, or on the element |
 | **Ctrl+Shift+H** | The history of the project |
-| **Ctrl+Z**, **Ctrl+Shift+Z** | Undo, redo |
+| **Ctrl+Z**, **Ctrl+Shift+Z** | Undo, redo; in the list of projects, what was done to folders and projects |
 | **Alt+Enter** | In the diagram: a new element after the one selected; in the text, a heading at the cursor |
 | **Alt+Shift+Enter** | In the diagram: a new element under the one selected, the first; in the text, a heading at the cursor, under the element it is in |
 | **Tab** | In the diagram, and in a name in the text: fold away what is under the element, or unfold it |

@@ -1,16 +1,11 @@
 /**
- * What the list of projects keeps while the application runs, the same on
- * the home page and in the pane of projects (ADR 0033): which folders are
- * closed; and on the owl map, which folders were folded or unfolded by
- * hand (ADR 0037). And the pane itself: whether it is open and how wide, which the
+ * What the list of projects at the left keeps while the application runs
+ * (ADR 0033, 0063): which folders are closed, and a row it is to put the
+ * focus on. And the list itself: whether it is shown and how wide, which the
  * settings remember.
  */
 
-import { projects } from '$lib/state/projects.svelte';
-import { router } from '$lib/state/router.svelte';
 import { settings } from '$lib/state/settings.svelte';
-import { folderOf } from './folders';
-import { projectKey } from './owl';
 
 class ListUi {
   /** The folders that are closed, by id. */
@@ -24,43 +19,10 @@ class ListUi {
   }
 
   /**
-   * The folders of the owl map folded (true) or unfolded (false) by hand.
-   * One not here is folded as it starts: where it holds many projects.
+   * A row the list is to select and put the focus on once it is drawn, by
+   * its key there (`p:<project>`): asked for by `toList`.
    */
-  owlFolds = $state.raw(new Map<string, boolean>());
-
-  /**
-   * What the owl map is to select and show when it next comes up, by its
-   * key: the project one came up from, or the folder.
-   */
-  owlReveal = $state<string | null>(null);
-
-  /** The projects whose maps are shown under their cards on the owl map, by id. */
-  owlMaps = $state.raw(new Set<string>());
-
-  /** Shows the map of a project under its card on the owl map, or hides it. */
-  owlMap(id: string, shown: boolean) {
-    const next = new Set(this.owlMaps);
-    if (shown) next.add(id);
-    else next.delete(id);
-    this.owlMaps = next;
-  }
-
-  /** Elements of those maps folded (true) or unfolded (false) on the owl map, by key; one not here is as its project has it. */
-  owlElementFolds = $state.raw(new Map<string, boolean>());
-
-  owlElementFold(key: string, folded: boolean) {
-    const next = new Map(this.owlElementFolds);
-    next.set(key, folded);
-    this.owlElementFolds = next;
-  }
-
-  /** Folds a folder of the owl map, or unfolds it. */
-  owlFold(id: string, folded: boolean) {
-    const next = new Map(this.owlFolds);
-    next.set(id, folded);
-    this.owlFolds = next;
-  }
+  focusRow = $state<string | null>(null);
 
   /** Opens the folders given, so that what is in them is seen. */
   reveal(ids: (string | null)[]) {
@@ -86,16 +48,15 @@ export function paneWidth(width: number, dx: number): number {
 
 /** Opens the pane of projects, or closes it. */
 export function toggleProjectsPane() {
-  settings.set('projectsPane', !settings.value.projectsPane);
+  settings.set('projectsList', !settings.value.projectsList);
 }
 
 /**
- * Up from the top of a project, to the owl map: at the folder the project
- * lies in, or at the owl where it lies in none, with the project selected.
+ * Up from the top of a project, into the list (ADR 0063): the list is shown
+ * where it was hidden, and the project's row takes the focus, so that the
+ * keys of the tree go on from there.
  */
-export function upFromProject(id: string) {
-  const p = projects.list.find((x) => x.id === id);
-  const folder = p ? folderOf(projects.folders, p) : null;
-  listUi.owlReveal = projectKey(id);
-  router.go(folder ? { view: 'owl', at: folder } : { view: 'owl' });
+export function toList(project: string) {
+  if (!settings.value.projectsList) settings.set('projectsList', true);
+  listUi.focusRow = `p:${project}`;
 }

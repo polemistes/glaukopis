@@ -137,17 +137,18 @@ try {
   await sleep(300);
 
   // ---- the pane of projects ----
-  check('the pane of projects is closed at first', !(await app.exists('[data-projects-pane]')));
+  check('the list of projects is shown at first', await app.exists('[data-projects-pane]'));
+  await app.keys(['Control', 'Shift', 'l']);
+  await app.waitGone('[data-projects-pane]', 3000);
+  check('Ctrl+Shift+L hides it', !(await app.exists('[data-projects-pane]')));
   await app.keys(['Control', 'Shift', 'l']);
   await app.waitFor('[data-projects-pane]', 3000);
   const current = await app.exec(`return document.querySelector('[data-projects-pane] [data-current]')?.textContent.trim() ?? null`);
-  check('Ctrl+Shift+L opens it, with the project that is open marked', !!current && current.includes('Wrath'), current);
-  check('and its button says it is open', (await app.exec(`return document.querySelector('[data-projects-button]')?.getAttribute('aria-pressed')`)) === 'true');
+  check('and shows it again, with the project that is open marked', !!current && current.includes('Wrath'), current);
+  check('and its button says it is shown', (await app.exec(`return document.querySelector('[data-projects-button]')?.getAttribute('aria-pressed')`)) === 'true');
   await app.screenshot('breaks-3-pane');
 
-  // A second project, made from the home page.
-  await app.keys(['Control', '1']);
-  await sleep(400);
+  // A second project, made from the start screen.
   await app.beginProject();
   await app.type('dialog input', 'Odyssey');
   await app.clickText('dialog footer button', 'Create');

@@ -7,9 +7,6 @@ home-new = Proiect nou
 
 ## The two forms of the page: the last used projects as cards, all of them as a list
 
-home-shown = Ce se arată
-home-recent = Folosite de curând
-home-all = Toate proiectele
 # Under the cards, when there are more projects than they show.
 }
 # The button that opens the menu of the page.
@@ -24,10 +21,6 @@ home-new-folder = Dosar nou
 home-folder-rename-title = Redenumește dosarul
 home-folder-name-placeholder = Ce cuprinde dosarul
 home-folder-name-missing = Dați dosarului un nume.
-home-folder-projects = { $count ->
-    [one] { $count } proiect
-    [few] { $count } proiecte
-   *[other] { $count } de proiecte
 }
 home-menu-move = Mută în dosar
 home-menu-out = Afară din dosare

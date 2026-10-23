@@ -12,7 +12,6 @@ project-back = Voltar aos projetos
 project-fetching = A obter o projeto
 project-fetching-offline = Não é possível chegar ao servidor. O projeto é obtido quando for possível.
 project-fetching-on-the-way = Vem a caminho, do servidor.
-project-all-projects = Todos os projetos
 project-name = Nome do projeto
 project-rename = Mudar o nome do projeto
 project-not-saved = Não guardado

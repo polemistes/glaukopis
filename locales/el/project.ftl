@@ -12,7 +12,6 @@ project-back = Πίσω στα έργα
 project-fetching = Λήψη του έργου
 project-fetching-offline = Δεν υπάρχει πρόσβαση στον διακομιστή. Το έργο θα ληφθεί όταν γίνει δυνατό.
 project-fetching-on-the-way = Έρχεται από τον διακομιστή.
-project-all-projects = Όλα τα έργα
 project-name = Όνομα του έργου
 project-rename = Μετονομασία του έργου
 project-not-saved = Δεν αποθηκεύτηκε

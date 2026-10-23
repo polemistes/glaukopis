@@ -309,8 +309,7 @@ try {
   check('and closes the box after it', !(await app.exists('.box')));
 
   // ---- through everything: a second project, and both searched ----
-  await app.keys(['Control', '1']);
-  await app.waitFor('[data-owl-map]', 8000);
+  await app.home();
   await sleep(600);
   await app.beginProject();
   await app.waitFor('dialog input');

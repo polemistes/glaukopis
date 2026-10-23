@@ -7,9 +7,6 @@ home-new = Новий проєкт
 
 ## The two forms of the page: the last used projects as cards, all of them as a list
 
-home-shown = Що показано
-home-recent = Останні
-home-all = Усі проєкти
 # Under the cards, when there are more projects than they show.
 }
 # The button that opens the menu of the page.
@@ -24,11 +21,6 @@ home-new-folder = Нова тека
 home-folder-rename-title = Перейменувати теку
 home-folder-name-placeholder = Що містить тека
 home-folder-name-missing = Дайте теці назву.
-home-folder-projects = { $count ->
-    [one] { $count } проєкт
-    [few] { $count } проєкти
-    [many] { $count } проєктів
-   *[other] { $count } проєкту
 }
 home-menu-move = Перемістити до теки
 home-menu-out = Поза теками

@@ -11,6 +11,7 @@
   import { t } from '$lib/i18n';
   import ProjectList from '$lib/home/ProjectList.svelte';
   import { ProjectActions } from '$lib/home/project-actions.svelte';
+  import { PROJECT } from './model/types';
   import { projects } from '$lib/state/projects.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
@@ -47,7 +48,11 @@
 >
   <div class="beside" data-beside-chooser>
     {#if projects.loaded}
-      <ProjectList {actions} {current} {choose} />
+      <ProjectList
+        {actions}
+        sides={[{ id: current, project: null, at: PROJECT, focused: true }]}
+        {choose}
+      />
     {:else}
       <div class="centre"><Spinner size={18} /></div>
     {/if}

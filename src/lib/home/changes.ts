@@ -1,13 +1,13 @@
 /**
- * The changes of folders and projects made on the home, in the list, the
- * pane and the owl map alike: each is made, said in a message, and
+ * The changes of folders and projects made in the list at the left: each
+ * is made, said in a message, and
  * remembered with its way back, so that it can be undone from the message
  * or by the keys (see `undo.svelte.ts`). A change that fails is said where
  * it is asked for: those that ask for a name throw, so that the dialog or
  * the field can say why; the others say it themselves.
  */
 
-import type { Folder, Place, ProjectInfo } from '$lib/api/projects';
+import type { Folder, ProjectInfo } from '$lib/api/projects';
 import { projectTrash } from '$lib/api/projects';
 import { sharingRename } from '$lib/api/sharing';
 import { t } from '$lib/i18n';
@@ -80,7 +80,7 @@ async function bringBack(id: string) {
  */
 async function trash(id: string) {
   if (openedHere(id)) {
-    router.go({ view: 'owl' });
+    router.go({ view: 'home' });
     if (!(await goneHere(id, 10_000))) throw new NotNow(t('home-open-now'));
   }
   await projects.closed(id);
@@ -130,7 +130,7 @@ export interface Things {
   folders: string[];
 }
 
-/** What is dragged when several are: the projects and folders of the selection on the owl map. */
+/** What is dragged when several are: projects and folders together. */
 export const THINGS = 'home-things';
 
 /** What a payload dragged on the home carries: one project, one folder, or several of both. */
@@ -333,30 +333,6 @@ function askProjects(list: ProjectInfo[]): Promise<boolean> {
     confirm: t('home-delete-many-confirm'),
     danger: true,
   });
-}
-
-/**
- * Puts folders and projects where they were dropped on the map of the
- * projects, each from what holds it; or (null) lets them be placed by
- * themselves again. One change, undone as one.
- */
-export async function placeThings(places: Record<string, Place | null>, message: string) {
-  const before: Record<string, Place | null> = {};
-  for (const key of Object.keys(places)) before[key] = projects.places[key] ?? null;
-  try {
-    await projects.setPlaces(places);
-  } catch (error) {
-    notifyError(t('home-failed'), error);
-    return;
-  }
-  homeUndo.remember(
-    {
-      message,
-      undo: () => projects.setPlaces(before),
-      redo: () => projects.setPlaces(places),
-    },
-    { quietly: true },
-  );
 }
 
 /**

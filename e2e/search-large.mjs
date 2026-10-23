@@ -42,7 +42,7 @@ const middle = (list) => Math.round(sorted(list)[Math.floor(list.length / 2)] ??
 const app = await App.launch({ width: 1360, height: 900, dataDir: data });
 try {
   await app.installErrorHook();
-  await app.waitFor('[data-owl-map]', 15000);
+  await app.waitFor('[data-start], .project', 15000);
   await app.openProject('Large', 60000);
   await until('the text of the map', () => app.exec(`return document.querySelectorAll('.text-view .section').length > 1`), 60000);
   await sleep(2000);

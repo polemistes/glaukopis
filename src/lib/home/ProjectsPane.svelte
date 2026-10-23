@@ -1,21 +1,22 @@
 <script lang="ts">
   /**
-   * The pane of projects (ADR 0033): at the left of a project, beside the
-   * rail, the list of projects as the home page has it, in a narrow column.
-   * One click opens a project; the one that is open is marked, and under
-   * its row stands its tree, down to the element in view (ADR 0037). It
-   * stands outside the view of a project, so that it stays as it was when
-   * another is opened; whether it is open, and how wide, the settings
-   * remember.
+   * The list of projects at the left (ADR 0033, 0063): the one place where
+   * the folders, the projects and the elements are shown as a tree. One
+   * click opens a project; the project of each side of the window is marked,
+   * with its tree under it down to the element in view there. Its head
+   * begins, joins and opens projects, and shows the deleted ones and the
+   * project of all the projects. It stands outside the view of a project, so
+   * that it stays as it was when another is opened; whether it is shown, and
+   * how wide, the settings remember.
    */
   import { onMount } from 'svelte';
-  import FolderOpen from '@lucide/svelte/icons/folder-open';
+  import Ellipsis from '@lucide/svelte/icons/ellipsis';
   import Plus from '@lucide/svelte/icons/plus';
   import X from '@lucide/svelte/icons/x';
   import type { ProjectInfo } from '$lib/api/projects';
   import { t } from '$lib/i18n';
   import { keysFor } from '$lib/shell/keys.svelte';
-  import type { Project } from '$lib/project/model/project.svelte';
+  import type { ShownSide } from '$lib/project/ProjectView.svelte';
   import { PROJECT } from '$lib/project/model/types';
   import { projects } from '$lib/state/projects.svelte';
   import { router, type MapMode } from '$lib/state/router.svelte';
@@ -29,27 +30,20 @@
   import ProjectList from './ProjectList.svelte';
 
   interface Props {
-    /** The project that is open; none where the owl map is in view. */
-    current?: string | null;
-    /** The open project itself, where the view gives it: its tree is shown under its row. */
-    project?: Project | null;
-    /** The element in view in it, marked in the tree. */
-    at?: string | null;
-    /** Enters an element of the open project. */
-    onenter?: (id: string) => void;
-    /** Whether the owl map is in view. */
-    /** Where the owl map is in view: null at the owl, a folder's id where one is entered. */
-    owlAt?: string | null;
+    /** The sides of the window and the projects they show; none on the start screen. */
+    sides?: readonly ShownSide[];
+    /** Enters an element of a project shown in a side. */
+    onenter?: (project: string, id: string) => void;
   }
 
-  let { current = null, project = null, at = null, onenter, owlAt = undefined }: Props = $props();
+  let { sides = [], onenter }: Props = $props();
 
   const width = $derived(paneWidth(settings.value.projectsPaneWidth, 0));
 
   function open(p: ProjectInfo, mode?: MapMode) {
-    if (p.id === current && !mode) {
-      // The row of the open project is the top of its tree.
-      onenter?.(PROJECT);
+    if (!mode && sides.some((s) => s.id === p.id)) {
+      // The row of a project that is shown is the top of its tree.
+      onenter?.(p.id, PROJECT);
       return;
     }
     router.go({ view: 'project', project: p.id, mode });
@@ -65,16 +59,21 @@
 <aside class="projects-pane" data-projects-pane aria-label={t('home-pane')} style:width="{width}px">
   <header>
     <h2>{t('home-title')}</h2>
-    <IconButton label={t('home-new')} size="sm" onclick={() => actions.newProject()}>
+    <IconButton
+      label={t('home-new-menu')}
+      size="sm"
+      data-projects-new
+      onclick={(e) => actions.newMenu(e.currentTarget)}
+    >
       <Plus size={15} />
     </IconButton>
     <IconButton
-      label={t('home-file-open')}
+      label={t('home-page-menu')}
       size="sm"
-      disabled={actions.filing}
-      onclick={() => void actions.openFile()}
+      data-projects-more
+      onclick={(e) => actions.moreMenu(e.currentTarget)}
     >
-      <FolderOpen size={14} />
+      <Ellipsis size={15} />
     </IconButton>
     <IconButton
       label={t('home-pane-close')}
@@ -87,7 +86,7 @@
   </header>
   <div class="body">
     {#if projects.loaded}
-      <ProjectList {actions} {current} {project} {at} {onenter} {owlAt} />
+      <ProjectList {actions} {sides} {onenter} />
     {:else}
       <div class="centre"><Spinner size={18} /></div>
     {/if}

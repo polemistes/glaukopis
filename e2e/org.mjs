@@ -208,7 +208,7 @@ try {
   // --- Saved: the folder holds the Org form and the works ---
   // The project is closed by going home, which saves it and writes its copy at once.
   await app.go('#/');
-  await app.waitFor('[data-owl-map]', 8000);
+  await app.waitFor('[data-start]', 8000);
   const first = await until('project.org in the folder of the project', () =>
     projectFolders(app.dataDir).find((f) => f.org && f.org.includes(':COMMENTS:')),
   );
@@ -236,7 +236,7 @@ try {
   // --- Opened as an Org file: a new project with the same Org form ---
   // As Open an Org file… does once the folder of the first is chosen: the
   // dialog that chooses a file cannot be answered from here.
-  await app.click('[data-owl-new]');
+  await app.click('[data-projects-new]');
   await sleep(200);
   check('the home offers to open an Org file', (await app.findByText('[role="menuitem"]', 'Open an Org file…').catch(() => null)) !== null);
   await app.press('Escape');

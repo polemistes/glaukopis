@@ -1,8 +1,10 @@
 /**
- * What is done with a project from the list of projects, the same on the
- * home page and in the pane of projects (ADR 0033): its menu, and the
- * dialog that asks for a name, for a new project, a renamed one, a copy, a
- * new folder or a renamed one. Each place has its own, shown by
+ * What is done with projects and folders from the list at the left and the
+ * start screen (ADR 0033, 0063): the menus of a project and a folder; the
+ * menus of the list's head, which begin, join and open projects and show
+ * the deleted ones; and the dialogs these ask for, a name, the earlier
+ * versions, the works of a project file, the trash, joining, the project of
+ * all the projects. Each place has its own, shown by
  * `ProjectActionsHost.svelte`; what opens a project is the place's.
  */
 
@@ -11,23 +13,41 @@ import ChevronRight from '@lucide/svelte/icons/chevron-right';
 import Columns2 from '@lucide/svelte/icons/columns-2';
 import Copy from '@lucide/svelte/icons/copy';
 import FileDown from '@lucide/svelte/icons/file-down';
+import FileInput from '@lucide/svelte/icons/file-input';
 import FilePlus from '@lucide/svelte/icons/file-plus';
+import FileText from '@lucide/svelte/icons/file-text';
 import FolderDown from '@lucide/svelte/icons/folder-down';
 import FolderInput from '@lucide/svelte/icons/folder-input';
+import FolderOpen from '@lucide/svelte/icons/folder-open';
 import FolderOutput from '@lucide/svelte/icons/folder-output';
 import FolderPlus from '@lucide/svelte/icons/folder-plus';
 import History from '@lucide/svelte/icons/history';
 import Minimize2 from '@lucide/svelte/icons/minimize-2';
 import Pencil from '@lucide/svelte/icons/pencil';
+import SquareArrowOutUpRight from '@lucide/svelte/icons/square-arrow-out-up-right';
 import Trash2 from '@lucide/svelte/icons/trash-2';
-import type { FileChoice, Folder, FoundWork, ProjectInfo } from '$lib/api/projects';
+import Users from '@lucide/svelte/icons/users';
+import Waypoints from '@lucide/svelte/icons/waypoints';
+import X from '@lucide/svelte/icons/x';
+import { isDocumentPath, isPlainTextPath } from '$lib/api/imported';
+import { isReadPath } from '$lib/api/ocr';
+import {
+  projectTrash,
+  type FileChoice,
+  type Folder,
+  type FoundWork,
+  type ProjectInfo,
+  type Trashed,
+} from '$lib/api/projects';
+import { bringIn, chooseDocument } from '$lib/documents/bringing.svelte';
 import { currentProject } from '$lib/editor/references.svelte';
+import { goThroughWhenOpen } from '$lib/found/found.svelte';
 import { t } from '$lib/i18n';
 import { keysFor } from '$lib/shell/keys.svelte';
 import { projects } from '$lib/state/projects.svelte';
 import { settings } from '$lib/state/settings.svelte';
-import type { MapMode } from '$lib/state/router.svelte';
-import type { MenuItem } from '$lib/ui/menu.svelte';
+import { router, type MapMode } from '$lib/state/router.svelte';
+import { openMenu, type MenuItem } from '$lib/ui/menu.svelte';
 import { describeError, notify, notifyError, notifyOk } from '$lib/ui/toast.svelte';
 import {
   copyProject,
@@ -54,6 +74,10 @@ export interface Naming {
   value: string;
   error: string | null;
 }
+
+/** What becomes a project when it is chosen or dropped: a document, a PDF or a picture, whose text is read. */
+export const written = (path: string) =>
+  isDocumentPath(path) || isPlainTextPath(path) || isReadPath(path);
 
 /** Whether the name asked for is that of a folder. */
 export const ofFolder = (purpose: Purpose) => purpose === 'folder' || purpose === 'folder-rename';
@@ -107,8 +131,14 @@ export interface Folding {
 
 /** Where a project's menu is shown, and what that place adds to it. */
 export interface ProjectPlace {
-  /** The project that is open, if any: it is not entered, renamed or deleted from here; the others are entered beside it. */
-  current?: string | null;
+  /**
+   * The projects shown in the sides of the window: they are not opened,
+   * renamed or deleted from here, and are closed from here; the others are
+   * opened beside them.
+   */
+  shown?: readonly string[];
+  /** Closes the sides that show the project. */
+  close?: (project: string) => void;
   /** Shows a project beside the open one. Given only where a project is open. */
   beside?: (project: string) => void;
   /** Where the place shows the project's map under it: whether it is folded, and the toggle. */
@@ -119,9 +149,6 @@ export interface ProjectPlace {
 
 /** Where a folder's menu is shown, and what that place adds to it. */
 export interface FolderPlace {
-  enter: () => void;
-  /** The folder is the one in view, which is not entered again. */
-  here?: boolean;
   fold?: Folding;
   /** Where new things are named in place, the maker; else the dialog asks. */
   make?: (kind: 'project' | 'folder') => void;
@@ -129,7 +156,7 @@ export interface FolderPlace {
   rename?: () => void;
 }
 
-/** Where the menu of an element of a project's map is shown. */
+/** Where the menu of an element of a project's tree is shown, under a project in the list. */
 export interface ElementPlace {
   enter: () => void;
   beside?: () => void;
@@ -159,6 +186,14 @@ export class ProjectActions {
   asking = $state<Asking | null>(null);
   /** Whether a project file is being written or read. */
   filing = $state(false);
+  /** Whether the dialog that joins a shared project is open. */
+  joining = $state(false);
+  /** Whether the dialog that makes a project of all the projects is open. */
+  mapping = $state(false);
+  /** The projects in the trash, as last read: see `readTrash`. */
+  trash = $state.raw<Trashed[]>([]);
+  /** Whether the trash is shown. */
+  showTrash = $state(false);
   #place: ActionsPlace;
 
   constructor(place: ActionsPlace) {
@@ -277,25 +312,18 @@ export class ProjectActions {
   }
 
   /**
-   * The menu of a folder, the same wherever folders are shown: enter it,
-   * fold it, make in it, rename it, move it, delete it. Where the place
-   * names new things in place, `make` does it; else the dialog asks.
+   * The menu of a folder: fold it, make in it, rename it, move it, delete
+   * it. Where the place names new things in place, `make` does it; else the
+   * dialog asks.
    */
-  folderItems(f: Folder, place: FolderPlace): MenuItem[] {
+  folderItems(f: Folder, place: FolderPlace = {}): MenuItem[] {
     const parent = f.parent ?? null;
     const move = (into: string | null) => void moveThings({ projects: [], folders: [f.id] }, into);
     const into = this.#intoFolders(foldersOpenTo(projects.folders, f.id), parent, move);
     const make = place.make;
     return [
-      {
-        label: t('home-enter'),
-        icon: Minimize2,
-        shortcut: keysFor('tree-enter'),
-        disabled: !!place.here,
-        action: place.enter,
-      },
       ...foldItem(place.fold),
-      { kind: 'separator' },
+      ...(place.fold ? [{ kind: 'separator' } as MenuItem] : []),
       {
         label: t('home-owl-new-project'),
         icon: FilePlus,
@@ -335,7 +363,7 @@ export class ProjectActions {
     ];
   }
 
-  /** The menu of an element of a project's map, shown on the map of all projects or in the list: enter it, beside, fold it. */
+  /** The menu of an element of a project's tree, under its project in the list: enter it, beside, fold it. */
   elementItems(place: ElementPlace): MenuItem[] {
     return [
       {
@@ -345,7 +373,7 @@ export class ProjectActions {
         action: place.enter,
       },
       ...(place.beside
-        ? [{ label: t('home-open-beside'), icon: Columns2, action: place.beside } as MenuItem]
+        ? [{ label: t('home-enter-beside'), icon: Columns2, action: place.beside } as MenuItem]
         : []),
       ...foldItem(place.fold),
     ];
@@ -467,6 +495,91 @@ export class ProjectActions {
     }
   }
 
+  // ---- the head of the list, and the start screen ----
+
+  /** Reads the projects in the trash, for its count and the dialog. */
+  async readTrash() {
+    try {
+      this.trash = await projectTrash();
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  /**
+   * A project is made of a document, named after it, with the document as
+   * a tree under it, in the folder given or in none: of the file that is
+   * chosen, or of one that was dropped. It opens on the document's text.
+   */
+  async fromDocument(dropped?: string, folder: string | null = null) {
+    const path = dropped ?? (await chooseDocument());
+    const brought = path ? await bringIn(path, null) : null;
+    const made = brought?.project;
+    if (!made) return;
+    if (folder) await projects.moveToFolder(made.id, folder).catch(() => {});
+    // The citations that were found in it are gone through when the project is open.
+    if (brought.goThrough) goThroughWhenOpen(made.id, brought.top);
+    router.go({ view: 'project', project: made.id, at: brought.top, mode: 'text' });
+  }
+
+  /** The menu of the plus at the head of the list: what is made, and what is joined or opened. */
+  newMenu(anchor: HTMLElement, folder: string | null = null) {
+    openMenu(
+      anchor,
+      [
+        {
+          label: t('home-new') + '…',
+          icon: FilePlus,
+          shortcut: keysFor('tree-new'),
+          action: () => this.newProject(folder),
+        },
+        {
+          label: t('home-new-folder'),
+          icon: FolderPlus,
+          shortcut: keysFor('tree-new-under'),
+          action: () => this.newFolder(folder),
+        },
+        { kind: 'separator' },
+        { label: t('home-join') + '…', icon: Users, action: () => (this.joining = true) },
+        {
+          label: t('home-from-document'),
+          icon: FileInput,
+          action: () => void this.fromDocument(undefined, folder),
+        },
+        {
+          label: t('home-file-open'),
+          icon: FolderOpen,
+          disabled: this.filing,
+          action: () => void this.openFile(),
+        },
+        {
+          label: t('home-org-open'),
+          icon: FileText,
+          disabled: this.filing,
+          action: () => void this.openOrg(),
+        },
+      ] satisfies MenuItem[],
+      { align: 'start' },
+    );
+  }
+
+  /** The menu of the ⋯ at the head of the list: the deleted projects, and the project of all the projects. */
+  moreMenu(anchor: HTMLElement) {
+    openMenu(
+      anchor,
+      [
+        {
+          label: t('home-deleted-projects', { count: this.trash.length }),
+          icon: Trash2,
+          disabled: !this.trash.length,
+          action: () => (this.showTrash = true),
+        },
+        { label: t('home-map-menu'), icon: Waypoints, action: () => (this.mapping = true) },
+      ] satisfies MenuItem[],
+      { align: 'start' },
+    );
+  }
+
   /** Answers what was asked of the works of a project file: the choices, or nothing to make nothing. */
   answer(choices: Record<string, FileChoice> | null) {
     const asking = this.asking;
@@ -475,25 +588,25 @@ export class ProjectActions {
   }
 
   /**
-   * The menu of a project, the same wherever projects are shown: enter it,
-   * beside the one that is open, fold its map; rename, copy, its history,
-   * save it; move it among the folders; delete it. The project that is open
-   * (`place.current`) is neither entered, renamed nor deleted from here:
-   * what is written in it goes to its folder on disk.
+   * The menu of a project (ADR 0063): open it, beside what is shown, close
+   * it, fold its tree; rename, copy, its history, save it; move it among the
+   * folders; delete it. A project shown in a side (`place.shown`) is
+   * neither opened, renamed nor deleted from here: what is written in it
+   * goes to its folder on disk.
    */
   items(p: ProjectInfo, place: ProjectPlace = {}): MenuItem[] {
-    const here = !!place.current && place.current === p.id;
-    const beside = place.beside;
+    const shown = place.shown ?? [];
+    const here = shown.includes(p.id);
+    const { beside, close } = place;
     return [
       {
-        label: t('home-enter'),
-        icon: Minimize2,
-        shortcut: keysFor('tree-enter'),
+        label: t('home-open'),
+        icon: SquareArrowOutUpRight,
         hint: here ? t('home-open-now') : undefined,
         disabled: here,
         action: () => this.open(p),
       },
-      ...(beside && place.current && !here
+      ...(beside && shown.length && !here
         ? [
             {
               label: t('home-open-beside'),
@@ -501,6 +614,9 @@ export class ProjectActions {
               action: () => beside(p.id),
             } as MenuItem,
           ]
+        : []),
+      ...(close && here
+        ? [{ label: t('home-close'), icon: X, action: () => close(p.id) } as MenuItem]
         : []),
       ...foldItem(place.fold),
       { kind: 'separator' },

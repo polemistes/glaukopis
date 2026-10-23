@@ -12,7 +12,6 @@ project-back = Înapoi la proiecte
 project-fetching = Se ia proiectul
 project-fetching-offline = Serverul nu poate fi atins. Proiectul se ia când se va putea.
 project-fetching-on-the-way = Este pe drum de la server.
-project-all-projects = Toate proiectele
 project-name = Numele proiectului
 project-rename = Redenumește proiectul
 project-not-saved = Nesalvat

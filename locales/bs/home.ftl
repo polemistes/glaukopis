@@ -7,9 +7,6 @@ home-new = Novi projekat
 
 ## The two forms of the page: the last used projects as cards, all of them as a list
 
-home-shown = Šta se prikazuje
-home-recent = Posljednje korišteni
-home-all = Svi projekti
 # Under the cards, when there are more projects than they show.
 # The button that opens the menu of the page.
 home-page-menu = Više
@@ -23,10 +20,6 @@ home-new-folder = Novi folder
 home-folder-rename-title = Preimenuj folder
 home-folder-name-placeholder = Šta folder sadrži
 home-folder-name-missing = Dajte folderu naziv.
-home-folder-projects = { $count ->
-    [one] { $count } projekat
-    [few] { $count } projekta
-   *[other] { $count } projekata
 }
 home-menu-move = Premjesti u folder
 home-menu-out = Izvan foldera

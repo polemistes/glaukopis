@@ -13,6 +13,14 @@
   import Mark from './Mark.svelte';
 
   const view = $derived(router.route.view);
+
+  /** The house goes back to the project shown last, where it was; else to the start screen. */
+  function toProjects(event: MouseEvent) {
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    event.preventDefault();
+    settingsUi.hide();
+    router.go(router.lastProject ?? { view: 'home' });
+  }
 </script>
 
 <nav class="rail" aria-label={t('shell-main')}>
@@ -28,8 +36,9 @@
   <a
     href="#/"
     class="place"
-    class:current={view === 'project' || view === 'owl'}
+    class:current={view === 'project' || view === 'home'}
     aria-label={t('shell-projects')}
+    onclick={toProjects}
     use:tooltip={{ text: t('shell-projects'), shortcut: keysFor('projects'), side: 'right' }}
   >
     <House size={19} strokeWidth={1.7} />

@@ -7,10 +7,6 @@ home-new = Nyt projekt
 
 ## The three forms of the page: the last used projects as cards, all of them as a list, all of them as a map around the owl
 
-home-shown = Hvad der vises
-home-recent = Senest brugt
-home-all = Alle projekter
-home-owl = Kort
 # Under the cards, when there are more projects than they show.
 # The button that opens the menu of the page.
 home-page-menu = Mere
@@ -24,9 +20,6 @@ home-new-folder = Ny mappe
 home-folder-rename-title = Omdøb mappen
 home-folder-name-placeholder = Hvad mappen rummer
 home-folder-name-missing = Giv mappen et navn.
-home-folder-projects = { $count ->
-    [one] { $count } projekt
-   *[other] { $count } projekter
 }
 home-menu-move = Flyt til mappe
 home-menu-out = Ud af mapperne
@@ -48,7 +41,6 @@ home-pane-between = Mellem projektlisten og projektet
 # Why the project that is open cannot be renamed or deleted from its menu.
 home-open-now = Det er åbent nu
 # On the menu of a project, or of an element of one, in the pane: shows it in a second pane, beside the project that is open.
-home-open-beside = Åbn ved siden af
 # Under a project that is not open, in the pane, when what it holds could not be read.
 home-tree-unreadable = Det kunne ikke læses
 # Under a project that is not open, in the pane, when it holds no elements yet.
@@ -57,45 +49,24 @@ home-tree-empty = Intet i det endnu
 ## The owl map: the projects drawn around the owl, the folders as plain labels
 
 # The button that shows all of the map at once.
-home-owl-fit = Vis det hele
 # On a folder of the map: its projects are hidden, or shown.
 # The map itself, as a list read aloud.
-home-owl-label = Kortet over projekterne
 # The corner of a card that opens the project, and of a folder that shows it at the centre of the map.
 # The corner of the folder at the centre: up to what holds it.
-home-owl-leave = Op til »{ $name }«
 # The menus of the map and of a folder on it: a new one made here, its name written in place.
 home-owl-new-project = Nyt projekt her
 home-owl-new-folder = Ny mappe her
 # What a new folder or project is called until its name is written.
-home-owl-name = Navn
 # Beside the pointer, while several folders and projects are dragged.
-home-owl-dragged = { $count ->
-    [one] { $count } ting
-   *[other] { $count } ting
 }
 # On a card: the map of the project, shown under it on the map of the projects, or hidden.
-home-owl-map-reading = Læser dets kort…
 # On an element of a project's map: the project opened there.
 # The menu of the map: what was put by hand is placed by itself again.
-home-owl-tidy = Lad alt placeres af sig selv
-home-owl-tidied = Alt på kortet placeres igen af sig selv
 # What a change of the map says, with a way back.
-home-owl-placed = »{ $name }« blev sat der
-home-owl-placed-many = { $count ->
-    [one] { $count } ting blev sat der
-   *[other] { $count } ting blev sat der
 }
-home-owl-elements-moved = { $count ->
-    [one] Et element i »{ $project }« blev flyttet
-   *[other] { $count } elementer i »{ $project }« blev flyttet
 }
-home-owl-elements-carried = { $count ->
-    [one] Et element blev flyttet til »{ $to }«
-   *[other] { $count } elementer blev flyttet til »{ $to }«
 }
 # The bar over the map, at a folder: what holds it.
-home-owl-in = I »{ $name }«
 
 ## A map of the projects
 

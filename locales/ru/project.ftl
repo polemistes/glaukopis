@@ -12,7 +12,6 @@ project-back = Назад к проектам
 project-fetching = Получение проекта
 project-fetching-offline = Сервер недоступен. Проект будет получен, когда это станет возможно.
 project-fetching-on-the-way = Он идёт с сервера.
-project-all-projects = Все проекты
 project-name = Название проекта
 project-rename = Переименовать проект
 project-not-saved = Не сохранено

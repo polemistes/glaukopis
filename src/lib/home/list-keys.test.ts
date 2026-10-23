@@ -13,8 +13,7 @@ const row = (key: string, over: Partial<ListRow> = {}): ListRow => ({
 });
 
 const rows: ListRow[] = [
-  row('owl', { kind: 'owl', changeable: false, holds: true, unfolded: true }),
-  row('f:g', { kind: 'folder', parent: 'owl', holds: true, unfolded: true }),
+  row('f:g', { kind: 'folder', parent: null, holds: true, unfolded: true }),
   row('p:1', { parent: 'f:g' }),
   row('p:2', { parent: 'f:g', changeable: false, holds: true, unfolded: true }),
   row('e:2:a', { kind: 'element', parent: 'p:2', changeable: false, own: true }),
@@ -65,7 +64,7 @@ describe('the keys of the list of projects', () => {
     expect(s.selected).toBe('p:1');
     const none = surface(null);
     pressed(key('ArrowDown'), none);
-    expect(none.selected).toBe('owl');
+    expect(none.selected).toBe('f:g');
   });
 
   it('folds with Tab, and all with Shift+Tab', () => {
@@ -74,6 +73,10 @@ describe('the keys of the list of projects', () => {
     expect(s.toggle).toHaveBeenCalledWith('f:g');
     pressed(key('Tab', { shiftKey: true }), s);
     expect(s.foldAll).toHaveBeenCalled();
+    // Under X, Shift+Tab comes by another name, and is known by where Tab is.
+    const x = surface('f:g');
+    pressed(key('ISO_Left_Tab', { shiftKey: true, code: 'Tab' }), x);
+    expect(x.foldAll).toHaveBeenCalled();
     const leaf = surface('p:1');
     expect(pressed(key('Tab'), leaf)).toBe(true);
     expect(leaf.toggle).not.toHaveBeenCalled();
