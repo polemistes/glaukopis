@@ -121,11 +121,14 @@
     void said;
     const el = measuring;
     if (!el) return;
-    void tick().then(() => {
+    const measure = () => {
       const steps = Array.from(el.querySelectorAll<HTMLElement>(':scope > .step'));
       ellipsisWidth = steps.pop()?.offsetWidth ?? 0;
       widths = steps.map((s) => s.offsetWidth);
-    });
+    };
+    void tick().then(measure);
+    // Again once the fonts are there, where they were not yet when the path was first drawn.
+    void document.fonts?.ready.then(measure);
   });
 
   const fitted = $derived.by(() => {
