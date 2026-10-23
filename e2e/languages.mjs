@@ -17,7 +17,7 @@ function check(name, ok, detail = '') {
 // Words that English has and Norwegian has not. A few that Norwegian has
 // as well ("element", "format", "note", "tekst") are not among them.
 const ENGLISH =
-  /\b(the|and|of|with|this|that|your|from|what|which|where|when|there|will|not|add|remove|delete|save|cancel|close|show|hide|new|name|text|maps?|projects?|library|references?|citations?|notes|figures?|tables?|pictures?|settings|search|words|pages?|documents?|preview|export|styles?|untitled|here|before|after|none|write|open|The|And|Of|With|This|That|Your|From|What|Which|Where|When|There|Add|Remove|Delete|Save|Cancel|Close|Show|Hide|New|Name|Text|Maps?|Projects?|Library|References?|Citations?|Notes|Figures?|Tables?|Pictures?|Settings|Search|Words|Pages?|Documents?|Preview|Export|Styles?|Untitled|Here|Before|After|None|Write|Open)\b/;
+  /\b(the|and|of|with|this|that|your|from|what|which|where|when|there|will|not|add|remove|delete|save|cancel|close|show|hide|new|name|text|maps?|projects?|library|references?|citations?|notes|figures?|tables?|pictures?|images?|settings|search|words|pages?|documents?|preview|export|styles?|untitled|here|before|after|none|write|open|The|And|Of|With|This|That|Your|From|What|Which|Where|When|There|Add|Remove|Delete|Save|Cancel|Close|Show|Hide|New|Name|Text|Maps?|Projects?|Library|References?|Citations?|Notes|Figures?|Tables?|Pictures?|Images?|Settings|Search|Words|Pages?|Documents?|Preview|Export|Styles?|Untitled|Here|Before|After|None|Write|Open)\b/;
 
 // What is shown of the writer's own: texts, names, references, and the names
 // of styles, formats and fonts, which are names.
@@ -224,7 +224,7 @@ try {
   };
   await app.thisElement();
   await english('the menu of the element in view');
-  await app.press('Escape');
+  await app.closeMenu();
   await sleep(200);
   await openLanguages();
   await english('the language of the project');
@@ -432,7 +432,7 @@ try {
   await sleep(300);
   check(
     'English is chosen, and the interface changes at once',
-    (await rail()).join(' ') === 'Projects Library Pictures Search Keys Settings',
+    (await rail()).join(' ') === 'Projects Library Images Search Keys Settings',
     (await rail()).join(' '),
   );
   check('the page says so', (await app.exec(`return document.documentElement.lang`)) === 'en');

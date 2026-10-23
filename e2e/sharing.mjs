@@ -162,10 +162,17 @@ try {
   await guest.screenshot('sharing-5-joined');
 
   // ---- each sees the other ----
-  await until('the owner to see the guest', () => owner.exists('.presence .avatar'));
-  await until('the guest to see the owner', () => guest.exists('.presence .avatar'));
-  check('the owner sees who is here', (await owner.text('.presence .avatar')).trim() === 'AL');
-  check('and so does the guest', (await guest.text('.presence .avatar')).trim() === 'R');
+  // Who is here is a sign in the head of the document pane, which each opens.
+  for (const one of [owner, guest]) if (!(await one.exists('.presence'))) await one.keys(['Control', 'Shift', 'r']);
+  const sees = async (one) => {
+    await until('the others to be seen', () => one.exists('.presence .avatar')).catch(() => {});
+    return (await one.exists('.presence .avatar')) ? (await one.text('.presence .avatar')).trim() : null;
+  };
+  const ownerSees = await sees(owner);
+  const guestSees = await sees(guest);
+  check('the owner sees who is here', ownerSees === 'AL', String(ownerSees));
+  check('and so does the guest', guestSees === 'R', String(guestSees));
+  for (const one of [owner, guest]) if (await one.exists('.side-map')) await one.keys(['Control', 'Shift', 'r']);
 
   // ---- what one writes, the other sees ----
   await guest.click(await guest.findByText('.diagram .node', 'Reception'));

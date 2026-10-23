@@ -147,7 +147,7 @@ try {
     app.exec(`return Array.from(document.querySelectorAll('.pictures .tile img')).filter((i) => i.complete && i.naturalWidth > 0).length === 3`),
   );
   check('and shown small', true);
-  check('the number of them is said', /^3 pictures$/.test((await app.text('.pictures header .count')).trim()), await app.text('.pictures header .count'));
+  check('the number of them is said', /^3 images$/.test((await app.text('.pictures header .count')).trim()), await app.text('.pictures header .count'));
   const again = await middleOf('.pictures .middle');
   await drop([join(desk, 'The shield.png')], again.x, again.y);
   await sleep(700);
@@ -236,7 +236,7 @@ try {
   check('and the picture is marked', (await app.count('.pictures .tile .noted')) === 1);
   const facts = (await app.text('.detail .facts')).replace(/\s+/g, ' ');
   check('what is known of the file is said', /PNG/.test(facts) && /480 × 300 points/.test(facts) && /kB|B/.test(facts), facts);
-  check('and that no project uses it', /No project uses the picture/.test(await app.text('.detail .used')));
+  check('and that no project uses it', /No project uses the image/.test(await app.text('.detail .used')));
   await both('pictures-2-pane');
 
   // ---- the search ----

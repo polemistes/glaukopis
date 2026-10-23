@@ -630,7 +630,7 @@
   </button>
   <button
     type="button"
-    class="menu"
+    class="opens"
     class:on={marked}
     disabled={!s}
     data-marks
@@ -688,7 +688,7 @@
 
   <button
     type="button"
-    class="menu"
+    class="opens"
     disabled={!s || s.kind === 'title'}
     data-insert
     aria-haspopup="menu"
@@ -762,7 +762,8 @@
     padding: 0 5px 0 8px;
     font-weight: 500;
   }
-  .menu {
+  /* A menu by its icon: the classname "menu" is the menus' own. */
+  .opens {
     gap: 1px;
     padding: 0 3px 0 5px;
   }

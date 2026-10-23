@@ -95,7 +95,8 @@ try {
       selector,
     );
   const menu = async (words) => {
-    await app.click('.box [data-insert], .pane-bar [data-insert]');
+    // The box's own Insert while it is open; the bar's is disabled over the diagram.
+    await app.click((await app.exists('.box [data-insert]')) ? '.box [data-insert]' : '.pane-bar [data-insert]');
     await app.waitFor('.menu');
     await app.clickText('.menu [role="menuitem"], .menu button', words);
   };
@@ -354,7 +355,7 @@ try {
   rmSync(out, { recursive: true, force: true });
 
   // What was refused on purpose is written to the console, as every failure is.
-  const errors = (await app.pageErrors()).filter((e) => !/not a picture of a kind/.test(e));
+  const errors = (await app.pageErrors()).filter((e) => !/not an image of a kind/.test(e));
   check('no errors in the window', errors.length === 0, errors.join(' ‖ '));
 } catch (error) {
   console.error(error);

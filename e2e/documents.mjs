@@ -232,8 +232,7 @@ try {
       `return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).some((m) => m.textContent.includes('A document into it'))`,
     ),
   );
-  await app.press('Escape');
-  await app.waitGone('.menu', 3000);
+  await app.closeMenu();
 
   // ---- a file that cannot be read ----
   if (pandoc) {

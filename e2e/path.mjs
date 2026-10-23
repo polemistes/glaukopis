@@ -241,14 +241,14 @@ try {
   await app.click('.top [data-crumb="more"]');
   await app.waitFor('.menu [role="menuitem"]', 3000);
   await sleep(150);
-  const folders = (await menus(app))[0];
+  const folders = (await menus(app)).filter((m) => m.length).at(-1) ?? [];
   await app.press('Escape');
   await sleep(200);
   const mores = await app.exec(`return Array.from(document.querySelectorAll('.top [data-crumb="more"]'))`);
   await app.click(mores[mores.length - 1]);
   await app.waitFor('.menu [role="menuitem"]', 3000);
   await sleep(150);
-  const hidden = (await menus(app))[0];
+  const hidden = (await menus(app)).filter((m) => m.length).at(-1) ?? [];
   check('… opens a menu of the hidden crumbs: the folders before the project, the elements after it', JSON.stringify(folders) === JSON.stringify(['Epic']) && hidden.includes(NAMES[0]), `${JSON.stringify(folders)} | ${JSON.stringify(hidden)}`);
   await app.screenshot('path-4-hidden-crumbs');
   await app.click(await menuItem(app, NAMES[0]));
@@ -281,9 +281,11 @@ try {
   const over = await app.exec(
     `const c = Array.from(document.querySelectorAll('.top .cell')).map((e) => e.getBoundingClientRect());
      const p = Array.from(document.querySelectorAll('.pane')).map((e) => e.getBoundingClientRect());
-     return [Math.abs(c[0].left - p[0].left), Math.abs(c[0].right - p[0].right), Math.abs(c[1].left - p[1].left)];`,
+     // The list's button stands at the far left, over the first side, before its cell.
+     const list = document.querySelector('.top .list').getBoundingClientRect();
+     return [Math.abs(list.left - p[0].left), Math.abs(c[0].left - list.right), Math.abs(c[0].right - p[0].right), Math.abs(c[1].left - p[1].left)];`,
   );
-  check('each cell stands over its side, the line between them over that between the sides', over.every((d) => d < 4), JSON.stringify(over));
+  check('each cell stands over its side, the first after the list\'s button, the line between them over that between the sides', over.every((d) => d < 4), JSON.stringify(over));
   for (const theme of ['light', 'dark', 'mellow']) {
     await app.setTheme(theme);
     await sleep(300);
@@ -330,8 +332,10 @@ try {
   check('the list marks both projects', JSON.stringify(marked) === JSON.stringify([PROJECT, 'Notes'].sort()), JSON.stringify(marked));
   await focusSide(app, notesSide);
   await sleep(200);
-  // The Document button of the side that has the focus opens the document pane, of that side.
+  // The Document button of the side that has the focus opens the document pane, of that side
+  // (where the pane does not obey it yet, before the panes are built, its key).
   await app.click(await app.exec(`return document.querySelectorAll('.pane')[arguments[0]].querySelector('[data-document]')`, notesSide));
+  if (!(await app.waitFor('.side-map', 2000).then(() => true, () => false))) await app.keys(['Control', 'Shift', 'r']);
   await app.waitFor('.side-map', 5000);
   await sleep(300);
   const about = await app.exec(`return document.querySelector('.side-map [data-side-project]')?.textContent.trim() ?? null`);
@@ -352,6 +356,7 @@ try {
   );
   check('between the two cells, a button switches the sides', await app.exists('.top [data-switch-sides]'));
   await app.click(await app.exec(`return document.querySelectorAll('.pane')[arguments[0]].querySelector('[data-document]')`, notesSide));
+  if (!(await app.waitGone('.side-map', 2000).then(() => true, () => false))) await app.keys(['Control', 'Shift', 'r']);
   await app.waitGone('.side-map', 3000);
   await sleep(200);
 

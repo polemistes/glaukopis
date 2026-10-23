@@ -777,6 +777,15 @@ export class App {
     await this.clickText('.menu [role="menuitem"]', 'Share…');
   }
 
+  /** Closes the menu that is open by Escape, given to the menu where the text took the cursor from it. */
+  async closeMenu() {
+    if (!(await this.exists('.menu'))) return;
+    await this.exec(`document.querySelector('.menu')?.focus()`);
+    await this.press('Escape');
+    await this.waitGone('.menu', 3000);
+    await sleep(150);
+  }
+
   /** Makes a new element under the one in view, from its menu, and leaves its name being written: the keys write it. */
   async newElementUnder() {
     await this.thisElement('Add an element under it');
