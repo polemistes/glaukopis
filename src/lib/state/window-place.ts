@@ -89,13 +89,19 @@ export async function windowPlace(
 
 /**
  * Puts the window as it was kept, before it is shown: its size; its place,
- * where that is on a screen there is now; maximised, where it was.
+ * where that is on a screen there is now; maximised, where it was. Each is
+ * asked for alone, so that one a desktop refuses, as Wayland refuses a
+ * place, keeps nothing else from being done; what failed is logged.
  */
 export async function placeWindow(window: Window, kept: unknown): Promise<void> {
   const place = usable(kept);
   if (!place) return;
-  await window.setSize(new LogicalSize(place.width, place.height));
-  const screens = await availableMonitors().then((all) => all.map(asScreen));
-  if (onAScreen(place, screens)) await window.setPosition(new LogicalPosition(place.x, place.y));
-  if (place.maximized) await window.maximize();
+  const ask = (what: string, done: () => Promise<unknown>) =>
+    done().catch((error) => console.warn(`The window's ${what} was not given back`, error));
+  await ask('size', () => window.setSize(new LogicalSize(place.width, place.height)));
+  await ask('place', async () => {
+    const screens = (await availableMonitors()).map(asScreen);
+    if (onAScreen(place, screens)) await window.setPosition(new LogicalPosition(place.x, place.y));
+  });
+  if (place.maximized) await ask('maximising', () => window.maximize());
 }
