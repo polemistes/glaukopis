@@ -120,6 +120,9 @@ try {
     at.x,
     at.y,
   );
+  await app.waitForText('dialog[open] footer button', 'Make the project', 10000);
+  await sleep(300);
+  await app.clickText('dialog[open] footer button', 'Make the project');
   await until(async () => (await app.count('.text-view [data-section]')) >= 13, 20000);
   projectId = decodeURIComponent((await app.exec('return location.hash')).split('/')[2].split('?')[0]);
   ids = Object.fromEntries(
@@ -141,7 +144,7 @@ try {
   await app.clickText('.menu [role="menuitem"]', 'Another element…');
   await app.waitFor('dialog [data-pick]', 3000);
   await app.clickText('dialog [data-pick]', 'A long book');
-  await app.clickText('dialog footer button', 'Show beside');
+  await app.clickText('dialog[open] footer button', 'Show beside');
   await app.waitGone('dialog [data-pick]', 3000);
   await until(async () => (await panes(app)).length === 2 && (await app.count('.panes > .pane .text-view')) === 2);
   // The focus in the first side, then the second side's text read far down, then the focus there.
@@ -209,8 +212,12 @@ try {
   const shown = await panes(app);
   check('with both sides, each in its text', shown.length === 2 && shown.every((p) => p.mode === 'text'), JSON.stringify(shown));
   check('the second side read at Part 10', shown[1]?.top === ids['Part 10'], JSON.stringify(shown));
+  // At the top as the outline brings an element there: under the padding the text keeps at its top.
+  const padding = await app.exec(
+    `return parseFloat(getComputedStyle(document.querySelectorAll('.panes > .pane')[1].querySelector('.scroller')).scrollPaddingTop) || 0`,
+  );
   const dy = await fromTop(app, 1, ids['Part 10']);
-  check('with Part 10 at the top of its text', dy !== null && Math.abs(dy) < 40, `${dy} px`);
+  check('with Part 10 at the top of its text', dy !== null && Math.abs(dy - padding) < 24, `${dy} px, under a padding of ${padding} px`);
   check('the first side from its top', (await fromTop(app, 0, ids['Part 2'])) !== null && Math.abs(await fromTop(app, 0, ids['Part 2'])) < 80, `${await fromTop(app, 0, ids['Part 2'])} px`);
   check('the focus in the second side', (await focusedPane(app)) === 1, String(await focusedPane(app)));
   const size = await app.exec('return [window.outerWidth, window.outerHeight]');
@@ -247,7 +254,7 @@ try {
   await app.clickText('[role="menuitem"]', 'Delete');
   await app.waitForText('dialog h2', 'Delete');
   await sleep(250);
-  await app.clickText('dialog footer button', 'Delete project');
+  await app.clickText('dialog[open] footer button', 'Delete project');
   await until(async () => (await app.count('[data-projects-pane] .row.project')) === 1);
   check('the project is deleted', (await app.count('[data-projects-pane] .row.project')) === 1);
   await app.home();
@@ -273,7 +280,8 @@ try {
   await app.waitFor('[data-start]', 10000);
   await sleep(500);
   await app.screenshot('as-left-4-first');
-  check('a project that is gone gives the start screen', !(await app.exists('.project')), await app.exec('return location.hash'));
+  const hash = await app.exec('return location.hash');
+  check('a project that is gone gives the start screen', !hash.startsWith('#/project') && !(await app.exists('.panes')), hash);
   const recent = await app.exec(
     `return Array.from(document.querySelectorAll('[data-start-recent] [data-start-project] .name')).map((n) => n.textContent.trim())`,
   );
