@@ -1,13 +1,15 @@
 /**
- * What the keys do on the owl map that has the focus, as they do in a
- * project's diagram: go from one folder, project or element to the next,
- * make a project or a folder and name it in place, rename, put deeper and
- * less deep, fold, delete, open the menu, enter a folder or open a project
- * at the element selected, go up, and zoom; and undo and redo what was
- * done on the home. A letter begins a new name for what is selected. The
- * elements of a project's map, shown under it, are gone through, folded,
- * opened and moved as the project's own map moves them, up and down as
- * well; they are renamed, made and deleted in the project.
+ * What the keys do on the map of all projects that has the focus: the keys
+ * of the tree, as in the diagram, the text and the list (ADR 0062). Go from
+ * one folder, project or element to the next; Alt+Enter a project and
+ * Alt+Shift+Enter a folder, named in place; rename; Alt and the arrows put
+ * deeper and less deep; Tab folds and Shift+Tab all; delete; the menu;
+ * Alt+Shift and the arrows enter and go up; Enter opens a project in its
+ * text; zoom; and undo and redo what was done on the home. A letter begins
+ * a new name for what is selected. The elements of a project's map, shown
+ * under it, are gone through, folded, opened and moved as the project's own
+ * map moves them, up and down as well; they are renamed, made and deleted
+ * in the project.
  */
 
 import type { Layout } from '$lib/project/diagram/layout';
@@ -25,6 +27,8 @@ export interface OwlSurface {
   select(keys: string[]): void;
   /** A project opens at its top; a folder is entered. */
   open(key: string): void;
+  /** What a double click does: a project opens in its text, at an element of its map too; a folder is entered. */
+  write(key: string): void;
   /** To what holds the folder at the centre. */
   up(): void;
   /** Opens the name for writing; with a letter, a new name begun by it. */
@@ -35,6 +39,8 @@ export interface OwlSurface {
   /** One place up or down among those beside them: for elements, whose order is their project's. */
   shift(keys: string[], by: -1 | 1): void;
   fold(key: string): void;
+  /** Where anything is unfolded, folds it all; else unfolds the folders at the first level. */
+  foldAll(): void;
   remove(keys: string[]): void;
   /** The menu of what is selected, or of the map where nothing is. */
   menu(key: string | null): void;
@@ -71,8 +77,6 @@ export function pressed(event: KeyboardEvent, owl: OwlSurface): boolean {
     else if (key === '0') owl.fit();
     else if (key === '=' || key === '+') owl.zoomBy(1.2);
     else if (key === '-') owl.zoomBy(1 / 1.2);
-    // Ctrl+Enter a new project, and with Shift a new folder, as the new element after and under.
-    else if (key === 'enter') owl.make(event.shiftKey ? 'folder' : 'project');
     else return false;
     return true;
   }
@@ -99,27 +103,32 @@ export function pressed(event: KeyboardEvent, owl: OwlSurface): boolean {
     return true;
   }
 
+  // Alt+Enter a new project, and with Shift a new folder, as the new element after and under.
+  // An element is its project's: what is made on this map is not made in a project.
+  if (event.altKey && !mod && event.key === 'Enter') {
+    if (!onElement) owl.make(event.shiftKey ? 'folder' : 'project');
+    return true;
+  }
+
   if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
     owl.menu(last);
     return true;
   }
+  if (event.altKey) return false;
 
-  switch (event.key) {
+  // Shift+Tab is another key by name on some systems (ISO_Left_Tab under X): Tab is known by where it is.
+  const key = event.code === 'Tab' || event.keyCode === 9 ? 'Tab' : event.key;
+  switch (key) {
     case 'Enter':
-      if (event.altKey) return false;
-      // An element is its project's: what is made on this map is not made in a project.
-      if (!onElement) owl.make('project');
+      if (last && last !== tree.root && keyed(last).kind !== 'owl') owl.write(last);
       break;
     case 'Tab':
-      if (event.shiftKey) return false;
-      if (!onElement) owl.make('folder');
+      // A folder folded, a project's map shown or hidden, an element folded; with Shift, all.
+      if (event.shiftKey) owl.foldAll();
+      else if (last && last !== tree.root && keyed(last).kind !== 'owl') owl.fold(last);
       break;
     case 'F2':
       if (last && thing(last)) owl.rename(last);
-      break;
-    case ' ':
-      // A folder folded, a project's map shown or hidden, an element folded.
-      if (last && last !== tree.root && keyed(last).kind !== 'owl') owl.fold(last);
       break;
     case 'Delete':
     case 'Backspace':

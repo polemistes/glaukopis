@@ -66,6 +66,7 @@ function surface(selection: string[], at?: string) {
       log('select')(keys);
     },
     open: log('open'),
+    write: log('write'),
     up: log('up'),
     rename: log('rename'),
     make: log('make'),
@@ -73,6 +74,7 @@ function surface(selection: string[], at?: string) {
     shallower: log('shallower'),
     shift: log('shift'),
     fold: log('fold'),
+    foldAll: log('foldAll'),
     remove: log('remove'),
     menu: log('menu'),
     fit: log('fit'),
@@ -88,13 +90,24 @@ const key = (k: string, mods: Partial<KeyboardEventInit> = {}) =>
   new KeyboardEvent('keydown', { key: k, ...mods });
 
 describe('the keys of the owl map', () => {
-  it('make a project with Enter and Ctrl+Enter, a folder with Tab and Ctrl+Shift+Enter', () => {
+  it('make a project with Alt+Enter and a folder with Alt+Shift+Enter, and nothing with the old keys', () => {
     const { owl, calls } = surface([OWL]);
-    pressed(key('Enter'), owl);
+    pressed(key('Enter', { altKey: true }), owl);
+    pressed(key('Enter', { altKey: true, shiftKey: true }), owl);
     pressed(key('Enter', { ctrlKey: true }), owl);
-    pressed(key('Tab'), owl);
     pressed(key('Enter', { ctrlKey: true, shiftKey: true }), owl);
-    expect(calls).toEqual(['make "project"', 'make "project"', 'make "folder"', 'make "folder"']);
+    pressed(key('Tab'), owl);
+    pressed(key('Enter'), owl);
+    expect(calls).toEqual(['make "project"', 'make "folder"']);
+  });
+
+  it('open a project in its text with Enter, and enter a folder with it', () => {
+    const p = surface([projectKey('1')]);
+    pressed(key('Enter'), p.owl);
+    expect(p.calls).toEqual([`write "${projectKey('1')}"`]);
+    const f = surface([folderKey('g')]);
+    pressed(key('Enter'), f.owl);
+    expect(f.calls).toEqual([`write "${folderKey('g')}"`]);
   });
 
   it('rename with F2, or begin a new name with a letter', () => {
@@ -143,13 +156,16 @@ describe('the keys of the owl map', () => {
     expect(calls).toEqual([`open "${folderKey('g')}"`, 'up']);
   });
 
-  it('fold a folder with Space, delete with Delete, clear with Escape', () => {
+  it('fold a folder with Tab and all with Shift+Tab, not with Space; delete with Delete, clear with Escape', () => {
     const { owl, calls } = surface([folderKey('g')]);
-    pressed(key(' '), owl);
+    pressed(key('Tab'), owl);
+    pressed(key('Tab', { shiftKey: true }), owl);
+    expect(pressed(key(' '), owl)).toBe(false);
     pressed(key('Delete'), owl);
     pressed(key('Escape'), owl);
     expect(calls).toEqual([
       `fold "${folderKey('g')}"`,
+      'foldAll',
       `remove ${JSON.stringify([folderKey('g')])}`,
       'select []',
     ]);
@@ -160,7 +176,7 @@ describe('the keys of the owl map', () => {
   it('do not move or delete the folder at the centre', () => {
     const { owl, calls } = surface([folderKey('g')], folderKey('g'));
     pressed(key('Delete'), owl);
-    pressed(key(' '), owl);
+    pressed(key('Tab'), owl);
     pressed(key('F2'), owl);
     expect(calls).toEqual([`rename "${folderKey('g')}"`]);
   });
@@ -182,7 +198,7 @@ describe('the keys of the owl map', () => {
   it('leave the keys that are not theirs', () => {
     const { owl } = surface([]);
     expect(pressed(key('q', { ctrlKey: true }), owl)).toBe(false);
-    expect(pressed(key('Tab', { shiftKey: true }), owl)).toBe(false);
+    expect(pressed(key(' '), owl)).toBe(false);
   });
 
   it('move the elements of a project among those beside them and deeper, and make, rename and delete nothing', () => {
@@ -192,24 +208,25 @@ describe('the keys of the owl map', () => {
     const outwards = side === 'left' ? 'ArrowLeft' : 'ArrowRight';
     pressed(key('ArrowUp', { altKey: true }), owl);
     pressed(key(outwards, { altKey: true }), owl);
-    pressed(key('Enter'), owl);
+    pressed(key('Enter', { altKey: true }), owl);
     pressed(key('Tab'), owl);
     pressed(key('F2'), owl);
     pressed(key('Delete'), owl);
     pressed(key('a'), owl);
-    pressed(key(' '), owl);
+    pressed(key('Enter'), owl);
     pressed(key('ArrowDown', { altKey: true, shiftKey: true }), owl);
     expect(calls).toEqual([
       `shift ${JSON.stringify([b])} -1`,
       `deeper ${JSON.stringify([b])}`,
       `fold "${b}"`,
+      `write "${b}"`,
       `open "${b}"`,
     ]);
   });
 
-  it('show or hide the map of a project with Space', () => {
+  it('show or hide the map of a project with Tab', () => {
     const { owl, calls } = surface([projectKey('2')]);
-    pressed(key(' '), owl);
+    pressed(key('Tab'), owl);
     expect(calls).toEqual([`fold "${projectKey('2')}"`]);
   });
 });

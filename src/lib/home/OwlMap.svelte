@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { MapMode } from '$lib/state/router.svelte';
   /**
    * The owl map (ADR 0037, 0050): the map above every project. The owl
    * stands at the centre as a picture, or a folder entered; under it the
@@ -92,7 +93,8 @@
     /** What stands at the centre, by its key: the owl, or a folder entered. */
     at?: string;
     /** Opens a project at its top, or enters a folder: shows it at the centre. */
-    onopen: (key: string) => void;
+    /** Opens a project at its top or at an element of its map, in the view given or where it was left; enters a folder. */
+    onopen: (key: string, mode?: MapMode) => void;
     /** Goes up from the folder at the centre, where one is. */
     onup?: () => void;
     /** The name of what holds the folder at the centre, for its corner. */
@@ -834,6 +836,36 @@
     if (k.kind === 'folder' || k.kind === 'project' || k.kind === 'element') onopen(key);
   }
 
+  /** What a double click and Enter do: a project opened in its text, at an element of its map too; a folder entered. */
+  function write(key: string) {
+    if (key === owl.tree.root) return;
+    const k = keyed(key);
+    if (k.kind === 'folder') onopen(key);
+    else if (k.kind === 'project' || k.kind === 'element') onopen(key, 'text');
+  }
+
+  /** Where any folder or project's map is unfolded, folds them all; else unfolds the folders at the first level. */
+  function foldAll() {
+    anchor = null;
+    const open = [...owl.items].filter(
+      ([key, item]) =>
+        key !== owl.tree.root &&
+        ((item.kind === 'folder' && item.holds && !item.folded) ||
+          (item.kind === 'project' && !item.folded)),
+    );
+    if (open.length) {
+      for (const [, item] of open) {
+        if (item.kind === 'folder') listUi.owlFold(item.folder.id, true);
+        else if (item.kind === 'project') listUi.owlMap(item.project.id, false);
+      }
+    } else {
+      for (const key of owl.tree.children.get(owl.tree.root) ?? []) {
+        const item = owl.items.get(key);
+        if (item?.kind === 'folder' && item.holds) listUi.owlFold(item.folder.id, false);
+      }
+    }
+  }
+
   // ---- menus ----
 
   function placeOf(key: string): HTMLElement | null {
@@ -846,13 +878,13 @@
       {
         label: t('home-owl-new-project'),
         icon: FilePlus,
-        shortcut: keysFor('owl-new-project'),
+        shortcut: keysFor('tree-new'),
         action: () => make('project'),
       },
       {
         label: t('home-owl-new-folder'),
         icon: FolderPlus,
-        shortcut: keysFor('owl-new-folder'),
+        shortcut: keysFor('tree-new-under'),
         action: () => make('folder'),
       },
       { kind: 'separator' },
@@ -956,6 +988,7 @@
     },
     select,
     open,
+    write,
     up: () => onup?.(),
     rename,
     make,
@@ -963,6 +996,7 @@
     shallower,
     shift: shiftElements,
     fold,
+    foldAll,
     remove: (keys) => void remove(keys),
     menu: menuOf,
     fit,
@@ -1118,7 +1152,7 @@
     const el = (event.target as HTMLElement).closest<HTMLElement>('[data-owl-key]');
     const key = el?.dataset.owlKey;
     if (!key || (event.target as HTMLElement).closest('button, [data-name-field]')) return;
-    open(key);
+    write(key);
   }
 
   /** A click that ended a drag of the view does nothing. */
@@ -1277,7 +1311,7 @@
                   use:tooltip={item.holds
                     ? {
                         text: item.folded ? t('home-unfold') : t('home-fold'),
-                        shortcut: keysFor('owl-fold'),
+                        shortcut: keysFor('tree-fold'),
                       }
                     : null}
                   onclick={(e) => {
@@ -1314,7 +1348,7 @@
                   aria-label={t('home-owl-leave', { name: above })}
                   use:tooltip={{
                     text: t('home-owl-leave', { name: above }),
-                    shortcut: keysFor('owl-up'),
+                    shortcut: keysFor('tree-up'),
                   }}
                   onclick={(e) => {
                     e.stopPropagation();
@@ -1330,7 +1364,7 @@
                   class="corner enter"
                   tabindex="-1"
                   aria-label={t('home-enter')}
-                  use:tooltip={{ text: t('home-enter'), shortcut: keysFor('owl-open') }}
+                  use:tooltip={{ text: t('home-enter'), shortcut: keysFor('tree-enter') }}
                   onclick={(e) => {
                     e.stopPropagation();
                     open(key);
@@ -1402,7 +1436,7 @@
                           : item.folded
                             ? t('home-unfold')
                             : t('home-fold'),
-                    shortcut: keysFor('owl-fold'),
+                    shortcut: keysFor('tree-fold'),
                   }}
                   onclick={(e) => {
                     e.stopPropagation();
@@ -1420,7 +1454,7 @@
                   class="corner enter"
                   tabindex="-1"
                   aria-label={t('home-enter')}
-                  use:tooltip={{ text: t('home-enter'), shortcut: keysFor('owl-open') }}
+                  use:tooltip={{ text: t('home-enter'), shortcut: keysFor('tree-enter') }}
                   onclick={(e) => {
                     e.stopPropagation();
                     open(key);
@@ -1468,7 +1502,7 @@
                   aria-label={item.folded ? t('home-unfold') : t('home-fold')}
                   use:tooltip={{
                     text: item.folded ? t('home-unfold') : t('home-fold'),
-                    shortcut: keysFor('owl-fold'),
+                    shortcut: keysFor('tree-fold'),
                   }}
                   onclick={(e) => {
                     e.stopPropagation();
@@ -1484,7 +1518,7 @@
                 class="corner enter"
                 tabindex="-1"
                 aria-label={t('home-enter')}
-                use:tooltip={{ text: t('home-enter'), shortcut: keysFor('owl-open') }}
+                use:tooltip={{ text: t('home-enter'), shortcut: keysFor('tree-enter') }}
                 onclick={(e) => {
                   e.stopPropagation();
                   open(key);

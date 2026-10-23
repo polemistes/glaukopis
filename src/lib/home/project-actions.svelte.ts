@@ -143,7 +143,7 @@ function foldItem(fold: Folding | undefined): MenuItem[] {
     {
       label: fold.folded ? t('home-unfold') : t('home-fold'),
       icon: ChevronRight,
-      shortcut: keysFor('owl-fold'),
+      shortcut: keysFor('tree-fold'),
       action: fold.toggle,
     },
   ];
@@ -290,7 +290,7 @@ export class ProjectActions {
       {
         label: t('home-enter'),
         icon: Minimize2,
-        shortcut: keysFor('owl-open'),
+        shortcut: keysFor('tree-enter'),
         disabled: !!place.here,
         action: place.enter,
       },
@@ -299,19 +299,19 @@ export class ProjectActions {
       {
         label: t('home-owl-new-project'),
         icon: FilePlus,
-        shortcut: make ? keysFor('owl-new-project') : undefined,
+        shortcut: make ? keysFor('tree-new') : undefined,
         action: () => (make ? make('project') : this.newProject(f.id)),
       },
       {
         label: t('home-owl-new-folder'),
         icon: FolderPlus,
-        shortcut: make ? keysFor('owl-new-folder') : undefined,
+        shortcut: make ? keysFor('tree-new-under') : undefined,
         action: () => (make ? make('folder') : this.newFolder(f.id)),
       },
       {
         label: t('common-rename'),
         icon: Pencil,
-        shortcut: keysFor('owl-rename'),
+        shortcut: keysFor('tree-rename'),
         action: () => (place.rename ? place.rename() : this.renameFolder(f)),
       },
       { kind: 'separator' },
@@ -341,7 +341,7 @@ export class ProjectActions {
       {
         label: t('home-enter'),
         icon: Minimize2,
-        shortcut: keysFor('owl-open'),
+        shortcut: keysFor('tree-enter'),
         action: place.enter,
       },
       ...(place.beside
@@ -488,7 +488,7 @@ export class ProjectActions {
       {
         label: t('home-enter'),
         icon: Minimize2,
-        shortcut: keysFor('owl-open'),
+        shortcut: keysFor('tree-enter'),
         hint: here ? t('home-open-now') : undefined,
         disabled: here,
         action: () => this.open(p),

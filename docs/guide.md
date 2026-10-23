@@ -130,11 +130,12 @@ It is worked as a project's diagram is, in a look of its own:
   of the buttons; **Ctrl** and a click add one or take it away, **Shift**
   adds, **Ctrl+A** selects all, **Escape** lets go. The arrows go from one to
   the next, and with **Shift** select more.
-- **Opening.** A double click on a card, the small button at its corner, or
-  **Alt+Shift+Down** opens the project. The same on a folder shows the folder
+- **Opening.** A double click on a project, or **Enter** with it selected,
+  opens it in its text; the small button at its corner, or
+  **Alt+Shift+Down**, opens it at its map. The same on a folder shows the folder
   at the centre, with what is in it; the bar says what holds it, and
   **Alt+Shift+Up**, the button at its corner or a name in the bar goes up.
-- **Making.** **Enter** makes a new project and **Tab** a new folder, in the
+- **Making.** **Alt+Enter** makes a new project and **Alt+Shift+Enter** a new folder, in the
   folder selected, beside the project selected, or at the top; its name is
   written where it stands, and **Enter** keeps it. **Escape**, or no name,
   and nothing is made. The menu of a folder and of the map's ground has the
@@ -153,15 +154,17 @@ It is worked as a project's diagram is, in a look of its own:
   this computer. **Place everything by itself**, in the map's menu, puts
   them back in order. Dropped on a folder, it goes into it; on the owl, out
   of all folders.
-- **Folding.** **Space**, or the sign before a folder's name, hides the
-  projects in it or shows them. A folder of many projects begins folded.
+- **Folding.** **Tab**, or the sign before a folder's name, hides the
+  projects in it or shows them; **Shift+Tab** folds everything, or, where
+  nothing is unfolded, opens the folders. A folder of many projects begins
+  folded.
 - **The maps of the projects.** A project stands on the map as the top
   element of its own map stands in it, and opens as an element does: the
   small button at its side, with the number of what is folded away, or
-  **Space** with the project selected, shows its trees under it, each
+  **Tab** with the project selected, shows its trees under it, each
   folded; every unfolding shows one more level. A double click on an
-  element, the button at its corner or **Alt+Shift+Down** opens the project
-  there. The elements are moved as in the project's own map: dragged onto
+  element, or **Enter**, opens the project there in its text; the button at
+  its corner or **Alt+Shift+Down** opens it there at its map. The elements are moved as in the project's own map: dragged onto
   the ground they stand where they are let go, onto another element they go
   under it, onto another project they are carried there; **Alt** and the
   arrows move them up and down, under the one before, and out. Each move is
@@ -1437,7 +1440,13 @@ side has a bar of its own.
 **The list of projects** (**Ctrl+Shift+L**) shows the whole tree of the open
 project under its name, folded but for the way down to the element in view,
 which is marked; press an element to enter it, and the chevron before one
-to show or hide what is under it.
+to show or hide what is under it. The list has the keys of the tree: the
+arrows go from row to row, **Left** to the row it stands under and
+**Right** to the first under it; **Tab** folds and **Shift+Tab** folds all;
+**Alt+Enter** makes a project and **Alt+Shift+Enter** a folder; **Alt** and
+the arrows move a project into a folder or out, and an element of the open
+project as in its map; **Alt+Shift+Down** and **Enter** do what a click
+does; **F2** renames and **Delete** deletes.
 
 This is what makes it safe to write. A tree that is valuable as it is, the
 first sketch of the argument, or the plan for the whole book, need not be

@@ -40,7 +40,9 @@
   import { ancestors, folderOf, rows as makeRows, type Row } from './folders';
   import { moveThings, thingsOf, wouldMove } from './changes';
   import { closedTrees } from './closed.svelte';
-  import { listUi } from './list.svelte';
+  import { listUi, upFromProject } from './list.svelte';
+  import { pressed, type ListRow, type ListSurface } from './list-keys';
+  import { indent, outdent, shift as shiftElement } from '$lib/project/elements';
   import type { ProjectActions } from './project-actions.svelte';
   import ProjectBadge from './ProjectBadge.svelte';
   import Mark from '$lib/shell/Mark.svelte';
@@ -264,35 +266,195 @@
     });
   });
 
-  function onelementkey(event: KeyboardEvent, src: Shown, id: string, holds: boolean) {
-    if (event.key === 'Enter' || event.key === ' ') src.enter(id);
-    else if (event.key === 'ArrowRight' && holds && !isUnfolded(src, id)) toggleFold(src, id);
-    else if (event.key === 'ArrowLeft' && holds && isUnfolded(src, id)) toggleFold(src, id);
-    else return;
-    event.preventDefault();
+  // ---- the keys of the tree, in the list (ADR 0062): see `list-keys` ----
+
+  /** The row selected, by its key: `owl`, `f:<folder>`, `p:<project>`, `e:<project>/<element>`. */
+  let selected = $state<string | null>(null);
+  const elementRow = (src: Shown, id: string) => `e:${src.project}/${id}`;
+  /** The row the Tab key comes to: the one selected, or the first. */
+  const tabOf = (key: string) => (selected === key || (!selected && key === 'owl') ? 0 : -1);
+
+  /** The rows as they stand, read from the page, top to bottom. */
+  function rowsNow(): ListRow[] {
+    return Array.from(listEl?.querySelectorAll<HTMLElement>('[data-row]') ?? []).map((el) => ({
+      key: el.dataset.row!,
+      kind: el.dataset.rowKind as ListRow['kind'],
+      parent: el.dataset.rowParent ?? null,
+      holds: el.dataset.rowHolds !== undefined,
+      unfolded: el.dataset.rowOpen !== undefined,
+      changeable: el.dataset.rowChangeable !== undefined,
+      own: el.dataset.rowOwn !== undefined,
+    }));
+  }
+  const rowEl = (key: string) =>
+    listEl?.querySelector<HTMLElement>(`[data-row="${CSS.escape(key)}"]`) ?? null;
+  const projectOf = (key: string) =>
+    key.startsWith('p:') ? projects.list.find((p) => p.id === key.slice(2)) : undefined;
+  const folderOfRow = (key: string) =>
+    key.startsWith('f:') ? projects.folder(key.slice(2)) : undefined;
+  /** An element's row: the tree it is shown in, and its id. */
+  function elementOf(key: string): { src: Shown; id: string } | null {
+    if (!key.startsWith('e:')) return null;
+    const rest = key.slice(2);
+    const cut = rest.indexOf('/');
+    const owner = rest.slice(0, cut);
+    const id = rest.slice(cut + 1);
+    if (owner === current && ownShown) return { src: ownShown, id };
+    const p = projects.list.find((x) => x.id === owner);
+    const reading = closedTrees.get(owner);
+    if (!p || reading?.state !== 'read') return null;
+    return { src: closedShown(p, reading.tree.tree, reading.tree.names), id };
+  }
+  /** The folder before a row among those beside it, as the keys put a thing into it. */
+  function folderBeforeRow(key: string): string | null {
+    const all = rowsNow();
+    const i = all.findIndex((r) => r.key === key);
+    const parent = all[i]?.parent ?? null;
+    for (let j = i - 1; j >= 0; j--) {
+      if (all[j].parent !== parent) continue;
+      if (all[j].kind === 'folder') return all[j].key.slice(2);
+    }
+    return null;
+  }
+  const thingOf = (key: string) => ({
+    projects: key.startsWith('p:') ? [key.slice(2)] : [],
+    folders: key.startsWith('f:') ? [key.slice(2)] : [],
+  });
+  /** The folder a project or a folder lies in, by id; none at the top. */
+  function holderOf(key: string): string | null {
+    const p = projectOf(key);
+    if (p) return folderOf(projects.folders, p);
+    const f = folderOfRow(key);
+    return f?.parent && projects.folder(f.parent) ? f.parent : null;
   }
 
-  function onprojectkey(event: KeyboardEvent, p: ProjectInfo) {
-    if (event.key === 'Enter' || event.key === ' ') open(p);
-    else if (event.key === 'ArrowRight' && unfoldable(p) && !closedUnfolded.has(p.id))
-      toggleClosed(p);
-    else if (event.key === 'ArrowLeft' && unfoldable(p) && closedUnfolded.has(p.id))
-      toggleClosed(p);
-    else return;
-    event.preventDefault();
-  }
+  const surface: ListSurface = {
+    get rows() {
+      return rowsNow();
+    },
+    get selected() {
+      return selected;
+    },
+    select(key) {
+      selected = key;
+      void tick().then(() => rowEl(key)?.focus());
+    },
+    toggle(key) {
+      const f = folderOfRow(key);
+      const p = projectOf(key);
+      const e = elementOf(key);
+      if (f) toggle(f.id);
+      else if (p && unfoldable(p)) toggleClosed(p);
+      else if (e) toggleFold(e.src, e.id);
+    },
+    foldAll() {
+      const anyOpen =
+        projects.folders.some((f) => !listUi.collapsed.has(f.id)) || closedUnfolded.size > 0;
+      if (anyOpen) {
+        listUi.collapsed = new Set(projects.folders.map((f) => f.id));
+        closedUnfolded.clear();
+      } else listUi.collapsed = new Set();
+    },
+    make(kind) {
+      const key = selected ?? 'owl';
+      const into = folderOfRow(key)?.id ?? holderOf(key);
+      if (kind === 'project') actions.newProject(into);
+      else actions.newFolder(into);
+    },
+    shift(key, by) {
+      const e = elementOf(key);
+      if (e?.src.own && project) shiftElement(project, e.src.tree, e.id, by);
+    },
+    deeper(key) {
+      const e = elementOf(key);
+      if (e) {
+        if (e.src.own && project) indent(project, e.src.tree, e.id);
+        return;
+      }
+      const into = folderBeforeRow(key);
+      if (into) void moveThings(thingOf(key), into);
+    },
+    shallower(key) {
+      const e = elementOf(key);
+      if (e) {
+        if (e.src.own && project) outdent(project, e.src.tree, e.id);
+        return;
+      }
+      const holder = holderOf(key);
+      if (holder) void moveThings(thingOf(key), projects.folder(holder)?.parent ?? null);
+    },
+    open(key) {
+      if (key === 'owl') return router.go({ view: 'owl' });
+      const f = folderOfRow(key);
+      const p = projectOf(key);
+      const e = elementOf(key);
+      if (f) openAsMap(f);
+      else if (p) open(p);
+      else if (e) e.src.enter(e.id);
+    },
+    up() {
+      const route = router.route;
+      if (route.view === 'owl' && route.at) {
+        const f = projects.folder(route.at);
+        const parent = f?.parent && projects.folder(f.parent) ? f.parent : null;
+        router.go(parent ? { view: 'owl', at: parent } : { view: 'owl' });
+      } else if (current && at && ownShown) {
+        if (at === PROJECT) upFromProject(current);
+        else onenter?.(ownShown.tree.parent.get(at) ?? PROJECT);
+      }
+    },
+    rename(key) {
+      const f = folderOfRow(key);
+      const p = projectOf(key);
+      if (f) actions.renameFolder(f);
+      else if (p) actions.rename(p);
+    },
+    remove(key) {
+      const f = folderOfRow(key);
+      const p = projectOf(key);
+      if (f) void actions.removeFolder(f);
+      else if (p) void actions.remove(p);
+    },
+    menu(key) {
+      const el = rowEl(key);
+      const f = folderOfRow(key);
+      const p = projectOf(key);
+      const e = elementOf(key);
+      const items = f
+        ? folderItems(f)
+        : p
+          ? projectItems(p)
+          : e && !e.src.own
+            ? elementItems(e.src, e.id)
+            : null;
+      if (el && items) openMenu(el, items, { align: 'start' });
+    },
+    bringIntoView(key) {
+      rowEl(key)?.scrollIntoView({ block: 'nearest' });
+    },
+  };
 
-  function onfolderkey(event: KeyboardEvent, f: FolderInfo) {
-    if (event.key === 'F2') actions.renameFolder(f);
-    else if (event.key === 'Delete') removeFolder(f);
-    else if (event.key === 'Enter' || event.key === ' ') toggle(f.id);
-    else return;
-    event.preventDefault();
+  function onlistkey(event: KeyboardEvent) {
+    // The field that finds a project keeps its keys.
+    if ((event.target as HTMLElement).closest('input, textarea, [contenteditable="true"]')) return;
+    if (!selected) {
+      const focused = (event.target as HTMLElement).closest<HTMLElement>('[data-row]');
+      if (focused) selected = focused.dataset.row!;
+    }
+    if (pressed(event, surface)) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
   }
 </script>
 
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div
   class="list"
+  role="tree"
+  tabindex="-1"
+  aria-label={t('home-pane')}
+  onkeydown={onlistkey}
   bind:this={listEl}
   use:dropTarget={{ accepts: accepts(null), ondrop: (e) => drop(e, null) }}
 >
@@ -323,16 +485,19 @@
     <div
       class="row owl"
       class:current={owlHere}
-      role="button"
-      tabindex="0"
+      role="treeitem"
+      tabindex={tabOf('owl')}
+      aria-selected={selected === 'owl'}
       aria-current={owlHere ? 'page' : undefined}
       data-owl
+      data-row="owl"
+      data-row-kind="owl"
+      data-row-holds=""
+      data-row-open=""
       data-current={owlHere ? '' : undefined}
       style:padding-left="4px"
-      onclick={() => router.go({ view: 'owl' })}
-      onkeydown={(e) => {
-        if (e.key !== 'Enter' && e.key !== ' ') return;
-        e.preventDefault();
+      onclick={() => {
+        selected = 'owl';
         router.go({ view: 'owl' });
       }}
     >
@@ -344,11 +509,20 @@
   {#each rows as row (row.kind === 'folder' ? `f:${row.folder.id}` : `p:${row.project.id}`)}
     {#if row.kind === 'folder'}
       {@const f = row.folder}
+      {@const fk = `f:${f.id}`}
       <!-- svelte-ignore a11y_click_events_have_key_events -->
       <div
         class="row folder"
-        role="button"
-        tabindex="0"
+        role="treeitem"
+        tabindex={tabOf(fk)}
+        aria-selected={selected === fk}
+        aria-expanded={row.holds ? row.open : undefined}
+        data-row={fk}
+        data-row-kind="folder"
+        data-row-parent={f.parent && projects.folder(f.parent) ? `f:${f.parent}` : 'owl'}
+        data-row-holds={row.holds ? '' : undefined}
+        data-row-open={row.open ? '' : undefined}
+        data-row-changeable=""
         data-depth={row.depth}
         data-folder={f.id}
         class:current={owlAt === f.id}
@@ -356,10 +530,12 @@
         data-current={owlAt === f.id ? '' : undefined}
         style:padding-left="{left + row.depth * step}px"
         use:dropTarget={{ accepts: accepts(f.id), ondrop: (e) => drop(e, f.id) }}
-        onclick={() => toggle(f.id)}
+        onclick={() => {
+          selected = fk;
+          toggle(f.id);
+        }}
         ondblclick={() => openAsMap(f)}
         oncontextmenu={(e) => openContextMenu(e, folderItems(f))}
-        onkeydown={(e) => onfolderkey(e, f)}
         onpointerdown={(e) => startDrag(e, () => ({ kind: 'folder', data: f.id, label: f.name }))}
       >
         <span class="twisty" class:open={row.open} class:hidden={!row.holds}>
@@ -383,20 +559,33 @@
       </div>
     {:else}
       {@const p = row.project}
+      {@const pk = `p:${p.id}`}
+      {@const pf = folderOf(projects.folders, p)}
       <!-- svelte-ignore a11y_click_events_have_key_events -->
       <div
         class="row project"
         class:current={p.id === current}
-        role="button"
-        tabindex="0"
+        role="treeitem"
+        tabindex={tabOf(pk)}
+        aria-selected={selected === pk}
+        data-row={pk}
+        data-row-kind="project"
+        data-row-parent={recent ? undefined : pf ? `f:${pf}` : 'owl'}
+        data-row-holds={!recent && (unfoldable(p) || (p.id === current && !!ownShown))
+          ? ''
+          : undefined}
+        data-row-open={p.id === current || closedUnfolded.has(p.id) ? '' : undefined}
+        data-row-changeable={p.id !== current ? '' : undefined}
         aria-current={p.id === current ? 'page' : undefined}
         data-depth={row.depth}
         data-project={p.id}
         data-current={p.id === current ? '' : undefined}
         title={p.name}
         style:padding-left="{left + row.depth * step}px"
-        onclick={() => open(p)}
-        onkeydown={(e) => onprojectkey(e, p)}
+        onclick={() => {
+          selected = pk;
+          open(p);
+        }}
         oncontextmenu={(e) => openContextMenu(e, projectItems(p))}
         onpointerdown={(e) => startDrag(e, () => ({ kind: 'project', data: p.id, label: p.name }))}
       >
@@ -491,15 +680,27 @@
     <div
       class="row element"
       class:current={id === src.at}
-      role="button"
-      tabindex="0"
+      role="treeitem"
+      tabindex={tabOf(elementRow(src, id))}
+      aria-selected={selected === elementRow(src, id)}
+      aria-expanded={holds ? open : undefined}
+      data-row={elementRow(src, id)}
+      data-row-kind="element"
+      data-row-parent={(src.tree.parent.get(id) ?? PROJECT) === PROJECT
+        ? `p:${src.project}`
+        : elementRow(src, src.tree.parent.get(id)!)}
+      data-row-holds={holds ? '' : undefined}
+      data-row-open={open ? '' : undefined}
+      data-row-own={src.own ? '' : undefined}
       aria-current={id === src.at ? 'location' : undefined}
       data-element={id}
       data-current={id === src.at ? '' : undefined}
       title={name || undefined}
       style:padding-left="{indent + depth * step}px"
-      onclick={() => src.enter(id)}
-      onkeydown={(e) => onelementkey(e, src, id, holds)}
+      onclick={() => {
+        selected = elementRow(src, id);
+        src.enter(id);
+      }}
       oncontextmenu={src.own ? undefined : (e) => openContextMenu(e, elementItems(src, id))}
     >
       <button

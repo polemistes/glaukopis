@@ -143,7 +143,7 @@
         {
           label: t('home-new-folder'),
           icon: FolderPlus,
-          shortcut: keysFor('owl-new-folder'),
+          shortcut: keysFor('tree-new-under'),
           action: () => makeHere('folder'),
         },
         { kind: 'separator' },
@@ -196,11 +196,12 @@
     );
   }
 
-  /** Opens a project at its top or at an element of its map, or enters a folder. */
-  function open(key: string) {
+  /** Opens a project at its top or at an element of its map, in the view given or where it was left; or enters a folder. */
+  function open(key: string, mode?: MapMode) {
     const k = keyed(key);
-    if (k.kind === 'project') router.go({ view: 'project', project: k.id });
-    else if (k.kind === 'element') router.go({ view: 'project', project: k.project, at: k.id });
+    if (k.kind === 'project') router.go({ view: 'project', project: k.id, mode });
+    else if (k.kind === 'element')
+      router.go({ view: 'project', project: k.project, at: k.id, mode });
     else if (k.kind === 'folder') router.go({ view: 'owl', at: k.id });
   }
 

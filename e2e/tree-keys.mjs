@@ -2,8 +2,9 @@
 // new element after, Alt+Shift+Enter one under, Tab to fold and Shift+Tab
 // all, Enter to open the text, F2 to rename. In the text Alt+Enter makes a
 // heading at the cursor: at the start, the middle and the end of a
-// paragraph, and with a citation in it, which a name cannot hold. And the
-// keys that once did these things do nothing now.
+// paragraph, and with a citation in it, which a name cannot hold. The same
+// keys on the map of all projects and in the list at the left. And the keys
+// that once did these things do nothing now.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -492,6 +493,93 @@ try {
   await app.exec(`document.activeElement?.blur?.()`);
   await sleep(200);
   await app.screenshot('tree-keys-2-text');
+
+  // ==== Part 4: the map of all projects ====
+  const projectOn = (name) =>
+    app.exec(
+      `return Array.from(document.querySelectorAll('[data-owl-project]')).find((c) => c.querySelector('.name')?.textContent.trim() === arguments[0]) ?? null`,
+      name,
+    );
+  const folderOn = (name) =>
+    app.exec(
+      `return Array.from(document.querySelectorAll('[data-owl-folder]')).find((c) => c.querySelector('.label')?.textContent.trim() === arguments[0]) ?? null`,
+      name,
+    );
+  const parentOn = (name) =>
+    app.exec(
+      `return Array.from(document.querySelectorAll('[data-owl-project]')).find((c) => c.querySelector('.name')?.textContent.trim() === arguments[0])?.dataset.owlParent ?? null`,
+      name,
+    );
+  const nameIt = async (text) => {
+    await app.waitFor('[data-name-field]', 3000);
+    await sleep(80);
+    await app.keys(text);
+    await app.press('Enter');
+    await app.waitGone('[data-name-field]', 3000);
+    await sleep(300);
+  };
+  const until = async (fn, ms = 4000) => {
+    for (const end = Date.now() + ms; Date.now() < end; await sleep(100)) if (await fn()) return true;
+    return false;
+  };
+  await app.home();
+  await sleep(600);
+  await app.click('[data-owl-key="owl"]');
+  await app.keys(['Alt', 'Shift', 'Enter']);
+  await nameIt('Shelf');
+  check('on the map, Alt+Shift+Enter makes a folder, named in place', !!(await folderOn('Shelf')));
+  await app.keys(['Alt', 'Enter']);
+  await nameIt('Second');
+  const shelf = await app.exec(`return Array.from(document.querySelectorAll('[data-owl-folder]')).find((c) => c.querySelector('.label')?.textContent.trim() === 'Shelf')?.dataset.owlFolder`);
+  check('and Alt+Enter a project in the folder selected', (await parentOn('Second')) === `folder:${shelf}`, await parentOn('Second'));
+  await app.click(await folderOn('Shelf'));
+  await app.press('Tab');
+  check('Tab folds the folder selected', await until(async () => !(await projectOn('Second'))));
+  await app.press('Tab');
+  check('and unfolds it', await until(async () => !!(await projectOn('Second'))));
+  await app.press(' ');
+  await sleep(300);
+  check('Space folds nothing', !!(await projectOn('Second')));
+  await app.keys(['Shift', 'Tab']);
+  check('Shift+Tab folds all', await until(async () => !(await projectOn('Second'))));
+  await app.keys(['Shift', 'Tab']);
+  check('and again unfolds the folders', await until(async () => !!(await projectOn('Second'))));
+  await app.screenshot('tree-keys-4-map');
+  await app.click(await projectOn('Tree'));
+  await app.press('Enter');
+  check(
+    'Enter on a project opens it in its text',
+    await until(async () => (await app.exec('return location.hash')).startsWith('#/project/') && (await app.exists('.text-view .section'))),
+    await app.exec('return location.hash'),
+  );
+  await sleep(600);
+
+  // ==== Part 5: the list at the left ====
+  if (!(await app.exists('[data-projects-pane]'))) await app.keys(['Control', 'Shift', 'l']);
+  await app.waitFor('[data-projects-pane] [data-row="owl"]', 4000);
+  await app.exec(`document.querySelector('[data-projects-pane] [data-row="owl"]').focus()`);
+  await app.press('ArrowDown');
+  const selectedRow = () => app.exec(`return document.querySelector('[data-projects-pane] [data-row][aria-selected="true"]')?.dataset.row ?? null`);
+  check('in the list, the arrows go from row to row', (await selectedRow()) === `f:${shelf}`, await selectedRow());
+  const secondRow = () => app.exec(`return Array.from(document.querySelectorAll('[data-projects-pane] .row.project .name')).some((n) => n.textContent.trim() === 'Second')`);
+  await app.press('Tab');
+  check('Tab folds the folder of the row', await until(async () => !(await secondRow())));
+  await app.press('Tab');
+  check('and unfolds it', await until(secondRow));
+  await app.press('ArrowDown');
+  await app.press('F2');
+  await app.waitFor('dialog input', 3000);
+  check('F2 renames the project of the row', (await app.exec(`return document.querySelector('dialog input').value`)) === 'Second');
+  await app.press('Escape');
+  await app.waitGone('dialog[open]', 3000);
+  await sleep(200);
+  await app.screenshot('tree-keys-5-list');
+  await app.keys(['Alt', 'Shift', 'ArrowDown']);
+  check(
+    'Alt+Shift+Down enters the project of the row',
+    await until(async () => (await app.exec('return document.title')).includes('Second')),
+    await app.exec('return document.title'),
+  );
 
   const errors = await app.pageErrors();
   check('no errors in the page', errors.length === 0, errors.join(' | '));

@@ -105,10 +105,10 @@ try {
   await app.press('Escape');
   await app.waitGone('.menu', 3000);
   check('a card in a folder is a level deeper', (await app.exec(`return ${card('Iliad')}?.getAttribute('aria-level')`)) === '3');
-  await app.press('Space');
+  await app.press('Tab');
   await sleep(250);
-  check('Space folds the folder selected', !(await hasCard(app, 'Iliad')));
-  await app.press('Space');
+  check('Tab folds the folder selected', !(await hasCard(app, 'Iliad')));
+  await app.press('Tab');
   await sleep(250);
   check('and unfolds it', await hasCard(app, 'Iliad'));
   await app.screenshot('owl-1-selected');
@@ -121,14 +121,14 @@ try {
 
   // --- 2. Making and naming in place, renaming, undoing ---
   await app.click('[data-owl-key="owl"]');
-  await app.press('Tab');
+  await app.keys(['Alt', 'Shift', 'Enter']);
   await name(app, 'Latin');
-  check('Tab makes a folder, named in place', await hasLabel(app, 'Latin'));
+  check('Alt+Shift+Enter makes a folder, named in place', await hasLabel(app, 'Latin'));
   check('and the new folder is selected', (await selectedName(app)) === 'Latin');
   const latin = await app.exec(`return ${label('Latin')}?.dataset.owlFolder`);
-  await app.press('Enter');
+  await app.keys(['Alt', 'Enter']);
   await name(app, 'Aeneid');
-  check('Enter makes a project in the folder selected', (await parentOfCard(app, 'Aeneid')) === `folder:${latin}`, await parentOfCard(app, 'Aeneid'));
+  check('Alt+Enter makes a project in the folder selected', (await parentOfCard(app, 'Aeneid')) === `folder:${latin}`, await parentOfCard(app, 'Aeneid'));
   await app.press('F2');
   await name(app, 'Aeneis');
   check('F2 renames in place', (await hasCard(app, 'Aeneis')) && !(await hasCard(app, 'Aeneid')));
@@ -141,7 +141,7 @@ try {
   await sleep(150);
   check('Escape keeps the old name', await hasCard(app, 'Aeneis'));
   const cards = await app.count('[data-owl-project]');
-  await app.press('Enter');
+  await app.keys(['Alt', 'Enter']);
   await app.waitFor('[data-name-field]', 3000);
   await app.press('Escape');
   await app.waitGone('[data-name-field]', 3000);
@@ -153,7 +153,7 @@ try {
   await app.clickText('.toaster .toast .action', 'Undo');
   check('the message of a renaming undoes it', await waitUntil(() => hasCard(app, 'Aeneis')));
   await app.click('[data-owl-key="owl"]');
-  await app.press('Enter');
+  await app.keys(['Alt', 'Enter']);
   await name(app, 'Scratch');
   check('a project made at the top stands under the owl', (await parentOfCard(app, 'Scratch')) === 'owl');
   await app.keys(['Control', 'z']);
@@ -261,7 +261,7 @@ try {
   await app.waitFor('.diagram .node.root', 10000);
   await sleep(500);
   const add = async (key, text) => {
-    await app.press(key);
+    await app.keys(key === 'Tab' ? ['Alt', 'Shift', 'Enter'] : ['Alt', 'Enter']);
     await app.waitFor('.diagram .node.renaming .prose', 3000);
     await sleep(120);
     await app.keys(text);
@@ -298,14 +298,14 @@ try {
   check('with its map folded away under it, and the fold button saying how many trees', (await app.exec(`return ${card('Iliad')}?.querySelector('.fold')?.textContent.trim()`)) === '3' && (await app.exec(`return ${card('Iliad')}?.hasAttribute('data-owl-folded')`)));
   check('a project with nothing in it has no fold button', await app.exec(`return !${card('Notes')}?.querySelector('.fold')`));
   await app.click(await cardEl(app, 'Iliad'));
-  await app.press('Space');
-  check('Space unfolds its map: its trees stand under it in the order of the project, and nothing deeper', await waitUntil(async () => JSON.stringify(await elementNames()) === '["Wrath","Ships","Embassy"]', 6000), JSON.stringify(await elementNames()));
+  await app.press('Tab');
+  check('Tab unfolds its map: its trees stand under it in the order of the project, and nothing deeper', await waitUntil(async () => JSON.stringify(await elementNames()) === '["Wrath","Ships","Embassy"]', 6000), JSON.stringify(await elementNames()));
   check('drawn as the elements of a map', await app.exec(`return ${element('Wrath')}?.classList.contains('node') && ${element('Wrath')}?.classList.contains('depth-1')`));
   check('a tree with something under it is folded, its fold button counting it', (await app.exec(`return ${element('Wrath')}?.querySelector('.fold')?.textContent.trim()`)) === '1');
   await app.click(await elementEl('Wrath'));
-  await app.press('Space');
-  check('Space on the tree shows the next level', await waitUntil(() => hasElement('Quarrel'), 4000));
-  await app.press('Space');
+  await app.press('Tab');
+  check('Tab on the tree shows the next level', await waitUntil(() => hasElement('Quarrel'), 4000));
+  await app.press('Tab');
   await waitUntil(async () => !(await hasElement('Quarrel')), 4000);
   check('and the fold button closes it again', await app.exec(`return ${card('Iliad')}?.querySelector('.fold')?.textContent.trim() === '–'`));
   // The off-screen webview paints what was just added a frame late: the picture waits for it.
@@ -342,7 +342,7 @@ try {
   check('Ctrl+Z puts it back', await waitUntil(async () => (await app.exec(`return ${element('Embassy')}?.dataset.owlParent`)) === `project:${iliad}`, 6000));
   await app.press('F2');
   await app.press('Delete');
-  await app.press('Enter');
+  await app.keys(['Alt', 'Enter']);
   await sleep(500);
   const untouched = { names: await elementNames(), field: await app.exists('[data-name-field]'), dialog: await app.exists('dialog[open]') };
   // The tree that took an element in was unfolded for it, and stays so after the undo.
@@ -403,10 +403,10 @@ try {
 
   // Carried to another project, whose map is open to show it.
   await app.click(await cardEl(app, 'Iliad'));
-  await app.press('Space');
+  await app.press('Tab');
   await waitUntil(() => hasElement('Embassy'), 6000);
   await app.click(await cardEl(app, 'Odyssey'));
-  await app.press('Space');
+  await app.press('Tab');
   await waitUntil(async () => (await app.exec(`return ${card('Odyssey')}?.hasAttribute('data-owl-folded')`)) === false, 6000);
   await sleep(600);
   await fitted();
