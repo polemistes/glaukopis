@@ -109,10 +109,18 @@
   $effect(() => {
     const el = room;
     if (!el) return;
-    const observer = new ResizeObserver(() => (roomWidth = el.clientWidth));
+    // A frame later, so that the crumbs drawn anew are not a change within the observing.
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => (roomWidth = el.clientWidth));
+    });
     observer.observe(el);
     roomWidth = el.clientWidth;
-    return () => observer.disconnect();
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
   });
 
   // The crumbs are measured, drawn whole out of sight, when they or their
@@ -136,7 +144,9 @@
     // Until the crumbs are measured, all are drawn: the room cuts what does not fit.
     if (widths.length !== crumbs.length || !roomWidth) return { shown: all, hidden: [] };
     const beside = (more?.offsetWidth ?? 26) + 4;
-    return fitCrumbs(widths, roomWidth - beside, ellipsisWidth);
+    // The project always shows, so that each path says which project it is in.
+    const project = crumbs.findIndex((c) => c.kind === 'project');
+    return fitCrumbs(widths, roomWidth - beside, ellipsisWidth, [project]);
   });
 
   // ---- what the crumbs do ----
@@ -158,8 +168,8 @@
   }
 
   /** The menu of the crumbs hidden behind …, each doing what it does. */
-  function openHidden(event: MouseEvent) {
-    const items: MenuItem[] = fitted.hidden.map((i): MenuItem => {
+  function openHidden(event: MouseEvent, hidden: number[]) {
+    const items: MenuItem[] = hidden.map((i): MenuItem => {
       const c = crumbs[i];
       if (c.kind === 'folder')
         return {
@@ -347,7 +357,9 @@
       />
     {:else}
       {#each fitted.shown as i, k (crumbs[i].kind + crumbs[i].id)}
-        {#if k === 1 && fitted.hidden.length}
+        {@const before = k > 0 ? fitted.shown[k - 1] : i - 1}
+        {#if i - before > 1}
+          {@const hidden = crumbs.map((_, j) => j).filter((j) => j > before && j < i)}
           <span class="step">
             <span class="sep" aria-hidden="true">›</span>
             <button
@@ -357,7 +369,7 @@
               aria-haspopup="menu"
               aria-label={t('project-path-hidden')}
               use:tooltip={{ text: t('project-path-hidden'), side: 'bottom' }}
-              onclick={openHidden}>…</button
+              onclick={(e) => openHidden(e, hidden)}>…</button
             >
           </span>
         {/if}

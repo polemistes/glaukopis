@@ -102,6 +102,23 @@ describe('fitCrumbs', () => {
     expect(fitCrumbs([300], 100, 20)).toEqual({ shown: [0], hidden: [] });
   });
 
+  it('keeps the project shown, with the crumbs hidden on either side of it behind one each', () => {
+    // Two folders, the project, four elements: the first folder, the project and the last always.
+    expect(fitCrumbs([30, 30, 60, 50, 50, 50, 70], 240, 20, [2])).toEqual({
+      shown: [0, 2, 6],
+      hidden: [1, 3, 4, 5],
+    });
+    expect(fitCrumbs([30, 30, 60, 50, 50, 50, 70], 290, 20, [2])).toEqual({
+      shown: [0, 2, 5, 6],
+      hidden: [1, 3, 4],
+    });
+    // With the project next to the first, one stretch only.
+    expect(fitCrumbs([30, 60, 50, 50, 70], 200, 20, [1])).toEqual({
+      shown: [0, 1, 4],
+      hidden: [2, 3],
+    });
+  });
+
   it('has nothing to show for no crumbs', () => {
     expect(fitCrumbs([], 100, 20)).toEqual({ shown: [], hidden: [] });
   });

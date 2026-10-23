@@ -46,29 +46,40 @@ export function crumbsOf(
 }
 
 /**
- * Which crumbs are shown in a room: the first and the last always, then as
- * many of the rest as fit, taken from the end; the hidden ones stand behind
- * one crumb of `ellipsis` width. Widths are of the crumbs drawn whole, with
- * their separators. Where the first and the last alone do not fit, both are
- * shown all the same, and the last is cut to the room that is left.
+ * Which crumbs are shown in a room: the first and the last always, and
+ * those `kept` (the project, so that each path says its project), then as
+ * many of the rest as fit, taken from the end; each stretch of hidden ones
+ * stands behind one crumb of `ellipsis` width. Widths are of the crumbs
+ * drawn whole, with their separators. Where those always shown do not fit,
+ * they are shown all the same, and the last is cut to the room that is left.
  */
 export function fitCrumbs(
   widths: readonly number[],
   room: number,
   ellipsis: number,
+  kept: readonly number[] = [],
 ): { shown: number[]; hidden: number[] } {
   const n = widths.length;
   const all = widths.map((_, i) => i);
   if (n <= 2 || widths.reduce((sum, w) => sum + w, 0) <= room) return { shown: all, hidden: [] };
-  let left = room - widths[0] - widths[n - 1] - ellipsis;
-  // From the end towards the first, while each fits: what is hidden is one stretch in the middle.
-  let from = n - 1;
-  while (from - 1 > 0 && widths[from - 1] <= left) {
-    from -= 1;
-    left -= widths[from];
+  const shown = new Set([0, n - 1, ...kept.filter((i) => i > 0 && i < n - 1)]);
+  /** What the crumbs shown take, with a crumb … for each stretch hidden between them. */
+  const cost = (set: Set<number>) => {
+    const sorted = [...set].sort((a, b) => a - b);
+    return sorted.reduce(
+      (sum, i, k) => sum + widths[i] + (k > 0 && i - sorted[k - 1] > 1 ? ellipsis : 0),
+      0,
+    );
+  };
+  // From the end towards the first, while each fits.
+  for (let i = n - 2; i > 0; i--) {
+    if (shown.has(i)) continue;
+    const more = new Set([...shown, i]);
+    if (cost(more) > room) break;
+    shown.add(i);
   }
   return {
-    shown: [0, ...all.slice(from)],
-    hidden: all.slice(1, from),
+    shown: all.filter((i) => shown.has(i)),
+    hidden: all.filter((i) => !shown.has(i)),
   };
 }

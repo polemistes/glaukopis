@@ -847,11 +847,19 @@
       paneWidths = els.map((el) => el.getBoundingClientRect().width);
       panesWidth = box.getBoundingClientRect().width;
     };
-    const observer = new ResizeObserver(measure);
+    // A frame later, so that the cells changing width is not a change within the observing.
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(measure);
+    });
     observer.observe(box);
     for (const el of els) observer.observe(el);
     measure();
-    return () => observer.disconnect();
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
   });
 
   // ---- the room each part has ----
@@ -1047,7 +1055,7 @@
   <div class="project">
     <!-- The top row: over each side a cell with its path, as wide as the side; Split view at the right end. -->
     <div class="top" data-top>
-      <div class="cells" class:mirrored style:gap="{between}px">
+      <div class="cells" class:mirrored style:gap="{between}px" style:flex-basis="{panesWidth}px">
         {#each panes as p, i (i)}
           {@const of = projectOf(p)}
           <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -1057,6 +1065,7 @@
             class:other={panes.length > 1 && i !== focused}
             data-side={i}
             style:flex-basis="{paneWidths[i] ?? 0}px"
+            style:flex-shrink={i === (mirrored ? 0 : panes.length - 1) ? 1 : 0}
             onpointerdowncapture={() => (focused = i)}
             onfocusin={() => (focused = i)}
           >
@@ -1590,11 +1599,11 @@
   .panes.mirrored {
     flex-direction: row-reverse;
   }
+  /* Where Split view needs room, the cell at the right gives way, so that the line between the cells stays over that between the sides. */
   .cell {
     display: flex;
     align-items: center;
     flex-grow: 0;
-    flex-shrink: 1;
     min-width: 0;
     padding: 0 6px 0 8px;
     overflow: hidden;
