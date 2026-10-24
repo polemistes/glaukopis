@@ -107,7 +107,9 @@ SPELLING = [
 # language it was trained on, and has no language of its own to be called
 # anything in: its title says what it is. The Fraktur model reads the Gothic
 # type of German, Norwegian, Danish and Swedish books of before about 1900,
-# whatever their language.
+# whatever their language. Japanese has two, for writing across and for
+# writing down the page; it has no dictionary of spelling, being written
+# without spaces between its words, and LibreOffice has none of it.
 OCR = [
     ("eng", "en", "English"),
     ("nor", "no", "Norsk"),
@@ -118,6 +120,8 @@ OCR = [
     ("ita", "it", "Italiano"),
     ("grc", "grc", "Ἀρχαία ἑλληνική"),
     ("lat", "la", "Latina"),
+    ("jpn", "ja", "日本語"),
+    ("jpn_vert", "ja", "日本語（縦書き）"),
     ("deu_latf", "de", "Fraktur"),
 ]
 TESSDATA_VERSION = "4.1.0"
