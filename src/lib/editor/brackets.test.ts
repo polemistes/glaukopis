@@ -7,6 +7,7 @@ import {
   joinRunBefore,
   languageOverRun,
   runAt,
+  runFrom,
   runLanguage,
   runToText,
   selectRun,
@@ -127,6 +128,77 @@ describe('the bracket of a run', () => {
     expect(current()).toBe('a,b');
     v.dispatch(v.state.tr.setSelection(TextSelection.atEnd(v.state.doc)));
     expect(current()).toBe('d');
+  });
+});
+
+describe('the bracket beside numbered lines', () => {
+  /** The paragraphs as drawn: the side their bracket keeps clear of the numbers on, `-` where it keeps none, and `|` where they have a segment of a bracket. */
+  const sides = (v: EditorView) =>
+    [...v.dom.querySelectorAll(':scope > p')]
+      .map(
+        (p) =>
+          `${p.getAttribute('data-run-numbers') ?? '-'}${p.querySelector(':scope > .run-line') ? '|' : ''}`,
+      )
+      .join(' ');
+
+  it('of text follows the numbered stretch, not all the text standing together', () => {
+    const v = at([
+      'text: a',
+      'text: b',
+      'text #counted: c',
+      'text #counted: d',
+      'text: e',
+      'text: f',
+    ]);
+    expect(brackets(v)).toEqual(['Text · numbered: c d']);
+    expect(sides(v)).toBe('- - left| left| - -');
+    expect(v.dom.querySelectorAll(':scope > p')[2].hasAttribute('data-run-first')).toBe(true);
+  });
+
+  it('of text is one for each stretch numbered alike', () => {
+    const v = at([
+      'text #counted: a',
+      'text #counted: b',
+      'text #given: c',
+      'text: d',
+      'text #given: e',
+    ]);
+    expect(brackets(v)).toEqual([
+      'Text · numbered: a b',
+      'Text · numbered: c',
+      'Text · numbered: e',
+    ]);
+  });
+
+  it('of a kind stands outside the numbers along the whole run, beside what is not numbered too', () => {
+    const v = at(['line: a', 'speaker: Chorus', 'line #counted: b', 'line #counted: c', 'text: d']);
+    expect(brackets(v)).toEqual(['Verse · numbered: a Chorus b c']);
+    expect(sides(v)).toBe('left| left| left| left| -');
+  });
+
+  it('keeps clear of the numbers at the left where any of the run stands there, and stays in where they stand at the right', () => {
+    expect(sides(at(['line #counted right: a', 'line #counted: b']))).toBe('left| left|');
+    expect(sides(at(['line #counted right: a', 'line: b']))).toBe('right| right|');
+    const v = editorOf(['line: a', 'line #counted: b'], {
+      numbers: () => ({ every: 5, side: 'right' }),
+    });
+    views.push(v);
+    expect(sides(v)).toBe('right| right|');
+  });
+
+  it('of numbered text has the menu of that stretch: selecting it selects those paragraphs alone', () => {
+    const v = at(['text: x', 'text #counted: Arma virumque', 'text #counted: cano|', 'text: y']);
+    const first = v.state.doc.child(0).nodeSize;
+    expect(runFrom(v.state, first)?.paragraphs.map((p) => p.node.textContent)).toEqual([
+      'Arma virumque',
+      'cano',
+    ]);
+    expect(selectRun(first)(v.state, v.dispatch)).toBe(true);
+    expect(v.state.doc.textBetween(v.state.selection.from, v.state.selection.to)).toBe(
+      'Arma virumquecano',
+    );
+    // All the text standing together is a run still, where it begins.
+    expect(runFrom(v.state, 0)?.paragraphs).toHaveLength(4);
   });
 });
 

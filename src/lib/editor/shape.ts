@@ -200,3 +200,40 @@ export function runsIn(parent: Node, start: number, own: readonly BasedKind[] = 
   settle();
   return out;
 }
+
+/**
+ * The settings of a paragraph that say how the stretch it stands in is
+ * numbered: paragraphs standing together that are numbered and have these
+ * the same are numbered together (`project/model/lines.ts`).
+ */
+export const STRETCH_ATTRS = ['numbering', 'every', 'side'] as const;
+
+/** Whether a paragraph is numbered: it is then of a stretch. */
+export function numberedNode(node: Node): boolean {
+  return node.attrs.numbering === 'counted' || node.attrs.numbering === 'given';
+}
+
+/** Whether two paragraphs are numbered, and alike, so that standing together they are of one stretch. */
+export function numberedAlike(a: Node, b: Node): boolean {
+  return (
+    numberedNode(a) &&
+    numberedNode(b) &&
+    STRETCH_ATTRS.every((k) => (a.attrs[k] ?? null) === (b.attrs[k] ?? null))
+  );
+}
+
+/**
+ * The numbered stretches among paragraphs that stand one after the other,
+ * as those of a run do: each of those numbered alike, together; a
+ * paragraph that is not numbered parts them.
+ */
+export function numberedStretches(paragraphs: readonly Placed[]): Placed[][] {
+  const out: Placed[][] = [];
+  let at: Placed[] | null = null;
+  for (const p of paragraphs) {
+    if (!numberedNode(p.node)) at = null;
+    else if (at && numberedAlike(at[at.length - 1].node, p.node)) at.push(p);
+    else out.push((at = [p]));
+  }
+  return out;
+}

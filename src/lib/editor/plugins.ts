@@ -397,7 +397,11 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
     // The numbers of the lines of a numbered stretch: see `numbers.ts`.
     stretchNumbersPlugin(own, () => hooks.numbers?.() ?? LAYOUT_NUMBERS),
     // The bracket of every run, with its name: see `brackets.ts`.
-    runBrackets(own, (kind) => kindName(kind, own())),
+    runBrackets(
+      own,
+      (kind) => kindName(kind, own()),
+      () => hooks.numbers?.() ?? LAYOUT_NUMBERS,
+    ),
     // Tables: before the keys of the text, since Tab and the arrows mean something of their own in them.
     ...tablePlugins(),
     keymap(keys),

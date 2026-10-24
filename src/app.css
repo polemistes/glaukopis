@@ -451,6 +451,10 @@ body.dragging * {
 }
 .prose .run-line {
   position: absolute;
+  /* Measured by the size of the text, not of its paragraph, so that a
+     speaker or a direction in a run of a kind set larger or smaller has its
+     segment in line with the others. */
+  font-size: var(--text-size, 17px);
   /* Up into the gap before the paragraph, over the line of the one before, which is of the run too. */
   top: -2.5em;
   bottom: 0;
@@ -466,8 +470,11 @@ body.dragging * {
   top: 0;
 }
 /* Where the numbers stand at the left, the bracket stands outside them, so
-   that it runs past the numbers rather than through them. */
-.prose p[data-numbers='left'] > .run-line {
+   that it runs past the numbers rather than through them: along the whole
+   run where any of its paragraphs is numbered (`data-run-numbers`, which
+   the editor sets on all of them), so that it does not jump in beside
+   those that are not. */
+.prose p[data-run-numbers='left'] > .run-line {
   left: calc(-3.4em - var(--inset));
 }
 /* The bracket is darker while the cursor is in the run. */
