@@ -61,8 +61,8 @@ Everything is saved as you work. There is nothing to press.
 them, and under the project you are in its whole tree, folded but for the
 way down to the element in view, which is marked. A click on a project opens
 it, and a click on an element enters it (see *One tree, entered anywhere*).
-**Ctrl+Shift+L**, the × at its head or the button at the left of the bar
-over the map hides it and shows it again; its edge can be dragged to make it
+**Ctrl+Shift+L**, the × at its head or the button at the top of the rail,
+where the owl stood, hides it and shows it again; its edge can be dragged to make it
 wider. It stays as you leave it.
 
 ### Many projects
@@ -74,8 +74,7 @@ file…**; the **⋯** beside it has the deleted projects, with their number,
 and **A project of all the projects…**. Under the head, a field finds a
 project by its name, and the button beside it makes a folder.
 
-A folder is opened and closed with a click, and shows how many projects it
-holds. Make one inside another from that folder's menu; drag a project onto
+A folder is opened and closed with a click. Make one inside another from that folder's menu; drag a project onto
 a folder, or choose **Move to folder** in its menu, and **Out of folders**
 to take it out again. Deleting a folder keeps what is in it, which moves up
 to where the folder was. The folders are kept on this computer alone, not in
@@ -1409,9 +1408,10 @@ element is in its right-click menu, in the diagram and in the text:
 **Rename**, **Document properties…**, **A document into it…**, **New
 element under it**, **Delete**, and the rest.
 
-At the far left of the top row stands the button of the list of projects;
-at its right end, **Split view**. Under the path, each side has its bar
-(see *The text*).
+The top row holds, over each side, its path and at its right end the
+**×** that closes the side; at the right end of the row, on a ground of its
+own, **Split view**. The button of the list of projects is at the top of
+the rail. Under the path, each side has its bar (see *The text*).
 
 This is what makes it safe to write. A tree that is valuable as it is, the
 first sketch of the argument, or the plan for the whole book, need not be
@@ -1470,7 +1470,7 @@ consumed by the writing:
   the dialogs act in the side you are in. The round button with arrows on
   the line between the two paths, or **Switch sides** in the menu, puts the
   two the other way round. **One at a time** closes the side you are not
-  in; the **×** in the bar of a side, or **Ctrl+W**, closes that side. With
+  in; the **×** at the right end of a side's path, or **Ctrl+W**, closes that side. With
   one side, they close the project, and the start screen comes.
 - **Another project beside**: **Another project…**, in the same menu, shows
   the list of projects, with its folders and its field; choose a project to

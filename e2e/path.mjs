@@ -9,7 +9,9 @@
 // light, the dark and the mellow theme; the colour follows the focus;
 // Switch sides draws them the other way round; another project beside, both
 // marked in the list, the panel at the side naming its project; the bar of
-// each side; a side closed by its ×, by Ctrl+W, by Close in
+// each side; the × of each side in its cell of the top row, at the right
+// end, and Split view with a background of its own with one side and with
+// two; the list's button on the rail; a side closed by its ×, by Ctrl+W, by Close in
 // the list; the first side closed, the other project becomes the project of
 // the view; the one side closed, the start screen.
 
@@ -103,9 +105,19 @@ try {
   await sleep(400);
 
   check(
-    'the top row stands over the sides, with the list\'s button at its left, and no bar of the project under it',
+    'the top row stands over the sides, beginning with the first cell, the list\'s button on the rail, and no bar of the project under it',
     await app.exec(`const top = document.querySelector('.project > .top');
-      return !!top && top.firstElementChild?.querySelector('[data-projects-button]') !== null && !document.querySelector('.project > header') && !!document.querySelector('.pane [data-bar]');`),
+      return !!top && top.firstElementChild?.classList.contains('cells') && !top.querySelector('[data-projects-button]') && !!document.querySelector('.rail [data-projects-button]') && !document.querySelector('.rail .mark') && !document.querySelector('.project > header') && !!document.querySelector('.pane [data-bar]');`),
+  );
+  const oneSide = await app.exec(`const cell = document.querySelector('.top .cell').getBoundingClientRect();
+    const x = document.querySelector('.top .cell [data-close-side]').getBoundingClientRect();
+    const split = document.querySelector('.top [data-side-by-side]');
+    const style = getComputedStyle(split), top = getComputedStyle(document.querySelector('.project > .top'));
+    return { right: Math.round(cell.right - x.right), background: style.backgroundColor, row: top.backgroundColor, border: style.borderTopColor };`);
+  check(
+    'with one side, its × stands at the right end of its cell, and Split view has a background of its own',
+    oneSide.right < 12 && oneSide.background !== oneSide.row && oneSide.background !== 'rgba(0, 0, 0, 0)' && oneSide.border !== 'rgba(0, 0, 0, 0)',
+    JSON.stringify(oneSide),
   );
   check('at the project itself, the path is the folders and the project', JSON.stringify(await crumbs(app)) === JSON.stringify(['folder:Greek', 'folder:Epic', `project:${PROJECT}`]), JSON.stringify(await crumbs(app)));
 
@@ -194,7 +206,7 @@ try {
     (await crumbs(app, 1)).at(-1) === `element:${NAMES[2]}` && (await crumbs(app, 0)).at(-1) === `element:${NAMES[4]}`,
     `${JSON.stringify(await crumbs(app, 0))} | ${JSON.stringify(await crumbs(app, 1))}`,
   );
-  await app.click(await app.exec(`return document.querySelectorAll('.pane')[1].querySelector('[data-close-side]')`));
+  await app.click(await app.exec(`return document.querySelector('.top .cell[data-side="1"] [data-close-side]')`));
   await until(async () => (await app.count('.pane')) === 1, 5000);
   // Another project chosen from it is shown in this side, at its top.
   await app.click('.top [data-path-all]');
@@ -281,11 +293,12 @@ try {
   const over = await app.exec(
     `const c = Array.from(document.querySelectorAll('.top .cell')).map((e) => e.getBoundingClientRect());
      const p = Array.from(document.querySelectorAll('.pane')).map((e) => e.getBoundingClientRect());
-     // The list's button stands at the far left, over the first side, before its cell.
-     const list = document.querySelector('.top .list').getBoundingClientRect();
-     return [Math.abs(list.left - p[0].left), Math.abs(c[0].left - list.right), Math.abs(c[0].right - p[0].right), Math.abs(c[1].left - p[1].left)];`,
+     // The first cell begins at the left edge of the row, over the first side.
+     return [Math.abs(c[0].left - p[0].left), Math.abs(c[0].right - p[0].right), Math.abs(c[1].left - p[1].left)];`,
   );
-  check('each cell stands over its side, the first after the list\'s button, the line between them over that between the sides', over.every((d) => d < 4), JSON.stringify(over));
+  check('each cell stands over its side, the first from the left edge, the line between them over that between the sides', over.every((d) => d < 4), JSON.stringify(over));
+  const splitLit = await app.exec(`const s = getComputedStyle(document.querySelector('.top [data-side-by-side]')); return s.backgroundColor;`);
+  check('Split view is lit while two sides are shown', splitLit !== oneSide.background, `${splitLit} / ${oneSide.background}`);
   for (const theme of ['light', 'dark', 'mellow']) {
     await app.setTheme(theme);
     await sleep(300);
@@ -350,9 +363,18 @@ try {
      }));`,
   );
   check(
-    'each side has its bar, with its views, undo and redo, Typesetting, Document and ×, and no Split view',
-    bars.length === 2 && bars.every((b) => b.views >= 2 && b.undo && b.redo && b.typeset && b.document && b.close && !b.split),
+    'each side has its bar, with its views, undo and redo, Typesetting and Document, and neither × nor Split view',
+    bars.length === 2 && bars.every((b) => b.views >= 2 && b.undo && b.redo && b.typeset && b.document && !b.close && !b.split),
     JSON.stringify(bars),
+  );
+  const crosses = await app.exec(`const cells = Array.from(document.querySelectorAll('.top .cell')).sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left);
+    const xs = cells.map((c) => c.querySelector('[data-close-side]')?.getBoundingClientRect());
+    const split = document.querySelector('.top [data-side-by-side]').getBoundingClientRect();
+    return { each: xs.every(Boolean), ends: cells.map((c, i) => Math.round(c.getBoundingClientRect().right - xs[i].right)), beforeSplit: Math.round(split.left - xs[1].right) };`);
+  check(
+    'each cell has its × at its right end, that of the right cell just before Split view',
+    crosses.each && crosses.ends.every((d) => d < 20) && crosses.beforeSplit >= 0 && crosses.beforeSplit < 40,
+    JSON.stringify(crosses),
   );
   check('between the two cells, a button switches the sides', await app.exists('.top [data-switch-sides]'));
   await app.click(await app.exec(`return document.querySelectorAll('.pane')[arguments[0]].querySelector('[data-document]')`, notesSide));
@@ -361,7 +383,7 @@ try {
   await sleep(200);
 
   // The × in the bar of the other project's side closes it.
-  await app.click(await app.exec(`return document.querySelectorAll('.pane')[arguments[0]].querySelector('[data-close-side]')`, notesSide));
+  await app.click(await app.exec(`return document.querySelector('.top .cell[data-side="' + arguments[0] + '"] [data-close-side]')`, notesSide));
   await sleep(500);
   check('the × of the side beside closes it', (await app.count('.pane')) === 1 && (await crumbs(app, 0)).includes(`project:${PROJECT}`));
 
@@ -379,7 +401,7 @@ try {
   await app.clickText('dialog [data-beside-chooser] .row.project', 'Notes');
   await app.waitGone('dialog [data-beside-chooser]', 3000);
   await until(async () => (await crumbs(app, 1))[0] === 'project:Notes', 8000);
-  await app.click(await app.exec(`return document.querySelectorAll('.pane')[0].querySelector('[data-close-side]')`));
+  await app.click(await app.exec(`return document.querySelector('.top .cell[data-side="0"] [data-close-side]')`));
   await until(async () => (await app.exec('return location.hash')).includes(ids.notes) && (await app.count('.pane')) === 1, 8000);
   await until(async () => JSON.stringify(await crumbs(app, 0)) === JSON.stringify(['project:Notes']), 8000);
   check('the first side closed, the other project is the project of the view', (await app.exec('return location.hash')).includes(ids.notes) && JSON.stringify(await crumbs(app, 0)) === JSON.stringify(['project:Notes']), await app.exec('return location.hash'));
@@ -406,7 +428,7 @@ try {
   await app.openProject(PROJECT);
   await app.waitFor('.top [data-path]', 10000);
   await sleep(400);
-  await app.click('.pane [data-close-side]');
+  await app.click('.top [data-close-side]');
   await app.waitFor('[data-start]', 8000);
   await sleep(300);
   const left = await app.exec(`return document.querySelectorAll('[data-projects-pane] .row[data-shown], [data-projects-pane] .row[data-current]').length`);

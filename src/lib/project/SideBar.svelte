@@ -4,9 +4,9 @@
    * outline; the views, Diagram, Text, and Timeline where the element has
    * times; the writing tools with their three menus, undo and redo of the
    * side's project between them and spelling, and Insert; Typesetting and
-   * Document; and at the right end the × that closes the side. While the
-   * side shows no text, the writing tools are disabled, not hidden, so that
-   * the bar does not shift.
+   * Document. The × that closes the side stands in the top row, in the
+   * side's cell (ADR 0065). While the side shows no text, the writing tools
+   * are disabled, not hidden, so that the bar does not shift.
    */
   import Clock from '@lucide/svelte/icons/clock';
   import BookOpenText from '@lucide/svelte/icons/book-open-text';
@@ -16,7 +16,6 @@
   import PanelRight from '@lucide/svelte/icons/panel-right';
   import Redo2 from '@lucide/svelte/icons/redo-2';
   import Undo2 from '@lucide/svelte/icons/undo-2';
-  import X from '@lucide/svelte/icons/x';
   import WritingTools from '$lib/editor/WritingTools.svelte';
   import { t } from '$lib/i18n';
   import { keysFor } from '$lib/shell/keys.svelte';
@@ -39,10 +38,9 @@
     timed: boolean;
     onview: (mode: MapMode) => void;
     onoutline: () => void;
-    onclose: () => void;
   }
 
-  let { spec, project, focused, scope, timed, onview, onoutline, onclose }: Props = $props();
+  let { spec, project, focused, scope, timed, onview, onoutline }: Props = $props();
 
   const views = $derived([
     { mode: 'diagram' as const, label: t('project-diagram'), icon: Network },
@@ -172,19 +170,6 @@
   >
     <PanelRight size={15} />
   </IconButton>
-
-  <span class="spring"></span>
-
-  <!-- Shown always: one side closes alone, and the one side there is closes the project. -->
-  <IconButton
-    label={t('project-close-side')}
-    shortcut={keysFor('close-side')}
-    size="sm"
-    data-close-side
-    onclick={onclose}
-  >
-    <X size={14} />
-  </IconButton>
 </div>
 
 <style>
@@ -227,8 +212,5 @@
     height: 16px;
     margin: 0 4px;
     background: var(--line);
-  }
-  .spring {
-    flex: 1;
   }
 </style>

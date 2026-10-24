@@ -3,16 +3,20 @@
   import Keyboard from '@lucide/svelte/icons/keyboard';
   import Images from '@lucide/svelte/icons/images';
   import LibraryBig from '@lucide/svelte/icons/library-big';
+  import PanelLeft from '@lucide/svelte/icons/panel-left';
   import Search from '@lucide/svelte/icons/search';
   import Settings from '@lucide/svelte/icons/settings';
+  import { toggleProjectsPane } from '$lib/home/list.svelte';
   import { t } from '$lib/i18n';
   import { router } from '$lib/state/router.svelte';
+  import { settings } from '$lib/state/settings.svelte';
   import { settingsUi } from '$lib/settings/settings-ui.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import { keysFor, keysUi } from './keys.svelte';
-  import Mark from './Mark.svelte';
 
   const view = $derived(router.route.view);
+  /** The list of projects stands beside a project and beside the start screen, and nowhere else. */
+  const listed = $derived(view === 'project' || view === 'home' || view === 'settings');
 
   /** The house goes back to the project shown last, where it was; else to the start screen. */
   function toProjects(event: MouseEvent) {
@@ -24,14 +28,20 @@
 </script>
 
 <nav class="rail" aria-label={t('shell-main')}>
-  <a
-    class="mark"
-    href="#/"
-    aria-label="Glaukopis"
-    use:tooltip={{ text: 'Glaukopis', side: 'right' }}
+  <!-- The list's button stands where the owl stood (ADR 0065); the owl is on the start screen. -->
+  <button
+    type="button"
+    class="place list"
+    class:current={listed && settings.value.projectsList}
+    aria-label={t('home-pane-toggle')}
+    aria-pressed={listed && settings.value.projectsList}
+    disabled={!listed}
+    data-projects-button
+    use:tooltip={{ text: t('home-pane-toggle'), shortcut: keysFor('projects-pane'), side: 'right' }}
+    onclick={toggleProjectsPane}
   >
-    <Mark size={26} />
-  </a>
+    <PanelLeft size={19} strokeWidth={1.7} />
+  </button>
 
   <a
     href="#/"
@@ -113,10 +123,9 @@
     background: var(--paper-sunken);
     border-right: 1px solid var(--line);
   }
-  .mark {
-    display: flex;
-    margin-bottom: 12px;
-    border-radius: var(--radius-m);
+  /* The places below stand where they stood under the owl. */
+  .list {
+    margin-bottom: 2px;
   }
   .place {
     position: relative;
@@ -135,7 +144,11 @@
       background var(--fast) var(--ease),
       color var(--fast) var(--ease);
   }
-  .place:hover {
+  .place:disabled {
+    cursor: default;
+    opacity: 0.4;
+  }
+  .place:hover:not(:disabled) {
     background: var(--paper-hover);
     color: var(--ink);
     text-decoration: none;
