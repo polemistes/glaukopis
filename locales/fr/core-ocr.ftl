@@ -48,9 +48,6 @@ ocr-remark-poorly = { $count ->
     [many] { $count } pages ont été mal lues : { $pages }. Une autre langue, le modèle Fraktur pour les caractères gothiques, ou une autre mise en page peuvent mieux les lire ; essayez une page avant de les lire toutes de nouveau.
    *[other] { $count } pages ont été mal lues : { $pages }. Une autre langue, le modèle Fraktur pour les caractères gothiques, ou une autre mise en page peuvent mieux les lire ; essayez une page avant de les lire toutes de nouveau.
 }
-ocr-remark-fraktur = Les livres en caractères gothiques, comme l’étaient beaucoup de livres norvégiens, danois, suédois et allemands avant 1900 environ, se lisent avec le modèle Fraktur, choisi en premier ou seul, quelle que soit leur langue. Il ne connaît ni æ, ni ø, ni å, et les lit comme e, o et a.
-# The same, where Norwegian or Danish was read: the Fraktur model of Glaukopis's server that knows æ, ø and å.
-ocr-remark-fraktur-dan = Les livres norvégiens et danois en caractères gothiques, comme l’étaient beaucoup avant 1900 environ, se lisent avec Fraktur, danois et norvégien, importé du serveur de Glaukopis et choisi en premier ou seul, quelles que soient les langues à côté : il connaît æ, ø et å, ce que ne fait pas le modèle Fraktur fait pour l’allemand.
 
 ## What a reading of a PDF came to (ADR 0044).
 

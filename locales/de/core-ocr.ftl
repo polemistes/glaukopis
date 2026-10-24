@@ -46,9 +46,6 @@ ocr-remark-poorly = { $count ->
     [one] Eine Seite wurde schlecht gelesen: { $pages }. Eine andere Sprache, das Fraktur-Modell für gebrochene Schrift oder ein anderer Aufbau der Seite liest sie vielleicht besser; probieren Sie es aus, bevor Sie sie erneut lesen.
    *[other] { $count } Seiten wurden schlecht gelesen: { $pages }. Eine andere Sprache, das Fraktur-Modell für gebrochene Schrift oder ein anderer Aufbau der Seite liest sie vielleicht besser; probieren Sie eine Seite aus, bevor Sie alle erneut lesen.
 }
-ocr-remark-fraktur = Bücher in Fraktur, wie viele norwegische, dänische, schwedische und deutsche vor etwa 1900, werden mit dem Fraktur-Modell gelesen, zuerst oder allein gewählt, welche Sprache sie auch haben. Es kennt kein æ, ø oder å und liest sie als e, o und a.
-# The same, where Norwegian or Danish was read: the Fraktur model of Glaukopis's server that knows æ, ø and å.
-ocr-remark-fraktur-dan = Norwegische und dänische Bücher in Fraktur, wie viele vor etwa 1900, werden mit „Fraktur, Dänisch und Norwegisch“ gelesen, vom Server von Glaukopis importiert und zuerst oder allein gewählt, welche Sprachen auch daneben stehen: es kennt æ, ø und å, die das für Deutsch gemachte Fraktur-Modell nicht kennt.
 
 ## What a reading of a PDF came to (ADR 0044).
 

@@ -46,9 +46,6 @@ ocr-remark-poorly = { $count ->
     [one] Én side ble lest dårlig: { $pages }. Et annet språk, frakturmodellen for gotisk skrift eller et annet oppsett av siden kan lese den bedre; prøv den før du leser den på nytt.
    *[other] { $count } sider ble lest dårlig: { $pages }. Et annet språk, frakturmodellen for gotisk skrift eller et annet oppsett av siden kan lese dem bedre; prøv en side før du leser alle på nytt.
 }
-ocr-remark-fraktur = Bøker med gotisk skrift, slik mange norske, danske, svenske og tyske bøker hadde før omkring 1900, leses med frakturmodellen, valgt først eller alene, uansett språk. Den kjenner ikke æ, ø og å, og leser dem som e, o og a.
-# Det samme, der norsk eller dansk ble lest: frakturmodellen fra Glaukopis' tjener, som kjenner æ, ø og å.
-ocr-remark-fraktur-dan = Norske og danske bøker med gotisk skrift, slik mange hadde før omkring 1900, leses med Fraktur, dansk og norsk, hentet fra Glaukopis' tjener og valgt først eller alene, uansett hvilke språk som står ved siden av: den kjenner æ, ø og å, som frakturmodellen laget for tysk ikke gjør.
 
 ## Hva en lesning av en PDF ga.
 
@@ -67,3 +64,8 @@ ocr-remark-counts = { $read ->
 }
 ocr-page-failed-line = [Denne siden kunne ikke leses: { $message }]
 ocr-why-no-tesseract = Tesseract, som leser tekst i bilder, er ikke installert.
+
+## The settings in plain words, stage 1: the Fraktur models named by the languages they were trained on.
+
+ocr-remark-fraktur = Bøker med gotisk skrift, slik mange norske, danske, svenske og tyske bøker hadde før omkring 1900, leses med Fraktur (gotisk skrift), tysk, valgt først eller alene, uansett språk. Den kjenner ikke æ, ø og å, og leser dem som e, o og a.
+ocr-remark-fraktur-dan = Norske og danske bøker med gotisk skrift, slik mange hadde før omkring 1900, leses med Fraktur (gotisk skrift), norsk og dansk, hentet fra Glaukopis' tjener og valgt først eller alene, uansett hvilke språk som står ved siden av: den kjenner æ, ø og å, som den tyske ikke gjør.

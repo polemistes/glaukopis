@@ -962,7 +962,7 @@ try {
     );
     check(
       'and, Greek never having been set in Gothic type, does not name the Fraktur model',
-      !saidPoorly.some((r) => /Fraktur model, chosen first/.test(r)),
+      !saidPoorly.some((r) => /Fraktur \(Gothic type\), German, chosen first/.test(r)),
     );
     await app.screenshot('ocr-2e-read-poorly');
     await app.clickText('dialog footer button', 'Cancel');
