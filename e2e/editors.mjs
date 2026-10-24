@@ -84,10 +84,11 @@ try {
   );
   check(
     'and where the figures stand',
-    /Heading over the figures/.test(told) && /about here/.test(told),
+    /Heading over the figures/.test(told) &&
+      (await app.exec(`return Array.from(document.querySelectorAll('.side .look .part[data-part="figures"] input')).some((i) => /about here/.test(i.value))`)),
   );
   await app.screenshot('editors-2b-format-figures');
-  await app.lookSection('The layout');
+  await app.lookSection('Layout');
   await sleep(200);
   await app.screenshot('editors-3-format-about');
   await app.clickText('.side .look .keep button', 'Keep these changes as a layout of my own');
@@ -100,7 +101,7 @@ try {
     .waitUntil(`return document.querySelector('.side .look .layout-line')?.textContent.replace(/\\s+/g, ' ').trim() === 'Layout: My publisher'`, 8000, 'the layout kept')
     .catch(() => {});
   await sleep(3500);
-  const format = await app.lookChosen('Layout');
+  const format = await app.lookChosen('Choose a layout');
   const kept = await app.lookTop();
   check(
     'a changed layout is saved as one’s own and taken into use',

@@ -26,8 +26,7 @@
   "text": {
     "lineSpacing": 2,
     "align": "left",
-    "paragraphs": "spaced",
-    "indent": "1.27cm",
+    "indent": "0cm",
     "indentFirst": false,
     "spaceBetween": "12pt",
     "hyphenate": false

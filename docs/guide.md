@@ -2178,12 +2178,18 @@ element in view, opens the window at this part.
 
 **Checklist** is what the document's template requires, against the text
 and the tree; nothing is cut. What is required is changed for one document
-under *What the document contains*, in Look. It says the words of the text against the limit, with the
+under *Parts of the document type*, in Look. It says the words of the text against the limit, with the
 template's note on what the limits count, and whether the authors are to be
 left out, for review; then what there is to remark on: more words than the
 template allows, more words in the abstract, more keywords, a second element
-of a kind the document has one of, beside the first, and elements of the
-kind **Cover** where the template makes no cover. Each names its elements,
+of a kind the document has one of, beside the first, elements of the
+kind **Cover** where the template makes no cover, a front page that names
+the authors where the document type asks for an anonymous document, and,
+where the layout warns about long inline quotations, every paragraph of
+text with a quotation between quotation marks of so many words or lines.
+The lines are estimated from the layout, from the width of the page less
+its margins and the size of the type, and said as *about*: how many lines a
+quotation takes is known only once it is set. Each names its elements,
 which open in the text; otherwise it says **Nothing to remark on**.
 
 ## Typesetting
@@ -2324,11 +2330,14 @@ it says and sets the same.
 The parts follow one after another, in the order of the page from the
 outside in, each under its heading. Where a part sets something the page
 carries besides the text, it begins with whether that is shown, and goes on
-to how it looks. The chips over them stay at the top as
+to how it looks. Every length is in centimetres: a layout that says one in
+another unit has it shown converted, and written in centimetres once you
+change it. The chips over them stay at the top as
 you scroll, mark the part you are in, and go to each:
 
-- **Page**: its size, the margins, the **Columns** and the **Gap between
-  columns**; then the **Header** and the **Footer**, each beginning with
+- **Page**: its size, the margins, the **Columns**, one for none, and the
+  **Gap between columns**, where a column break in the text begins the next
+  column; then the **Header** and the **Footer**, each beginning with
   whether it is **Shown**, whether **On the first page too**, and whether
   **On the pages where a chapter or a part begins too**, the pages where a
   heading that begins a page, or a part on a page of its own, begins; and
@@ -2345,39 +2354,59 @@ you scroll, mark the part you are in, and go to each:
   author on the left pages and the chapter on the right, the number
   outside, and leaves both off the pages where a chapter begins.
 - **Type**: the font, its size, the spacing, how italics and reference
-  marks are set.
-- **Paragraphs**: how they begin and are spaced; **Long quotations**, those
-  set off from the text by their length; and **Kinds of paragraph and of
-  words**, every kind with its look.
+  marks are set. A font that is not installed is shown in the nearest one
+  in the preview. Reference marks in the margin are raised in Word and
+  Writer, which have no room for them there.
+- **Paragraphs**: **Indent first line** and **Space between paragraphs**,
+  each 0 for none, and, while the first line is indented, **Also after a
+  heading**: by typographic custom the first paragraph after a heading is
+  not indented, and APA and others indent it. Then **Quotations**: **Warn
+  about long inline quotations**, and while that is on, **From this many
+  words** and **Or this many lines**, as publishers set a quotation off
+  from a length; the checklist of *Document properties* then names every
+  paragraph with such a quotation in it. A quotation set off is a paragraph
+  of the kind Quotation, whose look is set as every kind's is. Then
+  **Paragraph kinds** and **Words kinds**, every kind with its look.
 - **Headings**: whether they are **Numbered**, and each level: first its
   **Numbering**, *As the level above*, *None*, or a style of its own, 1, A,
   a, I or i. A level as the level above is numbered in that level's style,
   under its number, so that with nothing changed the headings run 1, 1.1,
   1.1.1; chapters in roman and sections in arabic are level 1 at *I, II,
   III* and level 2 at *1, 2, 3*, giving I.1. A level at *None* has no
-  number, nor have the levels under it that follow it. Then where the level
-  **Begins**: *In the text*, *On a new page*, as the chapters of a book do,
+  number, nor have the levels under it that follow it. A level that
+  **Begins the paragraph** runs into the text, and ends with a full stop.
+  Then its **Placement**: *In the text*, *On a new page*, as the chapters of a book do,
   or *On a right-hand page*, where a blank left page, with nothing in its
   header or footer, is put in where one is needed. The blank page is
   counted. Word begins such a chapter on an odd page itself; Writer begins
-  it on a new page only.
-- **Numbers**: how the numbers of lines you number are shown where they do
+  it on a new page only. Headings deeper than the deepest level are set as
+  that level.
+- **Line numbers**: how the numbers of lines you number are shown where they do
   not say otherwise, **Show a number every** and **Numbers on the** left or
   the right, and whether the lines of the page are numbered, as some
   journals ask for review.
 - **Notes and citations**: footnotes or endnotes and how they are set; the
-  **reference style**; and the bibliography.
+  **reference style**; and the bibliography, with its heading,
+  *Bibliography*, *References* or *Works Cited*.
 - **Figures and tables**: what they are called, how their captions are set,
-  and where they stand.
+  and where they stand; then **Inside the table**, its lines and headings;
+  then **Equations**. What stands between the number and the caption is
+  written as it is to stand, spaces too. Where a figure or a table stands
+  holds for every one of which nothing else is said; a caption beside one
+  that stands at a side stands at that side. Gathered at the end, as many
+  journals ask of a manuscript, each leaves a line in the text, in which
+  {} stands for its word and number. A size of 0 is that of the text.
 - **Front page**: first **A title page**, whether the document has one at
-  all, the same switch as under *What the document contains*; then what it
-  shows, the authors, their affiliations, the date, the abstract; then how
-  it is set, where the title stands, its size and its letters.
-- **What the document contains**: the parts it is made of, what has a
-  place of its own in it, and what it requires (below).
-- **The layout**: the layout itself (below).
+  all, the same switch as under *Parts of the document type*; then
+  **Include**: **Anonymize the front page**, the authors, their affiliations,
+  the date, the abstract; then **Formatting**, where the title stands, its
+  size and its letters. An anonymous front page leaves the authors out
+  everywhere: the running head, and the properties of every file made.
+- **Parts of the document type**: the parts it is made of, and what it
+  requires (below).
+- **Layout**: the layout itself (below).
 
-Under **Kinds of paragraph and of words** every kind is listed: first those
+Under **Paragraph kinds**, and again under **Words kinds**, every kind is listed: first those
 this document uses, then the rest by group, and your own kinds after them,
 each with what it is based on and, at the right of its line, what is said
 of it, or *as the base* where nothing is. Open a kind, and a line says how
@@ -2387,7 +2416,10 @@ into one. The rows under it are size, alignment, indents, the first line,
 space before and after, bold, italic, letters, underlining, letters of
 equal width, whether it keeps with what follows, and whether it begins a
 new page; where a row says nothing it shows what the base comes to, *As the
-base (1.27cm)*.
+base (1.27cm)*. **First line** is how far the first line begins in beyond
+the rest; **Kept with the next** keeps it from being left alone at the foot
+of a page; letters of equal width are set as code is; and what stands in a
+break is * * * where nothing is said, # for a manuscript.
 
 The **reference style** stands under **Notes and citations** in every
 document, for whoever looks for it. Its first choice is **As the template
@@ -2399,26 +2431,29 @@ reference style…** has the changes publishers most often ask for as simple
 choices, and the whole style, part by part, for the rest; what you change
 in it is kept as a style of your own.
 
-### What the document contains
+### Parts of the document type
 
 What you are writing says what the document consists of, and this part of
-Look shows it, to change for one document. **The parts of the document**
-are those Glaukopis makes itself: the half title, the title page, the
-keywords, the table of contents and the lists of figures and of tables,
-each with a switch, which holds in every document that is made, as in the
-preview; and the text, the notes and the bibliography, which are always
-there wherever there is something to make them of. **Elements with
-a place of their own** are the kinds of
-elements what you are writing gives a place to, the abstract or the
-dedication, each with where it is printed, front matter, back matter or
-cover, and the elements directly under this one that fill it, or **None
-yet**. **Make one** makes an element of the kind under this one, named after
-the kind, first among them for the front matter and last for the rest;
-pressing an element goes to it in the text. Where a document has one of a
+Look shows it, in one list, in the order the document is printed, to change
+for one document. The order is the document type's: where its parts stand,
+the abstract before the text or the acknowledgements after the preface, is
+what the type says. In the list stand the parts Glaukopis makes itself, the
+half title, the title page, the keywords, the table of contents and the
+lists of figures and of tables, each with a switch, which holds in every
+document that is made, as in the preview, and a part turned on is printed
+where it stands; the text, the notes and the bibliography, which are always
+there wherever there is something to make them of; and the kinds of
+elements the type gives a place to, the abstract or the dedication, each
+with the elements directly under this one that fill it, or **None yet**. A
+kind the type names without giving it a place is printed before the text
+where it belongs at the front, as a dedication does, and at the end
+otherwise; one printed on the cover only says so. **Make one** makes an
+element of the kind under this one, named after the kind; pressing an
+element goes to it in the text. Where a document has one of a
 kind and more are there, the second and the later say **Only the first is
-used**. **What is required** are the words of the text, the words of the
+used**. **Requirements of the document type** are the words of the text, the words of the
 abstract and the keywords, each at most, an empty field for no limit, and
-whether the names of the authors are left out, for review; the checklist of
+whether it is **Anonymous**, for review; the checklist of
 *Document properties* and the typesetting count against them, and nothing is
 cut. A part turned on or off, or a limit changed, holds for the element it
 is changed on and those under it, says **Changed here** under its row, and
@@ -2426,13 +2461,15 @@ is taken back by **take … again**, as a change of the look is.
 
 ### The layout, and what you change
 
-Under **The layout**, at the foot of Look, the layout is chosen: **As the
+Under **Layout**, at the foot of Look, **Choose a layout**: **As the
 template has it** first, naming what what you are writing brings, or
 **From** the element over this one that chose; then the layouts by kind,
-your own first. Under it is listed what this document changes of it, each
-change with where it was made and **take Manuscript’s again**; then what
-the layout is, and where its requirements were found, and when; and at the
-end **Document properties…**.
+your own first. Under it, **Modifications to the layout** lists what this
+document changes of it, each change with where it was made and **take
+Manuscript’s again**; then what the layout is; and at the end **Document
+properties…**. Where the requirements of a publisher's layout were found
+is said in *Document properties*, under the document type: **Source:**
+with its name, which opens the publisher's page.
 
 What you change in Look is the document's own: the layout and the template
 stay as they are, and the change is shown at once in the typesetting. Under a
@@ -2444,7 +2481,7 @@ can change it again for itself. The changes are kept with the project, and
 in its Org form as the element's **LOOK** and **COMPOSITION**.
 
 To use the same look elsewhere, **Keep these changes as a layout of my
-own…**, under **The layout**, asks for a name and makes a layout of the
+own…**, under **Layout**, asks for a name and makes a layout of the
 layout with the changes in it, which the document then uses, with no
 changes of its own; it is offered among your own layouts in every project.
 Where the layout is already one of your own, **Put these changes into** it
@@ -2460,8 +2497,8 @@ book as well as printed alone. Where the text is at an element under the
 document's, or a chip was pressed on one of its lines, Look has a line
 under the layout's, **These changes hold for**, offering **The whole
 document** or **Only** that element. Chosen, every row shows and sets that
-element's look; the chooser of what you are writing and *What the document
-contains* stay the document's. An element with nothing changed of its own
+element's look; the chooser of what you are writing and *Parts of the
+document type* stay the document's. An element with nothing changed of its own
 has the document's look throughout.
 
 What changes the pages, their size, margins or columns, the header or the

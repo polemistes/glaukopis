@@ -137,9 +137,32 @@ export function withoutPath(changes: LookChanges | undefined, path: LookPath): L
   return out as LookChanges;
 }
 
+/**
+ * Changes as they are read. A layout once told paragraphs apart either by
+ * the indent of the first line or by the space between them
+ * (`text.paragraphs`), and says both lengths now: a change of an older
+ * document to that choice is read as the other length made nought, unless
+ * the document says that length itself, so that nothing prints otherwise
+ * than it did. The choice is not written again: what is written is what the
+ * rows set, which is the lengths.
+ */
+export function modernised(changes: LookChanges | undefined): LookChanges | undefined {
+  const text = (changes as { text?: Record<string, unknown> } | undefined)?.text;
+  if (!isObject(text) || !('paragraphs' in text)) return changes;
+  const out = copy(changes) as Record<string, unknown>;
+  const now = out.text as Record<string, unknown>;
+  const told = now.paragraphs;
+  delete now.paragraphs;
+  if (told === 'spaced' && now.indent === undefined) now.indent = '0cm';
+  else if (told === 'indent' && now.spaceBetween === undefined) now.spaceBetween = '0pt';
+  if (!Object.keys(now).length) delete out.text;
+  return out as LookChanges;
+}
+
 /** A copy of a layout with changes laid over it, path by path; lists replaced whole. */
-export function laidOver(layout: DocumentFormat, changes: LookChanges | undefined): DocumentFormat {
+export function laidOver(layout: DocumentFormat, said: LookChanges | undefined): DocumentFormat {
   const out = copy(layout) as DocumentFormat;
+  const changes = modernised(said);
   const old = Object.keys((changes ?? {}) as object).filter((key) => OLD.has(key));
   if (old.length) {
     const said = JSON.stringify(old.map((key) => (changes as Record<string, unknown>)[key]));

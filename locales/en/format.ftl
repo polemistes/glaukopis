@@ -34,11 +34,6 @@ format-line-spacing = Line spacing
 format-as-the-text = As the text
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = as the text
-format-size-zero-hint = 0 for the size of the text
-# Beside a number of 0, in the place of its unit.
-format-not-said = not said
-format-unless-said = Unless something else is said of one
-format-as-it-will-stand = As it will stand
 format-align-left = Left
 format-align-center = Centred
 format-align-right = Right
@@ -66,33 +61,23 @@ format-margin-left = Left
 format-margin-right = Right
 format-columns-heading = Columns
 format-columns = Columns
-format-columns-hint = The text is set in so many columns on the page; 1 for none. A column break in the text begins the next.
 format-column-gap = Gap between columns
 format-lengths-hint = Lengths are written with their unit: 2.5cm, 1in, 25mm, 12pt.
 ## Numbers belong to what they number (ADR 0041): the lines one numbers
 ## are shown as the layout says where they do not say otherwise; the lines
 ## of the page are the layout's alone.
-format-numbers-hint = How the numbers of lines you number are shown, where they do not say otherwise; and whether the lines of the page are numbered.
 format-verse-every = Show a number every
-format-verse-every-hint = Of the lines you number: 5 shows 5, 10, 15
 format-verse-side = Numbers on the
 format-side-left = Left
 format-side-right = Right
 format-numbers-page = The lines of the page
 format-line-numbers = Number the lines
-format-line-numbers-hint = As some journals ask for review
 
 ## Type and spacing, and paragraphs.
 
 format-typeface = Font
-format-typeface-hint = Where it is not installed, the nearest is used in the preview
 format-hyphenate = Divide words at the ends of lines
-format-paragraphs = Paragraphs are told apart by
-format-paragraphs-indent = An indented first line
-format-paragraphs-spaced = Space between them
-format-indent = Indent
 format-indent-first = Also after a heading
-format-indent-first-hint = Typographic custom leaves the first paragraph unindented; APA and others indent it
 format-space-between = Space between paragraphs
 format-italics = Italics are set
 format-italics-italic = As italics
@@ -100,7 +85,6 @@ format-italics-underline = Underlined, as typewritten manuscripts had them
 format-refmarks = Reference marks are set
 format-refmarks-raised = Small and raised in the line
 format-refmarks-margin = In the margin beside their line
-format-refmarks-hint = Verses, pages of Stephanus, numbers of Bekker. Word and Writer have no room in the margin: there they are raised.
 
 ## Headings.
 
@@ -116,16 +100,11 @@ format-level-centred = centred
 format-level-right = right
 format-level-run-in = runs into the text
 format-level-indent = Indented as a paragraph is
-format-level-run-in-label = Runs into the text
-format-level-run-in-hint = The heading begins the paragraph and ends with a full stop
-format-level-begins = Begins
-format-level-begins-hint = On a right-hand page, a blank left page is put in where one is needed, with nothing in its header or footer
 format-level-begins-text = In the text
 format-level-begins-page = On a new page
 format-level-begins-right-page = On a right-hand page
 format-level-right-page-said = on a right-hand page
 format-level-numbering = Numbering
-format-level-numbering-hint = A level as the level above is numbered in its style, under its number
 format-level-numbering-as-above = As the level above
 format-level-numbering-none = None
 format-level-numbering-arabic = 1, 2, 3
@@ -141,17 +120,12 @@ format-space-before = Space before
 format-space-after = Space after
 format-level-add = A deeper level
 format-level-remove = Remove the deepest
-format-levels-hint = Headings deeper than the deepest level described are printed as that level.
 
 ## The title and the abstract.
 
 format-title-placement = The title stands
 format-title-top = At the top of the first page
 format-title-own-page = On a page of its own
-format-title-shown = What is shown
-format-title-how = How it is set
-format-title-anonymous = Without the names of the authors
-format-title-anonymous-hint = For review: the authors are left out everywhere, the running head too
 format-title-authors = Authors
 format-title-affiliations = Their affiliations
 format-title-date = Date
@@ -161,19 +135,13 @@ format-title-keywords-label = Word before the keywords
 
 ## Quotations, notes and the bibliography.
 
-format-quote-indent-left = Indent on the left
-format-quote-indent-right = Indent on the right
-format-quote-when = When a quotation is set off
 format-quote-from-words = From this many words
-format-quote-from-words-hint = A reminder: the writer decides
 format-quote-from-lines = Or this many lines
 format-notes-kind = Notes stand
 format-notes-footnotes = At the foot of the page
 format-notes-endnotes = At the end of the text
 format-notes-title = Heading of the notes
 format-bibliography-title = Heading
-# Headings a bibliography may have.
-format-bibliography-title-hint = Bibliography, References, Works Cited
 format-bibliography-new-page = Begins on a new page
 format-bibliography-hanging-indent = Hanging indent
 format-bibliography-entry-spacing = Space between entries
@@ -182,7 +150,6 @@ format-bibliography-entry-spacing = Space between entries
 ## is based on. The rows are those of the dialog for a kind of one's own
 ## too; what is not said is as the base has it.
 
-format-kinds-hint = Every kind, with its look as it will stand: the base look of the kind, then the kinds it is based on, then what this layout says of it. The rows change only what this layout says; what is not said is as the base has it.
 format-kind-based-on = based on { $base }
 # Of the kind Text, which the parts for type and paragraphs set.
 format-kind-text-note = as the type and the paragraphs of the layout have it
@@ -241,16 +208,7 @@ format-captioned-called = { $kind ->
     [figure] A figure is called
    *[table] A table is called
 }
-# Words a figure or table may be called by.
-format-captioned-called-hint = { $kind ->
-    [figure] Figure, Fig., Abbildung
-   *[table] Table, Tab., Tabelle
-}
 format-captioned-reference = Where the text points to it
-format-captioned-reference-hint = { $kind ->
-    [figure] fig., figure; empty for the same word
-   *[table] tab., table; empty for the same word
-}
 format-captioned-label-bold = The word and number in bold
 format-captioned-label-italic = The word and number in italic
 format-captioned-between = { $kind ->
@@ -272,7 +230,6 @@ format-between-line = { $kind ->
 }
 format-between-other = Other…
 format-captioned-separator = What stands between them
-format-captioned-separator-hint = Spaces count: write them where they are wanted
 format-captioned-own-line = { $kind ->
     [figure] Then the caption on a line of its own
    *[table] Then the caption on a line of its own
@@ -293,15 +250,6 @@ format-caption-above = { $kind ->
     [figure] Above the picture
    *[table] Above the table
 }
-format-caption-align-hint = { $kind ->
-    [figure] Of a figure that stands at a side, the caption stands at that side
-   *[table] Of a table that stands at a side, the caption stands at that side
-}
-# In the example of how the number and the caption will stand.
-format-caption-example = { $kind ->
-    [figure] Caption
-   *[table] Caption
-}
 format-captioned-where = { $kind ->
     [figure] Where figures stand
    *[table] Where tables stand
@@ -314,26 +262,17 @@ format-captioned-wrap = The text flows around them
 format-captioned-placement = In the document
 format-captioned-in-text = In the text
 format-captioned-at-end = Gathered at the end
-format-captioned-placement-hint = Many journals ask for them at the end of a manuscript
 format-captioned-end-title = { $kind ->
     [figure] Heading over the figures
    *[table] Heading over the tables
 }
-format-captioned-end-title-hint = { $kind ->
-    [figure] Figures, Illustrations; empty for none
-   *[table] Tables; empty for none
-}
 # What is left in the text where a figure or table gathered at the end belongs.
 format-captioned-placeholder = Line left in the text
-# The braces are written as they are; line is how the line will stand.
-format-captioned-placeholder-shown = {"{}"} stands for the word and number: { $line }
 format-captioned-placeholder-missing = It must hold {"{}"}, where the word and number go
-format-table-itself = The table itself
 format-table-rules = Lines
 format-table-rules-horizontal = Over, under, and under the headings
 format-table-rules-grid = Around every cell
 format-table-rules-none = None
-format-table-rules-hint = Books and journals have the first
 format-table-header-bold = Headings in bold
 format-equations = Equations
 format-equations-stand = Equations stand
@@ -356,7 +295,6 @@ format-margin-footer = Footer
 format-margin-shown = Shown
 format-margin-first-page = On the first page too
 format-margin-openers = On the pages where a chapter or a part begins too
-format-margin-openers-hint = A heading that begins a page, or a part on a page of its own
 format-margin-alternate = Different on left and right pages
 format-margin-right-pages = On right pages
 format-margin-left-pages = On left pages
@@ -384,5 +322,17 @@ format-source-read = Read { $date }.
 format-source-high = The values are those of the source.
 format-source-medium = The source could only be read in part or in an earlier state: check what matters to you.
 format-source-low = Little could be verified: treat the values as a beginning.
-format-source-changed = You have changed this layout; the source describes what it was made from.
-format-source-none = This layout follows no publisher’s requirements in particular.
+
+## Fewer words, stage 3: the rows of Look in plain words.
+
+format-level-begins-paragraph = Begins the paragraph
+format-level-placement = Placement
+format-title-include = Include
+format-title-formatting = Formatting
+format-title-anonymize = Anonymize the front page
+format-table-inside = Inside the table
+
+## Fewer words, stage 4: the two lengths of paragraphs, and the warning of long quotations.
+
+format-indent-first-line = Indent first line
+format-quote-warn = Warn about long inline quotations

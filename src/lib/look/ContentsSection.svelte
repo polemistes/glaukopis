@@ -1,11 +1,12 @@
 <script lang="ts">
   /**
-   * What the document contains, a section of Look (ADR 0054): the parts the
-   * core makes itself, each with a switch; the kinds of elements the
-   * template gives a place of their own, each with where it is printed, the
-   * elements under this one that fill it, and a way to make one; and what
-   * is required. Only the body of the section: its heading and its place
-   * are Look's.
+   * The parts of the document type, a section of Look (ADR 0054, in one list
+   * of 2026-10-24): everything the document is made of, in the order it is
+   * printed, the type's order: the parts the core makes itself, each with a
+   * switch, and the kinds of elements the type gives a place, each with the
+   * elements under this one that fill it and a way to make one; then what
+   * the type requires. Only the body of the section: its heading and its
+   * place are Look's.
    *
    * What is changed here belongs to the document, as a change to its look
    * does: it is written as the element's own changes over the template
@@ -22,10 +23,11 @@
     ALWAYS_MADE,
     hasPart,
     LIMITS,
+    printOrder,
     type CompositionPath,
     type Limit,
   } from '$lib/document/composition';
-  import { GENERATED_PARTS, generatedPartWords, partGroupWords } from '$lib/document/templates';
+  import { generatedPartWords } from '$lib/document/templates';
   import { t } from '$lib/i18n';
   import { documents } from '$lib/preview/documents.svelte';
   import type { Project } from '$lib/project/model/project.svelte';
@@ -54,7 +56,6 @@
     () => at,
   );
   const used = $derived(c.used);
-  const named = $derived(c.named);
   const set = (path: CompositionPath, value: unknown, left: unknown) => c.set(path, value, left);
   const from = (path: CompositionPath): Provenance | null => c.from(path);
   const given = $derived(c.given);
@@ -63,28 +64,25 @@
 
   // ---- the parts the core makes ----
 
-  /** What is said under a part: when those always made are printed, and that keywords need some. */
-  const partHints: Partial<Record<GeneratedPart, () => string>> = {
-    keywords: () => t('look-contents-part-keywords'),
-    body: () => t('look-contents-part-body'),
-    notes: () => t('look-contents-part-notes'),
-    bibliography: () => t('look-contents-part-bibliography'),
-  };
-
   function setPart(part: GeneratedPart, on: boolean) {
     c.setPart(part, on);
   }
 
   // ---- the kinds of elements with a place of their own ----
 
-  /** The kinds the template gives the document a place for: those of its contents in order, then the rest it puts in hand. */
-  const partKinds = $derived.by(() => {
-    if (!used) return [] as PartKind[];
-    const ids: string[] = [];
-    for (const item of used.contents)
-      if ('kind' in item && !ids.includes(item.kind)) ids.push(item.kind);
-    for (const id of used.kinds) if (!ids.includes(id)) ids.push(id);
-    return ids.map((id) => partOf(project, id)).filter((k): k is PartKind => !!k);
+  /**
+   * Everything the type makes the document of, in print order: a part the
+   * core makes, or a kind of element known to the project.
+   */
+  const printed = $derived.by(() => {
+    if (!used) return [];
+    return printOrder(used, (id) => partOf(project, id)?.place).flatMap(
+      (p): ({ part: GeneratedPart } | { kind: PartKind })[] => {
+        if ('part' in p) return [{ part: p.part }];
+        const kind = partOf(project, p.kind);
+        return kind ? [{ kind }] : [];
+      },
+    );
   });
   /** The elements under this one, of each kind: by the kind itself, or a kind of the project based on it. */
   const partsOf = $derived.by(() => {
@@ -159,59 +157,56 @@
 
 {#if used}
   {@const u = used}
-  <h4>{t('look-contents-parts')}</h4>
-  <p class="hint top">{t('look-contents-parts-hint', { template: named })}</p>
-  {#each GENERATED_PARTS as part (part)}
-    {@const always = ALWAYS_MADE.includes(part)}
-    {@const hint = partHints[part]?.()}
-    <label class="row check" class:always>
-      <span class="what"
-        >{generatedPartWords(part)}{#if hint}<small>{hint}</small>{/if}</span
-      >
-      <input
-        type="checkbox"
-        data-part-switch={part}
-        checked={always || hasPart(u, part)}
-        disabled={always}
-        onchange={(e) => setPart(part, e.currentTarget.checked)}
-      />
-    </label>
-    {@render fromLine(`parts.${part}`)}
-  {/each}
-
-  <h4>{t('look-contents-kinds')}</h4>
-  {#if partKinds.length}
-    <p class="hint top">{t('look-contents-kinds-hint', { template: named })}</p>
-  {/if}
-  {#each partKinds as kind (kind.id)}
-    {@const elements = partsOf.get(kind.id) ?? []}
-    <div class="place" data-kind={kind.id}>
-      <div class="place-head">
-        <strong>{kind.label()}</strong>
-        <span class="where">{placeWords(kind.place, true) ?? partGroupWords(kind.group)}</span>
-        <Button size="sm" data-make={kind.id} onclick={() => makePart(kind)}>
-          {#snippet icon()}<Plus size={13} />{/snippet}
-          {t('look-contents-kinds-make')}
-        </Button>
+  {#each printed as item ('part' in item ? item.part : `kind:${item.kind.id}`)}
+    {#if 'part' in item}
+      {@const part = item.part}
+      {@const always = ALWAYS_MADE.includes(part)}
+      <label class="row check" class:always>
+        <span class="what">{generatedPartWords(part)}</span>
+        <input
+          type="checkbox"
+          data-part-switch={part}
+          checked={always || hasPart(u, part)}
+          disabled={always}
+          onchange={(e) => setPart(part, e.currentTarget.checked)}
+        />
+      </label>
+      {@render fromLine(`parts.${part}`)}
+    {:else}
+      {@const kind = item.kind}
+      {@const elements = partsOf.get(kind.id) ?? []}
+      {@const where =
+        kind.place === 'cover' || kind.place === 'none' ? placeWords(kind.place, true) : null}
+      <div class="place" data-kind={kind.id}>
+        <div class="place-head">
+          <strong>{kind.label()}</strong>
+          <span class="where">{where ?? ''}</span>
+          <Button size="sm" data-make={kind.id} onclick={() => makePart(kind)}>
+            {#snippet icon()}<Plus size={13} />{/snippet}
+            {t('look-contents-kinds-make')}
+          </Button>
+        </div>
+        {#each elements as element, i (element)}
+          <button
+            type="button"
+            class="element"
+            data-element={element}
+            onclick={() => ongo(element)}
+          >
+            <span class="truncate">{nameOf(element)}</span>
+            {#if kind.one && i > 0}
+              <span class="doubled">{t('look-contents-kinds-doubled')}</span>
+            {/if}
+            <ArrowRight size={13} />
+          </button>
+        {:else}
+          <p class="none">{t('look-contents-kinds-missing')}</p>
+        {/each}
       </div>
-      {#each elements as element, i (element)}
-        <button type="button" class="element" data-element={element} onclick={() => ongo(element)}>
-          <span class="truncate">{nameOf(element)}</span>
-          {#if kind.one && i > 0}
-            <span class="doubled">{t('look-contents-kinds-doubled')}</span>
-          {/if}
-          <ArrowRight size={13} />
-        </button>
-      {:else}
-        <p class="none">{t('look-contents-kinds-missing')}</p>
-      {/each}
-    </div>
-  {:else}
-    <p class="hint top">{t('look-contents-kinds-none', { template: named })}</p>
+    {/if}
   {/each}
 
-  <h4>{t('look-contents-requirements')}</h4>
-  <p class="hint top">{t('look-contents-requirements-hint', { template: named })}</p>
+  <h4>{t('look-type-requirements')}</h4>
   {#each LIMITS as limit (limit)}
     {@const count = u.requirements[limit]}
     <label class="row">
@@ -233,10 +228,7 @@
     {@render fromLine(`requirements.${limit}`)}
   {/each}
   <label class="row check">
-    <span class="what"
-      >{t('template-requirement-anonymous')}<small>{t('template-requirement-anonymous-hint')}</small
-      ></span
-    >
+    <span class="what">{t('template-requirement-anonymity')}</span>
     <input
       type="checkbox"
       data-requirement="anonymous"

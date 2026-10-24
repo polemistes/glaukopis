@@ -21,3 +21,17 @@ checklist-unplaced = { $count ->
     [one] Malen lager ikke noe omslag: ett element av en omslagstype skrives ikke ut.
    *[other] Malen lager ikke noe omslag: { $count } elementer av en omslagstype skrives ikke ut.
 }
+
+## Fewer words, stage 4: what the type and the layout ask of the front page and of quotations.
+
+checklist-anonymous = Dokumenttypen ber om et anonymt dokument; forsiden nevner forfatterne. Slå på Anonymiser forsiden under Forsiden i Utseende.
+checklist-long-quotation = { $by ->
+    [lines] «{ $element }» har et sitat på { $words } ord i teksten, omtrent { $lines ->
+        [one] { $lines } linje
+       *[other] { $lines } linjer
+    }; oppsettet setter sitater for seg fra { $limit } linjer.
+   *[words] «{ $element }» har et sitat på { $words } ord i teksten, omtrent { $lines ->
+        [one] { $lines } linje
+       *[other] { $lines } linjer
+    }; oppsettet setter sitater for seg fra { $limit } ord.
+}

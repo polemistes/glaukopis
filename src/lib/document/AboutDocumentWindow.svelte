@@ -19,6 +19,7 @@
   import X from '@lucide/svelte/icons/x';
   import type { DocumentFormat } from '$lib/api/documents';
   import { languageName, newTextLanguage, t, TEXT_LANGUAGES } from '$lib/i18n';
+  import { laidOver } from '$lib/look/changes';
   import { countWords } from '$lib/project/model/document';
   import type { Project } from '$lib/project/model/project.svelte';
   import { PROJECT, type DocumentSettings, type Person } from '$lib/project/model/types';
@@ -204,7 +205,9 @@
 
   // ---- the checklist ----
 
-  const remarks = $derived<Remark[]>(template ? checklist(project, at, template, format) : []);
+  /** The layout as the document uses it, with its changes: what the checklist judges the front page and the quotations by. */
+  const used = $derived(format ? laidOver(format, project.lookOf(at).changes) : null);
+  const remarks = $derived<Remark[]>(template ? checklist(project, at, template, used) : []);
   const words = $derived(countWords(project, at));
   const wordsMost = $derived(template?.requirements.words ?? null);
 

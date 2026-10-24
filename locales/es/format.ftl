@@ -36,11 +36,6 @@ format-line-spacing = Interlineado
 format-as-the-text = Como el texto
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = como el texto
-format-size-zero-hint = 0 para el tamaño del texto
-# Beside a number of 0, in the place of its unit.
-format-not-said = no se dice
-format-unless-said = Salvo que se diga otra cosa de alguno
-format-as-it-will-stand = Como quedará
 format-align-left = Izquierda
 format-align-center = Centrado
 format-align-right = Derecha
@@ -68,19 +63,12 @@ format-margin-left = Izquierdo
 format-margin-right = Derecho
 format-lengths-hint = Las medidas se escriben con su unidad: 2.5cm, 1in, 25mm, 12pt.
 format-line-numbers = Numerar las líneas
-format-line-numbers-hint = Como piden algunas revistas para la revisión
 
 ## Type and spacing, and paragraphs.
 
 format-typeface = Fuente
-format-typeface-hint = Donde no está instalada, la vista previa usa la más parecida
 format-hyphenate = Dividir las palabras al final de las líneas
-format-paragraphs = Los párrafos se distinguen por
-format-paragraphs-indent = Una primera línea sangrada
-format-paragraphs-spaced = Espacio entre ellos
-format-indent = Sangría
 format-indent-first = También después de un encabezado
-format-indent-first-hint = La costumbre tipográfica deja sin sangrar el primer párrafo; APA y otros lo sangran
 format-space-between = Espacio entre párrafos
 format-italics = Las cursivas se componen
 format-italics-italic = Como cursivas
@@ -100,23 +88,17 @@ format-level-centred = centrado
 format-level-right = derecha
 format-level-run-in = sigue en el texto
 format-level-indent = Sangrado como un párrafo
-format-level-run-in-label = Sigue en el texto
-format-level-run-in-hint = El encabezado empieza el párrafo y termina con punto
 format-level-new-page-said = en página nueva
 format-space-before = Espacio antes
 format-space-after = Espacio después
 format-level-add = Un nivel más
 format-level-remove = Quitar el más profundo
-format-levels-hint = Los encabezados más profundos que el último nivel descrito se imprimen como ese nivel.
 
 ## The title and the abstract.
 
 format-title-placement = El título va
 format-title-top = Arriba en la primera página
 format-title-own-page = En una página propia
-format-title-shown = Qué se muestra
-format-title-anonymous = Sin los nombres de los autores
-format-title-anonymous-hint = Para la revisión: los autores se omiten en todas partes, también en la cabecera
 format-title-authors = Autores
 format-title-affiliations = Sus afiliaciones
 format-title-date = Fecha
@@ -126,19 +108,13 @@ format-title-keywords-label = Palabra antes de las palabras clave
 
 ## Quotations, notes and the bibliography.
 
-format-quote-indent-left = Sangría a la izquierda
-format-quote-indent-right = Sangría a la derecha
-format-quote-when = Cuándo se separa una cita
 format-quote-from-words = A partir de tantas palabras
-format-quote-from-words-hint = Un recordatorio: decide quien escribe
 format-quote-from-lines = O de tantas líneas
 format-notes-kind = Las notas van
 format-notes-footnotes = A pie de página
 format-notes-endnotes = Al final del texto
 format-notes-title = Encabezado de las notas
 format-bibliography-title = Encabezado
-# Headings a bibliography may have.
-format-bibliography-title-hint = Bibliografía, Referencias, Obras citadas
 format-bibliography-new-page = Empieza en página nueva
 format-bibliography-hanging-indent = Sangría francesa
 format-bibliography-entry-spacing = Espacio entre entradas
@@ -147,7 +123,6 @@ format-bibliography-entry-spacing = Espacio entre entradas
 ## is based on. The rows are those of the dialog for a kind of one's own
 ## too; what is not said is as the base has it.
 
-format-kinds-hint = Cada tipo se compone como el tipo en que se basa, con las diferencias que se dan aquí. Lo que no se dice es como lo tiene la base.
 format-kind-based-on = basado en { $base }
 format-as-the-base = Como la base
 # In an empty field for a size, in the place of its number.
@@ -197,16 +172,7 @@ format-captioned-called = { $kind ->
     [figure] Una figura se llama
    *[table] Una tabla se llama
 }
-# Words a figure or table may be called by.
-format-captioned-called-hint = { $kind ->
-    [figure] Figura, Fig., Figure
-   *[table] Tabla, Tab., Table
-}
 format-captioned-reference = Donde el texto remite a ella
-format-captioned-reference-hint = { $kind ->
-    [figure] fig., figura; vacío para la misma palabra
-   *[table] tab., tabla; vacío para la misma palabra
-}
 format-captioned-label-bold = La palabra y el número en negrita
 format-captioned-label-italic = La palabra y el número en cursiva
 format-captioned-between = { $kind ->
@@ -228,7 +194,6 @@ format-between-line = { $kind ->
 }
 format-between-other = Otro…
 format-captioned-separator = Lo que va entre ellos
-format-captioned-separator-hint = Los espacios cuentan: escríbalos donde los quiera
 format-captioned-own-line = { $kind ->
     [figure] Y luego la leyenda en una línea propia
    *[table] Y luego la leyenda en una línea propia
@@ -249,15 +214,6 @@ format-caption-above = { $kind ->
     [figure] Sobre la imagen
    *[table] Sobre la tabla
 }
-format-caption-align-hint = { $kind ->
-    [figure] De una figura colocada a un lado, la leyenda va a ese lado
-   *[table] De una tabla colocada a un lado, la leyenda va a ese lado
-}
-# In the example of how the number and the caption will stand.
-format-caption-example = { $kind ->
-    [figure] Leyenda
-   *[table] Leyenda
-}
 format-captioned-where = { $kind ->
     [figure] Dónde van las figuras
    *[table] Dónde van las tablas
@@ -270,26 +226,17 @@ format-captioned-wrap = El texto fluye alrededor
 format-captioned-placement = En el documento
 format-captioned-in-text = En el texto
 format-captioned-at-end = Reunidas al final
-format-captioned-placement-hint = Muchas revistas las piden al final del manuscrito
 format-captioned-end-title = { $kind ->
     [figure] Encabezado sobre las figuras
    *[table] Encabezado sobre las tablas
 }
-format-captioned-end-title-hint = { $kind ->
-    [figure] Figuras, Ilustraciones; vacío para ninguno
-   *[table] Tablas; vacío para ninguno
-}
 # What is left in the text where a figure or table gathered at the end belongs.
 format-captioned-placeholder = Línea que queda en el texto
-# The braces are written as they are; line is how the line will stand.
-format-captioned-placeholder-shown = {"{}"} representa la palabra y el número: { $line }
 format-captioned-placeholder-missing = Debe contener {"{}"}, donde van la palabra y el número
-format-table-itself = La tabla misma
 format-table-rules = Líneas
 format-table-rules-horizontal = Arriba, abajo y bajo los encabezados
 format-table-rules-grid = Alrededor de cada celda
 format-table-rules-none = Ninguna
-format-table-rules-hint = Los libros y las revistas usan la primera
 format-table-header-bold = Encabezados en negrita
 format-equations = Ecuaciones
 format-equations-stand = Las ecuaciones van
@@ -310,5 +257,3 @@ format-source-read = Leído el { $date }.
 format-source-high = Los valores son los de la fuente.
 format-source-medium = La fuente solo pudo leerse en parte o en un estado anterior: compruebe lo que le importe.
 format-source-low = Poco pudo verificarse: tome los valores como un punto de partida.
-format-source-changed = Ha cambiado este formato; la fuente describe aquello de lo que se hizo.
-format-source-none = Este formato no sigue los requisitos de ninguna editorial en particular.

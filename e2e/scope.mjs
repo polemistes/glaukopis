@@ -94,7 +94,7 @@ try {
   );
   await chooseScope(one);
   await sleep(300);
-  check('Book one chosen, Look says what that means', await app.exists('.side .look [data-scope-hint]'));
+  check('Book one chosen, the line says so, and no words of help stand under it', (await app.exec(`return document.querySelector('.side .look select.scope')?.value`)) === one && !(await app.exists('.side .look .whole .hint')));
   await app.screenshot('scope-1-line');
 
   // --- Larger type in Book one alone ---

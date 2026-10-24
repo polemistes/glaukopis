@@ -8,8 +8,8 @@ use std::fmt::Write;
 
 use super::kinds::{self, Family, OwnKind, Resolved};
 use super::{
-    Align, Case, DocumentFormat, HeadingLevel, Item, MATH_FONTS, Margin, NoteKind, NumberStyle, Paragraphs, RefMarks,
-    Rules, Sides, TitlePlacement, fallbacks,
+    Align, Case, DocumentFormat, HeadingLevel, Item, MATH_FONTS, Margin, NoteKind, NumberStyle, RefMarks, Rules, Sides,
+    TitlePlacement, fallbacks,
 };
 
 /// What the header, the footer and the properties of the file are made from.
@@ -510,12 +510,9 @@ pub fn rules(format: &DocumentFormat, p: &Particulars) -> String {
         region = region.map(|r| format!("\n  region: {},", string(&r))).unwrap_or_default(),
         hyphenate = f.text.hyphenate,
     );
-    let (indent, spacing) = match f.text.paragraphs {
-        Paragraphs::Indent => {
-            (format!("(amount: {}, all: {})", f.text.indent, f.text.indent_first), body_leading.clone())
-        }
-        Paragraphs::Spaced => ("0pt".to_owned(), format!("{body_leading} + {}", f.text.space_between)),
-    };
+    // The indent of the first line and the space between paragraphs, both as said, either nought.
+    let indent = format!("(amount: {}, all: {})", f.text.indent, f.text.indent_first);
+    let spacing = format!("{body_leading} + {}", f.text.space_between);
     let _ = writeln!(
         out,
         "#set par(leading: {body_leading}, spacing: {spacing}, first-line-indent: {indent}, justify: {justify})"

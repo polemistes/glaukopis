@@ -1169,7 +1169,6 @@ export const format: documents.DocumentFormat = {
     "indentFirst": false,
     "italics": "italic",
     "lineSpacing": 2.0,
-    "paragraphs": "indent",
     "refmarks": "raised",
     "spaceBetween": "0pt"
   },

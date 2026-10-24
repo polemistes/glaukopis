@@ -242,9 +242,10 @@ export interface DocumentFormat {
   text: {
     lineSpacing: number;
     align: Align;
-    paragraphs: 'indent' | 'spaced';
+    /** How far the first line of a paragraph begins in; nought for none. */
     indent: string;
     indentFirst: boolean;
+    /** The space between paragraphs, beyond that between lines; nought for none. */
     spaceBetween: string;
     hyphenate: boolean;
     /** How italics are set: as italics, or underlined as typewritten manuscripts had them. */

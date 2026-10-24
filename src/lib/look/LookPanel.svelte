@@ -18,7 +18,6 @@
    * written as the element's changes, each a step of undo of its own.
    */
   import { tick, untrack } from 'svelte';
-  import ExternalLink from '@lucide/svelte/icons/external-link';
   import Minus from '@lucide/svelte/icons/minus';
   import Plus from '@lucide/svelte/icons/plus';
   import Search from '@lucide/svelte/icons/search';
@@ -28,7 +27,6 @@
     formatKindLooks,
     formatsDelete,
     formatsSave,
-    openPath,
     type DocumentFormat,
     type HeadingLevel,
     type KindFamily,
@@ -40,7 +38,7 @@
   } from '$lib/api/documents';
   import type { Template } from '$lib/api/templates';
   import { aboutDocumentUi } from '$lib/document/about-document.svelte';
-  import { CATALOGUE, GROUPS, specOf } from '$lib/editor/kinds';
+  import { CATALOGUE, GROUPS, points, specOf } from '$lib/editor/kinds';
   import { languages, t } from '$lib/i18n';
   import { documents, templateFor, templateName } from '$lib/preview/documents.svelte';
   import StyleBrowser from '$lib/preview/StyleBrowser.svelte';
@@ -53,7 +51,7 @@
   import Settings from '$lib/ui/settings/Settings.svelte';
   import { rowsOf, type Choices, type Provenance, type Row } from '$lib/ui/settings/rows';
   import Spinner from '$lib/ui/Spinner.svelte';
-  import { describeError, notifyError, notifyOk } from '$lib/ui/toast.svelte';
+  import { describeError, notifyOk } from '$lib/ui/toast.svelte';
   import {
     changesBetween,
     countOf,
@@ -67,7 +65,7 @@
   import { LOOK_SECTIONS, lookUi, type LookRequest, type LookSection } from './look.svelte';
   import ContentsSection from './ContentsSection.svelte';
   import { Composition } from './composition.svelte';
-  import { lengthsOk, lookRows, lookWords, resolvedWords, setKindLook } from './rows.svelte';
+  import { lookRows, lookWords, resolvedWords, setKindLook } from './rows.svelte';
 
   interface Props {
     project: Project;
@@ -518,12 +516,12 @@
     type: t('look-section-type'),
     paragraphs: t('look-section-paragraphs'),
     headings: t('look-section-headings'),
-    numbers: t('look-section-numbers'),
+    numbers: t('look-section-line-numbers'),
     notes: t('look-section-notes'),
     figures: t('look-section-figures'),
     front: t('look-section-front'),
-    contents: t('look-section-contents'),
-    layout: t('look-section-layout'),
+    contents: t('look-section-type-parts'),
+    layout: t('look-section-the-layout'),
   });
 
   // ---- the rows ----
@@ -691,22 +689,14 @@
 
   const pt = (least = 6, most = 72) => ({ min: least, max: most, unit: 'pt' });
   /** A size where nought is that of the text. */
-  const ptOrText = (hint = true) => ({
+  const ptOrText = () => ({
     max: 36,
     unit: 'pt',
     zero: t('format-as-the-text-zero'),
-    hint: hint ? t('format-size-zero-hint') : undefined,
-  });
-  /** A count where nought is none. */
-  const counted = (most: number, step: number, zero: string, hint?: string) => ({
-    max: most,
-    step,
-    zero,
-    hint,
-    nullable: true,
   });
   const custom = (f: F) => f.page.size === 'custom';
-  const indented = (f: F) => f.text.paragraphs === 'indent';
+  /** Whether the first line of a paragraph is indented at all. */
+  const indented = (f: F) => (points(f.text.indent) ?? 0) !== 0;
   const named = (f: F) => !f.title.anonymous;
   const withAbstract = (f: F) => f.title.showAbstract;
 
@@ -804,7 +794,7 @@
       toggle(
         t('format-margin-openers'),
         { get: (f) => f[which].openers, set: (f, v) => (f[which].openers = v) },
-        { path: `${which}.openers`, when: shown, hint: t('format-margin-openers-hint') },
+        { path: `${which}.openers`, when: shown },
       ),
       toggle(
         t('format-margin-alternate'),
@@ -836,7 +826,7 @@
       number(
         t('format-size'),
         { get: (f) => f[which].size, set: (f, v) => (f[which].size = v ?? 0) },
-        { ...ptOrText(false), path: `${which}.size` },
+        { ...ptOrText(), path: `${which}.size` },
       ),
       toggle(
         t('format-italic'),
@@ -873,15 +863,10 @@
       ['italic', t('format-italics-italic')],
       ['underline', t('format-italics-underline')],
     ]),
-    chosen(
-      t('format-refmarks'),
-      'text.refmarks',
-      [
-        ['raised', t('format-refmarks-raised')],
-        ['margin', t('format-refmarks-margin')],
-      ],
-      { hint: t('format-refmarks-hint') },
-    ),
+    chosen(t('format-refmarks'), 'text.refmarks', [
+      ['raised', t('format-refmarks-raised')],
+      ['margin', t('format-refmarks-margin')],
+    ]),
   ]);
 
   const pageSizes: Choices = $derived([
@@ -902,7 +887,7 @@
     chosen(t('format-line-spacing'), 'text.lineSpacing', spacings),
     chosen(t('look-first-page-size'), 'page.size', pageSizes),
     toggle(t('format-page-numbers-show'), pagesNumbered, { path: 'footer.shown' }),
-    toggle(t('look-first-headings-numbered'), 'headings.numbered', { hint: '1, 1.1, 1.1.1' }),
+    toggle(t('look-first-headings-numbered'), 'headings.numbered'),
   ]);
 
   const pageRows: Row<F>[] = $derived([
@@ -922,7 +907,7 @@
         get: (f) => f.page.columns ?? 1,
         set: (f, value) => (f.page.columns = Math.max(1, Math.min(4, Math.round(value ?? 1)))),
       },
-      { min: 1, max: 4, step: 1, hint: t('format-columns-hint'), path: 'page.columns' },
+      { min: 1, max: 4, step: 1, path: 'page.columns' },
     ),
     length(
       t('format-column-gap'),
@@ -946,25 +931,15 @@
     ]),
     // Where the changes hold for an element under the document's: its pages may be counted anew.
     toggle(t('format-page-restart'), 'page.restart', { when: () => target !== at }),
-    { note: t('format-lengths-hint') },
   ]);
 
   const paragraphRows: Row<F>[] = $derived([
-    chosen(t('format-paragraphs'), 'text.paragraphs', [
-      ['indent', t('format-paragraphs-indent')],
-      ['spaced', t('format-paragraphs-spaced')],
-    ]),
-    length(t('format-indent'), 'text.indent', { when: indented }),
-    toggle(t('format-indent-first'), 'text.indentFirst', {
-      hint: t('format-indent-first-hint'),
-      when: indented,
-    }),
-    length(t('format-space-between'), 'text.spaceBetween', { when: (f) => !indented(f) }),
+    length(t('format-indent-first-line'), 'text.indent'),
+    toggle(t('format-indent-first'), 'text.indentFirst', { when: indented }),
+    length(t('format-space-between'), 'text.spaceBetween'),
   ]);
 
-  const headingRows: Row<F>[] = $derived([
-    toggle(t('format-numbered'), 'headings.numbered', { hint: '1, 1.1, 1.1.1' }),
-  ]);
+  const headingRows: Row<F>[] = $derived([toggle(t('format-numbered'), 'headings.numbered')]);
 
   const levelRows: Row<HeadingLevel>[] = $derived([
     // First how it is numbered (ADR 0058), where the headings are: then its look.
@@ -983,7 +958,7 @@
         ['roman', t('format-level-numbering-roman')],
         ['roman-lower', t('format-level-numbering-roman-lower')],
       ],
-      { hint: t('format-level-numbering-hint'), when: () => !!effective?.headings.numbered },
+      { when: () => !!effective?.headings.numbered },
     ),
     level.number(t('format-size'), 'size', pt()),
     level.toggle(t('format-bold'), 'bold'),
@@ -991,17 +966,12 @@
     level.choice(t('format-letters'), 'case', cases),
     level.choice(t('format-alignment'), 'align', aligns),
     level.toggle(t('format-level-indent'), 'indent'),
-    level.toggle(t('format-level-run-in-label'), 'runIn', { hint: t('format-level-run-in-hint') }),
-    level.choice(
-      t('format-level-begins'),
-      'begins',
-      [
-        ['text', t('format-level-begins-text')],
-        ['page', t('format-level-begins-page')],
-        ['right-page', t('format-level-begins-right-page')],
-      ],
-      { hint: t('format-level-begins-hint') },
-    ),
+    level.toggle(t('format-level-begins-paragraph'), 'runIn'),
+    level.choice(t('format-level-placement'), 'begins', [
+      ['text', t('format-level-begins-text')],
+      ['page', t('format-level-begins-page')],
+      ['right-page', t('format-level-begins-right-page')],
+    ]),
     level.length(t('format-space-before'), 'spaceBefore', { when: (l) => !l.runIn }),
     level.length(t('format-space-after'), 'spaceAfter', { when: (l) => !l.runIn }),
   ]);
@@ -1009,17 +979,15 @@
   // First whether, then how (ADR 0056): the switch of the title page stands
   // over these rows; then what the title page shows; then how it is set.
   const titleRows: Row<F>[] = $derived([
-    { subheading: t('format-title-shown'), at: 'title-shown' },
-    toggle(t('format-title-anonymous'), 'title.anonymous', {
-      hint: t('format-title-anonymous-hint'),
-    }),
+    { subheading: t('format-title-include'), at: 'title-shown' },
+    toggle(t('format-title-anonymize'), 'title.anonymous'),
     toggle(t('format-title-authors'), 'title.showAuthors', { when: named }),
     toggle(t('format-title-affiliations'), 'title.showAffiliations', { when: named }),
     toggle(t('format-title-date'), 'title.showDate'),
     toggle(t('format-title-abstract'), 'title.showAbstract'),
     text(t('format-title-abstract-label'), 'title.abstractLabel', { when: withAbstract }),
     text(t('format-title-keywords-label'), 'title.keywordsLabel', { when: withAbstract }),
-    { subheading: t('format-title-how'), at: 'title-how' },
+    { subheading: t('format-title-formatting'), at: 'title-how' },
     chosen(t('format-title-placement'), 'title.placement', [
       ['top', t('format-title-top')],
       ['own-page', t('format-title-own-page')],
@@ -1039,38 +1007,47 @@
   /** Where the switch of the title page has its value from: nothing where it is the template's. */
   const titlePageFrom = $derived(contained.from('parts.title-page'));
 
+  /**
+   * Quotations in the text that the layout would have set off by their
+   * length: a warning of the checklist, from this many words or lines. The
+   * look of a quotation is that of the kind Quotation, under Paragraph kinds.
+   */
+  const warns = (f: F) => f.quote.fromWords != null || f.quote.fromLines != null;
+  /** A limit of the warning: empty for none. */
+  const limit = (most: number, path: string) => ({
+    max: most,
+    step: 1,
+    nullable: true,
+    blank: '',
+    path,
+    when: warns,
+  });
   const quotationRows: Row<F>[] = $derived([
-    length(t('format-quote-indent-left'), 'quote.indentLeft'),
-    length(t('format-quote-indent-right'), 'quote.indentRight'),
-    number(t('format-size'), 'quote.size', ptOrText()),
-    chosen(t('format-line-spacing'), 'quote.lineSpacing', spacingsOrText),
-    toggle(t('format-italic'), 'quote.italic'),
-    { subheading: t('format-quote-when') },
-    number(
-      t('format-quote-from-words'),
-      'quote.fromWords',
-      counted(500, 1, t('format-not-said'), t('format-quote-from-words-hint')),
-    ),
-    number(t('format-quote-from-lines'), 'quote.fromLines', counted(50, 1, t('format-not-said'))),
+    toggle(t('format-quote-warn'), {
+      get: warns,
+      set: (f, on) => {
+        if (on && !warns(f)) f.quote.fromWords = 40;
+        else if (!on) {
+          f.quote.fromWords = null;
+          f.quote.fromLines = null;
+        }
+      },
+    }),
+    number(t('format-quote-from-words'), 'quote.fromWords', limit(500, 'quote.fromWords')),
+    number(t('format-quote-from-lines'), 'quote.fromLines', limit(50, 'quote.fromLines')),
   ]);
 
   // Numbers belong to what they number (ADR 0041): the lines of a numbered
   // stretch are shown as the layout says where the stretch does not; the
   // lines of the page are the document's to number.
   const numbersRows: Row<F>[] = $derived([
-    { note: t('format-numbers-hint') },
-    number(t('format-verse-every'), 'verse.every', {
-      min: 1,
-      max: 1000,
-      step: 1,
-      hint: t('format-verse-every-hint'),
-    }),
+    number(t('format-verse-every'), 'verse.every', { min: 1, max: 1000, step: 1 }),
     chosen(t('format-verse-side'), 'verse.side', [
       ['left', t('format-side-left')],
       ['right', t('format-side-right')],
     ]),
     { subheading: t('format-numbers-page') },
-    toggle(t('format-line-numbers'), 'lineNumbers', { hint: t('format-line-numbers-hint') }),
+    toggle(t('format-line-numbers'), 'lineNumbers'),
   ]);
 
   const noteRows: Row<F>[] = $derived([
@@ -1084,14 +1061,12 @@
   ]);
 
   const bibliographyRows: Row<F>[] = $derived([
-    text(t('format-bibliography-title'), 'bibliography.title', {
-      hint: t('format-bibliography-title-hint'),
-    }),
+    text(t('format-bibliography-title'), 'bibliography.title'),
     toggle(t('format-bibliography-new-page'), 'bibliography.newPage'),
     length(t('format-bibliography-hanging-indent'), 'bibliography.hangingIndent'),
     chosen(t('format-line-spacing'), 'bibliography.lineSpacing', spacingsOrText),
     length(t('format-bibliography-entry-spacing'), 'bibliography.entrySpacing'),
-    number(t('format-size'), 'bibliography.size', ptOrText(false)),
+    number(t('format-size'), 'bibliography.size', ptOrText()),
   ]);
 
   /** How figures or tables are called and told apart from what is said of them. */
@@ -1100,12 +1075,8 @@
     const other = (c: Captioned) => between(c.separator, kind) === 'other';
     const at = kind === 'figure' ? 'figures' : 'tables';
     return [
-      captions.text(t('format-captioned-called', { kind }), 'label', {
-        hint: t('format-captioned-called-hint', { kind }),
-      }),
-      captions.text(t('format-captioned-reference'), 'reference', {
-        hint: t('format-captioned-reference-hint', { kind }),
-      }),
+      captions.text(t('format-captioned-called', { kind }), 'label'),
+      captions.text(t('format-captioned-reference'), 'reference'),
       captions.toggle(t('format-captioned-label-bold'), 'labelBold'),
       captions.toggle(t('format-captioned-label-italic'), 'labelItalic'),
       captions.choice(
@@ -1128,7 +1099,7 @@
           get: (c) => c.separator.replaceAll('\n', ''),
           set: (c, v) => setSeparator(c, v, c.separator.includes('\n'), kind),
         },
-        { hint: t('format-captioned-separator-hint'), when: other },
+        { when: other },
       ),
       captions.toggle(
         t('format-captioned-own-line', { kind }),
@@ -1143,12 +1114,10 @@
         ['below', t('format-caption-below', { kind })],
         ['above', t('format-caption-above', { kind })],
       ]),
-      captions.choice(
-        t('format-alignment'),
-        'captionAlign',
-        [...aligns, ['justified', t('format-align-justified')]],
-        { hint: t('format-caption-align-hint', { kind }) },
-      ),
+      captions.choice(t('format-alignment'), 'captionAlign', [
+        ...aligns,
+        ['justified', t('format-align-justified')],
+      ]),
       captions.number(t('format-size'), 'captionSize', ptOrText()),
       captions.toggle(t('format-italic'), 'captionItalic'),
       captions.choice(t('format-line-spacing'), 'captionLineSpacing', spacingsOrText),
@@ -1159,24 +1128,13 @@
   function placingRows(kind: CaptionedKind): Row<Captioned>[] {
     return [
       { subheading: t('format-captioned-where', { kind }) },
-      captions.choice(t('format-captioned-stand', { kind }), 'align', stands, {
-        hint: t('format-unless-said'),
-      }),
-      captions.toggle(t('format-captioned-wrap'), 'wrap', {
-        hint: t('format-unless-said'),
-        when: (c) => c.align !== 'center',
-      }),
-      captions.choice(
-        t('format-captioned-placement'),
-        'placement',
-        [
-          ['in-text', t('format-captioned-in-text')],
-          ['at-end', t('format-captioned-at-end')],
-        ],
-        { hint: t('format-captioned-placement-hint') },
-      ),
+      captions.choice(t('format-captioned-stand', { kind }), 'align', stands),
+      captions.toggle(t('format-captioned-wrap'), 'wrap', { when: (c) => c.align !== 'center' }),
+      captions.choice(t('format-captioned-placement'), 'placement', [
+        ['in-text', t('format-captioned-in-text')],
+        ['at-end', t('format-captioned-at-end')],
+      ]),
       captions.text(t('format-captioned-end-title', { kind }), 'endTitle', {
-        hint: t('format-captioned-end-title-hint', { kind }),
         when: (c) => c.placement === 'at-end',
       }),
     ];
@@ -1188,24 +1146,20 @@
   const tablePlacing = $derived(placingRows('table'));
 
   const tableRows: Row<F>[] = $derived([
-    { subheading: t('format-table-itself') },
-    chosen(
-      t('format-table-rules'),
-      'tables.rules',
-      [
-        ['horizontal', t('format-table-rules-horizontal')],
-        ['grid', t('format-table-rules-grid')],
-        ['none', t('format-table-rules-none')],
-      ],
-      { hint: t('format-table-rules-hint') },
-    ),
+    { subheading: t('format-table-inside') },
+    chosen(t('format-table-rules'), 'tables.rules', [
+      ['horizontal', t('format-table-rules-horizontal')],
+      ['grid', t('format-table-rules-grid')],
+      ['none', t('format-table-rules-none')],
+    ]),
     toggle(t('format-table-header-bold'), 'tables.headerBold'),
     number(t('format-size'), 'tables.size', ptOrText()),
     chosen(t('format-line-spacing'), 'tables.lineSpacing', spacingsOrText),
-    { heading: t('format-equations') },
-    chosen(t('format-equations-stand'), 'equations.align', stands, {
-      hint: t('format-unless-said'),
-    }),
+  ]);
+
+  /** Equations, under a heading of the rank of Figures and Tables. */
+  const equationRows: Row<F>[] = $derived([
+    chosen(t('format-equations-stand'), 'equations.align', stands),
     text(t('format-equations-before'), 'equations.beforeNumber'),
     text(t('format-equations-after'), 'equations.afterNumber'),
   ]);
@@ -1272,6 +1226,13 @@
    * says of each only what differs; the base look of the kind, and the
    * kinds it is based on, give the rest (ADR 0040).
    */
+  /** The two families of kinds, each under a heading of its own, named as the bar's menus name them. */
+  const FAMILIES: readonly KindFamily[] = ['paragraph', 'words'];
+  const familyWords = $derived<Record<KindFamily, string>>({
+    paragraph: t('look-at-paragraph-kinds'),
+    words: t('look-at-words-kinds'),
+  });
+
   const kindGroups = $derived.by<{ id: string; label: string; kinds: Listed[] }[]>(() => {
     const all: Listed[] = [
       ...CATALOGUE.map((k): Listed => ({
@@ -1360,6 +1321,7 @@
             },
             {
               sign: k.id === 'break',
+              hints: false,
               resolved: resolved[k.id]?.look,
               path: (key) => `kinds.${k.id}.${key}`,
             },
@@ -1367,8 +1329,6 @@
         ]),
     ),
   );
-  /** Whether every length said of a kind is written with its unit. */
-  const kindsOk = $derived(Object.values(effective?.kinds ?? {}).every(lengthsOk));
 
   /** Whether the layout as used says anything of a kind. */
   const says = (f: F, id: string) => Object.keys(f.kinds?.[id] ?? {}).length > 0;
@@ -1378,14 +1338,14 @@
 
   // ---- finding ----
 
-  /** Whether words of the search are in a row's label or hint. */
+  /** Whether words of the search are in a row's label. */
   function fits(words: string | undefined): boolean {
     const q = query.trim().toLocaleLowerCase(languages.current);
     return !!words && words.toLocaleLowerCase(languages.current).includes(q);
   }
   /** The rows of a part that the search finds, without its headings and notes. */
   function found<T>(rows: Row<T>[]): Row<T>[] {
-    return rows.filter((r) => 'kind' in r && (fits(r.label) || fits(r.hint)));
+    return rows.filter((r) => 'kind' in r && fits(r.label));
   }
   /** What the search finds, part by part: rows that set the layout as used. */
   const foundRows = $derived.by(() => {
@@ -1407,20 +1367,16 @@
       ['headings', headingRows],
       ['numbers', numbersRows],
       ['notes', [...noteRows, ...bibliographyRows]],
-      ['figures', tableRows],
+      ['figures', [...tableRows, ...equationRows]],
       ['front', titleRows],
     ];
     return parts.map(([key, rows]) => ({ key, rows: found(rows) })).filter((p) => p.rows.length);
   });
-  const foundFont = $derived(
-    searching && (fits(t('format-typeface')) || fits(t('format-typeface-hint'))),
-  );
+  const foundFont = $derived(searching && fits(t('format-typeface')));
   const foundKinds = $derived(
     searching ? kindGroups.flatMap((g) => g.kinds).filter((k) => fits(k.label)) : [],
   );
-  const foundStyle = $derived(
-    searching && (fits(t('look-style')) || fits(t('look-citations-hint'))),
-  );
+  const foundStyle = $derived(searching && fits(t('look-style')));
   const foundNothing = $derived(
     searching && !foundRows.length && !foundFont && !foundKinds.length && !foundStyle,
   );
@@ -1454,6 +1410,7 @@
       noteRows,
       bibliographyRows,
       tableRows,
+      equationRows,
       titleRows,
     ] as Row<F>[][]) {
       const row = rows.find((r) => 'kind' in r && (r.path ?? r.at) === path);
@@ -1562,7 +1519,7 @@
 
 {#snippet fontRow(f: F)}
   <label class="row">
-    <span class="what">{t('format-typeface')}<small>{t('format-typeface-hint')}</small></span>
+    <span class="what">{t('format-typeface')}</span>
     <select
       value={f.font.family}
       onchange={(e) => (f.font.family = e.currentTarget.value)}
@@ -1618,26 +1575,13 @@
 )}
   {@const prefix = kind === 'figure' ? 'figures.' : 'tables.'}
   <Settings target={c} rows={naming} {from} {prefix} />
-  <div class="row">
-    <span class="what">{t('format-as-it-will-stand')}</span>
-    <span class="example"
-      ><span class:bold={c.labelBold} class:italic={c.labelItalic}>{called(c)}</span
-      >{c.separator}<span class:italic={c.captionItalic}
-        >{t('format-caption-example', { kind })}</span
-      ></span
-    >
-  </div>
   <Settings target={c} rows={placing} {from} {prefix} />
   {#if c.placement === 'at-end'}
     <label class="row">
       <span class="what"
-        >{t('format-captioned-placeholder')}<small
-          >{c.placeholder.includes('{}')
-            ? t('format-captioned-placeholder-shown', {
-                line: c.placeholder.replace('{}', () => called(c)),
-              })
-            : t('format-captioned-placeholder-missing')}</small
-        ></span
+        >{t('format-captioned-placeholder')}{#if !c.placeholder.includes('{}')}<small class="bad"
+            >{t('format-captioned-placeholder-missing')}</small
+          >{/if}</span
       >
       <input
         class:invalid={!c.placeholder.includes('{}')}
@@ -1651,7 +1595,7 @@
 
 {#snippet styleRow()}
   <label class="row" data-style-row>
-    <span class="what">{t('look-style')}<small>{t('look-citations-hint')}</small></span>
+    <span class="what">{t('look-style')}</span>
     <select
       value={own.style ?? ''}
       onchange={(e) => {
@@ -1700,7 +1644,6 @@
           >{t('look-document-type')}</Button
         >
       </div>
-      <p class="hint">{t('look-what-hint')}</p>
       <button
         type="button"
         class="link layout-line"
@@ -1728,9 +1671,6 @@
             {/each}
           </select>
         </label>
-        {#if target !== at}
-          <p class="hint" data-scope-hint>{t('look-scope-hint', { name: nameOf(target) })}</p>
-        {/if}
       {/if}
     </section>
 
@@ -1763,10 +1703,13 @@
             {#if !(foundFont && part.key === 'type')}<h4>{sectionWords[part.key]}</h4>{/if}
             <Settings target={f} rows={part.rows} {from} />
           {/each}
-          {#if foundKinds.length}
-            <h4>{t('look-at-kinds')}</h4>
-            {#each foundKinds as k (k.id)}{@render kindLook(f, k)}{/each}
-          {/if}
+          {#each FAMILIES as family (family)}
+            {@const kinds = foundKinds.filter((k) => k.family === family)}
+            {#if kinds.length}
+              <h4>{familyWords[family]}</h4>
+              {#each kinds as k (k.id)}{@render kindLook(f, k)}{/each}
+            {/if}
+          {/each}
           {#if foundStyle}
             <h4>{t('look-at-citations')}</h4>
             {@render styleRow()}
@@ -1809,16 +1752,21 @@
         <section class="part" data-part="paragraphs">
           <h3>{sectionWords.paragraphs}</h3>
           <Settings target={f} rows={paragraphRows} {from} />
-          <h4 data-at="quotations">{t('look-at-quotations')}</h4>
-          <p class="hint top">{t('look-quotations-hint')}</p>
+          <h4 data-at="quotations">{t('look-at-quotations-warning')}</h4>
           <Settings target={f} rows={quotationRows} {from} />
-          <h4 data-at="kinds">{t('look-at-kinds')}</h4>
-          <p class="hint top">{t('format-kinds-hint')}</p>
-          {#each kindGroups as group (group.id)}
-            <h5>{group.label}</h5>
-            {#each group.kinds as k (k.id)}{@render kindLook(f, k)}{/each}
+          <!-- The kinds of paragraph, then the kinds of words, each in the groups of the catalogue. -->
+          {#each FAMILIES as family (family)}
+            <h4 data-at={family === 'paragraph' ? 'kinds' : 'words-kinds'}>
+              {familyWords[family]}
+            </h4>
+            {#each kindGroups as group (group.id)}
+              {@const kinds = group.kinds.filter((k) => k.family === family)}
+              {#if kinds.length}
+                <h5>{group.label}</h5>
+                {#each kinds as k (k.id)}{@render kindLook(f, k)}{/each}
+              {/if}
+            {/each}
           {/each}
-          <p class="hint" class:bad={!kindsOk}>{t('format-lengths-hint')}</p>
         </section>
 
         <section class="part" data-part="headings">
@@ -1849,7 +1797,6 @@
               {t('format-level-remove')}
             </Button>
           </div>
-          <p class="hint">{t('format-levels-hint')}</p>
         </section>
 
         <section class="part" data-part="numbers">
@@ -1878,19 +1825,15 @@
           <h4>{t('format-tables')}</h4>
           {@render captioned(f.tables, 'table', tableNaming, tablePlacing)}
           <Settings target={f} rows={tableRows} {from} />
-          <div class="row">
-            <span class="what">{t('format-as-it-will-stand')}</span>
-            <span class="example">{f.equations.beforeNumber}1{f.equations.afterNumber}</span>
-          </div>
+          <h4 data-at="equations">{t('format-equations')}</h4>
+          <Settings target={f} rows={equationRows} {from} />
         </section>
 
         <section class="part" data-part="front">
           <h3>{sectionWords.front}</h3>
           <!-- Whether the document has a title page: the switch of What the document contains, here too. -->
           <label class="row check" data-front-switch>
-            <span class="what"
-              >{t('look-front-title-page')}<small>{t('look-front-title-page-hint')}</small></span
-            >
+            <span class="what">{t('look-front-title-page')}</span>
             <input
               type="checkbox"
               data-part-switch="title-page"
@@ -1921,7 +1864,7 @@
         <section class="part" data-part="layout">
           <h3>{sectionWords.layout}</h3>
           <label class="row">
-            <span class="what">{t('look-layout')}<small>{t('look-layout-hint')}</small></span>
+            <span class="what">{t('look-choose-layout')}</span>
             <select
               value={own.format ?? ''}
               onchange={(e) => setOwn({ format: e.currentTarget.value || undefined })}
@@ -1945,7 +1888,7 @@
           </label>
 
           {#if changed}
-            <h4>{t('look-layout-changes')}</h4>
+            <h4>{t('look-layout-modifications')}</h4>
             <ul class="changed">
               {#each changeList as c (c.path)}
                 <li>
@@ -1991,17 +1934,15 @@
             {:else}
               <Button
                 size="sm"
-                disabled={!changed || !kindsOk || saving}
+                disabled={!changed || saving}
                 onclick={() => {
                   keeping = true;
                   keptName = t('format-name-changed', { name: nameOfLayout });
                 }}>{t('look-keep')}</Button
               >
               {#if ownLayout}
-                <Button
-                  size="sm"
-                  disabled={!changed || !kindsOk || saving}
-                  onclick={() => keep(null)}>{t('look-put-into', { name: nameOfLayout })}</Button
+                <Button size="sm" disabled={!changed || saving} onclick={() => keep(null)}
+                  >{t('look-put-into', { name: nameOfLayout })}</Button
                 >
               {/if}
             {/if}
@@ -2019,44 +1960,12 @@
             {:else if layout.description}
               <p class="description">{layout.description}</p>
             {/if}
-            {#if layout.source?.name}
-              {@const s = layout.source}
-              <div class="source selectable">
-                <p class="overline">{t('format-source')}</p>
-                <p class="serif">{s.name}</p>
-                {#if s.url}
-                  <button
-                    type="button"
-                    class="link"
-                    onclick={() =>
-                      openPath(s.url).catch((e) => notifyError(t('common-link-open-failed'), e))}
-                  >
-                    {s.url}
-                    <ExternalLink size={11} />
-                  </button>
-                {/if}
-                <p class="read">
-                  {t('format-source-read', { date: s.checked })}
-                  {s.confidence === 'high'
-                    ? t('format-source-high')
-                    : s.confidence === 'medium'
-                      ? t('format-source-medium')
-                      : t('format-source-low')}
-                </p>
-                {#if s.notes}<p class="notes">{s.notes}</p>{/if}
-                {#if ownLayout}<p class="notes">{t('format-source-changed')}</p>{/if}
-              </div>
-            {:else}
-              <p class="hint top">{t('format-source-none')}</p>
-            {/if}
             {#if ownLayout}
               <div class="actions">
                 <Button size="sm" variant="danger" onclick={removeLayout}
                   >{t('look-delete-layout')}</Button
                 >
               </div>
-            {:else}
-              <p class="hint">{t('look-bundled')}</p>
             {/if}
           {/if}
           <div class="actions about">
@@ -2198,10 +2107,6 @@
   }
   .type-line :global(button) {
     flex: none;
-  }
-  .whole .hint {
-    margin: 6px 0 4px;
-    font-size: var(--text-xs);
   }
   .layout-line {
     font-size: var(--text-sm);
@@ -2361,20 +2266,6 @@
     justify-content: center;
     min-height: 120px;
   }
-  .example {
-    min-width: 0;
-    font-family: var(--font-text);
-    font-size: 15px;
-    line-height: 1.35;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-  }
-  .example .bold {
-    font-weight: 700;
-  }
-  .example .italic {
-    font-style: italic;
-  }
   details {
     margin-top: 6px;
     border: 1px solid var(--line);
@@ -2421,7 +2312,8 @@
   .resolved.problem {
     color: var(--danger);
   }
-  .hint.bad {
+  /* A fault to mend, under the label of its row. */
+  .what small.bad {
     color: var(--danger);
   }
   details :global(.row:last-child) {
@@ -2430,36 +2322,6 @@
   .description {
     margin: 0 0 10px;
     line-height: 1.5;
-  }
-  .source {
-    margin-top: 12px;
-    padding: 12px 14px;
-    border-radius: var(--radius-m);
-    background: var(--paper-sunken);
-    line-height: 1.5;
-  }
-  .source .serif {
-    margin-top: 2px;
-    font-size: 15px;
-  }
-  .source .link {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    max-width: 100%;
-    color: var(--accent-strong);
-    font-size: var(--text-sm);
-    overflow-wrap: anywhere;
-  }
-  .read {
-    margin-top: 8px;
-    font-size: var(--text-sm);
-    color: var(--ink-2);
-  }
-  .notes {
-    margin-top: 8px;
-    font-size: var(--text-sm);
-    color: var(--ink-3);
   }
   .error {
     padding: 8px 12px;

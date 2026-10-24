@@ -3,7 +3,10 @@
 // 2026-10-19: a header and a footer, each with three places of items, in
 // place of `pageNumbers` and `runningHead`; the pages' numbering and restart;
 // each level of heading with where it begins (`begins`) in place of
-// `newPage`, and its numbering. The rules are those of
+// `newPage`, and its numbering; and, of 2026-10-24, paragraphs with both
+// lengths, the indent of the first line and the space between them, in place
+// of the choice `paragraphs` between them, the length not chosen nought. The
+// rules are those of
 // `DocumentFormat::modernise` in crates/core/src/formats/mod.rs, which reads
 // a layout of the user's own in the old shape the same way.
 //
@@ -12,6 +15,7 @@
 //   "runningHead": { "content": "none" | "title" | "author" | "author-title" | "text",
 //                    "text": "", "align": "left" | "center" | "right", "case": "none" | "upper" | "smallcaps" }
 //   heading level: { …, "newPage": false }
+//   "text": { "paragraphs": "indent" | "spaced", "indent": "1.27cm", "spaceBetween": "12pt", … }
 //
 // Run: node scripts/modernise-formats.mjs
 
@@ -77,6 +81,8 @@ function convert(f) {
         out.header = header;
         out.footer = footer;
       }
+    } else if (key === 'text') {
+      out.text = paragraphs(value);
     } else if (key === 'page') {
       out.page = { ...value, numbering: value.numbering ?? 'arabic', restart: value.restart ?? false };
     } else if (key === 'headings') {
@@ -102,6 +108,24 @@ function convert(f) {
     out.footer = footer;
   }
   return out;
+}
+
+/** Whether a length is nought: `0pt`, `0cm`. */
+const nought = (length) => /^\s*-?0+([.,]0*)?\s*[a-z]*\s*$/i.test(String(length ?? '0'));
+
+/**
+ * The text's paragraphs with both lengths, as `DocumentFormat::modernise`
+ * has them: indented, the space between is nought; spaced, the indent is,
+ * and a spaced layout that said no space has the old default's.
+ */
+function paragraphs(text) {
+  if (!('paragraphs' in text)) return text;
+  const { paragraphs: told, ...rest } = text;
+  if (told === 'spaced') {
+    if (!nought(rest.indent ?? '1.27cm')) rest.indent = '0cm';
+    if (nought(rest.spaceBetween)) rest.spaceBetween = '12pt';
+  } else if (!nought(rest.spaceBetween ?? '12pt')) rest.spaceBetween = '0pt';
+  return rest;
 }
 
 // The layouts are formatted by hand, so they are edited where they change
@@ -178,6 +202,25 @@ function modernise(text) {
   }
   if (!('pageNumbers' in f) && !('runningHead' in f) && !('header' in f) && !('footer' in f)) {
     out = append(out, out.indexOf('{'), { header: next.header, footer: next.footer });
+  }
+  // The paragraphs with both lengths, the choice between them gone.
+  const textAt = key('text');
+  if (textAt >= 0 && 'paragraphs' in (f.text ?? {})) {
+    const open = out.indexOf('{', textAt);
+    const close = closing(out, open);
+    let object = out.slice(open, close + 1);
+    const was = f.text;
+    const now = next.text;
+    object = object.replace(/\n[ \t]*"paragraphs": "[a-z]+",/, '').replace(/,?\s*"paragraphs": "[a-z]+"/, '');
+    for (const [k, v] of [
+      ['indent', now.indent],
+      ['spaceBetween', now.spaceBetween],
+    ]) {
+      if (v === was[k]) continue;
+      if (k in was) object = object.replace(new RegExp(`"${k}": "[^"]*"`), `"${k}": ${JSON.stringify(v)}`);
+      else object = append(object, 0, { [k]: v });
+    }
+    out = out.slice(0, open) + object + out.slice(close + 1);
   }
   // The pages' numbering.
   const page = key('page');

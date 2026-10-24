@@ -36,11 +36,6 @@ format-line-spacing = Міжрядковий інтервал
 format-as-the-text = Як текст
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = як текст
-format-size-zero-hint = 0 — розмір тексту
-# Beside a number of 0, in the place of its unit.
-format-not-said = не вказано
-format-unless-said = Якщо про якийсь не сказано інакше
-format-as-it-will-stand = Як стоятиме
 format-align-left = Ліворуч
 format-align-center = По центру
 format-align-right = Праворуч
@@ -68,19 +63,12 @@ format-margin-left = Ліве
 format-margin-right = Праве
 format-lengths-hint = Довжини пишуться з одиницею: 2.5cm, 1in, 25mm, 12pt.
 format-line-numbers = Нумерувати рядки
-format-line-numbers-hint = Як просять деякі журнали для рецензування
 
 ## Type and spacing, and paragraphs.
 
 format-typeface = Гарнітура
-format-typeface-hint = Де її не встановлено, у перегляді береться найближча
 format-hyphenate = Переносити слова в кінці рядків
-format-paragraphs = Абзаци розрізняються
-format-paragraphs-indent = Відступом першого рядка
-format-paragraphs-spaced = Проміжком між ними
-format-indent = Відступ
 format-indent-first = Також після заголовка
-format-indent-first-hint = За типографським звичаєм перший абзац без відступу; APA та інші роблять відступ
 format-space-between = Проміжок між абзацами
 format-italics = Курсив набирається
 format-italics-italic = Курсивом
@@ -100,23 +88,17 @@ format-level-centred = по центру
 format-level-right = праворуч
 format-level-run-in = у рядок із текстом
 format-level-indent = З відступом, як абзац
-format-level-run-in-label = У рядок із текстом
-format-level-run-in-hint = Заголовок починає абзац і закінчується крапкою
 format-level-new-page-said = з нової сторінки
 format-space-before = Проміжок перед
 format-space-after = Проміжок після
 format-level-add = Глибший рівень
 format-level-remove = Прибрати найглибший
-format-levels-hint = Заголовки, глибші за найглибший описаний рівень, друкуються як той рівень.
 
 ## The title and the abstract.
 
 format-title-placement = Назва стоїть
 format-title-top = Угорі першої сторінки
 format-title-own-page = На окремій сторінці
-format-title-shown = Що показано
-format-title-anonymous = Без імен авторів
-format-title-anonymous-hint = Для рецензування: авторів пропущено всюди, і в колонтитулі теж
 format-title-authors = Автори
 format-title-affiliations = Їхні установи
 format-title-date = Дата
@@ -126,19 +108,13 @@ format-title-keywords-label = Слово перед ключовими слов�
 
 ## Quotations, notes and the bibliography.
 
-format-quote-indent-left = Відступ ліворуч
-format-quote-indent-right = Відступ праворуч
-format-quote-when = Коли цитата виокремлюється
 format-quote-from-words = Від стількох слів
-format-quote-from-words-hint = Нагадування: вирішує автор
 format-quote-from-lines = Або стількох рядків
 format-notes-kind = Примітки стоять
 format-notes-footnotes = Унизу сторінки
 format-notes-endnotes = У кінці тексту
 format-notes-title = Заголовок приміток
 format-bibliography-title = Заголовок
-# Headings a bibliography may have.
-format-bibliography-title-hint = Бібліографія, Список літератури, Цитовані праці
 format-bibliography-new-page = Починається з нової сторінки
 format-bibliography-hanging-indent = Виступ
 format-bibliography-entry-spacing = Проміжок між записами
@@ -147,7 +123,6 @@ format-bibliography-entry-spacing = Проміжок між записами
 ## is based on. The rows are those of the dialog for a kind of one's own
 ## too; what is not said is as the base has it.
 
-format-kinds-hint = Кожен вид набирається як вид, на якому він ґрунтується, з поданими тут відмінностями. Що не сказано — як в основі.
 format-kind-based-on = на основі { $base }
 format-as-the-base = Як основа
 # In an empty field for a size, in the place of its number.
@@ -197,16 +172,7 @@ format-captioned-called = { $kind ->
     [figure] Рисунок називається
    *[table] Таблиця називається
 }
-# Words a figure or table may be called by.
-format-captioned-called-hint = { $kind ->
-    [figure] Рисунок, Рис., Figure
-   *[table] Таблиця, Табл., Table
-}
 format-captioned-reference = У посиланнях із тексту
-format-captioned-reference-hint = { $kind ->
-    [figure] рис., рисунок; порожнє — те саме слово
-   *[table] табл., таблиця; порожнє — те саме слово
-}
 format-captioned-label-bold = Слово й номер жирним
 format-captioned-label-italic = Слово й номер курсивом
 format-captioned-between = { $kind ->
@@ -228,7 +194,6 @@ format-between-line = { $kind ->
 }
 format-between-other = Інше…
 format-captioned-separator = Що стоїть між ними
-format-captioned-separator-hint = Пробіли враховуються: пишіть їх там, де вони потрібні
 format-captioned-own-line = { $kind ->
     [figure] Далі підпис в окремому рядку
    *[table] Далі підпис в окремому рядку
@@ -249,15 +214,6 @@ format-caption-above = { $kind ->
     [figure] Над зображенням
    *[table] Над таблицею
 }
-format-caption-align-hint = { $kind ->
-    [figure] У рисунка, що стоїть збоку, підпис стоїть із того ж боку
-   *[table] У таблиці, що стоїть збоку, підпис стоїть із того ж боку
-}
-# In the example of how the number and the caption will stand.
-format-caption-example = { $kind ->
-    [figure] Підпис
-   *[table] Підпис
-}
 format-captioned-where = { $kind ->
     [figure] Де стоять рисунки
    *[table] Де стоять таблиці
@@ -270,26 +226,17 @@ format-captioned-wrap = Текст обтікає їх
 format-captioned-placement = У документі
 format-captioned-in-text = У тексті
 format-captioned-at-end = Зібрані в кінці
-format-captioned-placement-hint = Багато журналів просять ставити їх у кінці рукопису
 format-captioned-end-title = { $kind ->
     [figure] Заголовок над рисунками
    *[table] Заголовок над таблицями
 }
-format-captioned-end-title-hint = { $kind ->
-    [figure] Рисунки, Ілюстрації; порожнє — без заголовка
-   *[table] Таблиці; порожнє — без заголовка
-}
 # What is left in the text where a figure or table gathered at the end belongs.
 format-captioned-placeholder = Рядок, залишений у тексті
-# The braces are written as they are; line is how the line will stand.
-format-captioned-placeholder-shown = {"{}"} означає слово й номер: { $line }
 format-captioned-placeholder-missing = Він має містити {"{}"} там, де стоятимуть слово й номер
-format-table-itself = Сама таблиця
 format-table-rules = Лінії
 format-table-rules-horizontal = Над, під і під заголовками
 format-table-rules-grid = Навколо кожної клітинки
 format-table-rules-none = Немає
-format-table-rules-hint = У книжках і журналах — перше
 format-table-header-bold = Заголовки жирним
 format-equations = Рівняння
 format-equations-stand = Рівняння стоять
@@ -310,5 +257,3 @@ format-source-read = Прочитано { $date }.
 format-source-high = Значення — ті, що в джерелі вимог.
 format-source-medium = Джерело вимог вдалося прочитати лише частково або в давнішому стані: перевірте те, що для вас важливе.
 format-source-low = Перевірити вдалося мало: вважайте значення лише початком.
-format-source-changed = Ви змінили цей формат; джерело описує те, з чого його зроблено.
-format-source-none = Цей формат не йде за вимогами жодного конкретного видавця.

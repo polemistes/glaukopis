@@ -26,7 +26,6 @@
   "text": {
     "lineSpacing": 2,
     "align": "left",
-    "paragraphs": "indent",
     "indent": "0.5in",
     "indentFirst": true,
     "spaceBetween": "0pt",

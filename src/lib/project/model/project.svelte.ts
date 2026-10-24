@@ -40,7 +40,14 @@ import {
 } from './saving.svelte';
 import { isCatalogueKind } from '$lib/project/parts';
 import { gather, ReadableCopy } from '$lib/org/folder';
-import { getAt, pathsOf, setAt, type LookChanges, type LookPath } from '$lib/look/changes';
+import {
+  getAt,
+  modernised,
+  pathsOf,
+  setAt,
+  type LookChanges,
+  type LookPath,
+} from '$lib/look/changes';
 import {
   compositionPaths,
   type CompositionChanges,
@@ -1032,7 +1039,7 @@ export class Project {
     const changes: LookChanges = {};
     const from = new Map<LookPath, string>();
     for (const at of this.pathTo(id)) {
-      const own = this.nodes.get(at)?.document?.look;
+      const own = modernised(this.nodes.get(at)?.document?.look);
       for (const path of pathsOf(own)) {
         setAt(changes, path, structuredClone(getAt(own, path)));
         from.set(path, at);

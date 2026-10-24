@@ -4,6 +4,8 @@ import {
   composed,
   compositionPaths,
   hasPart,
+  printOrder,
+  type Printed,
   withCompositionPath,
   withoutCompositionPath,
 } from './composition';
@@ -19,6 +21,90 @@ const plain = () => JSON.parse(JSON.stringify(plainFile)) as Template;
 /** The items of the contents, a part by its id and a kind as `kind:` and its id. */
 const order = (template: Template) =>
   template.contents.map((item) => ('part' in item ? item.part : `kind:${item.kind}`));
+
+/** The things of a print order, a part by its id, with a minus where it is off, and a kind as `kind:` and its id. */
+const printed = (list: Printed[]) =>
+  list.map((p) => ('part' in p ? `${p.on ? '' : '-'}${p.part}` : `kind:${p.kind}`));
+
+describe('the order a document type prints its parts in', () => {
+  const places: Record<string, 'front' | 'back' | 'here' | 'cover' | 'none'> = {
+    abstract: 'front',
+    preface: 'front',
+    dedication: 'front',
+    appendix: 'back',
+    acknowledgements: 'back',
+    blurb: 'cover',
+  };
+  const placeOf = (kind: string) => places[kind];
+
+  it('is the contents as they stand, each part that is off where it would stand turned on', () => {
+    expect(printed(printOrder(article(), placeOf))).toEqual([
+      '-half-title',
+      'title-page',
+      'kind:abstract',
+      'keywords',
+      '-contents',
+      '-list-of-figures',
+      '-list-of-tables',
+      'body',
+      'kind:appendix',
+      'kind:acknowledgements',
+      'notes',
+      'bibliography',
+    ]);
+  });
+
+  it('keeps the type’s own order of the kinds, acknowledgements in the front among them', () => {
+    const book: Template = {
+      ...article(),
+      contents: [
+        { part: 'title-page' },
+        { kind: 'preface' },
+        { kind: 'acknowledgements' },
+        { part: 'contents' },
+        { part: 'body' },
+        { part: 'bibliography' },
+      ],
+      kinds: ['preface', 'acknowledgements', 'dedication', 'appendix', 'blurb'],
+    };
+    expect(printed(printOrder(book, placeOf))).toEqual([
+      '-half-title',
+      'title-page',
+      'kind:preface',
+      'kind:acknowledgements',
+      '-keywords',
+      'contents',
+      '-list-of-figures',
+      '-list-of-tables',
+      // A kind of the front that the type does not place comes before the text, as the core prints it.
+      'kind:dedication',
+      'body',
+      'notes',
+      'bibliography',
+      // One of the back after everything; the cover's last.
+      'kind:appendix',
+      'kind:blurb',
+    ]);
+  });
+
+  it('has the text where the type does not list it, and each thing once', () => {
+    const bare: Template = {
+      ...article(),
+      contents: [
+        { part: 'title-page' },
+        { kind: 'abstract' },
+        { kind: 'abstract' },
+        { part: 'title-page' },
+      ],
+      kinds: ['abstract', 'abstract'],
+    };
+    const list = printed(printOrder(bare, placeOf));
+    expect(list.filter((p) => p === 'kind:abstract')).toHaveLength(1);
+    expect(list.filter((p) => p === 'title-page')).toHaveLength(1);
+    expect(list).toContain('body');
+    expect(list.indexOf('kind:abstract')).toBeLessThan(list.indexOf('body'));
+  });
+});
 
 describe('what a document sets otherwise than its template', () => {
   it('puts a part turned on in its place among the parts, passing over the kinds', () => {

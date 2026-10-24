@@ -121,8 +121,6 @@ template-requirements-hint = Was ein Dokument dieser Vorlage erfüllen soll. Die
 template-requirement-words = Wörter im Text
 template-requirement-abstract-words = Wörter der Zusammenfassung
 template-requirement-keywords = Schlüsselwörter
-template-requirement-anonymous = Ohne die Namen der Autoren
-template-requirement-anonymous-hint = Zur Begutachtung: die Checkliste sagt es, und ein Layout zur Begutachtung lässt sie weg
 template-requirement-note = Was die Grenzen zählen
 template-requirement-note-placeholder = Anmerkungen eingeschlossen, Literaturverzeichnis nicht
 # Beside a number of 0, in the place of its unit.

@@ -84,6 +84,11 @@
   const broughtFormat = $derived(
     template?.layout ? documents.formatCached(template.layout) : undefined,
   );
+  /** Where the requirements of the layout the type brings are from, the usual layout's where it brings none. */
+  const layoutSource = $derived(
+    (template?.layout ? broughtFormat : documents.formatCached(settings.value.defaultFormat))
+      ?.source,
+  );
   /**
    * What the template in use brings, in a line: how its pages are set and,
    * where it or its layout names one, how it cites. A template that names
@@ -356,6 +361,21 @@
     {#if chosen && template && template.id === s.id}
       <div class="about">
         {#if brings}<p class="brings" data-brings>{brings}</p>{/if}
+        {#if layoutSource?.name}
+          {@const source = layoutSource}
+          <p class="selectable" data-layout-source>
+            {#if source.url}
+              <button
+                type="button"
+                class="link"
+                onclick={() =>
+                  openPath(source.url).catch((e) => notifyError(t('common-link-open-failed'), e))}
+                >{t('about-layout-source', { name: source.name })}
+                <ExternalLink size={11} /></button
+              >
+            {:else}{t('about-layout-source', { name: source.name })}{/if}
+          </p>
+        {/if}
         {#if template.source?.name}
           {@const source = template.source}
           <p class="selectable">

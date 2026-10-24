@@ -76,3 +76,7 @@ about-requirement-anonymous = Til fagfellevurdering: forfatterne utelates fra do
 about-section-type = Dokumenttype
 about-line-numbers = Nummerer linjene på siden
 about-line-numbers-hint = Hver linje på den trykte siden, nummerert i margen, i dette dokumentet og dem under det.
+
+## Fewer words, stage 3: the source of a layout's requirements, under the layout the type brings.
+
+about-layout-source = Kilde: { $name }

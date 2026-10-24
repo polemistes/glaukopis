@@ -300,7 +300,7 @@ try {
   await app.waitFor('.side .look .chips', 8000);
   await sleep(300);
   const nav = await app.exec(`return Array.from(document.querySelectorAll('.side .look .chips button')).map((b) => b.textContent.trim())`);
-  check('the look has a part for the numbers', nav.includes('Numbers'), nav.join(' | '));
+  check('the look has a part for the numbers', nav.includes('Line numbers'), nav.join(' | '));
   await app.lookSection('Paragraphs');
   await app
     .waitUntil(`return !!document.querySelector('.side .look details[data-kind="scene"] p.resolved[data-resolved]')`, 8000, 'the looks as resolved')
@@ -336,7 +336,7 @@ try {
   const gapAfter = await app.exec(`return ${row('Gap between columns')}?.querySelector('input')?.value ?? null`);
   check(
     'the look has a field for the columns, and the gap between them is asked for where there are more than one',
-    !gapBefore && gapAfter === '1cm',
+    !gapBefore && gapAfter === '1',
     `${gapBefore} ${gapAfter}`,
   );
   const lookTop = await app.lookTop();

@@ -121,8 +121,6 @@ template-requirements-hint = Vad ett dokument med den här mallen ska uppfylla. 
 template-requirement-words = Ord i texten
 template-requirement-abstract-words = Ord i sammanfattningen
 template-requirement-keywords = Nyckelord
-template-requirement-anonymous = Utan författarnas namn
-template-requirement-anonymous-hint = För granskning: checklistan säger till, och en layout för granskning utelämnar dem
 template-requirement-note = Vad gränserna räknar
 template-requirement-note-placeholder = Noter medräknade; litteraturförteckningen inte
 # Beside a number of 0, in the place of its unit.

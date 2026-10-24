@@ -36,11 +36,6 @@ format-line-spacing = Regelafstand
 format-as-the-text = Als de tekst
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = als de tekst
-format-size-zero-hint = 0 voor de grootte van de tekst
-# Beside a number of 0, in the place of its unit.
-format-not-said = niet gezegd
-format-unless-said = Tenzij over een ervan iets anders is gezegd
-format-as-it-will-stand = Zoals het komt te staan
 format-align-left = Links
 format-align-center = Gecentreerd
 format-align-right = Rechts
@@ -68,19 +63,12 @@ format-margin-left = Links
 format-margin-right = Rechts
 format-lengths-hint = Lengten worden met hun eenheid geschreven: 2.5cm, 1in, 25mm, 12pt.
 format-line-numbers = De regels nummeren
-format-line-numbers-hint = Zoals sommige tijdschriften vragen voor de beoordeling
 
 ## Type and spacing, and paragraphs.
 
 format-typeface = Lettertype
-format-typeface-hint = Waar het niet is geïnstalleerd, gebruikt het voorbeeld het dichtstbijzijnde
 format-hyphenate = Woorden afbreken aan het eind van de regel
-format-paragraphs = Alinea's worden onderscheiden door
-format-paragraphs-indent = Een inspringende eerste regel
-format-paragraphs-spaced = Witruimte ertussen
-format-indent = Inspringing
 format-indent-first = Ook na een kop
-format-indent-first-hint = Typografisch gebruik laat de eerste alinea niet inspringen; APA en andere wel
 format-space-between = Witruimte tussen alinea's
 format-italics = Cursief wordt gezet
 format-italics-italic = Als cursief
@@ -100,23 +88,17 @@ format-level-centred = gecentreerd
 format-level-right = rechts
 format-level-run-in = loopt door in de tekst
 format-level-indent = Ingesprongen als een alinea
-format-level-run-in-label = Loopt door in de tekst
-format-level-run-in-hint = De kop begint de alinea en eindigt met een punt
 format-level-new-page-said = op een nieuwe pagina
 format-space-before = Witruimte ervoor
 format-space-after = Witruimte erna
 format-level-add = Een dieper niveau
 format-level-remove = Het diepste verwijderen
-format-levels-hint = Koppen dieper dan het diepste beschreven niveau worden als dat niveau gedrukt.
 
 ## The title and the abstract.
 
 format-title-placement = De titel staat
 format-title-top = Bovenaan de eerste pagina
 format-title-own-page = Op een eigen pagina
-format-title-shown = Wat wordt getoond
-format-title-anonymous = Zonder de namen van de auteurs
-format-title-anonymous-hint = Voor beoordeling: de auteurs worden overal weggelaten, ook in de kopregel
 format-title-authors = Auteurs
 format-title-affiliations = Hun instellingen
 format-title-date = Datum
@@ -126,19 +108,13 @@ format-title-keywords-label = Woord voor de trefwoorden
 
 ## Quotations, notes and the bibliography.
 
-format-quote-indent-left = Inspringing links
-format-quote-indent-right = Inspringing rechts
-format-quote-when = Wanneer een citaat los wordt gezet
 format-quote-from-words = Vanaf zoveel woorden
-format-quote-from-words-hint = Een geheugensteun: de schrijver beslist
 format-quote-from-lines = Of zoveel regels
 format-notes-kind = Noten staan
 format-notes-footnotes = Onderaan de pagina
 format-notes-endnotes = Aan het eind van de tekst
 format-notes-title = Kop van de noten
 format-bibliography-title = Kop
-# Headings a bibliography may have.
-format-bibliography-title-hint = Bibliografie, Literatuur, Geciteerde werken
 format-bibliography-new-page = Begint op een nieuwe pagina
 format-bibliography-hanging-indent = Hangende inspringing
 format-bibliography-entry-spacing = Witruimte tussen de items
@@ -147,7 +123,6 @@ format-bibliography-entry-spacing = Witruimte tussen de items
 ## is based on. The rows are those of the dialog for a kind of one's own
 ## too; what is not said is as the base has it.
 
-format-kinds-hint = Elke soort wordt gezet als de soort waarop ze is gebaseerd, met de verschillen die hier staan. Wat niet wordt gezegd, is zoals de basis het heeft.
 format-kind-based-on = gebaseerd op { $base }
 format-as-the-base = Als de basis
 # In an empty field for a size, in the place of its number.
@@ -197,16 +172,7 @@ format-captioned-called = { $kind ->
     [figure] Een figuur heet
    *[table] Een tabel heet
 }
-# Words a figure or table may be called by.
-format-captioned-called-hint = { $kind ->
-    [figure] Figuur, Fig., Afbeelding
-   *[table] Tabel, Tab., Table
-}
 format-captioned-reference = Waar de tekst ernaar verwijst
-format-captioned-reference-hint = { $kind ->
-    [figure] fig., figuur; leeg voor hetzelfde woord
-   *[table] tab., tabel; leeg voor hetzelfde woord
-}
 format-captioned-label-bold = Het woord en nummer vet
 format-captioned-label-italic = Het woord en nummer cursief
 format-captioned-between = { $kind ->
@@ -228,7 +194,6 @@ format-between-line = { $kind ->
 }
 format-between-other = Anders…
 format-captioned-separator = Wat ertussen staat
-format-captioned-separator-hint = Spaties tellen mee: schrijf ze waar ze gewenst zijn
 format-captioned-own-line = { $kind ->
     [figure] Daarna het bijschrift op een eigen regel
    *[table] Daarna het bijschrift op een eigen regel
@@ -249,15 +214,6 @@ format-caption-above = { $kind ->
     [figure] Boven de afbeelding
    *[table] Boven de tabel
 }
-format-caption-align-hint = { $kind ->
-    [figure] Van een figuur die aan een zijde staat, staat het bijschrift aan die zijde
-   *[table] Van een tabel die aan een zijde staat, staat het bijschrift aan die zijde
-}
-# In the example of how the number and the caption will stand.
-format-caption-example = { $kind ->
-    [figure] Bijschrift
-   *[table] Bijschrift
-}
 format-captioned-where = { $kind ->
     [figure] Waar figuren staan
    *[table] Waar tabellen staan
@@ -270,26 +226,17 @@ format-captioned-wrap = De tekst loopt eromheen
 format-captioned-placement = In het document
 format-captioned-in-text = In de tekst
 format-captioned-at-end = Verzameld aan het eind
-format-captioned-placement-hint = Veel tijdschriften vragen ze aan het eind van een manuscript
 format-captioned-end-title = { $kind ->
     [figure] Kop boven de figuren
    *[table] Kop boven de tabellen
 }
-format-captioned-end-title-hint = { $kind ->
-    [figure] Figuren, Illustraties; leeg voor geen
-   *[table] Tabellen; leeg voor geen
-}
 # What is left in the text where a figure or table gathered at the end belongs.
 format-captioned-placeholder = Regel die in de tekst achterblijft
-# The braces are written as they are; line is how the line will stand.
-format-captioned-placeholder-shown = {"{}"} staat voor het woord en nummer: { $line }
 format-captioned-placeholder-missing = Er moet {"{}"} in staan, waar het woord en nummer komen
-format-table-itself = De tabel zelf
 format-table-rules = Lijnen
 format-table-rules-horizontal = Boven, onder, en onder de koppen
 format-table-rules-grid = Rond elke cel
 format-table-rules-none = Geen
-format-table-rules-hint = Boeken en tijdschriften hebben de eerste
 format-table-header-bold = Koppen vet
 format-equations = Vergelijkingen
 format-equations-stand = Vergelijkingen staan
@@ -310,5 +257,3 @@ format-source-read = Gelezen op { $date }.
 format-source-high = De waarden zijn die van de bron.
 format-source-medium = De bron kon maar gedeeltelijk of in een eerdere staat worden gelezen: controleer wat voor jou van belang is.
 format-source-low = Er kon weinig worden geverifieerd: beschouw de waarden als een begin.
-format-source-changed = Je hebt dit formaat gewijzigd; de bron beschrijft waarvan het is gemaakt.
-format-source-none = Dit formaat volgt geen eisen van een bepaalde uitgever.

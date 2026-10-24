@@ -119,8 +119,6 @@ template-requirements-hint = Det et dokument med denne malen skal oppfylle. Sjek
 template-requirement-words = Ord i teksten
 template-requirement-abstract-words = Ord i sammendraget
 template-requirement-keywords = Nøkkelord
-template-requirement-anonymous = Uten forfatternes navn
-template-requirement-anonymous-hint = Til fagfellevurdering: sjekklisten sier fra, og et oppsett for fagfellevurdering utelater dem
 template-requirement-note = Hva grensene teller
 template-requirement-note-placeholder = Noter tatt med; litteraturlisten ikke
 # Ved siden av tallet 0, der enheten står.
@@ -152,3 +150,7 @@ template-called-screenplay = Filmmanus
 template-called-letter = Brev
 template-called-blog-post = Blogginnlegg
 template-called-news-article = Nyhetsartikkel
+
+## Fewer words, stage 3: the requirement of anonymity, in Look and in the editor of a document type.
+
+template-requirement-anonymity = Anonymt
