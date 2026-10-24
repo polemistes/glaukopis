@@ -18,9 +18,6 @@ template-group-style-guide = Style guides
 
 ## Where a kind of element stands in the document.
 
-template-part-group-front = Front matter
-template-part-group-back = Back matter
-template-part-group-cover = Cover
 
 ## The parts of a document the application makes itself.
 

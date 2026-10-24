@@ -243,11 +243,11 @@ format-caption-stands = { $kind ->
    *[table] The caption stands
 }
 format-caption-below = { $kind ->
-    [figure] Below the picture
+    [figure] Below the image
    *[table] Below the table
 }
 format-caption-above = { $kind ->
-    [figure] Above the picture
+    [figure] Above the image
    *[table] Above the table
 }
 format-captioned-where = { $kind ->

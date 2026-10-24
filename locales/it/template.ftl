@@ -18,9 +18,6 @@ template-group-style-guide = Manuali di stile
 
 ## Where a kind of element stands in the document.
 
-template-part-group-front = Parti iniziali
-template-part-group-back = Parti finali
-template-part-group-cover = Copertina
 
 ## The parts of a document the application makes itself.
 

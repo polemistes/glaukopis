@@ -89,3 +89,22 @@ What the assessment found:
 - `formats/kinds.rs`, `formats/typst.rs`, `export/latex.rs`, `export/reference.rs` and `export/mod.rs` apply both paragraph lengths; `DocumentFormat::modernise` and `changes.ts` read the old choice; `modernise-formats.mjs` rewrites the layouts that ship.
 - `locales/en` and `locales/nb`: the words renamed under new ids, the hints removed and pruned from every language, *picture* become *image*; the guide follows.
 - The scripts find the list's button in the rail, the × in the top row and the menu items by their new words; a script checks the review and the other side.
+
+## Addendum, 2026-10-24: as built
+
+Built on 2026-10-24 from the plan: stages 1–2 and stages 3–4 by two agents in worktrees, merged into main; stage 5 on main. Where the build departs from the plan:
+
+- **The list's button on the rail** is a button in the rail's own style, lit while the list is shown, and enabled on the start screen, in a project, and on the settings' route, which shows the list too.
+- **The clone**: *Write its text* on a clone goes to its name, in the diagram and in the text, since a clone has no text of its own; a clone printed as a document by itself still prints nothing of the original, as before. *Rename* works on a clone. An element whose name is empty still prints no heading.
+- **The heading flag** is read into the record and acted on nowhere; the Org form no longer writes it; *Print the name as a heading*'s setter stays, since rejecting an old change of the flag in a review uses it.
+- **The kind dialog's *Based on*** is one list too, as the kind menus are.
+- **The focus of the text's right-click menu** was taken by the paragraph's editor, made by the press and focusing itself some milliseconds after the menu took the focus; while a menu is open, a new editor puts its cursor in place and leaves the focus to the menu. Escape closes any menu from the window as well.
+- **The fold marks of the diagram** say *Unfold* and *Fold* as the text's do; the key sheet's words keep their names.
+- **The source of a layout** stands as one line in the Document type tab (`DocumentType.svelte`, which is that tab); where the type's own source is the layout's, it is named twice there.
+- **Lengths in centimetres** are shown to at most two decimals without trailing zeros, so that the field does not rewrite what is being typed. A spaced layout of the old shape without a space of its own gets 12 pt, the old default; the default space between paragraphs is otherwise nought.
+- **The quotation's look**: a layout of one's own changes the look of quotations through the kind Quotation, under *Paragraph kinds*; the `quote` block of a layout's file is its base and is no longer edited in Look. The warning's marks are those whose opening mark comes first in the paragraph; the lines are estimated from the page's width less its margins, over the columns, at half the type size a character.
+- **The print order** is mirrored in the interface (`printOrder`, with its own tests) rather than asked of the core.
+- **The line *As it will stand*** under each kind stays: it is the kind's resolved look, not an example.
+- ***Picture* became *image*** in the English words; Bokmål said *bilde* already, and the ids keep their names. The folder `pictures/` of a project file keeps its name in the guide, since it is the folder's.
+- **Stray closing braces** left in the start screen's words of every language by earlier hand deletions are gone, so that every language is read without fault.
+- **Hints that remain** outside the menus named and Look, for the owner to decide: the table's *The table…*, the writing tools' *How "…" looks…*, the review's *Forget what you accepted*, the reference pane's *Duplicate*, the names field's *Prefix and suffix*, the files' *Add a folder…*, the line-numbering menu's four items, and a line under *The citation stands in the note* in the loose citations.

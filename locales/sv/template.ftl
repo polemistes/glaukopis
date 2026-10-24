@@ -18,9 +18,6 @@ template-group-style-guide = Stilguider
 
 ## Where a kind of element stands in the document.
 
-template-part-group-front = Inledande delar
-template-part-group-back = Avslutande delar
-template-part-group-cover = Omslag
 
 ## The parts of a document the application makes itself.
 

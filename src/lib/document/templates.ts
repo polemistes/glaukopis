@@ -5,13 +5,7 @@
  * template that came with the application becomes one of the writer's own.
  */
 
-import type {
-  GeneratedPart,
-  OutputTarget,
-  PartGroup,
-  Template,
-  TemplateGroup,
-} from '$lib/api/templates';
+import type { GeneratedPart, OutputTarget, Template, TemplateGroup } from '$lib/api/templates';
 import { t } from '$lib/i18n';
 
 /** The groups in the order the chooser lists them: the writer's own first, then by kind of text, then by who asks. */
@@ -45,12 +39,9 @@ export const TARGETS: readonly OutputTarget[] = [
   'epub',
 ];
 
-export const PART_GROUPS: readonly PartGroup[] = ['front', 'back', 'cover'];
-
 export const templateGroupWords = (group: TemplateGroup): string => t(`template-group-${group}`);
 export const generatedPartWords = (part: GeneratedPart): string => t(`template-generated-${part}`);
 export const targetWords = (target: OutputTarget): string => t(`template-target-${target}`);
-export const partGroupWords = (group: PartGroup): string => t(`template-part-group-${group}`);
 
 /** What a source's confidence says, in words; nothing where no source is named. */
 export function confidenceWords(confidence: string | undefined): string {

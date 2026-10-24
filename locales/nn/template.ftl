@@ -18,9 +18,6 @@ template-group-style-guide = Stilguidar
 
 ## Where a kind of element stands in the document.
 
-template-part-group-front = Forstoff
-template-part-group-back = Etterstoff
-template-part-group-cover = Omslag
 
 ## The parts of a document the application makes itself.
 

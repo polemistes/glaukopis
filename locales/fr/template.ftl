@@ -18,9 +18,6 @@ template-group-style-guide = Guides de style
 
 ## Where a kind of element stands in the document.
 
-template-part-group-front = Pages liminaires
-template-part-group-back = Pages finales
-template-part-group-cover = Couverture
 
 ## The parts of a document the application makes itself.
 

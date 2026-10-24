@@ -17,9 +17,6 @@ template-group-style-guide = Stilguider
 
 ## Hvor et slag element står i dokumentet.
 
-template-part-group-front = Forstoff
-template-part-group-back = Etterstoff
-template-part-group-cover = Omslag
 
 ## Delene av et dokument som programmet lager selv.
 

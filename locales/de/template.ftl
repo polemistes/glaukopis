@@ -18,9 +18,6 @@ template-group-style-guide = Richtlinien
 
 ## Where a kind of element stands in the document.
 
-template-part-group-front = Vorspann
-template-part-group-back = Nachspann
-template-part-group-cover = Umschlag
 
 ## The parts of a document the application makes itself.
 
