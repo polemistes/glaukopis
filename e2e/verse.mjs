@@ -299,8 +299,10 @@ try {
     !!longer && !!moved && Math.abs(longer.left - (moved.right + moved.em)) <= 2 && longer.left > second.left,
     JSON.stringify({ moved, longer }),
   );
-  await app.keys(['Backspace', 'Backspace', 'Backspace', 'Backspace', 'Backspace', 'Backspace']);
-  await sleep(300);
+  for (let i = 0; i < ' Speak'.length; i++) await app.press('Backspace');
+  await sleep(600);
+  const back = await wordsAt('It is.');
+  check('and taken back, it stands where it stood', !!back && Math.abs(back.left - second.left) <= 1, JSON.stringify(back));
   // Numbered: the second half is counted until its window says otherwise.
   await cursorAfter('Is it you, my sister?');
   await app.lineNumberingFromHere();
