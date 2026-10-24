@@ -8,8 +8,6 @@ diagram-show-all = Zobrazit celou mapu
 diagram-tidy = Uspořádat celou mapu
 # The keys are shown as keys, where the variables stand.
 diagram-hint-linking = Klepněte na prvek, s nímž má být spojen, nebo k němu přejděte šipkami a stiskněte { $enter } · { $esc } to ukončí
-diagram-show-under = Zobrazit, co je pod ním
-diagram-hide-under = Skrýt, co je pod ním
 diagram-link-handle = Přetažením na jiný prvek je spojíte
 
 ## The view

@@ -143,7 +143,9 @@
               role="button"
               tabindex="-1"
               aria-expanded={!folded.has(item.id)}
-              aria-label={folded.has(item.id) ? t('text-outline-open') : t('text-outline-fold')}
+              aria-label={folded.has(item.id)
+                ? t('text-outline-unfold')
+                : t('text-outline-fold-sub')}
               onclick={(e) => {
                 e.stopPropagation();
                 fold(item.id);

@@ -6,8 +6,6 @@ diagram-show-all = Prikaži cijelu mapu
 diagram-tidy = Uredi cijelu mapu
 # The keys are shown as keys, where the variables stand.
 diagram-hint-linking = Kliknite element s kojim ga želite povezati, ili dođite do njega strelicama i pritisnite { $enter } · { $esc } za odustajanje
-diagram-show-under = Prikaži šta je pod njim
-diagram-hide-under = Sakrij šta je pod njim
 diagram-link-handle = Povucite do drugog elementa da ih povežete
 
 ## The view

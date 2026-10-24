@@ -8,14 +8,6 @@ text-join = Juntar ao elemento acima
 
 ## Folding away what is under an element, and its text
 
-text-open = Desdobrar
-text-fold = Recolher
-text-open-shift = Desdobrar · com Shift, também tudo o que está recolhido sob ele
-text-fold-hint = Recolher o seu texto e o que está sob ele
-text-fold-shift = Recolher o seu texto e o que está sob ele · com Shift, desdobrar tudo o que está recolhido sob ele
-text-open-all = Desdobrar tudo
-text-open-all-under = Desdobrar tudo o que está recolhido sob ele
-text-fold-all-under = Recolher tudo sob ele
 # What is folded away, in its place: whether the element's own text is (text is
 # "yes" or "no"), how many elements under it, and how many words in all, which
 # may be none.
@@ -43,8 +35,6 @@ text-folded = { $text ->
 text-associations = Associações
 text-outline = Esquema
 text-outline-between = Entre o esquema e o texto
-text-outline-fold = Recolher o que está sob ele
-text-outline-open = Desdobrar o que está sob ele
 text-go-to = Ir a «{ $name }»
 text-add-label = Acrescentar um rótulo…
 text-change-label = Alterar o rótulo…

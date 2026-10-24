@@ -33,7 +33,6 @@ timeline-chronology-made = Acrescentou-se uma cronologia ao mapa
 timeline-elsewhere = Noutro lado do mapa
 timeline-elsewhere-chosen = As faixas estão escolhidas: o que não está em nenhuma delas fica aqui. Clique para escolher as faixas de novo.
 timeline-ordered = Por ordem, sem datas
-timeline-empty = Ainda nada diz quando é. Escolha «Dizer quando é…» no menu de um elemento.
 timeline-unplaced = { $count ->
     [one] Um elemento não pôde ser colocado:
     [many] { $count } elementos não puderam ser colocados:
@@ -44,14 +43,10 @@ timeline-contradiction = não pode estar onde diz que está
 timeline-moving = Mover arrastando
 timeline-moving-hint = Arraste um elemento ao longo do eixo, ou a ponta de um período, para mudar o seu tempo; desligado, para que nada se mova por engano
 timeline-without = Elementos sem tempo
-timeline-without-hint = Arraste um para a linha cronológica, ou clique nele para dizer quando é:
 timeline-waiting-hint = Ainda nada diz do seu tempo: clique nele para dizer quando é, ou arraste-o ao longo da faixa para o colocar
 timeline-unknown = remete para o que não está colocado, ou para um tempo que não se consegue ler
 
 ## Saying when an element is
-when-title = Quando é
-when-say = Dizer quando é…
-when-change = Quando é…
 when-clear = Deixar de dizer
 when-kind = Num ponto, ou ao longo de um período
 when-point = Num ponto

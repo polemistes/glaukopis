@@ -8,8 +8,6 @@ diagram-show-all = Vis heile kartet
 diagram-tidy = Rydd i heile kartet
 # The keys are shown as keys, where the variables stand.
 diagram-hint-linking = Klikk på elementet du vil knyte til, eller gå til det med pilene og trykk { $enter } · { $esc } for å avbryte
-diagram-show-under = Vis det som står under
-diagram-hide-under = Gøym det som står under
 diagram-link-handle = Dra til eit anna element for å knyte dei saman
 
 ## The view

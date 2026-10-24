@@ -247,9 +247,9 @@
       type="button"
       class="fold"
       class:folded={node.collapsed}
-      aria-label={node.collapsed ? t('diagram-show-under') : t('diagram-hide-under')}
+      aria-label={node.collapsed ? t('diagram-unfold-sub') : t('diagram-fold-sub')}
       use:tooltip={{
-        text: node.collapsed ? t('diagram-show-under') : t('diagram-hide-under'),
+        text: node.collapsed ? t('diagram-unfold-sub') : t('diagram-fold-sub'),
         shortcut: keysFor('tree-fold'),
       }}
       tabindex="-1"

@@ -15,14 +15,6 @@ text-open-as-map = Enter
 
 ## Folding away what is under an element, and its text
 
-text-open = Open it
-text-fold = Fold it away
-text-open-shift = Open it · with Shift, all that is folded under it as well
-text-fold-hint = Fold away its text and what is under it
-text-fold-shift = Fold away its text and what is under it · with Shift, open all that is folded under it
-text-open-all = Open all
-text-open-all-under = Open all that is folded under it
-text-fold-all-under = Fold away all under it
 # What is folded away, in its place: whether the element's own text is (text is
 # "yes" or "no"), how many elements under it, and how many words in all, which
 # may be none.
@@ -47,8 +39,6 @@ text-folded = { $text ->
 text-associations = Associations
 text-outline = Outline
 text-outline-between = Between the outline and the text
-text-outline-fold = Fold away what is under it
-text-outline-open = Open what is under it
 text-go-to = Go to “{ $name }”
 text-add-label = Add a label…
 text-change-label = Change the label…
@@ -69,3 +59,14 @@ text-keys = { $alt }+{ $enter } new element · { $alt }+{ $shift }+{ $enter } on
 # A clone in the text: the original's name is shown in bold where the variable stands.
 text-clone = Clone of { $name }
 text-clone-go = Go to the original
+text-unfold = Unfold this element
+text-fold-this = Fold this element
+text-unfold-all-under = Unfold all sub-elements
+text-fold-all-sub = Fold all sub-elements
+text-unfold-all = Unfold all
+# The tooltips of the mark that folds an element in the text.
+text-unfold-shift = Unfold · with Shift, all sub-elements as well
+text-fold-this-shift = Fold this element · with Shift, unfold all sub-elements
+# The buttons of the outline.
+text-outline-unfold = Unfold sub-elements
+text-outline-fold-sub = Fold sub-elements

@@ -64,9 +64,6 @@ project-moved-to = Verplaatst naar ‘{ $name }’
 
 ## What is done to elements, in the diagram and in the text
 
-project-add-under = Een element eronder toevoegen
-project-add = Een element toevoegen
-project-add-after = Een element erna toevoegen
 project-write-text = De tekst schrijven
 project-associate = Verbinden met…
 project-leave-out = Uit het document weglaten
@@ -75,7 +72,6 @@ project-copy = Kopiëren
 project-paste-under = Eronder plakken
 project-tidy-branch = Deze tak opruimen
 project-place-automatically = Automatisch plaatsen
-project-delete-keeping = Wissen, met behoud van wat eronder staat
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] ‘{ $name }’ is gewist

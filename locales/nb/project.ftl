@@ -87,9 +87,6 @@ project-send-no-element = Elementet er ikke lenger i det prosjektet.
 
 ## Det som gjøres med elementer, i diagrammet og i teksten
 
-project-add-under = Legg til et element under
-project-add = Legg til et element
-project-add-after = Legg til et element etter
 project-write-text = Skriv teksten
 project-associate = Knytt til …
 project-leave-out = Utelat fra dokumentet
@@ -116,7 +113,6 @@ project-pick-itself = Et element kan ikke legges i seg selv eller i det som stå
 project-pick-loop = Dokumentet ville inneholde seg selv
 project-tidy-branch = Rydd i denne grenen
 project-place-automatically = Plasser automatisk
-project-delete-keeping = Slett, men behold det som står under
 project-itself-stays = Selve prosjektet blir stående
 project-itself-stays-detail = Slett prosjektet fra prosjektsiden.
 project-deleted = { $under ->
@@ -254,3 +250,7 @@ project-clone-none = Ikke lenger en klon
 project-pick-clone-title = Hvilket element skal klones inn i «{ $name }»?
 project-pick-clone = Klon det
 project-pick-clone-self = Et element kan ikke være en klon av seg selv
+project-add-child = Legg til underelement
+project-add-sibling = Legg til element på samme nivå
+project-delete-promote = Slett og flytt underelementene opp
+project-delete-with = Slett med underelementer

@@ -99,9 +99,6 @@ project-send-no-element = The element is no longer in that project.
 
 ## What is done to elements, in the diagram and in the text
 
-project-add-under = Add an element under it
-project-add = Add an element
-project-add-after = Add an element after it
 project-write-text = Write its text
 project-associate = Associate with…
 project-leave-out = Leave out of the document
@@ -134,7 +131,6 @@ project-pick-itself = An element cannot go into itself, or into what is under it
 project-pick-loop = The document would hold itself
 project-tidy-branch = Tidy this branch
 project-place-automatically = Place automatically
-project-delete-keeping = Delete, keeping what is under it
 project-itself-stays = The project itself stays
 project-itself-stays-detail = Delete the project from the home page.
 # One element was deleted, with the elements that were under it.
@@ -301,3 +297,7 @@ project-clone-none = No longer a clone
 project-pick-clone-title = Clone which element into “{ $name }”?
 project-pick-clone = Clone it
 project-pick-clone-self = An element cannot be a clone of itself
+project-add-child = Add child element
+project-add-sibling = Add sibling element
+project-delete-promote = Delete and promote sub-elements
+project-delete-with = Delete with sub-elements

@@ -8,8 +8,6 @@ diagram-show-all = Afficher toute la carte
 diagram-tidy = Ranger toute la carte
 # The keys are shown as keys, where the variables stand.
 diagram-hint-linking = Cliquez sur l’élément à associer, ou allez-y avec les flèches et appuyez sur { $enter } · { $esc } pour renoncer
-diagram-show-under = Afficher ce qui est dessous
-diagram-hide-under = Cacher ce qui est dessous
 diagram-link-handle = Glissez vers un autre élément pour les associer
 
 ## The view

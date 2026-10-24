@@ -6,8 +6,6 @@ diagram-show-all = Прикажи целу мапу
 diagram-tidy = Среди целу мапу
 # The keys are shown as keys, where the variables stand.
 diagram-hint-linking = Кликните на елемент с којим се повезује, или дођите до њега стрелицама и притисните { $enter } · { $esc } за одустајање
-diagram-show-under = Прикажи шта је под њим
-diagram-hide-under = Сакриј шта је под њим
 diagram-link-handle = Превуците до другог елемента да их повежете
 
 ## The view

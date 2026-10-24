@@ -88,9 +88,6 @@ project-send-no-element = L’élément n’est plus dans ce projet-là.
 
 ## What is done to elements, in the diagram and in the text
 
-project-add-under = Ajouter un élément dessous
-project-add = Ajouter un élément
-project-add-after = Ajouter un élément après
 project-write-text = Écrire son texte
 project-associate = Associer à…
 project-leave-out = Laisser hors du document
@@ -125,7 +122,6 @@ project-pick-itself = Un élément ne peut pas aller en lui-même, ni dans ce qu
 project-pick-loop = Le document se contiendrait lui-même
 project-tidy-branch = Ranger cette branche
 project-place-automatically = Placer automatiquement
-project-delete-keeping = Supprimer, en gardant ce qui est dessous
 project-itself-stays = Le projet lui-même reste
 project-itself-stays-detail = Supprimez le projet depuis la page d’accueil.
 # One element was deleted, with the elements that were under it.

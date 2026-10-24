@@ -14,14 +14,6 @@ text-open-as-map = Opne som kart
 
 ## Folding away what is under an element, and its text
 
-text-open = Brett ut
-text-fold = Brett saman
-text-open-shift = Brett ut · med Shift: òg alt som er bretta saman under
-text-fold-hint = Brett saman teksten og det som står under
-text-fold-shift = Brett saman teksten og det som står under · med Shift: brett ut alt som er bretta saman under
-text-open-all = Brett ut alt
-text-open-all-under = Brett ut alt som er bretta saman under
-text-fold-all-under = Brett saman alt under
 # What is folded away, in its place: whether the element's own text is (text is
 # "yes" or "no"), how many elements under it, and how many words in all, which
 # may be none.
@@ -46,8 +38,6 @@ text-folded = { $text ->
 text-associations = Assosiasjonar
 text-outline = Disposisjon
 text-outline-between = Mellom disposisjonen og teksten
-text-outline-fold = Brett saman det som står under
-text-outline-open = Brett ut det som står under
 text-go-to = Gå til «{ $name }»
 text-add-label = Legg til ein merkelapp …
 text-change-label = Endre merkelappen …

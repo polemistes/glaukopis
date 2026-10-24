@@ -33,7 +33,6 @@ timeline-chronology-made = Una tavola cronologica è stata aggiunta alla mappa
 timeline-elsewhere = Altrove nella mappa
 timeline-elsewhere-chosen = Le corsie sono scelte: ciò che non sta in nessuna di esse sta qui. Premi per scegliere di nuovo le corsie.
 timeline-ordered = In ordine, senza date
-timeline-empty = Nulla dice ancora quando è. Scegli «Di' quando è…» nel menu di un elemento.
 timeline-unplaced = { $count ->
     [one] Un elemento non si è potuto collocare:
     [many] { $count } elementi non si sono potuti collocare:
@@ -44,14 +43,10 @@ timeline-contradiction = non può essere dove dice di essere
 timeline-moving = Sposta trascinando
 timeline-moving-hint = Trascina un elemento lungo l'asse, o il bordo di un periodo, per cambiarne il tempo; spento, perché nulla si sposti per sbaglio
 timeline-without = Elementi senza un tempo
-timeline-without-hint = Trascinane uno sulla linea del tempo, o premilo per dire quando è:
 timeline-waiting-hint = Non dice ancora nulla del suo tempo: premilo per dire quando è, o trascinalo lungo la corsia per collocarlo
 timeline-unknown = rimanda a ciò che non è collocato, o a un tempo che non si può leggere
 
 ## Saying when an element is
-when-title = Quando è
-when-say = Di' quando è…
-when-change = Quando è…
 when-clear = Non dirlo più
 when-kind = In un punto, o lungo un periodo
 when-point = In un punto

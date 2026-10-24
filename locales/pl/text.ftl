@@ -8,14 +8,6 @@ text-join = Połącz z elementem powyżej
 
 ## Folding away what is under an element, and its text
 
-text-open = Rozwiń
-text-fold = Zwiń
-text-open-shift = Rozwiń · z Shiftem także wszystko, co pod nim zwinięte
-text-fold-hint = Zwiń jego tekst i to, co pod nim
-text-fold-shift = Zwiń jego tekst i to, co pod nim · z Shiftem rozwiń wszystko, co pod nim zwinięte
-text-open-all = Rozwiń wszystko
-text-open-all-under = Rozwiń wszystko, co pod nim zwinięte
-text-fold-all-under = Zwiń wszystko pod nim
 # What is folded away, in its place: whether the element's own text is (text is
 # "yes" or "no"), how many elements under it, and how many words in all, which
 # may be none.
@@ -46,8 +38,6 @@ text-folded = { $text ->
 text-associations = Powiązania
 text-outline = Konspekt
 text-outline-between = Między konspektem a tekstem
-text-outline-fold = Zwiń to, co pod nim
-text-outline-open = Rozwiń to, co pod nim
 text-go-to = Przejdź do „{ $name }”
 text-add-label = Dodaj etykietę…
 text-change-label = Zmień etykietę…

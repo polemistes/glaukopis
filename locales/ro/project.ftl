@@ -70,9 +70,6 @@ project-moved-to = Mutat în „{ $name }”
 
 ## What is done to elements, in the diagram and in the text
 
-project-add-under = Adaugă un element sub el
-project-add = Adaugă un element
-project-add-after = Adaugă un element după el
 project-write-text = Scrie-i textul
 project-associate = Asociază cu…
 project-leave-out = Lasă afară din document
@@ -81,7 +78,6 @@ project-copy = Copiază
 project-paste-under = Lipește sub el
 project-tidy-branch = Ordonează această ramură
 project-place-automatically = Așază automat
-project-delete-keeping = Șterge, păstrând ce este sub el
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] „{ $name }” a fost șters

@@ -8,8 +8,6 @@ diagram-show-all = Visa hela kartan
 diagram-tidy = Snygga till hela kartan
 # The keys are shown as keys, where the variables stand.
 diagram-hint-linking = Klicka på elementet att associera med, eller gå till det med pilarna och tryck { $enter } · { $esc } för att låta bli
-diagram-show-under = Visa det som står under
-diagram-hide-under = Dölj det som står under
 diagram-link-handle = Dra till ett annat element för att associera dem
 
 ## The view

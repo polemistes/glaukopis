@@ -8,14 +8,6 @@ text-join = Unir al elemento de arriba
 
 ## Folding away what is under an element, and its text
 
-text-open = Desplegarlo
-text-fold = Plegarlo
-text-open-shift = Desplegarlo · con Mayús, también todo lo plegado debajo
-text-fold-hint = Plegar su texto y lo que hay debajo
-text-fold-shift = Plegar su texto y lo que hay debajo · con Mayús, desplegar todo lo plegado debajo
-text-open-all = Desplegar todo
-text-open-all-under = Desplegar todo lo plegado debajo
-text-fold-all-under = Plegar todo lo de debajo
 # What is folded away, in its place: whether the element's own text is (text is
 # "yes" or "no"), how many elements under it, and how many words in all, which
 # may be none.
@@ -43,8 +35,6 @@ text-folded = { $text ->
 text-associations = Asociaciones
 text-outline = Esquema
 text-outline-between = Entre el esquema y el texto
-text-outline-fold = Plegar lo que hay debajo
-text-outline-open = Desplegar lo que hay debajo
 text-go-to = Ir a «{ $name }»
 text-add-label = Añadir una etiqueta…
 text-change-label = Cambiar la etiqueta…

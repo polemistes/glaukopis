@@ -14,14 +14,6 @@ text-open-as-map = Åbn som kort
 
 ## Folding away what is under an element, and its text
 
-text-open = Fold ud
-text-fold = Fold sammen
-text-open-shift = Fold ud · med Skift også alt, der er foldet sammen under det
-text-fold-hint = Fold dets tekst og det, der er under det, sammen
-text-fold-shift = Fold dets tekst og det, der er under det, sammen · med Skift: fold alt ud, der er foldet sammen under det
-text-open-all = Fold alt ud
-text-open-all-under = Fold alt ud, der er foldet sammen under det
-text-fold-all-under = Fold alt under det sammen
 # What is folded away, in its place: whether the element's own text is (text is
 # "yes" or "no"), how many elements under it, and how many words in all, which
 # may be none.
@@ -46,8 +38,6 @@ text-folded = { $text ->
 text-associations = Associationer
 text-outline = Disposition
 text-outline-between = Mellem dispositionen og teksten
-text-outline-fold = Fold det, der er under det, sammen
-text-outline-open = Fold det, der er under det, ud
 text-go-to = Gå til »{ $name }«
 text-add-label = Tilføj en mærkat…
 text-change-label = Ændr mærkaten…

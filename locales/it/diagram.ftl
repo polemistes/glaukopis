@@ -8,8 +8,6 @@ diagram-show-all = Mostra tutta la mappa
 diagram-tidy = Riordina tutta la mappa
 # The keys are shown as keys, where the variables stand.
 diagram-hint-linking = Fai clic sull'elemento da associare, o vai ad esso con le frecce e premi { $enter } · { $esc } per lasciar perdere
-diagram-show-under = Mostra ciò che sta sotto
-diagram-hide-under = Nascondi ciò che sta sotto
 diagram-link-handle = Trascina su un altro elemento per associarli
 
 ## The view

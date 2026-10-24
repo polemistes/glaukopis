@@ -64,9 +64,6 @@ project-moved-to = Μετακινήθηκε στο «{ $name }»
 
 ## What is done to elements, in the diagram and in the text
 
-project-add-under = Προσθήκη στοιχείου από κάτω του
-project-add = Προσθήκη στοιχείου
-project-add-after = Προσθήκη στοιχείου μετά από αυτό
 project-write-text = Γραφή του κειμένου του
 project-associate = Συσχέτιση με…
 project-leave-out = Έξω από το έγγραφο
@@ -75,7 +72,6 @@ project-copy = Αντιγραφή
 project-paste-under = Επικόλληση από κάτω του
 project-tidy-branch = Τακτοποίηση αυτού του κλάδου
 project-place-automatically = Αυτόματη τοποθέτηση
-project-delete-keeping = Διαγραφή, κρατώντας όσα είναι από κάτω του
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] Το «{ $name }» διαγράφηκε

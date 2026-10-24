@@ -66,9 +66,6 @@ project-moved-to = Movido para «{ $name }»
 
 ## What is done to elements, in the diagram and in the text
 
-project-add-under = Acrescentar um elemento sob ele
-project-add = Acrescentar um elemento
-project-add-after = Acrescentar um elemento depois dele
 project-write-text = Escrever o seu texto
 project-associate = Associar a…
 project-leave-out = Deixar fora do documento
@@ -77,7 +74,6 @@ project-copy = Copiar
 project-paste-under = Colar sob ele
 project-tidy-branch = Arrumar este ramo
 project-place-automatically = Colocar automaticamente
-project-delete-keeping = Eliminar, guardando o que está sob ele
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] «{ $name }» foi eliminado

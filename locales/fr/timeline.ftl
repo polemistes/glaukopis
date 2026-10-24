@@ -33,7 +33,6 @@ timeline-chronology-made = Une chronologie a été ajoutée à la carte
 timeline-elsewhere = Ailleurs dans la carte
 timeline-elsewhere-chosen = Les couloirs sont choisis : ce qui n’est dans aucun d’eux se place ici. Appuyez pour choisir les couloirs de nouveau.
 timeline-ordered = Dans l’ordre, sans dates
-timeline-empty = Rien ne dit encore quand c’est. Choisissez « Dire quand c’est… » dans le menu d’un élément.
 timeline-unplaced = { $count ->
     [one] Un élément n’a pas pu être placé :
     [many] { $count } éléments n’ont pas pu être placés :
@@ -44,14 +43,10 @@ timeline-contradiction = ne peut pas être là où il dit être
 timeline-moving = Déplacer en glissant
 timeline-moving-hint = Glissez un élément le long de l’axe, ou le bord d’une étendue, pour changer son temps ; désactivé, rien ne bouge par mégarde
 timeline-without = Éléments sans temps
-timeline-without-hint = Glissez-en un sur la frise, ou appuyez dessus pour dire quand c’est :
 timeline-waiting-hint = Ne dit encore rien de son temps : appuyez dessus pour dire quand c’est, ou glissez-le le long du couloir pour le placer
 timeline-unknown = renvoie à ce qui n’est pas placé, ou à un temps qui ne peut pas être lu
 
 ## Saying when an element is
-when-title = Quand c’est
-when-say = Dire quand c’est…
-when-change = Quand c’est…
 when-clear = Ne plus le dire
 when-kind = À un moment, ou sur une période
 when-point = À un moment

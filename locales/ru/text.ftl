@@ -8,14 +8,6 @@ text-join = Присоединить к элементу выше
 
 ## Folding away what is under an element, and its text
 
-text-open = Развернуть
-text-fold = Свернуть
-text-open-shift = Развернуть · с Shift — и всё свёрнутое под ним
-text-fold-hint = Свернуть его текст и то, что под ним
-text-fold-shift = Свернуть его текст и то, что под ним · с Shift — развернуть всё свёрнутое под ним
-text-open-all = Развернуть всё
-text-open-all-under = Развернуть всё свёрнутое под ним
-text-fold-all-under = Свернуть всё под ним
 # What is folded away, in its place: whether the element's own text is (text is
 # "yes" or "no"), how many elements under it, and how many words in all, which
 # may be none.
@@ -46,8 +38,6 @@ text-folded = { $text ->
 text-associations = Связи
 text-outline = Структура
 text-outline-between = Между структурой и текстом
-text-outline-fold = Свернуть то, что под ним
-text-outline-open = Развернуть то, что под ним
 text-go-to = Перейти к «{ $name }»
 text-add-label = Добавить подпись…
 text-change-label = Изменить подпись…

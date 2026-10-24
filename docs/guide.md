@@ -147,8 +147,8 @@ behind. The new project opens on its text.
 | Add one under it, the first | **Alt+Shift+Enter** |
 | Add an element under the one in view, where you click | Double-click the background, or **New element here** in its menu |
 | Write the text of an element | **Enter**, or double-click it |
-| Fold away what is under an element, or unfold it | **Tab**, or the sign beside it |
-| Unfold all that is folded under the element in view; where nothing is, fold everything at the first level | **Shift+Tab** |
+| Fold or unfold an element | **Tab**, or the sign beside it |
+| Unfold all sub-elements of the element in view; where nothing is folded, fold all sub-elements at the first level | **Shift+Tab** |
 | Rename an element | **F2**, or begin to type |
 | Read its text without opening it | Rest the pointer on it |
 | Move an element, with all that is under it | Drag it onto another element |
@@ -259,8 +259,8 @@ Everything the tools do can be done from the keys, and much of it by typing:
 | Make a heading at the cursor: a new element after the one the cursor is in | **Alt+Enter**; or right-click there: **Split here** |
 | The same, with the new element under the one the cursor is in, the first | **Alt+Shift+Enter** |
 | Make the element deeper or less deep | **Alt+Right**, **Alt+Left** |
-| Fold away what is under the element, or unfold it | **Tab** in its name, or the arrow beside it |
-| Unfold all that is folded under the element in view; where nothing is, fold everything at the first level | **Shift+Tab** in a name |
+| Fold or unfold the element | **Tab** in its name, or the arrow beside it |
+| Unfold all sub-elements of the element in view; where nothing is folded, fold all sub-elements at the first level | **Shift+Tab** in a name |
 | Go to the name of the element the cursor is in, the name selected | **F2** |
 | Move the element up or down among those beside it | **Alt+Up**, **Alt+Down**; the cursor stays where it is |
 | Join an element to the one above | Right-click: **Join to the element above** |
@@ -341,12 +341,12 @@ folded still when the element over it is folded and opened again, so the
 text stays as you arranged it. To open an element with everything under
 it at once, however deep:
 
-- **Open all**, in the line that says what is folded away; or
+- **Unfold all**, in the line that says what is folded away; or
 - press the arrow with **Shift** held down; or
-- **Open all that is folded under it**, in the menu of the element. From
-  the title of the document, that opens the whole text.
+- **Unfold all sub-elements**, in the menu of the element. From the title
+  of the document, that opens the whole text.
 
-**Fold away all under it**, in the same menu, does the opposite: the
+**Fold all sub-elements**, in the same menu, does the opposite: the
 element stays open, and all under it is folded. From the title, that leaves
 the parts of the document by their names, to be opened one at a time.
 
@@ -1244,8 +1244,8 @@ the element is there.
 
 ## Timelines
 
-An element can say **when it is**: at a point, or over a span. Choose **Say
-when it is…** in its menu. Each end of the placement is either a time
+An element can say **when it is**: at a point, or over a span. Choose **Time
+stamp…** in its menu. Each end of the placement is either a time
 written in words — `431 BC`, `c. 480 BCE`, `May 1453`, `1453-05-29`, `5th
 century BC`, `the 1920s` — or relative: *after* another element, *before*
 one, *between* two, or *during* one. A year stands for the whole year, a
@@ -1404,8 +1404,10 @@ entered. Where the path does not fit, the names in the middle make way for
 view always show. Where the project could not be saved, its name in the
 path has a red sign, and the pointer on it says why. What is done with an
 element is in its right-click menu, in the diagram and in the text:
-**Rename**, **Document properties…**, **A document into it…**, **New
-element under it**, **Delete**, and the rest.
+**Rename**, **Document properties…**, **A document into it…**, **Add
+child element**, **Delete**, and the rest. **Delete with sub-elements**
+takes all under the element with it; **Delete and promote sub-elements**
+keeps them, one level up.
 
 The top row holds, over each side, its path and at its right end the
 **×** that closes the side; at the right end of the row, on a ground of its
@@ -2921,7 +2923,7 @@ what is to be done by its name, and does it.
 | **Ctrl+Z**, **Ctrl+Shift+Z** | Undo, redo; in the list of projects, what was done to folders and projects |
 | **Alt+Enter** | In the diagram: a new element after the one selected; in the text, a heading at the cursor |
 | **Alt+Shift+Enter** | In the diagram: a new element under the one selected, the first; in the text, a heading at the cursor, under the element it is in |
-| **Tab** | In the diagram, and in a name in the text: fold away what is under the element, or unfold it |
+| **Tab** | In the diagram, and in a name in the text: fold or unfold the element |
 | **Shift+Tab** | In the diagram, and in a name in the text: unfold all that is folded under the element in view, or fold everything at the first level |
 | **Enter** | In the diagram: write the text of the element selected |
 | **Alt+Shift+Down** | In the diagram and the text: enter the element, to see it alone with what is under it |

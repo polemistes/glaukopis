@@ -14,14 +14,6 @@ text-open-as-map = Als Karte öffnen
 
 ## Folding away what is under an element, and its text
 
-text-open = Ausklappen
-text-fold = Einklappen
-text-open-shift = Ausklappen · mit Umschalt auch alles, was darunter eingeklappt ist
-text-fold-hint = Seinen Text und was darunter ist einklappen
-text-fold-shift = Seinen Text und was darunter ist einklappen · mit Umschalt alles ausklappen, was darunter eingeklappt ist
-text-open-all = Alles ausklappen
-text-open-all-under = Alles ausklappen, was darunter eingeklappt ist
-text-fold-all-under = Alles darunter einklappen
 # What is folded away, in its place: whether the element's own text is (text is
 # "yes" or "no"), how many elements under it, and how many words in all, which
 # may be none.
@@ -46,8 +38,6 @@ text-folded = { $text ->
 text-associations = Verbindungen
 text-outline = Gliederung
 text-outline-between = Zwischen der Gliederung und dem Text
-text-outline-fold = Einklappen, was darunter ist
-text-outline-open = Ausklappen, was darunter ist
 text-go-to = Zu „{ $name }“ gehen
 text-add-label = Beschriftung hinzufügen…
 text-change-label = Beschriftung ändern…

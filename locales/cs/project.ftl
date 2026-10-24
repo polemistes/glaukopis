@@ -66,9 +66,6 @@ project-moved-to = Přesunuto do „{ $name }“
 
 ## What is done to elements, in the diagram and in the text
 
-project-add-under = Přidat prvek pod něj
-project-add = Přidat prvek
-project-add-after = Přidat prvek za něj
 project-write-text = Psát jeho text
 project-associate = Spojit s…
 project-leave-out = Vynechat z dokumentu
@@ -77,7 +74,6 @@ project-copy = Kopírovat
 project-paste-under = Vložit pod něj
 project-tidy-branch = Uspořádat tuto větev
 project-place-automatically = Umístit automaticky
-project-delete-keeping = Smazat a ponechat, co je pod ním
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] „{ $name }“ byl smazán

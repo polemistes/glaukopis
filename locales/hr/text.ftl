@@ -8,14 +8,6 @@ text-join = Spoji s elementom iznad
 
 ## Folding away what is under an element, and its text
 
-text-open = Rasklopi
-text-fold = Sklopi
-text-open-shift = Rasklopi · sa Shiftom i sve što je sklopljeno ispod njega
-text-fold-hint = Sklopi njegov tekst i ono što je ispod njega
-text-fold-shift = Sklopi njegov tekst i ono što je ispod njega · sa Shiftom rasklopi sve što je sklopljeno ispod njega
-text-open-all = Rasklopi sve
-text-open-all-under = Rasklopi sve što je sklopljeno ispod njega
-text-fold-all-under = Sklopi sve ispod njega
 # What is folded away, in its place: whether the element's own text is (text is
 # "yes" or "no"), how many elements under it, and how many words in all, which
 # may be none.
@@ -43,8 +35,6 @@ text-folded = { $text ->
 text-associations = Veze
 text-outline = Struktura
 text-outline-between = Između strukture i teksta
-text-outline-fold = Sklopi što je ispod njega
-text-outline-open = Rasklopi što je ispod njega
 text-go-to = Idi na „{ $name }”
 text-add-label = Dodaj oznaku…
 text-change-label = Izmijeni oznaku…

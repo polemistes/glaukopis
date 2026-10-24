@@ -14,14 +14,6 @@ text-open-as-map = Ouvrir comme carte
 
 ## Folding away what is under an element, and its text
 
-text-open = L’ouvrir
-text-fold = Le replier
-text-open-shift = L’ouvrir · avec Maj, tout ce qui est replié dessous aussi
-text-fold-hint = Replier son texte et ce qui est dessous
-text-fold-shift = Replier son texte et ce qui est dessous · avec Maj, ouvrir tout ce qui est replié dessous
-text-open-all = Tout ouvrir
-text-open-all-under = Ouvrir tout ce qui est replié dessous
-text-fold-all-under = Tout replier dessous
 # What is folded away, in its place: whether the element's own text is (text is
 # "yes" or "no"), how many elements under it, and how many words in all, which
 # may be none.
@@ -49,8 +41,6 @@ text-folded = { $text ->
 text-associations = Associations
 text-outline = Plan
 text-outline-between = Entre le plan et le texte
-text-outline-fold = Replier ce qui est dessous
-text-outline-open = Ouvrir ce qui est dessous
 text-go-to = Aller à « { $name } »
 text-add-label = Ajouter une étiquette…
 text-change-label = Changer l’étiquette…

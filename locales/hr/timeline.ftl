@@ -34,7 +34,6 @@ timeline-chronology-made = Mapi je dodana kronologija
 timeline-elsewhere = Drugdje u mapi
 timeline-elsewhere-chosen = Pruge su odabrane: što nije ni u jednoj od njih stoji ovdje. Pritisnite da ponovno odaberete pruge.
 timeline-ordered = Redom, bez datuma
-timeline-empty = Još ništa ne kaže kada jest. Odaberite „Reci kada je…” u izborniku elementa.
 timeline-unplaced = { $count ->
     [1] Jedan element nije bilo moguće smjestiti:
     [one] { $count } element nije bilo moguće smjestiti:
@@ -46,14 +45,10 @@ timeline-contradiction = ne može biti ondje gdje kaže da jest
 timeline-moving = Premještanje povlačenjem
 timeline-moving-hint = Povucite element duž osi, ili rub raspona, da promijenite njegovo vrijeme; isključeno, da se ništa ne pomakne slučajno
 timeline-without = Elementi bez vremena
-timeline-without-hint = Povucite jedan na vremensku crtu, ili ga pritisnite da kažete kada je:
 timeline-waiting-hint = Još ništa ne kaže o svojem vremenu: pritisnite ga da kažete kada je, ili ga povucite duž pruge da ga smjestite
 timeline-unknown = upućuje na ono što nije smješteno, ili na vrijeme koje se ne može pročitati
 
 ## Saying when an element is
-when-title = Kada je
-when-say = Reci kada je…
-when-change = Kada je…
 when-clear = Više ne reci
 when-kind = U trenutku, ili kroz raspon
 when-point = U trenutku

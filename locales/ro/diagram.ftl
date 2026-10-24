@@ -8,8 +8,6 @@ diagram-show-all = Arată toată harta
 diagram-tidy = Ordonează toată harta
 # The keys are shown as keys, where the variables stand.
 diagram-hint-linking = Faceți clic pe elementul cu care să-l asociați, sau mergeți la el cu săgețile și apăsați { $enter } · { $esc } ca să renunțați
-diagram-show-under = Arată ce este sub el
-diagram-hide-under = Ascunde ce este sub el
 diagram-link-handle = Trageți spre alt element ca să le asociați
 
 ## The view

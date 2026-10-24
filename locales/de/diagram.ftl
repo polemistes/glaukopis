@@ -8,8 +8,6 @@ diagram-show-all = Die ganze Karte zeigen
 diagram-tidy = Die ganze Karte aufräumen
 # The keys are shown as keys, where the variables stand.
 diagram-hint-linking = Klicken Sie das Element an, mit dem verbunden werden soll, oder gehen Sie mit den Pfeilen hin und drücken Sie { $enter } · { $esc } zum Verlassen
-diagram-show-under = Zeigen, was darunter ist
-diagram-hide-under = Verbergen, was darunter ist
 diagram-link-handle = Zu einem anderen Element ziehen, um sie zu verbinden
 
 ## The view

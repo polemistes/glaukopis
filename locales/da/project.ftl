@@ -86,9 +86,6 @@ project-send-no-element = Elementet er ikke længere i det projekt.
 
 ## What is done to elements, in the diagram and in the text
 
-project-add-under = Tilføj et element under det
-project-add = Tilføj et element
-project-add-after = Tilføj et element efter det
 project-write-text = Skriv dets tekst
 project-associate = Knyt til…
 project-leave-out = Udelad af dokumentet
@@ -121,7 +118,6 @@ project-pick-itself = Et element kan ikke flyttes ind i sig selv eller i det, de
 project-pick-loop = Dokumentet ville indeholde sig selv
 project-tidy-branch = Ryd op i denne gren
 project-place-automatically = Placer automatisk
-project-delete-keeping = Slet, men behold det, der er under det
 project-itself-stays = Selve projektet bliver
 project-itself-stays-detail = Slet projektet fra forsiden.
 # One element was deleted, with the elements that were under it.

@@ -442,18 +442,23 @@ export function elementMenu(
     };
     items.push(
       {
-        label: t('project-add-under'),
+        label: t('project-add-child'),
         icon: CornerDownRight,
         shortcut: keysFor('tree-new-under'),
         disabled: clone,
         action: () => add('under'),
       },
-      {
-        label: isProject ? t('project-add') : t('project-add-after'),
-        icon: Plus,
-        shortcut: keysFor('tree-new'),
-        action: () => add('after'),
-      },
+      // The project itself has no siblings: one item adds under it.
+      ...(isProject
+        ? []
+        : [
+            {
+              label: t('project-add-sibling'),
+              icon: Plus,
+              shortcut: keysFor('tree-new'),
+              action: () => add('after'),
+            },
+          ]),
       { kind: 'separator' },
     );
     if (actions.edit)
@@ -498,7 +503,7 @@ export function elementMenu(
       action: () => (actions.comment ? actions.comment(one.id) : commentsUi.begin(one.id)),
     });
     items.push({
-      label: one.when ? t('when-change') : t('when-say'),
+      label: t('when-stamp'),
       icon: Clock,
       action: () => sayWhen(one.id),
     });
@@ -675,13 +680,15 @@ export function elementMenu(
     items.push({ kind: 'separator' });
     if (one && hasChildren) {
       items.push({
-        label: t('project-delete-keeping'),
+        label: t('project-delete-promote'),
         icon: Scissors,
         action: () => removeElements(project, ids, true),
       });
     }
+    // What goes with them is said where there is any.
+    const withChildren = movable.some((id) => (tree.children.get(id)?.length ?? 0) > 0);
     items.push({
-      label: t('common-delete'),
+      label: withChildren ? t('project-delete-with') : t('common-delete'),
       icon: Trash2,
       danger: true,
       shortcut: keysFor('tree-delete'),

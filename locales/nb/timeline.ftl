@@ -32,7 +32,6 @@ timeline-chronology-made = En kronologi ble lagt til kartet
 timeline-elsewhere = Ellers i kartet
 timeline-elsewhere-chosen = Banene er valgt: det som ikke står i noen av dem, står her. Trykk for å velge banene på nytt.
 timeline-ordered = I rekkefølge, uten datoer
-timeline-empty = Ingenting sier når det er ennå. Velg «Si når det er …» i menyen til et element.
 timeline-unplaced = { $count ->
     [one] Ett element kunne ikke plasseres:
    *[other] { $count } elementer kunne ikke plasseres:
@@ -41,13 +40,9 @@ timeline-contradiction = kan ikke være der det sier det er
 timeline-moving = Flytt ved å dra
 timeline-moving-hint = Dra et element langs aksen, eller kanten av et spenn, for å endre tiden; av, så ingenting flyttes ved et uhell
 timeline-without = Elementer uten tid
-timeline-without-hint = Dra ett inn på tidslinjen, eller trykk på det for å si når det er:
 timeline-waiting-hint = Sier ennå ikke når det er: trykk på det for å si når, eller dra det langs banen for å plassere det
 timeline-unknown = viser til noe som ikke er plassert, eller til en tid som ikke kan leses
 
-when-title = Når det er
-when-say = Si når det er …
-when-change = Når det er …
 when-clear = Si det ikke lenger
 when-kind = På et tidspunkt, eller over et spenn
 when-point = På et tidspunkt
@@ -82,3 +77,10 @@ when-said-before = før
 when-said-during = under
 when-said-to = til
 when-said-approx = ca.
+
+## Fewer words, stage 2 (agent "chrome"): the words of the menus.
+
+when-stamp = Tidsstempel …
+# The title of the dialog that says when an element is.
+when-stamp-title = Tidsstempel
+timeline-empty-stamp = Ingenting har tidsstempel ennå. Velg «Tidsstempel …» i menyen til et element.

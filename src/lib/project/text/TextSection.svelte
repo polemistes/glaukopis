@@ -335,16 +335,16 @@
         type="button"
         class="fold"
         aria-expanded={!hidden}
-        aria-label={hidden ? t('text-open') : t('text-fold')}
+        aria-label={hidden ? t('text-unfold') : t('text-fold-this')}
         tabindex="-1"
         use:tooltip={{
           text: hidden
             ? openable
-              ? t('text-open-shift')
-              : t('text-open')
+              ? t('text-unfold-shift')
+              : t('text-unfold')
             : openable
-              ? t('text-fold-shift')
-              : t('text-fold-hint'),
+              ? t('text-fold-this-shift')
+              : t('text-fold-this'),
           shortcut: keysFor('tree-fold'),
           side: 'top',
         }}
@@ -523,7 +523,7 @@
         </button>
         {#if openable}
           <button type="button" class="all" onclick={() => onfold?.(node.id, true)}>
-            {t('text-open-all')}
+            {t('text-unfold-all')}
           </button>
         {/if}
       </div>

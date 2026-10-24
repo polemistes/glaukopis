@@ -6,8 +6,6 @@ diagram-show-all = Pokaži ves miselni vzorec
 diagram-tidy = Uredi ves miselni vzorec
 # The keys are shown as keys, where the variables stand.
 diagram-hint-linking = Kliknite element, s katerim ga želite povezati, ali pojdite nanj s smernimi tipkami in pritisnite { $enter } · { $esc } za izhod
-diagram-show-under = Pokaži, kar je pod njim
-diagram-hide-under = Skrij, kar je pod njim
 diagram-link-handle = Povlecite do drugega elementa, da ju povežete
 
 ## The view

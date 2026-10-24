@@ -1045,20 +1045,20 @@
     if (folding.can(tree, id)) {
       const folded = folding.hides(tree, id);
       folds.push({
-        label: folded ? t('text-open') : t('text-fold'),
+        label: folded ? t('text-unfold') : t('text-fold-this'),
         icon: folded ? UnfoldVertical : FoldVertical,
         shortcut: keysFor('tree-fold'),
         action: () => fold(id),
       });
       if (folding.anyFolded(tree, id))
         folds.push({
-          label: t('text-open-all-under'),
+          label: t('text-unfold-all-under'),
           icon: ChevronsUpDown,
           action: () => fold(id, true),
         });
       if (folding.anyOpen(tree, id))
         folds.push({
-          label: t('text-fold-all-under'),
+          label: t('text-fold-all-sub'),
           icon: ChevronsDownUp,
           action: () => folding.foldAll(tree, id),
         });

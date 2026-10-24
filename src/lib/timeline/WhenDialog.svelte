@@ -228,7 +228,7 @@
 
 <Dialog
   open
-  title={t('when-title')}
+  title={t('when-stamp-title')}
   subtitle={node?.title || t('project-untitled')}
   width={460}
   {onclose}

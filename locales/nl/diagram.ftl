@@ -8,8 +8,6 @@ diagram-show-all = De hele mindmap tonen
 diagram-tidy = De hele mindmap opruimen
 # The keys are shown as keys, where the variables stand.
 diagram-hint-linking = Klik op het element om mee te verbinden, of ga ernaartoe met de pijltjes en druk op { $enter } · { $esc } om het te laten
-diagram-show-under = Tonen wat eronder staat
-diagram-hide-under = Verbergen wat eronder staat
 diagram-link-handle = Sleep naar een ander element om ze te verbinden
 
 ## The view
