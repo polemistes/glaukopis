@@ -34,11 +34,11 @@ describe('the languages Tesseract reads', () => {
     expect(byName(['nor', 'grc', 'eng'])).toEqual(['grc', 'eng', 'nor']);
   });
 
-  it('name the Fraktur model for the type it reads, not for a language', async () => {
-    expect(ocrLanguageName('deu_latf')).toBe('Fraktur (Gothic type)');
-    expect(ocrLanguageName('deu_latf', true)).toBe('Fraktur (Gothic type)');
-    expect(ocrLanguageName('script/Fraktur')).toBe('Fraktur (Gothic type)');
-    expect(ocrLanguageName('dan_latf')).toBe('Fraktur, Danish and Norwegian (Gothic type)');
+  it('name the Fraktur models for the type they read, then for the languages they were trained on', async () => {
+    expect(ocrLanguageName('deu_latf')).toBe('Fraktur (Gothic type), German');
+    expect(ocrLanguageName('deu_latf', true)).toBe('Fraktur (Gothic type), German');
+    expect(ocrLanguageName('script/Fraktur')).toBe('Fraktur (Gothic type), German');
+    expect(ocrLanguageName('dan_latf')).toBe('Fraktur (Gothic type), Norwegian and Danish');
     // The older models of one language are still named by it.
     expect(ocrLanguageName('frk')).toBe('German, Fraktur');
     // So it stands under F, not under G with German.
@@ -53,8 +53,8 @@ describe('the languages Tesseract reads', () => {
     try {
       await load('nb');
       languages.current = 'nb';
-      expect(ocrLanguageName('deu_latf')).toBe('Fraktur (gotisk skrift)');
-      expect(ocrLanguageName('dan_latf')).toBe('Fraktur, dansk og norsk (gotisk skrift)');
+      expect(ocrLanguageName('deu_latf')).toBe('Fraktur (gotisk skrift), tysk');
+      expect(ocrLanguageName('dan_latf')).toBe('Fraktur (gotisk skrift), norsk og dansk');
     } finally {
       languages.current = was;
     }

@@ -86,8 +86,7 @@
   );
   /** Where the requirements of the layout the type brings are from, the usual layout's where it brings none. */
   const layoutSource = $derived(
-    (template?.layout ? broughtFormat : documents.formatCached(settings.value.defaultFormat))
-      ?.source,
+    (template?.layout ? broughtFormat : documents.formatCached(documents.usualFormat()))?.source,
   );
   /**
    * What the template in use brings, in a line: how its pages are set and,
@@ -97,9 +96,12 @@
    */
   const brings = $derived.by(() => {
     if (!template) return '';
+    // The writer's usual is named as such; with none in the settings, the layout that holds is named as it is.
     const layout = template.layout
       ? layoutName(template.layout)
-      : t('chooser-usual-pages', { name: layoutName(settings.value.defaultFormat) });
+      : documents.chosenUsual('format')
+        ? t('chooser-usual-pages', { name: layoutName(documents.usualFormat()) })
+        : layoutName(documents.usualFormat());
     const style = template.style || broughtFormat?.style;
     return style && documents.style(style)
       ? t('chooser-brings', { layout, style: styleName(style) })
@@ -232,11 +234,13 @@
   /**
    * Chooses a template for the element. One of the writer's own is copied
    * into the project, so that a shared project and a file carry it; one
-   * that came with the application is on every computer already.
+   * that came with the application is on every computer already. The
+   * element's own layout and style, chosen in Look, go with the choice, in
+   * the same step of undo, so that the type's take hold.
    */
   function setTemplate(id: string) {
     if (id === choice.template && own.template) return;
-    write({ template: id });
+    write({ template: id, format: undefined, style: undefined });
     keep(id);
   }
 
@@ -281,7 +285,12 @@
     {#if own.template}
       {@const setter = over()}
       <p class="from">
-        <button type="button" class="link" onclick={() => write({ template: undefined })}>
+        <!-- The type over it, or the usual, brings its own layout and style, as a type chosen does. -->
+        <button
+          type="button"
+          class="link"
+          onclick={() => write({ template: undefined, format: undefined, style: undefined })}
+        >
           {setter
             ? t('chooser-again', { name: nameOf(setter) })
             : t('chooser-usual-again', { name: templateName(project, usual) })}

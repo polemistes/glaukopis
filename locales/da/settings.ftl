@@ -21,7 +21,6 @@ settings-theme-dark = Mørkt
 settings-theme-mellow = Mildt
 settings-theme-own = Dine egne
 settings-own = Dine egne farver
-settings-own-hint = Fire farver, som resten følger af: papiret, blækket, accenten, der markerer det valgte og trykkede, og den anden stemme, der markerer associationer og kommentarer. Om farverne er lyse eller mørke, følger af papiret.
 settings-own-paper = Papir
 settings-own-ink = Blæk
 settings-own-accent = Accent
@@ -30,14 +29,11 @@ settings-own-begin = Begynd fra
 # The contrast of the ink and of the accent on the paper, as WCAG counts it; 4.5 and 3 are what reads well.
 settings-own-weak = Svært at læse: blækket står { $ink } til 1 mod papiret og accenten { $accent } til 1; 4,5 og 3 eller mere læses godt.
 settings-text-size = Størrelsen på din tekst i teksteditoren
-settings-text-size-hint = I forhold til grænsefladen. Skriftstørrelserne i forhåndsvisningen og i det, der eksporteres, påvirkes ikke af det.
 settings-editor-font = Skrift i teksteditoren
-settings-editor-font-hint = Vælg skriften for din tekst i teksteditoren.
 settings-editor-font-default = Som grænsefladen (Literata)
 # How the text of a map shows how deep each element stands: on the screen only.
 # How the text editor shows how deep each element stands: on the screen only.
 settings-text-depth = Dokumentstruktur
-settings-text-depth-hint = Hvordan teksteditoren viser dokumentstrukturen i din tekst.
 settings-text-depth-numbers = Numre
 settings-text-depth-dots = Prikker
 settings-text-depth-indent = Rykket ind, med streger
@@ -55,17 +51,10 @@ settings-sample-third = Et tredje niveau
 ## New documents
 
 settings-new-documents = Nye dokumenter
-# Whether a new project opens in its diagram or in its text; the choices are the names of the two views.
-settings-new-project-view = Nye projekter åbnes i
-settings-new-project-view-hint = Den visning, som et projekt åbnes i, når det lige er oprettet.
-settings-template = Hvad nye dokumenter er
-settings-document-format = Hvordan deres sider ser ud
-settings-reference-style = Hvordan de henviser
 
 ## You
 
 settings-you = Dine oplysninger
-settings-you-about = Dit navn er det, et projekts historik og dem, du deler det med, kalder dig. Et nyt projekt har dig som forfatter, med din organisation, e-mail og ORCID; det ændres i projektets dokumentindstillinger. Titel, adresse og telefon gemmes til dokumenter, der vil bede om dem; intet bruger dem endnu. Glaukopis sender intet af dette nogen steder hen af sig selv: det, der står i et projekts dokumentindstillinger, følger med projektet, når du deler eller eksporterer det.
 settings-first-name = Fornavn
 settings-last-name = Efternavn
 settings-organization = Organisation
@@ -80,7 +69,6 @@ settings-contact-problem = Det ligner ikke en adresse.
 ## Programs: Pandoc and Typst
 
 settings-programs = Programmer
-settings-programs-about = Glaukopis laver dokumenter med Pandoc, som findes af sig selv, hvor det er installeret på den sædvanlige måde. Siderne i forhåndsvisningen og i en PDF sættes af Typst, som er en del af Glaukopis.
 settings-pandoc-need = Behøves til forhåndsvisningen og til al eksport.
 settings-looking = Leder…
 # "need" is what the program is needed for: settings-pandoc-need.
@@ -98,8 +86,6 @@ settings-error-programs = Der kunne ikke ledes efter programmerne
 settings-about = Om
 settings-licence = Fri software under GNU General Public License, version 3 eller senere. Den leveres uden garanti.
 settings-data = Hvor alt gemmes
-# "file" is the name of the file of the library, shown as code.
-settings-data-hint = Dine referencer er i { $file }, som ethvert BibLaTeX-værktøj kan læse. Kopiér denne mappe for at have en kopi af dit arbejde.
 
 ## Language
 
@@ -113,11 +99,8 @@ settings-language-error-load = Ordene på { $language } kunne ikke indlæses
 ## The log of the runs.
 
 settings-logs = Loggen
-settings-logs-hint = Det, Glaukopis fortæller om sig selv, hver gang det kører, for de seneste { $count } gange: hvad det gjorde, hvad der gik galt, og hvad der blev af dets vindue. Nyttigt, når noget er gået galt, og ingen så hvorfor.
 
 ## What a line of the preview is: whether a chip at the edge of a page names it.
 
-settings-page-chips = Navngiv, hvad en linje i forhåndsvisningen er
-settings-page-chips-hint = Trykker du på en linje i forhåndsvisningen, viser et skilt i kanten af siden, hvad linjen er (tekst, et citat, en overskrift…), og åbner Udseende ved den; trykker du igen, forsvinder skiltet.
 settings-page-chips-on = Til
 settings-page-chips-off = Fra

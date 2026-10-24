@@ -21,7 +21,6 @@ settings-theme-dark = Mørkt
 settings-theme-mellow = Mildt
 settings-theme-own = Dine eigne
 settings-own = Dine eigne fargar
-settings-own-hint = Fire fargar, som resten følgjer av: papiret, blekket, aksenten som merkjer det som er valt og trykt, og den andre stemma, som merkjer assosiasjonar og kommentarar. Om fargane er lyse eller mørke, følgjer av papiret.
 settings-own-paper = Papir
 settings-own-ink = Blekk
 settings-own-accent = Aksent
@@ -30,14 +29,11 @@ settings-own-begin = Byrj frå
 # The contrast of the ink and of the accent on the paper, as WCAG counts it; 4.5 and 3 are what reads well.
 settings-own-weak = Vanskeleg å lese: blekket står { $ink } til 1 mot papiret og aksenten { $accent } til 1; 4,5 og 3 eller meir les godt.
 settings-text-size = Storleiken på teksten din i tekstredigeringa
-settings-text-size-hint = I høve til grensesnittet. Skriftstorleikane i førehandsvisinga og eksporten av dokument blir ikkje påverka av dette.
 settings-editor-font = Skrift i tekstredigeringa
-settings-editor-font-hint = Vel skrifta for teksten din i tekstredigeringa.
 settings-editor-font-default = Som grensesnittet (Literata)
 # How the text of a map shows how deep each element stands: on the screen only.
 # How the text editor shows how deep each element stands: on the screen only.
 settings-text-depth = Dokumentstruktur
-settings-text-depth-hint = Korleis tekstredigeringa viser dokumentstrukturen i teksten din.
 settings-text-depth-numbers = Tal
 settings-text-depth-dots = Prikkar
 settings-text-depth-indent = Rykt inn, med strekar
@@ -55,17 +51,10 @@ settings-sample-third = Eit tredje nivå
 ## New documents
 
 settings-new-documents = Nye dokument
-# Whether a new project opens in its diagram or in its text; the choices are the names of the two views.
-settings-new-project-view = Nye prosjekt blir opna i
-settings-new-project-view-hint = Visinga eit prosjekt blir opna i når det nettopp er laga.
-settings-template = Kva nye dokument er
-settings-document-format = Korleis sidene ser ut
-settings-reference-style = Korleis dei viser til kjelder
 
 ## You
 
 settings-you = Opplysningar om deg
-settings-you-about = Namnet ditt er det historikken til eit prosjekt og dei du deler det med, kallar deg. Eit nytt prosjekt har deg som forfattar, med organisasjon, e-post og ORCID; det blir endra i dokumentinnstillingane til prosjektet. Tittel, adresse og telefon blir tekne vare på for dokument som vil be om dei; ingenting bruker dei enno. Glaukopis sender ikkje noko av dette nokon stad av seg sjølv: det som står i dokumentinnstillingane til eit prosjekt, følgjer med prosjektet når du deler eller eksporterer det.
 settings-first-name = Førenamn
 settings-last-name = Etternamn
 settings-organization = Organisasjon
@@ -80,7 +69,6 @@ settings-contact-problem = Det ser ikkje ut som ei e-postadresse.
 ## Programs: Pandoc and Typst
 
 settings-programs = Program
-settings-programs-about = Glaukopis lagar dokument med Pandoc, som blir funne av seg sjølv når det er installert på vanleg måte. Sidene i førehandsvisinga og i ein PDF blir sette av Typst, som er ein del av Glaukopis.
 settings-pandoc-need = Trengst for førehandsvisinga og for all eksport.
 settings-looking = Leitar …
 # "need" is what the program is needed for: settings-pandoc-need.
@@ -98,8 +86,6 @@ settings-error-programs = Kunne ikkje leite etter programma
 settings-about = Om programmet
 settings-licence = Fri programvare under GNU General Public License, versjon 3 eller seinare. Det blir ikkje gitt nokon garanti.
 settings-data = Kvar alt er lagra
-# "file" is the name of the file of the library, shown as code.
-settings-data-hint = Referansane dine er i { $file }, som alle BibLaTeX-verktøy kan lese. Kopier denne mappa for å ta vare på ein kopi av arbeidet ditt.
 
 ## Language
 
@@ -113,11 +99,8 @@ settings-language-error-load = Orda på { $language } kunne ikkje lastast inn
 ## The log of the runs.
 
 settings-logs = Loggen
-settings-logs-hint = Det Glaukopis fortel om seg sjølv i kvar køyring, for dei siste { $count } køyringane: kva det gjorde, kva som gjekk gale, og kva som vart av vindauget. Til nytte når noko har gått gale og ingen såg kvifor.
 
 ## What a line of the preview is: whether a chip at the edge of a page names it.
 
-settings-page-chips = Vis kva ei linje i førehandsvisinga er
-settings-page-chips-hint = Trykkjer du på ei linje i førehandsvisinga, viser ei brikke ved kanten av sida kva linja er (tekst, eit sitat, ei overskrift …) og opnar Utsjånad der; trykkjer du igjen, forsvinn brikka.
 settings-page-chips-on = På
 settings-page-chips-off = Av

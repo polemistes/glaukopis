@@ -16,7 +16,6 @@ settings-theme-dark = Donker
 settings-theme-mellow = Zacht
 settings-theme-own = Eigen
 settings-own = Je eigen kleuren
-settings-own-hint = Vier kleuren, waaruit de rest volgt: het papier, de inkt, het accent dat markeert wat is gekozen en ingedrukt, en de tweede stem die verbindingen en opmerkingen markeert. Of het schema licht of donker is, volgt uit het papier.
 settings-own-paper = Papier
 settings-own-ink = Inkt
 settings-own-accent = Accent
@@ -25,7 +24,6 @@ settings-own-begin = Beginnen vanuit
 # The contrast of the ink and of the accent on the paper, as WCAG counts it; 4.5 and 3 are what reads well.
 settings-own-weak = Slecht leesbaar: de inkt staat op { $ink } tegen 1 op het papier en het accent op { $accent } tegen 1; 4,5 en 3 of meer lezen goed.
 settings-text-size = Grootte van je tekst
-settings-text-size-hint = In de mindmaps en de tekstweergave. Wat wordt geëxporteerd, volgt het documentformaat.
 settings-interface-size = Grootte van de interface
 # A line of text in the size chosen, which shows the face of the letters; a
 # line of Homer's Greek follows it.
@@ -34,8 +32,6 @@ settings-sample = Bezing, godin, de wrok van Achilles, de zoon van Peleus
 ## New documents
 
 settings-new-documents = Nieuwe documenten
-settings-reference-style = Citeerstijl
-settings-document-format = Documentformaat
 
 ## You
 
@@ -45,7 +41,6 @@ settings-contact-problem = Dat ziet er niet uit als een adres.
 ## Programs: Pandoc and Typst
 
 settings-programs = Programma's
-settings-programs-about = Glaukopis maakt documenten met Pandoc, dat vanzelf wordt gevonden waar het op de gebruikelijke manier is geïnstalleerd. De pagina's van het voorbeeld en van een PDF worden gezet door Typst, dat deel is van Glaukopis.
 settings-pandoc-need = Nodig voor het voorbeeld en voor elke export.
 settings-looking = Zoeken…
 # "need" is what the program is needed for: settings-pandoc-need.
@@ -63,8 +58,6 @@ settings-error-programs = Er kon niet naar de programma's worden gezocht
 settings-about = Over
 settings-licence = Vrije software onder de GNU General Public License, versie 3 of later. Ze komt zonder garantie.
 settings-data = Waar alles wordt bewaard
-# "file" is the name of the file of the library, shown as code.
-settings-data-hint = Je referenties staan in { $file }, dat elk BibLaTeX-programma kan lezen. Kopieer deze map om een kopie van je werk te bewaren.
 
 ## Language
 

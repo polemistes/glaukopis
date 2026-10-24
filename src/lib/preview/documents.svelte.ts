@@ -23,6 +23,7 @@ import { has, t } from '$lib/i18n';
 import { laidOver, pathsOf } from '$lib/look/changes';
 import { buildDocument } from '$lib/project/model/document';
 import type { Project } from '$lib/project/model/project.svelte';
+import { defaultSettings } from '$lib/api/system';
 import { settings } from '$lib/state/settings.svelte';
 import { notifyError } from '$lib/ui/toast.svelte';
 import { SvelteMap } from 'svelte/reactivity';
@@ -222,7 +223,9 @@ class Documents {
    * brings (a publisher's layout goes with its style), else the writer's
    * usual. The template and the layout are read if they have not been, and
    * the choice made again when they arrive; where the application lacks
-   * the template, the project's copy says what it brings.
+   * the template, the project's copy says what it brings. Where the
+   * settings say none for a usual, a new document is of the plain type,
+   * and the layout and the style are those of a fresh installation.
    */
   choice(
     document: { template?: string; style?: string; format?: string },
@@ -230,7 +233,7 @@ class Documents {
   ): Choice {
     const template = document.template || settings.value.defaultTemplate || PLAIN_TEMPLATE;
     const brings = this.templateCached(template) ?? project?.templateCopy(template);
-    const format = document.format || brings?.layout || settings.value.defaultFormat;
+    const format = document.format || brings?.layout || this.usualFormat();
     const layoutBrings = this.formatCached(format)?.style;
     return {
       template,
@@ -238,9 +241,20 @@ class Documents {
         document.style ||
         brings?.style ||
         (layoutBrings && this.style(layoutBrings) ? layoutBrings : '') ||
-        settings.value.defaultStyle,
+        settings.value.defaultStyle ||
+        defaultSettings.defaultStyle,
       format,
     };
+  }
+
+  /** The layout of a document whose type brings none: the writer's usual, or a fresh installation's where the settings say none. */
+  usualFormat(): string {
+    return settings.value.defaultFormat || defaultSettings.defaultFormat;
+  }
+
+  /** Whether the writer has chosen a usual layout or style in the settings, rather than none. */
+  chosenUsual(which: 'format' | 'style'): boolean {
+    return !!(which === 'format' ? settings.value.defaultFormat : settings.value.defaultStyle);
   }
 }
 

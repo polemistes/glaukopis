@@ -207,14 +207,6 @@ ocr-script = { $script ->
 # $alike: bokstavene som ligner hverandre, parvis, det første alfabetets først: «ϲ c, ο o, ν v».
 ocr-languages-scripts-alike = Det { $a } alfabetet leses sammen med det { $b }: bokstaver som ligner hverandre i de to ({ $alike }), leses ofte som hverandre, og hele ord blir feil. For bare ett alfabet, ta de andre bort.
 
-# Tesseracts frakturmodell, blant språkene i teksten: oppkalt etter skriften den leser, ikke etter et språk.
-ocr-language-fraktur-model = Fraktur (gotisk skrift)
-# Glaukopis' egen frakturmodell for dansk og norsk: Tesseracts, lært æ, ø og å.
-ocr-language-fraktur-dan-model = Fraktur, dansk og norsk (gotisk skrift)
-# Under språkene i teksten, der en modell for gotisk skrift er installert og verken norsk eller dansk er valgt.
-ocr-languages-fraktur-hint = Bøker trykt med gotisk skrift, slik norske, danske, svenske og tyske bøker ofte ble før omkring 1900, leses med frakturmodellen, valgt først eller alene, uansett språk. Den kjenner ikke æ, ø og å; norske og danske bøker leses med Fraktur, dansk og norsk, som gjør det.
-# Det samme, der norsk eller dansk er valgt.
-ocr-languages-fraktur-hint-dan = Norske og danske bøker trykt med gotisk skrift, slik mange ble før omkring 1900, leses med Fraktur, dansk og norsk, valgt først eller alene, uansett hvilke språk som står ved siden av: den kjenner æ, ø og å, som frakturmodellen laget for tysk ikke gjør.
 
 ## Stripen med sidene i en PDF, tegnet små, til å velge en side fra.
 
@@ -367,3 +359,12 @@ ocr-summary-idle = De gjelder sidene som leses med Tesseract; ingen gjør det n�
 ocr-summary-pages-open = Se på sidene og prøv dem …
 ocr-summary-picture-open = Prøv det …
 ocr-summary-back = Tilbake til oversikten
+
+## The settings in plain words, stage 1: the Fraktur models named by the languages they were trained on.
+
+# Tesseracts frakturmodell, blant språkene i teksten: oppkalt etter skriften den leser, så etter språket den ble lært på.
+ocr-language-fraktur-german = Fraktur (gotisk skrift), tysk
+# Glaukopis' egen frakturmodell: Tesseracts, lært æ, ø og å på norske bøker; den leser dansk også.
+ocr-language-fraktur-norwegian = Fraktur (gotisk skrift), norsk og dansk
+ocr-languages-fraktur-hint = Bøker trykt med gotisk skrift, slik norske, danske, svenske og tyske bøker ofte ble før omkring 1900, leses med Fraktur (gotisk skrift), tysk, valgt først eller alene, uansett språk. Den kjenner ikke æ, ø og å; norske og danske bøker leses med Fraktur (gotisk skrift), norsk og dansk, som gjør det.
+ocr-languages-fraktur-hint-dan = Norske og danske bøker trykt med gotisk skrift, slik mange ble før omkring 1900, leses med Fraktur (gotisk skrift), norsk og dansk, valgt først eller alene, uansett hvilke språk som står ved siden av: den kjenner æ, ø og å, som den tyske ikke gjør.

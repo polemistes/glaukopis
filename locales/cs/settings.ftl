@@ -16,7 +16,6 @@ settings-theme-dark = Tmavé
 settings-theme-mellow = Jemné
 settings-theme-own = Vlastní
 settings-own = Vaše vlastní barvy
-settings-own-hint = Čtyři barvy, z nichž plyne vše ostatní: papír, inkoust, akcent, který označuje zvolené a stisknuté, a druhý hlas, který označuje spojení a komentáře. Zda je schéma světlé, nebo tmavé, plyne z papíru.
 settings-own-paper = Papír
 settings-own-ink = Inkoust
 settings-own-accent = Akcent
@@ -25,7 +24,6 @@ settings-own-begin = Začít od
 # The contrast of the ink and of the accent on the paper, as WCAG counts it; 4.5 and 3 are what reads well.
 settings-own-weak = Špatně čitelné: inkoust má na papíře kontrast { $ink } : 1 a akcent { $accent } : 1; dobře se čte 4,5 a 3 a více.
 settings-text-size = Velikost vašeho textu
-settings-text-size-hint = V mapách a v textovém zobrazení. Co se exportuje, řídí se formátem dokumentu.
 settings-interface-size = Velikost rozhraní
 # A line of text in the size chosen, which shows the face of the letters; a
 # line of Homer's Greek follows it.
@@ -34,8 +32,6 @@ settings-sample = Hněv mi, bohyně, pěj Péleovce Achilléa
 ## New documents
 
 settings-new-documents = Nové dokumenty
-settings-reference-style = Citační styl
-settings-document-format = Formát dokumentu
 
 ## You
 
@@ -45,7 +41,6 @@ settings-contact-problem = To nevypadá jako adresa.
 ## Programs: Pandoc and Typst
 
 settings-programs = Programy
-settings-programs-about = Glaukopis vytváří dokumenty Pandocem, který se najde sám, je-li nainstalován obvyklým způsobem. Stránky náhledu a PDF sází Typst, který je součástí Glaukopis.
 settings-pandoc-need = Je potřeba pro náhled a pro každý export.
 settings-looking = Hledá se…
 # "need" is what the program is needed for: settings-pandoc-need.
@@ -63,8 +58,6 @@ settings-error-programs = Programy nelze hledat
 settings-about = O aplikaci
 settings-licence = Svobodný software pod licencí GNU General Public License, verze 3 nebo pozdější. Je bez záruky.
 settings-data = Kde se vše uchovává
-# "file" is the name of the file of the library, shown as code.
-settings-data-hint = Vaše záznamy jsou v { $file }, který přečte kterýkoli nástroj BibLaTeXu. Chcete-li mít kopii své práce, zkopírujte tuto složku.
 
 ## Language
 

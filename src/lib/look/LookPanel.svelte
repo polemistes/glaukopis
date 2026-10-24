@@ -286,17 +286,25 @@
     if (!who || who === target) return null;
     return nameOf(who);
   }
+  // The writer's usual, named as such where the settings choose one; with
+  // none, the layout and the style that hold are named as they are.
   const usualLayout = $derived(layoutName(documents.choice({}).format));
   const usualStyle = $derived(styleName(documents.choice({}).style));
   const broughtLayout = $derived(
-    template?.layout ? layoutName(template.layout) : t('look-usual', { name: usualLayout }),
+    template?.layout
+      ? layoutName(template.layout)
+      : documents.chosenUsual('format')
+        ? t('look-usual', { name: usualLayout })
+        : usualLayout,
   );
   const broughtStyle = $derived(
     template?.style
       ? styleName(template.style)
       : layout?.style
         ? styleName(layout.style)
-        : t('look-usual', { name: usualStyle }),
+        : documents.chosenUsual('style')
+          ? t('look-usual', { name: usualStyle })
+          : usualStyle,
   );
   const formatFrom = $derived(own.format ? null : fromAbove('format'));
   const styleFrom = $derived(own.style ? null : fromAbove('style'));

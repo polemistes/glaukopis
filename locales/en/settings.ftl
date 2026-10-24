@@ -21,7 +21,6 @@ settings-theme-dark = Dark
 settings-theme-mellow = Mellow
 settings-theme-own = Your own
 settings-own = Your own colours
-settings-own-hint = Four colours, from which the rest follow: the paper, the ink, the accent that marks what is chosen and pressed, and the second voice that marks associations and comments. Whether the scheme is light or dark follows from the paper.
 settings-own-paper = Paper
 settings-own-ink = Ink
 settings-own-accent = Accent
@@ -30,14 +29,11 @@ settings-own-begin = Begin from
 # The contrast of the ink and of the accent on the paper, as WCAG counts it; 4.5 and 3 are what reads well.
 settings-own-weak = Hard to read: the ink stands at { $ink } to 1 on the paper and the accent at { $accent } to 1; 4.5 and 3 or more read well.
 settings-text-size = Size of your text in the text editor
-settings-text-size-hint = Relative to the interface. The font sizes of the document preview and export are not affected by this.
 settings-editor-font = Editor font
-settings-editor-font-hint = Select the font for your text in the editor.
 settings-editor-font-default = As the interface (Literata)
 # How the text of a map shows how deep each element stands: on the screen only.
 # How the text editor shows how deep each element stands: on the screen only.
 settings-text-depth = Document structure
-settings-text-depth-hint = How the text editor displays the document structure of your text.
 settings-text-depth-numbers = Numbers
 settings-text-depth-dots = Dots
 settings-text-depth-indent = Set in, with lines
@@ -55,17 +51,10 @@ settings-sample-third = A third level
 ## New documents
 
 settings-new-documents = New documents
-# Whether a new project opens in its diagram or in its text; the choices are the names of the two views.
-settings-new-project-view = New projects open in
-settings-new-project-view-hint = The view a project opens in when it has just been made.
-settings-template = What new documents are
-settings-document-format = How their pages look
-settings-reference-style = How they cite
 
 ## You
 
 settings-you = Your details
-settings-you-about = Your name is what the history of a project and those you share it with call you. A new project has you as its author, with your organization, email and ORCID; that is changed in the project's document settings. Title, address and phone are kept for documents that will ask for them; nothing uses them yet. Glaukopis sends none of this anywhere by itself: what stands in a project's document settings goes with the project when you share or export it.
 settings-first-name = First name
 settings-last-name = Last name
 settings-organization = Organization
@@ -80,7 +69,6 @@ settings-contact-problem = That does not look like an address.
 ## Programs: Pandoc and Typst
 
 settings-programs = Programs
-settings-programs-about = Glaukopis makes documents with Pandoc, which is found by itself where it is installed in the usual way. The pages of the preview and of a PDF are set by Typst, which is part of Glaukopis.
 settings-pandoc-need = Needed for the preview and for every export.
 settings-looking = Looking…
 # "need" is what the program is needed for: settings-pandoc-need.
@@ -98,8 +86,6 @@ settings-error-programs = The programs could not be looked for
 settings-about = About
 settings-licence = Free software under the GNU General Public License, version 3 or later. It comes without warranty.
 settings-data = Where everything is kept
-# "file" is the name of the file of the library, shown as code.
-settings-data-hint = Your references are in { $file }, which any BibLaTeX tool can read. To keep a copy of your work, copy this folder.
 
 ## Language
 
@@ -113,11 +99,20 @@ settings-language-error-load = The words of { $language } could not be loaded
 ## The log of the runs.
 
 settings-logs = The log
-settings-logs-hint = What Glaukopis tells of itself in each run, of the last { $count } runs: what it did, what went wrong, and what became of its window. Of use when something has gone wrong and no one saw why.
 
 ## What a line of the preview is: whether a chip at the edge of a page names it.
 
-settings-page-chips = Name what a line of the preview is
-settings-page-chips-hint = Pressed, a line of the preview shows a chip at the edge of the page that says what the line is (text, a quotation, a heading…) and opens Look at it; pressed again, the chip goes.
 settings-page-chips-on = On
 settings-page-chips-off = Off
+
+## The settings in plain words, stage 1: the defaults of new projects and documents, and the look chips.
+
+# Whether a new project opens in its diagram or in its text; the choices are the names of the two views.
+settings-default-view = Default view for new projects
+settings-default-type = Default document type
+settings-default-look = Default look
+settings-default-style = Default citation style
+# The first choice of each of the three defaults: none, so that a new document is of the plain type, and the type's look and style hold.
+settings-default-none = None, as the document type has it
+# Whether a line of the preview, pressed, shows a chip at the edge of the page that says what it is and opens Look at it.
+settings-look-chips = Display look chips in the preview window

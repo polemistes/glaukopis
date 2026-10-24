@@ -30,7 +30,6 @@
   import { templateGroupWords, TEMPLATE_GROUPS } from '$lib/document/templates';
   import { calledName } from '$lib/preview/documents.svelte';
   import { languageName, languages, t, TEXT_LANGUAGES } from '$lib/i18n';
-  import { apart, PLACE } from '$lib/util/words';
   import {
     systemInfo,
     type Settings,
@@ -220,9 +219,12 @@
         .sort((a, b) => a.label.localeCompare(b.label)),
     ),
   );
-
-  // The name of the file of the library is shown as code, where the language puts it.
-  const [beforeFile, afterFile] = $derived(apart(t('settings-data-hint', { file: PLACE })));
+  /**
+   * The first choice of the three defaults of new documents: none, so that
+   * a new document is of the plain type, and the type's own look and style,
+   * or the core's, hold.
+   */
+  const none = $derived({ value: '', label: t('settings-default-none') });
 
   /** How far along a slider a value lies, from 0 to 1. */
   const along = (value: number, min: number, max: number) =>
@@ -264,7 +266,6 @@
         <div class="row top" data-own-theme>
           <div class="what">
             <div class="label">{t('settings-own')}</div>
-            <div class="hint">{t('settings-own-hint')}</div>
           </div>
           <div class="own">
             <div class="swatches">
@@ -333,9 +334,6 @@
       <div class="row top">
         <div class="what">
           <label class="label" for="text-size">{t('settings-text-size')}</label>
-          <div class="hint">
-            {t('settings-text-size-hint')}
-          </div>
         </div>
         <div class="size">
           <span class="slider" style:--fill={along(settings.value.textSize, 14, 22)}>
@@ -355,7 +353,6 @@
       <div class="row top">
         <div class="what">
           <div class="label">{t('settings-editor-font')}</div>
-          <div class="hint">{t('settings-editor-font-hint')}</div>
         </div>
         <div class="font" data-editor-font>
           <Select
@@ -369,7 +366,6 @@
       <div class="row top">
         <div class="what">
           <div class="label">{t('settings-text-depth')}</div>
-          <div class="hint">{t('settings-text-depth-hint')}</div>
         </div>
         <Segmented
           value={settings.value.textDepth ?? 'numbers'}
@@ -392,12 +388,11 @@
       <h2>{t('settings-new-documents')}</h2>
       <div class="row top" data-new-project-view>
         <div class="what">
-          <div class="label">{t('settings-new-project-view')}</div>
-          <div class="hint">{t('settings-new-project-view-hint')}</div>
+          <div class="label">{t('settings-default-view')}</div>
         </div>
         <Segmented
           value={settings.value.newProjectView ?? 'diagram'}
-          label={t('settings-new-project-view')}
+          label={t('settings-default-view')}
           options={[
             { value: 'diagram', label: t('project-diagram'), icon: Network },
             { value: 'text', label: t('project-text'), icon: FileText },
@@ -409,24 +404,24 @@
         {#if templateOptions.length}
           <Select
             value={settings.value.defaultTemplate}
-            label={t('settings-template')}
-            options={templateOptions}
+            label={t('settings-default-type')}
+            options={[none, ...templateOptions]}
             onchange={(id) => settings.set('defaultTemplate', id)}
           />
         {/if}
         {#if formatOptions.length}
           <Select
             value={settings.value.defaultFormat}
-            label={t('settings-document-format')}
-            options={formatOptions}
+            label={t('settings-default-look')}
+            options={[none, ...formatOptions]}
             onchange={(id) => settings.set('defaultFormat', id)}
           />
         {/if}
         {#if styleOptions.length}
           <Select
             value={settings.value.defaultStyle}
-            label={t('settings-reference-style')}
-            options={styleOptions}
+            label={t('settings-default-style')}
+            options={[none, ...styleOptions]}
             onchange={(id) => settings.set('defaultStyle', id)}
           />
         {/if}
@@ -434,12 +429,11 @@
       <!-- Whether a chip at the edge of a page of the preview names the line the pointer rests on. -->
       <div class="row top" data-page-chips>
         <div class="what">
-          <div class="label">{t('settings-page-chips')}</div>
-          <div class="hint">{t('settings-page-chips-hint')}</div>
+          <div class="label">{t('settings-look-chips')}</div>
         </div>
         <Segmented
           value={settings.value.pageChips === false ? 'off' : 'on'}
-          label={t('settings-page-chips')}
+          label={t('settings-look-chips')}
           options={[
             { value: 'on', label: t('settings-page-chips-on') },
             { value: 'off', label: t('settings-page-chips-off') },
@@ -478,7 +472,6 @@
 
     <section data-your-details>
       <h2>{t('settings-you')}</h2>
-      <p class="about">{t('settings-you-about')}</p>
       <div class="fields two">
         <TextField
           bind:value={firstName}
@@ -542,9 +535,6 @@
 
     <section>
       <h2>{t('settings-programs')}</h2>
-      <p class="about">
-        {t('settings-programs-about')}
-      </p>
       {#each [{ id: 'pandoc', name: 'Pandoc', found: tools?.pandoc, need: t('settings-pandoc-need') }] as const as program (program.id)}
         <div class="program">
           <div class="state" class:missing={tools && (!program.found || !!program.found.least)}>
@@ -626,9 +616,6 @@
         <div class="what">
           <div class="label">{t('settings-data')}</div>
           <div class="hint path-text">{system?.dataDir ?? ''}</div>
-          <div class="hint">
-            {beforeFile}<code>library/library.bib</code>{afterFile}
-          </div>
         </div>
         <Button size="sm" disabled={!system} onclick={() => system && openPath(system.dataDir)}>
           {#snippet icon()}<FolderOpen size={13} />{/snippet}
@@ -638,7 +625,6 @@
       <div class="row top">
         <div class="what">
           <div class="label">{t('settings-logs')}</div>
-          <div class="hint">{t('settings-logs-hint', { count: 10 })}</div>
         </div>
         <Button
           size="sm"
@@ -719,10 +705,6 @@
   .font {
     flex: none;
     width: 240px;
-  }
-  .hint code {
-    font-family: var(--font-mono);
-    font-size: 0.95em;
   }
   .path-text {
     font-family: var(--font-mono);

@@ -16,7 +16,6 @@ settings-theme-dark = Тёмная
 settings-theme-mellow = Мягкая
 settings-theme-own = Своя
 settings-own = Свои цвета
-settings-own-hint = Четыре цвета, из которых следуют остальные: бумага, чернила, акцент, которым отмечается выбранное и нажатое, и второй голос, которым отмечаются связи и комментарии. Светлая схема или тёмная — следует из бумаги.
 settings-own-paper = Бумага
 settings-own-ink = Чернила
 settings-own-accent = Акцент
@@ -25,7 +24,6 @@ settings-own-begin = Начать с
 # The contrast of the ink and of the accent on the paper, as WCAG counts it; 4.5 and 3 are what reads well.
 settings-own-weak = Трудно читать: контраст чернил на бумаге { $ink } к 1, акцента — { $accent } к 1; хорошо читаются 4,5 и 3 или больше.
 settings-text-size = Размер вашего текста
-settings-text-size-hint = В картах и в режиме текста. Экспортируемое следует формату документа.
 settings-interface-size = Размер интерфейса
 # A line of text in the size chosen, which shows the face of the letters; a
 # line of Homer's Greek follows it.
@@ -34,8 +32,6 @@ settings-sample = Гнев, богиня, воспой Ахиллеса, Пел�
 ## New documents
 
 settings-new-documents = Новые документы
-settings-reference-style = Стиль цитирования
-settings-document-format = Формат документа
 
 ## You
 
@@ -45,7 +41,6 @@ settings-contact-problem = Это не похоже на адрес.
 ## Programs: Pandoc and Typst
 
 settings-programs = Программы
-settings-programs-about = Glaukopis создаёт документы с помощью Pandoc, который находится сам, если установлен обычным образом. Страницы предпросмотра и PDF набирает Typst, который входит в Glaukopis.
 settings-pandoc-need = Нужен для предпросмотра и для любого экспорта.
 settings-looking = Поиск…
 # "need" is what the program is needed for: settings-pandoc-need.
@@ -63,8 +58,6 @@ settings-error-programs = Не удалось поискать программ�
 settings-about = О программе
 settings-licence = Свободная программа под лицензией GNU General Public License версии 3 или новее. Поставляется без гарантий.
 settings-data = Где всё хранится
-# "file" is the name of the file of the library, shown as code.
-settings-data-hint = Ваши источники — в { $file }, который может прочитать любая программа для BibLaTeX. Чтобы сохранить копию своей работы, скопируйте эту папку.
 
 ## Language
 

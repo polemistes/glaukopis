@@ -19,7 +19,6 @@ settings-theme-dark = Mørkt
 settings-theme-mellow = Mildt
 settings-theme-own = Dine egne
 settings-own = Dine egne farger
-settings-own-hint = Fire farger, som resten følger av: papiret, blekket, aksenten som merker det som er valgt og trykket, og den andre stemmen, som merker assosiasjoner og kommentarer. Om fargene er lyse eller mørke, følger av papiret.
 settings-own-paper = Papir
 settings-own-ink = Blekk
 settings-own-accent = Aksent
@@ -27,12 +26,9 @@ settings-own-gold = Andre stemme
 settings-own-begin = Begynn fra
 settings-own-weak = Vanskelig å lese: blekket står { $ink } til 1 mot papiret og aksenten { $accent } til 1; 4,5 og 3 eller mer leses godt.
 settings-text-size = Størrelsen på teksten din i tekstredigeringen
-settings-text-size-hint = I forhold til grensesnittet. Skriftstørrelsene i forhåndsvisningen og eksporten av dokumenter påvirkes ikke av dette.
 settings-editor-font = Skrift i tekstredigeringen
-settings-editor-font-hint = Velg skriften for teksten din i tekstredigeringen.
 settings-editor-font-default = Som grensesnittet (Literata)
 settings-text-depth = Dokumentstruktur
-settings-text-depth-hint = Hvordan tekstredigeringen viser dokumentstrukturen i teksten din.
 settings-text-depth-numbers = Tall
 settings-text-depth-dots = Prikker
 settings-text-depth-indent = Rykket inn, med streker
@@ -46,16 +42,10 @@ settings-sample-third = Et tredje nivå
 ## Nye dokumenter
 
 settings-new-documents = Nye dokumenter
-settings-new-project-view = Nye prosjekter åpnes i
-settings-new-project-view-hint = Visningen et prosjekt åpnes i når det nettopp er laget.
-settings-template = Hva nye dokumenter er
-settings-document-format = Hvordan sidene ser ut
-settings-reference-style = Hvordan de siterer
 
 ## Om deg
 
 settings-you = Opplysninger om deg
-settings-you-about = Navnet ditt er det historikken til et prosjekt og de du deler det med, kaller deg. Et nytt prosjekt har deg som forfatter, med organisasjon, e-post og ORCID; det endres i dokumentinnstillingene til prosjektet. Tittel, adresse og telefon tas vare på for dokumenter som vil be om dem; ingenting bruker dem ennå. Glaukopis sender ikke noe av dette noe sted av seg selv: det som står i dokumentinnstillingene til et prosjekt, følger med prosjektet når du deler eller eksporterer det.
 settings-first-name = Fornavn
 settings-last-name = Etternavn
 settings-organization = Organisasjon
@@ -70,7 +60,6 @@ settings-contact-problem = Det ser ikke ut som en e-postadresse.
 ## Programmer: Pandoc og Typst
 
 settings-programs = Programmer
-settings-programs-about = Glaukopis lager dokumenter med Pandoc, som blir funnet av seg selv når det er installert på vanlig måte. Sidene i forhåndsvisningen og i en PDF settes av Typst, som er en del av Glaukopis.
 settings-pandoc-need = Trengs for forhåndsvisningen og for all eksport.
 settings-looking = Leter …
 settings-program-missing = Ikke funnet. { $need } Installer det med pakkebehandleren på systemet ditt, eller skriv nedenfor hvor det er.
@@ -86,7 +75,6 @@ settings-error-programs = Kunne ikke lete etter programmene
 settings-about = Om programmet
 settings-licence = Fri programvare under GNU General Public License, versjon 3 eller senere. Det gis ingen garanti.
 settings-data = Hvor alt er lagret
-settings-data-hint = Referansene dine er i { $file }, som alle BibLaTeX-verktøy kan lese. Kopier denne mappen for å ta vare på en kopi av arbeidet ditt.
 
 ## Språk
 
@@ -99,11 +87,17 @@ settings-language-error-load = Ordene på { $language } kunne ikke lastes inn
 ## The log of the runs.
 
 settings-logs = Loggen
-settings-logs-hint = Det Glaukopis forteller om seg selv i hver kjøring, for de siste { $count } kjøringene: hva det gjorde, hva som gikk galt, og hva som ble av vinduet. Til nytte når noe har gått galt og ingen så hvorfor.
 
 ## Hva en linje i forhåndsvisningen er: om en merkelapp i kanten av siden sier det.
 
-settings-page-chips = Vis hva en linje i forhåndsvisningen er
-settings-page-chips-hint = Trykker du på en linje i forhåndsvisningen, viser en brikke i kanten av siden hva linjen er (tekst, et sitat, en overskrift …) og åpner Utseende der; trykker du igjen, forsvinner brikken.
 settings-page-chips-on = På
 settings-page-chips-off = Av
+
+## The settings in plain words, stage 1: the defaults of new projects and documents, and the look chips.
+
+settings-default-view = Standardvisning for nye prosjekter
+settings-default-type = Standard dokumenttype
+settings-default-look = Standardutseende
+settings-default-style = Standard referansestil
+settings-default-none = Ingen: som dokumenttypen har det
+settings-look-chips = Vis merkelapper for utseende i forhåndsvisningen

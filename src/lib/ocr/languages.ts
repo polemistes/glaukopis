@@ -107,8 +107,8 @@ const AS_TAG: Record<string, string> = {
  * model, its model of the Fraktur script, and Glaukopis's own Fraktur model
  * for Danish and Norwegian, which is Tesseract's taught æ, ø and å. They
  * read the Gothic type of books in German, Norwegian, Danish or Swedish
- * alike, so they are named for the type, not for the language they were
- * trained on.
+ * alike, so they are named for the type first, and then for the languages
+ * they were trained on.
  */
 const FRAKTUR_MODELS = ['deu_latf', 'dan_latf', 'script/Fraktur'];
 
@@ -135,8 +135,8 @@ export function hasFrakturModel(installed: string[]): boolean {
 
 /** The name of a language Tesseract reads, in the language of the interface. */
 export function ocrLanguageName(code: string, inText = false): string {
-  if (code === 'dan_latf') return t('ocr-language-fraktur-dan-model');
-  if (FRAKTUR_MODELS.includes(code)) return t('ocr-language-fraktur-model');
+  if (code === 'dan_latf') return t('ocr-language-fraktur-norwegian');
+  if (FRAKTUR_MODELS.includes(code)) return t('ocr-language-fraktur-german');
   if (code.startsWith('script/')) return t('ocr-language-script', { script: code.slice(7) });
   const tag = AS_TAG[code] ?? code.split('_')[0];
   // Standing alone, a name begins with a capital; in a sentence, it is as

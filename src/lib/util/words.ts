@@ -4,9 +4,9 @@
  * is given `PLACE` for the element, and its words are shown before and after
  * it, wherever the language puts it:
  *
- *     const [before, after] = $derived(apart(t('settings-data-hint', { file: PLACE })));
+ *     const [before, after] = $derived(apart(t('sharing-invite-hint', { join: PLACE, … })));
  *
- *     {before}<code>library/library.bib</code>{after}
+ *     {before}<em>{t('home-join')}</em>{after}
  */
 
 /** What stands in the words of a message where the element is to be. */

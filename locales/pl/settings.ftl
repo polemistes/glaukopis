@@ -16,7 +16,6 @@ settings-theme-dark = Ciemne
 settings-theme-mellow = Łagodne
 settings-theme-own = Własne
 settings-own = Własne kolory
-settings-own-hint = Cztery kolory, z których wynika reszta: papier, atrament, akcent, który oznacza to, co wybrane i naciśnięte, oraz drugi głos, który oznacza powiązania i komentarze. Czy schemat jest jasny, czy ciemny, wynika z papieru.
 settings-own-paper = Papier
 settings-own-ink = Atrament
 settings-own-accent = Akcent
@@ -25,7 +24,6 @@ settings-own-begin = Zacznij od
 # The contrast of the ink and of the accent on the paper, as WCAG counts it; 4.5 and 3 are what reads well.
 settings-own-weak = Trudne do czytania: atrament ma na papierze kontrast { $ink } do 1, a akcent { $accent } do 1; dobrze czyta się od 4,5 i 3.
 settings-text-size = Rozmiar twojego tekstu
-settings-text-size-hint = W mapach i w widoku tekstu. To, co eksportowane, idzie za formatem dokumentu.
 settings-interface-size = Rozmiar interfejsu
 # A line of text in the size chosen, which shows the face of the letters; a
 # line of Homer's Greek follows it.
@@ -34,8 +32,6 @@ settings-sample = Gniew, bogini, opiewaj Achilla, syna Peleusa
 ## New documents
 
 settings-new-documents = Nowe dokumenty
-settings-reference-style = Styl cytowania
-settings-document-format = Format dokumentu
 
 ## You
 
@@ -45,7 +41,6 @@ settings-contact-problem = To nie wygląda na adres.
 ## Programs: Pandoc and Typst
 
 settings-programs = Programy
-settings-programs-about = Glaukopis tworzy dokumenty programem Pandoc, który jest znajdowany samodzielnie tam, gdzie zainstalowano go w zwykły sposób. Strony podglądu i pliku PDF składa Typst, który jest częścią Glaukopis.
 settings-pandoc-need = Potrzebny do podglądu i każdego eksportu.
 settings-looking = Szukanie…
 # "need" is what the program is needed for: settings-pandoc-need.
@@ -63,8 +58,6 @@ settings-error-programs = Nie udało się poszukać programów
 settings-about = O programie
 settings-licence = Wolne oprogramowanie na licencji GNU General Public License, w wersji 3 lub późniejszej. Bez gwarancji.
 settings-data = Gdzie wszystko jest przechowywane
-# "file" is the name of the file of the library, shown as code.
-settings-data-hint = Twoje pozycje są w { $file }, który odczyta każde narzędzie BibLaTeX. By zachować kopię swojej pracy, skopiuj ten folder.
 
 ## Language
 

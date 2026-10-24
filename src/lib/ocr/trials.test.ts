@@ -74,7 +74,7 @@ describe('the settings of a trial, said in a line', () => {
   it('name the languages and the resolution, and the layout only where it is told', () => {
     languages.current = 'en';
     expect(settingsSaid(settings({ languages: ['dan_latf'] }), ocrLanguageName, t)).toBe(
-      'Fraktur, Danish and Norwegian (Gothic type) · 300',
+      'Fraktur (Gothic type), Norwegian and Danish · 300',
     );
     expect(
       settingsSaid(

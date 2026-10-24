@@ -1194,4 +1194,21 @@ describe('what a document sets otherwise than its template', () => {
     p.setDocument(chapter, { composition: {} });
     expect(p.yNodes.get(chapter)!.has('document')).toBe(false);
   });
+
+  it('a document type chosen drops the own layout and style in the same step of undo', () => {
+    const { p, root } = project();
+    const a = p.addChild(root, { title: 'A' })!;
+    p.setDocument(a, { format: 'manuscript', style: 'chicago', look: { font: { size: 11 } } });
+    p.checkpoint();
+    // As the chooser of document types writes it.
+    p.setDocument(a, { template: 'letter', format: undefined, style: undefined });
+    p.checkpoint();
+    expect(p.node(a)!.document).toEqual({ template: 'letter', look: { font: { size: 11 } } });
+    p.undo();
+    expect(p.node(a)!.document).toEqual({
+      format: 'manuscript',
+      style: 'chicago',
+      look: { font: { size: 11 } },
+    });
+  });
 });

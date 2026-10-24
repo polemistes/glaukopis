@@ -97,14 +97,20 @@
   .invalid .frame {
     border-color: var(--danger);
   }
-  input {
+  /* The frame is the field's only border: within a form of settings, whose
+     rule for its own inputs (settings.css) would draw a second inside it,
+     this one is the weightier. */
+  .field .frame input {
     flex: 1;
+    width: auto;
     min-width: 0;
     height: 100%;
     padding: 0;
     border: none;
+    border-radius: 0;
     background: transparent;
     outline: none;
+    box-shadow: none;
   }
   input.serif {
     font-family: var(--font-text);

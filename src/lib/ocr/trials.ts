@@ -46,7 +46,7 @@ const LAYOUT_SAID: Record<Exclude<Layout, ''>, (t: Say) => string> = {
 };
 
 /**
- * Settings said in a line: *Fraktur, Danish and Norwegian (Gothic type) ·
+ * Settings said in a line: *Fraktur (Gothic type), Norwegian and Danish ·
  * 300*, or *English + Ancient Greek · 400 · One column · B/W*. The languages
  * stand between plus signs, since the name of a model may have a comma of
  * its own; the layout is left out where Tesseract judges it, and black and

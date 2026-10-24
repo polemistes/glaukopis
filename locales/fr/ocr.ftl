@@ -219,14 +219,6 @@ ocr-script = { $script ->
 # $alike: the letters that look alike, in pairs, the first script's first: "ϲ c, ο o, ν v".
 ocr-languages-scripts-alike = L’écriture { $a } est lue avec l’écriture { $b } : des lettres qui se ressemblent dans les deux ({ $alike }) sont souvent lues l’une pour l’autre, et des mots entiers en sortent faux. Pour une seule écriture, retirez les autres.
 
-# Tesseract's Fraktur model, among the languages of the text: named for the type it reads, not for a language.
-ocr-language-fraktur-model = Fraktur (caractères gothiques)
-# Glaukopis's own Fraktur model for Danish and Norwegian: Tesseract's taught æ, ø and å.
-ocr-language-fraktur-dan-model = Fraktur, danois et norvégien (caractères gothiques)
-# Under the languages of the text, where a model of Gothic type is installed and neither Norwegian nor Danish is chosen.
-ocr-languages-fraktur-hint = Les livres en caractères gothiques, comme l’étaient souvent les livres norvégiens, danois, suédois et allemands avant 1900 environ, se lisent avec le modèle Fraktur, choisi en premier ou seul, quelle que soit leur langue. Il ne connaît ni æ, ni ø, ni å ; les livres norvégiens et danois se lisent avec Fraktur, danois et norvégien, qui les connaît.
-# The same, where Norwegian or Danish is chosen.
-ocr-languages-fraktur-hint-dan = Les livres norvégiens et danois en caractères gothiques, comme l’étaient beaucoup avant 1900 environ, se lisent avec Fraktur, danois et norvégien, choisi en premier ou seul, quelles que soient les langues à côté : il connaît æ, ø et å, ce que ne fait pas le modèle Fraktur fait pour l’allemand.
 
 ## The strip of the pages of a PDF, drawn small, to choose a page from.
 

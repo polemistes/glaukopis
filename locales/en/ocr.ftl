@@ -204,14 +204,6 @@ ocr-script = { $script ->
 # $alike: the letters that look alike, in pairs, the first script's first: "ϲ c, ο o, ν v".
 ocr-languages-scripts-alike = The { $a } script is read together with the { $b }: letters that look alike in the two ({ $alike }) are often read as the other, and whole words come out wrong. For one script alone, take the others away.
 
-# Tesseract's Fraktur model, among the languages of the text: named for the type it reads, not for a language.
-ocr-language-fraktur-model = Fraktur (Gothic type)
-# Glaukopis's own Fraktur model for Danish and Norwegian: Tesseract's taught æ, ø and å.
-ocr-language-fraktur-dan-model = Fraktur, Danish and Norwegian (Gothic type)
-# Under the languages of the text, where a model of Gothic type is installed and neither Norwegian nor Danish is chosen.
-ocr-languages-fraktur-hint = Books in Gothic type, as Norwegian, Danish, Swedish and German ones often were before about 1900, are read with the Fraktur model, chosen first or alone, whatever their language. It knows no æ, ø or å; Norwegian and Danish books are read with Fraktur, Danish and Norwegian, which does.
-# The same, where Norwegian or Danish is chosen.
-ocr-languages-fraktur-hint-dan = Norwegian and Danish books in Gothic type, as many were before about 1900, are read with Fraktur, Danish and Norwegian, chosen first or alone, whatever the languages beside it: it knows æ, ø and å, which the Fraktur model made for German does not.
 
 ## The strip of the pages of a PDF, drawn small, to choose a page from.
 
@@ -365,3 +357,14 @@ ocr-summary-idle = They hold for the pages read with Tesseract; none are now.
 ocr-summary-pages-open = Look at the pages and try them…
 ocr-summary-picture-open = Try it…
 ocr-summary-back = Back to the summary
+
+## The settings in plain words, stage 1: the Fraktur models named by the languages they were trained on.
+
+# Tesseract's Fraktur model, among the languages of the text: named for the type it reads, then for the language it was trained on.
+ocr-language-fraktur-german = Fraktur (Gothic type), German
+# Glaukopis's own Fraktur model: Tesseract's, taught æ, ø and å on Norwegian books; it reads Danish as well.
+ocr-language-fraktur-norwegian = Fraktur (Gothic type), Norwegian and Danish
+# Under the languages of the text, where a model of Gothic type is installed and neither Norwegian nor Danish is chosen.
+ocr-languages-fraktur-hint = Books in Gothic type, as Norwegian, Danish, Swedish and German ones often were before about 1900, are read with Fraktur (Gothic type), German, chosen first or alone, whatever their language. It knows no æ, ø or å; Norwegian and Danish books are read with Fraktur (Gothic type), Norwegian and Danish, which does.
+# The same, where Norwegian or Danish is chosen.
+ocr-languages-fraktur-hint-dan = Norwegian and Danish books in Gothic type, as many were before about 1900, are read with Fraktur (Gothic type), Norwegian and Danish, chosen first or alone, whatever the languages beside it: it knows æ, ø and å, which the German one does not.

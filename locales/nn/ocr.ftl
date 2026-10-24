@@ -207,14 +207,6 @@ ocr-script = { $script ->
 # $alike: the letters that look alike, in pairs, the first script's first: "ϲ c, ο o, ν v".
 ocr-languages-scripts-alike = Det { $a } alfabetet blir lese saman med det { $b }: bokstavar som liknar kvarandre i dei to ({ $alike }), blir ofte lesne som kvarandre, og heile ord blir feil. For berre eitt alfabet, ta bort dei andre.
 
-# Tesseract's Fraktur model, among the languages of the text: named for the type it reads, not for a language.
-ocr-language-fraktur-model = Fraktur (gotisk skrift)
-# Glaukopis's own Fraktur model for Danish and Norwegian: Tesseract's taught æ, ø and å.
-ocr-language-fraktur-dan-model = Fraktur, dansk og norsk (gotisk skrift)
-# Under the languages of the text, where a model of Gothic type is installed and neither Norwegian nor Danish is chosen.
-ocr-languages-fraktur-hint = Bøker i gotisk skrift, slik norske, danske, svenske og tyske bøker ofte var før kring 1900, blir lesne med frakturmodellen, vald først eller åleine, same kva språk dei er på. Den kjenner ikkje æ, ø og å; norske og danske bøker blir lesne med Fraktur, dansk og norsk, som gjer det.
-# The same, where Norwegian or Danish is chosen.
-ocr-languages-fraktur-hint-dan = Norske og danske bøker i gotisk skrift, slik mange var før kring 1900, blir lesne med Fraktur, dansk og norsk, vald først eller åleine, same kva språk som står ved sida av: den kjenner æ, ø og å, noko frakturmodellen laga for tysk ikkje gjer.
 
 ## The strip of the pages of a PDF, drawn small, to choose a page from.
 

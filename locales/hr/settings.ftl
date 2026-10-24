@@ -16,7 +16,6 @@ settings-theme-dark = Tamne
 settings-theme-mellow = Blage
 settings-theme-own = Vlastite
 settings-own = Vlastite boje
-settings-own-hint = Četiri boje, iz kojih slijede ostale: papir, tinta, naglasak koji označava odabrano i pritisnuto, i drugi glas koji označava veze i komentare. Je li shema svijetla ili tamna, slijedi iz papira.
 settings-own-paper = Papir
 settings-own-ink = Tinta
 settings-own-accent = Naglasak
@@ -25,7 +24,6 @@ settings-own-begin = Počni od
 # The contrast of the ink and of the accent on the paper, as WCAG counts it; 4.5 and 3 are what reads well.
 settings-own-weak = Teško se čita: tinta stoji prema papiru { $ink } : 1, a naglasak { $accent } : 1; dobro se čita od 4,5 i 3 naviše.
 settings-text-size = Veličina vašeg teksta
-settings-text-size-hint = U mapama i tekstnom prikazu. Izvezeno slijedi format dokumenta.
 settings-interface-size = Veličina sučelja
 # A line of text in the size chosen, which shows the face of the letters; a
 # line of Homer's Greek follows it.
@@ -34,8 +32,6 @@ settings-sample = Srdžbu mi, boginjo, pjevaj Ahileja Pelejevića
 ## New documents
 
 settings-new-documents = Novi dokumenti
-settings-reference-style = Citatni stil
-settings-document-format = Format dokumenta
 
 ## You
 
@@ -45,7 +41,6 @@ settings-contact-problem = To ne izgleda kao adresa.
 ## Programs: Pandoc and Typst
 
 settings-programs = Programi
-settings-programs-about = Glaukopis izrađuje dokumente Pandocom, koji se pronalazi sam ako je instaliran na uobičajen način. Stranice pretpregleda i PDF-a slaže Typst, koji je dio Glaukopisa.
 settings-pandoc-need = Potreban za pretpregled i za svaki izvoz.
 settings-looking = Traženje…
 # "need" is what the program is needed for: settings-pandoc-need.
@@ -63,8 +58,6 @@ settings-error-programs = Programe nije bilo moguće potražiti
 settings-about = O programu
 settings-licence = Slobodan softver pod licencijom GNU General Public License, inačica 3 ili novija. Dolazi bez jamstva.
 settings-data = Gdje se sve čuva
-# "file" is the name of the file of the library, shown as code.
-settings-data-hint = Vaše su reference u { $file }, koju može pročitati svaki alat za BibLaTeX. Da sačuvate kopiju svojega rada, kopirajte ovaj direktorij.
 
 ## Language
 
