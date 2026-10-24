@@ -218,6 +218,8 @@ const ENTRIES = [
 
   // The settings in plain words, stage 2: the zoom of the typesetting pane, while it has the focus or the pointer.
   { id: 'preview-zoom-in', keys: 'Ctrl++', place: 'preview', bound: true },
+  // Where + is over the =, as on an English keyboard, as the browsers have it.
+  { id: 'preview-zoom-in-equal', keys: 'Ctrl+=', place: 'preview', bound: true },
   { id: 'preview-zoom-out', keys: 'Ctrl+-', place: 'preview', bound: true },
   { id: 'preview-zoom-fit', keys: 'Ctrl+0', place: 'preview', bound: true },
 ] as const satisfies readonly KeyEntry[];

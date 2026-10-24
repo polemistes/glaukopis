@@ -123,5 +123,6 @@ keys-writing-hard-space = Et hardt mellomrom, der linjen ikke brytes
 ## The settings in plain words, stage 2: the zoom of the typesetting pane
 keys-place-preview = I ombrekkingspanelet
 keys-preview-zoom-in = Større sider
+keys-preview-zoom-in-equal = Større sider
 keys-preview-zoom-out = Mindre sider
 keys-preview-zoom-fit = Sider like brede som panelet

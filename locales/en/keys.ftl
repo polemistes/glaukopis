@@ -126,5 +126,6 @@ keys-writing-hard-space = A hard space, at which the line does not break
 ## The settings in plain words, stage 2: the zoom of the typesetting pane
 keys-place-preview = In the typesetting pane
 keys-preview-zoom-in = Larger pages
+keys-preview-zoom-in-equal = Larger pages
 keys-preview-zoom-out = Smaller pages
 keys-preview-zoom-fit = Pages as wide as the pane

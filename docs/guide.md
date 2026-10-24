@@ -2218,6 +2218,15 @@ made, and the typesetting waits the longer for it; the writing is not held up
 meanwhile. The pages that are looked at are the ones that are drawn, and
 the others as they are moved to.
 
+The pages are as wide as the pane until you zoom them. The button in the
+head of the pane says how large they are, **Fit the width** or a
+percentage, a hundred percent being a page as large as on paper; its menu
+offers the width of the pane and 50 to 200 %. **Ctrl** with the wheel over
+the pages zooms them a tenth at a time, and so do **Ctrl++** and **Ctrl+-**
+while the pane has the pointer or the focus; **Ctrl+0** fits them to the
+width again. Pages wider than the pane are moved sideways. The zoom is kept
+with the window, as the pane is.
+
 The text on the pages can be selected and copied, as it is set: a passage
 dragged over and copied with **Ctrl+C** comes out line by line, across
 pages. Two buttons over the pages bring the text and the pages to the same
@@ -2957,6 +2966,7 @@ what is to be done by its name, and does it.
 | **Ctrl+Shift+O** | The outline beside the text |
 | **Ctrl+Shift+L** | The list of projects at the left: hide it, or show it again |
 | **Ctrl+P** | Typesetting: the pages of the side you are in, beside the sides |
+| **Ctrl++**, **Ctrl+-**, **Ctrl+0** | In the typesetting pane: larger pages, smaller pages, pages as wide as the pane |
 | **Ctrl+Shift+S** | Split view: this element as diagram and text, another element or another project beside it, switch sides, or one at a time |
 | **Ctrl+W** | Close the side you are in; with one side, the project |
 | **Ctrl+Shift+D** | Document properties: the details, the document type, the language and the checklist of the element in view |

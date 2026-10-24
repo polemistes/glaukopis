@@ -485,6 +485,75 @@ try {
     String(lastShown),
   );
 
+  // --- The zoom of the pages: by its menu, by the keys, by the wheel; kept with the window ---
+  const zoomSaid = () => app.exec(`return document.querySelector('.preview [data-zoom]')?.textContent.trim() ?? null`);
+  const pageWide = () =>
+    app.exec(`return Math.round(document.querySelector('.preview .page[data-page]').getBoundingClientRect().width * 10) / 10`);
+  const zoomTo = async (words) => {
+    await app.click('.preview [data-zoom]');
+    await app.waitFor('[role="menuitem"]', 3000);
+    await app.clickText('[role="menuitem"]', words);
+    await sleep(300);
+  };
+  const fittedWide = await pageWide();
+  check('the pages are as wide as the pane at first', (await zoomSaid()) === 'Fit the width', await zoomSaid());
+  await zoomTo('100 %');
+  const at100 = await pageWide();
+  await zoomTo('150 %');
+  const at150 = await pageWide();
+  check(
+    'zoomed to 150 % by the menu, the page grows by half of its size at 100 %',
+    (await zoomSaid()) === '150 %' && Math.abs(at150 / at100 - 1.5) < 0.01,
+    `${await zoomSaid()}: ${at100} → ${at150} (fitted ${fittedWide})`,
+  );
+  const sideways = await app.exec(
+    `const p = document.querySelector('.preview .pages'); return { wide: p.classList.contains('wide'), scrolls: p.scrollWidth > p.clientWidth, left: Math.round(document.querySelector('.preview .page[data-page]').getBoundingClientRect().left - p.getBoundingClientRect().left + p.scrollLeft) };`,
+  );
+  check(
+    'pages wider than the pane begin at its left and are moved sideways',
+    sideways.wide && sideways.scrolls && sideways.left >= 0,
+    JSON.stringify(sideways),
+  );
+  await app.screenshot('preview-8-zoomed');
+  await sleep(800);
+  const keptZoom = JSON.parse(readFileSync(join(app.dataDir, 'settings.json'), 'utf8')).arrangement?.zoom;
+  check('the zoom is kept with the arrangement of the window', keptZoom === 1.5, String(keptZoom));
+  await app.exec('location.reload();');
+  await app.waitFor('.preview [data-zoom]', 15000);
+  await app.waitFor('.preview .page[data-page]', 30000);
+  await sleep(800);
+  check('and the window opens again with it', (await zoomSaid()) === '150 %', await zoomSaid());
+
+  // The keys hold while the pane has the focus.
+  await app.exec(`document.querySelector('.preview').focus()`);
+  await sleep(100);
+  await app.keys(['Control', '0']);
+  await sleep(400);
+  check(
+    'Ctrl+0 fits the pages to the width of the pane again',
+    (await zoomSaid()) === 'Fit the width' && Math.abs((await pageWide()) - fittedWide) < 1,
+    `${await zoomSaid()}: ${await pageWide()} (fitted ${fittedWide})`,
+  );
+  await app.keys(['Control', '+']);
+  await sleep(300);
+  const keyed = await zoomSaid();
+  await app.keys(['Control', '-']);
+  await sleep(300);
+  const keyedBack = await zoomSaid();
+  check(
+    'Ctrl+plus and Ctrl+minus zoom by a tenth',
+    /^\d+ %$/.test(keyed) && parseInt(keyed) % 10 === 0 && parseInt(keyedBack) === parseInt(keyed) - 10,
+    `${keyed}, ${keyedBack}`,
+  );
+  await app.exec(
+    `document.querySelector('.preview .pages').dispatchEvent(new WheelEvent('wheel', { deltaY: -120, ctrlKey: true, bubbles: true, cancelable: true }));`,
+  );
+  await sleep(300);
+  const wheeled = await zoomSaid();
+  check('Ctrl with the wheel over the pages zooms them', parseInt(wheeled) === parseInt(keyedBack) + 10, `${keyedBack} → ${wheeled}`);
+  await zoomTo('Fit the width');
+  check('Fit the width in the menu fits them again', (await zoomSaid()) === 'Fit the width', await zoomSaid());
+
   // --- No copies are written beside the project ---
   await app.home();
   await sleep(1500);

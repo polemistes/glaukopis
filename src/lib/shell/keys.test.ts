@@ -95,6 +95,16 @@ describe('the keys', () => {
     expect(matches(entry('Ctrl+Z'), press('я', { ctrlKey: true, code: 'KeyZ' }))).toBe(true);
   });
 
+  it('zoom the typesetting pane with + where it is a key and where it is over the =', () => {
+    const larger = KEYS.filter((k) => k.id.startsWith('preview-zoom-in'));
+    const any = (event: KeyboardEvent) => larger.some((k) => matches(k, event));
+    // A Norwegian keyboard has + of its own; an English one over the =, with Shift.
+    expect(any(press('+', { ctrlKey: true, code: 'Minus' }))).toBe(true);
+    expect(any(press('+', { ctrlKey: true, shiftKey: true, code: 'Equal' }))).toBe(true);
+    expect(any(press('=', { ctrlKey: true, code: 'Equal' }))).toBe(true);
+    expect(any(press('-', { ctrlKey: true, code: 'Minus' }))).toBe(false);
+  });
+
   it('give the letter of a key to a view that matches it, on a Greek or a Russian keyboard too', () => {
     const key = (key: string, code: string) => keyOf({ key, code });
     expect(key('a', 'KeyA')).toBe('a');

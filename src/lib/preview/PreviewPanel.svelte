@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { tick, untrack } from 'svelte';
+  import { onMount, tick, untrack } from 'svelte';
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import PackageX from '@lucide/svelte/icons/package-x';
   import Palette from '@lucide/svelte/icons/palette';
@@ -539,9 +539,11 @@
     return () => el.removeEventListener('wheel', onwheel);
   });
 
-  $effect(() =>
+  // Bound once, while the pane is there: binding changes what is bound, which an effect would follow.
+  onMount(() =>
     shortcuts.bind({
       'preview-zoom-in': { run: () => void zoomBy(1), when: here },
+      'preview-zoom-in-equal': { run: () => void zoomBy(1), when: here },
       'preview-zoom-out': { run: () => void zoomBy(-1), when: here },
       'preview-zoom-fit': { run: () => void zoomTo(null), when: here },
     }),
