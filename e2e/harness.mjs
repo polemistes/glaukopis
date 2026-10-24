@@ -730,7 +730,6 @@ export class App {
     if (item) await this.clickText('.menu [role="menuitem"]', item);
   }
 
-  /** Opens the menu of the text where the cursor is, by a right click there, and chooses Number these lines…: the window of the numbers opens. */
   /** Opens Line numbering from here, by its item in the right-click menu of the text where the cursor is. */
   async lineNumberingFromHere() {
     await this.textMenuAtCursor();
