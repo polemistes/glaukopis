@@ -486,7 +486,7 @@ every kind of text:
 | **Enter** | A new paragraph of the same kind, with the same indent and numbering. On an empty paragraph of a kind, the paragraph becomes text: so one leaves a list, a verse or a dialogue. |
 | **Shift+Enter** | A new line within the paragraph. |
 | **Backspace** at the start of a line | Joins it to the line before; at the start of a paragraph, to the paragraph before, whose kind holds. |
-| **Tab**, **Shift+Tab** | Indents a line of verse, or any other paragraph, a step more or less. |
+| **Tab**, **Shift+Tab** | Sets a line of verse, or any other paragraph, in a step more, or back a step. |
 
 Nothing else changes lines or paragraphs: changing the kind of a paragraph
 changes its kind and nothing more.
@@ -495,12 +495,36 @@ A poem is written as it is written on paper: a line of verse ends with
 **Shift+Enter**, and a stanza with **Enter**. Choose **Verse** as the kind of
 its paragraphs, and each paragraph is a stanza and each of its lines a line.
 Enter within a line parts the stanza there, the line break becoming the break
-between the two. Tab indents the line the cursor is in a step, for the
+between the two. Tab sets the line the cursor is in in a step, for the
 shorter lines of lyric, and Shift+Tab takes it back; over several lines
-selected, each of them. A **Speaker** or a **Stage direction** is a paragraph
-of its own kind among the lines, and does not part them from each other; the
-same two are kinds of words as well, under **Words kind**, for a name or a
-direction within a line, as editions set them.
+selected, each of them. In any other kind of paragraph Tab sets the whole
+paragraph in. The step is the layout's **Indentation step**, 0.6 cm unless
+it says otherwise (see *Look*, **Paragraphs**), and the steps stand where
+you write and in every document: in the PDF, in LaTeX, on a page of the
+web, and in Word and Writer as four spaces that do not break for each step.
+A **Speaker** or a **Stage direction** is a paragraph of its own kind among
+the lines, and does not part them from each other; the same two are kinds
+of words as well, under **Words kind**, for a name or a direction within a
+line, as editions set them.
+
+A line can begin where the line before ended: **Begins where the line
+before ended**, in the right-click menu of the text, sets it so, and a
+check beside it says that it is; choose it again to take it away. So the
+second part of a line of verse shared by two speakers is set, as editions
+of Greek drama set it, and stepped lines of modern verse. The line before
+is the nearest above that has words in it, in the paragraph before where
+the line is the first of its own, speakers and stage directions passed
+over; the line then begins one em past where that line ends, and the steps
+it is given with Tab are added. Where you write it is measured as it is
+drawn, and follows the line before as you write in it; in the PDF, in
+LaTeX and on a page of the web the words of the line before are measured
+in the type of the document; Word and Writer, which measure nothing, get
+two spaces that do not break for each of its characters, as their
+typesetters want it. A line before that runs over more than one line of
+the page is measured as it ends. Which part of a shared line is counted is
+yours to say: some editions count the first, some the last. Setting a line
+in changes nothing of its count; **Counted** in **Numbering of this line…**
+does (see below).
 
 Numbers belong to what they number. **Line numbering from here…** and
 **Numbering of this line…**, in the right-click menu of the text, number
@@ -2422,10 +2446,12 @@ you scroll, mark the part you are in, and go to each:
   marks are set. A font that is not installed is shown in the nearest one
   in the preview. Reference marks in the margin are raised in Word and
   Writer, which have no room for them there.
-- **Paragraphs**: **Indent first line** and **Space between paragraphs**,
-  each 0 for none, and, while the first line is indented, **Also after a
-  heading**: by typographic custom the first paragraph after a heading is
-  not indented, and APA and others indent it. Then **Quotations**: **Warn
+- **Paragraphs**: **Indent first line**, **Indentation step**, the step by
+  which Tab sets a line of verse or a paragraph in, 0.6 cm in the layouts
+  that ship, and **Space between paragraphs**, each 0 for none but the
+  step, and, while the first line is indented, **Also after a heading**: by
+  typographic custom the first paragraph after a heading is not indented,
+  and APA and others indent it. Then **Quotations**: **Warn
   about long inline quotations**, and while that is on, **From this many
   words** and **Or this many lines**, as publishers set a quotation off
   from a length; the checklist of *Document properties* then names every
