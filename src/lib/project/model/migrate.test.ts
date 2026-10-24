@@ -85,19 +85,59 @@ describe('a project brought into one tree', () => {
     expect(migrate(doc, 'Wrath', undefined, undefined, author)).toBe(true);
     const p = new Project(null);
     Y.applyUpdate(p.doc, Y.encodeStateAsUpdate(doc));
-    expect(p.node(PROJECT)?.document.authors).toEqual([author]);
+    expect(p.node(PROJECT)?.document.contributors).toEqual([{ ...author, role: 'author' }]);
     // Written before, as maps: whoever wrote it, it is not made the writer's.
     const old = oldDocument();
     migrate(old, 'ignored', undefined, undefined, author);
     const q = new Project(null);
     Y.applyUpdate(q.doc, Y.encodeStateAsUpdate(old));
-    expect(q.node(PROJECT)?.document.authors).toBeUndefined();
+    expect(q.node(PROJECT)?.document.contributors).toBeUndefined();
     // Without a name, nobody.
     const unnamed = new Y.Doc();
     migrate(unnamed, 'Wrath', undefined, undefined, { name: ' ' });
     const r = new Project(null);
     Y.applyUpdate(r.doc, Y.encodeStateAsUpdate(unnamed));
-    expect(r.node(PROJECT)?.document.authors).toBeUndefined();
+    expect(r.node(PROJECT)?.document.contributors).toBeUndefined();
+  });
+
+  it('the authors of a document become its contributors in the role of author, once', () => {
+    const doc = new Y.Doc();
+    migrate(doc, 'Wrath');
+    const nodes = doc.getMap<Y.Map<unknown>>('nodes');
+    const chapter = new Y.Map<unknown>();
+    doc.transact(() => {
+      nodes.get(PROJECT)!.set('document', {
+        language: 'nb',
+        authors: [{ name: 'Anna Lind', affiliation: 'Oslo' }, { name: 'Per Berg' }],
+      });
+      chapter.set('parent', PROJECT);
+      chapter.set('order', 'a1');
+      chapter.set('title', new Y.XmlFragment());
+      chapter.set('body', new Y.XmlFragment());
+      // Contributors said already: they hold, and the authors go.
+      chapter.set('document', {
+        authors: [{ name: 'Old' }],
+        contributors: [{ name: 'Eva Holm', role: 'translator' }],
+      });
+      nodes.set('chapter', chapter);
+    });
+    expect(needsMigration(doc)).toBe(true);
+    expect(migrate(doc, 'Wrath')).toBe(true);
+    expect(needsMigration(doc)).toBe(false);
+    const p = new Project(null);
+    Y.applyUpdate(p.doc, Y.encodeStateAsUpdate(doc));
+    expect(p.node(PROJECT)?.document).toEqual({
+      language: 'nb',
+      contributors: [
+        { name: 'Anna Lind', affiliation: 'Oslo', role: 'author' },
+        { name: 'Per Berg', role: 'author' },
+      ],
+    });
+    expect(p.node('chapter')?.document).toEqual({
+      contributors: [{ name: 'Eva Holm', role: 'translator' }],
+    });
+    // Done, it is done.
+    expect(migrate(doc, 'Wrath')).toBe(false);
   });
 
   it('maps become children of the project, in order, with their settings; loose elements after them', () => {

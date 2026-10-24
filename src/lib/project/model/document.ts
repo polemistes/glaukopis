@@ -216,7 +216,7 @@ export function buildDocument(project: Project, id: string): ExportDocument {
   return {
     title,
     subtitle: settings.subtitle,
-    authors: (settings.authors ?? []).filter((a) => a.name?.trim()),
+    contributors: (settings.contributors ?? []).filter((c) => c.name?.trim()),
     date: settings.date,
     keywords: settings.keywords ?? [],
     language: settings.language,

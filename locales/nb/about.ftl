@@ -18,22 +18,13 @@ about-section-checklist = Sjekkliste
 
 ## Opplysningene: det som står på første side, og i metadataene til filene.
 
-about-details-hint = Det som står på første side, og det filene bærer med seg som metadata. Alt annet skrives i treet.
 about-title = Tittel
 about-title-placeholder = Navnet på elementet
-about-title-hint = Står feltet tomt, blir navnet på elementet tittelen.
 about-subtitle = Undertittel
-about-authors = Forfattere
 about-name = Navn
-about-author-name = Navn på forfatter { $number }
 about-affiliation = Tilknytning
-about-author-affiliation = Tilknytningen til forfatter { $number }
 about-email = E-post
-about-author-email = E-post til forfatter { $number }
 about-orcid = ORCID
-about-author-orcid = ORCID til forfatter { $number }
-# Ved siden av et pluss, under forfatterne: legger til en.
-about-add-author = forfatter
 about-date = Dato
 about-date-placeholder = Slik den skal stå i dokumentet
 about-keywords = Nøkkelord
@@ -69,14 +60,26 @@ about-language = Språket i teksten
 about-checklist-hint = Det malen krever, mot teksten og treet. Ingenting kuttes.
 about-checklist-clear = Ingenting å bemerke.
 about-requirement-words = Ord i teksten
-about-requirement-anonymous = Til fagfellevurdering: forfatterne utelates fra dokumentet.
+about-requirement-anonymous = Til fagfellevurdering: bidragsyterne utelates fra dokumentet.
 
 ## The sides, the panes and the bars, stage 2: the typesetting pane, the document pane, Document properties.
 
 about-section-type = Dokumenttype
-about-line-numbers = Nummerer linjene på siden
-about-line-numbers-hint = Hver linje på den trykte siden, nummerert i margen, i dette dokumentet og dem under det.
 
 ## Fewer words, stage 3: the source of a layout's requirements, under the layout the type brings.
 
 about-layout-source = Kilde: { $name }
+
+## The contributors, stage 3: the persons of a document, each with a role.
+
+about-contributors = Bidragsytere
+about-add-contributor = Legg til en bidragsyter
+about-contributor-role = Rollen til bidragsyter { $number }
+about-role-author = Forfatter
+about-role-editor = Redaktør
+about-role-translator = Oversetter
+about-contributor-name = Navn på bidragsyter { $number }
+about-contributor-affiliation = Tilknytningen til bidragsyter { $number }
+about-contributor-email = E-post til bidragsyter { $number }
+about-contributor-orcid = ORCID til bidragsyter { $number }
+about-page-lines = Nummerer hver linje på den trykte siden

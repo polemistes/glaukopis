@@ -23,3 +23,10 @@ document-picture-not-here = [Bildet er ikke her: {"{}"}]
 document-the-file = filen
 document-sample-see = se
 document-sample-argues = hevder noe annet.
+
+## The contributors.
+
+document-edited-by = Redigert av {"{}"}
+document-translated-by = Oversatt av {"{}"}
+document-edited-and-translated-by = Redigert og oversatt av {"{}"}
+document-and = og

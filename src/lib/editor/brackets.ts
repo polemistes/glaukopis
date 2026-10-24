@@ -4,8 +4,9 @@
  * by a thin line at their left and a small label at its head with the name
  * of the kind, and "numbered" where the run lies in a numbered stretch.
  * Nothing is stored: the run is found anew from the kinds of the
- * paragraphs (`shape.ts`). Text has no bracket, unless it is numbered; nor
- * have speakers and directions of their own.
+ * paragraphs (`shape.ts`). Text has a bracket only where it is numbered,
+ * one beside each numbered stretch, and not along all the text standing
+ * together; speakers and directions of their own have none.
  *
  * The label is seen while the cursor is in the run or the pointer rests on
  * it, and pressed for the menu of the run: how its lines are numbered, its
@@ -15,6 +16,10 @@
  * so that they take no room from the text and are no part of it; the
  * paragraphs of a run are marked `data-run` with its kind, the first
  * `data-run-first`, and those of the run the cursor is in `data-current`.
+ * Where any paragraph of a run is numbered, all of them are marked
+ * `data-run-numbers` with the side the numbers stand on, so that the whole
+ * bracket stands outside the numbers at the left, not only its segments
+ * beside the paragraphs that are numbered: it would jump where they end.
  */
 
 import Globe from '@lucide/svelte/icons/globe';
@@ -32,26 +37,46 @@ import {
 } from 'prosemirror-state';
 import { Decoration, DecorationSet, type EditorView } from 'prosemirror-view';
 import { t } from '$lib/i18n';
-import type { BasedKind } from '$lib/project/model/families';
+import type { Node } from 'prosemirror-model';
+import type { BasedKind, Side } from '$lib/project/model/families';
 import { openMenu, type MenuItem } from '$lib/ui/menu.svelte';
 import { languageItems } from './language-menu';
 import { withinLines } from './changes';
-import { eachHolder, kindOfNode, runsIn, type Run } from './shape';
+import type { NumbersLayout } from './numbers';
+import { eachHolder, kindOfNode, numberedNode, numberedStretches, runsIn, type Run } from './shape';
 import { hooksOf } from './ui.svelte';
 
 export const bracketsKey = new PluginKey<Drawn>('run-brackets');
 
-/** Whether a run is drawn with a bracket: a run of a kind, or of text that is numbered. */
-export function bracketed(run: Run): boolean {
-  return !run.among && (run.kind !== 'text' || numbered(run));
-}
-
 /** Whether a run lies in a numbered stretch. */
 export function numbered(run: Run): boolean {
-  return run.paragraphs.some((p) => !!p.node.attrs.numbering);
+  return run.paragraphs.some((p) => numberedNode(p.node));
 }
 
-/** The run whose first paragraph begins at `pos`, where there is one. */
+/**
+ * What is drawn with a bracket among the children of a node whose content
+ * begins at `start`: every run of a kind, whole; of a run of text, each
+ * numbered stretch within it, since text is bracketed only where it is
+ * numbered. Runs of speakers and directions alone have none.
+ */
+export function bracketsIn(parent: Node, start: number, own: readonly BasedKind[] = []): Run[] {
+  const out: Run[] = [];
+  for (const run of runsIn(parent, start, own)) {
+    if (run.among) continue;
+    if (run.kind !== 'text') out.push(run);
+    else
+      for (const paragraphs of numberedStretches(run.paragraphs))
+        out.push({ kind: run.kind, paragraphs, among: false });
+  }
+  return out;
+}
+
+/**
+ * The run whose first paragraph begins at `pos`, where there is one: as
+ * its bracket is drawn, where one is, so that the menu of the bracket of a
+ * numbered stretch of text is of that stretch, and not of all the text
+ * standing together.
+ */
 export function runFrom(
   state: EditorState,
   pos: number,
@@ -59,7 +84,12 @@ export function runFrom(
 ): Run | null {
   if (pos < 0 || pos >= state.doc.content.size) return null;
   const $pos = state.doc.resolve(pos);
-  return runsIn($pos.parent, $pos.start(), own).find((r) => r.paragraphs[0].pos === pos) ?? null;
+  const first = (runs: Run[]) => runs.find((r) => r.paragraphs[0].pos === pos);
+  return (
+    first(bracketsIn($pos.parent, $pos.start(), own)) ??
+    first(runsIn($pos.parent, $pos.start(), own)) ??
+    null
+  );
 }
 
 /** The run the cursor is in, and which of its paragraphs the cursor is in; nothing outside a paragraph. */
@@ -327,30 +357,49 @@ interface Drawn {
 }
 
 /**
+ * The side the numbers of a run stand on, where any of its paragraphs is
+ * numbered: the left where any of them stands at the left, by its own
+ * setting or the layout's, so that the bracket stands outside them along
+ * the whole run; else the right. Nothing where none is numbered.
+ */
+function numbersSide(run: Run, layout: NumbersLayout): Side | null {
+  let side: Side | null = null;
+  for (const { node } of run.paragraphs) {
+    if (!numberedNode(node)) continue;
+    const own = node.attrs.side === 'left' || node.attrs.side === 'right' ? node.attrs.side : null;
+    if ((own ?? layout.side) === 'left') return 'left';
+    side = 'right';
+  }
+  return side;
+}
+
+/**
  * The brackets of every run: on each paragraph its run's kind, on the
  * first that it is the first, the line beside each with the label on the
- * first; and where the text of each run begins and ends. `name` gives the
- * words for a kind: of the catalogue, or a kind of the writer's own.
+ * first, and on each the side of the numbers where the run is numbered;
+ * and where the text of each run begins and ends. `name` gives the words
+ * for a kind: of the catalogue, or a kind of the writer's own; `layout`
+ * what the document's layout says of the numbers.
  */
 function brackets(
   state: EditorState,
   own: readonly BasedKind[],
   name: (kind: string) => string,
+  layout: NumbersLayout,
 ): Pick<Drawn, 'runs' | 'spans'> {
   const list: Decoration[] = [];
   const spans: Drawn['spans'] = [];
   eachHolder(state.doc, (parent, start) => {
-    for (const run of runsIn(parent, start, own)) {
-      if (!bracketed(run)) continue;
+    for (const run of bracketsIn(parent, start, own)) {
       spans.push(spanOf(run));
-      const words = numbered(run)
-        ? `${name(run.kind)} · ${t('editor-bracket-numbered')}`
-        : name(run.kind);
+      const side = numbersSide(run, layout);
+      const words = side ? `${name(run.kind)} · ${t('editor-bracket-numbered')}` : name(run.kind);
       run.paragraphs.forEach(({ node, pos }, i) => {
         list.push(
           Decoration.node(pos, pos + node.nodeSize, {
             'data-run': run.kind,
             ...(i === 0 ? { 'data-run-first': '' } : {}),
+            ...(side ? { 'data-run-numbers': side } : {}),
           }),
         );
         const head = i === 0 ? { words, kind: run.kind } : null;
@@ -409,8 +458,9 @@ function withCurrent(
 
 /**
  * Draws the brackets of the runs: their lines and labels, and which run the
- * cursor is in. `own` gives the kinds of the writer's own, and `name` the
- * words for a kind.
+ * cursor is in. `own` gives the kinds of the writer's own, `name` the
+ * words for a kind, and `layout` what the document's layout says of the
+ * numbers, for the side they stand on where a paragraph does not say.
  *
  * A run is found from the kinds of paragraphs and from what stands between
  * them, and from nothing within their lines: a change that only writes in
@@ -425,14 +475,15 @@ function withCurrent(
 export function runBrackets(
   own: () => readonly BasedKind[] = () => [],
   name: (kind: string) => string = (kind) => kind,
+  layout: () => NumbersLayout = () => ({ every: 5, side: 'left' }),
 ): Plugin<Drawn> {
   return new Plugin<Drawn>({
     key: bracketsKey,
     state: {
-      init: (_config, state) => withCurrent(state, brackets(state, own(), name)),
+      init: (_config, state) => withCurrent(state, brackets(state, own(), name, layout())),
       apply: (tr, drawn, _old, state) => {
         if (tr.getMeta(bracketsKey) || (tr.docChanged && !withinLines(tr)))
-          return withCurrent(state, brackets(state, own(), name));
+          return withCurrent(state, brackets(state, own(), name, layout()));
         if (tr.docChanged)
           return withCurrent(
             state,

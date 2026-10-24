@@ -15,22 +15,13 @@ about-section-checklist = Liste de contrôle
 
 ## The details: what stands on the first page, and in the metadata of the files.
 
-about-details-hint = Ce qui figure sur la première page, et ce que les fichiers portent comme métadonnées. Tout le reste s’écrit dans l’arbre.
 about-title = Titre
 about-title-placeholder = Le nom de l’élément
-about-title-hint = Laissé vide, le titre est le nom de l’élément.
 about-subtitle = Sous-titre
-about-authors = Auteurs
 about-name = Nom
-about-author-name = Nom de l’auteur { $number }
 about-affiliation = Affiliation
-about-author-affiliation = Affiliation de l’auteur { $number }
 about-email = Courriel
-about-author-email = Courriel de l’auteur { $number }
 about-orcid = ORCID
-about-author-orcid = ORCID de l’auteur { $number }
-# Beside a plus, under the authors: adds one.
-about-add-author = auteur
 about-date = Date
 about-date-placeholder = Telle qu’elle sera imprimée
 about-keywords = Mots-clés
@@ -67,4 +58,3 @@ about-language = Langue du texte
 about-checklist-hint = Ce que le modèle exige, en regard du texte et de l’arbre. Rien n’est coupé.
 about-checklist-clear = Rien à signaler.
 about-requirement-words = Mots du texte
-about-requirement-anonymous = Pour l’évaluation : les auteurs sont omis du document.

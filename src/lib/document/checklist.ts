@@ -3,7 +3,7 @@
  * what the tree says, as remarks. Words over the limit, the words of the
  * abstract, the keywords, a second element of a kind the document has one
  * of, and parts of a kind the template has no place for; a front page that
- * names the authors where the template asks for an anonymous document; and
+ * names the contributors where the template asks for an anonymous document; and
  * quotations in the text long enough for the layout to set them off. Nothing
  * is refused: every remark names what it is about.
  */
@@ -189,7 +189,7 @@ export function checklist(
       });
   }
 
-  // A front page that names the authors, where the template asks for an anonymous document.
+  // A front page that names the contributors, where the template asks for an anonymous document.
   if (requirements?.anonymous && format && !format.title.anonymous)
     remarks.push({ kind: 'anonymous', text: t('checklist-anonymous') });
 

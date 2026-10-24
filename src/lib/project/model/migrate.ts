@@ -3,7 +3,8 @@
  * element is made where there is none, and a document written before, as
  * maps with a centre each and loose elements beside them, becomes one tree.
  * An abstract or a cover written into an element's settings becomes an
- * element under it (ADR 0038). Texts are not written anew: what is read of
+ * element under it (ADR 0038); the authors of a document become its
+ * contributors in the role of author. Texts are not written anew: what is read of
  * them takes old shapes without falling over (`text.ts`). Done within a
  * transaction of the caller's; nothing happens to a project that is in
  * shape, so it can be asked of every document that is read.
@@ -13,7 +14,13 @@ import { generateKeyBetween } from 'fractional-indexing';
 import * as Y from 'yjs';
 import { str } from './origins';
 import { fillBody, fillTitle, inlineText, readTitle } from './text';
-import { PROJECT, type DocumentSettings, type Person, type TimelineSettings } from './types';
+import {
+  PROJECT,
+  type Contributor,
+  type DocumentSettings,
+  type Person,
+  type TimelineSettings,
+} from './types';
 
 type YNode = Y.Map<unknown>;
 
@@ -28,13 +35,21 @@ const holdsParts = (n: YNode): boolean => {
   return !!document && ('abstract' in document || 'cover' in document);
 };
 
+/** Whether an element's settings still name authors, who are contributors now. */
+const holdsAuthors = (n: YNode): boolean => {
+  const document = record(n.get('document'));
+  return !!document && 'authors' in document;
+};
+
 /**
  * Whether the document is not yet in shape: without its project element,
- * with maps, or with an abstract or a cover in an element's settings.
+ * with maps, with an abstract or a cover in an element's settings, or with
+ * authors where contributors are.
  */
 export function needsMigration(doc: Y.Doc): boolean {
   if (doc.getMap('maps').size > 0 || !doc.getMap('nodes').has(PROJECT)) return true;
-  for (const n of doc.getMap<YNode>('nodes').values()) if (holdsParts(n)) return true;
+  for (const n of doc.getMap<YNode>('nodes').values())
+    if (holdsParts(n) || holdsAuthors(n)) return true;
   return false;
 }
 
@@ -46,9 +61,9 @@ export function needsMigration(doc: Y.Doc): boolean {
  * share it. `word` gives a word of documents in a language (`term` of the
  * words of the interface), left out where this runs in a thread of its own
  * that must not take the interface in (the search through everything).
- * `author` is the writer as the settings name them, the author of a
- * project that begins now, with nothing in it yet: a new document is
- * theirs until they say otherwise in its settings.
+ * `author` is the writer as the settings name them, the first contributor,
+ * as its author, of a project that begins now, with nothing in it yet: a
+ * new document is theirs until they say otherwise in its settings.
  * Returns whether anything was changed.
  */
 export function migrate(
@@ -94,8 +109,8 @@ export function migrate(
 
   if (made && empty && author?.name.trim()) {
     const own = record(project.get('document')) ?? {};
-    if (!Array.isArray(own.authors) || !own.authors.length)
-      project.set('document', { ...own, authors: [author] });
+    if (!Array.isArray(own.contributors) || !own.contributors.length)
+      project.set('document', { ...own, contributors: [{ ...author, role: 'author' }] });
   }
 
   if (yMaps.size) {
@@ -103,6 +118,35 @@ export function migrate(
     changed = true;
   }
   if (partsOut(yNodes, word)) changed = true;
+  if (contributorsOut(yNodes)) changed = true;
+  return changed;
+}
+
+/**
+ * The authors of every document that names them become its contributors in
+ * the role of author, where it has none; the authors are said no more. The
+ * same is written by every copy of a shared project that does this, so
+ * that two that meet keep one.
+ */
+function contributorsOut(yNodes: Y.Map<YNode>): boolean {
+  let changed = false;
+  for (const n of yNodes.values()) {
+    if (!holdsAuthors(n)) continue;
+    const document = { ...record(n.get('document')) };
+    const authors = Array.isArray(document.authors) ? (document.authors as unknown[]) : [];
+    delete document.authors;
+    if (!Array.isArray(document.contributors) || !document.contributors.length) {
+      const contributors = authors
+        .map(record)
+        .filter((a): a is Record<string, unknown> => !!a && typeof a.name === 'string')
+        .map((a): Contributor => ({ ...(a as unknown as Person), role: 'author' }));
+      if (contributors.length) document.contributors = contributors;
+      else delete document.contributors;
+    }
+    if (Object.keys(document).length) n.set('document', document);
+    else n.delete('document');
+    changed = true;
+  }
   return changed;
 }
 

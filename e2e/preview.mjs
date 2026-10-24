@@ -252,12 +252,33 @@ try {
 
   // --- The particulars of the document ---
   await app.openAbout('Details');
-  await app.type('dialog[open] input[aria-label="Name of author 1"]', 'A. Scholar');
+  check(
+    'the details say nothing but their labels',
+    !(await app.exists('dialog[open] .settings > .hint, dialog[open] .details .hint, dialog[open] .details > label.field:first-child small')),
+  );
+  await app.type('dialog[open] input[aria-label="Name of contributor 1"]', 'A. Scholar');
+  // A second contributor, who translated it.
+  await app.clickText('dialog[open] .details button.add', 'Add a contributor');
+  await app.waitFor('dialog[open] select[aria-label="Role of contributor 2"]', 3000);
+  const roles = await app.exec(
+    `const s = document.querySelector('dialog[open] select[aria-label="Role of contributor 2"]');
+     const was = s.value;
+     s.value = 'translator';
+     s.dispatchEvent(new Event('change', { bubbles: true }));
+     return was + ' ' + Array.from(s.options).map((o) => o.textContent.trim()).join(',');`,
+  );
+  check('a new contributor is an author until told otherwise, among three roles', roles === 'author Author,Editor,Translator', roles);
+  await app.type('dialog[open] input[aria-label="Name of contributor 2"]', 'T. Translator');
   await app.screenshot('preview-3-details');
   await app.closeAbout(true);
   await sleep(4500);
   typ = source();
   check('the author is on the first page', /A\. Scholar/.test(typ));
+  check(
+    'the translator is on the first page, in a line of their own after the author',
+    /Translated by T\. Translator/.test(typ) && /\] <gk-roles>/.test(typ) && typ.indexOf('A. Scholar') < typ.indexOf('Translated by'),
+    (typ.match(/#block\[[^\]]*\] <gk-roles>/) ?? [''])[0],
+  );
   await app.screenshot('preview-4-with-author');
 
   // --- Export, as the dialog would ask for it ---

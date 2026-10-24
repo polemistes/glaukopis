@@ -35,3 +35,12 @@ document-the-file = the file
 # 1979, 12–14)", and "Nagy (1979) argues otherwise."
 document-sample-see = see
 document-sample-argues = argues otherwise.
+
+## The contributors: the lines of the editors and the translators on the title
+## page; the braces stand for their names.
+
+document-edited-by = Edited by {"{}"}
+document-translated-by = Translated by {"{}"}
+document-edited-and-translated-by = Edited and translated by {"{}"}
+# Between the last two names of a line of names: "A, B and C".
+document-and = and

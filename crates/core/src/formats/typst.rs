@@ -17,6 +17,8 @@ use super::{
 pub struct Particulars {
     pub title: String,
     pub authors: Vec<String>,
+    pub editors: Vec<String>,
+    pub translators: Vec<String>,
     /// The date the document carries, as words.
     pub date: Option<String>,
     pub language: Option<String>,
@@ -34,16 +36,19 @@ pub struct Particulars {
 
 impl Particulars {
     /// The words an item of the header or the footer stands for, where it
-    /// stands for words the document has: the title, the authors, the date,
-    /// words of one's own; trimmed, without their case. None for the page
-    /// number and the chapter, which each target sets itself, and where the
-    /// words would be empty. An anonymous manuscript names no author.
+    /// stands for words the document has: the title, the authors, the
+    /// editors, the translators, the date, words of one's own; trimmed,
+    /// without their case. None for the page number and the chapter, which
+    /// each target sets itself, and where the words would be empty. An
+    /// anonymous manuscript names no contributor.
     /// Typst, LaTeX, Word and Writer all take their words from here.
     pub fn words(&self, item: &Item, format: &DocumentFormat) -> Option<String> {
         let words = match item {
             Item::Title => self.title.clone(),
-            Item::Author if format.title.anonymous => String::new(),
+            Item::Author | Item::Editor | Item::Translator if format.title.anonymous => String::new(),
             Item::Author => self.authors.join(", "),
+            Item::Editor => self.editors.join(", "),
+            Item::Translator => self.translators.join(", "),
             Item::Date => self.date.clone().unwrap_or_default(),
             Item::Text { text } => text.clone(),
             Item::PageNumber | Item::Chapter => return None,
@@ -919,6 +924,11 @@ pub fn rules(format: &DocumentFormat, p: &Particulars) -> String {
   set align({align})
   block(width: 100%, below: 0.6em, it.body)
 }}
+#show <gk-roles>: it => {{
+  set par(leading: {block_leading}, spacing: {block_leading}, first-line-indent: 0pt, justify: false)
+  set align({align})
+  block(width: 100%, above: 0.6em, below: 0.6em, it.body)
+}}
 #show <gk-date>: it => {{
   set par(first-line-indent: 0pt)
   set align({align})
@@ -1137,6 +1147,28 @@ mod tests {
         let anonymous =
             DocumentFormat { title: super::super::TitleBlock { anonymous: true, ..Default::default() }, ..f };
         assert_eq!(p.words(&Item::Author, &anonymous), None);
+    }
+
+    #[test]
+    fn the_editors_and_the_translators_are_items_as_the_authors_are() {
+        let f = DocumentFormat::default();
+        let p = Particulars {
+            editors: vec!["B. Editor".into()],
+            translators: vec!["C. One".into(), "D. Other".into()],
+            ..Default::default()
+        };
+        assert_eq!(p.words(&Item::Editor, &f).as_deref(), Some("B. Editor"));
+        assert_eq!(p.words(&Item::Translator, &f).as_deref(), Some("C. One, D. Other"));
+        assert_eq!(p.words(&Item::Author, &f), None, "no author, no words");
+        let anonymous =
+            DocumentFormat { title: super::super::TitleBlock { anonymous: true, ..Default::default() }, ..f };
+        assert_eq!(p.words(&Item::Editor, &anonymous), None);
+        assert_eq!(p.words(&Item::Translator, &anonymous), None);
+        let mut f = DocumentFormat::default();
+        f.header.shown = true;
+        f.header.places.left = vec![Item::Translator];
+        assert!(preamble(&f, &p).contains("text(\"C. One, D. Other\")"), "{}", preamble(&f, &p));
+        assert!(preamble(&f, &p).contains("#show <gk-roles>"));
     }
 
     #[test]

@@ -1,7 +1,7 @@
 /** Documents that are brought in, to become maps. Mirrors `commands/reading.rs`. */
 
 import type { Block, Inline } from '$lib/project/model/text';
-import type { Person } from '$lib/project/model/types';
+import type { Contributor } from '$lib/project/model/types';
 import { fileEnding } from '$lib/util/file-name';
 import { call } from './backend';
 
@@ -39,7 +39,8 @@ export interface Imported {
   kind: string;
   title: Inline[];
   subtitle: string | null;
-  authors: Person[];
+  /** Who wrote it: contributors in the role of author. */
+  authors: Contributor[];
   date: string | null;
   abstract: string | null;
   keywords: string[];

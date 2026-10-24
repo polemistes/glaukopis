@@ -35,3 +35,10 @@ document-the-file = il file
 # 1979, 12–14)", and "Nagy (1979) argues otherwise."
 document-sample-see = vedi
 document-sample-argues = sostiene il contrario.
+
+## The contributors.
+
+document-edited-by = A cura di {"{}"}
+document-translated-by = Traduzione di {"{}"}
+document-edited-and-translated-by = A cura e traduzione di {"{}"}
+document-and = e

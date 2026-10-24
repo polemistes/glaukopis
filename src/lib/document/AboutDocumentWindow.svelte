@@ -22,10 +22,16 @@
   import { laidOver } from '$lib/look/changes';
   import { countWords } from '$lib/project/model/document';
   import type { Project } from '$lib/project/model/project.svelte';
-  import { PROJECT, type DocumentSettings, type Person } from '$lib/project/model/types';
+  import {
+    PROJECT,
+    ROLES,
+    type Contributor,
+    type DocumentSettings,
+  } from '$lib/project/model/types';
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
+  import Select from '$lib/ui/Select.svelte';
   import { ABOUT_SECTIONS, type AboutSection } from './about-document.svelte';
   import { checklist, type Remark } from './checklist';
   import DocumentType from './DocumentType.svelte';
@@ -106,7 +112,10 @@
   );
   // svelte-ignore state_referenced_locally
   let keywords = $state((node?.document.keywords ?? []).join(', '));
-  if (!draft.authors?.length) draft.authors = [{ name: '' }];
+  /** A row for a contributor not yet named: an author, as most are. */
+  const blank = (): Contributor => ({ name: '', role: 'author' });
+  if (!draft.contributors?.length) draft.contributors = [blank()];
+  const roles = $derived(ROLES.map((role) => ({ value: role, label: t(`about-role-${role}`) })));
 
   /** The identifiers a document usually has, first; then those the writer has named. */
   const USUAL_IDENTIFIERS = ['isbn', 'edition', 'publisher', 'place', 'doi'];
@@ -136,14 +145,16 @@
   }
 
   // Shown while the element says nothing of its own.
-  const authorsFrom = $derived(draft.authors?.some((a) => a.name.trim()) ? null : from('authors'));
+  const contributorsFrom = $derived(
+    draft.contributors?.some((c) => c.name.trim()) ? null : from('contributors'),
+  );
   const keywordsFrom = $derived(keywords.trim() ? null : from('keywords'));
   const dateFrom = $derived(draft.date?.trim() ? null : from('date'));
   const identifiersFrom = $derived(
     identifiers.some((i) => i.value.trim()) ? null : from('identifiers'),
   );
-  const inheritedAuthors = $derived(
-    (inherited.settings.authors ?? []).map((a) => a.name).join(', '),
+  const inheritedContributors = $derived(
+    (inherited.settings.contributors ?? []).map((c) => c.name).join(', '),
   );
   /** Whether the lines of the pages are numbered: as the element says, else as those over it, else as its layout. */
   const linesNumbered = $derived(
@@ -155,20 +166,21 @@
   const keywordsMost = $derived(template?.requirements.keywords ?? null);
 
   function save() {
-    const authors = (draft.authors ?? [])
-      .map((a): Person => ({
-        name: a.name.trim(),
-        affiliation: a.affiliation?.trim() || undefined,
-        email: a.email?.trim() || undefined,
-        orcid: a.orcid?.trim() || undefined,
+    const contributors = (draft.contributors ?? [])
+      .map((c): Contributor => ({
+        name: c.name.trim(),
+        affiliation: c.affiliation?.trim() || undefined,
+        email: c.email?.trim() || undefined,
+        orcid: c.orcid?.trim() || undefined,
+        role: c.role,
       }))
-      .filter((a) => a.name);
+      .filter((c) => c.name);
     const named: Record<string, string> = {};
     for (const i of identifiers) if (i.value.trim()) named[i.key.trim()] = i.value.trim();
     write({
       title: draft.title?.trim(),
       subtitle: draft.subtitle?.trim(),
-      authors,
+      contributors,
       keywords: keywords
         .split(/[,;\n]/)
         .map((k) => k.trim())
@@ -235,7 +247,6 @@
     <div class="form settings">
       {#if section === 'details'}
         <h3>{t('about-section-details')}</h3>
-        <p class="hint top">{t('about-details-hint')}</p>
         <div class="details">
           <label class="field">
             <span>{t('about-title')}</span>
@@ -244,7 +255,6 @@
               class="serif"
               placeholder={node?.title || t('about-title-placeholder')}
             />
-            <small>{t('about-title-hint')}</small>
           </label>
           <label class="field">
             <span>{t('about-subtitle')}</span>
@@ -252,48 +262,56 @@
           </label>
 
           <div class="field">
-            <span>{t('about-authors')}</span>
-            {#each draft.authors ?? [] as author, i (i)}
-              <div class="author">
-                <input
-                  bind:value={author.name}
-                  placeholder={i === 0 && authorsFrom ? inheritedAuthors : t('about-name')}
-                  aria-label={t('about-author-name', { number: i + 1 })}
+            <span>{t('about-contributors')}</span>
+            {#each draft.contributors ?? [] as contributor, i (i)}
+              <div class="contributor" data-contributor={i + 1}>
+                <Select
+                  bind:value={contributor.role}
+                  options={roles}
+                  ariaLabel={t('about-contributor-role', { number: i + 1 })}
                 />
                 <input
-                  bind:value={author.affiliation}
+                  bind:value={contributor.name}
+                  placeholder={i === 0 && contributorsFrom
+                    ? inheritedContributors
+                    : t('about-name')}
+                  aria-label={t('about-contributor-name', { number: i + 1 })}
+                />
+                <input
+                  bind:value={contributor.affiliation}
                   placeholder={t('about-affiliation')}
-                  aria-label={t('about-author-affiliation', { number: i + 1 })}
+                  aria-label={t('about-contributor-affiliation', { number: i + 1 })}
                 />
                 <input
-                  bind:value={author.email}
+                  bind:value={contributor.email}
                   placeholder={t('about-email')}
-                  aria-label={t('about-author-email', { number: i + 1 })}
+                  aria-label={t('about-contributor-email', { number: i + 1 })}
                 />
                 <input
-                  bind:value={author.orcid}
+                  bind:value={contributor.orcid}
                   placeholder={t('about-orcid')}
-                  aria-label={t('about-author-orcid', { number: i + 1 })}
+                  aria-label={t('about-contributor-orcid', { number: i + 1 })}
                   spellcheck="false"
                 />
                 <IconButton
                   label={t('common-remove')}
                   size="sm"
-                  disabled={(draft.authors?.length ?? 0) <= 1 && !author.name}
+                  disabled={(draft.contributors?.length ?? 0) <= 1 && !contributor.name}
                   onclick={() => {
-                    draft.authors?.splice(i, 1);
-                    if (!draft.authors?.length) draft.authors = [{ name: '' }];
+                    draft.contributors?.splice(i, 1);
+                    if (!draft.contributors?.length) draft.contributors = [blank()];
                   }}
                 >
                   <X size={13} />
                 </IconButton>
               </div>
             {/each}
-            <button type="button" class="add" onclick={() => draft.authors?.push({ name: '' })}>
+            <button type="button" class="add" onclick={() => draft.contributors?.push(blank())}>
               <Plus size={12} />
-              {t('about-add-author')}
+              {t('about-add-contributor')}
             </button>
-            {#if authorsFrom}<small>{t('documents-inherited-from', { name: authorsFrom })}</small
+            {#if contributorsFrom}<small
+                >{t('documents-inherited-from', { name: contributorsFrom })}</small
               >{/if}
           </div>
 
@@ -386,13 +404,9 @@
                 checked={linesNumbered}
                 onchange={(e) => (draft.lineNumbers = e.currentTarget.checked)}
               />
-              <span>{t('about-line-numbers')}</span>
+              <span>{t('about-page-lines')}</span>
             </label>
-            <small
-              >{t('about-line-numbers-hint')}{#if linesFrom}{' '}{t('documents-inherited-from', {
-                  name: linesFrom,
-                })}{/if}</small
-            >
+            {#if linesFrom}<small>{t('documents-inherited-from', { name: linesFrom })}</small>{/if}
           </div>
         </div>
       {:else if section === 'type'}
@@ -580,9 +594,9 @@
     font-family: var(--font-ui);
     font-size: var(--text-md);
   }
-  .author {
+  .contributor {
     display: grid;
-    grid-template-columns: 1.2fr 1.3fr 1.1fr 0.9fr auto;
+    grid-template-columns: max-content 1.2fr 1.2fr 1fr 0.8fr auto;
     gap: 5px;
     align-items: center;
   }

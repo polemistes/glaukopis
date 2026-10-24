@@ -35,3 +35,10 @@ document-the-file = die Datei
 # 1979, 12–14)", and "Nagy (1979) argues otherwise."
 document-sample-see = vgl.
 document-sample-argues = argumentiert anders.
+
+## The contributors.
+
+document-edited-by = Herausgegeben von {"{}"}
+document-translated-by = Übersetzt von {"{}"}
+document-edited-and-translated-by = Herausgegeben und übersetzt von {"{}"}
+document-and = und

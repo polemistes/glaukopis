@@ -428,7 +428,7 @@ pub fn docx_styles(f: &DocumentFormat, language: Option<&str>, own: &[OwnKind]) 
         },
     ));
     s.push_str(&character_style("SubtitleChar", "Subtitle Char", Some("Subtitle"), ""));
-    for (id, name) in [("Author", "Author"), ("Date", "Date")] {
+    for (id, name) in [("Author", "Author"), ("Role", "Role"), ("Date", "Date")] {
         s.push_str(&paragraph_style(
             id,
             name,
@@ -1453,7 +1453,7 @@ pub fn odt_styles_with_looks(default: &str, f: &DocumentFormat, p: &Particulars,
         paragraph: odt_paragraph(0.0, 12.0, 1.1, title_align, 0.0, 0.0, 0.0, true),
         text: odt_text(Some((t.size * 0.8).max(size)), Some(false), Some(false), Case::None),
     });
-    for name in ["Author", "Date"] {
+    for name in ["Author", "Role", "Date"] {
         put(OdtStyle {
             name,
             display: None,
@@ -2033,6 +2033,7 @@ mod tests {
             "FirstParagraph",
             "Title",
             "Author",
+            "Role",
             "Abstract",
             "Bibliography",
             "Heading1",

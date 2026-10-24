@@ -109,6 +109,9 @@ describe('the Org form of a project', () => {
     expect(text).toContain(
       ':AUTHORS:      Euripides; Ann Smith / University of Oslo <ann@example.org> orcid=0000-0001-2345-6789\n',
     );
+    expect(text).toContain(
+      ':EDITORS:      Ben Hall\n:TRANSLATORS:  Cleo Dale / Bergen; Ann Smith\n',
+    );
     expect(text).toContain(':IDENTIFIERS:  isbn=978-3-16-148410-0 doi="10.1000/xyz 1"\n');
     expect(text).toContain(':LINE_NUMBERS: t\n');
     expect(text).toContain(

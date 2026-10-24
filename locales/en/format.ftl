@@ -336,3 +336,9 @@ format-table-inside = Inside the table
 
 format-indent-first-line = Indent first line
 format-quote-warn = Warn about long inline quotations
+
+## The contributors, stage 3: the lines of the editors and the translators on the front page, and their items.
+
+format-title-roles = Editors and translators
+format-item-editor = Editor
+format-item-translator = Translator

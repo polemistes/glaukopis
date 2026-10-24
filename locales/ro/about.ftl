@@ -14,22 +14,13 @@ about-section-checklist = Listă de verificare
 
 ## The details: what stands on the first page, and in the metadata of the files.
 
-about-details-hint = Ce stă pe prima pagină și ce poartă fișierele ca metadate. Tot restul se scrie în arbore.
 about-title = Titlu
 about-title-placeholder = Numele elementului
-about-title-hint = Dacă rămâne gol, titlul este numele elementului.
 about-subtitle = Subtitlu
-about-authors = Autori
 about-name = Nume
-about-author-name = Numele autorului { $number }
 about-affiliation = Afiliere
-about-author-affiliation = Afilierea autorului { $number }
 about-email = E-mail
-about-author-email = E-mailul autorului { $number }
 about-orcid = ORCID
-about-author-orcid = ORCID-ul autorului { $number }
-# Beside a plus, under the authors: adds one.
-about-add-author = autor
 about-date = Dată
 about-date-placeholder = Cum se va tipări
 about-keywords = Cuvinte-cheie
@@ -66,4 +57,3 @@ about-language = Limba textului
 about-checklist-hint = Ce cere șablonul, față de text și de arbore. Nu se taie nimic.
 about-checklist-clear = Nimic de semnalat.
 about-requirement-words = Cuvintele textului
-about-requirement-anonymous = Pentru recenzare: autorii sunt lăsați afară din document.

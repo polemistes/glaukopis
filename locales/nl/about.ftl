@@ -14,22 +14,13 @@ about-section-checklist = Controlelijst
 
 ## The details: what stands on the first page, and in the metadata of the files.
 
-about-details-hint = Wat op de eerste pagina staat, en wat de bestanden als metadata meedragen. Al het andere wordt in de boom geschreven.
 about-title = Titel
 about-title-placeholder = De naam van het element
-about-title-hint = Blijft dit leeg, dan is de naam van het element de titel.
 about-subtitle = Ondertitel
-about-authors = Auteurs
 about-name = Naam
-about-author-name = Naam van auteur { $number }
 about-affiliation = Instelling
-about-author-affiliation = Instelling van auteur { $number }
 about-email = E-mail
-about-author-email = E-mail van auteur { $number }
 about-orcid = ORCID
-about-author-orcid = ORCID van auteur { $number }
-# Beside a plus, under the authors: adds one.
-about-add-author = auteur
 about-date = Datum
 about-date-placeholder = Zoals die moet worden gedrukt
 about-keywords = Trefwoorden
@@ -65,4 +56,3 @@ about-language = Taal van de tekst
 about-checklist-hint = Wat het sjabloon eist, tegenover de tekst en de boom. Er wordt niets ingekort.
 about-checklist-clear = Niets op aan te merken.
 about-requirement-words = Woorden in de tekst
-about-requirement-anonymous = Voor beoordeling: de auteurs worden uit het document weggelaten.

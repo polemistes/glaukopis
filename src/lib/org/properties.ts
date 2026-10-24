@@ -16,14 +16,17 @@
 
 import type { Template } from '$lib/api/templates';
 import type { KindFamily, Look } from '$lib/api/documents';
-import type {
-  DocumentSettings,
-  KindRecord,
-  PassageKindRecord,
-  Person,
-  Position,
-  Status,
-  TimelineSettings,
+import {
+  ROLES,
+  type Contributor,
+  type DocumentSettings,
+  type KindRecord,
+  type PassageKindRecord,
+  type Person,
+  type Position,
+  type Role,
+  type Status,
+  type TimelineSettings,
 } from '$lib/project/model/types';
 import type { CompositionChanges } from '$lib/document/composition';
 import type { LookChanges } from '$lib/look/changes';
@@ -217,7 +220,22 @@ function readList(v: string): string[] {
     .filter(Boolean);
 }
 
-/** The authors: names, an affiliation after a `/`, an address in `<…>`, an ORCID after `orcid=`; JSON where that would not read back. */
+/** The property each role's persons are written in, in the order they are read back. */
+const ROLE_PROPERTIES: Record<Role, string> = {
+  author: 'AUTHORS',
+  editor: 'EDITORS',
+  translator: 'TRANSLATORS',
+};
+
+/** The persons of a role, as a property says them; nothing where there are none. */
+function roleText(contributors: Contributor[] | undefined, role: Role): string | undefined {
+  const people = (contributors ?? [])
+    .filter((c) => c.role === role)
+    .map(({ role: _role, ...person }) => person);
+  return people.length ? authorsText(people) : undefined;
+}
+
+/** The persons of a role, as a property says them: names, an affiliation after a `/`, an address in `<…>`, an ORCID after `orcid=`; JSON where that would not read back. */
 function authorsText(people: Person[]): string {
   const plain = people.every(
     (p) =>
@@ -316,7 +334,10 @@ export function writeProperties(e: OrgElement, w: DrawerWriting): string[] {
     ],
     ['TITLE', d.title !== undefined ? propertyText(d.title) : undefined],
     ['SUBTITLE', d.subtitle !== undefined ? propertyText(d.subtitle) : undefined],
-    ['AUTHORS', d.authors?.length ? authorsText(d.authors) : undefined],
+    ...ROLES.map((role): [string, string | undefined] => [
+      ROLE_PROPERTIES[role],
+      roleText(d.contributors, role),
+    ]),
     ['DATE', d.date !== undefined ? propertyText(d.date) : undefined],
     ['KEYWORDS', d.keywords?.length ? listText(d.keywords) : undefined],
     ['TEMPLATE', d.template !== undefined ? propertyText(d.template) : undefined],
@@ -383,6 +404,8 @@ export function readProperties(lines: string[]): ReadProperties {
     unknown: [],
   };
   const d = out.document;
+  /** The persons of each role, which are one list after, in the order of the roles. */
+  const persons: Partial<Record<Role, Person[]>> = {};
   for (const line of lines) {
     const m = /^\s*:([^:\s]+):(?:\s+(.*))?$/.exec(line);
     if (!m) {
@@ -441,7 +464,13 @@ export function readProperties(lines: string[]): ReadProperties {
         d.subtitle = v;
         break;
       case 'AUTHORS':
-        d.authors = readAuthors(raw);
+        persons.author = readAuthors(raw);
+        break;
+      case 'EDITORS':
+        persons.editor = readAuthors(raw);
+        break;
+      case 'TRANSLATORS':
+        persons.translator = readAuthors(raw);
         break;
       case 'DATE':
         d.date = v;
@@ -495,6 +524,10 @@ export function readProperties(lines: string[]): ReadProperties {
         out.unknown.push(line.trim());
     }
   }
+  const contributors = ROLES.flatMap((role) =>
+    (persons[role] ?? []).map((person): Contributor => ({ ...person, role })),
+  );
+  if (contributors.length) d.contributors = contributors;
   return out;
 }
 

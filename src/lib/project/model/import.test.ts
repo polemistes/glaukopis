@@ -90,7 +90,10 @@ describe('a document made into a branch', () => {
         ],
         {
           subtitle: 'A study',
-          authors: [{ name: 'A. Scholar', affiliation: 'Oslo' }, { name: ' ' }],
+          authors: [
+            { name: 'A. Scholar', affiliation: 'Oslo', role: 'author' },
+            { name: ' ', role: 'author' },
+          ],
           date: '2026-01-02',
           abstract: 'Short.',
           keywords: ['wrath', ' ', 'epic'],
@@ -129,7 +132,7 @@ describe('a document made into a branch', () => {
     expect(project.node(made.elements[3])?.words).toBe(1);
     expect(project.node(made.top)?.document).toEqual({
       subtitle: 'A study',
-      authors: [{ name: 'A. Scholar', affiliation: 'Oslo' }],
+      contributors: [{ name: 'A. Scholar', affiliation: 'Oslo', role: 'author' }],
       date: '2026-01-02',
       keywords: ['wrath', 'epic'],
       language: 'en-GB',

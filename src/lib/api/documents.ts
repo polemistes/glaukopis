@@ -85,6 +85,8 @@ export type MarginItem =
   | { kind: 'page-number' }
   | { kind: 'title' }
   | { kind: 'author' }
+  | { kind: 'editor' }
+  | { kind: 'translator' }
   | { kind: 'chapter' }
   | { kind: 'date' }
   | { kind: 'text'; text: string };
@@ -263,6 +265,8 @@ export interface DocumentFormat {
     case: Case;
     showAuthors: boolean;
     showAffiliations: boolean;
+    /** The lines of the editors and the translators. */
+    showRoles: boolean;
     showDate: boolean;
     showAbstract: boolean;
     abstractLabel: string;
@@ -385,6 +389,9 @@ export interface ExportAuthor {
   orcid?: string;
 }
 
+/** A person of the document, with what they did for it. */
+export type ExportContributor = ExportAuthor & { role: 'author' | 'editor' | 'translator' };
+
 export interface ExportReference {
   id: string;
   key: string;
@@ -396,7 +403,8 @@ export interface ExportReference {
 export interface ExportDocument {
   title: Inline[];
   subtitle?: string;
-  authors: ExportAuthor[];
+  /** The authors, the editors and the translators, in their order. */
+  contributors: ExportContributor[];
   date?: string;
   keywords: string[];
   language?: string;

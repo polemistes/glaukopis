@@ -24,7 +24,7 @@ checklist-unplaced = { $count ->
 
 ## Fewer words, stage 4: what the type and the layout ask of the front page and of quotations.
 
-checklist-anonymous = Dokumenttypen ber om et anonymt dokument; forsiden nevner forfatterne. Slå på Anonymiser forsiden under Forsiden i Utseende.
+checklist-anonymous = Dokumenttypen ber om et anonymt dokument; forsiden nevner bidragsyterne. Slå på Anonymiser forsiden under Forsiden i Utseende.
 checklist-long-quotation = { $by ->
     [lines] «{ $element }» har et sitat på { $words } ord i teksten, omtrent { $lines ->
         [one] { $lines } linje

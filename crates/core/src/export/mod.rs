@@ -24,7 +24,7 @@ use crate::document::bibliography::{Bibliography, gather};
 use crate::document::pandoc::{
     Converter, Extras, Flavour, PageBegins, meta_inlines, meta_list, meta_string, meta_text,
 };
-use crate::document::{Block, Document, Inline, NotePlace, OwnKind, Part, Section};
+use crate::document::{Block, Contributor, Document, Inline, NotePlace, OwnKind, Part, Role, Section};
 use crate::error::{Error, IoContext, Result};
 use crate::formats::typst::{self, Particulars, preamble};
 use crate::formats::{DocumentFormat, NoteKind, TitlePlacement};
@@ -357,7 +357,9 @@ fn particulars(doc: &Document, f: &DocumentFormat) -> Particulars {
     let (flows, tables) = doc.flows_and_tables((f.figures.align, f.figures.wrap), (f.tables.align, f.tables.wrap));
     Particulars {
         title: doc.title_plain(),
-        authors: doc.authors.iter().map(|a| a.name.trim().to_owned()).filter(|n| !n.is_empty()).collect(),
+        authors: doc.authors().map(|a| a.name.trim().to_owned()).collect(),
+        editors: doc.editors().map(|a| a.name.trim().to_owned()).collect(),
+        translators: doc.translators().map(|a| a.name.trim().to_owned()).collect(),
         date: doc.date.as_deref().map(str::trim).filter(|d| !d.is_empty()).map(str::to_owned),
         language: doc.language.clone(),
         lettered_footnotes: f.notes.kind == NoteKind::Endnotes && doc.placed_notes().contains(&NotePlace::Foot),
@@ -391,7 +393,7 @@ fn properties(doc: &Document, f: &DocumentFormat) -> after::Properties {
         creators: if f.title.anonymous {
             Vec::new()
         } else {
-            doc.authors.iter().map(|a| a.name.trim().to_owned()).filter(|n| !n.is_empty()).collect()
+            doc.authors().map(|a| a.name.trim().to_owned()).collect()
         },
     }
 }
@@ -407,14 +409,14 @@ fn styled(style: &str, blocks: Vec<Value>) -> Value {
 }
 
 /// The names of the authors on the title page, in one line, as the preview sets them.
-fn names_of(authors: &[&crate::document::Author]) -> String {
+fn names_of(authors: &[&Contributor]) -> String {
     authors.iter().map(|a| a.name.trim()).collect::<Vec<_>>().join(", ")
 }
 
 /// The lines under the authors on the title page: each author's
 /// affiliation, e-mail and ORCID, in one line, and a line that two authors
 /// share once.
-fn affiliation_lines(authors: &[&crate::document::Author]) -> Vec<String> {
+fn affiliation_lines(authors: &[&Contributor]) -> Vec<String> {
     let mut lines: Vec<String> = Vec::new();
     for a in authors {
         let line = [a.affiliation.as_deref(), a.email.as_deref()]
@@ -436,21 +438,55 @@ fn affiliation_lines(authors: &[&crate::document::Author]) -> Vec<String> {
     lines
 }
 
+/// Names in a line, in the language of the document: *A*, *A and B*, *A, B and C*.
+fn joined(names: &[String], language: Option<&str>) -> String {
+    match names {
+        [] => String::new(),
+        [one] => one.clone(),
+        [rest @ .., last] => {
+            format!("{} {} {last}", rest.join(", "), crate::document::term(language, "document-and"))
+        }
+    }
+}
+
+/// The lines of the editors and the translators on the title page, in the
+/// language of the document: *Edited by …*, then *Translated by …*; or
+/// one, *Edited and translated by …*, where they are the same persons in
+/// the same order. Nothing where there are neither.
+fn role_lines(editors: &[String], translators: &[String], language: Option<&str>) -> Vec<String> {
+    let line = |id: &str, names: &[String]| crate::document::term(language, id).replace("{}", &joined(names, language));
+    if !editors.is_empty() && editors == translators {
+        return vec![line("document-edited-and-translated-by", editors)];
+    }
+    let mut out = Vec::new();
+    if !editors.is_empty() {
+        out.push(line("document-edited-by", editors));
+    }
+    if !translators.is_empty() {
+        out.push(line("document-translated-by", translators));
+    }
+    out
+}
+
+/// The persons of a title page: the authors, the lines of their
+/// affiliations, and the lines of the editors and the translators.
+type Persons<'a> = (&'a [&'a Contributor], &'a [String], &'a [String]);
+
 /// The title page of a document that is not set by Typst, as the core
 /// writes it where the template puts it (ADR 0055): the title, the
-/// subtitle, the authors in one line, the lines of their affiliations and
-/// the date, as the preview sets them; nothing where there is nothing to
-/// say. For Word and Writer, paragraphs in the styles of the reference
-/// document.
+/// subtitle, the authors in one line, the lines of their affiliations, the
+/// lines of the editors and the translators, which stand in the authors'
+/// place where there are none, and the date, as the preview sets them;
+/// nothing where there is nothing to say. For Word and Writer, paragraphs
+/// in the styles of the reference document.
 fn title_page(
     target: Target,
     title: &[Value],
     subtitle: Option<&str>,
-    authors: &[&crate::document::Author],
-    affiliations: &[String],
+    (authors, affiliations, roles): Persons,
     date: Option<&str>,
 ) -> Vec<Value> {
-    if title.is_empty() && subtitle.is_none() && authors.is_empty() && date.is_none() {
+    if title.is_empty() && subtitle.is_none() && authors.is_empty() && roles.is_empty() && date.is_none() {
         return Vec::new();
     }
     let mut out = Vec::new();
@@ -467,6 +503,9 @@ fn title_page(
                 if !affiliations.is_empty() {
                     out.push(styled("Affiliation", affiliations.iter().map(|l| para_text(l)).collect()));
                 }
+            }
+            if !roles.is_empty() {
+                out.push(styled("Role", roles.iter().map(|l| para_text(l)).collect()));
             }
             if let Some(d) = date {
                 out.push(styled("Date", vec![para_text(d)]));
@@ -493,6 +532,12 @@ fn title_page(
                     line.push(tex("}"));
                 }
             }
+            for (i, l) in roles.iter().enumerate() {
+                if i > 0 || !authors.is_empty() {
+                    line.push(tex("\\\\"));
+                }
+                line.extend(words(l));
+            }
             line.push(tex("}\\date{"));
             if let Some(d) = date {
                 line.extend(words(d));
@@ -516,6 +561,9 @@ fn title_page(
                 if !affiliations.is_empty() {
                     parts.push(classed("gk-affiliations", affiliations.iter().map(|l| para_text(l)).collect()));
                 }
+            }
+            if !roles.is_empty() {
+                parts.push(classed("gk-roles", roles.iter().map(|l| para_text(l)).collect()));
             }
             if let Some(d) = date {
                 parts.push(classed("gk-date", vec![para_text(d)]));
@@ -907,11 +955,17 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
     );
 
     let title = converter.inlines(&doc.title);
-    let authors: Vec<&crate::document::Author> = if f.title.anonymous || !f.title.show_authors {
-        Vec::new()
+    let authors: Vec<&Contributor> =
+        if f.title.anonymous || !f.title.show_authors { Vec::new() } else { doc.authors().collect() };
+    // The editors and the translators on the title page: in lines of their
+    // own after the authors, in the language of the document.
+    let named = |role| doc.in_role(role).map(|c| c.name.trim().to_owned()).collect::<Vec<_>>();
+    let (editors, translators) = if f.title.anonymous || !f.title.show_roles {
+        (Vec::new(), Vec::new())
     } else {
-        doc.authors.iter().filter(|a| !a.name.trim().is_empty()).collect()
+        (named(Role::Editor), named(Role::Translator))
     };
+    let roles = role_lines(&editors, &translators, doc.language.as_deref());
     let keywords: Vec<&str> = doc.keywords.iter().map(|k| k.trim()).filter(|k| !k.is_empty()).collect();
     let date = doc.date.as_deref().map(str::trim).filter(|d| !d.is_empty() && f.title.show_date);
     let keywords_para = (!keywords.is_empty() && f.title.show_abstract).then(|| {
@@ -1007,7 +1061,7 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
                 if !typst {
                     // The title page where the template puts it, and nowhere where it puts none, as the
                     // preview has it: Pandoc is given no title to set a block of its own from (ADR 0055).
-                    let page = title_page(target, &title, subtitle, &authors, &affiliations, date);
+                    let page = title_page(target, &title, subtitle, (&authors, &affiliations, &roles), date);
                     titled |= !page.is_empty();
                     front.extend(page);
                     continue;
@@ -1024,6 +1078,9 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
                     if !affiliations.is_empty() {
                         parts.push(div("gk-affiliations", affiliations.iter().map(|l| para_text(l)).collect()));
                     }
+                }
+                if !roles.is_empty() {
+                    parts.push(div("gk-roles", roles.iter().map(|l| para_text(l)).collect()));
                 }
                 if let Some(d) = date {
                     parts.push(div("gk-date", vec![para_text(d)]));
@@ -1214,10 +1271,43 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
         if !names.is_empty() {
             meta.insert("author".into(), meta_list(names.iter().map(|n| meta_text(n)).collect()));
         }
+        // The editors and the translators: the e-book's in its package, each
+        // with the role the package names them by, unless anonymous; those at
+        // the head of Markdown as the page shows them.
+        if target == Target::Epub {
+            if !f.title.anonymous {
+                let roles = doc.editors().map(|c| (c, "edt")).chain(doc.translators().map(|c| (c, "trl")));
+                let list: Vec<Value> = roles
+                    .map(|(c, role)| {
+                        json!({"t": "MetaMap", "c": {"text": meta_text(c.name.trim()), "role": meta_string(role)}})
+                    })
+                    .collect();
+                if !list.is_empty() {
+                    meta.insert("contributor".into(), meta_list(list));
+                }
+            }
+        } else {
+            for (key, list) in [("editor", &editors), ("translator", &translators)] {
+                if !list.is_empty() {
+                    meta.insert(key.into(), meta_list(list.iter().map(|n| meta_text(n)).collect()));
+                }
+            }
+        }
         let day =
             if target == Target::Epub { doc.date.as_deref().map(str::trim).filter(|d| !d.is_empty()) } else { date };
         if let Some(d) = day {
             meta.insert("date".into(), meta_text(d));
+        }
+    }
+    // The editors and the translators of a file of Word or Writer, in its
+    // properties, unless anonymous: Pandoc writes what it is given and does
+    // not know of as properties of the file's own, custom properties in
+    // Word and user-defined ones in Writer, and sets nothing of it on a page.
+    if matches!(target, Target::Docx | Target::Odt) && !f.title.anonymous {
+        for (key, list) in [("editor", &looked.editors), ("translator", &looked.translators)] {
+            if !list.is_empty() {
+                meta.insert(key.into(), meta_text(&list.join("; ")));
+            }
         }
     }
     if !typst {
@@ -1854,6 +1944,7 @@ fn front_styles(f: &DocumentFormat) -> String {
          .gk-subtitle p {{ font-size: {sub:.2}em; margin: 0 0 0.6em; }}\n\
          .gk-authors p {{ margin: 0.8em 0 0.2em; }}\n\
          .gk-affiliations p {{ font-size: 0.85em; margin: 0; }}\n\
+         .gk-roles p {{ margin: 0.6em 0 0; }}\n\
          .gk-date p {{ margin: 0.6em 0 0; }}\n",
         title = t.size / text,
         sub = (t.size * 0.8).max(f.font.size) / text,
@@ -3443,7 +3534,7 @@ mod tests {
         let mut r = request("chicago-author-date");
         r.document.subtitle = Some("A study of the Iliad".into());
         r.document.date = Some("2026".into());
-        r.document.authors[0].affiliation = Some("The University".into());
+        r.document.contributors[0].affiliation = Some("The University".into());
         r.format.title.show_date = true;
 
         // A book's order: the half title, a page, then the title page with all that stands on
@@ -3543,6 +3634,130 @@ mod tests {
     }
 
     #[test]
+    fn the_editors_and_the_translators_stand_on_the_title_page_in_lines_of_their_own() {
+        use crate::document::{Contributor, Role};
+        let Some(s) = setup() else { return };
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let person = |role, name: &str| Contributor { role, name: name.into(), ..Default::default() };
+        let mut r = request("chicago-author-date");
+        r.document.contributors = vec![
+            person(Role::Author, "A. Scholar"),
+            person(Role::Editor, "B. Editor"),
+            person(Role::Translator, "C. One"),
+            person(Role::Translator, "D. Other"),
+        ];
+        r.document.date = Some("2026".into());
+        r.format.title.show_date = true;
+        let (edited, translated) = ("Edited by B. Editor", "Translated by C. One and D. Other");
+
+        // Word: the authors, then a paragraph of the style Role for each role, then the date;
+        // the editors and the translators named in the file's own properties.
+        let docx = out.join("roles.docx");
+        export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        let x = unzip(&docx, "word/document.xml");
+        let role = at(&x, "w:val=\"Role\"");
+        assert!(at(&x, "w:val=\"Author\"") < role && role < at(&x, edited), "{x}");
+        assert!(at(&x, edited) < at(&x, translated) && at(&x, translated) < at(&x, "w:val=\"Date\""), "{x}");
+        let custom = unzip(&docx, "docProps/custom.xml");
+        assert!(custom.contains("name=\"editor\"") && custom.contains("B. Editor"), "{custom}");
+        assert!(custom.contains("name=\"translator\"") && custom.contains("C. One; D. Other"), "{custom}");
+        assert!(unzip(&docx, "docProps/core.xml").contains("<dc:creator>A. Scholar</dc:creator>"));
+        // Writer: the same, and its properties.
+        let odt = out.join("roles.odt");
+        export(&s.ctx(), &r, Target::Odt, &odt, &ExportOptions::default()).unwrap();
+        let c = unzip(&odt, "content.xml");
+        assert!(at(&c, "text:style-name=\"Role\"") < at(&c, translated), "{c}");
+        let meta = unzip(&odt, "meta.xml");
+        assert!(meta.contains("meta:name=\"translator\"") && meta.contains("C. One; D. Other"), "{meta}");
+        // LaTeX: within the author, each a line of its own.
+        let tex = out.join("roles.tex");
+        export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
+        let l = fs::read_to_string(&tex).unwrap();
+        assert!(l.contains(&format!("\\author{{A. Scholar\\\\{edited}\\\\{translated}}}")), "{l}");
+        // A page of the web, and Typst.
+        let html = out.join("roles.html");
+        export(&s.ctx(), &r, Target::Html, &html, &ExportOptions::default()).unwrap();
+        let h = fs::read_to_string(&html).unwrap();
+        assert!(at(&h, "class=\"gk-authors\"") < at(&h, "class=\"gk-roles\""), "{h}");
+        assert!(at(&h, translated) < at(&h, "class=\"gk-date\""), "{h}");
+        assert!(h.contains(".gk-roles p {"), "{h}");
+        let typ = out.join("roles.typ");
+        export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
+        let t = fs::read_to_string(&typ).unwrap();
+        assert!(at(&t, "] <gk-authors>") < at(&t, translated) && at(&t, translated) < at(&t, "] <gk-roles>"), "{t}");
+        assert!(at(&t, "] <gk-roles>") < at(&t, "] <gk-date>") && t.contains("#show <gk-roles>"), "{t}");
+        // Markdown at its head, the e-book in its package with their roles.
+        let md = out.join("roles.md");
+        export(&s.ctx(), &r, Target::Markdown, &md, &ExportOptions::default()).unwrap();
+        let m = fs::read_to_string(&md).unwrap();
+        assert!(m.contains("editor:") && m.contains("translator:") && m.contains("D. Other"), "{m}");
+        let epub = out.join("roles.epub");
+        export(&s.ctx(), &r, Target::Epub, &epub, &ExportOptions::default()).unwrap();
+        let opf = unzip(&epub, "EPUB/content.opf");
+        assert!(opf.contains("B. Editor</dc:contributor>") && opf.contains("D. Other</dc:contributor>"), "{opf}");
+        assert!(opf.contains(">edt</meta>") && opf.contains(">trl</meta>"), "{opf}");
+
+        // The header names the translators where it is told to.
+        let mut headed = r.clone();
+        headed.format.header.shown = true;
+        headed.format.header.places.left = vec![crate::formats::Item::Translator];
+        let typ = out.join("headed.typ");
+        export(&s.ctx(), &headed, Target::Typst, &typ, &ExportOptions::default()).unwrap();
+        assert!(fs::read_to_string(&typ).unwrap().contains("text(\"C. One, D. Other\")"));
+
+        // No author: the translator's line stands where the authors would.
+        r.document.contributors = vec![person(Role::Translator, "C. One")];
+        let tex = out.join("translated.tex");
+        export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
+        let l = fs::read_to_string(&tex).unwrap();
+        assert!(l.contains("\\author{Translated by C. One}"), "{l}");
+        let docx = out.join("translated.docx");
+        export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        let x = unzip(&docx, "word/document.xml");
+        assert!(!x.contains("w:val=\"Author\"") && at(&x, "w:val=\"Title\"") < at(&x, "w:val=\"Role\""), "{x}");
+
+        // The same person edited and translated: one line.
+        r.document.contributors =
+            vec![person(Role::Author, "A. Scholar"), person(Role::Editor, "B. E"), person(Role::Translator, "B. E")];
+        let html = out.join("both.html");
+        export(&s.ctx(), &r, Target::Html, &html, &ExportOptions::default()).unwrap();
+        let h = fs::read_to_string(&html).unwrap();
+        assert!(h.contains("Edited and translated by B. E") && !h.contains("Edited by"), "{h}");
+
+        // In the language of the document; three names with the word for and.
+        r.document.language = Some("nb".into());
+        r.document.contributors = ["C", "D", "E"].map(|n| person(Role::Translator, n)).to_vec();
+        let html = out.join("norsk.html");
+        export(&s.ctx(), &r, Target::Html, &html, &ExportOptions::default()).unwrap();
+        assert!(fs::read_to_string(&html).unwrap().contains("Oversatt av C, D og E"));
+        r.document.language = None;
+
+        // Without the switch of the roles: no lines on the page; the properties still name them.
+        r.document.contributors = vec![person(Role::Author, "A. Scholar"), person(Role::Translator, "C. One")];
+        r.format.title.show_roles = false;
+        let docx = out.join("unroled.docx");
+        export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        let x = unzip(&docx, "word/document.xml");
+        assert!(!x.contains("w:val=\"Role\"") && !x.contains("C. One"), "{x}");
+        assert!(unzip(&docx, "docProps/custom.xml").contains("C. One"));
+
+        // Anonymous: nobody, on the page or off it.
+        r.format.title.show_roles = true;
+        r.format.title.anonymous = true;
+        let docx = out.join("anonymous.docx");
+        export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        let x = unzip(&docx, "word/document.xml");
+        assert!(!x.contains("w:val=\"Role\"") && !x.contains("C. One"), "{x}");
+        let archive = zip::ZipArchive::new(fs::File::open(&docx).unwrap()).unwrap();
+        let names: Vec<String> = archive.file_names().map(str::to_owned).collect();
+        assert!(names.iter().all(|n| !n.ends_with(".xml") || !unzip(&docx, n).contains("C. One")), "{names:?}");
+        let epub = out.join("anonymous.epub");
+        export(&s.ctx(), &r, Target::Epub, &epub, &ExportOptions::default()).unwrap();
+        assert!(!unzip(&epub, "EPUB/content.opf").contains("C. One"));
+    }
+
+    #[test]
     fn the_title_page_and_the_lists_stand_where_the_template_puts_them_in_latex() {
         let Some(s) = setup() else { return };
         let out = s.work.join("out");
@@ -3552,7 +3767,7 @@ mod tests {
         // An article: the title page, the abstract and the keywords, the contents, then the text.
         let mut r = with_parts();
         r.document.subtitle = Some("A study of the Iliad".into());
-        r.document.authors[0].affiliation = Some("The University".into());
+        r.document.contributors[0].affiliation = Some("The University".into());
         let tex = out.join("article.tex");
         export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
         let l = fs::read_to_string(&tex).unwrap();

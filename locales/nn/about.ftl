@@ -15,22 +15,13 @@ about-section-checklist = Sjekkliste
 
 ## The details: what stands on the first page, and in the metadata of the files.
 
-about-details-hint = Det som står på første side, og det filene ber med seg som metadata. Alt anna blir skrive i treet.
 about-title = Tittel
 about-title-placeholder = Namnet på elementet
-about-title-hint = Står feltet tomt, blir namnet på elementet tittelen.
 about-subtitle = Undertittel
-about-authors = Forfattarar
 about-name = Namn
-about-author-name = Namnet på forfattar { $number }
 about-affiliation = Tilknyting
-about-author-affiliation = Tilknytinga til forfattar { $number }
 about-email = E-post
-about-author-email = E-posten til forfattar { $number }
 about-orcid = ORCID
-about-author-orcid = ORCID til forfattar { $number }
-# Beside a plus, under the authors: adds one.
-about-add-author = forfattar
 about-date = Dato
 about-date-placeholder = Slik den skal stå i dokumentet
 about-keywords = Nøkkelord
@@ -66,4 +57,3 @@ about-language = Språket i teksten
 about-checklist-hint = Det malen krev, mot teksten og treet. Ingenting blir kutta.
 about-checklist-clear = Ingen merknader.
 about-requirement-words = Ord i teksten
-about-requirement-anonymous = Til fagfellevurdering: forfattarane blir utelatne frå dokumentet.

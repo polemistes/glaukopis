@@ -184,7 +184,9 @@ export function makeImported(
 
   const settings: DocumentSettings = {
     subtitle: imported.subtitle?.trim() || undefined,
-    authors: imported.authors.filter((a) => a.name?.trim()),
+    contributors: imported.authors
+      .filter((a) => a.name?.trim())
+      .map((a) => ({ ...a, role: 'author' as const })),
     date: imported.date?.trim() || undefined,
     keywords: imported.keywords.map((k) => k.trim()).filter(Boolean),
     language: imported.language?.trim() || undefined,
