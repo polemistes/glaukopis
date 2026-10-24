@@ -34,11 +34,8 @@ format-line-spacing = Linjeafstand
 format-as-the-text = Som teksten
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = som teksten
-format-size-zero-hint = 0 for tekstens størrelse
 # Beside a number of 0, in the place of its unit.
 format-not-said = ikke angivet
-format-unless-said = Medmindre andet er sagt om den enkelte
-format-as-it-will-stand = Som det kommer til at stå
 format-align-left = Venstre
 format-align-center = Centreret
 format-align-right = Højre
@@ -66,33 +63,27 @@ format-margin-left = Venstre
 format-margin-right = Højre
 format-columns-heading = Spalter
 format-columns = Antal spalter
-format-columns-hint = Teksten sættes i så mange spalter på siden; 1 for ingen. Et spalteskift i teksten begynder den næste.
 format-column-gap = Afstand mellem spalter
 format-lengths-hint = Længder skrives med deres enhed: 2,5cm, 1in, 25mm, 12pt.
 ## Numbers belong to what they number (ADR 0041): the lines one numbers
 ## are shown as the layout says where they do not say otherwise; the lines
 ## of the page are the layout's alone.
-format-numbers-hint = Hvordan numrene på de linjer, du nummererer, vises, hvor de ikke selv siger andet; og om sidens linjer nummereres.
 format-verse-every = Vis et nummer for hver
-format-verse-every-hint = Af de linjer, du nummererer: 5 viser 5, 10, 15
 format-verse-side = Side for numrene
 format-side-left = Venstre
 format-side-right = Højre
 format-numbers-page = Sidens linjer
 format-line-numbers = Nummerer linjerne
-format-line-numbers-hint = Som nogle tidsskrifter beder om til fagfællebedømmelse
 
 ## Type and spacing, and paragraphs.
 
 format-typeface = Skrift
-format-typeface-hint = Hvor den ikke er installeret, bruges den nærmeste i forhåndsvisningen
 format-hyphenate = Del ord ved linjeskift
 format-paragraphs = Afsnit skilles ad med
 format-paragraphs-indent = Indrykket første linje
 format-paragraphs-spaced = Luft mellem dem
 format-indent = Indrykning
 format-indent-first = Også efter en overskrift
-format-indent-first-hint = Typografisk skik lader første afsnit stå uden indrykning; APA og andre rykker det ind
 format-space-between = Luft mellem afsnit
 format-italics = Kursiv sættes
 format-italics-italic = Som kursiv
@@ -100,7 +91,6 @@ format-italics-underline = Understreget, som maskinskrevne manuskripter havde de
 format-refmarks = Stedmærker sættes
 format-refmarks-raised = Små og hævet i linjen
 format-refmarks-margin = I margenen ud for deres linje
-format-refmarks-hint = Vers, Stephanus-sider, Bekker-numre. Word og Writer har ikke plads i margenen: der hæves de.
 
 ## Headings.
 
@@ -116,16 +106,11 @@ format-level-centred = centreret
 format-level-right = højre
 format-level-run-in = løber ind i teksten
 format-level-indent = Indrykket som et afsnit
-format-level-run-in-label = Løber ind i teksten
-format-level-run-in-hint = Overskriften indleder afsnittet og ender med punktum
-format-level-begins = Begynder
-format-level-begins-hint = På en højreside indsættes en tom venstreside, hvor der er brug for det, uden noget i dens sidehoved eller sidefod
 format-level-begins-text = I teksten
 format-level-begins-page = På en ny side
 format-level-begins-right-page = På en højreside
 format-level-right-page-said = på en højreside
 format-level-numbering = Nummerering
-format-level-numbering-hint = Et niveau »som niveauet over« nummereres på samme måde som det, under dets nummer
 format-level-numbering-as-above = Som niveauet over
 format-level-numbering-none = Ingen
 format-level-numbering-arabic = 1, 2, 3
@@ -141,17 +126,12 @@ format-space-before = Luft før
 format-space-after = Luft efter
 format-level-add = Et dybere niveau
 format-level-remove = Fjern det dybeste
-format-levels-hint = Overskrifter dybere end det dybeste beskrevne niveau sættes som det niveau.
 
 ## The title and the abstract.
 
 format-title-placement = Titlen står
 format-title-top = Øverst på første side
 format-title-own-page = På en side for sig
-format-title-shown = Hvad der vises
-format-title-how = Hvordan den sættes
-format-title-anonymous = Uden forfatternes navne
-format-title-anonymous-hint = Til fagfællebedømmelse: forfatterne udelades overalt, også i sidehovedet
 format-title-authors = Forfattere
 format-title-affiliations = Deres tilhørsforhold
 format-title-date = Dato
@@ -165,15 +145,12 @@ format-quote-indent-left = Indrykning til venstre
 format-quote-indent-right = Indrykning til højre
 format-quote-when = Hvornår et citat sættes for sig
 format-quote-from-words = Fra så mange ord
-format-quote-from-words-hint = En påmindelse: skribenten bestemmer
 format-quote-from-lines = Eller så mange linjer
 format-notes-kind = Noterne står
 format-notes-footnotes = Nederst på siden
 format-notes-endnotes = Sidst i teksten
 format-notes-title = Overskrift over noterne
 format-bibliography-title = Overskrift
-# Headings a bibliography may have.
-format-bibliography-title-hint = Litteratur, Referencer, Anvendt litteratur
 format-bibliography-new-page = Begynder på en ny side
 format-bibliography-hanging-indent = Hængende indrykning
 format-bibliography-entry-spacing = Luft mellem posterne
@@ -182,7 +159,6 @@ format-bibliography-entry-spacing = Luft mellem posterne
 ## is based on. The rows are those of the dialog for a kind of one's own
 ## too; what is not said is as the base has it.
 
-format-kinds-hint = Hver art med sit udseende, som det kommer til at stå: artens grundudseende, så de arter, den bygger på, og så hvad denne opsætning siger om den. Rækkerne ændrer kun det, denne opsætning siger; det, der ikke siges, er som grundlaget har det.
 format-kind-based-on = bygger på { $base }
 # Of the kind Text, which the parts for type and paragraphs set.
 format-kind-text-note = som opsætningens skrift og afsnit har det
@@ -241,16 +217,7 @@ format-captioned-called = { $kind ->
     [figure] En figur kaldes
    *[table] En tabel kaldes
 }
-# Words a figure or table may be called by.
-format-captioned-called-hint = { $kind ->
-    [figure] Figur, Fig., Figure
-   *[table] Tabel, Tab., Table
-}
 format-captioned-reference = Hvor teksten henviser til den
-format-captioned-reference-hint = { $kind ->
-    [figure] fig., figur; tomt for samme ord
-   *[table] tab., tabel; tomt for samme ord
-}
 format-captioned-label-bold = Ordet og nummeret med fed
 format-captioned-label-italic = Ordet og nummeret med kursiv
 format-captioned-between = { $kind ->
@@ -272,7 +239,6 @@ format-between-line = { $kind ->
 }
 format-between-other = Andet…
 format-captioned-separator = Det, der står mellem dem
-format-captioned-separator-hint = Mellemrum tæller: skriv dem, hvor de skal stå
 format-captioned-own-line = { $kind ->
     [figure] Derefter billedteksten på en linje for sig
    *[table] Derefter tabelteksten på en linje for sig
@@ -293,15 +259,6 @@ format-caption-above = { $kind ->
     [figure] Over billedet
    *[table] Over tabellen
 }
-format-caption-align-hint = { $kind ->
-    [figure] Står figuren i en side, står billedteksten i samme side
-   *[table] Står tabellen i en side, står tabelteksten i samme side
-}
-# In the example of how the number and the caption will stand.
-format-caption-example = { $kind ->
-    [figure] Billedtekst
-   *[table] Tabeltekst
-}
 format-captioned-where = { $kind ->
     [figure] Hvor figurerne står
    *[table] Hvor tabellerne står
@@ -314,26 +271,17 @@ format-captioned-wrap = Teksten løber omkring dem
 format-captioned-placement = I dokumentet
 format-captioned-in-text = I teksten
 format-captioned-at-end = Samlet til sidst
-format-captioned-placement-hint = Mange tidsskrifter beder om dem sidst i manuskriptet
 format-captioned-end-title = { $kind ->
     [figure] Overskrift over figurerne
    *[table] Overskrift over tabellerne
 }
-format-captioned-end-title-hint = { $kind ->
-    [figure] Figurer, Illustrationer; tomt for ingen
-   *[table] Tabeller; tomt for ingen
-}
 # What is left in the text where a figure or table gathered at the end belongs.
 format-captioned-placeholder = Linje, der bliver stående i teksten
-# The braces are written as they are; line is how the line will stand.
-format-captioned-placeholder-shown = {"{}"} står for ordet og nummeret: { $line }
 format-captioned-placeholder-missing = Den skal indeholde {"{}"}, hvor ordet og nummeret skal stå
-format-table-itself = Selve tabellen
 format-table-rules = Streger
 format-table-rules-horizontal = Over, under og under overskrifterne
 format-table-rules-grid = Omkring hver celle
 format-table-rules-none = Ingen
-format-table-rules-hint = Bøger og tidsskrifter har det første
 format-table-header-bold = Overskrifter med fed
 format-equations = Ligninger
 format-equations-stand = Ligningerne står
@@ -356,7 +304,6 @@ format-margin-footer = Sidefod
 format-margin-shown = Vises
 format-margin-first-page = Også på første side
 format-margin-openers = Også på de sider, hvor et kapitel eller en del begynder
-format-margin-openers-hint = En overskrift, der begynder en side, eller en del på en side for sig
 format-margin-alternate = Forskelligt på venstre- og højresider
 format-margin-right-pages = På højresider
 format-margin-left-pages = På venstresider
@@ -384,5 +331,3 @@ format-source-read = Læst { $date }.
 format-source-high = Værdierne er kildens.
 format-source-medium = Kilden kunne kun læses delvist eller i en tidligere udgave: tjek det, der har betydning for dig.
 format-source-low = Kun lidt kunne bekræftes: tag værdierne som et udgangspunkt.
-format-source-changed = Du har ændret denne opsætning; kilden beskriver den, den blev lavet ud fra.
-format-source-none = Denne opsætning følger ikke nogen bestemt udgivers krav.

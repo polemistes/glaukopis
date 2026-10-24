@@ -153,7 +153,7 @@ try {
   );
   check(
     'the layout and the reference style are chosen in Look, the style under the notes',
-    (await app.lookChosen('Layout')) === '' &&
+    (await app.lookChosen('Choose a layout')) === '' &&
       (await app.lookChosen('Reference style')) === '' &&
       (await app.exists('.side .look .part[data-part="notes"] [data-style-row]')) &&
       (await app.exists('.side .look .part[data-part="layout"] select')),
@@ -230,7 +230,7 @@ try {
   await app.screenshot('look-3-kinds');
 
   // --- Kept as a layout of one's own ---
-  await app.lookSection('The layout');
+  await app.lookSection('Layout');
   await app.clickText('.side .look .keep button', 'Keep these changes as a layout of my own');
   await app.waitFor('.side .look .keep input.kept-name', 3000);
   await app.exec(
@@ -271,13 +271,13 @@ try {
   await app.lookWrite('On the pages where a chapter or a part begins too', false);
   check('the footer kept off the openers and the blank pages', await typstHas(/if gk-blank\(at\) or gk-on\(<gk-opener>, at\) \{ none \}/));
   await app.lookSection('Headings');
-  check('a level begins in the text, on a new page or on a right-hand page', (await app.lookChoose('Begins', 'right-page')) === true);
+  check('a level begins in the text, on a new page or on a right-hand page', (await app.lookChoose('Placement', 'right-page')) === true);
   check('and the level says so', (await app.exec(`return document.querySelector('.side .look details.level[data-level="1"] .said')?.textContent ?? ''`)).includes('on a right-hand page'));
   check(
     'the preview breaks to a right-hand page before a heading of that level, and marks the opener',
     await typstHas(/#pagebreak\(weak: true, to: "odd"\)\n#metadata\("opener"\) <gk-opener>/),
   );
-  await app.lookChoose('Begins', 'text');
+  await app.lookChoose('Placement', 'text');
   // Numbered level by level: the chapters in roman.
   await app.lookWrite('Numbered', true);
   await sleep(300);
@@ -306,7 +306,7 @@ try {
   await app.screenshot('look-5-inherited');
 
   // --- The foot of Look opens what the document says of itself ---
-  await app.lookSection('The layout');
+  await app.lookSection('Layout');
   await app.clickText('.side .look .actions.about button', 'Document properties…');
   await app.waitForText('dialog[open] h2', 'Document properties', 5000);
   const about = await app.exec(

@@ -121,8 +121,6 @@ template-requirements-hint = Ciò che un documento di questo modello deve rispet
 template-requirement-words = Parole del testo
 template-requirement-abstract-words = Parole dell'abstract
 template-requirement-keywords = Parole chiave
-template-requirement-anonymous = Senza i nomi degli autori
-template-requirement-anonymous-hint = Per la revisione: la lista di controllo lo dice, e un'impaginazione per la revisione li lascia fuori
 template-requirement-note = Che cosa contano i limiti
 template-requirement-note-placeholder = Note comprese; bibliografia no
 # Beside a number of 0, in the place of its unit.

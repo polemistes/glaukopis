@@ -121,8 +121,6 @@ template-requirements-hint = Det eit dokument med denne malen skal oppfylle. Sje
 template-requirement-words = Ord i teksten
 template-requirement-abstract-words = Ord i samandraget
 template-requirement-keywords = Nøkkelord
-template-requirement-anonymous = Utan namna på forfattarane
-template-requirement-anonymous-hint = Til fagfellevurdering: sjekklista seier frå, og eit oppsett for fagfellevurdering utelèt dei
 template-requirement-note = Kva grensene tel
 template-requirement-note-placeholder = Notar tekne med; litteraturlista ikkje
 # Beside a number of 0, in the place of its unit.

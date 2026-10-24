@@ -36,11 +36,8 @@ format-line-spacing = Řádkování
 format-as-the-text = Jako text
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = jako text
-format-size-zero-hint = 0 pro velikost textu
 # Beside a number of 0, in the place of its unit.
 format-not-said = neřečeno
-format-unless-said = Není-li o některém řečeno jinak
-format-as-it-will-stand = Jak to bude vypadat
 format-align-left = Vlevo
 format-align-center = Na střed
 format-align-right = Vpravo
@@ -68,19 +65,16 @@ format-margin-left = Levý
 format-margin-right = Pravý
 format-lengths-hint = Délky se píší s jednotkou: 2.5cm, 1in, 25mm, 12pt.
 format-line-numbers = Číslovat řádky
-format-line-numbers-hint = Jak to některé časopisy žádají pro recenzní řízení
 
 ## Type and spacing, and paragraphs.
 
 format-typeface = Písmo
-format-typeface-hint = Není-li nainstalováno, náhled použije nejbližší
 format-hyphenate = Dělit slova na koncích řádků
 format-paragraphs = Odstavce se odlišují
 format-paragraphs-indent = Odsazením prvního řádku
 format-paragraphs-spaced = Mezerou mezi nimi
 format-indent = Odsazení
 format-indent-first = I za nadpisem
-format-indent-first-hint = Typografický zvyk první odstavec neodsazuje; APA a jiné ho odsazují
 format-space-between = Mezera mezi odstavci
 format-italics = Kurzíva se sází
 format-italics-italic = Jako kurzíva
@@ -100,23 +94,17 @@ format-level-centred = na střed
 format-level-right = vpravo
 format-level-run-in = vbíhá do textu
 format-level-indent = Odsazen jako odstavec
-format-level-run-in-label = Vbíhá do textu
-format-level-run-in-hint = Nadpis začíná odstavec a končí tečkou
 format-level-new-page-said = na nové straně
 format-space-before = Mezera před
 format-space-after = Mezera za
 format-level-add = Hlubší úroveň
 format-level-remove = Odebrat nejhlubší
-format-levels-hint = Nadpisy hlubší než nejhlubší popsaná úroveň se tisknou jako ta úroveň.
 
 ## The title and the abstract.
 
 format-title-placement = Název stojí
 format-title-top = Nahoře na první straně
 format-title-own-page = Na vlastní straně
-format-title-shown = Co se zobrazuje
-format-title-anonymous = Bez jmen autorů
-format-title-anonymous-hint = Pro recenzní řízení: autoři jsou všude vynecháni, i v živém záhlaví
 format-title-authors = Autoři
 format-title-affiliations = Jejich pracoviště
 format-title-date = Datum
@@ -130,15 +118,12 @@ format-quote-indent-left = Odsazení zleva
 format-quote-indent-right = Odsazení zprava
 format-quote-when = Kdy se citát odděluje
 format-quote-from-words = Od tohoto počtu slov
-format-quote-from-words-hint = Připomínka: rozhoduje pisatel
 format-quote-from-lines = Nebo tohoto počtu řádků
 format-notes-kind = Poznámky stojí
 format-notes-footnotes = Pod čarou
 format-notes-endnotes = Na konci textu
 format-notes-title = Nadpis poznámek
 format-bibliography-title = Nadpis
-# Headings a bibliography may have.
-format-bibliography-title-hint = Bibliografie, Literatura, Citovaná literatura
 format-bibliography-new-page = Začíná na nové straně
 format-bibliography-hanging-indent = Předsazení
 format-bibliography-entry-spacing = Mezera mezi záznamy
@@ -147,7 +132,6 @@ format-bibliography-entry-spacing = Mezera mezi záznamy
 ## is based on. The rows are those of the dialog for a kind of one's own
 ## too; what is not said is as the base has it.
 
-format-kinds-hint = Každý druh se sází jako druh, na němž je založen, s rozdíly uvedenými zde. Co není řečeno, je jako u základu.
 format-kind-based-on = založen na { $base }
 format-as-the-base = Jako základ
 # In an empty field for a size, in the place of its number.
@@ -197,16 +181,7 @@ format-captioned-called = { $kind ->
     [figure] Vyobrazení se nazývá
    *[table] Tabulka se nazývá
 }
-# Words a figure or table may be called by.
-format-captioned-called-hint = { $kind ->
-    [figure] Obrázek, Obr., Figure
-   *[table] Tabulka, Tab., Table
-}
 format-captioned-reference = Kde na ně text odkazuje
-format-captioned-reference-hint = { $kind ->
-    [figure] obr., obrázek; prázdné pro totéž slovo
-   *[table] tab., tabulka; prázdné pro totéž slovo
-}
 format-captioned-label-bold = Slovo a číslo tučně
 format-captioned-label-italic = Slovo a číslo kurzívou
 format-captioned-between = { $kind ->
@@ -228,7 +203,6 @@ format-between-line = { $kind ->
 }
 format-between-other = Jiné…
 format-captioned-separator = Co stojí mezi nimi
-format-captioned-separator-hint = Mezery se počítají: napište je tam, kde mají být
 format-captioned-own-line = { $kind ->
     [figure] Pak popisek na vlastním řádku
    *[table] Pak popisek na vlastním řádku
@@ -249,15 +223,6 @@ format-caption-above = { $kind ->
     [figure] Nad obrázkem
    *[table] Nad tabulkou
 }
-format-caption-align-hint = { $kind ->
-    [figure] U vyobrazení, které stojí u kraje, stojí popisek u téhož kraje
-   *[table] U tabulky, která stojí u kraje, stojí popisek u téhož kraje
-}
-# In the example of how the number and the caption will stand.
-format-caption-example = { $kind ->
-    [figure] Popisek
-   *[table] Popisek
-}
 format-captioned-where = { $kind ->
     [figure] Kde vyobrazení stojí
    *[table] Kde tabulky stojí
@@ -270,26 +235,17 @@ format-captioned-wrap = Text je obtéká
 format-captioned-placement = V dokumentu
 format-captioned-in-text = V textu
 format-captioned-at-end = Shromážděné na konci
-format-captioned-placement-hint = Mnohé časopisy je žádají na konci rukopisu
 format-captioned-end-title = { $kind ->
     [figure] Nadpis nad vyobrazeními
    *[table] Nadpis nad tabulkami
 }
-format-captioned-end-title-hint = { $kind ->
-    [figure] Obrázky, Vyobrazení; prázdné pro žádný
-   *[table] Tabulky; prázdné pro žádný
-}
 # What is left in the text where a figure or table gathered at the end belongs.
 format-captioned-placeholder = Řádek ponechaný v textu
-# The braces are written as they are; line is how the line will stand.
-format-captioned-placeholder-shown = {"{}"} zastupuje slovo a číslo: { $line }
 format-captioned-placeholder-missing = Musí obsahovat {"{}"}, kam přijde slovo a číslo
-format-table-itself = Tabulka sama
 format-table-rules = Linky
 format-table-rules-horizontal = Nad, pod a pod záhlavím
 format-table-rules-grid = Kolem každé buňky
 format-table-rules-none = Žádné
-format-table-rules-hint = Knihy a časopisy mají první
 format-table-header-bold = Záhlaví tučně
 format-equations = Rovnice
 format-equations-stand = Rovnice stojí
@@ -310,5 +266,3 @@ format-source-read = Přečteno { $date }.
 format-source-high = Hodnoty jsou ty ze zdroje.
 format-source-medium = Zdroj bylo možné přečíst jen zčásti nebo v dřívějším stavu: ověřte si, na čem vám záleží.
 format-source-low = Málo se dalo ověřit: berte hodnoty jako východisko.
-format-source-changed = Tento formát jste změnili; zdroj popisuje, z čeho byl vytvořen.
-format-source-none = Tento formát se neřídí požadavky žádného konkrétního nakladatele.

@@ -972,7 +972,7 @@ export class App {
 
   /**
    * Goes to a part of the look by its chip: "Page", "Type", "Paragraphs",
-   * "Notes and citations", "The layout"… Every part is on the panel at once;
+   * "Notes and citations", "Layout"… Every part is on the panel at once;
    * the rows are looked for in this part first after it (see `lookRow`).
    */
   async lookSection(section) {

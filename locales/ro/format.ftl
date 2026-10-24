@@ -36,11 +36,8 @@ format-line-spacing = Spațiere între rânduri
 format-as-the-text = Ca textul
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = ca textul
-format-size-zero-hint = 0 pentru mărimea textului
 # Beside a number of 0, in the place of its unit.
 format-not-said = nespus
-format-unless-said = Dacă nu se spune altceva despre vreunul
-format-as-it-will-stand = Așa cum va sta
 format-align-left = La stânga
 format-align-center = Centrat
 format-align-right = La dreapta
@@ -68,19 +65,16 @@ format-margin-left = Stânga
 format-margin-right = Dreapta
 format-lengths-hint = Lungimile se scriu cu unitatea lor: 2.5cm, 1in, 25mm, 12pt.
 format-line-numbers = Numerotează rândurile
-format-line-numbers-hint = Cum cer unele reviste pentru recenzare
 
 ## Type and spacing, and paragraphs.
 
 format-typeface = Font
-format-typeface-hint = Unde nu este instalat, în previzualizare se folosește cel mai apropiat
 format-hyphenate = Desparte cuvintele în silabe la capăt de rând
 format-paragraphs = Paragrafele se deosebesc prin
 format-paragraphs-indent = Un prim rând retras
 format-paragraphs-spaced = Spațiu între ele
 format-indent = Alineat
 format-indent-first = Și după un titlu
-format-indent-first-hint = Obiceiul tipografic lasă primul paragraf fără alineat; APA și altele îl retrag
 format-space-between = Spațiu între paragrafe
 format-italics = Cursivele se așază
 format-italics-italic = Ca litere cursive
@@ -100,23 +94,17 @@ format-level-centred = centrat
 format-level-right = la dreapta
 format-level-run-in = intră în text
 format-level-indent = Retras ca un paragraf
-format-level-run-in-label = Intră în text
-format-level-run-in-hint = Titlul începe paragraful și se încheie cu punct
 format-level-new-page-said = pe pagină nouă
 format-space-before = Spațiu înainte
 format-space-after = Spațiu după
 format-level-add = Un nivel mai adânc
 format-level-remove = Scoate-l pe cel mai adânc
-format-levels-hint = Titlurile mai adânci decât cel mai adânc nivel descris se tipăresc ca acel nivel.
 
 ## The title and the abstract.
 
 format-title-placement = Titlul stă
 format-title-top = În capul primei pagini
 format-title-own-page = Pe o pagină a lui
-format-title-shown = Ce se arată
-format-title-anonymous = Fără numele autorilor
-format-title-anonymous-hint = Pentru recenzare: autorii sunt lăsați afară peste tot, și din colontitlu
 format-title-authors = Autorii
 format-title-affiliations = Afilierile lor
 format-title-date = Data
@@ -130,15 +118,12 @@ format-quote-indent-left = Retragere la stânga
 format-quote-indent-right = Retragere la dreapta
 format-quote-when = Când se desparte un citat
 format-quote-from-words = De la atâtea cuvinte
-format-quote-from-words-hint = Un memento: cel care scrie hotărăște
 format-quote-from-lines = Sau de la atâtea rânduri
 format-notes-kind = Notele stau
 format-notes-footnotes = La subsolul paginii
 format-notes-endnotes = La sfârșitul textului
 format-notes-title = Titlul notelor
 format-bibliography-title = Titlu
-# Headings a bibliography may have.
-format-bibliography-title-hint = Bibliografie, Referințe, Lucrări citate
 format-bibliography-new-page = Începe pe o pagină nouă
 format-bibliography-hanging-indent = Alineat agățat
 format-bibliography-entry-spacing = Spațiu între intrări
@@ -147,7 +132,6 @@ format-bibliography-entry-spacing = Spațiu între intrări
 ## is based on. The rows are those of the dialog for a kind of one's own
 ## too; what is not said is as the base has it.
 
-format-kinds-hint = Fiecare tip se așază ca tipul pe care se bazează, cu deosebirile date aici. Ce nu se spune este cum are baza.
 format-kind-based-on = bazat pe { $base }
 format-as-the-base = Ca baza
 # In an empty field for a size, in the place of its number.
@@ -197,16 +181,7 @@ format-captioned-called = { $kind ->
     [figure] O figură se numește
    *[table] Un tabel se numește
 }
-# Words a figure or table may be called by.
-format-captioned-called-hint = { $kind ->
-    [figure] Figura, Fig., Figure
-   *[table] Tabelul, Tab., Table
-}
 format-captioned-reference = Unde textul face trimitere la ea
-format-captioned-reference-hint = { $kind ->
-    [figure] fig., figura; gol pentru același cuvânt
-   *[table] tab., tabelul; gol pentru același cuvânt
-}
 format-captioned-label-bold = Cuvântul și numărul cu aldine
 format-captioned-label-italic = Cuvântul și numărul cu cursive
 format-captioned-between = { $kind ->
@@ -228,7 +203,6 @@ format-between-line = { $kind ->
 }
 format-between-other = Altceva…
 format-captioned-separator = Ce stă între ele
-format-captioned-separator-hint = Spațiile contează: scrieți-le unde le vreți
 format-captioned-own-line = { $kind ->
     [figure] Apoi legenda pe un rând al ei
    *[table] Apoi legenda pe un rând al ei
@@ -249,15 +223,6 @@ format-caption-above = { $kind ->
     [figure] Deasupra imaginii
    *[table] Deasupra tabelului
 }
-format-caption-align-hint = { $kind ->
-    [figure] La o figură care stă pe o parte, legenda stă pe acea parte
-   *[table] La un tabel care stă pe o parte, legenda stă pe acea parte
-}
-# In the example of how the number and the caption will stand.
-format-caption-example = { $kind ->
-    [figure] Legenda
-   *[table] Legenda
-}
 format-captioned-where = { $kind ->
     [figure] Unde stau figurile
    *[table] Unde stau tabelele
@@ -270,26 +235,17 @@ format-captioned-wrap = Textul curge în jurul lor
 format-captioned-placement = În document
 format-captioned-in-text = În text
 format-captioned-at-end = Adunate la sfârșit
-format-captioned-placement-hint = Multe reviste le cer la sfârșitul manuscrisului
 format-captioned-end-title = { $kind ->
     [figure] Titlul de deasupra figurilor
    *[table] Titlul de deasupra tabelelor
 }
-format-captioned-end-title-hint = { $kind ->
-    [figure] Figuri, Ilustrații; gol pentru niciunul
-   *[table] Tabele; gol pentru niciunul
-}
 # What is left in the text where a figure or table gathered at the end belongs.
 format-captioned-placeholder = Rândul lăsat în text
-# The braces are written as they are; line is how the line will stand.
-format-captioned-placeholder-shown = {"{}"} ține locul cuvântului și numărului: { $line }
 format-captioned-placeholder-missing = Trebuie să cuprindă {"{}"}, unde vin cuvântul și numărul
-format-table-itself = Tabelul însuși
 format-table-rules = Linii
 format-table-rules-horizontal = Deasupra, dedesubt și sub capetele de coloană
 format-table-rules-grid = În jurul fiecărei celule
 format-table-rules-none = Niciuna
-format-table-rules-hint = Cărțile și revistele le au pe primele
 format-table-header-bold = Capetele de coloană cu aldine
 format-equations = Ecuații
 format-equations-stand = Ecuațiile stau
@@ -310,5 +266,3 @@ format-source-read = Citit la { $date }.
 format-source-high = Valorile sunt cele ale sursei.
 format-source-medium = Sursa nu s-a putut citi decât în parte sau într-o stare mai veche: verificați ce vă privește.
 format-source-low = Puțin s-a putut verifica: luați valorile ca un început.
-format-source-changed = Ați modificat acest format; sursa descrie din ce a fost făcut.
-format-source-none = Acest format nu urmează cerințele niciunei edituri anume.

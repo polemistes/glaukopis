@@ -36,11 +36,8 @@ format-line-spacing = Prored
 format-as-the-text = Kao tekst
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = kao tekst
-format-size-zero-hint = 0 za veličinu teksta
 # Beside a number of 0, in the place of its unit.
 format-not-said = nije rečeno
-format-unless-said = Ako o kojem nije rečeno drukčije
-format-as-it-will-stand = Kako će stajati
 format-align-left = Lijevo
 format-align-center = Centrirano
 format-align-right = Desno
@@ -68,19 +65,16 @@ format-margin-left = Lijevo
 format-margin-right = Desno
 format-lengths-hint = Duljine se pišu s jedinicom: 2.5cm, 1in, 25mm, 12pt.
 format-line-numbers = Numeriraj retke
-format-line-numbers-hint = Kako neki časopisi traže za recenziju
 
 ## Type and spacing, and paragraphs.
 
 format-typeface = Pismo
-format-typeface-hint = Gdje nije instalirano, u pretpregledu se koristi najbliže
 format-hyphenate = Rastavljaj riječi na kraju retka
 format-paragraphs = Odlomci se razlikuju po
 format-paragraphs-indent = Uvučenom prvom retku
 format-paragraphs-spaced = Razmaku među njima
 format-indent = Uvlaka
 format-indent-first = I iza naslova
-format-indent-first-hint = Tipografski običaj ostavlja prvi odlomak neuvučen; APA i drugi ga uvlače
 format-space-between = Razmak među odlomcima
 format-italics = Kurziv se slaže
 format-italics-italic = Kao kurziv
@@ -100,23 +94,17 @@ format-level-centred = centrirano
 format-level-right = desno
 format-level-run-in = utječe u tekst
 format-level-indent = Uvučen kao odlomak
-format-level-run-in-label = Utječe u tekst
-format-level-run-in-hint = Naslov počinje odlomak i završava točkom
 format-level-new-page-said = na novoj stranici
 format-space-before = Razmak prije
 format-space-after = Razmak poslije
 format-level-add = Dublja razina
 format-level-remove = Ukloni najdublju
-format-levels-hint = Naslovi dublji od najdublje opisane razine tiskaju se kao ta razina.
 
 ## The title and the abstract.
 
 format-title-placement = Naslov stoji
 format-title-top = Na vrhu prve stranice
 format-title-own-page = Na zasebnoj stranici
-format-title-shown = Što se prikazuje
-format-title-anonymous = Bez imena autora
-format-title-anonymous-hint = Za recenziju: autori se izostavljaju svugdje, i u živoj glavi
 format-title-authors = Autori
 format-title-affiliations = Njihove ustanove
 format-title-date = Datum
@@ -130,15 +118,12 @@ format-quote-indent-left = Uvlaka slijeva
 format-quote-indent-right = Uvlaka zdesna
 format-quote-when = Kad se navod izdvaja
 format-quote-from-words = Od ovoliko riječi
-format-quote-from-words-hint = Podsjetnik: odlučuje pisac
 format-quote-from-lines = Ili ovoliko redaka
 format-notes-kind = Bilješke stoje
 format-notes-footnotes = U podnožju stranice
 format-notes-endnotes = Na kraju teksta
 format-notes-title = Naslov bilježaka
 format-bibliography-title = Naslov
-# Headings a bibliography may have.
-format-bibliography-title-hint = Literatura, Bibliografija, Citirana literatura
 format-bibliography-new-page = Počinje na novoj stranici
 format-bibliography-hanging-indent = Viseća uvlaka
 format-bibliography-entry-spacing = Razmak među jedinicama
@@ -147,7 +132,6 @@ format-bibliography-entry-spacing = Razmak među jedinicama
 ## is based on. The rows are those of the dialog for a kind of one's own
 ## too; what is not said is as the base has it.
 
-format-kinds-hint = Svaka je vrsta složena kao vrsta na kojoj se temelji, s ovdje navedenim razlikama. Što nije rečeno, kao u temelju.
 format-kind-based-on = na temelju { $base }
 format-as-the-base = Kao temelj
 # In an empty field for a size, in the place of its number.
@@ -197,16 +181,7 @@ format-captioned-called = { $kind ->
     [figure] Ilustracija se zove
    *[table] Tablica se zove
 }
-# Words a figure or table may be called by.
-format-captioned-called-hint = { $kind ->
-    [figure] Slika, Sl., Figure
-   *[table] Tablica, Tabl., Table
-}
 format-captioned-reference = Gdje tekst na nju upućuje
-format-captioned-reference-hint = { $kind ->
-    [figure] sl., slika; prazno za istu riječ
-   *[table] tabl., tablica; prazno za istu riječ
-}
 format-captioned-label-bold = Riječ i broj podebljano
 format-captioned-label-italic = Riječ i broj kurzivom
 format-captioned-between = { $kind ->
@@ -228,7 +203,6 @@ format-between-line = { $kind ->
 }
 format-between-other = Drugo…
 format-captioned-separator = Što stoji između njih
-format-captioned-separator-hint = Razmaci se računaju: napišite ih gdje ih želite
 format-captioned-own-line = { $kind ->
     [figure] Zatim opis u zasebnom retku
    *[table] Zatim opis u zasebnom retku
@@ -249,15 +223,6 @@ format-caption-above = { $kind ->
     [figure] Iznad slike
    *[table] Iznad tablice
 }
-format-caption-align-hint = { $kind ->
-    [figure] Ilustraciji koja stoji sa strane opis stoji s te strane
-   *[table] Tablici koja stoji sa strane opis stoji s te strane
-}
-# In the example of how the number and the caption will stand.
-format-caption-example = { $kind ->
-    [figure] Opis
-   *[table] Opis
-}
 format-captioned-where = { $kind ->
     [figure] Gdje stoje ilustracije
    *[table] Gdje stoje tablice
@@ -270,26 +235,17 @@ format-captioned-wrap = Tekst ih optječe
 format-captioned-placement = U dokumentu
 format-captioned-in-text = U tekstu
 format-captioned-at-end = Skupljene na kraju
-format-captioned-placement-hint = Mnogi ih časopisi traže na kraju rukopisa
 format-captioned-end-title = { $kind ->
     [figure] Naslov iznad ilustracija
    *[table] Naslov iznad tablica
 }
-format-captioned-end-title-hint = { $kind ->
-    [figure] Slike, Ilustracije; prazno za nikakav
-   *[table] Tablice; prazno za nikakav
-}
 # What is left in the text where a figure or table gathered at the end belongs.
 format-captioned-placeholder = Redak ostavljen u tekstu
-# The braces are written as they are; line is how the line will stand.
-format-captioned-placeholder-shown = {"{}"} stoji za riječ i broj: { $line }
 format-captioned-placeholder-missing = Mora sadržavati {"{}"}, gdje idu riječ i broj
-format-table-itself = Sama tablica
 format-table-rules = Crte
 format-table-rules-horizontal = Iznad, ispod i ispod zaglavlja
 format-table-rules-grid = Oko svake ćelije
 format-table-rules-none = Nikakve
-format-table-rules-hint = Knjige i časopisi imaju prvo
 format-table-header-bold = Zaglavlja podebljana
 format-equations = Jednadžbe
 format-equations-stand = Jednadžbe stoje
@@ -310,5 +266,3 @@ format-source-read = Pročitano { $date }.
 format-source-high = Vrijednosti su one iz izvora.
 format-source-medium = Izvor se mogao pročitati samo djelomično ili u ranijem stanju: provjerite što vam je važno.
 format-source-low = Malo se toga moglo provjeriti: uzmite vrijednosti kao početak.
-format-source-changed = Izmijenili ste ovaj format; izvor opisuje ono od čega je načinjen.
-format-source-none = Ovaj format ne slijedi zahtjeve nijednog nakladnika posebno.

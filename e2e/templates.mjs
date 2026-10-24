@@ -151,7 +151,7 @@ try {
 
   // --- What the document contains, in Look: the parts, the places of their own, what is required ---
   await app.click('.preview header [data-look]');
-  await app.openLook('What the document contains');
+  await app.openLook('Parts of the document type');
   const places = await app.exec(
     `return Array.from(document.querySelectorAll('.side .look .place')).map((p) => ({
        name: p.querySelector('.place-head strong').textContent.trim(),
@@ -313,7 +313,7 @@ try {
   );
   await app.screenshot('templates-8-checklist');
   await app.closeAbout();
-  await app.openLook('What the document contains');
+  await app.openLook('Parts of the document type');
   check(
     'and what the document contains says that only the first is used',
     (await app.text('.side .look .place[data-kind="abstract"]')).includes('Only the first is used'),

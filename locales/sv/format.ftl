@@ -34,11 +34,8 @@ format-line-spacing = Radavstånd
 format-as-the-text = Som texten
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = som texten
-format-size-zero-hint = 0 för textens storlek
 # Beside a number of 0, in the place of its unit.
 format-not-said = inte angivet
-format-unless-said = Om inte något annat sägs om ett
-format-as-it-will-stand = Som det kommer att stå
 format-align-left = Vänster
 format-align-center = Centrerad
 format-align-right = Höger
@@ -66,33 +63,27 @@ format-margin-left = Vänster
 format-margin-right = Höger
 format-columns-heading = Spalter
 format-columns = Spalter
-format-columns-hint = Texten sätts i så många spalter på sidan; 1 för inga. En spaltbrytning i texten börjar nästa.
 format-column-gap = Mellanrum mellan spalterna
 format-lengths-hint = Längder skrivs med sin enhet: 2.5cm, 1in, 25mm, 12pt.
 ## Numbers belong to what they number (ADR 0041): the lines one numbers
 ## are shown as the layout says where they do not say otherwise; the lines
 ## of the page are the layout's alone.
-format-numbers-hint = Hur numren på de rader du numrerar visas, där de inte säger något annat; och om sidans rader numreras.
 format-verse-every = Visa ett nummer var
-format-verse-every-hint = Av raderna du numrerar: 5 visar 5, 10, 15
 format-verse-side = Numren till
 format-side-left = Vänster
 format-side-right = Höger
 format-numbers-page = Sidans rader
 format-line-numbers = Numrera raderna
-format-line-numbers-hint = Som en del tidskrifter begär för granskning
 
 ## Type and spacing, and paragraphs.
 
 format-typeface = Typsnitt
-format-typeface-hint = Där det inte är installerat används det närmaste i förhandsvisningen
 format-hyphenate = Avstava ord vid radslut
 format-paragraphs = Stycken skiljs åt med
 format-paragraphs-indent = Indragen första rad
 format-paragraphs-spaced = Mellanrum mellan dem
 format-indent = Indrag
 format-indent-first = Också efter en rubrik
-format-indent-first-hint = Typografisk sed lämnar det första stycket utan indrag; APA och andra drar in det
 format-space-between = Mellanrum mellan stycken
 format-italics = Kursiv sätts
 format-italics-italic = Som kursiv
@@ -100,7 +91,6 @@ format-italics-underline = Understruken, som maskinskrivna manuskript hade den
 format-refmarks = Referensmärken sätts
 format-refmarks-raised = Små och upphöjda i raden
 format-refmarks-margin = I marginalen bredvid sin rad
-format-refmarks-hint = Verser, Stephanus-sidor, Bekker-nummer. Word och Writer har ingen plats i marginalen: där blir de upphöjda.
 
 ## Headings.
 
@@ -116,16 +106,11 @@ format-level-centred = centrerad
 format-level-right = höger
 format-level-run-in = löper in i texten
 format-level-indent = Indragen som ett stycke
-format-level-run-in-label = Löper in i texten
-format-level-run-in-hint = Rubriken inleder stycket och slutar med punkt
-format-level-begins = Börjar
-format-level-begins-hint = På en högersida läggs en tom vänstersida in där det behövs, utan något i sidhuvudet eller sidfoten
 format-level-begins-text = I texten
 format-level-begins-page = På en ny sida
 format-level-begins-right-page = På en högersida
 format-level-right-page-said = på en högersida
 format-level-numbering = Numrering
-format-level-numbering-hint = En nivå som är som nivån ovanför numreras i den nivåns form, under dess nummer
 format-level-numbering-as-above = Som nivån ovanför
 format-level-numbering-none = Ingen
 format-level-numbering-arabic = 1, 2, 3
@@ -141,17 +126,12 @@ format-space-before = Mellanrum före
 format-space-after = Mellanrum efter
 format-level-add = En nivå djupare
 format-level-remove = Ta bort den djupaste
-format-levels-hint = Rubriker djupare än den djupaste nivå som beskrivs skrivs ut som den nivån.
 
 ## The title and the abstract.
 
 format-title-placement = Titeln står
 format-title-top = Överst på första sidan
 format-title-own-page = På en egen sida
-format-title-shown = Vad som visas
-format-title-how = Hur den sätts
-format-title-anonymous = Utan författarnas namn
-format-title-anonymous-hint = För granskning: författarna utelämnas överallt, också i kolumntiteln
 format-title-authors = Författare
 format-title-affiliations = Deras tillhörighet
 format-title-date = Datum
@@ -165,15 +145,12 @@ format-quote-indent-left = Indrag till vänster
 format-quote-indent-right = Indrag till höger
 format-quote-when = När ett citat avskiljs
 format-quote-from-words = Från så här många ord
-format-quote-from-words-hint = En påminnelse: skribenten avgör
 format-quote-from-lines = Eller så här många rader
 format-notes-kind = Noter står
 format-notes-footnotes = Längst ner på sidan
 format-notes-endnotes = I slutet av texten
 format-notes-title = Noternas rubrik
 format-bibliography-title = Rubrik
-# Headings a bibliography may have.
-format-bibliography-title-hint = Litteraturförteckning, Referenser, Källor
 format-bibliography-new-page = Börjar på ny sida
 format-bibliography-hanging-indent = Hängande indrag
 format-bibliography-entry-spacing = Mellanrum mellan posterna
@@ -182,7 +159,6 @@ format-bibliography-entry-spacing = Mellanrum mellan posterna
 ## is based on. The rows are those of the dialog for a kind of one's own
 ## too; what is not said is as the base has it.
 
-format-kinds-hint = Varje slag, med sitt utseende som det kommer att stå: slagets grundutseende, sedan de slag det bygger på, sedan det den här layouten säger om det. Raderna ändrar bara det den här layouten säger; det som inte sägs är som grunden har det.
 format-kind-based-on = bygger på { $base }
 # Of the kind Text, which the parts for type and paragraphs set.
 format-kind-text-note = som layoutens typografi och stycken har det
@@ -241,16 +217,7 @@ format-captioned-called = { $kind ->
     [figure] En figur kallas
    *[table] En tabell kallas
 }
-# Words a figure or table may be called by.
-format-captioned-called-hint = { $kind ->
-    [figure] Figur, Fig., Figure
-   *[table] Tabell, Tab., Table
-}
 format-captioned-reference = Där texten hänvisar till den
-format-captioned-reference-hint = { $kind ->
-    [figure] fig., figur; tomt för samma ord
-   *[table] tab., tabell; tomt för samma ord
-}
 format-captioned-label-bold = Ordet och numret i fet
 format-captioned-label-italic = Ordet och numret i kursiv
 format-captioned-between = { $kind ->
@@ -272,7 +239,6 @@ format-between-line = { $kind ->
 }
 format-between-other = Annat…
 format-captioned-separator = Vad som står mellan dem
-format-captioned-separator-hint = Mellanslag räknas: skriv dem där de ska vara
 format-captioned-own-line = { $kind ->
     [figure] Sedan bildtexten på en egen rad
    *[table] Sedan tabelltexten på en egen rad
@@ -293,15 +259,6 @@ format-caption-above = { $kind ->
     [figure] Över bilden
    *[table] Över tabellen
 }
-format-caption-align-hint = { $kind ->
-    [figure] För en figur som står vid en sida står bildtexten vid den sidan
-   *[table] För en tabell som står vid en sida står tabelltexten vid den sidan
-}
-# In the example of how the number and the caption will stand.
-format-caption-example = { $kind ->
-    [figure] Bildtext
-   *[table] Tabelltext
-}
 format-captioned-where = { $kind ->
     [figure] Var figurer står
    *[table] Var tabeller står
@@ -314,26 +271,17 @@ format-captioned-wrap = Texten flyter runt dem
 format-captioned-placement = I dokumentet
 format-captioned-in-text = I texten
 format-captioned-at-end = Samlade i slutet
-format-captioned-placement-hint = Många tidskrifter begär dem i slutet av ett manuskript
 format-captioned-end-title = { $kind ->
     [figure] Rubrik över figurerna
    *[table] Rubrik över tabellerna
 }
-format-captioned-end-title-hint = { $kind ->
-    [figure] Figurer, Illustrationer; tomt för ingen
-   *[table] Tabeller; tomt för ingen
-}
 # What is left in the text where a figure or table gathered at the end belongs.
 format-captioned-placeholder = Rad som lämnas i texten
-# The braces are written as they are; line is how the line will stand.
-format-captioned-placeholder-shown = {"{}"} står för ordet och numret: { $line }
 format-captioned-placeholder-missing = Den måste innehålla {"{}"}, där ordet och numret ska stå
-format-table-itself = Själva tabellen
 format-table-rules = Linjer
 format-table-rules-horizontal = Över, under, och under rubrikerna
 format-table-rules-grid = Runt varje cell
 format-table-rules-none = Inga
-format-table-rules-hint = Böcker och tidskrifter har det första
 format-table-header-bold = Rubriker i fet
 format-equations = Ekvationer
 format-equations-stand = Ekvationer står
@@ -356,7 +304,6 @@ format-margin-footer = Sidfot
 format-margin-shown = Visas
 format-margin-first-page = Också på första sidan
 format-margin-openers = Också på sidorna där ett kapitel eller en del börjar
-format-margin-openers-hint = En rubrik som börjar en sida, eller en del på en egen sida
 format-margin-alternate = Olika på vänster- och högersidor
 format-margin-right-pages = På högersidor
 format-margin-left-pages = På vänstersidor
@@ -384,5 +331,3 @@ format-source-read = Läst { $date }.
 format-source-high = Värdena är källans.
 format-source-medium = Källan kunde bara läsas delvis eller i ett tidigare skick: kontrollera det som är viktigt för dig.
 format-source-low = Lite kunde bekräftas: ta värdena som en början.
-format-source-changed = Du har ändrat den här layouten; källan beskriver vad den gjordes av.
-format-source-none = Den här layouten följer inga särskilda krav från något förlag.

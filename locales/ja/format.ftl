@@ -36,11 +36,8 @@ format-line-spacing = 行間
 format-as-the-text = 本文と同じ
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = 本文と同じ
-format-size-zero-hint = 0で本文と同じサイズ
 # Beside a number of 0, in the place of its unit.
 format-not-said = 指定なし
-format-unless-said = 個別の指定がなければ
-format-as-it-will-stand = 組まれる姿
 format-align-left = 左
 format-align-center = 中央
 format-align-right = 右
@@ -68,19 +65,16 @@ format-margin-left = 左
 format-margin-right = 右
 format-lengths-hint = 長さは単位を付けて書きます：2.5cm、1in、25mm、12pt。
 format-line-numbers = 行番号を振る
-format-line-numbers-hint = 査読用に求める学術誌もあります
 
 ## Type and spacing, and paragraphs.
 
 format-typeface = 書体
-format-typeface-hint = インストールされていない場合、プレビューでは最も近い書体を使います
 format-hyphenate = 行末で語を分割する
 format-paragraphs = 段落の区切り方
 format-paragraphs-indent = 一行目の字下げ
 format-paragraphs-spaced = 段落間のスペース
 format-indent = 字下げ
 format-indent-first = 見出しの直後も
-format-indent-first-hint = 組版の慣例では最初の段落は字下げしませんが、APAなどでは字下げします
 format-space-between = 段落間のスペース
 format-italics = 斜体の組み方
 format-italics-italic = 斜体で
@@ -100,23 +94,17 @@ format-level-centred = 中央
 format-level-right = 右
 format-level-run-in = 本文に続ける
 format-level-indent = 段落と同じく字下げ
-format-level-run-in-label = 本文に続ける
-format-level-run-in-hint = 見出しが段落の頭に来て、ピリオドで終わります
 format-level-new-page-said = 改ページ
 format-space-before = 前のスペース
 format-space-after = 後のスペース
 format-level-add = 深いレベルを追加
 format-level-remove = 最も深いレベルを外す
-format-levels-hint = 定義した最も深いレベルより深い見出しは、そのレベルとして印刷されます。
 
 ## The title and the abstract.
 
 format-title-placement = タイトルの位置
 format-title-top = 最初のページの上部
 format-title-own-page = 独立したページ
-format-title-shown = 表示するもの
-format-title-anonymous = 著者名を伏せる
-format-title-anonymous-hint = 査読用。柱も含め、あらゆる箇所から著者を除きます
 format-title-authors = 著者
 format-title-affiliations = 所属
 format-title-date = 日付
@@ -130,15 +118,12 @@ format-quote-indent-left = 左の字下げ
 format-quote-indent-right = 右の字下げ
 format-quote-when = 引用文を離して組むとき
 format-quote-from-words = この語数から
-format-quote-from-words-hint = 目安です。決めるのは書き手です
 format-quote-from-lines = またはこの行数から
 format-notes-kind = 注の位置
 format-notes-footnotes = ページの下
 format-notes-endnotes = テキストの末尾
 format-notes-title = 注の見出し
 format-bibliography-title = 見出し
-# Headings a bibliography may have.
-format-bibliography-title-hint = 参考文献、引用文献、文献一覧
 format-bibliography-new-page = 改ページして始める
 format-bibliography-hanging-indent = ぶら下げインデント
 format-bibliography-entry-spacing = 項目間のスペース
@@ -147,7 +132,6 @@ format-bibliography-entry-spacing = 項目間のスペース
 ## is based on. The rows are those of the dialog for a kind of one's own
 ## too; what is not said is as the base has it.
 
-format-kinds-hint = 各種類は基にする種類と同じに組まれ、ここで指定した違いだけが加わります。指定しないところは基のとおりです。
 format-kind-based-on = { $base }が基
 format-as-the-base = 基と同じ
 # In an empty field for a size, in the place of its number.
@@ -197,16 +181,7 @@ format-captioned-called = { $kind ->
     [figure] 図の呼び名
    *[table] 表の呼び名
 }
-# Words a figure or table may be called by.
-format-captioned-called-hint = { $kind ->
-    [figure] 図、Figure、Fig.
-   *[table] 表、Table、Tab.
-}
 format-captioned-reference = テキストから指すときの語
-format-captioned-reference-hint = { $kind ->
-    [figure] 図、fig.。空欄なら同じ語
-   *[table] 表、tab.。空欄なら同じ語
-}
 format-captioned-label-bold = 語と番号を太字に
 format-captioned-label-italic = 語と番号を斜体に
 format-captioned-between = { $kind ->
@@ -228,7 +203,6 @@ format-between-line = { $kind ->
 }
 format-between-other = その他…
 format-captioned-separator = あいだに置くもの
-format-captioned-separator-hint = スペースも数えます。必要なところに書いてください
 format-captioned-own-line = { $kind ->
     [figure] 続けてキャプションを別の行に
    *[table] 続けてキャプションを別の行に
@@ -249,15 +223,6 @@ format-caption-above = { $kind ->
     [figure] 画像の上
    *[table] 表の上
 }
-format-caption-align-hint = { $kind ->
-    [figure] 左右に置いた図では、キャプションもその側に置かれます
-   *[table] 左右に置いた表では、キャプションもその側に置かれます
-}
-# In the example of how the number and the caption will stand.
-format-caption-example = { $kind ->
-    [figure] キャプション
-   *[table] キャプション
-}
 format-captioned-where = { $kind ->
     [figure] 図の位置
    *[table] 表の位置
@@ -270,26 +235,17 @@ format-captioned-wrap = 周りにテキストを回り込ませる
 format-captioned-placement = 文書での置き場所
 format-captioned-in-text = テキスト内
 format-captioned-at-end = 末尾にまとめる
-format-captioned-placement-hint = 原稿の末尾にまとめるよう求める学術誌は多くあります
 format-captioned-end-title = { $kind ->
     [figure] 図の上の見出し
    *[table] 表の上の見出し
 }
-format-captioned-end-title-hint = { $kind ->
-    [figure] 図、図版。空欄なら見出しなし
-   *[table] 表。空欄なら見出しなし
-}
 # What is left in the text where a figure or table gathered at the end belongs.
 format-captioned-placeholder = テキストに残す行
-# The braces are written as they are; line is how the line will stand.
-format-captioned-placeholder-shown = {"{}"}は語と番号を表します：{ $line }
 format-captioned-placeholder-missing = 語と番号の入る{"{}"}を含めてください
-format-table-itself = 表そのもの
 format-table-rules = 罫線
 format-table-rules-horizontal = 上、下、見出しの下
 format-table-rules-grid = すべてのセルの周り
 format-table-rules-none = なし
-format-table-rules-hint = 書籍や学術誌では一つ目が普通です
 format-table-header-bold = 見出しを太字に
 format-equations = 数式
 format-equations-stand = 数式の配置
@@ -310,5 +266,3 @@ format-source-read = { $date }に参照。
 format-source-high = 値は出典どおりです。
 format-source-medium = 出典は一部しか、または以前の版しか参照できませんでした。大事なところは確認してください。
 format-source-low = ほとんど確認できませんでした。値は出発点として扱ってください。
-format-source-changed = この書式は変更されています。出典は元になった書式についてのものです。
-format-source-none = この書式は特定の出版社の規定に従っていません。

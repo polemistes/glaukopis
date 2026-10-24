@@ -34,11 +34,8 @@ format-line-spacing = Interlinea
 format-as-the-text = Come il testo
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = come il testo
-format-size-zero-hint = 0 per la dimensione del testo
 # Beside a number of 0, in the place of its unit.
 format-not-said = non detto
-format-unless-said = Se di uno non è detto altro
-format-as-it-will-stand = Come apparirà
 format-align-left = A sinistra
 format-align-center = Centrato
 format-align-right = A destra
@@ -66,33 +63,27 @@ format-margin-left = Sinistra
 format-margin-right = Destra
 format-columns-heading = Colonne
 format-columns = Colonne
-format-columns-hint = Il testo è composto in tante colonne sulla pagina; 1 per nessuna. Un'interruzione di colonna nel testo fa cominciare la successiva.
 format-column-gap = Spazio tra le colonne
 format-lengths-hint = Le lunghezze si scrivono con la loro unità: 2.5cm, 1in, 25mm, 12pt.
 ## Numbers belong to what they number (ADR 0041): the lines one numbers
 ## are shown as the layout says where they do not say otherwise; the lines
 ## of the page are the layout's alone.
-format-numbers-hint = Come si mostrano i numeri delle righe che numeri, dove queste non dicono altro; e se le righe della pagina sono numerate.
 format-verse-every = Mostra un numero ogni
-format-verse-every-hint = Delle righe che numeri: 5 mostra 5, 10, 15
 format-verse-side = Lato dei numeri
 format-side-left = Sinistra
 format-side-right = Destra
 format-numbers-page = Le righe della pagina
 format-line-numbers = Numera le righe
-format-line-numbers-hint = Come alcune riviste chiedono per la revisione
 
 ## Type and spacing, and paragraphs.
 
 format-typeface = Font
-format-typeface-hint = Dove non è installato, nell'anteprima si usa il più vicino
 format-hyphenate = Dividi le parole a fine riga
 format-paragraphs = I paragrafi si distinguono per
 format-paragraphs-indent = Il rientro della prima riga
 format-paragraphs-spaced = Lo spazio tra di essi
 format-indent = Rientro
 format-indent-first = Anche dopo un titolo
-format-indent-first-hint = L'uso tipografico lascia il primo paragrafo senza rientro; APA e altri lo rientrano
 format-space-between = Spazio tra i paragrafi
 format-italics = Il corsivo è reso
 format-italics-italic = Come corsivo
@@ -100,7 +91,6 @@ format-italics-underline = Sottolineato, come nei dattiloscritti
 format-refmarks = I segni di riferimento sono resi
 format-refmarks-raised = Piccoli e rialzati nella riga
 format-refmarks-margin = Nel margine accanto alla loro riga
-format-refmarks-hint = Versi, pagine di Stephanus, numeri di Bekker. Word e Writer non hanno spazio nel margine: lì sono rialzati.
 
 ## Headings.
 
@@ -116,16 +106,11 @@ format-level-centred = centrato
 format-level-right = a destra
 format-level-run-in = entra nel testo
 format-level-indent = Rientrato come un paragrafo
-format-level-run-in-label = Entra nel testo
-format-level-run-in-hint = Il titolo comincia il paragrafo e finisce con un punto
-format-level-begins = Comincia
-format-level-begins-hint = Su una pagina destra, dove serve si inserisce una pagina sinistra bianca, senza niente nell'intestazione né nel piè di pagina
 format-level-begins-text = Nel testo
 format-level-begins-page = Su una nuova pagina
 format-level-begins-right-page = Su una pagina destra
 format-level-right-page-said = su una pagina destra
 format-level-numbering = Numerazione
-format-level-numbering-hint = Un livello impostato come quello sopra è numerato nello stesso stile, sotto il numero di quello
 format-level-numbering-as-above = Come il livello sopra
 format-level-numbering-none = Nessuna
 format-level-numbering-arabic = 1, 2, 3
@@ -141,17 +126,12 @@ format-space-before = Spazio prima
 format-space-after = Spazio dopo
 format-level-add = Un livello più profondo
 format-level-remove = Togli il più profondo
-format-levels-hint = I titoli più profondi dell'ultimo livello descritto sono stampati come quel livello.
 
 ## The title and the abstract.
 
 format-title-placement = Il titolo sta
 format-title-top = In cima alla prima pagina
 format-title-own-page = Su una pagina a sé
-format-title-shown = Che cosa è mostrato
-format-title-how = Come è composto
-format-title-anonymous = Senza i nomi degli autori
-format-title-anonymous-hint = Per la revisione: gli autori sono lasciati fuori dappertutto, anche dalla testatina
 format-title-authors = Autori
 format-title-affiliations = Le loro affiliazioni
 format-title-date = Data
@@ -165,15 +145,12 @@ format-quote-indent-left = Rientro a sinistra
 format-quote-indent-right = Rientro a destra
 format-quote-when = Quando una citazione è staccata
 format-quote-from-words = Da tante parole in su
-format-quote-from-words-hint = Un promemoria: decide chi scrive
 format-quote-from-lines = O da tante righe in su
 format-notes-kind = Le note stanno
 format-notes-footnotes = A piè di pagina
 format-notes-endnotes = Alla fine del testo
 format-notes-title = Titolo delle note
 format-bibliography-title = Titolo
-# Headings a bibliography may have.
-format-bibliography-title-hint = Bibliografia, Riferimenti bibliografici, Opere citate
 format-bibliography-new-page = Comincia su una nuova pagina
 format-bibliography-hanging-indent = Rientro sporgente
 format-bibliography-entry-spacing = Spazio tra le voci
@@ -182,7 +159,6 @@ format-bibliography-entry-spacing = Spazio tra le voci
 ## is based on. The rows are those of the dialog for a kind of one's own
 ## too; what is not said is as the base has it.
 
-format-kinds-hint = Ogni tipo, con il suo aspetto come apparirà: l'aspetto di base del tipo, poi i tipi su cui è basato, poi ciò che ne dice questa impaginazione. Le righe cambiano solo ciò che dice questa impaginazione; ciò che non è detto è come lo ha la base.
 format-kind-based-on = basato su { $base }
 # Of the kind Text, which the parts for type and paragraphs set.
 format-kind-text-note = come stabiliscono i caratteri e i paragrafi dell'impaginazione
@@ -241,16 +217,7 @@ format-captioned-called = { $kind ->
     [figure] Una figura si chiama
    *[table] Una tabella si chiama
 }
-# Words a figure or table may be called by.
-format-captioned-called-hint = { $kind ->
-    [figure] Figura, Fig., Figure
-   *[table] Tabella, Tab., Table
-}
 format-captioned-reference = Dove il testo vi rimanda
-format-captioned-reference-hint = { $kind ->
-    [figure] fig., figura; vuoto per la stessa parola
-   *[table] tab., tabella; vuoto per la stessa parola
-}
 format-captioned-label-bold = Parola e numero in grassetto
 format-captioned-label-italic = Parola e numero in corsivo
 format-captioned-between = { $kind ->
@@ -272,7 +239,6 @@ format-between-line = { $kind ->
 }
 format-between-other = Altro…
 format-captioned-separator = Che cosa sta tra di essi
-format-captioned-separator-hint = Gli spazi contano: scrivili dove li vuoi
 format-captioned-own-line = { $kind ->
     [figure] Poi la didascalia su una riga a sé
    *[table] Poi la didascalia su una riga a sé
@@ -293,15 +259,6 @@ format-caption-above = { $kind ->
     [figure] Sopra l'immagine
    *[table] Sopra la tabella
 }
-format-caption-align-hint = { $kind ->
-    [figure] Di una figura che sta a lato, la didascalia sta da quel lato
-   *[table] Di una tabella che sta a lato, la didascalia sta da quel lato
-}
-# In the example of how the number and the caption will stand.
-format-caption-example = { $kind ->
-    [figure] Didascalia
-   *[table] Didascalia
-}
 format-captioned-where = { $kind ->
     [figure] Dove stanno le figure
    *[table] Dove stanno le tabelle
@@ -314,26 +271,17 @@ format-captioned-wrap = Il testo scorre intorno
 format-captioned-placement = Nel documento
 format-captioned-in-text = Nel testo
 format-captioned-at-end = Raccolte alla fine
-format-captioned-placement-hint = Molte riviste le chiedono alla fine del manoscritto
 format-captioned-end-title = { $kind ->
     [figure] Titolo sopra le figure
    *[table] Titolo sopra le tabelle
 }
-format-captioned-end-title-hint = { $kind ->
-    [figure] Figure, Illustrazioni; vuoto per nessuno
-   *[table] Tabelle; vuoto per nessuno
-}
 # What is left in the text where a figure or table gathered at the end belongs.
 format-captioned-placeholder = Riga lasciata nel testo
-# The braces are written as they are; line is how the line will stand.
-format-captioned-placeholder-shown = {"{}"} sta per la parola e il numero: { $line }
 format-captioned-placeholder-missing = Deve contenere {"{}"}, dove vanno la parola e il numero
-format-table-itself = La tabella stessa
 format-table-rules = Linee
 format-table-rules-horizontal = Sopra, sotto, e sotto le intestazioni
 format-table-rules-grid = Intorno a ogni cella
 format-table-rules-none = Nessuna
-format-table-rules-hint = Libri e riviste hanno le prime
 format-table-header-bold = Intestazioni in grassetto
 format-equations = Equazioni
 format-equations-stand = Le equazioni stanno
@@ -356,7 +304,6 @@ format-margin-footer = Piè di pagina
 format-margin-shown = Visibile
 format-margin-first-page = Anche sulla prima pagina
 format-margin-openers = Anche sulle pagine dove comincia un capitolo o una parte
-format-margin-openers-hint = Un titolo che comincia una pagina, o una parte su una pagina a sé
 format-margin-alternate = Cambia fra pagine sinistre e destre
 format-margin-right-pages = Sulle pagine destre
 format-margin-left-pages = Sulle pagine sinistre
@@ -384,5 +331,3 @@ format-source-read = Letta il { $date }.
 format-source-high = I valori sono quelli della fonte.
 format-source-medium = La fonte si è potuta leggere solo in parte o in uno stato precedente: controlla ciò che ti importa.
 format-source-low = Poco si è potuto verificare: prendi i valori come un inizio.
-format-source-changed = Hai modificato questa impaginazione; la fonte descrive ciò da cui è stata fatta.
-format-source-none = Questa impaginazione non segue i requisiti di nessun editore in particolare.

@@ -121,8 +121,6 @@ template-requirements-hint = What a document of this template is to meet. The ch
 template-requirement-words = Words of text
 template-requirement-abstract-words = Words of abstract
 template-requirement-keywords = Keywords
-template-requirement-anonymous = Without the names of the authors
-template-requirement-anonymous-hint = For review: the checklist says so, and a layout for review leaves them out
 template-requirement-note = What the limits count
 template-requirement-note-placeholder = Notes included; bibliography not
 # Beside a number of 0, in the place of its unit.
@@ -154,3 +152,7 @@ template-called-screenplay = Screenplay
 template-called-letter = Letter
 template-called-blog-post = Blog post
 template-called-news-article = News article
+
+## Fewer words, stage 3: the requirement of anonymity, in Look and in the editor of a document type.
+
+template-requirement-anonymity = Anonymous

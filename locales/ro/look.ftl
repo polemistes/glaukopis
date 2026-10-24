@@ -6,6 +6,5 @@ look-usual = Ce folosiți de obicei ({ $name })
 look-as-template = Ca în șablon ({ $name })
 # The first choice where an element over this one has chosen: the element, and what it chose.
 look-from-with = De la { $name } ({ $what })
-look-layout = Machetă
 look-style = Stil de citare
 look-style-change = Modifică acest stil de citare…

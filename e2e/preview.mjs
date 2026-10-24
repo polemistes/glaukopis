@@ -223,14 +223,14 @@ try {
   await app.click('.preview header [data-look]');
   await app.openLook();
   const groups = await app.exec(
-    `return Array.from(${app.lookRow('Layout')}.querySelectorAll('optgroup')).map((g) => g.label)`,
+    `return Array.from(${app.lookRow('Choose a layout')}.querySelectorAll('optgroup')).map((g) => g.label)`,
   );
   check(
     'the layouts are offered by kind',
     ['Fiction', 'Stage and screen', 'Poetry'].every((g) => groups.includes(g)),
     groups.join(' | '),
   );
-  check('the layout chosen is a choice of its own', await app.lookChoose('Layout', 'novel-book'));
+  check('the layout chosen is a choice of its own', await app.lookChoose('Choose a layout', 'novel-book'));
   await sleep(4500);
   typ = source();
   check(
@@ -241,12 +241,12 @@ try {
   );
   await app.screenshot('preview-2b-novel');
   // The layout of the template again.
-  await app.lookChoose('Layout', '');
+  await app.lookChoose('Choose a layout', '');
   await sleep(4500);
   typ = source();
   check(
     'left to the template, the layout is the template’s again',
-    (await app.lookChosen('Layout')) === '' && /us-letter/.test(typ) && !/a5/.test(typ),
+    (await app.lookChosen('Choose a layout')) === '' && /us-letter/.test(typ) && !/a5/.test(typ),
     typ.match(/paper: "[^"]*"/)?.[0],
   );
 
@@ -323,7 +323,7 @@ try {
   await app.waitFor('.preview header [data-look]', 8000);
   await sleep(500);
   await app.openLook();
-  await app.lookChoose('Layout', own);
+  await app.lookChoose('Choose a layout', own);
   await app.waitFor('.preview footer .issues', 15000);
   {
     await app.click('.preview footer .issues');

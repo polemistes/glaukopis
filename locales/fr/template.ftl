@@ -121,8 +121,6 @@ template-requirements-hint = Ce à quoi un document de ce modèle doit satisfair
 template-requirement-words = Mots du texte
 template-requirement-abstract-words = Mots du résumé
 template-requirement-keywords = Mots-clés
-template-requirement-anonymous = Sans les noms des auteurs
-template-requirement-anonymous-hint = Pour l’évaluation : la liste de contrôle le rappelle, et une mise en page pour l’évaluation les omet
 template-requirement-note = Ce que comptent les limites
 template-requirement-note-placeholder = Notes comprises ; bibliographie non
 # Beside a number of 0, in the place of its unit.

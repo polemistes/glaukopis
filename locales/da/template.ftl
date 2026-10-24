@@ -121,8 +121,6 @@ template-requirements-hint = Det, et dokument med denne skabelon skal opfylde. T
 template-requirement-words = Ord i teksten
 template-requirement-abstract-words = Ord i resuméet
 template-requirement-keywords = Nøgleord
-template-requirement-anonymous = Uden forfatternes navne
-template-requirement-anonymous-hint = Til fagfællebedømmelse: tjeklisten siger det, og en opsætning til fagfællebedømmelse udelader dem
 template-requirement-note = Hvad grænserne tæller
 template-requirement-note-placeholder = Noter medregnet; litteraturlisten ikke
 # Beside a number of 0, in the place of its unit.

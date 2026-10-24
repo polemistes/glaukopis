@@ -78,3 +78,7 @@ about-section-type = Document type
 # Under the details: whether every line of the printed page is numbered in the margin.
 about-line-numbers = Number the lines of the page
 about-line-numbers-hint = Every line of the printed page, numbered in the margin, in this document and those under it.
+
+## Fewer words, stage 3: the source of a layout's requirements, under the layout the type brings.
+
+about-layout-source = Source: { $name }

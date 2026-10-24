@@ -227,13 +227,11 @@ describe('what the document contains, in Look', () => {
     expect(p.yNodes.get(book)!.get('document')).toEqual({ template: 'my-article' });
   });
 
-  it('says so where the template gives no kind of element a place', () => {
+  it('shows no kind of element where the template gives none a place, and says nothing of it', () => {
     const { p, book } = aBook();
     p.keepTemplate({ ...p.templateCopy('my-article')!, contents: [{ part: 'body' }], kinds: [] });
     const view = shown(p, book);
     expect(view.find('.place')).toBeNull();
-    expect(view.target.textContent).toContain(
-      '“My article” gives no kind of element a place of its own.',
-    );
+    expect(view.target.textContent).not.toContain('gives no kind');
   });
 });

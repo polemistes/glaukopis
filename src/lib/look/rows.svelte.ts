@@ -69,12 +69,15 @@ export function setKindLook(format: DocumentFormat, id: string, key: keyof Look,
  * for what stands in a break. With `resolved`, the look as it will stand
  * where nothing is said, each measure of it shown in the place of "as the
  * base", so that the writer sees what the base comes to (ADR 0040).
+ * Without `hints`, no row says more than its label, as in Look.
  */
 export function lookRows<T>(
   family: KindFamily,
   reach: LookReach<T>,
   options: {
     sign?: boolean;
+    /** Whether the rows that have a few words of help say them; so unless said otherwise. */
+    hints?: boolean;
     resolved?: ResolvedLook;
     /** Where each measure is in what the rows set, for the line that says where its value comes from. */
     path?: (key: keyof Look) => string;
@@ -83,6 +86,8 @@ export function lookRows<T>(
   const { text, number, choice } = rowsOf<T>();
   const path = (key: keyof Look) => (options.path ? { path: options.path(key) } : {});
   const { resolved } = options;
+  /** A row's words of help, where the rows say them. */
+  const help = (words: string) => (options.hints === false ? undefined : words);
   const asBase = t('format-as-the-base');
   /** "As the base (…)", with what the base comes to, where that is known. */
   const asBaseIs = (value: string | undefined) =>
@@ -165,7 +170,7 @@ export function lookRows<T>(
       ...path('size'),
     },
   );
-  const monospace = yesNo(t('format-equal-width'), 'monospace', t('format-equal-width-hint'));
+  const monospace = yesNo(t('format-equal-width'), 'monospace', help(t('format-equal-width-hint')));
 
   if (family === 'words') return [italic, bold, underline, letters, monospace, size];
   return [
@@ -181,12 +186,12 @@ export function lookRows<T>(
     ]),
     length(t('format-indent-left'), 'indentLeft'),
     length(t('format-indent-right'), 'indentRight'),
-    length(t('format-first-line'), 'firstLine', t('format-first-line-hint')),
+    length(t('format-first-line'), 'firstLine', help(t('format-first-line-hint'))),
     length(t('format-space-before'), 'spaceBefore'),
     length(t('format-space-after'), 'spaceAfter'),
     size,
     monospace,
-    yesNo(t('format-keep-with-next'), 'keepWithNext', t('format-keep-with-next-hint')),
+    yesNo(t('format-keep-with-next'), 'keepWithNext', help(t('format-keep-with-next-hint'))),
     yesNo(t('format-new-page'), 'newPage'),
     ...(options.sign
       ? [
@@ -197,7 +202,7 @@ export function lookRows<T>(
               set: (target, value) => reach.set(target, 'text', value || undefined),
             },
             {
-              hint: t('format-break-text-hint'),
+              hint: help(t('format-break-text-hint')),
               placeholder: resolved?.text || asBase,
               literal: true,
               ...path('text'),

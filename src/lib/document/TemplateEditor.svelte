@@ -257,9 +257,7 @@
       counted(5000, 10),
     ),
     number(t('template-requirement-keywords'), 'requirements.keywords', counted(50, 1)),
-    toggle(t('template-requirement-anonymous'), 'requirements.anonymous', {
-      hint: t('template-requirement-anonymous-hint'),
-    }),
+    toggle(t('template-requirement-anonymity'), 'requirements.anonymous'),
   ]);
 
   // ---- the outputs ----

@@ -36,11 +36,8 @@ format-line-spacing = Διάστιχο
 format-as-the-text = Όπως το κείμενο
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = όπως το κείμενο
-format-size-zero-hint = 0 για το μέγεθος του κειμένου
 # Beside a number of 0, in the place of its unit.
 format-not-said = δεν ορίζεται
-format-unless-said = Εκτός αν λέγεται κάτι άλλο για κάποια
-format-as-it-will-stand = Όπως θα τυπωθεί
 format-align-left = Αριστερά
 format-align-center = Στο κέντρο
 format-align-right = Δεξιά
@@ -68,19 +65,16 @@ format-margin-left = Αριστερά
 format-margin-right = Δεξιά
 format-lengths-hint = Τα μήκη γράφονται με τη μονάδα τους: 2.5cm, 1in, 25mm, 12pt.
 format-line-numbers = Αρίθμηση των γραμμών
-format-line-numbers-hint = Όπως ζητούν μερικά περιοδικά για την κρίση
 
 ## Type and spacing, and paragraphs.
 
 format-typeface = Γραμματοσειρά
-format-typeface-hint = Όπου δεν είναι εγκατεστημένη, στην προεπισκόπηση χρησιμοποιείται η πλησιέστερη
 format-hyphenate = Συλλαβισμός στο τέλος των γραμμών
 format-paragraphs = Οι παράγραφοι ξεχωρίζουν με
 format-paragraphs-indent = Εσοχή στην πρώτη γραμμή
 format-paragraphs-spaced = Διάστημα ανάμεσά τους
 format-indent = Εσοχή
 format-indent-first = Και μετά από επικεφαλίδα
-format-indent-first-hint = Η τυπογραφική συνήθεια αφήνει την πρώτη παράγραφο χωρίς εσοχή· το APA και άλλα της βάζουν
 format-space-between = Διάστημα ανάμεσα στις παραγράφους
 format-italics = Τα πλάγια τυπώνονται
 format-italics-italic = Ως πλάγια
@@ -100,23 +94,17 @@ format-level-centred = στο κέντρο
 format-level-right = δεξιά
 format-level-run-in = συνεχίζει στο κείμενο
 format-level-indent = Με εσοχή, όπως μια παράγραφος
-format-level-run-in-label = Συνεχίζει στο κείμενο
-format-level-run-in-hint = Η επικεφαλίδα αρχίζει την παράγραφο και τελειώνει με τελεία
 format-level-new-page-said = σε νέα σελίδα
 format-space-before = Διάστημα πριν
 format-space-after = Διάστημα μετά
 format-level-add = Ένα βαθύτερο επίπεδο
 format-level-remove = Αφαίρεση του βαθύτερου
-format-levels-hint = Επικεφαλίδες βαθύτερες από το βαθύτερο επίπεδο που περιγράφεται τυπώνονται ως εκείνο το επίπεδο.
 
 ## The title and the abstract.
 
 format-title-placement = Ο τίτλος μπαίνει
 format-title-top = Στην κορυφή της πρώτης σελίδας
 format-title-own-page = Σε δική του σελίδα
-format-title-shown = Τι εμφανίζεται
-format-title-anonymous = Χωρίς τα ονόματα των συγγραφέων
-format-title-anonymous-hint = Για την κρίση: οι συγγραφείς παραλείπονται παντού, και στην κεφαλίδα
 format-title-authors = Συγγραφείς
 format-title-affiliations = Οι φορείς τους
 format-title-date = Ημερομηνία
@@ -130,15 +118,12 @@ format-quote-indent-left = Εσοχή αριστερά
 format-quote-indent-right = Εσοχή δεξιά
 format-quote-when = Πότε ένα παράθεμα μπαίνει χωριστά
 format-quote-from-words = Από τόσες λέξεις
-format-quote-from-words-hint = Μια υπενθύμιση: αποφασίζει ο συγγραφέας
 format-quote-from-lines = Ή τόσες γραμμές
 format-notes-kind = Οι σημειώσεις μπαίνουν
 format-notes-footnotes = Στο κάτω μέρος της σελίδας
 format-notes-endnotes = Στο τέλος του κειμένου
 format-notes-title = Επικεφαλίδα των σημειώσεων
 format-bibliography-title = Επικεφαλίδα
-# Headings a bibliography may have.
-format-bibliography-title-hint = Βιβλιογραφία, Βιβλιογραφικές αναφορές, Παρατιθέμενα έργα
 format-bibliography-new-page = Αρχίζει σε νέα σελίδα
 format-bibliography-hanging-indent = Προεξοχή πρώτης γραμμής
 format-bibliography-entry-spacing = Διάστημα ανάμεσα στις εγγραφές
@@ -147,7 +132,6 @@ format-bibliography-entry-spacing = Διάστημα ανάμεσα στις ε�
 ## is based on. The rows are those of the dialog for a kind of one's own
 ## too; what is not said is as the base has it.
 
-format-kinds-hint = Κάθε είδος τυπώνεται όπως το είδος στο οποίο βασίζεται, με τις διαφορές που δίνονται εδώ. Ό,τι δεν λέγεται είναι όπως το έχει η βάση.
 format-kind-based-on = βασισμένο σε { $base }
 format-as-the-base = Όπως η βάση
 # In an empty field for a size, in the place of its number.
@@ -197,16 +181,7 @@ format-captioned-called = { $kind ->
     [figure] Ένα σχήμα λέγεται
    *[table] Ένας πίνακας λέγεται
 }
-# Words a figure or table may be called by.
-format-captioned-called-hint = { $kind ->
-    [figure] Σχήμα, Σχ., Εικόνα
-   *[table] Πίνακας, Πίν.
-}
 format-captioned-reference = Όπου το κείμενο παραπέμπει σε αυτό
-format-captioned-reference-hint = { $kind ->
-    [figure] σχ., σχήμα· κενό για την ίδια λέξη
-   *[table] πίν., πίνακας· κενό για την ίδια λέξη
-}
 format-captioned-label-bold = Η λέξη και ο αριθμός με έντονα
 format-captioned-label-italic = Η λέξη και ο αριθμός με πλάγια
 format-captioned-between = { $kind ->
@@ -228,7 +203,6 @@ format-between-line = { $kind ->
 }
 format-between-other = Άλλο…
 format-captioned-separator = Τι μπαίνει ανάμεσά τους
-format-captioned-separator-hint = Τα κενά μετρούν: γράψτε τα εκεί που τα θέλετε
 format-captioned-own-line = { $kind ->
     [figure] Έπειτα η λεζάντα σε δική της γραμμή
    *[table] Έπειτα η λεζάντα σε δική της γραμμή
@@ -249,15 +223,6 @@ format-caption-above = { $kind ->
     [figure] Πάνω από την εικόνα
    *[table] Πάνω από τον πίνακα
 }
-format-caption-align-hint = { $kind ->
-    [figure] Σε σχήμα που στέκεται στο πλάι, η λεζάντα στέκεται στο ίδιο πλάι
-   *[table] Σε πίνακα που στέκεται στο πλάι, η λεζάντα στέκεται στο ίδιο πλάι
-}
-# In the example of how the number and the caption will stand.
-format-caption-example = { $kind ->
-    [figure] Λεζάντα
-   *[table] Λεζάντα
-}
 format-captioned-where = { $kind ->
     [figure] Πού μπαίνουν τα σχήματα
    *[table] Πού μπαίνουν οι πίνακες
@@ -270,26 +235,17 @@ format-captioned-wrap = Το κείμενο ρέει γύρω τους
 format-captioned-placement = Στο έγγραφο
 format-captioned-in-text = Μέσα στο κείμενο
 format-captioned-at-end = Συγκεντρωμένα στο τέλος
-format-captioned-placement-hint = Πολλά περιοδικά τα ζητούν στο τέλος του χειρογράφου
 format-captioned-end-title = { $kind ->
     [figure] Επικεφαλίδα πάνω από τα σχήματα
    *[table] Επικεφαλίδα πάνω από τους πίνακες
 }
-format-captioned-end-title-hint = { $kind ->
-    [figure] Σχήματα, Εικόνες· κενό για καμία
-   *[table] Πίνακες· κενό για καμία
-}
 # What is left in the text where a figure or table gathered at the end belongs.
 format-captioned-placeholder = Γραμμή που μένει στο κείμενο
-# The braces are written as they are; line is how the line will stand.
-format-captioned-placeholder-shown = Το {"{}"} αντιπροσωπεύει τη λέξη και τον αριθμό: { $line }
 format-captioned-placeholder-missing = Πρέπει να περιέχει {"{}"}, εκεί που μπαίνουν η λέξη και ο αριθμός
-format-table-itself = Ο ίδιος ο πίνακας
 format-table-rules = Γραμμές
 format-table-rules-horizontal = Πάνω, κάτω, και κάτω από τις επικεφαλίδες
 format-table-rules-grid = Γύρω από κάθε κελί
 format-table-rules-none = Καμία
-format-table-rules-hint = Τα βιβλία και τα περιοδικά έχουν το πρώτο
 format-table-header-bold = Επικεφαλίδες με έντονα
 format-equations = Εξισώσεις
 format-equations-stand = Οι εξισώσεις μπαίνουν
@@ -310,5 +266,3 @@ format-source-read = Διαβάστηκε στις { $date }.
 format-source-high = Οι τιμές είναι αυτές της πηγής.
 format-source-medium = Η πηγή διαβάστηκε μόνο εν μέρει ή σε παλιότερη κατάσταση: ελέγξτε ό,τι σας ενδιαφέρει.
 format-source-low = Λίγα μπόρεσαν να επαληθευτούν: πάρτε τις τιμές ως αρχή.
-format-source-changed = Έχετε αλλάξει αυτή τη μορφή· η πηγή περιγράφει αυτό από το οποίο φτιάχτηκε.
-format-source-none = Αυτή η μορφή δεν ακολουθεί τις απαιτήσεις κάποιου συγκεκριμένου εκδότη.

@@ -54,7 +54,6 @@
     () => at,
   );
   const used = $derived(c.used);
-  const named = $derived(c.named);
   const set = (path: CompositionPath, value: unknown, left: unknown) => c.set(path, value, left);
   const from = (path: CompositionPath): Provenance | null => c.from(path);
   const given = $derived(c.given);
@@ -62,14 +61,6 @@
   const nameOf = (id: string) => project.node(id)?.title || t('project-untitled');
 
   // ---- the parts the core makes ----
-
-  /** What is said under a part: when those always made are printed, and that keywords need some. */
-  const partHints: Partial<Record<GeneratedPart, () => string>> = {
-    keywords: () => t('look-contents-part-keywords'),
-    body: () => t('look-contents-part-body'),
-    notes: () => t('look-contents-part-notes'),
-    bibliography: () => t('look-contents-part-bibliography'),
-  };
 
   function setPart(part: GeneratedPart, on: boolean) {
     c.setPart(part, on);
@@ -160,14 +151,10 @@
 {#if used}
   {@const u = used}
   <h4>{t('look-contents-parts')}</h4>
-  <p class="hint top">{t('look-contents-parts-hint', { template: named })}</p>
   {#each GENERATED_PARTS as part (part)}
     {@const always = ALWAYS_MADE.includes(part)}
-    {@const hint = partHints[part]?.()}
     <label class="row check" class:always>
-      <span class="what"
-        >{generatedPartWords(part)}{#if hint}<small>{hint}</small>{/if}</span
-      >
+      <span class="what">{generatedPartWords(part)}</span>
       <input
         type="checkbox"
         data-part-switch={part}
@@ -180,9 +167,6 @@
   {/each}
 
   <h4>{t('look-contents-kinds')}</h4>
-  {#if partKinds.length}
-    <p class="hint top">{t('look-contents-kinds-hint', { template: named })}</p>
-  {/if}
   {#each partKinds as kind (kind.id)}
     {@const elements = partsOf.get(kind.id) ?? []}
     <div class="place" data-kind={kind.id}>
@@ -206,12 +190,9 @@
         <p class="none">{t('look-contents-kinds-missing')}</p>
       {/each}
     </div>
-  {:else}
-    <p class="hint top">{t('look-contents-kinds-none', { template: named })}</p>
   {/each}
 
-  <h4>{t('look-contents-requirements')}</h4>
-  <p class="hint top">{t('look-contents-requirements-hint', { template: named })}</p>
+  <h4>{t('look-type-requirements')}</h4>
   {#each LIMITS as limit (limit)}
     {@const count = u.requirements[limit]}
     <label class="row">
@@ -233,10 +214,7 @@
     {@render fromLine(`requirements.${limit}`)}
   {/each}
   <label class="row check">
-    <span class="what"
-      >{t('template-requirement-anonymous')}<small>{t('template-requirement-anonymous-hint')}</small
-      ></span
-    >
+    <span class="what">{t('template-requirement-anonymity')}</span>
     <input
       type="checkbox"
       data-requirement="anonymous"
