@@ -46,6 +46,7 @@ import { runBrackets } from './brackets';
 import { breakKey, enterKey, indentKey, joinLineKey, lineMarks } from './keys';
 import { kindName } from './kinds';
 import { kindKeyOf } from '$lib/shell/keys.svelte';
+import { continuesPlugin } from './continues';
 import { LAYOUT_NUMBERS, stretchNumbersPlugin, type NumbersLayout } from './numbers';
 import { acrossParallel, backOutOfParallel } from './parallel';
 import { refMarkKey } from './refmarks';
@@ -90,13 +91,15 @@ export interface EditorHooks {
    * not given.
    */
   passageKinds?: () => { id: string; name?: string; basedOn: string }[];
-  /** Asks how the lines where the cursor is are numbered, in the dialog of it (ADR 0041). */
-  askNumbers?: (view: EditorView) => void;
+  /** Asks how the lines are numbered from the paragraph the cursor is in, in *Line numbering from here* (ADR 0067). */
+  askNumbering?: (view: EditorView) => void;
+  /** Asks what is said of the line the cursor is in, in *Numbering of this line* (ADR 0067). */
+  askLine?: (view: EditorView) => void;
   /** Asks for the language of what is selected, by its tag; `tag` is the one it has now. */
   askLanguage?: (view: EditorView, tag: string | null) => void;
   /** The language of the document whose text the editor holds, as a tag; nothing where it is not known. */
   language?: () => string | null;
-  /** What the document's layout says of the numbers of a stretch that does not say: every how many, and on which side. */
+  /** What the document's layout says of the numbers of a stretch that does not say: every how many, on which side, and where the annotations stand. */
   numbers?: () => NumbersLayout;
   /**
    * The kinds of paragraph Ctrl+Alt with a digit gives, by the digit: those
@@ -394,6 +397,8 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
     hardSpaces(),
     // The marks of lines kept at the start of their lines: see `keys.ts`.
     lineMarks(),
+    // The lines that begin where the line before ended, set in by measuring it: see `continues.ts`.
+    continuesPlugin(own),
     // The numbers of the lines of a numbered stretch: see `numbers.ts`.
     stretchNumbersPlugin(own, () => hooks.numbers?.() ?? LAYOUT_NUMBERS),
     // The bracket of every run, with its name: see `brackets.ts`.

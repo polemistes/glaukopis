@@ -27,24 +27,12 @@ editor-speaker = Vorbitor
 editor-speaker-hint = Cine vorbește: pe un rând separat sau ca cuvinte în rând
 editor-direction = Indicație scenică
 editor-direction-hint = Ce se face pe scenă: pe un rând separat sau ca cuvinte în rând
-editor-line-numbers = Numere
-editor-line-numbers-hint = Numerotează aceste rânduri: cum se numără, de la ce număr, din câte în câte și pe ce parte; și ce se spune despre rândul în care este cursorul. Rândurile numerotate împreună, cu aceleași setări, se numără într-un singur șir, oricare le-ar fi tipurile.
 editor-line-numbers-from = Numerotează de la
-editor-line-numbers-from-hint = Primul rând numărat primește acest număr, iar numărătoarea continuă de la el.
 editor-line-numbers-every = Arată un număr la fiecare
 editor-line-numbers-number = Este nevoie de un număr întreg.
-editor-line-this = Acest rând
 editor-line-number = Numărul sau eticheta lui
 editor-line-number-placeholder = Numărat ca celelalte
-editor-line-number-hint = 1234, 567a: se arată întotdeauna; rândurile de după el se numără mai departe de la el.
-editor-line-uncounted = Nenumărat
-editor-line-uncounted-hint = Ca a doua jumătate a unui vers împărțit între vorbitori: numărătoarea trece peste el.
-editor-line-hidden = Numărat, fără să i se arate numărul
-editor-line-hidden-hint = Numărătoarea trece prin el ca prin orice rând, dar în document niciun număr nu stă lângă el, nici chiar acolo unde i-ar reveni unul. Acolo unde scrieți, stă între paranteze.
 editor-line-number-held = Numărat și nearătat în document. Apăsați ca să-i dați un număr al lui.
-editor-line-margin = Cuvinte pe margine
-editor-line-margin-placeholder = Un metru, numărul altei ediții
-editor-line-margin-hint = Se arată pe margine, lângă el, în partea opusă numerelor; nu se numără.
 # How the lines of a stretch are numbered: see ADR 0041.
 editor-numbering = Numerotare
 editor-numbering-none = Nenumerotate
@@ -55,23 +43,17 @@ editor-line-numbers-side = Partea numerelor
 editor-side-layout = Cum spune macheta ({ $side })
 editor-side-left = Stânga
 editor-side-right = Dreapta
-# The first counted line of the stretch is the one the cursor is in: its number is where the count begins.
-editor-line-number-first-hint = Numărătoarea începe aici.
 # Over a number in the margin of the text, which opens a field for it when pressed.
 editor-line-number-press = Numărul acestui rând: apăsați ca să-l schimbați
 
 ## Numbers belong to what they number (ADR 0041): the Numbers menu offers
 ## the three, each saying what it numbers.
-editor-numbers-lines = Numerotează aceste rânduri…
-editor-numbers-page = Numerotează rândurile paginii
-editor-numbers-page-hint = Fiecare rând al paginii tipărite, numerotat pe margine, în acest document și în cele de sub el
 
 ## The bracket at the left of paragraphs of one kind standing together (a
 ## run), named by the kind; its menu says what is said of them.
 # After the name of the kind, where the lines of the run are numbered: "Verse · numbered".
 editor-bracket-numbered = cu numere
 editor-run-label-hint = { $kind } · apăsați pentru ce se spune despre aceste paragrafe
-editor-run-numbers = Numere…
 editor-run-select = Selectează aceste paragrafe
 editor-run-to-text = Fă din ele text
 editor-run-begin = Începe aici un șir nou

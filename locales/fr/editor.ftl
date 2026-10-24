@@ -27,24 +27,12 @@ editor-speaker = Locuteur
 editor-speaker-hint = Qui parle : sur une ligne à part, ou comme mots dans une ligne
 editor-direction = Didascalie
 editor-direction-hint = Ce qui se fait sur scène : sur une ligne à part, ou comme mots dans une ligne
-editor-line-numbers = Numéros
-editor-line-numbers-hint = Numéroter ces lignes : comment elles sont comptées, à partir de quel numéro, tous les combien et de quel côté ; et dire ce qu’il en est de la ligne où se trouve le curseur. Des lignes numérotées ensemble avec les mêmes réglages sont comptées comme un tout, quels que soient leurs types.
 editor-line-numbers-from = Numéroter à partir de
-editor-line-numbers-from-hint = La première ligne comptée reçoit ce numéro, et le compte se poursuit à partir de lui.
 editor-line-numbers-every = Afficher un numéro tous les
 editor-line-numbers-number = Il faut un nombre entier.
-editor-line-this = Cette ligne
 editor-line-number = Son numéro ou son étiquette
 editor-line-number-placeholder = Comptée comme les autres
-editor-line-number-hint = 1234, 567a : toujours affiché ; les lignes qui suivent sont comptées à partir de lui.
-editor-line-uncounted = Non comptée
-editor-line-uncounted-hint = Comme la seconde moitié d’une ligne partagée entre locuteurs : le compte passe par-dessus.
-editor-line-hidden = Comptée, sans que son numéro soit affiché
-editor-line-hidden-hint = Le compte la traverse comme toute autre ligne, mais aucun numéro ne figure à côté d’elle dans le document, même là où il en tomberait un. Là où vous écrivez, il figure entre parenthèses.
 editor-line-number-held = Ligne comptée, dont le numéro n’est pas affiché dans le document. Appuyez pour lui donner un numéro à elle.
-editor-line-margin = Mots en marge
-editor-line-margin-placeholder = Un mètre, le numéro d’une autre édition
-editor-line-margin-hint = Affichés dans la marge à côté d’elle, en face des numéros ; non comptés.
 # How the lines of a stretch are numbered: see ADR 0041.
 editor-numbering = Numérotation
 editor-numbering-none = Sans numérotation
@@ -55,17 +43,12 @@ editor-line-numbers-side = Côté des numéros
 editor-side-layout = Comme la mise en page ({ $side })
 editor-side-left = Gauche
 editor-side-right = Droite
-# The first counted line of the stretch is the one the cursor is in: its number is where the count begins.
-editor-line-number-first-hint = Le compte commence ici.
 # Over a number in the margin of the text, which opens a field for it when pressed.
 editor-line-number-press = Le numéro de cette ligne : appuyez pour le changer
 
 ## Numbers belong to what they number (ADR 0041): the Numbers menu offers
 ## the three, each saying what it numbers.
 
-editor-numbers-lines = Numéroter ces lignes…
-editor-numbers-page = Numéroter les lignes de la page
-editor-numbers-page-hint = Chaque ligne de la page imprimée, numérotée dans la marge, dans ce document et ceux du dessous
 
 ## The bracket at the left of paragraphs of one kind standing together (a
 ## run), named by the kind; its menu says what is said of them.
@@ -73,7 +56,6 @@ editor-numbers-page-hint = Chaque ligne de la page imprimée, numérotée dans l
 # After the name of the kind, where the lines of the run are numbered: "Verse · numbered".
 editor-bracket-numbered = lignes numérotées
 editor-run-label-hint = { $kind } · appuyez pour voir ce qui est dit de ces paragraphes
-editor-run-numbers = Numéros…
 editor-run-select = Sélectionner ces paragraphes
 editor-run-to-text = En faire du texte
 editor-run-begin = Commencer une nouvelle suite ici

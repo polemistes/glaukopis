@@ -26,7 +26,9 @@ export const mark = (said: Omit<InlineLineMark, 'kind'>): InlineLineMark => ({
 export function p(
   content: Inline[],
   name = 'text',
-  more: Partial<Pick<ParagraphBlock, 'indent' | 'numbering' | 'every' | 'side' | 'new'>> = {},
+  more: Partial<
+    Pick<ParagraphBlock, 'indent' | 'numbering' | 'every' | 'side' | 'only' | 'new'>
+  > = {},
 ): ParagraphBlock {
   return {
     kind: 'paragraph',
@@ -35,6 +37,7 @@ export function p(
     ...(more.numbering ? { numbering: more.numbering } : {}),
     ...(more.every ? { every: more.every } : {}),
     ...(more.side ? { side: more.side } : {}),
+    ...(more.only ? { only: more.only } : {}),
     ...(more.new ? { new: true as const } : {}),
     content,
   };
@@ -629,6 +632,41 @@ export function everything(): OrgProject {
       element({ id: 'traps2', depth: 2, name: [t('[#A] * star :a:b:')] }),
       element({ id: 'traps3', depth: 2, name: [t('COMMENT this')] }),
       element({ id: 'empty', depth: 1, name: [] }),
+      // The numbering of lines: a stretch that counts the lines of one kind
+      // only, of the catalogue and of the writer's own, with a quotation
+      // passed over; and lines whose numbers are always shown.
+      element({
+        id: 'counted-lines',
+        depth: 1,
+        name: [t('Counted lines')],
+        blocks: [
+          p(
+            [
+              mark({ number: '41' }),
+              t('Counted'),
+              br,
+              mark({ shown: true }),
+              t('always shown'),
+              br,
+              mark({ continues: true, indent: 1 }),
+              t('and where it ended'),
+            ],
+            'line',
+            {
+              numbering: 'counted',
+              only: 'line',
+            },
+          ),
+          p([t('A quotation passed over')], 'quote', { numbering: 'counted', only: 'line' }),
+          p([t('and on')], 'line', { numbering: 'counted', only: 'line' }),
+          p([mark({ number: '7', shown: true }), t('Dear friend,')], 'own-letter', {
+            numbering: 'counted',
+            every: 1,
+            only: 'own-letter',
+          }),
+          p([mark({ continues: true }), t('A line of prose that begins where one ended')]),
+        ],
+      }),
     ],
     elementKinds: [
       {

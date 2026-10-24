@@ -65,8 +65,10 @@ export function markOf(node: Node): InlineLineMark {
     ...(typeof a.number === 'string' && a.number.trim() ? { number: a.number.trim() } : {}),
     ...(a.counted === false ? { counted: false as const } : {}),
     ...(a.hidden === true ? { hidden: true as const } : {}),
+    ...(a.shown === true && a.hidden !== true ? { shown: true as const } : {}),
     ...(typeof a.margin === 'string' && a.margin.trim() ? { margin: a.margin.trim() } : {}),
     ...(Number(a.indent) > 0 ? { indent: Number(a.indent) } : {}),
+    ...(a.continues === true ? { continues: true as const } : {}),
   };
 }
 
@@ -76,8 +78,10 @@ export function marksAnything(attrs: Record<string, unknown>): boolean {
     (typeof attrs.number === 'string' && attrs.number.trim()) ||
     attrs.counted === false ||
     attrs.hidden === true ||
+    attrs.shown === true ||
     (typeof attrs.margin === 'string' && attrs.margin.trim()) ||
-    Number(attrs.indent) > 0
+    Number(attrs.indent) > 0 ||
+    attrs.continues === true
   );
 }
 
@@ -102,6 +106,7 @@ export function blockOf(node: Node): ParagraphBlock {
     ...(numbering === 'counted' || numbering === 'given' ? { numbering } : {}),
     ...(Number(node.attrs.every) >= 1 ? { every: Number(node.attrs.every) } : {}),
     ...(node.attrs.side === 'left' || node.attrs.side === 'right' ? { side: node.attrs.side } : {}),
+    ...(typeof node.attrs.only === 'string' && node.attrs.only ? { only: node.attrs.only } : {}),
     ...(node.attrs.new === true ? { new: true as const } : {}),
     content,
   };
@@ -206,7 +211,7 @@ export function runsIn(parent: Node, start: number, own: readonly BasedKind[] = 
  * numbered: paragraphs standing together that are numbered and have these
  * the same are numbered together (`project/model/lines.ts`).
  */
-export const STRETCH_ATTRS = ['numbering', 'every', 'side'] as const;
+export const STRETCH_ATTRS = ['numbering', 'every', 'side', 'only'] as const;
 
 /** Whether a paragraph is numbered: it is then of a stretch. */
 export function numberedNode(node: Node): boolean {

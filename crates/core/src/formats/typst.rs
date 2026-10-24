@@ -747,22 +747,29 @@ pub fn rules(format: &DocumentFormat, p: &Particulars) -> String {
     // the line above, and a number on a later line of a paragraph falls
     // off the page. The lines of a verse place theirs from the edge of the
     // verse (`gk-at`), so that the numbers of texts side by side stand
-    // beside their own columns.
+    // beside their own columns. What stands on the numbers' side outside
+    // them, an annotation where the layout puts the annotations there, is
+    // placed `out` further from the text, past where a number of five digits
+    // ends, so that it fits a margin of 2.5 cm. `gk-after` sets a line in by
+    // the room of the line before it and an em, measuring and not setting its
+    // words, where the line begins where that one ended (ADR 0067).
     let _ = writeln!(
         out,
         "#let gk-number(n) = text(size: 0.8em, fill: luma(45%), hyphenate: false, n)
 #let gk-margin(words) = text(size: 0.8em, fill: luma(45%), style: \"italic\", hyphenate: false, words)
-#let gk-at(side, inset, body) = if side == \"left\" {{
-  place(left + horizon, dx: -inset - 4.6em, box(width: 4em, align(right, body)))
+#let gk-at(side, inset, body, out: 0pt) = if side == \"left\" {{
+  place(left + horizon, dx: -inset - 4.6em - out, box(width: 4em, align(right, body)))
 }} else {{
-  place(left + horizon, dx: 100% + 0.8em, box(width: {right} - 1.6em, body))
+  place(left + horizon, dx: 100% + 0.8em + out, if out == 0pt {{ box(width: {right} - 1.6em, body) }} else {{ body }})
 }}
-#let gk-beside(side, body) = {{ box[]; context {{
+#let gk-after(prev) = context h(measure(prev).width + 1em)
+#let gk-beside(side, body, out: 0pt) = {{ box[]; context {{
   let x = here().position().x
   if side == \"left\" {{
-    box(width: 0pt, place(left + horizon, dx: {left} - x - 4.6em, box(width: 4em, align(right, body))))
+    box(width: 0pt, place(left + horizon, dx: {left} - x - 4.6em - out, box(width: 4em, align(right, body))))
   }} else {{
-    box(width: 0pt, place(left + horizon, dx: page.width - {right} - x + 0.8em, box(width: {right} - 1.6em, body)))
+    box(width: 0pt, place(left + horizon, dx: page.width - {right} - x + 0.8em + out,
+      if out == 0pt {{ box(width: {right} - 1.6em, body) }} else {{ body }}))
   }}
 }} }}",
         left = f.page.margin_left,
@@ -772,8 +779,9 @@ pub fn rules(format: &DocumentFormat, p: &Particulars) -> String {
     // Lines of verse: each a line, standing in as far as the look of a line
     // says, with the number it shows beside it, as the converter has counted
     // them (`document/numbers.rs`), and words given in the margin on the
-    // other side; speakers and stage directions as their kinds look. And
-    // texts side by side.
+    // side the layout says, across from the numbers unless it says
+    // otherwise, and outside the number where they share a side; speakers
+    // and stage directions as their kinds look. And texts side by side.
     let line = kinds::resolve(f, "line", &p.own_kinds);
     let mut speaker_look = kinds::resolve(f, "speaker", &p.own_kinds);
     let mut direction_look = kinds::resolve(f, "direction", &p.own_kinds);
@@ -789,30 +797,37 @@ pub fn rules(format: &DocumentFormat, p: &Particulars) -> String {
     let _ = writeln!(
         out,
         "#let gk-verse(body) = block(width: 100%, above: {body_leading} + 0.6em, below: {body_leading} + 0.6em, inset: (left: {inset}), body)
-#let gk-line(kind, indent, n: none, margin: none, side: \"left\", body) = {{
-  let other = if side == \"left\" {{ \"right\" }} else {{ \"left\" }}
+#let gk-line(kind, indent, after: none, n: none, margin: none, side: \"left\", body) = {{
+  let notes = {notes}
+  let out = if notes == side {{ 3em }} else {{ 0pt }}
   if kind == \"speaker\" {{
     block(width: 100%, above: {speaker_above}, below: {speaker_below}, breakable: false, {{
       if n != none {{ gk-at(side, {inset}, gk-number(n)) }}
-      if margin != none {{ gk-at(other, {inset}, gk-margin(margin)) }}
+      if margin != none {{ gk-at(notes, {inset}, gk-margin(margin), out: out) }}
       {speaker}
     }})
   }} else if kind == \"direction\" {{
     block(width: 100%, above: {direction_above}, below: {direction_below}, breakable: false, {{
       if n != none {{ gk-at(side, {inset}, gk-number(n)) }}
-      if margin != none {{ gk-at(other, {inset}, gk-margin(margin)) }}
+      if margin != none {{ gk-at(notes, {inset}, gk-margin(margin), out: out) }}
       {direction}
     }})
   }} else {{
-    block(width: 100%, above: 0pt, below: 0pt, breakable: false, inset: (left: indent * 1.5em), {{
-      if n != none {{ gk-at(side, {inset} + indent * 1.5em, gk-number(n)) }}
-      if margin != none {{ gk-at(other, {inset} + indent * 1.5em, gk-margin(margin)) }}
+    block(width: 100%, above: 0pt, below: 0pt, breakable: false, inset: (left: indent * {step}), {{
+      if n != none {{ gk-at(side, {inset} + indent * {step}, gk-number(n)) }}
+      if margin != none {{ gk-at(notes, {inset} + indent * {step}, gk-margin(margin), out: out) }}
+      if after != none {{ gk-after(after) }}
       body
     }})
   }}
 }}
 {refmark}",
+        notes = match f.verse.annotations {
+            Some(side) => format!("\"{}\"", side.name()),
+            None => "if side == \"left\" { \"right\" } else { \"left\" }".to_owned(),
+        },
         inset = line.indent_left,
+        step = f.text.indent_step,
         speaker_above = speaker_look.space_before,
         speaker_below = speaker_look.space_after,
         direction_above = direction_look.space_before,
@@ -1057,7 +1072,9 @@ mod tests {
         assert!(out.contains("inset: (left: 4cm, right: 0pt)"), "{out}");
         let speaker = cased(Case::Smallcaps, &f.font.family, "body");
         assert!(
-            out.contains(&format!("if margin != none {{ gk-at(other, 1cm, gk-margin(margin)) }}\n      {speaker}\n")),
+            out.contains(&format!(
+                "if margin != none {{ gk-at(notes, 1cm, gk-margin(margin), out: out) }}\n      {speaker}\n"
+            )),
             "{out}"
         );
         assert!(out.contains("inset: (left: 1cm), body)"), "the verse stands in as far as a line looks: {out}");
@@ -1074,7 +1091,7 @@ mod tests {
     fn what_stands_in_the_margin_is_placed_after_the_line_break_before_it() {
         let mut f = DocumentFormat { name: "Test".into(), ..Default::default() };
         let out = preamble(&f, &Particulars::default());
-        assert!(out.contains("#let gk-beside(side, body) = { box[]; context {"), "{out}");
+        assert!(out.contains("#let gk-beside(side, body, out: 0pt) = { box[]; context {"), "{out}");
         f.text.refmarks = RefMarks::Margin;
         let out = preamble(&f, &Particulars::default());
         assert!(out.contains("#let gk-refmark(label) = { box[]; context {"), "{out}");

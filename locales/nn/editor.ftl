@@ -27,24 +27,12 @@ editor-speaker = Talar
 editor-speaker-hint = Kven som talar: på ei eiga linje, eller som ord inne i ei linje
 editor-direction = Sceneanvising
 editor-direction-hint = Det som blir gjort på scenen: på ei eiga linje, eller som ord inne i ei linje
-editor-line-numbers = Nummer
-editor-line-numbers-hint = Nummerer desse linjene: korleis dei blir talde, frå kva nummer, kvar kor mange og på kva side; og sei kva som blir sagt om linja markøren står i. Linjer som blir nummererte saman med dei same innstillingane, blir talde som éi, kva slag dei enn er.
 editor-line-numbers-from = Nummerer frå
-editor-line-numbers-from-hint = Den første linja som blir talt, får dette nummeret, og teljinga held fram frå det.
 editor-line-numbers-every = Vis eit nummer kvar
 editor-line-numbers-number = Det trengst eit heilt tal.
-editor-line-this = Denne linja
 editor-line-number = Nummeret eller merket
 editor-line-number-placeholder = Talt som dei andre
-editor-line-number-hint = 1234, 567a: blir alltid vist; linjene etter blir talde vidare frå det.
-editor-line-uncounted = Ikkje talt
-editor-line-uncounted-hint = Som den andre halvdelen av ei linje som er delt mellom talarar: teljinga går forbi den.
-editor-line-hidden = Talt, utan at nummeret blir vist
-editor-line-hidden-hint = Teljinga går gjennom den som gjennom kva linje som helst, men det står ikkje noko nummer ved sida av den i dokumentet, heller ikkje der eitt ville ha falle. Der du skriv, står det i parentes.
 editor-line-number-held = Talt, og ikkje vist i dokumentet. Trykk for å gi den eit eige nummer.
-editor-line-margin = Ord i margen
-editor-line-margin-placeholder = Eit versemål, nummeret i ei anna utgåve
-editor-line-margin-hint = Blir vist i margen ved sida av, overfor numra; blir ikkje talt.
 # How the lines of a stretch are numbered: see ADR 0041.
 editor-numbering = Nummerering
 editor-numbering-none = Ikkje nummerert
@@ -55,23 +43,17 @@ editor-line-numbers-side = Numra på
 editor-side-layout = Sida oppsettet seier ({ $side })
 editor-side-left = Venstre
 editor-side-right = Høgre
-# The first counted line of the stretch is the one the cursor is in: its number is where the count begins.
-editor-line-number-first-hint = Teljinga byrjar her.
 # Over a number in the margin of the text, which opens a field for it when pressed.
 editor-line-number-press = Nummeret på denne linja: trykk for å endre det
 
 ## Numbers belong to what they number (ADR 0041): the Numbers menu offers
 ## the three, each saying what it numbers.
-editor-numbers-lines = Nummerer desse linjene …
-editor-numbers-page = Nummerer linjene på sida
-editor-numbers-page-hint = Kvar linje på den trykte sida, nummerert i margen, i dette dokumentet og dei under det
 
 ## The bracket at the left of paragraphs of one kind standing together (a
 ## run), named by the kind; its menu says what is said of them.
 # After the name of the kind, where the lines of the run are numbered: "Verse · numbered".
 editor-bracket-numbered = nummerert
 editor-run-label-hint = { $kind } · trykk for det som blir sagt om desse avsnitta
-editor-run-numbers = Nummer …
 editor-run-select = Merk desse avsnitta
 editor-run-to-text = Gjer det til tekst
 editor-run-begin = Byrj eit nytt løp her

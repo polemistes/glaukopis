@@ -13,6 +13,7 @@ import {
   selectRun,
 } from './brackets';
 import { runsIn } from './shape';
+import { LAYOUT_NUMBERS } from './numbers';
 import { editorOf, shapeOf, text } from './testing';
 
 const views: EditorView[] = [];
@@ -180,7 +181,7 @@ describe('the bracket beside numbered lines', () => {
     expect(sides(at(['line #counted right: a', 'line #counted: b']))).toBe('left| left|');
     expect(sides(at(['line #counted right: a', 'line: b']))).toBe('right| right|');
     const v = editorOf(['line: a', 'line #counted: b'], {
-      numbers: () => ({ every: 5, side: 'right' }),
+      numbers: () => ({ ...LAYOUT_NUMBERS, side: 'right' }),
     });
     views.push(v);
     expect(sides(v)).toBe('right| right|');

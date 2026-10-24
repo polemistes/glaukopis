@@ -179,6 +179,9 @@ pub struct Text {
     pub indent: Length,
     /// Whether the first paragraph after a heading is indented too.
     pub indent_first: bool,
+    /// The step of an indent (ADR 0067): how far each Tab sets a line of
+    /// verse, or any other paragraph, in.
+    pub indent_step: Length,
     /// The space between paragraphs, beyond that between lines; nought for none.
     pub space_between: Length,
     pub hyphenate: bool,
@@ -196,6 +199,7 @@ impl Default for Text {
             paragraphs: None,
             indent: Length::cm(1.27),
             indent_first: true,
+            indent_step: Length::cm(0.6),
             space_between: Length::pt(0.0),
             hyphenate: false,
             italics: Italics::Italic,
@@ -490,18 +494,30 @@ impl Default for Quote {
 }
 
 /// How the numbers of a numbered passage are shown, where the passage does
-/// not say (ADR 0040): every how many, and on which side of the text.
+/// not say (ADR 0040): every how many, and on which side of the text; and
+/// on which side the annotations of lines stand (ADR 0067), nothing for the
+/// other side from the numbers. Where they stand on the numbers' side, they
+/// stand outside the numbers, further from the text.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Verse {
     /// Every how many: 5 shows 5, 10, 15.
     pub every: u32,
     pub side: Side,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub annotations: Option<Side>,
 }
 
 impl Default for Verse {
     fn default() -> Self {
-        Verse { every: 5, side: Side::Left }
+        Verse { every: 5, side: Side::Left, annotations: None }
+    }
+}
+
+impl Verse {
+    /// The side the annotations of lines numbered on `numbers` stand on.
+    pub fn annotations_beside(&self, numbers: Side) -> Side {
+        self.annotations.unwrap_or(numbers.other())
     }
 }
 
@@ -1190,6 +1206,11 @@ impl DocumentFormat {
         clamp(&mut self.quote.line_spacing, 0.0, 4.0, 0.0);
         if self.verse.every == 0 || self.verse.every > 1000 {
             self.verse.every = 5;
+        }
+        // The step of an indent, between a millimetre and five centimetres.
+        let step = self.text.indent_step.points() * 2.54 / 72.0;
+        if !step.is_finite() || !(0.1..=5.0).contains(&step) {
+            self.text.indent_step = Length::cm(0.6);
         }
         clamp(&mut self.bibliography.size, 0.0, 36.0, 0.0);
         clamp(&mut self.bibliography.line_spacing, 0.0, 4.0, 0.0);

@@ -38,6 +38,8 @@
 //! in Typst, two minipages in LaTeX, and a table without lines in Word and
 //! Writer.
 
+use std::fmt::Write as _;
+
 use serde_json::{Value, json};
 
 use super::numbers::{Shown, lines_of, stretch_numbers, stretches};
@@ -80,18 +82,60 @@ pub(super) struct Numbers<'a> {
     pub side: Side,
 }
 
-/// What stands beside a line: its number on one side, and words in the
-/// margin on the other.
+/// What stands beside a line: its number on its side, and the words in the
+/// margin, the annotation, on the side the layout says, across from the
+/// numbers unless it says otherwise. And what sets the line in, after what
+/// hangs in its margin and before its words: its steps, and the room of
+/// the line before where it begins where that ended.
 pub(super) struct Beside<'a> {
     pub number: Option<&'a Shown>,
     pub side: Side,
     pub margin: Option<&'a str>,
+    pub inset: Vec<Value>,
 }
 
 impl Beside<'_> {
     fn is_empty(&self) -> bool {
         self.number.is_none() && self.margin.is_none()
     }
+}
+
+/// The line before a line that begins where it ended (ADR 0067), as much
+/// as is needed to know where it ended: how many steps its own start
+/// stands in from the edge of the text, what set its words further in where
+/// it too began where the line before it ended, measured from `base` steps
+/// in, and its words.
+#[derive(Debug, Clone, Default)]
+pub(super) struct Before {
+    steps: u32,
+    base: u32,
+    after: Option<Box<Before>>,
+    words: Vec<Inline>,
+}
+
+/// The words of a line, as they are measured: its text, with its kinds of
+/// words and marks, and its formulas; notes, citations, pointers and the
+/// marks of lines and places left out, so that nothing is set twice.
+fn words_of(content: &[Inline]) -> Vec<Inline> {
+    content.iter().filter(|i| matches!(i, Inline::Text { .. } | Inline::Math { .. })).cloned().collect()
+}
+
+/// How many characters the words of a line have, for the spaces of Word and Writer.
+fn chars_of(words: &[Inline]) -> usize {
+    words
+        .iter()
+        .map(|i| match i {
+            Inline::Text { text, .. } => text.chars().count(),
+            Inline::Math { tex } => tex.chars().count(),
+            _ => 0,
+        })
+        .sum()
+}
+
+/// Spaces that do not break, as Word and Writer set a line in: they
+/// measure nothing, and their typesetters want spaces.
+fn hard_spaces(n: usize) -> Value {
+    json!({"t": "Str", "c": "\u{a0}".repeat(n)})
 }
 
 /// The text of a paragraph of code, line by line, as it was written.
@@ -126,6 +170,8 @@ enum VerseItem<'a> {
         indent: u32,
         margin: Option<&'a str>,
         shown: Option<&'a Shown>,
+        /// The line before, where the line begins where it ended.
+        before: Option<Before>,
     },
 }
 
@@ -183,7 +229,10 @@ impl Converter<'_> {
             let (shown, side) = match stretch {
                 Some(s) if s.numbering != Numbering::None => {
                     let every = s.every.filter(|e| *e > 0).unwrap_or(self.extras.verse.every);
-                    (stretch_numbers(&both, s.numbering, every, &counted), s.side.unwrap_or(self.extras.verse.side))
+                    (
+                        stretch_numbers(&both, s.numbering, every, s.only, &counted),
+                        s.side.unwrap_or(self.extras.verse.side),
+                    )
                 }
                 _ => (vec![Vec::new(); both.len()], self.extras.verse.side),
             };
@@ -202,6 +251,7 @@ impl Converter<'_> {
                 if std::mem::take(&mut first)
                     && group == "none"
                     && run[0].name == "text"
+                    && run[0].indent == 0
                     && run[0].shown.iter().all(Option::is_none)
                 {
                     let inner = self.lined(run[0].content, Numbers { shown: run[0].shown, side });
@@ -280,7 +330,7 @@ impl Converter<'_> {
             "quote" => {
                 let mut inner = Vec::new();
                 for p in run {
-                    self.kind_paragraph(p.name, p.content, Numbers { shown: p.shown, side }, &mut inner);
+                    self.kind_paragraph(p.name, p.content, Numbers { shown: p.shown, side }, p.indent, &mut inner);
                 }
                 if !inner.is_empty() {
                     out.push(json!({"t": "BlockQuote", "c": inner}));
@@ -297,7 +347,7 @@ impl Converter<'_> {
             "glossary" => self.glossary(run, side, out),
             _ => {
                 for p in run {
-                    self.kind_paragraph(p.name, p.content, Numbers { shown: p.shown, side }, out);
+                    self.kind_paragraph(p.name, p.content, Numbers { shown: p.shown, side }, p.indent, out);
                 }
             }
         }
@@ -306,21 +356,113 @@ impl Converter<'_> {
     /// The inlines of a paragraph, line by line, each with what stands
     /// beside it: its number, and the words in its margin.
     pub(super) fn lined(&self, content: &[Inline], numbers: Numbers) -> Vec<Value> {
+        self.lined_in(content, numbers, 0, true)
+    }
+
+    /// The inlines of a paragraph set in `steps` steps, line by line, as
+    /// `lined`: a line that begins where the line before ended set in by
+    /// that line's room. In Word and Writer the steps are spaces at the head
+    /// of every line; elsewhere what holds the paragraph sets it in. Where
+    /// `record` holds, the lines are kept as the line before for those that
+    /// follow, as a speaker's or a direction's are not.
+    fn lined_in(&self, content: &[Inline], numbers: Numbers, steps: u32, record: bool) -> Vec<Value> {
+        let spaced = matches!(self.extras.flavour, Flavour::Docx | Flavour::Odt);
         let mut out = Vec::new();
         for (j, line) in lines_of(content).iter().enumerate() {
             if j > 0 {
                 out.push(json!({"t": "LineBreak"}));
+            }
+            let before = self.before_if(line.mark.is_some_and(|m| m.continues));
+            let mut inset = Vec::new();
+            if spaced && steps > 0 {
+                inset.push(hard_spaces(steps as usize * 4));
+            }
+            if let Some(before) = &before {
+                inset.extend(self.after(before, steps));
             }
             let mut inner = self.inlines(line.content);
             let beside = Beside {
                 number: numbers.shown.get(j).and_then(Option::as_ref),
                 side: numbers.side,
                 margin: line.mark.and_then(|m| m.margin),
+                inset,
             };
             self.beside(&mut inner, &beside);
             out.extend(inner);
+            if record && !line.blank {
+                self.extras.line_before.replace(Some(Before {
+                    steps,
+                    base: steps,
+                    after: before.map(Box::new),
+                    words: words_of(line.content),
+                }));
+            }
         }
         out
+    }
+
+    /// The line before, where a line begins where it ended; nothing where it does not, or none stands before it.
+    fn before_if(&self, continues: bool) -> Option<Before> {
+        if continues { self.extras.line_before.borrow().clone() } else { None }
+    }
+
+    /// The step of an indent so many times, as a length every kind of document reads: `1.2cm`.
+    fn steps(&self, n: i64) -> String {
+        let step = self.extras.step;
+        crate::formats::Length { value: step.value * n as f32, ..step }.to_string()
+    }
+
+    /// The room of the line before, for a line that begins where it ended
+    /// and stands `base` steps in from the edge of the text: the line
+    /// before's own steps, what set it in, its words, and an em. In Typst
+    /// and LaTeX the words are measured and not set; in a page of the web
+    /// they are set and not seen; in Word and Writer, which measure nothing,
+    /// they are two spaces that do not break for each of their characters,
+    /// as their typesetters want it.
+    fn after(&self, before: &Before, base: u32) -> Vec<Value> {
+        match self.extras.flavour {
+            Flavour::Typst => {
+                let mut out = vec![raw_inline("typst", "#gk-after[")];
+                out.extend(self.measured(before, base));
+                out.push(raw_inline("typst", "];"));
+                out
+            }
+            Flavour::Latex => {
+                let mut out = vec![raw_inline("latex", "\\settowidth{\\gkafter}{")];
+                out.extend(self.measured(before, base));
+                out.push(raw_inline("latex", "}\\hspace*{\\dimexpr\\gkafter+1em\\relax}"));
+                out
+            }
+            Flavour::Plain if self.extras.classes => {
+                vec![json!({"t": "Span", "c": [["", ["gk-after"], []], self.measured(before, base)]})]
+            }
+            _ => vec![hard_spaces(self.spaces_of(before, base) + 2)],
+        }
+    }
+
+    /// The line before as what is measured: its own steps from `base`, what set it in, and its words.
+    fn measured(&self, before: &Before, base: u32) -> Vec<Value> {
+        let mut out = Vec::new();
+        let from = i64::from(before.steps) - i64::from(base);
+        if from != 0 {
+            match self.extras.flavour {
+                Flavour::Typst => out.push(raw_inline("typst", format!("#h({});", self.steps(from)))),
+                Flavour::Latex => out.push(raw_inline("latex", format!("\\hspace*{{{}}}", self.steps(from)))),
+                _ => out.push(json!({"t": "Span", "c": [["", [], [["style", format!("margin-left: {}", self.steps(from))]]], []]})),
+            }
+        }
+        if let Some(after) = &before.after {
+            out.extend(self.after(after, before.base));
+        }
+        out.extend(self.inlines(&before.words));
+        out
+    }
+
+    /// How many spaces stand for the line before in Word and Writer: four for a step, and two for a character.
+    fn spaces_of(&self, before: &Before, base: u32) -> usize {
+        let steps = before.steps.saturating_sub(base) as usize * 4;
+        let after = before.after.as_ref().map_or(0, |a| self.spaces_of(a, before.base) + 2);
+        steps + after + 2 * chars_of(&before.words)
     }
 
     /// A break of the page or of the column, as each kind of document has
@@ -385,13 +527,25 @@ impl Converter<'_> {
                     }
                     continue;
                 }
+                let indent = line.mark.map_or(0, |m| m.indent);
+                // A line of verse may begin where the line before ended; it is then the line before of the next.
+                let before = if base == "line" { self.before_if(line.mark.is_some_and(|m| m.continues)) } else { None };
+                if base == "line" && !line.blank {
+                    self.extras.line_before.replace(Some(Before {
+                        steps: indent,
+                        base: 0,
+                        after: before.clone().map(Box::new),
+                        words: words_of(line.content),
+                    }));
+                }
                 items.push(VerseItem::Line {
                     base,
                     name: p.name,
                     content: line.content,
-                    indent: line.mark.map_or(0, |m| m.indent),
+                    indent,
                     margin,
                     shown,
+                    before,
                 });
             }
         }
@@ -409,16 +563,24 @@ impl Converter<'_> {
                 // and a label of its kind, by which the preview names the line.
                 out.push(raw("typst", "#gk-verse["));
                 for item in &items {
-                    let VerseItem::Line { base, name, content, indent, margin, shown } = item else {
+                    let VerseItem::Line { base, name, content, indent, margin, shown, before } = item else {
                         out.push(raw("typst", "#v(1em)"));
                         continue;
                     };
                     let n = shown.map_or("none".to_owned(), |s| string(&s.label));
                     let margin = margin.map_or("none".to_owned(), string);
-                    out.push(raw(
-                        "typst",
-                        format!("#gk-line(\"{base}\", {indent}, n: {n}, margin: {margin}, side: \"{}\")[", side.name()),
-                    ));
+                    let rest = format!(", n: {n}, margin: {margin}, side: \"{}\")[", side.name());
+                    match before {
+                        None => out.push(raw("typst", format!("#gk-line(\"{base}\", {indent}{rest}"))),
+                        // The line before, measured as it stands from the edge of the verse.
+                        Some(before) => {
+                            let mut head =
+                                vec![raw_inline("typst", format!("#gk-line(\"{base}\", {indent}, after: ["))];
+                            head.extend(self.measured(before, 0));
+                            head.push(raw_inline("typst", format!("]{rest}")));
+                            out.push(json!({"t": "Plain", "c": head}));
+                        }
+                    }
                     out.push(json!({"t": "Plain", "c": self.inlines(content)}));
                     out.push(raw("typst", format!("] <gk-line-{}>", label(name))));
                 }
@@ -428,29 +590,39 @@ impl Converter<'_> {
                 // Each line a paragraph of its own, in a group that moves the
                 // lines in as far as the look of a line says; the number hangs
                 // in the margin on its side, and words in the margin on the other.
+                // A line is set in by its steps after what hangs in its margin,
+                // so that the numbers stand in one column.
                 let indent = line_look.map_or("2.4em".to_owned(), |l| l.indent_left.to_string());
                 out.push(raw("latex", format!("{{\\par\\leftskip={indent}\\relax\\parindent=0pt\\parskip=0pt")));
                 for item in &items {
-                    let VerseItem::Line { base, name, content, indent, margin, shown } = item else {
+                    let VerseItem::Line { base, name, content, indent, margin, shown, before } = item else {
                         out.push(raw("latex", "\\vspace{\\baselineskip}"));
                         continue;
                     };
                     let mut inner = self.inlines(content);
-                    let mut lead = vec![raw_inline("latex", "\\noindent")];
+                    // The space keeps the command apart from a first word that follows it.
+                    let mut lead = vec![raw_inline("latex", "\\noindent ")];
+                    let mut inset = Vec::new();
                     match *base {
                         "speaker" => {
-                            lead = vec![raw_inline("latex", "\\medskip\\noindent")];
+                            lead = vec![raw_inline("latex", "\\medskip\\noindent ")];
                             inner = self.line_words(inner, name);
                         }
                         "direction" => inner = self.line_words(inner, name),
                         _ => {
                             if *indent > 0 {
-                                lead.push(raw_inline("latex", format!("\\hspace*{{{}em}}", *indent as f32 * 1.5)));
+                                inset.push(raw_inline(
+                                    "latex",
+                                    format!("\\hspace*{{{}}}", self.steps(i64::from(*indent))),
+                                ));
                             }
                         }
                     }
+                    if let Some(before) = before {
+                        inset.extend(self.after(before, 0));
+                    }
                     inner.splice(0..0, lead);
-                    self.beside(&mut inner, &Beside { number: *shown, side, margin: *margin });
+                    self.beside(&mut inner, &Beside { number: *shown, side, margin: *margin, inset });
                     inner.push(raw_inline("latex", "\\par"));
                     out.push(json!({"t": "Plain", "c": inner}));
                 }
@@ -465,7 +637,7 @@ impl Converter<'_> {
                 // no margin to set them in.
                 let mut block = Vec::new();
                 for item in &items {
-                    let VerseItem::Line { base, name, content, indent, margin, shown } = item else {
+                    let VerseItem::Line { base, name, content, indent, margin, shown, before } = item else {
                         block.push(json!([]));
                         continue;
                     };
@@ -473,11 +645,14 @@ impl Converter<'_> {
                     if *base != "line" {
                         inner = self.line_words(inner, name);
                     }
+                    let mut inset = Vec::new();
                     if *indent > 0 {
-                        let spaces = "\u{a0}".repeat((*indent as usize) * 4);
-                        inner.insert(0, json!({"t": "Str", "c": spaces}));
+                        inset.push(hard_spaces(*indent as usize * 4));
                     }
-                    self.beside(&mut inner, &Beside { number: *shown, side, margin: *margin });
+                    if let Some(before) = before {
+                        inset.extend(self.after(before, 0));
+                    }
+                    self.beside(&mut inner, &Beside { number: *shown, side, margin: *margin, inset });
                     block.push(Value::Array(inner));
                 }
                 let lines = json!({"t": "LineBlock", "c": block});
@@ -517,52 +692,73 @@ impl Converter<'_> {
     }
 
     /// Puts what stands beside a line into it: the number on its side, the
-    /// words in the margin on the other. In Typst and LaTeX they are placed
-    /// in the margin; in Word, Writer and the formats made from a line block
-    /// they stand at the head of the line or at its end.
+    /// words in the margin on the side the layout says, across from the
+    /// numbers unless it says otherwise, and outside the number, further
+    /// from the text, where both stand on one side. In Typst and LaTeX they
+    /// are placed in the margin; in Word, Writer and the formats made from a
+    /// line block they stand at the head of the line or at its end. What
+    /// sets the line in stands after what hangs at its left, before its
+    /// words: in LaTeX after the command that begins the line too.
     pub(super) fn beside(&self, inner: &mut Vec<Value>, beside: &Beside) {
+        // After what begins the line, before its words: found before anything is put at its end.
+        let begun = if self.extras.flavour == Flavour::Latex {
+            inner.iter().take_while(|v| v["t"] == "RawInline").count()
+        } else {
+            0
+        };
         if beside.is_empty() {
+            inner.splice(begun..begun, beside.inset.iter().cloned());
             return;
         }
-        let number = beside.number.map(|s| s.label.as_str());
-        let (at_left, at_right) = match beside.side {
-            Side::Left => ((number, false), (beside.margin, true)),
-            Side::Right => ((beside.margin, true), (number, false)),
-        };
+        // What stands at each side, from the text outwards: its words, and whether they are the margin's.
+        let notes = self.extras.verse.annotations_beside(beside.side);
+        let mut left: Vec<(&str, bool)> = Vec::new();
+        let mut right: Vec<(&str, bool)> = Vec::new();
+        if let Some(number) = beside.number {
+            if beside.side == Side::Left { &mut left } else { &mut right }.push((number.label.as_str(), false));
+        }
+        if let Some(margin) = beside.margin {
+            if notes == Side::Left { &mut left } else { &mut right }.push((margin, true));
+        }
         match self.extras.flavour {
             Flavour::Typst => {
-                // Placed from where the paragraph begins, taking no room in the line.
-                let call = |side: &str, text: &str, margin: bool| {
+                // Placed from where the paragraph begins, taking no room in the line; what
+                // stands outside the number 3 em further out, past where a number of five digits ends.
+                let call = |side: &str, text: &str, margin: bool, outside: bool| {
                     let body = if margin {
                         format!("gk-margin({})", string(text))
                     } else {
                         format!("gk-number({})", string(text))
                     };
-                    raw_inline("typst", format!("#gk-beside(\"{side}\", {body});"))
+                    let out = if outside { ", out: 3em" } else { "" };
+                    raw_inline("typst", format!("#gk-beside(\"{side}\", {body}{out});"))
                 };
-                if let (Some(text), margin) = at_right {
-                    inner.insert(0, call("right", text, margin));
-                }
-                if let (Some(text), margin) = at_left {
-                    inner.insert(0, call("left", text, margin));
-                }
+                let calls: Vec<Value> = (left.iter().enumerate().map(|(k, (t, m))| call("left", t, *m, k > 0)))
+                    .chain(right.iter().enumerate().map(|(k, (t, m))| call("right", t, *m, k > 0)))
+                    .chain(beside.inset.iter().cloned())
+                    .collect();
+                inner.splice(0..0, calls);
             }
             Flavour::Latex => {
                 let shape = |margin: bool| if margin { "\\footnotesize\\itshape " } else { "\\footnotesize " };
-                if let (Some(text), margin) = at_right {
-                    inner
-                        .push(raw_inline("latex", format!("\\nobreak\\hfill\\rlap{{\\hspace{{1em}}{}", shape(margin))));
-                    inner.extend(words(text));
-                    inner.push(raw_inline("latex", "}"));
+                if !right.is_empty() {
+                    inner.push(raw_inline("latex", "\\nobreak\\hfill"));
+                    for (k, (text, margin)) in right.iter().enumerate() {
+                        let gap = if k > 0 { "4em" } else { "1em" };
+                        inner.push(raw_inline("latex", format!("\\rlap{{\\hspace{{{gap}}}{}", shape(*margin))));
+                        inner.extend(words(text));
+                        inner.push(raw_inline("latex", "}"));
+                    }
                 }
-                if let (Some(text), margin) = at_left {
-                    // After what begins the line, before its words.
-                    let at = inner.iter().take_while(|v| v["t"] == "RawInline").count();
-                    let mut lap = vec![raw_inline("latex", format!("\\llap{{{{{}", shape(margin)))];
-                    lap.extend(words(text));
-                    lap.push(raw_inline("latex", "}\\hspace{0.9em}}"));
-                    inner.splice(at..at, lap);
+                let mut laps = Vec::new();
+                for (k, (text, margin)) in left.iter().enumerate() {
+                    let gap = if k > 0 { "3.9em" } else { "0.9em" };
+                    laps.push(raw_inline("latex", format!("\\llap{{{{{}", shape(*margin))));
+                    laps.extend(words(text));
+                    laps.push(raw_inline("latex", format!("}}\\hspace{{{gap}}}}}")));
                 }
+                laps.extend(beside.inset.iter().cloned());
+                inner.splice(begun..begun, laps);
             }
             _ => {
                 let span = |text: &str, margin: bool, gap_before: bool| {
@@ -578,12 +774,17 @@ impl Converter<'_> {
                     };
                     vec![json!({"t": "Span", "c": [["", [class], [["custom-style", style]]], inner]})]
                 };
-                if let (Some(text), margin) = at_right {
-                    inner.extend(span(text, margin, true));
+                // At the end, from the text outwards; at the head, the outermost first.
+                for (text, margin) in &right {
+                    inner.extend(span(text, *margin, true));
                 }
-                if let (Some(text), margin) = at_left {
-                    inner.splice(0..0, span(text, margin, false));
-                }
+                let head: Vec<Value> = left
+                    .iter()
+                    .rev()
+                    .flat_map(|(text, margin)| span(text, *margin, false))
+                    .chain(beside.inset.iter().cloned())
+                    .collect();
+                inner.splice(0..0, head);
             }
         }
     }
@@ -669,25 +870,73 @@ impl Converter<'_> {
     /// elsewhere as plainly as the look can be shown. A paragraph of text or
     /// of a quotation is a plain paragraph, which what calls this puts where
     /// it belongs; one of code a code block; a break the sign of its look.
-    /// What stands beside its lines, where they are numbered, goes in.
-    pub(super) fn kind_paragraph(&self, name: &str, content: &[Inline], numbers: Numbers, out: &mut Vec<Value>) {
+    /// What stands beside its lines, where they are numbered, goes in. A
+    /// paragraph set in with Tab is set in by so many steps (ADR 0067): in
+    /// Typst within a block, in LaTeX by its left skip, on a page of the web
+    /// within a division, and in Word and Writer by spaces at the head of
+    /// each line; Markdown has nothing to set it in by.
+    pub(super) fn kind_paragraph(
+        &self,
+        name: &str,
+        content: &[Inline],
+        numbers: Numbers,
+        steps: u32,
+        out: &mut Vec<Value>,
+    ) {
+        let mut own = Vec::new();
+        self.kind_paragraph_in(name, content, numbers, steps, &mut own);
+        if steps == 0 || own.is_empty() {
+            out.extend(own);
+            return;
+        }
+        let x = &self.extras;
+        match x.flavour {
+            Flavour::Typst => {
+                out.push(raw("typst", format!("#block(inset: (left: {}))[", self.steps(i64::from(steps)))));
+                out.extend(own);
+                out.push(raw("typst", "]"));
+            }
+            Flavour::Plain if x.classes => out.push(json!({"t": "Div", "c": [
+                ["", [], [["style", format!("padding-left: {}", self.steps(i64::from(steps)))]]],
+                own,
+            ]})),
+            _ => out.extend(own),
+        }
+    }
+
+    /// A paragraph of a kind, as `kind_paragraph` has it, set in by `steps`
+    /// in LaTeX and in Word and Writer: the others are set in around it.
+    fn kind_paragraph_in(&self, name: &str, content: &[Inline], numbers: Numbers, steps: u32, out: &mut Vec<Value>) {
         let x = &self.extras;
         // A note to oneself goes into no document.
         if name == "draft" {
             return;
         }
+        // The lines of a speaker or a direction are no line before for a line that begins where one ended.
+        let record = !self.on_words(name);
+        let lined = |content: &[Inline]| self.lined_in(content, numbers, steps, record);
+        // In LaTeX a paragraph set in stands in a group of its own, its left skip moved by the steps.
+        let latex_steps = (x.flavour == Flavour::Latex && steps > 0).then(|| self.steps(i64::from(steps)));
+        let grouped = |block: Value, out: &mut Vec<Value>| match &latex_steps {
+            Some(by) => {
+                out.push(raw("latex", format!("{{\\par\\advance\\leftskip by {by}\\relax")));
+                out.push(block);
+                out.push(raw("latex", "\\par}"));
+            }
+            None => out.push(block),
+        };
         let Some(info) = x.kinds.get(name) else {
-            let inner = self.lined(content, numbers);
+            let inner = lined(content);
             if !inner.is_empty() {
-                out.push(json!({"t": "Para", "c": inner}));
+                grouped(json!({"t": "Para", "c": inner}), out);
             }
             return;
         };
         let look = &info.look;
         if matches!(name, "text" | "quote" | "item" | "numbered") {
-            let inner = self.lined(content, numbers);
+            let inner = lined(content);
             if !inner.is_empty() {
-                out.push(json!({"t": "Para", "c": inner}));
+                grouped(json!({"t": "Para", "c": inner}), out);
             }
             return;
         }
@@ -697,7 +946,7 @@ impl Converter<'_> {
         if info.base == "code" {
             let text = code_text(content);
             if !text.trim().is_empty() {
-                out.push(json!({"t": "CodeBlock", "c": [attr(), text.trim_end()]}));
+                grouped(json!({"t": "CodeBlock", "c": [attr(), text.trim_end()]}), out);
             }
             return;
         }
@@ -706,7 +955,7 @@ impl Converter<'_> {
             let sign = look.text.trim();
             words(if sign.is_empty() { "\u{a0}" } else { sign })
         } else {
-            self.lined(content, numbers)
+            lined(content)
         };
         if inner.is_empty() {
             return;
@@ -729,7 +978,10 @@ impl Converter<'_> {
                 if look.case == Case::Upper {
                     upper(&mut inner);
                 }
-                let (open, close) = crate::export::latex::around(look, x.kinds.get("text").map(|t| &t.look));
+                let (mut open, close) = crate::export::latex::around(look, x.kinds.get("text").map(|t| &t.look));
+                if let Some(by) = &latex_steps {
+                    let _ = write!(open, "\\advance\\leftskip by {by}\\relax ");
+                }
                 inner.insert(0, raw_inline("latex", open));
                 inner.push(raw_inline("latex", close));
                 out.push(json!({"t": "Plain", "c": inner}));
@@ -758,8 +1010,11 @@ impl Converter<'_> {
             side.iter().filter(|b| !matches!(b, Block::Break { .. })).cloned().collect()
         };
         let contained = self.extras.contained.replace(true);
+        // Each side begins where it begins: no line stands before its first.
+        self.extras.line_before.borrow_mut().take();
         let mut l = Vec::new();
         self.blocks(&unbroken(left), &mut l);
+        self.extras.line_before.borrow_mut().take();
         let mut r = Vec::new();
         self.blocks(&unbroken(right), &mut r);
         self.extras.contained.set(contained);
@@ -809,6 +1064,7 @@ mod tests {
         let mut extras = Extras::default();
         extras.flavour = flavour;
         extras.kinds = crate::formats::kinds::table(&DocumentFormat::default(), &[]);
+        extras.step = DocumentFormat::default().text.indent_step;
         Converter {
             keys,
             language: Some("en-GB"),
@@ -868,9 +1124,10 @@ mod tests {
         assert_eq!(lines.len(), 4);
         // The speaker in the character style the line block needs.
         assert_eq!(lines[0][0]["c"][0][2], json!([["custom-style", "Speaker Char"]]));
-        assert_eq!(lines[1][0]["c"][0][2], json!([["custom-style", "Verse Number"]]));
-        assert_eq!(lines[1][0]["c"][1][0]["c"], "1\u{a0}\u{a0}");
-        // The second line counted shows its number, every second being shown; it is indented by spaces that do not break.
+        // The 1 given to the first line is not shown, every second being shown.
+        assert_eq!(lines[1][0]["c"], "If");
+        // The second line counted shows its number; it is indented by spaces that do not break.
+        assert_eq!(lines[2][0]["c"][0][2], json!([["custom-style", "Verse Number"]]));
         assert_eq!(lines[2][0]["c"][1][0]["c"], "2\u{a0}\u{a0}");
         assert_eq!(lines[2][1]["c"], "\u{a0}\u{a0}\u{a0}\u{a0}");
         // The third is not shown; its margin words stand at the end.
@@ -880,8 +1137,8 @@ mod tests {
         // On the right side the number stands at the end and the margin words at the head.
         let out = written(&c, &nurse(Some(Side::Right)));
         let lines = out[0]["c"][1][0]["c"].as_array().unwrap();
-        let second = lines[1].as_array().unwrap();
-        assert_eq!(second[0]["c"], "If");
+        let second = lines[2].as_array().unwrap();
+        assert_eq!(second[0]["c"], "\u{a0}\u{a0}\u{a0}\u{a0}");
         assert_eq!(second[second.len() - 1]["c"][0][2], json!([["custom-style", "Verse Number"]]));
         let last = lines[3].as_array().unwrap();
         assert_eq!(last[0]["c"][0][2], json!([["custom-style", "Verse Margin"]]));
@@ -895,7 +1152,7 @@ mod tests {
         let out = written(&c, &verse);
         assert_eq!(out[0]["c"][1], "#gk-verse[");
         assert_eq!(out[1]["c"][1], "#gk-line(\"speaker\", 0, n: none, margin: none, side: \"left\")[");
-        assert_eq!(out[4]["c"][1], "#gk-line(\"line\", 0, n: \"1\", margin: none, side: \"left\")[");
+        assert_eq!(out[4]["c"][1], "#gk-line(\"line\", 0, n: none, margin: none, side: \"left\")[");
         assert_eq!(out[7]["c"][1], "#gk-line(\"line\", 1, n: \"2\", margin: none, side: \"left\")[");
         assert_eq!(out[10]["c"][1], "#gk-line(\"line\", 0, n: none, margin: \"ia.\", side: \"left\")[");
         // Each line labelled by its kind, by which the preview names it.
@@ -908,11 +1165,133 @@ mod tests {
             "as far in as a line looks"
         );
         let first = out[1]["c"].as_array().unwrap();
-        assert_eq!(first[0]["c"][1], "\\medskip\\noindent");
+        assert_eq!(first[0]["c"][1], "\\medskip\\noindent ");
         assert_eq!(first[1]["t"], "SmallCaps");
-        let second = out[2]["c"].as_array().unwrap();
-        assert_eq!(second[1]["c"][1], "\\llap{{\\footnotesize ");
-        assert_eq!(second[2]["c"], "1");
+        // The number hangs in the margin first, and the line is set in by its step after it,
+        // so that the numbers of lines set in stand in the column of the others.
+        let third = out[3]["c"].as_array().unwrap();
+        assert_eq!(third[1]["c"][1], "\\llap{{\\footnotesize ");
+        assert_eq!(third[2]["c"], "2");
+        assert_eq!(third[4]["c"][1], "\\hspace*{0.6cm}");
+    }
+
+    /// A speaker's first half of a line, a second speaker, and the second half.
+    fn shared() -> Vec<Block> {
+        vec![
+            lines("line", vec![(None, "Is it you,")]),
+            kind("speaker", vec![text("Ismene")]),
+            lines("line", vec![(Some(mark().continues().done()), "my sister?")]),
+        ]
+    }
+
+    /// What is written, as plain text: raw lines and words as they stand, a span of a class as `[class:words]`.
+    fn flat(v: &Value) -> String {
+        match v {
+            Value::Array(items) => items.iter().map(flat).collect(),
+            Value::Object(o) => match o.get("t").and_then(Value::as_str) {
+                Some("RawInline") => o["c"][1].as_str().unwrap_or("").to_owned(),
+                Some("RawBlock") => format!("{}\n", o["c"][1].as_str().unwrap_or("")),
+                Some("Str") => o["c"].as_str().unwrap_or("").to_owned(),
+                Some("Space") => " ".to_owned(),
+                Some("Span") => {
+                    let classes: Vec<&str> = o["c"][0][1]
+                        .as_array()
+                        .map(|c| c.iter().filter_map(Value::as_str).collect())
+                        .unwrap_or_default();
+                    let inner = flat(&o["c"][1]);
+                    if classes.is_empty() { inner } else { format!("[{}:{inner}]", classes.join(" ")) }
+                }
+                Some("Plain" | "Para") => format!("{}\n", flat(&o["c"])),
+                Some("LineBlock") => o["c"]
+                    .as_array()
+                    .map(|ls| ls.iter().map(|l| format!("{}\n", flat(l))).collect())
+                    .unwrap_or_default(),
+                Some("Div") => flat(&o["c"][1]),
+                Some(_) => o.get("c").map(flat).unwrap_or_default(),
+                None => String::new(),
+            },
+            _ => String::new(),
+        }
+    }
+
+    #[test]
+    fn a_line_that_begins_where_the_line_before_ended_is_set_in_by_its_room_in_every_kind_of_document() {
+        let keys = HashMap::new();
+        let said = |flavour: Flavour, classes: bool, blocks: &[Block]| {
+            let mut c = converter(&keys, flavour);
+            c.extras.classes = classes;
+            flat(&Value::Array(written(&c, blocks)))
+        };
+        // Typst: the line before measured, the speaker passed over.
+        let typst = said(Flavour::Typst, false, &shared());
+        assert!(
+            typst.contains(r#"#gk-line("line", 0, after: [Is it you,], n: none, margin: none, side: "left")["#),
+            "{typst}"
+        );
+        // LaTeX: measured into a length, and set in by it and an em.
+        let latex = said(Flavour::Latex, false, &shared());
+        assert!(
+            latex
+                .contains(r"\noindent \settowidth{\gkafter}{Is it you,}\hspace*{\dimexpr\gkafter+1em\relax}my sister?"),
+            "{latex}"
+        );
+        // Word: two spaces that do not break for each of the ten characters, and two more.
+        let c = converter(&keys, Flavour::Docx);
+        let out = written(&c, &shared());
+        let block = out[0]["c"][1][0]["c"].as_array().unwrap();
+        assert_eq!(block[2][0]["c"], "\u{a0}".repeat(22));
+        // A page of the web: the words of the line before, set and not seen.
+        let html = said(Flavour::Plain, true, &shared());
+        assert!(html.contains("[gk-after:Is it you,]my sister?"), "{html}");
+        // Prose: the line before is the last of the paragraph before.
+        let prose = vec![
+            Block::paragraph(vec![text("Speak, then.")]),
+            Block::paragraph(vec![mark().continues().done(), text("I will.")]),
+        ];
+        let typst = said(Flavour::Typst, false, &prose);
+        assert!(typst.contains("#gk-after[Speak, then.];I will."), "{typst}");
+        // A third part of the line: the second measured with what set it in.
+        let three = vec![lines(
+            "line",
+            vec![
+                (None, "One"),
+                (Some(mark().continues().done()), "two"),
+                (Some(mark().indent(1).continues().done()), "three"),
+            ],
+        )];
+        let typst = said(Flavour::Typst, false, &three);
+        assert!(typst.contains(r#"#gk-line("line", 1, after: [#gk-after[One];two], n: none"#), "{typst}");
+        // The first line of a section has none before it.
+        let alone = vec![lines("line", vec![(Some(mark().continues().done()), "Alone")])];
+        assert!(!said(Flavour::Typst, false, &alone).contains("after:"));
+    }
+
+    #[test]
+    fn a_paragraph_set_in_with_tab_is_set_in_on_the_page_by_the_step() {
+        let keys = HashMap::new();
+        let blocks = vec![
+            Block::paragraph(vec![text("Set in.")]).indented(2),
+            kind("epigraph", vec![text("Aside.")]).indented(1),
+        ];
+        let said = |flavour: Flavour, classes: bool| {
+            let mut c = converter(&keys, flavour);
+            c.extras.classes = classes;
+            written(&c, &blocks)
+        };
+        let typst = flat(&Value::Array(said(Flavour::Typst, false)));
+        assert!(typst.contains("#block(inset: (left: 1.2cm))[\nSet in.\n]\n"), "{typst}");
+        assert!(typst.contains("#block(inset: (left: 0.6cm))["), "{typst}");
+        let latex = flat(&Value::Array(said(Flavour::Latex, false)));
+        assert!(latex.contains("{\\par\\advance\\leftskip by 1.2cm\\relax\nSet in.\n\\par}"), "{latex}");
+        assert!(
+            latex.contains("\\noindent \\advance\\leftskip by 0.6cm\\relax Aside."),
+            "the kind's own left skip moved: {latex}"
+        );
+        let html = said(Flavour::Plain, true);
+        assert_eq!(html[0]["c"][0][2], json!([["style", "padding-left: 1.2cm"]]));
+        // Word: four spaces that do not break for each step, at the head of the line.
+        let out = said(Flavour::Docx, false);
+        assert_eq!(out[0]["c"][0]["c"], "\u{a0}".repeat(8));
     }
 
     #[test]
@@ -1026,6 +1405,48 @@ mod tests {
         for n in ["1", "2", "3"] {
             assert!(said.contains(&format!("#gk-beside(\\\"left\\\", gk-number(\\\"{n}\\\"));")), "{said}");
         }
+    }
+
+    #[test]
+    fn annotations_stand_where_the_layout_says_and_outside_the_numbers_on_their_side() {
+        let keys = HashMap::new();
+        let marked = || mark().number("1").margin("ia.").done();
+        let prose = numbered(1, None, vec![Block::paragraph(vec![marked(), text("Sing.")])]);
+        let verse = numbered(1, None, vec![lines("line", vec![(Some(marked()), "Sing")])]);
+        let typst = |c: &Converter| serde_json::to_string(&written(c, &prose)).unwrap();
+        // Across from the numbers, as the layouts that ship have it.
+        let c = converter(&keys, Flavour::Typst);
+        let said = typst(&c);
+        assert!(said.contains(r#"#gk-beside(\"left\", gk-number(\"1\"));"#), "{said}");
+        assert!(said.contains(r#"#gk-beside(\"right\", gk-margin(\"ia.\"));"#), "{said}");
+        // On the numbers' side, outside them.
+        let mut c = converter(&keys, Flavour::Typst);
+        c.extras.verse.annotations = Some(Side::Left);
+        let said = typst(&c);
+        assert!(said.contains(r#"#gk-beside(\"left\", gk-number(\"1\"));"#), "{said}");
+        assert!(said.contains(r#"#gk-beside(\"left\", gk-margin(\"ia.\"), out: 3em);"#), "{said}");
+        // LaTeX: both hang in the left margin, the annotation further out.
+        let mut c = converter(&keys, Flavour::Latex);
+        c.extras.verse.annotations = Some(Side::Left);
+        let said = serde_json::to_string(&written(&c, &prose)).unwrap();
+        assert!(said.contains(r#"}\\hspace{0.9em}}"#) && said.contains(r#"}\\hspace{3.9em}}"#), "{said}");
+        assert!(!said.contains("rlap"), "{said}");
+        // Word: at the head of the line, the annotation first, then the number.
+        let mut c = converter(&keys, Flavour::Docx);
+        c.extras.verse.annotations = Some(Side::Left);
+        let out = written(&c, &verse);
+        let line = out[0]["c"][1][0]["c"][0].as_array().unwrap();
+        assert_eq!(line[0]["c"][0][2], json!([["custom-style", "Verse Margin"]]));
+        assert_eq!(line[1]["c"][0][2], json!([["custom-style", "Verse Number"]]));
+        assert_eq!(line[2]["c"], "Sing");
+        // Numbers and annotations at the right: at the end, the number first.
+        let verse_right = numbered(1, Some(Side::Right), vec![lines("line", vec![(Some(marked()), "Sing")])]);
+        c.extras.verse.annotations = Some(Side::Right);
+        let out = written(&c, &verse_right);
+        let line = out[0]["c"][1][0]["c"][0].as_array().unwrap();
+        assert_eq!(line[0]["c"], "Sing");
+        assert_eq!(line[1]["c"][0][2], json!([["custom-style", "Verse Number"]]));
+        assert_eq!(line[2]["c"][0][2], json!([["custom-style", "Verse Margin"]]));
     }
 
     #[test]

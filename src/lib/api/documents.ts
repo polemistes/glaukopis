@@ -247,6 +247,8 @@ export interface DocumentFormat {
     /** How far the first line of a paragraph begins in; nought for none. */
     indent: string;
     indentFirst: boolean;
+    /** The step of an indent, by which Tab sets lines and paragraphs in. */
+    indentStep: string;
     /** The space between paragraphs, beyond that between lines; nought for none. */
     spaceBetween: string;
     hyphenate: boolean;
@@ -287,6 +289,8 @@ export interface DocumentFormat {
     /** Every how many: 5 shows 5, 10, 15. */
     every: number;
     side: 'left' | 'right';
+    /** The side the annotations of lines stand on; nothing for the other side from the numbers. */
+    annotations?: 'left' | 'right' | null;
   };
   notes: { kind: 'footnotes' | 'endnotes'; size: number; lineSpacing: number; title: string };
   bibliography: {

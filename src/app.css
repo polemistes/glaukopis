@@ -535,7 +535,7 @@ body.dragging * {
 .prose p[data-kind='item']::before,
 .prose p[data-kind='numbered']::before {
   position: absolute;
-  left: calc(var(--indent, 0) * 1.5em - 1.1em);
+  left: calc(var(--indent, 0) * var(--step, 1.5em) - 1.1em);
   color: var(--ink-3);
   user-select: none;
 }
@@ -1264,16 +1264,30 @@ span.math.selected {
 /* Verse: each paragraph a stanza, its lines parted by line breaks; a line
    indented by the mark at its start, a step for each indent it is given,
    the whole stanza by its own indent (the numbers in the margin are
-   below). The mark of a line shows nothing else. */
+   below). The step is the layout's, which the editor sets on its root
+   (`--step`). The mark of a line shows nothing else. */
 .prose p[data-indent] {
-  padding-left: calc(var(--indent, 0) * 1.5em);
+  padding-left: calc(var(--indent, 0) * var(--step, 1.5em));
 }
 .prose span.linemark {
   display: inline;
 }
 .prose span.linemark[data-indent] {
   display: inline-block;
-  width: calc(var(--indent, 0) * 1.5em);
+  width: calc(var(--indent, 0) * var(--step, 1.5em));
+}
+/* A line that begins where the line before ended: its mark is as wide as
+   the line before is long where it is drawn, and an em, which the editor
+   measures (`editor/continues.ts`, `--continues`), with the line's own
+   steps added; four steps until it is measured. */
+.prose span.linemark[data-continues] {
+  display: inline-block;
+  width: var(--continues, calc(4 * var(--step, 1.5em)));
+}
+.prose span.linemark[data-continues][data-indent] {
+  width: calc(
+    var(--continues, calc(4 * var(--step, 1.5em))) + var(--indent, 0) * var(--step, 1.5em)
+  );
 }
 .prose p[data-kind='line'] + p[data-kind='line'] {
   margin-top: 0.9em;
@@ -1329,6 +1343,12 @@ span.math.selected {
 .prose .line-number.held {
   color: var(--ink-4);
   font-weight: normal;
+}
+/* A number given by hand that the page does not show, as the count shows
+   only every so many: dark, as given numbers are, and in parentheses. */
+.prose .line-number.held[data-given] {
+  color: var(--ink-2);
+  font-weight: 600;
 }
 .prose .line-number.held::before {
   content: '(';
@@ -1387,23 +1407,35 @@ span.math.selected {
   -webkit-user-select: none;
   pointer-events: none;
 }
-/* Room for them, where there are any. */
-.prose p[data-margins] {
-  margin-right: 8em;
-}
-/* The numbers at the right: the margin words then go to the left. */
+/* The numbers at the right. */
 .prose p[data-numbers='right'] .line-number {
   right: auto;
   left: calc(100% + 0.6em);
   text-align: left;
 }
-.prose p[data-numbers='right'] .line-margin {
+/* The annotations stand on the side the numbering sets on their paragraph
+   (`data-annotations`): across from the numbers, unless the layout says
+   otherwise. At the right, with room for them, but never more than a part
+   of a narrow text. */
+.prose p[data-annotations='right'] {
+  margin-right: min(8em, 30%);
+}
+/* At the left, outside the bracket of the run and its label. */
+.prose p[data-annotations='left'] .line-margin {
   left: auto;
-  right: calc(100% + 1em + var(--inset));
+  right: calc(100% + 2.2em + var(--inset));
   text-align: right;
 }
-.prose p[data-numbers='right'][data-margins] {
-  margin-right: 0;
+/* On the numbers' side, outside the numbers, further from the text: at
+   the left outside the bracket too, which stands outside the numbers. */
+.prose p[data-annotations='left'][data-numbers='left'] .line-margin {
+  right: calc(100% + 6em + var(--inset));
+}
+.prose p[data-annotations='right'][data-numbers='right'] .line-margin {
+  left: calc(100% + 4.6em);
+}
+.prose p[data-annotations='right'][data-numbers='right'] {
+  margin-right: min(11.7em, 40%);
 }
 
 /* A break of the page or of the column: a dashed line across the text with

@@ -22,6 +22,9 @@
   import Pencil from '@lucide/svelte/icons/pencil';
   import SplitSquareVertical from '@lucide/svelte/icons/split-square-vertical';
   import Hash from '@lucide/svelte/icons/hash';
+  import ListOrdered from '@lucide/svelte/icons/list-ordered';
+  import CornerDownRight from '@lucide/svelte/icons/corner-down-right';
+  import { continueLine, continuesAt } from '$lib/editor/numbers';
   import Trash2 from '@lucide/svelte/icons/trash-2';
   import { widthFor } from '$lib/editor/commands';
   import type { KeyAction } from '$lib/editor/plugins';
@@ -1007,13 +1010,37 @@
     );
     const extra: MenuItem[] = [];
     if (inParagraph) {
+      // The editor is made where the text was pressed, if it was not there: it is looked for when chosen.
+      const ask = (which: 'askNumbering' | 'askLine') => () => {
+        const v = editors.get(id)?.body?.getView();
+        if (v) hooksOf.get(v)?.[which]?.(v);
+      };
+      extra.push(
+        {
+          label: t('editor-numbering-from-here-item'),
+          icon: ListOrdered,
+          action: ask('askNumbering'),
+        },
+        {
+          label: t('editor-numbering-of-line-item'),
+          icon: Hash,
+          action: ask('askLine'),
+        },
+      );
+      // Whether the line the cursor is in begins where the line before ended: the second part of a shared line.
+      const own = project.passageKinds.filter((k) => k.family === 'paragraph');
+      const continues = view ? continuesAt(view.state, own) : null;
       extra.push({
-        label: t('editor-numbers-lines'),
-        icon: Hash,
-        // The editor is made where the text was pressed, if it was not there: it is looked for when chosen.
+        label: t('editor-line-continues'),
+        icon: CornerDownRight,
+        checked: continues?.on ?? false,
+        disabled: !!continues && !continues.on && !continues.can,
         action: () => {
           const v = editors.get(id)?.body?.getView();
-          if (v) hooksOf.get(v)?.askNumbers?.(v);
+          const now = v && continuesAt(v.state, own);
+          if (!v || !now) return;
+          continueLine(!now.on, own)(v.state, v.dispatch);
+          v.focus();
         },
       });
     }

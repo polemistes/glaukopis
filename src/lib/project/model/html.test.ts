@@ -39,7 +39,6 @@ describe('a text as HTML', () => {
     expect(html).toBe(
       '<p data-kind="speaker" data-numbering="counted" data-every="2" data-side="right">Nurse</p>' +
         '<p data-kind="line" data-numbering="counted" data-every="2" data-side="right">' +
-        '<span class="line-number" data-n="1" data-n-set></span>' +
         '<span class="linemark" data-number="1"></span>If only the Argo' +
         BR +
         '<span class="line-number" data-n="2"></span>had never flown' +
@@ -62,7 +61,8 @@ describe('a text as HTML', () => {
       paragraph([...lines(2), br, linemark({ hidden: true }), t('held')], 'line', stretch),
       paragraph([t('after')], 'line', 0),
     ]);
-    expect(html.match(/data-n="[^"]*"/g)).toEqual(['data-n="1"', 'data-n="5"']);
+    // The 1 given does not divide by five, and stands on no page.
+    expect(html.match(/data-n="[^"]*"/g)).toEqual(['data-n="5"']);
     expect(html).toContain('<span class="line-number" data-n="5"></span>l1');
     expect(html).toContain(`${BR}<span class="linemark" data-hidden></span>held</p>`);
     expect(html).toContain('<p data-kind="line">after</p>');

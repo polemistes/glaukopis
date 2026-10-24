@@ -299,6 +299,11 @@ export function sideAttr(value: unknown): 'left' | 'right' | null {
   return value === 'left' || value === 'right' ? value : null;
 }
 
+/** The one kind whose lines a stretch counts, by its id, or nothing for every kind. */
+export function onlyAttr(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
 const bodyNodes: Record<string, NodeSpec> = {
   doc: { content: 'block+' },
   /**
@@ -306,12 +311,14 @@ const bodyNodes: Record<string, NodeSpec> = {
    * `project/model/families.ts`), `text` by default; `indent` its steps in,
    * from none to eight. A paragraph is lines, parted by `hard_break`; what
    * is said of one line by hand stands in a `linemark` at its start.
-   * `numbering`, `every` and `side` are the settings of the numbered
-   * stretch it stands in: consecutive paragraphs with the same settings are
-   * numbered together, whatever their kinds (`project/model/lines.ts`).
-   * `numbering` is `counted` or `given`, nothing where it is not numbered;
-   * `every` how often a counted number is shown and `side` where, nothing
-   * for what the layout says. `new` is true where the paragraph begins a
+   * `numbering`, `every`, `side` and `only` are the settings of the
+   * numbered stretch it stands in: consecutive paragraphs with the same
+   * settings are numbered together, whatever their kinds
+   * (`project/model/lines.ts`). `numbering` is `counted` or `given`,
+   * nothing where it is not numbered; `every` how often a counted number is
+   * shown and `side` where, nothing for what the layout says; `only` the
+   * one kind whose lines are counted, nothing for every kind that is
+   * counted. `new` is true where the paragraph begins a
    * new run of its kind beside another of the same kind. What is not said
    * is nothing, never false, so that it is not stored. See ADR 0041.
    */
@@ -324,6 +331,7 @@ const bodyNodes: Record<string, NodeSpec> = {
       numbering: { default: null },
       every: { default: null },
       side: { default: null },
+      only: { default: null },
       new: { default: null },
     },
     parseDOM: [
@@ -337,6 +345,7 @@ const bodyNodes: Record<string, NodeSpec> = {
             numbering: numberingAttr(el.getAttribute('data-numbering')),
             every: everyAttr(el.getAttribute('data-every')),
             side: sideAttr(el.getAttribute('data-side')),
+            only: onlyAttr(el.getAttribute('data-only')),
             new: el.hasAttribute('data-new') ? true : null,
           };
         },
@@ -353,6 +362,7 @@ const bodyNodes: Record<string, NodeSpec> = {
           'data-numbering': numberingAttr(node.attrs.numbering),
           'data-every': every ? String(every) : null,
           'data-side': sideAttr(node.attrs.side),
+          'data-only': onlyAttr(node.attrs.only),
           'data-new': node.attrs.new === true ? '' : null,
         },
         0,
@@ -366,9 +376,12 @@ const bodyNodes: Record<string, NodeSpec> = {
    * drawn by the editor (`editor/numbers.ts`). `number` a number or a label
    * given by hand ("1234", "567a"), from which the count goes on; `counted`
    * false for a line the count passes over; `hidden` true for one that is
-   * counted and shows no number; `margin` words shown in the margin beside
-   * it; `indent` the line's own steps in, for verse. Each is nothing where
-   * it is not said. A mark that says nothing is taken away.
+   * counted and never shows its number, `shown` true for one that always
+   * does; `margin` words shown in the margin beside it, the annotation;
+   * `indent` the line's own steps in, for verse; `continues` true for a
+   * line that begins where the line before ended, which the editor sets in
+   * by measuring that line (`editor/continues.ts`). Each is nothing where it
+   * is not said. A mark that says nothing is taken away.
    */
   linemark: {
     group: 'inline',
@@ -379,8 +392,10 @@ const bodyNodes: Record<string, NodeSpec> = {
       number: { default: null },
       counted: { default: null },
       hidden: { default: null },
+      shown: { default: null },
       margin: { default: null },
       indent: { default: null },
+      continues: { default: null },
     },
     parseDOM: [
       {
@@ -391,8 +406,10 @@ const bodyNodes: Record<string, NodeSpec> = {
             number: el.getAttribute('data-number') || null,
             counted: el.hasAttribute('data-uncounted') ? false : null,
             hidden: el.hasAttribute('data-hidden') ? true : null,
+            shown: el.hasAttribute('data-shown') && !el.hasAttribute('data-hidden') ? true : null,
             margin: el.getAttribute('data-margin') || null,
             indent: indentAttr(el.getAttribute('data-indent')) || null,
+            continues: el.hasAttribute('data-continues') ? true : null,
           };
         },
       },
@@ -404,8 +421,10 @@ const bodyNodes: Record<string, NodeSpec> = {
         'data-number': node.attrs.number || null,
         'data-uncounted': node.attrs.counted === false ? '' : null,
         'data-hidden': node.attrs.hidden === true ? '' : null,
+        'data-shown': node.attrs.shown === true ? '' : null,
         'data-margin': node.attrs.margin || null,
         'data-indent': node.attrs.indent ? String(node.attrs.indent) : null,
+        'data-continues': node.attrs.continues === true ? '' : null,
         style: node.attrs.indent ? `--indent: ${node.attrs.indent}` : null,
       },
     ],

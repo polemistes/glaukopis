@@ -312,8 +312,10 @@ fn block_of(piece: Shaped) -> Block {
                         number: Some(number),
                         counted: true,
                         hidden: false,
+                        shown: false,
                         margin: None,
                         indent: 0,
+                        continues: false,
                     });
                 }
                 content.extend(line);

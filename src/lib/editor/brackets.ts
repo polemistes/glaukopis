@@ -236,7 +236,8 @@ export function languageOverRun(
 /**
  * Opens the menu of the run that begins at `pos`, beside `anchor`. What
  * numbers the run and what asks for another language are the editor's
- * dialogs, reached through its hooks.
+ * dialogs, reached through its hooks; the numbering is asked from the
+ * run's first paragraph, so that the whole run is meant.
  */
 export function runMenu(view: EditorView, pos: number, anchor: HTMLElement) {
   const { state } = view;
@@ -251,20 +252,20 @@ export function runMenu(view: EditorView, pos: number, anchor: HTMLElement) {
     command(view.state, view.dispatch, view);
     view.focus();
   };
-  /** The cursor into the run, where it is not there, so that what is asked of the lines where the cursor is is asked of this run. */
-  const enter = () => {
-    if (inside || view.isDestroyed) return;
+  const current = runLanguage(state, pos, own);
+  /** The cursor to the start of the run's first paragraph, from which a numbering is set on the run. */
+  const toFirst = () => {
+    if (view.isDestroyed) return;
     view.dispatch(view.state.tr.setSelection(TextSelection.near(view.state.doc.resolve(pos + 1))));
   };
-  const current = runLanguage(state, pos, own);
   const items: MenuItem[] = [
     {
-      label: t('editor-run-numbers'),
+      label: t('editor-run-numbering'),
       icon: Hash,
-      disabled: !hooks?.askNumbers,
+      disabled: !hooks?.askNumbering,
       action: () => {
-        enter();
-        hooks?.askNumbers?.(view);
+        toFirst();
+        hooks?.askNumbering?.(view);
       },
     },
     {
@@ -362,7 +363,7 @@ interface Drawn {
  * setting or the layout's, so that the bracket stands outside them along
  * the whole run; else the right. Nothing where none is numbered.
  */
-function numbersSide(run: Run, layout: NumbersLayout): Side | null {
+function numbersSide(run: Run, layout: Pick<NumbersLayout, 'side'>): Side | null {
   let side: Side | null = null;
   for (const { node } of run.paragraphs) {
     if (!numberedNode(node)) continue;
@@ -385,7 +386,7 @@ function brackets(
   state: EditorState,
   own: readonly BasedKind[],
   name: (kind: string) => string,
-  layout: NumbersLayout,
+  layout: Pick<NumbersLayout, 'side'>,
 ): Pick<Drawn, 'runs' | 'spans'> {
   const list: Decoration[] = [];
   const spans: Drawn['spans'] = [];
@@ -475,7 +476,7 @@ function withCurrent(
 export function runBrackets(
   own: () => readonly BasedKind[] = () => [],
   name: (kind: string) => string = (kind) => kind,
-  layout: () => NumbersLayout = () => ({ every: 5, side: 'left' }),
+  layout: () => Pick<NumbersLayout, 'side'> = () => ({ side: 'left' }),
 ): Plugin<Drawn> {
   return new Plugin<Drawn>({
     key: bracketsKey,

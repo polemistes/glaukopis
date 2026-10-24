@@ -31,23 +31,27 @@
   import { dropTarget } from '$lib/ui/drag.svelte';
   import { editorUi, rectAt } from './ui.svelte';
   import { sharedUndo } from './undo';
-  import { markActive, paragraphsIn, setLanguage } from './commands';
+  import { markActive, setLanguage } from './commands';
   import {
     LAYOUT_NUMBERS,
+    LAYOUT_STEP,
+    lineAsked,
     markLine,
     numberFrom,
-    numbersAsked,
+    numberingAsked,
     numberStretch,
+    paragraphsFromHere,
     redrawShape,
-    stretchAt,
-    stretchToNumber,
-    type NumbersAsked,
+    type LineAsked,
+    type NumberingAsked,
     type NumbersLayout,
   } from './numbers';
   import LanguageDialog from './LanguageDialog.svelte';
-  import LineNumbersDialog from './LineNumbersDialog.svelte';
+  import LineDialog from './LineDialog.svelte';
+  import LineNumberingDialog from './LineNumberingDialog.svelte';
   import { documents, templateUsedCached } from '$lib/preview/documents.svelte';
-  import { kindKeysOf } from './kinds';
+  import { kindKeysOf, kindName } from './kinds';
+  import { toCm } from '$lib/ui/settings/rows';
   import { CitationView, FootnoteView, PageBreakView } from './views.svelte';
   import { RefMarkView } from './refmarks';
   import { topOf } from '$lib/figures/numbering.svelte';
@@ -149,7 +153,8 @@
   });
 
   // What the layout of the document says of the numbers of a stretch that
-  // does not say: every how many, and on which side (ADR 0041). The editor
+  // does not say: every how many, and on which side (ADR 0041), and where
+  // the annotations of lines stand (ADR 0067). The editor
   // is given it through a hook. The numbers of lines and the brackets of
   // runs are not drawn anew on every keystroke, so the editor is told to
   // draw them anew when what they are drawn with changes: the layout's
@@ -159,7 +164,15 @@
   // depends on; the rest is read untracked.
   const numbersLayout = $derived.by<NumbersLayout>(() => {
     if (kind !== 'body' || !owner || !project.node(owner)) return LAYOUT_NUMBERS;
-    return documents.formatForCached(project, owner)?.verse ?? LAYOUT_NUMBERS;
+    const format = documents.formatForCached(project, owner);
+    const verse = format?.verse;
+    const step = toCm(format?.text.indentStep ?? '');
+    return {
+      every: verse?.every ?? LAYOUT_NUMBERS.every,
+      side: verse?.side ?? LAYOUT_NUMBERS.side,
+      annotations: verse?.annotations ?? null,
+      step: step !== null && step > 0 ? (step * 72) / 2.54 : LAYOUT_STEP,
+    };
   });
   let drawnWith: { numbers: NumbersLayout; kinds: unknown; language: string } | null = null;
   $effect(() => {
@@ -176,6 +189,8 @@
       const changed =
         now.numbers.every !== was.numbers.every ||
         now.numbers.side !== was.numbers.side ||
+        now.numbers.annotations !== was.numbers.annotations ||
+        now.numbers.step !== was.numbers.step ||
         now.kinds !== was.kinds ||
         now.language !== was.language;
       if (view && kind === 'body' && changed) redrawShape(view);
@@ -243,17 +258,27 @@
   /** The kinds of paragraph of the writer's own, as much as the shape of a text needs of them. */
   const ownKinds = $derived(project.passageKinds.filter((k) => k.family === 'paragraph'));
 
-  // The dialogs the tools and the bracket of a run ask for through the
-  // hooks: how the lines where the cursor is are numbered (ADR 0041), and
-  // the language of what is selected (ADR 0020).
-  let numbering = $state<(NumbersAsked & { view: EditorView }) | null>(null);
+  // The windows the menus and the bracket of a run ask for through the
+  // hooks: how the lines are numbered from the cursor on, and what is said
+  // of the line the cursor is in (ADR 0067); and the language of what is
+  // selected (ADR 0020).
+  let numbering = $state<(NumberingAsked & { view: EditorView }) | null>(null);
+  let numberingLine = $state<(LineAsked & { view: EditorView }) | null>(null);
   let asking = $state<{ view: EditorView; tag: string | null } | null>(null);
-  function askNumbers(v: EditorView) {
-    const asked = numbersAsked(
+  function askNumbering(v: EditorView) {
+    const asked = numberingAsked(
       v.state,
       untrack(() => ownKinds),
     );
     if (asked) numbering = { ...asked, view: v };
+  }
+  function askLine(v: EditorView) {
+    const asked = lineAsked(
+      v.state,
+      untrack(() => ownKinds),
+      untrack(() => numbersLayout),
+    );
+    if (asked) numberingLine = { ...asked, view: v };
   }
   function askLanguage(v: EditorView, tag: string | null) {
     asking = { view: v, tag };
@@ -448,8 +473,9 @@
       passageKinds: () => project.passageKinds,
       // What the layout says of the numbers of a stretch: see above.
       numbers: () => drawnWith?.numbers ?? LAYOUT_NUMBERS,
-      // The dialogs of the numbers and of a language, and the language of the document for the one of a language.
-      askNumbers: kind === 'body' ? askNumbers : undefined,
+      // The windows of the numbering and of a language, and the language of the document for the one of a language.
+      askNumbering: kind === 'body' ? askNumbering : undefined,
+      askLine: kind === 'body' ? askLine : undefined,
       askLanguage: kind === 'body' ? askLanguage : undefined,
       language: () => untrack(() => language),
       // The keys of the kinds, as the document type of the element written in gives them.
@@ -615,6 +641,7 @@
 <div
   bind:this={host}
   class="rich-text {className}"
+  style:--step="{numbersLayout.step}pt"
   use:dropTarget={{
     accepts: ['references', PICTURES_DRAGGED],
     disabled: kind !== 'body',
@@ -661,32 +688,33 @@
 ></div>
 
 {#if numbering}
-  <LineNumbersDialog
+  <LineNumberingDialog
     stretch={numbering.stretch}
     layout={numbersLayout}
     from={numbering.from}
-    line={numbering.line}
+    kinds={numbering.kinds.map((id) => ({ id, name: kindName(id, project.passageKinds) }))}
     onclose={() => (numbering = null)}
-    onset={(how, from, line) => {
+    onset={(how, from) => {
       if (!numbering) return;
       const v = numbering.view;
       if (v.isDestroyed) return;
-      // What is selected, where something is: so that a part of a stretch can be numbered
-      // otherwise, or not at all. Else the stretch the cursor is in, or, where it is in
-      // none, the paragraphs a numbering is set on from there.
-      const chosen = v.state.selection.empty
-        ? (stretchAt(v.state)?.paragraphs ?? stretchToNumber(v.state, ownKinds))
-        : paragraphsIn(v.state).filter(
-            (p) =>
-              v.state.doc.resolve(p.pos).parent ===
-              v.state.doc.resolve(v.state.selection.from).node(-1),
-          );
-      const paragraphs = chosen.map((p) => ({ pos: p.pos }));
+      // From the paragraph the cursor is in, or those selected: the paragraphs before keep
+      // their numbering. The first counted line from here is given the number the window
+      // was filled in with, where it would not have it, so that a stretch parted here
+      // goes on from the number it had.
+      const paragraphs = paragraphsFromHere(v.state, ownKinds).map((p) => ({ pos: p.pos }));
       run(numberStretch(paragraphs, how), v);
-      if (from !== undefined && how.numbering !== 'none')
+      if (from !== undefined && how.numbering === 'counted')
         run(numberFrom(paragraphs, from, ownKinds), v);
-      if (line) run(markLine(line), v);
     }}
+  />
+{/if}
+
+{#if numberingLine}
+  <LineDialog
+    line={numberingLine}
+    onclose={() => (numberingLine = null)}
+    onset={(marks) => numberingLine && run(markLine(marks), numberingLine.view)}
   />
 {/if}
 

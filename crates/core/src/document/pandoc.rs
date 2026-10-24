@@ -10,7 +10,7 @@ use serde_json::{Value, json};
 
 use super::{Block, CiteItem, CiteMode, Document, Inline, NotePlace, Numbering, RefForm, Section};
 use crate::formats::kinds::{self, KindInfo, Resolved};
-use crate::formats::{Case, Equations, Figures, RefMarks, Tables, Verse};
+use crate::formats::{Case, Equations, Figures, Length, RefMarks, Tables, Verse};
 use crate::templates::kinds::PartInfo;
 use crate::written::locators::{locale_for, terms};
 
@@ -128,6 +128,12 @@ pub struct Extras {
     pub refmarks: RefMarks,
     /// How the layout shows the numbers of a numbered passage, where the passage does not say.
     pub verse: Verse,
+    /// The step of an indent, by which lines and paragraphs are set in (ADR 0067).
+    pub step: Length,
+    /// The line last written that has words in it, of no speaker or
+    /// direction, for a line that begins where it ended (ADR 0067); nothing
+    /// at the start of a section.
+    pub(super) line_before: RefCell<Option<super::passages::Before>>,
     /// Whether the document can carry the classes of kinds, as a page of the web can.
     pub classes: bool,
     /// How many columns the text is set in, as the layout says: 1, or nought for one.
@@ -690,6 +696,8 @@ impl Converter<'_> {
     }
 
     pub fn section(&self, section: &Section, out: &mut Vec<Value>) {
+        // A line at the start of a section begins where it begins: none stands before it.
+        self.extras.line_before.borrow_mut().take();
         if let Some(kind) = section.kind.as_deref()
             && let Some(info) = self.extras.parts.get(kind)
         {

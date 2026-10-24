@@ -342,3 +342,10 @@ format-quote-warn = Warn about long inline quotations
 format-title-roles = Editors and translators
 format-item-editor = Editor
 format-item-translator = Translator
+
+## The numbering of lines, stage 2: the side of the annotations of lines.
+format-verse-annotations = Annotations on the
+format-verse-annotations-other = Other side from the numbers
+
+## Where a line begins, stage 4: the step of an indent.
+format-indent-step = Indentation step

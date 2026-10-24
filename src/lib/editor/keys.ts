@@ -30,7 +30,7 @@ import { ySyncPluginKey } from 'y-prosemirror';
 import { type BasedKind } from '$lib/project/model/families';
 import { catalogueKindOf } from './kinds';
 import { changedRanges } from './changes';
-import { kindOfNode, linesOfNode, marksAnything, type LineAt } from './shape';
+import { kindOfNode, linesOfNode, marksAnything, STRETCH_ATTRS, type LineAt } from './shape';
 
 /** The paragraph a place is in, with where it begins, its lines, and the line the place is in; nothing outside a paragraph. */
 export function lineAtPos(
@@ -88,10 +88,8 @@ export const enterKey: Command = (state, dispatch) => {
     const next = $from.node(-1).maybeChild($from.index(-1) + 1);
     const sameStretch =
       next?.type.name === 'paragraph' &&
-      (['numbering', 'every', 'side'] as const).every(
-        (k) => (next.attrs[k] ?? null) === (paragraph.attrs[k] ?? null),
-      );
-    const leaves = sameStretch ? {} : { numbering: null, every: null, side: null };
+      STRETCH_ATTRS.every((k) => (next.attrs[k] ?? null) === (paragraph.attrs[k] ?? null));
+    const leaves = sameStretch ? {} : { numbering: null, every: null, side: null, only: null };
     if (dispatch)
       dispatch(
         state.tr

@@ -27,24 +27,12 @@ editor-speaker = Mówiący
 editor-speaker-hint = Kto mówi: w osobnym wersie albo jako słowa w obrębie wersu
 editor-direction = Didaskalia
 editor-direction-hint = Co dzieje się na scenie: w osobnym wersie albo jako słowa w obrębie wersu
-editor-line-numbers = Numery
-editor-line-numbers-hint = Numeruj te wiersze: jak są liczone, od jakiego numeru, co ile i po której stronie; i podaj, co dotyczy wiersza, w którym stoi kursor. Wiersze numerowane razem, z tymi samymi ustawieniami, liczy się jako jeden ciąg, bez względu na ich rodzaje.
 editor-line-numbers-from = Numeruj od
-editor-line-numbers-from-hint = Pierwszy liczony wiersz dostaje ten numer, a liczenie idzie od niego dalej.
 editor-line-numbers-every = Pokazuj numer co
 editor-line-numbers-number = Potrzebna jest liczba całkowita.
-editor-line-this = Ten wiersz
 editor-line-number = Jego numer lub etykieta
 editor-line-number-placeholder = Liczony jak pozostałe
-editor-line-number-hint = 1234, 567a: zawsze pokazywany; następne wiersze liczy się dalej od niego.
-editor-line-uncounted = Nieliczony
-editor-line-uncounted-hint = Na przykład druga połowa wersu dzielonego między mówiących: liczenie go pomija.
-editor-line-hidden = Liczony, bez widocznego numeru
-editor-line-hidden-hint = Liczenie przechodzi przez niego jak przez każdy wiersz, ale w dokumencie nie stoi przy nim żaden numer, nawet tam, gdzie by wypadał. Tam, gdzie piszesz, numer stoi w nawiasie.
 editor-line-number-held = Liczony, ale niepokazywany w dokumencie. Naciśnij, by nadać mu własny numer.
-editor-line-margin = Słowa na marginesie
-editor-line-margin-placeholder = Metrum, numer z innego wydania
-editor-line-margin-hint = Pokazywane na marginesie obok niego, naprzeciw numerów; nie są liczone.
 # How the lines of a stretch are numbered: see ADR 0041.
 editor-numbering = Numeracja
 editor-numbering-none = Bez numeracji
@@ -55,23 +43,17 @@ editor-line-numbers-side = Strona numerów
 editor-side-layout = Jak w układzie ({ $side })
 editor-side-left = Lewa
 editor-side-right = Prawa
-# The first counted line of the stretch is the one the cursor is in: its number is where the count begins.
-editor-line-number-first-hint = Tu zaczyna się liczenie.
 # Over a number in the margin of the text, which opens a field for it when pressed.
 editor-line-number-press = Numer tego wiersza: naciśnij, by go zmienić
 
 ## Numbers belong to what they number (ADR 0041): the Numbers menu offers
 ## the three, each saying what it numbers.
-editor-numbers-lines = Numeruj te wiersze…
-editor-numbers-page = Numeruj wiersze strony
-editor-numbers-page-hint = Każdy wiersz drukowanej strony, numerowany na marginesie, w tym dokumencie i w tych pod nim
 
 ## The bracket at the left of paragraphs of one kind standing together (a
 ## run), named by the kind; its menu says what is said of them.
 # After the name of the kind, where the lines of the run are numbered: "Verse · numbered".
 editor-bracket-numbered = z numeracją
 editor-run-label-hint = { $kind } · naciśnij, by zobaczyć, co dotyczy tych akapitów
-editor-run-numbers = Numery…
 editor-run-select = Zaznacz te akapity
 editor-run-to-text = Zamień w tekst
 editor-run-begin = Zacznij tu nowy ciąg

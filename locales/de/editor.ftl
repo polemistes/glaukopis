@@ -27,24 +27,12 @@ editor-speaker = Sprecher
 editor-speaker-hint = Wer spricht: in einer eigenen Zeile oder als Wörter in einer Zeile
 editor-direction = Regieanweisung
 editor-direction-hint = Was auf der Bühne geschieht: in einer eigenen Zeile oder als Wörter in einer Zeile
-editor-line-numbers = Nummern
-editor-line-numbers-hint = Diese Zeilen nummerieren: wie sie gezählt werden, ab welcher Nummer, jede wievielte und auf welcher Seite; und angeben, was für die Zeile gilt, in der der Cursor steht. Zeilen, die mit denselben Einstellungen zusammen nummeriert sind, werden durchgezählt, gleich welcher Art sie sind.
 editor-line-numbers-from = Nummerieren ab
-editor-line-numbers-from-hint = Die erste gezählte Zeile bekommt diese Nummer, und von ihr aus wird weitergezählt.
 editor-line-numbers-every = Eine Nummer zeigen alle
 editor-line-numbers-number = Eine ganze Zahl ist gefragt.
-editor-line-this = Diese Zeile
 editor-line-number = Ihre Nummer oder Bezeichnung
 editor-line-number-placeholder = Gezählt wie die anderen
-editor-line-number-hint = 1234, 567a: immer gezeigt; die Zeilen danach werden von ihr aus weitergezählt.
-editor-line-uncounted = Nicht gezählt
-editor-line-uncounted-hint = Wie die zweite Hälfte einer Zeile, die sich zwei Sprecher teilen: die Zählung übergeht sie.
-editor-line-hidden = Gezählt, die Nummer nicht gezeigt
-editor-line-hidden-hint = Die Zählung geht durch sie hindurch wie durch jede Zeile, aber im Dokument steht keine Nummer neben ihr, auch wo eine an der Reihe wäre. Wo Sie schreiben, steht die Nummer in Klammern.
 editor-line-number-held = Gezählt und im Dokument nicht gezeigt. Klicken, um ihr eine eigene Nummer zu geben.
-editor-line-margin = Wörter am Rand
-editor-line-margin-placeholder = Ein Versmaß, die Nummer einer anderen Ausgabe
-editor-line-margin-hint = Am Rand neben ihr gezeigt, gegenüber den Nummern; nicht gezählt.
 # How the lines of a stretch are numbered: see ADR 0041.
 editor-numbering = Nummerierung
 editor-numbering-none = Nicht nummeriert
@@ -55,23 +43,17 @@ editor-line-numbers-side = Seite der Nummern
 editor-side-layout = Wie im Layout ({ $side })
 editor-side-left = Links
 editor-side-right = Rechts
-# The first counted line of the stretch is the one the cursor is in: its number is where the count begins.
-editor-line-number-first-hint = Hier beginnt die Zählung.
 # Over a number in the margin of the text, which opens a field for it when pressed.
 editor-line-number-press = Die Nummer dieser Zeile: klicken, um sie zu ändern
 
 ## Numbers belong to what they number (ADR 0041): the Numbers menu offers
 ## the three, each saying what it numbers.
-editor-numbers-lines = Diese Zeilen nummerieren…
-editor-numbers-page = Die Zeilen der Seite nummerieren
-editor-numbers-page-hint = Jede Zeile der gedruckten Seite, am Rand nummeriert, in diesem Dokument und denen darunter
 
 ## The bracket at the left of paragraphs of one kind standing together (a
 ## run), named by the kind; its menu says what is said of them.
 # After the name of the kind, where the lines of the run are numbered: "Verse · numbered".
 editor-bracket-numbered = nummeriert
 editor-run-label-hint = { $kind } · klicken für das, was von diesen Absätzen gilt
-editor-run-numbers = Nummern…
 editor-run-select = Diese Absätze auswählen
 editor-run-to-text = Zu Text machen
 editor-run-begin = Hier eine neue Folge beginnen
