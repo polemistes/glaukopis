@@ -28,6 +28,8 @@ export class Panes {
   typesettingWidth = $state(0);
   documentWidth = $state(0);
   lookWidth = $state(0);
+  /** How large the pages of the typesetting pane are shown: a factor of their size on paper, or none for the width of the pane. */
+  zoom = $state<number | null>(null);
 
   /**
    * What a side's Typesetting button does: opens the pane for the side where
@@ -88,6 +90,7 @@ export class Panes {
       typesettingWidth: this.typesettingWidth,
       documentWidth: this.documentWidth,
       lookWidth: this.lookWidth,
+      zoom: this.zoom,
     };
   }
 
@@ -102,6 +105,7 @@ export class Panes {
     this.typesettingWidth = p.typesettingWidth;
     this.documentWidth = p.documentWidth;
     this.lookWidth = p.lookWidth;
+    this.zoom = p.zoom;
   }
 }
 

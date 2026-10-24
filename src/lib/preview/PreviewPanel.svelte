@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { untrack } from 'svelte';
+  import { tick, untrack } from 'svelte';
+  import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import PackageX from '@lucide/svelte/icons/package-x';
   import Palette from '@lucide/svelte/icons/palette';
   import ScanEye from '@lucide/svelte/icons/scan-eye';
@@ -31,7 +32,10 @@
   import { lookUi } from '$lib/look/look.svelte';
   import { documents } from './documents.svelte';
   import { t } from '$lib/i18n';
-  import { keysFor } from '$lib/shell/keys.svelte';
+  import { keysFor, shortcuts } from '$lib/shell/keys.svelte';
+  import { panes } from '$lib/project/panes.svelte';
+  import { openMenu } from '$lib/ui/menu.svelte';
+  import { clampZoom, percent, PX_PER_PT, stepped, ZOOMS } from './zoom';
   import { countWords, documentMark, leanDocument } from '$lib/project/model/document';
   import type { Project } from '$lib/project/model/project.svelte';
   import Button from '$lib/ui/Button.svelte';
@@ -246,11 +250,24 @@
     return () => watch.disconnect();
   });
 
+  /** How wide a page is fitted to the pane, in pixels. */
+  const fitted = $derived(Math.max(1, Math.min(WIDEST, room.width - 2 * AROUND.side)));
+  /**
+   * How wide a page is shown, in pixels: as wide as the pane, or as the
+   * zoom of the window says, its size on paper times the factor (a hundred
+   * percent being as large as on paper). The text over it and the chips are
+   * measured in its width, and follow.
+   */
+  const pageWidth = $derived(
+    panes.zoom === null ? fitted : Math.max(1, size.width * PX_PER_PT * panes.zoom),
+  );
+  /** The factor the pages are shown at, fitted or zoomed: what the button of the zoom says. */
+  const factor = $derived(pageWidth / Math.max(1, size.width * PX_PER_PT));
+  /** Whether the pages are wider than the pane, and are moved sideways. */
+  const wide = $derived(panes.zoom !== null && pageWidth > room.width - 2 * AROUND.side);
+
   /** How high a page is as it is shown, with the room after it. */
-  const each = $derived.by(() => {
-    const wide = Math.max(1, Math.min(WIDEST, room.width - 2 * AROUND.side));
-    return (wide * size.height) / Math.max(1, size.width) + GAP;
-  });
+  const each = $derived((pageWidth * size.height) / Math.max(1, size.width) + GAP);
 
   /**
    * The pages that have a place in the window: those in view and those
@@ -478,6 +495,80 @@
     marking = setTimeout(() => (marked = null), 1000);
   }
 
+  // ---- the zoom of the pages ----
+
+  /** The pane: its keys of the zoom hold while it has the focus or the pointer. */
+  let pane = $state<HTMLElement>();
+  let pointerIn = false;
+  const here = () => pointerIn || !!pane?.contains(document.activeElement);
+
+  /**
+   * Zooms the pages to a factor of their size on paper, or with none to
+   * the width of the pane. What was in the middle of the view stays there.
+   */
+  async function zoomTo(to: number | null) {
+    const next = to === null ? null : clampZoom(to);
+    if (next === panes.zoom) return;
+    const at = count && room.height ? looked() : null;
+    panes.zoom = next;
+    await tick();
+    if (!scroller || !at) return;
+    const pagePx = each - GAP;
+    const top = AROUND.top + (at.page - 1) * each + at.y * (pagePx / size.height);
+    scroller.scrollTop = Math.max(0, top - room.height / 2);
+    scroller.scrollLeft = Math.max(0, (scroller.scrollWidth - scroller.clientWidth) / 2);
+    moved = scroller.scrollTop;
+  }
+  /** Zooms by so many tenths, from the factor the pages are shown at, fitted or not. */
+  const zoomBy = (steps: number) => zoomTo(stepped(factor, steps));
+
+  // Ctrl with the wheel over the pages zooms them, a tenth at a time; the
+  // turns of a touchpad, many and small, a tenth for each pause between them.
+  $effect(() => {
+    const el = scroller;
+    if (!el) return;
+    let last = 0;
+    const onwheel = (event: WheelEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || !event.deltaY) return;
+      event.preventDefault();
+      if (event.timeStamp - last < 60) return;
+      last = event.timeStamp;
+      void zoomBy(event.deltaY < 0 ? 1 : -1);
+    };
+    el.addEventListener('wheel', onwheel, { passive: false });
+    return () => el.removeEventListener('wheel', onwheel);
+  });
+
+  $effect(() =>
+    shortcuts.bind({
+      'preview-zoom-in': { run: () => void zoomBy(1), when: here },
+      'preview-zoom-out': { run: () => void zoomBy(-1), when: here },
+      'preview-zoom-fit': { run: () => void zoomTo(null), when: here },
+    }),
+  );
+
+  /** The menu of the zoom: the width of the pane, and the steps. */
+  function zoomMenu(event: MouseEvent) {
+    openMenu(
+      event.currentTarget as HTMLElement,
+      [
+        {
+          label: t('preview-zoom-fit'),
+          checked: panes.zoom === null,
+          shortcut: keysFor('preview-zoom-fit'),
+          action: () => void zoomTo(null),
+        },
+        { kind: 'separator' },
+        ...ZOOMS.map((z) => ({
+          label: t('preview-zoom', { percent: String(percent(z)) }),
+          checked: panes.zoom === z,
+          action: () => void zoomTo(z),
+        })),
+      ],
+      { side: 'bottom', align: 'end' },
+    );
+  }
+
   // ---- what a line is, named at the edge of its page ----
 
   /** Whether a press on the page shows a chip that names what was pressed: the writer's setting, on unless turned off. */
@@ -602,7 +693,16 @@
 
 <svelte:document onpointerdown={leave} onkeydown={leave} />
 
-<aside class="preview" aria-label={t('preview-title')} data-template={choice.template}>
+<!-- Focusable, so that the keys of the zoom hold while it has the focus. -->
+<aside
+  class="preview"
+  aria-label={t('preview-title')}
+  data-template={choice.template}
+  tabindex="-1"
+  bind:this={pane}
+  onpointerenter={() => (pointerIn = true)}
+  onpointerleave={() => (pointerIn = false)}
+>
   <header>
     <!-- The Look column beside the pages, opened and closed. -->
     <button
@@ -618,6 +718,23 @@
       <span>{t('look-title')}</span>
     </button>
     <span class="grow"></span>
+    <!-- How large the pages are: as wide as the pane, or a percentage of their size on paper. -->
+    <button
+      type="button"
+      class="zoom-button"
+      data-zoom
+      aria-label={t('preview-zoom-label')}
+      aria-haspopup="menu"
+      use:tooltip={{ text: t('preview-zoom-label') }}
+      onclick={zoomMenu}
+    >
+      <span
+        >{panes.zoom === null
+          ? t('preview-zoom-fit')
+          : t('preview-zoom', { percent: String(percent(factor)) })}</span
+      >
+      <ChevronDown size={12} />
+    </button>
     <IconButton label={t('preview-go-to-text')} disabled={!places.length} onclick={goToText}>
       <TextCursorInput size={15} />
     </IconButton>
@@ -636,6 +753,7 @@
   <div
     class="pages"
     class:working={status === 'working'}
+    class:wide
     data-count={count}
     bind:this={scroller}
     {onscroll}
@@ -671,8 +789,10 @@
         <div
           class="page"
           class:marked={marked === n}
+          class:zoomed={panes.zoom !== null}
           data-page={n}
           style:aspect-ratio="{size.width} / {size.height}"
+          style:width={panes.zoom === null ? undefined : `${pageWidth}px`}
           aria-label={t('preview-page', { number: String(n) })}
           onpointerdown={chips ? press : undefined}
           onclick={chips ? (e) => pick(e, n) : undefined}
@@ -873,6 +993,31 @@
     flex: 1;
     min-width: 4px;
   }
+  /* The zoom: its percentage, or Fit the width, opening its menu. */
+  .zoom-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    flex: none;
+    height: 28px;
+    padding: 0 6px 0 8px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-s);
+    background: transparent;
+    color: var(--ink-2);
+    font: inherit;
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .zoom-button:hover {
+    background: var(--paper-hover);
+    color: var(--ink);
+  }
+  .preview:focus {
+    outline: none;
+  }
   /* The pages are a region of their own: what is written in the text
      beside them changes nothing in them, and they are not laid out and
      painted again for it. */
@@ -880,13 +1025,17 @@
     contain: strict;
     flex: 1;
     min-height: 0;
-    overflow-y: auto;
+    overflow: auto;
     padding: 20px 22px 28px;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 16px;
     transition: opacity var(--slow) var(--ease);
+  }
+  /* Pages zoomed wider than the pane begin at its left, and are moved sideways. */
+  .pages.wide {
+    align-items: flex-start;
   }
   /* A page that is not looked at is not drawn. It has its size of the
      width it is given and the shape of the page. */
@@ -908,6 +1057,10 @@
       0 1px 3px rgba(0, 0, 0, 0.14);
     user-select: none;
     transition: box-shadow var(--slow) var(--ease);
+  }
+  /* Zoomed, a page is as wide as the zoom says, whatever the pane. */
+  .page.zoomed {
+    max-width: none;
   }
   /* The page the text is at, pointed out for a moment. */
   .page.marked {

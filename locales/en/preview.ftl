@@ -121,3 +121,12 @@ preview-what-footer = Footer
 
 # The pane where the document is set into pages, with its Look beside them.
 preview-title = Typesetting
+
+## The settings in plain words, stage 2: the zoom of the typesetting pane.
+
+# The button of the zoom and the first choice of its menu: the pages as wide as the pane.
+preview-zoom-fit = Fit the width
+# The button of the zoom and the choices of its menu: the size of the pages against their size on paper.
+preview-zoom = { $percent } %
+# What the button of the zoom is, as it is told to those who cannot see it.
+preview-zoom-label = Zoom

@@ -8,6 +8,7 @@
  */
 
 import type { MapMode, Route } from '$lib/state/router.svelte';
+import { keptZoom } from '$lib/preview/zoom';
 
 /** A side of the window, as the window keeps it. */
 export interface SideSpec {
@@ -49,6 +50,8 @@ export interface Arrangement {
   typesettingWidth: number;
   documentWidth: number;
   lookWidth: number;
+  /** How large the pages of the typesetting pane are shown: a factor of their size on paper, or none for the width of the pane. */
+  zoom: number | null;
 }
 
 const MODES: readonly MapMode[] = ['diagram', 'text', 'timeline'];
@@ -95,6 +98,7 @@ export interface PaneParts {
   typesettingWidth: number;
   documentWidth: number;
   lookWidth: number;
+  zoom: number | null;
 }
 
 export class Sides {
@@ -311,6 +315,7 @@ export class Sides {
       typesettingWidth: panes.typesettingWidth,
       documentWidth: panes.documentWidth,
       lookWidth: panes.lookWidth,
+      zoom: panes.zoom,
     };
   }
 }
@@ -330,6 +335,7 @@ export function paneParts(kept: Partial<Arrangement> | null | undefined, sides: 
     typesettingWidth: width(kept?.typesettingWidth),
     documentWidth: width(kept?.documentWidth),
     lookWidth: width(kept?.lookWidth),
+    zoom: keptZoom(kept?.zoom),
   };
 }
 

@@ -11,6 +11,7 @@ const panes = {
   typesettingWidth: 0,
   documentWidth: 0,
   lookWidth: 0,
+  zoom: null,
 };
 
 describe('the sides of the window', () => {
@@ -99,5 +100,14 @@ describe('the sides of the window', () => {
       tab: 'history',
       lookWidth: 300,
     });
+  });
+
+  it('keep the zoom of the typesetting pane, none being the width of the pane', () => {
+    const s = new Sides();
+    s.open('a');
+    expect(s.toKeep({ ...panes, zoom: 1.5 }).zoom).toBe(1.5);
+    expect(paneParts({ zoom: 1.5 }, s).zoom).toBe(1.5);
+    expect(paneParts({}, s).zoom).toBe(null);
+    expect(paneParts({ zoom: 'large' } as never, s).zoom).toBe(null);
   });
 });

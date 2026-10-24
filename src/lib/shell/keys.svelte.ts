@@ -30,7 +30,8 @@ export type Place =
   | 'writing'
   | 'library'
   | 'store'
-  | 'files';
+  | 'files'
+  | 'preview';
 
 export interface KeyEntry {
   /** What it is called, and the words for it: `keys-<id>` in keys.ftl. */
@@ -63,8 +64,19 @@ export const TOGETHER: Readonly<Record<Place, readonly Place[]>> = {
     'library',
     'store',
     'files',
+    'preview',
   ],
-  project: ['everywhere', 'project', 'review', 'tree', 'diagram', 'list', 'text', 'writing'],
+  project: [
+    'everywhere',
+    'project',
+    'review',
+    'tree',
+    'diagram',
+    'list',
+    'text',
+    'writing',
+    'preview',
+  ],
   review: ['everywhere', 'project', 'review', 'tree', 'text', 'writing'],
   tree: ['everywhere', 'project', 'review', 'tree', 'diagram', 'list', 'text', 'writing'],
   diagram: ['everywhere', 'project', 'tree', 'diagram'],
@@ -74,6 +86,8 @@ export const TOGETHER: Readonly<Record<Place, readonly Place[]>> = {
   library: ['everywhere', 'library'],
   store: ['everywhere', 'store'],
   files: ['everywhere', 'files'],
+  // The typesetting pane's keys hold while it has the focus or the pointer, not the diagram's.
+  preview: ['everywhere', 'project', 'preview'],
 };
 
 const ENTRIES = [
@@ -201,6 +215,11 @@ const ENTRIES = [
 
   // Among the files of the library.
   { id: 'files-find', keys: 'Ctrl+F', place: 'files', bound: true },
+
+  // The settings in plain words, stage 2: the zoom of the typesetting pane, while it has the focus or the pointer.
+  { id: 'preview-zoom-in', keys: 'Ctrl++', place: 'preview', bound: true },
+  { id: 'preview-zoom-out', keys: 'Ctrl+-', place: 'preview', bound: true },
+  { id: 'preview-zoom-fit', keys: 'Ctrl+0', place: 'preview', bound: true },
 ] as const satisfies readonly KeyEntry[];
 
 /** The name of an entry of the table. */

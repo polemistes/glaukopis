@@ -111,3 +111,9 @@ preview-what-footer = Bunntekst
 ## The sides, the panes and the bars, stage 2: the typesetting pane, the document pane, Document properties.
 
 preview-title = Ombrekking
+
+## The settings in plain words, stage 2: the zoom of the typesetting pane.
+
+preview-zoom-fit = Tilpass bredden
+preview-zoom = { $percent } %
+preview-zoom-label = Forstørrelse
