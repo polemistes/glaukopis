@@ -19,7 +19,7 @@ use serde::{Deserialize, Serialize};
 use crate::bib::names::Person;
 use crate::formats::Stand;
 pub use crate::formats::kinds::OwnKind;
-pub use numbers::{Line, Mark, Shown, Stretch, lines_of, numbers, stretch_numbers, stretches};
+pub use numbers::{Counted, Line, Mark, Shown, Stretch, lines_of, numbers, stretch_numbers, stretches};
 
 /// A word the document prints, in the language of the document; in English
 /// where documents have no words in that language (ADR 0020).
@@ -86,8 +86,9 @@ pub enum Inline {
     /// it stands at the start of the line, first in its paragraph or right
     /// after a line break. A number or label given by hand, from which the
     /// count goes on; `counted: false` for a line the count passes over;
-    /// `hidden` for one that is counted and shows no number; words in the
-    /// margin; and the line's indent, for verse. No part of the words.
+    /// `hidden` for one that is counted and never shows its number, `shown`
+    /// for one that always does; words in the margin, the annotation; and
+    /// the line's indent, for verse. No part of the words.
     #[serde(rename = "linemark")]
     LineMark {
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -96,6 +97,8 @@ pub enum Inline {
         counted: bool,
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
         hidden: bool,
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        shown: bool,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         margin: Option<String>,
         #[serde(default, skip_serializing_if = "is_zero")]
@@ -144,10 +147,10 @@ pub enum Block {
     /// is the id of the kind (`formats/kinds.rs`), `text` where nothing is
     /// said. A paragraph is lines, parted by line breaks; what is said of
     /// one line by hand stands in a line mark at its start. `numbering`,
-    /// `every` and `side` are the settings of the stretch it stands in:
-    /// consecutive paragraphs with the same settings are numbered together,
-    /// whatever their kinds. `new` begins a new run of its kind, where two
-    /// runs of one kind stand together. See ADR 0041.
+    /// `every`, `side` and `only` are the settings of the stretch it stands
+    /// in: consecutive paragraphs with the same settings are numbered
+    /// together, whatever their kinds. `new` begins a new run of its kind,
+    /// where two runs of one kind stand together. See ADR 0041.
     Paragraph {
         #[serde(default = "text_kind")]
         name: String,
@@ -162,6 +165,10 @@ pub enum Block {
         /// The side the numbers stand on; nothing for the layout's.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         side: Option<Side>,
+        /// The one kind whose lines are counted, by its id; nothing for
+        /// every kind that is counted.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        only: Option<String>,
         /// Begins a new run of its kind.
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
         new: bool,
@@ -410,6 +417,7 @@ impl Block {
             numbering: Numbering::None,
             every: None,
             side: None,
+            only: None,
             new: false,
             content,
         }
@@ -421,6 +429,14 @@ impl Block {
             *numbering = how;
             *every = step;
             *side = on;
+        }
+        self
+    }
+
+    /// The same paragraph, counting the lines of one kind only.
+    pub fn counting_only(mut self, kind: &str) -> Block {
+        if let Block::Paragraph { only, .. } = &mut self {
+            *only = Some(kind.to_owned());
         }
         self
     }
@@ -848,6 +864,7 @@ pub(crate) mod fixtures {
         pub number: Option<&'static str>,
         pub uncounted: bool,
         pub hidden: bool,
+        pub shown: bool,
         pub margin: Option<&'static str>,
         pub indent: u32,
     }
@@ -868,11 +885,15 @@ pub(crate) mod fixtures {
         pub fn uncounted(self) -> Self {
             LineMarkSaid { uncounted: true, ..self }
         }
+        pub fn shown(self) -> Self {
+            LineMarkSaid { shown: true, ..self }
+        }
         pub fn done(self) -> Inline {
             Inline::LineMark {
                 number: self.number.map(Into::into),
                 counted: !self.uncounted,
                 hidden: self.hidden,
+                shown: self.shown,
                 margin: self.margin.map(Into::into),
                 indent: self.indent,
             }
@@ -1025,13 +1046,14 @@ mod tests {
                 number: Some("45".into()),
                 counted: false,
                 hidden: true,
+                shown: false,
                 margin: Some("ia.".into()),
                 indent: 1
             }
         );
         assert_eq!(
             content[3],
-            Inline::LineMark { number: None, counted: true, hidden: false, margin: None, indent: 0 },
+            Inline::LineMark { number: None, counted: true, hidden: false, shown: false, margin: None, indent: 0 },
             "a mark that says nothing is counted"
         );
         assert_eq!(doc.sections[0].blocks[3], Block::Break { what: BreakKind::Column });

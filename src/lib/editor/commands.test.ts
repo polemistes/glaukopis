@@ -190,6 +190,7 @@ describe('the kind of a paragraph', () => {
       numbering: 'given',
       every: 2,
       side: 'right',
+      only: null,
       new: true,
     });
     const markAttrs = bodySchema.nodes.linemark.spec.parseDOM![0].getAttrs!(mark);
@@ -197,6 +198,7 @@ describe('the kind of a paragraph', () => {
       number: '5',
       counted: false,
       hidden: null,
+      shown: null,
       margin: 'ia.',
       indent: 2,
     });

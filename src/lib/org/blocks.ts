@@ -80,14 +80,18 @@ const isSD = (p: ParagraphBlock) => SD.has(p.name);
 /** The settings of a paragraph's stretch, as one key; '' where it says nothing. */
 function settingsKey(p: ParagraphBlock): string {
   const n = p.numbering && p.numbering !== 'none' ? p.numbering : '';
-  return n || p.every || p.side ? `${n}|${p.every ?? ''}|${p.side ?? ''}` : '';
+  return n || p.every || p.side || p.only
+    ? `${n}|${p.every ?? ''}|${p.side ?? ''}|${p.only ?? ''}`
+    : '';
 }
 
-function settingsSaid(p: ParagraphBlock): [string, Value | undefined][] {
+/** The settings of a stretch as its settings line says them; the one kind counted by the name its block is written by. */
+function settingsSaid(p: ParagraphBlock, ctx: TextContext): [string, Value | undefined][] {
   return [
     ['numbering', p.numbering && p.numbering !== 'none' ? p.numbering : undefined],
     ['every', p.every],
     ['side', p.side],
+    ['only', p.only ? (ctx.ownName(p.only) ?? p.only) : undefined],
   ];
 }
 
@@ -132,7 +136,9 @@ const attrLine = (said: [string, Value | null | undefined][]): string[] => {
 function makeParagraph(
   content: Inline[],
   name: string,
-  more: Partial<Pick<ParagraphBlock, 'indent' | 'numbering' | 'every' | 'side' | 'new'>> = {},
+  more: Partial<
+    Pick<ParagraphBlock, 'indent' | 'numbering' | 'every' | 'side' | 'only' | 'new'>
+  > = {},
 ): ParagraphBlock {
   return {
     kind: 'paragraph',
@@ -141,6 +147,7 @@ function makeParagraph(
     ...(more.numbering && more.numbering !== 'none' ? { numbering: more.numbering } : {}),
     ...(more.every ? { every: more.every } : {}),
     ...(more.side ? { side: more.side } : {}),
+    ...(more.only ? { only: more.only } : {}),
     ...(more.new ? { new: true as const } : {}),
     content,
   };
@@ -532,6 +539,7 @@ function checked(lines: string[], ps: ParagraphBlock[], ctx: TextContext): strin
         numbering: undefined,
         every: undefined,
         side: undefined,
+        only: undefined,
         new: undefined,
       })),
     );
@@ -691,7 +699,7 @@ function stretchLines(
     }
     return { items, after: at };
   }
-  const settings = settingsSaid(ps[0]);
+  const settings = settingsSaid(ps[0], ctx);
   if (units.length === 1 && units[0].t !== 'list' && units[0].t !== 'glossary') {
     const got = unitLines(units[0], ctx, before, settings);
     return { items: [got.lines], after: got.after };
@@ -789,6 +797,9 @@ function sayOn(
     if (every !== undefined && every > 0) out = { ...out, every: Math.round(every) };
     const side = str(said.get('side'));
     if (side === 'left' || side === 'right') out = { ...out, side };
+    // By the name the kind's block is written by; made the kind's id when the whole text is read.
+    const only = str(said.get('only'));
+    if (only?.trim()) out = { ...out, only: only.trim() };
   }
   if (which.lang) {
     const lang = str(said.get('lang'));
@@ -1484,7 +1495,12 @@ export function readBody(lines: readonly string[], ctx: TextContext): Block[] {
     push(p.content.length ? [p] : []);
     i = j;
   }
-  return out;
+  // The one kind a stretch counts, by its id, from the name it was written by.
+  return out.map((b) =>
+    b.kind === 'paragraph' && b.only
+      ? makeParagraph(b.content, b.name, { ...b, only: ctx.kindOf(b.only) })
+      : b,
+  );
 }
 
 // ---- what a text is written and read with ----

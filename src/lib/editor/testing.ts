@@ -1,13 +1,14 @@
 /**
  * Texts for the tests of the editor, written out in one line a block:
  *
- *     line>1 #counted/5 right new: {n=12,i=1}Sing, goddess / {-}the wrath|
+ *     line>1 #counted/5 right only=line new: {n=12,i=1}Sing, goddess / {-}the wrath|
  *
  * The kind of the paragraph, its indent after `>`, its numbering after `#`,
- * every how many after `/`, the side, and `new`; after the colon its
- * content, where ` / ` is a line break, `{…}` a line mark (`n=` its number,
- * `m=` its margin words, `i=` its indent, `-` not counted, `~` hidden) and
- * `|` the cursor. `pagebreak` and `pagebreak column` are breaks. The same
+ * every how many after `/`, the side, the one kind counted after `only=`,
+ * and `new`; after the colon its content, where ` / ` is a line break,
+ * `{…}` a line mark (`n=` its number, `m=` its margin words, `i=` its
+ * indent, `-` not counted, `~` hidden, `+` always shown) and `|` the
+ * cursor. `pagebreak` and `pagebreak column` are breaks. The same
  * form is read and written, so that a text can be compared with what is
  * expected.
  */
@@ -26,6 +27,7 @@ function readMark(said: string): Record<string, unknown> {
   for (const part of said.split(',').map((p) => p.trim())) {
     if (part === '-') attrs.counted = false;
     else if (part === '~') attrs.hidden = true;
+    else if (part === '+') attrs.shown = true;
     else if (part.startsWith('n=')) attrs.number = part.slice(2);
     else if (part.startsWith('m=')) attrs.margin = part.slice(2);
     else if (part.startsWith('i=')) attrs.indent = Number(part.slice(2));
@@ -40,13 +42,14 @@ function writeMark(node: Node): string {
   if (a.number) out.push(`n=${a.number}`);
   if (a.counted === false) out.push('-');
   if (a.hidden === true) out.push('~');
+  if (a.shown === true) out.push('+');
   if (a.margin) out.push(`m=${a.margin}`);
   if (a.indent) out.push(`i=${a.indent}`);
   return `{${out.join(',')}}`;
 }
 
 const HEAD =
-  /^([\w-]+)(?:>(\d))?(?: #(counted|given))?(?:\/(\d+))?(?: (left|right))?( new)?: ?(.*)$/;
+  /^([\w-]+)(?:>(\d))?(?: #(counted|given))?(?:\/(\d+))?(?: (left|right))?(?: only=([\w-]+))?( new)?: ?(.*)$/;
 
 /** A text read from its blocks written out, with where the cursor is, if it is said. */
 export function text(...blocks: string[]): { doc: Node; cursor: number | null } {
@@ -62,7 +65,7 @@ export function text(...blocks: string[]): { doc: Node; cursor: number | null } 
     }
     const m = HEAD.exec(block);
     if (!m) throw new Error(`Not a block: ${block}`);
-    const [, kind, indent, numbering, every, side, isNew, content] = m;
+    const [, kind, indent, numbering, every, side, only, isNew, content] = m;
     const inline: Node[] = [];
     let at = pos + 1;
     for (const piece of content.split(/( \/ |\{[^}]*\}|\|)/)) {
@@ -82,6 +85,7 @@ export function text(...blocks: string[]): { doc: Node; cursor: number | null } 
         numbering: numbering ?? null,
         every: every ? Number(every) : null,
         side: side ?? null,
+        only: only ?? null,
         new: isNew ? true : null,
       },
       inline,
@@ -103,6 +107,7 @@ function writeBlock(node: Node, pos: number, cursor: number | null): string {
   if (a.numbering) head += ` #${a.numbering}`;
   if (a.every) head += `/${a.every}`;
   if (a.side) head += ` ${a.side}`;
+  if (a.only) head += ` only=${a.only}`;
   if (a.new) head += ' new';
   let out = '';
   node.forEach((child, offset) => {

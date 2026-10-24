@@ -183,7 +183,10 @@ impl Converter<'_> {
             let (shown, side) = match stretch {
                 Some(s) if s.numbering != Numbering::None => {
                     let every = s.every.filter(|e| *e > 0).unwrap_or(self.extras.verse.every);
-                    (stretch_numbers(&both, s.numbering, every, &counted), s.side.unwrap_or(self.extras.verse.side))
+                    (
+                        stretch_numbers(&both, s.numbering, every, s.only, &counted),
+                        s.side.unwrap_or(self.extras.verse.side),
+                    )
                 }
                 _ => (vec![Vec::new(); both.len()], self.extras.verse.side),
             };
@@ -436,10 +439,11 @@ impl Converter<'_> {
                         continue;
                     };
                     let mut inner = self.inlines(content);
-                    let mut lead = vec![raw_inline("latex", "\\noindent")];
+                    // The space keeps the command apart from a first word that follows it.
+                    let mut lead = vec![raw_inline("latex", "\\noindent ")];
                     match *base {
                         "speaker" => {
-                            lead = vec![raw_inline("latex", "\\medskip\\noindent")];
+                            lead = vec![raw_inline("latex", "\\medskip\\noindent ")];
                             inner = self.line_words(inner, name);
                         }
                         "direction" => inner = self.line_words(inner, name),
@@ -868,9 +872,10 @@ mod tests {
         assert_eq!(lines.len(), 4);
         // The speaker in the character style the line block needs.
         assert_eq!(lines[0][0]["c"][0][2], json!([["custom-style", "Speaker Char"]]));
-        assert_eq!(lines[1][0]["c"][0][2], json!([["custom-style", "Verse Number"]]));
-        assert_eq!(lines[1][0]["c"][1][0]["c"], "1\u{a0}\u{a0}");
-        // The second line counted shows its number, every second being shown; it is indented by spaces that do not break.
+        // The 1 given to the first line is not shown, every second being shown.
+        assert_eq!(lines[1][0]["c"], "If");
+        // The second line counted shows its number; it is indented by spaces that do not break.
+        assert_eq!(lines[2][0]["c"][0][2], json!([["custom-style", "Verse Number"]]));
         assert_eq!(lines[2][0]["c"][1][0]["c"], "2\u{a0}\u{a0}");
         assert_eq!(lines[2][1]["c"], "\u{a0}\u{a0}\u{a0}\u{a0}");
         // The third is not shown; its margin words stand at the end.
@@ -880,8 +885,8 @@ mod tests {
         // On the right side the number stands at the end and the margin words at the head.
         let out = written(&c, &nurse(Some(Side::Right)));
         let lines = out[0]["c"][1][0]["c"].as_array().unwrap();
-        let second = lines[1].as_array().unwrap();
-        assert_eq!(second[0]["c"], "If");
+        let second = lines[2].as_array().unwrap();
+        assert_eq!(second[0]["c"], "\u{a0}\u{a0}\u{a0}\u{a0}");
         assert_eq!(second[second.len() - 1]["c"][0][2], json!([["custom-style", "Verse Number"]]));
         let last = lines[3].as_array().unwrap();
         assert_eq!(last[0]["c"][0][2], json!([["custom-style", "Verse Margin"]]));
@@ -895,7 +900,7 @@ mod tests {
         let out = written(&c, &verse);
         assert_eq!(out[0]["c"][1], "#gk-verse[");
         assert_eq!(out[1]["c"][1], "#gk-line(\"speaker\", 0, n: none, margin: none, side: \"left\")[");
-        assert_eq!(out[4]["c"][1], "#gk-line(\"line\", 0, n: \"1\", margin: none, side: \"left\")[");
+        assert_eq!(out[4]["c"][1], "#gk-line(\"line\", 0, n: none, margin: none, side: \"left\")[");
         assert_eq!(out[7]["c"][1], "#gk-line(\"line\", 1, n: \"2\", margin: none, side: \"left\")[");
         assert_eq!(out[10]["c"][1], "#gk-line(\"line\", 0, n: none, margin: \"ia.\", side: \"left\")[");
         // Each line labelled by its kind, by which the preview names it.
@@ -908,11 +913,12 @@ mod tests {
             "as far in as a line looks"
         );
         let first = out[1]["c"].as_array().unwrap();
-        assert_eq!(first[0]["c"][1], "\\medskip\\noindent");
+        assert_eq!(first[0]["c"][1], "\\medskip\\noindent ");
         assert_eq!(first[1]["t"], "SmallCaps");
-        let second = out[2]["c"].as_array().unwrap();
-        assert_eq!(second[1]["c"][1], "\\llap{{\\footnotesize ");
-        assert_eq!(second[2]["c"], "1");
+        let third = out[3]["c"].as_array().unwrap();
+        assert_eq!(third[1]["c"][1], "\\hspace*{1.5em}");
+        assert_eq!(third[2]["c"][1], "\\llap{{\\footnotesize ");
+        assert_eq!(third[3]["c"], "2");
     }
 
     #[test]

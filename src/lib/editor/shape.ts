@@ -65,6 +65,7 @@ export function markOf(node: Node): InlineLineMark {
     ...(typeof a.number === 'string' && a.number.trim() ? { number: a.number.trim() } : {}),
     ...(a.counted === false ? { counted: false as const } : {}),
     ...(a.hidden === true ? { hidden: true as const } : {}),
+    ...(a.shown === true && a.hidden !== true ? { shown: true as const } : {}),
     ...(typeof a.margin === 'string' && a.margin.trim() ? { margin: a.margin.trim() } : {}),
     ...(Number(a.indent) > 0 ? { indent: Number(a.indent) } : {}),
   };
@@ -76,6 +77,7 @@ export function marksAnything(attrs: Record<string, unknown>): boolean {
     (typeof attrs.number === 'string' && attrs.number.trim()) ||
     attrs.counted === false ||
     attrs.hidden === true ||
+    attrs.shown === true ||
     (typeof attrs.margin === 'string' && attrs.margin.trim()) ||
     Number(attrs.indent) > 0
   );
@@ -102,6 +104,7 @@ export function blockOf(node: Node): ParagraphBlock {
     ...(numbering === 'counted' || numbering === 'given' ? { numbering } : {}),
     ...(Number(node.attrs.every) >= 1 ? { every: Number(node.attrs.every) } : {}),
     ...(node.attrs.side === 'left' || node.attrs.side === 'right' ? { side: node.attrs.side } : {}),
+    ...(typeof node.attrs.only === 'string' && node.attrs.only ? { only: node.attrs.only } : {}),
     ...(node.attrs.new === true ? { new: true as const } : {}),
     content,
   };

@@ -718,6 +718,7 @@ impl Reading<'_, '_> {
                             number: None,
                             counted: true,
                             hidden: false,
+                            shown: false,
                             margin: None,
                             indent,
                         });
@@ -846,6 +847,7 @@ impl Reading<'_, '_> {
                                     number: Some(start.to_string()),
                                     counted: true,
                                     hidden: false,
+                                    shown: false,
                                     margin: None,
                                     indent: 0,
                                 },

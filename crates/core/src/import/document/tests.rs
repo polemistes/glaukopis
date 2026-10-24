@@ -400,6 +400,7 @@ fn lists_quotations_and_what_has_no_place() {
         number: number.map(Into::into),
         counted: true,
         hidden: false,
+        shown: false,
         margin: None,
         indent,
     };

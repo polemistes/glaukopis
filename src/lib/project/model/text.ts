@@ -83,14 +83,17 @@ export interface InlineRefMark {
  * paragraph, or the first after a line break. A number or label given by
  * hand, from which the count goes on (`lines.ts`); `counted: false` for a
  * line the count passes over; `hidden: true` for one that is counted and
- * shows no number; words in the margin; and the line's indent, for verse.
- * What is not said is left out. A mark that says nothing is not written.
+ * never shows its number, `shown: true` for one that always does (never
+ * both); words in the margin, the annotation; and the line's indent, for
+ * verse. What is not said is left out. A mark that says nothing is not
+ * written.
  */
 export interface InlineLineMark {
   kind: 'linemark';
   number?: string;
   counted?: false;
   hidden?: true;
+  shown?: true;
   margin?: string;
   indent?: number;
 }
@@ -116,9 +119,9 @@ export type Stand = 'left' | 'center' | 'right';
  * for plain text; `indent` its steps of indentation, for items of lists and
  * any paragraph that is indented. A paragraph is lines, parted by line
  * breaks (`InlineBreak`); what is said of one line stands in a line mark at
- * its start. `numbering`, `every` and `side` are the settings of the
- * stretch it stands in: consecutive paragraphs with the same settings are
- * one stretch, numbered together, whatever their kinds (`lines.ts`).
+ * its start. `numbering`, `every`, `side` and `only` are the settings of
+ * the stretch it stands in: consecutive paragraphs with the same settings
+ * are one stretch, numbered together, whatever their kinds (`lines.ts`).
  * `new` begins a new run of its kind, where two runs of one kind stand
  * together. What is not said is left out when written.
  */
@@ -132,6 +135,8 @@ export interface ParagraphBlock {
   every?: number;
   /** The side the numbers stand on; absent for the layout's. */
   side?: Side;
+  /** The one kind whose lines are counted, by its id; absent for every kind that is counted. */
+  only?: string;
   /** Begins a new run of its kind. */
   new?: true;
   content: Inline[];
@@ -231,7 +236,8 @@ export interface SetOff {
 export function paragraph(
   content: Inline[],
   name = 'text',
-  more: Pick<ParagraphBlock, 'indent' | 'numbering' | 'every' | 'side' | 'new'> | number = 0,
+  more:
+    Pick<ParagraphBlock, 'indent' | 'numbering' | 'every' | 'side' | 'only' | 'new'> | number = 0,
 ): ParagraphBlock {
   const said = typeof more === 'number' ? { indent: more } : more;
   return {
@@ -241,6 +247,7 @@ export function paragraph(
     ...(said.numbering && said.numbering !== 'none' ? { numbering: said.numbering } : {}),
     ...(said.every ? { every: said.every } : {}),
     ...(said.side ? { side: said.side } : {}),
+    ...(said.only ? { only: said.only } : {}),
     ...(said.new ? { new: true as const } : {}),
     content,
   };
@@ -253,6 +260,7 @@ export function linemark(said: Omit<InlineLineMark, 'kind'> = {}): InlineLineMar
     ...(said.number?.trim() ? { number: said.number.trim() } : {}),
     ...(said.counted === false ? { counted: false as const } : {}),
     ...(said.hidden ? { hidden: true as const } : {}),
+    ...(said.shown && !said.hidden ? { shown: true as const } : {}),
     ...(said.margin?.trim() ? { margin: said.margin.trim() } : {}),
     ...(said.indent ? { indent: said.indent } : {}),
   };
@@ -260,7 +268,7 @@ export function linemark(said: Omit<InlineLineMark, 'kind'> = {}): InlineLineMar
 
 /** Whether a line mark says anything. */
 export const saysAnything = (m: InlineLineMark): boolean =>
-  !!(m.number || m.counted === false || m.hidden || m.margin || m.indent);
+  !!(m.number || m.counted === false || m.hidden || m.shown || m.margin || m.indent);
 
 /** A break of the page or of the column. */
 export function pagebreak(what: BreakBlock['what'] = 'page'): BreakBlock {
@@ -377,6 +385,7 @@ function saidOf(el: Y.XmlElement): Omit<InlineLineMark, 'kind' | 'indent'> {
     number: text(el.getAttribute('number') as unknown),
     ...((el.getAttribute('counted') as unknown) === false ? { counted: false as const } : {}),
     ...((el.getAttribute('hidden') as unknown) === true ? { hidden: true as const } : {}),
+    ...((el.getAttribute('shown') as unknown) === true ? { shown: true as const } : {}),
     margin: text(el.getAttribute('margin') as unknown),
   };
 }
@@ -403,6 +412,7 @@ function paragraphOf(el: Y.XmlElement): ParagraphBlock {
     numbering: numberingOf(el.getAttribute('numbering') as unknown),
     every: everyOf(el.getAttribute('every') as unknown) ?? undefined,
     side: sideOf(el.getAttribute('side') as unknown) ?? undefined,
+    only: text(el.getAttribute('only') as unknown).trim() || undefined,
     new: (el.getAttribute('new') as unknown) === true ? true : undefined,
   });
 }

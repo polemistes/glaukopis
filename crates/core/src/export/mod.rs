@@ -4221,7 +4221,8 @@ mod tests {
         let t = fs::read_to_string(&typ).unwrap();
         assert!(t.contains("#gk-verse["), "{t}");
         assert!(t.contains("#gk-line(\"speaker\", 0, n: none, margin: none, side: \"left\")["), "{t}");
-        assert!(t.contains("#gk-line(\"line\", 0, n: \"1\", margin: none, side: \"left\")["), "{t}");
+        // A 1 given where every fifth is shown stands on no page; the count goes on from it.
+        assert!(!t.contains("n: \"1\","), "{t}");
         assert!(t.contains("#gk-line(\"line\", 1, n: none, margin: none, side: \"left\")["), "{t}");
         assert!(t.contains("#gk-line(\"line\", 0, n: \"5\", margin: none, side: \"left\")["), "{t}");
         assert!(t.contains("#gk-line(\"line\", 0, n: \"1094a1\", margin: none, side: \"left\")["), "{t}");
@@ -4265,7 +4266,7 @@ mod tests {
         let l = fs::read_to_string(&tex).unwrap();
         assert!(l.contains("\\textsc{Nurse}"), "{l}");
         assert!(l.contains("{\\par\\leftskip=1cm\\relax"), "the lines stand in as far as a line looks: {l}");
-        assert!(l.contains("\\llap{{\\footnotesize 1}\\hspace{0.9em}}If only the Argo had never flown"), "{l}");
+        assert!(l.contains("\\noindent If only the Argo had never flown"), "the 1 given is not printed: {l}");
         assert!(l.contains("\\llap{{\\footnotesize 5}\\hspace{0.9em}}in the glens"), "{l}");
         assert!(l.contains("\\hspace*{1.5em}through the dark"), "{l}");
         assert!(l.contains("\\llap{{\\footnotesize 1094a1}\\hspace{0.9em}}Nor had"), "{l}");
@@ -4400,7 +4401,7 @@ mod tests {
                 "text",
                 vec![
                     (None, "Ismene, my sister, true child of my mother,"),
-                    (Some(mark().number("7").done()), "what evil is there of all"),
+                    (Some(mark().number("7").shown().done()), "what evil is there of all"),
                     (None, "that Zeus does not bring to pass for us two?"),
                 ],
             )

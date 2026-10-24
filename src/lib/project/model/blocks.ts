@@ -169,6 +169,7 @@ function lineMarkElement(m: InlineLineMark): Y.XmlElement {
     number: m.number?.trim() || null,
     counted: m.counted === false ? false : null,
     hidden: m.hidden ? true : null,
+    shown: m.shown && !m.hidden ? true : null,
     margin: m.margin?.trim() || null,
     indent: indent > 0 ? indent : null,
   });
@@ -189,6 +190,7 @@ function paragraphElement(p: ParagraphBlock): Y.XmlElement {
       numbering: p.numbering === 'counted' || p.numbering === 'given' ? p.numbering : null,
       every: p.every != null && Number.isFinite(every) && every > 0 ? every : null,
       side: p.side === 'left' || p.side === 'right' ? p.side : null,
+      only: p.only?.trim() || null,
       new: p.new ? true : null,
     },
     inlineChildren(p.content, 'text'),
