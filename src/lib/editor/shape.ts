@@ -68,6 +68,7 @@ export function markOf(node: Node): InlineLineMark {
     ...(a.shown === true && a.hidden !== true ? { shown: true as const } : {}),
     ...(typeof a.margin === 'string' && a.margin.trim() ? { margin: a.margin.trim() } : {}),
     ...(Number(a.indent) > 0 ? { indent: Number(a.indent) } : {}),
+    ...(a.continues === true ? { continues: true as const } : {}),
   };
 }
 
@@ -79,7 +80,8 @@ export function marksAnything(attrs: Record<string, unknown>): boolean {
     attrs.hidden === true ||
     attrs.shown === true ||
     (typeof attrs.margin === 'string' && attrs.margin.trim()) ||
-    Number(attrs.indent) > 0
+    Number(attrs.indent) > 0 ||
+    attrs.continues === true
   );
 }
 

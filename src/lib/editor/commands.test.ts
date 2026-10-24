@@ -201,6 +201,7 @@ describe('the kind of a paragraph', () => {
       shown: null,
       margin: 'ia.',
       indent: 2,
+      continues: null,
     });
     // Text says nothing of what it does not have.
     const w = at(['text: Plain']);

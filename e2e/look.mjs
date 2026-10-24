@@ -599,6 +599,39 @@ try {
   );
   await app.screenshot('look-9-annotations-right');
 
+  // --- The step of an indent: a paragraph set in with Tab moves by it, where one writes and on the page ---
+  const cities = () =>
+    app.exec(
+      `return Array.from(document.querySelectorAll('.text-view .prose > p')).find((p) => p.textContent.includes('Many cities'))`,
+    );
+  await app.click(await cities());
+  await sleep(200);
+  await app.press('Tab');
+  await sleep(300);
+  /** How far the quotation is set in where one writes, and where its words begin on the page. */
+  const setIn = () =>
+    app.exec(
+      `const p = Array.from(document.querySelectorAll('.text-view .prose > p')).find((p) => p.textContent.includes('Many cities'));
+       const span = Array.from(document.querySelectorAll('.preview .page .texts span')).find((s) => s.textContent.includes('Many cities'));
+       return { indent: p.getAttribute('data-indent'), padding: parseFloat(getComputedStyle(p).paddingLeft),
+                page: span ? span.getBoundingClientRect().left : null };`,
+    );
+  check('Tab sets the quotation in a step', await typstHas(/#block\(inset: \(left: 0\.6cm\)\)\[/));
+  await sleep(2500);
+  const before = await setIn();
+  await app.lookSection('Paragraphs');
+  await app.lookWrite('Indentation step', '1');
+  check('Look has the step of an indent under Paragraphs, and the Typst takes it', await typstHas(/#block\(inset: \(left: 1cm\)\)\[/));
+  await sleep(2500);
+  const after = await setIn();
+  check(
+    'with a step of 1 cm, the quotation moves by 0.4 cm more where one writes',
+    before.indent === '1' && Math.abs(after.padding - before.padding - (0.4 * 96) / 2.54) <= 2,
+    JSON.stringify({ before, after }),
+  );
+  check('and on the page', before.page !== null && after.page !== null && after.page > before.page + 3, JSON.stringify({ before, after }));
+  await app.screenshot('look-10-step');
+
   const errors = await app.pageErrors();
   check('no errors in the page', errors.length === 0, errors.join(' | '));
 } catch (e) {

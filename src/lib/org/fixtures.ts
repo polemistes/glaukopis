@@ -637,7 +637,16 @@ export function everything(): OrgProject {
         name: [t('Counted lines')],
         blocks: [
           p(
-            [mark({ number: '41' }), t('Counted'), br, mark({ shown: true }), t('always shown')],
+            [
+              mark({ number: '41' }),
+              t('Counted'),
+              br,
+              mark({ shown: true }),
+              t('always shown'),
+              br,
+              mark({ continues: true, indent: 1 }),
+              t('and where it ended'),
+            ],
             'line',
             {
               numbering: 'counted',
@@ -651,6 +660,7 @@ export function everything(): OrgProject {
             every: 1,
             only: 'own-letter',
           }),
+          p([mark({ continues: true }), t('A line of prose that begins where one ended')]),
         ],
       }),
     ],

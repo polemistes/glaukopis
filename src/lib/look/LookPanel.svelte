@@ -999,6 +999,8 @@
 
   const paragraphRows: Row<F>[] = $derived([
     length(t('format-indent-first-line'), 'text.indent'),
+    // The step of Tab, in verse and in any paragraph set in (ADR 0067).
+    length(t('format-indent-step'), 'text.indentStep'),
     toggle(t('format-indent-first'), 'text.indentFirst', { when: indented }),
     length(t('format-space-between'), 'text.spaceBetween'),
   ]);

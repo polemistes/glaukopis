@@ -378,7 +378,9 @@ const bodyNodes: Record<string, NodeSpec> = {
    * false for a line the count passes over; `hidden` true for one that is
    * counted and never shows its number, `shown` true for one that always
    * does; `margin` words shown in the margin beside it, the annotation;
-   * `indent` the line's own steps in, for verse. Each is nothing where it
+   * `indent` the line's own steps in, for verse; `continues` true for a
+   * line that begins where the line before ended, which the editor sets in
+   * by measuring that line (`editor/continues.ts`). Each is nothing where it
    * is not said. A mark that says nothing is taken away.
    */
   linemark: {
@@ -393,6 +395,7 @@ const bodyNodes: Record<string, NodeSpec> = {
       shown: { default: null },
       margin: { default: null },
       indent: { default: null },
+      continues: { default: null },
     },
     parseDOM: [
       {
@@ -406,6 +409,7 @@ const bodyNodes: Record<string, NodeSpec> = {
             shown: el.hasAttribute('data-shown') && !el.hasAttribute('data-hidden') ? true : null,
             margin: el.getAttribute('data-margin') || null,
             indent: indentAttr(el.getAttribute('data-indent')) || null,
+            continues: el.hasAttribute('data-continues') ? true : null,
           };
         },
       },
@@ -420,6 +424,7 @@ const bodyNodes: Record<string, NodeSpec> = {
         'data-shown': node.attrs.shown === true ? '' : null,
         'data-margin': node.attrs.margin || null,
         'data-indent': node.attrs.indent ? String(node.attrs.indent) : null,
+        'data-continues': node.attrs.continues === true ? '' : null,
         style: node.attrs.indent ? `--indent: ${node.attrs.indent}` : null,
       },
     ],

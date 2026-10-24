@@ -12,7 +12,7 @@ const views: EditorView[] = [];
 function at(blocks: string[], own: { id: string; basedOn: string; name?: string }[] = []) {
   const v = editorOf(blocks, {
     passageKinds: () => own,
-    numbers: () => ({ every: 1, side: 'left', annotations: null }),
+    numbers: () => ({ every: 1, side: 'left', annotations: null, step: 17 }),
   });
   views.push(v);
   return v;

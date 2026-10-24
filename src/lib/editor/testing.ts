@@ -7,8 +7,9 @@
  * every how many after `/`, the side, the one kind counted after `only=`,
  * and `new`; after the colon its content, where ` / ` is a line break,
  * `{…}` a line mark (`n=` its number, `m=` its margin words, `i=` its
- * indent, `-` not counted, `~` hidden, `+` always shown) and `|` the
- * cursor. `pagebreak` and `pagebreak column` are breaks. The same
+ * indent, `-` not counted, `~` hidden, `+` always shown, `^` begins where
+ * the line before ended) and `|` the cursor. `pagebreak` and `pagebreak
+ * column` are breaks. The same
  * form is read and written, so that a text can be compared with what is
  * expected.
  */
@@ -28,6 +29,7 @@ function readMark(said: string): Record<string, unknown> {
     if (part === '-') attrs.counted = false;
     else if (part === '~') attrs.hidden = true;
     else if (part === '+') attrs.shown = true;
+    else if (part === '^') attrs.continues = true;
     else if (part.startsWith('n=')) attrs.number = part.slice(2);
     else if (part.startsWith('m=')) attrs.margin = part.slice(2);
     else if (part.startsWith('i=')) attrs.indent = Number(part.slice(2));
@@ -43,6 +45,7 @@ function writeMark(node: Node): string {
   if (a.counted === false) out.push('-');
   if (a.hidden === true) out.push('~');
   if (a.shown === true) out.push('+');
+  if (a.continues === true) out.push('^');
   if (a.margin) out.push(`m=${a.margin}`);
   if (a.indent) out.push(`i=${a.indent}`);
   return `{${out.join(',')}}`;

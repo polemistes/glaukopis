@@ -160,6 +160,7 @@ function lineMarkHtml(m: InlineLineMark | null): string {
     (m.shown ? ' data-shown' : '') +
     (m.margin ? ` data-margin="${escape(m.margin)}"` : '') +
     (m.indent ? ` data-indent="${m.indent}"` : '') +
+    (m.continues ? ' data-continues' : '') +
     '></span>'
   );
 }

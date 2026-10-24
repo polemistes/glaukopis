@@ -34,6 +34,7 @@
   import { markActive, setLanguage } from './commands';
   import {
     LAYOUT_NUMBERS,
+    LAYOUT_STEP,
     lineAsked,
     markLine,
     numberFrom,
@@ -50,6 +51,7 @@
   import LineNumberingDialog from './LineNumberingDialog.svelte';
   import { documents, templateUsedCached } from '$lib/preview/documents.svelte';
   import { kindKeysOf, kindName } from './kinds';
+  import { toCm } from '$lib/ui/settings/rows';
   import { CitationView, FootnoteView, PageBreakView } from './views.svelte';
   import { RefMarkView } from './refmarks';
   import { topOf } from '$lib/figures/numbering.svelte';
@@ -162,10 +164,15 @@
   // depends on; the rest is read untracked.
   const numbersLayout = $derived.by<NumbersLayout>(() => {
     if (kind !== 'body' || !owner || !project.node(owner)) return LAYOUT_NUMBERS;
-    const verse = documents.formatForCached(project, owner)?.verse;
-    return verse
-      ? { every: verse.every, side: verse.side, annotations: verse.annotations ?? null }
-      : LAYOUT_NUMBERS;
+    const format = documents.formatForCached(project, owner);
+    const verse = format?.verse;
+    const step = toCm(format?.text.indentStep ?? '');
+    return {
+      every: verse?.every ?? LAYOUT_NUMBERS.every,
+      side: verse?.side ?? LAYOUT_NUMBERS.side,
+      annotations: verse?.annotations ?? null,
+      step: step !== null && step > 0 ? (step * 72) / 2.54 : LAYOUT_STEP,
+    };
   });
   let drawnWith: { numbers: NumbersLayout; kinds: unknown; language: string } | null = null;
   $effect(() => {
@@ -183,6 +190,7 @@
         now.numbers.every !== was.numbers.every ||
         now.numbers.side !== was.numbers.side ||
         now.numbers.annotations !== was.numbers.annotations ||
+        now.numbers.step !== was.numbers.step ||
         now.kinds !== was.kinds ||
         now.language !== was.language;
       if (view && kind === 'body' && changed) redrawShape(view);
@@ -633,6 +641,7 @@
 <div
   bind:this={host}
   class="rich-text {className}"
+  style:--step="{numbersLayout.step}pt"
   use:dropTarget={{
     accepts: ['references', PICTURES_DRAGGED],
     disabled: kind !== 'body',

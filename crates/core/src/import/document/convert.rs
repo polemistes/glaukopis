@@ -721,6 +721,7 @@ impl Reading<'_, '_> {
                             shown: false,
                             margin: None,
                             indent,
+                            continues: false,
                         });
                     }
                     stanza.extend(words);
@@ -850,6 +851,7 @@ impl Reading<'_, '_> {
                                     shown: false,
                                     margin: None,
                                     indent: 0,
+                                    continues: false,
                                 },
                             );
                         }

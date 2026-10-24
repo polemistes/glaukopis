@@ -274,3 +274,7 @@ editor-line-shown-never = Aldri
 editor-line-annotation-right = Merknad i høyremargen
 editor-line-annotation-left = Merknad i venstremargen
 editor-line-annotation-placeholder = Et versemål, en annen utgaves nummer
+
+## Hvor en linje begynner, og trinnet (trinn 4 av bidragsyterne og linjene)
+# I høyreklikkmenyen i teksten, med en hake mens linjen markøren står i, gjør det.
+editor-line-continues = Begynner der linjen før sluttet

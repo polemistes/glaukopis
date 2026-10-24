@@ -315,6 +315,7 @@ fn block_of(piece: Shaped) -> Block {
                         shown: false,
                         margin: None,
                         indent: 0,
+                        continues: false,
                     });
                 }
                 content.extend(line);

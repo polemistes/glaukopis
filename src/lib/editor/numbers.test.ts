@@ -2,9 +2,12 @@ import { TextSelection } from 'prosemirror-state';
 import type { EditorView } from 'prosemirror-view';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
+  continueLine,
+  continuesAt,
   giveNumber,
   lineAsked,
   lineAt,
+  lineBefore,
   markLine,
   numberFrom,
   numberingAsked,
@@ -27,7 +30,7 @@ function at(
 ): EditorView {
   const v = editorOf(blocks, {
     passageKinds: () => more.own ?? [],
-    numbers: () => more.layout ?? { every: 5, side: 'left', annotations: null },
+    numbers: () => more.layout ?? { every: 5, side: 'left', annotations: null, step: 17 },
   });
   views.push(v);
   return v;
@@ -246,7 +249,7 @@ describe('the numbers in the margin', () => {
     const v = at(
       ['line #counted: {n=1}a / b / c / d / e / f', 'line #counted/2 right: {n=1}g / h'],
       {
-        layout: { every: 3, side: 'left', annotations: null },
+        layout: { every: 3, side: 'left', annotations: null, step: 17 },
       },
     );
     expect(margin(v)).toEqual(['(1) # 3 # # 6', '(1) 2']);
@@ -255,7 +258,7 @@ describe('the numbers in the margin', () => {
     expect(v.dom.querySelectorAll('p')[1].getAttribute('data-numbers')).toBe('right');
     // The layout changed: drawn anew.
     const w = at(['line #counted: {n=1}a / b / c / d'], {
-      layout: { every: 2, side: 'right', annotations: null },
+      layout: { every: 2, side: 'right', annotations: null, step: 17 },
     });
     expect(margin(w)).toEqual(['(1) 2 # 4']);
     redrawShape(w);
@@ -313,17 +316,21 @@ describe('the numbers in the margin', () => {
           },
         ).dom.querySelectorAll(':scope > p'),
       ].map((p) => p.getAttribute('data-annotations'));
-    expect(sides({ every: 5, side: 'left', annotations: null })).toEqual([
+    expect(sides({ every: 5, side: 'left', annotations: null, step: 17 })).toEqual([
       'right',
       'left',
       'right',
     ]);
-    expect(sides({ every: 5, side: 'left', annotations: 'left' })).toEqual([
+    expect(sides({ every: 5, side: 'left', annotations: 'left', step: 17 })).toEqual([
       'left',
       'left',
       'left',
     ]);
-    expect(sides({ every: 5, side: 'right', annotations: null })).toEqual(['left', 'left', 'left']);
+    expect(sides({ every: 5, side: 'right', annotations: null, step: 17 })).toEqual([
+      'left',
+      'left',
+      'left',
+    ]);
   });
 });
 
@@ -355,6 +362,45 @@ describe('the field of a line`s number', () => {
     // Left so, nothing is given.
     expect(margin(v)).toEqual(['1! 2']);
     expect(v.dom.querySelector('.line-number-field')).toBeNull();
+  });
+});
+
+describe('where a line begins', () => {
+  it('the line before is the nearest above with words, blank lines, speakers and directions passed over', () => {
+    const v = at([
+      'line: Is it you, / ',
+      'speaker: Ismene',
+      'direction: Aside.',
+      'line: my sister?|',
+    ]);
+    // "Is it you," ends at 11, before the line break.
+    expect(lineBefore(v.state.doc, lineAt(v.state)!.markPos)).toBe(11);
+    const w = at(['line: Sing / goddess|']);
+    expect(lineBefore(w.state.doc, lineAt(w.state)!.markPos)).toBe(5);
+    const alone = at(['line: Alone|']);
+    expect(lineBefore(alone.state.doc, lineAt(alone.state)!.markPos)).toBeNull();
+  });
+
+  it('a line is said to begin where the line before ended, and no more, and the first line of a text cannot', () => {
+    const v = at(['line: Is it you,', 'speaker: Ismene', 'line: my sister?|']);
+    expect(continuesAt(v.state)).toEqual({ on: false, can: true });
+    expect(continueLine(true)(v.state, v.dispatch)).toBe(true);
+    expect(shapeOf(v)[2]).toBe('line: {^}my sister?|');
+    expect(continuesAt(v.state)).toEqual({ on: true, can: true });
+    // What the line's window says leaves it so.
+    markLine(said({ number: '5' }))(v.state, v.dispatch);
+    expect(shapeOf(v)[2]).toBe('line: {n=5,^}my sister?|');
+    markLine(said({}))(v.state, v.dispatch);
+    continueLine(false)(v.state, v.dispatch);
+    expect(shapeOf(v)[2]).toBe('line: my sister?|');
+    const alone = at(['line: Alone|']);
+    expect(continuesAt(alone.state)).toEqual({ on: false, can: false });
+    expect(continueLine(true)(alone.state)).toBe(false);
+  });
+
+  it('the line keeps its count: it is counted as before, unless its window says otherwise', () => {
+    const v = at(['line #counted/1: {n=1}Is it you, / {^}my sister?']);
+    expect(margin(v)).toEqual(['1! 2']);
   });
 });
 
@@ -400,7 +446,8 @@ describe('what Numbering of this line asks', () => {
     expect(asked.marks).toMatchObject({ number: null, counted: false, hidden: false, margin: 'x' });
     expect(asked).toMatchObject({ words: 'b', kind: 'line', countable: true, annotations: 'left' });
     expect(
-      lineAsked(v.state, [], { every: 5, side: 'left', annotations: 'right' })!.annotations,
+      lineAsked(v.state, [], { every: 5, side: 'left', annotations: 'right', step: 17 })!
+        .annotations,
     ).toBe('right');
   });
 

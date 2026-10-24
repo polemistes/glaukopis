@@ -128,12 +128,16 @@ pub struct Mark<'a> {
     /// The words in the margin, trimmed; nothing where there are none.
     pub margin: Option<&'a str>,
     pub indent: u32,
+    /// The line begins where the line before ended.
+    pub continues: bool,
 }
 
 impl<'a> Mark<'a> {
     /// What a line mark says; nothing of anything else.
     pub fn of(inline: &'a Inline) -> Option<Mark<'a>> {
-        let Inline::LineMark { number, counted, hidden, shown, margin, indent } = inline else { return None };
+        let Inline::LineMark { number, counted, hidden, shown, margin, indent, continues } = inline else {
+            return None;
+        };
         let given = |s: &'a Option<String>| s.as_deref().map(str::trim).filter(|s| !s.is_empty());
         Some(Mark {
             number: given(number),
@@ -142,6 +146,7 @@ impl<'a> Mark<'a> {
             shown: *shown && !*hidden,
             margin: given(margin),
             indent: *indent,
+            continues: *continues,
         })
     }
 }

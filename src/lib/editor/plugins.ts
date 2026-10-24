@@ -46,6 +46,7 @@ import { runBrackets } from './brackets';
 import { breakKey, enterKey, indentKey, joinLineKey, lineMarks } from './keys';
 import { kindName } from './kinds';
 import { kindKeyOf } from '$lib/shell/keys.svelte';
+import { continuesPlugin } from './continues';
 import { LAYOUT_NUMBERS, stretchNumbersPlugin, type NumbersLayout } from './numbers';
 import { acrossParallel, backOutOfParallel } from './parallel';
 import { refMarkKey } from './refmarks';
@@ -396,6 +397,8 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
     hardSpaces(),
     // The marks of lines kept at the start of their lines: see `keys.ts`.
     lineMarks(),
+    // The lines that begin where the line before ended, set in by measuring it: see `continues.ts`.
+    continuesPlugin(own),
     // The numbers of the lines of a numbered stretch: see `numbers.ts`.
     stretchNumbersPlugin(own, () => hooks.numbers?.() ?? LAYOUT_NUMBERS),
     // The bracket of every run, with its name: see `brackets.ts`.

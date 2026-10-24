@@ -1167,6 +1167,7 @@ export const format: documents.DocumentFormat = {
     "hyphenate": false,
     "indent": "1.27cm",
     "indentFirst": false,
+    "indentStep": "0.6cm",
     "italics": "italic",
     "lineSpacing": 2.0,
     "refmarks": "raised",

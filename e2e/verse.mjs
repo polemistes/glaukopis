@@ -1,11 +1,13 @@
 // Verse and texts side by side (ADR 0041): a poem typed as one types any
 // text, Shift+Enter for a line and Enter for a stanza, made Verse from the
 // kind menu; a speaker before it; Tab indenting one line; the lines
-// numbered through the speaker and across the stanza from the Numbers
-// dialog; Enter on an empty paragraph of verse leaving it for text; an
-// original and its translation side by side; a script whose parts are
+// numbered through the speaker and across the stanza from Line numbering
+// from here; Enter on an empty paragraph of verse leaving it for text; a
+// line shared by two speakers, the second half set to begin where the first
+// ended from the right-click menu, counted until its window says it is not;
+// an original and its translation side by side; a script whose parts are
 // chosen from the kind menu, Enter keeping the kind; and the preview set
-// with them, without remark.
+// with them, without remark, the second half beginning past the first.
 
 import { App, sleep } from './harness.mjs';
 
@@ -231,6 +233,119 @@ try {
     ps.map((p) => `${p.kind}:${p.lines.join('/')}`).join(' | '),
   );
 
+  // --- A line shared by two speakers: the second half begins where the first ended ---
+  await cursorAfter('So the nurse begins.');
+  await app.press('Enter');
+  await app.keys('Is it you, my sister?');
+  await app.press('Enter');
+  await app.keys('Ismene');
+  await app.press('Enter');
+  await app.keys('It is.');
+  await app.keys(['Shift', 'Enter']);
+  await app.keys('Then speak.');
+  await sleep(200);
+  await cursorAfter('Is it you, my sister?');
+  await chooseKind('Verse', true);
+  await cursorAfter('Then speak.');
+  await chooseKind('Verse', true);
+  await cursorAfter('Ismene');
+  await chooseKind('Speaker');
+  await cursorAfter('It is.');
+  await app.textMenuAtCursor();
+  const continues = await app.exec(
+    `const item = Array.from(document.querySelectorAll('.menu [role="menuitem"]')).find((i) => i.textContent.includes('Begins where the line before ended'));
+     return item ? { checked: !!item.querySelector('.check svg'), off: item.disabled || item.getAttribute('aria-disabled') === 'true' } : null;`,
+  );
+  check('the right-click menu offers to begin the line where the line before ended', !!continues && !continues.checked && !continues.off, JSON.stringify(continues));
+  await app.clickText('.menu [role="menuitem"]', 'Begins where the line before ended');
+  await app.waitGone('.menu', 3000);
+  await sleep(600);
+  /** Where words stand in the text view: the left and right of the first place they are found. */
+  const wordsAt = (words) =>
+    app.exec(
+      `const walker = document.createTreeWalker(document.querySelector(arguments[0]), NodeFilter.SHOW_TEXT);
+       let node;
+       while ((node = walker.nextNode())) {
+         if (node.parentElement.closest('.run-line, .line-number, .line-margin')) continue;
+         const at = node.data.indexOf(arguments[1]);
+         if (at < 0) continue;
+         const r = document.createRange(); r.setStart(node, at); r.setEnd(node, at + arguments[1].length);
+         const box = r.getBoundingClientRect();
+         return { left: box.left, right: box.right, top: box.top, em: parseFloat(getComputedStyle(node.parentElement.closest('p')).fontSize) };
+       }
+       return null;`,
+      prose,
+      words,
+    );
+  const first = await wordsAt('my sister?');
+  const second = await wordsAt('It is.');
+  check(
+    'the second half of the line begins where the first ended, and an em',
+    !!first && !!second && second.top > first.top && Math.abs(second.left - (first.right + first.em)) <= 2,
+    JSON.stringify({ first, second }),
+  );
+  check(
+    'its mark says so',
+    (await app.exec(`return document.querySelectorAll(arguments[0] + ' > p span.linemark[data-continues]').length`, prose)) === 1,
+  );
+  // Typing in the line before moves the second half with its end.
+  await cursorAfter('my sister?');
+  await app.keys(' Speak');
+  await sleep(600);
+  const longer = await wordsAt('It is.');
+  const moved = await wordsAt('sister? Speak');
+  check(
+    'written on, the line before takes the second half with it',
+    !!longer && !!moved && Math.abs(longer.left - (moved.right + moved.em)) <= 2 && longer.left > second.left,
+    JSON.stringify({ moved, longer }),
+  );
+  await app.keys(['Backspace', 'Backspace', 'Backspace', 'Backspace', 'Backspace', 'Backspace']);
+  await sleep(300);
+  // Numbered: the second half is counted until its window says otherwise.
+  await cursorAfter('Is it you, my sister?');
+  await app.lineNumberingFromHere();
+  await app.waitForText('dialog[open] h2', 'Line numbering from here', 3000);
+  await app.exec(
+    `const s = document.querySelector('dialog[open] [data-numbering] select'); s.value = 'counted';
+     s.dispatchEvent(new Event('input', { bubbles: true })); s.dispatchEvent(new Event('change', { bubbles: true }));`,
+  );
+  await sleep(150);
+  await app.exec(`const i = document.querySelector('dialog[open] input[data-every]'); i.focus(); i.select();`);
+  await app.keys('1');
+  await app.clickText('dialog[open] footer button', 'Apply');
+  await app.waitGone('dialog[open]', 3000);
+  await sleep(300);
+  const sharedNumbers = () =>
+    app.exec(
+      `return Array.from(document.querySelectorAll(arguments[0] + ' > p')).slice(-3).map((p) =>
+         Array.from(p.querySelectorAll('span.line-number')).map((w) => w.classList.contains('blank') ? '-' : w.dataset.label).join(' ')).join(' | ')`,
+      prose,
+    );
+  check('the second half is counted as any line is', (await sharedNumbers()) === '1 | - | 2 3', await sharedNumbers());
+  await cursorAfter('It is.');
+  await app.numberingOfThisLine();
+  await app.waitForText('dialog[open] h2', 'Numbering of this line', 3000);
+  await app.click('dialog[open] input[data-counted]');
+  await sleep(100);
+  await app.clickText('dialog[open] footer button', 'Apply');
+  await app.waitGone('dialog[open]', 3000);
+  await sleep(300);
+  check(
+    'said not to be counted in its window, it is passed over, and the next line counts on',
+    (await sharedNumbers()) === '1 | - | - 2',
+    await sharedNumbers(),
+  );
+  check(
+    'and it still begins where the line before ended',
+    (await app.exec(`return document.querySelectorAll(arguments[0] + ' > p span.linemark[data-continues][data-uncounted]').length`, prose)) === 1,
+  );
+  await app.screenshot('verse-1b-shared');
+  // Out of the verse again, for what follows.
+  await cursorAfter('Then speak.');
+  await app.press('Enter');
+  await app.press('Enter');
+  await sleep(200);
+
   // --- Two texts side by side ---
   await app.click('.pane-bar [data-insert]');
   await app.waitFor('.menu');
@@ -294,6 +409,19 @@ try {
   await sleep(1500);
   check('the preview is made without remark', !(await app.exists('.preview footer .issues')));
   await app.screenshot('verse-3-preview');
+  const onPage = await app.exec(
+    `const spans = Array.from(document.querySelectorAll('.preview .page .texts span'));
+     const first = spans.find((s) => s.textContent.includes('my sister?'));
+     const second = spans.find((s) => s.textContent.includes('It is.'));
+     if (!first || !second) return { first: !!first, second: !!second };
+     const a = first.getBoundingClientRect(), b = second.getBoundingClientRect();
+     return { end: Math.round(a.right), begin: Math.round(b.left), below: b.top > a.top };`,
+  );
+  check(
+    'on the page the second half of the shared line begins to the right of where the first ended',
+    onPage.below && onPage.begin > onPage.end,
+    JSON.stringify(onPage),
+  );
 
   const errors = await app.pageErrors();
   check('no errors in the page', errors.length === 0, errors.join(' | '));

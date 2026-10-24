@@ -179,6 +179,9 @@ pub struct Text {
     pub indent: Length,
     /// Whether the first paragraph after a heading is indented too.
     pub indent_first: bool,
+    /// The step of an indent (ADR 0067): how far each Tab sets a line of
+    /// verse, or any other paragraph, in.
+    pub indent_step: Length,
     /// The space between paragraphs, beyond that between lines; nought for none.
     pub space_between: Length,
     pub hyphenate: bool,
@@ -196,6 +199,7 @@ impl Default for Text {
             paragraphs: None,
             indent: Length::cm(1.27),
             indent_first: true,
+            indent_step: Length::cm(0.6),
             space_between: Length::pt(0.0),
             hyphenate: false,
             italics: Italics::Italic,
@@ -1195,6 +1199,11 @@ impl DocumentFormat {
         clamp(&mut self.quote.line_spacing, 0.0, 4.0, 0.0);
         if self.verse.every == 0 || self.verse.every > 1000 {
             self.verse.every = 5;
+        }
+        // The step of an indent, between a millimetre and five centimetres.
+        let step = self.text.indent_step.points() * 2.54 / 72.0;
+        if !step.is_finite() || !(0.1..=5.0).contains(&step) {
+            self.text.indent_step = Length::cm(0.6);
         }
         clamp(&mut self.bibliography.size, 0.0, 36.0, 0.0);
         clamp(&mut self.bibliography.line_spacing, 0.0, 4.0, 0.0);

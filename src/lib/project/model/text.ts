@@ -84,9 +84,10 @@ export interface InlineRefMark {
  * hand, from which the count goes on (`lines.ts`); `counted: false` for a
  * line the count passes over; `hidden: true` for one that is counted and
  * never shows its number, `shown: true` for one that always does (never
- * both); words in the margin, the annotation; and the line's indent, for
- * verse. What is not said is left out. A mark that says nothing is not
- * written.
+ * both); words in the margin, the annotation; the line's indent, for verse;
+ * and `continues: true` for a line that begins where the line before ended,
+ * as the second part of a line shared by two speakers (ADR 0067). What is
+ * not said is left out. A mark that says nothing is not written.
  */
 export interface InlineLineMark {
   kind: 'linemark';
@@ -96,6 +97,7 @@ export interface InlineLineMark {
   shown?: true;
   margin?: string;
   indent?: number;
+  continues?: true;
 }
 export type Inline =
   | InlineText
@@ -263,12 +265,13 @@ export function linemark(said: Omit<InlineLineMark, 'kind'> = {}): InlineLineMar
     ...(said.shown && !said.hidden ? { shown: true as const } : {}),
     ...(said.margin?.trim() ? { margin: said.margin.trim() } : {}),
     ...(said.indent ? { indent: said.indent } : {}),
+    ...(said.continues ? { continues: true as const } : {}),
   };
 }
 
 /** Whether a line mark says anything. */
 export const saysAnything = (m: InlineLineMark): boolean =>
-  !!(m.number || m.counted === false || m.hidden || m.shown || m.margin || m.indent);
+  !!(m.number || m.counted === false || m.hidden || m.shown || m.margin || m.indent || m.continues);
 
 /** A break of the page or of the column. */
 export function pagebreak(what: BreakBlock['what'] = 'page'): BreakBlock {
@@ -386,6 +389,7 @@ function saidOf(el: Y.XmlElement): Omit<InlineLineMark, 'kind' | 'indent'> {
     ...((el.getAttribute('counted') as unknown) === false ? { counted: false as const } : {}),
     ...((el.getAttribute('hidden') as unknown) === true ? { hidden: true as const } : {}),
     ...((el.getAttribute('shown') as unknown) === true ? { shown: true as const } : {}),
+    ...((el.getAttribute('continues') as unknown) === true ? { continues: true as const } : {}),
     margin: text(el.getAttribute('margin') as unknown),
   };
 }

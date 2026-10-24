@@ -528,7 +528,7 @@ body.dragging * {
 .prose p[data-kind='item']::before,
 .prose p[data-kind='numbered']::before {
   position: absolute;
-  left: calc(var(--indent, 0) * 1.5em - 1.1em);
+  left: calc(var(--indent, 0) * var(--step, 1.5em) - 1.1em);
   color: var(--ink-3);
   user-select: none;
 }
@@ -1257,16 +1257,30 @@ span.math.selected {
 /* Verse: each paragraph a stanza, its lines parted by line breaks; a line
    indented by the mark at its start, a step for each indent it is given,
    the whole stanza by its own indent (the numbers in the margin are
-   below). The mark of a line shows nothing else. */
+   below). The step is the layout's, which the editor sets on its root
+   (`--step`). The mark of a line shows nothing else. */
 .prose p[data-indent] {
-  padding-left: calc(var(--indent, 0) * 1.5em);
+  padding-left: calc(var(--indent, 0) * var(--step, 1.5em));
 }
 .prose span.linemark {
   display: inline;
 }
 .prose span.linemark[data-indent] {
   display: inline-block;
-  width: calc(var(--indent, 0) * 1.5em);
+  width: calc(var(--indent, 0) * var(--step, 1.5em));
+}
+/* A line that begins where the line before ended: its mark is as wide as
+   the line before is long where it is drawn, and an em, which the editor
+   measures (`editor/continues.ts`, `--continues`), with the line's own
+   steps added; four steps until it is measured. */
+.prose span.linemark[data-continues] {
+  display: inline-block;
+  width: var(--continues, calc(4 * var(--step, 1.5em)));
+}
+.prose span.linemark[data-continues][data-indent] {
+  width: calc(
+    var(--continues, calc(4 * var(--step, 1.5em))) + var(--indent, 0) * var(--step, 1.5em)
+  );
 }
 .prose p[data-kind='line'] + p[data-kind='line'] {
   margin-top: 0.9em;

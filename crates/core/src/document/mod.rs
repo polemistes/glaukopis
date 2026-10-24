@@ -87,8 +87,10 @@ pub enum Inline {
     /// after a line break. A number or label given by hand, from which the
     /// count goes on; `counted: false` for a line the count passes over;
     /// `hidden` for one that is counted and never shows its number, `shown`
-    /// for one that always does; words in the margin, the annotation; and
-    /// the line's indent, for verse. No part of the words.
+    /// for one that always does; words in the margin, the annotation; the
+    /// line's indent, for verse; and `continues` for a line that begins
+    /// where the line before ended, as the second part of a line shared by
+    /// two speakers (ADR 0067). No part of the words.
     #[serde(rename = "linemark")]
     LineMark {
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -103,6 +105,8 @@ pub enum Inline {
         margin: Option<String>,
         #[serde(default, skip_serializing_if = "is_zero")]
         indent: u32,
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        continues: bool,
     },
 }
 
@@ -867,6 +871,7 @@ pub(crate) mod fixtures {
         pub shown: bool,
         pub margin: Option<&'static str>,
         pub indent: u32,
+        pub continues: bool,
     }
 
     impl LineMarkSaid {
@@ -888,6 +893,9 @@ pub(crate) mod fixtures {
         pub fn shown(self) -> Self {
             LineMarkSaid { shown: true, ..self }
         }
+        pub fn continues(self) -> Self {
+            LineMarkSaid { continues: true, ..self }
+        }
         pub fn done(self) -> Inline {
             Inline::LineMark {
                 number: self.number.map(Into::into),
@@ -896,6 +904,7 @@ pub(crate) mod fixtures {
                 shown: self.shown,
                 margin: self.margin.map(Into::into),
                 indent: self.indent,
+                continues: self.continues,
             }
         }
     }
@@ -1048,12 +1057,21 @@ mod tests {
                 hidden: true,
                 shown: false,
                 margin: Some("ia.".into()),
-                indent: 1
+                indent: 1,
+                continues: false
             }
         );
         assert_eq!(
             content[3],
-            Inline::LineMark { number: None, counted: true, hidden: false, shown: false, margin: None, indent: 0 },
+            Inline::LineMark {
+                number: None,
+                counted: true,
+                hidden: false,
+                shown: false,
+                margin: None,
+                indent: 0,
+                continues: false
+            },
             "a mark that says nothing is counted"
         );
         assert_eq!(doc.sections[0].blocks[3], Block::Break { what: BreakKind::Column });

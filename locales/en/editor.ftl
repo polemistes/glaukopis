@@ -276,3 +276,7 @@ editor-line-shown-never = Never
 editor-line-annotation-right = Annotation in the right margin
 editor-line-annotation-left = Annotation in the left margin
 editor-line-annotation-placeholder = A metre, another edition's number
+
+## Where a line begins, and the step (stage 4 of the contributors and the lines)
+# In the right-click menu of the text, with a check while the line the cursor is in does so.
+editor-line-continues = Begins where the line before ended

@@ -893,6 +893,7 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
     converter.extras.italics_underlined = f.text.italics == crate::formats::Italics::Underline;
     converter.extras.refmarks = f.text.refmarks;
     converter.extras.verse = f.verse.clone();
+    converter.extras.step = f.text.indent_step;
     converter.extras.classes = matches!(target, Target::Html | Target::Epub);
     converter.extras.columns = f.page.columns;
 
@@ -1885,6 +1886,7 @@ h1 + p, h2 + p, h3 + p {{ text-indent: 0; }}
 blockquote {{ margin: 1em 1.5em; }}
 .line-block {{ margin-left: 1.5em; white-space: pre-wrap; }}
 .line-block p {{ text-indent: 0; margin: 0; }}
+.gk-after {{ visibility: hidden; margin-right: 1em; }}
 table.gk-parallel {{ width: 100%; border: none; }}
 table.gk-parallel td {{ vertical-align: top; width: 50%; padding: 0 0.5em; border: none; }}
 .footnotes {{ font-size: 0.9em; }}
@@ -4268,7 +4270,7 @@ mod tests {
         assert!(l.contains("{\\par\\leftskip=1cm\\relax"), "the lines stand in as far as a line looks: {l}");
         assert!(l.contains("\\noindent If only the Argo had never flown"), "the 1 given is not printed: {l}");
         assert!(l.contains("\\llap{{\\footnotesize 5}\\hspace{0.9em}}in the glens"), "{l}");
-        assert!(l.contains("\\hspace*{1.5em}through the dark"), "{l}");
+        assert!(l.contains("\\hspace*{0.6cm}through the dark"), "a step of the layout: {l}");
         assert!(l.contains("\\llap{{\\footnotesize 1094a1}\\hspace{0.9em}}Nor had"), "{l}");
         assert!(l.contains("\\rlap{\\hspace{1em}\\footnotesize\\itshape ia. trim.}"), "{l}");
         assert!(l.contains("\\begin{minipage}[t]{0.48\\textwidth}"), "{l}");

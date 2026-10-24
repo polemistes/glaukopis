@@ -171,6 +171,7 @@ export function lineMark(said: Omit<InlineLineMark, 'kind'>): InlineLineMark | n
     ...(said.shown && !said.hidden ? { shown: true as const } : {}),
     ...(said.margin?.trim() ? { margin: said.margin.trim() } : {}),
     ...(said.indent ? { indent: Math.max(0, Math.min(8, Math.round(said.indent))) } : {}),
+    ...(said.continues ? { continues: true as const } : {}),
   };
   return Object.keys(mark).length > 1 ? mark : null;
 }
@@ -505,7 +506,7 @@ function writeNode(node: MarkNode, before: string, after: string, w: Writing): s
 
 /** A number given to a line by hand as it stands in the braces: bare where it can be. */
 const numberToken = (n: string) =>
-  /^[^\s{}"|\\~>#+-][^\s{}"|\\]*$/.test(n)
+  /^[^\s{}"|\\~>#+^-][^\s{}"|\\]*$/.test(n)
     ? n
     : JSON.stringify(n).replace(/[{}]/g, (c) => (c === '{' ? '\\u007b' : '\\u007d'));
 
@@ -517,6 +518,7 @@ export function markText(mark: InlineLineMark | null, withIndent: boolean): stri
   if (mark.counted === false) said.push('-');
   if (mark.hidden) said.push('~');
   if (mark.shown) said.push('+');
+  if (mark.continues) said.push('^');
   if (withIndent && mark.indent) said.push(`> ${mark.indent}`);
   if (mark.margin) said.push(`| ${mark.margin.replace(/[\\{}]/g, (c) => `\\${c}`)}`);
   return said.length ? `{${said.join(' ')}}` : '';
@@ -1111,7 +1113,7 @@ export function readMarkText(said: string): Omit<InlineLineMark, 'kind'> | null 
     }
     s = s.slice(j + 1);
   } else {
-    const n = /^[^\s{}"|\\~>#+-][^\s{}"|\\]*/.exec(s)?.[0];
+    const n = /^[^\s{}"|\\~>#+^-][^\s{}"|\\]*/.exec(s)?.[0];
     if (n) {
       out.number = n;
       s = s.slice(n.length);
@@ -1128,6 +1130,9 @@ export function readMarkText(said: string): Omit<InlineLineMark, 'kind'> | null 
       s = s.slice(1);
     } else if (/^\+(\s|$)/.test(s)) {
       out.shown = true;
+      s = s.slice(1);
+    } else if (/^\^(\s|$)/.test(s)) {
+      out.continues = true;
       s = s.slice(1);
     } else if (/^>\s*\d+(\s|$)/.test(s)) {
       const m = /^>\s*(\d+)/.exec(s)!;

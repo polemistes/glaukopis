@@ -403,6 +403,7 @@ fn lists_quotations_and_what_has_no_place() {
         shown: false,
         margin: None,
         indent,
+        continues: false,
     };
     assert_eq!(
         read.sections[0].blocks,

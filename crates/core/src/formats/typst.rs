@@ -745,7 +745,9 @@ pub fn rules(format: &DocumentFormat, p: &Particulars) -> String {
     // beside their own columns. What stands on the numbers' side outside
     // them, an annotation where the layout puts the annotations there, is
     // placed `out` further from the text, past where a number of five digits
-    // ends, so that it fits a margin of 2.5 cm.
+    // ends, so that it fits a margin of 2.5 cm. `gk-after` sets a line in by
+    // the room of the line before it and an em, measuring and not setting its
+    // words, where the line begins where that one ended (ADR 0067).
     let _ = writeln!(
         out,
         "#let gk-number(n) = text(size: 0.8em, fill: luma(45%), hyphenate: false, n)
@@ -755,6 +757,7 @@ pub fn rules(format: &DocumentFormat, p: &Particulars) -> String {
 }} else {{
   place(left + horizon, dx: 100% + 0.8em + out, if out == 0pt {{ box(width: {right} - 1.6em, body) }} else {{ body }})
 }}
+#let gk-after(prev) = context h(measure(prev).width + 1em)
 #let gk-beside(side, body, out: 0pt) = {{ box[]; context {{
   let x = here().position().x
   if side == \"left\" {{
@@ -789,7 +792,7 @@ pub fn rules(format: &DocumentFormat, p: &Particulars) -> String {
     let _ = writeln!(
         out,
         "#let gk-verse(body) = block(width: 100%, above: {body_leading} + 0.6em, below: {body_leading} + 0.6em, inset: (left: {inset}), body)
-#let gk-line(kind, indent, n: none, margin: none, side: \"left\", body) = {{
+#let gk-line(kind, indent, after: none, n: none, margin: none, side: \"left\", body) = {{
   let notes = {notes}
   let out = if notes == side {{ 3em }} else {{ 0pt }}
   if kind == \"speaker\" {{
@@ -805,9 +808,10 @@ pub fn rules(format: &DocumentFormat, p: &Particulars) -> String {
       {direction}
     }})
   }} else {{
-    block(width: 100%, above: 0pt, below: 0pt, breakable: false, inset: (left: indent * 1.5em), {{
-      if n != none {{ gk-at(side, {inset} + indent * 1.5em, gk-number(n)) }}
-      if margin != none {{ gk-at(notes, {inset} + indent * 1.5em, gk-margin(margin), out: out) }}
+    block(width: 100%, above: 0pt, below: 0pt, breakable: false, inset: (left: indent * {step}), {{
+      if n != none {{ gk-at(side, {inset} + indent * {step}, gk-number(n)) }}
+      if margin != none {{ gk-at(notes, {inset} + indent * {step}, gk-margin(margin), out: out) }}
+      if after != none {{ gk-after(after) }}
       body
     }})
   }}
@@ -818,6 +822,7 @@ pub fn rules(format: &DocumentFormat, p: &Particulars) -> String {
             None => "if side == \"left\" { \"right\" } else { \"left\" }".to_owned(),
         },
         inset = line.indent_left,
+        step = f.text.indent_step,
         speaker_above = speaker_look.space_before,
         speaker_below = speaker_look.space_after,
         direction_above = direction_look.space_before,

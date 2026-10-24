@@ -245,6 +245,8 @@ export interface DocumentFormat {
     /** How far the first line of a paragraph begins in; nought for none. */
     indent: string;
     indentFirst: boolean;
+    /** The step of an indent, by which Tab sets lines and paragraphs in. */
+    indentStep: string;
     /** The space between paragraphs, beyond that between lines; nought for none. */
     spaceBetween: string;
     hyphenate: boolean;

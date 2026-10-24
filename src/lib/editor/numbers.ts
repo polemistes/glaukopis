@@ -37,6 +37,7 @@ import type { Block, ParagraphBlock } from '$lib/project/model/text';
 import { bracketsKey } from './brackets';
 import { withinLines } from './changes';
 import { paragraphsIn } from './commands';
+import { amongOthers } from './kinds';
 import { cursorLine, lineAtPos } from './keys';
 import {
   blockOf,
@@ -200,12 +201,19 @@ export interface LineMarks {
   margin: string | null;
   /** The line's own indent; where it is not given, it stays as it is. */
   indent?: number;
+  /** Whether the line begins where the line before ended; where it is not given, it stays as it is. */
+  continues?: boolean;
 }
 
-/** The attributes of a line mark that says what is given, the indent as it was where none is given. */
+/**
+ * The attributes of a line mark that says what is given, the indent and
+ * whether the line begins where the line before ended as they were where
+ * they are not given.
+ */
 function markAttrs(marks: LineMarks, was: Node | null): Record<string, unknown> {
   const indent = marks.indent ?? (Number(was?.attrs.indent) || 0);
   const hidden = marks.counted && marks.hidden;
+  const continues = marks.continues ?? was?.attrs.continues === true;
   return {
     number: marks.number?.trim() || null,
     counted: marks.counted ? null : false,
@@ -213,6 +221,7 @@ function markAttrs(marks: LineMarks, was: Node | null): Record<string, unknown> 
     shown: marks.counted && marks.shown && !hidden ? true : null,
     margin: marks.margin?.trim() || null,
     indent: indent > 0 ? Math.min(8, Math.round(indent)) : null,
+    continues: continues ? true : null,
   };
 }
 
@@ -238,6 +247,69 @@ function marksOf(mark: Node | null): LineMarks {
     shown: mark?.attrs.shown === true && mark?.attrs.hidden !== true,
     margin: (mark?.attrs.margin as string | null) ?? null,
     indent: Number(mark?.attrs.indent) || 0,
+    continues: mark?.attrs.continues === true,
+  };
+}
+
+/**
+ * Where the nearest line above the line that begins at `linePos` ends, of
+ * those that have words in them, in the same text: in the same paragraph,
+ * else in the paragraphs before, passing over blank lines, paragraphs of
+ * speakers and of stage directions, and what is not a paragraph. Nothing
+ * where there is none: the line is the first of its text.
+ */
+export function lineBefore(
+  doc: Node,
+  linePos: number,
+  own: readonly BasedKind[] = [],
+): number | null {
+  const found = lineAtPos(doc, linePos);
+  if (!found) return null;
+  for (let i = found.line.index - 1; i >= 0; i--)
+    if (!found.lines[i].blank) return found.lines[i].end;
+  const $p = doc.resolve(found.pos);
+  const parent = $p.parent;
+  let pos = found.pos;
+  for (let i = $p.index() - 1; i >= 0; i--) {
+    const node = parent.child(i);
+    pos -= node.nodeSize;
+    if (node.type.name !== 'paragraph' || amongOthers(kindOfNode(node), own)) continue;
+    const lines = linesOfNode(node, pos);
+    for (let j = lines.length - 1; j >= 0; j--) if (!lines[j].blank) return lines[j].end;
+  }
+  return null;
+}
+
+/** Whether the line the cursor is in begins where the line before ended, and whether it can: whether there is a line before. */
+export function continuesAt(
+  state: EditorState,
+  own: readonly BasedKind[] = [],
+): { on: boolean; can: boolean } | null {
+  const found = cursorLine(state);
+  if (!found) return null;
+  return {
+    on: found.line.mark?.attrs.continues === true,
+    can: lineBefore(state.doc, found.line.start, own) !== null,
+  };
+}
+
+/**
+ * Has the line the cursor is in begin where the line before ended, or no
+ * more: nothing else of the line changes, and its count is what its
+ * numbering says. Not the first line of a text, which has no line before.
+ */
+export function continueLine(on: boolean, own: readonly BasedKind[] = []): Command {
+  return (state, dispatch) => {
+    const found = cursorLine(state);
+    if (!found) return false;
+    if (on && lineBefore(state.doc, found.line.start, own) === null) return false;
+    if (dispatch) {
+      const tr = state.tr;
+      const marks = marksOf(found.line.mark);
+      setMark(tr, found.line, markAttrs({ ...marks, continues: on }, found.line.mark));
+      if (tr.docChanged) dispatch(tr);
+    }
+    return true;
   };
 }
 
@@ -467,16 +539,26 @@ export function lineAsked(
 
 /**
  * How the layout shows the numbers of a stretch that does not say: every
- * how many, and on which side; and on which side the annotations stand,
- * nothing for across from the numbers.
+ * how many, and on which side; on which side the annotations stand,
+ * nothing for across from the numbers; and the step of an indent, in
+ * points, by which lines and paragraphs are set in.
  */
 export interface NumbersLayout {
   every: number;
   side: Side;
   annotations: Side | null;
+  step: number;
 }
 
-export const LAYOUT_NUMBERS: NumbersLayout = { every: 5, side: 'left', annotations: null };
+/** 0.6 cm, the step of the layouts that ship, in points. */
+export const LAYOUT_STEP = (0.6 * 72) / 2.54;
+
+export const LAYOUT_NUMBERS: NumbersLayout = {
+  every: 5,
+  side: 'left',
+  annotations: null,
+  step: LAYOUT_STEP,
+};
 
 const key = new PluginKey<DecorationSet>('stretch-numbers');
 

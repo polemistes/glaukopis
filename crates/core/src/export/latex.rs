@@ -256,6 +256,10 @@ pub fn settings(f: &DocumentFormat, looks: &[&DocumentFormat], p: &Particulars) 
         );
     }
 
+    // A line that begins where the line before ended is set in by the width
+    // of that line, measured into this length (ADR 0067).
+    let _ = writeln!(h, "\\newlength{{\\gkafter}}");
+
     // Quotations.
     let _ = writeln!(h, "\\usepackage{{etoolbox}}\n\\usepackage{{setspace}}");
     let mut quote = String::new();

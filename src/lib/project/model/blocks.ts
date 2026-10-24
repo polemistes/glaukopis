@@ -172,6 +172,7 @@ function lineMarkElement(m: InlineLineMark): Y.XmlElement {
     shown: m.shown && !m.hidden ? true : null,
     margin: m.margin?.trim() || null,
     indent: indent > 0 ? indent : null,
+    continues: m.continues ? true : null,
   });
 }
 
