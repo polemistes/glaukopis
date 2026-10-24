@@ -29,4 +29,5 @@ document-sample-argues = hevdar noko anna.
 document-edited-by = Redigert av {"{}"}
 document-translated-by = Omsett av {"{}"}
 document-edited-and-translated-by = Redigert og omsett av {"{}"}
-document-and = og
+document-names-between = ,{" "}
+document-names-last = {" "}og{" "}

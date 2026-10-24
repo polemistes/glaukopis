@@ -42,5 +42,7 @@ document-sample-argues = argues otherwise.
 document-edited-by = Edited by {"{}"}
 document-translated-by = Translated by {"{}"}
 document-edited-and-translated-by = Edited and translated by {"{}"}
-# Between the last two names of a line of names: "A, B and C".
-document-and = and
+# Between the names of the editors or the translators on the title page,
+# and before the last of them: "A, B and C". A space is written {" "}.
+document-names-between = ,{" "}
+document-names-last = {" "}and{" "}

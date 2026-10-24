@@ -41,4 +41,5 @@ document-sample-argues = argumentiert anders.
 document-edited-by = Herausgegeben von {"{}"}
 document-translated-by = Übersetzt von {"{}"}
 document-edited-and-translated-by = Herausgegeben und übersetzt von {"{}"}
-document-and = und
+document-names-between = ,{" "}
+document-names-last = {" "}und{" "}

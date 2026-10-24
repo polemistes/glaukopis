@@ -41,4 +41,5 @@ document-sample-argues = hævder noget andet.
 document-edited-by = Redigeret af {"{}"}
 document-translated-by = Oversat af {"{}"}
 document-edited-and-translated-by = Redigeret og oversat af {"{}"}
-document-and = og
+document-names-between = ,{" "}
+document-names-last = {" "}og{" "}

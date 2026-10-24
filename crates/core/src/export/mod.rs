@@ -438,13 +438,17 @@ fn affiliation_lines(authors: &[&Contributor]) -> Vec<String> {
     lines
 }
 
-/// Names in a line, in the language of the document: *A*, *A and B*, *A, B and C*.
+/// Names in a line, in the language of the document: *A*, *A and B*, *A, B
+/// and C*; what stands between them and before the last is the language's,
+/// spaces and all, as Japanese has *A・B・C* with none.
 fn joined(names: &[String], language: Option<&str>) -> String {
     match names {
         [] => String::new(),
         [one] => one.clone(),
         [rest @ .., last] => {
-            format!("{} {} {last}", rest.join(", "), crate::document::term(language, "document-and"))
+            let between = crate::document::term(language, "document-names-between");
+            let before_last = crate::document::term(language, "document-names-last");
+            format!("{}{before_last}{last}", rest.join(&between))
         }
     }
 }

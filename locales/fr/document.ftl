@@ -41,4 +41,5 @@ document-sample-argues = soutient le contraire.
 document-edited-by = Édité par {"{}"}
 document-translated-by = Traduit par {"{}"}
 document-edited-and-translated-by = Édité et traduit par {"{}"}
-document-and = et
+document-names-between = ,{" "}
+document-names-last = {" "}et{" "}
