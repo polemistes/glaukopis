@@ -255,6 +255,7 @@ export function wordsOf(id: string): string {
  * keyboard AltGr with 2 writes @: what AltGr writes is typing, not a key.
  */
 export function kindKeyOf(event: KeyboardEvent): string | null {
+  if (!event.altKey || !(event.ctrlKey || event.metaKey)) return null;
   if (event.getModifierState?.('AltGraph')) return null;
   for (const entry of KEYS) {
     const digit = kindDigitOf(entry.id);
