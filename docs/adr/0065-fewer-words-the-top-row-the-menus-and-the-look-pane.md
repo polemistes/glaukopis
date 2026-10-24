@@ -1,6 +1,6 @@
 # 0065 — Fewer words: the top row, the menus, and the Look pane in plain words
 
-Date: 2026-10-24. Status: accepted by the owner on 2026-10-24, from their comments after trying what 0064 built, an assessment with questions, and their answers (both in the brief, last section); to be built from `docs/plans/fewer-words-the-top-row-the-menus-and-the-look-pane.md`. A few choices made in writing this remain unasked (see below). Amends 0064 (the list's button at the far left of the top row; the × at the right end of a side's bar), 0063 (the list, with the count of projects on a folder), 0042 and 0054 (the words of Look), 0038 and 0055 (the parts of a document, front and back, in Look), 0040 (the quotations part of a layout), 0029 (the hints of the menus), 0019 (the words of folding and of the element's menu), the element that stands for another (0037's include), and the element's switch *Print the name as a heading*.
+Date: 2026-10-24. Status: accepted by the owner on 2026-10-24, from their comments after trying what 0064 built, an assessment with questions, their answers, and their word on the last three choices: *Time stamp…*, *sub-elements*, and clones with names of their own (all in the brief, last section); to be built from `docs/plans/fewer-words-the-top-row-the-menus-and-the-look-pane.md`. A few choices made in writing this remain unasked (see below). Amends 0064 (the list's button at the far left of the top row; the × at the right end of a side's bar), 0063 (the list, with the count of projects on a folder), 0042 and 0054 (the words of Look), 0038 and 0055 (the parts of a document, front and back, in Look), 0040 (the quotations part of a layout), 0029 (the hints of the menus), 0019 (the words of folding and of the element's menu), the element that stands for another (0037's include), and the element's switch *Print the name as a heading*.
 
 ## Context
 
@@ -30,7 +30,7 @@ What the assessment found:
 
 - The diagram's right-click menu, the element's menu, the submenu of its kind, the text's right-click menu and the library's menu have **no hints**.
 - ***Print the name as a heading* goes**, and the flag behind it is no longer read: every element's name is printed as a heading, the levels of the text count every element, and the text shows no *Not printed*.
-- **The clone.** *Stand for another element* is **Clone other element…**. A clone has no name, no text and no sub-elements of its own: it shows the original's name, greyed and with the clone's mark, in the diagram and in the text, and in the document the original's tree stands where the clone is, name and all, at the clone's level. The original is printed at its own place as well, where it is within the document. *Clone other element…* is offered on an element that has no text and no sub-elements, and disabled on one that has; on a clone the menu says *Clone of “…”*, with *Choose another element…*, *Go to the original* and *No longer a clone*. *Add child element*, *Write its text*, *Rename* and *Paste under it* are disabled on a clone, and nothing can be dropped onto it. A clone of a clone is a clone of the original. A cycle is refused as today. In the text, the clone is a row with the original's name and *Go to the original*; the text itself is read in the original.
+- **The clone.** *Stand for another element* is **Clone other element…**. A clone has a name of its own and no text and no sub-elements of its own: in the document its own name is printed as the heading, and under it the original's text and sub-elements, at the clone's level; so a chapter can have another title in the book than where it is written. The original is printed at its own place as well, where it is within the document. *Clone other element…* is offered on an element that has no text and no sub-elements, and disabled on one that has; on a clone the menu says *Clone of “…”*, with *Choose another element…*, *Go to the original* and *No longer a clone*. *Add child element*, *Write its text* and *Paste under it* are disabled on a clone, and nothing can be dropped onto it; *Rename* is not. A clone of a clone is a clone of the original. A cycle is refused as today. In the text, the clone is its name, with a row *Clone of “…”* and *Go to the original*; the text itself is read in the original.
 - **The words of the element's menu**: *Add child element*, *Add sibling element*; *Time stamp…* for *Say when it is…* and *When it is…*, the dialog's title too; *Delete and promote sub-elements* for *Delete, keeping what is under it*, *Delete with sub-elements* for *Delete* on an element with sub-elements, and *Delete* where there are none.
 - **The words of folding**: *Unfold this element*, *Fold this element*, *Unfold all sub-elements*, *Fold all sub-elements*, *Unfold all*; the outline's buttons, the tooltips of the fold marks and the keys' words say *fold* and *unfold* likewise.
 - The kinds of the catalogue are listed **in one list, in the catalogue's order**, without the headings *Front matter*, *Back matter* and *Cover*, in the element's kind submenu and in the document type's editor; the words "printed at the front" and "printed at the back" go. *On the cover only* and *Not printed* stay.
@@ -60,9 +60,9 @@ What the assessment found:
 
 ## Choices made in writing this, which the owner has not been asked about
 
-1. **The clone shows the original's name and cannot be renamed.** The owner asked for no text and no sub-elements; the name is the step further, so that a clone is what the word says. The clone's own name, where older data has one, is not shown.
-2. ***Time stamp…*** is the owner's word; *Place in time…* was offered instead, since a time stamp usually names when something was recorded. One word changes if the owner prefers it.
-3. ***Delete with sub-elements* and *Delete and promote sub-elements***, in place of the owner's *content*, which also names the text, deleted in both cases; plain *Delete* where there are no sub-elements.
+1. **The clone's name is its own, the rest the original's**, as the owner decided; *Rename* works on a clone.
+2. ***Time stamp…*** and ***sub-elements***, as the owner decided.
+3. **Plain *Delete*** where an element has no sub-elements.
 4. **The text menu's four hints go too** (*Enter*, *Split*, *Fold all sub-elements*, *Number these lines…*), since the owner reworded that menu; the other hints of the application (the review, the tables, the files, the library's references) stay and are listed in the report.
 5. **One list in print order** in place of *Moveable parts* and *Placed parts*: it shows the whole document as it will print and needs no front or back.
 6. **The source of a layout's requirements** is kept as one line in the Document type tab.
@@ -76,7 +76,7 @@ What the assessment found:
 - *Keep the quotations rows beside the kinds list*: two places for one look.
 - *Drop the thresholds*: the publishers' rules are worth keeping, and a warning makes them useful.
 - *A flat count of words a line*: the layout knows its measure and type; an estimate from them is nearer the publisher's rule.
-- *A clone with its own name*: a heading of one name over the text of another is the hybrid the owner found random.
+- *A clone with the original's name*: the owner wants a chapter to have another title in the book than where it is written.
 - *Two headings for the parts*: see choice 5.
 - *Keep front and back in the words*: the type's order is the truth, and the words only confused.
 - *Keep the heading flag, unread but settable in the data*: a feature that cannot be reached is a trap.

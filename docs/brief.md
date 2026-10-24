@@ -1172,3 +1172,7 @@ The owner's answers, the same day:
 > Consider these suggestions, and tell me what you think, and whether you have reservations or better suggestions. If not, remake the plan.
 
 The assessment: the original already prints at its own place as well as where it is cloned; today the standing element may have text and sub-elements of its own, which print around the original's tree, and nothing needs that: a clone has none, shows the original's name and cannot be renamed. Lines are known only after typesetting; the checklist estimates them from the layout's measure and type size. The library's menu is found and reworded. The renamings are taken, with *sub-elements* in place of *content* in the two delete items, plain *Delete* where there are none, and *Time stamp…* as asked with *Place in time…* offered instead; the text menu's four help texts go with the rest. The record and the plan are remade accordingly.
+
+The owner's word on the last three:
+
+> 1. Time stamp. 2. sub-element it is. 3. Let the clones have their own names, so their title in the document can be different from the original. But no content or children. Other than that, do the plan.
