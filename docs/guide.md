@@ -596,9 +596,12 @@ word in another language. A kind says what the words are, not how they
 look, and it is a label and nothing more: no kind follows another, and the
 keys are the same in all of them. The look comes from the layout of the
 document, which has a look for every kind and changes with the layout;
-where you write, the editor shows each kind by cues of its own — a
-quotation set in, a speaker in small capitals, a direction in italics —
-which go into no document.
+where you write, the editor shows each kind by cues of its own, which go
+into no document: a speaker in small capitals, a direction in italics,
+and only what stands apart from the text by nature set in — a quotation,
+its attribution, code, an epigraph, and the lists, whose marks hang. The
+lines of a verse and the parts of a play or a script stand at the edge
+where you write, as text does; the page sets them in as the layout says.
 
 You choose one thing: the kind of a paragraph. **Paragraph kind**, in the
 bar, shows the kind of the paragraph the cursor is in, or **Mixed**
@@ -2409,14 +2412,17 @@ you scroll, mark the part you are in, and go to each:
 Under **Paragraph kinds**, and again under **Words kinds**, every kind is listed: first those
 this document uses, then the rest by group, and your own kinds after them,
 each with what it is based on and, at the right of its line, what is said
-of it, or *as the base* where nothing is. Open a kind, and a line says how
+of it, or *as the base* where nothing is. A kind you open stays open while
+you change it, until you close it. Open a kind, and a line says how
 it will stand, **As it will stand**: the base look of the kind, then the
 kinds it is based on, then what the layout and the document say, resolved
 into one. The rows under it are size, alignment, indents, the first line,
 space before and after, bold, italic, letters, underlining, letters of
 equal width, whether it keeps with what follows, and whether it begins a
 new page; where a row says nothing it shows what the base comes to, *As the
-base (1.27cm)*. **First line** is how far the first line begins in beyond
+base (1.27cm)*. Small capitals are the font's own where it has them; in a
+font that has none, such as Times New Roman, the small letters are set as
+capitals a fifth smaller, as they are shown where you write. **First line** is how far the first line begins in beyond
 the rest; **Kept with the next** keeps it from being left alone at the foot
 of a page; letters of equal width are set as code is; and what stands in a
 break is * * * where nothing is said, # for a manuscript.

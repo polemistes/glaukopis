@@ -226,6 +226,10 @@ export function inHand(project: Project, templateKinds: readonly string[] = []):
  * centimetre is about 2.4em on screen and 12pt about an em, so the
  * measures in points are those of the screen; `app.css` has only what
  * depends on the paragraphs around, and the signs before a list's items.
+ * Only what is set off from the text by nature stands in on screen: a
+ * quotation, its attribution, code and an epigraph, and the lists, whose
+ * signs hang; the lines of a verse and the parts of a play or a script are
+ * not set in, as they would be on the page (ADR 0066).
  */
 const CUES: Record<string, Look> = {
   quote: { indentLeft: '16.5pt', size: 11.5 },
@@ -243,26 +247,19 @@ const CUES: Record<string, Look> = {
     spaceAfter: '18pt',
     firstLine: '0pt',
   },
-  line: { indentLeft: '1cm' },
-  speaker: { case: 'smallcaps', indentLeft: '1cm', spaceBefore: '7pt' },
-  direction: { italic: true, indentLeft: '1cm', spaceBefore: '2.4pt', spaceAfter: '2.4pt' },
+  speaker: { case: 'smallcaps', spaceBefore: '7pt' },
+  direction: { italic: true, spaceBefore: '2.4pt', spaceAfter: '2.4pt' },
   scene: { bold: true, case: 'upper', spaceBefore: '16.5pt', align: 'left' },
   action: { align: 'left' },
-  character: { indentLeft: '5.6cm', case: 'upper', spaceBefore: '10.6pt', spaceAfter: '0pt' },
-  dialogue: { indentLeft: '2.5cm', indentRight: '3.8cm', spaceBefore: '0pt', spaceAfter: '0pt' },
-  parenthetical: {
-    indentLeft: '4cm',
-    indentRight: '4cm',
-    spaceBefore: '0pt',
-    spaceAfter: '0pt',
-    italic: true,
-  },
+  character: { case: 'upper', spaceBefore: '10.6pt', spaceAfter: '0pt' },
+  dialogue: { spaceBefore: '0pt', spaceAfter: '0pt' },
+  parenthetical: { spaceBefore: '0pt', spaceAfter: '0pt', italic: true },
   transition: { align: 'right', case: 'upper', spaceBefore: '10.6pt' },
   headword: { bold: true, spaceBefore: '6pt', spaceAfter: '0pt', firstLine: '0pt' },
-  gloss: { indentLeft: '1.27cm', spaceBefore: '0pt', spaceAfter: '6pt' },
+  gloss: { spaceBefore: '0pt', spaceAfter: '6pt' },
   item: { indentLeft: '18.9pt' },
   numbered: { indentLeft: '18.9pt' },
-  code: { monospace: true, lineSpacing: 1, align: 'left', size: 10.3 },
+  code: { monospace: true, lineSpacing: 1, align: 'left', size: 10.3, indentLeft: '16.5pt' },
   break: { align: 'center', spaceBefore: '12pt', spaceAfter: '12pt', text: '* * *' },
   foreign: { italic: true },
   title: { italic: true },

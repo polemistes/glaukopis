@@ -18,6 +18,7 @@
    * written as the element's changes, each a step of undo of its own.
    */
   import { tick, untrack } from 'svelte';
+  import { SvelteSet } from 'svelte/reactivity';
   import Minus from '@lucide/svelte/icons/minus';
   import Plus from '@lucide/svelte/icons/plus';
   import Search from '@lucide/svelte/icons/search';
@@ -407,7 +408,11 @@
   const SHOWN: readonly LookSection[] = LOOK_SECTIONS;
   /** The part at the top of the panel as it is scrolled: its chip is marked. */
   let section = $state<LookSection | null>(null);
-  let kindInView = $state<string | undefined>(undefined);
+  /**
+   * The kinds whose boxes are open, kept by kind for the life of the panel,
+   * so that a change, which may build the boxes anew, does not close one.
+   */
+  const openKinds = new SvelteSet<string>();
   let form = $state<HTMLDivElement>();
   let query = $state('');
   const searching = $derived(query.trim().length > 0);
@@ -420,7 +425,7 @@
     const asked = untrack(() => lookUi.request);
     untrack(() => {
       if (asked.section || asked.kind || asked.level || asked.at) query = '';
-      if (asked.kind) kindInView = asked.kind;
+      if (asked.kind) openKinds.add(asked.kind);
       aim = asked;
       lookHere();
       // Asked for from a chip on a line of an element under the document's: the changes hold for it.
@@ -1539,7 +1544,8 @@
   {@const said = says(f, k.id)}
   {@const look = resolved[k.id]?.look}
   <details
-    open={k.id === kindInView}
+    open={openKinds.has(k.id)}
+    ontoggle={(e) => (e.currentTarget.open ? openKinds.add(k.id) : openKinds.delete(k.id))}
     data-kind={k.id}
     data-said={said ? '' : null}
     data-changed={changesKind(k.id) ? '' : null}

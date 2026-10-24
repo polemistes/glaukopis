@@ -226,6 +226,46 @@ try {
     'and the preview sets the quotation so',
     await typstHas(/#show quote\.where\(block: true\): it => \{\s*set text\([^)]*style: "italic"/),
   );
+  // A kind's box stays open as it is changed, until it is closed: the
+  // quotation, opened from the menu; text, which the document uses, and an
+  // epigraph, which it does not, opened by their lines.
+  const stillOpen = async (kind, row, value) => {
+    const box = `.side .look .part details[data-kind="${kind}"]`;
+    if (!(await app.exec(`return !!document.querySelector(arguments[0])?.open`, box))) {
+      await app.exec(`document.querySelector(arguments[0] + ' > summary').scrollIntoView({ block: 'center' })`, box);
+      await sleep(200);
+      await app.click(`${box} > summary`);
+      await sleep(300);
+    }
+    await app.exec(
+      `const d = document.querySelector(arguments[0]);
+       const r = Array.from(d.querySelectorAll('.row')).find((r) => r.querySelector('.what').firstChild.textContent.trim() === arguments[1]);
+       const s = r.querySelector('select');
+       s.value = arguments[2];
+       s.dispatchEvent(new Event('change', { bubbles: true }));`,
+      box,
+      row,
+      value,
+    );
+    // The kinds in use are gathered a second after a change, and the looks resolved anew.
+    await sleep(1600);
+    return app.exec(`return !!document.querySelector(arguments[0])?.open`, box);
+  };
+  check('the box of the quotation stays open as it is changed', await stillOpen('quote', 'Bold', 'yes'));
+  check('the box of text, which the document uses, stays open as it is changed', await stillOpen('text', 'Bold', 'yes'));
+  check('and again at a second change', await stillOpen('text', 'Bold', 'no'));
+  check('the box of an epigraph, which the document does not use, stays open as it is changed', await stillOpen('epigraph', 'Bold', 'yes'));
+  await app.click('.side .look .part details[data-kind="epigraph"] > summary');
+  await sleep(300);
+  await app.lookSection('Paragraphs');
+  await sleep(300);
+  check(
+    'a box closed stays closed, the others open',
+    await app.exec(
+      `const open = (k) => document.querySelector('.side .look .part details[data-kind="' + k + '"]').open;
+       return !open('epigraph') && open('text') && open('quote');`,
+    ),
+  );
   await sleep(1500);
   await app.screenshot('look-3-kinds');
 

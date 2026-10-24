@@ -103,22 +103,50 @@ fn align(a: Align) -> &'static str {
     }
 }
 
-fn cased(case: Case, body: &str) -> String {
+/// Small capitals where the font has none of its own: the small letters
+/// as capitals at four fifths of the size, the capitals as they are, as the
+/// text view makes them.
+const MADE_SMALL_CAPS: &str = "show regex(\"\\\\p{Ll}+\"): it => text(size: 0.8em, upper(it))";
+
+/// Whether the font that sets a family has small capitals of its own: the
+/// first of the family and its stand-ins that there is a font of. Typst's
+/// `smallcaps` takes them from the font, and sets the letters as they are
+/// where it has none.
+fn own_small_caps(family: &str) -> bool {
+    std::iter::once(family.trim())
+        .chain(fallbacks(family))
+        .find_map(crate::export::typeset::has_small_caps)
+        .unwrap_or(false)
+}
+
+/// The family that sets a look of a kind: the type of code where it is
+/// set as code, else the text's.
+fn family_of<'a>(look: &Resolved, format: &'a DocumentFormat) -> &'a str {
+    if look.monospace { MONOSPACE } else { &format.font.family }
+}
+
+/// The font of code, and of kinds set as code.
+const MONOSPACE: &str = "DejaVu Sans Mono";
+
+/// Content in the case asked for, in a font of the family given: small
+/// capitals the font's own where it has them, else made of capitals.
+fn cased(case: Case, family: &str, body: &str) -> String {
     match case {
         Case::None => body.to_owned(),
         Case::Upper => format!("upper({body})"),
-        Case::Smallcaps => format!("smallcaps({body})"),
+        Case::Smallcaps if own_small_caps(family) => format!("smallcaps({body})"),
+        Case::Smallcaps => format!("{{ {MADE_SMALL_CAPS}; {body} }}"),
     }
 }
 
 /// Content set as a look of words says: `smallcaps(body)`, `emph(body)`.
-fn worded(look: &Resolved, body: &str) -> String {
+fn worded(look: &Resolved, format: &DocumentFormat, body: &str) -> String {
     let mut out = body.to_owned();
     if look.size > 0.0 {
         out = format!("text(size: {}, {out})", pt(look.size));
     }
     if look.monospace {
-        out = format!("text(font: \"DejaVu Sans Mono\", {out})");
+        out = format!("text(font: {}, {out})", string(MONOSPACE));
     }
     if look.bold {
         out = format!("strong({out})");
@@ -129,11 +157,11 @@ fn worded(look: &Resolved, body: &str) -> String {
     if look.underline {
         out = format!("underline({out})");
     }
-    cased(look.case, &out)
+    cased(look.case, family_of(look, format), &out)
 }
 
 /// The rule that sets a kind of paragraph as its look says.
-fn kind_rule(out: &mut String, id: &str, look: &Resolved, body_leading: &str) {
+fn kind_rule(out: &mut String, id: &str, look: &Resolved, format: &DocumentFormat, body_leading: &str) {
     let _ = writeln!(
         out,
         "#show <gk-kind-{id}>: it => {{
@@ -145,7 +173,7 @@ fn kind_rule(out: &mut String, id: &str, look: &Resolved, body_leading: &str) {
         size = pt(look.size),
         weight = if look.bold { "\"bold\"" } else { "\"regular\"" },
         style = if look.italic { "\"italic\"" } else { "\"normal\"" },
-        font = if look.monospace { ", font: \"DejaVu Sans Mono\"" } else { "" },
+        font = if look.monospace { format!(", font: {}", string(MONOSPACE)) } else { String::new() },
         first = look.first_line,
         leading = leading(look.line_spacing.max(0.8)),
         justify = look.align == Align::Justified,
@@ -156,7 +184,7 @@ fn kind_rule(out: &mut String, id: &str, look: &Resolved, body_leading: &str) {
         right = look.indent_right,
         breakable = !look.keep_with_next,
         sticky = look.keep_with_next,
-        body = cased(look.case, "it.body"),
+        body = cased(look.case, family_of(look, format), "it.body"),
     );
 }
 
@@ -207,7 +235,7 @@ fn heading_rule(out: &mut String, level: usize, h: &HeadingLevel, format: &Docum
         // each line: so the text below a heading stands further from it than
         // the space after the heading alone.
         extra = pt(((format.text.line_spacing - 1.0) * 1.2 * format.font.size).max(0.0)),
-        body = cased(h.case, "it.body"),
+        body = cased(h.case, &format.font.family, "it.body"),
     );
 }
 
@@ -258,10 +286,10 @@ fn margin_item(item: &Item, m: &Margin, format: &DocumentFormat, p: &Particulars
             "{{ let here = here(); let on = query(heading.where(level: 1).after(here)).filter(h => h.location().page() == here.page()); \
              let before = query(heading.where(level: 1).before(here)); \
              if on.len() > 0 {{ {} }} else if before.len() > 0 {{ {} }} }}",
-            cased(m.case, "on.first().body"),
-            cased(m.case, "before.last().body"),
+            cased(m.case, &format.font.family, "on.first().body"),
+            cased(m.case, &format.font.family, "before.last().body"),
         ),
-        _ => cased(m.case, &format!("text({})", string(&p.words(item, format)?))),
+        _ => cased(m.case, &format.font.family, &format!("text({})", string(&p.words(item, format)?))),
     })
 }
 
@@ -510,6 +538,12 @@ pub fn rules(format: &DocumentFormat, p: &Particulars) -> String {
         region = region.map(|r| format!("\n  region: {},", string(&r))).unwrap_or_default(),
         hyphenate = f.text.hyphenate,
     );
+    // The small capitals Pandoc writes, of the marks and the kinds of words,
+    // made of capitals where the font has none of its own, as the rules here
+    // make theirs (`cased`).
+    if !own_small_caps(&f.font.family) {
+        let _ = writeln!(out, "#show smallcaps: it => {{ {MADE_SMALL_CAPS}; it.body }}");
+    }
     // The indent of the first line and the space between paragraphs, both as said, either nought.
     let indent = format!("(amount: {}, all: {})", f.text.indent, f.text.indent_first);
     let spacing = format!("{body_leading} + {}", f.text.space_between);
@@ -740,8 +774,8 @@ pub fn rules(format: &DocumentFormat, p: &Particulars) -> String {
             look.size = 0.0;
         }
     }
-    let speaker = worded(&speaker_look, "body");
-    let direction = worded(&direction_look, "body");
+    let speaker = worded(&speaker_look, f, "body");
+    let direction = worded(&direction_look, f, "body");
     let _ = writeln!(
         out,
         "#let gk-verse(body) = block(width: 100%, above: {body_leading} + 0.6em, below: {body_leading} + 0.6em, inset: (left: {inset}), body)
@@ -788,7 +822,7 @@ pub fn rules(format: &DocumentFormat, p: &Particulars) -> String {
         if info.family != Family::Paragraph || id == "code" {
             continue;
         }
-        kind_rule(&mut out, &crate::document::pandoc::label(&id), &info.look, &body_leading);
+        kind_rule(&mut out, &crate::document::pandoc::label(&id), &info.look, f, &body_leading);
     }
     let code = kinds::resolve(f, "code", &p.own_kinds);
     let _ = writeln!(
@@ -907,7 +941,7 @@ pub fn rules(format: &DocumentFormat, p: &Particulars) -> String {
         title_leading = leading(1.05),
         align = align(t.align),
         abstract_align = align(t.align),
-        body = cased(t.case, "it.body"),
+        body = cased(t.case, &f.font.family, "it.body"),
     );
     match t.placement {
         TitlePlacement::OwnPage => {
@@ -1006,8 +1040,9 @@ mod tests {
             "{out}"
         );
         assert!(out.contains("inset: (left: 4cm, right: 0pt)"), "{out}");
+        let speaker = cased(Case::Smallcaps, &f.font.family, "body");
         assert!(
-            out.contains("if margin != none { gk-at(other, 1cm, gk-margin(margin)) }\n      smallcaps(body)\n"),
+            out.contains(&format!("if margin != none {{ gk-at(other, 1cm, gk-margin(margin)) }}\n      {speaker}\n")),
             "{out}"
         );
         assert!(out.contains("inset: (left: 1cm), body)"), "the verse stands in as far as a line looks: {out}");
@@ -1018,6 +1053,52 @@ mod tests {
         f.header.places.left = vec![Item::Author, Item::Title];
         let out = preamble(&f, &p);
         assert!(!out.contains("A. Scholar"), "an anonymous manuscript does not name its author anywhere");
+    }
+
+    #[test]
+    fn small_capitals_are_the_fonts_own_where_it_has_them_and_made_of_capitals_where_not() {
+        assert_eq!(cased(Case::Upper, "Anything", "it.body"), "upper(it.body)");
+        assert_eq!(cased(Case::None, "Anything", "it.body"), "it.body");
+        // A family there is no font of is set by its stand-ins, and asked of as they are.
+        assert_eq!(own_small_caps("No Such Font"), own_small_caps("Libertinus Serif"));
+        // Those that come with Typst: Libertinus has small capitals, the type of code has none.
+        #[cfg(feature = "embedded-fonts")]
+        {
+            assert!(own_small_caps("Libertinus Serif"));
+            assert_eq!(cased(Case::Smallcaps, "Libertinus Serif", "it.body"), "smallcaps(it.body)");
+            assert!(!own_small_caps(MONOSPACE));
+            assert_eq!(
+                cased(Case::Smallcaps, MONOSPACE, "it.body"),
+                "{ show regex(\"\\\\p{Ll}+\"): it => text(size: 0.8em, upper(it)); it.body }"
+            );
+
+            // Wherever small capitals are asked for: a kind, a heading, the title, the running head.
+            let mut f = DocumentFormat { name: "Test".into(), ..Default::default() };
+            f.font.family = MONOSPACE.into();
+            f.headings.levels[0].case = Case::Smallcaps;
+            f.title.case = Case::Smallcaps;
+            f.header = Margin {
+                shown: true,
+                case: Case::Smallcaps,
+                places: Sides { left: vec![Item::Title], ..Default::default() },
+                ..Default::default()
+            };
+            f.kinds.insert("epigraph".into(), kinds::Look { case: Some(Case::Smallcaps), ..Default::default() });
+            let p = Particulars { title: "Wrath".into(), ..Default::default() };
+            let out = preamble(&f, &p);
+            assert!(!out.contains("smallcaps("), "{out}");
+            assert!(
+                out.contains(&format!("#show smallcaps: it => {{ {MADE_SMALL_CAPS}; it.body }}")),
+                "the small capitals Pandoc writes are made too: {out}"
+            );
+            assert!(out.contains(&format!("{{ {MADE_SMALL_CAPS}; it.body }}")), "{out}");
+            assert!(out.contains(&format!("{{ {MADE_SMALL_CAPS}; text(\"Wrath\") }}")), "{out}");
+            assert!(out.contains(&format!("{{ {MADE_SMALL_CAPS}; body }}")), "the speaker of a verse: {out}");
+            f.font.family = "Libertinus Serif".into();
+            let out = preamble(&f, &p);
+            assert!(!out.contains(MADE_SMALL_CAPS) && !out.contains("#show smallcaps"), "{out}");
+            assert!(out.contains("smallcaps(text(\"Wrath\"))") && out.contains("smallcaps(it.body)"), "{out}");
+        }
     }
 
     #[test]
