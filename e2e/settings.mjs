@@ -228,6 +228,39 @@ try {
     JSON.stringify(kept),
   );
 
+  // ---- in plain words: no help texts but Hunspell's and the translators', the defaults with none, one frame to a field ----
+  const abouts = await app.exec(
+    `return Array.from(document.querySelectorAll('.settings p.about')).map((p) => p.textContent.trim().slice(0, 40))`,
+  );
+  check(
+    'the settings have no help texts but the one of the dictionaries and the one for translators',
+    abouts.length === 2 && /Hunspell/.test(abouts[0]) && /translators/.test(abouts[1]),
+    JSON.stringify(abouts),
+  );
+  const defaults = await app.exec(
+    `return ['Default document type', 'Default look', 'Default citation style'].map((name) => {
+       const label = Array.from(document.querySelectorAll('dialog[open] label')).find((l) => l.textContent.trim() === name);
+       const s = label && document.getElementById(label.htmlFor);
+       return s ? s.options[0].value + ':' + s.options[0].textContent.trim() : null;
+     })`,
+  );
+  check(
+    'the three defaults begin with none',
+    defaults.every((d) => d === ':None, as the document type has it'),
+    JSON.stringify(defaults),
+  );
+  await app.exec(`document.querySelector('[data-your-details]').scrollIntoView()`);
+  await sleep(200);
+  const frames = await app.exec(
+    `return Array.from(document.querySelectorAll('[data-your-details] input')).map((i) => getComputedStyle(i).borderTopStyle + '/' + getComputedStyle(i.parentElement).borderTopStyle)`,
+  );
+  check(
+    'each field of Your details has one frame',
+    frames.length > 0 && frames.every((f) => f === 'none/solid'),
+    JSON.stringify(frames),
+  );
+  await app.screenshot('settings-3c-your-details');
+
   // ---- every dialog is moved by its header, kept in the window, and put back by a double-click ----
   const where = () =>
     app.exec(

@@ -1742,13 +1742,13 @@ not always better. The data of more languages is imported under *Settings* ›
 spelling are (see *Spelling*): from the server of Glaukopis, which offers
 the best data there is for English, Norwegian, Swedish, Danish, German,
 French, Italian, Ancient Greek and Latin, for now, and **Fraktur (Gothic
-type)**, which reads the Gothic type that many Norwegian, Danish, Swedish
+type), German**, which reads the Gothic type that many Norwegian, Danish, Swedish
 and German books were set in before about 1900, whatever their language:
 choose it first, or alone, for such a book. It was made for German, and
 knows no *æ*, *ø* or *å*: in a Norwegian or Danish book it reads them as
 *e*, *o* and *a* (*vere* for *være*), and choosing Norwegian beside it does
-not bring them back. For such books the server offers **Fraktur, Danish and
-Norwegian (Gothic type)**: the same model taught on some fifteen thousand
+not bring them back. For such books the server offers **Fraktur (Gothic
+type), Norwegian and Danish**: the same model taught on some fifteen thousand
 lines of Norwegian books and newspapers in Gothic type of 1811 to 1920 from
 the National Library, read by eye. On lines of books it never saw it gets
 about one letter in three hundred wrong, against one in twenty-five for
@@ -1835,9 +1835,9 @@ language chosen is not that of the book, or its type is one the language's
 data does not know: a book in Gothic type read as Norwegian comes out as
 words that look right and are not (*ogfaa*, *famme* for *ogsaa*, *samme*).
 Where half of the pages or more were read poorly in a language once set in
-Gothic type, the window says that such books are read with the Fraktur
-model, or, where Norwegian or Danish was read, with Fraktur, Danish and
-Norwegian. A long *ſ* is an *s* printed in another shape, and Glaukopis writes it
+Gothic type, the window says that such books are read with Fraktur
+(Gothic type), German, or, where Norwegian or Danish was read, with Fraktur
+(Gothic type), Norwegian and Danish. A long *ſ* is an *s* printed in another shape, and Glaukopis writes it
 as *s* wherever it takes text: in what Tesseract reads, in the text a PDF
 has, and in the text laid unseen under a PDF made searchable, so that a
 search for *samme* finds what was printed *ſamme*.
@@ -2059,7 +2059,9 @@ their groups:
 The one in use is marked, and under it a line says how its pages are set
 and, where it brings a reference style, how it cites. Choosing takes effect
 at once, as a step of undo, and the typesetting follows; a double click chooses
-and closes.
+and closes. A type chosen brings its look and its citation style: a layout or
+a reference style chosen for the document in Look gives way to the type's, in
+the same step of undo.
 
 **Writing for a journal, a publisher or a style guide?**, under the kinds of
 text, is the second step: a template for each journal, publisher and style
@@ -2078,7 +2080,12 @@ else: a clone of a chapter (see *One tree, entered anywhere*) sends the chapter 
 while the book stays a book. Where it is taken from an element over this
 one, the chooser says **From** which; where the element chose itself, a
 line takes the one over it again. What new documents are, how their pages
-look and how they cite are chosen under *Settings* › *New documents*.
+look and how they cite are chosen under *Settings* › *New documents*, as
+**Default document type**, **Default look** and **Default citation style**;
+each may be **None, as the document type has it**, so that a new document is
+a plain document, and a type that brings no look or citation style of its
+own has those Glaukopis begins with, the Manuscript layout and Chicago's
+notes and bibliography.
 
 Underneath, three things are told apart, each with one job. You meet the
 last two by name in Look, at its foot:
@@ -2234,8 +2241,8 @@ template puts on the page, at the row that says whether it is shown at all,
 with how it is set under it. The chip knows the element its line stands
 in: pressed on a line of a chapter, Look opens with the changes set to hold
 for that chapter alone (see *Where changes hold*). The chips are turned off and on by the button
-with the tag at the foot of the typesetting, and by **Name what a line of the
-preview is** under *Settings* › *New documents*; the text of the pages is
+with the tag at the foot of the typesetting, and by **Display look chips in
+the preview window** under *Settings* › *New documents*; the text of the pages is
 selected and copied the same either way.
 
 The **layout** is the page, the type, the spacing, the headings, as a

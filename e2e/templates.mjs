@@ -419,7 +419,7 @@ try {
   await app.waitForText('dialog[open] header h2', 'Settings', 5000);
   await sleep(300);
   const usual = await app.exec(
-    `const label = Array.from(document.querySelectorAll('dialog[open] label')).find((l) => l.textContent.trim() === 'What new documents are');
+    `const label = Array.from(document.querySelectorAll('dialog[open] label')).find((l) => l.textContent.trim() === 'Default document type');
      const s = label && document.getElementById(label.htmlFor);
      if (!s) return null;
      s.scrollIntoView({ block: 'center' });
@@ -427,8 +427,8 @@ try {
        groups: Array.from(s.querySelectorAll('optgroup')).map((g) => g.label) };`,
   );
   check(
-    'the settings offer the usual template, plain at first, with every template',
-    !!usual && usual.value === 'plain' && usual.options.includes('article') && usual.options.includes('classical-quarterly') && usual.groups.includes('Your own'),
+    'the settings offer the usual template, plain at first, with none and every template',
+    !!usual && usual.value === 'plain' && usual.options[0] === '' && usual.options.includes('article') && usual.options.includes('classical-quarterly') && usual.groups.includes('Your own'),
     JSON.stringify(usual && { value: usual.value, options: usual.options.length, groups: usual.groups }),
   );
   await app.screenshot('templates-12-settings');
