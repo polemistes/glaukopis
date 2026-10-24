@@ -8,8 +8,6 @@ found-title = Lause kjeldetilvisingar
 # On the tab of the panel, beside the other tabs: short.
 found-tab = Lause tilvisingar
 found-between = Mellom kartet og dei lause kjeldetilvisingane
-found-taken = Det som blir teke for kjeldetilvisingar
-found-taken-always = Det eit program har laga, og taggar
 found-taken-years = Parentesar med eit årstal i
 found-taken-named = Notar som nemner eit verk i biblioteket
 found-taken-notes = Alle notar

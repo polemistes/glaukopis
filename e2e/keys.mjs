@@ -1,4 +1,5 @@
-// The keys: the sheet of them, and the palette of what can be done.
+// The keys: the sheet of them, and the palette of what can be done; Escape
+// closes any menu, the text's right-click menu keeping the focus.
 
 import { App, sleep } from './harness.mjs';
 
@@ -83,6 +84,39 @@ try {
   await app.keys(['Control', 'Shift', 'h']);
   await app.waitFor('.history-panel', 3000);
   check('the keys of a project are done from the table', await app.exists('.side-tabs [aria-label="History"][aria-selected="true"]'));
+
+  // --- Escape closes any menu: the text's right-click menu keeps the focus, and a menu closes whoever has it ---
+  await app.keys(['Control', 'w']);
+  await sleep(400);
+  await app.view('text');
+  await app.waitFor('.text-view .section .body', 5000);
+  await app.click('.text-view .section .body');
+  await sleep(300);
+  await app.keys('Sing, goddess, the wrath of Achilles.');
+  await sleep(600);
+  // Opened anew, the text is drawn without its editor, which the right press then makes.
+  await app.openProject('Wrath');
+  await app.waitFor('.text-view .section .body p', 8000);
+  await sleep(600);
+  await app.rightClick('.text-view .section .body p');
+  await app.waitFor('.menu', 3000);
+  await sleep(400);
+  check(
+    'the text’s right-click menu keeps the focus as the editor is made where it was pressed',
+    await app.exec(`return !!document.activeElement?.closest('.menu')`),
+    await app.exec(`return document.activeElement?.className ?? ''`),
+  );
+  await app.press('Escape');
+  await sleep(300);
+  check('and Escape closes it', !(await app.exists('.menu')));
+  await app.rightClick('.text-view .section .body p');
+  await app.waitFor('.menu', 3000);
+  await sleep(300);
+  await app.exec(`document.querySelector('.text-view .ProseMirror')?.focus()`);
+  await sleep(100);
+  await app.press('Escape');
+  await sleep(300);
+  check('Escape closes a menu where the text has the focus', !(await app.exists('.menu')));
 
   const errors = await app.pageErrors();
   check('no errors in the page', errors.length === 0, errors.join(' | '));

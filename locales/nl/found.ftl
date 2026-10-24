@@ -8,8 +8,6 @@ found-title = Gevonden verwijzingen
 # On the tab of the panel, beside the other tabs: short.
 found-tab = Gevonden
 found-between = Tussen de mindmap en de gevonden verwijzingen
-found-taken = Wat voor verwijzingen wordt aangezien
-found-taken-always = Wat een programma heeft gemaakt, en tags
 found-taken-years = Haakjes met een jaartal erin
 found-taken-named = Noten die een werk uit de bibliotheek noemen
 found-taken-notes = Elke noot

@@ -8,8 +8,6 @@ found-title = Παραπομπές που βρέθηκαν
 # On the tab of the panel, beside the other tabs: short.
 found-tab = Βρέθηκαν
 found-between = Ανάμεσα στον χάρτη και στις παραπομπές που βρέθηκαν
-found-taken = Τι λογαριάζεται για παραπομπή
-found-taken-always = Ό,τι έφτιαξε πρόγραμμα, και ετικέτες
 found-taken-years = Παρενθέσεις με έτος μέσα
 found-taken-named = Σημειώσεις που κατονομάζουν έργο της βιβλιοθήκης
 found-taken-notes = Κάθε σημείωση

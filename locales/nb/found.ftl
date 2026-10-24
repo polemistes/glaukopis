@@ -6,8 +6,6 @@
 found-title = Løse kildehenvisninger
 found-tab = Løse henvisninger
 found-between = Mellom kartet og de løse kildehenvisningene
-found-taken = Det som tas for kildehenvisninger
-found-taken-always = Det et program har laget, og tagger
 found-taken-years = Parenteser med et årstall i
 found-taken-named = Noter som nevner et verk i biblioteket
 found-taken-notes = Alle noter
@@ -115,3 +113,8 @@ found-work-may-be = Det kan være
 found-work-another = En annen …
 found-work-find = Finn det …
 found-work-add = Legg det til i biblioteket
+
+## Fewer words, stage 2 (agent "chrome")
+
+# Over the switches of what is taken for citations in plain text.
+found-plain-text = Kildehenvisninger i ren tekst

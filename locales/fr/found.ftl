@@ -8,8 +8,6 @@ found-title = Citations non liées
 # On the tab of the panel, beside the other tabs: short.
 found-tab = Citations non liées
 found-between = Entre la carte et les citations non liées
-found-taken = Ce qui est pris pour des citations
-found-taken-always = Ce qu’un logiciel a fait, et les balises
 found-taken-years = Les parenthèses contenant une année
 found-taken-named = Les notes qui nomment une œuvre de la bibliothèque
 found-taken-notes = Toutes les notes

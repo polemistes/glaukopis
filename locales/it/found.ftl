@@ -8,8 +8,6 @@ found-title = Citazioni sciolte
 # On the tab of the panel, beside the other tabs: short.
 found-tab = Citazioni sciolte
 found-between = Tra la mappa e le citazioni sciolte
-found-taken = Che cosa è preso per citazione
-found-taken-always = Ciò che ha fatto un programma, e le etichette
 found-taken-years = Parentesi con dentro un anno
 found-taken-named = Note che nominano un'opera della biblioteca
 found-taken-notes = Ogni nota

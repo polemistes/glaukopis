@@ -1184,13 +1184,16 @@ another reference manager can read the whole.
 
 ### Importing
 
-**Import a file…** reads `.bib` files, BibLaTeX or BibTeX. **Paste
-references…** takes entries copied from a web page or another program.
+The arrow beside **New reference** has the ways to bring references in.
+**Import Bib(La)TeX…** reads `.bib` files, BibLaTeX or BibTeX.
 
-**Import from Zotero…** reads the library that Zotero keeps on this
-computer: all of it, or one collection, with the files and the notes if you
-wish. Zotero is only read; it may be running meanwhile. Its collections
+**Import from Zotero…**, under it, reads the library that Zotero keeps on
+this computer: all of it, or one collection, with the files and the notes if
+you wish. Zotero is only read; it may be running meanwhile. Its collections
 become collections here.
+
+**Paste references…** takes entries copied from a web page or another
+program; for **Add PDF files…**, see *PDF files*.
 
 Before anything is added you are shown what was found and what is already
 there. Importing the same a second time adds nothing.

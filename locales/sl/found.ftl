@@ -8,8 +8,6 @@ found-title = Najdene navedbe
 # On the tab of the panel, beside the other tabs: short.
 found-tab = Najdene navedbe
 found-between = Med miselnim vzorcem in najdenimi navedbami
-found-taken = Kaj se šteje za navedbe
-found-taken-always = Kar je naredil program, in oznake
 found-taken-years = Oklepaji z letnico
 found-taken-named = Opombe, ki imenujejo delo iz knjižnice
 found-taken-notes = Vsaka opomba

@@ -8,8 +8,6 @@ found-title = Loose citations
 # On the tab of the panel, beside the other tabs: short.
 found-tab = Loose citations
 found-between = Between the map and the loose citations
-found-taken = What is taken for citations
-found-taken-always = What a program made, and tags
 found-taken-years = Parentheses with a year in them
 found-taken-named = Notes that name a work of the library
 found-taken-notes = Every note
@@ -124,3 +122,8 @@ found-work-may-be = It may be
 found-work-another = Another…
 found-work-find = Find it…
 found-work-add = Add it to the library
+
+## Fewer words, stage 2 (agent "chrome")
+
+# Over the switches of what is taken for citations in plain text.
+found-plain-text = Plain text citations

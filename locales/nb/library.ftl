@@ -222,8 +222,6 @@ library-filter-clear = Fjern filtrene
 library-filter-nothing-here = Ingenting å filtrere her.
 library-nothing-passes = Ingen referanse i oversikten slipper gjennom filtrene.
 library-import-export = Importer og eksporter
-library-import-file = Importer en fil …
-    .hint = BibLaTeX eller BibTeX
 library-paste = Lim inn referanser …
 library-add-pdfs = Legg til PDF-filer …
 library-import-zotero = Importer fra Zotero …
@@ -507,3 +505,8 @@ library-switch-files = Filer
 
 library-resize-side = Dra for å gjøre samlingene eller mappene bredere eller smalere
 library-resize-detail = Dra for å gjøre ruten til høyre bredere eller smalere
+
+## Fewer words, stage 2 (agent "chrome")
+
+# Importing a file of references: .bib, BibLaTeX or BibTeX.
+library-import-bibtex = Importer Bib(La)TeX …

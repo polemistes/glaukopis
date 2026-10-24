@@ -235,8 +235,6 @@ library-filter-nothing-here = Nothing to filter here.
 # When the filters let nothing through.
 library-nothing-passes = No reference in view passes the filters.
 library-import-export = Import and export
-library-import-file = Import a file…
-    .hint = BibLaTeX or BibTeX
 library-paste = Paste references…
 library-add-pdfs = Add PDF files…
 library-import-zotero = Import from Zotero…
@@ -535,3 +533,8 @@ library-switch-files = Files
 
 library-resize-side = Drag to make the collections or folders wider or narrower
 library-resize-detail = Drag to make the pane at the right wider or narrower
+
+## Fewer words, stage 2 (agent "chrome")
+
+# Importing a file of references: .bib, BibLaTeX or BibTeX.
+library-import-bibtex = Import Bib(La)TeX…

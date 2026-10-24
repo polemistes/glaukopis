@@ -8,8 +8,6 @@ found-title = Citas encontradas
 # On the tab of the panel, beside the other tabs: short.
 found-tab = Citas encontradas
 found-between = Entre el mapa y las citas encontradas
-found-taken = Qué se toma por cita
-found-taken-always = Lo que hizo un programa, y las etiquetas
 found-taken-years = Paréntesis con un año dentro
 found-taken-named = Notas que nombran una obra de la biblioteca
 found-taken-notes = Todas las notas

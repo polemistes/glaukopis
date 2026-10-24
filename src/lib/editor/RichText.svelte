@@ -9,6 +9,7 @@
   import { CellSelection } from 'prosemirror-tables';
   import { insertPoint } from 'prosemirror-transform';
   import { notify, notifyError } from '$lib/ui/toast.svelte';
+  import { menuState } from '$lib/ui/menu.svelte';
   import { EditorView } from 'prosemirror-view';
   import { untrack } from 'svelte';
   import { ySyncPlugin, yCursorPlugin } from 'y-prosemirror';
@@ -559,7 +560,10 @@
       // The content arrives from the document a moment after the editor is made.
       setTimeout(() => {
         if (view !== created) return;
-        focus(how);
+        // Made by the press that opened a menu, the text's right-click menu,
+        // it takes the cursor there but leaves the focus to the menu, so that
+        // the menu's keys and Escape reach it.
+        focus(how, !!menuState.current);
         untrack(() => onready)?.(created);
       }, 20);
     }
@@ -570,7 +574,7 @@
     };
   });
 
-  export function focus(where: FocusAt = 'keep') {
+  export function focus(where: FocusAt = 'keep', quiet = false) {
     if (!view) return;
     const { state } = view;
     if (typeof where === 'object') {
@@ -590,7 +594,7 @@
               : TextSelection.atEnd(state.doc);
       view.dispatch(state.tr.setSelection(selection));
     }
-    view.focus();
+    if (!quiet) view.focus();
   }
 
   export function getView(): EditorView | undefined {
