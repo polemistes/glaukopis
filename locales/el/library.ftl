@@ -16,7 +16,6 @@ library-form-remove-field = Αφαίρεση του πεδίου { $field }
 
 library-names-kept-whole = Ίδρυμα ή άλλο όνομα που μένει ενιαίο
 library-names-prefix-suffix = Πρόθεμα και επίθημα
-    .hint = «van», «de la» · «Jr.», «III»
 library-names-move-up = Μετακίνηση πάνω
 library-names-move-down = Μετακίνηση κάτω
 library-names-more = Περισσότερα για αυτό το όνομα
@@ -427,7 +426,6 @@ library-pane-no-files = Κανένα αρχείο. Επισυνάψτε ένα P
 library-pane-detach-failed = Το αρχείο δεν μπόρεσε να αφαιρεθεί
 library-pane-leave-collection = Αφαίρεση από { $name }
 library-pane-duplicate = Αντίγραφο
-    .hint = Νέα αναφορά που αρχίζει με αυτά τα στοιχεία
 library-pane-edit-source = Επεξεργασία της πηγής…
 library-pane-source-subtitle = Η εγγραφή ως BibLaTeX. Τα περισσότερα είναι ευκολότερα στη φόρμα.
 library-pane-source-failed = Η πηγή δεν μπόρεσε να εμφανιστεί

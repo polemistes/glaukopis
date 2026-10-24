@@ -72,14 +72,10 @@ editor-numbers-page-hint = Każdy wiersz drukowanej strony, numerowany na margin
 editor-bracket-numbered = z numeracją
 editor-run-label-hint = { $kind } · naciśnij, by zobaczyć, co dotyczy tych akapitów
 editor-run-numbers = Numery…
-editor-run-numbers-hint = Jak liczy się tu wiersze, od jakiego numeru, co ile i po której stronie
 editor-run-select = Zaznacz te akapity
 editor-run-to-text = Zamień w tekst
-editor-run-to-text-hint = Akapity tego rodzaju stają się tekstem; ich wiersze i cała reszta zostają, jak są
 editor-run-begin = Zacznij tu nowy ciąg
-editor-run-begin-hint = Akapit, w którym jest kursor, zaczyna własną klamrę, choć poprzedni jest tego samego rodzaju
 editor-run-join = Połącz z poprzednim ciągiem
-editor-run-join-hint = Te akapity znów tworzą jedno z poprzedzającymi je akapitami tego samego rodzaju
 editor-kinds-text = Tekst
 editor-kinds-quotation = Cytat
 editor-kinds-verse = Wiersz
@@ -145,7 +141,6 @@ editor-kinds-change-own = Zmień własny rodzaj…
 # Over the item that opens the look of the document at the kind the cursor is in.
 editor-kinds-set-by = Składane tak, jak ma je „{ $format }”
 editor-kinds-change-look = Jak wygląda „{ $kind }”…
-editor-kinds-change-look-hint = Jego wygląd w tym dokumencie i reszta strony
 editor-words-make = Utwórz rodzaj słów…
 # Beside the language of the map, first among the languages foreign words may be in.
 editor-foreign-of-text = Język tekstu

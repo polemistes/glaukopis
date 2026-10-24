@@ -16,7 +16,6 @@ library-form-remove-field = Scoate { $field }
 
 library-names-kept-whole = Instituție sau alt nume păstrat întreg
 library-names-prefix-suffix = Particulă și sufix
-    .hint = „van”, „de la” · „Jr.”, „III”
 library-names-move-up = Mută mai sus
 library-names-move-down = Mută mai jos
 library-names-more = Mai mult pentru acest nume
@@ -467,7 +466,6 @@ library-pane-no-files = Niciun fișier. Atașați un PDF, sau trageți unul aici
 library-pane-detach-failed = Fișierul nu s-a putut scoate
 library-pane-leave-collection = Scoate din { $name }
 library-pane-duplicate = Dublează
-    .hint = O referință nouă care începe cu aceste date
 library-pane-edit-source = Modifică sursa…
 library-pane-source-subtitle = Intrarea ca BibLaTeX. Cele mai multe lucruri sunt mai ușoare în formular.
 library-pane-source-failed = Sursa nu s-a putut arăta

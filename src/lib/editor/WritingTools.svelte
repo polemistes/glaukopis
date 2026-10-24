@@ -515,7 +515,6 @@
         { kind: 'heading', label: t('editor-kinds-set-by', { format: formatName }) },
         {
           label: t('editor-kinds-change-look', { kind: nameOf(kind) }),
-          hint: t('editor-kinds-change-look-hint'),
           icon: Palette,
           disabled: !element,
           action: changeLook,

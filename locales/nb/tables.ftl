@@ -44,7 +44,6 @@ tables-right-hint = Innholdet i cellen står til høyre
 tables-table-hint = Om den er nummerert, hvor bred den er; fjern den
 tables-numbered = Nummerert
 tables-the-table = Tabellen …
-tables-the-table-hint = Hvor bred den er
 tables-remove = Fjern tabellen
 
 ## Panelet med det som kan sies om en tabell som helhet.

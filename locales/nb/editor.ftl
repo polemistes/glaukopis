@@ -72,14 +72,10 @@ editor-numbers-page-hint = Hver linje på den trykte siden, nummerert i margen, 
 editor-bracket-numbered = nummerert
 editor-run-label-hint = { $kind } · trykk for det som sies om disse avsnittene
 editor-run-numbers = Nummer …
-editor-run-numbers-hint = Hvordan linjene her telles, fra hvilket nummer, hver hvor mange og på hvilken side
 editor-run-select = Merk disse avsnittene
 editor-run-to-text = Gjør det til tekst
-editor-run-to-text-hint = Avsnittene av dette slaget blir tekst; linjene deres, og alt annet, blir som de er
 editor-run-begin = Begynn et nytt løp her
-editor-run-begin-hint = Avsnittet markøren står i, begynner en egen klamme, selv om det foran er av samme slag
 editor-run-join = Slå sammen med løpet foran
-editor-run-join-hint = Disse avsnittene blir ett med dem av samme slag foran dem igjen
 editor-kinds-text = Tekst
 editor-kinds-quotation = Sitat
 editor-kinds-verse = Vers
@@ -145,7 +141,6 @@ editor-kinds-change-own = Endre et av dine egne …
 # Over valget som åpner oppsettredigeringen: oppsettet bestemmer hvordan hvert slag ser ut.
 editor-kinds-set-by = Satt slik «{ $format }» har dem
 editor-kinds-change-look = Hvordan «{ $kind }» ser ut …
-editor-kinds-change-look-hint = Utseendet i dette dokumentet, og resten av siden
 editor-words-make = Lag et slag ord …
 # Først blant språkene ord på et annet språk kan være på: det teksten selv er på.
 editor-foreign-of-text = Språket i teksten

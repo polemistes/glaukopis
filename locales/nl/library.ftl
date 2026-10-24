@@ -16,7 +16,6 @@ library-form-remove-field = { $field } verwijderen
 
 library-names-kept-whole = Instelling of andere naam die heel blijft
 library-names-prefix-suffix = Tussenvoegsel en achtervoegsel
-    .hint = ‘van’, ‘de la’ · ‘jr.’, ‘III’
 library-names-move-up = Omhoog
 library-names-move-down = Omlaag
 library-names-more = Meer voor deze naam
@@ -427,7 +426,6 @@ library-pane-no-files = Geen bestanden. Voeg een PDF bij, of laat er hier een va
 library-pane-detach-failed = Het bestand kon niet worden verwijderd
 library-pane-leave-collection = Uit { $name } verwijderen
 library-pane-duplicate = Dupliceren
-    .hint = Een nieuwe referentie die met deze gegevens begint
 library-pane-edit-source = De bron bewerken…
 library-pane-source-subtitle = Het item als BibLaTeX. Het meeste gaat makkelijker in het formulier.
 library-pane-source-failed = De bron kon niet worden getoond

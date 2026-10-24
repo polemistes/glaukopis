@@ -14,7 +14,6 @@ review-choose-since = Review from another moment
 # Mends a review that has gone wrong: what was accepted since the moment
 # reviewed from is forgotten, and those changes are shown again.
 review-forget-accepted = Forget what you accepted
-review-forget-accepted-hint = The changes you accepted since then are shown again, to be reviewed anew.
 review-own = Your own changes too
 review-show-org = Show as Org
 review-unit = Review by

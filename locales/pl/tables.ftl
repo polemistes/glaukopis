@@ -48,7 +48,6 @@ tables-right-hint = Zawartość komórki stoi z prawej
 tables-table-hint = Czy jest numerowana, jak szeroka; usuń ją
 tables-numbered = Numerowana
 tables-the-table = Tabela…
-tables-the-table-hint = Jak jest szeroka
 tables-remove = Usuń tabelę
 
 ## The panel of what can be said of a table as a whole.

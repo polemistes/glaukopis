@@ -72,14 +72,10 @@ editor-numbers-page-hint = Ogni riga della pagina stampata, numerata a margine, 
 editor-bracket-numbered = con numeri
 editor-run-label-hint = { $kind } · premi per ciò che si dice di questi paragrafi
 editor-run-numbers = Numeri…
-editor-run-numbers-hint = Come si contano qui le righe, da quale numero, ogni quante e da quale lato
 editor-run-select = Seleziona questi paragrafi
 editor-run-to-text = Fanne testo
-editor-run-to-text-hint = I paragrafi di questo tipo diventano testo; le loro righe, e tutto il resto, restano come sono
 editor-run-begin = Comincia qui una nuova serie
-editor-run-begin-hint = Il paragrafo in cui sta il cursore comincia una parentesi sua, anche se quello prima è dello stesso tipo
 editor-run-join = Unisci alla serie precedente
-editor-run-join-hint = Questi paragrafi tornano a fare tutt'uno con quelli dello stesso tipo che li precedono
 editor-kinds-text = Testo
 editor-kinds-quotation = Citazione
 editor-kinds-verse = Versi
@@ -145,7 +141,6 @@ editor-kinds-change-own = Modifica un tipo tuo…
 # Over the item that opens the look of the document at the kind the cursor is in.
 editor-kinds-set-by = Resi come li ha «{ $format }»
 editor-kinds-change-look = Come appare «{ $kind }»…
-editor-kinds-change-look-hint = Il suo aspetto in questo documento, e il resto della pagina
 editor-words-make = Crea un tipo di parole…
 # Beside the language of the map, first among the languages foreign words may be in.
 editor-foreign-of-text = La lingua del testo

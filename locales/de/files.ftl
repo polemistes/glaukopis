@@ -33,7 +33,6 @@ files-kind-other = Andere Datei
 files-add = Dateien hinzufügen…
 files-add-title = Dateien zur Bibliothek hinzufügen
 files-add-folder = Ordner hinzufügen…
-files-add-folder-hint = Mit den Ordnern darin
 files-add-folder-title = Einen Ordner zur Bibliothek hinzufügen
 files-more = Weitere Wege zum Hinzufügen
 files-taking-in = { $count ->

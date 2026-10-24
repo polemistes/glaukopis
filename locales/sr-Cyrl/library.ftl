@@ -16,7 +16,6 @@ library-form-remove-field = Уклони { $field }
 
 library-names-kept-whole = Установа или друго име које се чува цело
 library-names-prefix-suffix = Префикс и суфикс
-    .hint = „van“, „de la“ · „Jr.“, „III“
 library-names-move-up = Помери горе
 library-names-move-down = Помери доле
 library-names-more = Још за ово име
@@ -459,7 +458,6 @@ library-pane-no-files = Нема датотека. Приложите PDF, ил�
 library-pane-detach-failed = Датотека није могла да се уклони
 library-pane-leave-collection = Уклони из: { $name }
 library-pane-duplicate = Удвостручи
-    .hint = Нова референца која почиње овим подацима
 library-pane-edit-source = Уреди извор…
 library-pane-source-subtitle = Унос као BibLaTeX. Већина ствари је лакша у обрасцу.
 library-pane-source-failed = Извор није могао да се прикаже

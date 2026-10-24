@@ -16,7 +16,6 @@ library-form-remove-field = Ta bort { $field }
 
 library-names-kept-whole = Institution eller annat namn som hålls helt
 library-names-prefix-suffix = Prefix och suffix
-    .hint = ”van”, ”de la” · ”Jr.”, ”III”
 library-names-move-up = Flytta upp
 library-names-move-down = Flytta ner
 library-names-more = Mer för det här namnet
@@ -470,7 +469,6 @@ library-pane-unassign-title = Ta bort ”{ $name }” från den här referensen?
 library-pane-unassign-message = Filen blir kvar bland bibliotekets filer, där den kan hittas och kopplas till en annan referens. Den raderas bara därifrån.
 library-pane-leave-collection = Ta bort från { $name }
 library-pane-duplicate = Kopiera
-    .hint = En ny referens som börjar med de här uppgifterna
 library-pane-edit-source = Redigera källtexten…
 library-pane-source-subtitle = Posten som BibLaTeX. Det mesta är lättare i formuläret.
 library-pane-source-failed = Källtexten kunde inte visas

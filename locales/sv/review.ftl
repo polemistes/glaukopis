@@ -14,7 +14,6 @@ review-choose-since = Granska från ett annat ögonblick
 # Mends a review that has gone wrong: what was accepted since the moment
 # reviewed from is forgotten, and those changes are shown again.
 review-forget-accepted = Glöm det du godtog
-review-forget-accepted-hint = Ändringarna du godtog sedan dess visas igen, för att granskas på nytt.
 review-own = Dina egna ändringar också
 review-show-org = Visa som Org
 review-unit = Granska per

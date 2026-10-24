@@ -46,7 +46,6 @@ tables-right-hint = Obsah buňky stojí vpravo
 tables-table-hint = Zda je číslovaná, jak je široká; odstranit ji
 tables-numbered = Číslovaná
 tables-the-table = Tabulka…
-tables-the-table-hint = Jak je široká
 tables-remove = Odstranit tabulku
 
 ## The panel of what can be said of a table as a whole.

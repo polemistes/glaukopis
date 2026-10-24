@@ -46,7 +46,6 @@ tables-right-hint = Sadržaj ćelije stoji desno
 tables-table-hint = Je li numerirana, koliko je široka; ukloni je
 tables-numbered = Numerirana
 tables-the-table = Tablica…
-tables-the-table-hint = Koliko je široka
 tables-remove = Ukloni tablicu
 
 ## The panel of what can be said of a table as a whole.

@@ -72,14 +72,10 @@ editor-numbers-page-hint = Fiecare rând al paginii tipărite, numerotat pe marg
 editor-bracket-numbered = cu numere
 editor-run-label-hint = { $kind } · apăsați pentru ce se spune despre aceste paragrafe
 editor-run-numbers = Numere…
-editor-run-numbers-hint = Cum se numără rândurile de aici, de la ce număr, din câte în câte și pe ce parte
 editor-run-select = Selectează aceste paragrafe
 editor-run-to-text = Fă din ele text
-editor-run-to-text-hint = Paragrafele de acest tip devin text; rândurile lor și tot restul rămân cum sunt
 editor-run-begin = Începe aici un șir nou
-editor-run-begin-hint = Paragraful în care este cursorul începe o acoladă a lui, deși cel dinainte este de același tip
 editor-run-join = Unește cu șirul dinainte
-editor-run-join-hint = Aceste paragrafe fac din nou un singur șir cu cele de același tip dinaintea lor
 editor-kinds-text = Text
 editor-kinds-quotation = Citat
 editor-kinds-verse = Versuri
@@ -145,7 +141,6 @@ editor-kinds-change-own = Modifică un tip propriu…
 # Over the item that opens the look of the document at the kind the cursor is in.
 editor-kinds-set-by = Așezate cum le are „{ $format }”
 editor-kinds-change-look = Cum arată „{ $kind }”…
-editor-kinds-change-look-hint = Aspectul lui în acest document și restul paginii
 editor-words-make = Fă un tip de cuvinte…
 # Beside the language of the map, first among the languages foreign words may be in.
 editor-foreign-of-text = Limba textului

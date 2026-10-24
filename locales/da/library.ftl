@@ -16,7 +16,6 @@ library-form-remove-field = Fjern { $field }
 
 library-names-kept-whole = Institution eller andet navn, der holdes samlet
 library-names-prefix-suffix = Præfiks og suffiks
-    .hint = »van«, »de la« · »jr.«, »III«
 library-names-move-up = Flyt op
 library-names-move-down = Flyt ned
 library-names-more = Mere for dette navn
@@ -470,7 +469,6 @@ library-pane-unassign-title = Fjern »{ $name }« fra denne reference?
 library-pane-unassign-message = Filen bliver blandt bibliotekets filer, hvor den kan findes og knyttes til en anden reference. Den slettes kun derfra.
 library-pane-leave-collection = Fjern fra { $name }
 library-pane-duplicate = Dupliker
-    .hint = En ny reference, der begynder med disse oplysninger
 library-pane-edit-source = Rediger kilden…
 library-pane-source-subtitle = Posten som BibLaTeX. Det meste er lettere i formularen.
 library-pane-source-failed = Kilden kunne ikke vises

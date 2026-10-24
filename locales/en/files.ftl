@@ -33,7 +33,6 @@ files-kind-other = Other file
 files-add = Add files…
 files-add-title = Add files to the library
 files-add-folder = Add a folder…
-files-add-folder-hint = With the folders in it
 files-add-folder-title = Add a folder to the library
 files-more = More ways to add
 files-taking-in = { $count ->

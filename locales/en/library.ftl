@@ -16,7 +16,6 @@ library-form-remove-field = Remove { $field }
 
 library-names-kept-whole = Institution or other name kept whole
 library-names-prefix-suffix = Prefix and suffix
-    .hint = “van”, “de la” · “Jr.”, “III”
 library-names-move-up = Move up
 library-names-move-down = Move down
 library-names-more = More for this name
@@ -470,7 +469,6 @@ library-pane-unassign-title = Remove “{ $name }” from this reference?
 library-pane-unassign-message = The file stays among the files of the library, where it can be found and given to another reference. It is deleted only from there.
 library-pane-leave-collection = Remove from { $name }
 library-pane-duplicate = Duplicate
-    .hint = A new reference beginning with these details
 library-pane-edit-source = Edit the source…
 library-pane-source-subtitle = The entry as BibLaTeX. Most things are easier in the form.
 library-pane-source-failed = The source could not be shown

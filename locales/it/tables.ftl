@@ -46,7 +46,6 @@ tables-right-hint = Il contenuto della cella sta a destra
 tables-table-hint = Se è numerata, quanto è larga; toglila
 tables-numbered = Numerata
 tables-the-table = La tabella…
-tables-the-table-hint = Quanto è larga
 tables-remove = Togli la tabella
 
 ## The panel of what can be said of a table as a whole.

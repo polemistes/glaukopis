@@ -16,7 +16,6 @@ library-form-remove-field = Remover { $field }
 
 library-names-kept-whole = Instituição ou outro nome que fica inteiro
 library-names-prefix-suffix = Prefixo e sufixo
-    .hint = «van», «de la» · «Jr.», «III»
 library-names-move-up = Mover para cima
 library-names-move-down = Mover para baixo
 library-names-more = Mais para este nome
@@ -455,7 +454,6 @@ library-pane-no-files = Sem ficheiros. Anexe um PDF, ou largue um aqui.
 library-pane-detach-failed = Não foi possível remover o ficheiro
 library-pane-leave-collection = Remover de { $name }
 library-pane-duplicate = Duplicar
-    .hint = Uma nova referência que começa com estes dados
 library-pane-edit-source = Alterar o código…
 library-pane-source-subtitle = A entrada em BibLaTeX. A maior parte das coisas é mais fácil no formulário.
 library-pane-source-failed = Não foi possível mostrar o código

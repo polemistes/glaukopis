@@ -16,7 +16,6 @@ library-form-remove-field = Fjern { $field }
 
 library-names-kept-whole = Institusjon eller anna namn som blir halde samla
 library-names-prefix-suffix = Forledd og etterledd
-    .hint = «van», «de la» · «Jr.», «III»
 library-names-move-up = Flytt opp
 library-names-move-down = Flytt ned
 library-names-more = Meir for dette namnet
@@ -470,7 +469,6 @@ library-pane-unassign-title = Fjerne «{ $name }» frå denne referansen?
 library-pane-unassign-message = Fila blir verande blant filene i biblioteket, der den kan finnast og bli gitt til ein annan referanse. Den blir berre sletta derifrå.
 library-pane-leave-collection = Fjern frå { $name }
 library-pane-duplicate = Dupliser
-    .hint = Ein ny referanse som byrjar med desse opplysningane
 library-pane-edit-source = Rediger kjeldekoden …
 library-pane-source-subtitle = Referansen som BibLaTeX. Det meste er lettare i skjemaet.
 library-pane-source-failed = Kjeldekoden kunne ikkje visast

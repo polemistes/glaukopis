@@ -46,7 +46,6 @@ tables-right-hint = O que a célula contém fica à direita
 tables-table-hint = Se é numerada, que largura tem; removê-la
 tables-numbered = Numerada
 tables-the-table = A tabela…
-tables-the-table-hint = Que largura tem
 tables-remove = Remover a tabela
 
 ## The panel of what can be said of a table as a whole.

@@ -16,7 +16,6 @@ library-form-remove-field = Retirer { $field }
 
 library-names-kept-whole = Institution ou autre nom gardé entier
 library-names-prefix-suffix = Particule et suffixe
-    .hint = « van », « de la » · « Jr. », « III »
 library-names-move-up = Monter
 library-names-move-down = Descendre
 library-names-more = Plus pour ce nom
@@ -501,7 +500,6 @@ library-pane-unassign-title = Retirer « { $name } » de cette référence�
 library-pane-unassign-message = Le fichier reste parmi les fichiers de la bibliothèque, où il peut être trouvé et donné à une autre référence. Il ne peut être supprimé que là.
 library-pane-leave-collection = Retirer de { $name }
 library-pane-duplicate = Dupliquer
-    .hint = Une nouvelle référence qui commence avec ces informations
 library-pane-edit-source = Modifier la source…
 library-pane-source-subtitle = L’entrée en BibLaTeX. La plupart des choses sont plus faciles dans le formulaire.
 library-pane-source-failed = La source n’a pas pu être affichée

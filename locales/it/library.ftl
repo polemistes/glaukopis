@@ -16,7 +16,6 @@ library-form-remove-field = Togli { $field }
 
 library-names-kept-whole = Istituzione o altro nome tenuto intero
 library-names-prefix-suffix = Prefisso e suffisso
-    .hint = «van», «de la» · «Jr.», «III»
 library-names-move-up = Sposta su
 library-names-move-down = Sposta giù
 library-names-more = Altro per questo nome
@@ -501,7 +500,6 @@ library-pane-unassign-title = Togliere «{ $name }» da questo riferimento?
 library-pane-unassign-message = Il file resta tra i file della biblioteca, dove si può trovare e dare a un altro riferimento. Si elimina solo da lì.
 library-pane-leave-collection = Togli da { $name }
 library-pane-duplicate = Duplica
-    .hint = Un nuovo riferimento che comincia con questi dati
 library-pane-edit-source = Modifica la sorgente…
 library-pane-source-subtitle = La voce come BibLaTeX. Quasi tutto è più facile nel modulo.
 library-pane-source-failed = La sorgente non si è potuta mostrare

@@ -16,7 +16,6 @@ library-form-remove-field = Usuń pole { $field }
 
 library-names-kept-whole = Instytucja lub inna nazwa w całości
 library-names-prefix-suffix = Przedrostek i przyrostek
-    .hint = „van”, „de la” · „Jr.”, „III”
 library-names-move-up = Przesuń w górę
 library-names-move-down = Przesuń w dół
 library-names-more = Więcej dla tej osoby
@@ -490,7 +489,6 @@ library-pane-no-files = Brak plików. Załącz PDF albo upuść go tutaj.
 library-pane-detach-failed = Nie udało się usunąć pliku
 library-pane-leave-collection = Usuń z { $name }
 library-pane-duplicate = Powiel
-    .hint = Nowa pozycja zaczynająca się od tych danych
 library-pane-edit-source = Edytuj źródło…
 library-pane-source-subtitle = Wpis jako BibLaTeX. Większość rzeczy łatwiej zrobić w formularzu.
 library-pane-source-failed = Nie udało się pokazać źródła

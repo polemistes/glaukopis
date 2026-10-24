@@ -16,7 +16,6 @@ library-form-remove-field = { $field } entfernen
 
 library-names-kept-whole = Institution oder anderer Name, ungeteilt
 library-names-prefix-suffix = Namensvorsatz und -zusatz
-    .hint = „van“, „de la“ · „Jr.“, „III“
 library-names-move-up = Nach oben
 library-names-move-down = Nach unten
 library-names-more = Mehr zu diesem Namen
@@ -470,7 +469,6 @@ library-pane-unassign-title = „{ $name }“ von dieser Quelle entfernen?
 library-pane-unassign-message = Die Datei bleibt unter den Dateien der Bibliothek, wo sie gefunden und einer anderen Quelle zugeordnet werden kann. Gelöscht wird sie nur dort.
 library-pane-leave-collection = Aus { $name } entfernen
 library-pane-duplicate = Duplizieren
-    .hint = Eine neue Quelle, die mit diesen Angaben beginnt
 library-pane-edit-source = Quelltext bearbeiten…
 library-pane-source-subtitle = Der Eintrag als BibLaTeX. Das meiste geht im Formular leichter.
 library-pane-source-failed = Der Quelltext konnte nicht gezeigt werden

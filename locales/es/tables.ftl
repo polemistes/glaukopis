@@ -46,7 +46,6 @@ tables-right-hint = El contenido de la celda va a la derecha
 tables-table-hint = Si está numerada, cuánto mide de ancho; quitarla
 tables-numbered = Numerada
 tables-the-table = La tabla…
-tables-the-table-hint = Cuánto mide de ancho
 tables-remove = Quitar la tabla
 
 ## The panel of what can be said of a table as a whole.

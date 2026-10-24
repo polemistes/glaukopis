@@ -366,7 +366,6 @@
         { kind: 'separator' },
         {
           label: t('library-pane-duplicate'),
-          hint: t('library-pane-duplicate.hint'),
           action: () => {
             const copy = draftOf(r);
             copy.key = '';

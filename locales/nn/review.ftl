@@ -14,7 +14,6 @@ review-choose-since = Gå gjennom frå ein annan augneblink
 # Mends a review that has gone wrong: what was accepted since the moment
 # reviewed from is forgotten, and those changes are shown again.
 review-forget-accepted = Gløym det du har godteke
-review-forget-accepted-hint = Endringane du har godteke sidan då, blir viste igjen, så du kan gå gjennom dei på nytt.
 review-own = Dine eigne endringar òg
 review-show-org = Vis som Org
 review-unit = Gå gjennom etter

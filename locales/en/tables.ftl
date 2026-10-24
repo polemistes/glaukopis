@@ -44,7 +44,6 @@ tables-right-hint = What the cell holds stands to the right
 tables-table-hint = Whether it is numbered, how wide it is; remove it
 tables-numbered = Numbered
 tables-the-table = The table…
-tables-the-table-hint = How wide it is
 tables-remove = Remove the table
 
 ## The panel of what can be said of a table as a whole.

@@ -44,7 +44,6 @@ tables-right-hint = Der Inhalt der Zelle steht rechts
 tables-table-hint = Ob sie nummeriert ist, wie breit sie ist; sie entfernen
 tables-numbered = Nummeriert
 tables-the-table = Die Tabelle…
-tables-the-table-hint = Wie breit sie ist
 tables-remove = Tabelle entfernen
 
 ## The panel of what can be said of a table as a whole.

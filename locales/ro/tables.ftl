@@ -46,7 +46,6 @@ tables-right-hint = Ce cuprinde celula stă la dreapta
 tables-table-hint = Dacă este numerotat, cât de lat este; scoate-l
 tables-numbered = Numerotat
 tables-the-table = Tabelul…
-tables-the-table-hint = Cât de lat este
 tables-remove = Scoate tabelul
 
 ## The panel of what can be said of a table as a whole.

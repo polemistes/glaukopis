@@ -72,14 +72,10 @@ editor-numbers-page-hint = Kvar linje på den trykte sida, nummerert i margen, i
 editor-bracket-numbered = nummerert
 editor-run-label-hint = { $kind } · trykk for det som blir sagt om desse avsnitta
 editor-run-numbers = Nummer …
-editor-run-numbers-hint = Korleis linjene her blir talde, frå kva nummer, kvar kor mange og på kva side
 editor-run-select = Merk desse avsnitta
 editor-run-to-text = Gjer det til tekst
-editor-run-to-text-hint = Avsnitta av dette slaget blir tekst; linjene deira, og alt anna, blir verande som dei er
 editor-run-begin = Byrj eit nytt løp her
-editor-run-begin-hint = Avsnittet markøren står i, byrjar ei eiga klamme, sjølv om det framfor er av same slaget
 editor-run-join = Slå saman med løpet framfor
-editor-run-join-hint = Desse avsnitta blir eitt med dei av same slaget framfor seg igjen
 editor-kinds-text = Tekst
 editor-kinds-quotation = Sitat
 editor-kinds-verse = Vers
@@ -145,7 +141,6 @@ editor-kinds-change-own = Endre eitt av dine eigne …
 # Over the item that opens the look of the document at the kind the cursor is in.
 editor-kinds-set-by = Sette slik «{ $format }» har dei
 editor-kinds-change-look = Korleis «{ $kind }» ser ut …
-editor-kinds-change-look-hint = Utsjånaden i dette dokumentet, og resten av sida
 editor-words-make = Lag eit slag ord …
 # Beside the language of the map, first among the languages foreign words may be in.
 editor-foreign-of-text = Språket i teksten

@@ -230,7 +230,6 @@ export function runMenu(view: EditorView, pos: number, anchor: HTMLElement) {
   const items: MenuItem[] = [
     {
       label: t('editor-run-numbers'),
-      hint: t('editor-run-numbers-hint'),
       icon: Hash,
       disabled: !hooks?.askNumbers,
       action: () => {
@@ -260,21 +259,18 @@ export function runMenu(view: EditorView, pos: number, anchor: HTMLElement) {
     },
     {
       label: t('editor-run-to-text'),
-      hint: t('editor-run-to-text-hint'),
       icon: Pilcrow,
       disabled: run.kind === 'text',
       action: () => exec(runToText(pos, own)),
     },
     {
       label: t('editor-run-begin'),
-      hint: t('editor-run-begin-hint'),
       icon: SplitSquareVertical,
       disabled: !inside || !canBeginRun(state, own),
       action: () => exec(beginRun(own)),
     },
     {
       label: t('editor-run-join'),
-      hint: t('editor-run-join-hint'),
       icon: Merge,
       disabled: !run.paragraphs.some((p) => p.node.attrs.new === true),
       action: () => exec(joinRunBefore(pos, own)),

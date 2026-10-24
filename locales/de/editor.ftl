@@ -72,14 +72,10 @@ editor-numbers-page-hint = Jede Zeile der gedruckten Seite, am Rand nummeriert, 
 editor-bracket-numbered = nummeriert
 editor-run-label-hint = { $kind } · klicken für das, was von diesen Absätzen gilt
 editor-run-numbers = Nummern…
-editor-run-numbers-hint = Wie die Zeilen hier gezählt werden, ab welcher Nummer, jede wievielte und auf welcher Seite
 editor-run-select = Diese Absätze auswählen
 editor-run-to-text = Zu Text machen
-editor-run-to-text-hint = Die Absätze dieser Art werden zu Text; ihre Zeilen und alles andere bleiben, wie sie sind
 editor-run-begin = Hier eine neue Folge beginnen
-editor-run-begin-hint = Der Absatz, in dem der Cursor steht, beginnt eine eigene Klammer, obwohl der davor von derselben Art ist
 editor-run-join = Mit der Folge davor verbinden
-editor-run-join-hint = Diese Absätze sind wieder eins mit denen derselben Art davor
 editor-kinds-text = Text
 editor-kinds-quotation = Zitat
 editor-kinds-verse = Vers
@@ -145,7 +141,6 @@ editor-kinds-change-own = Eigene Art ändern…
 # Over the item that opens the look of the document at the kind the cursor is in.
 editor-kinds-set-by = Gesetzt, wie „{ $format }“ es vorgibt
 editor-kinds-change-look = Wie „{ $kind }“ aussieht…
-editor-kinds-change-look-hint = Ihr Aussehen in diesem Dokument und der Rest der Seite
 editor-words-make = Art für Wörter anlegen…
 # Beside the language of the map, first among the languages foreign words may be in.
 editor-foreign-of-text = Die Sprache des Textes

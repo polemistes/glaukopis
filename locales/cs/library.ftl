@@ -16,7 +16,6 @@ library-form-remove-field = Odebrat pole { $field }
 
 library-names-kept-whole = Instituce nebo jiné jméno vcelku
 library-names-prefix-suffix = Předpona a přípona
-    .hint = „van“, „de la“ · „Jr.“, „III“
 library-names-move-up = Posunout výš
 library-names-move-down = Posunout níž
 library-names-more = Více k tomuto jménu
@@ -467,7 +466,6 @@ library-pane-no-files = Žádné soubory. Přiložte PDF, nebo je sem přetáhn�
 library-pane-detach-failed = Soubor nelze odebrat
 library-pane-leave-collection = Odebrat ze sbírky { $name }
 library-pane-duplicate = Duplikovat
-    .hint = Nový záznam začínající těmito údaji
 library-pane-edit-source = Upravit zdroj…
 library-pane-source-subtitle = Záznam jako BibLaTeX. Většina věcí jde snáz ve formuláři.
 library-pane-source-failed = Zdroj nelze zobrazit

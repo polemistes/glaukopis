@@ -16,7 +16,6 @@ library-form-remove-field = Убрать поле «{ $field }»
 
 library-names-kept-whole = Организация или иное имя целиком
 library-names-prefix-suffix = Приставка и суффикс
-    .hint = «van», «de la» · «Jr.», «III»
 library-names-move-up = Выше
 library-names-move-down = Ниже
 library-names-more = Ещё для этого имени
@@ -470,7 +469,6 @@ library-pane-no-files = Файлов нет. Вложите PDF или пере�
 library-pane-detach-failed = Не удалось убрать файл
 library-pane-leave-collection = Убрать из { $name }
 library-pane-duplicate = Дублировать
-    .hint = Новый источник, начинающийся с этих же сведений
 library-pane-edit-source = Изменить исходный текст…
 library-pane-source-subtitle = Запись как BibLaTeX. Большинство вещей проще сделать в форме.
 library-pane-source-failed = Не удалось показать исходный текст

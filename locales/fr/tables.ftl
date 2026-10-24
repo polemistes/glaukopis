@@ -46,7 +46,6 @@ tables-right-hint = Le contenu de la cellule se place à droite
 tables-table-hint = S’il est numéroté, sa largeur ; le retirer
 tables-numbered = Numéroté
 tables-the-table = Le tableau…
-tables-the-table-hint = Sa largeur
 tables-remove = Retirer le tableau
 
 ## The panel of what can be said of a table as a whole.

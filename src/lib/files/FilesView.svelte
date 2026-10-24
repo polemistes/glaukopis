@@ -291,7 +291,6 @@
       { label: t('files-add'), icon: FilePlus, action: () => void addFiles() },
       {
         label: t('files-add-folder'),
-        hint: t('files-add-folder-hint'),
         icon: FolderUp,
         action: () => void addFolder(),
       },

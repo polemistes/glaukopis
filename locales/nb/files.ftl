@@ -33,7 +33,6 @@ files-kind-other = Annen fil
 files-add = Legg til filer …
 files-add-title = Legg til filer i biblioteket
 files-add-folder = Legg til en mappe …
-files-add-folder-hint = Med mappene i den
 files-add-folder-title = Legg til en mappe i biblioteket
 files-more = Flere måter å legge til på
 files-taking-in = { $count ->

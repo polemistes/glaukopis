@@ -131,7 +131,6 @@
         },
         {
           label: t('library-names-prefix-suffix'),
-          hint: t('library-names-prefix-suffix.hint'),
           checked: expanded.has(person) || !!person.prefix || !!person.suffix,
           disabled: !!person.literal,
           action: () => {

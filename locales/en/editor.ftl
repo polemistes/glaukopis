@@ -72,14 +72,10 @@ editor-numbers-page-hint = Every line of the printed page, numbered in the margi
 editor-bracket-numbered = numbered
 editor-run-label-hint = { $kind } · press for what is said of these paragraphs
 editor-run-numbers = Numbers…
-editor-run-numbers-hint = How the lines here are counted, from which number, every how many and on which side
 editor-run-select = Select these paragraphs
 editor-run-to-text = Make it text
-editor-run-to-text-hint = The paragraphs of this kind become text; their lines, and everything else, stay as they are
 editor-run-begin = Begin a new run here
-editor-run-begin-hint = The paragraph the cursor is in begins a bracket of its own, though the one before is of the same kind
 editor-run-join = Join with the run before
-editor-run-join-hint = These paragraphs are one with those of the same kind before them again
 editor-kinds-text = Text
 editor-kinds-quotation = Quotation
 editor-kinds-verse = Verse
@@ -145,7 +141,6 @@ editor-kinds-change-own = Change a kind of your own…
 # Over the item that opens the look of the document at the kind the cursor is in.
 editor-kinds-set-by = Set as “{ $format }” has them
 editor-kinds-change-look = How “{ $kind }” looks…
-editor-kinds-change-look-hint = Its look in this document, and the rest of the page
 editor-words-make = Make a kind of words…
 # Beside the language of the map, first among the languages foreign words may be in.
 editor-foreign-of-text = The language of the text

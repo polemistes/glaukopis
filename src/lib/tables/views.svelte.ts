@@ -506,7 +506,6 @@ export class TableTools {
       },
       {
         label: t('tables-the-table'),
-        hint: t('tables-the-table-hint'),
         action: () => this.openPanel(),
       },
       { label: t('tables-remove'), danger: true, action: () => this.run(removeTable) },

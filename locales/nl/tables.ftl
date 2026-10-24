@@ -44,7 +44,6 @@ tables-right-hint = Wat de cel bevat, staat rechts
 tables-table-hint = Of ze genummerd is, hoe breed ze is; haar verwijderen
 tables-numbered = Genummerd
 tables-the-table = De tabel…
-tables-the-table-hint = Hoe breed ze is
 tables-remove = De tabel verwijderen
 
 ## The panel of what can be said of a table as a whole.

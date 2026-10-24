@@ -92,7 +92,6 @@
       { kind: 'separator' },
       {
         label: t('review-forget-accepted'),
-        hint: t('review-forget-accepted-hint'),
         action: () => review.forgetAccepted(),
       },
     ];
@@ -338,10 +337,8 @@
     {#if review.failure}
       <!-- What was accepted may be what fails: it can be forgotten from here. -->
       <EmptyState compact title={t('review-failed')} text={review.failure}>
-        <Button
-          variant="ghost"
-          title={t('review-forget-accepted-hint')}
-          onclick={() => review.forgetAccepted()}>{t('review-forget-accepted')}</Button
+        <Button variant="ghost" onclick={() => review.forgetAccepted()}
+          >{t('review-forget-accepted')}</Button
         >
       </EmptyState>
     {:else if !review.ready}

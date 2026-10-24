@@ -44,7 +44,6 @@ tables-right-hint = Innhaldet i cella står til høgre
 tables-table-hint = Om den er nummerert, kor brei den er; fjern den
 tables-numbered = Nummerert
 tables-the-table = Tabellen …
-tables-the-table-hint = Kor brei den er
 tables-remove = Fjern tabellen
 
 ## The panel of what can be said of a table as a whole.

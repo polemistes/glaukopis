@@ -48,7 +48,6 @@ tables-right-hint = Содержимое ячейки стоит справа
 tables-table-hint = Нумеруется ли, какой ширины; убрать её
 tables-numbered = С номером
 tables-the-table = Таблица…
-tables-the-table-hint = Какой она ширины
 tables-remove = Убрать таблицу
 
 ## The panel of what can be said of a table as a whole.

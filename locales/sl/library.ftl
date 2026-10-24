@@ -16,7 +16,6 @@ library-form-remove-field = Odstrani { $field }
 
 library-names-kept-whole = Ustanova ali drugo ime, ki ostane celo
 library-names-prefix-suffix = Predpona in pripona
-    .hint = »van«, »de la« · »ml.«, »III«
 library-names-move-up = Premakni gor
 library-names-move-down = Premakni dol
 library-names-more = Več za to ime
@@ -490,7 +489,6 @@ library-pane-no-files = Ni datotek. Priložite PDF ali ga spustite sem.
 library-pane-detach-failed = Datoteke ni bilo mogoče odstraniti
 library-pane-leave-collection = Odstrani iz { $name }
 library-pane-duplicate = Podvoji
-    .hint = Nov vir, ki se začne s temi podatki
 library-pane-edit-source = Uredi izvorno kodo…
 library-pane-source-subtitle = Vnos kot BibLaTeX. Večina stvari je lažja v obrazcu.
 library-pane-source-failed = Izvorne kode ni bilo mogoče prikazati
