@@ -58,8 +58,6 @@ look-delete-layout = Supprimer cette mise en page à moi…
 ## over what it is. The name in quotes is what the document is: "Journal
 ## article", "Novel".
 
-look-contents-parts = Les parties du document
-look-contents-kinds = Éléments qui ont leur place
 look-contents-kinds-missing = Aucun pour l’instant
 look-contents-kinds-make = En créer un
 # On the second element of a kind a document has one of.

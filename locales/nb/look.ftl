@@ -45,12 +45,11 @@ look-keep-save = Behold
 look-put-into = Legg disse endringene inn i «{ $name }»
 look-delete-layout = Slett dette oppsettet mitt …
 
-## Hva dokumentet inneholder, en del av Utseende: delene programmet lager
-## selv, slagene elementer som får en egen plass, og hva som kreves. Det som
-## endres der, holdes som dokumentets egne endringer.
+## Dokumenttypens deler, en del av Utseende: delene programmet lager selv og
+## slagene elementer som får en egen plass, i én liste i den rekkefølgen de
+## skrives ut, og hva som kreves. Det som endres der, holdes som dokumentets
+## egne endringer.
 
-look-contents-parts = Delene av dokumentet
-look-contents-kinds = Elementer med en egen plass
 look-contents-kinds-missing = Ingen ennå
 look-contents-kinds-make = Lag en
 look-contents-kinds-doubled = Bare det første brukes

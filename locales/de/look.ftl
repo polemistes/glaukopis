@@ -57,8 +57,6 @@ look-delete-layout = Dieses eigene Layout löschen…
 ## over what it is. The name in quotes is what the document is: "Journal
 ## article", "Novel".
 
-look-contents-parts = Die Teile des Dokuments
-look-contents-kinds = Elemente mit eigenem Platz
 look-contents-kinds-missing = Noch keines
 look-contents-kinds-make = Eines anlegen
 # On the second element of a kind a document has one of.

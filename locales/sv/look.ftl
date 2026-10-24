@@ -57,8 +57,6 @@ look-delete-layout = Radera den här egna layouten…
 ## over what it is. The name in quotes is what the document is: "Journal
 ## article", "Novel".
 
-look-contents-parts = Dokumentets delar
-look-contents-kinds = Element med en egen plats
 look-contents-kinds-missing = Inget ännu
 look-contents-kinds-make = Gör ett
 # On the second element of a kind a document has one of.

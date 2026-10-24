@@ -52,14 +52,11 @@ look-keep-save = Keep
 look-put-into = Put these changes into “{ $name }”
 look-delete-layout = Delete this layout of mine…
 
-## What the document contains, a section of Look: the parts the program
-## makes itself, the kinds of elements given a place of their own, and what
-## is required. What is changed there is kept as the document's own changes
-## over what it is. The name in quotes is what the document is: "Journal
-## article", "Novel".
+## The parts of the document type, a section of Look: the parts the program
+## makes itself and the kinds of elements given a place of their own, in one
+## list in the order they are printed, and what is required. What is changed
+## there is kept as the document's own changes over what it is.
 
-look-contents-parts = The parts of the document
-look-contents-kinds = Elements with a place of their own
 look-contents-kinds-missing = None yet
 look-contents-kinds-make = Make one
 # On the second element of a kind a document has one of.
