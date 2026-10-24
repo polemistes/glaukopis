@@ -76,11 +76,6 @@ project-add-after = Pridať prvok za neho
 project-write-text = Písať jeho text
 project-associate = Spojiť s…
 project-leave-out = Vynechať z dokumentu
-# An element that stands for another map: in the document, that map is in its place.
-project-stands-for = Zastupuje „{ $name }“
-project-stand-for = Zastupovať inú mapu
-project-stand-for-heading = V dokumente stojí na jeho mieste táto mapa
-project-stand-for-none = Žiadna
 project-copy = Kopírovať
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Prilepiť pod neho
@@ -120,7 +115,6 @@ project-words = { $count ->
    *[other] { $count } slov
 }
 project-read-on = Dvojklikom čítate ďalej
-project-stands-for-map = Zastupuje mapu „{ $name }“
 project-left-out-of-document = Vynechaný z dokumentu
 
 ## The panels at the side: the references and the pictures

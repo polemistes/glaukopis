@@ -497,6 +497,8 @@
   function open(id: string, begin: 'title' | 'body' = 'body') {
     const p = lay.placed.get(id);
     if (!p) return;
+    // A clone has no text of its own to write: its name is what can be changed.
+    if (project.node(id)?.include) return rename(id);
     hovered = null;
     clearTimeout(hoverTimer);
     if (renaming) finishRename(renaming, 'blur');

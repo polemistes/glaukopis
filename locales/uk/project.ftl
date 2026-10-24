@@ -74,11 +74,6 @@ project-add-after = Додати елемент після нього
 project-write-text = Писати його текст
 project-associate = Повʼязати з…
 project-leave-out = Не включати в документ
-# An element that stands for another map: in the document, that map is in its place.
-project-stands-for = Стоїть замість «{ $name }»
-project-stand-for = Стояти замість іншої мапи
-project-stand-for-heading = У документі на його місці стоїть ця мапа
-project-stand-for-none = Жодної
 project-copy = Копіювати
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Вставити під ним
@@ -122,7 +117,6 @@ project-words = { $count ->
    *[other] { $count } слова
 }
 project-read-on = Двічі клацніть, щоб читати далі
-project-stands-for-map = Стоїть замість мапи «{ $name }»
 project-left-out-of-document = Не включено в документ
 
 ## The panels at the side: the references and the pictures

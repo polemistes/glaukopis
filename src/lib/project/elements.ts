@@ -398,37 +398,37 @@ export function elementMenu(
     })),
   ];
 
-  // The trees an element can stand for in the document: not its own, and none that would loop.
-  const includes: MenuItem[] = one
-    ? (tree.children.get(PROJECT) ?? [])
-        .filter((id) => id !== one.id && id !== holding)
-        .map((id): MenuItem => ({
-          label: nameOf(id),
-          checked: one.include === id,
-          disabled: one.include !== id && project.wouldLoop(one.id, id),
-          action: () => {
-            project.setInclude(one.id, one.include === id ? null : id);
-          },
-        }))
-    : [];
+  // The original of a clone, entered as the view enters an element; where the view does not say, in the side that shows the project.
+  const goToOriginal = (id: string) => {
+    if (actions.enter) return actions.enter(id);
+    const spec = [sides.active, ...sides.sides].find(
+      (s) => s && sideApis.get(s.key)?.open.project === project,
+    );
+    if (spec) sideApis.get(spec.key)?.goTo(id);
+  };
 
-  // Any element of the project, chosen in its tree, but itself and what would loop.
+  // Any element of the project, chosen in its tree, but itself and what would loop; of a clone, its original.
   const chooseIncluded = async (id: string) => {
     const target = await pickElement(project, {
-      title: t('project-pick-stand-title', { name: nameOf(id) }),
-      action: t('project-pick-stand'),
-      refuse: (e) =>
-        e === id
-          ? t('project-pick-self')
-          : project.wouldLoop(id, e)
+      title: t('project-pick-clone-title', { name: nameOf(id) }),
+      action: t('project-pick-clone'),
+      refuse: (e) => {
+        const original = project.originalOf(e);
+        return e === id || original === id
+          ? t('project-pick-clone-self')
+          : !original || project.wouldLoop(id, original)
             ? t('project-pick-loop')
-            : null,
+            : null;
+      },
       at: project.node(id)?.include ?? inView,
     });
     if (target) project.setInclude(id, target);
   };
 
   const items: MenuItem[] = [];
+
+  // A clone has nothing of its own but its name (ADR 0065).
+  const clone = !!one?.include;
 
   if (one) {
     const add = (how: 'after' | 'under') => {
@@ -445,6 +445,7 @@ export function elementMenu(
         label: t('project-add-under'),
         icon: CornerDownRight,
         shortcut: keysFor('tree-new-under'),
+        disabled: clone,
         action: () => add('under'),
       },
       {
@@ -460,6 +461,7 @@ export function elementMenu(
         label: t('project-write-text'),
         icon: Pencil,
         shortcut: keysFor('tree-open'),
+        disabled: clone,
         action: () => actions.edit!(one.id),
       });
     if (actions.rename)
@@ -587,36 +589,30 @@ export function elementMenu(
       action: () =>
         project.transact(() => nodes.forEach((n) => project.setExcluded(n.id, !allOut))),
     });
-    if (one) {
+    if (one?.include) {
+      const original = one.include;
       items.push({
         kind: 'submenu',
-        label: one.include
-          ? t('project-stands-for', { name: nameOf(one.include) })
-          : t('project-stand-for'),
+        label: t('project-clone-of', { name: nameOf(original) }),
         icon: FileInput,
         items: [
           {
-            label: t('project-choose-element'),
+            label: t('project-clone-choose'),
             icon: ListTree,
             action: () => void chooseIncluded(one.id),
           },
-          ...(includes.length
-            ? ([
-                { kind: 'separator' },
-                { kind: 'heading', label: t('project-stand-for-heading') },
-              ] as MenuItem[])
-            : []),
-          ...includes,
-          ...(one.include
-            ? ([
-                { kind: 'separator' },
-                {
-                  label: t('project-stand-for-none'),
-                  action: () => project.setInclude(one.id, null),
-                },
-              ] as MenuItem[])
-            : []),
+          { label: t('project-clone-go'), action: () => goToOriginal(original) },
+          { kind: 'separator' },
+          { label: t('project-clone-none'), action: () => project.setInclude(one.id, null) },
         ],
+      });
+    } else if (one) {
+      // Only an element without text or sub-elements can become a clone.
+      items.push({
+        label: t('project-clone-other'),
+        icon: FileInput,
+        disabled: !one.empty || hasChildren,
+        action: () => void chooseIncluded(one.id),
       });
     }
     items.push({ kind: 'separator' });
@@ -646,7 +642,7 @@ export function elementMenu(
         label: t('project-paste-under'),
         icon: ClipboardPaste,
         shortcut: keyed ? keysFor('diagram-paste') : undefined,
-        disabled: !canPaste(project),
+        disabled: clone || !canPaste(project),
         action: () => actions.paste?.(one.id),
       });
   }

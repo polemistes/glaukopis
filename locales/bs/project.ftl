@@ -72,11 +72,6 @@ project-add-after = Dodaj element iza njega
 project-write-text = Piši njegov tekst
 project-associate = Poveži s…
 project-leave-out = Izostavi iz dokumenta
-# An element that stands for another map: in the document, that map is in its place.
-project-stands-for = Stoji za „{ $name }“
-project-stand-for = Neka stoji za drugu mapu
-project-stand-for-heading = U dokumentu ova mapa zauzima njegovo mjesto
-project-stand-for-none = Nijedna
 project-copy = Kopiraj
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Zalijepi pod njega
@@ -116,7 +111,6 @@ project-words = { $count ->
    *[other] { $count } riječi
 }
 project-read-on = Dvoklik za dalje čitanje
-project-stands-for-map = Stoji za mapu „{ $name }“
 project-left-out-of-document = Izostavljen iz dokumenta
 
 ## The panels at the side: the references and the pictures

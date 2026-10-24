@@ -3,7 +3,6 @@
 text-title = Název
 text-name = Název prvku
 text-grip = Přesunout nebo změnit tento prvek
-text-include-open = Otevřít ji
 text-split = Rozdělit zde
 text-join = Připojit k prvku nad ním
 

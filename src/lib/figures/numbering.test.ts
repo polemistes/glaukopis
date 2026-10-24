@@ -99,18 +99,19 @@ describe('the numbers of a document', () => {
   });
 
   it('are those of the element the document is made of', () => {
-    const { p, top, b } = sample();
+    const { p, top } = sample();
     const other = p.addChild(PROJECT, { title: 'Another' })!;
     const x = p.addChild(other, { title: 'From elsewhere' })!;
     write(p, other, fig('g0', 'e', 'At the top'));
     write(p, x, fig('g1', 'f', 'Elsewhere'), eq('r1', 'x = y'));
     expect(count(p, other, plain).byId.get('g1')?.number).toBe('2');
-    // Standing in the place of an element, it is counted where it stands.
-    p.setInclude(b, other);
+    // Cloned into the document, it is counted where the clone stands.
+    const clone = p.addChild(top, { title: 'Another, here' })!;
+    expect(p.setInclude(clone, other)).toBe(true);
     const n = count(p, top, numbered);
     expect(['f3', 'g0', 'g1'].map((id) => n.byId.get(id)?.number)).toEqual(['3', '4', '5']);
     expect(n.byId.get('r1')?.number).toBe('3');
-    expect(n.byId.get(x)?.number).toBe('2.1');
+    expect(n.byId.get(x)?.number).toBe('3.1');
     // And as the document is made, so it is counted.
     const sections = buildDocument(p, top).sections;
     const figures = sections.flatMap((s) =>

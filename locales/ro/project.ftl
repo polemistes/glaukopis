@@ -76,11 +76,6 @@ project-add-after = Adaugă un element după el
 project-write-text = Scrie-i textul
 project-associate = Asociază cu…
 project-leave-out = Lasă afară din document
-# An element that stands for another map: in the document, that map is in its place.
-project-stands-for = Ține locul hărții „{ $name }”
-project-stand-for = Ține locul altei hărți
-project-stand-for-heading = În document, această hartă îi ia locul
-project-stand-for-none = Niciuna
 project-copy = Copiază
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Lipește sub el
@@ -120,7 +115,6 @@ project-words = { $count ->
    *[other] { $count } de cuvinte
 }
 project-read-on = Dublu clic ca să citiți mai departe
-project-stands-for-map = Ține locul hărții „{ $name }”
 project-left-out-of-document = Lăsat afară din document
 
 ## The panels at the side: the references and the pictures

@@ -1264,8 +1264,8 @@ city's years. A lane in which nothing says when it is, its own element
 included, is not shown: what says nothing of its time stays out of the
 timeline. The button with the rows among the timeline's controls chooses the
 lanes: any branch can be one lane, or each of its children a lane of their
-own. An element that stands for another element brings that element's
-placed elements with it. Elements that are in no lane stand in a lane of
+own. A clone of another element brings that element's placed elements with
+it. Elements that are in no lane stand in a lane of
 their own at the foot. Where you have chosen the lanes, a new child of the
 element in view is not a lane until you choose it, and stands at the foot
 too: the lanes button is marked while lanes are chosen, and pressing the
@@ -1449,12 +1449,22 @@ consumed by the writing:
   same names. Comments stay behind, and a copy in another project does not
   remember its original. A move to another project can be undone here,
   which brings the elements back, but leaves the copy there.
-- An element can have **another element take its place in the document**:
-  **Stand for another element**, in its menu, lists the trees under the
-  project, and **Choose an element…** any element of it; what would make the
-  document hold itself cannot be chosen. The tree of the book then has one element for each chapter, each
-  of which stands for the tree of that chapter, written elsewhere in the
-  project. The typesetting of the book shows the book.
+- An element can be a **clone** of another element: **Clone other
+  element…**, in its menu, shows the tree of the project, and the element
+  chosen is printed in the clone's place, its text and all under it, under
+  the clone's own name; what would make the document hold itself cannot be
+  chosen. A clone has a name of its own and nothing else: no text and no
+  elements under it. So **Clone other element…** is offered only on an
+  element that has neither, and grey on one that has; on a clone, nothing
+  can be added, written or pasted under it, but it can be renamed. The tree
+  of the book then has one clone for each chapter, written elsewhere in the
+  project, and the chapter can have another title in the book than where it
+  is written. The original is printed at its own place as well, where that
+  is within the document. On a clone the menu says **Clone of “…”**, with
+  **Choose another element…**, **Go to the original** and **No longer a
+  clone**; a clone of a clone is a clone of the original. In the text, a
+  clone is its name, with a line that says what it is a clone of: its text
+  is read in the original. The typesetting of the book shows the book.
 - **Split view**, at the right end of the top of the window
   (**Ctrl+Shift+S**), opens a menu of what the other side shows. **This
   element, as diagram and text** shows the element in view both ways,
@@ -2059,8 +2069,7 @@ says where its requirements were found, and when, and how sure that is.
 
 What a document is holds for everything under the element it is chosen on:
 a chapter printed alone is what the book is. Any element may be something
-else: a thin element that stands for a chapter (see *One tree, entered
-anywhere*) sends the chapter as an article, with the journal's template,
+else: a clone of a chapter (see *One tree, entered anywhere*) sends the chapter as an article, with the journal's template,
 while the book stays a book. Where it is taken from an element over this
 one, the chooser says **From** which; where the element chose itself, a
 line takes the one over it again. What new documents are, how their pages

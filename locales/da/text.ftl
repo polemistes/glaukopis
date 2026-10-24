@@ -4,9 +4,6 @@
 text-title = Titel
 text-name = Elementets navn
 text-grip = Flyt eller ændr dette element
-# The element an element stands for, whose name is shown in bold where the variable stands.
-text-include = I dokumentet står { $name } her, med alt under det.
-text-include-open = Åbn det
 # Where elements dragged in the text would go, said by the line drawn there.
 text-drop-under = Under »{ $name }«
 text-drop-after = Efter »{ $name }«

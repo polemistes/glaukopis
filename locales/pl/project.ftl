@@ -79,11 +79,6 @@ project-add-after = Dodaj element po nim
 project-write-text = Pisz jego tekst
 project-associate = Powiąż z…
 project-leave-out = Pomiń w dokumencie
-# An element that stands for another map: in the document, that map is in its place.
-project-stands-for = Zastępuje „{ $name }”
-project-stand-for = Zastępuj inną mapę
-project-stand-for-heading = W dokumencie jego miejsce zajmuje ta mapa
-project-stand-for-none = Żadna
 project-copy = Kopiuj
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Wklej pod nim
@@ -127,7 +122,6 @@ project-words = { $count ->
    *[other] { $count } słów
 }
 project-read-on = Dwuklik, by czytać dalej
-project-stands-for-map = Zastępuje mapę „{ $name }”
 project-left-out-of-document = Pominięty w dokumencie
 
 ## The panels at the side: the references and the pictures

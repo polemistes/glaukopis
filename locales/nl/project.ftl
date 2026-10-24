@@ -70,11 +70,6 @@ project-add-after = Een element erna toevoegen
 project-write-text = De tekst schrijven
 project-associate = Verbinden met…
 project-leave-out = Uit het document weglaten
-# An element that stands for another map: in the document, that map is in its place.
-project-stands-for = Staat voor ‘{ $name }’
-project-stand-for = Voor een andere mindmap staan
-project-stand-for-heading = In het document neemt deze mindmap zijn plaats in
-project-stand-for-none = Geen
 project-copy = Kopiëren
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Eronder plakken
@@ -110,7 +105,6 @@ project-words = { $count ->
    *[other] { $count } woorden
 }
 project-read-on = Dubbelklik om verder te lezen
-project-stands-for-map = Staat voor de mindmap ‘{ $name }’
 project-left-out-of-document = Uit het document weggelaten
 
 ## The panels at the side: the references and the pictures

@@ -4,8 +4,6 @@
 text-title = Tittel
 text-name = Navnet på elementet
 text-grip = Flytt eller endre dette elementet
-text-include = I dokumentet står { $name } her, med alt under seg.
-text-include-open = Åpne det
 text-drop-under = Under «{ $name }»
 text-drop-after = Etter «{ $name }»
 text-drop-before = Foran «{ $name }»
@@ -59,3 +57,9 @@ text-notes = { $count ->
    *[other] { $count } noter
 }
 text-keys = { $alt }+{ $enter } nytt element · { $alt }+{ $shift }+{ $enter } ett under · { $at } kildehenvisning
+
+## Fewer words, stage 2 (agent "chrome")
+
+# A clone in the text: the original's name is shown in bold where the variable stands.
+text-clone = Klon av { $name }
+text-clone-go = Gå til originalen

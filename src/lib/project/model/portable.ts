@@ -287,7 +287,8 @@ function retime(when: When, point: (id: string) => string): When {
  */
 export function makePortable(p: Project, carried: Portable, place: Place): string[] {
   const parent = p.node(place.under);
-  if (!parent || !carried.elements.length) return [];
+  // Nothing goes under a clone, which has no sub-elements of its own.
+  if (!parent || parent.include || !carried.elements.length) return [];
   const tree = p.tree();
 
   const ids = new Map<string, string>();

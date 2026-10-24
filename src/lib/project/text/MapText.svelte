@@ -340,6 +340,8 @@
 
   async function go(id: string | undefined | null, part: Part, at: FocusAt) {
     if (!id) return;
+    // A clone has no text of its own: the cursor goes to its name.
+    if (part === 'body' && project.node(id)?.include) part = 'title';
     // What is folded away is shown before the cursor goes there.
     let opened = folding.reveal(tree, id);
     if (part === 'body' && folding.has(id)) {

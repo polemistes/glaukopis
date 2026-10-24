@@ -3,7 +3,6 @@
 text-title = Título
 text-name = Nome do elemento
 text-grip = Mover ou alterar este elemento
-text-include-open = Abri-lo
 text-split = Dividir aqui
 text-join = Juntar ao elemento acima
 

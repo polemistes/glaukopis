@@ -70,11 +70,6 @@ project-add-after = Προσθήκη στοιχείου μετά από αυτό
 project-write-text = Γραφή του κειμένου του
 project-associate = Συσχέτιση με…
 project-leave-out = Έξω από το έγγραφο
-# An element that stands for another map: in the document, that map is in its place.
-project-stands-for = Στη θέση του «{ $name }»
-project-stand-for = Στη θέση άλλου χάρτη
-project-stand-for-heading = Στο έγγραφο, αυτός ο χάρτης παίρνει τη θέση του
-project-stand-for-none = Κανένας
 project-copy = Αντιγραφή
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Επικόλληση από κάτω του
@@ -110,7 +105,6 @@ project-words = { $count ->
    *[other] { $count } λέξεις
 }
 project-read-on = Διπλό κλικ για να διαβάσετε παρακάτω
-project-stands-for-map = Στη θέση του χάρτη «{ $name }»
 project-left-out-of-document = Έξω από το έγγραφο
 
 ## The panels at the side: the references and the pictures

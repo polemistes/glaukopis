@@ -83,7 +83,7 @@
         {/if}
         {#if included}
           <div>
-            {t('project-stands-for-map', { name: included.title || t('project-untitled') })}
+            {t('project-clone-of', { name: included.title || t('project-untitled') })}
           </div>
         {/if}
         {#if node.excluded}<div>{t('project-left-out-of-document')}</div>{/if}

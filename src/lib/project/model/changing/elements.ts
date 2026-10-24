@@ -177,7 +177,8 @@ export const elementChanges = {
   /**
    * Adds an element under another. `index` is its place among the children,
    * at the end when absent; `pos` where it stands, relative to its parent,
-   * when it is not to be placed automatically.
+   * when it is not to be placed automatically. Nothing is added under a
+   * clone, which has no sub-elements of its own.
    */
   addChild(
     this: Project,
@@ -185,7 +186,7 @@ export const elementChanges = {
     options: { title?: string; body?: string; index?: number; pos?: Position } = {},
   ): string | null {
     const parent = this.node(parentId);
-    if (!parent) return null;
+    if (!parent || parent.include) return null;
     const tree = this.tree();
     const siblings = tree.children.get(parentId) ?? [];
     const id = newId();
@@ -310,9 +311,9 @@ export const elementChanges = {
   },
 
   /**
-   * Whether an element `at` that stood for `id` in the document would make
-   * a document hold itself: when `id` is `at` or over it, or holds, by
-   * what stands for other elements within it, an element that is.
+   * Whether an element `at` that was a clone of `id` would make a document
+   * hold itself: when `id` is `at` or over it, or holds, by the clones
+   * within it, an element that is.
    */
   wouldLoop(this: Project, at: string, id: string): boolean {
     const tree = this.tree();
@@ -330,13 +331,38 @@ export const elementChanges = {
     return visit(id);
   },
 
-  /** Makes an element stand for another in the document. Returns false when that would loop. */
+  /**
+   * Makes an element a clone of another (ADR 0065): in the document, the
+   * other's text and sub-elements stand under the clone's name. A clone of
+   * a clone is a clone of its original. Returns false where the element has
+   * text or sub-elements of its own, which a clone cannot have, or where
+   * the document would hold itself.
+   */
   setInclude(this: Project, id: string, element: string | null): boolean {
     const node = this.node(id);
     if (!node) return false;
-    if (element && (!this.nodes.has(element) || this.wouldLoop(id, element))) return false;
+    if (element) {
+      if (!node.empty || (this.tree().children.get(id)?.length ?? 0) > 0) return false;
+      const original = this.originalOf(element);
+      if (!original || this.wouldLoop(id, original)) return false;
+      element = original;
+    }
     set(this, id, 'include', element, null);
     return true;
+  },
+
+  /** The original of an element: itself, or, of a clone, what it is a clone of, followed through clones. */
+  originalOf(this: Project, id: string): string | null {
+    const seen = new Set<string>();
+    let at: string | null = id;
+    while (at && !seen.has(at)) {
+      seen.add(at);
+      const node = this.node(at);
+      if (!node) return null;
+      if (!node.include) return at;
+      at = node.include;
+    }
+    return null;
   },
 
   /** Removes the positions the user gave, so that the branches are laid out automatically. */
@@ -368,7 +394,8 @@ export const elementChanges = {
     index?: number,
     options: { pos?: Position | null; keepFolded?: boolean } = {},
   ): string[] {
-    if (!this.node(parentId)) return [];
+    // Nothing goes under a clone, which has no sub-elements of its own.
+    if (!this.node(parentId) || this.node(parentId)!.include) return [];
     const tree = this.tree();
     const movable = topmost(
       tree,
@@ -416,7 +443,7 @@ export const elementChanges = {
     index?: number,
     options: { pos?: Position | null } = {},
   ): string[] {
-    if (!this.node(parentId)) return [];
+    if (!this.node(parentId) || this.node(parentId)!.include) return [];
     const tree = this.tree();
     const tops = topmost(
       tree,

@@ -6,11 +6,12 @@
  * - The name of the element at the top is the title; its text stands before
  *   the first section.
  * - What is excluded is left out, with everything under it.
- * - An element that stands for another element has that one's branch in its
- *   place: its own name is the heading, the other's text follows, and then
- *   the other's sections, one level below.
- * - An element whose name is not printed gives its text only, and does not
- *   deepen what is under it.
+ * - A clone has its original's branch in its place (ADR 0065): its own name
+ *   is the heading, the original's text follows, and then the original's
+ *   sections, one level below. Of its own a clone has nothing but its name:
+ *   text or sub-elements an older project gave it are not printed.
+ * - An element without a name gives its text only, and does not deepen
+ *   what is under it.
  * - The children of every element stand in the order front matter, the
  *   rest, back matter, by what their kinds are in the document
  *   (`project/parts.ts`). Of a kind a document has one of, the first among
@@ -42,6 +43,8 @@ export interface Placed {
   level: number;
   /** Whether its name is printed as a heading. */
   printed: boolean;
+  /** A clone, whose own text is not printed: its original's follows it. */
+  clone?: boolean;
   /** The top of a branch: of the document itself, of a part of it, or of one that stands in the place of an element. */
   root: boolean;
   /** The element the document is made of, whose name is the title. */
@@ -107,10 +110,12 @@ export function walkDocument(project: Project, id: string, visit: (placed: Place
       const node = project.node(nodeId);
       if (!node || node.excluded) return;
       const printed = !isRoot && node.titleHtml.length > 0;
+      const clone = !isRoot && !!node.include;
       visit({
         id: nodeId,
         level: isRoot ? (isTop || isPart ? 0 : Math.max(at, 1)) : Math.min(at, DEEPEST),
         printed,
+        ...(clone ? { clone } : {}),
         root: isRoot,
         top: isRoot && isTop,
         ...(kind ? { kind } : {}),
@@ -119,10 +124,14 @@ export function walkDocument(project: Project, id: string, visit: (placed: Place
 
       const next = isRoot ? at + (isTop || isPart ? 1 : 0) : printed ? at + 1 : at;
 
-      if (!isRoot && node.include && !within.has(node.include) && project.node(node.include)) {
-        const inner = new Set(within);
-        inner.add(node.include);
-        walkBranch(node.include, Math.max(next, 1), inner, false, part, undefined);
+      if (clone) {
+        // The original's branch, where it does not hold the document itself; nothing of the clone's own.
+        if (node.include && !within.has(node.include) && project.node(node.include)) {
+          const inner = new Set(within);
+          inner.add(node.include);
+          walkBranch(node.include, Math.max(next, 1), inner, false, part, undefined);
+        }
+        return;
       }
       for (const child of childrenInOrder(project, tree.children.get(nodeId) ?? [])) {
         const place = child.part?.place;
@@ -147,8 +156,8 @@ export function buildDocument(project: Project, id: string): ExportDocument {
   const cited = new Set<string>();
 
   walkDocument(project, id, (placed) => {
-    for (const ref of project.node(placed.id)?.cited ?? []) cited.add(ref);
-    const blocks = project.blocksOf(placed.id);
+    if (!placed.clone) for (const ref of project.node(placed.id)?.cited ?? []) cited.add(ref);
+    const blocks = placed.clone ? [] : project.blocksOf(placed.id);
     let into = sections;
     if (placed.part) {
       if (placed.part === placed.id)
@@ -272,13 +281,17 @@ export function countWords(project: Project, id: string): { text: number; withNo
     const walk = (nodeId: string) => {
       const node = project.node(nodeId);
       if (!node || node.excluded) return;
+      // A clone counts its original's words, and nothing of its own.
+      if (node.include) {
+        if (!within.has(node.include) && project.node(node.include)) {
+          const inner = new Set(within);
+          inner.add(node.include);
+          visit(node.include, inner);
+        }
+        return;
+      }
       withNotes += node.words;
       notes += node.noteWords;
-      if (node.include && !within.has(node.include) && project.node(node.include)) {
-        const inner = new Set(within);
-        inner.add(node.include);
-        visit(node.include, inner);
-      }
       for (const c of tree.children.get(nodeId) ?? []) walk(c);
     };
     walk(top);

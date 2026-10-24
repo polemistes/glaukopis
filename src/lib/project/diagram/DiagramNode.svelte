@@ -100,6 +100,10 @@
   const title = $derived(project.fragment(node.id, 'title'));
   /** A copy whose original has changed since it was copied. */
   const behind = $derived(!!node.origin && project.copyOf(node.id)?.changed === true);
+  /** The name of the original, where the element is a clone. */
+  const originalName = $derived(
+    node.include ? project.node(node.include)?.title || t('project-untitled') : '',
+  );
   /** The threads of comments on it that are open. */
   const commented = $derived(project.threadsOf(node.id).filter((th) => !th.resolved));
   /** Its kind, with its colour, where it has one. */
@@ -216,7 +220,11 @@
           }}><MessageSquare size={10} />{commented.length}</button
         >
       {/if}
-      {#if node.include}<span class="mark include"><FileInput size={11} /></span>{/if}
+      {#if node.include}<span
+          class="mark include"
+          aria-label={t('project-clone-of', { name: originalName })}
+          use:tooltip={t('project-clone-of', { name: originalName })}><FileInput size={11} /></span
+        >{/if}
       {#if !node.empty}<span class="mark"><FileText size={11} /></span>{/if}
       {#if node.excluded}<span class="mark"><EyeOff size={11} /></span>{/if}
     </div>

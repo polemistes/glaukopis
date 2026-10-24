@@ -4,9 +4,6 @@
 text-title = Title
 text-name = Name of the element
 text-grip = Move or change this element
-# The element an element stands for, whose name is shown in bold where the variable stands.
-text-include = In the document, { $name } stands here, with all under it.
-text-include-open = Open it
 # Where elements dragged in the text would go, said by the line drawn there.
 text-drop-under = Under “{ $name }”
 text-drop-after = After “{ $name }”
@@ -66,3 +63,9 @@ text-notes = { $count ->
 }
 # The keys are shown as keys, where the variables stand.
 text-keys = { $alt }+{ $enter } new element · { $alt }+{ $shift }+{ $enter } one under it · { $at } cite
+
+## Fewer words, stage 2 (agent "chrome")
+
+# A clone in the text: the original's name is shown in bold where the variable stands.
+text-clone = Clone of { $name }
+text-clone-go = Go to the original

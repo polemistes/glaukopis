@@ -92,11 +92,6 @@ project-add-after = Ein Element danach hinzufügen
 project-write-text = Seinen Text schreiben
 project-associate = Verbinden mit…
 project-leave-out = Aus dem Dokument weglassen
-# An element that stands for another element: in the document, that element is in its place.
-project-stands-for = Steht für „{ $name }“
-project-stand-for = Für ein anderes Element stehen
-project-stand-for-heading = Im Dokument tritt dieses Element an seine Stelle
-project-stand-for-none = Keine
 # Copying or moving elements to the project itself, to one of its trees, or to another project.
 project-copy-to = Kopieren nach
 project-cut = Ausschneiden
@@ -107,8 +102,6 @@ project-paste-under = Darunter einfügen
 project-move-to = Verschieben nach
 # Opening a dialog with the tree of the project, to choose where the elements go: first in Copy to and Move to.
 project-choose-where = Ziel wählen…
-# Opening the same dialog, to choose the element this one stands for.
-project-choose-element = Ein Element wählen…
 # The title of the dialog that chooses where elements are copied to: the name of the one copied, or how many.
 project-pick-copy-title = { $count ->
     [one] „{ $name }“ kopieren nach
@@ -118,16 +111,13 @@ project-pick-move-title = { $count ->
     [one] „{ $name }“ verschieben nach
    *[other] { $count } Elemente verschieben nach
 }
-project-pick-stand-title = Wofür „{ $name }“ steht
 # The buttons of the dialog, saying what will be done with the element chosen.
 project-pick-copy = Hierher kopieren
 project-pick-move = Hierher verschieben
-project-pick-stand = Für dieses stehen
 project-pick-find = Ein Element nach Namen finden
 project-pick-none = Kein Element hat diesen Namen
 # Why an element cannot be chosen, when it is hovered.
 project-pick-itself = Ein Element kann nicht in sich selbst gehen oder in das, was darunter ist
-project-pick-self = Ein Element kann nicht für sich selbst stehen
 project-pick-loop = Das Dokument würde sich selbst enthalten
 project-tidy-branch = Diesen Zweig aufräumen
 project-place-automatically = Automatisch platzieren
@@ -163,7 +153,6 @@ project-words = { $count ->
    *[other] { $count } Wörter
 }
 project-read-on = Doppelklick zum Weiterlesen
-project-stands-for-map = Steht für „{ $name }“
 project-left-out-of-document = Aus dem Dokument weggelassen
 
 ## The panels at the side: the references and the pictures

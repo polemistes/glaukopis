@@ -4,9 +4,6 @@
 text-title = Titolo
 text-name = Nome dell'elemento
 text-grip = Sposta o modifica questo elemento
-# The element an element stands for, whose name is shown in bold where the variable stands.
-text-include = Nel documento, qui sta { $name }, con tutto ciò che ha sotto.
-text-include-open = Aprilo
 # Where elements dragged in the text would go, said by the line drawn there.
 text-drop-under = Sotto «{ $name }»
 text-drop-after = Dopo «{ $name }»
