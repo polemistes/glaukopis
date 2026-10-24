@@ -62,9 +62,9 @@
   import { selectedPassage } from '$lib/comments/marks';
   import { commentsUi } from '$lib/comments/ui.svelte';
   import { languageName, t, TEXT_LANGUAGES } from '$lib/i18n';
-  import { keysFor } from '$lib/shell/keys.svelte';
+  import { keysFor, kindKeys as keysOfDigit } from '$lib/shell/keys.svelte';
   import { showPictures } from '$lib/pictures/store.svelte';
-  import { documents } from '$lib/preview/documents.svelte';
+  import { documents, templateUsedCached } from '$lib/preview/documents.svelte';
   import { lookUi } from '$lib/look/look.svelte';
   import { panes } from '$lib/project/panes.svelte';
   import type { Project } from '$lib/project/model/project.svelte';
@@ -88,7 +88,17 @@
     toggle,
     toggleKind,
   } from './commands';
-  import { fellowsOf, GROUPS, groupOf, inHand, specOf, WORD_KINDS, type KindGroup } from './kinds';
+  import {
+    digitOfKind,
+    fellowsOf,
+    GROUPS,
+    groupOf,
+    inHand,
+    kindKeysOf,
+    specOf,
+    WORD_KINDS,
+    type KindGroup,
+  } from './kinds';
   import LanguageDialog from './LanguageDialog.svelte';
   import { languageItems } from './language-menu';
   import { editPassageKind, newPassageKind } from './own-kinds.svelte';
@@ -207,6 +217,10 @@
       stale = true;
     };
   });
+  // The kinds Ctrl+Alt with a digit gives in the document type of the element, for the menu to show (ADR 0066).
+  const kindKeys = $derived(
+    kindKeysOf(element && ofDocument ? templateUsedCached(project, element) : null),
+  );
   // The kinds the template puts in hand (ADR 0038); nothing until the template is read.
   const suggests = $derived(documents.templateCached(choice.template)?.passageKinds ?? []);
   const formatName = $derived(
@@ -415,11 +429,13 @@
   /** An item of the kind menu, which makes the paragraphs that are selected of the kind. */
   function kindItem(id: string, view: EditorView): MenuItem {
     const spec = specOf(id);
+    // The key the document type gives the kind, before one of its own.
+    const digit = digitOfKind(kindKeys, id);
     return {
       label: nameOf(id),
       hint: spec?.hint(),
       icon: iconOf(id),
-      shortcut: spec?.shortcut,
+      shortcut: digit !== undefined ? keysOfDigit(digit) : spec?.shortcut,
       checked: !mixed && id === kind,
       action: () => run(setKind(id, own), view),
     };

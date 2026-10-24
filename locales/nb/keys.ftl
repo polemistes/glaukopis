@@ -119,3 +119,6 @@ keys-switch-sides = Bytt side
 ## Stage 3 of the sides, the panes and the bars (agent "bars")
 keys-writing-marks = Vise eller skjule tegn for mellomrom og avsnitt
 keys-writing-hard-space = Et hardt mellomrom, der linjen ikke brytes
+
+## Stage 4 of the settings, the zoom and the keys of the kinds (agent "kinds")
+keys-writing-kind = Avsnittstypen dokumenttypen gir sifferet

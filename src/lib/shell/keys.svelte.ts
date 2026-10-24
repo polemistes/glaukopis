@@ -192,6 +192,20 @@ const ENTRIES = [
   { id: 'writing-redo', keys: 'Ctrl+Shift+Z', place: 'writing', over: ['redo'] },
   { id: 'writing-redo-y', keys: 'Ctrl+Y', place: 'writing', over: ['redo-y'] },
 
+  // Stage 4 of the settings, the zoom and the keys of the kinds: the kinds
+  // of paragraph the document type gives the digits, 0 being text (ADR
+  // 0066). Done by the editor (`kindKeyOf`), as Word and Google Docs have them.
+  { id: 'writing-kind-0', keys: 'Ctrl+Alt+0', place: 'writing' },
+  { id: 'writing-kind-1', keys: 'Ctrl+Alt+1', place: 'writing' },
+  { id: 'writing-kind-2', keys: 'Ctrl+Alt+2', place: 'writing' },
+  { id: 'writing-kind-3', keys: 'Ctrl+Alt+3', place: 'writing' },
+  { id: 'writing-kind-4', keys: 'Ctrl+Alt+4', place: 'writing' },
+  { id: 'writing-kind-5', keys: 'Ctrl+Alt+5', place: 'writing' },
+  { id: 'writing-kind-6', keys: 'Ctrl+Alt+6', place: 'writing' },
+  { id: 'writing-kind-7', keys: 'Ctrl+Alt+7', place: 'writing' },
+  { id: 'writing-kind-8', keys: 'Ctrl+Alt+8', place: 'writing' },
+  { id: 'writing-kind-9', keys: 'Ctrl+Alt+9', place: 'writing' },
+
   // In the library.
   { id: 'library-find', keys: 'Ctrl+F', place: 'library', bound: true },
   { id: 'library-new', keys: 'Ctrl+N', place: 'library', bound: true },
@@ -211,6 +225,42 @@ export const KEYS: readonly KeyEntry[] = ENTRIES;
 /** The keys of an entry, as the table writes them: for a menu or a tooltip, which show them by `keyLabel`. */
 export function keysFor(id: KeyId): string {
   return KEYS.find((e) => e.id === id)!.keys;
+}
+
+/** The entries of the keys of the kinds, by their digit. */
+const KIND_KEY = /^writing-kind-(\d)$/;
+
+/** The digit of an entry of the keys of the kinds; nothing for another. */
+export function kindDigitOf(id: string): string | null {
+  return KIND_KEY.exec(id)?.[1] ?? null;
+}
+
+/** The keys that give a kind of paragraph by a digit, Ctrl+Alt+0 to Ctrl+Alt+9, as the table writes them. */
+export function kindKeys(digit: string): string {
+  return keysFor(`writing-kind-${digit}` as KeyId);
+}
+
+/**
+ * The name of the words of an entry in keys.ftl: `keys-<id>`, and one for
+ * the ten keys of the kinds, which a sheet shows by the kinds they give.
+ */
+export function wordsOf(id: string): string {
+  return kindDigitOf(id) === null ? `keys-${id}` : 'keys-writing-kind';
+}
+
+/**
+ * The digit of Ctrl+Alt with a digit, by which the editor gives a
+ * paragraph the kind the document type gives the digit; nothing for
+ * another key. On Windows, AltGr comes as Ctrl+Alt, and on a Norwegian
+ * keyboard AltGr with 2 writes @: what AltGr writes is typing, not a key.
+ */
+export function kindKeyOf(event: KeyboardEvent): string | null {
+  if (event.getModifierState?.('AltGraph')) return null;
+  for (const entry of KEYS) {
+    const digit = kindDigitOf(entry.id);
+    if (digit !== null && matches(entry, event)) return digit;
+  }
+  return null;
 }
 
 /** Whether the keys of two places are in force together, whichever is named first. */

@@ -8,6 +8,9 @@ import * as textModel from '$lib/project/model/text';
 import { PROJECT, type PassageKindRecord } from '$lib/project/model/types';
 import {
   amongOthers,
+  digitOfKind,
+  kindKeysOf,
+  withKindKey,
   catalogueKindOf,
   CATALOGUE,
   catalogueKindsCss,
@@ -332,5 +335,28 @@ describe('the cues on screen of the kinds of the catalogue', () => {
     expect(sheets.length).toBe(1);
     expect(sheets[0].textContent).toBe(css);
     sheets[0].remove();
+  });
+});
+
+describe('the keys of the kinds', () => {
+  it('are what the document type gives, with text for 0 whatever it says', () => {
+    expect(kindKeysOf(null)).toEqual({ '0': 'text' });
+    const keys = kindKeysOf({ kindKeys: { '1': 'quote', '2': 'verse', '0': 'code' } });
+    expect(keys).toEqual({ '0': 'text', '1': 'quote', '2': 'verse' });
+    expect(digitOfKind(keys, 'text')).toBe('0');
+    expect(digitOfKind(keys, 'quote')).toBe('1');
+    // A kind by its old name is the kind it is now.
+    expect(digitOfKind(keys, 'line')).toBe('2');
+    expect(digitOfKind(keys, 'code')).toBeUndefined();
+  });
+
+  it('give a digit one kind, and a kind one digit: a digit taken leaves the other kind without', () => {
+    const keys = { '1': 'quote', '2': 'line', '3': 'item' };
+    expect(withKindKey(keys, 'code', '2')).toEqual({ '1': 'quote', '2': 'code', '3': 'item' });
+    expect(withKindKey(keys, 'quote', '5')).toEqual({ '2': 'line', '3': 'item', '5': 'quote' });
+    expect(withKindKey(keys, 'line', '')).toEqual({ '1': 'quote', '3': 'item' });
+    // 0 is text's, and not said.
+    expect(withKindKey(keys, 'code', '0')).toEqual(keys);
+    expect(withKindKey(undefined, 'speaker', '1')).toEqual({ '1': 'speaker' });
   });
 });

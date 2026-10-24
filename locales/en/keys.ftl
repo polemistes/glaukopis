@@ -122,3 +122,6 @@ keys-switch-sides = Switch sides
 ## Stage 3 of the sides, the panes and the bars (agent "bars")
 keys-writing-marks = Show or hide the marks of whitespace
 keys-writing-hard-space = A hard space, at which the line does not break
+
+## Stage 4 of the settings, the zoom and the keys of the kinds (agent "kinds")
+keys-writing-kind = The kind of paragraph the document type gives the digit

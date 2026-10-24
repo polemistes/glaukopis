@@ -192,6 +192,49 @@ export function kindName(id: string, own: readonly { id: string; name?: string }
   return specOf(id)?.label() ?? own.find((k) => k.id === id)?.name ?? id;
 }
 
+// ---- the keys of the kinds ----
+
+/** The digits Ctrl+Alt gives kinds of paragraph with, in their order. */
+export const KEY_DIGITS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] as const;
+
+/**
+ * The kinds of paragraph Ctrl+Alt with a digit gives in a document type, by
+ * the digit: what the type says, and text for 0, said or not (ADR 0066).
+ * Only text, where the type is not known yet.
+ */
+export function kindKeysOf(
+  template: { kindKeys?: Record<string, string> } | null | undefined,
+): Record<string, string> {
+  return { ...(template?.kindKeys ?? {}), '0': 'text' };
+}
+
+/** The digit that gives a kind, among the keys of a type; nothing where none does. */
+export function digitOfKind(
+  keys: Readonly<Record<string, string>>,
+  kind: string,
+): string | undefined {
+  const id = renamed(kind);
+  return KEY_DIGITS.find((d) => keys[d] !== undefined && renamed(keys[d]) === id);
+}
+
+/**
+ * The keys of a type with a kind given a digit, or none with `''`: a digit
+ * taken from another kind leaves that kind without, and the kind has no
+ * other. Text keeps 0, which is not said.
+ */
+export function withKindKey(
+  keys: Readonly<Record<string, string>> | undefined,
+  kind: string,
+  digit: string,
+): Record<string, string> {
+  const id = renamed(kind);
+  const out: Record<string, string> = {};
+  for (const [d, k] of Object.entries(keys ?? {}))
+    if (d !== '0' && d !== digit && renamed(k) !== id) out[d] = k;
+  if (digit && digit !== '0') out[digit] = kind;
+  return out;
+}
+
 /** A kind of the writer's own, as much of it as the shape of a text needs: what it is based on. */
 export type OwnKindLike = BasedKind;
 
