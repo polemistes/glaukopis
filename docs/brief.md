@@ -1176,3 +1176,21 @@ The assessment: the original already prints at its own place as well as where it
 The owner's word on the last three:
 
 > 1. Time stamp. 2. sub-element it is. 3. Let the clones have their own names, so their title in the document can be different from the original. But no content or children. Other than that, do the plan.
+
+## 2026-10-24 — the settings window in plain words, the preview's zoom, keys for the kinds, and five faults
+
+> Also remove the help texts from the settings window. "New projects open in" should be "Default view for new projects". "What new documents are" is "Default document type" and then also "Default look" and "Default citation style". I made a new project. I have set the Document type, look and style on the settings. I want to reset them. Or at least, when I choose another document type, change the look and style to its defaults. "Name what a line of the preview is" should be "Display look chips in the preview window". Keep the Hunspell help message. The Fraktur (Gothic type) should say which language(s) it is trained on. The Your details fields have double borders around them.
+>
+> The preview window should be zoomable. In the Look pane, under paragraph kinds, choosing small capitals in letters shows normal letters. When changing the Text kind and other kinds, the kind box closes everytime one thing is changed. It does not happen with for example the Speaker kind.
+>
+> In the text view, I would prefer that none of the kinds are indented, except Quotation, Code and Attribution. Tell me if other kinds need to be indented.
+>
+> Each dokument type should have its own custom keyboard shortcuts for choosing kinds. What about ctrl+alt+0-9? Let it be possible to reassign kinds to these shortcuts in the Looks pane.
+>
+> The preview and export to pdf do not reflect the manually changed line numbering. In export to Word and Libreoffice, it works. The export to pdf, set by LaTeX failed with the message "LaTeX failed: Package babel Error: Unknown option 'norsk'.".
+>
+> Look at these comments, and say what you think about them.
+
+Then: "Remove help texts from the table, from the kinds menus, the reference pane's duplicate, the prefix and suffix help text, under add a folder, from the line numbering menu. I did not see a help text in loose citations. Take away the "forget what you accepted" help text too." (done the same day); "The line numbers that are not displayed are only those I set manually in the margin. The others work as they should. I have now installed all the texlive language packages. Is it possible to make it use the norwegian babel when it is there, and not fail if it isn't?"; and a picture of the text of Antigone beside its page, the numbers 7, 5 and 9 given by hand in the text and missing on the page, 10 and 15 on both. Then: "Please make the plan, and I will hand it over to Opus 5.5."
+
+The assessment, and what was found: the settings' three defaults cannot be unset because their choosers have no "none", and a default look applies only where the document type brings no layout; Typst sets small capitals only from the font's own, and Times New Roman has none, while the text view fakes them; the kind boxes of Look do not remember being open; the text view indents eleven kinds by its cues; Ctrl+Alt+digits is the convention of Word and Google Docs, and the key dispatcher already lets AltGr through; babel takes Norwegian from its own locale files with the option `provide=*`, with or without the language package, and the result is the same; a number given on a later line of a text paragraph is placed by Typst from a position asked before the line break is laid out, so that it falls off the page, and an empty box before the placement mends it (tested with the lines of Antigone). Record 0066 and the plan `docs/plans/settings-zoom-keys-for-kinds-and-five-faults.md` follow.
