@@ -94,6 +94,30 @@ try {
   await sleep(300);
   await app.keys('Sing, goddess, the wrath of Achilles.');
   await sleep(600);
+
+  // --- Ctrl+Alt and a digit: the kind of paragraph the document type gives it ---
+  const kindNow = () =>
+    app.exec(`return document.querySelector('.text-view .section .body .prose > p')?.getAttribute('data-kind') ?? 'text'`);
+  await app.keys(['Control', 'Alt', '1']);
+  await sleep(400);
+  check('Ctrl+Alt+1 makes the paragraph a quotation in a plain document', (await kindNow()) === 'quote', await kindNow());
+  await app.keys(['Control', 'Alt', '0']);
+  await sleep(400);
+  check('and Ctrl+Alt+0 text again', (await kindNow()) === 'text', await kindNow());
+  await app.keys(['Control', '/']);
+  await app.waitForText('dialog[open] h2', 'Keys', 3000);
+  await sleep(300);
+  const kindRows = await app.exec(
+    `return Array.from(document.querySelectorAll('dialog[open] dt')).map((dt) => dt.textContent.trim() + ' ' + Array.from(dt.nextElementSibling.querySelectorAll('kbd')).map((k) => k.textContent.trim()).join(' '))`,
+  );
+  check(
+    'the sheet lists the keys of the kinds by the kinds the document type gives them',
+    kindRows.includes('Text Ctrl+Alt+0') && kindRows.includes('Verse Ctrl+Alt+2') && kindRows.includes("Quotation Ctrl+' Ctrl+Alt+1"),
+    kindRows.filter((r) => r.includes('Ctrl+Alt+')).join(' | '),
+  );
+  await app.screenshot('keys-3-kinds');
+  await app.press('Escape');
+  await app.waitGone('dialog[open]');
   // Opened anew, the text is drawn without its editor, which the right press then makes.
   await app.openProject('Wrath');
   await app.waitFor('.text-view .section .body p', 8000);

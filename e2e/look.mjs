@@ -403,6 +403,71 @@ try {
   );
   await app.screenshot('look-6-cites');
 
+  // --- The key of a kind, in its box: Code given Ctrl+Alt+2, which Verse had ---
+  await app.lookSection('Paragraphs');
+  const keyRow = (kind) => `.side .look .part details[data-kind="${kind}"] [data-kind-key] select`;
+  check(
+    'a kind’s box says its key as the document type gives it: Verse Ctrl+Alt+2, text Ctrl+Alt+0',
+    (await app.exec(`return [document.querySelector(arguments[0]).value, document.querySelector(arguments[1]).value].join(' ')`, keyRow('line'), keyRow('text'))) === '2 0',
+  );
+  await app.exec(
+    `const s = document.querySelector(arguments[0]);
+     s.value = '2';
+     s.dispatchEvent(new Event('change', { bubbles: true }));`,
+    keyRow('code'),
+  );
+  await app.waitUntil(`return document.querySelector('.side .look .whole .type-line .name')?.textContent.trim() === 'Nature, changed'`, 10000, 'the type kept as one’s own').catch(() => {});
+  top = await app.lookTop();
+  check('the type that came with Glaukopis is kept as one’s own with the key, and the document takes it', top.what === 'Nature, changed', top.what);
+  await sleep(500);
+  check(
+    'Code has Ctrl+Alt+2 now, and Verse none',
+    (await app.exec(`return [document.querySelector(arguments[0]).value, document.querySelector(arguments[1]).value].join('|')`, keyRow('code'), keyRow('line'))) === '2|',
+  );
+  const ownType = execFileSync('find', [join(app.dataDir, 'templates'), '-name', '*.json'], { encoding: 'utf8' }).trim().split('\n').filter(Boolean);
+  const keptKeys = ownType.length ? JSON.parse(readFileSync(ownType[0], 'utf8')).kindKeys : null;
+  check('the type of one’s own holds the keys', keptKeys?.['2'] === 'code' && !Object.values(keptKeys ?? {}).includes('line'), JSON.stringify(keptKeys));
+
+  // The Paragraph kind menu shows the keys; the key gives the kind, and Ctrl+Alt+0 text.
+  const muse = () =>
+    app.exec(
+      `return Array.from(document.querySelectorAll('.text-view .prose > p')).find((p) => p.textContent.includes('Tell me, Muse'))`,
+    );
+  await app.click(await muse());
+  await sleep(300);
+  await app.click('.pane-bar [data-paragraph-kind]');
+  await app.waitFor('.menu', 3000);
+  await sleep(150);
+  const shortcutOf = (label) =>
+    app.exec(
+      `const item = Array.from(document.querySelectorAll('.menu [role="menuitem"]')).find((i) => (i.querySelector('.label > .truncate') ?? i.querySelector('.label') ?? i).textContent.trim() === arguments[0]);
+       return item?.querySelector('.shortcut')?.textContent.trim() ?? null;`,
+      label,
+    );
+  const quoteKey = await shortcutOf('Quotation');
+  check('the Paragraph kind menu shows the key beside a kind', quoteKey === 'Ctrl+Alt+1', String(quoteKey));
+  await app.clickText('.menu [role="menuitem"]', 'More…');
+  await sleep(300);
+  const codeKey = await shortcutOf('Code');
+  check('and Code with its new key', codeKey === 'Ctrl+Alt+2', String(codeKey));
+  await app.screenshot('look-7-kind-keys');
+  await app.press('Escape');
+  await sleep(150);
+  await app.press('Escape');
+  await sleep(300);
+  await app.click(await muse());
+  await sleep(200);
+  const kindOfMuse = () =>
+    app.exec(
+      `return Array.from(document.querySelectorAll('.text-view .prose > p')).find((p) => p.textContent.includes('Tell me, Muse'))?.getAttribute('data-kind') ?? 'text'`,
+    );
+  await app.keys(['Control', 'Alt', '2']);
+  await sleep(400);
+  check('Ctrl+Alt+2 makes the paragraph code', (await kindOfMuse()) === 'code', await kindOfMuse());
+  await app.keys(['Control', 'Alt', '0']);
+  await sleep(400);
+  check('and Ctrl+Alt+0 text again', (await kindOfMuse()) === 'text', await kindOfMuse());
+
   const errors = await app.pageErrors();
   check('no errors in the page', errors.length === 0, errors.join(' | '));
 } catch (e) {
