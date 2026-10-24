@@ -502,65 +502,87 @@ of its own kind among the lines, and does not part them from each other; the
 same two are kinds of words as well, under **Words kind**, for a name or a
 direction within a line, as editions set them.
 
-Numbers belong to what they number. **Number these lines…**, in the
-right-click menu of the text, numbers the lines you write; **Inline
-number…**, under **Insert**, marks a place in prose (see *Inline numbers*);
-and **Number the lines of the page**, in *Document properties* under
-**Details**, numbers every line of the printed page in the margin, for the
-document and all under it, over what its layout says.
+Numbers belong to what they number. **Line numbering from here…** and
+**Numbering of this line…**, in the right-click menu of the text, number
+the lines you write; **Inline number…**, under **Insert**, marks a place in
+prose (see *Inline numbers*); and **Number the lines of the page**, in
+*Document properties* under **Details**, numbers every line of the printed
+page in the margin, for the document and all under it, over what its
+layout says.
 
-**Number these lines…** numbers the paragraphs selected, or, where nothing
-is selected, the paragraphs of the cursor's kind standing together with the
-speakers and directions among them: a verse with its speakers, a run of
-quoted paragraphs, the paragraphs of prose around the cursor. Those
-paragraphs are then a **numbered stretch**, and one count runs through all
-of it, whatever the kinds of its paragraphs: through speakers and
-directions, which are not counted, across stanzas, through prose, in which a
-paragraph is one line. A stretch is what its paragraphs say: paragraphs
-numbered alike, standing together, are counted as one. Where the cursor is
-in a numbered stretch already, the same window changes how it is numbered.
-**Numbers…** in the menu of a bracket does the same for the paragraphs it is
+**Line numbering from here…** numbers the lines from the paragraph the
+cursor is in: that paragraph and those after it in the numbered stretch it
+stands in, or, where it is not numbered yet, those after it of its kind
+standing together, with the speakers and directions among them: a verse
+with its speakers, a run of quoted paragraphs, the paragraphs of prose.
+Where paragraphs are selected, it numbers those. The paragraphs before the
+cursor keep their numbering. Numbered paragraphs are a **numbered
+stretch**, and one count runs through all of it, whatever the kinds of its
+paragraphs: through speakers and directions, which are not counted, across
+stanzas, through prose, in which a paragraph is one line. A stretch is what
+its paragraphs say: paragraphs numbered alike, standing together, are
+counted as one; numbered otherwise from the middle, a stretch is parted
+there, and the second part goes on from the number it had. **Line
+numbering…** in the menu of a bracket does the same for the whole run it is
 beside (see *Kinds of paragraph and of words*).
 
 In its window, **Numbering** is one of three: **Not numbered**; **Counted
 from the first number given**, which counts the lines and begins where you
 gave a number; or **Only the numbers given**, which shows the numbers you
-gave and counts nothing. **Number from** gives the first counted line its
-number, 45 for lines that begin at line 45; paragraphs of prose not yet
-numbered are counted from 1, every one. **Show a number every** and the side
-the numbers stand on are the layout's unless you say otherwise here: every
-fifth line, at the left, in the layouts that ship. An empty line is never
-counted. The numbers stand in the margin, in the text and in the document;
-in Word and Writer they stand at the head of their lines, small.
+gave and counts nothing. **Number from** is filled in with the number the
+first counted line from here has now, given or counted, and 1 where nothing
+is counted yet; write 45 for lines that begin at line 45. **Show a number
+every** and the side the numbers stand on are the layout's unless you say
+otherwise here: every fifth line, at the left, in the layouts that ship.
+**Count the lines of** is **Every kind** that is counted, or one kind
+only, chosen among the kinds of the paragraphs from here: with *Verse*, a
+quotation among the lines is passed over as a speaker is, and shows only a
+number you gave it. An empty line is never counted. The numbers stand in
+the margin, in the text and in the document; in Word and Writer they stand
+at the head of their lines, small.
 
-The same window says what is to be said of the line the cursor is in, for
-editions whose numbers do not follow the lines as they are set, as those of
-Greek drama do not:
+Which numbers are shown: those that fall on every so many, counted or
+given by you. Counted from 1 or from 41, every fifth shown, the first line
+shows nothing, and 5 or 45 is the first number shown. A label with
+anything but digits in it, *567a*, *11b*, *§5*, *\**, is always shown,
+since no count could make it. *Every so many* is counted by the numbers of
+the edition, not by the lines on the page: with numbers every five, the
+lines numbered 1235 and 1240 show theirs, whatever lines were passed over
+between them.
 
-- **Its number or label**: *1234*, *567a*, *1094a1*. It is always shown, as
-  dark as the text where you write, so that you see which numbers you gave;
-  and the count goes on from its last number: after *1234* comes 1235, after
-  *1094a1* comes *1094a2*, and after *567a* comes 568. A label without a
-  number, such as *\**, is shown and leaves the count as it was.
-- **Not counted**: the count passes over the line, as over the second half
-  of a line shared between two speakers, or a line the edition does not
-  count. With a label of its own it shows the label, and nothing otherwise.
-- **Counted, its number not shown**: the count goes on through the line as
-  through any other, but no number stands beside it in the document, even
-  where one would fall, as where a number would crowd a short line. Where
-  you write, the number it holds back stands faint in parentheses, so that
-  you see it is counted.
-- **Words in the margin**: a note of the metre, the number another edition
-  gives, anything to stand beside the line. They are not counted. They
-  stand in the margin across from the numbers, and in Word and Writer at
-  the end of their line, small.
+**Numbering of this line…** says what is to be said of the line the cursor
+is in, for editions whose numbers do not follow the lines as they are set,
+as those of Greek drama do not:
+
+- **Its number or label**: *1234*, *567a*, *1094a1*. The count goes on from
+  its last number: after *1234* comes 1235, after *1094a1* comes *1094a2*,
+  and after *11b* comes 12. A label without a number, such as *\**, leaves
+  the count as it was. Where you write, a number you gave stands as dark as
+  the text, so that you see which numbers you gave, and in parentheses
+  where the document shows none.
+- **Counted**: on, unless you say otherwise. Off, the count passes over the
+  line, as over the part of a line shared between two speakers that your
+  edition does not count: some count the first part, some the last. A line
+  not counted shows only a label of its own.
+- **Its number is shown**: **As the others are**, **Always** or **Never**.
+  Never: the count goes on through the line, but no number stands beside it
+  in the document, even where one would fall, as where a number would crowd
+  a short line; where you write, the number it holds back stands faint in
+  parentheses. Always: its number stands beside it where the count would not
+  show it.
+- **Annotation in the right margin**, or **in the left margin**, as the
+  layout sets the annotations: a note of the metre, the number another
+  edition gives, anything to stand beside the line. It is not counted. It
+  stands in the margin across from the numbers, unless the layout says
+  otherwise (see *Look*, **Line numbers**), and in Word and Writer at the
+  end or the head of its line, small.
+
+In a speaker's paragraph, or in one of a kind the stretch does not count,
+only the annotation is asked.
 
 What is said of a line stays with the line: Enter or Shift+Enter at its
 start moves it down with the line, and Backspace that joins the line to the
-one before takes it away. *Every so many* is counted by the numbers of the
-edition, not by the lines on the page: with numbers every five, the lines
-numbered 1235 and 1240 show theirs, whatever lines were passed over between
-them.
+one before takes it away.
 
 The numbers in the margin are edited in place: press one, and a field opens
 where it stood, with the number the line was given, or empty where it is
@@ -639,8 +661,9 @@ unless its lines are numbered. While the cursor is among them, or the
 pointer rests on the first, the head of the bracket names their kind:
 *Quotation*, *Verse*, *Code*, the name of a kind of your own, and
 *· numbered* after it where their lines are numbered. What is said of them
-is said there: press the name for its menu. **Numbers…** numbers their
-lines (see *Lines and paragraphs, verse, and texts side by side*);
+is said there: press the name for its menu. **Line numbering…** numbers
+their lines, from the first of them (see *Lines and paragraphs, verse, and
+texts side by side*);
 **Language** gives them all a language of its own, as *Language* under
 *Words kind* gives one to what is selected; **Select these paragraphs** selects
 them; **Make it text** makes the paragraphs of the kind text, and changes
@@ -2324,8 +2347,9 @@ letter, and a break prints the sign the layout gives it; a draft note and a
 highlight go into none of them.
 The numbers of the lines you number do not stand in the margin of Word,
 which numbers lines only by the section: they stand at the head of their
-lines, small, and the words in the margin of a line at its end. Reference
-marks are raised there, whatever the layout says.
+lines, small, and the annotation of a line at its other end, or beside the
+number, further out, where the layout sets the annotations on the numbers'
+side. Reference marks are raised there, whatever the layout says.
 
 There are two kinds of PDF. **PDF** is what the typesetting pane shows. **PDF, set by
 LaTeX** is the same document in the typesetting of LaTeX, for those who
@@ -2424,8 +2448,11 @@ you scroll, mark the part you are in, and go to each:
   that level.
 - **Line numbers**: how the numbers of lines you number are shown where they do
   not say otherwise, **Show a number every** and **Numbers on the** left or
-  the right, and whether the lines of the page are numbered, as some
-  journals ask for review.
+  the right; **Annotations on the** **Other side from the numbers**, as the
+  layouts that ship have them, **Left** or **Right**: on the numbers' side
+  they stand outside the numbers, further from the text, where you write
+  and in every document; and whether the lines of the page are numbered, as
+  some journals ask for review.
 - **Notes and citations**: footnotes or endnotes and how they are set; the
   **reference style**; and the bibliography, with its heading,
   *Bibliography*, *References* or *Works Cited*.
