@@ -84,7 +84,8 @@ try {
   );
   check(
     'and where the figures stand',
-    /Heading over the figures/.test(told) && /about here/.test(told),
+    /Heading over the figures/.test(told) &&
+      (await app.exec(`return Array.from(document.querySelectorAll('.side .look .part[data-part="figures"] input')).some((i) => /about here/.test(i.value))`)),
   );
   await app.screenshot('editors-2b-format-figures');
   await app.lookSection('Layout');
