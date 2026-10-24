@@ -80,9 +80,5 @@ when-hint-units = Времена — числа единиц шкалы, зад�
 when-bc = до н. э.
 # $month: 1 to 12; $year: as written.
 when-month-of = { $year }, месяц { $month }
-# How a placement is said beside the element: "after the quarrel, before the embassy".
-when-said-after = после
-when-said-before = до
-when-said-during = во время
 when-said-to = по
 when-said-approx = ок.

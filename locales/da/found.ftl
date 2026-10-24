@@ -122,3 +122,8 @@ found-work-may-be = Det kan være
 found-work-another = En anden…
 found-work-find = Find den…
 found-work-add = Føj den til biblioteket
+
+## Fewer words, stage 2 (agent "chrome")
+
+# Over the switches of what is taken for citations in plain text.
+found-plain-text = Kildehenvisninger i ren tekst

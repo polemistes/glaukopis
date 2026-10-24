@@ -1,8 +1,11 @@
-# About this document: what an element's document says of itself, its
-# details, its language and the checklist of what its template requires.
-# What the document is, how it looks and what it contains are chosen in the
-# chooser of what you are writing and in Look.
+# Document properties: what an element's document says of itself, its
+# details, its type (what you are writing, its template), its language and
+# the checklist of what its template requires. How it looks and what it
+# contains are set in Look.
 
+about-window = Propriétés du document
+# In the menu of an element, and at the foot of Look.
+about-menu = Propriétés du document…
 about-sections = Rubriques de la fenêtre
 
 ## The parts of the window, as they stand down its left.
@@ -58,3 +61,29 @@ about-language = Langue du texte
 about-checklist-hint = Ce que le modèle exige, en regard du texte et de l’arbre. Rien n’est coupé.
 about-checklist-clear = Rien à signaler.
 about-requirement-words = Mots du texte
+about-requirement-anonymous = Pour l’évaluation : le document ne nomme pas ses contributeurs.
+
+## The sides, the panes and the bars, stage 2: the typesetting pane, the document pane, Document properties.
+
+# The tab of what the document is: what you are writing, its template.
+about-section-type = Type de document
+
+## Fewer words, stage 3: the source of a layout's requirements, under the layout the type brings.
+
+about-layout-source = Source : { $name }
+
+## The contributors, stage 3: the persons of a document, each with a role.
+
+about-contributors = Contributeurs
+# Beside a plus, under the contributors: adds one.
+about-add-contributor = Ajouter un contributeur
+about-contributor-role = Rôle du contributeur { $number }
+about-role-author = Auteur
+about-role-editor = Éditeur scientifique
+about-role-translator = Traducteur
+about-contributor-name = Nom du contributeur { $number }
+about-contributor-affiliation = Affiliation du contributeur { $number }
+about-contributor-email = Courriel du contributeur { $number }
+about-contributor-orcid = ORCID du contributeur { $number }
+# Under the details: whether every line of the printed page is numbered in the margin.
+about-page-lines = Numéroter chaque ligne de la page imprimée

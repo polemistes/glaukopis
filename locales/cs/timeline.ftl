@@ -78,9 +78,5 @@ when-hint-units = Časy jsou počty jednotek časové osy, nastavené u jejích 
 when-bc = př. n. l.
 # $month: 1 to 12; $year: as written.
 when-month-of = { $year }, měsíc { $month }
-# How a placement is said beside the element: "after the quarrel, before the embassy".
-when-said-after = po
-when-said-before = před
-when-said-during = během
 when-said-to = až
 when-said-approx = asi

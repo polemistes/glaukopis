@@ -20,11 +20,24 @@ project-view-this = Den här kartans vy
 project-diagram = Diagram
 project-text = Text
 project-one-at-a-time = En i taget
-project-side-by-side = Två sida vid sida
+project-side-by-side = Delad vy
+# The menu of the Split view button: what the second side shows.
+project-beside-this = Det här elementet, som diagram och text
+project-beside-element = Ett annat element…
+project-beside-project = Ett annat projekt…
+project-beside-element-title = Bredvid: välj ett element
+project-beside-show = Visa bredvid
+project-beside-title = Bredvid: välj ett projekt
+project-beside-subtitle = Ett projekt, eller ett element i dess träd, att visa bredvid det här
 project-close-side = Stäng den här sidan
 project-references = Referenser
+project-pictures = Bilder
+project-side-tabs = Vad dokumentpanelen visar
 project-side-map = Karta
 project-between-maps = Mellan de två kartorna
+project-between-preview = Mellan fönstrets sidor och ombrytningen
+project-between-pictures = Mellan fönstrets sidor och bilderna
+project-between-references = Mellan fönstrets sidor och dokumentpanelen
 
 ## When the sharing ends from the other side
 
@@ -75,7 +88,7 @@ project-document-into = Hämta in ett dokument i det…
 project-drop-on-map = Släpp på en karta för att flytta dit · håll Ctrl för att kopiera
 project-open-beside = Öppna bredvid
 project-open-beside-hint = Två kartor sida vid sida, för att flytta element mellan dem
-project-side-by-side-short = Sida vid sida
+project-side-by-side-short = Dela upp
 # The count is of those found in the element in view, and under it.
 project-found-hint = { $count } att gå igenom och göra till källhänvisningar
 project-copied-to = Kopierat till ”{ $name }”
@@ -119,7 +132,7 @@ project-pick-loop = Dokumentet skulle innehålla sig självt
 project-tidy-branch = Snygga till den här grenen
 project-place-automatically = Placera automatiskt
 project-itself-stays = Själva projektet blir kvar
-project-itself-stays-detail = Radera projektet från startsidan.
+project-itself-stays-detail = Radera projektet från projektlistan.
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] ”{ $name }” raderades
@@ -258,3 +271,33 @@ status-words-written = { $count ->
    *[other] { $count } ord skrivna
 }
 status-progress = Hur långt kartan har kommit
+
+## The path over each side, and the sides (stage 4 of the list, the path and the window as it was left)
+# The chevron at the start of a path, which opens the menu of all projects.
+project-all-projects-menu = Alla projekt
+# The crumb … in a path too long for its cell, whose menu has the crumbs hidden behind it.
+project-path-hidden = Mer av sökvägen
+project-switch-sides = Byt plats på sidorna
+
+## Stage 3 of the sides, the panes and the bars (agent "bars")
+project-bar-typesetting = Ombrytning
+project-bar-document = Dokument
+project-badge-offline = servern kan inte nås
+project-badge-refused = servern tar inte emot de senaste ändringarna
+
+## Fewer words, stage 2 (agent "chrome"): the clone, which has nothing of its own but its name.
+
+project-clone-other = Klona ett annat element…
+# The submenu of a clone, and the mark of a clone in the diagram: the original's name.
+project-clone-of = Klon av ”{ $name }”
+project-clone-choose = Välj ett annat element…
+project-clone-go = Gå till originalet
+project-clone-none = Inte längre en klon
+# The dialog with the tree of the project, choosing the original of a clone.
+project-pick-clone-title = Vilket element ska klonas in i ”{ $name }”?
+project-pick-clone = Klona det
+project-pick-clone-self = Ett element kan inte vara en klon av sig självt
+project-add-child = Lägg till underelement
+project-add-sibling = Lägg till element på samma nivå
+project-delete-promote = Radera och flytta upp underelementen
+project-delete-with = Radera med underelementen

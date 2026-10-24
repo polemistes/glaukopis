@@ -322,3 +322,30 @@ format-source-read = Lesen { $date }.
 format-source-high = Verdiane er kjelda sine.
 format-source-medium = Kjelda kunne berre lesast delvis eller i ei tidlegare utgåve: sjekk det som tyder noko for deg.
 format-source-low = Lite kunne stadfestast: sjå verdiane som eit utgangspunkt.
+
+## Fewer words, stage 3: the rows of Look in plain words.
+
+format-level-begins-paragraph = Byrjar avsnittet
+format-level-placement = Plassering
+format-title-include = Ta med
+format-title-formatting = Formatering
+format-title-anonymize = Anonymiser framsida
+format-table-inside = Inne i tabellen
+
+## Fewer words, stage 4: the two lengths of paragraphs, and the warning of long quotations.
+
+format-indent-first-line = Innrykk i første linje
+format-quote-warn = Varsle om lange sitat i løpande tekst
+
+## The contributors, stage 3: the lines of the editors and the translators on the front page, and their items.
+
+format-title-roles = Redaktørar og omsetjarar
+format-item-editor = Redaktør
+format-item-translator = Omsetjar
+
+## The numbering of lines, stage 2: the side of the annotations of lines.
+format-verse-annotations = Merknadene på
+format-verse-annotations-other = Motsett side av numra
+
+## Where a line begins, stage 4: the step of an indent.
+format-indent-step = Innrykkstrinn

@@ -13,11 +13,13 @@ keys-palette-hint = Alles, was eine Taste hat, und manches, was keine hat. Alle 
 keys-place-everywhere = Überall
 keys-place-project = In einem Projekt
 keys-place-review = Während Änderungen durchgesehen werden
+keys-place-tree = Im Baum: im Diagramm, im Text, in der Liste links
 keys-place-diagram = Im Diagramm
+keys-place-list = In der Liste der Projekte links
 keys-place-text = Im Text einer Karte
 keys-place-writing = Beim Schreiben
 keys-place-library = In der Bibliothek
-keys-place-store = Im Fundus der Bilder
+keys-place-store = Bei den Bildern
 keys-place-files = Bei den Dateien der Bibliothek
 
 ## What they do
@@ -32,15 +34,20 @@ keys-palette = Was soll geschehen?
 keys-sheet = Die Tasten
 keys-diagram-or-text = Diagramm oder Text
 keys-projects-pane = Die Liste der Projekte links
+keys-preview = Umbruch
+keys-document-settings = Dokumenteigenschaften
+keys-what-document = Dokumenttyp…
 keys-side-look = Aussehen
 keys-look-type = Die Schrift ändern…
 keys-side-references = Quellen
+keys-side-pictures = Die Bilder des Projekts
 keys-side-comments = Kommentare
 keys-comment = Die ausgewählte Passage oder das Element kommentieren
 keys-side-history = Verlauf
 keys-side-changes = Änderungen durchsehen
 keys-side-found = Lose Zitationen
-keys-side-by-side = Zwei nebeneinander
+keys-side-panel = Den Dokumentbereich öffnen oder schließen
+keys-side-by-side = Geteilte Ansicht…
 keys-find = Den Text durchsuchen
 keys-replace = Suchen und ersetzen
 keys-undo = Rückgängig
@@ -50,6 +57,21 @@ keys-review-next = Die nächste Änderung; diese bleibt für später
 keys-review-previous = Die Änderung davor
 keys-review-accept = Die Änderung annehmen
 keys-review-reject = Die Änderung verwerfen
+keys-tree-new = Ein neues Element nach diesem; im Text eine Überschrift am Cursor; in der Liste ein neues Projekt
+keys-tree-new-under = Ein neues Element unter diesem, als erstes; im Text eine Überschrift am Cursor; in der Liste ein neuer Ordner
+keys-tree-fold = Das Element ein- oder ausklappen; im Text mit dem Cursor in einem Namen
+keys-tree-fold-all = Alle Unterelemente des angezeigten Elements ausklappen, oder alle Unterelemente der ersten Ebene einklappen
+keys-tree-shift = Das Element nach oben oder unten verschieben, unter denen daneben
+keys-tree-depth = Das Element tiefer oder weniger tief setzen: im Diagramm, wohin der Pfeil zeigt, im Text ist Rechts tiefer
+keys-tree-enter = Hineingehen: das ausgewählte Element wird das angezeigte
+keys-tree-up = Nach oben zum Element über dem angezeigten
+keys-tree-open = Öffnen: den Text des Elements; in der Liste das Projekt in seinem Text
+keys-tree-rename = Umbenennen; im Text zum Namen gehen
+keys-tree-delete = Löschen
+keys-tree-go = Von einem zum nächsten gehen
+keys-tree-more = Mehr auswählen
+keys-tree-menu = Das Menü des Ausgewählten
+keys-tree-all = Alles auswählen
 keys-diagram-copy = Die ausgewählten Elemente kopieren, mit allem darunter
 keys-diagram-cut = Die ausgewählten Elemente ausschneiden, mit allem darunter, um sie anderswo einzufügen
 keys-diagram-paste = Sie unter dem ausgewählten Element einfügen, oder für sich
@@ -71,6 +93,8 @@ keys-writing-lowered = Tiefgestellt
 keys-writing-quotation = Zitat
 keys-writing-list = Liste
 keys-writing-numbered = Nummerierte Liste
+keys-writing-list-in = In einer Liste oder einem Vers: einen Schritt einrücken
+keys-writing-list-out = In einer Liste oder einem Vers: einen Schritt ausrücken
 keys-writing-line = Eine neue Zeile im selben Absatz
 keys-writing-note = Eine Anmerkung
 keys-writing-picture = Ein Bild
@@ -78,7 +102,7 @@ keys-writing-table = Eine Tabelle
 keys-writing-formula = Eine Formel in der Zeile
 keys-writing-equation = Eine Gleichung
 keys-writing-crossref = Ein Verweis
-keys-writing-refmark = Eine Stellenmarke
+keys-writing-refmark = Eine Nummer in der Zeile
 keys-writing-spelling = Das nächste falsch geschriebene Wort
 keys-writing-spelling-back = Das falsch geschriebene Wort davor
 keys-writing-undo = Rückgängig
@@ -88,3 +112,23 @@ keys-library-find = Die Bibliothek durchsuchen
 keys-library-new = Eine neue Quelle
 keys-store-find = Die Bilder durchsuchen
 keys-files-find = Die Dateien durchsuchen
+keys-list-undo = Rückgängig machen, was mit Ordnern und Projekten getan wurde
+keys-list-redo = Wiederherstellen, was mit Ordnern und Projekten getan wurde
+
+## The sides (stage 4 of the list, the path and the window as it was left)
+keys-close-side = Diese Seite schließen
+keys-switch-sides = Seiten tauschen
+
+## Stage 3 of the sides, the panes and the bars (agent "bars")
+keys-writing-marks = Formatierungszeichen ein- oder ausblenden
+keys-writing-hard-space = Ein geschütztes Leerzeichen, an dem die Zeile nicht umbricht
+
+## The settings in plain words, stage 2: the zoom of the typesetting pane
+keys-place-preview = Im Umbruch
+keys-preview-zoom-in = Größere Seiten
+keys-preview-zoom-in-equal = Größere Seiten
+keys-preview-zoom-out = Kleinere Seiten
+keys-preview-zoom-fit = Seiten an die Breite anpassen
+
+## The settings in plain words, stage 4: the keys of the kinds
+keys-writing-kind = Die Absatzart, die der Dokumenttyp der Ziffer gibt

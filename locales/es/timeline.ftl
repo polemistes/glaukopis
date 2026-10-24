@@ -78,9 +78,5 @@ when-hint-units = Los tiempos son números de la unidad de la línea de tiempo, 
 when-bc = a. C.
 # $month: 1 to 12; $year: as written.
 when-month-of = { $year }, mes { $month }
-# How a placement is said beside the element: "after the quarrel, before the embassy".
-when-said-after = después de
-when-said-before = antes de
-when-said-during = durante
 when-said-to = a
 when-said-approx = c.

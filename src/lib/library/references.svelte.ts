@@ -22,7 +22,7 @@ import { isBackendError } from '$lib/api/backend';
 import { importPdfs, importPdfsStop, onPdfsProgress } from '$lib/api/sources';
 import { fileEnding } from '$lib/util/file-name';
 import { newId } from '$lib/util/id';
-import { t } from '$lib/i18n';
+import { listed, t } from '$lib/i18n';
 import { library } from '$lib/state/library.svelte';
 import { notify, notifyError, notifyOk } from '$lib/ui/toast.svelte';
 
@@ -338,7 +338,7 @@ export async function carryOut(
     parts.push(t('library-imported-completed', { count: outcome.updated.length }));
   if (outcome.skipped) parts.push(t('library-imported-skipped', { count: outcome.skipped }));
   if (outcome.files) parts.push(t('library-imported-files', { count: outcome.files }));
-  const summary = parts.join(', ') || t('library-imported-nothing');
+  const summary = listed(parts) || t('library-imported-nothing');
   if (outcome.problems.length) {
     notifyError(summary, outcome.problems.slice(0, 4).join('\n'));
   } else {

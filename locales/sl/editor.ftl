@@ -4,7 +4,6 @@
 ## The marks and the kinds of paragraph, in the bar over a selection and in
 ## the tools over the text.
 
-editor-format = Oblikovanje
 editor-writing = Pisanje
 editor-italic = Ležeče
 editor-bold = Krepko
@@ -130,14 +129,6 @@ editor-pasted-picture = slika
 
 ## More.
 
-editor-found = Najdene navedbe…
-editor-found-count = { $count ->
-    [one] { $count } za pregled, da iz nje nastane navedba
-    [two] { $count } za pregled, da iz njiju nastaneta navedbi
-    [few] { $count } za pregled, da iz njih nastanejo navedbe
-   *[other] { $count } za pregled, da iz njih nastanejo navedbe
-}
-editor-found-none = In besedilo, ki je videti kot navedbe, v tem miselnem vzorcu
 
 ## Choosing a work to cite.
 

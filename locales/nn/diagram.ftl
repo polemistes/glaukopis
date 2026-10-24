@@ -3,10 +3,11 @@
 diagram-map = Kart
 diagram-idea = Namn
 diagram-new-here = Nytt element her
-diagram-open-as-map = Opne som kart
+diagram-open-as-map = Gå inn
 diagram-show-all = Vis heile kartet
 diagram-tidy = Rydd i heile kartet
 # The keys are shown as keys, where the variables stand.
+diagram-hint-empty = { $alt }+{ $enter } legg til eit element etter det som er valt · { $alt }+{ $shift }+{ $enter } eitt under det · dobbeltklikk for å skrive
 diagram-hint-linking = Klikk på elementet du vil knyte til, eller gå til det med pilene og trykk { $enter } · { $esc } for å avbryte
 diagram-link-handle = Dra til eit anna element for å knyte dei saman
 
@@ -32,3 +33,9 @@ diagram-cut = { $count ->
 diagram-paste-here = Lim inn her
 diagram-nothing-copied = Ingenting er kopiert enno
 diagram-pasted-elsewhere = Det som vart kopiert, er frå eit anna prosjekt og kan ikkje limast inn her
+
+## Fewer words, stage 2 (agent "chrome"): the words of the menus.
+
+# The tooltips of the mark that folds an element in the diagram.
+diagram-unfold-sub = Brett ut underelementa
+diagram-fold-sub = Brett saman underelementa

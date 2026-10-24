@@ -1,34 +1,34 @@
-# What the core says of references brought in from elsewhere, in English.
-# See locales/README.md.
+# ほかの所から取り込んだ文献について、中核が言うこと。
+# locales/README.md を参照。
 
-## Where the references came from, as the list of them says: "3 references in pasted text".
+## 文献の出どころ。文献の一覧での言い方：「貼り付けたテキストの文献3件」。
 
 core-import-pasted = 貼り付けたテキスト
 core-import-files = { $count }個のファイル
 
-## Files of BibTeX and BibLaTeX.
+## BibTeXとBibLaTeXのファイル。
 
 core-import-file-not-found = ファイル「{ $name }」が見つかりませんでした。
 core-import-empty-entry = { $line }行目：項目「{ $key }」は空なので除きました。
-# Where in a file a reference that has no key was found.
+# キーのない文献が、ファイルのどこで見つかったか。
 core-import-origin-line = { $line }行目
 core-import-origin-key-line = { $key }、{ $line }行目
 
-## What went wrong as the references were taken in, each after the reference
-## it concerns: Nagy 1979 “The Best of the Achaeans”.
+## 文献を収めるときにうまくいかなかったこと。それぞれ、関わる文献の後に置く：
+## Nagy 1979「The Best of the Achaeans」。
 
 core-import-title = 「{ $title }」
 core-import-merge-gone = { $reference }：統合先の項目がもうありません
 
-## PDF files.
+## PDFファイル。
 
 core-import-not-a-pdf = { $name }はPDFではありません。
-# The service is a name: Crossref, DataCite.
+# サービスは名前：Crossref、DataCite。
 core-import-details-from = 書誌情報は{ $service }から得ました。
 core-import-number-unknown = ファイルに番号が見つかりましたが、データベースには何の情報もありません。書誌情報はファイル自体から得たものなので、確認してください。
 core-import-databases-failed = データベースに問い合わせできませんでした（{ $error }）。書誌情報はファイル自体から得たものなので、確認してください。
 
-## Zotero.
+## Zotero。
 
 core-import-zotero-my-library = マイライブラリ
 core-import-zotero-group = グループ{ $id }
@@ -40,23 +40,27 @@ core-import-zotero-empty-item = Zoteroのアイテム{ $key }は空なので除�
 core-import-zotero-alone = { $count ->
    *[other] Zoteroで、どの文献にも属さないファイルやメモが{ $count }件あったため、除きました。
 }
-# The role is Zotero's own name for it: "recipient", "reviewed author".
+# 役割はZotero自身の呼び名：「recipient」「reviewed author」。
 core-import-zotero-not-a-field = Zoteroは{ $name }を{ $role }としていますが、BibLaTeXにはそれに当たるフィールドがありません。この名前は除きました。
+core-import-zotero-collaborator = Zoteroは{ $name }を{ $role }としていますが、BibLaTeXにはそれに当たるフィールドがありません。この名前は協力者（種類が「collaborator」の編者）に加え、役割は保持していません。
+core-import-zotero-collaborator-unnamed = Zoteroは{ $name }を名前のない役割で挙げていて、BibLaTeXにはそれに当たるフィールドがありません。この名前は協力者（種類が「collaborator」の編者）に加えました。
 core-import-zotero-left-out = Zoteroのフィールド「{ $field }」にはBibLaTeXで対応するものがないため、除きました：{ $value }
 
-## Zotero's database.
+## Zoteroのデータベース。
 
 core-import-zotero-no-database = { $path }内のZoteroデータベース（{ $file }）
 core-import-zotero-copying = { $path }を一時フォルダーにコピー
+core-import-zotero-locked = Zoteroは実行中{ $path }をロックしているため、読み込めませんでした。Zoteroを閉じてもう一度インポートしてください
 core-import-zotero-empty = ファイルが空です
 core-import-zotero-disturbed = 読み込みの最中に、Zoteroがデータベースに書き込んでいました。足りないものがあれば、Zoteroを閉じてもう一度インポートしてください。
 core-import-zotero-backup-read = Zoteroのデータベースを読み込めませんでした（{ $error }）。代わりにバックアップ{ $backup }を読み込みました。バックアップの作成後にZoteroで変更した内容は含まれていません。
+core-import-zotero-backup-read-locked = Zoteroは実行中データベースをロックしているため、データベースを読み込めませんでした。代わりにバックアップ{ $backup }を読み込みました。バックアップの作成後にZoteroで変更した内容は含まれていません。データベースそのものを読み込むには、Zoteroを閉じてもう一度インポートしてください。
 core-import-zotero-not-a-database = { $path }はZoteroのデータベースではありません。
 core-import-zotero-unreadable = このZoteroデータベースは、ここでは読み込めない形式です：{ $what }。古いバージョンのZoteroで書かれたものなら、最新のZoteroで一度開くと更新されます。
 core-import-zotero-unreadable-version = このZoteroデータベースは、ここでは読み込めない形式です（Zoteroデータベースのバージョン{ $version }）：{ $what }。古いバージョンのZoteroで書かれたものなら、最新のZoteroで一度開くと更新されます。
 core-import-zotero-no-table = テーブル「{ $table }」がありません
 core-import-zotero-no-column = テーブル「{ $table }」に列「{ $column }」がありません
-# What is lacking where a table is not there: one of the six below.
+# テーブルがないときに欠けるもの：下の六つのうちの一つ。
 core-import-zotero-no-optional = Zoteroデータベースに、ここで知られている形式のテーブル「{ $table }」がありません。そのため、{ $consequence }。
 core-import-zotero-no-bin = Zoteroのごみ箱にあるアイテムを他と区別できません
 core-import-zotero-no-collections = コレクションは読み込んでいません
@@ -65,65 +69,67 @@ core-import-zotero-no-notes = メモは読み込んでいません
 core-import-zotero-no-keywords = キーワードは読み込んでいません
 core-import-zotero-no-group-names = グループライブラリの名前はわかりません
 
-## PDF files, as they are read for a reference.
+## 文献のために読み込むPDFファイル。
 
 core-import-pdf-empty = ファイル「{ $name }」は空です。
 core-import-pdf-not-a-pdf = ファイル「{ $name }」はPDFではありません。
+core-import-pdf-not-started = 「{ $name }」を読み込めませんでした。読み込みのためのプロセスを開始できませんでした：{ $message }
 core-import-pdf-unreadable = ファイルを読み込めませんでした。壊れているか、パスワードで保護されているか、大きすぎます。
 core-import-pdf-scan = このファイルにはテキスト層がありません。スキャンした画像です。
 core-import-pdf-from-file = 書誌情報は目録からではなくファイル自体から得たものなので、確認してください。
 core-import-pdf-from-metadata = ファイルにDOIもISBNも見つかりませんでした。書誌情報はファイル自体のメタデータから得たものなので、確認してください。
 core-import-pdf-unknown = ファイルにDOIもISBNも見つからず、メタデータからも何のファイルかわかりません。書誌情報を記入してください。
 
-## Tables, from files of text and of sheets.
+## テキストと表計算シートのファイルから読み込む表。
 
 core-import-table-too-large = ファイルの大きさは{ $size } MBです。表を読み込めるのは{ $most } MBまでのファイルです。
 core-import-table-kinds = 表は、CSVなど値をコンマ・セミコロン・タブで区切ったテキストと、LibreOffice（.ods）およびExcel（.xlsx、.xls）のシートから読み込めます。
 core-import-table-empty = ファイルには何もありません。
-# The rows are a number, or where the counting was given up, the message below.
+# 行数は数か、数えるのをやめたところでは下のメッセージ。
 core-import-table-rows = この表は{ $rows }行あります。テキスト中の表は{ $most }行までです。表計算シートではありません。
 core-import-table-columns = この表は{ $columns }列あります。テキスト中の表は{ $most }列までです。表計算シートではありません。
 core-import-table-more-than = { $count }超
 
-## Documents brought in, to become maps.
+## マップになるために取り込む文書。
 
 core-import-document-stopped = 読み込みを中止しました。
 core-import-pdfs-stopped = ファイルの判別を中止しました。何も追加していません。
 core-import-document-kind = 「{ $file }」は文書として取り込める種類のファイルではありません。取り込めるのはWord（DOCX）、OpenDocument（ODT）、Markdown、HTML、LaTeX、RTF、EPUB、Org、reStructuredText、Typst、プレーンテキストです。
 core-import-document-too-large = 「{ $file }」は50 MBを超えていて、文書として取り込める大きさを超えています。
-# The kind is the kind of file: Word (DOCX), plain text.
+core-import-document-too-deep = 「{ $file }」は入れ子が深すぎて取り込めません。部分が互いの中に、読み込める深さ（数百段）を超えて入り組んでいます。Webサイトから保存したページなら、プレーンなHTMLとして保存し直すか、テキストを新しい文書にコピーしてください。
+# 種類はファイルの種類：Word（DOCX）、プレーンテキスト。
 core-import-document-unreadable = 「{ $file }」を{ $kind }として読み込めませんでした。壊れているか、名前とは別の種類のファイルかもしれません。読み込みを担うPandocの報告：{ $message }
 core-import-document-pandoc-unreadable = Pandocが「{ $file }」から作ったものを読み込めませんでした：{ $error }
-# The title of a map made of a document that has none, nor a name of its file.
+# タイトルも、ファイルの名前もない文書から作ったマップのタイトル。
 core-import-document-untitled = 無題
 core-import-document-plain-text = プレーンテキスト
 core-import-document-notebook = Jupyterノートブック
 
-## What the one who brings a document in should know of it.
+## 文書を取り込む人が、その文書について知っておくべきこと。
 
 core-import-document-found = { $count ->
    *[other] { $made ->
-        [all] ライブラリの文献にまだ結びついていない引用が{ $count }件見つかりました。すべて文献管理ソフトで作られたものです。書かれたとおりのテキストのまま置かれ、マップを作るときにも後からでも順に確認できます。
-        [some] ライブラリの文献にまだ結びついていない引用が{ $count }件見つかりました。そのうち{ $some }件は文献管理ソフトで作られたものです。書かれたとおりのテキストのまま置かれ、マップを作るときにも後からでも順に確認できます。
-       *[none] ライブラリの文献にまだ結びついていない引用が{ $count }件見つかりました。書かれたとおりのテキストのまま置かれ、マップを作るときにも後からでも順に確認できます。
+        [all] ライブラリの文献にまだ結び付けられていない引用が{ $count }件見つかりました。すべて文献管理ソフトで作られたものです。書かれたとおりのテキストのまま置かれ、文書を取り込んだときにも、後からでも順に確認できます。
+        [some] ライブラリの文献にまだ結び付けられていない引用が{ $count }件見つかりました。そのうち{ $some }件は文献管理ソフトで作られたものです。書かれたとおりのテキストのまま置かれ、文書を取り込んだときにも、後からでも順に確認できます。
+       *[none] ライブラリの文献にまだ結び付けられていない引用が{ $count }件見つかりました。書かれたとおりのテキストのまま置かれ、文書を取り込んだときにも、後からでも順に確認できます。
     }
 }
 core-import-document-endnote = { $count ->
-   *[other] EndNoteで作られた引用{ $count }件は、表示されているとおりのテキストとして取り込まれ、見つかった引用には含まれません。EndNoteが作品について記録した内容を読み取れなかったためです。
+   *[other] EndNoteで作られた引用{ $count }件は、表示されているとおりのテキストとして取り込まれ、未照合の引用には含まれません。EndNoteが作品について記録した内容を読み取れなかったためです。
 }
 core-import-document-bookmarks = { $count ->
-   *[other] この文書は引用{ $count }件をブックマークに保存しており、引用先を読み取れませんでした。そのままのテキストになります。Zoteroの文書設定を変えると、別の方法で保存されます。
+   *[other] この文書は引用{ $count }件をブックマークに保存しており、引用先を読み取れませんでした。そのままのテキストになります。Zoteroの文書設定でそう指定すれば、別の方法で保存されます。
 }
-core-import-document-bibliography = この文書には「{ $heading }」の下に引用文献の一覧があります。他の部分と同じくテキストとして取り込まれます。マップは、引用されたものから独自の参考文献を作ります。
-core-import-document-bibliography-made = この文書には、文献管理ソフトで作られた引用文献の一覧があります。他の部分と同じくテキストとして取り込まれます。マップは、引用されたものから独自の参考文献を作ります。
+core-import-document-bibliography = この文書には「{ $heading }」の下に引用文献の一覧があります。他の部分と同じくテキストとして取り込まれます。Glaukopisは、引用されたものから独自の参考文献を作ります。
+core-import-document-bibliography-made = この文書には、文献管理ソフトで作られた引用文献の一覧があります。他の部分と同じくテキストとして取り込まれます。Glaukopisは、引用されたものから独自の参考文献を作ります。
 core-import-document-tracked = この文書には変更履歴があります。テキストはすべての変更を承諾した状態で取り込まれます。
 core-import-document-comments = この文書には余白のコメントがありますが、除きます。
 core-import-document-heading-notes = { $count ->
    *[other] 見出しに付いた注{ $count }件は、その下のテキストの冒頭に置かれます。見出しには注を付けられません。
 }
-# What a caption began with is shown as the document has it: “Figure 1:”.
+# キャプションの冒頭にあったものは、文書のとおりに示す：「図1：」。
 core-import-document-labels = { $count ->
-   *[other] キャプション{ $count }件が「{ $first }」のような語と番号で始まっていました。これは除きます。マップは図と表に自分で番号を振ります。テキストが図や表を番号で挙げている箇所は書かれたとおりのテキストで、マップの番号には従いません。
+   *[other] キャプション{ $count }件が「{ $first }」のような語と番号で始まっていました。これは除きます。Glaukopisは図と表に自分で番号を振ります。テキストが図や表を番号で挙げている箇所は書かれたとおりのテキストで、印刷される番号には従いません。
 }
 core-import-document-label-example = 図1：
 core-import-document-caption-notes = { $count ->
@@ -145,10 +151,10 @@ core-import-document-raw = { $count ->
    *[other] 特定の種類の文書だけに向けてHTMLやTeXで書かれた部分{ $count }件は除きます。
 }
 core-import-document-pictures-wanting = { $count ->
-   *[other] ファイルにある画像{ $count }点が読み込んだテキストに含まれていないため、除きます。ページのヘッダーやフッター、または描画の中にあるのかもしれません。
+   *[other] ファイルにある画像{ $count }枚が読み込んだテキストに含まれていないため、除きます。ページのヘッダーやフッター、または描画の中にあるのかもしれません。
 }
 
-## A picture of a document that is left out, and why.
+## 除いた文書の画像と、その理由。
 
 core-import-document-picture-left-out = 画像「{ $name }」は除きます：{ $why }。
 core-import-document-picture-kind = 読み込まない種類の画像です（{ $kind }）
@@ -157,6 +163,26 @@ core-import-document-picture-unreadable = 読み込めませんでした
 core-import-document-picture-network = ネットワーク上にあり、そこからは何も取得しません
 core-import-document-picture-not-taken-out = ファイルから取り出せませんでした
 core-import-document-picture-outside = ファイル内ではなくこのコンピューターの別の場所にあり、そこからは取り込みません
+core-import-document-picture-outside-folder = 文書のフォルダーの外にあり、文書を取り込むときは、そのフォルダーとその下にあるファイルだけを取り込みます
 core-import-document-picture-not-found = 文書が示す場所にファイルが見つかりませんでした
 core-import-document-picture-too-large = 50 MBを超えています
 core-import-document-picture-file-unreadable = ファイルを読み込めませんでした
+
+## 文書がほかのファイルから読み込むもの（LaTeXの\input、reStructuredText・
+## Org・AsciiDoc・Typstのinclude）と、除いたもの。
+## $name は、文書が示すとおりのファイル。
+
+core-import-document-include-outside = 文書が読み込むファイル「{ $name }」は文書のフォルダーの外にあるため、除きました。文書を取り込むときは、そのフォルダーとその下にあるファイルだけを読み込みます。
+core-import-document-include-not-found = 文書が読み込むファイル「{ $name }」が文書のフォルダーに見つからなかったため、除きました。
+core-import-document-include-network = 文書が読み込む「{ $name }」はネットワーク上にあり、そこからは何も取得しないため、除きました。
+core-import-document-include-unreadable = 文書が読み込むファイル「{ $name }」をテキスト（UTF-8）として読み込めなかったため、除きました。
+core-import-document-include-circle = ファイル「{ $name }」は、読み込むファイルを通じて自分自身を読み込んでいます。一度だけ読み込みました。
+core-import-document-include-too-deep = ファイル「{ $name }」は除きました。文書が読み込むファイルが、さらに別のファイルを{ $count }段より深く読み込んでいます。
+core-import-document-include-too-large = ファイル「{ $name }」は除きました。文書が読み込むファイルと合わせると、50 MBを超えてしまいます。
+# 全体としてインポートしたTypstのモジュール（#import "file.typ" または #import "file.typ" as name）。
+core-import-document-include-module = Typstファイル「{ $name }」は、独自の名前で全体としてインポートされていますが、ここではそれを読み込まないため、除きました。そこから名前を指定してインポートしたものは読み込みます。
+
+## UTF-8でもUTF-16でもないテキストのファイル。文献、文書、表として取り込むもの。
+
+# $name はファイルの名前。
+core-import-read-as-western = 「{ $name }」はUTF-8でもUTF-16でも書かれていないため、西ヨーロッパ言語（Windows-1252）として読み込みました。ほかの文字体系の文字が正しく読めていないかもしれません。確実にするには、ファイルをUTF-8で保存し、もう一度取り込んでください。

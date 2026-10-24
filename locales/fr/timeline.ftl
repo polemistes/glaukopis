@@ -78,9 +78,17 @@ when-hint-units = Les temps sont des nombres de l’unité de la frise, réglée
 when-bc = av. J.-C.
 # $month: 1 to 12; $year: as written.
 when-month-of = { $year }, mois { $month }
-# How a placement is said beside the element: "after the quarrel, before the embassy".
-when-said-after = après
-when-said-before = avant
-when-said-during = pendant
+# How a placement is said beside the element: "after the quarrel, before the embassy";
+# $name is the name of the element it is placed by.
+when-said-after-name = après { $name }
+when-said-before-name = avant { $name }
+when-said-during-name = pendant { $name }
 when-said-to = à
 when-said-approx = v.
+
+## Fewer words, stage 2 (agent "chrome"): the words of the menus.
+
+when-stamp = Datation…
+# The title of the dialog that says when an element is.
+when-stamp-title = Datation
+timeline-empty-stamp = Rien n’est encore daté. Choisissez « Datation… » dans le menu d’un élément.

@@ -4,7 +4,6 @@
 ## The marks and the kinds of paragraph, in the bar over a selection and in
 ## the tools over the text.
 
-editor-format = Format
 editor-writing = Scriere
 editor-italic = Cursiv
 editor-bold = Aldin
@@ -178,13 +177,6 @@ editor-pasted-picture = imagine
 
 ## More.
 
-editor-found = Citări nelegate…
-editor-found-count = { $count ->
-    [one] Una de parcurs, din care să se facă o citare
-    [few] { $count } de parcurs, din care să se facă citări
-   *[other] { $count } de parcurs, din care să se facă citări
-}
-editor-found-none = Și text care seamănă a citări, în această hartă
 
 ## Choosing a work to cite.
 

@@ -16,7 +16,7 @@
   import PanelsTopLeft from '@lucide/svelte/icons/panels-top-left';
   import Scale from '@lucide/svelte/icons/scale';
   import type { Looked, Scheme } from '$lib/api/ocr';
-  import { t } from '$lib/i18n';
+  import { listed, sentence, t } from '$lib/i18n';
   import Button from '$lib/ui/Button.svelte';
   import Segmented from '$lib/ui/Segmented.svelte';
   import { lowResolution } from './how';
@@ -84,7 +84,7 @@
             : t('ocr-summary-poor', { poor: looked.poor }),
         );
     }
-    return `${parts.join(', ')}.`;
+    return sentence(listed(parts));
   });
 
   const schemeWords: Record<Scheme, string> = {

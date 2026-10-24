@@ -44,7 +44,7 @@ import { bringIn } from '$lib/documents/bringing.svelte';
 import { pictures } from '$lib/figures/pictures.svelte';
 import { goThroughWhenOpen } from '$lib/found/found.svelte';
 import { descendants } from '$lib/home/folders';
-import { t } from '$lib/i18n';
+import { listed, t } from '$lib/i18n';
 import { shortLabel } from '$lib/library/format';
 import { dialogs } from '$lib/library/references.svelte';
 import { fold, library } from '$lib/state/library.svelte';
@@ -223,7 +223,7 @@ export function exportedWords(out: Exported): string {
   if (out.bib) parts.push(t('files-exported-bib'));
   if (out.stopped) parts.push(t('files-exported-stopped', { count: out.total - out.files }));
   if (out.problems.length) parts.push(t('files-problems', { count: out.problems.length }));
-  return parts.join(', ');
+  return listed(parts);
 }
 
 /**
@@ -346,7 +346,7 @@ export function takenWords(taken: TakenIn): string {
   if (taken.same.length) parts.push(t('files-same', { count: taken.same.length }));
   if (taken.folders) parts.push(t('files-folders-made', { count: taken.folders }));
   if (taken.problems.length) parts.push(t('files-problems', { count: taken.problems.length }));
-  return parts.join(', ') || t('files-taken-none');
+  return listed(parts) || t('files-taken-none');
 }
 
 /**
@@ -390,7 +390,7 @@ export async function takeIn(
 
 /** Removes a file from the library, after asking, and saying which references it belongs to. */
 export function removeFile(file: FileView): Promise<boolean> {
-  const names = file.references.map(referenceWords).join(', ');
+  const names = listed(file.references.map(referenceWords));
   return removeAsked(
     [file],
     t('files-remove-title', { name: file.name }),
@@ -439,7 +439,7 @@ async function removeAsked(chosen: FileView[], title: string, message: string): 
     if (chosen.length > 1 || removed.folders) {
       const parts = [t('files-removed', { count: removed.files })];
       if (removed.folders) parts.push(t('files-removed-folders', { count: removed.folders }));
-      notifyOk(parts.join(', '));
+      notifyOk(listed(parts));
     }
     return true;
   } catch (error) {
@@ -529,7 +529,7 @@ export async function undoLast(done?: Done): Promise<void> {
   await Promise.all([files.reload(), library.reload()]);
   const parts = [t('files-going-undone', { count: back })];
   if (removed) parts.push(t('files-going-undone-made', { count: removed }));
-  const words = parts.join(', ');
+  const words = listed(parts);
   if (problems.length) notifyError(words, problems.slice(0, 4).join('\n'));
   else notifyOk(words);
 }

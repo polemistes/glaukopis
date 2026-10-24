@@ -510,7 +510,14 @@ describe('where elements stand in time', () => {
   });
 
   it('says a placement in words', () => {
-    const words = { after: 'after', before: 'before', during: 'during', to: 'to', approx: 'c.' };
+    const words = {
+      after: (name: string) => `after ${name}`,
+      before: (name: string) => `before ${name}`,
+      during: (name: string) => `during ${name}`,
+      between: ', ',
+      to: 'to',
+      approx: 'c.',
+    };
     const name = (id: string) => ({ war: 'the war', peace: 'the peace' })[id] ?? id;
     expect(describeWhen({ start: { at: '431 BC', approx: true } }, name, words)).toBe('c. 431 BC');
     expect(describeWhen({ start: { at: '431 BC', margin: '5 years' } }, name, words)).toBe(

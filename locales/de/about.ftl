@@ -1,7 +1,11 @@
-# The window of an element's document settings (ADR 0038): its template,
-# the details that stand on its first page, its parts, its layout and
-# reference style, its language, and the checklist.
+# Document properties: what an element's document says of itself, its
+# details, its type (what you are writing, its template), its language and
+# the checklist of what its template requires. How it looks and what it
+# contains are set in Look.
 
+about-window = Dokumenteigenschaften
+# In the menu of an element, and at the foot of Look.
+about-menu = Dokumenteigenschaften…
 about-sections = Bereiche des Fensters
 
 ## The parts of the window, as they stand down its left.
@@ -56,3 +60,29 @@ about-language = Sprache des Textes
 about-checklist-hint = Was die Vorlage verlangt, gemessen am Text und am Baum. Gekürzt wird nichts.
 about-checklist-clear = Nichts anzumerken.
 about-requirement-words = Wörter im Text
+about-requirement-anonymous = Zur Begutachtung: die Mitwirkenden bleiben aus dem Dokument weg.
+
+## The sides, the panes and the bars, stage 2: the typesetting pane, the document pane, Document properties.
+
+# The tab of what the document is: what you are writing, its template.
+about-section-type = Dokumenttyp
+
+## Fewer words, stage 3: the source of a layout's requirements, under the layout the type brings.
+
+about-layout-source = Quelle: { $name }
+
+## The contributors, stage 3: the persons of a document, each with a role.
+
+about-contributors = Mitwirkende
+# Beside a plus, under the contributors: adds one.
+about-add-contributor = Person hinzufügen
+about-contributor-role = Rolle von Person { $number }
+about-role-author = Autor
+about-role-editor = Herausgeber
+about-role-translator = Übersetzer
+about-contributor-name = Name von Person { $number }
+about-contributor-affiliation = Institution von Person { $number }
+about-contributor-email = E-Mail von Person { $number }
+about-contributor-orcid = ORCID von Person { $number }
+# Under the details: whether every line of the printed page is numbered in the margin.
+about-page-lines = Jede Zeile der gedruckten Seite nummerieren

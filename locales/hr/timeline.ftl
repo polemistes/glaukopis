@@ -80,9 +80,5 @@ when-hint-units = Vremena su brojevi jedinice vremenske crte, postavljene ispod 
 when-bc = pr. Kr.
 # $month: 1 to 12; $year: as written.
 when-month-of = { $year }, { $month }. mjesec
-# How a placement is said beside the element: "after the quarrel, before the embassy".
-when-said-after = nakon
-when-said-before = prije
-when-said-during = tijekom
 when-said-to = do
 when-said-approx = oko

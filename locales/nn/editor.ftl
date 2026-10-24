@@ -4,7 +4,6 @@
 ## The marks and the kinds of paragraph, in the bar over a selection and in
 ## the tools over the text.
 
-editor-format = Formatering
 editor-writing = Skriving
 editor-italic = Kursiv
 editor-bold = Feit
@@ -45,9 +44,6 @@ editor-side-left = Venstre
 editor-side-right = Høgre
 # Over a number in the margin of the text, which opens a field for it when pressed.
 editor-line-number-press = Nummeret på denne linja: trykk for å endre det
-
-## Numbers belong to what they number (ADR 0041): the Numbers menu offers
-## the three, each saying what it numbers.
 
 ## The bracket at the left of paragraphs of one kind standing together (a
 ## run), named by the kind; its menu says what is said of them.
@@ -168,7 +164,7 @@ editor-table = Tabell …
 editor-table-file = Tabell frå ei fil …
 editor-formula = Formel
 editor-pointer = Kryssreferanse …
-editor-refmark-title = Referansemerke
+editor-refmark-title = Tal i linja
 editor-refmark-label = Merke
 editor-refmark-placeholder = 3:16, 327a, 1094a1
 editor-refmark-dialog-hint = Merket er ingen del av orda: stavekontrollen, søket og ordteljinga går forbi det. Oppsettet avgjer om det blir heva i linja eller sett i margen.
@@ -177,9 +173,6 @@ editor-pasted-picture = bilete
 
 ## More.
 
-editor-found = Lause kjeldetilvisingar …
-editor-found-count = { $count } å gå gjennom og gjere til kjeldetilvisingar
-editor-found-none = Og tekst som ser ut som kjeldetilvisingar, i dette kartet
 
 ## Choosing a work to cite.
 
@@ -250,3 +243,36 @@ editor-note-place-format = Der oppsettet har notane sine
 editor-note-place-foot = Nedst på sida
 editor-note-place-end = Til slutt i teksten
 editor-note-placeholder = Teksten i noten
+
+## Stage 3 of the sides, the panes and the bars (agent "bars")
+editor-words-kind = Slag ord
+editor-words-kind-now = Slag ord: { $kind }
+editor-marks = Merke
+editor-marks-shown = Teikn for mellomrom og avsnitt
+editor-image = Bilete
+editor-inline-number = Tal i linja …
+
+## The numbering of lines, in two windows, and the side of the annotations (stage 2 of the contributors and the lines)
+# The title of the window, and the item of the text's right-click menu that opens it.
+editor-numbering-from-here = Linjenummerering herifrå
+editor-numbering-from-here-item = Linjenummerering herifrå …
+editor-numbering-of-line = Nummereringa av denne linja
+editor-numbering-of-line-item = Nummereringa av denne linja …
+# In the menu of a run's bracket.
+editor-run-numbering = Linjenummerering …
+# Count the lines of: every kind, or one kind of paragraph.
+editor-numbering-only = Tel linjene av
+editor-numbering-every-kind = Alle slag
+editor-line-counted = Blir talt
+editor-line-shown = Nummeret blir vist
+editor-line-shown-others = Som dei andre
+editor-line-shown-always = Alltid
+editor-line-shown-never = Aldri
+# Named by the margin the annotation goes to.
+editor-line-annotation-right = Merknad i høgremargen
+editor-line-annotation-left = Merknad i venstremargen
+editor-line-annotation-placeholder = Eit versemål, nummeret i ei anna utgåve
+
+## Where a line begins, and the step (stage 4 of the contributors and the lines)
+# In the right-click menu of the text, with a check while the line the cursor is in does so.
+editor-line-continues = Byrjar der linja før slutta

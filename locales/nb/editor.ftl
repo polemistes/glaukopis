@@ -4,7 +4,6 @@
 ## Formateringen og slagene avsnitt, i linjen over det som er merket og i
 ## verktøyene over teksten.
 
-editor-format = Formatering
 editor-writing = Skriving
 editor-italic = Kursiv
 editor-bold = Fet
@@ -174,9 +173,6 @@ editor-pasted-picture = bilde
 
 ## Mer.
 
-editor-found = Løse kildehenvisninger …
-editor-found-count = { $count } å gå gjennom og gjøre til kildehenvisninger
-editor-found-none = Og tekst som ser ut som kildehenvisninger, i dette kartet
 
 ## Å velge et verk å henvise til.
 

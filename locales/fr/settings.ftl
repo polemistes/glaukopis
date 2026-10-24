@@ -104,3 +104,15 @@ settings-logs = Le journal
 
 settings-page-chips-on = Activé
 settings-page-chips-off = Désactivé
+
+## The settings in plain words, stage 1: the defaults of new projects and documents, and the look chips.
+
+# Whether a new project opens in its diagram or in its text; the choices are the names of the two views.
+settings-default-view = Vue par défaut des nouveaux projets
+settings-default-type = Type de document par défaut
+settings-default-look = Aspect par défaut
+settings-default-style = Style de citation par défaut
+# The first choice of each of the three defaults: none, so that a new document is of the plain type, and the type's look and style hold.
+settings-default-none = Aucun, comme le veut le type de document
+# Whether a line of the preview, pressed, shows a chip at the edge of the page that says what it is and opens Look at it.
+settings-look-chips = Afficher les pastilles d’aspect dans la fenêtre d’aperçu

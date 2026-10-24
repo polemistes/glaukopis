@@ -1,7 +1,7 @@
-# The words a document prints, in English (ADR 0020). The formats have
-# these words in English; where a format has one of them, a document prints
-# it in the language of the document. A language that has this file has
-# words for documents, and is offered for new texts.
+# 文書が印刷する語の日本語（ADR 0020）。レイアウトはこれらの語を英語で
+# もつ。レイアウトにそのうちの一つがあるとき、文書はそれを文書の言語で
+# 印刷する。このファイルがある言語は文書の語をもち、新しいテキストの言語と
+# して選べる。
 
 document-notes = 注
 document-abstract = 要旨
@@ -13,25 +13,36 @@ document-references-and-notes = 注および参考文献
 document-contents = 目次
 document-figure = 図
 document-fig = 図
-document-figures = 図一覧
+document-figures = 図
 document-table = 表
 document-tab = 表
-document-tables = 表一覧
-# Where a figure or table that is gathered at the end belongs in the text;
-# the braces stand for its label and number.
+document-tables = 表
+# 末尾にまとめた図や表が、テキストの中で本来あるべきところ。
+# 波括弧はそのラベルと番号の代わり。
 document-about-here = ［{"{}"}をこのあたりに挿入］
-# A work that has no year, where the year of a citation stands.
+# 年のない著作。引用で年の立つところに。
 document-no-date = 刊年不明
-# Where a figure or table that is gathered at the end has no label: "[The figure about here]".
+# 末尾にまとめた図や表にラベルがないとき：「［図をこのあたりに挿入］」。
 document-the-figure = 図
 document-the-table = 表
-# Where a citation names a work that the document does not have.
+# 文書がもたない著作を引用が挙げているところ。
 document-reference-not-found = ［文献が見つかりません］
-# Where a picture is not on the computer the document is made on; the braces
-# stand for its name, or for the words below where it has none.
+# 文書を作成するコンピューターに画像がないところ。波括弧はその名前、
+# 名前がないときは下の語の代わり。
 document-picture-not-here = ［画像がありません：{"{}"}］
 document-the-file = ファイル
-# The little document that shows what a reference style does: "(see Nagy
-# 1979, 12–14)", and "Nagy (1979) argues otherwise."
+# 引用スタイルが何をするかを示す小さな文書：「（Nagy 1979, 12–14 参照）」と
+# 「Nagy (1979) は異なる見解を示している。」
 document-sample-see = 参照
 document-sample-argues = は異なる見解を示している。
+
+## 著者等：タイトルページの編者と訳者の行。波括弧はその名前の代わり。
+## 日本の本の扉のとおり、名前の後に「編」「訳」「編訳」を置く。
+
+document-edited-by = {"{}"} 編
+document-translated-by = {"{}"} 訳
+document-edited-and-translated-by = {"{}"} 編訳
+# タイトルページで、編者や訳者の名前のあいだと、最後の名前の前に置くもの：
+# 「山田・鈴木・佐藤 訳」。スペースは入れない（スペースは {" "} と書く）。
+document-names-between = ・
+document-names-last = ・

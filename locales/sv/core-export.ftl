@@ -72,3 +72,7 @@ core-export-template-own-only = Bara dina egna mallar kan raderas.
 core-export-the-template = mallen ”{ $id }”
 core-export-output-not-yet = Filen ”{ $id }” i mallen kan inte göras än: bara dokumentet kan göras.
 core-export-output-unknown = Mallen har ingen fil ”{ $id }”.
+
+## Stage 5 of the settings in plain words: LaTeX's hyphenation.
+
+core-export-latex-no-hyphenation = LaTeX har inga avstavningsmönster för { $language }: orden avstavas som engelska ord tills språkets paket i TeX Live är installerat (på Arch texlive-langeuropean för de flesta europeiska språk).

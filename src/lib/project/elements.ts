@@ -20,6 +20,7 @@ import Scissors from '@lucide/svelte/icons/scissors';
 import Tag from '@lucide/svelte/icons/tag';
 import Trash2 from '@lucide/svelte/icons/trash-2';
 import { languages, t } from '$lib/i18n';
+import type { SaidWords } from '$lib/timeline/solve';
 import { keysFor } from '$lib/shell/keys.svelte';
 import { commentsUi } from '$lib/comments/ui.svelte';
 import { aboutDocumentUi } from '$lib/document/about-document.svelte';
@@ -104,12 +105,13 @@ async function documentInto(project: Project, id: string) {
   if (brought.goThrough) goThrough(brought.top);
 }
 
-/** The words with which a placement in time is said. */
-export function saidWords() {
+/** The words with which a placement in time is said, in the language of the interface. */
+export function saidWords(): SaidWords {
   return {
-    after: t('when-said-after'),
-    before: t('when-said-before'),
-    during: t('when-said-during'),
+    after: (name) => t('when-said-after-name', { name }),
+    before: (name) => t('when-said-before-name', { name }),
+    during: (name) => t('when-said-during-name', { name }),
+    between: t('ui-list-between'),
     to: t('when-said-to'),
     approx: t('when-said-approx'),
   };

@@ -258,6 +258,86 @@ Vis, Åbn, Søg, Prøv igen, Vælg…
   romanmanuskript, novelle, novellesamling, digte, skuespil, filmmanuskript,
   brev, blogindlæg, nyhedsartikel
 
+## Nyt efter 0.2.4 (2026-10-24)
+
+Hvor dette afsnit og et ældre siger noget forskelligt, gælder dette.
+
+- **the list** (træet til venstre med alle projekter og mapper) — listen;
+  *the list of projects* — projektlisten, som før
+- **the start screen** (det, vinduet viser, når intet projekt er åbent) —
+  startskærmen; *Last opened* — Senest åbnet
+- **side** (den ene halvdel af vinduet, med sit eget projekt, sin sti og
+  sin bjælke med ikoner) — side (siden, sider), som i »Luk denne side« og
+  »Byt side«. Hvor det kan forveksles med dokumentets sider, skrives
+  *vinduets sider* (»Mellem vinduets sider og ombrydningen«).
+- **the path** (øverst på en side: hvor man er i træet) — stien; *More of
+  the path* — Mere af stien
+- **Split view** — Delt visning; knappen kort: »Opdel«, ikke »Del«, som er
+  *Share*
+- **the typesetting pane** (siderne af den valgte side, med Udseende ved
+  siden af) — ombrydningspanelet; overskriften og knappen: Ombrydning;
+  *Hide the typesetting* — Skjul ombrydningen. Det danske fagord for at
+  bryde teksten om i sider, som bokmåls »ombrekking«.
+- **the document pane** (referencer, billeder, kommentarer og det øvrige
+  for den side, der er i brug) — dokumentpanelet. Afløser *sidepanelet*.
+- **pane** om ombrydningspanelet og dokumentpanelet — panel (panelet);
+  »rude« bruges ikke om dem
+- **zoom** — Zoom; *Fit the width* — Tilpas til bredden; *Larger / Smaller
+  pages* — Større / Mindre sider
+- **Marks** (menuen med kursiv, fed osv.) — Mærker, som før; **the marks of
+  whitespace** (¶, ↵ og ringen om et hårdt mellemrum) — tegn for mellemrum
+  og afsnit; ikke »mærker«
+- **hard space** — hårdt mellemrum (som i dansk Word)
+- **clone** — klon (klonen, kloner): et element et andet sted, med sit eget
+  navn og originalens tekst og underelementer; *the original* — originalen;
+  *Clone of “X”* — Klon af »X«
+- **sub-elements** — underelementer; *Add child element* — Tilføj
+  underelement; *Add sibling element* — Tilføj element på samme niveau
+- **fold / unfold** — folde sammen / folde ud, som før: *Fold* — Fold
+  sammen; *Unfold* — Fold ud
+- **Enter** (det valgte element bliver det, der vises) — Gå ind; *Enter
+  beside* — Gå ind ved siden af
+- **Time stamp** — tidsstempel (tidsstemplet); menupunktet: Tidsstempel…
+- **image** — billede. Engelsk siger nu *image*, hvor det sagde *picture*;
+  dansk siger billede om begge. *The store* er stadig billedlageret; *Among
+  the images* — Blandt billederne
+- **look chip** (skiltet ved kanten af siden, der navngiver en linje og
+  åbner Udseende ved den) — udseendeskilt (udseendeskiltet, udseendeskilte)
+- **Document properties** (vinduet, der før hed Om dette dokument) —
+  Dokumentegenskaber; **document type** (hvad du skriver: skabelonen, som
+  grænsefladen nu kalder den) — dokumenttype (dokumenttypen)
+- **contributor** — bidragyder (bidragyderen, bidragydere); *role* — rolle;
+  **Author** — Forfatter; **Editor** — Redaktør; **Translator** — Oversætter
+- på titelbladet, efter forfatterne: **Edited by …** — Redigeret af …;
+  **Translated by …** — Oversat af …; **Edited and translated by …** —
+  Redigeret og oversat af …; kontakten i Udseende: *Editors and
+  translators* — Redaktører og oversættere
+- **Line numbering from here** — Linjenummerering herfra; **Numbering of
+  this line** — Denne linjes nummerering; **Count the lines of** — Tæl
+  linjerne i (*Every kind* — Alle arter)
+- **Counted** — Tælles med; **Its number is shown** — Nummeret vises: *As
+  the others are* — Som de andre, *Always* — Altid, *Never* — Aldrig
+- **annotation** (ved en linje, i højre eller venstre margen: et versemål,
+  en anden udgaves nummer) — bemærkning (bemærkningen, bemærkninger);
+  *Annotations on the* — Side for bemærkningerne (som »Side for numrene«);
+  *Other side from the numbers* — Modsat numrene
+- **indentation step** (længden af ét trin med Tab) — indrykningstrin
+- **Begins where the line before ended** — Begynder, hvor linjen før
+  sluttede
+- **inline number** (det, der før hed *reference mark*, hvor det sættes
+  ind: 3:16, 327a) — tal i linjen; hvor engelsk stadig siger *reference
+  mark*, er det stedmærke
+- **Paragraph kind / Words kind** (knapperne over teksten) — Afsnittets art
+  / Ordenes art; *Paragraph kinds / Words kinds* (i Udseende) — Arter af
+  afsnit / Arter af ord, som »Arter af afsnit og ord« i skabelonen. Aldrig
+  »ordarter«, som er ordklasser.
+- **Default …** (indstillingerne) — Standard…: Standardvisning for nye
+  projekter, Standarddokumenttype, Standardudseende,
+  Standardreferencestil; *None, as the document type has it* — Ingen: som
+  dokumenttypen har det
+- **Fraktur-modellerne** i sproglisten: »Fraktur (gotisk skrift), tysk« og
+  »Fraktur (gotisk skrift), norsk og dansk« (de afløser navnene ovenfor)
+
 ## Navne, der ikke oversættes
 
 Glaukopis; Pandoc, Typst, Tesseract, Hunspell, LaTeX, LuaLaTeX, BibLaTeX,

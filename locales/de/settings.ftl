@@ -104,3 +104,15 @@ settings-logs = Das Protokoll
 
 settings-page-chips-on = Ein
 settings-page-chips-off = Aus
+
+## The settings in plain words, stage 1: the defaults of new projects and documents, and the look chips.
+
+# Whether a new project opens in its diagram or in its text; the choices are the names of the two views.
+settings-default-view = Standardansicht für neue Projekte
+settings-default-type = Standard-Dokumenttyp
+settings-default-look = Standard-Aussehen
+settings-default-style = Standard-Zitierstil
+# The first choice of each of the three defaults: none, so that a new document is of the plain type, and the type's look and style hold.
+settings-default-none = Keine, wie der Dokumenttyp es vorsieht
+# Whether a line of the preview, pressed, shows a chip at the edge of the page that says what it is and opens Look at it.
+settings-look-chips = Etiketten des Aussehens in der Vorschau zeigen

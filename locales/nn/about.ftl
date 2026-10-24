@@ -1,8 +1,11 @@
-# About this document: what an element's document says of itself, its
-# details, its language and the checklist of what its template requires.
-# What the document is, how it looks and what it contains are chosen in the
-# chooser of what you are writing and in Look.
+# Document properties: what an element's document says of itself, its
+# details, its type (what you are writing, its template), its language and
+# the checklist of what its template requires. How it looks and what it
+# contains are set in Look.
 
+about-window = Dokumenteigenskapar
+# In the menu of an element, and at the foot of Look.
+about-menu = Dokumenteigenskapar …
 about-sections = Delane av vindauget
 
 ## The parts of the window, as they stand down its left.
@@ -57,3 +60,29 @@ about-language = Språket i teksten
 about-checklist-hint = Det malen krev, mot teksten og treet. Ingenting blir kutta.
 about-checklist-clear = Ingen merknader.
 about-requirement-words = Ord i teksten
+about-requirement-anonymous = Til fagfellevurdering: bidragsytarane blir utelatne frå dokumentet.
+
+## The sides, the panes and the bars, stage 2: the typesetting pane, the document pane, Document properties.
+
+# The tab of what the document is: what you are writing, its template.
+about-section-type = Dokumenttype
+
+## Fewer words, stage 3: the source of a layout's requirements, under the layout the type brings.
+
+about-layout-source = Kjelde: { $name }
+
+## The contributors, stage 3: the persons of a document, each with a role.
+
+about-contributors = Bidragsytarar
+# Beside a plus, under the contributors: adds one.
+about-add-contributor = Legg til ein bidragsytar
+about-contributor-role = Rolla til bidragsytar { $number }
+about-role-author = Forfattar
+about-role-editor = Redaktør
+about-role-translator = Omsetjar
+about-contributor-name = Namnet på bidragsytar { $number }
+about-contributor-affiliation = Tilknytinga til bidragsytar { $number }
+about-contributor-email = E-posten til bidragsytar { $number }
+about-contributor-orcid = ORCID til bidragsytar { $number }
+# Under the details: whether every line of the printed page is numbered in the margin.
+about-page-lines = Nummerer kvar linje på den trykte sida

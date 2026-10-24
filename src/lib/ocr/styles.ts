@@ -8,7 +8,7 @@
 
 import type { StyleFoundView } from '$lib/api/imported';
 import { CATALOGUE, GROUPS } from '$lib/editor/kinds';
-import { t } from '$lib/i18n';
+import { t, worded } from '$lib/i18n';
 
 /** A size this much from the body's, the body's being 1, is smaller or larger. */
 const SIZE_STEP = 0.05;
@@ -23,7 +23,7 @@ export function lookInWords(style: StyleFoundView): string {
   if (style.bold) words.push(t('ocr-style-bold', { kept }));
   if (style.italic) words.push(t('ocr-style-italic', { kept }));
   let said: string;
-  if (words.length || style.kept) said = t('ocr-style-guess', { kept, look: words.join(' ') });
+  if (words.length || style.kept) said = t('ocr-style-guess', { kept, look: worded(words) });
   else if (style.family.trim()) said = t('ocr-style-family', { family: style.family.trim() });
   else said = t('ocr-style-other');
   said = said.replace(/\s+/g, ' ').trim();

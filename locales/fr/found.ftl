@@ -124,3 +124,8 @@ found-work-may-be = Ce pourrait être
 found-work-another = Une autre…
 found-work-find = La trouver…
 found-work-add = L’ajouter à la bibliothèque
+
+## Fewer words, stage 2 (agent "chrome")
+
+# Over the switches of what is taken for citations in plain text.
+found-plain-text = Citations en texte brut

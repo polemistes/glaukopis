@@ -36,10 +36,13 @@ document-the-file = die Datei
 document-sample-see = vgl.
 document-sample-argues = argumentiert anders.
 
-## The contributors.
+## The contributors: the lines of the editors and the translators on the title
+## page; the braces stand for their names.
 
 document-edited-by = Herausgegeben von {"{}"}
 document-translated-by = Übersetzt von {"{}"}
 document-edited-and-translated-by = Herausgegeben und übersetzt von {"{}"}
+# Between the names of the editors or the translators on the title page,
+# and before the last of them: "A, B and C". A space is written {" "}.
 document-names-between = ,{" "}
 document-names-last = {" "}und{" "}

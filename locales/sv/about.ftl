@@ -1,8 +1,11 @@
-# About this document: what an element's document says of itself, its
-# details, its language and the checklist of what its template requires.
-# What the document is, how it looks and what it contains are chosen in the
-# chooser of what you are writing and in Look.
+# Document properties: what an element's document says of itself, its
+# details, its type (what you are writing, its template), its language and
+# the checklist of what its template requires. How it looks and what it
+# contains are set in Look.
 
+about-window = Dokumentegenskaper
+# In the menu of an element, and at the foot of Look.
+about-menu = Dokumentegenskaper…
 about-sections = Fönstrets delar
 
 ## The parts of the window, as they stand down its left.
@@ -57,3 +60,29 @@ about-language = Textens språk
 about-checklist-hint = Vad mallen kräver, mot texten och trädet. Inget skärs bort.
 about-checklist-clear = Inget att anmärka på.
 about-requirement-words = Ord i texten
+about-requirement-anonymous = För referentgranskning: de medverkande utelämnas ur dokumentet.
+
+## The sides, the panes and the bars, stage 2: the typesetting pane, the document pane, Document properties.
+
+# The tab of what the document is: what you are writing, its template.
+about-section-type = Dokumenttyp
+
+## Fewer words, stage 3: the source of a layout's requirements, under the layout the type brings.
+
+about-layout-source = Källa: { $name }
+
+## The contributors, stage 3: the persons of a document, each with a role.
+
+about-contributors = Medverkande
+# Beside a plus, under the contributors: adds one.
+about-add-contributor = Lägg till en medverkande
+about-contributor-role = Roll för medverkande { $number }
+about-role-author = Författare
+about-role-editor = Redaktör
+about-role-translator = Översättare
+about-contributor-name = Namn på medverkande { $number }
+about-contributor-affiliation = Tillhörighet för medverkande { $number }
+about-contributor-email = E-post till medverkande { $number }
+about-contributor-orcid = ORCID för medverkande { $number }
+# Under the details: whether every line of the printed page is numbered in the margin.
+about-page-lines = Numrera varje rad på den tryckta sidan

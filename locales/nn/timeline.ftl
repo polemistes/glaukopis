@@ -77,8 +77,15 @@ when-bc = f.Kr.
 # $month: 1 to 12; $year: as written.
 when-month-of = { $year }, månad { $month }
 # How a placement is said beside the element: "after the quarrel, before the embassy".
-when-said-after = etter
-when-said-before = før
-when-said-during = under
+when-said-after-name = etter { $name }
+when-said-before-name = før { $name }
+when-said-during-name = under { $name }
 when-said-to = til
 when-said-approx = ca.
+
+## Fewer words, stage 2 (agent "chrome"): the words of the menus.
+
+when-stamp = Tidsstempel …
+# The title of the dialog that says when an element is.
+when-stamp-title = Tidsstempel
+timeline-empty-stamp = Ingenting har tidsstempel enno. Vel «Tidsstempel …» i menyen til eit element.

@@ -76,9 +76,5 @@ when-hint-units = Tijden zijn aantallen van de eenheid van de tijdlijn, ingestel
 when-bc = v.Chr.
 # $month: 1 to 12; $year: as written.
 when-month-of = { $year }, maand { $month }
-# How a placement is said beside the element: "after the quarrel, before the embassy".
-when-said-after = na
-when-said-before = voor
-when-said-during = tijdens
 when-said-to = tot
 when-said-approx = ca.

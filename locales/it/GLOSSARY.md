@@ -182,7 +182,7 @@ Il senso di ciascuna parola è in `locales/GLOSSARY.md`.
 | pane | riquadro | |
 | the palette | la tavolozza dei comandi | |
 | the writing tools | gli strumenti di scrittura | |
-| fold, fold away | ripiegare | e «aprire» per il contrario |
+| fold, fold away | ripiegare | e «aprire» per il contrario; dal 2026-10-24, dove «Apri» starebbe accanto ad «Apri» (aprire un progetto), «dispiegare»: «Ripiega», «Dispiega» |
 | settings | impostazioni | |
 | data directory | la cartella dei dati | |
 | trash | cestino | |
@@ -226,6 +226,48 @@ Il senso di ciascuna parola è in `locales/GLOSSARY.md`.
 | the Fraktur model | il modello Fraktur | il modello di Tesseract per i caratteri gotici; «modello» qui solo insieme con *Fraktur*, mai da solo, per non confonderlo con il modello di un documento |
 | What the pages take | Che cosa prendono le pagine | il testo del PDF, una lettura di Tesseract, o la qualità del testo decide pagina per pagina |
 | What is made of it | Che cosa se ne fa | scelto dopo la lettura |
+
+## Nuovo dopo la 0.2.4 (2026-10-24)
+
+| inglese | italiano | note |
+| --- | --- | --- |
+| the list (at the left) | l'elenco, l'elenco dei progetti | l'unico albero di tutti i progetti e le cartelle; come già `home-pane` |
+| the start screen | la schermata iniziale | quando nessun progetto è aperto |
+| side (of the window) | lato | ciascun lato tiene un progetto suo: «Chiudi questo lato», «Scambia i lati»; non «metà», non «pannello» |
+| the path | il percorso | in cima a ciascun lato: dove sei nell'albero; «Altro del percorso» |
+| Split view, Split | Vista divisa, Dividi | il pulsante che mostra due lati; fino al 2026-10-24 «Due affiancate» |
+| the typesetting pane, Typesetting | il riquadro della composizione, Composizione | le pagine come Typst le compone, con la colonna Aspetto accanto; «composizione» come la composizione tipografica. Non «impaginazione», che è il layout, né «impaginato», che le starebbe troppo vicino |
+| the document pane, Document | il riquadro del documento, Documento | riferimenti, immagini, commenti… del lato in uso |
+| zoom, Fit the width | zoom, Adatta alla larghezza | «Zoom» resta il nome del pulsante; «Pagine più grandi», «Pagine più piccole» |
+| marks of whitespace | segni degli spazi e dei paragrafi | ¶ ↵ e il cerchietto dello spazio unificatore; «segni» da soli restano corsivo, grassetto… (il menu `editor-marks`) |
+| hard space | spazio unificatore | il termine tipografico italiano, come in Word e Writer |
+| Document properties | Proprietà del documento | la finestra di ciò che il documento dice di sé; fino al 2026-10-24 «Informazioni sul documento» |
+| document type | tipo di documento | ciò che il documento è, il suo modello: «Tipo di documento…», «Tipo di documento predefinito», «Parti del tipo di documento». Come in norvegese, «tipo» vale qui accanto a «tipo» di paragrafo e di parole |
+| paragraph kind, words kind | tipo di paragrafo, tipo di parole | «Tipi di paragrafo», «Tipi di parole» |
+| enter (an element) | entrare in | l'elemento diventa quello in vista: «Entra», «Entra accanto»; al posto di «Apri come mappa» |
+| open beside | aprire accanto | «Apri accanto» |
+| clone | clone, clonare | un elemento che sta altrove con un nome suo e il testo e i figli dell'originale: «Clona un altro elemento…», «Clone di «…»», «Non più un clone» |
+| sub-elements | sottoelementi | gli elementi sotto un elemento: «Elimina con i sottoelementi», «Elimina e alza di livello i sottoelementi» |
+| child element, sibling element | sottoelemento, elemento allo stesso livello | «Aggiungi un sottoelemento», «Aggiungi un elemento allo stesso livello»; non «figlio», «fratello», da informatici |
+| fold, unfold | ripiegare, dispiegare | «Ripiega questo elemento», «Dispiega tutti i sottoelementi» |
+| Time stamp | Datazione | quando un elemento è, un punto o un periodo: «Datazione…»; come la datazione di un fatto o di un'opera |
+| image | immagine | ciò che l'inglese prima diceva *picture*; in italiano era già «immagine» |
+| look chip | cartellino dell'aspetto | il cartellino (vedi sopra) che nomina una riga dell'anteprima e apre Aspetto su di essa |
+| inline number | numero nel testo | un numero o un'etichetta in un punto della prosa (Stephanus, Bekker); fino al 2026-10-24 «segno di riferimento». Non «nel rigo», perché l'impaginazione può metterlo a margine |
+| contributor | contributore | le persone di un documento, ciascuna con un ruolo; come nei sistemi editoriali delle riviste. Non «collaboratore», che è già di chi condivide un progetto (`sharing.ftl`, `project-left-out`) |
+| role: Author, Editor, Translator | ruolo: Autore, Curatore, Traduttore | «curatore» come in «a cura di», non «editore», che è chi pubblica |
+| Edited by, Translated by, Edited and translated by | A cura di, Traduzione di, A cura e traduzione di | parole che il documento stampa sul frontespizio (`document.ftl`) |
+| Editors and translators | Curatori e traduttori | l'interruttore della prima pagina in Aspetto |
+| Line numbering from here | Numerazione delle righe da qui | la finestra e la voce del menu del testo |
+| Numbering of this line | Numerazione di questa riga | |
+| Count the lines of, Every kind | Conta le righe di, Tutti i tipi | |
+| Counted | Contata | della riga |
+| Its number is shown: As the others are, Always, Never | Il suo numero è mostrato: Come per le altre, Sempre, Mai | |
+| annotation | annotazione | ciò che sta nel margine accanto a una riga: un metro, il numero di un'altra edizione; «Annotazione nel margine destro» |
+| Indentation step | Passo di rientro | la lunghezza di un passo di Tab |
+| Begins where the line before ended | Comincia dove finisce la riga precedente | la seconda metà di un verso diviso fra due personaggi |
+| Anonymize the front page | Rendi anonima la prima pagina | |
+| A project of all the projects | Un progetto di tutti i progetti | al posto di «Una mappa dei progetti» |
 
 ## Nomi che non si traducono
 

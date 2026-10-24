@@ -79,8 +79,15 @@ when-bc = a.C.
 # $month: 1 to 12; $year: as written.
 when-month-of = { $year }, mese { $month }
 # How a placement is said beside the element: "after the quarrel, before the embassy".
-when-said-after = dopo
-when-said-before = prima di
-when-said-during = durante
+when-said-after-name = dopo { $name }
+when-said-before-name = prima di { $name }
+when-said-during-name = durante { $name }
 when-said-to = a
 when-said-approx = c.
+
+## Fewer words, stage 2 (agent "chrome"): the words of the menus.
+
+when-stamp = Datazione…
+# The title of the dialog that says when an element is.
+when-stamp-title = Datazione
+timeline-empty-stamp = Nulla ha ancora una datazione. Scegli «Datazione…» nel menu di un elemento.

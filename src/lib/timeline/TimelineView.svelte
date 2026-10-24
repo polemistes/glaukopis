@@ -31,7 +31,7 @@
   import { addChronology } from './chronology';
   import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
   import { t } from '$lib/i18n';
-  import { elementMenu } from '$lib/project/elements';
+  import { elementMenu, saidWords } from '$lib/project/elements';
   import { kindColour } from '$lib/project/kinds';
   import type { Project } from '$lib/project/model/project.svelte';
   import type { NodeRecord } from '$lib/project/model/types';
@@ -389,13 +389,7 @@
 
   let selected = $state<string | null>(null);
 
-  const words = $derived({
-    after: t('when-said-after'),
-    before: t('when-said-before'),
-    during: t('when-said-during'),
-    to: t('when-said-to'),
-    approx: t('when-said-approx'),
-  });
+  const words = $derived(saidWords());
   const nameOf = (id: string) => project.node(id)?.title || t('project-untitled');
 
   function tipOf(e: Event): string {

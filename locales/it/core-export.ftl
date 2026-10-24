@@ -75,3 +75,7 @@ core-export-template-own-only = Si possono eliminare solo i modelli propri.
 core-export-the-template = il modello «{ $id }»
 core-export-output-not-yet = Il file «{ $id }» del modello non si può ancora fare: per ora solo il documento.
 core-export-output-unknown = Il modello non ha nessun file «{ $id }».
+
+## Stage 5 of the settings in plain words: LaTeX's hyphenation.
+
+core-export-latex-no-hyphenation = LaTeX non ha le regole di sillabazione per la lingua { $language }: le parole vanno a capo come quelle inglesi finché non è installato il pacchetto della lingua di TeX Live (su Arch, texlive-langeuropean per la maggior parte delle lingue europee).

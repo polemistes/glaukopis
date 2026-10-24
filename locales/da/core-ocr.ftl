@@ -65,3 +65,10 @@ ocr-remark-counts = { $read ->
 # Stands in the element in the place of a page that could not be read.
 ocr-page-failed-line = [Denne side kunne ikke læses: { $message }]
 ocr-why-no-tesseract = Tesseract, som læser tekst i billeder, er ikke installeret.
+
+## The settings in plain words, stage 1: the Fraktur models named by the languages they were trained on.
+
+# Under pages read poorly, where the language read was once set in Gothic type, and neither Norwegian nor Danish was read.
+ocr-remark-fraktur = Bøger trykt med gotisk skrift, som mange norske, danske, svenske og tyske bøger blev før omkring 1900, læses med Fraktur (gotisk skrift), tysk, valgt som første eller eneste sprog, uanset hvilket sprog de er på. Den kender ikke æ, ø og å og læser dem som e, o og a.
+# The same, where Norwegian or Danish was read: the Fraktur model of Glaukopis's server that knows æ, ø and å.
+ocr-remark-fraktur-dan = Norske og danske bøger trykt med gotisk skrift, som mange blev før omkring 1900, læses med Fraktur (gotisk skrift), norsk og dansk, importeret fra Glaukopis’ server og valgt som første eller eneste sprog, uanset hvilke sprog der står ved siden af: den kender æ, ø og å, hvad den tyske ikke gør.

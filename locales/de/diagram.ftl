@@ -3,10 +3,11 @@
 diagram-map = Karte
 diagram-idea = Name
 diagram-new-here = Neues Element hier
-diagram-open-as-map = Als Karte öffnen
+diagram-open-as-map = Hineingehen
 diagram-show-all = Die ganze Karte zeigen
 diagram-tidy = Die ganze Karte aufräumen
 # The keys are shown as keys, where the variables stand.
+diagram-hint-empty = { $alt }+{ $enter } fügt ein Element nach dem ausgewählten hinzu · { $alt }+{ $shift }+{ $enter } eines darunter · Doppelklick zum Schreiben
 diagram-hint-linking = Klicken Sie das Element an, mit dem verbunden werden soll, oder gehen Sie mit den Pfeilen hin und drücken Sie { $enter } · { $esc } zum Verlassen
 diagram-link-handle = Zu einem anderen Element ziehen, um sie zu verbinden
 
@@ -32,3 +33,9 @@ diagram-cut = { $count ->
 diagram-paste-here = Hier einfügen
 diagram-nothing-copied = Noch nichts kopiert
 diagram-pasted-elsewhere = Das Kopierte ist aus einem anderen Projekt und kann hier nicht eingefügt werden
+
+## Fewer words, stage 2 (agent "chrome"): the words of the menus.
+
+# The tooltips of the mark that folds an element in the diagram.
+diagram-unfold-sub = Unterelemente ausklappen
+diagram-fold-sub = Unterelemente einklappen

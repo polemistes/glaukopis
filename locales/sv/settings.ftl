@@ -104,3 +104,15 @@ settings-logs = Loggen
 
 settings-page-chips-on = På
 settings-page-chips-off = Av
+
+## The settings in plain words, stage 1: the defaults of new projects and documents, and the look chips.
+
+# Whether a new project opens in its diagram or in its text; the choices are the names of the two views.
+settings-default-view = Förvald vy för nya projekt
+settings-default-type = Förvald dokumenttyp
+settings-default-look = Förvalt utseende
+settings-default-style = Förvald referensstil
+# The first choice of each of the three defaults: none, so that a new document is of the plain type, and the type's look and style hold.
+settings-default-none = Ingen, som dokumenttypen har det
+# Whether a line of the preview, pressed, shows a chip at the edge of the page that says what it is and opens Look at it.
+settings-look-chips = Visa utseendeetiketter i förhandsvisningen

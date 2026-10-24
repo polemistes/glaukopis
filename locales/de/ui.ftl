@@ -7,3 +7,11 @@ ui-working = In Arbeit
 # The button that takes a message away.
 ui-dismiss = Ausblenden
 ui-no-backend = Glaukopis muss als Anwendung laufen, nicht im Browser.
+
+# How the interface puts together pieces of what it says: between the parts
+# of a list ("3 images, 2 files"), between the words of one phrase
+# ("indented smaller"), and at the end of a sentence made of parts. A space
+# is written {" "}, nothing {""}: Japanese has 、, nothing and 。.
+ui-list-between = ,{" "}
+ui-words-between = {" "}
+ui-sentence-end = .

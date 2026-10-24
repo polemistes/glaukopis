@@ -4,7 +4,6 @@
 ## The marks and the kinds of paragraph, in the bar over a selection and in
 ## the tools over the text.
 
-editor-format = Μορφή
 editor-writing = Γραφή
 editor-italic = Πλάγια
 editor-bold = Έντονα
@@ -128,9 +127,6 @@ editor-pasted-picture = εικόνα
 
 ## More.
 
-editor-found = Παραπομπές που βρέθηκαν…
-editor-found-count = { $count } προς εξέταση, για να γίνουν παραπομπές
-editor-found-none = Και κείμενο που μοιάζει με παραπομπές, σε αυτόν τον χάρτη
 
 ## Choosing a work to cite.
 

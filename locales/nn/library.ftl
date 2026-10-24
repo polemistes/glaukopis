@@ -531,3 +531,8 @@ library-switch-files = Filer
 
 library-resize-side = Dra for å gjere samlingane eller mappene breiare eller smalare
 library-resize-detail = Dra for å gjere ruta til høgre breiare eller smalare
+
+## Fewer words, stage 2 (agent "chrome")
+
+# Importing a file of references: .bib, BibLaTeX or BibTeX.
+library-import-bibtex = Importer Bib(La)TeX …

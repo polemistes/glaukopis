@@ -9,8 +9,9 @@ text-drop-under = Unter „{ $name }“
 text-drop-after = Nach „{ $name }“
 text-drop-before = Vor „{ $name }“
 text-split = Hier teilen
+text-heading-kept = Was auf den Cursor folgt, enthält, was ein Name nicht enthalten kann, etwa eine Zitation oder eine Anmerkung, und wird der erste Absatz des neuen Elements
 text-join = Mit dem Element darüber zusammenfügen
-text-open-as-map = Als Karte öffnen
+text-open-as-map = Hineingehen
 
 ## Folding away what is under an element, and its text
 
@@ -51,3 +52,21 @@ text-notes = { $count ->
    *[other] { $count } Anmerkungen
 }
 # The keys are shown as keys, where the variables stand.
+text-keys = { $alt }+{ $enter } neues Element · { $alt }+{ $shift }+{ $enter } eines darunter · { $at } zitieren
+
+## Fewer words, stage 2 (agent "chrome")
+
+# A clone in the text: the original's name is shown in bold where the variable stands.
+text-clone = Klon von { $name }
+text-clone-go = Zum Original gehen
+text-unfold = Dieses Element ausklappen
+text-fold-this = Dieses Element einklappen
+text-unfold-all-under = Alle Unterelemente ausklappen
+text-fold-all-sub = Alle Unterelemente einklappen
+text-unfold-all = Alles ausklappen
+# The tooltips of the mark that folds an element in the text.
+text-unfold-shift = Ausklappen · mit Umschalt auch alle Unterelemente
+text-fold-this-shift = Dieses Element einklappen · mit Umschalt alle Unterelemente ausklappen
+# The buttons of the outline.
+text-outline-unfold = Unterelemente ausklappen
+text-outline-fold-sub = Unterelemente einklappen

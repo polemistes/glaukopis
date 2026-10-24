@@ -84,7 +84,7 @@ const NAMES: &[(&str, &str)] = &[
 /// translated, and does not take a language away. The others stay under
 /// `locales/` while they are translated, and are added here when they are
 /// complete (ADR 0020).
-const OFFERED: &[&str] = &["da", "de", "en", "fr", "it", "nb", "nn", "sv"];
+const OFFERED: &[&str] = &["da", "de", "en", "fr", "it", "ja", "nb", "nn", "sv"];
 
 /// The languages the interface is in: the tag, and the name of the language
 /// in itself. Those of [`NAMES`] that are [`OFFERED`] and whose words are

@@ -1,5 +1,5 @@
-# Words that stand in many places of the interface, in English.
-# See locales/README.md.
+# インターフェースの多くの場所に出る語（日本語）。
+# locales/README.md を見よ。
 
 common-cancel = キャンセル
 common-close = 閉じる
@@ -15,8 +15,9 @@ common-open = 開く
 common-search = 検索
 common-try-again = もう一度試す
 common-choose = 選択…
+common-link-open-failed = リンクを開けませんでした
 
-## How long ago something was: "Changed { $ago }".
+## どれだけ前のことか：「{ $ago }に変更」。
 
 time-just-now = たった今
 time-minutes-ago = { $count ->

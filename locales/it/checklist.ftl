@@ -26,3 +26,20 @@ checklist-unplaced = { $count ->
     [many] Il modello non fa copertina: { $count } elementi di un tipo da copertina non sono stampati.
    *[other] Il modello non fa copertina: { $count } elementi di un tipo da copertina non sono stampati.
 }
+
+## Fewer words, stage 4: what the type and the layout ask of the front page and of quotations.
+
+checklist-anonymous = Il tipo di documento chiede un documento anonimo; la prima pagina nomina i contributori. Attiva «Rendi anonima la prima pagina» sotto Prima pagina in Aspetto.
+# A quotation within a paragraph of text, between quotation marks, as long as the layout sets quotations off from. The lines are estimated from the layout.
+checklist-long-quotation = { $by ->
+    [lines] «{ $element }» ha nel testo una citazione di { $words } parole, circa { $lines ->
+        [one] { $lines } riga
+        [many] { $lines } righe
+       *[other] { $lines } righe
+    }; l'impaginazione stacca dal testo le citazioni da { $limit } righe in su.
+   *[words] «{ $element }» ha nel testo una citazione di { $words } parole, circa { $lines ->
+        [one] { $lines } riga
+        [many] { $lines } righe
+       *[other] { $lines } righe
+    }; l'impaginazione stacca dal testo le citazioni da { $limit } parole in su.
+}

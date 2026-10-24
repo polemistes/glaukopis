@@ -127,6 +127,84 @@ prosjekt hadde vorte eitt tre.
   **frakturmodellen**; som namn på modellen «Fraktur (gotisk skrift)»
 - **percentages** — med mellomrom: «73 %»
 
+## Nytt 2026-10-24: vindauget, færre ord, bidragsytarane, linjene
+
+- **the list** — **lista** (ei liste, lista): treet over alle prosjekta og
+  mappene, til venstre i vindauget; «lista over prosjekt til venstre». Som
+  i bokmål
+- **the start screen** — **startsida** (ei startside): det som står når
+  ikkje noko prosjekt er ope
+- **side** (av vindauget) — **side** (ei side, sida, sider, sidene): kvar
+  side held eit prosjekt for seg, med stien øvst og ein rad med ikon;
+  «Lukk denne sida»; *Switch sides* — «Byt om sidene», ikkje «Byt side»,
+  som kan lesast som å bla om. Som i bokmål elles. Der *sidene* kan lesast som
+  sidene i eit dokument, står «sidene i vindauget». *Rute* var ordet for
+  ei side før 2026-10-23, og står att berre i biblioteket
+- **the path** — **stien** (ein sti, stien, stiar): kvar du er i treet,
+  øvst på kvar side; «Meir av stien». Som i bokmål
+- **Split view** — **Delt vising**: to sider i vindauget. På knappen, kort:
+  **Todelt**, ikkje «Del», som er å dele med andre
+- **the typesetting pane** — **ombrekkinga** (ei ombrekking, ombrekkinga),
+  **ombrekkingspanelet**: sidene i dokumentet, brotne om, med Utsjånad ved
+  sida av; «Skjul ombrekkinga». Som i bokmål
+- **the document pane** — **dokumentpanelet**: panelet til sida du er i;
+  «Kva dokumentpanelet viser»
+- **pane** — **panel** (eit panel, panelet, panel, panela), som i bokmål
+- **zoom** — **forstørring** (ei forstørring); «Tilpass breidda», «Større
+  sider», «Mindre sider»
+- **the marks of whitespace** — **teikn for mellomrom og avsnitt** (¶, ↵
+  og ringen for eit hardt mellomrom). Menyen **Merke** er framleis den med
+  kursiv, feit og dei andre merka
+- **hard space** — **hardt mellomrom** (eit hardt mellomrom), der linja
+  ikkje blir broten
+- **clone** — **klon** (ein klon, klonen, klonar, klonane), **klone** (å
+  klone): eit element som står ein annan stad med eige namn og teksten og
+  underelementa til originalen; «Klon av «…»», «Gå til originalen»
+- **sub-element** — **underelement** (eit underelement, underelementa);
+  *Add child element* — «Legg til underelement»; *Add sibling element* —
+  «Legg til element på same nivå». Som i bokmål
+- **fold**, **unfold** — som før: **brette saman**, **brette ut**; «Brett
+  saman», «Brett ut»
+- **Enter** (eit element) — **Gå inn**; før «Opne som kart»
+- **Time stamp…** — **Tidsstempel …** (eit tidsstempel): når eit element er
+- **image** — **bilete**, som for *picture* før: engelsk har skifta ord,
+  nynorsk har eitt ord for begge; *Among the images* — «Blant bileta»
+- **look chip** — **brikke for utsjånaden** (sjå *chip* ovanfor): «Vis
+  brikker for utsjånaden i førehandsvisinga»
+- **Document properties** — **Dokumenteigenskapar**: vindauget som før
+  heitte *Om dette dokumentet*
+- **document type** — **dokumenttype** (ein dokumenttype, dokumenttypen,
+  dokumenttypar): det engelsk no seier i nye meldingar om det som er ein
+  mal; eldre meldingar som seier *mal*, står som dei er. Som i bokmål
+- **contributor** — **bidragsytar** (ein bidragsytar, bidragsytaren,
+  bidragsytarar, bidragsytarane), kvar med ei **rolle** (ei rolle, rolla):
+  **Forfattar**, **Redaktør**, **Omsetjar** (ein omsetjar, omsetjarar)
+- **Edited by …**, **Translated by …**, **Edited and translated by …** —
+  på tittelsida, i `document.ftl`: **Redigert av …**, **Omsett av …**,
+  **Redigert og omsett av …**; brytaren på framsida i Utsjånad er
+  **Redaktørar og omsetjarar**
+- **Line numbering from here** — **Linjenummerering herifrå**: vindauget for
+  korleis linjene frå markøren og vidare blir nummererte
+- **Numbering of this line** — **Nummereringa av denne linja**
+- **Counted** — **Blir talt** (telje – tel – talde – talt); *Count the
+  lines of* — «Tel linjene av»; *Its number is shown* — «Nummeret blir
+  vist»: «Som dei andre», «Alltid», «Aldri»
+- **annotation** — **merknad** (ein merknad, merknaden, merknader,
+  merknadene) i margen: «Merknad i høgremargen»; *Annotations on the* —
+  «Merknadene på»
+- **indentation step** — **innrykkstrinn** (eit trinn): kor langt eitt
+  trykk på Tab set eit avsnitt inn; «eitt trinn inn». Som i bokmål
+- **Begins where the line before ended** — **Byrjar der linja før slutta**
+- **inline number** — **tal i linja**; før *referansemerke*. Som i bokmål
+- **paragraph kind**, **words kind** — framleis **slag avsnitt**, **slag
+  ord**, ikkje *ordslag*, som er ein term i grammatikken. Bokmål har gått
+  over til «Avsnittstype», «Ordtype»; nynorsk held seg til *slag*, som
+  filene elles seier
+- **key** (for eit slag) — **tast** (ein tast, tasten, tastar):
+  Ctrl+Alt+0–9
+- **Default …** — **Standard …**: «Standard dokumenttype», «Standard
+  utsjånad», «Standard referansestil», «Ingen: som dokumenttypen har det»
+
 ## Referansar og tilvisingar
 
 - **the library** — biblioteket

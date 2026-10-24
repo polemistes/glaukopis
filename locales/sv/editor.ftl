@@ -4,7 +4,6 @@
 ## The marks and the kinds of paragraph, in the bar over a selection and in
 ## the tools over the text.
 
-editor-format = Format
 editor-writing = Skrivning
 editor-italic = Kursiv
 editor-bold = Fet
@@ -168,7 +167,7 @@ editor-table = Tabell…
 editor-table-file = Tabell från en fil…
 editor-formula = Formel
 editor-pointer = Korshänvisning…
-editor-refmark-title = Referensmärke
+editor-refmark-title = Nummer i raden
 editor-refmark-label = Beteckning
 editor-refmark-placeholder = 3:16, 327a, 1094a1
 editor-refmark-dialog-hint = Märket är ingen del av orden: stavningen, sökningen och ordräkningen går förbi det. Layouten avgör om det sätts upphöjt i raden eller i marginalen.
@@ -177,9 +176,6 @@ editor-pasted-picture = bild
 
 ## More.
 
-editor-found = Lösa källhänvisningar…
-editor-found-count = { $count } att gå igenom och göra till källhänvisningar
-editor-found-none = Och text som ser ut som källhänvisningar, i den här kartan
 
 ## Choosing a work to cite.
 
@@ -250,3 +246,36 @@ editor-note-place-format = Där layouten har sina noter
 editor-note-place-foot = Längst ner på sidan
 editor-note-place-end = I slutet av texten
 editor-note-placeholder = Notens text
+
+## Stage 3 of the sides, the panes and the bars (agent "bars")
+editor-words-kind = Slag av ord
+editor-words-kind-now = Slag av ord: { $kind }
+editor-marks = Märkning
+editor-marks-shown = Osynliga tecken
+editor-image = Bild
+editor-inline-number = Nummer i raden…
+
+## The numbering of lines, in two windows, and the side of the annotations (stage 2 of the contributors and the lines)
+# The title of the window, and the item of the text's right-click menu that opens it.
+editor-numbering-from-here = Radnumrering härifrån
+editor-numbering-from-here-item = Radnumrering härifrån…
+editor-numbering-of-line = Numrering av den här raden
+editor-numbering-of-line-item = Numrering av den här raden…
+# In the menu of a run's bracket.
+editor-run-numbering = Radnumrering…
+# Count the lines of: every kind, or one kind of paragraph.
+editor-numbering-only = Räkna raderna i
+editor-numbering-every-kind = Varje slag
+editor-line-counted = Räknas
+editor-line-shown = Dess nummer visas
+editor-line-shown-others = Som de andras
+editor-line-shown-always = Alltid
+editor-line-shown-never = Aldrig
+# Named by the margin the annotation goes to.
+editor-line-annotation-right = Anmärkning i högermarginalen
+editor-line-annotation-left = Anmärkning i vänstermarginalen
+editor-line-annotation-placeholder = Ett versmått, en annan utgåvas nummer
+
+## Where a line begins, and the step (stage 4 of the contributors and the lines)
+# In the right-click menu of the text, with a check while the line the cursor is in does so.
+editor-line-continues = Börjar där föregående rad slutade

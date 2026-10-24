@@ -1,8 +1,9 @@
-## The look of a document, in one place: the panel beside the preview where
+## The look of a document, in one place: the column of the typesetting pane where
 ## everything is set that decides how the pages look. What is changed there
 ## is kept as the document's own changes over its layout.
 
 look-title = Utseende
+look-between = Mellan sidorna och dokumentets utseende
 look-whole = Det som avgör utseendet
 
 look-scope = De här ändringarna gäller för
@@ -51,11 +52,10 @@ look-keep-save = Spara
 look-put-into = För in de här ändringarna i ”{ $name }”
 look-delete-layout = Radera den här egna layouten…
 
-## What the document contains, a section of Look: the parts the program
-## makes itself, the kinds of elements given a place of their own, and what
-## is required. What is changed there is kept as the document's own changes
-## over what it is. The name in quotes is what the document is: "Journal
-## article", "Novel".
+## The parts of the document type, a section of Look: the parts the program
+## makes itself and the kinds of elements given a place of their own, in one
+## list in the order they are printed, and what is required. What is changed
+## there is kept as the document's own changes over what it is.
 
 look-contents-kinds-missing = Inget ännu
 look-contents-kinds-make = Gör ett
@@ -83,3 +83,27 @@ look-front-title-page = En titelsida
 look-fonts-document = I det här dokumentet
 look-fonts-project = På andra ställen i projektet
 look-fonts-all = Alla typsnitt
+
+## The sides, the panes and the bars, stage 2: the typesetting pane, the document pane, Document properties.
+
+# Opens Document properties at what the document is.
+look-document-type = Dokumenttyp…
+look-hide = Dölj utseendet
+
+## Fewer words, stage 3: the parts and the headings of Look in plain words.
+
+look-section-line-numbers = Radnummer
+look-section-type-parts = Dokumenttypens delar
+look-section-the-layout = Layout
+look-choose-layout = Välj en layout
+look-layout-modifications = Ändringar av layouten
+look-at-quotations-warning = Citat
+look-at-paragraph-kinds = Slag av stycken
+look-at-words-kinds = Slag av ord
+look-type-requirements = Dokumenttypens krav
+
+## Stage 4 of the settings, the zoom and the keys of the kinds: the key of a kind, Ctrl+Alt and a digit, as the document type gives it.
+look-kind-key = Tangent
+look-kind-key-none = Ingen
+# A digit another kind has: choosing it here leaves that kind without.
+look-kind-key-taken = { $keys }, nu { $kind }

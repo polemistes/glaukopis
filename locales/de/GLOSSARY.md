@@ -147,7 +147,7 @@ Bild ab, Einfg.
 - **the panel at the side** — die Seitenleiste
 - **the bar over the map** — die Leiste über der Karte
 - **pane** — die Hälfte (eine Seite der geteilten Ansicht, zwei Karten
-  nebeneinander)
+  nebeneinander); seit 0.2.4 *die Seite* des Fensters, siehe unten
 - **the palette** — die Palette (der Kasten der Befehle)
 - **the writing tools** — die Schreibwerkzeuge
 - **fold**, **fold away** — einklappen; **unfold** — ausklappen
@@ -239,6 +239,98 @@ Bild ab, Einfg.
   „Fraktur (gebrochene Schrift)“. **the Fraktur model** — das
   Fraktur-Modell
 - Prozente mit Leerzeichen: „73 %“
+
+## Seit 0.2.4 (2026-10-24)
+
+Das Fenster:
+
+- **the list** — die Liste (links: der eine Baum aller Projekte und Ordner);
+  „die Liste der Projekte“
+- **the start screen** — der Startbildschirm (wenn kein Projekt offen ist)
+- **side** (des Fensters, jede mit einem eigenen Projekt) — die Seite, wie
+  schon in „Diese Seite schließen“; **Switch sides** — „Seiten tauschen“.
+  Wo Seiten eines Dokuments nahe sind, *die Fensterseite*. Ersetzt die
+  frühere *Hälfte* (pane).
+- **the path** (oben über jeder Seite: wo man im Baum ist) — der Pfad
+- **Split view** — die geteilte Ansicht, als Schaltfläche „Geteilte
+  Ansicht“, kurz „Teilen“
+- **the typesetting pane** — der Umbruch; die Schaltfläche „Umbruch“. Wie
+  das norwegische *Ombrekking*: die Seiten, wie Typst sie setzt, mit
+  *Aussehen* daneben. Nicht „Satz“, das man als Satz eines Textes liest.
+  Ältere Einträge sagen noch *Vorschau*, wie das Englische *preview*.
+- **the document pane** — der Dokumentbereich; die Schaltfläche „Dokument“
+  (Quellen, Bilder, Kommentare, lose Zitationen, Verlauf, Änderungen). Er
+  ersetzt die Seitenleiste.
+- **zoom** — der Zoom; **Fit the width** — „An Breite anpassen“
+- **the marks of whitespace** (¶, ↵, der Ring über einem geschützten
+  Leerzeichen) — die Formatierungszeichen, wie Word und LibreOffice sie
+  nennen. Das Menü **Marks** (kursiv, fett…) bleibt „Auszeichnungen“.
+- **hard space** — das geschützte Leerzeichen (so Word und LibreOffice)
+- **Paragraph kind** — die Absatzart; **Words kind** — die Art der Wörter
+  (nie „Wortart“)
+- **Inline number** — die Nummer in der Zeile (3:16, 327a: was bis 0.2.4
+  *Stellenmarke* hieß; Layout und Seite sagen noch *Stellenmarken*, wie das
+  Englische *reference marks*)
+- **Share** (im Menü der Liste) — „Teilen…“
+- **Document properties** — die Dokumenteigenschaften (das Fenster, das
+  bis 0.2.4 „Über dieses Dokument“ hieß)
+- **Document type** — der Dokumenttyp (was ein Dokument ist, seine
+  Vorlage); nicht „Dokumentart“, denn *Art* ist *kind*
+
+Die Elemente:
+
+- **enter** (ein Element, so dass es allein angezeigt wird) — hineingehen:
+  „Hineingehen“, „Daneben hineingehen“; das Gegenstück zu „Nach oben“
+- **clone** — der Klon; **Clone other element…** — „Anderes Element
+  klonen…“; **Clone of „…“** — „Klon von „…““
+- **sub-elements** — die Unterelemente; **Add child element** —
+  „Unterelement hinzufügen“; **Add sibling element** — „Element auf
+  gleicher Ebene hinzufügen“ (nicht „Kind-“ und „Geschwisterelement“)
+- **fold** / **unfold** — einklappen / ausklappen, wie schon oben
+- **Time stamp…** — der Zeitstempel: „Zeitstempel…“ (sagt, wann ein
+  Element ist); das Wort, das Software dafür hat, wie das Englische
+- **image** — das Bild, wie zuvor *picture*: im Deutschen ändert sich
+  nichts
+
+Aussehen und Einstellungen:
+
+- **look chip** — das Etikett (siehe *chip*); in den Einstellungen
+  „Etiketten des Aussehens“
+- **Default document type**, **Default look**, **Default citation style** —
+  „Standard-Dokumenttyp“, „Standard-Aussehen“, „Standard-Zitierstil“;
+  **None** — „Keine“
+- **warning** (der Checkliste, für lange Zitate) — die Warnung
+- **Indent first line** — „Einzug der ersten Zeile“
+
+Die Mitwirkenden:
+
+- **contributor** — die Mitwirkenden (Plural); einzeln, in den Feldern,
+  „Person 1“, „Person hinzufügen“, um *der/die Mitwirkende* zu meiden.
+  (Die Mitglieder eines geteilten Projekts heißen in zwei Meldungen auch
+  Mitwirkende; die Zusammenhänge trennen sie.)
+- **role** — die Rolle: **Author** — Autor; **Editor** — Herausgeber;
+  **Translator** — Übersetzer (das Maskulinum, wie schon „Autor“ im Text)
+- **Edited by …** — „Herausgegeben von …“; **Translated by …** — „Übersetzt
+  von …“; **Edited and translated by …** — „Herausgegeben und übersetzt
+  von …“, wie die Titelseite eines deutschen Buches es sagt
+- **Editors and translators** (Schalter der ersten Seite) — „Herausgeber
+  und Übersetzer“
+
+Die Nummerierung der Zeilen:
+
+- **Line numbering from here** — „Zeilennummerierung ab hier“
+- **Numbering of this line** — „Nummerierung dieser Zeile“
+- **Count the lines of** — „Art der gezählten Zeilen“ (über einer Auswahl:
+  „Jede Art“ oder eine Absatzart)
+- **Counted** — „Gezählt“; **Its number is shown** — „Ihre Nummer wird
+  gezeigt“: „Wie bei den anderen“, „Immer“, „Nie“
+- **annotation** (Worte am Rand neben einer Zeile: ein Versmaß, die Nummer
+  einer anderen Ausgabe) — die Randbemerkung; „Randbemerkung rechts“,
+  „Randbemerkung links“. Nicht „Anmerkung“, das ist *note*.
+- **the indentation step** (die Länge eines Schritts der Tabulatortaste) —
+  der Einzugsschritt
+- **Begins where the line before ended** — „Beginnt, wo die Zeile davor
+  endete“
 
 ## Namen, die nicht übersetzt werden
 

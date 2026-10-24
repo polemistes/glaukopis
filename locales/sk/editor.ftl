@@ -4,7 +4,6 @@
 ## The marks and the kinds of paragraph, in the bar over a selection and in
 ## the tools over the text.
 
-editor-format = Formát
 editor-writing = Písanie
 editor-italic = Kurzíva
 editor-bold = Tučné
@@ -129,13 +128,6 @@ editor-pasted-picture = obrázok
 
 ## More.
 
-editor-found = Nájdené citácie…
-editor-found-count = { $count ->
-    [one] Treba prejsť { $count } a urobiť z nej citáciu
-    [few] Treba prejsť { $count } a urobiť z nich citácie
-   *[other] Treba prejsť { $count } a urobiť z nich citácie
-}
-editor-found-none = A text, ktorý vyzerá ako citácie, v tejto mape
 
 ## Choosing a work to cite.
 

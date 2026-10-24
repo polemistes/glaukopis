@@ -1809,7 +1809,8 @@ not always better. The data of more languages is imported under *Settings* ›
 *Language* › *OCR*, by **Import OCR language files**, as the dictionaries of
 spelling are (see *Spelling*): from the server of Glaukopis, which offers
 the best data there is for English, Norwegian, Swedish, Danish, German,
-French, Italian, Ancient Greek and Latin, for now, and **Fraktur (Gothic
+French, Italian, Ancient Greek, Latin and Japanese, for now (Japanese
+twice: written across the page, and written down it), and **Fraktur (Gothic
 type), German**, which reads the Gothic type that many Norwegian, Danish, Swedish
 and German books were set in before about 1900, whatever their language:
 choose it first, or alone, for such a book. It was made for German, and
@@ -2822,17 +2823,13 @@ out, unless you ask for **Your own changes too**.
 
 ## Languages
 
-Glaukopis speaks English; Norwegian Bokmål and Nynorsk, Swedish, Danish,
-Finnish and Icelandic; German, Dutch, French, Italian, Spanish, and
-Portuguese as Portugal and as Brazil write it; Romanian, Albanian and
-Greek; Polish, Czech, Slovak, Slovenian, Croatian, Bosnian, and Serbian in
-both its scripts; Ukrainian, Belarusian and Russian; Turkish; Hindi,
-Marathi, Bengali, Gujarati, Tamil and Telugu; Chinese in simplified and in
-traditional characters; and Japanese. English and Bokmål are the author's
-own. The others were translated with the help of a language model, under a
+Glaukopis speaks English; Norwegian Bokmål and Nynorsk, Swedish and
+Danish; German, French and Italian; and Japanese. English and Bokmål are
+the author's own. The others were translated with the help of a language model, under a
 glossary and mechanical checks, and have not yet all been read by people
 who speak them: a word that is wrong or odd in your language is worth a
-line to develop@robertemilberge.no. At first Glaukopis speaks the language
+line to develop@robertemilberge.no. More languages are being translated,
+and are offered when they are whole. At first Glaukopis speaks the language
 of the computer, where it has it, and English where it does not.
 *Settings* › *Language* changes it, at once.
 

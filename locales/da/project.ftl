@@ -20,11 +20,24 @@ project-view-this = Visning af dette kort
 project-diagram = Diagram
 project-text = Tekst
 project-one-at-a-time = Ét ad gangen
-project-side-by-side = To side om side
+project-side-by-side = Delt visning
+# The menu of the Split view button: what the second side shows.
+project-beside-this = Dette element, som diagram og tekst
+project-beside-element = Et andet element…
+project-beside-project = Et andet projekt…
+project-beside-element-title = Ved siden af: vælg et element
+project-beside-show = Vis ved siden af
+project-beside-title = Ved siden af: vælg et projekt
+project-beside-subtitle = Et projekt, eller et element i dets træ, der skal vises ved siden af dette
 project-close-side = Luk denne side
 project-references = Referencer
+project-pictures = Billeder
+project-side-tabs = Hvad dokumentpanelet viser
 project-side-map = Kort
 project-between-maps = Mellem de to kort
+project-between-preview = Mellem vinduets sider og ombrydningen
+project-between-pictures = Mellem vinduets sider og billederne
+project-between-references = Mellem vinduets sider og dokumentpanelet
 
 ## When the sharing ends from the other side
 
@@ -75,7 +88,7 @@ project-document-into = Et dokument ind i det…
 project-drop-on-map = Slip på et kort for at flytte dertil · hold Ctrl nede for at kopiere
 project-open-beside = Åbn ved siden af
 project-open-beside-hint = To kort side om side, så elementer kan flyttes mellem dem
-project-side-by-side-short = Side om side
+project-side-by-side-short = Opdel
 # The count is of those found in the element in view, and under it.
 project-found-hint = { $count } at gennemgå og gøre til kildehenvisninger
 project-copied-to = Kopieret til »{ $name }«
@@ -119,7 +132,7 @@ project-pick-loop = Dokumentet ville indeholde sig selv
 project-tidy-branch = Ryd op i denne gren
 project-place-automatically = Placer automatisk
 project-itself-stays = Selve projektet bliver
-project-itself-stays-detail = Slet projektet fra forsiden.
+project-itself-stays-detail = Slet projektet fra listen.
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] »{ $name }« blev slettet
@@ -261,3 +274,33 @@ status-words-written = { $count ->
    *[other] { $count } ord skrevet
 }
 status-progress = Hvor langt kortet er kommet
+
+## The path over each side, and the sides (stage 4 of the list, the path and the window as it was left)
+# The chevron at the start of a path, which opens the menu of all projects.
+project-all-projects-menu = Alle projekter
+# The crumb … in a path too long for its cell, whose menu has the crumbs hidden behind it.
+project-path-hidden = Mere af stien
+project-switch-sides = Byt side
+
+## Stage 3 of the sides, the panes and the bars (agent "bars")
+project-bar-typesetting = Ombrydning
+project-bar-document = Dokument
+project-badge-offline = serveren kan ikke nås
+project-badge-refused = serveren tager ikke imod de seneste ændringer
+
+## Fewer words, stage 2 (agent "chrome"): the clone, which has nothing of its own but its name.
+
+project-clone-other = Klon af et andet element…
+# The submenu of a clone, and the mark of a clone in the diagram: the original's name.
+project-clone-of = Klon af »{ $name }«
+project-clone-choose = Vælg et andet element…
+project-clone-go = Gå til originalen
+project-clone-none = Ikke længere en klon
+# The dialog with the tree of the project, choosing the original of a clone.
+project-pick-clone-title = Hvilket element skal klones ind i »{ $name }«?
+project-pick-clone = Klon det
+project-pick-clone-self = Et element kan ikke være en klon af sig selv
+project-add-child = Tilføj underelement
+project-add-sibling = Tilføj element på samme niveau
+project-delete-promote = Slet og flyt underelementerne op
+project-delete-with = Slet med underelementerne

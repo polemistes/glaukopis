@@ -362,3 +362,14 @@ ocr-summary-idle = Sie gelten für die Seiten, die mit Tesseract gelesen werden;
 ocr-summary-pages-open = Die Seiten ansehen und ausprobieren…
 ocr-summary-picture-open = Ausprobieren…
 ocr-summary-back = Zurück zur Übersicht
+
+## The settings in plain words, stage 1: the Fraktur models named by the languages they were trained on.
+
+# Tesseract's Fraktur model, among the languages of the text: named for the type it reads, then for the language it was trained on.
+ocr-language-fraktur-german = Fraktur (gebrochene Schrift), Deutsch
+# Glaukopis's own Fraktur model: Tesseract's, taught æ, ø and å on Norwegian books; it reads Danish as well.
+ocr-language-fraktur-norwegian = Fraktur (gebrochene Schrift), Norwegisch und Dänisch
+# Under the languages of the text, where a model of Gothic type is installed and neither Norwegian nor Danish is chosen.
+ocr-languages-fraktur-hint = Bücher in Fraktur, wie norwegische, dänische, schwedische und deutsche es vor etwa 1900 oft waren, werden mit dem Modell „Fraktur (gebrochene Schrift), Deutsch“ gelesen, zuerst oder allein gewählt, welche Sprache sie auch haben. Es kennt kein æ, ø oder å; norwegische und dänische Bücher werden mit dem Modell „Fraktur (gebrochene Schrift), Norwegisch und Dänisch“ gelesen, das sie kennt.
+# The same, where Norwegian or Danish is chosen.
+ocr-languages-fraktur-hint-dan = Norwegische und dänische Bücher in Fraktur, wie viele vor etwa 1900, werden mit dem Modell „Fraktur (gebrochene Schrift), Norwegisch und Dänisch“ gelesen, zuerst oder allein gewählt, welche Sprachen auch daneben stehen: es kennt æ, ø und å, die das deutsche Modell nicht kennt.

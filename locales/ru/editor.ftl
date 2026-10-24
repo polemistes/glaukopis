@@ -4,7 +4,6 @@
 ## The marks and the kinds of paragraph, in the bar over a selection and in
 ## the tools over the text.
 
-editor-format = Формат
 editor-writing = Инструменты письма
 editor-italic = Курсив
 editor-bold = Полужирный
@@ -130,9 +129,6 @@ editor-pasted-picture = изображение
 
 ## More.
 
-editor-found = Найденные ссылки…
-editor-found-count = Осталось разобрать и сделать ссылками: { $count }
-editor-found-none = И текст, похожий на ссылки, в этой карте
 
 ## Choosing a work to cite.
 

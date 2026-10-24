@@ -78,9 +78,5 @@ when-hint-units = Timpurile sunt numere de unități ale cronologiei, stabilite 
 when-bc = î.Hr.
 # $month: 1 to 12; $year: as written.
 when-month-of = { $year }, luna { $month }
-# How a placement is said beside the element: "after the quarrel, before the embassy".
-when-said-after = după
-when-said-before = înainte de
-when-said-during = în timpul
 when-said-to = până la
 when-said-approx = c.

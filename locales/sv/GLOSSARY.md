@@ -27,7 +27,8 @@ Page Down, piltangenterna. Pluralformer: one, other.
   upp* till elementet ovanför (*Upp till ”…”*).
 - **the owl map**, **the map of the projects** — ugglekartan; kartan över
   projekten (startsidan med alla projekt ritade runt ugglan, mapparna som
-  etiketter). Knappen heter *Karta*.
+  etiketter). Knappen heter *Karta*. Ugglekartan är borttagen; *A project
+  of all the projects* = Ett projekt av alla projekt.
 - **element** — element (elementet, elementen); varje element kan skrivas
   ut som ett dokument
 - **the centre** — mitten (kartans mitt)
@@ -73,7 +74,8 @@ Page Down, piltangenterna. Pluralformer: one, other.
   dokument, en tidskriftsartikel, en avhandling…), alltså elementets mall;
   **the chooser** — väljaren (väljaren av vad du skriver)
 - **About this document** — Om det här dokumentet: fönstret med ett
-  elements dokumentinställningar (uppgifterna, språket, checklistan)
+  elements dokumentinställningar (uppgifterna, språket, checklistan);
+  sedan 2026-10-24 *Dokumentegenskaper* (se nedan)
 - **chip** — etikett (etiketten): den lilla lappen vid sidans kant som
   säger vad en rad i förhandsvisningen är och öppnar Utseende vid den.
   *Name the lines of the page* = visa vad sidans rader är.
@@ -182,13 +184,96 @@ Page Down, piltangenterna. Pluralformer: one, other.
 
 - **the rail** — listen (listen till vänster, med vyerna Projekt,
   Bibliotek, Bilder, Inställningar)
-- **the panel at the side** — sidopanelen
-- **pane** — rutan (den ena halvan när två kartor står sida vid sida)
+- **the panel at the side** — sidopanelen; sedan 2026-10-24 heter den
+  *dokumentpanelen* (se nedan)
+- **pane** — till 2026-10-24: rutan (den ena halvan när två kartor står
+  sida vid sida); den halvan heter nu en *sida* av fönstret, och *pane*
+  är en panel (se nedan)
 - **the palette** — paletten (kommandopaletten, Ctrl+K)
 - **the writing tools** — skrivverktygen
 - **fold**, **fold away** — fälla ihop; **unfold** — fälla ut
 - **settings** — inställningar (inställningarna)
 - **data directory** — datamappen
+
+## Fönstret och det nya i 0.2.5 (2026-10-24)
+
+- **the list** — projektlistan (*listan* där det är tydligt): trädet till
+  vänster över alla projekt och mappar. Inte ”listen”, som är listen med
+  vyerna; *the list at the left* = projektlistan till vänster.
+- **the start screen** — startskärmen: det som visas bredvid projektlistan
+  när inget projekt är öppet; *Last opened* = Senast öppnade
+- **side** — sida (sidan, sidorna): fönstrets ena sida, med ett eget
+  projekt, sin sökväg överst och sin rad med ikoner (*Stäng den här
+  sidan*, *Byt plats på sidorna*). Där ordet kan läsas som dokumentets
+  sidor, säg *fönstrets sidor*.
+- **the path** — sökvägen: raden överst på en sida, med mapparna,
+  projektet och elementen ner till det som visas (*Mer av sökvägen*)
+- **Split view** — Delad vy; knappen själv: *Dela upp*; *One at a time* =
+  En i taget; *beside* = bredvid (*Öppna bredvid*, *Gå in bredvid*)
+- **enter** (ett element) — gå in (*Gå in*, *Gå in bredvid*), motsatsen
+  till *gå upp*
+- **pane** — panel (panelen): **the typesetting pane** —
+  ombrytningspanelen; den och dess knapp heter *Ombrytning* (som
+  typografins ombrytning: texten satt i sidor); **the document pane** —
+  dokumentpanelen, knappen *Dokument*
+- **zoom** — zoom (*Anpassa till bredden*, *{ $percent } %*); *larger
+  pages* = större sidor
+- **Document properties** — Dokumentegenskaper (fönstret, och
+  *Dokumentegenskaper…* i elementets meny); ersätter *Om det här
+  dokumentet*
+- **document type** — dokumenttyp (dokumenttypen): det gränssnittet nu
+  kallar mallen, vad dokumentet är (*Dokumenttyp…*, *Dokumenttypens
+  delar*, *Förvald dokumenttyp*). Där engelskan ännu säger *template*
+  står *mall*.
+- **default** (i inställningarna) — förvald, förvalt (*Förvalt utseende*,
+  *Förvald referensstil*); **None, as the document type has it** — Ingen,
+  som dokumenttypen har det
+- **Paragraph kind** / **Words kind** — Slag av stycke / Slag av ord (inte
+  ”ordslag”, som är grammatikens ordklass); i plural *Slag av stycken*,
+  *Slag av ord*
+- **Marks** (menyn) — Märkning; **the marks of whitespace** — osynliga
+  tecken (¶, ↵ och ringen över ett hårt mellanslag; *Visa eller dölj
+  osynliga tecken*), som i svensk ordbehandling
+- **hard space** — hårt mellanslag (där raden inte bryts)
+- **Inline number** — nummer i raden (*Nummer i raden…*): ett nummer som
+  327a eller 3:16 i prosan; till 2026-10-24 *referensmärke*
+- **clone** — klon (klonen, kloner); verbet *klona*: *Klon av ”…”*,
+  *Klona ett annat element…*, *Gå till originalet*, *Inte längre en klon*
+- **sub-element** — underelement (underelementet, underelementen); *fold* /
+  *unfold* = fälla ihop / fälla ut (*Fäll ut underelementen*); **Add child
+  element** — Lägg till underelement; **Add sibling element** — Lägg till
+  element på samma nivå; *promote* = flytta upp
+- **Time stamp** — tidsstämpel (*Tidsstämpel…*): när ett element är
+- **image** — bild, som *picture* förut; engelskans byte från *picture*
+  till *image* ändrar inget på svenska. *Among the images* = Bland bilderna.
+- **look chip** — utseendeetikett (*etikett* där det är tydligt; se
+  *chip* ovan): *Visa utseendeetiketter i förhandsvisningen*
+- **contributor** — medverkande (en medverkande, de medverkande), som i
+  bibliotekskatalogerna; **role** — roll; rollerna **Author** —
+  Författare, **Editor** — Redaktör, **Translator** — Översättare
+- **Edited by …**, **Translated by …**, **Edited and translated by …**
+  (på titelsidan, document.ftl) — Redigerad av …, Översatt av …,
+  Redigerad och översatt av …; *Editors and translators* (Utseende) =
+  Redaktörer och översättare
+- **Anonymize the front page** — Anonymisera framsidan
+- **Line numbering from here** — Radnumrering härifrån (fönstret och
+  *Radnumrering härifrån…* i högerklicksmenyn); *Line numbering…* =
+  Radnumrering…; **Count the lines of** — Räkna raderna i: *Varje slag*
+  eller ett slag (*Vers*)
+- **Numbering of this line** — Numrering av den här raden; **Counted** —
+  Räknas; **Its number is shown** — Dess nummer visas: *Som de andras*,
+  *Alltid*, *Aldrig*
+- **annotation** (vid en rad) — anmärkning (anmärkningen, anmärkningar):
+  *Anmärkning i högermarginalen*, *i vänstermarginalen*; i Utseende
+  *Anmärkningarna till* *Sidan mitt emot numren*, *Vänster*, *Höger*
+  (som *Numren till*)
+- **Begins where the line before ended** — Börjar där föregående rad
+  slutade; *the line before* = föregående rad
+- **indentation step** — indragssteg (ett steg av Tabb); **Indent first
+  line** — Indrag av första raden
+- **long inline quotation** — långt citat i löptexten (en *varning* i
+  checklistan)
+- **Key** (ett slags tangent, Ctrl+Alt+0–9) — Tangent; *Keys* = Tangenter
 
 ## Namn som inte översätts
 

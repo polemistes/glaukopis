@@ -4,7 +4,6 @@
 ## The marks and the kinds of paragraph, in the bar over a selection and in
 ## the tools over the text.
 
-editor-format = Format
 editor-writing = Pisanie
 editor-italic = Kursywa
 editor-bold = Pogrubienie
@@ -179,14 +178,6 @@ editor-pasted-picture = obraz
 
 ## More.
 
-editor-found = Niepowiązane cytowania…
-editor-found-count = { $count ->
-    [one] { $count } do przejrzenia i zrobienia z niego cytowania
-    [few] { $count } do przejrzenia i zrobienia z nich cytowań
-    [many] { $count } do przejrzenia i zrobienia z nich cytowań
-   *[other] { $count } do przejrzenia i zrobienia z nich cytowań
-}
-editor-found-none = Oraz tekst, który wygląda jak cytowania, w tej mapie
 
 ## Choosing a work to cite.
 

@@ -4,7 +4,6 @@
 ## The marks and the kinds of paragraph, in the bar over a selection and in
 ## the tools over the text.
 
-editor-format = 格式
 editor-writing = 写作
 editor-italic = 斜体
 editor-bold = 粗体
@@ -127,9 +126,6 @@ editor-pasted-picture = 图片
 
 ## More.
 
-editor-found = 识别出的引文…
-editor-found-count = 有 { $count } 处待处理并转为引文
-editor-found-none = 以及此导图中看起来像引文的文字
 
 ## Choosing a work to cite.
 

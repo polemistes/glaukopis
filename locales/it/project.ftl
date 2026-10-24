@@ -20,11 +20,24 @@ project-view-this = Vista di questa mappa
 project-diagram = Diagramma
 project-text = Testo
 project-one-at-a-time = Una alla volta
-project-side-by-side = Due affiancate
+project-side-by-side = Vista divisa
+# The menu of the Split view button: what the second side shows.
+project-beside-this = Questo elemento, come diagramma e testo
+project-beside-element = Un altro elemento…
+project-beside-project = Un altro progetto…
+project-beside-element-title = Accanto: scegli un elemento
+project-beside-show = Mostra accanto
+project-beside-title = Accanto: scegli un progetto
+project-beside-subtitle = Un progetto, o un elemento del suo albero, da mostrare accanto a questo
 project-close-side = Chiudi questo lato
 project-references = Riferimenti
+project-pictures = Immagini
+project-side-tabs = Che cosa mostra il riquadro del documento
 project-side-map = Mappa
 project-between-maps = Tra le due mappe
+project-between-preview = Tra i lati e la composizione
+project-between-pictures = Tra i lati e le immagini
+project-between-references = Tra i lati e il riquadro del documento
 
 ## When the sharing ends from the other side
 
@@ -77,7 +90,7 @@ project-document-into = Un documento al suo interno…
 project-drop-on-map = Lascia cadere su una mappa per spostare lì · tieni premuto Ctrl per copiare
 project-open-beside = Apri accanto
 project-open-beside-hint = Due mappe affiancate, per spostare elementi dall'una all'altra
-project-side-by-side-short = Affiancate
+project-side-by-side-short = Dividi
 # The count is of those found in the element in view, and under it.
 project-found-hint = { $count } da passare in rassegna, e di cui fare citazioni
 project-copied-to = Copiato in «{ $name }»
@@ -123,7 +136,7 @@ project-pick-loop = Il documento conterrebbe sé stesso
 project-tidy-branch = Riordina questo ramo
 project-place-automatically = Colloca automaticamente
 project-itself-stays = Il progetto stesso resta
-project-itself-stays-detail = Elimina il progetto dalla pagina dei progetti.
+project-itself-stays-detail = Elimina il progetto dall'elenco.
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] «{ $name }» è stato eliminato
@@ -274,3 +287,33 @@ status-words-written = { $count ->
    *[other] { $count } parole scritte
 }
 status-progress = A che punto è la mappa
+
+## The path over each side, and the sides (stage 4 of the list, the path and the window as it was left)
+# The chevron at the start of a path, which opens the menu of all projects.
+project-all-projects-menu = Tutti i progetti
+# The crumb … in a path too long for its cell, whose menu has the crumbs hidden behind it.
+project-path-hidden = Il resto del percorso
+project-switch-sides = Scambia i lati
+
+## Stage 3 of the sides, the panes and the bars (agent "bars")
+project-bar-typesetting = Composizione
+project-bar-document = Documento
+project-badge-offline = il server non è raggiungibile
+project-badge-refused = il server non accetta le ultime modifiche
+
+## Fewer words, stage 2 (agent "chrome"): the clone, which has nothing of its own but its name.
+
+project-clone-other = Clona un altro elemento…
+# The submenu of a clone, and the mark of a clone in the diagram: the original's name.
+project-clone-of = Clone di «{ $name }»
+project-clone-choose = Scegli un altro elemento…
+project-clone-go = Vai all'originale
+project-clone-none = Non più un clone
+# The dialog with the tree of the project, choosing the original of a clone.
+project-pick-clone-title = Quale elemento clonare in «{ $name }»?
+project-pick-clone = Clonalo
+project-pick-clone-self = Un elemento non può essere un clone di sé stesso
+project-add-child = Aggiungi un sottoelemento
+project-add-sibling = Aggiungi un elemento allo stesso livello
+project-delete-promote = Elimina e alza di livello i sottoelementi
+project-delete-with = Elimina con i sottoelementi

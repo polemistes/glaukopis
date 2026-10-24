@@ -101,7 +101,7 @@ export function runSaid(
 ): string {
   const said = [
     settings.languages.length
-      ? settings.languages.map((code) => nameOf(code)).join(', ')
+      ? settings.languages.map((code) => nameOf(code)).join(t('ui-list-between'))
       : t('ocr-strip-band-none'),
   ];
   if (settings.dpi !== 0 && settings.dpi !== 300)

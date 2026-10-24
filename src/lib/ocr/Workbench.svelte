@@ -37,7 +37,7 @@
     type PageTextView,
     type Scheme,
   } from '$lib/api/ocr';
-  import { t } from '$lib/i18n';
+  import { listed, t, worded } from '$lib/i18n';
   import { describeError } from '$lib/ui/toast.svelte';
   import { newId } from '$lib/util/id';
   import { firstSource, howFromSettings } from './how';
@@ -363,9 +363,9 @@
   const schemeSaid = $derived(
     looked.schemes
       .map((found) =>
-        t(schemeWords[found.scheme], { fonts: found.fonts.join(', '), pages: found.pages }),
+        t(schemeWords[found.scheme], { fonts: listed(found.fonts), pages: found.pages }),
       )
-      .join(' '),
+      .join(t('ui-words-between')),
   );
 
   // ---- what is asked ----

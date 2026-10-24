@@ -1,15 +1,15 @@
-# What the core says of the full history of a project, in English.
-# See locales/README.md.
+# 中核がプロジェクトの完全な履歴について言うこと、日本語で。
+# locales/README.md を見よ。
 
 core-history-not-history = { $path }はGlaukopisが保存した履歴ではありません。
-# What was read has been changed meanwhile, by a save or another window.
+# 読み込んだものが、そのあいだに、保存や別のウィンドウによって変えられた。
 core-history-changed = 読み込んだ後に履歴が変わりました。もう一度試してください。
 core-history-none = このプロジェクトは履歴を保存していません。
 
-## What was not found, shown after "not found: ".
+## 見つからなかったもの。「見つかりません：」の後に表示される。
 
 core-history-the-archive = アーカイブ
 
-## What was being done when the system said no, shown before what it said.
+## システムが拒んだときに行っていたこと。システムが言ったことの前に表示される。
 
 core-history-deleting = 履歴の削除

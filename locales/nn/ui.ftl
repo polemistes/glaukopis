@@ -7,3 +7,7 @@ ui-working = Arbeider
 # The button that takes a message away.
 ui-dismiss = Lukk
 ui-no-backend = Glaukopis må køyrast som eit program, ikkje i ein nettlesar.
+
+ui-list-between = ,{" "}
+ui-words-between = {" "}
+ui-sentence-end = .

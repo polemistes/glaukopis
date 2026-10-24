@@ -76,10 +76,11 @@ when-hint-units = Times are numbers of the timeline’s unit, set under its lane
 when-bc = BC
 # $month: 1 to 12; $year: as written.
 when-month-of = { $year }, month { $month }
-# How a placement is said beside the element: "after the quarrel, before the embassy".
-when-said-after = after
-when-said-before = before
-when-said-during = during
+# How a placement is said beside the element: "after the quarrel, before the embassy";
+# $name is the name of the element it is placed by.
+when-said-after-name = after { $name }
+when-said-before-name = before { $name }
+when-said-during-name = during { $name }
 when-said-to = to
 when-said-approx = c.
 

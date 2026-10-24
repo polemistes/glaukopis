@@ -322,3 +322,30 @@ format-source-read = Letta il { $date }.
 format-source-high = I valori sono quelli della fonte.
 format-source-medium = La fonte si è potuta leggere solo in parte o in uno stato precedente: controlla ciò che ti importa.
 format-source-low = Poco si è potuto verificare: prendi i valori come un inizio.
+
+## Fewer words, stage 3: the rows of Look in plain words.
+
+format-level-begins-paragraph = Apre il paragrafo
+format-level-placement = Collocazione
+format-title-include = Includi
+format-title-formatting = Formattazione
+format-title-anonymize = Rendi anonima la prima pagina
+format-table-inside = Dentro la tabella
+
+## Fewer words, stage 4: the two lengths of paragraphs, and the warning of long quotations.
+
+format-indent-first-line = Rientro della prima riga
+format-quote-warn = Avvisa delle citazioni lunghe nel testo
+
+## The contributors, stage 3: the lines of the editors and the translators on the front page, and their items.
+
+format-title-roles = Curatori e traduttori
+format-item-editor = Curatore
+format-item-translator = Traduttore
+
+## The numbering of lines, stage 2: the side of the annotations of lines.
+format-verse-annotations = Lato delle annotazioni
+format-verse-annotations-other = Dalla parte opposta ai numeri
+
+## Where a line begins, stage 4: the step of an indent.
+format-indent-step = Passo di rientro

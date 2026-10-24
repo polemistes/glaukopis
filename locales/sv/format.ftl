@@ -322,3 +322,30 @@ format-source-read = Läst { $date }.
 format-source-high = Värdena är källans.
 format-source-medium = Källan kunde bara läsas delvis eller i ett tidigare skick: kontrollera det som är viktigt för dig.
 format-source-low = Lite kunde bekräftas: ta värdena som en början.
+
+## Fewer words, stage 3: the rows of Look in plain words.
+
+format-level-begins-paragraph = Inleder stycket
+format-level-placement = Placering
+format-title-include = Ta med
+format-title-formatting = Utformning
+format-title-anonymize = Anonymisera framsidan
+format-table-inside = Inne i tabellen
+
+## Fewer words, stage 4: the two lengths of paragraphs, and the warning of long quotations.
+
+format-indent-first-line = Indrag av första raden
+format-quote-warn = Varna för långa citat i löptexten
+
+## The contributors, stage 3: the lines of the editors and the translators on the front page, and their items.
+
+format-title-roles = Redaktörer och översättare
+format-item-editor = Redaktör
+format-item-translator = Översättare
+
+## The numbering of lines, stage 2: the side of the annotations of lines.
+format-verse-annotations = Anmärkningarna till
+format-verse-annotations-other = Sidan mitt emot numren
+
+## Where a line begins, stage 4: the step of an indent.
+format-indent-step = Indragssteg

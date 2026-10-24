@@ -4,7 +4,6 @@
 ## The marks and the kinds of paragraph, in the bar over a selection and in
 ## the tools over the text.
 
-editor-format = Обликовање
 editor-writing = Писање
 editor-italic = Курзив
 editor-bold = Полуцрно
@@ -129,9 +128,6 @@ editor-pasted-picture = слика
 
 ## More.
 
-editor-found = Пронађени цитати…
-editor-found-count = { $count } за преглед, да од њих постану цитати
-editor-found-none = И текст који личи на цитате, у овој мапи
 
 ## Choosing a work to cite.
 

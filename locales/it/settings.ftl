@@ -104,3 +104,15 @@ settings-logs = Il registro
 
 settings-page-chips-on = Acceso
 settings-page-chips-off = Spento
+
+## The settings in plain words, stage 1: the defaults of new projects and documents, and the look chips.
+
+# Whether a new project opens in its diagram or in its text; the choices are the names of the two views.
+settings-default-view = Vista predefinita dei nuovi progetti
+settings-default-type = Tipo di documento predefinito
+settings-default-look = Aspetto predefinito
+settings-default-style = Stile di citazione predefinito
+# The first choice of each of the three defaults: none, so that a new document is of the plain type, and the type's look and style hold.
+settings-default-none = Nessuno, come vuole il tipo di documento
+# Whether a line of the preview, pressed, shows a chip at the edge of the page that says what it is and opens Look at it.
+settings-look-chips = Mostra i cartellini dell'aspetto nell'anteprima

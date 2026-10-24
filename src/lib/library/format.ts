@@ -1,7 +1,7 @@
 /** Words for things of the library. */
 
 import type { Reason, SummaryLite } from '$lib/api/library';
-import { languages, t } from '$lib/i18n';
+import { languages, listed, t } from '$lib/i18n';
 
 /**
  * A message one of whose variables is shown otherwise than as words, as a
@@ -67,7 +67,7 @@ export function reasonWords(reasons: Reason[]): string {
   const list = reasons.map(words);
   if (list.length <= 1) return list[0] ?? '';
   return t('library-reasons', {
-    others: list.slice(0, -1).join(', '),
+    others: listed(list.slice(0, -1)),
     last: list[list.length - 1],
   });
 }

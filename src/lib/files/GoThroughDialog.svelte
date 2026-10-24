@@ -19,7 +19,7 @@
     type PlanItem,
     type SummaryLite,
   } from '$lib/api/library';
-  import { t } from '$lib/i18n';
+  import { listed, t } from '$lib/i18n';
   import { reasonWords } from '$lib/library/format';
   import { newReference } from '$lib/library/references.svelte';
   import { library } from '$lib/state/library.svelte';
@@ -283,7 +283,7 @@
     const parts = [t('files-going-assigned', { count: assigned })];
     if (made) parts.push(t('files-going-made', { count: made }));
     if (later) parts.push(t('files-going-later-count', { count: later }));
-    const words = parts.join(', ');
+    const words = listed(parts);
     const done = given.length || madeIds.length;
     if (done) rememberGoing({ assigned: given, made: madeIds }, words, problems);
     else if (problems.length) notifyError(words, problems.slice(0, 4).join('\n'));

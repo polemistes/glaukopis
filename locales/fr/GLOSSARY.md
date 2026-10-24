@@ -269,6 +269,100 @@ personne qui écrit. Un mot choisi ici est le même dans tous les fichiers.
   scandinave d’autrefois) ; **Fraktur** reste le nom du caractère et du
   modèle : « le modèle Fraktur », « Fraktur (caractères gothiques) ».
 
+## La fenêtre, l’aspect et les lignes (après 0.2.4)
+
+Ces mots remplacent, là où ils diffèrent, ceux de plus haut : le
+**panneau** (une moitié de l’écran partagé) est désormais un **côté** ; le
+volet latéral est le **volet du document** ; « À propos de ce document »
+est devenu **Propriétés du document** ; « Ouvrir comme carte » est devenu
+**Entrer**.
+
+- **the list** → la **liste** (la liste des projets, à gauche : l’arbre de
+  tous les projets et de tous les dossiers)
+- **the start screen** → l’**écran d’accueil** (quand aucun projet n’est
+  ouvert)
+- **side** → le **côté** : chaque côté de la fenêtre a son projet, son
+  chemin et sa barre d’icônes. « Fermer ce côté », « Intervertir les
+  côtés ». Pas « panneau » ni « volet ».
+- **the path** → le **chemin** (en haut de chaque côté : où l’on est dans
+  l’arbre) ; « Plus du chemin » pour les noms cachés derrière « … »
+- **Split view** → **Vue scindée** ; le bouton court **Split** →
+  **Scinder**. Pas « partagée », qui est le mot du partage avec d’autres.
+- **enter** (an element) → **entrer** (dans un élément : il devient
+  l’élément affiché) ; « Entrer », « Entrer à côté » ; on **remonte**
+  comme avant. **Open beside** → **Ouvrir à côté**.
+- **the typesetting pane** → le volet **Composition** (la **composition**) :
+  les pages du côté choisi, telles qu’elles s’imprimeront, avec l’Aspect à
+  côté. « Masquer la composition ». Pas « mise en pages », trop proche de
+  la mise en page (layout).
+- **the document pane** → le **volet du document** (références, images,
+  commentaires, citations non liées, historique, modifications) ; son
+  bouton dans la barre : **Document**.
+- **zoom** → le **zoom** ; **Fit the width** → **Ajuster à la largeur** ;
+  « 100 % » avec une espace fine insécable.
+- **Marks** (the menu) → **Marques**, comme plus haut ; **the marks of
+  whitespace** (¶, ↵) → les **caractères invisibles**, comme les
+  traitements de texte en français.
+- **hard space** → l’**espace insécable** (féminin, comme en typographie :
+  « une espace insécable »)
+- **Inline number** → le **numéro dans la ligne** (ce qu’on insère : 3:16,
+  327a). Les **marques de référence** restent le nom de ces numéros dans
+  la mise en page (« Les marques de référence sont rendues »).
+- **clone** → le **clone** ; **cloner** : « Cloner un autre élément… »,
+  « Clone de « … » », « Aller à l’original », « Ne plus être un clone »
+- **sub-elements** → les **sous-éléments** ; **child element** →
+  **sous-élément** ; **sibling element** → **élément de même niveau**
+- **fold** / **unfold** → **replier** / **déplier**, comme plus haut
+- **Time stamp…** → **Datation…** : le moment ou la période d’un élément,
+  comme l’historien date un fait. « Rien n’est encore daté. »
+- **image** → l’**image**, comme plus haut (l’anglais dit désormais
+  *image* lui aussi)
+- **look chip** → la **pastille d’aspect** (voir *chip* plus haut)
+- **Document properties** → **Propriétés du document** ; **Document type**
+  → le **type de document** : ce qu’est le document, c’est-à-dire son
+  modèle (« Article de revue », « Thèse »). « Type » reste aussi le mot de
+  *kind* : un type de document, un type de paragraphe, un type de mots.
+- **Paragraph kind** / **Words kind** → **Type de paragraphe** / **Type de
+  mots**
+- **Default document type**, **Default look**, **Default citation style** →
+  **Type de document par défaut**, **Aspect par défaut**, **Style de
+  citation par défaut** ; **None** → **Aucun**
+- **Key** (of a kind, Ctrl+Alt+0–9) → la **touche** ; **None** → **Aucune**
+- **contributor** → le **contributeur** ; **role** → le **rôle** ; les
+  trois rôles : **Auteur**, **Éditeur scientifique**, **Traducteur**.
+  « Éditeur » seul est le *publisher* (l’identifiant), d’où « éditeur
+  scientifique », comme dans les catalogues de bibliothèque.
+- **Edited by …** → « Édité par … » ; **Translated by …** → « Traduit
+  par … » ; **Edited and translated by …** → « Édité et traduit par … ».
+  « Éditer » au sens d’établir un texte pour le publier, qui vaut pour une
+  édition critique comme pour un volume collectif, là où « Texte établi
+  par » ne vaut que pour la première et « Sous la direction de » que pour
+  le second.
+- **Editors and translators** (Look, the front page) → **Éditeurs
+  scientifiques et traducteurs**
+- **Front page** (Look) → la **Première page**, comme plus haut ;
+  **Anonymize the front page** → **Anonymiser la première page** ;
+  **Anonymous** (the requirement) → **Anonyme**
+- **Line numbering from here** → **Numérotation des lignes à partir
+  d’ici** ; **Numbering of this line** → **Numérotation de cette ligne** ;
+  **Count the lines of** → **Compter les lignes de** (« Tous les types »,
+  ou un seul)
+- **Counted** → **Comptée** (la ligne) ; **Its number is shown** → **Son
+  numéro est affiché** : **Comme les autres**, **Toujours**, **Jamais**
+- **annotation** → l’**annotation** (un mètre, le numéro d’une autre
+  édition, dans la marge) : « Annotation dans la marge de droite » ;
+  **Annotations on the** → **Les annotations se placent**, comme « Les
+  numéros se placent » ; **Other side from the numbers** → **Du côté
+  opposé aux numéros**
+- **Begins where the line before ended** → **Commence où la ligne
+  précédente s’arrête** (la seconde moitié d’un vers partagé entre deux
+  personnages)
+- **Indentation step** → le **retrait par tabulation** : la longueur dont
+  Tab met un paragraphe en retrait. Pas « pas de retrait », qui se lit
+  « aucun retrait ». **one step in** / **out** → **augmenter** /
+  **diminuer le retrait**
+- **Indent first line** → **Retrait de la première ligne**
+
 ## Les noms qui ne se traduisent pas
 
 Glaukopis ; Pandoc, Typst, Tesseract, Hunspell, LaTeX, LuaLaTeX, BibLaTeX,

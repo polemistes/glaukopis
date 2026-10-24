@@ -72,3 +72,7 @@ core-export-template-own-only = Kun dine egne skabeloner kan slettes.
 core-export-the-template = skabelonen »{ $id }«
 core-export-output-not-yet = Skabelonens fil »{ $id }« kan ikke laves endnu: det kan kun dokumentet.
 core-export-output-unknown = Skabelonen har ingen fil »{ $id }«.
+
+## Stage 5 of the settings in plain words: LaTeX's hyphenation.
+
+core-export-latex-no-hyphenation = LaTeX har ingen orddelingsmønstre for { $language }: ordene deles som engelske, indtil sprogets pakke i TeX Live er installeret (på Arch texlive-langeuropean for de fleste europæiske sprog).

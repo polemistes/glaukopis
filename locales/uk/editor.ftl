@@ -4,7 +4,6 @@
 ## The marks and the kinds of paragraph, in the bar over a selection and in
 ## the tools over the text.
 
-editor-format = Формат
 editor-writing = Письмо
 editor-italic = Курсив
 editor-bold = Жирний
@@ -130,9 +129,6 @@ editor-pasted-picture = зображення
 
 ## More.
 
-editor-found = Знайдені цитування…
-editor-found-count = Переглянути й зробити цитуваннями: { $count }
-editor-found-none = І текст, схожий на цитування, у цій мапі
 
 ## Choosing a work to cite.
 

@@ -149,3 +149,10 @@ template-called-screenplay = Scénario
 template-called-letter = Lettre
 template-called-blog-post = Billet de blog
 template-called-news-article = Article de presse
+
+## Fewer words, stage 3: the requirement of anonymity, in Look and in the editor of a document type.
+
+template-requirement-anonymity = Anonyme
+
+## Stage 4 of the settings, the zoom and the keys of the kinds: the kinds Ctrl+Alt and a digit gives.
+template-kind-keys = Touches

@@ -132,7 +132,7 @@ project-pick-loop = The document would hold itself
 project-tidy-branch = Tidy this branch
 project-place-automatically = Place automatically
 project-itself-stays = The project itself stays
-project-itself-stays-detail = Delete the project from the home page.
+project-itself-stays-detail = Delete the project from the list.
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] “{ $name }” was deleted

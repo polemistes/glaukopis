@@ -7,3 +7,7 @@ ui-working = Al lavoro
 # The button that takes a message away.
 ui-dismiss = Chiudi
 ui-no-backend = Glaukopis va eseguito come applicazione, non in un browser.
+
+ui-list-between = ,{" "}
+ui-words-between = {" "}
+ui-sentence-end = .

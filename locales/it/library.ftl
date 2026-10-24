@@ -563,3 +563,8 @@ library-switch-files = File
 
 library-resize-side = Trascina per allargare o restringere le raccolte o le cartelle
 library-resize-detail = Trascina per allargare o restringere il riquadro a destra
+
+## Fewer words, stage 2 (agent "chrome")
+
+# Importing a file of references: .bib, BibLaTeX or BibTeX.
+library-import-bibtex = Importa Bib(La)TeX…

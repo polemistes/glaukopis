@@ -80,9 +80,5 @@ when-hint-units = Czasy to liczby jednostek osi czasu, ustawianej pod jej torami
 when-bc = p.n.e.
 # $month: 1 to 12; $year: as written.
 when-month-of = { $year }, miesiąc { $month }
-# How a placement is said beside the element: "after the quarrel, before the embassy".
-when-said-after = po
-when-said-before = przed
-when-said-during = podczas
 when-said-to = do
 when-said-approx = ok.

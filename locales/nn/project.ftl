@@ -20,11 +20,24 @@ project-view-this = Vising av dette kartet
 project-diagram = Diagram
 project-text = Tekst
 project-one-at-a-time = Eitt om gongen
-project-side-by-side = To side om side
+project-side-by-side = Delt vising
+# The menu of the Split view button: what the second side shows.
+project-beside-this = Dette elementet, som diagram og tekst
+project-beside-element = Eit anna element …
+project-beside-project = Eit anna prosjekt …
+project-beside-element-title = Ved sida av: vel eit element
+project-beside-show = Vis ved sida av
+project-beside-title = Ved sida av: vel eit prosjekt
+project-beside-subtitle = Eit prosjekt, eller eit element i treet til det, som skal visast ved sida av dette
 project-close-side = Lukk denne sida
 project-references = Referansar
+project-pictures = Bilete
+project-side-tabs = Kva dokumentpanelet viser
 project-side-map = Kart
 project-between-maps = Mellom dei to karta
+project-between-preview = Mellom sidene i vindauget og ombrekkinga
+project-between-pictures = Mellom sidene i vindauget og bileta
+project-between-references = Mellom sidene i vindauget og dokumentpanelet
 
 ## When the sharing ends from the other side
 
@@ -75,7 +88,7 @@ project-document-into = Eit dokument inn i det …
 project-drop-on-map = Slepp på eit kart for å flytte dit · hald Ctrl for å kopiere
 project-open-beside = Opne ved sida av
 project-open-beside-hint = To kart side om side, for å flytte element mellom dei
-project-side-by-side-short = Side om side
+project-side-by-side-short = Todelt
 # The count is of those found in the element in view, and under it.
 project-found-hint = { $count } å gå gjennom og gjere til kjeldetilvisingar
 project-copied-to = Kopiert til «{ $name }»
@@ -119,7 +132,7 @@ project-pick-loop = Dokumentet ville innehalde seg sjølv
 project-tidy-branch = Rydd i denne greina
 project-place-automatically = Plasser automatisk
 project-itself-stays = Sjølve prosjektet blir ståande
-project-itself-stays-detail = Slett prosjektet frå prosjektsida.
+project-itself-stays-detail = Slett prosjektet frå lista.
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] «{ $name }» vart sletta
@@ -258,3 +271,33 @@ status-words-written = { $count ->
    *[other] { $count } ord skrivne
 }
 status-progress = Kor langt kartet er kome
+
+## The path over each side, and the sides (stage 4 of the list, the path and the window as it was left)
+# The chevron at the start of a path, which opens the menu of all projects.
+project-all-projects-menu = Alle prosjekta
+# The crumb … in a path too long for its cell, whose menu has the crumbs hidden behind it.
+project-path-hidden = Meir av stien
+project-switch-sides = Byt om sidene
+
+## Stage 3 of the sides, the panes and the bars (agent "bars")
+project-bar-typesetting = Ombrekking
+project-bar-document = Dokument
+project-badge-offline = tenaren kan ikkje nåast
+project-badge-refused = tenaren tek ikkje imot dei siste endringane
+
+## Fewer words, stage 2 (agent "chrome"): the clone, which has nothing of its own but its name.
+
+project-clone-other = Klon av eit anna element …
+# The submenu of a clone, and the mark of a clone in the diagram: the original's name.
+project-clone-of = Klon av «{ $name }»
+project-clone-choose = Vel eit anna element …
+project-clone-go = Gå til originalen
+project-clone-none = Ikkje lenger ein klon
+# The dialog with the tree of the project, choosing the original of a clone.
+project-pick-clone-title = Kva element skal klonast inn i «{ $name }»?
+project-pick-clone = Klon det
+project-pick-clone-self = Eit element kan ikkje vere ein klon av seg sjølv
+project-add-child = Legg til underelement
+project-add-sibling = Legg til element på same nivå
+project-delete-promote = Slett og flytt underelementa opp
+project-delete-with = Slett med underelementa

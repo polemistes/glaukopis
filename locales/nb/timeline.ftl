@@ -72,9 +72,9 @@ when-hint-dates = År, datoer, måneder, århundrer og tiår leses, med f.Kr. de
 when-hint-units = Tider er tall av tidslinjens enhet, satt under banene. «År 12» og «12» er det samme.
 when-bc = f.Kr.
 when-month-of = { $year }, måned { $month }
-when-said-after = etter
-when-said-before = før
-when-said-during = under
+when-said-after-name = etter { $name }
+when-said-before-name = før { $name }
+when-said-during-name = under { $name }
 when-said-to = til
 when-said-approx = ca.
 

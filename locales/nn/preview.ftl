@@ -1,7 +1,7 @@
-# The preview, and the making of documents: the panel beside the text, and
-# the export.
+# The typesetting pane, and the making of documents: the pages as the
+# document is set, with its Look beside them, and the export.
 
-## The panel beside the map, and what is chosen over it.
+## The head of the typesetting pane.
 
 # The last among the reference styles, which opens the search for more.
 preview-style-more = Fleire stilar …
@@ -9,6 +9,7 @@ preview-style-more = Fleire stilar …
 preview-go-to-text = Gå til denne staden i teksten
 # Moves the pages to where the element the text is at begins.
 preview-show-text = Vis kvar teksten er
+preview-hide = Skjul ombrekkinga
 # The name of the program is Pandoc, Typst or LaTeX.
 preview-program-missing = { $program } er ikkje installert
 preview-programs-needed = Førehandsvising og eksport blir laga med Pandoc og Typst. Installer dei med pakkehandsamaren på systemet ditt, eller sei i innstillingane kvar dei er.
@@ -115,3 +116,17 @@ preview-chips-off = Slutt å vise kva linjene er
 preview-what-page = Side
 preview-what-header = Topptekst
 preview-what-footer = Botntekst
+
+## The sides, the panes and the bars, stage 2: the typesetting pane, the document pane, Document properties.
+
+# The pane where the document is set into pages, with its Look beside them.
+preview-title = Ombrekking
+
+## The settings in plain words, stage 2: the zoom of the typesetting pane.
+
+# The button of the zoom and the first choice of its menu: the pages as wide as the pane.
+preview-zoom-fit = Tilpass breidda
+# The button of the zoom and the choices of its menu: the size of the pages against their size on paper.
+preview-zoom = { $percent }{" "}%
+# What the button of the zoom is, as it is told to those who cannot see it.
+preview-zoom-label = Forstørring

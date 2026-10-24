@@ -4,7 +4,6 @@
 ## The marks and the kinds of paragraph, in the bar over a selection and in
 ## the tools over the text.
 
-editor-format = Biçim
 editor-writing = Yazma
 editor-italic = İtalik
 editor-bold = Kalın
@@ -128,9 +127,6 @@ editor-pasted-picture = resim
 
 ## More.
 
-editor-found = Bulunan atıflar…
-editor-found-count = Gözden geçirilip atıfa dönüştürülecek { $count } adet
-editor-found-none = Ve bu haritada atıfa benzeyen metin
 
 ## Choosing a work to cite.
 

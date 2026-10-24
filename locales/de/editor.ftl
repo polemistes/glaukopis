@@ -4,7 +4,6 @@
 ## The marks and the kinds of paragraph, in the bar over a selection and in
 ## the tools over the text.
 
-editor-format = Format
 editor-writing = Schreiben
 editor-italic = Kursiv
 editor-bold = Fett
@@ -45,9 +44,6 @@ editor-side-left = Links
 editor-side-right = Rechts
 # Over a number in the margin of the text, which opens a field for it when pressed.
 editor-line-number-press = Die Nummer dieser Zeile: klicken, um sie zu ändern
-
-## Numbers belong to what they number (ADR 0041): the Numbers menu offers
-## the three, each saying what it numbers.
 
 ## The bracket at the left of paragraphs of one kind standing together (a
 ## run), named by the kind; its menu says what is said of them.
@@ -168,7 +164,7 @@ editor-table = Tabelle…
 editor-table-file = Tabelle aus einer Datei…
 editor-formula = Formel
 editor-pointer = Verweis…
-editor-refmark-title = Stellenmarke
+editor-refmark-title = Nummer in der Zeile
 editor-refmark-label = Bezeichnung
 editor-refmark-placeholder = 3:16, 327a, 1094a1
 editor-refmark-dialog-hint = Die Marke gehört nicht zu den Wörtern: Rechtschreibung, Suche und Wortzählung übergehen sie. Das Layout bestimmt, ob sie in der Zeile hochgestellt oder an den Rand gesetzt wird.
@@ -177,9 +173,6 @@ editor-pasted-picture = Bild
 
 ## More.
 
-editor-found = Lose Zitationen…
-editor-found-count = { $count } durchzugehen und zu Zitationen zu machen
-editor-found-none = Und Text, der wie Zitationen aussieht, in dieser Karte
 
 ## Choosing a work to cite.
 
@@ -250,3 +243,36 @@ editor-note-place-format = Wo das Layout seine Anmerkungen hat
 editor-note-place-foot = Am Fuß der Seite
 editor-note-place-end = Am Ende des Textes
 editor-note-placeholder = Der Text der Anmerkung
+
+## Stage 3 of the sides, the panes and the bars (agent "bars")
+editor-words-kind = Art der Wörter
+editor-words-kind-now = Art der Wörter: { $kind }
+editor-marks = Auszeichnungen
+editor-marks-shown = Formatierungszeichen
+editor-image = Bild
+editor-inline-number = Nummer in der Zeile…
+
+## The numbering of lines, in two windows, and the side of the annotations (stage 2 of the contributors and the lines)
+# The title of the window, and the item of the text's right-click menu that opens it.
+editor-numbering-from-here = Zeilennummerierung ab hier
+editor-numbering-from-here-item = Zeilennummerierung ab hier…
+editor-numbering-of-line = Nummerierung dieser Zeile
+editor-numbering-of-line-item = Nummerierung dieser Zeile…
+# In the menu of a run's bracket.
+editor-run-numbering = Zeilennummerierung…
+# Count the lines of: every kind, or one kind of paragraph.
+editor-numbering-only = Art der gezählten Zeilen
+editor-numbering-every-kind = Jede Art
+editor-line-counted = Gezählt
+editor-line-shown = Ihre Nummer wird gezeigt
+editor-line-shown-others = Wie bei den anderen
+editor-line-shown-always = Immer
+editor-line-shown-never = Nie
+# Named by the margin the annotation goes to.
+editor-line-annotation-right = Randbemerkung rechts
+editor-line-annotation-left = Randbemerkung links
+editor-line-annotation-placeholder = Ein Versmaß, die Nummer einer anderen Ausgabe
+
+## Where a line begins, and the step (stage 4 of the contributors and the lines)
+# In the right-click menu of the text, with a check while the line the cursor is in does so.
+editor-line-continues = Beginnt, wo die Zeile davor endete

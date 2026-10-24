@@ -20,11 +20,24 @@ project-view-this = Ansicht dieser Karte
 project-diagram = Diagramm
 project-text = Text
 project-one-at-a-time = Eine auf einmal
-project-side-by-side = Zwei nebeneinander
+project-side-by-side = Geteilte Ansicht
+# The menu of the Split view button: what the second side shows.
+project-beside-this = Dieses Element, als Diagramm und Text
+project-beside-element = Ein anderes Element…
+project-beside-project = Ein anderes Projekt…
+project-beside-element-title = Daneben: ein Element wählen
+project-beside-show = Daneben zeigen
+project-beside-title = Daneben: ein Projekt wählen
+project-beside-subtitle = Ein Projekt oder ein Element seines Baums, das neben diesem gezeigt werden soll
 project-close-side = Diese Seite schließen
 project-references = Quellen
+project-pictures = Bilder
+project-side-tabs = Was der Dokumentbereich zeigt
 project-side-map = Karte
 project-between-maps = Zwischen den beiden Karten
+project-between-preview = Zwischen den Fensterseiten und dem Umbruch
+project-between-pictures = Zwischen den Fensterseiten und den Bildern
+project-between-references = Zwischen den Fensterseiten und dem Dokumentbereich
 
 ## When the sharing ends from the other side
 
@@ -75,7 +88,7 @@ project-document-into = Ein Dokument hinein…
 project-drop-on-map = Auf eine Karte fallen lassen, um dorthin zu verschieben · Strg halten, um zu kopieren
 project-open-beside = Daneben öffnen
 project-open-beside-hint = Zwei Karten nebeneinander, um Elemente zwischen ihnen zu verschieben
-project-side-by-side-short = Nebeneinander
+project-side-by-side-short = Teilen
 # The count is of those found in the element in view, and under it.
 project-found-hint = { $count } durchzugehen und zu Zitationen zu machen
 project-copied-to = Nach „{ $name }“ kopiert
@@ -119,7 +132,7 @@ project-pick-loop = Das Dokument würde sich selbst enthalten
 project-tidy-branch = Diesen Zweig aufräumen
 project-place-automatically = Automatisch platzieren
 project-itself-stays = Das Projekt selbst bleibt
-project-itself-stays-detail = Löschen Sie das Projekt auf der Startseite.
+project-itself-stays-detail = Löschen Sie das Projekt aus der Liste.
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] „{ $name }“ wurde gelöscht
@@ -258,3 +271,33 @@ status-words-written = { $count ->
    *[other] { $count } Wörter geschrieben
 }
 status-progress = Wie weit die Karte ist
+
+## The path over each side, and the sides (stage 4 of the list, the path and the window as it was left)
+# The chevron at the start of a path, which opens the menu of all projects.
+project-all-projects-menu = Alle Projekte
+# The crumb … in a path too long for its cell, whose menu has the crumbs hidden behind it.
+project-path-hidden = Mehr vom Pfad
+project-switch-sides = Seiten tauschen
+
+## Stage 3 of the sides, the panes and the bars (agent "bars")
+project-bar-typesetting = Umbruch
+project-bar-document = Dokument
+project-badge-offline = der Server ist nicht zu erreichen
+project-badge-refused = der Server nimmt die letzten Änderungen nicht an
+
+## Fewer words, stage 2 (agent "chrome"): the clone, which has nothing of its own but its name.
+
+project-clone-other = Anderes Element klonen…
+# The submenu of a clone, and the mark of a clone in the diagram: the original's name.
+project-clone-of = Klon von „{ $name }“
+project-clone-choose = Ein anderes Element wählen…
+project-clone-go = Zum Original gehen
+project-clone-none = Kein Klon mehr
+# The dialog with the tree of the project, choosing the original of a clone.
+project-pick-clone-title = Welches Element in „{ $name }“ klonen?
+project-pick-clone = Klonen
+project-pick-clone-self = Ein Element kann kein Klon von sich selbst sein
+project-add-child = Unterelement hinzufügen
+project-add-sibling = Element auf gleicher Ebene hinzufügen
+project-delete-promote = Löschen und Unterelemente höher stufen
+project-delete-with = Mit Unterelementen löschen

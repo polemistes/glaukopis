@@ -4,7 +4,6 @@
 ## The marks and the kinds of paragraph, in the bar over a selection and in
 ## the tools over the text.
 
-editor-format = Opmaak
 editor-writing = Schrijven
 editor-italic = Cursief
 editor-bold = Vet
@@ -128,9 +127,6 @@ editor-pasted-picture = afbeelding
 
 ## More.
 
-editor-found = Gevonden verwijzingen…
-editor-found-count = { $count } om door te nemen en verwijzingen van te maken
-editor-found-none = En tekst die op verwijzingen lijkt, in deze mindmap
 
 ## Choosing a work to cite.
 

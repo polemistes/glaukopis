@@ -1,6 +1,5 @@
 # What you are writing: the chooser of what a document is, which is the
-# template of its element. Opened from the button over the preview, from the
-# top of Look, from the menu of an element and from the palette.
+# template of its element, the Document type tab of Document properties.
 
 chooser-title = Hvad skriver du?
 chooser-search = Søg i det, der kan skrives
@@ -22,3 +21,4 @@ chooser-submission-all = Hver er lavet til en af teksterne ovenfor, med det, tid
 chooser-own-from = Lav min egen skabelon ud fra denne…
 chooser-change-own = Ret i denne skabelon af mine…
 chooser-of-project = Gemt i projektet: ikke blandt dine egne skabeloner på denne computer.
+# In the menu of an element.

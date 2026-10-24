@@ -76,9 +76,17 @@ when-hint-units = Zeiten sind Zahlen der Einheit der Zeitleiste, unter ihren Bah
 when-bc = v. Chr.
 # $month: 1 to 12; $year: as written.
 when-month-of = { $year }, Monat { $month }
-# How a placement is said beside the element: "after the quarrel, before the embassy".
-when-said-after = nach
-when-said-before = vor
-when-said-during = während
+# How a placement is said beside the element: "after the quarrel, before the embassy";
+# $name is the name of the element it is placed by.
+when-said-after-name = nach { $name }
+when-said-before-name = vor { $name }
+when-said-during-name = während { $name }
 when-said-to = bis
 when-said-approx = ca.
+
+## Fewer words, stage 2 (agent "chrome"): the words of the menus.
+
+when-stamp = Zeitstempel…
+# The title of the dialog that says when an element is.
+when-stamp-title = Zeitstempel
+timeline-empty-stamp = Noch nichts hat einen Zeitstempel. Wählen Sie „Zeitstempel…“ im Menü eines Elements.

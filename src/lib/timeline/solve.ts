@@ -391,20 +391,31 @@ function ordered(nodes: Map<string, Node>): Solved {
   return { scaled: false, placed, range: nodes.size ? [0, max] : null };
 }
 
+/**
+ * The words with which a placement in time is said: after, before and
+ * during an element, said with its name where the language puts the word
+ * (`after the war`, 戦争以後), and what stands between two of them, between
+ * two times, and before an approximate one.
+ */
+export interface SaidWords {
+  after: (name: string) => string;
+  before: (name: string) => string;
+  during: (name: string) => string;
+  between: string;
+  to: string;
+  approx: string;
+}
+
 /** What a placement says, in words, for where it is shown beside the element. */
-export function describeWhen(
-  when: When,
-  nameOf: (id: string) => string,
-  words: { after: string; before: string; during: string; to: string; approx: string },
-): string {
+export function describeWhen(when: When, nameOf: (id: string) => string, words: SaidWords): string {
   const bound = (b: Bound): string => {
     if (b.at)
       return (b.approx ? `${words.approx} ` : '') + b.at + (b.margin ? ` ± ${b.margin}` : '');
     const parts: string[] = [];
-    if (b.after) parts.push(`${words.after} ${nameOf(b.after)}`);
-    if (b.before) parts.push(`${words.before} ${nameOf(b.before)}`);
-    if (b.during) parts.push(`${words.during} ${nameOf(b.during)}`);
-    return parts.join(', ');
+    if (b.after) parts.push(words.after(nameOf(b.after)));
+    if (b.before) parts.push(words.before(nameOf(b.before)));
+    if (b.during) parts.push(words.during(nameOf(b.during)));
+    return parts.join(words.between);
   };
   const start = bound(when.start);
   return when.end ? `${start} ${words.to} ${bound(when.end)}` : start;

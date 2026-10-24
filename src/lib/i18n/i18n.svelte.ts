@@ -433,6 +433,26 @@ class Languages {
 
 export const languages = new Languages();
 
+/**
+ * Pieces of what the interface says, put together as its language puts
+ * them: a list, `3 images, 2 files`, which Japanese joins with 、; words of
+ * one phrase, `indented smaller`, which Japanese joins with nothing; and a
+ * sentence ended, which Japanese ends with 。.
+ */
+export function listed(parts: readonly string[]): string {
+  return parts.join(t('ui-list-between'));
+}
+
+/** Words of one phrase, put together as the language of the interface puts them: see `listed`. */
+export function worded(parts: readonly string[]): string {
+  return parts.join(t('ui-words-between'));
+}
+
+/** A sentence put together of pieces, ended as the language of the interface ends one: see `listed`. */
+export function sentence(text: string): string {
+  return text + t('ui-sentence-end');
+}
+
 /** What the interface says by a name, in its language. */
 export function t(id: string, args?: Args): string {
   const tag = languages.current;

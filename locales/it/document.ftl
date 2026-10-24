@@ -40,6 +40,6 @@ document-sample-argues = sostiene il contrario.
 
 document-edited-by = A cura di {"{}"}
 document-translated-by = Traduzione di {"{}"}
-document-edited-and-translated-by = A cura e traduzione di {"{}"}
+document-edited-and-translated-by = Traduzione e cura di {"{}"}
 document-names-between = ,{" "}
 document-names-last = {" "}e{" "}

@@ -4,7 +4,6 @@
 ## The marks and the kinds of paragraph, in the bar over a selection and in
 ## the tools over the text.
 
-editor-format = Formát
 editor-writing = Psaní
 editor-italic = Kurzíva
 editor-bold = Tučně
@@ -129,9 +128,6 @@ editor-pasted-picture = obrazek
 
 ## More.
 
-editor-found = Nalezené citace…
-editor-found-count = { $count } k projití a převedení na citace
-editor-found-none = A text, který vypadá jako citace, v této mapě
 
 ## Choosing a work to cite.
 

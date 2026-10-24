@@ -4,7 +4,6 @@
 ## The marks and the kinds of paragraph, in the bar over a selection and in
 ## the tools over the text.
 
-editor-format = Formato
 editor-writing = Escritura
 editor-italic = Cursiva
 editor-bold = Negrita
@@ -129,13 +128,6 @@ editor-pasted-picture = imagen
 
 ## More.
 
-editor-found = Citas encontradas…
-editor-found-count = { $count ->
-    [one] { $count } por repasar y convertir en cita
-    [many] { $count } de citas por repasar y convertir en citas
-   *[other] { $count } por repasar y convertir en citas
-}
-editor-found-none = Y texto que parece citas, en este mapa
 
 ## Choosing a work to cite.
 

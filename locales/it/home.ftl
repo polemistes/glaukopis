@@ -40,6 +40,15 @@ home-pane-between = Tra l'elenco dei progetti e il progetto
 # Why the project that is open cannot be renamed or deleted from its menu.
 home-open-now = Ora è aperto
 # On the menu of a project, or of an element of one, in the pane: shows it in a second pane, beside the project that is open.
+home-open-beside = Apri accanto
+home-enter-beside = Entra accanto
+home-enter = Entra
+home-open = Apri
+home-close = Chiudi
+home-new-menu = Nuovo progetto o cartella, oppure entra in uno o aprine uno
+home-start-recent = Aperti di recente
+home-fold = Ripiega
+home-unfold = Dispiega
 # Under a project that is not open, in the pane, when what it holds could not be read.
 home-tree-unreadable = Non si è potuto leggere
 # Under a project that is not open, in the pane, when it holds no elements yet.
@@ -59,8 +68,8 @@ home-owl-new-folder = Nuova cartella qui
 
 ## A map of the projects
 
-home-map-menu = Una mappa dei progetti…
-home-map-title = Una mappa dei progetti
+home-map-menu = Un progetto di tutti i progetti…
+home-map-title = Un progetto di tutti i progetti
 home-map-about = Un nuovo progetto: le cartelle come elementi, e sotto ogni cartella i progetti che contiene.
 home-map-name-default = Progetti
 home-map-what = Che cosa contiene la mappa
@@ -244,3 +253,9 @@ home-delete-many-title = { $count ->
 home-delete-many-message = I progetti sono spostati nel cestino di Glaukopis, da cui si possono riportare indietro. I tuoi riferimenti non sono toccati.
 home-delete-many-shared = I progetti sono spostati nel cestino di Glaukopis, da cui si possono riportare indietro. Quelli che condividi restano sul server e presso gli altri.
 home-delete-many-confirm = Elimina i progetti
+
+## The path over a side (stage 4 of the list, the path and the window as it was left)
+# In the menu of all projects, under a folder with nothing in it.
+
+## Stage 3 of the sides, the panes and the bars (agent "bars")
+home-share = Condividi…

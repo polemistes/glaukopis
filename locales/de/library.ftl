@@ -531,3 +531,8 @@ library-switch-files = Dateien
 
 library-resize-side = Ziehen, um die Sammlungen oder Ordner breiter oder schmaler zu machen
 library-resize-detail = Ziehen, um den Bereich rechts breiter oder schmaler zu machen
+
+## Fewer words, stage 2 (agent "chrome")
+
+# Importing a file of references: .bib, BibLaTeX or BibTeX.
+library-import-bibtex = Bib(La)TeX importieren…

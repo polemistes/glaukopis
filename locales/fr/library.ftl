@@ -563,3 +563,8 @@ library-switch-files = Fichiers
 
 library-resize-side = Faire glisser pour élargir ou rétrécir les collections ou les dossiers
 library-resize-detail = Faire glisser pour élargir ou rétrécir le volet de droite
+
+## Fewer words, stage 2 (agent "chrome")
+
+# Importing a file of references: .bib, BibLaTeX or BibTeX.
+library-import-bibtex = Importer du Bib(La)TeX…

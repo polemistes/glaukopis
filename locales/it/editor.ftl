@@ -4,7 +4,6 @@
 ## The marks and the kinds of paragraph, in the bar over a selection and in
 ## the tools over the text.
 
-editor-format = Formato
 editor-writing = Scrittura
 editor-italic = Corsivo
 editor-bold = Grassetto
@@ -169,7 +168,7 @@ editor-table = Tabella…
 editor-table-file = Tabella da un file…
 editor-formula = Formula
 editor-pointer = Rimando…
-editor-refmark-title = Segno di riferimento
+editor-refmark-title = Numero nel testo
 editor-refmark-label = Etichetta
 editor-refmark-placeholder = 3:16, 327a, 1094a1
 editor-refmark-dialog-hint = Il segno non fa parte delle parole: l'ortografia, la ricerca e il conto delle parole lo saltano. L'impaginazione dice se sta in alto nel rigo o a margine.
@@ -178,9 +177,6 @@ editor-pasted-picture = immagine
 
 ## More.
 
-editor-found = Citazioni sciolte…
-editor-found-count = { $count } da passare in rassegna, e di cui fare citazioni
-editor-found-none = E testo che sembra una citazione, in questa mappa
 
 ## Choosing a work to cite.
 
@@ -251,3 +247,36 @@ editor-note-place-format = Dove l'impaginazione ha le sue note
 editor-note-place-foot = A piè di pagina
 editor-note-place-end = Alla fine del testo
 editor-note-placeholder = Il testo della nota
+
+## Stage 3 of the sides, the panes and the bars (agent "bars")
+editor-words-kind = Tipo di parole
+editor-words-kind-now = Tipo di parole: { $kind }
+editor-marks = Segni
+editor-marks-shown = Segni degli spazi e dei paragrafi
+editor-image = Immagine
+editor-inline-number = Numero nel testo…
+
+## The numbering of lines, in two windows, and the side of the annotations (stage 2 of the contributors and the lines)
+# The title of the window, and the item of the text's right-click menu that opens it.
+editor-numbering-from-here = Numerazione delle righe da qui
+editor-numbering-from-here-item = Numerazione delle righe da qui…
+editor-numbering-of-line = Numerazione di questa riga
+editor-numbering-of-line-item = Numerazione di questa riga…
+# In the menu of a run's bracket.
+editor-run-numbering = Numerazione delle righe…
+# Count the lines of: every kind, or one kind of paragraph.
+editor-numbering-only = Conta le righe di
+editor-numbering-every-kind = Tutti i tipi
+editor-line-counted = Contata
+editor-line-shown = Il suo numero è mostrato
+editor-line-shown-others = Come per le altre
+editor-line-shown-always = Sempre
+editor-line-shown-never = Mai
+# Named by the margin the annotation goes to.
+editor-line-annotation-right = Annotazione nel margine destro
+editor-line-annotation-left = Annotazione nel margine sinistro
+editor-line-annotation-placeholder = Un metro, il numero di un'altra edizione
+
+## Where a line begins, and the step (stage 4 of the contributors and the lines)
+# In the right-click menu of the text, with a check while the line the cursor is in does so.
+editor-line-continues = Comincia dove finisce la riga precedente

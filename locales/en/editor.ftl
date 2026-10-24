@@ -4,7 +4,6 @@
 ## The marks and the kinds of paragraph, in the bar over a selection and in
 ## the tools over the text.
 
-editor-format = Format
 editor-writing = Writing
 editor-italic = Italic
 editor-bold = Bold
@@ -174,9 +173,6 @@ editor-pasted-picture = image
 
 ## More.
 
-editor-found = Loose citations…
-editor-found-count = { $count } to go through, and make citations of
-editor-found-none = And text that looks like citations, in this map
 
 ## Choosing a work to cite.
 

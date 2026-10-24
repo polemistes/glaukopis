@@ -114,7 +114,7 @@ project-pick-loop = Dokumentet ville inneholde seg selv
 project-tidy-branch = Rydd i denne grenen
 project-place-automatically = Plasser automatisk
 project-itself-stays = Selve prosjektet blir stående
-project-itself-stays-detail = Slett prosjektet fra prosjektsiden.
+project-itself-stays-detail = Slett prosjektet fra lista.
 project-deleted = { $under ->
     [0] «{ $name }» ble slettet
     [one] «{ $name }» ble slettet, sammen med { $under } element under det

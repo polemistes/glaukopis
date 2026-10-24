@@ -32,7 +32,7 @@ core-library-merge-itself = 項目をそれ自身と統合することはでき�
 ## What was not found, shown after "not found: ".
 
 core-library-the-reference = 文献
-core-library-the-stored-file = 保存されたファイル{ $path }
+core-library-the-stored-file = 保管場所のファイル{ $path }
 core-library-the-file = ファイル{ $path }
 core-library-the-collection = コレクション
 core-library-the-collection-to-put-in = 入れる先のコレクション
@@ -48,3 +48,19 @@ core-library-collection-in-itself = コレクションをそれ自身の中に�
 
 core-library-not-in-library = 「{ $path }」はライブラリ内のパスではありません
 core-library-not-a-file = { $path }はファイルではありません
+
+## The files of the library and their folders.
+
+core-library-the-file-of-library = ライブラリのファイル
+core-library-the-folder = フォルダー
+core-library-needs-name = 名前が必要です。
+core-library-name-too-long = その名前は長すぎます。
+core-library-folder-in-itself = フォルダーをそれ自身の中に入れることはできません。
+# Why a file was not given to the reference chosen for it, when files are gone through.
+core-library-assign-file-gone = ファイルを文献に割り当てられませんでした。そのファイルはもうライブラリのファイルの中にありません。
+core-library-assign-reference-gone = 「{ $name }」を文献に割り当てられませんでした。その文献はもうライブラリにありません。
+core-library-assign-stored-gone = 「{ $name }」を文献に割り当てられませんでした。ファイルはもう、ライブラリが保管している場所（{ $path }）にありません。
+# The record of the files could not be read; it was put aside under another name.
+core-library-files-unreadable = ライブラリのファイルの記録を読み取れなかったため、{ $path }として別に取っておきました：{ $message }
+# The library file has bytes that are not UTF-8, as an editor that saves in Latin-1 writes them; $aside is the name of the copy kept in the same folder.
+core-library-not-utf8 = { $path }には、UTF-8でない文字が含まれています。別のエンコーディングで保存するエディターが書き込むような文字です。これらは�として読み取られ、そのまま書き込まれます。元のままのファイルは、同じフォルダーに{ $aside }として残してあります。

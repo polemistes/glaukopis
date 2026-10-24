@@ -1,8 +1,9 @@
-## The look of a document, in one place: the panel beside the preview where
+## The look of a document, in one place: the column of the typesetting pane where
 ## everything is set that decides how the pages look. What is changed there
 ## is kept as the document's own changes over its layout.
 
 look-title = Aspetto
+look-between = Tra le pagine e l'aspetto del documento
 look-whole = Ciò che determina l'aspetto
 
 look-scope = Queste modifiche valgono per
@@ -52,11 +53,10 @@ look-keep-save = Tieni
 look-put-into = Metti queste modifiche in «{ $name }»
 look-delete-layout = Elimina questa mia impaginazione…
 
-## What the document contains, a section of Look: the parts the program
-## makes itself, the kinds of elements given a place of their own, and what
-## is required. What is changed there is kept as the document's own changes
-## over what it is. The name in quotes is what the document is: "Journal
-## article", "Novel".
+## The parts of the document type, a section of Look: the parts the program
+## makes itself and the kinds of elements given a place of their own, in one
+## list in the order they are printed, and what is required. What is changed
+## there is kept as the document's own changes over what it is.
 
 look-contents-kinds-missing = Ancora nessuno
 look-contents-kinds-make = Creane uno
@@ -84,3 +84,27 @@ look-front-title-page = Un frontespizio
 look-fonts-document = In questo documento
 look-fonts-project = Altrove in questo progetto
 look-fonts-all = Tutti i font
+
+## The sides, the panes and the bars, stage 2: the typesetting pane, the document pane, Document properties.
+
+# Opens Document properties at what the document is.
+look-document-type = Tipo di documento…
+look-hide = Nascondi l'aspetto
+
+## Fewer words, stage 3: the parts and the headings of Look in plain words.
+
+look-section-line-numbers = Numeri di riga
+look-section-type-parts = Parti del tipo di documento
+look-section-the-layout = Impaginazione
+look-choose-layout = Scegli un'impaginazione
+look-layout-modifications = Modifiche all'impaginazione
+look-at-quotations-warning = Citazioni
+look-at-paragraph-kinds = Tipi di paragrafo
+look-at-words-kinds = Tipi di parole
+look-type-requirements = Requisiti del tipo di documento
+
+## Stage 4 of the settings, the zoom and the keys of the kinds: the key of a kind, Ctrl+Alt and a digit, as the document type gives it.
+look-kind-key = Tasto
+look-kind-key-none = Nessuno
+# A digit another kind has: choosing it here leaves that kind without.
+look-kind-key-taken = { $keys }, ora per { $kind }

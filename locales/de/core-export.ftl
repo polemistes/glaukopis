@@ -69,3 +69,7 @@ core-export-template-own-only = Nur eigene Vorlagen können gelöscht werden.
 core-export-the-template = die Vorlage „{ $id }“
 core-export-output-not-yet = Die Ausgabe „{ $id }“ der Vorlage kann noch nicht erzeugt werden, nur das Dokument.
 core-export-output-unknown = Die Vorlage hat keine Ausgabe „{ $id }“.
+
+## Stage 5 of the settings in plain words: LaTeX's hyphenation.
+
+core-export-latex-no-hyphenation = LaTeX hat keine Trennmuster für { $language }: die Wörter werden wie englische getrennt, bis das Paket der Sprache aus TeX Live installiert ist (unter Arch texlive-langeuropean für die meisten europäischen Sprachen).

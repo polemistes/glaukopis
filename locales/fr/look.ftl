@@ -1,8 +1,9 @@
-## The look of a document, in one place: the panel beside the preview where
+## The look of a document, in one place: the column of the typesetting pane where
 ## everything is set that decides how the pages look. What is changed there
 ## is kept as the document's own changes over its layout.
 
 look-title = Aspect
+look-between = Entre les pages et l’aspect du document
 look-whole = Ce qui fait l’aspect
 
 look-scope = Ces modifications valent pour
@@ -52,11 +53,10 @@ look-keep-save = Garder
 look-put-into = Enregistrer ces modifications dans « { $name } »
 look-delete-layout = Supprimer cette mise en page à moi…
 
-## What the document contains, a section of Look: the parts the program
-## makes itself, the kinds of elements given a place of their own, and what
-## is required. What is changed there is kept as the document's own changes
-## over what it is. The name in quotes is what the document is: "Journal
-## article", "Novel".
+## The parts of the document type, a section of Look: the parts the program
+## makes itself and the kinds of elements given a place of their own, in one
+## list in the order they are printed, and what is required. What is changed
+## there is kept as the document's own changes over what it is.
 
 look-contents-kinds-missing = Aucun pour l’instant
 look-contents-kinds-make = En créer un
@@ -84,3 +84,27 @@ look-front-title-page = Une page de titre
 look-fonts-document = Dans ce document
 look-fonts-project = Ailleurs dans ce projet
 look-fonts-all = Toutes les polices
+
+## The sides, the panes and the bars, stage 2: the typesetting pane, the document pane, Document properties.
+
+# Opens Document properties at what the document is.
+look-document-type = Type de document…
+look-hide = Masquer l’aspect
+
+## Fewer words, stage 3: the parts and the headings of Look in plain words.
+
+look-section-line-numbers = Numéros de ligne
+look-section-type-parts = Parties du type de document
+look-section-the-layout = Mise en page
+look-choose-layout = Choisir une mise en page
+look-layout-modifications = Modifications de la mise en page
+look-at-quotations-warning = Citations
+look-at-paragraph-kinds = Types de paragraphes
+look-at-words-kinds = Types de mots
+look-type-requirements = Exigences du type de document
+
+## Stage 4 of the settings, the zoom and the keys of the kinds: the key of a kind, Ctrl+Alt and a digit, as the document type gives it.
+look-kind-key = Touche
+look-kind-key-none = Aucune
+# A digit another kind has: choosing it here leaves that kind without.
+look-kind-key-taken = { $keys }, actuellement { $kind }

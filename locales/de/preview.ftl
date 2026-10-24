@@ -1,7 +1,7 @@
-# The preview, and the making of documents: the panel beside the text, and
-# the export.
+# The typesetting pane, and the making of documents: the pages as the
+# document is set, with its Look beside them, and the export.
 
-## The panel beside the map, and what is chosen over it.
+## The head of the typesetting pane.
 
 # The last among the reference styles, which opens the search for more.
 preview-style-more = Mehr Stile…
@@ -9,6 +9,7 @@ preview-style-more = Mehr Stile…
 preview-go-to-text = Zu dieser Stelle im Text gehen
 # Moves the pages to where the element the text is at begins.
 preview-show-text = Zeigen, wo der Text ist
+preview-hide = Umbruch ausblenden
 # The name of the program is Pandoc, Typst or LaTeX.
 preview-program-missing = { $program } ist nicht installiert
 preview-programs-needed = Vorschau und Export werden mit Pandoc und Typst erzeugt. Installieren Sie sie mit der Paketverwaltung Ihres Systems, oder geben Sie in den Einstellungen an, wo sie sind.
@@ -115,3 +116,17 @@ preview-chips-off = Die Zeilen nicht mehr benennen
 preview-what-page = Seite
 preview-what-header = Kopfzeile
 preview-what-footer = Fußzeile
+
+## The sides, the panes and the bars, stage 2: the typesetting pane, the document pane, Document properties.
+
+# The pane where the document is set into pages, with its Look beside them.
+preview-title = Umbruch
+
+## The settings in plain words, stage 2: the zoom of the typesetting pane.
+
+# The button of the zoom and the first choice of its menu: the pages as wide as the pane.
+preview-zoom-fit = An Breite anpassen
+# The button of the zoom and the choices of its menu: the size of the pages against their size on paper.
+preview-zoom = { $percent } %
+# What the button of the zoom is, as it is told to those who cannot see it.
+preview-zoom-label = Zoom

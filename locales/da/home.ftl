@@ -40,6 +40,15 @@ home-pane-between = Mellem projektlisten og projektet
 # Why the project that is open cannot be renamed or deleted from its menu.
 home-open-now = Det er åbent nu
 # On the menu of a project, or of an element of one, in the pane: shows it in a second pane, beside the project that is open.
+home-open-beside = Åbn ved siden af
+home-enter-beside = Gå ind ved siden af
+home-enter = Gå ind
+home-open = Åbn
+home-close = Luk
+home-new-menu = Nyt projekt, ny mappe, eller deltag i eller åbn et
+home-start-recent = Senest åbnet
+home-fold = Fold sammen
+home-unfold = Fold ud
 # Under a project that is not open, in the pane, when what it holds could not be read.
 home-tree-unreadable = Det kunne ikke læses
 # Under a project that is not open, in the pane, when it holds no elements yet.
@@ -59,8 +68,8 @@ home-owl-new-folder = Ny mappe her
 
 ## A map of the projects
 
-home-map-menu = Et kort over projekterne…
-home-map-title = Et kort over projekterne
+home-map-menu = Et projekt af alle projekterne…
+home-map-title = Et projekt af alle projekterne
 home-map-about = Et nyt projekt: mapperne som elementer, og under hver mappe projekterne i den.
 home-map-name-default = Projekter
 home-map-what = Hvad kortet rummer
@@ -234,3 +243,9 @@ home-delete-many-title = { $count ->
 home-delete-many-message = Projekterne flyttes til papirkurven i Glaukopis, hvorfra de kan hentes tilbage. Dine referencer røres ikke.
 home-delete-many-shared = Projekterne flyttes til papirkurven i Glaukopis, hvorfra de kan hentes tilbage. Dem, du deler, bliver på serveren og hos de andre.
 home-delete-many-confirm = Slet projekterne
+
+## The path over a side (stage 4 of the list, the path and the window as it was left)
+# In the menu of all projects, under a folder with nothing in it.
+
+## Stage 3 of the sides, the panes and the bars (agent "bars")
+home-share = Del…

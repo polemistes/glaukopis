@@ -149,3 +149,10 @@ template-called-screenplay = Sceneggiatura
 template-called-letter = Lettera
 template-called-blog-post = Articolo di blog
 template-called-news-article = Articolo di giornale
+
+## Fewer words, stage 3: the requirement of anonymity, in Look and in the editor of a document type.
+
+template-requirement-anonymity = Anonimo
+
+## Stage 4 of the settings, the zoom and the keys of the kinds: the kinds Ctrl+Alt and a digit gives.
+template-kind-keys = Tasti

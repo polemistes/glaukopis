@@ -36,10 +36,13 @@ document-the-file = filen
 document-sample-see = se
 document-sample-argues = hævder noget andet.
 
-## The contributors.
+## The contributors: the lines of the editors and the translators on the title
+## page; the braces stand for their names.
 
 document-edited-by = Redigeret af {"{}"}
 document-translated-by = Oversat af {"{}"}
 document-edited-and-translated-by = Redigeret og oversat af {"{}"}
+# Between the names of the editors or the translators on the title page,
+# and before the last of them: "A, B and C". A space is written {" "}.
 document-names-between = ,{" "}
 document-names-last = {" "}og{" "}

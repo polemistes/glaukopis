@@ -531,3 +531,8 @@ library-switch-files = Filer
 
 library-resize-side = Træk for at gøre samlingerne eller mapperne bredere eller smallere
 library-resize-detail = Træk for at gøre ruden til højre bredere eller smallere
+
+## Fewer words, stage 2 (agent "chrome")
+
+# Importing a file of references: .bib, BibLaTeX or BibTeX.
+library-import-bibtex = Importer Bib(La)TeX…
