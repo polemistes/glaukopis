@@ -344,6 +344,16 @@ try {
   await sleep(1500);
   check('the preview is made without remark', !(await app.exists('.preview footer .issues')));
   await app.screenshot('kinds-5-preview');
+  // The layout's font, Times New Roman or what stands in for it, has no
+  // small capitals of its own: the speaker's are made of capitals.
+  const page = await app.exec(
+    `return Array.from(document.querySelectorAll('.preview .page .texts span')).map((s) => s.textContent).join('|')`,
+  );
+  check(
+    'the word marked a speaker is set in small capitals made of capitals on the page',
+    /EAR/.test(page) && !/Dear/.test(page),
+    page.slice(0, 400),
+  );
 
   const errors = await app.pageErrors();
   check('no errors in the page', errors.length === 0, errors.join(' | '));
