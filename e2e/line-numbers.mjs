@@ -6,7 +6,9 @@
 // in its place in the margin. Then a paragraph with reference marks: one
 // by its key, one from the Insert menu, whose label is proposed from the
 // one before, and one changed by pressing it. Search finds words across a
-// mark, and spelling passes over it. The preview is made without remark
+// mark, and spelling passes over it. The paragraph gains two lines, and the
+// second of its three is given 9: the preview shows it beside that line.
+// The preview is made without remark
 // from Typst that has the numbers, the margin words and the marks; and a
 // document made as Typst by the command of export, with the layout setting
 // the marks in the margin, has them there.
@@ -309,6 +311,47 @@ try {
   await app.press('Escape');
   await sleep(200);
 
+  // --- A number given by hand on a later line of a text paragraph, as a play's lines are often written ---
+  const lineOf = (words) =>
+    app.exec(
+      `const lines = [];
+       for (const p of document.querySelectorAll(arguments[0] + ' > p')) {
+         let line = '';
+         lines.push(line);
+         const walker = document.createTreeWalker(p, NodeFilter.SHOW_ALL);
+         let node;
+         while ((node = walker.nextNode())) {
+           if (node.nodeType === 1 && node.classList.contains('hard-break')) lines.push('');
+           if (node.nodeType === 3 && !node.parentElement.closest('.run-line, .line-number, .line-margin')) lines[lines.length - 1] += node.data;
+         }
+       }
+       return lines.findIndex((l) => l.includes(arguments[1]));`,
+      prose,
+      words,
+    );
+  await toLine(await lineOf('without form'));
+  await app.keys(['Shift', 'Enter']);
+  await app.keys('And darkness was upon the face of the deep.');
+  await app.keys(['Shift', 'Enter']);
+  await app.keys('And the spirit moved upon the waters.');
+  await sleep(300);
+  await toLine(await lineOf('And darkness'));
+  await numbersWindow();
+  await app.exec(
+    `const s = document.querySelector('dialog[open] select'); s.value = 'counted';
+     s.dispatchEvent(new Event('input', { bubbles: true })); s.dispatchEvent(new Event('change', { bubbles: true }));`,
+  );
+  await sleep(150);
+  await fill('dialog[open] [data-this-line] input:not([type="checkbox"])', '9');
+  await app.clickText('dialog[open] footer button', 'Apply');
+  await app.waitGone('dialog[open]', 3000);
+  await sleep(300);
+  const nine = await app.exec(
+    `return Array.from(document.querySelectorAll(arguments[0] + ' span.linemark')).some((m) => m.getAttribute('data-number') === '9')`,
+    prose,
+  );
+  check('the second line of the text paragraph is given 9', nine);
+
   // --- The preview, set by Typst from the project ---
   await app.keys(['Control', 'p']);
   const opened = await app.waitFor('.preview', 3000).then(
@@ -320,6 +363,24 @@ try {
   await sleep(1500);
   check('the preview is made without remark', !(await app.exists('.preview footer .issues')));
   await app.screenshot('line-numbers-3-preview');
+  // The number given on the later line stands on the page, beside that line, not off the page.
+  await app.waitFor('.preview .page .texts span', 10000).catch(() => {});
+  const besideLater = await app.exec(
+    `const spans = Array.from(document.querySelectorAll('.preview .page .texts span'));
+     const nine = spans.find((s) => s.textContent.trim() === '9');
+     const dark = spans.find((s) => s.textContent.includes('And darkness'));
+     if (!nine || !dark) return { nine: !!nine, dark: !!dark };
+     const page = nine.closest('.page').getBoundingClientRect();
+     const n = nine.getBoundingClientRect();
+     const d = dark.getBoundingClientRect();
+     const middle = (n.top + n.bottom) / 2;
+     return { onPage: n.left >= page.left && n.left < d.left, atLine: middle >= d.top - 2 && middle <= d.bottom + 2, n: [n.left, n.top], d: [d.left, d.top, d.bottom], page: page.left };`,
+  );
+  check(
+    'a number given on a later line of a text paragraph stands beside that line in the preview',
+    besideLater.onPage && besideLater.atLine,
+    JSON.stringify(besideLater),
+  );
   const typ = execFileSync('find', [app.dataDir, '-name', 'document.typ'], { encoding: 'utf8' }).trim().split('\n')[0];
   const typst = typ ? readFileSync(typ, 'utf8') : '';
   const at = typst.indexOf('#gk-verse[');

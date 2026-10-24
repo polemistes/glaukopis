@@ -356,16 +356,17 @@ pub const BEFORE_RIGHT: &str = "#metadata(\"right\") <gk-before-right>";
 
 /// How a reference mark is set (ADR 0039): raised in the line, or in the
 /// margin at the right of its line, found from where the mark stands on the
-/// page, and taking no room in the line.
+/// page, and taking no room in the line; the empty box before it makes
+/// Typst lay out a line break just before the mark first, as `gk-beside`.
 fn refmark_rule(f: &DocumentFormat) -> String {
     match f.text.refmarks {
         RefMarks::Raised => "#let gk-refmark(label) = super(typographic: false, label)".to_owned(),
         RefMarks::Margin => format!(
-            "#let gk-refmark(label) = context {{
+            "#let gk-refmark(label) = {{ box[]; context {{
   let x = here().position().x
   box(width: 0pt, place(left + bottom, dx: page.width - {right} - x + 0.8em,
     text(size: 0.75em, fill: luma(30%), bottom-edge: \"baseline\", hyphenate: false, label)))
-}}",
+}} }}",
             right = f.page.margin_right,
         ),
     }
@@ -701,9 +702,13 @@ pub fn rules(format: &DocumentFormat, p: &Particulars) -> String {
     // What stands beside a paragraph (ADR 0040): its number, small and
     // faint, and words given in the margin, in italics besides. `gk-beside`
     // places them from where a paragraph begins, in the margin of the page
-    // on the side asked for, taking no room in the line; the lines of a
-    // verse place theirs from the edge of the verse (`gk-at`), so that the
-    // numbers of texts side by side stand beside their own columns.
+    // on the side asked for, taking no room in the line. The empty box
+    // before the placement makes Typst lay out a line break that comes
+    // just before it first: asked before that, the position is the end of
+    // the line above, and a number on a later line of a paragraph falls
+    // off the page. The lines of a verse place theirs from the edge of the
+    // verse (`gk-at`), so that the numbers of texts side by side stand
+    // beside their own columns.
     let _ = writeln!(
         out,
         "#let gk-number(n) = text(size: 0.8em, fill: luma(45%), hyphenate: false, n)
@@ -713,14 +718,14 @@ pub fn rules(format: &DocumentFormat, p: &Particulars) -> String {
 }} else {{
   place(left + horizon, dx: 100% + 0.8em, box(width: {right} - 1.6em, body))
 }}
-#let gk-beside(side, body) = context {{
+#let gk-beside(side, body) = {{ box[]; context {{
   let x = here().position().x
   if side == \"left\" {{
     box(width: 0pt, place(left + horizon, dx: {left} - x - 4.6em, box(width: 4em, align(right, body))))
   }} else {{
     box(width: 0pt, place(left + horizon, dx: page.width - {right} - x + 0.8em, box(width: {right} - 1.6em, body)))
   }}
-}}",
+}} }}",
         left = f.page.margin_left,
         right = f.page.margin_right,
     );
@@ -1018,6 +1023,16 @@ mod tests {
         f.header.places.left = vec![Item::Author, Item::Title];
         let out = preamble(&f, &p);
         assert!(!out.contains("A. Scholar"), "an anonymous manuscript does not name its author anywhere");
+    }
+
+    #[test]
+    fn what_stands_in_the_margin_is_placed_after_the_line_break_before_it() {
+        let mut f = DocumentFormat { name: "Test".into(), ..Default::default() };
+        let out = preamble(&f, &Particulars::default());
+        assert!(out.contains("#let gk-beside(side, body) = { box[]; context {"), "{out}");
+        f.text.refmarks = RefMarks::Margin;
+        let out = preamble(&f, &Particulars::default());
+        assert!(out.contains("#let gk-refmark(label) = { box[]; context {"), "{out}");
     }
 
     #[test]

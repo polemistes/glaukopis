@@ -71,6 +71,7 @@ package_glaukopis() {
     'texlive-luatex: for PDF set by LaTeX'
     'texlive-latexextra: for PDF set by LaTeX'
     'texlive-fontsrecommended: for PDF set by LaTeX'
+    'texlive-langeuropean: for the hyphenation of Norwegian and other European languages in PDF set by LaTeX'
     'librsvg: for drawings (SVG) in PDF set by LaTeX and in DOCX'
     'ttf-dejavu: for code set in letters of equal width in the preview and in PDF'
     'otf-latin-modern: for the font of LaTeX, Computer Modern, in the preview and in PDF'

@@ -1683,7 +1683,13 @@ pub fn export_until(
                 args.push(format!("{name}={value}"));
             }
             let header = dir.join("header.tex");
-            write_atomic(&header, settings.header.as_bytes())?;
+            let mut said = settings.header;
+            // Whether the language has hyphenation patterns, asked of a PDF
+            // only: the LaTeX given away is the writer's to run.
+            if target == Target::PdfLatex {
+                said.push_str(latex::HYPHENATION_CHECK);
+            }
+            write_atomic(&header, said.as_bytes())?;
             args.push("--include-in-header".into());
             args.push(header.display().to_string());
             if settings.number_sections {
@@ -1778,7 +1784,19 @@ pub fn export_until(
         }
         other => other,
     })?;
-    exported.warnings.extend(warnings_of(&out.messages).into_iter().filter(|w| {
+    let mut warnings = warnings_of(&out.messages);
+    if target == Target::PdfLatex {
+        // What the preamble wrote of the hyphenation is said as what it means.
+        let without: Vec<String> = warnings.iter().filter_map(|w| latex::without_patterns(w).flatten()).collect();
+        warnings.retain(|w| latex::without_patterns(w).is_none());
+        for language in without {
+            let warning = tr!("core-export-latex-no-hyphenation", language = language);
+            if !warnings.contains(&warning) {
+                warnings.push(warning);
+            }
+        }
+    }
+    exported.warnings.extend(warnings.into_iter().filter(|w| {
         // What LaTeX says of its own packages is of no use to the one who writes.
         target != Target::PdfLatex
             || !(w.contains("LaTeX Warning: Command") || w.contains("Check if current package is valid"))
@@ -3786,6 +3804,16 @@ mod tests {
             let e = export(&s.ctx(), &r, Target::PdfLatex, &by_latex, &ExportOptions { biblatex: true }).unwrap();
             assert!(fs::read(&by_latex).unwrap().starts_with(b"%PDF"));
             assert!(e.also.is_empty(), "the references are in the document, not beside it");
+            assert!(!e.warnings.iter().any(|w| w.contains("glaukopis-hyphenation")), "{:?}", e.warnings);
+            assert!(!e.warnings.iter().any(|w| w.contains("hyphenation patterns")), "{:?}", e.warnings);
+            // Norwegian, which babel knows from its own files whether the
+            // language's package of TeX Live is installed or not.
+            let mut norwegian = r.clone();
+            norwegian.document.language = Some("nb".into());
+            let e =
+                export(&s.ctx(), &norwegian, Target::PdfLatex, &by_latex, &ExportOptions { biblatex: true }).unwrap();
+            assert!(fs::read(&by_latex).unwrap().starts_with(b"%PDF"));
+            assert!(!e.warnings.iter().any(|w| w.contains("glaukopis-hyphenation")), "{:?}", e.warnings);
         } else {
             // LaTeX is too large to ask of every machine the tests run on.
             eprintln!("LaTeX is not installed: the PDF by LaTeX is not tested");
@@ -3894,7 +3922,7 @@ mod tests {
         assert!(text.contains("#[#set math.equation(numbering: (..n) => [(1)])"));
         assert!(text.contains("(..n) => [(2)]"));
         assert!(text.contains("$x_i lt.eq alpha$") || text.contains("$x_i <= alpha$"), "{text}");
-        assert!(text.contains("The picture is not here: lost.jpg"));
+        assert!(text.contains("The image is not here: lost.jpg"));
         assert!(out.join("with-figures-files").join(format!("{drawing}.svg")).is_file());
         assert_eq!(e.also, vec![out.join("with-figures-files").display().to_string()]);
 
@@ -4211,7 +4239,7 @@ mod tests {
                 export(&s.ctx(), &marked, Target::Typst, &typ, &ExportOptions::default()).unwrap();
                 let t = fs::read_to_string(&typ).unwrap();
                 assert!(t.contains("#gk-refmark(\"2\");"), "{t}");
-                assert_eq!(t.contains("gk-refmark(label) = context"), margin, "{t}");
+                assert_eq!(t.contains("gk-refmark(label) = { box[]; context"), margin, "{t}");
                 let p = preview(&s.ctx(), &marked).unwrap();
                 assert!(p.warnings.is_empty(), "{:?}", p.warnings);
             }
@@ -4343,6 +4371,38 @@ mod tests {
         export(&s.ctx(), &prose, Target::Docx, &docx, &ExportOptions::default()).unwrap();
         let xml = unzip(&docx, "word/document.xml");
         assert!(xml.contains("VerseNumber") && xml.contains(">328\u{a0}\u{a0}<"), "{xml}");
+    }
+
+    #[test]
+    fn a_number_given_on_a_later_line_of_a_paragraph_stands_beside_that_line() {
+        use crate::document::Numbering;
+        use crate::document::fixtures::{lines, mark};
+        let Some(s) = setup() else { return };
+        let mut r = request("chicago-author-date");
+        // A text paragraph of three lines, as a play's lines are often
+        // written: a number given by hand on the second only.
+        r.document.sections[1].blocks = vec![
+            lines(
+                "text",
+                vec![
+                    (None, "Ismene, my sister, true child of my mother,"),
+                    (Some(mark().number("7").done()), "what evil is there of all"),
+                    (None, "that Zeus does not bring to pass for us two?"),
+                ],
+            )
+            .numbered(Numbering::Counted, Some(5), None),
+        ];
+        let p = preview(&s.ctx(), &r).unwrap();
+        assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+        let runs: Vec<&TextRun> = p.pages.iter().flat_map(|page| page.texts.iter()).collect();
+        let line = |w: &str| *runs.iter().find(|r| r.text.contains(w)).unwrap_or_else(|| panic!("“{w}”: {runs:?}"));
+        let (first, second) = (line("Ismene"), line("what evil"));
+        let seven = runs.iter().find(|r| r.text.trim() == "7").unwrap_or_else(|| panic!("no 7 on the page: {runs:?}"));
+        assert!(seven.x >= 0.0 && seven.x < second.x, "the number stands left of the text: {seven:?} {second:?}");
+        assert!(
+            (seven.baseline - second.baseline).abs() < (second.baseline - first.baseline) / 2.0,
+            "the number stands at the second line's height: {seven:?} {first:?} {second:?}"
+        );
     }
 
     #[test]
@@ -4884,7 +4944,7 @@ mod tests {
         let placed = place_files(&ctx, &request, &into, "blocked", false);
         assert!(placed.present.is_empty());
         let remark = placed.remark().unwrap();
-        assert!(remark.starts_with("The file of a picture could not be put where the document is made"), "{remark}");
+        assert!(remark.starts_with("The file of an image could not be put where the document is made"), "{remark}");
         assert!(remark.contains("blocked"), "{remark}");
     }
 

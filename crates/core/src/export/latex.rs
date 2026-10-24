@@ -49,6 +49,37 @@ pub fn what_went_wrong(messages: &str) -> String {
     out.join("\n")
 }
 
+/// What the preamble of a PDF set by LaTeX says of the hyphenation of the
+/// document's language, for the export to find. Where babel has no
+/// patterns for the language, it says in its log that the language's
+/// "Hyphen rules" are set to English, and divides the words as English
+/// ones; but Pandoc keeps the log to itself, and passes on from it only the
+/// lines of characters missing from a font. So the preamble writes a line
+/// of that kind of its own, with the number of the language's patterns
+/// beside English's, which `without_patterns` reads.
+pub const HYPHENATION_CHECK: &str = r"\makeatletter
+\AtBeginDocument{\ifdefined\languagename\ifdefined\l@english\typeout{Missing character: glaukopis-hyphenation \languagename\space\the\language\space\the\l@english}\fi\fi}
+\makeatother
+";
+
+/// Of a line passed on from LaTeX's log: nothing where it is not the line
+/// the preamble writes of the hyphenation (`HYPHENATION_CHECK`); else the
+/// language whose words are divided as English ones for want of patterns,
+/// if any. The languages that are English, and babel's "nil" of a document
+/// with no language, have English's patterns as their own.
+pub fn without_patterns(line: &str) -> Option<Option<String>> {
+    let said = line.split("glaukopis-hyphenation").nth(1)?;
+    let mut words = said.split_whitespace();
+    let (Some(language), Some(its), Some(english)) = (words.next(), words.next(), words.next()) else {
+        return Some(None);
+    };
+    let english_by_name = ["nil", "english", "american", "usenglish", "canadian"];
+    if its != english || english_by_name.contains(&language.to_lowercase().as_str()) {
+        return Some(None);
+    }
+    Some(Some(language.to_owned()))
+}
+
 /// Fonts that have many letters, asked for those the font of the document
 /// lacks. Only LuaLaTeX can be told of them.
 pub const FALLBACK_FONTS: [&str; 8] = [
@@ -104,6 +135,11 @@ pub fn settings(f: &DocumentFormat, looks: &[&DocumentFormat], p: &Particulars) 
     let mut h = String::new();
 
     v.push(("documentclass".into(), "article".into()));
+    // Babel takes the language from its own locale files where the package
+    // of TeX Live for the language is not installed: Pandoc hands it the
+    // language as a class option (`norsk`), which it knows only from that
+    // package. Where the package is there, the output is the same.
+    v.push(("classoption".into(), "provide=*".into()));
     let twoside = alternates(f) || looks.iter().any(|l| alternates(l));
     if twoside {
         v.push(("classoption".into(), "twoside".into()));
@@ -631,6 +667,18 @@ mod tests {
     }
 
     #[test]
+    fn a_language_without_patterns_is_found_from_what_the_preamble_writes() {
+        let line = |s: &str| format!("Missing character: glaukopis-hyphenation {s}");
+        assert_eq!(without_patterns(&line("norsk 0 0")), Some(Some("norsk".into())));
+        assert_eq!(without_patterns(&line("norsk 39 0")), Some(None));
+        assert_eq!(without_patterns(&line("english 0 0")), Some(None));
+        assert_eq!(without_patterns(&line("american 0 0")), Some(None));
+        assert_eq!(without_patterns(&line("nil 0 0")), Some(None));
+        assert_eq!(without_patterns("Missing character: There is no ἄ (U+1F04) in font [lmroman10-regular]"), None);
+        assert!(HYPHENATION_CHECK.contains(r"\typeout{Missing character: glaukopis-hyphenation \languagename"));
+    }
+
+    #[test]
     fn a_format_as_settings() {
         let mut f = DocumentFormat::default();
         f.font.size = 11.5;
@@ -665,6 +713,11 @@ mod tests {
         f.page.numbering = NumberStyle::RomanLower;
         let s = settings(&f, &[], &Particulars::default());
         assert!(s.variables.contains(&("classoption".into(), "twoside".into())));
+        assert!(
+            s.variables.contains(&("classoption".into(), "provide=*".into())),
+            "babel takes any language from its own files: {:?}",
+            s.variables
+        );
         assert!(s.header.contains("\\fancyfoot[RO]{{\\fontsize{11.5}{13.8}\\selectfont \\thepage}}"), "{}", s.header);
         assert!(
             s.header.contains("\\fancyfoot[LE]{{\\fontsize{11.5}{13.8}\\selectfont \\thepage · \\leftmark}}"),

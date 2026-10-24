@@ -66,3 +66,7 @@ core-export-template-own-only = Bare dine egne maler kan slettes.
 core-export-the-template = malen «{ $id }»
 core-export-output-not-yet = Utdataen «{ $id }» i malen kan ikke lages ennå: bare dokumentet kan.
 core-export-output-unknown = Malen har ingen utdata «{ $id }».
+
+## Stage 5 of the settings in plain words: LaTeX's hyphenation.
+
+core-export-latex-no-hyphenation = LaTeX har ingen orddelingsmønstre for { $language }: ordene deles som engelske til språkets pakke av TeX Live er installert (på Arch texlive-langeuropean for de fleste europeiske språk).

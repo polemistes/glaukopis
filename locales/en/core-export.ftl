@@ -69,3 +69,7 @@ core-export-template-own-only = Only your own templates can be deleted.
 core-export-the-template = the template “{ $id }”
 core-export-output-not-yet = The output “{ $id }” of the template cannot be made yet: only the document can.
 core-export-output-unknown = The template has no output “{ $id }”.
+
+## Stage 5 of the settings in plain words: LaTeX's hyphenation.
+
+core-export-latex-no-hyphenation = LaTeX has no hyphenation patterns for { $language }: the words are divided as English ones until the language's package of TeX Live is installed (on Arch, texlive-langeuropean for most European languages).
