@@ -2008,7 +2008,7 @@ one tree under the project, with the thoughts as trees beside it, and that
 tree is what is printed.
 
 What a document is, how its pages look and how it cites, its language,
-authors, date, keywords and identifiers are set on an element and hold for
+contributors, date, keywords and identifiers are set on an element and hold for
 everything under it that sets none of its own: set once on the project,
 they hold for every chapter printed alone. The title and the subtitle are an
 element's own, and never taken from above: a chapter printed alone is not
@@ -2145,7 +2145,7 @@ mine…** under it changes it. The editor has, part by part:
 - **Kinds of paragraph and words**: those that belong to a document of its
   kind, as the parts of a script belong to a screenplay.
 - **Requirements**: words of text, words of abstract, keywords, whether the
-  names of the authors are left out, for review, and a note on what the
+  names of the contributors are left out, for review, and a note on what the
   limits count; *no limit* where nothing is said. The checklist and the
   preview count against these; nothing is cut.
 - **Files**: the kinds of file the document is made as.
@@ -2168,18 +2168,23 @@ you are in, and **Document properties…** in the right-click menu of any
 element, in the diagram and in the text, for that element; **Document
 type…** in Look opens it at what the document is. Down its left stand its
 parts: **Details**, **Document type** (see *What you are writing*),
-**Language** and the checklist. **Number the lines of the page**, among the
-details, numbers every line of the printed page in the margin. The
+**Language** and the checklist. **Number every line of the printed page**,
+among the details, numbers every line of the page in the margin. The
 language takes effect as it is chosen, a step of undo; the details are kept
 with **Save**.
 
 **Details** is what stands on the first page, and what the files carry as
 metadata: the **title**, which is the element's name until one is written,
 and shows the name in its place meanwhile; the **subtitle**; the
-**authors**, each with affiliation, e-mail and ORCID; the **date**, as it is
-to be printed; the **keywords**, separated by commas, counted against what
-the template allows; and the **identifiers**, ISBN, edition, publisher,
-place and DOI, and any other you name, such as an ISSN. The authors, the
+**contributors**, each with a role, **Author**, **Editor** or
+**Translator**, chosen before the name, and an affiliation, e-mail and
+ORCID; the **date**, as it is to be printed; the **keywords**, separated by
+commas, counted against what the template allows; and the
+**identifiers**, ISBN, edition, publisher, place and DOI, and any other you
+name, such as an ISSN. **Add a contributor** adds a row, an author until
+you choose otherwise. A translation of an old text has the author in its
+title, *Aristophanes: Lysistrata*, and a translator alone; a translation
+of a modern work has both. The contributors, the
 date, the keywords and the identifiers are the element's own where it sets
 them, and otherwise taken from the nearest element over it that does, up to
 the project itself: under such a setting the window says **From** which
@@ -2207,12 +2212,12 @@ element in view, opens the window at this part.
 **Checklist** is what the document's template requires, against the text
 and the tree; nothing is cut. What is required is changed for one document
 under *Parts of the document type*, in Look. It says the words of the text against the limit, with the
-template's note on what the limits count, and whether the authors are to be
+template's note on what the limits count, and whether the contributors are to be
 left out, for review; then what there is to remark on: more words than the
 template allows, more words in the abstract, more keywords, a second element
 of a kind the document has one of, beside the first, elements of the
 kind **Cover** where the template makes no cover, a front page that names
-the authors where the document type asks for an anonymous document, and,
+the contributors where the document type asks for an anonymous document, and,
 where the layout warns about long inline quotations, every paragraph of
 text with a quotation between quotation marks of so many words or lines.
 The lines are estimated from the layout, from the width of the page less
@@ -2303,11 +2308,20 @@ Every document that is made follows the typesetting in what it holds and in
 what order: the half title, the title page, the abstract, the keywords and
 the contents stand where the template puts them, in Word, Writer, LaTeX and
 the web page as in the PDF, and a part turned off in Look is left out of
-them all. The title and the authors are in the file's own properties all
-the same, where a word processor, a browser or a reader of PDFs shows
-them: every author, also where the title page shows none, unless the
-layout is anonymous. The e-book has them in its package, and a Markdown
-file at its head, which has no page to place a title page on.
+them all. On the title page the authors stand under the title, with
+their affiliations; then a line for the editors, *Edited by …*, and one for
+the translators, *Translated by …*, or one line, *Edited and translated by
+…*, where the same persons did both; where there is no author, these lines
+stand in the authors' place. The words are those of the language of the
+document: *Oversatt av …* in a Norwegian one. The title and the authors are
+in the file's own properties all the same, where a word processor, a
+browser or a reader of PDFs shows them: every author, also where the title
+page shows none, unless the layout is anonymous; Word and Writer name the
+editors and the translators among the file's own properties too. The
+e-book has them all in its package, the editors and the translators with
+their roles, and a Markdown file at its head, which has no page to place a
+title page on. In Word and Writer the lines of the editors and the
+translators are in the paragraph style *Role*, beside *Author*.
 
 In Word and Writer every kind is a style, with the look the layout gives
 it, so that a publisher can change every epigraph at once: the paragraph
@@ -2384,8 +2398,9 @@ you scroll, mark the part you are in, and go to each:
   heading that begins a page, or a part on a page of its own, begins; and
   whether it is **Different on left and right pages**. Each has three
   places, **Left**, **Centre** and **Right**, and in each place stand any
-  of the page number, the title, the author, the chapter (the heading of
-  the first level the page is in), the date, or words of your own, in the
+  of the page number, the title, the author, the editor, the translator,
+  the chapter (the heading of the first level the page is in), the date,
+  or words of your own, in the
   order you add them with **Add…**, with what stands **Between the items**
   (" · " unless you change it); where it differs on left pages, three more
   places for those. Then the **Page numbers**, with the **Style of the
@@ -2440,9 +2455,10 @@ you scroll, mark the part you are in, and go to each:
 - **Front page**: first **A title page**, whether the document has one at
   all, the same switch as under *Parts of the document type*; then
   **Include**: **Anonymize the front page**, the authors, their affiliations,
-  the date, the abstract; then **Formatting**, where the title stands, its
-  size and its letters. An anonymous front page leaves the authors out
-  everywhere: the running head, and the properties of every file made.
+  the **Editors and translators**, the date, the abstract; then
+  **Formatting**, where the title stands, its size and its letters. An
+  anonymous front page leaves every contributor out everywhere: the running
+  head, and the properties of every file made.
 - **Parts of the document type**: the parts it is made of, and what it
   requires (below).
 - **Layout**: the layout itself (below).
