@@ -483,7 +483,7 @@ export function searchProject(
       const details = [
         d.title,
         d.subtitle,
-        ...(d.authors ?? []).flatMap((a) => [a.name, a.affiliation, a.email]),
+        ...(d.contributors ?? []).flatMap((c) => [c.name, c.affiliation, c.email]),
         (d.keywords ?? []).join(', '),
         d.date,
       ].filter((x): x is string => typeof x === 'string' && !!x.trim());

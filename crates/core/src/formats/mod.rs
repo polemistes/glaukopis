@@ -427,11 +427,13 @@ pub struct TitleBlock {
     pub case: Case,
     pub show_authors: bool,
     pub show_affiliations: bool,
+    /// The lines of the editors and the translators, *Edited by …* and *Translated by …*.
+    pub show_roles: bool,
     pub show_date: bool,
     pub show_abstract: bool,
     pub abstract_label: String,
     pub keywords_label: String,
-    /// For review: the authors and their affiliations are left out.
+    /// For review: every contributor is left out, with the affiliations.
     pub anonymous: bool,
 }
 
@@ -446,6 +448,7 @@ impl Default for TitleBlock {
             case: Case::None,
             show_authors: true,
             show_affiliations: true,
+            show_roles: true,
             show_date: false,
             show_abstract: true,
             abstract_label: "Abstract".into(),
@@ -560,6 +563,10 @@ pub enum Item {
     PageNumber,
     Title,
     Author,
+    /// The names of the editors, as `Author` gives the authors'.
+    Editor,
+    /// The names of the translators.
+    Translator,
     /// The heading of the chapter the page is in: the nearest heading of the first level before it.
     Chapter,
     Date,

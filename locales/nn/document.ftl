@@ -23,3 +23,10 @@ document-picture-not-here = [Biletet er ikkje her: {"{}"}]
 document-the-file = fila
 document-sample-see = sjå
 document-sample-argues = hevdar noko anna.
+
+## The contributors.
+
+document-edited-by = Redigert av {"{}"}
+document-translated-by = Omsett av {"{}"}
+document-edited-and-translated-by = Redigert og omsett av {"{}"}
+document-and = og

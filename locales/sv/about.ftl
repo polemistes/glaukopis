@@ -15,22 +15,13 @@ about-section-checklist = Checklista
 
 ## The details: what stands on the first page, and in the metadata of the files.
 
-about-details-hint = Det som står på första sidan, och det som filerna bär med sig som metadata. Allt annat skrivs i trädet.
 about-title = Titel
 about-title-placeholder = Elementets namn
-about-title-hint = Lämnas den tom är elementets namn titeln.
 about-subtitle = Undertitel
-about-authors = Författare
 about-name = Namn
-about-author-name = Namn på författare { $number }
 about-affiliation = Tillhörighet
-about-author-affiliation = Tillhörighet för författare { $number }
 about-email = E-post
-about-author-email = E-post för författare { $number }
 about-orcid = ORCID
-about-author-orcid = ORCID för författare { $number }
-# Beside a plus, under the authors: adds one.
-about-add-author = författare
 about-date = Datum
 about-date-placeholder = Som det ska skrivas ut
 about-keywords = Nyckelord
@@ -66,4 +57,3 @@ about-language = Textens språk
 about-checklist-hint = Vad mallen kräver, mot texten och trädet. Inget skärs bort.
 about-checklist-clear = Inget att anmärka på.
 about-requirement-words = Ord i texten
-about-requirement-anonymous = För granskning: författarna utelämnas ur dokumentet.

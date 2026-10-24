@@ -112,12 +112,19 @@ describe('an element as a document', () => {
     expect(inlineText(buildDocument(p, book).title)).toBe('Wrath and the hero');
     p.setDocument(book, {
       title: 'Another title',
-      authors: [{ name: 'A. Scholar' }, { name: ' ' }],
+      contributors: [
+        { name: 'A. Scholar', role: 'author' },
+        { name: ' ', role: 'author' },
+        { name: 'C. Translator', role: 'translator' },
+      ],
       keywords: ['Homer'],
     });
     const d = buildDocument(p, book);
     expect(inlineText(d.title)).toBe('Another title');
-    expect(d.authors).toEqual([{ name: 'A. Scholar' }]);
+    expect(d.contributors).toEqual([
+      { name: 'A. Scholar', role: 'author' },
+      { name: 'C. Translator', role: 'translator' },
+    ]);
     expect(d.keywords).toEqual(['Homer']);
     // Written away, the name is the title again.
     p.setDocument(book, { title: '' });
@@ -125,12 +132,12 @@ describe('an element as a document', () => {
     expect(inlineText(buildDocument(p, book).title)).toBe('Wrath');
   });
 
-  it('a child printed alone takes authors, style and language from the project element, but not its title', () => {
+  it('a child printed alone takes contributors, style and language from the project element, but not its title', () => {
     const p = project();
     p.setDocument(PROJECT, {
       title: 'The wrath of Achilles',
       subtitle: 'A reading',
-      authors: [{ name: 'A. Scholar' }],
+      contributors: [{ name: 'A. Scholar', role: 'author' }],
       keywords: ['Homer'],
       style: 'chicago',
       template: 'journal-article',
@@ -143,14 +150,14 @@ describe('an element as a document', () => {
     const d = buildDocument(p, chapter);
     expect(inlineText(d.title)).toBe('Chapter one');
     expect(d.subtitle).toBeUndefined();
-    expect(d.authors).toEqual([{ name: 'A. Scholar' }]);
+    expect(d.contributors).toEqual([{ name: 'A. Scholar', role: 'author' }]);
     expect(d.keywords).toEqual(['Homer']);
     expect(d.language).toBe('de');
     expect(d.identifiers).toEqual({ doi: '10.1/x' });
     expect(d.parts).toEqual([]);
     const { settings, from } = p.documentOf(section);
     expect(settings).toEqual({
-      authors: [{ name: 'A. Scholar' }],
+      contributors: [{ name: 'A. Scholar', role: 'author' }],
       keywords: ['Homer'],
       style: 'chicago',
       template: 'journal-article',

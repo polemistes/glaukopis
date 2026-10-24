@@ -514,9 +514,24 @@ impl Part {
     }
 }
 
+/// What a person did for a document: wrote it, edited it, or translated it.
+/// Stored as a word, so that other roles can come without changing the shape.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Role {
+    #[default]
+    Author,
+    Editor,
+    Translator,
+}
+
+/// A person who had a part in a document, and which: the authors, the
+/// editors and the translators of a document are one list. An imported
+/// document's persons are its authors.
 #[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct Author {
+pub struct Contributor {
+    pub role: Role,
     pub name: String,
     pub affiliation: Option<String>,
     pub email: Option<String>,
@@ -540,7 +555,11 @@ pub struct CarriedReference {
 pub struct Document {
     pub title: Vec<Inline>,
     pub subtitle: Option<String>,
-    pub authors: Vec<Author>,
+    /// The persons of the document, each with their role, in their order.
+    /// A document sent as it was before the roles, with `authors`, is read
+    /// as one whose contributors are its authors.
+    #[serde(alias = "authors")]
+    pub contributors: Vec<Contributor>,
     pub date: Option<String>,
     pub keywords: Vec<String>,
     /// BCP 47: en-GB, nb, de, el.
@@ -578,6 +597,26 @@ pub struct ElementLook {
 }
 
 impl Document {
+    /// The contributors of a role who have a name, in their order.
+    pub fn in_role(&self, role: Role) -> impl Iterator<Item = &Contributor> {
+        self.contributors.iter().filter(move |c| c.role == role && !c.name.trim().is_empty())
+    }
+
+    /// The authors who have a name, in their order.
+    pub fn authors(&self) -> impl Iterator<Item = &Contributor> {
+        self.in_role(Role::Author)
+    }
+
+    /// The editors who have a name, in their order.
+    pub fn editors(&self) -> impl Iterator<Item = &Contributor> {
+        self.in_role(Role::Editor)
+    }
+
+    /// The translators who have a name, in their order.
+    pub fn translators(&self) -> impl Iterator<Item = &Contributor> {
+        self.in_role(Role::Translator)
+    }
+
     /// Readies the looks of the elements as the document's own layout is
     /// readied: within bounds, in the document's language.
     pub fn ready_looks(&mut self) {
@@ -909,7 +948,7 @@ pub(crate) mod fixtures {
     pub fn sample() -> Document {
         Document {
             title: vec![text("Wrath and the hero")],
-            authors: vec![Author { name: "A. Scholar".into(), ..Default::default() }],
+            contributors: vec![Contributor { name: "A. Scholar".into(), ..Default::default() }],
             language: Some("en-GB".into()),
             sections: vec![
                 Section {
@@ -957,6 +996,22 @@ pub(crate) mod fixtures {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_contributors_are_read_with_their_roles_and_the_authors_of_before_as_authors() {
+        let doc: Document = serde_json::from_str(
+            r#"{"contributors": [{"role":"translator","name":"C. Translator"},{"name":"A. Scholar","affiliation":"Oslo"},
+                                 {"role":"editor","name":" "},{"role":"editor","name":"B. Editor"}]}"#,
+        )
+        .unwrap();
+        let names = |list: Vec<&Contributor>| list.iter().map(|c| c.name.clone()).collect::<Vec<_>>();
+        assert_eq!(names(doc.authors().collect()), ["A. Scholar"], "a contributor is an author unless said otherwise");
+        assert_eq!(names(doc.editors().collect()), ["B. Editor"], "one without a name is left out");
+        assert_eq!(names(doc.translators().collect()), ["C. Translator"]);
+        let before: Document = serde_json::from_str(r#"{"authors": [{"name":"A. Scholar"}]}"#).unwrap();
+        assert_eq!(before.contributors, vec![Contributor { name: "A. Scholar".into(), ..Default::default() }]);
+        assert_eq!(serde_json::to_value(Role::Translator).unwrap(), "translator");
+    }
 
     #[test]
     fn reads_what_the_interface_sends() {

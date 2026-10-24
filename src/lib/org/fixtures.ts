@@ -547,14 +547,18 @@ export function everything(): OrgProject {
         document: {
           title: 'Medea',
           subtitle: 'A tragedy',
-          authors: [
-            { name: 'Euripides' },
+          contributors: [
+            { name: 'Euripides', role: 'author' },
             {
               name: 'Ann Smith',
               affiliation: 'University of Oslo',
               email: 'ann@example.org',
               orcid: '0000-0001-2345-6789',
+              role: 'author',
             },
+            { name: 'Ben Hall', role: 'editor' },
+            { name: 'Cleo Dale', affiliation: 'Bergen', role: 'translator' },
+            { name: 'Ann Smith', role: 'translator' },
           ],
           keywords: ['tragedy', 'the Argo'],
           date: '431 BC',
@@ -601,7 +605,7 @@ export function everything(): OrgProject {
         document: {
           title: '',
           lineNumbers: false,
-          authors: [{ name: 'Smith; Jones / Co' }],
+          contributors: [{ name: 'Smith; Jones / Co', role: 'translator' }],
           keywords: ['a; b'],
         },
         timeline: {},

@@ -24,7 +24,7 @@ checklist-unplaced = { $count ->
 
 ## Fewer words, stage 4: what the type and the layout ask of the front page and of quotations.
 
-checklist-anonymous = The document type asks for an anonymous document; the front page names the authors. Turn on Anonymize the front page under Front page in Look.
+checklist-anonymous = The document type asks for an anonymous document; the front page names the contributors. Turn on Anonymize the front page under Front page in Look.
 # A quotation within a paragraph of text, between quotation marks, as long as the layout sets quotations off from. The lines are estimated from the layout.
 checklist-long-quotation = { $by ->
     [lines] “{ $element }” has a quotation of { $words } words in the text, about { $lines ->

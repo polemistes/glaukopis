@@ -769,7 +769,16 @@
   type Which = 'header' | 'footer';
   type Side = keyof Sides;
   const SIDES: Side[] = ['left', 'center', 'right'];
-  const ITEMS: MarginItem['kind'][] = ['page-number', 'title', 'author', 'chapter', 'date', 'text'];
+  const ITEMS: MarginItem['kind'][] = [
+    'page-number',
+    'title',
+    'author',
+    'editor',
+    'translator',
+    'chapter',
+    'date',
+    'text',
+  ];
 
   function itemWords(kind: MarginItem['kind']): string {
     return t(`format-item-${kind}`);
@@ -1047,6 +1056,7 @@
     toggle(t('format-title-anonymize'), 'title.anonymous'),
     toggle(t('format-title-authors'), 'title.showAuthors', { when: named }),
     toggle(t('format-title-affiliations'), 'title.showAffiliations', { when: named }),
+    toggle(t('format-title-roles'), 'title.showRoles', { when: named }),
     toggle(t('format-title-date'), 'title.showDate'),
     toggle(t('format-title-abstract'), 'title.showAbstract'),
     text(t('format-title-abstract-label'), 'title.abstractLabel', { when: withAbstract }),

@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 
 use glaukopis_core::document::{
-    Author, Block, CarriedReference, Document, ElementLook, Inline, OwnKind, Part, Section,
+    Block, CarriedReference, Contributor, Document, ElementLook, Inline, OwnKind, Part, Section,
 };
 use glaukopis_core::export::{self, Context, ExportOptions, Exported, Page, Preview, Request, Target, Tools};
 use glaukopis_core::formats::kinds::{self, KindLook};
@@ -181,7 +181,7 @@ pub struct LeanSection {
 pub struct LeanDocument {
     pub title: Vec<Inline>,
     pub subtitle: Option<String>,
-    pub authors: Vec<Author>,
+    pub contributors: Vec<Contributor>,
     pub date: Option<String>,
     pub keywords: Vec<String>,
     pub language: Option<String>,
@@ -278,7 +278,7 @@ fn whole(request: LeanRequest) -> CommandResult<(Request, Arc<AtomicBool>)> {
     let document = Document {
         title: request.document.title,
         subtitle: request.document.subtitle,
-        authors: request.document.authors,
+        contributors: request.document.contributors,
         date: request.document.date,
         keywords: request.document.keywords,
         language: request.document.language,

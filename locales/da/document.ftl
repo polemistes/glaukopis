@@ -35,3 +35,10 @@ document-the-file = filen
 # 1979, 12–14)", and "Nagy (1979) argues otherwise."
 document-sample-see = se
 document-sample-argues = hævder noget andet.
+
+## The contributors.
+
+document-edited-by = Redigeret af {"{}"}
+document-translated-by = Oversat af {"{}"}
+document-edited-and-translated-by = Redigeret og oversat af {"{}"}
+document-and = og

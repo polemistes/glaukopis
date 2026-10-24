@@ -18,22 +18,13 @@ about-section-checklist = Checklist
 
 ## The details: what stands on the first page, and in the metadata of the files.
 
-about-details-hint = What stands on the first page, and what the files carry as metadata. Everything else is written in the tree.
 about-title = Title
 about-title-placeholder = The name of the element
-about-title-hint = Left empty, the name of the element is the title.
 about-subtitle = Subtitle
-about-authors = Authors
 about-name = Name
-about-author-name = Name of author { $number }
 about-affiliation = Affiliation
-about-author-affiliation = Affiliation of author { $number }
 about-email = E-mail
-about-author-email = E-mail of author { $number }
 about-orcid = ORCID
-about-author-orcid = ORCID of author { $number }
-# Beside a plus, under the authors: adds one.
-about-add-author = author
 about-date = Date
 about-date-placeholder = As it is to be printed
 about-keywords = Keywords
@@ -69,16 +60,29 @@ about-language = Language of the text
 about-checklist-hint = What the template requires, against the text and the tree. Nothing is cut.
 about-checklist-clear = Nothing to remark on.
 about-requirement-words = Words of text
-about-requirement-anonymous = For review: the authors are left out of the document.
+about-requirement-anonymous = For review: the contributors are left out of the document.
 
 ## The sides, the panes and the bars, stage 2: the typesetting pane, the document pane, Document properties.
 
 # The tab of what the document is: what you are writing, its template.
 about-section-type = Document type
-# Under the details: whether every line of the printed page is numbered in the margin.
-about-line-numbers = Number the lines of the page
-about-line-numbers-hint = Every line of the printed page, numbered in the margin, in this document and those under it.
 
 ## Fewer words, stage 3: the source of a layout's requirements, under the layout the type brings.
 
 about-layout-source = Source: { $name }
+
+## The contributors, stage 3: the persons of a document, each with a role.
+
+about-contributors = Contributors
+# Beside a plus, under the contributors: adds one.
+about-add-contributor = Add a contributor
+about-contributor-role = Role of contributor { $number }
+about-role-author = Author
+about-role-editor = Editor
+about-role-translator = Translator
+about-contributor-name = Name of contributor { $number }
+about-contributor-affiliation = Affiliation of contributor { $number }
+about-contributor-email = E-mail of contributor { $number }
+about-contributor-orcid = ORCID of contributor { $number }
+# Under the details: whether every line of the printed page is numbered in the margin.
+about-page-lines = Number every line of the printed page

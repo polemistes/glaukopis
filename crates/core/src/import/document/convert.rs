@@ -1088,6 +1088,7 @@ fn authors_of(meta: &Value) -> Vec<Author> {
                 affiliation: of("affiliation").or_else(|| of("institute")),
                 email: of("email"),
                 orcid: of("orcid"),
+                ..Default::default()
             }
         } else {
             Author { name: meta_text(one), ..Default::default() }

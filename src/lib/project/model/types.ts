@@ -26,6 +26,15 @@ export interface Person {
   orcid?: string;
 }
 
+/** What a person did for a document: wrote it, edited it, or translated it. */
+export type Role = 'author' | 'editor' | 'translator';
+
+/** The roles, in the order their persons are printed and written. */
+export const ROLES: readonly Role[] = ['author', 'editor', 'translator'];
+
+/** A person who had a part in a document, and which. */
+export type Contributor = Person & { role: Role };
+
 /**
  * What belongs to an element as a document (ADR 0037). Shown only with
  * preview and export. What an element does not set it takes from the
@@ -36,7 +45,8 @@ export interface DocumentSettings {
   /** When empty, the name of the element is the title. */
   title?: string;
   subtitle?: string;
-  authors?: Person[];
+  /** The authors, the editors and the translators, in their order. */
+  contributors?: Contributor[];
   keywords?: string[];
   date?: string;
   /** Id of the template: what the document consists of (ADR 0038). */

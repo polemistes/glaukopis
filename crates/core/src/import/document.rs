@@ -66,7 +66,7 @@ use base64::Engine;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use crate::document::{self, Author, Block, Cell, CiteItem, CiteMode, Inline, Table};
+use crate::document::{self, Block, Cell, CiteItem, CiteMode, Contributor as Author, Inline, Table};
 use crate::error::{Error, IoContext, Result};
 use crate::export::Tools;
 use crate::export::tools;

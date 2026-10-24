@@ -331,3 +331,9 @@ format-table-inside = Inne i tabellen
 
 format-indent-first-line = Innrykk i første linje
 format-quote-warn = Varsle om lange sitater i løpende tekst
+
+## The contributors, stage 3: the lines of the editors and the translators on the front page, and their items.
+
+format-title-roles = Redaktører og oversettere
+format-item-editor = Redaktør
+format-item-translator = Oversetter

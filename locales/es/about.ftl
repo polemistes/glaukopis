@@ -14,22 +14,13 @@ about-section-checklist = Lista de comprobación
 
 ## The details: what stands on the first page, and in the metadata of the files.
 
-about-details-hint = Lo que figura en la primera página, y lo que los archivos llevan como metadatos. Todo lo demás se escribe en el árbol.
 about-title = Título
 about-title-placeholder = El nombre del elemento
-about-title-hint = Si se deja vacío, el título es el nombre del elemento.
 about-subtitle = Subtítulo
-about-authors = Autores
 about-name = Nombre
-about-author-name = Nombre del autor { $number }
 about-affiliation = Afiliación
-about-author-affiliation = Afiliación del autor { $number }
 about-email = Correo electrónico
-about-author-email = Correo electrónico del autor { $number }
 about-orcid = ORCID
-about-author-orcid = ORCID del autor { $number }
-# Beside a plus, under the authors: adds one.
-about-add-author = autor
 about-date = Fecha
 about-date-placeholder = Tal como se ha de imprimir
 about-keywords = Palabras clave
@@ -66,4 +57,3 @@ about-language = Idioma del texto
 about-checklist-hint = Lo que exige la plantilla, frente al texto y al árbol. No se corta nada.
 about-checklist-clear = No hay nada que señalar.
 about-requirement-words = Palabras del texto
-about-requirement-anonymous = Para la revisión: los autores se dejan fuera del documento.
