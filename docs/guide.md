@@ -614,6 +614,24 @@ together — lines a verse, quoted paragraphs a quotation, items a list,
 lines of code a code block — are set as one where the document has a form
 for them; that is the document's business, and nothing you need to tend.
 
+**Ctrl+Alt** with a digit chooses a kind of paragraph without the menu, as
+in Word and Google Docs: **Ctrl+Alt+0** is always **Text**, and the other
+digits are what the document type gives them. A plain document, an article
+and most others give 1 Quotation, 2 Verse, 3 List, 4 Numbered list, 5 Code,
+6 Epigraph and 7 Attribution; a book adds 8 Headword and 9 Gloss, and
+fiction 8 Break; a play gives 1 Speaker, 2 Stage direction, 3 Verse,
+4 Quotation, 5 List and 6 Numbered list; a screenplay 1 Scene heading,
+2 Action, 3 Character, 4 Dialogue, 5 Parenthetical and 6 Transition. The
+Paragraph kind menu shows each kind's key beside it, and the sheet of keys
+(**Ctrl+/**) lists them by the kinds of the document in view. To give a kind
+another digit, open its box in **Look**, under **Paragraph kinds**, and
+choose in its row **Key**: a digit another kind had leaves that kind
+without, and a document type that came with Glaukopis becomes one of your
+own, *…, changed*, as any change to it does, which the document then uses.
+The editor of a document type has the digits under **Keys**. Where AltGr
+writes a sign with a digit, as @ on a Norwegian keyboard on Windows, which
+sends AltGr as Ctrl+Alt, the sign is written and no kind is chosen.
+
 Where you write, paragraphs of one kind standing together are shown by a
 thin line at their left, their **bracket**; speakers and directions among
 them do not part them, nor have a bracket of their own. Text has none,
@@ -2422,10 +2440,13 @@ equal width, whether it keeps with what follows, and whether it begins a
 new page; where a row says nothing it shows what the base comes to, *As the
 base (1.27cm)*. Small capitals are the font's own where it has them; in a
 font that has none, such as Times New Roman, the small letters are set as
-capitals a fifth smaller, as they are shown where you write. **First line** is how far the first line begins in beyond
-the rest; **Kept with the next** keeps it from being left alone at the foot
-of a page; letters of equal width are set as code is; and what stands in a
-break is * * * where nothing is said, # for a manuscript.
+capitals a fifth smaller, as they are shown where you write. **First
+line** is how far the first line begins in beyond the rest; **Kept with the
+next** keeps it from being left alone at the foot of a page; letters of
+equal width are set as code is; and what stands in a break is * * * where
+nothing is said, # for a manuscript. A kind of paragraph has a last row,
+**Key**: the digit Ctrl+Alt gives it with in the document type, or none
+(see *Kinds of paragraph and of words*); Text has Ctrl+Alt+0 in every type.
 
 The **reference style** stands under **Notes and citations** in every
 document, for whoever looks for it. Its first choice is **As the template
