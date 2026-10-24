@@ -100,8 +100,8 @@ try {
   await app.waitFor('[data-projects-pane] .list .row.folder', 5000);
   await sleep(200);
   check(
-    'a folder is made, and stands first',
-    (await rowsOf(app))[0] === '0:folder:Greek' && (await app.text('.row.folder .count')) === '0',
+    'a folder is made, and stands first, with no count of its projects',
+    (await rowsOf(app))[0] === '0:folder:Greek' && !(await app.exists('.row.folder .count')),
     (await rowsOf(app))[0],
   );
   const greek = await app.exec(`return document.querySelector('.row.folder').dataset.folder`);
@@ -125,7 +125,6 @@ try {
       JSON.stringify(['0:folder:Greek', '1:project:Alpha', '0:project:Beta', '0:project:Gamma']),
     JSON.stringify(rows),
   );
-  check('and the folder counts it', (await app.text('.row.folder .count')) === '1');
 
   // Another, dragged onto the folder.
   await app.drag(await app.findByText('.row.project', 'Beta'), await app.find('.row.folder'));
@@ -133,7 +132,7 @@ try {
   rows = await rowsOf(app);
   check(
     'a project dragged onto a folder goes into it',
-    rows.includes('1:project:Beta') && (await app.text('.row.folder .count')) === '2',
+    rows.includes('1:project:Beta'),
     JSON.stringify(rows),
   );
 

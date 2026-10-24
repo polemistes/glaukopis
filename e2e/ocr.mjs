@@ -540,7 +540,7 @@ try {
   await sleep(200);
   check(
     'the picture is read',
-    /one\.png · Picture/.test(
+    /one\.png · Image/.test(
       await app.exec(`return document.querySelector('dialog').textContent`),
     ) && (await facts()).parts === '0',
   );

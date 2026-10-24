@@ -362,7 +362,7 @@ try {
   await app.click('.file-pane [data-action="to-pictures"]');
   const among = await until(
     'the message of the picture',
-    async () => (await toasts()).find((t) => /is among the pictures now/.test(t)),
+    async () => (await toasts()).find((t) => /is among the images now/.test(t)),
     5000,
   ).catch(() => '');
   check('a picture of the files is taken into the pictures', !!among, among);
