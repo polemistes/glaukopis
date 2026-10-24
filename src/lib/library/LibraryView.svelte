@@ -313,10 +313,14 @@
       event.currentTarget as HTMLElement,
       [
         {
-          label: t('library-import-file'),
-          hint: t('library-import-file.hint'),
+          label: t('library-import-bibtex'),
           icon: FileUp,
           action: () => importFile(collectionId),
+        },
+        {
+          label: t('library-import-zotero'),
+          icon: LibraryBig,
+          action: () => importFromZotero(collectionId),
         },
         {
           label: t('library-paste'),
@@ -325,14 +329,8 @@
         },
         {
           label: t('library-add-pdfs'),
-          hint: t('library-add-pdfs.hint'),
           icon: FileText,
           action: () => importPdfFiles(undefined, collectionId),
-        },
-        {
-          label: t('library-import-zotero'),
-          icon: LibraryBig,
-          action: () => importFromZotero(collectionId),
         },
         { kind: 'separator' },
         {
@@ -494,7 +492,7 @@
       {:else if !library.entries.length}
         <EmptyState icon={LibraryBig} title={t('library-empty')} text={t('library-empty.text')}>
           <Button variant="primary" onclick={add}>{t('library-new-reference')}</Button>
-          <Button onclick={() => importFile(collectionId)}>{t('library-import-file')}</Button>
+          <Button onclick={() => importFile(collectionId)}>{t('library-import-bibtex')}</Button>
         </EmptyState>
       {:else if !scoped.length}
         <EmptyState

@@ -298,7 +298,6 @@ export function writeProperties(e: OrgElement, w: DrawerWriting): string[] {
     ['KIND', e.kind ? w.kindName(e.kind) : undefined],
     ['STATUS', e.status ?? undefined],
     ['WHEN', e.when ? JSON.stringify(e.when) : undefined],
-    ['HEADING', e.heading ? undefined : 'no'],
     ['INCLUDE', e.include ?? undefined],
     ['ORIGIN', e.origin ?? undefined],
     ['POS', e.pos ? `${Math.round(e.pos.x)},${Math.round(e.pos.y)}` : undefined],

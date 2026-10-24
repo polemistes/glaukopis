@@ -3,33 +3,18 @@
 
 text-title = Title
 text-name = Name of the element
-text-not-printed = not printed
 text-grip = Move or change this element
-# The element an element stands for, whose name is shown in bold where the variable stands.
-text-include = In the document, { $name } stands here, with all under it.
-text-include-open = Open it
 # Where elements dragged in the text would go, said by the line drawn there.
 text-drop-under = Under “{ $name }”
 text-drop-after = After “{ $name }”
 text-drop-before = Before “{ $name }”
 text-split = Split here
-text-split-hint = What follows the cursor becomes the name of a new element, and the paragraphs below its text
 text-heading-kept = What follows the cursor holds what a name cannot, such as a citation or a note, and is the first paragraph of the new element
 text-join = Join to the element above
 text-open-as-map = Enter
-text-open-as-map-hint = It is shown alone, with what is under it
 
 ## Folding away what is under an element, and its text
 
-text-open = Open it
-text-fold = Fold it away
-text-open-shift = Open it · with Shift, all that is folded under it as well
-text-fold-hint = Fold away its text and what is under it
-text-fold-shift = Fold away its text and what is under it · with Shift, open all that is folded under it
-text-open-all = Open all
-text-open-all-under = Open all that is folded under it
-text-fold-all-under = Fold away all under it
-text-fold-all-under-hint = Of what is directly under it the names are shown, and nothing deeper
 # What is folded away, in its place: whether the element's own text is (text is
 # "yes" or "no"), how many elements under it, and how many words in all, which
 # may be none.
@@ -54,8 +39,6 @@ text-folded = { $text ->
 text-associations = Associations
 text-outline = Outline
 text-outline-between = Between the outline and the text
-text-outline-fold = Fold away what is under it
-text-outline-open = Open what is under it
 text-go-to = Go to “{ $name }”
 text-add-label = Add a label…
 text-change-label = Change the label…
@@ -70,3 +53,20 @@ text-notes = { $count ->
 }
 # The keys are shown as keys, where the variables stand.
 text-keys = { $alt }+{ $enter } new element · { $alt }+{ $shift }+{ $enter } one under it · { $at } cite
+
+## Fewer words, stage 2 (agent "chrome")
+
+# A clone in the text: the original's name is shown in bold where the variable stands.
+text-clone = Clone of { $name }
+text-clone-go = Go to the original
+text-unfold = Unfold this element
+text-fold-this = Fold this element
+text-unfold-all-under = Unfold all sub-elements
+text-fold-all-sub = Fold all sub-elements
+text-unfold-all = Unfold all
+# The tooltips of the mark that folds an element in the text.
+text-unfold-shift = Unfold · with Shift, all sub-elements as well
+text-fold-this-shift = Fold this element · with Shift, unfold all sub-elements
+# The buttons of the outline.
+text-outline-unfold = Unfold sub-elements
+text-outline-fold-sub = Fold sub-elements

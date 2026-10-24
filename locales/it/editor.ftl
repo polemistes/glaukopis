@@ -63,7 +63,6 @@ editor-line-number-press = Il numero di questa riga: premi per cambiarlo
 ## Numbers belong to what they number (ADR 0041): the Numbers menu offers
 ## the three, each saying what it numbers.
 editor-numbers-lines = Numera queste righe…
-editor-numbers-lines-hint = Le righe dei paragrafi dove sta il cursore, o di quelli selezionati: da quale numero, ogni quante, da quale lato
 editor-numbers-page = Numera le righe della pagina
 editor-numbers-page-hint = Ogni riga della pagina stampata, numerata a margine, in questo documento e in quelli sotto
 

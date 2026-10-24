@@ -8,8 +8,6 @@ found-title = Lösa källhänvisningar
 # On the tab of the panel, beside the other tabs: short.
 found-tab = Lösa hänvisningar
 found-between = Mellan kartan och de lösa källhänvisningarna
-found-taken = Vad som tas för källhänvisningar
-found-taken-always = Det ett program gjort, och taggar
 found-taken-years = Parenteser med ett årtal i
 found-taken-named = Noter som nämner ett verk i biblioteket
 found-taken-notes = Varje not

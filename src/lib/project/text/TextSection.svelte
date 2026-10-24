@@ -155,12 +155,12 @@
     const own = project.passageKinds;
     return body ? blocksHtml(project.blocksOf(node.id), language, own) : '';
   });
-  /** The element it stands for in the document, where it stands for one. */
+  /** The original, where the element is a clone: its text is read there (ADR 0065). */
   const included = $derived(node.include ? project.node(node.include) : undefined);
-  /** Where that element is in the document, with its name in bold. */
+  /** What it is a clone of, with the original's name in bold. */
   const includedWords = $derived(
     included
-      ? pieces((m) => t('text-include', m), { name: included.title || t('project-untitled') })
+      ? pieces((m) => t('text-clone', m), { name: included.title || t('project-untitled') })
       : [],
   );
   /** Whether the cursor is in its text. */
@@ -304,7 +304,6 @@
   style:--level={level}
   class:selected
   class:excluded
-  class:plain={!node.heading && level > 0}
   class:linkable
   class:drop-before={drop === 'before'}
   class:drop-after={drop === 'after'}
@@ -336,16 +335,16 @@
         type="button"
         class="fold"
         aria-expanded={!hidden}
-        aria-label={hidden ? t('text-open') : t('text-fold')}
+        aria-label={hidden ? t('text-unfold') : t('text-fold-this')}
         tabindex="-1"
         use:tooltip={{
           text: hidden
             ? openable
-              ? t('text-open-shift')
-              : t('text-open')
+              ? t('text-unfold-shift')
+              : t('text-unfold')
             : openable
-              ? t('text-fold-shift')
-              : t('text-fold-hint'),
+              ? t('text-fold-this-shift')
+              : t('text-fold-this'),
           shortcut: keysFor('tree-fold'),
           side: 'top',
         }}
@@ -426,7 +425,6 @@
           )}</span
         >
       {/if}
-      {#if !node.heading && level > 0}<span class="tag">{t('text-not-printed')}</span>{/if}
       {#if active && title}
         <RichText
           bind:this={titleEditor}
@@ -470,11 +468,12 @@
             {#if piece.name}<strong>{piece.text}</strong>{:else}{piece.text}{/if}
           {/each}
         </span>
-        <span class="go">{t('text-include-open')}</span>
+        <span class="go">{t('text-clone-go')}</span>
       </button>
     {/if}
 
-    {#if !hidden}
+    <!-- A clone has no text of its own: its original's is read where it is written. -->
+    {#if !hidden && !node.include}
       <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
       <div class="body" class:closed data-part="body" onmousedown={(e) => press(e, 'body')}>
         {#if active && body}
@@ -524,7 +523,7 @@
         </button>
         {#if openable}
           <button type="button" class="all" onclick={() => onfold?.(node.id, true)}>
-            {t('text-open-all')}
+            {t('text-unfold-all')}
           </button>
         {/if}
       </div>
@@ -850,29 +849,6 @@
     margin-bottom: 0.15em;
   }
 
-  /* A name that is a label for the writer only */
-  .plain {
-    margin-top: 0.9em;
-    --grip-top: -4px;
-  }
-  .plain .heading {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-  }
-  .plain .heading :global(.rich-text) {
-    flex: 1;
-  }
-  .plain .heading :global(.prose.title) {
-    font-family: var(--font-ui);
-    font-size: 0.7em;
-    font-weight: 600;
-    font-style: normal;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-    margin-bottom: 0.15em;
-  }
   .tag {
     order: 2;
     flex: none;

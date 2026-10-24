@@ -16,7 +16,7 @@
   import TextField from '$lib/ui/TextField.svelte';
   import { KIND_COLOURS, nextKindColour } from './kinds';
   import { rememberKind } from './kinds.svelte';
-  import { PART_GROUPS, PARTS } from './parts';
+  import { PARTS } from './parts';
   import type { Project } from './model/project.svelte';
 
   interface Props {
@@ -182,12 +182,8 @@
       <span class="label">{t('kinds-based-on')}</span>
       <select bind:value={basedOn}>
         <option value="">{t('kinds-based-on-none')}</option>
-        {#each PART_GROUPS as g (g.id)}
-          <optgroup label={g.label()}>
-            {#each PARTS.filter((p) => p.group === g.id) as p (p.id)}
-              <option value={p.id}>{p.label()}</option>
-            {/each}
-          </optgroup>
+        {#each PARTS as p (p.id)}
+          <option value={p.id}>{p.label()}</option>
         {/each}
       </select>
       <span class="hint">{t('kinds-based-on-hint')}</span>

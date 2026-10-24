@@ -3,16 +3,11 @@
 diagram-map = Carte
 diagram-idea = Nom
 diagram-new-here = Nouvel élément ici
-diagram-new-here-hint = Une idée qui n’a pas encore sa place, sous l’élément affiché
 diagram-open-as-map = Ouvrir comme carte
-diagram-open-as-map-hint = L’élément au centre, avec ce qui est dessous
 diagram-show-all = Afficher toute la carte
 diagram-tidy = Ranger toute la carte
-diagram-tidy-hint = Chaque élément reprend sa place automatique
 # The keys are shown as keys, where the variables stand.
 diagram-hint-linking = Cliquez sur l’élément à associer, ou allez-y avec les flèches et appuyez sur { $enter } · { $esc } pour renoncer
-diagram-show-under = Afficher ce qui est dessous
-diagram-hide-under = Cacher ce qui est dessous
 diagram-link-handle = Glissez vers un autre élément pour les associer
 
 ## The view

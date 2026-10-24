@@ -869,7 +869,7 @@
         </div>
       {/each}
       {#if !lanes.length}
-        <div class="empty">{t('timeline-empty')}</div>
+        <div class="empty">{t('timeline-empty-stamp')}</div>
       {/if}
     </div>
   </div>

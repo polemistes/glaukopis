@@ -8,8 +8,6 @@ found-title = Citări găsite
 # On the tab of the panel, beside the other tabs: short.
 found-tab = Citări găsite
 found-between = Între hartă și citările găsite
-found-taken = Ce se ia drept citare
-found-taken-always = Ce a făcut un program, și etichetele
 found-taken-years = Parantezele cu un an în ele
 found-taken-named = Notele care numesc o lucrare din bibliotecă
 found-taken-notes = Fiecare notă

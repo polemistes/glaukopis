@@ -8,8 +8,6 @@ found-title = Найденные ссылки
 # On the tab of the panel, beside the other tabs: short.
 found-tab = Найденные
 found-between = Между картой и найденными ссылками
-found-taken = Что считать ссылками
-found-taken-always = Сделанное программой и метки
 found-taken-years = Скобки с годом внутри
 found-taken-named = Сноски, называющие работу из библиотеки
 found-taken-notes = Все сноски

@@ -86,21 +86,9 @@ project-send-no-element = Elementet er ikke længere i det projekt.
 
 ## What is done to elements, in the diagram and in the text
 
-project-add-under = Tilføj et element under det
-project-add = Tilføj et element
-project-add-after = Tilføj et element efter det
 project-write-text = Skriv dets tekst
 project-associate = Knyt til…
-project-associate-hint = Klik derefter på det andet element
-project-heading = Udskriv navnet som overskrift
-project-heading-hint = Fra: navnet er en mærkat til dig; kun teksten udskrives
 project-leave-out = Udelad af dokumentet
-project-leave-out-hint = Med alt under det
-# An element that stands for another element: in the document, that element is in its place.
-project-stands-for = Står for »{ $name }«
-project-stand-for = Stå for et andet element
-project-stand-for-heading = I dokumentet træder dette element i dets sted
-project-stand-for-none = Intet
 # Copying or moving elements to the project itself, to one of its trees, or to another project.
 project-copy-to = Kopiér til
 project-cut = Klip
@@ -111,8 +99,6 @@ project-paste-under = Sæt ind under det
 project-move-to = Flyt til
 # Opening a dialog with the tree of the project, to choose where the elements go: first in Copy to and Move to.
 project-choose-where = Vælg hvor…
-# Opening the same dialog, to choose the element this one stands for.
-project-choose-element = Vælg et element…
 # The title of the dialog that chooses where elements are copied to: the name of the one copied, or how many.
 project-pick-copy-title = { $count ->
     [one] Kopiér »{ $name }« til
@@ -122,20 +108,16 @@ project-pick-move-title = { $count ->
     [one] Flyt »{ $name }« til
    *[other] Flyt { $count } elementer til
 }
-project-pick-stand-title = Hvad »{ $name }« står for
 # The buttons of the dialog, saying what will be done with the element chosen.
 project-pick-copy = Kopiér hertil
 project-pick-move = Flyt hertil
-project-pick-stand = Stå for dette
 project-pick-find = Find et element ved navn
 project-pick-none = Intet element har det navn
 # Why an element cannot be chosen, when it is hovered.
 project-pick-itself = Et element kan ikke flyttes ind i sig selv eller i det, der er under det
-project-pick-self = Et element kan ikke stå for sig selv
 project-pick-loop = Dokumentet ville indeholde sig selv
 project-tidy-branch = Ryd op i denne gren
 project-place-automatically = Placer automatisk
-project-delete-keeping = Slet, men behold det, der er under det
 project-itself-stays = Selve projektet bliver
 project-itself-stays-detail = Slet projektet fra forsiden.
 # One element was deleted, with the elements that were under it.
@@ -167,8 +149,6 @@ project-words = { $count ->
    *[other] { $count } ord
 }
 project-read-on = Dobbeltklik for at læse videre
-project-stands-for-map = Står for »{ $name }«
-project-name-not-printed = Navnet udskrives ikke
 project-left-out-of-document = Udeladt af dokumentet
 
 ## The panels at the side: the references and the pictures

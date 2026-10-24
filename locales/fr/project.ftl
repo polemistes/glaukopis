@@ -88,21 +88,9 @@ project-send-no-element = L’élément n’est plus dans ce projet-là.
 
 ## What is done to elements, in the diagram and in the text
 
-project-add-under = Ajouter un élément dessous
-project-add = Ajouter un élément
-project-add-after = Ajouter un élément après
 project-write-text = Écrire son texte
 project-associate = Associer à…
-project-associate-hint = Puis cliquez sur l’autre élément
-project-heading = Imprimer le nom comme titre
-project-heading-hint = Désactivé : le nom est une étiquette pour vous ; seul le texte est imprimé
 project-leave-out = Laisser hors du document
-project-leave-out-hint = Avec tout ce qui est dessous
-# An element that stands for another element: in the document, that element is in its place.
-project-stands-for = Tient lieu de « { $name } »
-project-stand-for = Tenir lieu d’un autre élément
-project-stand-for-heading = Dans le document, cet élément prend sa place
-project-stand-for-none = Aucun
 # Copying or moving elements to the project itself, to one of its trees, or to another project.
 project-copy-to = Copier dans
 project-cut = Couper
@@ -113,8 +101,6 @@ project-paste-under = Coller dessous
 project-move-to = Déplacer dans
 # Opening a dialog with the tree of the project, to choose where the elements go: first in Copy to and Move to.
 project-choose-where = Choisir où…
-# Opening the same dialog, to choose the element this one stands for.
-project-choose-element = Choisir un élément…
 # The title of the dialog that chooses where elements are copied to: the name of the one copied, or how many.
 project-pick-copy-title = { $count ->
     [one] Copier « { $name } » dans
@@ -126,20 +112,16 @@ project-pick-move-title = { $count ->
     [many] Déplacer { $count } éléments dans
    *[other] Déplacer { $count } éléments dans
 }
-project-pick-stand-title = Ce dont « { $name } » tient lieu
 # The buttons of the dialog, saying what will be done with the element chosen.
 project-pick-copy = Copier ici
 project-pick-move = Déplacer ici
-project-pick-stand = Tenir lieu de celui-ci
 project-pick-find = Trouver un élément par son nom
 project-pick-none = Aucun élément ne porte ce nom
 # Why an element cannot be chosen, when it is hovered.
 project-pick-itself = Un élément ne peut pas aller en lui-même, ni dans ce qui est dessous
-project-pick-self = Un élément ne peut pas tenir lieu de lui-même
 project-pick-loop = Le document se contiendrait lui-même
 project-tidy-branch = Ranger cette branche
 project-place-automatically = Placer automatiquement
-project-delete-keeping = Supprimer, en gardant ce qui est dessous
 project-itself-stays = Le projet lui-même reste
 project-itself-stays-detail = Supprimez le projet depuis la page d’accueil.
 # One element was deleted, with the elements that were under it.
@@ -175,8 +157,6 @@ project-words = { $count ->
    *[other] { $count } mots
 }
 project-read-on = Double-cliquez pour lire la suite
-project-stands-for-map = Tient lieu de « { $name } »
-project-name-not-printed = Le nom n’est pas imprimé
 project-left-out-of-document = Laissé hors du document
 
 ## The panels at the side: the references and the pictures

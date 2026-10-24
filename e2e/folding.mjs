@@ -200,9 +200,9 @@ try {
   // The same from the line that says what is folded away.
   await fold('One A');
   await fold('One');
-  await app.clickText('.text-view .section[data-named="One"] .away .all', 'Open all');
+  await app.clickText('.text-view .section[data-named="One"] .away .all', 'Unfold all');
   await sleep(300);
-  check('“Open all” opens all under it', JSON.stringify(await shown()) === JSON.stringify(ALL.filter((n) => n !== 'Two A')), JSON.stringify(await shown()));
+  check('“Unfold all” opens all under it', JSON.stringify(await shown()) === JSON.stringify(ALL.filter((n) => n !== 'Two A')), JSON.stringify(await shown()));
 
   // And from the menu of the element, for the whole of the text.
   await fold('One A');
@@ -212,10 +212,10 @@ try {
   await app.waitFor('.menu');
   await sleep(150);
   const offered = await app.exec(
-    `return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((e) => e.textContent.replace(/\\s+/g, ' ').trim()).filter((t) => /old|Open/.test(t))`,
+    `return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((e) => e.textContent.replace(/\\s+/g, ' ').trim()).filter((t) => /old/.test(t))`,
   );
-  check('the menu of an element offers it', offered.some((t) => t.startsWith('Open all that is folded under it')) && offered.some((t) => t.startsWith('Fold it away')), JSON.stringify(offered));
-  await app.clickText('.menu [role="menuitem"]', 'Open all that is folded under it');
+  check('the menu of an element offers it', offered.some((t) => t.startsWith('Unfold all sub-elements')) && offered.some((t) => t.startsWith('Fold this element')), JSON.stringify(offered));
+  await app.clickText('.menu [role="menuitem"]', 'Unfold all sub-elements');
   await sleep(300);
   check('from the title, all of the text is opened', JSON.stringify(await shown()) === JSON.stringify(ALL) && (await folded()).length === 0, JSON.stringify(await shown()));
 
@@ -225,7 +225,7 @@ try {
   await app.rightClick('.text-view .section[data-named="The book"] .heading');
   await app.waitFor('.menu');
   await sleep(150);
-  await app.clickText('.menu [role="menuitem"]', 'Fold away all under it');
+  await app.clickText('.menu [role="menuitem"]', 'Fold all sub-elements');
   await sleep(300);
   check('all under the title folded, the parts are shown by their names and nothing deeper', JSON.stringify(await shown()) === JSON.stringify(['The book', 'One', 'Two', 'Three']) && (await folded()).length === 3, JSON.stringify(await folded()));
   check('the text of the title itself is shown', await app.exec(`return document.querySelector('.text-view .section .body').textContent.includes('Before the parts')`));

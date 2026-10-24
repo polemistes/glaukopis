@@ -63,7 +63,6 @@ editor-line-number-press = Numer tego wiersza: naciśnij, by go zmienić
 ## Numbers belong to what they number (ADR 0041): the Numbers menu offers
 ## the three, each saying what it numbers.
 editor-numbers-lines = Numeruj te wiersze…
-editor-numbers-lines-hint = Wiersze akapitów, w których jest kursor, albo zaznaczonych: od jakiego numeru, co ile, po której stronie
 editor-numbers-page = Numeruj wiersze strony
 editor-numbers-page-hint = Każdy wiersz drukowanej strony, numerowany na marginesie, w tym dokumencie i w tych pod nim
 

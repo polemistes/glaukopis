@@ -150,7 +150,11 @@ export interface NodeRecord {
    */
   pos: Position | null;
   collapsed: boolean;
-  /** Whether the name is printed as a heading in the document. */
+  /**
+   * Whether the name was to be printed as a heading in the document. Read
+   * from older projects and kept, but nothing acts on it: every element's
+   * name is printed (ADR 0065).
+   */
   heading: boolean;
   /** Whether the element is left out of the document. */
   excluded: boolean;

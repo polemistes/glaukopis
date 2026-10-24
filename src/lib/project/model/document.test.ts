@@ -37,14 +37,69 @@ describe('an element as a document', () => {
     expect(outline(p, 'nobody')).toEqual([]);
   });
 
-  it('an element whose name is not printed gives its text and does not deepen', () => {
+  it('every element’s name is printed as a heading, one an older project said not to print too', () => {
     const p = project();
     const a = p.addChild(PROJECT, { title: 'A' })!;
     const idea = p.addChild(a, { title: 'an idea of mine', body: 'A paragraph.' })!;
     p.setHeading(idea, false);
     p.addChild(idea, { title: 'Under the idea', body: 'More.' });
     p.addChild(a, { title: 'A2' });
-    expect(outline(p, PROJECT)).toEqual(['1 A', '2 — +text', '2 Under the idea +text', '2 A2']);
+    expect(outline(p, PROJECT)).toEqual([
+      '1 A',
+      '2 an idea of mine +text',
+      '3 Under the idea +text',
+      '2 A2',
+    ]);
+  });
+
+  it('a clone prints its own name, then its original under it, and nothing of its own', () => {
+    const p = project();
+    const book = p.addChild(PROJECT, { title: 'The book' })!;
+    const chapter = p.addChild(PROJECT, { title: 'Chapter one', body: 'It begins.' })!;
+    p.addChild(chapter, { title: 'First section', body: 'Text.' });
+    const clone = p.addChild(book, { title: 'Wrath' })!;
+    expect(p.setInclude(clone, chapter)).toBe(true);
+    // Text and a sub-element an older project gave the clone are not printed.
+    p.transact(() => fillBody(p.fragment(clone, 'body')!, 'Its own words.'));
+    p.yNodes.get(clone)!.delete('include');
+    p.addChild(clone, { title: 'Its own child' });
+    p.yNodes.get(clone)!.set('include', chapter);
+
+    expect(outline(p, book)).toEqual(['1 Wrath', '2 — +text', '2 First section +text']);
+    // The original prints at its own place as well, where it is within the document.
+    expect(outline(p, PROJECT)).toEqual([
+      '1 The book',
+      '2 Wrath',
+      '3 — +text',
+      '3 First section +text',
+      '1 Chapter one +text',
+      '2 First section +text',
+    ]);
+    // The words are the original's, counted where the clone stands.
+    expect(countWords(p, book)).toEqual(countWords(p, chapter));
+  });
+
+  it('an element with text or sub-elements cannot become a clone; a clone of a clone is one of the original', () => {
+    const p = project();
+    const chapter = p.addChild(PROJECT, { title: 'Chapter one', body: 'It begins.' })!;
+    const written = p.addChild(PROJECT, { title: 'Written', body: 'Words.' })!;
+    const parent = p.addChild(PROJECT, { title: 'Parent' })!;
+    p.addChild(parent, { title: 'Child' });
+    expect(p.setInclude(written, chapter)).toBe(false);
+    expect(p.setInclude(parent, chapter)).toBe(false);
+    const first = p.addChild(PROJECT, { title: 'First' })!;
+    const second = p.addChild(PROJECT, { title: 'Second' })!;
+    expect(p.setInclude(first, chapter)).toBe(true);
+    expect(p.setInclude(second, first)).toBe(true);
+    expect(p.node(second)!.include).toBe(chapter);
+    // Nothing goes under a clone: not a new element, nor one moved, copied or pasted.
+    expect(p.addChild(first, { title: 'Under' })).toBeNull();
+    expect(p.move([written], first)).toEqual([]);
+    expect(p.copy([written], first)).toEqual([]);
+    expect(p.tree().children.get(first) ?? []).toEqual([]);
+    // Its name is its own.
+    p.setTitle(first, 'Another name');
+    expect(p.node(first)!.title).toBe('Another name');
   });
 
   it('the title and the particulars of the document', () => {
@@ -116,7 +171,7 @@ describe('an element as a document', () => {
     expect(buildDocument(p, PROJECT).subtitle).toBe('A reading');
   });
 
-  it('an element that is included stands in the place of the element that includes it', () => {
+  it('the original of a clone stands in the clone’s place, and at its own', () => {
     const p = project();
     const book = p.addChild(PROJECT, { title: 'The book' })!;
     const chapter = p.addChild(PROJECT, { title: 'Chapter one' })!;

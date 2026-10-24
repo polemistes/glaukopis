@@ -87,20 +87,9 @@ project-send-no-element = Elementet er ikke lenger i det prosjektet.
 
 ## Det som gjøres med elementer, i diagrammet og i teksten
 
-project-add-under = Legg til et element under
-project-add = Legg til et element
-project-add-after = Legg til et element etter
 project-write-text = Skriv teksten
 project-associate = Knytt til …
-project-associate-hint = Klikk så på det andre elementet
-project-heading = Skriv ut navnet som overskrift
-project-heading-hint = Av: navnet er en merkelapp for deg; bare teksten skrives ut
 project-leave-out = Utelat fra dokumentet
-project-leave-out-hint = Med alt som står under
-project-stands-for = Står for «{ $name }»
-project-stand-for = La det stå for et annet element
-project-stand-for-heading = I dokumentet tar elementet du velger, plassen til dette
-project-stand-for-none = Ingen
 project-copy-to = Kopier til
 project-cut = Klipp ut
 project-cut-not-removed = Det som ble klippet ut, ble limt inn, men kunne ikke tas bort fra prosjektet det kom fra
@@ -108,7 +97,6 @@ project-copy = Kopier
 project-paste-under = Lim inn under
 project-move-to = Flytt til
 project-choose-where = Velg hvor …
-project-choose-element = Velg et element …
 project-pick-copy-title = { $count ->
     [one] Kopier «{ $name }» til
    *[other] Kopier { $count } elementer til
@@ -117,18 +105,14 @@ project-pick-move-title = { $count ->
     [one] Flytt «{ $name }» til
    *[other] Flytt { $count } elementer til
 }
-project-pick-stand-title = Hva «{ $name }» står for
 project-pick-copy = Kopier hit
 project-pick-move = Flytt hit
-project-pick-stand = Stå for dette
 project-pick-find = Finn et element etter navn
 project-pick-none = Ingen elementer har det navnet
 project-pick-itself = Et element kan ikke legges i seg selv eller i det som står under det
-project-pick-self = Et element kan ikke stå for seg selv
 project-pick-loop = Dokumentet ville inneholde seg selv
 project-tidy-branch = Rydd i denne grenen
 project-place-automatically = Plasser automatisk
-project-delete-keeping = Slett, men behold det som står under
 project-itself-stays = Selve prosjektet blir stående
 project-itself-stays-detail = Slett prosjektet fra prosjektsiden.
 project-deleted = { $under ->
@@ -156,8 +140,6 @@ project-name-placeholder = Navn
 project-write-here = Skriv her. Skriv @ for å henvise til en kilde.
 project-words = { $count } ord
 project-read-on = Dobbeltklikk for å lese videre
-project-stands-for-map = Står for «{ $name }»
-project-name-not-printed = Navnet skrives ikke ut
 project-left-out-of-document = Utelatt fra dokumentet
 
 ## Panelene ved siden av: referansene og bildene
@@ -255,3 +237,20 @@ project-bar-typesetting = Ombrekking
 project-bar-document = Dokument
 project-badge-offline = serveren kan ikke nås
 project-badge-refused = serveren tar ikke imot de siste endringene
+
+## Fewer words, stage 2 (agent "chrome"): the clone, which has nothing of its own but its name.
+
+project-clone-other = Klon av et annet element …
+# The submenu of a clone, and the mark of a clone in the diagram: the original's name.
+project-clone-of = Klon av «{ $name }»
+project-clone-choose = Velg et annet element …
+project-clone-go = Gå til originalen
+project-clone-none = Ikke lenger en klon
+# The dialog with the tree of the project, choosing the original of a clone.
+project-pick-clone-title = Hvilket element skal klones inn i «{ $name }»?
+project-pick-clone = Klon det
+project-pick-clone-self = Et element kan ikke være en klon av seg selv
+project-add-child = Legg til underelement
+project-add-sibling = Legg til element på samme nivå
+project-delete-promote = Slett og flytt underelementene opp
+project-delete-with = Slett med underelementer

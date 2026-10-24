@@ -200,13 +200,11 @@
 
   /**
    * The numbers of the elements, as in an outline: 1, 1.2, 1.2.3, counted
-   * among those whose names are printed as headings, what is folded away
-   * as well, so that they do not change as it is folded.
+   * every element counted, what is folded away as well, so that they do
+   * not change as it is folded.
    */
   const numbers = $derived(
-    depthShown === 'numbers'
-      ? outlineNumbers(all, (id) => !!project.nodes.get(id)?.heading)
-      : new Map<string, string>(),
+    depthShown === 'numbers' ? outlineNumbers(all) : new Map<string, string>(),
   );
 
   // ---- the element at the top of what is in view, for the outline ----
@@ -342,6 +340,8 @@
 
   async function go(id: string | undefined | null, part: Part, at: FocusAt) {
     if (!id) return;
+    // A clone has no text of its own: the cursor goes to its name.
+    if (part === 'body' && project.node(id)?.include) part = 'title';
     // What is folded away is shown before the cursor goes there.
     let opened = folding.reveal(tree, id);
     if (part === 'body' && folding.has(id)) {
@@ -1010,7 +1010,6 @@
       extra.push({
         label: t('editor-numbers-lines'),
         icon: Hash,
-        hint: t('editor-numbers-lines-hint'),
         // The editor is made where the text was pressed, if it was not there: it is looked for when chosen.
         action: () => {
           const v = editors.get(id)?.body?.getView();
@@ -1023,7 +1022,6 @@
         label: t('text-split'),
         icon: SplitSquareVertical,
         shortcut: keysFor('tree-new'),
-        hint: t('text-split-hint'),
         action: () => split(id, view),
       });
     }
@@ -1039,7 +1037,6 @@
         label: t('text-open-as-map'),
         icon: MapIcon,
         shortcut: keysFor('tree-enter'),
-        hint: t('text-open-as-map-hint'),
         action: () => onenter(id),
       });
     }
@@ -1048,22 +1045,21 @@
     if (folding.can(tree, id)) {
       const folded = folding.hides(tree, id);
       folds.push({
-        label: folded ? t('text-open') : t('text-fold'),
+        label: folded ? t('text-unfold') : t('text-fold-this'),
         icon: folded ? UnfoldVertical : FoldVertical,
         shortcut: keysFor('tree-fold'),
         action: () => fold(id),
       });
       if (folding.anyFolded(tree, id))
         folds.push({
-          label: t('text-open-all-under'),
+          label: t('text-unfold-all-under'),
           icon: ChevronsUpDown,
           action: () => fold(id, true),
         });
       if (folding.anyOpen(tree, id))
         folds.push({
-          label: t('text-fold-all-under'),
+          label: t('text-fold-all-sub'),
           icon: ChevronsDownUp,
-          hint: t('text-fold-all-under-hint'),
           action: () => folding.foldAll(tree, id),
         });
       folds.push({ kind: 'separator' });

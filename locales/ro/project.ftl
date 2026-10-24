@@ -70,27 +70,14 @@ project-moved-to = Mutat în „{ $name }”
 
 ## What is done to elements, in the diagram and in the text
 
-project-add-under = Adaugă un element sub el
-project-add = Adaugă un element
-project-add-after = Adaugă un element după el
 project-write-text = Scrie-i textul
 project-associate = Asociază cu…
-project-associate-hint = Apoi faceți clic pe celălalt element
-project-heading = Tipărește numele ca titlu
-project-heading-hint = Oprit: numele este o etichetă pentru dumneavoastră; se tipărește numai textul
 project-leave-out = Lasă afară din document
-project-leave-out-hint = Cu tot ce este sub el
-# An element that stands for another map: in the document, that map is in its place.
-project-stands-for = Ține locul hărții „{ $name }”
-project-stand-for = Ține locul altei hărți
-project-stand-for-heading = În document, această hartă îi ia locul
-project-stand-for-none = Niciuna
 project-copy = Copiază
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Lipește sub el
 project-tidy-branch = Ordonează această ramură
 project-place-automatically = Așază automat
-project-delete-keeping = Șterge, păstrând ce este sub el
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] „{ $name }” a fost șters
@@ -124,8 +111,6 @@ project-words = { $count ->
    *[other] { $count } de cuvinte
 }
 project-read-on = Dublu clic ca să citiți mai departe
-project-stands-for-map = Ține locul hărții „{ $name }”
-project-name-not-printed = Numele nu se tipărește
 project-left-out-of-document = Lăsat afară din document
 
 ## The panels at the side: the references and the pictures

@@ -8,8 +8,6 @@ found-title = Nájdené citácie
 # On the tab of the panel, beside the other tabs: short.
 found-tab = Nájdené citácie
 found-between = Medzi mapou a nájdenými citáciami
-found-taken = Čo sa považuje za citácie
-found-taken-always = Čo vytvoril program, a značky
 found-taken-years = Zátvorky s rokom
 found-taken-named = Poznámky, ktoré menujú dielo z knižnice
 found-taken-notes = Každá poznámka

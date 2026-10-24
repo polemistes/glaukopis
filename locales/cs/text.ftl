@@ -2,23 +2,12 @@
 
 text-title = Název
 text-name = Název prvku
-text-not-printed = netiskne se
 text-grip = Přesunout nebo změnit tento prvek
-text-include-open = Otevřít ji
 text-split = Rozdělit zde
 text-join = Připojit k prvku nad ním
 
 ## Folding away what is under an element, and its text
 
-text-open = Rozbalit
-text-fold = Sbalit
-text-open-shift = Rozbalit · se Shiftem i vše, co je pod ním sbaleno
-text-fold-hint = Sbalit jeho text a co je pod ním
-text-fold-shift = Sbalit jeho text a co je pod ním · se Shiftem rozbalit vše, co je pod ním sbaleno
-text-open-all = Rozbalit vše
-text-open-all-under = Rozbalit vše, co je pod ním sbaleno
-text-fold-all-under = Sbalit vše pod ním
-text-fold-all-under-hint = Z toho, co je přímo pod ním, se zobrazují názvy, a nic hlubšího
 # What is folded away, in its place: whether the element's own text is (text is
 # "yes" or "no"), how many elements under it, and how many words in all, which
 # may be none.
@@ -46,8 +35,6 @@ text-folded = { $text ->
 text-associations = Spojení
 text-outline = Osnova
 text-outline-between = Mezi osnovou a textem
-text-outline-fold = Sbalit, co je pod ním
-text-outline-open = Rozbalit, co je pod ním
 text-go-to = Přejít na „{ $name }“
 text-add-label = Přidat popisek…
 text-change-label = Změnit popisek…

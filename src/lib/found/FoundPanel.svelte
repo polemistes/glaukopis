@@ -312,8 +312,7 @@
   <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_static_element_interactions -->
   <div class="through" tabindex="0" bind:this={keys} {onkeydown}>
     <section class="taken">
-      <div class="overline">{t('found-taken')}</div>
-      <p class="always">{t('found-taken-always')}</p>
+      <div class="overline">{t('found-plain-text')}</div>
       <label class="check">
         <input
           type="checkbox"
@@ -610,11 +609,6 @@
     padding: 4px 16px 10px;
     border-bottom: 1px solid var(--line);
     background: var(--paper);
-  }
-  .always {
-    margin: -2px 0 2px;
-    color: var(--ink-3);
-    font-size: var(--text-sm);
   }
   .check {
     display: flex;

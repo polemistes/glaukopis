@@ -73,27 +73,14 @@ project-moved-to = Premaknjeno v »{ $name }«
 
 ## What is done to elements, in the diagram and in the text
 
-project-add-under = Dodaj element pod njim
-project-add = Dodaj element
-project-add-after = Dodaj element za njim
 project-write-text = Piši njegovo besedilo
 project-associate = Poveži z…
-project-associate-hint = Nato kliknite drugi element
-project-heading = Natisni ime kot naslov
-project-heading-hint = Izključeno: ime je oznaka za vas; natisne se le besedilo
 project-leave-out = Izpusti iz dokumenta
-project-leave-out-hint = Z vsem, kar je pod njim
-# An element that stands for another map: in the document, that map is in its place.
-project-stands-for = Stoji za »{ $name }«
-project-stand-for = Stoj za drug miselni vzorec
-project-stand-for-heading = V dokumentu ta miselni vzorec stopi na njegovo mesto
-project-stand-for-none = Noben
 project-copy = Kopiraj
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Prilepi pod njim
 project-tidy-branch = Uredi to vejo
 project-place-automatically = Umesti samodejno
-project-delete-keeping = Izbriši, obdrži pa, kar je pod njim
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] »{ $name }« je izbrisan
@@ -131,8 +118,6 @@ project-words = { $count ->
    *[other] { $count } besed
 }
 project-read-on = Dvokliknite za branje naprej
-project-stands-for-map = Stoji za miselni vzorec »{ $name }«
-project-name-not-printed = Ime se ne natisne
 project-left-out-of-document = Izpuščen iz dokumenta
 
 ## The panels at the side: the references and the pictures

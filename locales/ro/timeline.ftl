@@ -33,7 +33,6 @@ timeline-chronology-made = S-a adăugat o cronologie la hartă
 timeline-elsewhere = Altundeva în hartă
 timeline-elsewhere-chosen = Benzile sunt alese: ce nu stă în niciuna dintre ele stă aici. Apăsați ca să alegeți benzile din nou.
 timeline-ordered = În ordine, fără date
-timeline-empty = Nimic nu spune încă când este. Alegeți „Spune când este…” din meniul unui element.
 timeline-unplaced = { $count ->
     [one] Un element nu s-a putut așeza:
     [few] { $count } elemente nu s-au putut așeza:
@@ -44,14 +43,10 @@ timeline-contradiction = nu poate fi acolo unde spune că este
 timeline-moving = Mută prin tragere
 timeline-moving-hint = Trageți un element de-a lungul axei, sau marginea unei întinderi, ca să-i schimbați timpul; oprit, ca să nu se miște nimic din greșeală
 timeline-without = Elemente fără timp
-timeline-without-hint = Trageți unul pe cronologie, sau apăsați-l ca să spuneți când este:
 timeline-waiting-hint = Nu spune încă nimic despre timpul lui: apăsați-l ca să spuneți când este, sau trageți-l de-a lungul benzii ca să-l așezați
 timeline-unknown = se referă la ce nu este așezat, sau la un timp care nu se poate citi
 
 ## Saying when an element is
-when-title = Când este
-when-say = Spune când este…
-when-change = Când este…
 when-clear = Nu mai spune
 when-kind = Într-un punct, sau pe o întindere
 when-point = Într-un punct

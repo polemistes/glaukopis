@@ -15,7 +15,7 @@ import type { KindRecord } from './model/types';
 
 export interface PartSpec {
   id: string;
-  /** The group the menu shows it in. */
+  /** The group the core has it in; the menus list the kinds in one list (ADR 0065). */
   group: PartGroup;
   /** The id of the kind it is based on; nothing for a base. */
   basedOn: string | null;
@@ -69,13 +69,6 @@ export const PARTS: readonly PartSpec[] = [
   spec('blurb', 'cover', 'cover', { basedOn: 'cover', one: true }),
 ];
 
-/** The groups of the menu, in order. */
-export const PART_GROUPS: readonly { id: PartGroup; label(): string }[] = [
-  { id: 'front', label: () => t('parts-group-front') },
-  { id: 'back', label: () => t('parts-group-back') },
-  { id: 'cover', label: () => t('parts-group-cover') },
-];
-
 const byId = new Map(PARTS.map((p) => [p.id, p]));
 
 /** Whether an id names a kind of the catalogue, and not a kind of a project. */
@@ -106,12 +99,13 @@ export function partOf(
 
 /**
  * Where a kind puts an element in the document, in words, where that is
- * not where it stands in the tree: before the rest of its level, after it,
- * on the cover only, or nowhere. Nothing for a kind that leaves it where it
- * stands. `short` for the tag beside the element's kind in the text.
+ * more than an order: on the cover only, or nowhere. Nothing for the
+ * front and the back, whose order the document type says (ADR 0065), nor
+ * for a kind that leaves it where it stands. `short` for the tag beside the
+ * element's kind in the text.
  */
 export function placeWords(place: PartPlace | null | undefined, short = false): string | null {
-  if (place !== 'front' && place !== 'back' && place !== 'cover' && place !== 'none') return null;
+  if (place !== 'cover' && place !== 'none') return null;
   return t(short ? `parts-placed-${place}-short` : `parts-placed-${place}`);
 }
 

@@ -70,27 +70,14 @@ project-moved-to = Presunuté do „{ $name }“
 
 ## What is done to elements, in the diagram and in the text
 
-project-add-under = Pridať prvok pod neho
-project-add = Pridať prvok
-project-add-after = Pridať prvok za neho
 project-write-text = Písať jeho text
 project-associate = Spojiť s…
-project-associate-hint = Potom kliknite na druhý prvok
-project-heading = Tlačiť názov ako nadpis
-project-heading-hint = Vypnuté: názov je štítok pre vás; tlačí sa len text
 project-leave-out = Vynechať z dokumentu
-project-leave-out-hint = So všetkým pod ním
-# An element that stands for another map: in the document, that map is in its place.
-project-stands-for = Zastupuje „{ $name }“
-project-stand-for = Zastupovať inú mapu
-project-stand-for-heading = V dokumente stojí na jeho mieste táto mapa
-project-stand-for-none = Žiadna
 project-copy = Kopírovať
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Prilepiť pod neho
 project-tidy-branch = Upratať túto vetvu
 project-place-automatically = Umiestniť automaticky
-project-delete-keeping = Odstrániť a ponechať, čo je pod ním
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] „{ $name }“ bol odstránený
@@ -124,8 +111,6 @@ project-words = { $count ->
    *[other] { $count } slov
 }
 project-read-on = Dvojklikom čítate ďalej
-project-stands-for-map = Zastupuje mapu „{ $name }“
-project-name-not-printed = Názov sa netlačí
 project-left-out-of-document = Vynechaný z dokumentu
 
 ## The panels at the side: the references and the pictures

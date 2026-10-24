@@ -8,7 +8,23 @@
     const a = menuState.current?.anchor;
     return !!a && x >= a.left && x <= a.right && y >= a.top && y <= a.bottom;
   };
+
+  /**
+   * Escape closes an open menu whoever has the focus (ADR 0065): the menu's
+   * own keys handle it while the menu has the focus, as in a submenu, and
+   * where something else took the focus, the window does, before what has
+   * the focus acts on the key too.
+   */
+  function onkeydown(event: KeyboardEvent) {
+    if (event.key !== 'Escape' || !menuState.current) return;
+    if (event.target instanceof Element && event.target.closest('.menu')) return;
+    event.preventDefault();
+    event.stopPropagation();
+    menuState.close();
+  }
 </script>
+
+<svelte:window onkeydowncapture={onkeydown} />
 
 {#if menuState.current}
   {@const menu = menuState.current}

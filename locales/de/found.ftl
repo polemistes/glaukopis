@@ -8,8 +8,6 @@ found-title = Lose Zitationen
 # On the tab of the panel, beside the other tabs: short.
 found-tab = Lose Zitationen
 found-between = Zwischen der Karte und den losen Zitationen
-found-taken = Was für Zitationen genommen wird
-found-taken-always = Was ein Programm erzeugt hat, und Kürzel
 found-taken-years = Klammern mit einer Jahreszahl darin
 found-taken-named = Anmerkungen, die ein Werk der Bibliothek nennen
 found-taken-notes = Jede Anmerkung

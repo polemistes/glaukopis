@@ -593,7 +593,7 @@ export function everything(): OrgProject {
           start: { at: '431 BC', approx: true, margin: '5 years' },
           end: { after: 'scene2' },
         },
-        heading: false,
+        heading: true,
         excluded: true,
         origin: 'old1',
         pos: { x: 120, y: -40 },

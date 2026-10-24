@@ -4,11 +4,8 @@ diagram-map = マップ
 diagram-idea = 名前
 diagram-show-all = マップ全体を表示
 diagram-tidy = マップ全体を整理
-diagram-tidy-hint = すべての要素が自動の位置に戻ります
 # The keys are shown as keys, where the variables stand.
 diagram-hint-linking = 関連付ける要素をクリックするか、矢印キーで移動して{ $enter }を押します · { $esc }でやめる
-diagram-show-under = 下にあるものを表示
-diagram-hide-under = 下にあるものを隠す
 diagram-link-handle = 別の要素へドラッグして関連付ける
 
 ## The view

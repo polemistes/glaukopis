@@ -8,8 +8,6 @@ found-title = Пронађени цитати
 # On the tab of the panel, beside the other tabs: short.
 found-tab = Пронађени цитати
 found-between = Између мапе и пронађених цитата
-found-taken = Шта се узима за цитате
-found-taken-always = Што је направио програм, и ознаке
 found-taken-years = Заграде у којима је година
 found-taken-named = Напомене које именују дело из библиотеке
 found-taken-notes = Свака напомена

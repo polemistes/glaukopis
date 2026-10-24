@@ -3,16 +3,11 @@
 diagram-map = Mapa
 diagram-idea = Naziv
 diagram-new-here = Novi element ovdje
-diagram-new-here-hint = Zamisao koja još nema svoje mjesto, ispod elementa u prikazu
 diagram-open-as-map = Otvori kao mapu
-diagram-open-as-map-hint = Element u središtu, s onim što je ispod njega
 diagram-show-all = Prikaži cijelu mapu
 diagram-tidy = Uredi cijelu mapu
-diagram-tidy-hint = Svaki se element vraća na svoje automatsko mjesto
 # The keys are shown as keys, where the variables stand.
 diagram-hint-linking = Kliknite element s kojim ga želite povezati, ili dođite do njega strelicama i pritisnite { $enter } · { $esc } za odustajanje
-diagram-show-under = Prikaži što je ispod njega
-diagram-hide-under = Sakrij što je ispod njega
 diagram-link-handle = Povucite do drugog elementa da ih povežete
 
 ## The view

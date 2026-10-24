@@ -33,7 +33,6 @@ timeline-chronology-made = Do mapy byla přidána chronologie
 timeline-elsewhere = Jinde v mapě
 timeline-elsewhere-chosen = Pruhy jsou zvoleny: co nestojí v žádném z nich, stojí zde. Stisknutím zvolíte pruhy znovu.
 timeline-ordered = V pořadí, bez dat
-timeline-empty = Zatím nic neříká, kdy je. Zvolte „Určit, kdy je…“ v nabídce prvku.
 timeline-unplaced = { $count ->
     [one] Jeden prvek nelze umístit:
     [few] { $count } prvky nelze umístit:
@@ -44,14 +43,10 @@ timeline-contradiction = nemůže být tam, kde říká, že je
 timeline-moving = Přesouvat tažením
 timeline-moving-hint = Táhněte prvek po ose, nebo okraj rozpětí, a změníte jeho čas; vypnuto, aby se nic nepohnulo omylem
 timeline-without = Prvky bez času
-timeline-without-hint = Přetáhněte jeden na časovou osu, nebo ho stiskněte a určete, kdy je:
 timeline-waiting-hint = Zatím nic neříká o svém čase: stiskněte ho a určete, kdy je, nebo ho táhněte po pruhu a umístěte
 timeline-unknown = odkazuje na něco neumístěného, nebo na čas, který nelze přečíst
 
 ## Saying when an element is
-when-title = Kdy je
-when-say = Určit, kdy je…
-when-change = Kdy je…
 when-clear = Už neurčovat
 when-kind = V bodě, nebo v rozpětí
 when-point = V bodě

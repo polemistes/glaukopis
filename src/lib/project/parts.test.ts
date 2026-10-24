@@ -4,7 +4,6 @@ import type { PartKindEntry } from '$lib/api/templates';
 import { Project } from './model/project.svelte';
 import { PROJECT } from './model/types';
 import {
-  PART_GROUPS,
   PARTS,
   isCatalogueKind,
   isDoubled,
@@ -40,7 +39,7 @@ describe('the catalogue of the kinds that make a document', () => {
   });
 
   it('has every kind in a group that is listed, based on a kind that is there, and names it', () => {
-    const groups = PART_GROUPS.map((g) => g.id);
+    const groups = ['front', 'back', 'cover'];
     for (const kind of PARTS) {
       expect(groups, kind.id).toContain(kind.group);
       expect(kind.label(), kind.id).not.toMatch(/^parts-/);
@@ -52,7 +51,6 @@ describe('the catalogue of the kinds that make a document', () => {
         expect(base.place, kind.id).toBe(kind.place);
       }
     }
-    for (const group of PART_GROUPS) expect(group.label()).not.toMatch(/^parts-/);
     expect(isCatalogueKind('abstract')).toBe(true);
     expect(isCatalogueKind('project')).toBe(false);
     expect(isCatalogueKind(null)).toBe(false);

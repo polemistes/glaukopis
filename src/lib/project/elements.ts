@@ -9,7 +9,6 @@ import FileInput from '@lucide/svelte/icons/file-input';
 import GitCompare from '@lucide/svelte/icons/git-compare';
 import CircleDashed from '@lucide/svelte/icons/circle-dashed';
 import Clock from '@lucide/svelte/icons/clock';
-import Heading from '@lucide/svelte/icons/heading';
 import LayoutGrid from '@lucide/svelte/icons/layout-grid';
 import ListTree from '@lucide/svelte/icons/list-tree';
 import Link2 from '@lucide/svelte/icons/link-2';
@@ -28,11 +27,10 @@ import { bringIn, chooseDocument } from '$lib/documents/bringing.svelte';
 import { goThrough } from '$lib/found/found.svelte';
 import { truncate } from '$lib/library/format';
 import { confirm } from '$lib/ui/confirm.svelte';
-import { describeWhen } from '$lib/timeline/solve';
 import { sayWhen } from '$lib/timeline/when.svelte';
 import { kindColour } from './kinds';
 import { manageKinds, newKind } from './kinds.svelte';
-import { PART_GROUPS, PARTS, partsAmong, placeOf, placeWords, type PartSpec } from './parts';
+import { PARTS, partsAmong, type PartSpec } from './parts';
 import { documents } from '$lib/preview/documents.svelte';
 import type { MenuItem } from '$lib/ui/menu.svelte';
 import { compareCopy } from './copies.svelte';
@@ -400,37 +398,37 @@ export function elementMenu(
     })),
   ];
 
-  // The trees an element can stand for in the document: not its own, and none that would loop.
-  const includes: MenuItem[] = one
-    ? (tree.children.get(PROJECT) ?? [])
-        .filter((id) => id !== one.id && id !== holding)
-        .map((id): MenuItem => ({
-          label: nameOf(id),
-          checked: one.include === id,
-          disabled: one.include !== id && project.wouldLoop(one.id, id),
-          action: () => {
-            project.setInclude(one.id, one.include === id ? null : id);
-          },
-        }))
-    : [];
+  // The original of a clone, entered as the view enters an element; where the view does not say, in the side that shows the project.
+  const goToOriginal = (id: string) => {
+    if (actions.enter) return actions.enter(id);
+    const spec = [sides.active, ...sides.sides].find(
+      (s) => s && sideApis.get(s.key)?.open.project === project,
+    );
+    if (spec) sideApis.get(spec.key)?.goTo(id);
+  };
 
-  // Any element of the project, chosen in its tree, but itself and what would loop.
+  // Any element of the project, chosen in its tree, but itself and what would loop; of a clone, its original.
   const chooseIncluded = async (id: string) => {
     const target = await pickElement(project, {
-      title: t('project-pick-stand-title', { name: nameOf(id) }),
-      action: t('project-pick-stand'),
-      refuse: (e) =>
-        e === id
-          ? t('project-pick-self')
-          : project.wouldLoop(id, e)
+      title: t('project-pick-clone-title', { name: nameOf(id) }),
+      action: t('project-pick-clone'),
+      refuse: (e) => {
+        const original = project.originalOf(e);
+        return e === id || original === id
+          ? t('project-pick-clone-self')
+          : !original || project.wouldLoop(id, original)
             ? t('project-pick-loop')
-            : null,
+            : null;
+      },
       at: project.node(id)?.include ?? inView,
     });
     if (target) project.setInclude(id, target);
   };
 
   const items: MenuItem[] = [];
+
+  // A clone has nothing of its own but its name (ADR 0065).
+  const clone = !!one?.include;
 
   if (one) {
     const add = (how: 'after' | 'under') => {
@@ -444,17 +442,23 @@ export function elementMenu(
     };
     items.push(
       {
-        label: t('project-add-under'),
+        label: t('project-add-child'),
         icon: CornerDownRight,
         shortcut: keysFor('tree-new-under'),
+        disabled: clone,
         action: () => add('under'),
       },
-      {
-        label: isProject ? t('project-add') : t('project-add-after'),
-        icon: Plus,
-        shortcut: keysFor('tree-new'),
-        action: () => add('after'),
-      },
+      // The project itself has no siblings: one item adds under it.
+      ...(isProject
+        ? []
+        : [
+            {
+              label: t('project-add-sibling'),
+              icon: Plus,
+              shortcut: keysFor('tree-new'),
+              action: () => add('after'),
+            },
+          ]),
       { kind: 'separator' },
     );
     if (actions.edit)
@@ -462,6 +466,7 @@ export function elementMenu(
         label: t('project-write-text'),
         icon: Pencil,
         shortcut: keysFor('tree-open'),
+        disabled: clone,
         action: () => actions.edit!(one.id),
       });
     if (actions.rename)
@@ -489,7 +494,6 @@ export function elementMenu(
       items.push({
         label: t('project-associate'),
         icon: Link2,
-        hint: t('project-associate-hint'),
         action: () => actions.link!(one.id),
       });
     items.push({
@@ -499,15 +503,8 @@ export function elementMenu(
       action: () => (actions.comment ? actions.comment(one.id) : commentsUi.begin(one.id)),
     });
     items.push({
-      label: one.when ? t('when-change') : t('when-say'),
+      label: t('when-stamp'),
       icon: Clock,
-      hint: one.when
-        ? describeWhen(
-            one.when,
-            (id) => project.node(id)?.title || t('project-untitled'),
-            saidWords(),
-          )
-        : undefined,
       action: () => sayWhen(one.id),
     });
     items.push({ kind: 'separator' });
@@ -527,8 +524,6 @@ export function elementMenu(
   ]);
   const partItem = (p: PartSpec): MenuItem => ({
     label: p.label(),
-    // Where it puts the element in the document, where that is not where it stands.
-    hint: placeWords(p.place) ?? undefined,
     checked: kindSaid === p.id,
     action: () => project.setKind(ids, p.id),
   });
@@ -540,7 +535,6 @@ export function elementMenu(
     items: [
       ...project.kinds.map((k): MenuItem => ({
         label: k.name,
-        hint: placeWords(placeOf(project, k.id)) ?? undefined,
         colour: kindColour(k.colour).ink,
         checked: kindSaid === k.id,
         action: () => project.setKind(ids, k.id),
@@ -551,10 +545,7 @@ export function elementMenu(
       {
         kind: 'submenu',
         label: t('parts-more'),
-        items: PART_GROUPS.flatMap((g): MenuItem[] => [
-          { kind: 'heading', label: g.label() },
-          ...PARTS.filter((p) => p.group === g.id).map(partItem),
-        ]),
+        items: PARTS.map(partItem),
       },
       separator,
       {
@@ -595,56 +586,38 @@ export function elementMenu(
   );
 
   if (!isProject) {
-    const allPlain = nodes.every((n) => !n.heading);
     const allOut = nodes.every((n) => n.excluded);
-    items.push(
-      {
-        label: t('project-heading'),
-        icon: Heading,
-        hint: t('project-heading-hint'),
-        checked: !allPlain,
-        action: () =>
-          project.transact(() => nodes.forEach((n) => project.setHeading(n.id, allPlain))),
-      },
-      {
-        label: t('project-leave-out'),
-        icon: EyeOff,
-        hint: t('project-leave-out-hint'),
-        checked: allOut,
-        action: () =>
-          project.transact(() => nodes.forEach((n) => project.setExcluded(n.id, !allOut))),
-      },
-    );
-    if (one) {
+    items.push({
+      label: t('project-leave-out'),
+      icon: EyeOff,
+      checked: allOut,
+      action: () =>
+        project.transact(() => nodes.forEach((n) => project.setExcluded(n.id, !allOut))),
+    });
+    if (one?.include) {
+      const original = one.include;
       items.push({
         kind: 'submenu',
-        label: one.include
-          ? t('project-stands-for', { name: nameOf(one.include) })
-          : t('project-stand-for'),
+        label: t('project-clone-of', { name: nameOf(original) }),
         icon: FileInput,
         items: [
           {
-            label: t('project-choose-element'),
+            label: t('project-clone-choose'),
             icon: ListTree,
             action: () => void chooseIncluded(one.id),
           },
-          ...(includes.length
-            ? ([
-                { kind: 'separator' },
-                { kind: 'heading', label: t('project-stand-for-heading') },
-              ] as MenuItem[])
-            : []),
-          ...includes,
-          ...(one.include
-            ? ([
-                { kind: 'separator' },
-                {
-                  label: t('project-stand-for-none'),
-                  action: () => project.setInclude(one.id, null),
-                },
-              ] as MenuItem[])
-            : []),
+          { label: t('project-clone-go'), action: () => goToOriginal(original) },
+          { kind: 'separator' },
+          { label: t('project-clone-none'), action: () => project.setInclude(one.id, null) },
         ],
+      });
+    } else if (one) {
+      // Only an element without text or sub-elements can become a clone.
+      items.push({
+        label: t('project-clone-other'),
+        icon: FileInput,
+        disabled: !one.empty || hasChildren,
+        action: () => void chooseIncluded(one.id),
       });
     }
     items.push({ kind: 'separator' });
@@ -674,7 +647,7 @@ export function elementMenu(
         label: t('project-paste-under'),
         icon: ClipboardPaste,
         shortcut: keyed ? keysFor('diagram-paste') : undefined,
-        disabled: !canPaste(project),
+        disabled: clone || !canPaste(project),
         action: () => actions.paste?.(one.id),
       });
   }
@@ -707,13 +680,15 @@ export function elementMenu(
     items.push({ kind: 'separator' });
     if (one && hasChildren) {
       items.push({
-        label: t('project-delete-keeping'),
+        label: t('project-delete-promote'),
         icon: Scissors,
         action: () => removeElements(project, ids, true),
       });
     }
+    // What goes with them is said where there is any.
+    const withChildren = movable.some((id) => (tree.children.get(id)?.length ?? 0) > 0);
     items.push({
-      label: t('common-delete'),
+      label: withChildren ? t('project-delete-with') : t('common-delete'),
       icon: Trash2,
       danger: true,
       shortcut: keysFor('tree-delete'),

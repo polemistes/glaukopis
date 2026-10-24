@@ -68,27 +68,14 @@ project-moved-to = Переміщено до «{ $name }»
 
 ## What is done to elements, in the diagram and in the text
 
-project-add-under = Додати елемент під ним
-project-add = Додати елемент
-project-add-after = Додати елемент після нього
 project-write-text = Писати його текст
 project-associate = Повʼязати з…
-project-associate-hint = Потім клацніть інший елемент
-project-heading = Друкувати назву як заголовок
-project-heading-hint = Вимкнено: назва — позначка для вас; друкується лише текст
 project-leave-out = Не включати в документ
-project-leave-out-hint = З усім, що під ним
-# An element that stands for another map: in the document, that map is in its place.
-project-stands-for = Стоїть замість «{ $name }»
-project-stand-for = Стояти замість іншої мапи
-project-stand-for-heading = У документі на його місці стоїть ця мапа
-project-stand-for-none = Жодної
 project-copy = Копіювати
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Вставити під ним
 project-tidy-branch = Упорядкувати цю гілку
 project-place-automatically = Розмістити автоматично
-project-delete-keeping = Видалити, зберігши те, що під ним
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] «{ $name }» видалено
@@ -126,8 +113,6 @@ project-words = { $count ->
    *[other] { $count } слова
 }
 project-read-on = Двічі клацніть, щоб читати далі
-project-stands-for-map = Стоїть замість мапи «{ $name }»
-project-name-not-printed = Назва не друкується
 project-left-out-of-document = Не включено в документ
 
 ## The panels at the side: the references and the pictures

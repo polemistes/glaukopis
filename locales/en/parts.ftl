@@ -2,9 +2,6 @@
 # application (ADR 0038): what each is called in the kind menu and on the
 # label of an element. The core has the same kinds, with their looks.
 
-parts-group-front = Front matter
-parts-group-back = Back matter
-parts-group-cover = Cover
 parts-more = More…
 
 # The bases.
@@ -40,11 +37,7 @@ parts-doubled = Not printed: another element of this kind comes first among its 
 
 ## Where a kind puts an element in the document, where not where it stands.
 
-parts-placed-front = Printed at the front, before the rest of its level
-parts-placed-back = Printed at the back, after the rest of its level
 parts-placed-cover = Printed on the cover only
 parts-placed-none = Not printed in the document
-parts-placed-front-short = printed at the front
-parts-placed-back-short = printed at the back
 parts-placed-cover-short = on the cover only
 parts-placed-none-short = not printed

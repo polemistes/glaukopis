@@ -4,11 +4,8 @@ diagram-map = Мапа
 diagram-idea = Назва
 diagram-show-all = Показати всю мапу
 diagram-tidy = Упорядкувати всю мапу
-diagram-tidy-hint = Кожен елемент повертається на своє автоматичне місце
 # The keys are shown as keys, where the variables stand.
 diagram-hint-linking = Клацніть елемент, з яким повʼязати, або перейдіть до нього стрілками й натисніть { $enter } · { $esc } — вийти
-diagram-show-under = Показати те, що під ним
-diagram-hide-under = Сховати те, що під ним
 diagram-link-handle = Перетягніть до іншого елемента, щоб повʼязати їх
 
 ## The view

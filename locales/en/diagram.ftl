@@ -3,17 +3,12 @@
 diagram-map = Map
 diagram-idea = Name
 diagram-new-here = New element here
-diagram-new-here-hint = A thought that has no place yet, under the element in view
 diagram-open-as-map = Enter
-diagram-open-as-map-hint = The element at the centre, with what is under it
 diagram-show-all = Show the whole map
 diagram-tidy = Tidy the whole map
-diagram-tidy-hint = Every element goes back to its automatic place
 # The keys are shown as keys, where the variables stand.
 diagram-hint-empty = { $alt }+{ $enter } adds an element after the one selected · { $alt }+{ $shift }+{ $enter } one under it · double-click to write
 diagram-hint-linking = Click the element to associate with, or go to it with the arrows and press { $enter } · { $esc } to leave it
-diagram-show-under = Show what is under it
-diagram-hide-under = Hide what is under it
 diagram-link-handle = Drag to another element to associate them
 
 ## The view
@@ -38,3 +33,9 @@ diagram-cut = { $count ->
 diagram-paste-here = Paste here
 diagram-nothing-copied = Nothing is copied yet
 diagram-pasted-elsewhere = What was copied is of another project, and cannot be pasted here
+
+## Fewer words, stage 2 (agent "chrome"): the words of the menus.
+
+# The tooltips of the mark that folds an element in the diagram.
+diagram-unfold-sub = Unfold sub-elements
+diagram-fold-sub = Fold sub-elements

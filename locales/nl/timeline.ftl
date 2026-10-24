@@ -32,7 +32,6 @@ timeline-chronology-made = Er is een chronologie aan de mindmap toegevoegd
 timeline-elsewhere = Elders in de mindmap
 timeline-elsewhere-chosen = De banen zijn gekozen: wat in geen ervan staat, staat hier. Druk om de banen opnieuw te kiezen.
 timeline-ordered = Op volgorde, zonder datums
-timeline-empty = Nog niets zegt wanneer het is. Kies ‘Zeggen wanneer het is…’ in het menu van een element.
 timeline-unplaced = { $count ->
     [one] Eén element kon niet worden geplaatst:
    *[other] { $count } elementen konden niet worden geplaatst:
@@ -42,14 +41,10 @@ timeline-contradiction = kan niet zijn waar het zegt dat het is
 timeline-moving = Verplaatsen door te slepen
 timeline-moving-hint = Sleep een element langs de as, of de rand van een spanne, om zijn tijd te veranderen; uit, zodat niets per ongeluk verschuift
 timeline-without = Elementen zonder tijd
-timeline-without-hint = Sleep er een op de tijdlijn, of druk erop om te zeggen wanneer het is:
 timeline-waiting-hint = Zegt nog niets over zijn tijd: druk erop om te zeggen wanneer het is, of sleep het langs de baan om het te plaatsen
 timeline-unknown = verwijst naar wat niet is geplaatst, of naar een tijd die niet kan worden gelezen
 
 ## Saying when an element is
-when-title = Wanneer het is
-when-say = Zeggen wanneer het is…
-when-change = Wanneer het is…
 when-clear = Niet meer zeggen
 when-kind = Op een punt, of over een spanne
 when-point = Op een punt

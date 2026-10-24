@@ -2,23 +2,12 @@
 
 text-title = Titlu
 text-name = Numele elementului
-text-not-printed = nu se tipărește
 text-grip = Mută sau modifică acest element
-text-include-open = Deschide-o
 text-split = Desparte aici
 text-join = Unește cu elementul de deasupra
 
 ## Folding away what is under an element, and its text
 
-text-open = Desfă-l
-text-fold = Strânge-l
-text-open-shift = Desfă-l · cu Shift, și tot ce este strâns sub el
-text-fold-hint = Strânge textul lui și ce este sub el
-text-fold-shift = Strânge textul lui și ce este sub el · cu Shift, desfă tot ce este strâns sub el
-text-open-all = Desfă tot
-text-open-all-under = Desfă tot ce este strâns sub el
-text-fold-all-under = Strânge tot ce este sub el
-text-fold-all-under-hint = Din ce este direct sub el se arată numele, și nimic mai adânc
 # What is folded away, in its place: whether the element's own text is (text is
 # "yes" or "no"), how many elements under it, and how many words in all, which
 # may be none.
@@ -46,8 +35,6 @@ text-folded = { $text ->
 text-associations = Asocieri
 text-outline = Schiță
 text-outline-between = Între schiță și text
-text-outline-fold = Strânge ce este sub el
-text-outline-open = Desfă ce este sub el
 text-go-to = Mergi la „{ $name }”
 text-add-label = Adaugă o etichetă…
 text-change-label = Schimbă eticheta…

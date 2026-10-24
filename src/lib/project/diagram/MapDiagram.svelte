@@ -497,6 +497,8 @@
   function open(id: string, begin: 'title' | 'body' = 'body') {
     const p = lay.placed.get(id);
     if (!p) return;
+    // A clone has no text of its own to write: its name is what can be changed.
+    if (project.node(id)?.include) return rename(id);
     hovered = null;
     clearTimeout(hoverTimer);
     if (renaming) finishRename(renaming, 'blur');
@@ -825,7 +827,6 @@
     return [
       {
         label: t('diagram-open-as-map'),
-        hint: t('diagram-open-as-map-hint'),
         icon: Minimize2,
         shortcut: keysFor('tree-enter'),
         action: () => onenter(one),
@@ -1006,7 +1007,6 @@
       openContextMenu(event, [
         {
           label: t('diagram-new-here'),
-          hint: t('diagram-new-here-hint'),
           action: () => addHere(world),
         },
         {
@@ -1020,7 +1020,6 @@
         { label: t('diagram-show-all'), shortcut: keysFor('diagram-whole'), action: fit },
         {
           label: t('diagram-tidy'),
-          hint: t('diagram-tidy-hint'),
           action: () => {
             project.checkpoint();
             project.tidy(tree.sequence);

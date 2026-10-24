@@ -47,7 +47,7 @@ const nodes: FlatNode[] = [
 }));
 const tree = buildTree(nodes, 'book');
 
-/** Every element a heading with ten words of text, but where it is said otherwise. */
+/** Every element with ten words of text, but where it is said otherwise. */
 function factsOf(
   over: Record<string, Partial<RowFacts & { notes: number }>> = {},
 ): (id: string) => (RowFacts & { notes: number }) | undefined {
@@ -57,7 +57,6 @@ function factsOf(
           excluded: false,
           empty: false,
           include: null,
-          heading: true,
           words: 10,
           notes: 0,
           ...over[id],
@@ -68,8 +67,8 @@ function factsOf(
 const none = () => false;
 
 describe('the rows of the text', () => {
-  it('every element in the order of the text, a level deeper under each heading', () => {
-    const rows = textRows(tree, factsOf({ two: { heading: false } }), none);
+  it('every element in the order of the text, a level deeper under each', () => {
+    const rows = textRows(tree, factsOf(), none);
     expect(rows.map((r) => [r.id, r.level])).toEqual([
       ['book', 0],
       ['one', 1],
@@ -77,8 +76,7 @@ describe('the rows of the text', () => {
       ['one-a-i', 3],
       ['one-b', 2],
       ['two', 1],
-      // A name that is not printed does not deepen what is under it.
-      ['two-a', 1],
+      ['two-a', 2],
       ['three', 1],
     ]);
     expect(rows.every((r) => !r.away && !r.hidden && r.foldable)).toBe(true);
@@ -122,9 +120,9 @@ describe('the rows of the text', () => {
 });
 
 describe('the numbers of the outline', () => {
-  it('counts the headings at each level, starting again under each', () => {
+  it('counts the elements at each level, starting again under each', () => {
     const rows = textRows(tree, factsOf(), none);
-    expect(Object.fromEntries(outlineNumbers(rows, () => true))).toEqual({
+    expect(Object.fromEntries(outlineNumbers(rows))).toEqual({
       one: '1',
       'one-a': '1.1',
       'one-a-i': '1.1.1',
@@ -135,21 +133,21 @@ describe('the numbers of the outline', () => {
     });
   });
 
-  it('passes over what is not a heading or is left out, and counts what is folded away', () => {
-    const facts = factsOf({ two: { heading: false }, 'one-a': { excluded: true } });
+  it('passes over what is left out, and counts what is folded away', () => {
+    const facts = factsOf({ 'one-a': { excluded: true } });
     const rows = textRows(tree, facts, (id) => id === 'one');
-    expect(Object.fromEntries(outlineNumbers(rows, (id) => !!facts(id)?.heading))).toEqual({
+    expect(Object.fromEntries(outlineNumbers(rows))).toEqual({
       one: '1',
       'one-b': '1.1',
-      // Under a name that is not printed, at the level of the name.
-      'two-a': '2',
+      two: '2',
+      'two-a': '2.1',
       three: '3',
     });
   });
 
   it('a level skipped is counted as nought', () => {
     const rows = textRows(tree, factsOf(), none);
-    expect(outlineNumbers(rows, (id) => id === 'one-a-i').get('one-a-i')).toBe('0.0.1');
+    expect(outlineNumbers(rows.filter((r) => r.id === 'one-a-i')).get('one-a-i')).toBe('0.0.1');
   });
 });
 

@@ -604,7 +604,6 @@
         </span>
         <Folder size={15} strokeWidth={1.6} />
         <span class="name truncate">{f.name}</span>
-        <span class="count">{row.projects}</span>
         {#if !choose}
           <button
             type="button"
@@ -884,7 +883,6 @@
   .twisty.hidden {
     visibility: hidden;
   }
-  .count,
   .when {
     flex: none;
     font-size: var(--text-xs);

@@ -32,7 +32,6 @@ timeline-chronology-made = A chronology was added to the map
 timeline-elsewhere = Elsewhere in the map
 timeline-elsewhere-chosen = The lanes are chosen: what stands in none of them stands here. Press to choose the lanes anew.
 timeline-ordered = In order, without dates
-timeline-empty = Nothing says when it is yet. Choose “Say when it is…” in an element’s menu.
 timeline-unplaced = { $count ->
     [one] One element could not be placed:
    *[other] { $count } elements could not be placed:
@@ -42,14 +41,10 @@ timeline-contradiction = cannot be where it says it is
 timeline-moving = Move by dragging
 timeline-moving-hint = Drag an element along the axis, or the edge of a span, to change its time; off, so that nothing moves by mistake
 timeline-without = Elements without a time
-timeline-without-hint = Drag one onto the timeline, or press it to say when it is:
 timeline-waiting-hint = Says nothing of its time yet: press it to say when it is, or drag it along the lane to place it
 timeline-unknown = refers to what is not placed, or to a time that cannot be read
 
 ## Saying when an element is
-when-title = When it is
-when-say = Say when it is…
-when-change = When it is…
 when-clear = No longer say
 when-kind = At a point, or over a span
 when-point = At a point
@@ -87,3 +82,10 @@ when-said-before = before
 when-said-during = during
 when-said-to = to
 when-said-approx = c.
+
+## Fewer words, stage 2 (agent "chrome"): the words of the menus.
+
+when-stamp = Time stamp…
+# The title of the dialog that says when an element is.
+when-stamp-title = Time stamp
+timeline-empty-stamp = Nothing has a time stamp yet. Choose “Time stamp…” in an element’s menu.

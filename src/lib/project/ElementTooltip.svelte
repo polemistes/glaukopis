@@ -48,13 +48,7 @@
   );
   const worth = $derived(
     !!node &&
-      (!node.empty ||
-        !!included ||
-        !node.heading ||
-        node.excluded ||
-        !!copied?.original ||
-        !!kind ||
-        !!when),
+      (!node.empty || !!included || node.excluded || !!copied?.original || !!kind || !!when),
   );
 
   $effect(() => {
@@ -72,7 +66,7 @@
       </div>
       {#if content.cut}<div class="more">{t('project-read-on')}</div>{/if}
     {/if}
-    {#if included || !node.heading || node.excluded || copied?.original || kind || when}
+    {#if included || node.excluded || copied?.original || kind || when}
       <div class="facts" class:alone={!content.html}>
         {#if when}<div>{when}</div>{/if}
         {#if kind}
@@ -89,10 +83,9 @@
         {/if}
         {#if included}
           <div>
-            {t('project-stands-for-map', { name: included.title || t('project-untitled') })}
+            {t('project-clone-of', { name: included.title || t('project-untitled') })}
           </div>
         {/if}
-        {#if !node.heading}<div>{t('project-name-not-printed')}</div>{/if}
         {#if node.excluded}<div>{t('project-left-out-of-document')}</div>{/if}
       </div>
     {/if}

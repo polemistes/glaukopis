@@ -99,21 +99,9 @@ project-send-no-element = The element is no longer in that project.
 
 ## What is done to elements, in the diagram and in the text
 
-project-add-under = Add an element under it
-project-add = Add an element
-project-add-after = Add an element after it
 project-write-text = Write its text
 project-associate = Associate with…
-project-associate-hint = Then click the other element
-project-heading = Print the name as a heading
-project-heading-hint = Off: the name is a label for you; only the text is printed
 project-leave-out = Leave out of the document
-project-leave-out-hint = With everything under it
-# An element that stands for another element: in the document, that element is in its place.
-project-stands-for = Stands for “{ $name }”
-project-stand-for = Stand for another element
-project-stand-for-heading = In the document, this element takes its place
-project-stand-for-none = None
 # Copying or moving elements to the project itself, to one of its trees, or to another project.
 project-copy-to = Copy to
 project-cut = Cut
@@ -124,8 +112,6 @@ project-paste-under = Paste under it
 project-move-to = Move to
 # Opening a dialog with the tree of the project, to choose where the elements go: first in Copy to and Move to.
 project-choose-where = Choose where…
-# Opening the same dialog, to choose the element this one stands for.
-project-choose-element = Choose an element…
 # The title of the dialog that chooses where elements are copied to: the name of the one copied, or how many.
 project-pick-copy-title = { $count ->
     [one] Copy “{ $name }” to
@@ -135,20 +121,16 @@ project-pick-move-title = { $count ->
     [one] Move “{ $name }” to
    *[other] Move { $count } elements to
 }
-project-pick-stand-title = What “{ $name }” stands for
 # The buttons of the dialog, saying what will be done with the element chosen.
 project-pick-copy = Copy here
 project-pick-move = Move here
-project-pick-stand = Stand for this
 project-pick-find = Find an element by name
 project-pick-none = No element has that name
 # Why an element cannot be chosen, when it is hovered.
 project-pick-itself = An element cannot go into itself, or into what is under it
-project-pick-self = An element cannot stand for itself
 project-pick-loop = The document would hold itself
 project-tidy-branch = Tidy this branch
 project-place-automatically = Place automatically
-project-delete-keeping = Delete, keeping what is under it
 project-itself-stays = The project itself stays
 project-itself-stays-detail = Delete the project from the home page.
 # One element was deleted, with the elements that were under it.
@@ -180,8 +162,6 @@ project-words = { $count ->
    *[other] { $count } words
 }
 project-read-on = Double-click to read on
-project-stands-for-map = Stands for “{ $name }”
-project-name-not-printed = The name is not printed
 project-left-out-of-document = Left out of the document
 
 ## The panels at the side: the references and the pictures
@@ -304,3 +284,20 @@ project-bar-typesetting = Typesetting
 project-bar-document = Document
 project-badge-offline = the server cannot be reached
 project-badge-refused = the server does not take the latest changes
+
+## Fewer words, stage 2 (agent "chrome"): the clone, which has nothing of its own but its name.
+
+project-clone-other = Clone other element…
+# The submenu of a clone, and the mark of a clone in the diagram: the original's name.
+project-clone-of = Clone of “{ $name }”
+project-clone-choose = Choose another element…
+project-clone-go = Go to the original
+project-clone-none = No longer a clone
+# The dialog with the tree of the project, choosing the original of a clone.
+project-pick-clone-title = Clone which element into “{ $name }”?
+project-pick-clone = Clone it
+project-pick-clone-self = An element cannot be a clone of itself
+project-add-child = Add child element
+project-add-sibling = Add sibling element
+project-delete-promote = Delete and promote sub-elements
+project-delete-with = Delete with sub-elements

@@ -8,8 +8,6 @@ found-title = Знайдені цитування
 # On the tab of the panel, beside the other tabs: short.
 found-tab = Знайдені
 found-between = Між мапою та знайденими цитуваннями
-found-taken = Що вважати цитуваннями
-found-taken-always = Зроблене програмою, і теги
 found-taken-years = Дужки з роком усередині
 found-taken-named = Примітки, що називають працю з бібліотеки
 found-taken-notes = Кожну примітку

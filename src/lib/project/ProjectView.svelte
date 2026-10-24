@@ -49,7 +49,6 @@
   import WordsBar from '$lib/words/WordsBar.svelte';
   import { onDestroy, onMount, tick, untrack } from 'svelte';
   import Columns2 from '@lucide/svelte/icons/columns-2';
-  import PanelLeft from '@lucide/svelte/icons/panel-left';
   import X from '@lucide/svelte/icons/x';
   import Presence from '$lib/sharing/Presence.svelte';
   import SharePanel from '$lib/sharing/SharePanel.svelte';
@@ -626,10 +625,6 @@
   // ---- the top row: a cell over each side, as wide as it ----
 
   let panesEl = $state<HTMLDivElement>();
-  /** The width of the list's button at the far left, which the cell at the left gives up. */
-  let listWidth = $state(0);
-  /** The side whose cell stands at the left: the first, unless the sides are switched. */
-  const leftmost = $derived(sides.mirrored ? sides.sides.length - 1 : 0);
   /** The widths of the sides, and of the row of them, as drawn. */
   let paneWidths = $state.raw<number[]>([]);
   let panesWidth = $state(0);
@@ -820,25 +815,13 @@
 <svelte:window {onblur} {onkeydown} />
 
 <div class="project">
-  <!-- the top row: the list's button at the far left; over each side a cell with its path, as wide as the side, and on the join of two the button that switches them; Split view at the right end. -->
+  <!-- the top row: over each side a cell with its path and its ×, as wide as the side, and on the join of two the button that switches them; Split view at the right end. The list's button is on the rail. -->
   <div class="top" data-top>
-    <div class="list" bind:offsetWidth={listWidth}>
-      <IconButton
-        label={t('home-pane-toggle')}
-        shortcut={keysFor('projects-pane')}
-        size="sm"
-        active={settings.value.projectsList}
-        data-projects-button
-        onclick={toggleProjectsPane}
-      >
-        <PanelLeft size={15} />
-      </IconButton>
-    </div>
     <div
       class="cells"
       class:mirrored={sides.mirrored}
       style:gap="{between / 2}px"
-      style:flex-basis="{Math.max(0, panesWidth - listWidth)}px"
+      style:flex-basis="{panesWidth}px"
     >
       {#each sides.sides as spec, i (spec.key)}
         {@const of = openOf(spec)?.project}
@@ -865,10 +848,7 @@
           class:before-join={sides.sides.length > 1 && i === (sides.mirrored ? 1 : 0)}
           class:after-join={sides.sides.length > 1 && i === (sides.mirrored ? 0 : 1)}
           data-side={i}
-          style:flex-basis="{Math.max(
-            0,
-            (paneWidths[i] ?? 0) - (i === leftmost ? listWidth : 0),
-          )}px"
+          style:flex-basis="{paneWidths[i] ?? 0}px"
           style:flex-shrink={i === (sides.mirrored ? 0 : sides.sides.length - 1) ? 1 : 0}
           onpointerdowncapture={() => sides.focus(spec.key)}
           onfocusin={() => sides.focus(spec.key)}
@@ -885,6 +865,18 @@
               onproject={(id, element) => projectIn(spec, id, element)}
             />
           {/if}
+          <!-- At the right end of the cell: the path gives way, the × stays. With one side, closing it brings the start screen. -->
+          <span class="close">
+            <IconButton
+              label={t('project-close-side')}
+              shortcut={keysFor('close-side')}
+              size="sm"
+              data-close-side
+              onclick={() => closeSideOf(spec.key)}
+            >
+              <X size={14} />
+            </IconButton>
+          </span>
         </div>
       {/each}
     </div>
@@ -1214,12 +1206,11 @@
     flex: 1 0 auto;
     padding: 0 10px 0 8px;
   }
-  /* The list's button, at the far left, over the side that stands there. */
-  .list {
+  .close {
     display: flex;
-    align-items: center;
     flex: none;
-    padding: 0 2px 0 8px;
+    margin-left: auto;
+    padding-left: 4px;
   }
   /* Where two sides are shown, the cells leave room on the join for the button that switches them. */
   .cell.before-join {
@@ -1263,9 +1254,9 @@
     flex: none;
     height: 28px;
     padding: 0 9px;
-    border: 1px solid transparent;
+    border: 1px solid var(--line);
     border-radius: var(--radius-s);
-    background: transparent;
+    background: var(--paper-sunken);
     color: var(--ink-2);
     font: inherit;
     font-size: var(--text-sm);

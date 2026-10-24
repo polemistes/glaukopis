@@ -59,9 +59,9 @@ try {
     await app.waitFor('.menu');
     await sleep(150);
     await app.exec(
-      `Array.from(document.querySelectorAll('.menu [role="menuitem"]')).find((m) => /when it is…/i.test(m.textContent)).click()`,
+      `Array.from(document.querySelectorAll('.menu [role="menuitem"]')).find((m) => /time stamp…/i.test(m.textContent)).click()`,
     );
-    await app.waitForText('dialog[open] h2', 'When it is', 3000);
+    await app.waitForText('dialog[open] h2', 'Time stamp', 3000);
     await sleep(200);
     await fill();
     await app.clickText('dialog[open] footer button', 'Save');
@@ -178,8 +178,8 @@ try {
   // --- A double click opens "When it is"; the text is reached from the menu ---
   // The first point drawn is the plague, the earliest of Athens.
   await app.doubleClick('.timeline .event.point');
-  await app.waitForText('dialog[open] h2', 'When it is', 3000);
-  check('a double click on an element opens When it is', await app.exists('dialog[open]'));
+  await app.waitForText('dialog[open] h2', 'Time stamp', 3000);
+  check('a double click on an element opens Time stamp', await app.exists('dialog[open]'));
   await app.press('Escape');
   await app.waitGone('dialog[open]', 3000);
   await sleep(200);
@@ -262,8 +262,8 @@ try {
   );
   // Pressed, it says when it is in words; and the dialog can be dragged aside by its header.
   await app.click(await app.findByText('.timeline .waiting', 'The ephors'));
-  await app.waitForText('dialog[open] h2', 'When it is', 3000);
-  check('pressing a card opens When it is', await app.exists('dialog[open]'));
+  await app.waitForText('dialog[open] h2', 'Time stamp', 3000);
+  check('pressing a card opens Time stamp', await app.exists('dialog[open]'));
   const dialogBefore = await app.exec(
     `return document.querySelector('dialog[open]').getBoundingClientRect().left`,
   );
@@ -300,8 +300,8 @@ try {
 
   // --- Pressed rather than dragged, an element without a time says when it is in words ---
   await app.click(await app.findByText('.timeline .waiting', 'Sources'));
-  await app.waitForText('dialog[open] h2', 'When it is', 3000);
-  check('pressing an element without a time opens When it is', await app.exists('dialog[open]'));
+  await app.waitForText('dialog[open] h2', 'Time stamp', 3000);
+  check('pressing an element without a time opens Time stamp', await app.exists('dialog[open]'));
   await app.press('Escape');
   await app.waitGone('dialog[open]', 3000);
   await sleep(200);

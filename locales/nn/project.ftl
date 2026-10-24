@@ -86,21 +86,9 @@ project-send-no-element = Elementet er ikkje lenger i det prosjektet.
 
 ## What is done to elements, in the diagram and in the text
 
-project-add-under = Legg til eit element under
-project-add = Legg til eit element
-project-add-after = Legg til eit element etter
 project-write-text = Skriv teksten
 project-associate = Knyt til …
-project-associate-hint = Klikk så på det andre elementet
-project-heading = Skriv ut namnet som overskrift
-project-heading-hint = Av: namnet er ein merkelapp for deg; berre teksten blir skriven ut
 project-leave-out = Utelat frå dokumentet
-project-leave-out-hint = Med alt som står under
-# An element that stands for another element: in the document, that element is in its place.
-project-stands-for = Står for «{ $name }»
-project-stand-for = La det stå for eit anna element
-project-stand-for-heading = I dokumentet tek elementet du vel, plassen til dette
-project-stand-for-none = Ingen
 # Copying or moving elements to the project itself, to one of its trees, or to another project.
 project-copy-to = Kopier til
 project-cut = Klipp ut
@@ -111,8 +99,6 @@ project-paste-under = Lim inn under
 project-move-to = Flytt til
 # Opening a dialog with the tree of the project, to choose where the elements go: first in Copy to and Move to.
 project-choose-where = Vel kvar …
-# Opening the same dialog, to choose the element this one stands for.
-project-choose-element = Vel eit element …
 # The title of the dialog that chooses where elements are copied to: the name of the one copied, or how many.
 project-pick-copy-title = { $count ->
     [one] Kopier «{ $name }» til
@@ -122,20 +108,16 @@ project-pick-move-title = { $count ->
     [one] Flytt «{ $name }» til
    *[other] Flytt { $count } element til
 }
-project-pick-stand-title = Kva «{ $name }» står for
 # The buttons of the dialog, saying what will be done with the element chosen.
 project-pick-copy = Kopier hit
 project-pick-move = Flytt hit
-project-pick-stand = Stå for dette
 project-pick-find = Finn eit element etter namn
 project-pick-none = Ingen element har det namnet
 # Why an element cannot be chosen, when it is hovered.
 project-pick-itself = Eit element kan ikkje leggjast i seg sjølv eller i det som står under det
-project-pick-self = Eit element kan ikkje stå for seg sjølv
 project-pick-loop = Dokumentet ville innehalde seg sjølv
 project-tidy-branch = Rydd i denne greina
 project-place-automatically = Plasser automatisk
-project-delete-keeping = Slett, men hald på det som står under
 project-itself-stays = Sjølve prosjektet blir ståande
 project-itself-stays-detail = Slett prosjektet frå prosjektsida.
 # One element was deleted, with the elements that were under it.
@@ -167,8 +149,6 @@ project-words = { $count ->
    *[other] { $count } ord
 }
 project-read-on = Dobbeltklikk for å lese vidare
-project-stands-for-map = Står for «{ $name }»
-project-name-not-printed = Namnet blir ikkje skrive ut
 project-left-out-of-document = Utelate frå dokumentet
 
 ## The panels at the side: the references and the pictures

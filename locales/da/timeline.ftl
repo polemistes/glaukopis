@@ -32,7 +32,6 @@ timeline-chronology-made = En kronologi blev føjet til kortet
 timeline-elsewhere = Andetsteds i kortet
 timeline-elsewhere-chosen = Banerne er valgt: det, der ikke står i nogen af dem, står her. Tryk for at vælge banerne på ny.
 timeline-ordered = I rækkefølge, uden datoer
-timeline-empty = Intet siger endnu, hvornår det er. Vælg »Sig, hvornår det er…« i et elements menu.
 timeline-unplaced = { $count ->
     [one] Ét element kunne ikke placeres:
    *[other] { $count } elementer kunne ikke placeres:
@@ -42,14 +41,10 @@ timeline-contradiction = kan ikke være, hvor det siger, det er
 timeline-moving = Flyt ved at trække
 timeline-moving-hint = Træk et element langs aksen, eller kanten af et tidsrum, for at ændre dets tid; fra, så intet flyttes ved et uheld
 timeline-without = Elementer uden tid
-timeline-without-hint = Træk et ind på tidslinjen, eller tryk på det for at sige, hvornår det er:
 timeline-waiting-hint = Siger endnu intet om sin tid: tryk på det for at sige, hvornår det er, eller træk det langs banen for at placere det
 timeline-unknown = henviser til noget, der ikke er placeret, eller til en tid, der ikke kan læses
 
 ## Saying when an element is
-when-title = Hvornår det er
-when-say = Sig, hvornår det er…
-when-change = Hvornår det er…
 when-clear = Sig det ikke længere
 when-kind = På et tidspunkt eller over et tidsrum
 when-point = På et tidspunkt

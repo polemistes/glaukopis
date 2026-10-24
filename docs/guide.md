@@ -61,8 +61,8 @@ Everything is saved as you work. There is nothing to press.
 them, and under the project you are in its whole tree, folded but for the
 way down to the element in view, which is marked. A click on a project opens
 it, and a click on an element enters it (see *One tree, entered anywhere*).
-**Ctrl+Shift+L**, the × at its head or the button at the left of the bar
-over the map hides it and shows it again; its edge can be dragged to make it
+**Ctrl+Shift+L**, the × at its head or the button at the top of the rail,
+where the owl stood, hides it and shows it again; its edge can be dragged to make it
 wider. It stays as you leave it.
 
 ### Many projects
@@ -74,8 +74,7 @@ file…**; the **⋯** beside it has the deleted projects, with their number,
 and **A project of all the projects…**. Under the head, a field finds a
 project by its name, and the button beside it makes a folder.
 
-A folder is opened and closed with a click, and shows how many projects it
-holds. Make one inside another from that folder's menu; drag a project onto
+A folder is opened and closed with a click. Make one inside another from that folder's menu; drag a project onto
 a folder, or choose **Move to folder** in its menu, and **Out of folders**
 to take it out again. Deleting a folder keeps what is in it, which moves up
 to where the folder was. The folders are kept on this computer alone, not in
@@ -148,8 +147,8 @@ behind. The new project opens on its text.
 | Add one under it, the first | **Alt+Shift+Enter** |
 | Add an element under the one in view, where you click | Double-click the background, or **New element here** in its menu |
 | Write the text of an element | **Enter**, or double-click it |
-| Fold away what is under an element, or unfold it | **Tab**, or the sign beside it |
-| Unfold all that is folded under the element in view; where nothing is, fold everything at the first level | **Shift+Tab** |
+| Fold or unfold an element | **Tab**, or the sign beside it |
+| Unfold all sub-elements of the element in view; where nothing is folded, fold all sub-elements at the first level | **Shift+Tab** |
 | Rename an element | **F2**, or begin to type |
 | Read its text without opening it | Rest the pointer on it |
 | Move an element, with all that is under it | Drag it onto another element |
@@ -260,8 +259,8 @@ Everything the tools do can be done from the keys, and much of it by typing:
 | Make a heading at the cursor: a new element after the one the cursor is in | **Alt+Enter**; or right-click there: **Split here** |
 | The same, with the new element under the one the cursor is in, the first | **Alt+Shift+Enter** |
 | Make the element deeper or less deep | **Alt+Right**, **Alt+Left** |
-| Fold away what is under the element, or unfold it | **Tab** in its name, or the arrow beside it |
-| Unfold all that is folded under the element in view; where nothing is, fold everything at the first level | **Shift+Tab** in a name |
+| Fold or unfold the element | **Tab** in its name, or the arrow beside it |
+| Unfold all sub-elements of the element in view; where nothing is folded, fold all sub-elements at the first level | **Shift+Tab** in a name |
 | Go to the name of the element the cursor is in, the name selected | **F2** |
 | Move the element up or down among those beside it | **Alt+Up**, **Alt+Down**; the cursor stays where it is |
 | Join an element to the one above | Right-click: **Join to the element above** |
@@ -342,12 +341,12 @@ folded still when the element over it is folded and opened again, so the
 text stays as you arranged it. To open an element with everything under
 it at once, however deep:
 
-- **Open all**, in the line that says what is folded away; or
+- **Unfold all**, in the line that says what is folded away; or
 - press the arrow with **Shift** held down; or
-- **Open all that is folded under it**, in the menu of the element. From
-  the title of the document, that opens the whole text.
+- **Unfold all sub-elements**, in the menu of the element. From the title
+  of the document, that opens the whole text.
 
-**Fold away all under it**, in the same menu, does the opposite: the
+**Fold all sub-elements**, in the same menu, does the opposite: the
 element stays open, and all under it is folded. From the title, that leaves
 the parts of the document by their names, to be opened one at a time.
 
@@ -747,7 +746,7 @@ Where the text says *see figure 2*, the number should follow the figure: if
 another figure is put in before it, the text is to say *figure 3*. Make such
 a cross-reference with **Insert › Cross-reference…**, or **Ctrl+Alt+R**, and
 choose what it refers to: a figure, a table, a numbered equation, or a part
-of the document, which is an element whose name is printed as a heading.
+of the document, which is an element, by its name.
 They can be found by what is said of them.
 
 The cross-reference then says what the document calls the thing:
@@ -1185,13 +1184,16 @@ another reference manager can read the whole.
 
 ### Importing
 
-**Import a file…** reads `.bib` files, BibLaTeX or BibTeX. **Paste
-references…** takes entries copied from a web page or another program.
+The arrow beside **New reference** has the ways to bring references in.
+**Import Bib(La)TeX…** reads `.bib` files, BibLaTeX or BibTeX.
 
-**Import from Zotero…** reads the library that Zotero keeps on this
-computer: all of it, or one collection, with the files and the notes if you
-wish. Zotero is only read; it may be running meanwhile. Its collections
+**Import from Zotero…**, under it, reads the library that Zotero keeps on
+this computer: all of it, or one collection, with the files and the notes if
+you wish. Zotero is only read; it may be running meanwhile. Its collections
 become collections here.
+
+**Paste references…** takes entries copied from a web page or another
+program; for **Add PDF files…**, see *PDF files*.
 
 Before anything is added you are shown what was found and what is already
 there. Importing the same a second time adds nothing.
@@ -1231,8 +1233,7 @@ there is a name and a colour, as before.
 **Kind** in the element's menu has the kinds of the project, in their
 colours; then the kinds that come with Glaukopis which the template puts in
 hand, or which the project uses already, such as **Abstract** or
-**Appendix**; and **More…**, with all of them by group: **Front matter**,
-**Back matter** and **Cover**. **New kind…** makes a kind and gives it to
+**Appendix**; and **More…**, with all of them in one list. **New kind…** makes a kind and gives it to
 the element, and **Kinds of this project…** shows the project's own, with
 how many elements are of each, to change or delete them. A name you have
 used in another project is offered as you type, with the colour it had
@@ -1246,8 +1247,8 @@ the element is there.
 
 ## Timelines
 
-An element can say **when it is**: at a point, or over a span. Choose **Say
-when it is…** in its menu. Each end of the placement is either a time
+An element can say **when it is**: at a point, or over a span. Choose **Time
+stamp…** in its menu. Each end of the placement is either a time
 written in words — `431 BC`, `c. 480 BCE`, `May 1453`, `1453-05-29`, `5th
 century BC`, `the 1920s` — or relative: *after* another element, *before*
 one, *between* two, or *during* one. A year stands for the whole year, a
@@ -1266,8 +1267,8 @@ city's years. A lane in which nothing says when it is, its own element
 included, is not shown: what says nothing of its time stays out of the
 timeline. The button with the rows among the timeline's controls chooses the
 lanes: any branch can be one lane, or each of its children a lane of their
-own. An element that stands for another element brings that element's
-placed elements with it. Elements that are in no lane stand in a lane of
+own. A clone of another element brings that element's placed elements with
+it. Elements that are in no lane stand in a lane of
 their own at the foot. Where you have chosen the lanes, a new child of the
 element in view is not a lane until you choose it, and stands at the foot
 too: the lanes button is marked while lanes are chosen, and pressing the
@@ -1406,12 +1407,15 @@ entered. Where the path does not fit, the names in the middle make way for
 view always show. Where the project could not be saved, its name in the
 path has a red sign, and the pointer on it says why. What is done with an
 element is in its right-click menu, in the diagram and in the text:
-**Rename**, **Document properties…**, **A document into it…**, **New
-element under it**, **Delete**, and the rest.
+**Rename**, **Document properties…**, **A document into it…**, **Add
+child element**, **Delete**, and the rest. **Delete with sub-elements**
+takes all under the element with it; **Delete and promote sub-elements**
+keeps them, one level up.
 
-At the far left of the top row stands the button of the list of projects;
-at its right end, **Split view**. Under the path, each side has its bar
-(see *The text*).
+The top row holds, over each side, its path and at its right end the
+**×** that closes the side; at the right end of the row, on a ground of its
+own, **Split view**. The button of the list of projects is at the top of
+the rail. Under the path, each side has its bar (see *The text*).
 
 This is what makes it safe to write. A tree that is valuable as it is, the
 first sketch of the argument, or the plan for the whole book, need not be
@@ -1450,12 +1454,22 @@ consumed by the writing:
   same names. Comments stay behind, and a copy in another project does not
   remember its original. A move to another project can be undone here,
   which brings the elements back, but leaves the copy there.
-- An element can have **another element take its place in the document**:
-  **Stand for another element**, in its menu, lists the trees under the
-  project, and **Choose an element…** any element of it; what would make the
-  document hold itself cannot be chosen. The tree of the book then has one element for each chapter, each
-  of which stands for the tree of that chapter, written elsewhere in the
-  project. The typesetting of the book shows the book.
+- An element can be a **clone** of another element: **Clone other
+  element…**, in its menu, shows the tree of the project, and the element
+  chosen is printed in the clone's place, its text and all under it, under
+  the clone's own name; what would make the document hold itself cannot be
+  chosen. A clone has a name of its own and nothing else: no text and no
+  elements under it. So **Clone other element…** is offered only on an
+  element that has neither, and grey on one that has; on a clone, nothing
+  can be added, written or pasted under it, but it can be renamed. The tree
+  of the book then has one clone for each chapter, written elsewhere in the
+  project, and the chapter can have another title in the book than where it
+  is written. The original is printed at its own place as well, where that
+  is within the document. On a clone the menu says **Clone of “…”**, with
+  **Choose another element…**, **Go to the original** and **No longer a
+  clone**; a clone of a clone is a clone of the original. In the text, a
+  clone is its name, with a line that says what it is a clone of: its text
+  is read in the original. The typesetting of the book shows the book.
 - **Split view**, at the right end of the top of the window
   (**Ctrl+Shift+S**), opens a menu of what the other side shows. **This
   element, as diagram and text** shows the element in view both ways,
@@ -1470,7 +1484,7 @@ consumed by the writing:
   the dialogs act in the side you are in. The round button with arrows on
   the line between the two paths, or **Switch sides** in the menu, puts the
   two the other way round. **One at a time** closes the side you are not
-  in; the **×** in the bar of a side, or **Ctrl+W**, closes that side. With
+  in; the **×** at the right end of a side's path, or **Ctrl+W**, closes that side. With
   one side, they close the project, and the start screen comes.
 - **Another project beside**: **Another project…**, in the same menu, shows
   the list of projects, with its folders and its field; choose a project to
@@ -1962,18 +1976,15 @@ a large one. It is read again only when it has changed.
 ## What goes into the document
 
 Everything under the element in view, in its order: the element's name is
-the title, its text comes first, and each element under it is a part, with
-the parts under that, as deep as they go. Any element prints so: the project
-itself prints the whole project, and a chapter that is entered prints the
-chapter. Two things change that, both in the menu of an element:
-
-- **Print the name as a heading.** When this is off, the name is for you: a
-  label for a paragraph, which is printed without it.
-- **Leave out of the document.** The element stays in the tree, with what is
-  under it, and is not printed, in no document that holds it. A thought not
-  yet decided on is kept so, out of every document; or the book is one tree
-  under the project, with the thoughts as trees beside it, and that tree is
-  what is printed.
+the title, its text comes first, and each element under it is a part, its
+name the heading, with the parts under that, as deep as they go. Any element
+prints so: the project itself prints the whole project, and a chapter that
+is entered prints the chapter. One thing changes that, in the menu of an
+element: **Leave out of the document**. The element stays in the tree, with
+what is under it, and is not printed, in no document that holds it. A
+thought not yet decided on is kept so, out of every document; or the book is
+one tree under the project, with the thoughts as trees beside it, and that
+tree is what is printed.
 
 What a document is, how its pages look and how it cites, its language,
 authors, date, keywords and identifiers are set on an element and hold for
@@ -2063,8 +2074,7 @@ says where its requirements were found, and when, and how sure that is.
 
 What a document is holds for everything under the element it is chosen on:
 a chapter printed alone is what the book is. Any element may be something
-else: a thin element that stands for a chapter (see *One tree, entered
-anywhere*) sends the chapter as an article, with the journal's template,
+else: a clone of a chapter (see *One tree, entered anywhere*) sends the chapter as an article, with the journal's template,
 while the book stays a book. Where it is taken from an element over this
 one, the chooser says **From** which; where the element chose itself, a
 line takes the one over it again. What new documents are, how their pages
@@ -2616,8 +2626,8 @@ What is one change:
   paragraphs written one after another are one change.
 - **A paragraph moved**: deleted in one place and written, with nearly the
   same words, in another.
-- **An element** added, deleted, moved, left out of the document or put back,
-  or printed as a heading or not. An element added with its text is one
+- **An element** added, deleted, moved, left out of the document or put back.
+  An element added with its text is one
   change.
 - **A figure, an equation or a table** put in or taken out, and a citation, a
   formula or a note put into a sentence where nothing else of it changed. The
@@ -2916,7 +2926,7 @@ what is to be done by its name, and does it.
 | **Ctrl+Z**, **Ctrl+Shift+Z** | Undo, redo; in the list of projects, what was done to folders and projects |
 | **Alt+Enter** | In the diagram: a new element after the one selected; in the text, a heading at the cursor |
 | **Alt+Shift+Enter** | In the diagram: a new element under the one selected, the first; in the text, a heading at the cursor, under the element it is in |
-| **Tab** | In the diagram, and in a name in the text: fold away what is under the element, or unfold it |
+| **Tab** | In the diagram, and in a name in the text: fold or unfold the element |
 | **Shift+Tab** | In the diagram, and in a name in the text: unfold all that is folded under the element in view, or fold everything at the first level |
 | **Enter** | In the diagram: write the text of the element selected |
 | **Alt+Shift+Down** | In the diagram and the text: enter the element, to see it alone with what is under it |

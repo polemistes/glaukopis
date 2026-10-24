@@ -2,9 +2,6 @@
 # (ADR 0038): hva hver heter i typemenyen og på merkelappen til et element.
 # Kjernen har de samme typene, med utseendet deres.
 
-parts-group-front = Forstoff
-parts-group-back = Etterstoff
-parts-group-cover = Omslag
 parts-more = Flere …
 
 # Grunntypene.
@@ -40,11 +37,7 @@ parts-doubled = Skrives ikke ut: et annet element av denne typen kommer først b
 
 ## Where a kind puts an element in the document, where not where it stands.
 
-parts-placed-front = Skrives ut først, foran resten på sitt nivå
-parts-placed-back = Skrives ut sist, etter resten på sitt nivå
 parts-placed-cover = Skrives bare ut på omslaget
 parts-placed-none = Skrives ikke ut i dokumentet
-parts-placed-front-short = skrives ut først
-parts-placed-back-short = skrives ut sist
 parts-placed-cover-short = bare på omslaget
 parts-placed-none-short = skrives ikke ut

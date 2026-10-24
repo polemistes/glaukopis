@@ -66,27 +66,14 @@ project-moved-to = Movido para «{ $name }»
 
 ## What is done to elements, in the diagram and in the text
 
-project-add-under = Acrescentar um elemento sob ele
-project-add = Acrescentar um elemento
-project-add-after = Acrescentar um elemento depois dele
 project-write-text = Escrever o seu texto
 project-associate = Associar a…
-project-associate-hint = Depois clique no outro elemento
-project-heading = Imprimir o nome como título
-project-heading-hint = Desligado: o nome é um rótulo para si; só o texto se imprime
 project-leave-out = Deixar fora do documento
-project-leave-out-hint = Com tudo o que está sob ele
-# An element that stands for another map: in the document, that map is in its place.
-project-stands-for = Representa «{ $name }»
-project-stand-for = Representar outro mapa
-project-stand-for-heading = No documento, este mapa toma o seu lugar
-project-stand-for-none = Nenhum
 project-copy = Copiar
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Colar sob ele
 project-tidy-branch = Arrumar este ramo
 project-place-automatically = Colocar automaticamente
-project-delete-keeping = Eliminar, guardando o que está sob ele
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] «{ $name }» foi eliminado
@@ -120,8 +107,6 @@ project-words = { $count ->
    *[other] { $count } palavras
 }
 project-read-on = Duplo clique para continuar a ler
-project-stands-for-map = Representa o mapa «{ $name }»
-project-name-not-printed = O nome não se imprime
 project-left-out-of-document = Fora do documento
 
 ## The panels at the side: the references and the pictures

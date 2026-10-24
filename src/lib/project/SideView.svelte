@@ -275,7 +275,6 @@
       timed={timed(at)}
       onview={(mode) => sides.setMode(key, mode)}
       onoutline={() => sides.toggleOutline(key)}
-      {onclose}
     />
   </div>
   <!-- /the bar -->

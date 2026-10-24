@@ -32,8 +32,7 @@ export function outlineItems(project: Project, at: string, folding: Folding): Ou
     const under = tree.children.get(id) ?? [];
     const hides = !away && folding.hides(tree, id);
     out.push({ id, level, away, excluded: left, children: under.length });
-    // An element whose name is not printed does not deepen what is under it.
-    const next = top ? 1 : node.heading ? level + 1 : level;
+    const next = top ? 1 : level + 1;
     for (const c of under) walk(c, Math.max(1, next), left, false, away || hides);
   };
   walk(tree.root, 0, false, true, false);

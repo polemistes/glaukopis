@@ -2,9 +2,6 @@
 # application (ADR 0038): what each is called in the kind menu and on the
 # label of an element. The core has the same kinds, with their looks.
 
-parts-group-front = Parti iniziali
-parts-group-back = Parti finali
-parts-group-cover = Copertina
 parts-more = Altro…
 
 # The bases.
@@ -40,11 +37,7 @@ parts-doubled = Non stampato: un altro elemento di questo tipo viene prima, tra 
 
 ## Where a kind puts an element in the document, where not where it stands.
 
-parts-placed-front = Stampato all'inizio, prima del resto del suo livello
-parts-placed-back = Stampato alla fine, dopo il resto del suo livello
 parts-placed-cover = Stampato solo sulla copertina
 parts-placed-none = Non stampato nel documento
-parts-placed-front-short = stampato all'inizio
-parts-placed-back-short = stampato alla fine
 parts-placed-cover-short = solo sulla copertina
 parts-placed-none-short = non stampato

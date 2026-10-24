@@ -2,23 +2,12 @@
 
 text-title = Titel
 text-name = Naam van het element
-text-not-printed = niet gedrukt
 text-grip = Dit element verplaatsen of wijzigen
-text-include-open = Openen
 text-split = Hier splitsen
 text-join = Aan het element erboven vastmaken
 
 ## Folding away what is under an element, and its text
 
-text-open = Openen
-text-fold = Invouwen
-text-open-shift = Openen · met Shift ook alles wat eronder is ingevouwen
-text-fold-hint = De tekst en wat eronder staat invouwen
-text-fold-shift = De tekst en wat eronder staat invouwen · met Shift alles openen wat eronder is ingevouwen
-text-open-all = Alles openen
-text-open-all-under = Alles openen wat eronder is ingevouwen
-text-fold-all-under = Alles eronder invouwen
-text-fold-all-under-hint = Van wat er direct onder staat, worden de namen getoond, en niets diepers
 # What is folded away, in its place: whether the element's own text is (text is
 # "yes" or "no"), how many elements under it, and how many words in all, which
 # may be none.
@@ -43,8 +32,6 @@ text-folded = { $text ->
 text-associations = Verbindingen
 text-outline = Overzicht
 text-outline-between = Tussen het overzicht en de tekst
-text-outline-fold = Invouwen wat eronder staat
-text-outline-open = Openen wat eronder staat
 text-go-to = Naar ‘{ $name }’ gaan
 text-add-label = Een label toevoegen…
 text-change-label = Het label wijzigen…

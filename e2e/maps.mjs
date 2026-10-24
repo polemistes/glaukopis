@@ -651,7 +651,7 @@ try {
   await app.screenshot('maps-12-diagram-again');
 
   // --- A second tree under the project, entered and left; then two side by side ---
-  // "Add an element under it" in the menu of the element in view adds a child
+  // "Add child element" in the menu of the element in view adds a child
   // of it, the project, and names it there; the view stays where it was.
   await app.newElementUnder();
   await app.keys('Article');

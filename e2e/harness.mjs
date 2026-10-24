@@ -788,7 +788,7 @@ export class App {
 
   /** Makes a new element under the one in view, from its menu, and leaves its name being written: the keys write it. */
   async newElementUnder() {
-    await this.thisElement('Add an element under it');
+    await this.thisElement('Add child element');
     await sleep(300);
   }
 

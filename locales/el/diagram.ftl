@@ -4,11 +4,8 @@ diagram-map = Χάρτης
 diagram-idea = Όνομα
 diagram-show-all = Εμφάνιση όλου του χάρτη
 diagram-tidy = Τακτοποίηση όλου του χάρτη
-diagram-tidy-hint = Κάθε στοιχείο γυρίζει στην αυτόματη θέση του
 # The keys are shown as keys, where the variables stand.
 diagram-hint-linking = Κάντε κλικ στο στοιχείο που θέλετε να συσχετίσετε, ή πηγαίνετε σε αυτό με τα βέλη και πατήστε { $enter } · { $esc } για να το αφήσετε
-diagram-show-under = Εμφάνιση όσων είναι από κάτω του
-diagram-hide-under = Απόκρυψη όσων είναι από κάτω του
 diagram-link-handle = Σύρετε σε άλλο στοιχείο για να τα συσχετίσετε
 
 ## The view

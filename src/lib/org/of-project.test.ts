@@ -103,7 +103,6 @@ function made(): Project {
   pr.setKind([nurse], kind);
   pr.setStatus([scene], 'draft');
   pr.setPosition(nurse, { x: 40, y: -20 });
-  pr.setHeading(notes, false);
   pr.setExcluded(notes, true);
   pr.setDocument(PROJECT, { language: 'en-GB', subtitle: 'A tragedy' });
   pr.setWhen(scene, { start: { at: '431 BC' } });

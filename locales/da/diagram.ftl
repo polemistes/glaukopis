@@ -3,16 +3,11 @@
 diagram-map = Kort
 diagram-idea = Navn
 diagram-new-here = Nyt element her
-diagram-new-here-hint = En tanke, der endnu ikke har nogen plads, under elementet i midten
 diagram-open-as-map = Åbn som kort
-diagram-open-as-map-hint = Elementet i midten, med det, der er under det
 diagram-show-all = Vis hele kortet
 diagram-tidy = Ryd op i hele kortet
-diagram-tidy-hint = Hvert element går tilbage til sin automatiske plads
 # The keys are shown as keys, where the variables stand.
 diagram-hint-linking = Klik på det element, der skal knyttes til, eller gå til det med pilene og tryk { $enter } · { $esc } for at lade være
-diagram-show-under = Vis det, der er under det
-diagram-hide-under = Skjul det, der er under det
 diagram-link-handle = Træk til et andet element for at knytte dem sammen
 
 ## The view
