@@ -27,24 +27,12 @@ editor-speaker = Chi parla
 editor-speaker-hint = Chi parla: su una riga a sé, o come parole dentro una riga
 editor-direction = Didascalia scenica
 editor-direction-hint = Ciò che si fa sulla scena: su una riga a sé, o come parole dentro una riga
-editor-line-numbers = Numeri
-editor-line-numbers-hint = Numera queste righe: come si contano, da quale numero, ogni quante e da quale lato; e che cosa si dice della riga in cui sta il cursore. Le righe numerate insieme con le stesse impostazioni si contano di seguito, come una sola numerazione, di qualunque tipo siano.
 editor-line-numbers-from = Numera da
-editor-line-numbers-from-hint = La prima riga contata prende questo numero, e il conto prosegue da lì.
 editor-line-numbers-every = Mostra un numero ogni
 editor-line-numbers-number = Ci vuole un numero intero.
-editor-line-this = Questa riga
 editor-line-number = Il suo numero o la sua etichetta
 editor-line-number-placeholder = Contata come le altre
-editor-line-number-hint = 1234, 567a: sempre mostrato; le righe dopo si contano a partire da esso.
-editor-line-uncounted = Non contata
-editor-line-uncounted-hint = Come la seconda metà di un verso diviso tra personaggi: il conto la salta.
-editor-line-hidden = Contata, senza mostrarne il numero
-editor-line-hidden-hint = Il conto vi passa come per ogni riga, ma nel documento nessun numero le sta accanto, nemmeno dove ne cadrebbe uno. Dove scrivi, sta tra parentesi.
 editor-line-number-held = Contata, e non mostrata nel documento. Premi per darle un numero suo.
-editor-line-margin = Parole a margine
-editor-line-margin-placeholder = Un metro, il numero di un'altra edizione
-editor-line-margin-hint = Mostrate a margine accanto alla riga, dal lato opposto ai numeri; non contate.
 # How the lines of a stretch are numbered: see ADR 0041.
 editor-numbering = Numerazione
 editor-numbering-none = Non numerate
@@ -55,23 +43,17 @@ editor-line-numbers-side = Lato dei numeri
 editor-side-layout = Come dice l'impaginazione ({ $side })
 editor-side-left = Sinistra
 editor-side-right = Destra
-# The first counted line of the stretch is the one the cursor is in: its number is where the count begins.
-editor-line-number-first-hint = Il conto comincia qui.
 # Over a number in the margin of the text, which opens a field for it when pressed.
 editor-line-number-press = Il numero di questa riga: premi per cambiarlo
 
 ## Numbers belong to what they number (ADR 0041): the Numbers menu offers
 ## the three, each saying what it numbers.
-editor-numbers-lines = Numera queste righe…
-editor-numbers-page = Numera le righe della pagina
-editor-numbers-page-hint = Ogni riga della pagina stampata, numerata a margine, in questo documento e in quelli sotto
 
 ## The bracket at the left of paragraphs of one kind standing together (a
 ## run), named by the kind; its menu says what is said of them.
 # After the name of the kind, where the lines of the run are numbered: "Verse · numbered".
 editor-bracket-numbered = con numeri
 editor-run-label-hint = { $kind } · premi per ciò che si dice di questi paragrafi
-editor-run-numbers = Numeri…
 editor-run-select = Seleziona questi paragrafi
 editor-run-to-text = Fanne testo
 editor-run-begin = Comincia qui una nuova serie

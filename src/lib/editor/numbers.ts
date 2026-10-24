@@ -1,11 +1,13 @@
 /**
- * Numbered lines in the editor (ADR 0041). A numbered stretch is a run of
- * paragraphs with the same numbering settings, whatever their kinds; the
- * count runs through all of it, over its lines, as `project/model/lines.ts`
- * counts them. What is said of one line by hand stands in its line mark.
- * Here: the stretch the cursor is in, what a numbering is set on, the line
- * the cursor is in and what is said of it, and the numbers drawn in the
- * margin at the start of every line, which are edited in place.
+ * Numbered lines in the editor (ADR 0041, ADR 0067). A numbered stretch is
+ * a run of paragraphs with the same numbering settings, whatever their
+ * kinds; the count runs through all of it, over its lines, as
+ * `project/model/lines.ts` counts them. What is said of one line by hand
+ * stands in its line mark. Here: the stretch the cursor is in, the
+ * paragraphs a numbering is set on from the cursor, what the two windows
+ * ask (the numbering from here, and the line the cursor is in), and the
+ * numbers drawn in the margin at the start of every line, which are edited
+ * in place, with the annotations beside them.
  */
 
 import type { Node } from 'prosemirror-model';
@@ -24,7 +26,13 @@ import {
   type Numbering,
   type Side,
 } from '$lib/project/model/families';
-import { linesOf, stretches, stretchNumbers, type Shown } from '$lib/project/model/lines';
+import {
+  countedIn,
+  linesOf,
+  stretches,
+  stretchNumbers,
+  type Shown,
+} from '$lib/project/model/lines';
 import type { Block, ParagraphBlock } from '$lib/project/model/text';
 import { bracketsKey } from './brackets';
 import { withinLines } from './changes';
@@ -48,7 +56,12 @@ export interface StretchNumbering {
   every: number | null;
   /** The side the numbers stand on; nothing for the layout's. */
   side: Side | null;
+  /** The one kind whose lines are counted, by its id; nothing for every kind that is counted. */
+  only: string | null;
 }
+
+/** The settings a stretch is told apart by: paragraphs alike in all of them are numbered together. */
+const SETTINGS = ['numbering', 'every', 'side', 'only'] as const;
 
 /** A numbered stretch: its paragraphs, with where each begins, and its settings. */
 export interface StretchAt extends StretchNumbering {
@@ -81,6 +94,7 @@ export function stretchesIn(parent: Node, start: number): StretchAt[] {
     numbering: s.numbering,
     every: s.every,
     side: s.side,
+    only: s.only,
     paragraphs: placed.slice(s.from, s.to).filter((p): p is Placed => !!p),
   }));
 }
@@ -111,13 +125,16 @@ export function stretchAt(state: EditorState): StretchAt | null {
 }
 
 /**
- * The paragraphs a numbering would be set on from where the cursor is: the
- * paragraphs the selection touches, where it runs over more than one; and
- * otherwise the run the cursor is in, the paragraphs of its kind standing
- * together with the speakers and directions among them, or the paragraphs
- * of text standing together.
+ * The paragraphs a numbering is set on from where the cursor is, as *Line
+ * numbering from here* has it: the paragraphs the selection touches, where
+ * it runs over more than one, within one text; else, where the cursor's
+ * paragraph is in a numbered stretch, that paragraph and those of the
+ * stretch after it; else that paragraph and the rest of its run, the
+ * paragraphs of its kind standing together with the speakers and
+ * directions among them, or the paragraphs of text standing together. The
+ * paragraphs before the cursor keep their numbering.
  */
-export function stretchToNumber(state: EditorState, own: readonly BasedKind[] = []): Placed[] {
+export function paragraphsFromHere(state: EditorState, own: readonly BasedKind[] = []): Placed[] {
   const at = holderAt(state);
   if (!at) return [];
   const touched = paragraphsIn(state);
@@ -127,19 +144,25 @@ export function stretchToNumber(state: EditorState, own: readonly BasedKind[] = 
     const $first = state.doc.resolve(first.pos);
     return touched.filter((p) => state.doc.resolve(p.pos).parent === $first.parent);
   }
-  const run = runsIn(at.parent, at.start, own).find((r) =>
-    r.paragraphs.some((p) => p.pos === at.paragraph.pos),
+  const here = at.paragraph.pos;
+  const stretch = stretchesIn(at.parent, at.start).find((s) =>
+    s.paragraphs.some((p) => p.pos === here),
   );
-  return run ? run.paragraphs : [at.paragraph];
+  if (stretch) return stretch.paragraphs.filter((p) => p.pos >= here);
+  const run = runsIn(at.parent, at.start, own).find((r) =>
+    r.paragraphs.some((p) => p.pos === here),
+  );
+  return run ? run.paragraphs.filter((p) => p.pos >= here) : [at.paragraph];
 }
 
 /** The settings as they are stored: nothing where they say nothing. */
 function settingsOf(how: StretchNumbering) {
-  if (how.numbering === 'none') return { numbering: null, every: null, side: null };
+  if (how.numbering === 'none') return { numbering: null, every: null, side: null, only: null };
   return {
     numbering: how.numbering,
     every: how.every && how.every >= 1 ? Math.round(how.every) : null,
     side: how.side === 'left' || how.side === 'right' ? how.side : null,
+    only: how.only?.trim() || null,
   };
 }
 
@@ -156,9 +179,7 @@ export function numberStretch(
       const node = pos >= 0 && pos < state.doc.content.size ? state.doc.nodeAt(pos) : null;
       if (node?.type.name !== 'paragraph') continue;
       any = true;
-      const same = (['numbering', 'every', 'side'] as const).every(
-        (k) => (node.attrs[k] ?? null) === settings[k],
-      );
+      const same = SETTINGS.every((k) => (node.attrs[k] ?? null) === settings[k]);
       if (!same) tr.setNodeMarkup(pos, undefined, { ...node.attrs, ...settings });
     }
     if (!any) return false;
@@ -171,8 +192,11 @@ export function numberStretch(
 export interface LineMarks {
   number: string | null;
   counted: boolean;
-  /** Counted, and its number not shown. */
+  /** Counted, and its number never shown. */
   hidden: boolean;
+  /** Counted, and its number always shown. */
+  shown: boolean;
+  /** The annotation, the words in the margin beside it. */
   margin: string | null;
   /** The line's own indent; where it is not given, it stays as it is. */
   indent?: number;
@@ -181,10 +205,12 @@ export interface LineMarks {
 /** The attributes of a line mark that says what is given, the indent as it was where none is given. */
 function markAttrs(marks: LineMarks, was: Node | null): Record<string, unknown> {
   const indent = marks.indent ?? (Number(was?.attrs.indent) || 0);
+  const hidden = marks.counted && marks.hidden;
   return {
     number: marks.number?.trim() || null,
     counted: marks.counted ? null : false,
-    hidden: marks.counted && marks.hidden ? true : null,
+    hidden: hidden ? true : null,
+    shown: marks.counted && marks.shown && !hidden ? true : null,
     margin: marks.margin?.trim() || null,
     indent: indent > 0 ? Math.min(8, Math.round(indent)) : null,
   };
@@ -203,26 +229,32 @@ function setMark(tr: Transaction, line: LineAt, attrs: Record<string, unknown>) 
   } else if (marksAnything(attrs)) tr.insert(at, type.create(attrs));
 }
 
-/** What a line's mark says, as the dialog asks about it. */
+/** What a line's mark says, as the line's window asks about it. */
 function marksOf(mark: Node | null): LineMarks {
   return {
     number: (mark?.attrs.number as string | null) ?? null,
     counted: mark?.attrs.counted !== false,
     hidden: mark?.attrs.hidden === true,
+    shown: mark?.attrs.shown === true && mark?.attrs.hidden !== true,
     margin: (mark?.attrs.margin as string | null) ?? null,
     indent: Number(mark?.attrs.indent) || 0,
   };
 }
 
-/** The first line the count takes in among the paragraphs given, with its paragraph; nothing where none is counted. */
+/**
+ * The first line the count takes in among the paragraphs given, with its
+ * paragraph; nothing where none is counted. `only` is the one kind
+ * counted, where one is.
+ */
 export function firstCounted(
   doc: Node,
   paragraphs: readonly { pos: number }[],
   own: readonly BasedKind[] = [],
+  only: string | null = null,
 ): { paragraph: Placed; line: LineAt } | null {
   for (const { pos } of paragraphs) {
     const node = doc.nodeAt(pos);
-    if (node?.type.name !== 'paragraph' || !countedKind(kindOfNode(node), own)) continue;
+    if (node?.type.name !== 'paragraph' || !countedIn(kindOfNode(node), own, only)) continue;
     for (const line of linesOfNode(node, pos))
       if (!line.blank && line.mark?.attrs.counted !== false)
         return { paragraph: { node, pos }, line };
@@ -231,8 +263,34 @@ export function firstCounted(
 }
 
 /**
- * Gives the first counted line among the paragraphs given a number, from
- * which the count goes on; with nothing, takes away the number it had.
+ * The number or label a line of the paragraph at `pos` has now, given or
+ * counted, whether it is shown or not: what the count of its stretch gives
+ * it. Nothing where the paragraph is in no stretch, or the count has not
+ * begun.
+ */
+function numberNow(
+  doc: Node,
+  pos: number,
+  index: number,
+  own: readonly BasedKind[],
+): string | null {
+  const $at = doc.resolve(pos);
+  const stretch = stretchesIn($at.parent, $at.start()).find((s) =>
+    s.paragraphs.some((p) => p.pos === pos),
+  );
+  if (!stretch) return null;
+  const i = stretch.paragraphs.findIndex((p) => p.pos === pos);
+  // Every number, not only those shown: every one, and none held back.
+  const blocks = stretch.paragraphs.map((p) => unheld(blockOf(p.node)));
+  return stretchNumbers(blocks, stretch.numbering, 1, own, stretch.only)[i]?.[index]?.label ?? null;
+}
+
+/**
+ * Gives the first counted line among the paragraphs given the number
+ * `from`, from which the count goes on, where it would not have it
+ * already: a line that has it by the count is left as it is, and one given
+ * a number by hand is given this one. With nothing, takes away the number
+ * it had.
  */
 export function numberFrom(
   paragraphs: readonly { pos: number }[],
@@ -240,14 +298,24 @@ export function numberFrom(
   own: readonly BasedKind[] = [],
 ): Command {
   return (state, dispatch) => {
-    const first = firstCounted(state.doc, paragraphs, own);
+    const head = paragraphs.length ? state.doc.nodeAt(paragraphs[0].pos) : null;
+    const only = (head?.attrs.only as string | null) ?? null;
+    const first = firstCounted(state.doc, paragraphs, own, only);
     if (!first) return false;
+    const wanted = from?.trim() || null;
+    const given = (first.line.mark?.attrs.number as string | null) ?? null;
+    if (
+      !given &&
+      wanted &&
+      numberNow(state.doc, first.paragraph.pos, first.line.index, own) === wanted
+    )
+      return true;
     if (dispatch) {
       const tr = state.tr;
       setMark(
         tr,
         first.line,
-        markAttrs({ ...marksOf(first.line.mark), number: from }, first.line.mark),
+        markAttrs({ ...marksOf(first.line.mark), number: wanted }, first.line.mark),
       );
       if (tr.docChanged) dispatch(tr);
     }
@@ -304,64 +372,111 @@ export function giveNumber(linePos: number, value: string | null): Command {
   };
 }
 
-/** What the dialog of the numbers asks about: see `LineNumbersDialog.svelte`. */
-export interface NumbersAsked {
-  /** How the stretch is numbered; for paragraphs not numbered yet, how they would be. */
+/** What *Line numbering from here* asks about: see `LineNumberingDialog.svelte`. */
+export interface NumberingAsked {
+  /** How the paragraphs from here are numbered; for paragraphs not numbered yet, how they would be. */
   stretch: StretchNumbering;
   /** Whether the cursor stands in a numbered stretch. */
   numbered: boolean;
-  /** The number the first counted line has, and whether it is the line the cursor is in; nothing where none is counted. */
-  from: { number: string | null; here: boolean } | null;
-  /** The line the cursor is in: what is said of it, its words, the kind of its paragraph, and whether that kind is counted. */
-  line: LineMarks & { kind: string; words: string; countable: boolean };
+  /** The number the first counted line from here has now, given or counted; 1 where the count has not begun. */
+  from: string;
+  /** The kinds whose lines may be counted among the paragraphs from here, by their ids, in their order. */
+  kinds: string[];
 }
 
 /**
- * How the stretch the cursor is in is numbered, or how the paragraphs it
- * would number are to be, and what is said of the line the cursor is in,
- * as the dialog asks about them. Paragraphs not yet numbered are counted
- * from 1; paragraphs of text one by one, others as the layout says.
+ * How the paragraphs from the cursor on are numbered, or would be, as
+ * *Line numbering from here* asks about them: the settings of the stretch
+ * the cursor is in, or, where it is in none, counted from 1, paragraphs of
+ * text one by one and others as the layout says; the number the first
+ * counted line from here has; and the kinds that are counted among them.
  */
-export function numbersAsked(
+export function numberingAsked(
   state: EditorState,
   own: readonly BasedKind[] = [],
-): NumbersAsked | null {
+): NumberingAsked | null {
+  const at = holderAt(state);
+  if (!at) return null;
+  const stretch = stretchAt(state);
+  const paragraphs = paragraphsFromHere(state, own);
+  const only = stretch?.only ?? null;
+  const first = firstCounted(state.doc, paragraphs, own, only);
+  const given = (first?.line.mark?.attrs.number as string | null) ?? null;
+  const counted = first ? numberNow(state.doc, first.paragraph.pos, first.line.index, own) : null;
+  const kinds: string[] = [];
+  for (const p of paragraphs) {
+    const kind = kindOfNode(p.node);
+    if (countedKind(kind, own) && !kinds.includes(kind)) kinds.push(kind);
+  }
+  if (only && !kinds.includes(only)) kinds.push(only);
+  const kind = kindOfNode(at.paragraph.node);
+  return {
+    stretch: stretch
+      ? { numbering: stretch.numbering, every: stretch.every, side: stretch.side, only }
+      : { numbering: 'counted', every: kind === 'text' ? 1 : null, side: null, only: null },
+    numbered: !!stretch,
+    from: given ?? counted ?? '1',
+    kinds,
+  };
+}
+
+/** What *Numbering of this line* asks about: see `LineDialog.svelte`. */
+export interface LineAsked {
+  /** What is said of the line by hand. */
+  marks: LineMarks;
+  /** Its words, to tell which line it is. */
+  words: string;
+  /** The kind of its paragraph. */
+  kind: string;
+  /** Whether its lines are counted where they stand: a speaker's never are, nor those of a kind the stretch does not count. */
+  countable: boolean;
+  /** The side its annotation goes to, as the layout and the side of the numbers make it. */
+  annotations: Side;
+}
+
+/** The other side. */
+export const otherSide = (side: Side): Side => (side === 'left' ? 'right' : 'left');
+
+/** The side the annotations of lines go to: the layout's choice, else across from the numbers. */
+export function annotationSide(numbers: Side, layout: NumbersLayout): Side {
+  return layout.annotations ?? otherSide(numbers);
+}
+
+/** What is said of the line the cursor is in, as *Numbering of this line* asks about it. */
+export function lineAsked(
+  state: EditorState,
+  own: readonly BasedKind[] = [],
+  layout: NumbersLayout = LAYOUT_NUMBERS,
+): LineAsked | null {
   const found = cursorLine(state);
   if (!found) return null;
   const stretch = stretchAt(state);
-  const paragraphs = stretch?.paragraphs ?? stretchToNumber(state, own);
-  const first = firstCounted(state.doc, paragraphs, own);
-  const here = !!first && first.line.start === found.line.start;
   const kind = kindOfNode(found.paragraph);
-  const marks = marksOf(found.line.mark);
-  const given = (first?.line.mark?.attrs.number as string | null) ?? null;
   return {
-    stretch: stretch
-      ? { numbering: stretch.numbering, every: stretch.every, side: stretch.side }
-      : { numbering: 'counted', every: kind === 'text' ? 1 : null, side: null },
-    numbered: !!stretch,
-    from: first ? { number: stretch ? given : (given ?? '1'), here } : null,
-    line: {
-      ...marks,
-      number: !stretch && here && !marks.number ? '1' : marks.number,
-      kind,
-      words: state.doc.textBetween(found.line.start, found.line.end, ' ', (leaf) =>
-        leaf.type.name === 'linemark' ? '' : ' ',
-      ),
-      countable: countedKind(kind, own),
-    },
+    marks: marksOf(found.line.mark),
+    words: state.doc.textBetween(found.line.start, found.line.end, ' ', (leaf) =>
+      leaf.type.name === 'linemark' ? '' : ' ',
+    ),
+    kind,
+    countable: countedIn(kind, own, stretch?.only ?? null),
+    annotations: annotationSide(stretch?.side ?? layout.side, layout),
   };
 }
 
 // ---- the numbers in the margin ----
 
-/** How the layout shows the numbers of a stretch that does not say: every how many, and on which side. */
+/**
+ * How the layout shows the numbers of a stretch that does not say: every
+ * how many, and on which side; and on which side the annotations stand,
+ * nothing for across from the numbers.
+ */
 export interface NumbersLayout {
   every: number;
   side: Side;
+  annotations: Side | null;
 }
 
-export const LAYOUT_NUMBERS: NumbersLayout = { every: 5, side: 'left' };
+export const LAYOUT_NUMBERS: NumbersLayout = { every: 5, side: 'left', annotations: null };
 
 const key = new PluginKey<DecorationSet>('stretch-numbers');
 
@@ -421,7 +536,8 @@ function editNumber(view: EditorView, getPos: () => number | undefined, el: HTML
  * The number in the margin of a line, as a widget at its start: the
  * label, or an empty place where none is shown, which is seen when the
  * pointer rests on the paragraph; pressing either opens the field for the
- * line's number. A number held back is shown in parentheses.
+ * line's number. A number held back, and one given by hand that the page
+ * does not show, are shown in parentheses.
  */
 function numberWidget(
   shown: Shown | null,
@@ -438,7 +554,7 @@ function numberWidget(
       if (shown.set) el.dataset.given = '';
       if (held) el.dataset.held = '';
     }
-    el.title = held ? t('editor-line-number-held') : t('editor-line-number-press');
+    el.title = held && !shown?.set ? t('editor-line-number-held') : t('editor-line-number-press');
     el.addEventListener('mousedown', (event) => {
       // The text keeps its cursor: the number is not a place in it.
       if (!(event.target instanceof HTMLInputElement)) event.preventDefault();
@@ -479,10 +595,13 @@ function unheld(block: ParagraphBlock): ParagraphBlock {
  * The numbers of every numbered stretch, as decorations: a widget at the
  * start of each line that draws its number, or the place for one, by which
  * it is edited; on each paragraph of a stretch the side its numbers stand
- * on (`data-numbers`), and on a paragraph whose first line shows a number,
- * that number (`data-n`, and `data-n-set` where it was given by hand). And
- * the words in the margin beside a line, wherever they are said, with
- * `data-margins` on their paragraph.
+ * on (`data-numbers`), and on a paragraph whose first line shows a number
+ * on the page, that number (`data-n`, and `data-n-set` where it was given
+ * by hand). A number given by hand that the page does not show is drawn
+ * in parentheses, as one held back is. And the annotations, the words in
+ * the margin beside a line, wherever they are said, with `data-margins` on
+ * their paragraph and the side they stand on (`data-annotations`): the
+ * layout's, else across from the numbers.
  */
 function numbers(doc: Node, own: readonly BasedKind[], layout: NumbersLayout): DecorationSet {
   const list: Decoration[] = [];
@@ -491,30 +610,34 @@ function numbers(doc: Node, own: readonly BasedKind[], layout: NumbersLayout): D
     parent.forEach((node) => {
       if (node.type.name === 'paragraph' && isNumbered(node)) anyNumbered = true;
     });
+    /** The side the numbers of a paragraph stand on, by where it begins, where it is numbered. */
+    const sides = new Map<number, Side>();
     for (const s of anyNumbered ? stretchesIn(parent, start) : []) {
       const side = s.side ?? layout.side;
       const every = s.every ?? layout.every;
       const blocks = s.paragraphs.map((p) => blockOf(p.node));
-      const shown = stretchNumbers(blocks, s.numbering, every, own);
-      const held = stretchNumbers(blocks.map(unheld), s.numbering, every, own);
+      const shown = stretchNumbers(blocks, s.numbering, every, own, s.only);
+      const held = stretchNumbers(blocks.map(unheld), s.numbering, every, own, s.only);
       s.paragraphs.forEach((p, i) => {
+        sides.set(p.pos, side);
         const lines = linesOfNode(p.node, p.pos);
         const first = shown[i]?.[0];
         list.push(
           Decoration.node(p.pos, p.pos + p.node.nodeSize, {
             'data-numbers': side,
-            ...(first ? { 'data-n': first.label } : {}),
-            ...(first?.set ? { 'data-n-set': '' } : {}),
+            ...(first?.printed ? { 'data-n': first.label } : {}),
+            ...(first?.printed && first.set ? { 'data-n-set': '' } : {}),
           }),
         );
         lines.forEach((line, j) => {
           const hidden = line.mark?.attrs.hidden === true;
           const label = hidden ? (held[i]?.[j] ?? null) : (shown[i]?.[j] ?? null);
+          const inParentheses = !!label && (hidden || !label.printed);
           list.push(
-            Decoration.widget(line.start, numberWidget(label, hidden && !!label), {
+            Decoration.widget(line.start, numberWidget(label, inParentheses), {
               side: -1,
               key: label
-                ? `line-number:${label.label}${label.set ? ':given' : ''}${hidden ? ':held' : ''}`
+                ? `line-number:${label.label}${label.set ? ':given' : ''}${inParentheses ? ':held' : ''}`
                 : 'line-number:blank',
               ignoreSelection: true,
               stopEvent: () => true,
@@ -541,7 +664,13 @@ function numbers(doc: Node, own: readonly BasedKind[], layout: NumbersLayout): D
           }),
         );
       }
-      if (any) list.push(Decoration.node(here, here + node.nodeSize, { 'data-margins': '' }));
+      if (any)
+        list.push(
+          Decoration.node(here, here + node.nodeSize, {
+            'data-margins': '',
+            'data-annotations': annotationSide(sides.get(here) ?? layout.side, layout),
+          }),
+        );
     });
   });
   return DecorationSet.create(doc, list);

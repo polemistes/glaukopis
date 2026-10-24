@@ -283,6 +283,8 @@ export interface DocumentFormat {
     /** Every how many: 5 shows 5, 10, 15. */
     every: number;
     side: 'left' | 'right';
+    /** The side the annotations of lines stand on; nothing for the other side from the numbers. */
+    annotations?: 'left' | 'right' | null;
   };
   notes: { kind: 'footnotes' | 'endnotes'; size: number; lineSpacing: number; title: string };
   bibliography: {

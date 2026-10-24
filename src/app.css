@@ -1323,6 +1323,12 @@ span.math.selected {
   color: var(--ink-4);
   font-weight: normal;
 }
+/* A number given by hand that the page does not show, as the count shows
+   only every so many: dark, as given numbers are, and in parentheses. */
+.prose .line-number.held[data-given] {
+  color: var(--ink-2);
+  font-weight: 600;
+}
 .prose .line-number.held::before {
   content: '(';
 }
@@ -1380,23 +1386,34 @@ span.math.selected {
   -webkit-user-select: none;
   pointer-events: none;
 }
-/* Room for them, where there are any. */
-.prose p[data-margins] {
-  margin-right: 8em;
-}
-/* The numbers at the right: the margin words then go to the left. */
+/* The numbers at the right. */
 .prose p[data-numbers='right'] .line-number {
   right: auto;
   left: calc(100% + 0.6em);
   text-align: left;
 }
-.prose p[data-numbers='right'] .line-margin {
+/* The annotations stand on the side the numbering sets on their paragraph
+   (`data-annotations`): across from the numbers, unless the layout says
+   otherwise. At the right, with room for them. */
+.prose p[data-annotations='right'] {
+  margin-right: 8em;
+}
+/* At the left, outside the bracket of the run and its label. */
+.prose p[data-annotations='left'] .line-margin {
   left: auto;
-  right: calc(100% + 1em + var(--inset));
+  right: calc(100% + 2.2em + var(--inset));
   text-align: right;
 }
-.prose p[data-numbers='right'][data-margins] {
-  margin-right: 0;
+/* On the numbers' side, outside the numbers, further from the text: at
+   the left outside the bracket too, which stands outside the numbers. */
+.prose p[data-annotations='left'][data-numbers='left'] .line-margin {
+  right: calc(100% + 6em + var(--inset));
+}
+.prose p[data-annotations='right'][data-numbers='right'] .line-margin {
+  left: calc(100% + 4.6em);
+}
+.prose p[data-annotations='right'][data-numbers='right'] {
+  margin-right: 11.7em;
 }
 
 /* A break of the page or of the column: a dashed line across the text with

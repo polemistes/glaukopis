@@ -487,18 +487,30 @@ impl Default for Quote {
 }
 
 /// How the numbers of a numbered passage are shown, where the passage does
-/// not say (ADR 0040): every how many, and on which side of the text.
+/// not say (ADR 0040): every how many, and on which side of the text; and
+/// on which side the annotations of lines stand (ADR 0067), nothing for the
+/// other side from the numbers. Where they stand on the numbers' side, they
+/// stand outside the numbers, further from the text.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Verse {
     /// Every how many: 5 shows 5, 10, 15.
     pub every: u32,
     pub side: Side,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub annotations: Option<Side>,
 }
 
 impl Default for Verse {
     fn default() -> Self {
-        Verse { every: 5, side: Side::Left }
+        Verse { every: 5, side: Side::Left, annotations: None }
+    }
+}
+
+impl Verse {
+    /// The side the annotations of lines numbered on `numbers` stand on.
+    pub fn annotations_beside(&self, numbers: Side) -> Side {
+        self.annotations.unwrap_or(numbers.other())
     }
 }
 

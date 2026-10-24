@@ -1102,14 +1102,28 @@
   ]);
 
   // Numbers belong to what they number (ADR 0041): the lines of a numbered
-  // stretch are shown as the layout says where the stretch does not; the
-  // lines of the page are the document's to number.
+  // stretch are shown as the layout says where the stretch does not, and
+  // their annotations on the side it says (ADR 0067); the lines of the page
+  // are the document's to number.
   const numbersRows: Row<F>[] = $derived([
     number(t('format-verse-every'), 'verse.every', { min: 1, max: 1000, step: 1 }),
     chosen(t('format-verse-side'), 'verse.side', [
       ['left', t('format-side-left')],
       ['right', t('format-side-right')],
     ]),
+    chosen(
+      t('format-verse-annotations'),
+      {
+        get: (f) => f.verse.annotations ?? '',
+        set: (f, v) => (f.verse.annotations = v === 'left' || v === 'right' ? v : null),
+      },
+      [
+        ['', t('format-verse-annotations-other')],
+        ['left', t('format-side-left')],
+        ['right', t('format-side-right')],
+      ],
+      { path: 'verse.annotations' },
+    ),
     { subheading: t('format-numbers-page') },
     toggle(t('format-line-numbers'), 'lineNumbers'),
   ]);

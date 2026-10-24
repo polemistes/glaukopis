@@ -88,10 +88,10 @@ export const enterKey: Command = (state, dispatch) => {
     const next = $from.node(-1).maybeChild($from.index(-1) + 1);
     const sameStretch =
       next?.type.name === 'paragraph' &&
-      (['numbering', 'every', 'side'] as const).every(
+      (['numbering', 'every', 'side', 'only'] as const).every(
         (k) => (next.attrs[k] ?? null) === (paragraph.attrs[k] ?? null),
       );
-    const leaves = sameStretch ? {} : { numbering: null, every: null, side: null };
+    const leaves = sameStretch ? {} : { numbering: null, every: null, side: null, only: null };
     if (dispatch)
       dispatch(
         state.tr

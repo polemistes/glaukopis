@@ -27,24 +27,12 @@ editor-speaker = Speaker
 editor-speaker-hint = Who speaks: on a line of its own, or as words within a line
 editor-direction = Stage direction
 editor-direction-hint = What is done on the stage: on a line of its own, or as words within a line
-editor-line-numbers = Numbers
-editor-line-numbers-hint = Number these lines: how they are counted, from which number, every how many and on which side; and say what is said of the line the cursor is in. Lines numbered together with the same settings are counted as one, whatever their kinds.
 editor-line-numbers-from = Number from
-editor-line-numbers-from-hint = The first line that is counted is given this number, and the count goes on from it.
 editor-line-numbers-every = Show a number every
 editor-line-numbers-number = A whole number is wanted.
-editor-line-this = This line
 editor-line-number = Its number or label
 editor-line-number-placeholder = Counted as the others are
-editor-line-number-hint = 1234, 567a: always shown; the lines after it are counted on from it.
-editor-line-uncounted = Not counted
-editor-line-uncounted-hint = As the second half of a line shared between speakers: the count passes over it.
-editor-line-hidden = Counted, its number not shown
-editor-line-hidden-hint = The count goes on through it as through any line, but no number stands beside it in the document, even where one would fall. Where you write, it stands in parentheses.
 editor-line-number-held = Counted, and not shown in the document. Press to give it a number of its own.
-editor-line-margin = Words in the margin
-editor-line-margin-placeholder = A metre, another edition's number
-editor-line-margin-hint = Shown in the margin beside it, across from the numbers; not counted.
 # How the lines of a stretch are numbered: see ADR 0041.
 editor-numbering = Numbering
 editor-numbering-none = Not numbered
@@ -55,23 +43,14 @@ editor-line-numbers-side = Numbers on the
 editor-side-layout = Side the layout says ({ $side })
 editor-side-left = Left
 editor-side-right = Right
-# The first counted line of the stretch is the one the cursor is in: its number is where the count begins.
-editor-line-number-first-hint = The count begins here.
 # Over a number in the margin of the text, which opens a field for it when pressed.
 editor-line-number-press = The number of this line: press to change it
-
-## Numbers belong to what they number (ADR 0041): the Numbers menu offers
-## the three, each saying what it numbers.
-editor-numbers-lines = Number these lines…
-editor-numbers-page = Number the lines of the page
-editor-numbers-page-hint = Every line of the printed page, numbered in the margin, in this document and those under it
 
 ## The bracket at the left of paragraphs of one kind standing together (a
 ## run), named by the kind; its menu says what is said of them.
 # After the name of the kind, where the lines of the run are numbered: "Verse · numbered".
 editor-bracket-numbered = numbered
 editor-run-label-hint = { $kind } · press for what is said of these paragraphs
-editor-run-numbers = Numbers…
 editor-run-select = Select these paragraphs
 editor-run-to-text = Make it text
 editor-run-begin = Begin a new run here
@@ -276,3 +255,24 @@ editor-marks = Marks
 editor-marks-shown = Marks of whitespace
 editor-image = Image
 editor-inline-number = Inline number…
+
+## The numbering of lines, in two windows, and the side of the annotations (stage 2 of the contributors and the lines)
+# The title of the window, and the item of the text's right-click menu that opens it.
+editor-numbering-from-here = Line numbering from here
+editor-numbering-from-here-item = Line numbering from here…
+editor-numbering-of-line = Numbering of this line
+editor-numbering-of-line-item = Numbering of this line…
+# In the menu of a run's bracket.
+editor-run-numbering = Line numbering…
+# Count the lines of: every kind, or one kind of paragraph.
+editor-numbering-only = Count the lines of
+editor-numbering-every-kind = Every kind
+editor-line-counted = Counted
+editor-line-shown = Its number is shown
+editor-line-shown-others = As the others are
+editor-line-shown-always = Always
+editor-line-shown-never = Never
+# Named by the margin the annotation goes to.
+editor-line-annotation-right = Annotation in the right margin
+editor-line-annotation-left = Annotation in the left margin
+editor-line-annotation-placeholder = A metre, another edition's number

@@ -331,3 +331,7 @@ format-table-inside = Inne i tabellen
 
 format-indent-first-line = Innrykk i første linje
 format-quote-warn = Varsle om lange sitater i løpende tekst
+
+## Nummereringen av linjer, trinn 2: siden merknadene til linjer står på.
+format-verse-annotations = Merknadene på
+format-verse-annotations-other = Motsatt side av numrene

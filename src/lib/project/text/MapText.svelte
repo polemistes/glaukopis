@@ -22,6 +22,7 @@
   import Pencil from '@lucide/svelte/icons/pencil';
   import SplitSquareVertical from '@lucide/svelte/icons/split-square-vertical';
   import Hash from '@lucide/svelte/icons/hash';
+  import ListOrdered from '@lucide/svelte/icons/list-ordered';
   import Trash2 from '@lucide/svelte/icons/trash-2';
   import { widthFor } from '$lib/editor/commands';
   import type { KeyAction } from '$lib/editor/plugins';
@@ -1007,15 +1008,23 @@
     );
     const extra: MenuItem[] = [];
     if (inParagraph) {
-      extra.push({
-        label: t('editor-numbers-lines'),
-        icon: Hash,
-        // The editor is made where the text was pressed, if it was not there: it is looked for when chosen.
-        action: () => {
-          const v = editors.get(id)?.body?.getView();
-          if (v) hooksOf.get(v)?.askNumbers?.(v);
+      // The editor is made where the text was pressed, if it was not there: it is looked for when chosen.
+      const ask = (which: 'askNumbering' | 'askLine') => () => {
+        const v = editors.get(id)?.body?.getView();
+        if (v) hooksOf.get(v)?.[which]?.(v);
+      };
+      extra.push(
+        {
+          label: t('editor-numbering-from-here-item'),
+          icon: ListOrdered,
+          action: ask('askNumbering'),
         },
-      });
+        {
+          label: t('editor-numbering-of-line-item'),
+          icon: Hash,
+          action: ask('askLine'),
+        },
+      );
     }
     if (view && view.hasFocus()) {
       extra.push({

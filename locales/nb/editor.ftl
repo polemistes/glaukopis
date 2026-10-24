@@ -27,24 +27,12 @@ editor-speaker = Taler
 editor-speaker-hint = Hvem som taler: på en egen linje, eller som ord i en linje
 editor-direction = Sceneanvisning
 editor-direction-hint = Det som gjøres på scenen: på en egen linje, eller som ord i en linje
-editor-line-numbers = Nummer
-editor-line-numbers-hint = Nummerer disse linjene: hvordan de telles, fra hvilket nummer, hver hvor mange og på hvilken side; og si hva som sies om linjen markøren står i. Linjer som nummereres sammen med de samme innstillingene, telles som én, hva slags de enn er.
 editor-line-numbers-from = Nummerer fra
-editor-line-numbers-from-hint = Den første linjen som telles, får dette nummeret, og tellingen går videre fra den.
 editor-line-numbers-every = Vis et nummer hver
 editor-line-numbers-number = Et helt tall trengs.
-editor-line-this = Denne linjen
 editor-line-number = Nummeret eller merket dens
 editor-line-number-placeholder = Telles som de andre
-editor-line-number-hint = 1234, 567a: vises alltid; linjene etter telles videre fra det.
-editor-line-uncounted = Telles ikke
-editor-line-uncounted-hint = Som andre halvdel av en linje to talere deler: tellingen går forbi den.
-editor-line-hidden = Talt, men nummeret vises ikke
-editor-line-hidden-hint = Tellingen går videre gjennom den som gjennom enhver linje, men intet nummer står ved den i dokumentet, heller ikke der et ville falt. Der du skriver, står det i parentes.
 editor-line-number-held = Talt, men vises ikke i dokumentet. Trykk for å gi den et eget nummer.
-editor-line-margin = Ord i margen
-editor-line-margin-placeholder = Et versemål, en annen utgaves nummer
-editor-line-margin-hint = Vises i margen ved siden av det, overfor numrene; telles ikke.
 # Hvordan linjene i en strekning nummereres: se ADR 0041.
 editor-numbering = Nummerering
 editor-numbering-none = Ikke nummerert
@@ -55,23 +43,14 @@ editor-line-numbers-side = Numrene på
 editor-side-layout = Siden oppsettet sier ({ $side })
 editor-side-left = Venstre
 editor-side-right = Høyre
-# Den første linjen som telles, er den markøren står i: nummeret dens er der tellingen begynner.
-editor-line-number-first-hint = Tellingen begynner her.
 # Over et nummer i margen av teksten, som åpner et felt for det når det trykkes.
 editor-line-number-press = Nummeret til denne linjen: trykk for å endre det
-
-## Numrene hører til det de nummererer (ADR 0041): Nummer-menyen tilbyr de
-## tre, og hver sier hva den nummererer.
-editor-numbers-lines = Nummerer disse linjene …
-editor-numbers-page = Nummerer linjene på siden
-editor-numbers-page-hint = Hver linje på den trykte siden, nummerert i margen, i dette dokumentet og dem under det
 
 ## Klammen til venstre for avsnitt av ett slag som står sammen (et løp), med
 ## navnet på slaget; menyen dens sier det som sies om dem.
 # Etter navnet på slaget, der linjene i løpet er nummerert: «Vers · nummerert».
 editor-bracket-numbered = nummerert
 editor-run-label-hint = { $kind } · trykk for det som sies om disse avsnittene
-editor-run-numbers = Nummer …
 editor-run-select = Merk disse avsnittene
 editor-run-to-text = Gjør det til tekst
 editor-run-begin = Begynn et nytt løp her
@@ -274,3 +253,24 @@ editor-marks = Markeringer
 editor-marks-shown = Tegn for mellomrom og avsnitt
 editor-image = Bilde
 editor-inline-number = Tall i linjen …
+
+## Nummereringen av linjer, i to vinduer, og siden merknadene står på (trinn 2 av bidragsyterne og linjene)
+# Tittelen på vinduet, og punktet i tekstens høyreklikkmeny som åpner det.
+editor-numbering-from-here = Linjenummerering herfra
+editor-numbering-from-here-item = Linjenummerering herfra …
+editor-numbering-of-line = Nummereringen av denne linjen
+editor-numbering-of-line-item = Nummereringen av denne linjen …
+# I menyen til klammen om et løp.
+editor-run-numbering = Linjenummerering …
+# Tell linjene av: alle slag, eller ett slag avsnitt.
+editor-numbering-only = Tell linjene av
+editor-numbering-every-kind = Alle slag
+editor-line-counted = Telles
+editor-line-shown = Nummeret vises
+editor-line-shown-others = Som de andre
+editor-line-shown-always = Alltid
+editor-line-shown-never = Aldri
+# Navngitt etter margen merknaden havner i.
+editor-line-annotation-right = Merknad i høyremargen
+editor-line-annotation-left = Merknad i venstremargen
+editor-line-annotation-placeholder = Et versemål, en annen utgaves nummer

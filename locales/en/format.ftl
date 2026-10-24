@@ -336,3 +336,7 @@ format-table-inside = Inside the table
 
 format-indent-first-line = Indent first line
 format-quote-warn = Warn about long inline quotations
+
+## The numbering of lines, stage 2: the side of the annotations of lines.
+format-verse-annotations = Annotations on the
+format-verse-annotations-other = Other side from the numbers
