@@ -381,21 +381,21 @@ the document, so that they are told from the numbered ones.
 
 ### Figures
 
-A *picture* is a file: a photograph, a drawing. A *figure* is a picture as
+An *image* is a file: a photograph, a drawing. A *figure* is an image as
 it stands in a text, with what is said of it there, its caption, and its
-number in the document. The same picture can be a figure in many texts.
+number in the document. The same image can be a figure in many texts.
 
 Put a figure in with **Insert** › **Image**, from the images of the project or of the store, or a new one from a file;
-by dropping a file on the text where it is to stand; by pasting a picture
+by dropping a file on the text where it is to stand; by pasting an image
 that was copied; or by dragging an image from the images in the document
-pane (see *Images* below). A picture dropped
+pane (see *Images* below). An image dropped
 on an element in the diagram becomes a figure at the end of its text.
 
-What is said of the figure is written under the picture, where the cursor is
+What is said of the figure is written under the image, where the cursor is
 when the figure has been put in. It can hold citations and formulas. **Enter**
 leaves the figure, and the writing goes on under it.
 
-Pressing the picture opens the rest that can be said of it:
+Pressing the image opens the rest that can be said of it:
 
 - **How wide it is**, as a share of the width of the text in the document.
 - **Where it stands**: to the left, in the middle or to the right; and, of a
@@ -405,20 +405,20 @@ Pressing the picture opens the rest that can be said of it:
   the documents that can hold it.
 - Whether it is **numbered**. The figures are numbered through the document:
   the number shown where you write is the one the figure has there.
-- **Keep the caption with the picture**, so that figures made with the same
-  picture later begin with the same words; and **Use the picture's own**,
-  which says of this figure what is kept with the picture.
-- **Another picture** in its place, or the figure removed.
+- **Keep the caption with the image**, so that figures made with the same
+  image later begin with the same words; and **Use the image's own**,
+  which says of this figure what is kept with the image.
+- **Another image** in its place, or the figure removed.
 
 The word before the number, where what is said of the figure stands and how
 it is set, are said by the layout of the document: *Figure 1.* under the
-picture in one, **Figure 1** over it in another. A layout can also have the figures
+image in one, **Figure 1** over it in another. A layout can also have the figures
 gathered at the end of the document, as many journals ask of a manuscript;
 a line in the text then says where each belongs.
 
 PNG, JPEG and SVG are kept as they are. GIF, WebP, TIFF and BMP are made
 into PNG when they are put in, since not every kind of document can hold
-them. One picture may hold 50 MB.
+them. One image may hold 50 MB.
 
 ### Tables
 
@@ -732,7 +732,7 @@ the layout says.
 Several can stand **beside each other**: open the panel of the second, and
 choose **Put it beside the one before it**. A third and a fourth can join
 them. Each has its share of the width, its own caption and its own number;
-the pictures stand with their feet on one line. **By itself again** takes
+the images stand with their feet on one line. **By itself again** takes
 one out of the row.
 
 Where you write, things stand as they will in the document. How the text
@@ -1073,7 +1073,7 @@ the file is then kept in the library with its reference.
 
 A file that says nothing of what it is, such as a scan, is kept under its
 name, for you to fill in the details. A scan can be made searchable: see
-*Text in scans and pictures*.
+*Text in scans and images*.
 
 Where the file is dropped decides what becomes of it:
 
@@ -1121,7 +1121,7 @@ kind:
 | Kind | What can be done |
 | --- | --- |
 | PDF | Open it; **Make searchable…**; **Import the text as a map…** |
-| Picture | Open it; **Read the text…**, to copy or make an element of; **Take into the pictures**, so that it can become a figure |
+| Image | Open it; **Read the text…**, to copy or make an element of; **Take into the images**, so that it can become a figure |
 | Document (Word, OpenDocument, EPUB, HTML, Markdown, Org, plain text) | Open it; **Bring in as elements…** |
 | Anything else | Open it with the program your system has for it |
 
@@ -1558,15 +1558,15 @@ What becomes of what is in the document:
 
 - **Notes** become notes. A note on a heading stands at the beginning of the
   text under it.
-- **Pictures** are taken into the store of images, and stand in the text as
+- **Images** are taken into the store of images, and stand in the text as
   figures, with what is said of them. Those that a Word or OpenDocument file
-  holds are called after the document. A picture that is to be fetched from
+  holds are called after the document. An image that is to be fetched from
   the network is left out: nothing is fetched.
 - **Tables** become tables, with their headings, cells that span, and what
   is said of them.
 - **Captions** are found where the document has them: with the figure or
   the table, or as a paragraph beside it, as Word and LibreOffice write
-  them, also where the picture stands in a frame. *Figure 1:* before the
+  them, also where the image stands in a frame. *Figure 1:* before the
   words is left out, since the document numbers its figures and tables
   itself.
   Where the running text says *see Figure 1*, that stays text as it was
@@ -1595,19 +1595,19 @@ always that of the text; a web page, Markdown or LaTeX that says a passage
 is in another language keeps it as the language of the passage. OpenDocument files lose their mathematics in the
 reading, which is a limit of Pandoc.
 
-A PDF or a picture can be brought in the same way, and has its text read:
-see *Text in scans and pictures*.
+A PDF or an image can be brought in the same way, and has its text read:
+see *Text in scans and images*.
 
-## Text in scans and pictures
+## Text in scans and images
 
-A scan is a picture of a page: its text cannot be searched, copied or
+A scan is an image of a page: its text cannot be searched, copied or
 quoted until it is read. Glaukopis reads it with Tesseract, a program that
-reads text in pictures, in four places.
+reads text in images, in four places.
 
-- **A PDF or a picture becomes a tree of elements.** In a project, choose
+- **A PDF or an image becomes a tree of elements.** In a project, choose
   **A document into it…** in the menu of the element in view, and choose
   the file, or drop the file on the bar over the map; dropped elsewhere in a
-  project, a PDF is taken into the library and a picture becomes a figure.
+  project, a PDF is taken into the library and an image becomes a figure.
   Among the projects, **A project from a document…**, or drop the file
   there. An element is made for the PDF under the element in view, named by
   the title found on its pages, else as the PDF names itself, else after its
@@ -1624,8 +1624,8 @@ reads text in pictures, in four places.
   under it, as an edition cited by its pages may want; it is what is made
   where no heading is found. Each choice there makes the elements anew from
   what was read, in a moment, without reading the pages again, and the
-  window shows the title and the headings as they will nest. The text of a
-  picture becomes the text of the one element made of it.
+  window shows the title and the headings as they will nest. The text of an
+  image becomes the text of the one element made of it.
 - **A PDF of the library is made searchable.** In the files of a reference,
   or in the pane of a file among the files of the library, **Make
   searchable…** reads its pages and lays
@@ -1639,8 +1639,8 @@ reads text in pictures, in four places.
   is read, as of a PDF brought in, **into the project** you choose, under
   the element in view where that project is open, or into **a new project,
   named after it**. The file stays in the library as it was.
-- **The text of a picture of the store is read.** **Read the text in it…**,
-  in the pane of a picture, shows the text, to be copied. Where the picture
+- **The text of an image of the store is read.** **Read the text in it…**,
+  in the pane of an image, shows the text, to be copied. Where the image
   is looked at in a project, beside the map, **Make an element of it** makes
   an element of the text there, under the element in view.
 
@@ -1659,7 +1659,7 @@ searchable*.
 window, which grows for them; **Back to the summary** closes them again, and
 nothing done in either is lost. At the top stand **all the pages**, small,
 drawn as they are scrolled to; under them, **the page in view**, in three
-panes side by side: the picture of the page, to judge against; **the text
+panes side by side: the image of the page, to judge against; **the text
 the PDF has** on that page, where it has any; and **what Tesseract read** of
 it, once it has been tried. Beside the panes stand the settings again, for
 the pages selected, and **Try page …**.
@@ -1672,7 +1672,7 @@ page whose text does not read as text, as when a font does not say which
 letters it shows or a scanner read the page poorly, is tinted.
 
 **Which pages take which text.** Each page takes the text the PDF has, or is
-read from a picture of it by Tesseract; a page without text is always read.
+read from an image of it by Tesseract; a page without text is always read.
 At first every page is marked the same way: read where most of the text the
 PDF has does not read as text, and the pages are not too coarse to read
 anew; the PDF's text otherwise. In the summary, three choices change it for
@@ -1680,7 +1680,7 @@ the whole PDF; over the strip, three buttons of the same names change it for
 the pages selected, or for every page where none are:
 
 - **The PDF's text**: these pages take the text the PDF has.
-- **Read with Tesseract**: these pages are read anew from pictures of them.
+- **Read with Tesseract**: these pages are read anew from images of them.
 - **Decide by the text's quality**: page by page, a page whose text reads as
   text keeps it, and a page whose text does not, or that has none, is read.
 
@@ -1692,7 +1692,7 @@ look as they did, and the pages that keep their text are not touched.
 Where the text keeps its letters in a way Glaukopis knows (below), the text
 the PDF has is taken as translated by what its fonts say (**Translated by
 what the fonts say**, in the summary and over the pane of that text, is
-ticked at first): no page is read from a picture for it, and the pane shows
+ticked at first): no page is read from an image for it, and the pane shows
 the text as it will be. In a searchable PDF the PDF's
 own tables are put right instead (**Make readable**), so that every reader
 copies and searches the text rightly; nothing that is shown changes.
@@ -1769,7 +1769,7 @@ part before the hyphen does not look like a name: *for-* and *skning* make
 *forskning*, but *Oslo-* and *avtalen* make *Oslo-avtalen*. A number that
 stands alone at the head or the foot of a page, which is its number, is left
 out, and so are lines without a letter or a digit, which are what is read
-of a rule or a picture on the page.
+of a rule or an image on the page.
 
 **The shape of the pages.** Where **Keep the shape of the pages** is chosen
 under **What is made of it**, as it is at first, the shape of each page is
@@ -1842,7 +1842,7 @@ as *s* wherever it takes text: in what Tesseract reads, in the text a PDF
 has, and in the text laid unseen under a PDF made searchable, so that a
 search for *samme* finds what was printed *ſamme*.
 
-Where the pages of a PDF are pictures of fewer than 150 dots to the inch, the
+Where the pages of a PDF are images of fewer than 150 dots to the inch, the
 window says so before anything is read: their letters are too few to be read
 well, whatever is chosen, and reading them anew will not better the text the
 PDF has. It does not propose reading them anew.
@@ -1851,16 +1851,16 @@ PDF has. It does not propose reading them anew.
 it is marked to take: that is how you find out whether reading it anew is
 worth it. Choose the page in the strip and press **Try page …** beside the
 panes: it is read in a few seconds with the settings that hold for it, and
-what Tesseract read stands beside the text the PDF has and the picture, with
+what Tesseract read stands beside the text the PDF has and the image, with
 how sure it was, in a line: *Page 40: Low confidence (73%) · 89 of 251 words
 unsure*. Low is under 80%, where a page counts as read poorly, and what to
 try then is said when the pointer rests on it; good is 80 to 89%, and high
 90% and over. The words it was unsure of are underlined, and marked faintly
-on the picture: where the reading is weak shows at a glance. Over the
-picture stand the **blocks of text** Tesseract found, numbered in the order
+on the image: where the reading is weak shows at a glance. Over the
+image stand the **blocks of text** Tesseract found, numbered in the order
 it reads them: two columns in one block, or notes taken into the text, will
 be read in the wrong order, and another layout may part them. The blocks can
-be hidden, and the picture zoomed; at 100% and 200% it is moved by dragging
+be hidden, and the image zoomed; at 100% and 200% it is moved by dragging
 it.
 
 Change a language, choose the Fraktur model, tell the layout, and try
@@ -2250,10 +2250,10 @@ document*).
 
 **Export** makes the manuscript: PDF, Word, OpenDocument, LaTeX, Markdown, a
 web page, or an **e-book** (EPUB), in which the reader sets the text and each
-chapter is a part of its own. The cover of the e-book is the first picture
+chapter is a part of its own. The cover of the e-book is the first image
 in an element of the kind **Cover** under the element printed (see *What
 goes into the document*). Where the document is given as it is written, in
-LaTeX, Typst or Markdown, its pictures are put in a folder beside it, named
+LaTeX, Typst or Markdown, its images are put in a folder beside it, named
 after it.
 
 Every document that is made follows the typesetting in what it holds and in
@@ -2519,9 +2519,9 @@ From then on:
   sharing. Those who are removed keep the project as it was then.
 
 The files of the library are not shared; the references themselves are.
-The pictures of the figures of the project are shared: they are sent to the
+The images of the figures of the project are shared: they are sent to the
 server when they are put in, and fetched by the others from there, into
-their own stores. No other picture of your store is sent. A picture that
+their own stores. No other image of your store is sent. An image that
 has not arrived yet is shown as an empty frame until it has.
 
 ## The history of a project
@@ -2825,7 +2825,7 @@ on a desk of another shade, so that where the text goes is seen.
 - **Deleted projects** can be brought back, from the **⋯** at the head of the list of projects.
 - **A project as one file.** Right-click a project in the list of projects,
   and choose **Save as a file…**: a `.glaukopis` file holds
-  the project, its comments, the pictures its figures show and the works it
+  the project, its comments, the images its figures show and the works it
   cites, to keep, to move to another computer, or to send. **Open a project
   file…**, in the **+** at the head of the list of projects, makes a
   new project of one, never in the place of one you have. The works it cites
@@ -2867,7 +2867,7 @@ what Glaukopis works from:
   under its headline, and its comments in another.
 - `references.bib`: the works the project cites, by the keys the citations
   use.
-- `pictures/`: the pictures its figures show.
+- `pictures/`: the images its figures show.
 
 It is written anew a few seconds after the project is saved, and Glaukopis
 never reads it back: it cannot get your project wrong, and nothing is lost
@@ -2937,7 +2937,7 @@ what is to be done by its name, and does it.
 | **@** | In the text: cite |
 | **Ctrl+I**, **Ctrl+B**, **Ctrl+U** | In the text: italics, bold, underlined |
 | **Ctrl+Alt+F** | In the text: a note |
-| **Ctrl+Alt+P** | In the text: a picture |
+| **Ctrl+Alt+P** | In the text: an image |
 | **Ctrl+Alt+T** | In the text: a table |
 | **Ctrl+Alt+M**, **Ctrl+Alt+E** | In the text: a formula in the line, an equation |
 | **Ctrl+Alt+R** | In the text: a cross-reference to a figure, a table, an equation, a part |
@@ -2963,7 +2963,7 @@ them, and Tesseract and the dictionaries of English are recommended from
 the system's packages, so that `apt` and `dnf` install them along. On every
 system the dictionaries of spelling and the data for reading other
 languages are imported under *Settings* (see *Spelling* and *Text in scans
-and pictures*), and on Linux those of the system's packages serve as well.
+and images*), and on Linux those of the system's packages serve as well.
 
 The installers for Windows and macOS are not signed. On Windows, the
 installer is let run with **More info** › **Run anyway**. On macOS, open
@@ -2990,7 +2990,7 @@ A drawing (SVG) in a PDF set by LaTeX, or in a Word document, is made into
 what those can hold by `rsvg-convert`, which comes with librsvg and is on
 most computers.
 
-Tesseract reads the text of scans and pictures. On Arch it is optional:
+Tesseract reads the text of scans and images. On Arch it is optional:
 the package `tesseract`, with `tesseract-data-eng` for English; the data of
 other languages are packages of their own, such as `tesseract-data-nor` for
 Norwegian, `tesseract-data-grc` for Ancient Greek and `tesseract-data-lat`
