@@ -190,6 +190,10 @@ try {
     await app.exec(`const g = Array.from(document.querySelectorAll('[data-path-tree] .row.folder')).find((r) => r.textContent.includes('Greek'));
       return !!g && g.hasAttribute('data-row-open') && Array.from(document.querySelectorAll('[data-path-tree] .row.folder')).some((r) => r.textContent.includes('Epic'));`),
   );
+  check(
+    'a folder shows no count of its projects, in the tree nor in the list',
+    await app.exec(`return Array.from(document.querySelectorAll('[data-path-tree] .row.folder, [data-projects-pane] .row.folder')).every((r) => !/\\d/.test(r.textContent) && !r.querySelector('.count'))`),
+  );
   await app.press('Escape');
   await app.waitGone('[data-path-tree]', 3000);
   // With another project beside, an element of this project chosen in the tree of that side opens there; the first side stays.
