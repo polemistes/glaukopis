@@ -83,7 +83,7 @@ function whole(id, seen = new Set()) {
   const base = whole(own.basedOn, seen);
   if (!base) return own;
   const made = { ...own };
-  for (const field of ['layout', 'style', 'contents', 'kinds', 'passageKinds', 'requirements', 'outputs']) {
+  for (const field of ['layout', 'style', 'contents', 'kinds', 'passageKinds', 'kindKeys', 'requirements', 'outputs']) {
     if (made[field] === undefined && base[field] !== undefined) made[field] = base[field];
   }
   return made;
@@ -189,10 +189,12 @@ for (const file of files) {
       contents,
       kinds,
       passageKinds: base.passageKinds,
+      kindKeys: base.kindKeys,
       requirements: reqs,
       outputs: base.outputs,
     };
     if (template.style === undefined) delete template.style;
+    if (template.kindKeys === undefined) delete template.kindKeys;
     const made = print(template) + '\n';
     if (!existing || !same(existing, template) || readFileSync(out, 'utf8') !== made) {
       writeFileSync(out, made);

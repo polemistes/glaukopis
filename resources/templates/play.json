@@ -20,6 +20,7 @@
   ],
   "kinds": ["cast", "setting"],
   "passageKinds": ["verse", "speaker", "direction"],
+  "kindKeys": { "1": "speaker", "2": "direction", "3": "line", "4": "quote", "5": "item", "6": "numbered" },
   "requirements": { "words": null, "abstractWords": null, "keywords": null, "anonymous": false, "note": "" },
   "outputs": [
     { "id": "document", "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"] }

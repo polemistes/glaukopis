@@ -18,6 +18,7 @@
   ],
   "kinds": [],
   "passageKinds": ["scene", "action", "character", "dialogue", "parenthetical", "transition"],
+  "kindKeys": { "1": "scene", "2": "action", "3": "character", "4": "dialogue", "5": "parenthetical", "6": "transition" },
   "requirements": { "words": null, "abstractWords": null, "keywords": null, "anonymous": false, "note": "" },
   "outputs": [
     { "id": "document", "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"] }

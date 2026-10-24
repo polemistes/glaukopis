@@ -9,6 +9,7 @@
 
 pub mod kinds;
 
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
 
@@ -160,12 +161,19 @@ pub struct Template {
     pub kinds: Vec<String>,
     /// The kinds of paragraph and of words it puts in hand, by id.
     pub passage_kinds: Vec<String>,
+    /// The kinds of paragraph Ctrl+Alt with a digit gives, by the digit, "1"
+    /// to "9"; Ctrl+Alt+0 is text, said here or not.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub kind_keys: BTreeMap<String, String>,
     pub requirements: Requirements,
     pub outputs: Vec<Output>,
 }
 
 /// The id of the root template.
 pub const PLAIN: &str = "plain";
+
+/// The kind Ctrl+Alt+0 gives in every template.
+pub const KEY_ZERO: &str = "text";
 
 /// The fields of a file that are its own: every other is inherited from
 /// the template it is based on.
@@ -188,9 +196,31 @@ impl Template {
                 .into_iter()
                 .map(|part| ContentsItem::Part { part })
                 .collect(),
+            // The kinds most writers reach for, after text, which is 0.
+            kind_keys: [
+                ("1", "quote"),
+                ("2", "line"),
+                ("3", "item"),
+                ("4", "numbered"),
+                ("5", "code"),
+                ("6", "epigraph"),
+                ("7", "attribution"),
+            ]
+            .into_iter()
+            .map(|(digit, kind)| (digit.to_owned(), kind.to_owned()))
+            .collect(),
             outputs: vec![Output::document()],
             ..Default::default()
         }
+    }
+
+    /// The kind of paragraph Ctrl+Alt with a digit gives: text for 0, and
+    /// for another what the template says; nothing where it says nothing.
+    pub fn kind_of_key(&self, digit: char) -> Option<&str> {
+        if digit == '0' {
+            return Some(KEY_ZERO);
+        }
+        self.kind_keys.get(digit.to_string().as_str()).map(String::as_str)
     }
 
     /// The output with an id; nothing where the template has none such.
@@ -218,6 +248,11 @@ impl Template {
             list.dedup();
             list.truncate(40);
         }
+        // A digit each, and 0 only for text.
+        self.kind_keys.retain(|digit, kind| {
+            let one = digit.len() == 1 && digit.as_bytes()[0].is_ascii_digit();
+            one && id_ok(kind) && (digit != "0" || kind == KEY_ZERO)
+        });
         let r = &mut self.requirements;
         for n in [&mut r.words, &mut r.abstract_words, &mut r.keywords] {
             if n.is_some_and(|v| v == 0 || v > 10_000_000) {
@@ -452,11 +487,32 @@ mod tests {
         assert_eq!(back["outputs"][0]["targets"][1], "pdf-latex");
         assert!(back.get("source").is_none() && back["outputs"][0].get("name").is_none());
         assert_eq!(back["passageKinds"], serde_json::json!([]));
+        assert!(back.get("kindKeys").is_none(), "no keys, nothing said of them");
         // Nothing said is the plain template's shape, less its contents.
         let mut bare: Template = serde_json::from_str(r#"{"id":"y","name":"Y"}"#).unwrap();
         assert!(bare.contents.is_empty());
         bare.sanitise();
         assert_eq!(bare.outputs, vec![Output::document()], "the document is always made");
+    }
+
+    #[test]
+    fn the_keys_of_the_kinds_are_digits_and_zero_is_text() {
+        let mut t: Template = serde_json::from_str(
+            r#"{"id":"x","name":"X","kindKeys":{"1":"speaker","2":"line","0":"quote","12":"scene","x":"code","3":""}}"#,
+        )
+        .unwrap();
+        t.sanitise();
+        assert_eq!(t.kind_keys.len(), 2, "{:?}", t.kind_keys);
+        assert_eq!(t.kind_of_key('1'), Some("speaker"));
+        assert_eq!(t.kind_of_key('2'), Some("line"));
+        assert_eq!(t.kind_of_key('0'), Some("text"), "0 is text whatever is said");
+        assert_eq!(t.kind_of_key('4'), None);
+        assert_eq!(serde_json::to_value(&t).unwrap()["kindKeys"], serde_json::json!({"1": "speaker", "2": "line"}));
+        // The plain template's keys: the kinds most writers reach for.
+        let plain = Template::plain();
+        assert_eq!(plain.kind_of_key('1'), Some("quote"));
+        assert_eq!(plain.kind_of_key('5'), Some("code"));
+        assert_eq!(plain.kind_of_key('9'), None);
     }
 
     #[test]
@@ -493,6 +549,7 @@ mod tests {
             "requirements are one field: the article's are not merged in"
         );
         assert_eq!(journal.outputs, vec![Output::document()], "the plain template's, through the article");
+        assert_eq!(journal.kind_keys, Template::plain().kind_keys, "the keys of the kinds are inherited too");
         assert_eq!(journal.based_on.as_deref(), Some("article"), "what it was made from is its own");
         assert_eq!(journal.source.as_ref().map(|s| s.confidence.as_str()), Some("high"));
         assert!(templates.get("article").unwrap().source.is_none(), "the source is not inherited");
@@ -598,6 +655,13 @@ mod bundled {
                 assert!(
                     crate::formats::kinds::entry_of(kind).is_some(),
                     "{name}: there is no kind of passage “{kind}”"
+                );
+            }
+            for (digit, kind) in &t.kind_keys {
+                let entry = crate::formats::kinds::entry_of(kind);
+                assert!(
+                    entry.is_some_and(|e| e.family == crate::formats::kinds::Family::Paragraph),
+                    "{name}: Ctrl+Alt+{digit} gives “{kind}”, which is no kind of paragraph"
                 );
             }
             assert!(t.output(Output::DOCUMENT).is_some(), "{name}: no document output");

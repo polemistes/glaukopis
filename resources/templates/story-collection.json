@@ -32,6 +32,7 @@
     "about-the-author"
   ],
   "passageKinds": ["epigraph", "attribution", "break"],
+  "kindKeys": { "1": "quote", "2": "line", "3": "item", "4": "numbered", "5": "code", "6": "epigraph", "7": "attribution", "8": "break" },
   "requirements": { "words": null, "abstractWords": null, "keywords": null, "anonymous": false, "note": "" },
   "outputs": [
     { "id": "document", "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"] }

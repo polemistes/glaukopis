@@ -88,6 +88,12 @@ export interface Template {
   kinds: string[];
   /** The kinds of paragraph and of words it puts in hand, by id. */
   passageKinds: string[];
+  /**
+   * The kinds of paragraph Ctrl+Alt with a digit gives, by the digit, "1"
+   * to "9" (ADR 0066); Ctrl+Alt+0 is text, said or not. Nothing where no
+   * digit gives a kind.
+   */
+  kindKeys?: Record<string, string>;
   requirements: Requirements;
   outputs: Output[];
 }

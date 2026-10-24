@@ -13,6 +13,17 @@ what a file leaves out is as its base has it; the core fills the chain in on
 reading. The files here are written whole all the same, so that each can be
 read on its own.
 
+`kindKeys` says which kind of paragraph Ctrl+Alt with a digit gives, by the
+digit, "1" to "9"; Ctrl+Alt+0 is text in every template, said or not
+(ADR 0066). The plain document and those with no kinds of their own give 1
+Quotation, 2 Verse, 3 Bullet list, 4 Numbered list, 5 Code, 6 Epigraph and
+7 Attribution; a book adds 8 Headword and 9 Gloss, fiction 8 Break; a
+play gives 1 Speaker, 2 Stage direction, 3 Verse, 4 Quotation, 5 Bullet list
+and 6 Numbered list; a screenplay 1 Scene heading, 2 Action, 3 Character,
+4 Dialogue, 5 Parenthetical and 6 Transition. The templates of the journals,
+the publishers and the style guides take those of the template they are
+based on.
+
 The generic ones are written by hand: `paper`, `article`, `book`, `thesis`,
 `report`, `novel`, `novel-manuscript`, `short-story`, `story-collection`,
 `play`, `screenplay`, `poems`, `news-article`, `blog-post` and `letter`.
