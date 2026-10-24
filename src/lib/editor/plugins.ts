@@ -45,6 +45,7 @@ import {
 import { runBrackets } from './brackets';
 import { breakKey, enterKey, indentKey, joinLineKey, lineMarks } from './keys';
 import { kindName } from './kinds';
+import { kindKeyOf } from '$lib/shell/keys.svelte';
 import { LAYOUT_NUMBERS, stretchNumbersPlugin, type NumbersLayout } from './numbers';
 import { acrossParallel, backOutOfParallel } from './parallel';
 import { refMarkKey } from './refmarks';
@@ -97,6 +98,12 @@ export interface EditorHooks {
   language?: () => string | null;
   /** What the document's layout says of the numbers of a stretch that does not say: every how many, and on which side. */
   numbers?: () => NumbersLayout;
+  /**
+   * The kinds of paragraph Ctrl+Alt with a digit gives, by the digit: those
+   * of the document type of the element written in, with text for 0
+   * (`kindKeysOf`). Only text where it is not given.
+   */
+  kindKeys?: () => Readonly<Record<string, string>>;
 }
 
 /**
@@ -347,6 +354,22 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
     keys['Shift-Enter'] = hardBreak;
   }
 
+  // Ctrl+Alt with a digit: the paragraphs selected, or the one the cursor is
+  // in, are given the kind the document type gives the digit, text for 0
+  // (ADR 0066); a digit it gives nothing is left to others. AltGr, which
+  // Windows sends as Ctrl+Alt, writes what it writes (`kindKeyOf`).
+  const kindKeys = new Plugin({
+    props: {
+      handleKeyDown(view, event) {
+        const digit = kindKeyOf(event);
+        if (digit === null) return false;
+        const kind = digit === '0' ? 'text' : hooks.kindKeys?.()[digit];
+        if (!kind) return false;
+        return setKind(kind, own())(view.state, view.dispatch, view);
+      },
+    },
+  });
+
   const cite = new Plugin({
     props: {
       handleTextInput(view, from, _to, text) {
@@ -363,6 +386,7 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
   return [
     passes(),
     inputRules({ rules: [...dashes, ...blockRules(schema)] }),
+    kindKeys,
     cite,
     ids(),
     rows(),

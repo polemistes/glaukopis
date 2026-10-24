@@ -226,6 +226,46 @@ try {
     'and the preview sets the quotation so',
     await typstHas(/#show quote\.where\(block: true\): it => \{\s*set text\([^)]*style: "italic"/),
   );
+  // A kind's box stays open as it is changed, until it is closed: the
+  // quotation, opened from the menu; text, which the document uses, and an
+  // epigraph, which it does not, opened by their lines.
+  const stillOpen = async (kind, row, value) => {
+    const box = `.side .look .part details[data-kind="${kind}"]`;
+    if (!(await app.exec(`return !!document.querySelector(arguments[0])?.open`, box))) {
+      await app.exec(`document.querySelector(arguments[0] + ' > summary').scrollIntoView({ block: 'center' })`, box);
+      await sleep(200);
+      await app.click(`${box} > summary`);
+      await sleep(300);
+    }
+    await app.exec(
+      `const d = document.querySelector(arguments[0]);
+       const r = Array.from(d.querySelectorAll('.row')).find((r) => r.querySelector('.what').firstChild.textContent.trim() === arguments[1]);
+       const s = r.querySelector('select');
+       s.value = arguments[2];
+       s.dispatchEvent(new Event('change', { bubbles: true }));`,
+      box,
+      row,
+      value,
+    );
+    // The kinds in use are gathered a second after a change, and the looks resolved anew.
+    await sleep(1600);
+    return app.exec(`return !!document.querySelector(arguments[0])?.open`, box);
+  };
+  check('the box of the quotation stays open as it is changed', await stillOpen('quote', 'Bold', 'yes'));
+  check('the box of text, which the document uses, stays open as it is changed', await stillOpen('text', 'Bold', 'yes'));
+  check('and again at a second change', await stillOpen('text', 'Bold', 'no'));
+  check('the box of an epigraph, which the document does not use, stays open as it is changed', await stillOpen('epigraph', 'Bold', 'yes'));
+  await app.click('.side .look .part details[data-kind="epigraph"] > summary');
+  await sleep(300);
+  await app.lookSection('Paragraphs');
+  await sleep(300);
+  check(
+    'a box closed stays closed, the others open',
+    await app.exec(
+      `const open = (k) => document.querySelector('.side .look .part details[data-kind="' + k + '"]').open;
+       return !open('epigraph') && open('text') && open('quote');`,
+    ),
+  );
   await sleep(1500);
   await app.screenshot('look-3-kinds');
 
@@ -362,6 +402,71 @@ try {
     JSON.stringify(top),
   );
   await app.screenshot('look-6-cites');
+
+  // --- The key of a kind, in its box: Code given Ctrl+Alt+2, which Verse had ---
+  await app.lookSection('Paragraphs');
+  const keyRow = (kind) => `.side .look .part details[data-kind="${kind}"] [data-kind-key] select`;
+  check(
+    'a kind’s box says its key as the document type gives it: Verse Ctrl+Alt+2, text Ctrl+Alt+0',
+    (await app.exec(`return [document.querySelector(arguments[0]).value, document.querySelector(arguments[1]).value].join(' ')`, keyRow('line'), keyRow('text'))) === '2 0',
+  );
+  await app.exec(
+    `const s = document.querySelector(arguments[0]);
+     s.value = '2';
+     s.dispatchEvent(new Event('change', { bubbles: true }));`,
+    keyRow('code'),
+  );
+  await app.waitUntil(`return document.querySelector('.side .look .whole .type-line .name')?.textContent.trim() === 'Nature, changed'`, 10000, 'the type kept as one’s own').catch(() => {});
+  top = await app.lookTop();
+  check('the type that came with Glaukopis is kept as one’s own with the key, and the document takes it', top.what === 'Nature, changed', top.what);
+  await sleep(500);
+  check(
+    'Code has Ctrl+Alt+2 now, and Verse none',
+    (await app.exec(`return [document.querySelector(arguments[0]).value, document.querySelector(arguments[1]).value].join('|')`, keyRow('code'), keyRow('line'))) === '2|',
+  );
+  const ownType = execFileSync('find', [join(app.dataDir, 'templates'), '-name', '*.json'], { encoding: 'utf8' }).trim().split('\n').filter(Boolean);
+  const keptKeys = ownType.length ? JSON.parse(readFileSync(ownType[0], 'utf8')).kindKeys : null;
+  check('the type of one’s own holds the keys', keptKeys?.['2'] === 'code' && !Object.values(keptKeys ?? {}).includes('line'), JSON.stringify(keptKeys));
+
+  // The Paragraph kind menu shows the keys; the key gives the kind, and Ctrl+Alt+0 text.
+  const muse = () =>
+    app.exec(
+      `return Array.from(document.querySelectorAll('.text-view .prose > p')).find((p) => p.textContent.includes('Tell me, Muse'))`,
+    );
+  await app.click(await muse());
+  await sleep(300);
+  await app.click('.pane-bar [data-paragraph-kind]');
+  await app.waitFor('.menu', 3000);
+  await sleep(150);
+  const shortcutOf = (label) =>
+    app.exec(
+      `const item = Array.from(document.querySelectorAll('.menu [role="menuitem"]')).find((i) => (i.querySelector('.label > .truncate') ?? i.querySelector('.label') ?? i).textContent.trim() === arguments[0]);
+       return item?.querySelector('.shortcut')?.textContent.trim() ?? null;`,
+      label,
+    );
+  const quoteKey = await shortcutOf('Quotation');
+  check('the Paragraph kind menu shows the key beside a kind', quoteKey === 'Ctrl+Alt+1', String(quoteKey));
+  await app.clickText('.menu [role="menuitem"]', 'More…');
+  await sleep(300);
+  const codeKey = await shortcutOf('Code');
+  check('and Code with its new key', codeKey === 'Ctrl+Alt+2', String(codeKey));
+  await app.screenshot('look-7-kind-keys');
+  await app.press('Escape');
+  await sleep(150);
+  await app.press('Escape');
+  await sleep(300);
+  await app.click(await muse());
+  await sleep(200);
+  const kindOfMuse = () =>
+    app.exec(
+      `return Array.from(document.querySelectorAll('.text-view .prose > p')).find((p) => p.textContent.includes('Tell me, Muse'))?.getAttribute('data-kind') ?? 'text'`,
+    );
+  await app.keys(['Control', 'Alt', '2']);
+  await sleep(400);
+  check('Ctrl+Alt+2 makes the paragraph code', (await kindOfMuse()) === 'code', await kindOfMuse());
+  await app.keys(['Control', 'Alt', '0']);
+  await sleep(400);
+  check('and Ctrl+Alt+0 text again', (await kindOfMuse()) === 'text', await kindOfMuse());
 
   const errors = await app.pageErrors();
   check('no errors in the page', errors.length === 0, errors.join(' | '));

@@ -8,6 +8,9 @@ import * as textModel from '$lib/project/model/text';
 import { PROJECT, type PassageKindRecord } from '$lib/project/model/types';
 import {
   amongOthers,
+  digitOfKind,
+  kindKeysOf,
+  withKindKey,
   catalogueKindOf,
   CATALOGUE,
   catalogueKindsCss,
@@ -245,11 +248,12 @@ describe('the cues on screen of a kind of the writer`s own', () => {
     );
   });
 
-  it('a break of the writer`s own draws its sign, a draft note is dimmed, a kind based on verse by its old name is indented, and a circle ends', () => {
+  it('a break of the writer`s own draws its sign, a draft note is dimmed, a kind based on verse by its old name stands as a line, and a circle ends', () => {
     const css = passageKindsCss([
       kind('b1', { basedOn: 'break', look: { text: '#' } }),
       kind('d1', { basedOn: 'draft', look: {} }),
       kind('v1', { basedOn: 'verse', look: {} }),
+      kind('v2', { basedOn: 'verse', look: { indentLeft: '1cm' } }),
       kind('c1', { basedOn: 'c2', look: {} }),
       kind('c2', { basedOn: 'c1', look: { bold: true } }),
       kind('bad id', { basedOn: 'text', look: { bold: true } }),
@@ -259,7 +263,9 @@ describe('the cues on screen of a kind of the writer`s own', () => {
     expect(css).toContain(
       '.prose p[data-kind="d1"] { color: var(--ink-3); border-left: 2px dashed',
     );
-    expect(css).toContain('.prose p[data-kind="v1"] { --inset: 2.4em; margin-left: 2.4em; }');
+    // A line is not set in on screen; one of the writer's own may be.
+    expect(css).not.toContain('.prose p[data-kind="v1"] { --inset');
+    expect(css).toContain('.prose p[data-kind="v2"] { --inset: 2.4em; margin-left: 2.4em; }');
     expect(css).toContain('.prose p[data-kind="c1"] { font-weight: 600; }');
     expect(css).not.toContain('bad id');
   });
@@ -292,16 +298,31 @@ describe('the cues on screen of the kinds of the catalogue', () => {
     }
   });
 
-  it('keep the measures the screen had: a quotation and a list in by less than verse', () => {
+  it('set in only a quotation, its attribution, code, an epigraph and the lists, not verse nor the parts of a play', () => {
     expect(css).toContain(
       '.prose p[data-kind="quote"] { --inset: 1.4em; margin-left: 1.4em; font-size: 0.96em; color: var(--ink-2); }',
     );
     expect(css).toContain('.prose p[data-kind="item"] { --inset: 1.6em; margin-left: 1.6em; }');
     expect(css).toContain('.prose p[data-kind="numbered"] { --inset: 1.6em; margin-left: 1.6em; }');
-    expect(css).toContain('.prose p[data-kind="line"] { --inset: 2.4em; margin-left: 2.4em; }');
-    expect(css).toContain('.prose p[data-kind="gloss"] { --inset: 3.05em;');
     expect(css).toContain('.prose p[data-kind="epigraph"] { --inset: 9.6em;');
-    expect(css).toContain('.prose p[data-kind="character"] { --inset: 13.44em;');
+    expect(css).toMatch(
+      /\.prose p\[data-kind="attribution"\] \{[^}]*--inset: 3\.05em; margin-left: 3\.05em;/,
+    );
+    expect(css).toMatch(
+      /\.prose p\[data-kind="code"\] \{[^}]*--inset: 1\.4em; margin-left: 1\.4em;/,
+    );
+    for (const id of [
+      'line',
+      'speaker',
+      'direction',
+      'character',
+      'dialogue',
+      'parenthetical',
+      'gloss',
+    ])
+      expect(rulesOf(css, `.prose p[data-kind="${id}"]`).join('\n'), id).not.toMatch(
+        /--inset|margin-left|margin-right/,
+      );
     expect(css).toContain('.prose .kind[data-kind="foreign"] { font-style: italic; }');
     expect(css).toContain('.prose p[data-kind="break"]:empty::before { content: "* * *";');
     expect(css).toContain('.prose .kind[data-kind="mention"]::before { content: open-quote; }');
@@ -314,5 +335,28 @@ describe('the cues on screen of the kinds of the catalogue', () => {
     expect(sheets.length).toBe(1);
     expect(sheets[0].textContent).toBe(css);
     sheets[0].remove();
+  });
+});
+
+describe('the keys of the kinds', () => {
+  it('are what the document type gives, with text for 0 whatever it says', () => {
+    expect(kindKeysOf(null)).toEqual({ '0': 'text' });
+    const keys = kindKeysOf({ kindKeys: { '1': 'quote', '2': 'verse', '0': 'code' } });
+    expect(keys).toEqual({ '0': 'text', '1': 'quote', '2': 'verse' });
+    expect(digitOfKind(keys, 'text')).toBe('0');
+    expect(digitOfKind(keys, 'quote')).toBe('1');
+    // A kind by its old name is the kind it is now.
+    expect(digitOfKind(keys, 'line')).toBe('2');
+    expect(digitOfKind(keys, 'code')).toBeUndefined();
+  });
+
+  it('give a digit one kind, and a kind one digit: a digit taken leaves the other kind without', () => {
+    const keys = { '1': 'quote', '2': 'line', '3': 'item' };
+    expect(withKindKey(keys, 'code', '2')).toEqual({ '1': 'quote', '2': 'code', '3': 'item' });
+    expect(withKindKey(keys, 'quote', '5')).toEqual({ '2': 'line', '3': 'item', '5': 'quote' });
+    expect(withKindKey(keys, 'line', '')).toEqual({ '1': 'quote', '3': 'item' });
+    // 0 is text's, and not said.
+    expect(withKindKey(keys, 'code', '0')).toEqual(keys);
+    expect(withKindKey(undefined, 'speaker', '1')).toEqual({ '1': 'speaker' });
   });
 });

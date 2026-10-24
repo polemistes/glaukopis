@@ -101,3 +101,9 @@ look-at-quotations-warning = Quotations
 look-at-paragraph-kinds = Paragraph kinds
 look-at-words-kinds = Words kinds
 look-type-requirements = Requirements of the document type
+
+## Stage 4 of the settings, the zoom and the keys of the kinds: the key of a kind, Ctrl+Alt and a digit, as the document type gives it.
+look-kind-key = Key
+look-kind-key-none = None
+# A digit another kind has: choosing it here leaves that kind without.
+look-kind-key-taken = { $keys }, now { $kind }

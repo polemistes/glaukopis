@@ -59,6 +59,44 @@ pub fn families() -> Vec<String> {
     out
 }
 
+/// Whether a family of fonts sets small capitals of its own: whether its
+/// regular face has the OpenType feature `smcp`, which Typst's `smallcaps`
+/// uses and without which it sets the letters as they are. None where Typst
+/// has no font of the family. Asked once a family.
+pub fn has_small_caps(family: &str) -> Option<bool> {
+    type Known = std::sync::Mutex<std::collections::HashMap<String, Option<bool>>>;
+    static KNOWN: OnceLock<Known> = OnceLock::new();
+    let family = family.trim().to_lowercase();
+    let known = KNOWN.get_or_init(Default::default);
+    if let Some(answer) = known.lock().ok().and_then(|k| k.get(&family).copied()) {
+        return answer;
+    }
+    let answer = fonts().book().select(&family, typst::text::FontVariant::default()).map(|index| {
+        fonts().font(index).is_some_and(|font| has_feature(font.data(), font.index(), b"smcp").unwrap_or(false))
+    });
+    if let Ok(mut k) = known.lock() {
+        k.insert(family, answer);
+    }
+    answer
+}
+
+/// Whether the font in the data of a font file, the one at the index in a
+/// collection, has a feature among the substitutions of its glyphs (its
+/// table GSUB): read from the table's list of features, as OpenType lays
+/// it out. None where the data is not a font, or has no such table.
+fn has_feature(data: &[u8], index: u32, tag: &[u8; 4]) -> Option<bool> {
+    let u16_at = |at: usize| data.get(at..at + 2).map(|b| u16::from_be_bytes([b[0], b[1]]) as usize);
+    let u32_at = |at: usize| data.get(at..at + 4).map(|b| u32::from_be_bytes([b[0], b[1], b[2], b[3]]) as usize);
+    // A collection of fonts says where each begins.
+    let font = if data.get(..4)? == b"ttcf" { u32_at(12 + 4 * index as usize)? } else { 0 };
+    let tables = u16_at(font + 4)?;
+    let gsub = (0..tables).map(|i| font + 12 + 16 * i).find(|&at| data.get(at..at + 4) == Some(b"GSUB"))?;
+    let gsub = u32_at(gsub + 8)?;
+    let features = gsub + u16_at(gsub + 6)?;
+    let count = u16_at(features)?;
+    Some((0..count).any(|i| data.get(features + 2 + 6 * i..features + 6 + 6 * i) == Some(&tag[..])))
+}
+
 fn library() -> &'static LazyHash<Library> {
     static LIBRARY: OnceLock<LazyHash<Library>> = OnceLock::new();
     LIBRARY.get_or_init(|| LazyHash::new(Library::builder().build()))
@@ -714,6 +752,35 @@ mod tests {
         assert!(!message.is_empty());
         std::fs::write(place.join("document.typ"), "#let x = \n").unwrap();
         assert!(set(&place, "document.typ").is_err());
+    }
+
+    #[test]
+    #[cfg(feature = "embedded-fonts")]
+    fn small_capitals_are_set_where_the_font_has_none_of_its_own() {
+        // The type of code, which comes with Typst and has no small capitals:
+        // a speaker, in small capitals by its look, comes out in capitals, the
+        // small letters smaller than the capital.
+        assert_eq!(has_small_caps("DejaVu Sans Mono"), Some(false));
+        assert_eq!(has_small_caps("Libertinus Serif"), Some(true));
+        assert_eq!(has_small_caps("No Such Font"), None);
+        assert_eq!(has_feature(b"not a font", 0, b"smcp"), None);
+        assert_eq!(has_feature(b"ttcf", 3, b"smcp"), None);
+        let format = crate::formats::DocumentFormat {
+            name: "Test".into(),
+            font: crate::formats::Font { family: "DejaVu Sans Mono".into(), size: 10.0 },
+            ..Default::default()
+        };
+        let mut source = crate::formats::typst::preamble(&format, &Default::default());
+        source.push_str("#block[Antigone] <gk-kind-speaker>\n");
+        let tmp = tempfile::tempdir().unwrap();
+        std::fs::write(tmp.path().join("document.typ"), source).unwrap();
+        let set = set(tmp.path(), "document.typ").unwrap();
+        let runs = texts(&set.document, 1);
+        let words: String = runs.iter().map(|r| r.text.as_str()).collect();
+        assert!(words.contains("ANTIGONE"), "{runs:?}");
+        let capital = runs.iter().find(|r| r.text.starts_with('A')).unwrap();
+        let small = runs.iter().find(|r| r.text.contains("NTIGONE")).unwrap();
+        assert!((small.size - capital.size * 0.8).abs() < 0.01, "{runs:?}");
     }
 
     #[test]

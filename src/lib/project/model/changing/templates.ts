@@ -15,6 +15,15 @@ import type { Project } from '../project.svelte';
 const strings = (value: unknown): string[] =>
   Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
 
+/** The keys of the kinds, digits to kinds (ADR 0066), as the project can carry them: nothing where there are none. */
+function kindKeysOf(value: unknown): { kindKeys?: Record<string, string> } {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const keys = Object.fromEntries(
+    Object.entries(value).filter(([d, k]) => /^[0-9]$/.test(d) && typeof k === 'string' && !!k),
+  );
+  return Object.keys(keys).length ? { kindKeys: keys } : {};
+}
+
 /**
  * A template as the project can carry it: a plain record with what a
  * template has, each field as it should be; nothing where what is given
@@ -45,6 +54,7 @@ export function cleanTemplate(value: unknown, id?: string): Template | null {
         : [],
       kinds: strings(given.kinds),
       passageKinds: strings(given.passageKinds),
+      ...kindKeysOf(given.kindKeys),
       requirements: {
         words: count(requirements.words),
         abstractWords: count(requirements.abstractWords),

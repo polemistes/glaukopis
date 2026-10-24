@@ -192,6 +192,49 @@ export function kindName(id: string, own: readonly { id: string; name?: string }
   return specOf(id)?.label() ?? own.find((k) => k.id === id)?.name ?? id;
 }
 
+// ---- the keys of the kinds ----
+
+/** The digits Ctrl+Alt gives kinds of paragraph with, in their order. */
+export const KEY_DIGITS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] as const;
+
+/**
+ * The kinds of paragraph Ctrl+Alt with a digit gives in a document type, by
+ * the digit: what the type says, and text for 0, said or not (ADR 0066).
+ * Only text, where the type is not known yet.
+ */
+export function kindKeysOf(
+  template: { kindKeys?: Record<string, string> } | null | undefined,
+): Record<string, string> {
+  return { ...(template?.kindKeys ?? {}), '0': 'text' };
+}
+
+/** The digit that gives a kind, among the keys of a type; nothing where none does. */
+export function digitOfKind(
+  keys: Readonly<Record<string, string>>,
+  kind: string,
+): string | undefined {
+  const id = renamed(kind);
+  return KEY_DIGITS.find((d) => keys[d] !== undefined && renamed(keys[d]) === id);
+}
+
+/**
+ * The keys of a type with a kind given a digit, or none with `''`: a digit
+ * taken from another kind leaves that kind without, and the kind has no
+ * other. Text keeps 0, which is not said.
+ */
+export function withKindKey(
+  keys: Readonly<Record<string, string>> | undefined,
+  kind: string,
+  digit: string,
+): Record<string, string> {
+  const id = renamed(kind);
+  const out: Record<string, string> = {};
+  for (const [d, k] of Object.entries(keys ?? {}))
+    if (d !== '0' && d !== digit && renamed(k) !== id) out[d] = k;
+  if (digit && digit !== '0') out[digit] = kind;
+  return out;
+}
+
 /** A kind of the writer's own, as much of it as the shape of a text needs: what it is based on. */
 export type OwnKindLike = BasedKind;
 
@@ -226,6 +269,10 @@ export function inHand(project: Project, templateKinds: readonly string[] = []):
  * centimetre is about 2.4em on screen and 12pt about an em, so the
  * measures in points are those of the screen; `app.css` has only what
  * depends on the paragraphs around, and the signs before a list's items.
+ * Only what is set off from the text by nature stands in on screen: a
+ * quotation, its attribution, code and an epigraph, and the lists, whose
+ * signs hang; the lines of a verse and the parts of a play or a script are
+ * not set in, as they would be on the page (ADR 0066).
  */
 const CUES: Record<string, Look> = {
   quote: { indentLeft: '16.5pt', size: 11.5 },
@@ -243,26 +290,19 @@ const CUES: Record<string, Look> = {
     spaceAfter: '18pt',
     firstLine: '0pt',
   },
-  line: { indentLeft: '1cm' },
-  speaker: { case: 'smallcaps', indentLeft: '1cm', spaceBefore: '7pt' },
-  direction: { italic: true, indentLeft: '1cm', spaceBefore: '2.4pt', spaceAfter: '2.4pt' },
+  speaker: { case: 'smallcaps', spaceBefore: '7pt' },
+  direction: { italic: true, spaceBefore: '2.4pt', spaceAfter: '2.4pt' },
   scene: { bold: true, case: 'upper', spaceBefore: '16.5pt', align: 'left' },
   action: { align: 'left' },
-  character: { indentLeft: '5.6cm', case: 'upper', spaceBefore: '10.6pt', spaceAfter: '0pt' },
-  dialogue: { indentLeft: '2.5cm', indentRight: '3.8cm', spaceBefore: '0pt', spaceAfter: '0pt' },
-  parenthetical: {
-    indentLeft: '4cm',
-    indentRight: '4cm',
-    spaceBefore: '0pt',
-    spaceAfter: '0pt',
-    italic: true,
-  },
+  character: { case: 'upper', spaceBefore: '10.6pt', spaceAfter: '0pt' },
+  dialogue: { spaceBefore: '0pt', spaceAfter: '0pt' },
+  parenthetical: { spaceBefore: '0pt', spaceAfter: '0pt', italic: true },
   transition: { align: 'right', case: 'upper', spaceBefore: '10.6pt' },
   headword: { bold: true, spaceBefore: '6pt', spaceAfter: '0pt', firstLine: '0pt' },
-  gloss: { indentLeft: '1.27cm', spaceBefore: '0pt', spaceAfter: '6pt' },
+  gloss: { spaceBefore: '0pt', spaceAfter: '6pt' },
   item: { indentLeft: '18.9pt' },
   numbered: { indentLeft: '18.9pt' },
-  code: { monospace: true, lineSpacing: 1, align: 'left', size: 10.3 },
+  code: { monospace: true, lineSpacing: 1, align: 'left', size: 10.3, indentLeft: '16.5pt' },
   break: { align: 'center', spaceBefore: '12pt', spaceAfter: '12pt', text: '* * *' },
   foreign: { italic: true },
   title: { italic: true },

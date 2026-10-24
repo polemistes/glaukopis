@@ -1088,6 +1088,12 @@ describe('the templates the project carries a copy of', () => {
     expect(p.revision).toBe(before);
     p.keepTemplate({ ...own('letter'), name: 'Epistle', style: 'chicago-notes' });
     expect(p.templateCopy('letter')).toMatchObject({ name: 'Epistle', style: 'chicago-notes' });
+    // With the keys of its kinds, digits only.
+    p.keepTemplate({
+      ...own('letter'),
+      kindKeys: { '1': 'speaker', '2': 'line', x: 'code', '3': '' } as Record<string, string>,
+    });
+    expect(p.templateCopy('letter')?.kindKeys).toEqual({ '1': 'speaker', '2': 'line' });
 
     // Which elements use it.
     const a = p.addChild(root, { title: 'A' })!;

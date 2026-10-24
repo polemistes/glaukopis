@@ -46,7 +46,8 @@
   } from './numbers';
   import LanguageDialog from './LanguageDialog.svelte';
   import LineNumbersDialog from './LineNumbersDialog.svelte';
-  import { documents } from '$lib/preview/documents.svelte';
+  import { documents, templateUsedCached } from '$lib/preview/documents.svelte';
+  import { kindKeysOf } from './kinds';
   import { CitationView, FootnoteView, PageBreakView } from './views.svelte';
   import { RefMarkView } from './refmarks';
   import { topOf } from '$lib/figures/numbering.svelte';
@@ -451,6 +452,11 @@
       askNumbers: kind === 'body' ? askNumbers : undefined,
       askLanguage: kind === 'body' ? askLanguage : undefined,
       language: () => untrack(() => language),
+      // The keys of the kinds, as the document type of the element written in gives them.
+      kindKeys: () =>
+        untrack(() =>
+          kindKeysOf(owner && project.node(owner) ? templateUsedCached(project, owner) : null),
+        ),
     };
 
     const created = untrack(() => {

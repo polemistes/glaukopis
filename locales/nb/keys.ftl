@@ -126,3 +126,6 @@ keys-preview-zoom-in = Større sider
 keys-preview-zoom-in-equal = Større sider
 keys-preview-zoom-out = Mindre sider
 keys-preview-zoom-fit = Sider like brede som panelet
+
+## The settings in plain words, stage 4: the keys of the kinds
+keys-writing-kind = Avsnittstypen dokumenttypen gir sifferet

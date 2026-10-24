@@ -21,7 +21,8 @@
     type OutputTarget,
     type Template,
   } from '$lib/api/templates';
-  import { CATALOGUE, GROUPS } from '$lib/editor/kinds';
+  import { CATALOGUE, GROUPS, KEY_DIGITS, kindName, withKindKey } from '$lib/editor/kinds';
+  import { kindKeys, keyLabel } from '$lib/shell/keys.svelte';
   import { t } from '$lib/i18n';
   import { formatGroups, styleGroups } from '$lib/look/choosing.svelte';
   import Button from '$lib/ui/Button.svelte';
@@ -221,6 +222,20 @@
     if (!template) return;
     const list = template.passageKinds.filter((k) => k !== kindId);
     template.passageKinds = yes ? [...list, kindId] : list;
+  }
+
+  // ---- the keys of the kinds (ADR 0066) ----
+
+  /** The kinds of paragraph a key may give: those of the catalogue but text, which has 0. */
+  const keyedKinds = CATALOGUE.filter((k) => k.family === 'paragraph' && k.id !== 'text');
+  /** Gives the digit a kind, or none with `''`; the kind has no other digit. */
+  function setKey(digit: string, kind: string) {
+    if (!template) return;
+    const given = template.kindKeys?.[digit];
+    const keys = kind
+      ? withKindKey(template.kindKeys, kind, digit)
+      : withKindKey(template.kindKeys, given ?? '', '');
+    template.kindKeys = Object.keys(keys).length ? keys : undefined;
   }
 
   // ---- the requirements ----
@@ -469,6 +484,29 @@
                 />
               </label>
             {/each}
+          {/each}
+          <h4>{t('template-kind-keys')}</h4>
+          {#each KEY_DIGITS as digit (digit)}
+            {@const given = digit === '0' ? 'text' : (tp.kindKeys?.[digit] ?? '')}
+            <label class="row" data-kind-key={digit}>
+              <span class="what">{keyLabel(kindKeys(digit))}</span>
+              <select
+                value={given}
+                disabled={digit === '0'}
+                onchange={(e) => setKey(digit, e.currentTarget.value)}
+              >
+                {#if digit === '0'}
+                  <option value="text">{kindName('text')}</option>
+                {:else}
+                  <option value="">{t('look-kind-key-none')}</option>
+                  {#each keyedKinds as spec (spec.id)}<option value={spec.id}>{spec.label()}</option
+                    >{/each}
+                  {#if given && !keyedKinds.some((k) => k.id === given)}
+                    <option value={given}>{kindName(given)}</option>
+                  {/if}
+                {/if}
+              </select>
+            </label>
           {/each}
         {:else if section === 'requirements'}
           <Settings target={tp} rows={requirementRows} />

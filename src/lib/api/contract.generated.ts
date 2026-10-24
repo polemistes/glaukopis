@@ -271,7 +271,7 @@ export const readDone: ocr.ReadDone = {
     "date": null,
     "file": "dot.png",
     "keywords": [],
-    "kind": "Picture",
+    "kind": "Image",
     "language": null,
     "pictures": [],
     "remarks": [],
@@ -2732,6 +2732,15 @@ export const template: templates.Template = {
   "description": "Text with a title, for anything: what every document is until you say what you are writing. The title, the text, the notes and the bibliography.",
   "group": "plain",
   "id": "plain",
+  "kindKeys": {
+    "1": "quote",
+    "2": "line",
+    "3": "item",
+    "4": "numbered",
+    "5": "code",
+    "6": "epigraph",
+    "7": "attribution"
+  },
   "kinds": [],
   "name": "Plain document",
   "outputs": [

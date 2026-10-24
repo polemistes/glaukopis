@@ -129,3 +129,6 @@ keys-preview-zoom-in = Larger pages
 keys-preview-zoom-in-equal = Larger pages
 keys-preview-zoom-out = Smaller pages
 keys-preview-zoom-fit = Pages as wide as the pane
+
+## The settings in plain words, stage 4: the keys of the kinds
+keys-writing-kind = The kind of paragraph the document type gives the digit

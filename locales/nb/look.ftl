@@ -91,3 +91,9 @@ look-at-quotations-warning = Sitater
 look-at-paragraph-kinds = Avsnittstyper
 look-at-words-kinds = Ordtyper
 look-type-requirements = Dokumenttypens krav
+
+## Stage 4 of the settings, the zoom and the keys of the kinds: the key of a kind, Ctrl+Alt and a digit, as the document type gives it.
+look-kind-key = Tast
+look-kind-key-none = Ingen
+# A digit another kind has: choosing it here leaves that kind without.
+look-kind-key-taken = { $keys }, nå { $kind }

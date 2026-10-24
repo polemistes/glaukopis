@@ -431,7 +431,7 @@ try {
   check(
     'the menu on a cell has the same',
     offered ===
-      'A row above | A row below | Remove the row | A column before | A column after | Remove the column | Join the cells | Split the cell | The first row is headings | The first column is headings | To the left | In the middle | To the right | Numbered | The table… How wide it is | Remove the table',
+      'A row above | A row below | Remove the row | A column before | A column after | Remove the column | Join the cells | Split the cell | The first row is headings | The first column is headings | To the left | In the middle | To the right | Numbered | The table… | Remove the table',
     offered,
   );
   await app.screenshot('tables-4-menu');

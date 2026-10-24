@@ -8,7 +8,9 @@ import {
   keyLabel,
   keyOf,
   keysFor,
+  kindKeyOf,
   matches,
+  wordsOf,
   shortcuts,
   type Place,
 } from './keys.svelte';
@@ -55,7 +57,7 @@ describe('the keys', () => {
   it('have each a name of its own, and words for it', () => {
     const ids = KEYS.map((k) => k.id);
     expect(new Set(ids).size).toBe(ids.length);
-    expect(ids.filter((id) => !has(`keys-${id}`))).toEqual([]);
+    expect(ids.filter((id) => !has(wordsOf(id)))).toEqual([]);
     const places = [...new Set(KEYS.map((k) => k.place))];
     expect(places.filter((p) => !has(`keys-place-${p}`))).toEqual([]);
   });
@@ -82,6 +84,26 @@ describe('the keys', () => {
     expect(matches(entry('F8'), press('F8'))).toBe(true);
     expect(matches(entry('Shift+F8'), press('F8'))).toBe(false);
     expect(matches(entry(''), press('x'))).toBe(false);
+  });
+
+  it('give a paragraph a kind by Ctrl+Alt and a digit, but not by AltGr, which writes', () => {
+    const chord = (key: string, code: string, more: Partial<KeyboardEventInit> = {}) =>
+      new KeyboardEvent('keydown', { key, code, ctrlKey: true, altKey: true, ...more });
+    expect(kindKeyOf(chord('1', 'Digit1'))).toBe('1');
+    expect(kindKeyOf(chord('0', 'Digit0'))).toBe('0');
+    // A Mac writes a sign with Option and a digit: the digit under it is the key.
+    expect(kindKeyOf(chord('¡', 'Digit1', { ctrlKey: false, metaKey: true }))).toBe('1');
+    expect(kindKeyOf(chord('2', 'Digit2', { shiftKey: true }))).toBeNull();
+    expect(kindKeyOf(chord('c', 'KeyC'))).toBeNull();
+    expect(kindKeyOf(press('1', { ctrlKey: true, code: 'Digit1' }))).toBeNull();
+    // On Windows, AltGr comes as Ctrl+Alt: with 2 on a Norwegian keyboard it writes @.
+    const altGr = chord('@', 'Digit2');
+    Object.defineProperty(altGr, 'getModifierState', { value: (m: string) => m === 'AltGraph' });
+    expect(kindKeyOf(altGr)).toBeNull();
+    expect(shortcuts.handle(altGr)).toBe(false);
+    expect(keysFor('writing-kind-7')).toBe('Ctrl+Alt+7');
+    expect(wordsOf('writing-kind-7')).toBe('keys-writing-kind');
+    expect(wordsOf('writing-bold')).toBe('keys-writing-bold');
   });
 
   it('are a Latin letter that is written, wherever it is on the keyboard', () => {

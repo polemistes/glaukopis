@@ -2,7 +2,9 @@
 // that every file reads as JSON and is named by its id, that it uses only
 // the fields of src/lib/api/templates.ts, that its contents name only the
 // generated parts and the kinds of elements of the catalogue (ADR 0038), its
-// kinds of passage only those of ADR 0029, its group one of the groups, its
+// kinds of passage only those of ADR 0029, the keys of its kinds digits that
+// give kinds of paragraph of the catalogue or of its own (0 only text,
+// ADR 0066), its group one of the groups, its
 // outputs only the targets there are, and that what it is based on, its
 // layout and its style exist. The root, plain, is valid as a base whether
 // or not its file is present.
@@ -23,7 +25,7 @@ const cslDir = join(root, 'csl');
 const ROOT = 'plain';
 const FIELDS = new Set([
   'id', 'name', 'group', 'description', 'source', 'basedOn', 'layout', 'style',
-  'contents', 'kinds', 'passageKinds', 'requirements', 'outputs',
+  'contents', 'kinds', 'passageKinds', 'kindKeys', 'requirements', 'outputs',
 ]);
 const REQUIRED = ['id', 'name', 'group', 'description', 'contents', 'kinds', 'passageKinds', 'requirements', 'outputs'];
 const SOURCE_FIELDS = ['name', 'url', 'checked', 'confidence', 'notes'];
@@ -36,6 +38,12 @@ const KINDS = new Set([
 ]);
 const PASSAGE_KINDS = new Set([
   'text', 'quote', 'list', 'numbered', 'attribution', 'epigraph', 'verse', 'speaker', 'direction',
+  'scene', 'action', 'character', 'dialogue', 'parenthetical', 'transition',
+  'headword', 'gloss', 'code', 'break', 'draft',
+]);
+/** The kinds of paragraph of the catalogue, by their ids as they are now: what a key may give. */
+const PARAGRAPH_KINDS = new Set([
+  'text', 'quote', 'item', 'numbered', 'attribution', 'epigraph', 'line', 'speaker', 'direction',
   'scene', 'action', 'character', 'dialogue', 'parenthetical', 'transition',
   'headword', 'gloss', 'code', 'break', 'draft',
 ]);
@@ -140,6 +148,21 @@ for (const file of files) {
   }
   if (!Array.isArray(template.passageKinds)) fault(file, 'passageKinds is not a list');
   else for (const kind of template.passageKinds) if (!PASSAGE_KINDS.has(kind)) fault(file, `not a kind of passage: ${kind}`);
+  if (template.kindKeys !== undefined) {
+    const keys = template.kindKeys;
+    if (!keys || typeof keys !== 'object' || Array.isArray(keys)) fault(file, 'kindKeys is not an object');
+    else {
+      const given = new Set();
+      for (const [digit, kind] of Object.entries(keys)) {
+        if (!/^[0-9]$/.test(digit)) fault(file, `kindKeys has a key that is not a digit: ${digit}`);
+        else if (digit === '0' && kind !== 'text') fault(file, `Ctrl+Alt+0 is text, not ${kind}`);
+        else if (!PARAGRAPH_KINDS.has(kind) && !(template.passageKinds ?? []).includes(kind)) {
+          fault(file, `Ctrl+Alt+${digit} gives what is no kind of paragraph: ${kind}`);
+        } else if (given.has(kind)) fault(file, `${kind} has two keys`);
+        given.add(kind);
+      }
+    }
+  }
 
   const r = template.requirements;
   if (!r || typeof r !== 'object') fault(file, 'requirements is not an object');

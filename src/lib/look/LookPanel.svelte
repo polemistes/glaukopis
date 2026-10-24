@@ -18,6 +18,7 @@
    * written as the element's changes, each a step of undo of its own.
    */
   import { tick, untrack } from 'svelte';
+  import { SvelteSet } from 'svelte/reactivity';
   import Minus from '@lucide/svelte/icons/minus';
   import Plus from '@lucide/svelte/icons/plus';
   import Search from '@lucide/svelte/icons/search';
@@ -36,9 +37,20 @@
     type KindLooks,
     type OwnKind,
   } from '$lib/api/documents';
-  import type { Template } from '$lib/api/templates';
+  import { templatesSave, type Template } from '$lib/api/templates';
+  import { asOwn } from '$lib/document/templates';
+  import { kindKeys as keysOfDigit, keyLabel } from '$lib/shell/keys.svelte';
   import { aboutDocumentUi } from '$lib/document/about-document.svelte';
-  import { CATALOGUE, GROUPS, points, specOf } from '$lib/editor/kinds';
+  import {
+    CATALOGUE,
+    digitOfKind,
+    GROUPS,
+    KEY_DIGITS,
+    kindKeysOf,
+    points,
+    specOf,
+    withKindKey,
+  } from '$lib/editor/kinds';
   import { languages, t } from '$lib/i18n';
   import { documents, templateFor, templateName } from '$lib/preview/documents.svelte';
   import StyleBrowser from '$lib/preview/StyleBrowser.svelte';
@@ -280,6 +292,46 @@
     );
   });
 
+  // ---- the keys of the kinds (ADR 0066) ----
+
+  /** The kinds Ctrl+Alt with a digit gives in the document type, by the digit, text for 0. */
+  const kindKeys = $derived(kindKeysOf(template));
+
+  /**
+   * Gives a kind of paragraph a key in the document type, or none with
+   * `''`: a digit taken from another kind leaves that kind without. A type
+   * of the writer's own is changed; one that comes with Glaukopis is kept
+   * as one of the writer's own with the keys, as any change to it is, and
+   * the document takes it where it took the other, kept in the project.
+   */
+  async function setKindKey(kind: string, digit: string) {
+    if (!template) return;
+    const was = template;
+    const changedType = {
+      ...($state.snapshot(was) as Template),
+      kindKeys: withKindKey(was.kindKeys, kind, digit),
+    };
+    error = null;
+    try {
+      const taken = documents.templates.map((s) => s.id);
+      const saved = await templatesSave(
+        asOwn(
+          changedType,
+          was.group === 'own' ? was.name : t('template-name-changed', { name: was.name }),
+          taken,
+        ),
+      );
+      documents.forgetTemplate(saved.id);
+      await documents.reload();
+      template = saved;
+      if (saved.id !== choice.template)
+        setOwnAt(inherited.from.get('template') ?? target, { template: saved.id });
+      project.keepTemplate(saved);
+    } catch (e) {
+      error = describeError(e) ?? t('template-save-failed');
+    }
+  }
+
   /** The element over this one that a setting is taken from, by name; nothing where it is this one's. */
   function fromAbove(key: keyof DocumentSettings): string | null {
     const who = inherited.from.get(key);
@@ -415,7 +467,11 @@
   const SHOWN: readonly LookSection[] = LOOK_SECTIONS;
   /** The part at the top of the panel as it is scrolled: its chip is marked. */
   let section = $state<LookSection | null>(null);
-  let kindInView = $state<string | undefined>(undefined);
+  /**
+   * The kinds whose boxes are open, kept by kind for the life of the panel,
+   * so that a change, which may build the boxes anew, does not close one.
+   */
+  const openKinds = new SvelteSet<string>();
   let form = $state<HTMLDivElement>();
   let query = $state('');
   const searching = $derived(query.trim().length > 0);
@@ -428,7 +484,7 @@
     const asked = untrack(() => lookUi.request);
     untrack(() => {
       if (asked.section || asked.kind || asked.level || asked.at) query = '';
-      if (asked.kind) kindInView = asked.kind;
+      if (asked.kind) openKinds.add(asked.kind);
       aim = asked;
       lookHere();
       // Asked for from a chip on a line of an element under the document's: the changes hold for it.
@@ -1547,7 +1603,8 @@
   {@const said = says(f, k.id)}
   {@const look = resolved[k.id]?.look}
   <details
-    open={k.id === kindInView}
+    open={openKinds.has(k.id)}
+    ontoggle={(e) => (e.currentTarget.open ? openKinds.add(k.id) : openKinds.delete(k.id))}
     data-kind={k.id}
     data-said={said ? '' : null}
     data-changed={changesKind(k.id) ? '' : null}
@@ -1572,6 +1629,31 @@
       </p>
     {/if}
     <Settings target={f} rows={kindRows.get(k.id) ?? []} {from} />
+    {#if k.family === 'paragraph'}
+      {@const digit = digitOfKind(kindKeys, k.id) ?? ''}
+      <label class="row" data-kind-key>
+        <span class="what">{t('look-kind-key')}</span>
+        <!-- Text has Ctrl+Alt+0 in every document type, and no other. -->
+        <select
+          value={digit}
+          disabled={k.id === 'text' || !template}
+          onchange={(e) => setKindKey(k.id, e.currentTarget.value)}
+        >
+          {#if k.id !== 'text'}<option value="">{t('look-kind-key-none')}</option>{/if}
+          {#each KEY_DIGITS.filter((d) => (k.id === 'text') === (d === '0')) as d (d)}
+            {@const other = kindKeys[d] && kindKeys[d] !== k.id ? kindKeys[d] : null}
+            <option value={d}
+              >{other
+                ? t('look-kind-key-taken', {
+                    keys: keyLabel(keysOfDigit(d)),
+                    kind: kindName(other),
+                  })
+                : keyLabel(keysOfDigit(d))}</option
+            >
+          {/each}
+        </select>
+      </label>
+    {/if}
   </details>
 {/snippet}
 
