@@ -488,7 +488,7 @@ fn pictures_become_figures() {
     assert_eq!(read.counts.figures, 2);
     assert!(
         read.remarks
-            .contains(&"The picture “image1.emf” is left out: it is of a kind that is not read (EMF).".to_owned()),
+            .contains(&"The image “image1.emf” is left out: it is of a kind that is not read (EMF).".to_owned()),
         "{:?}",
         read.remarks
     );
@@ -1453,7 +1453,7 @@ fn pictures_that_the_file_holds_and_the_text_has_not_are_told_of() {
             "2 captions began with a word and a number, such as “Figure 1:”. They are left out: Glaukopis numbers \
                  figures and tables itself. Where the text names one of them by its number, that is text as it \
                  was written, and does not follow the numbers as they are printed.",
-            "1 picture that the file holds is not in the text that was read, and is left out. It may stand in \
+            "1 image that the file holds is not in the text that was read, and is left out. It may stand in \
                  the head or the foot of the pages, or in a drawing.",
             TRACKED,
         ]
@@ -2127,9 +2127,9 @@ fn pictures_that_cannot_be_taken_in() {
     assert_eq!(
         read.remarks,
         vec![
-            "The picture “far.png” is left out: it is on the network, and nothing is fetched from there.",
-            "The picture “missing.png” is left out: the file was not found where the document says it is.",
-            "The picture “drawing.emf” is left out: it is of a kind that is not read (EMF).",
+            "The image “far.png” is left out: it is on the network, and nothing is fetched from there.",
+            "The image “missing.png” is left out: the file was not found where the document says it is.",
+            "The image “drawing.emf” is left out: it is of a kind that is not read (EMF).",
         ]
     );
     // What was said of them is kept.

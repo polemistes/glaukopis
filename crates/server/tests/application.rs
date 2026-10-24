@@ -117,7 +117,7 @@ async fn the_pictures_of_a_project_are_brought_to_be_the_same() {
         let done = remote.sync_pictures(ROOM, &joined.token, &his, &used(&[&a, &b, &small, &small])).unwrap();
         assert_eq!(done.sent, 1);
         assert_eq!(done.problems.len(), 1, "{:?}", done.problems);
-        assert!(done.problems[0].starts_with("A picture is larger than 127.0.0.1"), "{:?}", done.problems);
+        assert!(done.problems[0].starts_with("An image is larger than 127.0.0.1"), "{:?}", done.problems);
         assert!(remote.files(ROOM, &owner).unwrap().0.iter().any(|f| f.hash == small.hash));
         // Sent all the same, it is refused in the words of the server.
         let hash = glaukopis_server::files::hash_of(large.as_bytes());
