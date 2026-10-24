@@ -24,7 +24,7 @@ use crate::document::bibliography::{Bibliography, gather};
 use crate::document::pandoc::{
     Converter, Extras, Flavour, PageBegins, meta_inlines, meta_list, meta_string, meta_text,
 };
-use crate::document::{Block, Contributor, Document, Inline, NotePlace, OwnKind, Part, Section};
+use crate::document::{Block, Contributor, Document, Inline, NotePlace, OwnKind, Part, Role, Section};
 use crate::error::{Error, IoContext, Result};
 use crate::formats::typst::{self, Particulars, preamble};
 use crate::formats::{DocumentFormat, NoteKind, TitlePlacement};
@@ -959,13 +959,11 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
         if f.title.anonymous || !f.title.show_authors { Vec::new() } else { doc.authors().collect() };
     // The editors and the translators on the title page: in lines of their
     // own after the authors, in the language of the document.
-    let named = |people: &mut dyn Iterator<Item = &Contributor>| -> Vec<String> {
-        people.map(|c| c.name.trim().to_owned()).collect()
-    };
+    let named = |role| doc.in_role(role).map(|c| c.name.trim().to_owned()).collect::<Vec<_>>();
     let (editors, translators) = if f.title.anonymous || !f.title.show_roles {
         (Vec::new(), Vec::new())
     } else {
-        (named(&mut doc.editors()), named(&mut doc.translators()))
+        (named(Role::Editor), named(Role::Translator))
     };
     let roles = role_lines(&editors, &translators, doc.language.as_deref());
     let keywords: Vec<&str> = doc.keywords.iter().map(|k| k.trim()).filter(|k| !k.is_empty()).collect();
