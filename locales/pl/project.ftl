@@ -78,11 +78,7 @@ project-add = Dodaj element
 project-add-after = Dodaj element po nim
 project-write-text = Pisz jego tekst
 project-associate = Powiąż z…
-project-associate-hint = Potem kliknij drugi element
-project-heading = Drukuj nazwę jako nagłówek
-project-heading-hint = Wyłączone: nazwa jest etykietą dla ciebie; drukuje się tylko tekst
 project-leave-out = Pomiń w dokumencie
-project-leave-out-hint = Ze wszystkim, co pod nim
 # An element that stands for another map: in the document, that map is in its place.
 project-stands-for = Zastępuje „{ $name }”
 project-stand-for = Zastępuj inną mapę
@@ -132,7 +128,6 @@ project-words = { $count ->
 }
 project-read-on = Dwuklik, by czytać dalej
 project-stands-for-map = Zastępuje mapę „{ $name }”
-project-name-not-printed = Nazwa nie jest drukowana
 project-left-out-of-document = Pominięty w dokumencie
 
 ## The panels at the side: the references and the pictures

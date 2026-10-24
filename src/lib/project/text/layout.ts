@@ -12,7 +12,7 @@ import type { LinkRecord, NodeRecord } from '../model/types';
 import type { Tree } from '../model/tree';
 
 /** What a row needs to know of its element. */
-export type RowFacts = Pick<NodeRecord, 'excluded' | 'empty' | 'include' | 'heading' | 'words'>;
+export type RowFacts = Pick<NodeRecord, 'excluded' | 'empty' | 'include' | 'words'>;
 
 export interface Row {
   id: string;
@@ -58,11 +58,9 @@ export function textRows(
       away,
     };
     out.push(row);
-    // The element in view is the title; an element whose name is not
-    // printed does not deepen what is under it.
-    const next = level === 0 ? 1 : node.heading ? level + 1 : level;
+    // The element in view is the title; every element deepens what is under it.
     const from = out.length;
-    for (const c of under) walk(c, next, out_, away || hides);
+    for (const c of under) walk(c, level + 1, out_, away || hides);
     if (row.hidden) {
       for (const r of out.slice(from)) {
         row.hidden.ids.push(r.id);
@@ -76,15 +74,15 @@ export function textRows(
 
 /**
  * The numbers of the elements, as in an outline: 1, 1.2, 1.2.3, counted
- * among those whose names are printed as headings, what is folded away
- * as well (pass all the rows), so that they do not change as it is folded.
- * The element in view and what is left out of the document have none.
+ * every element counted, what is folded away as well (pass all the
+ * rows), so that they do not change as it is folded. The element in view
+ * and what is left out of the document have none.
  */
-export function outlineNumbers(rows: Row[], heading: (id: string) => boolean): Map<string, string> {
+export function outlineNumbers(rows: Row[]): Map<string, string> {
   const out = new Map<string, string>();
   const counters: number[] = [];
   for (const r of rows) {
-    if (r.level === 0 || r.excluded || !heading(r.id)) continue;
+    if (r.level === 0 || r.excluded) continue;
     counters.length = r.level;
     counters[r.level - 1] = (counters[r.level - 1] ?? 0) + 1;
     out.set(r.id, Array.from(counters, (n) => n ?? 0).join('.'));

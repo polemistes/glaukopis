@@ -746,7 +746,7 @@ Where the text says *see figure 2*, the number should follow the figure: if
 another figure is put in before it, the text is to say *figure 3*. Make such
 a cross-reference with **Insert › Cross-reference…**, or **Ctrl+Alt+R**, and
 choose what it refers to: a figure, a table, a numbered equation, or a part
-of the document, which is an element whose name is printed as a heading.
+of the document, which is an element, by its name.
 They can be found by what is said of them.
 
 The cross-reference then says what the document calls the thing:
@@ -1230,8 +1230,7 @@ there is a name and a colour, as before.
 **Kind** in the element's menu has the kinds of the project, in their
 colours; then the kinds that come with Glaukopis which the template puts in
 hand, or which the project uses already, such as **Abstract** or
-**Appendix**; and **More…**, with all of them by group: **Front matter**,
-**Back matter** and **Cover**. **New kind…** makes a kind and gives it to
+**Appendix**; and **More…**, with all of them in one list. **New kind…** makes a kind and gives it to
 the element, and **Kinds of this project…** shows the project's own, with
 how many elements are of each, to change or delete them. A name you have
 used in another project is offered as you type, with the colour it had
@@ -1962,18 +1961,15 @@ a large one. It is read again only when it has changed.
 ## What goes into the document
 
 Everything under the element in view, in its order: the element's name is
-the title, its text comes first, and each element under it is a part, with
-the parts under that, as deep as they go. Any element prints so: the project
-itself prints the whole project, and a chapter that is entered prints the
-chapter. Two things change that, both in the menu of an element:
-
-- **Print the name as a heading.** When this is off, the name is for you: a
-  label for a paragraph, which is printed without it.
-- **Leave out of the document.** The element stays in the tree, with what is
-  under it, and is not printed, in no document that holds it. A thought not
-  yet decided on is kept so, out of every document; or the book is one tree
-  under the project, with the thoughts as trees beside it, and that tree is
-  what is printed.
+the title, its text comes first, and each element under it is a part, its
+name the heading, with the parts under that, as deep as they go. Any element
+prints so: the project itself prints the whole project, and a chapter that
+is entered prints the chapter. One thing changes that, in the menu of an
+element: **Leave out of the document**. The element stays in the tree, with
+what is under it, and is not printed, in no document that holds it. A
+thought not yet decided on is kept so, out of every document; or the book is
+one tree under the project, with the thoughts as trees beside it, and that
+tree is what is printed.
 
 What a document is, how its pages look and how it cites, its language,
 authors, date, keywords and identifiers are set on an element and hold for
@@ -2616,8 +2612,8 @@ What is one change:
   paragraphs written one after another are one change.
 - **A paragraph moved**: deleted in one place and written, with nearly the
   same words, in another.
-- **An element** added, deleted, moved, left out of the document or put back,
-  or printed as a heading or not. An element added with its text is one
+- **An element** added, deleted, moved, left out of the document or put back.
+  An element added with its text is one
   change.
 - **A figure, an equation or a table** put in or taken out, and a citation, a
   formula or a note put into a sentence where nothing else of it changed. The

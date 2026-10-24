@@ -73,11 +73,7 @@ project-add = Добавить элемент
 project-add-after = Добавить элемент после него
 project-write-text = Писать его текст
 project-associate = Связать с…
-project-associate-hint = Затем щёлкните другой элемент
-project-heading = Печатать название как заголовок
-project-heading-hint = Выключено: название — ярлык для вас; печатается только текст
 project-leave-out = Не включать в документ
-project-leave-out-hint = Со всем, что под ним
 # An element that stands for another map: in the document, that map is in its place.
 project-stands-for = Замещает «{ $name }»
 project-stand-for = Замещать другую карту
@@ -127,7 +123,6 @@ project-words = { $count ->
 }
 project-read-on = Двойной щелчок — читать дальше
 project-stands-for-map = Замещает карту «{ $name }»
-project-name-not-printed = Название не печатается
 project-left-out-of-document = Не входит в документ
 
 ## The panels at the side: the references and the pictures

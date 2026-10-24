@@ -246,7 +246,7 @@ function pointersOf(project: ProjectRead, top: string = PROJECT): Map<string, Po
     const walk = (id: string, root: boolean) => {
       const e = project.byId.get(id);
       if (!e || e.excluded) return;
-      if (!root && e.heading && e.name && !out.has(id))
+      if (!root && e.name && !out.has(id))
         out.set(id, { kind: 'part', number: null, words: e.name });
       for (const s of e.set) {
         const number = s.numbered ? String(++counted[s.kind]) : null;

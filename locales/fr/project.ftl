@@ -93,11 +93,7 @@ project-add = Ajouter un élément
 project-add-after = Ajouter un élément après
 project-write-text = Écrire son texte
 project-associate = Associer à…
-project-associate-hint = Puis cliquez sur l’autre élément
-project-heading = Imprimer le nom comme titre
-project-heading-hint = Désactivé : le nom est une étiquette pour vous ; seul le texte est imprimé
 project-leave-out = Laisser hors du document
-project-leave-out-hint = Avec tout ce qui est dessous
 # An element that stands for another element: in the document, that element is in its place.
 project-stands-for = Tient lieu de « { $name } »
 project-stand-for = Tenir lieu d’un autre élément
@@ -176,7 +172,6 @@ project-words = { $count ->
 }
 project-read-on = Double-cliquez pour lire la suite
 project-stands-for-map = Tient lieu de « { $name } »
-project-name-not-printed = Le nom n’est pas imprimé
 project-left-out-of-document = Laissé hors du document
 
 ## The panels at the side: the references and the pictures

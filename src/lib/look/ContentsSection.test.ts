@@ -166,7 +166,7 @@ describe('what the document contains, in Look', () => {
     );
     expect(places).toEqual(['abstract', 'appendix', 'acknowledgements']);
     const abstract = () => view.find('.place[data-kind="abstract"]')!;
-    expect(abstract().querySelector('.where')?.textContent).toBe('printed at the front');
+    expect(abstract().querySelector('.where')?.textContent).toBe('Front matter');
     expect(abstract().querySelector('.none')?.textContent).toBe('None yet');
 
     // Made first among the book's elements, as the front matter stands, named as its kind.

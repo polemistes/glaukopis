@@ -85,6 +85,8 @@ const focusSide = (app, i) =>
 const dataDir = mkdtempSync(join(tmpdir(), 'glaukopis-e2e-path-'));
 let deepest = null;
 let ids = {};
+/** Split view's colours at rest, with one side, to be told from those while two are shown. */
+let oneSide = null;
 
 // ---- run 1: a wide window, the whole path ----
 let app = await App.launch({ dataDir, width: 1360, height: 880 });
@@ -109,7 +111,7 @@ try {
     await app.exec(`const top = document.querySelector('.project > .top');
       return !!top && top.firstElementChild?.classList.contains('cells') && !top.querySelector('[data-projects-button]') && !!document.querySelector('.rail [data-projects-button]') && !document.querySelector('.rail .mark') && !document.querySelector('.project > header') && !!document.querySelector('.pane [data-bar]');`),
   );
-  const oneSide = await app.exec(`const cell = document.querySelector('.top .cell').getBoundingClientRect();
+  oneSide = await app.exec(`const cell = document.querySelector('.top .cell').getBoundingClientRect();
     const x = document.querySelector('.top .cell [data-close-side]').getBoundingClientRect();
     const split = document.querySelector('.top [data-side-by-side]');
     const style = getComputedStyle(split), top = getComputedStyle(document.querySelector('.project > .top'));
@@ -298,7 +300,7 @@ try {
   );
   check('each cell stands over its side, the first from the left edge, the line between them over that between the sides', over.every((d) => d < 4), JSON.stringify(over));
   const splitLit = await app.exec(`const s = getComputedStyle(document.querySelector('.top [data-side-by-side]')); return s.backgroundColor;`);
-  check('Split view is lit while two sides are shown', splitLit !== oneSide.background, `${splitLit} / ${oneSide.background}`);
+  check('Split view is lit while two sides are shown', !!oneSide && splitLit !== oneSide.background, `${splitLit} / ${oneSide?.background}`);
   for (const theme of ['light', 'dark', 'mellow']) {
     await app.setTheme(theme);
     await sleep(300);
@@ -367,6 +369,12 @@ try {
     bars.length === 2 && bars.every((b) => b.views >= 2 && b.undo && b.redo && b.typeset && b.document && !b.close && !b.split),
     JSON.stringify(bars),
   );
+  check('between the two cells, a button switches the sides', await app.exists('.top [data-switch-sides]'));
+  await app.click(await app.exec(`return document.querySelectorAll('.pane')[arguments[0]].querySelector('[data-document]')`, notesSide));
+  if (!(await app.waitGone('.side-map', 2000).then(() => true, () => false))) await app.keys(['Control', 'Shift', 'r']);
+  await app.waitGone('.side-map', 3000);
+  await sleep(200);
+  // Without a pane at the right, the sides reach Split view.
   const crosses = await app.exec(`const cells = Array.from(document.querySelectorAll('.top .cell')).sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left);
     const xs = cells.map((c) => c.querySelector('[data-close-side]')?.getBoundingClientRect());
     const split = document.querySelector('.top [data-side-by-side]').getBoundingClientRect();
@@ -376,11 +384,6 @@ try {
     crosses.each && crosses.ends.every((d) => d < 20) && crosses.beforeSplit >= 0 && crosses.beforeSplit < 40,
     JSON.stringify(crosses),
   );
-  check('between the two cells, a button switches the sides', await app.exists('.top [data-switch-sides]'));
-  await app.click(await app.exec(`return document.querySelectorAll('.pane')[arguments[0]].querySelector('[data-document]')`, notesSide));
-  if (!(await app.waitGone('.side-map', 2000).then(() => true, () => false))) await app.keys(['Control', 'Shift', 'r']);
-  await app.waitGone('.side-map', 3000);
-  await sleep(200);
 
   // The × in the bar of the other project's side closes it.
   await app.click(await app.exec(`return document.querySelector('.top .cell[data-side="' + arguments[0] + '"] [data-close-side]')`, notesSide));

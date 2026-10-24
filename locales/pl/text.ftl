@@ -2,7 +2,6 @@
 
 text-title = Tytuł
 text-name = Nazwa elementu
-text-not-printed = niedrukowane
 text-grip = Przenieś lub zmień ten element
 text-include-open = Otwórz ją
 text-split = Podziel tutaj
@@ -18,7 +17,6 @@ text-fold-shift = Zwiń jego tekst i to, co pod nim · z Shiftem rozwiń wszystk
 text-open-all = Rozwiń wszystko
 text-open-all-under = Rozwiń wszystko, co pod nim zwinięte
 text-fold-all-under = Zwiń wszystko pod nim
-text-fold-all-under-hint = Z tego, co bezpośrednio pod nim, pokazane są nazwy, i nic głębiej
 # What is folded away, in its place: whether the element's own text is (text is
 # "yes" or "no"), how many elements under it, and how many words in all, which
 # may be none.

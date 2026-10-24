@@ -825,7 +825,6 @@
     return [
       {
         label: t('diagram-open-as-map'),
-        hint: t('diagram-open-as-map-hint'),
         icon: Minimize2,
         shortcut: keysFor('tree-enter'),
         action: () => onenter(one),
@@ -1006,7 +1005,6 @@
       openContextMenu(event, [
         {
           label: t('diagram-new-here'),
-          hint: t('diagram-new-here-hint'),
           action: () => addHere(world),
         },
         {
@@ -1020,7 +1018,6 @@
         { label: t('diagram-show-all'), shortcut: keysFor('diagram-whole'), action: fit },
         {
           label: t('diagram-tidy'),
-          hint: t('diagram-tidy-hint'),
           action: () => {
             project.checkpoint();
             project.tidy(tree.sequence);

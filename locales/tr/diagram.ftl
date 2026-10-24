@@ -4,7 +4,6 @@ diagram-map = Harita
 diagram-idea = Ad
 diagram-show-all = Bütün haritayı göster
 diagram-tidy = Bütün haritayı düzenle
-diagram-tidy-hint = Her öğe kendiliğinden aldığı yere geri döner
 # The keys are shown as keys, where the variables stand.
 diagram-hint-linking = İlişkilendirilecek öğeye tıklayın ya da oklarla ona gidip { $enter } tuşuna basın · çıkmak için { $esc }
 diagram-show-under = Altındakileri göster

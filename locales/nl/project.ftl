@@ -69,11 +69,7 @@ project-add = Een element toevoegen
 project-add-after = Een element erna toevoegen
 project-write-text = De tekst schrijven
 project-associate = Verbinden met…
-project-associate-hint = Klik daarna op het andere element
-project-heading = De naam als kop drukken
-project-heading-hint = Uit: de naam is een label voor jou; alleen de tekst wordt gedrukt
 project-leave-out = Uit het document weglaten
-project-leave-out-hint = Met alles eronder
 # An element that stands for another map: in the document, that map is in its place.
 project-stands-for = Staat voor ‘{ $name }’
 project-stand-for = Voor een andere mindmap staan
@@ -115,7 +111,6 @@ project-words = { $count ->
 }
 project-read-on = Dubbelklik om verder te lezen
 project-stands-for-map = Staat voor de mindmap ‘{ $name }’
-project-name-not-printed = De naam wordt niet gedrukt
 project-left-out-of-document = Uit het document weggelaten
 
 ## The panels at the side: the references and the pictures

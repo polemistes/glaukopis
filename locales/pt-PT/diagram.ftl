@@ -4,7 +4,6 @@ diagram-map = Mapa
 diagram-idea = Nome
 diagram-show-all = Mostrar o mapa inteiro
 diagram-tidy = Arrumar o mapa inteiro
-diagram-tidy-hint = Cada elemento volta ao seu lugar automático
 # The keys are shown as keys, where the variables stand.
 diagram-hint-linking = Clique no elemento a associar, ou vá até ele com as setas e prima { $enter } · { $esc } para desistir
 diagram-show-under = Mostrar o que está sob ele

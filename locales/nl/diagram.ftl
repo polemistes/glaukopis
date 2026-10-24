@@ -3,12 +3,9 @@
 diagram-map = Mindmap
 diagram-idea = Naam
 diagram-new-here = Nieuw element hier
-diagram-new-here-hint = Een gedachte die nog geen plaats heeft, onder het element in beeld
 diagram-open-as-map = Als mindmap openen
-diagram-open-as-map-hint = Het element in de kern, met wat eronder staat
 diagram-show-all = De hele mindmap tonen
 diagram-tidy = De hele mindmap opruimen
-diagram-tidy-hint = Elk element gaat terug naar zijn automatische plaats
 # The keys are shown as keys, where the variables stand.
 diagram-hint-linking = Klik op het element om mee te verbinden, of ga ernaartoe met de pijltjes en druk op { $enter } · { $esc } om het te laten
 diagram-show-under = Tonen wat eronder staat

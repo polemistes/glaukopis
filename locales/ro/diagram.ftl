@@ -3,12 +3,9 @@
 diagram-map = Hartă
 diagram-idea = Nume
 diagram-new-here = Element nou aici
-diagram-new-here-hint = Un gând care nu are încă un loc, sub elementul afișat
 diagram-open-as-map = Deschide ca hartă
-diagram-open-as-map-hint = Elementul în centru, cu ce este sub el
 diagram-show-all = Arată toată harta
 diagram-tidy = Ordonează toată harta
-diagram-tidy-hint = Fiecare element se întoarce la locul lui automat
 # The keys are shown as keys, where the variables stand.
 diagram-hint-linking = Faceți clic pe elementul cu care să-l asociați, sau mergeți la el cu săgețile și apăsați { $enter } · { $esc } ca să renunțați
 diagram-show-under = Arată ce este sub el

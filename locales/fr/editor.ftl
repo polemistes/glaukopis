@@ -64,7 +64,6 @@ editor-line-number-press = Le numéro de cette ligne : appuyez pour le changer
 ## the three, each saying what it numbers.
 
 editor-numbers-lines = Numéroter ces lignes…
-editor-numbers-lines-hint = Les lignes des paragraphes où est le curseur, ou de ceux qui sont sélectionnés : à partir de quel numéro, tous les combien, de quel côté
 editor-numbers-page = Numéroter les lignes de la page
 editor-numbers-page-hint = Chaque ligne de la page imprimée, numérotée dans la marge, dans ce document et ceux du dessous
 

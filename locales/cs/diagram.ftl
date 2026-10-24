@@ -3,12 +3,9 @@
 diagram-map = Mapa
 diagram-idea = Název
 diagram-new-here = Nový prvek zde
-diagram-new-here-hint = Myšlenka, která ještě nemá své místo, pod zobrazeným prvkem
 diagram-open-as-map = Otevřít jako mapu
-diagram-open-as-map-hint = Prvek ve středu, s tím, co je pod ním
 diagram-show-all = Zobrazit celou mapu
 diagram-tidy = Uspořádat celou mapu
-diagram-tidy-hint = Každý prvek se vrátí na své automatické místo
 # The keys are shown as keys, where the variables stand.
 diagram-hint-linking = Klepněte na prvek, s nímž má být spojen, nebo k němu přejděte šipkami a stiskněte { $enter } · { $esc } to ukončí
 diagram-show-under = Zobrazit, co je pod ním

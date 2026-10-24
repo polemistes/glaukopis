@@ -99,7 +99,6 @@ describe('the Org form of a project', () => {
         ':KIND:         Scene',
         ':STATUS:       draft',
         ':WHEN:         {"start":{"at":"431 BC","approx":true,"margin":"5 years"},"end":{"after":"scene2"}}',
-        ':HEADING:      no',
         ':ORIGIN:       old1',
         ':POS:          120,-40',
         ':COLLAPSED:    t',

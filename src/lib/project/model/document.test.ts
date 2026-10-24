@@ -37,14 +37,19 @@ describe('an element as a document', () => {
     expect(outline(p, 'nobody')).toEqual([]);
   });
 
-  it('an element whose name is not printed gives its text and does not deepen', () => {
+  it('every element’s name is printed as a heading, one an older project said not to print too', () => {
     const p = project();
     const a = p.addChild(PROJECT, { title: 'A' })!;
     const idea = p.addChild(a, { title: 'an idea of mine', body: 'A paragraph.' })!;
     p.setHeading(idea, false);
     p.addChild(idea, { title: 'Under the idea', body: 'More.' });
     p.addChild(a, { title: 'A2' });
-    expect(outline(p, PROJECT)).toEqual(['1 A', '2 — +text', '2 Under the idea +text', '2 A2']);
+    expect(outline(p, PROJECT)).toEqual([
+      '1 A',
+      '2 an idea of mine +text',
+      '3 Under the idea +text',
+      '2 A2',
+    ]);
   });
 
   it('the title and the particulars of the document', () => {

@@ -71,11 +71,7 @@ project-add = Dodaj element
 project-add-after = Dodaj element iza njega
 project-write-text = Piši njegov tekst
 project-associate = Poveži s…
-project-associate-hint = Zatim kliknite drugi element
-project-heading = Štampaj naziv kao naslov
-project-heading-hint = Isključeno: naziv je oznaka za vas; štampa se samo tekst
 project-leave-out = Izostavi iz dokumenta
-project-leave-out-hint = Sa svim pod njim
 # An element that stands for another map: in the document, that map is in its place.
 project-stands-for = Stoji za „{ $name }“
 project-stand-for = Neka stoji za drugu mapu
@@ -121,7 +117,6 @@ project-words = { $count ->
 }
 project-read-on = Dvoklik za dalje čitanje
 project-stands-for-map = Stoji za mapu „{ $name }“
-project-name-not-printed = Naziv se ne štampa
 project-left-out-of-document = Izostavljen iz dokumenta
 
 ## The panels at the side: the references and the pictures

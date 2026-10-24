@@ -171,7 +171,6 @@ export function intoProject(org: OrgProject, project: Project) {
       n.set('body', body);
       if (e.pos) n.set('pos', { x: e.pos.x, y: e.pos.y });
       if (e.collapsed) n.set('collapsed', true);
-      if (!e.heading) n.set('heading', false);
       if (e.excluded) n.set('excluded', true);
       const include = known(e.include);
       if (include && include !== id) n.set('include', include);

@@ -75,11 +75,7 @@ project-add = Pridať prvok
 project-add-after = Pridať prvok za neho
 project-write-text = Písať jeho text
 project-associate = Spojiť s…
-project-associate-hint = Potom kliknite na druhý prvok
-project-heading = Tlačiť názov ako nadpis
-project-heading-hint = Vypnuté: názov je štítok pre vás; tlačí sa len text
 project-leave-out = Vynechať z dokumentu
-project-leave-out-hint = So všetkým pod ním
 # An element that stands for another map: in the document, that map is in its place.
 project-stands-for = Zastupuje „{ $name }“
 project-stand-for = Zastupovať inú mapu
@@ -125,7 +121,6 @@ project-words = { $count ->
 }
 project-read-on = Dvojklikom čítate ďalej
 project-stands-for-map = Zastupuje mapu „{ $name }“
-project-name-not-printed = Názov sa netlačí
 project-left-out-of-document = Vynechaný z dokumentu
 
 ## The panels at the side: the references and the pictures

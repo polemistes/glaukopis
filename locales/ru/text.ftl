@@ -2,7 +2,6 @@
 
 text-title = Заглавие
 text-name = Название элемента
-text-not-printed = не печатается
 text-grip = Переместить или изменить этот элемент
 text-include-open = Открыть её
 text-split = Разделить здесь
@@ -18,7 +17,6 @@ text-fold-shift = Свернуть его текст и то, что под ни
 text-open-all = Развернуть всё
 text-open-all-under = Развернуть всё свёрнутое под ним
 text-fold-all-under = Свернуть всё под ним
-text-fold-all-under-hint = Из того, что прямо под ним, показаны названия, и ничего глубже
 # What is folded away, in its place: whether the element's own text is (text is
 # "yes" or "no"), how many elements under it, and how many words in all, which
 # may be none.

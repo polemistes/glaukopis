@@ -63,7 +63,6 @@ editor-line-number-press = Nummeret på denne linja: trykk for å endre det
 ## Numbers belong to what they number (ADR 0041): the Numbers menu offers
 ## the three, each saying what it numbers.
 editor-numbers-lines = Nummerer desse linjene …
-editor-numbers-lines-hint = Linjene i avsnitta der markøren står, eller i dei som er merkte: frå kva nummer, kvar kor mange, på kva side
 editor-numbers-page = Nummerer linjene på sida
 editor-numbers-page-hint = Kvar linje på den trykte sida, nummerert i margen, i dette dokumentet og dei under det
 

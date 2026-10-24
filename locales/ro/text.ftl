@@ -2,7 +2,6 @@
 
 text-title = Titlu
 text-name = Numele elementului
-text-not-printed = nu se tipărește
 text-grip = Mută sau modifică acest element
 text-include-open = Deschide-o
 text-split = Desparte aici
@@ -18,7 +17,6 @@ text-fold-shift = Strânge textul lui și ce este sub el · cu Shift, desfă tot
 text-open-all = Desfă tot
 text-open-all-under = Desfă tot ce este strâns sub el
 text-fold-all-under = Strânge tot ce este sub el
-text-fold-all-under-hint = Din ce este direct sub el se arată numele, și nimic mai adânc
 # What is folded away, in its place: whether the element's own text is (text is
 # "yes" or "no"), how many elements under it, and how many words in all, which
 # may be none.

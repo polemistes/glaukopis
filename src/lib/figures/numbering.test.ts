@@ -96,9 +96,6 @@ describe('the numbers of a document', () => {
     write(p, beside, fig('f9', 'e', 'Beside'));
     expect(count(p, top, plain).byId.has('f9')).toBe(false);
     expect(count(p, PROJECT, plain).byId.get('f9')?.number).toBe('3');
-    // An element whose name is not printed is no part that can be pointed to.
-    p.setHeading(b, false);
-    expect(count(p, top, numbered).byId.has(b)).toBe(false);
   });
 
   it('are those of the element the document is made of', () => {

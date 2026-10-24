@@ -304,7 +304,6 @@
   style:--level={level}
   class:selected
   class:excluded
-  class:plain={!node.heading && level > 0}
   class:linkable
   class:drop-before={drop === 'before'}
   class:drop-after={drop === 'after'}
@@ -426,7 +425,6 @@
           )}</span
         >
       {/if}
-      {#if !node.heading && level > 0}<span class="tag">{t('text-not-printed')}</span>{/if}
       {#if active && title}
         <RichText
           bind:this={titleEditor}
@@ -850,29 +848,6 @@
     margin-bottom: 0.15em;
   }
 
-  /* A name that is a label for the writer only */
-  .plain {
-    margin-top: 0.9em;
-    --grip-top: -4px;
-  }
-  .plain .heading {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-  }
-  .plain .heading :global(.rich-text) {
-    flex: 1;
-  }
-  .plain .heading :global(.prose.title) {
-    font-family: var(--font-ui);
-    font-size: 0.7em;
-    font-weight: 600;
-    font-style: normal;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-    margin-bottom: 0.15em;
-  }
   .tag {
     order: 2;
     flex: none;

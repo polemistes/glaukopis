@@ -2,9 +2,6 @@
 # application (ADR 0038): what each is called in the kind menu and on the
 # label of an element. The core has the same kinds, with their looks.
 
-parts-group-front = Forstoff
-parts-group-back = Etterstoff
-parts-group-cover = Omslag
 parts-more = Fleire …
 
 # The bases.
@@ -40,11 +37,7 @@ parts-doubled = Blir ikkje skrive ut: eit anna element av denne typen kjem førs
 
 ## Where a kind puts an element in the document, where not where it stands.
 
-parts-placed-front = Blir skrive ut først, før resten på nivået sitt
-parts-placed-back = Blir skrive ut sist, etter resten på nivået sitt
 parts-placed-cover = Blir berre skrive ut på omslaget
 parts-placed-none = Blir ikkje skrive ut i dokumentet
-parts-placed-front-short = blir skrive ut først
-parts-placed-back-short = blir skrive ut sist
 parts-placed-cover-short = berre på omslaget
 parts-placed-none-short = blir ikkje skrive ut

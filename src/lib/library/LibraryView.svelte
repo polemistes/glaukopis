@@ -314,7 +314,6 @@
       [
         {
           label: t('library-import-file'),
-          hint: t('library-import-file.hint'),
           icon: FileUp,
           action: () => importFile(collectionId),
         },
@@ -325,7 +324,6 @@
         },
         {
           label: t('library-add-pdfs'),
-          hint: t('library-add-pdfs.hint'),
           icon: FileText,
           action: () => importPdfFiles(undefined, collectionId),
         },

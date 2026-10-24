@@ -63,7 +63,6 @@ editor-line-number-press = Die Nummer dieser Zeile: klicken, um sie zu ändern
 ## Numbers belong to what they number (ADR 0041): the Numbers menu offers
 ## the three, each saying what it numbers.
 editor-numbers-lines = Diese Zeilen nummerieren…
-editor-numbers-lines-hint = Die Zeilen der Absätze, in denen der Cursor steht, oder der ausgewählten: ab welcher Nummer, jede wievielte, auf welcher Seite
 editor-numbers-page = Die Zeilen der Seite nummerieren
 editor-numbers-page-hint = Jede Zeile der gedruckten Seite, am Rand nummeriert, in diesem Dokument und denen darunter
 

@@ -3,7 +3,6 @@
 
 text-title = Title
 text-name = Name of the element
-text-not-printed = not printed
 text-grip = Move or change this element
 # The element an element stands for, whose name is shown in bold where the variable stands.
 text-include = In the document, { $name } stands here, with all under it.
@@ -13,11 +12,9 @@ text-drop-under = Under “{ $name }”
 text-drop-after = After “{ $name }”
 text-drop-before = Before “{ $name }”
 text-split = Split here
-text-split-hint = What follows the cursor becomes the name of a new element, and the paragraphs below its text
 text-heading-kept = What follows the cursor holds what a name cannot, such as a citation or a note, and is the first paragraph of the new element
 text-join = Join to the element above
 text-open-as-map = Enter
-text-open-as-map-hint = It is shown alone, with what is under it
 
 ## Folding away what is under an element, and its text
 
@@ -29,7 +26,6 @@ text-fold-shift = Fold away its text and what is under it · with Shift, open al
 text-open-all = Open all
 text-open-all-under = Open all that is folded under it
 text-fold-all-under = Fold away all under it
-text-fold-all-under-hint = Of what is directly under it the names are shown, and nothing deeper
 # What is folded away, in its place: whether the element's own text is (text is
 # "yes" or "no"), how many elements under it, and how many words in all, which
 # may be none.

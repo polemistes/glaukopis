@@ -63,7 +63,6 @@ editor-line-number-press = The number of this line: press to change it
 ## Numbers belong to what they number (ADR 0041): the Numbers menu offers
 ## the three, each saying what it numbers.
 editor-numbers-lines = Number these lines…
-editor-numbers-lines-hint = The lines of the paragraphs where the cursor is, or of those selected: from which number, every how many, on which side
 editor-numbers-page = Number the lines of the page
 editor-numbers-page-hint = Every line of the printed page, numbered in the margin, in this document and those under it
 

@@ -69,11 +69,7 @@ project-add = Προσθήκη στοιχείου
 project-add-after = Προσθήκη στοιχείου μετά από αυτό
 project-write-text = Γραφή του κειμένου του
 project-associate = Συσχέτιση με…
-project-associate-hint = Έπειτα κάντε κλικ στο άλλο στοιχείο
-project-heading = Το όνομα τυπώνεται ως επικεφαλίδα
-project-heading-hint = Απενεργοποιημένο: το όνομα είναι ετικέτα για εσάς· τυπώνεται μόνο το κείμενο
 project-leave-out = Έξω από το έγγραφο
-project-leave-out-hint = Με όλα όσα είναι από κάτω του
 # An element that stands for another map: in the document, that map is in its place.
 project-stands-for = Στη θέση του «{ $name }»
 project-stand-for = Στη θέση άλλου χάρτη
@@ -115,7 +111,6 @@ project-words = { $count ->
 }
 project-read-on = Διπλό κλικ για να διαβάσετε παρακάτω
 project-stands-for-map = Στη θέση του χάρτη «{ $name }»
-project-name-not-printed = Το όνομα δεν τυπώνεται
 project-left-out-of-document = Έξω από το έγγραφο
 
 ## The panels at the side: the references and the pictures

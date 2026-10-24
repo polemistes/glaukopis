@@ -91,11 +91,7 @@ project-add = Tilføj et element
 project-add-after = Tilføj et element efter det
 project-write-text = Skriv dets tekst
 project-associate = Knyt til…
-project-associate-hint = Klik derefter på det andet element
-project-heading = Udskriv navnet som overskrift
-project-heading-hint = Fra: navnet er en mærkat til dig; kun teksten udskrives
 project-leave-out = Udelad af dokumentet
-project-leave-out-hint = Med alt under det
 # An element that stands for another element: in the document, that element is in its place.
 project-stands-for = Står for »{ $name }«
 project-stand-for = Stå for et andet element
@@ -168,7 +164,6 @@ project-words = { $count ->
 }
 project-read-on = Dobbeltklik for at læse videre
 project-stands-for-map = Står for »{ $name }«
-project-name-not-printed = Navnet udskrives ikke
 project-left-out-of-document = Udeladt af dokumentet
 
 ## The panels at the side: the references and the pictures

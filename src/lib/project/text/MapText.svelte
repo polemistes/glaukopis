@@ -200,13 +200,11 @@
 
   /**
    * The numbers of the elements, as in an outline: 1, 1.2, 1.2.3, counted
-   * among those whose names are printed as headings, what is folded away
-   * as well, so that they do not change as it is folded.
+   * every element counted, what is folded away as well, so that they do
+   * not change as it is folded.
    */
   const numbers = $derived(
-    depthShown === 'numbers'
-      ? outlineNumbers(all, (id) => !!project.nodes.get(id)?.heading)
-      : new Map<string, string>(),
+    depthShown === 'numbers' ? outlineNumbers(all) : new Map<string, string>(),
   );
 
   // ---- the element at the top of what is in view, for the outline ----
@@ -1010,7 +1008,6 @@
       extra.push({
         label: t('editor-numbers-lines'),
         icon: Hash,
-        hint: t('editor-numbers-lines-hint'),
         // The editor is made where the text was pressed, if it was not there: it is looked for when chosen.
         action: () => {
           const v = editors.get(id)?.body?.getView();
@@ -1023,7 +1020,6 @@
         label: t('text-split'),
         icon: SplitSquareVertical,
         shortcut: keysFor('tree-new'),
-        hint: t('text-split-hint'),
         action: () => split(id, view),
       });
     }
@@ -1039,7 +1035,6 @@
         label: t('text-open-as-map'),
         icon: MapIcon,
         shortcut: keysFor('tree-enter'),
-        hint: t('text-open-as-map-hint'),
         action: () => onenter(id),
       });
     }
@@ -1063,7 +1058,6 @@
         folds.push({
           label: t('text-fold-all-under'),
           icon: ChevronsDownUp,
-          hint: t('text-fold-all-under-hint'),
           action: () => folding.foldAll(tree, id),
         });
       folds.push({ kind: 'separator' });

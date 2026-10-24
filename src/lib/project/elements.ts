@@ -9,7 +9,6 @@ import FileInput from '@lucide/svelte/icons/file-input';
 import GitCompare from '@lucide/svelte/icons/git-compare';
 import CircleDashed from '@lucide/svelte/icons/circle-dashed';
 import Clock from '@lucide/svelte/icons/clock';
-import Heading from '@lucide/svelte/icons/heading';
 import LayoutGrid from '@lucide/svelte/icons/layout-grid';
 import ListTree from '@lucide/svelte/icons/list-tree';
 import Link2 from '@lucide/svelte/icons/link-2';
@@ -28,11 +27,10 @@ import { bringIn, chooseDocument } from '$lib/documents/bringing.svelte';
 import { goThrough } from '$lib/found/found.svelte';
 import { truncate } from '$lib/library/format';
 import { confirm } from '$lib/ui/confirm.svelte';
-import { describeWhen } from '$lib/timeline/solve';
 import { sayWhen } from '$lib/timeline/when.svelte';
 import { kindColour } from './kinds';
 import { manageKinds, newKind } from './kinds.svelte';
-import { PART_GROUPS, PARTS, partsAmong, placeOf, placeWords, type PartSpec } from './parts';
+import { PARTS, partsAmong, type PartSpec } from './parts';
 import { documents } from '$lib/preview/documents.svelte';
 import type { MenuItem } from '$lib/ui/menu.svelte';
 import { compareCopy } from './copies.svelte';
@@ -489,7 +487,6 @@ export function elementMenu(
       items.push({
         label: t('project-associate'),
         icon: Link2,
-        hint: t('project-associate-hint'),
         action: () => actions.link!(one.id),
       });
     items.push({
@@ -501,13 +498,6 @@ export function elementMenu(
     items.push({
       label: one.when ? t('when-change') : t('when-say'),
       icon: Clock,
-      hint: one.when
-        ? describeWhen(
-            one.when,
-            (id) => project.node(id)?.title || t('project-untitled'),
-            saidWords(),
-          )
-        : undefined,
       action: () => sayWhen(one.id),
     });
     items.push({ kind: 'separator' });
@@ -527,8 +517,6 @@ export function elementMenu(
   ]);
   const partItem = (p: PartSpec): MenuItem => ({
     label: p.label(),
-    // Where it puts the element in the document, where that is not where it stands.
-    hint: placeWords(p.place) ?? undefined,
     checked: kindSaid === p.id,
     action: () => project.setKind(ids, p.id),
   });
@@ -540,7 +528,6 @@ export function elementMenu(
     items: [
       ...project.kinds.map((k): MenuItem => ({
         label: k.name,
-        hint: placeWords(placeOf(project, k.id)) ?? undefined,
         colour: kindColour(k.colour).ink,
         checked: kindSaid === k.id,
         action: () => project.setKind(ids, k.id),
@@ -551,10 +538,7 @@ export function elementMenu(
       {
         kind: 'submenu',
         label: t('parts-more'),
-        items: PART_GROUPS.flatMap((g): MenuItem[] => [
-          { kind: 'heading', label: g.label() },
-          ...PARTS.filter((p) => p.group === g.id).map(partItem),
-        ]),
+        items: PARTS.map(partItem),
       },
       separator,
       {
@@ -595,26 +579,14 @@ export function elementMenu(
   );
 
   if (!isProject) {
-    const allPlain = nodes.every((n) => !n.heading);
     const allOut = nodes.every((n) => n.excluded);
-    items.push(
-      {
-        label: t('project-heading'),
-        icon: Heading,
-        hint: t('project-heading-hint'),
-        checked: !allPlain,
-        action: () =>
-          project.transact(() => nodes.forEach((n) => project.setHeading(n.id, allPlain))),
-      },
-      {
-        label: t('project-leave-out'),
-        icon: EyeOff,
-        hint: t('project-leave-out-hint'),
-        checked: allOut,
-        action: () =>
-          project.transact(() => nodes.forEach((n) => project.setExcluded(n.id, !allOut))),
-      },
-    );
+    items.push({
+      label: t('project-leave-out'),
+      icon: EyeOff,
+      checked: allOut,
+      action: () =>
+        project.transact(() => nodes.forEach((n) => project.setExcluded(n.id, !allOut))),
+    });
     if (one) {
       items.push({
         kind: 'submenu',

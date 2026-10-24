@@ -63,7 +63,6 @@ editor-line-number-press = Numărul acestui rând: apăsați ca să-l schimbați
 ## Numbers belong to what they number (ADR 0041): the Numbers menu offers
 ## the three, each saying what it numbers.
 editor-numbers-lines = Numerotează aceste rânduri…
-editor-numbers-lines-hint = Rândurile paragrafelor în care este cursorul sau ale celor selectate: de la ce număr, din câte în câte, pe ce parte
 editor-numbers-page = Numerotează rândurile paginii
 editor-numbers-page-hint = Fiecare rând al paginii tipărite, numerotat pe margine, în acest document și în cele de sub el
 

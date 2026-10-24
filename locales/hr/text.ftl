@@ -2,7 +2,6 @@
 
 text-title = Naslov
 text-name = Naziv elementa
-text-not-printed = ne tiska se
 text-grip = Premjesti ili izmijeni ovaj element
 text-include-open = Otvori je
 text-split = Razdvoji ovdje
@@ -18,7 +17,6 @@ text-fold-shift = Sklopi njegov tekst i ono što je ispod njega · sa Shiftom ra
 text-open-all = Rasklopi sve
 text-open-all-under = Rasklopi sve što je sklopljeno ispod njega
 text-fold-all-under = Sklopi sve ispod njega
-text-fold-all-under-hint = Od onoga što je neposredno ispod njega prikazuju se nazivi, a ništa dublje
 # What is folded away, in its place: whether the element's own text is (text is
 # "yes" or "no"), how many elements under it, and how many words in all, which
 # may be none.

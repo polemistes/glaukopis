@@ -104,11 +104,7 @@ project-add = Add an element
 project-add-after = Add an element after it
 project-write-text = Write its text
 project-associate = Associate with…
-project-associate-hint = Then click the other element
-project-heading = Print the name as a heading
-project-heading-hint = Off: the name is a label for you; only the text is printed
 project-leave-out = Leave out of the document
-project-leave-out-hint = With everything under it
 # An element that stands for another element: in the document, that element is in its place.
 project-stands-for = Stands for “{ $name }”
 project-stand-for = Stand for another element
@@ -181,7 +177,6 @@ project-words = { $count ->
 }
 project-read-on = Double-click to read on
 project-stands-for-map = Stands for “{ $name }”
-project-name-not-printed = The name is not printed
 project-left-out-of-document = Left out of the document
 
 ## The panels at the side: the references and the pictures

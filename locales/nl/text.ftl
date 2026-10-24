@@ -2,7 +2,6 @@
 
 text-title = Titel
 text-name = Naam van het element
-text-not-printed = niet gedrukt
 text-grip = Dit element verplaatsen of wijzigen
 text-include-open = Openen
 text-split = Hier splitsen
@@ -18,7 +17,6 @@ text-fold-shift = De tekst en wat eronder staat invouwen · met Shift alles open
 text-open-all = Alles openen
 text-open-all-under = Alles openen wat eronder is ingevouwen
 text-fold-all-under = Alles eronder invouwen
-text-fold-all-under-hint = Van wat er direct onder staat, worden de namen getoond, en niets diepers
 # What is folded away, in its place: whether the element's own text is (text is
 # "yes" or "no"), how many elements under it, and how many words in all, which
 # may be none.

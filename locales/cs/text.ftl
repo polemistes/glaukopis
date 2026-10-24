@@ -2,7 +2,6 @@
 
 text-title = Název
 text-name = Název prvku
-text-not-printed = netiskne se
 text-grip = Přesunout nebo změnit tento prvek
 text-include-open = Otevřít ji
 text-split = Rozdělit zde
@@ -18,7 +17,6 @@ text-fold-shift = Sbalit jeho text a co je pod ním · se Shiftem rozbalit vše,
 text-open-all = Rozbalit vše
 text-open-all-under = Rozbalit vše, co je pod ním sbaleno
 text-fold-all-under = Sbalit vše pod ním
-text-fold-all-under-hint = Z toho, co je přímo pod ním, se zobrazují názvy, a nic hlubšího
 # What is folded away, in its place: whether the element's own text is (text is
 # "yes" or "no"), how many elements under it, and how many words in all, which
 # may be none.

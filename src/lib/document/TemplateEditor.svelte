@@ -40,8 +40,6 @@
     confidenceWords,
     GENERATED_PARTS,
     generatedPartWords,
-    PART_GROUPS,
-    partGroupWords,
     TARGETS,
     targetWords,
     templateGroupWords,
@@ -193,29 +191,17 @@
   }
 
   function addKindMenu(event: MouseEvent) {
-    const items: MenuItem[] = [];
-    for (const group of PART_GROUPS) {
-      items.push({ kind: 'heading', label: partGroupWords(group) });
-      for (const kind of PART_CATALOGUE.filter((k) => k.group === group)) {
-        items.push({
-          label: kind.label(),
-          disabled: inContents({ kind: kind.id }),
-          action: () => template?.contents.push({ kind: kind.id }),
-        });
-      }
-    }
+    // The kinds in the catalogue's order, in one list: where each is printed is the contents' order.
+    const items: MenuItem[] = PART_CATALOGUE.map((kind) => ({
+      label: kind.label(),
+      disabled: inContents({ kind: kind.id }),
+      action: () => template?.contents.push({ kind: kind.id }),
+    }));
     openMenu(event.currentTarget as HTMLElement, items, { align: 'start' });
   }
 
   // ---- the kinds in hand ----
 
-  const kindGroups = $derived(
-    PART_GROUPS.map((group) => ({
-      group,
-      label: partGroupWords(group),
-      kinds: PART_CATALOGUE.filter((k) => k.group === group),
-    })),
-  );
   const inHand = (kindId: string) =>
     !!template && (template.kinds.includes(kindId) || inContents({ kind: kindId }));
   function setInHand(kindId: string, yes: boolean) {
@@ -455,23 +441,20 @@
         {:else if section === 'kinds'}
           <h3>{t('template-section-kinds')}</h3>
           <p class="hint top">{t('template-kinds-hint')}</p>
-          {#each kindGroups as group (group.group)}
-            <h4>{group.label}</h4>
-            {#each group.kinds as kind (kind.id)}
-              {@const listed = inContents({ kind: kind.id })}
-              <label class="row check">
-                <span class="what"
-                  >{kind.label()}{#if listed}<small>{t('template-kinds-in-contents')}</small
-                    >{/if}</span
-                >
-                <input
-                  type="checkbox"
-                  checked={inHand(kind.id)}
-                  disabled={listed}
-                  onchange={(e) => setInHand(kind.id, e.currentTarget.checked)}
-                />
-              </label>
-            {/each}
+          {#each PART_CATALOGUE as kind (kind.id)}
+            {@const listed = inContents({ kind: kind.id })}
+            <label class="row check">
+              <span class="what"
+                >{kind.label()}{#if listed}<small>{t('template-kinds-in-contents')}</small
+                  >{/if}</span
+              >
+              <input
+                type="checkbox"
+                checked={inHand(kind.id)}
+                disabled={listed}
+                onchange={(e) => setInHand(kind.id, e.currentTarget.checked)}
+              />
+            </label>
           {/each}
         {:else if section === 'passage-kinds'}
           <h3>{t('template-section-passage-kinds')}</h3>

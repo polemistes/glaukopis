@@ -3,12 +3,9 @@
 diagram-map = Map
 diagram-idea = Name
 diagram-new-here = New element here
-diagram-new-here-hint = A thought that has no place yet, under the element in view
 diagram-open-as-map = Enter
-diagram-open-as-map-hint = The element at the centre, with what is under it
 diagram-show-all = Show the whole map
 diagram-tidy = Tidy the whole map
-diagram-tidy-hint = Every element goes back to its automatic place
 # The keys are shown as keys, where the variables stand.
 diagram-hint-empty = { $alt }+{ $enter } adds an element after the one selected · { $alt }+{ $shift }+{ $enter } one under it · double-click to write
 diagram-hint-linking = Click the element to associate with, or go to it with the arrows and press { $enter } · { $esc } to leave it

@@ -106,7 +106,7 @@ export function walkDocument(project: Project, id: string, visit: (placed: Place
     const walk = (nodeId: string, at: number, isRoot: boolean, kind: string | undefined) => {
       const node = project.node(nodeId);
       if (!node || node.excluded) return;
-      const printed = !isRoot && node.heading && node.titleHtml.length > 0;
+      const printed = !isRoot && node.titleHtml.length > 0;
       visit({
         id: nodeId,
         level: isRoot ? (isTop || isPart ? 0 : Math.max(at, 1)) : Math.min(at, DEEPEST),

@@ -3,7 +3,6 @@
 
 text-title = Titel
 text-name = Name des Elements
-text-not-printed = nicht gedruckt
 text-grip = Dieses Element verschieben oder ändern
 # The element an element stands for, whose name is shown in bold where the variable stands.
 text-include = Im Dokument steht hier { $name }, mit allem darunter.
@@ -15,7 +14,6 @@ text-drop-before = Vor „{ $name }“
 text-split = Hier teilen
 text-join = Mit dem Element darüber zusammenfügen
 text-open-as-map = Als Karte öffnen
-text-open-as-map-hint = Es wird allein gezeigt, mit dem, was darunter ist
 
 ## Folding away what is under an element, and its text
 
@@ -27,7 +25,6 @@ text-fold-shift = Seinen Text und was darunter ist einklappen · mit Umschalt al
 text-open-all = Alles ausklappen
 text-open-all-under = Alles ausklappen, was darunter eingeklappt ist
 text-fold-all-under = Alles darunter einklappen
-text-fold-all-under-hint = Von dem, was direkt darunter ist, werden die Namen gezeigt, und nichts Tieferes
 # What is folded away, in its place: whether the element's own text is (text is
 # "yes" or "no"), how many elements under it, and how many words in all, which
 # may be none.
