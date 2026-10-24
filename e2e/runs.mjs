@@ -166,16 +166,18 @@ try {
 
   // --- Numbers in place: counted from 1, then a number given in the margin ---
   await toLine(0);
-  await app.numberTheseLines();
-  await app.waitForText('dialog[open] h2', 'Numbers', 3000);
+  await app.lineNumberingFromHere();
+  await app.waitForText('dialog[open] h2', 'Line numbering from here', 3000);
   await sleep(200);
   await app.exec(
-    `const s = document.querySelector('dialog[open] select'); s.value = 'counted';
+    `const s = document.querySelector('dialog[open] [data-numbering] select'); s.value = 'counted';
      s.dispatchEvent(new Event('input', { bubbles: true })); s.dispatchEvent(new Event('change', { bubbles: true }));`,
   );
   await sleep(150);
-  await app.exec(`const i = document.querySelector('dialog[open] [data-this-line] input:not([type="checkbox"])'); i.focus(); i.select();`);
-  await app.keys('1');
+  check(
+    'the window fills in the number to count from',
+    (await app.exec(`return document.querySelector('dialog[open] input[data-number-from]')?.value ?? null`)) === '1',
+  );
   await app.clickText('dialog[open] footer button', 'Apply');
   await app.waitGone('dialog[open]', 3000);
   await sleep(300);
@@ -213,7 +215,7 @@ try {
   const items = await menuItems();
   check(
     'the label opens the menu of the run',
-    ['Numbers…', 'Language', 'Select these paragraphs', 'Make it text', 'Begin a new run here', 'Join with the run before (off)'].every((w) => items.includes(w)),
+    ['Line numbering…', 'Language', 'Select these paragraphs', 'Make it text', 'Begin a new run here', 'Join with the run before (off)'].every((w) => items.includes(w)),
     items.join(' | '),
   );
   await app.screenshot('runs-4-menu');
@@ -259,9 +261,30 @@ try {
   await app.press('Escape');
   await app.waitGone('.menu', 3000);
   await toLine(0);
-  await app.numberTheseLines();
-  await app.waitForText('dialog[open] h2', 'Numbers', 3000);
-  check('the right-click menu of a paragraph numbers its lines', true);
+  await app.textMenuAtCursor();
+  const textItems = await menuItems();
+  check(
+    'the right-click menu of a paragraph offers the numbering from here and that of the line',
+    textItems.includes('Line numbering from here…') && textItems.includes('Numbering of this line…'),
+    textItems.join(' | '),
+  );
+  await app.clickText('.menu [role="menuitem"]', 'Line numbering from here…');
+  await app.waitForText('dialog[open] h2', 'Line numbering from here', 3000);
+  check('no hints in the window', !(await app.exists('dialog[open] .hint, dialog[open] small, dialog[open] .field .message:not(.error)')));
+  await app.press('Escape');
+  await app.waitGone('dialog[open]', 3000);
+  await sleep(200);
+  await app.numberingOfThisLine();
+  await app.waitForText('dialog[open] h2', 'Numbering of this line', 3000);
+  const lineRows = await app.exec(
+    `return Array.from(document.querySelectorAll('dialog[open] label')).map((l) => l.textContent.trim())`,
+  );
+  check(
+    'the window of a line asks its number, whether it is counted and shown, and its annotation',
+    ['Its number or label', 'Counted', 'Its number is shown', 'Annotation in the right margin'].every((w) => lineRows.includes(w)),
+    lineRows.join(' | '),
+  );
+  check('no hints in the window of a line', !(await app.exists('dialog[open] .hint, dialog[open] small, dialog[open] .field .message:not(.error)')));
   await app.press('Escape');
   await app.waitGone('dialog[open]', 3000);
   await sleep(200);

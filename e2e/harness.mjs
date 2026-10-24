@@ -731,7 +731,20 @@ export class App {
   }
 
   /** Opens the menu of the text where the cursor is, by a right click there, and chooses Number these lines…: the window of the numbers opens. */
-  async numberTheseLines() {
+  /** Opens Line numbering from here, by its item in the right-click menu of the text where the cursor is. */
+  async lineNumberingFromHere() {
+    await this.textMenuAtCursor();
+    await this.clickText('.menu [role="menuitem"]', 'Line numbering from here…');
+  }
+
+  /** Opens Numbering of this line, by its item in the right-click menu of the text where the cursor is. */
+  async numberingOfThisLine() {
+    await this.textMenuAtCursor();
+    await this.clickText('.menu [role="menuitem"]', 'Numbering of this line…');
+  }
+
+  /** Opens the right-click menu of the text where the cursor is, as a right press there does. */
+  async textMenuAtCursor() {
     const at = await this.exec(
       `const s = getSelection();
        if (!s.rangeCount) return null;
@@ -756,7 +769,6 @@ export class App {
     );
     await this.waitFor('.menu', 3000);
     await sleep(150);
-    await this.clickText('.menu [role="menuitem"]', 'Number these lines…');
   }
 
   /** Opens the window of the sharing of the project of the side that has the focus, by Share… in its menu in the list. */

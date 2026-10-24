@@ -468,6 +468,137 @@ try {
   await sleep(400);
   check('and Ctrl+Alt+0 text again', (await kindOfMuse()) === 'text', await kindOfMuse());
 
+  // --- The side of the annotations: across from the numbers, then on their side, outside them ---
+  await app.click(await muse());
+  await sleep(200);
+  await app.lineNumberingFromHere();
+  await app.waitForText('dialog[open] h2', 'Line numbering from here', 3000);
+  await app.exec(
+    `const s = document.querySelector('dialog[open] [data-numbering] select'); s.value = 'counted';
+     s.dispatchEvent(new Event('input', { bubbles: true })); s.dispatchEvent(new Event('change', { bubbles: true }));`,
+  );
+  await sleep(150);
+  await app.clickText('dialog[open] footer button', 'Apply');
+  await app.waitGone('dialog[open]', 3000);
+  await sleep(300);
+  await app.numberingOfThisLine();
+  await app.waitForText('dialog[open] h2', 'Numbering of this line', 3000);
+  await app.exec(`const i = document.querySelector('dialog[open] input[data-annotation]'); i.focus(); i.select();`);
+  await app.keys('metre');
+  await app.clickText('dialog[open] footer button', 'Apply');
+  await app.waitGone('dialog[open]', 3000);
+  await sleep(300);
+  /** Where the number, the annotation and the line of the paragraph of the Muse stand where one writes. */
+  const placed = () =>
+    app.exec(
+      `const p = Array.from(document.querySelectorAll('.text-view .prose > p')).find((p) => p.textContent.includes('Tell me, Muse'));
+       const box = (e) => { const r = e?.getBoundingClientRect(); return r ? [Math.round(r.left), Math.round(r.right)] : null; };
+       return { side: p.getAttribute('data-annotations'), line: box(p), number: box(p.querySelector('.line-number:not(.blank)')), note: box(p.querySelector('.line-margin')) };`,
+    );
+  let at = await placed();
+  check(
+    'an annotation stands across from the numbers, as the layouts that ship have it',
+    at.side === 'right' && at.number && at.note && at.number[1] <= at.line[0] && at.note[0] >= at.line[1],
+    JSON.stringify(at),
+  );
+  await app.openLook('Line numbers');
+  check(
+    'Look has a row for the side of the annotations, the other side from the numbers chosen',
+    (await app.lookChosen('Annotations on the')) === '',
+  );
+  await app.lookChoose('Annotations on the', 'left');
+  await app.waitUntil(
+    `return Array.from(document.querySelectorAll('.text-view .prose > p')).find((p) => p.textContent.includes('Tell me, Muse'))?.getAttribute('data-annotations') === 'left'`,
+    10000,
+    'the annotations at the left',
+  ).catch(() => {});
+  at = await placed();
+  check(
+    'set at the left with the numbers there, the annotation stands outside the number where one writes',
+    at.side === 'left' && at.note && at.number && at.note[1] < at.number[0] && at.number[1] <= at.line[0],
+    JSON.stringify(at),
+  );
+  check(
+    'and in the Typst of the preview, placed past the number',
+    await typstHas(/#gk-beside\("left", gk-margin\("metre"\), out: 3em\);/),
+  );
+  await sleep(2500);
+  const onPage = await app.exec(
+    `const spans = Array.from(document.querySelectorAll('.preview .page .texts span'));
+     const muse = spans.find((s) => s.textContent.includes('Tell me'));
+     const note = spans.find((s) => s.textContent.trim() === 'metre');
+     if (!muse || !note) return { muse: !!muse, note: !!note };
+     const m = muse.getBoundingClientRect();
+     const middle = (r) => (r.top + r.bottom) / 2;
+     const one = spans.map((s) => s.getBoundingClientRect()).find((r, i) => spans[i].textContent.trim() === '1' && Math.abs(middle(r) - middle(m)) < m.height);
+     const n = note.getBoundingClientRect();
+     return { line: Math.round(m.left), number: one ? [Math.round(one.left), Math.round(one.right)] : null, note: [Math.round(n.left), Math.round(n.right)] };`,
+  );
+  check(
+    'on the page, the annotation stands left of the number, and the number left of the line',
+    !!onPage.number && onPage.note[1] <= onPage.number[0] && onPage.number[1] <= onPage.line,
+    JSON.stringify(onPage),
+  );
+  await app.screenshot('look-8-annotations');
+
+  // The numbers at the right: the annotation across from them, at the left, and then at the right outside them.
+  /** Where the number, the annotation and the line of the Muse stand on the page. */
+  const onThePage = () =>
+    app.exec(
+      `const spans = Array.from(document.querySelectorAll('.preview .page .texts span'));
+       const muse = spans.find((s) => s.textContent.includes('Tell me'));
+       const note = spans.find((s) => s.textContent.trim() === 'metre');
+       if (!muse || !note) return { muse: !!muse, note: !!note };
+       const m = muse.getBoundingClientRect();
+       const middle = (r) => (r.top + r.bottom) / 2;
+       const one = spans.map((s) => s.getBoundingClientRect()).find((r, i) => spans[i].textContent.trim() === '1' && Math.abs(middle(r) - middle(m)) < m.height);
+       const n = note.getBoundingClientRect();
+       return { line: [Math.round(m.left), Math.round(m.right)], number: one ? [Math.round(one.left), Math.round(one.right)] : null, note: [Math.round(n.left), Math.round(n.right)] };`,
+    );
+  await app.lookChoose('Numbers on the', 'right');
+  await app.lookChoose('Annotations on the', '');
+  await app.waitUntil(
+    `const p = Array.from(document.querySelectorAll('.text-view .prose > p')).find((p) => p.textContent.includes('Tell me, Muse'));
+     return p?.getAttribute('data-numbers') === 'right' && p?.getAttribute('data-annotations') === 'left'`,
+    10000,
+    'the numbers at the right and the annotation at the left',
+  ).catch(() => {});
+  at = await placed();
+  check(
+    'with the numbers at the right, the annotation stands at the left where one writes',
+    at.side === 'left' && at.number && at.note && at.number[0] >= at.line[1] && at.note[1] <= at.line[0],
+    JSON.stringify(at),
+  );
+  await typstHas(/#gk-beside\("right", gk-number\("1"\)\);/);
+  await sleep(2500);
+  let page = await onThePage();
+  check(
+    'and on the page',
+    !!page.number && page.number[0] >= page.line[1] && page.note[1] <= page.line[0],
+    JSON.stringify(page),
+  );
+  await app.lookChoose('Annotations on the', 'right');
+  await app.waitUntil(
+    `return Array.from(document.querySelectorAll('.text-view .prose > p')).find((p) => p.textContent.includes('Tell me, Muse'))?.getAttribute('data-annotations') === 'right'`,
+    10000,
+    'the annotation at the right',
+  ).catch(() => {});
+  at = await placed();
+  check(
+    'set at the right with the numbers, the annotation stands outside the number where one writes',
+    at.side === 'right' && at.number && at.note && at.note[0] > at.number[1] && at.number[0] >= at.line[1],
+    JSON.stringify(at),
+  );
+  await typstHas(/#gk-beside\("right", gk-margin\("metre"\), out: 3em\);/);
+  await sleep(2500);
+  page = await onThePage();
+  check(
+    'and on the page',
+    !!page.number && page.note[0] >= page.number[1] && page.number[0] >= page.line[1],
+    JSON.stringify(page),
+  );
+  await app.screenshot('look-9-annotations-right');
+
   const errors = await app.pageErrors();
   check('no errors in the page', errors.length === 0, errors.join(' | '));
 } catch (e) {

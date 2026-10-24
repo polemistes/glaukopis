@@ -1394,9 +1394,10 @@ span.math.selected {
 }
 /* The annotations stand on the side the numbering sets on their paragraph
    (`data-annotations`): across from the numbers, unless the layout says
-   otherwise. At the right, with room for them. */
+   otherwise. At the right, with room for them, but never more than a part
+   of a narrow text. */
 .prose p[data-annotations='right'] {
-  margin-right: 8em;
+  margin-right: min(8em, 30%);
 }
 /* At the left, outside the bracket of the run and its label. */
 .prose p[data-annotations='left'] .line-margin {
@@ -1413,7 +1414,7 @@ span.math.selected {
   left: calc(100% + 4.6em);
 }
 .prose p[data-annotations='right'][data-numbers='right'] {
-  margin-right: 11.7em;
+  margin-right: min(11.7em, 40%);
 }
 
 /* A break of the page or of the column: a dashed line across the text with

@@ -174,10 +174,10 @@ try {
 
   // --- Numbered through the speaker and across the stanza, every 2, from 1 ---
   await cursorAfter('Nurse');
-  await app.numberTheseLines();
-  await app.waitForText('dialog[open] h2', 'Numbers', 3000);
+  await app.lineNumberingFromHere();
+  await app.waitForText('dialog[open] h2', 'Line numbering from here', 3000);
   await sleep(200);
-  const numbering = await app.exec(`return document.querySelector('dialog[open] select').value`);
+  const numbering = await app.exec(`return document.querySelector('dialog[open] [data-numbering] select').value`);
   check('the dialog proposes to count the lines', numbering === 'counted', numbering);
   await app.exec(
     `const i = document.querySelector('dialog[open] input[data-number-from], dialog[open] [data-number-from] input'); i.focus(); i.select();`,
@@ -204,7 +204,8 @@ try {
     `return Array.from(document.querySelectorAll(arguments[0] + ' > p')).map((p) => (p.getAttribute('data-n') ?? '-') + (p.hasAttribute('data-n-set') ? '!' : '') + ':' + (p.getAttribute('data-numbering') ?? '')).join(' ')`,
     prose,
   );
-  check('the stretch is numbered on each paragraph', ns === '-:counted 1!:counted 4:counted', ns);
+  // The 1 given does not fall on every second number: the page shows none on that line.
+  check('the stretch is numbered on each paragraph', ns === '-:counted -:counted 4:counted', ns);
   check(
     'the bracket says the verse is numbered',
     (await app.exec(`return document.querySelector(arguments[0] + ' > p[data-run-first] .run-label')?.textContent.trim()`, prose)) ===

@@ -544,14 +544,14 @@ impl Converter<'_> {
         match self.extras.flavour {
             Flavour::Typst => {
                 // Placed from where the paragraph begins, taking no room in the line; what
-                // stands outside the number past the number's room.
+                // stands outside the number 3 em further out, past where a number of five digits ends.
                 let call = |side: &str, text: &str, margin: bool, outside: bool| {
                     let body = if margin {
                         format!("gk-margin({})", string(text))
                     } else {
                         format!("gk-number({})", string(text))
                     };
-                    let out = if outside { ", out: 4.6em" } else { "" };
+                    let out = if outside { ", out: 3em" } else { "" };
                     raw_inline("typst", format!("#gk-beside(\"{side}\", {body}{out});"))
                 };
                 let calls: Vec<Value> = (left.iter().enumerate().map(|(k, (t, m))| call("left", t, *m, k > 0)))
@@ -566,7 +566,7 @@ impl Converter<'_> {
                 if !right.is_empty() {
                     inner.push(raw_inline("latex", "\\nobreak\\hfill"));
                     for (k, (text, margin)) in right.iter().enumerate() {
-                        let gap = if k > 0 { "4.6em" } else { "1em" };
+                        let gap = if k > 0 { "4em" } else { "1em" };
                         inner.push(raw_inline("latex", format!("\\rlap{{\\hspace{{{gap}}}{}", shape(*margin))));
                         inner.extend(words(text));
                         inner.push(raw_inline("latex", "}"));
@@ -574,7 +574,7 @@ impl Converter<'_> {
                 }
                 let mut laps = Vec::new();
                 for (k, (text, margin)) in left.iter().enumerate() {
-                    let gap = if k > 0 { "4.6em" } else { "0.9em" };
+                    let gap = if k > 0 { "3.9em" } else { "0.9em" };
                     laps.push(raw_inline("latex", format!("\\llap{{{{{}", shape(*margin))));
                     laps.extend(words(text));
                     laps.push(raw_inline("latex", format!("}}\\hspace{{{gap}}}}}")));
@@ -1065,12 +1065,12 @@ mod tests {
         c.extras.verse.annotations = Some(Side::Left);
         let said = typst(&c);
         assert!(said.contains(r#"#gk-beside(\"left\", gk-number(\"1\"));"#), "{said}");
-        assert!(said.contains(r#"#gk-beside(\"left\", gk-margin(\"ia.\"), out: 4.6em);"#), "{said}");
+        assert!(said.contains(r#"#gk-beside(\"left\", gk-margin(\"ia.\"), out: 3em);"#), "{said}");
         // LaTeX: both hang in the left margin, the annotation further out.
         let mut c = converter(&keys, Flavour::Latex);
         c.extras.verse.annotations = Some(Side::Left);
         let said = serde_json::to_string(&written(&c, &prose)).unwrap();
-        assert!(said.contains(r#"}\\hspace{0.9em}}"#) && said.contains(r#"}\\hspace{4.6em}}"#), "{said}");
+        assert!(said.contains(r#"}\\hspace{0.9em}}"#) && said.contains(r#"}\\hspace{3.9em}}"#), "{said}");
         assert!(!said.contains("rlap"), "{said}");
         // Word: at the head of the line, the annotation first, then the number.
         let mut c = converter(&keys, Flavour::Docx);

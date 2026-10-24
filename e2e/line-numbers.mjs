@@ -1,17 +1,21 @@
-// Marks on lines, and reference marks (ADR 0041, ADR 0039). Ten lines of
-// verse in two stanzas are numbered from 1, every 5 as the layout says;
-// the third is given 1234 by hand, the fifth is not counted, the tenth is
-// counted and its number held back, shown in parentheses where one
-// writes; the sixth has words in the margin; and the seventh is given 77
-// in its place in the margin. Then a paragraph with reference marks: one
-// by its key, one from the Insert menu, whose label is proposed from the
-// one before, and one changed by pressing it. Search finds words across a
-// mark, and spelling passes over it. The paragraph gains two lines, and the
-// second of its three is given 9: the preview shows it beside that line.
-// The preview is made without remark
-// from Typst that has the numbers, the margin words and the marks; and a
-// document made as Typst by the command of export, with the layout setting
-// the marks in the margin, has them there.
+// Marks on lines, and reference marks (ADR 0041, ADR 0039, ADR 0067). Ten
+// lines of verse in two stanzas are numbered from 1, every 5 as the layout
+// says, through Line numbering from here: the 1 given is not shown on the
+// page, since it does not fall on every fifth, and stands in parentheses
+// where one writes. Through Numbering of this line, the third is given
+// 1234, also in parentheses until its number is said to be shown always;
+// the fifth is not counted; the tenth's number is never shown; the sixth
+// has an annotation; and the seventh is given the label 7a in its place in
+// the margin, which is shown and counted on from. Then a paragraph with
+// reference marks: one by its key, one from the Insert menu, whose label is
+// proposed from the one before, and one changed by pressing it. Search
+// finds words across a mark, and spelling passes over it. The paragraph
+// gains two lines, and the second of its three is given 9: the preview
+// shows it beside that line. The preview is made without remark from Typst
+// that has the numbers, the annotations and the marks; a document made as
+// Typst by the command of export, with the layout setting the marks in the
+// margin, has them there; and a verse with a quotation among its lines,
+// counting the lines of verse only, passes over the quotation.
 
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
@@ -61,12 +65,36 @@ async function fill(selector, words) {
   else await app.press('Backspace');
 }
 
-/** Opens the window of the numbers of the lines, for the line the cursor is in. */
-async function numbersWindow() {
-  // The # button is a menu: the lines where the cursor is are its first item.
-  await app.numberTheseLines();
-  await app.waitForText('dialog[open] h2', 'Numbers', 3000);
+/** Opens Line numbering from here, from the paragraph the cursor is in. */
+async function numberingWindow() {
+  await app.lineNumberingFromHere();
+  await app.waitForText('dialog[open] h2', 'Line numbering from here', 3000);
   await sleep(200);
+}
+
+/** Opens Numbering of this line, for the line the cursor is in. */
+async function lineWindow() {
+  await app.numberingOfThisLine();
+  await app.waitForText('dialog[open] h2', 'Numbering of this line', 3000);
+  await sleep(200);
+}
+
+/** Chooses in a chooser of the window that is open, found by the mark around it. */
+async function chooseIn(mark, value) {
+  await app.exec(
+    `const s = document.querySelector('dialog[open] [' + arguments[0] + '] select'); s.value = arguments[1];
+     s.dispatchEvent(new Event('input', { bubbles: true })); s.dispatchEvent(new Event('change', { bubbles: true }));`,
+    mark,
+    value,
+  );
+  await sleep(150);
+}
+
+/** Applies the window that is open, and waits for it to go. */
+async function apply() {
+  await app.clickText('dialog[open] footer button', 'Apply');
+  await app.waitGone('dialog[open]', 3000);
+  await sleep(300);
 }
 
 /** The numbers the lines show in the margin, line by line: "-" where none, "!" where given by hand, "(n)" where held back. */
@@ -140,80 +168,86 @@ try {
     (await app.exec(`return Array.from(document.querySelectorAll(arguments[0] + ' > p[data-kind="line"]')).map((p) => p.querySelectorAll('.hard-break').length + 1).join(',')`, prose)) === '5,5',
   );
 
-  // --- Numbered, every 5 as the layout says: the first line is given 1 ---
+  // --- Numbered, every 5 as the layout says, from 1: the 1 given stands in parentheses, the page showing none ---
   await toLine(0);
-  await numbersWindow();
-  await app.exec(
-    `const s = document.querySelector('dialog[open] select'); s.value = 'counted';
-     s.dispatchEvent(new Event('input', { bubbles: true })); s.dispatchEvent(new Event('change', { bubbles: true }));`,
-  );
-  await sleep(150);
-  await fill('dialog[open] [data-this-line] input:not([type="checkbox"])', '1');
-  await app.clickText('dialog[open] footer button', 'Apply');
-  await app.waitGone('dialog[open]', 3000);
-  await sleep(300);
-  check('the lines are numbered from 1 every 5, across the stanzas', (await shownNumbers()) === '1! - - - 5 - - - - 10', await shownNumbers());
-
-  // --- The third line is given 1234 ---
-  await toLine(2);
-  await numbersWindow();
+  await numberingWindow();
+  await chooseIn('data-numbering', 'counted');
   check(
-    'the window has a part for the line the cursor is in',
-    (await app.exec(`return document.querySelector('dialog[open] [data-this-line] .words')?.textContent ?? ''`)) ===
+    'the window fills in the number to count from, and has no hints',
+    (await app.exec(`return document.querySelector('dialog[open] input[data-number-from]')?.value ?? null`)) === '1' &&
+      !(await app.exists('dialog[open] .hint, dialog[open] small, dialog[open] .field .message:not(.error)')),
+  );
+  await apply();
+  check(
+    'the lines are numbered from 1 every 5, across the stanzas; the 1 given is not shown on the page',
+    (await shownNumbers()) === '(1) - - - 5 - - - - 10',
+    await shownNumbers(),
+  );
+
+  // --- The third line is given 1234 in its window: not shown on the page until it is said to be always ---
+  await toLine(2);
+  await lineWindow();
+  check(
+    'the window of the line says the words of the line the cursor is in',
+    (await app.exec(`return document.querySelector('dialog[open] .words')?.textContent ?? ''`)) ===
       'to the land of Colchis,',
   );
-  await fill('dialog[open] [data-this-line] input:not([type="checkbox"])', '1234');
-  await app.clickText('dialog[open] footer button', 'Apply');
-  await app.waitGone('dialog[open]', 3000);
-  await sleep(300);
+  await fill('dialog[open] input[data-line-number]', '1234');
+  await apply();
   check(
-    'a number given by hand is shown as such, and the count goes on from it',
-    (await shownNumbers()) === '1! - 1234! 1235 - - - - 1240 -',
+    'a number given by hand that does not fall on every fifth stands in parentheses, and the count goes on from it',
+    (await shownNumbers()) === '(1) - (1234) 1235 - - - - 1240 -',
+    await shownNumbers(),
+  );
+  await lineWindow();
+  await chooseIn('data-shown', 'always');
+  await apply();
+  check(
+    'said to be shown always, it is shown',
+    (await shownNumbers()) === '(1) - 1234! 1235 - - - - 1240 -',
     await shownNumbers(),
   );
 
   // --- The fifth line is not counted ---
   await toLine(4);
-  await numbersWindow();
-  await app.click('dialog[open] [data-this-line] input[data-uncounted]');
+  await lineWindow();
+  await app.click('dialog[open] input[data-counted]');
   await sleep(100);
-  await app.clickText('dialog[open] footer button', 'Apply');
-  await app.waitGone('dialog[open]', 3000);
-  await sleep(300);
+  check('a line not counted is not asked whether its number is shown', !(await app.exists('dialog[open] [data-shown]')));
+  await apply();
   check(
     'a line not counted is passed over by the count',
-    (await shownNumbers()) === '1! - 1234! 1235 - - - - - 1240',
+    (await shownNumbers()) === '(1) - 1234! 1235 - - - - - 1240',
     await shownNumbers(),
   );
 
-  // --- The tenth line is counted, its number not shown: in parentheses where one writes ---
+  // --- The tenth line is counted, its number never shown: in parentheses where one writes ---
   await toLine(9);
-  await numbersWindow();
-  await app.click('dialog[open] [data-this-line] input[data-hidden]');
-  await sleep(100);
-  await app.clickText('dialog[open] footer button', 'Apply');
-  await app.waitGone('dialog[open]', 3000);
-  await sleep(300);
+  await lineWindow();
+  await chooseIn('data-shown', 'never');
+  await apply();
   const held = await app.exec(
     `const w = Array.from(document.querySelectorAll(arguments[0] + ' > p span.line-number')).pop(); return { held: w.classList.contains('held') && 'held' in w.dataset, seen: w.textContent, before: getComputedStyle(w, '::before').content, after: getComputedStyle(w, '::after').content };`,
     prose,
   );
   check(
-    'a line whose number is held back shows it in parentheses',
-    (await shownNumbers()) === '1! - 1234! 1235 - - - - - (1240)' && held.held && /\(/.test(held.before + held.seen) && /\)/.test(held.after + held.seen),
+    'a line whose number is never shown shows it in parentheses',
+    (await shownNumbers()) === '(1) - 1234! 1235 - - - - - (1240)' && held.held && /\(/.test(held.before + held.seen) && /\)/.test(held.after + held.seen),
     `${await shownNumbers()} ${JSON.stringify(held)}`,
   );
 
-  // --- The sixth line has words in the margin ---
+  // --- The sixth line has an annotation, across from the numbers ---
   await toLine(5);
-  await numbersWindow();
-  const fields = 'dialog[open] [data-this-line] input:not([type="checkbox"])';
-  await app.exec(`document.querySelectorAll(arguments[0])[1].dataset.marginField = '';`, fields);
-  await fill('[data-margin-field]', 'ia. trim.');
+  await lineWindow();
+  check(
+    'the field of the annotation is named by the margin it goes to',
+    (await app.exec(`return Array.from(document.querySelectorAll('dialog[open] label')).map((l) => l.textContent.trim())`)).includes(
+      'Annotation in the right margin',
+    ),
+  );
+  await fill('dialog[open] input[data-annotation]', 'ia. trim.');
   await app.screenshot('line-numbers-0-window');
-  await app.clickText('dialog[open] footer button', 'Apply');
-  await app.waitGone('dialog[open]', 3000);
-  await sleep(300);
+  await apply();
   const margin = await app.exec(
     `const p = document.querySelectorAll(arguments[0] + ' > p')[1]; const w = p.querySelector('span.line-margin'); const box = w?.getBoundingClientRect();
      return { margins: p.hasAttribute('data-margins'), words: w?.textContent ?? null, seen: !!box && box.width > 0 };`,
@@ -225,7 +259,7 @@ try {
     JSON.stringify(margin),
   );
 
-  // --- A number given in place: the seventh line's place in the margin is pressed ---
+  // --- A label given in place: the seventh line's place in the margin is pressed ---
   const seventh = await app.exec(`return document.querySelectorAll(arguments[0] + ' > p span.line-number')[6];`, prose);
   await app.hover(`${prose} > p:nth-of-type(2)`);
   await sleep(150);
@@ -235,20 +269,20 @@ try {
     () => false,
   );
   check('pressed, the place of a number opens a field for it', field);
-  await app.keys('77');
+  await app.keys('7a');
   await app.press('Enter');
   await sleep(300);
   check(
-    'Enter gives the line the number, and the count goes on from it',
-    (await shownNumbers()) === '1! - 1234! 1235 - - 77! - - (80)' && !(await app.exists('.line-number.editing')),
+    'Enter gives the line the label, which is shown, and the count goes on from its digits',
+    (await shownNumbers()) === '(1) - 1234! 1235 - - 7a! - - (10)' && !(await app.exists('.line-number.editing')),
     await shownNumbers(),
   );
   const given = await app.exec(
     `return Array.from(document.querySelectorAll(arguments[0] + ' span.linemark')).map((m) =>
-       (m.getAttribute('data-number') ?? '') + (m.hasAttribute('data-uncounted') ? '~' : '') + (m.hasAttribute('data-hidden') ? '()' : '') + (m.getAttribute('data-margin') ? '|' + m.getAttribute('data-margin') : '')).join(',')`,
+       (m.getAttribute('data-number') ?? '') + (m.hasAttribute('data-shown') ? '+' : '') + (m.hasAttribute('data-uncounted') ? '~' : '') + (m.hasAttribute('data-hidden') ? '()' : '') + (m.getAttribute('data-margin') ? '|' + m.getAttribute('data-margin') : '')).join(',')`,
     prose,
   );
-  check('what was given stays on its lines, as their marks', given === '1,1234,~,|ia. trim.,77,()', given);
+  check('what was given stays on its lines, as their marks', given === '1,1234+,~,|ia. trim.,7a,()', given);
   await app.screenshot('line-numbers-1-verse');
 
   // --- Out of the verse, a paragraph with reference marks ---
@@ -336,16 +370,12 @@ try {
   await app.keys('And the spirit moved upon the waters.');
   await sleep(300);
   await toLine(await lineOf('And darkness'));
-  await numbersWindow();
-  await app.exec(
-    `const s = document.querySelector('dialog[open] select'); s.value = 'counted';
-     s.dispatchEvent(new Event('input', { bubbles: true })); s.dispatchEvent(new Event('change', { bubbles: true }));`,
-  );
-  await sleep(150);
-  await fill('dialog[open] [data-this-line] input:not([type="checkbox"])', '9');
-  await app.clickText('dialog[open] footer button', 'Apply');
-  await app.waitGone('dialog[open]', 3000);
-  await sleep(300);
+  await numberingWindow();
+  await chooseIn('data-numbering', 'counted');
+  await apply();
+  await lineWindow();
+  await fill('dialog[open] input[data-line-number]', '9');
+  await apply();
   const nine = await app.exec(
     `return Array.from(document.querySelectorAll(arguments[0] + ' span.linemark')).some((m) => m.getAttribute('data-number') === '9')`,
     prose,
@@ -386,17 +416,17 @@ try {
   const at = typst.indexOf('#gk-verse[');
   const line = (n, margin = 'none') => `#gk-line("line", 0, n: ${n}, margin: ${margin}, side: "left")[`;
   check(
-    'the Typst of the preview has the lines in one block, with the numbers and the words in the margin',
+    'the Typst of the preview has the lines in one block, with the numbers the page shows and the annotation',
     (typst.match(/#gk-verse\[/g) ?? []).length === 1 &&
       typst.includes('#v(1em)') &&
-      typst.includes(line('"1"')) &&
+      !/n: "1",/.test(typst) &&
       typst.includes(line('"1234"')) &&
       typst.includes(line('"1235"')) &&
       typst.includes(line('none', '"ia. trim."')) &&
-      typst.includes(line('"77"')) &&
-      !typst.includes('n: "80"') &&
+      typst.includes(line('"7a"')) &&
+      !typst.includes('n: "10"') &&
       (typst.match(/#gk-line\(/g) ?? []).length === 10 &&
-      (typst.match(/, n: "/g) ?? []).length === 4,
+      (typst.match(/, n: "/g) ?? []).length === 3,
     typst.slice(at, at + 1400),
   );
   check(
@@ -421,7 +451,7 @@ try {
            { kind: 'paragraph', name: 'text', indent: 0, content: [{ kind: 'refmark', label: '1:1' }, t('In the beginning. '),
              { kind: 'refmark', label: '1:2' }, t('And the earth.')] },
            { kind: 'paragraph', name: 'line', indent: 0, numbering: 'counted', content: [
-             { kind: 'linemark', number: '567' }, t('one'), { kind: 'break' },
+             { kind: 'linemark', number: '567', shown: true }, t('one'), { kind: 'break' },
              { kind: 'linemark', number: '567a' }, t('two'), { kind: 'break' },
              { kind: 'linemark', counted: false }, t('three'), { kind: 'break' },
              { kind: 'linemark', margin: 'lyr.' }, t('four'), { kind: 'break' },
@@ -440,7 +470,7 @@ try {
   if (!made?.error) {
     const text = readFileSync(join(out, 'genesis.typ'), 'utf8');
     check(
-      'the exported Typst sets the marks in the margin, counts on from a label, and holds back a hidden number',
+      'the exported Typst sets the marks in the margin, shows a number said to be shown always, counts on from a label, and holds back a hidden number',
       text.includes('here().position()') &&
         text.includes('#gk-refmark("1:2"); And the earth') &&
         text.includes('#gk-line("line", 0, n: "567", margin: none, side: "left")[') &&
@@ -454,6 +484,74 @@ try {
     );
   }
   rmSync(out, { recursive: true, force: true });
+
+  // --- Count the lines of one kind: a verse with a quotation among its lines ---
+  await toLine(await lineOf('upon the waters'));
+  await app.press('Enter');
+  await app.keys('Sing, goddess,');
+  await app.keys(['Shift', 'Enter']);
+  await app.keys('the wrath of Achilles');
+  await app.press('Enter');
+  await app.keys('A quoted line');
+  await app.press('Enter');
+  await app.keys('son of Peleus');
+  await sleep(200);
+  const last = async (n) => {
+    await app.exec(
+      `const ps = document.querySelectorAll(arguments[0] + ' > p'); const p = ps[ps.length - arguments[1]];
+       const walker = document.createTreeWalker(p, NodeFilter.SHOW_TEXT); let node, end = null;
+       while ((node = walker.nextNode())) if (!node.parentElement.closest('.run-line, .line-number, .line-margin')) end = node;
+       getSelection().collapse(end, end.data.length);`,
+      prose,
+      n,
+    );
+    await sleep(200);
+  };
+  for (const [n, kind] of [[3, 'Verse'], [1, 'Verse']]) {
+    await last(n);
+    await app.click('.pane-bar [data-paragraph-kind]');
+    await app.clickText('[role="menuitem"]', 'More…');
+    await sleep(200);
+    await app.clickText('[role="menuitem"]', kind);
+    await sleep(300);
+  }
+  await last(2);
+  await app.click('.pane-bar [data-paragraph-kind]');
+  await app.clickText('[role="menuitem"]', 'Quotation');
+  await sleep(300);
+  // The three selected, from the start of the first to the end of the last.
+  await app.exec(
+    `const ps = Array.from(document.querySelectorAll(arguments[0] + ' > p')).slice(-3);
+     const texts = (p) => { const w = document.createTreeWalker(p, NodeFilter.SHOW_TEXT); const out = []; let n;
+       while ((n = w.nextNode())) if (!n.parentElement.closest('.run-line, .line-number, .line-margin')) out.push(n); return out; };
+     const first = texts(ps[0])[0]; const end = texts(ps[2]).pop();
+     getSelection().setBaseAndExtent(first, 0, end, end.data.length);`,
+    prose,
+  );
+  await sleep(300);
+  await numberingWindow();
+  await chooseIn('data-numbering', 'counted');
+  const offered = await app.exec(
+    `return Array.from(document.querySelectorAll('dialog[open] [data-only] option')).map((o) => o.value + ':' + o.textContent.trim())`,
+  );
+  check(
+    'Count the lines of offers every kind, and the kinds counted among the paragraphs',
+    offered.join(' | ') === ':Every kind | line:Verse | quote:Quotation',
+    offered.join(' | '),
+  );
+  // The new paragraphs were written in the numbered stretch of the text: the count is filled in as it stands there.
+  const from = await app.exec(`return document.querySelector('dialog[open] input[data-number-from]')?.value ?? null`);
+  check('the number to count from is the one the first line has now', from === '11', from);
+  await chooseIn('data-only', 'line');
+  await fill('dialog[open] input[data-every]', '1');
+  await apply();
+  const lastNumbers = await app.exec(
+    `return Array.from(document.querySelectorAll(arguments[0] + ' > p')).slice(-3).map((p) =>
+       Array.from(p.querySelectorAll('span.line-number')).map((w) => w.classList.contains('blank') ? '-' : w.dataset.label).join(' ')).join(' | ')`,
+    prose,
+  );
+  check('counting the lines of verse only, the quotation is passed over', lastNumbers === '11 12 | - | 13', lastNumbers);
+  await app.screenshot('line-numbers-4-only');
 
   const errors = await app.pageErrors();
   check('no errors in the page', errors.length === 0, errors.join(' | '));

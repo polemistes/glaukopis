@@ -744,7 +744,8 @@ pub fn rules(format: &DocumentFormat, p: &Particulars) -> String {
     // verse (`gk-at`), so that the numbers of texts side by side stand
     // beside their own columns. What stands on the numbers' side outside
     // them, an annotation where the layout puts the annotations there, is
-    // placed `out` further from the text, past the number's room.
+    // placed `out` further from the text, past where a number of five digits
+    // ends, so that it fits a margin of 2.5 cm.
     let _ = writeln!(
         out,
         "#let gk-number(n) = text(size: 0.8em, fill: luma(45%), hyphenate: false, n)
@@ -790,7 +791,7 @@ pub fn rules(format: &DocumentFormat, p: &Particulars) -> String {
         "#let gk-verse(body) = block(width: 100%, above: {body_leading} + 0.6em, below: {body_leading} + 0.6em, inset: (left: {inset}), body)
 #let gk-line(kind, indent, n: none, margin: none, side: \"left\", body) = {{
   let notes = {notes}
-  let out = if notes == side {{ 4.6em }} else {{ 0pt }}
+  let out = if notes == side {{ 3em }} else {{ 0pt }}
   if kind == \"speaker\" {{
     block(width: 100%, above: {speaker_above}, below: {speaker_below}, breakable: false, {{
       if n != none {{ gk-at(side, {inset}, gk-number(n)) }}
