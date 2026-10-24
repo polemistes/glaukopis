@@ -166,15 +166,15 @@ core-import-document-raw = { $count ->
    *[other] { $count } pieces written in HTML or TeX for the one kind of document only are left out.
 }
 core-import-document-pictures-wanting = { $count ->
-    [one] { $count } picture that the file holds is not in the text that was read, and is left out. It may stand in the head or the foot of the pages, or in a drawing.
-   *[other] { $count } pictures that the file holds are not in the text that was read, and are left out. They may stand in the head or the foot of the pages, or in a drawing.
+    [one] { $count } image that the file holds is not in the text that was read, and is left out. It may stand in the head or the foot of the pages, or in a drawing.
+   *[other] { $count } images that the file holds are not in the text that was read, and are left out. They may stand in the head or the foot of the pages, or in a drawing.
 }
 
 ## A picture of a document that is left out, and why.
 
-core-import-document-picture-left-out = The picture “{ $name }” is left out: { $why }.
+core-import-document-picture-left-out = The image “{ $name }” is left out: { $why }.
 core-import-document-picture-kind = it is of a kind that is not read ({ $kind })
-core-import-document-picture-not-read = it is not a picture of a kind that is read
+core-import-document-picture-not-read = it is not an image of a kind that is read
 core-import-document-picture-unreadable = it could not be read
 core-import-document-picture-network = it is on the network, and nothing is fetched from there
 core-import-document-picture-not-taken-out = it could not be taken out of the file

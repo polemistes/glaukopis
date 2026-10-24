@@ -3,13 +3,13 @@
 
 ## Making a document.
 
-core-export-picture-missing = The picture “{ $name }” is not on this computer, and is left out of the document.
+core-export-picture-missing = The image “{ $name }” is not on this computer, and is left out of the document.
 # Pictures that are in the store, and could not be put where the document is made: $error is why the first could not.
 core-export-files-not-placed = { $count ->
-    [one] The file of a picture could not be put where the document is made, and the picture is left out of it: { $error }
-   *[other] The files of { $count } pictures could not be put where the document is made, and the pictures are left out of it: { $error }
+    [one] The file of an image could not be put where the document is made, and the image is left out of it: { $error }
+   *[other] The files of { $count } images could not be put where the document is made, and the images are left out of it: { $error }
 }
-core-export-cover-left-out = The picture of the cover could not be put where the book is made, and the book has no cover: { $error }
+core-export-cover-left-out = The image of the cover could not be put where the book is made, and the book has no cover: { $error }
 core-export-astray = { $count ->
     [one] A cross-reference in the text refers to something that is not in the document. It is set as [?].
    *[other] { $count } cross-references in the text refer to what is not in the document. They are set as [?].

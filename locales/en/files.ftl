@@ -24,7 +24,7 @@ files-selected = { $count ->
 
 files-kind = Kind
 files-kind-pdf = PDF
-files-kind-picture = Picture
+files-kind-picture = Image
 files-kind-document = Document
 files-kind-other = Other file
 
@@ -77,7 +77,7 @@ files-filters-on = { $count ->
 files-filter-kind = Kind
 files-filter-all = All kinds
 files-filter-pdf = PDFs
-files-filter-picture = Pictures
+files-filter-picture = Images
 files-filter-document = Documents
 files-filter-other = Other files
 files-filter-unassigned = Unassigned only
@@ -174,10 +174,10 @@ files-origin = Came from
 files-searchable = Make searchable…
 files-read-into = Import the text as a map…
 files-read-text = Read the text…
-files-to-pictures = Take into the pictures
-files-to-pictures-done = “{ $name }” is among the pictures now
+files-to-pictures = Take into the images
+files-to-pictures-done = “{ $name }” is among the images now
 files-to-pictures-show = Show
-files-to-pictures-failed = The picture could not be taken into the pictures
+files-to-pictures-failed = The image could not be taken into the images
 files-bring-in = Bring in as elements…
 files-rename-failed = The file could not be renamed
 

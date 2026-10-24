@@ -23,7 +23,7 @@ core-sharing-full = The server holds as many projects as it is set to hold.
 core-sharing-password-asked = This server asks for a password from those who share projects through it.
 core-sharing-password-wrong = The password is not the one the server asks for.
 core-sharing-too-many = Too many attempts have been made from here. Try again in ten minutes.
-core-sharing-no-file = The server does not have the picture.
+core-sharing-no-file = The server does not have the image.
 core-sharing-server-error = { $host } answered with an error.
 
 ## What the server says in its own words, which are English, where the
@@ -42,12 +42,12 @@ core-sharing-project-full = There is not room for the file: the files of one pro
 
 ## The pictures of the figures, which are sent and fetched one by one.
 
-core-sharing-picture-too-large = { $host } does not take a picture as large as this.
-core-sharing-picture-larger = A picture is larger than { $host } takes ({ $most } MB at the most), and does not reach the others.
-core-sharing-picture-not-sent = A picture could not be sent: { $error }.
-core-sharing-picture-not-fetched = A picture could not be fetched: { $error }.
+core-sharing-picture-too-large = { $host } does not take an image as large as this.
+core-sharing-picture-larger = An image is larger than { $host } takes ({ $most } MB at the most), and does not reach the others.
+core-sharing-picture-not-sent = An image could not be sent: { $error }.
+core-sharing-picture-not-fetched = An image could not be fetched: { $error }.
 # The server gave a picture whose content is not what its name says: damaged on the way or where the server keeps it.
-core-sharing-picture-not-as-listed = A picture { $host } gave is not the one it listed: it was damaged on its way or where it is kept.
+core-sharing-picture-not-as-listed = An image { $host } gave is not the one it listed: it was damaged on its way or where it is kept.
 
 ## Publishing and joining.
 

@@ -29,7 +29,7 @@ document-the-table = The table
 document-reference-not-found = [reference not found]
 # Where a picture is not on the computer the document is made on; the braces
 # stand for its name, or for the words below where it has none.
-document-picture-not-here = [The picture is not here: {"{}"}]
+document-picture-not-here = [The image is not here: {"{}"}]
 document-the-file = the file
 # The little document that shows what a reference style does: "(see Nagy
 # 1979, 12–14)", and "Nagy (1979) argues otherwise."

@@ -5,7 +5,7 @@
 
 ocr-kind-pdf = PDF
 ocr-no-headings = No heading was found: the pages are the elements.
-ocr-kind-picture = Picture
+ocr-kind-picture = Image
 
 ## When text cannot be read.
 
@@ -19,10 +19,10 @@ ocr-unreadable = “{ $file }” could not be read as a PDF. It may be damaged.
 ocr-page-not-drawn = Page { $page } could not be drawn.
 ocr-no-such-page = The PDF has no page { $page }: it has { $pages }.
 ocr-reading-gone = The reading is no longer kept: read the file again.
-ocr-picture-unreadable = The picture could not be read: { $message }
+ocr-picture-unreadable = The image could not be read: { $message }
 ocr-not-made = Tesseract did not make { $path }.
 ocr-not-made-said = Tesseract did not make { $path }. It said: { $message }
-ocr-drawing = A drawing (SVG) has no picture in it to read text from.
+ocr-drawing = A drawing (SVG) has no image in it to read text from.
 ocr-child-time = Reading “{ $file }” took longer than it may, and was stopped. The file may be damaged, or made in a way that cannot be read.
 ocr-child-memory = Reading “{ $file }” took more memory than it may, and was stopped. The file may be damaged, or made in a way that cannot be read.
 ocr-child-failed = “{ $file }” could not be read: { $message }
@@ -67,4 +67,4 @@ ocr-remark-counts = { $read ->
 }
 # Stands in the element in the place of a page that could not be read.
 ocr-page-failed-line = [This page could not be read: { $message }]
-ocr-why-no-tesseract = Tesseract, which reads text in pictures, is not installed.
+ocr-why-no-tesseract = Tesseract, which reads text in images, is not installed.
