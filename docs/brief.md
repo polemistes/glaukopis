@@ -1152,3 +1152,23 @@ What this settles (ADR 0065, proposed; to be built from `docs/plans/fewer-words-
 - Look in plain words: two lengths for paragraphs, in centimetres; *Quotations* as a warning; *Paragraph kinds* and *Words kinds* apart; *Begins the paragraph*, *Placement*, *Line numbers*, *Inside the table*, *Include*, *Formatting*, *Anonymize the front page*; the parts of the document type in one list in print order; *Requirements of the document type*; *Layout*, *Choose a layout*, *Modifications to the layout*; the source of a layout's requirements out of Look.
 - *Plain text citations* in the loose citations, without the line about programs and tags.
 - The three things left: *image* for *picture* everywhere the user reads, Escape closes any menu, and a script for the review that closes when the other side takes the focus.
+
+The owner's answers, the same day:
+
+> We keep the "Stand for", but the terminology must change. Let us instead call it "Clone other element". A cloned element cannot have its own text or its own sub elements. Or do you think there are reasons to allow that? It seems to be quite random how this would be handled. Now, a cloned element only appear where it is cloned. If the cloned element is also a part of the document, it should appear at its own place as well as where it is cloned. Does this sound ok?
+>
+> Why not count lines for the quotation number of lines threshold? Because we don't know how many lines the quotation will have?
+>
+> No, remove the "As it will stand" for equations also.
+>
+> We do not care about projects and documents already made. No real work has been done on Glaukopis yet. It is nice if the testing projects don't break, but it is not worth using much work or energy on. So removing "Print the name as a heading" will be fine.
+>
+> In the library, a pulldown menu appears if you click on the down arrow on the right side of the new reference button. There are two help texts there to be removed. Instead of the BibTex help texts, make the choice "Import Bib(La)Tex. Place "Import from Zotero" right under it.
+>
+> Here are some more suggestions for adjustments:
+>
+> The opposite of fold should be unfold. In the contex menu, "Open it" should be "Unfold this element". "Open all that is folded under it" should be "Unfold all sub-elements". "Fold it away" should be "Fold this element". "Fold away all under it" should be "Fold all sub-elements". "Add an element under it" should be "Add child element". "Add an element after it" should be "Add sibling element". "Say when it is..." and "When it is..." should be "Time stamp...". "Delete, keeping what is under it" should be "Delete and promote content". "Delete" should be "Delete with content".
+>
+> Consider these suggestions, and tell me what you think, and whether you have reservations or better suggestions. If not, remake the plan.
+
+The assessment: the original already prints at its own place as well as where it is cloned; today the standing element may have text and sub-elements of its own, which print around the original's tree, and nothing needs that: a clone has none, shows the original's name and cannot be renamed. Lines are known only after typesetting; the checklist estimates them from the layout's measure and type size. The library's menu is found and reworded. The renamings are taken, with *sub-elements* in place of *content* in the two delete items, plain *Delete* where there are none, and *Time stamp…* as asked with *Place in time…* offered instead; the text menu's four help texts go with the rest. The record and the plan are remade accordingly.
