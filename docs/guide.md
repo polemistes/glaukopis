@@ -2310,7 +2310,11 @@ There are two kinds of PDF. **PDF** is what the typesetting pane shows. **PDF, s
 LaTeX** is the same document in the typesetting of LaTeX, for those who
 prefer its pages or are asked for them; it needs LaTeX (TeX Live) on the
 computer, and takes a little longer. The two are alike in everything the
-layout says, and differ in how lines and pages are broken.
+layout says, and differ in how lines and pages are broken. A language whose
+package of TeX Live is not installed, such as Norwegian without
+*texlive-langeuropean*, is set all the same, from what LaTeX knows of it
+itself; where LaTeX has no hyphenation patterns for the language, the
+export says so, and names the package to install.
 
 What there is to remark about a document, such as a font the layout asks for
 and the computer does not have, is said at the foot of the typesetting, with

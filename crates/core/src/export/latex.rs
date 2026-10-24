@@ -80,6 +80,22 @@ pub fn without_patterns(line: &str) -> Option<Option<String>> {
     Some(Some(language.to_owned()))
 }
 
+/// The class option that has babel take every language from its own locale
+/// files. Pandoc hands babel the language as a class option (`norsk`),
+/// which babel knows only from the package of TeX Live for the language;
+/// without it, LaTeX fails on "Unknown option". With this option it takes
+/// the language from its own files, the same where the package is there
+/// for Norwegian; but not for every language: German fails with it, as
+/// `ngerman`, and Greek by pdfLaTeX. So it is given only where babel has
+/// failed without it (`lacks_language`).
+pub const FROM_LOCALE_FILES: &str = "provide=*";
+
+/// Whether what LaTeX said when it failed is that babel does not know the
+/// language it was given: the package of TeX Live for it is not installed.
+pub fn lacks_language(messages: &str) -> bool {
+    messages.contains("Package babel Error: Unknown option")
+}
+
 /// Fonts that have many letters, asked for those the font of the document
 /// lacks. Only LuaLaTeX can be told of them.
 pub const FALLBACK_FONTS: [&str; 8] = [
@@ -135,11 +151,6 @@ pub fn settings(f: &DocumentFormat, looks: &[&DocumentFormat], p: &Particulars) 
     let mut h = String::new();
 
     v.push(("documentclass".into(), "article".into()));
-    // Babel takes the language from its own locale files where the package
-    // of TeX Live for the language is not installed: Pandoc hands it the
-    // language as a class option (`norsk`), which it knows only from that
-    // package. Where the package is there, the output is the same.
-    v.push(("classoption".into(), "provide=*".into()));
     let twoside = alternates(f) || looks.iter().any(|l| alternates(l));
     if twoside {
         v.push(("classoption".into(), "twoside".into()));
@@ -679,6 +690,13 @@ mod tests {
     }
 
     #[test]
+    fn a_language_babel_does_not_know_is_found_from_what_latex_said() {
+        let said = "Error producing PDF.\n! Package babel Error: Unknown option 'norsk'. Either you misspelled it\n(babel)                or the language definition file norsk.ldf\n(babel)                was not found.";
+        assert!(lacks_language(said));
+        assert!(!lacks_language("! LaTeX Error: File `fontspec.sty' not found."));
+    }
+
+    #[test]
     fn a_format_as_settings() {
         let mut f = DocumentFormat::default();
         f.font.size = 11.5;
@@ -714,8 +732,8 @@ mod tests {
         let s = settings(&f, &[], &Particulars::default());
         assert!(s.variables.contains(&("classoption".into(), "twoside".into())));
         assert!(
-            s.variables.contains(&("classoption".into(), "provide=*".into())),
-            "babel takes any language from its own files: {:?}",
+            !s.variables.iter().any(|(_, value)| value.starts_with("provide")),
+            "babel is asked for its own files only where it lacks the language's package: {:?}",
             s.variables
         );
         assert!(s.header.contains("\\fancyfoot[RO]{{\\fontsize{11.5}{13.8}\\selectfont \\thepage}}"), "{}", s.header);

@@ -1777,7 +1777,17 @@ pub fn export_until(
     args.push("-o".into());
     args.push(made.display().to_string());
     let input = serde_json::to_vec(&prepared.json)?;
-    let out = tools::run_until(&pandoc.path, "Pandoc", &args, Some(&input), Some(&dir), stop).map_err(|e| match e {
+    let mut ran = tools::run_until(&pandoc.path, "Pandoc", &args, Some(&input), Some(&dir), stop);
+    // Where babel does not know the language, its package of TeX Live not
+    // being installed, it is asked again to take it from its own files.
+    if target == Target::PdfLatex
+        && matches!(&ran, Err(Error::Program { message, .. }) if latex::lacks_language(message))
+    {
+        args.push("-V".into());
+        args.push(format!("classoption={}", latex::FROM_LOCALE_FILES));
+        ran = tools::run_until(&pandoc.path, "Pandoc", &args, Some(&input), Some(&dir), stop);
+    }
+    let out = ran.map_err(|e| match e {
         // What LaTeX says when it fails is long, and the first of it says little.
         Error::Program { message, .. } if target == Target::PdfLatex => {
             Error::Program { program: "LaTeX".into(), message: latex::what_went_wrong(&message) }
@@ -3806,14 +3816,18 @@ mod tests {
             assert!(e.also.is_empty(), "the references are in the document, not beside it");
             assert!(!e.warnings.iter().any(|w| w.contains("glaukopis-hyphenation")), "{:?}", e.warnings);
             assert!(!e.warnings.iter().any(|w| w.contains("hyphenation patterns")), "{:?}", e.warnings);
-            // Norwegian, which babel knows from its own files whether the
-            // language's package of TeX Live is installed or not.
-            let mut norwegian = r.clone();
-            norwegian.document.language = Some("nb".into());
-            let e =
-                export(&s.ctx(), &norwegian, Target::PdfLatex, &by_latex, &ExportOptions { biblatex: true }).unwrap();
-            assert!(fs::read(&by_latex).unwrap().starts_with(b"%PDF"));
-            assert!(!e.warnings.iter().any(|w| w.contains("glaukopis-hyphenation")), "{:?}", e.warnings);
+            // Norwegian, which babel takes from its own files where the
+            // language's package of TeX Live is not installed (tried by hand
+            // with the package hidden); and German, which babel's own files
+            // do not take by the name Pandoc gives it.
+            for language in ["nb", "de"] {
+                let mut other = r.clone();
+                other.document.language = Some(language.into());
+                let e = export(&s.ctx(), &other, Target::PdfLatex, &by_latex, &ExportOptions { biblatex: true })
+                    .unwrap_or_else(|e| panic!("{language}: {e}"));
+                assert!(fs::read(&by_latex).unwrap().starts_with(b"%PDF"));
+                assert!(!e.warnings.iter().any(|w| w.contains("glaukopis-hyphenation")), "{:?}", e.warnings);
+            }
         } else {
             // LaTeX is too large to ask of every machine the tests run on.
             eprintln!("LaTeX is not installed: the PDF by LaTeX is not tested");
