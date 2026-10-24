@@ -1,5 +1,6 @@
 # Installers for Windows and macOS, and packages for Debian, Ubuntu and
-# Fedora, made on GitHub's machines, since macOS can only be built on a Mac.
+# Fedora, made on GitHub's machines, since macOS can only be built on a Mac;
+# and the collaboration server for each of them (the job `server`).
 # The installers are not signed: Windows asks once whether to run the
 # installer; macOS needs the app to be opened with a right-click the first
 # time (see docs/guide.md). All are kept as artifacts of the run, not
@@ -22,6 +23,11 @@ name: Installers
 
 on:
   workflow_dispatch:
+    inputs:
+      server_only:
+        description: Make only the packages of the collaboration server
+        type: boolean
+        default: false
   push:
     tags: ['v*']
 
@@ -30,6 +36,8 @@ permissions:
 
 jobs:
   build:
+    # Run by hand with server_only, the application is not made.
+    if: ${{ !inputs.server_only }}
     strategy:
       fail-fast: false
       matrix:
@@ -159,3 +167,89 @@ jobs:
       # system marks the run without losing them.
       - name: Test the core
         run: cargo test -p glaukopis-core --features bundled-sqlite
+
+  # The collaboration server (docs/server.md), which Tauri does not bundle: a
+  # deb and an rpm made by nfpm on Linux, the same files as the Arch package,
+  # each tried by installing it, the deb started and asked what it is; and on
+  # Windows and macOS the program in a zip with a README of how to run it by
+  # hand.
+  server:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            name: windows-x64
+          - os: macos-latest
+            name: macos-aarch64
+          - os: ubuntu-24.04
+            name: linux
+    runs-on: ${{ matrix.os }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: The version
+        run: echo "VERSION=$(node -p "require('./package.json').version")" >> "$GITHUB_ENV"
+
+      - name: Build the server
+        run: cargo build --release --locked -p glaukopis-server
+
+      - name: The deb and the rpm
+        if: matrix.name == 'linux'
+        run: |
+          mkdir -p work server-packages
+          gh release download v2.48.0 -R goreleaser/nfpm --pattern 'nfpm_2.48.0_Linux_x86_64.tar.gz' -D work
+          echo '6d7f9a28b2f397934403950fcbba83f598b08d02edbe79a0815b3b4897341750  work/nfpm_2.48.0_Linux_x86_64.tar.gz' | sha256sum -c
+          tar -xzf work/nfpm_2.48.0_Linux_x86_64.tar.gz -C work nfpm
+          work/nfpm package --config packaging/server/nfpm.yaml --packager deb --target "server-packages/glaukopis-server_${VERSION}_amd64.deb"
+          work/nfpm package --config packaging/server/nfpm.yaml --packager rpm --target "server-packages/glaukopis-server-${VERSION}-1.x86_64.rpm"
+
+      - name: The deb installed, started and answering
+        if: matrix.name == 'linux'
+        run: |
+          sudo apt-get install -y "./server-packages/glaukopis-server_${VERSION}_amd64.deb"
+          echo 'GLAUKOPIS_SERVER_PASSWORD=tried on GitHub' | sudo tee -a /etc/glaukopis-server.conf > /dev/null
+          sudo systemctl start glaukopis-server
+          curl -fsS --retry 10 --retry-connrefused --retry-delay 1 http://127.0.0.1:8375/api/info
+          echo
+          sudo systemctl stop glaukopis-server
+          sudo apt-get purge -y glaukopis-server
+
+      - name: The rpm installed on Fedora
+        if: matrix.name == 'linux'
+        run: |
+          docker run --rm -v "$PWD/server-packages:/p:ro" fedora:42 sh -c \
+            'dnf install -y /p/glaukopis-server-*.rpm && glaukopis-server --version && test -f /usr/lib/systemd/system/glaukopis-server.service && test -f /etc/glaukopis-server.conf'
+
+      - name: The program in a zip
+        if: matrix.name != 'linux'
+        run: |
+          dir="glaukopis-server-${VERSION}-${{ matrix.name }}"
+          mkdir -p "work/$dir" server-packages
+          if [ "$RUNNER_OS" = Windows ]; then
+            cp target/release/glaukopis-server.exe "work/$dir/"
+          else
+            cp target/release/glaukopis-server "work/$dir/"
+          fi
+          cp packaging/server/README.txt packaging/server/Caddyfile.example docs/server.md LICENSE "work/$dir/"
+          cd work
+          if [ "$RUNNER_OS" = Windows ]; then
+            7z a -tzip "../server-packages/$dir.zip" "$dir" > /dev/null
+          else
+            zip -qr "../server-packages/$dir.zip" "$dir"
+          fi
+          cd ..
+          ls -l server-packages
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: glaukopis-server-${{ matrix.name }}
+          if-no-files-found: error
+          path: server-packages/*

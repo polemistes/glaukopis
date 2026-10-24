@@ -57,6 +57,42 @@ Install the package `glaukopis-server` (see `packaging/arch`), then:
 
 In Glaukopis, the address of the server is then `glaukopis.example.org`.
 
+## On Debian, Ubuntu and Fedora
+
+Each release has a package of the server for each, beside those of the
+application. Install it with
+
+```
+sudo apt install ./glaukopis-server_<version>_amd64.deb
+```
+
+on Ubuntu 24.04 or newer and Debian 13 or newer, or with
+
+```
+sudo dnf install ./glaukopis-server-<version>-1.x86_64.rpm
+```
+
+on Fedora 40 or newer. It holds what the Arch package holds, and the server is
+set up the same way, by the four steps above: the password in
+`/etc/glaukopis-server.conf`, `systemctl enable --now glaukopis-server`, Caddy
+in front of it (`sudo apt install caddy` or `sudo dnf install caddy`), and
+`curl` to see that it answers. Installing the package does not start the
+server; upgrading it starts a server that runs again with the new program, and
+removing it stops the server and leaves what it kept.
+
+## On Windows and macOS
+
+Each release has the program in a zip: `glaukopis-server-<version>-windows-x64.zip`
+for Windows, and `glaukopis-server-<version>-macos-aarch64.zip` for Macs with
+Apple silicon. Unzip it where the program is to stay. The `README.txt` in it
+says how to start the server by hand, with a folder for its data and a
+password; the options are those below. On macOS the program is not signed, and
+is let run by taking away the mark of a download once, in its folder:
+
+```
+xattr -d com.apple.quarantine glaukopis-server
+```
+
 ## Elsewhere
 
 The program is one file and can be run by hand:

@@ -1,0 +1,65 @@
+# The packages of the collaboration server for Debian, Ubuntu and Fedora,
+# made by nfpm in the Installers workflow (Tauri bundles only the
+# application). The same files as the Arch package: the program, the
+# systemd unit, the settings, kept when the package is upgraded, and the
+# guide. The unit runs the server as a user of its own that systemd makes
+# (DynamicUser), with its data in /var/lib/glaukopis-server, so the package
+# makes none. Run from the root of the repository with VERSION set:
+#
+#   VERSION=0.2.5 nfpm package --config packaging/server/nfpm.yaml --packager deb --target <file>
+
+name: glaukopis-server
+arch: amd64
+platform: linux
+version: ${VERSION}
+release: 1
+section: net
+priority: optional
+maintainer: Glaukopis <develop@robertemilberge.no>
+description: |
+  The collaboration server of Glaukopis.
+  It keeps the projects shared through it the same for everyone who has
+  them open. Needed only on the one computer that is to be the server.
+homepage: https://github.com/polemistes/glaukopis
+license: GPL-3.0-or-later
+recommends:
+  - caddy
+# The program is built on Ubuntu 24.04, whose C library is 2.39: the oldest
+# it runs with, as Debian 13 and Fedora 40 have it.
+overrides:
+  deb:
+    depends:
+      - libc6 (>= 2.39)
+      - libgcc-s1
+  rpm:
+    depends:
+      - glibc >= 2.39
+      - libgcc
+
+contents:
+  - src: target/release/glaukopis-server
+    dst: /usr/bin/glaukopis-server
+    file_info:
+      mode: 0755
+  - src: packaging/server/glaukopis-server.service
+    dst: /usr/lib/systemd/system/glaukopis-server.service
+    file_info:
+      mode: 0644
+  - src: packaging/server/glaukopis-server.conf
+    dst: /etc/glaukopis-server.conf
+    type: config|noreplace
+    file_info:
+      mode: 0640
+  - src: packaging/server/Caddyfile.example
+    dst: /usr/share/doc/glaukopis-server/Caddyfile.example
+    file_info:
+      mode: 0644
+  - src: docs/server.md
+    dst: /usr/share/doc/glaukopis-server/server.md
+    file_info:
+      mode: 0644
+
+scripts:
+  postinstall: packaging/server/postinstall.sh
+  preremove: packaging/server/preremove.sh
+  postremove: packaging/server/postremove.sh
