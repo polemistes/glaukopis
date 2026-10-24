@@ -20,7 +20,6 @@ home-new-folder = Nova pasta
 home-folder-rename-title = Mudar o nome da pasta
 home-folder-name-placeholder = O que a pasta contém
 home-folder-name-missing = Dê um nome à pasta.
-}
 home-menu-move = Mover para a pasta
 home-menu-out = Fora das pastas
 home-folder-delete-title = Eliminar a pasta «{ $name }»?
@@ -55,11 +54,6 @@ home-begin = Começar um projeto
 
 ## A project in the list
 
-# Under the names of the first four maps.
-}
-}
-}
-}
 # "ago" is how long ago it was: "3 hours ago", "yesterday", "12 March".
 # The button that opens the menu of a project.
 home-more-for = Mais para { $name }

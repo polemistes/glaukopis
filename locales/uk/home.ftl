@@ -7,8 +7,6 @@ home-new = Новий проєкт
 
 ## The two forms of the page: the last used projects as cards, all of them as a list
 
-# Under the cards, when there are more projects than they show.
-}
 # The button that opens the menu of the page.
 home-page-menu = Більше
 home-search = Знайти проєкт
@@ -21,7 +19,6 @@ home-new-folder = Нова тека
 home-folder-rename-title = Перейменувати теку
 home-folder-name-placeholder = Що містить тека
 home-folder-name-missing = Дайте теці назву.
-}
 home-menu-move = Перемістити до теки
 home-menu-out = Поза теками
 home-folder-delete-title = Видалити теку «{ $name }»?
@@ -56,11 +53,6 @@ home-begin = Почати проєкт
 
 ## A project in the list
 
-# Under the names of the first four maps.
-}
-}
-}
-}
 # "ago" is how long ago it was: "3 hours ago", "yesterday", "12 March".
 # The button that opens the menu of a project.
 home-more-for = Більше для { $name }

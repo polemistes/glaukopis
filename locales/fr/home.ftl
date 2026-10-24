@@ -20,7 +20,6 @@ home-new-folder = Nouveau dossier
 home-folder-rename-title = Renommer le dossier
 home-folder-name-placeholder = Ce que le dossier contient
 home-folder-name-missing = Donnez un nom au dossier.
-}
 home-menu-move = Déplacer dans un dossier
 home-menu-out = Hors des dossiers
 home-folder-delete-title = Supprimer le dossier « { $name } » ?
@@ -56,16 +55,6 @@ home-tree-empty = Rien dedans pour l’instant
 # The menus of the map and of a folder on it: a new one made here, its name written in place.
 home-owl-new-project = Nouveau projet ici
 home-owl-new-folder = Nouveau dossier ici
-# What a new folder or project is called until its name is written.
-# Beside the pointer, while several folders and projects are dragged.
-}
-# On a card: the map of the project, shown under it on the map of the projects, or hidden.
-# On an element of a project's map: the project opened there.
-# The menu of the map: what was put by hand is placed by itself again.
-# What a change of the map says, with a way back.
-}
-}
-}
 # The bar over the map, at a folder: what holds it.
 
 ## A map of the projects
@@ -93,11 +82,6 @@ home-begin = Commencer un projet
 
 ## A project in the list
 
-# Under the names of the first four maps.
-}
-}
-}
-}
 # "ago" is how long ago it was: "3 hours ago", "yesterday", "12 March".
 # The button that opens the menu of a project.
 home-more-for = Plus pour { $name }

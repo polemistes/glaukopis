@@ -7,8 +7,6 @@ home-new = Proiect nou
 
 ## The two forms of the page: the last used projects as cards, all of them as a list
 
-# Under the cards, when there are more projects than they show.
-}
 # The button that opens the menu of the page.
 home-page-menu = Mai mult
 home-search = Găsește un proiect
@@ -21,7 +19,6 @@ home-new-folder = Dosar nou
 home-folder-rename-title = Redenumește dosarul
 home-folder-name-placeholder = Ce cuprinde dosarul
 home-folder-name-missing = Dați dosarului un nume.
-}
 home-menu-move = Mută în dosar
 home-menu-out = Afară din dosare
 home-folder-delete-title = Ștergeți dosarul „{ $name }”?
@@ -56,12 +53,6 @@ home-begin = Începeți un proiect
 
 ## A project in the list
 
-# Under the names of the first four maps.
-}
-}
-}
-}
-}
 # "ago" is how long ago it was: "3 hours ago", "yesterday", "12 March".
 # The button that opens the menu of a project.
 home-more-for = Mai mult pentru { $name }

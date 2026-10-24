@@ -20,7 +20,6 @@ home-new-folder = Novi folder
 home-folder-rename-title = Preimenuj folder
 home-folder-name-placeholder = Šta folder sadrži
 home-folder-name-missing = Dajte folderu naziv.
-}
 home-menu-move = Premjesti u folder
 home-menu-out = Izvan foldera
 home-folder-delete-title = Izbrisati folder „{ $name }“?
@@ -55,11 +54,6 @@ home-begin = Započni projekat
 
 ## A project in the list
 
-# Under the names of the first four maps.
-}
-}
-}
-}
 # "ago" is how long ago it was: "3 hours ago", "yesterday", "12 March".
 # The button that opens the menu of a project.
 home-more-for = Više za { $name }

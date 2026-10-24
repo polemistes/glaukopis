@@ -7,8 +7,6 @@ home-new = Nov projekt
 
 ## The two forms of the page: the last used projects as cards, all of them as a list
 
-# Under the cards, when there are more projects than they show.
-}
 # The button that opens the menu of the page.
 home-page-menu = Več
 home-search = Poišči projekt
@@ -21,7 +19,6 @@ home-new-folder = Nova mapa
 home-folder-rename-title = Preimenuj mapo
 home-folder-name-placeholder = Kaj mapa vsebuje
 home-folder-name-missing = Dajte mapi ime.
-}
 home-menu-move = Premakni v mapo
 home-menu-out = Iz map
 home-folder-delete-title = Izbrisati mapo »{ $name }«?
@@ -56,11 +53,6 @@ home-begin = Začni projekt
 
 ## A project in the list
 
-# Under the names of the first four maps.
-}
-}
-}
-}
 # "ago" is how long ago it was: "3 hours ago", "yesterday", "12 March".
 # The button that opens the menu of a project.
 home-more-for = Več za { $name }

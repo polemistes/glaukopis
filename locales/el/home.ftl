@@ -20,7 +20,6 @@ home-new-folder = Νέος φάκελος
 home-folder-rename-title = Μετονομασία φακέλου
 home-folder-name-placeholder = Τι περιέχει ο φάκελος
 home-folder-name-missing = Δώστε όνομα στον φάκελο.
-}
 home-menu-move = Μετακίνηση σε φάκελο
 home-menu-out = Έξω από τους φακέλους
 home-folder-delete-title = Διαγραφή του φακέλου «{ $name }»;
@@ -55,11 +54,6 @@ home-begin = Ξεκινήστε ένα έργο
 
 ## A project in the list
 
-# Under the names of the first four maps.
-}
-}
-}
-}
 # "ago" is how long ago it was: "3 hours ago", "yesterday", "12 March".
 # The button that opens the menu of a project.
 home-more-for = Περισσότερα για το { $name }

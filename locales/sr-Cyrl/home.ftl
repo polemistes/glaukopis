@@ -7,8 +7,6 @@ home-new = Нови пројекат
 
 ## The two forms of the page: the last used projects as cards, all of them as a list
 
-# Under the cards, when there are more projects than they show.
-}
 # The button that opens the menu of the page.
 home-page-menu = Још
 home-search = Нађи пројекат
@@ -21,7 +19,6 @@ home-new-folder = Нова фасцикла
 home-folder-rename-title = Преименуј фасциклу
 home-folder-name-placeholder = Шта фасцикла садржи
 home-folder-name-missing = Дајте фасцикли назив.
-}
 home-menu-move = Премести у фасциклу
 home-menu-out = Ван фасцикли
 home-folder-delete-title = Обрисати фасциклу „{ $name }“?
@@ -56,11 +53,6 @@ home-begin = Започни пројекат
 
 ## A project in the list
 
-# Under the names of the first four maps.
-}
-}
-}
-}
 # "ago" is how long ago it was: "3 hours ago", "yesterday", "12 March".
 # The button that opens the menu of a project.
 home-more-for = Још за { $name }

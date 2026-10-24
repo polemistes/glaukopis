@@ -20,7 +20,6 @@ home-new-folder = Новая папка
 home-folder-rename-title = Переименовать папку
 home-folder-name-placeholder = Что лежит в папке
 home-folder-name-missing = Дайте папке название.
-}
 home-menu-move = Переместить в папку
 home-menu-out = Вне папок
 home-folder-delete-title = Удалить папку «{ $name }»?
@@ -55,11 +54,6 @@ home-begin = Начать проект
 
 ## A project in the list
 
-# Under the names of the first four maps.
-}
-}
-}
-}
 # "ago" is how long ago it was: "3 hours ago", "yesterday", "12 March".
 # The button that opens the menu of a project.
 home-more-for = Ещё для { $name }

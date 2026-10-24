@@ -18,7 +18,6 @@ home-new-folder = Ny mappe
 home-folder-rename-title = Gi mappen nytt navn
 home-folder-name-placeholder = Det mappen rommer
 home-folder-name-missing = Gi mappen et navn.
-}
 home-menu-move = Flytt til mappe
 home-menu-out = Ut av mappene
 home-folder-delete-title = Slette mappen «{ $name }»?
@@ -56,16 +55,6 @@ home-tree-empty = Ingenting i det ennå
 # Menyene i kartet og på en mappe i det: noe nytt laget her, med navnet skrevet på stedet.
 home-owl-new-project = Nytt prosjekt her
 home-owl-new-folder = Ny mappe her
-# Det en ny mappe eller et nytt prosjekt heter til navnet er skrevet.
-# Ved pekeren, mens flere mapper og prosjekter dras.
-}
-# På et kort: kartet til prosjektet, vist under det på kartet over prosjektene, eller skjult.
-# På et element i kartet til et prosjekt: prosjektet åpnet der.
-# Menyen i kartet: det som ble plassert for hånd, plasseres av seg selv igjen.
-# Det en endring i kartet sier, med en vei tilbake.
-}
-}
-}
 # Linjen over kartet, ved en mappe: det som rommer den.
 
 ## Et kart over prosjektene
@@ -93,10 +82,6 @@ home-begin = Begynn på et prosjekt
 
 ## Et prosjekt i listen
 
-}
-}
-}
-}
 home-more-for = Flere valg for { $name }
 home-deleted-projects = { $count ->
     [one] { $count } slettet prosjekt

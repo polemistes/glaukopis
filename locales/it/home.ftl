@@ -20,7 +20,6 @@ home-new-folder = Nuova cartella
 home-folder-rename-title = Rinomina la cartella
 home-folder-name-placeholder = Che cosa contiene la cartella
 home-folder-name-missing = Dai un nome alla cartella.
-}
 home-menu-move = Sposta nella cartella
 home-menu-out = Fuori dalle cartelle
 home-folder-delete-title = Eliminare la cartella «{ $name }»?
@@ -56,16 +55,6 @@ home-tree-empty = Ancora vuoto
 # The menus of the map and of a folder on it: a new one made here, its name written in place.
 home-owl-new-project = Nuovo progetto qui
 home-owl-new-folder = Nuova cartella qui
-# What a new folder or project is called until its name is written.
-# Beside the pointer, while several folders and projects are dragged.
-}
-# On a card: the map of the project, shown under it on the map of the projects, or hidden.
-# On an element of a project's map: the project opened there.
-# The menu of the map: what was put by hand is placed by itself again.
-# What a change of the map says, with a way back.
-}
-}
-}
 # The bar over the map, at a folder: what holds it.
 
 ## A map of the projects
@@ -93,11 +82,6 @@ home-begin = Comincia un progetto
 
 ## A project in the list
 
-# Under the names of the first four maps.
-}
-}
-}
-}
 # "ago" is how long ago it was: "3 hours ago", "yesterday", "12 March".
 # The button that opens the menu of a project.
 home-more-for = Altro per { $name }

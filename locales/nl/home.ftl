@@ -20,7 +20,6 @@ home-new-folder = Nieuwe map
 home-folder-rename-title = Map hernoemen
 home-folder-name-placeholder = Wat de map bevat
 home-folder-name-missing = Geef de map een naam.
-}
 home-menu-move = Naar map verplaatsen
 home-menu-out = Uit de mappen
 home-folder-delete-title = De map ‘{ $name }’ wissen?
@@ -55,11 +54,6 @@ home-begin = Een project beginnen
 
 ## A project in the list
 
-# Under the names of the first four maps.
-}
-}
-}
-}
 # "ago" is how long ago it was: "3 hours ago", "yesterday", "12 March".
 # The button that opens the menu of a project.
 home-more-for = Meer voor { $name }

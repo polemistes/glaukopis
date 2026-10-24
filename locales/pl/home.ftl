@@ -7,8 +7,6 @@ home-new = Nowy projekt
 
 ## The two forms of the page: the last used projects as cards, all of them as a list
 
-# Under the cards, when there are more projects than they show.
-}
 # The button that opens the menu of the page.
 home-page-menu = Więcej
 home-search = Znajdź projekt
@@ -21,7 +19,6 @@ home-new-folder = Nowy folder
 home-folder-rename-title = Zmień nazwę folderu
 home-folder-name-placeholder = Co folder zawiera
 home-folder-name-missing = Nadaj folderowi nazwę.
-}
 home-menu-move = Przenieś do folderu
 home-menu-out = Poza foldery
 home-folder-delete-title = Usunąć folder „{ $name }”?
@@ -56,12 +53,6 @@ home-begin = Zacznij projekt
 
 ## A project in the list
 
-# Under the names of the first four maps.
-}
-}
-}
-}
-}
 # "ago" is how long ago it was: "3 hours ago", "yesterday", "12 March".
 # The button that opens the menu of a project.
 home-more-for = Więcej dla { $name }

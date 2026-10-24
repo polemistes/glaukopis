@@ -20,7 +20,6 @@ home-new-folder = Ny mapp
 home-folder-rename-title = Byt namn på mappen
 home-folder-name-placeholder = Vad mappen rymmer
 home-folder-name-missing = Ge mappen ett namn.
-}
 home-menu-move = Flytta till mapp
 home-menu-out = Ut ur mapparna
 home-folder-delete-title = Radera mappen ”{ $name }”?
@@ -56,16 +55,6 @@ home-tree-empty = Inget i det än
 # The menus of the map and of a folder on it: a new one made here, its name written in place.
 home-owl-new-project = Nytt projekt här
 home-owl-new-folder = Ny mapp här
-# What a new folder or project is called until its name is written.
-# Beside the pointer, while several folders and projects are dragged.
-}
-# On a card: the map of the project, shown under it on the map of the projects, or hidden.
-# On an element of a project's map: the project opened there.
-# The menu of the map: what was put by hand is placed by itself again.
-# What a change of the map says, with a way back.
-}
-}
-}
 # The bar over the map, at a folder: what holds it.
 
 ## A map of the projects
@@ -93,11 +82,6 @@ home-begin = Börja ett projekt
 
 ## A project in the list
 
-# Under the names of the first four maps.
-}
-}
-}
-}
 # "ago" is how long ago it was: "3 hours ago", "yesterday", "12 March".
 # The button that opens the menu of a project.
 home-more-for = Mer för { $name }

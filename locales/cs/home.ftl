@@ -7,8 +7,6 @@ home-new = Nový projekt
 
 ## The two forms of the page: the last used projects as cards, all of them as a list
 
-# Under the cards, when there are more projects than they show.
-}
 # The button that opens the menu of the page.
 home-page-menu = Další
 home-search = Najít projekt
@@ -21,7 +19,6 @@ home-new-folder = Nová složka
 home-folder-rename-title = Přejmenovat složku
 home-folder-name-placeholder = Co složka obsahuje
 home-folder-name-missing = Dejte složce název.
-}
 home-menu-move = Přesunout do složky
 home-menu-out = Mimo složky
 home-folder-delete-title = Smazat složku „{ $name }“?
@@ -56,12 +53,6 @@ home-begin = Začít projekt
 
 ## A project in the list
 
-# Under the names of the first four maps.
-}
-}
-}
-}
-}
 # "ago" is how long ago it was: "3 hours ago", "yesterday", "12 March".
 # The button that opens the menu of a project.
 home-more-for = Další pro { $name }

@@ -20,7 +20,6 @@ home-new-folder = Nueva carpeta
 home-folder-rename-title = Renombrar la carpeta
 home-folder-name-placeholder = Lo que contiene la carpeta
 home-folder-name-missing = Dé un nombre a la carpeta.
-}
 home-menu-move = Mover a una carpeta
 home-menu-out = Fuera de las carpetas
 home-folder-delete-title = ¿Eliminar la carpeta «{ $name }»?
@@ -55,11 +54,6 @@ home-begin = Empezar un proyecto
 
 ## A project in the list
 
-# Under the names of the first four maps.
-}
-}
-}
-}
 # "ago" is how long ago it was: "3 hours ago", "yesterday", "12 March".
 # The button that opens the menu of a project.
 home-more-for = Más para { $name }
