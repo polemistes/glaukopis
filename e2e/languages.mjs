@@ -101,7 +101,7 @@ try {
     );
   check(
     'the interface is in the language of the system',
-    (await rail()).join(' ') === 'Prosjekter Bibliotek Bilder Søk Taster Innstillinger',
+    (await rail()).join(' ') === 'Prosjektlisten Prosjekter Bibliotek Bilder Søk Taster Innstillinger',
     (await rail()).join(' '),
   );
   check('and the page says so', (await app.exec(`return document.documentElement.lang`)) === 'nb');
@@ -256,7 +256,7 @@ try {
   await closeSettings();
   // Up to the project, and a new element made under it, in the language of the project.
   await up();
-  await app.thisElement('Legg til et element under');
+  await app.thisElement('Legg til underelement');
   await sleep(300);
   await app.keys('Annen sang');
   await app.press('Enter');
@@ -433,7 +433,7 @@ try {
   await sleep(300);
   check(
     'English is chosen, and the interface changes at once',
-    (await rail()).join(' ') === 'Projects Library Images Search Keys Settings',
+    (await rail()).join(' ') === 'The list of projects Projects Library Images Search Keys Settings',
     (await rail()).join(' '),
   );
   check('the page says so', (await app.exec(`return document.documentElement.lang`)) === 'en');
