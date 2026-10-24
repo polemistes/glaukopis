@@ -596,7 +596,7 @@
   }
   .contributor {
     display: grid;
-    grid-template-columns: 0.9fr 1.2fr 1.2fr 1fr 0.8fr auto;
+    grid-template-columns: max-content 1.2fr 1.2fr 1fr 0.8fr auto;
     gap: 5px;
     align-items: center;
   }
