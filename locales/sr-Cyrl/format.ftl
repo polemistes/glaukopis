@@ -36,8 +36,6 @@ format-line-spacing = Проред
 format-as-the-text = Као текст
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = као текст
-# Beside a number of 0, in the place of its unit.
-format-not-said = није речено
 format-align-left = Лево
 format-align-center = Центрирано
 format-align-right = Десно
@@ -70,10 +68,6 @@ format-line-numbers = Нумериши редове
 
 format-typeface = Фонт
 format-hyphenate = Растављај речи на крају реда
-format-paragraphs = Пасуси се разликују по
-format-paragraphs-indent = Увученом првом реду
-format-paragraphs-spaced = Размаку између њих
-format-indent = Увлачење
 format-indent-first = И после наслова
 format-space-between = Размак између пасуса
 format-italics = Курзив се слаже
@@ -114,9 +108,6 @@ format-title-keywords-label = Реч испред кључних речи
 
 ## Quotations, notes and the bibliography.
 
-format-quote-indent-left = Увлачење слева
-format-quote-indent-right = Увлачење здесна
-format-quote-when = Кад се навод издваја
 format-quote-from-words = Од толико речи
 format-quote-from-lines = Или толико редова
 format-notes-kind = Напомене стоје

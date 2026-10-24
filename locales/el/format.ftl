@@ -36,8 +36,6 @@ format-line-spacing = Διάστιχο
 format-as-the-text = Όπως το κείμενο
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = όπως το κείμενο
-# Beside a number of 0, in the place of its unit.
-format-not-said = δεν ορίζεται
 format-align-left = Αριστερά
 format-align-center = Στο κέντρο
 format-align-right = Δεξιά
@@ -70,10 +68,6 @@ format-line-numbers = Αρίθμηση των γραμμών
 
 format-typeface = Γραμματοσειρά
 format-hyphenate = Συλλαβισμός στο τέλος των γραμμών
-format-paragraphs = Οι παράγραφοι ξεχωρίζουν με
-format-paragraphs-indent = Εσοχή στην πρώτη γραμμή
-format-paragraphs-spaced = Διάστημα ανάμεσά τους
-format-indent = Εσοχή
 format-indent-first = Και μετά από επικεφαλίδα
 format-space-between = Διάστημα ανάμεσα στις παραγράφους
 format-italics = Τα πλάγια τυπώνονται
@@ -114,9 +108,6 @@ format-title-keywords-label = Λέξη πριν από τις λέξεις-κλ�
 
 ## Quotations, notes and the bibliography.
 
-format-quote-indent-left = Εσοχή αριστερά
-format-quote-indent-right = Εσοχή δεξιά
-format-quote-when = Πότε ένα παράθεμα μπαίνει χωριστά
 format-quote-from-words = Από τόσες λέξεις
 format-quote-from-lines = Ή τόσες γραμμές
 format-notes-kind = Οι σημειώσεις μπαίνουν

@@ -36,8 +36,6 @@ format-line-spacing = Spațiere între rânduri
 format-as-the-text = Ca textul
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = ca textul
-# Beside a number of 0, in the place of its unit.
-format-not-said = nespus
 format-align-left = La stânga
 format-align-center = Centrat
 format-align-right = La dreapta
@@ -70,10 +68,6 @@ format-line-numbers = Numerotează rândurile
 
 format-typeface = Font
 format-hyphenate = Desparte cuvintele în silabe la capăt de rând
-format-paragraphs = Paragrafele se deosebesc prin
-format-paragraphs-indent = Un prim rând retras
-format-paragraphs-spaced = Spațiu între ele
-format-indent = Alineat
 format-indent-first = Și după un titlu
 format-space-between = Spațiu între paragrafe
 format-italics = Cursivele se așază
@@ -114,9 +108,6 @@ format-title-keywords-label = Cuvântul dinaintea cuvintelor-cheie
 
 ## Quotations, notes and the bibliography.
 
-format-quote-indent-left = Retragere la stânga
-format-quote-indent-right = Retragere la dreapta
-format-quote-when = Când se desparte un citat
 format-quote-from-words = De la atâtea cuvinte
 format-quote-from-lines = Sau de la atâtea rânduri
 format-notes-kind = Notele stau

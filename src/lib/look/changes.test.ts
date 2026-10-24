@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DocumentFormat } from '$lib/api/documents';
-import { changesBetween, countOf, laidOver, pathsOf, withoutPath } from './changes';
+import { changesBetween, countOf, laidOver, modernised, pathsOf, withoutPath } from './changes';
 import layout from '../../../resources/formats/manuscript.json';
 
 const manuscript = () => JSON.parse(JSON.stringify(layout)) as DocumentFormat;
@@ -25,6 +25,29 @@ describe('the changes of a document over its layout', () => {
       kinds: { quote: { italic: true } },
     });
     expect(changesBetween(layout, laidOver(layout, {}))).toEqual({});
+  });
+
+  it('read the choice of an older document between the indent and the space as the other length made nought', () => {
+    const layout = manuscript();
+    const old = (paragraphs: string, more: object = {}) =>
+      ({ text: { paragraphs, ...more } }) as never;
+    // Spaced: no indent; the space as the layout has it.
+    const spaced = laidOver(layout, old('spaced', { spaceBetween: '6pt' }));
+    expect([spaced.text.indent, spaced.text.spaceBetween]).toEqual(['0cm', '6pt']);
+    expect('paragraphs' in spaced.text).toBe(false);
+    // Indented: no space, though the layout had one.
+    const roomy = { ...layout, text: { ...layout.text, spaceBetween: '12pt' } };
+    expect(laidOver(roomy, old('indent')).text.spaceBetween).toBe('0pt');
+    expect(laidOver(roomy, old('indent')).text.indent).toBe(layout.text.indent);
+    // What the document says of the other length itself is kept.
+    expect(modernised(old('spaced', { indent: '2cm' }))).toEqual({ text: { indent: '2cm' } });
+    // Not written again: what is written is what differs, the lengths.
+    expect(changesBetween(layout, spaced)).toEqual({
+      text: { indent: '0cm', spaceBetween: '6pt' },
+    });
+    // Changes without it are read as they are.
+    const plain = { font: { size: 11 } };
+    expect(modernised(plain)).toBe(plain);
   });
 
   it('take a list whole', () => {

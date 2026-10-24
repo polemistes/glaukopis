@@ -12,7 +12,7 @@
  * the Org form can use it.
  */
 
-import type { ContentsItem, GeneratedPart, Template } from '$lib/api/templates';
+import type { ContentsItem, GeneratedPart, PartPlace, Template } from '$lib/api/templates';
 import { pathsOf, setAt, withoutPath, type LookChanges } from '$lib/look/changes';
 import { GENERATED_PARTS } from './parts-order';
 
@@ -95,6 +95,48 @@ function putIn(contents: ContentsItem[], part: GeneratedPart) {
     (item) => 'part' in item && GENERATED_PARTS.indexOf(item.part) > rank,
   );
   contents.splice(at < 0 ? contents.length : at, 0, { part });
+}
+
+/** A thing of a document in the order it is printed: a part the core makes, on or off, or a kind of element. */
+export type Printed = { part: GeneratedPart; on: boolean } | { kind: string };
+
+/**
+ * Everything a document type is made of, in the order it is printed, as
+ * the core orders a document (`export/mod.rs`, `order`): the type's
+ * contents as they stand; each part the core makes that is off where it
+ * would stand turned on; then the kinds the type names and does not place,
+ * by their place, a kind of the front before the text and the others after
+ * everything, the cover's and those printed nowhere last. A kind listed
+ * twice is listed once.
+ */
+export function printOrder(
+  template: Template,
+  placeOf: (kind: string) => PartPlace | null | undefined,
+): Printed[] {
+  const contents: ContentsItem[] = [];
+  const kinds = new Set<string>();
+  for (const item of template.contents) {
+    if ('kind' in item) {
+      if (kinds.has(item.kind)) continue;
+      kinds.add(item.kind);
+    } else if (contents.some((c) => 'part' in c && c.part === item.part)) continue;
+    contents.push(item);
+  }
+  const on = new Set(contents.flatMap((c) => ('part' in c ? [c.part] : [])));
+  for (const part of GENERATED_PARTS) if (!on.has(part)) putIn(contents, part);
+  const out: Printed[] = contents.map((c) =>
+    'part' in c ? { part: c.part, on: on.has(c.part) || ALWAYS_MADE.includes(c.part) } : c,
+  );
+  const unplaced = template.kinds.filter(
+    (k, i) => !kinds.has(k) && template.kinds.indexOf(k) === i,
+  );
+  const front = unplaced.filter((k) => placeOf(k) === 'front').map((kind) => ({ kind }));
+  const body = out.findIndex((p) => 'part' in p && p.part === 'body');
+  out.splice(body < 0 ? out.length : body, 0, ...front);
+  const last = (k: string) => placeOf(k) === 'cover' || placeOf(k) === 'none';
+  out.push(...unplaced.filter((k) => placeOf(k) !== 'front' && !last(k)).map((kind) => ({ kind })));
+  out.push(...unplaced.filter(last).map((kind) => ({ kind })));
+  return out;
 }
 
 /**

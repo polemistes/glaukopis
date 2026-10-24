@@ -36,8 +36,6 @@ format-line-spacing = Interlinia
 format-as-the-text = Jak tekst
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = jak tekst
-# Beside a number of 0, in the place of its unit.
-format-not-said = nie podano
 format-align-left = Do lewej
 format-align-center = Wyśrodkowane
 format-align-right = Do prawej
@@ -70,10 +68,6 @@ format-line-numbers = Numeruj wiersze
 
 format-typeface = Krój pisma
 format-hyphenate = Dziel wyrazy na końcach wierszy
-format-paragraphs = Akapity odróżnia
-format-paragraphs-indent = Wcięcie pierwszego wiersza
-format-paragraphs-spaced = Odstęp między nimi
-format-indent = Wcięcie
 format-indent-first = Także po nagłówku
 format-space-between = Odstęp między akapitami
 format-italics = Kursywa jest składana
@@ -114,9 +108,6 @@ format-title-keywords-label = Słowo przed słowami kluczowymi
 
 ## Quotations, notes and the bibliography.
 
-format-quote-indent-left = Wcięcie z lewej
-format-quote-indent-right = Wcięcie z prawej
-format-quote-when = Kiedy cytat jest wyodrębniany
 format-quote-from-words = Od tylu słów
 format-quote-from-lines = Albo od tylu wierszy
 format-notes-kind = Przypisy stoją

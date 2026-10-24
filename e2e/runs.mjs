@@ -336,7 +336,7 @@ try {
   const gapAfter = await app.exec(`return ${row('Gap between columns')}?.querySelector('input')?.value ?? null`);
   check(
     'the look has a field for the columns, and the gap between them is asked for where there are more than one',
-    !gapBefore && gapAfter === '1cm',
+    !gapBefore && gapAfter === '1',
     `${gapBefore} ${gapAfter}`,
   );
   const lookTop = await app.lookTop();

@@ -1846,8 +1846,8 @@ fn epub_styles(f: &DocumentFormat, own: &[OwnKind]) -> String {
     };
     let h1 = f.heading(1);
     let h2 = f.heading(2);
-    let indent = if f.text.paragraphs == crate::formats::Paragraphs::Indent { "1.2em" } else { "0" };
-    let between = if f.text.paragraphs == crate::formats::Paragraphs::Indent { "0" } else { "0.8em" };
+    let indent = if f.text.indent.is_zero() { "0" } else { "1.2em" };
+    let between = if f.text.space_between.is_zero() { "0" } else { "0.8em" };
     let mut css = format!(
         "body {{ text-align: {align}; {hyphens} }}
 p {{ margin: 0 0 {between} 0; text-indent: {indent}; }}
@@ -3482,6 +3482,36 @@ mod tests {
         export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
         assert!(!unzip(&docx, "word/document.xml").contains("w:val=\"Author\""));
         assert!(unzip(&docx, "docProps/core.xml").contains("<dc:creator>A. Scholar</dc:creator>"));
+    }
+
+    #[test]
+    fn an_anonymous_front_page_leaves_the_authors_out_of_what_latex_and_html_say_of_themselves() {
+        let Some(s) = setup() else { return };
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let mut r = with_parts();
+        // Named: the PDF's properties and the page's head name the author.
+        let tex = out.join("named.tex");
+        export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
+        assert!(fs::read_to_string(&tex).unwrap().contains("pdfauthor={A. Scholar}"));
+        let html = out.join("named.html");
+        export(&s.ctx(), &r, Target::Html, &html, &ExportOptions::default()).unwrap();
+        let page = fs::read_to_string(&html).unwrap();
+        assert!(page.contains("<meta name=\"author\" content=\"A. Scholar\""), "{page}");
+
+        // Anonymous: neither says who wrote it, on the page or off it.
+        r.format.title.anonymous = true;
+        let tex = out.join("anonymous.tex");
+        export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
+        let l = fs::read_to_string(&tex).unwrap();
+        assert!(!l.contains("pdfauthor"), "{l}");
+        assert!(!l.contains("A. Scholar"), "{l}");
+        assert!(l.contains("pdftitle={Wrath and the hero}"), "the title is still said: {l}");
+        let html = out.join("anonymous.html");
+        export(&s.ctx(), &r, Target::Html, &html, &ExportOptions::default()).unwrap();
+        let page = fs::read_to_string(&html).unwrap();
+        assert!(!page.contains("A. Scholar"), "{page}");
+        assert!(!page.contains("name=\"author\""), "{page}");
     }
 
     #[test]

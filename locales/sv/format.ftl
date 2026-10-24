@@ -34,8 +34,6 @@ format-line-spacing = Radavstånd
 format-as-the-text = Som texten
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = som texten
-# Beside a number of 0, in the place of its unit.
-format-not-said = inte angivet
 format-align-left = Vänster
 format-align-center = Centrerad
 format-align-right = Höger
@@ -79,10 +77,6 @@ format-line-numbers = Numrera raderna
 
 format-typeface = Typsnitt
 format-hyphenate = Avstava ord vid radslut
-format-paragraphs = Stycken skiljs åt med
-format-paragraphs-indent = Indragen första rad
-format-paragraphs-spaced = Mellanrum mellan dem
-format-indent = Indrag
 format-indent-first = Också efter en rubrik
 format-space-between = Mellanrum mellan stycken
 format-italics = Kursiv sätts
@@ -141,9 +135,6 @@ format-title-keywords-label = Ordet före nyckelorden
 
 ## Quotations, notes and the bibliography.
 
-format-quote-indent-left = Indrag till vänster
-format-quote-indent-right = Indrag till höger
-format-quote-when = När ett citat avskiljs
 format-quote-from-words = Från så här många ord
 format-quote-from-lines = Eller så här många rader
 format-notes-kind = Noter står

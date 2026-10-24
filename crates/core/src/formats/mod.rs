@@ -133,11 +133,13 @@ pub enum Align {
     Justified,
 }
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+/// How paragraphs were told apart before a format said both lengths: by an
+/// indented first line, or by space between them. Read from an older file,
+/// never written; `DocumentFormat::modernise` turns it into the two lengths.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Paragraphs {
     /// The first line of each paragraph is indented; no space between paragraphs.
-    #[default]
     Indent,
     /// Space between paragraphs; no indent.
     Spaced,
@@ -170,11 +172,14 @@ pub struct Text {
     /// 1 is single spacing, 2 is double.
     pub line_spacing: f32,
     pub align: Align,
-    pub paragraphs: Paragraphs,
+    /// The choice of an older file between the indent and the space; read, never written.
+    #[serde(skip_serializing)]
+    pub paragraphs: Option<Paragraphs>,
+    /// How far the first line of a paragraph begins in; nought for none.
     pub indent: Length,
     /// Whether the first paragraph after a heading is indented too.
     pub indent_first: bool,
-    /// For spaced paragraphs: the space between them, beyond that between lines.
+    /// The space between paragraphs, beyond that between lines; nought for none.
     pub space_between: Length,
     pub hyphenate: bool,
     /// How italics are set.
@@ -188,10 +193,10 @@ impl Default for Text {
         Text {
             line_spacing: 2.0,
             align: Align::Left,
-            paragraphs: Paragraphs::Indent,
+            paragraphs: None,
             indent: Length::cm(1.27),
             indent_first: true,
-            space_between: Length::pt(12.0),
+            space_between: Length::pt(0.0),
             hyphenate: false,
             italics: Italics::Italic,
             refmarks: RefMarks::Raised,
@@ -1090,6 +1095,19 @@ impl DocumentFormat {
             self.header = header;
             self.footer = footer;
         }
+        // Paragraphs were told apart by one of the two lengths: the other is
+        // nought, so that nothing prints otherwise than it did. A spaced file
+        // that said no space had the space of the old default.
+        match self.text.paragraphs.take() {
+            Some(Paragraphs::Indent) => self.text.space_between = Length::pt(0.0),
+            Some(Paragraphs::Spaced) => {
+                self.text.indent = Length::pt(0.0);
+                if self.text.space_between.is_zero() {
+                    self.text.space_between = Length::pt(12.0);
+                }
+            }
+            None => {}
+        }
         for l in &mut self.headings.levels {
             if let Some(old) = l.new_page.take()
                 && l.begins == Begins::Text
@@ -1497,6 +1515,78 @@ mod tests {
         let mut off: DocumentFormat = serde_json::from_str(r#"{"pageNumbers": {"show": false}}"#).unwrap();
         off.sanitise();
         assert!(!off.footer.shown && off.footer.places.is_empty() && off.numbered_margin().is_none());
+    }
+
+    /// What a format sets of paragraphs in Typst and in Word: the line of
+    /// `set par`, and the first line and the space after of the text's style.
+    fn paragraphs_set(f: &DocumentFormat) -> (String, String) {
+        let typst = typst::rules(f, &typst::Particulars::default());
+        let par = typst.lines().find(|l| l.starts_with("#set par(leading:")).unwrap().to_owned();
+        let styles = crate::export::reference::docx_styles(f, None, &[]);
+        let at = styles.find("w:styleId=\"BodyText\"").unwrap();
+        let body = &styles[at..at + styles[at..].find("</w:style>").unwrap()];
+        let ind = body.find("<w:ind").map(|i| &body[i..i + body[i..].find("/>").unwrap()]).unwrap_or("");
+        let spacing = &body[body.find("<w:spacing").unwrap()..];
+        let spacing = &spacing[..spacing.find("/>").unwrap()];
+        (par, format!("{ind} {spacing}"))
+    }
+
+    #[test]
+    fn a_layout_that_told_paragraphs_apart_by_one_length_prints_as_it_did() {
+        // Indented: the space between is nought, whatever the file said of it.
+        let mut indented: DocumentFormat = serde_json::from_str(
+            r#"{"text": {"paragraphs": "indent", "indent": "1cm", "spaceBetween": "6pt", "indentFirst": false}}"#,
+        )
+        .unwrap();
+        indented.sanitise();
+        assert_eq!((indented.text.indent, indented.text.space_between), (Length::cm(1.0), Length::pt(0.0)));
+        let (par, word) = paragraphs_set(&indented);
+        assert!(par.contains("first-line-indent: (amount: 1cm, all: false)"), "{par}");
+        assert!(par.contains("+ 0pt,"), "{par}");
+        assert!(word.contains("w:firstLine=\"567\""), "{word}");
+        assert!(word.contains("w:after=\"0\""), "{word}");
+
+        // Spaced: the indent is nought, and the space as the file said it.
+        let mut spaced: DocumentFormat =
+            serde_json::from_str(r#"{"text": {"paragraphs": "spaced", "indent": "1.27cm", "spaceBetween": "6pt"}}"#)
+                .unwrap();
+        spaced.sanitise();
+        assert_eq!((spaced.text.indent, spaced.text.space_between), (Length::pt(0.0), Length::pt(6.0)));
+        let (par, word) = paragraphs_set(&spaced);
+        assert!(par.contains("first-line-indent: (amount: 0pt,"), "{par}");
+        assert!(par.contains("+ 6pt,"), "{par}");
+        assert!(!word.contains("w:firstLine=\"7"), "{word}");
+        assert!(word.contains("w:after=\"120\""), "{word}");
+        // A spaced file that said no space had the old default's.
+        let mut bare: DocumentFormat = serde_json::from_str(r#"{"text": {"paragraphs": "spaced"}}"#).unwrap();
+        bare.sanitise();
+        assert_eq!((bare.text.indent, bare.text.space_between), (Length::pt(0.0), Length::pt(12.0)));
+
+        // The choice is read, never written: what is written says the two lengths alone.
+        let written = serde_json::to_value(&spaced).unwrap();
+        assert!(written["text"].get("paragraphs").is_none(), "{written}");
+        assert_eq!(written["text"]["indent"], "0pt");
+        let mut again: DocumentFormat = serde_json::from_value(written).unwrap();
+        again.sanitise();
+        assert_eq!(again, spaced);
+    }
+
+    #[test]
+    fn a_layout_with_both_lengths_prints_both() {
+        let mut both: DocumentFormat =
+            serde_json::from_str(r#"{"text": {"indent": "0.5cm", "spaceBetween": "4pt"}}"#).unwrap();
+        both.sanitise();
+        let (par, word) = paragraphs_set(&both);
+        assert!(par.contains("first-line-indent: (amount: 0.5cm,"), "{par}");
+        assert!(par.contains("+ 4pt,"), "{par}");
+        assert!(word.contains("w:firstLine=\"283\""), "{word}");
+        assert!(word.contains("w:after=\"80\""), "{word}");
+        let latex = crate::export::latex::paragraph_lengths(&both);
+        assert_eq!(latex, "\\setlength{\\parindent}{0.5cm}\n\\setlength{\\parskip}{4pt}");
+        // A layout that says nothing indents, with no space between.
+        let mut plain: DocumentFormat = serde_json::from_str("{}").unwrap();
+        plain.sanitise();
+        assert_eq!((plain.text.indent, plain.text.space_between), (Length::cm(1.27), Length::pt(0.0)));
     }
 
     #[test]

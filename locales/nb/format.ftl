@@ -36,8 +36,6 @@ format-line-spacing = Linjeavstand
 format-as-the-text = Som teksten
 # Ved siden av en størrelse på 0, der enheten ellers står.
 format-as-the-text-zero = som teksten
-# Ved siden av et tall på 0, der enheten ellers står.
-format-not-said = ikke oppgitt
 format-align-left = Venstre
 format-align-center = Midtstilt
 format-align-right = Høyre
@@ -78,10 +76,6 @@ format-line-numbers = Nummerer linjene
 
 format-typeface = Skrift
 format-hyphenate = Del ord ved linjeslutt
-format-paragraphs = Avsnitt skilles med
-format-paragraphs-indent = Innrykk i første linje
-format-paragraphs-spaced = Luft mellom dem
-format-indent = Innrykk
 format-indent-first = Også etter en overskrift
 format-space-between = Luft mellom avsnittene
 format-italics = Kursiv settes
@@ -140,9 +134,6 @@ format-title-keywords-label = Ord foran nøkkelordene
 
 ## Sitater, noter og litteraturlisten.
 
-format-quote-indent-left = Innrykk til venstre
-format-quote-indent-right = Innrykk til høyre
-format-quote-when = Når et sitat settes som blokksitat
 format-quote-from-words = Fra så mange ord
 format-quote-from-lines = Eller så mange linjer
 format-notes-kind = Notene står
@@ -335,3 +326,8 @@ format-title-include = Ta med
 format-title-formatting = Formatering
 format-title-anonymize = Anonymiser forsiden
 format-table-inside = Inne i tabellen
+
+## Fewer words, stage 4: the two lengths of paragraphs, and the warning of long quotations.
+
+format-indent-first-line = Innrykk i første linje
+format-quote-warn = Varsle om lange sitater i løpende tekst

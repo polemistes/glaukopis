@@ -36,8 +36,6 @@ format-line-spacing = 行距
 format-as-the-text = 同正文
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = 同正文
-# Beside a number of 0, in the place of its unit.
-format-not-said = 未规定
 format-align-left = 左对齐
 format-align-center = 居中
 format-align-right = 右对齐
@@ -70,10 +68,6 @@ format-line-numbers = 为各行编号
 
 format-typeface = 字体
 format-hyphenate = 在行末断开单词
-format-paragraphs = 段落之间的区分方式
-format-paragraphs-indent = 首行缩进
-format-paragraphs-spaced = 段间空白
-format-indent = 缩进
 format-indent-first = 标题之后也缩进
 format-space-between = 段间距
 format-italics = 斜体的排法
@@ -114,9 +108,6 @@ format-title-keywords-label = 关键词前的引导词
 
 ## Quotations, notes and the bibliography.
 
-format-quote-indent-left = 左缩进
-format-quote-indent-right = 右缩进
-format-quote-when = 何时独立成段
 format-quote-from-words = 从这么多词起
 format-quote-from-lines = 或这么多行起
 format-notes-kind = 注释的位置

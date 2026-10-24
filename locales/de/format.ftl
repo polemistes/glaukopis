@@ -34,8 +34,6 @@ format-line-spacing = Zeilenabstand
 format-as-the-text = Wie der Text
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = wie der Text
-# Beside a number of 0, in the place of its unit.
-format-not-said = nicht gesagt
 format-align-left = Links
 format-align-center = Zentriert
 format-align-right = Rechts
@@ -79,10 +77,6 @@ format-line-numbers = Zeilen nummerieren
 
 format-typeface = Schriftart
 format-hyphenate = Wörter am Zeilenende trennen
-format-paragraphs = Absätze werden unterschieden durch
-format-paragraphs-indent = Eine eingezogene erste Zeile
-format-paragraphs-spaced = Abstand zwischen ihnen
-format-indent = Einzug
 format-indent-first = Auch nach einer Überschrift
 format-space-between = Abstand zwischen Absätzen
 format-italics = Kursives wird gesetzt
@@ -141,9 +135,6 @@ format-title-keywords-label = Wort vor den Schlüsselwörtern
 
 ## Quotations, notes and the bibliography.
 
-format-quote-indent-left = Einzug links
-format-quote-indent-right = Einzug rechts
-format-quote-when = Wann ein Zitat abgesetzt wird
 format-quote-from-words = Ab so vielen Wörtern
 format-quote-from-lines = Oder so vielen Zeilen
 format-notes-kind = Anmerkungen stehen

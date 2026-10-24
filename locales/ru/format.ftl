@@ -36,8 +36,6 @@ format-line-spacing = Межстрочный интервал
 format-as-the-text = Как текст
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = как текст
-# Beside a number of 0, in the place of its unit.
-format-not-said = не задано
 format-align-left = По левому краю
 format-align-center = По центру
 format-align-right = По правому краю
@@ -70,10 +68,6 @@ format-line-numbers = Нумеровать строки
 
 format-typeface = Гарнитура
 format-hyphenate = Переносить слова в концах строк
-format-paragraphs = Абзацы различаются
-format-paragraphs-indent = Красной строкой
-format-paragraphs-spaced = Отступом между ними
-format-indent = Отступ
 format-indent-first = И после заголовка
 format-space-between = Отступ между абзацами
 format-italics = Курсив набирается
@@ -114,9 +108,6 @@ format-title-keywords-label = Слово перед ключевыми слов�
 
 ## Quotations, notes and the bibliography.
 
-format-quote-indent-left = Отступ слева
-format-quote-indent-right = Отступ справа
-format-quote-when = Когда цитата отделяется
 format-quote-from-words = От стольких слов
 format-quote-from-lines = Или от стольких строк
 format-notes-kind = Сноски стоят

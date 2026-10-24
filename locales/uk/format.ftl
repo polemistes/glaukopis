@@ -36,8 +36,6 @@ format-line-spacing = Міжрядковий інтервал
 format-as-the-text = Як текст
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = як текст
-# Beside a number of 0, in the place of its unit.
-format-not-said = не вказано
 format-align-left = Ліворуч
 format-align-center = По центру
 format-align-right = Праворуч
@@ -70,10 +68,6 @@ format-line-numbers = Нумерувати рядки
 
 format-typeface = Гарнітура
 format-hyphenate = Переносити слова в кінці рядків
-format-paragraphs = Абзаци розрізняються
-format-paragraphs-indent = Відступом першого рядка
-format-paragraphs-spaced = Проміжком між ними
-format-indent = Відступ
 format-indent-first = Також після заголовка
 format-space-between = Проміжок між абзацами
 format-italics = Курсив набирається
@@ -114,9 +108,6 @@ format-title-keywords-label = Слово перед ключовими слов�
 
 ## Quotations, notes and the bibliography.
 
-format-quote-indent-left = Відступ ліворуч
-format-quote-indent-right = Відступ праворуч
-format-quote-when = Коли цитата виокремлюється
 format-quote-from-words = Від стількох слів
 format-quote-from-lines = Або стількох рядків
 format-notes-kind = Примітки стоять

@@ -36,8 +36,6 @@ format-line-spacing = Riadkovanie
 format-as-the-text = Ako text
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = ako text
-# Beside a number of 0, in the place of its unit.
-format-not-said = neurčené
 format-align-left = Vľavo
 format-align-center = Na stred
 format-align-right = Vpravo
@@ -70,10 +68,6 @@ format-line-numbers = Číslovať riadky
 
 format-typeface = Písmo
 format-hyphenate = Deliť slová na konci riadkov
-format-paragraphs = Odseky sa odlišujú
-format-paragraphs-indent = Odsadeným prvým riadkom
-format-paragraphs-spaced = Medzerou medzi nimi
-format-indent = Odsadenie
 format-indent-first = Aj po nadpise
 format-space-between = Medzera medzi odsekmi
 format-italics = Kurzíva sa sádže
@@ -114,9 +108,6 @@ format-title-keywords-label = Slovo pred kľúčovými slovami
 
 ## Quotations, notes and the bibliography.
 
-format-quote-indent-left = Odsadenie vľavo
-format-quote-indent-right = Odsadenie vpravo
-format-quote-when = Kedy sa citát oddelí
 format-quote-from-words = Od toľkých slov
 format-quote-from-lines = Alebo od toľkých riadkov
 format-notes-kind = Poznámky stoja

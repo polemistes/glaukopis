@@ -38,7 +38,7 @@
   } from '$lib/api/documents';
   import type { Template } from '$lib/api/templates';
   import { aboutDocumentUi } from '$lib/document/about-document.svelte';
-  import { CATALOGUE, GROUPS, specOf } from '$lib/editor/kinds';
+  import { CATALOGUE, GROUPS, points, specOf } from '$lib/editor/kinds';
   import { languages, t } from '$lib/i18n';
   import { documents, templateFor, templateName } from '$lib/preview/documents.svelte';
   import StyleBrowser from '$lib/preview/StyleBrowser.svelte';
@@ -65,7 +65,7 @@
   import { LOOK_SECTIONS, lookUi, type LookRequest, type LookSection } from './look.svelte';
   import ContentsSection from './ContentsSection.svelte';
   import { Composition } from './composition.svelte';
-  import { lengthsOk, lookRows, lookWords, resolvedWords, setKindLook } from './rows.svelte';
+  import { lookRows, lookWords, resolvedWords, setKindLook } from './rows.svelte';
 
   interface Props {
     project: Project;
@@ -694,15 +694,9 @@
     unit: 'pt',
     zero: t('format-as-the-text-zero'),
   });
-  /** A count where nought is none. */
-  const counted = (most: number, step: number, zero: string) => ({
-    max: most,
-    step,
-    zero,
-    nullable: true,
-  });
   const custom = (f: F) => f.page.size === 'custom';
-  const indented = (f: F) => f.text.paragraphs === 'indent';
+  /** Whether the first line of a paragraph is indented at all. */
+  const indented = (f: F) => (points(f.text.indent) ?? 0) !== 0;
   const named = (f: F) => !f.title.anonymous;
   const withAbstract = (f: F) => f.title.showAbstract;
 
@@ -940,13 +934,9 @@
   ]);
 
   const paragraphRows: Row<F>[] = $derived([
-    chosen(t('format-paragraphs'), 'text.paragraphs', [
-      ['indent', t('format-paragraphs-indent')],
-      ['spaced', t('format-paragraphs-spaced')],
-    ]),
-    length(t('format-indent'), 'text.indent', { when: indented }),
+    length(t('format-indent-first-line'), 'text.indent'),
     toggle(t('format-indent-first'), 'text.indentFirst', { when: indented }),
-    length(t('format-space-between'), 'text.spaceBetween', { when: (f) => !indented(f) }),
+    length(t('format-space-between'), 'text.spaceBetween'),
   ]);
 
   const headingRows: Row<F>[] = $derived([toggle(t('format-numbered'), 'headings.numbered')]);
@@ -1017,15 +1007,34 @@
   /** Where the switch of the title page has its value from: nothing where it is the template's. */
   const titlePageFrom = $derived(contained.from('parts.title-page'));
 
+  /**
+   * Quotations in the text that the layout would have set off by their
+   * length: a warning of the checklist, from this many words or lines. The
+   * look of a quotation is that of the kind Quotation, under Paragraph kinds.
+   */
+  const warns = (f: F) => f.quote.fromWords != null || f.quote.fromLines != null;
+  /** A limit of the warning: empty for none. */
+  const limit = (most: number, path: string) => ({
+    max: most,
+    step: 1,
+    nullable: true,
+    blank: '',
+    path,
+    when: warns,
+  });
   const quotationRows: Row<F>[] = $derived([
-    length(t('format-quote-indent-left'), 'quote.indentLeft'),
-    length(t('format-quote-indent-right'), 'quote.indentRight'),
-    number(t('format-size'), 'quote.size', ptOrText()),
-    chosen(t('format-line-spacing'), 'quote.lineSpacing', spacingsOrText),
-    toggle(t('format-italic'), 'quote.italic'),
-    { subheading: t('format-quote-when') },
-    number(t('format-quote-from-words'), 'quote.fromWords', counted(500, 1, t('format-not-said'))),
-    number(t('format-quote-from-lines'), 'quote.fromLines', counted(50, 1, t('format-not-said'))),
+    toggle(t('format-quote-warn'), {
+      get: warns,
+      set: (f, on) => {
+        if (on && !warns(f)) f.quote.fromWords = 40;
+        else if (!on) {
+          f.quote.fromWords = null;
+          f.quote.fromLines = null;
+        }
+      },
+    }),
+    number(t('format-quote-from-words'), 'quote.fromWords', limit(500, 'quote.fromWords')),
+    number(t('format-quote-from-lines'), 'quote.fromLines', limit(50, 'quote.fromLines')),
   ]);
 
   // Numbers belong to what they number (ADR 0041): the lines of a numbered
@@ -1320,8 +1329,6 @@
         ]),
     ),
   );
-  /** Whether every length said of a kind is written with its unit. */
-  const kindsOk = $derived(Object.values(effective?.kinds ?? {}).every(lengthsOk));
 
   /** Whether the layout as used says anything of a kind. */
   const says = (f: F, id: string) => Object.keys(f.kinds?.[id] ?? {}).length > 0;
@@ -1927,17 +1934,15 @@
             {:else}
               <Button
                 size="sm"
-                disabled={!changed || !kindsOk || saving}
+                disabled={!changed || saving}
                 onclick={() => {
                   keeping = true;
                   keptName = t('format-name-changed', { name: nameOfLayout });
                 }}>{t('look-keep')}</Button
               >
               {#if ownLayout}
-                <Button
-                  size="sm"
-                  disabled={!changed || !kindsOk || saving}
-                  onclick={() => keep(null)}>{t('look-put-into', { name: nameOfLayout })}</Button
+                <Button size="sm" disabled={!changed || saving} onclick={() => keep(null)}
+                  >{t('look-put-into', { name: nameOfLayout })}</Button
                 >
               {/if}
             {/if}

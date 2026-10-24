@@ -2172,8 +2172,14 @@ under *Parts of the document type*, in Look. It says the words of the text again
 template's note on what the limits count, and whether the authors are to be
 left out, for review; then what there is to remark on: more words than the
 template allows, more words in the abstract, more keywords, a second element
-of a kind the document has one of, beside the first, and elements of the
-kind **Cover** where the template makes no cover. Each names its elements,
+of a kind the document has one of, beside the first, elements of the
+kind **Cover** where the template makes no cover, a front page that names
+the authors where the document type asks for an anonymous document, and,
+where the layout warns about long inline quotations, every paragraph of
+text with a quotation between quotation marks of so many words or lines.
+The lines are estimated from the layout, from the width of the page less
+its margins and the size of the type, and said as *about*: how many lines a
+quotation takes is known only once it is set. Each names its elements,
 which open in the text; otherwise it says **Nothing to remark on**.
 
 ## Typesetting
@@ -2314,7 +2320,9 @@ it says and sets the same.
 The parts follow one after another, in the order of the page from the
 outside in, each under its heading. Where a part sets something the page
 carries besides the text, it begins with whether that is shown, and goes on
-to how it looks. The chips over them stay at the top as
+to how it looks. Every length is in centimetres: a layout that says one in
+another unit has it shown converted, and written in centimetres once you
+change it. The chips over them stay at the top as
 you scroll, mark the part you are in, and go to each:
 
 - **Page**: its size, the margins, the **Columns**, one for none, and the
@@ -2339,7 +2347,15 @@ you scroll, mark the part you are in, and go to each:
   marks are set. A font that is not installed is shown in the nearest one
   in the preview. Reference marks in the margin are raised in Word and
   Writer, which have no room for them there.
-- **Paragraphs**: how they begin and are spaced; **Quotations**; and then
+- **Paragraphs**: **Indent first line** and **Space between paragraphs**,
+  each 0 for none, and, while the first line is indented, **Also after a
+  heading**: by typographic custom the first paragraph after a heading is
+  not indented, and APA and others indent it. Then **Quotations**: **Warn
+  about long inline quotations**, and while that is on, **From this many
+  words** and **Or this many lines**, as publishers set a quotation off
+  from a length; the checklist of *Document properties* then names every
+  paragraph with such a quotation in it. A quotation set off is a paragraph
+  of the kind Quotation, whose look is set as every kind's is. Then
   **Paragraph kinds** and **Words kinds**, every kind with its look.
 - **Headings**: whether they are **Numbered**, and each level: first its
   **Numbering**, *As the level above*, *None*, or a style of its own, 1, A,
@@ -2408,19 +2424,22 @@ in it is kept as a style of your own.
 ### Parts of the document type
 
 What you are writing says what the document consists of, and this part of
-Look shows it, to change for one document. **The parts of the document**
-are those Glaukopis makes itself: the half title, the title page, the
-keywords, the table of contents and the lists of figures and of tables,
-each with a switch, which holds in every document that is made, as in the
-preview; and the text, the notes and the bibliography, which are always
-there wherever there is something to make them of. **Elements with
-a place of their own** are the kinds of
-elements what you are writing gives a place to, the abstract or the
-dedication, each with where it is printed, front matter, back matter or
-cover, and the elements directly under this one that fill it, or **None
-yet**. **Make one** makes an element of the kind under this one, named after
-the kind, first among them for the front matter and last for the rest;
-pressing an element goes to it in the text. Where a document has one of a
+Look shows it, in one list, in the order the document is printed, to change
+for one document. The order is the document type's: where its parts stand,
+the abstract before the text or the acknowledgements after the preface, is
+what the type says. In the list stand the parts Glaukopis makes itself, the
+half title, the title page, the keywords, the table of contents and the
+lists of figures and of tables, each with a switch, which holds in every
+document that is made, as in the preview, and a part turned on is printed
+where it stands; the text, the notes and the bibliography, which are always
+there wherever there is something to make them of; and the kinds of
+elements the type gives a place to, the abstract or the dedication, each
+with the elements directly under this one that fill it, or **None yet**. A
+kind the type names without giving it a place is printed before the text
+where it belongs at the front, as a dedication does, and at the end
+otherwise; one printed on the cover only says so. **Make one** makes an
+element of the kind under this one, named after the kind; pressing an
+element goes to it in the text. Where a document has one of a
 kind and more are there, the second and the later say **Only the first is
 used**. **Requirements of the document type** are the words of the text, the words of the
 abstract and the keywords, each at most, an empty field for no limit, and

@@ -36,8 +36,6 @@ format-line-spacing = Razmik med vrsticami
 format-as-the-text = Kakor besedilo
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = kakor besedilo
-# Beside a number of 0, in the place of its unit.
-format-not-said = ni določeno
 format-align-left = Levo
 format-align-center = Sredinsko
 format-align-right = Desno
@@ -70,10 +68,6 @@ format-line-numbers = Oštevilči vrstice
 
 format-typeface = Pisava
 format-hyphenate = Deli besede na koncu vrstic
-format-paragraphs = Odstavki se ločijo
-format-paragraphs-indent = Z zamaknjeno prvo vrstico
-format-paragraphs-spaced = S presledkom med njimi
-format-indent = Zamik
 format-indent-first = Tudi za naslovom
 format-space-between = Presledek med odstavki
 format-italics = Ležeče je postavljeno
@@ -114,9 +108,6 @@ format-title-keywords-label = Beseda pred ključnimi besedami
 
 ## Quotations, notes and the bibliography.
 
-format-quote-indent-left = Zamik na levi
-format-quote-indent-right = Zamik na desni
-format-quote-when = Kdaj je citat ločen
 format-quote-from-words = Od toliko besed
 format-quote-from-lines = Ali od toliko vrstic
 format-notes-kind = Opombe stojijo

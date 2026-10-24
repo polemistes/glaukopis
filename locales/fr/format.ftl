@@ -34,8 +34,6 @@ format-line-spacing = Interligne
 format-as-the-text = Comme le texte
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = comme le texte
-# Beside a number of 0, in the place of its unit.
-format-not-said = non dit
 format-align-left = À gauche
 format-align-center = Centré
 format-align-right = À droite
@@ -79,10 +77,6 @@ format-line-numbers = Numéroter les lignes
 
 format-typeface = Police
 format-hyphenate = Couper les mots en fin de ligne
-format-paragraphs = Les paragraphes se distinguent par
-format-paragraphs-indent = Un alinéa
-format-paragraphs-spaced = Un espace entre eux
-format-indent = Alinéa
 format-indent-first = Aussi après un titre
 format-space-between = Espace entre les paragraphes
 format-italics = L’italique est rendu
@@ -141,9 +135,6 @@ format-title-keywords-label = Mot devant les mots-clés
 
 ## Quotations, notes and the bibliography.
 
-format-quote-indent-left = Retrait à gauche
-format-quote-indent-right = Retrait à droite
-format-quote-when = Quand une citation est détachée
 format-quote-from-words = À partir de tant de mots
 format-quote-from-lines = Ou de tant de lignes
 format-notes-kind = Les notes se placent

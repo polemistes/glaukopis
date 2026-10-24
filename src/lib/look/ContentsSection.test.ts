@@ -157,6 +157,29 @@ describe('what the document contains, in Look', () => {
     expect(view.froms()).toEqual([]);
   });
 
+  it('lists the parts and the kinds in one list, in the order the type prints them', () => {
+    const { p, book } = aBook();
+    const view = shown(p, book);
+    const list = [...view.target.querySelectorAll('[data-part-switch], .place')].map(
+      (e) => e.getAttribute('data-part-switch') ?? `kind:${e.getAttribute('data-kind')}`,
+    );
+    expect(list).toEqual([
+      'half-title',
+      'title-page',
+      'kind:abstract',
+      'keywords',
+      'contents',
+      'list-of-figures',
+      'list-of-tables',
+      'body',
+      'kind:appendix',
+      'kind:acknowledgements',
+      'notes',
+      'bibliography',
+    ]);
+    expect(view.target.querySelectorAll('h4')).toHaveLength(1);
+  });
+
   it('lists the kinds the template gives a place to, shows the elements that fill them, and makes one', () => {
     const { p, book } = aBook();
     const view = shown(p, book);
@@ -166,7 +189,8 @@ describe('what the document contains, in Look', () => {
     );
     expect(places).toEqual(['abstract', 'appendix', 'acknowledgements']);
     const abstract = () => view.find('.place[data-kind="abstract"]')!;
-    expect(abstract().querySelector('.where')?.textContent).toBe('printed at the front');
+    // No words of front or back: the list is in the order the document is printed.
+    expect(abstract().querySelector('.where')?.textContent).toBe('');
     expect(abstract().querySelector('.none')?.textContent).toBe('None yet');
 
     // Made first among the book's elements, as the front matter stands, named as its kind.

@@ -21,7 +21,7 @@ use std::sync::OnceLock;
 
 use serde::{Deserialize, Serialize};
 
-use super::{Align, Case, DocumentFormat, Length, Paragraphs};
+use super::{Align, Case, DocumentFormat, Length};
 
 /// Of paragraphs, or of words within them.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -160,18 +160,15 @@ impl Resolved {
         }
     }
 
-    /// The look of a paragraph of text, as the format has it.
+    /// The look of a paragraph of text, as the format has it: the indent of
+    /// its first line and the space after it, either of them nought.
     pub fn text(f: &DocumentFormat) -> Self {
-        let (first, after) = match f.text.paragraphs {
-            Paragraphs::Indent => (f.text.indent, Length::pt(0.0)),
-            Paragraphs::Spaced => (Length::pt(0.0), f.text.space_between),
-        };
         Resolved {
             size: f.font.size,
             line_spacing: f.text.line_spacing,
             align: f.text.align,
-            first_line: first,
-            space_after: after,
+            first_line: f.text.indent,
+            space_after: f.text.space_between,
             ..Resolved::words()
         }
     }

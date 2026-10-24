@@ -36,8 +36,6 @@ format-line-spacing = Regelafstand
 format-as-the-text = Als de tekst
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = als de tekst
-# Beside a number of 0, in the place of its unit.
-format-not-said = niet gezegd
 format-align-left = Links
 format-align-center = Gecentreerd
 format-align-right = Rechts
@@ -70,10 +68,6 @@ format-line-numbers = De regels nummeren
 
 format-typeface = Lettertype
 format-hyphenate = Woorden afbreken aan het eind van de regel
-format-paragraphs = Alinea's worden onderscheiden door
-format-paragraphs-indent = Een inspringende eerste regel
-format-paragraphs-spaced = Witruimte ertussen
-format-indent = Inspringing
 format-indent-first = Ook na een kop
 format-space-between = Witruimte tussen alinea's
 format-italics = Cursief wordt gezet
@@ -114,9 +108,6 @@ format-title-keywords-label = Woord voor de trefwoorden
 
 ## Quotations, notes and the bibliography.
 
-format-quote-indent-left = Inspringing links
-format-quote-indent-right = Inspringing rechts
-format-quote-when = Wanneer een citaat los wordt gezet
 format-quote-from-words = Vanaf zoveel woorden
 format-quote-from-lines = Of zoveel regels
 format-notes-kind = Noten staan

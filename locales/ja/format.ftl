@@ -36,8 +36,6 @@ format-line-spacing = 行間
 format-as-the-text = 本文と同じ
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = 本文と同じ
-# Beside a number of 0, in the place of its unit.
-format-not-said = 指定なし
 format-align-left = 左
 format-align-center = 中央
 format-align-right = 右
@@ -70,10 +68,6 @@ format-line-numbers = 行番号を振る
 
 format-typeface = 書体
 format-hyphenate = 行末で語を分割する
-format-paragraphs = 段落の区切り方
-format-paragraphs-indent = 一行目の字下げ
-format-paragraphs-spaced = 段落間のスペース
-format-indent = 字下げ
 format-indent-first = 見出しの直後も
 format-space-between = 段落間のスペース
 format-italics = 斜体の組み方
@@ -114,9 +108,6 @@ format-title-keywords-label = キーワードの前の語
 
 ## Quotations, notes and the bibliography.
 
-format-quote-indent-left = 左の字下げ
-format-quote-indent-right = 右の字下げ
-format-quote-when = 引用文を離して組むとき
 format-quote-from-words = この語数から
 format-quote-from-lines = またはこの行数から
 format-notes-kind = 注の位置

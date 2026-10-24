@@ -34,8 +34,6 @@ format-line-spacing = Linjeavstand
 format-as-the-text = Som teksten
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = som teksten
-# Beside a number of 0, in the place of its unit.
-format-not-said = ikkje oppgitt
 format-align-left = Venstre
 format-align-center = Midtstilt
 format-align-right = Høgre
@@ -79,10 +77,6 @@ format-line-numbers = Nummerer linjene
 
 format-typeface = Skrift
 format-hyphenate = Del ord ved linjeslutt
-format-paragraphs = Avsnitt blir skilde med
-format-paragraphs-indent = Innrykk i første linje
-format-paragraphs-spaced = Luft mellom dei
-format-indent = Innrykk
 format-indent-first = Òg etter ei overskrift
 format-space-between = Luft mellom avsnitta
 format-italics = Kursiv blir sett
@@ -141,9 +135,6 @@ format-title-keywords-label = Ord framfor nøkkelorda
 
 ## Quotations, notes and the bibliography.
 
-format-quote-indent-left = Innrykk til venstre
-format-quote-indent-right = Innrykk til høgre
-format-quote-when = Når eit sitat blir sett som blokksitat
 format-quote-from-words = Frå så mange ord
 format-quote-from-lines = Eller så mange linjer
 format-notes-kind = Notane står

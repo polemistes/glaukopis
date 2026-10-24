@@ -8,7 +8,7 @@
 import type { DocumentFormat, KindFamily, Look, ResolvedLook } from '$lib/api/documents';
 import { points } from '$lib/editor/kinds';
 import { t } from '$lib/i18n';
-import { lengthOk, rowsOf, type Choices, type Row } from '$lib/ui/settings/rows';
+import { lengthOk, rowsOf, shownCm, toCm, type Choices, type Row } from '$lib/ui/settings/rows';
 
 // ---- the rows of a look ----
 
@@ -83,7 +83,7 @@ export function lookRows<T>(
     path?: (key: keyof Look) => string;
   } = {},
 ): Row<T>[] {
-  const { text, number, choice } = rowsOf<T>();
+  const { text, number, choice, length: measure } = rowsOf<T>();
   const path = (key: keyof Look) => (options.path ? { path: options.path(key) } : {});
   const { resolved } = options;
   /** A row's words of help, where the rows say them. */
@@ -135,16 +135,22 @@ export function lookRows<T>(
       ],
       path(key),
     );
-  /** A length with its unit, or nothing for as the base. */
-  const length = (label: string, key: keyof Look, hint?: string) =>
-    text(
+  /** A length, in centimetres, or nothing for as the base, which the empty field shows. */
+  const length = (label: string, key: keyof Look, hint?: string) => {
+    const base = resolved ? toCm(String(resolved[key])) : null;
+    return measure(
       label,
       {
         get: (target) => String(get(target, key) ?? ''),
         set: (target, value) => reach.set(target, key, value.trim() || undefined),
       },
-      { placeholder: resolved ? String(resolved[key]) : asBase, hint, ...path(key) },
+      {
+        blank: base === null ? t('format-as-the-base-blank') : String(shownCm(base)),
+        hint,
+        ...path(key),
+      },
     );
+  };
 
   const italic = yesNo(t('format-italic'), 'italic');
   const bold = yesNo(t('format-bold'), 'bold');

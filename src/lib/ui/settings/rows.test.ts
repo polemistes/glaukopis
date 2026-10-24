@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { lengthOk, rowsOf, setValue, valueOf, type Setting } from './rows';
+import { fromCm, lengthOk, rowsOf, setValue, shownCm, toCm, valueOf, type Setting } from './rows';
 
 interface Format {
   page: { size: string; margin: string };
@@ -45,6 +45,20 @@ describe('the rows of a form of settings', () => {
       zero: 'none',
       when,
     });
+  });
+
+  it('read a length as centimetres, whatever its unit, and write it in them', () => {
+    expect(toCm('2.5cm')).toBe(2.5);
+    expect(toCm(' 25 mm ')).toBeCloseTo(2.5);
+    expect(toCm('0.5in')).toBeCloseTo(1.27);
+    expect(toCm('72pt')).toBeCloseTo(2.54);
+    expect(toCm('1,5cm')).toBe(1.5);
+    for (const bad of ['', '2.5', 'cm', '2.5px']) expect(toCm(bad)).toBeNull();
+    expect(shownCm(toCm('12pt')!)).toBe(0.42);
+    expect(shownCm(toCm('0.5in')!)).toBe(1.27);
+    expect(fromCm(2.5)).toBe('2.5cm');
+    expect(fromCm(1.2700001)).toBe('1.27cm');
+    expect(fromCm(0)).toBe('0cm');
   });
 
   it('know a length when they see one', () => {

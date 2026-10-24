@@ -5,7 +5,7 @@ use std::fmt::Write;
 
 use crate::formats::kinds::Resolved;
 use crate::formats::typst::Particulars;
-use crate::formats::{Align, Case, DocumentFormat, Item, Margin, NoteKind, NumberStyle, Paragraphs, Sides};
+use crate::formats::{Align, Case, DocumentFormat, Item, Margin, NoteKind, NumberStyle, Sides};
 
 /// Text as LaTeX, with the characters that mean something to it made harmless.
 pub fn escape(text: &str) -> String {
@@ -130,11 +130,12 @@ pub fn settings(f: &DocumentFormat, looks: &[&DocumentFormat], p: &Particulars) 
     v.push(("mainfont".into(), f.font.family.clone()));
     v.push(("linestretch".into(), format!("{}", f.text.line_spacing)));
 
-    if f.text.paragraphs == Paragraphs::Indent {
+    let indented = !f.text.indent.is_zero();
+    if indented {
         v.push(("indent".into(), "true".into()));
     }
     let _ = writeln!(h, "{}", paragraph_lengths(f));
-    if f.text.paragraphs == Paragraphs::Indent && f.text.indent_first {
+    if indented && f.text.indent_first {
         let _ = writeln!(h, "\\usepackage{{indentfirst}}");
     }
     if f.text.align != Align::Justified {
@@ -143,7 +144,7 @@ pub fn settings(f: &DocumentFormat, looks: &[&DocumentFormat], p: &Particulars) 
         // For the stretches that are set ragged.
         let _ = writeln!(h, "\\usepackage{{ragged2e}}");
     }
-    if f.text.align != Align::Justified && f.text.paragraphs == Paragraphs::Indent {
+    if f.text.align != Align::Justified && indented {
         let _ = writeln!(h, "\\setlength{{\\RaggedRightParindent}}{{{}}}", f.text.indent);
     }
     if !f.text.hyphenate {
@@ -325,12 +326,9 @@ fn page_margins(f: &DocumentFormat) -> [String; 4] {
     ]
 }
 
-/// How far a paragraph is indented and how far apart paragraphs stand.
-fn paragraph_lengths(f: &DocumentFormat) -> String {
-    let (indent, skip) = match f.text.paragraphs {
-        Paragraphs::Indent => (f.text.indent.to_string(), "0pt".to_owned()),
-        Paragraphs::Spaced => ("0pt".to_owned(), f.text.space_between.to_string()),
-    };
+/// How far a paragraph is indented and how far apart paragraphs stand, both as said.
+pub(crate) fn paragraph_lengths(f: &DocumentFormat) -> String {
+    let (indent, skip) = (f.text.indent, f.text.space_between);
     format!("\\setlength{{\\parindent}}{{{indent}}}\n\\setlength{{\\parskip}}{{{skip}}}")
 }
 
@@ -405,7 +403,7 @@ fn text_commands(f: &DocumentFormat) -> String {
     if f.text.align == Align::Justified {
         out.push_str("\\ifdefined\\justifying\\justifying\\fi\n");
     } else {
-        if f.text.paragraphs == Paragraphs::Indent {
+        if !f.text.indent.is_zero() {
             let _ = writeln!(out, "\\setlength{{\\RaggedRightParindent}}{{{}}}", f.text.indent);
         }
         out.push_str("\\RaggedRight\n");
@@ -706,7 +704,8 @@ mod tests {
         appendix.footer.shown = false;
         appendix.page.numbering = NumberStyle::RomanLower;
         appendix.page.restart = true;
-        appendix.text.paragraphs = Paragraphs::Spaced;
+        appendix.text.indent = crate::formats::Length::pt(0.0);
+        appendix.text.space_between = crate::formats::Length::pt(12.0);
         let into = switch(&f, &appendix, true);
         let name = look_style(&appendix);
         assert!(

@@ -11,8 +11,8 @@ use crate::error::{Error, Result};
 use crate::formats::kinds::{self, Family, OwnKind, Resolved};
 use crate::formats::typst::Particulars;
 use crate::formats::{
-    Align, CaptionPosition, Case, DocumentFormat, HeadingLevel, Item, Length, Margin, NoteKind, NumberStyle,
-    Paragraphs, Rules, Sides, fallbacks,
+    Align, CaptionPosition, Case, DocumentFormat, HeadingLevel, Item, Length, Margin, NoteKind, NumberStyle, Rules,
+    Sides, fallbacks,
 };
 use crate::tr;
 
@@ -327,11 +327,7 @@ fn heading_styles(f: &DocumentFormat, body_line: i32) -> String {
 pub fn docx_styles(f: &DocumentFormat, language: Option<&str>, own: &[OwnKind]) -> String {
     let font = xml(&family(f));
     let body_line = line(f.text.line_spacing);
-    let indent = f.text.indent.twips();
-    let (first_line, between) = match f.text.paragraphs {
-        Paragraphs::Indent => (indent, 0),
-        Paragraphs::Spaced => (0, f.text.space_between.twips()),
-    };
+    let (first_line, between) = (f.text.indent.twips(), f.text.space_between.twips());
     let quote_line = if f.quote.line_spacing > 0.0 { line(f.quote.line_spacing) } else { body_line };
     let bib_line = if f.bibliography.line_spacing > 0.0 { line(f.bibliography.line_spacing) } else { body_line };
     let none = Run::default;
@@ -1280,10 +1276,7 @@ pub fn odt_styles_with_looks(default: &str, f: &DocumentFormat, p: &Particulars,
     let size = f.font.size;
     let body = f.text.line_spacing;
     let indent = f.text.indent.points();
-    let (first_line, between) = match f.text.paragraphs {
-        Paragraphs::Indent => (indent, 0.0),
-        Paragraphs::Spaced => (0.0, f.text.space_between.points()),
-    };
+    let (first_line, between) = (indent, f.text.space_between.points());
     let lang = word_language(p.language.as_deref());
     let (language, country) = lang.split_once('-').unwrap_or((lang.as_str(), ""));
 
@@ -1684,11 +1677,8 @@ pub fn odt_styles_with_looks(default: &str, f: &DocumentFormat, p: &Particulars,
         }
         let look = &info.look;
         let display = (name != info.style).then_some(info.style.as_str());
-        let (first, after) = match f.text.paragraphs {
-            Paragraphs::Indent if look.align == Align::Left => (f.text.indent.points(), 0.0),
-            Paragraphs::Indent => (0.0, 0.0),
-            Paragraphs::Spaced => (0.0, f.text.space_between.points()),
-        };
+        let first = if look.align == Align::Left { f.text.indent.points() } else { 0.0 };
+        let after = f.text.space_between.points();
         let style = OdtStyle {
             name: &name,
             display,

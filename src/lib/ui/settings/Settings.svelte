@@ -1,5 +1,14 @@
 <script lang="ts" generics="T">
-  import { lengthOk, setValue, valueOf, type Provenance, type Row, type Setting } from './rows';
+  import {
+    fromCm,
+    setValue,
+    shownCm,
+    toCm,
+    valueOf,
+    type Provenance,
+    type Row,
+    type Setting,
+  } from './rows';
 
   interface Props {
     /** What the rows set. */
@@ -51,13 +60,27 @@
             oninput={(e) => setValue(row, target, e.currentTarget.value)}
           />
         {:else if row.kind === 'length'}
-          <input
-            class="short"
-            class:invalid={!lengthOk((value as string) ?? '')}
-            value={(value as string) ?? ''}
-            spellcheck="false"
-            oninput={(e) => setValue(row, target, e.currentTarget.value)}
-          />
+          {@const cm = toCm((value as string) ?? '')}
+          <span class="with-unit">
+            <input
+              class="short"
+              type="number"
+              min="0"
+              step="0.05"
+              value={cm === null ? '' : shownCm(cm)}
+              placeholder={row.blank}
+              oninput={(e) => {
+                const raw = e.currentTarget.value;
+                if (raw.trim() === '') {
+                  if (row.blank !== undefined) setValue(row, target, '');
+                  return;
+                }
+                const n = Number(raw.replace(',', '.'));
+                if (Number.isFinite(n) && n >= 0) setValue(row, target, fromCm(n));
+              }}
+            />
+            <em>cm</em>
+          </span>
         {:else if row.kind === 'number'}
           {@const n = value as number | null | undefined}
           <span class="with-unit">

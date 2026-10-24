@@ -55,8 +55,16 @@ export type Row<T> =
       /** Written as it stands, in letters of equal width: punctuation, affixes. */
       literal?: boolean;
     } & Reach<T, string>)
-  /** A length with its unit: `2.5cm`, `12pt`. */
-  | (Named<T> & { kind: 'length' } & Reach<T, string>)
+  /**
+   * A length with its unit, `2.5cm`, `12pt`, shown and set in centimetres;
+   * one in another unit is shown converted, and written in centimetres
+   * when it is changed.
+   */
+  | (Named<T> & {
+      kind: 'length';
+      /** Nothing may be said: an empty field, with these words in it, and emptied unsays it. */
+      blank?: string;
+    } & Reach<T, string>)
   | (Named<T> & {
       kind: 'number';
       min?: number;
@@ -118,7 +126,7 @@ export function rowsOf<T>() {
       where: Where<T, string>,
       more: More<T> & { placeholder?: string; literal?: boolean } = {},
     ) => ({ kind: 'text', label, ...reach(where), ...more }) as Row<T>,
-    length: (label: string, where: Where<T, string>, more: More<T> = {}) =>
+    length: (label: string, where: Where<T, string>, more: More<T> & { blank?: string } = {}) =>
       ({ kind: 'length', label, ...reach(where), ...more }) as Row<T>,
     number: (label: string, where: Where<T, number | null>, more: NumberMore<T> = {}) =>
       ({ kind: 'number', label, ...reach(where), ...more }) as Row<T>,
@@ -129,6 +137,26 @@ export function rowsOf<T>() {
       more: More<T> = {},
     ) => ({ kind: 'choice', label, ...reach(where), options, ...more }) as Row<T>,
   };
+}
+
+/** How many centimetres a length is: `pt`, `mm`, `cm` or `in`, with a comma for a point too; nothing where it is not a length. */
+export function toCm(value: string): number | null {
+  const m = /^\s*(-?\d+(?:[.,]\d+)?)\s*(pt|mm|cm|in)\s*$/i.exec(value ?? '');
+  if (!m) return null;
+  const n = Number(m[1].replace(',', '.'));
+  if (!Number.isFinite(n)) return null;
+  const per = { cm: 1, mm: 0.1, in: 2.54, pt: 2.54 / 72 }[m[2].toLowerCase() as 'cm'];
+  return n * per;
+}
+
+/** Centimetres as a field shows them: to two decimals at most, without zeros after them. */
+export function shownCm(cm: number): number {
+  return Math.round(cm * 100) / 100 + 0;
+}
+
+/** A length in centimetres, as it is written: `2.5cm`, to two decimals at most. */
+export function fromCm(cm: number): string {
+  return `${shownCm(cm)}cm`;
 }
 
 /** Whether a length is written with a unit Typst and LaTeX both know. */

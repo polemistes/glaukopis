@@ -34,8 +34,6 @@ format-line-spacing = Line spacing
 format-as-the-text = As the text
 # Beside a size of 0, in the place of its unit.
 format-as-the-text-zero = as the text
-# Beside a number of 0, in the place of its unit.
-format-not-said = not said
 format-align-left = Left
 format-align-center = Centred
 format-align-right = Right
@@ -79,10 +77,6 @@ format-line-numbers = Number the lines
 
 format-typeface = Font
 format-hyphenate = Divide words at the ends of lines
-format-paragraphs = Paragraphs are told apart by
-format-paragraphs-indent = An indented first line
-format-paragraphs-spaced = Space between them
-format-indent = Indent
 format-indent-first = Also after a heading
 format-space-between = Space between paragraphs
 format-italics = Italics are set
@@ -141,9 +135,6 @@ format-title-keywords-label = Word before the keywords
 
 ## Quotations, notes and the bibliography.
 
-format-quote-indent-left = Indent on the left
-format-quote-indent-right = Indent on the right
-format-quote-when = When a quotation is set off
 format-quote-from-words = From this many words
 format-quote-from-lines = Or this many lines
 format-notes-kind = Notes stand
@@ -340,3 +331,8 @@ format-title-include = Include
 format-title-formatting = Formatting
 format-title-anonymize = Anonymize the front page
 format-table-inside = Inside the table
+
+## Fewer words, stage 4: the two lengths of paragraphs, and the warning of long quotations.
+
+format-indent-first-line = Indent first line
+format-quote-warn = Warn about long inline quotations
