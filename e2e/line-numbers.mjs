@@ -1,10 +1,9 @@
 // Marks on lines, and reference marks (ADR 0041, ADR 0039, ADR 0067). Ten
 // lines of verse in two stanzas are numbered from 1, every 5 as the layout
-// says, through Line numbering from here: the 1 given is not shown on the
-// page, since it does not fall on every fifth, nor where one writes but
-// while the pointer rests on its paragraph. Through Numbering of this line,
-// the third is given 1234, not shown either until its number is said to be
-// shown always;
+// says, through Line numbering from here: the count begins from 1, which
+// is a setting of the stretch, not a number on a line, and is not shown,
+// since it does not fall on every fifth. Through Numbering of this line, the
+// third is given 1234, which is shown at once, as a number given by hand is;
 // the fifth is not counted; the tenth's number is never shown; the sixth
 // has an annotation; and the seventh is given the label 7a in its place in
 // the margin, which is shown and counted on from. Then a paragraph with
@@ -129,11 +128,11 @@ async function apply() {
   await sleep(300);
 }
 
-/** The numbers the lines show in the margin, line by line: "-" where none, "!" where given by hand, "(n)" where held back, "[n]" where given and not on the page. */
+/** The numbers the lines show in the margin, line by line: "-" where none, "!" where given by hand, "(n)" where held back. */
 const shownNumbers = () =>
   app.exec(
     `return Array.from(document.querySelectorAll(arguments[0] + ' > p span.line-number')).map((w) =>
-       w.classList.contains('blank') ? '-' : 'held' in w.dataset ? '(' + w.dataset.label + ')' : 'unprinted' in w.dataset ? '[' + w.dataset.label + ']' : w.dataset.label + ('given' in w.dataset ? '!' : '')).join(' ')`,
+       w.classList.contains('blank') ? '-' : 'held' in w.dataset ? '(' + w.dataset.label + ')' : w.dataset.label + ('given' in w.dataset ? '!' : '')).join(' ')`,
     prose,
   );
 
@@ -200,7 +199,7 @@ try {
     (await app.exec(`return Array.from(document.querySelectorAll(arguments[0] + ' > p[data-kind="line"]')).map((p) => p.querySelectorAll('.hard-break').length + 1).join(',')`, prose)) === '5,5',
   );
 
-  // --- Numbered, every 5 as the layout says, from 1: the 1 given is not shown, on the page nor where one writes ---
+  // --- Numbered, every 5 as the layout says, from 1: the count begins from 1, which is not shown ---
   await toLine(0);
   await numberingWindow();
   await chooseIn('data-numbering', 'counted');
@@ -211,12 +210,12 @@ try {
   );
   await apply();
   check(
-    'the lines are numbered from 1 every 5, across the stanzas; the 1 given is not shown on the page',
-    (await shownNumbers()) === '[1] - - - 5 - - - - 10',
+    'the lines are numbered from 1 every 5, across the stanzas; the 1 the count begins from stands on no line',
+    (await shownNumbers()) === '- - - - 5 - - - - 10',
     await shownNumbers(),
   );
 
-  // --- The third line is given 1234 in its window: not shown on the page until it is said to be always ---
+  // --- The third line is given 1234 in its window: shown at once, and the count goes on from it ---
   await toLine(2);
   await lineWindow();
   check(
@@ -227,18 +226,17 @@ try {
   await fill('dialog[open] input[data-line-number]', '1234');
   await apply();
   check(
-    'a number given by hand that does not fall on every fifth is not shown, and the count goes on from it',
-    (await shownNumbers()) === '[1] - [1234] 1235 - - - - 1240 -',
+    'a number given by hand is shown, though it does not fall on every fifth, and the count goes on from it',
+    (await shownNumbers()) === '- - 1234! 1235 - - - - 1240 -',
     await shownNumbers(),
   );
   await lineWindow();
-  await chooseIn('data-shown', 'always');
-  await apply();
   check(
-    'said to be shown always, it is shown',
-    (await shownNumbers()) === '[1] - 1234! 1235 - - - - 1240 -',
-    await shownNumbers(),
+    'its window says the number is shown as the others are, and offers always and never',
+    (await app.exec(`return document.querySelector('dialog[open] [data-shown] select')?.value ?? null`)) === 'others',
   );
+  await app.clickText('dialog[open] footer button', 'Cancel');
+  await app.waitGone('dialog[open]', 3000);
 
   // --- A right press on a later line of the paragraph speaks of that line, the cursor going there ---
   await toLine(0);
@@ -266,7 +264,7 @@ try {
   await apply();
   check(
     'a line not counted is passed over by the count',
-    (await shownNumbers()) === '[1] - 1234! 1235 - - - - - 1240',
+    (await shownNumbers()) === '- - 1234! 1235 - - - - - 1240',
     await shownNumbers(),
   );
 
@@ -281,7 +279,7 @@ try {
   );
   check(
     'a line whose number is never shown shows it in parentheses',
-    (await shownNumbers()) === '[1] - 1234! 1235 - - - - - (1240)' && held.held && /\(/.test(held.before + held.seen) && /\)/.test(held.after + held.seen),
+    (await shownNumbers()) === '- - 1234! 1235 - - - - - (1240)' && held.held && /\(/.test(held.before + held.seen) && /\)/.test(held.after + held.seen),
     `${await shownNumbers()} ${JSON.stringify(held)}`,
   );
 
@@ -323,7 +321,7 @@ try {
   await sleep(300);
   check(
     'Enter gives the line the label, which is shown, and the count goes on from its digits',
-    (await shownNumbers()) === '[1] - 1234! 1235 - - 7a! - - (10)' && !(await app.exists('.line-number.editing')),
+    (await shownNumbers()) === '- - 1234! 1235 - - 7a! - - (10)' && !(await app.exists('.line-number.editing')),
     await shownNumbers(),
   );
   const given = await app.exec(
@@ -331,7 +329,7 @@ try {
        (m.getAttribute('data-number') ?? '') + (m.hasAttribute('data-shown') ? '+' : '') + (m.hasAttribute('data-uncounted') ? '~' : '') + (m.hasAttribute('data-hidden') ? '()' : '') + (m.getAttribute('data-margin') ? '|' + m.getAttribute('data-margin') : '')).join(',')`,
     prose,
   );
-  check('what was given stays on its lines, as their marks', given === '1,1234+,~,|ia. trim.,7a,()', given);
+  check('what was given stays on its lines, as their marks', given === '1234,~,|ia. trim.,7a,()', given);
   await app.screenshot('line-numbers-1-verse');
 
   // --- Out of the verse, a paragraph with reference marks ---

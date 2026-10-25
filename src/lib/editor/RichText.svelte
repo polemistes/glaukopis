@@ -698,11 +698,11 @@
       const v = numbering.view;
       if (v.isDestroyed) return;
       // From the paragraph the cursor is in, or those selected: the paragraphs before keep
-      // their numbering. Where the number to count from is the one the first line from
-      // here has already by the count, the stretch's own beginning is kept, so that a
-      // stretch is not parted by a window applied as it stood.
+      // their numbering. Where the window begins at the stretch's own first paragraph and
+      // the number to count from is the one its first line has already, the stretch's own
+      // beginning is kept, so that a window applied as it stood changes nothing.
       const paragraphs = paragraphsFromHere(v.state, ownKinds).map((p) => ({ pos: p.pos }));
-      const kept = numbering.numbered && how.numbering === 'counted' && how.from === numbering.now;
+      const kept = numbering.atStart && how.numbering === 'counted' && how.from === numbering.now;
       run(numberStretch(paragraphs, { ...how, from: kept ? numbering.stretch.from : how.from }), v);
     }}
   />

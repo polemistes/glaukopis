@@ -181,7 +181,7 @@ try {
   await app.clickText('dialog[open] footer button', 'Apply');
   await app.waitGone('dialog[open]', 3000);
   await sleep(300);
-  check('the verse is counted from 1, every 5', (await shownNumbers()) === '1! - - - 5 -', await shownNumbers());
+  check('the verse is counted from 1, every 5', (await shownNumbers()) === '- - - - 5 -', await shownNumbers());
   check('the label says the run is numbered', (await labels()).join(' | ') === 'Verse · numbered', (await labels()).join(' | '));
 
   // The third line is given 44 in its place in the margin: the count goes on from it.
@@ -204,7 +204,7 @@ try {
   );
   check(
     'Enter gives the line the number, and the count goes on from it',
-    given === '44' && (await shownNumbers()) === '1! - 44! 45 - -' && !(await app.exists('.line-number.editing')),
+    given === '44' && (await shownNumbers()) === '- - 44! 45 - -' && !(await app.exists('.line-number.editing')),
     `${given}; ${await shownNumbers()}`,
   );
   await app.screenshot('runs-3-numbered');
@@ -225,7 +225,7 @@ try {
     (await shape()) === 'line@line*:2 line@line*:2 line@line:2' &&
       (await app.exists(`${prose} > p:nth-of-type(2)[data-new]`)) &&
       (await labels()).join(' | ') === 'Verse · numbered | Verse · numbered' &&
-      (await shownNumbers()) === '1! - 44! 45 - -',
+      (await shownNumbers()) === '- - 44! 45 - -',
     `${await shape()}; ${(await labels()).join(' | ')}; ${await shownNumbers()}`,
   );
   await app.screenshot('runs-5-begun');
@@ -246,7 +246,7 @@ try {
     'made text, the second run keeps its line breaks and its numbers',
     (await shape()) === 'line@line*:2 text@text*:2 text@text:2' &&
       (await labels()).join(' | ') === 'Verse · numbered | Text · numbered' &&
-      (await shownNumbers()) === '1! - 44! 45 - -',
+      (await shownNumbers()) === '- - 44! 45 - -',
     `${await shape()}; ${(await labels()).join(' | ')}; ${await shownNumbers()}`,
   );
 

@@ -424,9 +424,10 @@ export interface NumberingAsked {
   /** What *Number from* is filled in with: the number the first counted line from here has now, given or counted; else what the stretch begins from; else 1. */
   from: string;
   /** The number the first counted line from here has now, given or counted; nothing where none is counted yet. */
-  now:
-    | string
-    | null; /** The kinds whose lines may be counted among the paragraphs from here, by their ids, in their order. */
+  now: string | null;
+  /** Whether the paragraphs from here begin where the stretch they are in begins. */
+  atStart: boolean;
+  /** The kinds whose lines may be counted among the paragraphs from here, by their ids, in their order. */
   kinds: string[];
 }
 
@@ -476,6 +477,7 @@ export function numberingAsked(
     numbered: !!stretch,
     from: now ?? stretch?.from ?? '1',
     now,
+    atStart: !!stretch && stretch.paragraphs[0]?.pos === paragraphs[0]?.pos,
     kinds,
   };
 }

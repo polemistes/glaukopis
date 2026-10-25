@@ -551,14 +551,15 @@ there, and the second part goes on from the number it had. **Line
 numbering…** in the menu of a bracket does the same for the whole run it is
 beside (see *Kinds of paragraph and of words*).
 
-In its window, **Numbering** is one of three: **Not numbered**; **Counted
-from the first number given**, which counts the lines and begins where you
-gave a number; or **Only the numbers given**, which shows the numbers you
-gave and counts nothing. **Number from** is filled in with the number the
-first counted line from here has now, given or counted, and 1 where nothing
-is counted yet; write 45 for lines that begin at line 45. **Show a number
-every** and the side the numbers stand on are the layout's unless you say
-otherwise here: every fifth line, at the left, in the layouts that ship.
+In its window, **Numbering** is one of three: **Not numbered**; **Counted**,
+which counts the lines; or **Only the numbers given**, which shows the
+numbers you gave and counts nothing. **Number from** is where the count
+begins: it is filled in with the number the first counted line from here
+has now, and 1 where nothing is counted yet; write 45 for lines that begin
+at line 45. It is a setting of the numbering, not a number written on a
+line, and is shown as the others are. **Show a number every** and the side
+the numbers stand on are the layout's unless you say otherwise here: every
+fifth line, at the left, in the layouts that ship.
 **Count the lines of** is **Every kind** that is counted, or one kind
 only, chosen among the kinds of the paragraphs from here: with *Verse*, a
 quotation among the lines is passed over as a speaker is, and shows only a
@@ -566,14 +567,14 @@ number you gave it. An empty line is never counted. The numbers stand in
 the margin, in the text and in the document; in Word and Writer they stand
 at the head of their lines, small.
 
-Which numbers are shown: those that fall on every so many, counted or
-given by you. Counted from 1 or from 41, every fifth shown, the first line
-shows nothing, and 5 or 45 is the first number shown. A label with
-anything but digits in it, *567a*, *11b*, *§5*, *\**, is always shown,
-since no count could make it. *Every so many* is counted by the numbers of
-the edition, not by the lines on the page: with numbers every five, the
-lines numbered 1235 and 1240 show theirs, whatever lines were passed over
-between them.
+Which numbers are shown: of the counted lines, those that fall on every
+so many. Counted from 1 or from 41, every fifth shown, the first line shows
+nothing, and 5 or 45 is the first number shown. A number you give a line
+yourself, in its window or in the margin, is always shown, in the text and
+in the document, since you put it there to be seen, and the count goes on
+from it. *Every so many* is counted by the numbers of the edition, not by
+the lines on the page: with numbers every five, the lines numbered 1235 and
+1240 show theirs, whatever lines were passed over between them.
 
 **Numbering of this line…** says what is to be said of the line the cursor
 is in, for editions whose numbers do not follow the lines as they are set,
@@ -583,9 +584,7 @@ as those of Greek drama do not:
   its last number: after *1234* comes 1235, after *1094a1* comes *1094a2*,
   and after *11b* comes 12. A label without a number, such as *\**, leaves
   the count as it was. Where you write, a number you gave stands as dark as
-  the text, so that you see which numbers you gave; one the document does
-  not show, as the 1 a count every fifth line begins from, is not shown
-  either, and is seen only while the pointer rests on its paragraph.
+  the text, so that you see which numbers you gave.
 - **Counted**: on, unless you say otherwise. Off, the count passes over the
   line, as over the part of a line shared between two speakers that your
   edition does not count: some count the first part, some the last. A line

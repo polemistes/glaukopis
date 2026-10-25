@@ -184,24 +184,35 @@ describe('what a numbering is set on from here', () => {
     expect([again.from, again.now]).toEqual(['12', '12']);
   });
 
-  it('is not parted by the window applied as it stood, the stretch keeping its own beginning', () => {
+  it('applied as it stood, counts on from the middle, and keeps the stretch`s beginning from its start', () => {
     const v = at([
       'text #counted/1 from=1: One',
       'text #counted/1 from=1: Two|',
       'text #counted/1 from=1: Three',
     ]);
     const asked = numberingAsked(v.state)!;
-    // What the window does where the number to count from is the one the line has already: see RichText.svelte.
-    const kept = asked.from === asked.now ? asked.stretch.from : asked.from;
-    numberStretch(paragraphsFromHere(v.state), { ...asked.stretch, from: kept })(
+    // What the window does: see RichText.svelte.
+    const keep = (a: typeof asked) => (a.atStart && a.from === a.now ? a.stretch.from : a.from);
+    expect(asked.atStart).toBe(false);
+    numberStretch(paragraphsFromHere(v.state), { ...asked.stretch, from: keep(asked) })(
       v.state,
       v.dispatch,
     );
+    // From the middle, the second part counts on from the number its first line had.
     expect(shapeOf(v)).toEqual([
       'text #counted/1 from=1: One',
-      'text #counted/1 from=1: Two|',
-      'text #counted/1 from=1: Three',
+      'text #counted/1 from=2: Two|',
+      'text #counted/1 from=2: Three',
     ]);
+    // From the first paragraph, applied as it stood, the stretch is as it was.
+    const w = at(['text #counted/1: {n=3}One|', 'text #counted/1: Two']);
+    const first = numberingAsked(w.state)!;
+    expect(first.atStart).toBe(true);
+    numberStretch(paragraphsFromHere(w.state), { ...first.stretch, from: keep(first) })(
+      w.state,
+      w.dispatch,
+    );
+    expect(shapeOf(w)).toEqual(['text #counted/1: {n=3}One|', 'text #counted/1: Two']);
   });
 });
 

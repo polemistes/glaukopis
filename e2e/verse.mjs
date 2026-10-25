@@ -199,7 +199,7 @@ try {
   );
   check(
     'every line has its place for a number; the speaker is not counted, the count runs across the stanza',
-    numbers === '- 1! 2 - 4 -',
+    numbers === '- - 2 - 4 -',
     numbers,
   );
   const ns = await app.exec(
