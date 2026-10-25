@@ -4,6 +4,7 @@
   import { save } from '@tauri-apps/plugin-dialog';
   import { fileWrite } from '$lib/api/system';
   import { safeFileName } from '$lib/util/file-name';
+  import { testHook } from '$lib/shell/testing';
   import { SvelteMap } from 'svelte/reactivity';
   import Maximize from '@lucide/svelte/icons/maximize';
   import Minimize2 from '@lucide/svelte/icons/minimize-2';
@@ -1001,9 +1002,10 @@
 
   /**
    * Saves the diagram as it stands as SVG or as a PNG image, where the user
-   * chooses, named after the element in view.
+   * chooses, named after the element in view; at `chosen`, where a script
+   * of the e2e harness gives the path the dialog would.
    */
-  async function savePicture(kind: 'svg' | 'png') {
+  async function savePicture(kind: 'svg' | 'png', chosen?: string) {
     if (!viewport) return;
     const name = project.node(at)?.title || t('project-untitled');
     try {
@@ -1020,16 +1022,18 @@
       const fonts = await fontsOf(settings);
       const svg = toSvg(picture, fonts.css);
       const ending = kind;
-      const path = await save({
-        title: t(kind === 'svg' ? 'diagram-save-svg-title' : 'diagram-save-image-title'),
-        defaultPath: `${safeFileName(name, t('project-untitled'))}.${ending}`,
-        filters: [
-          {
-            name: t(kind === 'svg' ? 'diagram-file-svg' : 'diagram-file-png'),
-            extensions: [ending],
-          },
-        ],
-      });
+      const path =
+        chosen ??
+        (await save({
+          title: t(kind === 'svg' ? 'diagram-save-svg-title' : 'diagram-save-image-title'),
+          defaultPath: `${safeFileName(name, t('project-untitled'))}.${ending}`,
+          filters: [
+            {
+              name: t(kind === 'svg' ? 'diagram-file-svg' : 'diagram-file-png'),
+              extensions: [ending],
+            },
+          ],
+        }));
       if (!path) return;
       const target = path.toLowerCase().endsWith(`.${ending}`) ? path : `${path}.${ending}`;
       const file = target.split(/[\\/]/).pop() ?? target;
@@ -1051,6 +1055,10 @@
       picturing = false;
     }
   }
+
+  testHook('__glaukopisPicture', {
+    save: (kind: 'svg' | 'png', path: string) => savePicture(kind, path),
+  });
 
   function oncontextmenu(event: MouseEvent) {
     if (menuByKey) {

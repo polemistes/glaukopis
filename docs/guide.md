@@ -191,6 +191,14 @@ whole one, with the words of a draft or of what is done. The foot of the
 diagram then says how far the map has come, as *2 done · 3 drafts · 1 idea ·
 4,210 words written*, and the foot of the text says it too.
 
+**The diagram as a picture.** **Save the diagram as SVG…** and **Save the
+diagram as an image…**, in the menu of the background, write the map as it
+stands: folded as it is folded, in the colours of your theme, named after
+the element in view. What belongs to working on the map is left out: what
+is selected, the buttons, the others who are there and the comments. The
+SVG keeps the names as text, to be found and copied, and carries its fonts
+with it. The image is a PNG at twice the size of the map on the screen.
+
 ## The text
 
 **Ctrl+D** turns between the diagram and the text. In the text, the element
