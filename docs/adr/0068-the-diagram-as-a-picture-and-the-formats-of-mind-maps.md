@@ -92,3 +92,17 @@ Built as decided, in `src/lib/project/diagram/picture.ts` and `fonts.ts`, with t
 - **Size**: a map with Latin and Greek names carries five faces of the fonts, about 250 KB; a Latin one about half that.
 - **Other programs**: the file is valid XML, and librsvg draws it in its own fonts, since it reads none put into a file; every word stays inside its box.
 - The two items are disabled while a name is written or something is dragged.
+
+## Addendum, 2026-10-26: as built — the formats of mind maps
+
+Built as decided, by an agent in a worktree, merged as 8f499747: `src/lib/mindmaps/` (the readers and writers over `Portable`, the text to and from HTML on the text view's writer), `home/mindmap-file.ts`, the commands `file_read`, `zip_read` and `zip_write`, *Open a mind map…* in the *+* and on the welcome screen, *Save as a mind map…* in the project's menu, a map dropped on the start screen, and the guide's *Your project as a mind map*. What was settled in the building:
+
+- **The side of a first-level element is written and not read back**: sides are not kept in a project, and the layout balances them itself.
+- **The names *Kind*, *Time* and *Left out*** of the attributes and labels are English in every language, so that a file reads the same everywhere.
+- **A time** is written as `1814` or `1814 – 1905`; one that says more is written as the project's own record, so that it reads back; one that cannot be read is counted as left out.
+- **Statuses and kinds on reading**: the furthest status of any icon or marker wins, the others counted; XMind's first plain label is the kind, further ones counted; a kind's colour is the nearest of the kinds' colours to Freeplane's edge colour, else the next free.
+- **Freeplane's details** are read into the text before the note; a name FreeMind kept as HTML is read with its marks; the middle topic's text becomes the project's own text.
+- **In a note**, citations become their words, footnotes square brackets, a figure its caption (the picture counted), a cross-reference is dropped and counted.
+- **What was left out** is said in lines under the opened or saved message, one per kind of thing with its count.
+- **A map dropped on an open project** goes to the library as any file does; only the start screen makes a project of it.
+- **The save dialog cannot be answered off-screen**: the e2e script checks the menus and acts through a hook, as the Org and picture scripts do.
