@@ -1,4 +1,5 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use tauri::ipc::Request;
 use tauri::{AppHandle, State};
 use tauri_plugin_opener::OpenerExt;
 
@@ -113,6 +114,21 @@ pub fn reveal_path(app: AppHandle, path: String) -> CommandResult<()> {
     app.opener()
         .reveal_item_in_dir(std::path::Path::new(&path))
         .map_err(|e| CommandError { kind: "open", message: e.to_string() })
+}
+
+/// Where bytes the page has made are written: a path the user chose.
+#[derive(Deserialize)]
+struct WriteHead {
+    path: String,
+}
+
+/// Writes bytes the page has made, a picture of the diagram, to a path the
+/// user chose, as `with_head` reads them: never half a file, and what went
+/// wrong said.
+#[tauri::command(async)]
+pub fn file_write(request: Request<'_>) -> CommandResult<()> {
+    let (head, bytes) = super::projects::with_head::<WriteHead>(&request)?;
+    Ok(glaukopis_core::fsutil::write_atomic(std::path::Path::new(&head.path), &bytes)?)
 }
 
 /// What went wrong in the page, for the log of the run: a warning or an

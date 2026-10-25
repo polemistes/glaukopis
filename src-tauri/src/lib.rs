@@ -109,6 +109,7 @@ pub fn run() {
             commands::system::languages,
             commands::system::language_set,
             commands::system::reveal_path,
+            commands::system::file_write,
             commands::system::log_page,
             commands::notices::notices_take,
             commands::clipboard::clipboard_read,

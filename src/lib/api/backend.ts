@@ -51,3 +51,13 @@ export async function call<T>(
   }
   return invoke<T>(command, args);
 }
+
+/** Bytes, with what they are said to be before them, as `with_head` in `commands/projects.rs` reads them. */
+export function withHead(head: Record<string, unknown>, bytes: Uint8Array): Uint8Array {
+  const said = new TextEncoder().encode(JSON.stringify(head));
+  const out = new Uint8Array(4 + said.length + bytes.length);
+  new DataView(out.buffer).setUint32(0, said.length, true);
+  out.set(said, 4);
+  out.set(bytes, 4 + said.length);
+  return out;
+}

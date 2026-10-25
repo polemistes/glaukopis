@@ -1,6 +1,6 @@
 /** Projects on disk. Mirrors `src-tauri/src/commands/projects.rs`. */
 
-import { call } from './backend';
+import { call, withHead } from './backend';
 import type { Certainty, Person, Reason, Reference, SummaryLite } from './library';
 
 export interface MapInfo {
@@ -122,16 +122,6 @@ export async function projectLoad(id: string): Promise<LoadedProject> {
   const state = part();
   const updates = Array.from({ length: number() }, part);
   return { info, state: state.length ? state : null, updates };
-}
-
-/** Bytes, with what they are said to be before them, as `with_head` in `commands/projects.rs` reads them. */
-function withHead(head: Record<string, unknown>, bytes: Uint8Array): Uint8Array {
-  const said = new TextEncoder().encode(JSON.stringify(head));
-  const out = new Uint8Array(4 + said.length + bytes.length);
-  new DataView(out.buffer).setUint32(0, said.length, true);
-  out.set(said, 4);
-  out.set(bytes, 4 + said.length);
-  return out;
 }
 
 /** A batch of changes: made here or received from another, and when, in milliseconds since 1970. */

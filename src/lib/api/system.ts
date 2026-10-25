@@ -1,4 +1,4 @@
-import { call } from './backend';
+import { call, withHead } from './backend';
 import type { Layout } from './ocr';
 import type { Arrangement } from '$lib/project/sides.svelte';
 
@@ -37,6 +37,9 @@ export const languageSet = (tag: string) => call<void>('language_set', { tag });
  * by `attachmentReveal`, with its stored path.
  */
 export const revealPath = (path: string) => call<void>('reveal_path', { path });
+/** Writes bytes the page has made to a path the user chose, whole or not at all. */
+export const fileWrite = (path: string, bytes: Uint8Array) =>
+  call<void>('file_write', withHead({ path }, bytes));
 
 export type Theme = 'system' | 'light' | 'dark' | 'mellow' | 'own';
 
