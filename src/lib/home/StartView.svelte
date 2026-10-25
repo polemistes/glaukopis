@@ -3,13 +3,14 @@
    * The start screen (ADR 0063), shown beside the list while no project is
    * open: the owl, a button for a new project, and the projects last opened,
    * newest first, each opened with a click. With no project at all, the
-   * welcome and the ways to begin. A document dropped on it becomes a
-   * project of its own.
+   * welcome and the ways to begin. A document or a mind map of another
+   * program dropped on it becomes a project of its own.
    */
   import { onMount } from 'svelte';
   import FileInput from '@lucide/svelte/icons/file-input';
   import FileText from '@lucide/svelte/icons/file-text';
   import FolderOpen from '@lucide/svelte/icons/folder-open';
+  import Network from '@lucide/svelte/icons/network';
   import Plus from '@lucide/svelte/icons/plus';
   import Users from '@lucide/svelte/icons/users';
   import type { ProjectInfo } from '$lib/api/projects';
@@ -24,7 +25,7 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import { ago } from '$lib/util/time';
   import ProjectBadge from './ProjectBadge.svelte';
-  import { ProjectActions, written } from './project-actions.svelte';
+  import { droppedAsProject, ProjectActions } from './project-actions.svelte';
   import ProjectActionsHost from './ProjectActionsHost.svelte';
 
   /** How many of the projects last opened are shown. */
@@ -59,8 +60,8 @@
   class="start"
   data-start
   use:dropTarget={{
-    accepts: (p) => p.kind === 'files' && (p.data as string[]).some(written),
-    ondrop: (e) => void actions.fromDocument((e.payload.data as string[]).find(written)),
+    accepts: (p) => p.kind === 'files' && (p.data as string[]).some(droppedAsProject),
+    ondrop: (e) => void actions.fromDocument((e.payload.data as string[]).find(droppedAsProject)),
   }}
 >
   {#if !projects.loaded}
@@ -100,6 +101,15 @@
         >
           {#snippet icon()}<FileText size={15} />{/snippet}
           {t('home-org-open')}
+        </Button>
+        <Button
+          variant="secondary"
+          size="md"
+          disabled={actions.filing}
+          onclick={() => void actions.openMindMap()}
+        >
+          {#snippet icon()}<Network size={15} />{/snippet}
+          {t('home-mindmap-open')}
         </Button>
       </div>
     </div>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<xmap-content xmlns="urn:xmind:xmap:xmlns:content:2.0" xmlns:fo="http://www.w3.org/1999/XSL/Format" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xlink="http://www.w3.org/1999/xlink" modified-by="someone" timestamp="1500000000000" version="2.0">
+  <sheet id="s1" modified-by="someone" timestamp="1500000000000">
+    <topic id="root" modified-by="someone" structure-class="org.xmind.ui.logic.right" timestamp="1500000000000">
+      <title>Aeneid</title>
+      <children>
+        <topics type="attached">
+          <topic id="troy" timestamp="1500000000000">
+            <title>The fall of Troy</title>
+            <notes>
+              <html><xhtml:p>The <xhtml:span style="font-style:italic">horse</xhtml:span> is brought in.</xhtml:p><xhtml:p>Laocoön warns.</xhtml:p></html>
+              <plain>The horse is brought in.
+Laocoön warns.</plain>
+            </notes>
+            <marker-refs>
+              <marker-ref marker-id="task-half"/>
+              <marker-ref marker-id="flag-red"/>
+            </marker-refs>
+            <labels>
+              <label>Book</label>
+            </labels>
+          </topic>
+          <topic id="carthage" branch="folded" xlink:href="https://example.org/carthage">
+            <title>Carthage</title>
+            <children>
+              <topics type="attached">
+                <topic id="dido">
+                  <title>Dido</title>
+                  <marker-refs><marker-ref marker-id="task-done"/></marker-refs>
+                </topic>
+              </topics>
+            </children>
+          </topic>
+        </topics>
+        <topics type="detached">
+          <topic id="fate">
+            <title>Fate</title>
+          </topic>
+        </topics>
+      </children>
+    </topic>
+    <relationships>
+      <relationship end1="dido" end2="troy" id="rel1">
+        <title>remembers</title>
+      </relationship>
+    </relationships>
+    <title>Sheet 1</title>
+  </sheet>
+</xmap-content>

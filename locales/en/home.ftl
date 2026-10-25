@@ -249,3 +249,70 @@ home-delete-many-confirm = Delete projects
 
 ## Stage 3 of the sides, the panes and the bars (agent "bars")
 home-share = Share…
+
+## Mind maps of other programs: Freeplane, FreeMind and XMind opened as projects, and projects saved as them and as OPML (agent "mindmaps")
+home-mindmap-open = Open a mind map…
+home-mindmap-open-title = Open a mind map
+home-mindmap-filter = Mind map (Freeplane, FreeMind, XMind)
+home-mindmap-open-failed = The mind map could not be opened
+home-menu-save-mindmap = Save as a mind map…
+home-mindmap-save-title = Save the project as a mind map
+home-mindmap-filter-freeplane = Freeplane and FreeMind
+home-mindmap-filter-xmind = XMind
+home-mindmap-filter-opml = OPML
+home-mindmap-saved = “{ $name }” was saved as a mind map
+home-mindmap-save-failed = The project could not be saved as a mind map
+home-mindmap-not-a-map = “{ $name }” is not a mind map of Freeplane, FreeMind or XMind.
+# Said over the lines below, after a mind map was opened.
+home-mindmap-left-out = Some of what the mind map holds has no place in a project, and was left out:
+# Said over the lines below, after a project was saved as a mind map.
+home-mindmap-left-out-saving = Some of what the project holds has no place in a mind map, and was left out:
+home-mindmap-left-out-images = { $count ->
+    [one] One image
+   *[other] { $count } images
+}
+home-mindmap-left-out-pictures = { $count ->
+    [one] One picture in a text; its caption was kept
+   *[other] { $count } pictures in texts; their captions were kept
+}
+home-mindmap-left-out-clouds = { $count ->
+    [one] One cloud
+   *[other] { $count } clouds
+}
+home-mindmap-left-out-summaries = { $count ->
+    [one] One summary
+   *[other] { $count } summaries
+}
+home-mindmap-left-out-boundaries = { $count ->
+    [one] One boundary
+   *[other] { $count } boundaries
+}
+home-mindmap-left-out-hyperlinks = { $count ->
+    [one] One link to a web page or a file
+   *[other] { $count } links to web pages or files
+}
+home-mindmap-left-out-icons = { $count ->
+    [one] One icon or marker that Glaukopis does not know
+   *[other] { $count } icons or markers that Glaukopis does not know
+}
+# "Kind", "Time" and "Left out" are the names of the attributes Glaukopis reads and writes, in every language.
+home-mindmap-left-out-attributes = { $count ->
+    [one] One attribute other than Kind, Time and Left out
+   *[other] { $count } attributes other than Kind, Time and Left out
+}
+home-mindmap-left-out-labels = { $count ->
+    [one] One label after the first, which became the kind
+   *[other] { $count } labels after the first, which became the kind
+}
+home-mindmap-left-out-times = { $count ->
+    [one] One time that could not be read
+   *[other] { $count } times that could not be read
+}
+home-mindmap-left-out-associations = { $count ->
+    [one] One association to a topic that is not there
+   *[other] { $count } associations to topics that are not there
+}
+home-mindmap-left-out-references = { $count ->
+    [one] One reference to a figure or a part, which has nothing to point to there
+   *[other] { $count } references to figures or parts, which have nothing to point to there
+}

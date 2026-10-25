@@ -167,6 +167,7 @@ describe('what is done with a project from a list of them', () => {
       t('home-menu-history'),
       t('home-menu-save-file'),
       t('home-menu-save-org'),
+      t('home-menu-save-mindmap'),
       '—',
       t('home-menu-move'),
       '—',
@@ -207,7 +208,7 @@ describe('what is done with a project from a list of them', () => {
     const share = vi.fn();
     const sharing = actions.items(p, { shown: ['p'], share });
     const at = labels(sharing).indexOf(t('home-share'));
-    expect(labels(sharing)[at - 1]).toBe(t('home-menu-save-org'));
+    expect(labels(sharing)[at - 1]).toBe(t('home-menu-save-mindmap'));
     item(sharing, t('home-share')).action();
     expect(share).toHaveBeenCalledWith('p');
     expect(labels(menu)).not.toContain(t('home-share'));

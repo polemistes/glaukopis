@@ -32,6 +32,9 @@ io-backing-up = kunne ikke ta sikkerhetskopi av { $path }
 io-setting-aside = kunne ikke legge { $path } til side
 io-storing = kunne ikke lagre { $path }
 io-no-directory = { $path } ligger ikke i noen mappe
+# $most er i megabyte.
+io-too-large = { $path } er større enn { $most } MB, som er det meste som leses
+io-not-an-archive = { $path } er ikke et zip-arkiv: { $error }
 
 ## En av programmets egne filer som ikke kunne leses: den legges til side,
 ## under sitt navn med tiden lagt til, og programmet fortsetter uten den.

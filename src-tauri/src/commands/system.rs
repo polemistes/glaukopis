@@ -1,9 +1,13 @@
+use std::io::{Read, Write};
+use std::path::Path;
+
 use serde::{Deserialize, Serialize};
-use tauri::ipc::Request;
+use tauri::ipc::{Request, Response};
 use tauri::{AppHandle, State};
 use tauri_plugin_opener::OpenerExt;
 
-use glaukopis_core::i18n;
+use glaukopis_core::error::{Error, IoContext};
+use glaukopis_core::{i18n, tr};
 
 use crate::error::{CommandError, CommandResult};
 use crate::state::AppState;
@@ -129,6 +133,88 @@ struct WriteHead {
 pub fn file_write(request: Request<'_>) -> CommandResult<()> {
     let (head, bytes) = super::projects::with_head::<WriteHead>(&request)?;
     Ok(glaukopis_core::fsutil::write_atomic(std::path::Path::new(&head.path), &bytes)?)
+}
+
+/// The most a file read for the page may hold: as much as a document brought in.
+const MOST_READ: u64 = 50 * 1024 * 1024;
+
+/// The most a zip archive read for the page may hold, and each text in it.
+const MOST_ARCHIVE: u64 = 200 * 1024 * 1024;
+const MOST_ENTRY: u64 = 50 * 1024 * 1024;
+
+/// Reads at most `most` bytes from `from`, saying of `path` that it is too large where there are more.
+fn read_bounded(from: impl Read, most: u64, path: &Path) -> glaukopis_core::Result<Vec<u8>> {
+    let mut bytes = Vec::new();
+    from.take(most + 1).read_to_end(&mut bytes).context(|| tr!("io-reading", path = path))?;
+    if bytes.len() as u64 > most {
+        return Err(Error::invalid(tr!("io-too-large", path = path, most = most / (1024 * 1024))));
+    }
+    Ok(bytes)
+}
+
+/// Reads a file the user chose, for the page to read: a mind map, say. No
+/// more than 50 MB of it, and what went wrong said.
+#[tauri::command(async)]
+pub fn file_read(path: String) -> CommandResult<Response> {
+    let path = Path::new(&path);
+    let file = std::fs::File::open(path).context(|| tr!("io-opening", path = path))?;
+    Ok(Response::new(read_bounded(file, MOST_READ, path)?))
+}
+
+/// A text kept in a zip archive, by its name there.
+#[derive(Serialize, Deserialize)]
+pub struct ZipEntry {
+    pub name: String,
+    pub text: String,
+}
+
+/// Whether an entry of an archive is a text the page reads: JSON or XML.
+fn is_text_entry(name: &str) -> bool {
+    let name = name.to_ascii_lowercase();
+    name.ends_with(".json") || name.ends_with(".xml")
+}
+
+/// Reads the texts of a zip archive the user chose, the JSON and the XML
+/// in it, for the page to read: an XMind file. The rest, pictures say, is
+/// not read. No more than 200 MB of archive, and 50 MB of each text.
+#[tauri::command(async)]
+pub fn zip_read(path: String) -> CommandResult<Vec<ZipEntry>> {
+    let path = Path::new(&path);
+    let file = std::fs::File::open(path).context(|| tr!("io-opening", path = path))?;
+    let size = file.metadata().context(|| tr!("io-reading", path = path))?.len();
+    if size > MOST_ARCHIVE {
+        return Err(Error::invalid(tr!("io-too-large", path = path, most = MOST_ARCHIVE / (1024 * 1024))).into());
+    }
+    let not_one =
+        |e: zip::result::ZipError| Error::invalid(tr!("io-not-an-archive", path = path, error = e.to_string()));
+    let mut archive = zip::ZipArchive::new(std::io::BufReader::new(file)).map_err(not_one)?;
+    let mut entries = Vec::new();
+    for i in 0..archive.len() {
+        let entry = archive.by_index(i).map_err(not_one)?;
+        if !entry.is_file() || !is_text_entry(entry.name()) {
+            continue;
+        }
+        let name = entry.name().to_owned();
+        let bytes = read_bounded(entry, MOST_ENTRY, &path.join(&name))?;
+        entries.push(ZipEntry { name, text: String::from_utf8_lossy(&bytes).into_owned() });
+    }
+    Ok(entries)
+}
+
+/// Writes texts the page has made as a zip archive at a path the user
+/// chose, each packed: an XMind file. Never half a file.
+#[tauri::command(async)]
+pub fn zip_write(path: String, entries: Vec<ZipEntry>) -> CommandResult<()> {
+    let path = Path::new(&path);
+    let failed = |e: zip::result::ZipError| Error::invalid(format!("{}: {e}", tr!("io-writing", path = path)));
+    let mut zip = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
+    let packed = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    for entry in &entries {
+        zip.start_file(entry.name.as_str(), packed).map_err(failed)?;
+        zip.write_all(entry.text.as_bytes()).context(|| tr!("io-writing", path = path))?;
+    }
+    let bytes = zip.finish().map_err(failed)?.into_inner();
+    Ok(glaukopis_core::fsutil::write_atomic(path, &bytes)?)
 }
 
 /// What went wrong in the page, for the log of the run: a warning or an

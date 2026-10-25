@@ -100,8 +100,12 @@ const escapeText = (s: string) =>
 export const escapeAttr = (s: string) =>
   escapeText(s).replace(/"/g, '&quot;').replace(/\n/g, '&#10;').replace(/\t/g, '&#9;');
 
-/** HTML as XML: every element closed, nothing but the five signs escaped. */
-export function serialise(node: Node): string {
+/**
+ * HTML as XML: every element closed, nothing but the five signs escaped;
+ * each element's name with `prefix` before it, where the XML wants one
+ * (`xhtml:`, in the file of XMind 8).
+ */
+export function serialise(node: Node, prefix = ''): string {
   if (node.nodeType === 3) return escapeText(node.nodeValue ?? '');
   if (node.nodeType !== 1) return '';
   const el = node as Element;
@@ -111,11 +115,13 @@ export function serialise(node: Node): string {
     const value = el.getAttribute(a);
     if (value) attrs += ` ${a}="${escapeAttr(value)}"`;
   }
-  if (EMPTY.has(name)) return `<${name}${attrs}/>`;
-  return `<${name}${attrs}>${children(el)}</${name}>`;
+  if (EMPTY.has(name)) return `<${prefix}${name}${attrs}/>`;
+  return `<${prefix}${name}${attrs}>${children(el, prefix)}</${prefix}${name}>`;
 }
 
-const children = (el: Node) => [...el.childNodes].map(serialise).join('');
+/** What an element holds, as `serialise` writes it. */
+export const children = (el: Node, prefix = '') =>
+  [...el.childNodes].map((n) => serialise(n, prefix)).join('');
 
 /** Puts an element's children where it stood. */
 function unwrap(el: Element) {

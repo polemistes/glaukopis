@@ -3532,6 +3532,11 @@ export const settingsLoaded: system.SettingsLoaded = {
   }
 };
 
+export const zipEntry: system.ZipEntry = {
+  "name": "content.json",
+  "text": "[]"
+};
+
 export const pasted: clipboard.Pasted = {
   "html": null,
   "pictures": [
