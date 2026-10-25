@@ -461,6 +461,15 @@ export class ProjectActions {
       ],
     });
     if (!path) return;
+    await this.saveMindMapAt(p, path, here);
+  }
+
+  /**
+   * Saves a project as a mind map at `path`, of the kind its ending says,
+   * Freeplane's where it says none of theirs, and says what had no place.
+   */
+  async saveMindMapAt(p: ProjectInfo, path: string, here = false) {
+    if (this.filing) return;
     // Not every system adds the ending to a name written without it.
     const end = MINDMAP_ENDINGS[kindOfPath(path)];
     const target = path.toLowerCase().endsWith(`.${end}`) ? path : `${path}.${end}`;

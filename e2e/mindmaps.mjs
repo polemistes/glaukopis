@@ -7,8 +7,9 @@
 // opened, saved and opened again; and a project saved as OPML is brought
 // in as a document, its names as elements and its notes as their text.
 //
-// The dialogs that choose a file are answered from the page: the call to
-// the dialog plugin is answered with a path given here, the rest go on.
+// The dialogs that choose a file cannot be answered off-screen: the items
+// are found in their menus, and what they do with a path is done through
+// the page's own hook.
 
 import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -41,21 +42,11 @@ try {
   await app.installErrorHook();
   await app.waitFor('[data-start]', 15000);
 
-  /** Answers the next dialog that opens or saves a file with `path`, in the page. */
-  const answer = (path) =>
-    app.exec(
-      `const internals = window.__TAURI_INTERNALS__;
-       if (!internals.__answered) {
-         const real = internals.invoke.bind(internals);
-         internals.__answered = true;
-         internals.invoke = (cmd, args, options) =>
-           (cmd === 'plugin:dialog|open' || cmd === 'plugin:dialog|save') && window.__answer !== undefined
-             ? Promise.resolve(window.__answer)
-             : real(cmd, args, options);
-       }
-       window.__answer = arguments[0];`,
-      path,
-    );
+  // The dialogs that choose a file cannot be answered off-screen: what the
+  // items do once a path is chosen is done through the page's own hook.
+  const openAt = (path) => app.exec(`void window.__glaukopisMindMaps.open(arguments[0])`, path);
+  const saveAt = (name, path) =>
+    app.execAsync(`await window.__glaukopisMindMaps.save(arguments[0], arguments[1])`, name, path);
   const plusMenu = async (item) => {
     if (!(await app.exists('[data-projects-pane]'))) {
       await app.click('[data-projects-button]');
@@ -64,7 +55,13 @@ try {
     await app.click('[data-projects-new]');
     await app.waitFor('.menu');
     await sleep(150);
-    await app.clickText('.menu [role="menuitem"]', item);
+    const offered = await app.exec(
+      `return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).some((m) => m.textContent.includes(arguments[0]))`,
+      item,
+    );
+    await app.press('Escape');
+    await sleep(150);
+    return offered;
   };
   const toasts = () =>
     app.exec(`return Array.from(document.querySelectorAll('.toast')).map((t) => t.innerText.replace(/\\s+/g, ' ').trim())`);
@@ -78,7 +75,7 @@ try {
       `return Array.from(document.querySelectorAll('${LIST} .row.project')).find((r) => r.querySelector('.name')?.textContent.trim() === arguments[0]) ?? null`,
       name,
     );
-  /** Opens the project of that name's menu in the list, and chooses in it. */
+  /** Whether the menu of the project of that name, in the list, offers the item. */
   const projectMenu = async (name, item) => {
     if (!(await app.exists('[data-projects-pane]'))) {
       await app.click('[data-projects-button]');
@@ -88,7 +85,13 @@ try {
     await app.rightClick(row);
     await app.waitFor('.menu');
     await sleep(150);
-    await app.clickText('.menu [role="menuitem"]', item);
+    const offered = await app.exec(
+      `return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).some((m) => m.textContent.includes(arguments[0]))`,
+      item,
+    );
+    await app.press('Escape');
+    await sleep(150);
+    return offered;
   };
   /** Waits for a project of that name to be open in the diagram, and for its boxes. */
   const opened = async (name) => {
@@ -99,8 +102,8 @@ try {
   };
 
   // --- A map of Freeplane opened ---
-  await answer(join(desk, 'odyssey.mm'));
-  await plusMenu('Open a mind map…');
+  check('the plus at the head of the list offers to open a mind map', await plusMenu('Open a mind map…'));
+  await openAt(join(desk, 'odyssey.mm'));
   await opened('The Odyssey');
   const names = await diagramNames();
   check(
@@ -129,8 +132,8 @@ try {
 
   // --- Saved as a map of Freeplane, and opened again ---
   const written = join(desk, 'again.mm');
-  await answer(written);
-  await projectMenu('The Odyssey', 'Save as a mind map…');
+  check('the project’s menu offers to save it as a mind map', await projectMenu('The Odyssey', 'Save as a mind map…'));
+  await saveAt('The Odyssey', written);
   await until('the map written', () => existsSync(written));
   await sleep(300);
   const xml = readFileSync(written, 'utf8');
@@ -143,8 +146,7 @@ try {
   );
   check('with the kind, the status and the note', xml.includes('NAME="Kind" VALUE="Part"') && xml.includes('BUILTIN="button_ok"') && xml.includes('TYPE="NOTE"'));
   const before = await diagramNames();
-  await answer(written);
-  await plusMenu('Open a mind map…');
+  await openAt(written);
   await opened('The Odyssey (2)');
   const after = await diagramNames();
   const plain = (list) => list.filter((n) => !/^The Odyssey/.test(n)).sort().join('|');
@@ -158,8 +160,7 @@ try {
     xmindFile,
     readFileSync(join(fixtures, 'content.json'), 'utf8'),
   );
-  await answer(xmindFile);
-  await plusMenu('Open a mind map…');
+  await openAt(xmindFile);
   await opened('iliad');
   const xnames = await diagramNames();
   check('the file of XMind opens, a sheet an element each', ['iliad', 'Iliad', 'Notes'].every((n) => xnames.includes(n)), xnames.join(' | '));
@@ -170,8 +171,7 @@ try {
   );
   await app.screenshot('mindmaps-3-xmind');
   const xmindAgain = join(desk, 'iliad-again.xmind');
-  await answer(xmindAgain);
-  await projectMenu('iliad', 'Save as a mind map…');
+  await saveAt('iliad', xmindAgain);
   await until('the file of XMind written', () => existsSync(xmindAgain));
   await sleep(300);
   const entries = await app.execAsync(`return await window.__TAURI_INTERNALS__.invoke('zip_read', { path: arguments[0] })`, xmindAgain);
@@ -183,8 +183,7 @@ try {
   );
   const content = JSON.parse(entries.find((e) => e.name === 'content.json').text);
   check('its sheet has the topics and the relationship with its words', content[0].rootTopic.children.attached.length === 2 && content[0].relationships?.[0]?.title === 'kills');
-  await answer(xmindAgain);
-  await plusMenu('Open a mind map…');
+  await openAt(xmindAgain);
   await opened('iliad (2)');
   const xagain = await diagramNames();
   check(
@@ -195,22 +194,21 @@ try {
 
   // --- Saved as OPML, and brought in as a document ---
   const opml = join(desk, 'odyssey.opml');
-  await answer(opml);
-  await projectMenu('The Odyssey', 'Save as a mind map…');
+  await saveAt('The Odyssey', opml);
   await until('the OPML written', () => existsSync(opml));
   await sleep(300);
   const outline = readFileSync(opml, 'utf8');
   check('the OPML has an outline to each element, the notes in _note', (outline.match(/<outline /g) ?? []).length === 8 && /_note="Telemachus goes/.test(outline));
-  await answer(opml);
-  await plusMenu('A project from a document…');
-  // What is brought in may be asked about first.
-  await until('the document brought in', async () => (await app.exists('dialog[open]')) || (await app.exec(`return location.hash.startsWith('#/project/')`)), 20000);
-  if (await app.exists('dialog[open] footer button.primary, dialog[open] footer button')) {
-    const buttons = await app.exec(`return Array.from(document.querySelectorAll('dialog[open] footer button')).map((b) => b.textContent.trim())`);
-    console.log(`      the dialog asks: ${buttons.join(' | ')}`);
-    await app.click(await app.exec(`return document.querySelector('dialog[open] footer button.primary') ?? Array.from(document.querySelectorAll('dialog[open] footer button')).pop()`));
-  }
-  await until('the project of the document', async () => (await app.exec(`return location.hash.startsWith('#/project/')`)) && !(await app.exists('dialog[open]')), 20000);
+  await app.exec(`void window.__glaukopisMindMaps.fromDocument(arguments[0])`, opml);
+  // What is to be made of the document is asked first, as for any document.
+  await app.waitForText('dialog[open] footer button', 'Make the project', 20000);
+  await sleep(300);
+  await app.clickText('dialog[open] footer button', 'Make the project');
+  await until(
+    'the project of the document',
+    async () => !(await app.exists('dialog[open]')) && /^The Odyssey/.test((await app.inView()) ?? ''),
+    30000,
+  );
   await sleep(1500);
   const body = await app.exec(`return document.body.innerText`);
   check('brought in, the names are there, and a note as text', ['Telemachy', 'Athena in disguise'].every((n) => body.includes(n)) && body.includes('Telemachus goes in search'), body.slice(0, 200).replace(/\s+/g, ' '));
@@ -221,6 +219,11 @@ try {
 } catch (error) {
   console.log(`FAIL  the script stopped: ${error.stack ?? error}`);
   checks.push({ name: 'the script ran to the end', ok: false });
+  const said = await app
+    .exec(`return Array.from(document.querySelectorAll('.toast')).map((t) => t.innerText.replace(/\\s+/g, ' ').trim())`)
+    .catch(() => []);
+  console.log(`      the messages shown: ${said.join(' / ') || 'none'}`);
+  console.log(`      the errors of the page: ${(await app.pageErrors().catch(() => [])).join(' | ') || 'none'}`);
   await app.screenshot('mindmaps-failed').catch(() => {});
 } finally {
   await app.close();
