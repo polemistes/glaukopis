@@ -84,18 +84,16 @@ export function readFreeplane(xml: string): { map: MindMap; leftOut: LeftOut } {
   const read = (el: Element, depth: number): Topic => {
     const id = el.getAttribute('ID') || `node-${seen.size + 1}`;
     seen.add(id);
-    let name = plainName(el.getAttribute('TEXT') ?? '');
-    const t = topic(id, name);
+    const words = el.getAttribute('TEXT') ?? '';
+    const asHtml = (html: string) =>
+      nameOfHtml(new DOMParser().parseFromString(html, 'text/html').body);
+    // FreeMind of old kept a name with marks as HTML in its words.
+    const t = topic(id, /^\s*<html/i.test(words) ? asHtml(words) : plainName(words));
     for (const rich of childrenNamed(el, 'richcontent')) {
       const type = (rich.getAttribute('TYPE') ?? '').toUpperCase();
       const said = richHtml(rich);
-      if (type === 'NODE') {
-        if ('html' in said) {
-          const read = new DOMParser().parseFromString(said.html, 'text/html');
-          name = nameOfHtml(read.body);
-        } else name = plainName(said.plain);
-        t.name = name;
-      } else if (type === 'NOTE' || type === 'DETAILS') {
+      if (type === 'NODE') t.name = 'html' in said ? asHtml(said.html) : plainName(said.plain);
+      else if (type === 'NOTE' || type === 'DETAILS') {
         const blocks = 'html' in said ? htmlToBlocks(said.html, left) : plainToBlocks(said.plain);
         // The details stand before the note, as Freeplane shows them.
         t.text = type === 'DETAILS' ? [...blocks, ...t.text] : [...t.text, ...blocks];

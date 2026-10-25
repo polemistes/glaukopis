@@ -163,11 +163,11 @@ try {
   await opened('iliad');
   const xnames = await diagramNames();
   check('the file of XMind opens, a sheet an element each', ['iliad', 'Iliad', 'Notes'].every((n) => xnames.includes(n)), xnames.join(' | '));
-  await app.openMap('Iliad');
-  await app.view('diagram');
-  await sleep(600);
-  const sheet = await diagramNames();
-  check('under a sheet, its topics and the floating one', ['The quarrel', 'The battles', 'The gods'].every((n) => sheet.includes(n)), sheet.join(' | '));
+  check(
+    'under a sheet, its topics and the floating one',
+    ['The quarrel', 'The battles', 'The gods'].every((n) => xnames.includes(n)),
+    xnames.join(' | '),
+  );
   await app.screenshot('mindmaps-3-xmind');
   const xmindAgain = join(desk, 'iliad-again.xmind');
   await answer(xmindAgain);
@@ -186,7 +186,12 @@ try {
   await answer(xmindAgain);
   await plusMenu('Open a mind map…');
   await opened('iliad (2)');
-  check('opened again, the same sheets', ['Iliad', 'Notes'].every((n) => xnames.includes(n)) && (await diagramNames()).includes('Iliad'));
+  const xagain = await diagramNames();
+  check(
+    'opened again, the same names',
+    plain(xnames.filter((n) => n !== 'iliad')) === plain(xagain.filter((n) => n !== 'iliad (2)')),
+    xagain.join(' | '),
+  );
 
   // --- Saved as OPML, and brought in as a document ---
   const opml = join(desk, 'odyssey.opml');

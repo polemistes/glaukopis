@@ -103,8 +103,21 @@ describe('a map of FreeMind', () => {
     const { map, leftOut } = readFreeplane(fixture('freemind.mm'));
     expect(map.name).toBe('Plans & projects');
     const topics = byName(map.root);
-    expect([...topics.keys()]).toEqual(['Plans & projects', 'Garden', 'Roses', 'Beans', 'House']);
+    expect([...topics.keys()]).toEqual([
+      'Plans & projects',
+      'Garden',
+      'Roses',
+      'Beans',
+      'House',
+      'The front door',
+    ]);
     expect(words(topics.get('House')!.text)).toEqual(['Paint the door.']);
+    const door = topics.get('The front door')!;
+    expect(door.name.map((i) => (i.kind === 'text' ? Object.keys(i.marks) : []))).toEqual([
+      [],
+      ['em'],
+      [],
+    ]);
     expect(leftOut).toEqual({});
   });
 
