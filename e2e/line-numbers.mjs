@@ -1,9 +1,10 @@
 // Marks on lines, and reference marks (ADR 0041, ADR 0039, ADR 0067). Ten
 // lines of verse in two stanzas are numbered from 1, every 5 as the layout
 // says, through Line numbering from here: the 1 given is not shown on the
-// page, since it does not fall on every fifth, and stands in parentheses
-// where one writes. Through Numbering of this line, the third is given
-// 1234, also in parentheses until its number is said to be shown always;
+// page, since it does not fall on every fifth, nor where one writes but
+// while the pointer rests on its paragraph. Through Numbering of this line,
+// the third is given 1234, not shown either until its number is said to be
+// shown always;
 // the fifth is not counted; the tenth's number is never shown; the sixth
 // has an annotation; and the seventh is given the label 7a in its place in
 // the margin, which is shown and counted on from. Then a paragraph with
@@ -57,6 +58,37 @@ async function toLine(i) {
   await sleep(200);
 }
 
+/** Presses the right button in the middle of the words of the line of verse given, counted through every paragraph, as a right-click there does. */
+async function rightClickLine(i) {
+  await app.exec(
+    `const lines = [];
+     for (const p of document.querySelectorAll(arguments[0] + ' > p')) {
+       let line = [];
+       lines.push(line);
+       const walker = document.createTreeWalker(p, NodeFilter.SHOW_ALL);
+       let node;
+       while ((node = walker.nextNode())) {
+         if (node.nodeType === 1 && node.classList.contains('hard-break')) lines.push((line = []));
+         if (node.nodeType === 3 && !node.parentElement.closest('.run-line, .line-number, .line-margin')) line.push(node);
+       }
+     }
+     const last = lines[arguments[1]].at(-1);
+     const range = document.createRange();
+     range.selectNodeContents(last);
+     const box = range.getBoundingClientRect();
+     const x = box.left + box.width / 2, y = box.top + box.height / 2;
+     const common = { bubbles: true, cancelable: true, composed: true, clientX: x, clientY: y, screenX: x, screenY: y, view: window };
+     const send = (event) => document.elementFromPoint(x, y)?.dispatchEvent(event);
+     send(new PointerEvent('pointerdown', { ...common, button: 2, buttons: 2, pointerType: 'mouse', isPrimary: true }));
+     send(new MouseEvent('mousedown', { ...common, button: 2, buttons: 2 }));
+     send(new MouseEvent('contextmenu', { ...common, button: 2, buttons: 2 }));
+     send(new PointerEvent('pointerup', { ...common, button: 2, buttons: 0, pointerType: 'mouse', isPrimary: true }));
+     send(new MouseEvent('mouseup', { ...common, button: 2, buttons: 0 }));`,
+    prose,
+    i,
+  );
+}
+
 /** Writes into a field of the dialog that is open, in place of what it holds. */
 async function fill(selector, words) {
   await app.exec(`const i = document.querySelector(arguments[0]); i.focus(); i.select();`, selector);
@@ -97,11 +129,11 @@ async function apply() {
   await sleep(300);
 }
 
-/** The numbers the lines show in the margin, line by line: "-" where none, "!" where given by hand, "(n)" where held back. */
+/** The numbers the lines show in the margin, line by line: "-" where none, "!" where given by hand, "(n)" where held back, "[n]" where given and not on the page. */
 const shownNumbers = () =>
   app.exec(
     `return Array.from(document.querySelectorAll(arguments[0] + ' > p span.line-number')).map((w) =>
-       w.classList.contains('blank') ? '-' : 'held' in w.dataset ? '(' + w.dataset.label + ')' : w.dataset.label + ('given' in w.dataset ? '!' : '')).join(' ')`,
+       w.classList.contains('blank') ? '-' : 'held' in w.dataset ? '(' + w.dataset.label + ')' : 'unprinted' in w.dataset ? '[' + w.dataset.label + ']' : w.dataset.label + ('given' in w.dataset ? '!' : '')).join(' ')`,
     prose,
   );
 
@@ -168,7 +200,7 @@ try {
     (await app.exec(`return Array.from(document.querySelectorAll(arguments[0] + ' > p[data-kind="line"]')).map((p) => p.querySelectorAll('.hard-break').length + 1).join(',')`, prose)) === '5,5',
   );
 
-  // --- Numbered, every 5 as the layout says, from 1: the 1 given stands in parentheses, the page showing none ---
+  // --- Numbered, every 5 as the layout says, from 1: the 1 given is not shown, on the page nor where one writes ---
   await toLine(0);
   await numberingWindow();
   await chooseIn('data-numbering', 'counted');
@@ -180,7 +212,7 @@ try {
   await apply();
   check(
     'the lines are numbered from 1 every 5, across the stanzas; the 1 given is not shown on the page',
-    (await shownNumbers()) === '(1) - - - 5 - - - - 10',
+    (await shownNumbers()) === '[1] - - - 5 - - - - 10',
     await shownNumbers(),
   );
 
@@ -195,8 +227,8 @@ try {
   await fill('dialog[open] input[data-line-number]', '1234');
   await apply();
   check(
-    'a number given by hand that does not fall on every fifth stands in parentheses, and the count goes on from it',
-    (await shownNumbers()) === '(1) - (1234) 1235 - - - - 1240 -',
+    'a number given by hand that does not fall on every fifth is not shown, and the count goes on from it',
+    (await shownNumbers()) === '[1] - [1234] 1235 - - - - 1240 -',
     await shownNumbers(),
   );
   await lineWindow();
@@ -204,9 +236,26 @@ try {
   await apply();
   check(
     'said to be shown always, it is shown',
-    (await shownNumbers()) === '(1) - 1234! 1235 - - - - 1240 -',
+    (await shownNumbers()) === '[1] - 1234! 1235 - - - - 1240 -',
     await shownNumbers(),
   );
+
+  // --- A right press on a later line of the paragraph speaks of that line, the cursor going there ---
+  await toLine(0);
+  await rightClickLine(3);
+  await app.waitFor('.menu', 3000);
+  await sleep(150);
+  await app.clickText('.menu [role="menuitem"]', 'Numbering of this line…');
+  await app.waitForText('dialog[open] h2', 'Numbering of this line', 3000);
+  await sleep(200);
+  check(
+    'the window opened by a right press on the fourth line of the paragraph is of that line, though the cursor stood on the first',
+    (await app.exec(`return document.querySelector('dialog[open] .words')?.textContent ?? ''`)) ===
+      'nor the pine been felled',
+    await app.exec(`return document.querySelector('dialog[open] .words')?.textContent ?? ''`),
+  );
+  await app.clickText('dialog[open] footer button', 'Cancel');
+  await app.waitGone('dialog[open]', 3000);
 
   // --- The fifth line is not counted ---
   await toLine(4);
@@ -217,7 +266,7 @@ try {
   await apply();
   check(
     'a line not counted is passed over by the count',
-    (await shownNumbers()) === '(1) - 1234! 1235 - - - - - 1240',
+    (await shownNumbers()) === '[1] - 1234! 1235 - - - - - 1240',
     await shownNumbers(),
   );
 
@@ -232,7 +281,7 @@ try {
   );
   check(
     'a line whose number is never shown shows it in parentheses',
-    (await shownNumbers()) === '(1) - 1234! 1235 - - - - - (1240)' && held.held && /\(/.test(held.before + held.seen) && /\)/.test(held.after + held.seen),
+    (await shownNumbers()) === '[1] - 1234! 1235 - - - - - (1240)' && held.held && /\(/.test(held.before + held.seen) && /\)/.test(held.after + held.seen),
     `${await shownNumbers()} ${JSON.stringify(held)}`,
   );
 
@@ -274,7 +323,7 @@ try {
   await sleep(300);
   check(
     'Enter gives the line the label, which is shown, and the count goes on from its digits',
-    (await shownNumbers()) === '(1) - 1234! 1235 - - 7a! - - (10)' && !(await app.exists('.line-number.editing')),
+    (await shownNumbers()) === '[1] - 1234! 1235 - - 7a! - - (10)' && !(await app.exists('.line-number.editing')),
     await shownNumbers(),
   );
   const given = await app.exec(

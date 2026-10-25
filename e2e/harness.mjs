@@ -748,10 +748,33 @@ export class App {
       `const s = getSelection();
        if (!s.rangeCount) return null;
        const range = s.getRangeAt(0);
-       const r = range.getClientRects()[0] ?? range.getBoundingClientRect();
-       const node = s.anchorNode.nodeType === 1 ? s.anchorNode : s.anchorNode.parentElement;
-       const p = node.closest('p')?.getBoundingClientRect();
-       return r && r.height ? { x: Math.round(r.left), y: Math.round((r.top + r.bottom) / 2) } : p ? { x: Math.round(p.left + 4), y: Math.round(p.top + 6) } : null;`,
+       const middle = (b) => Math.round((b.top + b.bottom) / 2);
+       // Within what is selected, the press goes on its first line, inside it.
+       if (!range.collapsed) {
+         const r = range.getClientRects()[0] ?? range.getBoundingClientRect();
+         if (r && r.height) return { x: Math.round(r.left + 2), y: middle(r) };
+       }
+       // A cursor: the press goes just after the character before it, or just
+       // before the one after, so that it lands on the cursor's own line. The
+       // selection may stand on the paragraph itself, between its children,
+       // as it does after a window closes: the text beside that place is taken.
+       const drawn = (n) => !!n.parentElement?.closest('.run-line, .line-number, .line-margin, .linemark');
+       const lastText = (n) => { if (!n) return null; if (n.nodeType === 3) return drawn(n) ? null : n; const w = document.createTreeWalker(n, NodeFilter.SHOW_TEXT); let t = null, x; while ((x = w.nextNode())) if (!drawn(x)) t = x; return t; };
+       const firstText = (n) => { if (!n) return null; if (n.nodeType === 3) return drawn(n) ? null : n; const w = document.createTreeWalker(n, NodeFilter.SHOW_TEXT); let x; while ((x = w.nextNode())) if (!drawn(x)) return x; return null; };
+       let node = s.focusNode, offset = s.focusOffset;
+       if (node && node.nodeType !== 3) {
+         const t = lastText(node.childNodes[offset - 1]);
+         if (t) { node = t; offset = t.length; }
+         else { const u = firstText(node.childNodes[offset]); if (u) { node = u; offset = 0; } else node = null; }
+       }
+       if (node && node.length) {
+         const probe = document.createRange();
+         if (offset > 0) { probe.setStart(node, offset - 1); probe.setEnd(node, offset); const b = probe.getBoundingClientRect(); return { x: Math.round(b.right - 1), y: middle(b) }; }
+         probe.setStart(node, 0); probe.setEnd(node, 1); const b = probe.getBoundingClientRect(); return { x: Math.round(b.left + 1), y: middle(b) };
+       }
+       const el = s.anchorNode.nodeType === 1 ? s.anchorNode : s.anchorNode.parentElement;
+       const p = el.closest('p')?.getBoundingClientRect();
+       return p ? { x: Math.round(p.left + 4), y: Math.round(p.top + 6) } : null;`,
     );
     if (!at) throw new Error('no cursor in a text');
     await this.exec(

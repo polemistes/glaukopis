@@ -619,8 +619,10 @@ function editNumber(view: EditorView, getPos: () => number | undefined, el: HTML
  * The number in the margin of a line, as a widget at its start: the
  * label, or an empty place where none is shown, which is seen when the
  * pointer rests on the paragraph; pressing either opens the field for the
- * line's number. A number held back, and one given by hand that the page
- * does not show, are shown in parentheses.
+ * line's number. A number held back is shown in parentheses. A number
+ * given by hand that the page does not show, as the 1 a count every fifth
+ * line begins from, is not shown either, but seen as the empty place is,
+ * while the pointer rests on the paragraph.
  */
 function numberWidget(
   shown: Shown | null,
@@ -628,7 +630,14 @@ function numberWidget(
 ): (view: EditorView, getPos: () => number | undefined) => HTMLElement {
   return (view, getPos) => {
     const el = document.createElement('span');
-    el.className = shown ? (held ? 'line-number held' : 'line-number') : 'line-number blank';
+    const unprinted = !!shown && !held && !shown.printed;
+    el.className = shown
+      ? held
+        ? 'line-number held'
+        : unprinted
+          ? 'line-number unprinted'
+          : 'line-number'
+      : 'line-number blank';
     el.setAttribute('role', 'button');
     el.setAttribute('tabindex', '-1');
     if (shown) {
@@ -636,6 +645,7 @@ function numberWidget(
       el.dataset.label = shown.label;
       if (shown.set) el.dataset.given = '';
       if (held) el.dataset.held = '';
+      if (unprinted) el.dataset.unprinted = '';
     }
     el.title = held && !shown?.set ? t('editor-line-number-held') : t('editor-line-number-press');
     el.addEventListener('mousedown', (event) => {
@@ -680,8 +690,8 @@ function unheld(block: ParagraphBlock): ParagraphBlock {
  * it is edited; on each paragraph of a stretch the side its numbers stand
  * on (`data-numbers`), and on a paragraph whose first line shows a number
  * on the page, that number (`data-n`, and `data-n-set` where it was given
- * by hand). A number given by hand that the page does not show is drawn
- * in parentheses, as one held back is. And the annotations, the words in
+ * by hand). A number given by hand that the page does not show is seen
+ * only while the pointer rests on its paragraph. And the annotations, the words in
  * the margin beside a line, wherever they are said, with `data-margins` on
  * their paragraph and the side they stand on (`data-annotations`): the
  * layout's, else across from the numbers.
@@ -715,12 +725,12 @@ function numbers(doc: Node, own: readonly BasedKind[], layout: NumbersLayout): D
         lines.forEach((line, j) => {
           const hidden = line.mark?.attrs.hidden === true;
           const label = hidden ? (held[i]?.[j] ?? null) : (shown[i]?.[j] ?? null);
-          const inParentheses = !!label && (hidden || !label.printed);
+          const inParentheses = !!label && hidden;
           list.push(
             Decoration.widget(line.start, numberWidget(label, inParentheses), {
               side: -1,
               key: label
-                ? `line-number:${label.label}${label.set ? ':given' : ''}${inParentheses ? ':held' : ''}`
+                ? `line-number:${label.label}${label.set ? ':given' : ''}${inParentheses ? ':held' : ''}${label.printed ? '' : ':unprinted'}`
                 : 'line-number:blank',
               ignoreSelection: true,
               stopEvent: () => true,

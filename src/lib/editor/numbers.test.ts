@@ -54,7 +54,9 @@ function margin(v: EditorView): string[] {
         ? '#'
         : el.classList.contains('held')
           ? `(${(el as HTMLElement).dataset.label})`
-          : `${(el as HTMLElement).dataset.label}${(el as HTMLElement).hasAttribute('data-given') ? '!' : ''}`,
+          : el.classList.contains('unprinted')
+            ? `[${(el as HTMLElement).dataset.label}]`
+            : `${(el as HTMLElement).dataset.label}${(el as HTMLElement).hasAttribute('data-given') ? '!' : ''}`,
     );
     return numbers.length ? numbers.join(' ') : '·';
   });
@@ -245,22 +247,26 @@ describe('the numbers in the margin', () => {
     expect(ps[4].hasAttribute('data-numbers')).toBe(false);
   });
 
-  it('show every so many as the stretch or the layout says, on its side, a number given that the page does not show in parentheses', () => {
+  it('show every so many as the stretch or the layout says, on its side, a number given that the page does not show only while the pointer rests', () => {
     const v = at(
       ['line #counted: {n=1}a / b / c / d / e / f', 'line #counted/2 right: {n=1}g / h'],
       {
         layout: { every: 3, side: 'left', annotations: null, step: 17 },
       },
     );
-    expect(margin(v)).toEqual(['(1) # 3 # # 6', '(1) 2']);
+    expect(margin(v)).toEqual(['[1] # 3 # # 6', '[1] 2']);
     const given = v.dom.querySelector('.line-number') as HTMLElement;
-    expect([given.dataset.given, given.dataset.held]).toEqual(['', '']);
+    expect([given.dataset.given, given.dataset.unprinted, given.dataset.held]).toEqual([
+      '',
+      '',
+      undefined,
+    ]);
     expect(v.dom.querySelectorAll('p')[1].getAttribute('data-numbers')).toBe('right');
     // The layout changed: drawn anew.
     const w = at(['line #counted: {n=1}a / b / c / d'], {
       layout: { every: 2, side: 'right', annotations: null, step: 17 },
     });
-    expect(margin(w)).toEqual(['(1) 2 # 4']);
+    expect(margin(w)).toEqual(['[1] 2 # 4']);
     redrawShape(w);
     expect(w.dom.querySelector('p')!.getAttribute('data-numbers')).toBe('right');
   });

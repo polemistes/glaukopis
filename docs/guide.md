@@ -528,7 +528,8 @@ does (see below).
 
 Numbers belong to what they number. **Line numbering from here…** and
 **Numbering of this line…**, in the right-click menu of the text, number
-the lines you write; **Inline number…**, under **Insert**, marks a place in
+the lines you write, the right press putting the cursor on the line it is
+pressed on, unless it is pressed within a selection; **Inline number…**, under **Insert**, marks a place in
 prose (see *Inline numbers*); and **Number the lines of the page**, in
 *Document properties* under **Details**, numbers every line of the printed
 page in the margin, for the document and all under it, over what its
@@ -582,8 +583,9 @@ as those of Greek drama do not:
   its last number: after *1234* comes 1235, after *1094a1* comes *1094a2*,
   and after *11b* comes 12. A label without a number, such as *\**, leaves
   the count as it was. Where you write, a number you gave stands as dark as
-  the text, so that you see which numbers you gave, and in parentheses
-  where the document shows none.
+  the text, so that you see which numbers you gave; one the document does
+  not show, as the 1 a count every fifth line begins from, is not shown
+  either, and is seen only while the pointer rests on its paragraph.
 - **Counted**: on, unless you say otherwise. Off, the count passes over the
   line, as over the part of a line shared between two speakers that your
   edition does not count: some count the first part, some the last. A line

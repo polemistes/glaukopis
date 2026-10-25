@@ -25,7 +25,7 @@
  * numbers given by hand and counts nothing. A line marked `shown` always
  * shows its number, one marked `hidden` never. A number given that does
  * not stand on the page is still said (`printed: false`), so that the
- * editor shows it where one writes. A stretch numbered *not at all* shows
+ * editor can show it while the pointer rests on its paragraph. A stretch numbered *not at all* shows
  * nothing.
  */
 

@@ -1117,6 +1117,18 @@
     const target = event.target as HTMLElement;
     const inParagraph =
       !!target.closest('.body p') && !target.closest('figure, figcaption, table, .footnote');
+    // The cursor goes where the text was pressed, unless it was pressed within
+    // what is selected, so that the menu speaks of that line and that
+    // paragraph: a right-click moves no cursor by itself, the editor leaving
+    // every button but the left one alone.
+    const part = target.closest('.body') ? 'body' : target.closest('.heading') ? 'title' : null;
+    const view = part ? editors.get(id)?.[part]?.getView() : undefined;
+    if (view && view.dom.contains(target)) {
+      const at = view.posAtCoords({ left: event.clientX, top: event.clientY });
+      const { selection, doc, tr } = view.state;
+      if (at && (selection.empty || at.pos < selection.from || at.pos > selection.to))
+        view.dispatch(tr.setSelection(TextSelection.near(doc.resolve(at.pos))));
+    }
     openContextMenu(event, menuFor(id, section, inParagraph));
   }
 
