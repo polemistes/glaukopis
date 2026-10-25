@@ -230,7 +230,7 @@ impl Converter<'_> {
                 Some(s) if s.numbering != Numbering::None => {
                     let every = s.every.filter(|e| *e > 0).unwrap_or(self.extras.verse.every);
                     (
-                        stretch_numbers(&both, s.numbering, every, s.only, &counted),
+                        stretch_numbers(&both, s.numbering, every, s.only, s.begins, &counted),
                         s.side.unwrap_or(self.extras.verse.side),
                     )
                 }
@@ -1092,7 +1092,7 @@ mod tests {
         blocks.into_iter().map(|b| b.numbered(Numbering::Counted, Some(every), side)).collect()
     }
 
-    /// A speaker, and a stanza of three lines: the first given a number, the
+    /// A speaker, and a stanza of three lines, counted from 1: the
     /// second indented, the third with words in the margin.
     fn nurse(side: Option<Side>) -> Vec<Block> {
         numbered(
@@ -1103,13 +1103,16 @@ mod tests {
                 lines(
                     "line",
                     vec![
-                        (Some(mark().number("1").done()), "If only"),
+                        (None, "If only"),
                         (Some(mark().indent(1).done()), "the Argo"),
                         (Some(mark().margin("ia.").done()), "had never flown"),
                     ],
                 ),
             ],
         )
+        .into_iter()
+        .map(|b| b.counting_from("1"))
+        .collect()
     }
 
     #[test]
@@ -1124,7 +1127,7 @@ mod tests {
         assert_eq!(lines.len(), 4);
         // The speaker in the character style the line block needs.
         assert_eq!(lines[0][0]["c"][0][2], json!([["custom-style", "Speaker Char"]]));
-        // The 1 given to the first line is not shown, every second being shown.
+        // The count begins from 1, which is not shown, every second being shown.
         assert_eq!(lines[1][0]["c"], "If");
         // The second line counted shows its number; it is indented by spaces that do not break.
         assert_eq!(lines[2][0]["c"][0][2], json!([["custom-style", "Verse Number"]]));

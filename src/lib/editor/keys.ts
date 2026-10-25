@@ -89,7 +89,9 @@ export const enterKey: Command = (state, dispatch) => {
     const sameStretch =
       next?.type.name === 'paragraph' &&
       STRETCH_ATTRS.every((k) => (next.attrs[k] ?? null) === (paragraph.attrs[k] ?? null));
-    const leaves = sameStretch ? {} : { numbering: null, every: null, side: null, only: null };
+    const leaves = sameStretch
+      ? {}
+      : { numbering: null, every: null, side: null, only: null, from: null };
     if (dispatch)
       dispatch(
         state.tr

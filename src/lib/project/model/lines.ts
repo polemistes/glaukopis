@@ -2,7 +2,7 @@
  * The numbers of the lines of a numbered stretch: which show one, and what
  * it says; and the lines and stretches of a text. The same rule is kept in
  * Rust (`document/numbers.rs`), by which the documents are made; the editor
- * and the text shown without one follow this one. See ADR 0039 and 0041.
+ * and the text shown without one follow this one. See ADR 0039, 0041 and 0067.
  *
  * A text is paragraphs, and a paragraph is lines, parted by line breaks.
  * A stretch is consecutive paragraphs with the same numbering settings,
@@ -10,23 +10,21 @@
  * when its paragraph's kind is counted, the stretch counts every kind or
  * that one (`only`), its mark does not say otherwise, and it holds
  * something to read; an empty line, as between two stanzas, never is. A
- * stretch that is *counted* begins its count at the first counted line
- * that was given a number by hand, and the count goes on from the last run
- * of digits of a number given: after "1234" comes 1235, after "1094a1"
- * comes "1094a2", and after "11b" comes 12. One without digits leaves the
- * count as it was.
+ * stretch that is *counted* begins its count at the number it says
+ * (`from`), taken up at its first counted line, or else at the first
+ * counted line that was given a number by hand; the count goes on from
+ * the last run of digits of a number given: after "1234" comes 1235,
+ * after "1094a1" comes "1094a2", and after "11b" comes 12. One without
+ * digits leaves the count as it was.
  *
- * Which numbers stand on the page: a counted line's, where its number can
- * be divided by `every`; a number given by hand the same, so that a count
- * from 1 or 41 every 5 shows 5 or 45 first; but a label that holds
- * anything but digits ("567a", "11b", "§5", "*") always, since no count
- * can make it, and so does what was given a line that is not counted, or
- * a line in a stretch whose numbering is *given*, which shows only the
- * numbers given by hand and counts nothing. A line marked `shown` always
- * shows its number, one marked `hidden` never. A number given that does
- * not stand on the page is still said (`printed: false`), so that the
- * editor can show it while the pointer rests on its paragraph. A stretch numbered *not at all* shows
- * nothing.
+ * Which numbers are shown: a counted line's, where its number can be
+ * divided by `every`, so that a count from 1 or 41 every 5 shows 5 or 45
+ * first; and every number given to a line by hand, always, since the
+ * writer put it there to be seen. A line marked `shown` always shows its
+ * number, one marked `hidden` never. A line that is not counted shows only
+ * what was given it by hand; a stretch whose numbering is *given* shows
+ * only the numbers given by hand and counts nothing; one numbered *not at
+ * all* shows nothing.
  */
 
 import { countedKind, type BasedKind, type Numbering, type Side } from './families';
@@ -42,15 +40,10 @@ export interface CountedLine {
   shown?: boolean;
 }
 
-/**
- * The number a line has, whether it was given by hand, and whether it
- * stands on the page; one given by hand that does not is shown only where
- * one writes.
- */
+/** The number a line shows in the margin, and whether it was given by hand. */
 export interface Shown {
   label: string;
   set: boolean;
-  printed: boolean;
 }
 
 /** The count as it stands: what the next paragraph counted is, and what comes before its digits. */
@@ -76,37 +69,41 @@ function written(count: Count, n: number): string {
   return `${count.prefix}${n < 0 ? '-' : ''}${digits}`;
 }
 
-/** Whether a number given by hand is more than digits: a label, which no count could make, and which is always shown. */
-export const isLabel = (given: string): boolean => /\D/.test(given);
-
 /**
  * What each line shows in the margin: its number, or nothing. `every` is
- * the stretch's, or the layout's. See the head of this file for which
+ * the stretch's, or the layout's; `from` the number the stretch's count
+ * begins from, where it says one. See the head of this file for which
  * numbers stand on the page.
  */
 export function lineNumbers(
   numbering: Numbering,
   every: number,
   lines: readonly CountedLine[],
+  from: string | null = null,
 ): (Shown | null)[] {
   if (numbering === 'none') return lines.map(() => null);
   const step = Math.max(1, Math.round(every) || 1);
   let count: Count | null = null;
+  // The number the count begins from, taken up at the first counted line
+  // that has no number of its own before any number given.
+  const read = from?.trim() ? readLabel(from.trim()) : null;
+  let begins: Count | null = read ? { prefix: read.prefix, next: read.n, width: read.width } : null;
   return lines.map((line) => {
     const given = (line.number ?? '').trim();
-    if (numbering === 'given' || !line.counted)
-      return given ? { label: given, set: true, printed: true } : null;
+    if (numbering === 'given' || !line.counted) return given ? { label: given, set: true } : null;
     if (given) {
+      begins = null;
       const read = readLabel(given);
       if (read) count = { prefix: read.prefix, next: read.n + 1, width: read.width };
-      const printed = !!line.shown || isLabel(given) || !read || read.n % step === 0;
-      return { label: given, set: true, printed };
+      return { label: given, set: true };
+    }
+    if (!count && begins) {
+      count = begins;
+      begins = null;
     }
     if (!count) return null;
     const n = count.next++;
-    return n % step === 0 || line.shown
-      ? { label: written(count, n), set: false, printed: true }
-      : null;
+    return n % step === 0 || line.shown ? { label: written(count, n), set: false } : null;
   });
 }
 
@@ -153,6 +150,8 @@ export interface Stretch {
   side: Side | null;
   /** The one kind whose lines are counted; nothing for every kind that is counted. */
   only: string | null;
+  /** The number the count begins from; nothing where it begins at the first number given. */
+  begins: string | null;
 }
 
 /** The numbering of a paragraph, as its settings say; `none` where it says nothing. */
@@ -174,18 +173,20 @@ export function stretches(blocks: readonly Block[]): Stretch[] {
     const every = b.every ?? null;
     const side = b.side ?? null;
     const only = b.only ?? null;
+    const begins = b.from ?? null;
     if (
       at &&
       at.to === i &&
       at.numbering === numberingOf(b) &&
       at.every === every &&
       at.side === side &&
-      at.only === only
+      at.only === only &&
+      at.begins === begins
     ) {
       at.to = i + 1;
       return;
     }
-    at = { from: i, to: i + 1, numbering: numberingOf(b), every, side, only };
+    at = { from: i, to: i + 1, numbering: numberingOf(b), every, side, only, begins };
     out.push(at);
   });
   return out;
@@ -204,10 +205,11 @@ export function stretchNumbers(
   every: number,
   own: readonly BasedKind[] = [],
   only: string | null = null,
+  from: string | null = null,
 ): (Shown | null)[][] {
   const lines = paragraphs.map((p) => linesOf(p.content));
   const counted = countedFlags(paragraphs, lines, own, only);
-  const flat = lineNumbers(numbering, every, counted);
+  const flat = lineNumbers(numbering, every, counted, from);
   const out: (Shown | null)[][] = [];
   let at = 0;
   for (const ls of lines) {

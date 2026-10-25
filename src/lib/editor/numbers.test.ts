@@ -9,7 +9,6 @@ import {
   lineAt,
   lineBefore,
   markLine,
-  numberFrom,
   numberingAsked,
   numberStretch,
   paragraphsFromHere,
@@ -54,9 +53,7 @@ function margin(v: EditorView): string[] {
         ? '#'
         : el.classList.contains('held')
           ? `(${(el as HTMLElement).dataset.label})`
-          : el.classList.contains('unprinted')
-            ? `[${(el as HTMLElement).dataset.label}]`
-            : `${(el as HTMLElement).dataset.label}${(el as HTMLElement).hasAttribute('data-given') ? '!' : ''}`,
+          : `${(el as HTMLElement).dataset.label}${(el as HTMLElement).hasAttribute('data-given') ? '!' : ''}`,
     );
     return numbers.length ? numbers.join(' ') : '·';
   });
@@ -139,47 +136,72 @@ describe('what a numbering is set on from here', () => {
   it('is numbered by setting the settings on every paragraph, and numbered no more by none', () => {
     const v = at(['speaker: Nurse|', 'line: a', 'line: b']);
     const paragraphs = paragraphsFromHere(v.state);
-    numberStretch(paragraphs, { numbering: 'counted', every: 2, side: 'right', only: 'line' })(
-      v.state,
-      v.dispatch,
-    );
+    numberStretch(paragraphs, {
+      numbering: 'counted',
+      every: 2,
+      side: 'right',
+      only: 'line',
+      from: '10',
+    })(v.state, v.dispatch);
+    // The number counted from is a setting of the stretch, on every paragraph, no mark on a line.
     expect(shapeOf(v)).toEqual([
-      'speaker #counted/2 right only=line: Nurse|',
-      'line #counted/2 right only=line: a',
-      'line #counted/2 right only=line: b',
+      'speaker #counted/2 right only=line from=10: Nurse|',
+      'line #counted/2 right only=line from=10: a',
+      'line #counted/2 right only=line from=10: b',
     ]);
-    numberFrom(paragraphs, '10')(v.state, v.dispatch);
-    // The first line that is counted: not the speaker's.
-    expect(shapeOf(v)[1]).toBe('line #counted/2 right only=line: {n=10}a');
     numberStretch(stretchAt(v.state)!.paragraphs, {
       numbering: 'none',
       every: 2,
       side: 'right',
       only: 'line',
+      from: '10',
     })(v.state, v.dispatch);
-    expect(shapeOf(v)).toEqual(['speaker: Nurse|', 'line: {n=10}a', 'line: b']);
+    expect(shapeOf(v)).toEqual(['speaker: Nurse|', 'line: a', 'line: b']);
   });
 
-  it('parts a stretch where it is set from the middle, the second part going on from the number it had', () => {
-    const v = at(['text #counted/1: {n=1}One', 'text #counted/1: Two|', 'text #counted/1: Three']);
-    const asked = numberingAsked(v.state)!;
-    expect(asked.from).toBe('2');
-    const paragraphs = paragraphsFromHere(v.state);
-    numberStretch(paragraphs, { ...asked.stretch, every: 5 })(v.state, v.dispatch);
-    numberFrom(paragraphs, asked.from)(v.state, v.dispatch);
-    expect(shapeOf(v)).toEqual([
-      'text #counted/1: {n=1}One',
-      'text #counted/5: {n=2}Two|',
-      'text #counted/5: Three',
+  it('parts a stretch where it is set from the middle, the second part counting from the number it had', () => {
+    const v = at([
+      'text #counted/1 from=1: One',
+      'text #counted/1 from=1: Two|',
+      'text #counted/1 from=1: Three',
     ]);
+    const asked = numberingAsked(v.state)!;
+    // Filled in with the number the first line from here has now, by the count.
+    expect([asked.from, asked.now, asked.stretch.from]).toEqual(['2', '2', '1']);
+    const paragraphs = paragraphsFromHere(v.state);
+    numberStretch(paragraphs, { ...asked.stretch, every: 5, from: asked.from })(
+      v.state,
+      v.dispatch,
+    );
+    expect(shapeOf(v)).toEqual([
+      'text #counted/1 from=1: One',
+      'text #counted/5 from=2: Two|',
+      'text #counted/5 from=2: Three',
+    ]);
+    // A number given to a line by hand is what the window fills in from, and stays a mark of the line.
+    const w = at(['text #counted/1 from=1: One', 'text #counted/1 from=1: {n=12}Two|']);
+    const again = numberingAsked(w.state)!;
+    expect([again.from, again.now]).toEqual(['12', '12']);
   });
 
-  it('gives the first counted line from here no number of its own where it has that number already', () => {
-    const v = at(['text #counted/1: {n=1}One', 'text #counted/1: Two|', 'text #counted/1: Three']);
-    const paragraphs = paragraphsFromHere(v.state);
-    numberStretch(paragraphs, numberingAsked(v.state)!.stretch)(v.state, v.dispatch);
-    numberFrom(paragraphs, '2')(v.state, v.dispatch);
-    expect(shapeOf(v)[1]).toBe('text #counted/1: Two|');
+  it('is not parted by the window applied as it stood, the stretch keeping its own beginning', () => {
+    const v = at([
+      'text #counted/1 from=1: One',
+      'text #counted/1 from=1: Two|',
+      'text #counted/1 from=1: Three',
+    ]);
+    const asked = numberingAsked(v.state)!;
+    // What the window does where the number to count from is the one the line has already: see RichText.svelte.
+    const kept = asked.from === asked.now ? asked.stretch.from : asked.from;
+    numberStretch(paragraphsFromHere(v.state), { ...asked.stretch, from: kept })(
+      v.state,
+      v.dispatch,
+    );
+    expect(shapeOf(v)).toEqual([
+      'text #counted/1 from=1: One',
+      'text #counted/1 from=1: Two|',
+      'text #counted/1 from=1: Three',
+    ]);
   });
 });
 
@@ -247,26 +269,22 @@ describe('the numbers in the margin', () => {
     expect(ps[4].hasAttribute('data-numbers')).toBe(false);
   });
 
-  it('show every so many as the stretch or the layout says, on its side, a number given that the page does not show only while the pointer rests', () => {
+  it('show every so many as the stretch or the layout says, on its side, and a number given by hand always', () => {
     const v = at(
       ['line #counted: {n=1}a / b / c / d / e / f', 'line #counted/2 right: {n=1}g / h'],
       {
         layout: { every: 3, side: 'left', annotations: null, step: 17 },
       },
     );
-    expect(margin(v)).toEqual(['[1] # 3 # # 6', '[1] 2']);
+    expect(margin(v)).toEqual(['1! # 3 # # 6', '1! 2']);
     const given = v.dom.querySelector('.line-number') as HTMLElement;
-    expect([given.dataset.given, given.dataset.unprinted, given.dataset.held]).toEqual([
-      '',
-      '',
-      undefined,
-    ]);
+    expect([given.dataset.given, given.dataset.held]).toEqual(['', undefined]);
     expect(v.dom.querySelectorAll('p')[1].getAttribute('data-numbers')).toBe('right');
     // The layout changed: drawn anew.
     const w = at(['line #counted: {n=1}a / b / c / d'], {
       layout: { every: 2, side: 'right', annotations: null, step: 17 },
     });
-    expect(margin(w)).toEqual(['[1] 2 # 4']);
+    expect(margin(w)).toEqual(['1! 2 # 4']);
     redrawShape(w);
     expect(w.dom.querySelector('p')!.getAttribute('data-numbers')).toBe('right');
   });
@@ -415,7 +433,13 @@ describe('what Line numbering from here asks', () => {
     const v = at(['text: One|', 'text: Two']);
     const asked = numberingAsked(v.state)!;
     expect(asked.numbered).toBe(false);
-    expect(asked.stretch).toEqual({ numbering: 'counted', every: 1, side: null, only: null });
+    expect(asked.stretch).toEqual({
+      numbering: 'counted',
+      every: 1,
+      side: null,
+      only: null,
+      from: null,
+    });
     expect(asked.from).toBe('1');
     expect(asked.kinds).toEqual(['text']);
   });
@@ -435,7 +459,13 @@ describe('what Line numbering from here asks', () => {
     ]);
     const asked = numberingAsked(v.state)!;
     expect(asked.numbered).toBe(true);
-    expect(asked.stretch).toEqual({ numbering: 'counted', every: 5, side: 'right', only: 'line' });
+    expect(asked.stretch).toEqual({
+      numbering: 'counted',
+      every: 5,
+      side: 'right',
+      only: 'line',
+      from: null,
+    });
     expect(asked.from).toBe('102');
   });
 

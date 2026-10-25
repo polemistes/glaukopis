@@ -12,8 +12,18 @@ const plain = (n: number) => Array.from({ length: n }, () => line());
 
 /** What stands on the page, line by line: "-" where nothing, "!" after a number given by hand. */
 function shown(numbering: Numbering, every: number, lines: CountedLine[]): string[] {
-  return lineNumbers(numbering, every, lines).map((s) =>
-    s?.printed ? (s.set ? `${s.label}!` : s.label) : '-',
+  return shownFrom(numbering, every, null, lines);
+}
+
+/** The same, the stretch counting from the number given. */
+function shownFrom(
+  numbering: Numbering,
+  every: number,
+  from: string | null,
+  lines: CountedLine[],
+): string[] {
+  return lineNumbers(numbering, every, lines, from).map((s) =>
+    s ? (s.set ? `${s.label}!` : s.label) : '-',
   );
 }
 
@@ -26,7 +36,7 @@ describe('the numbers of the paragraphs of a passage', () => {
   it('count from the first number given, every so many, and not what is not counted', () => {
     expect(shown('counted', 5, [line(null, false), line('1'), ...plain(5)])).toEqual([
       '-',
-      '-',
+      '1!',
       '-',
       '-',
       '-',
@@ -39,7 +49,7 @@ describe('the numbers of the paragraphs of a passage', () => {
     expect(shown('counted', 5, [...plain(2), line('1234'), ...plain(6)])).toEqual([
       '-',
       '-',
-      '-',
+      '1234!',
       '1235',
       '-',
       '-',
@@ -49,18 +59,41 @@ describe('the numbers of the paragraphs of a passage', () => {
     ]);
   });
 
-  it('show a count from 41 every 5 first at 45', () => {
-    expect(shown('counted', 5, [line('41'), ...plain(5)])).toEqual(['-', '-', '-', '-', '45', '-']);
+  it('count from the number the stretch begins from, showing it only where it falls on every', () => {
+    expect(shownFrom('counted', 5, '1', plain(6))).toEqual(['-', '-', '-', '-', '5', '-']);
+    expect(shownFrom('counted', 5, '41', plain(6))).toEqual(['-', '-', '-', '-', '45', '-']);
+    expect(shownFrom('counted', 5, '45', plain(6))).toEqual(['45', '-', '-', '-', '-', '50']);
+    expect(shownFrom('counted', 1, '1', plain(2))).toEqual(['1', '2']);
+    // Taken up at the first counted line: one not counted before it is passed over.
+    expect(shownFrom('counted', 5, '5', [line(null, false), ...plain(6)])).toEqual([
+      '-',
+      '5',
+      '-',
+      '-',
+      '-',
+      '-',
+      '10',
+    ]);
   });
 
-  it('say a number given that is not shown on the page, for the editor to show', () => {
-    expect(lineNumbers('counted', 5, [line('41'), line()])).toEqual([
-      { label: '41', set: true, printed: false },
-      null,
+  it('show a number given by hand, and go on from it, whatever the stretch begins from', () => {
+    expect(shownFrom('counted', 5, '1', [line('41'), ...plain(5)])).toEqual([
+      '41!',
+      '-',
+      '-',
+      '-',
+      '45',
+      '-',
     ]);
-    expect(lineNumbers('counted', 5, [line('45')])).toEqual([
-      { label: '45', set: true, printed: true },
+    expect(shownFrom('counted', 5, '1', [...plain(2), line('12'), ...plain(3)])).toEqual([
+      '-',
+      '-',
+      '12!',
+      '-',
+      '-',
+      '15',
     ]);
+    expect(lineNumbers('counted', 5, [line('12')], '1')).toEqual([{ label: '12', set: true }]);
   });
 
   it('always show a label with letters, and go on from it: after 11b comes 12', () => {
@@ -123,7 +156,7 @@ describe('the numbers of the paragraphs of a passage', () => {
       '1235!',
       '-',
       '-',
-      '-',
+      '1239!',
       '1240',
     ]);
   });
@@ -147,8 +180,8 @@ describe('the numbers of the paragraphs of a passage', () => {
 
 const w = (text: string): Inline => ({ kind: 'text', text, marks: {} });
 const br: Inline = { kind: 'break' };
-const shownOf = (rows: ({ label: string; set: boolean; printed: boolean } | null)[][]) =>
-  rows.map((r) => r.map((s) => (s?.printed ? (s.set ? `${s.label}!` : s.label) : '-')).join(' '));
+const shownOf = (rows: ({ label: string; set: boolean } | null)[][]) =>
+  rows.map((r) => r.map((s) => (s ? (s.set ? `${s.label}!` : s.label) : '-')).join(' '));
 
 // The same cases as the test of `stretch_numbers` in `crates/core/src/document/numbers.rs`.
 describe('the lines of a paragraph', () => {
@@ -235,7 +268,7 @@ describe('the numbers of a stretch', () => {
       'counted',
       2,
     );
-    expect(shownOf(rows)).toEqual(['- - - - 4']);
+    expect(shownOf(rows)).toEqual(['1! - - - 4']);
   });
 
   it('number prose paragraph by paragraph, each one line', () => {

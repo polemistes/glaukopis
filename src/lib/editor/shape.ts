@@ -107,6 +107,7 @@ export function blockOf(node: Node): ParagraphBlock {
     ...(Number(node.attrs.every) >= 1 ? { every: Number(node.attrs.every) } : {}),
     ...(node.attrs.side === 'left' || node.attrs.side === 'right' ? { side: node.attrs.side } : {}),
     ...(typeof node.attrs.only === 'string' && node.attrs.only ? { only: node.attrs.only } : {}),
+    ...(typeof node.attrs.from === 'string' && node.attrs.from ? { from: node.attrs.from } : {}),
     ...(node.attrs.new === true ? { new: true as const } : {}),
     content,
   };
@@ -211,7 +212,7 @@ export function runsIn(parent: Node, start: number, own: readonly BasedKind[] = 
  * numbered: paragraphs standing together that are numbered and have these
  * the same are numbered together (`project/model/lines.ts`).
  */
-export const STRETCH_ATTRS = ['numbering', 'every', 'side', 'only'] as const;
+export const STRETCH_ATTRS = ['numbering', 'every', 'side', 'only', 'from'] as const;
 
 /** Whether a paragraph is numbered: it is then of a stretch. */
 export function numberedNode(node: Node): boolean {

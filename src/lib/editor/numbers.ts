@@ -60,6 +60,8 @@ export interface StretchNumbering {
   side: Side | null;
   /** The one kind whose lines are counted, by its id; nothing for every kind that is counted. */
   only: string | null;
+  /** The number the count begins from, taken up at the stretch's first counted line; nothing where it begins at the first number given. */
+  from: string | null;
 }
 
 /** The settings a stretch is told apart by: paragraphs alike in all of them are numbered together. */
@@ -97,6 +99,7 @@ export function stretchesIn(parent: Node, start: number): StretchAt[] {
     every: s.every,
     side: s.side,
     only: s.only,
+    from: s.begins,
     paragraphs: placed.slice(s.from, s.to).filter((p): p is Placed => !!p),
   }));
 }
@@ -159,12 +162,14 @@ export function paragraphsFromHere(state: EditorState, own: readonly BasedKind[]
 
 /** The settings as they are stored: nothing where they say nothing. */
 function settingsOf(how: StretchNumbering) {
-  if (how.numbering === 'none') return { numbering: null, every: null, side: null, only: null };
+  if (how.numbering === 'none')
+    return { numbering: null, every: null, side: null, only: null, from: null };
   return {
     numbering: how.numbering,
     every: how.every && how.every >= 1 ? Math.round(how.every) : null,
     side: how.side === 'left' || how.side === 'right' ? how.side : null,
     only: how.only?.trim() || null,
+    from: how.numbering === 'counted' ? how.from?.trim() || null : null,
   };
 }
 
@@ -355,45 +360,10 @@ function numberNow(
   const i = stretch.paragraphs.findIndex((p) => p.pos === pos);
   // Every number, not only those shown: every one, and none held back.
   const blocks = stretch.paragraphs.map((p) => unheld(blockOf(p.node)));
-  return stretchNumbers(blocks, stretch.numbering, 1, own, stretch.only)[i]?.[index]?.label ?? null;
-}
-
-/**
- * Gives the first counted line among the paragraphs given the number
- * `from`, from which the count goes on, where it would not have it
- * already: a line that has it by the count is left as it is, and one given
- * a number by hand is given this one. With nothing, takes away the number
- * it had.
- */
-export function numberFrom(
-  paragraphs: readonly { pos: number }[],
-  from: string | null,
-  own: readonly BasedKind[] = [],
-): Command {
-  return (state, dispatch) => {
-    const head = paragraphs.length ? state.doc.nodeAt(paragraphs[0].pos) : null;
-    const only = (head?.attrs.only as string | null) ?? null;
-    const first = firstCounted(state.doc, paragraphs, own, only);
-    if (!first) return false;
-    const wanted = from?.trim() || null;
-    const given = (first.line.mark?.attrs.number as string | null) ?? null;
-    if (
-      !given &&
-      wanted &&
-      numberNow(state.doc, first.paragraph.pos, first.line.index, own) === wanted
-    )
-      return true;
-    if (dispatch) {
-      const tr = state.tr;
-      setMark(
-        tr,
-        first.line,
-        markAttrs({ ...marksOf(first.line.mark), number: wanted }, first.line.mark),
-      );
-      if (tr.docChanged) dispatch(tr);
-    }
-    return true;
-  };
+  return (
+    stretchNumbers(blocks, stretch.numbering, 1, own, stretch.only, stretch.from)[i]?.[index]
+      ?.label ?? null
+  );
 }
 
 /** The line the cursor is in: its paragraph, which line of it it is, its mark, and where the mark stands or would. */
@@ -451,9 +421,12 @@ export interface NumberingAsked {
   stretch: StretchNumbering;
   /** Whether the cursor stands in a numbered stretch. */
   numbered: boolean;
-  /** The number the first counted line from here has now, given or counted; 1 where the count has not begun. */
+  /** What *Number from* is filled in with: the number the first counted line from here has now, given or counted; else what the stretch begins from; else 1. */
   from: string;
-  /** The kinds whose lines may be counted among the paragraphs from here, by their ids, in their order. */
+  /** The number the first counted line from here has now, given or counted; nothing where none is counted yet. */
+  now:
+    | string
+    | null; /** The kinds whose lines may be counted among the paragraphs from here, by their ids, in their order. */
   kinds: string[];
 }
 
@@ -483,12 +456,26 @@ export function numberingAsked(
   }
   if (only && !kinds.includes(only)) kinds.push(only);
   const kind = kindOfNode(at.paragraph.node);
+  const now = given ?? counted;
   return {
     stretch: stretch
-      ? { numbering: stretch.numbering, every: stretch.every, side: stretch.side, only }
-      : { numbering: 'counted', every: kind === 'text' ? 1 : null, side: null, only: null },
+      ? {
+          numbering: stretch.numbering,
+          every: stretch.every,
+          side: stretch.side,
+          only,
+          from: stretch.from,
+        }
+      : {
+          numbering: 'counted',
+          every: kind === 'text' ? 1 : null,
+          side: null,
+          only: null,
+          from: null,
+        },
     numbered: !!stretch,
-    from: given ?? counted ?? '1',
+    from: now ?? stretch?.from ?? '1',
+    now,
     kinds,
   };
 }
@@ -619,10 +606,7 @@ function editNumber(view: EditorView, getPos: () => number | undefined, el: HTML
  * The number in the margin of a line, as a widget at its start: the
  * label, or an empty place where none is shown, which is seen when the
  * pointer rests on the paragraph; pressing either opens the field for the
- * line's number. A number held back is shown in parentheses. A number
- * given by hand that the page does not show, as the 1 a count every fifth
- * line begins from, is not shown either, but seen as the empty place is,
- * while the pointer rests on the paragraph.
+ * line's number. A number held back is shown in parentheses.
  */
 function numberWidget(
   shown: Shown | null,
@@ -630,14 +614,7 @@ function numberWidget(
 ): (view: EditorView, getPos: () => number | undefined) => HTMLElement {
   return (view, getPos) => {
     const el = document.createElement('span');
-    const unprinted = !!shown && !held && !shown.printed;
-    el.className = shown
-      ? held
-        ? 'line-number held'
-        : unprinted
-          ? 'line-number unprinted'
-          : 'line-number'
-      : 'line-number blank';
+    el.className = shown ? (held ? 'line-number held' : 'line-number') : 'line-number blank';
     el.setAttribute('role', 'button');
     el.setAttribute('tabindex', '-1');
     if (shown) {
@@ -645,7 +622,6 @@ function numberWidget(
       el.dataset.label = shown.label;
       if (shown.set) el.dataset.given = '';
       if (held) el.dataset.held = '';
-      if (unprinted) el.dataset.unprinted = '';
     }
     el.title = held && !shown?.set ? t('editor-line-number-held') : t('editor-line-number-press');
     el.addEventListener('mousedown', (event) => {
@@ -690,8 +666,7 @@ function unheld(block: ParagraphBlock): ParagraphBlock {
  * it is edited; on each paragraph of a stretch the side its numbers stand
  * on (`data-numbers`), and on a paragraph whose first line shows a number
  * on the page, that number (`data-n`, and `data-n-set` where it was given
- * by hand). A number given by hand that the page does not show is seen
- * only while the pointer rests on its paragraph. And the annotations, the words in
+ * by hand). And the annotations, the words in
  * the margin beside a line, wherever they are said, with `data-margins` on
  * their paragraph and the side they stand on (`data-annotations`): the
  * layout's, else across from the numbers.
@@ -709,8 +684,8 @@ function numbers(doc: Node, own: readonly BasedKind[], layout: NumbersLayout): D
       const side = s.side ?? layout.side;
       const every = s.every ?? layout.every;
       const blocks = s.paragraphs.map((p) => blockOf(p.node));
-      const shown = stretchNumbers(blocks, s.numbering, every, own, s.only);
-      const held = stretchNumbers(blocks.map(unheld), s.numbering, every, own, s.only);
+      const shown = stretchNumbers(blocks, s.numbering, every, own, s.only, s.from);
+      const held = stretchNumbers(blocks.map(unheld), s.numbering, every, own, s.only, s.from);
       s.paragraphs.forEach((p, i) => {
         sides.set(p.pos, side);
         const lines = linesOfNode(p.node, p.pos);
@@ -718,19 +693,18 @@ function numbers(doc: Node, own: readonly BasedKind[], layout: NumbersLayout): D
         list.push(
           Decoration.node(p.pos, p.pos + p.node.nodeSize, {
             'data-numbers': side,
-            ...(first?.printed ? { 'data-n': first.label } : {}),
-            ...(first?.printed && first.set ? { 'data-n-set': '' } : {}),
+            ...(first ? { 'data-n': first.label } : {}),
+            ...(first?.set ? { 'data-n-set': '' } : {}),
           }),
         );
         lines.forEach((line, j) => {
           const hidden = line.mark?.attrs.hidden === true;
           const label = hidden ? (held[i]?.[j] ?? null) : (shown[i]?.[j] ?? null);
-          const inParentheses = !!label && hidden;
           list.push(
-            Decoration.widget(line.start, numberWidget(label, inParentheses), {
+            Decoration.widget(line.start, numberWidget(label, hidden && !!label), {
               side: -1,
               key: label
-                ? `line-number:${label.label}${label.set ? ':given' : ''}${inParentheses ? ':held' : ''}${label.printed ? '' : ':unprinted'}`
+                ? `line-number:${label.label}${label.set ? ':given' : ''}${hidden ? ':held' : ''}`
                 : 'line-number:blank',
               ignoreSelection: true,
               stopEvent: () => true,

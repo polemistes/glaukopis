@@ -311,7 +311,7 @@ const bodyNodes: Record<string, NodeSpec> = {
    * `project/model/families.ts`), `text` by default; `indent` its steps in,
    * from none to eight. A paragraph is lines, parted by `hard_break`; what
    * is said of one line by hand stands in a `linemark` at its start.
-   * `numbering`, `every`, `side` and `only` are the settings of the
+   * `numbering`, `every`, `side`, `only` and `from` are the settings of the
    * numbered stretch it stands in: consecutive paragraphs with the same
    * settings are numbered together, whatever their kinds
    * (`project/model/lines.ts`). `numbering` is `counted` or `given`,
@@ -332,6 +332,7 @@ const bodyNodes: Record<string, NodeSpec> = {
       every: { default: null },
       side: { default: null },
       only: { default: null },
+      from: { default: null },
       new: { default: null },
     },
     parseDOM: [
@@ -346,6 +347,7 @@ const bodyNodes: Record<string, NodeSpec> = {
             every: everyAttr(el.getAttribute('data-every')),
             side: sideAttr(el.getAttribute('data-side')),
             only: onlyAttr(el.getAttribute('data-only')),
+            from: onlyAttr(el.getAttribute('data-from')),
             new: el.hasAttribute('data-new') ? true : null,
           };
         },
@@ -363,6 +365,7 @@ const bodyNodes: Record<string, NodeSpec> = {
           'data-every': every ? String(every) : null,
           'data-side': sideAttr(node.attrs.side),
           'data-only': onlyAttr(node.attrs.only),
+          'data-from': onlyAttr(node.attrs.from),
           'data-new': node.attrs.new === true ? '' : null,
         },
         0,

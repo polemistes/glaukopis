@@ -1367,15 +1367,6 @@ span.math.selected {
 .prose p[data-numbers]:hover .line-number.blank {
   opacity: 0.6;
 }
-/* A number given by hand that the page does not show, as the 1 a count
-   every fifth line begins from: seen only as the place for a number is. */
-.prose .line-number.unprinted {
-  opacity: 0;
-  transition: opacity var(--fast) var(--ease);
-}
-.prose p[data-numbers]:hover .line-number.unprinted {
-  opacity: 0.6;
-}
 .prose .line-number.editing,
 .prose p[data-numbers]:hover .line-number.editing {
   opacity: 1;

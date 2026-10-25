@@ -37,7 +37,6 @@
     LAYOUT_STEP,
     lineAsked,
     markLine,
-    numberFrom,
     numberingAsked,
     numberStretch,
     paragraphsFromHere,
@@ -694,18 +693,17 @@
     from={numbering.from}
     kinds={numbering.kinds.map((id) => ({ id, name: kindName(id, project.passageKinds) }))}
     onclose={() => (numbering = null)}
-    onset={(how, from) => {
+    onset={(how) => {
       if (!numbering) return;
       const v = numbering.view;
       if (v.isDestroyed) return;
       // From the paragraph the cursor is in, or those selected: the paragraphs before keep
-      // their numbering. The first counted line from here is given the number the window
-      // was filled in with, where it would not have it, so that a stretch parted here
-      // goes on from the number it had.
+      // their numbering. Where the number to count from is the one the first line from
+      // here has already by the count, the stretch's own beginning is kept, so that a
+      // stretch is not parted by a window applied as it stood.
       const paragraphs = paragraphsFromHere(v.state, ownKinds).map((p) => ({ pos: p.pos }));
-      run(numberStretch(paragraphs, how), v);
-      if (from !== undefined && how.numbering === 'counted')
-        run(numberFrom(paragraphs, from, ownKinds), v);
+      const kept = numbering.numbered && how.numbering === 'counted' && how.from === numbering.now;
+      run(numberStretch(paragraphs, { ...how, from: kept ? numbering.stretch.from : how.from }), v);
     }}
   />
 {/if}

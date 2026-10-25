@@ -139,6 +139,8 @@ export interface ParagraphBlock {
   side?: Side;
   /** The one kind whose lines are counted, by its id; absent for every kind that is counted. */
   only?: string;
+  /** The number the count of the stretch begins from, taken up at its first counted line; absent where it begins at the first number given. */
+  from?: string;
   /** Begins a new run of its kind. */
   new?: true;
   content: Inline[];
@@ -239,7 +241,8 @@ export function paragraph(
   content: Inline[],
   name = 'text',
   more:
-    Pick<ParagraphBlock, 'indent' | 'numbering' | 'every' | 'side' | 'only' | 'new'> | number = 0,
+    | Pick<ParagraphBlock, 'indent' | 'numbering' | 'every' | 'side' | 'only' | 'from' | 'new'>
+    | number = 0,
 ): ParagraphBlock {
   const said = typeof more === 'number' ? { indent: more } : more;
   return {
@@ -250,6 +253,7 @@ export function paragraph(
     ...(said.every ? { every: said.every } : {}),
     ...(said.side ? { side: said.side } : {}),
     ...(said.only ? { only: said.only } : {}),
+    ...(said.from ? { from: said.from } : {}),
     ...(said.new ? { new: true as const } : {}),
     content,
   };

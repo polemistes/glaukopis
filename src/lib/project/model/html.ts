@@ -133,13 +133,14 @@ function paragraphAttrs(p: ParagraphBlock): string {
     (p.every ? ` data-every="${p.every}"` : '') +
     (p.side ? ` data-side="${p.side}"` : '') +
     (p.only ? ` data-only="${escape(p.only)}"` : '') +
+    (p.from ? ` data-from="${escape(p.from)}"` : '') +
     (p.new ? ' data-new' : '')
   );
 }
 
 /** The number a line shows, as a sign before it: what it says, and whether it was given by hand. */
 function numberHtml(shown: Shown | null | undefined): string {
-  return shown?.printed
+  return shown
     ? `<span class="line-number" data-n="${escape(shown.label)}"${shown.set ? ' data-n-set' : ''}></span>`
     : '';
 }
@@ -189,8 +190,8 @@ function numbersOf(list: Block[], own: readonly BasedKind[]): Map<number, (Shown
   for (const s of stretches(list)) {
     const paragraphs = list.slice(s.from, s.to) as ParagraphBlock[];
     // The layout is not known here: every fifth, where the stretch does not say.
-    stretchNumbers(paragraphs, s.numbering, s.every ?? 5, own, s.only).forEach((shown, i) =>
-      out.set(s.from + i, shown),
+    stretchNumbers(paragraphs, s.numbering, s.every ?? 5, own, s.only, s.begins).forEach(
+      (shown, i) => out.set(s.from + i, shown),
     );
   }
   return out;

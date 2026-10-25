@@ -4,7 +4,7 @@
  *     line>1 #counted/5 right only=line new: {n=12,i=1}Sing, goddess / {-}the wrath|
  *
  * The kind of the paragraph, its indent after `>`, its numbering after `#`,
- * every how many after `/`, the side, the one kind counted after `only=`,
+ * every how many after `/`, the side, the one kind counted after `only=`, the number counted from after `from=`,
  * and `new`; after the colon its content, where ` / ` is a line break,
  * `{…}` a line mark (`n=` its number, `m=` its margin words, `i=` its
  * indent, `-` not counted, `~` hidden, `+` always shown, `^` begins where
@@ -52,7 +52,7 @@ function writeMark(node: Node): string {
 }
 
 const HEAD =
-  /^([\w-]+)(?:>(\d))?(?: #(counted|given))?(?:\/(\d+))?(?: (left|right))?(?: only=([\w-]+))?( new)?: ?(.*)$/;
+  /^([\w-]+)(?:>(\d))?(?: #(counted|given))?(?:\/(\d+))?(?: (left|right))?(?: only=([\w-]+))?(?: from=([\w-]+))?( new)?: ?(.*)$/;
 
 /** A text read from its blocks written out, with where the cursor is, if it is said. */
 export function text(...blocks: string[]): { doc: Node; cursor: number | null } {
@@ -68,7 +68,7 @@ export function text(...blocks: string[]): { doc: Node; cursor: number | null } 
     }
     const m = HEAD.exec(block);
     if (!m) throw new Error(`Not a block: ${block}`);
-    const [, kind, indent, numbering, every, side, only, isNew, content] = m;
+    const [, kind, indent, numbering, every, side, only, from, isNew, content] = m;
     const inline: Node[] = [];
     let at = pos + 1;
     for (const piece of content.split(/( \/ |\{[^}]*\}|\|)/)) {
@@ -89,6 +89,7 @@ export function text(...blocks: string[]): { doc: Node; cursor: number | null } 
         every: every ? Number(every) : null,
         side: side ?? null,
         only: only ?? null,
+        from: from ?? null,
         new: isNew ? true : null,
       },
       inline,
@@ -111,6 +112,7 @@ function writeBlock(node: Node, pos: number, cursor: number | null): string {
   if (a.every) head += `/${a.every}`;
   if (a.side) head += ` ${a.side}`;
   if (a.only) head += ` only=${a.only}`;
+  if (a.from) head += ` from=${a.from}`;
   if (a.new) head += ' new';
   let out = '';
   node.forEach((child, offset) => {

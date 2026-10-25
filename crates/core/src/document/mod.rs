@@ -173,6 +173,11 @@ pub enum Block {
         /// every kind that is counted.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         only: Option<String>,
+        /// The number the count of the stretch begins from, taken up at its
+        /// first counted line; nothing where the count begins at the first
+        /// number given by hand.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        from: Option<String>,
         /// Begins a new run of its kind.
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
         new: bool,
@@ -422,6 +427,7 @@ impl Block {
             every: None,
             side: None,
             only: None,
+            from: None,
             new: false,
             content,
         }
@@ -441,6 +447,14 @@ impl Block {
     pub fn counting_only(mut self, kind: &str) -> Block {
         if let Block::Paragraph { only, .. } = &mut self {
             *only = Some(kind.to_owned());
+        }
+        self
+    }
+
+    /// The same paragraph, its stretch counting from the number given.
+    pub fn counting_from(mut self, number: &str) -> Block {
+        if let Block::Paragraph { from, .. } = &mut self {
+            *from = Some(number.to_owned());
         }
         self
     }

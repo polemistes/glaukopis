@@ -80,8 +80,8 @@ const isSD = (p: ParagraphBlock) => SD.has(p.name);
 /** The settings of a paragraph's stretch, as one key; '' where it says nothing. */
 function settingsKey(p: ParagraphBlock): string {
   const n = p.numbering && p.numbering !== 'none' ? p.numbering : '';
-  return n || p.every || p.side || p.only
-    ? `${n}|${p.every ?? ''}|${p.side ?? ''}|${p.only ?? ''}`
+  return n || p.every || p.side || p.only || p.from
+    ? `${n}|${p.every ?? ''}|${p.side ?? ''}|${p.only ?? ''}|${p.from ?? ''}`
     : '';
 }
 
@@ -92,6 +92,7 @@ function settingsSaid(p: ParagraphBlock, ctx: TextContext): [string, Value | und
     ['every', p.every],
     ['side', p.side],
     ['only', p.only ? (ctx.ownName(p.only) ?? p.only) : undefined],
+    ['from', p.from],
   ];
 }
 
@@ -137,7 +138,7 @@ function makeParagraph(
   content: Inline[],
   name: string,
   more: Partial<
-    Pick<ParagraphBlock, 'indent' | 'numbering' | 'every' | 'side' | 'only' | 'new'>
+    Pick<ParagraphBlock, 'indent' | 'numbering' | 'every' | 'side' | 'only' | 'from' | 'new'>
   > = {},
 ): ParagraphBlock {
   return {
@@ -148,6 +149,7 @@ function makeParagraph(
     ...(more.every ? { every: more.every } : {}),
     ...(more.side ? { side: more.side } : {}),
     ...(more.only ? { only: more.only } : {}),
+    ...(more.from ? { from: more.from } : {}),
     ...(more.new ? { new: true as const } : {}),
     content,
   };
@@ -540,6 +542,7 @@ function checked(lines: string[], ps: ParagraphBlock[], ctx: TextContext): strin
         every: undefined,
         side: undefined,
         only: undefined,
+        from: undefined,
         new: undefined,
       })),
     );
@@ -797,6 +800,9 @@ function sayOn(
     if (every !== undefined && every > 0) out = { ...out, every: Math.round(every) };
     const side = str(said.get('side'));
     if (side === 'left' || side === 'right') out = { ...out, side };
+    const from = said.get('from');
+    if (from !== undefined && from !== null && String(from).trim())
+      out = { ...out, from: String(from).trim() };
     // By the name the kind's block is written by; made the kind's id when the whole text is read.
     const only = str(said.get('only'));
     if (only?.trim()) out = { ...out, only: only.trim() };

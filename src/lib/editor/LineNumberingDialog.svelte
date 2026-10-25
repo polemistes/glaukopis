@@ -26,8 +26,7 @@
     /** The kinds whose lines may be counted, with their names. */
     kinds: { id: string; name: string }[];
     onclose: () => void;
-    /** `from` is undefined where nothing is counted. */
-    onset: (how: StretchNumbering, from: string | null | undefined) => void;
+    onset: (how: StretchNumbering) => void;
   }
 
   let { stretch, layout, from, kinds, onclose, onset }: Props = $props();
@@ -59,15 +58,13 @@
   function keep() {
     if (!everyGiven) return;
     const counted = numbering === 'counted';
-    onset(
-      {
-        numbering,
-        every: every.trim() ? Number(every.trim()) : null,
-        side: side || null,
-        only: counted ? only || null : null,
-      },
-      counted ? begin.trim() || null : undefined,
-    );
+    onset({
+      numbering,
+      every: every.trim() ? Number(every.trim()) : null,
+      side: side || null,
+      only: counted ? only || null : null,
+      from: counted ? begin.trim() || null : null,
+    });
     onclose();
   }
 </script>

@@ -1,7 +1,7 @@
 //! The numbers of the lines of a numbered stretch: which show one, and what
 //! it says; and the lines and stretches of a text. The same rules are kept
 //! in TypeScript (`src/lib/project/model/lines.ts`), which the editor
-//! follows; the documents are made by these. See ADR 0039 and 0041.
+//! follows; the documents are made by these. See ADR 0039, 0041 and 0067.
 //!
 //! A text is paragraphs, and a paragraph is lines, parted by line breaks.
 //! A stretch is consecutive paragraphs with the same numbering settings,
@@ -9,38 +9,29 @@
 //! when its paragraph's kind is counted, the stretch counts every kind or
 //! that one (`only`), its mark does not say otherwise, and it holds
 //! something to read; an empty line, as between two stanzas, never is. A
-//! stretch that is *counted* begins its count at the first counted line
-//! that was given a number by hand, and the count goes on from the last run
-//! of digits of a number given: after "1234" comes 1235, after "1094a1"
-//! comes "1094a2", and after "11b" comes 12. One without digits leaves the
-//! count as it was.
+//! stretch that is *counted* begins its count at the number it says
+//! (`from`), taken up at its first counted line, or else at the first
+//! counted line that was given a number by hand; the count goes on from
+//! the last run of digits of a number given: after "1234" comes 1235,
+//! after "1094a1" comes "1094a2", and after "11b" comes 12. One without
+//! digits leaves the count as it was.
 //!
 //! Which numbers stand on the page: a counted line's, where its number can
-//! be divided by `every`; a number given by hand the same, so that a count
-//! from 1 or 41 every 5 shows 5 or 45 first; but a label that holds
-//! anything but digits ("567a", "11b", "§5", "*") always, since no count
-//! can make it, and so does what was given a line that is not counted, or
-//! a line in a stretch whose numbering is *given*, which shows only the
-//! numbers given by hand and counts nothing. A line marked `shown` always
-//! shows its number, one marked `hidden` never. A stretch numbered *not at
+//! be divided by `every`, so that a count from 1 or 41 every 5 shows 5 or
+//! 45 first; and every number given to a line by hand, always, since the
+//! writer put it there to be seen. A line marked `shown` always shows its
+//! number, one marked `hidden` never. A line that is not counted shows only
+//! what was given it by hand; a stretch whose numbering is *given* shows
+//! only the numbers given by hand and counts nothing; one numbered *not at
 //! all* shows nothing.
 
 use super::{Block, Inline, Numbering, Side};
 
-/// The number a line has, whether it was given by hand, and whether it
-/// stands on the page: one given by hand that does not is what the editor
-/// shows where one writes, and no document prints it.
+/// The number a line shows in the margin, and whether it was given by hand.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Shown {
     pub label: String,
     pub set: bool,
-    pub printed: bool,
-}
-
-/// Whether a number given by hand is more than digits: a label, which no
-/// count could make, and which is always shown.
-fn is_label(given: &str) -> bool {
-    given.chars().any(|c| !c.is_ascii_digit())
 }
 
 /// The count as it stands: what comes before the digits, the number of the
@@ -84,32 +75,38 @@ pub struct Counted<'a> {
 
 /// What each line of a stretch shows in the margin: its number, or
 /// nothing. `every` is the stretch's, or the layout's; nought counts as
-/// one. See the head of this file for which numbers stand on the page.
-pub fn numbers(numbering: Numbering, every: u32, lines: &[Counted]) -> Vec<Option<Shown>> {
+/// one. `from` is the number the stretch's count begins from, where it
+/// says one. See the head of this file for which numbers stand on the page.
+pub fn numbers(numbering: Numbering, every: u32, from: Option<&str>, lines: &[Counted]) -> Vec<Option<Shown>> {
     if numbering == Numbering::None {
         return vec![None; lines.len()];
     }
     let step = i64::from(every.max(1));
     let mut count: Option<Count> = None;
+    // The number the count begins from, taken up at the first counted line
+    // that has no number of its own before any number given.
+    let mut begins = from.map(str::trim).filter(|f| !f.is_empty()).and_then(read_label);
     lines
         .iter()
         .map(|line| {
             let given = line.number.map(str::trim).unwrap_or("");
             if numbering == Numbering::Given || !line.counted {
-                return (!given.is_empty()).then(|| Shown { label: given.to_owned(), set: true, printed: true });
+                return (!given.is_empty()).then(|| Shown { label: given.to_owned(), set: true });
             }
             if !given.is_empty() {
-                let read = read_label(given);
-                let printed = line.shown || is_label(given) || read.as_ref().is_none_or(|r| r.next % step == 0);
-                if let Some(read) = read {
+                begins = None;
+                if let Some(read) = read_label(given) {
                     count = Some(Count { next: read.next.saturating_add(1), ..read });
                 }
-                return Some(Shown { label: given.to_owned(), set: true, printed });
+                return Some(Shown { label: given.to_owned(), set: true });
+            }
+            if count.is_none() {
+                count = begins.take();
             }
             let count = count.as_mut()?;
             let n = count.next;
             count.next = count.next.saturating_add(1);
-            (n % step == 0 || line.shown).then(|| Shown { label: written(count, n), set: false, printed: true })
+            (n % step == 0 || line.shown).then(|| Shown { label: written(count, n), set: false })
         })
         .collect()
 }
@@ -194,6 +191,8 @@ pub struct Stretch<'a> {
     pub side: Option<Side>,
     /// The one kind whose lines are counted; nothing for every kind that is counted.
     pub only: Option<&'a str>,
+    /// The number the count begins from; nothing where it begins at the first number given.
+    pub begins: Option<&'a str>,
 }
 
 /// The numbered stretches of a text, in order: runs of consecutive
@@ -203,7 +202,7 @@ pub fn stretches(blocks: &[Block]) -> Vec<Stretch<'_>> {
     let mut out: Vec<Stretch> = Vec::new();
     let mut open = false;
     for (i, b) in blocks.iter().enumerate() {
-        let Block::Paragraph { numbering, every, side, only, .. } = b else {
+        let Block::Paragraph { numbering, every, side, only, from, .. } = b else {
             open = false;
             continue;
         };
@@ -212,6 +211,7 @@ pub fn stretches(blocks: &[Block]) -> Vec<Stretch<'_>> {
             continue;
         }
         let only = only.as_deref();
+        let begins = from.as_deref();
         if open
             && let Some(at) = out.last_mut()
             && at.to == i
@@ -219,11 +219,12 @@ pub fn stretches(blocks: &[Block]) -> Vec<Stretch<'_>> {
             && at.every == *every
             && at.side == *side
             && at.only == only
+            && at.begins == begins
         {
             at.to = i + 1;
             continue;
         }
-        out.push(Stretch { from: i, to: i + 1, numbering: *numbering, every: *every, side: *side, only });
+        out.push(Stretch { from: i, to: i + 1, numbering: *numbering, every: *every, side: *side, only, begins });
         open = true;
     }
     out
@@ -232,15 +233,15 @@ pub fn stretches(blocks: &[Block]) -> Vec<Stretch<'_>> {
 /// What each line of a stretch shows on the page, paragraph by paragraph
 /// and line by line: the paragraphs of the stretch as their kind and their
 /// content, how it is numbered, every how many (the stretch's, else the
-/// layout's), and whether the lines of a kind are counted, as `facts` says
-/// of it and the stretch's one kind (`only`) allows. Only what stands on
-/// the page is given: a line marked hidden, and a number given by hand
-/// that the count does not show, show nothing.
+/// layout's), the number its count begins from, where it says one, and
+/// whether the lines of a kind are counted, as `facts` says of it and the
+/// stretch's one kind (`only`) allows. A line marked hidden shows nothing.
 pub fn stretch_numbers(
     paragraphs: &[(&str, &[Inline])],
     numbering: Numbering,
     every: u32,
     only: Option<&str>,
+    from: Option<&str>,
     counted_kind: &dyn Fn(&str) -> bool,
 ) -> Vec<Vec<Option<Shown>>> {
     let lines: Vec<Vec<Line>> = paragraphs.iter().map(|(_, content)| lines_of(content)).collect();
@@ -255,13 +256,13 @@ pub fn stretch_numbers(
             });
         }
     }
-    let mut flat = numbers(numbering, every, &counted).into_iter();
+    let mut flat = numbers(numbering, every, from, &counted).into_iter();
     lines
         .iter()
         .map(|ls| {
             ls.iter()
                 .map(|l| {
-                    let shown = flat.next().flatten().filter(|s| s.printed);
+                    let shown = flat.next().flatten();
                     if l.mark.is_some_and(|m| m.hidden) { None } else { shown }
                 })
                 .collect()
@@ -287,12 +288,14 @@ mod tests {
 
     /// What stands on the page, line by line: "-" where nothing, "!" after a number given by hand.
     fn shown(numbering: Numbering, every: u32, lines: &[Counted]) -> Vec<String> {
-        numbers(numbering, every, lines)
+        shown_from(numbering, every, None, lines)
+    }
+
+    /// The same, the stretch counting from the number given.
+    fn shown_from(numbering: Numbering, every: u32, from: Option<&str>, lines: &[Counted]) -> Vec<String> {
+        numbers(numbering, every, from, lines)
             .into_iter()
-            .map(|s| {
-                s.filter(|s| s.printed)
-                    .map_or("-".to_owned(), |s| if s.set { format!("{}!", s.label) } else { s.label })
-            })
+            .map(|s| s.map_or("-".to_owned(), |s| if s.set { format!("{}!", s.label) } else { s.label }))
             .collect()
     }
 
@@ -308,7 +311,7 @@ mod tests {
     fn count_from_the_first_number_given_every_so_many_and_not_what_is_not_counted() {
         let mut lines = vec![line(None, false), line(Some("1"), true)];
         lines.extend(plain(5));
-        assert_eq!(shown(Numbering::Counted, 5, &lines), ["-", "-", "-", "-", "-", "5", "-"]);
+        assert_eq!(shown(Numbering::Counted, 5, &lines), ["-", "1!", "-", "-", "-", "5", "-"]);
     }
 
     #[test]
@@ -316,26 +319,33 @@ mod tests {
         let mut lines = plain(2);
         lines.push(line(Some("1234"), true));
         lines.extend(plain(6));
-        assert_eq!(shown(Numbering::Counted, 5, &lines), ["-", "-", "-", "1235", "-", "-", "-", "-", "1240"]);
+        assert_eq!(shown(Numbering::Counted, 5, &lines), ["-", "-", "1234!", "1235", "-", "-", "-", "-", "1240"]);
     }
 
     #[test]
-    fn show_a_count_from_41_every_5_first_at_45() {
+    fn count_from_the_number_the_stretch_begins_from_showing_it_only_where_it_falls_on_every() {
+        let mut lines = plain(6);
+        assert_eq!(shown_from(Numbering::Counted, 5, Some("1"), &lines), ["-", "-", "-", "-", "5", "-"]);
+        assert_eq!(shown_from(Numbering::Counted, 5, Some("41"), &lines), ["-", "-", "-", "-", "45", "-"]);
+        assert_eq!(shown_from(Numbering::Counted, 5, Some("45"), &lines), ["45", "-", "-", "-", "-", "50"]);
+        assert_eq!(shown_from(Numbering::Counted, 1, Some("1"), &lines[..2]), ["1", "2"]);
+        // Taken up at the first counted line: one not counted before it is passed over.
+        lines.insert(0, line(None, false));
+        assert_eq!(shown_from(Numbering::Counted, 5, Some("5"), &lines), ["-", "5", "-", "-", "-", "-", "10"]);
+    }
+
+    #[test]
+    fn a_number_given_by_hand_is_shown_and_the_count_goes_on_from_it_whatever_the_stretch_begins_from() {
         let mut lines = vec![line(Some("41"), true)];
         lines.extend(plain(5));
-        assert_eq!(shown(Numbering::Counted, 5, &lines), ["-", "-", "-", "-", "45", "-"]);
-    }
-
-    #[test]
-    fn say_a_number_given_that_is_not_shown_on_the_page_for_the_editor_to_show() {
-        let lines = [line(Some("41"), true), line(None, true)];
+        assert_eq!(shown_from(Numbering::Counted, 5, Some("1"), &lines), ["41!", "-", "-", "-", "45", "-"]);
+        let mut lines = plain(2);
+        lines.push(line(Some("12"), true));
+        lines.extend(plain(3));
+        assert_eq!(shown_from(Numbering::Counted, 5, Some("1"), &lines), ["-", "-", "12!", "-", "-", "15"]);
         assert_eq!(
-            numbers(Numbering::Counted, 5, &lines),
-            [Some(Shown { label: "41".into(), set: true, printed: false }), None]
-        );
-        assert_eq!(
-            numbers(Numbering::Counted, 5, &[line(Some("45"), true)]),
-            [Some(Shown { label: "45".into(), set: true, printed: true })]
+            numbers(Numbering::Counted, 5, Some("1"), &lines[2..3]),
+            [Some(Shown { label: "12".into(), set: true })]
         );
     }
 
@@ -409,7 +419,7 @@ mod tests {
         lines.extend(plain(2));
         lines.push(line(Some("1239"), true));
         lines.push(line(None, true));
-        assert_eq!(shown(Numbering::Counted, 5, &lines), ["1235!", "-", "-", "-", "1240"]);
+        assert_eq!(shown(Numbering::Counted, 5, &lines), ["1235!", "-", "-", "1239!", "1240"]);
     }
 
     #[test]
@@ -461,7 +471,28 @@ mod tests {
             })
             .collect();
         let counted = |name: &str| crate::formats::kinds::facts(name, &[]).counted;
-        shown_of(stretch_numbers(&paras, numbering, every, only, &counted))
+        shown_of(stretch_numbers(&paras, numbering, every, only, None, &counted))
+    }
+
+    #[test]
+    fn a_stretch_counts_from_the_number_it_says_at_its_first_counted_line() {
+        let paragraphs = vec![
+            Block::of_kind("speaker", vec![w("Nurse")]),
+            Block::of_kind("line", vec![w("one"), BR, w("two"), BR, w("three")]),
+            Block::of_kind("line", vec![w("four"), BR, mark().number("40").done(), w("forty"), BR, w("forty-one")]),
+        ];
+        let paras: Vec<(&str, &[Inline])> = paragraphs
+            .iter()
+            .filter_map(|b| match b {
+                Block::Paragraph { name, content, .. } => Some((name.as_str(), content.as_slice())),
+                _ => None,
+            })
+            .collect();
+        let counted = |name: &str| crate::formats::kinds::facts(name, &[]).counted;
+        assert_eq!(
+            shown_of(stretch_numbers(&paras, Numbering::Counted, 2, None, Some("1"), &counted)),
+            ["-", "- 2 -", "4 40! -"]
+        );
     }
 
     #[test]
@@ -565,7 +596,7 @@ mod tests {
                 w("e"),
             ],
         )];
-        assert_eq!(numbered(&paragraphs, Numbering::Counted, 2), ["- - - - 4"]);
+        assert_eq!(numbered(&paragraphs, Numbering::Counted, 2), ["1! - - - 4"]);
     }
 
     #[test]

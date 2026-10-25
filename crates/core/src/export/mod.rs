@@ -4394,15 +4394,15 @@ mod tests {
         fs::create_dir_all(&out).unwrap();
         let mut r = request("chicago-author-date");
         use crate::document::fixtures::{lines, mark};
-        let counted = |b: Block| b.numbered(Numbering::Counted, None, None);
-        // A speaker, two stanzas with a direction between them, and a third
+        let counted = |b: Block| b.numbered(Numbering::Counted, None, None).counting_from("1");
+        // A speaker, two stanzas with a direction between them, counted from 1, and a third
         // with a number given by hand, a line not counted, and words in the margin.
         let mut blocks = vec![
             counted(Block::of_kind("speaker", vec![text("Nurse")])),
             counted(lines(
                 "line",
                 vec![
-                    (Some(mark().number("1").done()), "If only the Argo had never flown"),
+                    (None, "If only the Argo had never flown"),
                     (Some(mark().indent(1).done()), "through the dark Clashing Rocks"),
                 ],
             )),
@@ -4442,7 +4442,7 @@ mod tests {
         let t = fs::read_to_string(&typ).unwrap();
         assert!(t.contains("#gk-verse["), "{t}");
         assert!(t.contains("#gk-line(\"speaker\", 0, n: none, margin: none, side: \"left\")["), "{t}");
-        // A 1 given where every fifth is shown stands on no page; the count goes on from it.
+        // A count from 1 where every fifth is shown begins on no page; it goes on from it.
         assert!(!t.contains("n: \"1\","), "{t}");
         assert!(t.contains("#gk-line(\"line\", 1, n: none, margin: none, side: \"left\")["), "{t}");
         assert!(t.contains("#gk-line(\"line\", 0, n: \"5\", margin: none, side: \"left\")["), "{t}");

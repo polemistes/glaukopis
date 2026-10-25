@@ -12,17 +12,17 @@ const BR = '<span class="hard-break"><br></span>';
 
 describe('a text as HTML', () => {
   it('draws a numbered stanza with a speaker: its lines parted, a number before each line that shows one', () => {
-    const stretch: Pick<ParagraphBlock, 'indent' | 'numbering' | 'every' | 'side'> = {
+    const stretch: Pick<ParagraphBlock, 'indent' | 'numbering' | 'every' | 'side' | 'from'> = {
       indent: 0,
       numbering: 'counted',
       every: 2,
       side: 'right',
+      from: '1',
     };
     const html = blocksHtml([
       paragraph([t('Nurse')], 'speaker', stretch),
       paragraph(
         [
-          linemark({ number: '1' }),
           t('If only the Argo'),
           br,
           t('had never flown'),
@@ -37,9 +37,9 @@ describe('a text as HTML', () => {
       ),
     ]);
     expect(html).toBe(
-      '<p data-kind="speaker" data-numbering="counted" data-every="2" data-side="right">Nurse</p>' +
-        '<p data-kind="line" data-numbering="counted" data-every="2" data-side="right">' +
-        '<span class="linemark" data-number="1"></span>If only the Argo' +
+      '<p data-kind="speaker" data-numbering="counted" data-every="2" data-side="right" data-from="1">Nurse</p>' +
+        '<p data-kind="line" data-numbering="counted" data-every="2" data-side="right" data-from="1">' +
+        'If only the Argo' +
         BR +
         '<span class="line-number" data-n="2"></span>had never flown' +
         BR +
@@ -50,18 +50,18 @@ describe('a text as HTML', () => {
   });
 
   it('counts every fifth where the stretch does not say, across paragraphs, and shows no hidden number', () => {
-    const stretch = { indent: 0, numbering: 'counted' as const };
+    const stretch = { indent: 0, numbering: 'counted' as const, from: '1' };
     const lines = (n: number): Inline[] =>
       Array.from({ length: n }, (_, i) => [br, t(`l${i}`)])
         .flat()
         .slice(1);
     const html = blocksHtml([
-      paragraph([linemark({ number: '1' }), ...lines(3)], 'line', stretch),
+      paragraph(lines(3), 'line', stretch),
       paragraph([t('aside')], 'direction', stretch),
       paragraph([...lines(2), br, linemark({ hidden: true }), t('held')], 'line', stretch),
       paragraph([t('after')], 'line', 0),
     ]);
-    // The 1 given does not divide by five, and stands on no page.
+    // The count begins from 1, which does not divide by five and stands on no page.
     expect(html.match(/data-n="[^"]*"/g)).toEqual(['data-n="5"']);
     expect(html).toContain('<span class="line-number" data-n="5"></span>l1');
     expect(html).toContain(`${BR}<span class="linemark" data-hidden></span>held</p>`);

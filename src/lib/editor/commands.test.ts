@@ -191,6 +191,7 @@ describe('the kind of a paragraph', () => {
       every: 2,
       side: 'right',
       only: null,
+      from: null,
       new: true,
     });
     const markAttrs = bodySchema.nodes.linemark.spec.parseDOM![0].getAttrs!(mark);
