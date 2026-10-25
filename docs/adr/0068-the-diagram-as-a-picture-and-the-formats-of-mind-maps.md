@@ -1,6 +1,6 @@
 # 0068 — The diagram as a picture, and the formats of mind maps
 
-Date: 2026-10-26. Status: proposed, from the owner's request of 2026-10-26 (two more export formats, the diagram as SVG and as an image) and their question about the formats of mind maps that could be imported and exported; to be built from `docs/plans/the-diagram-as-a-picture-and-the-formats-of-mind-maps.md`. The picture (stages 1 and 2 of the plan) is asked for; the formats (stages 3 to 5) are proposed, and await the owner's word. Relates to 0005 (export through Pandoc and Typst: this one does not go through them), 0012 (documents brought in: OPML is among them), 0033 (elements in a form another project can take: what a mind map file carries), 0036 and 0041 (a project saved as one file and as Org: the forms a project is saved as today), 0050 (the diagram behaves as a tree), 0052 (nothing fails quietly), 0065 (fewer words).
+Date: 2026-10-26. Status: accepted by the owner on 2026-10-26 ("Do also 3-5"), from the owner's request of 2026-10-26 (two more export formats, the diagram as SVG and as an image) and their question about the formats of mind maps that could be imported and exported; to be built from `docs/plans/the-diagram-as-a-picture-and-the-formats-of-mind-maps.md`. The picture (stages 1 and 2 of the plan) is asked for; the formats (stages 3 to 5) are proposed, and await the owner's word. Relates to 0005 (export through Pandoc and Typst: this one does not go through them), 0012 (documents brought in: OPML is among them), 0033 (elements in a form another project can take: what a mind map file carries), 0036 and 0041 (a project saved as one file and as Org: the forms a project is saved as today), 0050 (the diagram behaves as a tree), 0052 (nothing fails quietly), 0065 (fewer words).
 
 ## Context
 
@@ -80,3 +80,15 @@ What was found:
 - A module of the diagram's picture (`src/lib/project/diagram/picture.ts` and its PNG), two items and their words in `diagram.ftl`, two commands of the core (`file_write`, `file_read`) in `commands/system.rs`, a paragraph in the guide's *The diagram*, an e2e script that saves both and shows them.
 - If the formats are built: a module `src/lib/mindmaps/` with a reader and writer for each format over `Portable`, the text to and from HTML on the writer the text view has, fixtures of each format in the tests, two zip commands of the core, the two menu items and dropped files, their words in `home.ftl`, a passage in the guide's *Keeping things safe*.
 - Nothing of the model changes; the Org form and the project file stay as they are.
+
+## Addendum, 2026-10-26: as built — the diagram as a picture
+
+Built as decided, in `src/lib/project/diagram/picture.ts` and `fonts.ts`, with the command `file_write`. What departs from the plan, or was settled in the building:
+
+- **WebKitGTK draws the SVG on a canvas with its fonts**, so the PNG is made from the SVG itself; the fallback of drawing the shapes on the canvas was not needed and was not built.
+- **Every run of words stands where the browser set its first letter**, each with its own place in the file, so that how another program spaces words cannot move a run out of its box. The lines of a name are found by reading the place of each letter.
+- **The picture is read with nothing lit**: a state of the diagram, while it is read, takes away the selection, what is lit under the pointer, the marks of comments and every transition, so that no colour is caught on its way.
+- **The save dialog cannot be answered off-screen**, and the page does not let the call to the core be replaced; a hook for the e2e scripts gives the path the dialog would, as the hook for Org files does.
+- **Size**: a map with Latin and Greek names carries five faces of the fonts, about 250 KB; a Latin one about half that.
+- **Other programs**: the file is valid XML, and librsvg draws it in its own fonts, since it reads none put into a file; every word stays inside its box.
+- The two items are disabled while a name is written or something is dragged.
