@@ -17,6 +17,7 @@ import FileInput from '@lucide/svelte/icons/file-input';
 import FilePlus from '@lucide/svelte/icons/file-plus';
 import FileText from '@lucide/svelte/icons/file-text';
 import FolderDown from '@lucide/svelte/icons/folder-down';
+import Network from '@lucide/svelte/icons/network';
 import FolderInput from '@lucide/svelte/icons/folder-input';
 import FolderOpen from '@lucide/svelte/icons/folder-open';
 import FolderOutput from '@lucide/svelte/icons/folder-output';
@@ -49,6 +50,7 @@ import { settings } from '$lib/state/settings.svelte';
 import { router, type MapMode } from '$lib/state/router.svelte';
 import { openMenu, type MenuItem } from '$lib/ui/menu.svelte';
 import { describeError, notify, notifyError, notifyOk } from '$lib/ui/toast.svelte';
+import { safeFileName } from '$lib/util/file-name';
 import {
   copyProject,
   deleteThings,
@@ -59,8 +61,17 @@ import {
   renameProject,
 } from './changes';
 import { folderOf, folderTree, foldersOpenTo } from './folders';
+import {
+  isMindMapPath,
+  kindOfPath,
+  leftOutLines,
+  makeFromMindMap,
+  MINDMAP_ENDINGS,
+  OPENED_ENDINGS,
+  writeMindMap,
+} from './mindmap-file';
 import { makeFromOrg, ORG_ENDING, writeOrgFolder } from './org-file';
-import { ENDING, fileName, given, makeFromFile, writeProjectFile } from './project-file';
+import { ENDING, fileName, given, makeFromFile, writeProjectFile, type Made } from './project-file';
 
 /** What a name is asked for. */
 export type Purpose = 'new' | 'rename' | 'copy' | 'folder' | 'folder-rename';
@@ -78,6 +89,9 @@ export interface Naming {
 /** What becomes a project when it is chosen or dropped: a document, a PDF or a picture, whose text is read. */
 export const written = (path: string) =>
   isDocumentPath(path) || isPlainTextPath(path) || isReadPath(path);
+
+/** What becomes a project when it is dropped: a document, or a mind map of another program. */
+export const droppedAsProject = (path: string) => written(path) || isMindMapPath(path);
 
 /** Whether the name asked for is that of a folder. */
 export const ofFolder = (purpose: Purpose) => purpose === 'folder' || purpose === 'folder-rename';
@@ -430,6 +444,51 @@ export class ProjectActions {
     }
   }
 
+  /**
+   * Saves a project as a mind map of another program, where the user says:
+   * of the kind the ending of the name says, Freeplane's where it says none
+   * of theirs. The project that is open (`here`) is written to disk first.
+   * What had no place in the map is told.
+   */
+  async saveAsMindMap(p: ProjectInfo, here = false) {
+    const path = await save({
+      title: t('home-mindmap-save-title'),
+      defaultPath: `${safeFileName(p.name, 'project')}.${MINDMAP_ENDINGS.freeplane}`,
+      filters: [
+        { name: t('home-mindmap-filter-freeplane'), extensions: [MINDMAP_ENDINGS.freeplane] },
+        { name: t('home-mindmap-filter-xmind'), extensions: [MINDMAP_ENDINGS.xmind] },
+        { name: t('home-mindmap-filter-opml'), extensions: [MINDMAP_ENDINGS.opml] },
+      ],
+    });
+    if (!path) return;
+    await this.saveMindMapAt(p, path, here);
+  }
+
+  /**
+   * Saves a project as a mind map at `path`, of the kind its ending says,
+   * Freeplane's where it says none of theirs, and says what had no place.
+   */
+  async saveMindMapAt(p: ProjectInfo, path: string, here = false) {
+    if (this.filing) return;
+    // Not every system adds the ending to a name written without it.
+    const end = MINDMAP_ENDINGS[kindOfPath(path)];
+    const target = path.toLowerCase().endsWith(`.${end}`) ? path : `${path}.${end}`;
+    this.filing = true;
+    try {
+      const open = here ? currentProject() : null;
+      const left = await writeMindMap(p, target, open ? () => open.flush() : undefined);
+      notifyOk(t('home-mindmap-saved', { name: p.name }));
+      const lines = leftOutLines(left);
+      // Told with the message before it, a line each.
+      if (lines.length)
+        for (const line of [t('home-mindmap-left-out-saving'), ...lines]) notify(line);
+    } catch (error) {
+      notifyError(t('home-mindmap-save-failed'), error);
+    } finally {
+      this.filing = false;
+    }
+  }
+
   /** Makes a new project of a project file the user chooses, and opens it. */
   async openFile() {
     if (this.filing) return;
@@ -459,11 +518,39 @@ export class ProjectActions {
     return this.makeOf(path, makeFromOrg, t('home-org-open-failed'));
   }
 
+  /** Makes a new project of a mind map of another program the user chooses, and opens it. */
+  async openMindMap() {
+    if (this.filing) return;
+    const path = await chooseFile({
+      title: t('home-mindmap-open-title'),
+      multiple: false,
+      filters: [{ name: t('home-mindmap-filter'), extensions: OPENED_ENDINGS }],
+    });
+    if (typeof path !== 'string') return;
+    await this.openMindMapAt(path);
+  }
+
+  /**
+   * Makes a new project of the mind map at `path`, and opens it; what the
+   * map holds that has no place in a project is told after.
+   */
+  openMindMapAt(path: string): Promise<void> {
+    return this.makeOf(path, makeFromMindMap, t('home-mindmap-open-failed'), (made) => {
+      const lines = leftOutLines(made.leftOut);
+      if (lines.length) for (const line of [t('home-mindmap-left-out'), ...lines]) notify(line);
+    });
+  }
+
   /**
    * Makes a new project of the file at `path` by `maker`, asking what is
    * to be done with its works where something is to be chosen, and opens it.
    */
-  async makeOf(path: string, maker: typeof makeFromFile, failed: string) {
+  async makeOf<M extends Made>(
+    path: string,
+    maker: (path: string, ask: Parameters<typeof makeFromFile>[1]) => Promise<M | null>,
+    failed: string,
+    after?: (made: M) => void,
+  ) {
     if (this.filing) return;
     this.filing = true;
     try {
@@ -489,6 +576,7 @@ export class ProjectActions {
       if (made.problems.length)
         notify(t('home-file-problems', { count: made.problems.length }), made.problems.join('\n'));
       this.open(made.info);
+      after?.(made);
     } catch (error) {
       notifyError(failed, error);
     } finally {
@@ -514,6 +602,8 @@ export class ProjectActions {
    * chosen, or of one that was dropped. It opens on the document's text.
    */
   async fromDocument(dropped?: string, folder: string | null = null) {
+    // A mind map dropped is made a project of its own kind.
+    if (dropped && isMindMapPath(dropped)) return this.openMindMapAt(dropped);
     const path = dropped ?? (await chooseDocument());
     const brought = path ? await bringIn(path, null) : null;
     const made = brought?.project;
@@ -559,6 +649,12 @@ export class ProjectActions {
           icon: FileText,
           disabled: this.filing,
           action: () => void this.openOrg(),
+        },
+        {
+          label: t('home-mindmap-open'),
+          icon: Network,
+          disabled: this.filing,
+          action: () => void this.openMindMap(),
         },
       ] satisfies MenuItem[],
       { align: 'start' },
@@ -642,6 +738,12 @@ export class ProjectActions {
         icon: FolderDown,
         disabled: this.filing,
         action: () => void this.saveAsOrg(p, here),
+      },
+      {
+        label: t('home-menu-save-mindmap'),
+        icon: Network,
+        disabled: this.filing,
+        action: () => void this.saveAsMindMap(p, here),
       },
       ...(place.share
         ? [{ label: t('home-share'), icon: Users, action: () => place.share?.(p.id) } as MenuItem]

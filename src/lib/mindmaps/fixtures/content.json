@@ -1,0 +1,87 @@
+[
+  {
+    "id": "sheet-1",
+    "class": "sheet",
+    "title": "Iliad",
+    "rootTopic": {
+      "id": "root-1",
+      "class": "topic",
+      "title": "The Iliad",
+      "structureClass": "org.xmind.ui.map.unbalanced",
+      "notes": {
+        "plain": { "content": "The wrath of Achilles." },
+        "realHTML": { "content": "<div>The wrath of <i>Achilles</i>.</div>" }
+      },
+      "children": {
+        "attached": [
+          {
+            "id": "t-quarrel",
+            "class": "topic",
+            "title": "The quarrel",
+            "markers": [{ "markerId": "task-done" }, { "markerId": "priority-1" }],
+            "labels": ["Episode", "Time: 1184 BC"],
+            "notes": { "plain": { "content": "Agamemnon takes Briseis.\n\nAchilles withdraws." } },
+            "children": {
+              "attached": [
+                { "id": "t-achilles", "class": "topic", "title": "Achilles", "labels": ["Character"] },
+                {
+                  "id": "t-agamemnon",
+                  "class": "topic",
+                  "title": "Agamemnon",
+                  "labels": ["Character", "King"],
+                  "href": "https://example.org/agamemnon"
+                }
+              ]
+            }
+          },
+          {
+            "id": "t-battles",
+            "class": "topic",
+            "title": "The battles",
+            "branch": "folded",
+            "markers": [{ "markerId": "task-quarter" }],
+            "children": {
+              "attached": [
+                { "id": "t-patroclus", "class": "topic", "title": "Patroclus falls", "labels": ["Left out"] },
+                {
+                  "id": "t-hector",
+                  "class": "topic",
+                  "title": "Hector",
+                  "image": { "src": "xap:resources/hector.png" }
+                }
+              ]
+            },
+            "boundaries": [{ "id": "b1", "range": "(0,1)" }]
+          }
+        ],
+        "detached": [
+          {
+            "id": "t-gods",
+            "class": "topic",
+            "title": "The gods",
+            "markers": [{ "markerId": "task-start" }],
+            "position": { "x": 300, "y": -200 }
+          }
+        ]
+      }
+    },
+    "relationships": [
+      { "id": "r1", "class": "relationship", "end1Id": "t-achilles", "end2Id": "t-hector", "title": "kills" },
+      { "id": "r2", "class": "relationship", "end1Id": "t-achilles", "end2Id": "gone" }
+    ]
+  },
+  {
+    "id": "sheet-2",
+    "class": "sheet",
+    "title": "Notes",
+    "rootTopic": {
+      "id": "root-2",
+      "class": "topic",
+      "title": "Central Topic",
+      "children": {
+        "attached": [{ "id": "t-meter", "class": "topic", "title": "Hexameter" }]
+      },
+      "summaries": [{ "id": "s1", "range": "(0,0)", "topicId": "t-sum" }]
+    }
+  }
+]

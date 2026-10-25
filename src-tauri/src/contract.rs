@@ -597,6 +597,8 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("systemInfo", "system.SystemInfo", &system_info);
     put("languagesInfo", "system.LanguagesInfo", &languages);
     put("settingsLoaded", "system.SettingsLoaded", &settings);
+    let zip_entry = crate::commands::system::ZipEntry { name: "content.json".into(), text: "[]".into() };
+    put("zipEntry", "system.ZipEntry", &zip_entry);
     put("pasted", "clipboard.Pasted", &pasted);
     put("trashed", "projects.Trashed[]", &trashed);
     put("history", "projects.HistoryEntry[]", &history);

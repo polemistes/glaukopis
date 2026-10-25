@@ -3055,6 +3055,46 @@ marked, and within a changed line the words that changed.
 tables, and by Pandoc, which turns it into many other forms; any editor of
 plain text shows it as it is.
 
+### Your project as a mind map
+
+A project can go to a program of mind maps, and a mind map can become a
+project. Right-click a project in the list of projects and choose **Save as
+a mind map…**; the kind of file is chosen in the save dialog, or by the
+ending of the name:
+
+- **Freeplane and FreeMind** (`.mm`): the file nearly every program of mind
+  maps reads, XMind, MindManager, MindMeister, SimpleMind and the plug-ins
+  of Obsidian and Logseq among them. Choose it when in doubt.
+- **XMind** (`.xmind`), read by the XMind of today and by XMind 8.
+- **OPML** (`.opml`), the outline that outliners such as Workflowy,
+  Dynalist and OmniOutliner share: names and texts only.
+
+The project's own element is the topic in the middle, and every element
+under it a topic, in its order. What crosses: each name, with its italics,
+small capitals, raised and lowered letters in Freeplane; each text, as the
+topic's note, with its paragraphs, lists, quotations, marks and tables,
+citations as their words, *(Nagy 1979, 12)*, notes in square brackets
+where they stand, a figure as its caption and an equation as its source;
+what is folded; how far the writing has come, as Freeplane's icons of an
+idea, a pencil and a tick, and as XMind's task markers; the kind, the time
+and *left out of the document*, as attributes named *Kind*, *Time* and
+*Left out* in Freeplane and as labels in XMind, the kind also in its colour
+in Freeplane; and the associations with their words. What does not cross:
+where you put elements by hand (a map opened is laid out anew), images,
+comments, that a clone is a clone, the look of documents, and the records
+of the works cited. Where something of the project has no place in the
+file, Glaukopis says what and how much.
+
+**Open a mind map…**, in the **+** at the head of the list of projects, or
+a map dropped on the start screen, makes a new project of a file of
+Freeplane, FreeMind or XMind: named after the topic in the middle, the
+topics under it its elements, read as above. A file of XMind with several
+sheets gives an element for each sheet; floating topics stand under the
+topic in the middle. What the map holds that has no place in a project
+(images, clouds, summaries, boundaries, links to web pages, icons of other
+meaning) is left out, and you are told what and how much. An OPML file is
+opened as a document, with **A project from a document…**.
+
 ## Keys
 
 Everything here is also in the application: **Ctrl+/**, or the keyboard at

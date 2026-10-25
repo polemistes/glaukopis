@@ -36,6 +36,15 @@
   // For the tests of the running application, which cannot answer the dialog
   // that chooses a file; only when the harness asks for it.
   testHook('__glaukopisOrg', { open: (path: string) => actions.openOrgAt(path) });
+  testHook('__glaukopisMindMaps', {
+    open: (path: string) => actions.openMindMapAt(path),
+    /** Saves the project of that name, which may be the one open, as a mind map at `path`. */
+    save: (name: string, path: string) => {
+      const p = projects.list.find((x) => x.name === name);
+      return p ? actions.saveMindMapAt(p, path, true) : Promise.reject(new Error(`no ${name}`));
+    },
+    fromDocument: (path: string) => actions.fromDocument(path),
+  });
 </script>
 
 {#if actions.showTrash}

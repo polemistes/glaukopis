@@ -40,6 +40,21 @@ export const revealPath = (path: string) => call<void>('reveal_path', { path });
 /** Writes bytes the page has made to a path the user chose, whole or not at all. */
 export const fileWrite = (path: string, bytes: Uint8Array) =>
   call<void>('file_write', withHead({ path }, bytes));
+/** Reads a file the user chose, whole: no more than 50 MB of it. */
+export const fileRead = async (path: string) =>
+  new Uint8Array(await call<ArrayBuffer>('file_read', { path }));
+
+/** A text kept in a zip archive, by its name there. */
+export interface ZipEntry {
+  name: string;
+  text: string;
+}
+
+/** The texts of a zip archive the user chose: its JSON and its XML, nothing else. */
+export const zipRead = (path: string) => call<ZipEntry[]>('zip_read', { path });
+/** Writes texts as a zip archive at a path the user chose, whole or not at all. */
+export const zipWrite = (path: string, entries: ZipEntry[]) =>
+  call<void>('zip_write', { path, entries });
 
 export type Theme = 'system' | 'light' | 'dark' | 'mellow' | 'own';
 
