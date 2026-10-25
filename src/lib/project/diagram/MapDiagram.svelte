@@ -1,6 +1,9 @@
 <script lang="ts">
   import ClipboardPaste from '@lucide/svelte/icons/clipboard-paste';
-  import { onDestroy, untrack } from 'svelte';
+  import { onDestroy, tick, untrack } from 'svelte';
+  import { save } from '@tauri-apps/plugin-dialog';
+  import { fileWrite } from '$lib/api/system';
+  import { safeFileName } from '$lib/util/file-name';
   import { SvelteMap } from 'svelte/reactivity';
   import Maximize from '@lucide/svelte/icons/maximize';
   import Minimize2 from '@lucide/svelte/icons/minimize-2';
@@ -29,7 +32,7 @@
   } from '../clipboard.svelte';
   import { elementMenu, type ElementActions, type ElementsPayload } from '../elements';
   import { carryAcross } from '../elsewhere';
-  import { notify, notifyOk } from '$lib/ui/toast.svelte';
+  import { notify, notifyError, notifyOk } from '$lib/ui/toast.svelte';
   import ElementTooltip from '../ElementTooltip.svelte';
   import type { Project } from '../model/project.svelte';
   import { isAncestor, subtree } from '../model/tree';
@@ -50,6 +53,7 @@
   import { progressOf, progressWords } from '../status';
   import { associationsOf, drawing, linesOf } from './lines';
   import { layout, type Layout, type Placed, type Size } from './layout';
+  import { fontsOf, imageScale, pictureOf, toPng, toSvg } from './picture';
 
   interface Props {
     project: Project;
@@ -992,6 +996,62 @@
   /** Whether the menu was just opened by a key, so that the event the key sends after it is let be. */
   let menuByKey = false;
 
+  /** While the diagram is read as a picture: nothing selected, nothing lit, nothing moving. */
+  let picturing = $state(false);
+
+  /**
+   * Saves the diagram as it stands as SVG or as a PNG image, where the user
+   * chooses, named after the element in view.
+   */
+  async function savePicture(kind: 'svg' | 'png') {
+    if (!viewport) return;
+    const name = project.node(at)?.title || t('project-untitled');
+    try {
+      picturing = true;
+      await tick();
+      await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
+      const { picture, settings } = pictureOf(viewport, name);
+      picturing = false;
+      const scale = kind === 'png' ? imageScale(picture.view) : null;
+      if (kind === 'png' && !scale) {
+        notify(t('diagram-too-large-for-image'));
+        return;
+      }
+      const fonts = await fontsOf(settings);
+      const svg = toSvg(picture, fonts.css);
+      const ending = kind;
+      const path = await save({
+        title: t(kind === 'svg' ? 'diagram-save-svg-title' : 'diagram-save-image-title'),
+        defaultPath: `${safeFileName(name, t('project-untitled'))}.${ending}`,
+        filters: [
+          {
+            name: t(kind === 'svg' ? 'diagram-file-svg' : 'diagram-file-png'),
+            extensions: [ending],
+          },
+        ],
+      });
+      if (!path) return;
+      const target = path.toLowerCase().endsWith(`.${ending}`) ? path : `${path}.${ending}`;
+      const file = target.split(/[\\/]/).pop() ?? target;
+      const missing = fonts.complete ? undefined : t('diagram-saved-no-fonts');
+      if (kind === 'svg') {
+        await fileWrite(target, new TextEncoder().encode(svg));
+        notifyOk(t('diagram-saved', { name: file }), missing);
+      } else {
+        const png = await toPng(picture, svg, scale!);
+        await fileWrite(target, png.bytes);
+        notifyOk(
+          t('diagram-saved-size', { name: file, width: png.width, height: png.height }),
+          missing,
+        );
+      }
+    } catch (error) {
+      notifyError(t('diagram-save-failed'), error);
+    } finally {
+      picturing = false;
+    }
+  }
+
   function oncontextmenu(event: MouseEvent) {
     if (menuByKey) {
       menuByKey = false;
@@ -1026,6 +1086,17 @@
             project.checkpoint();
             requestAnimationFrame(fit);
           },
+        },
+        { kind: 'separator' },
+        {
+          label: t('diagram-save-svg'),
+          disabled: renaming !== null || !!drag.payload,
+          action: () => void savePicture('svg'),
+        },
+        {
+          label: t('diagram-save-image'),
+          disabled: renaming !== null || !!drag.payload,
+          action: () => void savePicture('png'),
         },
       ]);
       return;
@@ -1164,7 +1235,7 @@
         <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
         <g
           class="association"
-          class:selected={selectedLink === c.id}
+          class:selected={!picturing && selectedLink === c.id}
           class:faint={c.faint}
           onpointerdown={(e) => {
             e.stopPropagation();
@@ -1221,7 +1292,7 @@
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <span
           class="link-label"
-          class:selected={selectedLink === c.id}
+          class:selected={!picturing && selectedLink === c.id}
           style:transform="translate(-50%, -50%) translate({c.middle.x}px, {c.middle.y}px)"
           onpointerdown={(e) => {
             e.stopPropagation();
@@ -1274,9 +1345,10 @@
             {project}
             {node}
             placed={p}
-            selected={selected.has(id)}
-            target={dropOn === id || linking?.over === id}
-            lifted={lifted.has(id) && overThis}
+            selected={!picturing && selected.has(id)}
+            target={!picturing && (dropOn === id || linking?.over === id)}
+            lifted={!picturing && lifted.has(id) && overThis}
+            still={picturing}
             renaming={renaming === id}
             hasChildren={(tree.children.get(id)?.length ?? 0) > 0}
             excluded={node.excluded}

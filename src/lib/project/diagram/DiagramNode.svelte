@@ -50,6 +50,8 @@
     onenter?: (id: string) => void;
     /** On the element in view: goes up, to the element over it, with a button where the other is. */
     onleave?: () => void;
+    /** While the diagram is read as a picture: nothing lit, nothing moving, no comments. */
+    still?: boolean;
   }
 
   let {
@@ -71,6 +73,7 @@
     onlinkstart,
     onenter,
     onleave,
+    still = false,
   }: Props = $props();
 
   let el = $state<HTMLDivElement>();
@@ -143,8 +146,9 @@
     : node.title || t('project-untitled')}
   aria-selected={selected}
   class:kinded={!!kind}
-  class:commented={commented.length > 0}
-  class:hot={commentsUi.hovered?.element === node.id}
+  class:commented={!still && commented.length > 0}
+  class:hot={!still && commentsUi.hovered?.element === node.id}
+  class:still
   style:--kind={kind ? kindColour(kind.colour).ink : undefined}
   aria-level={placed.depth + 1}
   aria-expanded={hasChildren ? !node.collapsed : undefined}
@@ -383,8 +387,13 @@
   .node.excluded {
     opacity: 0.5;
   }
-  .node:hover {
+  .node:not(.still):hover {
     border-color: var(--ink-4);
+  }
+  /* Read as a picture: as it stands, with nothing on its way. */
+  .node.still,
+  .node.still * {
+    transition: none !important;
   }
   .node.selected {
     border-color: var(--accent);
@@ -564,7 +573,7 @@
   .root .fold {
     display: none;
   }
-  .node:hover .fold,
+  .node:not(.still):hover .fold,
   .node.selected .fold,
   .fold.folded {
     opacity: 1;
