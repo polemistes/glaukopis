@@ -1240,3 +1240,21 @@ Agreed, with one amendment: selecting a file in the library opens its pane, wher
 > great, do it.
 
 Record 0069 and the plan `docs/plans/a-file-in-a-view.md` follow.
+
+## 2026-10-27 — one place for files
+
+> I think the separate place of files and images is somewhat unintuitive. The files menu in the library just lists all the files that has been imported to the project, except the image files, which gets its own pane. Should we not just have one files pane, where all files are listed, no matter where it was imported from? You have advised me against this before, but I still cannot see why the way it is now is better. The files pane would need to be organized some way, perhaps, three categories: pdf, image and other? Or just be like a normal file manager, where you can sort on file type, date, or file name? What do you think?
+
+The assessment agreed: the two stores were divided by their storage (a picture is material of a document, shared and carried in the project file; a file is a source, private, belonging to references), and that reasoning should not have decided what the writer sees; the same image lands in either store by the way it came in, with nothing between the copies. Proposed: one Files view shaped like a plain file manager, folders, sorting by name, kind and date, a filter row rather than three fixed groups, *where it is used* as the extra fact, the image's extras in its pane, the project's picture panel kept, sharing following use. Then:
+
+> I am not sure about the image caption. Images may be used in many documents, and would probably need different captions (or none) in each document. So, should not the caption stay with the document, not the image itself? Also, images now have a note field, while other files do not. Adding a notes field to pdfs would create some confusion, since also a reference has a note field, so a user may forget if she added a note to the pdf or the reference of a work. Should we just remove the image note? Or do you have another suggestion?
+
+Agreed on both: the image's caption was only a starting point copied into each figure, and the field says otherwise; it goes, and a figure's caption is the document's. The image's note goes too, the store's and the project's under `picture:<hash>`; notes belong to works, and what there is to say of a file is said on its reference. The alternative text stays with the file: it says what the image shows, the same wherever it is used.
+
+> Nobody has made an image note yet, that needs to be saved, so just discard them. I am unsure that we should allow notes even to files that have no reference. That will cause confusion if the file is ever added to references, don't you think? I also have some ideas and questions about the files view. It would be good to have a well functioning preview function for all supported files, and different listing modes, like thumbnails in different sizes and a list view, with or without recursion. What do you think?
+
+Resolved: no notes on files at all; a file that deserves a note is given a reference first. A preview in the file's pane (an image as it is, a PDF by its first page, drawn once and kept), a list and a grid of thumbnails in three sizes, a switch *Include subfolders*, sorting in both modes.
+
+> Yes, make the plan. I will give it to Opus 5.5, so please make sure it is detailed enough, and that it points to the files that will be part of the plan.
+
+Record 0070 and the plan `docs/plans/one-place-for-files.md` follow.
