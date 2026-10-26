@@ -1780,6 +1780,12 @@ pub fn pages_at(
             None => lacking.push(index),
         }
     }
+    // Past the last page, where how many there are is known already, nothing is drawn.
+    if let Some(known) = pages_cache::key_of(path).and_then(|key| {
+        FRAMES.lock().unwrap_or_else(PoisonError::into_inner).iter().find(|(k, _)| *k == key).map(|(_, f)| f.clone())
+    }) {
+        lacking.retain(|index| *index < known.frames.len());
+    }
     if !lacking.is_empty() {
         let draw = |pages: &[usize]| -> Result<Vec<child::PagePicture>> {
             let place = place_in(work)?;
