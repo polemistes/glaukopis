@@ -213,6 +213,95 @@ fn a_page_that_draws_without_end_ends_the_child_and_not_the_application() {
     assert_eq!(std::fs::read_dir(&work).map(|d| d.count()).unwrap_or(0), 0);
 }
 
+/// A file shown in a view, in the child: the facts of the fixture, its page
+/// drawn in colour, its lines; a page that draws without end says so in its
+/// place, and the child, not the application, ends.
+#[test]
+fn a_file_is_shown_from_the_child() {
+    with_child();
+    let dir = tempfile::tempdir().unwrap();
+    let work = dir.path().join("work");
+    let porson = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../e2e/fixtures/porson.pdf");
+    let facts = ocr::file_facts(&porson, &Tools::default(), &work).unwrap();
+    assert_eq!((facts.pages, facts.sizes.as_slice(), facts.locked), (1, &[(400.0, 360.0)][..], false));
+    let pages = ocr::pages_at(&porson, &Tools::default(), &work, None, &[0], 600, &never()).unwrap();
+    let picture = image::load_from_memory(pages[0].1.as_ref().unwrap()).unwrap();
+    assert_eq!((picture.color(), picture.width(), picture.height()), (image::ColorType::Rgb8, 600, 540));
+    let lines = ocr::page_lines(&porson, &Tools::default(), &work, 0).unwrap();
+    assert_eq!(lines.lines.len(), 4);
+
+    let pdf = drawing_without_end(dir.path());
+    let before = before();
+    let facts = ocr::file_facts(&pdf, &Tools::default(), &work).unwrap();
+    assert_eq!(facts.pages, 1);
+    let pages = ocr::pages_at(&pdf, &Tools::default(), &work, None, &[0, 1], 600, &never()).unwrap();
+    assert_eq!(pages, [(0, Err(memory_error(&pdf)))]);
+    held_little(before);
+    assert_eq!(std::fs::read_dir(&work).map(|d| d.count()).unwrap_or(0), 0);
+}
+
+/// How long a view waits with the child, as the application has it: the
+/// facts of a book of 364 pages set by Typst (the child opens it, and reads
+/// its text for the numbers in print), a page drawn 1600 wide the first
+/// time and from the cache, and the lines of a page. Run by hand:
+/// `cargo test -p glaukopis-core --release --test ocr_child measure -- --ignored --nocapture`.
+#[test]
+#[ignore]
+fn measure_a_file_shown_from_the_child() {
+    use std::time::Instant;
+    with_child();
+    let Some(typst) = tools::find("typst", None, &[]) else {
+        passed_over("The program Typst is not installed");
+        return;
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let (work, cache) = (dir.path().join("work"), dir.path().join("cache"));
+    let paragraph = "The wrath of Achilles is the subject of the Iliad, and Homer sings of the quarrel \
+                     between the king and the hero, and of all that came of it. "
+        .repeat(6);
+    let mut text = String::from("#set page(paper: \"a5\", numbering: \"i\")\n#set text(size: 10pt)\n");
+    for chapter in 1..=40 {
+        text.push_str(&format!("= Chapter {chapter}\n"));
+        for _ in 0..30 {
+            text.push_str(&paragraph);
+            text.push_str("\n\n");
+        }
+    }
+    std::fs::write(dir.path().join("book.typ"), text).unwrap();
+    let book = dir.path().join("book.pdf");
+    let ran = std::process::Command::new(&typst).arg("compile").arg(dir.path().join("book.typ")).arg(&book).status();
+    assert!(ran.unwrap().success());
+    let porson = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../e2e/fixtures/porson.pdf");
+    let structure = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../e2e/fixtures/structure.pdf");
+    let tools = tools::discover(&Configured::default());
+    for file in [&porson, &structure, &book] {
+        let started = Instant::now();
+        let facts = ocr::file_facts(file, &tools, &work).unwrap();
+        let facts_took = started.elapsed();
+        let started = Instant::now();
+        let first = ocr::pages_at(file, &tools, &work, Some(&cache), &[0], 1600, &never()).unwrap();
+        let drawn = started.elapsed();
+        let started = Instant::now();
+        let again = ocr::pages_at(file, &tools, &work, Some(&cache), &[0], 1600, &never()).unwrap();
+        let kept = started.elapsed();
+        assert_eq!(first, again);
+        let six: Vec<usize> = (facts.pages / 2..facts.pages / 2 + 6).collect();
+        let started = Instant::now();
+        ocr::pages_at(file, &tools, &work, Some(&cache), &six, 1600, &never()).unwrap();
+        let several = started.elapsed();
+        let started = Instant::now();
+        let lines = ocr::page_lines(file, &tools, &work, facts.pages - 1).unwrap();
+        let lines_took = started.elapsed();
+        println!(
+            "{}: {} pages; facts {facts_took:?}; page 1 at 1600 {drawn:?}, from the cache {kept:?}; six pages from the middle {several:?}; lines of the last page {lines_took:?} ({} lines, labelled {})",
+            file.file_name().unwrap().to_string_lossy(),
+            facts.pages,
+            lines.lines.len(),
+            lines.label,
+        );
+    }
+}
+
 #[test]
 fn a_file_that_loads_without_end_ends_the_child_and_not_the_application() {
     with_child();

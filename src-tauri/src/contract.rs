@@ -399,6 +399,24 @@ fn what_is_sent_is_what_the_interface_declares() {
             .into_iter()
             .map(Into::into)
             .collect();
+    use crate::commands::viewer;
+    let file_facts = viewer::FileFacts {
+        name: "nagy.pdf".into(),
+        picture: false,
+        pages: 2,
+        sizes: vec![(595.0, 842.0), (842.0, 595.0)],
+        labels: vec!["i".into(), "1".into()],
+        locked: false,
+    };
+    let pages_at: Vec<viewer::PageAt> =
+        vec![(0, Ok(DOT.to_vec())), (1, Err("A remark.".to_owned()))].into_iter().map(Into::into).collect();
+    let page_lines = viewer::PageLines {
+        number: 1,
+        label: "i".into(),
+        width: 595.0,
+        height: 842.0,
+        lines: vec![viewer::PageLine { text: "A line.".into(), left: 72.0, top: 90.5, right: 300.25, bottom: 102.0 }],
+    };
     let rendered = vec![
         glaukopis_core::export::math::Rendered { mathml: Some("<math/>".into()), problem: None },
         glaukopis_core::export::math::Rendered { mathml: None, problem: Some("A remark.".into()) },
@@ -617,6 +635,9 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("madeSearchable", "ocr.MadeSearchable", &searchable);
     put("synced", "pictures.Synced", &synced);
     put("pagePictures", "ocr.PagePicture[]", &page_pictures);
+    put("fileFacts", "viewer.FileFacts", &file_facts);
+    put("pagesAt", "viewer.PageAt[]", &pages_at);
+    put("pageLines", "viewer.PageLines", &page_lines);
     put("rendered", "pictures.Rendered[]", &rendered);
     put("sheets", "tables.Sheet[]", &sheets);
     put("server", "sharing.ServerInfo", &server);

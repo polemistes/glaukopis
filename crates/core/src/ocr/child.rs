@@ -182,6 +182,12 @@ pub enum Task {
     /// Small pictures of `count` pages from `from`, counted from nought, as
     /// many as the file has, each `width` dots wide: to be shown, not read.
     Pictures { from: usize, count: usize, width: u32 },
+    /// These pages, counted from nought, those the file has, each drawn
+    /// `width` dots wide in colour: a file shown in a view.
+    PagesAt { pages: Vec<usize>, width: u32 },
+    /// How many pages the file has, and where each stands as it is drawn:
+    /// what a view needs before any page is drawn.
+    Facts,
 }
 
 /// What the child is asked to do with the pages of a PDF.
@@ -235,6 +241,8 @@ impl Job {
             Task::Read { pages } | Task::Searchable { pages, .. } => pages.len(),
             Task::First { count } | Task::Pictures { count, .. } => *count,
             Task::Try { .. } => 1,
+            Task::PagesAt { pages, .. } => pages.len(),
+            Task::Facts => 0,
         }
     }
 }
@@ -303,6 +311,15 @@ pub struct Tried {
 /// page could not be drawn.
 pub type PagePicture = (usize, std::result::Result<String, String>);
 
+/// What is known of a PDF before its pages are drawn: where each stands as
+/// it is drawn, or that it asks for a password.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct Facts {
+    pub frames: Vec<drawing::Frame>,
+    /// Whether it asks for a password, which neither hayro nor Poppler is given.
+    pub locked: bool,
+}
+
 /// What a job came to.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Done {
@@ -310,6 +327,9 @@ pub enum Done {
     Made(Made),
     Tried(Tried),
     Pictures(Vec<PagePicture>),
+    /// The pages drawn at a width, in colour: as `Pictures`, PNGs in base64.
+    PagesAt(Vec<PagePicture>),
+    Facts(Facts),
 }
 
 /// How long the work on a file of `bytes` may take, with `pages` to draw and
@@ -403,6 +423,30 @@ fn work_here(job: &Job, told: &mut dyn FnMut(Progress), stop: &AtomicBool) -> st
             let pages: Vec<usize> = (*from..from.saturating_add(*count).min(drawing.count())).collect();
             Ok(Done::Pictures(pictures(job, &drawing, &pages, *width, size, told, stop)))
         }
+        Task::PagesAt { pages, width } => {
+            let drawing = Pages::open(&job.pdf, Arc::new(bytes), pdftoppm.as_ref()).map_err(failure)?;
+            let pages: Vec<usize> = pages.iter().copied().filter(|&index| index < drawing.count()).collect();
+            Ok(Done::PagesAt(pages_at(job, &drawing, &pages, *width, size, told, stop)))
+        }
+        Task::Facts => {
+            let bytes = Arc::new(bytes);
+            match Pages::open(&job.pdf, bytes.clone(), pdftoppm.as_ref()) {
+                Ok(drawing) => Ok(Done::Facts(Facts { frames: drawing.frames(), locked: false })),
+                Err(e) => {
+                    let asks = std::panic::catch_unwind(|| {
+                        matches!(
+                            hayro::hayro_syntax::Pdf::new(bytes),
+                            Err(hayro::hayro_syntax::LoadPdfError::Decryption(_))
+                        )
+                    });
+                    if asks.unwrap_or(false) {
+                        Ok(Done::Facts(Facts { frames: Vec::new(), locked: true }))
+                    } else {
+                        Err(failure(e))
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -487,6 +531,34 @@ fn pictures(
     };
     let at_once = at_once(drawing, pages, Quality::default(), job.memory, bytes);
     tracing::debug!(pages = pages.len(), at_once, width, "small pictures of pages drawn");
+    several(pages, at_once, &one, told, stop)
+        .into_iter()
+        .map(|(index, result)| (index, result.map_err(|e: Error| e.to_string())))
+        .collect()
+}
+
+/// Pages drawn at a width in colour, several at a time, as
+/// [`Task::PagesAt`] says. As many are drawn at once as the larger of the
+/// picture asked for and the page drawn for Tesseract allows: however small
+/// the picture, a scan's picture is unpacked whole.
+fn pages_at(
+    job: &Job,
+    drawing: &Pages,
+    pages: &[usize],
+    width: u32,
+    bytes: u64,
+    told: &mut dyn FnMut(Progress),
+    stop: &AtomicBool,
+) -> Vec<PagePicture> {
+    use base64::Engine as _;
+    let one = |index: usize| {
+        let png = drawing.at_width(index, width, &job.work, stop)?;
+        Ok(base64::engine::general_purpose::STANDARD.encode(png))
+    };
+    let wide = drawing.largest_dots_at_width(pages, width);
+    let dots = wide.max(drawing.largest_dots(pages, Quality::default()));
+    let at_once = workers(dots).min(fitting(job.memory, bytes, dots));
+    tracing::debug!(pages = pages.len(), at_once, width, "pages drawn in colour to be shown");
     several(pages, at_once, &one, told, stop)
         .into_iter()
         .map(|(index, result)| (index, result.map_err(|e: Error| e.to_string())))

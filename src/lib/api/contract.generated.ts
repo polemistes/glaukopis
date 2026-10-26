@@ -14,6 +14,7 @@ import type * as system from './system';
 import type * as clipboard from './clipboard';
 import type * as sources from './sources';
 import type * as found from './found';
+import type * as viewer from './viewer';
 import type * as tables from './tables';
 import type * as sharing from './sharing';
 import type * as words from './words';
@@ -4086,6 +4087,56 @@ export const pagePictures: ocr.PagePicture[] = [
     "picture": null
   }
 ];
+
+export const fileFacts: viewer.FileFacts = {
+  "labels": [
+    "i",
+    "1"
+  ],
+  "locked": false,
+  "name": "nagy.pdf",
+  "pages": 2,
+  "picture": false,
+  "sizes": [
+    [
+      595.0,
+      842.0
+    ],
+    [
+      842.0,
+      595.0
+    ]
+  ]
+};
+
+export const pagesAt: viewer.PageAt[] = [
+  {
+    "failed": null,
+    "number": 1,
+    "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg=="
+  },
+  {
+    "failed": "A remark.",
+    "number": 2,
+    "png": null
+  }
+];
+
+export const pageLines: viewer.PageLines = {
+  "height": 842.0,
+  "label": "i",
+  "lines": [
+    {
+      "bottom": 102.0,
+      "left": 72.0,
+      "right": 300.25,
+      "text": "A line.",
+      "top": 90.5
+    }
+  ],
+  "number": 1,
+  "width": 595.0
+};
 
 export const rendered: pictures.Rendered[] = [
   {
