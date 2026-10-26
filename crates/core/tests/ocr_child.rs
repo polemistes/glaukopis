@@ -213,6 +213,33 @@ fn a_page_that_draws_without_end_ends_the_child_and_not_the_application() {
     assert_eq!(std::fs::read_dir(&work).map(|d| d.count()).unwrap_or(0), 0);
 }
 
+/// A file shown in a view, in the child: the facts of the fixture, its page
+/// drawn in colour, its lines; a page that draws without end says so in its
+/// place, and the child, not the application, ends.
+#[test]
+fn a_file_is_shown_from_the_child() {
+    with_child();
+    let dir = tempfile::tempdir().unwrap();
+    let work = dir.path().join("work");
+    let porson = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../e2e/fixtures/porson.pdf");
+    let facts = ocr::file_facts(&porson, &Tools::default(), &work).unwrap();
+    assert_eq!((facts.pages, facts.sizes.as_slice(), facts.locked), (1, &[(400.0, 360.0)][..], false));
+    let pages = ocr::pages_at(&porson, &Tools::default(), &work, None, &[0], 600, &never()).unwrap();
+    let picture = image::load_from_memory(pages[0].1.as_ref().unwrap()).unwrap();
+    assert_eq!((picture.color(), picture.width(), picture.height()), (image::ColorType::Rgb8, 600, 540));
+    let lines = ocr::page_lines(&porson, &Tools::default(), &work, 0).unwrap();
+    assert_eq!(lines.lines.len(), 4);
+
+    let pdf = drawing_without_end(dir.path());
+    let before = before();
+    let facts = ocr::file_facts(&pdf, &Tools::default(), &work).unwrap();
+    assert_eq!(facts.pages, 1);
+    let pages = ocr::pages_at(&pdf, &Tools::default(), &work, None, &[0, 1], 600, &never()).unwrap();
+    assert_eq!(pages, [(0, Err(memory_error(&pdf)))]);
+    held_little(before);
+    assert_eq!(std::fs::read_dir(&work).map(|d| d.count()).unwrap_or(0), 0);
+}
+
 #[test]
 fn a_file_that_loads_without_end_ends_the_child_and_not_the_application() {
     with_child();

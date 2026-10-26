@@ -22,6 +22,7 @@ pub mod drawing;
 #[doc(hidden)]
 pub mod fixture;
 pub mod layer;
+pub mod pages_cache;
 mod rules;
 pub mod schemes;
 pub mod searchable;
@@ -32,6 +33,8 @@ pub mod text;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod view_tests;
 
 use std::collections::BTreeMap;
 use std::io::Read as _;
@@ -1523,4 +1526,253 @@ pub fn pages_pictures(
         return Err(stopped());
     }
     Ok(pictures)
+}
+
+// ---------------------------------------------------------------------------
+// A file shown in a view
+// ---------------------------------------------------------------------------
+
+/// What a view needs to know of a file before its pages are drawn.
+#[derive(Debug, Clone, Default, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FileFacts {
+    /// Whether it is a picture, shown as its one page, and not a PDF.
+    pub picture: bool,
+    pub pages: usize,
+    /// The size of each page as it is drawn, in points; of a picture, in its pixels.
+    pub sizes: Vec<(f32, f32)>,
+    /// The number each page has in print, where the file tells it; else its count, from one.
+    pub labels: Vec<String>,
+    /// Whether it asks for a password, and cannot be shown.
+    pub locked: bool,
+}
+
+/// What was found of the files shown last: where each page stands as it is
+/// drawn, by the file as it is (`pages_cache::key_of`). A few are kept, one
+/// for each side of the window and some over, so that the lines of a page
+/// are placed without opening the file again.
+static FRAMES: Mutex<Vec<(String, Arc<child::Facts>)>> = Mutex::new(Vec::new());
+const FRAMES_KEPT: usize = 4;
+
+/// Where each page of the PDF at `path`, of `size`, stands as it is drawn,
+/// or that it asks for a password: kept from the last time, else found in
+/// the child, which only opens the file and does not read its text.
+fn facts_of(path: &Path, size: u64, pdftoppm: Option<&Tool>, work: &Path) -> Result<Arc<child::Facts>> {
+    let key = pages_cache::key_of(path);
+    if let Some(key) = &key
+        && let Some((_, facts)) = FRAMES.lock().unwrap_or_else(PoisonError::into_inner).iter().find(|(k, _)| k == key)
+    {
+        return Ok(facts.clone());
+    }
+    let place = place_in(work)?;
+    let job = child::Job::new(path, None, pdftoppm, place.path(), child::Task::Facts);
+    let facts = match child::work(job, size, place.path(), &mut |_| {}, &AtomicBool::new(false))? {
+        child::Done::Facts(facts) => Arc::new(facts),
+        _ => return Err(Error::invalid("the file was not opened")),
+    };
+    if let Some(key) = key {
+        let mut kept = FRAMES.lock().unwrap_or_else(PoisonError::into_inner);
+        kept.retain(|(k, _)| *k != key);
+        kept.insert(0, (key, facts.clone()));
+        kept.truncate(FRAMES_KEPT);
+    }
+    Ok(facts)
+}
+
+/// The width and height of a picture as it is shown, turned upright where
+/// it says it is to be turned, read from its head alone.
+fn picture_size(path: &Path) -> Result<(f32, f32)> {
+    use image::ImageDecoder;
+    use image::metadata::Orientation;
+    let unreadable = |e: image::ImageError| Error::invalid(tr!("ocr-picture-unreadable", message = e.to_string()));
+    let reader = image::ImageReader::open(path)
+        .context(|| tr!("io-reading", path = path))?
+        .with_guessed_format()
+        .context(|| tr!("io-reading", path = path))?;
+    let mut decoder = reader.into_decoder().map_err(unreadable)?;
+    let (width, height) = decoder.dimensions();
+    let turned = matches!(
+        decoder.orientation().unwrap_or(Orientation::NoTransforms),
+        Orientation::Rotate90 | Orientation::Rotate270 | Orientation::Rotate90FlipH | Orientation::Rotate270FlipH
+    );
+    Ok(if turned { (height as f32, width as f32) } else { (width as f32, height as f32) })
+}
+
+/// What a view needs of the PDF or picture at `path` before its pages are
+/// drawn: how many pages it has, the size of each as it is drawn, the number
+/// each has in print, and whether it asks for a password. The file is
+/// opened in the child, which does not read its text, for its pages; the
+/// numbers in print are those of the text the file has (`seen_of`), which
+/// is kept for the lines of its pages.
+pub fn file_facts(path: &Path, tools: &Tools, work: &Path) -> Result<FileFacts> {
+    if is_picture(path) {
+        let size = picture_size(path)?;
+        return Ok(FileFacts { picture: true, pages: 1, sizes: vec![size], labels: vec!["1".into()], locked: false });
+    }
+    let size = checked_pdf(path)?;
+    let facts = facts_of(path, size, tools.pdftoppm.as_ref(), work)?;
+    if facts.locked {
+        return Ok(FileFacts { locked: true, ..FileFacts::default() });
+    }
+    let seen = seen_of(path, size, None)?;
+    let pages = facts.frames.len();
+    Ok(FileFacts {
+        picture: false,
+        pages,
+        sizes: facts.frames.iter().map(|f| f.size).collect(),
+        labels: (0..pages).map(|index| seen.layer.label(index)).collect(),
+        locked: false,
+    })
+}
+
+/// The text a page has, as lines with their places on the page as it is
+/// drawn, in points from its top left.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct PageLines {
+    /// Counted from one.
+    pub number: usize,
+    /// The number it has in print, or its count from one.
+    pub label: String,
+    /// The size of the page as it is drawn, in points.
+    pub width: f32,
+    pub height: f32,
+    /// In the order they stand (`text::by_place`), each composed (NFC).
+    pub lines: Vec<Line>,
+    /// Whether they are as translated by the schemes, which applied on the page.
+    pub translated: bool,
+}
+
+/// The lines of a page of the PDF at `path`, counted from nought, in the
+/// order they stand, as translated where the schemes applied on it, else as
+/// the PDF has them, each placed on the page as it is drawn. A page without
+/// text has no lines. The text is read once and kept while the file is
+/// looked at (`seen_of`); where each page stands, likewise (`facts_of`).
+pub fn page_lines(path: &Path, tools: &Tools, work: &Path, index: usize) -> Result<PageLines> {
+    let size = checked_pdf(path)?;
+    let facts = facts_of(path, size, tools.pdftoppm.as_ref(), work)?;
+    let seen = seen_of(path, size, None)?;
+    let layer = &seen.layer;
+    let count = facts.frames.len().max(layer.pages.len());
+    if index >= count {
+        return Err(Error::invalid(tr!("ocr-no-such-page", page = index + 1, pages = count)));
+    }
+    let frame = facts
+        .frames
+        .get(index)
+        .copied()
+        .unwrap_or_else(|| drawing::Frame::plain(layer.sizes.get(index).copied().unwrap_or_default()));
+    let translated = layer.translated.get(index).is_some_and(Option::is_some);
+    let lines = layer
+        .best_lines(index)
+        .map(|lines| {
+            text::by_place(lines.clone())
+                .into_iter()
+                .flatten()
+                .map(|mut line| {
+                    line.text = text::composed(&line.text);
+                    (line.left, line.top, line.right, line.bottom) =
+                        frame.place((line.left, line.top, line.right, line.bottom));
+                    line
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    Ok(PageLines {
+        number: index + 1,
+        label: layer.label(index),
+        width: frame.size.0,
+        height: frame.size.1,
+        lines,
+        translated,
+    })
+}
+
+/// A page, counted from nought, drawn at a width as a PNG, or why it could not be.
+pub type PageDrawn = (usize, std::result::Result<Vec<u8>, String>);
+
+/// Pages of the PDF at `path`, counted from nought, those it has, each
+/// drawn `width` dots wide in colour, as PNGs: to be shown in a view. Those
+/// kept in the cache at `cache` are taken from it; the others are drawn in
+/// one run of the child, several at a time, and put in it. A page that
+/// cannot be drawn says why, and the others are drawn all the same. In the
+/// order asked, each once.
+pub fn pages_at(
+    path: &Path,
+    tools: &Tools,
+    work: &Path,
+    cache: Option<&Path>,
+    pages: &[usize],
+    width: u32,
+    stop: &AtomicBool,
+) -> Result<Vec<PageDrawn>> {
+    use base64::Engine as _;
+    let size = checked_pdf(path)?;
+    let width = width.clamp(1, drawing::LONGEST as u32);
+    let mut asked: Vec<usize> = Vec::with_capacity(pages.len());
+    for &page in pages {
+        if !asked.contains(&page) {
+            asked.push(page);
+        }
+    }
+    let key = cache.and(pages_cache::key_of(path));
+    let kept = |index: usize| pages_cache::get(cache?, key.as_deref()?, index + 1, width);
+    let mut got: BTreeMap<usize, std::result::Result<Vec<u8>, String>> = BTreeMap::new();
+    let mut lacking = Vec::new();
+    for &index in &asked {
+        match kept(index) {
+            Some(png) => {
+                got.insert(index, Ok(png));
+            }
+            None => lacking.push(index),
+        }
+    }
+    if !lacking.is_empty() {
+        let draw = |pages: &[usize]| -> Result<Vec<child::PagePicture>> {
+            let place = place_in(work)?;
+            let task = child::Task::PagesAt { pages: pages.to_vec(), width };
+            let job = child::Job::new(path, None, tools.pdftoppm.as_ref(), place.path(), task);
+            match child::work(job, size, place.path(), &mut |_| {}, stop)? {
+                child::Done::PagesAt(drawn) => Ok(drawn),
+                _ => Err(Error::invalid("the pages were not drawn")),
+            }
+        };
+        let drawn = match draw(&lacking) {
+            Ok(drawn) => drawn,
+            Err(e) if e.kind() == tools::STOPPED => return Err(e),
+            // The child ended without its answer, where the file opens: on
+            // one of the pages, which says so in its place. Each is drawn
+            // alone, so that the others are drawn all the same.
+            Err(e) if facts_of(path, size, tools.pdftoppm.as_ref(), work).is_ok_and(|f| !f.frames.is_empty()) => {
+                let count = facts_of(path, size, tools.pdftoppm.as_ref(), work).map_or(0, |f| f.frames.len());
+                lacking.retain(|index| *index < count);
+                if lacking.len() <= 1 {
+                    lacking.iter().map(|&index| (index, Err(e.to_string()))).collect()
+                } else {
+                    let mut each = Vec::new();
+                    for &index in &lacking {
+                        match draw(&[index]) {
+                            Ok(drawn) => each.extend(drawn),
+                            Err(e) if e.kind() == tools::STOPPED => return Err(e),
+                            Err(e) => each.push((index, Err(e.to_string()))),
+                        }
+                    }
+                    each
+                }
+            }
+            Err(e) => return Err(e),
+        };
+        if stop.load(Ordering::Relaxed) {
+            return Err(stopped());
+        }
+        for (index, result) in drawn {
+            let result =
+                result.and_then(|png| base64::engine::general_purpose::STANDARD.decode(png).map_err(|e| e.to_string()));
+            if let (Ok(png), Some(cache), Some(key)) = (&result, cache, key.as_deref()) {
+                pages_cache::put(cache, key, index + 1, width, png);
+            }
+            got.insert(index, result);
+        }
+    }
+    // Those the file does not have are not given.
+    Ok(asked.into_iter().filter_map(|index| got.remove(&index).map(|result| (index, result))).collect())
 }

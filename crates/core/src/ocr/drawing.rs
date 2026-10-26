@@ -62,7 +62,7 @@ pub fn dots_asked(asked: u32) -> f32 {
 /// No side of a picture of a page is longer than this, in dots: a plan a
 /// metre wide is drawn at less than 300 dots to the inch, so that its
 /// picture is not hundreds of megabytes.
-const LONGEST: f32 = 10_000.0;
+pub(crate) const LONGEST: f32 = 10_000.0;
 
 /// A picture of a page in shades of grey, a byte to a dot, row after row
 /// from the top.
@@ -528,6 +528,172 @@ impl Pages {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Pages at a width, in colour, to be shown in a view
+// ---------------------------------------------------------------------------
+
+/// Draws a page with hayro `wide` dots wide, in colour on white: a page of a
+/// file shown in a view, at the size it is shown. As high as the page's
+/// shape makes it, and smaller where its longer side would be longer than
+/// any picture of a page may be (`small_size`). A page it loses itself in is
+/// an error of that page alone.
+pub fn draw_wide_with_hayro(pdf: &Pdf, index: usize, wide: u32) -> Result<image::RgbImage> {
+    let not_drawn = || Error::invalid(tr!("ocr-page-not-drawn", page = index + 1));
+    let page = pdf.pages().get(index).ok_or_else(not_drawn)?;
+    let (width, height) = page.render_dimensions();
+    let (across, down) = small_size(width, height, wide).ok_or_else(not_drawn)?;
+    let settings = RenderSettings {
+        x_scale: across as f32 / width,
+        y_scale: down as f32 / height,
+        width: u16::try_from(across).ok(),
+        height: u16::try_from(down).ok(),
+        bg_color: WHITE,
+    };
+    let drawn = catch_unwind(AssertUnwindSafe(|| {
+        let cache = RenderCache::new();
+        hayro::render(page, &cache, &InterpreterSettings::default(), &settings)
+    }))
+    .map_err(|_| not_drawn())?;
+    // On white, every dot is whole: what hayro gives premultiplied is the colour itself.
+    let rgb: Vec<u8> = drawn.data_as_u8_slice().as_chunks::<4>().0.iter().flat_map(|p| [p[0], p[1], p[2]]).collect();
+    image::RgbImage::from_raw(u32::from(drawn.width()), u32::from(drawn.height()), rgb).ok_or_else(not_drawn)
+}
+
+/// A picture in colour as a PNG, written quickly rather than small: it is
+/// made to be shown, and kept a while (`pages_cache.rs`).
+pub fn colour_png(picture: &image::RgbImage) -> Result<Vec<u8>> {
+    use image::ImageEncoder;
+    let mut out = Vec::new();
+    image::codecs::png::PngEncoder::new(&mut out)
+        .write_image(picture.as_raw(), picture.width(), picture.height(), image::ExtendedColorType::Rgb8)
+        .map_err(|e| Error::invalid(e.to_string()))?;
+    Ok(out)
+}
+
+impl Pages {
+    /// A page, counted from nought, drawn `wide` dots wide in colour, as a
+    /// PNG: to be shown in a view. Poppler draws it, in `dir`, where hayro
+    /// cannot open the file.
+    pub fn at_width(&self, index: usize, wide: u32, dir: &Path, stop: &AtomicBool) -> Result<Vec<u8>> {
+        match self {
+            Pages::Hayro(pdf) => colour_png(&draw_wide_with_hayro(pdf, index, wide)?),
+            Pages::Poppler { pdftoppm, file, sizes } => {
+                let not_drawn = || Error::invalid(tr!("ocr-page-not-drawn", page = index + 1));
+                let (width, height) = sizes.get(index).copied().ok_or_else(not_drawn)?;
+                let (across, down) = small_size(width, height, wide).ok_or_else(not_drawn)?;
+                // At the dots to the inch that make it as wide as asked, as `small` does.
+                let dpi = across as f32 * 72.0 / width;
+                let base = dir.join(format!("wide-{}", index + 1));
+                let number = (index + 1).to_string();
+                let args: Vec<std::ffi::OsString> = vec![
+                    "-png".into(),
+                    "-cropbox".into(),
+                    "-r".into(),
+                    dpi.to_string().into(),
+                    "-f".into(),
+                    number.clone().into(),
+                    "-l".into(),
+                    number.into(),
+                    "-singlefile".into(),
+                    file.into(),
+                    base.clone().into(),
+                ];
+                tools::run_until(pdftoppm, "pdftoppm", &args, None, None, stop)?;
+                // Read back and written again, of the size asked for: Poppler's
+                // size may be a dot more or less.
+                let png = base.with_extension("png");
+                let drawn = image::open(&png).map(|p| p.into_rgb8()).map_err(|_| not_drawn());
+                let _ = std::fs::remove_file(&png);
+                let mut drawn = drawn?;
+                if drawn.dimensions() != (across, down) {
+                    drawn = image::imageops::resize(&drawn, across, down, image::imageops::FilterType::Triangle);
+                }
+                colour_png(&drawn)
+            }
+        }
+    }
+
+    /// How many dots the largest of these pages comes to, drawn `wide` dots wide.
+    pub fn largest_dots_at_width(&self, indices: &[usize], wide: u32) -> u64 {
+        indices
+            .iter()
+            .filter_map(|&i| self.size(i))
+            .filter_map(|(width, height)| small_size(width, height, wide))
+            .map(|(across, down)| u64::from(across) * u64::from(down))
+            .max()
+            .unwrap_or(0)
+    }
+
+    /// Where each page stands as it is drawn, in points: its size, and how
+    /// the places of the text it has are put on it (`Frame`).
+    pub fn frames(&self) -> Vec<Frame> {
+        match self {
+            Pages::Hayro(pdf) => pdf.pages().iter().map(Frame::of_hayro).collect(),
+            Pages::Poppler { sizes, .. } => sizes.iter().map(|&size| Frame::plain(size)).collect(),
+        }
+    }
+}
+
+/// A page as it is drawn: its size in points, what of it is shown (the crop
+/// box, within the media box) and how it is turned. The text a PDF has is
+/// placed from the top left of the media box, unturned (`layer.rs`); a page
+/// is drawn as it is shown, its crop box turned as it says. A frame puts the
+/// one on the other.
+#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct Frame {
+    /// The width and height of the page as it is drawn, in points.
+    pub size: (f32, f32),
+    /// The top of the media box, from which the places of the text are counted down.
+    pub media_top: f32,
+    /// What is shown of the page, unturned: left, bottom, right, top, in the page's own points.
+    pub crop: [f32; 4],
+    /// The quarters it is turned clockwise as it is shown: 0 to 3.
+    pub turned: u8,
+}
+
+impl Frame {
+    /// A page whose crop box is its media box, at nought, and not turned:
+    /// all that is known of a page Poppler measured.
+    pub fn plain((width, height): (f32, f32)) -> Frame {
+        Frame { size: (width, height), media_top: height, crop: [0.0, 0.0, width, height], turned: 0 }
+    }
+
+    fn of_hayro(page: &hayro::hayro_syntax::page::Page<'_>) -> Frame {
+        use hayro::hayro_syntax::page::Rotation;
+        let media = page.media_box();
+        let crop = page.intersected_crop_box();
+        let turned = match page.rotation() {
+            Rotation::None => 0,
+            Rotation::Horizontal => 1,
+            Rotation::Flipped => 2,
+            Rotation::FlippedHorizontal => 3,
+        };
+        let size = page.render_dimensions();
+        let crop = [crop.x0 as f32, crop.y0 as f32, crop.x1 as f32, crop.y1 as f32];
+        let frame = Frame { size, media_top: media.y0.max(media.y1) as f32, crop, turned };
+        // A page of no size is drawn as A4 (`base_dimensions`): its text is laid as it stands.
+        if crop[2] - crop[0] <= 0.0 || crop[3] - crop[1] <= 0.0 { Frame::plain(size) } else { frame }
+    }
+
+    /// A box of the text the PDF has, placed as `layer.rs` places it (left,
+    /// top, right, bottom, from the top left of the media box), placed on
+    /// the page as it is drawn, from its top left, in points.
+    pub fn place(&self, (left, top, right, bottom): (f32, f32, f32, f32)) -> (f32, f32, f32, f32) {
+        let [x0, _, x1, y1] = self.crop;
+        let (wide, high) = (x1 - x0, y1 - self.crop[1]);
+        // On the crop box unturned, from its top left.
+        let unturned = |x: f32, y: f32| (x - x0, y + y1 - self.media_top);
+        let turn = |(u, v): (f32, f32)| match self.turned % 4 {
+            0 => (u, v),
+            1 => (high - v, u),
+            2 => (wide - u, high - v),
+            _ => (v, wide - u),
+        };
+        let (a, b) = (turn(unturned(left, top)), turn(unturned(right, bottom)));
+        (a.0.min(b.0), a.1.min(b.1), a.0.max(b.0), a.1.max(b.1))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -755,6 +921,52 @@ mod tests {
         assert!(opened.small(1, 120, tmp.path(), &AtomicBool::new(false)).is_err(), "there is no second page");
     }
 
+    /// A box of the text a PDF has is placed on its page as it is drawn: as
+    /// it stands on a plain page, moved by what the crop box leaves out,
+    /// turned as the page is turned.
+    #[test]
+    fn a_box_of_text_is_placed_on_the_page_as_it_is_drawn() {
+        let line = (40.0, 100.0, 240.0, 112.0);
+        assert_eq!(Frame::plain((400.0, 360.0)).place(line), line);
+        // Of a media box 400 by 360, the crop box leaves 20 out at the left and 60 at the top.
+        let cropped = Frame { size: (360.0, 290.0), media_top: 360.0, crop: [20.0, 10.0, 380.0, 300.0], turned: 0 };
+        assert_eq!(cropped.place(line), (20.0, 40.0, 220.0, 52.0));
+        let turned = |turned| Frame { turned, ..Frame::plain((400.0, 360.0)) }.place(line);
+        assert_eq!(turned(1), (248.0, 40.0, 260.0, 240.0));
+        assert_eq!(turned(2), (160.0, 248.0, 360.0, 260.0));
+        assert_eq!(turned(3), (100.0, 160.0, 112.0, 360.0));
+    }
+
+    /// hayro tells of a page turned a quarter that it is so, and its size as shown.
+    #[test]
+    fn the_frame_of_a_turned_page() {
+        let tmp = tempfile::tempdir().unwrap();
+        let pdf = turned_page(tmp.path());
+        let pages = Pages::Hayro(Box::new(Pdf::new(std::fs::read(&pdf).unwrap()).unwrap()));
+        let frames = pages.frames();
+        assert_eq!(frames.len(), 1);
+        let Frame { size: (width, height), turned, .. } = frames[0];
+        assert_eq!(turned, 1);
+        // 150 by 100 mm as it is shown.
+        assert!((width - 425.2).abs() < 0.5 && (height - 283.5).abs() < 0.5, "{width} × {height}");
+    }
+
+    /// A page drawn at a width is in colour, as wide as asked, turned as it is shown.
+    #[test]
+    fn hayro_draws_a_page_at_a_width_in_colour() {
+        let tmp = tempfile::tempdir().unwrap();
+        let pdf = turned_page(tmp.path());
+        let pages = Pages::Hayro(Box::new(Pdf::new(std::fs::read(&pdf).unwrap()).unwrap()));
+        let png = pages.at_width(0, 600, tmp.path(), &AtomicBool::new(false)).unwrap();
+        let picture = image::load_from_memory(&png).unwrap();
+        assert_eq!(picture.color(), image::ColorType::Rgb8);
+        let picture = picture.into_rgb8();
+        assert_eq!(picture.dimensions(), (600, 400));
+        let dark = |x: u32, y: u32| picture.get_pixel(x, y).0[0] < 128;
+        assert!(dark(500, 200) && !dark(100, 200), "the band is at the right");
+        assert_eq!(pages.largest_dots_at_width(&[0, 1], 600), 240_000);
+    }
+
     /// Poppler draws a small picture of a page as hayro does. Passed over
     /// where Poppler is not installed.
     #[test]
@@ -774,5 +986,33 @@ mod tests {
         let dark = |x: u32, y: u32| picture.get_pixel(x, y).0[0] < 128;
         assert!(dark(100, 40) && !dark(20, 40), "the band is at the right");
         assert!(!tmp.path().join("small-1.png").exists(), "the file Poppler drew is gone");
+    }
+
+    /// Poppler draws a page at a width in colour as hayro does. Passed over
+    /// where Poppler is not installed.
+    #[test]
+    fn poppler_draws_a_page_at_a_width_as_hayro_does() {
+        let tools = tools::discover(&tools::Configured::default());
+        let Some(pdftoppm) = tools.pdftoppm else {
+            crate::testing::passed_over("Poppler is not installed");
+            return;
+        };
+        let tmp = tempfile::tempdir().unwrap();
+        let pdf = turned_page(tmp.path());
+        let sizes = poppler_sizes(&pdftoppm.path, &pdf).expect("pdfinfo is beside pdftoppm");
+        let poppler = Pages::Poppler { pdftoppm: pdftoppm.path.clone(), file: pdf.clone(), sizes };
+        let png = poppler.at_width(0, 600, tmp.path(), &AtomicBool::new(false)).unwrap();
+        let picture = image::load_from_memory(&png).unwrap();
+        assert_eq!(picture.color(), image::ColorType::Rgb8);
+        let picture = picture.into_rgb8();
+        assert_eq!(picture.dimensions(), (600, 400));
+        let dark = |x: u32, y: u32| picture.get_pixel(x, y).0[0] < 128;
+        assert!(dark(500, 200) && !dark(100, 200), "the band is at the right");
+        assert!(!tmp.path().join("wide-1.png").exists(), "the file Poppler drew is gone");
+        // Poppler tells the size of a page as it is shown, and nothing of how it is turned.
+        let frames = poppler.frames();
+        let Frame { size: (width, height), turned, .. } = frames[0];
+        assert_eq!((frames.len(), turned), (1, 0));
+        assert!((width - 425.2).abs() < 0.5 && (height - 283.5).abs() < 0.5, "{width} × {height}");
     }
 }
