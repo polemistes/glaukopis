@@ -94,7 +94,6 @@ files-sort-descending = Descending
 
 files-no-reference = No reference
 files-missing = missing
-files-open = Open
 files-reveal = Show in the file manager
 files-move = Move…
 files-move-to = Move to

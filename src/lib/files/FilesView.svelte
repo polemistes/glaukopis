@@ -52,6 +52,8 @@
   import Divider from '$lib/ui/Divider.svelte';
   import ExportDialog from './ExportDialog.svelte';
   import { sortFiles, type FileSortKey } from './order';
+  import Eye from '@lucide/svelte/icons/eye';
+  import { showFile } from '$lib/viewer/show';
   import {
     assign,
     exportFiles,
@@ -237,8 +239,17 @@
     return [
       ...(one.exists
         ? [
+            ...(one.kind === 'pdf' || one.kind === 'picture'
+              ? [
+                  {
+                    label: t('files-show'),
+                    icon: Eye,
+                    action: () => showFile(one.hash),
+                  } as MenuItem,
+                ]
+              : []),
             {
-              label: t('files-open'),
+              label: t('files-open-elsewhere'),
               icon: ExternalLink,
               action: () =>
                 attachmentOpen(one.path).catch((e) =>
@@ -532,9 +543,12 @@
           bind:this={list}
           files={shown}
           bind:selection
-          onopen={(f) =>
-            f.exists &&
-            attachmentOpen(f.path).catch((e) => notifyError(t('library-file-open-failed'), e))}
+          onopen={(f) => {
+            if (!f.exists) return;
+            // A PDF or an image is shown in the window; another kind is opened in its own program.
+            if (f.kind === 'pdf' || f.kind === 'picture') showFile(f.hash);
+            else attachmentOpen(f.path).catch((e) => notifyError(t('library-file-open-failed'), e));
+          }}
           oncontext={(event, chosen) => openContextMenu(event, fileItems(chosen))}
           ondelete={(chosen) => void removeFiles(chosen)}
           label={folder?.name ?? t('files-all')}

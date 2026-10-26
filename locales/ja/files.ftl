@@ -73,7 +73,6 @@ files-sort-descending = 降順
 
 files-no-reference = 文献なし
 files-missing = 見つかりません
-files-open = 開く
 files-reveal = ファイルマネージャーで表示
 files-move = 移動…
 files-move-to = 移動先

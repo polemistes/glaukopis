@@ -50,6 +50,8 @@
   import PdfMapDialog from '$lib/ocr/PdfMapDialog.svelte';
   import PictureTextDialog from '$lib/ocr/PictureTextDialog.svelte';
   import FileChooser from '$lib/files/FileChooser.svelte';
+  import { showFile } from '$lib/viewer/show';
+  import ExternalLink from '@lucide/svelte/icons/external-link';
   import { filesAssign } from '$lib/api/files';
   import {
     KIND_ICONS,
@@ -455,10 +457,14 @@
               type="button"
               class="open"
               disabled={!file.exists}
-              onclick={() =>
-                attachmentOpen(file.path).catch((e) =>
-                  notifyError(t('library-file-open-failed'), e),
-                )}
+              onclick={() => {
+                // A PDF or an image is shown in the window; another kind in its own program.
+                if (file.kind === 'pdf' || file.kind === 'picture') showFile(file.hash);
+                else
+                  attachmentOpen(file.path).catch((e) =>
+                    notifyError(t('library-file-open-failed'), e),
+                  );
+              }}
             >
               <KindIcon size={15} strokeWidth={1.6} />
               <span class="name truncate">{file.name}</span>
@@ -477,6 +483,18 @@
             >
               <FolderOpen size={13} />
             </IconButton>
+            {#if file.exists && (file.kind === 'pdf' || file.kind === 'picture')}
+              <IconButton
+                label={t('files-open-elsewhere')}
+                size="sm"
+                onclick={() =>
+                  attachmentOpen(file.path).catch((e) =>
+                    notifyError(t('library-file-open-failed'), e),
+                  )}
+              >
+                <ExternalLink size={13} />
+              </IconButton>
+            {/if}
             {#if file.exists && file.kind === 'pdf'}
               <IconButton
                 label={t('ocr-searchable-button')}

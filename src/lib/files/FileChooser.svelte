@@ -19,12 +19,14 @@
   interface Props {
     title: string;
     /** The files the reference has already, left out of the list. */
-    except: string[];
+    except?: string[];
+    /** One file is chosen, of these kinds, and taken at once: to be shown in a side (ADR 0069). */
+    single?: FileView['kind'][];
     onpick: (hashes: string[]) => void;
     onclose: () => void;
   }
 
-  let { title, except, onpick, onclose }: Props = $props();
+  let { title, except = [], single, onpick, onclose }: Props = $props();
 
   /** The most rows shown: what is sought is found by searching, not by scrolling. */
   const MOST = 50;
@@ -39,7 +41,14 @@
   // Sorted when the files change; what is searched for is filtered out of
   // that, in the same order, with every letter typed.
   const ordered = $derived(forChoosing(files.files));
-  const found = $derived(ordered.filter((f) => !except.includes(f.hash) && fileMatches(f, query)));
+  const found = $derived(
+    ordered.filter(
+      (f) =>
+        !except.includes(f.hash) &&
+        (!single || (f.exists && single.includes(f.kind))) &&
+        fileMatches(f, query),
+    ),
+  );
   const shown = $derived(found.slice(0, MOST));
 
   $effect(() => {
@@ -48,6 +57,11 @@
   });
 
   function toggle(file: FileView) {
+    if (single) {
+      onpick([file.hash]);
+      onclose();
+      return;
+    }
     chosen = chosen.includes(file.hash)
       ? chosen.filter((h) => h !== file.hash)
       : [...chosen, file.hash];
@@ -100,7 +114,7 @@
       bind:this={list}
       class="list"
       role="listbox"
-      aria-multiselectable="true"
+      aria-multiselectable={!single}
       aria-label={t('files-choose-files')}
       data-file-chooser
     >
@@ -120,9 +134,11 @@
           onkeydown={(e) => (e.key === ' ' || e.key === 'Enter') && toggle(file)}
           onpointermove={() => (at = i)}
         >
-          <span class="box" class:on
-            >{#if on}<Check size={12} strokeWidth={2.5} />{/if}</span
-          >
+          {#if !single}
+            <span class="box" class:on
+              >{#if on}<Check size={12} strokeWidth={2.5} />{/if}</span
+            >
+          {/if}
           <span class="icon"><Icon size={15} strokeWidth={1.6} /></span>
           <span class="text">
             <span class="name truncate">{file.name}</span>
@@ -145,9 +161,11 @@
   {#snippet footer()}
     <span class="spring"></span>
     <Button variant="ghost" onclick={onclose}>{t('common-cancel')}</Button>
-    <Button variant="primary" disabled={!chosen.length} onclick={add} data-choose-add>
-      {t('files-choose-add', { count: chosen.length })}
-    </Button>
+    {#if !single}
+      <Button variant="primary" disabled={!chosen.length} onclick={add} data-choose-add>
+        {t('files-choose-add', { count: chosen.length })}
+      </Button>
+    {/if}
   {/snippet}
 </Dialog>
 

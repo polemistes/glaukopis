@@ -94,7 +94,6 @@ files-sort-descending = Fallande
 
 files-no-reference = Ingen referanse
 files-missing = manglar
-files-open = Opne
 files-reveal = Vis i filhandsamaren
 files-move = Flytt …
 files-move-to = Flytt til

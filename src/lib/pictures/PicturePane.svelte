@@ -22,6 +22,9 @@
   import Thumb from './Thumb.svelte';
   import ScanText from '@lucide/svelte/icons/scan-text';
   import Paperclip from '@lucide/svelte/icons/paperclip';
+  import Eye from '@lucide/svelte/icons/eye';
+  // From the images of the store, in the active side; from those of a project, beside its map.
+  import { besideFile, showFile } from '$lib/viewer/show';
   import PictureTextDialog from '$lib/ocr/PictureTextDialog.svelte';
   import { pictureToFile } from '$lib/api/files';
   import ReferenceChooser from '$lib/files/ReferenceChooser.svelte';
@@ -274,6 +277,15 @@
 
     <div class="read">
       {#if picture.extension !== 'svg'}
+        <Button
+          size="sm"
+          variant="ghost"
+          onclick={() => (project ? besideFile(hash) : showFile(hash))}
+          data-show-picture
+        >
+          {#snippet icon()}<Eye size={13} />{/snippet}
+          {t('pictures-show')}
+        </Button>
         <Button size="sm" variant="ghost" onclick={() => (reading = true)} data-ocr-picture>
           {#snippet icon()}<ScanText size={13} />{/snippet}
           {t('ocr-picture-read')}

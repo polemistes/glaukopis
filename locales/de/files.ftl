@@ -94,7 +94,6 @@ files-sort-descending = Absteigend
 
 files-no-reference = Keine Quelle
 files-missing = fehlt
-files-open = Öffnen
 files-reveal = Im Dateimanager zeigen
 files-move = Verschieben…
 files-move-to = Verschieben nach

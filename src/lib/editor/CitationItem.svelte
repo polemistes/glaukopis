@@ -10,6 +10,7 @@
   import { t } from '$lib/i18n';
   import { truncate } from '$lib/library/format';
   import NoteButton from '$lib/library/NoteButton.svelte';
+  import ShowFileButton from '$lib/viewer/ShowFileButton.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
   import { lookup } from './references.svelte';
   import { LOCATOR_LABELS, type CiteMode } from './schema';
@@ -70,6 +71,7 @@
     </div>
     {#if reference}
       <NoteButton id={reference} always />
+      {#if ref?.inLibrary}<ShowFileButton {reference} />{/if}
       {#if ref?.inLibrary && onedit}
         <IconButton
           label={t('editor-citation-edit-reference')}

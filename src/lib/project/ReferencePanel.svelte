@@ -1,4 +1,7 @@
 <script lang="ts">
+  import Eye from '@lucide/svelte/icons/eye';
+  import { libraryGet } from '$lib/api/library';
+  import { besideFile } from '$lib/viewer/show';
   import type { Snippet } from 'svelte';
   import { onMount } from 'svelte';
   import FileUp from '@lucide/svelte/icons/file-up';
@@ -62,12 +65,28 @@
     return [...groups.values()];
   });
 
-  function context(event: MouseEvent, entries: Summary[]) {
+  async function context(event: MouseEvent, entries: Summary[]) {
     const one = entries.length === 1 ? entries[0] : null;
+    // A work's files that can be shown, beside the map (ADR 0069): one item each, named where there are several.
+    const files = one?.attachments
+      ? await libraryGet(one.id)
+          .then((r) =>
+            r.files.filter((f) => f.exists && (f.kind === 'pdf' || f.kind === 'picture')),
+          )
+          .catch(() => [])
+      : [];
     openContextMenu(event, [
       ...(one
         ? [{ label: t('project-edit-reference'), action: () => void editReference(one.id) }]
         : []),
+      ...files.map((f) => ({
+        label:
+          files.length === 1
+            ? t('project-show-file')
+            : t('project-show-file-named', { name: f.name }),
+        icon: Eye,
+        action: () => besideFile(f.hash),
+      })),
     ]);
   }
 </script>

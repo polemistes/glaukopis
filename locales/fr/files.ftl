@@ -106,7 +106,6 @@ files-sort-descending = Décroissant
 
 files-no-reference = Sans référence
 files-missing = manquant
-files-open = Ouvrir
 files-reveal = Afficher dans le gestionnaire de fichiers
 files-move = Déplacer…
 files-move-to = Déplacer vers

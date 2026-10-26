@@ -94,7 +94,6 @@ files-sort-descending = Faldende
 
 files-no-reference = Ingen reference
 files-missing = mangler
-files-open = Åbn
 files-reveal = Vis i filhåndteringen
 files-move = Flyt…
 files-move-to = Flyt til

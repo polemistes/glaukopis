@@ -102,6 +102,8 @@
   import SideView from './SideView.svelte';
   import FileSide from '$lib/viewer/FileSide.svelte';
   import FilePath from '$lib/viewer/FilePath.svelte';
+  import FileChooser from '$lib/files/FileChooser.svelte';
+  import FileText from '@lucide/svelte/icons/file-text';
   import PreviewPanel from '$lib/preview/PreviewPanel.svelte';
   import LookPanel from '$lib/look/LookPanel.svelte';
   import { lookUi } from '$lib/look/look.svelte';
@@ -563,6 +565,8 @@
   }
 
   let sideBySideButton = $state<HTMLButtonElement>();
+  /** Whether the chooser of a file of the library to show beside is open. */
+  let choosingFile = $state(false);
   /** Whether the chooser of another project to show beside is open. */
   let choosingBeside = $state(false);
 
@@ -586,6 +590,11 @@
         label: t('project-beside-project'),
         icon: FolderTree,
         action: () => (choosingBeside = true),
+      },
+      {
+        label: t('project-beside-file'),
+        icon: FileText,
+        action: () => (choosingFile = true),
       },
     ];
     if (sides.sides.length > 1)
@@ -1206,7 +1215,16 @@
   ongo={(element) => activeApi?.goTo(element)}
 />
 
-{#if choosingBeside && active}
+{#if choosingFile}
+  <FileChooser
+    title={t('project-beside-file-title')}
+    single={['pdf', 'picture']}
+    onpick={([hash]) => hash && sides.besideFile(hash)}
+    onclose={() => (choosingFile = false)}
+  />
+{/if}
+
+{#if choosingBeside && sides.active}
   <BesideDialog
     current={active?.project ?? ''}
     onchoose={(id, element) => sides.beside(id, element ?? null)}

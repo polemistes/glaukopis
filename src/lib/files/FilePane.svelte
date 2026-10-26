@@ -13,6 +13,8 @@
    */
   import { onMount } from 'svelte';
   import ExternalLink from '@lucide/svelte/icons/external-link';
+  import Eye from '@lucide/svelte/icons/eye';
+  import { showFile } from '$lib/viewer/show';
   import FolderInput from '@lucide/svelte/icons/folder-input';
   import FolderOpen from '@lucide/svelte/icons/folder-open';
   import FolderOutput from '@lucide/svelte/icons/folder-output';
@@ -112,7 +114,7 @@
     else if (file) name = file.name;
   }
 
-  async function show(path: string) {
+  async function openElsewhere(path: string) {
     try {
       await attachmentOpen(path);
     } catch (error) {
@@ -152,8 +154,19 @@
 
   /** What can be done with a file of its kind. */
   function kindActions(f: FileView): Action[] {
+    // A PDF and an image are shown in a side of the window; every file can be opened in another program.
+    const shown: Action[] =
+      f.kind === 'pdf' || f.kind === 'picture'
+        ? [{ id: 'show', label: t('files-show'), icon: Eye, run: () => showFile(f.hash) }]
+        : [];
     const opening: Action[] = [
-      { id: 'open', label: t('files-open'), icon: ExternalLink, run: () => void show(f.path) },
+      ...shown,
+      {
+        id: 'open',
+        label: t('files-open-elsewhere'),
+        icon: ExternalLink,
+        run: () => void openElsewhere(f.path),
+      },
       {
         id: 'reveal',
         label: t('files-reveal'),
