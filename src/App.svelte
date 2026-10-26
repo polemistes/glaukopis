@@ -36,6 +36,8 @@
   import SearchView from '$lib/search/SearchView.svelte';
   import SettingsDialog from '$lib/settings/SettingsDialog.svelte';
   import { settingsUi } from '$lib/settings/settings-ui.svelte';
+  // The ways a file is shown in a side, with the hook of the e2e scripts.
+  import '$lib/viewer/show';
 
   const route = $derived(router.route);
 
@@ -289,13 +291,13 @@
         <PicturesView />
       {:else if route.view === 'files'}
         <FilesView />
-      {:else if route.view === 'project'}
+      {:else if route.view === 'project' || route.view === 'file'}
         <!-- The pane of projects stands outside the view of a project, which is made anew for each. -->
         <div class="in-project">
           {#if settings.value.projectsList}
             <!-- Until the view says what its sides show, the project of the place is the one shown. -->
             <ProjectsPane
-              sides={viewing.sides.length
+              sides={viewing.sides.length || route.view === 'file'
                 ? viewing.sides
                 : [{ id: route.project, project: null, at: route.at ?? PROJECT, focused: true }]}
               onenter={(project, id) => viewing.enter?.(project, id)}

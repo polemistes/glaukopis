@@ -16,7 +16,9 @@
 
   const view = $derived(router.route.view);
   /** The list of projects stands beside a project and beside the start screen, and nowhere else. */
-  const listed = $derived(view === 'project' || view === 'home' || view === 'settings');
+  const listed = $derived(
+    view === 'project' || view === 'file' || view === 'home' || view === 'settings',
+  );
 
   /** The house goes back to the project shown last, where it was; else to the start screen. */
   function toProjects(event: MouseEvent) {
@@ -46,7 +48,7 @@
   <a
     href="#/"
     class="place"
-    class:current={view === 'project' || view === 'home'}
+    class:current={view === 'project' || view === 'file' || view === 'home'}
     aria-label={t('shell-projects')}
     onclick={toProjects}
     use:tooltip={{ text: t('shell-projects'), shortcut: keysFor('projects'), side: 'right' }}

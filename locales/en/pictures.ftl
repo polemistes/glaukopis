@@ -85,3 +85,7 @@ pictures-attach = Attach to a reference…
 pictures-attach-title = Attach “{ $name }” to a reference
 pictures-attached = The image is among the files of { $name } now
 pictures-attach-failed = The image could not be attached
+
+## An image shown in a side of the window (2026-10-26).
+
+pictures-show = Show

@@ -35,12 +35,12 @@
   import { panes } from './panes.svelte';
   import SideBar from './SideBar.svelte';
   import { sideApis, type SideApi } from './side-api.svelte';
-  import { sides, type SideSpec } from './sides.svelte';
+  import { sides, type MapSide } from './sides.svelte';
   import MapText from './text/MapText.svelte';
   import Outline from './text/Outline.svelte';
 
   interface Props {
-    spec: SideSpec;
+    spec: MapSide;
     /** Its place among the sides. */
     index: number;
     /** How many sides there are. */

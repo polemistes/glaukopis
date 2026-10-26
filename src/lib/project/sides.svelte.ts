@@ -1,6 +1,7 @@
 /**
  * The sides of the window (ADR 0064): one or two, each showing a project of
- * its own at an element, as diagram, text or timeline. Nothing is the
+ * its own at an element, as diagram, text or timeline, or a file of the
+ * library (ADR 0069), which belongs to no project. Nothing is the
  * project of the view: what is of the window reads the active side, the one
  * that has the focus. The window keeps its arrangement (the sides, the
  * focus, whether they are switched, how the room is shared, the panes) in
@@ -10,8 +11,9 @@
 import type { MapMode, Route } from '$lib/state/router.svelte';
 import { keptZoom } from '$lib/preview/zoom';
 
-/** A side of the window, as the window keeps it. */
-export interface SideSpec {
+/** A side of the window that shows a project, as the window keeps it. */
+export interface MapSide {
+  kind: 'map';
   /** Lasts while the side is shown: the panes and the bars name the side by it. */
   key: string;
   project: string;
@@ -26,6 +28,27 @@ export interface SideSpec {
    */
   fresh?: boolean;
 }
+
+/** A side of the window that shows a file of the library or an image of the store (ADR 0069). */
+export interface FileSide {
+  kind: 'file';
+  key: string;
+  /** The hash of the file: the name the store keeps it by. */
+  file: string;
+  /** The page in view, counted from one. */
+  page: number;
+  /** How large its pages are shown: a factor of their size on paper, or none for the width of the side. */
+  zoom: number | null;
+}
+
+/** A side of the window: a project at an element, or a file. */
+export type SideSpec = MapSide | FileSide;
+
+/** Whether a side shows a project. */
+export const isMap = (side: SideSpec | null | undefined): side is MapSide => side?.kind === 'map';
+/** Whether a side shows a file. */
+export const isFile = (side: SideSpec | null | undefined): side is FileSide =>
+  side?.kind === 'file';
 
 /** What the document pane shows. Look is a column of the typesetting pane. */
 export type DocumentTab = 'references' | 'images' | 'comments' | 'found' | 'history' | 'changes';
@@ -70,12 +93,24 @@ let made = 0;
 /** A key of a side, new each time: two sides of one project are told apart by it. */
 const newKey = () => `s${Date.now().toString(36)}${(made++).toString(36)}`;
 
-/** A side as it is kept, read with care: what is not a side is none. */
+/** A side as it is kept, read with care: what is not a side is none. A side kept before files were shown is a map. */
 function readSide(kept: unknown): SideSpec | null {
   if (!kept || typeof kept !== 'object') return null;
-  const k = kept as Partial<SideSpec>;
+  const f = kept as Partial<FileSide>;
+  if (f.kind === 'file') {
+    if (typeof f.file !== 'string' || !f.file) return null;
+    return {
+      kind: 'file',
+      key: newKey(),
+      file: f.file,
+      page: Number.isInteger(f.page) && (f.page as number) > 0 ? (f.page as number) : 1,
+      zoom: keptZoom(f.zoom),
+    };
+  }
+  const k = kept as Partial<MapSide>;
   if (typeof k.project !== 'string' || !k.project) return null;
   return {
+    kind: 'map',
     key: newKey(),
     project: k.project,
     at: typeof k.at === 'string' && k.at ? k.at : null,
@@ -125,9 +160,26 @@ export class Sides {
     return key ? this.sides.findIndex((s) => s.key === key) : -1;
   }
 
+  /** The sides that show projects. */
+  get maps(): MapSide[] {
+    return this.sides.filter(isMap);
+  }
+
+  /**
+   * The side whose document the panes and the keys of a project are about:
+   * the active side where it shows a project, else the other where that
+   * does; none where no side shows one.
+   */
+  get map(): MapSide | undefined {
+    const active = this.active;
+    if (isMap(active)) return active;
+    return this.sides.find(isMap);
+  }
+
   /** Whether two sides are shown, of two projects. */
   get across(): boolean {
-    return this.sides.length > 1 && this.sides[0].project !== this.sides[1].project;
+    const [a, b] = this.sides;
+    return isMap(a) && isMap(b) && a.project !== b.project;
   }
 
   /**
@@ -139,9 +191,30 @@ export class Sides {
     const side = this.active;
     if (!side) {
       this.sides = [
-        { key: newKey(), project, at, mode: mode ?? 'diagram', outline: false, fresh: !mode },
+        {
+          kind: 'map',
+          key: newKey(),
+          project,
+          at,
+          mode: mode ?? 'diagram',
+          outline: false,
+          fresh: !mode,
+        },
       ];
       this.focused = 0;
+      return;
+    }
+    if (!isMap(side)) {
+      // A file in this side: the project takes its place.
+      this.sides[this.index] = {
+        kind: 'map',
+        key: newKey(),
+        project,
+        at,
+        mode: mode ?? 'diagram',
+        outline: false,
+        fresh: !mode,
+      };
       return;
     }
     if (side.project === project) {
@@ -151,6 +224,7 @@ export class Sides {
     }
     // Another project in this side: a side of its own, so that what showed the old one is let go.
     this.sides[this.index] = {
+      kind: 'map',
       key: newKey(),
       project,
       at,
@@ -167,11 +241,12 @@ export class Sides {
       this.open(project, at, mode);
       return;
     }
-    const spec: SideSpec = {
+    const spec: MapSide = {
+      kind: 'map',
       key: newKey(),
       project,
       at,
-      mode: mode ?? side.mode,
+      mode: mode ?? (isMap(side) ? side.mode : 'diagram'),
       outline: false,
       fresh: !mode,
     };
@@ -182,7 +257,7 @@ export class Sides {
     }
     const other = 1 - this.index;
     const there = this.sides[other];
-    if (there.project === project) {
+    if (isMap(there) && there.project === project) {
       if (at) there.at = at;
       if (mode) there.mode = mode;
     } else {
@@ -194,8 +269,9 @@ export class Sides {
   /** The element in view of the active side shown the other way in a second side. */
   bothWays() {
     const side = this.active;
-    if (!side) return;
-    const spec: SideSpec = {
+    if (!isMap(side)) return;
+    const spec: MapSide = {
+      kind: 'map',
       key: newKey(),
       project: side.project,
       at: side.at,
@@ -209,19 +285,70 @@ export class Sides {
   /** Enters an element in a side; with a mode, it shows it that way. */
   show(key: string, at: string, mode?: MapMode) {
     const side = this.byKey(key);
-    if (!side) return;
+    if (!isMap(side)) return;
     side.at = at;
     if (mode) side.mode = mode;
   }
 
   setMode(key: string, mode: MapMode) {
     const side = this.byKey(key);
-    if (side) side.mode = mode;
+    if (isMap(side)) side.mode = mode;
   }
 
   toggleOutline(key: string) {
     const side = this.byKey(key);
-    if (side) side.outline = !side.outline;
+    if (isMap(side)) side.outline = !side.outline;
+  }
+
+  // ---- files (ADR 0069) ----
+
+  /** Shows a file in the active side, in the place of what it showed; the first side, where there is none. */
+  openFile(file: string, page = 1) {
+    const spec: FileSide = { kind: 'file', key: newKey(), file, page, zoom: null };
+    const side = this.active;
+    if (!side) {
+      this.sides = [spec];
+      this.focused = 0;
+      return;
+    }
+    if (isFile(side) && side.file === file) {
+      side.page = page;
+      return;
+    }
+    this.sides[this.index] = spec;
+  }
+
+  /** Shows a file in the other side, making one where there is none; the other side gets the focus. */
+  besideFile(file: string, page = 1) {
+    const spec: FileSide = { kind: 'file', key: newKey(), file, page, zoom: null };
+    const side = this.active;
+    if (!side) {
+      this.sides = [spec];
+      this.focused = 0;
+      return;
+    }
+    if (this.sides.length < 2) {
+      this.sides = [side, spec];
+      this.focused = 1;
+      return;
+    }
+    const other = 1 - this.index;
+    const there = this.sides[other];
+    if (isFile(there) && there.file === file) there.page = page;
+    else this.sides[other] = spec;
+    this.focused = other;
+  }
+
+  /** The page in view of a file side. */
+  setPage(key: string, page: number) {
+    const side = this.byKey(key);
+    if (isFile(side) && side.page !== page) side.page = page;
+  }
+
+  /** How large the pages of a file side are shown; none for the width of the side. */
+  setFileZoom(key: string, zoom: number | null) {
+    const side = this.byKey(key);
+    if (isFile(side)) side.zoom = zoom;
   }
 
   focus(key: string) {
@@ -240,7 +367,7 @@ export class Sides {
 
   /** Closes every side that shows a project. */
   closeProject(project: string) {
-    for (const side of this.sides.filter((s) => s.project === project)) this.close(side.key);
+    for (const side of this.maps.filter((s) => s.project === project)) this.close(side.key);
   }
 
   /** The two sides change places, as they are drawn; each keeps what it is. */
@@ -256,26 +383,36 @@ export class Sides {
   }
 
   /**
-   * Lays the window out as it was kept, where the place names the project
-   * of the active side that was kept (as it does when the window opens, or
+   * Lays the window out as it was kept, where the place names what the
+   * active side that was kept showed (as it does when the window opens, or
    * the house goes back to the projects); else one side, at the project,
-   * element and view the place names. Sides of projects that are gone are
+   * element and view, or the file and page, the place names. Sides of
+   * projects that are gone, and of files the library has no longer, are
    * left out.
    */
   arrange(
     kept: Partial<Arrangement> | null | undefined,
-    route: Extract<Route, { view: 'project' }>,
+    route: Extract<Route, { view: 'project' } | { view: 'file' }>,
     exists: (project: string) => boolean = () => true,
+    fileExists: (file: string) => boolean = () => true,
   ) {
     const keptSides = (Array.isArray(kept?.sides) ? kept.sides : [])
       .map(readSide)
-      .filter((s): s is SideSpec => !!s && exists(s.project))
+      .filter((s): s is SideSpec => !!s && (isMap(s) ? exists(s.project) : fileExists(s.file)))
       .slice(0, 2);
     const keptFocus = Number.isInteger(kept?.focused) ? (kept!.focused as number) : 0;
     const keptActive = keptSides[clamp(keptFocus, 0, Math.max(0, keptSides.length - 1))];
-    if (keptActive && keptActive.project === route.project) {
-      if (route.at) keptActive.at = route.at;
-      if (route.mode) keptActive.mode = route.mode;
+    const same =
+      route.view === 'project'
+        ? isMap(keptActive) && keptActive.project === route.project
+        : isFile(keptActive) && keptActive.file === route.file;
+    if (keptActive && same) {
+      if (isMap(keptActive) && route.view === 'project') {
+        if (route.at) keptActive.at = route.at;
+        if (route.mode) keptActive.mode = route.mode;
+      } else if (isFile(keptActive) && route.view === 'file' && route.page) {
+        keptActive.page = route.page;
+      }
       this.sides = keptSides;
       this.focused = keptSides.indexOf(keptActive);
       this.mirrored = keptSides.length > 1 && kept?.mirrored === true;
@@ -285,15 +422,38 @@ export class Sides {
           : 0.5;
       return;
     }
-    this.sides = [
-      {
+    // A file asked for from elsewhere, the library or the images, takes the
+    // place of the active side kept; the other stays as it was.
+    if (route.view === 'file' && keptActive) {
+      const i = keptSides.indexOf(keptActive);
+      keptSides[i] = {
+        kind: 'file',
         key: newKey(),
-        project: route.project,
-        at: route.at ?? null,
-        mode: route.mode ?? 'diagram',
-        outline: false,
-        fresh: !route.mode,
-      },
+        file: route.file,
+        page: route.page ?? 1,
+        zoom: null,
+      };
+      this.sides = keptSides;
+      this.focused = i;
+      this.mirrored = keptSides.length > 1 && kept?.mirrored === true;
+      this.split =
+        typeof kept?.split === 'number' && Number.isFinite(kept.split)
+          ? clamp(kept.split, 0.2, 0.8)
+          : 0.5;
+      return;
+    }
+    this.sides = [
+      route.view === 'project'
+        ? {
+            kind: 'map',
+            key: newKey(),
+            project: route.project,
+            at: route.at ?? null,
+            mode: route.mode ?? 'diagram',
+            outline: false,
+            fresh: !route.mode,
+          }
+        : { kind: 'file', key: newKey(), file: route.file, page: route.page ?? 1, zoom: null },
     ];
     this.focused = 0;
     this.mirrored = false;
@@ -303,7 +463,11 @@ export class Sides {
   toKeep(panes: PaneParts): Arrangement {
     const typesetting = this.indexOf(panes.typesetting);
     return {
-      sides: this.sides.map(({ fresh: _, ...s }) => s),
+      sides: this.sides.map((s) => {
+        if (!isMap(s)) return s;
+        const { fresh: _, ...kept } = s;
+        return kept;
+      }),
       focused: this.index,
       mirrored: this.sides.length > 1 && this.mirrored,
       split: this.split,

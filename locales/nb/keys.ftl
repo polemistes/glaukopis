@@ -129,3 +129,11 @@ keys-preview-zoom-fit = Sider like brede som panelet
 
 ## The settings in plain words, stage 4: the keys of the kinds
 keys-writing-kind = Avsnittstypen dokumenttypen gir sifferet
+
+## En fil vist i en side av vinduet (2026-10-26).
+
+keys-place-viewer = I en fil
+keys-viewer-next = Neste side
+keys-viewer-previous = Forrige side
+keys-viewer-first = Første side
+keys-viewer-last = Siste side

@@ -31,7 +31,8 @@ export type Place =
   | 'library'
   | 'store'
   | 'files'
-  | 'preview';
+  | 'preview'
+  | 'viewer';
 
 export interface KeyEntry {
   /** What it is called, and the words for it: `keys-<id>` in keys.ftl. */
@@ -65,6 +66,7 @@ export const TOGETHER: Readonly<Record<Place, readonly Place[]>> = {
     'store',
     'files',
     'preview',
+    'viewer',
   ],
   project: [
     'everywhere',
@@ -76,6 +78,7 @@ export const TOGETHER: Readonly<Record<Place, readonly Place[]>> = {
     'text',
     'writing',
     'preview',
+    'viewer',
   ],
   review: ['everywhere', 'project', 'review', 'tree', 'text', 'writing'],
   tree: ['everywhere', 'project', 'review', 'tree', 'diagram', 'list', 'text', 'writing'],
@@ -87,7 +90,9 @@ export const TOGETHER: Readonly<Record<Place, readonly Place[]>> = {
   store: ['everywhere', 'store'],
   files: ['everywhere', 'files'],
   // The typesetting pane's keys hold while it has the focus or the pointer, not the diagram's.
-  preview: ['everywhere', 'project', 'preview'],
+  preview: ['everywhere', 'project', 'preview', 'viewer'],
+  // A file in a side: its pages, with the typesetting pane's keys of zoom.
+  viewer: ['everywhere', 'project', 'preview', 'viewer'],
 };
 
 const ENTRIES = [
@@ -236,6 +241,12 @@ const ENTRIES = [
   { id: 'preview-zoom-in-equal', keys: 'Ctrl+=', place: 'preview', bound: true },
   { id: 'preview-zoom-out', keys: 'Ctrl+-', place: 'preview', bound: true },
   { id: 'preview-zoom-fit', keys: 'Ctrl+0', place: 'preview', bound: true },
+
+  // A file shown in a side (ADR 0069): its pages; the zoom is that of the typesetting pane's keys.
+  { id: 'viewer-next', keys: 'PageDown', place: 'viewer', bound: true, notInFields: true },
+  { id: 'viewer-previous', keys: 'PageUp', place: 'viewer', bound: true, notInFields: true },
+  { id: 'viewer-first', keys: 'Home', place: 'viewer', bound: true, notInFields: true },
+  { id: 'viewer-last', keys: 'End', place: 'viewer', bound: true, notInFields: true },
 ] as const satisfies readonly KeyEntry[];
 
 /** The name of an entry of the table. */
@@ -453,11 +464,14 @@ class Shortcuts {
     };
   }
 
-  /** What is bound to an entry and can be done now. */
+  /** What is bound to an entry and can be done now: the last bound that can, as the zoom of the pages where the pointer is. */
   binding(id: string): Binding | null {
-    const list = this.#bound.get(id);
-    const b = list?.[list.length - 1];
-    return b && (!b.when || b.when()) ? b : null;
+    const list = this.#bound.get(id) ?? [];
+    for (let i = list.length - 1; i >= 0; i--) {
+      const b = list[i];
+      if (!b.when || b.when()) return b;
+    }
+    return null;
   }
 
   /** Does what a key is bound to. Returns whether it was taken. */

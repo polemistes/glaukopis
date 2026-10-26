@@ -79,3 +79,7 @@ pictures-attach = Legg ved en referanse …
 pictures-attach-title = Legg «{ $name }» ved en referanse
 pictures-attached = Bildet er nå blant filene til { $name }
 pictures-attach-failed = Bildet kunne ikke legges ved
+
+## Et bilde vist i en side av vinduet (2026-10-26).
+
+pictures-show = Vis

@@ -24,10 +24,10 @@
   import { tooltip } from '$lib/ui/tooltip';
   import type { Project } from './model/project.svelte';
   import { panes } from './panes.svelte';
-  import type { SideSpec } from './sides.svelte';
+  import type { MapSide } from './sides.svelte';
 
   interface Props {
-    spec: SideSpec;
+    spec: MapSide;
     /** The side's project, once it is open. */
     project: Project | null;
     /** Whether the side has the focus. */

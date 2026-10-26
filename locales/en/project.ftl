@@ -301,3 +301,13 @@ project-add-child = Add child element
 project-add-sibling = Add sibling element
 project-delete-promote = Delete and promote sub-elements
 project-delete-with = Delete with sub-elements
+
+## A file shown in a side of the window (2026-10-26).
+
+project-beside-file = A file of the library…
+project-beside-file-title = Beside: choose a file
+project-show-file = Show the file
+# Where a work has several files: one item for each, by its name.
+project-show-file-named = Show “{ $name }”
+# Over the document pane while the side that has the focus shows a file: the document is that of the other side.
+project-document-of-other = The document of the other side

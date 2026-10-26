@@ -19,6 +19,7 @@
     'text',
     'writing',
     'preview',
+    'viewer',
     'review',
     'library',
     'files',
@@ -33,8 +34,9 @@
    */
   const kindsByKey = $derived.by(() => {
     const side = sides.active;
-    const project = openProjects.get(side?.project)?.project;
-    const at = side?.at;
+    if (side?.kind !== 'map') return null;
+    const project = openProjects.get(side.project)?.project;
+    const at = side.at;
     if (!project || !at || !project.node(at)) return null;
     const template = templateUsedCached(project, at);
     return template ? { keys: kindKeysOf(template), own: project.passageKinds } : null;

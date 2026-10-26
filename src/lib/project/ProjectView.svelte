@@ -100,6 +100,8 @@
   import ReferencePanel from './ReferencePanel.svelte';
   import SideTabs from './SideTabs.svelte';
   import SideView from './SideView.svelte';
+  import FileSide from '$lib/viewer/FileSide.svelte';
+  import FilePath from '$lib/viewer/FilePath.svelte';
   import PreviewPanel from '$lib/preview/PreviewPanel.svelte';
   import LookPanel from '$lib/look/LookPanel.svelte';
   import { lookUi } from '$lib/look/look.svelte';
@@ -115,13 +117,13 @@
   import { openProjects, type OpenProject } from './open-projects.svelte';
   import { panes } from './panes.svelte';
   import { sideApis } from './side-api.svelte';
-  import { sides, type SideSpec } from './sides.svelte';
+  import { isFile, isMap, sides, type MapSide, type SideSpec } from './sides.svelte';
 
   // ---- the arrangement, as it was kept and as it changes ----
 
   {
     const route = router.route;
-    if (route.view === 'project') {
+    if (route.view === 'project' || route.view === 'file') {
       const kept = settings.value.arrangement;
       sides.arrange(
         kept,
@@ -158,10 +160,19 @@
     });
   });
 
-  // The place follows the active side: its project, element and view. It
-  // depends on those alone.
+  // The place follows the active side: its project, element and view, or
+  // its file and page. It depends on those alone.
   $effect(() => {
     const side = sides.active;
+    if (isFile(side)) {
+      const place = { view: 'file' as const, file: side.file, page: side.page };
+      untrack(() => {
+        const now = router.route;
+        if (now.view === 'file' && now.file === place.file && now.page === place.page) return;
+        router.replace(place);
+      });
+      return;
+    }
     if (!side?.at) return;
     const place = { view: 'project' as const, project: side.project, at: side.at, mode: side.mode };
     untrack(() => {
@@ -182,10 +193,19 @@
   // stays as it was. It depends on the place alone.
   $effect(() => {
     const route = router.route;
+    if (route.view === 'file') {
+      untrack(() => {
+        const side = sides.active;
+        if (isFile(side) && side.file === route.file) {
+          if (route.page) sides.setPage(side.key, route.page);
+        } else sides.openFile(route.file, route.page ?? 1);
+      });
+      return;
+    }
     if (route.view !== 'project') return;
     untrack(() => {
       const side = sides.active;
-      if (!side || side.project !== route.project) {
+      if (!isMap(side) || side.project !== route.project) {
         sides.open(route.project, route.at ?? null, route.mode);
         return;
       }
@@ -196,7 +216,14 @@
 
   // ---- the active side ----
 
-  const active = $derived(sides.active);
+  /**
+   * The side whose document the panes, the dialogs and the keys of a project
+   * are about: the active side where it shows a project, else the other
+   * where that does (ADR 0069).
+   */
+  const active = $derived(sides.map);
+  /** Whether the side that has the focus shows a project: the keys of the tree, the views and writing act only then. */
+  const mapFocused = $derived(isMap(sides.active));
   const activeApi = $derived(active ? sideApis.get(active.key) : undefined);
   const activeOpen = $derived<OpenProject | undefined>(
     activeApi?.open ?? openProjects.get(active?.project),
@@ -205,9 +232,9 @@
   const project = $derived(activeOpen?.project ?? null);
   const at = $derived(active?.at ?? PROJECT);
   /** The projects the sides show, by id: marked in the menu of all projects. */
-  const shownIds = $derived([...new Set(sides.sides.map((s) => s.project))]);
+  const shownIds = $derived([...new Set(sides.maps.map((s) => s.project))]);
 
-  const openOf = (spec: SideSpec) => openProjects.get(spec.project);
+  const openOf = (spec: SideSpec) => (isMap(spec) ? openProjects.get(spec.project) : undefined);
 
   // What was asked of a project before it was open is answered once it is:
   // what was found through everything in what is written about a work is
@@ -231,6 +258,7 @@
   $effect(() => {
     const shown: ShownSide[] = [];
     sides.sides.forEach((spec, i) => {
+      if (!isMap(spec)) return;
       const has = i === sides.index;
       const at = spec.at ?? PROJECT;
       const there = shown.find((s) => s.id === spec.project);
@@ -243,7 +271,7 @@
     viewing.sides = shown;
     viewing.enter = (id, element) => {
       const spec =
-        (active?.project === id ? active : undefined) ?? sides.sides.find((s) => s.project === id);
+        (active?.project === id ? active : undefined) ?? sides.maps.find((s) => s.project === id);
       if (spec) sideApis.get(spec.key)?.show(element);
     };
     viewing.beside = (id, element) => sides.beside(id, element ?? null);
@@ -275,6 +303,16 @@
       return documentPane.review;
     },
   });
+  // With no side that shows a project, the document pane has nothing to show,
+  // and closes; the Document button of a map side opens it again. It depends
+  // on whether a map is shown.
+  $effect(() => {
+    if (sides.map) return;
+    untrack(() => {
+      if (panes.document) panes.document = false;
+    });
+  });
+
   // A review is not begun as the window opens: the tab of changes kept is left closed.
   if (panes.tab === 'changes') {
     panes.tab = 'references';
@@ -294,7 +332,10 @@
   // ---- the typesetting pane, of the side whose button was pressed ----
 
   /** The side the typesetting pane shows, and its project. It does not follow the focus. */
-  const previewSpec = $derived(sides.byKey(panes.typesetting));
+  const previewSpec = $derived.by(() => {
+    const spec = sides.byKey(panes.typesetting);
+    return isMap(spec) ? spec : undefined;
+  });
   const previewOpen = $derived(previewSpec ? openOf(previewSpec) : undefined);
 
   /** What the Typesetting button of the active side does: opens the pane for it, turns it to it, or closes it. */
@@ -486,6 +527,7 @@
     if (target?.closest?.('input, textarea, select')) return;
     const writing = target?.closest?.('[contenteditable="true"], .prose');
     if (writing && !writing.closest('.text-view')) return;
+    if (!mapFocused) return;
     event.preventDefault();
     activeApi?.up();
   }
@@ -500,7 +542,7 @@
 
   /** The sides that show a project close, as Close in the list's menu of a project asks. */
   function closeShown(id: string) {
-    for (const spec of sides.sides.filter((s) => s.project === id)) closeSideOf(spec.key);
+    for (const spec of sides.maps.filter((s) => s.project === id)) closeSideOf(spec.key);
   }
 
   /** One side again: the side without the focus closes. */
@@ -526,10 +568,20 @@
 
   /** The menu of Split view: what the other side shows, switching the sides, and one side again. */
   function sideBySideMenu() {
-    if (!sideBySideButton || !active) return;
+    if (!sideBySideButton || !sides.active) return;
     const items: MenuItem[] = [
-      { label: t('project-beside-this'), icon: Columns2, action: () => sides.bothWays() },
-      { label: t('project-beside-element'), icon: ListTree, action: () => void besideElement() },
+      {
+        label: t('project-beside-this'),
+        icon: Columns2,
+        disabled: !mapFocused,
+        action: () => sides.bothWays(),
+      },
+      {
+        label: t('project-beside-element'),
+        icon: ListTree,
+        disabled: !mapFocused,
+        action: () => void besideElement(),
+      },
       {
         label: t('project-beside-project'),
         icon: FolderTree,
@@ -551,7 +603,7 @@
 
   /** Shows a project in a side, at its top or at an element of it, as it is chosen in the tree of all projects of the side's path. */
   function projectIn(spec: SideSpec, id: string, at?: string) {
-    if (spec.project === id) {
+    if (isMap(spec) && spec.project === id) {
       sideApis.get(spec.key)?.show(at ?? PROJECT);
       return;
     }
@@ -560,7 +612,7 @@
   }
 
   /** The project of a side, as the list has it, for its path: the folder it lies in. */
-  function infoOf(spec: SideSpec, of: Project): ProjectInfo {
+  function infoOf(spec: MapSide, of: Project): ProjectInfo {
     return (
       projects.list.find((x) => x.id === spec.project) ??
       openOf(spec)?.info ?? {
@@ -604,7 +656,7 @@
    * first, since the sharing needs the project open.
    */
   function shareProject(id: string) {
-    if (!sides.sides.some((s) => s.project === id)) sides.open(id);
+    if (!sides.maps.some((s) => s.project === id)) sides.open(id);
     sharingWanted = id;
   }
 
@@ -638,7 +690,12 @@
   $effect(() => {
     const box = panesEl;
     const els = sides.sides
-      .map((s) => sideApis.get(s.key)?.el)
+      .map(
+        (s) =>
+          sideApis.get(s.key)?.el ??
+          panesEl?.querySelector<HTMLElement>(`[data-side-key="${s.key}"]`) ??
+          undefined,
+      )
       .filter((el): el is HTMLElement => !!el);
     if (!box) return;
     const measure = () => {
@@ -734,7 +791,7 @@
 
   /** Shows a citation that was found where a side shows the element in view as text: scrolled to, and selected. */
   function showFound(element: string, entry: Entry) {
-    for (const spec of sides.sides) {
+    for (const spec of sides.maps) {
       if (spec.project !== active?.project || spec.at !== element || spec.mode !== 'text') continue;
       const surface = sideApis.get(spec.key)?.text()?.searchSurface();
       if (surface) void revealFound(surface, entry.target, entry.element);
@@ -745,12 +802,14 @@
   onMount(() => {
     const reviewing = () => !!documentPane.review;
     const shown = () => !!active;
+    /** The keys of the tree, the views and writing: only while a side that shows a project has the focus. */
+    const onMap = () => !!active && mapFocused;
     return shortcuts.bind({
       'diagram-or-text': {
         run: () => {
           if (active) sides.setMode(active.key, active.mode === 'diagram' ? 'text' : 'diagram');
         },
-        when: shown,
+        when: onMap,
       },
       preview: { run: togglePreview, when: shown },
       'document-settings': {
@@ -778,16 +837,16 @@
       'side-pictures': () => documentPane.show('images'),
       'side-comments': () => documentPane.show('comments'),
       'side-found': () => documentPane.show('found'),
-      comment: { run: beginComment, when: () => !!project },
+      comment: { run: beginComment, when: () => !!project && mapFocused },
       'side-history': () => documentPane.show('history'),
       'side-changes': () => documentPane.toggleReview(),
       'side-panel': () => panes.toggleDocument(),
       'side-by-side': sideBySideMenu,
       'close-side': {
         run: () => {
-          if (active) closeSideOf(active.key);
+          if (sides.active) closeSideOf(sides.active.key);
         },
-        when: shown,
+        when: () => !!sides.active,
       },
       'switch-sides': { run: () => sides.switchSides(), when: () => sides.sides.length > 1 },
       'writing-marks': () => (panes.marks = !panes.marks),
@@ -795,14 +854,14 @@
         run: () => {
           if (active) sides.toggleOutline(active.key);
         },
-        when: shown,
+        when: onMap,
       },
-      find: { run: () => activeApi?.find(false), when: shown },
-      replace: { run: () => activeApi?.find(true), when: shown },
+      find: { run: () => activeApi?.find(false), when: onMap },
+      replace: { run: () => activeApi?.find(true), when: onMap },
       // The keys act in the project of the active side.
-      undo: { run: () => project?.undo(), when: () => !!project },
-      redo: { run: () => project?.redo(), when: () => !!project },
-      'redo-y': { run: () => project?.redo(), when: () => !!project },
+      undo: { run: () => project?.undo(), when: () => !!project && mapFocused },
+      redo: { run: () => project?.redo(), when: () => !!project && mapFocused },
+      'redo-y': { run: () => project?.redo(), when: () => !!project && mapFocused },
       'review-next': { run: () => documentPane.review?.next(), when: reviewing },
       'review-previous': { run: () => documentPane.review?.previous(), when: reviewing },
       'review-accept': { run: () => void documentPane.review?.accept(), when: reviewing },
@@ -853,7 +912,9 @@
           onpointerdowncapture={() => sides.focus(spec.key)}
           onfocusin={() => sides.focus(spec.key)}
         >
-          {#if of && of.node(PROJECT) && spec.at}
+          {#if !isMap(spec)}
+            <FilePath {spec} onproject={(id, element) => projectIn(spec, id, element)} />
+          {:else if of && of.node(PROJECT) && spec.at}
             <Path
               project={of}
               info={infoOf(spec, of)}
@@ -924,19 +985,30 @@
           />
         {/if}
         {@const otherSpec = sides.sides[1 - i]}
-        <SideView
-          {spec}
-          index={i}
-          count={sides.sides.length}
-          active={i === sides.index}
-          other={otherSpec && otherSpec.project !== spec.project
-            ? (openOf(otherSpec)?.project ?? null)
-            : null}
-          grow={sides.sides.length > 1 ? (i === 0 ? sides.split : 1 - sides.split) : 1}
-          looking={i === sides.index ? looking : null}
-          onlooked={() => (documentPane.looking = null)}
-          onclose={() => closeSideOf(spec.key)}
-        />
+        {@const grow = sides.sides.length > 1 ? (i === 0 ? sides.split : 1 - sides.split) : 1}
+        {#if isMap(spec)}
+          <SideView
+            {spec}
+            index={i}
+            count={sides.sides.length}
+            active={i === sides.index}
+            other={isMap(otherSpec) && otherSpec.project !== spec.project
+              ? (openOf(otherSpec)?.project ?? null)
+              : null}
+            {grow}
+            looking={i === sides.index ? looking : null}
+            onlooked={() => (documentPane.looking = null)}
+            onclose={() => closeSideOf(spec.key)}
+          />
+        {:else}
+          <FileSide
+            {spec}
+            count={sides.sides.length}
+            active={i === sides.index}
+            {grow}
+            onclose={() => closeSideOf(spec.key)}
+          />
+        {/if}
       {/each}
     </div>
 
@@ -1035,7 +1107,10 @@
         {#if sideElement || (shared?.connection && project?.others.length)}
           <div class="side-map" class:split={sides.sides.length > 1}>
             {#if sideElement}
-              <span class="overline">{t('project-side-map')}</span>
+              <!-- While a file has the focus, the pane is of the map in the other side, and says so. -->
+              <span class="overline" data-document-of-other={!mapFocused || undefined}
+                >{mapFocused ? t('project-side-map') : t('project-document-of-other')}</span
+              >
               <!-- Where two projects are shown, which one the pane is about. -->
               {#if sides.across}
                 <span class="of" data-side-project>{project?.name}</span>

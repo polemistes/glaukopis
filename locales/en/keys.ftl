@@ -132,3 +132,11 @@ keys-preview-zoom-fit = Pages as wide as the pane
 
 ## The settings in plain words, stage 4: the keys of the kinds
 keys-writing-kind = The kind of paragraph the document type gives the digit
+
+## A file shown in a side of the window (2026-10-26).
+
+keys-place-viewer = In a file
+keys-viewer-next = Next page
+keys-viewer-previous = Previous page
+keys-viewer-first = First page
+keys-viewer-last = Last page

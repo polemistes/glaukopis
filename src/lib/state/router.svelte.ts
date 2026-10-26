@@ -14,6 +14,8 @@ export type Route =
   | { view: 'files'; folder?: string; file?: string }
   /** A project, and the element in view within it (ADR 0037): the project itself where none is named. */
   | { view: 'project'; project: string; at?: string; mode?: MapMode }
+  /** A file of the library shown in a side of the window (ADR 0069), at a page. */
+  | { view: 'file'; file: string; page?: number }
   | { view: 'search' }
   | { view: 'settings'; section?: string };
 
@@ -58,6 +60,15 @@ export function parseRoute(hash: string): Route {
         at: parts[2],
         mode: (['text', 'diagram', 'timeline'] as const).find((m) => m === params.get('mode')),
       };
+    case 'file': {
+      if (!parts[1]) return { view: 'home' };
+      const page = Number(params.get('page'));
+      return {
+        view: 'file',
+        file: parts[1],
+        page: Number.isInteger(page) && page > 0 ? page : undefined,
+      };
+    }
     case 'settings':
       return { view: 'settings', section: parts[1] };
     case 'search':
@@ -96,6 +107,8 @@ export function formatRoute(route: Route): string {
       if (route.mode) s += `?mode=${route.mode}`;
       return s;
     }
+    case 'file':
+      return `#/file/${e(route.file)}` + (route.page ? `?page=${route.page}` : '');
     case 'settings':
       return '#/settings' + (route.section ? `/${e(route.section)}` : '');
     case 'search':
@@ -107,10 +120,10 @@ class Router {
   route = $state<Route>(parseRoute(typeof location === 'undefined' ? '' : location.hash));
   /**
    * The project shown last while the application has run, at its element and
-   * in its view: where the house in the rail goes back to. None once it is
-   * closed.
+   * in its view, or the file shown last in a side of the window: where the
+   * house in the rail goes back to. None once it is closed.
    */
-  lastProject = $state<Extract<Route, { view: 'project' }> | null>(null);
+  lastProject = $state<Extract<Route, { view: 'project' } | { view: 'file' }> | null>(null);
 
   constructor() {
     this.#follow(this.route);
@@ -123,12 +136,13 @@ class Router {
   }
 
   #follow(route: Route) {
-    if (route.view === 'project') this.lastProject = route;
+    if (route.view === 'project' || route.view === 'file') this.lastProject = route;
   }
 
   /** The project shown last was closed: the house goes to the start screen. */
   forgetProject(id?: string) {
-    if (!id || this.lastProject?.project === id) this.lastProject = null;
+    const last = this.lastProject;
+    if (!id || (last?.view === 'project' && last.project === id)) this.lastProject = null;
   }
 
   go(route: Route) {

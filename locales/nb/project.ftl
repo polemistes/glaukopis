@@ -254,3 +254,13 @@ project-add-child = Legg til underelement
 project-add-sibling = Legg til element på samme nivå
 project-delete-promote = Slett og flytt underelementene opp
 project-delete-with = Slett med underelementer
+
+## En fil vist i en side av vinduet (2026-10-26).
+
+project-beside-file = En fil fra biblioteket …
+project-beside-file-title = Ved siden av: velg en fil
+project-show-file = Vis filen
+# Der et verk har flere filer: ett valg for hver, ved navnet.
+project-show-file-named = Vis «{ $name }»
+# Over dokumentpanelet mens siden som har fokus, viser en fil: dokumentet er den andre sidens.
+project-document-of-other = Dokumentet på den andre siden
