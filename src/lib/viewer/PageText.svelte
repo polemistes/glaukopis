@@ -68,7 +68,7 @@
         style:height={pct(h, lines.height)}
         style:font-size="{(h / lines.width) * 100 * 0.88}cqw"
       >
-        <span>{line.text}</span>
+        <span>{line.text}</span><br />
       </div>
     {/each}
   </div>

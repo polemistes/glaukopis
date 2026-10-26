@@ -5,7 +5,7 @@
    * It belongs to no project; its bar holds what a file needs: the page, a
    * field to go to one, and the zoom.
    */
-  import { onDestroy } from 'svelte';
+  import { onDestroy, untrack } from 'svelte';
   import CircleAlert from '@lucide/svelte/icons/circle-alert';
   import FileX from '@lucide/svelte/icons/file-x';
   import Lock from '@lucide/svelte/icons/lock';
@@ -38,7 +38,10 @@
 
   // The facts of the file, once for each file the side shows. It depends on the file alone.
   $effect(() => {
-    void viewers.fetch(spec.key, spec.file);
+    const key = spec.key;
+    const file = spec.file;
+    // What the fetching reads and writes of what is known is not what this depends on.
+    untrack(() => void viewers.fetch(key, file));
   });
   // The side's key lasts while it is shown.
   // svelte-ignore state_referenced_locally

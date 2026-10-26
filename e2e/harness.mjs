@@ -45,6 +45,8 @@ export const Key = {
   Alt: '',
   F2: '',
   F10: '\uE03A',
+  PageUp: '\uE00E',
+  PageDown: '\uE00F',
   Space: ' ',
 };
 

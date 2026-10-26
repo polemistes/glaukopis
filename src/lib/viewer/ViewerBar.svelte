@@ -145,6 +145,7 @@
     background: transparent;
     color: var(--ink-2);
     font: inherit;
+    white-space: nowrap;
     cursor: pointer;
   }
   .zoom:hover {

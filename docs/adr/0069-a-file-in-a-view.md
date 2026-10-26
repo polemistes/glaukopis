@@ -71,3 +71,17 @@ What was found:
 - A viewer in `src/lib/viewer/` (the side, its bar, the pages, the text over them, the keys); the core gains the drawing of pages at a width in colour with a cache, and a command for the lines of a page with their places; the library's files, the pane of a reference, the images, the Split view menu, the citation editor and the references tab gain their items.
 - Words in a part of their own, `viewer.ftl`; a section of the guide, *A file in a view*; an e2e script that shows a PDF and an image, turns pages, copies text, keeps the window and comes back to it.
 - Nothing of the model changes; projects and the library are as they were.
+
+## Addendum, 2026-10-26: as built
+
+Built the same day: the core by an agent in a worktree (the drawing of pages at a width in colour, the cache, the lines of a page, the facts of a file, the commands `file_facts`, `file_pages`, `file_page_lines`), merged as ce3fb0ff; the window, the viewer, the ways in and the guide on main. What departs from the plan, or was settled in the building:
+
+- **Measured**: the facts of a file come from the child in under 0.1 s for a small PDF and 0.5 s for a book of 364 pages; a page at 1600 dots takes some 40 ms through the child the first time and well under a millisecond from the cache; the lines of a page under a millisecond once the text is read. The pages show before the text is read, as the plan allowed.
+- **The facts come from the child**, so that the sizes are those of the pages as drawn (cropped and turned), and files only Poppler opens are shown too; their pages are not known to be turned, and their text may then lie wrong.
+- **An image of the store** is found by its hash where the library has no file of it: the page tries the library, then the store. An image among a project's images is shown beside the map, as from within a map; one of the store's images in the active side.
+- **The page is said by the bar alone**: the path over the side names the folder and the file, and not the page twice.
+- **The keys of a page** are bound where the pointer is over the pages or the focus is in them, as the typesetting pane's zoom keys are; where two views bind the same key, the later that can act now takes it, else the earlier (a change to the key dispatcher, which before gave up when the later could not act).
+- **A line of the text ends in a break**, as in the typesetting pane, so that lines copied together come out as lines.
+- **The file chooser** gained a mode for one file, taken at once, of the kinds that can be shown.
+- **The e2e harness** knows PageUp and PageDown, and the script acts through a hook for the ways in that pass through a native dialog or a double-click on a list, as the other scripts do.
+- *Open it* was renamed *Open in another program* everywhere, and its old words removed from every language.

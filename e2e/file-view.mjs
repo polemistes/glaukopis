@@ -111,9 +111,9 @@ try {
 
   // ---- the field goes to a page ----
   await app.click('[data-viewer-go]');
-  await app.keys('3');
+  await app.keys('2');
   await app.press('Enter');
-  await until('page 3 from the field', async () => (await fileSide(app))?.page === 3);
+  await until('page 2 from the field', async () => (await fileSide(app))?.page === 2);
   check('the field goes to a page', true);
   await app.press('Home');
   await sleep(300);
@@ -232,7 +232,13 @@ try {
       const s = await fileSide(app);
       return s?.kinds.length === 2 ? s : null;
     }, 15000).catch(() => null);
-    check('from a citation the file comes in the other side', fromCitation?.kinds.join() === 'map,file', fromCitation?.kinds.join());
+    // The other side is whichever the text is not in: here the first, which the window kept from before.
+    const textStays = await app.exec(`return !!document.querySelector('[data-side-key]:not([data-file-side]) .box .text .prose, [data-side-key]:not([data-file-side]) .diagram')`);
+    check(
+      'from a citation the file comes in the other side, and the map stays',
+      [...(fromCitation?.kinds ?? [])].sort().join() === 'file,map' && textStays,
+      fromCitation?.kinds.join(),
+    );
     await app.screenshot('file-view-6-from-citation');
   }
   await app.press('Escape');

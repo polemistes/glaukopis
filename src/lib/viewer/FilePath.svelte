@@ -3,7 +3,7 @@
    * The path over a file side (ADR 0069): the chevron of all projects, as
    * over a map side, a project chosen there opening in this side; then the
    * file's folder in the library, small, which opens the files at that
-   * folder; then the file's name, with its page.
+   * folder; then the file's name. The page is said by the bar of the side.
    */
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import FileText from '@lucide/svelte/icons/file-text';
@@ -37,7 +37,6 @@
   const record = $derived(files.get(spec.file));
   const name = $derived(viewed?.facts?.name ?? record?.name ?? '');
   const folder = $derived(record ? files.folder(files.folderOf(record)) : undefined);
-  const count = $derived(viewed?.facts?.pages ?? 0);
 
   let treeAt = $state<HTMLElement | null>(null);
   const listActions = new ProjectActions({ open: () => {} });
@@ -82,9 +81,6 @@
     {#if viewed?.facts?.picture}<ImageIcon size={14} />{:else}<FileText size={14} />{/if}
     <span class="name">{name || t('viewer-file')}</span>
   </span>
-  {#if count > 1}
-    <span class="count">{t('viewer-page-of', { page: spec.page, count })}</span>
-  {/if}
   <Popover
     open={!!treeAt}
     anchor={treeAt ?? undefined}
@@ -171,13 +167,6 @@
     padding: 0 3px;
     color: var(--ink-4);
     font-size: var(--text-sm);
-  }
-  .count {
-    flex: none;
-    margin-left: 6px;
-    color: var(--ink-3);
-    font-size: var(--text-xs);
-    white-space: nowrap;
   }
   .tree {
     max-height: min(480px, 70vh);
