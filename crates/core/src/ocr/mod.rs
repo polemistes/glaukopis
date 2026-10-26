@@ -1648,6 +1648,13 @@ pub struct PageLines {
 /// text has no lines. The text is read once and kept while the file is
 /// looked at (`seen_of`); where each page stands, likewise (`facts_of`).
 pub fn page_lines(path: &Path, tools: &Tools, work: &Path, index: usize) -> Result<PageLines> {
+    if is_picture(path) {
+        if index > 0 {
+            return Err(Error::invalid(tr!("ocr-no-such-page", page = index + 1, pages = 1)));
+        }
+        let (width, height) = picture_size(path)?;
+        return Ok(PageLines { number: 1, label: "1".into(), width, height, ..PageLines::default() });
+    }
     let size = checked_pdf(path)?;
     let facts = facts_of(path, size, tools.pdftoppm.as_ref(), work)?;
     let seen = seen_of(path, size, None)?;
@@ -1687,6 +1694,37 @@ pub fn page_lines(path: &Path, tools: &Tools, work: &Path, index: usize) -> Resu
     })
 }
 
+/// A picture shown as a page, `width` dots wide, or as wide as it is where
+/// it is narrower: in colour on white, turned upright where it says it is
+/// to be turned, as a PNG. A picture is not taken apart in the child: it is
+/// read here, as it is to be read by Tesseract (`Drawn::of_picture`).
+fn picture_at(path: &Path, width: u32) -> Result<Vec<u8>> {
+    use image::ImageDecoder;
+    let bytes = std::fs::read(path).context(|| tr!("io-reading", path = path))?;
+    let unreadable = |e: image::ImageError| Error::invalid(tr!("ocr-picture-unreadable", message = e.to_string()));
+    let reader = image::ImageReader::new(std::io::Cursor::new(bytes))
+        .with_guessed_format()
+        .map_err(|e| Error::invalid(tr!("ocr-picture-unreadable", message = e.to_string())))?;
+    let mut decoder = reader.into_decoder().map_err(unreadable)?;
+    let orientation = decoder.orientation().unwrap_or(image::metadata::Orientation::NoTransforms);
+    let mut picture = image::DynamicImage::from_decoder(decoder).map_err(unreadable)?;
+    picture.apply_orientation(orientation);
+    let rgba = picture.to_rgba8();
+    // Over white: what is not there at all is paper.
+    let over = |c: u8, a: u8| ((u32::from(c) * u32::from(a) + 255 * (255 - u32::from(a))) / 255) as u8;
+    let rgb = image::RgbImage::from_fn(rgba.width(), rgba.height(), |x, y| {
+        let [r, g, b, a] = rgba.get_pixel(x, y).0;
+        image::Rgb([over(r, a), over(g, a), over(b, a)])
+    });
+    let rgb = if width < rgb.width() {
+        let high = ((u64::from(rgb.height()) * u64::from(width)) / u64::from(rgb.width()).max(1)).max(1) as u32;
+        image::imageops::resize(&rgb, width, high, image::imageops::FilterType::Triangle)
+    } else {
+        rgb
+    };
+    drawing::colour_png(&rgb)
+}
+
 /// A page, counted from nought, drawn at a width as a PNG, or why it could not be.
 pub type PageDrawn = (usize, std::result::Result<Vec<u8>, String>);
 
@@ -1706,7 +1744,6 @@ pub fn pages_at(
     stop: &AtomicBool,
 ) -> Result<Vec<PageDrawn>> {
     use base64::Engine as _;
-    let size = checked_pdf(path)?;
     let width = width.clamp(1, drawing::LONGEST as u32);
     let mut asked: Vec<usize> = Vec::with_capacity(pages.len());
     for &page in pages {
@@ -1716,6 +1753,23 @@ pub fn pages_at(
     }
     let key = cache.and(pages_cache::key_of(path));
     let kept = |index: usize| pages_cache::get(cache?, key.as_deref()?, index + 1, width);
+    if is_picture(path) {
+        if !asked.contains(&0) {
+            return Ok(Vec::new());
+        }
+        let drawn = match kept(0) {
+            Some(png) => Ok(png),
+            None => {
+                let drawn = picture_at(path, width).map_err(|e| e.to_string());
+                if let (Ok(png), Some(cache), Some(key)) = (&drawn, cache, key.as_deref()) {
+                    pages_cache::put(cache, key, 1, width, png);
+                }
+                drawn
+            }
+        };
+        return Ok(vec![(0, drawn)]);
+    }
+    let size = checked_pdf(path)?;
     let mut got: BTreeMap<usize, std::result::Result<Vec<u8>, String>> = BTreeMap::new();
     let mut lacking = Vec::new();
     for &index in &asked {

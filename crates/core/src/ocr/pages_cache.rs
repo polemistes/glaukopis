@@ -74,16 +74,17 @@ static SAID: AtomicBool = AtomicBool::new(false);
 static KEPT: Mutex<Vec<(PathBuf, u64)>> = Mutex::new(Vec::new());
 
 fn put_within(root: &Path, key: &str, page: usize, width: u32, bytes: &[u8], (most, down_to): (u64, u64)) {
+    use std::io::Write as _;
     let path = file_of(root, key, page, width);
-    let part = path.with_extension("part");
-    // Written beside it and put in its place, so that a page half written is never taken for one.
-    let written = path
-        .parent()
-        .map_or(Ok(()), std::fs::create_dir_all)
-        .and_then(|()| std::fs::write(&part, bytes))
-        .and_then(|()| std::fs::rename(&part, &path));
+    // Written beside it and put in its place, so that a page half written is
+    // never taken for one; each in a file of its own, so that two views
+    // drawing the same page at once do not write into one.
+    let written = path.parent().map_or(Ok(()), std::fs::create_dir_all).and_then(|()| {
+        let mut part = tempfile::Builder::new().suffix(".part").tempfile_in(path.parent().unwrap_or(root))?;
+        part.write_all(bytes)?;
+        part.persist(&path).map(|_| ()).map_err(|e| e.error)
+    });
     if let Err(e) = written {
-        let _ = std::fs::remove_file(&part);
         if !SAID.swap(true, Ordering::Relaxed) {
             tracing::warn!(%e, root = %root.display(), "the pages drawn cannot be kept: they are drawn each time");
         }
@@ -111,8 +112,10 @@ fn pages_kept(root: &Path) -> Vec<(PathBuf, u64, SystemTime)> {
     let mut found = Vec::new();
     for folder in std::fs::read_dir(root).into_iter().flatten().flatten() {
         for file in std::fs::read_dir(folder.path()).into_iter().flatten().flatten() {
+            // Not what is being written.
             if let Ok(meta) = file.metadata()
                 && meta.is_file()
+                && file.path().extension().is_some_and(|e| e == "png")
             {
                 found.push((file.path(), meta.len(), meta.modified().unwrap_or(SystemTime::UNIX_EPOCH)));
             }
@@ -181,7 +184,8 @@ mod tests {
         assert_eq!(get(&root, "a", 1, 800), None, "another width");
         assert_eq!(get(&root, "a", 2, 600), None, "another page");
         assert_eq!(get(&root, "b", 1, 600), None, "another file");
-        assert!(!file_of(&root, "a", 1, 600).with_extension("part").exists());
+        let written: Vec<_> = std::fs::read_dir(root.join("a")).unwrap().flatten().map(|f| f.file_name()).collect();
+        assert_eq!(written, ["1-600.png"], "nothing is left of the writing");
     }
 
     #[test]

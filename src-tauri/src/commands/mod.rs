@@ -19,6 +19,7 @@ pub mod spelling;
 pub mod system;
 pub mod tables;
 pub mod templates;
+pub mod viewer;
 pub mod words;
 pub mod work;
 

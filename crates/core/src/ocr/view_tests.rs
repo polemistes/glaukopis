@@ -248,6 +248,36 @@ fn the_facts_of_a_file() {
     assert!(file_facts(&text, &tools, &work).is_err());
 }
 
+/// A picture among the files is shown as its one page: as wide as asked,
+/// or as it is where it is narrower; what is not there of it is white; it
+/// has no lines.
+#[test]
+fn a_picture_is_shown_as_its_one_page() {
+    let tmp = tempfile::tempdir().unwrap();
+    let work = tmp.path().join("work");
+    let cache = tmp.path().join("cache");
+    let path = tmp.path().join("picture.png");
+    let mut picture = image::RgbaImage::new(30, 20);
+    picture.put_pixel(0, 0, image::Rgba([255, 0, 0, 255]));
+    picture.save(&path).unwrap();
+    let tools = Tools::default();
+    let pages = pages_at(&path, &tools, &work, Some(&cache), &[1, 0], 600, &never()).unwrap();
+    let pages = drawn(&pages);
+    assert_eq!(pages.len(), 1);
+    assert_eq!((pages[0].0, pages[0].1.dimensions()), (0, (30, 20)));
+    assert_eq!(pages[0].1.get_pixel(0, 0).0, [255, 0, 0]);
+    assert_eq!(pages[0].1.get_pixel(10, 10).0, [255, 255, 255], "what is not there is white");
+    let key = pages_cache::key_of(&path).unwrap();
+    assert!(pages_cache::get(&cache, &key, 1, 600).is_some(), "kept");
+    let small = drawn(&pages_at(&path, &tools, &work, None, &[0], 15, &never()).unwrap());
+    assert_eq!(small[0].1.dimensions(), (15, 10));
+    assert!(pages_at(&path, &tools, &work, None, &[1], 600, &never()).unwrap().is_empty());
+
+    let lines = page_lines(&path, &tools, &work, 0).unwrap();
+    assert_eq!((lines.number, lines.width, lines.height, lines.lines.len()), (1, 30.0, 20.0, 0));
+    assert!(page_lines(&path, &tools, &work, 1).is_err());
+}
+
 /// How long a view waits, measured on files made here and on the fixtures
 /// of the end-to-end scripts: the look at a file (`seen_of`, which reads its
 /// text), opening it for its pages alone (`facts_of`), and a page drawn
@@ -293,6 +323,10 @@ fn measure_a_file_in_a_view() {
         let started = Instant::now();
         let facts = facts_of(file, size, tools.pdftoppm.as_ref(), &work).unwrap();
         let opened = started.elapsed();
+        let started = Instant::now();
+        let loaded = Document::load_mem(&std::fs::read(file).unwrap()).map(|d| d.get_pages().len()).unwrap_or(0);
+        let by_lopdf = started.elapsed();
+        println!("  lopdf loads it whole in {by_lopdf:?} ({loaded} pages)");
         let started = Instant::now();
         let first = pages_at(file, &tools, &work, Some(&cache), &[0], 1600, &never()).unwrap();
         let drawn = started.elapsed();
