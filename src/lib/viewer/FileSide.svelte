@@ -86,6 +86,7 @@
       page={spec.page}
       count={facts.pages}
       labels={facts.labels}
+      picture={facts.picture}
       zoom={spec.zoom}
       {percent}
       onpage={(n) => sides.setPage(spec.key, n)}

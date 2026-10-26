@@ -4,6 +4,7 @@
    * over a map side, a project chosen there opening in this side; then the
    * file's folder in the library, small, which opens the files at that
    * folder; then the file's name. The page is said by the bar of the side.
+   * Under the projects, the files and the images that can be shown here.
    */
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import FileText from '@lucide/svelte/icons/file-text';
@@ -19,15 +20,18 @@
   import { router } from '$lib/state/router.svelte';
   import Popover from '$lib/ui/Popover.svelte';
   import { tooltip } from '$lib/ui/tooltip';
+  import LibraryTrees from './LibraryTrees.svelte';
   import { viewers } from './viewers.svelte';
 
   interface Props {
     spec: FileSide;
     /** Shows a project in this side, at its top or at an element of it. */
     onproject: (id: string, at?: string) => void;
+    /** Shows a file of the library, or an image of the store, in this side. */
+    onfile: (hash: string) => void;
   }
 
-  let { spec, onproject }: Props = $props();
+  let { spec, onproject, onfile }: Props = $props();
 
   $effect(() => {
     if (!files.loaded) void files.load();
@@ -49,6 +53,11 @@
   function choose(id: string, element?: string) {
     treeAt = null;
     onproject(id, element);
+  }
+
+  function chooseFile(hash: string) {
+    treeAt = null;
+    onfile(hash);
   }
 </script>
 
@@ -92,6 +101,7 @@
       {#if projects.loaded}
         <ProjectList actions={listActions} sides={viewing.sides} {choose} focusField />
       {/if}
+      <LibraryTrees current={spec.file} onfile={chooseFile} />
     </div>
   </Popover>
 </nav>

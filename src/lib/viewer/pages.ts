@@ -42,6 +42,20 @@ export function placePages(sizes: [number, number][], widthOf: (w: number) => nu
   return { tops, widths, heights, total: y - AROUND.between + AROUND.top };
 }
 
+/** The width of the column of pages: the widest, with the room at its sides. */
+export function columnWidth(placed: Placed): number {
+  return Math.max(0, ...placed.widths) + 2 * AROUND.side;
+}
+
+/**
+ * Where the left edge of a page stands, in pixels from the left of what
+ * the side scrolls: the column in the middle of a side wider than it, and
+ * at the left of one narrower; each page in the middle of the column.
+ */
+export function pageLeft(placed: Placed, i: number, room: number): number {
+  return (Math.max(columnWidth(placed), room) - (placed.widths[i] ?? 0)) / 2;
+}
+
 /** The page, counted from one, that stands at a height in the column: the last whose top is above it. */
 export function pageAt(placed: Placed, y: number): number {
   const { tops } = placed;

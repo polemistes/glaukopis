@@ -1,14 +1,16 @@
 <script lang="ts">
   /**
    * An image of the library's files, or of the store of images, in a side
-   * (ADR 0069): as one page, fitted to the side or at a factor of its size,
-   * zoomed with the typesetting pane's keys and Ctrl and the wheel.
+   * (ADR 0069): as one page in the middle of the side, fitted to it, the
+   * whole of it seen, or at a factor of its size; zoomed with the typesetting pane's keys and Ctrl
+   * and the wheel, about the pointer, which stays over the same place of
+   * the image.
    */
-  import { onMount } from 'svelte';
+  import { flushSync, onMount } from 'svelte';
   import { pictureRead } from '$lib/api/pictures';
   import { fileRead } from '$lib/api/system';
   import { t } from '$lib/i18n';
-  import { clampZoom, stepped } from '$lib/preview/zoom';
+  import { clampZoom, FILE, rung, wheeled } from '$lib/preview/zoom';
   import { shortcuts } from '$lib/shell/keys.svelte';
   import { AROUND } from './pages';
   import type { ImageSource } from './viewers.svelte';
@@ -29,6 +31,7 @@
   let failed = $state<string | null>(null);
   let scroller = $state<HTMLDivElement>();
   let roomWidth = $state(0);
+  let roomHeight = $state(0);
   let pointerIn = $state(false);
 
   $effect(() => {
@@ -53,24 +56,65 @@
   });
 
   const [w, h] = $derived(size);
-  const factor = $derived(
-    zoom ?? Math.min(1, Math.max(0.05, (roomWidth - 2 * AROUND.side) / Math.max(w, 1))),
+  /** The factor at which the whole image is seen, no larger than itself: as small as a large image needs. */
+  const fit = $derived(
+    Math.max(
+      0.001,
+      Math.min(
+        1,
+        (roomWidth - 2 * AROUND.side) / Math.max(w, 1),
+        (roomHeight - 2 * AROUND.top) / Math.max(h, 1),
+      ),
+    ),
   );
+  /** The range of a file, reaching down to the fit where that is smaller. */
+  const range = $derived({ ...FILE, least: Math.min(FILE.least, fit) });
+  const factor = $derived(zoom ?? fit);
 
-  function zoomBy(steps: number) {
-    onzoom(clampZoom(stepped(factor, steps)));
+  /** Zooms by rungs of the ladder, about the middle of the view. */
+  const zoomBy = (steps: number) => zoomAt(rung(factor, steps, range));
+
+  /**
+   * Zooms to a factor, or with none to the fit, about a point of the view,
+   * which stays over the same place of the image: the pointer under the
+   * wheel, or the middle of the view from the keys, the menu and the field.
+   */
+  function zoomAt(next: number | null, px?: number, py?: number) {
+    const el = scroller;
+    const to = next === null ? null : clampZoom(next, range);
+    if (!el || to === zoom) return;
+    const img = el.querySelector('img');
+    const x = px ?? el.clientWidth / 2;
+    const y = py ?? el.clientHeight / 2;
+    const fx = img ? (el.scrollLeft + x - img.offsetLeft) / Math.max(1, img.offsetWidth) : 0.5;
+    const fy = img ? (el.scrollTop + y - img.offsetTop) / Math.max(1, img.offsetHeight) : 0.5;
+    onzoom(to);
+    // Drawn at once, before the next turn of the wheel can read a half-moved view.
+    flushSync();
+    if (!img) return;
+    el.scrollLeft = img.offsetLeft + fx * img.offsetWidth - x;
+    el.scrollTop = img.offsetTop + fy * img.offsetHeight - y;
   }
 
   onMount(() => {
     const el = scroller;
     if (!el) return;
-    const observer = new ResizeObserver(() => (roomWidth = el.clientWidth));
+    const measure = () => {
+      roomWidth = el.clientWidth;
+      roomHeight = el.clientHeight;
+    };
+    const observer = new ResizeObserver(measure);
     observer.observe(el);
-    roomWidth = el.clientWidth;
+    measure();
     const onwheel = (event: WheelEvent) => {
       if (!(event.ctrlKey || event.metaKey) || !event.deltaY) return;
       event.preventDefault();
-      zoomBy(event.deltaY < 0 ? 1 : -1);
+      const box = el.getBoundingClientRect();
+      zoomAt(
+        wheeled(factor, event.deltaY, event.deltaMode, range),
+        event.clientX - box.left,
+        event.clientY - box.top,
+      );
     };
     el.addEventListener('wheel', onwheel, { passive: false });
     const here = () => pointerIn || el.contains(document.activeElement);
@@ -78,7 +122,7 @@
       'preview-zoom-in': { run: () => zoomBy(1), when: here },
       'preview-zoom-in-equal': { run: () => zoomBy(1), when: here },
       'preview-zoom-out': { run: () => zoomBy(-1), when: here },
-      'preview-zoom-fit': { run: () => onzoom(null), when: here },
+      'preview-zoom-fit': { run: () => zoomAt(null), when: here },
     });
     return () => {
       observer.disconnect();
@@ -87,6 +131,10 @@
     };
   });
 
+  /** For the bar: zoom to a factor or to the fit, about the middle of the view. */
+  export function zoomed(next: number | null) {
+    zoomAt(next);
+  }
   export function percent(): number {
     return Math.round(factor * 100);
   }
@@ -111,22 +159,28 @@
 </div>
 
 <style>
+  /* The image in the middle of the view while it is smaller, scrolled from its top left corner once larger. */
   .scroller {
+    position: relative;
+    display: flex;
     flex: 1;
     min-height: 0;
     overflow: auto;
+    overflow-anchor: none;
     padding: 16px 18px;
     background: var(--canvas);
     outline: none;
-    text-align: center;
   }
   img {
-    display: inline-block;
+    display: block;
+    flex: none;
+    margin: auto;
     max-width: none;
     background: #fff;
     box-shadow: var(--shadow-1);
   }
   .failed {
+    margin: auto;
     color: var(--ink-3);
     font-size: var(--text-sm);
   }

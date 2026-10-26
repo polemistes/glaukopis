@@ -14,7 +14,7 @@ function check(name, ok, detail = '') {
 
 const dataDir = mkdtempSync(join(tmpdir(), 'glaukopis-e2e-file-view-'));
 const pdf = join(root, 'e2e/fixtures/structure.pdf');
-const png = join(root, 'src/lib/shell/owl-small.png');
+const png = join(root, 'resources/brand/owl.png');
 
 const invoke = (app, command, args = {}) =>
   app.execAsync(`return await window.__TAURI_INTERNALS__.invoke(arguments[0], arguments[1]);`, command, args);
@@ -109,6 +109,75 @@ try {
   await app.press('Home');
   await until('the first page again', async () => (await fileSide(app))?.page === 1);
 
+  // ---- zooming about the pointer: the wheel, the field, the menu ----
+  /** What lies under a point of the view: the page, and where on it, as fractions of its size. */
+  const under = (selector, sx, sy) =>
+    app.exec(`
+      const el = document.querySelector(arguments[0]);
+      const box = el.getBoundingClientRect();
+      const x = box.left + box.width * arguments[1], y = box.top + box.height * arguments[2];
+      const hit = document.elementsFromPoint(x, y).find((e) => e.matches('.page[data-page], [data-viewer-image] img'));
+      if (!hit) return null;
+      const r = hit.getBoundingClientRect();
+      return { page: Number(hit.dataset.page ?? 1), fx: (x - r.left) / r.width, fy: (y - r.top) / r.height, width: r.width };`, selector, sx, sy);
+  /** A turn of the wheel with Ctrl held, at a point of the view. */
+  const wheel = (selector, sx, sy, deltaY) =>
+    app.exec(`
+      const el = document.querySelector(arguments[0]);
+      const box = el.getBoundingClientRect();
+      el.dispatchEvent(new WheelEvent('wheel', { deltaY: arguments[3], ctrlKey: true, bubbles: true, cancelable: true,
+        clientX: box.left + box.width * arguments[1], clientY: box.top + box.height * arguments[2] }));`, selector, sx, sy, deltaY);
+  const same = (a, b) => a && b && a.page === b.page && Math.abs(a.fx - b.fx) < 0.02 && Math.abs(a.fy - b.fy) < 0.02;
+  const pdfBefore = await under('[data-viewer-pages]', 0.7, 0.35);
+  // The small, quick turns of a touchpad, in a burst.
+  for (let i = 0; i < 6; i++) {
+    await wheel('[data-viewer-pages]', 0.7, 0.35, -25);
+    await sleep(20);
+  }
+  await sleep(100);
+  const pdfAfter = await under('[data-viewer-pages]', 0.7, 0.35);
+  check('Ctrl and the wheel zoom the pages in', pdfAfter?.width > pdfBefore?.width * 1.3, `${Math.round(pdfBefore?.width)} → ${Math.round(pdfAfter?.width)}`);
+  check('the place under the pointer stays under it', same(pdfBefore, pdfAfter), JSON.stringify([pdfBefore, pdfAfter]));
+  for (let i = 0; i < 6; i++) {
+    await wheel('[data-viewer-pages]', 0.3, 0.6, 25);
+    await sleep(20);
+  }
+  await sleep(100);
+  const pdfOut = await under('[data-viewer-pages]', 0.3, 0.6);
+  check('turned the other way, the pages zoom out', pdfOut?.width < pdfAfter?.width, `${Math.round(pdfAfter?.width)} → ${Math.round(pdfOut?.width)}`);
+  await sleep(400);
+  const widthAtRest = await fileSide(app);
+  check('the pages are drawn again once the zoom rests', widthAtRest.drawn.includes(1));
+  // The field takes any percent.
+  await app.click('[data-viewer-zoom-field]');
+  await app.keys('100');
+  await app.press('Enter');
+  await sleep(300);
+  const hundred = (await fileSide(app)).width;
+  await app.click('[data-viewer-zoom-field]');
+  await app.keys('250');
+  await app.press('Enter');
+  await sleep(300);
+  const twoFifty = (await fileSide(app)).width;
+  check('a percent written in the field zooms to it', Math.abs(twoFifty / hundred - 2.5) < 0.02, `${Math.round(hundred)} → ${Math.round(twoFifty)}`);
+  const field = await app.exec(`return document.querySelector('[data-viewer-zoom-field]').value`);
+  check('the field shows the percent', field === '250', field);
+  await app.click('[data-viewer-zoom-field]');
+  await app.keys('12,5');
+  await app.press('Enter');
+  await sleep(300);
+  const eighth = (await fileSide(app)).width;
+  check('an eighth, written with a comma', Math.abs(eighth / hundred - 0.125) < 0.01, `${Math.round(eighth)}`);
+  // The menu offers the steps, and fitting to the width.
+  await app.click('[data-viewer-zoom]');
+  await sleep(300);
+  const items = await app.exec(`return Array.from(document.querySelectorAll('[role="menuitem"]')).map((m) => m.textContent.trim())`);
+  check('the menu offers steps from an eighth to four times', ['12.5%', '25%', '50%', '100%', '200%', '400%'].every((p) => items.some((i) => i.startsWith(p))), items.join(' | '));
+  await app.clickText('[role="menuitem"]', 'As wide as the view');
+  await sleep(300);
+  const fitted = await fileSide(app);
+  check('fitted again from the menu', fitted.width > eighth && (await app.exec(`return document.querySelector('[data-viewer-zoom]').textContent.trim()`)) === 'As wide as the view');
+
   // ---- the field goes to a page ----
   await app.click('[data-viewer-go]');
   await app.keys('2');
@@ -164,6 +233,52 @@ try {
   const image = await until('the image', () => app.exec(`return document.querySelector('[data-viewer-image] img')?.naturalWidth ?? 0`), 10000);
   check('an image of the library is shown as one page', image > 0, `${image} wide`);
   await app.screenshot('file-view-4-image');
+  const fitLabel = await app.exec(`return document.querySelector('[data-viewer-zoom]').textContent.trim()`);
+  const fitPercent = Number(await app.exec(`return document.querySelector('[data-viewer-zoom-field]').value`));
+  check('a large image is fitted whole, as small as that takes', fitLabel === 'The whole image in the view' && fitPercent > 0 && fitPercent < 50, `${fitLabel}, ${fitPercent}%`);
+  const whole = await app.exec(`const i = document.querySelector('[data-viewer-image] img'), s = i.closest('[data-viewer-image]'); return i.getBoundingClientRect().height <= s.clientHeight && i.getBoundingClientRect().width <= s.clientWidth`);
+  check('the whole image is in the view', whole);
+  // At its own size it is larger than the side: the place under the pointer is kept.
+  await app.click('[data-viewer-zoom-field]');
+  await app.keys('100');
+  await app.press('Enter');
+  await sleep(300);
+  const imageBefore = await under('[data-viewer-image]', 0.3, 0.4);
+  for (let i = 0; i < 6; i++) {
+    await wheel('[data-viewer-image]', 0.3, 0.4, -25);
+    await sleep(20);
+  }
+  await sleep(100);
+  const imageAfter = await under('[data-viewer-image]', 0.3, 0.4);
+  check('the image zooms in with the wheel', imageAfter?.width > imageBefore?.width * 1.3, `${Math.round(imageBefore?.width)} → ${Math.round(imageAfter?.width)}`);
+  check('the place of the image under the pointer stays under it', same(imageBefore, imageAfter), JSON.stringify([imageBefore, imageAfter]));
+  await app.screenshot('file-view-4b-image-zoomed');
+  // ---- the trees of files and images under the projects, from the chevron over a side ----
+  await app.click('.top [data-path][data-file] [data-path-all]');
+  await app.waitFor('[data-path-tree] [data-library-trees]', 3000);
+  const heads = await app.exec(`return Array.from(document.querySelectorAll('[data-library-trees] [data-tree-kind="tree"] .name')).map((n) => n.textContent.trim())`);
+  check('under the projects stand the trees of files and images', heads.join() === 'Files,Images', heads.join());
+  await app.click('[data-library-trees] [data-tree-row="files"]');
+  await sleep(200);
+  const fileRows = await app.exec(`return Array.from(document.querySelectorAll('[data-library-trees] [data-tree-kind="file"] .name')).map((n) => n.textContent.trim())`);
+  check('the files that can be shown are listed, the one shown marked', fileRows.some((n) => n.endsWith('.pdf')) && fileRows.some((n) => n.endsWith('.png')) && (await app.exists('[data-library-trees] [data-tree-row="file:' + pngHash + '"].current')), fileRows.join(' | '));
+  await app.click('[data-library-trees] [data-tree-row="images"]');
+  await sleep(200);
+  check('the images of the store, of which there are none yet, say so', (await app.exec(`return document.querySelector('[data-library-trees] .none')?.textContent.trim() ?? ''`)) === 'Nothing here yet');
+  await app.screenshot('file-view-4c-trees');
+  await app.click('[data-library-trees] [data-tree-row="file:' + pdfHash + '"]');
+  const fromTree = await until('the PDF from the tree', async () => {
+    const s = await fileSide(app);
+    return s?.file === pdfHash && s.drawn.length ? s : null;
+  }, 20000);
+  check('a file chosen in the tree is shown in that side', fromTree.kinds.join() === 'map,file' && !(await app.exists('[data-path-tree]')));
+  // The chevron of a map side has the trees too.
+  await app.click('.top [data-path]:not([data-file]) [data-path-all]');
+  await app.waitFor('[data-path-tree] [data-library-trees]', 3000);
+  check('the chevron of a map side has the trees too', (await app.exec(`return document.querySelectorAll('[data-library-trees] [data-tree-kind="tree"]').length`)) === 2);
+  await app.press('Escape');
+  await sleep(200);
+  await app.click('[data-viewer-pages]');
   await app.execAsync(`window.__glaukopisViewer.show(arguments[0]);`, pdfHash);
   await until('the PDF again', async () => (await fileSide(app))?.drawn.length > 0, 20000);
   await app.click('[data-viewer-pages]');

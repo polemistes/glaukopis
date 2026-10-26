@@ -14,3 +14,13 @@ viewer-not-found = Filen er ikke lenger i biblioteket.
 viewer-locked = Filen ber om et passord og kan ikke vises.
 viewer-not-shown = Denne typen fil kan ikke vises her: åpne den i et annet program.
 viewer-loading = Åpner filen …
+# Zoomen til et bilde, tilpasset: hele bildet sees, hvor lite det enn gjør det.
+viewer-fit-image = Hele bildet i visningen
+# Feltet der en zoom skrives, i prosent.
+viewer-zoom-field = Zoom, i prosent
+viewer-zoom-choose = Velg en zoom
+# De to trærne under treet av alle prosjekter, som pilen over en side åpner: en fil som velges, vises i den siden.
+viewer-trees = Filer og bilder
+viewer-tree-files = Filer
+viewer-tree-images = Bilder
+viewer-tree-empty = Ingenting her ennå

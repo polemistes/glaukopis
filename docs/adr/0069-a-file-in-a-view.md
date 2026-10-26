@@ -85,3 +85,12 @@ Built the same day: the core by an agent in a worktree (the drawing of pages at 
 - **The file chooser** gained a mode for one file, taken at once, of the kinds that can be shown.
 - **The e2e harness** knows PageUp and PageDown, and the script acts through a hook for the ways in that pass through a native dialog or a double-click on a list, as the other scripts do.
 - *Open it* was renamed *Open in another program* everywhere, and its old words removed from every language.
+
+## Addendum, 2026-10-27: the zoom, and the trees under the projects
+
+The owner found the zoom narrow and the wheel unsteady: the pages flickered and moved about, and an image kept its top left corner rather than the place under the pointer. Changed the next day:
+
+- **About the pointer.** A turn of the wheel zooms about the point under it, which stays over the same place of the same page, sideways as well as up and down; the keys, the menu and the field zoom about the middle of the view. The view is laid out at once, before the next turn can read a half-moved one, and the pages are drawn anew by the core only once the zoom has rested a quarter of a second, the pictures drawn before being stretched meanwhile; a page drawn before is swapped only once its new picture is decoded, so that it never goes blank.
+- **A wide range, by a ladder.** A file zooms between 5 % and 800 %, kept to a thousandth; the keys go by rungs of a ladder with 100 % on it and six rungs to each doubling; the wheel by a factor for each pixel it turns, a mouse's notch near a rung and a touchpad's small turns as small as they are, never more than a quarter in one turn. The menu offers an eighth, a quarter, a half, one, two and four times. A field in the bar shows the percent and takes any, with or without the sign, a comma as a point. The typesetting pane keeps its own range and tenths.
+- **An image fitted whole**, as small as that takes, in the middle of the view while it is smaller than the view, scrolled from its corner once larger; the fit may lie below the least zoom.
+- **The files and the images under the projects.** The tree of all projects, which the chevron over a side opens, has under it a rule and two trees folded until opened: *Files*, the PDFs and images of the library in their folders, and *Images*, those of the store. One chosen is shown in that side, in the place of what it showed, as a project chosen there is. The one the side shows is marked.

@@ -620,6 +620,12 @@
     sides.open(id, at ?? PROJECT);
   }
 
+  /** Shows a file of the library, or an image of the store, in a side, in the place of what it showed (ADR 0069). */
+  function fileIn(spec: SideSpec, hash: string) {
+    sides.focus(spec.key);
+    sides.openFile(hash);
+  }
+
   /** The project of a side, as the list has it, for its path: the folder it lies in. */
   function infoOf(spec: MapSide, of: Project): ProjectInfo {
     return (
@@ -922,7 +928,11 @@
           onfocusin={() => sides.focus(spec.key)}
         >
           {#if !isMap(spec)}
-            <FilePath {spec} onproject={(id, element) => projectIn(spec, id, element)} />
+            <FilePath
+              {spec}
+              onproject={(id, element) => projectIn(spec, id, element)}
+              onfile={(hash) => fileIn(spec, hash)}
+            />
           {:else if of && of.node(PROJECT) && spec.at}
             <Path
               project={of}
@@ -933,6 +943,7 @@
               fault={of.saveError ?? undefined}
               onselect={(id) => sideApis.get(spec.key)?.show(id)}
               onproject={(id, element) => projectIn(spec, id, element)}
+              onfile={(hash) => fileIn(spec, hash)}
             />
           {/if}
           <!-- At the right end of the cell: the path gives way, the × stays. With one side, closing it brings the start screen. -->

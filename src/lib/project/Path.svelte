@@ -32,6 +32,7 @@
   import type { Project } from './model/project.svelte';
   import { PROJECT } from './model/types';
   import { viewing } from './ProjectView.svelte';
+  import LibraryTrees from '$lib/viewer/LibraryTrees.svelte';
   import { crumbsOf, fitCrumbs, type Crumb } from './path';
 
   interface Props {
@@ -49,6 +50,8 @@
     onselect: (id: string) => void;
     /** Shows another project in this side, at its top or at an element of it. */
     onproject: (id: string, at?: string) => void;
+    /** Shows a file of the library, or an image of the store, in this side (ADR 0069). */
+    onfile: (hash: string) => void;
   }
 
   let {
@@ -60,6 +63,7 @@
     fault,
     onselect,
     onproject,
+    onfile,
   }: Props = $props();
 
   // The crumbs as a string first, so that what follows them, the drawing and
@@ -289,6 +293,12 @@
           focusField
         />
       {/if}
+      <LibraryTrees
+        onfile={(hash) => {
+          treeAt = null;
+          onfile(hash);
+        }}
+      />
     </div>
   </Popover>
   <!-- Every crumb drawn whole, out of sight, to be measured; and the crumb … last. -->

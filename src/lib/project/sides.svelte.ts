@@ -9,7 +9,7 @@
  */
 
 import type { MapMode, Route } from '$lib/state/router.svelte';
-import { keptZoom } from '$lib/preview/zoom';
+import { FILE, keptZoom } from '$lib/preview/zoom';
 
 /** A side of the window that shows a project, as the window keeps it. */
 export interface MapSide {
@@ -104,7 +104,7 @@ function readSide(kept: unknown): SideSpec | null {
       key: newKey(),
       file: f.file,
       page: Number.isInteger(f.page) && (f.page as number) > 0 ? (f.page as number) : 1,
-      zoom: keptZoom(f.zoom),
+      zoom: keptZoom(f.zoom, FILE),
     };
   }
   const k = kept as Partial<MapSide>;

@@ -14,3 +14,13 @@ viewer-not-found = The file is no longer in the library.
 viewer-locked = The file asks for a password, and cannot be shown.
 viewer-not-shown = This kind of file cannot be shown here: open it in another program.
 viewer-loading = Opening the file…
+# The zoom of an image, fitted: all of it seen, however small that makes it.
+viewer-fit-image = The whole image in the view
+# The field in which a zoom is written, in percent.
+viewer-zoom-field = Zoom, in percent
+viewer-zoom-choose = Choose a zoom
+# The two trees under the tree of all projects, which the chevron over a side opens: a file chosen is shown in that side.
+viewer-trees = Files and images
+viewer-tree-files = Files
+viewer-tree-images = Images
+viewer-tree-empty = Nothing here yet

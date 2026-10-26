@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { AROUND, pageAsked, pageAt, pagesSeen, placePages, toLetGo, widthWanted } from './pages';
+import {
+  AROUND,
+  columnWidth,
+  pageAsked,
+  pageAt,
+  pageLeft,
+  pagesSeen,
+  placePages,
+  toLetGo,
+  widthWanted,
+} from './pages';
 
 const a4: [number, number] = [595, 842];
 
@@ -42,5 +52,24 @@ describe('the pages of a file in a side', () => {
     expect(pageAsked('5', labels)).toBe(5);
     expect(pageAsked('9', labels)).toBeNull();
     expect(pageAsked('', labels)).toBeNull();
+  });
+});
+
+describe('where a page stands across the side', () => {
+  const placed = placePages(
+    [
+      [100, 200],
+      [50, 100],
+    ],
+    (w) => w * 4,
+  );
+  it('has the column as wide as the widest page with the room at its sides', () => {
+    expect(columnWidth(placed)).toBe(400 + 2 * AROUND.side);
+  });
+  it('stands in the middle of a side wider than the column, and of the column where it is wider', () => {
+    expect(pageLeft(placed, 0, 1000)).toBe(300);
+    expect(pageLeft(placed, 1, 1000)).toBe(400);
+    expect(pageLeft(placed, 0, 300)).toBe(AROUND.side);
+    expect(pageLeft(placed, 1, 300)).toBe(AROUND.side + 100);
   });
 });

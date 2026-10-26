@@ -1295,11 +1295,14 @@ A view of the window can show a file of the library instead of a map: a
 PDF, page by page, or an image, of the library's files or of the images.
 The file belongs to no project. Its bar holds what a file needs: the page in
 view, *Page 3 of 271*, with the number it has in print where that differs,
-*(xiv)*; a field to go to a page by either; and the zoom, as wide as the
-view or a size of the page on paper. **PageDown** and **PageUp** turn a
-page, **Home** and **End** go to the first and the last, and **Ctrl++**,
-**Ctrl+-** and **Ctrl+0** zoom, as in the typesetting pane, as does the
-wheel with **Ctrl**. The text the PDF has lies unseen over its pages, so
+*(xiv)*; a field to go to a page by either; and the zoom: a field that
+takes any percent from 5 to 800, and a menu of steps from an eighth to
+four times, beside *As wide as the view*, which for an image is *The whole
+image in the view*. **PageDown** and **PageUp** turn a page, **Home** and
+**End** go to the first and the last, and **Ctrl++**, **Ctrl+-** and
+**Ctrl+0** zoom, as in the typesetting pane; so does the wheel with
+**Ctrl**, about the pointer, which stays over the same place of the page.
+The text the PDF has lies unseen over its pages, so
 that words can be selected and copied as letters; a scan that has no text
 shows its pages alone, and **Make searchable…** gives it text.
 
@@ -1514,7 +1517,10 @@ enters it, and a folder opens the tree at that folder. The chevron at the
 start of the path opens the tree of all projects, unfolded down to the
 element in view, which is marked, with a field that finds a project by its
 name: a project chosen opens at its top in that side, an element is
-entered. Where the path does not fit, the names in the middle make way for
+entered. Under the projects stand two trees, folded until opened: **Files**,
+the PDFs and images of the library in their folders, and **Images**, those
+of the store; one chosen is shown in that side, in the place of what it
+showed. Where the path does not fit, the names in the middle make way for
 **…**, which lists them; the first name, the project and the element in
 view always show. Where the project could not be saved, its name in the
 path has a red sign, and the pointer on it says why. What is done with an
