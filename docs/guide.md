@@ -1197,10 +1197,10 @@ kind:
 
 | Kind | What can be done |
 | --- | --- |
-| PDF | Open it; **Make searchable…**; **Import the text as a map…** |
-| Image | Open it; **Read the text…**, to copy or make an element of; **Take into the images**, so that it can become a figure |
-| Document (Word, OpenDocument, EPUB, HTML, Markdown, Org, plain text) | Open it; **Bring in as elements…** |
-| Anything else | Open it with the program your system has for it |
+| PDF | **Show**; **Open in another program**; **Make searchable…**; **Import the text as a map…** |
+| Image | **Show**; **Open in another program**; **Read the text…**, to copy or make an element of; **Take into the images**, so that it can become a figure |
+| Document (Word, OpenDocument, EPUB, HTML, Markdown, Org, plain text) | **Open in another program**; **Bring in as elements…** |
+| Anything else | **Open in another program**, the one your system has for it |
 
 **Files and references.** A file may belong to one reference, to several (a
 chapter and its book), or to none yet. **Assign to a reference…**, in the
@@ -1288,6 +1288,41 @@ there with all under it, named in the line over its tabs, with its project
 where two are shown; it turns with the focus. The history alone is of the
 whole project. While others are in a shared project, a small sign with
 people in the pane's head says how many; rest the pointer on it to see who.
+
+## A file in a view
+
+A view of the window can show a file of the library instead of a map: a
+PDF, page by page, or an image, of the library's files or of the images.
+The file belongs to no project. Its bar holds what a file needs: the page in
+view, *Page 3 of 271*, with the number it has in print where that differs,
+*(xiv)*; a field to go to a page by either; and the zoom, as wide as the
+view or a size of the page on paper. **PageDown** and **PageUp** turn a
+page, **Home** and **End** go to the first and the last, and **Ctrl++**,
+**Ctrl+-** and **Ctrl+0** zoom, as in the typesetting pane, as does the
+wheel with **Ctrl**. The text the PDF has lies unseen over its pages, so
+that words can be selected and copied as letters; a scan that has no text
+shows its pages alone, and **Make searchable…** gives it text.
+
+Where a file is shown from decides where it comes:
+
+- **In the view that has the focus**, in the place of what it showed: a
+  double-click or **Enter** on a PDF or an image among the files of the
+  library, **Show** at the head of its pane or in its menu, a press on a
+  file in the pane of a reference, and **Show** in the pane of an image.
+  Selecting a file only selects it, so that it can be renamed or moved.
+- **In a new view**: **A file of the library…** in the menu of **Split
+  view**, which asks for the file by its name.
+- **In the other view**, which opens where there is none: **Show the file**
+  in the editor of a citation, beside each work that has a file, and in the
+  menu of a work among the references of a document; and **Show** in the
+  pane of an image of a project. So the text you write stays where it is.
+
+The path over the view says the file's folder in the library, which opens
+the files there, and its name. Closing the view closes it, as any view; a
+map is opened again as maps are opened, from the list. While a file has
+the focus, the document pane shows the document of the other view, and
+says so; with no map shown, it closes. **Open in another program**, where
+*Open it* stood, opens the file as before.
 
 ## Kinds of elements
 
@@ -3112,7 +3147,8 @@ what is to be done by its name, and does it.
 | **Ctrl+Shift+O** | The outline beside the text |
 | **Ctrl+Shift+L** | The list of projects at the left: hide it, or show it again |
 | **Ctrl+P** | Typesetting: the pages of the side you are in, beside the sides |
-| **Ctrl++**, **Ctrl+-**, **Ctrl+0** | In the typesetting pane: larger pages, smaller pages, pages as wide as the pane |
+| **Ctrl++**, **Ctrl+-**, **Ctrl+0** | In the typesetting pane and in a file: larger pages, smaller pages, pages as wide as the pane |
+| **PageDown**, **PageUp**, **Home**, **End** | In a file: the next page, the one before, the first, the last |
 | **Ctrl+Shift+S** | Split view: this element as diagram and text, another element or another project beside it, switch sides, or one at a time |
 | **Ctrl+W** | Close the side you are in; with one side, the project |
 | **Ctrl+Shift+D** | Document properties: the details, the document type, the language and the checklist of the element in view |
