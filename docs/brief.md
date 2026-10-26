@@ -1220,3 +1220,23 @@ Resolved: the authors become contributors with roles (author, editor, translator
 > Could you make a plan for adding two more export formats? Diagram as svg and Diagram as image? By the way, are there any other well known mind map formats that we could import and export? Say what you think, and make a plan that I can give to Opus 5.5.
 
 The assessment, and what was found: the diagram is drawn by the page, not by the core (boxes placed by `layout.ts`, lines and curves in one SVG, names as HTML with the four marks a name can have, the marks of status, text, clone and left-out, the fold badge; the colours are the theme's tokens; the fonts Literata and Inter come with the application, split by range of letters), so the picture is best drawn from the screen itself, as a small SVG writer that reads the boxes, the line boxes of the names and the icons as they stand, with the fonts put into the file, and the image made from that SVG in the page at two pixels a pixel; the items belong to the diagram's own menu, the Export dialog being the document's. Of the formats of mind maps, the file of Freeplane and FreeMind (`.mm`) is the one nearly every program reads and writes, XMind the one most used, and OPML the outline format that outliners share and that Glaukopis already reads as a document; MindManager, iThoughts, SimpleMind, MindNode, MindMeister, Scapple and the text diagrams (Mermaid, PlantUML) are not worth their menu items. Record 0068 and the plan `docs/plans/the-diagram-as-a-picture-and-the-formats-of-mind-maps.md` follow; the formats are stages the owner may strike.
+
+## 2026-10-26 — a file in a view
+
+> Can we make a pdf-viewer that can be in a view instead of a map?
+
+The assessment: the core draws PDF pages already (for the window of a reading, in a child process with bounds), and has the text of every page with the place of each line, which the typesetting pane lays over its pages for copying; the library keeps the files and knows their references and the printed number of each page. So a viewer needs no new engine. The first proposal tied the file to the side's project, so that the path, the document pane and the typesetting pane had something to show; the owner:
+
+> I am not sure. Having a file in a side while the side still has its map seems confusing, or have I misunderstood you? I think it would be much clearer if any view, split or not, can show either a map or a file, and the view then is not linked to a map. I think your ideas of remembering the relation between a map made from a pdf and its pdf, and opening the file of a reference, are nice.
+
+Then, on the proposal of a File button beside Diagram, Text and Timeline, and of the page marks of a map read from a PDF opening the PDF:
+
+> I think the diagram, tex, timeline buttons belong to a map, and adding a file button would be confusing. A file is shown in the active view when it is selected in the library, a reference or images window. When displayed from the split view, it will appear in the new view, of course. And when it is opened from a citation, it will open in the other view. I think we will abandon the idea that there is a connection between a pdf and the map made from it. It is enticint, but I see no real use for it. What do you think?
+
+Agreed, with one amendment: selecting a file in the library opens its pane, where it is renamed and moved, so showing is an act, a double-click, Enter, or *Show* at the head of the pane, and *Open it* becomes *Open in another program*. And on "coming back" to the map:
+
+> What do you mean by coming back? When a file is in a view, the map is gone, bit can opened, in any view in the way maps are opened. It should not reappear when the file view is closed. That should close the view, as always.
+
+> great, do it.
+
+Record 0069 and the plan `docs/plans/a-file-in-a-view.md` follow.
