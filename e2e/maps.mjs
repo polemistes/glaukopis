@@ -688,8 +688,8 @@ try {
   await app.click('.top button[data-side-by-side]');
   const one = await offered();
   check(
-    'Split view is a menu: this element, another element, another project',
-    JSON.stringify(one) === JSON.stringify(['This element, as diagram and text', 'Another element…', 'Another project…']),
+    'Split view is a menu: this element, another element, another project, a file of the library',
+    JSON.stringify(one) === JSON.stringify(['This element, as diagram and text', 'Another element…', 'Another project…', 'A file of the library…']),
     one.join(' | '),
   );
   check('and the button is not lit with one side', !(await lit()));
