@@ -225,7 +225,7 @@ try {
   await readIt();
   await app.waitFor('dialog [data-fact="words"]', 60000);
   await sleep(200);
-  await app.clickText('dialog footer button', 'Make the project');
+  await app.clickText('dialog footer button:not(:disabled)', 'Make the project');
   await app.waitFor('.text-view .section', 20000);
   await sleep(500);
   check(

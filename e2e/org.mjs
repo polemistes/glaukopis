@@ -248,7 +248,7 @@ try {
   if (opened && (await app.exists('dialog[open] footer button'))) {
     const asked = await app.exec(`return document.querySelector('dialog[open] h2')?.textContent ?? ''`);
     check('the works of the Org file are asked about as a project file’s', /works the project cites/.test(asked), asked);
-    await app.clickText('dialog[open] footer button', 'Make the project');
+    await app.clickText('dialog[open] footer button:not(:disabled)', 'Make the project');
   }
   await app.waitFor('.text-view .section, .diagram .node.root', 15000);
   await sleep(600);

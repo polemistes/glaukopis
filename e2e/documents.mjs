@@ -791,7 +791,7 @@ try {
     ),
   );
   await app.screenshot('documents-11-project');
-  await app.clickText('dialog footer button', 'Make the project');
+  await app.clickText('dialog footer button:not(:disabled)', 'Make the project');
   await app.waitFor('.text-view .section', 15000);
   await sleep(600);
   const named = await app.exec(`return document.title.replace(/^Glaukopis – /, '')`);

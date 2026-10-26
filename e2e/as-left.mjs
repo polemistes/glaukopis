@@ -131,9 +131,10 @@ try {
     at.x,
     at.y,
   );
-  await app.waitForText('dialog[open] footer button', 'Make the project', 10000);
+  // The button is disabled until the document is read: waited for enabled.
+  await app.waitForText('dialog[open] footer button:not(:disabled)', 'Make the project', 10000);
   await sleep(300);
-  await app.clickText('dialog[open] footer button', 'Make the project');
+  await app.clickText('dialog[open] footer button:not(:disabled)', 'Make the project');
   await until(async () => (await app.count('.text-view [data-section]')) >= 13, 20000);
   projectId = decodeURIComponent((await app.exec('return location.hash')).split('/')[2].split('?')[0]);
   ids = Object.fromEntries(

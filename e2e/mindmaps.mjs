@@ -201,9 +201,9 @@ try {
   check('the OPML has an outline to each element, the notes in _note', (outline.match(/<outline /g) ?? []).length === 8 && /_note="Telemachus goes/.test(outline));
   await app.exec(`void window.__glaukopisMindMaps.fromDocument(arguments[0])`, opml);
   // What is to be made of the document is asked first, as for any document.
-  await app.waitForText('dialog[open] footer button', 'Make the project', 20000);
+  await app.waitForText('dialog[open] footer button:not(:disabled)', 'Make the project', 20000);
   await sleep(300);
-  await app.clickText('dialog[open] footer button', 'Make the project');
+  await app.clickText('dialog[open] footer button:not(:disabled)', 'Make the project');
   await until(
     'the project of the document',
     async () => !(await app.exists('dialog[open]')) && /^The Odyssey/.test((await app.inView()) ?? ''),

@@ -845,7 +845,7 @@ try {
     await app.exec(`return document.querySelector('dialog input[data-choice="at-once"]')`),
   );
   await sleep(300);
-  await app.clickText('dialog footer button', 'Make the project');
+  await app.clickText('dialog footer button:not(:disabled)', 'Make the project');
   await opened(20000);
   await sleep(200);
   const named = await app.exec(`return document.title.replace(/^Glaukopis – /, '')`);
