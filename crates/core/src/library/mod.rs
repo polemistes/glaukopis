@@ -4,9 +4,12 @@ pub mod attachments;
 pub mod collections;
 pub mod entry;
 pub mod export;
+pub mod figures;
 pub mod files;
 pub mod keys;
+pub mod migration;
 pub mod schema;
+pub mod small;
 
 use std::collections::{HashMap, HashSet};
 use std::fs;
@@ -745,6 +748,9 @@ impl Library {
 
     fn link_file_unsaved(&mut self, index: usize, stored: String, origin: Option<&str>) -> bool {
         if self.files.record(&stored, None, origin, &now()) {
+            if let Some(hash) = attachments::hash_of_path(&stored) {
+                self.files.measure(&self.dir, hash);
+            }
             self.files_dirty = true;
         }
         let entry = &mut self.entries[index];
@@ -842,6 +848,7 @@ impl Library {
         for path in stored {
             attachments::delete(&self.dir, &path)?;
         }
+        small::forget(&self.dir, hash);
         Ok(())
     }
 
@@ -902,6 +909,9 @@ impl Library {
         for path in stored {
             attachments::delete(&self.dir, &path)?;
         }
+        for hash in &wanted {
+            small::forget(&self.dir, hash);
+        }
         Ok((count, emptied.len()))
     }
 
@@ -936,6 +946,70 @@ impl Library {
         }
         self.save_files()?;
         Ok(removed)
+    }
+
+    /// The file of the library a figure made of this one shows (ADR 0070):
+    /// the file itself where it is PNG, SVG, or a JPEG that stands upright;
+    /// else a copy made to be shown, PNG or a JPEG turned upright, beside it
+    /// in its folder, named after it, which says what it was made from. The
+    /// copy is made once: asked again, it is the one made before. The file
+    /// itself is never changed. An error where it is no image that can be
+    /// read, or larger than an image may be.
+    pub fn for_figure(&mut self, hash: &str) -> Result<FileView> {
+        let record =
+            self.files.get(hash).cloned().ok_or_else(|| Error::not_found(tr!("core-library-the-file-of-library")))?;
+        let path = attachments::absolute(&self.dir, &record.path)?;
+        let size = fs::metadata(&path).context(|| tr!("io-reading", path = &path))?.len();
+        if size > figures::MAX_BYTES {
+            return Err(figures::too_large());
+        }
+        let bytes = fs::read(&path).context(|| tr!("io-reading", path = &path))?;
+        let (content, ending, measured) = figures::prepared(&bytes)?;
+        if content == bytes {
+            return Ok(self.view_of(&record));
+        }
+        if let Some(made) = self.files.files().iter().find(|f| f.made_from.as_deref() == Some(hash)) {
+            let made = made.clone();
+            let there = attachments::absolute(&self.dir, &made.path).is_ok_and(|p| p.is_file());
+            if there {
+                return Ok(self.view_of(&made));
+            }
+        }
+        if content.len() as u64 > figures::MAX_BYTES {
+            return Err(figures::too_large());
+        }
+        let name = figures::shown_name(&record.name, ending);
+        let stored = attachments::store_bytes(&self.dir, &content, &name)?;
+        let made_hash = attachments::hash_of_path(&stored).unwrap_or_default().to_owned();
+        // The same picture taken in before by itself is that file, as it is.
+        if let Some(there) = self.files.get(&made_hash) {
+            let there = there.clone();
+            return Ok(self.view_of(&there));
+        }
+        self.files.insert(FileRecord {
+            hash: made_hash,
+            path: stored,
+            name,
+            folder: record.folder.clone(),
+            origin: record.origin.clone(),
+            added: now(),
+            width: measured.map(|m| m.0),
+            height: measured.map(|m| m.1),
+            alt: record.alt.clone(),
+            made_from: Some(hash.to_owned()),
+        });
+        self.files_dirty = true;
+        self.save_files()?;
+        let made = self.files.files().last().cloned().unwrap_or_default();
+        Ok(self.view_of(&made))
+    }
+
+    /// Says what an image of the library shows, in words, for those who do
+    /// not see it (ADR 0070).
+    pub fn set_alt(&mut self, hash: &str, alt: &str) -> Result<FileView> {
+        let record = self.files.set_alt(hash, alt)?;
+        self.save_files()?;
+        Ok(self.view_of(&record))
     }
 
     /// Puts many files in a folder, or at the top in none; the record written once.
@@ -1040,10 +1114,11 @@ impl Library {
             self.files_dirty = true;
         }
         self.save()?;
-        if new != stored
-            && let Err(e) = attachments::delete(&self.dir, stored)
-        {
-            tracing::warn!(%e, stored, "could not delete a stored file");
+        if new != stored {
+            small::forget(&self.dir, &old_hash);
+            if let Err(e) = attachments::delete(&self.dir, stored) {
+                tracing::warn!(%e, stored, "could not delete a stored file");
+            }
         }
         Ok((new, changed))
     }
@@ -1119,6 +1194,7 @@ impl Library {
                 }
             }
             self.files.record(&t.stored, at.as_deref(), Some(&t.origin), &now());
+            self.files.measure(&self.dir, &hash);
             if let Some(view) = self.file_view(&hash) {
                 out.files.push(view);
             }
@@ -1311,6 +1387,13 @@ pub struct FileView {
     pub folder: Option<String>,
     pub origin: Option<String>,
     pub added: String,
+    /// Of an image, how large it is in its pixels, where that can be told.
+    pub width: Option<u32>,
+    pub height: Option<u32>,
+    /// Of an image, what it shows, in words.
+    pub alt: String,
+    /// Of a file made from another to be a figure, the hash of that one.
+    pub made_from: Option<String>,
     /// The references the file belongs to, in the order of the library.
     pub references: Vec<Summary>,
 }
@@ -1328,6 +1411,10 @@ impl FileView {
             folder: record.folder.clone(),
             origin: record.origin.clone(),
             added: record.added.clone(),
+            width: record.width,
+            height: record.height,
+            alt: record.alt.clone(),
+            made_from: record.made_from.clone(),
             references,
         }
     }
@@ -1866,6 +1953,92 @@ mod tests {
         );
         assert!(problems[2].contains("West 1988.pdf") && problems[2].contains(&west.path), "{}", problems[2]);
         assert!(lib.require(&e.id).unwrap().attachments().is_empty());
+    }
+
+    #[test]
+    fn an_image_taken_in_says_how_large_it_is_and_what_it_shows() {
+        use std::sync::atomic::AtomicBool;
+        let (tmp, mut lib) = library();
+        let png = tmp.path().join("vase.png");
+        fs::write(&png, figures::fixtures::PNG).unwrap();
+        let svg = tmp.path().join("circle.svg");
+        fs::write(&svg, figures::fixtures::SVG).unwrap();
+        let pdf = tmp.path().join("paper.pdf");
+        fs::write(&pdf, b"%PDF paper").unwrap();
+        let (taken, _) =
+            files::store_paths(lib.dir(), &[png, svg, pdf], false, &mut |_, _, _| {}, &AtomicBool::new(false));
+        let got = lib.enter_taken(&taken, None).unwrap();
+        let by_name = |name: &str| got.files.iter().find(|f| f.name == name).unwrap().clone();
+        let vase = by_name("vase.png");
+        assert_eq!((vase.kind, vase.width, vase.height), (FileKind::Picture, Some(4), Some(3)));
+        let circle = by_name("circle.svg");
+        assert_eq!((circle.kind, circle.width), (FileKind::Picture, None), "a drawing has no size in pixels");
+        assert_eq!(by_name("paper.pdf").width, None);
+
+        let said = lib.set_alt(&vase.hash, "  A vase with\n a lid ").unwrap();
+        assert_eq!(said.alt, "A vase with a lid");
+        let again = Library::open_at(lib.dir()).unwrap();
+        let kept = again.file_view(&vase.hash).unwrap();
+        assert_eq!((kept.alt.as_str(), kept.width), ("A vase with a lid", Some(4)));
+        assert!(lib.set_alt(&"0".repeat(64), "x").is_err());
+
+        // A file found in the store without a record is measured as it is entered.
+        let mut record: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(lib.dir().join(files::FILE)).unwrap()).unwrap();
+        record["files"].as_array_mut().unwrap().retain(|f| f["hash"] != vase.hash.as_str());
+        fs::write(lib.dir().join(files::FILE), record.to_string()).unwrap();
+        let found = Library::open_at(lib.dir()).unwrap();
+        assert_eq!(found.file_view(&vase.hash).unwrap().width, Some(4));
+    }
+
+    #[test]
+    fn a_figure_shows_the_file_itself_or_a_copy_made_beside_it() {
+        use std::io::Cursor;
+        use std::sync::atomic::AtomicBool;
+        let (tmp, mut lib) = library();
+        let plates = lib.files.folder_create("Plates", None).unwrap();
+        lib.save_files().unwrap();
+        let picture = image::DynamicImage::ImageRgb8(image::RgbImage::from_pixel(6, 5, image::Rgb([10, 120, 200])));
+        let mut bmp = Cursor::new(Vec::new());
+        picture.write_to(&mut bmp, image::ImageFormat::Bmp).unwrap();
+        let desk = tmp.path().join("desk");
+        fs::create_dir_all(&desk).unwrap();
+        fs::write(desk.join("vase.png"), figures::fixtures::PNG).unwrap();
+        fs::write(desk.join("Plate 3.bmp"), bmp.get_ref()).unwrap();
+        fs::write(desk.join("words.txt"), b"plain words").unwrap();
+        let (taken, _) = files::store_paths(
+            lib.dir(),
+            &[desk.join("vase.png"), desk.join("Plate 3.bmp"), desk.join("words.txt")],
+            false,
+            &mut |_, _, _| {},
+            &AtomicBool::new(false),
+        );
+        let got = lib.enter_taken(&taken, Some(&plates.id)).unwrap();
+        let by_name = |name: &str| got.files.iter().find(|f| f.name == name).unwrap().clone();
+        let vase = by_name("vase.png");
+        assert_eq!(lib.for_figure(&vase.hash).unwrap().hash, vase.hash, "shown as it is");
+
+        let plate = by_name("Plate 3.bmp");
+        lib.set_alt(&plate.hash, "The third plate").unwrap();
+        let made = lib.for_figure(&plate.hash).unwrap();
+        assert_ne!(made.hash, plate.hash);
+        assert_eq!(made.name, "Plate 3.png");
+        assert_eq!(made.folder.as_deref(), Some(plates.id.as_str()));
+        assert_eq!(made.made_from.as_deref(), Some(plate.hash.as_str()));
+        assert_eq!((made.width, made.height, made.alt.as_str()), (Some(6), Some(5), "The third plate"));
+        assert_eq!(
+            image::guess_format(&fs::read(lib.attachment_path(&made.path).unwrap()).unwrap()).unwrap(),
+            image::ImageFormat::Png
+        );
+        // The original stays as it was; asked again, the same copy.
+        assert!(lib.attachment_path(&plate.path).unwrap().is_file());
+        assert_eq!(lib.for_figure(&plate.hash).unwrap().hash, made.hash);
+        assert_eq!(lib.file_views().len(), 4);
+        let again = Library::open_at(lib.dir()).unwrap();
+        assert_eq!(again.file_view(&made.hash).unwrap().made_from.as_deref(), Some(plate.hash.as_str()));
+
+        assert!(lib.for_figure(&by_name("words.txt").hash).is_err());
+        assert_eq!(lib.for_figure(&"0".repeat(64)).unwrap_err().kind(), "not-found");
     }
 
     #[test]

@@ -278,6 +278,24 @@ fn a_picture_is_shown_as_its_one_page() {
     assert!(page_lines(&path, &tools, &work, 1).is_err());
 }
 
+/// A drawing among the files is one page, as large as it says it is, or as
+/// a page of a screen where it does not say; what is no drawing is said so.
+#[test]
+fn a_drawing_is_one_page_as_large_as_it_says() {
+    let tmp = tempfile::tempdir().unwrap();
+    let work = tmp.path().join("work");
+    let tools = Tools::default();
+    let path = tmp.path().join("circle.svg");
+    std::fs::write(&path, crate::library::figures::fixtures::SVG).unwrap();
+    let facts = file_facts(&path, &tools, &work).unwrap();
+    assert!(facts.picture);
+    assert_eq!((facts.pages, facts.sizes.clone()), (1, vec![(120.0, 80.0)]));
+    std::fs::write(&path, "<svg xmlns='http://www.w3.org/2000/svg'><rect/></svg>").unwrap();
+    assert_eq!(file_facts(&path, &tools, &work).unwrap().sizes, vec![(800.0, 600.0)]);
+    std::fs::write(&path, "plain words").unwrap();
+    assert!(file_facts(&path, &tools, &work).is_err());
+}
+
 /// How long a view waits, measured on files made here and on the fixtures
 /// of the end-to-end scripts: the look at a file (`seen_of`, which reads its
 /// text), opening it for its pages alone (`facts_of`), and a page drawn

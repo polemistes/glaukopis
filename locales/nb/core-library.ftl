@@ -63,3 +63,9 @@ core-library-assign-reference-gone = «{ $name }» ble ikke gitt til referansen 
 core-library-assign-stored-gone = «{ $name }» ble ikke gitt til referansen sin: filen er ikke lenger der biblioteket har den, { $path }.
 core-library-files-unreadable = Oversikten over filene i biblioteket kunne ikke leses, og ble lagt til side som { $path }: { $message }
 core-library-not-utf8 = { $path } har bokstaver som ikke er i UTF-8, slik et redigeringsprogram som lagrer i en annen tegnkoding skriver dem. De leses som �, og blir skrevet slik; filen slik den var, er tatt vare på som { $aside } i samme mappe.
+
+# Ett sted for filer (ADR 0070).
+core-library-no-small = denne filtypen vises ikke i liten størrelse
+core-library-images-folder = Bilder
+core-library-picture-missing = «{ $name }» ble ikke tatt inn i biblioteket: filen mangler.
+core-library-picture-not-itself = «{ $name }» ble ikke tatt inn i biblioteket: filen er ikke bildet den var.

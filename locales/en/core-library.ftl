@@ -65,3 +65,13 @@ core-library-assign-stored-gone = “{ $name }” was not given to its reference
 core-library-files-unreadable = The record of the files of the library could not be read, and was put aside as { $path }: { $message }
 # The library file has bytes that are not UTF-8, as an editor that saves in Latin-1 writes them; $aside is the name of the copy kept in the same folder.
 core-library-not-utf8 = { $path } has letters that are not in UTF-8, as an editor that saves in another encoding writes them. They are read as �, and will be written so; the file as it was is kept as { $aside } in the same folder.
+
+# One place for files (ADR 0070).
+# A file of a kind that has no thumbnail, or one that could not be read for it; the interface shows the kind's icon instead.
+core-library-no-small = this kind of file is not shown small
+# The folder the images of the old store of pictures are put in, at the top of the files of the library.
+core-library-images-folder = Images
+# An image of the old store of pictures whose file was not there when it was taken into the library.
+core-library-picture-missing = “{ $name }” was not taken into the library: its file is missing.
+# An image of the old store of pictures whose file does not hold what its name says.
+core-library-picture-not-itself = “{ $name }” was not taken into the library: its file is not the image it was.

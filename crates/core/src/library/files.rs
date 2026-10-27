@@ -54,6 +54,20 @@ pub struct FileRecord {
     /// When it was taken in, as the library writes times; for a file found
     /// in the store without a record, the time of the file.
     pub added: String,
+    /// Of an image, how large it is in its pixels, where that can be told:
+    /// not of a drawing (ADR 0070).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub width: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub height: Option<u32>,
+    /// Of an image, what it shows, in words, for those who do not see it:
+    /// the same wherever it is a figure.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub alt: String,
+    /// Of a file made from another to be a figure (an image turned upright,
+    /// or made into PNG), the hash of the one it was made from.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub made_from: Option<String>,
 }
 
 /// The record of the files of the library.
@@ -196,8 +210,51 @@ impl Files {
             folder,
             origin: origin.filter(|o| !o.is_empty()).map(str::to_owned),
             added: added.to_owned(),
+            ..Default::default()
         });
         true
+    }
+
+    /// Reads how large an image of the store is, where the record does not
+    /// say it yet: from the head of its file, so that a store of many is
+    /// measured quickly. Returns whether anything changed.
+    pub fn measure(&mut self, library_dir: &Path, hash: &str) -> bool {
+        let Some(&at) = self.by_hash.get(hash) else { return false };
+        let file = &self.files[at];
+        if file.width.is_some() || kind_of(&file.name) != FileKind::Picture {
+            return false;
+        }
+        let Some((width, height)) =
+            attachments::absolute(library_dir, &file.path).ok().and_then(|p| super::figures::measure(&p))
+        else {
+            return false;
+        };
+        let file = &mut self.files[at];
+        file.width = Some(width);
+        file.height = Some(height);
+        true
+    }
+
+    /// Gives an image what is known of it where the record does not say it
+    /// yet: its size, and what it shows. What the record says stays.
+    pub fn add_image_facts(&mut self, hash: &str, width: Option<u32>, height: Option<u32>, alt: &str) {
+        let Some(&at) = self.by_hash.get(hash) else { return };
+        let file = &mut self.files[at];
+        if file.width.is_none() && width.is_some() && height.is_some() {
+            file.width = width;
+            file.height = height;
+        }
+        if file.alt.is_empty() {
+            file.alt = alt.split_whitespace().collect::<Vec<_>>().join(" ");
+        }
+    }
+
+    /// Says what an image shows, in words; nothing, where `alt` is blank.
+    pub fn set_alt(&mut self, hash: &str, alt: &str) -> Result<FileRecord> {
+        let alt: String = alt.split_whitespace().collect::<Vec<_>>().join(" ").chars().take(2000).collect();
+        let file = self.get_mut(hash)?;
+        file.alt = alt;
+        Ok(file.clone())
     }
 
     /// Forgets a file. Returns what was known of it.
@@ -427,7 +484,10 @@ impl Files {
                             .unwrap_or_default()
                     })
                     .unwrap_or_else(super::now);
-                changed |= self.record(&path, None, None, &added);
+                if self.record(&path, None, None, &added) {
+                    self.measure(library_dir, &hash);
+                    changed = true;
+                }
             }
         }
         changed
@@ -544,7 +604,7 @@ pub fn kind_of(name: &str) -> FileKind {
     let ending = name.rsplit_once('.').map(|(_, e)| e.to_ascii_lowercase()).unwrap_or_default();
     if ending == "pdf" {
         FileKind::Pdf
-    } else if crate::ocr::PICTURE_ENDINGS.contains(&ending.as_str()) {
+    } else if ending == "svg" || crate::ocr::PICTURE_ENDINGS.contains(&ending.as_str()) {
         FileKind::Picture
     } else if crate::import::document::ENDINGS.contains(&ending.as_str()) {
         FileKind::Document

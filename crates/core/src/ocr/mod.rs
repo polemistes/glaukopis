@@ -1099,7 +1099,7 @@ fn picture_read(
     asked: &Asked,
     stop: &AtomicBool,
 ) -> Result<(Drawn, String, tesseract::With)> {
-    if crate::pictures::is_svg(bytes) {
+    if crate::library::figures::is_svg(bytes) {
         return Err(Error::invalid(tr!("ocr-drawing")));
     }
     let reader = ready(tools, asked)?;
@@ -1605,6 +1605,16 @@ fn picture_size(path: &Path) -> Result<(f32, f32)> {
 /// numbers in print are those of the text the file has (`seen_of`), which
 /// is kept for the lines of its pages.
 pub fn file_facts(path: &Path, tools: &Tools, work: &Path) -> Result<FileFacts> {
+    // A drawing is one page, as large as it says it is, or as a page of a
+    // screen where it does not say: the view shows it as it is.
+    if ending(path) == "svg" {
+        let bytes = std::fs::read(path).context(|| tr!("io-reading", path = path))?;
+        if !crate::library::figures::is_svg(&bytes) {
+            return Err(Error::invalid(tr!("core-pictures-not-a-picture")));
+        }
+        let size = crate::library::figures::svg_size(&bytes).unwrap_or((800.0, 600.0));
+        return Ok(FileFacts { picture: true, pages: 1, sizes: vec![size], labels: vec!["1".into()], locked: false });
+    }
     if is_picture(path) {
         let size = picture_size(path)?;
         return Ok(FileFacts { picture: true, pages: 1, sizes: vec![size], labels: vec!["1".into()], locked: false });

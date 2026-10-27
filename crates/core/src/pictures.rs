@@ -24,17 +24,18 @@
 //! shows, and notes, which are part of no document.
 
 use std::fs;
-use std::io::Cursor;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, MutexGuard};
 
-use image::{DynamicImage, ImageDecoder, ImageFormat, ImageReader};
+use image::ImageFormat;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::error::{Error, IoContext, Result};
 use crate::fsutil::write_atomic;
 use crate::library::attachments::hash_bytes;
+use crate::library::figures::{Kind, dimensions, kind_of, not_a_picture, prepared, shown_name, too_large};
+pub use crate::library::figures::{MAX_BYTES, is_svg, lighter};
 use crate::library::now;
 use crate::sidefile;
 use crate::tr;
@@ -45,9 +46,6 @@ const SMALL: &str = "small";
 
 /// How wide the lighter copies are, in points of the picture.
 const SMALL_WIDTH: u32 = 480;
-
-/// The most one picture may hold: what a server takes, unless it says otherwise.
-pub const MAX_BYTES: u64 = 50 * 1024 * 1024;
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -88,143 +86,6 @@ pub struct Change {
     pub caption: Option<Value>,
     pub alt: Option<String>,
     pub note: Option<String>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Kind {
-    Png,
-    Jpeg,
-    Svg,
-    /// A kind that is read, and kept as PNG.
-    Other(ImageFormat),
-}
-
-/// Whether what a file holds is a drawing (SVG).
-pub fn is_svg(bytes: &[u8]) -> bool {
-    let head = &bytes[..bytes.len().min(8192)];
-    let Ok(text) = std::str::from_utf8(head).or_else(|e| std::str::from_utf8(&head[..e.valid_up_to()])) else {
-        return false;
-    };
-    let text = text.trim_start_matches('\u{feff}').trim_start();
-    if !text.starts_with('<') {
-        return false;
-    }
-    // What stands before the picture itself: the declaration, remarks, the kind of document.
-    let mut rest = text;
-    loop {
-        rest = rest.trim_start();
-        if rest.starts_with("<?") {
-            let Some(end) = rest.find("?>") else { return false };
-            rest = &rest[end + 2..];
-        } else if rest.starts_with("<!--") {
-            let Some(end) = rest.find("-->") else { return false };
-            rest = &rest[end + 3..];
-        } else if rest.starts_with("<!") {
-            let Some(end) = rest.find('>') else { return false };
-            rest = &rest[end + 1..];
-        } else {
-            break;
-        }
-    }
-    let Some(tag) = rest.strip_prefix('<') else { return false };
-    let name: String = tag.chars().take_while(|c| !c.is_whitespace() && *c != '>' && *c != '/').collect();
-    name == "svg" || name.ends_with(":svg")
-}
-
-fn kind_of(bytes: &[u8]) -> Option<Kind> {
-    match image::guess_format(bytes) {
-        Ok(ImageFormat::Png) => Some(Kind::Png),
-        Ok(ImageFormat::Jpeg) => Some(Kind::Jpeg),
-        Ok(f @ (ImageFormat::Gif | ImageFormat::WebP | ImageFormat::Tiff | ImageFormat::Bmp)) => Some(Kind::Other(f)),
-        _ => is_svg(bytes).then_some(Kind::Svg),
-    }
-}
-
-fn not_a_picture() -> Error {
-    Error::invalid(tr!("core-pictures-not-a-picture"))
-}
-
-fn unreadable(e: image::ImageError) -> Error {
-    Error::invalid(tr!("core-pictures-unreadable", error = e.to_string()))
-}
-
-fn decode(bytes: &[u8], format: ImageFormat) -> Result<(DynamicImage, bool)> {
-    let mut decoder = ImageReader::with_format(Cursor::new(bytes), format).into_decoder().map_err(unreadable)?;
-    let orientation = decoder.orientation().unwrap_or(image::metadata::Orientation::NoTransforms);
-    let mut picture = DynamicImage::from_decoder(decoder).map_err(unreadable)?;
-    let turned = orientation != image::metadata::Orientation::NoTransforms;
-    if turned {
-        picture.apply_orientation(orientation);
-    }
-    Ok((picture, turned))
-}
-
-fn encode(picture: &DynamicImage, format: ImageFormat) -> Result<Vec<u8>> {
-    let mut out = Cursor::new(Vec::new());
-    match format {
-        ImageFormat::Jpeg => {
-            // JPEG has neither transparency nor more than eight bits.
-            let encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut out, 93);
-            DynamicImage::ImageRgb8(picture.to_rgb8()).write_with_encoder(encoder).map_err(unreadable)?;
-        }
-        _ => picture.write_to(&mut out, ImageFormat::Png).map_err(unreadable)?,
-    }
-    Ok(out.into_inner())
-}
-
-fn dimensions(bytes: &[u8], format: ImageFormat) -> Option<(u32, u32)> {
-    ImageReader::with_format(Cursor::new(bytes), format).into_dimensions().ok()
-}
-
-/// What is kept of a file: its content as it is stored, the ending that
-/// says what kind that is, and how large the picture is.
-type Prepared = (Vec<u8>, &'static str, Option<(u32, u32)>);
-
-fn prepared(bytes: &[u8]) -> Result<Prepared> {
-    match kind_of(bytes).ok_or_else(not_a_picture)? {
-        Kind::Png => Ok((bytes.to_vec(), "png", dimensions(bytes, ImageFormat::Png))),
-        Kind::Svg => Ok((bytes.to_vec(), "svg", None)),
-        Kind::Jpeg => {
-            // A photograph may say that it is to be turned before it is
-            // shown. Not everything that sets a page heeds that: the picture
-            // is turned here, once and for all.
-            let upright = ImageReader::with_format(Cursor::new(bytes), ImageFormat::Jpeg)
-                .into_decoder()
-                .ok()
-                .and_then(|mut d| d.orientation().ok())
-                .is_none_or(|o| o == image::metadata::Orientation::NoTransforms);
-            if upright {
-                return Ok((bytes.to_vec(), "jpg", dimensions(bytes, ImageFormat::Jpeg)));
-            }
-            let (picture, _) = decode(bytes, ImageFormat::Jpeg)?;
-            let size = (picture.width(), picture.height());
-            Ok((encode(&picture, ImageFormat::Jpeg)?, "jpg", Some(size)))
-        }
-        Kind::Other(format) => {
-            let (picture, _) = decode(bytes, format)?;
-            let size = (picture.width(), picture.height());
-            Ok((encode(&picture, ImageFormat::Png)?, "png", Some(size)))
-        }
-    }
-}
-
-/// A picture made smaller, for where it is only looked at: no wider than
-/// `widest` points. Nothing, when it is small already, is a drawing, or
-/// cannot be read.
-pub fn lighter(bytes: &[u8], extension: &str, widest: u32) -> Option<Vec<u8>> {
-    let format = match extension {
-        "png" => ImageFormat::Png,
-        "jpg" => ImageFormat::Jpeg,
-        _ => return None,
-    };
-    let (width, _) = dimensions(bytes, format)?;
-    if width <= widest {
-        return None;
-    }
-    let (picture, _) = decode(bytes, format).ok()?;
-    let height = (u64::from(picture.height()) * u64::from(widest) / u64::from(picture.width())).max(1) as u32;
-    let small = picture.resize_exact(widest, height, image::imageops::FilterType::Triangle);
-    encode(&small, format).ok()
 }
 
 pub fn is_hash(text: &str) -> bool {
@@ -555,43 +416,16 @@ impl Pictures {
     }
 }
 
-fn too_large() -> Error {
-    Error::invalid(tr!("core-pictures-too-large", most = MAX_BYTES >> 20))
-}
-
-/// The name as it is shown: without what leads to the file, and with the
-/// ending of what is kept.
-fn shown_name(name: &str, extension: &str) -> String {
-    let name = name.rsplit(['/', '\\']).next().unwrap_or(name).trim();
-    let stem = match name.rsplit_once('.') {
-        Some((stem, end)) if !stem.is_empty() && end.len() <= 5 => stem,
-        _ => name,
-    };
-    let stem: String = stem.chars().filter(|c| !c.is_control()).take(120).collect();
-    if stem.is_empty() {
-        format!("{}.{extension}", tr!("core-pictures-unnamed"))
-    } else {
-        format!("{stem}.{extension}")
-    }
-}
-
 #[cfg(test)]
-pub(crate) mod fixtures {
-    /// A picture of four points by three, in one colour.
-    pub const PNG: [u8; 73] = [
-        137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0, 4, 0, 0, 0, 3, 8, 2, 0, 0, 0, 59, 150,
-        57, 145, 0, 0, 0, 16, 73, 68, 65, 84, 120, 218, 99, 56, 17, 160, 1, 71, 12, 56, 57, 0, 44, 54, 15, 1, 74, 169,
-        232, 210, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
-    ];
-
-    pub const SVG: &str = "<?xml version=\"1.0\"?>\n<!-- a circle -->\n<svg xmlns=\"http://www.w3.org/2000/svg\" \
-                           width=\"120\" height=\"80\" viewBox=\"0 0 120 80\"><circle cx=\"60\" cy=\"40\" r=\"30\" \
-                           fill=\"#a33\"/></svg>";
-}
+pub(crate) use crate::library::figures::fixtures;
 
 #[cfg(test)]
 mod tests {
     use serde_json::json;
+
+    use std::io::Cursor;
+
+    use image::DynamicImage;
 
     use super::fixtures::{PNG, SVG};
     use super::*;
@@ -821,15 +655,5 @@ mod tests {
         fs::create_dir_all(&empty).unwrap();
         assert_eq!(p.adopt(&empty), 0);
         assert!(!empty.exists());
-    }
-
-    #[test]
-    fn what_is_a_drawing() {
-        assert!(is_svg(SVG.as_bytes()));
-        assert!(is_svg(b"\xef\xbb\xbf<svg xmlns=\"http://www.w3.org/2000/svg\"/>"));
-        assert!(is_svg(b"<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"x\"><svg:svg/>"));
-        assert!(!is_svg(b"<svgx/>"));
-        assert!(!is_svg(b"svg"));
-        assert!(!is_svg(b"<?xml version=\"1.0\"?><html/>"));
     }
 }
