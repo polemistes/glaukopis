@@ -187,22 +187,15 @@ project-references-foreign = { $count ->
     [one] { $count } i det här projektet finns inte i ditt bibliotek.
    *[other] { $count } i det här projektet finns inte i ditt bibliotek.
 }
-# The store of pictures.
-project-store = Förråd
 project-open-picture = Öppna…
 project-put-into-text = Sätt in den i texten
 project-add-pictures = Lägg till bilder från filer
 project-which-pictures = Vilka bilder
 project-search-pictures = Sök bilder
 project-a-picture = En bild
-project-with-notes = Med anteckningar
 project-not-on-computer = Inte på den här datorn
 project-nothing-said = Inget sägs om den än
-project-store-empty = Förrådet är tomt
-project-store-empty-hint = Lägg till bilder från filer, eller släpp dem på en text.
 project-no-pictures = Inga bilder än
-project-no-pictures-map = Bilderna i den här kartans figurer listas här. De i förrådet finns under Förråd.
-project-no-pictures-project = Bilderna i projektets figurer listas här. De i förrådet finns under Förråd.
 project-pictures-drag = Dra en bild in i en text för att göra en figur av den där, eller till ett element för att sätta den i slutet av dess text.
 # The count is of the pictures that are used and are not in the store of this computer.
 project-pictures-absent-map = { $count ->

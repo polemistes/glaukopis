@@ -14,14 +14,8 @@ figures-width-of-text = Belgede metnin genişliğinin.
 figures-shows = Gösterdiği
 figures-shows-placeholder = Göremeyenler için sözle
 figures-numbered = “Şekil 1” gibi numaralı
-figures-keep-caption = Başlığı resimle birlikte sakla
-figures-keep-caption-hint = Bu resimle yapılan şekiller bundan sonra burada söylenenle başlar
-figures-take-caption = Resmin kendi başlığını kullan
-figures-take-caption-hint = Resimle birlikte saklanan, şimdi söylenenin yerine buraya gelir
 figures-another-picture = Başka bir resim…
 figures-remove = Şekli kaldır
-figures-caption-kept = Resimle birlikte saklandı
-figures-caption-kept-detail = Onunla yapılan şekiller bu sözlerle başlar.
 # The title of the window in which a picture is chosen among the files of the computer.
 figures-choose-picture = Bir resim
 # What the files that can be chosen there are called.
@@ -29,10 +23,8 @@ figures-picture-files = Resimler
 
 ## The store of pictures, as the text reads it.
 
-figures-pictures-unread = Resimler okunamadı
 figures-picture-not-taken = Resim eklenemedi
 figures-picture-not-kept = Resim hakkında söylenenler saklanamadı
-figures-picture-not-removed = Resim kaldırılamadı
 
 ## Where a figure, a table or an equation stands.
 

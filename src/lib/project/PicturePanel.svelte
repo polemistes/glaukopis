@@ -9,6 +9,7 @@
   import type { EditorView } from 'prosemirror-view';
   import ImagePlus from '@lucide/svelte/icons/image-plus';
   import Plus from '@lucide/svelte/icons/plus';
+  import ScanText from '@lucide/svelte/icons/scan-text';
   import Search from '@lucide/svelte/icons/search';
   import SquarePen from '@lucide/svelte/icons/square-pen';
   import X from '@lucide/svelte/icons/x';
@@ -24,6 +25,8 @@
   import { t } from '$lib/i18n';
   import { importDropped } from '$lib/library/references.svelte';
   import { addPictures, takeIn, type PictureScope } from '$lib/figures/images.svelte';
+  import { files, storedOf } from '$lib/files/store.svelte';
+  import PictureTextDialog from '$lib/ocr/PictureTextDialog.svelte';
   import Thumb from '$lib/files/Thumb.svelte';
   import { router } from '$lib/state/router.svelte';
   import { dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
@@ -42,9 +45,11 @@
     onclose: () => void;
     /** What stands at the head in place of the title: the tabs of the panel at the side. */
     head?: Snippet;
+    /** Enters an element made of the text of an image. */
+    onenter?: (id: string) => void;
   }
 
-  let { project, at, scope = $bindable('project'), onclose, head }: Props = $props();
+  let { project, at, scope = $bindable('project'), onclose, head, onenter }: Props = $props();
 
   /** A picture as it stands in the list: one the project uses may not have arrived in the store. */
   interface Row {
@@ -56,6 +61,9 @@
 
   let query = $state('');
   let selected = $state<string | null>(null);
+  /** The image whose text is being read, to be copied or made an element of here. */
+  let reading = $state<string | null>(null);
+  const readingFile = $derived(reading ? files.get(reading) : undefined);
   let list = $state<HTMLDivElement>();
   /** The text that had the cursor last: where a picture is put when that is asked for. */
   let written: EditorView | null = null;
@@ -165,6 +173,9 @@
         : []),
       ...(picture && text()
         ? [{ label: t('project-put-into-text'), icon: ImagePlus, action: () => void put(picture) }]
+        : []),
+      ...(picture && picture.extension !== 'svg'
+        ? [{ label: t('files-read-text'), icon: ScanText, action: () => (reading = row.hash) }]
         : []),
     ]);
   }
@@ -321,6 +332,16 @@
     {/if}
   </footer>
 </aside>
+
+{#if readingFile}
+  <PictureTextDialog
+    file={storedOf(readingFile)}
+    {project}
+    {at}
+    {onenter}
+    onclose={() => (reading = null)}
+  />
+{/if}
 
 <style>
   .panel {

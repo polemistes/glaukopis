@@ -145,22 +145,15 @@ project-references-foreign = { $count ->
     [few] { $count } v tem projektu niso v vaši knjižnici.
    *[other] { $count } v tem projektu ni v vaši knjižnici.
 }
-# The store of pictures.
-project-store = Shramba
 project-open-picture = Odpri…
 project-put-into-text = Vstavi v besedilo
 project-add-pictures = Dodaj slike iz datotek
 project-which-pictures = Katere slike
 project-search-pictures = Išči slike
 project-a-picture = Slika
-project-with-notes = Z zapiski
 project-not-on-computer = Ni na tem računalniku
 project-nothing-said = O njej še ni nič povedano
-project-store-empty = Shramba je prazna
-project-store-empty-hint = Dodajte slike iz datotek ali jih spustite na besedilo.
 project-no-pictures = Še ni slik
-project-no-pictures-map = Slike ilustracij tega miselnega vzorca so navedene tu. Tiste iz shrambe so pod Shramba.
-project-no-pictures-project = Slike ilustracij projekta so navedene tu. Tiste iz shrambe so pod Shramba.
 project-pictures-drag = Povlecite sliko v besedilo, da tam nastane ilustracija, ali na element, da jo postavite na konec njegovega besedila.
 # The count is of the pictures that are used and are not in the store of this computer.
 project-pictures-absent-map = { $count ->

@@ -3,9 +3,7 @@
 
 core-pictures-not-a-picture = datoteka ni slika vrste, ki jo je mogoče uporabiti: PNG, JPEG, SVG, GIF, WebP, TIFF ali BMP
 core-pictures-unreadable = slike ni bilo mogoče prebrati: { $error }
-core-pictures-not-a-name = to ne imenuje nobene slike
 core-pictures-not-as-asked = kar je prišlo, ni slika, ki je bila zahtevana
-core-pictures-needs-name = slika se mora nekako imenovati
 core-pictures-too-large = slika je večja od { $most } MB, kolikor je slika lahko največ
 core-pictures-not-whole = slika ni prišla cela
 # Shown after "not found: ".

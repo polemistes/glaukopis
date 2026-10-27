@@ -135,22 +135,15 @@ project-not-cited = В этом проекте не цитируется.
 project-references-drag = Перетащите источник в текст, чтобы сослаться на него там, или на элемент, чтобы сослаться в конце его текста.
 # The count is of the references the project cites that the library lacks.
 project-references-foreign = { $count } из этого проекта нет в вашей библиотеке.
-# The store of pictures.
-project-store = Хранилище
 project-open-picture = Открыть…
 project-put-into-text = Вставить в текст
 project-add-pictures = Добавить изображения из файлов
 project-which-pictures = Какие изображения
 project-search-pictures = Поиск изображений
 project-a-picture = Изображение
-project-with-notes = С заметками
 project-not-on-computer = Нет на этом компьютере
 project-nothing-said = О нём пока ничего не сказано
-project-store-empty = Хранилище пусто
-project-store-empty-hint = Добавьте изображения из файлов или перетащите их в текст.
 project-no-pictures = Изображений пока нет
-project-no-pictures-map = Изображения рисунков этой карты перечислены здесь. Изображения хранилища — под «Хранилище».
-project-no-pictures-project = Изображения рисунков проекта перечислены здесь. Изображения хранилища — под «Хранилище».
 project-pictures-drag = Перетащите изображение в текст, чтобы сделать там рисунок, или на элемент, чтобы поставить его в конце его текста.
 # The count is of the pictures that are used and are not in the store of this computer.
 project-pictures-absent-map = { $count } из этой карты нет на этом компьютере.

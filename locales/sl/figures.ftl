@@ -14,14 +14,8 @@ figures-width-of-text = Širine besedila v dokumentu.
 figures-shows = Prikazuje
 figures-shows-placeholder = Z besedami, za tiste, ki je ne vidijo
 figures-numbered = Oštevilčena, kot »Slika 1«
-figures-keep-caption = Obdrži napis pri sliki
-figures-keep-caption-hint = Ilustracije, narejene s to sliko, se potem začnejo s tem, kar je povedano tu
-figures-take-caption = Uporabi tistega od slike
-figures-take-caption-hint = Kar je shranjeno pri sliki, je povedano tu namesto tega, kar je povedano zdaj
 figures-another-picture = Druga slika…
 figures-remove = Odstrani ilustracijo
-figures-caption-kept = Shranjeno pri sliki
-figures-caption-kept-detail = Ilustracije, narejene z njo, se začnejo s temi besedami.
 # The title of the window in which a picture is chosen among the files of the computer.
 figures-choose-picture = Slika
 # What the files that can be chosen there are called.
@@ -29,10 +23,8 @@ figures-picture-files = Slike
 
 ## The store of pictures, as the text reads it.
 
-figures-pictures-unread = Slik ni bilo mogoče prebrati
 figures-picture-not-taken = Slike ni bilo mogoče dodati
 figures-picture-not-kept = Tega, kar je bilo povedano o sliki, ni bilo mogoče shraniti
-figures-picture-not-removed = Slike ni bilo mogoče odstraniti
 
 ## Where a figure, a table or an equation stands.
 

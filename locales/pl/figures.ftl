@@ -14,14 +14,8 @@ figures-width-of-text = Szerokości tekstu w dokumencie.
 figures-shows = Przedstawia
 figures-shows-placeholder = Słowami, dla tych, którzy nie mogą jej zobaczyć
 figures-numbered = Numerowana, jako „Rycina 1”
-figures-keep-caption = Zachowaj podpis przy obrazie
-figures-keep-caption-hint = Ryciny zrobione z tego obrazu zaczynają się wtedy od tego, co tu napisano
-figures-take-caption = Użyj własnego podpisu obrazu
-figures-take-caption-hint = To, co zachowano przy obrazie, staje tu w miejsce tego, co jest teraz
 figures-another-picture = Inny obraz…
 figures-remove = Usuń rycinę
-figures-caption-kept = Zachowane przy obrazie
-figures-caption-kept-detail = Ryciny z niego zrobione zaczynają się od tych słów.
 # The title of the window in which a picture is chosen among the files of the computer.
 figures-choose-picture = Obraz
 # What the files that can be chosen there are called.
@@ -29,10 +23,8 @@ figures-picture-files = Obrazy
 
 ## The store of pictures, as the text reads it.
 
-figures-pictures-unread = Nie udało się odczytać obrazów
 figures-picture-not-taken = Nie udało się dodać obrazu
 figures-picture-not-kept = Nie udało się zachować tego, co powiedziano o obrazie
-figures-picture-not-removed = Nie udało się usunąć obrazu
 
 ## Where a figure, a table or an equation stands.
 

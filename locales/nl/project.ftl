@@ -126,22 +126,15 @@ project-references-foreign = { $count ->
     [one] { $count } in dit project staat niet in je bibliotheek.
    *[other] { $count } in dit project staan niet in je bibliotheek.
 }
-# The store of pictures.
-project-store = Beeldbank
 project-open-picture = Openen…
 project-put-into-text = In de tekst zetten
 project-add-pictures = Afbeeldingen uit bestanden toevoegen
 project-which-pictures = Welke afbeeldingen
 project-search-pictures = Afbeeldingen zoeken
 project-a-picture = Een afbeelding
-project-with-notes = Met notities
 project-not-on-computer = Niet op deze computer
 project-nothing-said = Er is nog niets over gezegd
-project-store-empty = De beeldbank is leeg
-project-store-empty-hint = Voeg afbeeldingen uit bestanden toe, of laat ze op een tekst vallen.
 project-no-pictures = Nog geen afbeeldingen
-project-no-pictures-map = De afbeeldingen van de figuren van deze mindmap staan hier. Die van de beeldbank staan onder Beeldbank.
-project-no-pictures-project = De afbeeldingen van de figuren van het project staan hier. Die van de beeldbank staan onder Beeldbank.
 project-pictures-drag = Sleep een afbeelding in een tekst om er daar een figuur van te maken, of op een element om haar aan het eind van zijn tekst te zetten.
 # The count is of the pictures that are used and are not in the store of this computer.
 project-pictures-absent-map = { $count ->

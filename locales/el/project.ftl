@@ -126,22 +126,15 @@ project-references-foreign = { $count ->
     [one] { $count } σε αυτό το έργο δεν είναι στη βιβλιοθήκη σας.
    *[other] { $count } σε αυτό το έργο δεν είναι στη βιβλιοθήκη σας.
 }
-# The store of pictures.
-project-store = Αποθήκη
 project-open-picture = Άνοιγμα…
 project-put-into-text = Να μπει στο κείμενο
 project-add-pictures = Προσθήκη εικόνων από αρχεία
 project-which-pictures = Ποιες εικόνες
 project-search-pictures = Αναζήτηση εικόνων
 project-a-picture = Μια εικόνα
-project-with-notes = Με σημειώσεις
 project-not-on-computer = Όχι σε αυτόν τον υπολογιστή
 project-nothing-said = Δεν λέγεται τίποτα γι’ αυτήν ακόμη
-project-store-empty = Η αποθήκη είναι άδεια
-project-store-empty-hint = Προσθέστε εικόνες από αρχεία, ή αφήστε τες πάνω σε κείμενο.
 project-no-pictures = Καμία εικόνα ακόμη
-project-no-pictures-map = Οι εικόνες των σχημάτων αυτού του χάρτη καταγράφονται εδώ. Αυτές της αποθήκης είναι κάτω από το Αποθήκη.
-project-no-pictures-project = Οι εικόνες των σχημάτων του έργου καταγράφονται εδώ. Αυτές της αποθήκης είναι κάτω από το Αποθήκη.
 project-pictures-drag = Σύρετε μια εικόνα μέσα σε κείμενο για να γίνει σχήμα εκεί, ή πάνω σε στοιχείο για να μπει στο τέλος του κειμένου του.
 # The count is of the pictures that are used and are not in the store of this computer.
 project-pictures-absent-map = { $count ->

@@ -187,22 +187,15 @@ project-references-foreign = { $count ->
     [one] { $count } i dette projekt er ikke i dit bibliotek.
    *[other] { $count } i dette projekt er ikke i dit bibliotek.
 }
-# The store of pictures.
-project-store = Billedlager
 project-open-picture = Åbn…
 project-put-into-text = Sæt det ind i teksten
 project-add-pictures = Tilføj billeder fra filer
 project-which-pictures = Hvilke billeder
 project-search-pictures = Søg i billederne
 project-a-picture = Et billede
-project-with-notes = Med notater
 project-not-on-computer = Ikke på denne computer
 project-nothing-said = Der er intet sagt om det endnu
-project-store-empty = Billedlageret er tomt
-project-store-empty-hint = Tilføj billeder fra filer, eller slip dem på en tekst.
 project-no-pictures = Ingen billeder endnu
-project-no-pictures-map = Billederne i dette korts figurer står her. Billedlagerets står under Billedlager.
-project-no-pictures-project = Billederne i projektets figurer står her. Billedlagerets står under Billedlager.
 project-pictures-drag = Træk et billede ind i en tekst for at lave en figur af det dér, eller hen på et element for at sætte det sidst i dets tekst.
 # The count is of the pictures that are used and are not in the store of this computer.
 project-pictures-absent-map = { $count ->

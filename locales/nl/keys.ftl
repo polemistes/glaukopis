@@ -17,13 +17,11 @@ keys-place-diagram = In het diagram
 keys-place-text = In de tekst van een mindmap
 keys-place-writing = Schrijven
 keys-place-library = In de bibliotheek
-keys-place-store = In de beeldbank
 
 ## What they do
 
 keys-projects = De projecten
 keys-library = De bibliotheek
-keys-pictures = De afbeeldingen
 keys-settings = Instellingen
 keys-search-everything = Overal zoeken
 keys-palette = Wat moet er gebeuren?
@@ -78,4 +76,3 @@ keys-writing-redo = Opnieuw
 keys-writing-redo-y = Opnieuw
 keys-library-find = In de bibliotheek zoeken
 keys-library-new = Een nieuwe referentie
-keys-store-find = In de afbeeldingen zoeken

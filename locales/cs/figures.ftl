@@ -14,14 +14,8 @@ figures-width-of-text = Ze šířky textu v dokumentu.
 figures-shows = Zobrazuje
 figures-shows-placeholder = Slovy, pro ty, kdo je nevidí
 figures-numbered = Číslováno, jako „Obrázek 1“
-figures-keep-caption = Uchovat popisek u obrázku
-figures-keep-caption-hint = Vyobrazení z tohoto obrázku pak začínají tím, co je řečeno zde
-figures-take-caption = Použít vlastní popisek obrázku
-figures-take-caption-hint = Místo toho, co je řečeno teď, se zde řekne, co je uchováno u obrázku
 figures-another-picture = Jiný obrázek…
 figures-remove = Odstranit vyobrazení
-figures-caption-kept = Uchováno u obrázku
-figures-caption-kept-detail = Vyobrazení z něj začínají těmito slovy.
 # The title of the window in which a picture is chosen among the files of the computer.
 figures-choose-picture = Obrázek
 # What the files that can be chosen there are called.
@@ -29,10 +23,8 @@ figures-picture-files = Obrázky
 
 ## The store of pictures, as the text reads it.
 
-figures-pictures-unread = Obrázky nelze přečíst
 figures-picture-not-taken = Obrázek nelze přidat
 figures-picture-not-kept = Co bylo o obrázku řečeno, nelze uchovat
-figures-picture-not-removed = Obrázek nelze odstranit
 
 ## Where a figure, a table or an equation stands.
 

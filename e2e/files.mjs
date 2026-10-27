@@ -131,6 +131,24 @@ try {
     app.exec(
       `return Array.from(document.querySelectorAll('.toaster .toast')).map((e) => e.textContent.replace(/\\s+/g, ' ').trim())`,
     );
+  /** Chooses in the menu of how the files are shown. */
+  const view = async (label) => {
+    await app.click('[data-files-view]');
+    await app.waitFor('[role="menu"]', 3000);
+    await sleep(250);
+    await app.clickText('[role="menuitem"]', label);
+    await app.waitGone('[role="menu"]', 3000).catch(() => {});
+    await sleep(250);
+  };
+  /** Chooses in the menu of the order. */
+  const sortBy = async (label) => {
+    await app.click('button[aria-label="Sort"]');
+    await app.waitFor('[role="menu"]', 3000);
+    await sleep(250);
+    await app.clickText('[role="menuitem"]', label);
+    await app.waitGone('[role="menu"]', 3000).catch(() => {});
+    await sleep(250);
+  };
   /** Chooses in the menu of the filters. */
   const filter = async (label) => {
     await app.click('[data-files-filter]');
@@ -210,17 +228,19 @@ try {
     listed.every((r) => r.reference === 'No reference'),
   );
 
-  // The folders: Homer has the PDF; Greek has it and the plate, with the folders under it.
+  // The folders: Homer has the PDF; Greek the plate, and the PDF too with the folders under it included.
   await app.clickText('[data-file-folders] [data-folder] .name', 'Homer');
   await sleep(250);
   const inHomer = await rows();
   check('Homer holds the PDF', inHomer.length === 1 && inHomer[0].name === NAGY, inHomer.map((r) => r.name).join(', '));
   await app.clickText('[data-file-folders] [data-folder] .name', 'Greek');
   await sleep(250);
-  check('Greek holds two with Homer under it', (await rows()).length === 2);
-  await filter('With the folders under it');
-  check('and one without', (await rows()).length === 1);
-  await filter('With the folders under it');
+  check('Greek holds one, the folders under it not included', (await rows()).length === 1);
+  await view('Include subfolders');
+  check('and two with them', (await rows()).length === 2);
+  const homerShown = await app.exec(`return Array.from(document.querySelectorAll('[data-file-list] [data-hash] .folder')).map((e) => e.textContent.trim()).join('|')`);
+  check('each with its folder said', homerShown.split('|').sort().join('|') === 'Greek|Homer', homerShown);
+  await view('Include subfolders');
   await app.clickText('[data-file-folders] .item.all', 'All files');
   await sleep(250);
 
@@ -355,42 +375,74 @@ try {
   check('the file is still there', !!kept);
   check('unassigned', kept?.reference === 'No reference', kept?.reference);
 
-  // The picture is taken into the pictures, and stays among the files.
+  // ---- the pane of an image, and of a PDF: the file itself, small ----
   const plate = (await rows()).find((r) => r.kind === 'picture');
   await app.click(`[data-file-list] [data-hash="${plate.hash}"]`);
-  await app.waitFor(`.file-pane[data-file="${plate.hash}"] [data-action="to-pictures"]`, 5000);
-  await app.click('.file-pane [data-action="to-pictures"]');
-  const among = await until(
-    'the message of the picture',
-    async () => (await toasts()).find((t) => /is among the images now/.test(t)),
-    5000,
-  ).catch(() => '');
-  check('a picture of the files is taken into the pictures', !!among, among);
-  check('with a way to it', /Show/.test(among));
-
-  // A picture of the store attached to a reference is a file of that reference: the same file.
-  await app.go('#/pictures');
-  await app.waitFor('.tile', 5000);
-  await app.click('.tile');
-  await app.waitFor('[data-attach-picture]', 5000);
-  await app.click('[data-attach-picture]');
+  await app.waitFor(`.file-pane[data-file="${plate.hash}"] [data-preview] img[src^="blob:"]`, 8000);
+  check('the pane of an image shows it, small', true);
+  const pixels = await app.text('.file-pane [data-pixels]');
+  check('and how large it is', pixels.trim() === '1 × 1', pixels);
+  check('and that it is a figure nowhere yet', /Not used yet/.test(await app.text('.file-pane [data-used]')));
+  await app.click('.file-pane [data-field="alt"] input');
+  await app.keys('One dot, of the shield');
+  await app.press('Enter');
+  const record = () => JSON.parse(readFileSync(join(app.dataDir, 'library', 'files.json'), 'utf8'));
+  await until('what it shows to be kept', async () => record().files.find((f) => f.hash === plate.hash)?.alt === 'One dot, of the shield');
+  check('what it shows is written there and kept with the file', true);
+  await app.screenshot('files-2c-pane-image');
+  // Given to a reference from its pane, as any file is.
+  await app.click('.file-pane [data-assign]');
   await app.waitFor('dialog [data-chooser]', 3000);
   await app.type('dialog .search input', 'Singer of Tales');
-  await until('the chooser to find the work', async () =>
-    (await app.count('dialog [data-chooser] [role="option"]')) === 1,
-  );
+  await until('the chooser to find the work', async () => (await app.count('dialog [data-chooser] [role="option"]')) === 1);
   await app.press('Enter');
   await app.waitGone('dialog', 3000);
-  const attached = await until(
-    'the message of the attachment',
-    async () => (await toasts()).find((t) => /among the files of/.test(t)),
-    5000,
-  ).catch(() => '');
-  check('a picture is attached to a reference', /Lord 1960/.test(attached), attached);
-  await app.go('#/files');
-  await until('the files', async () => (await rows()).length === 3);
-  const given = (await rows()).find((r) => r.hash === plate.hash);
-  check('and is the same file of the library, now the reference’s', /Lord 1960/.test(given?.reference ?? ''), given?.reference);
+  const given = await until('the image to be the reference’s', async () => {
+    const r = (await rows()).find((x) => x.hash === plate.hash);
+    return /Lord 1960/.test(r?.reference ?? '') ? r : null;
+  }, 5000).catch(() => null);
+  check('an image is given to a reference as any file is', !!given, given?.reference);
+  await app.click(`[data-file-list] [data-hash="${kept.hash}"]`);
+  await app.waitFor(`.file-pane[data-file="${kept.hash}"] [data-preview]`, 5000);
+  const pdfShown = await until('the first page of the PDF', () => app.exists('.file-pane [data-preview] img[src^="blob:"]'), 20000).catch(() => false);
+  check('the pane of a PDF shows its first page', pdfShown);
+  await app.screenshot('files-2d-pane-pdf');
+  const notesRow = (await rows()).find((r) => r.kind === 'document' || r.kind === 'other');
+  if (notesRow) {
+    await app.click(`[data-file-list] [data-hash="${notesRow.hash}"]`);
+    await app.waitFor(`.file-pane[data-file="${notesRow.hash}"] [data-preview="none"]`, 5000);
+    check('a file of another kind says it has no preview', /No preview/.test(await app.text('.file-pane [data-preview]')));
+  }
+
+  // ---- thumbnails, in three sizes, and back ----
+  await view('Medium');
+  await app.waitFor('[data-file-list][data-mode="grid"]', 3000);
+  const thumbs = await until('the thumbnails', async () => {
+    const n = await app.exec(`return Array.from(document.querySelectorAll('[data-file-list] [data-hash] .frame img[src^="blob:"]')).map((i) => i.closest('[data-hash]').dataset.kind).sort().join('|')`);
+    return n === 'pdf|picture' ? n : null;
+  }, 20000).catch(() => '');
+  check('as thumbnails, an image is shown small, and a PDF by its first page', thumbs === 'pdf|picture', thumbs);
+  const side = () => app.exec(`return Math.round(document.querySelector('[data-file-list] [data-hash] .frame').getBoundingClientRect().width)`);
+  check('in the middle size', (await side()) === 160, String(await side()));
+  await app.screenshot('files-2e-grid-medium');
+  await view('Large');
+  check('large', (await side()) === 240, String(await side()));
+  await app.screenshot('files-2f-grid-large');
+  await view('Small');
+  check('and small', (await side()) === 96, String(await side()));
+  await app.press('ArrowRight');
+  const settingsKept = () => JSON.parse(readFileSync(join(app.dataDir, 'settings.json'), 'utf8'));
+  await until('the view to be kept', async () => settingsKept().filesView?.mode === 'grid' && settingsKept().filesView?.size === 'small', 5000).catch(() => {});
+  check('how the files are shown is kept', settingsKept().filesView?.mode === 'grid' && settingsKept().filesView?.size === 'small', JSON.stringify(settingsKept().filesView));
+  await view('List');
+  await app.waitFor('[data-file-list][data-mode="list"]', 3000);
+  check('and back as a list', true);
+
+  // ---- sorted by kind ----
+  await sortBy('By kind');
+  const kinds = (await rows()).map((r) => r.kind);
+  check('sorted by kind: PDFs, then images, then the rest', kinds.join('|') === ['pdf', 'picture', ...kinds.slice(2)].join('|') && kinds.indexOf('picture') > kinds.lastIndexOf('pdf'), kinds.join('|'));
+  await sortBy('By name');
 
   // A folder deleted: what was in it moves up.
   await app.rightClick(await app.findByText('[data-file-folders] [data-folder]', 'Homer'));
@@ -407,14 +459,12 @@ try {
     (await app.exec('return location.hash')).includes('folder='),
   );
   await sleep(250);
-  await filter('With the folders under it');
   const inGreek = await rows();
   check(
     'and its file stands where the folder was',
     inGreek.length === 2 && inGreek.some((r) => r.hash === pdf.hash),
     inGreek.map((r) => r.name).join(', '),
   );
-  await filter('With the folders under it');
 
   // ---- part 2: the going-through ----
 

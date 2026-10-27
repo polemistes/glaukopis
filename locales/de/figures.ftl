@@ -14,14 +14,8 @@ figures-width-of-text = Der Breite des Textes, im Dokument.
 figures-shows = Zeigt
 figures-shows-placeholder = In Worten, für die, die es nicht sehen können
 figures-numbered = Nummeriert, als „Abbildung 1“
-figures-keep-caption = Die Beschriftung beim Bild behalten
-figures-keep-caption-hint = Abbildungen mit diesem Bild beginnen dann mit dem, was hier gesagt wird
-figures-take-caption = Die eigene des Bildes nehmen
-figures-take-caption-hint = Was beim Bild aufbewahrt ist, wird hier gesagt, anstelle dessen, was jetzt gesagt wird
 figures-another-picture = Ein anderes Bild…
 figures-remove = Abbildung entfernen
-figures-caption-kept = Beim Bild aufbewahrt
-figures-caption-kept-detail = Abbildungen mit ihm beginnen mit diesen Worten.
 # The title of the window in which a picture is chosen among the files of the computer.
 figures-choose-picture = Ein Bild
 # What the files that can be chosen there are called.
@@ -29,10 +23,8 @@ figures-picture-files = Bilder
 
 ## The store of pictures, as the text reads it.
 
-figures-pictures-unread = Die Bilder konnten nicht gelesen werden
 figures-picture-not-taken = Das Bild konnte nicht hinzugefügt werden
 figures-picture-not-kept = Was zum Bild gesagt wurde, konnte nicht gespeichert werden
-figures-picture-not-removed = Das Bild konnte nicht entfernt werden
 
 ## Where a figure, a table or an equation stands.
 

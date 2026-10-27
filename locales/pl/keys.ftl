@@ -17,13 +17,11 @@ keys-place-diagram = W diagramie
 keys-place-text = W tekście mapy
 keys-place-writing = Pisanie
 keys-place-library = W bibliotece
-keys-place-store = W zbiorze obrazów
 
 ## What they do
 
 keys-projects = Projekty
 keys-library = Biblioteka
-keys-pictures = Obrazy
 keys-settings = Ustawienia
 keys-search-everything = Szukaj we wszystkim
 keys-palette = Co zrobić?
@@ -78,4 +76,3 @@ keys-writing-redo = Ponów
 keys-writing-redo-y = Ponów
 keys-library-find = Szukaj w bibliotece
 keys-library-new = Nowa pozycja
-keys-store-find = Szukaj w obrazach

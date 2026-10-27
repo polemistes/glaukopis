@@ -19,14 +19,12 @@ keys-place-list = In the list of projects at the left
 keys-place-text = In the text of a map
 keys-place-writing = Writing
 keys-place-library = In the library
-keys-place-store = Among the images
 keys-place-files = Among the files of the library
 
 ## What they do
 
 keys-projects = The projects
 keys-library = The library
-keys-pictures = The images
 keys-files = The files of the library
 keys-settings = Settings
 keys-search-everything = Search through everything
@@ -110,7 +108,6 @@ keys-writing-redo = Redo
 keys-writing-redo-y = Redo
 keys-library-find = Search the library
 keys-library-new = A new reference
-keys-store-find = Search the images
 keys-files-find = Search the files
 keys-list-undo = Undo what was done to folders and projects
 keys-list-redo = Redo what was done to folders and projects

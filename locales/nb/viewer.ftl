@@ -19,8 +19,5 @@ viewer-fit-image = Hele bildet i visningen
 # Feltet der en zoom skrives, i prosent.
 viewer-zoom-field = Zoom, i prosent
 viewer-zoom-choose = Velg en zoom
-# De to trærne under treet av alle prosjekter, som pilen over en side åpner: en fil som velges, vises i den siden.
-viewer-trees = Filer og bilder
 viewer-tree-files = Filer
-viewer-tree-images = Bilder
 viewer-tree-empty = Ingenting her ennå

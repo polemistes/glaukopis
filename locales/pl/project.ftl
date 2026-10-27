@@ -145,22 +145,15 @@ project-references-foreign = { $count ->
     [many] W twojej bibliotece brakuje { $count } z tego projektu.
    *[other] W twojej bibliotece brakuje { $count } z tego projektu.
 }
-# The store of pictures.
-project-store = Zbiór
 project-open-picture = Otwórz…
 project-put-into-text = Wstaw do tekstu
 project-add-pictures = Dodaj obrazy z plików
 project-which-pictures = Które obrazy
 project-search-pictures = Szukaj obrazów
 project-a-picture = Obraz
-project-with-notes = Z notatkami
 project-not-on-computer = Nie ma na tym komputerze
 project-nothing-said = Nic jeszcze o nim nie powiedziano
-project-store-empty = Zbiór jest pusty
-project-store-empty-hint = Dodaj obrazy z plików albo upuść je na tekst.
 project-no-pictures = Nie ma jeszcze obrazów
-project-no-pictures-map = Obrazy rycin tej mapy są tu wymienione. Te ze zbioru są pod Zbiór.
-project-no-pictures-project = Obrazy rycin projektu są tu wymienione. Te ze zbioru są pod Zbiór.
 project-pictures-drag = Przeciągnij obraz do tekstu, by zrobić tam z niego rycinę, albo na element, by wstawić go na końcu jego tekstu.
 # The count is of the pictures that are used and are not in the store of this computer.
 project-pictures-absent-map = { $count ->

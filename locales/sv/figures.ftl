@@ -14,14 +14,8 @@ figures-width-of-text = Av textens bredd, i dokumentet.
 figures-shows = Visar
 figures-shows-placeholder = I ord, för dem som inte kan se den
 figures-numbered = Numrerad, som ”Figur 1”
-figures-keep-caption = Behåll bildtexten hos bilden
-figures-keep-caption-hint = Figurer som görs med den här bilden börjar då med det som sägs här
-figures-take-caption = Använd bildens egen
-figures-take-caption-hint = Det som finns hos bilden sägs här, i stället för det som sägs nu
 figures-another-picture = En annan bild…
 figures-remove = Ta bort figuren
-figures-caption-kept = Hos bilden
-figures-caption-kept-detail = Figurer som görs med den börjar med de här orden.
 # The title of the window in which a picture is chosen among the files of the computer.
 figures-choose-picture = En bild
 # What the files that can be chosen there are called.
@@ -29,10 +23,8 @@ figures-picture-files = Bilder
 
 ## The store of pictures, as the text reads it.
 
-figures-pictures-unread = Bilderna kunde inte läsas
 figures-picture-not-taken = Bilden kunde inte läggas till
 figures-picture-not-kept = Det som sades om bilden kunde inte sparas
-figures-picture-not-removed = Bilden kunde inte tas bort
 
 ## Where a figure, a table or an equation stands.
 

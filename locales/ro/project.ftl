@@ -137,22 +137,15 @@ project-references-foreign = { $count ->
     [few] { $count } din acest proiect nu sunt în biblioteca dumneavoastră.
    *[other] { $count } din acest proiect nu sunt în biblioteca dumneavoastră.
 }
-# The store of pictures.
-project-store = Depozit
 project-open-picture = Deschide…
 project-put-into-text = Pune-o în text
 project-add-pictures = Adaugă imagini din fișiere
 project-which-pictures = Ce imagini
 project-search-pictures = Caută imagini
 project-a-picture = O imagine
-project-with-notes = Cu note
 project-not-on-computer = Nu este pe acest calculator
 project-nothing-said = Nu se spune nimic despre ea încă
-project-store-empty = Depozitul este gol
-project-store-empty-hint = Adăugați imagini din fișiere, sau trageți-le pe un text.
 project-no-pictures = Nicio imagine încă
-project-no-pictures-map = Imaginile figurilor din această hartă se înșiră aici. Cele din depozit sunt sub Depozit.
-project-no-pictures-project = Imaginile figurilor din proiect se înșiră aici. Cele din depozit sunt sub Depozit.
 project-pictures-drag = Trageți o imagine într-un text ca să faceți din ea o figură acolo, sau pe un element ca să o puneți la sfârșitul textului lui.
 # The count is of the pictures that are used and are not in the store of this computer.
 project-pictures-absent-map = { $count ->

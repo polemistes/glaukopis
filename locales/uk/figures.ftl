@@ -14,14 +14,8 @@ figures-width-of-text = Від ширини тексту в документі.
 figures-shows = Показує
 figures-shows-placeholder = Словами, для тих, хто не може його бачити
 figures-numbered = Нумерований, як «Рисунок 1»
-figures-keep-caption = Зберегти підпис із зображенням
-figures-keep-caption-hint = Рисунки з цим зображенням тоді починатимуться з того, що сказано тут
-figures-take-caption = Узяти власний підпис зображення
-figures-take-caption-hint = Те, що збережено із зображенням, стає тут замість сказаного тепер
 figures-another-picture = Інше зображення…
 figures-remove = Вилучити рисунок
-figures-caption-kept = Збережено із зображенням
-figures-caption-kept-detail = Рисунки з ним починаються з цих слів.
 # The title of the window in which a picture is chosen among the files of the computer.
 figures-choose-picture = Зображення
 # What the files that can be chosen there are called.
@@ -29,10 +23,8 @@ figures-picture-files = Зображення
 
 ## The store of pictures, as the text reads it.
 
-figures-pictures-unread = Не вдалося прочитати зображення
 figures-picture-not-taken = Не вдалося додати зображення
 figures-picture-not-kept = Не вдалося зберегти сказане про зображення
-figures-picture-not-removed = Не вдалося вилучити зображення
 
 ## Where a figure, a table or an equation stands.
 

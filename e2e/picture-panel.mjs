@@ -284,6 +284,12 @@ try {
   await app.clickText('.menu [role="menuitem"]', 'Open…');
   await app.waitFor(`.file-pane[data-file="${shield.hash}"]`, 8000);
   check('an image is opened among the files of the library', (await app.exec('return location.hash')).startsWith('#/files'));
+  const usedIn = await until('the project to be said', async () => {
+    const said = await app.text('.file-pane [data-used]');
+    return /Wrath and the hero/.test(said) ? said : null;
+  }, 8000).catch(() => app.text('.file-pane [data-used]'));
+  check('its pane says the project in which it is a figure', /Wrath and the hero/.test(usedIn), usedIn);
+  await app.screenshot('picture-panel-4-pane');
 
   const errors = await app.pageErrors();
   check('no errors in the window', errors.length === 0, errors.join(' ‖ '));

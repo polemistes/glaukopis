@@ -30,7 +30,7 @@
   import ReadStep from './ReadStep.svelte';
 
   interface Props {
-    /** The picture of the store of pictures, by its hash. */
+    /** An image of the library, by its hash. */
     hash?: string;
     /** What the picture is called. */
     name?: string;

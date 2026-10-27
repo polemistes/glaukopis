@@ -3,9 +3,7 @@
 
 core-pictures-not-a-picture = dosya, kullanılabilecek türde bir resim değil: PNG, JPEG, SVG, GIF, WebP, TIFF ya da BMP
 core-pictures-unreadable = resim okunamadı: { $error }
-core-pictures-not-a-name = bu bir resmin adı değil
 core-pictures-not-as-asked = gelen, istenen resim değil
-core-pictures-needs-name = bir resmin bir adı olmalı
 core-pictures-too-large = resim { $most } MB’tan büyük; bir resim en çok bu kadar olabilir
 core-pictures-not-whole = resim bütün olarak gelmedi
 # Shown after "not found: ".

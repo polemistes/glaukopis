@@ -17,13 +17,11 @@ keys-place-diagram = En el diagrama
 keys-place-text = En el texto de un mapa
 keys-place-writing = Escribiendo
 keys-place-library = En la biblioteca
-keys-place-store = En el almacén de imágenes
 
 ## What they do
 
 keys-projects = Los proyectos
 keys-library = La biblioteca
-keys-pictures = Las imágenes
 keys-settings = Ajustes
 keys-search-everything = Buscar en todo
 keys-palette = ¿Qué hay que hacer?
@@ -78,4 +76,3 @@ keys-writing-redo = Rehacer
 keys-writing-redo-y = Rehacer
 keys-library-find = Buscar en la biblioteca
 keys-library-new = Una referencia nueva
-keys-store-find = Buscar en las imágenes

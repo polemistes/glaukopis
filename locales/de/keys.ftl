@@ -19,14 +19,12 @@ keys-place-list = In der Liste der Projekte links
 keys-place-text = Im Text einer Karte
 keys-place-writing = Beim Schreiben
 keys-place-library = In der Bibliothek
-keys-place-store = Bei den Bildern
 keys-place-files = Bei den Dateien der Bibliothek
 
 ## What they do
 
 keys-projects = Die Projekte
 keys-library = Die Bibliothek
-keys-pictures = Die Bilder
 keys-files = Die Dateien der Bibliothek
 keys-settings = Einstellungen
 keys-search-everything = Alles durchsuchen
@@ -110,7 +108,6 @@ keys-writing-redo = Wiederherstellen
 keys-writing-redo-y = Wiederherstellen
 keys-library-find = Die Bibliothek durchsuchen
 keys-library-new = Eine neue Quelle
-keys-store-find = Die Bilder durchsuchen
 keys-files-find = Die Dateien durchsuchen
 keys-list-undo = Rückgängig machen, was mit Ordnern und Projekten getan wurde
 keys-list-redo = Wiederherstellen, was mit Ordnern und Projekten getan wurde

@@ -14,25 +14,17 @@ figures-width-of-text = Of the width of the text, in the document.
 figures-shows = Shows
 figures-shows-placeholder = In words, for those who cannot see it
 figures-numbered = Numbered, as “Figure 1”
-figures-keep-caption = Keep the caption with the image
-figures-keep-caption-hint = Figures made with this image then begin with what is said here
-figures-take-caption = Use the image’s own
-figures-take-caption-hint = What is kept with the image is said here, in place of what is said now
 figures-another-picture = Another image…
 figures-remove = Remove the figure
-figures-caption-kept = Kept with the image
-figures-caption-kept-detail = Figures made with it begin with these words.
 # The title of the window in which a picture is chosen among the files of the computer.
 figures-choose-picture = An image
 # What the files that can be chosen there are called.
 figures-picture-files = Images
 
-## The store of pictures, as the text reads it.
+## The images of the library, as the text reads them.
 
-figures-pictures-unread = The images could not be read
 figures-picture-not-taken = The image could not be added
 figures-picture-not-kept = What was said of the image could not be kept
-figures-picture-not-removed = The image could not be removed
 
 ## Where a figure, a table or an equation stands.
 

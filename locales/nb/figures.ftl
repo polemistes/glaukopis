@@ -14,14 +14,8 @@ figures-width-of-text = Av tekstbredden i dokumentet.
 figures-shows = Viser
 figures-shows-placeholder = Med ord, for dem som ikke kan se det
 figures-numbered = Nummerert, som «Figur 1»
-figures-keep-caption = Lagre bildeteksten med bildet
-figures-keep-caption-hint = Figurer som lages med dette bildet, begynner da med det som står her
-figures-take-caption = Bruk bildets egen
-figures-take-caption-hint = Det som er lagret med bildet, settes her i stedet for det som står nå
 figures-another-picture = Et annet bilde …
 figures-remove = Fjern figuren
-figures-caption-kept = Lagret med bildet
-figures-caption-kept-detail = Figurer som lages med det, begynner med disse ordene.
 # Tittelen på vinduet der et bilde velges blant filene på datamaskinen.
 figures-choose-picture = Et bilde
 # Hva filene som kan velges der, kalles.
@@ -29,10 +23,8 @@ figures-picture-files = Bilder
 
 ## Bildelageret, slik teksten leser det.
 
-figures-pictures-unread = Bildene kunne ikke leses
 figures-picture-not-taken = Bildet kunne ikke hentes inn
 figures-picture-not-kept = Det som ble sagt om bildet, kunne ikke lagres
-figures-picture-not-removed = Bildet kunne ikke fjernes
 
 ## Hvor en figur, en tabell eller en ligning står.
 

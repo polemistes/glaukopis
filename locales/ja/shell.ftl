@@ -2,7 +2,6 @@
 
 shell-projects = プロジェクト
 shell-library = ライブラリ
-shell-pictures = 画像
 shell-settings = 設定
 # 画面が見えない人に、ナビゲーションバーが何と呼ばれるか。
 shell-main = メイン

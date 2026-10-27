@@ -105,7 +105,10 @@
   // Whether the search goes over all the files: a word typed changes what is
   // shown, not the files it is chosen from.
   const searchingAll = $derived(!!query.trim() && searchAll);
-  const scoped = $derived(searchingAll ? files.files : files.inFolder(folderId, below));
+  // All the files are all of them; a folder has its own, and those under it where they are included.
+  const scoped = $derived(
+    searchingAll || folderId === null ? files.files : files.inFolder(folderId, below),
+  );
   const filters = $derived((kind !== 'all' ? 1 : 0) + (unassignedOnly ? 1 : 0));
   // Sorted when the files or the order change; what is searched for is
   // filtered out of that, in the same order, with every letter typed.
@@ -602,7 +605,7 @@
           label={folder?.name ?? t('files-all')}
           {mode}
           {size}
-          folders={below || searchingAll}
+          folders={below || searchingAll || folderId === null}
           figuresIn={(hash) => figureUse.get(hash) ?? []}
         />
       {/if}

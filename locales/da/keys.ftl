@@ -19,14 +19,12 @@ keys-place-list = I projektlisten til venstre
 keys-place-text = I et korts tekst
 keys-place-writing = Skrivning
 keys-place-library = I biblioteket
-keys-place-store = Blandt billederne
 keys-place-files = Blandt bibliotekets filer
 
 ## What they do
 
 keys-projects = Projekterne
 keys-library = Biblioteket
-keys-pictures = Billederne
 keys-files = Bibliotekets filer
 keys-settings = Indstillinger
 keys-search-everything = Søg gennem alt
@@ -110,7 +108,6 @@ keys-writing-redo = Gentag
 keys-writing-redo-y = Gentag
 keys-library-find = Søg i biblioteket
 keys-library-new = En ny reference
-keys-store-find = Søg i billederne
 keys-files-find = Søg i filerne
 keys-list-undo = Fortryd det, der blev gjort med mapper og projekter
 keys-list-redo = Gentag det, der blev gjort med mapper og projekter

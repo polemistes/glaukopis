@@ -17,13 +17,11 @@ keys-place-diagram = U dijagramu
 keys-place-text = U tekstu mape
 keys-place-writing = Pisanje
 keys-place-library = U biblioteci
-keys-place-store = U spremištu slika
 
 ## What they do
 
 keys-projects = Projekti
 keys-library = Biblioteka
-keys-pictures = Slike
 keys-settings = Postavke
 keys-search-everything = Pretraži sve
 keys-palette = Šta treba učiniti?
@@ -78,4 +76,3 @@ keys-writing-redo = Ponovi
 keys-writing-redo-y = Ponovi
 keys-library-find = Pretraži biblioteku
 keys-library-new = Nova referenca
-keys-store-find = Pretraži slike

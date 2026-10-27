@@ -177,22 +177,15 @@ project-not-cited = このプロジェクトでは引用されていません。
 project-references-drag = 文献をテキストの中にドラッグするとそこで引用し、要素の上にドラッグするとそのテキストの末尾で引用します。
 # 数は、プロジェクトが引用している文献のうち、ライブラリにないもの。
 project-references-foreign = このプロジェクトの{ $count }件はライブラリにありません。
-# 画像庫。
-project-store = 画像庫
 project-open-picture = 開く…
 project-put-into-text = テキストに入れる
 project-add-pictures = ファイルから画像を追加
 project-which-pictures = 表示する画像
 project-search-pictures = 画像を検索
 project-a-picture = 画像
-project-with-notes = メモあり
 project-not-on-computer = このコンピューターにはありません
 project-nothing-said = まだ何も書かれていません
-project-store-empty = 画像庫は空です
-project-store-empty-hint = ファイルから画像を追加するか、テキストにドロップしてください。
 project-no-pictures = まだ画像はありません
-project-no-pictures-map = このマップの図の画像がここに一覧されます。画像庫の画像は「画像庫」にあります。
-project-no-pictures-project = このプロジェクトの図の画像がここに一覧されます。画像庫の画像は「画像庫」にあります。
 project-pictures-drag = 画像をテキストの中にドラッグするとそこで図になり、要素の上にドラッグするとそのテキストの末尾に入ります。
 # 数は、使われている画像のうち、このコンピューターの画像庫にないもの。
 project-pictures-absent-map = このマップの{ $count }枚はこのコンピューターにありません。

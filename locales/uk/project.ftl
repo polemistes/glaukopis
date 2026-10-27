@@ -140,22 +140,15 @@ project-references-foreign = { $count ->
     [many] { $count } із цього проєкту немає у вашій бібліотеці.
    *[other] { $count } із цього проєкту немає у вашій бібліотеці.
 }
-# The store of pictures.
-project-store = Сховище
 project-open-picture = Відкрити…
 project-put-into-text = Вставити в текст
 project-add-pictures = Додати зображення з файлів
 project-which-pictures = Які зображення
 project-search-pictures = Шукати зображення
 project-a-picture = Зображення
-project-with-notes = З нотатками
 project-not-on-computer = Немає на цьому компʼютері
 project-nothing-said = Про нього ще нічого не сказано
-project-store-empty = Сховище порожнє
-project-store-empty-hint = Додайте зображення з файлів або киньте їх на текст.
 project-no-pictures = Зображень ще немає
-project-no-pictures-map = Зображення рисунків цієї мапи перелічено тут. Зображення сховища — під «Сховище».
-project-no-pictures-project = Зображення рисунків проєкту перелічено тут. Зображення сховища — під «Сховище».
 project-pictures-drag = Перетягніть зображення в текст, щоб зробити там із нього рисунок, або на елемент, щоб поставити його в кінці тексту елемента.
 # The count is of the pictures that are used and are not in the store of this computer.
 project-pictures-absent-map = { $count ->

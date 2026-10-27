@@ -14,14 +14,8 @@ figures-width-of-text = 文書のテキストの幅に対して。
 figures-shows = 内容
 figures-shows-placeholder = 見ることのできない人のための説明
 figures-numbered = 「図1」のように番号を振る
-figures-keep-caption = キャプションを画像とともに保存
-figures-keep-caption-hint = この画像で作る図は、ここに書いた内容で始まります
-figures-take-caption = 画像に保存されたキャプションを使う
-figures-take-caption-hint = 画像とともに保存された内容が、今の内容に代わってここに入ります
 figures-another-picture = 別の画像…
 figures-remove = 図を外す
-figures-caption-kept = 画像とともに保存済み
-figures-caption-kept-detail = この画像で作る図は、この語句で始まります。
 # コンピューターのファイルの中から画像を選ぶ窓の題。
 figures-choose-picture = 画像
 # そこで選べるファイルの呼び名。
@@ -29,10 +23,8 @@ figures-picture-files = 画像
 
 ## テキストから読む画像庫。
 
-figures-pictures-unread = 画像を読み込めませんでした
 figures-picture-not-taken = 画像を追加できませんでした
 figures-picture-not-kept = 画像の説明を保存できませんでした
-figures-picture-not-removed = 画像を外せませんでした
 
 ## 図、表、別行立ての数式の配置。
 

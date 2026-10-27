@@ -1192,6 +1192,7 @@
             bind:scope={documentPane.pictureScope}
             head={tabs}
             onclose={() => documentPane.close()}
+            onenter={(id) => activeApi?.show(id)}
           />
         {:else}
           <ReferencePanel

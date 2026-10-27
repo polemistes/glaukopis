@@ -17,13 +17,11 @@ keys-place-diagram = În diagramă
 keys-place-text = În textul unei hărți
 keys-place-writing = La scris
 keys-place-library = În bibliotecă
-keys-place-store = În depozitul de imagini
 
 ## What they do
 
 keys-projects = Proiectele
 keys-library = Biblioteca
-keys-pictures = Imaginile
 keys-settings = Setări
 keys-search-everything = Caută peste tot
 keys-palette = Ce este de făcut?
@@ -78,4 +76,3 @@ keys-writing-redo = Refă acțiunea
 keys-writing-redo-y = Refă acțiunea
 keys-library-find = Caută în bibliotecă
 keys-library-new = O referință nouă
-keys-store-find = Caută în imagini

@@ -187,24 +187,19 @@ project-references-foreign = { $count ->
     [one] { $count } in this project is not in your library.
    *[other] { $count } in this project are not in your library.
 }
-# The store of pictures.
-project-store = Store
 project-open-picture = Open…
 project-put-into-text = Put it into the text
 project-add-pictures = Add images from files
 project-which-pictures = Which images
 project-search-pictures = Search images
 project-a-picture = An image
-project-with-notes = With notes
 project-not-on-computer = Not on this computer
 project-nothing-said = Nothing is said of it yet
-project-store-empty = The store is empty
-project-store-empty-hint = Add images from files, or drop them on a text.
 project-no-pictures = No images yet
-project-no-pictures-map = The images of the figures of this map are listed here. Those of the store are under Store.
-project-no-pictures-project = The images of the figures of the project are listed here. Those of the store are under Store.
+project-no-pictures-map = The images of the figures of this map are listed here. Those of the library are under Library.
+project-no-pictures-project = The images of the figures of the project are listed here. Those of the library are under Library.
 project-pictures-drag = Drag an image into a text to make a figure of it there, or onto an element to put it at the end of its text.
-# The count is of the pictures that are used and are not in the store of this computer.
+# The count is of the images that are used and are not among the files of this computer.
 project-pictures-absent-map = { $count ->
     [one] { $count } in this map is not on this computer.
    *[other] { $count } in this map are not on this computer.

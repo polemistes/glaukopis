@@ -272,7 +272,11 @@ class Pictures {
       if (!isBackendError(error) || error.kind !== 'not-found') {
         // There, and not to be read: damaged, refused, of a kind not known.
         // Said as it is, not as a picture that is elsewhere.
-        console.error(`the picture ${hash}.${extension} could not be read`, error);
+        // A thumbnail that cannot be made, of a damaged PDF, is ordinary; an image a figure shows is not.
+        (small ? console.warn : console.error)(
+          `the picture ${hash}.${extension} could not be read`,
+          error,
+        );
         const why = describeError(error) ?? String(error);
         this.#shown.set(key, { url: null, state: 'unread', why });
         return;

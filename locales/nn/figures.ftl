@@ -14,14 +14,8 @@ figures-width-of-text = Av tekstbreidda i dokumentet.
 figures-shows = Viser
 figures-shows-placeholder = Med ord, for dei som ikkje kan sjå det
 figures-numbered = Nummerert, som «Figur 1»
-figures-keep-caption = Lagre biletteksten med biletet
-figures-keep-caption-hint = Figurar som blir laga med dette biletet, byrjar då med det som står her
-figures-take-caption = Bruk biletet sin eigen
-figures-take-caption-hint = Det som er lagra med biletet, blir sett her i staden for det som står no
 figures-another-picture = Eit anna bilete …
 figures-remove = Fjern figuren
-figures-caption-kept = Lagra med biletet
-figures-caption-kept-detail = Figurar som blir laga med det, byrjar med desse orda.
 # The title of the window in which a picture is chosen among the files of the computer.
 figures-choose-picture = Eit bilete
 # What the files that can be chosen there are called.
@@ -29,10 +23,8 @@ figures-picture-files = Bilete
 
 ## The store of pictures, as the text reads it.
 
-figures-pictures-unread = Bileta kunne ikkje lesast
 figures-picture-not-taken = Biletet kunne ikkje leggjast til
 figures-picture-not-kept = Det som vart sagt om biletet, kunne ikkje lagrast
-figures-picture-not-removed = Biletet kunne ikkje fjernast
 
 ## Where a figure, a table or an equation stands.
 

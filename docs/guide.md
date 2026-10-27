@@ -393,7 +393,7 @@ An *image* is a file: a photograph, a drawing. A *figure* is an image as
 it stands in a text, with what is said of it there, its caption, and its
 number in the document. The same image can be a figure in many texts.
 
-Put a figure in with **Insert** › **Image**, from the images of the project or of the store, or a new one from a file;
+Put a figure in with **Insert** › **Image**, from the images of the project or of the library, or a new one from a file;
 by dropping a file on the text where it is to stand; by pasting an image
 that was copied; or by dragging an image from the images in the document
 pane (see *Images* below). An image dropped
@@ -864,33 +864,42 @@ changed there.
 
 ## Images
 
-Images are kept in one store for the whole of Glaukopis, as references are
-kept in the library. An image that is used in several texts or projects is
-the same image in all of them, and is kept once.
-
-**Ctrl+3**, or the images in the rail at the left, shows the store: every
-image, to be searched by what it is called and by what is said of it. Add
-images with **Add images…**, or drop files on the view.
+Images are files of the library, as PDFs and documents are (see *The files
+of the library*). An image that is used in several texts or projects is the
+same file in all of them, and is kept once.
 
 In a project, **Insert** › **Image** or **Ctrl+Shift+P** opens the images in
 the document pane (see *The document pane*). They can be shown for **this
 map**, which is the element in view with all under it, for the **project**,
-or for the whole **store**, and new ones are added there from a file. Drag
-one into a text to make a figure of it there.
+or for the whole **library**; new ones are added there from a file, or
+dropped on it, and go into the folder **Images** of the library. Drag one
+into a text, onto an element of the diagram or onto a part of the text to
+make a figure of it there; **Open…** in the menu of a row shows it among the
+files.
 
-Of each image you can say:
+**What is said of a figure**, its caption, is written where the figure
+stands, and is the document's: the same image may have another caption, or
+none, in another text. **What an image shows**, in words, for those who
+cannot see it, is said of the image, in its pane among the files, and every
+new figure of it begins with those words; a figure's own panel can say it
+otherwise for that figure.
 
-- what it is **called**;
-- its **caption**: what figures made with it begin with. What is said of a
-  figure can be changed where the figure stands, without changing this;
-- what it **shows**, in words, for those who cannot see it;
-- **notes**, which are for you, and are part of no document. As with
-  references, a note is for all projects when it is written in the store,
-  and for the project when it is written in a project, where it is with
-  everyone the project is shared with, until you keep it for all projects.
+**Images of other kinds.** Every kind of document can hold PNG, JPEG and SVG.
+A figure of an image of another kind, GIF, WebP, TIFF or BMP, shows a PNG made
+of it, and a photograph that is on its side shows a copy turned upright; the
+copy is made once, stands beside the image in its folder, and says what it
+was made from. The image itself is never changed.
 
-The store also says in which projects an image is used. An image that is
-removed from the store leaves the figures made with it without an image.
+Images have no notes: notes belong to works, and what there is to say of a
+picture is said in the notes of the work it belongs to. An image that is
+removed from the library leaves the figures made with it without an image;
+before it goes you are told in how many projects it is a figure.
+
+Earlier versions kept images in a store of their own. They are taken into the
+library once, at the start, into the folder **Images**, with their names and
+what they show; what was once said of them as a caption, and the notes on
+them, are not taken. The old store is left beside the library as
+`pictures.old-` with the date, to be removed by hand.
 
 ## Citations
 
@@ -1183,6 +1192,16 @@ parent folder**) or are deleted from the library, and from their references.
 The folders are not the collections: a collection gathers works, and a work
 may be in many; a folder is where a file is kept, one place for each.
 
+**How the files are shown.** **View**, at the head, shows them as a **List**,
+one line each with the kind, the name, where the file is used, when it was
+taken in and its size; or as **Thumbnails**, **Small**, **Medium** or
+**Large**, an image as it is and a PDF by its first page. **Include
+subfolders**, in the same menu, shows a folder's files with those of the
+folders under it, each saying its folder; **All files**, at the top of the
+tree, shows them all. **Sort** orders them by name, by kind, by reference, by
+the date they were taken in or by size. What is chosen is kept for every
+folder, and the next time.
+
 **Taking files in.** **Add files…** at the head, **Add a folder…** in the
 menu beside it, or
 files and folders dropped on the view, are taken into the folder in view. A
@@ -1190,15 +1209,19 @@ folder comes with the folders in it, as they were on your disk. A file the
 library has already, under any name, is not taken twice: you are told it is
 there, and it stays where it was.
 
-**What a file is for.** The pane at the right says what is known of the file
-selected: its name, its folder, where it came from and when, its size, and
-the references it belongs to. Below are what can be done with a file of its
-kind:
+**What a file is for.** The pane at the right shows the file selected,
+small, an image as it is and a PDF by its first page; a press on it shows the
+file in the view that has the focus (see *A file in a view*). Under it is
+what is known of the file: its name, its folder, where it came from and when,
+its size, and the references it belongs to. Of an image it says how large it
+is in pixels, what it shows, in words that can be written there, and the
+projects in which it is a figure, each a link. Below are what can be done with
+a file of its kind:
 
 | Kind | What can be done |
 | --- | --- |
 | PDF | **Show**; **Open in another program**; **Make searchable…**; **Import the text as a map…** |
-| Image | **Show**; **Open in another program**; **Read the text…**, to copy or make an element of; **Take into the images**, so that it can become a figure |
+| Image | **Show**; **Open in another program**; **Read the text…**, to copy or make an element of |
 | Document (Word, OpenDocument, EPUB, HTML, Markdown, Org, plain text) | **Open in another program**; **Bring in as elements…** |
 | Anything else | **Open in another program**, the one your system has for it |
 
@@ -1243,7 +1266,8 @@ files are taken back, and the references made in it are removed, their files
 staying.
 
 **Files stay.** A file leaves the library only when you remove the file
-itself, and you are told first which references it belongs to. Where
+itself, and you are told first which references it belongs to, and in how
+many projects it is a figure. Where
 removing files leaves folders empty, you are asked whether those folders go
 with them; folders that were empty already are not asked about, and stay. Taking a file
 from a reference keeps it among the files. When references are removed,
@@ -1292,7 +1316,7 @@ people in the pane's head says how many; rest the pointer on it to see who.
 ## A file in a view
 
 A view of the window can show a file of the library instead of a map: a
-PDF, page by page, or an image, of the library's files or of the images.
+PDF, page by page, or an image.
 The file belongs to no project. Its bar holds what a file needs: the page in
 view, *Page 3 of 271*, with the number it has in print where that differs,
 *(xiv)*; a field to go to a page by either; and the zoom: a field that
@@ -1517,10 +1541,9 @@ enters it, and a folder opens the tree at that folder. The chevron at the
 start of the path opens the tree of all projects, unfolded down to the
 element in view, which is marked, with a field that finds a project by its
 name: a project chosen opens at its top in that side, an element is
-entered. Under the projects stand two trees, folded until opened: **Files**,
-the PDFs and images of the library in their folders, and **Images**, those
-of the store; one chosen is shown in that side, in the place of what it
-showed. Where the path does not fit, the names in the middle make way for
+entered. Under the projects stands a tree, folded until opened, **Files**:
+the PDFs and images of the library in their folders; one chosen is shown in
+that side, in the place of what it showed. Where the path does not fit, the names in the middle make way for
 **…**, which lists them; the first name, the project and the element in
 view always show. Where the project could not be saved, its name in the
 path has a red sign, and the pointer on it says why. What is done with an
@@ -1676,8 +1699,8 @@ What becomes of what is in the document:
 
 - **Notes** become notes. A note on a heading stands at the beginning of the
   text under it.
-- **Images** are taken into the store of images, and stand in the text as
-  figures, with what is said of them. Those that a Word or OpenDocument file
+- **Images** are taken into the library, in the folder **Images**, and stand
+  in the text as figures, with what is said of them. Those that a Word or OpenDocument file
   holds are called after the document. An image that is to be fetched from
   the network is left out: nothing is fetched.
 - **Tables** become tables, with their headings, cells that span, and what
@@ -1757,10 +1780,10 @@ reads text in images, in four places.
   is read, as of a PDF brought in, **into the project** you choose, under
   the element in view where that project is open, or into **a new project,
   named after it**. The file stays in the library as it was.
-- **The text of an image of the store is read.** **Read the text in it…**,
-  in the pane of an image, shows the text, to be copied. Where the image
-  is looked at in a project, beside the map, **Make an element of it** makes
-  an element of the text there, under the element in view.
+- **The text of an image is read.** **Read the text…**, in the pane of an
+  image among the files, shows the text, to be copied. From the images of a
+  project, in the menu of a row, **Make an element of it** makes an element
+  of the text there, under the element in view.
 
 **The window of a reading** is the same wherever a PDF is read, into
 elements or to be made searchable. It opens as a **summary**: what the file
@@ -3146,7 +3169,7 @@ what is to be done by its name, and does it.
 | --- | --- |
 | **Ctrl+/** | All the keys, by where they hold; also the keyboard in the rail |
 | **Ctrl+K** | What is to be done: anything that has a key, and some that have none, found by its name |
-| **Ctrl+1**, **Ctrl+2**, **Ctrl+3** | The projects, the library, the images |
+| **Ctrl+1**, **Ctrl+2**, **Ctrl+4** | The projects, the library, the files of the library |
 | **Ctrl+,** | Settings, in a window over what is open; closing it leaves you where you were |
 | **Ctrl+D** | Diagram or text |
 | **Alt+Shift+Up** | Up to the element over this one, in the diagram and in the text; from the top of a project, to its row in the list of projects |

@@ -17,13 +17,11 @@ keys-place-diagram = Στο διάγραμμα
 keys-place-text = Στο κείμενο ενός χάρτη
 keys-place-writing = Στη γραφή
 keys-place-library = Στη βιβλιοθήκη
-keys-place-store = Στην αποθήκη εικόνων
 
 ## What they do
 
 keys-projects = Τα έργα
 keys-library = Η βιβλιοθήκη
-keys-pictures = Οι εικόνες
 keys-settings = Ρυθμίσεις
 keys-search-everything = Αναζήτηση σε όλα
 keys-palette = Τι να γίνει;
@@ -78,4 +76,3 @@ keys-writing-redo = Επανάληψη
 keys-writing-redo-y = Επανάληψη
 keys-library-find = Αναζήτηση στη βιβλιοθήκη
 keys-library-new = Νέα αναφορά
-keys-store-find = Αναζήτηση στις εικόνες

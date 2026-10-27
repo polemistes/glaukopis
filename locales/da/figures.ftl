@@ -14,14 +14,8 @@ figures-width-of-text = Af tekstens bredde i dokumentet.
 figures-shows = Viser
 figures-shows-placeholder = Med ord, for dem, der ikke kan se det
 figures-numbered = Nummereret, som »Figur 1«
-figures-keep-caption = Gem billedteksten med billedet
-figures-keep-caption-hint = Figurer lavet med dette billede begynder så med det, der står her
-figures-take-caption = Brug billedets egen
-figures-take-caption-hint = Det, der er gemt med billedet, sættes her i stedet for det, der står nu
 figures-another-picture = Et andet billede…
 figures-remove = Fjern figuren
-figures-caption-kept = Gemt med billedet
-figures-caption-kept-detail = Figurer lavet med det begynder med disse ord.
 # The title of the window in which a picture is chosen among the files of the computer.
 figures-choose-picture = Et billede
 # What the files that can be chosen there are called.
@@ -29,10 +23,8 @@ figures-picture-files = Billeder
 
 ## The store of pictures, as the text reads it.
 
-figures-pictures-unread = Billederne kunne ikke læses
 figures-picture-not-taken = Billedet kunne ikke tilføjes
 figures-picture-not-kept = Det, der blev sagt om billedet, kunne ikke gemmes
-figures-picture-not-removed = Billedet kunne ikke fjernes
 
 ## Where a figure, a table or an equation stands.
 

@@ -19,14 +19,12 @@ keys-place-list = 左のプロジェクト一覧の中
 keys-place-text = マップのテキストの中
 keys-place-writing = 執筆中
 keys-place-library = ライブラリの中
-keys-place-store = 画像の中
 keys-place-files = ライブラリのファイルの中
 
 ## キーがすること
 
 keys-projects = プロジェクト
 keys-library = ライブラリ
-keys-pictures = 画像
 keys-files = ライブラリのファイル
 keys-settings = 設定
 keys-search-everything = すべてを検索
@@ -110,7 +108,6 @@ keys-writing-redo = やり直す
 keys-writing-redo-y = やり直す
 keys-library-find = ライブラリを検索
 keys-library-new = 新しい文献
-keys-store-find = 画像を検索
 keys-files-find = ファイルを検索
 keys-list-undo = フォルダーとプロジェクトへの操作を元に戻す
 keys-list-redo = フォルダーとプロジェクトへの操作をやり直す

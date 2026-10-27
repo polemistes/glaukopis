@@ -14,14 +14,8 @@ figures-width-of-text = Van de breedte van de tekst, in het document.
 figures-shows = Toont
 figures-shows-placeholder = In woorden, voor wie ze niet kan zien
 figures-numbered = Genummerd, als ‘Figuur 1’
-figures-keep-caption = Het bijschrift bij de afbeelding bewaren
-figures-keep-caption-hint = Figuren die met deze afbeelding worden gemaakt, beginnen dan met wat hier staat
-figures-take-caption = Dat van de afbeelding gebruiken
-figures-take-caption-hint = Wat bij de afbeelding is bewaard, komt hier te staan, in plaats van wat er nu staat
 figures-another-picture = Een andere afbeelding…
 figures-remove = De figuur verwijderen
-figures-caption-kept = Bewaard bij de afbeelding
-figures-caption-kept-detail = Figuren die ermee worden gemaakt, beginnen met deze woorden.
 # The title of the window in which a picture is chosen among the files of the computer.
 figures-choose-picture = Een afbeelding
 # What the files that can be chosen there are called.
@@ -29,10 +23,8 @@ figures-picture-files = Afbeeldingen
 
 ## The store of pictures, as the text reads it.
 
-figures-pictures-unread = De afbeeldingen konden niet worden gelezen
 figures-picture-not-taken = De afbeelding kon niet worden toegevoegd
 figures-picture-not-kept = Wat over de afbeelding is gezegd, kon niet worden bewaard
-figures-picture-not-removed = De afbeelding kon niet worden verwijderd
 
 ## Where a figure, a table or an equation stands.
 

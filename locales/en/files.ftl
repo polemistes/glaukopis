@@ -1,6 +1,6 @@
-# The files of the library: a store of their own beside the pictures, in
-# folders of their own, each file belonging to no reference, to one or to
-# several. The view stands in the library's place.
+# The files of the library, images among them: in folders of their own,
+# each file belonging to no reference, to one or to several. The view stands
+# in the library's place.
 
 files-title = Files of the library
 files-all = All files
@@ -80,7 +80,6 @@ files-filter-picture = Images
 files-filter-document = Documents
 files-filter-other = Other files
 files-filter-unassigned = Unassigned only
-files-filter-below = With the folders under it
 files-filter-search-all = Search in all folders
 files-filter-clear = Clear the filters
 files-sort = Sort
@@ -172,10 +171,6 @@ files-origin = Came from
 files-searchable = Make searchable…
 files-read-into = Import the text as a map…
 files-read-text = Read the text…
-files-to-pictures = Take into the images
-files-to-pictures-done = “{ $name }” is among the images now
-files-to-pictures-show = Show
-files-to-pictures-failed = The image could not be taken into the images
 files-bring-in = Bring in as elements…
 files-rename-failed = The file could not be renamed
 

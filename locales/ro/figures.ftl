@@ -14,14 +14,8 @@ figures-width-of-text = Din lățimea textului, în document.
 figures-shows = Arată
 figures-shows-placeholder = În cuvinte, pentru cei care nu o pot vedea
 figures-numbered = Numerotată, ca „Figura 1”
-figures-keep-caption = Păstrează legenda cu imaginea
-figures-keep-caption-hint = Figurile făcute cu această imagine încep atunci cu ce se spune aici
-figures-take-caption = Folosește-o pe a imaginii
-figures-take-caption-hint = Ce se păstrează cu imaginea se spune aici, în locul a ce se spune acum
 figures-another-picture = Altă imagine…
 figures-remove = Scoate figura
-figures-caption-kept = Păstrată cu imaginea
-figures-caption-kept-detail = Figurile făcute cu ea încep cu aceste cuvinte.
 # The title of the window in which a picture is chosen among the files of the computer.
 figures-choose-picture = O imagine
 # What the files that can be chosen there are called.
@@ -29,10 +23,8 @@ figures-picture-files = Imagini
 
 ## The store of pictures, as the text reads it.
 
-figures-pictures-unread = Imaginile nu s-au putut citi
 figures-picture-not-taken = Imaginea nu s-a putut adăuga
 figures-picture-not-kept = Ce s-a spus despre imagine nu s-a putut păstra
-figures-picture-not-removed = Imaginea nu s-a putut scoate
 
 ## Where a figure, a table or an equation stands.
 

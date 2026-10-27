@@ -14,14 +14,8 @@ figures-width-of-text = 占文档中文本宽度。
 figures-shows = 内容
 figures-shows-placeholder = 用文字描述，供看不到图的人阅读
 figures-numbered = 编号，如“图 1”
-figures-keep-caption = 把题注与图片一起保存
-figures-keep-caption-hint = 以后用这张图片做的插图，就以这里的说明开头
-figures-take-caption = 使用图片自带的说明
-figures-take-caption-hint = 用图片保存的说明替换这里现有的说明
 figures-another-picture = 换一张图片…
 figures-remove = 移除插图
-figures-caption-kept = 已与图片一起保存
-figures-caption-kept-detail = 用它做的插图以这些文字开头。
 # The title of the window in which a picture is chosen among the files of the computer.
 figures-choose-picture = 选择图片
 # What the files that can be chosen there are called.
@@ -29,10 +23,8 @@ figures-picture-files = 图片
 
 ## The store of pictures, as the text reads it.
 
-figures-pictures-unread = 无法读取图片
 figures-picture-not-taken = 无法添加图片
 figures-picture-not-kept = 无法保存对图片的说明
-figures-picture-not-removed = 无法移除图片
 
 ## Where a figure, a table or an equation stands.
 

@@ -14,14 +14,8 @@ figures-width-of-text = Του πλάτους του κειμένου, στο έ
 figures-shows = Δείχνει
 figures-shows-placeholder = Με λόγια, για όσους δεν μπορούν να το δουν
 figures-numbered = Αριθμημένο, ως «Σχήμα 1»
-figures-keep-caption = Να μείνει η λεζάντα με την εικόνα
-figures-keep-caption-hint = Τα σχήματα που φτιάχνονται με αυτή την εικόνα αρχίζουν τότε με όσα λέγονται εδώ
-figures-take-caption = Χρήση της λεζάντας της εικόνας
-figures-take-caption-hint = Ό,τι φυλάσσεται με την εικόνα λέγεται εδώ, στη θέση όσων λέγονται τώρα
 figures-another-picture = Άλλη εικόνα…
 figures-remove = Αφαίρεση του σχήματος
-figures-caption-kept = Φυλαγμένη με την εικόνα
-figures-caption-kept-detail = Τα σχήματα που φτιάχνονται με αυτήν αρχίζουν με αυτά τα λόγια.
 # The title of the window in which a picture is chosen among the files of the computer.
 figures-choose-picture = Μια εικόνα
 # What the files that can be chosen there are called.
@@ -29,10 +23,8 @@ figures-picture-files = Εικόνες
 
 ## The store of pictures, as the text reads it.
 
-figures-pictures-unread = Οι εικόνες δεν διαβάζονται
 figures-picture-not-taken = Η εικόνα δεν μπόρεσε να προστεθεί
 figures-picture-not-kept = Όσα ειπώθηκαν για την εικόνα δεν μπόρεσαν να φυλαχτούν
-figures-picture-not-removed = Η εικόνα δεν μπόρεσε να αφαιρεθεί
 
 ## Where a figure, a table or an equation stands.
 

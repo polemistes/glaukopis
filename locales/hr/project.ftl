@@ -135,22 +135,15 @@ project-references-foreign = { $count ->
     [few] { $count } u ovom projektu nisu u vašoj knjižnici.
    *[other] { $count } u ovom projektu nije u vašoj knjižnici.
 }
-# The store of pictures.
-project-store = Spremište
 project-open-picture = Otvori…
 project-put-into-text = Stavi u tekst
 project-add-pictures = Dodaj slike iz datoteka
 project-which-pictures = Koje slike
 project-search-pictures = Pretraži slike
 project-a-picture = Slika
-project-with-notes = S bilješkama
 project-not-on-computer = Nije na ovom računalu
 project-nothing-said = O njoj još ništa nije rečeno
-project-store-empty = Spremište je prazno
-project-store-empty-hint = Dodajte slike iz datoteka, ili ih ispustite na tekst.
 project-no-pictures = Još nema slika
-project-no-pictures-map = Ovdje se navode slike ilustracija ove mape. Slike iz spremišta su pod Spremište.
-project-no-pictures-project = Ovdje se navode slike ilustracija projekta. Slike iz spremišta su pod Spremište.
 project-pictures-drag = Povucite sliku u tekst da od nje ondje načinite ilustraciju, ili na element da je stavite na kraj njegova teksta.
 # The count is of the pictures that are used and are not in the store of this computer.
 project-pictures-absent-map = { $count ->

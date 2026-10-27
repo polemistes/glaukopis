@@ -3,9 +3,7 @@
 
 core-pictures-not-a-picture = plik nie jest obrazem rodzaju, którego można użyć: PNG, JPEG, SVG, GIF, WebP, TIFF lub BMP
 core-pictures-unreadable = nie udało się odczytać obrazu: { $error }
-core-pictures-not-a-name = to nie nazywa żadnego obrazu
 core-pictures-not-as-asked = to, co nadeszło, nie jest obrazem, o który proszono
-core-pictures-needs-name = obraz musi się jakoś nazywać
 core-pictures-too-large = obraz ma więcej niż { $most } MB, a tyle najwyżej może mieć obraz
 core-pictures-not-whole = obraz nie nadszedł w całości
 # Shown after "not found: ".

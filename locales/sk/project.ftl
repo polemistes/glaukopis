@@ -137,22 +137,15 @@ project-references-foreign = { $count ->
     [few] { $count } v tomto projekte nie sú vo vašej knižnici.
    *[other] { $count } v tomto projekte nie je vo vašej knižnici.
 }
-# The store of pictures.
-project-store = Úložisko
 project-open-picture = Otvoriť…
 project-put-into-text = Vložiť do textu
 project-add-pictures = Pridať obrázky zo súborov
 project-which-pictures = Ktoré obrázky
 project-search-pictures = Hľadať obrázky
 project-a-picture = Obrázok
-project-with-notes = S poznámkami
 project-not-on-computer = Nie je v tomto počítači
 project-nothing-said = Zatiaľ sa o ňom nič nehovorí
-project-store-empty = Úložisko je prázdne
-project-store-empty-hint = Pridajte obrázky zo súborov alebo ich pustite na text.
 project-no-pictures = Zatiaľ žiadne obrázky
-project-no-pictures-map = Obrázky vyobrazení tejto mapy sú uvedené tu. Tie z úložiska sú pod Úložiskom.
-project-no-pictures-project = Obrázky vyobrazení projektu sú uvedené tu. Tie z úložiska sú pod Úložiskom.
 project-pictures-drag = Potiahnite obrázok do textu, aby sa z neho tam stalo vyobrazenie, alebo na prvok, aby sa vložil na koniec jeho textu.
 # The count is of the pictures that are used and are not in the store of this computer.
 project-pictures-absent-map = { $count ->

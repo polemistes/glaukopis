@@ -17,13 +17,11 @@ keys-place-diagram = У схемі
 keys-place-text = У тексті мапи
 keys-place-writing = Під час письма
 keys-place-library = У бібліотеці
-keys-place-store = У сховищі зображень
 
 ## What they do
 
 keys-projects = Проєкти
 keys-library = Бібліотека
-keys-pictures = Зображення
 keys-settings = Налаштування
 keys-search-everything = Шукати всюди
 keys-palette = Що зробити?
@@ -78,4 +76,3 @@ keys-writing-redo = Повторити дію
 keys-writing-redo-y = Повторити дію
 keys-library-find = Шукати в бібліотеці
 keys-library-new = Нове джерело
-keys-store-find = Шукати серед зображень
