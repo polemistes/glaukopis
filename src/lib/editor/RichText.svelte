@@ -648,14 +648,19 @@
       if (!view) return;
       const at = view.posAtCoords({ left: event.x, top: event.y });
       if (event.payload.kind === PICTURES_DRAGGED) {
-        // A picture of the store dropped into the text is a figure where it was dropped.
-        let where = at?.pos;
-        for (const hash of event.payload.data as string[]) {
-          const known = pictures.get(hash);
-          if (known) insertFigure(known, where)(view.state, view.dispatch);
-          where = undefined;
-        }
-        view.focus();
+        // An image of the library dropped into the text is a figure where it
+        // was dropped, of the file the figure shows: itself, or a copy made of it.
+        const hashes = event.payload.data as string[];
+        const v = view;
+        void (async () => {
+          let where = at?.pos;
+          for (const hash of hashes) {
+            const known = await pictures.forFigure(hash);
+            if (known && !v.isDestroyed) insertFigure(known, where)(v.state, v.dispatch);
+            where = undefined;
+          }
+          if (!v.isDestroyed) v.focus();
+        })();
         return;
       }
       // A reference dropped into the text is cited where it was dropped.

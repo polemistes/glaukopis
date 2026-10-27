@@ -31,7 +31,7 @@ describe('the keys', () => {
       { id: 'a', keys: 'Ctrl+,', place: 'everywhere' },
       { id: 'b', keys: 'Ctrl+,', place: 'writing' },
       { id: 'c', keys: 'Ctrl+F', place: 'library' },
-      { id: 'd', keys: 'Ctrl+F', place: 'store' },
+      { id: 'd', keys: 'Ctrl+F', place: 'files' },
     ]);
     expect(found.map(([a, b]) => `${a.id}+${b.id}`)).toEqual(['a+b']);
   });
@@ -44,10 +44,10 @@ describe('the keys', () => {
         .map((b) => `${a} has ${b}, but ${b} has not ${a}`),
     );
     expect(oneWay).toEqual([]);
-    // The store of pictures has the keys that hold everywhere, whichever comes first in the table.
+    // The files of the library have the keys that hold everywhere, whichever comes first in the table.
     for (const order of [
-      ['everywhere', 'store'],
-      ['store', 'everywhere'],
+      ['everywhere', 'files'],
+      ['files', 'everywhere'],
     ] as const) {
       const found = clashes(order.map((place, i) => ({ id: `k${i}`, keys: 'Ctrl+K', place })));
       expect(found.length, order.join(' before ')).toBe(1);

@@ -1,10 +1,11 @@
 /** The files of the library and their folders (ADR 0043). Mirrors `commands/files.rs`. */
 
+import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import { t } from '$lib/i18n';
 import { call, inTauri } from './backend';
 import type { Count, Told } from './backend';
 import type { Candidate, Match, Summary } from './library';
-import type { Picture } from './pictures';
 
 /** What can be done with a file, by the ending of its name. */
 export type FileKind = 'pdf' | 'picture' | 'document' | 'other';
@@ -34,6 +35,13 @@ export interface FileView {
   /** The path it was copied from, where that is known. */
   origin: string | null;
   added: string;
+  /** Of an image, how large it is in its pixels, where that can be told: not of a drawing. */
+  width: number | null;
+  height: number | null;
+  /** Of an image, what it shows, in words, for those who do not see it. */
+  alt: string;
+  /** Of a file made from another to be a figure, the hash of that one. */
+  madeFrom: string | null;
   /** The references it belongs to; none for a file that is unassigned. */
   references: Summary[];
 }
@@ -166,11 +174,41 @@ export const filesIdentify = (hashes: string[], ask = true, ticket?: string) =>
 /** Stops the work on files with this ticket: taking in, finding out, exporting. */
 export const filesStop = (ticket: string) => call<void>('files_stop', { ticket });
 
-/** Takes a picture that is a file of the library into the store of pictures. */
-export const fileToPicture = (hash: string) => call<Picture>('file_to_picture', { hash });
-/** Takes a picture of the store into the files, and gives it to a reference where one is named. */
-export const pictureToFile = (hash: string, id: string | null, folder: string | null = null) =>
-  call<FileView>('picture_to_file', { hash, id, folder });
+// ---- images, as figures show them (ADR 0070) ----
+
+/** An image that a project uses, as the project names it. */
+export interface UsedPicture {
+  hash: string;
+  extension: string;
+  name: string;
+}
+
+/** What came of bringing a shared project's images and the server's to be the same. */
+export interface Synced {
+  sent: number;
+  fetched: number;
+  problems: string[];
+}
+
+/** The thumbnail of a file: an image, or the first page of a PDF, made once and kept. */
+export async function fileSmall(hash: string): Promise<ArrayBuffer> {
+  if (!inTauri) throw { kind: 'no-backend', message: t('ui-no-backend') };
+  return invoke<ArrayBuffer>('file_small', { hash });
+}
+/** Says what an image shows, in words. */
+export const fileSetAlt = (hash: string, alt: string) =>
+  call<FileView>('file_set_alt', { hash, alt });
+/** The file a figure made of this image shows: itself, or a copy made beside it. */
+export const fileForFigure = (hash: string) => call<FileView>('file_for_figure', { hash });
+/** Takes in an image the page holds, pasted or dropped, into `folder` or the folder Images. `content` in base64. */
+export const filesAddImage = (name: string, content: string, folder: string | null = null) =>
+  call<FileView>('files_add_image', { name, content, folder });
+/** Takes in an image that is a file on this computer, and gives the file a figure shows of it. */
+export const filesTakeInForFigure = (path: string) =>
+  call<FileView>('files_take_in_for_figure', { path });
+/** For the shared project with this id: sends what the server lacks of `used`, fetches what is lacking here. */
+export const filesSync = (id: string, used: UsedPicture[]) =>
+  call<Synced>('files_sync', { id, used });
 
 /** Listens to how far the work on files with a ticket has come. Gives what ends the listening. */
 export async function onFilesProgress(

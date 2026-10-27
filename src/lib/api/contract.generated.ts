@@ -14,7 +14,7 @@ import type * as clipboard from './clipboard';
 import type * as sources from './sources';
 import type * as found from './found';
 import type * as viewer from './viewer';
-import type * as pictures from './pictures';
+import type * as math from './math';
 import type * as tables from './tables';
 import type * as sharing from './sharing';
 import type * as words from './words';
@@ -4138,7 +4138,7 @@ export const pageLines: viewer.PageLines = {
   "width": 595.0
 };
 
-export const rendered: pictures.Rendered[] = [
+export const rendered: math.Rendered[] = [
   {
     "mathml": "<math/>",
     "problem": null

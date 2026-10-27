@@ -1,7 +1,7 @@
 /**
  * The files of the library as the interface holds them: the folders, and
  * what is known of each file, with the references it belongs to. The files
- * view, the pane of a reference and the pictures change them through what is
+ * view, the pane of a reference and the figures change them through what is
  * here, so that the files and the references are brought up to date
  * together.
  */
@@ -19,7 +19,6 @@ import {
   filesExport,
   filesStop,
   filesTakeIn,
-  fileToPicture,
   fileUnassign,
   filesLeftEmpty,
   filesMove,
@@ -41,7 +40,6 @@ import { libraryRemove, type StoredFile, type Summary } from '$lib/api/library';
 import type { Project } from '$lib/project/model/project.svelte';
 import { PROJECT } from '$lib/project/model/types';
 import { bringIn } from '$lib/documents/bringing.svelte';
-import { pictures } from '$lib/figures/pictures.svelte';
 import { goThroughWhenOpen } from '$lib/found/found.svelte';
 import { descendants } from '$lib/home/folders';
 import { listed, t } from '$lib/i18n';
@@ -555,24 +553,6 @@ export async function renameFile(file: FileView, name: string): Promise<void> {
     files.put(await fileRename(file.hash, wanted));
   } catch (error) {
     notifyError(t('files-rename-failed'), error);
-  }
-}
-
-/** Takes a picture that is a file into the store of pictures, so that it can become a figure. */
-export async function toPictures(file: { hash: string }): Promise<void> {
-  try {
-    const picture = await fileToPicture(file.hash);
-    await pictures.reload();
-    toasts.show({
-      kind: 'ok',
-      message: t('files-to-pictures-done', { name: picture.name }),
-      action: {
-        label: t('files-to-pictures-show'),
-        run: () => router.go({ view: 'pictures', picture: picture.hash }),
-      },
-    });
-  } catch (error) {
-    notifyError(t('files-to-pictures-failed'), error);
   }
 }
 

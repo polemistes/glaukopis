@@ -472,41 +472,8 @@ export interface FigureOf {
   name: string;
   /** How many points the picture itself is wide, where that is known. */
   width?: number | null;
-  /** What the store has of the picture, which the figure begins with. */
+  /** What the image shows, in words, which the figure begins with. */
   alt?: string;
-  caption?: Inline[];
-}
-
-/** What is said of a picture in the store, as the content of a figure. */
-export function captionNodes(schema: Schema, caption: Inline[] | undefined): Node[] {
-  const out: Node[] = [];
-  for (const i of caption ?? []) {
-    if (i.kind === 'math' && schema.nodes.math) out.push(schema.nodes.math.create({ tex: i.tex }));
-    if (i.kind !== 'text' || !i.text) continue;
-    const marks = Object.keys(i.marks).flatMap((name) => {
-      const type = schema.marks[name];
-      return type && name !== 'link' ? [type.create()] : [];
-    });
-    out.push(schema.text(i.text, marks));
-  }
-  return out;
-}
-
-/** What is said of a figure, as the store keeps what is said of a picture: text and its marks, and formulas. */
-export function captionOf(figure: Node): Inline[] {
-  const out: Inline[] = [];
-  figure.forEach((child) => {
-    if (child.isText && child.text) {
-      const marks: Record<string, true> = {};
-      for (const m of child.marks) if (m.type.name !== 'link') marks[m.type.name] = true;
-      out.push({ kind: 'text', text: child.text, marks });
-    } else if (child.type.name === 'math' && child.attrs.tex) {
-      out.push({ kind: 'math', tex: child.attrs.tex });
-    } else if (child.type.name === 'hard_break') {
-      out.push({ kind: 'text', text: ' ', marks: {} });
-    }
-  });
-  return out;
 }
 
 /**
@@ -521,7 +488,8 @@ export function widthFor(picture: FigureOf): number {
 
 /**
  * A figure with this picture. `at` is where in the text, when that is not
- * where the cursor is. The cursor is put into what is said of the figure.
+ * where the cursor is. The cursor is put into what is said of the figure,
+ * which is the document's own and begins empty (ADR 0070).
  */
 export function insertFigure(picture: FigureOf, at?: number): Command {
   return (state, dispatch) => {
@@ -539,17 +507,14 @@ export function insertFigure(picture: FigureOf, at?: number): Command {
     const where = placeForBlock(from, type);
     if (!where) return false;
     if (dispatch) {
-      const node = type.create(
-        {
-          id: newId(),
-          file: picture.hash,
-          extension: picture.extension,
-          name: picture.name,
-          alt: picture.alt ?? '',
-          width: widthFor(picture),
-        },
-        captionNodes(state.schema, picture.caption),
-      );
+      const node = type.create({
+        id: newId(),
+        file: picture.hash,
+        extension: picture.extension,
+        name: picture.name,
+        alt: picture.alt ?? '',
+        width: widthFor(picture),
+      });
       const tr = state.tr.replaceWith(where.from, where.to, node);
       // The cursor is at the end of what is said of it.
       tr.setSelection(TextSelection.create(tr.doc, where.from + node.nodeSize - 1));

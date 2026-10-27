@@ -23,7 +23,6 @@
     'review',
     'library',
     'files',
-    'store',
   ];
 
   /**

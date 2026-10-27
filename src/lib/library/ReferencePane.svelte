@@ -6,7 +6,6 @@
   import Copy from '@lucide/svelte/icons/copy';
   import Ellipsis from '@lucide/svelte/icons/ellipsis';
   import FolderOpen from '@lucide/svelte/icons/folder-open';
-  import Images from '@lucide/svelte/icons/images';
   import Network from '@lucide/svelte/icons/network';
   import Map from '@lucide/svelte/icons/map';
   import FileStack from '@lucide/svelte/icons/file-stack';
@@ -53,12 +52,7 @@
   import { showFile } from '$lib/viewer/show';
   import ExternalLink from '@lucide/svelte/icons/external-link';
   import { filesAssign } from '$lib/api/files';
-  import {
-    KIND_ICONS,
-    bringInFile,
-    files as filesState,
-    toPictures,
-  } from '$lib/files/store.svelte';
+  import { KIND_ICONS, bringInFile, files as filesState } from '$lib/files/store.svelte';
   import { PROJECT } from '$lib/project/model/types';
   import SearchableDialog from '$lib/ocr/SearchableDialog.svelte';
   import type { Project } from '$lib/project/model/project.svelte';
@@ -520,14 +514,6 @@
                 onclick={() => (reading = file)}
               >
                 <ScanText size={13} />
-              </IconButton>
-              <IconButton
-                label={t('files-to-pictures')}
-                size="sm"
-                data-to-pictures={file.name}
-                onclick={() => void toPictures({ hash: file.hash })}
-              >
-                <Images size={13} />
               </IconButton>
             {:else if file.exists && file.kind === 'document'}
               <IconButton

@@ -9,7 +9,7 @@ import { sides } from '$lib/project/sides.svelte';
 import { testHook } from '$lib/shell/testing';
 import { router } from '$lib/state/router.svelte';
 
-/** Shows a file of the library, or an image of the store, in the active side; the window comes back for it. */
+/** Shows a file of the library in the active side; the window comes back for it. */
 export function showFile(hash: string, page = 1) {
   if (router.route.view === 'project' || router.route.view === 'file') {
     sides.openFile(hash, page);

@@ -1,7 +1,6 @@
 <script lang="ts">
   import House from '@lucide/svelte/icons/house';
   import Keyboard from '@lucide/svelte/icons/keyboard';
-  import Images from '@lucide/svelte/icons/images';
   import LibraryBig from '@lucide/svelte/icons/library-big';
   import PanelLeft from '@lucide/svelte/icons/panel-left';
   import Search from '@lucide/svelte/icons/search';
@@ -63,15 +62,6 @@
     use:tooltip={{ text: t('shell-library'), shortcut: keysFor('library'), side: 'right' }}
   >
     <LibraryBig size={19} strokeWidth={1.7} />
-  </a>
-  <a
-    href="#/pictures"
-    class="place"
-    class:current={view === 'pictures'}
-    aria-label={t('shell-pictures')}
-    use:tooltip={{ text: t('shell-pictures'), shortcut: keysFor('pictures'), side: 'right' }}
-  >
-    <Images size={19} strokeWidth={1.7} />
   </a>
   <a
     href="#/search"

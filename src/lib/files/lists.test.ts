@@ -58,6 +58,10 @@ const file = (i: number): FileView => ({
   folder: null,
   origin: null,
   added: '',
+  width: null,
+  height: null,
+  alt: '',
+  madeFrom: null,
   references: [],
 });
 

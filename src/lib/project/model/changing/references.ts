@@ -46,7 +46,7 @@ export const referenceChanges = {
   addFigure(
     this: Project,
     id: string,
-    picture: { hash: string; extension: string; name: string; alt?: string; caption?: Inline[] },
+    picture: { hash: string; extension: string; name: string; alt?: string },
     width = 100,
   ) {
     const body = this.fragment(id, 'body');
@@ -66,19 +66,7 @@ export const referenceChanges = {
       figure.setAttribute('alt', picture.alt ?? '');
       figure.setAttribute('width', width as unknown as string);
       figure.setAttribute('numbered', true as unknown as string);
-      // What is said of the picture in the store is said of the figure, to begin with.
-      const said = (picture.caption ?? []).flatMap((i): (Y.XmlElement | Y.XmlText)[] => {
-        if (i.kind === 'math' && i.tex) {
-          const formula = new Y.XmlElement('math');
-          formula.setAttribute('tex', i.tex);
-          return [formula];
-        }
-        if (i.kind !== 'text' || !i.text) return [];
-        const text = new Y.XmlText();
-        text.insert(0, i.text, i.marks);
-        return [text];
-      });
-      if (said.length) figure.insert(0, said);
+      // What is said of the figure is the document's own, and begins empty.
       body.insert(at, [figure]);
     });
   },

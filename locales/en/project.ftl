@@ -311,3 +311,8 @@ project-show-file = Show the file
 project-show-file-named = Show “{ $name }”
 # Over the document pane while the side that has the focus shows a file: the document is that of the other side.
 project-document-of-other = The document of the other side
+
+# One place for files (ADR 0070): the third choice of the images at the side of a project, all of the library.
+project-pictures-library = Library
+project-library-no-images = The library has no images
+project-library-no-images-hint = Add images from files, or drop them on a text.

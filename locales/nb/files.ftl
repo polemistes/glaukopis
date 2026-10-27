@@ -385,3 +385,10 @@ files-export-all = Eksporter alle filene …
 
 files-show = Vis
 files-open-elsewhere = Åpne i et annet program
+
+# Ett sted for filer: bilder er filer i biblioteket (ADR 0070).
+files-add-images = Legg til bilder …
+files-images-taken-in = { $count ->
+    [one] «{ $name }» er i biblioteket
+   *[other] { $count } bilder er i biblioteket
+}

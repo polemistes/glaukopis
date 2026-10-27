@@ -391,3 +391,11 @@ files-export-all = Export all files…
 
 files-show = Show
 files-open-elsewhere = Open in another program
+
+# One place for files: images are files of the library (ADR 0070).
+files-add-images = Add images…
+# After images were taken in to be figures; $name is the first of them.
+files-images-taken-in = { $count ->
+    [one] “{ $name }” is in the library
+   *[other] { $count } images are in the library
+}

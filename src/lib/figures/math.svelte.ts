@@ -9,7 +9,7 @@
 
 import { SvelteMap } from 'svelte/reactivity';
 import font from '@fontsource/stix-two-math/files/stix-two-math-latin-400-normal.woff2?url';
-import { mathRender, type Formula } from '$lib/api/pictures';
+import { mathRender, type Formula } from '$lib/api/math';
 import { t } from '$lib/i18n';
 import { describeError } from '$lib/ui/toast.svelte';
 

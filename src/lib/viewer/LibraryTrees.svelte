@@ -1,32 +1,28 @@
 <script module lang="ts">
   import { SvelteSet } from 'svelte/reactivity';
 
-  /** The folders unfolded by hand in the trees, kept while the application runs; the two trees themselves among them. */
+  /** The folders unfolded by hand in the tree, kept while the application runs; the tree itself among them. */
   const unfolded = new SvelteSet<string>();
 </script>
 
 <script lang="ts">
   /**
    * Under the tree of all projects, which the chevron over a side opens
-   * (ADR 0069): the files of the library that can be shown, PDFs and images,
-   * in their folders, and the images of the store, as two trees, each folded
-   * until it is opened. A file or an image chosen is shown in that side,
-   * in the place of what it showed.
+   * (ADR 0069, 0070): the files of the library that can be shown, PDFs and
+   * images, in their folders, as a tree folded until it is opened. A file
+   * chosen is shown in that side, in the place of what it showed.
    */
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import FileText from '@lucide/svelte/icons/file-text';
   import Folder from '@lucide/svelte/icons/folder';
-  import ImageIcon from '@lucide/svelte/icons/image';
-  import Images from '@lucide/svelte/icons/images';
   import type { FileFolder, FileView } from '$lib/api/files';
-  import { pictures } from '$lib/figures/pictures.svelte';
   import { files, KIND_ICONS } from '$lib/files/store.svelte';
   import { t } from '$lib/i18n';
 
   interface Props {
     /** The file this side shows, marked in the trees. */
     current?: string | null;
-    /** Shows a file of the library, or an image of the store, in this side. */
+    /** Shows a file of the library in this side. */
     onfile: (hash: string) => void;
   }
 
@@ -34,24 +30,22 @@
 
   $effect(() => {
     if (!files.loaded) void files.load();
-    void pictures.load();
   });
 
   const FILES = 'files';
-  const IMAGES = 'images';
   const step = 14;
   const left = 4;
 
-  /** A row of the trees: a tree's head, a folder, or a file or an image that can be shown. */
+  /** A row of the tree: its head, a folder, or a file that can be shown. */
   interface Row {
     key: string;
-    kind: 'tree' | 'folder' | 'file' | 'image';
+    kind: 'tree' | 'folder' | 'file';
     name: string;
     depth: number;
     /** Whether it holds rows, and whether they are shown. */
     holds: boolean;
     open: boolean;
-    /** The hash of a file or an image. */
+    /** The hash of a file. */
     hash?: string;
     icon: typeof FileText;
   }
@@ -97,30 +91,6 @@
       icon: FileText,
     });
     if (filesOpen) filesUnder(null, 1, out);
-    const imagesOpen = unfolded.has(IMAGES);
-    out.push({
-      key: IMAGES,
-      kind: 'tree',
-      name: t('viewer-tree-images'),
-      depth: 0,
-      holds: true,
-      open: imagesOpen,
-      icon: Images,
-    });
-    if (imagesOpen) {
-      for (const p of pictures.all) {
-        out.push({
-          key: `image:${p.hash}`,
-          kind: 'image',
-          name: p.name,
-          depth: 1,
-          holds: false,
-          open: false,
-          hash: p.hash,
-          icon: ImageIcon,
-        });
-      }
-    }
     return out;
   });
 
@@ -149,7 +119,7 @@
   }
 </script>
 
-<div class="trees" role="tree" aria-label={t('viewer-trees')} data-library-trees>
+<div class="trees" role="tree" aria-label={t('viewer-tree-files')} data-library-trees>
   <div class="rule" role="separator"></div>
   {#each rows as row (row.key)}
     {@const Icon = row.icon}

@@ -27,7 +27,7 @@
     spec: FileSide;
     /** Shows a project in this side, at its top or at an element of it. */
     onproject: (id: string, at?: string) => void;
-    /** Shows a file of the library, or an image of the store, in this side. */
+    /** Shows a file of the library in this side. */
     onfile: (hash: string) => void;
   }
 

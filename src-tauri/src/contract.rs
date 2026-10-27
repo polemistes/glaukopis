@@ -634,7 +634,7 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("fileFacts", "viewer.FileFacts", &file_facts);
     put("pagesAt", "viewer.PageAt[]", &pages_at);
     put("pageLines", "viewer.PageLines", &page_lines);
-    put("rendered", "pictures.Rendered[]", &rendered);
+    put("rendered", "math.Rendered[]", &rendered);
     put("sheets", "tables.Sheet[]", &sheets);
     put("server", "sharing.ServerInfo", &server);
     put("invitation", "sharing.Invitation", &invitation);

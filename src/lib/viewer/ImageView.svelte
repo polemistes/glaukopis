@@ -1,13 +1,12 @@
 <script lang="ts">
   /**
-   * An image of the library's files, or of the store of images, in a side
+   * An image of the library's files in a side
    * (ADR 0069): as one page in the middle of the side, fitted to it, the
    * whole of it seen, or at a factor of its size; zoomed with the typesetting pane's keys and Ctrl
    * and the wheel, about the pointer, which stays over the same place of
    * the image.
    */
   import { flushSync, onMount } from 'svelte';
-  import { pictureRead } from '$lib/api/pictures';
   import { fileRead } from '$lib/api/system';
   import { t } from '$lib/i18n';
   import { clampZoom, FILE, rung, wheeled } from '$lib/preview/zoom';
@@ -16,7 +15,7 @@
   import type { ImageSource } from './viewers.svelte';
 
   interface Props {
-    /** Where the image is read from: the path of a file of the library, or a picture of the store. */
+    /** Where the image is read from: the path of its file in the library. */
     source: ImageSource;
     /** Its size, in its pixels. */
     size: [number, number];
@@ -38,14 +37,12 @@
     const from = source;
     let made: string | null = null;
     let gone = false;
-    const bytes =
-      'path' in from
-        ? fileRead(from.path).then((b) => b.buffer as ArrayBuffer)
-        : pictureRead(from.hash, from.extension);
-    bytes
+    // A drawing is shown only where it is said to be one; other images are known by what they hold.
+    const type = from.path.toLowerCase().endsWith('.svg') ? { type: 'image/svg+xml' } : {};
+    fileRead(from.path)
       .then((b) => {
         if (gone) return;
-        made = URL.createObjectURL(new Blob([b]));
+        made = URL.createObjectURL(new Blob([b as BlobPart], type));
         url = made;
       })
       .catch((e) => (failed = (e as { message?: string })?.message ?? String(e)));

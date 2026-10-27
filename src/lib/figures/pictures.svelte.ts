@@ -1,36 +1,67 @@
 /**
- * The store of pictures, as the window holds it.
+ * The images figures show, as the window holds them (ADR 0070).
  *
- * Pictures are kept in one place for the whole application, as references
- * are in the library; a figure in a text names its picture by what the file
- * holds. Here is what is known of the pictures, and the pictures themselves
- * as they can be shown: each is read from the disk once and shown from
- * memory after that, whole where it stands in a text, smaller in a list.
+ * Images are files of the library, as every other file is; a figure in a
+ * text names its file by what the file holds. Here is what figures need of
+ * them, read from the files of the library, and the images themselves as
+ * they can be shown: each is read from the disk once and shown from memory
+ * after that, whole where it stands in a text, as its thumbnail in a list.
  *
- * A picture that is not there, as when a figure was put into a shared
+ * An image that is not there, as when a figure was put into a shared
  * project by someone else a moment ago, is asked for from the server of the
  * project that is open, and shown when it has come.
  */
 
-import { SvelteMap } from 'svelte/reactivity';
 import {
-  pictureAdd,
-  pictureAddFile,
-  pictureList,
-  pictureRead,
-  pictureRemove,
-  pictureSync,
-  pictureUpdate,
-  type Picture,
-  type PictureChange,
+  fileForFigure,
+  filePath,
+  fileSetAlt,
+  fileSmall,
+  filesAddImage,
+  filesSync,
+  filesTakeInForFigure,
+  type FileView,
   type UsedPicture,
-} from '$lib/api/pictures';
+} from '$lib/api/files';
 import { isBackendError } from '$lib/api/backend';
+import { fileRead } from '$lib/api/system';
+import { files } from '$lib/files/store.svelte';
 import { t } from '$lib/i18n';
 import { fileEnding } from '$lib/util/file-name';
 import { describeError, notify, notifyError } from '$lib/ui/toast.svelte';
+import { SvelteMap } from 'svelte/reactivity';
 
-export type { Picture, PictureChange, UsedPicture };
+export type { UsedPicture };
+
+/** An image of the library, as a figure names and shows it. */
+export interface Picture {
+  hash: string;
+  /** What it is called, with its ending. */
+  name: string;
+  /** The ending of its name, in small letters: what a figure names it by. */
+  extension: string;
+  size: number;
+  width: number | null;
+  height: number | null;
+  /** When it was taken in. */
+  added: string;
+  /** What it shows, in words, for those who do not see it. */
+  alt: string;
+}
+
+/** A file of the library as a figure names it. */
+export function pictureOf(file: FileView): Picture {
+  return {
+    hash: file.hash,
+    name: file.name,
+    extension: fileEnding(file.name),
+    size: file.size,
+    width: file.width,
+    height: file.height,
+    added: file.added,
+    alt: file.alt,
+  };
+}
 
 /**
  * The address of a picture in memory, or why there is none: being read; not
@@ -68,6 +99,7 @@ export function showPicture(holder: HTMLElement | null, img: HTMLImageElement, s
 const TYPES: Record<string, string> = {
   png: 'image/png',
   jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
   svg: 'image/svg+xml',
 };
 
@@ -87,148 +119,115 @@ export function isPictureName(hash: unknown, extension: unknown): boolean {
   );
 }
 
-/** What is dragged when pictures of the store are: see `ui/drag.svelte.ts`. */
+/** What is dragged when images of the library are, to be figures: see `ui/drag.svelte.ts`. */
 export const PICTURES_DRAGGED = 'pictures';
 
-/** Whether a picture answers to what is searched for: by what it is called and what is said of it. */
+/** Whether an image answers to what is searched for: by what it is called and what it shows. */
 export function pictureMatches(picture: Picture, query: string): boolean {
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
   if (!words.length) return true;
-  const said = (picture.caption ?? [])
-    .map((i) => (i.kind === 'text' ? i.text : i.kind === 'math' ? i.tex : ' '))
-    .join('');
-  const hay = `${picture.name}\n${said}\n${picture.alt}\n${picture.note}`.toLowerCase();
+  const hay = `${picture.name}\n${picture.alt}`.toLowerCase();
   return words.every((w) => hay.includes(w));
 }
 
 class Pictures {
-  /** What is known of the pictures, by the names they are kept by. */
-  readonly #known = new SvelteMap<string, Picture>();
-  loaded = $state(false);
-  #loading: Promise<void> | null = null;
-
   /** The project that is open, if one is, and what it uses. */
   #project: string | null = null;
   #used: () => UsedPicture[] = () => [];
-  /** Whether the project is shared, so that pictures can come from elsewhere. */
+  /** Whether the project is shared, so that images can come from elsewhere. */
   shared = false;
 
   readonly #shown = new SvelteMap<string, Shown>();
   #syncing: Promise<void> | null = null;
   #again = false;
   #said = new Set<string>();
-  /** How often each picture that is not there has been asked for again. */
+  /** How often each image that is not there has been asked for again. */
   #tries = new Map<string, number>();
 
-  // ---- what is known ----
+  // ---- what is known: the files of the library that are images ----
 
-  /** Reads what the store holds. Asked again, it waits for the first reading. */
+  get loaded(): boolean {
+    return files.loaded;
+  }
+
   load(): Promise<void> {
-    if (this.loaded) return Promise.resolve();
-    this.#loading ??= this.reload();
-    return this.#loading;
+    return files.load();
   }
 
-  async reload() {
-    try {
-      const list = await pictureList();
-      const seen = new Set(list.map((p) => p.hash));
-      for (const p of list) this.#known.set(p.hash, p);
-      for (const hash of [...this.#known.keys()]) if (!seen.has(hash)) this.#known.delete(hash);
-      this.loaded = true;
-    } catch (error) {
-      notifyError(t('figures-pictures-unread'), error);
-    } finally {
-      this.#loading = null;
-    }
+  reload(): Promise<void> {
+    return files.reload();
   }
 
-  /** The pictures of the store, the one taken in last first. */
+  /** The images of the library, the one taken in last first. */
   get all(): Picture[] {
-    return [...this.#known.values()].sort((a, b) =>
-      a.added === b.added ? a.name.localeCompare(b.name) : a.added < b.added ? 1 : -1,
-    );
+    return files.files
+      .filter((f) => f.kind === 'picture' && f.exists)
+      .map(pictureOf)
+      .sort((a, b) =>
+        a.added === b.added ? a.name.localeCompare(b.name) : a.added < b.added ? 1 : -1,
+      );
   }
 
   get(hash: string): Picture | undefined {
-    return this.#known.get(hash);
+    const file = files.get(hash);
+    return file?.kind === 'picture' ? pictureOf(file) : undefined;
   }
 
-  #took(picture: Picture): Picture {
-    this.#known.set(picture.hash, picture);
-    // Known to be there now, whatever was thought before.
+  /** A file taken in or changed: known to the files, and to be shown anew where it was not there. */
+  #took(file: FileView): Picture {
+    if (file.folder && !files.folder(file.folder)) void files.reload();
+    else files.put(file);
+    const picture = pictureOf(file);
     for (const key of [this.#key(picture, false), this.#key(picture, true)])
       if (!this.#shown.get(key)?.url) this.#shown.delete(key);
     return picture;
   }
 
-  /** Takes in a file of this computer. Says why when it cannot, and gives nothing. */
+  /**
+   * Takes in a file of this computer to be a figure, into the folder Images,
+   * and gives the image the figure shows: the file, or a copy made of it in
+   * a kind every document holds. Says why when it cannot, and gives nothing.
+   */
   async addFile(path: string): Promise<Picture | null> {
     try {
-      return this.#took(await pictureAddFile(path));
+      return this.#took(await filesTakeInForFigure(path));
     } catch (error) {
       notifyError(t('figures-picture-not-taken'), error);
       return null;
     }
   }
 
-  /** Takes in a picture that the window holds: one that was pasted. */
+  /** Takes in an image that the window holds: one that was pasted. */
   async addBlob(blob: Blob, name: string): Promise<Picture | null> {
     try {
       const content = await toBase64(blob);
-      return this.#took(await pictureAdd(name, content));
+      return this.#took(await filesAddImage(name, content));
     } catch (error) {
       notifyError(t('figures-picture-not-taken'), error);
       return null;
     }
   }
 
-  /** Says something anew of a picture. Gives the picture as it is then, or nothing when it could not be kept. */
-  async update(hash: string, change: PictureChange): Promise<Picture | null> {
+  /** The image a figure made of this file shows: the file, or a copy made of it. Nothing, with a word, where it is no image. */
+  async forFigure(hash: string): Promise<Picture | null> {
     try {
-      const picture = await pictureUpdate(hash, change);
-      this.#known.set(picture.hash, picture);
-      return picture;
+      return this.#took(await fileForFigure(hash));
+    } catch (error) {
+      notifyError(t('figures-picture-not-taken'), error);
+      return null;
+    }
+  }
+
+  /** Says what an image shows. Gives the image as it is then, or nothing when it could not be kept. */
+  async setAlt(hash: string, alt: string): Promise<Picture | null> {
+    try {
+      const file = await fileSetAlt(hash, alt);
+      files.put(file);
+      return pictureOf(file);
     } catch (error) {
       notifyError(t('figures-picture-not-kept'), error);
       return null;
     }
-  }
-
-  /**
-   * A picture that came without a name, from a project that kept its own or
-   * from someone else, is called what a project calls it.
-   */
-  async nameFrom(used: UsedPicture[]) {
-    await this.load();
-    for (const u of used) {
-      const known = this.#known.get(u.hash);
-      if (known && !known.name.trim() && u.name.trim())
-        await pictureUpdate(u.hash, { name: u.name })
-          .then((picture) => this.#known.set(picture.hash, picture))
-          .catch(() => {});
-    }
-  }
-
-  /** Takes a picture out of the store. Figures that name it are left without it. */
-  async remove(hash: string): Promise<boolean> {
-    const picture = this.#known.get(hash);
-    try {
-      await pictureRemove(hash);
-    } catch (error) {
-      notifyError(t('figures-picture-not-removed'), error);
-      return false;
-    }
-    this.#known.delete(hash);
-    if (picture) {
-      for (const small of [false, true]) {
-        const key = this.#key(picture, small);
-        const shown = this.#shown.get(key);
-        if (shown?.url) URL.revokeObjectURL(shown.url);
-        this.#shown.set(key, { url: null, state: 'absent' });
-      }
-    }
-    return true;
   }
 
   // ---- the pictures themselves ----
@@ -238,7 +237,7 @@ class Pictures {
   }
 
   /**
-   * The picture as it can be shown; with `small`, as it is shown in a list.
+   * The image as it can be shown; with `small`, its thumbnail, as it is shown in a list.
    * Read where it is shown: what reads it is told when the picture has come.
    */
   of(hash: string, extension: string, small = false): Shown {
@@ -259,8 +258,10 @@ class Pictures {
   async #read(hash: string, extension: string, small: boolean, asked = false) {
     const key = this.#key({ hash, extension }, small);
     try {
-      const bytes = await pictureRead(hash, extension, small);
-      const url = URL.createObjectURL(new Blob([bytes], { type: TYPES[extension] }));
+      const bytes = small ? await fileSmall(hash) : await fileRead(await filePath(hash));
+      // A thumbnail is a photograph or a PNG, which is known by what it holds; a drawing is said to be one.
+      const type = small && extension !== 'svg' ? undefined : TYPES[extension];
+      const url = URL.createObjectURL(new Blob([bytes as BlobPart], type ? { type } : {}));
       const before = this.#shown.get(key);
       if (before?.url) URL.revokeObjectURL(before.url);
       this.#shown.set(key, { url, state: 'shown' });
@@ -355,7 +356,7 @@ class Pictures {
       do {
         this.#again = false;
         try {
-          const done = await pictureSync(project, this.#used());
+          const done = await filesSync(project, this.#used());
           if (project !== this.#project) return;
           for (const problem of done.problems) {
             if (this.#said.has(problem)) continue;
@@ -365,7 +366,6 @@ class Pictures {
           if (done.fetched) {
             await this.reload();
             await this.#retry();
-            await this.nameFrom(this.#used());
           }
         } catch {
           // Not connected: it is done when the connection is there again.

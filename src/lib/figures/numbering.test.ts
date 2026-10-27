@@ -250,24 +250,18 @@ describe('what is pointed to by', () => {
     expect(v.state.selection.$from.parent.type.name).toBe('figure');
   });
 
-  it('a figure begins with what is said of its picture in the store', () => {
+  it('a figure begins with what its image shows, and with nothing said of it: that is the document’s', () => {
     const v = editor();
     insertFigure({
       hash: HASH('a'),
       extension: 'png',
       name: 'vase.png',
       alt: 'A large vase',
-      caption: [
-        { kind: 'text', text: 'The ', marks: {} },
-        { kind: 'text', text: 'krater', marks: { em: true } },
-        { kind: 'text', text: ' of Florence', marks: {} },
-      ],
     })(v.state, v.dispatch);
     const made = v.state.doc.firstChild!;
     expect(made.type.name).toBe('figure');
-    expect(made.textContent).toBe('The krater of Florence');
+    expect(made.textContent).toBe('');
     expect(made.attrs.alt).toBe('A large vase');
-    expect(made.child(1).marks.map((m) => m.type.name)).toEqual(['em']);
     // The cursor is at the end of it, where the writing goes on.
     expect(v.state.selection.from).toBe(made.nodeSize - 1);
   });

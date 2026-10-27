@@ -29,7 +29,6 @@ export type Place =
   | 'text'
   | 'writing'
   | 'library'
-  | 'store'
   | 'files'
   | 'preview'
   | 'viewer';
@@ -63,7 +62,6 @@ export const TOGETHER: Readonly<Record<Place, readonly Place[]>> = {
     'text',
     'writing',
     'library',
-    'store',
     'files',
     'preview',
     'viewer',
@@ -87,7 +85,6 @@ export const TOGETHER: Readonly<Record<Place, readonly Place[]>> = {
   text: ['everywhere', 'project', 'review', 'tree', 'text', 'writing'],
   writing: ['everywhere', 'project', 'review', 'tree', 'text', 'writing'],
   library: ['everywhere', 'library'],
-  store: ['everywhere', 'store'],
   files: ['everywhere', 'files'],
   // The typesetting pane's keys hold while it has the focus or the pointer, not the diagram's.
   preview: ['everywhere', 'project', 'preview', 'viewer'],
@@ -99,7 +96,6 @@ const ENTRIES = [
   // Everywhere.
   { id: 'projects', keys: 'Ctrl+1', place: 'everywhere', bound: true },
   { id: 'library', keys: 'Ctrl+2', place: 'everywhere', bound: true },
-  { id: 'pictures', keys: 'Ctrl+3', place: 'everywhere', bound: true },
   { id: 'files', keys: 'Ctrl+4', place: 'everywhere', bound: true },
   { id: 'settings', keys: 'Ctrl+,', place: 'everywhere', bound: true },
   { id: 'search-everything', keys: 'Ctrl+Shift+F', place: 'everywhere', bound: true },
@@ -228,9 +224,6 @@ const ENTRIES = [
   // In the library.
   { id: 'library-find', keys: 'Ctrl+F', place: 'library', bound: true },
   { id: 'library-new', keys: 'Ctrl+N', place: 'library', bound: true },
-
-  // In the store of pictures.
-  { id: 'store-find', keys: 'Ctrl+F', place: 'store', bound: true },
 
   // Among the files of the library.
   { id: 'files-find', keys: 'Ctrl+F', place: 'files', bound: true },

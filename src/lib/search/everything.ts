@@ -179,6 +179,8 @@ export function readProject(
   for (const [refId, r] of yRefs) if (r && typeof r === 'object') refs.set(refId, r);
   const notes: { ref: string; text: string }[] = [];
   for (const [ref, text] of yNotes) {
+    // Notes on pictures were once kept here too, under `picture:<hash>`; notes belong to works now (ADR 0070).
+    if (ref.startsWith('picture:')) continue;
     const said = text instanceof Y.Text ? text.toString() : '';
     if (said.trim()) notes.push({ ref, text: said });
   }

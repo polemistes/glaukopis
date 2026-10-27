@@ -63,7 +63,7 @@
   import { commentsUi } from '$lib/comments/ui.svelte';
   import { languageName, t, TEXT_LANGUAGES } from '$lib/i18n';
   import { keysFor, kindKeys as keysOfDigit } from '$lib/shell/keys.svelte';
-  import { showPictures } from '$lib/pictures/store.svelte';
+  import { showPictures } from '$lib/figures/images.svelte';
   import { documents, templateUsedCached } from '$lib/preview/documents.svelte';
   import { lookUi } from '$lib/look/look.svelte';
   import { panes } from '$lib/project/panes.svelte';
@@ -330,7 +330,7 @@
           disabled: !body,
           action: () => {
             // The cursor stays where the image is to go.
-            showPictures('store');
+            showPictures('library');
             view.focus();
           },
         },

@@ -28,7 +28,6 @@
   import ProjectsPane from '$lib/home/ProjectsPane.svelte';
   import StartView from '$lib/home/StartView.svelte';
   import LibraryView from '$lib/library/LibraryView.svelte';
-  import PicturesView from '$lib/pictures/PicturesView.svelte';
   import FilesView from '$lib/files/FilesView.svelte';
   import ProjectView, { viewing } from '$lib/project/ProjectView.svelte';
   import { PROJECT } from '$lib/project/model/types';
@@ -259,7 +258,6 @@
       // To the projects: the one shown last, where it was; else the start screen.
       projects: () => go(router.lastProject ?? { view: 'home' }),
       library: () => go({ view: 'library' }),
-      pictures: () => go({ view: 'pictures' }),
       files: () => go({ view: 'files' }),
       settings: () => settingsUi.toggle(),
       'search-everything': () => go({ view: 'search' }),
@@ -287,8 +285,6 @@
     <main>
       {#if route.view === 'library'}
         <LibraryView />
-      {:else if route.view === 'pictures'}
-        <PicturesView />
       {:else if route.view === 'files'}
         <FilesView />
       {:else if route.view === 'project' || route.view === 'file'}

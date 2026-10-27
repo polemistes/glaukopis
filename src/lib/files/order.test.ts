@@ -27,6 +27,10 @@ const file = (
   folder: null,
   origin: null,
   added: '2026-10-18',
+  width: null,
+  height: null,
+  alt: '',
+  madeFrom: null,
   references,
   ...more,
 });

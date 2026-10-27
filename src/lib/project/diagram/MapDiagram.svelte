@@ -603,13 +603,20 @@
     if (payload.kind === PICTURES_DRAGGED) {
       const target = hit(world);
       if (!target) return;
-      // A picture dropped on an element is a figure at the end of its text.
-      project.checkpoint();
-      for (const hash of payload.data as string[]) {
-        const picture = pictures.get(hash);
-        if (picture) project.addFigure(target, picture, widthFor(picture));
-      }
-      project.checkpoint();
+      // A picture dropped on an element is a figure at the end of its text,
+      // of the file a figure shows: itself, or a copy made of it.
+      const hashes = payload.data as string[];
+      void (async () => {
+        const chosen = [];
+        for (const hash of hashes) {
+          const picture = await pictures.forFigure(hash);
+          if (picture) chosen.push(picture);
+        }
+        if (!chosen.length) return;
+        project.checkpoint();
+        for (const picture of chosen) project.addFigure(target, picture, widthFor(picture));
+        project.checkpoint();
+      })();
       select([target]);
       return;
     }

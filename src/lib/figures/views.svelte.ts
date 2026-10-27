@@ -5,7 +5,6 @@ import type { Node } from 'prosemirror-model';
 import { NodeSelection, Selection, TextSelection, type Command } from 'prosemirror-state';
 import type { EditorView, NodeView } from 'prosemirror-view';
 import { mount, unmount, untrack } from 'svelte';
-import { captionOf, captionNodes } from '$lib/editor/commands';
 import { currentProject } from '$lib/editor/references.svelte';
 import type { DocumentFormat } from '$lib/api/documents';
 import { figureWidth, flow, stand, tableWidth } from '$lib/editor/schema';
@@ -35,7 +34,6 @@ import {
   usualOf,
   type Usual,
 } from './placing';
-import { notifyOk } from '$lib/ui/toast.svelte';
 
 /** What the panel of a formula can be asked. */
 interface Written {
@@ -374,7 +372,7 @@ export class FormulaView implements NodeView {
   }
 }
 
-/** Asks for a picture among the files of this computer, and takes it in. */
+/** Asks for an image among the files of this computer, and takes it into the library to be a figure. */
 export async function choosePicture() {
   const path = await openFile({
     title: t('figures-choose-picture'),
@@ -524,13 +522,6 @@ export class FigureView implements NodeView {
           this.#picture.style.width = `${figureWidth(width)}%`;
         },
         onchange: (change) => this.#change(change),
-        kept: () => {
-          const said = pictures.get(String(this.#node.attrs.file))?.caption ?? [];
-          return JSON.stringify(said) === JSON.stringify(captionOf(this.#node));
-        },
-        own: () => !!pictures.get(String(this.#node.attrs.file))?.caption?.length,
-        onkeep: () => void this.#keepCaption(),
-        ontake: () => this.#takeCaption(),
         onreplace: () => void this.#replace(),
         onremove: () => this.#remove(),
         onclose: () => this.#leave(),
@@ -563,32 +554,6 @@ export class FigureView implements NodeView {
   /** The panel follows the picture as it grows and shrinks. */
   #again() {
     this.#panel?.place();
-  }
-
-  /** What is said of the figure is kept with the picture, for the figures that are made with it after. */
-  async #keepCaption() {
-    const hash = String(this.#node.attrs.file);
-    const kept = await pictures.update(hash, {
-      caption: captionOf(this.#node),
-      ...(this.#node.attrs.alt ? { alt: String(this.#node.attrs.alt) } : {}),
-    });
-    if (kept) notifyOk(t('figures-caption-kept'), t('figures-caption-kept-detail'));
-  }
-
-  /** What is kept with the picture is said of the figure, in place of what is said now. */
-  #takeCaption() {
-    const pos = this.#getPos();
-    const picture = pictures.get(String(this.#node.attrs.file));
-    if (pos === undefined || !picture) return;
-    const view = this.#view;
-    const node = view.state.doc.nodeAt(pos);
-    if (!node || node.type !== this.#node.type) return;
-    const tr = view.state.tr.replaceWith(
-      pos + 1,
-      pos + node.nodeSize - 1,
-      captionNodes(view.state.schema, picture.caption),
-    );
-    view.dispatch(tr.setSelection(NodeSelection.create(tr.doc, pos)));
   }
 
   async #replace() {

@@ -50,7 +50,7 @@
     onselect: (id: string) => void;
     /** Shows another project in this side, at its top or at an element of it. */
     onproject: (id: string, at?: string) => void;
-    /** Shows a file of the library, or an image of the store, in this side (ADR 0069). */
+    /** Shows a file of the library in this side (ADR 0069). */
     onfile: (hash: string) => void;
   }
 

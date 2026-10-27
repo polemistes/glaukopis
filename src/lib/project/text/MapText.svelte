@@ -1204,13 +1204,21 @@
     drop = null;
     if (!target) return;
     if (event.payload.kind === PICTURES_DRAGGED) {
-      // Where a text is being written, the text itself takes the picture.
-      project.checkpoint();
-      for (const hash of event.payload.data as string[]) {
-        const picture = pictures.get(hash);
-        if (picture) project.addFigure(target.id, picture, widthFor(picture));
-      }
-      project.checkpoint();
+      // Where a text is being written, the text itself takes the picture,
+      // of the file a figure shows: itself, or a copy made of it.
+      const hashes = event.payload.data as string[];
+      const into = target.id;
+      void (async () => {
+        const chosen = [];
+        for (const hash of hashes) {
+          const picture = await pictures.forFigure(hash);
+          if (picture) chosen.push(picture);
+        }
+        if (!chosen.length) return;
+        project.checkpoint();
+        for (const picture of chosen) project.addFigure(into, picture, widthFor(picture));
+        project.checkpoint();
+      })();
       // What was put into a text that is folded away is shown.
       folding.open(target.id);
       current = target.id;

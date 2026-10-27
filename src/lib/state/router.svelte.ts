@@ -9,7 +9,6 @@ export type Route =
   /** The start screen, while no project is open (ADR 0063). */
   | { view: 'home' }
   | { view: 'library'; collection?: string; entry?: string }
-  | { view: 'pictures'; picture?: string }
   /** The files of the library, in the library's place: the folder in view, and the file selected. */
   | { view: 'files'; folder?: string; file?: string }
   /** A project, and the element in view within it (ADR 0037): the project itself where none is named. */
@@ -44,8 +43,11 @@ export function parseRoute(hash: string): Route {
         collection: params.get('collection') ?? undefined,
         entry: params.get('entry') ?? undefined,
       };
+    // The images had a view of their own; they are files of the library now (ADR 0070).
     case 'pictures':
-      return { view: 'pictures', picture: params.get('picture') ?? undefined };
+      return params.get('picture')
+        ? { view: 'files', file: params.get('picture') ?? undefined }
+        : { view: 'files' };
     case 'files':
       return {
         view: 'files',
@@ -92,8 +94,6 @@ export function formatRoute(route: Route): string {
       const q = params.toString();
       return '#/library' + (q ? `?${q}` : '');
     }
-    case 'pictures':
-      return '#/pictures' + (route.picture ? `?picture=${e(route.picture)}` : '');
     case 'files': {
       const params = new URLSearchParams();
       if (route.folder) params.set('folder', route.folder);

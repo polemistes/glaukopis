@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 const render = vi.fn();
-vi.mock('$lib/api/pictures', () => ({ mathRender: render }));
+vi.mock('$lib/api/math', () => ({ mathRender: render }));
 
 const { mathematics } = await import('./math.svelte');
 

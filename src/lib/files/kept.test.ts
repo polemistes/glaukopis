@@ -13,6 +13,10 @@ const file = (hash: string, ...references: string[]): FileView => ({
   folder: null,
   origin: null,
   added: '2026-10-18T00:00:00Z',
+  width: null,
+  height: null,
+  alt: '',
+  madeFrom: null,
   references: references.map((id) => ({ id }) as Summary),
 });
 

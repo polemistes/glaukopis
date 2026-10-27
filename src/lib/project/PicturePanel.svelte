@@ -1,14 +1,13 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   /**
-   * The pictures at the side of a project: those of the element in view, of
-   * the project, or all of the store. A picture is dragged from here into a text,
-   * where it becomes a figure.
+   * The images at the side of a project: those of the element in view, of
+   * the project, or all of the library (ADR 0070). An image is dragged from
+   * here into a text, where it becomes a figure.
    */
   import { onMount } from 'svelte';
   import type { EditorView } from 'prosemirror-view';
   import ImagePlus from '@lucide/svelte/icons/image-plus';
-  import NotebookPen from '@lucide/svelte/icons/notebook-pen';
   import Plus from '@lucide/svelte/icons/plus';
   import Search from '@lucide/svelte/icons/search';
   import SquarePen from '@lucide/svelte/icons/square-pen';
@@ -24,17 +23,9 @@
   } from '$lib/figures/pictures.svelte';
   import { t } from '$lib/i18n';
   import { importDropped } from '$lib/library/references.svelte';
-  import PicturePane from '$lib/pictures/PicturePane.svelte';
-  import {
-    addPictures,
-    captionHtml,
-    captionWords,
-    pictureHasNotes,
-    takeIn,
-    type PictureScope,
-  } from '$lib/pictures/store.svelte';
-  import Thumb from '$lib/pictures/Thumb.svelte';
-  import Dialog from '$lib/ui/Dialog.svelte';
+  import { addPictures, takeIn, type PictureScope } from '$lib/figures/images.svelte';
+  import Thumb from '$lib/files/Thumb.svelte';
+  import { router } from '$lib/state/router.svelte';
   import { dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
@@ -51,11 +42,9 @@
     onclose: () => void;
     /** What stands at the head in place of the title: the tabs of the panel at the side. */
     head?: Snippet;
-    /** Enters an element in which the picture stands. */
-    onenter?: (id: string) => void;
   }
 
-  let { project, at, scope = $bindable('project'), onclose, onenter, head }: Props = $props();
+  let { project, at, scope = $bindable('project'), onclose, head }: Props = $props();
 
   /** A picture as it stands in the list: one the project uses may not have arrived in the store. */
   interface Row {
@@ -67,8 +56,6 @@
 
   let query = $state('');
   let selected = $state<string | null>(null);
-  /** The picture whose pane is open. */
-  let opened = $state<string | null>(null);
   let list = $state<HTMLDivElement>();
   /** The text that had the cursor last: where a picture is put when that is asked for. */
   let written: EditorView | null = null;
@@ -85,7 +72,7 @@
   const collator = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
 
   const rows = $derived.by((): Row[] => {
-    if (scope === 'store')
+    if (scope === 'library')
       return pictures.all.map((p) => ({
         hash: p.hash,
         extension: p.extension,
@@ -116,15 +103,13 @@
     ),
   );
   const absent = $derived(
-    pictures.loaded && scope !== 'store' ? rows.filter((r) => !r.picture).length : 0,
+    pictures.loaded && scope !== 'library' ? rows.filter((r) => !r.picture).length : 0,
   );
-  const openedRow = $derived(
-    opened
-      ? (rows.find((r) => r.hash === opened) ??
-          project.usedPictures().find((p) => p.hash === opened) ??
-          pictures.get(opened))
-      : undefined,
-  );
+
+  /** An image is looked at, named and given its words where every file is: among the files of the library. */
+  function open(hash: string) {
+    router.go({ view: 'files', file: hash });
+  }
 
   /** The text a picture is put into when that is asked for: the one that has the cursor, or had it last. */
   function text(): EditorView | null {
@@ -133,17 +118,20 @@
     return written && !written.isDestroyed && written.dom.isConnected ? written : null;
   }
 
-  function put(picture: Picture) {
+  /** Puts a figure of the image into the text, of the file a figure shows: itself, or a copy made of it. */
+  async function put(picture: Picture) {
     const view = text();
     if (!view) return;
-    insertFigure(picture)(view.state, view.dispatch);
+    const shown = await pictures.forFigure(picture.hash);
+    if (!shown || view.isDestroyed) return;
+    insertFigure(shown)(view.state, view.dispatch);
     view.focus();
   }
 
-  /** Pictures that were taken in are in the store, and in no text yet: the store is shown. */
+  /** Images that were taken in are in the library, and in no text yet: all of the library is shown. */
   function took(taken: Picture[]) {
     if (!taken.length) return;
-    scope = 'store';
+    scope = 'library';
     query = '';
     selected = taken[taken.length - 1].hash;
   }
@@ -172,9 +160,11 @@
     selected = row.hash;
     const picture = row.picture;
     openContextMenu(event, [
-      { label: t('project-open-picture'), icon: SquarePen, action: () => (opened = row.hash) },
+      ...(picture
+        ? [{ label: t('project-open-picture'), icon: SquarePen, action: () => open(row.hash) }]
+        : []),
       ...(picture && text()
-        ? [{ label: t('project-put-into-text'), icon: ImagePlus, action: () => put(picture) }]
+        ? [{ label: t('project-put-into-text'), icon: ImagePlus, action: () => void put(picture) }]
         : []),
     ]);
   }
@@ -201,7 +191,7 @@
         next = shown.length - 1;
         break;
       case 'Enter':
-        if (current >= 0) opened = shown[current].hash;
+        if (current >= 0 && shown[current].picture) open(shown[current].hash);
         event.preventDefault();
         return;
       default:
@@ -237,7 +227,7 @@
         options={[
           { value: 'map', label: t('project-this-map') },
           { value: 'project', label: t('project-project') },
-          { value: 'store', label: t('project-store') },
+          { value: 'library', label: t('project-pictures-library') },
         ]}
       />
       <span class="spring"></span>
@@ -269,7 +259,7 @@
         {onkeydown}
       >
         {#each shown as row (row.hash)}
-          {@const said = captionWords(row.picture)}
+          {@const said = row.picture?.alt ?? ''}
           <!-- svelte-ignore a11y_click_events_have_key_events -->
           <div
             class="row"
@@ -282,7 +272,7 @@
               if (editorUi.selection) e.preventDefault();
             }}
             onpointerdown={(e) => onpointerdown(e, row)}
-            ondblclick={() => (opened = row.hash)}
+            ondblclick={() => row.picture && open(row.hash)}
             oncontextmenu={(e) => context(e, row)}
           >
             <div class="frame">
@@ -291,19 +281,12 @@
             <div class="text">
               <div class="first">
                 <span class="name truncate">{row.name || t('project-a-picture')}</span>
-                {#if pictureHasNotes(row.hash, project)}
-                  <span class="noted" aria-label={t('project-with-notes')}
-                    ><NotebookPen size={12} /></span
-                  >
-                {/if}
               </div>
               <div class="second truncate">
                 {#if !row.picture}
                   <span class="missing">{t('project-not-on-computer')}</span>
                 {:else if said}
-                  <!-- Made by captionHtml, which escapes all text. -->
-                  <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-                  <span class="said">{@html captionHtml(row.picture)}</span>
+                  <span class="said">{said}</span>
                 {:else}
                   <span class="unsaid">{t('project-nothing-said')}</span>
                 {/if}
@@ -314,8 +297,12 @@
       </div>
     {:else if query}
       <EmptyState compact title={t('project-nothing-found')} />
-    {:else if scope === 'store'}
-      <EmptyState compact title={t('project-store-empty')} text={t('project-store-empty-hint')} />
+    {:else if scope === 'library'}
+      <EmptyState
+        compact
+        title={t('project-library-no-images')}
+        text={t('project-library-no-images-hint')}
+      />
     {:else}
       <EmptyState
         compact
@@ -334,29 +321,6 @@
     {/if}
   </footer>
 </aside>
-
-{#if opened}
-  <Dialog
-    open
-    title={openedRow?.name || t('project-a-picture')}
-    width={560}
-    padded={false}
-    onclose={() => (opened = null)}
-  >
-    {#key opened}
-      <PicturePane
-        hash={opened}
-        {project}
-        {at}
-        onremoved={() => (opened = null)}
-        onenter={(id) => {
-          opened = null;
-          onenter?.(id);
-        }}
-      />
-    {/key}
-  </Dialog>
-{/if}
 
 <style>
   .panel {
@@ -474,11 +438,6 @@
   }
   .absent .name {
     color: var(--ink-2);
-  }
-  .noted {
-    display: inline-flex;
-    flex: none;
-    color: var(--gold);
   }
   .second {
     margin-top: 1px;

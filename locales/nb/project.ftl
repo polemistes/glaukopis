@@ -264,3 +264,8 @@ project-show-file = Vis filen
 project-show-file-named = Vis «{ $name }»
 # Over dokumentpanelet mens siden som har fokus, viser en fil: dokumentet er den andre sidens.
 project-document-of-other = Dokumentet på den andre siden
+
+# Ett sted for filer (ADR 0070).
+project-pictures-library = Bibliotek
+project-library-no-images = Biblioteket har ingen bilder
+project-library-no-images-hint = Legg til bilder fra filer, eller slipp dem på en tekst.

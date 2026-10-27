@@ -151,3 +151,6 @@ figures-picture-absent = The image is not on this computer
 # A picture that is on this computer and could not be read: the reason is what the reading said.
 figures-picture-unread = The image could not be read: { $reason }
 figures-caption-placeholder = What is said of the image
+
+# One place for files (ADR 0070): the kind of an image that is a drawing.
+figures-kind-svg = SVG, a drawing

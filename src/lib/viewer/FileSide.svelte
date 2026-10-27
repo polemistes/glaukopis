@@ -1,7 +1,7 @@
 <script lang="ts">
   /**
    * A side of the window that shows a file (ADR 0069): a PDF of the library,
-   * page by page, or an image of the library or of the store, as one page.
+   * page by page, or an image of the library, as one page.
    * It belongs to no project; its bar holds what a file needs: the page, a
    * field to go to one, and the zoom.
    */

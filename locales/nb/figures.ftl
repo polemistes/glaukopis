@@ -149,3 +149,6 @@ figures-targets-hint = Ordene følger det de viser til: nummeret, og hva oppsett
 figures-picture-absent = Bildet finnes ikke på denne datamaskinen
 figures-picture-unread = Bildet kunne ikke leses: { $reason }
 figures-caption-placeholder = Bildetekst
+
+# Ett sted for filer (ADR 0070).
+figures-kind-svg = SVG, en tegning

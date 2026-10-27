@@ -175,30 +175,19 @@ describe('figures and formulas in the text', () => {
       {
         ...picture,
         alt: 'A vase',
-        caption: [
-          { kind: 'text', text: 'The ', marks: {} },
-          { kind: 'text', text: 'krater', marks: { em: true } },
-          { kind: 'text', text: ', where ', marks: {} },
-          { kind: 'math', tex: 'x_i' },
-        ],
       },
       50,
     );
     p.checkpoint();
     const blocks = readBody(p.fragment(a, 'body')!);
     expect(blocks.map((b) => b.kind)).toEqual(['paragraph', 'figure']);
-    // It begins with what is said of the picture in the store, and can be pointed to.
+    // It begins with what its image shows, and nothing said of it; it can be pointed to.
     expect(blocks[1]).toMatchObject({
       file: HASH,
       width: 50,
       numbered: true,
       alt: 'A vase',
-      caption: [
-        { kind: 'text', text: 'The ', marks: {} },
-        { kind: 'text', text: 'krater', marks: { em: true } },
-        { kind: 'text', text: ', where ', marks: {} },
-        { kind: 'math', tex: 'x_i' },
-      ],
+      caption: [],
     });
     expect(blocks[1].kind === 'figure' && blocks[1].id).toMatch(/^[0-9A-Za-z]{12}$/);
     p.undo();

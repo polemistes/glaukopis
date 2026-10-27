@@ -17,7 +17,6 @@
   import FolderInput from '@lucide/svelte/icons/folder-input';
   import FolderPlus from '@lucide/svelte/icons/folder-plus';
   import FolderUp from '@lucide/svelte/icons/folder-up';
-  import Images from '@lucide/svelte/icons/images';
   import Link from '@lucide/svelte/icons/link';
   import ListChecks from '@lucide/svelte/icons/list-checks';
   import ListFilter from '@lucide/svelte/icons/list-filter';
@@ -64,7 +63,6 @@
     moveFiles,
     removeFiles,
     takeIn,
-    toPictures,
     unassignedIn,
     undoLast,
   } from './store.svelte';
@@ -267,15 +265,6 @@
       },
       moving,
       goingThrough,
-      ...(one.kind === 'picture' && one.exists
-        ? [
-            {
-              label: t('files-to-pictures'),
-              icon: Images,
-              action: () => void toPictures(one),
-            } as MenuItem,
-          ]
-        : []),
       exporting,
       ...removing,
     ];

@@ -1,17 +1,21 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const read = vi.fn();
-vi.mock('$lib/api/pictures', () => ({
-  pictureRead: read,
-  pictureList: vi.fn(async () => []),
-  pictureSync: vi.fn(async () => {}),
+vi.mock('$lib/api/files', async (original) => ({
+  ...(await original<typeof import('$lib/api/files')>()),
+  filePath: read,
+  filesSync: vi.fn(async () => ({ sent: 0, fetched: 0, problems: [] })),
+}));
+vi.mock('$lib/api/system', async (original) => ({
+  ...(await original<typeof import('$lib/api/system')>()),
+  fileRead: vi.fn(async () => new Uint8Array()),
 }));
 
 const { pictures, showPicture } = await import('./pictures.svelte');
 
 const hash = (n: number) => n.toString(16).padStart(64, '0');
 
-/** What the store shows of a picture once it has been read. */
+/** What is shown of an image once it has been read. */
 async function shownOf(name: string) {
   pictures.of(name, 'png');
   await vi.waitFor(() => expect(pictures.of(name, 'png').state).not.toBe('reading'));
@@ -21,7 +25,7 @@ async function shownOf(name: string) {
 afterEach(() => vi.restoreAllMocks());
 
 describe('a picture that cannot be shown', () => {
-  it('is not on this computer only when the store says it is not there', async () => {
+  it('is not on this computer only when the library says it is not there', async () => {
     read.mockRejectedValueOnce({ kind: 'not-found', message: 'the picture was not found' });
     expect((await shownOf(hash(1))).state).toBe('absent');
   });

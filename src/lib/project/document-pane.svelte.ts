@@ -16,7 +16,7 @@ import { untrack } from 'svelte';
 import { commentsUi } from '$lib/comments/ui.svelte';
 import { foundUi } from '$lib/found/found.svelte';
 import type { Looking } from '$lib/history/looking';
-import { picturesUi, type PictureScope } from '$lib/pictures/store.svelte';
+import { picturesUi, type PictureScope } from '$lib/figures/images.svelte';
 import { Review } from '$lib/review/review.svelte';
 import { sourceFor } from '$lib/review/source';
 import type { MapMode } from '$lib/state/router.svelte';

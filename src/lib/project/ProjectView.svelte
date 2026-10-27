@@ -459,8 +459,8 @@
     sheet.textContent = css;
   });
 
-  // The store of pictures is that of the active side's project. It depends
-  // on that project.
+  // The images figures show are sent and fetched for the active side's
+  // project. It depends on that project.
   $effect(() => {
     const p = project;
     const id = active?.project;
@@ -468,7 +468,6 @@
     untrack(() => {
       if (pictures.project === id) return;
       pictures.open(id, () => p.usedPictures());
-      void pictures.nameFrom(p.usedPictures());
     });
   });
 
@@ -1193,7 +1192,6 @@
             bind:scope={documentPane.pictureScope}
             head={tabs}
             onclose={() => documentPane.close()}
-            onenter={(id) => activeApi?.show(id)}
           />
         {:else}
           <ReferencePanel

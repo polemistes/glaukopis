@@ -18,7 +18,6 @@
   import FolderInput from '@lucide/svelte/icons/folder-input';
   import FolderOpen from '@lucide/svelte/icons/folder-open';
   import FolderOutput from '@lucide/svelte/icons/folder-output';
-  import Images from '@lucide/svelte/icons/images';
   import Link from '@lucide/svelte/icons/link';
   import MapIcon from '@lucide/svelte/icons/map';
   import Network from '@lucide/svelte/icons/network';
@@ -52,7 +51,6 @@
     removeFile,
     renameFile,
     storedOf,
-    toPictures,
     unassign,
   } from './store.svelte';
 
@@ -191,12 +189,6 @@
         return [
           ...opening,
           { id: 'read', label: t('files-read-text'), icon: ScanText, run: () => (open = 'read') },
-          {
-            id: 'to-pictures',
-            label: t('files-to-pictures'),
-            icon: Images,
-            run: () => void toPictures(f),
-          },
         ];
       case 'document':
         return [
