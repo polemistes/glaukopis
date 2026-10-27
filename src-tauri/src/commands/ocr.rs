@@ -302,7 +302,7 @@ pub fn ocr_try(
     Ok(ocr::try_page(&path, &state.tools(), &state.data.work(), &asked, page, &trying.stop)?)
 }
 
-/// Reads the text of a picture of the store, to be shown, or made a map of.
+/// Reads the text of an image of the library, to be shown, or made a map of.
 #[tauri::command(async)]
 pub fn ocr_picture(
     state: State<'_, AppState>,
@@ -311,12 +311,19 @@ pub fn ocr_picture(
     ticket: Option<String>,
 ) -> CommandResult<Imported> {
     let reading = Work::begin(ticket);
-    let picture = state.pictures.get(&hash)?;
-    let bytes = state.pictures.read(&hash, &picture.extension)?;
+    let (path, called) = {
+        let library = state.library();
+        let record = library
+            .files
+            .get(&hash)
+            .ok_or_else(|| glaukopis_core::Error::not_found(tr!("core-library-the-file-of-library")))?;
+        (library.attachment_path(&record.path)?, record.name.clone())
+    };
+    let bytes = std::fs::read(&path).map_err(|e| glaukopis_core::Error::io(tr!("io-reading", path = &path), e))?;
     let words = words_of(&state, &asked);
     let is_word = words.as_ref().map(|w| w as &IsWord);
     let paragraphs = ocr::read_picture(&bytes, &state.tools(), &state.data.work(), &asked, is_word, &reading.stop)?;
-    let name = if picture.name.trim().is_empty() { hash.chars().take(8).collect() } else { picture.name.clone() };
+    let name = if called.trim().is_empty() { hash.chars().take(8).collect() } else { called };
     Ok(ocr::imported_picture(&name, &stem(&name), paragraphs))
 }
 

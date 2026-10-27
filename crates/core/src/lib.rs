@@ -22,7 +22,6 @@ pub mod net;
 pub mod notices;
 pub mod ocr;
 pub mod paths;
-pub mod pictures;
 pub mod projectfile;
 pub mod projects;
 pub mod readable;

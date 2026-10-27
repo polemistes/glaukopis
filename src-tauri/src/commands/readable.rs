@@ -48,7 +48,7 @@ pub fn project_readable_write(state: State<'_, AppState>, request: Request<'_>) 
     // The library is not held while the folder is written: a copy of it is enough.
     let library = state.library().clone();
     let copy = Readable { org: &org, records: &head.records, pictures: &head.pictures };
-    Ok(readable::write(&dir, &copy, &state.pictures, Some(&library))?)
+    Ok(readable::write(&dir, &copy, &library, Some(&library))?)
 }
 
 #[derive(Serialize)]
@@ -59,16 +59,16 @@ pub struct ReadOrg {
     /// The works beside it, each by its key, which is also its id here:
     /// the citations of the Org form name works by their keys.
     pub records: Vec<Record>,
-    /// How many pictures the store did not have.
+    /// How many pictures the library did not have.
     pub pictures: usize,
 }
 
 /// Reads an Org file, or the folder that holds `project.org`, with the works
-/// and the pictures beside it; the pictures are taken into the store.
+/// and the pictures beside it; the pictures are taken into the library.
 #[tauri::command(async)]
 pub fn project_readable_read(state: State<'_, AppState>, path: String) -> CommandResult<ReadOrg> {
     let read = readable::read(Path::new(&path))?;
-    let pictures = projectfile::take_pictures(&state.pictures, &read.pictures);
+    let pictures = projectfile::take_pictures(state.library_lock(), &read.pictures);
     let records = bib::parser::parse(&read.bib)
         .entries()
         .map(|raw| {

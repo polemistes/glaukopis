@@ -33,7 +33,6 @@ impl DataDir {
         for sub in [
             dir.library(),
             dir.attachments(),
-            dir.pictures(),
             dir.styles(),
             dir.formats(),
             dir.projects(),
@@ -88,7 +87,8 @@ impl DataDir {
         self.library().join("attachments")
     }
 
-    /// The store of pictures: see `pictures`.
+    /// Where images were kept before they were files of the library; taken
+    /// into the library once, then set aside (`library::migration`).
     pub fn pictures(&self) -> PathBuf {
         self.root.join("pictures")
     }

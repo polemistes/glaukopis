@@ -4,7 +4,10 @@
 use std::time::Duration;
 
 use glaukopis_core::net::Client;
-use glaukopis_core::pictures::Pictures;
+use std::sync::Mutex;
+
+use glaukopis_core::library::figures::Images;
+use glaukopis_core::library::{FileView, Library};
 use glaukopis_core::sharing::{Remote, Used};
 use glaukopis_server::{Config, Server, serve};
 use tokio::sync::oneshot;
@@ -42,16 +45,27 @@ async fn the_pictures_of_a_project_are_brought_to_be_the_same() {
         let code = remote.invite(ROOM, &owner, "", None, None).unwrap().code.unwrap();
         let joined = remote.join(&code, "Another").unwrap();
 
-        // Each has a store of pictures, in which there is more than the project uses.
-        let hers = Pictures::open(root.join("hers")).unwrap();
-        let his = Pictures::open(root.join("his")).unwrap();
-        let vase = hers.add("vase.png", &PNG).unwrap();
-        let circle = his.add("circle.svg", SVG.as_bytes()).unwrap();
-        let apart = hers.add("of another project.svg", SVG.replace("4", "2").as_bytes()).unwrap();
-        let used = |pictures: &[&glaukopis_core::pictures::Picture]| -> Vec<Used> {
-            pictures
+        // Each has a library, in which there are more images than the project uses.
+        let open = |name: &str| Mutex::new(Library::open_at(&root.join(name)).unwrap());
+        let add = |library: &Mutex<Library>, name: &str, bytes: &[u8]| -> FileView {
+            library.lock().unwrap().add_image(name, bytes, None, None).unwrap().0
+        };
+        let read = |library: &Mutex<Library>, hash: &str| std::fs::read(library.image(hash).unwrap().1).unwrap();
+        let name_in = |library: &Mutex<Library>, hash: &str| library.image(hash).unwrap().0.name;
+        let count = |library: &Mutex<Library>| library.lock().unwrap().file_views().len();
+        let hers = open("hers");
+        let his = open("his");
+        let vase = add(&hers, "vase.png", &PNG);
+        let circle = add(&his, "circle.svg", SVG.as_bytes());
+        let apart = add(&hers, "of another project.svg", SVG.replace("4", "2").as_bytes());
+        let used = |files: &[&FileView]| -> Vec<Used> {
+            files
                 .iter()
-                .map(|p| Used { hash: p.hash.clone(), extension: p.extension.clone(), name: p.name.clone() })
+                .map(|f| Used {
+                    hash: f.hash.clone(),
+                    extension: f.name.rsplit_once('.').map(|(_, e)| e.to_owned()).unwrap_or_default(),
+                    name: f.name.clone(),
+                })
                 .collect()
         };
 
@@ -66,20 +80,20 @@ async fn the_pictures_of_a_project_are_brought_to_be_the_same() {
         // He sends his, and fetches hers, which is called what the project calls it.
         let done = remote.sync_pictures(ROOM, &joined.token, &his, &used(&[&vase, &circle])).unwrap();
         assert_eq!((done.sent, done.fetched, done.problems.len()), (1, 1, 0), "{:?}", done.problems);
-        assert_eq!(his.read(&vase.hash, "png").unwrap(), PNG);
-        assert_eq!(his.get(&vase.hash).unwrap().name, "vase.png");
+        assert_eq!(read(&his, &vase.hash), PNG);
+        assert_eq!(name_in(&his, &vase.hash), "vase.png");
 
         // She fetches his, and is told what kind it is by what it holds.
         let done = remote.sync_pictures(ROOM, &owner, &hers, &used(&[&vase])).unwrap();
         assert_eq!((done.sent, done.fetched), (0, 1));
-        assert_eq!(hers.read(&circle.hash, "svg").unwrap(), SVG.as_bytes());
-        assert_eq!(hers.get(&circle.hash).unwrap().name, "");
+        assert_eq!(read(&hers, &circle.hash), SVG.as_bytes());
+        assert_eq!(name_in(&hers, &circle.hash), "image.svg");
 
         // Then there is nothing to do.
         let done = remote.sync_pictures(ROOM, &owner, &hers, &used(&[&vase, &circle])).unwrap();
         assert_eq!((done.sent, done.fetched, done.problems.len()), (0, 0, 0));
-        assert_eq!(his.list().len(), 2);
-        assert_eq!(hers.list().len(), 3);
+        assert_eq!(count(&his), 2);
+        assert_eq!(count(&hers), 3);
 
         // A picture the server keeps damaged is not taken in, and is said to be that.
         fn find(dir: &std::path::Path, name: &str) -> Option<std::path::PathBuf> {
@@ -99,21 +113,21 @@ async fn the_pictures_of_a_project_are_brought_to_be_the_same() {
         let mut damaged = PNG;
         damaged[40] ^= 0xff;
         std::fs::write(&kept, damaged).unwrap();
-        let theirs = Pictures::open(root.join("theirs")).unwrap();
+        let theirs = open("theirs");
         let done = remote.sync_pictures(ROOM, &joined.token, &theirs, &used(&[&vase])).unwrap();
         assert_eq!(done.fetched, 1, "the circle is fetched");
         assert_eq!(done.problems.len(), 1, "{:?}", done.problems);
         assert!(done.problems[0].contains("is not the one it listed"), "{:?}", done.problems);
-        assert!(theirs.get(&vase.hash).is_err());
+        assert!(theirs.image(&vase.hash).is_none());
         std::fs::write(&kept, PNG).unwrap();
 
         // A picture the server does not take is said to be that, once, and
         // does not keep the rest from being seen to.
         let large = format!("<svg xmlns=\"http://www.w3.org/2000/svg\"><!--{}--></svg>", "x".repeat(400));
         let larger = format!("<svg xmlns=\"http://www.w3.org/2000/svg\"><!--{}--></svg>", "y".repeat(500));
-        let a = his.add("large.svg", large.as_bytes()).unwrap();
-        let b = his.add("larger.svg", larger.as_bytes()).unwrap();
-        let small = his.add("small.svg", SVG.replace("4", "3").as_bytes()).unwrap();
+        let a = add(&his, "large.svg", large.as_bytes());
+        let b = add(&his, "larger.svg", larger.as_bytes());
+        let small = add(&his, "small.svg", SVG.replace("4", "3").as_bytes());
         let done = remote.sync_pictures(ROOM, &joined.token, &his, &used(&[&a, &b, &small, &small])).unwrap();
         assert_eq!(done.sent, 1);
         assert_eq!(done.problems.len(), 1, "{:?}", done.problems);

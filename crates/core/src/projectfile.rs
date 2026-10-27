@@ -6,7 +6,7 @@
 //! ```text
 //! manifest.json            the format, the name and description, when and by what it was written
 //! document.bin             the document as it is now, as one state of Yjs
-//! pictures.json            what the store says of each picture that comes with it
+//! pictures.json            what the library says of each picture that comes with it
 //! pictures/<hash>.<ext>    the pictures its figures show
 //! references.bib           the works it cites, as BibLaTeX, for anyone who would read them
 //! ```
@@ -28,9 +28,10 @@ use crate::duplicates;
 use crate::error::{Error, IoContext, Result};
 use crate::fsutil::write_atomic;
 use crate::import::{CertaintyWord, ReasonWord, SummaryLite, fill_missing};
+use crate::library::attachments::is_hash;
+use crate::library::figures::{self, Image, Images, KeepImages};
 use crate::library::{Draft, Entry, Library, now};
 use crate::notices;
-use crate::pictures::{self, Change, Picture, Pictures};
 use crate::tr;
 
 /// The form of the file this version writes, and the latest it reads.
@@ -133,6 +134,46 @@ pub fn references_bib(records: &[Record], library: Option<&Library>) -> String {
     out
 }
 
+/// What a project file says of a picture that comes with it: what the
+/// library knows of it. Files written before kept a caption and notes here
+/// too; they are not read (ADR 0070).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Picture {
+    pub hash: String,
+    pub extension: String,
+    pub name: String,
+    pub size: u64,
+    pub width: Option<u32>,
+    pub height: Option<u32>,
+    pub alt: String,
+}
+
+impl Picture {
+    fn of(image: &Image, size: u64) -> Self {
+        Picture {
+            hash: image.hash.clone(),
+            extension: image.extension.clone(),
+            name: image.name.clone(),
+            size,
+            width: image.width,
+            height: image.height,
+            alt: image.alt.clone(),
+        }
+    }
+
+    fn image(&self) -> Image {
+        Image {
+            hash: self.hash.clone(),
+            name: self.name.clone(),
+            extension: self.extension.clone(),
+            width: self.width,
+            height: self.height,
+            alt: self.alt.clone(),
+        }
+    }
+}
+
 /// What is written into a project file.
 pub struct Contents<'a> {
     /// The name and the description; the rest is filled in when it is written.
@@ -145,9 +186,9 @@ pub struct Contents<'a> {
     pub records: &'a [Record],
 }
 
-/// The file, as bytes. A picture the store does not have is left out: the
-/// figure that shows it is without it here as well.
-pub fn to_bytes(contents: &Contents<'_>, store: &Pictures, library: Option<&Library>) -> Result<Vec<u8>> {
+/// The file, as bytes. A picture the library does not have is left out:
+/// the figure that shows it is without it here as well.
+pub fn to_bytes(contents: &Contents<'_>, images: &impl Images, library: Option<&Library>) -> Result<Vec<u8>> {
     let manifest = Manifest { format: FORMAT, written: now(), ..contents.manifest.clone() };
     let mut zip = zip::ZipWriter::new(Cursor::new(Vec::new()));
     let packed = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
@@ -168,11 +209,11 @@ pub fn to_bytes(contents: &Contents<'_>, store: &Pictures, library: Option<&Libr
         if !seen.insert(hash.as_str()) {
             continue;
         }
-        let Ok(picture) = store.get(hash) else { continue };
-        let Ok(bytes) = store.read(&picture.hash, &picture.extension) else { continue };
-        let options = if picture.extension == "svg" { packed } else { stored };
-        put(&format!("{PICTURE_DIR}{}.{}", picture.hash, picture.extension), &bytes, options)?;
-        said.push(picture);
+        let Some((image, path)) = images.image(hash) else { continue };
+        let Ok(bytes) = std::fs::read(&path) else { continue };
+        let options = if image.extension == "svg" { packed } else { stored };
+        put(&format!("{PICTURE_DIR}{}.{}", image.hash, image.extension), &bytes, options)?;
+        said.push(Picture::of(&image, bytes.len() as u64));
     }
     put(PICTURES, serde_json::to_string_pretty(&said)?.as_bytes(), packed)?;
     put(REFERENCES, references_bib(contents.records, library).as_bytes(), packed)?;
@@ -181,8 +222,8 @@ pub fn to_bytes(contents: &Contents<'_>, store: &Pictures, library: Option<&Libr
 }
 
 /// Writes a project file.
-pub fn write(path: &Path, contents: &Contents<'_>, store: &Pictures, library: Option<&Library>) -> Result<()> {
-    write_atomic(path, &to_bytes(contents, store, library)?)
+pub fn write(path: &Path, contents: &Contents<'_>, images: &impl Images, library: Option<&Library>) -> Result<()> {
+    write_atomic(path, &to_bytes(contents, images, library)?)
 }
 
 /// A project file as it was read.
@@ -190,7 +231,7 @@ pub fn write(path: &Path, contents: &Contents<'_>, store: &Pictures, library: Op
 pub struct Opened {
     pub manifest: Manifest,
     pub state: Vec<u8>,
-    /// The pictures, each with what the store it came from says of it.
+    /// The pictures, each with what the library it came from says of it.
     pub pictures: Vec<(Picture, Vec<u8>)>,
 }
 
@@ -220,11 +261,11 @@ pub fn read_from<R: Read + Seek>(source: R) -> Result<Opened> {
     Ok(opened)
 }
 
-/// Reads a project file and takes its pictures into the store as each is
+/// Reads a project file and takes its pictures into the library as each is
 /// read, so that one picture at a time is held, however many the file has:
 /// each may be 50 MB, and a file may hold any number. Gives the file without
-/// its pictures, and how many of them the store did not have.
-pub fn read_into(path: &Path, store: &Pictures) -> Result<(Opened, usize)> {
+/// its pictures, and how many of them the library did not have.
+pub fn read_into(path: &Path, store: &impl KeepImages) -> Result<(Opened, usize)> {
     let file = std::fs::File::open(path).context(|| tr!("io-opening", path = path))?;
     let mut added = 0;
     let opened = read_each(std::io::BufReader::new(file), |picture, bytes| {
@@ -251,7 +292,7 @@ fn read_each<R: Read + Seek>(source: R, mut each: impl FnMut(Picture, Vec<u8>)) 
         .ok_or_else(|| Error::invalid(tr!("core-projectfile-no-document")))?;
 
     // What the file says of its pictures. When it cannot be read, the
-    // pictures still come, without their names, captions and alt texts,
+    // pictures still come, without their names and alt texts,
     // and the writer is told so: those were written on the other computer.
     let said: Vec<Picture> = match part(&mut archive, PICTURES, MOST_SAID)? {
         Some(bytes) => serde_json::from_slice(&bytes).unwrap_or_else(|e| {
@@ -265,10 +306,10 @@ fn read_each<R: Read + Seek>(source: R, mut each: impl FnMut(Picture, Vec<u8>)) 
     let names: Vec<String> = archive.file_names().filter(|n| n.starts_with(PICTURE_DIR)).map(str::to_owned).collect();
     for name in names {
         let Some((hash, extension)) = name[PICTURE_DIR.len()..].split_once('.') else { continue };
-        if !pictures::is_hash(hash) {
+        if !is_hash(hash) {
             continue;
         }
-        let Some(bytes) = part(&mut archive, &name, pictures::MAX_BYTES)? else { continue };
+        let Some(bytes) = part(&mut archive, &name, figures::MAX_BYTES)? else { continue };
         let picture = said.iter().find(|p| p.hash == hash).cloned().unwrap_or_else(|| Picture {
             hash: hash.to_owned(),
             extension: extension.to_owned(),
@@ -284,34 +325,17 @@ pub fn read(path: &Path) -> Result<Opened> {
     read_from(std::io::BufReader::new(file))
 }
 
-/// Takes the pictures of a file into the store. One the store has is the
-/// same picture, and what the store says of it is kept; one it lacks is
-/// added, with what the file says of it. A picture that is not what its
+/// Takes the pictures of a file into the library. One the library has is
+/// the same picture, and what the library says of it is kept; one it lacks
+/// is added, with what the file says of it. A picture that is not what its
 /// name says is left out. Returns how many were added.
-pub fn take_pictures(store: &Pictures, pictures: &[(Picture, Vec<u8>)]) -> usize {
+pub fn take_pictures(store: &impl KeepImages, pictures: &[(Picture, Vec<u8>)]) -> usize {
     let mut added = 0;
     for (said, bytes) in pictures {
-        if store.get(&said.hash).is_ok() {
-            continue;
-        }
-        let kept = match store.keep(&said.hash, bytes, &said.name) {
-            Ok(kept) => kept,
-            Err(e) => {
-                tracing::warn!(%e, hash = %said.hash, "a picture of a project file was left out");
-                continue;
-            }
-        };
-        added += 1;
-        let change = Change {
-            name: None,
-            caption: (!said.caption.is_null()).then(|| said.caption.clone()),
-            alt: (!said.alt.is_empty()).then(|| said.alt.clone()),
-            note: (!said.note.is_empty()).then(|| said.note.clone()),
-        };
-        if (change.caption.is_some() || change.alt.is_some() || change.note.is_some())
-            && let Err(e) = store.update(&kept.hash, change)
-        {
-            tracing::warn!(%e, "what a project file says of a picture was not kept");
+        match store.keep(&said.image(), bytes) {
+            Ok(true) => added += 1,
+            Ok(false) => {}
+            Err(e) => tracing::warn!(%e, hash = %said.hash, "a picture of a project file was left out"),
         }
     }
     added

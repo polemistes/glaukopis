@@ -3,7 +3,8 @@ use super::locating::{locator, terms_for};
 use super::pictures::{name_of, picture_bytes};
 use super::plain::{plain, text_of};
 use super::*;
-use crate::pictures::fixtures::PNG;
+use crate::library::figures::fixtures::PNG;
+use crate::library::figures::{Image, Images};
 
 fn none(_: &str) -> Option<String> {
     None
@@ -17,11 +18,11 @@ fn library(key: &str) -> Option<String> {
     }
 }
 
-fn a_picture(named: &str) -> std::result::Result<Picture, String> {
+fn a_picture(named: &str) -> std::result::Result<Image, String> {
     if named.ends_with(".emf") {
         return Err("it is of a kind that is not read (EMF)".to_owned());
     }
-    Ok(Picture {
+    Ok(Image {
         hash: "a".repeat(64),
         extension: "png".into(),
         name: name_of(named),
@@ -880,7 +881,7 @@ fn text_without_marks() {
 struct Setup {
     tmp: tempfile::TempDir,
     tools: Tools,
-    pictures: Pictures,
+    pictures: std::sync::Mutex<Library>,
 }
 
 /// Nothing, when Pandoc is not installed: the tests that need it are
@@ -892,7 +893,7 @@ fn setup() -> Option<Setup> {
         return None;
     }
     let tmp = tempfile::tempdir().unwrap();
-    let pictures = Pictures::open(tmp.path().join("pictures")).unwrap();
+    let pictures = std::sync::Mutex::new(Library::open_at(&tmp.path().join("library")).unwrap());
     Some(Setup { tmp, tools, pictures })
 }
 
@@ -1076,7 +1077,7 @@ fn markdown_with_everything_in_it() {
     assert_eq!(caption, &vec![text("The shield of Achilles")]);
     assert_eq!((alt.as_str(), *width, *numbered), ("", 50, true));
     assert_eq!(name, "shield.png");
-    assert!(s.pictures.has(file, extension));
+    assert_eq!(s.pictures.image(file).unwrap().0.extension, *extension);
     assert_eq!(read.pictures, vec![file.clone()]);
     assert_eq!(
         read.counts,
@@ -1097,7 +1098,7 @@ fn markdown_with_everything_in_it() {
     assert!(all.contains("1 citation was found that is not yet tied to a reference of your library."), "{all}");
     assert!(all.contains("under “References”"), "{all}");
 
-    // Read again, the picture is in the store already, and is not one to be taken out.
+    // Read again, the picture is in the library already, and is not one to be taken out.
     let again = s.read(&everything(&s)).unwrap();
     assert!(again.pictures.is_empty());
     // What was found gets an id of its own every time.
@@ -1141,7 +1142,7 @@ fn word_and_opendocument_made_of_the_same() {
                 _ => None,
             })
             .unwrap();
-        assert!(s.pictures.has(&figure.0, &figure.1), "{ending}");
+        assert_eq!(s.pictures.image(&figure.0).unwrap().0.extension, figure.1, "{ending}");
         assert!(read.remarks.iter().any(|r| r.contains("under “References”")), "{ending}");
     }
 }
@@ -1361,8 +1362,8 @@ fn a_picture_in_a_frame_with_what_is_said_of_it() {
         assert_eq!(caption, &vec![text("The shield, with its "), marked("rings", &["em"])], "{name}");
         assert!(*numbered, "{name}");
         assert_eq!(alt, shows[0], "{name}");
-        assert!(s.pictures.has(file, extension), "{name}");
-        assert_eq!(s.pictures.get(file).unwrap().width, Some(120), "{name}");
+        assert_eq!(s.pictures.image(file).unwrap().0.extension, *extension, "{name}");
+        assert_eq!(s.pictures.image(file).unwrap().0.width, Some(120), "{name}");
 
         // What is said of the table stood over it.
         assert_eq!(kinds(&read.sections[2].blocks), vec!["table", "paragraph"], "{name}");
@@ -1386,10 +1387,10 @@ fn a_picture_in_a_frame_with_what_is_said_of_it() {
         assert_eq!(caption, &vec![text("Ocean, the river")], "{name}");
         assert!(*numbered, "{name}");
         assert_eq!(alt, shows[1], "{name}");
-        assert!(s.pictures.has(file, extension), "{name}");
-        assert_eq!(s.pictures.get(file).unwrap().width, Some(60), "{name}");
+        assert_eq!(s.pictures.image(file).unwrap().0.extension, *extension, "{name}");
+        assert_eq!(s.pictures.image(file).unwrap().0.width, Some(60), "{name}");
         // Called after the document, and not what the file calls it within.
-        let called = s.pictures.get(file).unwrap().name;
+        let called = s.pictures.image(file).unwrap().0.name;
         assert!(called.starts_with("captions ") && !called.contains("1000"), "{name}: {called}");
 
         assert_eq!(read.counts.figures, 2, "{name}");

@@ -27,7 +27,6 @@ use glaukopis_core::formats::Formats;
 use glaukopis_core::import::{self, bibfile};
 use glaukopis_core::library::{Library, attachments, draft_from_source};
 use glaukopis_core::paths::DataDir;
-use glaukopis_core::pictures::Pictures;
 use glaukopis_core::projects::{MapInfo, Projects, Summary};
 use glaukopis_core::styles::Styles;
 use glaukopis_core::templates::Templates;
@@ -160,8 +159,6 @@ fn what_is_sent_is_what_the_interface_declares() {
         .unwrap();
         glaukopis_core::ocr::imported_pdf("shape.pdf", "Shape", &read, glaukopis_core::ocr::Making::default())
     };
-    let pictures = Pictures::open(data.pictures()).unwrap();
-    let picture = pictures.add("dot.png", DOT).unwrap();
     // A project as it is after it was saved: with what it uses and cites.
     let projects = Projects::new(&data);
     let project = projects.create("Wrath").unwrap();
@@ -171,7 +168,7 @@ fn what_is_sent_is_what_the_interface_declares() {
         maps: vec![MapInfo { id: "map".into(), name: "Wrath".into(), elements: 3 }],
         words: 12,
         references: 1,
-        pictures: vec![picture.hash.clone()],
+        pictures: vec![taken_in.files[0].hash.clone()],
         cited: Some(vec!["reference".into()]),
     };
     let project = projects.save_state(&project.id, b"state", Some(summary)).unwrap();
@@ -597,7 +594,6 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("duplicates", "library.DuplicateGroup[]", &groups);
     put("project", "projects.ProjectInfo", &project);
     put("folder", "projects.Folder", &folder);
-    put("picture", "pictures.Picture", &picture);
     put("tools", "documents.ToolsInfo", &tools);
     put("format", "documents.DocumentFormat", &formats.get("manuscript").unwrap());
     put("formats", "documents.FormatSummary[]", &formats.list());
@@ -633,7 +629,7 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("foundProposals", "found.Proposal[]", &found_proposals);
     put("suggestions", "found.Suggestion[][]", &suggestions);
     put("madeSearchable", "ocr.MadeSearchable", &searchable);
-    put("synced", "pictures.Synced", &synced);
+    put("synced", "files.Synced", &synced);
     put("pagePictures", "ocr.PagePicture[]", &page_pictures);
     put("fileFacts", "viewer.FileFacts", &file_facts);
     put("pagesAt", "viewer.PageAt[]", &pages_at);

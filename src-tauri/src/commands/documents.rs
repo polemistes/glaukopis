@@ -134,7 +134,7 @@ fn with_context<T>(
     let tools = state.tools();
     let fonts = state.fonts();
     let guard = matches!(library, Of::Held).then(|| state.library());
-    let pictures = state.data.pictures();
+    let pictures = state.data.library();
     let ctx = Context {
         tools: &tools,
         resources: &state.resources,

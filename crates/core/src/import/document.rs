@@ -10,7 +10,7 @@
 //! and otherwise left out; what was done is said in the remarks, in words
 //! for the one who wrote the document.
 //!
-//! The pictures of the document are taken into the store of pictures. A file
+//! The pictures of the document are taken into the library's files. A file
 //! that holds its pictures itself (DOCX, ODT, EPUB) has them taken out by
 //! Pandoc; a file that names its pictures (Markdown, HTML, LaTeX) has them
 //! read from where it says, in its own folder or below. Pandoc is kept from
@@ -72,7 +72,8 @@ use crate::export::Tools;
 use crate::export::tools;
 use crate::formats::Stand;
 use crate::found::{self, By, FoundItem};
-use crate::pictures::{Picture, Pictures};
+use crate::library::Library;
+use crate::library::figures::Image;
 use crate::tr;
 
 /// The largest file that is read.
@@ -332,7 +333,7 @@ pub struct Imported {
     /// What the one who brings the document in should know.
     pub remarks: Vec<String>,
     pub counts: Counts,
-    /// The pictures that were taken into the store for this document and
+    /// The pictures that were taken into the library for this document and
     /// were not there before, by the names they are kept by: to be taken
     /// out again if no map is made of it.
     pub pictures: Vec<String>,
@@ -349,7 +350,7 @@ pub struct Properties {
 }
 
 /// A picture of the document, by what the document calls it.
-pub type TakeIn<'a> = dyn FnMut(&str) -> std::result::Result<Picture, String> + 'a;
+pub type TakeIn<'a> = dyn FnMut(&str) -> std::result::Result<Image, String> + 'a;
 /// The id of the reference of the library that has a key, if one has.
 pub type Keys<'a> = dyn Fn(&str) -> Option<String> + 'a;
 
@@ -364,7 +365,7 @@ pub type Keys<'a> = dyn Fn(&str) -> Option<String> + 'a;
 pub fn read(
     path: &Path,
     tools: &Tools,
-    pictures: &Pictures,
+    library: &std::sync::Mutex<Library>,
     work: &Path,
     keys: &Keys,
     stop: &AtomicBool,
@@ -389,14 +390,14 @@ pub fn read(
     let stem = path.file_stem().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
     let beside = path.parent().map(Path::to_owned).unwrap_or_default();
 
-    let before: HashSet<String> = pictures.list().into_iter().map(|p| p.hash).collect();
     let mut taken: Vec<String> = Vec::new();
     // The pictures that were asked for, by what the document calls them.
     let mut asked: HashSet<String> = HashSet::new();
     let mut held = 0usize;
     let mut told: Vec<String> = Vec::new();
     let media = work.join("media");
-    let mut take_in = |named: &str| -> std::result::Result<Picture, String> {
+    let origin = path.display().to_string();
+    let mut take_in = |named: &str| -> std::result::Result<Image, String> {
         asked.insert(named.to_owned());
         let bytes = picture_bytes(named, &beside, &media, format.holds_pictures())?;
         // What a file that holds its pictures calls them says nothing (image1.png): they are called after
@@ -407,14 +408,20 @@ pub fn read(
         } else {
             name_of(named)
         };
-        let picture = pictures.add(&called, &bytes).map_err(|_| match kind_of_name(named) {
+        let added = library.lock().unwrap_or_else(std::sync::PoisonError::into_inner).add_image(
+            &called,
+            &bytes,
+            None,
+            Some(&origin),
+        );
+        let (view, new) = added.map_err(|_| match kind_of_name(named) {
             Some(kind) => tr!("core-import-document-picture-kind", kind = kind),
             None => tr!("core-import-document-picture-not-read"),
         })?;
-        if !before.contains(&picture.hash) && !taken.contains(&picture.hash) {
-            taken.push(picture.hash.clone());
+        if new && !taken.contains(&view.hash) {
+            taken.push(view.hash.clone());
         }
-        Ok(picture)
+        Ok(Image::from(&view))
     };
 
     let mut imported = match format.reader() {
@@ -467,9 +474,7 @@ pub fn read(
         }
     };
     if stop.load(Ordering::Relaxed) {
-        for hash in &taken {
-            let _ = pictures.remove(hash);
-        }
+        forget(library, &taken);
         return Err(stopped());
     }
     // Never without a word: the pictures that the file holds and the text that was read has not.
@@ -534,11 +539,14 @@ pub(crate) fn pandoc_value(json: &[u8], file: &str) -> Result<Value> {
     value.map_err(|e| Error::invalid(tr!("core-import-document-pandoc-unreadable", file = file, error = e.to_string())))
 }
 
-/// Takes pictures out of the store again: those that were taken in for a
-/// document of which no map was made.
-pub fn forget(pictures: &Pictures, hashes: &[String]) {
+/// Takes pictures out of the library again: those that were new to it,
+/// taken in for a document of which no map was made. Nothing uses them yet.
+pub fn forget(library: &std::sync::Mutex<Library>, hashes: &[String]) {
+    let mut library = library.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     for hash in hashes {
-        let _ = pictures.remove(hash);
+        if let Err(e) = library.remove_file(hash) {
+            tracing::warn!(%e, hash, "a picture taken in for a document not made into a map was left in the library");
+        }
     }
 }
 

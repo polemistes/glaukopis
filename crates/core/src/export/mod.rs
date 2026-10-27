@@ -257,7 +257,8 @@ pub struct Context<'a> {
     pub work: PathBuf,
     /// The fonts Typst finds, if they have been asked for.
     pub fonts: &'a [String],
-    /// The store of pictures, where the files of the figures are.
+    /// The library's directory, where the files of the figures are kept by
+    /// their hashes (ADR 0070).
     pub pictures: Option<&'a Path>,
 }
 
@@ -312,7 +313,7 @@ fn place_files(ctx: &Context, request: &Request, into: &Path, name: &str, light:
         return placed;
     }
     for (hash, extension) in wanted {
-        let Ok(source) = crate::pictures::file_in(pictures, &hash, &extension) else { continue };
+        let Some(source) = crate::library::figures::file_of(pictures, &hash) else { continue };
         let file = format!("{hash}.{extension}");
         let target = to.join(&file);
         let size = |path: &Path| path.metadata().ok().filter(|m| m.is_file()).map(|m| m.len());
@@ -329,7 +330,7 @@ fn place_files(ctx: &Context, request: &Request, into: &Path, name: &str, light:
             (light && whole > 200_000)
                 .then(|| fs::read(&source).ok())
                 .flatten()
-                .and_then(|bytes| crate::pictures::lighter(&bytes, &extension, WIDEST_SHOWN))
+                .and_then(|bytes| crate::library::figures::lighter(&bytes, &extension, WIDEST_SHOWN))
         };
         let made = if there {
             Ok(())
@@ -1848,9 +1849,11 @@ pub fn export_until(
             // A cover that cannot be put there is said, not left out quietly.
             if let (Some((hash, extension)), Some(pictures)) = (cover, ctx.pictures) {
                 let target = dir.join(format!("cover.{extension}"));
-                let copied = crate::pictures::file_in(pictures, &hash, &extension).and_then(|source| {
-                    fs::copy(&source, &target).map(|_| ()).context(|| tr!("io-copying", path = &source))
-                });
+                let copied = crate::library::figures::file_of(pictures, &hash)
+                    .ok_or_else(|| Error::not_found(tr!("core-pictures-the-picture")))
+                    .and_then(|source| {
+                        fs::copy(&source, &target).map(|_| ()).context(|| tr!("io-copying", path = &source))
+                    });
                 match copied {
                     Ok(()) => {
                         args.push("--epub-cover-image".into());
@@ -2331,7 +2334,11 @@ pub fn count_words(document: &Document, with_notes: bool) -> usize {
 mod tests {
     use super::*;
     use crate::document::fixtures::sample;
-    use crate::pictures::Pictures;
+
+    /// An image taken into the library at `dir`, as a figure finds it.
+    fn add_picture(dir: &Path, name: &str, bytes: &[u8]) -> crate::library::FileView {
+        crate::library::Library::open_at(dir).unwrap().add_image(name, bytes, None, None).unwrap().0
+    }
 
     struct Setup {
         _tmp: tempfile::TempDir,
@@ -2354,7 +2361,7 @@ mod tests {
         let resources = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../resources");
         let styles = Styles::new(&resources, &tmp.path().join("styles"));
         let work = tmp.path().join("work");
-        let pictures = tmp.path().join("pictures");
+        let pictures = tmp.path().join("library");
         Some(Setup { _tmp: tmp, tools, resources, styles, work, pictures })
     }
 
@@ -2583,9 +2590,8 @@ mod tests {
         // The e-book: the parts with their classes, and the cover the
         // first picture of the cover part.
         {
-            use crate::pictures::fixtures::PNG;
-            let pictures = Pictures::open(&s.pictures).unwrap();
-            let picture = pictures.add("cover.png", &PNG).unwrap();
+            use crate::library::figures::fixtures::PNG;
+            let picture = add_picture(&s.pictures, "cover.png", &PNG);
             let mut with_cover = r.clone();
             with_cover.document.identifiers.insert("isbn".into(), "978-0-00-000000-0".into());
             with_cover.document.identifiers.insert("publisher".into(), "The Press".into());
@@ -4059,12 +4065,11 @@ mod tests {
     fn with_figures(s: &Setup) -> Request {
         use crate::document::Block;
         use crate::document::fixtures::text;
-        use crate::pictures::fixtures::{PNG, SVG};
+        use crate::library::figures::fixtures::{PNG, SVG};
         let mut r = request("chicago-author-date");
         r.key = "p1".into();
-        let pictures = Pictures::open(&s.pictures).unwrap();
-        let drawing = pictures.add("circle.svg", SVG.as_bytes()).unwrap();
-        let picture = pictures.add("vase.png", &PNG).unwrap();
+        let drawing = add_picture(&s.pictures, "circle.svg", SVG.as_bytes());
+        let picture = add_picture(&s.pictures, "vase.png", &PNG);
         let blocks = &mut r.document.sections[1].blocks;
         blocks.push(Block::Figure {
             id: "fig-shield".into(),
@@ -4521,9 +4526,8 @@ mod tests {
 
         // With a cover: a picture of the store, which the book carries.
         {
-            use crate::pictures::fixtures::PNG;
-            let pictures = Pictures::open(&s.pictures).unwrap();
-            let picture = pictures.add("cover.png", &PNG).unwrap();
+            use crate::library::figures::fixtures::PNG;
+            let picture = add_picture(&s.pictures, "cover.png", &PNG);
             let mut with_cover = r.clone();
             with_cover.document.parts.push(Part {
                 kind: "cover".into(),
@@ -4766,7 +4770,7 @@ mod tests {
         }));
         let mut bytes = std::io::Cursor::new(Vec::new());
         large.write_to(&mut bytes, image::ImageFormat::Png).unwrap();
-        let kept = Pictures::open(&s.pictures).unwrap().add("large.png", bytes.get_ref()).unwrap();
+        let kept = add_picture(&s.pictures, "large.png", bytes.get_ref());
         assert!(kept.size > 200_000);
         r.document.sections[1].blocks.push(crate::document::Block::Figure {
             id: String::new(),
@@ -5145,8 +5149,8 @@ mod tests {
         let resources = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../resources");
         let styles = Styles::new(&resources, &tmp.path().join("styles"));
         let tools = Tools::default();
-        let store = Pictures::open(tmp.path().join("pictures")).unwrap();
-        let vase = store.add("vase.png", &crate::pictures::fixtures::PNG).unwrap();
+        let store = tmp.path().join("library");
+        let vase = add_picture(&store, "vase.png", &crate::library::figures::fixtures::PNG);
         let ctx = Context {
             tools: &tools,
             resources: &resources,
@@ -5154,7 +5158,7 @@ mod tests {
             library: None,
             work: tmp.path().join("w"),
             fonts: &[],
-            pictures: Some(store.dir()),
+            pictures: Some(&store),
         };
         let mut request = request("apa");
         request.document.sections[1].blocks.push(Block::Figure {

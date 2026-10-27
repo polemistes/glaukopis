@@ -11,8 +11,9 @@ use serde_json::{Value, json};
 
 use crate::error::{Error, Result};
 use crate::library::attachments::hash_bytes;
+use crate::library::attachments::is_hash;
+use crate::library::figures::{self, Image, KeepImages};
 use crate::net::{self, Client};
-use crate::pictures::{self, Pictures};
 use crate::tr;
 
 /// The version of what is said between the application and the server that
@@ -542,7 +543,7 @@ impl Remote<'_> {
     /// The pictures the server has of a project, and the most it lets one hold.
     pub fn files(&self, room: &str, token: &str) -> Result<(Vec<RemoteFile>, u64)> {
         let value = self.ask("GET", &format!("{}/files", Self::room_path(room)), Some(token), None)?;
-        let most = value.get("maxFileBytes").and_then(Value::as_u64).unwrap_or(pictures::MAX_BYTES);
+        let most = value.get("maxFileBytes").and_then(Value::as_u64).unwrap_or(figures::MAX_BYTES);
         Ok((self.read(value.get("files").cloned().unwrap_or(Value::Null))?, most))
     }
 
@@ -551,7 +552,7 @@ impl Remote<'_> {
     }
 
     pub fn fetch_file(&self, room: &str, token: &str, hash: &str) -> Result<Vec<u8>> {
-        let answer = self.client.fetch(&self.file_url(room, hash), token, pictures::MAX_BYTES)?;
+        let answer = self.client.fetch(&self.file_url(room, hash), token, figures::MAX_BYTES)?;
         if (200..300).contains(&answer.status) {
             Ok(answer.body)
         } else {
@@ -564,12 +565,13 @@ impl Remote<'_> {
         if (200..300).contains(&answer.status) { Ok(()) } else { Err(self.refusal(answer.status, &answer.body)) }
     }
 
-    /// Sends the pictures of a project that the server lacks, and fetches
+    /// Sends the images of a project that the server lacks, and fetches
     /// those the server has of it that are lacking here. `used` are the
-    /// pictures of the figures of the project: no other picture of the store
-    /// is sent. What cannot be done with one picture does not keep the
-    /// others from being seen to.
-    pub fn sync_pictures(&self, room: &str, token: &str, pictures: &Pictures, used: &[Used]) -> Result<Synced> {
+    /// images of the figures of the project: no other file of the library
+    /// is sent. What cannot be done with one image does not keep the others
+    /// from being seen to. The library is held only while one is looked up
+    /// or kept, never while one is sent or fetched.
+    pub fn sync_pictures(&self, room: &str, token: &str, images: &impl KeepImages, used: &[Used]) -> Result<Synced> {
         let (there, most) = self.files(room, token)?;
         let mut done = Synced::default();
         let mut problems: Vec<String> = Vec::new();
@@ -580,14 +582,14 @@ impl Remote<'_> {
         };
         let mut sent: Vec<&str> = Vec::new();
         for picture in used {
-            if !pictures::is_hash(&picture.hash)
+            if !is_hash(&picture.hash)
                 || sent.contains(&picture.hash.as_str())
                 || there.iter().any(|f| f.hash == picture.hash)
             {
                 continue;
             }
             // One that is not here either is with someone else, who sends it.
-            let Ok(path) = pictures.path(&picture.hash, &picture.extension) else { continue };
+            let Some((_, path)) = images.image(&picture.hash) else { continue };
             let Some(size) = path.metadata().ok().filter(|m| m.is_file()).map(|m| m.len()) else { continue };
             sent.push(&picture.hash);
             if size > most {
@@ -596,8 +598,8 @@ impl Remote<'_> {
                 say(tr!("core-sharing-picture-larger", host = net::host(&self.server), most = most >> 20));
                 continue;
             }
-            let sending = pictures
-                .read(&picture.hash, &picture.extension)
+            let sending = std::fs::read(&path)
+                .map_err(|e| Error::io(tr!("io-reading", path = &path), e))
                 .and_then(|content| self.send_file(room, token, &picture.hash, &content));
             match sending {
                 Ok(()) => done.sent += 1,
@@ -606,7 +608,7 @@ impl Remote<'_> {
             }
         }
         for file in &there {
-            if !pictures::is_hash(&file.hash) || file.size > pictures::MAX_BYTES || pictures.get(&file.hash).is_ok() {
+            if !is_hash(&file.hash) || file.size > figures::MAX_BYTES || images.image(&file.hash).is_some() {
                 continue;
             }
             let name = used.iter().find(|u| u.hash == file.hash).map(|u| u.name.as_str()).unwrap_or("");
@@ -629,7 +631,8 @@ impl Remote<'_> {
                 say(tr!("core-sharing-picture-not-as-listed", host = net::host(&self.server)));
                 continue;
             }
-            match pictures.keep(&file.hash, &content, name) {
+            let image = Image { hash: file.hash.clone(), name: name.to_owned(), ..Default::default() };
+            match images.keep(&image, &content) {
                 Ok(_) => done.fetched += 1,
                 // What is on the server and is no picture is nothing to the project.
                 Err(Error::Invalid(_)) => {}

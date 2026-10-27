@@ -4,14 +4,18 @@ use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
 
+use base64::Engine;
+use base64::engine::general_purpose::STANDARD as B64;
 use serde::{Deserialize, Serialize};
+use tauri::ipc::Response;
 use tauri::{AppHandle, State};
 
 use glaukopis_core::i18n::tr;
 use glaukopis_core::library::export::{ExportSelection, Exported};
 use glaukopis_core::library::files::{self, FileFolder};
+use glaukopis_core::library::small;
 use glaukopis_core::library::{FileView, Library, TakenIn, attachments};
-use glaukopis_core::pictures::Picture;
+use glaukopis_core::sharing::{Remote, Synced, Used};
 
 use super::work::{self, Work};
 use crate::error::CommandResult;
@@ -380,58 +384,85 @@ pub fn files_take_in(
     Ok(out)
 }
 
-// ---- between the files and the pictures ----
+// ---- images, as figures show them (ADR 0070) ----
 
-/// Takes a picture that is a file of the library into the store of
-/// pictures, so that it can become a figure. The file stays where it was.
+/// The thumbnail of a file: an image, or the first page of a PDF, at most
+/// so wide; made once and kept. The library is let go before it is made.
 #[tauri::command(async)]
-pub fn file_to_picture(state: State<'_, AppState>, hash: String) -> CommandResult<Picture> {
-    let (absolute, name) = {
+pub fn file_small(state: State<'_, AppState>, hash: String) -> CommandResult<Response> {
+    let (dir, stored, name) = {
         let library = state.library();
-        let path = record_path(&library, &hash)?;
-        let name = library.files.get(&hash).map(|r| r.name.clone()).unwrap_or_default();
-        (library.attachment_path(&path)?, name)
+        let record = library
+            .files
+            .get(&hash)
+            .ok_or_else(|| glaukopis_core::Error::not_found(tr!("core-library-the-file-of-library")))?;
+        (library.dir().to_owned(), record.path.clone(), record.name.clone())
     };
-    let bytes =
-        std::fs::read(&absolute).map_err(|e| glaukopis_core::Error::io(tr!("io-reading", path = &absolute), e))?;
-    Ok(state.pictures.add(&name, &bytes)?)
+    let bytes = small::small(&dir, &hash, &stored, &name, &state.tools(), &state.data.work())?;
+    Ok(Response::new(bytes))
 }
 
-/// Takes a picture of the store of pictures into the files of the library,
-/// into `folder`, and makes it one of the reference `id`'s where that is
-/// given. The picture stays where it was.
+/// Says what an image shows, in words, for those who do not see it.
 #[tauri::command(async)]
-pub fn picture_to_file(
+pub fn file_set_alt(state: State<'_, AppState>, hash: String, alt: String) -> CommandResult<FileView> {
+    Ok(state.library().set_alt(&hash, &alt)?)
+}
+
+/// The file a figure made of this image shows: itself, or a copy made beside it.
+#[tauri::command(async)]
+pub fn file_for_figure(state: State<'_, AppState>, hash: String) -> CommandResult<FileView> {
+    Ok(state.library().for_figure(&hash)?)
+}
+
+/// Takes in an image that the interface holds, one that was pasted or
+/// dropped from where there are no files, into `folder` or the folder
+/// *Images*: as a figure shows it.
+#[tauri::command(async)]
+pub fn files_add_image(
     state: State<'_, AppState>,
-    hash: String,
-    id: Option<String>,
+    name: String,
+    content: String,
     folder: Option<String>,
 ) -> CommandResult<FileView> {
-    let picture = state.pictures.get(&hash)?;
-    let source = state.pictures.path(&picture.hash, &picture.extension)?;
-    let dir = state.library().dir().to_owned();
-    let name = with_ending(&picture.name, &picture.extension);
-    let stored = attachments::store_file(&dir, &source, &name)?;
-    let mut library = state.library();
-    let taken = files::Taken { stored: stored.clone(), folders: Vec::new(), origin: String::new() };
-    library.enter_taken(&[taken], folder.as_deref())?;
-    if let Some(id) = &id {
-        library.attach_stored(id, &stored, None)?;
-    }
-    let file_hash = attachments::hash_of_path(&stored).unwrap_or_default().to_owned();
-    view(&library, &file_hash)
+    let bytes =
+        B64.decode(content.trim()).map_err(|_| glaukopis_core::Error::invalid(tr!("core-pictures-not-whole")))?;
+    Ok(state.library().add_image(&name, &bytes, folder.as_deref(), None)?.0)
 }
 
-/// A name with the ending of its kind, where it has none. What follows the
-/// last point is an ending only when it is one of a picture: "Fig. 3" and
-/// "Plate 2.1" have none, and would otherwise be files of no kind.
-fn with_ending(name: &str, extension: &str) -> String {
-    let extension = extension.to_lowercase();
-    let has = name.rsplit_once('.').is_some_and(|(_, after)| {
-        let after = after.to_lowercase();
-        after == extension || glaukopis_core::ocr::PICTURE_ENDINGS.contains(&after.as_str())
-    });
-    if has { name.to_owned() } else { format!("{name}.{extension}") }
+/// Takes in an image that is a file on this computer, dropped on a text or
+/// chosen to be a figure, into the folder *Images*, and gives the file a
+/// figure shows of it: itself, or a copy made beside it. One the library
+/// has already stays where it is. The file is copied before the library is
+/// held.
+#[tauri::command(async)]
+pub fn files_take_in_for_figure(state: State<'_, AppState>, path: PathBuf) -> CommandResult<FileView> {
+    let dir = state.library().dir().to_owned();
+    let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    let stored = attachments::store_file(&dir, &path, &name)?;
+    let hash = attachments::hash_of_path(&stored).unwrap_or_default().to_owned();
+    let mut library = state.library();
+    let folder = library.images_folder()?;
+    let taken = files::Taken { stored, folders: Vec::new(), origin: path.display().to_string() };
+    library.enter_taken(&[taken], Some(&folder))?;
+    Ok(library.for_figure(&hash)?)
+}
+
+/// Sends the images of a project that the server lacks and fetches those
+/// that are lacking here. `used` are the images of its figures. Nothing is
+/// done for a project that is not shared.
+#[tauri::command(async)]
+pub fn files_sync(state: State<'_, AppState>, id: String, used: Vec<Used>) -> CommandResult<Synced> {
+    // A project that is not shared, or no longer there, has nothing to
+    // bring together; one whose sharing or token cannot be read fails, lest
+    // its figures stop being brought together without a word.
+    let (sharing, token) = match state.projects.shared(&id) {
+        Ok(shared) => shared,
+        Err(e) if matches!(e.kind(), "invalid" | "not-found") => return Ok(Synced::default()),
+        Err(e) => return Err(e.into()),
+    };
+    let client = state.client();
+    let remote = Remote::new(&client, &sharing.server)?;
+    Ok(remote.sync_pictures(&sharing.room, &token, state.library_lock(), &used)?)
 }
 
 // ---- export ----
@@ -463,20 +494,4 @@ pub fn files_export(
         &mut work.counter(&app, work::FILES_PROGRESS),
         &work.stop,
     )?)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn a_picture_becomes_a_file_with_the_ending_of_its_kind() {
-        assert_eq!(with_ending("Fig. 3", "png"), "Fig. 3.png");
-        assert_eq!(with_ending("Plate 2.1", "jpg"), "Plate 2.1.jpg");
-        assert_eq!(with_ending("map", "PNG"), "map.png");
-        assert_eq!(with_ending("map.png", "png"), "map.png");
-        assert_eq!(with_ending("Scan.TIFF", "tif"), "Scan.TIFF");
-        assert_eq!(with_ending("drawing.svg", "svg"), "drawing.svg");
-        assert_eq!(glaukopis_core::library::files::kind_of(&with_ending("Fig. 3", "png")), files::FileKind::Picture);
-    }
 }

@@ -12,7 +12,7 @@
 //! ```
 //!
 //! The copy is written and never read back, but by opening an Org file as a
-//! new project. Pictures are linked to the store where the file system
+//! new project. Pictures are linked to the library where the file system
 //! allows it, so that they take no room twice, and copied where it does not.
 
 use std::collections::HashSet;
@@ -22,8 +22,9 @@ use std::path::{Path, PathBuf};
 use crate::error::{Error, IoContext, Result};
 use crate::fsutil::write_atomic;
 use crate::library::Library;
-use crate::pictures::{Picture, Pictures, is_hash};
-use crate::projectfile::{Record, references_bib};
+use crate::library::attachments::is_hash;
+use crate::library::figures::Images;
+use crate::projectfile::{Picture, Record, references_bib};
 use crate::tr;
 
 /// The name of the Org form in the folder.
@@ -42,8 +43,8 @@ pub struct Readable<'a> {
 
 /// Writes the readable copy into `dir`: the Org form and the works anew,
 /// the pictures that are not there yet, and none that the project no longer
-/// shows. A picture the store lacks is left out.
-pub fn write(dir: &Path, readable: &Readable<'_>, store: &Pictures, library: Option<&Library>) -> Result<()> {
+/// shows. A picture the library lacks is left out.
+pub fn write(dir: &Path, readable: &Readable<'_>, images: &impl Images, library: Option<&Library>) -> Result<()> {
     fs::create_dir_all(dir).context(|| tr!("io-creating", path = dir))?;
     write_atomic(&dir.join(ORG), readable.org.as_bytes())?;
     write_atomic(&dir.join(BIB), references_bib(readable.records, library).as_bytes())?;
@@ -51,18 +52,17 @@ pub fn write(dir: &Path, readable: &Readable<'_>, store: &Pictures, library: Opt
     let mut wanted = HashSet::new();
     let mut lacking: Vec<&str> = Vec::new();
     for hash in readable.pictures {
-        let Ok(picture) = store.get(hash) else {
+        let Some((image, from)) = images.image(hash) else {
             lacking.push(hash);
             continue;
         };
-        let name = format!("{}.{}", picture.hash, picture.extension);
+        let name = format!("{}.{}", image.hash, image.extension);
         wanted.insert(name.clone());
         let to = pictures.join(&name);
         if to.is_file() {
             continue;
         }
         fs::create_dir_all(&pictures).context(|| tr!("io-creating", path = &pictures))?;
-        let from = store.path(&picture.hash, &picture.extension)?;
         if fs::hard_link(&from, &to).is_err() {
             fs::copy(&from, &to).context(|| tr!("io-writing", path = &to))?;
         }
@@ -82,7 +82,7 @@ pub fn write(dir: &Path, readable: &Readable<'_>, store: &Pictures, library: Opt
     }
     if !lacking.is_empty() {
         // The copy is written at every save: one line for all that are lacking.
-        tracing::warn!(pictures = ?lacking, "pictures the project shows are not in the store, and are not in its readable copy");
+        tracing::warn!(pictures = ?lacking, "pictures the project shows are not in the library, and are not in its readable copy");
     }
     Ok(())
 }
@@ -158,14 +158,14 @@ mod tests {
     #[test]
     fn writes_the_org_form_the_works_and_the_pictures_and_reads_them_back() {
         let tmp = tempfile::tempdir().unwrap();
-        let store = Pictures::open(tmp.path().join("store")).unwrap();
+        let mut store = Library::open_at(&tmp.path().join("store")).unwrap();
         // A one-pixel PNG.
         let png = [
             0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, b'I', b'H', b'D', b'R', 0, 0, 0, 1, 0, 0, 0,
             1, 8, 6, 0, 0, 0, 0x1f, 0x15, 0xc4, 0x89, 0, 0, 0, 10, b'I', b'D', b'A', b'T', 0x78, 0x9c, 0x63, 0, 1, 0,
             0, 5, 0, 1, 0x0d, 0x0a, 0x2d, 0xb4, 0, 0, 0, 0, b'I', b'E', b'N', b'D', 0xae, 0x42, 0x60, 0x82,
         ];
-        let picture = store.add("dot.png", &png).unwrap();
+        let picture = store.add_image("dot.png", &png, None, None).unwrap().0;
         let dir = tmp.path().join("project");
         let records = [record()];
         let readable =

@@ -100,7 +100,9 @@ pub(super) fn picture_bytes(
 
 fn read_picture(found: &Path) -> std::result::Result<Vec<u8>, String> {
     match fs::metadata(found) {
-        Ok(m) if m.len() > crate::pictures::MAX_BYTES => return Err(tr!("core-import-document-picture-too-large")),
+        Ok(m) if m.len() > crate::library::figures::MAX_BYTES => {
+            return Err(tr!("core-import-document-picture-too-large"));
+        }
         _ => {}
     }
     fs::read(found).map_err(|_| tr!("core-import-document-picture-file-unreadable"))
@@ -108,7 +110,7 @@ fn read_picture(found: &Path) -> std::result::Result<Vec<u8>, String> {
 
 /// How wide a figure is when the file does not say: as suits what the
 /// picture holds. As `widthFor` in `src/lib/editor/commands.ts`.
-pub(super) fn width_for(picture: &Picture) -> u8 {
+pub(super) fn width_for(picture: &crate::library::figures::Image) -> u8 {
     match picture.width {
         None | Some(0) => {
             if picture.extension == "svg" {

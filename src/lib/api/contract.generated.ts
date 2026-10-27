@@ -7,7 +7,6 @@ import type * as ocr from './ocr';
 import type * as imported from './imported';
 import type * as files from './files';
 import type * as projects from './projects';
-import type * as pictures from './pictures';
 import type * as documents from './documents';
 import type * as templates from './templates';
 import type * as system from './system';
@@ -15,6 +14,7 @@ import type * as clipboard from './clipboard';
 import type * as sources from './sources';
 import type * as found from './found';
 import type * as viewer from './viewer';
+import type * as pictures from './pictures';
 import type * as tables from './tables';
 import type * as sharing from './sharing';
 import type * as words from './words';
@@ -663,10 +663,13 @@ export const filesListing: files.FilesListing = {
   "files": [
     {
       "added": "2026-01-01T00:00:00Z",
+      "alt": "",
       "exists": true,
       "folder": null,
       "hash": "e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e",
+      "height": null,
       "kind": "pdf",
+      "madeFrom": null,
       "name": "Nagy 1979 - The Best of the Achaeans.pdf",
       "origin": null,
       "path": "attachments/e1/e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e/Nagy 1979 - The Best of the Achaeans.pdf",
@@ -689,19 +692,24 @@ export const filesListing: files.FilesListing = {
           "yearNumber": 1979
         }
       ],
-      "size": 8
+      "size": 8,
+      "width": null
     },
     {
       "added": "2026-01-01T00:00:00Z",
+      "alt": "",
       "exists": true,
       "folder": "00000000-0000-4000-8000-000000000000",
       "hash": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+      "height": 1,
       "kind": "picture",
+      "madeFrom": null,
       "name": "plate.png",
       "origin": "/data/plate.png",
       "path": "attachments/4f/4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5/plate.png",
       "references": [],
-      "size": 70
+      "size": 70,
+      "width": 1
     }
   ],
   "folders": [
@@ -717,15 +725,19 @@ export const takenIn: files.TakenIn = {
   "files": [
     {
       "added": "2026-01-01T00:00:00Z",
+      "alt": "",
       "exists": true,
       "folder": "00000000-0000-4000-8000-000000000000",
       "hash": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+      "height": 1,
       "kind": "picture",
+      "madeFrom": null,
       "name": "plate.png",
       "origin": "/data/plate.png",
       "path": "attachments/4f/4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5/plate.png",
       "references": [],
-      "size": 70
+      "size": 70,
+      "width": 1
     }
   ],
   "folders": 0,
@@ -959,18 +971,6 @@ export const folder: projects.Folder = {
   "name": "Epic",
   "order": "000002",
   "parent": "00000000-0000-4000-8000-000000000000"
-};
-
-export const picture: pictures.Picture = {
-  "added": "2026-01-01T00:00:00Z",
-  "alt": "",
-  "extension": "png",
-  "hash": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
-  "height": 1,
-  "name": "dot.png",
-  "note": "",
-  "size": 70,
-  "width": 1
 };
 
 export const tools: documents.ToolsInfo = {
@@ -4067,7 +4067,7 @@ export const madeSearchable: ocr.MadeSearchable = {
   "withText": 1
 };
 
-export const synced: pictures.Synced = {
+export const synced: files.Synced = {
   "fetched": 0,
   "problems": [
     "A remark."

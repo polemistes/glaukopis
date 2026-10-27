@@ -11,7 +11,6 @@ use glaukopis_core::library::Library;
 use glaukopis_core::net::Client;
 use glaukopis_core::ocr;
 use glaukopis_core::paths::{Claim, DataDir};
-use glaukopis_core::pictures::Pictures;
 use glaukopis_core::projects::Projects;
 use glaukopis_core::settings;
 use glaukopis_core::spelling::Spelling;
@@ -24,7 +23,6 @@ pub struct AppState {
     _claim: Claim,
     pub projects: Projects,
     /// The store of pictures.
-    pub pictures: Pictures,
     /// What comes with the application: styles, formats, filters.
     pub resources: PathBuf,
     pub styles: Styles,
@@ -94,19 +92,35 @@ fn zotero_copies(data: &DataDir) -> PathBuf {
 
 impl AppState {
     pub fn open(data: DataDir, claim: Claim, installed_resources: Option<PathBuf>) -> glaukopis_core::Result<Self> {
-        let library = Library::open(&data)?;
+        let mut library = Library::open(&data)?;
         for w in &library.warnings {
             tracing::warn!("library: {w}");
         }
         tracing::info!(entries = library.len(), "library read");
         let projects = Projects::new(&data);
-        let pictures = Pictures::open(data.pictures())?;
-        // Projects once kept their pictures by themselves: the store takes them in.
-        let taken: usize = projects.picture_directories().iter().map(|dir| pictures.adopt(dir)).sum();
-        if taken > 0 {
-            tracing::info!(pictures = taken, "pictures of projects taken into the store");
+        // Images were once kept in a store of their own, and before that by
+        // each project: they are taken into the library, once (ADR 0070).
+        let of_projects = projects.picture_directories();
+        if data.pictures().exists() || !of_projects.is_empty() {
+            match library.take_in_pictures(&data.pictures(), &of_projects) {
+                Ok(done) => {
+                    if done.moved + done.same > 0 {
+                        tracing::info!(
+                            moved = done.moved,
+                            same = done.same,
+                            aside = ?done.aside,
+                            "the images of the store of pictures taken into the library"
+                        );
+                    }
+                    for problem in &done.problems {
+                        tracing::warn!("{problem}");
+                    }
+                }
+                Err(error) => {
+                    tracing::warn!(%error, "the store of pictures could not be taken into the library; it is left as it was")
+                }
+            }
         }
-        tracing::info!(pictures = pictures.list().len(), "store of pictures read");
         let resources = find_resources(installed_resources);
         tracing::info!(resources = %resources.display(), "resources");
         let styles = Styles::new(&resources, &data.styles());
@@ -123,7 +137,6 @@ impl AppState {
         }
         let state = AppState {
             projects,
-            pictures,
             resources,
             styles,
             formats,
@@ -146,6 +159,13 @@ impl AppState {
     /// file on disk is always whole, and is read again when it has changed.
     pub fn library(&self) -> MutexGuard<'_, Library> {
         self.library.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+    }
+
+    /// The library behind its lock, for what holds it only while it looks a
+    /// file up or keeps one: the sync of a shared project's images, which
+    /// talks to a server between.
+    pub fn library_lock(&self) -> &Mutex<Library> {
+        &self.library
     }
 
     /// Runs `work` on the copy of the Zotero database at `path` (its data

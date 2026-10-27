@@ -5,14 +5,23 @@ use serde_json::json;
 use super::*;
 use crate::library::attachments::hash_bytes;
 use crate::library::draft_from_source;
-use crate::pictures::fixtures::{PNG, SVG};
+use crate::library::figures::fixtures::{PNG, SVG};
 
 fn library(tmp: &tempfile::TempDir) -> Library {
     Library::open_at(&tmp.path().join("library")).unwrap()
 }
 
-fn store(tmp: &tempfile::TempDir, name: &str) -> Pictures {
-    Pictures::open(tmp.path().join(name)).unwrap()
+/// A library of images, behind its lock as the application holds it.
+fn store(tmp: &tempfile::TempDir, name: &str) -> std::sync::Mutex<Library> {
+    std::sync::Mutex::new(Library::open_at(&tmp.path().join(name)).unwrap())
+}
+
+fn add(store: &std::sync::Mutex<Library>, name: &str, bytes: &[u8]) -> crate::library::FileView {
+    store.lock().unwrap().add_image(name, bytes, None, None).unwrap().0
+}
+
+fn alt(store: &std::sync::Mutex<Library>, hash: &str, alt: &str) {
+    store.lock().unwrap().set_alt(hash, alt).unwrap();
 }
 
 fn draft(source: &str) -> Draft {
@@ -49,20 +58,9 @@ fn text_in(bytes: &[u8], name: &str) -> String {
 fn a_project_is_written_as_one_file_and_read_again() {
     let tmp = tempfile::tempdir().unwrap();
     let pictures = store(&tmp, "pictures");
-    let png = pictures.add("vase.png", &PNG).unwrap();
-    let svg = pictures.add("circle.svg", SVG.as_bytes()).unwrap();
-    let caption = json!([{"kind": "text", "text": "A circle", "marks": {}}]);
-    pictures
-        .update(
-            &svg.hash,
-            Change {
-                caption: Some(caption.clone()),
-                alt: Some("A red circle".into()),
-                note: Some("Drawn by hand.".into()),
-                ..Default::default()
-            },
-        )
-        .unwrap();
+    let png = add(&pictures, "vase.png", &PNG);
+    let svg = add(&pictures, "circle.svg", SVG.as_bytes());
+    alt(&pictures, &svg.hash, "A red circle");
     let mut lib = library(&tmp);
     let parent =
         lib.add(&draft("@collection{fowler2004, editor={Fowler, R.}, title={Companion}, date={2004}}")).unwrap();
@@ -122,11 +120,10 @@ fn a_project_is_written_as_one_file_and_read_again() {
     assert_eq!(opened.pictures.len(), 2);
     let (said, held) = opened.pictures.iter().find(|(p, _)| p.hash == svg.hash).unwrap();
     assert_eq!(held, SVG.as_bytes());
-    assert_eq!(
-        (said.caption.clone(), said.alt.as_str(), said.note.as_str()),
-        (caption, "A red circle", "Drawn by hand.")
-    );
-    assert_eq!(said.name, "circle.svg");
+    assert_eq!((said.name.as_str(), said.alt.as_str(), said.extension.as_str()), ("circle.svg", "A red circle", "svg"));
+    let png_said = &opened.pictures.iter().find(|(p, _)| p.hash == png.hash).unwrap().0;
+    assert_eq!((png_said.width, png_said.height), (Some(4), Some(3)));
+    assert!(!text_in(&bytes, "pictures.json").contains("caption"), "a caption is the document's");
 }
 
 /// A project file is read with its pictures taken into the store one by
@@ -135,8 +132,8 @@ fn a_project_is_written_as_one_file_and_read_again() {
 fn pictures_are_taken_in_as_they_are_read() {
     let tmp = tempfile::tempdir().unwrap();
     let there = store(&tmp, "there");
-    let png = there.add("vase.png", &PNG).unwrap();
-    let svg = there.add("circle.svg", SVG.as_bytes()).unwrap();
+    let png = add(&there, "vase.png", &PNG);
+    let svg = add(&there, "circle.svg", SVG.as_bytes());
     let hashes = [png.hash.clone(), svg.hash.clone()];
     let contents = Contents {
         manifest: Manifest { name: "P".into(), ..Default::default() },
@@ -152,9 +149,9 @@ fn pictures_are_taken_in_as_they_are_read() {
         (opened.manifest.name.as_str(), opened.state.as_slice(), opened.pictures.len(), added),
         ("P", &b"x"[..], 0, 2)
     );
-    assert_eq!(here.read(&svg.hash, "svg").unwrap(), SVG.as_bytes());
-    assert!(here.get(&png.hash).is_ok());
-    // Those the store has already are not counted again.
+    assert_eq!(std::fs::read(here.image(&svg.hash).unwrap().1).unwrap(), SVG.as_bytes());
+    assert!(here.image(&png.hash).is_some());
+    // Those the library has already are not counted again.
     assert_eq!(read_into(&path, &here).unwrap().1, 0);
 }
 
@@ -162,23 +159,14 @@ fn pictures_are_taken_in_as_they_are_read() {
 fn pictures_are_taken_in_by_their_hash() {
     let tmp = tempfile::tempdir().unwrap();
     let here = store(&tmp, "here");
-    let png = here.add("vase.png", &PNG).unwrap();
-    here.update(&png.hash, Change { note: Some("Mine.".into()), ..Default::default() }).unwrap();
+    let png = add(&here, "vase.png", &PNG);
+    alt(&here, &png.hash, "Mine");
 
     let there = store(&tmp, "there");
-    let other = there.add("A vase from elsewhere.png", &PNG).unwrap();
-    there.update(&other.hash, Change { note: Some("Theirs.".into()), ..Default::default() }).unwrap();
-    let svg = there.add("circle.svg", SVG.as_bytes()).unwrap();
-    there
-        .update(
-            &svg.hash,
-            Change {
-                alt: Some("A red circle".into()),
-                caption: Some(json!([{"kind": "text", "text": "C"}])),
-                ..Default::default()
-            },
-        )
-        .unwrap();
+    let other = add(&there, "A vase from elsewhere.png", &PNG);
+    alt(&there, &other.hash, "Theirs");
+    let svg = add(&there, "circle.svg", SVG.as_bytes());
+    alt(&there, &svg.hash, "A red circle");
     let hashes = [other.hash.clone(), svg.hash.clone()];
     let bytes = to_bytes(
         &Contents {
@@ -200,14 +188,23 @@ fn pictures_are_taken_in_by_their_hash() {
         .push((Picture { hash: wrong.clone(), extension: "png".into(), ..Default::default() }, PNG.to_vec()));
 
     assert_eq!(take_pictures(&here, &opened.pictures), 1);
-    let kept = here.get(&png.hash).unwrap();
-    assert_eq!((kept.name.as_str(), kept.note.as_str()), ("vase.png", "Mine."), "what the store says is kept");
-    let added = here.get(&svg.hash).unwrap();
-    assert_eq!((added.name.as_str(), added.alt.as_str(), added.note.as_str()), ("circle.svg", "A red circle", ""));
-    assert_eq!(added.caption, json!([{"kind": "text", "text": "C"}]));
-    assert_eq!(here.read(&svg.hash, "svg").unwrap(), SVG.as_bytes());
-    assert!(here.get(&wrong).is_err());
+    let kept = here.image(&png.hash).unwrap().0;
+    assert_eq!((kept.name.as_str(), kept.alt.as_str()), ("vase.png", "Mine"), "what the library says is kept");
+    let (added, path) = here.image(&svg.hash).unwrap();
+    assert_eq!((added.name.as_str(), added.alt.as_str()), ("circle.svg", "A red circle"));
+    assert_eq!(std::fs::read(path).unwrap(), SVG.as_bytes());
+    let folder = here.lock().unwrap().file_view(&svg.hash).unwrap().folder.unwrap();
+    assert_eq!(here.lock().unwrap().files.folder(&folder).unwrap().name, "Images");
+    assert!(here.image(&wrong).is_none());
     assert_eq!(hash_bytes(&PNG), png.hash);
+
+    // What a file written before says of a picture, a caption and notes among it, is read for the rest.
+    let old: Picture = serde_json::from_value(json!({
+        "hash": svg.hash, "extension": "svg", "name": "c.svg", "alt": "A circle",
+        "caption": [{"kind": "text", "text": "C"}], "note": "Theirs."
+    }))
+    .unwrap();
+    assert_eq!((old.name.as_str(), old.alt.as_str()), ("c.svg", "A circle"));
 }
 
 #[test]

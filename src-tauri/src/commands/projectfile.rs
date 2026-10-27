@@ -45,23 +45,23 @@ pub fn project_file_write(app: AppHandle, state: State<'_, AppState>, request: R
     let contents = Contents { manifest, state: &document, pictures: &head.pictures, records: &head.records };
     // The library is not held while the file is written: a copy of it is enough.
     let library = state.library().clone();
-    Ok(projectfile::write(Path::new(&head.path), &contents, &state.pictures, Some(&library))?)
+    Ok(projectfile::write(Path::new(&head.path), &contents, &library, Some(&library))?)
 }
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ReadHead {
     pub manifest: Manifest,
-    /// How many pictures the store did not have.
+    /// How many pictures the library did not have.
     pub pictures: usize,
 }
 
-/// Reads a project file and takes its pictures into the store. Gives what
+/// Reads a project file and takes its pictures into the library. Gives what
 /// the file says of itself, in JSON, and the document, each with its length
 /// before it, as `project_load` gives a project.
 #[tauri::command(async)]
 pub fn project_file_read(state: State<'_, AppState>, path: String) -> CommandResult<Response> {
-    let (opened, added) = projectfile::read_into(Path::new(&path), &state.pictures)?;
+    let (opened, added) = projectfile::read_into(Path::new(&path), state.library_lock())?;
     let head = serde_json::to_vec(&ReadHead { manifest: opened.manifest, pictures: added })
         .map_err(glaukopis_core::Error::from)?;
     let mut out = Vec::with_capacity(head.len() + opened.state.len() + 8);

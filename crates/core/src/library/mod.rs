@@ -1004,6 +1004,96 @@ impl Library {
         Ok(self.view_of(&made))
     }
 
+    /// Keeps an image that came from elsewhere, a project shared or carried
+    /// in a file, as it is: if it holds what its hash says and is of a kind
+    /// a figure shows, PNG, JPEG or SVG. One the library has is the same,
+    /// and is given what is known of it where its record does not say it;
+    /// one it lacks is taken into the folder *Images*. Whether it is new.
+    pub fn keep_image(&mut self, image: &figures::Image, bytes: &[u8]) -> Result<bool> {
+        if !attachments::is_hash(&image.hash) || attachments::hash_bytes(bytes) != image.hash {
+            return Err(Error::invalid(tr!("core-pictures-not-as-asked")));
+        }
+        if bytes.len() as u64 > figures::MAX_BYTES {
+            return Err(figures::too_large());
+        }
+        let ending = match figures::kind_of(bytes) {
+            Some(figures::Kind::Png) => "png",
+            Some(figures::Kind::Jpeg) => "jpg",
+            Some(figures::Kind::Svg) => "svg",
+            _ => return Err(figures::not_a_picture()),
+        };
+        if self.files.get(&image.hash).is_some() {
+            self.files.add_image_facts(&image.hash, image.width, image.height, &image.alt);
+            self.save_files()?;
+            return Ok(false);
+        }
+        let name = figures::shown_name(&image.name, ending);
+        self.take_in_image(&name, bytes, None, None, image.alt.as_str())?;
+        Ok(true)
+    }
+
+    /// Takes an image into the library from what it holds: a picture pasted,
+    /// or one of a document brought in. One of a kind a figure does not
+    /// show is made one first, PNG, or a photograph turned upright. Into
+    /// `folder`, or the folder *Images* where none is given; one the library
+    /// has already is that file, where it is. Gives the file, and whether
+    /// it is new to the library.
+    pub fn add_image(
+        &mut self,
+        name: &str,
+        bytes: &[u8],
+        folder: Option<&str>,
+        origin: Option<&str>,
+    ) -> Result<(FileView, bool)> {
+        if bytes.len() as u64 > figures::MAX_BYTES {
+            return Err(figures::too_large());
+        }
+        let (content, ending, _) = figures::prepared(bytes)?;
+        if content.len() as u64 > figures::MAX_BYTES {
+            return Err(figures::too_large());
+        }
+        let hash = attachments::hash_bytes(&content);
+        if let Some(there) = self.files.get(&hash) {
+            let there = there.clone();
+            return Ok((self.view_of(&there), false));
+        }
+        let name = figures::shown_name(name, ending);
+        Ok((self.take_in_image(&name, &content, folder, origin, "")?, true))
+    }
+
+    /// The folder *Images* at the top of the files, where images taken in to
+    /// be figures go: made where it is not there. Its id.
+    pub fn images_folder(&mut self) -> Result<String> {
+        let before = self.files.folders().len();
+        let id = self.files.folder_named(&tr!("core-library-images-folder"), None)?.id;
+        if self.files.folders().len() != before {
+            self.save_files()?;
+        }
+        Ok(id)
+    }
+
+    fn take_in_image(
+        &mut self,
+        name: &str,
+        bytes: &[u8],
+        folder: Option<&str>,
+        origin: Option<&str>,
+        alt: &str,
+    ) -> Result<FileView> {
+        let folder = match folder {
+            Some(id) => self.files.folder(id)?.id.clone(),
+            None => self.files.folder_named(&tr!("core-library-images-folder"), None)?.id,
+        };
+        let stored = attachments::store_bytes(&self.dir, bytes, name)?;
+        let hash = attachments::hash_of_path(&stored).unwrap_or_default().to_owned();
+        self.files.record(&stored, Some(&folder), origin, &now());
+        self.files.measure(&self.dir, &hash);
+        self.files.add_image_facts(&hash, None, None, alt);
+        self.save_files()?;
+        let record = self.files.get(&hash).cloned().unwrap_or_default();
+        Ok(self.view_of(&record))
+    }
+
     /// Says what an image of the library shows, in words, for those who do
     /// not see it (ADR 0070).
     pub fn set_alt(&mut self, hash: &str, alt: &str) -> Result<FileView> {

@@ -9,12 +9,94 @@
 //! made from, which stays as it was.
 
 use std::io::Cursor;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::sync::{Mutex, PoisonError};
 
 use image::{DynamicImage, ImageDecoder, ImageFormat, ImageReader};
 
 use crate::error::{Error, Result};
 use crate::tr;
+
+use super::{Library, attachments};
+
+/// An image of the library, as what shows it, sends it or carries it needs it.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct Image {
+    pub hash: String,
+    /// What it is called, with its ending.
+    pub name: String,
+    /// The ending of its name, in small letters: what a figure names it by.
+    pub extension: String,
+    pub width: Option<u32>,
+    pub height: Option<u32>,
+    /// What it shows, in words.
+    pub alt: String,
+}
+
+impl From<&super::FileView> for Image {
+    fn from(view: &super::FileView) -> Self {
+        Image {
+            hash: view.hash.clone(),
+            name: view.name.clone(),
+            extension: view.name.rsplit_once('.').map(|(_, e)| e.to_ascii_lowercase()).unwrap_or_default(),
+            width: view.width,
+            height: view.height,
+            alt: view.alt.clone(),
+        }
+    }
+}
+
+/// The file of the library with this hash, in the library at `library_dir`,
+/// where it is there: what a figure that names it shows. The library need
+/// not be held for it.
+pub fn file_of(library_dir: &Path, hash: &str) -> Option<PathBuf> {
+    let stored = attachments::find_by_hash(library_dir, hash)?;
+    attachments::absolute(library_dir, &stored).ok().filter(|p| p.is_file())
+}
+
+/// Where the images of figures are found: the library, held or behind its lock.
+pub trait Images {
+    /// The image with this hash and where its file is, where the library has it there.
+    fn image(&self, hash: &str) -> Option<(Image, PathBuf)>;
+}
+
+/// Where images that arrive from elsewhere are kept: the library behind its
+/// lock, held only while one is kept, so that what fetches them does not
+/// hold it meanwhile.
+pub trait KeepImages: Images {
+    /// Keeps an image that came from elsewhere, as it is, if it holds what
+    /// its hash says and is of a kind a figure shows. Whether it is new.
+    fn keep(&self, image: &Image, bytes: &[u8]) -> Result<bool>;
+}
+
+impl Images for Library {
+    fn image(&self, hash: &str) -> Option<(Image, PathBuf)> {
+        let record = self.files.get(hash)?;
+        let path = attachments::absolute(&self.dir, &record.path).ok().filter(|p| p.is_file())?;
+        let extension = record.name.rsplit_once('.').map(|(_, e)| e.to_ascii_lowercase()).unwrap_or_default();
+        let image = Image {
+            hash: record.hash.clone(),
+            name: record.name.clone(),
+            extension,
+            width: record.width,
+            height: record.height,
+            alt: record.alt.clone(),
+        };
+        Some((image, path))
+    }
+}
+
+impl Images for Mutex<Library> {
+    fn image(&self, hash: &str) -> Option<(Image, PathBuf)> {
+        self.lock().unwrap_or_else(PoisonError::into_inner).image(hash)
+    }
+}
+
+impl KeepImages for Mutex<Library> {
+    fn keep(&self, image: &Image, bytes: &[u8]) -> Result<bool> {
+        self.lock().unwrap_or_else(PoisonError::into_inner).keep_image(image, bytes)
+    }
+}
 
 /// The most one image may hold: what a server takes, unless it says otherwise.
 pub const MAX_BYTES: u64 = 50 * 1024 * 1024;
