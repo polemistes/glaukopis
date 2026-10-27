@@ -52,6 +52,24 @@ describe('the order of the files', () => {
     expect(down[0].references[0].authors).toBe('Author 36');
   });
 
+  it('by kind, in the order the filter names the kinds, by name within each', () => {
+    const list = [
+      file('notes.txt', [], { kind: 'other' }),
+      file('b.png', [], { kind: 'picture' }),
+      file('paper.pdf'),
+      file('a.png', [], { kind: 'picture' }),
+      file('essay.docx', [], { kind: 'document' }),
+    ];
+    expect(sortFiles(list, 'kind', false).map((f) => f.name)).toEqual([
+      'paper.pdf',
+      'a.png',
+      'b.png',
+      'essay.docx',
+      'notes.txt',
+    ]);
+    expect(sortFiles(list, 'kind', true)[0].name).toBe('notes.txt');
+  });
+
   it('by name, by when added and by size, either way', () => {
     const list = [
       file('b.pdf', [], { size: 3, added: '2026-01-02' }),

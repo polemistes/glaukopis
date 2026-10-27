@@ -34,6 +34,7 @@ import {
   type TakenIn,
 } from '$lib/api/files';
 import { open } from '@tauri-apps/plugin-dialog';
+import type { ProjectInfo } from '$lib/api/projects';
 import { revealPath } from '$lib/api/system';
 import { isBackendError } from '$lib/api/backend';
 import { libraryRemove, type StoredFile, type Summary } from '$lib/api/library';
@@ -46,6 +47,7 @@ import { listed, t } from '$lib/i18n';
 import { shortLabel } from '$lib/library/format';
 import { dialogs } from '$lib/library/references.svelte';
 import { fold, library } from '$lib/state/library.svelte';
+import { projects } from '$lib/state/projects.svelte';
 import { router } from '$lib/state/router.svelte';
 import { ask, confirm } from '$lib/ui/confirm.svelte';
 import { describeError, notifyError, notifyOk, toasts } from '$lib/ui/toast.svelte';
@@ -386,15 +388,29 @@ export async function takeIn(
   }
 }
 
-/** Removes a file from the library, after asking, and saying which references it belongs to. */
+/**
+ * The projects in which a file is a figure, by what each said it used when
+ * it was last saved (ADR 0070).
+ */
+export function figuresIn(hash: string): ProjectInfo[] {
+  return projects.list.filter((p) => (p.pictures ?? []).includes(hash));
+}
+
+/**
+ * Removes a file from the library, after asking, and saying which
+ * references it belongs to and in how many projects it is a figure, which
+ * will show nothing in its place. Removal is never refused.
+ */
 export function removeFile(file: FileView): Promise<boolean> {
   const names = listed(file.references.map(referenceWords));
+  const said = file.references.length
+    ? t('files-remove-message-assigned', { count: file.references.length, names })
+    : t('files-remove-message');
+  const used = figuresIn(file.hash).length;
   return removeAsked(
     [file],
     t('files-remove-title', { name: file.name }),
-    file.references.length
-      ? t('files-remove-message-assigned', { count: file.references.length, names })
-      : t('files-remove-message'),
+    used ? `${said} ${t('files-remove-used', { count: used })}` : said,
   );
 }
 

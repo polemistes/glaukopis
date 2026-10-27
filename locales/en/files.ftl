@@ -399,3 +399,29 @@ files-images-taken-in = { $count ->
     [one] “{ $name }” is in the library
    *[other] { $count } images are in the library
 }
+
+# One place for files, the view (ADR 0070).
+files-view = View
+files-as-list = List
+files-as-grid = Thumbnails
+files-size-small = Small
+files-size-medium = Medium
+files-size-large = Large
+files-include-subfolders = Include subfolders
+files-sort-kind = By kind
+# Where a file is used, where it belongs to no reference: as a figure.
+files-column-used = Used in
+files-used-figure = A figure in { $project }
+files-used-figures = A figure in { $count } projects
+files-used-nowhere = Not used yet
+files-pixels-label = Pixels
+files-pixels = { $width } × { $height }
+files-alt = What it shows, in words
+files-preview-none = No preview for this kind of file
+# Before the name of the file a copy made to be a figure was made from, which is a link.
+files-made-from = Made to be a figure, from
+# Said when a file that is a figure in projects is to be removed.
+files-remove-used = { $count ->
+    [one] It is a figure in a project, which will show nothing in its place.
+   *[other] It is a figure in { $count } projects, which will show nothing in its place.
+}

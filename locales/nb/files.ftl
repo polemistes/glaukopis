@@ -392,3 +392,26 @@ files-images-taken-in = { $count ->
     [one] «{ $name }» er i biblioteket
    *[other] { $count } bilder er i biblioteket
 }
+
+# Ett sted for filer, visningen (ADR 0070).
+files-view = Visning
+files-as-list = Liste
+files-as-grid = Miniatyrer
+files-size-small = Små
+files-size-medium = Middels
+files-size-large = Store
+files-include-subfolders = Ta med undermapper
+files-sort-kind = Etter type
+files-column-used = Brukt i
+files-used-figure = En figur i { $project }
+files-used-figures = En figur i { $count } prosjekter
+files-used-nowhere = Ikke brukt ennå
+files-pixels-label = Piksler
+files-pixels = { $width } × { $height }
+files-alt = Hva det viser, med ord
+files-preview-none = Ingen forhåndsvisning for denne filtypen
+files-made-from = Laget for å bli en figur, av
+files-remove-used = { $count ->
+    [one] Den er en figur i et prosjekt, som da vil vise ingenting der.
+   *[other] Den er en figur i { $count } prosjekter, som da vil vise ingenting der.
+}

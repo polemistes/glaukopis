@@ -237,11 +237,14 @@ class Pictures {
   }
 
   /**
-   * The image as it can be shown; with `small`, its thumbnail, as it is shown in a list.
+   * The image as it can be shown; with `small`, its thumbnail, as it is shown in a list:
+   * of an image, or of the first page of a PDF.
    * Read where it is shown: what reads it is told when the picture has come.
    */
   of(hash: string, extension: string, small = false): Shown {
-    if (!isPictureName(hash, extension)) return { url: null, state: 'absent' };
+    // A thumbnail is had of a PDF as well, by its first page.
+    const named = small ? /^[0-9a-f]{64}$/.test(hash) : isPictureName(hash, extension);
+    if (!named) return { url: null, state: 'absent' };
     const key = this.#key({ hash, extension }, small);
     const known = this.#shown.get(key);
     if (known) return known;

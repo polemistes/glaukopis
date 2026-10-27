@@ -257,14 +257,11 @@ try {
   await app.click('.top [data-path][data-file] [data-path-all]');
   await app.waitFor('[data-path-tree] [data-library-trees]', 3000);
   const heads = await app.exec(`return Array.from(document.querySelectorAll('[data-library-trees] [data-tree-kind="tree"] .name')).map((n) => n.textContent.trim())`);
-  check('under the projects stand the trees of files and images', heads.join() === 'Files,Images', heads.join());
+  check('under the projects stands the tree of files', heads.join() === 'Files', heads.join());
   await app.click('[data-library-trees] [data-tree-row="files"]');
   await sleep(200);
   const fileRows = await app.exec(`return Array.from(document.querySelectorAll('[data-library-trees] [data-tree-kind="file"] .name')).map((n) => n.textContent.trim())`);
-  check('the files that can be shown are listed, the one shown marked', fileRows.some((n) => n.endsWith('.pdf')) && fileRows.some((n) => n.endsWith('.png')) && (await app.exists('[data-library-trees] [data-tree-row="file:' + pngHash + '"].current')), fileRows.join(' | '));
-  await app.click('[data-library-trees] [data-tree-row="images"]');
-  await sleep(200);
-  check('the images of the store, of which there are none yet, say so', (await app.exec(`return document.querySelector('[data-library-trees] .none')?.textContent.trim() ?? ''`)) === 'Nothing here yet');
+  check('the files that can be shown are listed, images among them, the one shown marked', fileRows.some((n) => n.endsWith('.pdf')) && fileRows.some((n) => n.endsWith('.png')) && (await app.exists('[data-library-trees] [data-tree-row="file:' + pngHash + '"].current')), fileRows.join(' | '));
   await app.screenshot('file-view-4c-trees');
   await app.click('[data-library-trees] [data-tree-row="file:' + pdfHash + '"]');
   const fromTree = await until('the PDF from the tree', async () => {
@@ -272,10 +269,10 @@ try {
     return s?.file === pdfHash && s.drawn.length ? s : null;
   }, 20000);
   check('a file chosen in the tree is shown in that side', fromTree.kinds.join() === 'map,file' && !(await app.exists('[data-path-tree]')));
-  // The chevron of a map side has the trees too.
+  // The chevron of a map side has the tree too.
   await app.click('.top [data-path]:not([data-file]) [data-path-all]');
   await app.waitFor('[data-path-tree] [data-library-trees]', 3000);
-  check('the chevron of a map side has the trees too', (await app.exec(`return document.querySelectorAll('[data-library-trees] [data-tree-kind="tree"]').length`)) === 2);
+  check('the chevron of a map side has the tree of files too', (await app.exec(`return document.querySelectorAll('[data-library-trees] [data-tree-kind="tree"]').length`)) === 1);
   await app.press('Escape');
   await sleep(200);
   await app.click('[data-viewer-pages]');

@@ -1,16 +1,28 @@
 <script lang="ts">
   /**
-   * The files of the folder in view, one line each: the kind, the name, the
-   * reference it belongs to, the size. Several are selected as references
-   * are in their list, and dragged onto a folder together. Only the lines
-   * that are seen are made, so that a store of thousands scrolls freely.
+   * The files of the folder in view (ADR 0043, 0070): one line each, with
+   * the kind, the name, where it is used, when it was taken in and its size,
+   * and its folder where those under the folder are shown too; or as a grid
+   * of thumbnails, an image as it is and a PDF by its first page, in three
+   * sizes. Several are selected as references are in their list, and
+   * dragged onto a folder together. Only the lines or rows of tiles that are
+   * seen are made, so that a library of thousands scrolls freely and only the
+   * thumbnails in sight are asked for.
    */
   import type { FileView } from '$lib/api/files';
-  import { t } from '$lib/i18n';
+  import { languages, t } from '$lib/i18n';
   import { fileSize } from '$lib/library/format';
   import { startDrag } from '$lib/ui/drag.svelte';
-  import { FILES_DRAGGED, KIND_ICONS, kindWords, referenceWords } from './store.svelte';
+  import { fileEnding } from '$lib/util/file-name';
+  import {
+    FILES_DRAGGED,
+    KIND_ICONS,
+    kindWords,
+    referenceWords,
+    files as store,
+  } from './store.svelte';
   import { keyOf } from '$lib/shell/keys.svelte';
+  import Thumb from './Thumb.svelte';
 
   interface Props {
     files: FileView[];
@@ -20,31 +32,97 @@
     oncontext?: (event: MouseEvent, chosen: FileView[]) => void;
     ondelete?: (chosen: FileView[]) => void;
     label?: string;
+    /** One line each, or their thumbnails. */
+    mode?: 'list' | 'grid';
+    /** How large the thumbnails are. */
+    size?: 'small' | 'medium' | 'large';
+    /** Whether each says the folder it stands in: where those under the folder in view are shown too. */
+    folders?: boolean;
+    /** The projects in which a file is a figure, by name, where it is one. */
+    figuresIn?: (hash: string) => string[];
   }
 
-  let { files, selection = $bindable(), onopen, oncontext, ondelete, label }: Props = $props();
+  let {
+    files,
+    selection = $bindable(),
+    onopen,
+    oncontext,
+    ondelete,
+    label,
+    mode = 'list',
+    size = 'medium',
+    folders = false,
+    figuresIn = () => [],
+  }: Props = $props();
 
   const ROW = 38;
   const OVERSCAN = 8;
+  /** The side of a thumbnail, and the room around a tile and between tiles, in pixels. */
+  const SIDES = { small: 96, medium: 160, large: 240 } as const;
+  const GAP = 12;
+  const PAD = 16;
 
   let viewport = $state<HTMLDivElement>();
   let scrollTop = $state(0);
   let height = $state(600);
+  let width = $state(800);
   /** Where a range selected with Shift begins. */
   let anchor = $state<string | null>(null);
 
+  const grid = $derived(mode === 'grid');
+  const side = $derived(SIDES[size]);
+  /** A tile: the thumbnail, and its name under it, with its folder where that is said. */
+  const tileHeight = $derived(side + (folders ? 52 : 34));
+  /** How many tiles stand in a row, and how high a row is with the room under it. */
+  const across = $derived(
+    grid ? Math.max(1, Math.floor((width - 2 * PAD + GAP) / (side + GAP))) : 1,
+  );
+  const rowHeight = $derived(grid ? tileHeight + GAP : ROW);
+  const rows = $derived(Math.ceil(files.length / across));
+  const firstRow = $derived(Math.max(0, Math.floor(scrollTop / rowHeight) - (grid ? 2 : OVERSCAN)));
+  const lastRow = $derived(
+    Math.min(rows, Math.ceil((scrollTop + height) / rowHeight) + (grid ? 2 : OVERSCAN)),
+  );
+  const visible = $derived(files.slice(firstRow * across, lastRow * across));
   const selected = $derived(new Set(selection));
-  const first = $derived(Math.max(0, Math.floor(scrollTop / ROW) - OVERSCAN));
-  const last = $derived(Math.min(files.length, Math.ceil((scrollTop + height) / ROW) + OVERSCAN));
-  const visible = $derived(files.slice(first, last));
   const focused = $derived(selection.length ? selection[selection.length - 1] : null);
 
   $effect(() => {
     if (!viewport) return;
-    const observer = new ResizeObserver(() => (height = viewport!.clientHeight));
+    const observer = new ResizeObserver(() => {
+      height = viewport!.clientHeight;
+      width = viewport!.clientWidth;
+    });
     observer.observe(viewport);
     return () => observer.disconnect();
   });
+
+  /** Where a file is used: the references it belongs to, else the projects in which it is a figure. */
+  function used(file: FileView): { words: string; none: boolean } {
+    const reference = file.references[0];
+    if (reference) {
+      const more = file.references.length > 1 ? ` +${file.references.length - 1}` : '';
+      return { words: referenceWords(reference) + more, none: false };
+    }
+    const projects = figuresIn(file.hash);
+    if (projects.length === 1)
+      return { words: t('files-used-figure', { project: projects[0] }), none: false };
+    if (projects.length > 1)
+      return { words: t('files-used-figures', { count: projects.length }), none: false };
+    return { words: t('files-no-reference'), none: true };
+  }
+
+  const dateFormat = $derived(
+    new Intl.DateTimeFormat(languages.current, { year: 'numeric', month: 'short', day: 'numeric' }),
+  );
+  function added(file: FileView): string {
+    const d = new Date(file.added);
+    return Number.isNaN(d.getTime()) ? '' : dateFormat.format(d);
+  }
+
+  function folderName(file: FileView): string {
+    return store.folder(store.folderOf(file))?.name ?? '';
+  }
 
   function indexOf(hash: string | null): number {
     return hash ? files.findIndex((f) => f.hash === hash) : -1;
@@ -52,10 +130,10 @@
 
   function reveal(index: number) {
     if (!viewport) return;
-    const top = index * ROW;
-    if (top < viewport.scrollTop) viewport.scrollTop = top;
-    else if (top + ROW > viewport.scrollTop + viewport.clientHeight) {
-      viewport.scrollTop = top + ROW - viewport.clientHeight;
+    const top = Math.floor(index / across) * rowHeight + (grid ? PAD : 0);
+    if (top < viewport.scrollTop) viewport.scrollTop = Math.max(0, top - (grid ? PAD : 0));
+    else if (top + rowHeight > viewport.scrollTop + viewport.clientHeight) {
+      viewport.scrollTop = top + rowHeight - viewport.clientHeight;
     }
   }
 
@@ -132,7 +210,7 @@
     if (!files.length) return;
     const current = indexOf(focused);
     let next = current;
-    const page = Math.max(1, Math.floor(height / ROW) - 1);
+    const page = Math.max(1, Math.floor(height / rowHeight) - 1) * across;
     // Ctrl+A by its letter, which is found on a Greek or a Russian keyboard too.
     if ((event.ctrlKey || event.metaKey) && keyOf(event) === 'a') {
       selection = files.map((f) => f.hash);
@@ -141,9 +219,18 @@
     }
     switch (event.key) {
       case 'ArrowDown':
-        next = Math.min(files.length - 1, current + 1);
+        next = Math.min(files.length - 1, current + across);
         break;
       case 'ArrowUp':
+        next = current < 0 ? 0 : Math.max(0, current - across);
+        break;
+      // In the grid, along a row; in the list, nothing.
+      case 'ArrowRight':
+        if (!grid) return;
+        next = Math.min(files.length - 1, current + 1);
+        break;
+      case 'ArrowLeft':
+        if (!grid) return;
         next = current < 0 ? 0 : Math.max(0, current - 1);
         break;
       case 'PageDown':
@@ -197,19 +284,29 @@
 <div
   bind:this={viewport}
   class="list"
+  class:grid
   role="listbox"
   aria-label={label ?? t('files-all')}
   aria-multiselectable="true"
   tabindex="0"
   data-file-list
+  data-mode={mode}
+  style:--side="{side}px"
+  style:--tile="{tileHeight}px"
+  style:--gap="{GAP}px"
+  style:--pad="{PAD}px"
   onscroll={() => (scrollTop = viewport!.scrollTop)}
   {onkeydown}
 >
-  <div class="sizer" style:height="{files.length * ROW}px">
-    <div class="window" style:transform="translateY({first * ROW}px)">
+  <div class="sizer" style:height="{rows * rowHeight + (grid ? 2 * PAD : 0)}px">
+    <div
+      class="window"
+      style:transform="translateY({firstRow * rowHeight}px)"
+      style:grid-template-columns={grid ? `repeat(${across}, var(--side))` : undefined}
+    >
       {#each visible as file (file.hash)}
         {@const Icon = KIND_ICONS[file.kind]}
-        {@const reference = file.references[0]}
+        {@const where = used(file)}
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <div
           class="item"
@@ -220,24 +317,35 @@
           aria-selected={selected.has(file.hash)}
           data-hash={file.hash}
           data-kind={file.kind}
-          style:height="{ROW}px"
+          style:height={grid ? undefined : `${ROW}px`}
+          title={grid ? file.name : undefined}
           onpointerdown={(e) => onpointerdown(e, file)}
           ondblclick={() => onopen?.(file)}
           oncontextmenu={(e) => oncontextmenu(e, file)}
         >
-          <span class="icon" title={kindWords(file.kind)}><Icon size={16} strokeWidth={1.6} /></span
-          >
-          <span class="name truncate">{file.name}</span>
-          <span class="reference truncate" class:none={!reference}>
-            {#if reference}
-              {referenceWords(reference)}{#if file.references.length > 1}<span class="more"
-                  >+{file.references.length - 1}</span
-                >{/if}
-            {:else}
-              {t('files-no-reference')}
-            {/if}
-          </span>
-          <span class="size">{file.exists ? fileSize(file.size) : t('files-missing')}</span>
+          {#if grid}
+            <span class="frame">
+              {#if file.exists && (file.kind === 'picture' || file.kind === 'pdf')}
+                <Thumb hash={file.hash} extension={fileEnding(file.name)} small alt="" />
+              {:else}
+                <span class="kind" title={kindWords(file.kind)}
+                  ><Icon size={Math.round(side / 3)} strokeWidth={1.2} /></span
+                >
+              {/if}
+              {#if !where.none}<span class="used-mark" title={where.words}></span>{/if}
+            </span>
+            <span class="name truncate">{file.name}</span>
+            {#if folders}<span class="folder truncate">{folderName(file)}</span>{/if}
+          {:else}
+            <span class="icon" title={kindWords(file.kind)}
+              ><Icon size={16} strokeWidth={1.6} /></span
+            >
+            <span class="name truncate">{file.name}</span>
+            {#if folders}<span class="folder truncate">{folderName(file)}</span>{/if}
+            <span class="reference truncate" class:none={where.none}>{where.words}</span>
+            <span class="added">{added(file)}</span>
+            <span class="size">{file.exists ? fileSize(file.size) : t('files-missing')}</span>
+          {/if}
         </div>
       {/each}
     </div>
@@ -299,11 +407,6 @@
     color: var(--ink-4);
     font-style: italic;
   }
-  .more {
-    margin-left: 4px;
-    color: var(--ink-3);
-    font-size: var(--text-xs);
-  }
   .size {
     flex: none;
     width: 64px;
@@ -315,5 +418,91 @@
   .missing .name {
     color: var(--ink-3);
     text-decoration: line-through;
+  }
+  .folder {
+    flex: 0 1 18%;
+    min-width: 0;
+    color: var(--ink-3);
+    font-size: var(--text-xs);
+  }
+  .added {
+    flex: none;
+    width: 92px;
+    text-align: right;
+    color: var(--ink-3);
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The grid: tiles of the thumbnail and its name, a row at a time. */
+  .grid .window {
+    display: grid;
+    gap: var(--gap);
+    padding: var(--pad);
+    justify-content: start;
+  }
+  .grid .item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    width: var(--side);
+    height: var(--tile);
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-m);
+  }
+  .grid .item.selected {
+    background: none;
+  }
+  .grid .item:hover:not(.selected) {
+    background: none;
+  }
+  .frame {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--side);
+    height: var(--side);
+    flex: none;
+    border-radius: var(--radius-m);
+    background: var(--paper-sunken);
+    overflow: hidden;
+  }
+  .grid .item:hover .frame {
+    box-shadow: 0 0 0 1px var(--line-strong);
+  }
+  .grid .item.selected .frame {
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+  .kind {
+    display: inline-flex;
+    color: var(--ink-4);
+  }
+  /* A file that is used, by a reference or as a figure. */
+  .used-mark {
+    position: absolute;
+    right: 6px;
+    bottom: 6px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 2px var(--paper);
+  }
+  .grid .name {
+    flex: none;
+    padding: 0 2px;
+    font-size: var(--text-sm);
+    text-align: center;
+  }
+  .grid .item.selected .name {
+    color: var(--accent-strong);
+    font-weight: 550;
+  }
+  .grid .folder {
+    flex: none;
+    padding: 0 2px;
+    text-align: center;
   }
 </style>

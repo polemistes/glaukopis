@@ -339,11 +339,13 @@ try {
     30000,
   );
   check('and is shown to the one who did not have it', true);
-  const theirs = kept(join(guest.dataDir, 'pictures', 'files'));
+  // Among the files of the guest's library, as figures name it.
+  const theirRecord = JSON.parse(readFileSync(join(guest.dataDir, 'library', 'files.json'), 'utf8')).files;
+  const theirs = theirRecord.filter((f) => f.name.toLowerCase().endsWith('.svg'));
   check(
     'who has it as it was, under the name of what it holds',
-    theirs.length === 1 && /^[0-9a-f]{64}\.svg$/.test(theirs[0]) && readFileSync(join(guest.dataDir, 'pictures', 'files', theirs[0]), 'utf8') === drawing,
-    theirs.join(', '),
+    theirs.length === 1 && readFileSync(join(guest.dataDir, 'library', theirs[0].path), 'utf8') === drawing,
+    theirRecord.map((f) => f.name).join(', '),
   );
   await guest.click('.box .text figure figcaption');
   await guest.keys('The shield');

@@ -111,9 +111,14 @@ try {
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
   const project = (await invoke('project_list'))[0].id;
-  // The pictures are in the store of the application, and not with the project.
-  const store = join(app.dataDir, 'pictures', 'files');
-  const files = () => (existsSync(store) ? readdirSync(store).sort() : []);
+  // The pictures are files of the library, and not with the project.
+  const libraryOf = (dataDir) => join(dataDir, 'library');
+  /** The files of the library, as `<hash>.<ending>`, as figures name them. */
+  const recordsOf = (dataDir) =>
+    existsSync(join(libraryOf(dataDir), 'files.json')) ? JSON.parse(readFileSync(join(libraryOf(dataDir), 'files.json'), 'utf8')).files : [];
+  const listed = (dataDir) => recordsOf(dataDir).map((f) => `${f.hash}.${f.name.split('.').pop().toLowerCase()}`).sort();
+  const pathOf = (dataDir, name) => join(libraryOf(dataDir), recordsOf(dataDir).find((f) => name.startsWith(f.hash)).path);
+  const files = () => listed(app.dataDir);
 
   await app.doubleClick('.diagram .node.root');
   await app.waitFor('.box .text .prose');
@@ -206,8 +211,8 @@ try {
   check('a picture dropped on the text is a figure there', true);
   const given = await app.exec(`return document.querySelector('.box .text figure .picture').style.width`);
   check('as wide as suits what it holds', given === '50%', given);
-  check('it is kept in the store of pictures, by what it holds', files().length === 1 && /^[0-9a-f]{64}\.png$/.test(files()[0]), files().join(', '));
-  check('as it was', readFileSync(join(store, files()[0])).equals(readFileSync(join(desk, 'The shield.png'))));
+  check('it is kept among the files of the library, by what it holds', files().length === 1 && /^[0-9a-f]{64}\.png$/.test(files()[0]), files().join(', '));
+  check('as it was', readFileSync(pathOf(app.dataDir, files()[0])).equals(readFileSync(join(desk, 'The shield.png'))));
   check('and not with the project', !existsSync(join(app.dataDir, 'projects', project, 'files')));
   await sleep(200);
   await app.keys('The shield of Achilles, as the poem has it');

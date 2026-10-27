@@ -23,6 +23,42 @@ export interface RememberedPassageKind {
   look: Look;
 }
 
+/** How the files of the library are shown (ADR 0070): kept for every folder, not one by one. */
+export interface FilesViewSettings {
+  /** One line each, or their thumbnails. */
+  mode: 'list' | 'grid';
+  /** How large the thumbnails are. */
+  size: 'small' | 'medium' | 'large';
+  sort: 'name' | 'kind' | 'added' | 'size' | 'reference';
+  descending: boolean;
+  /** Whether a folder shows the files of the folders under it as well. */
+  below: boolean;
+}
+
+const FILES_VIEW: FilesViewSettings = {
+  mode: 'list',
+  size: 'medium',
+  sort: 'name',
+  descending: false,
+  below: false,
+};
+
+/** The way the files are shown, as it was kept, read with care: what is not one of the choices is the default. */
+export function filesViewOf(kept: unknown): FilesViewSettings {
+  const k = (kept && typeof kept === 'object' ? kept : {}) as Partial<
+    Record<keyof FilesViewSettings, unknown>
+  >;
+  const one = <T extends string>(value: unknown, choices: readonly T[], otherwise: T): T =>
+    choices.includes(value as T) ? (value as T) : otherwise;
+  return {
+    mode: one(k.mode, ['list', 'grid'], FILES_VIEW.mode),
+    size: one(k.size, ['small', 'medium', 'large'], FILES_VIEW.size),
+    sort: one(k.sort, ['name', 'kind', 'added', 'size', 'reference'], FILES_VIEW.sort),
+    descending: typeof k.descending === 'boolean' ? k.descending : FILES_VIEW.descending,
+    below: typeof k.below === 'boolean' ? k.below : FILES_VIEW.below,
+  };
+}
+
 /** What is kept in the settings beyond what `api/system.ts` declares. */
 export interface MoreSettings {
   /** The kinds of paragraph and of words made in any project, the latest first. */
@@ -32,6 +68,8 @@ export interface MoreSettings {
    * the pointer rests on is, and opens Look at it. On, unless turned off.
    */
   pageChips: boolean;
+  /** How the files of the library are shown. */
+  filesView: FilesViewSettings;
 }
 
 export type AllSettings = Settings & MoreSettings;
@@ -41,6 +79,7 @@ const more = (kept: Partial<AllSettings> = {}): MoreSettings => ({
     ? kept.passageKinds.filter((k) => k && typeof k.name === 'string')
     : [],
   pageChips: typeof kept.pageChips === 'boolean' ? kept.pageChips : true,
+  filesView: filesViewOf(kept.filesView),
 });
 
 /**

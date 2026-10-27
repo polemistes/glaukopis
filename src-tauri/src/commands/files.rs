@@ -436,6 +436,8 @@ pub fn files_add_image(
 /// held.
 #[tauri::command(async)]
 pub fn files_take_in_for_figure(state: State<'_, AppState>, path: PathBuf) -> CommandResult<FileView> {
+    // What is no image a figure can show is refused before it is taken in.
+    glaukopis_core::library::figures::check_image_file(&path)?;
     let dir = state.library().dir().to_owned();
     let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
     let stored = attachments::store_file(&dir, &path, &name)?;

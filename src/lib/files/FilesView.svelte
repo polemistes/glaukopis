@@ -14,6 +14,7 @@
   import FolderOutput from '@lucide/svelte/icons/folder-output';
   import FilePlus from '@lucide/svelte/icons/file-plus';
   import Folder from '@lucide/svelte/icons/folder';
+  import LayoutGrid from '@lucide/svelte/icons/layout-grid';
   import FolderInput from '@lucide/svelte/icons/folder-input';
   import FolderPlus from '@lucide/svelte/icons/folder-plus';
   import FolderUp from '@lucide/svelte/icons/folder-up';
@@ -31,6 +32,8 @@
   import { t } from '$lib/i18n';
   import { shortcuts } from '$lib/shell/keys.svelte';
   import { library } from '$lib/state/library.svelte';
+  import { projects } from '$lib/state/projects.svelte';
+  import { settings } from '$lib/state/settings.svelte';
   import { router } from '$lib/state/router.svelte';
   import Button from '$lib/ui/Button.svelte';
   import { dropTarget } from '$lib/ui/drag.svelte';
@@ -72,12 +75,17 @@
   let query = $state('');
   let kind = $state<FileKind | 'all'>('all');
   let unassignedOnly = $state(false);
+  // How the files are shown, as the settings keep it for every folder (ADR 0070).
+  const kept = untrack(() => settings.value.filesView);
   /** The files of the folders under the one in view are shown with its own. */
-  let below = $state(true);
+  let below = $state(kept.below);
+  /** One line each, or their thumbnails, and how large those are. */
+  let mode = $state(kept.mode);
+  let size = $state(kept.size);
   /** The search goes over all the files, not only those of the folder in view. */
   let searchAll = $state(false);
-  let sortKey = $state<SortKey>('name');
-  let descending = $state(false);
+  let sortKey = $state<SortKey>(kept.sort);
+  let descending = $state(kept.descending);
   let selection = $state<string[]>([]);
   let searchField = $state<HTMLInputElement>();
   let list = $state<ReturnType<typeof FileList>>();
@@ -112,9 +120,32 @@
   );
   const single = $derived(selection.length === 1 ? selection[0] : null);
 
+  // What is chosen of the way the files are shown is kept. It depends on the five choices.
+  $effect(() => {
+    const now = { mode, size, sort: sortKey, descending, below };
+    untrack(() => {
+      const was = settings.value.filesView;
+      if ((Object.keys(now) as (keyof typeof now)[]).some((k) => now[k] !== was[k]))
+        settings.set('filesView', now);
+    });
+  });
+
+  /** The projects in which each file is a figure, by name: as each project was last saved. */
+  const figureUse = $derived.by(() => {
+    const by = new Map<string, string[]>();
+    for (const p of projects.list)
+      for (const hash of p.pictures ?? []) {
+        const names = by.get(hash) ?? [];
+        names.push(p.name);
+        by.set(hash, names);
+      }
+    return by;
+  });
+
   onMount(() => {
     void files.reload();
     void library.load();
+    if (!projects.loaded) void projects.load();
   });
 
   // The file the route names is selected, once it is known; what is selected
@@ -342,11 +373,6 @@
         },
         { kind: 'separator' },
         {
-          label: t('files-filter-below'),
-          checked: below,
-          action: () => (below = !below),
-        },
-        {
           label: t('files-filter-search-all'),
           checked: searchAll,
           action: () => (searchAll = !searchAll),
@@ -372,6 +398,7 @@
       event.currentTarget as HTMLElement,
       [
         option('name', t('files-sort-name')),
+        option('kind', t('files-sort-kind')),
         option('reference', t('files-sort-reference')),
         option('added', t('files-sort-added')),
         option('size', t('files-sort-size')),
@@ -380,6 +407,35 @@
           label: t('files-sort-descending'),
           checked: descending,
           action: () => (descending = !descending),
+        },
+      ],
+      { align: 'end' },
+    );
+  }
+
+  /** How the files are shown: a list, or thumbnails in three sizes; and with the folders under the one in view, or not. */
+  function viewMenu(event: MouseEvent) {
+    const shape = (to: 'list' | 'grid', large: typeof size, label: string): MenuItem => ({
+      label,
+      checked: mode === to && (to === 'list' || size === large),
+      action: () => {
+        mode = to;
+        if (to === 'grid') size = large;
+      },
+    });
+    openMenu(
+      event.currentTarget as HTMLElement,
+      [
+        shape('list', size, t('files-as-list')),
+        { kind: 'heading', label: t('files-as-grid') },
+        shape('grid', 'small', t('files-size-small')),
+        shape('grid', 'medium', t('files-size-medium')),
+        shape('grid', 'large', t('files-size-large')),
+        { kind: 'separator' },
+        {
+          label: t('files-include-subfolders'),
+          checked: below,
+          action: () => (below = !below),
         },
       ],
       { align: 'end' },
@@ -464,6 +520,9 @@
         {#if filters}<span class="badge" aria-hidden="true">{filters}</span>{/if}
       </span>
       <IconButton label={t('files-sort')} onclick={sortMenu}><ArrowDownUp size={15} /></IconButton>
+      <IconButton label={t('files-view')} onclick={viewMenu} data-files-view
+        ><LayoutGrid size={15} /></IconButton
+      >
       <!-- An icon only: the search keeps its room in a narrow head. -->
       <IconButton
         label={t('files-go-through-head')}
@@ -541,6 +600,10 @@
           oncontext={(event, chosen) => openContextMenu(event, fileItems(chosen))}
           ondelete={(chosen) => void removeFiles(chosen)}
           label={folder?.name ?? t('files-all')}
+          {mode}
+          {size}
+          folders={below || searchingAll}
+          figuresIn={(hash) => figureUse.get(hash) ?? []}
         />
       {/if}
     </div>

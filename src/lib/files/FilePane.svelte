@@ -7,9 +7,12 @@
 
 <script lang="ts">
   /**
-   * One file of the library: what it is called, where it stands, the
-   * references it belongs to, where it came from; and what can be done with
-   * it, by its kind. The pane is made anew for every file.
+   * One file of the library: the file itself, small, as a press on it shows
+   * it in a side; what it is called, where it stands, the references it
+   * belongs to, where it came from; of an image, how large it is, what it
+   * shows in words, and the projects in which it is a figure (ADR 0070);
+   * and what can be done with it, by its kind. The pane is made anew for
+   * every file.
    */
   import { onMount } from 'svelte';
   import ExternalLink from '@lucide/svelte/icons/external-link';
@@ -31,6 +34,9 @@
   import { pathOf } from '$lib/home/folders';
   import { t } from '$lib/i18n';
   import { dateWords, fileSize } from '$lib/library/format';
+  import { pictures } from '$lib/figures/pictures.svelte';
+  import { fileEnding } from '$lib/util/file-name';
+  import Thumb from './Thumb.svelte';
   import PdfMapDialog from '$lib/ocr/PdfMapDialog.svelte';
   import PictureTextDialog from '$lib/ocr/PictureTextDialog.svelte';
   import SearchableDialog from '$lib/ocr/SearchableDialog.svelte';
@@ -46,6 +52,7 @@
     assign,
     bringInFile,
     exportFiles,
+    figuresIn,
     files,
     kindWords,
     removeFile,
@@ -102,6 +109,26 @@
         lookFailed = describeError(error) ?? String(error);
       });
   });
+
+  // ---- of an image: what it shows, in words ----
+
+  // svelte-ignore state_referenced_locally
+  let alt = $state(files.get(own)?.alt ?? '');
+  let altTimer: ReturnType<typeof setTimeout> | undefined;
+  /** What is written is kept a moment after the writing stops, and when the field is left. */
+  function altChanged() {
+    clearTimeout(altTimer);
+    altTimer = setTimeout(() => void keepAlt(), 700);
+  }
+  async function keepAlt() {
+    clearTimeout(altTimer);
+    if (file && alt.trim() !== file.alt) await pictures.setAlt(file.hash, alt.trim());
+  }
+
+  /** The projects in which an image is a figure. */
+  const usedIn = $derived(file?.kind === 'picture' ? figuresIn(file.hash) : []);
+  /** The file a copy made to be a figure was made from. */
+  const madeFrom = $derived(file?.madeFrom ? files.get(file.madeFrom) : undefined);
 
   /** A dialog over the pane. */
   let open = $state<'assign' | 'searchable' | 'map' | 'read' | null>(null);
@@ -247,6 +274,24 @@
       </div>
     </div>
 
+    {#if file.exists && (file.kind === 'picture' || file.kind === 'pdf')}
+      <button
+        type="button"
+        class="preview"
+        title={t('files-show')}
+        aria-label={t('files-show')}
+        data-preview
+        onclick={() => showFile(file.hash)}
+      >
+        <Thumb hash={file.hash} extension={fileEnding(file.name)} small alt={file.alt} />
+      </button>
+    {:else}
+      <div class="preview none" data-preview="none">
+        <Icon size={28} strokeWidth={1.2} />
+        <span>{t('files-preview-none')}</span>
+      </div>
+    {/if}
+
     <div class="where">
       <span class="label">{t('files-folder')}</span>
       <span class="path truncate" data-folder-path
@@ -292,6 +337,43 @@
       {/each}
     </section>
 
+    {#if file.kind === 'picture'}
+      <section class="image" data-image>
+        <div class="field" data-field="alt">
+          <TextField
+            label={t('files-alt')}
+            bind:value={alt}
+            oninput={altChanged}
+            onblur={() => void keepAlt()}
+            onkeydown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                void keepAlt();
+              }
+            }}
+          />
+        </div>
+        <div class="used" data-used>
+          <h3 class="overline">{t('files-column-used')}</h3>
+          {#each usedIn as project (project.id)}
+            <a href={formatRoute({ view: 'project', project: project.id })} class="link"
+              >{project.name}</a
+            >
+          {:else}
+            <p class="none">{t('files-used-nowhere')}</p>
+          {/each}
+          {#if madeFrom}
+            <p class="made" data-made-from>
+              {t('files-made-from')}
+              <a href={formatRoute({ view: 'files', file: madeFrom.hash })} class="link"
+                >{madeFrom.name}</a
+              >
+            </p>
+          {/if}
+        </div>
+      </section>
+    {/if}
+
     {#if actions(file).length}
       <section class="actions" data-actions>
         {#each actions(file) as action (action.id)}
@@ -310,6 +392,10 @@
         <dd>{kindWords(file.kind)}</dd>
         <dt>{t('files-size')}</dt>
         <dd>{file.exists ? fileSize(file.size) : t('files-missing')}</dd>
+        {#if file.width && file.height}
+          <dt>{t('files-pixels-label')}</dt>
+          <dd data-pixels>{t('files-pixels', { width: file.width, height: file.height })}</dd>
+        {/if}
         {#if pages}
           <dt>{t('files-pages')}</dt>
           <dd data-pages>{pages}</dd>
@@ -375,6 +461,63 @@
   .head .field {
     flex: 1;
     min-width: 0;
+  }
+  /* The file itself, small: no larger than the pane is wide, nor higher than it need be. */
+  .preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 220px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-m);
+    background: var(--paper-sunken);
+    overflow: hidden;
+    cursor: zoom-in;
+  }
+  .preview:hover {
+    box-shadow: 0 0 0 1px var(--line-strong);
+  }
+  .preview.none {
+    flex-direction: column;
+    gap: 8px;
+    height: 120px;
+    color: var(--ink-4);
+    font-size: var(--text-sm);
+    cursor: default;
+  }
+  .preview.none:hover {
+    box-shadow: none;
+  }
+  .image {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+  .used {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+  .used .link {
+    padding: 3px 8px;
+    border-radius: var(--radius-s);
+    color: var(--accent-strong);
+    font-family: var(--font-text);
+    text-decoration: none;
+  }
+  .used .link:hover {
+    background: var(--paper-hover);
+  }
+  .made {
+    margin: 4px 0 0;
+    padding: 0 8px;
+    color: var(--ink-3);
+    font-size: var(--text-sm);
+  }
+  .made .link {
+    padding: 0;
   }
   .where {
     display: flex;

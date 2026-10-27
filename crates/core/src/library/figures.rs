@@ -192,6 +192,19 @@ pub(crate) fn dimensions(bytes: &[u8], format: ImageFormat) -> Option<(u32, u32)
     ImageReader::with_format(Cursor::new(bytes), format).into_dimensions().ok()
 }
 
+/// Whether the file at `path` holds an image a figure can show, of a kind
+/// that is read, no larger than an image may be: an error that says why
+/// where it does not. Read before the file is taken into the library, so
+/// that what only says it is an image is not kept for one.
+pub fn check_image_file(path: &Path) -> Result<()> {
+    let size = std::fs::metadata(path).map_err(|e| Error::io(tr!("io-reading", path = path), e))?.len();
+    if size > MAX_BYTES {
+        return Err(too_large());
+    }
+    let bytes = std::fs::read(path).map_err(|e| Error::io(tr!("io-reading", path = path), e))?;
+    kind_of(&bytes).map(|_| ()).ok_or_else(not_a_picture)
+}
+
 /// How large the image in a file is, in its pixels, read from its head
 /// alone: nothing for a drawing, or for what cannot be read.
 pub fn measure(path: &Path) -> Option<(u32, u32)> {
@@ -396,6 +409,18 @@ mod tests {
         std::fs::write(&svg, SVG).unwrap();
         assert_eq!(measure(&svg), None);
         assert_eq!(measure(&tmp.path().join("none.png")), None);
+    }
+
+    #[test]
+    fn what_only_says_it_is_an_image_is_not_one() {
+        let tmp = tempfile::tempdir().unwrap();
+        let fake = tmp.path().join("not a picture.png");
+        std::fs::write(&fake, "This only says that it is one.").unwrap();
+        assert_eq!(check_image_file(&fake).unwrap_err().kind(), "invalid");
+        let real = tmp.path().join("vase.png");
+        std::fs::write(&real, PNG).unwrap();
+        assert!(check_image_file(&real).is_ok());
+        assert!(check_image_file(&tmp.path().join("none.png")).is_err());
     }
 
     #[test]

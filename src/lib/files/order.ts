@@ -8,12 +8,14 @@
 import type { FileView } from '$lib/api/files';
 import { referenceWords } from './store.svelte';
 
-export type FileSortKey = 'name' | 'added' | 'size' | 'reference';
+export type FileSortKey = 'name' | 'kind' | 'added' | 'size' | 'reference';
 
 /** One for all the lists: made once, not for every sort. */
 const collator = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
 
 const byName = (a: FileView, b: FileView) => collator.compare(a.name, b.name);
+
+const KINDS: FileView['kind'][] = ['pdf', 'picture', 'document', 'other'];
 
 /**
  * The files in an order of the files view. By reference, the words of each
@@ -39,6 +41,8 @@ export function sortFiles(
   }
   const compare: Record<Exclude<FileSortKey, 'reference'>, (a: FileView, b: FileView) => number> = {
     name: byName,
+    // The kinds in the order the filter names them: PDF, image, document, other.
+    kind: (a, b) => KINDS.indexOf(a.kind) - KINDS.indexOf(b.kind) || byName(a, b),
     added: (a, b) => a.added.localeCompare(b.added) || byName(a, b),
     size: (a, b) => a.size - b.size || byName(a, b),
   };

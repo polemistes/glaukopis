@@ -184,3 +184,26 @@ describe('the writer as an author', () => {
     expect(authorOf({ ...defaultSettings, organization: 'Oslo', firstName: ' ' })).toBeNull();
   });
 });
+
+describe('how the files are shown, as it was kept', () => {
+  it('is read with care: what is not one of the choices is the default', async () => {
+    const { filesViewOf } = await import('./settings.svelte');
+    expect(filesViewOf(undefined)).toEqual({
+      mode: 'list',
+      size: 'medium',
+      sort: 'name',
+      descending: false,
+      below: false,
+    });
+    expect(
+      filesViewOf({ mode: 'grid', size: 'large', sort: 'kind', descending: true, below: true }),
+    ).toEqual({ mode: 'grid', size: 'large', sort: 'kind', descending: true, below: true });
+    expect(filesViewOf({ mode: 'tiles', size: 9, sort: 'colour', below: 'yes' })).toEqual({
+      mode: 'list',
+      size: 'medium',
+      sort: 'name',
+      descending: false,
+      below: false,
+    });
+  });
+});

@@ -202,8 +202,13 @@ try {
        const n = s.querySelector('.heading .prose.title');
        return n && n.textContent.trim() === ${JSON.stringify(name)};
      })`;
-  const store = join(app.dataDir, 'pictures', 'files');
-  const files = () => (existsSync(store) ? readdirSync(store).sort() : []);
+  const libraryOf = (dataDir) => join(dataDir, 'library');
+  /** The files of the library, as `<hash>.<ending>`, as figures name them. */
+  const recordsOf = (dataDir) =>
+    existsSync(join(libraryOf(dataDir), 'files.json')) ? JSON.parse(readFileSync(join(libraryOf(dataDir), 'files.json'), 'utf8')).files : [];
+  const libraryFiles = (dataDir) => recordsOf(dataDir).map((f) => `${f.hash}.${f.name.split('.').pop().toLowerCase()}`).sort();
+  const pathOf = (dataDir, name) => join(libraryOf(dataDir), recordsOf(dataDir).find((f) => name.startsWith(f.hash)).path);
+  const files = () => libraryFiles(app.dataDir);
 
   // References to cite: the one the document names by its key is among them.
   const bib = readFileSync(join(root, 'e2e/fixtures/sample.bib'), 'utf8');
