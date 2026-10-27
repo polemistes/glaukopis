@@ -69,3 +69,24 @@ What was found:
 - `src/lib/figures/pictures.svelte.ts` becomes a reading of the files store for figures (thumbnails, sizes, the projects' use); `src/lib/pictures/` goes; `src/lib/files/` gains the modes, the preview, the image's pane; `PicturePanel.svelte`, the viewer, the trees under the chevron, the Split view chooser and the shell's rail, keys and routes follow.
 - The guide's section *Images* is folded into *The files of the library*; the words of `pictures.ftl` go or move; the e2e script of the pictures is folded into that of the files.
 - Nothing of the model of a document changes: a figure names its file by hash and extension as before.
+
+## Addendum, 2026-10-27: as built
+
+Built the same day on main, in five commits: the core's one store (62ee41d6, f566394f), figures over the files of the library (23e2109c), the one Files view (00ce8e3a), the guide and the words (66fc5dec). What departs from the plan, or was settled in the building:
+
+- **The library is not held while it talks or draws.** A shared project's sync looks an image up, and keeps one that arrived, behind the library's lock one at a time, through two small traits the library implements bare and behind its lock (`library/figures.rs`, `Images`, `KeepImages`); writing a project file or its readable copy, done with the library held already, reads it bare. A thumbnail is made by a function given the file's stored path (`library/small.rs`), not by a method of the library, so that a PDF's first page is drawn with the library let go.
+- **A small photograph's thumbnail is a JPEG**, kept as `library/small/<hash>.jpg`; others are PNG; a drawing is its own thumbnail and is not kept.
+- **The project file keeps a record of its own** of each picture it carries (`projectfile::Picture`: name, size, width, height, what it shows); files written before, with a caption and a note, are read for the rest.
+- **The pictures of a document brought in and then left are removed again**, as before: they are new to the library, and nothing uses them yet. A file dropped on a text to be a figure is taken in as it is and the copy made beside it where needed; a picture pasted, which has no file of its own, is taken in as a figure shows it.
+- **The interface keeps an image type of its own for figures** (`figures/pictures.svelte.ts`, `Picture`, made from a file's record by `pictureOf`), so that the many places that read an image's ending stay as they were.
+- **The images view went in stage 2**, not 3: the picture panel shared its module, which moved to `figures/images.svelte.ts`. The old address of the images leads to the files.
+- **The picture panel opens an image among the files**, where it is named and its words are written, rather than in a pane of its own; its menu reads an image's text and makes an element of it in the project, as the image's pane once could.
+- **The thumbnails are a mode of the list** (`FileList.svelte`), sharing its selection, keys and dragging, drawn a row at a time as the list draws its lines; not a component of their own. The arrow keys go along a row and down a column.
+- **The choices of the view stand in one menu, View**, with *Include subfolders*, which left the filter menu; **All files** shows every file whatever that switch, the switch being a folder's.
+- **The list's columns** are the kind (as its icon), the name, the folder where subfolders are included, where the file is used (a reference, else the projects in which it is a figure, else *No reference*, which the going-through and its script know), the date it was taken in, and the size; there is no row of column heads, the order being chosen in *Sort*.
+- **A file that only says it is an image** is refused before it is taken in to be a figure (`figures::check_image_file`).
+- **The core's words of images** stay in their part, `core-pictures.ftl`, since they are about images; the two that went with the old store are gone.
+
+Choices made alone, beyond the record's: the panel's third scope is called *Library*; the panel's hints for the map and the project were reworded for the library and dropped from the other languages until translated; a thumbnail that cannot be made, of a damaged PDF, is said in the log as a warning and shows the frame.
+
+Verified: the Rust tests of the core, the application and the server's sharing test, 906 passed; the interface's types clean and 1311 tests passed; clippy clean but for a warning that was there before, in `document/numbers.rs`. End-to-end, every script passes: files 87, picture-panel 25 (new), figures 35, taken-in 15 (now the migration's), file-view 43, documents 62, sharing 32, library 40, ocr 116, maps 78, as-left 31, path 46, list 31, placing 17, pointers 18, passing 19, languages 17. The script of the images view is gone.

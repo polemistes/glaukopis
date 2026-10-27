@@ -272,7 +272,7 @@ try {
   await app.rightClick(await row('Rings.png'));
   await app.waitFor('.menu');
   const offered = await app.exec(`return Array.from(document.querySelectorAll('.menu [role="menuitem"] .label')).map((m) => m.textContent.trim()).join('|')`);
-  check('the menu of a row opens it, and puts it where the cursor is', offered === 'Open…|Put it into the text', offered);
+  check('the menu of a row opens it, puts it where the cursor is, and reads its text', offered === 'Open…|Put it into the text|Read the text…', offered);
   await app.clickText('.menu [role="menuitem"]', 'Put it into the text');
   await until('the fifth figure', async () => (await app.count('.text-view figure')) === 5, 8000);
   check('which makes a figure there', true);

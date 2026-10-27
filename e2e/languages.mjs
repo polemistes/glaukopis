@@ -101,7 +101,7 @@ try {
     );
   check(
     'the interface is in the language of the system',
-    (await rail()).join(' ') === 'Prosjektlisten Prosjekter Bibliotek Bilder Søk Taster Innstillinger',
+    (await rail()).join(' ') === 'Prosjektlisten Prosjekter Bibliotek Søk Taster Innstillinger',
     (await rail()).join(' '),
   );
   check('and the page says so', (await app.exec(`return document.documentElement.lang`)) === 'nb');
@@ -433,7 +433,7 @@ try {
   await sleep(300);
   check(
     'English is chosen, and the interface changes at once',
-    (await rail()).join(' ') === 'The list of projects Projects Library Images Search Keys Settings',
+    (await rail()).join(' ') === 'The list of projects Projects Library Search Keys Settings',
     (await rail()).join(' '),
   );
   check('the page says so', (await app.exec(`return document.documentElement.lang`)) === 'en');
