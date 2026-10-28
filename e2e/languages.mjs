@@ -393,6 +393,29 @@ try {
   await app.keys(['Control', '4']);
   await sleep(500);
   await english('the files of the library');
+  // An image edited (ADR 0071): the row, the crop and the question on leaving.
+  const owl = (
+    await app.execAsync(
+      `return await window.__TAURI_INTERNALS__.invoke('files_take_in', { paths: [arguments[0]], folder: null, structure: false, ticket: null });`,
+      join(root, 'resources/brand/owl.png'),
+    )
+  ).files[0];
+  await app.execAsync(`window.__glaukopisViewer.show(arguments[0]);`, owl.hash);
+  await app.waitFor('[data-file-side] [data-viewer-edit]', 10000);
+  await app.click('[data-file-side] [data-viewer-edit]');
+  await app.waitFor('[data-edit-row]', 8000);
+  await app.click('[data-edit-crop]');
+  await app.execAsync(`window.__glaukopisImageEditing.set({ brightness: 120 });`);
+  await sleep(400);
+  await english('the editing of an image');
+  await app.click('[data-edit-cancel]');
+  await app.waitFor('dialog', 3000);
+  await sleep(300);
+  await english('the question on leaving an edit');
+  await app.clickText('dialog footer button', 'Gå ut');
+  await app.waitGone('[data-edit-row]', 3000);
+  await app.keys(['Control', '4']);
+  await sleep(500);
   await app.keys(['Control', '3']);
   await sleep(500);
   await english('the pictures');
