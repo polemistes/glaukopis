@@ -1258,3 +1258,17 @@ Resolved: no notes on files at all; a file that deserves a note is given a refer
 > Yes, make the plan. I will give it to Opus 5.5, so please make sure it is detailed enough, and that it points to the files that will be part of the plan.
 
 Record 0070 and the plan `docs/plans/one-place-for-files.md` follow.
+
+## 2026-10-28 — a simple image editor
+
+> I have been thinking that it would be very helpful for Glaukopis to have a simple image editor. It does not need to be very advanced, but rotating, cropping, some colour functions, like contrast, brightness and saturation would be nice to have. How hard would it be to implement something like this?
+
+Assessed as a modest job: the core already has the `image` crate with turns, flips, crops and colour operations; the library already makes copies of an image without touching the original, recorded as made from it; the viewer already shows an image at a zoom. Proposed: a live preview in the page by the browser's own filters and transforms, one command in Rust that applies the same settings to the full image and keeps the result as a new file made from the old; the open question being what happens to the figures that show the old file.
+
+> I think the user must change the image into the edited version manually. Remember, an image can be a figure in many different documents, so automatically changing it would need to change it in all places, right? That is probably not what the user intends in most cases. When a user wants to edit a very large image, should we perhaps tell the user that the image is too big to be edited, and offer to make a scaled down copy of it?
+
+Agreed on the first: the edited image is a new file beside the old, no figure follows it, and the writer swaps a figure for it by hand, document by document, the pane and the figure's panel making that one step. On the second, separated: the preview is what stalls on a big image, and it works on a scaled-down version, while the apply runs on the full image in Rust, so that a scan keeps the resolution print wants; only a file above the limit figures already have, 50 MB, is refused, with the offer of a smaller copy. Also proposed: an edit of an edited copy starts from the file in view and records it as what it was made from.
+
+> I misunderstood you. I agree, we should not impose limits that are not necessary. And, yes, the source of a copy is the image it is based on, whether the base is a copy or not. Make the plan so I can give it to Opus 5.5.
+
+Record 0071 and the plan `docs/plans/a-simple-image-editor.md` follow.
