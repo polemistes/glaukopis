@@ -522,6 +522,13 @@ fn what_is_sent_is_what_the_interface_declares() {
         words: "nb".into(),
     };
     let removed = crate::commands::files::FilesRemoved { files: 2, folders: 1 };
+    let edit_facts = glaukopis_core::library::figures::EditFacts {
+        width: 3000,
+        height: 4000,
+        ending: "jpg".into(),
+        editable: true,
+        too_large: false,
+    };
     use crate::commands::work::{Count, Told};
     let files_told = Told { ticket: "t".into(), told: Count { done: 1, total: 3, name: "nagy.pdf".into() } };
     let pdfs_told = files_told.clone();
@@ -652,6 +659,7 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("dictionaries", "spelling.Dictionary[]", &vec![dictionary]);
     put("checking", "spelling.Checking", &checking);
     put("filesRemoved", "files.FilesRemoved", &removed);
+    put("editFacts", "files.EditFacts", &edit_facts);
     // The events that tell of work that goes on (`commands/work.rs`).
     put("filesProgress", "backend.Told<files.FilesProgress>", &files_told);
     put("pdfsProgress", "backend.Told<sources.PdfsProgress>", &pdfs_told);

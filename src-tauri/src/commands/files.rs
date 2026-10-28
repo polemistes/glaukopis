@@ -12,9 +12,10 @@ use tauri::{AppHandle, State};
 
 use glaukopis_core::i18n::tr;
 use glaukopis_core::library::export::{ExportSelection, Exported};
+use glaukopis_core::library::figures::{self, Edit, EditFacts};
 use glaukopis_core::library::files::{self, FileFolder};
 use glaukopis_core::library::small;
-use glaukopis_core::library::{FileView, Library, TakenIn, attachments};
+use glaukopis_core::library::{self, FileView, Library, TakenIn, attachments};
 use glaukopis_core::sharing::{Remote, Synced, Used};
 
 use super::work::{self, Work};
@@ -412,6 +413,45 @@ pub fn file_set_alt(state: State<'_, AppState>, hash: String, alt: String) -> Co
 #[tauri::command(async)]
 pub fn file_for_figure(state: State<'_, AppState>, hash: String) -> CommandResult<FileView> {
     Ok(state.library().for_figure(&hash)?)
+}
+
+// ---- an image edited (ADR 0071) ----
+
+/// What an edit of an image begins from: how large it is upright, what an
+/// edit of it is kept as, whether it can be edited and whether it is too
+/// large to be.
+#[tauri::command(async)]
+pub fn file_edit_facts(state: State<'_, AppState>, hash: String) -> CommandResult<EditFacts> {
+    Ok(state.library().edit_facts(&hash)?)
+}
+
+/// The image shown while it is edited: upright, no larger than 2400 pixels
+/// on its longer side, a JPEG or PNG. Made each time and kept nowhere; the
+/// library is let go before the file is read.
+#[tauri::command(async)]
+pub fn file_edit_preview(state: State<'_, AppState>, hash: String) -> CommandResult<Response> {
+    let (dir, stored) = {
+        let library = state.library();
+        (library.dir().to_owned(), record_path(&library, &hash)?)
+    };
+    let path = attachments::absolute(&dir, &stored)?;
+    let bytes = std::fs::read(&path).map_err(|e| glaukopis_core::Error::io(tr!("io-reading", path = &path), e))?;
+    let (shown, _, _) = figures::preview(&bytes, figures::PREVIEW_LONGEST)?;
+    Ok(Response::new(shown))
+}
+
+/// Keeps the image edited as a new file beside it, made from it; the image
+/// itself stays as it was. The library is not held while the pixels are
+/// worked on.
+#[tauri::command(async)]
+pub fn file_edit_keep(state: State<'_, AppState>, hash: String, edit: Edit) -> CommandResult<FileView> {
+    Ok(library::edited(state.library_lock(), &hash, &edit)?)
+}
+
+/// A smaller copy of an image too large to be edited, kept beside it.
+#[tauri::command(async)]
+pub fn file_smaller_copy(state: State<'_, AppState>, hash: String) -> CommandResult<FileView> {
+    Ok(library::smaller_copy(state.library_lock(), &hash)?)
 }
 
 /// Takes in an image that the interface holds, one that was pasted or

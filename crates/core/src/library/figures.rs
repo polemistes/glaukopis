@@ -400,7 +400,7 @@ impl Default for Edit {
 impl Edit {
     /// Whether it changes nothing.
     pub fn is_nothing(&self) -> bool {
-        self.turns % 4 == 0
+        self.turns.is_multiple_of(4)
             && !self.flip_x
             && !self.flip_y
             && self.crop.is_none_or(|c| c.is_whole())
