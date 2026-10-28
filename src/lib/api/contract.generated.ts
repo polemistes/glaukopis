@@ -4353,6 +4353,14 @@ export const filesRemoved: files.FilesRemoved = {
   "folders": 1
 };
 
+export const editFacts: files.EditFacts = {
+  "editable": true,
+  "ending": "jpg",
+  "height": 4000,
+  "tooLarge": false,
+  "width": 3000
+};
+
 export const filesProgress: backend.Told<files.FilesProgress> = {
   "done": 1,
   "name": "nagy.pdf",

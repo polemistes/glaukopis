@@ -8,3 +8,9 @@ core-pictures-too-large = bildet er større enn { $most } MB, som er det meste e
 core-pictures-not-whole = bildet kom ikke helt fram
 core-pictures-the-picture = bildet
 core-pictures-unnamed = bilde
+
+# Et enkelt bilderedigeringsprogram (docs/plans/a-simple-image-editor.md).
+core-pictures-edited = redigert
+core-pictures-smaller = mindre
+core-pictures-not-editable = en tegning har ingen piksler å redigere
+core-pictures-nothing-changed = ingenting ble endret
