@@ -14,6 +14,7 @@
   import { fileSize } from '$lib/library/format';
   import { startDrag } from '$lib/ui/drag.svelte';
   import { fileEnding } from '$lib/util/file-name';
+  import { filesUi } from './store.svelte';
   import {
     FILES_DRAGGED,
     KIND_ICONS,
@@ -87,8 +88,13 @@
   const selected = $derived(new Set(selection));
   const focused = $derived(selection.length ? selection[selection.length - 1] : null);
 
+  // The list is scrolled as it was left when it is made again.
   $effect(() => {
     if (!viewport) return;
+    if (filesUi.scrollTop) {
+      viewport.scrollTop = filesUi.scrollTop;
+      scrollTop = viewport.scrollTop; // as far as the list reaches
+    }
     const observer = new ResizeObserver(() => {
       height = viewport!.clientHeight;
       width = viewport!.clientWidth;
@@ -295,7 +301,7 @@
   style:--tile="{tileHeight}px"
   style:--gap="{GAP}px"
   style:--pad="{PAD}px"
-  onscroll={() => (scrollTop = viewport!.scrollTop)}
+  onscroll={() => (scrollTop = filesUi.scrollTop = viewport!.scrollTop)}
   {onkeydown}
 >
   <div class="sizer" style:height="{rows * rowHeight + (grid ? 2 * PAD : 0)}px">

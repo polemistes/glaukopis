@@ -288,7 +288,7 @@ try {
   check('and narrower again there', side3 <= side1 - 100, `${side1}→${side3}`);
   await app.clickText('[data-library-switch] button', 'Files');
   await app.waitFor('.files-view .side', 5000);
-  await filter('Unassigned only'); // The filters start anew with the view.
+  check('the filter is as it was left, the view being kept', (await rows()).length === 3); // Not reset with the view.
 
   // The PDF is given to its reference, through the pane and the chooser.
   const pdf = listed.find((r) => r.kind === 'pdf');
@@ -298,6 +298,18 @@ try {
     'the route names the file',
     (await app.exec('return location.hash')).includes(`file=${pdf.hash}`),
   );
+  // The library is kept as it was left: gone elsewhere and back by the book in
+  // the rail, the files are in view, at the file selected, with the filter still on.
+  await app.go('#/search');
+  await app.waitGone('.files-view', 5000);
+  await app.click('.rail a[href="#/library"]');
+  await app.waitFor(`.file-pane[data-file="${pdf.hash}"]`, 5000);
+  check(
+    'back by the rail, the library shows its files, at the file selected',
+    (await app.exec('return location.hash')) === `#/files?file=${pdf.hash}`,
+    await app.exec('return location.hash'),
+  );
+  check('with the filter still on', (await rows()).length === 3);
   check(
     'the pane says it is unassigned',
     /belongs to no reference/.test(await app.text('.file-pane [data-references]')),

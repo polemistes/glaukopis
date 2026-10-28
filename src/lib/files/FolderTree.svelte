@@ -38,6 +38,7 @@
     FILES_DRAGGED,
     exportFiles,
     files,
+    filesUi,
     goThrough,
     moveFiles,
     takeIn,
@@ -55,7 +56,8 @@
   /** What a folder dragged in the tree is. */
   const FOLDER_DRAGGED = 'file-folder';
 
-  let collapsed = $state(new Set<string>());
+  /** The folders folded, kept while the application runs. */
+  const collapsed = filesUi.collapsed;
   /** The folder being named: its id, or 'new' with the parent it will lie in. */
   let naming = $state<{ id: string | 'new'; parent: string | null; value: string } | null>(null);
   let input = $state<HTMLInputElement>();
@@ -102,7 +104,6 @@
     const up = ancestors(files.folders, selected).slice(1);
     if (up.some((id) => collapsed.has(id))) {
       for (const id of up) collapsed.delete(id);
-      collapsed = new Set(collapsed);
     }
   });
 
@@ -114,7 +115,6 @@
   export async function begin(parent: string | null) {
     if (parent) {
       collapsed.delete(parent);
-      collapsed = new Set(collapsed);
     }
     naming = { id: 'new', parent, value: '' };
     await tick();
@@ -293,7 +293,6 @@
   function toggle(id: string) {
     if (collapsed.has(id)) collapsed.delete(id);
     else collapsed.add(id);
-    collapsed = new Set(collapsed);
   }
 
   function onkeydown(event: KeyboardEvent, f: FileFolder) {

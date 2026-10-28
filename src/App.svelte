@@ -257,8 +257,9 @@
     shortcuts.bind({
       // To the projects: the one shown last, where it was; else the start screen.
       projects: () => go(router.lastProject ?? { view: 'home' }),
-      library: () => go({ view: 'library' }),
-      files: () => go({ view: 'files' }),
+      // To the library as it was left; to its files, at the folder and file they showed.
+      library: () => go(router.lastLibrary ?? { view: 'library' }),
+      files: () => go(router.lastFiles ?? { view: 'files' }),
       settings: () => settingsUi.toggle(),
       'search-everything': () => go({ view: 'search' }),
       palette: () => keysUi.togglePalette(),

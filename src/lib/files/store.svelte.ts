@@ -194,6 +194,18 @@ class FilesUi {
   lastToast: number | null = null;
   /** The folders whose bar of unassigned files is hidden for the session; `null` is the top. */
   barHidden = new SvelteSet<string | null>();
+  /**
+   * The view as it was left, kept while the application runs, so that one
+   * comes back from a file to the library as it was: the word searched for,
+   * the filters, the folders folded in the tree, and how far the list was
+   * scrolled. The folder and the file are in the place (`router`).
+   */
+  query = $state('');
+  kind = $state<FileKind | 'all'>('all');
+  unassignedOnly = $state(false);
+  searchAll = $state(false);
+  collapsed = new SvelteSet<string>();
+  scrollTop = 0;
 }
 
 export const filesUi = new FilesUi();

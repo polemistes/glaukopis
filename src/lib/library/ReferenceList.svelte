@@ -15,6 +15,8 @@
     oncontext?: (event: MouseEvent, entries: Summary[]) => void;
     ondelete?: (entries: Summary[]) => void;
     label?: string;
+    /** Where the list keeps how far it was scrolled, to be scrolled so again when it is made anew. */
+    scroll?: { top: number };
   }
 
   let {
@@ -25,6 +27,7 @@
     oncontext,
     ondelete,
     label,
+    scroll,
   }: Props = $props();
 
   const ROW = 56;
@@ -44,6 +47,10 @@
 
   $effect(() => {
     if (!viewport) return;
+    if (scroll?.top) {
+      viewport.scrollTop = scroll.top;
+      scrollTop = viewport.scrollTop; // as far as the list reaches
+    }
     const observer = new ResizeObserver(() => (height = viewport!.clientHeight));
     observer.observe(viewport);
     return () => observer.disconnect();
@@ -206,7 +213,10 @@
   aria-label={label ?? t('library-references')}
   aria-multiselectable="true"
   tabindex="0"
-  onscroll={() => (scrollTop = viewport!.scrollTop)}
+  onscroll={() => {
+    scrollTop = viewport!.scrollTop;
+    if (scroll) scroll.top = scrollTop;
+  }}
   {onkeydown}
 >
   <div class="sizer" style:height="{entries.length * ROW}px">

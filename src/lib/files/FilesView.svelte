@@ -72,9 +72,6 @@
 
   type SortKey = FileSortKey;
 
-  let query = $state('');
-  let kind = $state<FileKind | 'all'>('all');
-  let unassignedOnly = $state(false);
   // How the files are shown, as the settings keep it for every folder (ADR 0070).
   const kept = untrack(() => settings.value.filesView);
   /** The files of the folders under the one in view are shown with its own. */
@@ -82,8 +79,6 @@
   /** One line each, or their thumbnails, and how large those are. */
   let mode = $state(kept.mode);
   let size = $state(kept.size);
-  /** The search goes over all the files, not only those of the folder in view. */
-  let searchAll = $state(false);
   let sortKey = $state<SortKey>(kept.sort);
   let descending = $state(kept.descending);
   let selection = $state<string[]>([]);
@@ -104,21 +99,21 @@
 
   // Whether the search goes over all the files: a word typed changes what is
   // shown, not the files it is chosen from.
-  const searchingAll = $derived(!!query.trim() && searchAll);
+  const searchingAll = $derived(!!filesUi.query.trim() && filesUi.searchAll);
   // All the files are all of them; a folder has its own, and those under it where they are included.
   const scoped = $derived(
     searchingAll || folderId === null ? files.files : files.inFolder(folderId, below),
   );
-  const filters = $derived((kind !== 'all' ? 1 : 0) + (unassignedOnly ? 1 : 0));
+  const filters = $derived((filesUi.kind !== 'all' ? 1 : 0) + (filesUi.unassignedOnly ? 1 : 0));
   // Sorted when the files or the order change; what is searched for is
   // filtered out of that, in the same order, with every letter typed.
   const sorted = $derived(sortFiles(scoped, sortKey, descending));
   const shown = $derived(
     sorted.filter(
       (f) =>
-        (kind === 'all' || f.kind === kind) &&
-        (!unassignedOnly || !f.references.length) &&
-        fileMatches(f, query),
+        (filesUi.kind === 'all' || f.kind === filesUi.kind) &&
+        (!filesUi.unassignedOnly || !f.references.length) &&
+        fileMatches(f, filesUi.query),
     ),
   );
   const single = $derived(selection.length === 1 ? selection[0] : null);
@@ -356,8 +351,8 @@
   function filterMenu(event: MouseEvent) {
     const option = (value: FileKind | 'all', label: string): MenuItem => ({
       label,
-      checked: kind === value,
-      action: () => (kind = value),
+      checked: filesUi.kind === value,
+      action: () => (filesUi.kind = value),
     });
     openMenu(
       event.currentTarget as HTMLElement,
@@ -371,14 +366,14 @@
         { kind: 'separator' },
         {
           label: t('files-filter-unassigned'),
-          checked: unassignedOnly,
-          action: () => (unassignedOnly = !unassignedOnly),
+          checked: filesUi.unassignedOnly,
+          action: () => (filesUi.unassignedOnly = !filesUi.unassignedOnly),
         },
         { kind: 'separator' },
         {
           label: t('files-filter-search-all'),
-          checked: searchAll,
-          action: () => (searchAll = !searchAll),
+          checked: filesUi.searchAll,
+          action: () => (filesUi.searchAll = !filesUi.searchAll),
         },
       ],
       { align: 'end' },
@@ -446,8 +441,8 @@
   }
 
   function clearFilters() {
-    kind = 'all';
-    unassignedOnly = false;
+    filesUi.kind = 'all';
+    filesUi.unassignedOnly = false;
   }
 
   // The keys of the files, while they are shown: see `shell/keys`.
@@ -486,26 +481,26 @@
         <Search size={15} />
         <input
           bind:this={searchField}
-          bind:value={query}
+          bind:value={filesUi.query}
           type="search"
-          placeholder={folder && !searchAll
+          placeholder={folder && !filesUi.searchAll
             ? t('files-search-in', { name: folder.name })
             : t('files-search')}
           aria-label={t('common-search')}
           spellcheck="false"
           onkeydown={(e) => {
-            if (e.key === 'Escape' && query) {
-              query = '';
+            if (e.key === 'Escape' && filesUi.query) {
+              filesUi.query = '';
               e.stopPropagation();
             }
           }}
         />
-        {#if query}
+        {#if filesUi.query}
           <button
             type="button"
             class="clear"
             aria-label={t('files-search-clear')}
-            onclick={() => (query = '')}
+            onclick={() => (filesUi.query = '')}
           >
             <X size={13} />
           </button>
@@ -582,8 +577,8 @@
           title={t('files-nothing-found')}
           text={filters ? t('files-nothing-passes') : t('files-nothing-found-text')}
         >
-          {#if query}
-            <Button onclick={() => (query = '')}>{t('files-search-clear')}</Button>
+          {#if filesUi.query}
+            <Button onclick={() => (filesUi.query = '')}>{t('files-search-clear')}</Button>
           {/if}
           {#if filters}
             <Button onclick={clearFilters}>{t('files-filter-clear')}</Button>

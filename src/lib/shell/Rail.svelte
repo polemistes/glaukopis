@@ -26,6 +26,14 @@
     settingsUi.hide();
     router.go(router.lastProject ?? { view: 'home' });
   }
+
+  /** The book goes back to the library as it was left: its references or its files, where one was. */
+  function toLibrary(event: MouseEvent) {
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    event.preventDefault();
+    settingsUi.hide();
+    router.go(router.lastLibrary ?? { view: 'library' });
+  }
 </script>
 
 <nav class="rail" aria-label={t('shell-main')}>
@@ -59,6 +67,7 @@
     class="place"
     class:current={view === 'library' || view === 'files'}
     aria-label={t('shell-library')}
+    onclick={toLibrary}
     use:tooltip={{ text: t('shell-library'), shortcut: keysFor('library'), side: 'right' }}
   >
     <LibraryBig size={19} strokeWidth={1.7} />

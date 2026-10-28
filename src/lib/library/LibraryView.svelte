@@ -56,7 +56,8 @@
   import { columns } from './columns.svelte';
   import Divider from '$lib/ui/Divider.svelte';
   import FilterPopover from './FilterPopover.svelte';
-  import { activeFilters, applyFilters, noFilters, type Filters } from './filters';
+  import { activeFilters, applyFilters, noFilters } from './filters';
+  import { libraryUi } from './view.svelte';
   import MapDialog from './MapDialog.svelte';
   import ReferenceList from './ReferenceList.svelte';
   import ReferencePane from './ReferencePane.svelte';
@@ -72,12 +73,9 @@
   let findingDuplicates = $state(false);
   /** A map is being made of the library, or of a collection. */
   let mapping = $state<{ collection: Collection | null } | null>(null);
-  let query = $state('');
-  let filters = $state<Filters>({ ...noFilters });
+  // What is searched for, the filters and the order outlive the view (`view.svelte.ts`).
   let filtering = $state(false);
   let filterButton = $state<HTMLElement>();
-  let sortKey = $state<SortKey>('authors');
-  let descending = $state(false);
   let selection = $state<string[]>([]);
   let searchField = $state<HTMLInputElement>();
   let list = $state<ReturnType<typeof ReferenceList>>();
@@ -95,9 +93,13 @@
     const ids = library.idsIn(collectionId);
     return library.entries.filter((e) => ids.has(e.id));
   });
-  const active = $derived(activeFilters(filters));
+  const active = $derived(activeFilters(libraryUi.filters));
   const shown = $derived(
-    sortEntries(applyFilters(search(scoped, query), filters), sortKey, descending),
+    sortEntries(
+      applyFilters(search(scoped, libraryUi.query), libraryUi.filters),
+      libraryUi.sortKey,
+      libraryUi.descending,
+    ),
   );
   const single = $derived(selection.length === 1 ? selection[0] : null);
 
@@ -153,7 +155,7 @@
   async function add() {
     const added = await newReference({ collection: collectionId });
     if (added) {
-      query = '';
+      libraryUi.query = '';
       selection = [added.id];
       queueMicrotask(() => list?.scrollTo(added.id));
     }
@@ -367,12 +369,12 @@
   function sortMenu(event: MouseEvent) {
     const option = (key: SortKey, label: string): MenuItem => ({
       label,
-      checked: sortKey === key,
+      checked: libraryUi.sortKey === key,
       action: () => {
-        if (sortKey === key) descending = !descending;
+        if (libraryUi.sortKey === key) libraryUi.descending = !libraryUi.descending;
         else {
-          sortKey = key;
-          descending = key === 'added' || key === 'modified';
+          libraryUi.sortKey = key;
+          libraryUi.descending = key === 'added' || key === 'modified';
         }
       },
     });
@@ -387,8 +389,8 @@
         { kind: 'separator' },
         {
           label: t('library-sort-descending'),
-          checked: descending,
-          action: () => (descending = !descending),
+          checked: libraryUi.descending,
+          action: () => (libraryUi.descending = !libraryUi.descending),
         },
       ],
       { align: 'end' },
@@ -432,7 +434,7 @@
         <Search size={15} />
         <input
           bind:this={searchField}
-          bind:value={query}
+          bind:value={libraryUi.query}
           type="search"
           placeholder={collection
             ? t('library-search-in', { name: collection.name })
@@ -440,18 +442,18 @@
           aria-label={t('common-search')}
           spellcheck="false"
           onkeydown={(e) => {
-            if (e.key === 'Escape' && query) {
-              query = '';
+            if (e.key === 'Escape' && libraryUi.query) {
+              libraryUi.query = '';
               e.stopPropagation();
             }
           }}
         />
-        {#if query}
+        {#if libraryUi.query}
           <button
             type="button"
             class="clear"
             aria-label={t('library-search-clear')}
-            onclick={() => (query = '')}
+            onclick={() => (libraryUi.query = '')}
           >
             <X size={13} />
           </button>
@@ -508,11 +510,12 @@
           title={t('library-nothing-found')}
           text={active ? t('library-nothing-passes') : t('library-nothing-found.text')}
         >
-          {#if query}
-            <Button onclick={() => (query = '')}>{t('library-search-clear')}</Button>
+          {#if libraryUi.query}
+            <Button onclick={() => (libraryUi.query = '')}>{t('library-search-clear')}</Button>
           {/if}
           {#if active}
-            <Button onclick={() => (filters = { ...noFilters })}>{t('library-filter-clear')}</Button
+            <Button onclick={() => (libraryUi.filters = { ...noFilters })}
+              >{t('library-filter-clear')}</Button
             >
           {/if}
         </EmptyState>
@@ -520,6 +523,7 @@
         <ReferenceList
           bind:this={list}
           entries={shown}
+          scroll={libraryUi.scroll}
           bind:selection
           oncontext={context}
           ondelete={remove}
@@ -532,7 +536,7 @@
       <footer>
         {#if selection.length > 1}
           {t('library-selected-of', { selected: selection.length, count: shown.length })}
-        {:else if query || collection || active}
+        {:else if libraryUi.query || collection || active}
           {t('library-count', { count: shown.length })}
         {:else}
           {t('library-count', { count: library.entries.length })}
@@ -594,7 +598,7 @@
 {#if mapping}
   <MapDialog
     collection={mapping.collection}
-    sort={{ key: sortKey, descending }}
+    sort={{ key: libraryUi.sortKey, descending: libraryUi.descending }}
     onclose={() => (mapping = null)}
   />
 {/if}
@@ -603,7 +607,7 @@
   open={filtering}
   anchor={filterButton}
   entries={scoped}
-  bind:filters
+  bind:filters={libraryUi.filters}
   onclose={() => (filtering = false)}
 />
 

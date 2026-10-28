@@ -18,7 +18,12 @@
       { value: 'references', label: t('library-switch-references'), icon: LibraryBig },
       { value: 'files', label: t('library-switch-files'), icon: FileStack },
     ]}
-    onchange={(next) => router.go({ view: next === 'files' ? 'files' : 'library' })}
+    onchange={(next) =>
+      router.go(
+        next === 'files'
+          ? (router.lastFiles ?? { view: 'files' })
+          : (router.lastReferences ?? { view: 'library' }),
+      )}
   />
 </span>
 

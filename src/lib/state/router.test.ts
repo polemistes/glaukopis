@@ -19,3 +19,21 @@ describe('where one is', () => {
     expect(parseRoute('#/project/%E0%A4%A4')).toMatchObject({ project: '\u0924' });
   });
 });
+
+describe('the library as it was left', () => {
+  it('is the references or the files, whichever was shown last, each where it was', async () => {
+    const { router } = await import('./router.svelte');
+    expect(router.lastLibrary).toBeNull();
+    router.replace({ view: 'files', folder: 'f1', file: 'abc' });
+    expect(router.lastFiles).toEqual({ view: 'files', folder: 'f1', file: 'abc' });
+    expect(router.lastLibrary).toEqual(router.lastFiles);
+    router.replace({ view: 'project', project: 'p' });
+    expect(router.lastLibrary).toEqual({ view: 'files', folder: 'f1', file: 'abc' });
+    router.replace({ view: 'library', collection: 'c', entry: 'e' });
+    expect(router.lastReferences).toEqual({ view: 'library', collection: 'c', entry: 'e' });
+    expect(router.lastLibrary).toEqual(router.lastReferences);
+    // The files are where they were, behind the references.
+    expect(router.lastFiles).toEqual({ view: 'files', folder: 'f1', file: 'abc' });
+    router.replace({ view: 'home' });
+  });
+});

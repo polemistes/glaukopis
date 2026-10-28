@@ -1073,6 +1073,14 @@ nothing about your references is locked into Glaukopis. Files that belong to
 references, such as the PDF of an article, are copied into the library when
 they are added. Glaukopis does not depend on where they came from.
 
+The library stays as you left it while Glaukopis runs. The book in the rail
+and **Ctrl+2** go back to the references or the files, whichever you were in,
+at the collection or the folder you had open and the entry or the file you
+had selected, with the word you searched for, the filters, the order and the
+folders folded in the tree as they were, and the list scrolled to where it
+was; the switch at its head goes to each as it was left. Looking at a file in
+a view and coming back costs no finding of the way again.
+
 **New reference** opens a form with the fields that are usual for the kind of
 publication. Other fields are added from **Add field**. The entry as it
 stands in the file can be seen and changed with **Edit the source…**, in the

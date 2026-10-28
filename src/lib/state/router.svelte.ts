@@ -124,6 +124,18 @@ class Router {
    * house in the rail goes back to. None once it is closed.
    */
   lastProject = $state<Extract<Route, { view: 'project' } | { view: 'file' }> | null>(null);
+  /**
+   * The library as it was left while the application has run: its references
+   * at their collection and entry, its files at their folder and file, and
+   * which of the two was shown last. The book in the rail goes back to the
+   * last of them; the switch at the head of the library to each.
+   */
+  lastReferences = $state<Extract<Route, { view: 'library' }> | null>(null);
+  lastFiles = $state<Extract<Route, { view: 'files' }> | null>(null);
+  #lastShelf = $state<'library' | 'files' | null>(null);
+  get lastLibrary(): Extract<Route, { view: 'library' } | { view: 'files' }> | null {
+    return this.#lastShelf === 'files' ? this.lastFiles : this.lastReferences;
+  }
 
   constructor() {
     this.#follow(this.route);
@@ -137,6 +149,13 @@ class Router {
 
   #follow(route: Route) {
     if (route.view === 'project' || route.view === 'file') this.lastProject = route;
+    else if (route.view === 'library') {
+      this.lastReferences = route;
+      this.#lastShelf = 'library';
+    } else if (route.view === 'files') {
+      this.lastFiles = route;
+      this.#lastShelf = 'files';
+    }
   }
 
   /** The project shown last was closed: the house goes to the start screen. */
