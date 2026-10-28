@@ -127,8 +127,12 @@
 
   /** The projects in which an image is a figure. */
   const usedIn = $derived(file?.kind === 'picture' ? figuresIn(file.hash) : []);
-  /** The file a copy made to be a figure was made from. */
+  /** The file a copy was made from: to be a figure, by editing, or to be smaller. */
   const madeFrom = $derived(file?.madeFrom ? files.get(file.madeFrom) : undefined);
+  /** The copies made from it (ADR 0071). */
+  const copies = $derived(
+    file ? files.files.filter((f) => f.madeFrom === file.hash && f.exists) : [],
+  );
 
   /** A dialog over the pane. */
   let open = $state<'assign' | 'searchable' | 'map' | 'read' | null>(null);
@@ -370,6 +374,16 @@
               >
             </p>
           {/if}
+          {#if copies.length}
+            <div class="copies" data-copies>
+              <p class="made">{t('files-copies')}</p>
+              {#each copies as copy (copy.hash)}
+                <a href={formatRoute({ view: 'files', file: copy.hash })} class="link"
+                  >{copy.name}</a
+                >
+              {/each}
+            </div>
+          {/if}
         </div>
       </section>
     {/if}
@@ -518,6 +532,12 @@
   }
   .made .link {
     padding: 0;
+  }
+  .copies {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
   }
   .where {
     display: flex;

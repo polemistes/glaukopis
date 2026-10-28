@@ -21,3 +21,31 @@ viewer-zoom-field = Zoom, i prosent
 viewer-zoom-choose = Velg en zoom
 viewer-tree-files = Filer
 viewer-tree-empty = Ingenting her ennå
+
+# En enkel bilderedigering (docs/plans/a-simple-image-editor.md): knappen i linjen, raden under den, og hva den sier.
+viewer-edit = Rediger
+viewer-edit-turn-left = Drei til venstre
+viewer-edit-turn-right = Drei til høyre
+viewer-edit-flip-sideways = Speilvend
+viewer-edit-flip-over = Snu opp ned
+viewer-edit-crop = Beskjær
+viewer-edit-brightness = Lysstyrke
+viewer-edit-contrast = Kontrast
+viewer-edit-saturation = Metning
+# Hvor mye av en farge bildet har, der 100 er som det er.
+viewer-edit-percent = { $percent } %
+# Setter én glidebryter tilbake til 100 %.
+viewer-edit-as-it-was = Som det var
+viewer-edit-start-again = Begynn på nytt
+viewer-edit-keep = Behold som ny fil
+# Størrelsen beskjæringen gir, av hele: «Beskåret til 800 × 600 av 1600 × 1200».
+viewer-edit-cut-to = Beskåret til { $width } × { $height } av { $fullWidth } × { $fullHeight }
+viewer-edit-leave-title = Gå ut uten å beholde?
+viewer-edit-leave-message = Det som ble endret, går tapt.
+viewer-edit-leave = Gå ut
+viewer-edit-kept = Beholdt som { $name }
+viewer-edit-not-kept = Det redigerte bildet kunne ikke beholdes
+viewer-edit-not-opened = Bildet kunne ikke åpnes for redigering
+viewer-edit-too-large-title = For stort til å redigeres
+viewer-edit-too-large-message = Bildet er større enn { $most } MB, som er det meste et bilde kan være. En mindre kopi kan lages og redigeres i stedet.
+viewer-edit-make-smaller = Lag en mindre kopi

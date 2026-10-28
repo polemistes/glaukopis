@@ -200,6 +200,56 @@ export const fileSetAlt = (hash: string, alt: string) =>
   call<FileView>('file_set_alt', { hash, alt });
 /** The file a figure made of this image shows: itself, or a copy made beside it. */
 export const fileForFigure = (hash: string) => call<FileView>('file_for_figure', { hash });
+
+// ---- an image edited (ADR 0071) ----
+
+/** A crop, in fractions of the frame that shows: the image after its turns and flips. */
+export interface Crop {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * The settings of one editing of an image: quarter turns clockwise (0–3),
+ * flips in the turned frame, a crop in the frame that shows, and the colours
+ * in percent, 100 being the image as it is.
+ */
+export interface Edit {
+  turns: number;
+  flipX: boolean;
+  flipY: boolean;
+  crop: Crop | null;
+  brightness: number;
+  contrast: number;
+  saturation: number;
+}
+
+/** What editing an image needs to know of it before it begins. */
+export interface EditFacts {
+  /** The full image's size, upright, in its pixels. */
+  width: number;
+  height: number;
+  /** The ending what is kept will have: "jpg" or "png". */
+  ending: string;
+  /** Whether it has pixels to edit: not a drawing. */
+  editable: boolean;
+  /** Whether it is larger than an image may be, so that only a smaller copy can be edited. */
+  tooLarge: boolean;
+}
+
+export const fileEditFacts = (hash: string) => call<EditFacts>('file_edit_facts', { hash });
+/** The image to be shown while it is edited: upright, no larger than a side needs. */
+export async function fileEditPreview(hash: string): Promise<ArrayBuffer> {
+  if (!inTauri) throw { kind: 'no-backend', message: t('ui-no-backend') };
+  return invoke<ArrayBuffer>('file_edit_preview', { hash });
+}
+/** Keeps the image edited as a new file of the library, made from the one edited. */
+export const fileEditKeep = (hash: string, edit: Edit) =>
+  call<FileView>('file_edit_keep', { hash, edit });
+/** A smaller copy of an image too large to be edited, made from it. */
+export const fileSmallerCopy = (hash: string) => call<FileView>('file_smaller_copy', { hash });
 /** Takes in an image the page holds, pasted or dropped, into `folder` or the folder Images. `content` in base64. */
 export const filesAddImage = (name: string, content: string, folder: string | null = null) =>
   call<FileView>('files_add_image', { name, content, folder });

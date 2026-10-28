@@ -413,10 +413,13 @@ files-pixels-label = Pixels
 files-pixels = { $width } × { $height }
 files-alt = What it shows, in words
 files-preview-none = No preview for this kind of file
-# Before the name of the file a copy made to be a figure was made from, which is a link.
-files-made-from = Made to be a figure, from
+# Before the name of the file a copy was made from, to be a figure, by editing or to be smaller; the name is a link.
+files-made-from = Made from
 # Said when a file that is a figure in projects is to be removed.
 files-remove-used = { $count ->
     [one] It is a figure in a project, which will show nothing in its place.
    *[other] It is a figure in { $count } projects, which will show nothing in its place.
 }
+
+# A simple image editor (docs/plans/a-simple-image-editor.md): the copies made from a file, as links.
+files-copies = Copies made from it

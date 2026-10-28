@@ -3,12 +3,24 @@
    * A side of the window that shows a file (ADR 0069): a PDF of the library,
    * page by page, or an image of the library, as one page.
    * It belongs to no project; its bar holds what a file needs: the page, a
-   * field to go to one, and the zoom.
+   * field to go to one, and the zoom. An image can be edited in it (ADR
+   * 0071): a row of controls under the bar, the image showing the edit over
+   * a lighter copy, kept as a new file of the library made from the one in
+   * view, which the side then shows.
    */
   import { onDestroy, untrack } from 'svelte';
   import CircleAlert from '@lucide/svelte/icons/circle-alert';
   import FileX from '@lucide/svelte/icons/file-x';
   import Lock from '@lucide/svelte/icons/lock';
+  import {
+    fileEditFacts,
+    fileEditKeep,
+    fileEditPreview,
+    fileSmallerCopy,
+    type Crop,
+    type Edit,
+    type EditFacts,
+  } from '$lib/api/files';
   import { attachmentOpen } from '$lib/api/library';
   import { files } from '$lib/files/store.svelte';
   import { t } from '$lib/i18n';
@@ -17,7 +29,12 @@
   import Button from '$lib/ui/Button.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
-  import { describeError, notifyError } from '$lib/ui/toast.svelte';
+  import { testHook } from '$lib/shell/testing';
+  import { confirm } from '$lib/ui/confirm.svelte';
+  import { describeError, notifyError, notifyOk } from '$lib/ui/toast.svelte';
+  import CropFrame from './CropFrame.svelte';
+  import { isNothing, nothing } from './editing';
+  import EditRow from './EditRow.svelte';
   import ImageView from './ImageView.svelte';
   import PdfView from './PdfView.svelte';
   import ViewerBar from './ViewerBar.svelte';
@@ -64,12 +81,163 @@
     else sides.setFileZoom(spec.key, zoom);
   }
 
+  // ---- editing an image (ADR 0071) ----
+
+  interface Editing {
+    /** The file being edited: the one in view when editing began. */
+    file: string;
+    facts: EditFacts;
+    edit: Edit;
+    /** The lighter copy shown while it is edited, as a URL of its own. */
+    preview: string;
+    cropping: boolean;
+    keeping: boolean;
+  }
+  let editing = $state<Editing | null>(null);
+  /** Whether a question is being asked: Escape is the question's then. */
+  let asking = false;
+
+  /** An image with pixels can be edited; a drawing cannot. */
+  const editable = $derived(
+    !!facts?.picture && !(files.get(spec.file)?.name ?? '').toLowerCase().endsWith('.svg'),
+  );
+
+  /** Begins to edit the image in view: a smaller copy first, where it is too large. */
+  async function beginEditing() {
+    if (editing) return;
+    let hash = spec.file;
+    let known: EditFacts;
+    try {
+      known = await fileEditFacts(hash);
+    } catch (e) {
+      notifyError(t('viewer-edit-not-opened'), e);
+      return;
+    }
+    if (!known.editable) return;
+    if (known.tooLarge) {
+      asking = true;
+      const smaller = await confirm({
+        title: t('viewer-edit-too-large-title'),
+        message: t('viewer-edit-too-large-message', { most: 50 }),
+        confirm: t('viewer-edit-make-smaller'),
+      }).finally(() => (asking = false));
+      if (!smaller) return;
+      try {
+        const copy = await fileSmallerCopy(hash);
+        await files.reload();
+        sides.setFile(spec.key, copy.hash);
+        hash = copy.hash;
+        known = await fileEditFacts(hash);
+      } catch (e) {
+        notifyError(t('viewer-edit-not-kept'), e);
+        return;
+      }
+    }
+    let preview: string;
+    try {
+      const bytes = await fileEditPreview(hash);
+      preview = URL.createObjectURL(new Blob([bytes as BlobPart]));
+    } catch (e) {
+      notifyError(t('viewer-edit-not-opened'), e);
+      return;
+    }
+    // The side may have gone to another file while the copy was being made.
+    if (spec.file !== hash) {
+      URL.revokeObjectURL(preview);
+      return;
+    }
+    editing = {
+      file: hash,
+      facts: known,
+      edit: nothing(),
+      preview,
+      cropping: false,
+      keeping: false,
+    };
+    sides.setFileZoom(spec.key, null);
+  }
+
+  /** Ends the editing, keeping nothing. */
+  function endEditing() {
+    if (editing) URL.revokeObjectURL(editing.preview);
+    editing = null;
+  }
+
+  /** Leaves the editing: after asking, where something was changed. */
+  async function cancelEditing() {
+    if (!editing || editing.keeping) return;
+    if (!isNothing(editing.edit)) {
+      asking = true;
+      const leave = await confirm({
+        title: t('viewer-edit-leave-title'),
+        message: t('viewer-edit-leave-message'),
+        confirm: t('viewer-edit-leave'),
+        danger: true,
+      }).finally(() => (asking = false));
+      if (!leave) return;
+    }
+    endEditing();
+  }
+
+  /** Keeps the edit as a new file of the library, which the side then shows. */
+  async function keepEditing() {
+    const now = editing;
+    if (!now || now.keeping || isNothing(now.edit)) return;
+    now.keeping = true;
+    try {
+      const made = await fileEditKeep(now.file, $state.snapshot(now.edit));
+      await files.reload();
+      endEditing();
+      sides.setFile(spec.key, made.hash);
+      notifyOk(t('viewer-edit-kept', { name: made.name }));
+    } catch (e) {
+      now.keeping = false;
+      notifyError(t('viewer-edit-not-kept'), e);
+    }
+  }
+
+  function changeEdit(edit: Edit) {
+    if (editing && !editing.keeping) editing.edit = edit;
+  }
+  function changeCrop(crop: Crop) {
+    if (editing && !editing.keeping) editing.edit = { ...editing.edit, crop };
+  }
+
+  // The side going to another file, or away, drops what was being edited.
+  $effect(() => {
+    if (editing && editing.file !== spec.file) untrack(endEditing);
+  });
+  onDestroy(endEditing);
+
+  function onEscape(event: KeyboardEvent) {
+    if (event.key !== 'Escape' || !editing || asking || event.defaultPrevented) return;
+    if (!active && count > 1) return;
+    if (document.querySelector('dialog[open]')) return;
+    event.preventDefault();
+    void cancelEditing();
+  }
+
+  // For the scripts: the edit of the active side set exactly, rather than by dragging.
+  $effect(() => {
+    if (!active && count > 1) return;
+    testHook('__glaukopisImageEditing', {
+      begin: () => beginEditing(),
+      set: (part: Partial<Edit>) => editing && changeEdit({ ...editing.edit, ...part }),
+      cropping: (on: boolean) => editing && (editing.cropping = on),
+      keep: () => keepEditing(),
+      cancel: () => cancelEditing(),
+      edit: () => (editing ? $state.snapshot(editing.edit) : null),
+    });
+  });
+
   async function openElsewhere() {
     const path = files.get(spec.file)?.path;
     if (!path) return;
     await attachmentOpen(path).catch((e) => notifyError(t('library-file-open-failed'), e));
   }
 </script>
+
+<svelte:window onkeydown={onEscape} />
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
@@ -91,7 +259,22 @@
       {percent}
       onpage={(n) => sides.setPage(spec.key, n)}
       onzoom={zoomTo}
+      {editable}
+      editing={!!editing}
+      onedit={() => void beginEditing()}
     />
+    {#if editing}
+      <EditRow
+        edit={editing.edit}
+        facts={editing.facts}
+        cropping={editing.cropping}
+        keeping={editing.keeping}
+        onchange={changeEdit}
+        oncropping={(on) => editing && (editing.cropping = on)}
+        onkeep={() => void keepEditing()}
+        oncancel={() => void cancelEditing()}
+      />
+    {/if}
   {/if}
   {#if viewed?.gone}
     <EmptyState icon={FileX} title={t('viewer-not-found')}>
@@ -118,11 +301,21 @@
     <ImageView
       bind:this={view}
       source={viewed.image}
-      size={facts.sizes[0]}
+      size={editing ? [editing.facts.width, editing.facts.height] : facts.sizes[0]}
       name={facts.name}
       zoom={spec.zoom}
       onzoom={(z) => sides.setFileZoom(spec.key, z)}
-    />
+      edit={editing?.edit ?? null}
+      previewUrl={editing?.preview ?? null}
+    >
+      {#if editing && (editing.cropping || editing.edit.crop)}
+        <CropFrame
+          crop={editing.edit.crop ?? { x: 0, y: 0, width: 1, height: 1 }}
+          active={editing.cropping && !editing.keeping}
+          onchange={changeCrop}
+        />
+      {/if}
+    </ImageView>
   {:else}
     {#key spec.file}
       <PdfView

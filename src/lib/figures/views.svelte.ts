@@ -11,6 +11,7 @@ import { figureWidth, flow, stand, tableWidth } from '$lib/editor/schema';
 import { hooksOf, OPEN, passing } from '$lib/editor/ui.svelte';
 import { t } from '$lib/i18n';
 import { refForm } from '$lib/project/model/text';
+import { fileEnding } from '$lib/util/file-name';
 import { openMenu } from '$lib/ui/menu.svelte';
 import { belongs, Panel } from '$lib/ui/panel';
 import FigurePanel from './FigurePanel.svelte';
@@ -506,6 +507,7 @@ export class FigureView implements NodeView {
     this.#mounted = mount(FigurePanel, {
       target: panel.el,
       props: {
+        file: String(a.file ?? ''),
         name: String(a.name ?? ''),
         alt: String(a.alt ?? ''),
         width: figureWidth(a.width),
@@ -523,6 +525,10 @@ export class FigureView implements NodeView {
         },
         onchange: (change) => this.#change(change),
         onreplace: () => void this.#replace(),
+        onversion: (f) => {
+          this.#change({ file: f.hash, extension: fileEnding(f.name), name: f.name });
+          this.#again();
+        },
         onremove: () => this.#remove(),
         onclose: () => this.#leave(),
       },

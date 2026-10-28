@@ -3,9 +3,11 @@
    * The bar of a file side (ADR 0069): the page in view, with the number it
    * has in print where that differs from its count; a field to go to a page
    * by either; and the zoom, in a field that takes any percent and a menu
-   * of steps. Nothing of a map: no views, no writing tools.
+   * of steps. Nothing of a map: no views, no writing tools. An image that
+   * has pixels has *Edit* after the zoom (ADR 0071).
    */
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
+  import Pencil from '@lucide/svelte/icons/pencil';
   import { t } from '$lib/i18n';
   import { FILE, FILE_ZOOMS, zoomAsked } from '$lib/preview/zoom';
   import { keysFor } from '$lib/shell/keys.svelte';
@@ -24,9 +26,26 @@
     percent: number;
     onpage: (page: number) => void;
     onzoom: (zoom: number | null) => void;
+    /** Whether the file is an image that can be edited: one with pixels, not a drawing. */
+    editable?: boolean;
+    /** Whether it is being edited. */
+    editing?: boolean;
+    onedit?: () => void;
   }
 
-  let { page, count, labels, picture, zoom, percent, onpage, onzoom }: Props = $props();
+  let {
+    page,
+    count,
+    labels,
+    picture,
+    zoom,
+    percent,
+    onpage,
+    onzoom,
+    editable = false,
+    editing = false,
+    onedit,
+  }: Props = $props();
 
   const printed = $derived(labels[page - 1] ?? '');
   let said = $state('');
@@ -137,6 +156,21 @@
     {#if zoom === null}<span>{t(picture ? 'viewer-fit-image' : 'viewer-fit-width')}</span>{/if}
     <ChevronDown size={12} />
   </button>
+  {#if editable && onedit}
+    <span class="rule" role="separator"></span>
+    <button
+      type="button"
+      class="zoom edit"
+      class:on={editing}
+      aria-pressed={editing}
+      disabled={editing}
+      data-viewer-edit
+      onclick={onedit}
+    >
+      <Pencil size={13} />
+      <span>{t('viewer-edit')}</span>
+    </button>
+  {/if}
 </div>
 
 <style>
@@ -216,5 +250,11 @@
   .zoom:hover {
     background: var(--paper-hover);
     color: var(--ink);
+  }
+  .edit.on,
+  .edit.on:hover {
+    background: var(--paper-hover);
+    color: var(--ink);
+    cursor: default;
   }
 </style>

@@ -1,15 +1,22 @@
 <script lang="ts">
   /** What can be said of a figure besides its caption: how wide it is, whether it is numbered, what it shows. */
   import ImageUp from '@lucide/svelte/icons/image-up';
+  import Layers from '@lucide/svelte/icons/layers';
   import Trash2 from '@lucide/svelte/icons/trash-2';
   import { untrack } from 'svelte';
+  import type { FileView } from '$lib/api/files';
   import type { Flow, Stand } from '$lib/editor/schema';
+  import { files } from '$lib/files/store.svelte';
+  import { versionsOf } from '$lib/files/versions';
+  import { openMenu } from '$lib/ui/menu.svelte';
   import { t } from '$lib/i18n';
   import Placing from './Placing.svelte';
   import type { Usual } from './placing';
   import { keyOf } from '$lib/shell/keys.svelte';
 
   interface Props {
+    /** The hash of the file the figure shows. */
+    file: string;
     name: string;
     alt: string;
     width: number;
@@ -32,11 +39,14 @@
       flow?: Flow;
     }) => void;
     onreplace: () => void;
+    /** Another version of the image chosen: the figure shows it, in this document alone (ADR 0071). */
+    onversion: (file: FileView) => void;
     onremove: () => void;
     onclose: () => void;
   }
 
   let {
+    file,
     name,
     alt,
     width,
@@ -50,9 +60,36 @@
     ontry,
     onchange,
     onreplace,
+    onversion,
     onremove,
     onclose,
   }: Props = $props();
+
+  // ---- the versions of the image (ADR 0071) ----
+
+  /** The file shown, as chosen here since the panel opened. */
+  let shown = $state(untrack(() => file));
+  void files.load();
+  const versions = $derived(versionsOf(shown, files.files));
+
+  function chooseVersion(event: MouseEvent) {
+    openMenu(
+      event.currentTarget as HTMLElement,
+      versions.map((v) => ({
+        label:
+          v.width && v.height
+            ? `${v.name} — ${t('figures-version-size', { width: v.width, height: v.height })}`
+            : v.name,
+        checked: v.hash === shown,
+        action: () => {
+          if (v.hash === shown) return;
+          shown = v.hash;
+          onversion(v);
+        },
+      })),
+      { side: 'bottom', align: 'start' },
+    );
+  }
 
   let wide = $state(untrack(() => width));
   let described = $state(untrack(() => alt));
@@ -157,6 +194,12 @@
       <ImageUp size={14} />
       {t('figures-another-picture')}
     </button>
+    {#if versions.length > 1}
+      <button type="button" aria-haspopup="menu" data-figure-versions onclick={chooseVersion}>
+        <Layers size={14} />
+        {t('figures-versions')}
+      </button>
+    {/if}
     <span class="spring"></span>
     <button type="button" class="danger" onclick={onremove}>
       <Trash2 size={14} />

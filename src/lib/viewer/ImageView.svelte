@@ -4,13 +4,17 @@
    * (ADR 0069): as one page in the middle of the side, fitted to it, the
    * whole of it seen, or at a factor of its size; zoomed with the typesetting pane's keys and Ctrl
    * and the wheel, about the pointer, which stays over the same place of
-   * the image.
+   * the image. While it is edited (ADR 0071), it is shown turned, flipped
+   * and coloured as the edit says, from a lighter copy, with what is drawn
+   * over it (the crop) the size of the frame that shows.
    */
-  import { flushSync, onMount } from 'svelte';
+  import { flushSync, onMount, type Snippet } from 'svelte';
+  import type { Edit } from '$lib/api/files';
   import { fileRead } from '$lib/api/system';
   import { t } from '$lib/i18n';
   import { clampZoom, FILE, rung, wheeled } from '$lib/preview/zoom';
   import { shortcuts } from '$lib/shell/keys.svelte';
+  import { cssFilter, cssTransform, shownSize } from './editing';
   import { AROUND } from './pages';
   import type { ImageSource } from './viewers.svelte';
 
@@ -22,9 +26,24 @@
     name: string;
     zoom: number | null;
     onzoom: (zoom: number | null) => void;
+    /** The edit shown over the image, while it is edited. */
+    edit?: Edit | null;
+    /** What is shown in place of the file while it is edited: a lighter copy, upright. */
+    previewUrl?: string | null;
+    /** Drawn over the image, the size of the frame that shows. */
+    children?: Snippet;
   }
 
-  let { source, size, name, zoom, onzoom }: Props = $props();
+  let {
+    source,
+    size,
+    name,
+    zoom,
+    onzoom,
+    edit = null,
+    previewUrl = null,
+    children,
+  }: Props = $props();
 
   let url = $state<string | null>(null);
   let failed = $state<string | null>(null);
@@ -53,14 +72,17 @@
   });
 
   const [w, h] = $derived(size);
+  /** The frame that shows: the image's size, turned as the edit says. */
+  const [fw, fh] = $derived(edit ? shownSize(edit, w, h) : [w, h]);
+  const shown = $derived(previewUrl ?? url);
   /** The factor at which the whole image is seen, no larger than itself: as small as a large image needs. */
   const fit = $derived(
     Math.max(
       0.001,
       Math.min(
         1,
-        (roomWidth - 2 * AROUND.side) / Math.max(w, 1),
-        (roomHeight - 2 * AROUND.top) / Math.max(h, 1),
+        (roomWidth - 2 * AROUND.side) / Math.max(fw, 1),
+        (roomHeight - 2 * AROUND.top) / Math.max(fh, 1),
       ),
     ),
   );
@@ -80,7 +102,7 @@
     const el = scroller;
     const to = next === null ? null : clampZoom(next, range);
     if (!el || to === zoom) return;
-    const img = el.querySelector('img');
+    const img = el.querySelector<HTMLElement>('.box');
     const x = px ?? el.clientWidth / 2;
     const y = py ?? el.clientHeight / 2;
     const fx = img ? (el.scrollLeft + x - img.offsetLeft) / Math.max(1, img.offsetWidth) : 0.5;
@@ -147,9 +169,21 @@
   onpointerenter={() => (pointerIn = true)}
   onpointerleave={() => (pointerIn = false)}
   data-viewer-image
+  data-viewer-editing={edit ? '' : undefined}
 >
-  {#if url}
-    <img src={url} alt={name} style:width="{w * factor}px" style:height="{h * factor}px" />
+  {#if shown}
+    <div class="box" style:width="{fw * factor}px" style:height="{fh * factor}px">
+      <img
+        src={shown}
+        alt={name}
+        style:width="{w * factor}px"
+        style:height="{h * factor}px"
+        style:transform={edit ? cssTransform(edit) || null : null}
+        style:filter={edit ? cssFilter(edit) || null : null}
+        draggable="false"
+      />
+      {@render children?.()}
+    </div>
   {:else if failed}
     <p class="failed">{t('viewer-not-drawn', { why: failed })}</p>
   {/if}
@@ -168,13 +202,23 @@
     background: var(--canvas);
     outline: none;
   }
-  img {
-    display: block;
+  /* The frame that shows, in the middle; the image turned about its middle within it. */
+  .box {
+    position: relative;
     flex: none;
     margin: auto;
-    max-width: none;
     background: #fff;
     box-shadow: var(--shadow-1);
+  }
+  img {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    display: block;
+    max-width: none;
+    translate: -50% -50%;
+    transform-origin: center;
+    user-select: none;
   }
   .failed {
     margin: auto;

@@ -339,6 +339,15 @@ export class Sides {
     this.focused = other;
   }
 
+  /** Puts another file into a file side, keeping the side: at its first page, fitted (ADR 0071). */
+  setFile(key: string, file: string) {
+    const side = this.byKey(key);
+    if (!isFile(side)) return;
+    side.file = file;
+    side.page = 1;
+    side.zoom = null;
+  }
+
   /** The page in view of a file side. */
   setPage(key: string, page: number) {
     const side = this.byKey(key);

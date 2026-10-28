@@ -405,8 +405,11 @@ files-pixels-label = Piksler
 files-pixels = { $width } × { $height }
 files-alt = Hva det viser, med ord
 files-preview-none = Ingen forhåndsvisning for denne filtypen
-files-made-from = Laget for å bli en figur, av
+files-made-from = Laget av
 files-remove-used = { $count ->
     [one] Den er en figur i et prosjekt, som da vil vise ingenting der.
    *[other] Den er en figur i { $count } prosjekter, som da vil vise ingenting der.
 }
+
+# En enkel bilderedigering (docs/plans/a-simple-image-editor.md): kopiene laget av en fil, som lenker.
+files-copies = Kopier laget av den

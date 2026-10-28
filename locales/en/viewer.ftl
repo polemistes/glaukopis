@@ -21,3 +21,31 @@ viewer-zoom-field = Zoom, in percent
 viewer-zoom-choose = Choose a zoom
 viewer-tree-files = Files
 viewer-tree-empty = Nothing here yet
+
+# A simple image editor (docs/plans/a-simple-image-editor.md): the button in the bar, the row under it, and what it says.
+viewer-edit = Edit
+viewer-edit-turn-left = Turn left
+viewer-edit-turn-right = Turn right
+viewer-edit-flip-sideways = Flip sideways
+viewer-edit-flip-over = Flip upside down
+viewer-edit-crop = Crop
+viewer-edit-brightness = Brightness
+viewer-edit-contrast = Contrast
+viewer-edit-saturation = Saturation
+# How much of a colour the image has, 100 being as it is.
+viewer-edit-percent = { $percent } %
+# Puts one slider back at 100 %.
+viewer-edit-as-it-was = As it was
+viewer-edit-start-again = Start again
+viewer-edit-keep = Keep as a new file
+# The size the crop cuts to, of the size of the whole: "Cut to 800 × 600 of 1600 × 1200".
+viewer-edit-cut-to = Cut to { $width } × { $height } of { $fullWidth } × { $fullHeight }
+viewer-edit-leave-title = Leave without keeping?
+viewer-edit-leave-message = What was changed is lost.
+viewer-edit-leave = Leave
+viewer-edit-kept = Kept as { $name }
+viewer-edit-not-kept = The edited image could not be kept
+viewer-edit-not-opened = The image could not be opened for editing
+viewer-edit-too-large-title = Too large to be edited
+viewer-edit-too-large-message = The image is larger than { $most } MB, which is the most an image may be. A smaller copy can be made and edited instead.
+viewer-edit-make-smaller = Make a smaller copy

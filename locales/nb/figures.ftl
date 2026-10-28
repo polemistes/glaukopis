@@ -144,3 +144,8 @@ figures-caption-placeholder = Bildetekst
 
 # Ett sted for filer (ADR 0070).
 figures-kind-svg = SVG, en tegning
+
+# En enkel bilderedigering (docs/plans/a-simple-image-editor.md): versjonene av bildet i en figur.
+figures-versions = Versjoner
+# Størrelsen på en versjon, etter navnet i menyen.
+figures-version-size = { $width } × { $height }

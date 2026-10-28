@@ -146,3 +146,8 @@ figures-caption-placeholder = What is said of the image
 
 # One place for files (ADR 0070): the kind of an image that is a drawing.
 figures-kind-svg = SVG, a drawing
+
+# A simple image editor (docs/plans/a-simple-image-editor.md): the versions of a figure's image.
+figures-versions = Versions
+# The size of a version, after its name in the menu.
+figures-version-size = { $width } × { $height }
