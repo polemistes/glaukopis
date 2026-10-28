@@ -64,8 +64,9 @@ pub struct FileRecord {
     /// the same wherever it is a figure.
     #[serde(skip_serializing_if = "String::is_empty")]
     pub alt: String,
-    /// Of a file made from another to be a figure (an image turned upright,
-    /// or made into PNG), the hash of the one it was made from.
+    /// Of a file made from another, the hash of the one it was made from:
+    /// an image made to be a figure (turned upright, or made into PNG),
+    /// edited, or made smaller (ADR 0070, 0071). It does not say which.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub made_from: Option<String>,
 }

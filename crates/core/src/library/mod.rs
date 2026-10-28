@@ -14,6 +14,7 @@ pub mod small;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::{Mutex, MutexGuard, PoisonError};
 use std::time::SystemTime;
 
 use serde::Serialize;
@@ -968,17 +969,34 @@ impl Library {
         if content == bytes {
             return Ok(self.view_of(&record));
         }
-        if let Some(made) = self.files.files().iter().find(|f| f.made_from.as_deref() == Some(hash)) {
+        let name = figures::shown_name(&record.name, ending);
+        // A copy made of it before to be a figure is that copy; one made by
+        // editing it is not, and is named otherwise (ADR 0071).
+        if let Some(made) = self.files.files().iter().find(|f| f.made_from.as_deref() == Some(hash) && f.name == name) {
             let made = made.clone();
             let there = attachments::absolute(&self.dir, &made.path).is_ok_and(|p| p.is_file());
             if there {
                 return Ok(self.view_of(&made));
             }
         }
+        self.keep_copy(&record, content, name, measured)
+    }
+
+    /// Keeps what was made of the file `source` as a file of its own (ADR
+    /// 0070, 0071): beside it in its folder, under `name`, measured, with
+    /// what it shows in words, saying it was made from it. What the library
+    /// holds already, by its hash, is that file, as it is. An error where it
+    /// is larger than an image may be.
+    fn keep_copy(
+        &mut self,
+        source: &FileRecord,
+        content: Vec<u8>,
+        name: String,
+        measured: Option<(u32, u32)>,
+    ) -> Result<FileView> {
         if content.len() as u64 > figures::MAX_BYTES {
             return Err(figures::too_large());
         }
-        let name = figures::shown_name(&record.name, ending);
         let stored = attachments::store_bytes(&self.dir, &content, &name)?;
         let made_hash = attachments::hash_of_path(&stored).unwrap_or_default().to_owned();
         // The same picture taken in before by itself is that file, as it is.
@@ -990,18 +1008,49 @@ impl Library {
             hash: made_hash,
             path: stored,
             name,
-            folder: record.folder.clone(),
-            origin: record.origin.clone(),
+            folder: source.folder.clone(),
+            origin: source.origin.clone(),
             added: now(),
             width: measured.map(|m| m.0),
             height: measured.map(|m| m.1),
-            alt: record.alt.clone(),
-            made_from: Some(hash.to_owned()),
+            alt: source.alt.clone(),
+            made_from: Some(source.hash.clone()),
         });
         self.files_dirty = true;
         self.save_files()?;
         let made = self.files.files().last().cloned().unwrap_or_default();
         Ok(self.view_of(&made))
+    }
+
+    /// The record of the file with this hash and where it lies: what a copy
+    /// is made from.
+    fn copy_source(&self, hash: &str) -> Result<(FileRecord, PathBuf)> {
+        let record =
+            self.files.get(hash).cloned().ok_or_else(|| Error::not_found(tr!("core-library-the-file-of-library")))?;
+        let path = attachments::absolute(&self.dir, &record.path)?;
+        Ok((record, path))
+    }
+
+    /// Keeps what was made of the file with the hash `source` beside it,
+    /// named after it with `word` before the ending (ADR 0071). The file is
+    /// looked up anew: one that went away while the copy was made is not
+    /// found.
+    fn keep_named_copy(&mut self, source: &str, made: figures::Prepared, word: &str) -> Result<FileView> {
+        let (record, _) = self.copy_source(source)?;
+        let (content, ending, measured) = made;
+        let files = self.files.files();
+        let name = figures::copy_name(&record.name, word, ending, |n| {
+            files.iter().any(|f| f.name == n && f.folder == record.folder)
+        });
+        self.keep_copy(&record, content, name, measured)
+    }
+
+    /// What an edit of the image with this hash begins from (ADR 0071): how
+    /// large it is upright, what an edit of it is kept as, whether it can be
+    /// edited and whether it is too large to be. Read from the file's head.
+    pub fn edit_facts(&self, hash: &str) -> Result<figures::EditFacts> {
+        let (_, path) = self.copy_source(hash)?;
+        figures::edit_facts(&path)
     }
 
     /// Keeps an image that came from elsewhere, a project shared or carried
@@ -1463,6 +1512,49 @@ fn tidy_note(text: &str) -> String {
         .join("\n\n")
 }
 
+fn held(library: &Mutex<Library>) -> MutexGuard<'_, Library> {
+    library.lock().unwrap_or_else(PoisonError::into_inner)
+}
+
+/// The bytes of the file of a copy's source, read with the library let go.
+fn read_source(path: &Path) -> Result<Vec<u8>> {
+    fs::read(path).context(|| tr!("io-reading", path = path))
+}
+
+/// The image with this hash edited, kept as a new file of the library
+/// beside it (ADR 0071): named after it with *edited*, measured, with what
+/// it shows in words, made from it whether it is an original or a copy.
+/// The same edit made again is the file made before. The image itself is
+/// never changed. The library is held only while the file is looked up and
+/// while the copy is kept, not while its pixels are worked on. An error
+/// where it is larger than an image may be, a drawing, or not changed.
+pub fn edited(library: &Mutex<Library>, hash: &str, edit: &figures::Edit) -> Result<FileView> {
+    let (_, path) = held(library).copy_source(hash)?;
+    let size = fs::metadata(&path).context(|| tr!("io-reading", path = &path))?.len();
+    if size > figures::MAX_BYTES {
+        return Err(figures::too_large());
+    }
+    let made = figures::edited(&read_source(&path)?, edit)?;
+    held(library).keep_named_copy(hash, made, &tr!("core-pictures-edited"))
+}
+
+/// A smaller copy of the image with this hash, no larger than 4000 pixels
+/// on its longer side, kept beside it as an edit is and named with
+/// *smaller*: what is offered for an image too large to be edited, so it is
+/// read whatever its size. A copy still too large is made once more at half
+/// the size, and refused after that. The library is not held meanwhile.
+pub fn smaller_copy(library: &Mutex<Library>, hash: &str) -> Result<FileView> {
+    let (_, path) = held(library).copy_source(hash)?;
+    let bytes = read_source(&path)?;
+    let mut made = figures::smaller(&bytes, figures::SMALLER_LONGEST)?;
+    if made.0.len() as u64 > figures::MAX_BYTES {
+        tracing::info!(hash, "a smaller copy was still too large; made at half the size");
+        made = figures::smaller(&bytes, figures::SMALLER_LONGEST / 2)?;
+    }
+    drop(bytes);
+    held(library).keep_named_copy(hash, made, &tr!("core-pictures-smaller"))
+}
+
 /// A file of the store, with what the record and the entries say of it.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -1482,7 +1574,8 @@ pub struct FileView {
     pub height: Option<u32>,
     /// Of an image, what it shows, in words.
     pub alt: String,
-    /// Of a file made from another to be a figure, the hash of that one.
+    /// Of a file made from another, to be a figure, by editing or to be
+    /// smaller, the hash of that one.
     pub made_from: Option<String>,
     /// The references the file belongs to, in the order of the library.
     pub references: Vec<Summary>,
@@ -2129,6 +2222,124 @@ mod tests {
 
         assert!(lib.for_figure(&by_name("words.txt").hash).is_err());
         assert_eq!(lib.for_figure(&"0".repeat(64)).unwrap_err().kind(), "not-found");
+    }
+
+    /// A library with a folder *Plates* that holds these files, taken in
+    /// from a desk where they were written under their names: the library,
+    /// the folder's id and the files as they were taken in.
+    fn library_with_plates(files: &[(&str, Vec<u8>)]) -> (tempfile::TempDir, Library, String, Vec<FileView>) {
+        use std::sync::atomic::AtomicBool;
+        let (tmp, mut lib) = library();
+        let plates = lib.files.folder_create("Plates", None).unwrap();
+        lib.save_files().unwrap();
+        let desk = tmp.path().join("desk");
+        fs::create_dir_all(&desk).unwrap();
+        let paths: Vec<PathBuf> = files
+            .iter()
+            .map(|(name, bytes)| {
+                fs::write(desk.join(name), bytes).unwrap();
+                desk.join(name)
+            })
+            .collect();
+        let (taken, _) = files::store_paths(lib.dir(), &paths, false, &mut |_, _, _| {}, &AtomicBool::new(false));
+        let got = lib.enter_taken(&taken, Some(&plates.id)).unwrap();
+        (tmp, lib, plates.id, got.files)
+    }
+
+    fn encoded(picture: &image::DynamicImage, format: image::ImageFormat) -> Vec<u8> {
+        let mut bytes = std::io::Cursor::new(Vec::new());
+        picture.write_to(&mut bytes, format).unwrap();
+        bytes.into_inner()
+    }
+
+    #[test]
+    fn an_image_edited_is_a_new_file_beside_it() {
+        let long = image::DynamicImage::ImageRgb8(image::RgbImage::from_pixel(5000, 100, image::Rgb([90, 60, 30])));
+        // Of a colour that differs at every point, so that no two edits of it are the same.
+        let vase = image::DynamicImage::ImageRgb8(image::RgbImage::from_fn(4, 3, |x, y| {
+            image::Rgb([(x * 60) as u8, (y * 100) as u8, 30])
+        }));
+        let (_tmp, mut lib, plates, got) = library_with_plates(&[
+            ("vase.png", encoded(&vase, image::ImageFormat::Png)),
+            ("long.png", encoded(&long, image::ImageFormat::Png)),
+            ("circle.svg", figures::fixtures::SVG.as_bytes().to_vec()),
+        ]);
+        let by_name = |name: &str| got.iter().find(|f| f.name == name).unwrap().clone();
+        let vase = by_name("vase.png");
+        lib.set_alt(&vase.hash, "A vase").unwrap();
+        let before = lib.files.get(&vase.hash).cloned().unwrap();
+        let lib = Mutex::new(lib);
+
+        let turn = figures::Edit { turns: 1, ..figures::Edit::default() };
+        let made = edited(&lib, &vase.hash, &turn).unwrap();
+        assert_ne!(made.hash, vase.hash);
+        assert_eq!((made.name.as_str(), made.folder.as_deref()), ("vase (edited).png", Some(plates.as_str())));
+        assert_eq!((made.width, made.height, made.alt.as_str()), (Some(3), Some(4), "A vase"));
+        assert_eq!(made.made_from.as_deref(), Some(vase.hash.as_str()));
+        assert!(made.exists);
+        assert_eq!(held(&lib).files.get(&vase.hash), Some(&before), "the image edited stays as it was");
+        assert!(held(&lib).attachment_path(&vase.path).unwrap().is_file());
+
+        // The same edit again is the same file.
+        assert_eq!(edited(&lib, &vase.hash, &turn).unwrap().hash, made.hash);
+        assert_eq!(held(&lib).file_views().len(), 4);
+
+        // A copy edited is made from the copy, and counted on.
+        let flip = figures::Edit { flip_y: true, ..figures::Edit::default() };
+        let second = edited(&lib, &made.hash, &flip).unwrap();
+        assert_eq!(second.name, "vase (edited 2).png");
+        assert_eq!(second.made_from.as_deref(), Some(made.hash.as_str()));
+        let brighter = figures::Edit { brightness: 150, ..figures::Edit::default() };
+        assert_eq!(edited(&lib, &vase.hash, &brighter).unwrap().name, "vase (edited 3).png");
+        let again = Library::open_at(held(&lib).dir()).unwrap();
+        assert_eq!(again.file_view(&second.hash).unwrap().made_from.as_deref(), Some(made.hash.as_str()));
+
+        let small = smaller_copy(&lib, &by_name("long.png").hash).unwrap();
+        assert_eq!((small.name.as_str(), small.width, small.height), ("long (smaller).png", Some(4000), Some(80)));
+
+        let circle = by_name("circle.svg");
+        let facts = held(&lib).edit_facts(&circle.hash).unwrap();
+        assert!(!facts.editable, "a drawing has no pixels to edit");
+        assert_eq!(edited(&lib, &circle.hash, &turn).unwrap_err().kind(), "invalid");
+        let facts = held(&lib).edit_facts(&vase.hash).unwrap();
+        assert_eq!((facts.width, facts.height, facts.editable, facts.too_large), (4, 3, true, false));
+        assert_eq!(edited(&lib, &vase.hash, &figures::Edit::default()).unwrap_err().kind(), "invalid");
+        assert_eq!(edited(&lib, &"0".repeat(64), &turn).unwrap_err().kind(), "not-found");
+        assert_eq!(held(&lib).edit_facts(&"0".repeat(64)).unwrap_err().kind(), "not-found");
+    }
+
+    #[test]
+    fn an_image_too_large_to_be_edited_is_offered_a_smaller_copy() {
+        let plate = image::DynamicImage::ImageRgb8(image::RgbImage::from_pixel(6, 5, image::Rgb([10, 120, 200])));
+        let (_tmp, lib, _, got) = library_with_plates(&[("Plate 3.bmp", encoded(&plate, image::ImageFormat::Bmp))]);
+        let plate = got[0].clone();
+        // The file grows past the limit; what it holds after its image is not read.
+        let stored = lib.attachment_path(&plate.path).unwrap();
+        fs::File::options().append(true).open(&stored).unwrap().set_len(figures::MAX_BYTES + 1).unwrap();
+        let lib = Mutex::new(lib);
+        let facts = held(&lib).edit_facts(&plate.hash).unwrap();
+        assert_eq!((facts.width, facts.height, facts.ending.as_str(), facts.too_large), (6, 5, "png", true));
+        let refused = edited(&lib, &plate.hash, &figures::Edit { turns: 2, ..figures::Edit::default() }).unwrap_err();
+        assert_eq!(refused.to_string(), figures::too_large().to_string());
+
+        let small = smaller_copy(&lib, &plate.hash).unwrap();
+        assert_eq!((small.name.as_str(), small.width, small.height), ("Plate 3 (smaller).png", Some(6), Some(5)));
+        assert_eq!(small.made_from.as_deref(), Some(plate.hash.as_str()));
+        assert!(!held(&lib).edit_facts(&small.hash).unwrap().too_large);
+    }
+
+    #[test]
+    fn a_copy_made_by_editing_is_not_the_one_a_figure_shows() {
+        let plate = image::DynamicImage::ImageRgb8(image::RgbImage::from_pixel(6, 5, image::Rgb([10, 120, 200])));
+        let (_tmp, lib, _, got) = library_with_plates(&[("Plate 3.bmp", encoded(&plate, image::ImageFormat::Bmp))]);
+        let plate = got[0].clone();
+        let lib = Mutex::new(lib);
+        let turned = edited(&lib, &plate.hash, &figures::Edit { turns: 1, ..figures::Edit::default() }).unwrap();
+        assert_eq!(turned.name, "Plate 3 (edited).png");
+        let shown = held(&lib).for_figure(&plate.hash).unwrap();
+        assert_ne!(shown.hash, turned.hash);
+        assert_eq!((shown.name.as_str(), shown.width, shown.height), ("Plate 3.png", Some(6), Some(5)));
+        assert_eq!(held(&lib).for_figure(&plate.hash).unwrap().hash, shown.hash, "made once");
     }
 
     #[test]
