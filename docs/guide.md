@@ -413,10 +413,12 @@ Pressing the image opens the rest that can be said of it:
   the documents that can hold it.
 - Whether it is **numbered**. The figures are numbered through the document:
   the number shown where you write is the one the figure has there.
-- **Keep the caption with the image**, so that figures made with the same
-  image later begin with the same words; and **Use the image's own**,
-  which says of this figure what is kept with the image.
 - **Another image** in its place, or the figure removed.
+- **Versions**, where the image has been edited or copied: the image it was
+  first made from and every copy made from it, each with its size in pixels,
+  the one shown marked. Choosing one makes this figure show it, in this
+  document alone; every other figure goes on showing the one it names. See
+  *Editing an image*.
 
 The word before the number, where what is said of the figure stands and how
 it is set, are said by the layout of the document: *Figure 1.* under the
@@ -1215,8 +1217,10 @@ file in the view that has the focus (see *A file in a view*). Under it is
 what is known of the file: its name, its folder, where it came from and when,
 its size, and the references it belongs to. Of an image it says how large it
 is in pixels, what it shows, in words that can be written there, and the
-projects in which it is a figure, each a link. Below are what can be done with
-a file of its kind:
+projects in which it is a figure, each a link. A copy says what it was **made
+from**: the image it was edited from, made smaller from, or made from to be a
+figure; and a file from which copies were made lists them, under **Copies made
+from it**. Each is a link. Below are what can be done with a file of its kind:
 
 | Kind | What can be done |
 | --- | --- |
@@ -1350,6 +1354,42 @@ map is opened again as maps are opened, from the list. While a file has
 the focus, the document pane shows the document of the other view, and
 says so; with no map shown, it closes. **Open in another program**, where
 *Open it* stood, opens the file as before.
+
+### Editing an image
+
+An image in a view can be edited: **Edit**, at the end of its bar, opens a
+row under it. It does six things, and no more:
+
+- **Turn left** and **Turn right**, by a quarter.
+- **Flip sideways** and **Flip upside down**.
+- **Crop**: a frame over the image, with handles at its corners and sides,
+  moved by its inside; what lies outside is shaded, and the row says what
+  it cuts to, *Cut to 800 × 600 of 1600 × 1200*. Pressed again, the handles
+  go and the crop stays.
+- **Brightness**, **Contrast** and **Saturation**, each a slider from 0 to
+  200 %, 100 % being the image as it is. The small arrow beside one puts it
+  back.
+
+The image shows every change at once, as it will be kept. While it is
+edited, what is shown is a lighter copy of it; what is kept is made from the
+image itself, at its full size. **Start again** undoes everything.
+
+**Keep as a new file** keeps the edited image as a new file of the library,
+beside the one edited in its folder, named after it: *plate.jpg* becomes
+*plate (edited).jpg*, and that edited again *plate (edited 2).jpg*. A JPEG is
+kept as a JPEG, everything else as PNG. The view then shows the new file.
+The image edited is never changed, and **no figure changes by itself**: an
+image may be a figure in many documents, and what was done for one would be
+wrong in another. A figure is given the edited image in its own panel, under
+**Versions**. A copy says what it was made from, the image that was in view,
+whether that was itself a copy or not.
+
+**Cancel**, or **Escape**, leaves the editing; where something was changed,
+you are asked first. An edit that is not kept is lost when the view is
+closed. A drawing (SVG) has no pixels and cannot be edited. An image larger
+than 50 MB, the most a figure may hold, cannot be edited as it is; you are
+offered **Make a smaller copy**, whose longer side is 4000 pixels, and that
+copy is edited instead.
 
 ## Kinds of elements
 
