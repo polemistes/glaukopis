@@ -7,12 +7,18 @@
 //! made into PNG, and a photograph that says it is to be turned before it is
 //! shown is turned; what is made is a file of its own beside the one it was
 //! made from, which stays as it was.
+//!
+//! An image is edited here too (ADR 0071): turned, flipped, cropped and
+//! made lighter, darker or paler by the formulas the browser previews it
+//! with; what is made is likewise a file of its own.
 
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, PoisonError};
 
+use image::metadata::Orientation;
 use image::{DynamicImage, ImageDecoder, ImageFormat, ImageReader};
+use serde::{Deserialize, Serialize};
 
 use crate::error::{Error, Result};
 use crate::tr;
@@ -327,6 +333,328 @@ pub fn shown_name(name: &str, extension: &str) -> String {
     }
 }
 
+// ---- an image edited (ADR 0071) ----
+
+/// A rectangle cut out of the frame that shows, the image after its turns
+/// and flips: fractions from 0 to 1 of that frame's width and height, so
+/// that it means the same on the preview and on the full image.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Crop {
+    pub x: f64,
+    pub y: f64,
+    pub width: f64,
+    pub height: f64,
+}
+
+impl Default for Crop {
+    /// The whole frame.
+    fn default() -> Self {
+        Crop { x: 0.0, y: 0.0, width: 1.0, height: 1.0 }
+    }
+}
+
+impl Crop {
+    /// The pixels it cuts out of a frame of `width` by `height`, which is
+    /// not empty: the left, the top, the width and the height, rounded as
+    /// the interface rounds them, at least one pixel, and within the frame.
+    /// A value that is no number is that of the whole frame.
+    fn pixels(&self, width: u32, height: u32) -> (u32, u32, u32, u32) {
+        let fraction = |v: f64, or: f64| if v.is_finite() { v.clamp(0.0, 1.0) } else { or };
+        let along = |v: f64, size: u32| (v * f64::from(size)).round() as u32;
+        let x = along(fraction(self.x, 0.0), width).min(width - 1);
+        let y = along(fraction(self.y, 0.0), height).min(height - 1);
+        let w = along(fraction(self.width, 1.0), width).clamp(1, width - x);
+        let h = along(fraction(self.height, 1.0), height).clamp(1, height - y);
+        (x, y, w, h)
+    }
+
+    fn is_whole(&self) -> bool {
+        *self == Crop::default()
+    }
+}
+
+/// The settings of one editing: what is done to an image, in this order.
+/// Quarter turns clockwise, read modulo four; flips sideways and upside
+/// down in the turned frame; a crop in the frame that shows; brightness,
+/// contrast and saturation in percent, 100 being the image as it is.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Edit {
+    pub turns: u8,
+    pub flip_x: bool,
+    pub flip_y: bool,
+    pub crop: Option<Crop>,
+    pub brightness: u16,
+    pub contrast: u16,
+    pub saturation: u16,
+}
+
+impl Default for Edit {
+    /// Nothing changed.
+    fn default() -> Self {
+        Edit { turns: 0, flip_x: false, flip_y: false, crop: None, brightness: 100, contrast: 100, saturation: 100 }
+    }
+}
+
+impl Edit {
+    /// Whether it changes nothing.
+    pub fn is_nothing(&self) -> bool {
+        self.turns % 4 == 0
+            && !self.flip_x
+            && !self.flip_y
+            && self.crop.is_none_or(|c| c.is_whole())
+            && !self.changes_colours()
+    }
+
+    fn changes_colours(&self) -> bool {
+        (self.brightness, self.contrast, self.saturation) != (100, 100, 100)
+    }
+}
+
+/// What the interface needs of an image before it is edited.
+#[derive(Debug, Clone, Default, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EditFacts {
+    /// How large the whole image is, upright, as it is shown.
+    pub width: u32,
+    pub height: u32,
+    /// The ending of what an edit of it is kept as, `jpg` or `png`; `svg`
+    /// for a drawing, which is not edited.
+    pub ending: String,
+    /// Whether it has pixels to edit: not a drawing.
+    pub editable: bool,
+    /// Whether it is larger than an image may be, so that it is edited only
+    /// through a smaller copy.
+    pub too_large: bool,
+}
+
+/// The side the preview of an edit is no larger than, in pixels.
+pub const PREVIEW_LONGEST: u32 = 2400;
+/// The longer side of the copy offered of an image too large to be edited.
+pub const SMALLER_LONGEST: u32 = 4000;
+
+fn not_editable() -> Error {
+    Error::invalid(tr!("core-pictures-not-editable"))
+}
+
+/// What an edit of the file at `path` begins from: how large it is upright,
+/// read from its head, what kind an edit of it is kept as, whether it can
+/// be edited and whether it is too large to be. The pixels are not read.
+pub fn edit_facts(path: &Path) -> Result<EditFacts> {
+    use std::io::Read;
+    let reading = |e| Error::io(tr!("io-reading", path = path), e);
+    let size = std::fs::metadata(path).map_err(reading)?.len();
+    let mut head = Vec::new();
+    std::fs::File::open(path).map_err(reading)?.take(8192).read_to_end(&mut head).map_err(reading)?;
+    let format = match kind_of(&head).ok_or_else(not_a_picture)? {
+        Kind::Svg => {
+            let (width, height) = svg_size(&head).unwrap_or_default();
+            return Ok(EditFacts {
+                width: width.round() as u32,
+                height: height.round() as u32,
+                ending: "svg".into(),
+                editable: false,
+                too_large: size > MAX_BYTES,
+            });
+        }
+        Kind::Png => ImageFormat::Png,
+        Kind::Jpeg => ImageFormat::Jpeg,
+        Kind::Other(format) => format,
+    };
+    let file = std::io::BufReader::new(std::fs::File::open(path).map_err(reading)?);
+    let mut decoder = ImageReader::with_format(file, format).into_decoder().map_err(unreadable)?;
+    let (width, height) = decoder.dimensions();
+    let across = matches!(
+        decoder.orientation().unwrap_or(Orientation::NoTransforms),
+        Orientation::Rotate90 | Orientation::Rotate270 | Orientation::Rotate90FlipH | Orientation::Rotate270FlipH
+    );
+    let (width, height) = if across { (height, width) } else { (width, height) };
+    Ok(EditFacts { width, height, ending: kept_ending(format).into(), editable: true, too_large: size > MAX_BYTES })
+}
+
+/// The kind of image the bytes are, as they are decoded to be edited: an
+/// error for a drawing, which has no pixels, and for what is no image.
+fn editable_format(bytes: &[u8]) -> Result<ImageFormat> {
+    match kind_of(bytes).ok_or_else(not_a_picture)? {
+        Kind::Svg => Err(not_editable()),
+        Kind::Png => Ok(ImageFormat::Png),
+        Kind::Jpeg => Ok(ImageFormat::Jpeg),
+        Kind::Other(format) => Ok(format),
+    }
+}
+
+/// What an image made of one of this kind is kept as: a photograph as a
+/// photograph, everything else as PNG, as a figure's copy is.
+fn kept_format(format: ImageFormat) -> ImageFormat {
+    if format == ImageFormat::Jpeg { ImageFormat::Jpeg } else { ImageFormat::Png }
+}
+
+fn kept_ending(format: ImageFormat) -> &'static str {
+    if kept_format(format) == ImageFormat::Jpeg { "jpg" } else { "png" }
+}
+
+fn kept(picture: &DynamicImage, source: ImageFormat) -> Result<Prepared> {
+    let content = encode(picture, kept_format(source))?;
+    Ok((content, kept_ending(source), Some((picture.width(), picture.height()))))
+}
+
+/// The image made no larger than `longest` on its longer side, where it is larger.
+fn at_most(picture: DynamicImage, longest: u32) -> DynamicImage {
+    if picture.width().max(picture.height()) > longest {
+        picture.resize(longest, longest, image::imageops::FilterType::Triangle)
+    } else {
+        picture
+    }
+}
+
+/// The edit done to an upright image, in the record's order: the turns,
+/// the flips in the turned frame, the crop in the frame that shows, then
+/// the colours. The interface previews it with `scale(fx, fy)
+/// rotate(turns × 90deg)`, which the browser applies from the right, the
+/// turn first and then the flip: the two must agree.
+pub fn apply(picture: DynamicImage, edit: &Edit) -> DynamicImage {
+    let mut picture = match edit.turns % 4 {
+        1 => picture.rotate90(),
+        2 => picture.rotate180(),
+        3 => picture.rotate270(),
+        _ => picture,
+    };
+    if edit.flip_x {
+        picture = picture.fliph();
+    }
+    if edit.flip_y {
+        picture = picture.flipv();
+    }
+    if let Some(crop) = &edit.crop
+        && picture.width() > 0
+        && picture.height() > 0
+    {
+        let (x, y, w, h) = crop.pixels(picture.width(), picture.height());
+        if (x, y, w, h) != (0, 0, picture.width(), picture.height()) {
+            picture = picture.crop_imm(x, y, w, h);
+        }
+    }
+    if edit.changes_colours() {
+        // What has no transparency is given none.
+        picture = if picture.color().has_alpha() {
+            let mut rgba = picture.to_rgba8();
+            colours(&mut rgba, edit.brightness, edit.contrast, edit.saturation);
+            DynamicImage::ImageRgba8(rgba)
+        } else {
+            let mut rgb = picture.to_rgb8();
+            colours(&mut rgb, edit.brightness, edit.contrast, edit.saturation);
+            DynamicImage::ImageRgb8(rgb)
+        };
+    }
+    picture
+}
+
+/// Brightness, contrast and saturation, in percent, by the formulas of the
+/// browser's filter functions (Filter Effects Module Level 1, the shorthand
+/// functions), so that what the preview shows is what is kept: on the
+/// stored sRGB values as fractions, in this order, each step clamped before
+/// the next, the alpha untouched.
+fn colours<P>(picture: &mut image::ImageBuffer<P, Vec<u8>>, brightness: u16, contrast: u16, saturation: u16)
+where
+    P: image::Pixel<Subpixel = u8>,
+{
+    let b = f32::from(brightness) / 100.0;
+    let c = f32::from(contrast) / 100.0;
+    let s = f32::from(saturation) / 100.0;
+    // Brightness and contrast act on each channel alone: they are worked
+    // out once for each of its 256 values.
+    let mut table = [0f32; 256];
+    for (v, out) in table.iter_mut().enumerate() {
+        let v = (v as f32 / 255.0 * b).clamp(0.0, 1.0);
+        *out = ((v - 0.5) * c + 0.5).clamp(0.0, 1.0);
+    }
+    let matrix = [
+        [0.213 + 0.787 * s, 0.715 - 0.715 * s, 0.072 - 0.072 * s],
+        [0.213 - 0.213 * s, 0.715 + 0.285 * s, 0.072 - 0.072 * s],
+        [0.213 - 0.213 * s, 0.715 - 0.715 * s, 0.072 + 0.928 * s],
+    ];
+    let shade = |v: f32| (v * 255.0).round() as u8;
+    for pixel in picture.pixels_mut() {
+        let channels = pixel.channels_mut();
+        let rgb = [table[usize::from(channels[0])], table[usize::from(channels[1])], table[usize::from(channels[2])]];
+        let rgb = if saturation == 100 {
+            rgb
+        } else {
+            matrix.map(|m| (m[0] * rgb[0] + m[1] * rgb[1] + m[2] * rgb[2]).clamp(0.0, 1.0))
+        };
+        for (channel, v) in channels.iter_mut().zip(rgb) {
+            *channel = shade(v);
+        }
+    }
+}
+
+/// The bytes an image edited is kept as: decoded upright, as the browser
+/// shows it, the edit applied, and encoded as a JPEG where it was one and
+/// as PNG otherwise; an animated GIF by its first frame. An error for a
+/// drawing, for what is no image, and for an edit that changes nothing.
+pub fn edited(bytes: &[u8], edit: &Edit) -> Result<Prepared> {
+    let format = editable_format(bytes)?;
+    if edit.is_nothing() {
+        return Err(Error::invalid(tr!("core-pictures-nothing-changed")));
+    }
+    let (picture, _) = decode(bytes, format)?;
+    kept(&apply(picture, edit), format)
+}
+
+/// The image shown while it is edited: upright, no larger than `longest`
+/// on its longer side, a JPEG for a JPEG and PNG for every other kind, so
+/// that the browser shows what it does not read. One that is small enough
+/// and upright already is as it is. The size given is the whole image's,
+/// upright, not the preview's.
+pub fn preview(bytes: &[u8], longest: u32) -> Result<Prepared> {
+    let format = editable_format(bytes)?;
+    let (picture, turned) = decode(bytes, format)?;
+    let whole = (picture.width(), picture.height());
+    let small = whole.0.max(whole.1) <= longest;
+    if small && !turned && matches!(format, ImageFormat::Png | ImageFormat::Jpeg) {
+        return Ok((bytes.to_vec(), kept_ending(format), Some(whole)));
+    }
+    let (content, ending, _) = kept(&at_most(picture, longest), format)?;
+    Ok((content, ending, Some(whole)))
+}
+
+/// A smaller copy of an image, no larger than `longest` on its longer
+/// side, kept as an edit of it would be. The size given is the copy's.
+pub fn smaller(bytes: &[u8], longest: u32) -> Result<Prepared> {
+    let format = editable_format(bytes)?;
+    let (picture, _) = decode(bytes, format)?;
+    kept(&at_most(picture, longest), format)
+}
+
+/// The name of a copy made of the file `name`: its stem with `word` after
+/// it in brackets, and `ending`; counted up, `(word 2)`, `(word 3)`, while
+/// `taken` says a name is. A stem that has the word already is counted on
+/// from it rather than given it twice: *plate (edited).jpg* edited again
+/// is *plate (edited 2).jpg*.
+pub fn copy_name(name: &str, word: &str, ending: &str, taken: impl Fn(&str) -> bool) -> String {
+    let shown = shown_name(name, ending);
+    let stem = shown.strip_suffix(&format!(".{ending}")).unwrap_or(&shown);
+    let (stem, mut count) = counted(stem, word).unwrap_or((stem, 0));
+    loop {
+        count += 1;
+        let candidate =
+            if count == 1 { format!("{stem} ({word}).{ending}") } else { format!("{stem} ({word} {count}).{ending}") };
+        if !taken(&candidate) {
+            return candidate;
+        }
+    }
+}
+
+/// The stem without the ` (word)` or ` (word n)` at its end, and the count
+/// that was there, 1 for the word alone; nothing where it has none.
+fn counted<'a>(stem: &'a str, word: &str) -> Option<(&'a str, u32)> {
+    let (before, bracketed) = stem.strip_suffix(')')?.rsplit_once(" (")?;
+    let rest = bracketed.strip_prefix(word)?;
+    let count = if rest.is_empty() { 1 } else { rest.strip_prefix(' ')?.parse::<u32>().ok().filter(|n| *n >= 2)? };
+    (!before.is_empty()).then_some((before, count))
+}
+
 #[cfg(test)]
 pub(crate) mod fixtures {
     /// A picture of four points by three, in one colour.
@@ -438,5 +766,210 @@ mod tests {
         assert_eq!(shown_name("/home/someone/A vase.PNG", "png"), "A vase.png");
         assert_eq!(shown_name("C:\\pictures\\photo.jpeg", "jpg"), "photo.jpg");
         assert_eq!(shown_name("  ", "svg"), "image.svg");
+    }
+
+    const RED: [u8; 3] = [255, 0, 0];
+    const GREEN: [u8; 3] = [0, 255, 0];
+    const BLUE: [u8; 3] = [0, 0, 255];
+    const WHITE: [u8; 3] = [255, 255, 255];
+
+    /// Four points by three, black, with red at the top left, green at the
+    /// top right, blue at the bottom left and white at the bottom right.
+    fn corners() -> DynamicImage {
+        DynamicImage::ImageRgb8(image::RgbImage::from_fn(4, 3, |x, y| {
+            image::Rgb(match (x, y) {
+                (0, 0) => RED,
+                (3, 0) => GREEN,
+                (0, 2) => BLUE,
+                (3, 2) => WHITE,
+                _ => [0, 0, 0],
+            })
+        }))
+    }
+
+    /// The four corners of a picture, top left, top right, bottom right,
+    /// bottom left, and its size.
+    fn corners_of(picture: &DynamicImage) -> ([[u8; 3]; 4], (u32, u32)) {
+        let rgb = picture.to_rgb8();
+        let (w, h) = rgb.dimensions();
+        let at = |x, y| rgb.get_pixel(x, y).0;
+        ([at(0, 0), at(w - 1, 0), at(w - 1, h - 1), at(0, h - 1)], (w, h))
+    }
+
+    fn encoded(picture: &DynamicImage, format: ImageFormat) -> Vec<u8> {
+        let mut bytes = Cursor::new(Vec::new());
+        picture.write_to(&mut bytes, format).unwrap();
+        bytes.into_inner()
+    }
+
+    /// A JPEG that says it is to be turned a quarter clockwise before it is
+    /// shown: an Exif segment with the orientation 6 put after its start.
+    fn lying_jpeg(picture: &DynamicImage) -> Vec<u8> {
+        let jpeg = encoded(picture, ImageFormat::Jpeg);
+        let mut exif = vec![0xff, 0xe1, 0x00, 0x22];
+        exif.extend_from_slice(b"Exif\0\0MM\0\x2a\0\0\0\x08");
+        exif.extend_from_slice(&[0x00, 0x01, 0x01, 0x12, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, 0x06, 0x00, 0x00]);
+        exif.extend_from_slice(&[0, 0, 0, 0]);
+        [&jpeg[..2], &exif[..], &jpeg[2..]].concat()
+    }
+
+    #[test]
+    fn an_image_is_turned_clockwise_by_quarters() {
+        let turned = |turns| corners_of(&apply(corners(), &Edit { turns, ..Edit::default() }));
+        // The top left goes to the top right, and the picture stands on its side.
+        assert_eq!(turned(1), ([BLUE, RED, GREEN, WHITE], (3, 4)));
+        assert_eq!(turned(2), ([WHITE, BLUE, RED, GREEN], (4, 3)));
+        assert_eq!(turned(3), ([GREEN, WHITE, BLUE, RED], (3, 4)));
+        assert_eq!(turned(4), turned(0), "four quarters are none");
+        assert_eq!(turned(0), ([RED, GREEN, WHITE, BLUE], (4, 3)));
+    }
+
+    #[test]
+    fn a_flip_acts_in_the_turned_frame_and_the_crop_in_the_frame_that_shows() {
+        // Turned a quarter, the corners are blue, red, green, white; flipped
+        // sideways after that, what was at the right is at the left.
+        let flipped = Edit { turns: 1, flip_x: true, ..Edit::default() };
+        assert_eq!(corners_of(&apply(corners(), &flipped)), ([RED, BLUE, WHITE, GREEN], (3, 4)));
+        // Flipped sideways first and turned after, it would be white, green,
+        // red, blue: what flipping upside down after the turn gives.
+        let over = Edit { turns: 1, flip_y: true, ..Edit::default() };
+        assert_eq!(corners_of(&apply(corners(), &over)), ([WHITE, GREEN, RED, BLUE], (3, 4)));
+        // The right half of three points is the last one: its first point
+        // is at 1.5, rounded to 2.
+        let right = Edit { crop: Some(Crop { x: 0.5, y: 0.0, width: 0.5, height: 1.0 }), ..flipped.clone() };
+        assert_eq!(corners_of(&apply(corners(), &right)), ([BLUE, BLUE, WHITE, WHITE], (1, 4)));
+        let top_right = Edit { crop: Some(Crop { x: 1.0 / 3.0, y: 0.0, width: 2.0 / 3.0, height: 0.5 }), ..flipped };
+        assert_eq!(corners_of(&apply(corners(), &top_right)), ([[0, 0, 0], BLUE, [0, 0, 0], [0, 0, 0]], (2, 2)));
+    }
+
+    #[test]
+    fn a_crop_cuts_whole_points_and_at_least_one() {
+        let cut = |crop| apply(corners(), &Edit { crop: Some(crop), ..Edit::default() });
+        let left = cut(Crop { x: 0.0, y: 0.0, width: 0.5, height: 1.0 });
+        assert_eq!(corners_of(&left), ([RED, [0, 0, 0], [0, 0, 0], BLUE], (2, 3)));
+        assert_eq!(cut(Crop::default()), corners(), "the whole frame is no crop");
+        let speck = cut(Crop { x: 0.9, y: 0.0, width: 0.01, height: 0.01 });
+        assert_eq!(corners_of(&speck), ([GREEN; 4], (1, 1)), "less than a point is one point");
+        let past = cut(Crop { x: 0.75, y: 0.5, width: 2.0, height: f64::NAN });
+        assert_eq!((past.width(), past.height()), (1, 1), "what goes past the edge ends at it");
+        assert!(Edit { crop: Some(Crop::default()), ..Edit::default() }.is_nothing());
+        assert!(!Edit { crop: Some(Crop { width: 0.5, ..Crop::default() }), ..Edit::default() }.is_nothing());
+    }
+
+    #[test]
+    fn the_colours_follow_the_formulas_of_the_browser() {
+        let one = |rgba: [u8; 4], edit: Edit| {
+            let picture = DynamicImage::ImageRgba8(image::RgbaImage::from_pixel(1, 1, image::Rgba(rgba)));
+            apply(picture, &edit).to_rgba8().get_pixel(0, 0).0
+        };
+        let colours = |brightness, contrast, saturation| Edit { brightness, contrast, saturation, ..Edit::default() };
+        // Brightness multiplies: a quarter made twice as bright is a half.
+        assert_eq!(one([64, 64, 64, 255], colours(200, 100, 100)), [128, 128, 128, 255]);
+        // No contrast is the middle everywhere, 127.5 rounded up.
+        assert_eq!(one([0, 90, 255, 255], colours(100, 0, 100)), [128, 128, 128, 255]);
+        // No saturation of a pure red is 0.213 of white, 54.3 of 255.
+        assert_eq!(one([255, 0, 0, 255], colours(100, 100, 0)), [54, 54, 54, 255]);
+        // Brightness before contrast: 100 made 150, then halved about 127.5, is 138.75.
+        assert_eq!(one([100, 100, 100, 255], colours(150, 50, 100)), [139, 139, 139, 255]);
+        // Clamped between: 200 made 400 is 255, then halved about the middle 191.25.
+        assert_eq!(one([200, 200, 200, 255], colours(200, 50, 100)), [191, 191, 191, 255]);
+        // Saturation doubled, by the matrix: (0.213 + 1.574) · 0.6 − 0.715 · 0.4 − 0.072 · 0.2 of red.
+        let [r, g, b, _] = one([153, 102, 51, 255], colours(100, 100, 200));
+        let red = (1.787 * 0.6 - 0.715 * 0.4 - 0.072 * 0.2f32) * 255.0;
+        let green = (-0.213 * 0.6 + 1.285 * 0.4 - 0.072 * 0.2f32) * 255.0;
+        let blue = (-0.213 * 0.6 - 0.715 * 0.4 + 1.928 * 0.2f32) * 255.0;
+        assert_eq!([r, g, b], [red.round() as u8, green.round() as u8, blue.clamp(0.0, 255.0).round() as u8]);
+        // The alpha is left as it is, and 100 everywhere is nothing.
+        assert_eq!(one([255, 0, 0, 77], colours(150, 120, 30))[3], 77);
+        assert_eq!(one([12, 34, 56, 78], Edit::default()), [12, 34, 56, 78]);
+        // What has no transparency is given none.
+        assert_eq!(apply(corners(), &colours(120, 100, 100)).color(), image::ColorType::Rgb8);
+    }
+
+    #[test]
+    fn an_image_edited_is_kept_as_a_photograph_or_as_png() {
+        let turn = Edit { turns: 1, ..Edit::default() };
+        let (jpeg, ending, size) = edited(&encoded(&corners(), ImageFormat::Jpeg), &turn).unwrap();
+        assert_eq!((image::guess_format(&jpeg).unwrap(), ending, size), (ImageFormat::Jpeg, "jpg", Some((3, 4))));
+        let (png, ending, size) = edited(&encoded(&corners(), ImageFormat::Bmp), &turn).unwrap();
+        assert_eq!((image::guess_format(&png).unwrap(), ending, size), (ImageFormat::Png, "png", Some((3, 4))));
+        assert_eq!(corners_of(&image::load_from_memory(&png).unwrap()).0, [BLUE, RED, GREEN, WHITE]);
+        // A photograph that says it lies on its side is set upright first,
+        // as the browser shows it, and then turned.
+        let (upright, _, size) = edited(&lying_jpeg(&corners()), &turn).unwrap();
+        assert_eq!(size, Some((4, 3)));
+        assert_eq!(dimensions(&upright, ImageFormat::Jpeg), Some((4, 3)));
+
+        let drawing = edited(SVG.as_bytes(), &turn).unwrap_err();
+        assert_eq!(drawing.kind(), "invalid");
+        assert!(drawing.to_string().contains("drawing"), "{drawing}");
+        let nothing = edited(&PNG, &Edit::default()).unwrap_err();
+        assert!(nothing.to_string().contains("nothing was changed"), "{nothing}");
+        assert!(edited(b"no picture", &turn).is_err());
+    }
+
+    #[test]
+    fn the_preview_is_upright_and_no_larger_than_asked() {
+        let large = DynamicImage::ImageRgb8(image::RgbImage::from_pixel(5000, 2000, image::Rgb([90, 60, 30])));
+        let (shown, ending, size) = preview(&encoded(&large, ImageFormat::Png), PREVIEW_LONGEST).unwrap();
+        assert_eq!((dimensions(&shown, ImageFormat::Png), ending), (Some((2400, 960)), "png"));
+        assert_eq!(size, Some((5000, 2000)), "the size is the whole image's");
+        // Small enough, it is as it is.
+        let small = encoded(&DynamicImage::ImageRgb8(image::RgbImage::new(100, 100)), ImageFormat::Png);
+        assert_eq!(preview(&small, PREVIEW_LONGEST).unwrap(), (small.clone(), "png", Some((100, 100))));
+        // Of a kind the browser may not show, PNG; of a photograph lying on its side, upright.
+        let (shown, ending, _) = preview(&encoded(&corners(), ImageFormat::Tiff), PREVIEW_LONGEST).unwrap();
+        assert_eq!((image::guess_format(&shown).unwrap(), ending), (ImageFormat::Png, "png"));
+        let (shown, ending, size) = preview(&lying_jpeg(&corners()), PREVIEW_LONGEST).unwrap();
+        assert_eq!((dimensions(&shown, ImageFormat::Jpeg), ending, size), (Some((3, 4)), "jpg", Some((3, 4))));
+    }
+
+    #[test]
+    fn a_smaller_copy_is_as_large_as_asked() {
+        let long = DynamicImage::ImageRgb8(image::RgbImage::from_pixel(5000, 100, image::Rgb([90, 60, 30])));
+        let (copy, ending, size) = smaller(&encoded(&long, ImageFormat::Bmp), SMALLER_LONGEST).unwrap();
+        assert_eq!((dimensions(&copy, ImageFormat::Png), ending, size), (Some((4000, 80)), "png", Some((4000, 80))));
+        assert!(smaller(SVG.as_bytes(), SMALLER_LONGEST).is_err());
+    }
+
+    #[test]
+    fn what_an_edit_begins_from_is_read_from_the_head() {
+        let tmp = tempfile::tempdir().unwrap();
+        let write = |name: &str, bytes: &[u8]| {
+            let path = tmp.path().join(name);
+            std::fs::write(&path, bytes).unwrap();
+            path
+        };
+        let facts = edit_facts(&write("vase.png", &PNG)).unwrap();
+        let expected = EditFacts { width: 4, height: 3, ending: "png".into(), editable: true, too_large: false };
+        assert_eq!(facts, expected);
+        let lying = edit_facts(&write("lying.jpg", &lying_jpeg(&corners()))).unwrap();
+        assert_eq!((lying.width, lying.height, lying.ending.as_str()), (3, 4, "jpg"), "upright");
+        let gif = edit_facts(&write("a.gif", &encoded(&corners(), ImageFormat::Gif))).unwrap();
+        assert_eq!((gif.width, gif.ending.as_str()), (4, "png"));
+        let drawing = edit_facts(&write("circle.svg", SVG.as_bytes())).unwrap();
+        assert_eq!((drawing.editable, drawing.width, drawing.height), (false, 120, 80));
+        assert!(edit_facts(&write("words.txt", b"plain words")).is_err());
+        // Over the limit by its size, whatever it holds after its head.
+        let large = write("large.png", &PNG);
+        std::fs::File::options().append(true).open(&large).unwrap().set_len(MAX_BYTES + 1).unwrap();
+        assert!(edit_facts(&large).unwrap().too_large);
+    }
+
+    #[test]
+    fn a_copy_is_named_after_its_source_and_counted_up() {
+        let none = |_: &str| false;
+        assert_eq!(copy_name("plate.jpg", "edited", "jpg", none), "plate (edited).jpg");
+        assert_eq!(copy_name("plate.jpg", "edited", "jpg", |n| n == "plate (edited).jpg"), "plate (edited 2).jpg");
+        assert_eq!(copy_name("plate (edited).jpg", "edited", "jpg", none), "plate (edited 2).jpg");
+        assert_eq!(copy_name("plate (edited 2).jpg", "edited", "jpg", none), "plate (edited 3).jpg");
+        assert_eq!(
+            copy_name("plate (edited 2).jpg", "edited", "jpg", |n| n == "plate (edited 3).jpg"),
+            "plate (edited 4).jpg"
+        );
+        assert_eq!(copy_name("plate", "edited", "png", none), "plate (edited).png");
+        assert_eq!(copy_name("Plate 3.bmp", "smaller", "png", none), "Plate 3 (smaller).png");
+        assert_eq!(copy_name("plate (smaller).png", "edited", "png", none), "plate (smaller) (edited).png");
+        assert_eq!(copy_name("(edited).png", "edited", "png", none), "(edited) (edited).png");
     }
 }
