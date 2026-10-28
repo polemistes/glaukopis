@@ -174,10 +174,12 @@
 </div>
 
 <style>
+  /* On a narrow side the bar wraps, so that nothing of it goes out of reach under what lies beside. */
   .bar {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 6px;
+    gap: 4px 6px;
     flex: none;
     min-width: 0;
     min-height: 40px;

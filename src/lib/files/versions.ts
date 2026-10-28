@@ -40,6 +40,8 @@ export function versionsOf(hash: string, all: readonly FileView[]): FileView[] {
     }
   }
   const [first, ...copies] = found;
-  copies.sort((a, b) => a.added.localeCompare(b.added) || a.name.localeCompare(b.name));
+  // Times are kept to the second: copies made within one keep the order they were found in,
+  // a copy before the copies made from it.
+  copies.sort((a, b) => a.added.localeCompare(b.added));
   return [first, ...copies].filter((f) => f.exists);
 }

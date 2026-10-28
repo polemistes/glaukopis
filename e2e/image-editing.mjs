@@ -114,13 +114,25 @@ try {
   await sleep(500);
   await app.drag(await app.findByText('.panel .list .row', 'The shield.png'), '.box .text .prose p');
   await until('the figure', () => app.exists('.box .text figure.figure img[src^="blob:"]'), 10000);
-  const figureFile = () => app.exec(`return document.querySelector('.box .text figure')?.dataset.picture ?? ''`);
-  check('the image is a figure in a text', (await figureFile()) === `${shield.hash}.png`, await figureFile());
+  // The figure's picture carries the name of the file it shows; every version has a name of its own.
+  const figureFile = () => app.exec(`return document.querySelector('.box .text figure .picture')?.dataset.name ?? ''`);
+  check('the image is a figure in a text', (await figureFile()) === 'The shield.png', await figureFile());
 
-  // ---- shown beside, and edited ----
+  // ---- shown beside, and edited; the text and the panel of images closed, for the room ----
+  await app.press('Escape');
+  await sleep(200);
+  await app.press('Escape');
+  await sleep(200);
+  await app.keys(['Control', 'Shift', 'p']);
+  await app.waitGone('.panel[aria-label="Images"]', 5000);
   await app.execAsync(`window.__glaukopisViewer.beside(arguments[0]);`, shield.hash);
   await until('the image beside', () => app.exec(`return document.querySelector('[data-file-side] [data-viewer-image] img')?.naturalWidth ?? 0`), 10000);
   check('the bar of an image has Edit', await app.exists('[data-file-side] [data-viewer-edit]'));
+  const reachable = await app.exec(
+    `const b = document.querySelector('[data-file-side] [data-viewer-edit]').getBoundingClientRect(), s = document.querySelector('[data-file-side]').getBoundingClientRect();
+     return b.right <= s.right + 1 && b.bottom <= s.bottom;`,
+  );
+  check('and it is within the side, however narrow', reachable);
   await app.click('[data-file-side] [data-viewer-edit]');
   await app.waitFor('[data-edit-row]', 5000);
   await until('the lighter copy', async () => (await imageStyle())?.src.startsWith('blob:'), 8000);
@@ -163,7 +175,6 @@ try {
   await until('the copy in the side', async () => (await sideFile()) === copy.hash, 8000);
   check('the side shows the copy, and the row is gone', !(await app.exists('[data-edit-row]')));
   await until('the copy drawn', () => app.exec(`return document.querySelector('[data-file-side] [data-viewer-image] img')?.naturalWidth ?? 0`), 10000);
-  check('every figure still shows the one it named', (await figureFile()) === `${shield.hash}.png`);
   await app.screenshot('image-editing-3-kept');
 
   // ---- the copy edited: made from the copy ----
@@ -196,6 +207,10 @@ try {
   check('with nothing changed, Escape leaves without asking', !(await app.exists('dialog')));
 
   // ---- the versions of the figure's image ----
+  await app.doubleClick('.diagram .node.root');
+  await app.waitFor('.box .text figure .picture', 5000);
+  await sleep(300);
+  check('every figure still shows the one it named', (await figureFile()) === 'The shield.png', await figureFile());
   await app.click('.box .text figure .picture');
   await app.waitFor('.figure-panel', 3000);
   await sleep(250);
@@ -212,7 +227,7 @@ try {
   );
   await app.screenshot('image-editing-4-versions');
   await app.clickText('.menu [role="menuitem"]', 'The shield (edited).png');
-  await until('the figure to show the copy', async () => (await figureFile()) === `${copy.hash}.png`, 5000);
+  await until('the figure to show the copy', async () => (await figureFile()) === 'The shield (edited).png', 5000);
   check('a version chosen is what the figure shows', true);
   await app.press('Escape');
   await sleep(200);

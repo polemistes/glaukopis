@@ -310,10 +310,12 @@
     gap: 6px;
     cursor: pointer;
   }
+  /* With Versions there are three: the row wraps rather than squeezing a button onto two lines. */
   .actions {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 6px;
+    gap: 4px 6px;
     margin-top: 12px;
     padding-top: 8px;
     border-top: 1px solid var(--line);
@@ -329,6 +331,7 @@
     background: transparent;
     color: var(--ink-2);
     font: inherit;
+    white-space: nowrap;
     cursor: pointer;
   }
   .actions button:hover {

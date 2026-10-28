@@ -41,6 +41,11 @@ describe('the versions of an image', () => {
     expect(names('none')).toEqual([]);
   });
 
+  it('made within one second, put a copy before the copies made from it', () => {
+    const same = [file('copy2', '5', 'copy'), file('root', '1'), file('copy', '5', 'root')];
+    expect(versionsOf('root', same).map((f) => f.hash)).toEqual(['root', 'copy', 'copy2']);
+  });
+
   it('begin where the library no longer has the source, and leave out what is not there', () => {
     const some = [file('copy', '1', 'gone'), file('copy2', '2', 'copy', false)];
     expect(versionsOf('copy', some).map((f) => f.hash)).toEqual(['copy']);
