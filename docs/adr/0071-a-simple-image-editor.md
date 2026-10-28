@@ -61,3 +61,23 @@ The owner wants to turn, crop and adjust an image without leaving the applicatio
 - `src/lib/figures/FigurePanel.svelte` and `views.svelte.ts` gain *Versions*; `src/lib/files/FilePane.svelte` the copies made from a file.
 - The guide's section *A file in a view* gains the editing; *The files of the library* the copies; `viewer.ftl`, `figures.ftl`, `files.ftl` the words, in English and Bokmål.
 - Nothing of the model of a document changes: a figure names its file by hash and extension as before.
+
+## Addendum, 2026-10-28: as built
+
+Built the same day on main: the core and its commands by an agent in a worktree (3085fbb0, 80de930e, 16a782a8, merged in 7ef11a11), the interface beside it (654229d7), the script (3fa93927), the guide (4b0dfe19), the languages script (44a9bf4a), and what the running application showed (e8367a00). What departs from the plan, or was settled in the building:
+
+- **The edit and the smaller copy are free functions over the library's lock** (`library::edited`, `library::smaller_copy` in `library/mod.rs`), not methods of the library: a method cannot let go of its own lock. The lock is held to look the file up and again to keep the copy, the record looked up anew there; reading, decoding, editing and encoding are done without it.
+- **A figure's copy is now found by its name as well as by what it was made from**, so that an image of another kind, edited and then made a figure, does not take the edited copy for its figure's copy.
+- **Ties in time keep the order of making.** The library's times are to the second; the versions of an image made within one keep the order they were found in, a copy before the copies made from it.
+- **Turning or flipping turns and flips the crop with the image**, so that it covers the same part.
+- **A crop with its handles put away stays a crop**: what it leaves out stays shaded, the image not shown cut.
+- **The figure's panel works out the versions itself**, from the files of the library: its properties are given once, when it opens.
+- **The side keeps its place when it shows the copy**: `sides.setFile` puts another file into a file side, at its first page, fitted.
+- **The viewer's bar wraps on a narrow side**, and so does the last row of a figure's panel: with two sides and the document pane open, Edit lay under the pane, out of reach, and *Another image…* broke over two lines.
+- **The words "could not be opened for editing" say no reason in themselves**: the error's own words are shown under them, as every error is.
+- **The guide lost a line it should have lost before**: *Keep the caption with the image*, a control that went with one place for files.
+- **The flips have arrows for icons**, ↔ and ↕: the set of icons has none named for flipping.
+
+Choices made alone, beyond the record's: the preview is the file as it is where it is a PNG or JPEG, upright and no larger than 2400 pixels; a copy over the limit after making it smaller is tried once more at 2000 pixels and then refused; a drawing's facts say it cannot be edited and the button is not shown for it.
+
+Verified: the Rust tests of the core and the application, 884 and 16 passed with the integration tests (9, 7, 1); clippy clean but for the warning that was there before, in `document/numbers.rs`; the interface's types clean and 1321 tests passed. End-to-end: image-editing 27 (new), file-view 43, figures 35, files 87, picture-panel 25, languages 17, as-left 31, documents 62, all passed. The kept image is turned and cut as the side showed it (`e2e/output/image-editing-2-crop.png`, `-3-kept.png`).
