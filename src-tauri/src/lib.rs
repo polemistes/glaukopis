@@ -329,6 +329,8 @@ pub fn run() {
             if let Some(state) = app.try_state::<state::AppState>() {
                 state.zotero_done();
             }
+            // The children that keep files open for the views end with it (ADR 0072).
+            glaukopis_core::ocr::server::end_all();
         }
         _ => {}
     });
