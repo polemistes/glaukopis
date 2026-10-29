@@ -162,15 +162,32 @@
     });
   });
 
+  // A file side of a project that is gone, deleted or in the trash, closes,
+  // so that its sources are not kept for a project that is not there. It
+  // depends on the list of projects and the sides.
+  $effect(() => {
+    if (!projects.loaded) return;
+    const ids = new Set(projects.list.map((p) => p.id));
+    const gone = sides.sides.filter((s) => isFile(s) && s.project && !ids.has(s.project));
+    if (gone.length) untrack(() => gone.forEach((s) => closeSideOf(s.key)));
+  });
+
   // The place follows the active side: its project, element and view, or
-  // its file and page. It depends on those alone.
+  // the file of its tab and the page it was at when the tab was shown. It
+  // depends on those alone; scrolling a tab does not change it.
   $effect(() => {
     const side = sides.active;
     if (isFile(side)) {
-      const place = { view: 'file' as const, file: side.file, page: side.page };
+      const tab = sides.activeTab(side.key);
+      if (!tab) return;
+      const place = {
+        view: 'file' as const,
+        file: tab.file,
+        page: untrack(() => tab.place.page),
+      };
       untrack(() => {
         const now = router.route;
-        if (now.view === 'file' && now.file === place.file && now.page === place.page) return;
+        if (now.view === 'file' && now.file === place.file) return;
         router.replace(place);
       });
       return;
@@ -198,9 +215,8 @@
     if (route.view === 'file') {
       untrack(() => {
         const side = sides.active;
-        if (isFile(side) && side.file === route.file) {
-          if (route.page) sides.setPage(side.key, route.page);
-        } else sides.openFile(route.file, route.page ?? 1);
+        if (isFile(side) && sides.activeTab(side.key)?.file === route.file) return;
+        sides.showFile(route.file, route.page ? { page: route.page, at: 0 } : undefined);
       });
       return;
     }
@@ -619,10 +635,12 @@
     sides.open(id, at ?? PROJECT);
   }
 
-  /** Shows a file of the library, or an image of the store, in a side, in the place of what it showed (ADR 0069). */
+  /** The file sides as they are drawn, by their keys: Ctrl+W closes the tab one shows. */
+  const fileSideViews: Record<string, FileSide | undefined> = {};
+
+  /** Shows a file of the library in a side, as its tree chooses it: as a tab, or the side made a file side (ADR 0072). */
   function fileIn(spec: SideSpec, hash: string) {
-    sides.focus(spec.key);
-    sides.openFile(hash);
+    sides.showFileIn(spec.key, hash);
   }
 
   /** The project of a side, as the list has it, for its path: the folder it lies in. */
@@ -856,9 +874,14 @@
       'side-changes': () => documentPane.toggleReview(),
       'side-panel': () => panes.toggleDocument(),
       'side-by-side': sideBySideMenu,
+      // On a file side, the tab shown closes first, and the side with its last (ADR 0072).
       'close-side': {
         run: () => {
-          if (sides.active) closeSideOf(sides.active.key);
+          const side = sides.active;
+          if (!side) return;
+          const shown = isFile(side) ? fileSideViews[side.key] : undefined;
+          if (shown) shown.closeShown();
+          else closeSideOf(side.key);
         },
         when: () => !!sides.active,
       },
@@ -1021,6 +1044,7 @@
           />
         {:else}
           <FileSide
+            bind:this={fileSideViews[spec.key]}
             {spec}
             count={sides.sides.length}
             active={i === sides.index}
@@ -1229,7 +1253,7 @@
   <FileChooser
     title={t('project-beside-file-title')}
     single={['pdf', 'picture']}
-    onpick={([hash]) => hash && sides.besideFile(hash)}
+    onpick={([hash]) => hash && sides.showFile(hash)}
     onclose={() => (choosingFile = false)}
   />
 {/if}

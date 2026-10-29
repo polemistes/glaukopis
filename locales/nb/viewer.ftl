@@ -49,3 +49,27 @@ viewer-edit-not-opened = Bildet kunne ikke åpnes for redigering
 viewer-edit-too-large-title = For stort til å redigeres
 viewer-edit-too-large-message = Bildet er større enn { $most } MB, som er det meste et bilde kan være. En mindre kopi kan lages og redigeres i stedet.
 viewer-edit-make-smaller = Lag en mindre kopi
+
+# Kilder i faner, bokmerker i en fil (docs/plans/sources-in-tabs-bookmarks-and-the-scrolling-of-pages.md).
+viewer-tabs = Kilder
+viewer-tab-add = Legg til en fil …
+viewer-tab-add-title = Legg til en fil blant kildene
+viewer-tab-menu = Fanens meny
+viewer-tab-close = Lukk fanen
+viewer-tab-close-others = Lukk de andre fanene
+viewer-tab-again = Åpne igjen i en ny fane
+viewer-tab-in-library = Vis i biblioteket
+viewer-tab-gone = Ikke lenger i biblioteket
+viewer-tabs-none = Ingen filer her ennå
+viewer-sources-of = Kildene til { $name }
+viewer-places = Bokmerker og innhold
+viewer-bookmark-here = Merk dette stedet
+viewer-bookmarks = Bokmerker
+viewer-bookmarks-none = Ingen bokmerker ennå
+viewer-bookmark-page = Side { $label }
+viewer-bookmark-name = Bokmerkets navn
+viewer-bookmark-rename = Gi nytt navn
+viewer-bookmark-remove = Fjern
+viewer-bookmark-not-kept = Bokmerkene kunne ikke lagres
+viewer-contents = Innhold
+viewer-contents-none = Filen har ingen egen innholdsfortegnelse

@@ -1,6 +1,6 @@
 /**
- * What the window knows of the files its sides show (ADR 0069), by the key
- * of the side: the facts of the file once they are fetched, or why they
+ * What the window knows of the files its sides show (ADR 0069, 0072), by
+ * the file, however many tabs show it: its facts once they are fetched, or why they
  * could not be. The path over a side reads its name and count of pages here;
  * the side fetches them.
  */
@@ -25,24 +25,30 @@ export interface Viewed {
   failure: unknown;
 }
 
+/** The facts of so many files are kept: the files of a few tabs. */
+const FILES_KEPT = 12;
+
 class Viewers {
-  #by = new SvelteMap<string, Viewed>();
+  /** What is known of each file, the one fetched last at the end. */
+  #byFile = new SvelteMap<string, Viewed>();
+  /** The file each side shows, by the side's key. */
+  #sideFile = new SvelteMap<string, string>();
 
   get(key: string): Viewed | undefined {
-    return this.#by.get(key);
+    const file = this.#sideFile.get(key);
+    return file ? this.#byFile.get(file) : undefined;
   }
 
   /**
-   * Fetches the facts of a side's file, once for each file it shows: a PDF
-   * or an image of the library.
+   * Fetches the facts of the file a side shows, a PDF or an image of the
+   * library, once for each file however many tabs show it (ADR 0072).
    */
   async fetch(key: string, file: string): Promise<void> {
-    const known = this.#by.get(key);
-    if (known && known.file === file && (known.facts || known.gone)) return;
-    const set = (v: Omit<Viewed, 'file'>) => {
-      if (this.#by.get(key)?.file === file) this.#by.set(key, { file, ...v });
-    };
-    this.#by.set(key, { file, facts: null, image: null, gone: false, failure: null });
+    if (this.#sideFile.get(key) !== file) this.#sideFile.set(key, file);
+    const known = this.#byFile.get(file);
+    if (known && (known.facts || known.gone || !known.failure)) return;
+    const set = (v: Omit<Viewed, 'file'>) => this.#byFile.set(file, { file, ...v });
+    set({ facts: null, image: null, gone: false, failure: null });
     try {
       const facts = await fileFacts(file);
       const image = facts.picture ? { path: await filePath(file) } : null;
@@ -50,10 +56,19 @@ class Viewers {
     } catch (failure) {
       set({ facts: null, image: null, gone: isNotFound(failure), failure });
     }
+    const all = [...this.#byFile.keys()];
+    const shown = new Set(this.#sideFile.values());
+    for (const old of all.slice(0, Math.max(0, all.length - FILES_KEPT)))
+      if (!shown.has(old)) this.#byFile.delete(old);
+  }
+
+  /** What is known of a file is fetched anew, as when it was changed. */
+  refresh(file: string) {
+    this.#byFile.delete(file);
   }
 
   forget(key: string) {
-    this.#by.delete(key);
+    this.#sideFile.delete(key);
   }
 }
 

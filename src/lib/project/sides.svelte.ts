@@ -1,15 +1,35 @@
 /**
  * The sides of the window (ADR 0064): one or two, each showing a project of
- * its own at an element, as diagram, text or timeline, or a file of the
- * library (ADR 0069), which belongs to no project. Nothing is the
- * project of the view: what is of the window reads the active side, the one
- * that has the focus. The window keeps its arrangement (the sides, the
- * focus, whether they are switched, how the room is shared, the panes) in
- * the settings, and opens with it.
+ * its own at an element, as diagram, text or timeline, or the sources of a
+ * project in tabs, each a place in a file of the library (ADR 0069, 0072).
+ * Nothing is the project of the view: what is of the window reads the
+ * active side, the one that has the focus. The window keeps its arrangement
+ * (the sides, the focus, whether they are switched, how the room is shared,
+ * the panes, the project it was last in) in the settings, and opens with it;
+ * the tabs of a project are kept with the project.
  */
 
 import type { MapMode, Route } from '$lib/state/router.svelte';
 import { FILE, keptZoom } from '$lib/preview/zoom';
+import type { Place } from '$lib/viewer/pages';
+import {
+  activated,
+  activeTab,
+  emptySources,
+  merged,
+  moved,
+  placed,
+  readSources,
+  replaced,
+  stepped,
+  without,
+  withoutOthers,
+  withFile,
+  zoomed,
+  type SourceTab,
+  type Sources,
+} from '$lib/viewer/sources';
+import { sourcesStore, type SourcesOf } from '$lib/viewer/sources.svelte';
 
 /** A side of the window that shows a project, as the window keeps it. */
 export interface MapSide {
@@ -29,16 +49,18 @@ export interface MapSide {
   fresh?: boolean;
 }
 
-/** A side of the window that shows a file of the library or an image of the store (ADR 0069). */
+/**
+ * A side of the window that shows files of the library in tabs (ADR 0069,
+ * 0072): the sources of a project, the one beside it or the one the window
+ * was last in; or, where there is no project at all, tabs of its own.
+ */
 export interface FileSide {
   kind: 'file';
   key: string;
-  /** The hash of the file: the name the store keeps it by. */
-  file: string;
-  /** The page in view, counted from one. */
-  page: number;
-  /** How large its pages are shown: a factor of their size on paper, or none for the width of the side. */
-  zoom: number | null;
+  /** The project whose sources it shows; none where there was none to show. */
+  project: string | null;
+  /** Its own tabs, where it has no project. */
+  own: Sources | null;
 }
 
 /** A side of the window: a project at an element, or a file. */
@@ -60,6 +82,8 @@ export interface Arrangement {
   mirrored: boolean;
   /** The part of the width the first of two sides has. */
   split: number;
+  /** The project the window was last in: a file shown with no project open shows its sources. */
+  lastProject: string | null;
   /** The side the typesetting pane shows, by its place among the sides; none while it is closed. */
   typesetting: number | null;
   /** Whether the Look column of the typesetting pane is open. */
@@ -93,19 +117,35 @@ let made = 0;
 /** A key of a side, new each time: two sides of one project are told apart by it. */
 const newKey = () => `s${Date.now().toString(36)}${(made++).toString(36)}`;
 
-/** A side as it is kept, read with care: what is not a side is none. A side kept before files were shown is a map. */
+/** A file side of a project, or of none with tabs of its own. */
+const fileSide = (project: string | null, own: Sources | null = null): FileSide => ({
+  kind: 'file',
+  key: newKey(),
+  project,
+  own: project ? null : (own ?? emptySources()),
+});
+
+/**
+ * A side as it is kept, read with care: what is not a side is none. A side
+ * kept before files were shown is a map; a file side kept before it had
+ * tabs is one of no project, with one tab at its page (ADR 0072).
+ */
 function readSide(kept: unknown): SideSpec | null {
   if (!kept || typeof kept !== 'object') return null;
-  const f = kept as Partial<FileSide>;
+  const f = kept as Partial<FileSide> & { file?: unknown; page?: unknown; zoom?: unknown };
   if (f.kind === 'file') {
-    if (typeof f.file !== 'string' || !f.file) return null;
-    return {
-      kind: 'file',
-      key: newKey(),
-      file: f.file,
-      page: Number.isInteger(f.page) && (f.page as number) > 0 ? (f.page as number) : 1,
-      zoom: keptZoom(f.zoom, FILE),
-    };
+    if (typeof f.project === 'string' && f.project) return fileSide(f.project);
+    if (typeof f.file === 'string' && f.file) {
+      const page = Number.isInteger(f.page) && (f.page as number) > 0 ? (f.page as number) : 1;
+      const tab = {
+        id: newKey(),
+        file: f.file,
+        place: { page, at: 0 },
+        zoom: keptZoom(f.zoom, FILE),
+      };
+      return fileSide(null, { tabs: [tab], active: tab.id });
+    }
+    return fileSide(null, readSources(f.own));
   }
   const k = kept as Partial<MapSide>;
   if (typeof k.project !== 'string' || !k.project) return null;
@@ -141,6 +181,15 @@ export class Sides {
   focused = $state(0);
   mirrored = $state(false);
   split = $state(0.5);
+  /** The project the window was last in (ADR 0072). */
+  lastProject = $state<string | null>(null);
+  /** Whether a project is there still: one deleted is not given a file side. */
+  exists: (project: string) => boolean = () => true;
+  #sources: SourcesOf;
+
+  constructor(sources: SourcesOf) {
+    this.#sources = sources;
+  }
 
   /** The place of the active side among the sides. */
   get index(): number {
@@ -188,6 +237,11 @@ export class Sides {
    * was left.
    */
   open(project: string, at: string | null = null, mode?: MapMode) {
+    this.#open(project, at, mode);
+    this.#follow();
+  }
+
+  #open(project: string, at: string | null, mode?: MapMode) {
     const side = this.active;
     if (!side) {
       this.sides = [
@@ -236,9 +290,14 @@ export class Sides {
 
   /** Opens a project in the other side, making one where there is one; the other side gets the focus. */
   beside(project: string, at: string | null = null, mode?: MapMode) {
+    this.#beside(project, at, mode);
+    this.#follow();
+  }
+
+  #beside(project: string, at: string | null, mode?: MapMode) {
     const side = this.active;
     if (!side) {
-      this.open(project, at, mode);
+      this.#open(project, at, mode);
       return;
     }
     const spec: MapSide = {
@@ -280,6 +339,7 @@ export class Sides {
     };
     this.sides = [side, spec];
     this.focused = 0;
+    this.#follow();
   }
 
   /** Enters an element in a side; with a mode, it shows it that way. */
@@ -300,83 +360,210 @@ export class Sides {
     if (isMap(side)) side.outline = !side.outline;
   }
 
-  // ---- files (ADR 0069) ----
+  // ---- files in tabs (ADR 0069, 0072) ----
 
-  /** Shows a file in the active side, in the place of what it showed; the first side, where there is none. */
-  openFile(file: string, page = 1) {
-    const spec: FileSide = { kind: 'file', key: newKey(), file, page, zoom: null };
-    const side = this.active;
-    if (!side) {
-      this.sides = [spec];
-      this.focused = 0;
-      return;
-    }
-    if (isFile(side) && side.file === file) {
-      side.page = page;
-      return;
-    }
-    this.sides[this.index] = spec;
+  /** The sources a file side shows: its project's, or its own. */
+  sourcesOf(side: FileSide): Sources {
+    return side.project ? this.#sources.of(side.project) : (side.own ?? emptySources());
   }
 
-  /** Shows a file in the other side, making one where there is none; the other side gets the focus. */
-  besideFile(file: string, page = 1) {
-    const spec: FileSide = { kind: 'file', key: newKey(), file, page, zoom: null };
-    const side = this.active;
-    if (!side) {
+  /** The tabs of a side, and the one shown; none for a map side. */
+  tabs(key: string): Sources {
+    const side = this.byKey(key);
+    return isFile(side) ? this.sourcesOf(side) : emptySources();
+  }
+
+  /** The tab a file side shows. */
+  activeTab(key: string): SourceTab | undefined {
+    return activeTab(this.tabs(key));
+  }
+
+  #change(side: FileSide, change: (s: Sources) => Sources) {
+    if (side.project) this.#sources.change(side.project, change);
+    else side.own = change(side.own ?? emptySources());
+  }
+
+  #changeOf(key: string, change: (s: Sources) => Sources) {
+    const side = this.byKey(key);
+    if (isFile(side)) this.#change(side, change);
+  }
+
+  /** The project a new file side shows the sources of: the map beside it, else the one the window was last in. */
+  #projectFor(beside: SideSpec | undefined): string | null {
+    if (isMap(beside)) return beside.project;
+    const last = this.lastProject;
+    return last && this.exists(last) ? last : null;
+  }
+
+  /**
+   * Shows a file of the library (ADR 0072): in the file side there is,
+   * the active one first, as a new tab or in its tab where it has one; else
+   * the other side becomes a file side of the project beside it, in the
+   * place of what it showed, or one is made beside the one there is; with
+   * no side at all, the first. The file side gets the focus. Gives its key.
+   */
+  showFile(file: string, place?: Place): string {
+    const active = this.active;
+    const there = isFile(active) ? active : this.sides.find(isFile);
+    if (there) {
+      this.#change(there, (s) => withFile(s, file, place).sources);
+      this.focus(there.key);
+      this.#follow();
+      return there.key;
+    }
+    const spec = fileSide(this.#projectFor(active));
+    this.#change(spec, (s) => withFile(s, file, place).sources);
+    if (!active) {
       this.sides = [spec];
       this.focused = 0;
-      return;
-    }
-    if (this.sides.length < 2) {
-      this.sides = [side, spec];
+    } else if (this.sides.length < 2) {
+      this.sides = [active, spec];
       this.focused = 1;
-      return;
+    } else {
+      const other = 1 - this.index;
+      this.sides[other] = spec;
+      this.focused = other;
     }
-    const other = 1 - this.index;
-    const there = this.sides[other];
-    if (isFile(there) && there.file === file) there.page = page;
-    else this.sides[other] = spec;
-    this.focused = other;
+    this.#follow();
+    return spec.key;
   }
 
-  /** Puts another file into a file side, keeping the side: at its first page, fitted (ADR 0071). */
-  setFile(key: string, file: string) {
+  /**
+   * Shows a file in a side, as the trees under its chevron do: a file side
+   * takes it as a tab; a map side becomes a file side of the project the
+   * map beside it shows, else of its own (ADR 0072). Where that project has
+   * a file side already, the file goes there.
+   */
+  showFileIn(key: string, file: string) {
+    const side = this.byKey(key);
+    if (!side) return;
+    if (isFile(side)) {
+      this.#change(side, (s) => withFile(s, file).sources);
+      this.focus(key);
+      return;
+    }
+    const i = this.indexOf(key);
+    const beside = this.sides[1 - i];
+    const project = isMap(beside) ? beside.project : side.project;
+    const there = this.sides.find((s) => isFile(s) && s.project === project);
+    if (isFile(there)) {
+      this.#change(there, (s) => withFile(s, file).sources);
+      this.focus(there.key);
+      return;
+    }
+    const spec = fileSide(project);
+    this.#change(spec, (s) => withFile(s, file).sources);
+    this.sides[i] = spec;
+    this.focused = i;
+    this.#follow();
+  }
+
+  /** Shows a tab of a side. */
+  activate(key: string, id: string) {
+    this.#changeOf(key, (s) => activated(s, id));
+  }
+
+  /** Closes a tab; the side closes with its last. */
+  closeTab(key: string, id: string) {
     const side = this.byKey(key);
     if (!isFile(side)) return;
-    side.file = file;
-    side.page = 1;
-    side.zoom = null;
+    const before = this.sourcesOf(side);
+    this.#change(side, (s) => without(s, id));
+    if (before.tabs.length <= 1 && before.tabs.some((t) => t.id === id)) this.close(key);
   }
 
-  /** The page in view of a file side. */
-  setPage(key: string, page: number) {
-    const side = this.byKey(key);
-    if (isFile(side) && side.page !== page) side.page = page;
+  /** Closes every tab of a side but one. */
+  closeOtherTabs(key: string, id: string) {
+    this.#changeOf(key, (s) => withoutOthers(s, id));
   }
 
-  /** How large the pages of a file side are shown; none for the width of the side. */
-  setFileZoom(key: string, zoom: number | null) {
+  /** Moves a tab to stand at `to` among the tabs. */
+  moveTab(key: string, id: string, to: number) {
+    this.#changeOf(key, (s) => moved(s, id, to));
+  }
+
+  /** Opens the file of a tab again, in a new tab at the same place. */
+  again(key: string, id: string) {
+    const tab = this.tabs(key).tabs.find((t) => t.id === id);
+    if (tab) this.#changeOf(key, (s) => withFile(s, tab.file, tab.place, true).sources);
+  }
+
+  /** The tab after the one shown, or before it. */
+  stepTab(key: string, by: 1 | -1) {
+    this.#changeOf(key, (s) => stepped(s, by));
+  }
+
+  /** Where a tab's pages were left: kept without telling what shows the tabs. */
+  setPlace(key: string, id: string, place: Place) {
     const side = this.byKey(key);
-    if (isFile(side)) side.zoom = zoom;
+    if (!isFile(side)) return;
+    if (side.project) this.#sources.place(side.project, id, place);
+    else side.own = placed(side.own ?? emptySources(), id, place);
+  }
+
+  /** How large a tab's pages are shown; none for the width of the side. */
+  setTabZoom(key: string, id: string, zoom: number | null) {
+    this.#changeOf(key, (s) => zoomed(s, id, zoom));
+  }
+
+  /** Puts another file into the tab shown, at its top and fitted: an image edited, kept as a new file (ADR 0071). */
+  setFile(key: string, file: string) {
+    const id = this.activeTab(key)?.id;
+    if (id) this.#changeOf(key, (s) => replaced(s, id, file));
+  }
+
+  /**
+   * What follows a change of the sides (ADR 0072): a file side beside a map
+   * shows that map's project, and gives it the tabs it had of its own; the
+   * project the window was last in is that of the active map, else of the
+   * other side.
+   */
+  #follow() {
+    this.sides.forEach((side, i) => {
+      if (!isFile(side)) return;
+      const beside = this.sides[1 - i];
+      if (!isMap(beside) || side.project === beside.project) return;
+      const own = side.own;
+      side.project = beside.project;
+      side.own = null;
+      if (own?.tabs.length) this.#sources.change(beside.project, (s) => merged(s, own));
+    });
+    this.#remember();
+  }
+
+  #remember() {
+    const active = this.active;
+    const map = isMap(active) ? active : this.sides.find(isMap);
+    const project = map?.project ?? (isFile(active) ? active.project : null);
+    if (project && project !== this.lastProject) this.lastProject = project;
   }
 
   focus(key: string) {
     const i = this.indexOf(key);
-    if (i >= 0 && i !== this.focused) this.focused = i;
+    if (i >= 0 && i !== this.focused) {
+      this.focused = i;
+      this.#remember();
+    }
   }
 
-  /** Closes a side. With none left, nothing is shown, and the window goes to the start screen. */
+  /**
+   * Closes a side. With none left, nothing is shown, and the window goes to
+   * the start screen. A file side whose map closes keeps its project.
+   */
   close(key: string) {
     const i = this.indexOf(key);
     if (i < 0) return;
     this.sides = this.sides.filter((_, j) => j !== i);
     this.focused = 0;
     if (this.sides.length < 2) this.mirrored = false;
+    this.#remember();
   }
 
-  /** Closes every side that shows a project. */
+  /** Closes every side of a project that is gone, its file sides too, and forgets its sources. */
   closeProject(project: string) {
-    for (const side of this.maps.filter((s) => s.project === project)) this.close(side.key);
+    for (const side of this.sides.filter((s) => s.project === project)) this.close(side.key);
+    this.#sources.forget(project);
+    if (this.lastProject === project) this.lastProject = null;
   }
 
   /** The two sides change places, as they are drawn; each keeps what it is. */
@@ -395,65 +582,41 @@ export class Sides {
    * Lays the window out as it was kept, where the place names what the
    * active side that was kept showed (as it does when the window opens, or
    * the house goes back to the projects); else one side, at the project,
-   * element and view, or the file and page, the place names. Sides of
-   * projects that are gone, and of files the library has no longer, are
-   * left out.
+   * element and view the place names. A file the place names is shown where
+   * files are shown, the window otherwise as it was kept (ADR 0072). Sides
+   * of projects that are gone are left out.
    */
   arrange(
     kept: Partial<Arrangement> | null | undefined,
     route: Extract<Route, { view: 'project' } | { view: 'file' }>,
     exists: (project: string) => boolean = () => true,
-    fileExists: (file: string) => boolean = () => true,
   ) {
+    this.exists = exists;
     const keptSides = (Array.isArray(kept?.sides) ? kept.sides : [])
       .map(readSide)
-      .filter((s): s is SideSpec => !!s && (isMap(s) ? exists(s.project) : fileExists(s.file)))
+      .filter((s): s is SideSpec => !!s && (s.project === null || exists(s.project)))
       .slice(0, 2);
+    const last = kept?.lastProject;
+    this.lastProject = typeof last === 'string' && last && exists(last) ? last : null;
     const keptFocus = Number.isInteger(kept?.focused) ? (kept!.focused as number) : 0;
     const keptActive = keptSides[clamp(keptFocus, 0, Math.max(0, keptSides.length - 1))];
-    const same =
-      route.view === 'project'
-        ? isMap(keptActive) && keptActive.project === route.project
-        : isFile(keptActive) && keptActive.file === route.file;
-    if (keptActive && same) {
-      if (isMap(keptActive) && route.view === 'project') {
+    const lay = () => {
+      this.sides = keptSides;
+      this.focused = Math.max(0, keptSides.indexOf(keptActive));
+      this.mirrored = keptSides.length > 1 && kept?.mirrored === true;
+      this.split =
+        typeof kept?.split === 'number' && Number.isFinite(kept.split)
+          ? clamp(kept.split, 0.2, 0.8)
+          : 0.5;
+    };
+    if (route.view === 'project') {
+      if (isMap(keptActive) && keptActive.project === route.project) {
         if (route.at) keptActive.at = route.at;
         if (route.mode) keptActive.mode = route.mode;
-      } else if (isFile(keptActive) && route.view === 'file' && route.page) {
-        keptActive.page = route.page;
-      }
-      this.sides = keptSides;
-      this.focused = keptSides.indexOf(keptActive);
-      this.mirrored = keptSides.length > 1 && kept?.mirrored === true;
-      this.split =
-        typeof kept?.split === 'number' && Number.isFinite(kept.split)
-          ? clamp(kept.split, 0.2, 0.8)
-          : 0.5;
-      return;
-    }
-    // A file asked for from elsewhere, the library or the images, takes the
-    // place of the active side kept; the other stays as it was.
-    if (route.view === 'file' && keptActive) {
-      const i = keptSides.indexOf(keptActive);
-      keptSides[i] = {
-        kind: 'file',
-        key: newKey(),
-        file: route.file,
-        page: route.page ?? 1,
-        zoom: null,
-      };
-      this.sides = keptSides;
-      this.focused = i;
-      this.mirrored = keptSides.length > 1 && kept?.mirrored === true;
-      this.split =
-        typeof kept?.split === 'number' && Number.isFinite(kept.split)
-          ? clamp(kept.split, 0.2, 0.8)
-          : 0.5;
-      return;
-    }
-    this.sides = [
-      route.view === 'project'
-        ? {
+        lay();
+      } else {
+        this.sides = [
+          {
             kind: 'map',
             key: newKey(),
             project: route.project,
@@ -461,11 +624,20 @@ export class Sides {
             mode: route.mode ?? 'diagram',
             outline: false,
             fresh: !route.mode,
-          }
-        : { kind: 'file', key: newKey(), file: route.file, page: route.page ?? 1, zoom: null },
-    ];
-    this.focused = 0;
-    this.mirrored = false;
+          },
+        ];
+        this.focused = 0;
+        this.mirrored = false;
+      }
+      this.#follow();
+      return;
+    }
+    if (keptSides.length) lay();
+    else this.clear();
+    this.#follow();
+    const side = this.active;
+    if (isFile(side) && activeTab(this.sourcesOf(side))?.file === route.file) return;
+    this.showFile(route.file, route.page ? { page: route.page, at: 0 } : undefined);
   }
 
   /** The arrangement as it is, to keep, with the parts the panes hold. */
@@ -480,6 +652,7 @@ export class Sides {
       focused: this.index,
       mirrored: this.sides.length > 1 && this.mirrored,
       split: this.split,
+      lastProject: this.lastProject,
       typesetting: typesetting >= 0 ? typesetting : null,
       look: panes.look,
       document: panes.document,
@@ -512,4 +685,4 @@ export function paneParts(kept: Partial<Arrangement> | null | undefined, sides: 
   };
 }
 
-export const sides = new Sides();
+export const sides = new Sides(sourcesStore);

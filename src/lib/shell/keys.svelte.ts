@@ -240,6 +240,10 @@ const ENTRIES = [
   { id: 'viewer-previous', keys: 'PageUp', place: 'viewer', bound: true, notInFields: true },
   { id: 'viewer-first', keys: 'Home', place: 'viewer', bound: true, notInFields: true },
   { id: 'viewer-last', keys: 'End', place: 'viewer', bound: true, notInFields: true },
+  // The tabs of a file side, and a bookmark at the place in view (ADR 0072).
+  { id: 'viewer-tab-next', keys: 'Ctrl+PageDown', place: 'viewer', bound: true },
+  { id: 'viewer-tab-previous', keys: 'Ctrl+PageUp', place: 'viewer', bound: true },
+  { id: 'viewer-bookmark', keys: 'Ctrl+Shift+B', place: 'viewer', bound: true },
 ] as const satisfies readonly KeyEntry[];
 
 /** The name of an entry of the table. */

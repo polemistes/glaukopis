@@ -1,14 +1,14 @@
 <script lang="ts">
   /**
-   * A side of the window that shows a file (ADR 0069): a PDF of the library,
-   * page by page, or an image of the library, as one page.
-   * It belongs to no project; its bar holds what a file needs: the page, a
-   * field to go to one, and the zoom. An image can be edited in it (ADR
+   * A side of the window that shows files of the library in tabs (ADR 0069,
+   * 0072): the sources of a project, each tab a PDF, page by page, or an
+   * image, as one page, at a place of its own. Its bar holds what a file
+   * needs: the page, a field to go to one, and the zoom. An image can be edited in it (ADR
    * 0071): a row of controls under the bar, the image showing the edit over
    * a lighter copy, kept as a new file of the library made from the one in
    * view, which the side then shows.
    */
-  import { onDestroy, untrack } from 'svelte';
+  import { onDestroy, onMount, untrack } from 'svelte';
   import CircleAlert from '@lucide/svelte/icons/circle-alert';
   import FileX from '@lucide/svelte/icons/file-x';
   import Lock from '@lucide/svelte/icons/lock';
@@ -22,7 +22,9 @@
     type EditFacts,
   } from '$lib/api/files';
   import { attachmentOpen } from '$lib/api/library';
+  import FileChooser from '$lib/files/FileChooser.svelte';
   import { files } from '$lib/files/store.svelte';
+  import { shortcuts } from '$lib/shell/keys.svelte';
   import { t } from '$lib/i18n';
   import type { FileSide } from '$lib/project/sides.svelte';
   import { sides } from '$lib/project/sides.svelte';
@@ -37,6 +39,8 @@
   import EditRow from './EditRow.svelte';
   import ImageView from './ImageView.svelte';
   import PdfView from './PdfView.svelte';
+  import { activeTab, START } from './sources';
+  import TabRow from './TabRow.svelte';
   import ViewerBar from './ViewerBar.svelte';
   import { viewers } from './viewers.svelte';
 
@@ -53,12 +57,26 @@
 
   let { spec, count, active, grow, onclose }: Props = $props();
 
+  /** The tabs, and the one shown. */
+  const sources = $derived(sides.tabs(spec.key));
+  const tab = $derived(activeTab(sources));
+  const file = $derived(tab?.file ?? '');
+
   // The facts of the file, once for each file the side shows. It depends on the file alone.
   $effect(() => {
     const key = spec.key;
-    const file = spec.file;
+    const shown = file;
     // What the fetching reads and writes of what is known is not what this depends on.
-    untrack(() => void viewers.fetch(key, file));
+    if (shown) untrack(() => void viewers.fetch(key, shown));
+  });
+
+  /** The page at the middle of the view, as the bar says it: from the tab's place until the view tells. */
+  let middle = $state(1);
+  /** The tab shown, by its id alone: a change of its zoom is not another tab. */
+  const tabId = $derived(tab?.id);
+  $effect(() => {
+    void tabId;
+    middle = untrack(() => tab?.place.page ?? 1);
   });
   // The side's key lasts while it is shown.
   // svelte-ignore state_referenced_locally
@@ -66,20 +84,75 @@
   onDestroy(() => viewers.forget(key));
 
   const viewed = $derived(viewers.get(spec.key));
-  const facts = $derived(viewed?.file === spec.file ? viewed.facts : null);
+  const facts = $derived(file && viewed?.file === file ? viewed.facts : null);
 
   let view = $state<PdfView | ImageView>();
   /** The zoom as the bar shows it, in percent: what the view says it shows at. */
   const percent = $derived.by(() => {
-    void spec.zoom;
-    void spec.page;
+    void tab?.zoom;
+    void middle;
     return view?.percent() ?? 100;
   });
 
   function zoomTo(zoom: number | null) {
     if (view && 'zoomed' in view) view.zoomed(zoom);
-    else sides.setFileZoom(spec.key, zoom);
+    else if (tab) sides.setTabZoom(spec.key, tab.id, zoom);
   }
+
+  /** Goes to a page of the file shown, its top at the top of the view. */
+  function goToPage(page: number) {
+    if (view && 'goToPlace' in view) view.goToPlace({ page, at: 0 });
+  }
+
+  // ---- the tabs (ADR 0072) ----
+
+  let choosing = $state(false);
+
+  /** Whether the tab shown may be left: an edit not kept is asked about first. */
+  async function mayLeave(): Promise<boolean> {
+    if (!editing) return true;
+    if (isNothing(editing.edit)) {
+      endEditing();
+      return true;
+    }
+    await cancelEditing();
+    return !editing;
+  }
+
+  async function activate(id: string) {
+    if (id === sources.active) return;
+    if (await mayLeave()) sides.activate(spec.key, id);
+  }
+  async function closeTab(id: string) {
+    if (id === sources.active && !(await mayLeave())) return;
+    sides.closeTab(spec.key, id);
+  }
+  async function closeOthers(id: string) {
+    if (id !== sources.active && !(await mayLeave())) return;
+    sides.closeOtherTabs(spec.key, id);
+  }
+  async function again(id: string) {
+    if (await mayLeave()) sides.again(spec.key, id);
+  }
+  async function step(by: 1 | -1) {
+    if (sources.tabs.length > 1 && (await mayLeave())) sides.stepTab(spec.key, by);
+  }
+  async function add(hash: string) {
+    if (await mayLeave()) sides.showFileIn(spec.key, hash);
+  }
+
+  /** Closes the tab shown, as Ctrl+W does on a file side; the side with its last. */
+  export function closeShown() {
+    if (tab) void closeTab(tab.id);
+    else onclose();
+  }
+
+  onMount(() =>
+    shortcuts.bind({
+      'viewer-tab-next': { run: () => void step(1), when: () => active || count === 1 },
+      'viewer-tab-previous': { run: () => void step(-1), when: () => active || count === 1 },
+    }),
+  );
 
   // ---- editing an image (ADR 0071) ----
 
@@ -99,13 +172,13 @@
 
   /** An image with pixels can be edited; a drawing cannot. */
   const editable = $derived(
-    !!facts?.picture && !(files.get(spec.file)?.name ?? '').toLowerCase().endsWith('.svg'),
+    !!facts?.picture && !(files.get(file)?.name ?? '').toLowerCase().endsWith('.svg'),
   );
 
   /** Begins to edit the image in view: a smaller copy first, where it is too large. */
   async function beginEditing() {
     if (editing) return;
-    let hash = spec.file;
+    let hash = file;
     let known: EditFacts;
     try {
       known = await fileEditFacts(hash);
@@ -142,7 +215,7 @@
       return;
     }
     // The side may have gone to another file while the copy was being made.
-    if (spec.file !== hash) {
+    if (file !== hash) {
       URL.revokeObjectURL(preview);
       return;
     }
@@ -154,7 +227,7 @@
       cropping: false,
       keeping: false,
     };
-    sides.setFileZoom(spec.key, null);
+    if (tab) sides.setTabZoom(spec.key, tab.id, null);
   }
 
   /** Ends the editing, keeping nothing. */
@@ -205,7 +278,7 @@
 
   // The side going to another file, or away, drops what was being edited.
   $effect(() => {
-    if (editing && editing.file !== spec.file) untrack(endEditing);
+    if (editing && editing.file !== file) untrack(endEditing);
   });
   onDestroy(endEditing);
 
@@ -231,7 +304,7 @@
   });
 
   async function openElsewhere() {
-    const path = files.get(spec.file)?.path;
+    const path = files.get(file)?.path;
     if (!path) return;
     await attachmentOpen(path).catch((e) => notifyError(t('library-file-open-failed'), e));
   }
@@ -243,21 +316,30 @@
 <div
   class="pane file-side"
   data-side-key={spec.key}
-  data-file-side={spec.file}
+  data-file-side={file}
   style:flex-grow={grow}
   class:focused={count > 1 && active}
   onpointerdowncapture={() => sides.focus(spec.key)}
   onfocusin={() => sides.focus(spec.key)}
 >
+  <TabRow
+    {sources}
+    onactivate={(id) => void activate(id)}
+    onclose={(id) => void closeTab(id)}
+    oncloseothers={(id) => void closeOthers(id)}
+    onagain={(id) => void again(id)}
+    onmove={(id, to) => sides.moveTab(spec.key, id, to)}
+    onadd={() => (choosing = true)}
+  />
   {#if facts && !facts.locked && facts.pages > 0}
     <ViewerBar
-      page={spec.page}
+      page={middle}
       count={facts.pages}
       labels={facts.labels}
       picture={facts.picture}
-      zoom={spec.zoom}
+      zoom={tab?.zoom ?? null}
       {percent}
-      onpage={(n) => sides.setPage(spec.key, n)}
+      onpage={goToPage}
       onzoom={zoomTo}
       {editable}
       editing={!!editing}
@@ -276,7 +358,11 @@
       />
     {/if}
   {/if}
-  {#if viewed?.gone}
+  {#if !tab}
+    <EmptyState icon={FileX} title={t('viewer-tabs-none')}>
+      <Button onclick={() => (choosing = true)}>{t('viewer-tab-add')}</Button>
+    </EmptyState>
+  {:else if viewed?.gone}
     <EmptyState icon={FileX} title={t('viewer-not-found')}>
       <Button onclick={onclose}>{t('project-close-side')}</Button>
     </EmptyState>
@@ -290,7 +376,7 @@
       title={t('viewer-not-shown')}
       text={describeError(viewed.failure)}
     >
-      {#if files.get(spec.file)}
+      {#if files.get(file)}
         <Button onclick={openElsewhere}>{t('files-open-elsewhere')}</Button>
       {/if}
       <Button onclick={onclose}>{t('project-close-side')}</Button>
@@ -298,38 +384,56 @@
   {:else if !facts}
     <div class="centre"><Spinner size={20} /> <span>{t('viewer-loading')}</span></div>
   {:else if facts.picture && viewed?.image}
-    <ImageView
-      bind:this={view}
-      source={viewed.image}
-      size={editing ? [editing.facts.width, editing.facts.height] : facts.sizes[0]}
-      name={facts.name}
-      zoom={spec.zoom}
-      onzoom={(z) => sides.setFileZoom(spec.key, z)}
-      edit={editing?.edit ?? null}
-      previewUrl={editing?.preview ?? null}
-    >
-      {#if editing && (editing.cropping || editing.edit.crop)}
-        <CropFrame
-          crop={editing.edit.crop ?? { x: 0, y: 0, width: 1, height: 1 }}
-          active={editing.cropping && !editing.keeping}
-          onchange={changeCrop}
-        />
-      {/if}
-    </ImageView>
+    {#key tabId}
+      {@const id = tabId ?? ''}
+      <ImageView
+        bind:this={view}
+        source={viewed.image}
+        size={editing ? [editing.facts.width, editing.facts.height] : facts.sizes[0]}
+        name={facts.name}
+        zoom={tab?.zoom ?? null}
+        onzoom={(z) => sides.setTabZoom(spec.key, id, z)}
+        edit={editing?.edit ?? null}
+        previewUrl={editing?.preview ?? null}
+      >
+        {#if editing && (editing.cropping || editing.edit.crop)}
+          <CropFrame
+            crop={editing.edit.crop ?? { x: 0, y: 0, width: 1, height: 1 }}
+            active={editing.cropping && !editing.keeping}
+            onchange={changeCrop}
+          />
+        {/if}
+      </ImageView>
+    {/key}
   {:else}
-    {#key spec.file}
+    <!-- Each tab its own view, laid out anew at its place; what it tells of its place is of the tab it was made for. -->
+    {#key tabId}
+      {@const id = tabId ?? ''}
       <PdfView
         bind:this={view}
-        file={spec.file}
+        {file}
         {facts}
-        page={spec.page}
-        zoom={spec.zoom}
-        onpage={(n) => sides.setPage(spec.key, n)}
-        onzoom={(z) => sides.setFileZoom(spec.key, z)}
+        place={tab?.place ?? START}
+        zoom={tab?.zoom ?? null}
+        onplace={(place) => sides.setPlace(spec.key, id, place)}
+        onmiddle={(n) => (middle = n)}
+        onzoom={(z) => sides.setTabZoom(spec.key, id, z)}
       />
     {/key}
   {/if}
 </div>
+
+{#if choosing}
+  <FileChooser
+    title={t('viewer-tab-add-title')}
+    single={['pdf', 'picture']}
+    onpick={([hash]) => {
+      choosing = false;
+      if (hash) void add(hash);
+    }}
+    onclose={() => (choosing = false)}
+  />
+{/if}
 
 <style>
   .pane {

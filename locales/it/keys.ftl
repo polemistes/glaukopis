@@ -113,7 +113,6 @@ keys-list-undo = Annulla ciò che si è fatto a cartelle e progetti
 keys-list-redo = Ripeti ciò che si è fatto a cartelle e progetti
 
 ## The sides (stage 4 of the list, the path and the window as it was left)
-keys-close-side = Chiudi questo lato
 keys-switch-sides = Scambia i lati
 
 ## Stage 3 of the sides, the panes and the bars (agent "bars")

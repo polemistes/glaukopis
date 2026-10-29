@@ -110,7 +110,7 @@ keys-list-undo = Angre det som ble gjort med mapper og prosjekter
 keys-list-redo = Gjør om det som ble gjort med mapper og prosjekter
 
 ## The sides (stage 4 of the list, the path and the window as it was left)
-keys-close-side = Lukk denne siden
+keys-close-side = Lukk fanen, eller denne siden
 keys-switch-sides = Bytt side
 
 ## Stage 3 of the sides, the panes and the bars (agent "bars")
@@ -134,3 +134,8 @@ keys-viewer-next = Neste side
 keys-viewer-previous = Forrige side
 keys-viewer-first = Første side
 keys-viewer-last = Siste side
+
+# Kilder i faner (docs/plans/sources-in-tabs-bookmarks-and-the-scrolling-of-pages.md).
+keys-viewer-tab-next = Neste fane
+keys-viewer-tab-previous = Forrige fane
+keys-viewer-bookmark = Merk dette stedet

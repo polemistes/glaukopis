@@ -113,7 +113,7 @@ keys-list-undo = Undo what was done to folders and projects
 keys-list-redo = Redo what was done to folders and projects
 
 ## The sides (stage 4 of the list, the path and the window as it was left)
-keys-close-side = Close this side
+keys-close-side = Close the tab, or this side
 keys-switch-sides = Switch sides
 
 ## Stage 3 of the sides, the panes and the bars (agent "bars")
@@ -137,3 +137,8 @@ keys-viewer-next = Next page
 keys-viewer-previous = Previous page
 keys-viewer-first = First page
 keys-viewer-last = Last page
+
+# Sources in tabs (docs/plans/sources-in-tabs-bookmarks-and-the-scrolling-of-pages.md).
+keys-viewer-tab-next = Next tab
+keys-viewer-tab-previous = Previous tab
+keys-viewer-bookmark = Mark this place

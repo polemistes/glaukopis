@@ -1,8 +1,9 @@
 <script lang="ts">
   /**
-   * Show the file of a work, from within a map (ADR 0069): from a citation's
-   * editor and from the references of a document. The file is shown in the
-   * other side, so that the text one writes stays where it is. Where the
+   * Show the file of a work, from within a map (ADR 0069, 0072): from a
+   * citation's editor and from the references of a document. The file is
+   * shown among the sources beside the text, so that the text one writes
+   * stays where it is. Where the
    * work has several files that can be shown, a menu names them; where it
    * has none, nothing is shown.
    */
@@ -11,7 +12,7 @@
   import { t } from '$lib/i18n';
   import IconButton from '$lib/ui/IconButton.svelte';
   import { openMenu } from '$lib/ui/menu.svelte';
-  import { besideFile } from './show';
+  import { showFile } from './show';
 
   interface Props {
     /** The id of the reference in the library. */
@@ -35,14 +36,14 @@
 
   function show(event: MouseEvent) {
     if (shown.length === 1) {
-      besideFile(shown[0].hash);
+      showFile(shown[0].hash);
       return;
     }
     openMenu(
       event.currentTarget as HTMLElement,
       shown.map((f) => ({
         label: t('project-show-file-named', { name: f.name }),
-        action: () => besideFile(f.hash),
+        action: () => showFile(f.hash),
       })),
       { align: 'start' },
     );

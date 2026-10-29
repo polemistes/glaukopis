@@ -1,14 +1,14 @@
 <script lang="ts">
   /**
-   * The path over a file side (ADR 0069): the chevron of all projects, as
-   * over a map side, a project chosen there opening in this side; then the
-   * file's folder in the library, small, which opens the files at that
-   * folder; then the file's name. The page is said by the bar of the side.
-   * Under the projects, the files and the images that can be shown here.
+   * The path over a file side (ADR 0069, 0072): the chevron of all projects,
+   * as over a map side, a project chosen there opening in this side; then
+   * the project whose sources the side shows, small, which opens it beside;
+   * then the name of the file shown. The page is said by the bar of the
+   * side. Under the projects, the files and the images that can be shown.
    */
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import FileText from '@lucide/svelte/icons/file-text';
-  import FolderIcon from '@lucide/svelte/icons/folder';
+  import FolderTree from '@lucide/svelte/icons/folder-tree';
   import ImageIcon from '@lucide/svelte/icons/image';
   import { ProjectActions } from '$lib/home/project-actions.svelte';
   import ProjectList from '$lib/home/ProjectList.svelte';
@@ -17,9 +17,9 @@
   import { viewing } from '$lib/project/ProjectView.svelte';
   import type { FileSide } from '$lib/project/sides.svelte';
   import { projects } from '$lib/state/projects.svelte';
-  import { router } from '$lib/state/router.svelte';
   import Popover from '$lib/ui/Popover.svelte';
   import { tooltip } from '$lib/ui/tooltip';
+  import { sides } from '$lib/project/sides.svelte';
   import LibraryTrees from './LibraryTrees.svelte';
   import { viewers } from './viewers.svelte';
 
@@ -35,12 +35,19 @@
 
   $effect(() => {
     if (!files.loaded) void files.load();
+    if (spec.project && !projects.loaded) void projects.load();
   });
 
+  const file = $derived(sides.activeTab(spec.key)?.file ?? '');
   const viewed = $derived(viewers.get(spec.key));
-  const record = $derived(files.get(spec.file));
-  const name = $derived(viewed?.facts?.name ?? record?.name ?? '');
-  const folder = $derived(record ? files.folder(files.folderOf(record)) : undefined);
+  const record = $derived(files.get(file));
+  const name = $derived(
+    (viewed?.file === file ? viewed?.facts?.name : undefined) ?? record?.name ?? '',
+  );
+  /** The project whose sources these are. */
+  const project = $derived(
+    spec.project ? projects.list.find((p) => p.id === spec.project) : undefined,
+  );
 
   let treeAt = $state<HTMLElement | null>(null);
   const listActions = new ProjectActions({ open: () => {} });
@@ -61,7 +68,7 @@
   }
 </script>
 
-<nav class="path" aria-label={t('project-where')} data-path data-file={spec.file}>
+<nav class="path" aria-label={t('project-where')} data-path data-file={file}>
   <button
     type="button"
     class="all"
@@ -74,15 +81,16 @@
   >
     <ChevronDown size={14} />
   </button>
-  {#if folder}
+  {#if project}
     <button
       type="button"
       class="crumb folder"
-      data-crumb="folder"
-      onclick={() => router.go({ view: 'files', folder: folder.id })}
+      data-crumb="project"
+      use:tooltip={{ text: t('viewer-sources-of', { name: project.name }), side: 'bottom' }}
+      onclick={() => project && viewing.beside?.(project.id)}
     >
-      <FolderIcon size={12} />
-      <span class="name">{folder.name}</span>
+      <FolderTree size={12} />
+      <span class="name">{project.name}</span>
     </button>
     <span class="sep" aria-hidden="true">›</span>
   {/if}
@@ -101,7 +109,7 @@
       {#if projects.loaded}
         <ProjectList actions={listActions} sides={viewing.sides} {choose} focusField />
       {/if}
-      <LibraryTrees current={spec.file} onfile={chooseFile} />
+      <LibraryTrees current={file} onfile={chooseFile} />
     </div>
   </Popover>
 </nav>

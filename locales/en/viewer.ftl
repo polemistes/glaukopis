@@ -49,3 +49,29 @@ viewer-edit-not-opened = The image could not be opened for editing
 viewer-edit-too-large-title = Too large to be edited
 viewer-edit-too-large-message = The image is larger than { $most } MB, which is the most an image may be. A smaller copy can be made and edited instead.
 viewer-edit-make-smaller = Make a smaller copy
+
+# Sources in tabs, bookmarks in a file (docs/plans/sources-in-tabs-bookmarks-and-the-scrolling-of-pages.md).
+viewer-tabs = Sources
+viewer-tab-add = Add a file…
+viewer-tab-add-title = Add a file to the sources
+viewer-tab-menu = The tab's menu
+viewer-tab-close = Close the tab
+viewer-tab-close-others = Close the other tabs
+viewer-tab-again = Open again in a new tab
+viewer-tab-in-library = Show in the library
+viewer-tab-gone = No longer in the library
+viewer-tabs-none = No files here yet
+# The tooltip of the project's name in the cell of a file side.
+viewer-sources-of = The sources of { $name }
+viewer-places = Bookmarks and contents
+viewer-bookmark-here = Mark this place
+viewer-bookmarks = Bookmarks
+viewer-bookmarks-none = No bookmarks yet
+# The default name of a bookmark, and the small page said beside one.
+viewer-bookmark-page = Page { $label }
+viewer-bookmark-name = The bookmark's name
+viewer-bookmark-rename = Rename
+viewer-bookmark-remove = Remove
+viewer-bookmark-not-kept = The bookmarks could not be kept
+viewer-contents = Contents
+viewer-contents-none = The file has no table of contents of its own

@@ -74,13 +74,15 @@ try {
     const s = await fileSide(app);
     return s?.drawn.includes(1) ? s : null;
   }, 20000);
-  check('the file takes the place of the map in the active side', first.kinds.join() === 'file', first.kinds.join());
+  check('the file comes beside the map, among the sources of its project', first.kinds.join() === 'map,file', first.kinds.join());
   check('the bar says the page and how many', /^Page 1 of \d+/.test(first.bar), first.bar);
   check('the first page is drawn by the core, in colour', first.drawn.includes(1));
   const cell = await app.exec(`return document.querySelector('.top .cell [data-path][data-file] [data-crumb-last] .name')?.textContent.trim()`);
   check('the path over the side names the file', /structure/.test(cell ?? ''), cell);
+  const named = await app.exec(`return document.querySelector('.top .cell [data-path][data-file] [data-crumb="project"] .name')?.textContent.trim()`);
+  check('and the project whose sources these are', named === 'Wrath and the hero', named);
   check('the place names the file', (await app.exec('return location.hash')).startsWith(`#/file/${pdfHash}`));
-  check('the document pane is closed with no map shown', !(await app.exists('[data-document-pane]')));
+  check('the document pane stays closed', !(await app.exists('[data-document-pane]')));
   await app.screenshot('file-view-1-pdf');
 
   // ---- turning and zooming, from the keys ----
@@ -91,7 +93,7 @@ try {
     return s?.page === 2 ? s : null;
   });
   check('PageDown turns to the next page', second.page === 2);
-  check('the place follows the page', (await app.exec('return location.hash')).endsWith('?page=2'));
+  check('the place still names the file', (await app.exec('return location.hash')).startsWith(`#/file/${pdfHash}`));
   const before = second.width;
   await app.keys(['Control', '-']);
   await sleep(500);
@@ -206,10 +208,10 @@ try {
   await app.screenshot('file-view-2-text');
   await app.exec('getSelection().removeAllRanges()');
 
-  // ---- closing the side: the map does not come back ----
-  await app.click('.top .cell [data-close-side]');
-  await until('the start screen', async () => (await app.exec('return location.hash')) === '#/');
-  check('closing the file side closes the view, and the map does not reappear', !(await app.exists('[data-side-key]')));
+  // ---- closing the file side: the map stays ----
+  await app.click('.top .cell:has([data-file]) [data-close-side]');
+  await until('one side', async () => (await app.count('[data-side-key]')) === 1);
+  check('closing the file side leaves the map as it was', !(await app.exists('[data-file-side]')) && (await app.exists('.text-view .section')));
 
   // ---- the project from the list, and the file beside it ----
   await app.openProject('Wrath and the hero');

@@ -5,7 +5,9 @@
    * shown and comes as the bytes of a PNG, one page to a call, the nearest
    * to the view first, a few at a time (ADR 0072); the pictures of forty are
    * kept, and only those in view and beside them stand in the document. The
-   * page in view is the one at the middle of the side.
+   * page in view is the one at the middle of the side; the place is the page
+   * at its top edge and how far down it, told a moment after the scrolling
+   * rests and when the view goes, so that a tab comes back where it was.
    * Turned with PageDown, PageUp, Home and End; zoomed with the typesetting
    * pane's keys, and Ctrl and the wheel, about the pointer, which stays over
    * the same place of the same page.
@@ -40,15 +42,25 @@
   interface Props {
     file: string;
     facts: FileFacts;
-    /** The page in view, counted from one. */
-    page: number;
+    /** Where the view begins: the page at its top edge, and how far down it. */
+    place: Place;
     /** A factor of the size on paper, or none for the width of the side. */
     zoom: number | null;
-    onpage: (page: number) => void;
+    /** Where the view was left, a moment after the scrolling rests, and when it goes. */
+    onplace: (place: Place) => void;
+    /** The page at the middle of the view, as it changes. */
+    onmiddle: (page: number) => void;
     onzoom: (zoom: number | null) => void;
   }
 
-  let { file, facts, page, zoom, onpage, onzoom }: Props = $props();
+  let { file, facts, place, zoom, onplace, onmiddle, onzoom }: Props = $props();
+  // What the view tells of its place is of the tab it was made for, even as it goes.
+  // svelte-ignore state_referenced_locally
+  const tellPlace = onplace;
+  // svelte-ignore state_referenced_locally
+  const startAt: Place = { ...place };
+  /** The page at the middle of the view, counted from one. */
+  let page = $state(1);
 
   let scroller = $state<HTMLDivElement>();
   let roomWidth = $state(0);
@@ -151,6 +163,8 @@
   }
 
   onDestroy(() => {
+    // Where it was left is told as it goes: a tab switched away from keeps its place.
+    if (placeTimer !== undefined) tellNow();
     gone = true;
     clearTimeout(rest);
     void ocrStop(ticket).catch(() => {});
@@ -166,17 +180,42 @@
 
   // ---- the page in view ----
 
-  /** The page last said to be in view: one given from outside, by the field, is scrolled to. */
-  let told = 0;
+  let placeTimer: ReturnType<typeof setTimeout> | undefined;
+  /** The place at the top edge, as the view was last scrolled. */
+  let lastPlace: Place | null = null;
+  /** Whether the view has its size and stands at its place: before that, nothing is told. */
+  let started = false;
+
+  /** The page last gone to by the bar, the keys or a bookmark: said while it is in view. */
+  let askedPage = 0;
 
   function onscroll() {
-    if (!scroller) return;
+    if (!scroller || !started) return;
     scrolled = scroller.scrollTop;
-    const middle = pageAt(placed, scrolled + roomHeight / 2);
-    if (middle !== told) {
-      told = middle;
-      onpage(middle);
+    lastPlace = placeAt(placed, scrolled + AROUND.top);
+    const bottom = scrolled + roomHeight;
+    const inView = (n: number) =>
+      n > 0 && placed.tops[n - 1] < bottom && placed.tops[n - 1] + placed.heights[n - 1] > scrolled;
+    // The page at the middle; at the end of the file, the last in view.
+    let middle = pageAt(placed, scrolled + roomHeight / 2);
+    if (scrolled + scroller.clientHeight >= scroller.scrollHeight - 2)
+      middle = pageAt(placed, bottom - 1);
+    if (askedPage && inView(askedPage)) middle = askedPage;
+    else askedPage = 0;
+    if (middle !== page) {
+      page = middle;
+      onmiddle(middle);
     }
+    clearTimeout(placeTimer);
+    placeTimer = setTimeout(tellNow, 150);
+  }
+
+  /** Tells where the view stands. */
+  function tellNow() {
+    clearTimeout(placeTimer);
+    placeTimer = undefined;
+    if (!lastPlace) return;
+    tellPlace({ page: lastPlace.page, at: Math.round(lastPlace.at * 10000) / 10000 });
   }
 
   /** The place at the top edge of the view: the page there, and how far down it. */
@@ -189,19 +228,8 @@
 
   /** Scrolls to a page, its top at the top of the side. */
   function goTo(n: number) {
-    const to = Math.min(Math.max(1, n), facts.pages);
-    told = to;
-    if (to !== page) onpage(to);
-    if (scroller) scroller.scrollTop = Math.max(0, placed.tops[to - 1] - AROUND.top);
+    goToPlace({ page: Math.min(Math.max(1, n), facts.pages), at: 0 });
   }
-
-  // A page asked for from outside (the field, the place) is gone to. It depends on the page alone.
-  $effect(() => {
-    const n = page;
-    untrack(() => {
-      if (n !== told && roomHeight) goTo(n);
-    });
-  });
 
   // ---- the room, and zooming ----
 
@@ -211,7 +239,6 @@
     // The page the side was left at is gone to once the side has its size;
     // a side made wider or narrower keeps the place at its top, and has its
     // pages drawn anew once it rests, as a zoom has.
-    let started = false;
     const measure = () => {
       const width = el.clientWidth;
       const height = el.clientHeight;
@@ -223,7 +250,8 @@
       flushSync();
       if (!started) {
         started = true;
-        goTo(page);
+        toPlace(startAt);
+        onscroll();
       } else if (kept) {
         toPlace(kept);
         onscroll();
@@ -301,6 +329,18 @@
   /** For the bar: zoom to a factor or to the width, about the middle of the view. */
   export function zoomed(next: number | null) {
     zoomAt(next);
+  }
+  /** For the bar, the bookmarks and the contents: goes to a place, at the top edge of the view. */
+  export function goToPlace(to: Place) {
+    if (!started) return;
+    askedPage = Math.min(Math.max(1, to.page), facts.pages);
+    toPlace({ page: askedPage, at: to.at });
+    onscroll();
+    tellNow();
+  }
+  /** Where the view stands: the page at its top edge, and how far down it. */
+  export function placeNow(): Place {
+    return lastPlace ?? { ...startAt };
   }
   export function percent(): number {
     return Math.round(factor * 100);

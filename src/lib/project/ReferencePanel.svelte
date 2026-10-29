@@ -1,7 +1,7 @@
 <script lang="ts">
   import Eye from '@lucide/svelte/icons/eye';
   import { libraryGet } from '$lib/api/library';
-  import { besideFile } from '$lib/viewer/show';
+  import { showFile } from '$lib/viewer/show';
   import type { Snippet } from 'svelte';
   import { onMount } from 'svelte';
   import FileUp from '@lucide/svelte/icons/file-up';
@@ -85,7 +85,7 @@
             ? t('project-show-file')
             : t('project-show-file-named', { name: f.name }),
         icon: Eye,
-        action: () => besideFile(f.hash),
+        action: () => showFile(f.hash),
       })),
     ]);
   }
