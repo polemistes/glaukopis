@@ -88,3 +88,40 @@ What was found:
 
 - `FileSide` becomes a side of a project with its tabs in the project's record, or of no project with its own; `Arrangement` gains `lastProject`; `Sides` gains the tabs' acts and the rule by which a file side follows the map beside it; every way in goes through one rule. `ProjectInfo` gains `sources`; `FileRecord` gains `bookmarks`; `FileFacts` gains the outline; `file_pages` gives way to `file_page`, which returns bytes.
 - In the viewer: a row of tabs, a list of bookmarks and contents, places per tab, pages as blobs, exact widths, fewer pages mounted. In the core: a served child (`ocr/server.rs`), a long-lived task of `isolated.rs`, pages taken into the cache from files. The contract's types, the e2e scripts of the file view and the image editor, the guide's section *A file in a view* and the key sheet change with them. Projects' documents and the library's store are untouched.
+
+## Addendum, 2026-10-29: as built
+
+Built the same day on `main`, from ccd7230d to bc434459: the core's sources, bookmarks, contents and page as bytes, the quicker view, the tabs, the bookmarks, the guide and the scripts in the main session; the fast PNG and the served child (fbccaa77 to 874a2c55) by an agent in a worktree, merged as feb765d4. Nothing is pushed.
+
+### Measured
+
+`e2e/viewer-speed.mjs`, a book of three hundred pages made with Typst, off-screen, three runs each. Milliseconds; the gaps are between frames while the view is scrolled a tenth of a page every 50 ms past page 60.
+
+| | first page | longest gap | gaps over 50 ms | a page not drawn before | a page from the cache | a tab switched to |
+|---|---|---|---|---|---|---|
+| before (`main` at ccc8330f) | 3953–5462 | 443–452 | 615–616 | 527–603 | 404–454 | — |
+| after stage 3 | 449–540 | 67–68 | 49 | 341–461 | 69–76 | — |
+| after stage 6, and the text read once | 261–288 | 44–49 | 0 | 124–163 | 23–43 | 43–88 |
+
+The scrolling meant to take 30 seconds took about 45 before, the page's thread being so busy that a timer of 50 ms ran late; it takes 33 after.
+
+### What was found in the building, and what departs from the plan
+
+- **The lag was mostly the shadow of a page.** Switching parts of the view off one at a time showed it: with the blurred shadow every page had, a frame took about 160 ms while scrolling off-screen; without it 15, as a plain page does. The text over the pages, the pictures and their centring cost little. A line and a drop without blur instead, on the pages and on an image. The typesetting pane's pages keep their smaller blurred shadow; they were not part of this.
+- **The facts of a file waited for its whole text.** `file_facts` read the file's text (`seen_of`) for the numbers of its pages in print, four or five seconds for the book before its first page could be drawn. Those numbers and the outline are now read in the child's quick opening of the file (`layer::labels_and_outline`, the `Facts` task), and the text is read only for the text over the pages. Three readings of files are kept instead of one, so that tabs of several files do not read each other's away.
+- **The text was read many times at once.** With the facts quick, the text over each page in view asked for the file's text before it was read, and as many as seven children read the same book side by side. A file's text is now read once, however many ask; the others wait for it, and another file is not kept waiting.
+- **The default PNG was already fast packing.** The record took it for the slow kind; the agent measured, and chose fast packing with the filter of the row above, which cost least by the plan's measure on every page tried (a page of text 7 ms against 9; the balanced kind five to ten times slower).
+- **The served child takes several asks at once**, since the page asks for four pages at a time; a stop kills it only where no other ask waits for it. Served children are not given Linux's signal of the parent's end, which comes when the thread that started them ends; they end when their input closes, by watching their parent, after ninety seconds idle, and when the application ends (`server::end_all`, called on exit). The agent also made a one-shot child be looked at as soon as it tells a line rather than every 40 ms (874a2c55, a commit of its own).
+- **A view tells its place for the tab it was made for**, taken once as it is made. As first built, a tab left told its place to the tab shown next, and all tabs came back at page 1; the tabs script found it.
+- **The bar says the page gone to while it is in view**, and the last in view once the view is at the end of the file, where the middle of the view never reaches the last page. A bookmark is of the page the bar says, and where in it the view begins.
+- **A file shown stays in the tab shown** when that tab is of the file, and goes to its first tab otherwise.
+- **The place in the address** names the file of the tab shown and the page it was at when it was shown; scrolling does not change it, so that nothing is written while the pages move. The places of tabs are kept without redrawing what shows the tabs.
+- **A file chosen in the tree of a map side** makes that side a file side of the project of the map beside it, where there is one, so that the file joins the sources of the text it is read beside; else of the side's own project.
+- **A file side of a project in the trash closes.** A duplicated project keeps its sources, not where it was left. A bookmark's name is one line of at most 200 letters. The facts of up to twelve files are kept in the page, so that a tab switched to needs no new call.
+- **A tab is shown by a click**, as a button is, not by the pointer's release: the keyboard and whatever clicks it show it too.
+- **The script of the tabs is `e2e/source-tabs.mjs`**: `e2e/sources.mjs` is the script of lookups and drops.
+- Two tabs of one file look alike in the row: the tab does not say its page. Later, if wanted.
+
+### Counts
+
+`cargo test --workspace`: all pass (the core 886 unit tests, 18 of the child, 7 of the served child, 7 of the one-shot child, and the rest); `cargo clippy --workspace --all-targets` without warnings. `pnpm check` without errors; `pnpm test` 1345. The scripts: `source-tabs` 27 of 27, `file-view` 44 of 44, `image-editing` 27 of 27, `languages` 17 of 17, `viewer-speed` 8 of 8, `maps` 78 of 78, `as-left` 31 of 31, `tree-keys` 44 of 44, `list` 31 of 31, `files` 90 of 90, `library` 40 of 40, `documents` 62 of 62. `ocr` passes every step on PDFs and stops at its last, which presses Ctrl+3 for the view of images that one place for files (0070) took away; that step was stale before this work, and is left.
