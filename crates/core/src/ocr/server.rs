@@ -133,6 +133,7 @@ fn served(key: &str, path: &Path, size: u64, pdftoppm: Option<&Tool>, work: &Pat
 /// A child started to serve the file at `path`, of `size`, writing its pages
 /// in a folder of `work`, counted as asked of.
 fn start(key: &str, path: &Path, size: u64, pdftoppm: Option<&Tool>, work: &Path) -> Option<Result<Arc<Served>>> {
+    left_before(work);
     let place = std::fs::create_dir_all(work).context(|| tr!("io-creating", path = work)).and_then(|()| {
         tempfile::Builder::new()
             .prefix("served-")
@@ -155,6 +156,25 @@ fn start(key: &str, path: &Path, size: u64, pdftoppm: Option<&Tool>, work: &Path
         last_asked: Mutex::new(Instant::now()),
         asking: AtomicUsize::new(1),
     })))
+}
+
+/// Lets go, once in the life of the application and before the first file
+/// is served from `work`, of the folders that files served before left
+/// there: an application that was killed, or ended with its children
+/// still drawing, cannot remove them. Only one application works in a
+/// folder of data at a time, so none of them is another's.
+fn left_before(work: &Path) {
+    static CLEARED: Mutex<Vec<PathBuf>> = Mutex::new(Vec::new());
+    let mut cleared = lock(&CLEARED);
+    if cleared.iter().any(|done| done == work) {
+        return;
+    }
+    cleared.push(work.to_owned());
+    for entry in std::fs::read_dir(work).into_iter().flatten().flatten() {
+        if entry.file_name().to_string_lossy().starts_with("served-") && entry.path().is_dir() {
+            let _ = std::fs::remove_dir_all(entry.path());
+        }
+    }
 }
 
 /// Asks the child of a file served for pages, and gathers what it tells of

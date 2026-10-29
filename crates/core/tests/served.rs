@@ -290,6 +290,26 @@ fn files_idle_are_let_go_and_no_more_are_served_than_the_most() {
     assert_eq!(std::fs::read_dir(&work).map(|d| d.count()).unwrap_or(0), 0, "their folders are gone");
 }
 
+/// What files served by an application that was killed left in its folder
+/// of work is let go when the next serves its first file.
+#[test]
+fn folders_left_by_files_served_before_are_let_go() {
+    let _turn = one_at_a_time();
+    let dir = tempfile::tempdir().unwrap();
+    let work = dir.path().join("work");
+    let left = work.join("served-left");
+    std::fs::create_dir_all(&left).unwrap();
+    std::fs::write(left.join("3-0.png"), "a page never taken").unwrap();
+    let other = work.join("ocr-other");
+    std::fs::create_dir_all(&other).unwrap();
+    let pdf = dir.path().join("squares.pdf");
+    std::fs::write(&pdf, squares(2)).unwrap();
+    ocr::pages_at(&pdf, &Tools::default(), &work, None, &[0], 300, &never()).unwrap();
+    assert!(!left.exists());
+    assert!(other.exists(), "what is not of a file served is left alone");
+    server::end_all();
+}
+
 /// A file that cannot be opened says why, as it does when it is not served.
 #[test]
 fn a_file_that_cannot_be_opened_says_why() {
