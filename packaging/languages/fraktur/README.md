@@ -297,3 +297,31 @@ the characters: Tesseract then looks for a line in each picture and often
 takes a sliver of the next one. The application reads whole pages, where
 this does not arise.
 
+
+### Runs B and C, 2026-10-30: worn copies
+
+Run B continued run A for 25,000 iterations at a fifth of its learning rate
+on the same lines; it was no better (held-out Norwegian CER 0.39, the
+owner's lines 1.55). The model had reached what those lines can teach.
+
+Run C (experiment `train-aug`) gave every Norwegian line a worn copy made
+by `augment.py` (paler, thinner or heavier strokes, blur, a coarser scan,
+specks, a slight tilt or an uneven paper, two or three at a time, the
+text unchanged) and continued run A for 30,000 iterations at 0.00005.
+`heldout-nor-worn` is the held-out set worn the same way with another
+seed, to measure print like the pale page 450. `judge.sh` makes and
+measures runs.
+
+| set | run A | run C |
+|---|---|---|
+| held-out Norwegian, CER | 0.36 | **0.28** |
+| same, æøå right | 2494/2530 | 2489/2530 |
+| held-out worn, CER | 0.46 | **0.36** |
+| owner's novel, 42 lines, CER | 1.60 | 1.70 |
+| owner's novel, page confidences | 87.9 87.8 85.5 89.1 87.3 81.9 86.4 | 88.3 88.0 86.0 89.5 85.8 83.5 87.5 |
+| pvorb held-out pages, CER | 0.80 | 0.97 |
+
+The owner's lines and the pvorb pages differ by two and five characters,
+within what small sets wander by; the large sets and the pale page are
+better. **Run C is the model** (`make-model.sh choose runC` with
+`EXPERIMENT=train-aug`), packaged as version 2026.10.30.

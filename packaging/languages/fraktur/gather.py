@@ -25,7 +25,10 @@ the plain quotation marks a person types as these books print
 them, the marks a reader wrote kept as written, the capital I or J the
 word has, spaces single.
 
-    gather.py BOOKS-DIR TRAIN-DIR HELDOUT-DIR
+    gather.py BOOKS-DIR TRAIN-DIR HELDOUT-DIR [--roman]
+
+`--roman` is for books in roman type: the I and J are kept apart and the
+quotation marks kept as the reader wrote them.
 
 Writes `<book>.<line>.png` and `.gt.txt` into TRAIN-DIR, or HELDOUT-DIR
 for the books listed in BOOKS-DIR/heldout.json, emptying both first, and
@@ -57,14 +60,22 @@ def i_or_j(text):
     return re.sub(r"J(?![aeiouyæøåAEIOUYÆØÅ])", "I", text)
 
 
+ROMAN = False
+
+
 def normalise(text):
     text = unicodedata.normalize("NFC", text).replace("ſ", "s")
     for lig, letters in LIGATURES.items():
         text = text.replace(lig, letters)
-    text = i_or_j(quotes(text))
-    # The sign for etc., an r rotunda with c, written ꝛc. by some readers
-    # and rc. by others: one mark for one glyph.
-    text = re.sub(r"(?<![A-Za-zÆØÅæøåÄÖÜäöü])rc\.", "ꝛc.", text)
+    if ROMAN:
+        # Roman type: the marks as the reader wrote them, I and J apart;
+        # a raised footnote number as a plain figure, as the brief asks.
+        text = text.replace("'", "’").translate(str.maketrans("⁰¹²³⁴⁵⁶⁷⁸⁹", "0123456789"))
+    else:
+        text = i_or_j(quotes(text))
+        # The sign for etc., an r rotunda with c, written ꝛc. by some
+        # readers and rc. by others: one mark for one glyph.
+        text = re.sub(r"(?<![A-Za-zÆØÅæøåÄÖÜäöü])rc\.", "ꝛc.", text)
     text = re.sub(r"\s+", " ", text).strip()
     return re.sub(r" ([.,;:!?])", r"\1", text)
 
@@ -81,9 +92,12 @@ def read(path):
 
 
 def main():
-    if len(sys.argv) != 4:
+    global ROMAN
+    args = [a for a in sys.argv[1:] if a != "--roman"]
+    ROMAN = len(args) < len(sys.argv) - 1
+    if len(args) != 3:
         sys.exit(__doc__)
-    books, train, heldout_dir = sys.argv[1:]
+    books, train, heldout_dir = args
     with open(os.path.join(books, "heldout.json"), encoding="utf-8") as f:
         heldout = set(json.load(f))
     for d in (train, heldout_dir):

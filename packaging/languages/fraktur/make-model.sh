@@ -18,16 +18,26 @@
 set -euo pipefail
 
 ROOT=$(git -C "$(dirname "$0")" rev-parse --show-toplevel)
-BUILD=$ROOT/packaging/build/fraktur
+# The same steps make the Norwegian model of roman type (packaging/languages/
+# antiqua): BUILD, LINES, NAME, START and WORDS say where and what.
+BUILD=${BUILD:-$ROOT/packaging/build/fraktur}
 BEST=$ROOT/packaging/build/languages/tessdata_best
-LINES=$BUILD/lines
+LINES=${LINES:-$BUILD/lines}
+# radical-stroke.txt, which combine_lang_model needs, from langdata_lstm.
+SCRIPTS=${SCRIPTS:-$ROOT/packaging/build/fraktur/clones}
+# A word list for the model (one word a line), with the punctuation and
+# number patterns combine_lang_model then needs (PUNCS, NUMBERS); none by
+# default.
+WORDS=${WORDS:-}
+PUNCS=${PUNCS:-}
+NUMBERS=${NUMBERS:-}
 # An experiment is a folder of its own under packaging/build/fraktur
 # (EXPERIMENT, train by default) with the sets of lines it is made from
 # (SETS, folders under lines/); its proto model lives in it, so that one
 # experiment does not overwrite another's.
 TRAIN=$BUILD/${EXPERIMENT:-train}
 MODELS=$BUILD/models
-NAME=dan_latf
+NAME=${NAME:-dan_latf}
 START=${START:-deu_latf}
 SETS=${SETS:-dan german}
 PROTO=$TRAIN/proto
@@ -42,10 +52,13 @@ prepare() {
         | sort -z | xargs -0 cat > "$TRAIN/all-gt.txt"
     unicharset_extractor --output_unicharset "$TRAIN/my.unicharset" --norm_mode 2 "$TRAIN/all-gt.txt"
     merge_unicharsets "$MODELS/$START/$START.lstm-unicharset" "$TRAIN/my.unicharset" "$TRAIN/unicharset"
-    # The proto model: a traineddata with the widened unicharset and no
-    # word lists (the start model's are German).
-    combine_lang_model --input_unicharset "$TRAIN/unicharset" --script_dir "$BUILD/clones" \
-        --output_dir "$PROTO" --lang "$NAME"
+    # The proto model: a traineddata with the widened unicharset, and the
+    # word list of WORDS if one is given (deu_latf's are German, so the
+    # Fraktur model has none).
+    local words=()
+    [ -n "$WORDS" ] && words=(--words "$WORDS" --puncs "$PUNCS" --numbers "$NUMBERS")
+    combine_lang_model --input_unicharset "$TRAIN/unicharset" --script_dir "$SCRIPTS" \
+        "${words[@]}" --output_dir "$PROTO" --lang "$NAME"
     # A WordStr box beside every line image, from its text and size, as
     # tesstrain makes it; then an lstmf beside it.
     find $(for s in $SETS; do echo "$LINES/$s"; done) -name '*.png' -print0 | sort -z \

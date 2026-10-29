@@ -18,6 +18,9 @@ old type sets a thin space there that no truth can write the same.
 
     measure.py --tessdata DIR --lang NAME [--legacy] [--worst N] SET...
 
+`--roman` measures books in roman type: I and J are not folded together,
+and „ “ ” " count as one mark, ‘ ’ ' as one.
+
 `--legacy` reads with the old engine (`--oem 0`), for `dan_frak`. Each
 line is read as one line (`--psm 7`), all of a set in one run of
 Tesseract.
@@ -53,8 +56,19 @@ def i_or_j(text):
     return re.sub(r"J(?![aeiouyæøåAEIOUYÆØÅ])", "I", text)
 
 
+ROMAN = False
+
+
+def roman_marks(text):
+    """In roman type the I and J are two letters and the books print many
+    kinds of quotation marks: the double marks „ “ ” " are counted as one,
+    and ‘ ’ ' as one; » and « are themselves."""
+    return re.sub(r"[„“”\"]", '"', re.sub(r"[‘’']", "'", text))
+
+
 def normalise(text):
-    text = i_or_j(quotes(unicodedata.normalize("NFC", text).replace("ſ", "s")))
+    text = unicodedata.normalize("NFC", text).replace("ſ", "s")
+    text = roman_marks(text) if ROMAN else i_or_j(quotes(text))
     text = re.sub(r"\s+", " ", text).strip()
     text = re.sub(r" ([.,;:!?])", r"\1", text)
     return text
@@ -165,8 +179,11 @@ def main():
     p.add_argument("--worst", type=int, default=0, help="print the N worst lines of each set")
     p.add_argument("--psm", default="7", help="7 to find the line in each picture, 13 to take it as one raw line "
                    "(for pictures cut with slivers of the lines around them)")
+    p.add_argument("--roman", action="store_true", help="roman type: I and J apart, quotation marks of one kind as one")
     p.add_argument("sets", nargs="+")
     a = p.parse_args()
+    global ROMAN
+    ROMAN = a.roman
     print(f"{'set':<12} {'lines':>5} {'chars':>6} {'CER%':>6} {'CER%-æøå':>9} {'æøå':>7} {'right%':>6} {'conf':>5}")
     for folder in a.sets:
         name = os.path.basename(os.path.normpath(folder))

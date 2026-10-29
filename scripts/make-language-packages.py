@@ -130,10 +130,11 @@ TESSDATA_VERSION = "4.1.0"
 # Å, made here (packaging/languages/fraktur/README.md says how) and not
 # fetched; its version is the day it was made.
 DAN_LATF = ROOT / "packaging" / "build" / "fraktur" / "dan_latf.traineddata"
-DAN_LATF_VERSION = "2026.10.21"
+DAN_LATF_VERSION = "2026.10.30"
 DAN_LATF_SOURCE = ("deu_latf of tessdata_best 4.1.0 fine-tuned with lstmtraining on 15,522 lines of 71 Norwegian "
                    "books and newspapers in Gothic type of 1811–1920 from the National Library of Norway (nb.no, public "
-                   "domain), transcribed by eye, and the Danish pages of pvorb/tesseract-training-fraktur (Apache 2.0), "
+                   "domain), transcribed by eye, with a worn copy of each (paler, thinner, blurred, coarser), and the "
+                   "Danish pages of pvorb/tesseract-training-fraktur (Apache 2.0), "
                    "its unicharset widened to 148 letters and signs; packaging/languages/fraktur in the repository of "
                    "Glaukopis says how")
 

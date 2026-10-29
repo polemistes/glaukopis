@@ -13,7 +13,10 @@ folder `NN-slug/` with `book.json` saying what was chosen. A `report.tsv`
 in the output folder says for every row what became of it; rows whose
 folder exists already are skipped, so a run can be taken up again.
 
-    fetch-nb.py LIST.csv OUT-DIR [--pages 6] [--only 1,5,12]
+    fetch-nb.py LIST.csv OUT-DIR [--pages 6] [--only 1,5,12] [--public-only]
+
+`--public-only` takes only editions and issues in the public domain and
+readable from everywhere, and leaves a row without one as "no hit".
 
 A row may give the library's `id` of the edition wanted, which is then
 taken as it is, and `kind` = `newspaper`, which takes one page from each
@@ -37,6 +40,14 @@ import urllib.request
 API = "https://api.nb.no/catalog/v1"
 AGENT = "Glaukopis Fraktur ground truth (https://github.com/polemistes/glaukopis)"
 PAUSE = 0.4
+PUBLIC_ONLY = False
+
+
+def usable(item):
+    """Whether an item is digitised and, if only public items are asked
+    for, in the public domain and readable from everywhere."""
+    a = item.get("accessInfo", {})
+    return bool(a.get("isDigital")) and (not PUBLIC_ONLY or (a.get("isPublicDomain") and a.get("accessAllowedFrom") == "EVERYWHERE"))
 
 
 def get(url, binary=False):
@@ -107,7 +118,7 @@ def choose(items, title, lo):
             1 if first and first in (m.get("title") or "").lower() else 0,
             -abs(year - lo),
         )
-    items = [it for it in items if it.get("accessInfo", {}).get("isDigital")]
+    items = [it for it in items if usable(it)]
     if not items:
         return None
     return max(items, key=score)
@@ -210,7 +221,7 @@ def fetch_newspaper(row, folder, lo, hi, pages):
     params = urllib.parse.urlencode([("q", title), ("filter", "mediatype:aviser"),
                                      ("filter", f"date:[{lo}0101 TO {hi}1231]"), ("size", "100")])
     items = [it for it in get(f"{API}/items?{params}").get("_embedded", {}).get("items", [])
-             if it.get("accessInfo", {}).get("isDigital")
+             if usable(it)
              and clean_title(title).split()[0].lower() in (it["metadata"].get("title") or "").lower()]
     if not items:
         return {"nr": nr, "status": "no hit", "query": title, "years": f"{lo}-{hi}"}
@@ -263,7 +274,10 @@ def main():
     p.add_argument("out")
     p.add_argument("--pages", type=int, default=6)
     p.add_argument("--only", help="row numbers, comma-separated")
+    p.add_argument("--public-only", action="store_true", help="public domain, readable from everywhere, only")
     a = p.parse_args()
+    global PUBLIC_ONLY
+    PUBLIC_ONLY = a.public_only
     only = {int(x) for x in a.only.split(",")} if a.only else None
     os.makedirs(a.out, exist_ok=True)
     report = os.path.join(a.out, "report.tsv")
