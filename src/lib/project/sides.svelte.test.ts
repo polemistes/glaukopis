@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest';
 import type { Place } from '$lib/viewer/pages';
 import { emptySources, type Sources } from '$lib/viewer/sources';
 import type { SourcesOf } from '$lib/viewer/sources.svelte';
-import { Sides, isMap, paneParts, type MapSide, type SideSpec } from './sides.svelte';
+import {
+  Sides,
+  besideOnArrival,
+  isMap,
+  paneParts,
+  type MapSide,
+  type SideSpec,
+} from './sides.svelte';
 
 /** The sources of the projects, kept here as the store keeps them, at once. */
 class FakeSources implements SourcesOf {
@@ -324,6 +331,41 @@ describe('the sides of the window', () => {
     const none = withSources().s;
     none.showTabs();
     expect(none.sides).toMatchObject([{ kind: 'file', project: null }]);
+  });
+
+  it('mark a project come from the list as arriving, and not one of the window as it was left', () => {
+    const { s } = withSources();
+    s.open('a', 'x');
+    expect(s.active).toMatchObject({ arriving: true });
+    const kept = JSON.parse(JSON.stringify(s.toKeep(panes)));
+    expect(kept.sides[0]).not.toHaveProperty('arriving');
+    const asLeft = withSources().s;
+    asLeft.arrange(kept, route('a', 'x'));
+    expect(asLeft.active).not.toHaveProperty('arriving');
+    const other = withSources().s;
+    other.arrange(kept, route('b'));
+    expect(other.active).toMatchObject({ project: 'b', arriving: true });
+  });
+
+  it('bring what stood beside a project where the other side is free', () => {
+    const map = (project: string): SideSpec => ({
+      kind: 'map',
+      key: 'k',
+      project,
+      at: null,
+      mode: 'text',
+      outline: false,
+    });
+    const file: SideSpec = { kind: 'file', key: 'f', project: 'a', own: null };
+    const tabs = { kind: 'tabs' } as const;
+    const both = { kind: 'map', at: 'x', mode: 'diagram' } as const;
+    expect(besideOnArrival(tabs, undefined)).toBe('tabs');
+    expect(besideOnArrival(both, undefined)).toBe('map');
+    expect(besideOnArrival(both, file)).toBe('map');
+    expect(besideOnArrival(tabs, file)).toBeNull();
+    expect(besideOnArrival(tabs, map('b'))).toBeNull();
+    expect(besideOnArrival(both, map('a'))).toBeNull();
+    expect(besideOnArrival(null, undefined)).toBeNull();
   });
 
   it('close the sides of a project that is gone, its file side too, and forget its sources', () => {

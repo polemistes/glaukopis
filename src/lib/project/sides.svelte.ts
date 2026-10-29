@@ -10,6 +10,7 @@
  */
 
 import type { MapMode, Route } from '$lib/state/router.svelte';
+import type { Beside } from './layout';
 import { FILE, keptZoom } from '$lib/preview/zoom';
 import type { Place } from '$lib/viewer/pages';
 import {
@@ -47,6 +48,12 @@ export interface MapSide {
    * element is named: none was asked for. Not kept.
    */
   fresh?: boolean;
+  /**
+   * Whether the project has just come into this side, opened from the list,
+   * a link or the start screen: it brings what stood beside it when it was
+   * left, where the other side is free (ADR 0073). Not kept.
+   */
+  arriving?: boolean;
 }
 
 /**
@@ -71,6 +78,21 @@ export const isMap = (side: SideSpec | null | undefined): side is MapSide => sid
 /** Whether a side shows a file. */
 export const isFile = (side: SideSpec | null | undefined): side is FileSide =>
   side?.kind === 'file';
+
+/**
+ * What comes beside a project arriving in a side, of what stood beside it
+ * when it was left (ADR 0073): its tabs, or itself the other way, where the
+ * other side is free, none or a file side; nothing beside another project's
+ * map, or the same project's, which is there already.
+ */
+export function besideOnArrival(
+  beside: Beside | null,
+  other: SideSpec | undefined,
+): Beside['kind'] | null {
+  if (!beside || isMap(other)) return null;
+  if (beside.kind === 'tabs' && isFile(other)) return null;
+  return beside.kind;
+}
 
 /** What the document pane shows. Look is a column of the typesetting pane. */
 export type DocumentTab = 'references' | 'images' | 'comments' | 'found' | 'history' | 'changes';
@@ -253,6 +275,7 @@ export class Sides {
           mode: mode ?? 'diagram',
           outline: false,
           fresh: !mode,
+          arriving: true,
         },
       ];
       this.focused = 0;
@@ -268,6 +291,7 @@ export class Sides {
         mode: mode ?? 'diagram',
         outline: false,
         fresh: !mode,
+        arriving: true,
       };
       return;
     }
@@ -285,6 +309,7 @@ export class Sides {
       mode: mode ?? side.mode,
       outline: side.outline,
       fresh: !mode,
+      arriving: true,
     };
   }
 
@@ -308,6 +333,7 @@ export class Sides {
       mode: mode ?? (isMap(side) ? side.mode : 'diagram'),
       outline: false,
       fresh: !mode,
+      arriving: true,
     };
     if (this.sides.length < 2) {
       this.sides = [side, spec];
@@ -636,6 +662,7 @@ export class Sides {
         if (route.mode) keptActive.mode = route.mode;
         lay();
       } else {
+        // A project opened in a window that showed another arrives, as from the list.
         this.sides = [
           {
             kind: 'map',
@@ -645,6 +672,7 @@ export class Sides {
             mode: route.mode ?? 'diagram',
             outline: false,
             fresh: !route.mode,
+            arriving: true,
           },
         ];
         this.focused = 0;
@@ -667,7 +695,7 @@ export class Sides {
     return {
       sides: this.sides.map((s) => {
         if (!isMap(s)) return s;
-        const { fresh: _, ...kept } = s;
+        const { fresh: _, arriving: __, ...kept } = s;
         return kept;
       }),
       focused: this.index,

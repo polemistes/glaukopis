@@ -2,9 +2,10 @@
  * What a project keeps of how it was looked at, from one opening to the next
  * (ADR 0064): where each diagram was looked at, what is folded away in its
  * text, where the text of each element was read, how wide its outline
- * stands, and where it was left, the element and the way it was shown. What
- * the window shows, its sides and its panes, is the window's, kept with the
- * settings (`sides.svelte.ts`).
+ * stands, where it was left, the element and the way it was shown, and what
+ * stood beside it then where that was its own: its tabs, or itself the other
+ * way (ADR 0073). What the window shows, its sides and its panes, is the
+ * window's, kept with the settings (`sides.svelte.ts`).
  */
 
 import type { MapMode } from '$lib/state/router.svelte';
@@ -22,6 +23,13 @@ export interface Left {
   mode: MapMode;
 }
 
+/**
+ * What stood beside a project when it was left, where it was its own: its
+ * tabs, or the project itself at another element or the other way. A
+ * project opened again brings it, where the other side is free (ADR 0073).
+ */
+export type Beside = { kind: 'tabs' } | { kind: 'map'; at: string; mode: MapMode };
+
 /** What a project keeps of how it was looked at, as it is written with it. */
 export interface StoredView {
   /** By the element in view. */
@@ -36,6 +44,8 @@ export interface StoredView {
    */
   tops?: Record<string, string> | unknown[];
   outlineWidth?: number;
+  /** What stood beside it, where that was its own. */
+  beside?: unknown;
   /** Where the project was left. */
   at?: string;
   mode?: MapMode;
@@ -49,6 +59,7 @@ export interface Memory {
   tops: Record<string, string>;
   outlineWidth: number;
   left: Left | null;
+  beside: Beside | null;
 }
 
 export const OUTLINE_WIDTH = 240;
@@ -79,8 +90,33 @@ export function readMemory(stored: unknown): Memory {
         ? s.outlineWidth
         : OUTLINE_WIDTH,
     left: at ? { at, mode: MODES.includes(mode as MapMode) ? (mode as MapMode) : 'diagram' } : null,
+    beside: readBeside(s.beside),
   };
 }
+
+/** What stood beside, read with care: what is neither is none. */
+export function readBeside(kept: unknown): Beside | null {
+  const b = (kept && typeof kept === 'object' ? kept : {}) as Partial<{
+    kind: string;
+    at: string;
+    mode: string;
+  }>;
+  if (b.kind === 'tabs') return { kind: 'tabs' };
+  if (b.kind !== 'map') return null;
+  return {
+    kind: 'map',
+    at: typeof b.at === 'string' && b.at ? b.at : PROJECT,
+    mode: MODES.includes(b.mode as MapMode) ? (b.mode as MapMode) : 'diagram',
+  };
+}
+
+/** Whether two of what stood beside are the same. */
+export const sameBeside = (a: Beside | null, b: Beside | null): boolean =>
+  a === b ||
+  (!!a &&
+    !!b &&
+    a.kind === b.kind &&
+    (a.kind === 'tabs' || (b.kind === 'map' && a.at === b.at && a.mode === b.mode)));
 
 /** Where the project is to be shown, of what was kept: the element it was left at, where it is still there. */
 export function leftAt(memory: Memory, elements: Elements): Left {
@@ -101,6 +137,14 @@ export function toStore(memory: Memory, elements: Elements, folded: string[]): S
     tops,
     outlineWidth: memory.outlineWidth,
     ...(memory.left && inView(elements, memory.left.at) ? memory.left : {}),
+    ...(memory.beside
+      ? {
+          beside:
+            memory.beside.kind === 'map' && !inView(elements, memory.beside.at)
+              ? { ...memory.beside, at: PROJECT }
+              : memory.beside,
+        }
+      : {}),
   };
 }
 

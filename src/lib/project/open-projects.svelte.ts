@@ -21,7 +21,7 @@ import { beforeClose } from '$lib/state/closing';
 import { openProject, projects, rememberOpened } from '$lib/state/projects.svelte';
 import { describeError } from '$lib/ui/toast.svelte';
 import { closedHere, openHere } from './elsewhere';
-import { leftAt, readMemory, toStore, type Left, type Memory } from './layout';
+import { leftAt, readMemory, toStore, type Beside, type Left, type Memory } from './layout';
 import type { Camera } from './diagram/camera';
 import type { Project } from './model/project.svelte';
 import { PROJECT } from './model/types';
@@ -103,6 +103,8 @@ export class OpenProject {
   outlineWidth = $state(240);
   /** Where it was left: the element and the view of the side that showed it last. */
   left = $state.raw<Left | null>(null);
+  /** What stood beside it then, where that was its own (ADR 0073). */
+  beside = $state.raw<Beside | null>(null);
   /** How many sides show it. */
   refs = 0;
   /** It was let go while it was still being opened. */
@@ -126,6 +128,7 @@ export class OpenProject {
       tops: $state.snapshot(this.tops),
       outlineWidth: this.outlineWidth,
       left: this.left,
+      beside: this.beside,
     };
   }
 
@@ -232,6 +235,7 @@ export class OpenProjects {
       open.tops = memory.tops;
       open.outlineWidth = memory.outlineWidth;
       open.left = memory.left;
+      open.beside = memory.beside;
       open.info = opened.info;
       open.sharing = o.share(id, p, opened.info);
       open.project = p;

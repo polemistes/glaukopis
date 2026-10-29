@@ -84,7 +84,7 @@
   import { tooltip } from '$lib/ui/tooltip';
   import { t } from '$lib/i18n';
   import { comparing } from './copies.svelte';
-  import { clamp, sideWidth } from './layout';
+  import { clamp, sameBeside, sideWidth, type Beside } from './layout';
   import { DocumentPane } from './document-pane.svelte';
   import ProjectDialogs from './ProjectDialogs.svelte';
   import BesideDialog from './BesideDialog.svelte';
@@ -120,7 +120,14 @@
   import { openProjects, type OpenProject } from './open-projects.svelte';
   import { panes } from './panes.svelte';
   import { sideApis } from './side-api.svelte';
-  import { isFile, isMap, sides, type MapSide, type SideSpec } from './sides.svelte';
+  import {
+    besideOnArrival,
+    isFile,
+    isMap,
+    sides,
+    type MapSide,
+    type SideSpec,
+  } from './sides.svelte';
 
   // ---- the arrangement, as it was kept and as it changes ----
 
@@ -254,6 +261,64 @@
   const shownIds = $derived([...new Set(sides.maps.map((s) => s.project))]);
 
   const openOf = (spec: SideSpec) => (isMap(spec) ? openProjects.get(spec.project) : undefined);
+
+  // ---- a project comes back as it was shown (ADR 0073) ----
+
+  // Each project shown keeps what stands beside it where that is its own:
+  // its tabs, or itself at another element or the other way; else nothing,
+  // as beside another project. Of a project in both sides, as the active one
+  // sees it, which is where the project was left. It depends on the sides,
+  // their elements and the focus.
+  $effect(() => {
+    const all = sides.sides;
+    const active = sides.active;
+    const first = isMap(active) ? [active, ...all.filter((s) => s.key !== active.key)] : all;
+    const done = new Set<string>();
+    for (const spec of first) {
+      // A project that has just come is not alone yet: what it brings is still to come.
+      if (!isMap(spec) || spec.arriving || done.has(spec.project)) continue;
+      done.add(spec.project);
+      const open = openOf(spec);
+      if (open?.state !== 'open') continue;
+      const other = all[1 - sides.indexOf(spec.key)];
+      const beside: Beside | null =
+        isFile(other) && other.project === spec.project
+          ? { kind: 'tabs' }
+          : isMap(other) && other.project === spec.project && other.at
+            ? { kind: 'map', at: other.at, mode: other.mode }
+            : null;
+      untrack(() => {
+        if (sameBeside(open.beside, beside)) return;
+        open.beside = beside;
+        openProjects.changed(open);
+      });
+    }
+  });
+
+  // A project that has just come into a side, from the list, a link or the
+  // start screen, brings what stood beside it when it was left, where the
+  // other side is free; the focus stays where it came. Once for each coming.
+  $effect(() => {
+    for (const spec of sides.maps) {
+      if (!spec.arriving) continue;
+      const open = openOf(spec);
+      if (open?.state !== 'open' || !open.project?.node(PROJECT)) continue;
+      const beside = open.beside;
+      untrack(() => {
+        delete spec.arriving;
+        const i = sides.indexOf(spec.key);
+        const what = besideOnArrival(beside, sides.sides[1 - i]);
+        if (!what || !beside) return;
+        sides.focus(spec.key);
+        if (beside.kind === 'tabs') sides.showTabs();
+        else {
+          const at = open.project?.node(beside.at) ? beside.at : PROJECT;
+          sides.beside(spec.project, at, beside.mode);
+        }
+        sides.focus(spec.key);
+      });
+    }
+  });
 
   // What was asked of a project before it was open is answered once it is:
   // what was found through everything in what is written about a work is

@@ -285,6 +285,70 @@ try {
   s = await shown(app);
   check('closing the last tab closes the side', s.kinds.join() === 'map', s.kinds.join());
 
+  // ---- a project comes back as it was shown: alone, with its tabs, or both ways (ADR 0073) ----
+  const layout = () =>
+    app.exec(`return Array.from(document.querySelectorAll('[data-side-key]')).map((p, i) => {
+      const cell = document.querySelector('.top .cell[data-side="' + i + '"]');
+      return p.matches('[data-file-side]')
+        ? 'file:' + (cell?.querySelector('[data-crumb="project"] .name')?.textContent.trim() ?? '')
+        : (p.querySelector('.diagram') ? 'diagram' : p.querySelector('.text-view') ? 'text' : '?') + ':' + (cell?.querySelector('[data-crumb-last] .name')?.textContent.trim() ?? '');
+    })`);
+  /** Opens a project from the start screen, the map of the window having the focus, so that the window is let go first. */
+  const fromStart = async (name) => {
+    await app.click('[data-side-key]:not([data-file-side])');
+    await until('the place of the map', async () => (await app.exec('return location.hash')).startsWith('#/project/'), 5000);
+    await app.openProject(name);
+    await sleep(1500);
+  };
+  await app.exec(`window.__glaukopisViewer.show(arguments[0])`, hashes.structure);
+  await until('the tabs beside Wrath', async () => /^(text|diagram):Wrath,file:Wrath$/.test((await layout()).join()), 15000);
+  await sleep(600);
+  await fromStart('Odyssey');
+  await fromStart('Wrath');
+  let shape = await until('Wrath with its tabs', async () => {
+    const got = await layout();
+    return got.length === 2 ? got : null;
+  }, 15000).catch(() => layout());
+  check('a project left with its tabs comes back with them, from the start screen', /^(text|diagram):Wrath,file:Wrath$/.test(shape.join()), shape.join());
+  await app.screenshot('sources-5-back-with-tabs');
+  await app.click('.top .cell:has([data-file]) [data-close-side]');
+  await until('Wrath alone', async () => (await layout()).length === 1);
+  await fromStart('Odyssey');
+  await fromStart('Wrath');
+  shape = await layout();
+  check('left alone, it comes back alone', shape.length === 1 && /:Wrath$/.test(shape[0]), shape.join());
+  await app.click('.top button[data-side-by-side]');
+  await sleep(300);
+  await app.clickText('.menu [role="menuitem"]', 'This element, as diagram and text');
+  await until('Wrath both ways', async () => (await layout()).length === 2);
+  await sleep(600);
+  await fromStart('Odyssey');
+  await fromStart('Wrath');
+  shape = await until('Wrath both ways again', async () => {
+    const got = await layout();
+    return got.length === 2 ? got : null;
+  }, 15000).catch(() => layout());
+  check(
+    'left both ways, it comes back both ways',
+    shape.length === 2 && shape.every((x) => /^(text|diagram):Wrath$/.test(x)) && shape[0] !== shape[1],
+    shape.join(),
+  );
+  // Another project opened in the window beside it changes nothing else.
+  const odyssey = await app.execAsync(`return (await window.__TAURI_INTERNALS__.invoke('project_list')).find((p) => p.name === 'Odyssey').id`);
+  await app.click('[data-side-key]');
+  await app.go(`#/project/${encodeURIComponent(odyssey)}`);
+  shape = await until('Odyssey beside Wrath', async () => {
+    const got = await layout();
+    return got.some((x) => x.endsWith(':Odyssey')) ? got : null;
+  }, 10000).catch(() => layout());
+  await sleep(1500);
+  shape = await layout();
+  check(
+    'another project opened beside one brings nothing of its own in its place',
+    shape.length === 2 && shape.some((x) => /^(text|diagram):Odyssey$/.test(x)) && shape.some((x) => /^(text|diagram):Wrath$/.test(x)),
+    shape.join(),
+  );
+
   const errors = await app.exec('return window.__glaukopisErrors ?? []');
   if (errors.length) console.log('errors in the page:', JSON.stringify(errors).slice(0, 2000));
   check('no errors in the page, again', !errors.length);
