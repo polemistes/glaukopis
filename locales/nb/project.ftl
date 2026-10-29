@@ -253,8 +253,8 @@ project-delete-with = Slett med underelementer
 
 ## En fil vist i en side av vinduet (2026-10-26).
 
-project-beside-file = En fil fra biblioteket …
-project-beside-file-title = Ved siden av: velg en fil
+project-beside-file = Legg til en fil blant fanene …
+project-beside-file-title = Legg til en fil blant fanene
 project-show-file = Vis filen
 # Der et verk har flere filer: ett valg for hver, ved navnet.
 project-show-file-named = Vis «{ $name }»
@@ -265,3 +265,6 @@ project-document-of-other = Dokumentet på den andre siden
 project-pictures-library = Bibliotek
 project-library-no-images = Biblioteket har ingen bilder
 project-library-no-images-hint = Legg til bilder fra filer, eller slipp dem på en tekst.
+
+# Fanene åpnet (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
+project-beside-tabs = Prosjektets faner

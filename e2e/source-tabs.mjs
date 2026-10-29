@@ -131,6 +131,8 @@ try {
   // ---- the plus adds a file from the library ----
   await app.click('[data-file-side] [data-tab-add]');
   await app.waitFor('[data-file-chooser]', 5000);
+  const chooserWords = await app.exec(`return document.querySelector('[data-file-chooser]')?.closest('dialog')?.textContent ?? ''`);
+  check('the plus asks for a file to add to the tabs', chooserWords.includes('Add a file to the tabs'));
   await app.keys('owl');
   await sleep(300);
   await app.click('[data-choose-file]');
@@ -256,6 +258,19 @@ try {
   check('the window comes back with the map and its sources in four tabs', s.tabs.length === 4 && s.project === 'Wrath', `${s.kinds.join()}, ${s.tabs.length} tabs`);
   check('the tab shown last is shown, at its place', s.active === s.ids[1] && s.page === 2, `page ${s.page}`);
   await app.screenshot('sources-3-as-left');
+  check('the row of tabs is called Tabs', (await app.exec(`return document.querySelector('[data-file-side] [role="tablist"]')?.getAttribute('aria-label')`)) === 'Tabs');
+
+  // ---- the project's tabs, from Split view, as they were ----
+  await app.click('.top .cell:has([data-file]) [data-close-side]');
+  await until('the map alone', async () => (await shown(app)).kinds.join() === 'map');
+  await app.click('.top button[data-side-by-side]');
+  await sleep(300);
+  await app.clickText('.menu [role="menuitem"]', "The project's tabs");
+  s = await until('the tabs again', async () => {
+    const got = await shown(app);
+    return got.tabs.length === 4 && got.drawn ? got : null;
+  }, 15000);
+  check("Split view's The project's tabs opens them as they were", s.kinds.join() === 'map,file' && s.project === 'Wrath' && s.active === s.ids[1] && s.page === 2, `${s.kinds.join()}, page ${s.page}`);
 
   // ---- Ctrl+W closes a tab, and the side with its last ----
   await app.click('[data-file-side] [data-viewer-pages]');

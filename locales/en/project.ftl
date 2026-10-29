@@ -299,8 +299,8 @@ project-delete-with = Delete with sub-elements
 
 ## A file shown in a side of the window (2026-10-26).
 
-project-beside-file = A file of the library…
-project-beside-file-title = Beside: choose a file
+project-beside-file = Add a file to the tabs…
+project-beside-file-title = Add a file to the tabs
 project-show-file = Show the file
 # Where a work has several files: one item for each, by its name.
 project-show-file-named = Show “{ $name }”
@@ -311,3 +311,6 @@ project-document-of-other = The document of the other side
 project-pictures-library = Library
 project-library-no-images = The library has no images
 project-library-no-images-hint = Add images from files, or drop them on a text.
+
+# The tabs opened (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
+project-beside-tabs = The project's tabs

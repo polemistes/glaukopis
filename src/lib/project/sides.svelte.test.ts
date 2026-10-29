@@ -298,6 +298,34 @@ describe('the sides of the window', () => {
     expect(s.tabs(s.active!.key).tabs).toHaveLength(1);
   });
 
+  it('open the tabs of the project beside as they were, adding none', () => {
+    const { s, store } = withSources();
+    s.open('a', 'x');
+    s.showTabs();
+    expect(s.sides).toMatchObject([{ kind: 'map' }, { kind: 'file', project: 'a' }]);
+    expect(s.index).toBe(1);
+    expect(store.of('a').tabs).toEqual([]);
+    // With a file side there, it gets the focus, and nothing more.
+    s.focus(s.sides[0].key);
+    s.showTabs();
+    expect(s.sides).toHaveLength(2);
+    expect(s.index).toBe(1);
+    // With two maps, in the other side's place, of the project with the focus.
+    const two = withSources().s;
+    two.open('a', 'x');
+    two.beside('b', 'y');
+    two.focus(two.sides[0].key);
+    two.showTabs();
+    expect(two.sides).toMatchObject([
+      { kind: 'map', project: 'a' },
+      { kind: 'file', project: 'a' },
+    ]);
+    // With nothing, a side of no project, or of the one the window was last in.
+    const none = withSources().s;
+    none.showTabs();
+    expect(none.sides).toMatchObject([{ kind: 'file', project: null }]);
+  });
+
   it('close the sides of a project that is gone, its file side too, and forget its sources', () => {
     const { s, store } = withSources();
     s.open('a', 'x');

@@ -16,7 +16,7 @@
    */
   import { onMount } from 'svelte';
   import ExternalLink from '@lucide/svelte/icons/external-link';
-  import Eye from '@lucide/svelte/icons/eye';
+  import PanelRight from '@lucide/svelte/icons/panel-right';
   import { showFile } from '$lib/viewer/show';
   import FolderInput from '@lucide/svelte/icons/folder-input';
   import FolderOpen from '@lucide/svelte/icons/folder-open';
@@ -186,7 +186,7 @@
     // A PDF and an image are shown in a side of the window; every file can be opened in another program.
     const shown: Action[] =
       f.kind === 'pdf' || f.kind === 'picture'
-        ? [{ id: 'show', label: t('files-show'), icon: Eye, run: () => showFile(f.hash) }]
+        ? [{ id: 'show', label: t('files-show'), icon: PanelRight, run: () => showFile(f.hash) }]
         : [];
     const opening: Action[] = [
       ...shown,

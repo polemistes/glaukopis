@@ -54,7 +54,7 @@
   import Divider from '$lib/ui/Divider.svelte';
   import ExportDialog from './ExportDialog.svelte';
   import { sortFiles, type FileSortKey } from './order';
-  import Eye from '@lucide/svelte/icons/eye';
+  import PanelRight from '@lucide/svelte/icons/panel-right';
   import { showFile } from '$lib/viewer/show';
   import {
     assign,
@@ -270,7 +270,7 @@
               ? [
                   {
                     label: t('files-show'),
-                    icon: Eye,
+                    icon: PanelRight,
                     action: () => showFile(one.hash),
                   } as MenuItem,
                 ]

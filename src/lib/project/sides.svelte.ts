@@ -403,16 +403,37 @@ export class Sides {
    * no side at all, the first. The file side gets the focus. Gives its key.
    */
   showFile(file: string, place?: Place): string {
+    const side = this.#fileSide();
+    this.#change(side, (s) => withFile(s, file, place).sources);
+    this.#follow();
+    return side.key;
+  }
+
+  /**
+   * Opens the tabs of the project beside the text as they were (ADR 0073):
+   * the file side there is gets the focus; else one is made where
+   * `showFile` would make it, with no tab added. Gives its key.
+   */
+  showTabs(): string {
+    const side = this.#fileSide();
+    this.#follow();
+    return side.key;
+  }
+
+  /**
+   * The file side files go to, focused: the one there is, the active one
+   * first; else the other side made one, of the project beside it, in the
+   * place of what it showed, or one made beside the side there is; with no
+   * side at all, the first.
+   */
+  #fileSide(): FileSide {
     const active = this.active;
     const there = isFile(active) ? active : this.sides.find(isFile);
     if (there) {
-      this.#change(there, (s) => withFile(s, file, place).sources);
       this.focus(there.key);
-      this.#follow();
-      return there.key;
+      return there;
     }
     const spec = fileSide(this.#projectFor(active));
-    this.#change(spec, (s) => withFile(s, file, place).sources);
     if (!active) {
       this.sides = [spec];
       this.focused = 0;
@@ -424,8 +445,8 @@ export class Sides {
       this.sides[other] = spec;
       this.focused = other;
     }
-    this.#follow();
-    return spec.key;
+    // The side as the window holds it, so that what changes it is seen.
+    return this.sides.find((s) => s.key === spec.key) as FileSide;
   }
 
   /**

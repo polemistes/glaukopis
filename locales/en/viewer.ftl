@@ -51,9 +51,9 @@ viewer-edit-too-large-message = The image is larger than { $most } MB, which is 
 viewer-edit-make-smaller = Make a smaller copy
 
 # Sources in tabs, bookmarks in a file (docs/plans/sources-in-tabs-bookmarks-and-the-scrolling-of-pages.md).
-viewer-tabs = Sources
+viewer-tabs = Tabs
 viewer-tab-add = Add a file…
-viewer-tab-add-title = Add a file to the sources
+viewer-tab-add-title = Add a file to the tabs
 viewer-tab-menu = The tab's menu
 viewer-tab-close = Close the tab
 viewer-tab-close-others = Close the other tabs
@@ -62,7 +62,7 @@ viewer-tab-in-library = Show in the library
 viewer-tab-gone = No longer in the library
 viewer-tabs-none = No files here yet
 # The tooltip of the project's name in the cell of a file side.
-viewer-sources-of = The sources of { $name }
+viewer-sources-of = The tabs of { $name }
 viewer-places = Bookmarks and contents
 viewer-bookmark-here = Mark this place
 viewer-bookmarks = Bookmarks
@@ -75,3 +75,6 @@ viewer-bookmark-remove = Remove
 viewer-bookmark-not-kept = The bookmarks could not be kept
 viewer-contents = Contents
 viewer-contents-none = The file has no table of contents of its own
+
+# The tabs opened, files by their references, a file read in the library (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
+viewer-back-to-files = Back to the files

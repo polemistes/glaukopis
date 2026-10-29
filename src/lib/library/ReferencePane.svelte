@@ -451,6 +451,9 @@
               type="button"
               class="open"
               disabled={!file.exists}
+              title={file.kind === 'pdf' || file.kind === 'picture'
+                ? t('library-pane-add-to-tabs')
+                : undefined}
               onclick={() => {
                 // A PDF or an image is shown in the window; another kind in its own program.
                 if (file.kind === 'pdf' || file.kind === 'picture') showFile(file.hash);

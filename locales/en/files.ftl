@@ -384,7 +384,7 @@ files-export-all = Export all files…
 
 ## A file shown in a side of the window (2026-10-26).
 
-files-show = Show
+files-show = Add to the project's tabs
 files-open-elsewhere = Open in another program
 
 # One place for files: images are files of the library (ADR 0070).
@@ -423,3 +423,15 @@ files-remove-used = { $count ->
 
 # A simple image editor (docs/plans/a-simple-image-editor.md): the copies made from a file, as links.
 files-copies = Copies made from it
+
+# The tabs opened, files by their references, a file read in the library (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
+files-read = Read
+files-people = People
+files-year = Year
+files-title = Title
+files-publisher = Publisher
+files-sort-year = By year
+files-sort-title = By title
+files-sort-publisher = By publisher
+# The translators after the authors or editors: "Lord; tr. Smith".
+files-translated = tr. { $names }

@@ -508,3 +508,6 @@ library-resize-detail = Dra for å gjøre ruten til høyre bredere eller smalere
 
 # Importing a file of references: .bib, BibLaTeX or BibTeX.
 library-import-bibtex = Importer Bib(La)TeX …
+
+# Filene til en referanse i ruten (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
+library-pane-add-to-tabs = Legg til i prosjektets faner

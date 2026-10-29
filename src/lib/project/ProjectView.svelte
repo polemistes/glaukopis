@@ -104,6 +104,7 @@
   import FilePath from '$lib/viewer/FilePath.svelte';
   import FileChooser from '$lib/files/FileChooser.svelte';
   import FileText from '@lucide/svelte/icons/file-text';
+  import PanelRight from '@lucide/svelte/icons/panel-right';
   import PreviewPanel from '$lib/preview/PreviewPanel.svelte';
   import LookPanel from '$lib/look/LookPanel.svelte';
   import { lookUi } from '$lib/look/look.svelte';
@@ -605,6 +606,11 @@
         label: t('project-beside-project'),
         icon: FolderTree,
         action: () => (choosingBeside = true),
+      },
+      {
+        label: t('project-beside-tabs'),
+        icon: PanelRight,
+        action: () => sides.showTabs(),
       },
       {
         label: t('project-beside-file'),

@@ -378,7 +378,7 @@ files-export-all = Eksporter alle filene …
 
 ## En fil vist i en side av vinduet (2026-10-26).
 
-files-show = Vis
+files-show = Legg til i prosjektets faner
 files-open-elsewhere = Åpne i et annet program
 
 # Ett sted for filer: bilder er filer i biblioteket (ADR 0070).
@@ -413,3 +413,14 @@ files-remove-used = { $count ->
 
 # En enkel bilderedigering (docs/plans/a-simple-image-editor.md): kopiene laget av en fil, som lenker.
 files-copies = Kopier laget av den
+
+# Fanene åpnet, filer etter referansene sine, en fil lest i biblioteket (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
+files-read = Les
+files-people = Personer
+files-year = År
+files-title = Tittel
+files-publisher = Utgiver
+files-sort-year = Etter år
+files-sort-title = Etter tittel
+files-sort-publisher = Etter utgiver
+files-translated = overs. { $names }

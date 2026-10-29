@@ -51,9 +51,9 @@ viewer-edit-too-large-message = Bildet er større enn { $most } MB, som er det m
 viewer-edit-make-smaller = Lag en mindre kopi
 
 # Kilder i faner, bokmerker i en fil (docs/plans/sources-in-tabs-bookmarks-and-the-scrolling-of-pages.md).
-viewer-tabs = Kilder
+viewer-tabs = Faner
 viewer-tab-add = Legg til en fil …
-viewer-tab-add-title = Legg til en fil blant kildene
+viewer-tab-add-title = Legg til en fil blant fanene
 viewer-tab-menu = Fanens meny
 viewer-tab-close = Lukk fanen
 viewer-tab-close-others = Lukk de andre fanene
@@ -61,7 +61,7 @@ viewer-tab-again = Åpne igjen i en ny fane
 viewer-tab-in-library = Vis i biblioteket
 viewer-tab-gone = Ikke lenger i biblioteket
 viewer-tabs-none = Ingen filer her ennå
-viewer-sources-of = Kildene til { $name }
+viewer-sources-of = Fanene til { $name }
 viewer-places = Bokmerker og innhold
 viewer-bookmark-here = Merk dette stedet
 viewer-bookmarks = Bokmerker
@@ -73,3 +73,6 @@ viewer-bookmark-remove = Fjern
 viewer-bookmark-not-kept = Bokmerkene kunne ikke lagres
 viewer-contents = Innhold
 viewer-contents-none = Filen har ingen egen innholdsfortegnelse
+
+# Fanene åpnet, filer etter referansene sine, en fil lest i biblioteket (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
+viewer-back-to-files = Tilbake til filene
