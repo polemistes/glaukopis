@@ -19,13 +19,17 @@
 //! ended with what it started, the programs it runs (Tesseract, Poppler):
 //! on Linux and macOS the child leads a process group of its own, which is
 //! killed whole; on Windows its job ends them with it.
+//!
+//! A task may also live on, to be asked one thing after another while it
+//! keeps what it has opened ([`start_serving`], [`Serving`]): a file read
+//! once whose pages are drawn as they are wanted. It is bounded in memory
+//! as every child is, each ask in its time.
 
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
-use std::process::Stdio;
-use std::sync::OnceLock;
+use std::process::{Child, ChildStderr, ChildStdin, ChildStdout, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::mpsc;
+use std::sync::{Arc, Mutex, MutexGuard, OnceLock, PoisonError, mpsc};
 use std::time::{Duration, Instant};
 
 use serde::Serialize;
@@ -273,6 +277,351 @@ fn kill(child: &mut std::process::Child) {
     let _ = child.wait();
 }
 
+// ---------------------------------------------------------------------------
+// A task that lives on, and is asked one thing after another
+// ---------------------------------------------------------------------------
+
+/// How often a served child is looked at while an ask waits for it: whether
+/// it has ended, the memory it holds, and the ask's stop and time.
+const TICK: Duration = Duration::from_millis(40);
+
+/// How much of what a served child says on its standard error is kept, to
+/// say why it ended.
+const SAID_KEPT: usize = 4000;
+
+/// A child that keeps what it has opened and is asked one thing after
+/// another, a line each, from any number of threads at once: a file kept
+/// open while its pages are drawn (`ocr/server.rs`). Each ask is given a
+/// number; its line goes to the child as `<number> <line>` on its standard
+/// input, and what the child tells of it comes back as `<number> <line>` on
+/// its output ([`asked`], [`tell_to`]), handed to the ask that waits for it.
+/// The child's memory is watched while an ask waits, as [`run`] watches it;
+/// each ask has a time of its own; and the child is killed when it is ended
+/// ([`Serving::end`]) or let go. A child that has ended, or was killed, is
+/// asked nothing more: a new one is started for that.
+pub struct Serving {
+    task: String,
+    pid: u32,
+    started: Instant,
+    /// In bytes.
+    memory: u64,
+    life: Mutex<Life>,
+    stdin: Mutex<Option<ChildStdin>>,
+    waiting: Arc<Mutex<Waiting>>,
+    said: Arc<Said>,
+    /// Where it writes what it gives as it ends, which nothing reads.
+    _place: tempfile::TempDir,
+}
+
+/// The child, and why it ended, once it has.
+struct Life {
+    child: Child,
+    /// Once it is here, the child has been waited for: it is asked nothing
+    /// more, and never killed again, since its number may be another's.
+    ended: Option<Ended>,
+    #[cfg(windows)]
+    job: Option<windows::Job>,
+}
+
+/// The asks that wait for what the child tells of them, by their numbers,
+/// and the number the next is given.
+#[derive(Default)]
+struct Waiting {
+    next: u64,
+    asks: Vec<(u64, mpsc::Sender<String>)>,
+}
+
+/// What a served child says on its standard error: the last of it, and
+/// whether all of it has been read, which it has once the child has ended.
+#[derive(Default)]
+struct Said {
+    last: Mutex<String>,
+    all: AtomicBool,
+}
+
+fn lock<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
+    mutex.lock().unwrap_or_else(PoisonError::into_inner)
+}
+
+/// Starts a child that does `task` on the file at `input` and lives on to
+/// be asked ([`Serving::ask`]), holding no more than `memory` bytes. Nothing
+/// where no program is set: the caller does the work itself.
+pub fn start_serving(task: &str, input: &Path, memory: u64) -> Option<Result<Serving, Ended>> {
+    let program = PROGRAM.get()?;
+    Some(start_serving_with(program, task, input, memory))
+}
+
+/// As [`start_serving`], with the program given: for the tests.
+pub fn start_serving_with(program: &Path, task: &str, input: &Path, memory: u64) -> Result<Serving, Ended> {
+    let not_started = |e: &dyn std::fmt::Display| Ended::NotStarted(e.to_string());
+    let place = tempfile::Builder::new().prefix("glaukopis-served-").tempdir().map_err(|e| not_started(&e))?;
+    let output = place.path().join("out.json");
+    let mut c = crate::export::tools::command(program);
+    c.arg(FLAG).arg(task).arg(input).arg(&output);
+    c.env(PARENT, std::process::id().to_string());
+    c.stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped());
+    unix_child(&mut c);
+    let mut child = c.spawn().map_err(|e| not_started(&e))?;
+    #[cfg(windows)]
+    let job = windows::limit(&child, memory)
+        .inspect_err(|code| {
+            tracing::warn!(task, code, "the served process could not be given a bound on its memory");
+        })
+        .ok();
+    let stdin = child.stdin.take();
+    let waiting = Arc::new(Mutex::new(Waiting::default()));
+    let said = Arc::new(Said::default());
+    let (stdout, stderr) = (child.stdout.take(), child.stderr.take());
+    let readers = {
+        let (waiting, said, task, also) = (waiting.clone(), said.clone(), task.to_owned(), task.to_owned());
+        std::thread::Builder::new().name("served-out".into()).spawn(move || hand_on(stdout, &waiting, &task)).and_then(
+            |_| std::thread::Builder::new().name("served-err".into()).spawn(move || gather(stderr, &said, &also)),
+        )
+    };
+    if let Err(e) = readers {
+        // Unread, it would stop once its output is full, and be waited for in vain.
+        kill(&mut child);
+        return Err(not_started(&e));
+    }
+    tracing::debug!(task, pid = child.id(), "a served process was started");
+    Ok(Serving {
+        task: task.to_owned(),
+        pid: child.id(),
+        started: Instant::now(),
+        memory,
+        life: Mutex::new(Life {
+            child,
+            ended: None,
+            #[cfg(windows)]
+            job,
+        }),
+        stdin: Mutex::new(stdin),
+        waiting,
+        said,
+        _place: place,
+    })
+}
+
+/// Hands each line a served child tells to the ask it is told of, by the
+/// number it begins with. What is told of an ask no longer waiting is let go.
+fn hand_on(stdout: Option<ChildStdout>, waiting: &Mutex<Waiting>, task: &str) {
+    use std::io::BufRead;
+    let Some(out) = stdout else { return };
+    for line in std::io::BufReader::new(out).lines() {
+        let Ok(line) = line else { break };
+        let Some((number, told)) = line.split_once(' ').and_then(|(n, told)| Some((n.parse::<u64>().ok()?, told)))
+        else {
+            tracing::debug!(task, line, "the served process said this on its output");
+            continue;
+        };
+        let to = lock(waiting).asks.iter().find(|(n, _)| *n == number).map(|(_, to)| to.clone());
+        if let Some(to) = to {
+            let _ = to.send(told.to_owned());
+        }
+    }
+}
+
+/// Gathers what a served child says on its standard error, the last of it
+/// kept; each line is said in the log as it comes, since the child may live
+/// long after it was said.
+fn gather(stderr: Option<ChildStderr>, said: &Said, task: &str) {
+    use std::io::BufRead;
+    if let Some(err) = stderr {
+        for line in std::io::BufReader::new(err).lines() {
+            let Ok(line) = line else { break };
+            if !line.trim().is_empty() {
+                tracing::warn!(task, line, "the served process said this while it worked");
+            }
+            let mut last = lock(&said.last);
+            last.push_str(&line);
+            last.push('\n');
+            if last.len() > SAID_KEPT * 2 {
+                let cut = last.len() - SAID_KEPT;
+                let cut = (cut..last.len()).find(|&at| last.is_char_boundary(at)).unwrap_or(last.len());
+                last.drain(..cut);
+            }
+        }
+    }
+    said.all.store(true, Ordering::Relaxed);
+}
+
+impl Serving {
+    /// The number of its process.
+    pub fn pid(&self) -> u32 {
+        self.pid
+    }
+
+    /// Asks the child `line`, which holds no line break, and hands each line
+    /// it tells of it to `told` until `told` says the answer is whole, by
+    /// giving `true`. Other asks may wait at the same time. The child is
+    /// killed when the ask has waited longer than `deadline`, and when it
+    /// holds more memory than it was given, and the ask is then given up;
+    /// as it is when the child ends. When `stop` is set, the ask is given
+    /// up, and the child killed where no other ask waits for it.
+    pub fn ask(
+        &self,
+        line: &str,
+        deadline: Duration,
+        told: &mut dyn FnMut(&str) -> bool,
+        stop: &AtomicBool,
+    ) -> Result<(), Ended> {
+        if stop.load(Ordering::Relaxed) {
+            return Err(Ended::Stopped);
+        }
+        self.watch()?;
+        let (number, answers) = {
+            let mut waiting = lock(&self.waiting);
+            let number = waiting.next;
+            waiting.next += 1;
+            let (send, answers) = mpsc::channel();
+            waiting.asks.push((number, send));
+            (number, answers)
+        };
+        let asked = Instant::now();
+        let answered = self.send(number, line).and_then(|()| {
+            loop {
+                if let Ok(answer) = answers.recv_timeout(TICK)
+                    && told(&answer)
+                {
+                    break Ok(());
+                }
+                self.watch()?;
+                if stop.load(Ordering::Relaxed) {
+                    break Err(self.let_go(number));
+                }
+                if asked.elapsed() > deadline {
+                    self.kill(Ended::Time);
+                    break Err(Ended::Time);
+                }
+            }
+        });
+        lock(&self.waiting).asks.retain(|(n, _)| *n != number);
+        answered
+    }
+
+    /// Writes an ask's line to the child. A child that no longer reads has
+    /// ended, or is ending: why, once it has.
+    fn send(&self, number: u64, line: &str) -> Result<(), Ended> {
+        use std::io::Write;
+        let written = match lock(&self.stdin).as_mut() {
+            Some(input) => writeln!(input, "{number} {}", line.replace(['\n', '\r'], " ")).and_then(|()| input.flush()),
+            None => Err(std::io::Error::from(std::io::ErrorKind::BrokenPipe)),
+        };
+        let Err(e) = written else { return Ok(()) };
+        let until = Instant::now() + Duration::from_secs(1);
+        while Instant::now() < until {
+            self.watch()?;
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        let ended = Ended::Failed(e.to_string());
+        self.kill(ended.clone());
+        Err(ended)
+    }
+
+    /// Whether the child lives within its memory: why not, where it has
+    /// ended, or is killed now for the memory it holds.
+    fn watch(&self) -> Result<(), Ended> {
+        let mut life = lock(&self.life);
+        if let Some(ended) = &life.ended {
+            return Err(ended.clone());
+        }
+        let ended = match life.child.try_wait() {
+            Ok(Some(status)) => self.why_ended(status),
+            Ok(None) if resident(self.pid).is_some_and(|held| held > self.memory) => {
+                kill(&mut life.child);
+                Ended::Memory
+            }
+            Ok(None) => return Ok(()),
+            Err(e) => {
+                // It cannot be watched: it is ended, lest it go on without bounds.
+                kill(&mut life.child);
+                Ended::Failed(e.to_string())
+            }
+        };
+        self.ended(&mut life, ended.clone());
+        Err(ended)
+    }
+
+    /// Why a child that has ended of itself ended: what it said last, once
+    /// all it said has been read, or how it ended.
+    fn why_ended(&self, status: std::process::ExitStatus) -> Ended {
+        let until = Instant::now() + Duration::from_millis(200);
+        while !self.said.all.load(Ordering::Relaxed) && Instant::now() < until {
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        let said = lock(&self.said.last).clone();
+        // On Windows the job ends a child that takes too much, and the child
+        // is told so as a failure to allocate.
+        if said.contains("memory allocation") {
+            return Ended::Memory;
+        }
+        let last = said.lines().rev().find(|l| !l.trim().is_empty()).unwrap_or("").trim().to_owned();
+        Ended::Failed(if last.is_empty() { status.to_string() } else { last })
+    }
+
+    /// Kills the child, for `why`, where it has not ended already.
+    fn kill(&self, why: Ended) {
+        let mut life = lock(&self.life);
+        if life.ended.is_none() {
+            kill(&mut life.child);
+            self.ended(&mut life, why);
+        }
+    }
+
+    fn ended(&self, life: &mut Life, why: Ended) {
+        // What the child started dies with its job.
+        #[cfg(windows)]
+        drop(life.job.take());
+        let lived = self.started.elapsed().as_secs();
+        tracing::info!(task = self.task, pid = self.pid, lived, ended = %why, "a served process ended");
+        life.ended = Some(why);
+    }
+
+    /// An ask that was stopped lets go of the child, which is killed where
+    /// no other ask waits for it: what was asked of it is no longer wanted.
+    fn let_go(&self, number: u64) -> Ended {
+        let mut waiting = lock(&self.waiting);
+        waiting.asks.retain(|(n, _)| *n != number);
+        if waiting.asks.is_empty() {
+            self.kill(Ended::Stopped);
+        }
+        Ended::Stopped
+    }
+
+    /// Whether the child lives, within its memory: one that holds more is killed.
+    pub fn alive(&self) -> bool {
+        self.watch().is_ok()
+    }
+
+    /// Ends the child: it is killed, with what it started. An ask that
+    /// waits for it is given up.
+    pub fn end(&self) {
+        drop(lock(&self.stdin).take());
+        self.kill(Ended::Failed("it was ended".to_owned()));
+    }
+}
+
+impl Drop for Serving {
+    fn drop(&mut self) {
+        self.end();
+    }
+}
+
+/// In a task that is served ([`start_serving`]): each line it is asked,
+/// with the number by which what it tells of the line is told
+/// ([`tell_to`]), until the one who asks is gone.
+pub fn asked() -> impl Iterator<Item = (u64, String)> {
+    std::io::stdin().lines().map_while(std::result::Result::ok).filter_map(|line| {
+        let (number, asked) = line.split_once(' ')?;
+        Some((number.parse().ok()?, asked.to_owned()))
+    })
+}
+
+/// In a task that is served: tells a line of what it was asked by `number`.
+pub fn tell_to(number: u64, line: &str) {
+    tell(&format!("{number} {line}"));
+}
+
 /// What a task of [`serve`] does: from the file it is given, what it gives.
 type Task = fn(&Path) -> Result<Vec<u8>, String>;
 
@@ -318,6 +667,45 @@ fn task(name: &str) -> Option<Task> {
             let sleeper = std::process::Command::new("sleep").arg("600").spawn().map_err(|e| e.to_string())?;
             tell(&sleeper.id().to_string());
             std::thread::sleep(Duration::from_secs(600));
+            Ok(Vec::new())
+        }),
+        // Served: tells each line it is asked back, until it is asked no more.
+        "test-serve-echo" if testing() => Some(|_| {
+            for (number, line) in asked() {
+                tell_to(number, &format!("echo: {line}"));
+            }
+            Ok(Vec::new())
+        }),
+        // Served: waits as many milliseconds as each line says, the lines at
+        // once, and tells that it has.
+        "test-serve-wait" if testing() => Some(|_| {
+            std::thread::scope(|scope| {
+                for (number, line) in asked() {
+                    scope.spawn(move || {
+                        std::thread::sleep(Duration::from_millis(line.trim().parse().unwrap_or(0)));
+                        tell_to(number, "waited");
+                    });
+                }
+            });
+            Ok(Vec::new())
+        }),
+        // Served: eats memory without end once it is asked anything.
+        "test-serve-eat" if testing() => Some(|_| {
+            let mut held: Vec<Vec<u8>> = Vec::new();
+            if asked().next().is_some() {
+                loop {
+                    held.push(vec![1; 16 << 20]);
+                    std::thread::sleep(Duration::from_millis(5));
+                }
+            }
+            Ok(Vec::new())
+        }),
+        // Served: says why, and ends, once it is asked anything.
+        "test-serve-end" if testing() => Some(|_| {
+            if asked().next().is_some() {
+                eprintln!("given up at once");
+                std::process::exit(1);
+            }
             Ok(Vec::new())
         }),
         _ => None,
