@@ -18,6 +18,8 @@ export interface Summary {
   type: string;
   authors: string;
   authorsSort: string;
+  /** The translators, where authors or editors stand first; else empty (ADR 0073). */
+  translators: string;
   year: string;
   yearNumber: number | null;
   title: string;

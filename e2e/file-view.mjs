@@ -80,7 +80,12 @@ try {
   const cell = await app.exec(`return document.querySelector('.top .cell [data-path][data-file] [data-crumb-last] .name')?.textContent.trim()`);
   check('the path over the side names the file', /structure/.test(cell ?? ''), cell);
   const named = await app.exec(`return document.querySelector('.top .cell [data-path][data-file] [data-crumb="project"] .name')?.textContent.trim()`);
-  check('and the project whose sources these are', named === 'Wrath and the hero', named);
+  check('and the project whose tabs these are', named === 'Wrath and the hero', named);
+  const tabWords = await until('the tab named by its reference', async () => {
+    const tab = await app.exec(`const t = document.querySelector('[data-file-side] [data-tab][aria-selected="true"]'); return t ? { name: t.querySelector('.name').textContent.trim(), title: t.title } : null`);
+    return tab?.name === 'Lord 1960' ? tab : null;
+  }, 5000).catch(async () => app.exec(`const t = document.querySelector('[data-file-side] [data-tab][aria-selected="true"]'); return t ? { name: t.querySelector('.name').textContent.trim(), title: t.title } : null`));
+  check('the tab of a file of a reference is named by it, its title and the file in the tooltip', tabWords?.name === 'Lord 1960' && /Singer of Tales/.test(tabWords?.title ?? '') && /structure\.pdf/.test(tabWords?.title ?? ''), JSON.stringify(tabWords));
   // The text of a project just made takes the focus a moment later; the place follows the side that has it.
   await app.click('[data-viewer-pages]');
   const placeNow = await until('the place of the file', async () => {
@@ -268,7 +273,8 @@ try {
   check('under the projects stands the tree of files', heads.join() === 'Files', heads.join());
   await app.click('[data-library-trees] [data-tree-row="files"]');
   await sleep(200);
-  const fileRows = await app.exec(`return Array.from(document.querySelectorAll('[data-library-trees] [data-tree-kind="file"] .name')).map((n) => n.textContent.trim())`);
+  // A file of a reference is named by it, its own name in the tooltip.
+  const fileRows = await app.exec(`return Array.from(document.querySelectorAll('[data-library-trees] [data-tree-kind="file"]')).map((r) => r.title || r.querySelector('.name').textContent.trim())`);
   check('the files that can be shown are listed, images among them, the one shown marked', fileRows.some((n) => n.endsWith('.pdf')) && fileRows.some((n) => n.endsWith('.png')) && (await app.exists('[data-library-trees] [data-tree-row="file:' + pngHash + '"].current')), fileRows.join(' | '));
   await app.screenshot('file-view-4c-trees');
   await app.click('[data-library-trees] [data-tree-row="file:' + pdfHash + '"]');
@@ -368,8 +374,8 @@ try {
   await app.click('.top button[data-side-by-side]');
   await app.waitFor('.menu [role="menuitem"]', 3000);
   const offered = await app.exec(`return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((m) => m.textContent.trim())`);
-  check('Split view offers a file of the library', offered.some((o) => /A file of the library/.test(o)), offered.join(' | '));
-  await app.clickText('.menu [role="menuitem"]', 'A file of the library');
+  check('Split view offers a file to add to the tabs', offered.some((o) => /Add a file to the tabs/.test(o)), offered.join(' | '));
+  await app.clickText('.menu [role="menuitem"]', 'Add a file to the tabs');
   await app.waitFor('[data-file-chooser]', 5000);
   await app.keys('owl');
   await sleep(300);

@@ -1,8 +1,12 @@
 <script lang="ts">
   /**
-   * The files of the folder in view (ADR 0043, 0070): one line each, with
-   * the kind, the name, where it is used, when it was taken in and its size,
-   * and its folder where those under the folder are shown too; or as a grid
+   * The files of the folder in view (ADR 0043, 0070, 0073): one line each,
+   * with the kind; where the file belongs to a reference, the reference's
+   * people with their roles, its year, title and publisher, and the file's
+   * name small after them; else the name and where the file is used; when it
+   * was taken in and its size, and its folder where those under the folder
+   * are shown too. A narrow list says the reference by its short form, and
+   * leaves out when the file was taken in. Or a grid
    * of thumbnails, an image as it is and a PDF by its first page, in three
    * sizes. Several are selected as references are in their list, and
    * dragged onto a folder together. Only the lines or rows of tiles that are
@@ -19,6 +23,7 @@
     FILES_DRAGGED,
     KIND_ICONS,
     kindWords,
+    peopleWords,
     referenceWords,
     files as store,
   } from './store.svelte';
@@ -71,6 +76,10 @@
   let anchor = $state<string | null>(null);
 
   const grid = $derived(mode === 'grid');
+  /** Whether the list is wide enough for the columns of a reference: else its short form. */
+  const wide = $derived(width >= 560);
+  /** Whether it is wide enough for when each file was taken in too: that is in the pane and the order. */
+  const roomy = $derived(width >= 900);
   const side = $derived(SIDES[size]);
   /** A tile: the thumbnail, and its name under it, with its folder where that is said. */
   const tileHeight = $derived(side + (folders ? 52 : 34));
@@ -343,13 +352,26 @@
             <span class="name truncate">{file.name}</span>
             {#if folders}<span class="folder truncate">{folderName(file)}</span>{/if}
           {:else}
+            {@const ref = file.references[0]}
             <span class="icon" title={kindWords(file.kind)}
               ><Icon size={16} strokeWidth={1.6} /></span
             >
-            <span class="name truncate">{file.name}</span>
+            {#if ref && wide}
+              {@const more = file.references.length > 1 ? ` +${file.references.length - 1}` : ''}
+              <span class="people truncate" data-cell="people">{peopleWords(ref) + more}</span>
+              <span class="year" data-cell="year">{ref.year}</span>
+              <span class="title truncate" data-cell="title">{ref.title}</span>
+              <span class="publisher truncate" data-cell="publisher">{ref.publisher}</span>
+              <span class="file-name truncate" data-cell="name" title={file.name}>{file.name}</span>
+            {:else if ref}
+              <span class="short truncate" data-cell="people">{where.words}</span>
+              <span class="file-name truncate" data-cell="name" title={file.name}>{file.name}</span>
+            {:else}
+              <span class="name truncate" data-cell="name">{file.name}</span>
+              <span class="reference truncate" class:none={where.none}>{where.words}</span>
+            {/if}
             {#if folders}<span class="folder truncate">{folderName(file)}</span>{/if}
-            <span class="reference truncate" class:none={where.none}>{where.words}</span>
-            <span class="added">{added(file)}</span>
+            {#if roomy}<span class="added">{added(file)}</span>{/if}
             <span class="size">{file.exists ? fileSize(file.size) : t('files-missing')}</span>
           {/if}
         </div>
@@ -412,6 +434,42 @@
   .reference.none {
     color: var(--ink-4);
     font-style: italic;
+  }
+  /* The columns of a reference (ADR 0073). */
+  .people {
+    flex: 0 1 18%;
+    min-width: 0;
+  }
+  .year {
+    flex: none;
+    width: 44px;
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+  }
+  .title {
+    flex: 1 1 34%;
+    min-width: 0;
+    font-family: var(--font-text);
+  }
+  .publisher {
+    flex: 0 1 14%;
+    min-width: 0;
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+  }
+  .short {
+    flex: 1 1 50%;
+    min-width: 0;
+  }
+  .file-name {
+    flex: 0 1 14%;
+    min-width: 0;
+    color: var(--ink-3);
+    font-size: var(--text-xs);
+  }
+  .missing .file-name {
+    text-decoration: line-through;
   }
   .size {
     flex: none;

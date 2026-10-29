@@ -6,9 +6,14 @@
  */
 
 import type { FileView } from '$lib/api/files';
+import type { Summary } from '$lib/api/library';
 import { referenceWords } from './store.svelte';
 
-export type FileSortKey = 'name' | 'kind' | 'added' | 'size' | 'reference';
+export type FileSortKey =
+  'name' | 'kind' | 'added' | 'size' | 'reference' | 'year' | 'title' | 'publisher';
+
+/** The orders by what a file's reference says (ADR 0073). */
+type ByReference = Extract<FileSortKey, 'reference' | 'year' | 'title' | 'publisher'>;
 
 /** One for all the lists: made once, not for every sort. */
 const collator = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
@@ -18,28 +23,52 @@ const byName = (a: FileView, b: FileView) => collator.compare(a.name, b.name);
 const KINDS: FileView['kind'][] = ['pdf', 'picture', 'document', 'other'];
 
 /**
- * The files in an order of the files view. By reference, the words of each
- * file's first reference are made once, not twice for every comparison,
- * and the files with no reference go last, whatever the direction.
+ * What a reference is ordered by, in each order of it, given its people and
+ * year as the line of a file names it; none where it says nothing.
+ */
+const OF_REFERENCE: Record<ByReference, (s: Summary, words: string) => string | number | null> = {
+  reference: (_, words) => words,
+  year: (s) => s.yearNumber,
+  title: (s) => s.title || null,
+  publisher: (s) => s.publisher || null,
+};
+
+const isByReference = (key: FileSortKey): key is ByReference => key in OF_REFERENCE;
+
+/**
+ * The files in an order of the files view. By what their references say,
+ * the words of each file's first reference are made once, not twice for
+ * every comparison, and the files whose references say nothing of it, or
+ * that have none, go last, whatever the direction; files alike in it stand
+ * by their people, then by their names.
  */
 export function sortFiles(
   files: readonly FileView[],
   key: FileSortKey,
   descending: boolean,
 ): FileView[] {
-  if (key === 'reference') {
-    const words = new Map<FileView, string | null>();
-    for (const f of files) words.set(f, f.references[0] ? referenceWords(f.references[0]) : null);
+  if (isByReference(key)) {
+    const of = OF_REFERENCE[key];
+    const said = new Map<FileView, { value: string | number | null; people: string }>();
+    for (const f of files) {
+      const r = f.references[0];
+      const people = r ? referenceWords(r) : '';
+      said.set(f, r ? { value: of(r, people), people } : { value: null, people });
+    }
     return files.slice().sort((a, b) => {
-      const x = words.get(a)!;
-      const y = words.get(b)!;
-      if (x === null || y === null)
-        return (x !== null ? -1 : 0) + (y !== null ? 1 : 0) || byName(a, b);
-      const said = collator.compare(x, y) || byName(a, b);
-      return descending ? -said : said;
+      const x = said.get(a)!;
+      const y = said.get(b)!;
+      if (x.value === null || y.value === null)
+        return (x.value !== null ? -1 : 0) + (y.value !== null ? 1 : 0) || byName(a, b);
+      const first =
+        typeof x.value === 'number' && typeof y.value === 'number'
+          ? x.value - y.value
+          : collator.compare(String(x.value), String(y.value));
+      const order = first || collator.compare(x.people, y.people) || byName(a, b);
+      return descending ? -order : order;
     });
   }
-  const compare: Record<Exclude<FileSortKey, 'reference'>, (a: FileView, b: FileView) => number> = {
+  const compare: Record<Exclude<FileSortKey, ByReference>, (a: FileView, b: FileView) => number> = {
     name: byName,
     // The kinds in the order the filter names them: PDF, image, document, other.
     kind: (a, b) => KINDS.indexOf(a.kind) - KINDS.indexOf(b.kind) || byName(a, b),

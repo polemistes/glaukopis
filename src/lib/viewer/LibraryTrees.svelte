@@ -16,7 +16,7 @@
   import FileText from '@lucide/svelte/icons/file-text';
   import Folder from '@lucide/svelte/icons/folder';
   import type { FileFolder, FileView } from '$lib/api/files';
-  import { files, KIND_ICONS } from '$lib/files/store.svelte';
+  import { fileLabel, files, KIND_ICONS } from '$lib/files/store.svelte';
   import { t } from '$lib/i18n';
 
   interface Props {
@@ -47,11 +47,12 @@
     open: boolean;
     /** The hash of a file. */
     hash?: string;
+    /** What the pointer is told: of a file named by its reference, its title and its name (ADR 0073). */
+    title?: string;
     icon: typeof FileText;
   }
 
   const byOrder = (a: FileFolder, b: FileFolder) => a.order.localeCompare(b.order);
-  const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name);
   /** The files that can be shown: PDFs and images that are there. */
   const showable = (f: FileView) => f.exists && (f.kind === 'pdf' || f.kind === 'picture');
 
@@ -64,11 +65,17 @@
       out.push({ key, kind: 'folder', name: f.name, depth, holds: true, open, icon: Folder });
       if (open) filesUnder(f.id, depth + 1, out);
     }
-    for (const f of files.inFolder(parent, false).filter(showable).sort(byName)) {
+    const shown = files
+      .inFolder(parent, false)
+      .filter(showable)
+      .map((f) => ({ f, label: fileLabel(f) }))
+      .sort((a, b) => a.label.name.localeCompare(b.label.name));
+    for (const { f, label } of shown) {
       out.push({
         key: `file:${f.hash}`,
         kind: 'file',
-        name: f.name,
+        name: label.name,
+        title: label.title,
         depth,
         holds: false,
         open: false,
@@ -133,7 +140,7 @@
       aria-current={row.hash && row.hash === current ? 'page' : undefined}
       data-tree-row={row.key}
       data-tree-kind={row.kind}
-      title={row.name}
+      title={row.title ?? row.name}
       style:padding-left="{left + row.depth * step}px"
       onclick={() => act(row)}
       onkeydown={(e) => onkeydown(e, row)}

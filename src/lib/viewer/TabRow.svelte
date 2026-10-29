@@ -16,7 +16,7 @@
   import Plus from '@lucide/svelte/icons/plus';
   import X from '@lucide/svelte/icons/x';
   import { attachmentOpen } from '$lib/api/library';
-  import { files, KIND_ICONS } from '$lib/files/store.svelte';
+  import { fileLabel, files, KIND_ICONS } from '$lib/files/store.svelte';
   import { t } from '$lib/i18n';
   import { router } from '$lib/state/router.svelte';
   import { openMenu } from '$lib/ui/menu.svelte';
@@ -43,7 +43,6 @@
 
   let row = $state<HTMLDivElement>();
 
-  const nameOf = (hash: string) => files.get(hash)?.name ?? '';
   const gone = (hash: string) => files.loaded && !files.get(hash);
 
   // ---- dragging a tab to another place in the row ----
@@ -166,7 +165,7 @@
           aria-selected={shown}
           data-tab={tab.id}
           data-tab-file={tab.file}
-          title={gone(tab.file) ? t('viewer-tab-gone') : nameOf(tab.file)}
+          title={gone(tab.file) ? t('viewer-tab-gone') : fileLabel(record).title}
           onpointerdown={(e) => down(e, tab.id)}
           onpointermove={move}
           onpointerup={up}
@@ -175,7 +174,7 @@
           oncontextmenu={(e) => contextmenu(e, tab.id)}
         >
           <Icon size={13} />
-          <span class="name">{nameOf(tab.file) || t('viewer-file')}</span>
+          <span class="name">{fileLabel(record, t('viewer-file')).name}</span>
         </button>
         {#if shown}
           <button

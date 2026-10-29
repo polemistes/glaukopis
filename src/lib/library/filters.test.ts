@@ -17,6 +17,7 @@ function entry(partial: Partial<Summary>): Summary {
     type: 'book',
     authors: '',
     authorsSort: '',
+    translators: '',
     year: '',
     yearNumber: null,
     title: '',

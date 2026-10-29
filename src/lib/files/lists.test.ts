@@ -40,6 +40,7 @@ const reference = (i: number) =>
     type: 'book',
     authors: `Author ${i}`,
     authorsSort: `author ${i}`,
+    translators: '',
     year: '1979',
     yearNumber: 1979,
     title: `Book ${i}`,

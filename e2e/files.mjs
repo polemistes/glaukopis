@@ -117,8 +117,14 @@ try {
       `return Array.from(document.querySelectorAll('[data-file-list] [data-hash]')).map((e) => ({
          hash: e.dataset.hash,
          kind: e.dataset.kind,
-         name: e.querySelector('.name').textContent.trim(),
-         reference: e.querySelector('.reference').textContent.trim(),
+         name: e.querySelector('[data-cell="name"], .name')?.textContent.trim() ?? '',
+         // The reference as the line says it: in its columns where it has some, the people and the year.
+         reference: e.querySelector('.reference')?.textContent.trim()
+           ?? [e.querySelector('[data-cell="people"]')?.textContent.trim(), e.querySelector('[data-cell="year"]')?.textContent.trim()].filter(Boolean).join(' '),
+         people: e.querySelector('[data-cell="people"]')?.textContent.trim() ?? '',
+         year: e.querySelector('[data-cell="year"]')?.textContent.trim() ?? '',
+         title: e.querySelector('[data-cell="title"]')?.textContent.trim() ?? '',
+         publisher: e.querySelector('[data-cell="publisher"]')?.textContent.trim() ?? '',
        }))`,
     );
   const folders = () =>
@@ -414,6 +420,23 @@ try {
     return /Lord 1960/.test(r?.reference ?? '') ? r : null;
   }, 5000).catch(() => null);
   check('an image is given to a reference as any file is', !!given, given?.reference);
+  // Its line says the reference in its columns, the file's own name after them (ADR 0073).
+  check(
+    'a file of a reference shows its people, year, title and publisher',
+    given?.people === 'Lord' && given?.year === '1960' && given?.title === 'The Singer of Tales' && given?.publisher === 'Harvard University Press',
+    JSON.stringify(given),
+  );
+  check('and the file’s own name after them', given?.name === 'plate.png', given?.name);
+  const noReference = (await rows()).find((r) => r.hash === kept.hash);
+  check('a file of no reference keeps its name first, and says it has none', noReference?.name.endsWith('.pdf') && noReference?.reference === 'No reference', JSON.stringify(noReference));
+  await sleep(500);
+  await app.screenshot('files-2e-columns');
+  await sortBy('By year');
+  const byYear = await rows();
+  check('by year, the file of a reference before those of none', byYear[0]?.hash === plate.hash, byYear.map((r) => r.name).join(' | '));
+  await sortBy('By title');
+  check('by title too', (await rows())[0]?.hash === plate.hash);
+  await sortBy('By name');
   await app.click(`[data-file-list] [data-hash="${kept.hash}"]`);
   await app.waitFor(`.file-pane[data-file="${kept.hash}"] [data-preview]`, 5000);
   const pdfShown = await until('the first page of the PDF', () => app.exists('.file-pane [data-preview] img[src^="blob:"]'), 20000).catch(() => false);

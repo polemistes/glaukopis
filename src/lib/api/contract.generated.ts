@@ -35,6 +35,7 @@ export const summary: library.Summary = {
   "publisher": "Johns Hopkins",
   "search": "gregory nagy some else the best of the achaeans concepts of the hero  johns hopkins baltimore hero epic 10 1 x 9780801823886 read again 1979 nagy1979",
   "title": "The Best of the Achaeans: Concepts of the Hero",
+  "translators": "",
   "type": "book",
   "year": "1979",
   "yearNumber": 1979
@@ -99,6 +100,7 @@ export const reference: library.Reference = {
     "publisher": "Johns Hopkins",
     "search": "gregory nagy some else the best of the achaeans concepts of the hero  johns hopkins baltimore hero epic 10 1 x 9780801823886 read again 1979 nagy1979",
     "title": "The Best of the Achaeans: Concepts of the Hero",
+    "translators": "",
     "type": "book",
     "year": "1979",
     "yearNumber": 1979
@@ -132,6 +134,7 @@ export const listing: library.LibraryListing = {
       "publisher": "Johns Hopkins",
       "search": "gregory nagy some else the best of the achaeans concepts of the hero  johns hopkins baltimore hero epic 10 1 x 9780801823886 read again 1979 nagy1979",
       "title": "The Best of the Achaeans: Concepts of the Hero",
+      "translators": "",
       "type": "book",
       "year": "1979",
       "yearNumber": 1979
@@ -149,6 +152,7 @@ export const listing: library.LibraryListing = {
       "publisher": "",
       "search": "gregory nagy the best of the achaeans  1979 x",
       "title": "The Best of the Achaeans",
+      "translators": "",
       "type": "book",
       "year": "1979",
       "yearNumber": 1979
@@ -688,6 +692,7 @@ export const filesListing: files.FilesListing = {
           "publisher": "Johns Hopkins",
           "search": "gregory nagy some else the best of the achaeans concepts of the hero  johns hopkins baltimore hero epic 10 1 x 9780801823886 read again 1979 nagy1979",
           "title": "The Best of the Achaeans: Concepts of the Hero",
+          "translators": "",
           "type": "book",
           "year": "1979",
           "yearNumber": 1979
@@ -3789,6 +3794,7 @@ export const settled: projects.FileSettlement = {
           "publisher": "Johns Hopkins",
           "search": "gregory nagy some else the best of the achaeans concepts of the hero  johns hopkins baltimore hero epic 10 1 x 9780801823886 read again 1979 nagy1979",
           "title": "The Best of the Achaeans: Concepts of the Hero",
+          "translators": "",
           "type": "book",
           "year": "1979",
           "yearNumber": 1979
@@ -4075,6 +4081,7 @@ export const madeSearchable: ocr.MadeSearchable = {
       "publisher": "Johns Hopkins",
       "search": "gregory nagy some else the best of the achaeans concepts of the hero  johns hopkins baltimore hero epic 10 1 x 9780801823886 read again 1979 nagy1979",
       "title": "The Best of the Achaeans: Concepts of the Hero",
+      "translators": "",
       "type": "book",
       "year": "1979",
       "yearNumber": 1979

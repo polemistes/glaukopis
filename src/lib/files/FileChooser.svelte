@@ -14,7 +14,7 @@
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
   import { forChoosing } from './order';
-  import { KIND_ICONS, fileMatches, files, referenceWords } from './store.svelte';
+  import { KIND_ICONS, fileLabel, fileMatches, files } from './store.svelte';
 
   interface Props {
     title: string;
@@ -141,11 +141,14 @@
           {/if}
           <span class="icon"><Icon size={15} strokeWidth={1.6} /></span>
           <span class="text">
-            <span class="name truncate">{file.name}</span>
+            <span class="name truncate">{fileLabel(file).name}</span>
             <span class="about truncate">
-              {[folderName(file), file.references.map(referenceWords).join('; ')]
+              {(fileLabel(file).named
+                ? [folderName(file), file.name]
+                : [folderName(file), t('files-no-reference')]
+              )
                 .filter(Boolean)
-                .join(' · ') || t('files-no-reference')}
+                .join(' · ')}
             </span>
           </span>
         </div>

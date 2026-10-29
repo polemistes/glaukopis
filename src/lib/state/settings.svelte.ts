@@ -29,7 +29,7 @@ export interface FilesViewSettings {
   mode: 'list' | 'grid';
   /** How large the thumbnails are. */
   size: 'small' | 'medium' | 'large';
-  sort: 'name' | 'kind' | 'added' | 'size' | 'reference';
+  sort: 'name' | 'kind' | 'added' | 'size' | 'reference' | 'year' | 'title' | 'publisher';
   descending: boolean;
   /** Whether a folder shows the files of the folders under it as well. */
   below: boolean;
@@ -53,7 +53,11 @@ export function filesViewOf(kept: unknown): FilesViewSettings {
   return {
     mode: one(k.mode, ['list', 'grid'], FILES_VIEW.mode),
     size: one(k.size, ['small', 'medium', 'large'], FILES_VIEW.size),
-    sort: one(k.sort, ['name', 'kind', 'added', 'size', 'reference'], FILES_VIEW.sort),
+    sort: one(
+      k.sort,
+      ['name', 'kind', 'added', 'size', 'reference', 'year', 'title', 'publisher'],
+      FILES_VIEW.sort,
+    ),
     descending: typeof k.descending === 'boolean' ? k.descending : FILES_VIEW.descending,
     below: typeof k.below === 'boolean' ? k.below : FILES_VIEW.below,
   };

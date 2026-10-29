@@ -57,3 +57,44 @@ describe('undoing a going-through', () => {
     expect(filesUi.lastDone).toBe(b);
   });
 });
+
+describe('a file named by its reference', () => {
+  const work = (more: Partial<import('$lib/api/library').Summary>) =>
+    ({
+      id: 'w',
+      authors: 'Lord',
+      year: '1960',
+      title: 'The Singer of Tales',
+      translators: '',
+      ...more,
+    }) as import('$lib/api/library').Summary;
+  const file = (references: import('$lib/api/library').Summary[]) =>
+    ({
+      hash: 'h',
+      name: 'lord-singer.pdf',
+      references,
+    }) as unknown as import('$lib/api/files').FileView;
+
+  it('by the short form of its reference, the title and the name in the tooltip', async () => {
+    const { fileLabel } = await import('./store.svelte');
+    expect(fileLabel(file([work({})]))).toEqual({
+      name: 'Lord 1960',
+      title: 'The Singer of Tales\nlord-singer.pdf',
+      named: true,
+    });
+    expect(fileLabel(file([]))).toEqual({
+      name: 'lord-singer.pdf',
+      title: 'lord-singer.pdf',
+      named: false,
+    });
+    expect(fileLabel(undefined, 'gone')).toEqual({ name: 'gone', title: 'gone', named: false });
+  });
+
+  it('with its people and their roles, the translators after the others', async () => {
+    const { peopleWords } = await import('./store.svelte');
+    expect(peopleWords(work({}))).toBe('Lord');
+    expect(peopleWords(work({ authors: 'Homer', translators: 'Lattimore' }))).toBe(
+      'Homer; tr. Lattimore',
+    );
+  });
+});

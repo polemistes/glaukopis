@@ -85,6 +85,7 @@ const reference = (id: string, title: string): Reference => ({
     type: 'book',
     authors: '',
     authorsSort: '',
+    translators: '',
     year: '',
     yearNumber: null,
     title,

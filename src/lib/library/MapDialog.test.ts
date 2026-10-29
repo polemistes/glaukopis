@@ -34,6 +34,7 @@ function entry(id: string, authors: string): Summary {
     type: 'book',
     authors,
     authorsSort: authors.toLowerCase(),
+    translators: '',
     year: '1979',
     yearNumber: 1979,
     title: `A book by ${authors}`,

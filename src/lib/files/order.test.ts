@@ -85,6 +85,32 @@ describe('the order of the files', () => {
     expect(names(list)).toEqual(['b.pdf', 'a10.pdf', 'a9.pdf']);
   });
 
+  it('by year, by title and by publisher, those that say nothing of it last', () => {
+    const work = (authors: string, yearNumber: number | null, title: string, publisher: string) =>
+      ({
+        ...reference(authors, String(yearNumber ?? '')),
+        yearNumber,
+        title,
+        publisher,
+      }) as Summary;
+    const list = [
+      file('none.pdf'),
+      file('b.pdf', [work('Parry', 1971, 'The Making', 'Clarendon')]),
+      file('a.pdf', [work('Lord', 1960, 'The Singer', '')]),
+      file('c.pdf', [work('Nagy', null, 'Best of the Achaeans', 'Johns Hopkins')]),
+    ];
+    const names = (fs: FileView[]) => fs.map((f) => f.name);
+    expect(names(sortFiles(list, 'year', false))).toEqual(['a.pdf', 'b.pdf', 'c.pdf', 'none.pdf']);
+    expect(names(sortFiles(list, 'year', true))).toEqual(['b.pdf', 'a.pdf', 'c.pdf', 'none.pdf']);
+    expect(names(sortFiles(list, 'title', false))).toEqual(['c.pdf', 'b.pdf', 'a.pdf', 'none.pdf']);
+    expect(names(sortFiles(list, 'publisher', false))).toEqual([
+      'b.pdf',
+      'c.pdf',
+      'a.pdf',
+      'none.pdf',
+    ]);
+  });
+
   it('to choose from, has the files that belong to no reference first', () => {
     const list = [file('a.pdf', [reference('Nagy', '1979')]), file('c.pdf'), file('b.pdf')];
     expect(forChoosing(list).map((f) => f.name)).toEqual(['b.pdf', 'c.pdf', 'a.pdf']);

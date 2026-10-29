@@ -321,6 +321,35 @@ export function referenceWords(reference: Summary): string {
 }
 
 /**
+ * The people of a reference with their roles (ADR 0073): the authors, or the
+ * editors marked as such, as the library marks them; the translators after
+ * them, marked, where there are others before them.
+ */
+export function peopleWords(reference: Summary): string {
+  const translators = reference.translators
+    ? t('files-translated', { names: reference.translators })
+    : '';
+  return [reference.authors, translators].filter(Boolean).join('; ');
+}
+
+/**
+ * The words a file is named by where it stands in for its reference: in a
+ * tab, the file chooser, the tree under a side's chevron (ADR 0073). Its
+ * reference's short form, the title and the file's name in the tooltip;
+ * the file's name where it belongs to no reference.
+ */
+export function fileLabel(
+  file: FileView | undefined,
+  fallback = '',
+): { name: string; title: string; named: boolean } {
+  const reference = file?.references[0];
+  if (!file) return { name: fallback, title: fallback, named: false };
+  if (!reference) return { name: file.name, title: file.name, named: false };
+  const title = [reference.title, file.name].filter(Boolean).join('\n');
+  return { name: referenceWords(reference), title, named: true };
+}
+
+/**
  * Whether a file answers to what is searched for: every word, as a word or
  * the beginning of one, in its name, where it came from, or the authors
  * and the title of a reference it belongs to.

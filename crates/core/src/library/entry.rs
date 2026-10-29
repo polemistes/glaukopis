@@ -150,6 +150,12 @@ impl Entry {
     pub fn summary(&self) -> Summary {
         let creators = self.creators();
         let is_editor = self.get("author").is_none() && self.get("editor").is_some();
+        // The translators, where those who stand first are others: authors or editors (ADR 0073).
+        let translators = if self.get("author").is_some() || self.get("editor").is_some() {
+            short_list(&self.people("translator"))
+        } else {
+            String::new()
+        };
         let mut authors = short_list(&creators);
         if is_editor && !authors.is_empty() {
             authors = tr!("core-library-edited", names = &authors, count = creators.len());
@@ -205,6 +211,7 @@ impl Entry {
             entry_type: self.entry_type.clone(),
             authors,
             authors_sort,
+            translators,
             year: year_text,
             year_number: self.year(),
             title,
@@ -315,6 +322,9 @@ pub struct Summary {
     pub entry_type: String,
     pub authors: String,
     pub authors_sort: String,
+    /// The translators, where authors or editors stand first; else none:
+    /// where they stand first themselves, they are the `authors` (ADR 0073).
+    pub translators: String,
     pub year: String,
     pub year_number: Option<i32>,
     pub title: String,
@@ -584,6 +594,17 @@ mod tests {
         assert!(s.search.contains("gregory nagy"));
         assert!(s.search.contains("homeric questions"));
         assert_eq!(e.attachments(), vec!["a/b.pdf", "c;d.pdf"]);
+    }
+
+    #[test]
+    fn the_translators_after_those_who_stand_first() {
+        let translated =
+            draft("@book{k, author={Homer}, translator={Lattimore, Richmond}, title={The Iliad}}").to_entry().summary();
+        assert_eq!((translated.authors.as_str(), translated.translators.as_str()), ("Homer", "Lattimore"));
+        let only = draft("@book{k, translator={Lattimore, Richmond}, title={The Iliad}}").to_entry().summary();
+        assert_eq!((only.authors.as_str(), only.translators.as_str()), ("Lattimore", ""));
+        let none = draft("@book{k, author={Lord, Albert}, title={The Singer}}").to_entry().summary();
+        assert_eq!(none.translators, "");
     }
 
     #[test]
