@@ -81,7 +81,13 @@ try {
   check('the path over the side names the file', /structure/.test(cell ?? ''), cell);
   const named = await app.exec(`return document.querySelector('.top .cell [data-path][data-file] [data-crumb="project"] .name')?.textContent.trim()`);
   check('and the project whose sources these are', named === 'Wrath and the hero', named);
-  check('the place names the file', (await app.exec('return location.hash')).startsWith(`#/file/${pdfHash}`));
+  // The text of a project just made takes the focus a moment later; the place follows the side that has it.
+  await app.click('[data-viewer-pages]');
+  const placeNow = await until('the place of the file', async () => {
+    const hash = await app.exec('return location.hash');
+    return hash.startsWith(`#/file/${pdfHash}`) ? hash : null;
+  }, 3000).catch(async () => app.exec('return location.hash'));
+  check('the place names the file', placeNow.startsWith(`#/file/${pdfHash}`), placeNow);
   check('the document pane stays closed', !(await app.exists('[data-document-pane]')));
   await app.screenshot('file-view-1-pdf');
 
