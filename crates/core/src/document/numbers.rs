@@ -476,7 +476,7 @@ mod tests {
 
     #[test]
     fn a_stretch_counts_from_the_number_it_says_at_its_first_counted_line() {
-        let paragraphs = vec![
+        let paragraphs = [
             Block::of_kind("speaker", vec![w("Nurse")]),
             Block::of_kind("line", vec![w("one"), BR, w("two"), BR, w("three")]),
             Block::of_kind("line", vec![w("four"), BR, mark().number("40").done(), w("forty"), BR, w("forty-one")]),

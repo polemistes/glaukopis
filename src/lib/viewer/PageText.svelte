@@ -42,15 +42,18 @@
     void width;
     const el = layer;
     if (!el || !lines?.lines.length) return;
+    // In three passes, so that the page is laid out twice, not twice for each line (ADR 0072).
     const frame = requestAnimationFrame(() => {
-      for (const line of Array.from(el.querySelectorAll<HTMLElement>('.line'))) {
-        const span = line.firstElementChild as HTMLElement | null;
-        if (!span) continue;
-        span.style.transform = '';
-        const natural = span.getBoundingClientRect().width;
-        const wanted = line.getBoundingClientRect().width;
+      const spans = Array.from(el.querySelectorAll<HTMLElement>('.line > span'));
+      for (const span of spans) span.style.transform = '';
+      const widths = spans.map((span) => [
+        span.getBoundingClientRect().width,
+        (span.parentElement as HTMLElement).getBoundingClientRect().width,
+      ]);
+      spans.forEach((span, i) => {
+        const [natural, wanted] = widths[i];
         if (natural > 0 && wanted > 0) span.style.transform = `scaleX(${wanted / natural})`;
-      }
+      });
     });
     return () => cancelAnimationFrame(frame);
   });

@@ -115,6 +115,12 @@ pub struct ProjectInfo {
     /// What the interface wants to find again: the map that was open, the view.
     #[serde(skip_serializing_if = "serde_json::Value::is_null")]
     pub view: serde_json::Value,
+    /// The sources of the project: the tabs of the file side beside it, each
+    /// a place in a file of the library, and which of them is active (ADR
+    /// 0072). On this computer alone, as `view` is; the interface owns their
+    /// shape.
+    #[serde(skip_serializing_if = "serde_json::Value::is_null")]
+    pub sources: serde_json::Value,
 }
 
 /// A folder of projects, on this computer alone: a name under which the
@@ -621,6 +627,8 @@ impl Projects {
         copy.pictures = source.pictures;
         copy.cited = source.cited;
         copy.folder = source.folder;
+        // The files read beside the text go with it; where it was left does not.
+        copy.sources = source.sources;
         Self::write_info(&to, &copy)?;
         Ok(copy)
     }
@@ -943,6 +951,21 @@ mod tests {
             }
         });
         assert_eq!(p.info(&id).unwrap().words, 8 * 25);
+    }
+
+    #[test]
+    fn the_sources_of_a_project_are_kept_and_go_with_a_copy() {
+        let (_tmp, p) = projects();
+        let id = p.create("Read").unwrap().id;
+        assert!(p.info(&id).unwrap().sources.is_null());
+        let sources = serde_json::json!({
+            "tabs": [{ "id": "t1", "file": "abc", "place": { "page": 3, "at": 0.5 }, "zoom": null }],
+            "active": "t1",
+        });
+        p.update_info(&id, |info| info.sources = sources.clone()).unwrap();
+        assert_eq!(p.info(&id).unwrap().sources, sources);
+        let copy = p.duplicate(&id, "Copy").unwrap();
+        assert_eq!(p.info(&copy.id).unwrap().sources, sources);
     }
 
     #[test]

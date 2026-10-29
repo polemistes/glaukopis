@@ -1,8 +1,8 @@
 //! Commands for a file of the library shown in a side of the window (ADR
-//! 0069): what is known of it before its pages are drawn, its pages drawn
-//! at a width in colour, and the lines of a page with their places, laid
-//! over the page so that its text is selected and copied as text. Mirrors
-//! `src/lib/api/viewer.ts`.
+//! 0069, 0072): what is known of it before its pages are drawn, a page drawn
+//! at a width in colour, given as the bytes of a PNG, and the lines of a
+//! page with their places, laid over the page so that its text is selected
+//! and copied as text. Mirrors `src/lib/api/viewer.ts`.
 //!
 //! The file is opened and its pages drawn in the child, as every PDF is
 //! (`ocr/child.rs`); the pages drawn are kept on disk under the data
@@ -12,6 +12,7 @@ use std::path::PathBuf;
 
 use serde::Serialize;
 use tauri::State;
+use tauri::ipc::Response;
 
 use glaukopis_core::ocr;
 use glaukopis_core::tr;
@@ -35,33 +36,18 @@ pub struct FileFacts {
     pub labels: Vec<String>,
     /// Whether it asks for a password, and cannot be shown.
     pub locked: bool,
+    /// The contents the file carries of its own headings, in their order.
+    pub outline: Vec<ContentsEntry>,
 }
 
-/// A page drawn at a width, or why it could not be.
+/// An entry of a file's own contents: a heading's words, the page it leads
+/// to, counted from one, and how deep it stands, 1 at the top.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct PageAt {
-    /// Counted from one.
-    pub number: usize,
-    /// The page in colour, as a data URL of a PNG, where it could be drawn.
-    pub png: Option<String>,
-    /// Why it could not be drawn, where it could not.
-    pub failed: Option<String>,
-}
-
-impl From<ocr::PageDrawn> for PageAt {
-    /// A page counted from nought, and its PNG or why it was not drawn.
-    fn from((index, drawn): ocr::PageDrawn) -> PageAt {
-        use base64::Engine as _;
-        match drawn {
-            Ok(png) => PageAt {
-                number: index + 1,
-                png: Some(format!("data:image/png;base64,{}", base64::engine::general_purpose::STANDARD.encode(png))),
-                failed: None,
-            },
-            Err(why) => PageAt { number: index + 1, png: None, failed: Some(why) },
-        }
-    }
+pub struct ContentsEntry {
+    pub title: String,
+    pub page: usize,
+    pub depth: u8,
 }
 
 /// A line of the text a page has, and where it stands, in points from the
@@ -139,28 +125,41 @@ pub fn file_facts(state: State<'_, AppState>, hash: String) -> CommandResult<Fil
         sizes: facts.sizes,
         labels: facts.labels,
         locked: facts.locked,
+        outline: facts
+            .outline
+            .into_iter()
+            .filter_map(|e| Some(ContentsEntry { title: e.title, page: e.page?, depth: e.depth }))
+            .collect(),
     })
 }
 
-/// Pages of a file of the library, counted from one, each drawn `width`
-/// dots wide in colour: one for each page asked that the file has, in the
-/// order asked. From the cache where they were drawn before; the others
-/// drawn in one run of the child, several at a time, and kept. With a
-/// ticket, it is stopped by `ocr_stop`.
+/// A page of a file of the library, counted from one, drawn `width` dots
+/// wide in colour, as the bytes of a PNG (ADR 0072): from the cache where it
+/// was drawn before, else drawn in the child and kept. With a ticket, it is
+/// stopped by `ocr_stop`. A page the file has not, or one that could not be
+/// drawn, is an error that says why.
 #[tauri::command(async)]
-pub fn file_pages(
+pub fn file_page(
     state: State<'_, AppState>,
     hash: String,
-    pages: Vec<usize>,
+    page: usize,
     width: u32,
     ticket: Option<String>,
-) -> CommandResult<Vec<PageAt>> {
+) -> CommandResult<Response> {
     let (_, path) = stored(&state, &hash)?;
+    let (tools, work) = (state.tools(), state.data.work());
+    let no_such_page = || -> CommandResult<Response> {
+        let pages = ocr::file_facts(&path, &tools, &work)?.pages;
+        Err(glaukopis_core::Error::invalid(tr!("ocr-no-such-page", page = page, pages = pages)).into())
+    };
+    let Some(index) = page.checked_sub(1) else { return no_such_page() };
     let drawing = Work::begin(ticket);
-    let indices: Vec<usize> = pages.iter().filter_map(|page| page.checked_sub(1)).collect();
     let cache = cache(&state);
-    let drawn = ocr::pages_at(&path, &state.tools(), &state.data.work(), Some(&cache), &indices, width, &drawing.stop)?;
-    Ok(drawn.into_iter().map(PageAt::from).collect())
+    match ocr::pages_at(&path, &tools, &work, Some(&cache), &[index], width, &drawing.stop)?.into_iter().next() {
+        Some((_, Ok(png))) => Ok(Response::new(png)),
+        Some((_, Err(why))) => Err(glaukopis_core::Error::invalid(why).into()),
+        None => no_such_page(),
+    }
 }
 
 /// The lines of a page of a file of the library, counted from one, in the
@@ -175,20 +174,4 @@ pub fn file_page_lines(state: State<'_, AppState>, hash: String, page: usize) ->
         return Err(glaukopis_core::Error::invalid(tr!("ocr-no-such-page", page = 0, pages = pages)).into());
     };
     Ok(ocr::page_lines(&path, &tools, &work, index)?.into())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn a_page_drawn_is_a_data_url_and_one_not_drawn_says_why() {
-        let drawn = PageAt::from((0, Ok(b"\x89PNG".to_vec())));
-        assert_eq!(
-            (drawn.number, drawn.png.as_deref(), drawn.failed),
-            (1, Some("data:image/png;base64,iVBORw=="), None)
-        );
-        let failed = PageAt::from((4, Err("A remark.".to_owned())));
-        assert_eq!((failed.number, failed.png, failed.failed.as_deref()), (5, None, Some("A remark.")));
-    }
 }

@@ -31,6 +31,7 @@ const file = (
   height: null,
   alt: '',
   madeFrom: null,
+  bookmarks: [],
   references,
   ...more,
 });

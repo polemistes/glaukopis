@@ -21,6 +21,7 @@ const file = (
   height: 3,
   alt: '',
   madeFrom,
+  bookmarks: [],
   references: [],
 });
 

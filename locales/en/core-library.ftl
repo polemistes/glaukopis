@@ -75,3 +75,6 @@ core-library-images-folder = Images
 core-library-picture-missing = “{ $name }” was not taken into the library: its file is missing.
 # An image of the old store of pictures whose file does not hold what its name says.
 core-library-picture-not-itself = “{ $name }” was not taken into the library: its file is not the image it was.
+# Bookmarks in a file (sources in tabs, 2026-10-29).
+core-library-too-many-bookmarks = A file keeps at most { $most } bookmarks.
+core-library-bookmark-no-place = A bookmark must be at a page of the file.

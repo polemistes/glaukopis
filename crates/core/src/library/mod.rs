@@ -29,7 +29,7 @@ use crate::{notices, tr};
 pub use attachments::StoredFile;
 pub use collections::{Collection, Collections};
 pub use entry::{Draft, Entry, EntryView, Summary};
-pub use files::{FileFolder, FileKind, FileRecord, Files};
+pub use files::{Bookmark, FileFolder, FileKind, FileRecord, Files};
 
 const HEADER: &str = "\
 % The reference library of Glaukopis. BibLaTeX, UTF-8.
@@ -1015,6 +1015,7 @@ impl Library {
             height: measured.map(|m| m.1),
             alt: source.alt.clone(),
             made_from: Some(source.hash.clone()),
+            bookmarks: Vec::new(),
         });
         self.files_dirty = true;
         self.save_files()?;
@@ -1147,6 +1148,13 @@ impl Library {
     /// not see it (ADR 0070).
     pub fn set_alt(&mut self, hash: &str, alt: &str) -> Result<FileView> {
         let record = self.files.set_alt(hash, alt)?;
+        self.save_files()?;
+        Ok(self.view_of(&record))
+    }
+
+    /// The bookmarks of a file (ADR 0072), in the stead of those it had.
+    pub fn set_bookmarks(&mut self, hash: &str, bookmarks: Vec<Bookmark>) -> Result<FileView> {
+        let record = self.files.set_bookmarks(hash, bookmarks)?;
         self.save_files()?;
         Ok(self.view_of(&record))
     }
@@ -1577,6 +1585,8 @@ pub struct FileView {
     /// Of a file made from another, to be a figure, by editing or to be
     /// smaller, the hash of that one.
     pub made_from: Option<String>,
+    /// Of a PDF, the places marked in it (ADR 0072).
+    pub bookmarks: Vec<Bookmark>,
     /// The references the file belongs to, in the order of the library.
     pub references: Vec<Summary>,
 }
@@ -1598,6 +1608,7 @@ impl FileView {
             height: record.height,
             alt: record.alt.clone(),
             made_from: record.made_from.clone(),
+            bookmarks: record.bookmarks.clone(),
             references,
         }
     }
@@ -2164,6 +2175,21 @@ mod tests {
         let kept = again.file_view(&vase.hash).unwrap();
         assert_eq!((kept.alt.as_str(), kept.width), ("A vase with a lid", Some(4)));
         assert!(lib.set_alt(&"0".repeat(64), "x").is_err());
+
+        // The bookmarks of a file are kept with it, ordered by their places.
+        let paper = by_name("paper.pdf");
+        let mark = |id: &str, page: usize, at: f32, name: &str| Bookmark { id: id.into(), page, at, name: name.into() };
+        let set = lib
+            .set_bookmarks(&paper.hash, vec![mark("b", 7, 0.25, " The\n proof "), mark("a", 2, 0.9, "Start")])
+            .unwrap();
+        assert_eq!(set.bookmarks.iter().map(|b| b.id.as_str()).collect::<Vec<_>>(), ["a", "b"]);
+        let again = Library::open_at(lib.dir()).unwrap();
+        let kept = again.file_view(&paper.hash).unwrap().bookmarks;
+        assert_eq!((kept.len(), kept[1].name.as_str(), kept[1].page, kept[1].at), (2, "The proof", 7, 0.25));
+        assert!(lib.set_bookmarks(&paper.hash, vec![mark("c", 0, 0.0, "No page")]).is_err());
+        assert!(lib.set_bookmarks(&paper.hash, vec![mark("c", 1, 1.5, "Past the foot")]).is_err());
+        assert!(lib.set_bookmarks(&"0".repeat(64), Vec::new()).is_err());
+        assert_eq!(lib.set_bookmarks(&paper.hash, Vec::new()).unwrap().bookmarks.len(), 0);
 
         // A file found in the store without a record is measured as it is entered.
         let mut record: serde_json::Value =

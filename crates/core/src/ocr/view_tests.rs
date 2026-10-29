@@ -203,7 +203,14 @@ fn the_facts_of_a_file() {
     let facts = file_facts(&porson(tmp.path()), &tools, &work).unwrap();
     assert_eq!(
         facts,
-        FileFacts { picture: false, pages: 1, sizes: vec![(400.0, 360.0)], labels: vec!["1".into()], locked: false }
+        FileFacts {
+            picture: false,
+            pages: 1,
+            sizes: vec![(400.0, 360.0)],
+            labels: vec!["1".into()],
+            locked: false,
+            outline: Vec::new()
+        }
     );
 
     let numbered = tmp.path().join("numbered.pdf");
@@ -215,14 +222,29 @@ fn the_facts_of_a_file() {
         .unwrap();
     let facts = file_facts(&numbered, &tools, &work).unwrap();
     assert_eq!((facts.pages, facts.labels.as_slice()), (3, &["i".to_owned(), "ii".into(), "1".into()][..]));
+    assert!(facts.outline.is_empty(), "a file without an outline has no contents");
     assert_eq!(facts.sizes, [(595.0, 842.0), (595.0, 842.0), (842.0, 595.0)]);
+
+    // The contents a file carries of its own headings, read without its text.
+    let structure = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../e2e/fixtures/structure.pdf");
+    let facts = file_facts(&structure, &tools, &work).unwrap();
+    let contents: Vec<(Option<usize>, u8)> = facts.outline.iter().map(|e| (e.page, e.depth)).collect();
+    assert_eq!(contents, [(Some(1), 1), (Some(2), 2), (Some(2), 2), (Some(2), 1)], "{:?}", facts.outline);
+    assert!(facts.outline[0].title.ends_with("Beginnings"), "{:?}", facts.outline);
 
     let picture = tmp.path().join("picture.png");
     image::RgbImage::new(30, 20).save(&picture).unwrap();
     let facts = file_facts(&picture, &tools, &work).unwrap();
     assert_eq!(
         facts,
-        FileFacts { picture: true, pages: 1, sizes: vec![(30.0, 20.0)], labels: vec!["1".into()], locked: false }
+        FileFacts {
+            picture: true,
+            pages: 1,
+            sizes: vec![(30.0, 20.0)],
+            labels: vec!["1".into()],
+            locked: false,
+            outline: Vec::new()
+        }
     );
 
     // Locked with a password to open it.

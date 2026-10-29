@@ -69,3 +69,6 @@ core-library-no-small = denne filtypen vises ikke i liten størrelse
 core-library-images-folder = Bilder
 core-library-picture-missing = «{ $name }» ble ikke tatt inn i biblioteket: filen mangler.
 core-library-picture-not-itself = «{ $name }» ble ikke tatt inn i biblioteket: filen er ikke bildet den var.
+# Bokmerker i en fil (kilder i faner, 2026-10-29).
+core-library-too-many-bookmarks = En fil kan ha høyst { $most } bokmerker.
+core-library-bookmark-no-place = Et bokmerke må stå ved en side i filen.

@@ -316,6 +316,12 @@ pub type PagePicture = (usize, std::result::Result<String, String>);
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Facts {
     pub frames: Vec<drawing::Frame>,
+    /// The number each page has in print, as the file tells it, else its
+    /// count; and the outline of its headings: read without its text.
+    #[serde(default)]
+    pub labels: Vec<String>,
+    #[serde(default)]
+    pub outline: Vec<super::shape::OutlineEntry>,
     /// Whether it asks for a password, which neither hayro nor Poppler is given.
     pub locked: bool,
 }
@@ -431,7 +437,11 @@ fn work_here(job: &Job, told: &mut dyn FnMut(Progress), stop: &AtomicBool) -> st
         Task::Facts => {
             let bytes = Arc::new(bytes);
             match Pages::open(&job.pdf, bytes.clone(), pdftoppm.as_ref()) {
-                Ok(drawing) => Ok(Done::Facts(Facts { frames: drawing.frames(), locked: false })),
+                Ok(drawing) => {
+                    let frames = drawing.frames();
+                    let (labels, outline) = layer::labels_and_outline(&bytes, frames.len());
+                    Ok(Done::Facts(Facts { frames, labels, outline, locked: false }))
+                }
                 Err(e) => {
                     let asks = std::panic::catch_unwind(|| {
                         matches!(
@@ -440,7 +450,7 @@ fn work_here(job: &Job, told: &mut dyn FnMut(Progress), stop: &AtomicBool) -> st
                         )
                     });
                     if asks.unwrap_or(false) {
-                        Ok(Done::Facts(Facts { frames: Vec::new(), locked: true }))
+                        Ok(Done::Facts(Facts { locked: true, ..Facts::default() }))
                     } else {
                         Err(failure(e))
                     }

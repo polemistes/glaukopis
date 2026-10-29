@@ -160,6 +160,7 @@ impl Library {
                 height,
                 alt: old.alt.split_whitespace().collect::<Vec<_>>().join(" "),
                 made_from: None,
+                bookmarks: Vec::new(),
             });
             out.moved += 1;
         }

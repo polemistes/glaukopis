@@ -111,6 +111,13 @@ fn what_is_sent_is_what_the_interface_declares() {
         &std::sync::atomic::AtomicBool::new(false),
     );
     let taken_in = library.enter_taken(&taken, Some(&shelf.id)).unwrap();
+    // A place marked in it (ADR 0072).
+    library
+        .set_bookmarks(
+            &taken_in.files[0].hash,
+            vec![glaukopis_core::library::Bookmark { id: "b1".into(), page: 1, at: 0.25, name: "The plate".into() }],
+        )
+        .unwrap();
     // The whole store exported, with a references.bib.
     let exported = library
         .export_files(
@@ -176,6 +183,10 @@ fn what_is_sent_is_what_the_interface_declares() {
     let greek = projects.folder_create("Greek", None).unwrap();
     let folder = projects.folder_create("Epic", Some(&greek.id)).unwrap();
     let project = projects.move_to_folder(&project.id, Some(&folder.id)).unwrap();
+    // With the files read beside it (ADR 0072).
+    let project = projects
+        .update_info(&project.id, |info| info.sources = serde_json::json!({ "tabs": [], "active": null }))
+        .unwrap();
     let formats = Formats::new(&resources, &data.formats());
     let styles = Styles::new(&resources, &data.styles());
     let templates = Templates::new(&resources, &data.templates());
@@ -404,9 +415,8 @@ fn what_is_sent_is_what_the_interface_declares() {
         sizes: vec![(595.0, 842.0), (842.0, 595.0)],
         labels: vec!["i".into(), "1".into()],
         locked: false,
+        outline: vec![viewer::ContentsEntry { title: "Introduction".into(), page: 2, depth: 1 }],
     };
-    let pages_at: Vec<viewer::PageAt> =
-        vec![(0, Ok(DOT.to_vec())), (1, Err("A remark.".to_owned()))].into_iter().map(Into::into).collect();
     let page_lines = viewer::PageLines {
         number: 1,
         label: "i".into(),
@@ -639,7 +649,6 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("synced", "files.Synced", &synced);
     put("pagePictures", "ocr.PagePicture[]", &page_pictures);
     put("fileFacts", "viewer.FileFacts", &file_facts);
-    put("pagesAt", "viewer.PageAt[]", &pages_at);
     put("pageLines", "viewer.PageLines", &page_lines);
     put("rendered", "math.Rendered[]", &rendered);
     put("sheets", "tables.Sheet[]", &sheets);

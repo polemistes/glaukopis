@@ -62,6 +62,7 @@ const file = (i: number): FileView => ({
   height: null,
   alt: '',
   madeFrom: null,
+  bookmarks: [],
   references: [],
 });
 

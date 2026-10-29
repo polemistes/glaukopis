@@ -38,6 +38,8 @@ export interface ProjectInfo {
   /** The folder the project is in on this computer. Not there for one in no folder. */
   folder?: string;
   view?: unknown;
+  /** The sources of the project: the tabs of its file side (ADR 0072), as `viewer/sources.ts` reads them. */
+  sources?: unknown;
 }
 
 /** A folder of projects, on this computer alone (ADR 0031). It may lie in another. */
@@ -136,6 +138,12 @@ export const projectSaveState = (
 ) => call<ProjectInfo>('project_save_state', withHead({ id, summary, keep }, document));
 export const projectSaveView = (id: string, view: unknown) =>
   call<void>('project_save_view', { id, view });
+
+/** The sources of a project as they were kept (ADR 0072); null where none were. */
+export const projectSources = (id: string) => call<unknown>('project_sources', { id });
+/** Keeps the sources of a project, on this computer alone. */
+export const projectSaveSources = (id: string, sources: unknown) =>
+  call<void>('project_save_sources', { id, sources });
 export const foldersList = () => call<Folder[]>('folders_list');
 
 /** A place on the map of the projects, from what holds the thing put there. */

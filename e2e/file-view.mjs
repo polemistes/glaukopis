@@ -36,7 +36,7 @@ const fileSide = (app) =>
       file: side.dataset.fileSide,
       page: Number(side.querySelector('[data-viewer-page]')?.dataset.viewerPage ?? 0),
       bar: side.querySelector('[data-viewer-bar] .page')?.textContent.trim() ?? '',
-      drawn: Array.from(side.querySelectorAll('.page[data-page] img')).filter((i) => i.src.startsWith('data:image/png')).map((i) => Number(i.closest('.page').dataset.page)),
+      drawn: Array.from(side.querySelectorAll('.page[data-page] img')).filter((i) => i.src.startsWith('blob:') && i.complete && i.naturalWidth > 0).map((i) => Number(i.closest('.page').dataset.page)),
       width: side.querySelector('.page[data-page="1"]')?.getBoundingClientRect().width ?? 0,
       lines: side.querySelectorAll('[data-page-text] .line').length,
       kinds: Array.from(document.querySelectorAll('[data-side-key]')).map((s) => (s.matches('[data-file-side]') ? 'file' : 'map')),

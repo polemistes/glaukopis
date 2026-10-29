@@ -1,10 +1,13 @@
 /**
- * A file of the library shown in a side of the window (ADR 0069): what the
- * core tells of it, its pages drawn at a width, and the lines of a page with
- * their places. Mirrors `src-tauri/src/commands/viewer.rs`.
+ * A file of the library shown in a side of the window (ADR 0069, 0072): what
+ * the core tells of it, a page drawn at a width as the bytes of a PNG, and
+ * the lines of a page with their places. Mirrors
+ * `src-tauri/src/commands/viewer.rs`.
  */
 
-import { call } from './backend';
+import { invoke } from '@tauri-apps/api/core';
+import { t } from '$lib/i18n';
+import { call, inTauri } from './backend';
 
 /** What is known of a file before its pages are drawn. */
 export interface FileFacts {
@@ -20,16 +23,17 @@ export interface FileFacts {
   labels: string[];
   /** Whether it asks for a password, and cannot be shown. */
   locked: boolean;
+  /** The contents the file carries of its own headings, in their order (ADR 0072). */
+  outline: ContentsEntry[];
 }
 
-/** A page drawn at a width, or why it could not be. */
-export interface PageAt {
-  /** Counted from one. */
-  number: number;
-  /** The page in colour, as a data URL of a PNG (`data:image/png;base64,…`), where it could be drawn. */
-  png: string | null;
-  /** Why it could not be drawn, where it could not. */
-  failed: string | null;
+/** An entry of a file's own contents. */
+export interface ContentsEntry {
+  title: string;
+  /** The page it leads to, counted from one. */
+  page: number;
+  /** How deep it stands, 1 at the top. */
+  depth: number;
 }
 
 /** A line of the text a page has, and where it stands, in points from the top left of the page. */
@@ -58,12 +62,20 @@ export interface PageLines {
 export const fileFacts = (hash: string) => call<FileFacts>('file_facts', { hash });
 
 /**
- * Pages of a PDF of the library, counted from one, each drawn `width` dots
- * wide, in colour: from the cache where they were drawn before. With a
- * ticket, it can be stopped by `ocrStop`.
+ * A page of a PDF or an image of the library, counted from one, drawn
+ * `width` dots wide in colour, as the bytes of a PNG: from the cache where
+ * it was drawn before. With a ticket, it can be stopped by `ocrStop`. A page
+ * that could not be drawn is an error that says why.
  */
-export const filePages = (hash: string, pages: number[], width: number, ticket?: string) =>
-  call<PageAt[]>('file_pages', { hash, pages, width, ticket });
+export async function filePage(
+  hash: string,
+  page: number,
+  width: number,
+  ticket?: string,
+): Promise<ArrayBuffer> {
+  if (!inTauri) throw { kind: 'no-backend', message: t('ui-no-backend') };
+  return invoke<ArrayBuffer>('file_page', { hash, page, width, ticket });
+}
 
 /** The lines of a page of a PDF of the library, counted from one. */
 export const filePageLines = (hash: string, page: number) =>

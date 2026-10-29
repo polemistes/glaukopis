@@ -409,6 +409,17 @@ pub fn file_set_alt(state: State<'_, AppState>, hash: String, alt: String) -> Co
     Ok(state.library().set_alt(&hash, &alt)?)
 }
 
+/// Keeps the bookmarks of a file of the library (ADR 0072), in the stead of
+/// those it had.
+#[tauri::command(async)]
+pub fn file_bookmarks_set(
+    state: State<'_, AppState>,
+    hash: String,
+    bookmarks: Vec<glaukopis_core::library::Bookmark>,
+) -> CommandResult<FileView> {
+    Ok(state.library().set_bookmarks(&hash, bookmarks)?)
+}
+
 /// The file a figure made of this image shows: itself, or a copy made beside it.
 #[tauri::command(async)]
 pub fn file_for_figure(state: State<'_, AppState>, hash: String) -> CommandResult<FileView> {

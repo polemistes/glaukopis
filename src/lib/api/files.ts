@@ -42,8 +42,20 @@ export interface FileView {
   alt: string;
   /** Of a file made from another to be a figure, the hash of that one. */
   madeFrom: string | null;
+  /** Of a PDF, the places marked in it, in the order they stand (ADR 0072). */
+  bookmarks: Bookmark[];
   /** The references it belongs to; none for a file that is unassigned. */
   references: Summary[];
+}
+
+/** A place marked in a file: of the file, so the same from every project (ADR 0072). */
+export interface Bookmark {
+  id: string;
+  /** Counted from one. */
+  page: number;
+  /** How far down the page the top of the view stood, from 0 at its top to 1 at its foot. */
+  at: number;
+  name: string;
 }
 
 export interface FilesListing {
@@ -149,6 +161,10 @@ export const filesAssign = (pairs: { hash: string; id: string }[]) =>
 /** Takes many files each from its reference; the files stay in the library. */
 export const filesUnassign = (pairs: { hash: string; id: string }[]) =>
   call<void>('files_unassign', { pairs });
+/** Keeps the bookmarks of a file, in the stead of those it had. */
+export const fileBookmarksSet = (hash: string, bookmarks: Bookmark[]) =>
+  call<FileView>('file_bookmarks_set', { hash, bookmarks });
+
 export const fileAssign = (hash: string, id: string) => call<FileView>('file_assign', { hash, id });
 export const fileUnassign = (hash: string, id: string) =>
   call<FileView>('file_unassign', { hash, id });

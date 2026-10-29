@@ -7,12 +7,14 @@
 export const AROUND = { top: 16, side: 18, between: 12 };
 /** At most so many pages are kept drawn: those nearest to what is looked at. */
 export const KEPT = 40;
-/** So many pages before and after those in view are fetched with them. */
+/** So many pages before and after those in view are fetched with them, and stand in the document. */
 export const BESIDE = 2;
-/** Widths are asked for in steps, so that a zoom changed a little is served by the pages drawn. */
-export const WIDTH_STEP = 200;
+/** At most so many pages are asked of the core at once (ADR 0072). */
+export const IN_FLIGHT = 4;
 /** The widest a page is drawn, in dots. */
 export const WIDEST = 4000;
+/** A picture wider than this many times the width wanted is drawn again, narrower. */
+export const TOO_WIDE = 1.25;
 
 /** The place of each page in the column, and the height of all, in pixels. */
 export interface Placed {
@@ -27,12 +29,13 @@ export interface Placed {
  * size makes it, with the room around and between them.
  */
 export function placePages(sizes: [number, number][], widthOf: (w: number) => number): Placed {
+  // Whole pixels across, so that a picture drawn as wide is painted dot for dot.
   const tops: number[] = [];
   const widths: number[] = [];
   const heights: number[] = [];
   let y = AROUND.top;
   for (const [w, h] of sizes) {
-    const width = Math.max(1, widthOf(w));
+    const width = Math.max(1, Math.round(widthOf(w)));
     const height = Math.max(1, (width * h) / Math.max(w, 1));
     tops.push(y);
     widths.push(width);
@@ -70,6 +73,28 @@ export function pageAt(placed: Placed, y: number): number {
   return lo + 1;
 }
 
+/** A place in a file: a page, counted from one, and how far down it, from 0 at its top to 1 at its foot. */
+export interface Place {
+  page: number;
+  at: number;
+}
+
+/** The place at a height of the column: the page there, and how far down it. */
+export function placeAt(placed: Placed, y: number): Place {
+  const page = pageAt(placed, y);
+  const i = page - 1;
+  const top = placed.tops[i] ?? 0;
+  const at = (y - top) / Math.max(placed.heights[i] ?? 1, 1);
+  return { page, at: Math.min(1, Math.max(0, at)) };
+}
+
+/** The height of the column at which a place stands. */
+export function heightOf(placed: Placed, place: Place): number {
+  if (!placed.tops.length) return 0;
+  const i = Math.min(Math.max(Math.round(place.page), 1), placed.tops.length) - 1;
+  return placed.tops[i] + Math.min(1, Math.max(0, place.at)) * placed.heights[i];
+}
+
 /** The pages, counted from one, seen between two heights, with those beside them. */
 export function pagesSeen(placed: Placed, from: number, to: number, beside = BESIDE): number[] {
   const count = placed.tops.length;
@@ -81,10 +106,32 @@ export function pagesSeen(placed: Placed, from: number, to: number, beside = BES
   return out;
 }
 
-/** The width a page is asked to be drawn at: its shown width in dots, up to the next step. */
+/**
+ * The width a page is asked to be drawn at: exactly its shown width in the
+ * screen's own dots, so that its picture is painted as it is, not scaled
+ * at every paint (ADR 0072).
+ */
 export function widthWanted(shown: number, ratio = 1): number {
-  const dots = Math.ceil(shown * Math.max(ratio, 1));
-  return Math.min(WIDEST, Math.ceil(dots / WIDTH_STEP) * WIDTH_STEP);
+  return Math.min(WIDEST, Math.max(1, Math.ceil(shown * Math.max(ratio, 1))));
+}
+
+/**
+ * Whether a page drawn at `has` dots wide, or not yet drawn, is to be drawn
+ * at `want`: where it is narrower, or much wider. One that could not be
+ * drawn (`pictured` false) is not asked for again at a width it was asked at.
+ */
+export function lacking(
+  has: { width: number; pictured: boolean } | undefined,
+  want: number,
+): boolean {
+  if (!has) return true;
+  if (!has.pictured) return has.width < want;
+  return has.width < want || has.width > want * TOO_WIDE;
+}
+
+/** The pages to fetch, of those `seen`: those that `lack`, nearest to the page `middle` first. */
+export function wanted(seen: number[], middle: number, lack: (n: number) => boolean): number[] {
+  return seen.filter(lack).sort((a, b) => Math.abs(a - middle) - Math.abs(b - middle) || a - b);
 }
 
 /** Of the pages kept, those to let go: the furthest from the page in view, beyond `most`. */

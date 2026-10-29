@@ -208,7 +208,11 @@
     flex: none;
     margin: auto;
     background: #fff;
-    box-shadow: var(--shadow-1);
+    /* A line and a drop without blur: a blurred shadow is painted anew at
+       every step of the scrolling, which made it lag (ADR 0072). */
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.08),
+      0 2px 0 rgba(0, 0, 0, 0.05);
   }
   img {
     position: absolute;

@@ -17,6 +17,7 @@ const file = (hash: string, ...references: string[]): FileView => ({
   height: null,
   alt: '',
   madeFrom: null,
+  bookmarks: [],
   references: references.map((id) => ({ id }) as Summary),
 });
 

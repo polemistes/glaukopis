@@ -664,6 +664,7 @@ export const filesListing: files.FilesListing = {
     {
       "added": "2026-01-01T00:00:00Z",
       "alt": "",
+      "bookmarks": [],
       "exists": true,
       "folder": null,
       "hash": "e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e",
@@ -698,6 +699,14 @@ export const filesListing: files.FilesListing = {
     {
       "added": "2026-01-01T00:00:00Z",
       "alt": "",
+      "bookmarks": [
+        {
+          "at": 0.25,
+          "id": "b1",
+          "name": "The plate",
+          "page": 1
+        }
+      ],
       "exists": true,
       "folder": "00000000-0000-4000-8000-000000000000",
       "hash": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
@@ -726,6 +735,7 @@ export const takenIn: files.TakenIn = {
     {
       "added": "2026-01-01T00:00:00Z",
       "alt": "",
+      "bookmarks": [],
       "exists": true,
       "folder": "00000000-0000-4000-8000-000000000000",
       "hash": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
@@ -963,6 +973,10 @@ export const project: projects.ProjectInfo = {
     "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5"
   ],
   "references": 1,
+  "sources": {
+    "active": null,
+    "tabs": []
+  },
   "words": 12
 };
 
@@ -3581,6 +3595,10 @@ export const trashed: projects.Trashed[] = [
         "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5"
       ],
       "references": 1,
+      "sources": {
+        "active": null,
+        "tabs": []
+      },
       "words": 12
     }
   }
@@ -4095,6 +4113,13 @@ export const fileFacts: viewer.FileFacts = {
   ],
   "locked": false,
   "name": "nagy.pdf",
+  "outline": [
+    {
+      "depth": 1,
+      "page": 2,
+      "title": "Introduction"
+    }
+  ],
   "pages": 2,
   "picture": false,
   "sizes": [
@@ -4108,19 +4133,6 @@ export const fileFacts: viewer.FileFacts = {
     ]
   ]
 };
-
-export const pagesAt: viewer.PageAt[] = [
-  {
-    "failed": null,
-    "number": 1,
-    "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg=="
-  },
-  {
-    "failed": "A remark.",
-    "number": 2,
-    "png": null
-  }
-];
 
 export const pageLines: viewer.PageLines = {
   "height": 842.0,

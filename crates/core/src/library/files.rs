@@ -69,7 +69,29 @@ pub struct FileRecord {
     /// edited, or made smaller (ADR 0070, 0071). It does not say which.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub made_from: Option<String>,
+    /// Of a PDF, the places marked in it, in the order they stand (ADR
+    /// 0072): of the file, so the same from every project.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub bookmarks: Vec<Bookmark>,
 }
+
+/// A place marked in a file: a page, how far down it the top of the view
+/// stood, and a name.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Bookmark {
+    /// Made by the interface, to tell one from another.
+    pub id: String,
+    /// Counted from one.
+    pub page: usize,
+    /// How far down the page, from 0 at its top to 1 at its foot.
+    pub at: f32,
+    pub name: String,
+}
+
+/// The most bookmarks a file keeps, and the longest name of one.
+pub const MOST_BOOKMARKS: usize = 500;
+const LONGEST_BOOKMARK: usize = 200;
 
 /// The record of the files of the library.
 ///
@@ -255,6 +277,27 @@ impl Files {
         let alt: String = alt.split_whitespace().collect::<Vec<_>>().join(" ").chars().take(2000).collect();
         let file = self.get_mut(hash)?;
         file.alt = alt;
+        Ok(file.clone())
+    }
+
+    /// The bookmarks of a file, in the stead of those it had: each name made
+    /// one line, and the list ordered by their places. A list too long, or a
+    /// bookmark that is no place, is refused.
+    pub fn set_bookmarks(&mut self, hash: &str, bookmarks: Vec<Bookmark>) -> Result<FileRecord> {
+        if bookmarks.len() > MOST_BOOKMARKS {
+            return Err(Error::invalid(tr!("core-library-too-many-bookmarks", most = MOST_BOOKMARKS)));
+        }
+        let mut checked = Vec::with_capacity(bookmarks.len());
+        for b in bookmarks {
+            if b.id.trim().is_empty() || b.page == 0 || !(0.0..=1.0).contains(&b.at) {
+                return Err(Error::invalid(tr!("core-library-bookmark-no-place")));
+            }
+            let name = b.name.split_whitespace().collect::<Vec<_>>().join(" ").chars().take(LONGEST_BOOKMARK).collect();
+            checked.push(Bookmark { id: b.id, page: b.page, at: b.at, name });
+        }
+        checked.sort_by(|a, b| a.page.cmp(&b.page).then(a.at.total_cmp(&b.at)));
+        let file = self.get_mut(hash)?;
+        file.bookmarks = checked;
         Ok(file.clone())
     }
 

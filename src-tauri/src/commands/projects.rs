@@ -165,6 +165,20 @@ pub fn project_save_view(state: State<'_, AppState>, id: String, view: serde_jso
     Ok(())
 }
 
+/// The sources of a project, as the page kept them (ADR 0072): null where
+/// none were kept.
+#[tauri::command(async)]
+pub fn project_sources(state: State<'_, AppState>, id: String) -> CommandResult<serde_json::Value> {
+    Ok(state.projects.info(&id)?.sources)
+}
+
+/// Keeps the sources of a project, on this computer alone.
+#[tauri::command(async)]
+pub fn project_save_sources(state: State<'_, AppState>, id: String, sources: serde_json::Value) -> CommandResult<()> {
+    state.projects.update_info(&id, |info| info.sources = sources)?;
+    Ok(())
+}
+
 // ---- folders, and the form of the page of projects (ADR 0031) ----
 
 /// Where folders and projects were put by hand on the map of the projects (ADR 0051).

@@ -1293,6 +1293,26 @@ fn labels(doc: &Document, pages: usize) -> Vec<String> {
         .collect()
 }
 
+/// The numbers the pages of the PDF in `bytes` have in print, `pages` of
+/// them, and the outline the file carries of its headings, without reading
+/// its text: what a view needs before its pages are drawn (ADR 0072). The
+/// counts from one and no outline, where the file cannot be opened so.
+pub fn labels_and_outline(bytes: &[u8], pages: usize) -> (Vec<String>, Vec<OutlineEntry>) {
+    match catch_unwind(|| Document::load_mem(bytes)) {
+        Ok(Ok(doc)) if !doc.is_encrypted() => {
+            let outline = catch_unwind(AssertUnwindSafe(|| outline_of(&doc))).unwrap_or_default();
+            let labels = catch_unwind(AssertUnwindSafe(|| labels(&doc, pages))).unwrap_or_else(|_| counted(pages));
+            (labels, outline)
+        }
+        _ => (counted(pages), Vec::new()),
+    }
+}
+
+/// The pages counted from one, as their numbers where nothing better is known.
+fn counted(pages: usize) -> Vec<String> {
+    (1..=pages).map(|n| n.to_string()).collect()
+}
+
 // ---------------------------------------------------------------------------
 // Reading the file
 // ---------------------------------------------------------------------------

@@ -656,9 +656,10 @@ fn several<T: Send>(
 // The text a file has, as it was looked at
 // ---------------------------------------------------------------------------
 
-/// What was seen of the file that was looked at last, by the file, its size
-/// and when it was changed, and the Poppler it was looked at with: what was
-/// read when a file was looked at is not read again when it is read.
+/// What was seen of the files that were looked at last, by the file, its
+/// size and when it was changed, and the Poppler it was looked at with: what
+/// was read when a file was looked at is not read again when it is read, nor
+/// when a view goes back to it from another (ADR 0072).
 struct Kept {
     path: PathBuf,
     size: u64,
@@ -666,7 +667,9 @@ struct Kept {
     pdftoppm: Option<PathBuf>,
     seen: Arc<Seen>,
 }
-static KEPT: Mutex<Option<Kept>> = Mutex::new(None);
+static KEPT: Mutex<Vec<Kept>> = Mutex::new(Vec::new());
+/// How many looks are kept: the files of a few tabs.
+const LOOKS_KEPT: usize = 3;
 
 /// What a look at the PDF at `path`, of `size`, finds: kept from the last
 /// look where it was at this file as it is, else looked at in the child.
@@ -676,23 +679,30 @@ fn seen_of(path: &Path, size: u64, pdftoppm: Option<&Tool>) -> Result<Arc<Seen>>
     let changed = std::fs::metadata(path).ok().and_then(|m| m.modified().ok());
     let poppler = pdftoppm.map(|t| t.path.clone());
     {
-        let kept = KEPT.lock().unwrap_or_else(PoisonError::into_inner);
-        if let Some(kept) = kept.as_ref()
-            && kept.path == path
-            && kept.size == size
-            && kept.changed == changed
-            // Poppler counts only what hayro cannot open: asked without it,
-            // or where hayro opened the file, either look will do.
-            && (poppler.is_none()
-                || kept.pdftoppm == poppler
-                || matches!(kept.seen.opened, child::Opened::Pages(_) | child::Opened::NoPages))
-        {
-            return Ok(kept.seen.clone());
+        let mut all = KEPT.lock().unwrap_or_else(PoisonError::into_inner);
+        let found = all.iter().position(|kept| {
+            kept.path == path
+                && kept.size == size
+                && kept.changed == changed
+                // Poppler counts only what hayro cannot open: asked without it,
+                // or where hayro opened the file, either look will do.
+                && (poppler.is_none()
+                    || kept.pdftoppm == poppler
+                    || matches!(kept.seen.opened, child::Opened::Pages(_) | child::Opened::NoPages))
+        });
+        if let Some(at) = found {
+            // The one looked at last stands first, and is let go last.
+            let kept = all.remove(at);
+            let seen = kept.seen.clone();
+            all.insert(0, kept);
+            return Ok(seen);
         }
     }
     let seen = Arc::new(child::look(path, size, pdftoppm)?);
-    *KEPT.lock().unwrap_or_else(PoisonError::into_inner) =
-        Some(Kept { path: path.to_owned(), size, changed, pdftoppm: poppler, seen: seen.clone() });
+    let mut all = KEPT.lock().unwrap_or_else(PoisonError::into_inner);
+    all.retain(|kept| kept.path != path);
+    all.insert(0, Kept { path: path.to_owned(), size, changed, pdftoppm: poppler, seen: seen.clone() });
+    all.truncate(LOOKS_KEPT);
     Ok(seen)
 }
 
@@ -1545,7 +1555,13 @@ pub struct FileFacts {
     pub labels: Vec<String>,
     /// Whether it asks for a password, and cannot be shown.
     pub locked: bool,
+    /// The outline the file carries of its headings, those entries that lead
+    /// to a page it has, in their order: its own contents (ADR 0072).
+    pub outline: Vec<shape::OutlineEntry>,
 }
+
+/// The most entries of a file's own contents that a view lists.
+const CONTENTS_MOST: usize = 2000;
 
 /// What was found of the files shown last: where each page stands as it is
 /// drawn, by the file as it is (`pages_cache::key_of`). A few are kept, one
@@ -1600,10 +1616,9 @@ fn picture_size(path: &Path) -> Result<(f32, f32)> {
 
 /// What a view needs of the PDF or picture at `path` before its pages are
 /// drawn: how many pages it has, the size of each as it is drawn, the number
-/// each has in print, and whether it asks for a password. The file is
-/// opened in the child, which does not read its text, for its pages; the
-/// numbers in print are those of the text the file has (`seen_of`), which
-/// is kept for the lines of its pages.
+/// each has in print, its own contents, and whether it asks for a password.
+/// The file is opened in the child, which does not read its text: the pages
+/// are shown before the text is read (ADR 0072).
 pub fn file_facts(path: &Path, tools: &Tools, work: &Path) -> Result<FileFacts> {
     // A drawing is one page, as large as it says it is, or as a page of a
     // screen where it does not say: the view shows it as it is.
@@ -1613,25 +1628,46 @@ pub fn file_facts(path: &Path, tools: &Tools, work: &Path) -> Result<FileFacts> 
             return Err(Error::invalid(tr!("core-pictures-not-a-picture")));
         }
         let size = crate::library::figures::svg_size(&bytes).unwrap_or((800.0, 600.0));
-        return Ok(FileFacts { picture: true, pages: 1, sizes: vec![size], labels: vec!["1".into()], locked: false });
+        return Ok(FileFacts {
+            picture: true,
+            pages: 1,
+            sizes: vec![size],
+            labels: vec!["1".into()],
+            ..FileFacts::default()
+        });
     }
     if is_picture(path) {
         let size = picture_size(path)?;
-        return Ok(FileFacts { picture: true, pages: 1, sizes: vec![size], labels: vec!["1".into()], locked: false });
+        return Ok(FileFacts {
+            picture: true,
+            pages: 1,
+            sizes: vec![size],
+            labels: vec!["1".into()],
+            ..FileFacts::default()
+        });
     }
     let size = checked_pdf(path)?;
     let facts = facts_of(path, size, tools.pdftoppm.as_ref(), work)?;
     if facts.locked {
         return Ok(FileFacts { locked: true, ..FileFacts::default() });
     }
-    let seen = seen_of(path, size, None)?;
     let pages = facts.frames.len();
+    let labels =
+        (0..pages).map(|index| facts.labels.get(index).cloned().unwrap_or_else(|| (index + 1).to_string())).collect();
+    let outline = facts
+        .outline
+        .iter()
+        .filter(|e| e.page.is_some_and(|page| (1..=pages).contains(&page)))
+        .take(CONTENTS_MOST)
+        .cloned()
+        .collect();
     Ok(FileFacts {
         picture: false,
         pages,
         sizes: facts.frames.iter().map(|f| f.size).collect(),
-        labels: (0..pages).map(|index| seen.layer.label(index)).collect(),
+        labels,
         locked: false,
+        outline,
     })
 }
 

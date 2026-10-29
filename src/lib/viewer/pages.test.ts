@@ -2,12 +2,16 @@ import { describe, expect, it } from 'vitest';
 import {
   AROUND,
   columnWidth,
+  heightOf,
+  lacking,
   pageAsked,
   pageAt,
   pageLeft,
   pagesSeen,
+  placeAt,
   placePages,
   toLetGo,
+  wanted,
   widthWanted,
 } from './pages';
 
@@ -31,10 +35,41 @@ describe('the pages of a file in a side', () => {
     expect(pagesSeen(placed, 0, 1, 2)).toEqual([1, 2, 3]);
   });
 
-  it('asks for widths in steps, sharp on a dense screen, never too wide', () => {
-    expect(widthWanted(500)).toBe(600);
+  it('asks for the width shown, in the dots of the screen, never too wide', () => {
+    expect(widthWanted(500)).toBe(500);
+    expect(widthWanted(500.2)).toBe(501);
     expect(widthWanted(500, 2)).toBe(1000);
     expect(widthWanted(9000, 2)).toBe(4000);
+  });
+
+  it('places the pages a whole number of pixels wide', () => {
+    expect(placePages([a4], () => 500.4).widths[0]).toBe(500);
+  });
+
+  it('draws a page again where it is too narrow or much too wide, not where it failed at that width', () => {
+    expect(lacking(undefined, 500)).toBe(true);
+    expect(lacking({ width: 500, pictured: true }, 500)).toBe(false);
+    expect(lacking({ width: 480, pictured: true }, 500)).toBe(true);
+    expect(lacking({ width: 600, pictured: true }, 500)).toBe(false);
+    expect(lacking({ width: 700, pictured: true }, 500)).toBe(true);
+    expect(lacking({ width: 500, pictured: false }, 500)).toBe(false);
+    expect(lacking({ width: 400, pictured: false }, 500)).toBe(true);
+  });
+
+  it('fetches the pages nearest to the one in view first', () => {
+    expect(wanted([3, 4, 5, 6, 7, 8], 6, () => true)).toEqual([6, 5, 7, 4, 8, 3]);
+    expect(wanted([3, 4, 5, 6], 4, (n) => n !== 4)).toEqual([3, 5, 6]);
+  });
+
+  it('tells a place as a page and how far down it, which holds when the pages are shown larger', () => {
+    const small = placePages(Array(10).fill(a4), () => 100);
+    const large = placePages(Array(10).fill(a4), () => 300);
+    const place = placeAt(small, small.tops[3] + small.heights[3] / 4);
+    expect(place.page).toBe(4);
+    expect(place.at).toBeCloseTo(0.25);
+    expect(heightOf(large, place)).toBeCloseTo(large.tops[3] + large.heights[3] / 4);
+    expect(placeAt(small, 0)).toEqual({ page: 1, at: 0 });
+    expect(heightOf(small, { page: 99, at: 2 })).toBeCloseTo(small.tops[9] + small.heights[9]);
   });
 
   it('lets go the pages furthest from the one in view', () => {
