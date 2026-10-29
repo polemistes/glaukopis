@@ -46,15 +46,20 @@
     place: Place;
     /** A factor of the size on paper, or none for the width of the side. */
     zoom: number | null;
+    /** The tab the view is made for: what it tells of its place is of this tab, even as it goes. */
+    tab: string;
     /** Where the view was left, a moment after the scrolling rests, and when it goes. */
-    onplace: (place: Place) => void;
+    onplace: (tab: string, place: Place) => void;
     /** The page at the middle of the view, as it changes. */
     onmiddle: (page: number) => void;
     onzoom: (zoom: number | null) => void;
   }
 
-  let { file, facts, place, zoom, onplace, onmiddle, onzoom }: Props = $props();
-  // What the view tells of its place is of the tab it was made for, even as it goes.
+  let { file, facts, tab, place, zoom, onplace, onmiddle, onzoom }: Props = $props();
+  // What the view tells of its place is of the tab it was made for, even as it goes:
+  // the tab is taken once, as the view is made.
+  // svelte-ignore state_referenced_locally
+  const mine = tab;
   // svelte-ignore state_referenced_locally
   const tellPlace = onplace;
   // svelte-ignore state_referenced_locally
@@ -215,7 +220,7 @@
     clearTimeout(placeTimer);
     placeTimer = undefined;
     if (!lastPlace) return;
-    tellPlace({ page: lastPlace.page, at: Math.round(lastPlace.at * 10000) / 10000 });
+    tellPlace(mine, { page: lastPlace.page, at: Math.round(lastPlace.at * 10000) / 10000 });
   }
 
   /** The place at the top edge of the view: the page there, and how far down it. */
@@ -341,6 +346,16 @@
   /** Where the view stands: the page at its top edge, and how far down it. */
   export function placeNow(): Place {
     return lastPlace ?? { ...startAt };
+  }
+  /**
+   * The place a bookmark marks: the page the bar says, and how far down it
+   * the view begins, from its top where the view begins above it.
+   */
+  export function markPlace(): Place {
+    const i = page - 1;
+    const top = (scroller?.scrollTop ?? 0) + AROUND.top;
+    const at = (top - (placed.tops[i] ?? 0)) / Math.max(placed.heights[i] ?? 1, 1);
+    return { page, at: Math.round(Math.min(1, Math.max(0, at)) * 10000) / 10000 };
   }
   export function percent(): number {
     return Math.round(factor * 100);

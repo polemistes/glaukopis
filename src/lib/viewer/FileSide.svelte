@@ -39,6 +39,7 @@
   import EditRow from './EditRow.svelte';
   import ImageView from './ImageView.svelte';
   import PdfView from './PdfView.svelte';
+  import PlacesPopover from './PlacesPopover.svelte';
   import { activeTab, START } from './sources';
   import TabRow from './TabRow.svelte';
   import ViewerBar from './ViewerBar.svelte';
@@ -141,6 +142,24 @@
     if (await mayLeave()) sides.showFileIn(spec.key, hash);
   }
 
+  // ---- the bookmarks and the contents (ADR 0072) ----
+
+  let pane = $state<HTMLDivElement>();
+  let placesAt = $state<HTMLElement | null>(null);
+  let marking = $state(false);
+
+  function openPlaces(anchor: HTMLElement, mark = false) {
+    marking = mark;
+    placesAt = anchor;
+  }
+
+  /** The place a bookmark marks: the page the bar says, and where in it the view begins. */
+  const placeNow = () => (view && 'markPlace' in view ? view.markPlace() : { page: middle, at: 0 });
+
+  function goToPlace(place: { page: number; at: number }) {
+    if (view && 'goToPlace' in view) view.goToPlace(place);
+  }
+
   /** Closes the tab shown, as Ctrl+W does on a file side; the side with its last. */
   export function closeShown() {
     if (tab) void closeTab(tab.id);
@@ -151,6 +170,13 @@
     shortcuts.bind({
       'viewer-tab-next': { run: () => void step(1), when: () => active || count === 1 },
       'viewer-tab-previous': { run: () => void step(-1), when: () => active || count === 1 },
+      'viewer-bookmark': {
+        run: () => {
+          const button = pane?.querySelector<HTMLElement>('[data-viewer-places]');
+          if (button) openPlaces(button, true);
+        },
+        when: () => (active || count === 1) && !!facts && !facts.picture && !facts.locked,
+      },
     }),
   );
 
@@ -314,6 +340,7 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
+  bind:this={pane}
   class="pane file-side"
   data-side-key={spec.key}
   data-file-side={file}
@@ -340,6 +367,7 @@
       zoom={tab?.zoom ?? null}
       {percent}
       onpage={goToPage}
+      onplaces={(anchor) => openPlaces(anchor)}
       onzoom={zoomTo}
       {editable}
       editing={!!editing}
@@ -413,15 +441,32 @@
         bind:this={view}
         {file}
         {facts}
+        tab={id}
         place={tab?.place ?? START}
         zoom={tab?.zoom ?? null}
-        onplace={(place) => sides.setPlace(spec.key, id, place)}
+        onplace={(of, place) => sides.setPlace(spec.key, of, place)}
         onmiddle={(n) => (middle = n)}
         onzoom={(z) => sides.setTabZoom(spec.key, id, z)}
       />
     {/key}
   {/if}
 </div>
+
+{#if placesAt && facts && file}
+  <PlacesPopover
+    anchor={placesAt}
+    {file}
+    labels={facts.labels}
+    outline={facts.outline}
+    {marking}
+    here={placeNow}
+    ongo={goToPlace}
+    onclose={() => {
+      placesAt = null;
+      marking = false;
+    }}
+  />
+{/if}
 
 {#if choosing}
   <FileChooser

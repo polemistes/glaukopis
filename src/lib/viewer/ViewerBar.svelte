@@ -6,6 +6,7 @@
    * of steps. Nothing of a map: no views, no writing tools. An image that
    * has pixels has *Edit* after the zoom (ADR 0071).
    */
+  import BookmarkIcon from '@lucide/svelte/icons/bookmark';
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import Pencil from '@lucide/svelte/icons/pencil';
   import { t } from '$lib/i18n';
@@ -31,6 +32,8 @@
     /** Whether it is being edited. */
     editing?: boolean;
     onedit?: () => void;
+    /** Opens the bookmarks and the contents of a PDF, by the button (ADR 0072). */
+    onplaces?: (anchor: HTMLElement) => void;
   }
 
   let {
@@ -45,6 +48,7 @@
     editable = false,
     editing = false,
     onedit,
+    onplaces,
   }: Props = $props();
 
   const printed = $derived(labels[page - 1] ?? '');
@@ -156,6 +160,21 @@
     {#if zoom === null}<span>{t(picture ? 'viewer-fit-image' : 'viewer-fit-width')}</span>{/if}
     <ChevronDown size={12} />
   </button>
+  {#if onplaces}
+    <span class="rule" role="separator"></span>
+    <button
+      type="button"
+      class="zoom places"
+      aria-label={t('viewer-places')}
+      aria-haspopup="dialog"
+      disabled={picture}
+      data-viewer-places
+      use:tooltip={{ text: t('viewer-places'), shortcut: keysFor('viewer-bookmark') }}
+      onclick={(e) => onplaces(e.currentTarget)}
+    >
+      <BookmarkIcon size={13} />
+    </button>
+  {/if}
   {#if editable && onedit}
     <span class="rule" role="separator"></span>
     <button

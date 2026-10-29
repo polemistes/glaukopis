@@ -158,6 +158,77 @@ try {
     return got.project === 'Wrath' && got.tabs.length === 4 ? got : null;
   });
   check('the first project beside again, its four tabs are back, the one shown last shown', s.file === hashes.owl, s.tabs.length);
+
+  // ---- bookmarks: of the file, the same in every project ----
+  await clickTab(app, second);
+  await until('the second tab, at page 2', async () => {
+    const got = await shown(app);
+    return got.active === second && got.page === 2 && got.drawn ? got : null;
+  });
+  await app.click('[data-file-side] [data-viewer-pages]');
+  await app.keys(['Control', 'Shift', 'b']);
+  await app.waitFor('[data-viewer-places-list] [data-bookmark-name]', 3000);
+  const offered = await app.exec(`return document.querySelector('[data-bookmark-name]').value`);
+  check('Ctrl+Shift+B offers a bookmark named after the page', offered === 'Page 2', offered);
+  await app.press('Enter');
+  await until('the bookmark kept', () => app.exists('[data-viewer-places-list] [data-bookmark]'), 5000);
+  await app.screenshot('sources-4-places');
+  const contents = await app.exec(`return Array.from(document.querySelectorAll('[data-contents-page]')).map((c) => c.dataset.contentsPage + ':' + c.querySelector('.name').textContent.trim())`);
+  check('the file’s own contents are listed under the bookmarks', contents.length === 4 && /Beginnings/.test(contents[0]), contents.join(' | '));
+  await app.press('Escape');
+  await sleep(300);
+  await app.click('[data-file-side] [data-viewer-pages]');
+  await app.press('Home');
+  await until('page 1', async () => (await shown(app)).page === 1);
+  await app.click('[data-file-side] [data-viewer-places]');
+  await app.waitFor('[data-viewer-places-list] [data-bookmark-go]', 3000);
+  await app.click('[data-viewer-places-list] [data-bookmark-go]');
+  s = await until('the bookmark’s place', async () => ((await shown(app)).page === 2 ? shown(app) : null));
+  check('a bookmark goes to its place', s.page === 2 && s.scrolled > 0, `page ${s.page}`);
+  await app.click('[data-file-side] [data-viewer-places]');
+  await app.waitFor('[data-viewer-places-list] [data-bookmark-menu]', 3000);
+  await app.click('[data-viewer-places-list] [data-bookmark-menu]');
+  await app.clickText('.menu [role="menuitem"]', 'Rename');
+  await app.waitFor('[data-bookmark-rename]', 3000);
+  await app.exec(`const i = document.querySelector('[data-bookmark-rename]'); i.value = 'The second section'; i.dispatchEvent(new Event('input', { bubbles: true }));`);
+  await app.press('Enter');
+  await until('the bookmark renamed', async () => (await app.exec(`return document.querySelector('[data-bookmark] .name')?.textContent.trim()`)) === 'The second section', 5000);
+  check('a bookmark is renamed from its menu', true);
+  await app.press('Escape');
+  await sleep(300);
+  // In another project, the same file has the same bookmark.
+  await app.click('[data-file-side]');
+  await anotherProject(app, 'Odyssey');
+  await until('Odyssey beside', async () => (await shown(app)).project === 'Odyssey');
+  await app.exec(`window.__glaukopisViewer.show(arguments[0])`, hashes.structure);
+  await until('the file in Odyssey', async () => {
+    const got = await shown(app);
+    return got.file === hashes.structure && got.drawn ? got : null;
+  }, 15000);
+  await app.click('[data-file-side] [data-viewer-places]');
+  await app.waitFor('[data-viewer-places-list]', 3000);
+  const there = await app.exec(`return Array.from(document.querySelectorAll('[data-bookmark] .name')).map((n) => n.textContent.trim())`);
+  check('the bookmark is there from another project', there.join() === 'The second section', there.join());
+  // A heading of the contents goes to its page.
+  await app.exec(`Array.from(document.querySelectorAll('[data-contents-page="2"]'))[0]?.click()`);
+  await until('the heading’s page', async () => (await shown(app)).page === 2);
+  check('a heading of the contents goes to its page', true);
+  // Removed, it is gone everywhere.
+  await app.click('[data-file-side] [data-viewer-places]');
+  await app.waitFor('[data-viewer-places-list] [data-bookmark-menu]', 3000);
+  await app.click('[data-viewer-places-list] [data-bookmark-menu]');
+  await app.clickText('.menu [role="menuitem"]', 'Remove');
+  await until('no bookmarks', async () => !(await app.exists('[data-viewer-places-list] [data-bookmark]')), 5000);
+  check('a bookmark removed from its menu is gone', (await app.exec(`return document.querySelector('[data-viewer-places-list]')?.textContent.includes('No bookmarks yet')`)) === true);
+  await app.press('Escape');
+  await sleep(300);
+  await app.click('[data-file-side]');
+  await anotherProject(app, 'Wrath');
+  await until('Wrath beside, once more', async () => {
+    const got = await shown(app);
+    return got.project === 'Wrath' && got.tabs.length === 4 ? got : null;
+  });
+
   await clickTab(app, second);
   await until('the second tab before leaving', async () => (await shown(app)).active === second);
   await sleep(800);
