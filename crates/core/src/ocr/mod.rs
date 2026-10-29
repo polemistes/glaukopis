@@ -672,14 +672,21 @@ static KEPT: Mutex<Vec<Kept>> = Mutex::new(Vec::new());
 /// How many looks are kept: the files of a few tabs.
 const LOOKS_KEPT: usize = 3;
 
+/// The files being looked at now, each with what lets one look at it at a
+/// time: the text over each page of a view asks for the file's text at
+/// once, and only the first reads it, the others waiting for what it read
+/// (ADR 0072). Another file is not kept waiting.
+static LOOKING: Mutex<Vec<(PathBuf, Arc<Mutex<()>>)>> = Mutex::new(Vec::new());
+
 /// What a look at the PDF at `path`, of `size`, finds: kept from the last
-/// look where it was at this file as it is, else looked at in the child.
-/// The lock is not held while the child works, so that a second file is not
-/// kept waiting for the first.
+/// look where it was at this file as it is, else looked at in the child,
+/// once however many ask for it at the same time. The lock of what is kept
+/// is not held while the child works, so that a second file is not kept
+/// waiting for the first.
 fn seen_of(path: &Path, size: u64, pdftoppm: Option<&Tool>) -> Result<Arc<Seen>> {
     let changed = std::fs::metadata(path).ok().and_then(|m| m.modified().ok());
     let poppler = pdftoppm.map(|t| t.path.clone());
-    {
+    let kept = || {
         let mut all = KEPT.lock().unwrap_or_else(PoisonError::into_inner);
         let found = all.iter().position(|kept| {
             kept.path == path
@@ -690,21 +697,46 @@ fn seen_of(path: &Path, size: u64, pdftoppm: Option<&Tool>) -> Result<Arc<Seen>>
                 && (poppler.is_none()
                     || kept.pdftoppm == poppler
                     || matches!(kept.seen.opened, child::Opened::Pages(_) | child::Opened::NoPages))
-        });
-        if let Some(at) = found {
-            // The one looked at last stands first, and is let go last.
-            let kept = all.remove(at);
-            let seen = kept.seen.clone();
-            all.insert(0, kept);
-            return Ok(seen);
-        }
+        })?;
+        // The one looked at last stands first, and is let go last.
+        let kept = all.remove(found);
+        let seen = kept.seen.clone();
+        all.insert(0, kept);
+        Some(seen)
+    };
+    if let Some(seen) = kept() {
+        return Ok(seen);
     }
-    let seen = Arc::new(child::look(path, size, pdftoppm)?);
-    let mut all = KEPT.lock().unwrap_or_else(PoisonError::into_inner);
-    all.retain(|kept| kept.path != path);
-    all.insert(0, Kept { path: path.to_owned(), size, changed, pdftoppm: poppler, seen: seen.clone() });
-    all.truncate(LOOKS_KEPT);
-    Ok(seen)
+    let gate = {
+        let mut looking = LOOKING.lock().unwrap_or_else(PoisonError::into_inner);
+        match looking.iter().find(|(p, _)| p == path) {
+            Some((_, gate)) => gate.clone(),
+            None => {
+                let gate = Arc::new(Mutex::new(()));
+                looking.push((path.to_owned(), gate.clone()));
+                gate
+            }
+        }
+    };
+    let turn = gate.lock().unwrap_or_else(PoisonError::into_inner);
+    let seen = match kept() {
+        Some(seen) => Ok(seen),
+        None => child::look(path, size, pdftoppm).map(|seen| {
+            let seen = Arc::new(seen);
+            let mut all = KEPT.lock().unwrap_or_else(PoisonError::into_inner);
+            all.retain(|kept| kept.path != path);
+            all.insert(0, Kept { path: path.to_owned(), size, changed, pdftoppm: poppler.clone(), seen: seen.clone() });
+            all.truncate(LOOKS_KEPT);
+            seen
+        }),
+    };
+    drop(turn);
+    // Let go where none waits for it but this one: the list's and this.
+    LOOKING
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .retain(|(p, g)| !(p == path && Arc::ptr_eq(g, &gate) && Arc::strong_count(g) <= 2));
+    seen
 }
 
 /// The size of a PDF, which is known to be one by what it begins with: the
