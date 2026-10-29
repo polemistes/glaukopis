@@ -36,6 +36,10 @@ const DATA = [
   // The names of templates, layouts and styles, and what the built-in templates say of themselves.
   '.side .look .whole .type-line .name',
   '.template',
+  // The names of files in the tabs, the names of bookmarks, and the headings a PDF carries.
+  '[data-viewer-tabs] .name',
+  '[data-bookmark]',
+  '[data-contents-page]',
 ].join(', ');
 
 // Names that are English, and words that are quoted as they are written
@@ -414,6 +418,27 @@ try {
   await english('the question on leaving an edit');
   await app.clickText('dialog footer button', 'Gå ut');
   await app.waitGone('[data-edit-row]', 3000);
+  // The sources in tabs: a tab's menu, and the bookmarks and contents of a PDF.
+  const pdf = (
+    await app.execAsync(
+      `return await window.__TAURI_INTERNALS__.invoke('files_take_in', { paths: [arguments[0]], folder: null, structure: false, ticket: null });`,
+      join(root, 'e2e/fixtures/structure.pdf'),
+    )
+  ).files[0];
+  await app.execAsync(`window.__glaukopisViewer.show(arguments[0]);`, pdf.hash);
+  await app.waitFor('[data-file-side] [data-viewer-places]:not(:disabled)', 10000);
+  await app.click('[data-file-side] [data-tab-menu]');
+  await sleep(300);
+  await english('the menu of a tab');
+  await app.press('Escape');
+  await sleep(200);
+  await app.click('[data-file-side] [data-viewer-places]');
+  await app.waitFor('[data-viewer-places-list]', 3000);
+  await sleep(300);
+  await english('the bookmarks and contents');
+  await app.screenshot('languages-5a-places');
+  await app.press('Escape');
+  await sleep(200);
   await app.keys(['Control', '4']);
   await sleep(500);
   await app.keys(['Control', '3']);

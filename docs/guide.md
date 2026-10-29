@@ -1221,7 +1221,7 @@ there, and it stays where it was.
 
 **What a file is for.** The pane at the right shows the file selected,
 small, an image as it is and a PDF by its first page; a press on it shows the
-file in the view that has the focus (see *A file in a view*). Under it is
+file among the sources beside your text (see *A file in a view*). Under it is
 what is known of the file: its name, its folder, where it came from and when,
 its size, and the references it belongs to. Of an image it says how large it
 is in pixels, what it shows, in words that can be written there, and the
@@ -1327,41 +1327,86 @@ people in the pane's head says how many; rest the pointer on it to see who.
 
 ## A file in a view
 
-A view of the window can show a file of the library instead of a map: a
-PDF, page by page, or an image.
-The file belongs to no project. Its bar holds what a file needs: the page in
-view, *Page 3 of 271*, with the number it has in print where that differs,
-*(xiv)*; a field to go to a page by either; and the zoom: a field that
-takes any percent from 5 to 800, and a menu of steps from an eighth to
-four times, beside *As wide as the view*, which for an image is *The whole
-image in the view*. **PageDown** and **PageUp** turn a page, **Home** and
-**End** go to the first and the last, and **Ctrl++**, **Ctrl+-** and
-**Ctrl+0** zoom, as in the typesetting pane; so does the wheel with
-**Ctrl**, about the pointer, which stays over the same place of the page.
-The text the PDF has lies unseen over its pages, so
+A view of the window can show files of the library beside your text: PDFs,
+page by page, and images. They are the **sources** of the project beside
+them, each in a tab, and each tab remembers where you were in it, so that
+moving between books and articles, or between two places in one book, is a
+press on a tab. The same file may stand in two tabs, each at its own place.
+
+### Where a file comes
+
+Wherever you show a file from, it goes among the sources beside the text:
+
+- a double-click or **Enter** on a PDF or an image among the files of the
+  library, **Show** at the head of its pane or in its menu, a press on a
+  file in the pane of a reference, **Show** in the pane of an image;
+- **Show the file** in the editor of a citation, beside each work that has a
+  file, and in the menu of a work among the references of a document;
+- **A file of the library…** in the menu of **Split view**, which asks for
+  the file by its name;
+- the plus at the end of the row of tabs, which asks the same.
+
+The file goes to the view of sources there is, as a new tab, or to its tab
+where it has one already. Where there is none, the other view becomes one,
+or one is made beside the text. Your text never gives way to the source you
+read. A file chosen under **Files** in the tree of projects, which the
+chevron over a view opens, comes in that view.
+
+### Whose sources
+
+A view of sources shows the sources of the project beside it, and its cell
+in the top row names that project, small, before the name of the file; a
+press on the project's name shows its map beside. When the map is closed,
+the view keeps its project: with only the PDF open, the tabs are still that
+project's, and a file you add goes to it. When another project is opened
+beside it, the view shows that project's sources instead, and its cell says
+so. A file shown with no project open goes among the sources of the project
+you were last in.
+
+The sources are kept with the project, on this computer alone: they are not
+shared with those who share the project, and a copy of the project takes
+them along. While the sources have the focus, the document pane shows the
+document of the other view, and says so; with no map shown, it closes.
+
+### The tabs
+
+The tab shown is marked, with a close mark and a small chevron for its menu;
+the close mark of another tab comes under the pointer, and the middle button
+closes a tab too. Drag a tab to move it. Its menu closes it or the other
+tabs, opens its file **again in a new tab**, at the same place, shows the
+file **in the library**, or opens it **in another program**.
+**Ctrl+PageDown** and **Ctrl+PageUp** go to the next tab and the one before,
+and **Ctrl+W** closes the tab shown; the view closes with its last tab. Its
+× in the top row closes the view and leaves its tabs with the project.
+
+### Reading
+
+The bar holds what a file needs: the page in view, *Page 3 of 271*, with the
+number it has in print where that differs, *(xiv)*; a field to go to a page
+by either; and the zoom: a field that takes any percent from 5 to 800, and a
+menu of steps from an eighth to four times, beside *As wide as the view*,
+which for an image is *The whole image in the view*. **PageDown** and
+**PageUp** turn a page, **Home** and **End** go to the first and the last,
+and **Ctrl++**, **Ctrl+-** and **Ctrl+0** zoom, as in the typesetting pane;
+so does the wheel with **Ctrl**, about the pointer, which stays over the
+same place of the page. The text the PDF has lies unseen over its pages, so
 that words can be selected and copied as letters; a scan that has no text
 shows its pages alone, and **Make searchable…** gives it text.
 
-Where a file is shown from decides where it comes:
+### Bookmarks and contents
 
-- **In the view that has the focus**, in the place of what it showed: a
-  double-click or **Enter** on a PDF or an image among the files of the
-  library, **Show** at the head of its pane or in its menu, a press on a
-  file in the pane of a reference, and **Show** in the pane of an image.
-  Selecting a file only selects it, so that it can be renamed or moved.
-- **In a new view**: **A file of the library…** in the menu of **Split
-  view**, which asks for the file by its name.
-- **In the other view**, which opens where there is none: **Show the file**
-  in the editor of a citation, beside each work that has a file, and in the
-  menu of a work among the references of a document; and **Show** in the
-  pane of an image of a project. So the text you write stays where it is.
+The bookmark button in the bar of a PDF, or **Ctrl+Shift+B**, opens a list.
+**Mark this place** at its top marks the page in view and where in it the
+view begins, under a name that is offered as the page, *Page 12*, and can be
+written over. Under it stand the bookmarks in the order of their places; a
+press goes to one, and its menu renames or removes it. A bookmark belongs to
+the file, not to the project: it is there in every project the file is read
+in, it stays when the file is renamed or moved, and it goes when the file is
+removed from the library. It stays on this computer.
 
-The path over the view says the file's folder in the library, which opens
-the files there, and its name. Closing the view closes it, as any view; a
-map is opened again as maps are opened, from the list. While a file has
-the focus, the document pane shows the document of the other view, and
-says so; with no map shown, it closes. **Open in another program**, where
-*Open it* stood, opens the file as before.
+Under the bookmarks stand the **contents** the file carries of its own
+headings, where it has them, indented by their depth; a press goes to the
+top of a heading's page.
 
 ### Editing an image
 
@@ -1385,7 +1430,7 @@ image itself, at its full size. **Start again** undoes everything.
 **Keep as a new file** keeps the edited image as a new file of the library,
 beside the one edited in its folder, named after it: *plate.jpg* becomes
 *plate (edited).jpg*, and that edited again *plate (edited 2).jpg*. A JPEG is
-kept as a JPEG, everything else as PNG. The view then shows the new file.
+kept as a JPEG, everything else as PNG. The tab then shows the new file.
 The image edited is never changed, and **no figure changes by itself**: an
 image may be a figure in many documents, and what was done for one would be
 wrong in another. A figure is given the edited image in its own panel, under
@@ -1393,8 +1438,8 @@ wrong in another. A figure is given the edited image in its own panel, under
 whether that was itself a copy or not.
 
 **Cancel**, or **Escape**, leaves the editing; where something was changed,
-you are asked first. An edit that is not kept is lost when the view is
-closed. A drawing (SVG) has no pixels and cannot be edited. An image larger
+you are asked first, as you are before another tab is shown. An edit that
+is not kept is lost when the view is closed. A drawing (SVG) has no pixels and cannot be edited. An image larger
 than 50 MB, the most a figure may hold, cannot be edited as it is; you are
 offered **Make a smaller copy**, whose longer side is 4000 pixels, and that
 copy is edited instead.
@@ -3226,8 +3271,10 @@ what is to be done by its name, and does it.
 | **Ctrl+P** | Typesetting: the pages of the side you are in, beside the sides |
 | **Ctrl++**, **Ctrl+-**, **Ctrl+0** | In the typesetting pane and in a file: larger pages, smaller pages, pages as wide as the pane |
 | **PageDown**, **PageUp**, **Home**, **End** | In a file: the next page, the one before, the first, the last |
+| **Ctrl+PageDown**, **Ctrl+PageUp** | Among the sources: the next tab, the one before |
+| **Ctrl+Shift+B** | In a PDF: mark the place in view |
 | **Ctrl+Shift+S** | Split view: this element as diagram and text, another element or another project beside it, switch sides, or one at a time |
-| **Ctrl+W** | Close the side you are in; with one side, the project |
+| **Ctrl+W** | Close the side you are in; with one side, the project. Among the sources, the tab shown, and the side with its last |
 | **Ctrl+Shift+D** | Document properties: the details, the document type, the language and the checklist of the element in view |
 | **Ctrl+Shift+Space** | In the text: a hard space |
 | **Ctrl+Shift+A** | The look of the document: font, page, the looks of the kinds |
