@@ -1203,14 +1203,20 @@ The folders are not the collections: a collection gathers works, and a work
 may be in many; a folder is where a file is kept, one place for each.
 
 **How the files are shown.** **View**, at the head, shows them as a **List**,
-one line each with the kind, the name, where the file is used, when it was
-taken in and its size; or as **Thumbnails**, **Small**, **Medium** or
-**Large**, an image as it is and a PDF by its first page. **Include
-subfolders**, in the same menu, shows a folder's files with those of the
-folders under it, each saying its folder; **All files**, at the top of the
-tree, shows them all. **Sort** orders them by name, by kind, by reference, by
-the date they were taken in or by size. What is chosen is kept for every
-folder, and the next time.
+one line each, or as **Thumbnails**, **Small**, **Medium** or **Large**, an
+image as it is and a PDF by its first page. In the list, a file that belongs
+to a reference is shown by it: the people, with editors and translators
+marked as such, the year, the title and the publisher, and the file's own
+name small after them; a file of no reference shows its name, and where it
+is used, or that it belongs to no reference. Each line ends with the size,
+and, where the list is wide enough, when the file was taken in. A narrow
+list says a reference shortly, *Lord 1960*. **Include subfolders**, in the
+same menu, shows a folder's files with those of the folders under it, each
+saying its folder; **All files**, at the top of the tree, shows them all.
+**Sort** orders them by name, by kind, by reference (its people), by year,
+by title, by publisher, by the date they were taken in or by size; the files
+whose reference says nothing of it, and those of no reference, come last.
+What is chosen is kept for every folder, and the next time.
 
 **Taking files in.** **Add files…** at the head, **Add a folder…** in the
 menu beside it, or
@@ -1219,9 +1225,18 @@ folder comes with the folders in it, as they were on your disk. A file the
 library has already, under any name, is not taken twice: you are told it is
 there, and it stays where it was.
 
+**Reading a file there.** A double-click or **Enter** on a PDF or an image,
+**Read** in its pane or its menu, or a press on its picture in the pane,
+shows the file large in the place of the list, with the bar of a file in a
+view: its pages, the field to go to a page, the zoom, and the text of the
+pages to be selected and copied. The pane of the file stays beside it, so
+that a reference is made or given with the title page in view. Nothing of
+your projects is touched, and where you read to is not kept. **Back to the
+files**, at its head, or **Escape**, brings the list back at the file.
+
 **What a file is for.** The pane at the right shows the file selected,
-small, an image as it is and a PDF by its first page; a press on it shows the
-file among the sources beside your text (see *A file in a view*). Under it is
+small, an image as it is and a PDF by its first page; a press on it reads
+the file (see *Reading a file there*). Under it is
 what is known of the file: its name, its folder, where it came from and when,
 its size, and the references it belongs to. Of an image it says how large it
 is in pixels, what it shows, in words that can be written there, and the
@@ -1232,8 +1247,8 @@ from it**. Each is a link. Below are what can be done with a file of its kind:
 
 | Kind | What can be done |
 | --- | --- |
-| PDF | **Show**; **Open in another program**; **Make searchable…**; **Import the text as a map…** |
-| Image | **Show**; **Open in another program**; **Read the text…**, to copy or make an element of |
+| PDF | **Read**; **Add to the project's tabs**; **Open in another program**; **Make searchable…**; **Import the text as a map…** |
+| Image | **Read**; **Add to the project's tabs**; **Open in another program**; **Read the text…**, to copy or make an element of |
 | Document (Word, OpenDocument, EPUB, HTML, Markdown, Org, plain text) | **Open in another program**; **Bring in as elements…** |
 | Anything else | **Open in another program**, the one your system has for it |
 
@@ -1327,46 +1342,62 @@ people in the pane's head says how many; rest the pointer on it to see who.
 
 ## A file in a view
 
-A view of the window can show files of the library beside your text: PDFs,
-page by page, and images. They are the **sources** of the project beside
-them, each in a tab, and each tab remembers where you were in it, so that
-moving between books and articles, or between two places in one book, is a
-press on a tab. The same file may stand in two tabs, each at its own place.
+A view of the window can show files of the library beside your text, in
+tabs: PDFs, page by page, and images. They are the project's **tabs**,
+whatever you read in them, books and articles, dictionaries, editions or
+plates, and each tab remembers where you were in it, so that moving between
+files, or between two places in one file, is a press on a tab. The same file
+may stand in two tabs, each at its own place.
 
 ### Where a file comes
 
-Wherever you show a file from, it goes among the sources beside the text:
+A file is added to the project's tabs from:
 
-- a double-click or **Enter** on a PDF or an image among the files of the
-  library, **Show** at the head of its pane or in its menu, a press on a
-  file in the pane of a reference, **Show** in the pane of an image;
+- **Add to the project's tabs** in the pane of a PDF or an image among the
+  files of the library, or in its menu; a press on a file in the pane of a
+  reference;
 - **Show the file** in the editor of a citation, beside each work that has a
   file, and in the menu of a work among the references of a document;
-- **A file of the library…** in the menu of **Split view**, which asks for
+- **Add a file to the tabs…** in the menu of **Split view**, which asks for
   the file by its name;
 - the plus at the end of the row of tabs, which asks the same.
 
-The file goes to the view of sources there is, as a new tab, or to its tab
+The file goes to the view of tabs there is, as a new tab, or to its tab
 where it has one already. Where there is none, the other view becomes one,
-or one is made beside the text. Your text never gives way to the source you
+or one is made beside the text. Your text never gives way to the file you
 read. A file chosen under **Files** in the tree of projects, which the
-chevron over a view opens, comes in that view.
+chevron over a view opens, comes in that view. **The project's tabs**, in
+the menu of Split view, opens the tabs as they were, without adding a file.
 
-### Whose sources
+A file read only to make its reference is read in the library itself: see
+*Reading a file there*, under *The files of the library*.
 
-A view of sources shows the sources of the project beside it, and its cell
-in the top row names that project, small, before the name of the file; a
-press on the project's name shows its map beside. When the map is closed,
-the view keeps its project: with only the PDF open, the tabs are still that
+### Whose tabs
+
+A view of tabs shows the tabs of the project beside it, and its cell in the
+top row names that project, small, before the name of the file; a press on
+the project's name shows its map beside. When the map is closed, the view
+keeps its project: with only the PDF open, the tabs are still that
 project's, and a file you add goes to it. When another project is opened
-beside it, the view shows that project's sources instead, and its cell says
-so. A file shown with no project open goes among the sources of the project
+beside it, the view shows that project's tabs instead, and its cell says
+so. A file added with no project open goes among the tabs of the project
 you were last in.
 
-The sources are kept with the project, on this computer alone: they are not
+A tab whose file belongs to a reference is named by it, *Lord 1960*; the
+pointer over it shows the title and the file's name.
+
+The tabs are kept with the project, on this computer alone: they are not
 shared with those who share the project, and a copy of the project takes
-them along. While the sources have the focus, the document pane shows the
+them along. While the tabs have the focus, the document pane shows the
 document of the other view, and says so; with no map shown, it closes.
+
+**A project comes back as it was shown.** A project remembers whether its
+tabs stood beside it when you left it, or the project itself the other way,
+diagram and text, each at its element. Opened again from the list, a link
+or the start screen, it comes back so, where the other view is free; beside
+another project's map, it comes alone, and the tabs or the second view are
+one press away in Split view. When Glaukopis starts, the window is laid out
+as you left it, two projects side by side as well.
 
 ### The tabs
 
@@ -3271,10 +3302,10 @@ what is to be done by its name, and does it.
 | **Ctrl+P** | Typesetting: the pages of the side you are in, beside the sides |
 | **Ctrl++**, **Ctrl+-**, **Ctrl+0** | In the typesetting pane and in a file: larger pages, smaller pages, pages as wide as the pane |
 | **PageDown**, **PageUp**, **Home**, **End** | In a file: the next page, the one before, the first, the last |
-| **Ctrl+PageDown**, **Ctrl+PageUp** | Among the sources: the next tab, the one before |
+| **Ctrl+PageDown**, **Ctrl+PageUp** | In the tabs of files: the next tab, the one before |
 | **Ctrl+Shift+B** | In a PDF: mark the place in view |
 | **Ctrl+Shift+S** | Split view: this element as diagram and text, another element or another project beside it, switch sides, or one at a time |
-| **Ctrl+W** | Close the side you are in; with one side, the project. Among the sources, the tab shown, and the side with its last |
+| **Ctrl+W** | Close the side you are in; with one side, the project. In the tabs of files, the tab shown, and the side with its last |
 | **Ctrl+Shift+D** | Document properties: the details, the document type, the language and the checklist of the element in view |
 | **Ctrl+Shift+Space** | In the text: a hard space |
 | **Ctrl+Shift+A** | The look of the document: font, page, the looks of the kinds |

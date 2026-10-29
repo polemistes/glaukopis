@@ -69,3 +69,22 @@ Date: 2026-10-29. Status: accepted by the owner on 2026-10-29 ("Yes to all", wit
 ## Consequences
 
 - Words in `viewer.ftl`, `files.ftl`, `project.ftl`, `library.ftl`, English and Norwegian; `files-show` and `project-beside-file` go or change. `Summary` gains `translators`; the files list gains columns and three orders; a function names a file by its reference for the tabs, the chooser and the tree; the files view gains a reader made of the viewer's parts, and `FilePane` a *Read*; `Sides` gains the opening of a project's tabs; the Split view menu its item. The project's memory (`StoredView`, `Memory` in `layout.ts`) gains what stood beside it; the window applies it when a project arrives in a side. The guide's *The files of the library* and *A file in a view* change; `e2e/files.mjs` and `e2e/source-tabs.mjs` grow.
+
+## Addendum, 2026-10-30: as built
+
+Built on `main` from c1d96fb1 to the commit of this addendum, by one builder, the stages running through the same files. Nothing is pushed. The Arch packages of 0.2.6, release 6, were built at the owner's word after stage 1, from that stage.
+
+What departs from the plan, or was settled in the building:
+
+- **The words of the columns** are `files-column-people`, `-year`, `-title` and `-publisher`, as the pane's *Used in* is `files-column-used`: `files-title` names the files view already, and the first commit of stage 1 failed the test of the words for it (mended at once).
+- **The columns from 560 pixels of list, not 720.** In a window of 1360 pixels the list is about 670 wide, the pane of a file and the tree taking the rest; at 720 the columns would not be seen where most would look. Under 900 pixels the date a file was taken in is left out of every line: it is in the pane and in the orders. The widths: people 18 %, the year 44 pixels, the title 34 % and growing, the publisher 14 %, the file's name 14 %.
+- **The translators** are in the summary only where authors or editors stand first; where translators stand first they are the people already.
+- **The chooser** names a file by its reference's short form, its second line the folder and the file's name; a file of no reference keeps its name, the second line saying so.
+- **The reader** takes the whole middle column, its head and its search with it, not only the list, so that it is as high as the view; it is ended by another folder and by another search. Its action in the pane is `read-file`, since images had a `read` already (*Read the text…*). It focuses its pages as it opens, so that the keys of pages work at once.
+- **A project that arrives** is marked so by `open` and `beside` where they make a side, and by `arrange` where the window that was kept showed another project: a project opened from the start screen into such a window arrives as from the list. The window laid out whole as it was left brings nothing more.
+- **What stood beside a project in both sides** is recorded as the active side sees it: as first built, each side wrote its own, the last won, and both came back as text.
+- **A side still arriving** is not recorded: the effect that keeps what stands beside ran first and wrote "nothing" for a project that had just come alone.
+- **The tabs already there count as free** for a second view: a project left both ways, opened beside its own tabs, takes their place with its second view. A project left with its tabs, opened beside its tabs, needs nothing.
+- In the scripts: `e2e/file-view.mjs` adds a file to the tabs from the pane, since a double-click reads; `e2e/maps.mjs` reads Split view's new items; `e2e/files.mjs` reads the cells of the reference.
+
+Counts: `pnpm check` without errors or warnings; `pnpm test` 1352; `cargo test --workspace` 977, none failing; `cargo clippy --workspace --all-targets` without warnings. The scripts: `source-tabs` 34 of 34, `files` 102 of 102, `file-view` 45 of 45, `maps` 78 of 78, `as-left` 31 of 31, `list` 31 of 31, `tree-keys` 44 of 44, `image-editing` 27 of 27, `library` 40 of 40, `languages` 17 of 17 (it does not walk the reader).
