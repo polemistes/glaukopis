@@ -19,9 +19,10 @@
 //! number of pages. Where no program is set for the child, as in the tests
 //! of this crate, the same work is done here.
 
+use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError};
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
@@ -659,9 +660,6 @@ fn searchable_here(
 // ---------------------------------------------------------------------------
 // A file served: kept open, its pages drawn as they are asked
 // ---------------------------------------------------------------------------
-
-use std::collections::VecDeque;
-use std::sync::{Condvar, Mutex, MutexGuard, PoisonError};
 
 /// What a file served is asked, a line each: these pages, counted from
 /// nought, each drawn `width` dots wide in colour.
