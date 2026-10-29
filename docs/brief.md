@@ -1286,3 +1286,19 @@ Answered: yes, the last project, but the side has to say so. A file side belongs
 > Yes to all. Make the plan.
 
 Record 0072 and the plan `docs/plans/sources-in-tabs-bookmarks-and-the-scrolling-of-pages.md` follow.
+
+## 2026-10-29 — the tabs opened, files by their references, and a file read in the library
+
+> Now I have a project with a files' view with 2 pdf files. It is not clear at all how I can open the files view without adding a new file to the project. Also, I think it would be nice if it was possible to show the files in the files list by author(s)/editor(s)/translator(s), year, title or publisher, at least where the reference has been found. Also, moving an image or pdf to the preview window for files is to small. I have to open it in order to read the author and title etc. to create a new reference, but then it is moved into the active project, which is usually not what I want, while I am just creating a reference for it.
+
+Proposed: an item of Split view that opens the file side of the project beside the text with its tabs as they were; the files list with columns for the people with their role, the year, the title and the publisher where the file belongs to a reference, each sortable, and the same words naming the file in the tabs, the chooser and the tree; and a reading column in the files view, the file shown large with the viewer of the window, nothing of the window's sides touched.
+
+> Yes to all, but should not "Show" then be renamed something like "Add to project tabs"?
+
+Agreed: the act is named for what it does. A double-click or Enter among the files reads the file; adding to the tabs is a deliberate act.
+
+> Sources is not a good name for the list. The pdfs will often not be sources but reference material like dictionaries etc. We should not use language that restricts the possible usages of the function.
+
+Agreed: the row of tabs and the acts are named for what they are, *tabs*, in every word the user sees; the record of 2026-10-29 on sources in tabs keeps its name, and the code its inner names.
+
+Record 0073 and the plan `docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md` follow.
