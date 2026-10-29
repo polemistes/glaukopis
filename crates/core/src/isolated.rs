@@ -233,7 +233,14 @@ fn run_in<T: DeserializeOwned>(
             kill(&mut child);
             break None;
         }
-        std::thread::sleep(Duration::from_millis(40));
+        // Waiting for what it tells, it is looked at again as soon as it
+        // tells a line or closes its output, as it does when it ends, rather
+        // than a tick later: a task of a few milliseconds is not kept waiting.
+        match lines.recv_timeout(TICK) {
+            Ok(line) => told(&line),
+            Err(mpsc::RecvTimeoutError::Timeout) => {}
+            Err(mpsc::RecvTimeoutError::Disconnected) => std::thread::sleep(Duration::from_millis(5)),
+        }
     };
     // What the child started dies with its job, before what they may hold
     // open of its output is waited for: on Windows they share its handles.
@@ -287,8 +294,8 @@ fn kill(child: &mut std::process::Child) {
 // A task that lives on, and is asked one thing after another
 // ---------------------------------------------------------------------------
 
-/// How often a served child is looked at while an ask waits for it: whether
-/// it has ended, the memory it holds, and the ask's stop and time.
+/// How often a child is looked at while it works, at the most: whether it
+/// has ended, the memory it holds, and the stop and time of what was asked.
 const TICK: Duration = Duration::from_millis(40);
 
 /// How much of what a served child says on its standard error is kept, to
