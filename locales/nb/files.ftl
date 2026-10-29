@@ -416,10 +416,10 @@ files-copies = Kopier laget av den
 
 # Fanene åpnet, filer etter referansene sine, en fil lest i biblioteket (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
 files-read = Les
-files-people = Personer
-files-year = År
-files-title = Tittel
-files-publisher = Utgiver
+files-column-people = Personer
+files-column-year = År
+files-column-title = Tittel
+files-column-publisher = Utgiver
 files-sort-year = Etter år
 files-sort-title = Etter tittel
 files-sort-publisher = Etter utgiver

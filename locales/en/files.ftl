@@ -426,10 +426,10 @@ files-copies = Copies made from it
 
 # The tabs opened, files by their references, a file read in the library (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
 files-read = Read
-files-people = People
-files-year = Year
-files-title = Title
-files-publisher = Publisher
+files-column-people = People
+files-column-year = Year
+files-column-title = Title
+files-column-publisher = Publisher
 files-sort-year = By year
 files-sort-title = By title
 files-sort-publisher = By publisher
