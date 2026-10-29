@@ -49,6 +49,8 @@
   // ---- dragging a tab to another place in the row ----
 
   let dragging: { id: string; x: number; moved: boolean } | null = null;
+  /** A tab let go after it was dragged: the click that follows does not show it. */
+  let dragged = false;
 
   function down(event: PointerEvent, id: string) {
     if (event.button !== 0) return;
@@ -68,10 +70,17 @@
     else if (before && event.clientX < before.left + before.width / 2) onmove(dragging.id, at - 1);
   }
 
-  function up(event: PointerEvent, id: string) {
-    const was = dragging;
+  function up() {
+    dragged = !!dragging?.moved;
     dragging = null;
-    if (event.button === 0 && was && !was.moved && was.id === id) onactivate(id);
+  }
+
+  function click(id: string) {
+    if (dragged) {
+      dragged = false;
+      return;
+    }
+    onactivate(id);
   }
 
   function auxclick(event: MouseEvent, id: string) {
@@ -160,15 +169,10 @@
           title={gone(tab.file) ? t('viewer-tab-gone') : nameOf(tab.file)}
           onpointerdown={(e) => down(e, tab.id)}
           onpointermove={move}
-          onpointerup={(e) => up(e, tab.id)}
+          onpointerup={up}
+          onclick={() => click(tab.id)}
           onauxclick={(e) => auxclick(e, tab.id)}
           oncontextmenu={(e) => contextmenu(e, tab.id)}
-          onkeydown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              onactivate(tab.id);
-            }
-          }}
         >
           <Icon size={13} />
           <span class="name">{nameOf(tab.file) || t('viewer-file')}</span>
