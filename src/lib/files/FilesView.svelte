@@ -6,7 +6,7 @@
    * kind is taken, and what can be done with one depends on its kind.
    */
   import { open } from '@tauri-apps/plugin-dialog';
-  import { onMount, untrack } from 'svelte';
+  import { onMount, tick, untrack } from 'svelte';
   import ArrowDownUp from '@lucide/svelte/icons/arrow-down-up';
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import ExternalLink from '@lucide/svelte/icons/external-link';
@@ -55,6 +55,8 @@
   import ExportDialog from './ExportDialog.svelte';
   import { sortFiles, type FileSortKey } from './order';
   import PanelRight from '@lucide/svelte/icons/panel-right';
+  import BookOpen from '@lucide/svelte/icons/book-open';
+  import FileReader from './FileReader.svelte';
   import { showFile } from '$lib/viewer/show';
   import {
     assign,
@@ -179,6 +181,33 @@
     if (present.length !== selection.length) selection = present;
   });
 
+  // ---- a file read here (ADR 0073) ----
+
+  /** The file read in the place of the list: nothing of the window is touched. */
+  let reading = $state<string | null>(null);
+
+  function read(hash: string) {
+    selection = [hash];
+    reading = hash;
+  }
+
+  /** Back to the list, where it was, the file read still selected. */
+  function stopReading() {
+    const was = reading;
+    reading = null;
+    void tick().then(() => {
+      if (was) list?.scrollTo(was);
+      document.querySelector<HTMLElement>('[data-file-list]')?.focus();
+    });
+  }
+
+  // Another folder, or another search, ends the reading. It depends on those alone.
+  $effect(() => {
+    void folderId;
+    void filesUi.query;
+    untrack(() => (reading = null));
+  });
+
   function selectFolder(id: string | null) {
     // The route of the folder names no file; it comes when the window says the place has changed.
     named = undefined;
@@ -268,6 +297,11 @@
         ? [
             ...(one.kind === 'pdf' || one.kind === 'picture'
               ? [
+                  {
+                    label: t('files-read'),
+                    icon: BookOpen,
+                    action: () => read(one.hash),
+                  } as MenuItem,
                   {
                     label: t('files-show'),
                     icon: PanelRight,
@@ -478,147 +512,153 @@
   />
 
   <section class="middle" aria-label={t('files-title')}>
-    <header>
-      <LibrarySwitch current="files" />
-      <div class="search">
-        <Search size={15} />
-        <input
-          bind:this={searchField}
-          bind:value={filesUi.query}
-          type="search"
-          placeholder={folder && !filesUi.searchAll
-            ? t('files-search-in', { name: folder.name })
-            : t('files-search')}
-          aria-label={t('common-search')}
-          spellcheck="false"
-          onkeydown={(e) => {
-            if (e.key === 'Escape' && filesUi.query) {
-              filesUi.query = '';
-              e.stopPropagation();
-            }
-          }}
-        />
-        {#if filesUi.query}
+    {#if reading && files.get(reading)}
+      <FileReader hash={reading} onback={stopReading} />
+    {:else}
+      <header>
+        <LibrarySwitch current="files" />
+        <div class="search">
+          <Search size={15} />
+          <input
+            bind:this={searchField}
+            bind:value={filesUi.query}
+            type="search"
+            placeholder={folder && !filesUi.searchAll
+              ? t('files-search-in', { name: folder.name })
+              : t('files-search')}
+            aria-label={t('common-search')}
+            spellcheck="false"
+            onkeydown={(e) => {
+              if (e.key === 'Escape' && filesUi.query) {
+                filesUi.query = '';
+                e.stopPropagation();
+              }
+            }}
+          />
+          {#if filesUi.query}
+            <button
+              type="button"
+              class="clear"
+              aria-label={t('files-search-clear')}
+              onclick={() => (filesUi.query = '')}
+            >
+              <X size={13} />
+            </button>
+          {/if}
+        </div>
+        <span class="filter">
+          <IconButton
+            label={filters ? t('files-filters-on', { count: filters }) : t('files-filters')}
+            active={filters > 0}
+            onclick={filterMenu}
+            data-files-filter
+          >
+            <ListFilter size={15} />
+          </IconButton>
+          {#if filters}<span class="badge" aria-hidden="true">{filters}</span>{/if}
+        </span>
+        <IconButton label={t('files-sort')} onclick={sortMenu}><ArrowDownUp size={15} /></IconButton
+        >
+        <IconButton label={t('files-view')} onclick={viewMenu} data-files-view
+          ><LayoutGrid size={15} /></IconButton
+        >
+        <!-- An icon only: the search keeps its room in a narrow head. -->
+        <IconButton
+          label={t('files-go-through-head')}
+          onclick={goThroughHere}
+          disabled={!files.files.length}
+          data-go-through
+        >
+          <ListChecks size={15} />
+        </IconButton>
+        <div class="split">
+          <Button variant="primary" onclick={() => void addFiles()}>
+            {#snippet icon()}<FilePlus size={15} />{/snippet}
+            {t('files-add')}
+          </Button>
           <button
             type="button"
-            class="clear"
-            aria-label={t('files-search-clear')}
-            onclick={() => (filesUi.query = '')}
+            class="split-more"
+            aria-label={t('files-more')}
+            data-files-more
+            onclick={(e) => openMenu(e.currentTarget as HTMLElement, headItems(), { align: 'end' })}
           >
-            <X size={13} />
+            <ChevronDown size={14} />
           </button>
-        {/if}
-      </div>
-      <span class="filter">
-        <IconButton
-          label={filters ? t('files-filters-on', { count: filters }) : t('files-filters')}
-          active={filters > 0}
-          onclick={filterMenu}
-          data-files-filter
-        >
-          <ListFilter size={15} />
-        </IconButton>
-        {#if filters}<span class="badge" aria-hidden="true">{filters}</span>{/if}
-      </span>
-      <IconButton label={t('files-sort')} onclick={sortMenu}><ArrowDownUp size={15} /></IconButton>
-      <IconButton label={t('files-view')} onclick={viewMenu} data-files-view
-        ><LayoutGrid size={15} /></IconButton
-      >
-      <!-- An icon only: the search keeps its room in a narrow head. -->
-      <IconButton
-        label={t('files-go-through-head')}
-        onclick={goThroughHere}
-        disabled={!files.files.length}
-        data-go-through
-      >
-        <ListChecks size={15} />
-      </IconButton>
-      <div class="split">
-        <Button variant="primary" onclick={() => void addFiles()}>
-          {#snippet icon()}<FilePlus size={15} />{/snippet}
-          {t('files-add')}
-        </Button>
-        <button
-          type="button"
-          class="split-more"
-          aria-label={t('files-more')}
-          data-files-more
-          onclick={(e) => openMenu(e.currentTarget as HTMLElement, headItems(), { align: 'end' })}
-        >
-          <ChevronDown size={14} />
-        </button>
-      </div>
-    </header>
+        </div>
+      </header>
 
-    {#if files.loaded && unassignedHere.length && !filesUi.barHidden.has(folderId)}
-      <UnassignedBar
-        count={unassignedHere.length}
-        ongo={() => goThrough(unassignedHere)}
-        onhide={() => filesUi.barHidden.add(folderId)}
-      />
-    {/if}
-
-    <div class="body">
-      {#if !files.loaded}
-        <div class="centre"><Spinner size={22} /></div>
-      {:else if !files.files.length}
-        <EmptyState icon={FileStack} title={t('files-empty')} text={t('files-empty-text')}>
-          <Button variant="primary" onclick={() => void addFiles()}>{t('files-add')}</Button>
-          <Button onclick={() => void addFolder()}>{t('files-add-folder')}</Button>
-        </EmptyState>
-      {:else if !scoped.length}
-        <EmptyState
-          icon={Folder}
-          title={t('files-folder-empty')}
-          text={t('files-folder-empty-text')}
-        >
-          <Button onclick={() => void addFiles()}>{t('files-add')}</Button>
-        </EmptyState>
-      {:else if !shown.length}
-        <EmptyState
-          icon={filters ? ListFilter : SearchX}
-          title={t('files-nothing-found')}
-          text={filters ? t('files-nothing-passes') : t('files-nothing-found-text')}
-        >
-          {#if filesUi.query}
-            <Button onclick={() => (filesUi.query = '')}>{t('files-search-clear')}</Button>
-          {/if}
-          {#if filters}
-            <Button onclick={clearFilters}>{t('files-filter-clear')}</Button>
-          {/if}
-        </EmptyState>
-      {:else}
-        <FileList
-          bind:this={list}
-          files={shown}
-          bind:selection
-          onopen={(f) => {
-            if (!f.exists) return;
-            // A PDF or an image is shown in the window; another kind is opened in its own program.
-            if (f.kind === 'pdf' || f.kind === 'picture') showFile(f.hash);
-            else attachmentOpen(f.path).catch((e) => notifyError(t('library-file-open-failed'), e));
-          }}
-          oncontext={(event, chosen) => openContextMenu(event, fileItems(chosen))}
-          ondelete={(chosen) => void removeFiles(chosen)}
-          label={folder?.name ?? t('files-all')}
-          {mode}
-          {size}
-          folders={below || searchingAll || folderId === null}
-          figuresIn={(hash) => figureUse.get(hash) ?? []}
+      {#if files.loaded && unassignedHere.length && !filesUi.barHidden.has(folderId)}
+        <UnassignedBar
+          count={unassignedHere.length}
+          ongo={() => goThrough(unassignedHere)}
+          onhide={() => filesUi.barHidden.add(folderId)}
         />
       {/if}
-    </div>
 
-    {#if files.loaded && files.files.length}
-      <footer data-files-count>
-        {#if selection.length > 1}
-          {t('files-selected-of', { selected: selection.length, count: shown.length })}
-        {:else if shown.length !== files.files.length}
-          {t('files-shown-of', { shown: shown.length, count: files.files.length })}
+      <div class="body">
+        {#if !files.loaded}
+          <div class="centre"><Spinner size={22} /></div>
+        {:else if !files.files.length}
+          <EmptyState icon={FileStack} title={t('files-empty')} text={t('files-empty-text')}>
+            <Button variant="primary" onclick={() => void addFiles()}>{t('files-add')}</Button>
+            <Button onclick={() => void addFolder()}>{t('files-add-folder')}</Button>
+          </EmptyState>
+        {:else if !scoped.length}
+          <EmptyState
+            icon={Folder}
+            title={t('files-folder-empty')}
+            text={t('files-folder-empty-text')}
+          >
+            <Button onclick={() => void addFiles()}>{t('files-add')}</Button>
+          </EmptyState>
+        {:else if !shown.length}
+          <EmptyState
+            icon={filters ? ListFilter : SearchX}
+            title={t('files-nothing-found')}
+            text={filters ? t('files-nothing-passes') : t('files-nothing-found-text')}
+          >
+            {#if filesUi.query}
+              <Button onclick={() => (filesUi.query = '')}>{t('files-search-clear')}</Button>
+            {/if}
+            {#if filters}
+              <Button onclick={clearFilters}>{t('files-filter-clear')}</Button>
+            {/if}
+          </EmptyState>
         {:else}
-          {t('files-count', { count: files.files.length })}
+          <FileList
+            bind:this={list}
+            files={shown}
+            bind:selection
+            onopen={(f) => {
+              if (!f.exists) return;
+              // A PDF or an image is read here; another kind is opened in its own program.
+              if (f.kind === 'pdf' || f.kind === 'picture') read(f.hash);
+              else
+                attachmentOpen(f.path).catch((e) => notifyError(t('library-file-open-failed'), e));
+            }}
+            oncontext={(event, chosen) => openContextMenu(event, fileItems(chosen))}
+            ondelete={(chosen) => void removeFiles(chosen)}
+            label={folder?.name ?? t('files-all')}
+            {mode}
+            {size}
+            folders={below || searchingAll || folderId === null}
+            figuresIn={(hash) => figureUse.get(hash) ?? []}
+          />
         {/if}
-      </footer>
+      </div>
+
+      {#if files.loaded && files.files.length}
+        <footer data-files-count>
+          {#if selection.length > 1}
+            {t('files-selected-of', { selected: selection.length, count: shown.length })}
+          {:else if shown.length !== files.files.length}
+            {t('files-shown-of', { shown: shown.length, count: files.files.length })}
+          {:else}
+            {t('files-count', { count: files.files.length })}
+          {/if}
+        </footer>
+      {/if}
     {/if}
   </section>
 
@@ -632,6 +672,7 @@
       {#key single}
         <FilePane
           hash={single}
+          onread={read}
           onmove={(anchor, f) => openMenu(anchor, folderItems([f.hash]), { align: 'start' })}
           onremoved={() => (selection = [])}
           onreplaced={(hash) => (selection = [hash])}

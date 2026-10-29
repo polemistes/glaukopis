@@ -317,16 +317,17 @@ try {
   check('the file at the page it was left at', again.page === 2, `page ${again.page}`);
   await app.screenshot('file-view-5-as-left');
 
-  // ---- from the files of the library: a double-click shows it in the active side ----
+  // ---- from the files of the library: Add to the project's tabs, in the file's pane ----
   await app.go('#/files');
-  await app.waitFor('.list [data-file], .list .row, .list .item', 8000).catch(() => {});
-  const row = await app.exec(`return Array.from(document.querySelectorAll('[role="row"], [role="option"], .row, .item')).find((r) => r.textContent.includes('structure')) ?? null`);
-  if (row) await app.doubleClick(row);
+  await app.waitFor('[data-file-list] [data-hash]', 8000).catch(() => {});
+  await app.click(`[data-file-list] [data-hash="${pdfHash}"]`);
+  await app.waitFor('.file-pane [data-action="show"]', 5000);
+  await app.click('.file-pane [data-action="show"]');
   const fromFiles = await until('the window with the file', async () => {
     const s = await fileSide(app);
     return s && (await app.exec('return location.hash')).startsWith('#/file/') ? s : null;
   }, 10000).catch(() => null);
-  check('a double-click among the files shows the PDF in the window', !!fromFiles);
+  check('Add to the project’s tabs, among the files, brings the PDF to the window', !!fromFiles);
 
   // ---- from a citation: the file beside the text ----
   await app.openProject('Wrath and the hero');

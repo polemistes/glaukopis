@@ -442,6 +442,47 @@ try {
   const pdfShown = await until('the first page of the PDF', () => app.exists('.file-pane [data-preview] img[src^="blob:"]'), 20000).catch(() => false);
   check('the pane of a PDF shows its first page', pdfShown);
   await app.screenshot('files-2d-pane-pdf');
+  // ---- a file read here, in the place of the list (ADR 0073) ----
+  const reader = () =>
+    app.exec(`
+      const r = document.querySelector('[data-reader]');
+      const img = r?.querySelector('.page[data-page="1"] img');
+      return r ? {
+        file: r.dataset.reader,
+        drawn: !!img && img.complete && img.naturalWidth > 0,
+        page: Number(r.querySelector('[data-viewer-page]')?.dataset.viewerPage ?? 0),
+        list: !!document.querySelector('[data-file-list]'),
+        pane: document.querySelector('.file-pane')?.dataset.file ?? null,
+        sides: document.querySelectorAll('[data-file-side], [data-side-key]').length,
+        place: location.hash,
+      } : null;`);
+  await app.doubleClick(`[data-file-list] [data-hash="${kept.hash}"]`);
+  let read = await until('the PDF read here', async () => {
+    const got = await reader();
+    return got?.drawn ? got : null;
+  }, 20000).catch(() => null);
+  check('a double-click on a PDF reads it here, in the place of the list', read?.file === kept.hash && !read.list, JSON.stringify(read));
+  check('with its pane beside it', read?.pane === kept.hash);
+  check('and nothing of the window touched', read?.sides === 0 && read.place.startsWith('#/files'), read?.place);
+  await app.screenshot('files-2f-reader');
+  await app.click('[data-reader] [data-viewer-pages]');
+  await app.press('PageDown');
+  await sleep(500);
+  read = await reader();
+  check('its pages are turned as in a view', read?.page >= 1, `page ${read?.page}`);
+  await app.press('Escape');
+  await until('the list again', async () => !(await reader()) && (await app.exists('[data-file-list]')), 5000);
+  check('Escape brings the list back, the file still selected', await app.exists(`[data-file-list] [data-hash="${kept.hash}"].selected`));
+  await app.click('.file-pane [data-action="read-file"]');
+  read = await until('the PDF read again', async () => ((await reader())?.file === kept.hash ? reader() : null), 10000).catch(() => null);
+  check('Read in the pane reads it too', !!read);
+  await app.click('[data-reader-back]');
+  await until('the list again', async () => await app.exists('[data-file-list]'), 5000);
+  await app.click('.file-pane [data-preview]');
+  read = await until('the PDF read from its preview', async () => ((await reader())?.file === kept.hash ? reader() : null), 10000).catch(() => null);
+  check('and a press on its preview', !!read);
+  await app.click('[data-reader-back]');
+  await until('the list again', async () => await app.exists('[data-file-list]'), 5000);
   const notesRow = (await rows()).find((r) => r.kind === 'document' || r.kind === 'other');
   if (notesRow) {
     await app.click(`[data-file-list] [data-hash="${notesRow.hash}"]`);

@@ -17,6 +17,7 @@
   import { onMount } from 'svelte';
   import ExternalLink from '@lucide/svelte/icons/external-link';
   import PanelRight from '@lucide/svelte/icons/panel-right';
+  import BookOpen from '@lucide/svelte/icons/book-open';
   import { showFile } from '$lib/viewer/show';
   import FolderInput from '@lucide/svelte/icons/folder-input';
   import FolderOpen from '@lucide/svelte/icons/folder-open';
@@ -70,9 +71,11 @@
     onremoved?: () => void;
     /** Called when the file has been replaced by another, as a PDF made searchable is. */
     onreplaced?: (hash: string) => void;
+    /** Reads a PDF or an image in the files view, in the place of the list (ADR 0073). */
+    onread?: (hash: string) => void;
   }
 
-  let { hash, onmove, onremoved, onreplaced }: Props = $props();
+  let { hash, onmove, onremoved, onreplaced, onread }: Props = $props();
 
   // svelte-ignore state_referenced_locally
   const own = hash;
@@ -183,10 +186,23 @@
 
   /** What can be done with a file of its kind. */
   function kindActions(f: FileView): Action[] {
-    // A PDF and an image are shown in a side of the window; every file can be opened in another program.
+    // A PDF and an image are read here, and added to the project's tabs; every file can be
+    // opened in another program.
     const shown: Action[] =
       f.kind === 'pdf' || f.kind === 'picture'
-        ? [{ id: 'show', label: t('files-show'), icon: PanelRight, run: () => showFile(f.hash) }]
+        ? [
+            ...(onread
+              ? [
+                  {
+                    id: 'read-file',
+                    label: t('files-read'),
+                    icon: BookOpen,
+                    run: () => onread(f.hash),
+                  },
+                ]
+              : []),
+            { id: 'show', label: t('files-show'), icon: PanelRight, run: () => showFile(f.hash) },
+          ]
         : [];
     const opening: Action[] = [
       ...shown,
@@ -282,10 +298,10 @@
       <button
         type="button"
         class="preview"
-        title={t('files-show')}
-        aria-label={t('files-show')}
+        title={onread ? t('files-read') : t('files-show')}
+        aria-label={onread ? t('files-read') : t('files-show')}
         data-preview
-        onclick={() => showFile(file.hash)}
+        onclick={() => (onread ? onread(file.hash) : showFile(file.hash))}
       >
         <Thumb hash={file.hash} extension={fileEnding(file.name)} small alt={file.alt} />
       </button>
