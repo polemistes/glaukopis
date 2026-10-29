@@ -103,6 +103,12 @@ pub fn run<T: DeserializeOwned>(task: &str, input: &Path, limits: Limits) -> Opt
     Some(run_with(program, task, input, limits))
 }
 
+/// Whether a program is set to do tasks in children: where none is, the
+/// caller does the work itself.
+pub fn program_is_set() -> bool {
+    PROGRAM.get().is_some()
+}
+
 /// As [`run`], with the program given: for the tests.
 pub fn run_with<T: DeserializeOwned>(program: &Path, task: &str, input: &Path, limits: Limits) -> Result<T, Ended> {
     run_in(program, task, input, limits, &mut |_| {}, &AtomicBool::new(false))
@@ -360,7 +366,12 @@ pub fn start_serving_with(program: &Path, task: &str, input: &Path, memory: u64)
     c.arg(FLAG).arg(task).arg(input).arg(&output);
     c.env(PARENT, std::process::id().to_string());
     c.stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped());
-    unix_child(&mut c);
+    // Not given the signal of its parent's end, which Linux sends when the
+    // thread that started the child ends, not the application: a served
+    // child outlives the thread that first asked of it. It ends with the
+    // application all the same, as its input ends then, and as it watches
+    // its parent (`end_with_parent`).
+    unix_child_on_its_own(&mut c);
     let mut child = c.spawn().map_err(|e| not_started(&e))?;
     #[cfg(windows)]
     let job = windows::limit(&child, memory)
@@ -633,6 +644,8 @@ fn task(name: &str) -> Option<Task> {
         // The look at a PDF, and the work on its pages (`ocr/child.rs`).
         "pdf-look" => Some(crate::ocr::child::look_task),
         "pdf-job" => Some(crate::ocr::child::work_task),
+        // A PDF kept open while its pages are drawn to be shown (`ocr/server.rs`).
+        "pdf-serve" => Some(crate::ocr::child::serve_task),
         // For the tests of this module, only where they ask for them.
         "test-sleep" if testing() => Some(|_| {
             std::thread::sleep(Duration::from_secs(600));
@@ -877,6 +890,27 @@ fn unix_child(c: &mut std::process::Command) {
                 libc::setpgid(0, 0);
                 #[cfg(target_os = "linux")]
                 libc::prctl(libc::PR_SET_PDEATHSIG, libc::SIGKILL);
+                Ok(())
+            });
+        }
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = c;
+    }
+}
+
+/// As [`unix_child`], without the signal on Linux: for a child that
+/// outlives the thread that started it.
+fn unix_child_on_its_own(c: &mut std::process::Command) {
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        // SAFETY: setpgid is safe to call between fork and exec, and touches
+        // nothing of the parent.
+        unsafe {
+            c.pre_exec(|| {
+                libc::setpgid(0, 0);
                 Ok(())
             });
         }

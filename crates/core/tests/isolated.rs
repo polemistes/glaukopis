@@ -208,6 +208,16 @@ fn a_served_child_answers_one_ask_after_another() {
     assert_eq!(serving.pid(), pid);
 }
 
+/// A served child outlives the thread that started it, as it must where
+/// the threads that ask are a pool's, which end when they are idle.
+#[test]
+fn a_served_child_outlives_the_thread_that_started_it() {
+    let serving = std::thread::spawn(|| served("test-serve-echo", 1024)).join().unwrap();
+    std::thread::sleep(Duration::from_millis(200));
+    assert!(serving.alive());
+    assert_eq!(first_answer(&serving, "still here"), Ok("echo: still here".to_owned()));
+}
+
 /// Asks from several threads at once wait for the child at once, each
 /// handed what is told of it.
 #[test]

@@ -26,6 +26,7 @@ pub mod pages_cache;
 mod rules;
 pub mod schemes;
 pub mod searchable;
+pub mod server;
 pub mod shape;
 pub mod shaped;
 pub mod tesseract;
@@ -1740,10 +1741,13 @@ pub type PageDrawn = (usize, std::result::Result<Vec<u8>, String>);
 
 /// Pages of the PDF at `path`, counted from nought, those it has, each
 /// drawn `width` dots wide in colour, as PNGs: to be shown in a view. Those
-/// kept in the cache at `cache` are taken from it; the others are drawn in
-/// one run of the child, several at a time, and put in it. A page that
-/// cannot be drawn says why, and the others are drawn all the same. In the
-/// order asked, each once.
+/// kept in the cache at `cache` are taken from it; the others are drawn by
+/// the child that keeps the file open while it is shown (`server.rs`),
+/// several at a time, and put in it. Where that child cannot be had, or
+/// ends without its answer, they are drawn in one run of the one-shot
+/// child, or each alone; where no program is set for children, here. A
+/// page that cannot be drawn says why, and the others are drawn all the
+/// same. In the order asked, each once.
 pub fn pages_at(
     path: &Path,
     tools: &Tools,
@@ -1797,26 +1801,60 @@ pub fn pages_at(
         lacking.retain(|index| *index < known.frames.len());
     }
     if !lacking.is_empty() {
-        let draw = |pages: &[usize]| -> Result<Vec<child::PagePicture>> {
+        // In one run of the one-shot child, which opens the file for them.
+        let draw = |pages: &[usize]| -> Result<Vec<PageDrawn>> {
             let place = place_in(work)?;
             let task = child::Task::PagesAt { pages: pages.to_vec(), width };
             let job = child::Job::new(path, None, tools.pdftoppm.as_ref(), place.path(), task);
             match child::work(job, size, place.path(), &mut |_| {}, stop)? {
-                child::Done::PagesAt(drawn) => Ok(drawn),
+                child::Done::PagesAt(drawn) => Ok(drawn
+                    .into_iter()
+                    .map(|(index, result)| {
+                        let png = result.and_then(|png| {
+                            base64::engine::general_purpose::STANDARD.decode(png).map_err(|e| e.to_string())
+                        });
+                        (index, png)
+                    })
+                    .collect()),
                 _ => Err(Error::invalid("the pages were not drawn")),
             }
         };
-        let drawn = match draw(&lacking) {
-            Ok(drawn) => drawn,
+        // By the child that keeps the file open, where children are started:
+        // each page it wrote read, and moved into the cache.
+        let served = server::draw(path, size, tools.pdftoppm.as_ref(), work, &lacking, width, stop).map(|drawn| {
+            drawn.map(|drawn| {
+                let take = |(index, file): server::PageFile| {
+                    let png = file.and_then(|file| {
+                        let png = std::fs::read(&file).map_err(|e| e.to_string());
+                        match (&png, cache, key.as_deref()) {
+                            (Ok(_), Some(cache), Some(key)) => {
+                                pages_cache::put_file(cache, key, index + 1, width, &file)
+                            }
+                            _ => {
+                                let _ = std::fs::remove_file(&file);
+                            }
+                        }
+                        png
+                    });
+                    (index, png)
+                };
+                drawn.into_iter().map(take).collect::<Vec<PageDrawn>>()
+            })
+        });
+        let was_served = served.is_some();
+        let (drawn, kept) = match served.unwrap_or_else(|| draw(&lacking)) {
+            Ok(drawn) => (drawn, was_served),
             Err(e) if e.kind() == tools::STOPPED => return Err(e),
             // The child ended without its answer, where the file opens: on
             // one of the pages, which says so in its place. Each is drawn
-            // alone, so that the others are drawn all the same.
+            // alone, so that the others are drawn all the same. A child that
+            // served the file was asked by others too, and its end says
+            // nothing of a page alone: that one is drawn again by itself.
             Err(e) if facts_of(path, size, tools.pdftoppm.as_ref(), work).is_ok_and(|f| !f.frames.is_empty()) => {
                 let count = facts_of(path, size, tools.pdftoppm.as_ref(), work).map_or(0, |f| f.frames.len());
                 lacking.retain(|index| *index < count);
-                if lacking.len() <= 1 {
-                    lacking.iter().map(|&index| (index, Err(e.to_string()))).collect()
+                if lacking.len() <= 1 && !was_served {
+                    (lacking.iter().map(|&index| (index, Err(e.to_string()))).collect(), false)
                 } else {
                     let mut each = Vec::new();
                     for &index in &lacking {
@@ -1826,7 +1864,7 @@ pub fn pages_at(
                             Err(e) => each.push((index, Err(e.to_string()))),
                         }
                     }
-                    each
+                    (each, false)
                 }
             }
             Err(e) => return Err(e),
@@ -1835,9 +1873,7 @@ pub fn pages_at(
             return Err(stopped());
         }
         for (index, result) in drawn {
-            let result =
-                result.and_then(|png| base64::engine::general_purpose::STANDARD.decode(png).map_err(|e| e.to_string()));
-            if let (Ok(png), Some(cache), Some(key)) = (&result, cache, key.as_deref()) {
+            if let (false, Ok(png), Some(cache), Some(key)) = (kept, &result, cache, key.as_deref()) {
                 pages_cache::put(cache, key, index + 1, width, png);
             }
             got.insert(index, result);

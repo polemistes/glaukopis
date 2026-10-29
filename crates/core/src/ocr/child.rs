@@ -167,6 +167,10 @@ impl Given {
 /// What is done with the pages.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Task {
+    /// The file kept open, and its pages drawn in colour as they are asked,
+    /// a request a line, until it is asked no more ([`serve_task`]): a file
+    /// shown in a view. Not a job of [`work`].
+    Serve,
     /// These pages, counted from nought, drawn and read: their TSV.
     Read { pages: Vec<usize> },
     /// The first pages, as many as there are up to `count`, drawn and read.
@@ -238,6 +242,7 @@ impl Job {
     /// How many pages are drawn, at the most.
     fn pages(&self) -> usize {
         match &self.task {
+            Task::Serve => 0,
             Task::Read { pages } | Task::Searchable { pages, .. } => pages.len(),
             Task::First { count } | Task::Pictures { count, .. } => *count,
             Task::Try { .. } => 1,
@@ -259,7 +264,7 @@ impl Failure {
         Failure { kind: e.kind().to_owned(), message: e.to_string() }
     }
 
-    fn error(self) -> Error {
+    pub(super) fn error(self) -> Error {
         match self.kind.as_str() {
             "locked" => Error::Refused { kind: "locked", message: self.message },
             tools::STOPPED => Error::Refused { kind: tools::STOPPED, message: self.message },
@@ -396,6 +401,7 @@ fn work_here(job: &Job, told: &mut dyn FnMut(Progress), stop: &AtomicBool) -> st
     });
     let size = bytes.len() as u64;
     match &job.task {
+        Task::Serve => Err(failure(Error::invalid("a file is served by a task of its own"))),
         Task::Read { pages } => {
             let reader = reader.ok_or_else(|| failure(Error::invalid("no Tesseract was given")))?;
             let drawing = Pages::open(&job.pdf, Arc::new(bytes), pdftoppm.as_ref()).map_err(failure)?;
@@ -651,6 +657,230 @@ fn searchable_here(
 }
 
 // ---------------------------------------------------------------------------
+// A file served: kept open, its pages drawn as they are asked
+// ---------------------------------------------------------------------------
+
+use std::collections::VecDeque;
+use std::sync::{Condvar, Mutex, MutexGuard, PoisonError};
+
+/// What a file served is asked, a line each: these pages, counted from
+/// nought, each drawn `width` dots wide in colour.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub(super) struct Request {
+    pub pages: Vec<usize>,
+    pub width: u32,
+}
+
+/// What a file served tells of a request, a line each, as each is known.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub(super) enum Answer {
+    /// A page drawn, as the PNG written for it in the folder the child was given.
+    Drawn { page: usize, file: PathBuf },
+    /// A page that could not be drawn, and why.
+    Failed { page: usize, why: String },
+    /// Every page asked for that the file has has been told of.
+    Done,
+    /// The file could not be opened, and none of its pages can be drawn.
+    Unopened(Failure),
+}
+
+/// The widest a view asks a page to be (`WIDEST` in
+/// `src/lib/viewer/pages.ts`): how many pages a file served draws at once
+/// is counted for pages so wide.
+const WIDEST_SHOWN: u32 = 4000;
+
+/// Starts the child that keeps the PDF at `pdf`, of `bytes`, open and draws
+/// its pages as they are asked, writing each in `place`, a folder of the
+/// application's that outlives the child; with Poppler where it is there.
+/// Bounded in memory as the work on a file of its size is. Nothing where no
+/// program is set for children.
+pub(super) fn start_serving(
+    pdf: &Path,
+    bytes: u64,
+    pdftoppm: Option<&Tool>,
+    place: &Path,
+) -> Option<Result<isolated::Serving>> {
+    let mut job = Job::new(pdf, None, pdftoppm, place, Task::Serve);
+    job.memory = Limits::for_file(bytes, Duration::ZERO).memory;
+    let input = place.join("job.json");
+    if let Err(e) = write_json(&input, &job) {
+        return Some(Err(e));
+    }
+    let started = isolated::start_serving("pdf-serve", &input, job.memory)?;
+    Some(started.map_err(|ended| ended_error(&ended, pdf)))
+}
+
+/// The task of the child that serves a file: the job at `input`, its file
+/// opened once, and each request it is asked drawn and told of, page by
+/// page, as each is done; until it is asked no more, or is killed. A file
+/// that cannot be opened is said to be so to each request.
+pub(crate) fn serve_task(input: &Path) -> std::result::Result<Vec<u8>, String> {
+    let job: Job = read_json(input)?;
+    crate::i18n::set_language(&job.language);
+    let pdftoppm =
+        job.pdftoppm.as_ref().map(|p| Tool { path: p.clone(), version: String::new(), least: None, data: None });
+    let opened = std::fs::read(&job.pdf).context(|| tr!("io-reading", path = &job.pdf)).and_then(|bytes| {
+        let size = bytes.len() as u64;
+        Pages::open(&job.pdf, Arc::new(bytes), pdftoppm.as_ref()).map(|drawing| (drawing, size))
+    });
+    match opened {
+        Ok((drawing, size)) => serve_pages(&job, &drawing, size),
+        Err(e) => {
+            let unopened = Answer::Unopened(Failure::of(&e));
+            for (number, _) in isolated::asked() {
+                tell_answer(number, &unopened);
+            }
+        }
+    }
+    Ok(Vec::new())
+}
+
+fn tell_answer(number: u64, answer: &Answer) {
+    if let Ok(line) = serde_json::to_string(answer) {
+        isolated::tell_to(number, &line);
+    }
+}
+
+/// A page wanted of a file served: the number of its request, the page,
+/// counted from nought, and the width it is drawn at.
+type PageWanted = (u64, usize, u32);
+
+/// The pages asked of a file served and not yet drawn, in the order they
+/// were asked; and whether more may be asked.
+#[derive(Default)]
+struct Waiting {
+    pages: VecDeque<PageWanted>,
+    closed: bool,
+}
+
+/// What the threads that draw the pages of a file served take them from.
+#[derive(Default)]
+struct Wanted {
+    waiting: Mutex<Waiting>,
+    more: Condvar,
+}
+
+impl Wanted {
+    fn held(&self) -> MutexGuard<'_, Waiting> {
+        self.waiting.lock().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    fn put(&self, number: u64, pages: &[usize], width: u32) {
+        self.held().pages.extend(pages.iter().map(|&page| (number, page, width)));
+        self.more.notify_all();
+    }
+
+    fn close(&self) {
+        self.held().closed = true;
+        self.more.notify_all();
+    }
+
+    /// The next page to draw, waiting for one; nothing once no more will come.
+    fn take(&self) -> Option<PageWanted> {
+        let mut held = self.held();
+        loop {
+            if let Some(next) = held.pages.pop_front() {
+                return Some(next);
+            }
+            if held.closed {
+                return None;
+            }
+            held = self.more.wait(held).unwrap_or_else(PoisonError::into_inner);
+        }
+    }
+}
+
+/// Draws the pages asked of a file served, those of every request in the
+/// order asked, as many at once as fit: as many as for the largest of its
+/// pages drawn as wide as a view asks, or as it is drawn for Tesseract,
+/// since a scan's picture is unpacked whole however small the page is
+/// drawn. Each page is told of as it is done, and a request as done once
+/// all its pages are.
+fn serve_pages(job: &Job, drawing: &Pages, bytes: u64) {
+    let count = drawing.count();
+    let all: Vec<usize> = (0..count).collect();
+    let dots = drawing.largest_dots_at_width(&all, WIDEST_SHOWN).max(drawing.largest_dots(&all, Quality::default()));
+    let at_once = workers(dots).min(fitting(job.memory, bytes, dots));
+    let wanted = Wanted::default();
+    // The pages of each request not yet told of.
+    let left: Mutex<Vec<(u64, usize)>> = Mutex::new(Vec::new());
+    std::thread::scope(|scope| {
+        let mut drawers = 0;
+        for _ in 0..at_once {
+            let (wanted, left) = (&wanted, &left);
+            let draw = move || {
+                while let Some((number, page, width)) = wanted.take() {
+                    tell_answer(number, &drawn_page(job, drawing, number, page, width));
+                    let mut left = left.lock().unwrap_or_else(PoisonError::into_inner);
+                    if let Some(at) = left.iter().position(|(n, _)| *n == number) {
+                        left[at].1 -= 1;
+                        if left[at].1 == 0 {
+                            left.remove(at);
+                            tell_answer(number, &Answer::Done);
+                        }
+                    }
+                }
+            };
+            // Pages are drawn by recursion into what they hold.
+            match std::thread::Builder::new().name("ocr".into()).stack_size(16 << 20).spawn_scoped(scope, draw) {
+                Ok(_) => drawers += 1,
+                Err(e) => eprintln!("no thread could be started for drawing pages: {e}"),
+            }
+        }
+        // Without one, nothing asked would be drawn: the child ends, and the
+        // one who asks has the pages drawn otherwise.
+        if drawers > 0 {
+            for (number, line) in isolated::asked() {
+                let (mut pages, width) = match serde_json::from_str::<Request>(&line) {
+                    Ok(request) => (request.pages, request.width),
+                    Err(e) => {
+                        eprintln!("a request that could not be read: {e}");
+                        (Vec::new(), 0)
+                    }
+                };
+                pages.retain(|&page| page < count);
+                pages.sort_unstable();
+                pages.dedup();
+                if pages.is_empty() {
+                    tell_answer(number, &Answer::Done);
+                    continue;
+                }
+                left.lock().unwrap_or_else(PoisonError::into_inner).push((number, pages.len()));
+                wanted.put(number, &pages, width);
+            }
+        }
+        wanted.close();
+    });
+}
+
+/// A page of a file served, counted from nought, drawn `width` dots wide in
+/// colour and written in the folder of the job, named by the request and
+/// the page; or why it could not be. A page the drawing loses itself in is
+/// an error of that page alone.
+fn drawn_page(job: &Job, drawing: &Pages, number: u64, page: usize, width: u32) -> Answer {
+    let never = AtomicBool::new(false);
+    let drawn = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| -> Result<PathBuf> {
+        // Poppler draws in a folder of its own for each page, so that one
+        // page asked at two widths at once is not drawn into one file.
+        let own = match drawing {
+            Pages::Poppler { .. } => {
+                Some(tempfile::tempdir_in(&job.work).context(|| tr!("io-creating-directory-in", path = &job.work))?)
+            }
+            Pages::Hayro(_) => None,
+        };
+        let png = drawing.at_width(page, width, own.as_ref().map_or(job.work.as_path(), |own| own.path()), &never)?;
+        let file = job.work.join(format!("{number}-{page}.png"));
+        std::fs::write(&file, png).context(|| tr!("io-writing", path = &file))?;
+        Ok(file)
+    }));
+    match drawn {
+        Ok(Ok(file)) => Answer::Drawn { page, file },
+        Ok(Err(e)) => Answer::Failed { page, why: e.to_string() },
+        Err(_) => Answer::Failed { page, why: tr!("ocr-page-not-drawn", page = page + 1) },
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Between the processes
 // ---------------------------------------------------------------------------
 
@@ -665,7 +895,7 @@ fn read_json<T: serde::de::DeserializeOwned>(path: &Path) -> std::result::Result
 }
 
 /// What the one who asked is told of a child that ended without its answer.
-fn ended_error(ended: &Ended, path: &Path) -> Error {
+pub(super) fn ended_error(ended: &Ended, path: &Path) -> Error {
     let file = super::file_name(path);
     match ended {
         Ended::Stopped => super::stopped(),
