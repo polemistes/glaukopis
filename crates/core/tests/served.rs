@@ -147,13 +147,7 @@ fn two_calls_for_pages_of_a_file_are_served_by_one_process() {
     eprintln!("the first call {first_took:?}, the second {second_took:?}");
     assert!(second_took * 5 < first_took, "the first {first_took:?}, the second {second_took:?}");
 
-    // Taken into the cache: a third call is answered from it.
-    let started = Instant::now();
-    let again = ocr::pages_at(&pdf, &tools, &work, Some(&cache), &[19_999, 0], 100, &never()).unwrap();
-    assert_eq!(again.iter().map(|(index, _)| *index).collect::<Vec<_>>(), [19_999, 0]);
-    assert_eq!(again[1], first[0]);
-    assert!(started.elapsed() < second_took, "{:?}", started.elapsed());
-    // What it drew was moved out of its folder.
+    // What it drew was moved out of its folder, into the cache.
     let place =
         std::fs::read_dir(&work).unwrap().flatten().find(|e| e.file_name().to_string_lossy().starts_with("served-"));
     let left: Vec<_> = std::fs::read_dir(place.unwrap().path())
@@ -163,8 +157,16 @@ fn two_calls_for_pages_of_a_file_are_served_by_one_process() {
         .filter(|name| name.ends_with(".png"))
         .collect();
     assert!(left.is_empty(), "{left:?}");
+
+    // Taken into the cache: a third call is answered from it, though the
+    // process is gone.
     server::end_all();
     gone_within(pid, Duration::from_secs(1));
+    let again = ocr::pages_at(&pdf, &tools, &work, Some(&cache), &[19_999, 0], 100, &never()).unwrap();
+    assert_eq!(again.iter().map(|(index, _)| *index).collect::<Vec<_>>(), [19_999, 0]);
+    assert_eq!(again[1], first[0]);
+    assert!(server::all_serving().is_empty(), "nothing was drawn");
+    assert_eq!(std::fs::read_dir(&work).map(|d| d.count()).unwrap_or(0), 0, "its folder went with it");
 }
 
 /// Calls from several threads at once, as a view makes them, a page each,
