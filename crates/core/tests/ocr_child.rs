@@ -237,7 +237,17 @@ fn a_file_is_shown_from_the_child() {
     let pages = ocr::pages_at(&pdf, &Tools::default(), &work, None, &[0, 1], 600, &never()).unwrap();
     assert_eq!(pages, [(0, Err(memory_error(&pdf)))]);
     held_little(before);
-    assert_eq!(std::fs::read_dir(&work).map(|d| d.count()).unwrap_or(0), 0);
+    // What was made on the way is gone; the fixture is still served, and
+    // its folder lives with the child that serves it.
+    let left: Vec<String> = std::fs::read_dir(&work)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .map(|entry| entry.file_name().to_string_lossy().into_owned())
+        .collect();
+    assert!(left.iter().all(|name| name.starts_with("served-")) && left.len() <= 1, "{left:?}");
+    assert!(ocr::server::serving(&porson).is_some());
+    assert_eq!(ocr::server::serving(&pdf), None, "the child that drew without end is gone");
 }
 
 /// How long a view waits with the child, as the application has it: the

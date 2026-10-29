@@ -5,7 +5,7 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-use glaukopis_core::isolated::{Ended, Limits, run_watched_with, run_with};
+use glaukopis_core::isolated::{Ended, Limits, Serving, run_watched_with, run_with, start_serving_with};
 use glaukopis_core::ocr::layer::{Layer, read_file};
 
 fn program() -> &'static Path {
@@ -157,4 +157,161 @@ fn what_a_killed_child_started_is_killed_with_it() {
         assert!(started.elapsed() < Duration::from_secs(5), "the program {sleeper} the child started lives on");
         std::thread::sleep(Duration::from_millis(50));
     }
+}
+
+// ---------------------------------------------------------------------------
+// A task that lives on, and is asked one thing after another
+// ---------------------------------------------------------------------------
+
+fn served(task: &str, megabytes: u64) -> Serving {
+    start_serving_with(program(), task, Path::new("."), megabytes << 20).unwrap()
+}
+
+/// What a served child tells first of `line`, taken as its whole answer.
+fn first_answer(serving: &Serving, line: &str) -> Result<String, Ended> {
+    let mut got = String::new();
+    let mut told = |line: &str| {
+        got = line.to_owned();
+        true
+    };
+    serving.ask(line, Duration::from_secs(30), &mut told, &AtomicBool::new(false))?;
+    Ok(got)
+}
+
+/// Whether the process of this number lives, and is not only left to be
+/// waited for: told by `ps`, on Linux and macOS. Elsewhere it is taken to
+/// be gone.
+fn lives(pid: u32) -> bool {
+    if !cfg!(unix) {
+        return false;
+    }
+    let state = std::process::Command::new("ps").args(["-o", "stat=", "-p", &pid.to_string()]).output().unwrap();
+    let state = String::from_utf8_lossy(&state.stdout).trim().to_owned();
+    !state.is_empty() && !state.starts_with('Z')
+}
+
+fn gone_within(pid: u32, time: Duration) {
+    let started = Instant::now();
+    while lives(pid) {
+        assert!(started.elapsed() < time, "the served process {pid} lives on");
+        std::thread::sleep(Duration::from_millis(20));
+    }
+}
+
+#[test]
+fn a_served_child_answers_one_ask_after_another() {
+    let serving = served("test-serve-echo", 1024);
+    let pid = serving.pid();
+    assert_eq!(first_answer(&serving, "one"), Ok("echo: one".to_owned()));
+    assert_eq!(first_answer(&serving, "Μῆνιν ἄειδε"), Ok("echo: Μῆνιν ἄειδε".to_owned()));
+    assert!(serving.alive());
+    assert_eq!(serving.pid(), pid);
+}
+
+/// A served child outlives the thread that started it, as it must where
+/// the threads that ask are a pool's, which end when they are idle.
+#[test]
+fn a_served_child_outlives_the_thread_that_started_it() {
+    let serving = std::thread::spawn(|| served("test-serve-echo", 1024)).join().unwrap();
+    std::thread::sleep(Duration::from_millis(200));
+    assert!(serving.alive());
+    assert_eq!(first_answer(&serving, "still here"), Ok("echo: still here".to_owned()));
+}
+
+/// Asks from several threads at once wait for the child at once, each
+/// handed what is told of it.
+#[test]
+fn asks_at_once_are_answered_at_once() {
+    let serving = served("test-serve-wait", 1024);
+    let started = Instant::now();
+    std::thread::scope(|scope| {
+        let asks: Vec<_> = (0..3).map(|_| scope.spawn(|| first_answer(&serving, "500"))).collect();
+        for ask in asks {
+            assert_eq!(ask.join().unwrap(), Ok("waited".to_owned()));
+        }
+    });
+    // One after another, they would take a second and a half.
+    assert!(started.elapsed() < Duration::from_millis(1200), "{:?}", started.elapsed());
+}
+
+#[test]
+fn a_served_child_that_is_ended_is_gone_within_a_second() {
+    let serving = served("test-serve-echo", 1024);
+    let pid = serving.pid();
+    assert!(first_answer(&serving, "one").is_ok());
+    serving.end();
+    assert!(!serving.alive());
+    gone_within(pid, Duration::from_secs(1));
+    assert!(matches!(first_answer(&serving, "two"), Err(Ended::Failed(_))));
+    // Let go, it is ended too.
+    let serving = served("test-serve-echo", 1024);
+    let pid = serving.pid();
+    drop(serving);
+    gone_within(pid, Duration::from_secs(1));
+}
+
+#[test]
+fn a_served_child_stopped_while_asked_is_killed_and_the_next_is_another() {
+    let serving = served("test-serve-wait", 1024);
+    let pid = serving.pid();
+    let stop = AtomicBool::new(false);
+    let started = Instant::now();
+    let got = std::thread::scope(|scope| {
+        scope.spawn(|| {
+            std::thread::sleep(Duration::from_millis(200));
+            stop.store(true, Ordering::Relaxed);
+        });
+        serving.ask("10000", Duration::from_secs(60), &mut |_| true, &stop)
+    });
+    assert_eq!(got, Err(Ended::Stopped));
+    assert!(started.elapsed() < Duration::from_secs(5), "{:?}", started.elapsed());
+    assert!(!serving.alive());
+    gone_within(pid, Duration::from_secs(1));
+    let next = served("test-serve-wait", 1024);
+    assert_ne!(next.pid(), pid);
+    // Stopped before it is asked, nothing is asked and nothing killed.
+    assert_eq!(next.ask("1", Duration::from_secs(10), &mut |_| true, &stop), Err(Ended::Stopped));
+    assert!(next.alive());
+}
+
+/// One who stops lets go of the child, which goes on for another who waits for it.
+#[test]
+fn a_stopped_ask_leaves_the_child_to_another_that_waits() {
+    let serving = served("test-serve-wait", 1024);
+    let stop = AtomicBool::new(false);
+    std::thread::scope(|scope| {
+        let other = scope.spawn(|| first_answer(&serving, "800"));
+        scope.spawn(|| {
+            std::thread::sleep(Duration::from_millis(300));
+            stop.store(true, Ordering::Relaxed);
+        });
+        std::thread::sleep(Duration::from_millis(100));
+        assert_eq!(serving.ask("10000", Duration::from_secs(60), &mut |_| true, &stop), Err(Ended::Stopped));
+        assert_eq!(other.join().unwrap(), Ok("waited".to_owned()));
+    });
+    assert!(serving.alive());
+}
+
+#[test]
+fn an_ask_whose_time_is_up_kills_the_served_child() {
+    let serving = served("test-serve-wait", 1024);
+    let started = Instant::now();
+    let got = serving.ask("10000", Duration::from_millis(300), &mut |_| true, &AtomicBool::new(false));
+    assert_eq!(got, Err(Ended::Time));
+    assert!(started.elapsed() < Duration::from_secs(5), "{:?}", started.elapsed());
+    assert!(!serving.alive());
+}
+
+#[test]
+fn a_served_child_that_takes_too_much_memory_is_killed() {
+    let serving = served("test-serve-eat", 300);
+    let started = Instant::now();
+    assert_eq!(first_answer(&serving, "eat"), Err(Ended::Memory));
+    assert!(started.elapsed() < Duration::from_secs(30), "{:?}", started.elapsed());
+}
+
+#[test]
+fn a_served_child_that_ends_while_asked_says_why() {
+    let serving = served("test-serve-end", 1024);
+    assert_eq!(first_answer(&serving, "anything"), Err(Ended::Failed("given up at once".to_owned())));
 }

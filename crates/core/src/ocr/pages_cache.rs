@@ -84,16 +84,62 @@ fn put_within(root: &Path, key: &str, page: usize, width: u32, bytes: &[u8], (mo
         part.write_all(bytes)?;
         part.persist(&path).map(|_| ()).map_err(|e| e.error)
     });
-    if let Err(e) = written {
-        if !SAID.swap(true, Ordering::Relaxed) {
-            tracing::warn!(%e, root = %root.display(), "the pages drawn cannot be kept: they are drawn each time");
-        }
-        return;
+    match written {
+        Ok(()) => kept_more(root, bytes.len() as u64, (most, down_to)),
+        Err(e) => not_kept(root, &e),
     }
+}
+
+/// Keeps the page `page` of the file kept by `key`, drawn `width` dots
+/// wide, from the PNG at `from`, which is moved into the cache rather than
+/// written again: a page drawn by the child that serves a file
+/// (`ocr/server.rs`). Across file systems it is copied. The file at `from`
+/// is gone afterwards, kept or not. The oldest go where what is kept passes
+/// the bound, as [`put`] has it.
+pub fn put_file(root: &Path, key: &str, page: usize, width: u32, from: &Path) {
+    put_file_within(root, key, page, width, from, (MOST, DOWN_TO));
+}
+
+fn put_file_within(root: &Path, key: &str, page: usize, width: u32, from: &Path, bounds: (u64, u64)) {
+    let path = file_of(root, key, page, width);
+    let moved = std::fs::metadata(from).and_then(|meta| {
+        path.parent().map_or(Ok(()), std::fs::create_dir_all)?;
+        if std::fs::rename(from, &path).is_err() {
+            // Copied beside it and put in its place, as `put` writes.
+            let mut part = tempfile::Builder::new().suffix(".part").tempfile_in(path.parent().unwrap_or(root))?;
+            std::io::copy(&mut std::fs::File::open(from)?, &mut part)?;
+            part.persist(&path).map_err(|e| e.error)?;
+            let _ = std::fs::remove_file(from);
+        }
+        // Moved, it would keep the time it was written; it is kept as shown now.
+        if let Ok(file) = std::fs::File::options().write(true).open(&path) {
+            let _ = file.set_modified(SystemTime::now());
+        }
+        Ok(meta.len())
+    });
+    match moved {
+        Ok(size) => kept_more(root, size, bounds),
+        Err(e) => {
+            let _ = std::fs::remove_file(from);
+            not_kept(root, &e);
+        }
+    }
+}
+
+/// Says, once, that the cache cannot be written.
+fn not_kept(root: &Path, e: &std::io::Error) {
+    if !SAID.swap(true, Ordering::Relaxed) {
+        tracing::warn!(%e, root = %root.display(), "the pages drawn cannot be kept: they are drawn each time");
+    }
+}
+
+/// Counts `size` more kept under `root`, and lets the oldest go where that
+/// passes `most`, down to `down_to`.
+fn kept_more(root: &Path, size: u64, (most, down_to): (u64, u64)) {
     let mut kept = KEPT.lock().unwrap_or_else(PoisonError::into_inner);
     let at = match kept.iter().position(|(r, _)| r == root) {
         Some(at) => {
-            kept[at].1 += bytes.len() as u64;
+            kept[at].1 += size;
             at
         }
         None => {
@@ -229,6 +275,34 @@ mod tests {
         // And within it again, more is kept.
         put_within(&root, "c", 2, 600, &png(150), bounds);
         assert_eq!(size_of(&root), 750);
+    }
+
+    /// A page drawn into a file of its own is moved into the cache, counted
+    /// in what is kept, and given back as any other.
+    #[test]
+    fn a_page_drawn_into_a_file_is_moved_into_the_cache() {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path().join("pages");
+        let bounds = (1000, 600);
+        for page in 1..=6 {
+            let drawn = tmp.path().join(format!("{page}.png"));
+            std::fs::write(&drawn, png(150)).unwrap();
+            put_file_within(&root, "a", page, 600, &drawn, bounds);
+            assert!(!drawn.exists(), "moved, not copied");
+        }
+        assert_eq!(get(&root, "a", 1, 600), Some(png(150)));
+        assert_eq!(size_of(&root), 900);
+        let drawn = tmp.path().join("7.png");
+        std::fs::write(&drawn, png(150)).unwrap();
+        put_file_within(&root, "a", 7, 600, &drawn, bounds);
+        assert!(size_of(&root) <= 600, "the bound holds");
+        assert_eq!(get(&root, "a", 7, 600), Some(png(150)), "the newest is kept");
+        // A file that cannot be kept is let go all the same.
+        let blocked = tmp.path().join("blocked");
+        std::fs::write(&blocked, "not a folder").unwrap();
+        std::fs::write(&drawn, png(150)).unwrap();
+        put_file(&blocked, "a", 1, 600, &drawn);
+        assert!(!drawn.exists());
     }
 
     #[test]

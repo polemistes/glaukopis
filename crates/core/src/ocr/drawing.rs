@@ -560,11 +560,17 @@ pub fn draw_wide_with_hayro(pdf: &Pdf, index: usize, wide: u32) -> Result<image:
 }
 
 /// A picture in colour as a PNG, written quickly rather than small: it is
-/// made to be shown, and kept a while (`pages_cache.rs`).
+/// made to be shown, and kept a while (`pages_cache.rs`). Each row is told
+/// by the row above it, which costs a page of text some 15 % more bytes
+/// than the filter chosen row by row and saves some 40 % of the time; a
+/// scan, 6 % more and 20 % less (`tests/pages_encoded.rs`). Said, rather
+/// than left to the crate's default, which is the same packing today but
+/// need not stay so.
 pub fn colour_png(picture: &image::RgbImage) -> Result<Vec<u8>> {
     use image::ImageEncoder;
+    use image::codecs::png::{CompressionType, FilterType, PngEncoder};
     let mut out = Vec::new();
-    image::codecs::png::PngEncoder::new(&mut out)
+    PngEncoder::new_with_quality(&mut out, CompressionType::Fast, FilterType::Up)
         .write_image(picture.as_raw(), picture.width(), picture.height(), image::ExtendedColorType::Rgb8)
         .map_err(|e| Error::invalid(e.to_string()))?;
     Ok(out)
