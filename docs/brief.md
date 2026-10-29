@@ -1301,4 +1301,8 @@ Agreed: the act is named for what it does. A double-click or Enter among the fil
 
 Agreed: the row of tabs and the acts are named for what they are, *tabs*, in every word the user sees; the record of 2026-10-29 on sources in tabs keeps its name, and the code its inner names.
 
+> I also think it should be remembered whether a project files' tabbed view was open or not last time the project was open. This goes against an earlier decision, but now the view belongs to the project, so I think it makes more sense. I am not sure about other constellations. Two different project views should not be remembered the next time one of the projects are opened (but still be remembered if they were open when Glaukopis was closed). But perhaps it makes sense remember it if the same project is in both views. That reflects a mode of working, I guess. Perhaps there should be an option for what happens in such cases? What do you think.
+
+Proposed, and agreed ("I agree. Make the adjustments."): one rule and no option. A project remembers how it was shown when it was left, alone, with its tabs beside it, or both ways at their elements, and comes back that way when it is opened from the list, provided the other side is free, empty or showing tabs; another project's map stays. The window as a whole is still laid out as it was left when Glaukopis starts. A project opened at an element, from a citation or the search, still brings its other side. This revises the decision of 2026-10-23 that a project remembers only where it was left.
+
 Record 0073 and the plan `docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md` follow.

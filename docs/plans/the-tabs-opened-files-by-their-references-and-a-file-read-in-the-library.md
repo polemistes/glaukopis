@@ -123,9 +123,34 @@ Commit: *Files by their references: the people with their roles, the year, the t
 
 Commit: *A file is read in the library: the viewer in the place of the list, the pane beside it, nothing of the window touched.*
 
-## Stage 4 — the guide, the record
+## Stage 4 — a project comes back as it was shown
 
-- `docs/guide.md`: *The files of the library*: the list's columns and the orders; the pane's preview reads; the table of what can be done (*Read*; *Add to the project's tabs*; …); *Files and references* unchanged. *A file in a view*: every *source* and *sources* becomes *tabs* or *files in tabs* (the heading *Whose sources* becomes *Whose tabs*; *The tabs* stays), *Add to the project's tabs* where *Show* stood, *The project's tabs* in Split view's list, the chooser's new words. The *Keys* table: Ctrl+W's row says *tabs*.
+### 4.1 What stood beside the project — `src/lib/project/layout.ts`, `layout.test.ts`, `open-projects.svelte.ts`
+
+- `layout.ts`: `export type Beside = { kind: 'tabs' } | { kind: 'map'; at: string; mode: MapMode }`; `Memory` and `StoredView` gain `beside: Beside | null` (`beside?:` in `StoredView`). `readMemory` reads it with care (a map's `at` that is not an element becomes `PROJECT`, a mode not a mode becomes `diagram`, anything else none); `toStore` writes it where it is not none, and leaves out a map's `at` that is not an element. Tests beside `readMemory`'s and `toStore`'s.
+- `open-projects.svelte.ts`: `OpenProject` gains `beside = $state.raw<Beside | null>(null)`, taken from the memory when the project is opened (about line 234) and given to `toStore` (about line 128), saved as `left` is, a moment after it changes and when the project is let go. A setter `setBeside(beside)` that writes only what differs.
+
+### 4.2 Kept as the sides change — `src/lib/project/ProjectView.svelte`
+
+- An effect beside the one that keeps the arrangement: for each map side whose project is open, what stands in the other side: a file side of the same project is `{ kind: 'tabs' }`; a map side of the same project with an element in view is `{ kind: 'map', at, mode }` of that other side; anything else, another project's map or no side, is none. Written with `open.setBeside`. Where the project is in both sides, each side's record is the other side's element and view, so that whichever is left active says the other.
+
+### 4.3 Applied when the project arrives — `src/lib/project/sides.svelte.ts`, `SideView.svelte` or `ProjectView.svelte`, `sides.svelte.test.ts`
+
+- `Sides.open(project, at, mode)` marks the map side it makes anew `arriving: true` (not kept, as `fresh` is not), and so does `beside` for the side it makes; `arrange` marks none, since the window as it was left is laid out whole.
+- In `ProjectView.svelte`, an effect for the sides marked `arriving` whose project is open (`open.state === 'open'`, its element there): read `open.beside`; where the other side is free, no other side or a file side (`isFile`), apply it: `tabs` → `sides.showTabs()` with the focus brought back to the arriving side; `map` → `sides.beside(project, at, mode)` with the focus brought back; where the other side is another project's map, nothing. Then `delete spec.arriving`. The element asked for in the route stays in the arriving side; the other side keeps the element it had. Done once per arrival; a side that is re-arranged or re-shown does not arrive again.
+- Tests in `sides.svelte.test.ts`: `open` marks the side arriving and `arrange` does not; and a small pure helper, if one falls out, that decides from `beside` and the sides what to do (`tabs`, `map`, nothing), tested for the four cases: no other side, a file side, the same project's map, another project's map.
+
+### Verify
+
+- `pnpm check`, `pnpm test`.
+- `e2e/source-tabs.mjs` grows: with the map and its tabs open, go to the start screen and open the project from the list: the map comes with its file side and the tabs; close the file side, go to the start screen, open the project: it comes alone. Split view → *This element, as diagram and text*; go to the start screen; open the project: it comes both ways, each side at its element and view. Open the other project from the list while the first stands in the other side: the first stays; nothing else is added. Screenshot `sources-5-back-with-tabs`.
+- `e2e/as-left.mjs` still passes: the window as it was left is laid out whole, and nothing arrives twice.
+
+Commit: *A project comes back as it was shown: alone, with its tabs, or both ways, where the other side is free.*
+
+## Stage 5 — the guide, the record
+
+- `docs/guide.md`: *The files of the library*: the list's columns and the orders; the pane's preview reads; the table of what can be done (*Read*; *Add to the project's tabs*; …); *Files and references* unchanged. *A file in a view*: every *source* and *sources* becomes *tabs* or *files in tabs* (the heading *Whose sources* becomes *Whose tabs*; *The tabs* stays), *Add to the project's tabs* where *Show* stood, *The project's tabs* in Split view's list, the chooser's new words; a paragraph under *Whose tabs* that a project comes back as it was shown, alone, with its tabs or both ways, where the other side is free, and the window as it was left when Glaukopis starts. The *Keys* table: Ctrl+W's row says *tabs*. Where the guide says, after the list, the path and the window as it was left, that a project opened from the list comes alone in the active side, say what now comes with it.
 - An addendum to 0073, *as built*: what departs from the plan, the choices made alone, the counts.
 
 ## At the end
