@@ -98,7 +98,7 @@ impl Taken {
 
 /// The ending of a stored file, with its dot, in lower case as the store
 /// writes it: `.pdf`; none where it has none.
-fn ending_of(path: &str) -> String {
+pub(super) fn ending_of(path: &str) -> String {
     let name = path.rsplit('/').next().unwrap_or(path);
     match name.rsplit_once('.') {
         Some((stem, ending)) if !stem.is_empty() && !ending.is_empty() && ending.len() <= 8 => {
@@ -109,7 +109,7 @@ fn ending_of(path: &str) -> String {
 }
 
 /// A name without the ending given, where it ends so.
-fn without_ending<'a>(name: &'a str, ending: &str) -> &'a str {
+pub(super) fn without_ending<'a>(name: &'a str, ending: &str) -> &'a str {
     if !ending.is_empty() && name.len() > ending.len() && name.to_lowercase().ends_with(ending) {
         &name[..name.len() - ending.len()]
     } else {
@@ -119,7 +119,7 @@ fn without_ending<'a>(name: &'a str, ending: &str) -> &'a str {
 
 /// Cuts a name to what a file system takes, at a word where there is one,
 /// and without what would dangle at its end: a dash, a comma, a dot.
-fn cut_at_word(name: &str) -> String {
+pub(super) fn cut_at_word(name: &str) -> String {
     if name.chars().count() <= NAME_CHARS && name.len() <= NAME_BYTES {
         return name.to_owned();
     }
@@ -139,6 +139,23 @@ fn cut_at_word(name: &str) -> String {
         cut = &cut[..space];
     }
     cut.trim_end_matches([' ', '-', '–', '—', ',', ';', '.']).to_owned()
+}
+
+/// The name of a file of a work, before it is cut and given its ending:
+/// the work's name, `Nagy 1979 - The Best of the Achaeans`, or, for a second
+/// file of the work with the same ending, the work's name and the file's
+/// own name after a dash. The own name is taken without a leading `work - `
+/// and is nothing where it is the work's name alone, so that a file named
+/// by its reference before is not named by it twice over: export and the
+/// naming on request both name by this, and the naming run twice gives the
+/// same names.
+pub(super) fn name_of_work_file(work: &str, own: &str, second: bool) -> String {
+    let own = match own.strip_prefix(work) {
+        Some("") => "",
+        Some(rest) => rest.strip_prefix(" - ").unwrap_or(own),
+        None => own,
+    };
+    if !second || own.is_empty() { work.to_owned() } else { format!("{work} - {own}") }
 }
 
 impl Library {
@@ -269,11 +286,8 @@ impl Library {
             let stem = match entries_of.get(record.hash.as_str()).and_then(|list| list.first()) {
                 Some(entry) => {
                     let work = clean_file_name(&Self::file_name_for(entry));
-                    if works_named.insert((dir.clone(), entry.id.clone(), ending.clone())) || own.is_empty() {
-                        work
-                    } else {
-                        format!("{work} - {own}")
-                    }
+                    let second = !works_named.insert((dir.clone(), entry.id.clone(), ending.clone()));
+                    name_of_work_file(&work, &own, second)
                 }
                 None => own,
             };
@@ -364,7 +378,7 @@ impl Library {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::library::{draft_from_source, files};
+    use crate::library::{Named, draft_from_source, files};
 
     struct Desk {
         _tmp: tempfile::TempDir,
@@ -400,6 +414,20 @@ mod tests {
         fn assign(&mut self, hash: &str, id: &str) {
             let path = self.lib.files.get(hash).unwrap().path.clone();
             self.lib.attach_stored(id, &path, None).unwrap();
+        }
+
+        /// Attaches a file from the reference, which names it, as the
+        /// library's pane does; gives its hash.
+        fn attach(&mut self, id: &str, name: &str, content: &str) -> String {
+            let source = self.root.join("desk").join(uuid::Uuid::new_v4().to_string()).join(name);
+            fs::create_dir_all(source.parent().unwrap()).unwrap();
+            fs::write(&source, content).unwrap();
+            let entry = self.lib.attach(id, &source).unwrap();
+            attachments::hash_of_path(entry.attachments().last().unwrap()).unwrap().to_owned()
+        }
+
+        fn name(&self, hash: &str) -> String {
+            self.lib.files.get(hash).unwrap().name.clone()
         }
 
         fn folder(&mut self, name: &str, parent: Option<&str>) -> String {
@@ -613,6 +641,119 @@ mod tests {
         let bib = fs::read_to_string(got.bib.unwrap()).unwrap();
         let named = bib.lines().filter(|l| l.trim_start().starts_with("file ")).count();
         assert_eq!(named, bib.matches('@').count());
+    }
+
+    #[test]
+    fn files_are_named_by_their_references_as_export_names_them() {
+        let (mut desk, h) = store();
+        let all: Vec<String> =
+            ["plate", "nagy", "text", "commentary", "tgf", "scan", "notes", "notes2"].map(|k| h[k].clone()).to_vec();
+        let named = desk.lib.name_files_by_reference(&all).unwrap();
+        assert_eq!(named.changed, ["nagy", "text", "commentary", "tgf"].map(|k| h[k].clone()));
+        assert_eq!(named.kept, 4);
+        assert_eq!(desk.name(&h["nagy"]), "Nagy 1979 - The Best of the Achaeans.pdf");
+        // The second file of a work keeps its own name after the work's.
+        assert_eq!(desk.name(&h["text"]), "West 1966 - Theogony.pdf");
+        assert_eq!(desk.name(&h["commentary"]), "West 1966 - Theogony - commentary.pdf");
+        assert_eq!(desk.name(&h["tgf"]), "Snell 1971 - Tragicorum Graecorum Fragmenta.pdf");
+        // A file of no reference keeps its name.
+        assert_eq!(desk.name(&h["scan"]), "scan0001.pdf");
+        assert_eq!(desk.name(&h["plate"]), "plate.png");
+        // The names are written; the files on disk keep theirs.
+        let read = Library::open_at(desk.lib.dir()).unwrap();
+        assert_eq!(read.files.get(&h["commentary"]).unwrap().name, "West 1966 - Theogony - commentary.pdf");
+        let path = desk.lib.files.get(&h["commentary"]).unwrap().path.clone();
+        assert!(path.ends_with("/commentary.pdf"), "{path}");
+        assert!(desk.lib.attachment_path(&path).unwrap().is_file());
+
+        // Run again, it gives the same names; a file asked twice, and one the
+        // store does not know, are passed over.
+        let mut again = all.clone();
+        again.push(h["commentary"].clone());
+        again.push("f".repeat(64));
+        assert_eq!(desk.lib.name_files_by_reference(&again).unwrap(), Named { changed: Vec::new(), kept: 4 });
+        assert_eq!(desk.name(&h["commentary"]), "West 1966 - Theogony - commentary.pdf");
+
+        // Exported after, a twin named so is not named by its work twice over.
+        let (into, _) = desk.export(ExportSelection::Folder { id: h["greek"].clone() }, "named", false);
+        let names: Vec<String> = listing(&into).into_iter().map(|(a, _)| a).collect();
+        assert_eq!(
+            names,
+            [
+                "Homer/",
+                "Homer/Nagy 1979 - The Best of the Achaeans.pdf",
+                "Homer/West 1966 - Theogony - commentary.pdf",
+                "Homer/West 1966 - Theogony.pdf",
+                "Tragedy/",
+                "Tragedy/Snell 1971 - Tragicorum Graecorum Fragmenta.pdf",
+                "plate.png",
+            ]
+        );
+    }
+
+    #[test]
+    fn a_file_taken_in_under_its_own_name_is_named_by_its_reference_only_on_request() {
+        let mut desk = Desk::new();
+        let nagy = desk.work("@book{, author={Nagy, Gregory}, title={The Best of the Achaeans}, date={1979}}");
+        let scan = desk.file("scan0042.pdf", "nagy", None);
+        let epub = desk.file("achaeans.EPUB", "nagy as an epub", None);
+        desk.assign(&scan, &nagy);
+        desk.assign(&epub, &nagy);
+        // Assigning does not name it.
+        assert_eq!(desk.name(&scan), "scan0042.pdf");
+        assert_eq!(desk.lib.reference_name_for(&scan).as_deref(), Some("Nagy 1979 - The Best of the Achaeans.pdf"));
+
+        // A PDF and an EPUB of one work are told apart by their endings.
+        let named = desk.lib.name_files_by_reference(&[scan.clone(), epub.clone()]).unwrap();
+        assert_eq!(named, Named { changed: vec![scan.clone(), epub.clone()], kept: 0 });
+        assert_eq!(desk.name(&scan), "Nagy 1979 - The Best of the Achaeans.pdf");
+        assert_eq!(desk.name(&epub), "Nagy 1979 - The Best of the Achaeans.epub");
+
+        // A reference with nothing to name a file by names none.
+        let nothing = desk.work("@misc{, note={Nothing to name it by}}");
+        let loose = desk.file("loose.pdf", "loose", None);
+        desk.assign(&loose, &nothing);
+        assert_eq!(desk.lib.reference_name_for(&loose), None);
+        assert_eq!(desk.lib.name_files_by_reference(&[loose.clone()]).unwrap(), Named { changed: Vec::new(), kept: 1 });
+        assert_eq!(desk.name(&loose), "loose.pdf");
+    }
+
+    #[test]
+    fn a_file_attached_from_its_reference_is_named_by_it_already() {
+        let mut desk = Desk::new();
+        let west = desk.work("@book{, author={West, M. L.}, title={Theogony}, date={1966}}");
+        let first = desk.attach(&west, "theogony-scan.pdf", "west text");
+        assert_eq!(desk.name(&first), "West 1966 - Theogony.pdf");
+        assert_eq!(desk.lib.name_files_by_reference(&[first.clone()]).unwrap(), Named::default());
+
+        // A second, attached the same way, has the work's name for its own:
+        // it is not named by the work twice over, here nor in export, where
+        // the two are numbered.
+        let second = desk.attach(&west, "theogony-commentary.pdf", "west commentary");
+        assert_eq!(desk.name(&second), "West 1966 - Theogony.pdf");
+        assert_eq!(desk.lib.name_files_by_reference(&[first, second]).unwrap(), Named::default());
+        let (into, got) = desk.export(ExportSelection::All, "attached", false);
+        let names: Vec<String> = listing(&into).into_iter().map(|(a, _)| a).collect();
+        assert_eq!(names, ["West 1966 - Theogony (2).pdf", "West 1966 - Theogony.pdf"]);
+        assert_eq!(got.files, 2);
+    }
+
+    #[test]
+    fn the_name_of_a_file_of_a_work() {
+        let work = "West 1966 - Theogony";
+        assert_eq!(name_of_work_file(work, "text", false), work);
+        assert_eq!(name_of_work_file(work, "commentary", true), "West 1966 - Theogony - commentary");
+        assert_eq!(
+            name_of_work_file(work, "West 1966 - Theogony - commentary", true),
+            "West 1966 - Theogony - commentary"
+        );
+        assert_eq!(name_of_work_file(work, work, true), work);
+        assert_eq!(name_of_work_file(work, "", true), work);
+        // Only the work's name with a dash after it is taken away.
+        assert_eq!(
+            name_of_work_file(work, "West 1966 - Theogony2", true),
+            "West 1966 - Theogony - West 1966 - Theogony2"
+        );
     }
 
     #[test]

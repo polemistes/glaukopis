@@ -4372,6 +4372,48 @@ export const filesRemoved: files.FilesRemoved = {
   "folders": 1
 };
 
+export const namedFiles: files.NamedFiles = {
+  "files": [
+    {
+      "added": "2026-01-01T00:00:00Z",
+      "alt": "",
+      "bookmarks": [],
+      "exists": true,
+      "folder": null,
+      "hash": "e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e",
+      "height": null,
+      "kind": "pdf",
+      "madeFrom": null,
+      "name": "Nagy 1979 - The Best of the Achaeans.pdf",
+      "origin": null,
+      "path": "attachments/e1/e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e/Nagy 1979 - The Best of the Achaeans.pdf",
+      "references": [
+        {
+          "added": "2026-01-01T00:00:00Z",
+          "attachments": 1,
+          "authors": "Nagy",
+          "authorsSort": "nagy gregory",
+          "container": "",
+          "hasNote": true,
+          "id": "00000000-0000-4000-8000-000000000000",
+          "key": "nagy1979",
+          "modified": "2026-01-01T00:00:00Z",
+          "publisher": "Johns Hopkins",
+          "search": "gregory nagy some else the best of the achaeans concepts of the hero  johns hopkins baltimore hero epic 10 1 x 9780801823886 read again 1979 nagy1979",
+          "title": "The Best of the Achaeans: Concepts of the Hero",
+          "translators": "",
+          "type": "book",
+          "year": "1979",
+          "yearNumber": 1979
+        }
+      ],
+      "size": 8,
+      "width": null
+    }
+  ],
+  "kept": 1
+};
+
 export const editFacts: files.EditFacts = {
   "editable": true,
   "ending": "jpg",
