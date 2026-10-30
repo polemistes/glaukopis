@@ -43,6 +43,15 @@ files-named-none = The names were by their references already  | Navnene var all
 library.ftl
 # Changed: the files of a reference, in its pane.
 library-pane-add-to-tabs = Add to a project's tabs…           | Legg til i et prosjekts faner …
+
+viewer.ftl
+# Changed: several files at once, from the plus of a file side.
+viewer-tab-add-title = Add files to the tabs                   | Legg til filer blant fanene
+
+project.ftl
+# Changed: several files at once, from Split view's menu.
+project-beside-file = Add files to the tabs…                   | Legg til filer blant fanene …
+project-beside-file-title = Add files to the tabs              | Legg til filer blant fanene
 ```
 
 `files-name` (*Name*) and `files-about` stay. Write the Bokmål plural forms with the same `{ $count -> [one] … *[other] … }` shape as `files-count` has.
@@ -116,9 +125,17 @@ Commit: *Files are named by their references on request, from the pane or the me
 - `ReferencePane.svelte` (about line 447): the button of a PDF or an image of the reference: `title={t('library-pane-add-to-tabs')}`, `onclick={(e) => addToTabsMenu(e.currentTarget as HTMLElement, [file.hash])}`; another kind opens in its program as now. The import of `showFile` goes where nothing else in the pane uses it (check: a citation's *Show the file* lives elsewhere).
 - Grep `src/` for `showFile(` after: what stays must be within a project (ProjectView, the citation editor, the references of a document, `show.ts` itself).
 
+### 3.3 Several files at once, from the plus and from Split view — `src/lib/files/FileChooser.svelte`, `src/lib/viewer/FileSide.svelte`, `src/lib/project/ProjectView.svelte`, `src/lib/project/sides.svelte.ts`
+
+- `FileChooser.svelte`: the prop `single` becomes `kinds?: FileKind[]`, a filter alone: `found` keeps files that exist and are of these kinds, where given; `toggle` always toggles, and `add` adds what is chosen, as for a reference. The comment at the head says the chooser serves the tabs too. Where the chooser leaves nothing to choose (`found.length === 0` with an empty query), the empty words there are stay. The `ReferencePane` use is unchanged.
+- `FileSide.svelte` (about line 472): `kinds={['pdf', 'picture']}`, `except={sides.tabs(key).tabs.map((t) => t.file)}` (the files already among the tabs), `onpick={(hashes) => { choosing = false; void addAll(hashes); }}`, where `addAll` adds each in order through what `add` does, so that each tab comes after the one shown and the last is shown; look at `add` first: where it awaits something per file, keep the order.
+- `ProjectView.svelte` (about line 1324): `kinds={['pdf', 'picture']}`, `except` the tabs of the file side the files would go to (`sides.tabs(key)` of the file side there is, else none), `onpick={(hashes) => hashes.forEach((h) => sides.showFile(h))}`; `Sides.showFile` adds after the active tab and shows what it adds, so the order chosen is kept and the last is shown.
+- Grep `src/` for `single=` of the chooser after: nothing left.
+
 ### Verify
 
 - `pnpm check`, `pnpm test`.
+- `e2e/source-tabs.mjs`: the plus opens the chooser titled *Add files to the tabs*; two files pressed stay chosen, the button says *Add 2 files*; after it, both are tabs, the second shown, in the order chosen; opening the chooser again does not offer them. Split view → *Add files to the tabs…*: the same chooser.
 - `e2e/file-view.mjs` (about line 320): the press on `.file-pane [data-action="show"]` opens a menu; `app.clickText('[role="menuitem"]', 'Wrath and the hero')` (the project of the script); then: `location.hash` still begins with `#/files`, no `[data-file-side]` in the window, and a notice `Added to the tabs of Wrath and the hero` (`[data-toast]` or what the toasts render as; look at `e2e/lib`); press *Show* in the notice: the window shows the project with the file side and the PDF shown, `location.hash` beginning with `#/file/` and carrying `project=`. Then the rest of the script as it was. Do the same once more from the files view and check *Already in the tabs of …*.
 - `e2e/files.mjs`: the list's menu of the PDF has *Add to a project's tabs…* as a submenu with the projects in it (open it, check the items, Escape).
 - `e2e/library.mjs`: where it presses a file of a reference in the pane, the menu; else add a short check that the button's tooltip is *Add to a project's tabs…*.

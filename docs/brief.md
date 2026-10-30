@@ -1316,3 +1316,7 @@ Proposed: the list and the thumbnails show a file by its reference where it has 
 > I think renaming files should be a separate function, run manually. Files should possible be renamable.
 
 Agreed: naming by the reference is an act run by hand, never a consequence of assigning; every file stays renamable. Record 0074 and the plan `docs/plans/files-by-their-references-named-on-request-and-a-menu-of-projects-for-the-tabs.md` follow.
+
+> One question first. The add a file on the tabbar and the add a file to the tabs in the split menu, should be multiple choice. Is that part of the plan?
+
+It was not; it is now. The chooser under the plus and in Split view's menu lets several PDFs and images be chosen, as the chooser of a reference's files does already, the button saying how many it adds; all go to the tabs in the order chosen, the last shown; files already among the tabs are not offered. The words become *Add files to the tabs…*. The record and the plan carry it.
