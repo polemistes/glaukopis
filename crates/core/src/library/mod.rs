@@ -21,7 +21,7 @@ use serde::Serialize;
 
 use crate::bib::{self, RawEntry};
 use crate::error::{Error, IoContext, Result};
-use crate::fsutil::write_atomic_with_backup;
+use crate::fsutil::{clean_file_name, write_atomic_with_backup};
 use crate::paths::DataDir;
 use crate::sidefile;
 use crate::{notices, tr};
@@ -707,6 +707,91 @@ impl Library {
             name.push_str(title.trim());
         }
         name
+    }
+
+    /// The name a file of the store takes from its first reference in the
+    /// order of the library, as export writes it: `Nagy 1979 - The Best of
+    /// the Achaeans.pdf`, the ending the file's own. Where the reference
+    /// names before it another file of the same ending, which is of that
+    /// work first too, the file's own name follows after a dash, as export
+    /// tells two volumes of one book apart. None for a file of no reference,
+    /// or of one with no people, no year and no title to name it by.
+    pub fn reference_name_for(&self, hash: &str) -> Option<String> {
+        self.reference_name_with(hash, &self.first_references())
+    }
+
+    /// For every file of the store that belongs to a reference, the first of
+    /// them in the order of the library, as export takes it.
+    fn first_references(&self) -> HashMap<&str, usize> {
+        let mut first = HashMap::new();
+        for (index, e) in self.entries.iter().enumerate() {
+            for f in e.attachments() {
+                if let Some(hash) = attachments::hash_of_path(&f)
+                    && let Some(record) = self.files.get(hash)
+                {
+                    first.entry(record.hash.as_str()).or_insert(index);
+                }
+            }
+        }
+        first
+    }
+
+    fn reference_name_with(&self, hash: &str, first: &HashMap<&str, usize>) -> Option<String> {
+        let record = self.files.get(hash)?;
+        let entry = &self.entries[*first.get(hash)?];
+        let work = clean_file_name(&Self::file_name_for(entry));
+        if work.is_empty() {
+            return None;
+        }
+        let ending = export::ending_of(&record.path);
+        let files = entry.attachments();
+        let at = files.iter().position(|f| attachments::hash_of_path(f) == Some(hash))?;
+        let second = files[..at].iter().any(|f| {
+            attachments::hash_of_path(f).is_some_and(|other| {
+                other != hash
+                    && first.get(other) == first.get(hash)
+                    && self.files.get(other).is_some_and(|o| export::ending_of(&o.path) == ending)
+            })
+        });
+        let own = clean_file_name(export::without_ending(&record.name, &ending));
+        let stem = export::cut_at_word(&export::name_of_work_file(&work, &own, second));
+        (!stem.is_empty()).then(|| format!("{stem}{ending}"))
+    }
+
+    /// Names the files with these hashes by their references, each as
+    /// `reference_name_for` gives it, and writes the record of the files
+    /// once. Never done by itself: only when the writer asks. A file of no
+    /// reference keeps its name and is counted; one named so already is
+    /// left as it is; a hash the store does not know is passed over. The
+    /// files on disk are not touched: the store keeps them by their hashes,
+    /// and the name is what the lists call them.
+    pub fn name_files_by_reference(&mut self, hashes: &[String]) -> Result<Named> {
+        self.refresh()?;
+        let first = self.first_references();
+        let mut seen = HashSet::new();
+        let mut names = Vec::new();
+        let mut kept = 0;
+        for hash in hashes {
+            if !seen.insert(hash.as_str()) {
+                continue;
+            }
+            let Some(record) = self.files.get(hash) else { continue };
+            match self.reference_name_with(hash, &first) {
+                None => kept += 1,
+                Some(name) if name == record.name => {}
+                Some(name) => names.push((hash.clone(), name)),
+            }
+        }
+        let mut named = Named { changed: Vec::new(), kept };
+        for (hash, name) in names {
+            self.files.rename(&hash, &name)?;
+            self.files_dirty = true;
+            named.changed.push(hash);
+        }
+        if !named.changed.is_empty() {
+            self.save_files()?;
+        }
+        Ok(named)
     }
 
     /// Copies a file into the store and links it to the entry.
@@ -1625,6 +1710,16 @@ pub struct TakenIn {
     /// How many folders were made.
     pub folders: usize,
     pub problems: Vec<String>,
+}
+
+/// What came of naming files by their references.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Named {
+    /// The hashes of the files whose names changed, in the order asked.
+    pub changed: Vec<String>,
+    /// How many of those asked kept their names for want of a reference
+    /// that gives one.
+    pub kept: usize,
 }
 
 #[cfg(test)]
