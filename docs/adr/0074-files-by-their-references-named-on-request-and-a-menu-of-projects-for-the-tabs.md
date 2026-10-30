@@ -69,3 +69,22 @@ Date: 2026-10-30. Status: accepted by the owner on 2026-10-30 ("I think renaming
 ## Consequences
 
 - Words in `files.ftl`, `library.ftl`, `viewer.ftl` and `project.ftl`, English and Norwegian: `files-show`, `library-pane-add-to-tabs`, `viewer-tab-add-title`, `project-beside-file` and `project-beside-file-title` change; words for the naming, its notice, and the notice of the tabs come. The core gains the naming of files by their references, with the rule of a second file lifted out of export where both can use it, and a command for it; `api/files.ts` and the files store carry it; `FilePane` moves its name among the facts and names the file by its reference at the head; `FileList` hides the name where the reference tells, and the tiles take the tabs' words; `viewer/show.ts` gains the menu of projects and the adding; the file route carries the project for *Show*; `FileChooser` loses its one-and-done way, and the plus and Split view take several files. The guide's *The files of the library* and *A file in a view* change; `e2e/files.mjs`, `e2e/file-view.mjs` and `e2e/library.mjs` grow or change where they press the button that is now a menu.
+
+## Addendum, 2026-10-30: as built
+
+Built on `main` from 7c6283d8 to the commit of this addendum: stages 1, 2's page and 3 by one builder, the core of stage 2 and its command by an agent in a worktree of its own, merged after. The editor fell over while stage 3's scripts were to run; the work was taken up again from the progress note, the commits and the agent's branch, and nothing was lost. Nothing is pushed.
+
+What departs from the plan, or was settled in the building:
+
+- **A file named by the work alone has no name of its own.** A second file attached from the reference is named by the work at attaching; named again, it keeps the work's name, rather than *Work - Work.pdf*, and export gives it *Work (2).pdf* by its numbering of names taken, as before. Export's naming changes only where it would have written the work's name twice. The rule of a second file is one function in `export.rs`, `name_of_work_file`, that export and the naming share.
+- **A second file is told over the whole library**, as the list's twins are, not folder by folder as export tells them.
+- **A file the store does not know, or one asked twice,** is passed over: neither named nor counted as kept.
+- The core's tests are in `export.rs`'s tests, beside the export's and with their fixture, not in `mod.rs`'s. Clippy found two needless clones in them after the merge, mended there.
+- **Where nothing was named and some files had no reference**, the notice says only that they kept their names, as plain news. Failures are told with the words of a failed renaming.
+- *Name by the reference* in the menu of one file comes after *Assign to a reference…*; *Name by their references* for several after *Go through these…*, both with a tag for their icon.
+- **Show, in the notice, puts the project in the place of a map** where the window has one, so that the text stays where the text was, else in the active side; the project comes alone with its tabs and the file, not with what stood beside it when it was left, since the file is what was asked for. The plan's way, a map laid as for a project that arrives, put the project in the place of the file's own side.
+- **The menu of projects** has the project the window was last in first, then the others by name: the start screen lists the recent ones newest first and the rest in its tree, so "as the start screen lists them" gave no one flat order.
+- The count of tabs added is taken through a callback of the store's change, told the tabs before and after, which runs when the tabs come where they had not.
+- In the scripts: several files at once are tried in `e2e/file-view.mjs`'s Split view part, with a one-dot image made there, since the later checks of `e2e/source-tabs.mjs` count its tabs; that script checks the plus's words and that it offers only the files not among the tabs. The button beside a PDF in a reference's pane is tried in `e2e/files.mjs`, which stands in such a pane; `e2e/library.mjs` never presses one, and is unchanged.
+
+Counts: `pnpm check` without errors or warnings; `pnpm test` 1357; `cargo test --workspace` 981, none failing (`glaukopis-core` 924 again after the mending of clippy's two); `cargo clippy --workspace --all-targets` without warnings. The scripts: `files` 117 of 117, `file-view` 52 of 52, `library` 40 of 40, `source-tabs` 35 of 35, `as-left` 31 of 31, `maps` 78 of 78, `languages` 17 of 17.

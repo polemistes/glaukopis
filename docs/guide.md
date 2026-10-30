@@ -1204,11 +1204,14 @@ may be in many; a folder is where a file is kept, one place for each.
 
 **How the files are shown.** **View**, at the head, shows them as a **List**,
 one line each, or as **Thumbnails**, **Small**, **Medium** or **Large**, an
-image as it is and a PDF by its first page. In the list, a file that belongs
+image as it is and a PDF by its first page, each named by its reference
+shortly, *Lord 1960*, where it has one. In the list, a file that belongs
 to a reference is shown by it: the people, with editors and translators
-marked as such, the year, the title and the publisher, and the file's own
-name small after them; a file of no reference shows its name, and where it
-is used, or that it belongs to no reference. Each line ends with the size,
+marked as such, the year, the title and the publisher. The file's own name
+is in the tooltip, and in the line only where the work has another file of
+the same kind, two volumes of one book in PDF, say, to tell them apart; a
+file of no reference shows its name, and where it is used, or that it
+belongs to no reference. Each line ends with the size,
 and, where the list is wide enough, when the file was taken in. A narrow
 list says a reference shortly, *Lord 1960*. **Include subfolders**, in the
 same menu, shows a folder's files with those of the folders under it, each
@@ -1234,10 +1237,12 @@ that a reference is made or given with the title page in view. Nothing of
 your projects is touched, and where you read to is not kept. **Back to the
 files**, at its head, or **Escape**, brings the list back at the file.
 
-**What a file is for.** The pane at the right shows the file selected,
-small, an image as it is and a PDF by its first page; a press on it reads
-the file (see *Reading a file there*). Under it is
-what is known of the file: its name, its folder, where it came from and when,
+**What a file is for.** The pane at the right names the file selected by
+its reference, *Lord 1960*, with the title under it, or by its own name
+where it has none. It shows the file small, an image as it is and a PDF by
+its first page; a press on it reads the file (see *Reading a file there*).
+Under it, in **About the file**, is what is known of the file: its own
+name, where it is changed, its folder, where it came from and when,
 its size, and the references it belongs to. Of an image it says how large it
 is in pixels, what it shows, in words that can be written there, and the
 projects in which it is a figure, each a link. A copy says what it was **made
@@ -1247,10 +1252,28 @@ from it**. Each is a link. Below are what can be done with a file of its kind:
 
 | Kind | What can be done |
 | --- | --- |
-| PDF | **Read**; **Add to the project's tabs**; **Open in another program**; **Make searchable…**; **Import the text as a map…** |
-| Image | **Read**; **Add to the project's tabs**; **Open in another program**; **Read the text…**, to copy or make an element of |
+| PDF | **Read**; **Add to a project's tabs…**; **Open in another program**; **Make searchable…**; **Import the text as a map…** |
+| Image | **Read**; **Add to a project's tabs…**; **Open in another program**; **Read the text…**, to copy or make an element of |
 | Document (Word, OpenDocument, EPUB, HTML, Markdown, Org, plain text) | **Open in another program**; **Bring in as elements…** |
 | Anything else | **Open in another program**, the one your system has for it |
+
+**Add to a project's tabs…** asks which project, the one you were last in
+first, and leaves you in the library: the message after it says where the
+file went, and its **Show** opens that project with the file beside it. The
+menu of several files chosen adds the PDFs and images among them together.
+
+**Named by the reference.** Files come with names that say nothing, from a
+scanner or from the archives of articles. **Name by the reference**, beside
+the file's name in **About the file**, names it as export would: the people,
+the year and the title, as in *Nagy 1979 - The Best of the Achaeans.pdf*,
+its ending kept. **Name by their references**, in the menu of the files
+chosen, names them all; a file of no reference keeps its name, and the
+message says how many did. A second file of one work of the same kind keeps
+its own name after the work's, *Nagy 1979 - The Best of the Achaeans -
+volume 2.pdf*, so that the two are still told apart. Nothing is named so
+unless you ask, and the name can be changed by hand after. Only the name in
+the library changes: the file itself is kept by Glaukopis under a name of its
+own, and is named on your disk when it is exported.
 
 **Files and references.** A file may belong to one reference, to several (a
 chapter and its book), or to none yet. **Assign to a reference…**, in the
@@ -1353,14 +1376,20 @@ may stand in two tabs, each at its own place.
 
 A file is added to the project's tabs from:
 
-- **Add to the project's tabs** in the pane of a PDF or an image among the
-  files of the library, or in its menu; a press on a file in the pane of a
-  reference;
+- **Add to a project's tabs…** in the pane of a PDF or an image among the
+  files of the library, or in its menu, and a press on a PDF or an image in
+  the pane of a reference: these ask which project, and leave you in the
+  library, and **Show** in the message after opens that project with the
+  file (see *The files of the library*);
 - **Show the file** in the editor of a citation, beside each work that has a
   file, and in the menu of a work among the references of a document;
-- **Add a file to the tabs…** in the menu of **Split view**, which asks for
-  the file by its name;
+- **Add files to the tabs…** in the menu of **Split view**, which asks for
+  the files by their names, several at once, and leaves out those among the
+  tabs already;
 - the plus at the end of the row of tabs, which asks the same.
+
+Several files chosen come as tabs in the order you chose them, the last
+shown.
 
 The file goes to the view of tabs there is, as a new tab, or to its tab
 where it has one already. Where there is none, the other view becomes one,
