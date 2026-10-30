@@ -892,6 +892,16 @@ try {
   await app.waitGone('dialog', 3000);
   await until('the pane to have it', async () => (await paneFiles()) === had + 1, 5000).catch(() => {});
   check('the reference has the chapter now', (await paneFiles()) === had + 1, `${had} → ${await paneFiles()}`);
+  // A PDF of the reference goes to the tabs of a project chosen from a menu (ADR 0074); here there is none.
+  const openTitle = await app.exec(`return document.querySelector('.pane .file button.open')?.title ?? null`);
+  check('a PDF of the reference is added to a project\'s tabs', openTitle === 'Add to a project\'s tabs…', openTitle);
+  await app.click('.pane .file button.open');
+  await app.waitFor('[role="menu"]', 3000);
+  await sleep(250);
+  const noProject = await app.exec(`return Array.from(document.querySelectorAll('[role="menu"] [role="menuitem"]')).map((e) => e.textContent.trim() + (e.getAttribute('aria-disabled') === 'true' ? ' (disabled)' : ''))`);
+  check('from a menu of projects, which says where there is none', JSON.stringify(noProject) === JSON.stringify(['No project to add to (disabled)']), noProject.join(' | '));
+  await app.press('Escape');
+  await app.waitGone('[role="menu"]', 3000).catch(() => {});
 
   // All taken from it at once, with one question that names the count.
   const all = had + 1;
