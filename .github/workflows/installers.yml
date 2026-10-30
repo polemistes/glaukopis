@@ -1,6 +1,10 @@
 # Installers for Windows and macOS, and packages for Debian, Ubuntu and
 # Fedora, made on GitHub's machines, since macOS can only be built on a Mac;
 # and the collaboration server for each of them (the job `server`).
+# macOS is made twice, for Apple silicon on macos-latest and for Intel on
+# macos-15-intel. That is the last Intel Mac GitHub offers, until the autumn
+# of 2027; after it, the Intel build has to be cross-compiled on Apple
+# silicon, with an Intel Tesseract from a Homebrew run under Rosetta.
 # The installers are not signed: Windows asks once whether to run the
 # installer; macOS needs the app to be opened with a right-click the first
 # time (see docs/guide.md). All are kept as artifacts of the run, not
@@ -47,6 +51,9 @@ jobs:
             bundles: nsis,msi
           - os: macos-latest
             name: macos
+            bundles: app,dmg
+          - os: macos-15-intel
+            name: macos-intel
             bundles: app,dmg
           - os: ubuntu-24.04
             name: linux
@@ -120,21 +127,25 @@ jobs:
           # For the tests of the core as well.
           echo "$PWD/resources/bin" >> "$GITHUB_PATH"
 
+      # The Pandoc of the Mac's own processor, Apple silicon or Intel.
       - name: Pandoc for macOS
-        if: matrix.name == 'macos'
+        if: runner.os == 'macOS'
         run: |
           mkdir -p resources/bin/licenses work
-          gh release download -R jgm/pandoc --pattern '*-arm64-macOS.zip' -D work
+          case "$(uname -m)" in arm64) arch=arm64 ;; *) arch=x86_64 ;; esac
+          gh release download -R jgm/pandoc --pattern "*-$arch-macOS.zip" -D work
           unzip -q work/pandoc-*.zip -d work/pandoc
           cp work/pandoc/*/bin/pandoc resources/bin/
           cp work/pandoc/*/share/doc/pandoc/COPYRIGHT* resources/bin/licenses/ 2>/dev/null || true
+          resources/bin/pandoc --version | head -1
 
       # Homebrew's Tesseract, with the libraries it needs copied beside it and
       # pointed to there, so that it runs on a Mac without Homebrew; and its
       # folder of data whole: English, and the configurations and the font it
-      # makes PDFs and TSV with.
+      # makes PDFs and TSV with. Homebrew builds for the macOS it runs on, so
+      # the log says which macOS this Tesseract was built for at the least.
       - name: Tesseract for macOS
-        if: matrix.name == 'macos'
+        if: runner.os == 'macOS'
         continue-on-error: true
         run: |
           brew install tesseract dylibbundler
@@ -145,6 +156,7 @@ jobs:
           for f in resources/bin/tesseract/tesseract resources/bin/tesseract/libs/*; do codesign --force -s - "$f"; done
           cp -RL "$(brew --prefix tesseract)/share/tessdata/." resources/bin/tesseract/tessdata/
           resources/bin/tesseract/tesseract --version
+          otool -l resources/bin/tesseract/tesseract | grep -A4 LC_BUILD_VERSION | grep minos || true
           TESSDATA_PREFIX="$PWD/resources/bin/tesseract/tessdata" resources/bin/tesseract/tesseract --list-langs
 
       # ---- the application ----
@@ -182,6 +194,8 @@ jobs:
             name: windows-x64
           - os: macos-latest
             name: macos-aarch64
+          - os: macos-15-intel
+            name: macos-x86_64
           - os: ubuntu-24.04
             name: linux
     runs-on: ${{ matrix.os }}

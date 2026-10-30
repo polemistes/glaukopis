@@ -83,8 +83,10 @@ removing it stops the server and leaves what it kept.
 ## On Windows and macOS
 
 Each release has the program in a zip: `glaukopis-server-<version>-windows-x64.zip`
-for Windows, and `glaukopis-server-<version>-macos-aarch64.zip` for Macs with
-Apple silicon. Unzip it where the program is to stay. The `README.txt` in it
+for Windows, `glaukopis-server-<version>-macos-aarch64.zip` for Macs with
+Apple silicon, and, from the release after 0.2.6,
+`glaukopis-server-<version>-macos-x86_64.zip` for Macs with Intel processors.
+Unzip it where the program is to stay. The `README.txt` in it
 says how to start the server by hand, with a folder for its data and a
 password; the options are those below. On macOS the program is not signed, and
 is let run by taking away the mark of a download once, in its folder:

@@ -17,7 +17,12 @@ as well, from `packaging/languages/out/index.json`.
 When a release is made (as 0.2.0 was): the Arch packages are built from the
 release's archive with `arch/release/PKGBUILD`; the installers, the deb and
 the rpm are made on GitHub by the workflow `Installers` when the tag `vX.Y.Z`
-is pushed, and fetched with `gh run download <run> -D build/run-<run>`. All
+is pushed, and fetched with `gh run download <run> -D build/run-<run>`.
+From the release after 0.2.6 the Mac comes twice, for Apple silicon and for
+Intel: `Glaukopis_X.Y.Z_aarch64.dmg` and `Glaukopis_X.Y.Z_x64.dmg`, and the
+server's `…-macos-aarch64.zip` and `…-macos-x86_64.zip`. The first time, the
+page's macOS section gets the two Intel files, and loses its sentence that
+there is no build for Intel Macs. All
 of them, the PKGBUILD, the page and the language packages
 (`languages/out/*`) are gathered in one folder, `release-X.Y.Z/` (ignored by
 git), and the checksums are made there:

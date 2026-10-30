@@ -1320,3 +1320,15 @@ Agreed: naming by the reference is an act run by hand, never a consequence of as
 > One question first. The add a file on the tabbar and the add a file to the tabs in the split menu, should be multiple choice. Is that part of the plan?
 
 It was not; it is now. The chooser under the plus and in Split view's menu lets several PDFs and images be chosen, as the chooser of a reference's files does already, the button saying how many it adds; all go to the tabs in the order chosen, the last shown; files already among the tabs are not offered. The words become *Add files to the tabs…*. The record and the plan carry it.
+
+## 2026-10-30 — a build for Intel Macs
+
+> How hard is it to make a version for intel macs?
+
+Answered: not hard. Nothing in the code depends on the processor; GitHub still has an Intel Mac, `macos-15-intel`, the last it will offer, until the autumn of 2027; Pandoc has an Intel build for the Mac, and Homebrew on the Intel Mac gives an Intel Tesseract. After 2027 the Intel build would have to be cross-compiled on Apple silicon. A universal app, both processors in one, was set aside: twice the size, and two Tesseracts to join.
+
+> Make it.
+
+- The workflow `Installers` makes the application and the collaboration server on `macos-15-intel` as well as on Apple silicon: `Glaukopis_X.Y.Z_x64.dmg` beside `Glaukopis_X.Y.Z_aarch64.dmg`, and `glaukopis-server-X.Y.Z-macos-x86_64.zip` beside the `macos-aarch64` one. Pandoc is fetched for the processor of the Mac that builds.
+- The log of Tesseract's step says which macOS Homebrew built it for. Homebrew builds for the macOS it runs on, so the Tesseract that comes with either Mac build may need macOS 15 though the application asks only for 11; Intel Macs are the ones more often left on older systems. Not yet seen, since no run has been made.
+- The page of packages for 0.2.6 is left as it is, since 0.2.6 has no Intel build; the steps of a release in `packaging/web/README.md` say what the page gains at the next one, and `docs/server.md` names the Intel zip.
