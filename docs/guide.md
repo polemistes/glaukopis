@@ -574,7 +574,8 @@ fifth line, at the left, in the layouts that ship.
 only, chosen among the kinds of the paragraphs from here: with *Verse*, a
 quotation among the lines is passed over as a speaker is, and shows only a
 number you gave it. An empty line is never counted. The numbers stand in
-the margin, in the text and in the document; in Word and Writer they stand
+the margin, in the text and in the document, as far from the text as the
+layout says (see *Look*, **Line numbers**); in Word and Writer they stand
 at the head of their lines, small.
 
 Which numbers are shown: of the counted lines, those that fall on every
@@ -2743,9 +2744,16 @@ you scroll, mark the part you are in, and go to each:
 - **Line numbers**: how the numbers of lines you number are shown where they do
   not say otherwise, **Show a number every** and **Numbers on the** left or
   the right; **Annotations on the** **Other side from the numbers**, as the
-  layouts that ship have them, **Left** or **Right**: on the numbers' side
-  they stand outside the numbers, further from the text, where you write
-  and in every document; and whether the lines of the page are numbered, as
+  layouts that ship have them, **Left** or **Right**; how far from the text
+  they stand, **Numbers from the text** and **Annotations from the text**,
+  in centimetres, measured from the edge of the text to the nearer edge of
+  the number or the annotation: 0.25 cm for the numbers, and for the
+  annotations as far as the numbers across from them, 1.5 cm on their side,
+  outside a number of five digits, unless you write another length. Every
+  line keeps its distance, whether or not it shows its number, so that the
+  annotations stand in a column, on the page and where you write; there,
+  an annotation at the left stands outside the bracket of its passage, which
+  the page has not. And whether the lines of the page are numbered, as
   some journals ask for review.
 - **Notes and citations**: footnotes or endnotes and how they are set; the
   **reference style**; and the bibliography, with its heading,
