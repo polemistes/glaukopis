@@ -1346,3 +1346,17 @@ Answered: the nice dialog, on all three, and the obscure text field survives onl
 > Ok, make the build plan.
 
 Record 0075 and the plan `docs/plans/printing.md` follow: *Print…* in the typesetting pane's header before *Export* and in the bar of a file side; **Ctrl+P** prints the document of the side one is in, opening the pane where it is closed and waiting for the pages, or the file when a file side has the focus; the pane takes **Ctrl+T**; the pages go through the window's own page with a print style, the paper set from the document on Linux before the dialog opens; a PDF asks the range of pages first, since they must be drawn, at 300 dots per inch; the harness prints to a PDF file through a hook and reads it with poppler's tools. Whether WebKitGTK 2.54, which renders with Skia, prints at all is the first thing the builder tries.
+
+## 2026-10-31 — the distance of the numbers and the annotations
+
+> I guess the Look test fails are problems with the tests, not the actual line numbers?
+
+Answered: yes, the tests. Three of the four checks look for the number 1 beside the Muse line on the page, and the fourth expects the annotation written 3 em further out, past that number; both rest on the first line of a count showing its 1. The script was written on 24 October; the next day the rule became that a count's first number is a setting of the numbering, shown as the others are, so a count from 1 every fifth shows 5 first, and the Muse line prints no number. With no number on the line, the annotation stands in the number's place. The kept run's Typst shows exactly that. Where one writes, a held-back number stands faint, which is why the editor-side checks pass. Noted for the owner's judgement: when annotations sit on the numbers' side, an annotation on a line whose number is shown stands 3 em further out than one on a line whose number is held back, so a column of annotations jumps between two distances every fifth line.
+
+> Should not the behaviour in such cases be up to the user as an option, and not something hard coded?
+
+Answered: yes, with one distinction: where only one behaviour is right a setting is a burden, and nobody wants a column that zigzags; what differs between editions is how far from the text the numbers and the annotations stand. Proposed: two lengths under *Line numbers* in Look, in centimetres as the other lengths there, *Numbers … from the text* and *Annotations … from the text*, the layouts that ship carrying their defaults, a document changing them in Look as any other value of the layout, the text view following the same lengths; with fixed distances the annotations form a column whatever the line shows. (What was said of one centimetre was the verse's indent, not the distance of the numbers, which is 0.6 em at the left and 0.8 em at the right; the record says so.)
+
+> Yes, do it.
+
+Record 0076 and the plan `docs/plans/the-distance-of-numbers-and-annotations.md` follow: two optional lengths of the layout's `verse`, defaults 0.25 cm for the numbers and, for the annotations, the numbers' length across from them and 1.5 cm on their side; Typst, LaTeX and the text view take them in place of the em, on every line; the four Look checks are rewritten for the column, with a line that shows its number.
