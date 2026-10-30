@@ -80,3 +80,10 @@ export async function filePage(
 /** The lines of a page of a PDF of the library, counted from one. */
 export const filePageLines = (hash: string, page: number) =>
   call<PageLines>('file_page_lines', { hash, page });
+
+/**
+ * Says that a view still shows the file, so that the process that keeps it
+ * open and draws its pages is not ended as idle while it is read: whether
+ * one does keep it open.
+ */
+export const fileKeep = (hash: string) => call<boolean>('file_keep', { hash });

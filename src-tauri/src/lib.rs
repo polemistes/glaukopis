@@ -288,6 +288,7 @@ pub fn run() {
             commands::viewer::file_facts,
             commands::viewer::file_page,
             commands::viewer::file_page_lines,
+            commands::viewer::file_keep,
             commands::languages::languages_installed,
             commands::words::words_read,
             commands::words::words_write,

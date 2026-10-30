@@ -290,6 +290,30 @@ fn files_idle_are_let_go_and_no_more_are_served_than_the_most() {
     assert_eq!(std::fs::read_dir(&work).map(|d| d.count()).unwrap_or(0), 0, "their folders are gone");
 }
 
+/// A file that a view keeps, saying so now and then while it shows the
+/// file, is not let go as idle, however long since a page was asked; once
+/// nothing keeps it, it is.
+#[test]
+fn a_file_kept_by_its_view_is_not_let_go_as_idle() {
+    let _turn = one_at_a_time();
+    let dir = tempfile::tempdir().unwrap();
+    let work = dir.path().join("work");
+    let pdf = dir.path().join("squares.pdf");
+    std::fs::write(&pdf, squares(2)).unwrap();
+    assert!(!server::keep(&pdf), "nothing serves it yet");
+    ocr::pages_at(&pdf, &Tools::default(), &work, None, &[0], 300, &never()).unwrap();
+    let pid = server::serving(&pdf).unwrap();
+    std::thread::sleep(Duration::from_millis(300));
+    assert!(server::keep(&pdf));
+    server::let_go_idle(Duration::from_millis(200));
+    assert_eq!(server::serving(&pdf), Some(pid), "kept, it is not idle");
+    std::thread::sleep(Duration::from_millis(300));
+    server::let_go_idle(Duration::from_millis(200));
+    assert_eq!(server::serving(&pdf), None, "no longer kept, it is let go");
+    gone_within(pid, Duration::from_secs(1));
+    assert!(!server::keep(&pdf), "nothing serves it any longer");
+}
+
 /// What files served by an application that was killed left in its folder
 /// of work is let go when the next serves its first file.
 #[test]

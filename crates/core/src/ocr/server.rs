@@ -10,8 +10,11 @@
 //! memory as every child is, each request in its time; it is ended when
 //! nothing has been asked of it for [`IDLE`], when the one who asked stops
 //! and no other waits for it, and when more than [`MOST_OPEN`] files are
-//! served, the one asked of longest ago first. Whatever ends it, the pages
-//! asked of it are drawn otherwise by the one who asked (`pages_at`).
+//! served, the one asked of longest ago first. A view that shows the file
+//! says so now and then ([`keep`]), so that a reader who looks at one page
+//! for longer than that and then turns far does not wait for the file to
+//! be opened again. Whatever ends it, the pages asked of it are drawn
+//! otherwise by the one who asked (`pages_at`).
 
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
@@ -228,6 +231,17 @@ fn ask(
         return Err(failure.error());
     }
     Ok(drawn)
+}
+
+/// Counts the file at `path` as asked of now, where a child serves it, so
+/// that it is not let go as idle: a view that shows the file says so every
+/// so often while it is open. Whether a child serves the file.
+pub fn keep(path: &Path) -> bool {
+    let Some(key) = pages_cache::key_of(path) else { return false };
+    let all = lock(&SERVED);
+    let Some(served) = all.iter().find(|served| served.key == key && served.serving.alive()) else { return false };
+    *lock(&served.last_asked) = Instant::now();
+    true
 }
 
 /// Starts, once, what lets go of the files served that are idle.

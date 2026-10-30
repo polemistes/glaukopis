@@ -125,3 +125,21 @@ The scrolling meant to take 30 seconds took about 45 before, the page's thread b
 ### Counts
 
 `cargo test --workspace`: all pass (the core 886 unit tests, 18 of the child, 7 of the served child, 7 of the one-shot child, and the rest); `cargo clippy --workspace --all-targets` without warnings. `pnpm check` without errors; `pnpm test` 1345. The scripts: `source-tabs` 27 of 27, `file-view` 44 of 44, `image-editing` 27 of 27, `languages` 17 of 17, `viewer-speed` 8 of 8, `maps` 78 of 78, `as-left` 31 of 31, `tree-keys` 44 of 44, `list` 31 of 31, `files` 90 of 90, `library` 40 of 40, `documents` 62 of 62. `ocr` passes every step on PDFs and stops at its last, which presses Ctrl+3 for the view of images that one place for files (0070) took away; that step was stale before this work, and is left.
+
+## Addendum, 2026-10-30: pages that came late in a big scan
+
+The owner found that in a very big PDF, scrolling far down left white pages for a while, and asked whether it must be so, and if so for a sign that the pages are coming.
+
+### What was found
+
+- **The child that draws is quick.** Measured with the child of the release build on the owner's four biggest scans (450–740 MB, 459–1595 pages of JPEG or JPX at 250–300 dots): the file opened in 0.3–0.6 s, a page drawn 1800 dots wide in 0.07–0.23 s, eight at once in 0.2–0.5 s. In the application off-screen, a page jumped to far away came in about 0.2 s while the child lived.
+- **The pages stopped while the text was read.** Each page shown asks for its lines (`file_page_lines`), and that call waits until the text of the whole file has been read in the one-shot child, which for the 740 MB scan takes 17–37 s. Tauri runs a command marked `async` on its runtime's worker threads, as many as the machine has cores, and a call that blocks holds one. With a page shown for each, a book scrolled through had every thread waiting for the text within twenty pages, and from then on no call of the page was answered, pages included, until the reading ended: in the measurement with the owner's scan, page 20 came after 16.8 s, the moment the look ended, and every other page in 0.2 s.
+- **A page read at length cost a second.** The child that keeps the file open was ended after ninety seconds without a request, which a page read closely passes; a far jump then paid for reading and opening the file again, 1.1 s against 0.2 s in the application off-screen.
+
+### What was changed
+
+- **The viewer's commands do their work on the runtime's threads for blocking work** (`spawn_blocking`): the facts, a page, the lines. A call that waits holds none of the few threads the page's calls are run on. `viewer-speed.mjs` checks the order: with the lines of forty pages asked at once, a page asked after them comes before the last of them.
+- **A view keeps its file open** while it shows it: it says so every 45 seconds (`file_keep`, `server::keep`), which counts as a request; the child goes 90 seconds after the view does. Tested in `tests/served.rs`.
+- **A page not yet come shows a spinner** in its middle, from 400 ms after it is asked for, so that a page that comes at once never blinks.
+
+Not changed: the reading of the whole file's text before any page has its lines, which still takes its half minute on a big scan, now without holding anything else up; two files served at once; the kill of the child when the view that asked goes while a page is drawn, so that a tab switched away from and back opens the file again. Each is a possible next step if a wait is still felt.

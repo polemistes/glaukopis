@@ -11,6 +11,12 @@ export const KEPT = 40;
 export const BESIDE = 2;
 /** At most so many pages are asked of the core at once (ADR 0072). */
 export const IN_FLIGHT = 4;
+/**
+ * So often, in milliseconds, a view says that it still shows the file, so
+ * that the process that keeps it open is not ended as idle (after a minute
+ * and a half) while a page is read for longer than that.
+ */
+export const KEEP_EVERY = 45_000;
 /** The widest a page is drawn, in dots. */
 export const WIDEST = 4000;
 /** A picture wider than this many times the width wanted is drawn again, narrower. */

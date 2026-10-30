@@ -86,6 +86,41 @@ try {
   await app.clickText('dialog footer button', 'Create');
   await app.waitFor('.text-view .section', 8000);
 
+  // ---- a page while the text of the file is read ----
+  // The lines of forty pages asked at once, as a book scrolled through asks for them while
+  // its text is still being read, and then a page: the page must not wait for the text, as it
+  // did while each call waiting held one of the runtime's few threads (0072, addendum of
+  // 2026-10-30). The order tells, not the times: the page comes before the last of the lines.
+  numbers.whileRead = await app.execAsync(
+    `const invoke = window.__TAURI_INTERNALS__.invoke;
+    const start = performance.now();
+    const lines = [];
+    for (let n = 1; n <= 40; n++)
+      invoke('file_page_lines', { hash: arguments[0], page: n }).then(
+        () => lines.push(performance.now() - start),
+        () => lines.push(-1),
+      );
+    const page = await invoke('file_page', { hash: arguments[0], page: 50, width: 600, ticket: null }).then(
+      () => performance.now() - start,
+    );
+    await new Promise((done, failed) => {
+      const waited = performance.now();
+      const tick = () => {
+        if (lines.length === 40) done();
+        else if (performance.now() - waited > 120000) failed(new Error('the lines did not come'));
+        else setTimeout(tick, 10);
+      };
+      tick();
+    });
+    return { page: Math.round(page), linesFirst: Math.round(Math.min(...lines)), linesLast: Math.round(Math.max(...lines)) };`,
+    hash,
+  );
+  check(
+    'a page is drawn while the text of the file is read',
+    numbers.whileRead.page < numbers.whileRead.linesLast,
+    `the page after ${numbers.whileRead.page} ms, the lines after ${numbers.whileRead.linesFirst}–${numbers.whileRead.linesLast} ms`,
+  );
+
   // ---- the first page ----
   numbers.first = await app.execAsync(
     `${PICTURED}

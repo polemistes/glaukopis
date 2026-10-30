@@ -4,7 +4,11 @@
    * another, scrolled. Each is drawn by the core at exactly the width it is
    * shown and comes as the bytes of a PNG, one page to a call, the nearest
    * to the view first, a few at a time (ADR 0072); the pictures of forty are
-   * kept, and only those in view and beside them stand in the document. The
+   * kept, and only those in view and beside them stand in the document. A
+   * page asked for and not yet come shows that it is coming, a moment after
+   * it is asked for. The view says now and then that it still shows the
+   * file, so that the process that keeps the file open is not ended as idle
+   * while a page is read at length. The
    * page in view is the one at the middle of the side; the place is the page
    * at its top edge and how far down it, told a moment after the scrolling
    * rests and when the view goes, so that a tab comes back where it was.
@@ -16,16 +20,18 @@
   import { SvelteMap } from 'svelte/reactivity';
   import { isNotFound } from '$lib/api/backend';
   import { ocrStop } from '$lib/api/ocr';
-  import { filePage, type FileFacts } from '$lib/api/viewer';
+  import { fileKeep, filePage, type FileFacts } from '$lib/api/viewer';
   import { t } from '$lib/i18n';
   import { clampZoom, FILE, PX_PER_PT, rung, wheeled } from '$lib/preview/zoom';
   import { shortcuts } from '$lib/shell/keys.svelte';
+  import Spinner from '$lib/ui/Spinner.svelte';
   import { newId } from '$lib/util/id';
   import {
     AROUND,
     columnWidth,
     heightOf,
     IN_FLIGHT,
+    KEEP_EVERY,
     lacking,
     pageAt,
     pageLeft,
@@ -166,6 +172,13 @@
   function letGoLater(url: string) {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
+
+  // The file is kept open while the view shows it: said every so often, since
+  // the process that draws the pages is ended after a while without a request.
+  onMount(() => {
+    const keeping = setInterval(() => void fileKeep(file).catch(() => {}), KEEP_EVERY);
+    return () => clearInterval(keeping);
+  });
 
   onDestroy(() => {
     // Where it was left is told as it goes: a tab switched away from keeps its place.
@@ -390,6 +403,8 @@
           <PageText {file} page={n} width={placed.widths[i]} />
         {:else if d?.failed}
           <p class="failed">{t('viewer-not-drawn', { why: d.failed })}</p>
+        {:else}
+          <div class="coming" data-page-coming><Spinner size={24} /></div>
         {/if}
       </div>
     {/each}
@@ -443,5 +458,21 @@
     color: var(--ink-3);
     font-size: var(--text-sm);
     text-align: center;
+  }
+  /* A page not yet come says so in its middle, from a moment after it is
+     asked for: one that comes at once never blinks. */
+  .coming {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    animation: coming 200ms ease-out 400ms forwards;
+  }
+  @keyframes coming {
+    to {
+      opacity: 1;
+    }
   }
 </style>
