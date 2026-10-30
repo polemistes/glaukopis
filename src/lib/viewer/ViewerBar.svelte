@@ -9,6 +9,7 @@
   import BookmarkIcon from '@lucide/svelte/icons/bookmark';
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import Pencil from '@lucide/svelte/icons/pencil';
+  import Printer from '@lucide/svelte/icons/printer';
   import { t } from '$lib/i18n';
   import { FILE, FILE_ZOOMS, zoomAsked } from '$lib/preview/zoom';
   import { keysFor } from '$lib/shell/keys.svelte';
@@ -34,6 +35,10 @@
     onedit?: () => void;
     /** Opens the bookmarks and the contents of a PDF, by the button (ADR 0072). */
     onplaces?: (anchor: HTMLElement) => void;
+    /** Prints the file (record 0075). */
+    onprint?: () => void;
+    /** Whether it is being printed: the button waits. */
+    printing?: boolean;
   }
 
   let {
@@ -49,6 +54,8 @@
     editing = false,
     onedit,
     onplaces,
+    onprint,
+    printing = false,
   }: Props = $props();
 
   const printed = $derived(labels[page - 1] ?? '');
@@ -173,6 +180,19 @@
       onclick={(e) => onplaces(e.currentTarget)}
     >
       <BookmarkIcon size={13} />
+    </button>
+  {/if}
+  {#if onprint}
+    <button
+      type="button"
+      class="zoom print"
+      aria-label={t('viewer-print')}
+      disabled={printing}
+      data-viewer-print
+      use:tooltip={{ text: t('viewer-print'), shortcut: keysFor('print') }}
+      onclick={onprint}
+    >
+      <Printer size={13} />
     </button>
   {/if}
   {#if editable && onedit}

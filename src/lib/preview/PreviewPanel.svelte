@@ -483,7 +483,7 @@
       notice = null;
       // The pictures are the printing's from here: it lets go of them when it is over.
       urls.length = 0;
-      await printPages(pages, project.node(at)?.title || t('preview-file-name'), toFile);
+      await printPages(pages, project.node(at)?.title || t('preview-file-name'), { toFile });
       return { count: pages.length, width: pages[0]?.width ?? 0, height: pages[0]?.height ?? 0 };
     } catch (e) {
       notifyError(t('preview-print-failed'), e);

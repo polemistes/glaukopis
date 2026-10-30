@@ -5,12 +5,12 @@
 //! before it opens; on Windows and macOS through Tauri's print, which opens
 //! Edge's print dialog and the print sheet of the system.
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::error::CommandResult;
 
 /// The size of the pages to be printed, in points.
-#[derive(Debug, Clone, Copy, Deserialize)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Paper {
     pub width: f64,
@@ -43,6 +43,22 @@ pub async fn print_pages(
             });
         }
         window.print().map(|()| false).map_err(|e| crate::error::CommandError { kind: "print", message: e.to_string() })
+    }
+}
+
+/// The paper the system prints on where nothing else is asked, in points,
+/// on which a picture is printed: GTK's, by the locale, on Linux. Nothing
+/// elsewhere, where the page takes A4.
+#[tauri::command]
+pub async fn print_paper(app: tauri::AppHandle) -> Option<Paper> {
+    #[cfg(target_os = "linux")]
+    {
+        linux::default_paper(&app)
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        let _ = app;
+        None
     }
 }
 
@@ -167,6 +183,17 @@ mod linux {
             PRINTING.with(|p| p.borrow_mut().take());
             let _ = tx.send(Ok(()));
         }
+    }
+
+    /// GTK's paper of the locale, asked on the main thread, where GTK is.
+    pub fn default_paper(app: &tauri::AppHandle) -> Option<Paper> {
+        let (tx, rx) = mpsc::channel();
+        app.run_on_main_thread(move || {
+            let size = gtk::PaperSize::new(None);
+            let _ = tx.send(Paper { width: size.width(gtk::Unit::Points), height: size.height(gtk::Unit::Points) });
+        })
+        .ok()?;
+        rx.recv_timeout(std::time::Duration::from_secs(5)).ok()
     }
 
     /// The paper of the job: GTK's own where the page is of a size it knows,

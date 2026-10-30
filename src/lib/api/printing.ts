@@ -19,3 +19,6 @@ export interface Paper {
  */
 export const printPagesCommand = (paper: Paper | null, toFile: string | null) =>
   call<boolean>('print_pages', { paper, toFile });
+
+/** The paper the system prints on where nothing else is asked, on which a picture is printed: GTK's, on Linux; nothing elsewhere. */
+export const printPaper = () => call<Paper | null>('print_paper');

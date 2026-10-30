@@ -11,7 +11,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { App, outputDir, sleep } from './harness.mjs';
+import { App, outputDir, root, sleep } from './harness.mjs';
 
 const checks = [];
 function check(name, ok, detail = '') {
@@ -38,6 +38,16 @@ function picturesIn(file) {
     .split('\n')
     .slice(2)
     .filter((l) => /^\s*\d+\s+\d+\s+image\b/.test(l)).length;
+}
+
+/** The resolution of each picture the file has, by pdfimages: its x-ppi. */
+function resolutionsIn(file) {
+  return poppler('pdfimages', '-list', file)
+    .split('\n')
+    .slice(2)
+    .map((l) => l.trim().split(/\s+/))
+    .filter((cells) => cells[2] === 'image')
+    .map((cells) => Number(cells[12]));
 }
 
 /** How many fonts the file has, by pdffonts. */
@@ -194,6 +204,89 @@ try {
     execFileSync('xdotool', ['windowfocus', '--sync', dialog, 'key', 'Escape'], onTheDisplay);
     const gone = await app.waitGone('#print-pages', 10000).then(() => true, () => false);
     check('closed without printing, the pages leave the page', gone);
+  }
+
+  // ---- a file in a view: a PDF by a range of its pages, an image as it is ----
+  const invoke = (command, args) =>
+    app.execAsync(`return await window.__TAURI_INTERNALS__.invoke(arguments[0], arguments[1]);`, command, args);
+  const taken = await invoke('files_take_in', {
+    paths: [join(root, 'e2e/fixtures/structure.pdf'), join(root, 'resources/brand/owl.png')],
+    folder: null,
+    structure: true,
+    ticket: null,
+  });
+  const pdfHash = taken.files.find((f) => f.name.endsWith('.pdf'))?.hash;
+  const owlHash = taken.files.find((f) => f.name.endsWith('.png'))?.hash;
+  await app.execAsync('window.__glaukopisViewer.show(arguments[0]);', pdfHash);
+  await app.waitFor('[data-file-side] [data-viewer-print]', 20000);
+  check(
+    'the bar of a file has Print…',
+    (await app.exec(`return document.querySelector('[data-file-side] [data-viewer-print]').getAttribute('aria-label')`)) ===
+      'Print…',
+  );
+  await app.click('[data-file-side] [data-viewer-print]');
+  await app.waitForText('dialog[open] h2', 'Pages to print', 3000);
+  await sleep(300);
+  const range = await app.exec(
+    `const all = document.querySelector('dialog[open] [data-print-all]');
+     return { all: all.checked, words: all.parentElement.textContent.trim(), to: document.querySelector('dialog[open] [data-print-to]').value };`,
+  );
+  check(
+    'it asks which pages first, all of them chosen',
+    range.all && range.words === 'All 2 pages' && range.to === '2',
+    JSON.stringify(range),
+  );
+  await app.screenshot('print-3-range');
+  await app.press('Escape');
+  await app.waitGone('dialog[open]', 3000);
+
+  const filePdf = join(outputDir, 'print-file.pdf');
+  rmSync(filePdf, { force: true });
+  const filePrinted = await app.execAsync(
+    'return await window.__glaukopisFilePrint.toFile(arguments[0], 1, 2);',
+    filePdf,
+  );
+  check('the pages of the PDF are drawn and printed', !!filePrinted && (await written(filePdf)), JSON.stringify(filePrinted));
+  if (filePrinted && existsSync(filePdf)) {
+    const info = infoOf(filePdf);
+    check('both pages, on paper of their size, A5', info.pages === 2 && near(info.width, 419.53) && near(info.height, 595.28), JSON.stringify(info));
+    const dpi = resolutionsIn(filePdf);
+    check(
+      'each a picture drawn at the resolution print wants',
+      dpi.length === 2 && dpi.every((d) => d >= 290 && d <= 310),
+      dpi.join(', '),
+    );
+  }
+  check('the pages leave the page when they are printed', !(await app.exists('#print-pages')));
+
+  // Ctrl+P while the file has the focus asks the pages of the file, not of the document beside it.
+  await app.click('[data-viewer-pages]');
+  await sleep(300);
+  await app.keys(['Control', 'p']);
+  const asked = await app.waitForText('dialog[open] h2', 'Pages to print', 3000).then(() => true, () => false);
+  check('Ctrl+P on a file asks which of its pages to print', asked);
+  if (asked) {
+    await app.press('Escape');
+    await app.waitGone('dialog[open]', 3000);
+  }
+
+  await app.execAsync('window.__glaukopisViewer.show(arguments[0]);', owlHash);
+  await app.waitFor('[data-file-side] .bar', 10000);
+  await sleep(1500);
+  const imagePdf = join(outputDir, 'print-image.pdf');
+  rmSync(imagePdf, { force: true });
+  const imagePrinted = await app.execAsync(
+    'return await window.__glaukopisFilePrint.toFile(arguments[0], 1, 1);',
+    imagePdf,
+  );
+  check('an image is printed', !!imagePrinted && (await written(imagePdf)), JSON.stringify(imagePrinted));
+  if (imagePrinted && existsSync(imagePdf)) {
+    const info = infoOf(imagePdf);
+    const a4 = near(info.width, 595.28) && near(info.height, 841.89);
+    const letter = near(info.width, 612) && near(info.height, 792);
+    check("as one page, on the system's paper", info.pages === 1 && (a4 || letter), JSON.stringify(info));
+    const dpi = resolutionsIn(imagePdf);
+    check('at its own size, taken as 300 dots per inch', dpi.length === 1 && dpi[0] >= 290 && dpi[0] <= 310, dpi.join(', '));
   }
 
   // ---- the end ----

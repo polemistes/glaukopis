@@ -443,10 +443,8 @@
    * it where it is closed or shows the other side, and its pages waited for.
    */
   async function printActive() {
-    if (isFile(sides.active)) {
-      // A file side prints its file: stage 3 of docs/plans/printing.md.
-      return;
-    }
+    const shown = sides.active;
+    if (isFile(shown)) return fileSideViews[shown.key]?.print();
     const side = active;
     if (!side) return;
     if (panes.typesetting !== side.key) panes.typesetFor(side.key);

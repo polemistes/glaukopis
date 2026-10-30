@@ -271,6 +271,7 @@ pub fn run() {
             commands::documents::document_export_stop,
             commands::documents::open_path,
             commands::printing::print_pages,
+            commands::printing::print_paper,
             commands::found::found_suggest,
             commands::found::found_propose,
             commands::found::found_draft,

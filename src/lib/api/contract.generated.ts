@@ -17,6 +17,7 @@ import type * as viewer from './viewer';
 import type * as math from './math';
 import type * as tables from './tables';
 import type * as sharing from './sharing';
+import type * as printing from './printing';
 import type * as words from './words';
 import type * as languages from './languages';
 import type * as spelling from './spelling';
@@ -4269,6 +4270,11 @@ export const printPages: documents.PrintPage[] = [
     "svg": "<svg/>"
   }
 ];
+
+export const paper: printing.Paper = {
+  "height": 841.89,
+  "width": 595.28
+};
 
 export const exportedDocument: documents.Exported = {
   "also": [

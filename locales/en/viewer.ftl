@@ -78,3 +78,23 @@ viewer-contents-none = The file has no table of contents of its own
 
 # The tabs opened, files by their references, a file read in the library (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
 viewer-back-to-files = Back to the files
+
+# Printing (docs/plans/printing.md, record 0075).
+# The button in the bar of a file, and in the dialog of its pages, that prints.
+viewer-print = Print…
+# The dialog that asks which pages of a PDF to print, before they are drawn.
+viewer-print-pages = Pages to print
+viewer-print-all = { $count ->
+    [one] The one page
+   *[other] All { $count } pages
+}
+# "From [3] to [10]": the words around two fields of page numbers.
+viewer-print-from = From
+viewer-print-to = to
+# Told while the pages are drawn for printing, before the system's dialog opens.
+viewer-print-drawing = { $count ->
+    [one] Drawing one page for printing…
+   *[other] Drawing { $count } pages for printing…
+}
+viewer-print-stop = Stop
+viewer-print-failed = The pages could not be drawn for printing

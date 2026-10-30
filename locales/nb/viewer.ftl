@@ -76,3 +76,19 @@ viewer-contents-none = Filen har ingen egen innholdsfortegnelse
 
 # Fanene åpnet, filer etter referansene sine, en fil lest i biblioteket (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
 viewer-back-to-files = Tilbake til filene
+
+# Utskrift (docs/plans/printing.md, record 0075).
+viewer-print = Skriv ut …
+viewer-print-pages = Sider som skal skrives ut
+viewer-print-all = { $count ->
+    [one] Den ene siden
+   *[other] Alle { $count } sidene
+}
+viewer-print-from = Fra
+viewer-print-to = til
+viewer-print-drawing = { $count ->
+    [one] Tegner én side for utskrift …
+   *[other] Tegner { $count } sider for utskrift …
+}
+viewer-print-stop = Stopp
+viewer-print-failed = Sidene kunne ikke tegnes for utskrift

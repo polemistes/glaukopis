@@ -27,8 +27,9 @@ function pt(n: number): string {
 /**
  * So much shorter than the paper each sheet is made: a sheet of the paper's
  * height to the last fraction spills that fraction onto a sheet of its own,
- * and every page is followed by an empty one. The point is taken from the
- * foot of the page, in its margin, rather than shrinking the page.
+ * and every page is followed by an empty one. A page of the paper's size
+ * loses half a point at its head and its foot, in its margins, rather than
+ * being made smaller.
  */
 const SLACK = 1;
 
@@ -50,7 +51,7 @@ export function printStyle([width, height]: readonly [number, number]): string {
     `  body > :not(${id}) { display: none !important; }`,
     `  ${id} { display: block !important; }`,
     `  ${id} .page { width: ${pt(width)}; height: ${pt(height - SLACK)}; overflow: hidden;`,
-    '    display: flex; align-items: flex-start; justify-content: center; }',
+    '    display: flex; align-items: center; justify-content: center; }',
     `  ${id} .page + .page { break-before: page; page-break-before: always; }`,
     `  ${id} img { display: block; flex: none; }`,
     '}',
@@ -91,24 +92,34 @@ function letGo() {
   held = null;
 }
 
+/** Waits until a picture is there to be drawn: decoded as each page is printed, not all at once. */
+function loaded(img: HTMLImageElement): Promise<void> {
+  if (img.complete) return Promise.resolve();
+  return new Promise((done) => {
+    img.addEventListener('load', () => done(), { once: true });
+    img.addEventListener('error', () => done(), { once: true });
+  });
+}
+
 /**
- * Prints the pages through the system's dialog, the job named `name`. The
- * pages' URLs are taken over: they are let go of when the pages leave the
- * page. Where the system says when the printing is over (Linux), the pages
- * leave then; elsewhere when the page is told it was printed, or at the next
- * printing, so that the system never draws from pages that are gone. With
- * `toFile`, on Linux, to a PDF at that path with no dialog.
+ * Prints the pages through the system's dialog, the job named `name`, on
+ * the paper given, or on paper of the first page's size. The pages' URLs are
+ * taken over: they are let go of when the pages leave the page. Where the
+ * system says when the printing is over (Linux), the pages leave then;
+ * elsewhere when the page is told it was printed, or at the next printing,
+ * so that the system never draws from pages that are gone. With `toFile`,
+ * on Linux, to a PDF at that path with no dialog.
  */
 export async function printPages(
   pages: readonly PrintablePage[],
   name: string,
-  toFile?: string,
+  { paper: asked, toFile }: { paper?: [number, number]; toFile?: string } = {},
 ): Promise<void> {
   letGo();
   const container = document.createElement('div');
   container.id = PRINT_PAGES_ID;
   container.setAttribute('aria-hidden', 'true');
-  const paper = paperOf(pages);
+  const paper = asked ?? paperOf(pages);
   const style = document.createElement('style');
   style.textContent = printStyle(paper);
   container.append(style, ...pageElements(pages, paper));
@@ -116,9 +127,8 @@ export async function printPages(
   held = { container, urls: pages.map((p) => p.url) };
   const mine = held;
 
-  await Promise.all(
-    [...container.querySelectorAll('img')].map((img) => img.decode().catch(() => {})),
-  );
+  // Loaded, not decoded: a hundred pages of a scan, decoded at once, would fill the memory.
+  await Promise.all([...container.querySelectorAll('img')].map(loaded));
   const title = document.title;
   document.title = name;
   let over: boolean;
