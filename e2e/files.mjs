@@ -117,7 +117,9 @@ try {
       `return Array.from(document.querySelectorAll('[data-file-list] [data-hash]')).map((e) => ({
          hash: e.dataset.hash,
          kind: e.dataset.kind,
-         name: e.querySelector('[data-cell="name"], .name')?.textContent.trim() ?? '',
+         // The file's own name: in the line, or in its tooltip where the reference names it (ADR 0074).
+         name: e.getAttribute('title') || e.querySelector('[data-cell="name"], .name')?.textContent.trim() || '',
+         nameShown: !e.getAttribute('title') && !!e.querySelector('[data-cell="name"], .name'),
          // The reference as the line says it: in its columns where it has some, the people and the year.
          reference: e.querySelector('.reference')?.textContent.trim()
            ?? [e.querySelector('[data-cell="people"]')?.textContent.trim(), e.querySelector('[data-cell="year"]')?.textContent.trim()].filter(Boolean).join(' '),
@@ -426,9 +428,23 @@ try {
     given?.people === 'Lord' && given?.year === '1960' && given?.title === 'The Singer of Tales' && given?.publisher === 'Harvard University Press',
     JSON.stringify(given),
   );
-  check('and the file’s own name after them', given?.name === 'plate.png', given?.name);
+  check('and the file’s own name in the tooltip, not in the line', given?.name === 'plate.png' && given?.nameShown === false, JSON.stringify(given));
+  // The pane names it by its reference; its own name is among the facts, and changed there (ADR 0074).
+  const head = () => app.exec(`const h = document.querySelector('.file-pane [data-field="heading"]'); return h ? { named: h.querySelector('.named')?.textContent.trim(), sub: h.querySelector('.sub')?.textContent.trim() ?? '', title: h.title } : null`);
+  const plateHead = await until('the pane to say the reference', async () => ((await head())?.named === 'Lord 1960' ? head() : null), 5000).catch(() => null);
+  check('the pane names the file by its reference, the title under it', plateHead?.sub === 'The Singer of Tales' && plateHead?.title === 'plate.png', JSON.stringify(plateHead));
+  const nameField = () => app.exec(`const i = document.querySelector('.file-pane [data-field="name"] input'); return i ? { value: i.value, inFacts: !!i.closest('section')?.querySelector('.facts') } : null`);
+  check('its own name is a field among the facts', (await nameField())?.value === 'plate.png' && (await nameField())?.inFacts, JSON.stringify(await nameField()));
+  await app.exec(`const i = document.querySelector('.file-pane [data-field="name"] input'); i.focus(); i.select();`);
+  await app.keys('shield plate.png');
+  await app.press('Enter');
+  await until('the name to be kept', async () => record().files.find((f) => f.hash === plate.hash)?.name === 'shield plate.png', 5000).catch(() => {});
+  check('and it is renamed there by hand', record().files.find((f) => f.hash === plate.hash)?.name === 'shield plate.png', record().files.find((f) => f.hash === plate.hash)?.name);
+  const pointer = await app.exec(`const p = document.querySelector('.file-pane [data-preview]'); return p ? getComputedStyle(p).cursor : null`);
+  check('the preview shows the hand: a press reads the file', pointer === 'pointer', pointer);
+  await app.screenshot('files-2g-by-reference');
   const noReference = (await rows()).find((r) => r.hash === kept.hash);
-  check('a file of no reference keeps its name first, and says it has none', noReference?.name.endsWith('.pdf') && noReference?.reference === 'No reference', JSON.stringify(noReference));
+  check('a file of no reference keeps its name first, and says it has none', noReference?.name.endsWith('.pdf') && noReference?.nameShown && noReference?.reference === 'No reference', JSON.stringify(noReference));
   await sleep(500);
   await app.screenshot('files-2e-columns');
   await sortBy('By year');
@@ -500,6 +516,8 @@ try {
   check('as thumbnails, an image is shown small, and a PDF by its first page', thumbs === 'pdf|picture', thumbs);
   const side = () => app.exec(`return Math.round(document.querySelector('[data-file-list] [data-hash] .frame').getBoundingClientRect().width)`);
   check('in the middle size', (await side()) === 160, String(await side()));
+  const tile = await app.exec(`const e = document.querySelector('[data-file-list] [data-hash="${plate.hash}"]'); return e ? { words: e.querySelector('.name')?.textContent.trim(), title: e.title } : null`);
+  check('a tile is named as the tabs name it, its own name in the tooltip', tile?.words === 'Lord 1960' && tile?.title === 'shield plate.png', JSON.stringify(tile));
   await app.screenshot('files-2e-grid-medium');
   await view('Large');
   check('large', (await side()) === 240, String(await side()));

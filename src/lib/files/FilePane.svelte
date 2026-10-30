@@ -7,8 +7,9 @@
 
 <script lang="ts">
   /**
-   * One file of the library: the file itself, small, as a press on it shows
-   * it in a side; what it is called, where it stands, the references it
+   * One file of the library: named as the tabs name it, by its reference
+   * where it has one (ADR 0074); the file itself, small, as a press on it
+   * reads it; what it is called, where it stands, the references it
    * belongs to, where it came from; of an image, how large it is, what it
    * shows in words, and the projects in which it is a figure (ADR 0070);
    * and what can be done with it, by its kind. The pane is made anew for
@@ -53,6 +54,7 @@
     assign,
     bringInFile,
     exportFiles,
+    fileLabel,
     figuresIn,
     files,
     kindWords,
@@ -271,26 +273,15 @@
 
 {#if file}
   {@const Icon = KIND_ICONS[file.kind]}
+  {@const label = fileLabel(file)}
+  {@const first = file.references[0]}
   <div class="file-pane" data-file={file.hash}>
+    <!-- Named as the tabs name it; its own name is among the facts, where it is changed. -->
     <div class="head">
       <span class="kind-icon"><Icon size={22} strokeWidth={1.4} /></span>
-      <div class="field" data-field="name">
-        <TextField
-          label={t('files-name')}
-          bind:value={name}
-          serif
-          oninput={() => (naming = true)}
-          onblur={() => void keepName()}
-          onkeydown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              void keepName();
-            } else if (e.key === 'Escape') {
-              naming = false;
-              name = file.name;
-            }
-          }}
-        />
+      <div class="heading" data-field="heading" title={file.name}>
+        <span class="named">{label.name}</span>
+        {#if first?.authors && first.title}<span class="sub">{first.title}</span>{/if}
       </div>
     </div>
 
@@ -385,8 +376,10 @@
           {#if madeFrom}
             <p class="made" data-made-from>
               {t('files-made-from')}
-              <a href={formatRoute({ view: 'files', file: madeFrom.hash })} class="link"
-                >{madeFrom.name}</a
+              <a
+                href={formatRoute({ view: 'files', file: madeFrom.hash })}
+                class="link"
+                title={madeFrom.name}>{fileLabel(madeFrom).name}</a
               >
             </p>
           {/if}
@@ -394,8 +387,10 @@
             <div class="copies" data-copies>
               <p class="made">{t('files-copies')}</p>
               {#each copies as copy (copy.hash)}
-                <a href={formatRoute({ view: 'files', file: copy.hash })} class="link"
-                  >{copy.name}</a
+                <a
+                  href={formatRoute({ view: 'files', file: copy.hash })}
+                  class="link"
+                  title={copy.name}>{fileLabel(copy).name}</a
                 >
               {/each}
             </div>
@@ -417,6 +412,26 @@
 
     <section>
       <h3 class="overline">{t('files-about')}</h3>
+      <div class="naming">
+        <div class="field" data-field="name">
+          <TextField
+            label={t('files-name')}
+            bind:value={name}
+            serif
+            oninput={() => (naming = true)}
+            onblur={() => void keepName()}
+            onkeydown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                void keepName();
+              } else if (e.key === 'Escape') {
+                naming = false;
+                name = file.name;
+              }
+            }}
+          />
+        </div>
+      </div>
       <dl class="facts">
         <dt>{t('files-kind')}</dt>
         <dd>{kindWords(file.kind)}</dd>
@@ -479,16 +494,43 @@
   }
   .head {
     display: flex;
-    align-items: flex-end;
+    align-items: flex-start;
     gap: 12px;
   }
   .kind-icon {
     display: inline-flex;
     flex: none;
-    margin-bottom: 7px;
+    margin-top: 2px;
     color: var(--ink-3);
   }
-  .head .field {
+  .heading {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+  }
+  .heading .named {
+    font-family: var(--font-text);
+    font-size: var(--text-xl);
+    line-height: 1.25;
+    color: var(--ink);
+    overflow-wrap: anywhere;
+  }
+  .heading .sub {
+    font-family: var(--font-text);
+    font-size: var(--text-md);
+    color: var(--ink-2);
+    overflow-wrap: anywhere;
+  }
+  /* The file's own name, first of the facts, and what names it by its reference. */
+  .naming {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    margin: 6px 0 10px;
+  }
+  .naming .field {
     flex: 1;
     min-width: 0;
   }
@@ -503,7 +545,8 @@
     border-radius: var(--radius-m);
     background: var(--paper-sunken);
     overflow: hidden;
-    cursor: zoom-in;
+    /* A press reads the file: the hand of a button, not a magnifying glass. */
+    cursor: pointer;
   }
   .preview:hover {
     box-shadow: 0 0 0 1px var(--line-strong);

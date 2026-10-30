@@ -90,6 +90,21 @@ describe('a file named by its reference', () => {
     expect(fileLabel(undefined, 'gone')).toEqual({ name: 'gone', title: 'gone', named: false });
   });
 
+  it('with its own name only where its work has another file of the same ending', async () => {
+    const { twinsOf } = await import('./store.svelte');
+    const at = (hash: string, path: string, references: import('$lib/api/library').Summary[]) =>
+      ({ hash, path, name: path, references }) as unknown as import('$lib/api/files').FileView;
+    const twins = twinsOf([
+      at('v1', 'aa/v1/Volume 1.pdf', [work({})]),
+      at('v2', 'aa/v2/Volume 2.PDF', [work({})]),
+      at('ep', 'aa/ep/Singer.epub', [work({})]),
+      at('other', 'aa/ot/Other.pdf', [work({ id: 'x' })]),
+      at('loose1', 'aa/l1/scan.pdf', []),
+      at('loose2', 'aa/l2/scan2.pdf', []),
+    ]);
+    expect([...twins].sort()).toEqual(['v1', 'v2']);
+  });
+
   it('with its people and their roles, the translators after the others', async () => {
     const { peopleWords } = await import('./store.svelte');
     expect(peopleWords(work({}))).toBe('Lord');

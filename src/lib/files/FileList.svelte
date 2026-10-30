@@ -2,13 +2,15 @@
   /**
    * The files of the folder in view (ADR 0043, 0070, 0073): one line each,
    * with the kind; where the file belongs to a reference, the reference's
-   * people with their roles, its year, title and publisher, and the file's
-   * name small after them; else the name and where the file is used; when it
+   * people with their roles, its year, title and publisher, the file's own
+   * name small after them only where its work has another file of the same
+   * ending (ADR 0074), else in the tooltip; a file of no reference by its name
+   * and where it is used; when it
    * was taken in and its size, and its folder where those under the folder
    * are shown too. A narrow list says the reference by its short form, and
    * leaves out when the file was taken in. Or a grid
    * of thumbnails, an image as it is and a PDF by its first page, in three
-   * sizes. Several are selected as references are in their list, and
+   * sizes, each named as the tabs name it. Several are selected as references are in their list, and
    * dragged onto a folder together. Only the lines or rows of tiles that are
    * seen are made, so that a library of thousands scrolls freely and only the
    * thumbnails in sight are asked for.
@@ -22,9 +24,11 @@
   import {
     FILES_DRAGGED,
     KIND_ICONS,
+    fileLabel,
     kindWords,
     peopleWords,
     referenceWords,
+    twinsOf,
     files as store,
   } from './store.svelte';
   import { keyOf } from '$lib/shell/keys.svelte';
@@ -95,6 +99,13 @@
   );
   const visible = $derived(files.slice(firstRow * across, lastRow * across));
   const selected = $derived(new Set(selection));
+  /** The files whose own names tell them from another file of their work: of the whole library. */
+  const twins = $derived(twinsOf(store.files));
+
+  /** Whether a file's line or tile says its name; where it does not, its tooltip does. */
+  function nameShown(file: FileView): boolean {
+    return !grid && (!file.references.length || twins.has(file.hash));
+  }
   const focused = $derived(selection.length ? selection[selection.length - 1] : null);
 
   // The list is scrolled as it was left when it is made again.
@@ -333,7 +344,7 @@
           data-hash={file.hash}
           data-kind={file.kind}
           style:height={grid ? undefined : `${ROW}px`}
-          title={grid ? file.name : undefined}
+          title={nameShown(file) ? undefined : file.name}
           onpointerdown={(e) => onpointerdown(e, file)}
           ondblclick={() => onopen?.(file)}
           oncontextmenu={(e) => oncontextmenu(e, file)}
@@ -349,7 +360,7 @@
               {/if}
               {#if !where.none}<span class="used-mark" title={where.words}></span>{/if}
             </span>
-            <span class="name truncate">{file.name}</span>
+            <span class="name truncate">{fileLabel(file).name}</span>
             {#if folders}<span class="folder truncate">{folderName(file)}</span>{/if}
           {:else}
             {@const ref = file.references[0]}
@@ -362,10 +373,14 @@
               <span class="year" data-cell="year">{ref.year}</span>
               <span class="title truncate" data-cell="title">{ref.title}</span>
               <span class="publisher truncate" data-cell="publisher">{ref.publisher}</span>
-              <span class="file-name truncate" data-cell="name" title={file.name}>{file.name}</span>
+              {#if twins.has(file.hash)}
+                <span class="file-name truncate" data-cell="name">{file.name}</span>
+              {/if}
             {:else if ref}
               <span class="short truncate" data-cell="people">{where.words}</span>
-              <span class="file-name truncate" data-cell="name" title={file.name}>{file.name}</span>
+              {#if twins.has(file.hash)}
+                <span class="file-name truncate" data-cell="name">{file.name}</span>
+              {/if}
             {:else}
               <span class="name truncate" data-cell="name">{file.name}</span>
               <span class="reference truncate" class:none={where.none}>{where.words}</span>

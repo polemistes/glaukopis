@@ -36,6 +36,7 @@ import {
 import { open } from '@tauri-apps/plugin-dialog';
 import type { ProjectInfo } from '$lib/api/projects';
 import { revealPath } from '$lib/api/system';
+import { fileEnding } from '$lib/util/file-name';
 import { isBackendError } from '$lib/api/backend';
 import { libraryRemove, type StoredFile, type Summary } from '$lib/api/library';
 import type { Project } from '$lib/project/model/project.svelte';
@@ -347,6 +348,28 @@ export function fileLabel(
   if (!reference) return { name: file.name, title: file.name, named: false };
   const title = [reference.title, file.name].filter(Boolean).join('\n');
   return { name: referenceWords(reference), title, named: true };
+}
+
+/**
+ * The files that the words of their reference do not tell apart (ADR 0074):
+ * those whose first reference has another file of the same ending among
+ * `files`, two volumes of one book, say. Their own names are shown beside
+ * the reference. A PDF and an EPUB of one work are told apart by their
+ * endings, and a file of no reference by its name already.
+ */
+export function twinsOf(files: readonly FileView[]): Set<string> {
+  const by = new Map<string, string[]>();
+  for (const file of files) {
+    const reference = file.references[0];
+    if (!reference) continue;
+    const key = `${reference.id}\u0000${fileEnding(file.path)}`;
+    const group = by.get(key);
+    if (group) group.push(file.hash);
+    else by.set(key, [file.hash]);
+  }
+  const twins = new Set<string>();
+  for (const group of by.values()) if (group.length > 1) for (const hash of group) twins.add(hash);
+  return twins;
 }
 
 /**
