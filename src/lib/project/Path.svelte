@@ -32,7 +32,7 @@
   import type { Project } from './model/project.svelte';
   import { PROJECT } from './model/types';
   import { viewing } from './ProjectView.svelte';
-  import LibraryTrees from '$lib/viewer/LibraryTrees.svelte';
+  import FilesMenu from '$lib/viewer/FilesMenu.svelte';
   import { crumbsOf, fitCrumbs, type Crumb } from './path';
 
   interface Props {
@@ -50,7 +50,7 @@
     onselect: (id: string) => void;
     /** Shows another project in this side, at its top or at an element of it. */
     onproject: (id: string, at?: string) => void;
-    /** Shows a file of the library in this side (ADR 0069). */
+    /** Shows a file of the library in this side, chosen in the menu of files (ADR 0069). */
     onfile: (hash: string) => void;
   }
 
@@ -145,7 +145,8 @@
    * of projects as the list at the left has it, with its field, unfolded
    * along the path to the element in view, which is marked; a folder's crumb
    * opens it unfolded at that folder. A project chosen opens at its top, an
-   * element chosen is entered, in this side.
+   * element chosen is entered, in this side. The files of the library have a
+   * menu of their own, beside the chevron (`FilesMenu`).
    */
   let treeAt = $state<{ anchor: HTMLElement; folder: string | null } | null>(null);
   // The list asks for the actions of its place; where it chooses, none of them is offered.
@@ -255,6 +256,7 @@
   >
     <ChevronDown size={14} />
   </button>
+  <FilesMenu {onfile} />
   <div class="room" bind:this={room}>
     {#each fitted.shown as i, k (crumbs[i].kind + crumbs[i].id)}
       {@const before = k > 0 ? fitted.shown[k - 1] : i - 1}
@@ -293,12 +295,6 @@
           focusField
         />
       {/if}
-      <LibraryTrees
-        onfile={(hash) => {
-          treeAt = null;
-          onfile(hash);
-        }}
-      />
     </div>
   </Popover>
   <!-- Every crumb drawn whole, out of sight, to be measured; and the crumb … last. -->

@@ -19,6 +19,7 @@
   import ExternalLink from '@lucide/svelte/icons/external-link';
   import PanelRight from '@lucide/svelte/icons/panel-right';
   import BookOpen from '@lucide/svelte/icons/book-open';
+  import Printer from '@lucide/svelte/icons/printer';
   import { addToTabsMenu, anyProject } from '$lib/viewer/show';
   import FolderInput from '@lucide/svelte/icons/folder-input';
   import FolderOpen from '@lucide/svelte/icons/folder-open';
@@ -76,9 +77,11 @@
     onreplaced?: (hash: string) => void;
     /** Reads a PDF or an image in the files view, in the place of the list (ADR 0073). */
     onread?: (hash: string) => void;
+    /** Prints a PDF or an image through the system's dialog (record 0075). */
+    onprint?: (hash: string) => void;
   }
 
-  let { hash, onmove, onremoved, onreplaced, onread }: Props = $props();
+  let { hash, onmove, onremoved, onreplaced, onread, onprint }: Props = $props();
 
   // svelte-ignore state_referenced_locally
   const own = hash;
@@ -191,8 +194,8 @@
 
   /** What can be done with a file of its kind. */
   function kindActions(f: FileView): Action[] {
-    // A PDF and an image are read here, and added to the project's tabs; every file can be
-    // opened in another program.
+    // A PDF and an image are read here, added to the project's tabs, and printed; every file
+    // can be opened in another program.
     const shown: Action[] =
       f.kind === 'pdf' || f.kind === 'picture'
         ? [
@@ -224,6 +227,9 @@
         icon: ExternalLink,
         run: () => void openElsewhere(f.path),
       },
+      ...(onprint && (f.kind === 'pdf' || f.kind === 'picture')
+        ? [{ id: 'print', label: t('viewer-print'), icon: Printer, run: () => onprint(f.hash) }]
+        : []),
       {
         id: 'reveal',
         label: t('files-reveal'),

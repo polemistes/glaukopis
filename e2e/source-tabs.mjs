@@ -47,7 +47,7 @@ const shown = (app) =>
       scrolled: pages ? Math.round(pages.scrollTop) : null,
       drawn: side ? Array.from(side.querySelectorAll('.page[data-page] img')).filter((i) => i.complete && i.naturalWidth > 0).length : 0,
       image: !!side?.querySelector('[data-viewer-image] img'),
-      project: document.querySelector('.top .cell [data-path][data-file] [data-crumb="project"] .name')?.textContent.trim() ?? null,
+      project: document.querySelector('.top .cell [data-path][data-file]')?.dataset.projectName || null,
       focused: !!side?.classList.contains('focused') || document.querySelectorAll('[data-side-key]').length === 1,
       empty: side?.textContent.includes('No files here yet') ?? false,
     };`);
@@ -293,7 +293,7 @@ try {
     app.exec(`return Array.from(document.querySelectorAll('[data-side-key]')).map((p, i) => {
       const cell = document.querySelector('.top .cell[data-side="' + i + '"]');
       return p.matches('[data-file-side]')
-        ? 'file:' + (cell?.querySelector('[data-crumb="project"] .name')?.textContent.trim() ?? '')
+        ? 'file:' + (cell?.querySelector('[data-path][data-file]')?.dataset.projectName ?? '')
         : (p.querySelector('.diagram') ? 'diagram' : p.querySelector('.text-view') ? 'text' : '?') + ':' + (cell?.querySelector('[data-crumb-last] .name')?.textContent.trim() ?? '');
     })`);
   /** Opens a project from the start screen, the map of the window having the focus, so that the window is let go first. */

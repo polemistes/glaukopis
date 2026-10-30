@@ -88,8 +88,8 @@ try {
   check('the first page is drawn by the core, in colour', first.drawn.includes(1));
   const cell = await app.exec(`return document.querySelector('.top .cell [data-path][data-file] [data-crumb-last] .name')?.textContent.trim()`);
   check('the path over the side names the file', /structure/.test(cell ?? ''), cell);
-  const named = await app.exec(`return document.querySelector('.top .cell [data-path][data-file] [data-crumb="project"] .name')?.textContent.trim()`);
-  check('and the project whose tabs these are', named === 'Wrath and the hero', named);
+  const named = await app.exec(`return document.querySelector('.top .cell [data-path][data-file]')?.dataset.projectName`);
+  check('and knows the project whose tabs these are, without naming it', named === 'Wrath and the hero' && !(await app.exists('.top .cell [data-path][data-file] [data-crumb="project"]')), named);
   const tabWords = await until('the tab named by its reference', async () => {
     const tab = await app.exec(`const t = document.querySelector('[data-file-side] [data-tab][aria-selected="true"]'); return t ? { name: t.querySelector('.name').textContent.trim(), title: t.title } : null`);
     return tab?.name === 'Lord 1960' ? tab : null;
@@ -275,27 +275,29 @@ try {
   check('the image zooms in with the wheel', imageAfter?.width > imageBefore?.width * 1.3, `${Math.round(imageBefore?.width)} → ${Math.round(imageAfter?.width)}`);
   check('the place of the image under the pointer stays under it', same(imageBefore, imageAfter), JSON.stringify([imageBefore, imageAfter]));
   await app.screenshot('file-view-4b-image-zoomed');
-  // ---- the trees of files and images under the projects, from the chevron over a side ----
-  await app.click('.top [data-path][data-file] [data-path-all]');
-  await app.waitFor('[data-path-tree] [data-library-trees]', 3000);
-  const heads = await app.exec(`return Array.from(document.querySelectorAll('[data-library-trees] [data-tree-kind="tree"] .name')).map((n) => n.textContent.trim())`);
-  check('under the projects stands the tree of files', heads.join() === 'Files', heads.join());
-  await app.click('[data-library-trees] [data-tree-row="files"]');
-  await sleep(200);
+  // ---- the files of the library, from a menu of their own beside the chevron, with a field ----
+  await app.click('.top [data-path][data-file] [data-path-files]');
+  await app.waitFor('[data-files-menu] [data-library-trees]', 3000);
+  check('the menu of files opens with the cursor in its field', await app.exec(`const a = document.activeElement; return !!a && a.tagName === 'INPUT' && !!a.closest('[data-files-menu]')`));
   // A file of a reference is named by it, its own name in the tooltip.
   const fileRows = await app.exec(`return Array.from(document.querySelectorAll('[data-library-trees] [data-tree-kind="file"]')).map((r) => r.title || r.querySelector('.name').textContent.trim())`);
   check('the files that can be shown are listed, images among them, the one shown marked', fileRows.some((n) => n.endsWith('.pdf')) && fileRows.some((n) => n.endsWith('.png')) && (await app.exists('[data-library-trees] [data-tree-row="file:' + pngHash + '"].current')), fileRows.join(' | '));
+  await sleep(300); // the menu fades in
   await app.screenshot('file-view-4c-trees');
-  await app.click('[data-library-trees] [data-tree-row="file:' + pdfHash + '"]');
-  const fromTree = await until('the PDF from the tree', async () => {
+  await app.keys('structure');
+  await sleep(300);
+  const sought = await app.exec(`return Array.from(document.querySelectorAll('[data-library-trees] [data-tree-kind="file"]')).map((r) => r.title || r.querySelector('.name').textContent.trim())`);
+  check('what is written in the field leaves the files that answer to it', sought.length === 1 && /structure/.test(sought[0]), sought.join(' | '));
+  await app.press('Enter');
+  const fromTree = await until('the PDF from the menu', async () => {
     const s = await fileSide(app);
     return s?.file === pdfHash && s.drawn.length ? s : null;
   }, 20000);
-  check('a file chosen in the tree is shown in that side', fromTree.kinds.join() === 'map,file' && !(await app.exists('[data-path-tree]')));
-  // The chevron of a map side has the tree too.
+  check('Enter shows the file found in that side, and the menu closes', fromTree.kinds.join() === 'map,file' && !(await app.exists('[data-files-menu]')));
+  // The chevron of a side has the projects alone; the menu of files stands over a map side too.
   await app.click('.top [data-path]:not([data-file]) [data-path-all]');
-  await app.waitFor('[data-path-tree] [data-library-trees]', 3000);
-  check('the chevron of a map side has the tree of files too', (await app.exec(`return document.querySelectorAll('[data-library-trees] [data-tree-kind="tree"]').length`)) === 1);
+  await app.waitFor('[data-path-tree]', 3000);
+  check('the chevron has the projects alone', !(await app.exists('[data-path-tree] [data-library-trees]')) && (await app.exists('.top [data-path]:not([data-file]) [data-path-files]')));
   await app.press('Escape');
   await sleep(200);
   await app.click('[data-viewer-pages]');
@@ -363,7 +365,7 @@ try {
     return s?.file === pdfHash && (await app.exec('return location.hash')).startsWith('#/file/') ? s : null;
   }, 10000).catch(() => null);
   check('Show in the notice opens the project with the file among its tabs', !!fromFiles, JSON.stringify(fromFiles));
-  const besideIt = await app.exec(`return document.querySelector('.top .cell [data-path][data-file] [data-crumb="project"] .name')?.textContent.trim()`);
+  const besideIt = await app.exec(`return document.querySelector('.top .cell [data-path][data-file]')?.dataset.projectName`);
   check('the tabs of the project chosen', besideIt === 'Wrath and the hero', besideIt);
 
   // ---- from a citation: the file beside the text ----
@@ -408,12 +410,14 @@ try {
   await app.press('Escape');
   await sleep(300);
 
-  // ---- Split view: files of the library, several chosen by name (ADR 0074) ----
+  // ---- the plus of the tabs: files of the library, several chosen by name (ADR 0074); Split view offers none ----
   await app.click('.top button[data-side-by-side]');
   await app.waitFor('.menu [role="menuitem"]', 3000);
   const offered = await app.exec(`return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((m) => m.textContent.trim())`);
-  check('Split view offers files to add to the tabs', offered.some((o) => /Add files to the tabs/.test(o)), offered.join(' | '));
-  await app.clickText('.menu [role="menuitem"]', 'Add files to the tabs');
+  check("Split view offers the project's tabs, and no files", offered.some((o) => /The project's tabs/.test(o)) && !offered.some((o) => /files/i.test(o)), offered.join(' | '));
+  await app.press('Escape');
+  await sleep(200);
+  await app.click('[data-file-side] [data-tab-add]');
   await app.waitFor('[data-file-chooser]', 5000);
   const choosable = () => app.exec(`return Array.from(document.querySelectorAll('[data-file-chooser] [data-choose-file]')).map((e) => e.dataset.chooseFile)`);
   const offeredFiles = await choosable();

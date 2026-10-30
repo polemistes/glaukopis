@@ -15,6 +15,8 @@
   import Lock from '@lucide/svelte/icons/lock';
   import { attachmentOpen } from '$lib/api/library';
   import { t } from '$lib/i18n';
+  import { printFile, printable, type Printed } from '$lib/print/file';
+  import { testHook } from '$lib/shell/testing';
   import Button from '$lib/ui/Button.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
@@ -22,6 +24,7 @@
   import { newId } from '$lib/util/id';
   import ImageView from '$lib/viewer/ImageView.svelte';
   import PdfView from '$lib/viewer/PdfView.svelte';
+  import PrintRangeDialog from '$lib/viewer/PrintRangeDialog.svelte';
   import ViewerBar from '$lib/viewer/ViewerBar.svelte';
   import { START } from '$lib/viewer/sources';
   import { viewers } from '$lib/viewer/viewers.svelte';
@@ -73,8 +76,38 @@
       await attachmentOpen(path).catch((e) => notifyError(t('library-file-open-failed'), e));
   }
 
+  // ---- printing (record 0075): the file read prints as a file in a view does ----
+
+  let printing = $state(false);
+  let askingRange = $state(false);
+
+  /** Prints the file read: a PDF once the pages to print are chosen, a picture as it is. */
+  function print() {
+    if (printing || !printable(facts)) return;
+    if (facts.picture) void printRead(1, 1);
+    else askingRange = true;
+  }
+
+  async function printRead(from: number, to: number, toFile?: string): Promise<Printed | null> {
+    const shown = facts;
+    if (printing || !shown) return null;
+    printing = true;
+    try {
+      return await printFile(hash, shown, from, to, toFile);
+    } finally {
+      printing = false;
+    }
+  }
+
   let root = $state<HTMLElement>();
-  onMount(() => root?.querySelector<HTMLElement>('[data-viewer-pages]')?.focus());
+  onMount(() => {
+    root?.querySelector<HTMLElement>('[data-viewer-pages]')?.focus();
+    // The e2e scripts print to a file, where the dialog cannot be pressed.
+    testHook('__glaukopisFilePrint', {
+      toFile: (path: string, from: number, to: number) => printRead(from, to, path),
+    });
+    return () => testHook('__glaukopisFilePrint', undefined);
+  });
 
   function onkeydown(event: KeyboardEvent) {
     if (event.key !== 'Escape' || event.defaultPrevented) return;
@@ -105,6 +138,8 @@
       {percent}
       onpage={goToPage}
       onzoom={zoomTo}
+      onprint={print}
+      {printing}
     />
   {/if}
   {#if viewed?.gone}
@@ -151,6 +186,18 @@
     {/key}
   {/if}
 </section>
+
+{#if askingRange && facts}
+  <PrintRangeDialog
+    count={facts.pages}
+    page={middle}
+    onprint={(from, to) => {
+      askingRange = false;
+      void printRead(from, to);
+    }}
+    onclose={() => (askingRange = false)}
+  />
+{/if}
 
 <style>
   .reader {

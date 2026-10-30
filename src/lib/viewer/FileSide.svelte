@@ -21,13 +21,8 @@
     type Edit,
     type EditFacts,
   } from '$lib/api/files';
-  import { isBackendError } from '$lib/api/backend';
   import { attachmentOpen } from '$lib/api/library';
-  import { ocrStop } from '$lib/api/ocr';
-  import { printPaper } from '$lib/api/printing';
-  import { filePage } from '$lib/api/viewer';
-  import { printPages, type PrintablePage } from '$lib/print/pages';
-  import { newId } from '$lib/util/id';
+  import { printFile, printable, type Printed } from '$lib/print/file';
   import FileChooser from '$lib/files/FileChooser.svelte';
   import { files } from '$lib/files/store.svelte';
   import { shortcuts } from '$lib/shell/keys.svelte';
@@ -39,7 +34,7 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import { testHook } from '$lib/shell/testing';
   import { confirm } from '$lib/ui/confirm.svelte';
-  import { describeError, notifyError, notifyOk, toasts } from '$lib/ui/toast.svelte';
+  import { describeError, notifyError, notifyOk } from '$lib/ui/toast.svelte';
   import CropFrame from './CropFrame.svelte';
   import { isNothing, nothing } from './editing';
   import EditRow from './EditRow.svelte';
@@ -181,13 +176,7 @@
 
   // ---- printing (record 0075) ----
 
-  /** The resolution the pages of a file are drawn at for printing, and a picture is taken to have. */
-  const PRINT_DPI = 300;
-  /** So many pages are drawn at once, as the view draws them. */
-  const PRINT_AT_ONCE = 2;
-  /** A4, in points: the paper of a picture where the system says none. */
-  const A4: [number, number] = [595.28, 841.89];
-  /** Whether the file is being drawn or printed: never twice at once. */
+  /** Whether the file is being drawn or printed: the button waits. */
   let printing = $state(false);
   /** Whether the pages of a PDF to print are being asked. */
   let askingRange = $state(false);
@@ -197,78 +186,20 @@
    * print are chosen, since they must be drawn; a picture as it is.
    */
   export function print() {
-    if (printing || !file || !facts || facts.locked || facts.pages < 1) return;
-    if (facts.picture) void printFile(1, 1);
+    if (printing || !file || !printable(facts)) return;
+    if (facts.picture) void printShown(1, 1);
     else askingRange = true;
   }
 
-  /**
-   * Draws the pages `from` to `to` of the file shown at the resolution print
-   * wants, and prints them through the system's dialog: a PDF on paper of its
-   * first page's size, a picture on the system's paper, fitted where it is
-   * larger. With `toFile`, to a PDF there with no dialog, for the e2e
-   * scripts. What was printed: how many pages, and the size of the first.
-   */
-  async function printFile(
-    from: number,
-    to: number,
-    toFile?: string,
-  ): Promise<{ count: number; width: number; height: number } | null> {
+  /** Prints the pages `from` to `to` of the file shown (`print/file.ts`); with `toFile`, to a PDF there for the e2e scripts. */
+  async function printShown(from: number, to: number, toFile?: string): Promise<Printed | null> {
     const hash = file;
     const shown = facts;
     if (printing || !hash || !shown) return null;
     printing = true;
-    const ticket = newId();
-    let stopped = false;
-    const numbers = Array.from({ length: Math.max(0, to - from + 1) }, (_, i) => from + i);
-    const notice = toasts.show(
-      {
-        kind: 'info',
-        message: t('viewer-print-drawing', { count: numbers.length }),
-        action: {
-          label: t('viewer-print-stop'),
-          run: () => {
-            stopped = true;
-            void ocrStop(ticket).catch(() => {});
-          },
-        },
-      },
-      0,
-    );
-    const drawn = new Map<number, PrintablePage>();
     try {
-      let next = 0;
-      const drawing = async () => {
-        while (!stopped && next < numbers.length) {
-          const n = numbers[next++];
-          const [w, h] = shown.sizes[n - 1] ?? shown.sizes[0];
-          // A page of a PDF is measured in points; a picture, in its pixels.
-          const dots = shown.picture ? Math.round(w) : Math.round((w / 72) * PRINT_DPI);
-          const bytes = await filePage(hash, n, dots, ticket);
-          const url = URL.createObjectURL(new Blob([bytes], { type: 'image/png' }));
-          const size = shown.picture ? [(w * 72) / PRINT_DPI, (h * 72) / PRINT_DPI] : [w, h];
-          drawn.set(n, { url, width: size[0], height: size[1] });
-        }
-      };
-      await Promise.all(Array.from({ length: PRINT_AT_ONCE }, drawing));
-      if (stopped) return null;
-      toasts.dismiss(notice);
-      const pages = numbers.map((n) => drawn.get(n)!);
-      // The pictures are the printing's from here: it lets go of them when it is over.
-      drawn.clear();
-      const paper = shown.picture ? await printPaper().catch(() => null) : null;
-      await printPages(pages, files.get(hash)?.name ?? shown.name, {
-        toFile,
-        ...(shown.picture ? { paper: paper ? [paper.width, paper.height] : A4 } : {}),
-      });
-      return { count: pages.length, width: pages[0].width, height: pages[0].height };
-    } catch (e) {
-      if (!stopped && !(isBackendError(e) && e.kind === 'stopped'))
-        notifyError(t('viewer-print-failed'), e);
-      return null;
+      return await printFile(hash, shown, from, to, toFile);
     } finally {
-      toasts.dismiss(notice);
-      for (const page of drawn.values()) URL.revokeObjectURL(page.url);
       printing = false;
     }
   }
@@ -276,7 +207,7 @@
   // The e2e scripts print to a file, where neither dialog can be pressed.
   onMount(() => {
     testHook('__glaukopisFilePrint', {
-      toFile: (path: string, from: number, to: number) => printFile(from, to, path),
+      toFile: (path: string, from: number, to: number) => printShown(from, to, path),
     });
     return () => testHook('__glaukopisFilePrint', undefined);
   });
@@ -591,7 +522,7 @@
     page={middle}
     onprint={(from, to) => {
       askingRange = false;
-      void printFile(from, to);
+      void printShown(from, to);
     }}
     onclose={() => (askingRange = false)}
   />

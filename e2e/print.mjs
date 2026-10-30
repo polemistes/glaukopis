@@ -289,6 +289,37 @@ try {
     check('at its own size, taken as 300 dots per inch', dpi.length === 1 && dpi[0] >= 290 && dpi[0] <= 310, dpi.join(', '));
   }
 
+  // ---- from the files of the library: the menu of a file, and the file read there ----
+  await app.go('#/files');
+  await app.waitFor(`[data-file-list] [data-hash="${pdfHash}"]`, 10000);
+  await app.rightClick(`[data-file-list] [data-hash="${pdfHash}"]`);
+  await app.waitFor('[role="menu"]', 3000);
+  await sleep(250);
+  const fileMenu = await app.exec(`return Array.from(document.querySelectorAll('[role="menu"] [role="menuitem"]')).map((m) => m.textContent.trim())`);
+  check('the menu of a PDF among the files has Print…', fileMenu.includes('Print…'), fileMenu.join(' | '));
+  await app.clickText('[role="menuitem"]', 'Print…');
+  const askedInLibrary = await app.waitForText('dialog[open] h2', 'Pages to print', 5000).then(() => true, () => false);
+  check('which asks its pages, as a file in a view does', askedInLibrary);
+  if (askedInLibrary) {
+    await app.press('Escape');
+    await app.waitGone('dialog[open]', 3000);
+  }
+  await app.click(`[data-file-list] [data-hash="${owlHash}"]`);
+  await app.waitFor(`.file-pane[data-file="${owlHash}"] [data-action="print"]`, 5000);
+  check('the pane of an image has Print…', await app.exists(`.file-pane[data-file="${owlHash}"] [data-action="print"]`));
+  await app.click(`.file-pane[data-file="${owlHash}"] [data-action="read-file"]`);
+  await app.waitFor('[data-reader] [data-viewer-print]', 10000);
+  await sleep(1000);
+  const readPdf = join(outputDir, 'print-read.pdf');
+  rmSync(readPdf, { force: true });
+  const readPrinted = await app.execAsync(
+    'return await window.__glaukopisFilePrint.toFile(arguments[0], 1, 1);',
+    readPdf,
+  );
+  check('a file read in the library prints from its bar', !!readPrinted && (await written(readPdf)) && infoOf(readPdf).pages === 1, JSON.stringify(readPrinted));
+  await app.press('Escape');
+  await sleep(300);
+
   // ---- the end ----
   const errors = await app.pageErrors();
   check('no errors in the page', errors.length === 0, errors.slice(0, 3).join(' / '));

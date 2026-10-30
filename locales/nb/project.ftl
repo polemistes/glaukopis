@@ -253,8 +253,6 @@ project-delete-with = Slett med underelementer
 
 ## En fil vist i en side av vinduet (2026-10-26).
 
-project-beside-file = Legg til filer blant fanene …
-project-beside-file-title = Legg til filer blant fanene
 project-show-file = Vis filen
 # Der et verk har flere filer: ett valg for hver, ved navnet.
 project-show-file-named = Vis «{ $name }»

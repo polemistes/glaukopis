@@ -19,7 +19,8 @@ viewer-fit-image = The whole image in the view
 # The field in which a zoom is written, in percent.
 viewer-zoom-field = Zoom, in percent
 viewer-zoom-choose = Choose a zoom
-viewer-tree-files = Files
+viewer-files-menu = Files of the library
+viewer-files-search = Find a file
 viewer-tree-empty = Nothing here yet
 
 # A simple image editor (docs/plans/a-simple-image-editor.md): the button in the bar, the row under it, and what it says.

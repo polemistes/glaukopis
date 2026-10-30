@@ -1232,8 +1232,8 @@ there, and it stays where it was.
 **Reading a file there.** A double-click or **Enter** on a PDF or an image,
 **Read** in its pane or its menu, or a press on its picture in the pane,
 shows the file large in the place of the list, with the bar of a file in a
-view: its pages, the field to go to a page, the zoom, and the text of the
-pages to be selected and copied. The pane of the file stays beside it, so
+view: its pages, the field to go to a page, the zoom, **Print…**, and the
+text of the pages to be selected and copied. The pane of the file stays beside it, so
 that a reference is made or given with the title page in view. Nothing of
 your projects is touched, and where you read to is not kept. **Back to the
 files**, at its head, or **Escape**, brings the list back at the file.
@@ -1253,8 +1253,8 @@ from it**. Each is a link. Below are what can be done with a file of its kind:
 
 | Kind | What can be done |
 | --- | --- |
-| PDF | **Read**; **Add to a project's tabs…**; **Open in another program**; **Make searchable…**; **Import the text as a map…** |
-| Image | **Read**; **Add to a project's tabs…**; **Open in another program**; **Read the text…**, to copy or make an element of |
+| PDF | **Read**; **Add to a project's tabs…**; **Open in another program**; **Print…**; **Make searchable…**; **Import the text as a map…** |
+| Image | **Read**; **Add to a project's tabs…**; **Open in another program**; **Print…**; **Read the text…**, to copy or make an element of |
 | Document (Word, OpenDocument, EPUB, HTML, Markdown, Org, plain text) | **Open in another program**; **Bring in as elements…** |
 | Anything else | **Open in another program**, the one your system has for it |
 
@@ -1262,6 +1262,9 @@ from it**. Each is a link. Below are what can be done with a file of its kind:
 first, and leaves you in the library: the message after it says where the
 file went, and its **Show** opens that project with the file beside it. The
 menu of several files chosen adds the PDFs and images among them together.
+**Print…** prints a PDF or an image as a file in a view is printed (see
+*Reading*, under *A file in a view*): a PDF asks which pages first, an
+image prints as it is.
 
 **Named by the reference.** Files come with names that say nothing, from a
 scanner or from the archives of articles. **Name by the reference**, beside
@@ -1384,10 +1387,8 @@ A file is added to the project's tabs from:
   file (see *The files of the library*);
 - **Show the file** in the editor of a citation, beside each work that has a
   file, and in the menu of a work among the references of a document;
-- **Add files to the tabs…** in the menu of **Split view**, which asks for
-  the files by their names, several at once, and leaves out those among the
-  tabs already;
-- the plus at the end of the row of tabs, which asks the same.
+- the plus at the end of the row of tabs, which asks for the files by their
+  names, several at once, and leaves out those among the tabs already.
 
 Several files chosen come as tabs in the order you chose them, the last
 shown.
@@ -1395,23 +1396,22 @@ shown.
 The file goes to the view of tabs there is, as a new tab, or to its tab
 where it has one already. Where there is none, the other view becomes one,
 or one is made beside the text. Your text never gives way to the file you
-read. A file chosen under **Files** in the tree of projects, which the
-chevron over a view opens, comes in that view. **The project's tabs**, in
-the menu of Split view, opens the tabs as they were, without adding a file.
+read. A file chosen in the menu of files over a view, the button beside the
+chevron, comes in that view. **The project's tabs**, in the menu of Split
+view, opens the tabs as they were, without adding a file.
 
 A file read only to make its reference is read in the library itself: see
 *Reading a file there*, under *The files of the library*.
 
 ### Whose tabs
 
-A view of tabs shows the tabs of the project beside it, and its cell in the
-top row names that project, small, before the name of the file; a press on
-the project's name shows its map beside. When the map is closed, the view
-keeps its project: with only the PDF open, the tabs are still that
-project's, and a file you add goes to it. When another project is opened
-beside it, the view shows that project's tabs instead, and its cell says
-so. A file added with no project open goes among the tabs of the project
-you were last in.
+A view of tabs shows the tabs of the project beside it. Its cell in the top
+row names the file alone; the pointer over the name says whose tabs these
+are. When the map is closed, the view keeps its project: with only the PDF
+open, the tabs are still that project's, and a file you add goes to it.
+When another project is opened beside it, the view shows that project's
+tabs instead. A file added with no project open goes among the tabs of the
+project you were last in.
 
 A tab whose file belongs to a reference is named by it, *Lord 1960*; the
 pointer over it shows the title and the file's name.
@@ -1705,9 +1705,12 @@ enters it, and a folder opens the tree at that folder. The chevron at the
 start of the path opens the tree of all projects, unfolded down to the
 element in view, which is marked, with a field that finds a project by its
 name: a project chosen opens at its top in that side, an element is
-entered. Under the projects stands a tree, folded until opened, **Files**:
-the PDFs and images of the library in their folders; one chosen is shown in
-that side, in the place of what it showed. Where the path does not fit, the names in the middle make way for
+entered. Beside the chevron stands the button of the **files of the
+library**, with a menu of its own: the PDFs and images of the library in
+their folders, folded until opened, under a field that finds a file by its
+name or by the work it belongs to; one chosen is shown in that side, in the
+place of what it showed, and **Enter** in the field shows the first found.
+Where the path does not fit, the names in the middle make way for
 **…**, which lists them; the first name, the project and the element in
 view always show. Where the project could not be saved, its name in the
 path has a red sign, and the pointer on it says why. What is done with an

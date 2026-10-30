@@ -1,45 +1,50 @@
 <script module lang="ts">
   import { SvelteSet } from 'svelte/reactivity';
 
-  /** The folders unfolded by hand in the tree, kept while the application runs; the tree itself among them. */
+  /** The folders unfolded by hand in the tree, kept while the application runs. */
   const unfolded = new SvelteSet<string>();
 </script>
 
 <script lang="ts">
   /**
-   * Under the tree of all projects, which the chevron over a side opens
-   * (ADR 0069, 0070): the files of the library that can be shown, PDFs and
-   * images, in their folders, as a tree folded until it is opened. A file
-   * chosen is shown in that side, in the place of what it showed.
+   * The files of the library that can be shown in a side, PDFs and images,
+   * in their folders, as a tree under the field of the menu of files over a
+   * side (ADR 0069): the folders folded until opened. With something written
+   * in the field, the files that answer to it alone, in the folders that hold
+   * them, unfolded. A file chosen is shown in that side, in the place of what
+   * it showed; the one it shows is marked.
    */
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import FileText from '@lucide/svelte/icons/file-text';
   import Folder from '@lucide/svelte/icons/folder';
   import type { FileFolder, FileView } from '$lib/api/files';
-  import { fileLabel, files, KIND_ICONS } from '$lib/files/store.svelte';
+  import { fileLabel, fileMatches, files, KIND_ICONS } from '$lib/files/store.svelte';
   import { t } from '$lib/i18n';
 
   interface Props {
-    /** The file this side shows, marked in the trees. */
+    /** The file this side shows, marked in the tree. */
     current?: string | null;
+    /** What was written in the field: the files that answer to it alone are listed. */
+    filter?: string;
     /** Shows a file of the library in this side. */
     onfile: (hash: string) => void;
+    /** The key up from the first row: the field over the tree takes the cursor. */
+    onup?: () => void;
   }
 
-  let { current = null, onfile }: Props = $props();
+  let { current = null, filter = '', onfile, onup }: Props = $props();
 
   $effect(() => {
     if (!files.loaded) void files.load();
   });
 
-  const FILES = 'files';
   const step = 14;
   const left = 4;
 
-  /** A row of the tree: its head, a folder, or a file that can be shown. */
+  /** A row of the tree: a folder, or a file that can be shown. */
   interface Row {
     key: string;
-    kind: 'tree' | 'folder' | 'file';
+    kind: 'folder' | 'file';
     name: string;
     depth: number;
     /** Whether it holds rows, and whether they are shown. */
@@ -56,18 +61,30 @@
   /** The files that can be shown: PDFs and images that are there. */
   const showable = (f: FileView) => f.exists && (f.kind === 'pdf' || f.kind === 'picture');
 
-  /** The folders of the library and their files, from a folder down, as the rows of a tree. */
+  const sought = $derived(filter.trim());
+
+  /**
+   * The folders of the library and their files, from a folder down, as the
+   * rows of a tree. While something is sought, every folder is open, and one
+   * that holds nothing sought is left out.
+   */
   function filesUnder(parent: string | null, depth: number, out: Row[]) {
     const folders = files.folders.filter((f) => (f.parent ?? null) === parent).sort(byOrder);
     for (const f of folders) {
       const key = `folder:${f.id}`;
-      const open = unfolded.has(key);
-      out.push({ key, kind: 'folder', name: f.name, depth, holds: true, open, icon: Folder });
-      if (open) filesUnder(f.id, depth + 1, out);
+      const open = sought ? true : unfolded.has(key);
+      const within: Row[] = [];
+      if (open) filesUnder(f.id, depth + 1, within);
+      if (sought && !within.length) continue;
+      out.push(
+        { key, kind: 'folder', name: f.name, depth, holds: true, open, icon: Folder },
+        ...within,
+      );
     }
     const shown = files
       .inFolder(parent, false)
       .filter(showable)
+      .filter((f) => fileMatches(f, sought))
       .map((f) => ({ f, label: fileLabel(f) }))
       .sort((a, b) => a.label.name.localeCompare(b.label.name));
     for (const { f, label } of shown) {
@@ -87,28 +104,13 @@
 
   const rows = $derived.by(() => {
     const out: Row[] = [];
-    const filesOpen = unfolded.has(FILES);
-    out.push({
-      key: FILES,
-      kind: 'tree',
-      name: t('viewer-tree-files'),
-      depth: 0,
-      holds: true,
-      open: filesOpen,
-      icon: FileText,
-    });
-    if (filesOpen) filesUnder(null, 1, out);
+    filesUnder(null, 0, out);
     return out;
   });
+  /** Whether the library has any file that can be shown. */
+  const any = $derived(files.files.some(showable));
 
-  /** Whether a tree opened holds nothing: said under its head. */
-  const emptyAfter = $derived(
-    new Set(
-      rows
-        .filter((r, i) => r.kind === 'tree' && r.open && (rows[i + 1]?.depth ?? 0) === 0)
-        .map((r) => r.key),
-    ),
-  );
+  let root = $state<HTMLDivElement>();
 
   function act(row: Row) {
     if (row.holds) {
@@ -123,11 +125,25 @@
       act(row);
     } else if (event.key === 'ArrowRight' && row.holds && !row.open) unfolded.add(row.key);
     else if (event.key === 'ArrowLeft' && row.holds && row.open) unfolded.delete(row.key);
+    else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      // Up and down walk the rows; up from the first leaves the tree.
+      event.preventDefault();
+      const all = Array.from(root?.querySelectorAll<HTMLElement>('[data-tree-row]') ?? []);
+      const at = all.indexOf(event.currentTarget as HTMLElement);
+      const next = all[at + (event.key === 'ArrowDown' ? 1 : -1)];
+      if (next) next.focus();
+      else if (event.key === 'ArrowUp') onup?.();
+    }
   }
 </script>
 
-<div class="trees" role="tree" aria-label={t('viewer-tree-files')} data-library-trees>
-  <div class="rule" role="separator"></div>
+<div
+  bind:this={root}
+  class="trees"
+  role="tree"
+  aria-label={t('viewer-files-menu')}
+  data-library-trees
+>
   {#each rows as row (row.key)}
     {@const Icon = row.icon}
     <div
@@ -151,20 +167,18 @@
       <Icon size={15} strokeWidth={1.6} />
       <span class="name truncate">{row.name}</span>
     </div>
-    {#if emptyAfter.has(row.key)}
-      <p class="none" style:padding-left="{left + step + 22}px">{t('viewer-tree-empty')}</p>
+  {:else}
+    {#if files.loaded}
+      <p class="none" data-tree-none>
+        {any ? t('files-choose-files-none') : t('viewer-tree-empty')}
+      </p>
     {/if}
   {/each}
 </div>
 
 <style>
   .trees {
-    padding-bottom: 8px;
-  }
-  .rule {
-    height: 1px;
-    margin: 8px 6px;
-    background: var(--line);
+    padding: 4px 0 8px;
   }
   .row {
     display: flex;
@@ -194,7 +208,6 @@
     min-width: 0;
     font-size: var(--text-sm);
   }
-  .row.tree .name,
   .row.folder .name {
     font-weight: 500;
   }
@@ -216,7 +229,7 @@
   }
   .none {
     margin: 0;
-    padding: 4px 0 6px;
+    padding: 8px 6px 6px;
     color: var(--ink-4);
     font-size: var(--text-sm);
   }

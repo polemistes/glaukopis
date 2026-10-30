@@ -326,8 +326,8 @@ try {
     `return Array.from(document.querySelectorAll('.file-pane [data-action]')).map((e) => e.dataset.action)`,
   );
   check(
-    'the pane has the actions of a PDF',
-    ['open', 'reveal', 'searchable', 'map'].every((a) => actions.includes(a)),
+    'the pane has the actions of a PDF, Print… among them',
+    ['open', 'print', 'reveal', 'searchable', 'map'].every((a) => actions.includes(a)),
     actions.join(', '),
   );
   await app.click('.file-pane [data-assign]');

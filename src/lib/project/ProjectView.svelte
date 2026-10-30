@@ -72,7 +72,6 @@
   import { editorUi, hooksOf } from '$lib/editor/ui.svelte';
   import { library } from '$lib/state/library.svelte';
   import { projects } from '$lib/state/projects.svelte';
-  import { sourcesStore } from '$lib/viewer/sources.svelte';
   import { jumpFor } from '$lib/search/everything.svelte';
   import { takeCitations } from '$lib/library/citing.svelte';
   import { router } from '$lib/state/router.svelte';
@@ -103,8 +102,6 @@
   import SideView from './SideView.svelte';
   import FileSide from '$lib/viewer/FileSide.svelte';
   import FilePath from '$lib/viewer/FilePath.svelte';
-  import FileChooser from '$lib/files/FileChooser.svelte';
-  import FileText from '@lucide/svelte/icons/file-text';
   import PanelRight from '@lucide/svelte/icons/panel-right';
   import PreviewPanel from '$lib/preview/PreviewPanel.svelte';
   import LookPanel from '$lib/look/LookPanel.svelte';
@@ -671,18 +668,6 @@
   }
 
   let sideBySideButton = $state<HTMLButtonElement>();
-  /** Whether the chooser of a file of the library to show beside is open. */
-  let choosingFile = $state(false);
-  /**
-   * The files among the tabs Split view's chooser adds to, not offered again:
-   * of the file side there is, else of the project of the active side.
-   */
-  function tabbedFiles(): string[] {
-    const there = sides.sides.find(isFile);
-    if (there) return sides.tabs(there.key).tabs.map((tab) => tab.file);
-    const map = sides.active;
-    return isMap(map) ? sourcesStore.of(map.project).tabs.map((tab) => tab.file) : [];
-  }
   /** Whether the chooser of another project to show beside is open. */
   let choosingBeside = $state(false);
 
@@ -711,11 +696,6 @@
         label: t('project-beside-tabs'),
         icon: PanelRight,
         action: () => sides.showTabs(),
-      },
-      {
-        label: t('project-beside-file'),
-        icon: FileText,
-        action: () => (choosingFile = true),
       },
     ];
     if (sides.sides.length > 1)
@@ -1356,16 +1336,6 @@
   at={active?.at ?? undefined}
   ongo={(element) => activeApi?.goTo(element)}
 />
-
-{#if choosingFile}
-  <FileChooser
-    title={t('project-beside-file-title')}
-    kinds={['pdf', 'picture']}
-    except={tabbedFiles()}
-    onpick={(hashes) => hashes.forEach((hash) => sides.showFile(hash))}
-    onclose={() => (choosingFile = false)}
-  />
-{/if}
 
 {#if choosingBeside && sides.active}
   <BesideDialog

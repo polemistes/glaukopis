@@ -21,6 +21,7 @@
   import Link from '@lucide/svelte/icons/link';
   import ListChecks from '@lucide/svelte/icons/list-checks';
   import ListFilter from '@lucide/svelte/icons/list-filter';
+  import Printer from '@lucide/svelte/icons/printer';
   import Search from '@lucide/svelte/icons/search';
   import Tag from '@lucide/svelte/icons/tag';
   import SearchX from '@lucide/svelte/icons/search-x';
@@ -29,6 +30,9 @@
   import X from '@lucide/svelte/icons/x';
   import type { FileKind, FileView } from '$lib/api/files';
   import { attachmentOpen } from '$lib/api/library';
+  import { fileFacts, type FileFacts } from '$lib/api/viewer';
+  import { printFile } from '$lib/print/file';
+  import PrintRangeDialog from '$lib/viewer/PrintRangeDialog.svelte';
   import DocumentHost from '$lib/documents/DocumentHost.svelte';
   import { t } from '$lib/i18n';
   import { shortcuts } from '$lib/shell/keys.svelte';
@@ -338,6 +342,15 @@
                   notifyError(t('library-file-open-failed'), e),
                 ),
             } as MenuItem,
+            ...(one.kind === 'pdf' || one.kind === 'picture'
+              ? [
+                  {
+                    label: t('viewer-print'),
+                    icon: Printer,
+                    action: () => void printOne(one.hash),
+                  } as MenuItem,
+                ]
+              : []),
             { kind: 'separator' } as MenuItem,
           ]
         : []),
@@ -353,6 +366,31 @@
       exporting,
       ...removing,
     ];
+  }
+
+  // ---- printing (record 0075) ----
+
+  /** A PDF whose pages to print are being asked, with what is known of it. */
+  let printAsked = $state<{ hash: string; facts: FileFacts } | null>(null);
+
+  /**
+   * Prints a PDF or an image of the library from its menu or its pane, as a
+   * file in a view prints: a picture at once, a PDF once its pages are chosen.
+   */
+  async function printOne(hash: string) {
+    let facts: FileFacts;
+    try {
+      facts = await fileFacts(hash);
+    } catch (e) {
+      notifyError(t('viewer-print-failed'), e);
+      return;
+    }
+    if (facts.locked || facts.pages < 1) {
+      notify(t(facts.locked ? 'viewer-locked' : 'viewer-print-failed'));
+      return;
+    }
+    if (facts.picture) void printFile(hash, facts, 1, 1);
+    else printAsked = { hash, facts };
   }
 
   /**
@@ -695,6 +733,7 @@
         <FilePane
           hash={single}
           onread={read}
+          onprint={(hash) => void printOne(hash)}
           onmove={(anchor, f) => openMenu(anchor, folderItems([f.hash]), { align: 'start' })}
           onremoved={() => (selection = [])}
           onreplaced={(hash) => (selection = [hash])}
@@ -771,6 +810,19 @@
 
 <!-- A document among the files is brought in as elements from here. -->
 <DocumentHost />
+
+{#if printAsked}
+  <PrintRangeDialog
+    count={printAsked.facts.pages}
+    page={1}
+    onprint={(from, to) => {
+      const asked = printAsked;
+      printAsked = null;
+      if (asked) void printFile(asked.hash, asked.facts, from, to);
+    }}
+    onclose={() => (printAsked = null)}
+  />
+{/if}
 
 <style>
   /* The columns at the sides are as wide as they were dragged to be, the

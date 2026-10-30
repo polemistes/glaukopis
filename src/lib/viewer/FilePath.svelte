@@ -1,14 +1,14 @@
 <script lang="ts">
   /**
    * The path over a file side (ADR 0069, 0072): the chevron of all projects,
-   * as over a map side, a project chosen there opening in this side; then
-   * the project whose sources the side shows, small, which opens it beside;
-   * then the name of the file shown. The page is said by the bar of the
-   * side. Under the projects, the files and the images that can be shown.
+   * as over a map side, a project chosen there opening in this side; the
+   * menu of the files of the library, as over a map side, a file chosen
+   * there shown in this side; then the name of the file shown, and nothing
+   * else. The page is said by the bar of the side; the project whose tabs
+   * these are, by the pointer over the name.
    */
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import FileText from '@lucide/svelte/icons/file-text';
-  import FolderTree from '@lucide/svelte/icons/folder-tree';
   import ImageIcon from '@lucide/svelte/icons/image';
   import { ProjectActions } from '$lib/home/project-actions.svelte';
   import ProjectList from '$lib/home/ProjectList.svelte';
@@ -20,7 +20,7 @@
   import Popover from '$lib/ui/Popover.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import { sides } from '$lib/project/sides.svelte';
-  import LibraryTrees from './LibraryTrees.svelte';
+  import FilesMenu from './FilesMenu.svelte';
   import { viewers } from './viewers.svelte';
 
   interface Props {
@@ -44,9 +44,15 @@
   const name = $derived(
     (viewed?.file === file ? viewed?.facts?.name : undefined) ?? record?.name ?? '',
   );
-  /** The project whose sources these are. */
+  /** The project whose tabs these are. */
   const project = $derived(
     spec.project ? projects.list.find((p) => p.id === spec.project) : undefined,
+  );
+  /** What the pointer over the name is told: the name whole, and whose tabs these are. */
+  const hint = $derived(
+    [name || t('viewer-file'), project ? t('viewer-sources-of', { name: project.name }) : '']
+      .filter(Boolean)
+      .join(' · '),
   );
 
   let treeAt = $state<HTMLElement | null>(null);
@@ -63,12 +69,18 @@
   }
 
   function chooseFile(hash: string) {
-    treeAt = null;
     onfile(hash);
   }
 </script>
 
-<nav class="path" aria-label={t('project-where')} data-path data-file={file}>
+<nav
+  class="path"
+  aria-label={t('project-where')}
+  data-path
+  data-file={file}
+  data-project={spec.project ?? ''}
+  data-project-name={project?.name ?? ''}
+>
   <button
     type="button"
     class="all"
@@ -81,20 +93,8 @@
   >
     <ChevronDown size={14} />
   </button>
-  {#if project}
-    <button
-      type="button"
-      class="crumb folder"
-      data-crumb="project"
-      use:tooltip={{ text: t('viewer-sources-of', { name: project.name }), side: 'bottom' }}
-      onclick={() => project && viewing.beside?.(project.id)}
-    >
-      <FolderTree size={12} />
-      <span class="name">{project.name}</span>
-    </button>
-    <span class="sep" aria-hidden="true">›</span>
-  {/if}
-  <span class="crumb last" data-crumb-last>
+  <FilesMenu current={file} onfile={chooseFile} />
+  <span class="crumb last" data-crumb-last use:tooltip={{ text: hint, side: 'bottom' }}>
     {#if viewed?.facts?.picture}<ImageIcon size={14} />{:else}<FileText size={14} />{/if}
     <span class="name">{name || t('viewer-file')}</span>
   </span>
@@ -109,7 +109,6 @@
       {#if projects.loaded}
         <ProjectList actions={listActions} sides={viewing.sides} {choose} focusField />
       {/if}
-      <LibraryTrees current={file} onfile={chooseFile} />
     </div>
   </Popover>
 </nav>
@@ -156,22 +155,10 @@
     font-size: var(--text-sm);
     white-space: nowrap;
   }
-  button.crumb {
-    flex: none;
-    cursor: pointer;
-  }
-  button.crumb:hover {
-    background: var(--paper-hover);
-    color: var(--ink);
-  }
   .crumb .name {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
-  }
-  .crumb.folder {
-    color: var(--ink-3);
-    font-size: var(--text-xs);
   }
   .crumb.last {
     flex: 0 1 auto;
@@ -179,12 +166,6 @@
     font-family: var(--font-text);
     font-size: 15px;
     font-weight: 600;
-  }
-  .sep {
-    flex: none;
-    padding: 0 3px;
-    color: var(--ink-4);
-    font-size: var(--text-sm);
   }
   .tree {
     max-height: min(480px, 70vh);

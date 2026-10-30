@@ -19,7 +19,8 @@ viewer-fit-image = Hele bildet i visningen
 # Feltet der en zoom skrives, i prosent.
 viewer-zoom-field = Zoom, i prosent
 viewer-zoom-choose = Velg en zoom
-viewer-tree-files = Filer
+viewer-files-menu = Bibliotekets filer
+viewer-files-search = Finn en fil
 viewer-tree-empty = Ingenting her ennå
 
 # En enkel bilderedigering (docs/plans/a-simple-image-editor.md): knappen i linjen, raden under den, og hva den sier.
