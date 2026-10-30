@@ -58,6 +58,7 @@
     figuresIn,
     files,
     kindWords,
+    nameByReference,
     removeFile,
     renameFile,
     storedOf,
@@ -446,6 +447,16 @@
             }}
           />
         </div>
+        {#if file.references.length}
+          <Button
+            variant="ghost"
+            size="sm"
+            onclick={() => void nameByReference([file.hash])}
+            data-name-by-reference
+          >
+            {t('files-name-by-reference')}
+          </Button>
+        {/if}
       </div>
       <dl class="facts">
         <dt>{t('files-kind')}</dt>

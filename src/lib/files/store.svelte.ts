@@ -22,6 +22,7 @@ import {
   fileUnassign,
   filesLeftEmpty,
   filesMove,
+  filesNameByReference,
   filesRemove,
   filesUnassign,
   onFilesProgress,
@@ -51,7 +52,7 @@ import { fold, library } from '$lib/state/library.svelte';
 import { projects } from '$lib/state/projects.svelte';
 import { router } from '$lib/state/router.svelte';
 import { ask, confirm } from '$lib/ui/confirm.svelte';
-import { describeError, notifyError, notifyOk, toasts } from '$lib/ui/toast.svelte';
+import { describeError, notify, notifyError, notifyOk, toasts } from '$lib/ui/toast.svelte';
 import { newId } from '$lib/util/id';
 import { forgetChanged, forgetStale } from './kept';
 
@@ -631,6 +632,26 @@ export async function renameFile(file: FileView, name: string): Promise<void> {
   if (!wanted || wanted === file.name) return;
   try {
     files.put(await fileRename(file.hash, wanted));
+  } catch (error) {
+    notifyError(t('files-rename-failed'), error);
+  }
+}
+
+/**
+ * Names the files by their references, as export would name them; those of
+ * no reference keep their names, and are told of. The library is read again
+ * where a name changed, since a reference's pane lists its files by name.
+ */
+export async function nameByReference(hashes: string[]): Promise<void> {
+  try {
+    const named = await filesNameByReference(hashes);
+    for (const view of named.files) files.put(view);
+    if (named.files.length) await library.reload();
+    const count = named.files.length;
+    const kept = named.kept ? t('files-named-kept', { count: named.kept }) : undefined;
+    if (count) toasts.show({ kind: 'ok', message: t('files-named', { count }), detail: kept });
+    else if (kept) notify(kept);
+    else notify(t('files-named-none'));
   } catch (error) {
     notifyError(t('files-rename-failed'), error);
   }

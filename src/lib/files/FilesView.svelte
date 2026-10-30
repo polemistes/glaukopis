@@ -22,6 +22,7 @@
   import ListChecks from '@lucide/svelte/icons/list-checks';
   import ListFilter from '@lucide/svelte/icons/list-filter';
   import Search from '@lucide/svelte/icons/search';
+  import Tag from '@lucide/svelte/icons/tag';
   import SearchX from '@lucide/svelte/icons/search-x';
   import Trash2 from '@lucide/svelte/icons/trash-2';
   import Undo2 from '@lucide/svelte/icons/undo-2';
@@ -66,6 +67,7 @@
     filesUi,
     goThrough,
     moveFiles,
+    nameByReference,
     removeFiles,
     takeIn,
     unassignedIn,
@@ -288,6 +290,12 @@
       disabled: !readable.length || !anyProject(),
       items: tabsItems(readable.map((f) => f.hash)),
     };
+    const naming: MenuItem = {
+      label: one ? t('files-name-by-reference') : t('files-name-by-references'),
+      icon: Tag,
+      disabled: !chosen.some((f) => f.references.length),
+      action: () => void nameByReference(hashes),
+    };
     const removing: MenuItem[] = [
       { kind: 'separator' },
       {
@@ -301,7 +309,14 @@
     // Several files are gone through, each to its own reference: none is
     // given to one reference with the others in one step.
     if (!one)
-      return [goingThrough, ...(readable.length ? [toTabs] : []), moving, exporting, ...removing];
+      return [
+        goingThrough,
+        naming,
+        ...(readable.length ? [toTabs] : []),
+        moving,
+        exporting,
+        ...removing,
+      ];
     return [
       ...(one.exists
         ? [
@@ -332,6 +347,7 @@
         disabled: !library.entries.length,
         action: () => (choosing = one),
       },
+      naming,
       moving,
       goingThrough,
       exporting,

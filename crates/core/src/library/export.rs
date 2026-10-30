@@ -714,7 +714,10 @@ mod tests {
         let loose = desk.file("loose.pdf", "loose", None);
         desk.assign(&loose, &nothing);
         assert_eq!(desk.lib.reference_name_for(&loose), None);
-        assert_eq!(desk.lib.name_files_by_reference(&[loose.clone()]).unwrap(), Named { changed: Vec::new(), kept: 1 });
+        assert_eq!(
+            desk.lib.name_files_by_reference(std::slice::from_ref(&loose)).unwrap(),
+            Named { changed: Vec::new(), kept: 1 }
+        );
         assert_eq!(desk.name(&loose), "loose.pdf");
     }
 
@@ -724,7 +727,7 @@ mod tests {
         let west = desk.work("@book{, author={West, M. L.}, title={Theogony}, date={1966}}");
         let first = desk.attach(&west, "theogony-scan.pdf", "west text");
         assert_eq!(desk.name(&first), "West 1966 - Theogony.pdf");
-        assert_eq!(desk.lib.name_files_by_reference(&[first.clone()]).unwrap(), Named::default());
+        assert_eq!(desk.lib.name_files_by_reference(std::slice::from_ref(&first)).unwrap(), Named::default());
 
         // A second, attached the same way, has the work's name for its own:
         // it is not named by the work twice over, here nor in export, where

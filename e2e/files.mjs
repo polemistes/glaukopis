@@ -435,11 +435,24 @@ try {
   check('the pane names the file by its reference, the title under it', plateHead?.sub === 'The Singer of Tales' && plateHead?.title === 'plate.png', JSON.stringify(plateHead));
   const nameField = () => app.exec(`const i = document.querySelector('.file-pane [data-field="name"] input'); return i ? { value: i.value, inFacts: !!i.closest('section')?.querySelector('.facts') } : null`);
   check('its own name is a field among the facts', (await nameField())?.value === 'plate.png' && (await nameField())?.inFacts, JSON.stringify(await nameField()));
+  // Named by its reference on request, as export would name it (ADR 0074).
+  const nameOf = (hash) => record().files.find((f) => f.hash === hash)?.name;
+  const toastWith = (re) => until('the notice', async () => (await toasts()).find((t) => re.test(t)), 5000).catch(() => '');
+  await app.click('.file-pane [data-name-by-reference]');
+  await until('the name by the reference', async () => (await nameField())?.value === 'Lord 1960 - The Singer of Tales.png', 5000).catch(() => {});
+  check('a file is named by its reference from its pane', (await nameField())?.value === 'Lord 1960 - The Singer of Tales.png' && nameOf(plate.hash) === 'Lord 1960 - The Singer of Tales.png', `${JSON.stringify(await nameField())} ${nameOf(plate.hash)}`);
+  check('and the notice says one file was named', !!(await toastWith(/One file named by its reference/)), JSON.stringify(await toasts()));
+  await app.screenshot('files-2h-named');
+  await sleep(600);
+  await app.click('.file-pane [data-name-by-reference]');
+  check('named again, the notice says the names were so already', !!(await toastWith(/The names were by their references already/)), JSON.stringify(await toasts()));
   await app.exec(`const i = document.querySelector('.file-pane [data-field="name"] input'); i.focus(); i.select();`);
   await app.keys('shield plate.png');
   await app.press('Enter');
   await until('the name to be kept', async () => record().files.find((f) => f.hash === plate.hash)?.name === 'shield plate.png', 5000).catch(() => {});
   check('and it is renamed there by hand', record().files.find((f) => f.hash === plate.hash)?.name === 'shield plate.png', record().files.find((f) => f.hash === plate.hash)?.name);
+  await sleep(600);
+  check('and the name given by hand stays', nameOf(plate.hash) === 'shield plate.png' && (await nameField())?.value === 'shield plate.png', `${JSON.stringify(await nameField())} ${nameOf(plate.hash)}`);
   const pointer = await app.exec(`const p = document.querySelector('.file-pane [data-preview]'); return p ? getComputedStyle(p).cursor : null`);
   check('the preview shows the hand: a press reads the file', pointer === 'pointer', pointer);
   await app.screenshot('files-2g-by-reference');
@@ -453,6 +466,24 @@ try {
   await sortBy('By title');
   check('by title too', (await rows())[0]?.hash === plate.hash);
   await sortBy('By name');
+  // Two files chosen, one of no reference: one is named, the other keeps its name.
+  await app.exec(
+    `const el = document.querySelector('[data-file-list] [data-hash="' + arguments[0] + '"]');
+     const box = el.getBoundingClientRect();
+     const common = { bubbles: true, cancelable: true, composed: true, clientX: box.left + box.width / 2, clientY: box.top + box.height / 2, view: window, ctrlKey: true, pointerType: 'mouse', isPrimary: true };
+     el.dispatchEvent(new PointerEvent('pointerdown', { ...common, button: 0, buttons: 1 }));
+     window.dispatchEvent(new PointerEvent('pointerup', { ...common, button: 0, buttons: 0 }));`,
+    kept.hash,
+  );
+  await until('the two to be chosen', () => app.exists('[data-go-through-chosen]'), 5000).catch(() => {});
+  await app.rightClick(`[data-file-list] [data-hash="${plate.hash}"]`);
+  await app.waitFor('[role="menu"]', 3000);
+  await sleep(250);
+  const namingItem = () => app.exec(`const e = Array.from(document.querySelectorAll('[role="menu"] [role="menuitem"]')).find((e) => e.textContent.trim() === 'Name by their references'); return e ? e.getAttribute('aria-disabled') ?? 'false' : null`);
+  check('the menu of two, one of a reference, names them by their references', (await namingItem()) === 'false', await namingItem());
+  await app.clickText('[role="menuitem"]', 'Name by their references');
+  const namedWords = await toastWith(/One file of no reference kept its name/);
+  check('one is named, and the other, of no reference, keeps its name', /One file named by its reference/.test(namedWords) && nameOf(plate.hash) === 'Lord 1960 - The Singer of Tales.png' && nameOf(kept.hash) === kept.name, `${namedWords} | ${nameOf(plate.hash)} | ${nameOf(kept.hash)}`);
   await app.click(`[data-file-list] [data-hash="${kept.hash}"]`);
   await app.waitFor(`.file-pane[data-file="${kept.hash}"] [data-preview]`, 5000);
   const pdfShown = await until('the first page of the PDF', () => app.exists('.file-pane [data-preview] img[src^="blob:"]'), 20000).catch(() => false);
@@ -517,7 +548,7 @@ try {
   const side = () => app.exec(`return Math.round(document.querySelector('[data-file-list] [data-hash] .frame').getBoundingClientRect().width)`);
   check('in the middle size', (await side()) === 160, String(await side()));
   const tile = await app.exec(`const e = document.querySelector('[data-file-list] [data-hash="${plate.hash}"]'); return e ? { words: e.querySelector('.name')?.textContent.trim(), title: e.title } : null`);
-  check('a tile is named as the tabs name it, its own name in the tooltip', tile?.words === 'Lord 1960' && tile?.title === 'shield plate.png', JSON.stringify(tile));
+  check('a tile is named as the tabs name it, its own name in the tooltip', tile?.words === 'Lord 1960' && tile?.title === 'Lord 1960 - The Singer of Tales.png', JSON.stringify(tile));
   await app.screenshot('files-2e-grid-medium');
   await view('Large');
   check('large', (await side()) === 240, String(await side()));
@@ -634,6 +665,7 @@ try {
     menuOfTwo.join(' | '),
   );
   check('and they are added to a project\'s tabs together, from a menu of projects', menuOfTwo.some((m) => m === 'Add to a project\'s tabs…'), menuOfTwo.join(' | '));
+  check('and naming them by their references waits for a reference', (await namingItem()) === 'true', await namingItem());
   await app.press('Escape');
   await app.waitGone('[role="menu"]', 3000).catch(() => {});
   await app.click('[data-go-through-chosen]');
