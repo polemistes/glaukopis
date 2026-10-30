@@ -159,7 +159,7 @@ def main():
                         continue
                     text, how = got[0][1], "two" if len(got) > 1 else "one"
                 text = normalise(text)
-                base = os.path.join(out, f"{book[:2]}.{name}")
+                base = os.path.join(out, f"{book.split('-')[0]}.{name}")
                 shutil.copyfile(os.path.join(folder, "lines", name + ".png"), base + ".png")
                 with open(base + ".gt.txt", "w", encoding="utf-8") as f:
                     f.write(text + "\n")

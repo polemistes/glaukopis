@@ -138,6 +138,18 @@ DAN_LATF_SOURCE = ("deu_latf of tessdata_best 4.1.0 fine-tuned with lstmtraining
                    "its unicharset widened to 148 letters and signs; packaging/languages/fraktur in the repository of "
                    "Glaukopis says how")
 
+# Norwegian: Tesseract's own nor taught the roman type of Norwegian books
+# and newspapers, made here (packaging/languages/antiqua/README.md says how)
+# and taken in place of tessdata_best's where it has been made.
+MADE = {
+    "nor": (ROOT / "packaging" / "build" / "antiqua" / "nor.traineddata", "2026.10.30",
+            "nor of tessdata_best 4.1.0 fine-tuned with lstmtraining on 8,872 lines of 50 Norwegian books and newspaper "
+            "pages in roman type of 1855–1952 from the National Library of Norway (nb.no, public domain), transcribed "
+            "by eye, with worn, tight and black-and-white copies of each, and on some 70,000 synthetic lines of "
+            "Norwegian text set in free fonts; its word list widened by the words of nineteenth-century spelling; "
+            "packaging/languages/antiqua in the repository of Glaukopis says how"),
+}
+
 # The time every file of a package is given, so that the same files make
 # the same zip.
 STAMP = (1980, 1, 1, 0, 0, 0)
@@ -243,19 +255,26 @@ def main() -> None:
     print("OCR", file=sys.stderr)
     licence = fetch(f"{TESSDATA}/LICENSE", args.work / "tessdata_best" / "LICENSE", args.fetch).read_bytes()
     for name, language, title in OCR:
-        data = fetch(f"{TESSDATA}/{name}.traineddata", args.work / "tessdata_best" / f"{name}.traineddata",
-                     args.fetch).read_bytes()
+        version, origin = TESSDATA_VERSION, f"tessdata_best {TESSDATA_VERSION}, https://github.com/tesseract-ocr/tessdata_best"
+        if name in MADE and MADE[name][0].exists():
+            path, version, origin = MADE[name]
+            data = path.read_bytes()
+        else:
+            if name in MADE:
+                print(f"  no {MADE[name][0]}: {name} is tessdata_best's", file=sys.stderr)
+            data = fetch(f"{TESSDATA}/{name}.traineddata", args.work / "tessdata_best" / f"{name}.traineddata",
+                         args.fetch).read_bytes()
         manifest = {
             "format": 1,
             "kind": "ocr",
             "language": language,
             "name": name,
             "title": title,
-            "version": TESSDATA_VERSION,
+            "version": version,
             "licence": "Apache-2.0",
-            "source": f"tessdata_best {TESSDATA_VERSION}, https://github.com/tesseract-ocr/tessdata_best",
+            "source": origin,
         }
-        packages.append(package(args.out, f"ocr-{name}-{TESSDATA_VERSION}.zip", manifest,
+        packages.append(package(args.out, f"ocr-{name}-{version}.zip", manifest,
                                 [(f"{name}.traineddata", data), ("LICENSE", licence)]))
 
     if DAN_LATF.exists():
