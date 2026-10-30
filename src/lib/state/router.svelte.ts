@@ -13,8 +13,12 @@ export type Route =
   | { view: 'files'; folder?: string; file?: string }
   /** A project, and the element in view within it (ADR 0037): the project itself where none is named. */
   | { view: 'project'; project: string; at?: string; mode?: MapMode }
-  /** A file of the library shown in a side of the window (ADR 0069), at a page. */
-  | { view: 'file'; file: string; page?: number }
+  /**
+   * A file of the library shown in a side of the window (ADR 0069), at a page;
+   * among the tabs of the project named, with that project beside it (ADR 0074),
+   * else of the window's.
+   */
+  | { view: 'file'; file: string; page?: number; project?: string }
   | { view: 'search' }
   | { view: 'settings'; section?: string };
 
@@ -69,6 +73,7 @@ export function parseRoute(hash: string): Route {
         view: 'file',
         file: parts[1],
         page: Number.isInteger(page) && page > 0 ? page : undefined,
+        ...(params.get('project') ? { project: params.get('project')! } : {}),
       };
     }
     case 'settings':
@@ -107,8 +112,13 @@ export function formatRoute(route: Route): string {
       if (route.mode) s += `?mode=${route.mode}`;
       return s;
     }
-    case 'file':
-      return `#/file/${e(route.file)}` + (route.page ? `?page=${route.page}` : '');
+    case 'file': {
+      const params = new URLSearchParams();
+      if (route.page) params.set('page', String(route.page));
+      if (route.project) params.set('project', route.project);
+      const q = params.toString();
+      return `#/file/${e(route.file)}` + (q ? `?${q}` : '');
+    }
     case 'settings':
       return '#/settings' + (route.section ? `/${e(route.section)}` : '');
     case 'search':

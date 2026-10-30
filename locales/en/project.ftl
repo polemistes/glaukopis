@@ -299,8 +299,8 @@ project-delete-with = Delete with sub-elements
 
 ## A file shown in a side of the window (2026-10-26).
 
-project-beside-file = Add a file to the tabs…
-project-beside-file-title = Add a file to the tabs
+project-beside-file = Add files to the tabs…
+project-beside-file-title = Add files to the tabs
 project-show-file = Show the file
 # Where a work has several files: one item for each, by its name.
 project-show-file-named = Show “{ $name }”

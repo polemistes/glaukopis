@@ -689,7 +689,7 @@ try {
   const one = await offered();
   check(
     'Split view is a menu: this element, another element, another project, the project’s tabs, a file to add to them',
-    JSON.stringify(one) === JSON.stringify(['This element, as diagram and text', 'Another element…', 'Another project…', "The project's tabs", 'Add a file to the tabs…']),
+    JSON.stringify(one) === JSON.stringify(['This element, as diagram and text', 'Another element…', 'Another project…', "The project's tabs", 'Add files to the tabs…']),
     one.join(' | '),
   );
   check('and the button is not lit with one side', !(await lit()));

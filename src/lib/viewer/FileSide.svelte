@@ -142,6 +142,12 @@
     if (await mayLeave()) sides.showFileIn(spec.key, hash);
   }
 
+  /** Several files chosen at once: each a tab after the one shown, in the order chosen, the last shown. */
+  async function addAll(hashes: string[]) {
+    if (!hashes.length || !(await mayLeave())) return;
+    for (const hash of hashes) sides.showFileIn(spec.key, hash);
+  }
+
   // ---- the bookmarks and the contents (ADR 0072) ----
 
   let pane = $state<HTMLDivElement>();
@@ -471,10 +477,11 @@
 {#if choosing}
   <FileChooser
     title={t('viewer-tab-add-title')}
-    single={['pdf', 'picture']}
-    onpick={([hash]) => {
+    kinds={['pdf', 'picture']}
+    except={sides.tabs(spec.key).tabs.map((tab) => tab.file)}
+    onpick={(hashes) => {
       choosing = false;
-      if (hash) void add(hash);
+      void addAll(hashes);
     }}
     onclose={() => (choosing = false)}
   />

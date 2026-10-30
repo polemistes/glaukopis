@@ -9,6 +9,13 @@ describe('where one is', () => {
       expect(parseRoute(place)).toEqual({ view: 'home' });
   });
 
+  it('names a file at its page, and the project whose tabs it is shown among', () => {
+    const place = { view: 'file' as const, file: 'abc', page: 3, project: 'p1' };
+    expect(formatRoute(place)).toBe('#/file/abc?page=3&project=p1');
+    expect(parseRoute(formatRoute(place))).toEqual(place);
+    expect(parseRoute('#/file/abc')).toEqual({ view: 'file', file: 'abc', page: undefined });
+  });
+
   it('reads a place with a stray % as it is written, and does not throw', () => {
     expect(parseRoute('#/project/a%E0%A4%A/b%')).toEqual({
       view: 'project',

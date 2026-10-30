@@ -633,6 +633,7 @@ try {
     /Go through these 2/.test(menuOfTwo[0] ?? '') && !menuOfTwo.some((m) => /Assign/.test(m)),
     menuOfTwo.join(' | '),
   );
+  check('and they are added to a project\'s tabs together, from a menu of projects', menuOfTwo.some((m) => m === 'Add to a project\'s tabs…'), menuOfTwo.join(' | '));
   await app.press('Escape');
   await app.waitGone('[role="menu"]', 3000).catch(() => {});
   await app.click('[data-go-through-chosen]');

@@ -57,7 +57,7 @@
   import PanelRight from '@lucide/svelte/icons/panel-right';
   import BookOpen from '@lucide/svelte/icons/book-open';
   import FileReader from './FileReader.svelte';
-  import { showFile } from '$lib/viewer/show';
+  import { anyProject, tabsItems } from '$lib/viewer/show';
   import {
     assign,
     exportFiles,
@@ -279,6 +279,15 @@
       icon: FolderOutput,
       action: () => void exportFiles({ kind: 'files', hashes }, hashes.length),
     };
+    // To the tabs of a project chosen in a submenu: the PDFs and images among them (ADR 0074).
+    const readable = chosen.filter((f) => f.exists && (f.kind === 'pdf' || f.kind === 'picture'));
+    const toTabs: MenuItem = {
+      kind: 'submenu',
+      label: t('files-show'),
+      icon: PanelRight,
+      disabled: !readable.length || !anyProject(),
+      items: tabsItems(readable.map((f) => f.hash)),
+    };
     const removing: MenuItem[] = [
       { kind: 'separator' },
       {
@@ -291,7 +300,8 @@
     ];
     // Several files are gone through, each to its own reference: none is
     // given to one reference with the others in one step.
-    if (!one) return [goingThrough, moving, exporting, ...removing];
+    if (!one)
+      return [goingThrough, ...(readable.length ? [toTabs] : []), moving, exporting, ...removing];
     return [
       ...(one.exists
         ? [
@@ -302,11 +312,7 @@
                     icon: BookOpen,
                     action: () => read(one.hash),
                   } as MenuItem,
-                  {
-                    label: t('files-show'),
-                    icon: PanelRight,
-                    action: () => showFile(one.hash),
-                  } as MenuItem,
+                  toTabs,
                 ]
               : []),
             {

@@ -1,10 +1,11 @@
 <script lang="ts">
   /**
-   * Files of the library chosen by name, several at once, for one reference
-   * to have: the parts of one work, a book scanned chapter by chapter, a
-   * work and its supplement. The files that belong to no reference come
-   * first. What is chosen stays chosen while the search changes, and the
-   * button says how many are added.
+   * Files of the library chosen by name, several at once: for one reference
+   * to have, the parts of one work, a book scanned chapter by chapter, a
+   * work and its supplement; or for the tabs of a project, PDFs and images
+   * (ADR 0074). The files that belong to no reference come first. What is
+   * chosen stays chosen while the search changes, and the button says how
+   * many are added.
    */
   import { tick } from 'svelte';
   import Check from '@lucide/svelte/icons/check';
@@ -18,15 +19,15 @@
 
   interface Props {
     title: string;
-    /** The files the reference has already, left out of the list. */
+    /** The files the reference or the tabs have already, left out of the list. */
     except?: string[];
-    /** One file is chosen, of these kinds, and taken at once: to be shown in a side (ADR 0069). */
-    single?: FileView['kind'][];
+    /** Files of these kinds alone, and only those that are there: for the tabs. */
+    kinds?: FileView['kind'][];
     onpick: (hashes: string[]) => void;
     onclose: () => void;
   }
 
-  let { title, except = [], single, onpick, onclose }: Props = $props();
+  let { title, except = [], kinds, onpick, onclose }: Props = $props();
 
   /** The most rows shown: what is sought is found by searching, not by scrolling. */
   const MOST = 50;
@@ -45,7 +46,7 @@
     ordered.filter(
       (f) =>
         !except.includes(f.hash) &&
-        (!single || (f.exists && single.includes(f.kind))) &&
+        (!kinds || (f.exists && kinds.includes(f.kind))) &&
         fileMatches(f, query),
     ),
   );
@@ -57,11 +58,6 @@
   });
 
   function toggle(file: FileView) {
-    if (single) {
-      onpick([file.hash]);
-      onclose();
-      return;
-    }
     chosen = chosen.includes(file.hash)
       ? chosen.filter((h) => h !== file.hash)
       : [...chosen, file.hash];
@@ -114,7 +110,7 @@
       bind:this={list}
       class="list"
       role="listbox"
-      aria-multiselectable={!single}
+      aria-multiselectable="true"
       aria-label={t('files-choose-files')}
       data-file-chooser
     >
@@ -134,11 +130,9 @@
           onkeydown={(e) => (e.key === ' ' || e.key === 'Enter') && toggle(file)}
           onpointermove={() => (at = i)}
         >
-          {#if !single}
-            <span class="box" class:on
-              >{#if on}<Check size={12} strokeWidth={2.5} />{/if}</span
-            >
-          {/if}
+          <span class="box" class:on
+            >{#if on}<Check size={12} strokeWidth={2.5} />{/if}</span
+          >
           <span class="icon"><Icon size={15} strokeWidth={1.6} /></span>
           <span class="text">
             <span class="name truncate">{fileLabel(file).name}</span>
@@ -164,11 +158,9 @@
   {#snippet footer()}
     <span class="spring"></span>
     <Button variant="ghost" onclick={onclose}>{t('common-cancel')}</Button>
-    {#if !single}
-      <Button variant="primary" disabled={!chosen.length} onclick={add} data-choose-add>
-        {t('files-choose-add', { count: chosen.length })}
-      </Button>
-    {/if}
+    <Button variant="primary" disabled={!chosen.length} onclick={add} data-choose-add>
+      {t('files-choose-add', { count: chosen.length })}
+    </Button>
   {/snippet}
 </Dialog>
 

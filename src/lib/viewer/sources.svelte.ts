@@ -18,7 +18,15 @@ import { emptySources, readSources, type Sources } from './sources';
 /** What the sides ask of the sources of a project. */
 export interface SourcesOf {
   of(project: string): Sources;
-  change(project: string, change: (s: Sources) => Sources): void;
+  /**
+   * A change of a project's tabs; `then` is told the tabs before and after
+   * once it is made, which is when the tabs have come where they had not.
+   */
+  change(
+    project: string,
+    change: (s: Sources) => Sources,
+    then?: (before: Sources, after: Sources) => void,
+  ): void;
   /** A tab's place, kept without telling. */
   place(project: string, id: string, place: Place): void;
   forget(project: string): void;
@@ -61,16 +69,29 @@ export class SourcesStore implements SourcesOf {
     return this.#by.has(project);
   }
 
-  change(project: string, change: (s: Sources) => Sources) {
+  change(
+    project: string,
+    change: (s: Sources) => Sources,
+    then?: (before: Sources, after: Sources) => void,
+  ) {
     const got = this.#by.get(project);
     if (!got) {
       const waiting = this.#waiting.get(project) ?? [];
-      waiting.push(change);
+      waiting.push(
+        then
+          ? (s) => {
+              const next = change(s);
+              then(s, next);
+              return next;
+            }
+          : change,
+      );
       this.#waiting.set(project, waiting);
       this.#load(project);
       return;
     }
     const next = change(got);
+    then?.(got, next);
     if (next === got) return;
     this.#by.set(project, next);
     this.#later(project);

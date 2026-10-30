@@ -378,7 +378,7 @@ files-export-all = Eksporter alle filene …
 
 ## En fil vist i en side av vinduet (2026-10-26).
 
-files-show = Legg til i prosjektets faner
+files-show = Legg til i et prosjekts faner …
 files-open-elsewhere = Åpne i et annet program
 
 # Ett sted for filer: bilder er filer i biblioteket (ADR 0070).
@@ -424,3 +424,20 @@ files-sort-year = Etter år
 files-sort-title = Etter tittel
 files-sort-publisher = Etter utgiver
 files-translated = overs. { $names }
+
+# Filer etter referansene, navn på forespørsel, og en meny av prosjekter for fanene.
+files-tabs-no-project = Ingen prosjekter å legge til i
+files-added-to-tabs = Lagt til i fanene til { $project }
+files-already-in-tabs = Allerede i fanene til { $project }
+files-show-tabs = Vis
+files-name-by-reference = Gi navn etter referansen
+files-name-by-references = Gi navn etter referansene
+files-named = { $count ->
+    [one] Én fil fikk navn etter referansen
+   *[other] { $count } filer fikk navn etter referansene
+}
+files-named-kept = { $count ->
+    [one] Én fil uten referanse beholdt navnet
+   *[other] { $count } filer uten referanse beholdt navnet
+}
+files-named-none = Navnene var allerede etter referansene

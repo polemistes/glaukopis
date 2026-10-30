@@ -1,7 +1,7 @@
 // A file in a view (ADR 0069): a PDF and an image of the library shown in a side of the window,
 // turned and zoomed, its text copied, kept with the window, and shown from the ways in.
 
-import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { App, root, sleep } from './harness.mjs';
@@ -15,6 +15,12 @@ function check(name, ok, detail = '') {
 const dataDir = mkdtempSync(join(tmpdir(), 'glaukopis-e2e-file-view-'));
 const pdf = join(root, 'e2e/fixtures/structure.pdf');
 const png = join(root, 'resources/brand/owl.png');
+const shape = join(root, 'e2e/fixtures/shape.pdf');
+const porson = join(root, 'e2e/fixtures/porson.pdf');
+// An image of one red dot, made here: a file the tabs have not had.
+const dotDir = mkdtempSync(join(tmpdir(), 'glaukopis-e2e-file-view-dot-'));
+const dot = join(dotDir, 'dot.png');
+writeFileSync(dot, Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==', 'base64'));
 
 const invoke = (app, command, args = {}) =>
   app.execAsync(`return await window.__TAURI_INTERNALS__.invoke(arguments[0], arguments[1]);`, command, args);
@@ -46,6 +52,9 @@ const fileSide = (app) =>
 let app = await App.launch({ dataDir, keepData: true });
 let pdfHash = '';
 let pngHash = '';
+let shapeHash = '';
+let porsonHash = '';
+let dotHash = '';
 let projectId = '';
 try {
   await app.installErrorHook();
@@ -317,17 +326,45 @@ try {
   check('the file at the page it was left at', again.page === 2, `page ${again.page}`);
   await app.screenshot('file-view-5-as-left');
 
-  // ---- from the files of the library: Add to the project's tabs, in the file's pane ----
+  // ---- from the files of the library: Add to a project's tabs…, a menu of projects (ADR 0074) ----
+  // Two more PDFs, neither among the project's tabs.
+  const more = await invoke(app, 'files_take_in', { paths: [shape, porson, dot], folder: null, structure: true, ticket: null });
+  shapeHash = more.files.find((f) => f.name.startsWith('shape'))?.hash ?? '';
+  porsonHash = more.files.find((f) => f.name.startsWith('porson'))?.hash ?? '';
+  dotHash = more.files.find((f) => f.name.startsWith('dot'))?.hash ?? '';
   await app.go('#/files');
   await app.waitFor('[data-file-list] [data-hash]', 8000).catch(() => {});
-  await app.click(`[data-file-list] [data-hash="${pdfHash}"]`);
-  await app.waitFor('.file-pane [data-action="show"]', 5000);
-  await app.click('.file-pane [data-action="show"]');
+  const notice = (pattern) =>
+    until(`the notice ${pattern}`, () => app.exec(`return Array.from(document.querySelectorAll('.toast')).map((t) => t.querySelector('.message')?.textContent.trim()).find((t) => ${pattern}.test(t)) ?? null`), 5000).catch(() => null);
+  const toProject = async (hash) => {
+    await app.click(`[data-file-list] [data-hash="${hash}"]`);
+    await app.waitFor(`.file-pane[data-file="${hash}"] [data-action="show"]`, 5000);
+    await app.click('.file-pane [data-action="show"]');
+    await app.waitFor('[role="menu"]', 3000);
+    await sleep(250); // the menu slides in
+    await app.clickText('[role="menuitem"]', 'Wrath and the hero');
+  };
+  await toProject(shapeHash);
+  check('a PDF is added to the tabs of the project chosen', !!(await notice(/^Added to the tabs of Wrath and the hero$/)));
+  const stayed = await app.exec(`return { place: location.hash, sides: document.querySelectorAll('[data-file-side], [data-side-key]').length }`);
+  check('and the library stays as it was, nothing of the window shown', stayed.place.startsWith('#/files') && stayed.sides === 0, JSON.stringify(stayed));
+  const keptTabs = await until('the tabs to be kept', async () => {
+    const kept = await invoke(app, 'project_sources', { id: projectId });
+    return kept?.tabs?.some((t) => t.file === shapeHash) ? kept : null;
+  }, 5000).catch(() => null);
+  check('the project keeps it among its tabs', !!keptTabs, JSON.stringify(keptTabs?.tabs?.map((t) => t.file)));
+  await app.exec(`document.querySelectorAll('.toast .close').forEach((b) => b.click())`);
+  await toProject(pdfHash);
+  check('a file among the tabs already is not given twice: the notice says so', !!(await notice(/^Already in the tabs of Wrath and the hero$/)));
+  await app.screenshot('file-view-6-added-to-tabs');
+  await app.clickText('.toast button.action', 'Show');
   const fromFiles = await until('the window with the file', async () => {
     const s = await fileSide(app);
-    return s && (await app.exec('return location.hash')).startsWith('#/file/') ? s : null;
+    return s?.file === pdfHash && (await app.exec('return location.hash')).startsWith('#/file/') ? s : null;
   }, 10000).catch(() => null);
-  check('Add to the project’s tabs, among the files, brings the PDF to the window', !!fromFiles);
+  check('Show in the notice opens the project with the file among its tabs', !!fromFiles, JSON.stringify(fromFiles));
+  const besideIt = await app.exec(`return document.querySelector('.top .cell [data-path][data-file] [data-crumb="project"] .name')?.textContent.trim()`);
+  check('the tabs of the project chosen', besideIt === 'Wrath and the hero', besideIt);
 
   // ---- from a citation: the file beside the text ----
   await app.openProject('Wrath and the hero');
@@ -371,19 +408,30 @@ try {
   await app.press('Escape');
   await sleep(300);
 
-  // ---- Split view: a file of the library, chosen by name ----
+  // ---- Split view: files of the library, several chosen by name (ADR 0074) ----
   await app.click('.top button[data-side-by-side]');
   await app.waitFor('.menu [role="menuitem"]', 3000);
   const offered = await app.exec(`return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((m) => m.textContent.trim())`);
-  check('Split view offers a file to add to the tabs', offered.some((o) => /Add a file to the tabs/.test(o)), offered.join(' | '));
-  await app.clickText('.menu [role="menuitem"]', 'Add a file to the tabs');
+  check('Split view offers files to add to the tabs', offered.some((o) => /Add files to the tabs/.test(o)), offered.join(' | '));
+  await app.clickText('.menu [role="menuitem"]', 'Add files to the tabs');
   await app.waitFor('[data-file-chooser]', 5000);
-  await app.keys('owl');
+  const choosable = () => app.exec(`return Array.from(document.querySelectorAll('[data-file-chooser] [data-choose-file]')).map((e) => e.dataset.chooseFile)`);
+  const offeredFiles = await choosable();
+  check('the files among the tabs already are not offered', offeredFiles.some((n) => n.startsWith('porson')) && offeredFiles.some((n) => n.startsWith('dot')) && !offeredFiles.some((n) => n.startsWith('structure') || n.startsWith('shape')), offeredFiles.join(' | '));
+  await app.keys('porson');
   await sleep(300);
-  await app.screenshot('file-view-7-chooser');
   await app.click('[data-choose-file]');
+  await app.exec(`const i = document.querySelector('dialog .search input'); i.select();`);
+  await app.keys('dot');
+  await sleep(300);
+  await app.click('[data-choose-file]');
+  const button = await app.text('[data-choose-add]');
+  check('two chosen, one after the other, the button says so', /Add 2 files/.test(button), button);
+  await app.screenshot('file-view-7-chooser');
+  await app.click('[data-choose-add]');
   await until('the image beside', () => app.exec(`return document.querySelector('[data-viewer-image] img')?.naturalWidth ?? 0`), 10000);
-  check('the file chosen in Split view comes in the new side', true);
+  const tabsNow = await app.exec(`return Array.from(document.querySelectorAll('[data-file-side] [data-tab]')).map((t) => t.dataset.tabFile)`);
+  check('both come among the tabs in the order chosen, the last shown', tabsNow.indexOf(porsonHash) >= 0 && tabsNow.indexOf(dotHash) === tabsNow.indexOf(porsonHash) + 1, JSON.stringify(tabsNow));
 
   const errors = await app.exec('return window.__glaukopisErrors ?? []');
   if (errors.length) console.log('errors in the page:', JSON.stringify(errors).slice(0, 2000));
@@ -397,6 +445,7 @@ try {
 }
 
 rmSync(dataDir, { recursive: true, force: true });
+rmSync(dotDir, { recursive: true, force: true });
 mkdirSync(join(root, 'e2e', 'output'), { recursive: true });
 const failed = checks.filter((c) => !c.ok);
 console.log(`\n${checks.length - failed.length} of ${checks.length} checks passed`);

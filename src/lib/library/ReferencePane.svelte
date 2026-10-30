@@ -49,7 +49,7 @@
   import PdfMapDialog from '$lib/ocr/PdfMapDialog.svelte';
   import PictureTextDialog from '$lib/ocr/PictureTextDialog.svelte';
   import FileChooser from '$lib/files/FileChooser.svelte';
-  import { showFile } from '$lib/viewer/show';
+  import { addToTabsMenu } from '$lib/viewer/show';
   import ExternalLink from '@lucide/svelte/icons/external-link';
   import { filesAssign } from '$lib/api/files';
   import { KIND_ICONS, bringInFile, files as filesState } from '$lib/files/store.svelte';
@@ -454,9 +454,11 @@
               title={file.kind === 'pdf' || file.kind === 'picture'
                 ? t('library-pane-add-to-tabs')
                 : undefined}
-              onclick={() => {
-                // A PDF or an image is shown in the window; another kind in its own program.
-                if (file.kind === 'pdf' || file.kind === 'picture') showFile(file.hash);
+              onclick={(e) => {
+                // A PDF or an image goes to the tabs of a project chosen from a menu (ADR 0074);
+                // another kind opens in its own program.
+                if (file.kind === 'pdf' || file.kind === 'picture')
+                  void addToTabsMenu(e.currentTarget as HTMLElement, [file.hash]);
                 else
                   attachmentOpen(file.path).catch((e) =>
                     notifyError(t('library-file-open-failed'), e),

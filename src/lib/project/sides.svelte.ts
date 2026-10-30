@@ -436,6 +436,30 @@ export class Sides {
   }
 
   /**
+   * Shows a file among the tabs of a project, with the project beside it
+   * (ADR 0074): what *Show* does in the notice of a file added to a
+   * project's tabs from the library. The project's map there is gets the
+   * focus; else the active side shows the project, as it was left, with
+   * nothing beside it but its tabs: what stood beside it when it was left
+   * does not come, since the file is what was asked for. Gives the key of
+   * the file side.
+   */
+  showFileOf(project: string, file: string, place?: Place): string {
+    const own = this.sides.find((s) => isMap(s) && s.project === project);
+    if (own) this.focus(own.key);
+    else {
+      // In the place of a map where there is one, so that the text stays where the text was.
+      const map = this.sides.find(isMap);
+      if (map) this.focus(map.key);
+      this.#open(project, null);
+      const opened = this.active;
+      if (isMap(opened)) delete opened.arriving;
+      this.#follow();
+    }
+    return this.showFile(file, place);
+  }
+
+  /**
    * Opens the tabs of the project beside the text as they were (ADR 0073):
    * the file side there is gets the focus; else one is made where
    * `showFile` would make it, with no tab added. Gives its key.
@@ -684,9 +708,14 @@ export class Sides {
     if (keptSides.length) lay();
     else this.clear();
     this.#follow();
+    const place = route.page ? { page: route.page, at: 0 } : undefined;
+    if (route.project && exists(route.project)) {
+      this.showFileOf(route.project, route.file, place);
+      return;
+    }
     const side = this.active;
     if (isFile(side) && activeTab(this.sourcesOf(side))?.file === route.file) return;
-    this.showFile(route.file, route.page ? { page: route.page, at: 0 } : undefined);
+    this.showFile(route.file, place);
   }
 
   /** The arrangement as it is, to keep, with the parts the panes hold. */

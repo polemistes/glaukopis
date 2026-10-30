@@ -53,7 +53,7 @@ viewer-edit-make-smaller = Lag en mindre kopi
 # Kilder i faner, bokmerker i en fil (docs/plans/sources-in-tabs-bookmarks-and-the-scrolling-of-pages.md).
 viewer-tabs = Faner
 viewer-tab-add = Legg til en fil …
-viewer-tab-add-title = Legg til en fil blant fanene
+viewer-tab-add-title = Legg til filer blant fanene
 viewer-tab-menu = Fanens meny
 viewer-tab-close = Lukk fanen
 viewer-tab-close-others = Lukk de andre fanene

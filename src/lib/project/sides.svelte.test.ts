@@ -290,6 +290,42 @@ describe('the sides of the window', () => {
     expect(store.of('a').tabs).toMatchObject([{ file: 'f', place: { page: 2, at: 0 } }]);
   });
 
+  it('show a file among the tabs of the project the place names, that project beside it', () => {
+    const { s, store } = withSources();
+    s.open('a', 'x');
+    s.showFile('g');
+    const kept = JSON.parse(JSON.stringify(s.toKeep(panes)));
+    // The window showed another project: the one named comes in its place, its tabs beside it.
+    s.arrange(kept, { view: 'file', file: 'f', project: 'b' });
+    expect(s.sides).toMatchObject([
+      { kind: 'map', project: 'b' },
+      { kind: 'file', project: 'b' },
+    ]);
+    expect(maps(s.sides)[0].arriving).toBeUndefined();
+    expect(store.of('b').tabs.map((t) => t.file)).toEqual(['f']);
+    expect(store.of('a').tabs.map((t) => t.file)).toEqual(['g']);
+    // The project's own map in the window: it stays, and the file goes among its tabs.
+    const same = withSources();
+    same.s.arrange(kept, { view: 'file', file: 'f', project: 'a' });
+    expect(same.s.sides).toMatchObject([
+      { kind: 'map', project: 'a', at: 'x' },
+      { kind: 'file', project: 'a' },
+    ]);
+    expect(same.store.of('a').tabs.map((t) => t.file)).toEqual(['f']);
+  });
+
+  it("show a file among a project's tabs from where the window is, the project brought beside it", () => {
+    const { s, store } = withSources();
+    s.open('a', 'x');
+    s.beside('c');
+    s.showFileOf('a', 'f');
+    expect(s.sides).toMatchObject([
+      { kind: 'map', project: 'a' },
+      { kind: 'file', project: 'a' },
+    ]);
+    expect(store.of('a').tabs.map((t) => t.file)).toEqual(['f']);
+  });
+
   it('read a file side kept before it had tabs as one of no project, with its file at its page', () => {
     const { s } = withSources();
     s.arrange(

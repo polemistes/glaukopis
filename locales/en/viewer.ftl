@@ -53,7 +53,7 @@ viewer-edit-make-smaller = Make a smaller copy
 # Sources in tabs, bookmarks in a file (docs/plans/sources-in-tabs-bookmarks-and-the-scrolling-of-pages.md).
 viewer-tabs = Tabs
 viewer-tab-add = Add a file…
-viewer-tab-add-title = Add a file to the tabs
+viewer-tab-add-title = Add files to the tabs
 viewer-tab-menu = The tab's menu
 viewer-tab-close = Close the tab
 viewer-tab-close-others = Close the other tabs

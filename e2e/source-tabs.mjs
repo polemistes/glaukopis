@@ -132,10 +132,13 @@ try {
   await app.click('[data-file-side] [data-tab-add]');
   await app.waitFor('[data-file-chooser]', 5000);
   const chooserWords = await app.exec(`return document.querySelector('[data-file-chooser]')?.closest('dialog')?.textContent ?? ''`);
-  check('the plus asks for a file to add to the tabs', chooserWords.includes('Add a file to the tabs'));
+  check('the plus asks for files to add to the tabs', chooserWords.includes('Add files to the tabs'));
+  const offeredHere = await app.exec(`return Array.from(document.querySelectorAll('[data-file-chooser] [data-choose-file]')).map((e) => e.dataset.chooseFile)`);
+  check('and offers only those not among them already', offeredHere.length === 1 && offeredHere[0].startsWith('owl'), offeredHere.join(' | '));
   await app.keys('owl');
   await sleep(300);
   await app.click('[data-choose-file]');
+  await app.click('[data-choose-add]');
   s = await until('the image in a tab', async () => {
     const got = await shown(app);
     return got.tabs.length === 4 && got.image ? got : null;

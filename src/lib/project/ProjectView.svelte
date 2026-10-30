@@ -72,6 +72,7 @@
   import { editorUi, hooksOf } from '$lib/editor/ui.svelte';
   import { library } from '$lib/state/library.svelte';
   import { projects } from '$lib/state/projects.svelte';
+  import { sourcesStore } from '$lib/viewer/sources.svelte';
   import { jumpFor } from '$lib/search/everything.svelte';
   import { takeCitations } from '$lib/library/citing.svelte';
   import { router } from '$lib/state/router.svelte';
@@ -223,8 +224,14 @@
     if (route.view === 'file') {
       untrack(() => {
         const side = sides.active;
-        if (isFile(side) && sides.activeTab(side.key)?.file === route.file) return;
-        sides.showFile(route.file, route.page ? { page: route.page, at: 0 } : undefined);
+        if (isFile(side) && sides.activeTab(side.key)?.file === route.file) {
+          // Among the tabs of the project named, where one is: else it is shown there.
+          if (!route.project || side.project === route.project) return;
+        }
+        const place = route.page ? { page: route.page, at: 0 } : undefined;
+        if (route.project && projects.list.some((p) => p.id === route.project))
+          sides.showFileOf(route.project, route.file, place);
+        else sides.showFile(route.file, place);
       });
       return;
     }
@@ -648,6 +655,16 @@
   let sideBySideButton = $state<HTMLButtonElement>();
   /** Whether the chooser of a file of the library to show beside is open. */
   let choosingFile = $state(false);
+  /**
+   * The files among the tabs Split view's chooser adds to, not offered again:
+   * of the file side there is, else of the project of the active side.
+   */
+  function tabbedFiles(): string[] {
+    const there = sides.sides.find(isFile);
+    if (there) return sides.tabs(there.key).tabs.map((tab) => tab.file);
+    const map = sides.active;
+    return isMap(map) ? sourcesStore.of(map.project).tabs.map((tab) => tab.file) : [];
+  }
   /** Whether the chooser of another project to show beside is open. */
   let choosingBeside = $state(false);
 
@@ -1323,8 +1340,9 @@
 {#if choosingFile}
   <FileChooser
     title={t('project-beside-file-title')}
-    single={['pdf', 'picture']}
-    onpick={([hash]) => hash && sides.showFile(hash)}
+    kinds={['pdf', 'picture']}
+    except={tabbedFiles()}
+    onpick={(hashes) => hashes.forEach((hash) => sides.showFile(hash))}
     onclose={() => (choosingFile = false)}
   />
 {/if}

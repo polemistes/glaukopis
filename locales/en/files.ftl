@@ -384,7 +384,7 @@ files-export-all = Export all files…
 
 ## A file shown in a side of the window (2026-10-26).
 
-files-show = Add to the project's tabs
+files-show = Add to a project's tabs…
 files-open-elsewhere = Open in another program
 
 # One place for files: images are files of the library (ADR 0070).
@@ -435,3 +435,20 @@ files-sort-title = By title
 files-sort-publisher = By publisher
 # The translators after the authors or editors: "Lord; tr. Smith".
 files-translated = tr. { $names }
+
+# Files by their references, named on request, and a menu of projects for the tabs.
+files-tabs-no-project = No project to add to
+files-added-to-tabs = Added to the tabs of { $project }
+files-already-in-tabs = Already in the tabs of { $project }
+files-show-tabs = Show
+files-name-by-reference = Name by the reference
+files-name-by-references = Name by their references
+files-named = { $count ->
+    [one] One file named by its reference
+   *[other] { $count } files named by their references
+}
+files-named-kept = { $count ->
+    [one] One file of no reference kept its name
+   *[other] { $count } files of no reference kept their names
+}
+files-named-none = The names were by their references already

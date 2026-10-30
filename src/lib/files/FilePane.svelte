@@ -19,7 +19,7 @@
   import ExternalLink from '@lucide/svelte/icons/external-link';
   import PanelRight from '@lucide/svelte/icons/panel-right';
   import BookOpen from '@lucide/svelte/icons/book-open';
-  import { showFile } from '$lib/viewer/show';
+  import { addToTabsMenu, anyProject } from '$lib/viewer/show';
   import FolderInput from '@lucide/svelte/icons/folder-input';
   import FolderOpen from '@lucide/svelte/icons/folder-open';
   import FolderOutput from '@lucide/svelte/icons/folder-output';
@@ -169,7 +169,9 @@
     id: string;
     label: string;
     icon: Component<{ size?: number | string }>;
-    run: () => void;
+    /** Done from the button pressed, which a menu opens from. */
+    run: (anchor: HTMLElement) => void;
+    disabled?: boolean;
   }
 
   /** What can be done with the file, in the order they are shown: what its kind allows, then the export. */
@@ -203,7 +205,14 @@
                   },
                 ]
               : []),
-            { id: 'show', label: t('files-show'), icon: PanelRight, run: () => showFile(f.hash) },
+            // To a project chosen from a menu; nothing on screen changes (ADR 0074).
+            {
+              id: 'show',
+              label: t('files-show'),
+              icon: PanelRight,
+              run: (anchor) => void addToTabsMenu(anchor, [f.hash]),
+              disabled: !anyProject(),
+            },
           ]
         : [];
     const opening: Action[] = [
@@ -289,10 +298,10 @@
       <button
         type="button"
         class="preview"
-        title={onread ? t('files-read') : t('files-show')}
-        aria-label={onread ? t('files-read') : t('files-show')}
+        title={t('files-read')}
+        aria-label={t('files-read')}
         data-preview
-        onclick={() => (onread ? onread(file.hash) : showFile(file.hash))}
+        onclick={() => onread?.(file.hash)}
       >
         <Thumb hash={file.hash} extension={fileEnding(file.name)} small alt={file.alt} />
       </button>
@@ -402,7 +411,13 @@
     {#if actions(file).length}
       <section class="actions" data-actions>
         {#each actions(file) as action (action.id)}
-          <Button variant="ghost" size="sm" onclick={action.run} data-action={action.id}>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={action.disabled}
+            onclick={(e) => action.run(e.currentTarget as HTMLElement)}
+            data-action={action.id}
+          >
             {#snippet icon()}<action.icon size={14} />{/snippet}
             {action.label}
           </Button>
