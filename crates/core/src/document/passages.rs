@@ -693,9 +693,10 @@ impl Converter<'_> {
 
     /// Puts what stands beside a line into it: the number on its side, the
     /// words in the margin on the side the layout says, across from the
-    /// numbers unless it says otherwise, and outside the number, further
-    /// from the text, where both stand on one side. In Typst and LaTeX they
-    /// are placed in the margin; in Word, Writer and the formats made from a
+    /// numbers unless it says otherwise. In Typst and LaTeX they are placed
+    /// in the margin, each at the layout's length from the text, the
+    /// annotations outside the numbers where both stand on one side, by the
+    /// length the layout gives them there (ADR 0076); in Word, Writer and the formats made from a
     /// line block they stand at the head of the line or at its end. What
     /// sets the line in stands after what hangs at its left, before its
     /// words: in LaTeX after the command that begins the line too.
@@ -720,21 +721,24 @@ impl Converter<'_> {
         if let Some(margin) = beside.margin {
             if notes == Side::Left { &mut left } else { &mut right }.push((margin, true));
         }
+        // How far each stands from the text, the layout's lengths (ADR 0076): the same on every
+        // line, so that an annotation stands where it does whether or not the line shows its number.
+        let numbers_gap = self.extras.verse.numbers_gap();
+        let annotations_gap = self.extras.verse.annotations_gap(beside.side);
+        let gap = |margin: bool| if margin { annotations_gap } else { numbers_gap };
         match self.extras.flavour {
             Flavour::Typst => {
-                // Placed from where the paragraph begins, taking no room in the line; what
-                // stands outside the number 3 em further out, past where a number of five digits ends.
-                let call = |side: &str, text: &str, margin: bool, outside: bool| {
+                // Placed from where the paragraph begins, taking no room in the line.
+                let call = |side: &str, text: &str, margin: bool| {
                     let body = if margin {
                         format!("gk-margin({})", string(text))
                     } else {
                         format!("gk-number({})", string(text))
                     };
-                    let out = if outside { ", out: 3em" } else { "" };
-                    raw_inline("typst", format!("#gk-beside(\"{side}\", {body}{out});"))
+                    raw_inline("typst", format!("#gk-beside(\"{side}\", {}, {body});", gap(margin)))
                 };
-                let calls: Vec<Value> = (left.iter().enumerate().map(|(k, (t, m))| call("left", t, *m, k > 0)))
-                    .chain(right.iter().enumerate().map(|(k, (t, m))| call("right", t, *m, k > 0)))
+                let calls: Vec<Value> = (left.iter().map(|(t, m)| call("left", t, *m)))
+                    .chain(right.iter().map(|(t, m)| call("right", t, *m)))
                     .chain(beside.inset.iter().cloned())
                     .collect();
                 inner.splice(0..0, calls);
@@ -743,16 +747,16 @@ impl Converter<'_> {
                 let shape = |margin: bool| if margin { "\\footnotesize\\itshape " } else { "\\footnotesize " };
                 if !right.is_empty() {
                     inner.push(raw_inline("latex", "\\nobreak\\hfill"));
-                    for (k, (text, margin)) in right.iter().enumerate() {
-                        let gap = if k > 0 { "4em" } else { "1em" };
+                    for (text, margin) in &right {
+                        let gap = gap(*margin);
                         inner.push(raw_inline("latex", format!("\\rlap{{\\hspace{{{gap}}}{}", shape(*margin))));
                         inner.extend(words(text));
                         inner.push(raw_inline("latex", "}"));
                     }
                 }
                 let mut laps = Vec::new();
-                for (k, (text, margin)) in left.iter().enumerate() {
-                    let gap = if k > 0 { "3.9em" } else { "0.9em" };
+                for (text, margin) in &left {
+                    let gap = gap(*margin);
                     laps.push(raw_inline("latex", format!("\\llap{{{{{}", shape(*margin))));
                     laps.extend(words(text));
                     laps.push(raw_inline("latex", format!("}}\\hspace{{{gap}}}}}")));
@@ -1058,7 +1062,7 @@ mod tests {
     use super::super::fixtures::{kind, lines, mark, text};
     use super::super::pandoc::Extras;
     use super::*;
-    use crate::formats::DocumentFormat;
+    use crate::formats::{DocumentFormat, Length};
 
     fn converter(keys: &HashMap<String, String>, flavour: Flavour) -> Converter<'_> {
         let mut extras = Extras::default();
@@ -1406,8 +1410,33 @@ mod tests {
         let c = converter(&keys, Flavour::Typst);
         let said = serde_json::to_string(&written(&c, &prose)).unwrap();
         for n in ["1", "2", "3"] {
-            assert!(said.contains(&format!("#gk-beside(\\\"left\\\", gk-number(\\\"{n}\\\"));")), "{said}");
+            assert!(said.contains(&format!("#gk-beside(\\\"left\\\", 0.25cm, gk-number(\\\"{n}\\\"));")), "{said}");
         }
+    }
+
+    #[test]
+    fn an_annotation_stands_as_far_out_on_a_line_that_shows_no_number_as_on_one_that_does() {
+        let keys = HashMap::new();
+        // Every second line shown: the first shows no number, the second its 2.
+        let prose = numbered(
+            2,
+            None,
+            vec![
+                Block::paragraph(vec![mark().margin("ia.").done(), text("Sing.")]),
+                Block::paragraph(vec![mark().margin("ib.").done(), text("Goddess.")]),
+            ],
+        );
+        let mut c = converter(&keys, Flavour::Typst);
+        c.extras.verse.annotations = Some(Side::Left);
+        let said = serde_json::to_string(&written(&c, &prose)).unwrap();
+        for words in ["ia.", "ib."] {
+            let call = format!(r#"#gk-beside(\"left\", 1.5cm, gk-margin(\"{words}\"));"#);
+            assert!(said.contains(&call), "{call} in {said}");
+        }
+        let mut c = converter(&keys, Flavour::Latex);
+        c.extras.verse.annotations = Some(Side::Left);
+        let said = serde_json::to_string(&written(&c, &prose)).unwrap();
+        assert_eq!(said.matches(r#"}\\hspace{1.5cm}}"#).count(), 2, "{said}");
     }
 
     #[test]
@@ -1417,22 +1446,28 @@ mod tests {
         let prose = numbered(1, None, vec![Block::paragraph(vec![marked(), text("Sing.")])]);
         let verse = numbered(1, None, vec![lines("line", vec![(Some(marked()), "Sing")])]);
         let typst = |c: &Converter| serde_json::to_string(&written(c, &prose)).unwrap();
-        // Across from the numbers, as the layouts that ship have it.
+        // Across from the numbers, as the layouts that ship have it, as far from the text as they.
         let c = converter(&keys, Flavour::Typst);
         let said = typst(&c);
-        assert!(said.contains(r#"#gk-beside(\"left\", gk-number(\"1\"));"#), "{said}");
-        assert!(said.contains(r#"#gk-beside(\"right\", gk-margin(\"ia.\"));"#), "{said}");
+        assert!(said.contains(r#"#gk-beside(\"left\", 0.25cm, gk-number(\"1\"));"#), "{said}");
+        assert!(said.contains(r#"#gk-beside(\"right\", 0.25cm, gk-margin(\"ia.\"));"#), "{said}");
         // On the numbers' side, outside them.
         let mut c = converter(&keys, Flavour::Typst);
         c.extras.verse.annotations = Some(Side::Left);
         let said = typst(&c);
-        assert!(said.contains(r#"#gk-beside(\"left\", gk-number(\"1\"));"#), "{said}");
-        assert!(said.contains(r#"#gk-beside(\"left\", gk-margin(\"ia.\"), out: 3em);"#), "{said}");
+        assert!(said.contains(r#"#gk-beside(\"left\", 0.25cm, gk-number(\"1\"));"#), "{said}");
+        assert!(said.contains(r#"#gk-beside(\"left\", 1.5cm, gk-margin(\"ia.\"));"#), "{said}");
+        // At the lengths the layout gives.
+        c.extras.verse.numbers_gap = Some(Length::mm(5.0));
+        c.extras.verse.annotations_gap = Some(Length::cm(2.0));
+        let said = typst(&c);
+        assert!(said.contains(r#"#gk-beside(\"left\", 5mm, gk-number(\"1\"));"#), "{said}");
+        assert!(said.contains(r#"#gk-beside(\"left\", 2cm, gk-margin(\"ia.\"));"#), "{said}");
         // LaTeX: both hang in the left margin, the annotation further out.
         let mut c = converter(&keys, Flavour::Latex);
         c.extras.verse.annotations = Some(Side::Left);
         let said = serde_json::to_string(&written(&c, &prose)).unwrap();
-        assert!(said.contains(r#"}\\hspace{0.9em}}"#) && said.contains(r#"}\\hspace{3.9em}}"#), "{said}");
+        assert!(said.contains(r#"}\\hspace{0.25cm}}"#) && said.contains(r#"}\\hspace{1.5cm}}"#), "{said}");
         assert!(!said.contains("rlap"), "{said}");
         // Word: at the head of the line, the annotation first, then the number.
         let mut c = converter(&keys, Flavour::Docx);

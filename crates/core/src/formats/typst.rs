@@ -747,29 +747,32 @@ pub fn rules(format: &DocumentFormat, p: &Particulars) -> String {
     // the line above, and a number on a later line of a paragraph falls
     // off the page. The lines of a verse place theirs from the edge of the
     // verse (`gk-at`), so that the numbers of texts side by side stand
-    // beside their own columns. What stands on the numbers' side outside
-    // them, an annotation where the layout puts the annotations there, is
-    // placed `out` further from the text, past where a number of five digits
-    // ends, so that it fits a margin of 2.5 cm. `gk-after` sets a line in by
+    // beside their own columns. Each is placed `gap` from the text, from
+    // the edge the paragraphs share to its near edge: the layout's length
+    // for the numbers or for the annotations (ADR 0076), the same on every
+    // line, whether or not it shows its number, so that the annotations
+    // stand in a column. At the left a box of 4 em, aligned right, holds
+    // what is placed; at the right a box as wide as the margin leaves past
+    // the length, so that long words wrap within it. `gk-after` sets a line in by
     // the room of the line before it and an em, measuring and not setting its
     // words, where the line begins where that one ended (ADR 0067).
     let _ = writeln!(
         out,
         "#let gk-number(n) = text(size: 0.8em, fill: luma(45%), hyphenate: false, n)
 #let gk-margin(words) = text(size: 0.8em, fill: luma(45%), style: \"italic\", hyphenate: false, words)
-#let gk-at(side, inset, body, out: 0pt) = if side == \"left\" {{
-  place(left + horizon, dx: -inset - 4.6em - out, box(width: 4em, align(right, body)))
+#let gk-room(gap) = calc.max(({right} - gap - 0.8em).to-absolute(), 2em.to-absolute())
+#let gk-at(side, inset, gap, body) = if side == \"left\" {{
+  place(left + horizon, dx: -inset - gap - 4em, box(width: 4em, align(right, body)))
 }} else {{
-  place(left + horizon, dx: 100% + 0.8em + out, if out == 0pt {{ box(width: {right} - 1.6em, body) }} else {{ body }})
+  context place(left + horizon, dx: 100% + gap, box(width: gk-room(gap), body))
 }}
 #let gk-after(prev) = context h(measure(prev).width + 1em)
-#let gk-beside(side, body, out: 0pt) = {{ box[]; context {{
+#let gk-beside(side, gap, body) = {{ box[]; context {{
   let x = here().position().x
   if side == \"left\" {{
-    box(width: 0pt, place(left + horizon, dx: {left} - x - 4.6em - out, box(width: 4em, align(right, body))))
+    box(width: 0pt, place(left + horizon, dx: {left} - x - gap - 4em, box(width: 4em, align(right, body))))
   }} else {{
-    box(width: 0pt, place(left + horizon, dx: page.width - {right} - x + 0.8em + out,
-      if out == 0pt {{ box(width: {right} - 1.6em, body) }} else {{ body }}))
+    box(width: 0pt, place(left + horizon, dx: page.width - {right} - x + gap, box(width: gk-room(gap), body)))
   }}
 }} }}",
         left = f.page.margin_left,
@@ -799,23 +802,23 @@ pub fn rules(format: &DocumentFormat, p: &Particulars) -> String {
         "#let gk-verse(body) = block(width: 100%, above: {body_leading} + 0.6em, below: {body_leading} + 0.6em, inset: (left: {inset}), body)
 #let gk-line(kind, indent, after: none, n: none, margin: none, side: \"left\", body) = {{
   let notes = {notes}
-  let out = if notes == side {{ 3em }} else {{ 0pt }}
+  let gap = if side == \"left\" {{ {annotations_left} }} else {{ {annotations_right} }}
   if kind == \"speaker\" {{
     block(width: 100%, above: {speaker_above}, below: {speaker_below}, breakable: false, {{
-      if n != none {{ gk-at(side, {inset}, gk-number(n)) }}
-      if margin != none {{ gk-at(notes, {inset}, gk-margin(margin), out: out) }}
+      if n != none {{ gk-at(side, {inset}, {numbers_gap}, gk-number(n)) }}
+      if margin != none {{ gk-at(notes, {inset}, gap, gk-margin(margin)) }}
       {speaker}
     }})
   }} else if kind == \"direction\" {{
     block(width: 100%, above: {direction_above}, below: {direction_below}, breakable: false, {{
-      if n != none {{ gk-at(side, {inset}, gk-number(n)) }}
-      if margin != none {{ gk-at(notes, {inset}, gk-margin(margin), out: out) }}
+      if n != none {{ gk-at(side, {inset}, {numbers_gap}, gk-number(n)) }}
+      if margin != none {{ gk-at(notes, {inset}, gap, gk-margin(margin)) }}
       {direction}
     }})
   }} else {{
     block(width: 100%, above: 0pt, below: 0pt, breakable: false, inset: (left: indent * {step}), {{
-      if n != none {{ gk-at(side, {inset} + indent * {step}, gk-number(n)) }}
-      if margin != none {{ gk-at(notes, {inset} + indent * {step}, gk-margin(margin), out: out) }}
+      if n != none {{ gk-at(side, {inset} + indent * {step}, {numbers_gap}, gk-number(n)) }}
+      if margin != none {{ gk-at(notes, {inset} + indent * {step}, gap, gk-margin(margin)) }}
       if after != none {{ gk-after(after) }}
       body
     }})
@@ -828,6 +831,10 @@ pub fn rules(format: &DocumentFormat, p: &Particulars) -> String {
         },
         inset = line.indent_left,
         step = f.text.indent_step,
+        // The lengths by the side the numbers of a line stand on: the annotations' default is where they stand.
+        numbers_gap = f.verse.numbers_gap(),
+        annotations_left = f.verse.annotations_gap(crate::document::Side::Left),
+        annotations_right = f.verse.annotations_gap(crate::document::Side::Right),
         speaker_above = speaker_look.space_before,
         speaker_below = speaker_look.space_after,
         direction_above = direction_look.space_before,
@@ -1073,7 +1080,7 @@ mod tests {
         let speaker = cased(Case::Smallcaps, &f.font.family, "body");
         assert!(
             out.contains(&format!(
-                "if margin != none {{ gk-at(notes, 1cm, gk-margin(margin), out: out) }}\n      {speaker}\n"
+                "if margin != none {{ gk-at(notes, 1cm, gap, gk-margin(margin)) }}\n      {speaker}\n"
             )),
             "{out}"
         );
@@ -1091,7 +1098,7 @@ mod tests {
     fn what_stands_in_the_margin_is_placed_after_the_line_break_before_it() {
         let mut f = DocumentFormat { name: "Test".into(), ..Default::default() };
         let out = preamble(&f, &Particulars::default());
-        assert!(out.contains("#let gk-beside(side, body, out: 0pt) = { box[]; context {"), "{out}");
+        assert!(out.contains("#let gk-beside(side, gap, body) = { box[]; context {"), "{out}");
         f.text.refmarks = RefMarks::Margin;
         let out = preamble(&f, &Particulars::default());
         assert!(out.contains("#let gk-refmark(label) = { box[]; context {"), "{out}");

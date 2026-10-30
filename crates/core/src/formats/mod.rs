@@ -494,10 +494,12 @@ impl Default for Quote {
 }
 
 /// How the numbers of a numbered passage are shown, where the passage does
-/// not say (ADR 0040): every how many, and on which side of the text; and
-/// on which side the annotations of lines stand (ADR 0067), nothing for the
-/// other side from the numbers. Where they stand on the numbers' side, they
-/// stand outside the numbers, further from the text.
+/// not say (ADR 0040): every how many, and on which side of the text; on
+/// which side the annotations of lines stand (ADR 0067), nothing for the
+/// other side from the numbers; and how far from the text the numbers and
+/// the annotations stand (ADR 0076), each measured from the edge the
+/// paragraphs share to the near edge of what stands in the margin, the same
+/// on every line, whether or not it shows its number.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Verse {
@@ -506,18 +508,51 @@ pub struct Verse {
     pub side: Side,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub annotations: Option<Side>,
+    /// How far the numbers stand from the text; nothing for the default.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub numbers_gap: Option<Length>,
+    /// How far the annotations stand from the text; nothing for the default,
+    /// which is where they stand.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub annotations_gap: Option<Length>,
 }
 
 impl Default for Verse {
     fn default() -> Self {
-        Verse { every: 5, side: Side::Left, annotations: None }
+        Verse { every: 5, side: Side::Left, annotations: None, numbers_gap: None, annotations_gap: None }
     }
 }
+
+/// How far the numbers stand from the text where the layout does not say:
+/// where the em written into the pages before ADR 0076 put them, to within
+/// a millimetre.
+pub const NUMBERS_GAP: Length = Length::cm(0.25);
+/// How far the annotations stand from the text on the numbers' side, where
+/// the layout does not say: outside a column of numbers of five digits, as
+/// the em before ADR 0076 put them. Across from the numbers they stand as
+/// far as the numbers do.
+pub const ANNOTATIONS_GAP_BESIDE_NUMBERS: Length = Length::cm(1.5);
 
 impl Verse {
     /// The side the annotations of lines numbered on `numbers` stand on.
     pub fn annotations_beside(&self, numbers: Side) -> Side {
         self.annotations.unwrap_or(numbers.other())
+    }
+
+    /// How far the numbers stand from the text.
+    pub fn numbers_gap(&self) -> Length {
+        self.numbers_gap.unwrap_or(NUMBERS_GAP)
+    }
+
+    /// How far the annotations of lines numbered on `numbers` stand from the
+    /// text: the layout's length; else, across from the numbers, as far as
+    /// the numbers, and on their side, outside them.
+    pub fn annotations_gap(&self, numbers: Side) -> Length {
+        self.annotations_gap.unwrap_or(if self.annotations_beside(numbers) == numbers {
+            ANNOTATIONS_GAP_BESIDE_NUMBERS
+        } else {
+            self.numbers_gap()
+        })
     }
 }
 
@@ -1469,6 +1504,35 @@ pub fn slug(name: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_numbers_and_the_annotations_stand_at_lengths_of_their_own_or_by_their_place() {
+        let verse = Verse::default();
+        assert_eq!(verse.numbers_gap(), Length::cm(0.25));
+        // Across from the numbers, as far as the numbers; on their side, outside them.
+        assert_eq!(verse.annotations_gap(Side::Left), Length::cm(0.25));
+        let beside = Verse { annotations: Some(Side::Left), ..Verse::default() };
+        assert_eq!(beside.annotations_gap(Side::Left), Length::cm(1.5));
+        assert_eq!(beside.annotations_gap(Side::Right), Length::cm(0.25));
+        // Across from numbers set farther out, as far as they are.
+        let far = Verse { numbers_gap: Some(Length::cm(1.0)), ..Verse::default() };
+        assert_eq!(far.annotations_gap(Side::Right), Length::cm(1.0));
+        // A length given is kept, wherever they stand.
+        let given =
+            Verse { annotations: Some(Side::Left), annotations_gap: Some(Length::mm(30.0)), ..Verse::default() };
+        assert_eq!(given.annotations_gap(Side::Left), Length::mm(30.0));
+        assert_eq!(given.annotations_gap(Side::Right), Length::mm(30.0));
+    }
+
+    #[test]
+    fn a_layout_written_before_the_lengths_reads_as_it_did_and_writes_none() {
+        let read: Verse = serde_json::from_str(r#"{"every": 10, "side": "right"}"#).unwrap();
+        assert_eq!(read, Verse { every: 10, side: Side::Right, ..Verse::default() });
+        let written = serde_json::to_value(&read).unwrap();
+        assert!(written.get("numbersGap").is_none() && written.get("annotationsGap").is_none(), "{written}");
+        let given: Verse = serde_json::from_str(r#"{"numbersGap": "0.5cm", "annotationsGap": "2cm"}"#).unwrap();
+        assert_eq!((given.numbers_gap(), given.annotations_gap(Side::Left)), (Length::cm(0.5), Length::cm(2.0)));
+    }
 
     #[test]
     fn headings_are_numbered_level_by_level() {

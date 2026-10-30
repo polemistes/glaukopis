@@ -4554,10 +4554,10 @@ mod tests {
         assert!(l.contains("\\textsc{Nurse}"), "{l}");
         assert!(l.contains("{\\par\\leftskip=1cm\\relax"), "the lines stand in as far as a line looks: {l}");
         assert!(l.contains("\\noindent If only the Argo had never flown"), "the 1 given is not printed: {l}");
-        assert!(l.contains("\\llap{{\\footnotesize 5}\\hspace{0.9em}}in the glens"), "{l}");
+        assert!(l.contains("\\llap{{\\footnotesize 5}\\hspace{0.25cm}}in the glens"), "{l}");
         assert!(l.contains("\\hspace*{0.6cm}through the dark"), "a step of the layout: {l}");
-        assert!(l.contains("\\llap{{\\footnotesize 1094a1}\\hspace{0.9em}}Nor had"), "{l}");
-        assert!(l.contains("\\rlap{\\hspace{1em}\\footnotesize\\itshape ia. trim.}"), "{l}");
+        assert!(l.contains("\\llap{{\\footnotesize 1094a1}\\hspace{0.25cm}}Nor had"), "{l}");
+        assert!(l.contains("\\rlap{\\hspace{0.25cm}\\footnotesize\\itshape ia. trim.}"), "{l}");
         assert!(l.contains("\\begin{minipage}[t]{0.48\\textwidth}"), "{l}");
 
         // An e-book: the chapters are its parts, and the lines stay lines.
@@ -4661,14 +4661,17 @@ mod tests {
         .collect();
         export(&s.ctx(), &prose, Target::Typst, &typ, &ExportOptions::default()).unwrap();
         let t = fs::read_to_string(&typ).unwrap();
-        assert!(t.contains("#gk-beside(\"left\", gk-number(\"327a\"));"), "{t}");
-        assert!(t.contains("#gk-beside(\"left\", gk-number(\"328\"));"), "the count goes on from the digits: {t}");
+        assert!(t.contains("#gk-beside(\"left\", 0.25cm, gk-number(\"327a\"));"), "{t}");
+        assert!(
+            t.contains("#gk-beside(\"left\", 0.25cm, gk-number(\"328\"));"),
+            "the count goes on from the digits: {t}"
+        );
         assert!(t.contains("#quote(block: true)"), "{t}");
         let p = preview(&s.ctx(), &prose).unwrap();
         assert!(p.warnings.is_empty(), "{:?}", p.warnings);
         export(&s.ctx(), &prose, Target::Latex, &tex, &ExportOptions::default()).unwrap();
         let l = fs::read_to_string(&tex).unwrap();
-        assert!(l.contains("\\llap{{\\footnotesize 327a}\\hspace{0.9em}}I went down"), "{l}");
+        assert!(l.contains("\\llap{{\\footnotesize 327a}\\hspace{0.25cm}}I went down"), "{l}");
         export(&s.ctx(), &prose, Target::Docx, &docx, &ExportOptions::default()).unwrap();
         let xml = unzip(&docx, "word/document.xml");
         assert!(xml.contains("VerseNumber") && xml.contains(">328\u{a0}\u{a0}<"), "{xml}");
