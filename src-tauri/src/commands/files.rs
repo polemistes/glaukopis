@@ -171,6 +171,28 @@ pub fn files_move(state: State<'_, AppState>, hashes: Vec<String>, folder: Optio
     Ok(state.library().move_files(&hashes, folder.as_deref())?)
 }
 
+/// What came of naming files by their references.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NamedFiles {
+    /// The files whose names changed.
+    pub files: Vec<FileView>,
+    /// How many of those asked kept their names for want of a reference
+    /// that gives one.
+    pub kept: usize,
+}
+
+/// Names the files by their references, as export names them, when the
+/// writer asks; a file of no reference keeps its name, and one named so
+/// already is left as it is. The files in the store keep their names.
+#[tauri::command(async)]
+pub fn files_name_by_reference(state: State<'_, AppState>, hashes: Vec<String>) -> CommandResult<NamedFiles> {
+    let mut library = state.library();
+    let named = library.name_files_by_reference(&hashes)?;
+    let files = named.changed.iter().map(|hash| view(&library, hash)).collect::<CommandResult<Vec<_>>>()?;
+    Ok(NamedFiles { files, kept: named.kept })
+}
+
 /// Gives many files to references, each to its own; says what could not be given.
 #[tauri::command(async)]
 pub fn files_assign(state: State<'_, AppState>, pairs: Vec<FileAndReference>) -> CommandResult<Vec<String>> {

@@ -154,6 +154,7 @@ pub fn run() {
             commands::files::files_folder_delete,
             commands::files::file_move,
             commands::files::file_rename,
+            commands::files::files_name_by_reference,
             commands::files::file_remove,
             commands::files::files_left_empty,
             commands::files::files_remove,

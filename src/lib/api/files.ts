@@ -140,6 +140,24 @@ export const fileMove = (hash: string, folder: string | null) =>
 /** What the file is called in the lists. */
 export const fileRename = (hash: string, name: string) =>
   call<FileView>('file_rename', { hash, name });
+
+/** What came of naming files by their references. */
+export interface NamedFiles {
+  /** The files whose names changed. */
+  files: FileView[];
+  /** How many of those asked kept their names: of no reference, or of one that gives no name. */
+  kept: number;
+}
+
+/**
+ * Names the files by their references, as export names them: `Nagy 1979 -
+ * The Best of the Achaeans.pdf`, the ending kept, a second file of one work
+ * with the same ending by that and its own name after a dash. A file of no
+ * reference keeps its name; one named so already is left as it is, and is
+ * not among the files given back. The files in the store keep their names.
+ */
+export const filesNameByReference = (hashes: string[]) =>
+  call<NamedFiles>('files_name_by_reference', { hashes });
 /** Removes the file from every reference that has it, and from the store. */
 export const fileRemove = (hash: string) => call<void>('file_remove', { hash });
 /** The folders that removing these files would leave empty; not those empty before. */

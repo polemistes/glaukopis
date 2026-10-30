@@ -532,6 +532,10 @@ fn what_is_sent_is_what_the_interface_declares() {
         words: "nb".into(),
     };
     let removed = crate::commands::files::FilesRemoved { files: 2, folders: 1 };
+    let named_files = crate::commands::files::NamedFiles {
+        files: vec![library.file_view(attachments::hash_of_path(&stored).unwrap()).unwrap()],
+        kept: 1,
+    };
     let edit_facts = glaukopis_core::library::figures::EditFacts {
         width: 3000,
         height: 4000,
@@ -668,6 +672,7 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("dictionaries", "spelling.Dictionary[]", &vec![dictionary]);
     put("checking", "spelling.Checking", &checking);
     put("filesRemoved", "files.FilesRemoved", &removed);
+    put("namedFiles", "files.NamedFiles", &named_files);
     put("editFacts", "files.EditFacts", &edit_facts);
     // The events that tell of work that goes on (`commands/work.rs`).
     put("filesProgress", "backend.Told<files.FilesProgress>", &files_told);
