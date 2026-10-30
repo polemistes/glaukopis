@@ -595,6 +595,17 @@ export const documentPreviewPages = (key: string, pages: number[]) =>
 
 /** Stops what is being made for a key: the preview was closed. */
 export const documentPreviewStop = (key: string) => call<void>('document_preview_stop', { key });
+
+/** A page to be printed (record 0075): as SVG, without the runs of its text. */
+export interface PrintPage {
+  /** Which page it is, the first being 1. */
+  number: number;
+  svg: string;
+}
+
+/** The pages `from` to `to` of the document last set for the preview of a key, for printing: as many as are asked. */
+export const documentPrintPages = (key: string, from: number, to: number) =>
+  call<PrintPage[]>('document_print_pages', { key, from, to });
 export const documentExport = (
   request: DocumentRequest,
   target: Target,

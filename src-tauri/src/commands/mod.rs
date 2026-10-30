@@ -9,6 +9,7 @@ pub mod library;
 pub mod math;
 pub mod notices;
 pub mod ocr;
+pub mod printing;
 pub mod projectfile;
 pub mod projects;
 pub mod readable;

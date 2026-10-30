@@ -1589,17 +1589,42 @@ pub fn preview_made(
 /// the pages. They are drawn from the document as it was set, which is set
 /// again only where it is not kept, as after the application was restarted.
 pub fn preview_pages(ctx: &Context, key: &str, wanted: &[u32], stop: &AtomicBool) -> Result<(usize, Vec<Page>)> {
-    let dir = work_dir(ctx, key, "preview")?;
-    let document = match kept(&dir) {
-        Some(document) => document,
-        None => {
-            if !dir.join("document.typ").is_file() {
-                return Err(Error::NotFound(tr!("core-export-preview-document")));
-            }
-            set_for_preview(&dir, stop)?.document
-        }
-    };
+    let document = kept_or_set(ctx, key, stop)?;
     Ok(pages_from(&document, wanted))
+}
+
+/// The document last set for the preview of a key: the one kept, or, where
+/// it is no longer kept, set again from what was written for it.
+fn kept_or_set(ctx: &Context, key: &str, stop: &AtomicBool) -> Result<Arc<typeset::PagedDocument>> {
+    let dir = work_dir(ctx, key, "preview")?;
+    if let Some(document) = kept(&dir) {
+        return Ok(document);
+    }
+    if !dir.join("document.typ").is_file() {
+        return Err(Error::NotFound(tr!("core-export-preview-document")));
+    }
+    Ok(set_for_preview(&dir, stop)?.document)
+}
+
+/// A page to be printed (record 0075): drawn as SVG, without the runs of its
+/// text, which the printing does not want.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PrintPage {
+    /// Which page it is, the first being 1.
+    pub number: u32,
+    pub svg: String,
+}
+
+/// The pages `from` to `to` of the document last set for the preview of a
+/// key, for printing: as many as are asked, not the few the preview is
+/// given at a time; those the document has not are passed over.
+pub fn preview_print_pages(ctx: &Context, key: &str, from: u32, to: u32, stop: &AtomicBool) -> Result<Vec<PrintPage>> {
+    let document = kept_or_set(ctx, key, stop)?;
+    let count = document.pages().len() as u32;
+    Ok((from.max(1)..=to.min(count))
+        .filter_map(|number| Some(PrintPage { number, svg: typeset::svg(&document, number as usize)? }))
+        .collect())
 }
 
 /// The documents last set for the preview, by the places they were made
@@ -2826,6 +2851,31 @@ mod tests {
     }
 
     #[test]
+    fn a_document_is_given_whole_for_printing_past_the_few_pages_of_the_preview() {
+        use crate::document::fixtures::text;
+        use crate::document::{Block, Section};
+        let Some(s) = setup() else { return };
+        let mut r = request("chicago-author-date");
+        r.key = "printing".into();
+        r.document.sections.push(Section {
+            level: 1,
+            heading: Some(vec![text("Long")]),
+            blocks: (0..400).map(|_| Block::paragraph(vec![text(&"Many words follow. ".repeat(20))])).collect(),
+            element: Some("e2".into()),
+            kind: None,
+        });
+        let p = preview(&s.ctx(), &r).unwrap();
+        assert!(p.count > MOST_PAGES, "{}", p.count);
+        let stop = AtomicBool::new(false);
+        let all = preview_print_pages(&s.ctx(), &r.key, 1, p.count as u32, &stop).unwrap();
+        assert_eq!(all.len(), p.count);
+        assert_eq!(all.last().unwrap().number, p.count as u32);
+        let some = preview_print_pages(&s.ctx(), &r.key, 2, 3, &stop).unwrap();
+        assert_eq!(some.iter().map(|page| page.number).collect::<Vec<_>>(), [2, 3]);
+        assert_eq!(some[0].svg, all[1].svg);
+    }
+
+    #[test]
     fn the_preview_tells_where_the_elements_are_and_what_the_pages_say() {
         use crate::document::fixtures::text;
         use crate::document::{Block, Section};
@@ -2868,6 +2918,17 @@ mod tests {
         let (count, pages) = preview_pages(&s.ctx(), &r.key, &[1], &AtomicBool::new(false)).unwrap();
         assert_eq!(count, p.count);
         assert_eq!(pages[0].texts, p.pages[0].texts);
+        // The pages are given for printing as many as are asked, the last ones passed over that the document has not.
+        let stop = AtomicBool::new(false);
+        let printed = preview_print_pages(&s.ctx(), &r.key, 1, p.count as u32 + 5, &stop).unwrap();
+        assert_eq!(
+            printed.iter().map(|page| page.number).collect::<Vec<_>>(),
+            (1..=p.count as u32).collect::<Vec<_>>()
+        );
+        assert!(printed.iter().all(|page| page.svg.starts_with("<svg")));
+        assert_eq!(printed[0].svg, p.pages[0].svg);
+        assert!(preview_print_pages(&s.ctx(), &r.key, 0, 0, &stop).unwrap().is_empty());
+        assert!(preview_print_pages(&s.ctx(), &r.key, 3, 2, &stop).unwrap().is_empty());
 
         // The marks are no part of what the other formats are given.
         let out = s.work.join("out");

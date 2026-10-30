@@ -117,3 +117,12 @@ preview-title = Ombrekking
 preview-zoom-fit = Tilpass bredden
 preview-zoom = { $percent } %
 preview-zoom-label = Forstørrelse
+
+## Printing (docs/plans/printing.md, record 0075).
+
+preview-print = Skriv ut …
+preview-print-preparing = { $count ->
+    [one] Gjør klar én side for utskrift …
+   *[other] Gjør klar { $count } sider for utskrift …
+}
+preview-print-failed = Sidene kunne ikke skrives ut

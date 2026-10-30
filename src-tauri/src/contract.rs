@@ -476,6 +476,7 @@ fn what_is_sent_is_what_the_interface_declares() {
     };
     let ticket = crate::commands::sharing::Ticket { url: "wss://example.org/rooms/r1/socket?ticket=t".into() };
     let pages_of = crate::commands::documents::PagesOf { count: preview.count, pages: preview.pages.clone() };
+    let print_pages = vec![glaukopis_core::export::PrintPage { number: 1, svg: "<svg/>".into() }];
     let exported_document = glaukopis_core::export::Exported {
         path: "/data/wrath.pdf".into(),
         also: vec!["/data/wrath.bib".into()],
@@ -662,6 +663,7 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("readInvitation", "sharing.ReadInvitation", &read_invitation);
     put("ticket", "sharing.SharingTicket", &ticket);
     put("pagesOf", "documents.PagesOf", &pages_of);
+    put("printPages", "documents.PrintPage[]", &print_pages);
     put("exportedDocument", "documents.Exported", &exported_document);
     put("styleFound", "documents.StyleFound[]", &style_found);
     put("wordsFiles", "words.WordsFile[]", &words_files);

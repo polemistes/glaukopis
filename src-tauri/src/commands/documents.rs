@@ -343,6 +343,29 @@ pub struct PagesOf {
     pub pages: Vec<Page>,
 }
 
+/// The pages `from` to `to` of the document last set for the preview of a
+/// key, for printing (record 0075): as SVG, as many as are asked.
+#[tauri::command(async)]
+pub fn document_print_pages(
+    state: State<'_, AppState>,
+    key: String,
+    from: u32,
+    to: u32,
+) -> CommandResult<Vec<glaukopis_core::export::PrintPage>> {
+    let tools = state.tools();
+    let fonts = state.fonts();
+    let ctx = Context {
+        tools: &tools,
+        resources: &state.resources,
+        styles: &state.styles,
+        library: None,
+        work: state.data.work(),
+        fonts: &fonts,
+        pictures: None,
+    };
+    Ok(export::preview_print_pages(&ctx, &key, from, to, &AtomicBool::new(false))?)
+}
+
 /// Stops what is being made for a key, and lets go of what is kept for it:
 /// the preview was closed.
 #[tauri::command(async)]

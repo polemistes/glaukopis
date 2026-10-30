@@ -4263,6 +4263,13 @@ export const pagesOf: documents.PagesOf = {
   ]
 };
 
+export const printPages: documents.PrintPage[] = [
+  {
+    "number": 1,
+    "svg": "<svg/>"
+  }
+];
+
 export const exportedDocument: documents.Exported = {
   "also": [
     "/data/wrath.bib"
