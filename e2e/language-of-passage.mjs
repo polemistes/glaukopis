@@ -267,7 +267,7 @@ try {
   await app.screenshot('language-5-drawn');
 
   // --- The preview, set by Typst from the project, and a document made as Word ---
-  await app.keys(['Control', 'p']);
+  await app.keys(['Control', 't']);
   const opened = await app.waitFor('.preview', 3000).then(
     () => true,
     () => false,

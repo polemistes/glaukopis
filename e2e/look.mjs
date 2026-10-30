@@ -83,7 +83,7 @@ try {
   );
 
   // --- Look, from its button in the head of the typesetting pane, in the order of the page ---
-  await app.keys(['Control', 'p']);
+  await app.keys(['Control', 't']);
   await app.waitFor('.preview .page', 30000);
   await sleep(800);
   await app.click('.preview header [data-look]');

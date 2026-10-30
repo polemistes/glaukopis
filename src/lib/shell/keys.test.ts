@@ -201,12 +201,12 @@ describe('the keys', () => {
   it('do what is bound, while it is bound, and leave what another has taken', () => {
     let done = 0;
     const unbind = shortcuts.bind({ preview: () => done++ });
-    expect(shortcuts.handle(press('p', { ctrlKey: true }))).toBe(true);
-    const taken = press('p', { ctrlKey: true });
+    expect(shortcuts.handle(press('t', { ctrlKey: true }))).toBe(true);
+    const taken = press('t', { ctrlKey: true });
     taken.preventDefault();
     expect(shortcuts.handle(taken)).toBe(false);
     unbind();
-    expect(shortcuts.handle(press('p', { ctrlKey: true }))).toBe(false);
+    expect(shortcuts.handle(press('t', { ctrlKey: true }))).toBe(false);
     expect(done).toBe(1);
   });
 

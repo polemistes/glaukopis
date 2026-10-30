@@ -827,7 +827,7 @@
       class="look-button"
       data-print
       disabled={printing || status !== 'shown'}
-      use:tooltip={{ text: t('preview-print') }}
+      use:tooltip={{ text: t('preview-print'), shortcut: keysFor('print') }}
       onclick={() => void print()}
     >
       <Printer size={14} />

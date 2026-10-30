@@ -323,7 +323,7 @@ try {
   await app.screenshot('figures-6-text');
 
   // ---- the preview ----
-  await app.keys(['Control', 'p']);
+  await app.keys(['Control', 't']);
   await app.waitFor('.preview .page', 30000);
   await sleep(1500);
   const remarks = await app.exec(`const r = document.querySelector('.preview .remarks, .preview .warnings'); return r ? r.textContent.trim() : ''`);

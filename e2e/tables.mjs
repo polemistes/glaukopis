@@ -831,7 +831,7 @@ try {
   await app.setTheme('light');
 
   // ---- in the document ----
-  await app.keys(['Control', 'p']);
+  await app.keys(['Control', 't']);
   await app.waitFor('.preview .page', 30000);
   await sleep(1500);
   const work = join(app.dataDir, 'work', project, 'preview', 'document.typ');

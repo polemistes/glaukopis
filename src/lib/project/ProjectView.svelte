@@ -434,6 +434,26 @@
     if (active) panes.typesetFor(active.key);
   }
 
+  /** The typesetting pane shown, which prints. */
+  let previewPanel = $state<PreviewPanel>();
+
+  /**
+   * Prints what the side that has the focus shows (record 0075): a file side
+   * its file; else the document of the side, the typesetting pane opened for
+   * it where it is closed or shows the other side, and its pages waited for.
+   */
+  async function printActive() {
+    if (isFile(sides.active)) {
+      // A file side prints its file: stage 3 of docs/plans/printing.md.
+      return;
+    }
+    const side = active;
+    if (!side) return;
+    if (panes.typesetting !== side.key) panes.typesetFor(side.key);
+    await tick();
+    await previewPanel?.print();
+  }
+
   /** The element the text of the side the typesetting pane shows is at; nothing where it shows no text. */
   function previewCurrent(): string | null {
     const spec = previewSpec;
@@ -932,6 +952,7 @@
         when: onMap,
       },
       preview: { run: togglePreview, when: shown },
+      print: { run: () => void printActive(), when: () => !!sides.active },
       'document-settings': {
         run: () => {
           if (project) aboutDocumentUi.open({ project, at });
@@ -1163,6 +1184,7 @@
           <!-- Of the project of the side it shows: made anew when that is another. -->
           {#key previewSpec?.project}
             <PreviewPanel
+              bind:this={previewPanel}
               project={of}
               projectId={previewSpec?.project ?? ''}
               at={typesetAt}

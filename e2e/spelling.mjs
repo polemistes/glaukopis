@@ -329,12 +329,12 @@ try {
 
   // ---- Norwegian ----
   await newProject('Vreden');
-  await app.keys(['Control', 'p']);
+  await app.keys(['Control', 't']);
   await app.waitFor('.preview', 8000);
   await app.openAbout('Language');
   await app.documentChoose('Language of the text', 'nb');
   await app.closeAbout();
-  await app.keys(['Control', 'p']);
+  await app.keys(['Control', 't']);
   await app.keys(['Control', 'd']);
   await app.waitFor('.text-view .section');
   await app.click('.text-view .section .body');
@@ -380,12 +380,12 @@ try {
   await app.waitGone('.note-panel');
 
   // A language without a dictionary: nothing is underlined, and F7 says why.
-  await app.keys(['Control', 'p']);
+  await app.keys(['Control', 't']);
   await app.waitFor('.preview', 8000);
   await app.openAbout('Language');
   await app.documentChoose('Language of the text', 'la');
   await app.closeAbout();
-  await app.keys(['Control', 'p']);
+  await app.keys(['Control', 't']);
   await until('the underlines to go', async () => (await underlined()).length === 0);
   await app.click('.text-view .section .body');
   await app.keys([F7]);

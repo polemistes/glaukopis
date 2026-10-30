@@ -261,7 +261,7 @@ async function measure() {
     // The preview is closed, if it was left open.
     if (await app.exists('.preview')) {
       console.log('      the preview was open, and is closed');
-      await app.keys(['Control', 'p']);
+      await app.keys(['Control', 't']);
       await sleep(3000);
     }
 
@@ -342,7 +342,7 @@ async function measure() {
     await write('the text alone', 50);
 
     // ---- with the preview open ----
-    await app.keys(['Control', 'p']);
+    await app.keys(['Control', 't']);
     await app.waitFor('.preview .page', 120000);
     await sleep(3000);
     await write('with the preview', 80);
@@ -373,7 +373,7 @@ async function measure() {
       Math.max(...fetched.times) < 1000,
       `${Math.max(...fetched.times)} ms`,
     );
-    await app.keys(['Control', 'p']);
+    await app.keys(['Control', 't']);
     await sleep(500);
 
     // ---- the history, read and compared ----

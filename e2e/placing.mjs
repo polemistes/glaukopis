@@ -186,7 +186,7 @@ try {
   await app.waitFor('.text-view .section', 5000);
   await until('the figures as they stand', async () => (await figures()).join('|') === 'right+around|-+row|-+row', 8000).catch(() => {});
   check('where the text is shown, they stand as they were put', (await figures()).join('|') === 'right+around|-+row|-+row', (await figures()).join('|'));
-  await app.keys(['Control', 'p']);
+  await app.keys(['Control', 't']);
   await app.waitFor('.preview .page', 30000);
   const typ = () => readFileSync(join(app.dataDir, 'work', project, 'preview', 'document.typ'), 'utf8');
   await until('the document', () => /#gk-row\(2/.test(typ()), 20000);

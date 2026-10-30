@@ -131,6 +131,71 @@ try {
   }
   check('the pages leave the page when they are printed', !(await app.exists('#print-pages')));
 
+  // ---- the keys: Ctrl+T the typesetting pane, Ctrl+P printing ----
+  await app.click('.text-view .section .body');
+  await sleep(200);
+  await app.keys(['Control', 't']);
+  const closed = await app.waitGone('.preview', 5000).then(() => true, () => false);
+  check('Ctrl+T closes the typesetting pane', closed);
+  await app.keys(['Control', 't']);
+  const opened = await app.waitFor('.preview', 5000).then(() => true, () => false);
+  check('and opens it again', opened);
+  await app.keys(['Control', 't']);
+  await app.waitGone('.preview', 5000).catch(() => {});
+
+  await app.keys(['Control', 'k']);
+  await app.waitFor('dialog[open] .query', 3000);
+  await sleep(200);
+  await app.keys('print');
+  await sleep(200);
+  const found = await app.exec(
+    `const li = document.querySelector('dialog[open] li.active');
+     return li && li.querySelector('.label')?.textContent.trim() + ' ' + (li.querySelector('kbd')?.textContent.trim() ?? '');`,
+  );
+  check('the palette finds Print, with Ctrl+P', found === 'Print Ctrl+P', found);
+  await app.press('Escape');
+  await app.waitGone('dialog[open]');
+  await app.keys(['Control', '/']);
+  await app.waitForText('dialog[open] h2', 'Keys', 3000);
+  await sleep(300);
+  const rows = await app.exec(
+    `return Array.from(document.querySelectorAll('dialog[open] dt')).map((dt) => dt.textContent.trim() + ' ' + Array.from(dt.nextElementSibling.querySelectorAll('kbd')).map((k) => k.textContent.trim()).join(' '))`,
+  );
+  check(
+    'the sheet of the keys has Print as Ctrl+P and Typesetting as Ctrl+T',
+    rows.includes('Print Ctrl+P') && rows.includes('Typesetting Ctrl+T'),
+    rows.filter((r) => /^(Print|Typesetting) /.test(r)).join(' | '),
+  );
+  await app.press('Escape');
+  await app.waitGone('dialog[open]');
+
+  // Ctrl+P with the pane closed: the pane opens, the pages are made, and the
+  // system's dialog opens over the window. It is seen on the private display
+  // and closed with Escape, which prints nothing.
+  await app.click('.text-view .section .body');
+  await sleep(200);
+  await app.keys(['Control', 'p']);
+  const paned = await app.waitFor('.preview .page', 20000).then(() => true, () => false);
+  check('Ctrl+P opens the typesetting pane where it is closed', paned);
+  const onTheDisplay = { env: { ...process.env, DISPLAY: app.display }, encoding: 'utf8', timeout: 20000 };
+  let dialog = '';
+  try {
+    dialog = execFileSync('xdotool', ['search', '--sync', '--onlyvisible', '--name', '^Print$'], onTheDisplay)
+      .trim()
+      .split('\n')[0];
+  } catch {
+    // Not there in time.
+  }
+  check("and the system's print dialog opens", !!dialog);
+  if (dialog) {
+    await sleep(1500);
+    execFileSync('import', ['-display', app.display, '-window', 'root', join(outputDir, 'print-2-dialog.png')], onTheDisplay);
+    // GTK takes no key sent to a window; the dialog is given the focus, and the key pressed on the display.
+    execFileSync('xdotool', ['windowfocus', '--sync', dialog, 'key', 'Escape'], onTheDisplay);
+    const gone = await app.waitGone('#print-pages', 10000).then(() => true, () => false);
+    check('closed without printing, the pages leave the page', gone);
+  }
+
   // ---- the end ----
   const errors = await app.pageErrors();
   check('no errors in the page', errors.length === 0, errors.slice(0, 3).join(' / '));

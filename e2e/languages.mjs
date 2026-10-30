@@ -182,7 +182,7 @@ try {
   await sleep(200);
 
   // ---- the preview, and the settings of the document ----
-  await app.keys(['Control', 'p']);
+  await app.keys(['Control', 't']);
   await app.waitFor('.preview', 8000);
   await sleep(1500);
   await english('the preview');
@@ -199,7 +199,7 @@ try {
   const written = await app.exec(`return document.querySelector('dialog select').value`);
   check('a new project is written in the language of the system', written === 'nb', written);
   await closeSettings();
-  await app.keys(['Control', 'p']);
+  await app.keys(['Control', 't']);
   await sleep(300);
 
   // ---- the language of the element in view and of the project, from the menu of the element ----

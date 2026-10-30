@@ -50,7 +50,7 @@ try {
   console.log(`      the text of the map: ${words}`);
   // The preview is closed, if it was left open: the search is measured by itself.
   if (await app.exists('.preview')) {
-    await app.keys(['Control', 'p']);
+    await app.keys(['Control', 't']);
     await sleep(3000);
   }
 

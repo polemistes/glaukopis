@@ -45,7 +45,7 @@ try {
   await app.click('.diagram .node.root');
   await sleep(200);
 
-  await app.keys(['Control', 'p']);
+  await app.keys(['Control', 't']);
   await app.waitFor('.preview header [data-look]', 15000);
   await app.waitFor('.preview .page', 20000);
   const header = async () => (await app.text('.preview header')).replace(/\s+/g, ' ');

@@ -44,7 +44,7 @@ try {
   await app.press('Enter');
   await app.waitGone('.editor');
   await app.keys('.');
-  await app.keys(['Control', 'p']);
+  await app.keys(['Control', 't']);
   await app.waitFor('.preview .page', 20000);
 
   /** The name of the reference style in use, as its row in Look shows it. */

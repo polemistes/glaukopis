@@ -142,3 +142,5 @@ keys-viewer-last = Last page
 keys-viewer-tab-next = Next tab
 keys-viewer-tab-previous = Previous tab
 keys-viewer-bookmark = Mark this place
+# Printing (docs/plans/printing.md, record 0075).
+keys-print = Print

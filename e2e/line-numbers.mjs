@@ -430,7 +430,7 @@ try {
   check('the second line of the text paragraph is given 9', nine);
 
   // --- The preview, set by Typst from the project ---
-  await app.keys(['Control', 'p']);
+  await app.keys(['Control', 't']);
   const opened = await app.waitFor('.preview', 3000).then(
     () => true,
     () => false,

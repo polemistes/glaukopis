@@ -80,7 +80,7 @@ try {
   const bookOne = `.text-view .section[data-section="${one}"] .body`;
   await app.click(bookOne);
   await sleep(300);
-  await app.keys(['Control', 'p']);
+  await app.keys(['Control', 't']);
   await app.waitFor('.preview .page', 30000);
   await sleep(800);
   await app.click('.preview header [data-look]');

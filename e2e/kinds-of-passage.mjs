@@ -334,7 +334,7 @@ try {
   await app.screenshot('kinds-4-own-kind');
 
   // --- The preview sets them all ---
-  await app.keys(['Control', 'p']);
+  await app.keys(['Control', 't']);
   const opened = await app.waitFor('.preview', 3000).then(
     () => true,
     () => false,

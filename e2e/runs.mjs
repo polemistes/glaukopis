@@ -370,7 +370,7 @@ try {
   await sleep(300);
 
   // --- The preview: the breaks and the columns set by Typst ---
-  await app.keys(['Control', 'p']);
+  await app.keys(['Control', 't']);
   const opened = await app.waitFor('.preview', 3000).then(
     () => true,
     () => false,

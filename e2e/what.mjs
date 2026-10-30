@@ -83,7 +83,7 @@ try {
   );
 
   // --- Every line of the pages knows what it is ---
-  await app.keys(['Control', 'p']);
+  await app.keys(['Control', 't']);
   await app.waitFor('.preview .page .line[data-what]', 30000);
   await sleep(800);
   await app.waitUntil(`return !!document.querySelector(${JSON.stringify(quoteLine)})`, 15000, 'the quotation named').catch(() => {});

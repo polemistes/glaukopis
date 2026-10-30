@@ -841,7 +841,7 @@ export class App {
        return side?.querySelector('[data-typeset]') ?? null;`,
     );
     if (button) await this.click(button);
-    else await this.keys(['Control', 'p']);
+    else await this.keys(['Control', 't']);
     await sleep(400);
     return this.exists('.side.typesetting .preview');
   }
