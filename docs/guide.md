@@ -167,8 +167,13 @@ behind. The new project opens on its text.
 | Everything else | Right-click an element, or **Shift+F10** |
 
 The element in view stands at the centre of the map, never folded, and what
-is under it is laid out to both sides of it. A project opens with the
-project itself in view, and its whole tree about it. With nothing selected,
+is under it is laid out to both sides of it. Each branch stands as close
+beside the one before it as the two allow, box against box and box against
+line: an element with little under it stands close beside one with much,
+whose children fan out past it, and an element stands midway between its
+first child and its last. From the second level down the boxes are smaller.
+A project opens with the project itself in view, and its whole tree about
+it. With nothing selected,
 **Alt+Enter** adds an element under the element in view, and **Enter** selects it.
 In the name of a new element, **Enter** keeps the name, and **Alt+Enter**
 keeps it and makes the next.

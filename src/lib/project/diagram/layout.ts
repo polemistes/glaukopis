@@ -3,15 +3,21 @@
  *
  * Elements are placed automatically, as a mind map: the element in view in
  * the middle, its children to the right and to the left, each branch growing
- * outwards with its children stacked beside it. An element the user has moved
- * keeps the place it was given, relative to its parent, and its own branch is
- * laid out from there. The element in view stands at the origin whatever its
+ * outwards with its children stacked beside it, each as close under the one
+ * before as the outline of the two allows: the boxes, and the lines from an
+ * element to those under it, so that nothing stands across a line. An
+ * element with little under it thus stands close beside one with much, and
+ * what is under the latter fans out past it; an element stands midway
+ * between its first child and its last. An element the user has moved keeps
+ * the place it was given, relative to its parent, and its own branch is laid
+ * out from there. The element in view stands at the origin whatever its
  * place under its own parent, and is never folded. Coordinates are those of
  * the centre of each element.
  */
 
 import type { Tree } from '../model/tree';
 import type { NodeRecord, Position, Side } from '../model/types';
+import { clearance, joined, moved, piece, reach, type Outline } from './contour';
 
 export interface Size {
   w: number;
@@ -40,9 +46,20 @@ export interface Layout {
   bounds: { left: number; top: number; right: number; bottom: number };
 }
 
+/** Between an element and those under it. */
 export const H_GAP = 64;
-export const V_GAP = 16;
+/** Between a branch and the next, wherever the two come closest. */
+export const V_GAP = 10;
 export const DEFAULT_SIZE: Size = { w: 120, h: 36 };
+
+/** A branch as laid out on its own, its element at the origin and growing to the right. */
+interface Branch {
+  top: Outline;
+  bottom: Outline;
+  /** How far it reaches above the middle of its element, and below. */
+  above: number;
+  below: number;
+}
 
 export function layout(
   tree: Tree,
@@ -50,24 +67,7 @@ export function layout(
   sizes: ReadonlyMap<string, Size>,
   /** Elements held at a place on the canvas whatever their parent: those being dragged. */
   held: ReadonlyMap<string, Position> = new Map(),
-  options: {
-    /**
-     * An element placed by the user keeps its room in the flow of those
-     * beside it, as one that is held does, so that nothing else moves when
-     * it is placed: for the map of the projects, where what is put somewhere
-     * must not shift the rest about.
-     */
-    keepRoom?: boolean;
-    /**
-     * Room kept around the branch of an element, by its id: those beside it
-     * stand that much further away, above and below. For the folders of the
-     * map of the projects, drawn as regions around what is in them.
-     */
-    margin?: ReadonlyMap<string, number>;
-  } = {},
 ): Layout {
-  const keepRoom = !!options.keepRoom;
-  const margin = (id: string) => options.margin?.get(id) ?? 0;
   const placed = new Map<string, Placed>();
   const order: string[] = [];
   const size = (id: string): Size => sizes.get(id) ?? DEFAULT_SIZE;
@@ -83,23 +83,102 @@ export function layout(
     return n;
   };
 
-  // The height a branch takes when placed automatically.
-  const heights = new Map<string, number>();
-  const blockHeight = (id: string): number => {
-    const known = heights.get(id);
-    if (known !== undefined) return known;
-    // What is held keeps its room in the flow, so that nothing else moves while it is dragged.
-    const flowing = visibleChildren(id).filter(
-      (c) => keepRoom || !nodes.get(c)?.pos || held.has(c),
-    );
-    let kids = 0;
-    flowing.forEach((c, i) => {
-      kids += blockHeight(c) + (i ? V_GAP : 0);
+  /** Where a child stands from its parent, in the frame of a branch growing to the right; of those that flow. */
+  const rel = new Map<string, Position>();
+  /** Which side of the element in view each of its flowing children went to. */
+  const sideOf = new Map<string, Side>();
+
+  /** Those of the children that take their place in the flow: all but those the user put somewhere. A flowing element that is held keeps its room, so that nothing else moves while it is dragged. */
+  const flowing = (id: string): string[] => visibleChildren(id).filter((c) => !nodes.get(c)?.pos);
+
+  /**
+   * Children stacked beside their parent, each as close under the one
+   * before as the outlines allow: how far down each stands from the first,
+   * and the outline of all of them together, in the parent's frame.
+   */
+  const stack = (parent: Size, kids: { id: string; branch: Branch }[]) => {
+    const ys: number[] = [];
+    let top: Outline = [];
+    let bottom: Outline = [];
+    kids.forEach((k, i) => {
+      const s = size(k.id);
+      const dx = parent.w / 2 + H_GAP + s.w / 2;
+      const over = moved(k.branch.top, dx, 0);
+      // Their boxes stand in one column, so they always lie over each other; failing that, box under box.
+      const dy =
+        i === 0
+          ? 0
+          : (clearance(bottom, over, V_GAP) ??
+            ys[i - 1] + size(kids[i - 1].id).h / 2 + V_GAP + s.h / 2);
+      ys.push(dy);
+      top = joined(top, moved(over, 0, dy), false);
+      bottom = joined(bottom, moved(k.branch.bottom, dx, dy), true);
     });
-    const h = Math.max(size(id).h, kids) + 2 * margin(id);
-    heights.set(id, h);
-    return h;
+    return { ys, top, bottom };
   };
+
+  /** Each child of a stack given its place from the parent, which stands midway between the first and the last. */
+  const settle = (parent: Size, kids: { id: string; branch: Branch }[], ys: number[]): number => {
+    const mid = (ys[0] + ys[ys.length - 1]) / 2;
+    kids.forEach((k, i) =>
+      rel.set(k.id, { x: parent.w / 2 + H_GAP + size(k.id).w / 2, y: ys[i] - mid }),
+    );
+    return mid;
+  };
+
+  const branches = new Map<string, Branch>();
+  const branch = (id: string): Branch => {
+    const known = branches.get(id);
+    if (known) return known;
+    const s = size(id);
+    const kids = flowing(id).map((c) => ({ id: c, branch: branch(c) }));
+    // What the user put somewhere is laid out from there, on its own.
+    for (const c of visibleChildren(id)) if (nodes.get(c)?.pos) branch(c);
+    let top = piece(-s.w / 2, -s.h / 2, s.w / 2, -s.h / 2);
+    let bottom = piece(-s.w / 2, s.h / 2, s.w / 2, s.h / 2);
+    if (kids.length) {
+      const stacked = stack(s, kids);
+      const mid = settle(s, kids, stacked.ys);
+      // The lines to the first child and to the last bound the fan of lines between them.
+      for (const k of [kids[0], kids[kids.length - 1]]) {
+        const line = piece(s.w / 2, 0, s.w / 2 + H_GAP, rel.get(k.id)!.y);
+        top = joined(top, line, false);
+        bottom = joined(bottom, line, true);
+      }
+      top = joined(top, moved(stacked.top, 0, -mid), false);
+      bottom = joined(bottom, moved(stacked.bottom, 0, -mid), true);
+    }
+    const b = { top, bottom, above: -reach(top, false), below: reach(bottom, true) };
+    branches.set(id, b);
+    return b;
+  };
+
+  // Around the element in view: what is already on either side, placed by
+  // hand, is counted, and the rest is divided so that the sides come out
+  // even with it counted; the first in order to the right.
+  const root = tree.root;
+  const rs = size(root);
+  const occupied = { left: 0, right: 0 };
+  const flow: { id: string; branch: Branch }[] = [];
+  for (const c of visibleChildren(root)) {
+    const pos = nodes.get(c)?.pos;
+    const b = branch(c);
+    if (pos) occupied[pos.x < 0 ? 'left' : 'right'] += b.above + b.below + V_GAP;
+    else flow.push({ id: c, branch: b });
+  }
+  const split = balance(
+    flow.map((k) => k.branch.above + k.branch.below),
+    occupied.right,
+    occupied.left,
+  );
+  for (const [kids, side] of [
+    [flow.slice(0, split), 'right'],
+    [flow.slice(split), 'left'],
+  ] as const) {
+    if (!kids.length) continue;
+    settle(rs, kids, stack(rs, kids).ys);
+    for (const k of kids) sideOf.set(k.id, side);
+  }
 
   const place = (
     id: string,
@@ -125,74 +204,33 @@ export function layout(
     });
     order.push(id);
 
-    const children = visibleChildren(id);
-    if (!children.length) return;
-
-    const flow = (list: string[], to: Side) => {
-      let total = 0;
-      list.forEach((c, i) => {
-        total += blockHeight(c) + (i ? V_GAP : 0);
-      });
-      let top = y - total / 2;
-      for (const c of list) {
-        const block = blockHeight(c);
-        const pos = nodes.get(c)?.pos;
-        // Held where the pointer is; or, keeping its room, where the user put it.
-        const at = held.get(c) ?? (keepRoom && pos ? { x: x + pos.x, y: y + pos.y } : undefined);
-        if (at) {
-          // Held where the pointer is, its room in the flow kept for it.
-          place(c, at.x, at.y, at.x < x ? 'left' : 'right', depth + 1, id);
-        } else {
-          const cs = size(c);
-          const cx =
-            to === 'right' ? x + s.w / 2 + H_GAP + cs.w / 2 : x - s.w / 2 - H_GAP - cs.w / 2;
-          place(c, cx, top + block / 2, to, depth + 1, id);
-        }
-        top += block + V_GAP;
-      }
-    };
-
-    const flowing: string[] = [];
-    // What is already on either side, placed by hand or held: the rest is
-    // divided so that the sides come out even with it counted.
-    const occupied = { left: 0, right: 0 };
-    for (const c of children) {
-      const n = nodes.get(c);
+    for (const c of visibleChildren(id)) {
+      const pos = nodes.get(c)?.pos;
       const at = held.get(c);
-      if (keepRoom) {
-        // Placed or not, it flows with the rest, and is drawn where it is to be.
-        flowing.push(c);
-      } else if (at && n?.pos) {
-        // Placed by the user, and held: where the pointer is, counted on the side it was placed.
-        const to: Side = n.pos.x < 0 ? 'left' : n.pos.x > 0 ? 'right' : side;
-        occupied[to] += blockHeight(c) + V_GAP;
+      const r = rel.get(c);
+      if (at) {
+        // Held where the pointer is; its room in the flow, where it flows, kept for it.
         place(c, at.x, at.y, at.x < x ? 'left' : 'right', depth + 1, id);
-      } else if (at) {
-        // Held while it flows: it keeps its room in the flow, and is placed where the pointer is.
-        flowing.push(c);
-      } else if (n?.pos) {
+      } else if (pos) {
         // Placed by the user: the branch grows away from its parent.
-        const to: Side = n.pos.x < 0 ? 'left' : n.pos.x > 0 ? 'right' : side;
-        occupied[to] += blockHeight(c) + V_GAP;
-        place(c, x + n.pos.x, y + n.pos.y, to, depth + 1, id);
-      } else {
-        flowing.push(c);
+        place(
+          c,
+          x + pos.x,
+          y + pos.y,
+          pos.x < 0 ? 'left' : pos.x > 0 ? 'right' : side,
+          depth + 1,
+          id,
+        );
+      } else if (r) {
+        const to = sideOf.get(c) ?? side;
+        place(c, to === 'right' ? x + r.x : x - r.x, y + r.y, to, depth + 1, id);
       }
-    }
-    if (id === tree.root) {
-      // Around the element in view: the first in order to the right, the rest
-      // to the left, divided where the two sides come closest to equal height.
-      const split = balance(flowing.map(blockHeight), occupied.right, occupied.left);
-      flow(flowing.slice(0, split), 'right');
-      flow(flowing.slice(split), 'left');
-    } else {
-      flow(flowing, side);
     }
   };
 
   // The element in view stands at the origin, whatever its place under its
   // own parent, and is not moved by being held.
-  place(tree.root, 0, 0, 'right', 0, null);
+  place(root, 0, 0, 'right', 0, null);
 
   const bounds = { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity };
   for (const p of placed.values()) {

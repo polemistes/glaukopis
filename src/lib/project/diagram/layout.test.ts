@@ -9,8 +9,46 @@ import {
   layout,
   neighbour,
   V_GAP,
+  type Layout,
   type Size,
 } from './layout';
+
+/** The pairs of boxes that lie over each other. */
+function overlaps(l: Layout): string[] {
+  const out: string[] = [];
+  const boxes = [...l.placed.values()];
+  for (const x of boxes) {
+    for (const y of boxes) {
+      if (x.id >= y.id) continue;
+      const apart =
+        Math.abs(x.x - y.x) >= (x.w + y.w) / 2 || Math.abs(x.y - y.y) >= (x.h + y.h) / 2;
+      if (!apart) out.push(`${x.id} and ${y.id}`);
+    }
+  }
+  return out;
+}
+
+/** The lines from an element to one under it that pass through some other box. */
+function crossings(l: Layout): string[] {
+  const out: string[] = [];
+  for (const p of l.placed.values()) {
+    if (!p.parent) continue;
+    const q = l.placed.get(p.parent)!;
+    const [a, b] = hierarchyLine(q, p);
+    for (const z of l.placed.values()) {
+      if (z.id === p.id || z.id === q.id) continue;
+      for (let t = 0; t <= 1; t += 0.005) {
+        const x = a.x + (b.x - a.x) * t;
+        const y = a.y + (b.y - a.y) * t;
+        if (Math.abs(x - z.x) < z.w / 2 && Math.abs(y - z.y) < z.h / 2) {
+          out.push(`${q.id} to ${p.id} through ${z.id}`);
+          break;
+        }
+      }
+    }
+  }
+  return out;
+}
 
 /** A tree with `root` at the top, the elements in the order given. */
 function make(spec: Record<string, Partial<NodeRecord> & { parent: string | null }>, root = 'r') {
@@ -71,7 +109,7 @@ describe('the layout of a map', () => {
     expect(p('c').side).toBe('left');
   });
 
-  it('gives each branch the room its children need', () => {
+  it('packs each branch against the outline of the one before, not under the whole of it', () => {
     const { tree, nodes, sizes } = make({
       r: { parent: null },
       a: { parent: 'r' },
@@ -87,20 +125,72 @@ describe('the layout of a map', () => {
     });
     const l = layout(tree, nodes, sizes);
     const p = (id: string) => l.placed.get(id)!;
-    // a is centred on its three children, b is below the whole branch.
+    // a is centred on its three children; b, with nothing under it, stands
+    // close under a, and a's children fan out past it.
     expect(p('a').y).toBe(p('a2').y);
-    expect(p('b').y - p('a3').y).toBe(40 + V_GAP);
+    expect(p('b').y - p('a').y).toBe(40 + V_GAP);
+    expect(p('b').y).toBeLessThanOrEqual(p('a3').y);
     expect(p('a1').x).toBeGreaterThan(p('a').x);
-    // Nothing overlaps.
-    const boxes = [...l.placed.values()];
-    for (const x of boxes) {
-      for (const y of boxes) {
-        if (x.id >= y.id) continue;
-        const apart =
-          Math.abs(x.x - y.x) >= (x.w + y.w) / 2 || Math.abs(x.y - y.y) >= (x.h + y.h) / 2;
-        expect(apart, `${x.id} and ${y.id}`).toBe(true);
+    expect(p('c').side).toBe('left');
+    expect(p('c').y).toBe((p('c1').y + p('c4').y) / 2);
+    expect(overlaps(l)).toEqual([]);
+    expect(crossings(l)).toEqual([]);
+  });
+
+  it('an element wider than the one before stands clear of the lines that fan past it', () => {
+    const { tree, nodes, sizes } = make({
+      r: { parent: null },
+      a: { parent: 'r' },
+      a1: { parent: 'a' },
+      a2: { parent: 'a' },
+      a3: { parent: 'a' },
+      a4: { parent: 'a' },
+      b: { parent: 'r' },
+      c: { parent: 'r' },
+      c1: { parent: 'c' },
+      c2: { parent: 'c' },
+      c3: { parent: 'c' },
+      c4: { parent: 'c' },
+      c5: { parent: 'c' },
+      c6: { parent: 'c' },
+    });
+    sizes.set('b', { w: 140, h: 40 });
+    const l = layout(tree, nodes, sizes);
+    const p = (id: string) => l.placed.get(id)!;
+    expect(p('b').side).toBe('right');
+    // Its top clears the line to a4 where that passes b's right edge, 40 past a's; still beside the fan.
+    expect(p('b').y - p('a').y).toBeCloseTo((75 * 40) / 64 + V_GAP + 20);
+    expect(p('b').y).toBeLessThan(p('a4').y + 40 + V_GAP);
+    expect(overlaps(l)).toEqual([]);
+    expect(crossings(l)).toEqual([]);
+  });
+
+  it('lays out a large tree of every shape and width with nothing over anything', () => {
+    // A tree of a few hundred elements, the same every time.
+    let seed = 7;
+    const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+    const flat: FlatNode[] = [];
+    const nodes = new Map<string, NodeRecord>();
+    const sizes = new Map<string, Size>();
+    const add = (id: string, parent: string | null) => {
+      flat.push({ id, parent, order: id });
+      nodes.set(id, { ...make({ x: { parent: null } }).nodes.get('x')!, id, order: id });
+      sizes.set(id, { w: 60 + Math.floor(rnd() * 200), h: rnd() < 0.2 ? 53 : 34 });
+    };
+    const grow = (parent: string, depth: number) => {
+      const kids = depth === 0 ? 9 : rnd() < 0.45 ? 1 + Math.floor(rnd() * 7) : 0;
+      for (let i = 0; i < kids; i++) {
+        const id = `${parent}.${i}`;
+        add(id, parent);
+        if (depth < 5) grow(id, depth + 1);
       }
-    }
+    };
+    add('r', null);
+    grow('r', 0);
+    const l = layout(buildTree(flat, 'r'), nodes, sizes);
+    expect(l.placed.size).toBeGreaterThan(150);
+    expect(overlaps(l)).toEqual([]);
+    expect(crossings(l)).toEqual([]);
   });
 
   it('leaves an element where the user put it, and its branch follows', () => {
@@ -121,7 +211,7 @@ describe('the layout of a map', () => {
     expect(p('a').y).toBe(0);
   });
 
-  it('keeps the room of an element the user put somewhere, when asked to, so that nothing else moves', () => {
+  it('the others close the gap of an element the user put somewhere, and the sides are balanced anew', () => {
     const spec = {
       r: { parent: null },
       a: { parent: 'r' },
@@ -132,15 +222,9 @@ describe('the layout of a map', () => {
     const flowing = make(spec);
     const before = layout(flowing.tree, flowing.nodes, flowing.sizes);
     const placed = make({ ...spec, c: { parent: 'r', pos: { x: -400, y: 300 } } });
-    const kept = layout(placed.tree, placed.nodes, placed.sizes, new Map(), { keepRoom: true });
-    const p = (l: ReturnType<typeof layout>, id: string) => l.placed.get(id)!;
-    expect([p(kept, 'c').x, p(kept, 'c').y]).toEqual([-400, 300]);
-    expect(p(kept, 'c').pinned).toBe(true);
-    for (const id of ['a', 'b', 'd']) {
-      expect([p(kept, id).x, p(kept, id).y], id).toEqual([p(before, id).x, p(before, id).y]);
-    }
-    // Without that, the others close the gap and the sides are balanced anew.
     const loose = layout(placed.tree, placed.nodes, placed.sizes);
+    const p = (l: Layout, id: string) => l.placed.get(id)!;
+    expect([p(loose, 'c').x, p(loose, 'c').y]).toEqual([-400, 300]);
     expect(['a', 'b', 'd'].some((id) => p(loose, id).y !== p(before, id).y)).toBe(true);
   });
 

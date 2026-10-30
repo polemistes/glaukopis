@@ -374,10 +374,14 @@
     font-weight: 600;
     font-size: 15px;
   }
+  /* From the second level down, lighter and smaller, so that more of a map is seen at once. */
   .node.depth-2 {
+    min-height: 28px;
+    padding: 4px 10px;
     background: color-mix(in srgb, var(--paper-raised) 70%, transparent);
     border-color: var(--line);
     box-shadow: none;
+    font-size: 13.5px;
   }
   .node.plain .name {
     font-style: italic;

@@ -238,14 +238,16 @@ try {
   await app.screenshot('maps-9-association');
 
   // --- The same from the keys: the menu by Shift+F10, the other end by the arrows and Enter ---
-  await app.click(await app.findByText('.diagram .node', 'The economy of honour'));
+  // From the first element, which always stands at the right, to the one
+  // under it, the second, which stands there too however the sides balance.
+  await app.click(await app.findByText('.diagram .node', 'The word mênis'));
   await sleep(100);
   await app.keys(['Shift', 'F10']);
   await app.waitFor('[role="menuitem"]', 3000);
   check('the menu of an element opens from the keys', await app.exists('[role="menuitem"]'));
   await app.clickText('[role="menuitem"]', 'Associate with');
   await sleep(150);
-  await app.press('ArrowUp');
+  await app.press('ArrowDown');
   await app.press('Enter');
   await sleep(300);
   check(
