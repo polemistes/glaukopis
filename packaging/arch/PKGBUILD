@@ -10,7 +10,7 @@
 pkgbase=glaukopis
 pkgname=(glaukopis glaukopis-server)
 pkgver=0.2.6
-pkgrel=10
+pkgrel=11
 arch=(x86_64 aarch64)
 # The program and the owl. The dictionaries of spelling and the data of
 # Tesseract's languages are imported in the application, or come from the
