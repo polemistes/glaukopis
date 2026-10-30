@@ -349,3 +349,7 @@ format-verse-annotations-other = Other side from the numbers
 
 ## Where a line begins, stage 4: the step of an indent.
 format-indent-step = Indentation step
+
+# The distance of the numbers and the annotations from the text (docs/plans/the-distance-of-numbers-and-annotations.md).
+format-verse-numbers-gap = Numbers from the text
+format-verse-annotations-gap = Annotations from the text

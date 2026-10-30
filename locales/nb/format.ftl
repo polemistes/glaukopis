@@ -344,3 +344,7 @@ format-verse-annotations-other = Motsatt side av numrene
 
 ## Hvor en linje begynner, trinn 4: trinnet i et innrykk.
 format-indent-step = Innrykkstrinn
+
+# Avstanden fra teksten til numrene og merknadene (docs/plans/the-distance-of-numbers-and-annotations.md).
+format-verse-numbers-gap = Numrene fra teksten
+format-verse-annotations-gap = Merknadene fra teksten

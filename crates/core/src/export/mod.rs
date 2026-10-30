@@ -4669,6 +4669,34 @@ mod tests {
         assert!(t.contains("#quote(block: true)"), "{t}");
         let p = preview(&s.ctx(), &prose).unwrap();
         assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+        // On the page, in the margin, at the length of the numbers from the edge the paragraphs share,
+        // and an annotation on their side outside them, at its own length, on a line with a number and on one without.
+        // (Without a full stop at their end, which Typst lets hang past the edge of its box.)
+        let mut beside = prose.clone();
+        beside.format.verse.annotations = Some(crate::document::Side::Left);
+        beside.document.sections[0].blocks = vec![
+            lines(
+                "quote",
+                vec![(Some(mark().number("327a").margin("ia").done()), "I went down yesterday to the Piraeus.")],
+            ),
+            lines("quote", vec![(Some(mark().margin("ib").done()), "Polemarchus saw us from a distance.")]),
+        ]
+        .into_iter()
+        .map(|b| b.numbered(Numbering::Counted, Some(2), None))
+        .collect();
+        let p = preview(&s.ctx(), &beside).unwrap();
+        assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+        let runs = &p.pages[0].texts;
+        let run = |words: &str| {
+            runs.iter().find(|r| r.text.trim() == words).cloned().unwrap_or_else(|| panic!("{words}: {runs:?}"))
+        };
+        let edge = beside.format.page.margin_left.points();
+        let cm = |n: f32| n / 2.54 * 72.0;
+        let number = run("327a");
+        assert!((edge - (number.x + number.width) - cm(0.25)).abs() < 1.0, "{number:?}, the text from {edge}");
+        let (first, second) = (run("ia"), run("ib"));
+        assert!((edge - (first.x + first.width) - cm(1.5)).abs() < 1.0, "{first:?}, the text from {edge}");
+        assert!((first.x + first.width - second.x - second.width).abs() < 0.5, "a column: {first:?} {second:?}");
         export(&s.ctx(), &prose, Target::Latex, &tex, &ExportOptions::default()).unwrap();
         let l = fs::read_to_string(&tex).unwrap();
         assert!(l.contains("\\llap{{\\footnotesize 327a}\\hspace{0.25cm}}I went down"), "{l}");

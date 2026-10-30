@@ -291,6 +291,16 @@ export interface DocumentFormat {
     side: 'left' | 'right';
     /** The side the annotations of lines stand on; nothing for the other side from the numbers. */
     annotations?: 'left' | 'right' | null;
+    /**
+     * How far the numbers stand from the text, from the edge the paragraphs
+     * share to their near edge (ADR 0076); nothing for 0.25 cm. See `document/line-gaps.ts`.
+     */
+    numbersGap?: string | null;
+    /**
+     * How far the annotations stand from the text; nothing for as far as the
+     * numbers across from them, and 1.5 cm on their side.
+     */
+    annotationsGap?: string | null;
   };
   notes: { kind: 'footnotes' | 'endnotes'; size: number; lineSpacing: number; title: string };
   bibliography: {

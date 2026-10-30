@@ -51,6 +51,7 @@
   import { documents, templateUsedCached } from '$lib/preview/documents.svelte';
   import { kindKeysOf, kindName } from './kinds';
   import { toCm } from '$lib/ui/settings/rows';
+  import { annotationsGapWhere, numbersGap } from '$lib/document/line-gaps';
   import { CitationView, FootnoteView, PageBreakView } from './views.svelte';
   import { RefMarkView } from './refmarks';
   import { topOf } from '$lib/figures/numbering.svelte';
@@ -171,6 +172,23 @@
       side: verse?.side ?? LAYOUT_NUMBERS.side,
       annotations: verse?.annotations ?? null,
       step: step !== null && step > 0 ? (step * 72) / 2.54 : LAYOUT_STEP,
+    };
+  });
+  /**
+   * How far the numbers and the annotations stand from the text, as the
+   * layout in force puts them on the page (ADR 0076): the annotations as
+   * they stand across from the numbers, and on their side.
+   */
+  const gaps = $derived.by(() => {
+    const verse =
+      kind === 'body' && owner && project.node(owner)
+        ? documents.formatForCached(project, owner)?.verse
+        : undefined;
+    const look = verse ?? { every: 5, side: 'left' as const };
+    return {
+      numbers: numbersGap(look),
+      across: annotationsGapWhere(look, false),
+      beside: annotationsGapWhere(look, true),
     };
   });
   let drawnWith: { numbers: NumbersLayout; kinds: unknown; language: string } | null = null;
@@ -641,6 +659,9 @@
   bind:this={host}
   class="rich-text {className}"
   style:--step="{numbersLayout.step}pt"
+  style:--numbers-gap={gaps.numbers}
+  style:--annotations-gap-across={gaps.across}
+  style:--annotations-gap-beside={gaps.beside}
   use:dropTarget={{
     accepts: ['references', PICTURES_DRAGGED],
     disabled: kind !== 'body',

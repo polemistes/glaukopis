@@ -62,6 +62,7 @@
   import IconButton from '$lib/ui/IconButton.svelte';
   import Settings from '$lib/ui/settings/Settings.svelte';
   import { rowsOf, type Choices, type Provenance, type Row } from '$lib/ui/settings/rows';
+  import { annotationsGap, numbersGap } from '$lib/document/line-gaps';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError, notifyOk } from '$lib/ui/toast.svelte';
   import {
@@ -1135,6 +1136,23 @@
         ['right', t('format-side-right')],
       ],
       { path: 'verse.annotations' },
+    ),
+    // How far they stand from the text (ADR 0076): the length in force, the layout's or the default.
+    length(
+      t('format-verse-numbers-gap'),
+      {
+        get: (f) => numbersGap(f.verse),
+        set: (f, value) => (f.verse.numbersGap = value),
+      },
+      { path: 'verse.numbersGap' },
+    ),
+    length(
+      t('format-verse-annotations-gap'),
+      {
+        get: (f) => annotationsGap(f.verse, f.verse.side),
+        set: (f, value) => (f.verse.annotationsGap = value),
+      },
+      { path: 'verse.annotationsGap' },
     ),
     { subheading: t('format-numbers-page') },
     toggle(t('format-line-numbers'), 'lineNumbers'),

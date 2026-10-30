@@ -475,7 +475,7 @@ body.dragging * {
    the editor sets on all of them), so that it does not jump in beside
    those that are not. */
 .prose p[data-run-numbers='left'] > .run-line {
-  left: calc(-3.4em - var(--inset));
+  left: calc(-1 * (var(--numbers-gap, 0.25cm) + 3em) - var(--inset));
 }
 /* The bracket is darker while the cursor is in the run. */
 .prose p[data-current] > .run-line {
@@ -1304,14 +1304,17 @@ span.math.selected {
    start of their lines (editor/numbers.ts), which open a field for the
    line's number when pressed; in a text shown without an editor they are
    drawn from `data-n` on a `.line-number` before the line. Each stands at
-   the height of its line, where it would be in the line, and at the edge
-   the paragraphs share, whatever the indent of their kind. */
+   the height of its line, where it would be in the line, and as far from
+   the edge the paragraphs share as the layout says, whatever the indent of
+   their kind (ADR 0076): `--numbers-gap`, and for the annotations
+   `--annotations-gap-across` and `--annotations-gap-beside`, which the text
+   view sets from the layout in force; the defaults are the core's. */
 .prose.static p:has(.line-number) {
   position: relative;
 }
 .prose .line-number {
   position: absolute;
-  right: calc(100% + 0.4em + var(--inset));
+  right: calc(100% + var(--numbers-gap, 0.25cm) + var(--inset));
   min-width: 1em;
   white-space: nowrap;
   text-align: right;
@@ -1391,7 +1394,7 @@ span.math.selected {
 }
 .prose .line-margin {
   position: absolute;
-  left: calc(100% + 1em);
+  left: calc(100% + var(--annotations-gap-across, 0.25cm));
   max-width: 8.5em;
   font-size: 0.8em;
   line-height: 2;
@@ -1410,32 +1413,38 @@ span.math.selected {
 /* The numbers at the right. */
 .prose p[data-numbers='right'] .line-number {
   right: auto;
-  left: calc(100% + 0.6em);
+  left: calc(100% + var(--numbers-gap, 0.25cm));
   text-align: left;
 }
 /* The annotations stand on the side the numbering sets on their paragraph
    (`data-annotations`): across from the numbers, unless the layout says
-   otherwise. At the right, with room for them, but never more than a part
-   of a narrow text. */
+   otherwise, as far from the text as the layout says, on every line. At
+   the right, with room for them, but never more than a part of a narrow
+   text. */
 .prose p[data-annotations='right'] {
-  margin-right: min(8em, 30%);
+  margin-right: min(calc(var(--annotations-gap-across, 0.25cm) + 7.2em), 30%);
 }
-/* At the left, outside the bracket of the run and its label. */
+/* At the left, at their length, but never under the bracket of the run and
+   its label, which are the text view's and which the page has not: where
+   the length would put them there, just outside it. */
 .prose p[data-annotations='left'] .line-margin {
   left: auto;
-  right: calc(100% + 2.2em + var(--inset));
+  right: calc(100% + max(var(--annotations-gap-across, 0.25cm), 2.2em) + var(--inset));
   text-align: right;
 }
-/* On the numbers' side, outside the numbers, further from the text: at
-   the left outside the bracket too, which stands outside the numbers. */
+/* On the numbers' side, at the length the layout gives them there: at the
+   left outside the bracket too, which stands outside the numbers. */
 .prose p[data-annotations='left'][data-numbers='left'] .line-margin {
-  right: calc(100% + 6em + var(--inset));
+  right: calc(
+    100% + max(var(--annotations-gap-beside, 1.5cm), var(--numbers-gap, 0.25cm) + 5.6em) +
+      var(--inset)
+  );
 }
 .prose p[data-annotations='right'][data-numbers='right'] .line-margin {
-  left: calc(100% + 4.6em);
+  left: calc(100% + var(--annotations-gap-beside, 1.5cm));
 }
 .prose p[data-annotations='right'][data-numbers='right'] {
-  margin-right: min(11.7em, 40%);
+  margin-right: min(calc(var(--annotations-gap-beside, 1.5cm) + 7.2em), 40%);
 }
 
 /* A break of the page or of the column: a dashed line across the text with
