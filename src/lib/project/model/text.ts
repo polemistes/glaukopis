@@ -421,6 +421,8 @@ function paragraphOf(el: Y.XmlElement): ParagraphBlock {
     every: everyOf(el.getAttribute('every') as unknown) ?? undefined,
     side: sideOf(el.getAttribute('side') as unknown) ?? undefined,
     only: text(el.getAttribute('only') as unknown).trim() || undefined,
+    // The number the count begins from (0067's addendum): without it the core counts nothing.
+    from: text(el.getAttribute('from') as unknown).trim() || undefined,
     new: (el.getAttribute('new') as unknown) === true ? true : undefined,
   });
 }

@@ -290,6 +290,16 @@ describe('text written without an editor', () => {
     expect(none.getAttributes() as Record<string, unknown>).toEqual({ kind: 'line', indent: 0 });
   });
 
+  it('keeps the number a count begins from, written and read again', () => {
+    const counted = paragraph([t('Sing')], 'line', { indent: 0, numbering: 'counted', from: '45' });
+    const [el] = elements([counted]);
+    expect(el.getAttributes() as Record<string, unknown>).toMatchObject({
+      numbering: 'counted',
+      from: '45',
+    });
+    expect(readBody(written([counted]))).toEqual([counted]);
+  });
+
   it('reads a line mark again with each thing it says', () => {
     for (const said of [
       { number: '1234' },
