@@ -1450,7 +1450,9 @@ which for an image is *The whole image in the view*. **PageDown** and
 **PageUp** turn a page, **Home** and **End** go to the first and the last,
 and **Ctrl++**, **Ctrl+-** and **Ctrl+0** zoom, as in the typesetting pane;
 so does the wheel with **Ctrl**, about the pointer, which stays over the
-same place of the page. The text the PDF has lies unseen over its pages, so
+same place of the page. While the wheel turns, the pages are shown scaled
+as they are; a moment after it rests, they are drawn anew at the new size.
+The text the PDF has lies unseen over its pages, so
 that words can be selected and copied as letters; a scan that has no text
 shows its pages alone, and **Make searchable…** gives it text.
 

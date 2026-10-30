@@ -158,3 +158,44 @@ export function pageAsked(said: string, labels: string[]): number | null {
   const n = Number(s);
   return Number.isInteger(n) && n >= 1 && n <= labels.length ? n : null;
 }
+
+/** The zoom rests after so many milliseconds without a turn of the wheel or a key: the pages are laid out and drawn anew then. */
+export const REST = 250;
+
+/**
+ * A zoom in progress (ADR 0069, addendum of 2026-10-31): while the wheel
+ * turns, nothing is laid out anew; what is drawn is shown scaled by `s` and
+ * moved by `t`, as a transform of the view, so that no page is painted or
+ * decoded until the zoom rests. A point `p` of the view as laid out is shown
+ * at `s · p + t`.
+ */
+export interface Gesture {
+  s: number;
+  t: [number, number];
+}
+
+/** No zoom in progress: everything shown where it is laid out. */
+export const STILL: Gesture = { s: 1, t: [0, 0] };
+
+/** The gesture after one more turn, by the ratio `r` about the point `q` of the view: what is shown under `q` stays there. */
+export function turned(g: Gesture, r: number, q: [number, number]): Gesture {
+  return { s: g.s * r, t: [q[0] + r * (g.t[0] - q[0]), q[1] + r * (g.t[1] - q[1])] };
+}
+
+/** The point of the view as laid out that the gesture shows at `q`. */
+export function under(g: Gesture, q: [number, number]): [number, number] {
+  return [(q[0] - g.t[0]) / g.s, (q[1] - g.t[1]) / g.s];
+}
+
+/**
+ * The transform of a box laid out with its top left corner at `l` in the
+ * view, about that corner (`transform-origin: 0 0`): moved by (s − 1)·l + t
+ * and scaled by s, so that every point of it is shown where the gesture
+ * shows it.
+ */
+export function boxTransform(g: Gesture, l: [number, number]): string {
+  const px = (n: number) => `${Math.round(n * 100) / 100}px`;
+  const tx = (g.s - 1) * l[0] + g.t[0];
+  const ty = (g.s - 1) * l[1] + g.t[1];
+  return `translate(${px(tx)}, ${px(ty)}) scale(${Math.round(g.s * 100000) / 100000})`;
+}

@@ -45,8 +45,8 @@ const invoke = (app, command, args = {}) =>
 /** Waits in the page until a page of the file side has its picture, and gives the milliseconds since `since`. */
 const PICTURED = `
   const pictured = (n) => {
-    const img = document.querySelector('[data-file-side] .page[data-page="' + n + '"] img');
-    return !!img && img.complete && img.naturalWidth > 0;
+    const img = document.querySelector('[data-file-side] .page[data-page="' + n + '"] canvas');
+    return !!img && !!img.dataset.drawn;
   };
   const until = (test, ms = 60000) => new Promise((done, failed) => {
     const start = performance.now();
@@ -149,9 +149,9 @@ try {
     const sampler = setInterval(() => {
       const box = scroller.getBoundingClientRect();
       const hit = document.elementsFromPoint(box.left + box.width / 2, box.top + box.height / 2).find((e) => e.matches('.page[data-page]'));
-      const img = hit?.querySelector('img');
+      const img = hit?.querySelector('canvas');
       speed.samples++;
-      if (!(img && img.complete && img.naturalWidth > 0)) speed.blank++;
+      if (!(img && img.dataset.drawn)) speed.blank++;
     }, 300);
     const mover = setInterval(() => {
       scroller.scrollTop += step;

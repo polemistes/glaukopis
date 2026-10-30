@@ -14,7 +14,10 @@
    * rests and when the view goes, so that a tab comes back where it was.
    * Turned with PageDown, PageUp, Home and End; zoomed with the typesetting
    * pane's keys, and Ctrl and the wheel, about the pointer, which stays over
-   * the same place of the same page.
+   * the same place of the same page. While the wheel turns, the pages are
+   * shown scaled as they are, a transform and nothing laid out anew; once
+   * the zoom rests they are laid out at the new size and drawn anew, into
+   * canvases that hold their pixels (addendum of 2026-10-31).
    */
   import { flushSync, onDestroy, onMount, untrack } from 'svelte';
   import { SvelteMap } from 'svelte/reactivity';
@@ -28,6 +31,7 @@
   import { newId } from '$lib/util/id';
   import {
     AROUND,
+    boxTransform,
     columnWidth,
     heightOf,
     IN_FLIGHT,
@@ -38,12 +42,18 @@
     pagesSeen,
     placeAt,
     placePages,
+    REST,
+    STILL,
     toLetGo,
+    turned,
+    under,
     wanted,
     widthWanted,
+    type Gesture,
     type Place,
   } from './pages';
   import PageText from './PageText.svelte';
+  import { picture } from './picture';
 
   interface Props {
     file: string;
@@ -77,6 +87,8 @@
   let roomWidth = $state(0);
   let roomHeight = $state(0);
   let scrolled = $state(0);
+  /** How far the side is scrolled sideways, for the transform of a zoom in progress. */
+  let scrolledX = $state(0);
   /** Whether the pointer is over the pages: the keys of zoom are theirs then. */
   let pointerIn = $state(false);
 
@@ -88,9 +100,16 @@
   );
   /** The width of the column, that of the widest page. */
   const column = $derived(columnWidth(placed));
-  /** Whether the zoom has rested: the pages are drawn anew only then, not at each turn of the wheel. */
+  /** Whether the width of the side has rested: the pages are drawn anew only then, not while it is dragged. */
   let resting = $state(true);
   let rest: ReturnType<typeof setTimeout> | undefined;
+  /**
+   * The zoom in progress, while the wheel turns or the keys are pressed: the
+   * transform of the view, the point of the view it was last turned about,
+   * and the zoom it has reached, which the pages are laid out at once it rests.
+   */
+  let gesture = $state<(Gesture & { at: [number, number]; zoom: number | null }) | null>(null);
+  let commitTimer: ReturnType<typeof setTimeout> | undefined;
 
   /**
    * The pages drawn, by their numbers: the picture as a URL of its own, or
@@ -136,12 +155,6 @@
     try {
       const bytes = await filePage(file, n, width, ticket);
       url = URL.createObjectURL(new Blob([bytes], { type: 'image/png' }));
-      // A page drawn before is swapped only once the new picture is decoded, so that it never goes blank.
-      if (drawn.get(n)?.url) {
-        const picture = new Image();
-        picture.src = url;
-        await picture.decode().catch(() => {});
-      }
     } catch (e) {
       // A file gone from the library is said by the side.
       if (isNotFound(e)) failed = '';
@@ -168,9 +181,9 @@
     }
   }
 
-  /** A picture replaced is let go a moment later, once the page shows the new one. */
+  /** A picture replaced is let go a while later, once its canvas has decoded and drawn the new one. */
   function letGoLater(url: string) {
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
   }
 
   // The file is kept open while the view shows it: said every so often, since
@@ -181,19 +194,21 @@
   });
 
   onDestroy(() => {
-    // Where it was left is told as it goes: a tab switched away from keeps its place.
+    // Where it was left is told as it goes: a tab switched away from keeps its place; a zoom in progress is kept as its zoom.
     if (placeTimer !== undefined) tellNow();
+    clearTimeout(commitTimer);
+    if (gesture) onzoom(gesture.zoom);
     gone = true;
     clearTimeout(rest);
     void ocrStop(ticket).catch(() => {});
     for (const d of drawn.values()) if (d.url) URL.revokeObjectURL(d.url);
   });
 
-  /** The pages are not drawn anew until the zoom, or the width of the side, has rested a quarter of a second. */
+  /** The pages are not drawn anew until the width of the side has rested a quarter of a second. */
   function unrest() {
     resting = false;
     clearTimeout(rest);
-    rest = setTimeout(() => (resting = true), 250);
+    rest = setTimeout(() => (resting = true), REST);
   }
 
   // ---- the page in view ----
@@ -209,7 +224,13 @@
 
   function onscroll() {
     if (!scroller || !started) return;
+    // A scroll while a zoom is in progress ends it first: the pages are laid out as the zoom reached.
+    if (gesture) {
+      commit();
+      return;
+    }
     scrolled = scroller.scrollTop;
+    scrolledX = scroller.scrollLeft;
     lastPlace = placeAt(placed, scrolled + AROUND.top);
     const bottom = scrolled + roomHeight;
     const inView = (n: number) =>
@@ -261,6 +282,7 @@
       const width = el.clientWidth;
       const height = el.clientHeight;
       if (!width || !height) return;
+      if (gesture) commit();
       const kept = started ? topPlace() : null;
       if (roomWidth && width !== roomWidth) unrest();
       roomWidth = width;
@@ -282,8 +304,9 @@
       if (!(event.ctrlKey || event.metaKey) || !event.deltaY) return;
       event.preventDefault();
       const box = el.getBoundingClientRect();
+      // From the zoom reached so far, so that each turn of a burst counts.
       zoomAt(
-        wheeled(factor, event.deltaY, event.deltaMode),
+        wheeled(factorOf(reached()), event.deltaY, event.deltaMode),
         event.clientX - box.left,
         event.clientY - box.top,
       );
@@ -295,37 +318,74 @@
     };
   });
 
-  /** The factor the pages are shown at now: at fit, what the width of the side makes it. */
+  /** The factor the pages are shown at now, as laid out: at fit, what the width of the side makes it. */
   const factor = $derived(
     zoom ?? (placed.widths[page - 1] ?? 1) / ((facts.sizes[page - 1]?.[0] ?? 1) * PX_PER_PT),
   );
+  /** The factor the page in view would have fitted to the width of the side. */
+  const fitFactor = $derived(
+    Math.max(120, roomWidth - 2 * AROUND.side) / ((facts.sizes[page - 1]?.[0] ?? 1) * PX_PER_PT),
+  );
+  /** The factor a zoom means: the fit, for none. */
+  const factorOf = (z: number | null) => z ?? fitFactor;
+  /** The zoom reached: that of the zoom in progress, else the one the pages are laid out at. */
+  const reached = () => (gesture ? gesture.zoom : zoom);
 
   /** Zooms by rungs of the ladder, about the middle of the view. */
-  const zoomBy = (steps: number) => zoomAt(rung(factor, steps));
+  const zoomBy = (steps: number) => zoomAt(rung(factorOf(reached()), steps));
 
   /**
    * Zooms to a factor, or with none to the width of the side, about a point
    * of the view, which stays over the same place of the same page: the
    * pointer under the wheel, or the middle of the view from the keys, the
-   * menu and the field. The pages are drawn anew once the zoom has rested.
+   * menu and the field. Nothing is laid out anew at once: the pages are
+   * shown scaled by a transform, and laid out and drawn anew once the zoom
+   * has rested a quarter of a second (`commit`), or at once where asked.
    */
-  function zoomAt(next: number | null, px?: number, py?: number) {
+  function zoomAt(next: number | null, px?: number, py?: number, atOnce = false) {
     const el = scroller;
+    if (!el) return;
     const to = next === null ? null : clampZoom(next, FILE);
-    if (!el || to === zoom) return;
-    const x = px ?? el.clientWidth / 2;
-    const y = py ?? el.clientHeight / 2;
+    const current = reached();
+    if (to === current) return;
+    const q: [number, number] = [px ?? el.clientWidth / 2, py ?? el.clientHeight / 2];
+    const ratio = factorOf(to) / factorOf(current);
+    gesture = { ...turned(gesture ?? STILL, ratio, q), at: q, zoom: to };
+    clearTimeout(commitTimer);
+    if (atOnce) commit();
+    else commitTimer = setTimeout(commit, REST);
+  }
+
+  /**
+   * Ends the zoom in progress: the pages are laid out at the zoom it reached,
+   * and the side scrolled so that what lay under the pointer stays there,
+   * in one drawing, with the transform taken off.
+   */
+  function commit() {
+    clearTimeout(commitTimer);
+    const g = gesture;
+    const el = scroller;
+    if (!g || !el) return;
+    const q = g.at;
+    const p = under(g, q);
     const before = placed;
-    const i = pageAt(before, el.scrollTop + y) - 1;
-    const fx = (el.scrollLeft + x - pageLeft(before, i, el.clientWidth)) / before.widths[i];
-    const fy = (el.scrollTop + y - before.tops[i]) / before.heights[i];
-    unrest();
-    onzoom(to);
-    // Drawn at once, before the next turn of the wheel can read a half-moved view.
-    flushSync();
+    const i = Math.min(
+      before.tops.length - 1,
+      Math.max(0, pageAt(before, el.scrollTop + p[1]) - 1),
+    );
+    const fx = (el.scrollLeft + p[0] - pageLeft(before, i, el.clientWidth)) / before.widths[i];
+    const fy = (el.scrollTop + p[1] - before.tops[i]) / before.heights[i];
+    gesture = null;
+    onzoom(g.zoom);
     const after = placed;
-    el.scrollLeft = pageLeft(after, i, el.clientWidth) + fx * after.widths[i] - x;
-    el.scrollTop = after.tops[i] + fy * after.heights[i] - y;
+    const left = pageLeft(after, i, el.clientWidth) + fx * after.widths[i] - q[0];
+    const top = after.tops[i] + fy * after.heights[i] - q[1];
+    // The pages in view are those at the new place: told before the drawing, so that none leaves the document and comes back within it.
+    scrolled = Math.max(0, Math.min(top, after.total - el.clientHeight));
+    scrolledX = Math.max(0, left);
+    flushSync();
+    el.scrollLeft = left;
+    el.scrollTop = top;
     onscroll();
   }
 
@@ -336,7 +396,7 @@
       'preview-zoom-in': { run: () => zoomBy(1), when: here },
       'preview-zoom-in-equal': { run: () => zoomBy(1), when: here },
       'preview-zoom-out': { run: () => zoomBy(-1), when: here },
-      'preview-zoom-fit': { run: () => zoomAt(null), when: here },
+      'preview-zoom-fit': { run: () => zoomAt(null, undefined, undefined, true), when: here },
       'viewer-next': { run: () => goTo(page + 1), when: here },
       'viewer-previous': { run: () => goTo(page - 1), when: here },
       'viewer-first': { run: () => goTo(1), when: here },
@@ -344,9 +404,9 @@
     }),
   );
 
-  /** For the bar: zoom to a factor or to the width, about the middle of the view. */
+  /** For the bar: zoom to a factor or to the width, about the middle of the view, at once. */
   export function zoomed(next: number | null) {
-    zoomAt(next);
+    zoomAt(next, undefined, undefined, true);
   }
   /** For the bar, the bookmarks and the contents: goes to a place, at the top edge of the view. */
   export function goToPlace(to: Place) {
@@ -371,7 +431,7 @@
     return { page, at: Math.round(Math.min(1, Math.max(0, at)) * 10000) / 10000 };
   }
   export function percent(): number {
-    return Math.round(factor * 100);
+    return Math.round((gesture ? factorOf(gesture.zoom) : factor) * 100);
   }
 </script>
 
@@ -391,15 +451,20 @@
     {#each seen as n (n)}
       {@const i = n - 1}
       {@const d = drawn.get(n)}
+      <!-- While a zoom is in progress, each page is shown where the gesture shows it, about its own corner, as a layer of its own. -->
       <div
         class="page"
+        class:zooming={!!gesture}
         data-page={n}
         style:top="{placed.tops[i]}px"
         style:width="{placed.widths[i]}px"
         style:height="{placed.heights[i]}px"
+        style:transform={gesture
+          ? `${boxTransform(gesture, [Math.max(column, roomWidth) / 2 - scrolledX, placed.tops[i] - scrolled])} translateX(-50%)`
+          : undefined}
       >
         {#if d?.url}
-          <img src={d.url} alt="" draggable="false" decoding="async" />
+          <canvas use:picture={d.url} aria-hidden="true"></canvas>
           <PageText {file} page={n} width={placed.widths[i]} />
         {:else if d?.failed}
           <p class="failed">{t('viewer-not-drawn', { why: d.failed })}</p>
@@ -437,13 +502,16 @@
       0 2px 0 rgba(0, 0, 0, 0.05);
     container-type: inline-size;
   }
-  /* As wide as the page and as high as the picture makes it: drawn as wide as it is shown, it is painted dot for dot. */
-  .page img {
+  .page.zooming {
+    transform-origin: 0 0;
+    will-change: transform;
+  }
+  /* The picture fills the page: drawn as wide as the page is shown, it is painted dot for dot once the zoom rests. */
+  .page canvas {
     position: absolute;
-    top: 0;
-    left: 0;
+    inset: 0;
     width: 100%;
-    height: auto;
+    height: 100%;
     user-select: none;
     pointer-events: none;
   }

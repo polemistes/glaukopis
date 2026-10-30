@@ -42,7 +42,7 @@ const fileSide = (app) =>
       file: side.dataset.fileSide,
       page: Number(side.querySelector('[data-viewer-page]')?.dataset.viewerPage ?? 0),
       bar: side.querySelector('[data-viewer-bar] .page')?.textContent.trim() ?? '',
-      drawn: Array.from(side.querySelectorAll('.page[data-page] img')).filter((i) => i.src.startsWith('blob:') && i.complete && i.naturalWidth > 0).map((i) => Number(i.closest('.page').dataset.page)),
+      drawn: Array.from(side.querySelectorAll('.page[data-page] canvas[data-drawn]')).filter((i) => i.dataset.drawn.startsWith('blob:')).map((i) => Number(i.closest('.page').dataset.page)),
       width: side.querySelector('.page[data-page="1"]')?.getBoundingClientRect().width ?? 0,
       lines: side.querySelectorAll('[data-page-text] .line').length,
       kinds: Array.from(document.querySelectorAll('[data-side-key]')).map((s) => (s.matches('[data-file-side]') ? 'file' : 'map')),
@@ -138,7 +138,7 @@ try {
       const el = document.querySelector(arguments[0]);
       const box = el.getBoundingClientRect();
       const x = box.left + box.width * arguments[1], y = box.top + box.height * arguments[2];
-      const hit = document.elementsFromPoint(x, y).find((e) => e.matches('.page[data-page], [data-viewer-image] img'));
+      const hit = document.elementsFromPoint(x, y).find((e) => e.matches('.page[data-page], [data-viewer-image] canvas, [data-viewer-image] img'));
       if (!hit) return null;
       const r = hit.getBoundingClientRect();
       return { page: Number(hit.dataset.page ?? 1), fx: (x - r.left) / r.width, fy: (y - r.top) / r.height, width: r.width };`, selector, sx, sy);
@@ -151,12 +151,31 @@ try {
         clientX: box.left + box.width * arguments[1], clientY: box.top + box.height * arguments[2] }));`, selector, sx, sy, deltaY);
   const same = (a, b) => a && b && a.page === b.page && Math.abs(a.fx - b.fx) < 0.02 && Math.abs(a.fy - b.fy) < 0.02;
   const pdfBefore = await under('[data-viewer-pages]', 0.7, 0.35);
+  // While the wheel turns, nothing in the document is made anew: counted while the burst runs.
+  await app.exec(`
+    const column = document.querySelector('[data-viewer-pages] .column');
+    const counts = (window.__zoomCounts = { pagesRemoved: 0, picturesAdded: 0 });
+    const mo = new MutationObserver((muts) => { for (const m of muts) {
+      for (const n of m.removedNodes) if (n.nodeType === 1 && n.matches('.page')) counts.pagesRemoved++;
+      for (const n of m.addedNodes) if (n.nodeType === 1 && (n.matches('canvas') || n.querySelector?.('canvas'))) counts.picturesAdded++;
+    } });
+    mo.observe(column, { childList: true, subtree: true });
+    window.__zoomCountsStop = () => mo.disconnect();`);
   // The small, quick turns of a touchpad, in a burst.
   for (let i = 0; i < 6; i++) {
     await wheel('[data-viewer-pages]', 0.7, 0.35, -25);
     await sleep(20);
   }
-  await sleep(100);
+  const midway = await app.exec(`const p = document.querySelector('[data-viewer-pages] .page[data-page]'); return { transform: p?.style.transform ?? '', zoomed: Array.from(document.querySelectorAll('[data-viewer-pages] .page')).map((e) => e.classList.contains('zooming')) }`);
+  check('while the wheel turns, the pages are shown scaled by a transform, laid out as they were', /scale\(/.test(midway.transform) && midway.zoomed.every(Boolean), JSON.stringify(midway));
+  const pdfMidway = await under('[data-viewer-pages]', 0.7, 0.35);
+  check('and the place under the pointer stays under it meanwhile', same(pdfBefore, pdfMidway), JSON.stringify([pdfBefore, pdfMidway]));
+  // Once the zoom rests, the pages are laid out at the new size, the transform taken off.
+  await sleep(500);
+  const counts = await app.exec(`window.__zoomCountsStop(); return window.__zoomCounts`);
+  check('no page was removed and no picture made anew by the turns', counts.pagesRemoved === 0 && counts.picturesAdded === 0, JSON.stringify(counts));
+  const rested = await app.exec(`return Array.from(document.querySelectorAll('[data-viewer-pages] .page')).map((e) => e.style.transform || '')`);
+  check('once it rests, the pages are laid out anew without a transform', rested.length > 0 && rested.every((t) => !t), JSON.stringify(rested));
   const pdfAfter = await under('[data-viewer-pages]', 0.7, 0.35);
   check('Ctrl and the wheel zoom the pages in', pdfAfter?.width > pdfBefore?.width * 1.3, `${Math.round(pdfBefore?.width)} → ${Math.round(pdfAfter?.width)}`);
   check('the place under the pointer stays under it', same(pdfBefore, pdfAfter), JSON.stringify([pdfBefore, pdfAfter]));
@@ -252,13 +271,13 @@ try {
 
   // ---- an image ----
   await app.execAsync(`window.__glaukopisViewer.show(arguments[0]);`, pngHash);
-  const image = await until('the image', () => app.exec(`return document.querySelector('[data-viewer-image] img')?.naturalWidth ?? 0`), 10000);
+  const image = await until('the image', () => app.exec(`const c = document.querySelector('[data-viewer-image] canvas'); return c?.dataset.drawn ? c.width : 0`), 10000);
   check('an image of the library is shown as one page', image > 0, `${image} wide`);
   await app.screenshot('file-view-4-image');
   const fitLabel = await app.exec(`return document.querySelector('[data-viewer-zoom]').textContent.trim()`);
   const fitPercent = Number(await app.exec(`return document.querySelector('[data-viewer-zoom-field]').value`));
   check('a large image is fitted whole, as small as that takes', fitLabel === 'The whole image in the view' && fitPercent > 0 && fitPercent < 50, `${fitLabel}, ${fitPercent}%`);
-  const whole = await app.exec(`const i = document.querySelector('[data-viewer-image] img'), s = i.closest('[data-viewer-image]'); return i.getBoundingClientRect().height <= s.clientHeight && i.getBoundingClientRect().width <= s.clientWidth`);
+  const whole = await app.exec(`const i = document.querySelector('[data-viewer-image] canvas'), s = i.closest('[data-viewer-image]'); return i.getBoundingClientRect().height <= s.clientHeight && i.getBoundingClientRect().width <= s.clientWidth`);
   check('the whole image is in the view', whole);
   // At its own size it is larger than the side: the place under the pointer is kept.
   await app.click('[data-viewer-zoom-field]');
@@ -433,7 +452,7 @@ try {
   check('two chosen, one after the other, the button says so', /Add 2 files/.test(button), button);
   await app.screenshot('file-view-7-chooser');
   await app.click('[data-choose-add]');
-  await until('the image beside', () => app.exec(`return document.querySelector('[data-viewer-image] img')?.naturalWidth ?? 0`), 10000);
+  await until('the image beside', () => app.exec(`const c = document.querySelector('[data-viewer-image] canvas'); return c?.dataset.drawn ? c.width : 0`), 10000);
   const tabsNow = await app.exec(`return Array.from(document.querySelectorAll('[data-file-side] [data-tab]')).map((t) => t.dataset.tabFile)`);
   check('both come among the tabs in the order chosen, the last shown', tabsNow.indexOf(porsonHash) >= 0 && tabsNow.indexOf(dotHash) === tabsNow.indexOf(porsonHash) + 1, JSON.stringify(tabsNow));
 

@@ -10,7 +10,11 @@ import {
   pagesSeen,
   placeAt,
   placePages,
+  boxTransform,
+  STILL,
   toLetGo,
+  turned,
+  under,
   wanted,
   widthWanted,
 } from './pages';
@@ -106,5 +110,39 @@ describe('where a page stands across the side', () => {
     expect(pageLeft(placed, 1, 1000)).toBe(400);
     expect(pageLeft(placed, 0, 300)).toBe(AROUND.side);
     expect(pageLeft(placed, 1, 300)).toBe(AROUND.side + 100);
+  });
+});
+
+describe('a zoom in progress, as a transform of the view', () => {
+  const near = (a: [number, number], b: [number, number]) => {
+    expect(a[0]).toBeCloseTo(b[0], 6);
+    expect(a[1]).toBeCloseTo(b[1], 6);
+  };
+
+  it('keeps what lies under the pointer under it, turn after turn, wherever the pointer moves', () => {
+    let g = STILL;
+    const first = under(g, [200, 300]);
+    g = turned(g, 1.2, [200, 300]);
+    near(under(g, [200, 300]), first);
+    // The pointer has moved: the point under it now is kept through the next turn.
+    const second = under(g, [260, 310]);
+    g = turned(g, 0.9, [260, 310]);
+    near(under(g, [260, 310]), second);
+    expect(g.s).toBeCloseTo(1.08);
+  });
+
+  it('composes the turns: two turns about one point are one turn by their product', () => {
+    const q: [number, number] = [150, 400];
+    const twice = turned(turned(STILL, 1.1, q), 1.25, q);
+    const once = turned(STILL, 1.375, q);
+    expect(twice.s).toBeCloseTo(once.s);
+    near(twice.t, once.t);
+  });
+
+  it('transforms a box so that its corners are shown where the gesture shows them', () => {
+    const g = turned(STILL, 2, [100, 100]);
+    // The box laid out at (50, 300): its corner is shown at 100 + 2 · (50 − 100) = 0, 100 + 2 · (300 − 100) = 500.
+    expect(boxTransform(g, [50, 300])).toBe('translate(-50px, 200px) scale(2)');
+    expect(boxTransform(STILL, [50, 300])).toBe('translate(0px, 0px) scale(1)');
   });
 });

@@ -82,9 +82,9 @@ try {
   const editing = (body, ...args) => app.execAsync(`return await window.__glaukopisImageEditing.${body};`, ...args);
   const sideFile = () => app.exec(`return document.querySelector('[data-file-side]')?.dataset.fileSide ?? null`);
   const imageStyle = () =>
-    app.exec(`const i = document.querySelector('[data-file-side] [data-viewer-image] .box img');
+    app.exec(`const i = document.querySelector('[data-file-side] [data-viewer-image] .box canvas, [data-file-side] [data-viewer-image] .box img');
       const b = i?.parentElement.getBoundingClientRect();
-      return i ? { transform: i.style.transform, filter: i.style.filter, src: i.src, w: b.width, h: b.height } : null;`);
+      return i ? { transform: i.style.transform, filter: i.style.filter, src: i.dataset.drawn ?? i.src ?? '', w: b.width, h: b.height } : null;`);
 
   // ---- an image of the library, and a project in which it is a figure ----
   const taken = await invoke('files_take_in', { paths: [join(desk, 'The shield.png')], folder: null, structure: false, ticket: null });
@@ -126,7 +126,7 @@ try {
   await app.keys(['Control', 'Shift', 'p']);
   await app.waitGone('.panel[aria-label="Images"]', 5000);
   await app.execAsync(`window.__glaukopisViewer.beside(arguments[0]);`, shield.hash);
-  await until('the image beside', () => app.exec(`return document.querySelector('[data-file-side] [data-viewer-image] img')?.naturalWidth ?? 0`), 10000);
+  await until('the image beside', () => app.exec(`const c = document.querySelector('[data-file-side] [data-viewer-image] canvas'); return c?.dataset.drawn ? c.width : 0`), 10000);
   check('the bar of an image has Edit', await app.exists('[data-file-side] [data-viewer-edit]'));
   const reachable = await app.exec(
     `const b = document.querySelector('[data-file-side] [data-viewer-edit]').getBoundingClientRect(), s = document.querySelector('[data-file-side]').getBoundingClientRect();
@@ -174,7 +174,7 @@ try {
   check('the one edited is as it was', before.hash === shield.hash && before.width === W && before.height === H && before.added === shield.added);
   await until('the copy in the side', async () => (await sideFile()) === copy.hash, 8000);
   check('the side shows the copy, and the row is gone', !(await app.exists('[data-edit-row]')));
-  await until('the copy drawn', () => app.exec(`return document.querySelector('[data-file-side] [data-viewer-image] img')?.naturalWidth ?? 0`), 10000);
+  await until('the copy drawn', () => app.exec(`const c = document.querySelector('[data-file-side] [data-viewer-image] canvas'); return c?.dataset.drawn ? c.width : 0`), 10000);
   await app.screenshot('image-editing-3-kept');
 
   // ---- the copy edited: made from the copy ----

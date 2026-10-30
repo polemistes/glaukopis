@@ -493,10 +493,10 @@ try {
   const reader = () =>
     app.exec(`
       const r = document.querySelector('[data-reader]');
-      const img = r?.querySelector('.page[data-page="1"] img');
+      const img = r?.querySelector('.page[data-page="1"] canvas');
       return r ? {
         file: r.dataset.reader,
-        drawn: !!img && img.complete && img.naturalWidth > 0,
+        drawn: !!img && !!img.dataset.drawn,
         page: Number(r.querySelector('[data-viewer-page]')?.dataset.viewerPage ?? 0),
         list: !!document.querySelector('[data-file-list]'),
         pane: document.querySelector('.file-pane')?.dataset.file ?? null,
