@@ -1453,6 +1453,16 @@ same place of the page. The text the PDF has lies unseen over its pages, so
 that words can be selected and copied as letters; a scan that has no text
 shows its pages alone, and **Make searchable…** gives it text.
 
+The printer in the bar, **Print…**, or **Ctrl+P** while the file has the
+focus, prints the file through the printing of your computer, as a
+document is printed (see *Printing*). A PDF asks first which pages, all of
+them or from one to another, the first being the page in view, since its
+pages must be drawn for printing, at the resolution print wants, which
+takes a moment for a long scan; a notice counts them and can stop them.
+The pages print on paper of their own size. An image prints as it is, on
+the paper your computer prints on, made smaller only where it is larger
+than the paper.
+
 ### Bookmarks and contents
 
 The bookmark button in the bar of a PDF, or **Ctrl+Shift+B**, opens a list.
@@ -2502,7 +2512,7 @@ which open in the text; otherwise it says **Nothing to remark on**.
 ## Typesetting
 
 **Typesetting**, the button with the open book in the bar of a side, or
-**Ctrl+P**, opens the typesetting pane beside the sides, for that side: the
+**Ctrl+T**, opens the typesetting pane beside the sides, for that side: the
 pages of its element in view, with all under it, as they will be, set by
 Typst. The button is lit in the bar of the side the pages are of. Pressed in
 the other side's bar, it turns the pane to that side; pressed again in the
@@ -2633,6 +2643,22 @@ the words of the text against what the template allows.
 Two programs do the work. Pandoc turns the text into the document, and sets
 every citation and the bibliography in the reference style. Typst sets the
 pages: those of the typesetting, and those of the PDF, which are the same.
+
+### Printing
+
+**Print…**, in the head of the typesetting pane before *Export*, or
+**Ctrl+P** anywhere in a project, prints the document of the side you are
+in through the printing of your computer: its own dialog, with its
+printers, the number of copies, the pages, printing on both sides and the
+rest. On Linux that is the dialog of GTK, which lists the printers your
+system knows through CUPS and *Print to File*, which makes a PDF or a
+PostScript file; on a Mac the print sheet; on Windows the print dialog of
+Edge, with a preview. The pages print as they are set, each on a sheet of
+its size with nothing added, and the dialog comes up with the paper of the
+document's page: an A4 document on A4. Where the typesetting pane is
+closed, Ctrl+P opens it and prints when the pages are set. Nothing is
+printed that the typesetting does not show: the diagram and the text as
+you write it are not printed, the document is.
 
 ## The look of a document
 
@@ -3328,7 +3354,8 @@ what is to be done by its name, and does it.
 | **Alt+Shift+Up** | Up to the element over this one, in the diagram and in the text; from the top of a project, to its row in the list of projects |
 | **Ctrl+Shift+O** | The outline beside the text |
 | **Ctrl+Shift+L** | The list of projects at the left: hide it, or show it again |
-| **Ctrl+P** | Typesetting: the pages of the side you are in, beside the sides |
+| **Ctrl+P** | Print: the document of the side you are in, or the file shown in it |
+| **Ctrl+T** | Typesetting: the pages of the side you are in, beside the sides |
 | **Ctrl++**, **Ctrl+-**, **Ctrl+0** | In the typesetting pane and in a file: larger pages, smaller pages, pages as wide as the pane |
 | **PageDown**, **PageUp**, **Home**, **End** | In a file: the next page, the one before, the first, the last |
 | **Ctrl+PageDown**, **Ctrl+PageUp** | In the tabs of files: the next tab, the one before |
