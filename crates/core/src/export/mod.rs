@@ -3234,6 +3234,71 @@ mod tests {
     }
 
     #[test]
+    fn chapters_counted_through_the_parts_in_every_document() {
+        // Three parts in roman, their chapters 1 to 6 counted on through the
+        // document, the sections under them 4.1 (ADR 0078): on the pages
+        // Typst sets, and written into the headings for Word.
+        use crate::document::fixtures::text;
+        use crate::document::{Block, Section};
+        use crate::formats::{Counted, LevelNumbering};
+        let Some(s) = setup() else { return };
+        let mut r = request("chicago-author-date");
+        let section = |level: u8, heading: &str| Section {
+            level,
+            heading: Some(vec![text(heading)]),
+            blocks: vec![Block::paragraph(vec![text("Words.")])],
+            element: Some(heading.to_lowercase()),
+            kind: None,
+        };
+        r.document.sections = vec![
+            section(1, "One"),
+            section(2, "Alpha"),
+            section(3, "Deep"),
+            section(2, "Beta"),
+            section(1, "Two"),
+            section(2, "Gamma"),
+            section(3, "Deeper"),
+            section(2, "Delta"),
+            section(1, "Three"),
+            section(2, "Epsilon"),
+            section(2, "Zeta"),
+        ];
+        r.format.headings.numbered = true;
+        r.format.headings.levels[0].numbering = LevelNumbering::Roman;
+        r.format.headings.levels[1].numbering = LevelNumbering::Arabic;
+        r.format.headings.levels[1].counted = Counted::Through;
+        r.key = "counted-through".into();
+        let p = preview(&s.ctx(), &r).unwrap();
+        assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+        let source = fs::read_to_string(s.work.join("counted-through/preview/document.typ")).unwrap();
+        assert!(source.contains("#let gk-through-2 = counter(\"gk-through-2\")"), "{source}");
+        let words: Vec<&str> = p.pages.iter().flat_map(|p| p.texts.iter().map(|t| t.text.trim())).collect();
+        // The number of each heading is the word before its name.
+        let before = |name: &str| {
+            let i = words.iter().position(|w| *w == name).unwrap_or_else(|| panic!("{name} in {words:?}"));
+            words[i - 1]
+        };
+        let numbers: Vec<&str> =
+            ["One", "Alpha", "Deep", "Beta", "Two", "Gamma", "Deeper", "Delta", "Three", "Epsilon", "Zeta"]
+                .iter()
+                .map(|n| before(n))
+                .collect();
+        assert_eq!(numbers, ["I", "1", "1.1", "2", "II", "3", "3.1", "4", "III", "5", "6"], "{words:?}");
+
+        // Word: the numbers written into the headings by the core.
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let docx = out.join("counted-through.docx");
+        export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        let document = unzip(&docx, "word/document.xml");
+        assert!(
+            at(&document, ">4<") < at(&document, "Delta") && at(&document, "Delta") < at(&document, ">III<"),
+            "{document}"
+        );
+        assert!(!document.contains(">II.3<") && !document.contains(">2.1<"), "{document}");
+    }
+
+    #[test]
     fn chapters_begin_on_right_hand_pages_with_bare_openers() {
         use crate::document::fixtures::text;
         use crate::document::{Block, Section};

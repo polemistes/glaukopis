@@ -12,9 +12,10 @@
 
 import { documentWord, t } from '$lib/i18n';
 import { untrack } from 'svelte';
-import { createSubscriber, SvelteMap } from 'svelte/reactivity';
-import type { DocumentFormat } from '$lib/api/documents';
+import { createSubscriber } from 'svelte/reactivity';
+import type { DocumentFormat, NumberStyle } from '$lib/api/documents';
 import { documents } from '$lib/preview/documents.svelte';
+import { countHeading, headingNumber, resolvedNumbering, throughLevels } from './headingNumbers';
 import { walkDocument } from '$lib/project/model/document';
 import type { Project } from '$lib/project/model/project.svelte';
 import { partOf } from '$lib/project/parts';
@@ -61,6 +62,10 @@ export interface Numbers {
 /** What of the format the numbers and the words depend on: the words that point (`editor/labels.ts`), and more. */
 export interface Counting extends PointerWords {
   numberedHeadings: boolean;
+  /** The style of each level of heading, null where it is not numbered (record 0058); arabic throughout where empty. */
+  numbering: (NumberStyle | null)[];
+  /** Which levels are counted on through the document (record 0078). */
+  through: boolean[];
   /** The levels of heading that run into the text, which have no number. */
   runIn: number[];
   deepest: number;
@@ -72,6 +77,8 @@ export interface Counting extends PointerWords {
 const PLAIN: Counting = {
   ...PLAIN_POINTER,
   numberedHeadings: false,
+  numbering: [],
+  through: [],
   runIn: [],
   deepest: 6,
   separator: '. ',
@@ -88,6 +95,8 @@ export function countingOf(format: DocumentFormat | undefined, language?: string
   const levels = format.headings?.levels ?? [];
   return {
     numberedHeadings: !!format.headings?.numbered,
+    numbering: resolvedNumbering(format.headings),
+    through: throughLevels(format.headings),
     runIn: levels.flatMap((l, i) => (l.runIn ? [i + 1] : [])),
     deepest: Math.min(6, Math.max(1, levels.length)),
     label: say(format.figures?.label ?? PLAIN.label),
@@ -122,6 +131,9 @@ export function count(project: Project, at: string, counting: Counting = PLAIN):
   };
   const counted = { figure: 0, table: 0, equation: 0 };
   const levels = [0, 0, 0, 0, 0, 0];
+  // The numbers as the document prints them (record 0079): by the styles of
+  // the levels, a level counted on through the document not begun anew.
+  const numbering = counting.numbering.length ? counting.numbering : ['arabic' as const];
 
   walkDocument(project, at, (placed) => {
     const node = project.node(placed.id);
@@ -132,9 +144,8 @@ export function count(project: Project, at: string, counting: Counting = PLAIN):
       const level = Math.min(Math.max(placed.level, 1), counting.deepest);
       let number: string | null = null;
       if (counting.numberedHeadings && !counting.runIn.includes(level)) {
-        levels[level - 1] += 1;
-        levels.fill(0, level);
-        number = levels.slice(0, level).join('.');
+        countHeading(levels, level - 1, counting.through);
+        number = headingNumber(levels.slice(0, level), numbering, counting.through);
       }
       put({ id: placed.id, kind: 'part', number, words: node.title, element: placed.id });
     }
@@ -217,28 +228,17 @@ export function sameNumbers(a: Numbers, b: Numbers): boolean {
 }
 
 class Numbering {
-  /** The formats that have been read, by their ids. */
-  readonly #formats = new SvelteMap<string, DocumentFormat | null>();
   /** The numbers of the documents of each project, by the element each is the document of. */
   #counted = new WeakMap<Project, Map<string, Counted>>();
 
-  /** The format of the document of an element, when it has been read; it is asked for when it has not. */
+  /**
+   * The format of the document of an element as it is to be used, the
+   * document's own changes laid over its layout (record 0042), when the
+   * layout has been read; it is asked for when it has not.
+   */
   formatOf(project: Project, at: string): DocumentFormat | undefined {
-    const id = documents.choice(project.documentOf(at).settings, project).format;
-    if (!id) return undefined;
-    // A format that was changed is read anew.
-    const key = `${id}@${documents.changed}`;
-    const known = this.#formats.get(key);
-    if (known !== undefined) return known ?? undefined;
-    queueMicrotask(() => {
-      if (this.#formats.has(key)) return;
-      this.#formats.set(key, null);
-      documents
-        .format(id)
-        .then((format) => this.#formats.set(key, format))
-        .catch(() => {});
-    });
-    return undefined;
+    if (!documents.choice(project.documentOf(at).settings, project).format) return undefined;
+    return documents.formatForCached(project, at);
   }
 
   countingOf(project: Project, at: string): Counting {
@@ -325,6 +325,6 @@ class Counted {
 
 /** What of the format the numbers depend on. */
 const countingMark = (c: Counting) =>
-  `${c.numberedHeadings}:${c.runIn}:${c.deepest}:${c.label}:${c.tableLabel}`;
+  `${c.numberedHeadings}:${c.numbering}:${c.through}:${c.runIn}:${c.deepest}:${c.label}:${c.tableLabel}`;
 
 export const numbering = new Numbering();

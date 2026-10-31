@@ -11,6 +11,7 @@
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import X from '@lucide/svelte/icons/x';
   import { t } from '$lib/i18n';
+  import { numbering } from '$lib/figures/numbering.svelte';
   import { keysFor } from '$lib/shell/keys.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
   import { indent, outdent, shift } from '../elements';
@@ -37,6 +38,12 @@
   const folded = $derived(outlineFolds(at));
   /** The items that are listed: not those under a folded one. */
   const items = $derived(listed(all, folded));
+  /** The numbers of the headings as the document prints them (record 0079). */
+  const printed = $derived(numbering.of(project, at));
+  const numberOf = (id: string) => {
+    const p = printed.byId.get(id);
+    return p?.kind === 'part' ? p.number : null;
+  };
 
   function fold(id: string, to?: boolean) {
     const now = folded.has(id);
@@ -123,6 +130,7 @@
   <ol bind:this={list}>
     {#each items as item, i (item.id)}
       {@const node = project.nodes.get(item.id)}
+      {@const number = numberOf(item.id)}
       <li>
         <button
           type="button"
@@ -171,6 +179,7 @@
               ></span>
             {/if}
           {/if}
+          {#if number}<span class="number">{number}</span>{/if}
           <span class="name truncate">{node?.title || t('project-untitled')}</span>
         </button>
       </li>
@@ -245,6 +254,12 @@
   }
   .name {
     min-width: 0;
+  }
+  .number {
+    flex: none;
+    margin-right: 0.35em;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
   }
   .chevron {
     flex: none;

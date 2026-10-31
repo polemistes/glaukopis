@@ -15,6 +15,7 @@
   import { widthFor } from '$lib/editor/commands';
   import { colourOf, initials } from '$lib/sharing/connection.svelte';
   import type { KeyAction } from '$lib/editor/plugins';
+  import { numbering } from '$lib/figures/numbering.svelte';
   import { pictures, PICTURES_DRAGGED } from '$lib/figures/pictures.svelte';
   import { t } from '$lib/i18n';
   import { keyLabel, keysFor } from '$lib/shell/keys.svelte';
@@ -157,6 +158,12 @@
 
   /** The tree seen from the element in view: that element its root, its branch under it. */
   const tree = $derived(project.tree(at));
+  /** The numbers of the headings as the document prints them (record 0079). */
+  const printed = $derived(numbering.of(project, at));
+  const numberOf = (id: string) => {
+    const p = printed.byId.get(id);
+    return p?.kind === 'part' ? p.number : null;
+  };
   const selected = $derived(new Set(selection));
 
   // ---- what is being dragged, when it is from this project ----
@@ -1359,6 +1366,7 @@
           <DiagramNode
             {project}
             {node}
+            printedNumber={numberOf(id)}
             placed={p}
             selected={!picturing && selected.has(id)}
             target={!picturing && (dropOn === id || linking?.over === id)}

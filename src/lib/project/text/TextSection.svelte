@@ -71,6 +71,8 @@
     depthShown?: TextDepth;
     /** Its number, as in an outline, where it has one: its name is printed as a heading. */
     number?: string | null;
+    /** Its number as the document prints it, before its name, where the look numbers the headings (record 0079). */
+    headingNumber?: string | null;
     /** Whether the editors are there; otherwise the text is shown as it stands. */
     active: boolean;
     /** Where the cursor goes when the editors appear. */
@@ -116,6 +118,7 @@
     level,
     depthShown = 'numbers',
     number = null,
+    headingNumber = null,
     active,
     focus,
     selected,
@@ -425,39 +428,44 @@
           )}</span
         >
       {/if}
-      {#if active && title}
-        <RichText
-          bind:this={titleEditor}
-          {project}
-          fragment={title}
-          kind="title"
-          placeholder={level === 0 ? t('text-title') : t('text-name')}
-          autofocus={focus?.part === 'title' ? focus.at : null}
-          onaction={(a, v) => onaction(node.id, 'title', a, v)}
-          onfocus={() => onfocused(node.id, 'title')}
-        />
-      {:else if node.titleHtml}
-        <!-- The name holds only the marks a name can have; its text is escaped. -->
-        <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-        <div
-          class="prose title static"
-          use:spellingMarks={{
-            project,
-            element: node.id,
-            part: 'title',
-            language,
-            ignored: project.ignored,
-            html: node.titleHtml,
-          }}
-          use:reviewDrawn={{ marks, part: 'title', fragment: title, html: node.titleHtml }}
-        >
-          {@html node.titleHtml}
-        </div>
-      {:else}
-        <div class="prose title static unnamed">
-          {level === 0 ? t('text-title') : t('text-name')}
-        </div>
-      {/if}
+      <div class="named">
+        {#if headingNumber && level > 0}<span class="number" aria-hidden="true"
+            >{headingNumber}</span
+          >{/if}
+        {#if active && title}
+          <RichText
+            bind:this={titleEditor}
+            {project}
+            fragment={title}
+            kind="title"
+            placeholder={level === 0 ? t('text-title') : t('text-name')}
+            autofocus={focus?.part === 'title' ? focus.at : null}
+            onaction={(a, v) => onaction(node.id, 'title', a, v)}
+            onfocus={() => onfocused(node.id, 'title')}
+          />
+        {:else if node.titleHtml}
+          <!-- The name holds only the marks a name can have; its text is escaped. -->
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+          <div
+            class="prose title static"
+            use:spellingMarks={{
+              project,
+              element: node.id,
+              part: 'title',
+              language,
+              ignored: project.ignored,
+              html: node.titleHtml,
+            }}
+            use:reviewDrawn={{ marks, part: 'title', fragment: title, html: node.titleHtml }}
+          >
+            {@html node.titleHtml}
+          </div>
+        {:else}
+          <div class="prose title static unnamed">
+            {level === 0 ? t('text-title') : t('text-name')}
+          </div>
+        {/if}
+      </div>
     </div>
 
     {#if included && !hidden}
@@ -775,6 +783,39 @@
   .heading :global(.prose.title) {
     font-family: var(--font-text);
     color: var(--ink);
+  }
+  /* The name, with its number before it where the document prints one (record 0079). */
+  .named {
+    display: flex;
+    align-items: baseline;
+    column-gap: 0.4em;
+  }
+  .named > :global(:last-child) {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .number {
+    flex: none;
+    font-family: var(--font-text);
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+    user-select: none;
+  }
+  .level-1 .heading .number {
+    font-size: 1.42em;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .level-2 .heading .number {
+    font-size: 1.16em;
+    font-weight: 600;
+  }
+  .level-3 .heading .number {
+    font-weight: 600;
+    font-style: italic;
+  }
+  .level-4 .heading .number {
+    font-style: italic;
   }
   .unnamed {
     color: var(--ink-4) !important;

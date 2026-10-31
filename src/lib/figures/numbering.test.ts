@@ -300,3 +300,29 @@ describe('the numbers as they are read', () => {
     expect(sameNumbers(count(p, top, plain), count(p, a, plain))).toBe(false);
   });
 });
+
+describe('the numbers of the parts as the document prints them', () => {
+  it('follow the styles of the levels and a level counted on through the document', () => {
+    const { p, top, a, a1, b } = sample();
+    const b1 = p.addChild(b, { title: 'Hephaestus' })!;
+    // Parts in roman, their chapters counted on 1, 2, 3 through the parts (records 0058, 0078).
+    const counting: Counting = {
+      ...numbered,
+      numbering: ['roman', 'arabic'],
+      through: [false, true],
+    };
+    const numbers = count(p, top, counting);
+    const of = (id: string) => numbers.byId.get(id)?.number;
+    expect([of(a), of(a1), of(b), of(b1)]).toEqual(['I', '1', 'II', '2']);
+    // Plain, as before: 1, 1.1, 2, 2.1.
+    const plainNumbers = count(p, top, numbered);
+    expect([a, a1, b, b1].map((id) => plainNumbers.byId.get(id)?.number)).toEqual([
+      '1',
+      '1.1',
+      '2',
+      '2.1',
+    ]);
+    // Not numbered: none.
+    expect(count(p, top, plain).byId.get(a)?.number).toBeNull();
+  });
+});

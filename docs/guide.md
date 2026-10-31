@@ -2748,7 +2748,10 @@ you scroll, mark the part you are in, and go to each:
   chapter of every part is chapter 1, or *Through the document*, where the
   chapters of three parts run 1 to 9. A level counted through stands by its
   own number, without the numbers of the levels above it, and the levels
-  under it are numbered under it: 4.1 in chapter 4. A level that
+  under it are numbered under it: 4.1 in chapter 4. The numbers stand
+  before the names in the text view, in the boxes of the map and in the
+  outline too, as the document prints them, as soon as the headings are
+  numbered. A level that
   **Begins the paragraph** runs into the text, and ends with a full stop.
   Then its **Placement**: *In the text*, *On a new page*, as the chapters of a book do,
   or *On a right-hand page*, where a blank left page, with nothing in its

@@ -26,6 +26,8 @@
   interface Props {
     project: Project;
     node: NodeRecord;
+    /** Its number as the document prints it, before its name, where the look numbers the headings (record 0079). */
+    printedNumber?: string | null;
     placed: Placed;
     selected: boolean;
     /** Whether something dragged would be put under this element if dropped now. */
@@ -57,6 +59,7 @@
   let {
     project,
     node,
+    printedNumber = null,
     placed,
     selected,
     target,
@@ -177,7 +180,9 @@
     {:else if node.titleHtml}
       <!-- The name holds only the marks a name can have; its text is escaped. -->
       <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-      <span class="name">{@html node.titleHtml}</span>
+      {#if printedNumber}<span class="number">{printedNumber}</span>{/if}<span class="name"
+        >{@html node.titleHtml}</span
+      >
     {:else}
       <span class="name unnamed">{t('project-untitled')}</span>
     {/if}
@@ -438,6 +443,11 @@
   .caption {
     min-width: 0;
     overflow-wrap: break-word;
+  }
+  .caption .number {
+    margin-right: 0.35em;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
   }
   .caption :global(.rename) {
     min-width: 60px;
