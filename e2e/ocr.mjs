@@ -5,8 +5,8 @@
 // selecting, what each page takes, and what is made of it chosen after the
 // reading; a reading stopped, a PDF
 // attached to a reference made searchable (with how it is read changed, and
-// the text it has taken away), a map from a PDF of the library, the text of a
-// picture of the store, and Tesseract in the settings.
+// the text it has taken away), a map from a PDF of the library, the text of an
+// image of the library, and Tesseract in the settings.
 //
 // The files are made here with Typst: pages of text drawn as pictures, and
 // PDFs whose only content is those pictures, as scans are. The file chooser
@@ -1140,23 +1140,23 @@ try {
   await app.clickText('dialog footer button', 'Cancel');
   await app.waitGone('dialog[open]', 5000);
 
-  // ---- the text of a picture of the store ----
-  await app.keys(['Control', '3']);
-  await app.waitFor('.pictures', 5000);
+  // ---- the text of an image of the library (the store of pictures is the library's since record 0070) ----
+  await app.go('#/files');
+  await app.waitFor('.files-view .middle .body', 8000);
   await sleep(500);
-  const onStore = await middleOf('.pictures');
-  await drop([picture], onStore.x, onStore.y);
-  await app.waitFor('.pictures [data-hash]', 8000);
+  const onFiles = await middleOf('.files-view .middle .body');
+  await drop([picture], onFiles.x, onFiles.y);
+  await app.waitFor('[data-file-list] [data-hash][data-kind="picture"]', 10000);
   await sleep(300);
-  await app.click('.pictures [data-hash]');
-  await app.waitFor('.picture-pane [data-ocr-picture]', 5000);
-  await app.click('.picture-pane [data-ocr-picture]');
+  await app.click('[data-file-list] [data-hash][data-kind="picture"]');
+  await app.waitFor('[data-actions] [data-action="read"]', 5000);
+  await app.click('[data-actions] [data-action="read"]');
   await app.waitFor('dialog [data-ocr="asking"]', 5000);
   await app.click('dialog [data-ocr-read]');
   await app.waitFor('dialog [data-ocr-text]', 60000);
   const pictureText = await app.text('dialog [data-ocr-text]');
   check(
-    'a picture of the store has its text read, and shown',
+    'an image of the library has its text read, and shown',
     /Homer sings of the quarrel/.test(pictureText),
     pictureText.slice(0, 100),
   );
