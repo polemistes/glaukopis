@@ -2188,7 +2188,7 @@ dependencies = [
 
 [[package]]
 name = "glaukopis"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "base64 0.22.1",
  "glaukopis-core",
@@ -2209,7 +2209,7 @@ dependencies = [
 
 [[package]]
 name = "glaukopis-core"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "base64 0.22.1",
  "calamine",
@@ -2251,7 +2251,7 @@ dependencies = [
 
 [[package]]
 name = "glaukopis-server"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "axum",
  "clap",
