@@ -37,6 +37,10 @@ settings-text-depth = 文書の構造
 settings-text-depth-numbers = 番号
 settings-text-depth-dots = 点
 settings-text-depth-indent = 字下げと線
+# 見出しが印字する番号を、テキストビューとダイアグラムで名前の前に表示するかどうか。アウトラインには常に表示される。
+settings-heading-numbers = 見出しの番号（文書に印字されるとおり）
+settings-heading-numbers-shown = 表示
+settings-heading-numbers-hidden = 非表示
 settings-interface-size = インターフェースの大きさ
 # 選んだ大きさのテキストの一行。字の形を見せる。そのあとにホメロスの
 # ギリシア語の一行が続く。

@@ -221,6 +221,9 @@ each level further in, with a faint line down from the element it is under.
 Choose which under **Document structure** in the settings, where **Editor
 font** chooses the font your text is set in while you write, and the size
 beside it how large; neither touches the typesetting or what is exported.
+Under it, **Numbers of the headings, as the document prints them** says
+whether the number a heading will print stands before its name in the text
+view and the diagram, as it does unless hidden; the outline has it always.
 
 Write as in any editor. Each side has a bar of its own, of icons, each
 named when the pointer rests on it: the outline; **Diagram**, **Text**, and
@@ -2751,7 +2754,9 @@ you scroll, mark the part you are in, and go to each:
   under it are numbered under it: 4.1 in chapter 4. The numbers stand
   before the names in the text view, in the boxes of the map and in the
   outline too, as the document prints them, as soon as the headings are
-  numbered. A level that
+  numbered; **Numbers of the headings, as the document prints them** in the
+  settings hides them in the text view and the diagram, where the outline
+  keeps them. A level that
   **Begins the paragraph** runs into the text, and ends with a full stop.
   Then its **Placement**: *In the text*, *On a new page*, as the chapters of a book do,
   or *On a right-hand page*, where a blank left page, with nothing in its

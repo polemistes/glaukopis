@@ -32,6 +32,10 @@ settings-text-depth = Dokumentstruktur
 settings-text-depth-numbers = Tall
 settings-text-depth-dots = Prikker
 settings-text-depth-indent = Rykket inn, med streker
+# Whether the number a heading will print stands before its name in the text view and the diagram: the outline has it always.
+settings-heading-numbers = Overskriftenes numre, slik dokumentet skriver dem ut
+settings-heading-numbers-shown = Vist
+settings-heading-numbers-hidden = Skjult
 settings-interface-size = Størrelsen på grensesnittet
 settings-sample = Jeg begynte å fortære en sandwich mens jeg kjørte taxi på vei til quiz.
 # The three levels of the sample of the document structure, the sample sentence under the third.

@@ -37,6 +37,10 @@ settings-text-depth = Struttura del documento
 settings-text-depth-numbers = Numeri
 settings-text-depth-dots = Punti
 settings-text-depth-indent = Rientri, con linee
+# Whether the number a heading will print stands before its name in the text view and the diagram: the outline has it always.
+settings-heading-numbers = Numeri dei titoli, come il documento li stampa
+settings-heading-numbers-shown = Mostrati
+settings-heading-numbers-hidden = Nascosti
 settings-interface-size = Dimensione dell'interfaccia
 # A line of text in the size chosen, which shows the face of the letters; a
 # line of Homer's Greek follows it.

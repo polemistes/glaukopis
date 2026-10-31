@@ -382,6 +382,22 @@
         depth={settings.value.textDepth ?? 'numbers'}
         size={settings.value.textSize}
       />
+      <!-- Whether the number a heading will print stands before its name in the text view and the diagram (record 0079). -->
+      <div class="row top" data-heading-numbers>
+        <div class="what">
+          <div class="label">{t('settings-heading-numbers')}</div>
+        </div>
+        <Segmented
+          value={settings.value.headingNumbers === false ? 'hidden' : 'shown'}
+          label={t('settings-heading-numbers')}
+          options={[
+            { value: 'shown', label: t('settings-heading-numbers-shown') },
+            { value: 'hidden', label: t('settings-heading-numbers-hidden') },
+          ]}
+          onchange={(shown: 'shown' | 'hidden') =>
+            settings.set('headingNumbers', shown === 'shown')}
+        />
+      </div>
     </section>
 
     <section>

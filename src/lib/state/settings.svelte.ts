@@ -72,6 +72,12 @@ export interface MoreSettings {
    * the pointer rests on is, and opens Look at it. On, unless turned off.
    */
   pageChips: boolean;
+  /**
+   * Whether the number a heading will print stands before its name in the
+   * text view and in the diagram (record 0079). Shown, unless turned off;
+   * the outline has it always.
+   */
+  headingNumbers: boolean;
   /** How the files of the library are shown. */
   filesView: FilesViewSettings;
 }
@@ -83,6 +89,7 @@ const more = (kept: Partial<AllSettings> = {}): MoreSettings => ({
     ? kept.passageKinds.filter((k) => k && typeof k.name === 'string')
     : [],
   pageChips: typeof kept.pageChips === 'boolean' ? kept.pageChips : true,
+  headingNumbers: typeof kept.headingNumbers === 'boolean' ? kept.headingNumbers : true,
   filesView: filesViewOf(kept.filesView),
 });
 

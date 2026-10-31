@@ -144,6 +144,26 @@ describe('the settings as they are read', () => {
     expect(writes).toHaveLength(0);
   });
 
+  it('show the numbers of the headings unless that was turned off, and keep it as it was set', async () => {
+    const kept = (more: object): Partial<Settings> => ({ person: 'kept-id', ...more });
+    vi.mocked(settingsLoad).mockResolvedValueOnce({ settings: kept({}), setAside: null });
+    await settings.load();
+    expect(settings.value.headingNumbers).toBe(true);
+    vi.mocked(settingsLoad).mockResolvedValueOnce({
+      settings: kept({ headingNumbers: false }),
+      setAside: null,
+    });
+    await settings.load();
+    expect(settings.value.headingNumbers).toBe(false);
+    vi.mocked(settingsLoad).mockResolvedValueOnce({
+      settings: kept({ headingNumbers: 'no' }),
+      setAside: null,
+    });
+    await settings.load();
+    expect(settings.value.headingNumbers).toBe(true);
+    expect(writes).toHaveLength(0);
+  });
+
   it('whose first writing fails are said to be unsaved, not unread', async () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.mocked(settingsLoad).mockResolvedValueOnce({ settings: {}, setAside: null });

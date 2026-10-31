@@ -12,6 +12,7 @@ The numbers of headings are decided by the look of the document (0058, 0078) and
 - **One rule, the core's.** `figures/headingNumbers.ts` is the core's `resolved_numbering`, `count_heading` and `heading_number` in TypeScript: the styles of the levels, none, as the level above, a level counted on through the document, and the numbers in arabic, roman and letters. The count of the headings for the words that point (`count`) numbers by it, so the words that point, "see section IV.2", now say what the document prints; and it reads the look of the document with its changes laid over the layout, as the typesetting pane does, where it read the layout alone.
 - **Nothing else changes.** The gutter's number by depth stays as the writer has set it; it says where an element stands in the tree, named or not, which the printed number does not. What is left out of the document, what has no name and the element in view carry no number, as they print none. The number in the map's box goes into the SVG and PNG pictures of the map, as the text of the caption does.
 - **The number is not part of the name**: it is a mark beside it, not written, not selected, not searched; the name stays what the writer typed.
+- **Shown unless turned off** (owner, 2026-10-31: "Showing the numbers in the text view and the dialogue view should be optional"). A setting, *Numbers of the headings, as the document prints them*, under the document structure in the settings, hides them in the text view and the diagram; the outline, which the owner did not name, keeps them, being a table of contents, where the number belongs. Kept as `headingNumbers` in the settings, true unless set false, as the page chips are.
 
 ## Why not otherwise
 
@@ -23,5 +24,6 @@ The numbers of headings are decided by the look of the document (0058, 0078) and
 
 - `src/lib/figures/headingNumbers.ts` with tests; `numbering.svelte.ts`: `Counting` with the styles and the levels counted through, `count` by the rule, `formatOf` through `formatForCached`.
 - `TextSection.svelte`: the name wrapped with its number before it, the number in the size of its level; `MapText.svelte`, `MapDiagram.svelte`, `DiagramNode.svelte`, `Outline.svelte`: the number from `numbering.of(project, at)`.
-- `e2e/numbers.mjs`: two parts of two chapters, numbered, in roman, counted through, in the map, the text view and the outline.
+- `state/settings.svelte.ts`: `headingNumbers` among the settings beyond `api/system.ts`; `SettingsView.svelte`: its row, shown or hidden; `MapText.svelte` and `MapDiagram.svelte` read no numbers while it is off.
+- `e2e/numbers.mjs`: two parts of two chapters, numbered, in roman, counted through, in the map, the text view and the outline; hidden by the setting in the map and the text view, kept in the outline, shown again.
 - Unchanged, noted: the sections of a front or back part are counted with the body's levels on the screen, as `count` had it before; the exports number them otherwise. A record of its own if it matters.

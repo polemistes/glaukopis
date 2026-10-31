@@ -37,6 +37,10 @@ settings-text-depth = Dokumentstruktur
 settings-text-depth-numbers = Nummer
 settings-text-depth-dots = Punkter
 settings-text-depth-indent = Indraget, med linjer
+# Whether the number a heading will print stands before its name in the text view and the diagram: the outline has it always.
+settings-heading-numbers = Rubrikernas nummer, som dokumentet skriver ut dem
+settings-heading-numbers-shown = Visade
+settings-heading-numbers-hidden = Dolda
 settings-interface-size = Gränssnittets storlek
 # A line of text in the size chosen, which shows the face of the letters; a
 # line of Homer's Greek follows it.
