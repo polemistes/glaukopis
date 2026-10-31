@@ -2069,9 +2069,10 @@ knows no *æ*, *ø* or *å*: in a Norwegian or Danish book it reads them as
 not bring them back. For such books the server offers **Fraktur (Gothic
 type), Norwegian and Danish**: the same model taught on some fifteen thousand
 lines of Norwegian books and newspapers in Gothic type of 1811 to 1920 from
-the National Library, read by eye. On lines of books it never saw it gets
-about one letter in three hundred wrong, against one in twenty-five for
-the Fraktur model made for German, and nearly every *æ*, *ø* and *å* right;
+the National Library, transcribed by an AI model, Claude. On lines of books
+it never saw it gets about one letter in three hundred wrong, against one
+in twenty-five for the Fraktur model made for German, and nearly every
+*æ*, *ø* and *å* right;
 on a pale page it is as sure of itself as on a clean one. Choose it
 first, or alone, for a Norwegian or Danish book; the line under the
 languages names it where Norwegian or Danish is chosen. The list of **OCR
