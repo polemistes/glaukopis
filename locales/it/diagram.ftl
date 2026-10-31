@@ -41,3 +41,18 @@ diagram-pasted-elsewhere = Ciò che è stato copiato è di un altro progetto, e 
 # The tooltips of the mark that folds an element in the diagram.
 diagram-unfold-sub = Dispiega i sottoelementi
 diagram-fold-sub = Ripiega i sottoelementi
+
+## The diagram as a picture (2026-10-26).
+
+diagram-save-svg = Salva il diagramma come SVG…
+diagram-save-image = Salva il diagramma come immagine…
+diagram-save-svg-title = Salva il diagramma come SVG
+diagram-save-image-title = Salva il diagramma come immagine
+diagram-file-svg = SVG
+diagram-file-png = Immagine PNG
+# $name is the name of the file.
+diagram-saved = Il diagramma è stato salvato come «{ $name }»
+diagram-saved-size = Il diagramma è stato salvato come «{ $name }», { $width } × { $height } pixel
+diagram-saved-no-fonts = I font non si sono potuti mettere nel file: è mostrato con i font di chi lo apre.
+diagram-save-failed = Il diagramma non si è potuto salvare
+diagram-too-large-for-image = La mappa è troppo grande per un'immagine: salvala come SVG.

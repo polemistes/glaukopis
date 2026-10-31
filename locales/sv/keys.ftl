@@ -113,6 +113,7 @@ keys-list-undo = Ångra det som gjordes med mappar och projekt
 keys-list-redo = Gör om det som gjordes med mappar och projekt
 
 ## The sides (stage 4 of the list, the path and the window as it was left)
+keys-close-side = Stäng fliken, eller den här sidan
 keys-switch-sides = Byt plats på sidorna
 
 ## Stage 3 of the sides, the panes and the bars (agent "bars")
@@ -128,3 +129,18 @@ keys-preview-zoom-fit = Sidor lika breda som panelen
 
 ## The settings in plain words, stage 4: the keys of the kinds
 keys-writing-kind = Det slag av stycke som dokumenttypen ger siffran
+
+## A file shown in a side of the window (2026-10-26).
+
+keys-place-viewer = I en fil
+keys-viewer-next = Nästa sida
+keys-viewer-previous = Föregående sida
+keys-viewer-first = Första sidan
+keys-viewer-last = Sista sidan
+
+# Sources in tabs (docs/plans/sources-in-tabs-bookmarks-and-the-scrolling-of-pages.md).
+keys-viewer-tab-next = Nästa flik
+keys-viewer-tab-previous = Föregående flik
+keys-viewer-bookmark = Sätt ett bokmärke här
+# Printing (docs/plans/printing.md, record 0075).
+keys-print = Skriv ut

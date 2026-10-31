@@ -35,6 +35,9 @@ io-backing-up = copie de sauvegarde de { $path }
 io-setting-aside = mise de côté de { $path }
 io-storing = stockage de { $path }
 io-no-directory = { $path } n’a pas de dossier
+# $most is in megabytes.
+io-too-large = { $path } fait plus de { $most } Mo, le plus qui puisse être lu
+io-not-an-archive = { $path } n’est pas une archive zip : { $error }
 
 ## A file of the application's own that could not be read: it is set aside,
 ## under its name with the time added, and the application goes on without

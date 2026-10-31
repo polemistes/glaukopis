@@ -338,9 +338,94 @@ Hvor dette afsnit og et ældre siger noget forskelligt, gælder dette.
 - **Fraktur-modellerne** i sproglisten: »Fraktur (gotisk skrift), tysk« og
   »Fraktur (gotisk skrift), norsk og dansk« (de afløser navnene ovenfor)
 
+## Nyt efter 0.2.5 (2026-10-31)
+
+Hvor dette afsnit og et ældre siger noget forskelligt, gælder dette.
+
+- **a file in a view** (en side af vinduet viser en fil fra biblioteket, en
+  PDF eller et billede, i stedet for et kort) — en fil i en visning; *Show
+  the file* — Vis filen; **the viewer** (bjælken over siderne og siderne
+  selv) — filvisningen; kort »visningen«, som i »Så bred som visningen«
+- **tab** (en fil i en side af vinduet; de filer, et projekt har føjet til
+  sig fra biblioteket) — fane (fanen, faner, fanerne), som fanerne i et
+  panel; *the tabs of a project* — projektets faner; *Add to a project's
+  tabs…* — Tilføj til et projekts faner…; *Close the tab* — Luk fanen;
+  *The tabs of {name}* — Fanerne i {name}
+- **bookmark** (et sted, en side, i en fil; gemmes med filen i biblioteket)
+  — bogmærke (bogmærket, bogmærker); *Mark this place* — Sæt et bogmærke
+  her; *Bookmarks and contents* — Bogmærker og indhold
+- **the contents of a file** (dens egen indholdsfortegnelse) — indhold;
+  *table of contents* — indholdsfortegnelse
+- **drawn** (siderne tegnes, før de vises eller udskrives) — tegne; *could
+  not be drawn* — kunne ikke tegnes
+- **locked** (en fil, der beder om en adgangskode) — beder om en
+  adgangskode, som i core-ocr
+- **zoom** — zoom, som før; *As wide as the view* — Så bred som visningen;
+  *The whole image in the view* — Hele billedet i visningen; *Go to page* —
+  Gå til side; *Zoom, in percent* — Zoom, i procent
+- **the image editor** — billedredigeringen; *Edit* — Rediger; *Turn left /
+  Turn right* — Drej til venstre / Drej til højre; *Flip sideways* —
+  Spejlvend; *Flip upside down* — Vend på hovedet; *Crop* — Beskær; *Cut to
+  w × h of W × H* — Beskæres til w × h ud af W × H; *Brightness* —
+  Lysstyrke; *Contrast* — Kontrast; *Saturation* — Farvemætning; *As it
+  was* — Som det var; *Start again* — Begynd forfra; *Keep as a new file* —
+  Gem som en ny fil (»gemme« om *keep*, som de ældre filer siger »gemt« om
+  *kept*); *Leave* — Forlad
+- **version** (af et billede: originalen og kopierne lavet af den) —
+  version (versionen, versioner); *Versions* — Versioner
+- **a copy made smaller** — en mindre kopi; *Make a smaller copy* — Lav en
+  mindre kopi; i filnavne: *(edited)* — (redigeret), *(edited 2)* —
+  (redigeret 2), *(smaller)* — (mindre)
+- **SVG, a drawing** (arten af en figur, der er en tegning) — SVG, en
+  tegning; *a drawing has no pixels* — en tegning har ingen pixel
+- **thumbnails** — miniaturer (miniaturen, miniaturer); *shown small* — vist
+  som miniature; *Small / Medium / Large* — Små / Mellemstore / Store;
+  *List* — Liste; *View* (knappen over filerne) — Visning; *Include
+  subfolders* — Medtag undermapper
+- **Used in** — Brugt i; *A figure in …* — En figur i …; *Not used yet* —
+  Ikke brugt endnu
+- **Made from** — Lavet af; *Copies made from it* — Kopier lavet af den
+- **Pixels** — Pixel (flertal uden -s, som Retskrivningsordbogen tillader);
+  **What it shows, in words** — Hvad det viser, i ord; *Read* (en fil læst i
+  biblioteket) — Læs
+- **tr.** (oversætterne efter forfatterne i den korte form) — overs., som
+  danske litteraturlister skriver det: »Lord; overs. Smith«
+- **People / Year / Title / Publisher** (kolonnerne, når en fil vises ved
+  sin reference) — Personer / År / Titel / Forlag, som fields.ftl
+- **Name by the reference / Name by their references** — Navngiv efter
+  referencen / Navngiv efter deres referencer
+- **mind map** (en fil fra et andet program) — tankekort (tankekortet,
+  tankekort); **Freeplane**, **FreeMind**, **XMind**, **OPML** — navne;
+  *Open a mind map…* — Åbn et tankekort…; *Save as a mind map…* — Gem som
+  tankekort…
+- **left out** — udeladt; det, der udelades: *images* — billeder; *pictures
+  in texts* — billeder i tekster; *clouds* — skyer; *summaries* —
+  opsummeringer; *boundaries* — afgrænsninger; *hyperlinks* — links;
+  *icons or markers* — ikoner eller markører (XMinds *markers*);
+  *attributes* — attributter; *labels* — etiketter; *associations* —
+  associationer, som i projektets eget ord; *references to figures or
+  parts* — krydshenvisninger til figurer eller dele; *times* — tidspunkter
+- **the diagram as a picture** — *Save the diagram as SVG…* — Gem diagrammet
+  som SVG…; *Save the diagram as an image…* — Gem diagrammet som et
+  billede…; *PNG image* — PNG-billede
+- **print** (filer og dokumenter gennem systemets egen dialog) — udskrive,
+  som før; *Print…* — Udskriv…; *Pages to print* — Sider, der skal
+  udskrives; *The one page / All n pages* — Den ene side / Alle n sider;
+  *From [3] to [10]* — Fra [3] til [10]; *Drawing n pages for printing…* —
+  Tegner n sider til udskrivning…; *Preparing n pages for printing…* —
+  Forbereder n sider til udskrivning…
+- **Numbers from the text / Annotations from the text** (de to længder
+  under Linjenumre i Udseende, i centimeter) — Numrenes afstand fra
+  teksten / Bemærkningernes afstand fra teksten
+- **The document of the other side** (over dokumentpanelet, mens siden i
+  brug viser en fil) — Den anden sides dokument
+- **Library** (det tredje valg blandt et projekts billeder: alle
+  bibliotekets) — Bibliotek
+
 ## Navne, der ikke oversættes
 
 Glaukopis; Pandoc, Typst, Tesseract, Hunspell, LaTeX, LuaLaTeX, BibLaTeX,
-Zotero, CSL, Markdown, Org; filformaterne (DOCX, ODT, PDF, EPUB, RTF,
-HTML, SVG, PNG); skrifternes navne; referencestilenes navne (APA,
-Chicago, MLA); DOI, ISBN, ISSN, ORCID, arXiv, URL.
+Zotero, CSL, Markdown, Org, Freeplane, FreeMind, XMind, OPML; filformaterne
+(DOCX, ODT, PDF, EPUB, RTF, HTML, SVG, PNG); skrifternes navne;
+referencestilenes navne (APA, Chicago, MLA); DOI, ISBN, ISSN, ORCID, arXiv,
+URL.

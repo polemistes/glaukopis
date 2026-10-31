@@ -66,3 +66,16 @@ core-library-assign-stored-gone = «{ $name }» non è stato assegnato al suo ri
 core-library-files-unreadable = Il registro dei file della biblioteca non si è potuto leggere, ed è stato messo da parte come { $path }: { $message }
 # The library file has bytes that are not UTF-8, as an editor that saves in Latin-1 writes them; $aside is the name of the copy kept in the same folder.
 core-library-not-utf8 = { $path } ha lettere che non sono in UTF-8, come le scrive un editor che salva in un'altra codifica. Sono lette come �, e così saranno scritte; il file com'era è tenuto come { $aside } nella stessa cartella.
+
+# One place for files (ADR 0070).
+# A file of a kind that has no thumbnail, or one that could not be read for it; the interface shows the kind's icon instead.
+core-library-no-small = questo tipo di file non si mostra in piccolo
+# The folder the images of the old store of pictures are put in, at the top of the files of the library.
+core-library-images-folder = Immagini
+# An image of the old store of pictures whose file was not there when it was taken into the library.
+core-library-picture-missing = «{ $name }» non è stata portata nella biblioteca: il suo file manca.
+# An image of the old store of pictures whose file does not hold what its name says.
+core-library-picture-not-itself = «{ $name }» non è stata portata nella biblioteca: il suo file non è l'immagine che era.
+# Bookmarks in a file (sources in tabs, 2026-10-29).
+core-library-too-many-bookmarks = Un file tiene al massimo { $most } segnalibri.
+core-library-bookmark-no-place = Un segnalibro deve stare a una pagina del file.

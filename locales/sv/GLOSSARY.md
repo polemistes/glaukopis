@@ -275,6 +275,107 @@ Page Down, piltangenterna. Pluralformer: one, other.
   checklistan)
 - **Key** (ett slags tangent, Ctrl+Alt+0–9) — Tangent; *Keys* = Tangenter
 
+## En fil i en vy och det nya efter 0.2.5 (2026-10-31)
+
+- **a file in a view**, **the viewer** — en fil i en vy; filvisningen:
+  fönstrets ena sida visar en fil ur biblioteket, en PDF eller en bild, i
+  stället för en karta (*Visa filen*, *Visa ”…”*). Raden över filen säger
+  *Sida 3 av 271*, med sidans tryckta nummer efter i parentes där det
+  skiljer sig, *Gå till sida*, zoomen och knapparna. Messages talar om
+  *filen*, aldrig om ”visaren”.
+- **drawn** (om sidor) — ritas: en sida *ritas* (*Den här sidan kunde inte
+  ritas*, *Ritar 12 sidor för utskrift…*), som i textigenkänningen
+- **locked** — låst med ett lösenord (*Filen är låst med ett lösenord och
+  kan inte visas*)
+- **zoom** — zoom, som förut: *Anpassa till bredden* (= *As wide as the
+  view*, samma ord som i ombrytningspanelen), *Hela bilden i vyn*,
+  *{ $percent } %* med mellanrum, *Zoom, i procent*, *Välj zoom*
+- **tab**, **the tabs of a project** — flik (fliken, flikar, flikarna);
+  projektets flikar: filer ur biblioteket som ett projekt har uppslagna,
+  var och en på sitt ställe (*Flikar*, *Flikarna i { $name }*, *Flikens
+  meny*, *Stäng fliken*, *Stäng de andra flikarna*, *Öppna igen i en ny
+  flik*, *Inte längre i biblioteket*). *Add to a project's tabs…* = Lägg
+  till i ett projekts flikar…; *The project's tabs* (Delad vy) =
+  Projektets flikar; *Added to the tabs of X* = Lades till bland flikarna
+  i X. Samma ord som fliken *Lösa hänvisningar*.
+- **bookmark** — bokmärke (bokmärket, bokmärken): ett ställe i en fil, en
+  sida, som sparas med filen i biblioteket. *Mark this place* = Sätt ett
+  bokmärke här (inte ”märk”, som kan läsas som *lägg märke till*, och inte
+  ”markera”, som är det markerade); *Bookmarks and contents* = Bokmärken
+  och innehåll
+- **the contents of a file** — innehåll (filens egen innehållsförteckning,
+  där en PDF har en): *Innehåll*, *Filen har ingen egen
+  innehållsförteckning*
+- **the image editor** — bildredigeringen (*Redigera* i filens rad): **turn
+  left / right** — vrid åt vänster / åt höger; **flip sideways** —
+  spegelvänd; **flip upside down** — vänd upp och ner; **crop** — beskär
+  (*Beskär till 800 × 600 av 1600 × 1200*); **brightness** — ljusstyrka;
+  **contrast** — kontrast; **saturation** — mättnad; *As it was* = Som den
+  var (en regel tillbaka till 100 %); *Start again* = Börja om; *Keep as a
+  new file* = Spara som en ny fil; *Leave without keeping?* = Lämna utan
+  att spara?
+- **a version of an image** — version (*Versioner* i figurens meny:
+  originalet och kopiorna gjorda av det, var och en med sin storlek i
+  pixlar)
+- **a copy made smaller** — en mindre kopia (*Gör en mindre kopia*); i
+  filnamnet *(mindre)*; en redigerad kopia heter *(redigerad)*,
+  *(redigerad 2)*. core-pictures-edited = redigerad, core-pictures-smaller
+  = mindre: ett ord vart, gement, utan parentes
+- **drawing** (SVG) — ritning, som i textigenkänningen (*SVG, en ritning*;
+  *en ritning har inga pixlar att redigera*)
+- **pixels** — pixlar (*Pixlar*: 1600 × 1200)
+- **thumbnails** — miniatyrer (*Vy*: *Lista* eller *Miniatyrer*, *Små*,
+  *Medelstora*, *Stora*); *this kind of file is not shown small* = det här
+  slaget av fil visas inte i miniatyr; *Include subfolders* = Ta med
+  undermappar; *By kind* = Efter slag
+- **Used in** — Används i (*En figur i { $project }*, *En figur i { $count }
+  projekt*, *Används inte än*)
+- **Made from** — Kopia av: står före namnet på filen en kopia gjordes av
+  (redigerad, förminskad eller gjord för att bli figur). Inte ”Gjord av”,
+  som i found.ftl betyder *gjord av Zotero*, upphovet. **Copies made from
+  it** = Kopior av den
+- **What it shows, in words** — Vad den visar, i ord (orden en läsare som
+  inte kan se bilden får)
+- **the columns of a reference** (bland filerna) — Personer, År, Titel,
+  Förlag (som fields.ftl); **tr.** — övers. (*Lord; övers. Smith*), som i
+  svenska litteraturförteckningar och i style.ftl; *Name by the reference*
+  = Namnge efter referensen, *Name by their references* = Namnge efter
+  referenserna
+- **the folder Images** — mappen *Bilder* (dit det gamla bildförrådets
+  bilder lades); det tredje valet bland bilderna vid ett projekt heter
+  *Bibliotek*
+- **mind map** — tankekarta (tankekartan, tankekartor): en fil från
+  **Freeplane**, **FreeMind** eller **XMind**, som öppnas som ett projekt
+  (*Öppna en tankekarta…*) eller som ett projekt sparas som (*Spara som
+  en tankekarta…*; Freeplane och FreeMind, XMind eller **OPML**).
+  Programmens namn översätts inte. Programmets egna kartor heter *karta*
+  som förut.
+- **left out** — utelämnad; *was left out* = utelämnades (*En del av det
+  tankekartan rymmer har ingen plats i ett projekt, och utelämnades:*).
+  Det som utelämnas: **images** — bilder (bildfiler); **pictures in
+  texts** — bilder i texter (bildtexten behölls); **clouds** — moln;
+  **summaries** — sammanfattningar (Freeplanes och XMinds egna; inte
+  dokumentets sammanfattning, men här kan det inte blandas ihop);
+  **boundaries** — avgränsningar; **hyperlinks** — länkar till webbsidor
+  eller filer; **icons / markers** — ikoner eller symboler; **attributes**
+  — attribut (andra än Kind, Time och Left out, som är namnen på alla
+  språk); **labels** — etiketter (efter den första, som blev slaget);
+  **times that could not be read** — tidsangivelser som inte kunde läsas;
+  **associations** — associationer till ämnen (XMinds *topic* = ämne);
+  **references to figures or parts** — korshänvisningar till figurer
+  eller delar, som inte pekar på något där
+- **the diagram as a picture** — *Spara diagrammet som SVG…*, *Spara
+  diagrammet som en bild…* (en PNG, *PNG-bild*); *Diagrammet sparades som
+  ”…”, 2400 × 1600 pixlar*; typsnitten *läggs in i filen*
+- **printing** — skriva ut, utskrift (*Skriv ut…*, Ctrl+P; *Förbereder 12
+  sidor för utskrift…*); **the pages to print** — Sidor att skriva ut:
+  *Den enda sidan* / *Alla 12 sidor*, *Från [3] till [10]*, *Ritar 8
+  sidor för utskrift…*, *Stoppa*
+- **the two lengths of Look** (under *Radnumrering*) — *Numrens avstånd
+  från texten*, *Anmärkningarnas avstånd från texten*, i centimeter
+- **too large** (core) — *{ $path } är större än { $most } MB, vilket är det
+  mesta som läses*; **not a zip archive** — inte ett zip-arkiv
+
 ## Namn som inte översätts
 
 Glaukopis; Pandoc, Typst, Tesseract, Hunspell, LaTeX, LuaLaTeX, BibLaTeX,

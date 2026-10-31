@@ -353,3 +353,7 @@ format-verse-annotations-other = Du côté opposé aux numéros
 
 ## Where a line begins, stage 4: the step of an indent.
 format-indent-step = Retrait par tabulation
+
+# The distance of the numbers and the annotations from the text (docs/plans/the-distance-of-numbers-and-annotations.md).
+format-verse-numbers-gap = Distance des numéros au texte
+format-verse-annotations-gap = Distance des annotations au texte

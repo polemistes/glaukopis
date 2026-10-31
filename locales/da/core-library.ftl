@@ -68,3 +68,16 @@ core-library-assign-stored-gone = »{ $name }« blev ikke knyttet til sin refere
 core-library-files-unreadable = Fortegnelsen over bibliotekets filer kunne ikke læses og blev lagt til side som { $path }: { $message }
 # The library file has bytes that are not UTF-8, as an editor that saves in Latin-1 writes them; $aside is the name of the copy kept in the same folder.
 core-library-not-utf8 = { $path } har bogstaver, der ikke er i UTF-8, som et redigeringsprogram, der gemmer i en anden tegnkodning, skriver dem. De læses som � og bliver skrevet sådan; filen, som den var, er gemt som { $aside } i samme mappe.
+
+# One place for files (ADR 0070).
+# A file of a kind that has no thumbnail, or one that could not be read for it; the interface shows the kind's icon instead.
+core-library-no-small = denne type fil vises ikke som miniature
+# The folder the images of the old store of pictures are put in, at the top of the files of the library.
+core-library-images-folder = Billeder
+# An image of the old store of pictures whose file was not there when it was taken into the library.
+core-library-picture-missing = »{ $name }« blev ikke taget ind i biblioteket: dets fil mangler.
+# An image of the old store of pictures whose file does not hold what its name says.
+core-library-picture-not-itself = »{ $name }« blev ikke taget ind i biblioteket: dets fil er ikke det billede, det var.
+# Bookmarks in a file (sources in tabs, 2026-10-29).
+core-library-too-many-bookmarks = En fil kan højst have { $most } bogmærker.
+core-library-bookmark-no-place = Et bogmærke skal stå på en side i filen.

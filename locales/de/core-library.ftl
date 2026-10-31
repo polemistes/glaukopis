@@ -65,3 +65,16 @@ core-library-assign-stored-gone = „{ $name }“ wurde seiner Quelle nicht zuge
 core-library-files-unreadable = Die Liste der Dateien der Bibliothek konnte nicht gelesen werden und wurde als { $path } beiseitegelegt: { $message }
 # The library file has bytes that are not UTF-8, as an editor that saves in Latin-1 writes them; $aside is the name of the copy kept in the same folder.
 core-library-not-utf8 = { $path } hat Buchstaben, die nicht in UTF-8 sind, wie ein Editor sie schreibt, der in einer anderen Kodierung speichert. Sie werden als � gelesen und so geschrieben; die Datei, wie sie war, ist als { $aside } im selben Ordner aufbewahrt.
+
+# One place for files (ADR 0070).
+# A file of a kind that has no thumbnail, or one that could not be read for it; the interface shows the kind's icon instead.
+core-library-no-small = von dieser Art von Datei gibt es kein Vorschaubild
+# The folder the images of the old store of pictures are put in, at the top of the files of the library.
+core-library-images-folder = Bilder
+# An image of the old store of pictures whose file was not there when it was taken into the library.
+core-library-picture-missing = „{ $name }“ wurde nicht in die Bibliothek aufgenommen: seine Datei fehlt.
+# An image of the old store of pictures whose file does not hold what its name says.
+core-library-picture-not-itself = „{ $name }“ wurde nicht in die Bibliothek aufgenommen: seine Datei ist nicht das Bild, das sie war.
+# Bookmarks in a file (sources in tabs, 2026-10-29).
+core-library-too-many-bookmarks = Eine Datei behält höchstens { $most } Lesezeichen.
+core-library-bookmark-no-place = Ein Lesezeichen muss auf einer Seite der Datei liegen.

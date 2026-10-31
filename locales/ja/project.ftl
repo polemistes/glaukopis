@@ -186,6 +186,8 @@ project-a-picture = 画像
 project-not-on-computer = このコンピューターにはありません
 project-nothing-said = まだ何も書かれていません
 project-no-pictures = まだ画像はありません
+project-no-pictures-map = ここにはこのマップの図の画像が並びます。ライブラリの画像は「ライブラリ」にあります。
+project-no-pictures-project = ここにはプロジェクトの図の画像が並びます。ライブラリの画像は「ライブラリ」にあります。
 project-pictures-drag = 画像をテキストの中にドラッグするとそこで図になり、要素の上にドラッグするとそのテキストの末尾に入ります。
 # 数は、使われている画像のうち、このコンピューターの画像庫にないもの。
 project-pictures-absent-map = このマップの{ $count }枚はこのコンピューターにありません。
@@ -263,3 +265,19 @@ project-add-child = 子要素を追加
 project-add-sibling = 同じ階層に要素を追加
 project-delete-promote = 削除して下位要素を一段上げる
 project-delete-with = 下位要素ごと削除
+
+## 側に表示したファイル（2026-10-26）。
+
+project-show-file = ファイルを表示
+# 作品に複数のファイルがあるところ：それぞれに一項目、名前で。
+project-show-file-named = 「{ $name }」を表示
+# フォーカスのある側がファイルを表示しているあいだ、文書ペインの上に：文書はもう一方の側のもの。
+project-document-of-other = もう一方の側の文書
+
+# 一か所にまとめたファイル（ADR 0070）：プロジェクトの脇の画像の三つ目の選択肢、ライブラリ全体。
+project-pictures-library = ライブラリ
+project-library-no-images = ライブラリに画像はありません
+project-library-no-images-hint = ファイルから画像を追加するか、テキストにドロップしてください。
+
+# タブを開く（docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md）。
+project-beside-tabs = プロジェクトのタブ

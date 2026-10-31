@@ -143,3 +143,11 @@ figures-picture-absent = 画像がこのコンピューターにありません
 # このコンピューターにあるが読めなかった画像。reason は読み込みが言ったこと。
 figures-picture-unread = 画像を読み込めませんでした：{ $reason }
 figures-caption-placeholder = 画像の説明
+
+# 一か所にまとめたファイル（ADR 0070）：描画である画像の種類。
+figures-kind-svg = SVG（描画）
+
+# 簡単な画像の編集（docs/plans/a-simple-image-editor.md）：図の画像のバージョン。
+figures-versions = バージョン
+# バージョンの大きさ。メニューでその名前の後に。
+figures-version-size = { $width } × { $height }

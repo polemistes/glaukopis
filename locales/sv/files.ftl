@@ -1,6 +1,6 @@
-# The files of the library: a store of their own beside the pictures, in
-# folders of their own, each file belonging to no reference, to one or to
-# several. The view stands in the library's place.
+# The files of the library, images among them: in folders of their own,
+# each file belonging to no reference, to one or to several. The view stands
+# in the library's place.
 
 files-title = Bibliotekets filer
 files-all = Alla filer
@@ -381,3 +381,74 @@ files-reveal-failed = Mappen kunde inte visas
 files-export = Exportera…
 files-export-chosen = Exportera de här { $count }…
 files-export-all = Exportera alla filer…
+
+## A file shown in a side of the window (2026-10-26).
+
+files-show = Lägg till i ett projekts flikar…
+files-open-elsewhere = Öppna i ett annat program
+
+# One place for files: images are files of the library (ADR 0070).
+files-add-images = Lägg till bilder…
+# After images were taken in to be figures; $name is the first of them.
+files-images-taken-in = { $count ->
+    [one] ”{ $name }” finns i biblioteket
+   *[other] { $count } bilder finns i biblioteket
+}
+
+# One place for files, the view (ADR 0070).
+files-view = Vy
+files-as-list = Lista
+files-as-grid = Miniatyrer
+files-size-small = Små
+files-size-medium = Medelstora
+files-size-large = Stora
+files-include-subfolders = Ta med undermappar
+files-sort-kind = Efter slag
+# Where a file is used, where it belongs to no reference: as a figure.
+files-column-used = Används i
+files-used-figure = En figur i { $project }
+files-used-figures = En figur i { $count } projekt
+files-used-nowhere = Används inte än
+files-pixels-label = Pixlar
+files-pixels = { $width } × { $height }
+files-alt = Vad den visar, i ord
+files-preview-none = Ingen förhandsvisning för det här slaget av fil
+# Before the name of the file a copy was made from, to be a figure, by editing or to be smaller; the name is a link.
+files-made-from = Kopia av
+# Said when a file that is a figure in projects is to be removed.
+files-remove-used = { $count ->
+    [one] Den är en figur i ett projekt, som då inte visar något i dess ställe.
+   *[other] Den är en figur i { $count } projekt, som då inte visar något i dess ställe.
+}
+
+# A simple image editor (docs/plans/a-simple-image-editor.md): the copies made from a file, as links.
+files-copies = Kopior av den
+
+# The tabs opened, files by their references, a file read in the library (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
+files-read = Läs
+files-column-people = Personer
+files-column-year = År
+files-column-title = Titel
+files-column-publisher = Förlag
+files-sort-year = Efter år
+files-sort-title = Efter titel
+files-sort-publisher = Efter förlag
+# The translators after the authors or editors: "Lord; tr. Smith".
+files-translated = övers. { $names }
+
+# Files by their references, named on request, and a menu of projects for the tabs.
+files-tabs-no-project = Inget projekt att lägga till i
+files-added-to-tabs = Lades till bland flikarna i { $project }
+files-already-in-tabs = Finns redan bland flikarna i { $project }
+files-show-tabs = Visa
+files-name-by-reference = Namnge efter referensen
+files-name-by-references = Namnge efter referenserna
+files-named = { $count ->
+    [one] En fil fick namn efter sin referens
+   *[other] { $count } filer fick namn efter sina referenser
+}
+files-named-kept = { $count ->
+    [one] En fil utan referens behöll sitt namn
+   *[other] { $count } filer utan referens behöll sina namn
+}
+files-named-none = Filerna var redan namngivna efter sina referenser

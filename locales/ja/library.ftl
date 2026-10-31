@@ -506,3 +506,6 @@ library-resize-detail = ドラッグして右のペインの幅を変える
 
 # 文献のファイルをインポートする：.bib、BibLaTeXまたはBibTeX。
 library-import-bibtex = Bib(La)TeXをインポート…
+
+# 文献のペインにある、その文献のファイル（docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md）。
+library-pane-add-to-tabs = プロジェクトのタブに追加…

@@ -143,3 +143,11 @@ figures-picture-absent = L’image n’est pas sur cet ordinateur
 # A picture that is on this computer and could not be read: the reason is what the reading said.
 figures-picture-unread = L’image n’a pas pu être lue : { $reason }
 figures-caption-placeholder = Ce qui est dit de l’image
+
+# One place for files (ADR 0070): the kind of an image that is a drawing.
+figures-kind-svg = SVG, un dessin
+
+# A simple image editor (docs/plans/a-simple-image-editor.md): the versions of a figure's image.
+figures-versions = Versions
+# The size of a version, after its name in the menu.
+figures-version-size = { $width } × { $height }

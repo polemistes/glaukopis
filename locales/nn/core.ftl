@@ -35,6 +35,9 @@ io-backing-up = kunne ikkje ta tryggingskopi av { $path }
 io-setting-aside = kunne ikkje leggje { $path } til side
 io-storing = kunne ikkje lagre { $path }
 io-no-directory = { $path } ligg ikkje i noka mappe
+# $most is in megabytes.
+io-too-large = { $path } er større enn { $most } MB, som er det meste som blir lese
+io-not-an-archive = { $path } er ikkje eit zip-arkiv: { $error }
 
 ## A file of the application's own that could not be read: it is set aside,
 ## under its name with the time added, and the application goes on without

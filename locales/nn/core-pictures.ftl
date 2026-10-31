@@ -11,3 +11,11 @@ core-pictures-the-picture = biletet
 # What a picture that came without a name is called, before the ending of
 # its file: "picture.png".
 core-pictures-unnamed = bilete
+
+# A simple image editor (docs/plans/a-simple-image-editor.md).
+# Put before the ending of a copy's name: "plate (edited).jpg", "plate (edited 2).jpg".
+core-pictures-edited = redigert
+# Likewise: "plate (smaller).jpg".
+core-pictures-smaller = mindre
+core-pictures-not-editable = ei teikning har ingen pikslar å redigere
+core-pictures-nothing-changed = ingenting vart endra

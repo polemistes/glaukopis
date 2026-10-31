@@ -196,6 +196,8 @@ project-a-picture = Ein Bild
 project-not-on-computer = Nicht auf diesem Computer
 project-nothing-said = Noch nichts dazu gesagt
 project-no-pictures = Noch keine Bilder
+project-no-pictures-map = Hier stehen die Bilder der Abbildungen dieser Karte. Die der Bibliothek stehen unter Bibliothek.
+project-no-pictures-project = Hier stehen die Bilder der Abbildungen des Projekts. Die der Bibliothek stehen unter Bibliothek.
 project-pictures-drag = Ziehen Sie ein Bild in einen Text, um dort eine Abbildung daraus zu machen, oder auf ein Element, um es ans Ende seines Textes zu setzen.
 # The count is of the pictures that are used and are not in the store of this computer.
 project-pictures-absent-map = { $count ->
@@ -294,3 +296,19 @@ project-add-child = Unterelement hinzufügen
 project-add-sibling = Element auf gleicher Ebene hinzufügen
 project-delete-promote = Löschen und Unterelemente höher stufen
 project-delete-with = Mit Unterelementen löschen
+
+## A file shown in a side of the window (2026-10-26).
+
+project-show-file = Die Datei zeigen
+# Where a work has several files: one item for each, by its name.
+project-show-file-named = „{ $name }“ zeigen
+# Over the document pane while the side that has the focus shows a file: the document is that of the other side.
+project-document-of-other = Das Dokument der anderen Fensterseite
+
+# One place for files (ADR 0070): the third choice of the images at the side of a project, all of the library.
+project-pictures-library = Bibliothek
+project-library-no-images = Die Bibliothek hat keine Bilder
+project-library-no-images-hint = Fügen Sie Bilder aus Dateien hinzu, oder lassen Sie sie auf einen Text fallen.
+
+# The tabs opened (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
+project-beside-tabs = Die Tabs des Projekts

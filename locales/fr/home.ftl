@@ -259,3 +259,82 @@ home-delete-many-confirm = Supprimer les projets
 
 ## Stage 3 of the sides, the panes and the bars (agent "bars")
 home-share = Partager…
+
+## Mind maps of other programs: Freeplane, FreeMind and XMind opened as projects, and projects saved as them and as OPML (agent "mindmaps")
+home-mindmap-open = Ouvrir une carte mentale…
+home-mindmap-open-title = Ouvrir une carte mentale
+home-mindmap-filter = Carte mentale (Freeplane, FreeMind, XMind)
+home-mindmap-open-failed = La carte mentale n’a pas pu être ouverte
+home-menu-save-mindmap = Enregistrer comme carte mentale…
+home-mindmap-save-title = Enregistrer le projet comme carte mentale
+home-mindmap-filter-freeplane = Freeplane et FreeMind
+home-mindmap-filter-xmind = XMind
+home-mindmap-filter-opml = OPML
+home-mindmap-saved = « { $name } » a été enregistré comme carte mentale
+home-mindmap-save-failed = Le projet n’a pas pu être enregistré comme carte mentale
+home-mindmap-not-a-map = « { $name } » n’est pas une carte mentale de Freeplane, FreeMind ou XMind.
+# Said over the lines below, after a mind map was opened.
+home-mindmap-left-out = Une partie de ce que contient la carte mentale n’a pas sa place dans un projet, et a été laissée de côté :
+# Said over the lines below, after a project was saved as a mind map.
+home-mindmap-left-out-saving = Une partie de ce que contient le projet n’a pas sa place dans une carte mentale, et a été laissée de côté :
+home-mindmap-left-out-images = { $count ->
+    [one] Une image
+    [many] { $count } images
+   *[other] { $count } images
+}
+home-mindmap-left-out-pictures = { $count ->
+    [one] Une image dans un texte ; sa légende a été gardée
+    [many] { $count } images dans des textes ; leurs légendes ont été gardées
+   *[other] { $count } images dans des textes ; leurs légendes ont été gardées
+}
+home-mindmap-left-out-clouds = { $count ->
+    [one] Un nuage
+    [many] { $count } nuages
+   *[other] { $count } nuages
+}
+home-mindmap-left-out-summaries = { $count ->
+    [one] Un résumé
+    [many] { $count } résumés
+   *[other] { $count } résumés
+}
+home-mindmap-left-out-boundaries = { $count ->
+    [one] Une limite
+    [many] { $count } limites
+   *[other] { $count } limites
+}
+home-mindmap-left-out-hyperlinks = { $count ->
+    [one] Un lien vers une page web ou un fichier
+    [many] { $count } liens vers des pages web ou des fichiers
+   *[other] { $count } liens vers des pages web ou des fichiers
+}
+home-mindmap-left-out-icons = { $count ->
+    [one] Une icône ou un marqueur que Glaukopis ne connaît pas
+    [many] { $count } icônes ou marqueurs que Glaukopis ne connaît pas
+   *[other] { $count } icônes ou marqueurs que Glaukopis ne connaît pas
+}
+# "Kind", "Time" and "Left out" are the names of the attributes Glaukopis reads and writes, in every language.
+home-mindmap-left-out-attributes = { $count ->
+    [one] Un attribut autre que Kind, Time et Left out
+    [many] { $count } attributs autres que Kind, Time et Left out
+   *[other] { $count } attributs autres que Kind, Time et Left out
+}
+home-mindmap-left-out-labels = { $count ->
+    [one] Une étiquette après la première, devenue le type
+    [many] { $count } étiquettes après la première, devenue le type
+   *[other] { $count } étiquettes après la première, devenue le type
+}
+home-mindmap-left-out-times = { $count ->
+    [one] Une datation qui n’a pas pu être lue
+    [many] { $count } datations qui n’ont pas pu être lues
+   *[other] { $count } datations qui n’ont pas pu être lues
+}
+home-mindmap-left-out-associations = { $count ->
+    [one] Une association vers un sujet absent
+    [many] { $count } associations vers des sujets absents
+   *[other] { $count } associations vers des sujets absents
+}
+home-mindmap-left-out-references = { $count ->
+    [one] Un renvoi à une figure ou à une partie, qui n’y désigne rien
+    [many] { $count } renvois à des figures ou à des parties, qui n’y désignent rien
+   *[other] { $count } renvois à des figures ou à des parties, qui n’y désignent rien
+}

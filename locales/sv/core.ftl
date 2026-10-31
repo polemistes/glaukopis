@@ -35,6 +35,9 @@ io-backing-up = säkerhetskopieringen av { $path }
 io-setting-aside = undanläggningen av { $path }
 io-storing = lagringen av { $path }
 io-no-directory = { $path } har ingen mapp
+# $most is in megabytes.
+io-too-large = { $path } är större än { $most } MB, vilket är det mesta som läses
+io-not-an-archive = { $path } är inte ett zip-arkiv: { $error }
 
 ## A file of the application's own that could not be read: it is set aside,
 ## under its name with the time added, and the application goes on without

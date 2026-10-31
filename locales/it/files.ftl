@@ -1,6 +1,6 @@
-# The files of the library: a store of their own beside the pictures, in
-# folders of their own, each file belonging to no reference, to one or to
-# several. The view stands in the library's place.
+# The files of the library, images among them: in folders of their own,
+# each file belonging to no reference, to one or to several. The view stands
+# in the library's place.
 
 files-title = File della biblioteca
 files-all = Tutti i file
@@ -439,3 +439,78 @@ files-reveal-failed = La cartella non si è potuta mostrare
 files-export = Esporta…
 files-export-chosen = Esporta questi { $count }…
 files-export-all = Esporta tutti i file…
+
+## A file shown in a side of the window (2026-10-26).
+
+files-show = Aggiungi alle schede di un progetto…
+files-open-elsewhere = Apri in un altro programma
+
+# One place for files: images are files of the library (ADR 0070).
+files-add-images = Aggiungi immagini…
+# After images were taken in to be figures; $name is the first of them.
+files-images-taken-in = { $count ->
+    [one] «{ $name }» è nella biblioteca
+    [many] { $count } immagini sono nella biblioteca
+   *[other] { $count } immagini sono nella biblioteca
+}
+
+# One place for files, the view (ADR 0070).
+files-view = Vista
+files-as-list = Elenco
+files-as-grid = Miniature
+files-size-small = Piccole
+files-size-medium = Medie
+files-size-large = Grandi
+files-include-subfolders = Includi le sottocartelle
+files-sort-kind = Per tipo
+# Where a file is used, where it belongs to no reference: as a figure.
+files-column-used = Usato in
+files-used-figure = Una figura in { $project }
+files-used-figures = Una figura in { $count } progetti
+files-used-nowhere = Non ancora usato
+files-pixels-label = Pixel
+files-pixels = { $width } × { $height }
+files-alt = Che cosa mostra, a parole
+files-preview-none = Nessuna anteprima per questo tipo di file
+# Before the name of the file a copy was made from, to be a figure, by editing or to be smaller; the name is a link.
+files-made-from = Ricavato da
+# Said when a file that is a figure in projects is to be removed.
+files-remove-used = { $count ->
+    [one] È una figura in un progetto, che al suo posto non mostrerà nulla.
+    [many] È una figura in { $count } progetti, che al suo posto non mostreranno nulla.
+   *[other] È una figura in { $count } progetti, che al suo posto non mostreranno nulla.
+}
+
+# A simple image editor (docs/plans/a-simple-image-editor.md): the copies made from a file, as links.
+files-copies = Copie ricavate da questo file
+
+# The tabs opened, files by their references, a file read in the library (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
+files-read = Leggi
+files-column-people = Persone
+files-column-year = Anno
+files-column-title = Titolo
+files-column-publisher = Editore
+files-sort-year = Per anno
+files-sort-title = Per titolo
+files-sort-publisher = Per editore
+# The translators after the authors or editors: "Lord; tr. Smith".
+files-translated = trad. { $names }
+
+# Files by their references, named on request, and a menu of projects for the tabs.
+files-tabs-no-project = Nessun progetto a cui aggiungerlo
+files-added-to-tabs = Aggiunto alle schede di { $project }
+files-already-in-tabs = Già nelle schede di { $project }
+files-show-tabs = Mostra
+files-name-by-reference = Rinomina secondo il riferimento
+files-name-by-references = Rinomina secondo i loro riferimenti
+files-named = { $count ->
+    [one] Un file rinominato secondo il suo riferimento
+    [many] { $count } file rinominati secondo i loro riferimenti
+   *[other] { $count } file rinominati secondo i loro riferimenti
+}
+files-named-kept = { $count ->
+    [one] Un file senza riferimento ha tenuto il suo nome
+    [many] { $count } file senza riferimento hanno tenuto i loro nomi
+   *[other] { $count } file senza riferimento hanno tenuto i loro nomi
+}
+files-named-none = I nomi erano già quelli dei riferimenti

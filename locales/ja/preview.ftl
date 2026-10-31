@@ -124,3 +124,11 @@ preview-zoom-fit = 幅に合わせる
 preview-zoom = { $percent }%
 # ズームのボタンが何であるか。画面を見られない人に伝えるときの言い方。
 preview-zoom-label = ズーム
+
+## 印刷（docs/plans/printing.md、記録 0075）。
+
+# 組版ペインの頭にある、システムのダイアログを通して文書を印刷するボタン。
+preview-print = 印刷…
+# 印刷のためにページを取り出しているあいだ、システムのダイアログが開く前に言う。
+preview-print-preparing = 印刷のために{ $count }ページを準備しています…
+preview-print-failed = ページを印刷できませんでした

@@ -37,3 +37,18 @@ diagram-pasted-elsewhere = コピーしたものは別のプロジェクトの�
 # ダイアグラムで要素を折りたたむ印のツールチップ。
 diagram-unfold-sub = 下位要素を展開
 diagram-fold-sub = 下位要素を折りたたむ
+
+## 画像としてのダイアグラム（2026-10-26）。
+
+diagram-save-svg = ダイアグラムをSVGとして保存…
+diagram-save-image = ダイアグラムを画像として保存…
+diagram-save-svg-title = ダイアグラムをSVGとして保存
+diagram-save-image-title = ダイアグラムを画像として保存
+diagram-file-svg = SVG
+diagram-file-png = PNG画像
+# $name はファイルの名前。
+diagram-saved = ダイアグラムを「{ $name }」として保存しました
+diagram-saved-size = ダイアグラムを「{ $name }」として保存しました（{ $width } × { $height }ピクセル）
+diagram-saved-no-fonts = フォントをファイルに入れられませんでした。開いた人の手元のフォントで表示されます。
+diagram-save-failed = ダイアグラムを保存できませんでした
+diagram-too-large-for-image = マップが大きすぎて画像にできません。SVGとして保存してください。

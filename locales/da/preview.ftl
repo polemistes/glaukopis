@@ -130,3 +130,14 @@ preview-zoom-fit = Tilpas til bredden
 preview-zoom = { $percent } %
 # What the button of the zoom is, as it is told to those who cannot see it.
 preview-zoom-label = Zoom
+
+## Printing (docs/plans/printing.md, record 0075).
+
+# The button in the head of the typesetting pane that prints the document through the system's dialog.
+preview-print = Udskriv…
+# Told while the pages are fetched for printing, before the system's dialog opens.
+preview-print-preparing = { $count ->
+    [one] Forbereder én side til udskrivning…
+   *[other] Forbereder { $count } sider til udskrivning…
+}
+preview-print-failed = Siderne kunne ikke udskrives

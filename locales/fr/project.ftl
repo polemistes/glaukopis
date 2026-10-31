@@ -205,7 +205,9 @@ project-a-picture = Une image
 project-not-on-computer = Pas sur cet ordinateur
 project-nothing-said = Rien n’en est encore dit
 project-no-pictures = Pas encore d’images
-project-pictures-drag = Glissez une image dans un texte pour en faire une figure à cet endroit, ou sur un élément pour la mettre à la fin de son texte.
+project-no-pictures-map = Les images des figures de cette carte sont listées ici. Celles de la bibliothèque sont sous Bibliothèque.
+project-no-pictures-project = Les images des figures du projet sont listées ici. Celles de la bibliothèque sont sous Bibliothèque.
+project-pictures-drag =Glissez une image dans un texte pour en faire une figure à cet endroit, ou sur un élément pour la mettre à la fin de son texte.
 # The count is of the pictures that are used and are not in the store of this computer.
 project-pictures-absent-map = { $count ->
     [one] { $count } de cette carte n’est pas sur cet ordinateur.
@@ -313,3 +315,19 @@ project-add-child = Ajouter un sous-élément
 project-add-sibling = Ajouter un élément de même niveau
 project-delete-promote = Supprimer et remonter les sous-éléments
 project-delete-with = Supprimer avec les sous-éléments
+
+## A file shown in a side of the window (2026-10-26).
+
+project-show-file = Afficher le fichier
+# Where a work has several files: one item for each, by its name.
+project-show-file-named = Afficher « { $name } »
+# Over the document pane while the side that has the focus shows a file: the document is that of the other side.
+project-document-of-other = Le document de l’autre côté
+
+# One place for files (ADR 0070): the third choice of the images at the side of a project, all of the library.
+project-pictures-library = Bibliothèque
+project-library-no-images = La bibliothèque n’a pas d’images
+project-library-no-images-hint = Ajoutez des images depuis des fichiers, ou déposez-les sur un texte.
+
+# The tabs opened (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
+project-beside-tabs = Les onglets du projet

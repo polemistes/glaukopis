@@ -21,7 +21,7 @@ figures-choose-picture = Un'immagine
 # What the files that can be chosen there are called.
 figures-picture-files = Immagini
 
-## The store of pictures, as the text reads it.
+## The images of the library, as the text reads them.
 
 figures-picture-not-taken = L'immagine non si è potuta aggiungere
 figures-picture-not-kept = Ciò che è stato detto dell'immagine non si è potuto conservare
@@ -143,3 +143,11 @@ figures-picture-absent = L'immagine non è su questo computer
 # A picture that is on this computer and could not be read: the reason is what the reading said.
 figures-picture-unread = L'immagine non si è potuta leggere: { $reason }
 figures-caption-placeholder = Ciò che si dice dell'immagine
+
+# One place for files (ADR 0070): the kind of an image that is a drawing.
+figures-kind-svg = SVG, un disegno
+
+# A simple image editor (docs/plans/a-simple-image-editor.md): the versions of a figure's image.
+figures-versions = Versioni
+# The size of a version, after its name in the menu.
+figures-version-size = { $width } × { $height }

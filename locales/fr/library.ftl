@@ -568,3 +568,6 @@ library-resize-detail = Faire glisser pour élargir ou rétrécir le volet de dr
 
 # Importing a file of references: .bib, BibLaTeX or BibTeX.
 library-import-bibtex = Importer du Bib(La)TeX…
+
+# The files of a reference in its pane (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
+library-pane-add-to-tabs = Ajouter aux onglets d’un projet…

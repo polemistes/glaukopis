@@ -113,6 +113,7 @@ keys-list-undo = Annuler ce qui a été fait aux dossiers et aux projets
 keys-list-redo = Rétablir ce qui a été fait aux dossiers et aux projets
 
 ## The sides (stage 4 of the list, the path and the window as it was left)
+keys-close-side = Fermer l’onglet, ou ce côté
 keys-switch-sides = Intervertir les côtés
 
 ## Stage 3 of the sides, the panes and the bars (agent "bars")
@@ -128,3 +129,18 @@ keys-preview-zoom-fit = Pages aussi larges que le volet
 
 ## The settings in plain words, stage 4: the keys of the kinds
 keys-writing-kind = Le type de paragraphe que le type de document attribue à ce chiffre
+
+## A file shown in a side of the window (2026-10-26).
+
+keys-place-viewer = Dans un fichier
+keys-viewer-next = Page suivante
+keys-viewer-previous = Page précédente
+keys-viewer-first = Première page
+keys-viewer-last = Dernière page
+
+# Sources in tabs (docs/plans/sources-in-tabs-bookmarks-and-the-scrolling-of-pages.md).
+keys-viewer-tab-next = Onglet suivant
+keys-viewer-tab-previous = Onglet précédent
+keys-viewer-bookmark = Marquer cet endroit
+# Printing (docs/plans/printing.md, record 0075).
+keys-print = Imprimer

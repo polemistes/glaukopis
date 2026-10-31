@@ -536,3 +536,6 @@ library-resize-detail = Ziehen, um den Bereich rechts breiter oder schmaler zu m
 
 # Importing a file of references: .bib, BibLaTeX or BibTeX.
 library-import-bibtex = Bib(La)TeX importieren…
+
+# The files of a reference in its pane (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
+library-pane-add-to-tabs = Zu den Tabs eines Projekts hinzufügen…

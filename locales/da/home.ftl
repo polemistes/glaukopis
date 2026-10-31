@@ -249,3 +249,70 @@ home-delete-many-confirm = Slet projekterne
 
 ## Stage 3 of the sides, the panes and the bars (agent "bars")
 home-share = Del…
+
+## Mind maps of other programs: Freeplane, FreeMind and XMind opened as projects, and projects saved as them and as OPML (agent "mindmaps")
+home-mindmap-open = Åbn et tankekort…
+home-mindmap-open-title = Åbn et tankekort
+home-mindmap-filter = Tankekort (Freeplane, FreeMind, XMind)
+home-mindmap-open-failed = Tankekortet kunne ikke åbnes
+home-menu-save-mindmap = Gem som tankekort…
+home-mindmap-save-title = Gem projektet som tankekort
+home-mindmap-filter-freeplane = Freeplane og FreeMind
+home-mindmap-filter-xmind = XMind
+home-mindmap-filter-opml = OPML
+home-mindmap-saved = »{ $name }« blev gemt som tankekort
+home-mindmap-save-failed = Projektet kunne ikke gemmes som tankekort
+home-mindmap-not-a-map = »{ $name }« er ikke et tankekort fra Freeplane, FreeMind eller XMind.
+# Said over the lines below, after a mind map was opened.
+home-mindmap-left-out = Noget af det, tankekortet rummer, har ingen plads i et projekt og blev udeladt:
+# Said over the lines below, after a project was saved as a mind map.
+home-mindmap-left-out-saving = Noget af det, projektet rummer, har ingen plads i et tankekort og blev udeladt:
+home-mindmap-left-out-images = { $count ->
+    [one] Ét billede
+   *[other] { $count } billeder
+}
+home-mindmap-left-out-pictures = { $count ->
+    [one] Ét billede i en tekst; dets billedtekst blev beholdt
+   *[other] { $count } billeder i tekster; deres billedtekster blev beholdt
+}
+home-mindmap-left-out-clouds = { $count ->
+    [one] Én sky
+   *[other] { $count } skyer
+}
+home-mindmap-left-out-summaries = { $count ->
+    [one] Én opsummering
+   *[other] { $count } opsummeringer
+}
+home-mindmap-left-out-boundaries = { $count ->
+    [one] Én afgrænsning
+   *[other] { $count } afgrænsninger
+}
+home-mindmap-left-out-hyperlinks = { $count ->
+    [one] Ét link til en webside eller en fil
+   *[other] { $count } links til websider eller filer
+}
+home-mindmap-left-out-icons = { $count ->
+    [one] Ét ikon eller én markør, som Glaukopis ikke kender
+   *[other] { $count } ikoner eller markører, som Glaukopis ikke kender
+}
+# "Kind", "Time" and "Left out" are the names of the attributes Glaukopis reads and writes, in every language.
+home-mindmap-left-out-attributes = { $count ->
+    [one] Én attribut ud over Kind, Time og Left out
+   *[other] { $count } attributter ud over Kind, Time og Left out
+}
+home-mindmap-left-out-labels = { $count ->
+    [one] Én etiket efter den første, som blev arten
+   *[other] { $count } etiketter efter den første, som blev arten
+}
+home-mindmap-left-out-times = { $count ->
+    [one] Ét tidspunkt, der ikke kunne læses
+   *[other] { $count } tidspunkter, der ikke kunne læses
+}
+home-mindmap-left-out-associations = { $count ->
+    [one] Én association til et emne, der ikke er der
+   *[other] { $count } associationer til emner, der ikke er der
+}
+home-mindmap-left-out-references = { $count ->
+    [one] Én krydshenvisning til en figur eller en del, som intet har at pege på der
+   *[other] { $count } krydshenvisninger til figurer eller dele, som intet har at pege på der
+}

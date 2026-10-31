@@ -41,3 +41,18 @@ diagram-pasted-elsewhere = Ce qui a été copié vient d’un autre projet et ne
 # The tooltips of the mark that folds an element in the diagram.
 diagram-unfold-sub = Déplier les sous-éléments
 diagram-fold-sub = Replier les sous-éléments
+
+## The diagram as a picture (2026-10-26).
+
+diagram-save-svg = Enregistrer le diagramme en SVG…
+diagram-save-image = Enregistrer le diagramme comme image…
+diagram-save-svg-title = Enregistrer le diagramme en SVG
+diagram-save-image-title = Enregistrer le diagramme comme image
+diagram-file-svg = SVG
+diagram-file-png = Image PNG
+# $name is the name of the file.
+diagram-saved = Le diagramme a été enregistré sous le nom « { $name } »
+diagram-saved-size = Le diagramme a été enregistré sous le nom « { $name } », { $width } × { $height } pixels
+diagram-saved-no-fonts = Les polices n’ont pas pu être mises dans le fichier : il s’affiche dans les polices de qui l’ouvre.
+diagram-save-failed = Le diagramme n’a pas pu être enregistré
+diagram-too-large-for-image = La carte est trop grande pour une image : enregistrez-la en SVG.

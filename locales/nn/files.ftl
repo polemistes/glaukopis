@@ -381,3 +381,74 @@ files-reveal-failed = Mappa kunne ikkje visast
 files-export = Eksporter …
 files-export-chosen = Eksporter desse { $count } …
 files-export-all = Eksporter alle filene …
+
+## A file shown in a side of the window (2026-10-26).
+
+files-show = Legg til i fanene til eit prosjekt …
+files-open-elsewhere = Opne i eit anna program
+
+# One place for files: images are files of the library (ADR 0070).
+files-add-images = Legg til bilete …
+# After images were taken in to be figures; $name is the first of them.
+files-images-taken-in = { $count ->
+    [one] «{ $name }» er i biblioteket
+   *[other] { $count } bilete er i biblioteket
+}
+
+# One place for files, the view (ADR 0070).
+files-view = Vising
+files-as-list = Liste
+files-as-grid = Miniatyrar
+files-size-small = Små
+files-size-medium = Middels
+files-size-large = Store
+files-include-subfolders = Ta med undermappene
+files-sort-kind = Etter type
+# Where a file is used, where it belongs to no reference: as a figure.
+files-column-used = Brukt i
+files-used-figure = Ein figur i { $project }
+files-used-figures = Ein figur i { $count } prosjekt
+files-used-nowhere = Ikkje brukt enno
+files-pixels-label = Pikslar
+files-pixels = { $width } × { $height }
+files-alt = Kva det viser, med ord
+files-preview-none = Inga førehandsvising for denne typen fil
+# Before the name of the file a copy was made from, to be a figure, by editing or to be smaller; the name is a link.
+files-made-from = Laga av
+# Said when a file that is a figure in projects is to be removed.
+files-remove-used = { $count ->
+    [one] Den er ein figur i eit prosjekt, som då vil vise ingenting der den stod.
+   *[other] Den er ein figur i { $count } prosjekt, som då vil vise ingenting der den stod.
+}
+
+# A simple image editor (docs/plans/a-simple-image-editor.md): the copies made from a file, as links.
+files-copies = Kopiar laga av den
+
+# The tabs opened, files by their references, a file read in the library (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
+files-read = Les
+files-column-people = Personar
+files-column-year = År
+files-column-title = Tittel
+files-column-publisher = Forlag
+files-sort-year = Etter år
+files-sort-title = Etter tittel
+files-sort-publisher = Etter forlag
+# The translators after the authors or editors: "Lord; tr. Smith".
+files-translated = oms. { $names }
+
+# Files by their references, named on request, and a menu of projects for the tabs.
+files-tabs-no-project = Ingen prosjekt å leggje til i
+files-added-to-tabs = Lagd til i fanene til { $project }
+files-already-in-tabs = Allereie i fanene til { $project }
+files-show-tabs = Vis
+files-name-by-reference = Gi namn etter referansen
+files-name-by-references = Gi namn etter referansane
+files-named = { $count ->
+    [one] Éi fil fekk namn etter referansen sin
+   *[other] { $count } filer fekk namn etter referansane sine
+}
+files-named-kept = { $count ->
+    [one] Éi fil utan referanse heldt på namnet sitt
+   *[other] { $count } filer utan referanse heldt på namna sine
+}
+files-named-none = Namna var allereie etter referansane

@@ -10,3 +10,11 @@ core-pictures-not-whole = 画像が完全には届きませんでした
 core-pictures-the-picture = 画像
 # 名前なしで届いた画像を、ファイルの拡張子の前で呼ぶ名前：「画像.png」。
 core-pictures-unnamed = 画像
+
+# 簡単な画像の編集（docs/plans/a-simple-image-editor.md）。
+# コピーの名前の拡張子の前に入れる：「plate (編集済み).jpg」「plate (編集済み 2).jpg」。
+core-pictures-edited = 編集済み
+# 同じく：「plate (縮小).jpg」。
+core-pictures-smaller = 縮小
+core-pictures-not-editable = 描画（SVG）にはピクセルがないため、編集できません
+core-pictures-nothing-changed = 何も変更されていません

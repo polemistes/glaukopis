@@ -113,6 +113,7 @@ keys-list-undo = Annulla ciò che si è fatto a cartelle e progetti
 keys-list-redo = Ripeti ciò che si è fatto a cartelle e progetti
 
 ## The sides (stage 4 of the list, the path and the window as it was left)
+keys-close-side = Chiudi la scheda, o questo lato
 keys-switch-sides = Scambia i lati
 
 ## Stage 3 of the sides, the panes and the bars (agent "bars")
@@ -128,3 +129,18 @@ keys-preview-zoom-fit = Pagine larghe quanto il riquadro
 
 ## The settings in plain words, stage 4: the keys of the kinds
 keys-writing-kind = Il tipo di paragrafo che il tipo di documento dà alla cifra
+
+## A file shown in a side of the window (2026-10-26).
+
+keys-place-viewer = In un file
+keys-viewer-next = Pagina successiva
+keys-viewer-previous = Pagina precedente
+keys-viewer-first = Prima pagina
+keys-viewer-last = Ultima pagina
+
+# Sources in tabs (docs/plans/sources-in-tabs-bookmarks-and-the-scrolling-of-pages.md).
+keys-viewer-tab-next = Scheda successiva
+keys-viewer-tab-previous = Scheda precedente
+keys-viewer-bookmark = Segna questo punto
+# Printing (docs/plans/printing.md, record 0075).
+keys-print = Stampa

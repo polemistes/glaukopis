@@ -332,9 +332,136 @@ Die Nummerierung der Zeilen:
 - **Begins where the line before ended** — „Beginnt, wo die Zeile davor
   endete“
 
+## Seit 0.2.5 (2026-10-31)
+
+Eine Datei in einer Ansicht:
+
+- **a file in a view** — eine Datei in einer Ansicht: eine Seite des
+  Fensters zeigt statt einer Karte eine Datei der Bibliothek, ein PDF oder
+  ein Bild; **the viewer** — die Dateiansicht (die Seite mit der Datei und
+  ihrer Leiste; nicht „Betrachter“, das ein eigenes Programm nennt). Wo die
+  Seiten eines Dokuments nahe sind, heißt die Seite des Fensters *die
+  Fensterseite*: „Das Dokument der anderen Fensterseite“.
+- **Show the file** — „Die Datei zeigen“; **Open in another program** —
+  „In einem anderen Programm öffnen“
+- **drawn** (eine Seite, für die Ansicht oder den Druck) — gezeichnet, wie
+  schon bei der Texterkennung: „Diese Seite konnte nicht gezeichnet
+  werden“; **locked** (eine Datei, die ein Passwort verlangt) — verlangt
+  ein Passwort
+- **zoom** — der Zoom, wie zuvor; **As wide as the view** — „So breit wie
+  die Ansicht“; **The whole image in the view** — „Das ganze Bild in der
+  Ansicht“; **Go to page** — „Zu Seite gehen“
+- **tab** — der Tab, die Tabs (eine Datei, offen in einer Ansicht; **the
+  tabs of a project** — die Tabs eines Projekts, „Die Tabs von „…““). Das
+  Wort der Browser und Editoren, die jeder täglich sieht: „Tab schließen“,
+  „Die anderen Tabs schließen“, „Nächster Tab“ wie in Firefox. Nicht
+  „Reiter“, das GNOME sagt und sonst niemand, und nicht „Registerkarte“,
+  das ein Formular meint. **Add to a project's tabs…** — „Zu den Tabs eines
+  Projekts hinzufügen…“; **The project's tabs** — „Die Tabs des Projekts“
+- **bookmark** — das Lesezeichen (wie in jedem Browser); **Mark this
+  place** — „Hier ein Lesezeichen setzen“ (nicht „markieren“, das ist
+  *highlight*); **the contents** (das eigene Inhaltsverzeichnis einer
+  Datei) — das Inhaltsverzeichnis; **Bookmarks and contents** — „Lesezeichen
+  und Inhaltsverzeichnis“
+- **print** — drucken, „Drucken…“; **Pages to print** — „Zu druckende
+  Seiten“; **The one page** / **All n pages** — „Die eine Seite“ / „Alle n
+  Seiten“; **From [3] to [10]** — „Von [3] bis [10]“; **Drawing n pages for
+  printing…** — „n Seiten werden für den Druck gezeichnet…“; **Preparing n
+  pages for printing…** (der Umbruch) — „n Seiten werden für den Druck
+  vorbereitet…“; **Stop** — „Anhalten“, wie beim Durchgehen der Dateien
+
+Die Bildbearbeitung:
+
+- **the image editor**, **Edit** — die Bildbearbeitung; „Bearbeiten“
+- **Turn left** / **Turn right** — „Nach links drehen“ / „Nach rechts
+  drehen“; **Flip sideways** / **Flip upside down** — „Seitlich spiegeln“ /
+  „Kopfüber spiegeln“ (spiegeln, wie Bildprogramme es sagen; seitlich und
+  kopfüber statt waagerecht und senkrecht, die zweideutig sind)
+- **Crop** — „Zuschneiden“; **Cut to w × h of W × H** — „Zugeschnitten auf
+  w × h von W × H“
+- **Brightness**, **Contrast**, **Saturation** — Helligkeit, Kontrast,
+  Sättigung; Prozente mit Leerzeichen, „100 %“
+- **As it was** (ein Regler zurück auf 100 %) — „Wie es war“; **Start
+  again** — „Von vorn beginnen“
+- **Keep as a new file** — „Als neue Datei behalten“; **Kept as …** —
+  „Behalten als …“; **Leave without keeping?** — „Verlassen, ohne zu
+  behalten?“. *Behalten* wie „Beide behalten“, nicht „speichern“: das
+  Englische meidet *save*, und nichts am alten Bild wird angerührt.
+- **(edited)**, **(edited 2)** (im Dateinamen einer Kopie) — „(bearbeitet)“,
+  „(bearbeitet 2)“; **(smaller)** — „(verkleinert)“; beide klein, als
+  Partizipien hinter dem Namen; die Klammern setzt das Programm
+- **a copy made smaller** — eine verkleinerte Kopie; **Make a smaller
+  copy** — „Eine verkleinerte Kopie anlegen“
+- **Versions** (im Menü einer Abbildung: das Original und die Kopien
+  daraus) — „Fassungen“, wie *version* im Verlauf
+- **SVG, a drawing** — „SVG, eine Zeichnung“; eine Zeichnung hat keine
+  Pixel
+- **pixels** — die Pixel; „1600 × 1200“
+
+Ein Ort für Dateien:
+
+- **View** (am Kopf der Dateien) — „Ansicht“; **List** — „Liste“;
+  **Thumbnails** — „Vorschaubilder“ (nicht „Miniaturansichten“, das
+  Windows-Wort, und nicht „Miniaturen“, die gemalt sind); **Small**,
+  **Medium**, **Large** — „Klein“, „Mittel“, „Groß“; **Include
+  subfolders** — „Mit Unterordnern“; **No preview for this kind of
+  file** — „Keine Vorschau für diese Art von Datei“
+- **Used in** — „Verwendet in“: „Eine Abbildung in „…““, „Eine Abbildung in
+  3 Projekten“, „Noch nicht verwendet“
+- **What it shows, in words** (die Worte für Leser, die es nicht sehen) —
+  „Was es zeigt, in Worten“
+- **Made from** (vor dem Namen der Datei, aus der eine Kopie gemacht
+  wurde) — „Entstanden aus“; **Copies made from it** — „Daraus entstandene
+  Kopien“
+- **Read** (eine Datei in der Bibliothek selbst lesen) — „Lesen“; **Back to
+  the files** — „Zurück zu den Dateien“
+- **People**, **Year**, **Title**, **Publisher** (die Spalten einer Datei
+  nach ihrer Quelle) — „Personen“, „Jahr“, „Titel“, „Verlag“
+- **tr. Smith** (die Übersetzer nach den Autoren, kurz: *Lord; tr.
+  Smith*) — „Übers. Smith“, die Abkürzung der deutschen Bibliografien und
+  Kataloge, neben „(Hrsg.)“
+- **Name by the reference** / **Name by their references** — „Nach der
+  Quelle benennen“ / „Nach ihren Quellen benennen“
+- **Images** (der Ordner, in den die Bilder des alten Fundus kamen) —
+  „Bilder“; **Library** (die dritte Wahl der Bilder neben einem Projekt) —
+  „Bibliothek“
+
+Mindmaps und das Diagramm als Bild:
+
+- **mind map** (eine Datei von Freeplane, FreeMind oder XMind) — die
+  Mindmap, die Mindmaps. Die eigenen Karten bleiben *Karten*; die der
+  anderen Programme heißen, wie Duden und die Programme sie nennen. **Open
+  a mind map…** — „Mindmap öffnen…“; **Save as a mind map…** — „Als Mindmap
+  speichern…“; **Freeplane and FreeMind**, **XMind**, **OPML** bleiben
+- **left out** — weggelassen, wie zuvor. Was die Programme eigen haben, wie
+  ihre deutschen Oberflächen es sagen: **cloud** — die Wolke (Freeplane);
+  **summary** — die Zusammenfassung (Freeplane und XMind; der Zusammenhang
+  trennt sie vom *abstract*); **boundary** — der Rahmen (XMind);
+  **hyperlink** — der Link zu einer Webseite oder einer Datei; **icon** —
+  das Symbol (Freeplane), **marker** — der Marker (XMind); **attribute** —
+  das Attribut (Freeplane), die Namen „Kind“, „Time“ und „Left out“ bleiben
+  englisch, in Anführungszeichen; **label** — das Label (XMind; nicht
+  „Etikett“, das ist *chip*); **topic** — das Thema (XMind); **association**
+  — die Verbindung, wie zuvor; **images** — Bilder; **pictures in texts** —
+  Bilder in Texten (ihre Beschriftungen bleiben erhalten)
+- **Save the diagram as SVG…** / **as an image…** — „Das Diagramm als SVG
+  speichern…“ / „Das Diagramm als Bild speichern…“; **PNG image** —
+  „PNG-Bild“; „…, 2400 × 1600 Pixel“
+
+Aussehen:
+
+- **Numbers from the text** / **Annotations from the text** (zwei Längen
+  unter den Zeilennummern, in Zentimetern) — „Abstand der Nummern vom Text“
+  / „Abstand der Randbemerkungen vom Text“
+
+Der Kern:
+
+- **io-too-large** — „… ist größer als n MB, mehr wird nicht gelesen“;
+  **zip archive** — das Zip-Archiv
+
 ## Namen, die nicht übersetzt werden
 
 Glaukopis; Pandoc, Typst, Tesseract, Hunspell, LaTeX, LuaLaTeX, BibLaTeX,
 Zotero, CSL, Markdown; die Namen der Dateiformate (DOCX, ODT, PDF, EPUB,
 RTF, HTML, SVG, PNG); Schriftnamen; Zitierstile (APA, Chicago, MLA); DOI,
-ISBN, ISSN, arXiv, URL.
+ISBN, ISSN, arXiv, URL; Freeplane, FreeMind, XMind, OPML.

@@ -227,3 +227,34 @@ home-delete-many-confirm = プロジェクトを削除
 
 ## 側、ペイン、バーの第3段階（エージェント「bars」）
 home-share = 共有…
+
+## ほかのプログラムのマインドマップ：Freeplane、FreeMind、XMind をプロジェクトとして開き、プロジェクトをそれらと OPML として保存する（エージェント「mindmaps」）
+home-mindmap-open = マインドマップを開く…
+home-mindmap-open-title = マインドマップを開く
+home-mindmap-filter = マインドマップ（Freeplane、FreeMind、XMind）
+home-mindmap-open-failed = マインドマップを開けませんでした
+home-menu-save-mindmap = マインドマップとして保存…
+home-mindmap-save-title = プロジェクトをマインドマップとして保存
+home-mindmap-filter-freeplane = FreeplaneとFreeMind
+home-mindmap-filter-xmind = XMind
+home-mindmap-filter-opml = OPML
+home-mindmap-saved = 「{ $name }」をマインドマップとして保存しました
+home-mindmap-save-failed = プロジェクトをマインドマップとして保存できませんでした
+home-mindmap-not-a-map = 「{ $name }」はFreeplane、FreeMind、XMindのマインドマップではありません。
+# マインドマップを開いた後、下の行の上に言う。
+home-mindmap-left-out = マインドマップの中身のうち、プロジェクトに置き場所のないものは除外しました：
+# プロジェクトをマインドマップとして保存した後、下の行の上に言う。
+home-mindmap-left-out-saving = プロジェクトの中身のうち、マインドマップに置き場所のないものは除外しました：
+home-mindmap-left-out-images = 画像{ $count }枚
+home-mindmap-left-out-pictures = テキスト内の画像{ $count }枚（キャプションは残しました）
+home-mindmap-left-out-clouds = クラウド{ $count }個
+home-mindmap-left-out-summaries = サマリー{ $count }個
+home-mindmap-left-out-boundaries = 囲み{ $count }個
+home-mindmap-left-out-hyperlinks = ウェブページやファイルへのリンク{ $count }個
+home-mindmap-left-out-icons = Glaukopisの知らないアイコンやマーカー{ $count }個
+# 「Kind」「Time」「Left out」は、Glaukopis が読み書きする属性の名前。どの言語でも同じ。
+home-mindmap-left-out-attributes = Kind、Time、Left out以外の属性{ $count }個
+home-mindmap-left-out-labels = 2つ目以降のラベル{ $count }個（最初のラベルは種類になりました）
+home-mindmap-left-out-times = 読み取れなかった時期{ $count }件
+home-mindmap-left-out-associations = そこにないトピックへの関連付け{ $count }件
+home-mindmap-left-out-references = 図や部分への相互参照{ $count }件（そこには指すものがありません）

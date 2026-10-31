@@ -353,3 +353,7 @@ format-verse-annotations-other = Motsett side av numra
 
 ## Where a line begins, stage 4: the step of an indent.
 format-indent-step = Innrykkstrinn
+
+# The distance of the numbers and the annotations from the text (docs/plans/the-distance-of-numbers-and-annotations.md).
+format-verse-numbers-gap = Numra frå teksten
+format-verse-annotations-gap = Merknadene frå teksten

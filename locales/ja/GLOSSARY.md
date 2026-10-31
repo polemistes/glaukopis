@@ -359,6 +359,91 @@
   「フラクトゥール（亀の子文字）、ドイツ語」；**the Fraktur model** —
   フラクトゥール・モデル
 
+## 2026-10-31 の追加：側に表示したファイル、タブ、ブックマーク、画像の編集、マインドマップ、印刷
+
+- **a file in a view / the viewer** — 側に表示したファイル。ウィンドウの
+  片側（側）はマップの代わりにライブラリのファイル（PDF、画像）を表示できる。
+  インターフェースに「ビューアー」という語は出さず、「ファイル」「ファイルの
+  表示」と言う。**the view**（ズームで言う、ファイルを表示している側）—
+  表示（**As wide as the view** 幅に合わせる；**The whole image in the
+  view** 画像全体を表示）。**Show the file** — ファイルを表示；
+  **Open in another program** — 別のプログラムで開く；**locked**（パスワード
+  を求めるファイル）— パスワードを求める
+- **drawn**（ページが）— 描く（「このページを描けませんでした」「印刷のために
+  { $count }ページを描いています…」）。「描画」はSVGのこと（下）に取っておく
+- **Page { $page } of { $count }** — 「{ $count }ページ中{ $page }ページ」；
+  印刷上のページ番号（**printed**）はその後に全角括弧で「（xiv）」；
+  **Go to page** — ページへ移動
+- **zoom** — ズーム（既出）；**Zoom, in percent** — ズーム（%）；
+  **Choose a zoom** — ズームを選ぶ。百分率は「{ $percent }%」（スペースなし）
+- **tab** — タブ；**the tabs of a project** — プロジェクトのタブ
+  （**The tabs of { $name }** 「{ $name }のタブ」；**The project's tabs**
+  プロジェクトのタブ；**Add to a project's tabs…** プロジェクトのタブに追加…；
+  **Add files to the tabs** タブにファイルを追加）；**The tab's menu** —
+  タブのメニュー；**Close the tab** — タブを閉じる；**Close the other
+  tabs** — ほかのタブを閉じる；**Open again in a new tab** — 新しいタブで
+  もう一度開く；**Show in the library** — ライブラリで表示；**No longer
+  in the library** — もうライブラリにありません
+- **bookmark** — ブックマーク；**Mark this place** — この場所をブックマーク
+  （キーの名も同じ）；**Bookmarks and contents** — ブックマークと目次；
+  **the contents**（ファイル自身の目次）— 目次（文書の「目次」と同じ語）；
+  **The bookmark's name** — ブックマークの名前；既定の名前 **Page 12** —
+  「12ページ」
+- **Files of the library**（ファイルのバーのメニュー）— ライブラリのファイル；
+  **Find a file** — ファイルを探す；**Back to the files** — ファイルの一覧に戻る
+- **the image editor** — 画像の編集；**Edit** — 編集；**Turn left / Turn
+  right** — 左に回転 / 右に回転；**Flip sideways** — 左右反転；**Flip
+  upside down** — 上下反転；**Crop** — 切り抜き（「切り取り」は cut なので
+  使わない）；**Cut to w × h of W × H** — 「W × Hのうちw × hに切り抜く」
+  （× の前後の半角スペースは英語のまま）；**Brightness** — 明るさ；
+  **Contrast** — コントラスト；**Saturation** — 彩度；**As it was**
+  （一つのスライダーを100%に）— 元の値に戻す（「元に戻す」Undo と区別）；
+  **Start again** — 最初からやり直す；**Keep as a new file** — 新しい
+  ファイルとして保存；**Kept as { $name }** — 「{ $name }として保存しました」；
+  **Leave without keeping?** — 保存せずに終了しますか？；**Leave** — 終了
+- **version**（図の画像の、原本とそこから作ったコピー）— バージョン（図の
+  メニューの **Versions** も「バージョン」）；**a copy made smaller** —
+  縮小したコピー；**Make a smaller copy** — 縮小したコピーを作る
+- **edited / smaller**（ファイル名に入る語。括弧はプログラムが付ける）—
+  編集済み / 縮小（「plate (編集済み).jpg」「plate (縮小).jpg」）
+- **a drawing**（SVG、ピクセルのない画像）— 描画（SVG）（core-ocr と同じ）；
+  **SVG, a drawing** — SVG（描画）
+- **thumbnails** — サムネイル；**List**（ファイルの表示）— 一覧；
+  **Small / Medium / Large** — 小 / 中 / 大；**Include subfolders** —
+  サブフォルダーも含める；**By kind** — 種類順；**View**（ファイルの頭の
+  ボタン）— 表示
+- **Used in**（ファイルがどこで図になっているか）— 使用先（**A figure in
+  { $project }** 「{ $project }の図」；**Not used yet** まだ使われていません）
+- **Pixels** — ピクセル（「{ $width } × { $height }」）；**What it shows,
+  in words**（見られない人のための言葉）— 内容を言葉で
+- **Made from**（コピーの元になったファイルの名前の前に）— 作成元；
+  **Copies made from it** — このファイルから作ったコピー；**Read**
+  （ファイルをライブラリの中で読む）— 読む（文字認識の「読み取る」とは別）
+- ファイルの列 **People / Year / Title / Publisher** — 著者等 / 年 /
+  タイトル / 出版社；**tr. { $names }**（著者の後の訳者。日本の書誌の
+  とおり名前の後に）— 「{ $names }訳」（スペースなし）；**Name by the
+  reference** — 文献に基づいて名前を付ける
+- **mind map** — マインドマップ；Freeplane、FreeMind、XMind、OPML は
+  そのまま；**left out**（マインドマップとプロジェクトのあいだで置き場所の
+  ないもの）— 除外する（文書の「除外」と同じ語）。それらのプログラムの
+  もの：**cloud** — クラウド（Freeplane）；**summary** — サマリー；
+  **boundary** — 囲み（XMind）；**hyperlink** — ウェブページやファイルへの
+  リンク；**icon / marker** — アイコン / マーカー；**attribute** — 属性
+  （Freeplane）；**label** — ラベル（XMind）；**association** — 関連付け
+  （Glaukopis の語）；**topic** — トピック；**pictures in texts** —
+  テキスト内の画像
+- **Save the diagram as SVG… / as an image…** — ダイアグラムをSVGとして
+  保存… / 画像として保存…；**PNG image** — PNG画像；大きさは
+  「{ $width } × { $height }ピクセル」
+- **printing** — 印刷；**Print…** — 印刷…；**Print**（キー）— 印刷；
+  **Pages to print** — 印刷するページ；**The one page** — この1ページ；
+  **All n pages** — 全{ $count }ページ；**From [3] to [10]**（二つの欄の
+  まわりの語。日本語では「ページ [3] ～ [10]」）— 「ページ」と「～」；
+  **Preparing / Drawing n pages for printing…** — 印刷のために
+  { $count }ページを準備しています… / 描いています…
+- 見た目の二つの長さ：**Numbers from the text** — 番号と本文の間隔；
+  **Annotations from the text** — 注記と本文の間隔（センチメートル）
+
 ## Glaukopisの文言
 
 - **the words / strings**（インターフェースの）— 文言；**a message**

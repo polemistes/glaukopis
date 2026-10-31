@@ -431,3 +431,78 @@ files-reveal-failed = Le dossier n’a pas pu être affiché
 files-export = Exporter…
 files-export-chosen = Exporter ces { $count }…
 files-export-all = Exporter tous les fichiers…
+
+## A file shown in a side of the window (2026-10-26).
+
+files-show = Ajouter aux onglets d’un projet…
+files-open-elsewhere = Ouvrir dans un autre logiciel
+
+# One place for files: images are files of the library (ADR 0070).
+files-add-images = Ajouter des images…
+# After images were taken in to be figures; $name is the first of them.
+files-images-taken-in = { $count ->
+    [one] « { $name } » est dans la bibliothèque
+    [many] { $count } images sont dans la bibliothèque
+   *[other] { $count } images sont dans la bibliothèque
+}
+
+# One place for files, the view (ADR 0070).
+files-view = Affichage
+files-as-list = Liste
+files-as-grid = Vignettes
+files-size-small = Petites
+files-size-medium = Moyennes
+files-size-large = Grandes
+files-include-subfolders = Inclure les sous-dossiers
+files-sort-kind = Par type
+# Where a file is used, where it belongs to no reference: as a figure.
+files-column-used = Utilisé dans
+files-used-figure = Une figure dans { $project }
+files-used-figures = Une figure dans { $count } projets
+files-used-nowhere = Pas encore utilisé
+files-pixels-label = Pixels
+files-pixels = { $width } × { $height }
+files-alt = Ce qu’il montre, en mots
+files-preview-none = Pas d’aperçu pour ce type de fichier
+# Before the name of the file a copy was made from, to be a figure, by editing or to be smaller; the name is a link.
+files-made-from = Fait à partir de
+# Said when a file that is a figure in projects is to be removed.
+files-remove-used = { $count ->
+    [one] C’est une figure dans un projet, où rien ne s’affichera à sa place.
+    [many] C’est une figure dans { $count } projets, où rien ne s’affichera à sa place.
+   *[other] C’est une figure dans { $count } projets, où rien ne s’affichera à sa place.
+}
+
+# A simple image editor (docs/plans/a-simple-image-editor.md): the copies made from a file, as links.
+files-copies = Copies faites à partir de ce fichier
+
+# The tabs opened, files by their references, a file read in the library (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
+files-read = Lire
+files-column-people = Personnes
+files-column-year = Année
+files-column-title = Titre
+files-column-publisher = Éditeur
+files-sort-year = Par année
+files-sort-title = Par titre
+files-sort-publisher = Par éditeur
+# The translators after the authors or editors: "Lord; tr. Smith".
+files-translated = trad. { $names }
+
+# Files by their references, named on request, and a menu of projects for the tabs.
+files-tabs-no-project = Aucun projet où l’ajouter
+files-added-to-tabs = Ajouté aux onglets de « { $project } »
+files-already-in-tabs = Déjà dans les onglets de « { $project } »
+files-show-tabs = Afficher
+files-name-by-reference = Nommer d’après la référence
+files-name-by-references = Nommer d’après leurs références
+files-named = { $count ->
+    [one] Un fichier nommé d’après sa référence
+    [many] { $count } fichiers nommés d’après leurs références
+   *[other] { $count } fichiers nommés d’après leurs références
+}
+files-named-kept = { $count ->
+    [one] Un fichier sans référence a gardé son nom
+    [many] { $count } fichiers sans référence ont gardé leur nom
+   *[other] { $count } fichiers sans référence ont gardé leur nom
+}
+files-named-none = Les fichiers portaient déjà le nom de leur référence

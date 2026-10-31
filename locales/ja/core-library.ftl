@@ -64,3 +64,16 @@ core-library-assign-stored-gone = 「{ $name }」を文献に割り当てられ�
 core-library-files-unreadable = ライブラリのファイルの記録を読み取れなかったため、{ $path }として別に取っておきました：{ $message }
 # The library file has bytes that are not UTF-8, as an editor that saves in Latin-1 writes them; $aside is the name of the copy kept in the same folder.
 core-library-not-utf8 = { $path }には、UTF-8でない文字が含まれています。別のエンコーディングで保存するエディターが書き込むような文字です。これらは�として読み取られ、そのまま書き込まれます。元のままのファイルは、同じフォルダーに{ $aside }として残してあります。
+
+# One place for files (ADR 0070).
+# A file of a kind that has no thumbnail, or one that could not be read for it; the interface shows the kind's icon instead.
+core-library-no-small = この種類のファイルは小さく表示されません
+# The folder the images of the old store of pictures are put in, at the top of the files of the library.
+core-library-images-folder = 画像
+# An image of the old store of pictures whose file was not there when it was taken into the library.
+core-library-picture-missing = 「{ $name }」をライブラリに収められませんでした。ファイルが見つかりません。
+# An image of the old store of pictures whose file does not hold what its name says.
+core-library-picture-not-itself = 「{ $name }」をライブラリに収められませんでした。ファイルの中身が、もとの画像ではありません。
+# Bookmarks in a file (sources in tabs, 2026-10-29).
+core-library-too-many-bookmarks = 一つのファイルに付けられるブックマークは{ $most }個までです。
+core-library-bookmark-no-place = ブックマークはファイルのページに付ける必要があります。

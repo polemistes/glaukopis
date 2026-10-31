@@ -35,6 +35,9 @@ io-backing-up = { $path }のバックアップ
 io-setting-aside = { $path }の退避
 io-storing = { $path }の保存
 io-no-directory = { $path }には親フォルダーがありません
+# $most はメガバイト。
+io-too-large = { $path }は{ $most } MBを超えています。読み込めるのは{ $most } MBまでです
+io-not-an-archive = { $path }はzipアーカイブではありません：{ $error }
 
 ## アプリケーション自身のファイルで、読み込めなかったもの：名前に時刻を
 ## 加えて退避し、アプリケーションはそれなしで続ける。ウィンドウの下端に

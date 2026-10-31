@@ -39,3 +39,18 @@ diagram-pasted-elsewhere = Det, der blev kopieret, er fra et andet projekt og ka
 # The tooltips of the mark that folds an element in the diagram.
 diagram-unfold-sub = Fold underelementerne ud
 diagram-fold-sub = Fold underelementerne sammen
+
+## The diagram as a picture (2026-10-26).
+
+diagram-save-svg = Gem diagrammet som SVG…
+diagram-save-image = Gem diagrammet som et billede…
+diagram-save-svg-title = Gem diagrammet som SVG
+diagram-save-image-title = Gem diagrammet som et billede
+diagram-file-svg = SVG
+diagram-file-png = PNG-billede
+# $name is the name of the file.
+diagram-saved = Diagrammet blev gemt som »{ $name }«
+diagram-saved-size = Diagrammet blev gemt som »{ $name }«, { $width } × { $height } pixel
+diagram-saved-no-fonts = Skrifterne kunne ikke lægges ind i filen: den vises med skrifterne hos den, der åbner den.
+diagram-save-failed = Diagrammet kunne ikke gemmes
+diagram-too-large-for-image = Kortet er for stort til et billede: gem det som SVG.

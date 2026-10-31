@@ -205,6 +205,96 @@ prosjekt hadde vorte eitt tre.
 - **Default …** — **Standard …**: «Standard dokumenttype», «Standard
   utsjånad», «Standard referansestil», «Ingen: som dokumenttypen har det»
 
+## Nytt 2026-10-31: ei fil i ei vising, fanene, bokmerke, biletredigeringa, tankekart, utskrift
+
+- **a file in a view** — **ei fil i ei vising**: ei side av vindauget kan
+  vise ei fil frå biblioteket, ein PDF eller eit bilete, i staden for eit
+  kart; «Vis fila». **the viewer** — **filvisinga** (ei filvising,
+  filvisinga): sidene i fila med lina over dei. I meldingane oftast berre
+  **visinga**: «Så brei som visinga», «Heile biletet i visinga». Som i
+  bokmål («visningen»)
+- **the bar** (over fila) — **lina** (ei line, lina): «knappen i lina»
+- **tab** — **fane** (ei fane, fana, faner, fanene), som nettlesarane seier;
+  **the tabs of a project** — **fanene til prosjektet**: filene som er
+  lagde til prosjektet frå biblioteket, kvar på sin eigen stad; «Legg til i
+  fanene til eit prosjekt …», «Fanene til «…»», «Lukk fana», «Lukk dei
+  andre fanene», «Opne att i ei ny fane». Som i bokmål
+- **bookmark** — **bokmerke** (eit bokmerke, bokmerket, bokmerke, bokmerka):
+  ein stad, ei side, i ei fil, teke vare på med fila i biblioteket; «Merk
+  denne staden», «Gi nytt namn», «Fjern». Som i bokmål
+- **the contents** (of a file) — **innhaldet**, **innhaldslista** til fila
+  sjølv: «Bokmerke og innhald», «Fila har inga eiga innhaldsliste». Som
+  `document-contents` («Innhald»)
+- **drawn** (pages) — **teikna**: sidene blir teikna, «Denne sida kunne
+  ikkje teiknast», «Teiknar { $count } sider for utskrift …»
+- **locked** — fila **ber om eit passord**
+- **zoom** — **forstørring**, som før: «Forstørring», «Forstørring i
+  prosent», «Vel ei forstørring»; **As wide as the view** — **Så brei som
+  visinga**; **The whole image in the view** — **Heile biletet i visinga**
+- **Files of the library** (menyen i lina) — **Filene i biblioteket**;
+  «Finn ei fil»
+- **the image editor** — **biletredigeringa**; knappen **Rediger**. Dei seks
+  handlingane: **Turn left/right** — **Drei til venstre / Drei til høgre**;
+  **Flip sideways** — **Spegelvend**; **Flip upside down** — **Snu opp
+  ned**; **Crop** — **Skjer til** (skjere – skar – skore): «Skore til 800 ×
+  600 av 1600 × 1200»; **Brightness** — **Lysstyrke**; **Contrast** —
+  **Kontrast**; **Saturation** — **Metting** (fargemetting). **As it was**
+  — **Som det var**; **Start again** — **Byrj på nytt**; **Keep as a new
+  file** — **Ta vare på som ny fil** (nynorsk har ikkje *behalde*);
+  «Teke vare på som …»
+- **edited**, **smaller** (i filnamn) — **redigert**, **mindre**: «plate
+  (redigert).jpg», «plate (redigert 2).jpg», «plate (mindre).jpg»
+- **version** (av biletet i ein figur) — **versjon** (ein versjon, versjonen,
+  versjonar): originalen og kopiane som er laga av den; menyen **Versjonar**
+- **a smaller copy** — **ein mindre kopi**: «Lag ein mindre kopi»
+- **a drawing** (SVG) — **ei teikning**: «SVG, ei teikning»; ei teikning har
+  ingen pikslar å redigere. **pixels** — **pikslar** (ein piksel, pikslane)
+- **the Files view** — **Vising**: **Liste** eller **Miniatyrar** (ein
+  miniatyr, miniatyren, miniatyrar, miniatyrane), **Små**, **Middels**,
+  **Store**; «Ta med undermappene»; «Etter type». Som i bokmål
+- **Used in** — **Brukt i**: «Ein figur i «…»», «Ein figur i { $count }
+  prosjekt», «Ikkje brukt enno»
+- **What it shows, in words** — **Kva det viser, med ord**, som
+  `figures-shows-placeholder` («Med ord, for dei som ikkje kan sjå det»)
+- **Made from** — **Laga av**, framfor namnet på fila ein kopi er laga av;
+  **Copies made from it** — **Kopiar laga av den**. Som i bokmål
+- **Read** (ei fil i biblioteket) — **Les**
+- **tr.** — **oms.**, som `style.ftl` alt seier («red.», «oms.»): «Lord;
+  oms. Smith». Bokmål: «overs.»
+- **Name by the reference** — **Gi namn etter referansen**, **Gi namn etter
+  referansane**
+- **mind map** — **tankekart** (eit tankekart, tankekartet, tankekart,
+  tankekarta): ei fil frå **Freeplane**, **FreeMind** eller **XMind**, namna
+  som dei er; **OPML** likeins
+- **left out** — **utelate** (utelaten, utelate, utelatne), som
+  `core-import.ftl` alt seier: «… vart utelate:». Det som ikkje har nokon
+  plass: **images** — **bilete**; **pictures in texts** — **bilete i
+  tekstar** (biletteksten vart teken vare på); **clouds** — **skyer** (ei
+  sky); **summaries** — **samandrag**; **boundaries** — **avgrensingar** (ei
+  avgrensing); **hyperlinks** — **lenkjer til nettsider eller filer**;
+  **icons** — **ikon** (eit ikon, ikona); **attributes** — **attributt**
+  (eit attributt, attributta); **labels** — **etikettar** (ein etikett), for
+  å skilje dei frå merkelappane på mapper og slag; **times** —
+  **tidspunkt**; **associations** — **assosiasjonar**, som `text.ftl`;
+  **references to figures or parts** — **kryssreferansar til figurar eller
+  delar**
+- **the diagram as a picture** — **diagrammet som bilete**: «Lagre
+  diagrammet som SVG …», «Lagre diagrammet som bilete …»; «PNG-bilete»;
+  **the fonts** — **skriftene**
+- **print** — **skrive ut** (skriv ut, skreiv ut, skrive ut); knappen og
+  menyvalet **Skriv ut …**; **printing** — **utskrift** (ei utskrift,
+  utskrifta); **Pages to print** — **Sider som skal skrivast ut**; «Den eine
+  sida», «Alle { $count } sidene»; «Frå [3] til [10]»; «Førebur { $count }
+  sider for utskrift …»
+- **Numbers from the text**, **Annotations from the text** (to lengder i
+  Utsjånad, i centimeter) — **Numra frå teksten**, **Merknadene frå
+  teksten**
+- **the store** (of pictures) — biletlageret er gått inn i biblioteket:
+  bilete er filer i biblioteket som alle andre, og dei frå det gamle lageret
+  ligg i mappa **Bilete** (`core-library-images-folder`). Meldingane som
+  nemner *lageret* frå før, står som dei er
+- **Open in another program** — **Opne i eit anna program**
+
 ## Referansar og tilvisingar
 
 - **the library** — biblioteket

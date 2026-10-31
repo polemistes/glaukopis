@@ -568,3 +568,6 @@ library-resize-detail = Trascina per allargare o restringere il riquadro a destr
 
 # Importing a file of references: .bib, BibLaTeX or BibTeX.
 library-import-bibtex = Importa Bib(La)TeX…
+
+# The files of a reference in its pane (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
+library-pane-add-to-tabs = Aggiungi alle schede di un progetto…

@@ -363,6 +363,109 @@ est devenu **Propriétés du document** ; « Ouvrir comme carte » est devenu
   **diminuer le retrait**
 - **Indent first line** → **Retrait de la première ligne**
 
+## Un fichier dans un côté, les onglets, les images, les cartes mentales (0.2.8)
+
+- **a file in a view** → un **fichier affiché dans un côté** : un côté de
+  la fenêtre montre un fichier de la bibliothèque, PDF ou image, au lieu
+  d’une carte. **the viewer** (sa barre et ses pages) → la **visionneuse**,
+  le mot des logiciels en français ; dans l’interface on dit plutôt « le
+  fichier », « dans un fichier » (la place des touches).
+- **Show the file** → **Afficher le fichier** ; **the document of the
+  other side** → **le document de l’autre côté**
+- **tab** → l’**onglet**, comme plus haut ; **the tabs of a project** →
+  les **onglets du projet** : « Ajouter aux onglets d’un projet… », « Les
+  onglets de { $name } », « Fermer l’onglet », « Fermer les autres
+  onglets », « Ouvrir de nouveau dans un nouvel onglet », « N’est plus
+  dans la bibliothèque »
+- **bookmark** → le **signet**, le mot des lecteurs de PDF (Acrobat,
+  Okular) ; pas « marque-page », qui est celui des navigateurs. « Marquer
+  cet endroit », « Le nom du signet », « Supprimer ».
+- **the contents of a file** (its own table of contents) → la **table des
+  matières** du fichier ; **Bookmarks and contents** → **Signets et table
+  des matières**
+- **drawn** (pages) → **dessinées** : « Cette page n’a pas pu être
+  dessinée », « Dessin de 12 pages pour l’impression… », comme le dit déjà
+  la lecture des PDF
+- **locked** (a file that asks for a password) → **demande un mot de
+  passe**
+- **zoom** → le **zoom**, comme plus haut ; **As wide as the view** →
+  **Ajuster à la largeur**, comme dans la composition ; **The whole image
+  in the view** → **L’image entière** ; **Zoom, in percent** → **Zoom, en
+  pourcentage** ; « 100 % » avec une espace fine insécable
+- **Go to page** → **Aller à la page** ; **Page 3 of 271** → **Page 3
+  sur 271**, le numéro imprimé entre parenthèses après
+- **Edit** (an image) → **Modifier** ; **the image editor** → la
+  **modification d’une image**. Ses actes : **Turn left** / **Turn right**
+  → **Tourner à gauche** / **Tourner à droite** ; **Flip sideways** /
+  **Flip upside down** → **Retourner horizontalement** / **Retourner
+  verticalement**, comme les visionneuses d’images ; **Crop** →
+  **Recadrer** (pas « rogner », le mot de Word) ; **Cut to 800 × 600 of
+  1600 × 1200** → **Recadré à 800 × 600 sur 1600 × 1200** ; **Brightness**
+  → **Luminosité** ; **Contrast** → **Contraste** ; **Saturation** →
+  **Saturation** ; **As it was** → **Comme à l’origine** (un curseur remis
+  à 100 %) ; **Start again** → **Recommencer** ; **Keep as a new file** →
+  **Garder comme nouveau fichier** ; **Leave without keeping?** →
+  **Quitter sans garder ?**
+- **edited** / **smaller** (in a file's name) → **modifiée** / **réduite** :
+  « planche (modifiée).jpg », « planche (réduite).jpg » ; **a copy made
+  smaller** → une **copie réduite** ; **Make a smaller copy** → **Faire une
+  copie plus petite** ; **Too large to be edited** → **Trop grande pour
+  être modifiée**
+- **a version** (of a figure's image) → une **version** ; **Versions** →
+  **Versions** : l’original et les copies qui en sont faites, avec leur
+  taille
+- **SVG, a drawing** → **SVG, un dessin** ; un dessin n’a pas de pixels
+- **thumbnails** → les **vignettes** (le mot ancien de l’imprimerie, et
+  celui de Firefox et de LibreOffice) ; pas « miniatures », celui de
+  Windows. **Small** / **Medium** / **Large** → **Petites** / **Moyennes**
+  / **Grandes** ; **List** → **Liste** ; **View** → **Affichage**, comme
+  dans le diagramme ; **Include subfolders** → **Inclure les
+  sous-dossiers** ; **By kind** → **Par type**
+- **Used in** → **Utilisé dans** (le fichier) : « Une figure dans
+  { $project } », « Une figure dans 3 projets », « Pas encore utilisé »
+- **Pixels** → **Pixels** ; **What it shows, in words** → **Ce qu’il
+  montre, en mots** ; **No preview for this kind of file** → **Pas d’aperçu
+  pour ce type de fichier**
+- **Made from** → **Fait à partir de** (devant le nom du fichier d’où une
+  copie vient) ; **Copies made from it** → **Copies faites à partir de ce
+  fichier** ; **Read** (a file, in the library itself) → **Lire**
+- **People** / **Year** / **Title** / **Publisher** (columns of the files)
+  → **Personnes** / **Année** / **Titre** / **Éditeur** ; **tr.** (the
+  translators after the authors) → **trad.**, l’abréviation des
+  bibliographies françaises : « Lord ; trad. Smith »
+- **Name by the reference** / **Name by their references** → **Nommer
+  d’après la référence** / **Nommer d’après leurs références**
+- **mind map** → la **carte mentale** ; **Freeplane**, **FreeMind**,
+  **XMind** et **OPML** restent eux-mêmes ; **Open a mind map…** → **Ouvrir
+  une carte mentale…** ; **Save as a mind map…** → **Enregistrer comme
+  carte mentale…**
+- **left out** (what has no place on the other side) → **laissé de côté**.
+  Les choses propres à ces logiciels, dites comme leur interface française
+  les dit : **clouds** → les **nuages** (Freeplane) ; **summaries** → les
+  **résumés** (Freeplane et XMind ; ici ceux de la carte, pas l’abstract) ;
+  **boundaries** → les **limites** (XMind) ; **hyperlinks** → les **liens**
+  vers une page web ou un fichier ; **icons** → les **icônes** ou
+  **marqueurs** (XMind) ; **attributes** → les **attributs** (Freeplane ;
+  « Kind », « Time » et « Left out » gardent leur nom anglais dans toutes
+  les langues) ; **labels** → les **étiquettes** (XMind) ;
+  **associations** → les **associations**, le mot de Glaukopis ; **times
+  that could not be read** → les **datations** qui n’ont pas pu être lues ;
+  **references to figures or parts** → les **renvois** à des figures ou à
+  des parties ; **pictures in texts** → les **images dans des textes**
+  (dont les légendes sont gardées), **images** → les **images** (les
+  fichiers)
+- **Save the diagram as SVG…** / **as an image…** → **Enregistrer le
+  diagramme en SVG…** / **comme image…** (une image PNG), avec sa taille
+  en pixels
+- **Print…** → **Imprimer…** ; **Pages to print** → **Pages à imprimer** ;
+  **The one page** / **All n pages** → **La seule page** / **Toutes les n
+  pages** ; **From [3] to [10]** → **De [3] à [10]** ; **Preparing n pages
+  for printing…** → **Préparation de n pages pour l’impression…** ;
+  **Stop** → **Arrêter**
+- **Numbers from the text** / **Annotations from the text** (Look, the two
+  lengths) → **Distance des numéros au texte** / **Distance des annotations
+  au texte**, en centimètres
+
 ## Les noms qui ne se traduisent pas
 
 Glaukopis ; Pandoc, Typst, Tesseract, Hunspell, LaTeX, LuaLaTeX, BibLaTeX,

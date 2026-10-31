@@ -113,6 +113,7 @@ keys-list-undo = フォルダーとプロジェクトへの操作を元に戻す
 keys-list-redo = フォルダーとプロジェクトへの操作をやり直す
 
 ## 側（一覧、パス、閉じたときのままのウィンドウの第4段階）
+keys-close-side = タブ、またはこの側を閉じる
 keys-switch-sides = 左右を入れ替える
 
 ## 側・ペイン・バーの第3段階（エージェント「bars」）
@@ -128,3 +129,18 @@ keys-preview-zoom-fit = ページをペインの幅に合わせる
 
 ## 設定を平易な言葉で、第4段階：種類のキー
 keys-writing-kind = 文書種別がその数字に割り当てた段落の種類
+
+## 側に表示したファイル（2026-10-26）。
+
+keys-place-viewer = ファイルの中
+keys-viewer-next = 次のページ
+keys-viewer-previous = 前のページ
+keys-viewer-first = 最初のページ
+keys-viewer-last = 最後のページ
+
+# タブの中のファイル、ファイルのブックマーク（docs/plans/sources-in-tabs-bookmarks-and-the-scrolling-of-pages.md）。
+keys-viewer-tab-next = 次のタブ
+keys-viewer-tab-previous = 前のタブ
+keys-viewer-bookmark = この場所をブックマーク
+# 印刷（docs/plans/printing.md、記録 0075）。
+keys-print = 印刷

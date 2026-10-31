@@ -196,6 +196,8 @@ project-a-picture = Et billede
 project-not-on-computer = Ikke på denne computer
 project-nothing-said = Der er intet sagt om det endnu
 project-no-pictures = Ingen billeder endnu
+project-no-pictures-map = Billederne i dette korts figurer står her. Bibliotekets billeder står under Bibliotek.
+project-no-pictures-project = Billederne i projektets figurer står her. Bibliotekets billeder står under Bibliotek.
 project-pictures-drag = Træk et billede ind i en tekst for at lave en figur af det dér, eller hen på et element for at sætte det sidst i dets tekst.
 # The count is of the pictures that are used and are not in the store of this computer.
 project-pictures-absent-map = { $count ->
@@ -297,3 +299,19 @@ project-add-child = Tilføj underelement
 project-add-sibling = Tilføj element på samme niveau
 project-delete-promote = Slet og flyt underelementerne op
 project-delete-with = Slet med underelementerne
+
+## A file shown in a side of the window (2026-10-26).
+
+project-show-file = Vis filen
+# Where a work has several files: one item for each, by its name.
+project-show-file-named = Vis »{ $name }«
+# Over the document pane while the side that has the focus shows a file: the document is that of the other side.
+project-document-of-other = Den anden sides dokument
+
+# One place for files (ADR 0070): the third choice of the images at the side of a project, all of the library.
+project-pictures-library = Bibliotek
+project-library-no-images = Biblioteket har ingen billeder
+project-library-no-images-hint = Tilføj billeder fra filer, eller slip dem på en tekst.
+
+# The tabs opened (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
+project-beside-tabs = Projektets faner

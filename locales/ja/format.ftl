@@ -353,3 +353,7 @@ format-verse-annotations-other = 番号と反対側
 
 ## 行の始まる位置、第4段階：字下げ1段の幅。
 format-indent-step = 字下げ1段の幅
+
+# 本文から番号と注記までの距離（docs/plans/the-distance-of-numbers-and-annotations.md）。
+format-verse-numbers-gap = 番号と本文の間隔
+format-verse-annotations-gap = 注記と本文の間隔

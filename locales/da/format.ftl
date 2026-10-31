@@ -353,3 +353,7 @@ format-verse-annotations-other = Modsat numrene
 
 ## Where a line begins, stage 4: the step of an indent.
 format-indent-step = Indrykningstrin
+
+# The distance of the numbers and the annotations from the text (docs/plans/the-distance-of-numbers-and-annotations.md).
+format-verse-numbers-gap = Numrenes afstand fra teksten
+format-verse-annotations-gap = Bemærkningernes afstand fra teksten

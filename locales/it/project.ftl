@@ -205,8 +205,10 @@ project-a-picture = Un'immagine
 project-not-on-computer = Non su questo computer
 project-nothing-said = Non se ne dice ancora nulla
 project-no-pictures = Ancora nessuna immagine
+project-no-pictures-map = Qui sono elencate le immagini delle figure di questa mappa. Quelle della biblioteca sono sotto Biblioteca.
+project-no-pictures-project = Qui sono elencate le immagini delle figure del progetto. Quelle della biblioteca sono sotto Biblioteca.
 project-pictures-drag = Trascina un'immagine in un testo per farne una figura lì, o su un elemento per metterla alla fine del suo testo.
-# The count is of the pictures that are used and are not in the store of this computer.
+# The count is of the images that are used and are not among the files of this computer.
 project-pictures-absent-map = { $count ->
     [one] { $count } in questa mappa non è su questo computer.
     [many] { $count } in questa mappa non sono su questo computer.
@@ -310,3 +312,19 @@ project-add-child = Aggiungi un sottoelemento
 project-add-sibling = Aggiungi un elemento allo stesso livello
 project-delete-promote = Elimina e alza di livello i sottoelementi
 project-delete-with = Elimina con i sottoelementi
+
+## A file shown in a side of the window (2026-10-26).
+
+project-show-file = Mostra il file
+# Where a work has several files: one item for each, by its name.
+project-show-file-named = Mostra «{ $name }»
+# Over the document pane while the side that has the focus shows a file: the document is that of the other side.
+project-document-of-other = Il documento dell'altro lato
+
+# One place for files (ADR 0070): the third choice of the images at the side of a project, all of the library.
+project-pictures-library = Biblioteca
+project-library-no-images = La biblioteca non ha immagini
+project-library-no-images-hint = Aggiungi immagini da file, o lasciale cadere su un testo.
+
+# The tabs opened (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
+project-beside-tabs = Le schede del progetto

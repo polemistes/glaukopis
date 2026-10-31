@@ -35,6 +35,9 @@ io-backing-up = kunne ikke tage sikkerhedskopi af { $path }
 io-setting-aside = kunne ikke lægge { $path } til side
 io-storing = kunne ikke gemme { $path }
 io-no-directory = { $path } ligger ikke i nogen mappe
+# $most is in megabytes.
+io-too-large = { $path } er større end { $most } MB, som er det største, der læses
+io-not-an-archive = { $path } er ikke et zip-arkiv: { $error }
 
 ## A file of the application's own that could not be read: it is set aside,
 ## under its name with the time added, and the application goes on without

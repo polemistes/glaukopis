@@ -259,3 +259,82 @@ home-delete-many-confirm = Elimina i progetti
 
 ## Stage 3 of the sides, the panes and the bars (agent "bars")
 home-share = Condividi…
+
+## Mind maps of other programs: Freeplane, FreeMind and XMind opened as projects, and projects saved as them and as OPML (agent "mindmaps")
+home-mindmap-open = Apri una mappa mentale…
+home-mindmap-open-title = Apri una mappa mentale
+home-mindmap-filter = Mappa mentale (Freeplane, FreeMind, XMind)
+home-mindmap-open-failed = La mappa mentale non si è potuta aprire
+home-menu-save-mindmap = Salva come mappa mentale…
+home-mindmap-save-title = Salva il progetto come mappa mentale
+home-mindmap-filter-freeplane = Freeplane e FreeMind
+home-mindmap-filter-xmind = XMind
+home-mindmap-filter-opml = OPML
+home-mindmap-saved = «{ $name }» è stato salvato come mappa mentale
+home-mindmap-save-failed = Il progetto non si è potuto salvare come mappa mentale
+home-mindmap-not-a-map = «{ $name }» non è una mappa mentale di Freeplane, FreeMind o XMind.
+# Said over the lines below, after a mind map was opened.
+home-mindmap-left-out = Una parte di ciò che la mappa mentale contiene non ha posto in un progetto, ed è stata lasciata fuori:
+# Said over the lines below, after a project was saved as a mind map.
+home-mindmap-left-out-saving = Una parte di ciò che il progetto contiene non ha posto in una mappa mentale, ed è stata lasciata fuori:
+home-mindmap-left-out-images = { $count ->
+    [one] Un'immagine
+    [many] { $count } immagini
+   *[other] { $count } immagini
+}
+home-mindmap-left-out-pictures = { $count ->
+    [one] Un'immagine dentro un testo; la sua didascalia è stata conservata
+    [many] { $count } immagini dentro i testi; le loro didascalie sono state conservate
+   *[other] { $count } immagini dentro i testi; le loro didascalie sono state conservate
+}
+home-mindmap-left-out-clouds = { $count ->
+    [one] Una nuvola
+    [many] { $count } nuvole
+   *[other] { $count } nuvole
+}
+home-mindmap-left-out-summaries = { $count ->
+    [one] Un riepilogo
+    [many] { $count } riepiloghi
+   *[other] { $count } riepiloghi
+}
+home-mindmap-left-out-boundaries = { $count ->
+    [one] Un confine
+    [many] { $count } confini
+   *[other] { $count } confini
+}
+home-mindmap-left-out-hyperlinks = { $count ->
+    [one] Un collegamento a una pagina web o a un file
+    [many] { $count } collegamenti a pagine web o a file
+   *[other] { $count } collegamenti a pagine web o a file
+}
+home-mindmap-left-out-icons = { $count ->
+    [one] Un'icona o un marcatore che Glaukopis non conosce
+    [many] { $count } icone o marcatori che Glaukopis non conosce
+   *[other] { $count } icone o marcatori che Glaukopis non conosce
+}
+# "Kind", "Time" and "Left out" are the names of the attributes Glaukopis reads and writes, in every language.
+home-mindmap-left-out-attributes = { $count ->
+    [one] Un attributo diverso da Kind, Time e Left out
+    [many] { $count } attributi diversi da Kind, Time e Left out
+   *[other] { $count } attributi diversi da Kind, Time e Left out
+}
+home-mindmap-left-out-labels = { $count ->
+    [one] Un'etichetta oltre la prima, che è diventata il tipo
+    [many] { $count } etichette oltre la prima, che è diventata il tipo
+   *[other] { $count } etichette oltre la prima, che è diventata il tipo
+}
+home-mindmap-left-out-times = { $count ->
+    [one] Una datazione che non si è potuta leggere
+    [many] { $count } datazioni che non si sono potute leggere
+   *[other] { $count } datazioni che non si sono potute leggere
+}
+home-mindmap-left-out-associations = { $count ->
+    [one] Un'associazione a un argomento che non c'è
+    [many] { $count } associazioni ad argomenti che non ci sono
+   *[other] { $count } associazioni ad argomenti che non ci sono
+}
+home-mindmap-left-out-references = { $count ->
+    [one] Un rimando a una figura o a una parte, che lì non ha nulla a cui puntare
+    [many] { $count } rimandi a figure o a parti, che lì non hanno nulla a cui puntare
+   *[other] { $count } rimandi a figure o a parti, che lì non hanno nulla a cui puntare
+}

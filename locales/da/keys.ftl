@@ -113,6 +113,7 @@ keys-list-undo = Fortryd det, der blev gjort med mapper og projekter
 keys-list-redo = Gentag det, der blev gjort med mapper og projekter
 
 ## The sides (stage 4 of the list, the path and the window as it was left)
+keys-close-side = Luk fanen, eller denne side
 keys-switch-sides = Byt side
 
 ## Stage 3 of the sides, the panes and the bars (agent "bars")
@@ -128,3 +129,18 @@ keys-preview-zoom-fit = Siderne så brede som panelet
 
 ## The settings in plain words, stage 4: the keys of the kinds
 keys-writing-kind = Den art af afsnit, dokumenttypen giver cifferet
+
+## A file shown in a side of the window (2026-10-26).
+
+keys-place-viewer = I en fil
+keys-viewer-next = Næste side
+keys-viewer-previous = Forrige side
+keys-viewer-first = Første side
+keys-viewer-last = Sidste side
+
+# Sources in tabs (docs/plans/sources-in-tabs-bookmarks-and-the-scrolling-of-pages.md).
+keys-viewer-tab-next = Næste fane
+keys-viewer-tab-previous = Forrige fane
+keys-viewer-bookmark = Sæt et bogmærke her
+# Printing (docs/plans/printing.md, record 0075).
+keys-print = Udskriv

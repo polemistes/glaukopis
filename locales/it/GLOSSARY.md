@@ -269,9 +269,71 @@ Il senso di ciascuna parola è in `locales/GLOSSARY.md`.
 | Anonymize the front page | Rendi anonima la prima pagina | |
 | A project of all the projects | Un progetto di tutti i progetti | al posto di «Una mappa dei progetti» |
 
+## Nuovo dopo la 0.2.5 (2026-10-31)
+
+| inglese | italiano | note |
+| --- | --- | --- |
+| a file in a view, the viewer | un file in una vista, la vista di un file | un lato della finestra mostra un file della biblioteca, un PDF o un'immagine, al posto di una mappa: «Mostra il file». L'interfaccia non nomina mai il visualizzatore: dice «il file», «la vista»; dove nelle note serve un nome, «la vista del file» |
+| the view (of the window, as a place) | la vista | «Alla larghezza della vista», «Tutta l'immagine nella vista»; `files-view = Vista` è invece il menu che sceglie elenco o miniature, come `diagram-view` |
+| tab, the tabs of a project | scheda, le schede del progetto | i file aperti accanto a un progetto, ciascuno al suo punto, come le schede di un browser: «Schede», «Le schede di { $name }», «Chiudi la scheda», «Chiudi le altre schede», «Riapri in una nuova scheda»; «Aggiungi alle schede di un progetto…»; «Le schede del progetto» nella Vista divisa |
+| bookmark, Mark this place | segnalibro, Segna questo punto | un punto, una pagina, in un file, conservato con il file nella biblioteca: «Segnalibri», «Il nome del segnalibro», «Rinomina», «Togli» |
+| contents (of a file) | indice | l'indice che il PDF porta con sé: «Segnalibri e indice», «Il file non ha un indice suo»; non «sommario», che è già una parte (`parts.ftl`) |
+| drawn (pages) | disegnate | le pagine di un PDF si disegnano, come già in `core-ocr.ftl`: «Questa pagina non si è potuta disegnare» |
+| locked (file) | chiede una password | «Il file chiede una password, e non si può mostrare» |
+| zoom: As wide as the view, The whole image in the view | zoom: Alla larghezza della vista, Tutta l'immagine nella vista | «Zoom» resta il nome del pulsante; il numero con `%` attaccato, come negli altri file; «Zoom, in percentuale», «Scegli uno zoom» |
+| Go to page | Vai alla pagina | il campo della barra |
+| Page 3 of 271 | Pagina 3 di 271 | il numero che la pagina ha a stampa, se è un altro, dopo fra parentesi |
+| Edit (an image), the image editor | Modifica, la modifica dell'immagine | il pulsante alla fine della barra di un'immagine; non «editor», che in italiano è il programma |
+| Turn left, Turn right | Ruota a sinistra, Ruota a destra | di un quarto di giro |
+| Flip sideways, Flip upside down | Specchia, Capovolgi | a specchio da sinistra a destra; sottosopra. Due parole piane e distinte, come nei visualizzatori d'immagini italiani; non «rifletti orizzontalmente/verticalmente», che confonde |
+| Crop, Cut to w × h of W × H | Ritaglia, Ritagliata a w × h di W × H | il taglio dell'immagine, al femminile |
+| Brightness, Contrast, Saturation | Luminosità, Contrasto, Saturazione | tre cursori da 0 a 200%, 100% com'è |
+| As it was, Start again | Com'era, Ricomincia | un cursore riportato a 100%; tutto annullato |
+| Keep as a new file, Kept as | Conserva come nuovo file, Conservata come | «conservare» come già di ciò che si dice di un'immagine (`figures-picture-not-kept`); l'immagine modificata è un nuovo file accanto al vecchio |
+| Leave without keeping?, Leave | Uscire senza conservare?, Esci | della modifica |
+| (edited), (edited 2); (smaller) | (modificata), (modificata 2); (ridotta) | messe nel nome del file prima dell'estensione: «tavola (modificata).jpg», «tavola (ridotta).jpg»; `core-pictures-edited` e `core-pictures-smaller` sono le parole sole, minuscole, senza parentesi, che aggiunge il programma; al femminile perché sono un'immagine, una copia |
+| a smaller copy, Make a smaller copy | una copia più piccola, Fai una copia più piccola | di un'immagine troppo grande per essere modificata |
+| a version (of a figure's image), Versions | una versione, Versioni | nel menu di una figura: l'originale e le copie ricavate da esso, ciascuna con la sua dimensione in pixel |
+| SVG, a drawing | SVG, un disegno | il tipo di una figura che è un disegno; «un disegno non ha pixel da modificare» |
+| pixels, Pixels | pixel, Pixel | invariabile; «1600 × 1200 pixel» |
+| Files (the view of the library): View, List, Thumbnails | Vista, Elenco, Miniature | «Miniature» come in tutto il software italiano; «Piccole», «Medie», «Grandi» |
+| Include subfolders | Includi le sottocartelle | |
+| Used in; A figure in {project}; Not used yet | Usato in; Una figura in {project}; Non ancora usato | la colonna di un file senza riferimento: dove è figura. Al maschile, del file |
+| What it shows, in words | Che cosa mostra, a parole | le parole date a chi non può vedere l'immagine, come `figures-shows-placeholder` |
+| Made from; Copies made from it | Ricavato da; Copie ricavate da questo file | una copia dice da quale file è stata ricavata, modificandolo, riducendolo o per farne una figura; non «fatto da», che in italiano dice chi lo ha fatto |
+| No preview for this kind of file | Nessuna anteprima per questo tipo di file | |
+| not shown small | non si mostra in piccolo | `core-library-no-small`: un tipo di file che non ha miniatura |
+| Read (a file in the library) | Leggi | il file mostrato grande al posto dell'elenco; «Torna ai file» |
+| People, Year, Title, Publisher | Persone, Anno, Titolo, Editore | le colonne dei file mostrati dal loro riferimento; «Per anno», «Per titolo», «Per editore» |
+| tr. { $names } | trad. { $names } | i traduttori dopo gli autori, in breve: «Lord; trad. Smith», come «trad.» già in `style.ftl` |
+| Name by the reference, Name by their references | Rinomina secondo il riferimento, Rinomina secondo i loro riferimenti | i file sul disco prendono il nome dei loro riferimenti, come li chiamerebbe un'esportazione |
+| Add to a project's tabs…, Show | Aggiungi alle schede di un progetto…, Mostra | il menu dei progetti chiede quale; «Aggiunto alle schede di { $project }», «Già nelle schede di { $project }» |
+| Open in another program | Apri in un altro programma | un tipo di file che qui non si può mostrare |
+| The document of the other side | Il documento dell'altro lato | sopra il riquadro del documento mentre il lato in uso mostra un file |
+| Images (the folder) | Immagini | la cartella della biblioteca in cui sono andate le immagini del vecchio deposito |
+| mind map | mappa mentale | un file di Freeplane, FreeMind o XMind: «Apri una mappa mentale…», «Salva come mappa mentale…»; OPML solo in uscita |
+| left out | lasciato fuori | ciò che non ha posto dall'altra parte, come già `core-import.ftl`: «…ed è stata lasciata fuori:» |
+| images; pictures in texts | immagini; immagini dentro un testo | i file d'immagine; le immagini messe nel testo di un elemento, di cui si conserva la didascalia |
+| clouds, summaries, boundaries | nuvole, riepiloghi, confini | le cose di Freeplane e di XMind, come le dicono le loro interfacce italiane: la nuvola di Freeplane, il riepilogo e il confine di XMind |
+| hyperlinks | collegamenti a pagine web o a file | |
+| icons, markers | icone, marcatori | le icone di Freeplane, i marcatori di XMind |
+| attributes; Kind, Time, Left out | attributi; Kind, Time, Left out | gli attributi di Freeplane; i tre che Glaukopis legge e scrive si chiamano così in ogni lingua |
+| labels | etichette | le etichette di XMind; la prima diventa il tipo |
+| associations, topic | associazioni, argomento | come già «associare» nel diagramma; il nodo di XMind è l'«argomento», come la sua interfaccia italiana |
+| times that could not be read | datazioni che non si sono potute leggere | la datazione di un elemento (vedi *Time stamp*) |
+| references to figures or parts | rimandi a figure o a parti | come *pointer* |
+| Save the diagram as SVG…, as an image… | Salva il diagramma come SVG…, come immagine… | dal menu dello sfondo del diagramma; «Immagine PNG» il tipo di file; «{ $width } × { $height } pixel» |
+| Print…, Print | Stampa…, Stampa | nella testa del riquadro della composizione e nella barra di un file; il tasto Ctrl+P |
+| Pages to print; The one page; All n pages; From … to … | Pagine da stampare; L'unica pagina; Tutte le n pagine; Da … a … | la domanda prima di stampare un PDF; due campi fra «Da» e «a» |
+| Preparing n pages for printing…; Drawing n pages for printing… | Preparazione di n pagine per la stampa…; Disegno di n pagine per la stampa… | come «Esportazione di n file…» |
+| Numbers from the text, Annotations from the text | Distanza dei numeri dal testo, Distanza delle annotazioni dal testo | le due lunghezze sotto *Numera le righe* in Aspetto, in centimetri; «dal testo» da solo in italiano direbbe da dove vengono |
+| too large (a file read) | più grande di n MB, il massimo che si legge | `io-too-large` |
+| not a zip archive | non è un archivio zip | `io-not-an-archive`; «archivio» per gli archivi veri, come dice la voce *the store* |
+
 ## Nomi che non si traducono
 
 Glaukopis; Pandoc, Typst, Tesseract, Hunspell, LaTeX, LuaLaTeX, BibLaTeX,
-Zotero, CSL, Markdown, Org; i formati di file (DOCX, ODT, PDF, EPUB, RTF,
-HTML, SVG, PNG); i nomi dei font; gli stili (APA, Chicago, MLA); DOI, ISBN,
-ISSN, arXiv, URL, ORCID.
+Zotero, CSL, Markdown, Org; Freeplane, FreeMind, XMind, OPML; i formati di
+file (DOCX, ODT, PDF, EPUB, RTF, HTML, SVG, PNG); i nomi dei font; gli stili
+(APA, Chicago, MLA); DOI, ISBN, ISSN, arXiv, URL, ORCID; i nomi degli
+attributi Kind, Time e Left out di una mappa mentale.

@@ -11,3 +11,11 @@ core-pictures-the-picture = l'immagine
 # What a picture that came without a name is called, before the ending of
 # its file: "picture.png".
 core-pictures-unnamed = immagine
+
+# A simple image editor (docs/plans/a-simple-image-editor.md).
+# Put before the ending of a copy's name: "plate (edited).jpg", "plate (edited 2).jpg".
+core-pictures-edited = modificata
+# Likewise: "plate (smaller).jpg".
+core-pictures-smaller = ridotta
+core-pictures-not-editable = un disegno non ha pixel da modificare
+core-pictures-nothing-changed = non è stato cambiato nulla

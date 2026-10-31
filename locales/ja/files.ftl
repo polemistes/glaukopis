@@ -303,3 +303,65 @@ files-reveal-failed = フォルダーを表示できませんでした
 files-export = 書き出す…
 files-export-chosen = この{ $count }個を書き出す…
 files-export-all = すべてのファイルを書き出す…
+
+## 側に表示したファイル（2026-10-26）。
+
+files-show = プロジェクトのタブに追加…
+files-open-elsewhere = 別のプログラムで開く
+
+# 一か所にまとめたファイル：画像はライブラリのファイル（ADR 0070）。
+files-add-images = 画像を追加…
+# 図にするために画像を収めた後。$name はその最初のもの。
+files-images-taken-in = { $count ->
+    [1] 「{ $name }」をライブラリに収めました
+   *[other] 画像{ $count }枚をライブラリに収めました
+}
+
+# 一か所にまとめたファイル、その表示（ADR 0070）。
+files-view = 表示
+files-as-list = 一覧
+files-as-grid = サムネイル
+files-size-small = 小
+files-size-medium = 中
+files-size-large = 大
+files-include-subfolders = サブフォルダーも含める
+files-sort-kind = 種類順
+# 文献に属さないファイルがどこで使われているか：図として。
+files-column-used = 使用先
+files-used-figure = { $project }の図
+files-used-figures = { $count }件のプロジェクトの図
+files-used-nowhere = まだ使われていません
+files-pixels-label = ピクセル
+files-pixels = { $width } × { $height }
+files-alt = 内容を言葉で
+files-preview-none = この種類のファイルにはプレビューがありません
+# コピーの元になったファイルの名前の前に。図にするため、編集して、または縮小して作ったコピー。名前はリンク。
+files-made-from = 作成元
+# プロジェクトで図になっているファイルを外そうとするときに言う。
+files-remove-used = このファイルは{ $count }件のプロジェクトで図になっていて、その場所には何も表示されなくなります。
+
+# 簡単な画像の編集（docs/plans/a-simple-image-editor.md）：ファイルから作ったコピー。リンクとして。
+files-copies = このファイルから作ったコピー
+
+# タブを開く、文献によるファイル、ライブラリの中で読むファイル（docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md）。
+files-read = 読む
+files-column-people = 著者等
+files-column-year = 年
+files-column-title = タイトル
+files-column-publisher = 出版社
+files-sort-year = 年順
+files-sort-title = タイトル順
+files-sort-publisher = 出版社順
+# 著者や編者の後の訳者：「Lord; Smith訳」。
+files-translated = { $names }訳
+
+# 文献によるファイルに、求めに応じて名前を付ける。タブのためのプロジェクトのメニュー。
+files-tabs-no-project = 追加先のプロジェクトがありません
+files-added-to-tabs = { $project }のタブに追加しました
+files-already-in-tabs = すでに{ $project }のタブにあります
+files-show-tabs = 表示
+files-name-by-reference = 文献に基づいて名前を付ける
+files-name-by-references = それぞれの文献に基づいて名前を付ける
+files-named = { $count }個のファイルに、文献に基づく名前を付けました
+files-named-kept = 文献のない{ $count }個は名前をそのままにしました
+files-named-none = 名前はすでに文献に基づいていました
