@@ -43,7 +43,8 @@
         "begins": "page",
         "spaceBefore": "48pt",
         "spaceAfter": "36pt",
-        "numbering": "as-above"
+        "numbering": "as-above",
+        "counted": "under"
       },
       {
         "size": 12,
@@ -54,7 +55,8 @@
         "spaceBefore": "30pt",
         "spaceAfter": "18pt",
         "begins": "text",
-        "numbering": "as-above"
+        "numbering": "as-above",
+        "counted": "under"
       },
       {
         "size": 12,
@@ -64,7 +66,8 @@
         "spaceBefore": "12pt",
         "spaceAfter": "6pt",
         "begins": "text",
-        "numbering": "as-above"
+        "numbering": "as-above",
+        "counted": "under"
       }
     ]
   },

@@ -184,6 +184,7 @@ export function laidOver(layout: DocumentFormat, said: LookChanges | undefined):
     const was = level as typeof level & { newPage?: boolean };
     if (was.begins === undefined) was.begins = was.newPage ? 'page' : 'text';
     if (was.numbering === undefined) was.numbering = 'as-above';
+    if (was.counted === undefined) was.counted = 'under';
     delete was.newPage;
   }
   return out;

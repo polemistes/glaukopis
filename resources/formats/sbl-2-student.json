@@ -31,11 +31,11 @@
   "headings": {
     "numbered": false,
     "levels": [
-      { "size": 12, "bold": false, "italic": false, "align": "center", "case": "upper", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt", "begins": "text", "numbering": "as-above" },
-      { "size": 12, "bold": true, "italic": false, "align": "center", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt", "begins": "text", "numbering": "as-above" },
-      { "size": 12, "bold": false, "italic": false, "align": "center", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt", "begins": "text", "numbering": "as-above" },
-      { "size": 12, "bold": true, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt", "begins": "text", "numbering": "as-above" },
-      { "size": 12, "bold": false, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt", "begins": "text", "numbering": "as-above" }
+      { "size": 12, "bold": false, "italic": false, "align": "center", "case": "upper", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt", "begins": "text", "numbering": "as-above", "counted": "under" },
+      { "size": 12, "bold": true, "italic": false, "align": "center", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt", "begins": "text", "numbering": "as-above", "counted": "under" },
+      { "size": 12, "bold": false, "italic": false, "align": "center", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt", "begins": "text", "numbering": "as-above", "counted": "under" },
+      { "size": 12, "bold": true, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt", "begins": "text", "numbering": "as-above", "counted": "under" },
+      { "size": 12, "bold": false, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt", "begins": "text", "numbering": "as-above", "counted": "under" }
     ]
   },
   "title": {

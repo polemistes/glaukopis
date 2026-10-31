@@ -939,8 +939,9 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
     // numbered otherwise than 1, 1.1, 1.1.1, which Typst does itself and
     // the others are asked to (ADR 0058).
     converter.extras.numbering = f.headings.resolved_numbering();
+    converter.extras.through = f.headings.through();
     converter.extras.written_numbers = !matches!(target, Target::Pdf | Target::Typst) && !f.headings.plain_numbering();
-    converter.extras.targets = converter.targets(doc, &converter.extras.numbering);
+    converter.extras.targets = converter.targets(doc, &converter.extras.numbering, &converter.extras.through);
     converter.extras.kinds = crate::formats::kinds::table(f, &doc.kinds);
     converter.extras.parts = crate::templates::kinds::table(f);
     converter.extras.italics_underlined = f.text.italics == crate::formats::Italics::Underline;

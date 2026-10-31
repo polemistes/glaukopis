@@ -31,8 +31,8 @@
   "headings": {
     "numbered": true,
     "levels": [
-      { "size": 12, "bold": false, "italic": false, "align": "left", "case": "smallcaps", "runIn": true, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt", "begins": "text", "numbering": "as-above" },
-      { "size": 12, "bold": false, "italic": false, "align": "left", "case": "smallcaps", "runIn": true, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt", "begins": "text", "numbering": "as-above" }
+      { "size": 12, "bold": false, "italic": false, "align": "left", "case": "smallcaps", "runIn": true, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt", "begins": "text", "numbering": "as-above", "counted": "under" },
+      { "size": 12, "bold": false, "italic": false, "align": "left", "case": "smallcaps", "runIn": true, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt", "begins": "text", "numbering": "as-above", "counted": "under" }
     ]
   },
   "title": {

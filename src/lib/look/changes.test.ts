@@ -86,11 +86,12 @@ describe('the changes of a document over its layout', () => {
 
   it('read levels taken whole before they said where they begin', () => {
     const layout = manuscript();
-    const { begins: _b, numbering: _n, ...before } = layout.headings.levels[0];
+    const { begins: _b, numbering: _n, counted: _c, ...before } = layout.headings.levels[0];
     const levels = [{ ...before, newPage: true }] as never;
     const level = laidOver(layout, { headings: { levels } }).headings.levels[0];
     expect(level.begins).toBe('page');
     expect(level.numbering).toBe('as-above');
+    expect(level.counted).toBe('under');
     expect('newPage' in level).toBe(false);
   });
 

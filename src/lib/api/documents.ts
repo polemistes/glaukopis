@@ -62,6 +62,11 @@ export type Begins = 'text' | 'page' | 'right-page';
 /** How a level of heading is numbered (ADR 0058). */
 export type LevelNumbering =
   'as-above' | 'none' | 'arabic' | 'alpha' | 'alpha-lower' | 'roman' | 'roman-lower';
+/**
+ * How a level of heading is counted (ADR 0078): begun anew under each heading
+ * of the level above, or on through the document.
+ */
+export type Counted = 'under' | 'through';
 /** How the pages are numbered. */
 export type NumberStyle = 'arabic' | 'roman' | 'roman-lower' | 'letters' | 'letters-lower';
 
@@ -75,6 +80,7 @@ export interface HeadingLevel {
   /** Where the heading begins: a chapter of a book on a new page. */
   begins: Begins;
   numbering: LevelNumbering;
+  counted: Counted;
   indent: boolean;
   spaceBefore: string;
   spaceAfter: string;

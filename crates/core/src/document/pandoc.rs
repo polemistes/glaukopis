@@ -111,6 +111,8 @@ pub struct Extras {
     /// numbers are written into the headings, where the target would not
     /// number them so itself.
     pub numbering: Vec<Option<crate::formats::NumberStyle>>,
+    /// Which levels are counted on through the document (ADR 0078).
+    pub through: Vec<bool>,
     pub written_numbers: bool,
     /// How many headings of each level have been written, for their numbers.
     pub(super) counts: RefCell<Vec<u32>>,
@@ -290,6 +292,7 @@ impl Converter<'_> {
         &self,
         doc: &Document,
         numbering: &[Option<crate::formats::NumberStyle>],
+        through: &[bool],
     ) -> HashMap<String, Pointed> {
         fn inlines(list: &[Inline], to: &mut HashSet<String>) {
             for inline in list {
@@ -381,7 +384,8 @@ impl Converter<'_> {
         let mut to = HashSet::new();
         let mut counted = Counted { figure: 0, table: 0, equation: 0, found: HashMap::new(), to: &mut to };
         // The numbers of the parts, as those who set the pages count them:
-        // a heading counts on at its level, and begins the levels under it anew.
+        // a heading counts on at its level, and begins the levels under it
+        // anew, but for those counted on through the document (ADR 0078).
         let mut levels = [0u32; 6];
         for section in &doc.sections {
             if let Some(heading) = section.heading.as_deref().filter(|h| !h.is_empty() && section.level > 0) {
@@ -389,9 +393,8 @@ impl Converter<'_> {
                 let level = section.level.clamp(1, self.deepest.max(1)) as usize;
                 let set_as_heading = !self.run_in.iter().any(|r| r.level as usize == level);
                 let number = if set_as_heading {
-                    levels[level - 1] += 1;
-                    levels[level..].fill(0);
-                    crate::formats::heading_number(&levels[..level], numbering)
+                    crate::formats::count_heading(&mut levels, level - 1, through);
+                    crate::formats::heading_number(&levels[..level], numbering, through)
                 } else {
                     None
                 };
@@ -745,12 +748,11 @@ impl Converter<'_> {
                 let number = {
                     let mut counts = self.extras.counts.borrow_mut();
                     let at = level as usize;
-                    if counts.len() < at {
-                        counts.resize(at, 0);
+                    if counts.len() < 6 {
+                        counts.resize(6, 0);
                     }
-                    counts[at - 1] += 1;
-                    counts.truncate(at);
-                    crate::formats::heading_number(&counts, &self.extras.numbering)
+                    crate::formats::count_heading(&mut counts, at - 1, &self.extras.through);
+                    crate::formats::heading_number(&counts[..at], &self.extras.numbering, &self.extras.through)
                 };
                 if self.extras.written_numbers
                     && let Some(n) = number
@@ -1256,6 +1258,59 @@ mod tests {
         assert_eq!(blocks[3]["c"][0]["c"][1], json!([{"t":"Strong","c":[{"t":"Str","c":"Deeper?"}]}]));
         assert_eq!(blocks[4], json!({"t":"Para","c":[{"t":"Str","c":"No"},{"t":"Space"},{"t":"Str","c":"heading."}]}));
         assert_eq!(blocks.len(), 5);
+    }
+
+    #[test]
+    fn chapters_counted_through_the_parts() {
+        // Parts in roman; chapters counted on through the document, 1 to 6
+        // through three parts, and their sections under them (ADR 0078).
+        let keys = HashMap::new();
+        let mut c = converter(&keys);
+        c.deepest = 3;
+        c.extras.numbering = vec![
+            Some(crate::formats::NumberStyle::Roman),
+            Some(crate::formats::NumberStyle::Arabic),
+            Some(crate::formats::NumberStyle::Arabic),
+        ];
+        c.extras.through = vec![false, true, false];
+        c.extras.written_numbers = true;
+        let section = |level, name: &str| Section {
+            level,
+            heading: Some(vec![text(name)]),
+            blocks: vec![],
+            element: Some(name.to_lowercase()),
+            kind: None,
+        };
+        let doc = Document {
+            sections: vec![
+                section(1, "One"),
+                section(2, "Alpha"),
+                section(3, "Deep"),
+                section(2, "Beta"),
+                section(2, "Gamma"),
+                section(1, "Two"),
+                section(2, "Delta"),
+                section(3, "Deeper"),
+                section(2, "Epsilon"),
+                section(1, "Three"),
+                section(2, "Zeta"),
+            ],
+            ..Default::default()
+        };
+        let expected = ["I", "1", "1.1", "2", "3", "II", "4", "4.1", "5", "III", "6"];
+        let targets = c.targets(&doc, &c.extras.numbering, &c.extras.through);
+        let pointed: Vec<String> =
+            doc.sections.iter().map(|s| targets[s.element.as_deref().unwrap()].number.clone().unwrap()).collect();
+        assert_eq!(pointed, expected);
+        let out = c.document(&doc, &[1, 23, 1], serde_json::Map::new());
+        let written: Vec<String> = out["blocks"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|b| b["t"] == "Header")
+            .map(|b| b["c"][2][0]["c"][1][0]["c"].as_str().unwrap().to_owned())
+            .collect();
+        assert_eq!(written, expected);
     }
 
     #[test]

@@ -112,6 +112,10 @@ format-level-numbering-alpha = A, B, C
 format-level-numbering-alpha-lower = a, b, c
 format-level-numbering-roman = I, II, III
 format-level-numbering-roman-lower = i, ii, iii
+format-level-counted = Tælling
+format-level-counted-under = Under niveauet over
+format-level-counted-through = Gennem hele dokumentet
+format-level-counted-through-said = talt gennem hele dokumentet
 # How a level is numbered, said among its look: "numbered I, II, III".
 format-level-numbered-as = nummereret { $style }
 format-level-not-numbered = ikke nummereret

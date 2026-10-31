@@ -326,6 +326,21 @@ try {
   check('a level numbered in roman is said so', (await app.exec(`return document.querySelector('.side .look details.level[data-level="1"] .said')?.textContent ?? ''`)).includes('numbered I, II, III'));
   check('and the preview numbers the chapters so', await typstHas(/#set heading\(numbering: \(\.\.nums\) => \{\n  let styles = \("I", "I", "I",\)/));
   await app.lookChoose('Numbering', 'as-above');
+  // Counted on through the document (ADR 0078): a row of each level from the second.
+  check(
+    'the first level has no count, nothing above begins it anew',
+    !(await app.exec(`return Array.from(document.querySelectorAll('.side .look details.level[data-level="1"] .row .what')).some((w) => w.firstChild?.textContent.trim() === 'Count')`)),
+  );
+  await app.exec(`document.querySelector('.side .look details.level[data-level="2"]').open = true;`);
+  check('the second level is counted under the level above', (await app.lookChosen('Count')) === 'under');
+  await app.lookChoose('Count', 'through');
+  check('a level counted through says so', (await app.exec(`return document.querySelector('.side .look details.level[data-level="2"] .said')?.textContent ?? ''`)).includes('counted through the document'));
+  check(
+    'and the preview counts the chapters on through the parts',
+    (await typstHas(/let through = \(false, true, false,\)/)) &&
+      (await typstHas(/#let gk-through-2 = counter\("gk-through-2"\)\n#show heading\.where\(level: 1\): it => \{\n  it\n  context \{ let t = gk-through-2\.get\(\)\.first\(\); counter\(heading\)\.update/)),
+  );
+  await app.lookChoose('Count', 'under');
   await app.lookWrite('Numbered', false);
 
   // --- A change made on the project is said in an element under it ---

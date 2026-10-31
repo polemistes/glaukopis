@@ -2743,7 +2743,12 @@ you scroll, mark the part you are in, and go to each:
   under its number, so that with nothing changed the headings run 1, 1.1,
   1.1.1; chapters in roman and sections in arabic are level 1 at *I, II,
   III* and level 2 at *1, 2, 3*, giving I.1. A level at *None* has no
-  number, nor have the levels under it that follow it. A level that
+  number, nor have the levels under it that follow it. Each level from the
+  second has a **Count** too: *Under the level above*, where the first
+  chapter of every part is chapter 1, or *Through the document*, where the
+  chapters of three parts run 1 to 9. A level counted through stands by its
+  own number, without the numbers of the levels above it, and the levels
+  under it are numbered under it: 4.1 in chapter 4. A level that
   **Begins the paragraph** runs into the text, and ends with a full stop.
   Then its **Placement**: *In the text*, *On a new page*, as the chapters of a book do,
   or *On a right-hand page*, where a blank left page, with nothing in its

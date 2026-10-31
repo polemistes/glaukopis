@@ -721,8 +721,13 @@
         : l.numbering === 'none'
           ? t('format-level-not-numbered')
           : t('format-level-numbered-as', { style: t(`format-level-numbering-${l.numbering}`) });
+    const counted =
+      effective?.headings.numbered && l.numbering !== 'none' && l.counted === 'through'
+        ? t('format-level-counted-through-said')
+        : '';
     return [
       numbering,
+      counted,
       t('format-level-size', { size: l.size }),
       l.bold ? t('format-level-bold') : '',
       l.italic ? t('format-level-italic') : '',
@@ -1035,6 +1040,25 @@
         ['roman-lower', t('format-level-numbering-roman-lower')],
       ],
       { when: () => !!effective?.headings.numbered },
+    ),
+    // Then how it is counted (ADR 0078): begun anew under the level above, or
+    // on through the document. Not the first level, which nothing begins anew.
+    level.choice(
+      t('format-level-counted'),
+      {
+        get: (l) => l.counted ?? 'under',
+        set: (l, v) => (l.counted = v as HeadingLevel['counted']),
+      },
+      [
+        ['under', t('format-level-counted-under')],
+        ['through', t('format-level-counted-through')],
+      ],
+      {
+        when: (l) =>
+          !!effective?.headings.numbered &&
+          l.numbering !== 'none' &&
+          effective.headings.levels.indexOf(l) > 0,
+      },
     ),
     level.number(t('format-size'), 'size', pt()),
     level.toggle(t('format-bold'), 'bold'),

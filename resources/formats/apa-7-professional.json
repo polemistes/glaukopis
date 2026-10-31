@@ -45,7 +45,8 @@
         "spaceBefore": "16.8pt",
         "spaceAfter": "16.8pt",
         "begins": "text",
-        "numbering": "as-above"
+        "numbering": "as-above",
+        "counted": "under"
       },
       {
         "size": 12,
@@ -58,7 +59,8 @@
         "spaceBefore": "16.8pt",
         "spaceAfter": "16.8pt",
         "begins": "text",
-        "numbering": "as-above"
+        "numbering": "as-above",
+        "counted": "under"
       },
       {
         "size": 12,
@@ -71,7 +73,8 @@
         "spaceBefore": "16.8pt",
         "spaceAfter": "16.8pt",
         "begins": "text",
-        "numbering": "as-above"
+        "numbering": "as-above",
+        "counted": "under"
       },
       {
         "size": 12,
@@ -84,7 +87,8 @@
         "spaceBefore": "16.8pt",
         "spaceAfter": "16.8pt",
         "begins": "text",
-        "numbering": "as-above"
+        "numbering": "as-above",
+        "counted": "under"
       },
       {
         "size": 12,
@@ -97,7 +101,8 @@
         "spaceBefore": "16.8pt",
         "spaceAfter": "16.8pt",
         "begins": "text",
-        "numbering": "as-above"
+        "numbering": "as-above",
+        "counted": "under"
       }
     ]
   },

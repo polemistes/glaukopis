@@ -45,7 +45,8 @@
         "spaceBefore": "24pt",
         "spaceAfter": "12pt",
         "begins": "text",
-        "numbering": "as-above"
+        "numbering": "as-above",
+        "counted": "under"
       },
       {
         "size": 12,
@@ -58,7 +59,8 @@
         "spaceBefore": "18pt",
         "spaceAfter": "6pt",
         "begins": "text",
-        "numbering": "as-above"
+        "numbering": "as-above",
+        "counted": "under"
       },
       {
         "size": 12,
@@ -71,7 +73,8 @@
         "spaceBefore": "12pt",
         "spaceAfter": "6pt",
         "begins": "text",
-        "numbering": "as-above"
+        "numbering": "as-above",
+        "counted": "under"
       }
     ]
   },

@@ -112,6 +112,10 @@ format-level-numbering-alpha = A, B, C
 format-level-numbering-alpha-lower = a, b, c
 format-level-numbering-roman = I, II, III
 format-level-numbering-roman-lower = i, ii, iii
+format-level-counted = カウント
+format-level-counted-under = 上のレベルの下で
+format-level-counted-through = 文書全体を通して
+format-level-counted-through-said = 文書全体を通してカウント
 # レベルの番号の振り方。見た目の概要の中で：「番号はI, II, III」。
 format-level-numbered-as = 番号は{ $style }
 format-level-not-numbered = 番号なし

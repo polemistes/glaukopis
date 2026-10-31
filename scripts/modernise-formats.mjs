@@ -96,6 +96,7 @@ function convert(f) {
           }
           if (!('begins' in level)) level.begins = 'text';
           if (!('numbering' in level)) level.numbering = 'as-above';
+          if (!('counted' in level)) level.counted = 'under';
           return level;
         }),
       };
@@ -244,6 +245,7 @@ function modernise(text) {
       const missing = {};
       if (!('newPage' in level) && !('begins' in level)) missing.begins = 'text';
       if (!('numbering' in level)) missing.numbering = 'as-above';
+      if (!('counted' in level)) missing.counted = 'under';
       object = append(object, 0, missing);
       out = out.slice(0, open) + object + out.slice(close + 1);
       at = open + object.length;

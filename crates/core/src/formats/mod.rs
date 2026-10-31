@@ -235,6 +235,9 @@ pub struct HeadingLevel {
     pub begins: Begins,
     /// How the level is numbered (ADR 0058).
     pub numbering: LevelNumbering,
+    /// How the level is counted (ADR 0078): begun anew under each heading
+    /// of the level above, or on through the document.
+    pub counted: Counted,
     pub space_before: Length,
     pub space_after: Length,
     /// The switch the level had before it had `begins`, read from layouts
@@ -276,6 +279,20 @@ pub enum LevelNumbering {
     RomanLower,
 }
 
+/// How a level of heading is counted (ADR 0078).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Counted {
+    /// Begun anew under each heading of the level above: the first chapter
+    /// of every part is chapter 1.
+    #[default]
+    Under,
+    /// On through the document, whatever stands above: the chapters 1 to 9
+    /// through three parts. Its number stands without the numbers of the
+    /// levels above it, and the levels under it are numbered under it.
+    Through,
+}
+
 impl Default for HeadingLevel {
     fn default() -> Self {
         HeadingLevel {
@@ -288,6 +305,7 @@ impl Default for HeadingLevel {
             indent: false,
             begins: Begins::Text,
             numbering: LevelNumbering::AsAbove,
+            counted: Counted::Under,
             space_before: Length::pt(24.0),
             space_after: Length::pt(12.0),
             new_page: None,
@@ -342,25 +360,55 @@ impl Headings {
         out
     }
 
-    /// Whether the headings are numbered 1, 1.1, 1.1.1 and no otherwise, as
-    /// Pandoc and LaTeX number them of themselves.
-    pub fn plain_numbering(&self) -> bool {
-        self.numbered && self.resolved_numbering().iter().all(|s| *s == Some(NumberStyle::Arabic))
+    /// Which levels are counted on through the document (ADR 0078). The
+    /// first level has nothing above it to begin it anew, so it never is.
+    pub fn through(&self) -> Vec<bool> {
+        self.levels.iter().enumerate().map(|(i, l)| i > 0 && l.counted == Counted::Through).collect()
     }
+
+    /// Whether the headings are numbered 1, 1.1, 1.1.1 and no otherwise, as
+    /// Pandoc and LaTeX number them of themselves: every level arabic, and
+    /// none counted on through the document.
+    pub fn plain_numbering(&self) -> bool {
+        self.numbered
+            && self.resolved_numbering().iter().all(|s| *s == Some(NumberStyle::Arabic))
+            && !self.through().iter().any(|t| *t)
+    }
+}
+
+/// Whether a level (from 0) is counted on through the document, by what
+/// `Headings::through` says; levels deeper than it says are as its last.
+pub fn counted_through(through: &[bool], level: usize) -> bool {
+    through.get(level.min(through.len().saturating_sub(1))).copied().unwrap_or(false)
 }
 
 /// The number of a heading from how many headings of each level have been
 /// counted down to it (ADR 0058): the numbers of the numbered levels above
 /// it and its own, in their styles, with full stops between; None where its
 /// own level is not numbered. Levels deeper than the numbering says are
-/// numbered as its last.
-pub fn heading_number(counts: &[u32], numbering: &[Option<NumberStyle>]) -> Option<String> {
+/// numbered as its last. The number begins at the nearest level, its own or
+/// above it, that is counted on through the document (ADR 0078): a chapter
+/// counted through three parts is 4, not II.4, and its sections 4.1.
+pub fn heading_number(counts: &[u32], numbering: &[Option<NumberStyle>], through: &[bool]) -> Option<String> {
     let style = |i: usize| numbering.get(i.min(numbering.len().saturating_sub(1))).copied().flatten();
     let own = counts.len().checked_sub(1)?;
     style(own)?;
+    let from = (0..=own).rev().find(|&i| counted_through(through, i)).unwrap_or(0);
     let parts: Vec<String> =
-        counts.iter().enumerate().filter_map(|(i, n)| style(i).map(|s| styled_number(*n, s))).collect();
+        counts.iter().enumerate().skip(from).filter_map(|(i, n)| style(i).map(|s| styled_number(*n, s))).collect();
     Some(parts.join("."))
+}
+
+/// A heading of a level (from 0) counted: its own count goes up, and the
+/// levels under it begin anew, but for those counted on through the
+/// document (ADR 0078). `counts` holds one count per level, however deep.
+pub fn count_heading(counts: &mut [u32], level: usize, through: &[bool]) {
+    counts[level] += 1;
+    for (i, n) in counts.iter_mut().enumerate().skip(level + 1) {
+        if !counted_through(through, i) {
+            *n = 0;
+        }
+    }
 }
 
 /// A number in a style: 4 as 4, IV, iv, D or d.
@@ -1540,24 +1588,24 @@ mod tests {
         let arabic = Some(NumberStyle::Arabic);
         assert_eq!(h.resolved_numbering(), [arabic, arabic, arabic]);
         assert!(h.plain_numbering());
-        assert_eq!(heading_number(&[2, 1, 3], &h.resolved_numbering()).as_deref(), Some("2.1.3"));
+        assert_eq!(heading_number(&[2, 1, 3], &h.resolved_numbering(), &h.through()).as_deref(), Some("2.1.3"));
         // Level 3 none: not numbered, the deeper as it.
         h.levels[2].numbering = LevelNumbering::None;
         assert_eq!(h.resolved_numbering(), [arabic, arabic, None]);
         assert!(!h.plain_numbering());
-        assert_eq!(heading_number(&[2, 1, 3], &h.resolved_numbering()), None);
-        assert_eq!(heading_number(&[2, 1], &h.resolved_numbering()).as_deref(), Some("2.1"));
+        assert_eq!(heading_number(&[2, 1, 3], &h.resolved_numbering(), &h.through()), None);
+        assert_eq!(heading_number(&[2, 1], &h.resolved_numbering(), &h.through()).as_deref(), Some("2.1"));
         // Level 1 roman, level 2 as above: in its style, under its number.
         h.levels[2].numbering = LevelNumbering::AsAbove;
         h.levels[0].numbering = LevelNumbering::Roman;
-        assert_eq!(heading_number(&[4, 2], &h.resolved_numbering()).as_deref(), Some("IV.II"));
+        assert_eq!(heading_number(&[4, 2], &h.resolved_numbering(), &h.through()).as_deref(), Some("IV.II"));
         h.levels[1].numbering = LevelNumbering::Arabic;
-        assert_eq!(heading_number(&[4, 2], &h.resolved_numbering()).as_deref(), Some("IV.2"));
-        assert_eq!(heading_number(&[4, 2, 1], &h.resolved_numbering()).as_deref(), Some("IV.2.1"));
+        assert_eq!(heading_number(&[4, 2], &h.resolved_numbering(), &h.through()).as_deref(), Some("IV.2"));
+        assert_eq!(heading_number(&[4, 2, 1], &h.resolved_numbering(), &h.through()).as_deref(), Some("IV.2.1"));
         // A level not numbered between: the numbers of the numbered levels.
         h.levels[1].numbering = LevelNumbering::None;
         h.levels[2].numbering = LevelNumbering::AlphaLower;
-        assert_eq!(heading_number(&[4, 2, 3], &h.resolved_numbering()).as_deref(), Some("IV.c"));
+        assert_eq!(heading_number(&[4, 2, 3], &h.resolved_numbering(), &h.through()).as_deref(), Some("IV.c"));
         // Not numbered at all, whatever the levels say.
         h.numbered = false;
         assert_eq!(h.resolved_numbering(), [None, None, None]);
@@ -1565,6 +1613,37 @@ mod tests {
         assert_eq!(styled_number(1994, NumberStyle::Roman), "MCMXCIV");
         assert_eq!(styled_number(28, NumberStyle::Letters), "AB");
         assert_eq!(styled_number(3, NumberStyle::RomanLower), "iii");
+    }
+
+    #[test]
+    fn a_level_counted_through_the_document() {
+        // Three parts of three chapters, the chapters 1 to 9 (ADR 0078).
+        let mut h = Headings { numbered: true, ..Default::default() };
+        h.levels[0].numbering = LevelNumbering::Roman;
+        h.levels[1].numbering = LevelNumbering::Arabic;
+        h.levels[1].counted = Counted::Through;
+        assert_eq!(h.through(), [false, true, false]);
+        assert!(!h.plain_numbering());
+        let (numbering, through) = (h.resolved_numbering(), h.through());
+        let mut counts = [0u32; 6];
+        let mut numbers = Vec::new();
+        for level in [0, 1, 2, 2, 1, 1, 0, 1, 2, 1, 1, 0, 1, 1, 1] {
+            count_heading(&mut counts, level, &through);
+            numbers.push(heading_number(&counts[..=level], &numbering, &through).unwrap());
+        }
+        assert_eq!(numbers, ["I", "1", "1.1", "1.2", "2", "3", "II", "4", "4.1", "5", "6", "III", "7", "8", "9"]);
+        // The first level is never counted through: nothing above begins it anew.
+        h.levels[0].counted = Counted::Through;
+        assert_eq!(h.through(), [false, true, false]);
+        // Arabic throughout but counted through: not what Pandoc or Typst do of themselves.
+        h.levels[0].numbering = LevelNumbering::AsAbove;
+        h.levels[1].numbering = LevelNumbering::AsAbove;
+        assert!(!h.plain_numbering());
+        h.levels[1].counted = Counted::Under;
+        assert!(h.plain_numbering());
+        // Deeper than the levels say: as the last, counted through too.
+        assert!(counted_through(&[false, true], 5));
+        assert!(!counted_through(&[], 2));
     }
 
     #[test]

@@ -9,7 +9,7 @@ use std::fmt::Write;
 use super::kinds::{self, Family, OwnKind, Resolved};
 use super::{
     Align, Case, DocumentFormat, HeadingLevel, Item, MATH_FONTS, Margin, NoteKind, NumberStyle, RefMarks, Rules, Sides,
-    TitlePlacement, fallbacks,
+    TitlePlacement, counted_through, fallbacks,
 };
 
 /// What the header, the footer and the properties of the file are made from.
@@ -246,8 +246,9 @@ fn heading_rule(out: &mut String, level: usize, h: &HeadingLevel, format: &Docum
 
 /// How Typst numbers the headings (ADR 0058): "1.1" where every level is
 /// numbered in arabic, as before; a function where the levels differ, which
-/// numbers a heading by the numbered levels above it and its own, and gives
-/// none where its own level is not numbered; nothing where nothing is.
+/// numbers a heading by the numbered levels above it and its own, from the
+/// nearest level counted on through the document (ADR 0078), and gives none
+/// where its own level is not numbered; nothing where nothing is.
 fn heading_numbering(f: &DocumentFormat) -> String {
     let numbering = f.headings.resolved_numbering();
     if f.headings.plain_numbering() {
@@ -258,16 +259,64 @@ fn heading_numbering(f: &DocumentFormat) -> String {
     }
     let styles: Vec<String> =
         numbering.iter().map(|s| s.map(|s| string(number_pattern(s))).unwrap_or_else(|| "none".into())).collect();
+    let through = f.headings.through();
+    let through: Vec<&str> =
+        (0..numbering.len()).map(|i| if counted_through(&through, i) { "true" } else { "false" }).collect();
     format!(
         "#set heading(numbering: (..nums) => {{
   let styles = ({},)
-  let style(i) = styles.at(calc.min(i, styles.len() - 1))
+  let through = ({},)
+  let at(a, i) = a.at(calc.min(i, a.len() - 1))
   let n = nums.pos()
-  if style(n.len() - 1) == none {{ return none }}
-  n.enumerate().filter(((i, x)) => style(i) != none).map(((i, x)) => numbering(style(i), x)).join(\".\")
+  let own = n.len() - 1
+  if at(styles, own) == none {{ return none }}
+  let from = range(own + 1).rev().find(i => at(through, i))
+  if from == none {{ from = 0 }}
+  n.enumerate().filter(((i, x)) => i >= from and at(styles, i) != none).map(((i, x)) => numbering(at(styles, i), x)).join(\".\")
 }})",
-        styles.join(", ")
+        styles.join(", "),
+        through.join(", ")
     )
+}
+
+/// The count of the levels counted on through the document (ADR 0078).
+/// Typst's heading counter begins every level anew under a heading of a
+/// level above it, and a heading reads that counter where it stands, before
+/// anything its own show rule could put there, as do its entry in the
+/// contents and the references to it. So each such level has a counter of
+/// its own, stepped at each of its headings; and each heading of a level
+/// above it puts that count back into the heading counter after itself, so
+/// that the next heading of the level counts on from it. The rules stand
+/// after those of the look, which Typst applies last.
+fn through_rules(f: &DocumentFormat) -> String {
+    let through = f.headings.through();
+    let levels: Vec<usize> = (1..=6).filter(|l| counted_through(&through, l - 1)).collect();
+    if levels.is_empty() || !f.headings.numbered {
+        return String::new();
+    }
+    let mut out = String::new();
+    for l in &levels {
+        let _ = writeln!(out, "#let gk-through-{l} = counter(\"gk-through-{l}\")");
+    }
+    for level in 1..=6 {
+        let steps: String =
+            levels.iter().filter(|l| **l == level).map(|l| format!("  gk-through-{l}.step()\n")).collect();
+        let restores: String = levels
+            .iter()
+            .filter(|l| **l > level)
+            .map(|l| {
+                format!(
+                    "  context {{ let t = gk-through-{l}.get().first(); counter(heading).update((..n) => (n.pos() + (0,) * {l}).slice(0, {}) + (t,)) }}\n",
+                    l - 1
+                )
+            })
+            .collect();
+        if steps.is_empty() && restores.is_empty() {
+            continue;
+        }
+        let _ = writeln!(out, "#show heading.where(level: {level}): it => {{\n{steps}  it\n{restores}}}");
+    }
+    out
 }
 
 /// The pattern of Typst's `numbering` for a style of numbers.
@@ -567,6 +616,7 @@ pub fn rules(format: &DocumentFormat, p: &Particulars) -> String {
     for level in 1..=6 {
         heading_rule(&mut out, level, &f.heading(level), f);
     }
+    let _ = write!(out, "{}", through_rules(f));
 
     // Quotations set off from the text: as the part of quotations has them,
     // with what the format says of the kind Quotation over it.
@@ -1058,6 +1108,7 @@ mod tests {
         assert!(out.contains("upper(text(\"Wrath \\\"and\\\" the hero\"))"));
         assert!(out.contains("if gk-blank(at) or at == 1 { none }"), "{out}");
         assert!(out.contains("#set heading(numbering: \"1.1\")"));
+        assert!(!out.contains("gk-through"));
         assert!(out.contains("#set par.line(numbering: \"1\")"));
         assert!(out.contains("pagebreak(weak: true)"));
         assert!(out.contains("region: \"gb\""));
@@ -1092,6 +1143,35 @@ mod tests {
         f.header.places.left = vec![Item::Author, Item::Title];
         let out = preamble(&f, &p);
         assert!(!out.contains("A. Scholar"), "an anonymous manuscript does not name its author anywhere");
+    }
+
+    #[test]
+    fn chapters_counted_through_the_parts() {
+        // Parts in roman, chapters counted on through the document (ADR 0078).
+        let mut f = DocumentFormat::default();
+        f.headings.numbered = true;
+        f.headings.levels[0].numbering = super::super::LevelNumbering::Roman;
+        f.headings.levels[1].numbering = super::super::LevelNumbering::Arabic;
+        f.headings.levels[1].counted = super::super::Counted::Through;
+        let out = preamble(&f, &Particulars::default());
+        assert!(out.contains("let styles = (\"I\", \"1\", \"1\",)\n  let through = (false, true, false,)"), "{out}");
+        assert!(out.contains("let from = range(own + 1).rev().find(i => at(through, i))"), "{out}");
+        assert!(out.contains("#let gk-through-2 = counter(\"gk-through-2\")"), "{out}");
+        // A heading of the first level puts the count back after itself; one of the second steps it.
+        assert!(
+            out.contains(
+                "#show heading.where(level: 1): it => {\n  it\n  context { let t = gk-through-2.get().first(); counter(heading).update((..n) => (n.pos() + (0,) * 2).slice(0, 1) + (t,)) }\n}"
+            ),
+            "{out}"
+        );
+        assert!(out.contains("#show heading.where(level: 2): it => {\n  gk-through-2.step()\n  it\n}"), "{out}");
+        assert!(!out.contains("#show heading.where(level: 3): it => {\n  it\n"), "{out}");
+        // The rules of the count stand after those of the look.
+        let last_look = out.find("#show heading.where(level: 6): it => {\n  set text").unwrap();
+        assert!(out.find("#let gk-through-2").unwrap() > last_look, "{out}");
+        // Not numbered: no count either.
+        f.headings.numbered = false;
+        assert!(!preamble(&f, &Particulars::default()).contains("gk-through"));
     }
 
     #[test]
