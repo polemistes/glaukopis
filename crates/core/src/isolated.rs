@@ -944,6 +944,12 @@ mod windows {
     /// given, and it ends when the job is closed, with the application.
     pub struct Job(HANDLE);
 
+    // SAFETY: the handle of a job object belongs to the process, not to the
+    // thread that made it, and may be used and closed from any thread; a Job
+    // only closes it, once, as it is dropped. A served child's job is held in
+    // its life, behind a mutex, and is dropped by whichever thread ends it.
+    unsafe impl Send for Job {}
+
     impl Drop for Job {
         fn drop(&mut self) {
             // SAFETY: the handle was made by CreateJobObjectW and is closed once.
