@@ -7,7 +7,7 @@
 
 pkgbase=glaukopis
 pkgname=(glaukopis glaukopis-server)
-pkgver=0.2.7
+pkgver=0.2.8
 pkgrel=1
 arch=(x86_64 aarch64)
 # The program and the owl. The dictionaries of spelling and the data of
@@ -22,7 +22,7 @@ options=(!lto !debug)
 
 url='https://github.com/polemistes/glaukopis'
 source=("$pkgbase-$pkgver.tar.gz::https://github.com/polemistes/glaukopis/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('b7f6dafb10aacf5a36886640a98b0f43b8ff82536c2cac1194e7e317b96a24e6')
+sha256sums=('5deadae22de1c44e954372f06a64ef7440ea401d2f6ab0a28cf5a1d65bf9b8d1')
 
 prepare() {
   cd "$srcdir/$pkgbase-$pkgver"
