@@ -6,7 +6,7 @@
     <title>Glaukopis — packages to test</title>
     <meta
       name="description"
-      content="Glaukopis 0.2.6, a version for testing: installers for Windows and macOS, packages for Linux, and the languages of spelling and of reading text."
+      content="Glaukopis 0.2.8, a version for testing: installers for Windows and macOS, packages for Linux, and the languages of spelling and of reading text."
     />
     <style>
       :root {
@@ -216,7 +216,7 @@
           will not have AI generated texts, except for standard short text for features 
           in the user interface.</em></p>
       <p class="lede">
-        Version 0.2.6, built 25 October 2026. Everything here is for testing: it will have faults,
+        Version 0.2.8, built 31 October 2026. Everything here is for testing: it will have faults,
         and your project files may not open in a later version. Keep what matters elsewhere as
         well.
       </p>
@@ -236,33 +236,67 @@
         work, cited in the text with a keystroke and set in the style a publisher asks for. The
         finished text comes out as a PDF, a Word or LibreOffice document, LaTeX, a web page or an
         e-book, with its notes, figures, tables and bibliography in place. Books and papers you
-        have as PDFs or scans can be read into a project. The interface speaks nine languages,
+        have as PDFs or scans can be read beside your text, or into a project. The interface speaks nine languages,
         and spelling is checked in more. Two or more people can write in the same project at the
         same time, through a server of your own. Everything stays on your computer and nothing is
         sent anywhere; the program is free software, for Linux, Windows and macOS.
       </p>
 
-      <h2>New in 0.2.6</h2>
+      <h2>New in 0.2.8</h2>
       <ul class="new">
         <li>
-          <strong>Numbering lines, put right.</strong> The number a count begins from is a setting
-          of the numbering, given in <em>Line numbering from here</em> and shown as the other
-          numbers are: counted from 1 with every fifth line shown, the first number shown is 5. A
-          number you give a line yourself, in <em>Numbering of this line</em> or in the margin, is
-          always shown, where you write and in the document, and the count goes on from it.
-          Numbering set from the middle of a passage counts on from the number its line had.
+          <strong>A file beside your text.</strong> A side of the window shows a PDF or an image of
+          your library instead of a map, opened from a reference, a figure or the files. Each
+          project keeps the files you read beside it as tabs, each at the place you left it, with
+          bookmarks of your own and the file's own contents. Pages zoom about the pointer, and a
+          long scan keeps up as you scroll. A file can be read in the library as well.
         </li>
         <li>
-          <strong>The right-click menu of the text speaks of the line you press.</strong> A right
-          press puts the cursor where it is pressed, unless within what is selected, so that
-          <em>Numbering of this line</em> and <em>Begins where the line before ended</em> are of
-          that line, also within a paragraph of several lines.
+          <strong>One place for files.</strong> The images of your figures are files of the library
+          like any other. The files are shown as a list or as thumbnails, with where each image is a
+          figure, and by their references: the people, the year, the title and the publisher. On
+          request, files are renamed after their references.
+        </li>
+        <li>
+          <strong>A simple image editor.</strong> Turn, flip and crop an image, and change its
+          brightness, contrast and saturation. What you keep is a new file beside the old one, and
+          <em>Versions</em> in the menu of a figure switches between them.
+        </li>
+        <li>
+          <strong>Printing.</strong> <kbd>Print…</kbd> in the typesetting pane, or
+          <kbd>Ctrl+P</kbd>, prints the document through the system's own dialog. A PDF or an image
+          prints from its view, once the pages are chosen.
+        </li>
+        <li>
+          <strong>Chapters counted through the parts.</strong> Each level of heading from the second
+          is counted under the level above, or through the whole document, so that a book of three
+          parts of three chapters has chapters 1 to 9. The number a heading will print stands before
+          its name in the text view, the diagram and the outline; the settings hide it in the text
+          view and the diagram.
+        </li>
+        <li>
+          <strong>The diagram, closer and shared.</strong> Each branch is packed against the one
+          before it, with smaller boxes from the second level down, so that more of a map fits the
+          window. The diagram is saved as SVG or as a PNG image from the menu of its background.
+          Mind maps of Freeplane, FreeMind and XMind open as projects, and a project is saved as
+          one, or as OPML.
+        </li>
+        <li>
+          <strong>Line numbers.</strong> <em>Look</em> has two lengths under <em>Line numbers</em>:
+          how far the numbers, and the annotations, stand from the text, the same on every line.
+        </li>
+        <li>
+          <strong>Norwegian read better.</strong> A Norwegian model for Tesseract, taught for
+          Glaukopis on public-domain Norwegian books read by eye, reads older books better, and no
+          longer mistakes <em>o</em> for <em>ø</em> or <em>a</em> for <em>å</em> on the pages it was
+          tried on. The Fraktur model has learned from worn copies of its lines. Both are updated
+          under <em>Settings</em> › <em>Language</em>, with <kbd>Update</kbd> beside the language.
+        </li>
+        <li>
+          <strong>Intel Macs.</strong> Glaukopis and the collaboration server come for Macs with
+          Intel processors too.
         </li>
       </ul>
-      <p class="aside">
-        0.2.6 mends what was found in 0.2.5, which made over the window, the numbering of lines and
-        much else, and brought Japanese: <a href="releases.html#v0.2.5">what was new in 0.2.5</a>.
-      </p>
       <p class="aside">
         What was new in the versions before: <a href="releases.html">the notes of every release</a>.
       </p>
@@ -293,8 +327,8 @@
       </p>
       <ul class="files">
         <li>
-          <a class="name" href="Glaukopis_0.2.6_x64-setup.exe">Glaukopis_0.2.6_x64-setup.exe</a>
-          <span class="size">92 MB</span>
+          <a class="name" href="Glaukopis_0.2.8_x64-setup.exe">Glaukopis_0.2.8_x64-setup.exe</a>
+          <span class="size">93 MB</span>
           <div class="what">
             <p>
               The usual installer. Installs for the person who runs it, without asking for an
@@ -304,8 +338,8 @@
           </div>
         </li>
         <li>
-          <a class="name" href="Glaukopis_0.2.6_x64_en-US.msi">Glaukopis_0.2.6_x64_en-US.msi</a>
-          <span class="size">136 MB</span>
+          <a class="name" href="Glaukopis_0.2.8_x64_en-US.msi">Glaukopis_0.2.8_x64_en-US.msi</a>
+          <span class="size">137 MB</span>
           <div class="what">
             <p>
               The same application as a Windows Installer package, for installing for every user of
@@ -314,7 +348,7 @@
           </div>
         </li>
         <li>
-          <a class="name" href="glaukopis-server-0.2.6-windows-x64.zip">glaukopis-server-0.2.6-windows-x64.zip</a>
+          <a class="name" href="glaukopis-server-0.2.8-windows-x64.zip">glaukopis-server-0.2.8-windows-x64.zip</a>
           <span class="size">1.7 MB</span>
           <div class="what">
             <p>
@@ -328,28 +362,51 @@
 
       <h2>macOS</h2>
       <p>
-        For Macs with Apple silicon (M1 and later), macOS 11 or newer. There is no build for Intel
-        Macs yet. As on Windows, Pandoc, Tesseract and the fonts come with it.
+        For Macs with Apple silicon (M1 and later) and for Macs with Intel processors, macOS 11 or
+        newer. As on Windows, Pandoc, Tesseract and the fonts come with it. The Tesseract that comes
+        with it needs a newer macOS than Glaukopis does: macOS 26.6.2 or newer on Apple silicon,
+        macOS 14.8.5 or newer on Intel. On an older macOS, install Tesseract with Homebrew,
+        <code>brew install tesseract</code>, and give <code>/opt/homebrew/bin/tesseract</code>, or
+        <code>/usr/local/bin/tesseract</code> on an Intel Mac, as <em>Where Tesseract is</em> in the
+        settings.
       </p>
       <ul class="files">
         <li>
-          <a class="name" href="Glaukopis_0.2.6_aarch64.dmg">Glaukopis_0.2.6_aarch64.dmg</a>
-          <span class="size">86 MB</span>
+          <a class="name" href="Glaukopis_0.2.8_aarch64.dmg">Glaukopis_0.2.8_aarch64.dmg</a>
+          <span class="size">87 MB</span>
           <div class="what">
             <p>
-              A disk image. Open it and drag Glaukopis into <em>Applications</em>. Then open it the
-              first time with a right-click, as said above.
+              For Apple silicon. A disk image: open it and drag Glaukopis into
+              <em>Applications</em>. Then open it the first time with a right-click, as said above.
             </p>
           </div>
         </li>
         <li>
-          <a class="name" href="glaukopis-server-0.2.6-macos-aarch64.zip">glaukopis-server-0.2.6-macos-aarch64.zip</a>
+          <a class="name" href="Glaukopis_0.2.8_x64.dmg">Glaukopis_0.2.8_x64.dmg</a>
+          <span class="size">77 MB</span>
+          <div class="what">
+            <p>
+              The same for Intel.
+            </p>
+          </div>
+        </li>
+        <li>
+          <a class="name" href="glaukopis-server-0.2.8-macos-aarch64.zip">glaukopis-server-0.2.8-macos-aarch64.zip</a>
           <span class="size">1.8 MB</span>
           <div class="what">
             <p>
-              The collaboration server, for the one computer that is to pass changes between people
+              For Apple silicon. The collaboration server, for the one computer that is to pass changes between people
               writing in the same project at the same time; nobody else needs it.
               The program in a folder, with a README of how to start it by hand.
+            </p>
+          </div>
+        </li>
+        <li>
+          <a class="name" href="glaukopis-server-0.2.8-macos-x86_64.zip">glaukopis-server-0.2.8-macos-x86_64.zip</a>
+          <span class="size">1.9 MB</span>
+          <div class="what">
+            <p>
+              The same for Intel.
             </p>
           </div>
         </li>
@@ -362,11 +419,11 @@
         dictionaries of Hunspell and the rest are optional, and <code>pacman -Qi glaukopis</code>
         says what each is for.
       </p>
-      <pre>sudo pacman -U glaukopis-0.2.6-1-x86_64.pkg.tar.zst</pre>
+      <pre>sudo pacman -U glaukopis-0.2.8-1-x86_64.pkg.tar.zst</pre>
       <ul class="files">
         <li>
-          <a class="name" href="glaukopis-0.2.6-1-x86_64.pkg.tar.zst"
-            >glaukopis-0.2.6-1-x86_64.pkg.tar.zst</a
+          <a class="name" href="glaukopis-0.2.8-1-x86_64.pkg.tar.zst"
+            >glaukopis-0.2.8-1-x86_64.pkg.tar.zst</a
           >
           <span class="size">29 MB</span>
           <div class="what">
@@ -380,8 +437,8 @@
           </div>
         </li>
         <li>
-          <a class="name" href="glaukopis-server-0.2.6-1-x86_64.pkg.tar.zst"
-            >glaukopis-server-0.2.6-1-x86_64.pkg.tar.zst</a
+          <a class="name" href="glaukopis-server-0.2.8-1-x86_64.pkg.tar.zst"
+            >glaukopis-server-0.2.8-1-x86_64.pkg.tar.zst</a
           >
           <span class="size">1.7 MB</span>
           <div class="what">
@@ -415,47 +472,47 @@
       </p>
       <ul class="files">
         <li>
-          <a class="name" href="Glaukopis_0.2.6_amd64.deb">Glaukopis_0.2.6_amd64.deb</a>
-          <span class="size">73 MB</span>
+          <a class="name" href="Glaukopis_0.2.8_amd64.deb">Glaukopis_0.2.8_amd64.deb</a>
+          <span class="size">75 MB</span>
           <div class="what">
             <p>
               For Ubuntu 24.04 or newer and Debian 13 or newer. Install with
-              <code>sudo apt install ./Glaukopis_0.2.6_amd64.deb</code>, from the folder it is in.
+              <code>sudo apt install ./Glaukopis_0.2.8_amd64.deb</code>, from the folder it is in.
             </p>
           </div>
         </li>
         <li>
-          <a class="name" href="Glaukopis-0.2.6-1.x86_64.rpm">Glaukopis-0.2.6-1.x86_64.rpm</a>
-          <span class="size">73 MB</span>
+          <a class="name" href="Glaukopis-0.2.8-1.x86_64.rpm">Glaukopis-0.2.8-1.x86_64.rpm</a>
+          <span class="size">75 MB</span>
           <div class="what">
             <p>
               For Fedora 40 or newer. Install with
-              <code>sudo dnf install ./Glaukopis-0.2.6-1.x86_64.rpm</code>, from the folder it is
+              <code>sudo dnf install ./Glaukopis-0.2.8-1.x86_64.rpm</code>, from the folder it is
               in.
             </p>
           </div>
         </li>
         <li>
-          <a class="name" href="glaukopis-server_0.2.6_amd64.deb">glaukopis-server_0.2.6_amd64.deb</a>
+          <a class="name" href="glaukopis-server_0.2.8_amd64.deb">glaukopis-server_0.2.8_amd64.deb</a>
           <span class="size">2.0 MB</span>
           <div class="what">
             <p>
               The collaboration server, for the one computer that is to pass changes between people
               writing in the same project at the same time; nobody else needs it.
               With its service and settings, as the Arch package has them:
-              <code>sudo apt install ./glaukopis-server_0.2.6_amd64.deb</code>; how to run it is in
+              <code>sudo apt install ./glaukopis-server_0.2.8_amd64.deb</code>; how to run it is in
               <code>/usr/share/doc/glaukopis-server/server.md</code> once installed.
             </p>
           </div>
         </li>
         <li>
-          <a class="name" href="glaukopis-server-0.2.6-1.x86_64.rpm">glaukopis-server-0.2.6-1.x86_64.rpm</a>
+          <a class="name" href="glaukopis-server-0.2.8-1.x86_64.rpm">glaukopis-server-0.2.8-1.x86_64.rpm</a>
           <span class="size">2.0 MB</span>
           <div class="what">
             <p>
               The collaboration server, for the one computer that is to pass changes between people
               writing in the same project at the same time; nobody else needs it.
-              The same for Fedora: <code>sudo dnf install ./glaukopis-server-0.2.6-1.x86_64.rpm</code>.
+              The same for Fedora: <code>sudo dnf install ./glaukopis-server-0.2.8-1.x86_64.rpm</code>.
             </p>
           </div>
         </li>
@@ -547,8 +604,10 @@
       <h3>Languages for reading scans and pictures</h3>
       <p>
         The best data there is for Tesseract, <code>tessdata_best</code> 4.1.0, under the Apache
-        License 2.0. Tesseract has one Norwegian, for Bokmål and Nynorsk both, one English, and two
-        Japanese, for writing across the page and down it. The
+        License 2.0, but the Norwegian. Tesseract has one Norwegian, for Bokmål and Nynorsk both;
+        here it is that model taught for Glaukopis the roman type of public-domain Norwegian books
+        and newspapers from the National Library, read by eye (Apache 2.0). There is one English,
+        and two Japanese, for writing across the page and down it. The
         Fraktur model reads books in Gothic type, whatever their language; it was made for German,
         and knows no <em>æ</em>, <em>ø</em> or <em>å</em>. Fraktur, Danish and Norwegian is the
         same model trained for Glaukopis on Norwegian books and newspapers in Gothic type of 1811
@@ -573,9 +632,9 @@
           </tr>
           <tr>
             <td>Norwegian</td>
-            <td><a href="ocr-nor-4.1.0.zip">ocr-nor-4.1.0.zip</a></td>
+            <td><a href="ocr-nor-2026.10.30.zip">ocr-nor-2026.10.30.zip</a></td>
             <td class="licence">Apache 2.0</td>
-            <td class="size">12 MB</td>
+            <td class="size">7.2 MB</td>
           </tr>
           <tr>
             <td>Swedish</td>
@@ -639,7 +698,7 @@
           </tr>
           <tr>
             <td>Fraktur, Danish and Norwegian (Gothic type)</td>
-            <td><a href="ocr-dan_latf-2026.10.21.zip">ocr-dan_latf-2026.10.21.zip</a></td>
+            <td><a href="ocr-dan_latf-2026.10.30.zip">ocr-dan_latf-2026.10.30.zip</a></td>
             <td class="licence">Apache 2.0</td>
             <td class="size">4.0 MB</td>
           </tr>
