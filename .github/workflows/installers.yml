@@ -178,7 +178,7 @@ jobs:
       # After the installers are kept, so that a test that fails on one
       # system marks the run without losing them.
       - name: Test the core
-        run: cargo test -p glaukopis-core --features bundled-sqlite
+        run: cargo test -p glaukopis-core --features bundled-sqlite --no-fail-fast
 
   # The collaboration server (docs/server.md), which Tauri does not bundle: a
   # deb and an rpm made by nfpm on Linux, the same files as the Arch package,

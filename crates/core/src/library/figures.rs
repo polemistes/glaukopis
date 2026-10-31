@@ -952,7 +952,7 @@ mod tests {
         assert!(edit_facts(&write("words.txt", b"plain words")).is_err());
         // Over the limit by its size, whatever it holds after its head.
         let large = write("large.png", &PNG);
-        std::fs::File::options().append(true).open(&large).unwrap().set_len(MAX_BYTES + 1).unwrap();
+        std::fs::File::options().write(true).open(&large).unwrap().set_len(MAX_BYTES + 1).unwrap();
         assert!(edit_facts(&large).unwrap().too_large);
     }
 

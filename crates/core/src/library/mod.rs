@@ -2436,7 +2436,7 @@ mod tests {
         let plate = got[0].clone();
         // The file grows past the limit; what it holds after its image is not read.
         let stored = lib.attachment_path(&plate.path).unwrap();
-        fs::File::options().append(true).open(&stored).unwrap().set_len(figures::MAX_BYTES + 1).unwrap();
+        fs::File::options().write(true).open(&stored).unwrap().set_len(figures::MAX_BYTES + 1).unwrap();
         let lib = Mutex::new(lib);
         let facts = held(&lib).edit_facts(&plate.hash).unwrap();
         assert_eq!((facts.width, facts.height, facts.ending.as_str(), facts.too_large), (6, 5, "png", true));
