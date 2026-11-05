@@ -11,7 +11,10 @@
  * between its first child and its last. An element the user has moved keeps
  * the place it was given, relative to its parent, and its own branch is laid
  * out from there. The element in view stands at the origin whatever its
- * place under its own parent, and is never folded. Coordinates are those of
+ * place under its own parent, and is never folded. Where it has one child
+ * with children of its own, that child stands under it, and so on down a
+ * chain of single children, and the map spreads from the last of the chain,
+ * the hub, as it would from the element in view. Coordinates are those of
  * the centre of each element.
  */
 
@@ -31,7 +34,10 @@ export interface Placed {
   w: number;
   h: number;
   side: Side;
+  /** How many steps from the element in view. */
   depth: number;
+  /** How deep it is drawn: 0 the element in view, 1 the chain under it and the hub's children, 2 and more below. */
+  level: number;
   parent: string | null;
   /** How many elements are hidden under it because it is collapsed. */
   hidden: number;
@@ -50,6 +56,8 @@ export interface Layout {
 export const H_GAP = 64;
 /** Between a branch and the next, wherever the two come closest. */
 export const V_GAP = 10;
+/** Between the element in view and the single element that stands under it, at the least. */
+export const CHAIN_GAP = 28;
 export const DEFAULT_SIZE: Size = { w: 120, h: 36 };
 
 /** A branch as laid out on its own, its element at the origin and growing to the right. */
@@ -153,14 +161,30 @@ export function layout(
     return b;
   };
 
-  // Around the element in view: what is already on either side, placed by
-  // hand, is counted, and the rest is divided so that the sides come out
-  // even with it counted; the first in order to the right.
+  // The chain: from the element in view down through single children that
+  // have children of their own, each standing under the one before. The
+  // last, the hub, is what the map spreads from (record 0082).
   const root = tree.root;
-  const rs = size(root);
+  const chain: string[] = [];
+  let hub = root;
+  for (;;) {
+    const kids = flowing(hub);
+    if (kids.length !== 1 || visibleChildren(hub).length !== 1 || !visibleChildren(kids[0]).length)
+      break;
+    chain.push(kids[0]);
+    hub = kids[0];
+  }
+  const inChain = new Set(chain);
+
+  // Around the hub: what is already on either side, placed by hand, is
+  // counted, and the rest is divided so that the sides come out even with it
+  // counted; the first in order to the right.
+  const hs = size(hub);
   const occupied = { left: 0, right: 0 };
   const flow: { id: string; branch: Branch }[] = [];
-  for (const c of visibleChildren(root)) {
+  /** The top of what flows on either side of the hub, in its frame, the left side turned over to the right. */
+  let fan: Outline = [];
+  for (const c of visibleChildren(hub)) {
     const pos = nodes.get(c)?.pos;
     const b = branch(c);
     if (pos) occupied[pos.x < 0 ? 'left' : 'right'] += b.above + b.below + V_GAP;
@@ -176,8 +200,27 @@ export function layout(
     [flow.slice(split), 'left'],
   ] as const) {
     if (!kids.length) continue;
-    settle(rs, kids, stack(rs, kids).ys);
+    const stacked = stack(hs, kids);
+    const mid = settle(hs, kids, stacked.ys);
     for (const k of kids) sideOf.set(k.id, side);
+    fan = joined(fan, moved(stacked.top, 0, -mid), false);
+    fan = joined(fan, piece(hs.w / 2, 0, hs.w / 2 + H_GAP, rel.get(kids[0].id)!.y), false);
+  }
+
+  // The chain from the hub upwards, each element over the one under it, and
+  // higher where it would stand across the hub's branches or their lines.
+  const column = [root, ...chain];
+  const heights = new Map<string, number>([[hub, 0]]);
+  for (let i = column.length - 2; i >= 0; i--) {
+    const s = size(column[i]);
+    const under = size(column[i + 1]);
+    let y = heights.get(column[i + 1])! - under.h / 2 - CHAIN_GAP - s.h / 2;
+    const need = clearance(piece(-s.w / 2, y + s.h / 2, s.w / 2, y + s.h / 2), fan, V_GAP);
+    if (need !== null && need > 0) y -= need;
+    heights.set(column[i], y);
+  }
+  for (let i = 1; i < column.length; i++) {
+    rel.set(column[i], { x: 0, y: heights.get(column[i])! - heights.get(column[i - 1])! });
   }
 
   const place = (
@@ -198,6 +241,7 @@ export function layout(
       h: s.h,
       side,
       depth,
+      level: depth === 0 ? 0 : inChain.has(id) ? 1 : depth - chain.length,
       parent,
       hidden: node?.collapsed && id !== tree.root ? countUnder(id) : 0,
       pinned: !!node?.pos && parent !== null,

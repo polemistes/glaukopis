@@ -173,6 +173,9 @@ beside the one before it as the two allow, box against box and box against
 line: an element with little under it stands close beside one with much,
 whose children fan out past it, and an element stands midway between its
 first child and its last. From the second level down the boxes are smaller.
+Where the element in view has one thing under it with things of its own,
+that stands under it, and the map spreads from there: a project that is one
+book is laid out about the book, with the project's name over it.
 A project opens with the project itself in view, and its whole tree about
 it. With nothing selected,
 **Alt+Enter** adds an element under the element in view, and **Enter** selects it.

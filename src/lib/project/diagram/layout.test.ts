@@ -4,6 +4,7 @@ import type { NodeRecord } from '../model/types';
 import {
   associationCurve,
   balance,
+  CHAIN_GAP,
   H_GAP,
   hierarchyLine,
   layout,
@@ -313,6 +314,178 @@ describe('the layout of a map', () => {
     // Placed by hand, relative to the element in view, which stands at the origin.
     expect([p('b').x, p('b').y]).toEqual([-200, 80]);
     expect(l.placed.has('other')).toBe(false);
+  });
+});
+
+describe('the chain under the element in view', () => {
+  it('a single child with children of its own stands under the element in view, and its children go to both sides', () => {
+    const { tree, nodes, sizes } = make({
+      r: { parent: null },
+      a: { parent: 'r' },
+      b: { parent: 'a' },
+      c: { parent: 'a' },
+    });
+    const l = layout(tree, nodes, sizes);
+    const p = (id: string) => l.placed.get(id)!;
+    expect([p('a').x, p('a').y]).toEqual([0, 20 + CHAIN_GAP + 20]);
+    expect(p('b').x).toBe(50 + H_GAP + 50);
+    expect(p('b').y).toBe(p('a').y);
+    expect(p('c').x).toBe(-(50 + H_GAP + 50));
+    expect(p('c').y).toBe(p('a').y);
+    expect(p('c').side).toBe('left');
+    expect([p('r').level, p('a').level, p('b').level, p('c').level]).toEqual([0, 1, 1, 1]);
+    expect([p('a').depth, p('b').depth]).toEqual([1, 2]);
+    expect(neighbour(l, 'r', 'down')).toBe('a');
+    expect(neighbour(l, 'a', 'up')).toBe('r');
+    expect(hierarchyLine(p('r'), p('a'))).toEqual([
+      { x: 0, y: 20 },
+      { x: 0, y: 20 + CHAIN_GAP },
+    ]);
+    expect(overlaps(l)).toEqual([]);
+    expect(crossings(l)).toEqual([]);
+  });
+
+  it('a chain of two goes on down, and what is under the hub is drawn as the levels below', () => {
+    const { tree, nodes, sizes } = make({
+      r: { parent: null },
+      a: { parent: 'r' },
+      b: { parent: 'a' },
+      c: { parent: 'b' },
+      d: { parent: 'b' },
+      e: { parent: 'c' },
+    });
+    const l = layout(tree, nodes, sizes);
+    const p = (id: string) => l.placed.get(id)!;
+    expect(p('b').x).toBe(0);
+    expect(p('b').y).toBe(p('a').y + 40 + CHAIN_GAP);
+    expect(p('c').x).toBeGreaterThan(0);
+    expect(p('d').x).toBeLessThan(0);
+    expect(p('c').y).toBe(p('b').y);
+    expect(['a', 'b', 'c', 'd', 'e'].map((id) => p(id).level)).toEqual([1, 1, 1, 1, 2]);
+    expect(p('e').depth).toBe(4);
+    expect(p('e').x).toBeGreaterThan(p('c').x);
+  });
+
+  it('a single leaf stays beside', () => {
+    const { tree, nodes, sizes } = make({ r: { parent: null }, a: { parent: 'r' } });
+    const l = layout(tree, nodes, sizes);
+    expect([l.placed.get('a')!.x, l.placed.get('a')!.y]).toEqual([50 + H_GAP + 50, 0]);
+    expect(l.placed.get('a')!.level).toBe(1);
+  });
+
+  it('a placed single child is laid out from its place, one-sided', () => {
+    const { tree, nodes, sizes } = make({
+      r: { parent: null },
+      a: { parent: 'r', pos: { x: -200, y: 0 } },
+      a1: { parent: 'a' },
+      a2: { parent: 'a' },
+    });
+    const l = layout(tree, nodes, sizes);
+    const p = (id: string) => l.placed.get(id)!;
+    expect([p('a').x, p('a').y]).toEqual([-200, 0]);
+    expect(p('a1').x).toBeLessThan(-200);
+    expect(p('a2').x).toBe(p('a1').x);
+    expect([...l.placed.values()].filter((q) => q.x === 0 && q.y > 0)).toEqual([]);
+    expect(p('a1').level).toBe(2);
+  });
+
+  it('a folded single child stands beside', () => {
+    const { tree, nodes, sizes } = make({
+      r: { parent: null },
+      a: { parent: 'r', collapsed: true },
+      a1: { parent: 'a' },
+      a2: { parent: 'a' },
+    });
+    const l = layout(tree, nodes, sizes);
+    const a = l.placed.get('a')!;
+    expect([a.x, a.y]).toEqual([50 + H_GAP + 50, 0]);
+    expect(a.hidden).toBe(2);
+  });
+
+  it('a single child beside one placed by hand is not a chain', () => {
+    const { tree, nodes, sizes } = make({
+      r: { parent: null },
+      a: { parent: 'r' },
+      a1: { parent: 'a' },
+      b: { parent: 'r', pos: { x: -300, y: 0 } },
+    });
+    const l = layout(tree, nodes, sizes);
+    expect(l.placed.get('a')!.y).toBe(0);
+    expect(l.placed.get('a')!.x).toBeGreaterThan(0);
+  });
+
+  it("the hub's placed children count on their side", () => {
+    const spec = {
+      r: { parent: null },
+      h: { parent: 'r' },
+      a: { parent: 'h' },
+      b: { parent: 'h' },
+    };
+    const before = make(spec);
+    const free = layout(before.tree, before.nodes, before.sizes);
+    expect(free.placed.get('b')!.side).toBe('left');
+    const placed = make({ ...spec, c: { parent: 'h', pos: { x: -300, y: 0 } } });
+    const l = layout(placed.tree, placed.nodes, placed.sizes);
+    const p = (id: string) => l.placed.get(id)!;
+    expect([p('c').x, p('c').y]).toEqual([-300, p('h').y]);
+    // The left side holds the placed one: both that flow go right.
+    expect(p('a').side).toBe('right');
+    expect(p('b').side).toBe('right');
+  });
+
+  it('an element in view wider than the hub stands higher, clear of the lines to its branches', () => {
+    const { tree, nodes, sizes } = make({
+      r: { parent: null },
+      h: { parent: 'r' },
+      a: { parent: 'h' },
+      b: { parent: 'h' },
+      c: { parent: 'h' },
+      d: { parent: 'h' },
+      e: { parent: 'h' },
+      f: { parent: 'h' },
+    });
+    sizes.set('r', { w: 320, h: 46 });
+    sizes.set('h', { w: 60, h: 40 });
+    const l = layout(tree, nodes, sizes);
+    const p = (id: string) => l.placed.get(id)!;
+    expect(p('h').x).toBe(0);
+    expect(p('h').y).toBeGreaterThan(23 + CHAIN_GAP + 20);
+    // The hub still stands midway between its first child and its last on either side.
+    expect(p('h').y).toBe((p('a').y + p('c').y) / 2);
+    expect(overlaps(l)).toEqual([]);
+    expect(crossings(l)).toEqual([]);
+  });
+
+  it('lays out a large tree under a chain with nothing over anything', () => {
+    let seed = 11;
+    const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+    const nodes = new Map<string, NodeRecord>();
+    const sizes = new Map<string, Size>();
+    // The element in view far wider than the book, and narrower.
+    for (const w of [300, 80]) {
+      const flat: FlatNode[] = [];
+      const add = (id: string, parent: string | null, width = 60 + Math.floor(rnd() * 200)) => {
+        flat.push({ id, parent, order: id });
+        nodes.set(id, { ...make({ x: { parent: null } }).nodes.get('x')!, id, order: id });
+        sizes.set(id, { w: width, h: rnd() < 0.2 ? 53 : 34 });
+      };
+      const grow = (parent: string, depth: number) => {
+        const kids = depth === 0 ? 9 : rnd() < 0.45 ? 1 + Math.floor(rnd() * 7) : 0;
+        for (let i = 0; i < kids; i++) {
+          const id = `${parent}.${i}`;
+          add(id, parent);
+          if (depth < 5) grow(id, depth + 1);
+        }
+      };
+      add('p', null, w);
+      add('b', 'p', 160);
+      grow('b', 0);
+      const l = layout(buildTree(flat, 'p'), nodes, sizes);
+      expect(l.placed.size).toBeGreaterThan(100);
+      expect(l.placed.get('b')!.x).toBe(0);
+      expect(overlaps(l)).toEqual([]);
+      expect(crossings(l)).toEqual([]);
+    }
   });
 });
 

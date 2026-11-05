@@ -136,7 +136,7 @@
 
 <div
   bind:this={el}
-  class="node depth-{Math.min(placed.depth, 2)} {placed.side}"
+  class="node depth-{Math.min(placed.level, 2)} {placed.side}"
   class:root={placed.depth === 0}
   class:selected
   class:target
