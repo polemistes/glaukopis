@@ -1393,6 +1393,7 @@
             renaming={renaming === id}
             hasChildren={(tree.children.get(id)?.length ?? 0) > 0}
             excluded={node.excluded}
+            isDocument={marking?.marked === id}
             others={project.othersAt(id)}
             onsize={(nodeId, size) => {
               if (!size) sizes.delete(nodeId);

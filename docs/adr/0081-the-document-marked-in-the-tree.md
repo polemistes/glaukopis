@@ -69,3 +69,7 @@ Built on 2026-11-05 as the plan has it, with these departures:
 - **The settings are kept as they were read**: the old `headingNumbers` is not dropped from the settings file, which keeps whatever it does not know; it is only read where neither new setting is kept.
 - **The notes beside a marked book are numbered**, being within it: the plan's script expected no number there. An element outside the marked document carries none, as the record says; the script checks it with a part marked.
 - **No test hook** was made to set the mark before the menu could: the views were checked in the running application with the item, in the new script.
+
+## Addendum, 2026-11-05: the sign in the diagram
+
+The owner asked the same day for a visible sign on the marked element in the diagram. The box of the marked element carries the open book before its name, as the path's crumb does, on any element of the diagram and on the element in view at its centre; its tooltip says *The document*. The picture saved of the diagram (0068) leaves the sign out with the rest of what belongs to working on the map: the mark is of this computer's view of the project, not of the project. The text view has no sign of its own, which the owner has not been asked about: its title is the element in view, whose crumb in the path carries the sign where it is marked; the heading of a marked element under the one in view carries none.

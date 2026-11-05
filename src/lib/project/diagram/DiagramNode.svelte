@@ -1,4 +1,5 @@
 <script lang="ts">
+  import BookOpenText from '@lucide/svelte/icons/book-open-text';
   import FileText from '@lucide/svelte/icons/file-text';
   import EyeOff from '@lucide/svelte/icons/eye-off';
   import FileInput from '@lucide/svelte/icons/file-input';
@@ -38,6 +39,8 @@
     hasChildren: boolean;
     /** Inherited: the element or one above it is left out of the document. */
     excluded: boolean;
+    /** Marked as the document (record 0081): its box carries the sign of the typesetting. */
+    isDocument?: boolean;
     /** Those of the others who are at this element. */
     others?: Other[];
     onsize: (id: string, size: Size | null) => void;
@@ -67,6 +70,7 @@
     renaming,
     hasChildren,
     excluded,
+    isDocument = false,
     others = [],
     onsize,
     domId,
@@ -160,7 +164,13 @@
   )}px)"
 >
   <div class="caption">
-    {#if renaming && title}
+    {#if isDocument && !still && !renaming}<span
+        class="document"
+        role="img"
+        aria-label={t('project-the-document')}
+        use:tooltip={t('project-the-document')}
+        data-document-sign><BookOpenText size={placed.depth === 0 ? 15 : 12} /></span
+      >{/if}{#if renaming && title}
       <RichText
         {project}
         fragment={title}
@@ -448,6 +458,16 @@
     margin-right: 0.35em;
     color: var(--ink-3);
     font-variant-numeric: tabular-nums;
+  }
+  /* The sign of the element marked as the document: the open book of the Typesetting button. */
+  .caption .document {
+    display: inline-flex;
+    vertical-align: -0.15em;
+    margin-right: 0.35em;
+    color: var(--ink-3);
+  }
+  .root .caption .document {
+    color: color-mix(in srgb, var(--accent-ink) 85%, transparent);
   }
   .caption :global(.rename) {
     min-width: 60px;

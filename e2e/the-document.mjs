@@ -3,8 +3,8 @@
 // with a mark, the element entered beneath it carries the number the
 // document gives it in the text view and the diagram, the typesetting pane
 // sets the marked document and names it in its head, the sign of the
-// typesetting stands on the marked element's crumb in the path and on its row
-// in the list; an element outside the marked document carries no number;
+// typesetting stands on the marked element's box in the diagram, on its crumb
+// in the path and on its row in the list; an element outside the marked document carries no number;
 // chosen again on the marked element, the item is checked and takes the mark
 // off, and the chapter entered prints alone again; the mark comes back when
 // the application is opened again.
@@ -49,6 +49,11 @@ const signedCrumbs = (app) =>
 const signedRows = (app) =>
   app.exec(
     `return Array.from(document.querySelectorAll('[data-projects-pane] .row')).filter((r) => r.querySelector('[data-document-sign]')).map((r) => r.querySelector('.name')?.textContent.trim())`,
+  );
+/** The names of the boxes of the diagram that carry the sign. */
+const signedNodes = (app) =>
+  app.exec(
+    `return Array.from(document.querySelectorAll('.pane .diagram .node')).filter((n) => n.querySelector('[data-document-sign]')).map((n) => n.querySelector('.caption .name')?.textContent.trim())`,
   );
 /** Goes up to the project, by its crumb, which the path always shows. */
 const toTop = async (app) => {
@@ -132,6 +137,10 @@ try {
   await app.waitFor('[data-path] [data-document-sign]', 5000);
   check('marked, the project’s crumb carries the sign', JSON.stringify(await signedCrumbs(app)) === '["A book in parts"]', JSON.stringify(await signedCrumbs(app)));
   check('while the pane names nothing, the project being in view', (await namedInPane(app)) === null);
+  await app.view('diagram');
+  await app.waitFor('.pane .diagram .node.root [data-document-sign]', 5000);
+  check('and in the diagram the sign stands on the project’s box alone', JSON.stringify(await signedNodes(app)) === '["A book in parts"]', JSON.stringify(await signedNodes(app)));
+  await app.screenshot('the-document-0-sign-in-diagram');
   await enter(app, 'Part one', 'Alpha');
   await inText(app);
   check('the chapter entered under the marked book has its number in the title', (await titleNumber(app)) === '1.1', String(await titleNumber(app)));
@@ -175,6 +184,10 @@ try {
   await app.elementMenu('Part one', 'Make this the document');
   await sleep(300);
   check('a part marked from its heading carries the sign on its row', (await signedRows(app)).includes('Part one'), JSON.stringify(await signedRows(app)));
+  await app.view('diagram');
+  await app.waitFor('.pane .diagram .node [data-document-sign]', 5000);
+  check('and on its box in the diagram, the project’s box carrying none', JSON.stringify(await signedNodes(app)) === '["Part one"]', JSON.stringify(await signedNodes(app)));
+  await app.screenshot('the-document-3-sign-on-a-part');
   await enter(app, 'Part one', 'Alpha');
   await inText(app);
   check('the chapter entered under the marked part is numbered as the part prints it', (await titleNumber(app)) === '1', String(await titleNumber(app)));

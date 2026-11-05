@@ -201,9 +201,10 @@ diagram then says how far the map has come, as *2 done · 3 drafts · 1 idea ·
 diagram as an image…**, in the menu of the background, write the map as it
 stands: folded as it is folded, in the colours of your theme, named after
 the element in view. What belongs to working on the map is left out: what
-is selected, the buttons, the others who are there and the comments. The
-SVG keeps the names as text, to be found and copied, and carries its fonts
-with it. The image is a PNG at twice the size of the map on the screen.
+is selected, the buttons, the others who are there, the comments and the
+sign of the document. The SVG keeps the names as text, to be found and
+copied, and carries its fonts with it. The image is a PNG at twice the size
+of the map on the screen.
 
 ## The text
 
@@ -1724,7 +1725,8 @@ first section. An element outside the marked document carries no number,
 as it prints none. Where you are does not change: entering, going up, the
 diagram, the text, what is folded and the path are of the element in view,
 as always. The marked element has the open book of the **Typesetting**
-button before its name in the path and after it in the list of projects.
+button before its name on its box in the diagram and in the path, and
+after it in the list of projects.
 One element of a project is marked at a time: marking another moves the
 mark, and the item, checked on the element that is marked, takes the mark
 off there. The mark is kept with the project on this computer, as its folds
