@@ -27,8 +27,8 @@
   interface Props {
     project: Project;
     node: NodeRecord;
-    /** Its number as the document prints it, before its name, where the look numbers the headings (record 0079). */
-    printedNumber?: string | null;
+    /** The number before its name: as the document prints it, or its place in the tree, as the settings say (records 0079, 0083). */
+    numberShown?: string | null;
     placed: Placed;
     selected: boolean;
     /** Whether something dragged would be put under this element if dropped now. */
@@ -62,7 +62,7 @@
   let {
     project,
     node,
-    printedNumber = null,
+    numberShown = null,
     placed,
     selected,
     target,
@@ -190,7 +190,7 @@
     {:else if node.titleHtml}
       <!-- The name holds only the marks a name can have; its text is escaped. -->
       <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-      {#if printedNumber}<span class="number">{printedNumber}</span>{/if}<span class="name"
+      {#if numberShown}<span class="number">{numberShown}</span>{/if}<span class="name"
         >{@html node.titleHtml}</span
       >
     {:else}

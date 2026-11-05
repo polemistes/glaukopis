@@ -1,0 +1,50 @@
+# 0083 — The order of the document is its own, and the map says it
+
+Date: 2026-11-06. Status: accepted on 2026-11-06 by the owner ("Do all three"), from the owner's question of the same day ("It is not satisfactory that the order of a document is determined by the placement of elements on the mind map. I have imported a large document, which is in correct order, and then, just by moving elements around, everything becomes a mess. Also, it is not intuitive that the vertical placement on a 2d plane should determine the order of elements. There must be a better way of doing it. In principle, ordering will normally happen in the text view, except if the document starts with a mind map, and then the order should be determined by the order of which the elements are made. Still, there should be a way to see and alter the order of elements also from the diagram view. Any suggestions?"). Built the same day (see *As built*). Amends 0081 in the setting of the numbers in the diagram, which gains a third choice; the layout of 0077 and 0082 is as it was.
+
+## Context
+
+- **The order is its own already.** Every element carries an order key beside its parent (0002); the tree sorts the children of each element by it, and the text, the outline, the document and the Org form all read that order. New elements take their place by when they are made: Alt+Enter puts one after the element it is made from, Alt+Shift+Enter the first under it, and a double-click on the background the last under the element in view. Alt with the arrows moves an element among those beside it, in the diagram, the text and the outline alike; the text view moves an element by the grip beside its heading, with a line that shows where it will go.
+- **One function wrote the order from the place.** When an element was dropped on the background of the map, the diagram put it under the parent it had, where it was dropped, and gave it the place among its siblings that followed from where it stood: on its side of the parent, from the top down; dropped across the centre, it went to the start or to the end of its siblings. So arranging the map rearranged the document, and the vertical place on a plane said what the order was. On a document brought in from a file in its right order, moving a few elements about undid the order.
+- **The automatic layout reads in order.** Where nothing is placed by hand, the children of the element the map spreads from stand down its right side, then down its left, each in the order of the tree (0077, 0082). The guide did not say so.
+- **The numbers on the boxes are those the document prints** (0079, 0081): nothing where the look numbers no headings, as in a novel. Where elements are placed by hand, nothing on the map says their order.
+
+## Decision
+
+- **A placement never changes the order.** An element dropped on the background of the map is placed by hand where it was dropped, under the parent it has, and keeps its place in the order. Dropped on another element, it goes last under that element, as before. *Place automatically* and *Tidy the branch* put elements back into the flow, at their places in the order, as before; so does Alt with the arrows, which orders.
+- **A drop between siblings orders.** Held over the column of elements that flow beside a parent, between two of them, over the first or under the last, a line shows across the column where the element would go. Dropped there, the element takes that place in the order under that parent and flows with the rest. The same from the text view and from another project shown beside. With Shift held, the element goes alone and is placed where it is dropped: no line is shown.
+- **The numbers in the diagram can count every element.** The setting of the numbers in the diagram (0081) has three choices: as the document prints them, of every element, or hidden. *Of every element* numbers every box on the map from the element in view, the first level 1, 2, 3, the second 1.1, 1.2, whatever the look prints, so that the order is read on a map whose elements stand anywhere. The text view keeps its two choices.
+- **The guide says how the map reads**: down the right side of the element the map spreads from, then down the left; an element placed by hand keeps its place in the order wherever it stands.
+
+## Choices made in writing this, which the owner has not been asked about
+
+1. **Of every element counts from the element in view**, not from the element marked as the document (0081). The count is of the map, to read the order of what is on it: the sections of a chapter entered are 1, 2, 3 on its map, and short. The printed numbers, the other choice, are counted from the document as 0081 has it.
+2. **Dropped on an element, last under it**, as before; not at the place the pointer's height would say among its children. The children of the element are not seen in the gesture.
+3. **The line between siblings has no words**: the two boxes it stands between say where the element goes. The text view's line says *Before* or *After* because its column is one, and the depth is chosen by the pointer's distance to the right.
+4. **The column reaches 36 pixels over its first element and under its last**, a box's height, so that an element lifted from the end of a column and let go where it was finds its own room; and 12 pixels to either side of its boxes. Beyond that, a drop places. Where two columns stand one over the other, the nearer takes the drop.
+5. **Alt with the arrows still puts a placed element back into the flow**, as before, so that the move is seen.
+6. **No numbers in the picture of the diagram beyond what the boxes carry**: the picture copies the boxes as drawn, as it does the printed numbers.
+
+## Why not otherwise
+
+- **Not the order from the place, kept, with a better rule.** Any rule that reads an order from two coordinates is a rule the writer has to know, and the owner's question is that no such rule is obvious. The place of an element on a map is what it looks like; its order is what it says. The two are kept apart.
+- **Not a mode in which placing is turned off.** The map is read in order where nothing is placed by hand, and placing by hand is wanted for a map that is thought about; the fault was only that placing wrote into the order.
+- **Not the outline as the only way to order from the diagram.** The outline stands beside the diagram and orders with Alt and the arrows, and stays; but a map wants the gesture of dropping an element between two others, which every mind-map program has.
+- **Not numbers always on.** A map of ideas does not want numbers; a map of a book in order does. The choice is the writer's, as the printed numbers are already.
+
+## Consequences
+
+- `project/diagram/MapDiagram.svelte`: a drop on the background places and does not move; the slot while something is dragged, and the drop into it; the numbers by the setting.
+- `project/diagram/slots.ts`, new: the columns of a layout and the slot at a point, with tests.
+- `project/model/tree.ts`: the numbers of every element from the root of a tree, with tests.
+- `state/settings.svelte.ts`, `settings/SettingsView.svelte`: the setting of the diagram's numbers as three choices, the older settings read as before; its tests.
+- `locales/en/settings.ftl`, `locales/nb/settings.ftl`: the words of the choices.
+- `docs/guide.md`: *The diagram* (how the map reads, placing, the line between siblings) and *The text* (the setting).
+- `e2e/ordering.mjs`, new: the order kept through placing, the drop between siblings, the numbers of every element; `e2e/numbers.mjs` mended for the words of the setting; `maps`, `chain`, `tree-keys` and `settings` run as they were.
+
+## As built, 2026-11-06
+
+- **As decided.** A drop on the background sets the element's place alone, under the parent it has, from the map as it stood during the drop; nothing of the order is written. The columns of a layout are the elements that flow beside each parent on each side, from the top down (`diagram/slots.ts`); the slot at a point is of the nearest column that reaches it, within 12 pixels beside its boxes and 36 over the first and under the last, a box's height, so that an element lifted from the end of a column and let go where it was finds its own room. The place counts in the parent's list as it is: after the element over the slot, or at the element under it where none is over, so that an element placed by hand between the two in the list keeps its place too. The line is drawn over the boxes, since the box held covers the gap it is dropped into, with its dot at the parent's side; it shows for elements of this project from any pane and for those of the project beside, and a drop from the project beside goes to the slot's place by the carrying across. Shift held shows no line and places alone.
+- **The numbers.** The setting of the diagram's numbers is a word, printed, tree or hidden; what was kept as on or off, or as the one setting before 0081, is read as printed or hidden. *Of every element* counts from the element in view, by `numbered` of `model/tree.ts`.
+- **Counts.** The interface's tests are 1406, all passing, seven of them of the slots and one of the numbering, the settings' test widened; svelte-check finds nothing. The new script `e2e/ordering.mjs` passes its 21 checks: four elements in the order they were made, read down the right side then the left; one dragged to the background keeps its order and stands where dropped; one dropped over the first of a column comes before it, with the line shown; a placed one dropped between two comes between them and flows; with Shift held no line, the order kept; the numbers of every element, from the project and from an element entered, hidden, and as printed where the look prints none. The scripts of the parts touched pass as they were: numbers 16 (its words mended for the setting's), maps 78, chain 10, tree-keys 44, settings 25, languages 17.
+- **Not changed.** The layout, the keys, Alt with the arrows putting a placed element back into the flow, the picture of the diagram, the outline.

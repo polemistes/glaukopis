@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { buildTree, isAncestor, pathTo, subtree, topmost, viewOf, type FlatNode } from './tree';
+import {
+  buildTree,
+  isAncestor,
+  numbered,
+  pathTo,
+  subtree,
+  topmost,
+  viewOf,
+  type FlatNode,
+} from './tree';
 import { PROJECT } from './types';
 
 const n = (id: string, parent: string | null, order = 'a'): FlatNode => ({ id, parent, order });
@@ -18,6 +27,32 @@ describe('the tree of a project', () => {
     expect(t.children.get(PROJECT)).toEqual(['a', 'd', 'b']);
     expect(t.sequence).toEqual([PROJECT, 'a', 'c', 'd', 'b']);
     expect(t.depth.get('c')).toBe(2);
+  });
+
+  it('numbers every element from the root of the tree it is seen from, the root having none', () => {
+    const t = buildTree([
+      root,
+      n('a', PROJECT, 'a1'),
+      n('b', PROJECT, 'a2'),
+      n('a1', 'a', 'a1'),
+      n('a2', 'a', 'a2'),
+      n('a2x', 'a2'),
+    ]);
+    const whole = numbered(t);
+    expect(whole.get(PROJECT)).toBeUndefined();
+    expect([...whole]).toEqual([
+      ['a', '1'],
+      ['a1', '1.1'],
+      ['a2', '1.2'],
+      ['a2x', '1.2.1'],
+      ['b', '2'],
+    ]);
+    // Seen from an element, the count begins there.
+    expect([...numbered(viewOf(t, 'a'))]).toEqual([
+      ['a1', '1'],
+      ['a2', '2'],
+      ['a2x', '2.1'],
+    ]);
   });
 
   it('has its root even where no element of that id is', () => {

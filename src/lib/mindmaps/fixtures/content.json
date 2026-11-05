@@ -23,7 +23,12 @@
             "notes": { "plain": { "content": "Agamemnon takes Briseis.\n\nAchilles withdraws." } },
             "children": {
               "attached": [
-                { "id": "t-achilles", "class": "topic", "title": "Achilles", "labels": ["Character"] },
+                {
+                  "id": "t-achilles",
+                  "class": "topic",
+                  "title": "Achilles",
+                  "labels": ["Character"]
+                },
                 {
                   "id": "t-agamemnon",
                   "class": "topic",
@@ -42,7 +47,12 @@
             "markers": [{ "markerId": "task-quarter" }],
             "children": {
               "attached": [
-                { "id": "t-patroclus", "class": "topic", "title": "Patroclus falls", "labels": ["Left out"] },
+                {
+                  "id": "t-patroclus",
+                  "class": "topic",
+                  "title": "Patroclus falls",
+                  "labels": ["Left out"]
+                },
                 {
                   "id": "t-hector",
                   "class": "topic",
@@ -66,7 +76,13 @@
       }
     },
     "relationships": [
-      { "id": "r1", "class": "relationship", "end1Id": "t-achilles", "end2Id": "t-hector", "title": "kills" },
+      {
+        "id": "r1",
+        "class": "relationship",
+        "end1Id": "t-achilles",
+        "end2Id": "t-hector",
+        "title": "kills"
+      },
       { "id": "r2", "class": "relationship", "end1Id": "t-achilles", "end2Id": "gone" }
     ]
   },

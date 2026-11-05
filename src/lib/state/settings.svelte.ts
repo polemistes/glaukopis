@@ -63,6 +63,9 @@ export function filesViewOf(kept: unknown): FilesViewSettings {
   };
 }
 
+/** How the diagram numbers its boxes (record 0083): as the document prints the headings, every element from the element in view, or not at all. */
+export type DiagramNumbers = 'printed' | 'tree' | 'hidden';
+
 /** What is kept in the settings beyond what `api/system.ts` declares. */
 export interface MoreSettings {
   /** The kinds of paragraph and of words made in any project, the latest first. */
@@ -79,10 +82,11 @@ export interface MoreSettings {
    */
   headingNumbersText: boolean;
   /**
-   * Whether the number a heading will print stands before its name in the
-   * diagram (records 0079, 0081). Shown, unless turned off.
+   * The numbers before the names in the diagram (records 0079, 0081, 0083):
+   * as the document prints them, of every element from the element in
+   * view, or hidden. As printed, unless chosen otherwise.
    */
-  headingNumbersDiagram: boolean;
+  headingNumbersDiagram: DiagramNumbers;
   /** How the files of the library are shown. */
   filesView: FilesViewSettings;
 }
@@ -100,13 +104,23 @@ function shownOr(own: unknown, kept: object): boolean {
   return typeof before === 'boolean' ? before : true;
 }
 
+/**
+ * The numbers of the diagram as they were kept: one of the three words;
+ * else the on-or-off of 0081, or the one setting before it, read as printed
+ * or hidden.
+ */
+function diagramNumbersOf(own: unknown, kept: object): DiagramNumbers {
+  if (own === 'printed' || own === 'tree' || own === 'hidden') return own;
+  return shownOr(own, kept) ? 'printed' : 'hidden';
+}
+
 const more = (kept: Partial<AllSettings> = {}): MoreSettings => ({
   passageKinds: Array.isArray(kept.passageKinds)
     ? kept.passageKinds.filter((k) => k && typeof k.name === 'string')
     : [],
   pageChips: typeof kept.pageChips === 'boolean' ? kept.pageChips : true,
   headingNumbersText: shownOr(kept.headingNumbersText, kept),
-  headingNumbersDiagram: shownOr(kept.headingNumbersDiagram, kept),
+  headingNumbersDiagram: diagramNumbersOf(kept.headingNumbersDiagram, kept),
   filesView: filesViewOf(kept.filesView),
 });
 

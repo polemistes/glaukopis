@@ -37,7 +37,7 @@
     type TextDepth,
     type Theme,
   } from '$lib/api/system';
-  import { settings } from '$lib/state/settings.svelte';
+  import { settings, type DiagramNumbers } from '$lib/state/settings.svelte';
   import Button from '$lib/ui/Button.svelte';
   import Segmented from '$lib/ui/Segmented.svelte';
   import Select from '$lib/ui/Select.svelte';
@@ -382,24 +382,35 @@
         depth={settings.value.textDepth ?? 'numbers'}
         size={settings.value.textSize}
       />
-      <!-- Whether the number a heading will print stands before its name, in the text view and in the diagram, each on its own (records 0079, 0081). -->
+      <!-- The number before a name: in the text view as the document prints it, or hidden; in the diagram as printed, of every element, or hidden (records 0079, 0081, 0083). -->
       <div class="numbers" data-heading-numbers>
         <div class="label">{t('settings-heading-numbers')}</div>
-        {#each [{ key: 'headingNumbersText', view: 'text' }, { key: 'headingNumbersDiagram', view: 'diagram' }] as const as one (one.key)}
-          {@const label = t(`settings-heading-numbers-${one.view}`)}
-          <div class="row" data-heading-numbers-view={one.view}>
-            <div class="what">{label}</div>
-            <Segmented
-              value={settings.value[one.key] === false ? 'hidden' : 'shown'}
-              {label}
-              options={[
-                { value: 'shown', label: t('settings-heading-numbers-shown') },
-                { value: 'hidden', label: t('settings-heading-numbers-hidden') },
-              ]}
-              onchange={(shown: 'shown' | 'hidden') => settings.set(one.key, shown === 'shown')}
-            />
-          </div>
-        {/each}
+        <div class="row" data-heading-numbers-view="text">
+          <div class="what">{t('settings-heading-numbers-text')}</div>
+          <Segmented
+            value={settings.value.headingNumbersText === false ? 'hidden' : 'printed'}
+            label={t('settings-heading-numbers-text')}
+            options={[
+              { value: 'printed', label: t('settings-heading-numbers-printed') },
+              { value: 'hidden', label: t('settings-heading-numbers-hidden') },
+            ]}
+            onchange={(chosen: 'printed' | 'hidden') =>
+              settings.set('headingNumbersText', chosen === 'printed')}
+          />
+        </div>
+        <div class="row" data-heading-numbers-view="diagram">
+          <div class="what">{t('settings-heading-numbers-diagram')}</div>
+          <Segmented
+            value={settings.value.headingNumbersDiagram}
+            label={t('settings-heading-numbers-diagram')}
+            options={[
+              { value: 'printed', label: t('settings-heading-numbers-printed') },
+              { value: 'tree', label: t('settings-heading-numbers-tree') },
+              { value: 'hidden', label: t('settings-heading-numbers-hidden') },
+            ]}
+            onchange={(chosen: DiagramNumbers) => settings.set('headingNumbersDiagram', chosen)}
+          />
+        </div>
       </div>
     </section>
 

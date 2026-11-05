@@ -191,12 +191,12 @@ try {
     hidden.join(' | '),
   );
   check('and the text view still none', !(await textNumbered()));
-  await hideOrShow('diagram', 'Shown');
+  await hideOrShow('diagram', 'As the document prints them');
   await app.waitUntil(`return !!document.querySelector('.diagram .node .caption .number')`, 8000, 'the numbers shown again');
   const shown = await mapNumbers();
   check('shown again in the diagram, the numbers are back as they were', same(shown, through), shown.join(' | '));
   check('while the text view is still without them', !(await textNumbered()));
-  await hideOrShow('text', 'Shown');
+  await hideOrShow('text', 'As the document prints them');
   await app.view('text');
   await app.waitFor('.text-view .section', 5000);
   await app.waitUntil(`return !!document.querySelector('.text-view .heading .number')`, 8000, 'the numbers back in the text view');

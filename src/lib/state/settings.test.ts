@@ -144,21 +144,24 @@ describe('the settings as they are read', () => {
     expect(writes).toHaveLength(0);
   });
 
-  it('show the numbers of the headings in each view unless that was turned off, the one setting before them read as both', async () => {
+  it('show the numbers of the headings in each view unless that was turned off, the one setting before them read as both, and the diagram by its word', async () => {
     const kept = (more: object): Partial<Settings> => ({ person: 'kept-id', ...more });
     const read = async (more: object) => {
       vi.mocked(settingsLoad).mockResolvedValueOnce({ settings: kept(more), setAside: null });
       await settings.load();
       return [settings.value.headingNumbersText, settings.value.headingNumbersDiagram];
     };
-    expect(await read({})).toEqual([true, true]);
-    expect(await read({ headingNumbers: false })).toEqual([false, false]);
-    expect(await read({ headingNumbers: 'no' })).toEqual([true, true]);
-    expect(await read({ headingNumbersText: false })).toEqual([false, true]);
+    expect(await read({})).toEqual([true, 'printed']);
+    expect(await read({ headingNumbers: false })).toEqual([false, 'hidden']);
+    expect(await read({ headingNumbers: 'no' })).toEqual([true, 'printed']);
+    expect(await read({ headingNumbersText: false })).toEqual([false, 'printed']);
     expect(await read({ headingNumbers: false, headingNumbersDiagram: true })).toEqual([
       false,
-      true,
+      'printed',
     ]);
+    expect(await read({ headingNumbersDiagram: 'tree' })).toEqual([true, 'tree']);
+    expect(await read({ headingNumbersDiagram: 'hidden' })).toEqual([true, 'hidden']);
+    expect(await read({ headingNumbersDiagram: 'odd' })).toEqual([true, 'printed']);
     expect(writes).toHaveLength(0);
   });
 

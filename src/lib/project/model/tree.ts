@@ -101,6 +101,25 @@ export function buildTree(nodes: Iterable<FlatNode>, rootId: string = PROJECT): 
 }
 
 /**
+ * The number of every element under the root of a tree, counted among its
+ * siblings from the root down: the children of the root 1, 2, 3, theirs
+ * 1.1, 1.2, and so on. The root has none. What the diagram shows when its
+ * numbers are of every element (record 0083).
+ */
+export function numbered(tree: Tree): Map<string, string> {
+  const out = new Map<string, string>();
+  const walk = (id: string, prefix: string) => {
+    (tree.children.get(id) ?? []).forEach((c, i) => {
+      const number = prefix ? `${prefix}.${i + 1}` : String(i + 1);
+      out.set(c, number);
+      walk(c, number);
+    });
+  };
+  walk(tree.root, '');
+  return out;
+}
+
+/**
  * The tree seen from an element: that element at the top, with depth 0,
  * and all under it. Children and parents are those of the whole, so that
  * the way up from the top is still known.

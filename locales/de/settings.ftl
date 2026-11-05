@@ -39,7 +39,6 @@ settings-text-depth-dots = Punkte
 settings-text-depth-indent = Eingezogen, mit Linien
 # Whether the number a heading will print stands before its name in the text view and the diagram: the outline has it always.
 settings-heading-numbers = Nummern der Überschriften, wie das Dokument sie druckt
-settings-heading-numbers-shown = Angezeigt
 settings-heading-numbers-hidden = Verborgen
 settings-interface-size = Größe der Oberfläche
 # A line of text in the size chosen, which shows the face of the letters; a

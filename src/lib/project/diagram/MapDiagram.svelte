@@ -43,7 +43,7 @@
   import { notify, notifyError, notifyOk } from '$lib/ui/toast.svelte';
   import ElementTooltip from '../ElementTooltip.svelte';
   import type { Project } from '../model/project.svelte';
-  import { isAncestor, subtree } from '../model/tree';
+  import { isAncestor, numbered, subtree } from '../model/tree';
   import type { Position } from '../model/types';
   import { pieces } from '../pieces';
   import {
@@ -61,6 +61,7 @@
   import { progressOf, progressWords } from '../status';
   import { associationsOf, drawing, linesOf } from './lines';
   import { layout, type Layout, type Placed, type Size } from './layout';
+  import { slotAt } from './slots';
   import { fontsOf, imageScale, pictureOf, toPng, toSvg } from './picture';
 
   interface Props {
@@ -174,11 +175,21 @@
 
   /** The tree seen from the element in view: that element its root, its branch under it. */
   const tree = $derived(project.tree(at));
-  /** The numbers of the headings as the document prints them (record 0079), unless the settings hide them. */
+  /**
+   * The numbers before the names, as the settings have them (records 0079,
+   * 0081, 0083): those the document prints, or those of every element
+   * counted from the element in view, or none.
+   */
   const printed = $derived(
-    writerSettings.value.headingNumbersDiagram === false ? null : numbering.of(project, documentAt),
+    writerSettings.value.headingNumbersDiagram === 'printed'
+      ? numbering.of(project, documentAt)
+      : null,
+  );
+  const inTree = $derived(
+    writerSettings.value.headingNumbersDiagram === 'tree' ? numbered(tree) : null,
   );
   const numberOf = (id: string) => {
+    if (inTree) return inTree.get(id) ?? null;
     const p = printed?.byId.get(id);
     return p?.kind === 'part' ? p.number : null;
   };
@@ -232,6 +243,24 @@
     if (target && p.kind === 'elements' && underItself(p.data as ElementsPayload, target))
       return null;
     return target;
+  });
+
+  /**
+   * Where elements dragged would go in the order, if dropped now: between
+   * two that flow beside a parent, over the first or under the last (record
+   * 0083). Nothing over an element, and nothing with Shift held, which
+   * places the element alone where it is dropped.
+   */
+  const slot = $derived.by(() => {
+    const p = drag.payload;
+    if (p?.kind !== 'elements' || !drag.welcome || drag.alone) return null;
+    const data = p.data as ElementsPayload;
+    if (!takes(data) || !pointerInside(drag.x, drag.y)) return null;
+    const world = toWorld(drag.x, drag.y);
+    const own = data.project === project;
+    const except = own ? lifted : new Set<string>();
+    if (hit(world, except)) return null;
+    return slotAt(lay, tree, world, except, (parent) => !own || !underItself(data, parent));
   });
 
   /**
@@ -584,28 +613,19 @@
 
   // ---- drops ----
 
-  /** Puts an element where it was dropped, under the parent it has, placed from that parent. */
-  function placeAt(id: string, world: Position) {
+  /**
+   * Puts an element where it was dropped, placed by hand from the parent it
+   * has, as the map `during` the drop had that parent. Its place in the
+   * order is kept: where an element stands says nothing of where it comes
+   * in the document (record 0083).
+   */
+  function placeAt(id: string, world: Position, during: Layout) {
     const parent = tree.parent.get(id) ?? null;
     // The element in view stands at the centre whatever is said of it.
     if (parent === null || id === tree.root) return;
-    const pp = lay.placed.get(parent);
+    const pp = during.placed.get(parent);
     if (!pp) return;
-    const rel = { x: world.x - pp.x, y: world.y - pp.y };
-    const side = rel.x < 0 ? 'left' : 'right';
-    // Its place among its siblings follows from where it stands: on its side, from the top down.
-    const siblings = (tree.children.get(parent) ?? []).filter((s) => s !== id);
-    const same = siblings.filter((s) => lay.placed.get(s)?.side === side);
-    const below = same.find((s) => (lay.placed.get(s)?.y ?? 0) > world.y);
-    let index: number;
-    if (below) index = siblings.indexOf(below);
-    else if (same.length) index = siblings.indexOf(same[same.length - 1]) + 1;
-    else index = side === 'right' ? 0 : siblings.length;
-    // `move` counts places in the list as it is, with the element in it.
-    const full = tree.children.get(parent) ?? [];
-    const before = siblings[index];
-    const slot = before ? full.indexOf(before) : full.length;
-    project.move([id], parent, slot, { pos: rel });
+    project.setPosition(id, { x: world.x - pp.x, y: world.y - pp.y });
   }
 
   function ondrop(event: DropEvent) {
@@ -650,13 +670,19 @@
     const data = payload.data as ElementsPayload;
     if (!takes(data)) return;
     if (data.project !== project) {
-      // From the project beside: onto an element, under it; else under the element in view, where dropped.
+      // From the project beside: onto an element, under it; between two,
+      // there in the order; else under the element in view, where dropped.
       const target = hit(world);
+      const where = target || event.alone ? null : slotAt(lay, tree, world);
       const made = carryAcross(
         data.project,
         data.ids,
         project,
-        target ? { under: target, keepFolded: true } : { under: at, pos: world },
+        target
+          ? { under: target, keepFolded: true }
+          : where
+            ? { under: where.parent, index: where.index }
+            : { under: at, pos: world },
         !event.copy,
       );
       if (made.length) {
@@ -685,13 +711,22 @@
       return;
     }
 
+    // Between two elements that flow beside a parent: that place in the order (record 0083).
+    const where =
+      target || event.alone
+        ? null
+        : slotAt(during, tree, world, except, (parent) => !underItself(data, parent));
+
     project.checkpoint();
     let result: string[] = [];
     if (target) {
       // Under another element, with all that is under it, Shift or not; folded, it stays folded.
       result = project.move(data.ids, target, undefined, { pos: null, keepFolded: true });
       if (result.length && project.node(target)?.collapsed) result = [target];
+    } else if (where) {
+      result = project.move(data.ids, where.parent, where.index, { pos: null });
     } else if (onMap) {
+      // On the background: placed by hand where dropped, each in its order as it was.
       data.ids.forEach((id, i) => {
         const to = { x: world.x - data.grab.x, y: world.y - data.grab.y + i * 52 };
         // With Shift, what is under the element stays where it stood: each
@@ -699,7 +734,7 @@
         const kept = event.alone
           ? (tree.children.get(id) ?? []).map((c) => ({ c, was: during.placed.get(c) }))
           : [];
-        placeAt(id, to);
+        placeAt(id, to, during);
         for (const { c, was } of kept) {
           if (was) project.setPosition(c, { x: was.x - to.x, y: was.y - to.y });
         }
@@ -1384,7 +1419,7 @@
           <DiagramNode
             {project}
             {node}
-            printedNumber={numberOf(id)}
+            numberShown={numberOf(id)}
             placed={p}
             selected={!picturing && selected.has(id)}
             target={!picturing && (dropOn === id || linking?.over === id)}
@@ -1413,6 +1448,14 @@
         </div>
       {/if}
     {/each}
+
+    {#if slot}
+      <!-- Where what is dragged would go in the order (record 0083): a line across the column, over the boxes, its dot at the parent's side. -->
+      <svg class="lines over" aria-hidden="true">
+        <line x1={slot.x0} y1={slot.y} x2={slot.x1} y2={slot.y} class="slot" data-slot />
+        <circle cx={slot.side === 'left' ? slot.x1 : slot.x0} cy={slot.y} r="4" class="slot-dot" />
+      </svg>
+    {/if}
   </div>
 
   {#if empty && !renaming}
@@ -1563,6 +1606,17 @@
   }
   .branch.faint {
     opacity: 0.35;
+  }
+  .lines.over {
+    z-index: 7;
+  }
+  .slot {
+    stroke: var(--accent);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+  }
+  .slot-dot {
+    fill: var(--accent);
   }
   .association {
     pointer-events: stroke;

@@ -153,6 +153,8 @@ behind. The new project opens on its text.
 | Rename an element | **F2**, or begin to type |
 | Read its text without opening it | Rest the pointer on it |
 | Move an element, with all that is under it | Drag it onto another element |
+| Put an element somewhere on the map; it keeps its place in the order | Drag it to the background |
+| Move an element to another place among those beside it | Drag it between two of them: a line shows where it goes |
 | Move an element without moving what is under it, which stays where it stood, still its own | Drag it with **Shift** held |
 | Move it up or down among those beside it | **Alt+Up**, **Alt+Down** |
 | Move it sideways, as the arrow points: deeper on the right of the map, less deep on the left | **Alt+Right**, **Alt+Left** |
@@ -176,6 +178,18 @@ first child and its last. From the second level down the boxes are smaller.
 Where the element in view has one thing under it with things of its own,
 that stands under it, and the map spreads from there: a project that is one
 book is laid out about the book, with the project's name over it.
+
+The map reads in the order of the document: down the right side of the
+element the map spreads from, then down the left, and each branch from the
+top down. Where an element stands says nothing of where it comes in the
+document. Drag one to the background and it is placed there by hand, the
+rest flowing around it, and it keeps its place in the order; **Place
+automatically** in its menu puts it back into the flow. To move an element
+to another place in the order, drag it between two of those beside it, or
+over the first or under the last: a line shows across them where it will go,
+and it flows there with the rest. Where the look prints no numbers on the
+headings, **Of every element** in the settings numbers every box of the map
+from the element in view, so that the order is read off it (see *The text*).
 A project opens with the project itself in view, and its whole tree about
 it. With nothing selected,
 **Alt+Enter** adds an element under the element in view, and **Enter** selects it.
@@ -226,10 +240,12 @@ each level further in, with a faint line down from the element it is under.
 Choose which under **Document structure** in the settings, where **Editor
 font** chooses the font your text is set in while you write, and the size
 beside it how large; neither touches the typesetting or what is exported.
-Under it, **Numbers of the headings, as the document prints them** says
-whether the number a heading will print stands before its name, in two
-rows: **In the text view** and **In the diagram**, each **Shown** unless
-hidden; the outline has it always.
+Under it, **Numbers of the headings** says what number stands before a
+name. **In the text view**, the number the heading will print, **As the
+document prints them**, unless **Hidden**. **In the diagram** the same, or
+**Of every element**: every box of the map numbered from the element in
+view, 1, 2, 3 and 1.1, 1.2, whatever the look prints, so that the order of
+the map is read off it. The outline has the printed numbers always.
 
 Write as in any editor. Each side has a bar of its own, of icons, each
 named when the pointer rests on it: the outline; **Diagram**, **Text**, and

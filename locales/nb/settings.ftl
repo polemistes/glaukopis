@@ -33,8 +33,9 @@ settings-text-depth-numbers = Tall
 settings-text-depth-dots = Prikker
 settings-text-depth-indent = Rykket inn, med streker
 # Whether the number a heading will print stands before its name in the text view and the diagram: the outline has it always.
-settings-heading-numbers = Overskriftenes numre, slik dokumentet skriver dem ut
-settings-heading-numbers-shown = Vist
+settings-heading-numbers = Overskriftenes numre
+settings-heading-numbers-printed = Slik dokumentet skriver dem ut
+settings-heading-numbers-tree = Av hvert element
 settings-heading-numbers-hidden = Skjult
 settings-heading-numbers-text = I teksten
 settings-heading-numbers-diagram = I diagrammet
