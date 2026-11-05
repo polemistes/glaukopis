@@ -223,8 +223,9 @@ Choose which under **Document structure** in the settings, where **Editor
 font** chooses the font your text is set in while you write, and the size
 beside it how large; neither touches the typesetting or what is exported.
 Under it, **Numbers of the headings, as the document prints them** says
-whether the number a heading will print stands before its name in the text
-view and the diagram, as it does unless hidden; the outline has it always.
+whether the number a heading will print stands before its name, in two
+rows: **In the text view** and **In the diagram**, each **Shown** unless
+hidden; the outline has it always.
 
 Write as in any editor. Each side has a bar of its own, of icons, each
 named when the pointer rests on it: the outline; **Diagram**, **Text**, and
@@ -1708,6 +1709,28 @@ the text; or by pressing the name of the element over it in the path at the
 top. The project itself has no such button: **Alt+Shift+Up** at its top
 comes to its row in the list of projects.
 
+Entering narrows the view; what is made is **the document**, which is the
+element in view unless an element is marked as the document. To work in
+one chapter of a book while the book stays what is made, choose **Make this
+the document** in the book's right-click menu, in the diagram or the text,
+or in the palette (**Ctrl+K**) for the element in view. While it is marked,
+the book is the document wherever you are in the project: the typesetting
+pane sets the book, with its pages following the text where you write in
+it; **Export** and **Print** make the book; Look, **Ctrl+Shift+D** and
+**Document type…** in Look are of the book; and the numbers of the headings
+in the text view, the diagram and the outline are those the book prints, so
+that chapter four entered reads *4* before its title and *4.1* before its
+first section. An element outside the marked document carries no number,
+as it prints none. Where you are does not change: entering, going up, the
+diagram, the text, what is folded and the path are of the element in view,
+as always. The marked element has the open book of the **Typesetting**
+button before its name in the path and after it in the list of projects.
+One element of a project is marked at a time: marking another moves the
+mark, and the item, checked on the element that is marked, takes the mark
+off there. The mark is kept with the project on this computer, as its folds
+are, and is there when the project is opened again; it is not written into
+the project or shared.
+
 **The path** at the top of the window says where you are: the folders the
 project lies in, small; the project, in bold with its sign; and the
 elements from the top of the project down to the element in view, the last
@@ -1726,7 +1749,8 @@ Where the path does not fit, the names in the middle make way for
 view always show. Where the project could not be saved, its name in the
 path has a red sign, and the pointer on it says why. What is done with an
 element is in its right-click menu, in the diagram and in the text:
-**Rename**, **Document properties…**, **A document into it…**, **Add
+**Rename**, **Document properties…**, **Make this the document**, **A
+document into it…**, **Add
 child element**, **Delete**, and the rest. **Delete with sub-elements**
 takes all under the element with it; **Delete and promote sub-elements**
 keeps them, one level up.
@@ -2463,8 +2487,9 @@ is chosen there, so that those you share the project with, and a
 ## Document properties
 
 **Document properties** is a window of what a document says of itself, for
-an element. **Ctrl+Shift+D** opens it for the element in view of the side
-you are in, and **Document properties…** in the right-click menu of any
+an element. **Ctrl+Shift+D** opens it for the document of the side you are
+in, the element in view unless an element is marked as the document, and
+**Document properties…** in the right-click menu of any
 element, in the diagram and in the text, for that element; **Document
 type…** in Look opens it at what the document is. Down its left stand its
 parts: **Details**, **Document type** (see *What you are writing*),
@@ -2529,8 +2554,10 @@ which open in the text; otherwise it says **Nothing to remark on**.
 
 **Typesetting**, the button with the open book in the bar of a side, or
 **Ctrl+T**, opens the typesetting pane beside the sides, for that side: the
-pages of its element in view, with all under it, as they will be, set by
-Typst. The button is lit in the bar of the side the pages are of. Pressed in
+pages of its document, with all under it, as they will be, set by Typst.
+The document is the element in view, unless an element is marked as the
+document (see *One tree, entered anywhere*); then the head of the pane
+names it, with the open book, where it is not the element in view. The button is lit in the bar of the side the pages are of. Pressed in
 the other side's bar, it turns the pane to that side; pressed again in the
 same, it closes the pane. The pane does not follow the focus: write in one
 side while the pages of the other are set. When the side it shows closes,
@@ -2539,7 +2566,7 @@ with the project.
 
 The pages follow as you write, a moment behind: it waits until the writing pauses. Any
 element is a document: enter a chapter, and the typesetting shows the chapter
-alone, and exports it so. Of a long document the pages take a few seconds to be
+alone, and exports it so, unless an element is marked as the document. Of a long document the pages take a few seconds to be
 made, and the typesetting waits the longer for it; the writing is not held up
 meanwhile. The pages that are looked at are the ones that are drawn, and
 the others as they are moved to.
@@ -2757,8 +2784,8 @@ you scroll, mark the part you are in, and go to each:
   before the names in the text view, in the boxes of the map and in the
   outline too, as the document prints them, as soon as the headings are
   numbered; **Numbers of the headings, as the document prints them** in the
-  settings hides them in the text view and the diagram, where the outline
-  keeps them. A level that
+  settings hides them in the text view, in the diagram, or in both, where
+  the outline keeps them. A level that
   **Begins the paragraph** runs into the text, and ends with a full stop.
   Then its **Placement**: *In the text*, *On a new page*, as the chapters of a book do,
   or *On a right-hand page*, where a blank left page, with nothing in its
@@ -3395,7 +3422,7 @@ what is to be done by its name, and does it.
 | **Ctrl+Shift+B** | In a PDF: mark the place in view |
 | **Ctrl+Shift+S** | Split view: this element as diagram and text, another element or another project beside it, switch sides, or one at a time |
 | **Ctrl+W** | Close the side you are in; with one side, the project. In the tabs of files, the tab shown, and the side with its last |
-| **Ctrl+Shift+D** | Document properties: the details, the document type, the language and the checklist of the element in view |
+| **Ctrl+Shift+D** | Document properties: the details, the document type, the language and the checklist of the document, the element in view unless one is marked as the document |
 | **Ctrl+Shift+Space** | In the text: a hard space |
 | **Ctrl+Shift+A** | The look of the document: font, page, the looks of the kinds |
 | **Ctrl+Shift+R** | The references |
