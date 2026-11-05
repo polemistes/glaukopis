@@ -1,5 +1,6 @@
 /** What can be done to elements, wherever they are shown: the menu, and what is dragged. */
 
+import BookOpenText from '@lucide/svelte/icons/book-open-text';
 import Copy from '@lucide/svelte/icons/copy';
 import ClipboardPaste from '@lucide/svelte/icons/clipboard-paste';
 import CornerDownRight from '@lucide/svelte/icons/corner-down-right';
@@ -85,6 +86,14 @@ export interface ElementActions {
   at?: string;
   /** Brings a document in, as a branch under the element; where the view does not say, the menu does it itself. */
   documentInto?: (id: string) => void;
+  /** The element marked as the document, and how the mark is set or taken off; where it is not given, the menu has no item for it. */
+  document?: DocumentMark;
+}
+
+/** The element of a project marked as the document, and how the mark is set or taken off (record 0081). */
+export interface DocumentMark {
+  readonly marked: string | null;
+  mark: (id: string | null) => void;
 }
 
 /**
@@ -485,6 +494,19 @@ export function elementMenu(
         shortcut: keysFor('document-settings'),
         action: () => aboutDocumentUi.open({ project, at: one.id }),
       },
+      // Checked on the element that is the document, where choosing it takes the mark off;
+      // unchecked, it says nothing, so that the menus of the others have no column of checks.
+      ...(actions.document
+        ? [
+            {
+              label: t('project-make-document'),
+              icon: BookOpenText,
+              checked: one.id === actions.document.marked || undefined,
+              action: () =>
+                actions.document!.mark(one.id === actions.document!.marked ? null : one.id),
+            },
+          ]
+        : []),
       {
         label: t('project-document-into'),
         icon: FileInput,

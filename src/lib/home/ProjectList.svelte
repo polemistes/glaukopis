@@ -14,6 +14,7 @@
 </script>
 
 <script lang="ts">
+  import BookOpenText from '@lucide/svelte/icons/book-open-text';
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import Ellipsis from '@lucide/svelte/icons/ellipsis';
   import Folder from '@lucide/svelte/icons/folder';
@@ -235,6 +236,8 @@
     enter: (id: string) => void;
     /** The project itself, where it is shown in a side, rather than read from disk: its elements move as in its map. */
     live: Project | null;
+    /** The element marked as the document, where the project is shown and has one (record 0081). */
+    document: string | null;
   }
 
   /** The trees of the projects shown in the sides, by project: live, as the sides show them. */
@@ -253,6 +256,7 @@
         at,
         enter: (id) => (choose ? choose(side.id, id) : onenter?.(side.id, id)),
         live: pr,
+        document: side.document ?? null,
       });
     }
     return out;
@@ -280,6 +284,7 @@
       enter: (id) =>
         choose ? choose(p.id, id) : router.go({ view: 'project', project: p.id, at: id }),
       live: null,
+      document: null,
     };
   }
 
@@ -681,6 +686,7 @@
           size={14}
         />
         <span class="name serif truncate">{p.name}</span>
+        {#if live?.document === PROJECT}{@render documentSign()}{/if}
         {#if choose && unavailable.includes(p.id)}
           <span class="when">{t('home-open-now')}</span>
         {/if}
@@ -739,6 +745,13 @@
   {/if}
 </div>
 
+<!-- The sign of the element marked as the document: the open book of the Typesetting button. -->
+{#snippet documentSign()}
+  <span class="document" role="img" aria-label={t('project-the-document')} data-document-sign
+    ><BookOpenText size={13} /></span
+  >
+{/snippet}
+
 <!-- The elements of the open project, each a line, those under an unfolded one drawn in a step further. -->
 {#snippet branch(src: Shown, ids: string[], depth: number, indent: number)}
   {#each ids as id (id)}
@@ -764,6 +777,7 @@
       aria-current={id === src.at ? 'location' : undefined}
       data-element={id}
       data-current={id === src.at ? '' : undefined}
+      data-marked={id === src.document ? '' : undefined}
       title={name || undefined}
       style:padding-left="{indent + depth * step}px"
       onclick={() => {
@@ -791,6 +805,7 @@
         <ChevronRight size={12} />
       </button>
       <span class="name serif truncate">{name || t('project-untitled')}</span>
+      {#if id === src.document}{@render documentSign()}{/if}
     </div>
     {#if open}
       {@render branch(src, src.tree.children.get(id) ?? [], depth + 1, indent)}
@@ -830,6 +845,11 @@
     color: var(--ink-2);
     cursor: pointer;
     user-select: none;
+  }
+  .row .document {
+    flex: none;
+    display: inline-flex;
+    color: var(--ink-3);
   }
   .row:hover {
     background: var(--paper-hover);

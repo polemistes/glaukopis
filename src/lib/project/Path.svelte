@@ -19,6 +19,7 @@
   import CircleAlert from '@lucide/svelte/icons/circle-alert';
   import FolderIcon from '@lucide/svelte/icons/folder';
   import Book from '@lucide/svelte/icons/book';
+  import BookOpenText from '@lucide/svelte/icons/book-open-text';
   import { tick } from 'svelte';
   import type { ProjectInfo } from '$lib/api/projects';
   import ProjectBadge from '$lib/home/ProjectBadge.svelte';
@@ -41,6 +42,8 @@
     info: ProjectInfo;
     /** The element in view in this side. */
     at: string;
+    /** The element marked as the document of the project, or none: its crumb carries the sign of the typesetting (record 0081). */
+    marked?: string | null;
     /** How the project is shared, and how it is connected, for its badge. */
     sharing?: { owner: boolean; status?: 'connected' | 'offline' | 'refused' } | null;
     /** Whether the project's changes are on disk; where they could not be written, the fault. */
@@ -58,6 +61,7 @@
     project,
     info,
     at,
+    marked = null,
     sharing = null,
     status = 'saved',
     fault,
@@ -117,6 +121,7 @@
   // names change. It depends on what they say.
   $effect(() => {
     void said;
+    void marked;
     const el = measuring;
     if (!el) return;
     const measure = () => {
@@ -190,11 +195,14 @@
   {@const last = i === crumbs.length - 1}
   {@const up =
     (c.kind === 'element' && c.id === parent) || (c.kind === 'project' && parent === PROJECT)}
+  {@const isDocument =
+    (c.kind === 'element' && c.id === marked) || (c.kind === 'project' && marked === PROJECT)}
   <span class="step" class:last>
     {#if i > 0}<span class="sep" aria-hidden="true">›</span>{/if}
     {#if measured}
       <span class="crumb {c.kind}" class:last>
         {#if c.kind === 'project'}<ProjectBadge name={c.name} {sharing} size={15} />{/if}
+        {#if isDocument}<span class="document"><BookOpenText size={13} /></span>{/if}
         <span class="name">{labelOf(c)}</span>
         {#if c.kind === 'project' && status === 'error'}<span class="unsaved"
             ><CircleAlert size={14} /></span
@@ -211,12 +219,22 @@
         aria-haspopup={c.kind === 'folder' ? 'menu' : undefined}
         aria-current={last ? 'location' : undefined}
         use:tooltip={{
-          text: up ? t('project-up-hint', { name: labelOf(c) }) : labelOf(c),
+          text:
+            (up ? t('project-up-hint', { name: labelOf(c) }) : labelOf(c)) +
+            (isDocument ? ` · ${t('project-the-document')}` : ''),
           side: 'bottom',
         }}
         onclick={(e) => go(c, e.currentTarget)}
       >
         {#if c.kind === 'project'}<ProjectBadge name={c.name} {sharing} size={15} />{/if}
+        {#if isDocument}
+          <span
+            class="document"
+            role="img"
+            aria-label={t('project-the-document')}
+            data-document-sign><BookOpenText size={13} /></span
+          >
+        {/if}
         <span class="name">{labelOf(c)}</span>
         {#if c.kind === 'project' && status === 'error'}
           <!-- The changes could not be written: what went wrong is told on hover. -->
@@ -386,6 +404,12 @@
   button.crumb:hover {
     background: var(--paper-hover);
     color: var(--ink);
+  }
+  /* The sign of the element marked as the document: the open book of the Typesetting button. */
+  .crumb .document {
+    flex: none;
+    display: inline-flex;
+    color: var(--ink-3);
   }
   .crumb .name {
     min-width: 0;

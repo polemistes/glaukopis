@@ -732,6 +732,26 @@ export class App {
     if (item) await this.clickText('.menu [role="menuitem"]', item);
   }
 
+  /**
+   * Opens the menu of an element of the side that has the focus by its
+   * name: a right click on its heading in the text view, else on its box in
+   * the diagram; and chooses in it where told.
+   */
+  async elementMenu(name, item) {
+    const target = await this.exec(
+      `const side = ${this.side};
+       const heading = Array.from(side?.querySelectorAll('.text-view .section .heading') ?? []).find((h) => h.querySelector('.prose')?.textContent.trim() === arguments[0]);
+       const node = Array.from(side?.querySelectorAll('.diagram .node') ?? []).find((n) => n.querySelector('.caption .name')?.textContent.trim() === arguments[0]);
+       return heading ?? node ?? null;`,
+      name,
+    );
+    if (!target) throw new Error(`no element named ${name} in view to open the menu of`);
+    await this.rightClick(target);
+    await this.waitFor('.menu');
+    await sleep(150);
+    if (item) await this.clickText('.menu [role="menuitem"]', item);
+  }
+
   /** Opens Line numbering from here, by its item in the right-click menu of the text where the cursor is. */
   async lineNumberingFromHere() {
     await this.textMenuAtCursor();

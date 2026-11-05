@@ -11,6 +11,8 @@
     at: string;
     /** Whether the side has the focus. */
     focused: boolean;
+    /** The element marked as the document of the project, or none (record 0081). */
+    document?: string | null;
   }
 
   /**
@@ -363,7 +365,13 @@
         if (has) Object.assign(there, { at, focused: true });
         return;
       }
-      shown.push({ id: spec.project, project: openOf(spec)?.project ?? null, at, focused: has });
+      shown.push({
+        id: spec.project,
+        project: openOf(spec)?.project ?? null,
+        at,
+        focused: has,
+        document: openOf(spec)?.document ?? null,
+      });
     });
     viewing.sides = shown;
     viewing.enter = (id, element) => {
@@ -959,6 +967,13 @@
         },
         when: () => !!project,
       },
+      // The element in view of the active side marked as the document, or the mark taken off it.
+      'mark-document': {
+        run: () => {
+          if (activeOpen) activeOpen.document = activeOpen.document === at ? null : at;
+        },
+        when: () => !!project,
+      },
       'projects-pane': toggleProjectsPane,
       'side-look': {
         run: () => {
@@ -1063,6 +1078,7 @@
               project={of}
               info={infoOf(spec, of)}
               at={spec.at}
+              marked={openOf(spec)?.document ?? null}
               sharing={sharingOf(spec)}
               status={of.status === 'error' ? 'error' : 'saved'}
               fault={of.saveError ?? undefined}
@@ -1183,6 +1199,9 @@
               project={of}
               projectId={previewSpec?.project ?? ''}
               at={typesetAt}
+              named={typesetAt !== previewSpec.at
+                ? of.node(typesetAt)?.title || t('project-untitled')
+                : null}
               look={panes.look}
               onlook={() => {
                 if (previewSpec) panes.toggleLook(previewSpec.key);

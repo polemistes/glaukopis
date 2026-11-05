@@ -33,7 +33,12 @@
     pasteElements,
     pastesUnderItself,
   } from '../clipboard.svelte';
-  import { elementMenu, type ElementActions, type ElementsPayload } from '../elements';
+  import {
+    elementMenu,
+    type DocumentMark,
+    type ElementActions,
+    type ElementsPayload,
+  } from '../elements';
   import { carryAcross } from '../elsewhere';
   import { notify, notifyError, notifyOk } from '$lib/ui/toast.svelte';
   import ElementTooltip from '../ElementTooltip.svelte';
@@ -84,6 +89,8 @@
      * are carried here, copied, or moved and taken away there (ADR 0037).
      */
     besideProject?: Project | null;
+    /** The element marked as the document, and how the mark is set or taken off: for the menu of an element. */
+    marking?: DocumentMark;
   }
 
   let {
@@ -97,6 +104,7 @@
     onleave,
     reveal = null,
     besideProject = null,
+    marking,
   }: Props = $props();
 
   /** Whether what is dragged is elements this map takes: its own, or those of the project beside. */
@@ -850,7 +858,7 @@
    * for one that is not in view, opening it as a map.
    */
   function menuFor(ids: string[], anchor: HTMLElement): MenuItem[] {
-    const items = elementMenu(project, ids, actions, anchor);
+    const items = elementMenu(project, ids, { ...actions, document: marking }, anchor);
     const one = ids.length === 1 ? ids[0] : null;
     if (!one || one === tree.root) return items;
     return [

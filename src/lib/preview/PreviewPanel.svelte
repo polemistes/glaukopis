@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, tick, untrack } from 'svelte';
+  import BookOpenText from '@lucide/svelte/icons/book-open-text';
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import PackageX from '@lucide/svelte/icons/package-x';
   import Palette from '@lucide/svelte/icons/palette';
@@ -60,6 +61,8 @@
      * (record 0081).
      */
     at: string;
+    /** The name of the document, where it is not the element in view of the side the pane shows; nothing otherwise. */
+    named?: string | null;
     onclose: () => void;
     /** Whether the Look column stands beside the pages. */
     look: boolean;
@@ -71,7 +74,17 @@
     current: () => string | null;
   }
 
-  let { project, projectId, at, onclose, look, onlook, ongo, current }: Props = $props();
+  let {
+    project,
+    projectId,
+    at,
+    named = null,
+    onclose,
+    look,
+    onlook,
+    ongo,
+    current,
+  }: Props = $props();
 
   /**
    * A page as it is shown: what it holds, the address it is shown from, the
@@ -802,6 +815,17 @@
       <Palette size={14} />
       <span>{t('look-title')}</span>
     </button>
+    {#if named}
+      <!-- What the pages are of, where the path of the side does not say it: the element marked as the document. -->
+      <span
+        class="document"
+        data-document-name
+        use:tooltip={{ text: `${t('project-the-document')}: ${named}`, side: 'bottom' }}
+      >
+        <BookOpenText size={14} />
+        <span class="truncate">{named}</span>
+      </span>
+    {/if}
     <span class="grow"></span>
     <!-- How large the pages are: as wide as the pane, or a percentage of their size on paper. -->
     <button
@@ -1092,6 +1116,19 @@
   .grow {
     flex: 1;
     min-width: 4px;
+  }
+  .document {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    flex: 0 1 auto;
+    margin-left: 6px;
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+  }
+  .document :global(svg) {
+    flex: none;
   }
   /* The zoom: its percentage, or Fit the width, opening its menu. */
   .zoom-button {

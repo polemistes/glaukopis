@@ -35,6 +35,7 @@ keys-projects-pane = The list of projects at the left
 keys-preview = Typesetting
 keys-document-settings = Document properties
 keys-what-document = Document type…
+keys-mark-document = Make this the document
 keys-side-look = Look
 keys-look-type = Change the font…
 keys-side-references = References

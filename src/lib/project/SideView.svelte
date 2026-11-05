@@ -27,7 +27,7 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import MapDiagram from './diagram/MapDiagram.svelte';
   import { filesDropped, mapOfIt } from './drops';
-  import type { ElementsPayload } from './elements';
+  import type { DocumentMark, ElementsPayload } from './elements';
   import { documentOf } from './layout';
   import type { Project } from './model/project.svelte';
   import { PROJECT } from './model/types';
@@ -72,6 +72,13 @@
   const at = $derived(spec.at ?? PROJECT);
   /** The document of this side: the element marked as the document where there is one, else the element in view (record 0081). */
   const documentAt = $derived(project ? documentOf(open.document, project.nodes, at) : at);
+  /** The mark, for the menus of elements: set on an element, moved, taken off; saved with the view a moment after. */
+  const marking: DocumentMark = {
+    get marked() {
+      return open.document;
+    },
+    mark: (id) => (open.document = id),
+  };
 
   let el = $state<HTMLDivElement>();
   let text = $state<ReturnType<typeof MapText>>();
@@ -347,6 +354,7 @@
               {project}
               {at}
               {documentAt}
+              {marking}
               camera={open.cameras[at] ?? null}
               oncamera={(c) => (open.cameras[at] = c)}
               onkeep={keep}
@@ -361,6 +369,7 @@
               {project}
               {at}
               {documentAt}
+              {marking}
               onkeep={keep}
               onenter={(id) => show(id)}
               onleave={project.tree().parent.get(at) ? up : undefined}

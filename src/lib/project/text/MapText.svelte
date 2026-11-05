@@ -52,6 +52,7 @@
     indent as indentElement,
     outdent as outdentElement,
     shift as shiftElement,
+    type DocumentMark,
     type ElementActions,
     type ElementsPayload,
   } from '../elements';
@@ -124,6 +125,8 @@
      * are carried here, copied, or moved and taken away there (ADR 0037).
      */
     besideProject?: Project | null;
+    /** The element marked as the document, and how the mark is set or taken off: for the menu of an element. */
+    marking?: DocumentMark;
   }
 
   let {
@@ -140,6 +143,7 @@
     ontop,
     top = null,
     besideProject = null,
+    marking,
   }: Props = $props();
 
   /** Whether what is dragged is elements this text takes: its own, or those of the project beside. */
@@ -1018,7 +1022,13 @@
     // Text selected where the menu is opened is what a comment is on: taken now, before the menu takes the focus.
     const passage = view && view.hasFocus() ? selectedPassage(view) : null;
     const comment = (element: string) => commentsUi.begin(element, element === id ? passage : null);
-    const base = elementMenu(project, [id], { ...actions, comment }, anchor, 'text').filter(
+    const base = elementMenu(
+      project,
+      [id],
+      { ...actions, comment, document: marking },
+      anchor,
+      'text',
+    ).filter(
       (item) =>
         !('label' in item) ||
         (item.label !== t('project-write-text') && item.label !== t('common-rename')),

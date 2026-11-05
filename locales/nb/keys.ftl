@@ -32,6 +32,7 @@ keys-projects-pane = Prosjektlisten til venstre
 keys-preview = Ombrekking
 keys-document-settings = Dokumentegenskaper
 keys-what-document = Dokumenttype …
+keys-mark-document = Gjør dette til dokumentet
 keys-side-look = Utseende
 keys-look-type = Endre skriften …
 keys-side-references = Referanser
