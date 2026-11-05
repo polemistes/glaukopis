@@ -4,7 +4,8 @@
  * text, where the text of each element was read, how wide its outline
  * stands, where it was left, the element and the way it was shown, and what
  * stood beside it then where that was its own: its tabs, or itself the other
- * way (ADR 0073). What the window shows, its sides and its panes, is the
+ * way (ADR 0073), and the element marked as the document (record 0081).
+ * What the window shows, its sides and its panes, is the
  * window's, kept with the settings (`sides.svelte.ts`).
  */
 
@@ -49,6 +50,8 @@ export interface StoredView {
   /** Where the project was left. */
   at?: string;
   mode?: MapMode;
+  /** The element marked as the document, where one is (record 0081). */
+  document?: string;
   /** As the view was kept before the sides were the window's: the first pane says where it was left. */
   panes?: { at?: string; mode?: MapMode }[];
 }
@@ -60,6 +63,8 @@ export interface Memory {
   outlineWidth: number;
   left: Left | null;
   beside: Beside | null;
+  /** The element marked as the document, or none. */
+  document: string | null;
 }
 
 export const OUTLINE_WIDTH = 240;
@@ -91,6 +96,7 @@ export function readMemory(stored: unknown): Memory {
         : OUTLINE_WIDTH,
     left: at ? { at, mode: MODES.includes(mode as MapMode) ? (mode as MapMode) : 'diagram' } : null,
     beside: readBeside(s.beside),
+    document: typeof s.document === 'string' && s.document ? s.document : null,
   };
 }
 
@@ -124,7 +130,17 @@ export function leftAt(memory: Memory, elements: Elements): Left {
   return left && inView(elements, left.at) ? left : { at: PROJECT, mode: left?.mode ?? 'diagram' };
 }
 
-/** What is kept: the cameras and the tops of elements that are there, and the folds given. */
+/**
+ * The document of a side: the element marked as the document where the
+ * project has one and it is there, else the element in view (record 0081).
+ * The mark is tested against the elements, not against the way down to the
+ * element in view: it holds wherever one is in the project.
+ */
+export function documentOf(marked: string | null, elements: Elements, at: string): string {
+  return marked && inView(elements, marked) ? marked : at;
+}
+
+/** What is kept: the cameras and the tops of elements that are there, the folds given, and the mark where its element is there. */
 export function toStore(memory: Memory, elements: Elements, folded: string[]): StoredView {
   const cameras: Record<string, Camera> = {};
   for (const [id, c] of Object.entries(memory.cameras)) if (inView(elements, id)) cameras[id] = c;
@@ -145,6 +161,7 @@ export function toStore(memory: Memory, elements: Elements, folded: string[]): S
               : memory.beside,
         }
       : {}),
+    ...(inView(elements, memory.document ?? undefined) ? { document: memory.document! } : {}),
   };
 }
 

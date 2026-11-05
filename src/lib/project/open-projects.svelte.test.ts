@@ -14,7 +14,10 @@ const { OpenProjects } = await import('./open-projects.svelte');
 function opener() {
   const calls: string[] = [];
   const project = (id: string) => ({
-    nodes: new Map([['project', {}]]),
+    nodes: new Map([
+      ['project', {}],
+      ['chapter', {}],
+    ]),
     node: () => ({}),
     close: vi.fn(async () => calls.push(`close ${id}`)),
     snapshot: vi.fn(),
@@ -27,7 +30,7 @@ function opener() {
         calls.push(`open ${id}`);
         return {
           project: project(id) as never,
-          info: { id, view: { at: 'x', mode: 'text' } } as never,
+          info: { id, view: { at: 'x', mode: 'text', document: 'chapter' } } as never,
         };
       }),
       share: () => ({ sharing: null, shared: false, close: () => {} }),
@@ -58,6 +61,19 @@ describe('the projects the sides show', () => {
     await open.release('a');
     expect(calls.slice(-3)).toEqual(['away a', 'save a', 'close a']);
     expect(open.get('a')).toBeUndefined();
+  });
+
+  it('bring back the element marked as the document, and keep it while it is there', async () => {
+    const { o } = opener();
+    const open = new OpenProjects(o);
+    const one = open.acquire('a');
+    await settle();
+    expect(one.document).toBe('chapter');
+    expect(one.toStore().document).toBe('chapter');
+    one.document = 'gone';
+    expect(one.toStore()).not.toHaveProperty('document');
+    one.document = null;
+    expect(one.toStore()).not.toHaveProperty('document');
   });
 
   it('let go at once of a project let go while it was being opened', async () => {

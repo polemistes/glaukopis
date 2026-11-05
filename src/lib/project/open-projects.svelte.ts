@@ -105,6 +105,13 @@ export class OpenProject {
   left = $state.raw<Left | null>(null);
   /** What stood beside it then, where that was its own (ADR 0073). */
   beside = $state.raw<Beside | null>(null);
+  /**
+   * The element marked as the document, or none: the document of every side
+   * that shows the project, wherever it is in it, while the element is there;
+   * the element in view otherwise (record 0081). Kept with the view on this
+   * computer, not in the project.
+   */
+  document = $state.raw<string | null>(null);
   /** How many sides show it. */
   refs = 0;
   /** It was let go while it was still being opened. */
@@ -129,6 +136,7 @@ export class OpenProject {
       outlineWidth: this.outlineWidth,
       left: this.left,
       beside: this.beside,
+      document: this.document,
     };
   }
 
@@ -236,6 +244,7 @@ export class OpenProjects {
       open.outlineWidth = memory.outlineWidth;
       open.left = memory.left;
       open.beside = memory.beside;
+      open.document = memory.document;
       open.info = opened.info;
       open.sharing = o.share(id, p, opened.info);
       open.project = p;

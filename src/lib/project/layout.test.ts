@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  documentOf,
   leftAt,
   OUTLINE_WIDTH,
   readBeside,
@@ -21,6 +22,7 @@ describe('what a project keeps of how it was looked at', () => {
         outlineWidth: OUTLINE_WIDTH,
         left: null,
         beside: null,
+        document: null,
       });
     expect(leftAt(readMemory(null), elements)).toEqual({ at: PROJECT, mode: 'diagram' });
   });
@@ -32,6 +34,7 @@ describe('what a project keeps of how it was looked at', () => {
       outlineWidth: 300,
       left: { at: 'a', mode: 'text' as const },
       beside: null,
+      document: 'b',
     };
     const stored = toStore(memory, elements, ['a']);
     expect(stored).toEqual({
@@ -41,6 +44,7 @@ describe('what a project keeps of how it was looked at', () => {
       outlineWidth: 300,
       at: 'a',
       mode: 'text',
+      document: 'b',
     });
     expect(readMemory(JSON.parse(JSON.stringify(stored)))).toEqual({
       ...memory,
@@ -77,6 +81,29 @@ describe('what a project keeps of how it was looked at', () => {
       sameBeside({ kind: 'map', at: 'a', mode: 'text' }, { kind: 'map', at: 'a', mode: 'diagram' }),
     ).toBe(false);
     expect(sameBeside(null, { kind: 'tabs' })).toBe(false);
+  });
+
+  it('keeps the element marked as the document while it is there, and reads a view without one as none', () => {
+    expect(toStore({ ...readMemory(null), document: 'gone' }, elements, [])).not.toHaveProperty(
+      'document',
+    );
+    expect(toStore({ ...readMemory(null), document: PROJECT }, elements, []).document).toBe(
+      PROJECT,
+    );
+    expect(readMemory({ at: 'a', document: '' }).document).toBeNull();
+    expect(readMemory({ at: 'a', document: 3 }).document).toBeNull();
+  });
+
+  it('has as its document the element marked, wherever the element in view is, else the element in view', () => {
+    // No mark: the element in view.
+    expect(documentOf(null, elements, 'b')).toBe('b');
+    // A mark that is there: the mark, with the element in view within it, beside it or above it.
+    expect(documentOf('a', elements, 'b')).toBe('a');
+    expect(documentOf('a', elements, 'a')).toBe('a');
+    expect(documentOf('a', elements, PROJECT)).toBe('a');
+    expect(documentOf(PROJECT, elements, 'b')).toBe(PROJECT);
+    // A mark whose element is gone: the element in view again.
+    expect(documentOf('gone', elements, 'b')).toBe('b');
   });
 
   it('is left at the project where the element it was left at is gone', () => {
