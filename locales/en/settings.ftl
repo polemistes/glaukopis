@@ -41,6 +41,8 @@ settings-text-depth-indent = Set in, with lines
 settings-heading-numbers = Numbers of the headings, as the document prints them
 settings-heading-numbers-shown = Shown
 settings-heading-numbers-hidden = Hidden
+settings-heading-numbers-text = In the text view
+settings-heading-numbers-diagram = In the diagram
 settings-interface-size = Size of the interface
 # A line of text in the size chosen, which shows the face of the letters; a
 # line of Homer's Greek follows it.

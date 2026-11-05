@@ -382,21 +382,24 @@
         depth={settings.value.textDepth ?? 'numbers'}
         size={settings.value.textSize}
       />
-      <!-- Whether the number a heading will print stands before its name in the text view and the diagram (record 0079). -->
-      <div class="row top" data-heading-numbers>
-        <div class="what">
-          <div class="label">{t('settings-heading-numbers')}</div>
-        </div>
-        <Segmented
-          value={settings.value.headingNumbers === false ? 'hidden' : 'shown'}
-          label={t('settings-heading-numbers')}
-          options={[
-            { value: 'shown', label: t('settings-heading-numbers-shown') },
-            { value: 'hidden', label: t('settings-heading-numbers-hidden') },
-          ]}
-          onchange={(shown: 'shown' | 'hidden') =>
-            settings.set('headingNumbers', shown === 'shown')}
-        />
+      <!-- Whether the number a heading will print stands before its name, in the text view and in the diagram, each on its own (records 0079, 0081). -->
+      <div class="numbers" data-heading-numbers>
+        <div class="label">{t('settings-heading-numbers')}</div>
+        {#each [{ key: 'headingNumbersText', view: 'text' }, { key: 'headingNumbersDiagram', view: 'diagram' }] as const as one (one.key)}
+          {@const label = t(`settings-heading-numbers-${one.view}`)}
+          <div class="row" data-heading-numbers-view={one.view}>
+            <div class="what">{label}</div>
+            <Segmented
+              value={settings.value[one.key] === false ? 'hidden' : 'shown'}
+              {label}
+              options={[
+                { value: 'shown', label: t('settings-heading-numbers-shown') },
+                { value: 'hidden', label: t('settings-heading-numbers-hidden') },
+              ]}
+              onchange={(shown: 'shown' | 'hidden') => settings.set(one.key, shown === 'shown')}
+            />
+          </div>
+        {/each}
       </div>
     </section>
 
@@ -717,6 +720,14 @@
   }
   .sub {
     padding-top: 12px;
+  }
+  .numbers {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .numbers .what {
+    color: var(--ink-2);
   }
   .font {
     flex: none;

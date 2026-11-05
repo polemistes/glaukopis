@@ -74,22 +74,39 @@ export interface MoreSettings {
   pageChips: boolean;
   /**
    * Whether the number a heading will print stands before its name in the
-   * text view and in the diagram (record 0079). Shown, unless turned off;
-   * the outline has it always.
+   * text view (records 0079, 0081). Shown, unless turned off; the outline
+   * has it always.
    */
-  headingNumbers: boolean;
+  headingNumbersText: boolean;
+  /**
+   * Whether the number a heading will print stands before its name in the
+   * diagram (records 0079, 0081). Shown, unless turned off.
+   */
+  headingNumbersDiagram: boolean;
   /** How the files of the library are shown. */
   filesView: FilesViewSettings;
 }
 
 export type AllSettings = Settings & MoreSettings;
 
+/**
+ * A setting of the numbers of the headings in one view, where it is kept;
+ * else the one setting of both views that came before it, where that is
+ * kept; else shown.
+ */
+function shownOr(own: unknown, kept: object): boolean {
+  if (typeof own === 'boolean') return own;
+  const before = (kept as { headingNumbers?: unknown }).headingNumbers;
+  return typeof before === 'boolean' ? before : true;
+}
+
 const more = (kept: Partial<AllSettings> = {}): MoreSettings => ({
   passageKinds: Array.isArray(kept.passageKinds)
     ? kept.passageKinds.filter((k) => k && typeof k.name === 'string')
     : [],
   pageChips: typeof kept.pageChips === 'boolean' ? kept.pageChips : true,
-  headingNumbers: typeof kept.headingNumbers === 'boolean' ? kept.headingNumbers : true,
+  headingNumbersText: shownOr(kept.headingNumbersText, kept),
+  headingNumbersDiagram: shownOr(kept.headingNumbersDiagram, kept),
   filesView: filesViewOf(kept.filesView),
 });
 

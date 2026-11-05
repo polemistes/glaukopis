@@ -36,6 +36,8 @@ settings-text-depth-indent = Rykket inn, med streker
 settings-heading-numbers = Overskriftenes numre, slik dokumentet skriver dem ut
 settings-heading-numbers-shown = Vist
 settings-heading-numbers-hidden = Skjult
+settings-heading-numbers-text = I teksten
+settings-heading-numbers-diagram = I diagrammet
 settings-interface-size = Størrelsen på grensesnittet
 settings-sample = Jeg begynte å fortære en sandwich mens jeg kjørte taxi på vei til quiz.
 # The three levels of the sample of the document structure, the sample sentence under the third.

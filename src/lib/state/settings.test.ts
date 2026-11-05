@@ -144,23 +144,21 @@ describe('the settings as they are read', () => {
     expect(writes).toHaveLength(0);
   });
 
-  it('show the numbers of the headings unless that was turned off, and keep it as it was set', async () => {
+  it('show the numbers of the headings in each view unless that was turned off, the one setting before them read as both', async () => {
     const kept = (more: object): Partial<Settings> => ({ person: 'kept-id', ...more });
-    vi.mocked(settingsLoad).mockResolvedValueOnce({ settings: kept({}), setAside: null });
-    await settings.load();
-    expect(settings.value.headingNumbers).toBe(true);
-    vi.mocked(settingsLoad).mockResolvedValueOnce({
-      settings: kept({ headingNumbers: false }),
-      setAside: null,
-    });
-    await settings.load();
-    expect(settings.value.headingNumbers).toBe(false);
-    vi.mocked(settingsLoad).mockResolvedValueOnce({
-      settings: kept({ headingNumbers: 'no' }),
-      setAside: null,
-    });
-    await settings.load();
-    expect(settings.value.headingNumbers).toBe(true);
+    const read = async (more: object) => {
+      vi.mocked(settingsLoad).mockResolvedValueOnce({ settings: kept(more), setAside: null });
+      await settings.load();
+      return [settings.value.headingNumbersText, settings.value.headingNumbersDiagram];
+    };
+    expect(await read({})).toEqual([true, true]);
+    expect(await read({ headingNumbers: false })).toEqual([false, false]);
+    expect(await read({ headingNumbers: 'no' })).toEqual([true, true]);
+    expect(await read({ headingNumbersText: false })).toEqual([false, true]);
+    expect(await read({ headingNumbers: false, headingNumbersDiagram: true })).toEqual([
+      false,
+      true,
+    ]);
     expect(writes).toHaveLength(0);
   });
 

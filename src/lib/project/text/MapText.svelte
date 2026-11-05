@@ -185,7 +185,7 @@
   const tree = $derived(project.tree(at));
   /** The numbers of the headings as the document prints them (record 0079), unless the settings hide them. */
   const printed = $derived(
-    settings.value.headingNumbers === false ? null : numbering.of(project, at),
+    settings.value.headingNumbersText === false ? null : numbering.of(project, at),
   );
   const numberOf = (id: string) => {
     const p = printed?.byId.get(id);

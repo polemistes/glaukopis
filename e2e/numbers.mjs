@@ -147,8 +147,8 @@ try {
   );
   await app.screenshot('numbers-3-text-outline');
 
-  // --- Hidden by the settings in the text view and the diagram; the outline keeps them ---
-  const hideOrShow = async (word) => {
+  // --- Hidden by the settings, in the text view and in the diagram each on its own; the outline keeps them ---
+  const hideOrShow = async (view, word) => {
     // From the diagram, where Ctrl+, is not the key of lowered text.
     await app.view('diagram');
     await app.waitFor('.diagram .node.root', 8000);
@@ -158,35 +158,45 @@ try {
     await app.waitFor('[data-heading-numbers]', 8000);
     await app.exec(`document.querySelector('[data-heading-numbers]').scrollIntoView({ block: 'center' })`);
     await sleep(200);
-    if (word === 'Hidden') await app.screenshot('numbers-4-setting');
-    await app.clickText('[data-heading-numbers] [role="radio"]', word);
+    await app.clickText(`[data-heading-numbers-view="${view}"] [role="radio"]`, word);
     await sleep(200);
+    if (view === 'diagram' && word === 'Hidden') await app.screenshot('numbers-4-setting');
     await app.press('Escape');
     await app.waitGone('dialog[open]', 5000);
   };
-  await hideOrShow('Hidden');
-  await app.waitUntil(`return !document.querySelector('.diagram .node .caption .number')`, 8000, 'the numbers hidden in the diagram');
-  const hidden = await mapNumbers();
-  check(
-    'hidden by the settings, the boxes of the map carry the name alone',
-    same(hidden, ['A book in parts', 'Alpha', 'Beta', 'Delta', 'Gamma', 'Part one', 'Part two']),
-    hidden.join(' | '),
-  );
-  await app.view('text');
-  await app.waitFor('.text-view .section', 5000);
-  await sleep(300);
-  check('and the headings of the text view too', !(await app.exists('.text-view .heading .number')));
+  const textNumbered = async () => {
+    await app.view('text');
+    await app.waitFor('.text-view .section', 5000);
+    await sleep(300);
+    return app.exists('.text-view .heading .number');
+  };
+  await hideOrShow('text', 'Hidden');
+  await app.waitFor('.diagram .node .caption .number', 8000);
+  const textOnly = await mapNumbers();
+  check('hidden in the text view alone, the diagram keeps its numbers', same(textOnly, through), textOnly.join(' | '));
+  check('while the headings of the text view carry none', !(await textNumbered()));
   if (!(await app.exists('.outline'))) {
     await app.keys(['Control', 'Shift', 'o']);
     await app.waitFor('.outline', 3000);
     await sleep(200);
   }
-  check('while the outline keeps its numbers', await app.exists('.outline .number'));
-  await app.screenshot('numbers-5-hidden');
-  await hideOrShow('Shown');
+  check('and the outline keeps its numbers', await app.exists('.outline .number'));
+  await app.screenshot('numbers-5-hidden-in-text');
+  await hideOrShow('diagram', 'Hidden');
+  await app.waitUntil(`return !document.querySelector('.diagram .node .caption .number')`, 8000, 'the numbers hidden in the diagram');
+  const hidden = await mapNumbers();
+  check(
+    'hidden in the diagram too, the boxes of the map carry the name alone',
+    same(hidden, ['A book in parts', 'Alpha', 'Beta', 'Delta', 'Gamma', 'Part one', 'Part two']),
+    hidden.join(' | '),
+  );
+  check('and the text view still none', !(await textNumbered()));
+  await hideOrShow('diagram', 'Shown');
   await app.waitUntil(`return !!document.querySelector('.diagram .node .caption .number')`, 8000, 'the numbers shown again');
   const shown = await mapNumbers();
-  check('shown again, the numbers are back as they were', same(shown, through), shown.join(' | '));
+  check('shown again in the diagram, the numbers are back as they were', same(shown, through), shown.join(' | '));
+  check('while the text view is still without them', !(await textNumbered()));
+  await hideOrShow('text', 'Shown');
   await app.view('text');
   await app.waitFor('.text-view .section', 5000);
   await app.waitUntil(`return !!document.querySelector('.text-view .heading .number')`, 8000, 'the numbers back in the text view');
