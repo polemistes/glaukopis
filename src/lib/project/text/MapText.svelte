@@ -88,8 +88,14 @@
 
   interface Props {
     project: Project;
-    /** The element in view: the title of the document, whose branch is the text. */
+    /** The element in view: the title of the text, whose branch is the text. */
     at: string;
+    /**
+     * The element whose document the numbers and the words that point are
+     * of: the element in view, or the one marked as the document (record
+     * 0081).
+     */
+    documentAt: string;
     onkeep: (id: string) => void;
     /** Enters an element: it becomes the one in view. */
     onenter: (id: string) => void;
@@ -123,6 +129,7 @@
   let {
     project,
     at,
+    documentAt,
     onkeep,
     onenter,
     onleave,
@@ -185,7 +192,7 @@
   const tree = $derived(project.tree(at));
   /** The numbers of the headings as the document prints them (record 0079), unless the settings hide them. */
   const printed = $derived(
-    settings.value.headingNumbersText === false ? null : numbering.of(project, at),
+    settings.value.headingNumbersText === false ? null : numbering.of(project, documentAt),
   );
   const numberOf = (id: string) => {
     const p = printed?.byId.get(id);
@@ -806,9 +813,9 @@
       citation: citationLabel,
       crossref: (target, form) =>
         pointerText(
-          numbering.of(project, at).byId.get(target),
+          numbering.of(project, documentAt).byId.get(target),
           form,
-          numbering.countingOf(project, at),
+          numbering.countingOf(project, documentAt),
         ),
     }),
     holder: (element, part) =>
@@ -1477,6 +1484,7 @@
             <TextSection
               {project}
               {at}
+              {documentAt}
               {node}
               level={row.level}
               {depthShown}

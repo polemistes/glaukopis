@@ -31,6 +31,7 @@ export { hooksOf };
  * where the editor holds no element's text.
  */
 function viewedAt(hooks: EditorHooks | undefined): string | null {
+  if (hooks?.inView) return hooks.inView;
   if (hooks?.at) return hooks.at;
   const project = currentProject();
   return hooks?.element && project?.node(hooks.element) ? topOf(project, hooks.element) : null;

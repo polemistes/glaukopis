@@ -28,6 +28,7 @@
   import MapDiagram from './diagram/MapDiagram.svelte';
   import { filesDropped, mapOfIt } from './drops';
   import type { ElementsPayload } from './elements';
+  import { documentOf } from './layout';
   import type { Project } from './model/project.svelte';
   import { PROJECT } from './model/types';
   import { openProjects } from './open-projects.svelte';
@@ -69,6 +70,8 @@
 
   const project = $derived(open.project);
   const at = $derived(spec.at ?? PROJECT);
+  /** The document of this side: the element marked as the document where there is one, else the element in view (record 0081). */
+  const documentAt = $derived(project ? documentOf(open.document, project.nodes, at) : at);
 
   let el = $state<HTMLDivElement>();
   let text = $state<ReturnType<typeof MapText>>();
@@ -148,11 +151,19 @@
     sides.focus(key);
   }
 
+  /**
+   * The element to enter to show an element: the element in view where it
+   * is within it; else the document of the side where the element is within
+   * that, so that the side stays within the document it sets; else the top
+   * of the element's tree.
+   */
   function holding(element: string): string {
     const p = project;
     if (!p) return PROJECT;
     if (p.tree(at).depth.has(element)) return at;
-    return p.pathTo(element)[1] ?? PROJECT;
+    const way = p.pathTo(element);
+    if (documentAt !== at && way.includes(documentAt)) return documentAt;
+    return way[1] ?? PROJECT;
   }
 
   function goTo(element: string, options: { mode?: MapMode } = {}) {
@@ -305,6 +316,7 @@
         <Outline
           {project}
           {at}
+          {documentAt}
           items={outlineItems(project, at, open.folding)}
           current={spec.mode === 'text' ? top : null}
           ongo={(id) => (spec.mode === 'text' && text ? text.goTo(id) : goTo(id))}
@@ -334,6 +346,7 @@
               bind:this={diagram}
               {project}
               {at}
+              {documentAt}
               camera={open.cameras[at] ?? null}
               oncamera={(c) => (open.cameras[at] = c)}
               onkeep={keep}
@@ -347,6 +360,7 @@
               bind:this={text}
               {project}
               {at}
+              {documentAt}
               onkeep={keep}
               onenter={(id) => show(id)}
               onleave={project.tree().parent.get(at) ? up : undefined}

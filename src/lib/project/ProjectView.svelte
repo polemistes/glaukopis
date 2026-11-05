@@ -84,7 +84,7 @@
   import { tooltip } from '$lib/ui/tooltip';
   import { t } from '$lib/i18n';
   import { comparing } from './copies.svelte';
-  import { clamp, sameBeside, sideWidth, type Beside } from './layout';
+  import { clamp, documentOf, sameBeside, sideWidth, type Beside } from './layout';
   import { DocumentPane } from './document-pane.svelte';
   import ProjectDialogs from './ProjectDialogs.svelte';
   import BesideDialog from './BesideDialog.svelte';
@@ -262,6 +262,14 @@
   /** The project of the active side, once it is open: what the keys, the undo and the dialogs act on. */
   const project = $derived(activeOpen?.project ?? null);
   const at = $derived(active?.at ?? PROJECT);
+  /**
+   * The document of the active side: the element marked as the document
+   * where there is one, else the element in view (record 0081). What the
+   * keys of the document open.
+   */
+  const activeDocument = $derived(
+    project ? documentOf(activeOpen?.document ?? null, project.nodes, at) : at,
+  );
   /** The projects the sides show, by id: marked in the menu of all projects. */
   const shownIds = $derived([...new Set(sides.maps.map((s) => s.project))]);
 
@@ -941,13 +949,13 @@
       print: { run: () => void printActive(), when: () => !!sides.active },
       'document-settings': {
         run: () => {
-          if (project) aboutDocumentUi.open({ project, at });
+          if (project) aboutDocumentUi.open({ project, at: activeDocument });
         },
         when: () => !!project,
       },
       'what-document': {
         run: () => {
-          if (project) aboutDocumentUi.open({ project, at, section: 'type' });
+          if (project) aboutDocumentUi.open({ project, at: activeDocument, section: 'type' });
         },
         when: () => !!project,
       },
@@ -1153,7 +1161,8 @@
     <!-- the typesetting pane -->
     {#if previewSpec && previewOpen?.project && previewSpec.at}
       {@const of = previewOpen?.project as Project}
-      {@const typesetAt = previewSpec?.at ?? PROJECT}
+      <!-- The document of the side the pane shows: the element marked as the document, else the element in view. -->
+      {@const typesetAt = documentOf(previewOpen.document, of.nodes, previewSpec.at)}
       <Divider
         label={t('project-between-preview')}
         onstart={() => measure('preview')}

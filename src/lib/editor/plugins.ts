@@ -85,6 +85,11 @@ export interface EditorHooks {
    */
   at?: string;
   /**
+   * The element in view, where a citation that was found is gone through
+   * when it is pressed; `at`, where it is not given.
+   */
+  inView?: string;
+  /**
    * The kinds of paragraph of the writer's own, by which Tab knows a line
    * of verse, the count which lines are counted, and the brackets the
    * names of runs: as the kind it is based on has it. None, where they are

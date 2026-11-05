@@ -80,6 +80,11 @@
      * stands in, where none is given.
      */
     at?: string;
+    /**
+     * The element in view, where a citation that was found is gone through
+     * when it is pressed; `at`, where it is not given.
+     */
+    inView?: string;
     placeholder?: string;
     /** Where to put the cursor when the editor appears: at an end, or at a point of the window. */
     autofocus?: FocusAt | null;
@@ -103,6 +108,7 @@
     kind,
     element,
     at,
+    inView,
     placeholder = '',
     autofocus = null,
     editable = true,
@@ -486,6 +492,7 @@
       point: kind === 'body' ? point : undefined,
       element: untrack(() => element),
       at: untrack(() => at),
+      inView: untrack(() => inView),
       // The kinds of the writer's own, for what they are based on: a line of verse, a kind that is counted, the name of a run.
       passageKinds: () => project.passageKinds,
       // What the layout says of the numbers of a stretch: see above.
@@ -561,7 +568,7 @@
           return pressedFound(
             event.target,
             untrack(() =>
-              element && project.node(element) ? (at ?? topOf(project, element)) : null,
+              element && project.node(element) ? (inView ?? at ?? topOf(project, element)) : null,
             ),
           );
         },

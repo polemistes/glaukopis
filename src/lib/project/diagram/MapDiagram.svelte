@@ -62,6 +62,12 @@
     project: Project;
     /** The element in view: at the centre, its branch around it. */
     at: string;
+    /**
+     * The element whose document the numbers and the words that point are
+     * of: the element in view, or the one marked as the document (record
+     * 0081).
+     */
+    documentAt: string;
     /** Where the view was when the map was last shown. */
     camera?: Camera | null;
     oncamera?: (camera: Camera) => void;
@@ -83,6 +89,7 @@
   let {
     project,
     at,
+    documentAt,
     camera = null,
     oncamera,
     onkeep,
@@ -161,7 +168,7 @@
   const tree = $derived(project.tree(at));
   /** The numbers of the headings as the document prints them (record 0079), unless the settings hide them. */
   const printed = $derived(
-    writerSettings.value.headingNumbersDiagram === false ? null : numbering.of(project, at),
+    writerSettings.value.headingNumbersDiagram === false ? null : numbering.of(project, documentAt),
   );
   const numberOf = (id: string) => {
     const p = printed?.byId.get(id);
@@ -1489,7 +1496,8 @@
     <ElementBox
       {project}
       id={editing.id}
-      {at}
+      at={documentAt}
+      inView={at}
       anchor={editing.anchor}
       begin={editing.begin}
       {onkeep}

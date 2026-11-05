@@ -30,15 +30,26 @@
     project: Project;
     id: string;
     anchor: RectLike;
-    /** The element in view, whose document the element is read as part of; the project where none is. */
+    /** The element whose document the element is read as part of: the element in view, or the one marked as the document; the project where none is. */
     at?: string | null;
+    /** The element in view, where a citation that was found is gone through; `at`, where it is not given. */
+    inView?: string | null;
     /** Where to begin: in the name, or in the text. */
     begin?: 'title' | 'body';
     onkeep: (id: string) => void;
     onclose: () => void;
   }
 
-  let { project, id, anchor, at = null, begin = 'body', onkeep, onclose }: Props = $props();
+  let {
+    project,
+    id,
+    anchor,
+    at = null,
+    inView = null,
+    begin = 'body',
+    onkeep,
+    onclose,
+  }: Props = $props();
 
   let el = $state<HTMLDivElement>();
   let name = $state<ReturnType<typeof RichText>>();
@@ -265,6 +276,7 @@
         kind="body"
         element={id}
         at={within}
+        inView={inView ?? undefined}
         placeholder={t('project-write-here')}
         autofocus={begin === 'body' ? 'end' : null}
         onaction={bodyAction}

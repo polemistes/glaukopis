@@ -24,6 +24,12 @@
     project: Project;
     /** The element in view, whose branch is listed. */
     at: string;
+    /**
+     * The element whose document the numbers and the words that point are
+     * of: the element in view, or the one marked as the document (record
+     * 0081).
+     */
+    documentAt: string;
     items: OutlineItem[];
     /** The element in view: at the top of the text, or chosen. */
     current: string | null;
@@ -33,13 +39,22 @@
     width?: number;
   }
 
-  let { project, at, items: all, current, ongo, onclose, width = 240 }: Props = $props();
+  let {
+    project,
+    at,
+    documentAt,
+    items: all,
+    current,
+    ongo,
+    onclose,
+    width = 240,
+  }: Props = $props();
 
   const folded = $derived(outlineFolds(at));
   /** The items that are listed: not those under a folded one. */
   const items = $derived(listed(all, folded));
   /** The numbers of the headings as the document prints them (record 0079). */
-  const printed = $derived(numbering.of(project, at));
+  const printed = $derived(numbering.of(project, documentAt));
   const numberOf = (id: string) => {
     const p = printed.byId.get(id);
     return p?.kind === 'part' ? p.number : null;

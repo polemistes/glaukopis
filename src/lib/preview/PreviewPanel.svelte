@@ -54,7 +54,11 @@
   interface Props {
     project: Project;
     projectId: string;
-    /** The element in view: its branch is the document. */
+    /**
+     * The element whose branch is the document: the element in view of the
+     * side the pane shows, unless an element is marked as the document
+     * (record 0081).
+     */
     at: string;
     onclose: () => void;
     /** Whether the Look column stands beside the pages. */

@@ -62,8 +62,10 @@
 
   interface Props {
     project: Project;
-    /** The element in view, whose document this is part of. */
+    /** The element in view: where a citation that was found is gone through. */
     at: string;
+    /** The element whose document this is part of: where what stands in its text is numbered and pointed to (record 0081). */
+    documentAt: string;
     node: NodeRecord;
     /** 0 for the element in view, whose name is the title of the document. */
     level: number;
@@ -114,6 +116,7 @@
   let {
     project,
     at,
+    documentAt,
     node,
     level,
     depthShown = 'numbers',
@@ -429,9 +432,7 @@
         >
       {/if}
       <div class="named">
-        {#if headingNumber && level > 0}<span class="number" aria-hidden="true"
-            >{headingNumber}</span
-          >{/if}
+        {#if headingNumber}<span class="number" aria-hidden="true">{headingNumber}</span>{/if}
         {#if active && title}
           <RichText
             bind:this={titleEditor}
@@ -491,7 +492,8 @@
             fragment={body}
             kind="body"
             element={node.id}
-            {at}
+            at={documentAt}
+            inView={at}
             autofocus={focus?.part === 'body' ? focus.at : null}
             onaction={(a, v) => onaction(node.id, 'body', a, v)}
             onfocus={() => {
@@ -506,7 +508,7 @@
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
           <div
             class="prose body static"
-            use:hydrate={{ html, project, element: node.id, at }}
+            use:hydrate={{ html, project, element: node.id, at: documentAt }}
             use:spellingMarks={{
               project,
               element: node.id,
@@ -800,6 +802,13 @@
     color: var(--ink-3);
     font-variant-numeric: tabular-nums;
     user-select: none;
+  }
+  /* The element in view numbered by the document above it, which is marked (record 0081). */
+  .level-0 .heading .number {
+    font-size: 2em;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
   }
   .level-1 .heading .number {
     font-size: 1.42em;
