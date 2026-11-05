@@ -168,6 +168,19 @@ Linux. A command that can wait long or be called many times at once runs on
    loop in the page: kill by PID only, never `pkill -f`. Never drive the
    owner's own screen or keyboard. `e2e/languages.mjs` finds English left in
    the Norwegian interface.
+
+   **Which checks, when** (the owner's word, 2026-11-05):
+   - *Every change*: steps 2 and 3 (step 3 where the Rust changed), and the
+     scripts whose part the change touches, picked by the files changed: a
+     new script for what is new, the script of each part whose look or
+     behaviour changed (the path, the typesetting pane, Look …), and
+     `languages` where words were added. Not the scripts of parts the change
+     does not reach.
+   - *Before a release, or a package the owner is to rely on*: every script
+     (`pnpm e2e`), as a capped unit (step 5).
+   - *Never in the way*: a package the owner asks for to try is built at
+     once; it does not wait for scripts. Two capped units at once compete for
+     memory and slow both: run one after the other.
 5. **Heavy builds** (makepkg, a release build, a full e2e run) run as a capped
    systemd unit of their own: `./capped.sh <name> <command>` (output in
    `run-<name>.log`). An out-of-memory kill inside the editor's scope takes
