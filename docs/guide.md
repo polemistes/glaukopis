@@ -87,8 +87,9 @@ the second side (see *Another project beside*); **Close**, for a project
 that is shown, which closes its side; and **Fold** or **Unfold**, which
 shows its tree under it, read from the disk for a project that is not open.
 Then come renaming, copying, its earlier versions and saving it as a file;
-moving it among the folders; and deleting it. A project that is open is not
-renamed or deleted from here. A folder's menu has **Fold**, then what is
+moving it among the folders; and deleting it. A project that is open is
+renamed and deleted from here too: the name goes into its own element, as its
+views show at once, and its sides close before it goes to the trash. A folder's menu has **Fold**, then what is
 made in it, renaming, moving and deleting. The menu of an element under a
 project that is not open has **Enter**, which opens the project there, and
 **Enter beside**.

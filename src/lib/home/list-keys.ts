@@ -16,7 +16,7 @@ export interface ListRow {
   holds: boolean;
   /** Whether what is under it is shown. */
   unfolded: boolean;
-  /** Whether it can be renamed and deleted from here: not a project that is shown, not an element. */
+  /** Whether it can be renamed, deleted and moved among the folders from here: a folder or a project, not an element. */
   changeable: boolean;
   /** An element of a project shown in a side, which moves as it does in the project. */
   own: boolean;

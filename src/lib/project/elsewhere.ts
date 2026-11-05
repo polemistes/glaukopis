@@ -40,6 +40,26 @@ export function closedHere(id: string, project?: Project) {
   waiting.delete(id);
 }
 
+/** What closes the sides of the window that show a project, while the window has sides: see `closeHere`. */
+let closer: ((id: string) => void) | null = null;
+
+/** The window says what closes the sides that show a project; null while it has no sides. */
+export function closesHere(close: ((id: string) => void) | null) {
+  closer = close;
+}
+
+/**
+ * Closes the sides that show a project, as Close in the list does, so that
+ * it is let go and `goneHere` says when it is: for a project that goes to
+ * the trash (ADR 0080). Whether anything could: nothing, where the window
+ * has no sides.
+ */
+export function closeHere(id: string): boolean {
+  if (!closer) return false;
+  closer(id);
+  return true;
+}
+
 /**
  * When the project of that id is no longer open in the view: at once where
  * it is not. Whether it was let go within `ms`, so that what waits for it

@@ -13,6 +13,7 @@ import { sharingRename } from '$lib/api/sharing';
 import { t } from '$lib/i18n';
 import {
   carryAcross,
+  closeHere,
   goneHere,
   openedHere,
   openElsewhere,
@@ -24,7 +25,7 @@ import { projects } from '$lib/state/projects.svelte';
 import { router } from '$lib/state/router.svelte';
 import { confirm } from '$lib/ui/confirm.svelte';
 import type { DragPayload } from '$lib/ui/drag.svelte';
-import { notifyError } from '$lib/ui/toast.svelte';
+import { notify, notifyError } from '$lib/ui/toast.svelte';
 import { closedTrees } from './closed.svelte';
 import { ancestors, descendants, folderOf, parentOf, topmost } from './folders';
 import { listUi } from './list.svelte';
@@ -34,8 +35,17 @@ const folderName = (id: string | null) => (id ? projects.folder(id)?.name : unde
 const projectNamed = (id: string) => projects.list.find((p) => p.id === id);
 const shown = (folder: string | null) => listUi.reveal(ancestors(projects.folders, folder));
 
+/**
+ * Names a project. Its name is that of its own element (ADR 0037), and the
+ * list's copy of it is written at each save; so the copy is written first,
+ * which shows the name in the list at once and refuses a name that will not
+ * do before anything else is written, and then the element is named: in the
+ * project open in the view, as one step its undo takes back, or in the
+ * project opened from disk for it and let go (ADR 0080).
+ */
 async function nameProject(p: ProjectInfo, name: string) {
   await projects.rename(p.id, name);
+  await writeElsewhere(p.id, (project) => project.setName(name));
   // Those who share it are told the name by the server; the server itself takes no harm from failing.
   if (p.sharing?.owner) sharingRename(p.id, name).catch(() => {});
 }
@@ -72,15 +82,17 @@ async function bringBack(id: string) {
 }
 
 /**
- * Puts a project in the trash, where what is undone or done again takes it
- * away: a project open in the window is never taken away from under the
- * writer (ADR 0053). Its view is left for the home, and it is put in the
- * trash once it is closed and on disk; where it is still open after that,
- * nothing is done, and the writer is told why.
+ * Puts a project in the trash, where it is deleted and where what is undone
+ * or done again takes it away: a project open in the window is never taken
+ * away from under the writer (ADR 0053). The sides that show it close, as
+ * Close in the list does (ADR 0080), or the view is left for the home where
+ * the window has no sides; it is put in the trash once it is closed and on
+ * disk; where it is still open after that, nothing is done, and the writer
+ * is told why.
  */
 async function trash(id: string) {
   if (openedHere(id)) {
-    router.go({ view: 'home' });
+    if (!closeHere(id)) router.go({ view: 'home' });
     if (!(await goneHere(id, 10_000))) throw new NotNow(t('home-open-now'));
   }
   await projects.closed(id);
@@ -243,8 +255,9 @@ async function makeAgain(d: Deleted) {
 
 /**
  * Deletes projects and folders, when that is confirmed: the projects go to
- * the trash, and what is in a folder moves up to where the folder was. One
- * change, undone as one. Whether anything was deleted.
+ * the trash, one that is open closed first, and what is in a folder moves
+ * up to where the folder was. One change, undone as one. Whether anything
+ * was deleted.
  */
 export async function deleteThings(things: Things): Promise<boolean> {
   const folders = things.folders.map((id) => projects.folder(id)).filter((f) => !!f);
@@ -266,11 +279,13 @@ export async function deleteThings(things: Things): Promise<boolean> {
       gone.push(d);
     }
     for (const p of list) {
-      await projects.remove(p.id);
+      await trash(p.id);
       trashed.push(p);
     }
   } catch (error) {
-    notifyError(t('home-delete-failed'), error);
+    // A project that stays open is no failure: it is said, and left where it is.
+    if (error instanceof NotNow) notify(error.message);
+    else notifyError(t('home-delete-failed'), error);
     if (!gone.length && !trashed.length) return false;
   }
   const message =

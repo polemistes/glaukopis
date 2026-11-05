@@ -146,9 +146,9 @@ export interface Folding {
 /** Where a project's menu is shown, and what that place adds to it. */
 export interface ProjectPlace {
   /**
-   * The projects shown in the sides of the window: they are not opened,
-   * renamed or deleted from here, and are closed from here; the others are
-   * opened beside them.
+   * The projects shown in the sides of the window: they are not opened from
+   * here, and are closed from here; the others are opened beside them. One
+   * of them is renamed in its own element, and closed before it is deleted.
    */
   shown?: readonly string[];
   /** Closes the sides that show the project. */
@@ -689,8 +689,8 @@ export class ProjectActions {
    * The menu of a project (ADR 0063): open it, beside what is shown, close
    * it, fold its tree; rename, copy, its history, save it, share it; move it
    * among the folders; delete it. A project shown in a side (`place.shown`) is
-   * neither opened, renamed nor deleted from here: what is written in it
-   * goes to its folder on disk.
+   * not opened again from here; it is renamed in its own element, and its
+   * sides close before it goes to the trash (ADR 0080).
    */
   items(p: ProjectInfo, place: ProjectPlace = {}): MenuItem[] {
     const shown = place.shown ?? [];
@@ -721,8 +721,6 @@ export class ProjectActions {
       {
         label: t('home-menu-rename'),
         icon: Pencil,
-        hint: here ? t('home-open-now') : undefined,
-        disabled: here,
         action: () => (place.rename ? place.rename() : this.rename(p)),
       },
       { label: t('home-menu-duplicate'), icon: Copy, action: () => this.duplicate(p) },
@@ -755,8 +753,6 @@ export class ProjectActions {
         label: t('common-delete'),
         icon: Trash2,
         danger: true,
-        hint: here ? t('home-open-now') : undefined,
-        disabled: here,
         action: () => void this.remove(p),
       },
     ];

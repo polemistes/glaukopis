@@ -96,6 +96,7 @@
   import ArrowLeftRight from '@lucide/svelte/icons/arrow-left-right';
   import ListTree from '@lucide/svelte/icons/list-tree';
   import { PROJECT } from './model/types';
+  import { closesHere } from './elsewhere';
   import PicturePanel from './PicturePanel.svelte';
   import ReferencePanel from './ReferencePanel.svelte';
   import SideTabs from './SideTabs.svelte';
@@ -365,6 +366,7 @@
     viewing.beside = (id, element) => sides.beside(id, element ?? null);
     viewing.close = closeShown;
     viewing.share = shareProject;
+    closesHere(closeAllOf);
   });
 
   // ---- the document pane, of the active side's document ----
@@ -612,6 +614,7 @@
     viewing.beside = null;
     viewing.close = null;
     viewing.share = null;
+    closesHere(null);
     pictures.open(null);
   });
 
@@ -648,6 +651,11 @@
   /** The sides that show a project close, as Close in the list's menu of a project asks. */
   function closeShown(id: string) {
     for (const spec of sides.maps.filter((s) => s.project === id)) closeSideOf(spec.key);
+  }
+
+  /** Every side of a project closes, its file sides too: before it goes to the trash (ADR 0080). */
+  function closeAllOf(id: string) {
+    for (const spec of sides.sides.filter((s) => s.project === id)) closeSideOf(spec.key);
   }
 
   /** One side again: the side without the focus closes. */

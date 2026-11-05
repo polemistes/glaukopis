@@ -642,7 +642,7 @@
         data-row-parent={pf ? `f:${pf}` : undefined}
         data-row-holds={unfoldable(p) || live ? '' : undefined}
         data-row-open={live || closedUnfolded.has(p.id) ? '' : undefined}
-        data-row-changeable={!isShown && !choose ? '' : undefined}
+        data-row-changeable={!choose ? '' : undefined}
         aria-current={p.id === current ? 'page' : undefined}
         data-depth={row.depth}
         data-project={p.id}

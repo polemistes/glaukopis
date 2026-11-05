@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   carryAcross,
   closedHere,
+  closeHere,
+  closesHere,
   idOf,
   openElsewhere,
   openedHere,
@@ -69,6 +71,16 @@ describe('the projects open in the view', () => {
     closedHere('iliad', two);
     expect(openedHere('iliad')).toBeUndefined();
     expect(idOf(two)).toBeNull();
+  });
+
+  it('have their sides closed by what the window gave, while it has sides', () => {
+    expect(closeHere('iliad')).toBe(false);
+    const closed: string[] = [];
+    closesHere((id) => closed.push(id));
+    expect(closeHere('iliad')).toBe(true);
+    expect(closed).toEqual(['iliad']);
+    closesHere(null);
+    expect(closeHere('iliad')).toBe(false);
   });
 
   it('are written in as one step their undo takes back, keeping what was done before', async () => {

@@ -4,25 +4,33 @@ import { t } from '$lib/i18n';
 import type { MapMode } from '$lib/state/router.svelte';
 import type { MenuItem } from '$lib/ui/menu.svelte';
 
-const { projects, sharingRename, confirm, notifyOk, notifyError } = vi.hoisted(() => ({
-  projects: {
-    list: [] as ProjectInfo[],
-    folders: [] as Folder[],
-    folder: vi.fn(),
-    create: vi.fn(),
-    createFolder: vi.fn(),
-    renameFolder: vi.fn(),
-    rename: vi.fn(),
-    duplicate: vi.fn(),
-    remove: vi.fn(),
-  },
-  sharingRename: vi.fn(),
-  confirm: vi.fn(),
-  notifyOk: vi.fn(),
-  notifyError: vi.fn(),
-}));
+const { projects, sharingRename, confirm, notifyOk, notifyError, writeElsewhere } = vi.hoisted(
+  () => ({
+    projects: {
+      list: [] as ProjectInfo[],
+      folders: [] as Folder[],
+      folder: vi.fn(),
+      create: vi.fn(),
+      createFolder: vi.fn(),
+      renameFolder: vi.fn(),
+      rename: vi.fn(),
+      duplicate: vi.fn(),
+      remove: vi.fn(),
+      closed: vi.fn(),
+    },
+    sharingRename: vi.fn(),
+    confirm: vi.fn(),
+    notifyOk: vi.fn(),
+    notifyError: vi.fn(),
+    writeElsewhere: vi.fn(),
+  }),
+);
 
 vi.mock('$lib/state/projects.svelte', () => ({ projects }));
+vi.mock('$lib/project/elsewhere', async (original) => ({
+  ...(await original<typeof import('$lib/project/elsewhere')>()),
+  writeElsewhere,
+}));
 vi.mock('$lib/api/sharing', () => ({ sharingRename }));
 vi.mock('$lib/ui/confirm.svelte', () => ({ confirm }));
 vi.mock('$lib/ui/toast.svelte', async (original) => ({
@@ -117,6 +125,12 @@ describe('what is done with a project from a list of them', () => {
     await actions.commit();
     expect(projects.rename).toHaveBeenCalledWith('s', 'The Iliad');
     expect(sharingRename).toHaveBeenCalledWith('s', 'The Iliad');
+    // The name is written in the project's own element, in the project open in the view or opened for it.
+    expect(writeElsewhere).toHaveBeenCalledWith('s', expect.any(Function));
+    const model = { setName: vi.fn() };
+    const what = writeElsewhere.mock.lastCall?.[1] as (p: typeof model) => void;
+    what(model);
+    expect(model.setName).toHaveBeenCalledWith('The Iliad');
 
     actions.rename(project('p', 'Notes'));
     actions.naming!.value = 'More notes';
@@ -156,7 +170,7 @@ describe('what is done with a project from a list of them', () => {
     expect(deleted).toHaveBeenCalledTimes(1);
   });
 
-  it('gives the one menu of a project, without entering, renaming or deleting the one that is open', () => {
+  it('gives the one menu of a project, not opening again the one that is open, which it renames and deletes', () => {
     const p = project('p', 'Notes');
     const menu = actions.items(p);
     expect(labels(menu)).toEqual([
@@ -178,14 +192,17 @@ describe('what is done with a project from a list of them', () => {
     item(menu, t('home-menu-history')).action();
     expect(actions.earlier).toBe(p);
 
-    // A project shown in a side is closed from here, and neither opened, renamed nor deleted.
+    // A project shown in a side is closed from here and not opened again; it is renamed and deleted (ADR 0080).
     const close = vi.fn();
     const here = actions.items(p, { shown: ['p'], close, beside: () => {} });
     expect(item(here, t('home-open')).disabled).toBe(true);
     expect(labels(here)).not.toContain(t('home-open-beside'));
-    expect(item(here, t('home-menu-rename')).disabled).toBe(true);
-    expect(item(here, t('common-delete')).disabled).toBe(true);
+    expect(item(here, t('home-menu-rename')).disabled).toBeFalsy();
+    expect(item(here, t('common-delete')).disabled).toBeFalsy();
     expect(item(here, t('home-menu-duplicate')).disabled).toBeFalsy();
+    item(here, t('home-menu-rename')).action();
+    expect(actions.naming?.purpose).toBe('rename');
+    actions.naming = null;
     item(here, t('home-close')).action();
     expect(close).toHaveBeenCalledWith('p');
 

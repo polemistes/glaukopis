@@ -3,7 +3,8 @@
 // the deleted ones; a folder folds and is not entered; a project is opened,
 // opened beside and marked; the keys of the tree move things and undo; up
 // from the top of a project comes to its row; the start screen shows the
-// projects last opened.
+// projects last opened; an open project is renamed and deleted from the
+// list, its sides closing first (record 0080).
 
 import { App, sleep } from './harness.mjs';
 
@@ -224,6 +225,58 @@ try {
   await app.click('nav.rail a.place[href="#/"]');
   await app.waitFor('.project', 8000);
   check('the house goes back to the project shown last', (await app.exec('return location.hash')).includes('/project/'));
+
+  // ---- an open project is renamed and deleted from the list (record 0080) ----
+  // Notes is open, from the start screen. The field of the dialog holds the old name: it is emptied first.
+  const nameIn = async (name) => {
+    await app.waitFor('dialog input');
+    await app.exec(`const i = document.querySelector('dialog input'); i.value = ''; i.dispatchEvent(new Event('input', { bubbles: true }));`);
+    await app.type('dialog input', name);
+    await app.clickText('dialog footer button', 'Rename');
+  };
+  const menuState = () =>
+    app.exec(`return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((m) => [m.querySelector('.label')?.textContent.trim() ?? m.textContent.trim(), !!(m.disabled || m.getAttribute('aria-disabled') === 'true')])`);
+  await sleep(500);
+  await app.rightClick(await rowEl(app, 'project', 'Notes'));
+  await app.waitFor('.menu');
+  // The labels carry their ellipsis and hint: "Rename…", "Open  It is open now".
+  const openState = await menuState();
+  const stateOf = (word) => openState.find(([l]) => l.startsWith(word))?.[1];
+  check('the menu of the open project renames and deletes it, and does not open it again', stateOf('Open') === true && stateOf('Rename') === false && stateOf('Delete') === false, JSON.stringify(openState));
+  await app.clickText('.menu [role="menuitem"]', 'Rename');
+  await nameIn('Notebook');
+  await until(() => hasRow(app, 'project', 'Notebook'));
+  check('the open project is renamed in the list', await hasRow(app, 'project', 'Notebook'));
+  await until(async () => (await sideProjects())[0] === 'Notebook');
+  check('and in its own element, as the path shows', (await sideProjects())[0] === 'Notebook', JSON.stringify(await sideProjects()));
+  check('and the window is named after it', (await app.exec('return document.title')) === 'Glaukopis – Notebook', await app.exec('return document.title'));
+  await app.screenshot('list-5-renamed-open');
+
+  // A project that is not open is renamed in its element too: the name holds when it is opened.
+  await app.rightClick(await rowEl(app, 'project', 'Iliad'));
+  await app.waitFor('.menu');
+  await app.clickText('.menu [role="menuitem"]', 'Rename');
+  await nameIn('The Iliad');
+  await until(() => hasRow(app, 'project', 'The Iliad'));
+  await app.click(await rowEl(app, 'project', 'The Iliad'));
+  await until(async () => (await sideProjects())[0] === 'The Iliad', 10000);
+  await sleep(500);
+  check('a project renamed while closed opens under its new name', (await sideProjects())[0] === 'The Iliad', JSON.stringify(await sideProjects()));
+
+  // Deleting the open project closes its side first; with no side left, the window shows the start screen.
+  await app.rightClick(await rowEl(app, 'project', 'The Iliad'));
+  await app.waitFor('.menu');
+  await app.clickText('.menu [role="menuitem"]', 'Delete');
+  await app.waitForText('dialog h2', 'Delete');
+  await sleep(250);
+  await app.clickText('dialog footer button', 'Delete project');
+  await until(async () => !(await hasRow(app, 'project', 'The Iliad')), 10000);
+  check('the open project is deleted from the list', !(await hasRow(app, 'project', 'The Iliad')));
+  await until(() => app.exists('[data-start]'), 5000);
+  check('its side closed first, and the window shows the start screen', (await app.exists('[data-start]')) && (await app.count('.pane')) === 0);
+  const trash = await invoke(app, 'project_trash');
+  check('it is in the trash', trash.some((e) => e.info.name === 'The Iliad'), JSON.stringify(trash.map((e) => e.info.name)));
+  await app.screenshot('list-6-deleted-open');
 
   const errors = await app.pageErrors();
   check('no errors in the page', !errors.length, JSON.stringify(errors).slice(0, 400));
