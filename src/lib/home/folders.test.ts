@@ -6,6 +6,7 @@ import {
   folderTree,
   foldersOpenTo,
   pathOf,
+  rowKey,
   rows,
   topmost,
 } from './folders';
@@ -41,7 +42,7 @@ const projects = [
 const shape = (list: ReturnType<typeof rows>) =>
   list.map(
     (r) =>
-      `${'  '.repeat(r.depth)}${r.kind === 'folder' ? `${r.folder.name}/${r.projects}` : r.project.name}`,
+      `${'  '.repeat(r.depth)}${r.kind === 'favourites' ? `Favourites/${r.count}` : r.kind === 'folder' ? `${r.folder.name}/${r.projects}` : r.project.name}`,
   );
 
 describe('the rows of the list of projects', () => {
@@ -71,6 +72,55 @@ describe('the rows of the list of projects', () => {
       shape(rows(folders, projects, { collapsed: new Set(['g', 'e']), filter: 'ia' })),
     ).toEqual(['Greek/1', '  Epic/1', '    Iliad']);
     expect(shape(rows(folders, projects, { collapsed: new Set(), filter: 'xyz' }))).toEqual([]);
+  });
+
+  it('put the favourites first under their heading, in the order they were made favourites', () => {
+    const favourites = ['notes', 'gone', 'iliad'];
+    const list = rows(folders, projects, { collapsed: new Set(['g', 'l']), favourites });
+    expect(shape(list)).toEqual([
+      'Favourites/2',
+      '  Notes',
+      '  Iliad',
+      'Greek/2',
+      'Latin/1',
+      'Lost',
+      'Notes',
+    ]);
+    // A favourite's row is its own, beside the project's row in the tree.
+    expect(list.map(rowKey)).toEqual([
+      'h:favourites',
+      'v:notes',
+      'v:iliad',
+      'f:g',
+      'f:l',
+      'p:lost',
+      'p:notes',
+    ]);
+  });
+
+  it('fold the favourites to their heading, and leave the heading out where none is shown', () => {
+    const favourites = ['iliad'];
+    expect(
+      shape(rows(folders, projects, { collapsed: new Set(['g', 'l', 'favourites']), favourites })),
+    ).toEqual(['Favourites/1', 'Greek/2', 'Latin/1', 'Lost', 'Notes']);
+    expect(
+      shape(rows(folders, projects, { collapsed: new Set(['g', 'l']), favourites: ['gone'] })),
+    ).toEqual(['Greek/2', 'Latin/1', 'Lost', 'Notes']);
+    expect(
+      shape(rows(folders, projects, { collapsed: new Set(['g', 'l']), favourites: [] }))[0],
+    ).toBe('Greek/2');
+  });
+
+  it('with a filter show the favourites that match, open', () => {
+    const favourites = ['iliad', 'notes'];
+    expect(
+      shape(
+        rows(folders, projects, { collapsed: new Set(['favourites']), favourites, filter: 'ia' }),
+      ),
+    ).toEqual(['Favourites/1', '  Iliad', 'Greek/1', '  Epic/1', '    Iliad']);
+    expect(
+      shape(rows(folders, projects, { collapsed: new Set(), favourites, filter: 'aen' })),
+    ).toEqual(['Latin/1', '  Aeneid']);
   });
 
   it('treat a project in a folder that is gone as in none', () => {

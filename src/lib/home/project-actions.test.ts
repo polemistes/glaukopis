@@ -17,6 +17,9 @@ const { projects, sharingRename, confirm, notifyOk, notifyError, writeElsewhere 
       duplicate: vi.fn(),
       remove: vi.fn(),
       closed: vi.fn(),
+      favourites: [] as string[],
+      isFavourite: vi.fn(),
+      setFavourite: vi.fn(),
     },
     sharingRename: vi.fn(),
     confirm: vi.fn(),
@@ -70,6 +73,7 @@ describe('what is done with a project from a list of them', () => {
     vi.clearAllMocks();
     projects.list = [];
     projects.folders = [];
+    projects.isFavourite.mockReturnValue(false);
     open = vi.fn();
     deleted = vi.fn();
     actions = new ProjectActions({ open, deleted });
@@ -175,6 +179,7 @@ describe('what is done with a project from a list of them', () => {
     const menu = actions.items(p);
     expect(labels(menu)).toEqual([
       t('home-open'),
+      t('home-favourite-add'),
       '—',
       t('home-menu-rename'),
       t('home-menu-duplicate'),
@@ -229,6 +234,25 @@ describe('what is done with a project from a list of them', () => {
     item(sharing, t('home-share')).action();
     expect(share).toHaveBeenCalledWith('p');
     expect(labels(menu)).not.toContain(t('home-share'));
+  });
+
+  it('makes a project a favourite from its menu, after the fold, and takes it off again', () => {
+    const p = project('p', 'Notes');
+    projects.setFavourite.mockResolvedValue(undefined);
+    projects.isFavourite.mockReturnValue(false);
+    const toggle = vi.fn();
+    const menu = actions.items(p, { fold: { folded: true, toggle } });
+    expect(labels(menu).slice(0, 4)).toEqual([
+      t('home-open'),
+      t('home-unfold'),
+      t('home-favourite-add'),
+      '—',
+    ]);
+    item(menu, t('home-favourite-add')).action();
+    expect(projects.setFavourite).toHaveBeenLastCalledWith('p', true);
+    projects.isFavourite.mockReturnValue(true);
+    item(actions.items(p), t('home-favourite-remove')).action();
+    expect(projects.setFavourite).toHaveBeenLastCalledWith('p', false);
   });
 
   it('gives the one menu of a folder, which is not entered, and of an element', () => {

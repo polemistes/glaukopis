@@ -377,8 +377,11 @@ try {
   await app.waitFor('.menu', 3000);
   await sleep(300);
   await english('the menu of a project in the list');
-  await app.press('Escape');
-  await sleep(200);
+  await app.clickText('.menu [role="menuitem"]', 'Legg til i favoritter');
+  await app.waitFor('[data-projects-pane] [data-favourites]', 3000);
+  await app.waitFor('[data-start-favourites]', 3000);
+  await sleep(300);
+  await english('the favourites in the list and on the start screen');
   await app.screenshot('languages-4d-list');
   await app.keys(['Control', '/']);
   await sleep(500);

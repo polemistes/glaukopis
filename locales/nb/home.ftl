@@ -300,3 +300,9 @@ home-mindmap-left-out-references = { $count ->
     [one] Én henvisning til en figur eller en del, som ikke har noe å vise til der
    *[other] { $count } henvisninger til figurer eller deler, som ikke har noe å vise til der
 }
+
+## Favourite projects (plan: the data folder, more than one window, favourites and the copied space)
+
+home-favourites = Favoritter
+home-favourite-add = Legg til i favoritter
+home-favourite-remove = Fjern fra favoritter

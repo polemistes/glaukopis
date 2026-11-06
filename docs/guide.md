@@ -81,6 +81,17 @@ to where the folder was. The folders are kept on this computer alone, not in
 the projects: a project you share is in your folders, not in the others'.
 Folders and projects stand in the order of their names.
 
+**Favourites** are the projects you work in most, kept at the top of the
+list. **Add to favourites** in a project's menu puts it there, under the
+heading **Favourites**, after those already there; **Remove from
+favourites** takes it off. The favourites stand in the order you added
+them, before the folders, and the heading folds and unfolds as a folder
+does. A favourite opens with a click and has the project's menu; the
+project's tree stands under its own row further down, not here. With words
+in the field, the favourites that match are shown too. Like the folders, the
+favourites are kept on this computer alone, and a project deleted is no
+longer one, nor when it is brought back.
+
 A project and a folder have one menu each. A project's begins with
 **Open**; **Open beside**, while another project is open, which shows it in
 the second side (see *Another project beside*); **Close**, for a project
@@ -114,8 +125,10 @@ Glaukopis runs; in a project they undo what was written.
 ### The start screen
 
 While no project is open, the start screen stands beside the list: the owl,
-**New project**, and the projects you opened last, the newest first, each
-with its folder and when it was changed; a click opens one. With no project
+**New project**, your favourites, in the order you added them, and then the
+projects you opened last, the newest first, a favourite not repeated among
+them; each with its folder and when it was changed. A click opens one, and
+the right button gives the project's menu. With no project
 at all, it welcomes you, with **Begin a project** and the other ways to
 begin. A document dropped on it becomes a project of its own.
 

@@ -26,6 +26,7 @@ import History from '@lucide/svelte/icons/history';
 import Minimize2 from '@lucide/svelte/icons/minimize-2';
 import Pencil from '@lucide/svelte/icons/pencil';
 import SquareArrowOutUpRight from '@lucide/svelte/icons/square-arrow-out-up-right';
+import Star from '@lucide/svelte/icons/star';
 import Trash2 from '@lucide/svelte/icons/trash-2';
 import Users from '@lucide/svelte/icons/users';
 import Waypoints from '@lucide/svelte/icons/waypoints';
@@ -685,6 +686,19 @@ export class ProjectActions {
     asking?.resolve(choices);
   }
 
+  /** Makes the project a favourite, or takes it off the favourites (ADR 0086). */
+  favouriteItem(p: ProjectInfo): MenuItem {
+    const on = projects.isFavourite(p.id);
+    return {
+      label: on ? t('home-favourite-remove') : t('home-favourite-add'),
+      icon: Star,
+      action: () =>
+        void projects
+          .setFavourite(p.id, !on)
+          .catch((error) => notifyError(t('home-failed'), error)),
+    };
+  }
+
   /**
    * The menu of a project (ADR 0063): open it, beside what is shown, close
    * it, fold its tree; rename, copy, its history, save it, share it; move it
@@ -717,6 +731,7 @@ export class ProjectActions {
         ? [{ label: t('home-close'), icon: X, action: () => close(p.id) } as MenuItem]
         : []),
       ...foldItem(place.fold),
+      this.favouriteItem(p),
       { kind: 'separator' },
       {
         label: t('home-menu-rename'),

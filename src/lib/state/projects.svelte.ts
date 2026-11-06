@@ -6,6 +6,8 @@ import {
   folderMove,
   folderRename,
   foldersList,
+  favouriteSet,
+  favouritesList,
   projectAppend,
   projectCreate,
   projectRestore,
@@ -29,6 +31,8 @@ class ProjectsState {
   list = $state.raw<ProjectInfo[]>([]);
   /** The folders the projects are put in on this computer (ADR 0031). */
   folders = $state.raw<Folder[]>([]);
+  /** The favourite projects, by id, in the order they were made favourites (ADR 0086). */
+  favourites = $state.raw<string[]>([]);
   loaded = $state(false);
   /** The project that was opened last while the application has run. */
   lastOpened = $state<string | null>(null);
@@ -51,9 +55,14 @@ class ProjectsState {
 
   async load() {
     try {
-      const [list, folders] = await Promise.all([projectList(), foldersList()]);
+      const [list, folders, favourites] = await Promise.all([
+        projectList(),
+        foldersList(),
+        favouritesList(),
+      ]);
       this.list = list;
       this.folders = folders;
+      this.favourites = favourites;
     } catch (error) {
       notifyError(t('project-list-unreadable'), error);
     }
@@ -84,6 +93,8 @@ class ProjectsState {
   async remove(id: string) {
     await projectDelete(id);
     this.list = this.list.filter((p) => p.id !== id);
+    // The core takes a deleted project off the favourites; brought back, it is not one again.
+    this.favourites = this.favourites.filter((f) => f !== id);
     this.trashed++;
   }
 
@@ -99,6 +110,16 @@ class ProjectsState {
     this.list = this.list.some((p) => p.id === info.id)
       ? this.list.map((p) => (p.id === info.id ? info : p))
       : [info, ...this.list];
+  }
+
+  // ---- favourites ----
+
+  isFavourite(id: string): boolean {
+    return this.favourites.includes(id);
+  }
+
+  async setFavourite(id: string, on: boolean) {
+    this.favourites = await favouriteSet(id, on);
   }
 
   // ---- folders ----

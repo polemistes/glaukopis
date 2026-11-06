@@ -196,6 +196,18 @@ pub fn owl_places_set(
     Ok(state.projects.set_places(&changes)?)
 }
 
+/// The favourite projects, by id, in the order they were made favourites (ADR 0086).
+#[tauri::command(async)]
+pub fn favourites_list(state: State<'_, AppState>) -> CommandResult<Vec<String>> {
+    Ok(state.projects.favourites()?)
+}
+
+/// Makes a project a favourite or takes it off; returns the favourites.
+#[tauri::command(async)]
+pub fn favourite_set(state: State<'_, AppState>, id: String, on: bool) -> CommandResult<Vec<String>> {
+    Ok(state.projects.set_favourite(&id, on)?)
+}
+
 #[tauri::command(async)]
 pub fn folders_list(state: State<'_, AppState>) -> CommandResult<Vec<Folder>> {
     Ok(state.projects.folders()?)

@@ -20,6 +20,7 @@
   import Folder from '@lucide/svelte/icons/folder';
   import FolderPlus from '@lucide/svelte/icons/folder-plus';
   import Search from '@lucide/svelte/icons/search';
+  import Star from '@lucide/svelte/icons/star';
   import type { Folder as FolderInfo, ProjectInfo } from '$lib/api/projects';
   import { t } from '$lib/i18n';
   import type { Project } from '$lib/project/model/project.svelte';
@@ -34,7 +35,7 @@
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import TextField from '$lib/ui/TextField.svelte';
   import { tick, untrack } from 'svelte';
-  import { ancestors, folderOf, rows as makeRows, type Row } from './folders';
+  import { ancestors, FAVOURITES, folderOf, rowKey, rows as makeRows } from './folders';
   import { moveThings, thingsOf, wouldMove } from './changes';
   import { closedTrees } from './closed.svelte';
   import { listUi } from './list.svelte';
@@ -98,7 +99,11 @@
   let listEl = $state<HTMLDivElement>();
 
   const rows = $derived(
-    makeRows(projects.folders, projects.list, { collapsed: listUi.collapsed, filter }),
+    makeRows(projects.folders, projects.list, {
+      collapsed: listUi.collapsed,
+      favourites: projects.favourites,
+      filter,
+    }),
   );
   /** How far each step deeper is drawn in. */
   const step = 14;
@@ -182,8 +187,12 @@
     });
   });
 
-  /** The menu of a project in the list: the one menu of a project, with its tree folded or not where the list unfolds it. */
-  function projectItems(p: ProjectInfo): MenuItem[] {
+  /**
+   * The menu of a project in the list: the one menu of a project, with its
+   * tree folded or not where the list unfolds it; a favourite's row has no
+   * tree under it, and no fold.
+   */
+  function projectItems(p: ProjectInfo, inTree = true): MenuItem[] {
     return actions.items(p, {
       shown: shownIds,
       close: viewing.close ?? undefined,
@@ -196,9 +205,10 @@
           actions.open(p);
         }
       },
-      fold: unfoldable(p)
-        ? { folded: !closedUnfolded.has(p.id), toggle: () => toggleClosed(p) }
-        : undefined,
+      fold:
+        inTree && unfoldable(p)
+          ? { folded: !closedUnfolded.has(p.id), toggle: () => toggleClosed(p) }
+          : undefined,
     });
   }
 
@@ -347,8 +357,6 @@
   /** The row selected, by its key: `f:<folder>`, `p:<project>`, `e:<project>/<element>`. */
   let selected = $state<string | null>(null);
   const elementRow = (src: Shown, id: string) => `e:${src.project}/${id}`;
-  const rowKey = (row: Row) =>
-    row.kind === 'folder' ? `f:${row.folder.id}` : `p:${row.project.id}`;
   /** The row the Tab key comes to: the one selected, or the first. */
   const tabOf = (key: string) =>
     selected === key || (!selected && rows[0] && key === rowKey(rows[0])) ? 0 : -1;
@@ -369,6 +377,10 @@
     listEl?.querySelector<HTMLElement>(`[data-row="${CSS.escape(key)}"]`) ?? null;
   const projectOf = (key: string) =>
     key.startsWith('p:') ? projects.list.find((p) => p.id === key.slice(2)) : undefined;
+  /** A favourite's row, under the heading of the favourites: the project it opens. */
+  const favouriteOf = (key: string) =>
+    key.startsWith('v:') ? projects.list.find((p) => p.id === key.slice(2)) : undefined;
+  const favouritesKey = `h:${FAVOURITES}`;
   const folderOfRow = (key: string) =>
     key.startsWith('f:') ? projects.folder(key.slice(2)) : undefined;
   /** An element's row: the tree it is shown in, and its id. */
@@ -420,6 +432,7 @@
       void tick().then(() => rowEl(key)?.focus());
     },
     toggle(key) {
+      if (key === favouritesKey) return toggle(FAVOURITES);
       const f = folderOfRow(key);
       const p = projectOf(key);
       const e = elementOf(key);
@@ -429,9 +442,11 @@
     },
     foldAll() {
       const anyOpen =
-        projects.folders.some((f) => !listUi.collapsed.has(f.id)) || closedUnfolded.size > 0;
+        projects.folders.some((f) => !listUi.collapsed.has(f.id)) ||
+        (projects.favourites.length > 0 && !listUi.collapsed.has(FAVOURITES)) ||
+        closedUnfolded.size > 0;
       if (anyOpen) {
-        listUi.collapsed = new Set(projects.folders.map((f) => f.id));
+        listUi.collapsed = new Set([FAVOURITES, ...projects.folders.map((f) => f.id)]);
         closedUnfolded.clear();
       } else listUi.collapsed = new Set();
     },
@@ -467,8 +482,11 @@
       const f = folderOfRow(key);
       const p = projectOf(key);
       const e = elementOf(key);
-      // A folder is not entered: it is folded and unfolded.
-      if (f) toggle(f.id);
+      const v = favouriteOf(key);
+      // A folder is not entered: it is folded and unfolded; nor the heading of the favourites.
+      if (key === favouritesKey) toggle(FAVOURITES);
+      else if (v) open(v);
+      else if (f) toggle(f.id);
       else if (p) open(p);
       else if (e) e.src.enter(e.id);
     },
@@ -497,13 +515,16 @@
       const f = folderOfRow(key);
       const p = projectOf(key);
       const e = elementOf(key);
+      const v = favouriteOf(key);
       const items = f
         ? folderItems(f)
         : p
           ? projectItems(p)
-          : e && !e.src.live
-            ? elementItems(e.src, e.id)
-            : null;
+          : v
+            ? projectItems(v, false)
+            : e && !e.src.live
+              ? elementItems(e.src, e.id)
+              : null;
       if (el && items) openMenu(el, items, { align: 'start' });
     },
     bringIntoView(key) {
@@ -574,8 +595,85 @@
     {/if}
   </div>
 
-  {#each rows as row (row.kind === 'folder' ? `f:${row.folder.id}` : `p:${row.project.id}`)}
-    {#if row.kind === 'folder'}
+  {#each rows as row (rowKey(row))}
+    {#if row.kind === 'favourites'}
+      <!-- The heading of the favourites: folds as a folder does, and nothing is dropped on it or dragged from it. -->
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <div
+        class="row folder favourites"
+        role="treeitem"
+        tabindex={tabOf(favouritesKey)}
+        aria-selected={selected === favouritesKey}
+        aria-expanded={row.open}
+        data-row={favouritesKey}
+        data-row-kind="folder"
+        data-row-holds=""
+        data-row-open={row.open ? '' : undefined}
+        data-depth={0}
+        data-favourites=""
+        style:padding-left="{left}px"
+        onclick={() => {
+          selected = favouritesKey;
+          toggle(FAVOURITES);
+        }}
+      >
+        <span class="twisty" class:open={row.open}>
+          <ChevronRight size={13} />
+        </span>
+        <Star size={15} strokeWidth={1.6} />
+        <span class="name truncate">{t('home-favourites')}</span>
+      </div>
+    {:else if row.kind === 'project' && row.favourite}
+      {@const p = row.project}
+      {@const vk = `v:${p.id}`}
+      <!-- A favourite: opens the project and has its menu; its tree stands under its row in the tree. -->
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <div
+        class="row project"
+        class:unavailable={!!choose && unavailable.includes(p.id)}
+        aria-disabled={choose && unavailable.includes(p.id) ? true : undefined}
+        role="treeitem"
+        tabindex={tabOf(vk)}
+        aria-selected={selected === vk}
+        data-row={vk}
+        data-row-kind="project"
+        data-row-parent={favouritesKey}
+        data-depth={row.depth}
+        data-favourite={p.id}
+        title={p.name}
+        style:padding-left="{left + row.depth * step}px"
+        onclick={() => {
+          selected = vk;
+          open(p);
+        }}
+        oncontextmenu={choose ? undefined : (e) => openContextMenu(e, projectItems(p, false))}
+      >
+        <span class="fold hidden"></span>
+        <ProjectBadge
+          name={p.name}
+          sharing={p.sharing ? { owner: p.sharing.owner } : null}
+          size={14}
+        />
+        <span class="name serif truncate">{p.name}</span>
+        {#if choose && unavailable.includes(p.id)}
+          <span class="when">{t('home-open-now')}</span>
+        {/if}
+        {#if !choose}
+          <button
+            type="button"
+            class="row-menu"
+            aria-label={t('home-more-for', { name: p.name })}
+            onclick={(e) => {
+              e.stopPropagation();
+              openMenu(e.currentTarget, projectItems(p, false), { align: 'end' });
+            }}
+            onpointerdown={(e) => e.stopPropagation()}
+          >
+            <Ellipsis size={15} />
+          </button>
+        {/if}
+      </div>
+    {:else if row.kind === 'folder'}
       {@const f = row.folder}
       {@const fk = `f:${f.id}`}
       <!-- svelte-ignore a11y_click_events_have_key_events -->

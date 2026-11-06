@@ -25,9 +25,32 @@ export interface ProjectRow {
   kind: 'project';
   project: ProjectInfo;
   depth: number;
+  /** A row under the heading of the favourites, not the project's row in the tree (ADR 0086). */
+  favourite?: true;
 }
 
-export type Row = FolderRow | ProjectRow;
+/** The heading of the favourite projects, at the top of the list (ADR 0086). */
+export interface FavouritesRow {
+  kind: 'favourites';
+  /** At the top, always. */
+  depth: 0;
+  /** Whether the favourites are shown under it. */
+  open: boolean;
+  /** How many favourites are under it. */
+  count: number;
+}
+
+export type Row = FavouritesRow | FolderRow | ProjectRow;
+
+/** What folds the heading of the favourites, kept among the folders that are closed. */
+export const FAVOURITES = 'favourites';
+
+/** A row's key in the list: `h:` the heading of the favourites, `v:` a favourite, `f:` a folder, `p:` a project. */
+export function rowKey(row: Row): string {
+  if (row.kind === 'favourites') return `h:${FAVOURITES}`;
+  if (row.kind === 'folder') return `f:${row.folder.id}`;
+  return row.favourite ? `v:${row.project.id}` : `p:${row.project.id}`;
+}
 
 /** The parent of a folder, where that is a folder that exists; else the top. */
 export function parentOf(folders: Folder[], folder: Folder): string | null {
@@ -132,16 +155,19 @@ export function folderTree(folders: Folder[]): { folder: Folder; depth: number }
 }
 
 export interface RowsOptions {
-  /** The folders that are closed, by id. */
+  /** The folders that are closed, by id, and `FAVOURITES` where the favourites are. */
   collapsed: ReadonlySet<string>;
+  /** The favourite projects, by id, in the order they were made favourites. */
+  favourites?: readonly string[];
   /** Words a project's name must hold to be shown; nothing shows all. */
   filter?: string;
 }
 
 /**
- * The rows of the list: under each folder its folders, then its projects,
- * each by name. With a filter, only the projects whose name holds the
- * words, and the folders they are in, open.
+ * The rows of the list: first the favourites under their heading, in the
+ * order they were made favourites; then under each folder its folders, then
+ * its projects, each by name. With a filter, only the projects whose name
+ * holds the words, and the folders they are in, open.
  */
 export function rows(folders: Folder[], projects: ProjectInfo[], options: RowsOptions): Row[] {
   const filter = options.filter?.trim().toLocaleLowerCase() ?? '';
@@ -168,6 +194,17 @@ export function rows(folders: Folder[], projects: ProjectInfo[], options: RowsOp
   };
 
   const out: Row[] = [];
+  const byId = new Map(projects.map((p) => [p.id, p]));
+  const favourites = (options.favourites ?? [])
+    .map((id) => byId.get(id))
+    .filter((p): p is ProjectInfo => !!p && matches(p));
+  if (favourites.length) {
+    const open = filter ? true : !options.collapsed.has(FAVOURITES);
+    out.push({ kind: 'favourites', depth: 0, open, count: favourites.length });
+    if (open)
+      for (const p of favourites)
+        out.push({ kind: 'project', project: p, depth: 1, favourite: true });
+  }
   const walk = (parent: string | null, depth: number) => {
     const children = folders.filter((f) => parentOf(folders, f) === parent).sort(byName);
     for (const f of children) {
