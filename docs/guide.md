@@ -132,7 +132,9 @@ projects and the same library. A project may be open in two windows at once,
 and it is one project: what you write in one is in the other at once. Undo
 in a window undoes what was written in that window. Closing a window closes
 it alone, saving what it holds; closing the last ends Glaukopis, and the
-next start opens one window, where the last window closed was.
+next start opens one window, where the last window closed was. Starting
+Glaukopis again while it runs opens a new window of the one that runs, and
+brings it to the front.
 
 The windows share one process of the web view, which keeps a window to a
 few tens of megabytes. Should that process fail, every window goes with it

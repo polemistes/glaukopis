@@ -30,6 +30,7 @@ serde_json.workspace = true
 tracing.workspace = true
 tracing-subscriber = { workspace = true, features = ["local-time"] }
 time = { workspace = true, features = ["local-offset"] }
+tauri-plugin-single-instance = "2"
 
 # What becomes of the window and of the page's own process, for the log:
 # both are in the build already, through Tauri.

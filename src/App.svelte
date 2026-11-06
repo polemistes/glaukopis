@@ -132,6 +132,11 @@
       console.warn('The window could not be put where it was left', error);
     } finally {
       await window.show().catch((error) => console.error('The window could not be shown', error));
+      // A window made after the first comes to the front, over the one it came from.
+      if (madeAfterTheFirst())
+        await window
+          .setFocus()
+          .catch((error) => console.warn('The window was not brought to the front', error));
     }
   }
 

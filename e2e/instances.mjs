@@ -1,4 +1,10 @@
 // A second instance of the application, on data another is already at work in.
+// A second start of Glaukopis opens a new window of the one that runs
+// (record 0085), but not where GLAUKOPIS_DATA_DIR says where the data is, as
+// the harness does, lest a script reach through the session bus a Glaukopis
+// someone works in: here the claim on the folder meets the second start, as
+// it does where the session bus is missing. The new window was checked by
+// hand on a private session bus (dbus-run-session).
 
 import { execFileSync, spawn } from 'node:child_process';
 import { join } from 'node:path';
@@ -39,6 +45,7 @@ try {
   second.stdout.on('data', (d) => (said += String(d)));
   for (let i = 0; i < 100 && !said.includes('in use by another instance'); i++) await sleep(200);
   check('a second instance on the same data sees that another is at work in it', said.includes('in use by another instance'));
+  check('with the data folder set by the harness, no new window is asked of the first', !app.log.join('').includes('started again'));
   await sleep(1500);
   execFileSync('import', ['-display', app.display, '-window', 'root', join(root, 'e2e', 'output', 'instances-1-second.png')]);
   check('and says so, waiting to be read', ended === null);

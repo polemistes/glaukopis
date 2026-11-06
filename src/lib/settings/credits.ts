@@ -60,7 +60,7 @@ export const CREDIT_GROUPS: CreditGroup[] = [
         by: 'Tauri Apps Contributors',
       },
       {
-        name: 'Tauri plugins: dialog, opener',
+        name: 'Tauri plugins: dialog, opener, single instance',
         what: 'credits-what-tauri-plugins',
         licence: 'Apache-2.0 OR MIT',
         url: 'https://github.com/tauri-apps/plugins-workspace',

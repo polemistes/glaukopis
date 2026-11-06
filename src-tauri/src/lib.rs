@@ -88,7 +88,20 @@ pub fn run() {
         "the compositor of WebKitGTK"
     );
 
-    let built = tauri::Builder::default()
+    // Started again while it runs, Glaukopis opens a new window of the one
+    // that runs (ADR 0085), first of the plugins, as the plugin asks. Not
+    // where GLAUKOPIS_DATA_DIR says where the data is: the scripts set it,
+    // and must never reach a Glaukopis someone works in through the session
+    // bus they share; and a portable installation keeps to its folder. There
+    // the claim on the folder meets a second start, as it does where the
+    // plugin cannot work.
+    let builder = tauri::Builder::default();
+    let builder = if paths::data_dir_from_environment() {
+        builder
+    } else {
+        builder.plugin(tauri_plugin_single_instance::init(|app, _arguments, _folder| started_again(app)))
+    };
+    let built = builder
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(move |app| {
@@ -600,6 +613,30 @@ pub(crate) fn make_window(
     watch(&window);
     show_late(&window);
     Ok(window)
+}
+
+/// Glaukopis was started again while it runs: a new window of this one,
+/// beside the window that has the focus, or the first. Its page brings it to
+/// the front once it is shown. Made on a thread of its own, since the new
+/// window is built on the main thread, where this is called.
+fn started_again(app: &AppHandle) {
+    tracing::info!("Glaukopis was started again: a new window of the one that runs");
+    if app.try_state::<state::AppState>().is_none() {
+        tracing::info!("the one that runs has no window yet: nothing is made");
+        return;
+    }
+    let app = app.clone();
+    std::thread::spawn(move || {
+        let windows = app.webview_windows();
+        let beside = windows
+            .values()
+            .find(|w| w.is_focused().unwrap_or(false))
+            .or_else(|| windows.get("main"))
+            .or_else(|| windows.values().next());
+        if let Err(error) = make_window(&app, None, beside) {
+            tracing::error!(%error, "no new window was made for the second start");
+        }
+    });
 }
 
 /// A new window down and to the right of the window it came from.

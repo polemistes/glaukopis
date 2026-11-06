@@ -26,7 +26,7 @@ credits-lookup-about = DOIs at doi.org, Crossref and DataCite; books in the cata
 ## What each is to Glaukopis
 
 credits-what-tauri = The frame of the application: its window, and the way between the interface and the rest.
-credits-what-tauri-plugins = The windows for choosing files and folders, and opening files and addresses in other programs.
+credits-what-tauri-plugins = The windows for choosing files and folders, opening files and addresses in other programs, and a new window when Glaukopis is started again.
 credits-what-webkitgtk = The web engine the interface is shown in, on Linux. It is a part of the system, not of Glaukopis.
 credits-what-gtk = What becomes of the window and of the page on Linux, for the log.
 credits-what-svelte = The interface is written with it.

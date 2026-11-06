@@ -26,7 +26,7 @@ credits-lookup-about = DOI-er hos doi.org, Crossref og DataCite; bøker i katalo
 ## Hva hvert av dem er for Glaukopis
 
 credits-what-tauri = Rammen rundt programmet: vinduet, og veien mellom grensesnittet og resten.
-credits-what-tauri-plugins = Vinduene for å velge filer og mapper, og å åpne filer og adresser i andre programmer.
+credits-what-tauri-plugins = Vinduene for å velge filer og mapper, å åpne filer og adresser i andre programmer, og et nytt vindu når Glaukopis startes på nytt.
 credits-what-webkitgtk = Nettmotoren grensesnittet vises i, på Linux. Den er en del av systemet, ikke av Glaukopis.
 credits-what-gtk = Hva som blir av vinduet og siden på Linux, for loggen.
 credits-what-svelte = Grensesnittet er skrevet med det.
