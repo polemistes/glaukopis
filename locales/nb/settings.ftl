@@ -108,3 +108,16 @@ settings-default-look = Standardutseende
 settings-default-style = Standard referansestil
 settings-default-none = Ingen: som dokumenttypen har det
 settings-look-chips = Vis merkelapper for utseende i forhåndsvisningen
+
+## The data folder chosen by the writer (docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md).
+
+settings-data-change = Endre …
+settings-data-move = Flytt alt til «{ $path }»
+settings-data-use = Bruk det som er i «{ $path }»
+settings-data-use-note = Det som er i «{ $path }» nå, blir liggende der, ubrukt.
+settings-data-not-empty = Mappen er ikke tom.
+settings-data-restart = Glaukopis lukkes og starter på nytt.
+settings-data-move-button = Flytt
+settings-data-use-button = Bruk
+settings-data-copying = Kopierer … { $done } av { $count } filer
+settings-data-failed = Mappen kunne ikke endres

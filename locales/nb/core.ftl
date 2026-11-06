@@ -73,3 +73,13 @@ core-start-failed-log = Mer om hva som skjedde, står i loggen for kjøringen, {
 ## Når noe går galt inne i Glaukopis selv.
 
 core-worker-panicked = Noe gikk galt inne i Glaukopis, og det som ble gjort, ble gitt opp: { $message }. Loggen for kjøringen har mer.
+
+## The data folder chosen by the writer (docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md).
+
+core-data-cannot-open-title = Mappen kunne ikke åpnes
+core-data-cannot-open = Glaukopis har alt i { $path }, som ikke kunne åpnes: { $error }
+core-data-usual = Bruk den vanlige mappen
+core-data-quit = Avslutt
+core-data-move-failed = Alt blir i { $from }: det kunne ikke flyttes til { $to }. { $error }
+core-data-not-copied = { $path } ble ikke kopiert helt.
+core-data-inside = { $to } ligger i { $from }, eller { $from } i den.

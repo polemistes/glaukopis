@@ -3323,6 +3323,21 @@ on a desk of another shade, so that where the text goes is seen.
   name made of what it holds) and `files.json`, which says what each file is
   called and which folder it is in; **Export all files…** gives a copy you
   can read in any file manager.
+
+  **Change…**, beside the folder's path, puts it somewhere else: on a bigger
+  disk, in a folder that is backed up, on a disk you take between computers.
+  Choose an empty folder, and everything is moved there; on another disk the
+  files are copied first, so many of so many, and the old folder is removed
+  once every file is checked. Choose a folder that holds Glaukopis's data
+  already, and that is used as it is; what was used till now stays where it
+  is. A folder that holds anything else is refused, since two sets of data
+  are never merged. Either way Glaukopis closes, saving everything, and
+  starts again. If the folder cannot be opened when Glaukopis starts, as
+  when its disk is not plugged in, you are asked whether to use the usual
+  folder for now or to quit; the next start tries the chosen folder again.
+  A folder synced between two computers is worked in from one of them at a
+  time: no sync service keeps two programs on two computers from writing
+  over each other's library.
 - **What Glaukopis did is written down.** Each run keeps a log in the folder
   `logs`, beside the rest, and the last ten are kept: what was done, what
   went wrong, and what became of the window. **The log**, under *Settings*,

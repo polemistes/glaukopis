@@ -3522,10 +3522,21 @@ export const partKinds: templates.PartKindEntry[] = [
 
 export const systemInfo: system.SystemInfo = {
   "dataDir": "/data",
+  "dataFolderChosen": true,
   "logs": "/data/logs",
   "platform": "linux",
   "user": "Some One",
   "version": "0.0.0"
+};
+
+export const dataFolderCheck: system.DataFolderCheck = {
+  "current": false,
+  "holds": "glaukopis"
+};
+
+export const dataFolderProgress: system.DataFolderProgress = {
+  "count": 10,
+  "done": 3
 };
 
 export const languagesInfo: system.LanguagesInfo = {

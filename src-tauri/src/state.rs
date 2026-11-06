@@ -1,6 +1,7 @@
 //! What the application holds while it runs.
 
 use std::path::PathBuf;
+use std::sync::atomic::AtomicBool;
 use std::sync::{Mutex, MutexGuard, RwLock};
 
 use glaukopis_core::export::Tools;
@@ -44,6 +45,12 @@ pub struct AppState {
     /// of it can be changed without reading the file again: one at a time,
     /// a new reading taking its place, until it is let go.
     pub reading: Mutex<Option<KeptReading>>,
+    /// Whether the data folder is the one the writer chose (ADR 0084), not
+    /// the usual one or that of `GLAUKOPIS_DATA_DIR`.
+    pub data_folder_chosen: bool,
+    /// Whether the application starts again when its windows have closed,
+    /// as it does when the data folder is changed.
+    pub restart: AtomicBool,
 }
 
 /// A reading of a PDF into elements, kept under a token of its own: the
@@ -148,6 +155,8 @@ impl AppState {
             exporting: Mutex::new(()),
             zotero: Mutex::new(Vec::new()),
             reading: Mutex::new(None),
+            data_folder_chosen: false,
+            restart: AtomicBool::new(false),
             data,
             _claim: claim,
         };

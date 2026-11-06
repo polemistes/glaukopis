@@ -8,11 +8,12 @@ mod log;
 mod state;
 
 use std::path::PathBuf;
+use std::sync::atomic::Ordering;
 
 use glaukopis_core::i18n::tr;
-use glaukopis_core::paths::{DataDir, default_root};
-use tauri::{Emitter, Manager};
-use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
+use glaukopis_core::paths::{self, DataDir, default_root};
+use tauri::{AppHandle, Emitter, Manager};
+use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
 
 /// The variable by which WebKitGTK 2.54 and later are told which compositor
 /// to use: `0` for TextureMapper, the one of the releases before, `1` for Skia.
@@ -40,7 +41,40 @@ fn previous_compositor() -> bool {
 pub fn run() {
     #[cfg(target_os = "linux")]
     let compositor_asked = previous_compositor();
-    let log_file = log::start(&default_root());
+    // Where the data is: the folder the writer chose, where a file in the
+    // settings place says so, else the usual one (ADR 0084). A move under
+    // way is finished first, before anything is open in either folder.
+    let place = paths::settings_place();
+    let from_environment = paths::data_dir_from_environment();
+    let moving = (!from_environment)
+        .then(|| paths::location(&place).ok().flatten())
+        .flatten()
+        .and_then(|location| location.moving_from.map(|from| (from, location.folder)));
+    let moved = moving.map(|(from, to)| {
+        let finished = paths::finish_move(&place);
+        (from, to, finished)
+    });
+    let root = paths::chosen_root(&place);
+    let chosen = !from_environment && matches!(paths::location(&place), Ok(Some(_)));
+    // The log is begun in the folder the data is in; a chosen folder that is
+    // not there, its disk unplugged, is not made by it, and the log goes to
+    // the usual folder.
+    let usual = default_root();
+    let log_root = root.as_deref().ok().filter(|root| !chosen || root.is_dir()).unwrap_or(usual.as_path());
+    let log_file = log::start(log_root);
+    match &moved {
+        Some((from, to, Ok(_))) => {
+            tracing::info!(from = %from.display(), to = %to.display(), "the data folder was moved")
+        }
+        Some((from, to, Err(error))) => {
+            tracing::error!(from = %from.display(), to = %to.display(), %error, "the data folder could not be moved");
+            let (from, to, error) = (from.clone(), to.clone(), error.to_string());
+            glaukopis_core::notices::tell(move || {
+                tr!("core-data-move-failed", from = &from, to = &to, error = error.as_str())
+            });
+        }
+        None => {}
+    }
     // PDFs are read in a process of their own, this program started anew, so
     // that one a library loses itself in cannot take the machine's memory.
     match std::env::current_exe() {
@@ -61,14 +95,6 @@ pub fn run() {
             // Nothing in setup returns an error: Tauri would panic with it, and
             // started from the desktop the program would vanish without a word.
             // What goes wrong is said in a dialog, after which the program ends.
-            let failed = |app: &tauri::App, error: &dyn std::fmt::Display| {
-                tracing::error!(%error, "the application could not start");
-                let mut message = tr!("core-start-failed", error = error.to_string());
-                if let Some(log) = &log_file {
-                    message = format!("{message}\n\n{}", tr!("core-start-failed-log", log = log));
-                }
-                say_and_end(app, tr!("core-start-failed-title"), message, MessageDialogKind::Error, 1);
-            };
             // What the core tells without being asked (a file set aside while
             // the stores open, say) waits for the page; the page is told when
             // more comes, and takes what waits when it starts.
@@ -76,29 +102,10 @@ pub fn run() {
             glaukopis_core::notices::on_told(move || {
                 let _ = handle.emit(commands::notices::EVENT, ());
             });
-            match opening(default_root(), app.path().resource_dir().ok(), speak_as_chosen) {
-                Opening::Ready(state) => {
-                    app.manage(*state);
-                    // The windows are made only now that what their commands ask
-                    // for is there (they are not made by Tauri from the
-                    // configuration, where `create` is false): a page that ran
-                    // without it had its first command panic on the main thread.
-                    if let Err(error) = make_windows(app) {
-                        failed(app, &error);
-                    }
-                }
-                Opening::InUse(root) => {
-                    // Another is at work in the same data: this one says so, and goes.
-                    tracing::warn!("the data directory is in use by another instance; this one ends");
-                    say_and_end(
-                        app,
-                        tr!("core-in-use-title"),
-                        tr!("core-in-use", path = &root),
-                        MessageDialogKind::Info,
-                        0,
-                    );
-                }
-                Opening::Failed(error) => failed(app, &error),
+            let start = Start { log: log_file.clone(), resources: app.path().resource_dir().ok() };
+            match &root {
+                Ok(root) => start.open(app.handle(), root.clone(), chosen),
+                Err(error) => start.failed(app.handle(), error),
             }
             Ok(())
         })
@@ -114,6 +121,10 @@ pub fn run() {
             commands::system::zip_read,
             commands::system::zip_write,
             commands::system::log_page,
+            commands::system::data_folder_check,
+            commands::system::data_folder_move,
+            commands::system::data_folder_use,
+            commands::system::app_restart,
             commands::notices::notices_take,
             commands::clipboard::clipboard_read,
             commands::library::library_list,
@@ -328,7 +339,24 @@ pub fn run() {
         tauri::RunEvent::WindowEvent { label, event: tauri::WindowEvent::Destroyed, .. } => {
             tracing::info!(window = label, "the window is destroyed")
         }
-        tauri::RunEvent::ExitRequested { code, .. } => tracing::info!(?code, "the application is asked to end"),
+        tauri::RunEvent::ExitRequested { code, .. } => {
+            tracing::info!(?code, "the application is asked to end");
+            let restart = app.try_state::<state::AppState>().is_some_and(|s| s.restart.load(Ordering::SeqCst));
+            if restart && code.is_none() {
+                // The driver of the scripts cannot reach a program it did not
+                // start: there the program ends, and says it would have started.
+                if std::env::var_os("GLAUKOPIS_E2E").is_some_and(|v| !v.is_empty()) {
+                    tracing::info!("the application would start again, but the harness runs it: it ends");
+                    return;
+                }
+                tracing::info!("the application starts again");
+                if let Some(state) = app.try_state::<state::AppState>() {
+                    state.zotero_done();
+                }
+                glaukopis_core::ocr::server::end_all();
+                app.restart();
+            }
+        }
         tauri::RunEvent::Exit => {
             tracing::info!("the application ends");
             if let Some(state) = app.try_state::<state::AppState>() {
@@ -339,6 +367,75 @@ pub fn run() {
         }
         _ => {}
     });
+}
+
+/// What starting needs, past the data folder: where the log of the run is,
+/// and where the resources were installed.
+#[derive(Clone)]
+struct Start {
+    log: Option<PathBuf>,
+    resources: Option<PathBuf>,
+}
+
+impl Start {
+    /// Opens the data folder at `root` and makes the windows; says what went
+    /// wrong and ends where it cannot. A folder the writer chose that cannot
+    /// be opened, a disk not plugged in, is asked about: the usual folder
+    /// for this run, or quit (ADR 0084).
+    fn open(&self, app: &AppHandle, root: PathBuf, chosen: bool) {
+        match opening(root.clone(), chosen, self.resources.clone(), speak_as_chosen) {
+            Opening::Ready(mut state) => {
+                state.data_folder_chosen = chosen;
+                app.manage(*state);
+                // The windows are made only now that what their commands ask
+                // for is there (they are not made by Tauri from the
+                // configuration, where `create` is false): a page that ran
+                // without it had its first command panic on the main thread.
+                if let Err(error) = make_windows(app) {
+                    self.failed(app, &error);
+                }
+            }
+            Opening::InUse(root) => {
+                // Another is at work in the same data: this one says so, and goes.
+                tracing::warn!("the data directory is in use by another instance; this one ends");
+                say_and_end(
+                    app,
+                    tr!("core-in-use-title"),
+                    tr!("core-in-use", path = &root),
+                    MessageDialogKind::Info,
+                    0,
+                );
+            }
+            Opening::Failed(error) if chosen => {
+                tracing::error!(%error, root = %root.display(), "the data folder chosen could not be opened");
+                let (start, handle) = (self.clone(), app.clone());
+                app.dialog()
+                    .message(tr!("core-data-cannot-open", path = &root, error = error.to_string()))
+                    .title(tr!("core-data-cannot-open-title"))
+                    .kind(MessageDialogKind::Warning)
+                    .buttons(MessageDialogButtons::OkCancelCustom(tr!("core-data-usual"), tr!("core-data-quit")))
+                    .show(move |usual| {
+                        if usual {
+                            tracing::info!("the usual data folder is used for this run");
+                            start.open(&handle, default_root(), false);
+                        } else {
+                            handle.exit(0);
+                        }
+                    });
+            }
+            Opening::Failed(error) => self.failed(app, &error),
+        }
+    }
+
+    /// Says that the application could not start, and why, and ends it.
+    fn failed(&self, app: &AppHandle, error: &dyn std::fmt::Display) {
+        tracing::error!(%error, "the application could not start");
+        let mut message = tr!("core-start-failed", error = error.to_string());
+        if let Some(log) = &self.log {
+            message = format!("{message}\n\n{}", tr!("core-start-failed-log", log = log));
+        }
+        say_and_end(app, tr!("core-start-failed-title"), message, MessageDialogKind::Error, 1);
+    }
 }
 
 /// What came of opening the data directory, before any window is made.
@@ -354,8 +451,15 @@ enum Opening {
 /// Opens the data directory at `root`, has the core speak as `speak` says
 /// (given the directory where it could be opened), claims it, and reads the
 /// library and the stores. Nothing of it is read past the claim when another
-/// instance holds it.
-fn opening(root: PathBuf, resources: Option<PathBuf>, speak: impl FnOnce(Option<&DataDir>)) -> Opening {
+/// instance holds it. A folder the writer `chosen` must be there: one that
+/// is not, a disk not plugged in, is not made anew and empty.
+fn opening(root: PathBuf, chosen: bool, resources: Option<PathBuf>, speak: impl FnOnce(Option<&DataDir>)) -> Opening {
+    if chosen && !root.is_dir() {
+        speak(None);
+        // The dialog names the folder; the error says only what is wrong with it.
+        let missing = std::io::Error::from(std::io::ErrorKind::NotFound);
+        return Opening::Failed(glaukopis_core::Error::invalid(missing.to_string()));
+    }
     let data = match DataDir::open(root) {
         Ok(data) => data,
         Err(error) => {
@@ -398,12 +502,12 @@ fn speak_as_chosen(data: Option<&DataDir>) {
 /// Makes the windows of the configuration, which Tauri is told not to make
 /// itself, and watches each. A window is shown only once it is watched, so
 /// that the log sees it come on the screen.
-fn make_windows(app: &tauri::App) -> tauri::Result<()> {
+fn make_windows(app: &AppHandle) -> tauri::Result<()> {
     // The hooks the e2e scripts reach the page by are there only when the
     // harness asks for them (`shell/testing.ts`), never in a working window.
     let testing = std::env::var_os("GLAUKOPIS_E2E").is_some_and(|v| !v.is_empty());
     for config in &app.config().app.windows {
-        let mut builder = tauri::WebviewWindowBuilder::from_config(app.handle(), config)?.visible(false);
+        let mut builder = tauri::WebviewWindowBuilder::from_config(app, config)?.visible(false);
         if testing {
             builder = builder.initialization_script("window.__glaukopisTesting = true;");
         }
@@ -439,8 +543,8 @@ fn show_late(window: &tauri::WebviewWindow) {
 
 /// Shows a message, and ends the program with `code` when it has been read.
 /// There is no window to show it over, and none is needed.
-fn say_and_end(app: &tauri::App, title: String, message: String, kind: MessageDialogKind, code: i32) {
-    let handle = app.handle().clone();
+fn say_and_end(app: &AppHandle, title: String, message: String, kind: MessageDialogKind, code: i32) {
+    let handle = app.clone();
     app.dialog().message(message).title(title).kind(kind).show(move |_| handle.exit(code));
 }
 
@@ -479,16 +583,16 @@ mod tests {
     fn a_second_opening_of_the_same_data_finds_it_in_use_and_reads_nothing() {
         let tmp = tempfile::tempdir().unwrap();
         let root = tmp.path().join("data");
-        let first = opening(root.clone(), None, |_| {});
+        let first = opening(root.clone(), false, None, |_| {});
         assert!(matches!(first, Opening::Ready(_)));
         let mut spoken = false;
-        match opening(root.clone(), None, |data| spoken = data.is_some()) {
+        match opening(root.clone(), false, None, |data| spoken = data.is_some()) {
             Opening::InUse(at) => assert_eq!(at, root),
             _ => panic!("the second opening did not find the data in use"),
         }
         assert!(spoken, "the language is chosen before the claim, so that the dialog speaks it");
         drop(first);
-        assert!(matches!(opening(root, None, |_| {}), Opening::Ready(_)), "the claim is let go with the state");
+        assert!(matches!(opening(root, false, None, |_| {}), Opening::Ready(_)), "the claim is let go with the state");
     }
 
     #[test]
@@ -497,7 +601,7 @@ mod tests {
         let root = tmp.path().join("a file");
         std::fs::write(&root, "not a directory").unwrap();
         let mut spoken = None;
-        let opened = opening(root, None, |data| spoken = Some(data.is_some()));
+        let opened = opening(root, false, None, |data| spoken = Some(data.is_some()));
         assert!(matches!(opened, Opening::Failed(_)));
         assert_eq!(spoken, Some(false), "a failure is said in the language of the system");
     }
@@ -508,7 +612,16 @@ mod tests {
         let root = tmp.path().join("data");
         let data = DataDir::open(&root).unwrap();
         std::fs::create_dir_all(data.library_file()).unwrap();
-        assert!(matches!(opening(root, None, |_| {}), Opening::Failed(_)));
+        assert!(matches!(opening(root, false, None, |_| {}), Opening::Failed(_)));
+    }
+
+    #[test]
+    fn a_chosen_folder_that_is_not_there_is_not_made_anew() {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path().join("unplugged").join("glaukopis");
+        assert!(matches!(opening(root.clone(), true, None, |_| {}), Opening::Failed(_)));
+        assert!(!root.exists(), "an empty folder in its place would be taken for the data");
+        assert!(matches!(opening(root, false, None, |_| {}), Opening::Ready(_)), "the usual folder is made");
     }
 
     #[test]

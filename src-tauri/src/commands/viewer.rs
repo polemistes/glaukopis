@@ -121,7 +121,9 @@ fn cache(state: &AppState) -> PathBuf {
 /// Does the work of a command on the runtime's threads for blocking work,
 /// of which there are many, so that a command that waits holds none of
 /// the few on which the page's calls are run.
-async fn blocking<T: Send + 'static>(work: impl FnOnce() -> CommandResult<T> + Send + 'static) -> CommandResult<T> {
+pub(crate) async fn blocking<T: Send + 'static>(
+    work: impl FnOnce() -> CommandResult<T> + Send + 'static,
+) -> CommandResult<T> {
     match tauri::async_runtime::spawn_blocking(work).await {
         Ok(result) => result,
         Err(e) => Err(glaukopis_core::Error::invalid(e.to_string()).into()),

@@ -112,6 +112,11 @@ export class App {
       throw new Error(`No application at ${app.binary}. Build it first.`);
     app.ownsData = !options.dataDir && !options.keepData;
     app.dataDir = options.dataDir ?? mkdtempSync(join(tmpdir(), 'glaukopis-e2e-'));
+    // The settings place of the system, where the file that says where the
+    // data is stands (ADR 0084): a folder of the run beside the data, so that
+    // no script reads or writes the one of the computer it runs on.
+    app.configDir = `${app.dataDir}-config`;
+    mkdirSync(app.configDir, { recursive: true });
     // The scripts were written when a new project opened on its text: so it
     // does for them, where the settings say nothing yet. `newProjectView:
     // null` leaves the settings as the application makes them.
@@ -147,6 +152,7 @@ export class App {
       WEBKIT_DISABLE_COMPOSITING_MODE: '1',
       LIBGL_ALWAYS_SOFTWARE: '1',
       GLAUKOPIS_DATA_DIR: app.dataDir,
+      XDG_CONFIG_HOME: app.configDir,
       GLAUKOPIS_LOG: process.env.GLAUKOPIS_LOG ?? 'info',
       // The hooks the scripts reach the page by, which a working window has not.
       GLAUKOPIS_E2E: '1',
@@ -1196,6 +1202,7 @@ export class App {
     await sleep(200);
     if (this.ownsData && this.dataDir && !process.env.GLAUKOPIS_E2E_KEEP) {
       rmSync(this.dataDir, { recursive: true, force: true });
+      rmSync(this.configDir, { recursive: true, force: true });
     }
   }
 }

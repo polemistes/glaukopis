@@ -39,6 +39,7 @@
   } from '$lib/api/system';
   import { settings, type DiagramNumbers } from '$lib/state/settings.svelte';
   import Button from '$lib/ui/Button.svelte';
+  import DataFolderDialog from './DataFolderDialog.svelte';
   import Segmented from '$lib/ui/Segmented.svelte';
   import Select from '$lib/ui/Select.svelte';
   import TextField from '$lib/ui/TextField.svelte';
@@ -647,10 +648,13 @@
           <div class="label">{t('settings-data')}</div>
           <div class="hint path-text">{system?.dataDir ?? ''}</div>
         </div>
-        <Button size="sm" disabled={!system} onclick={() => system && openPath(system.dataDir)}>
-          {#snippet icon()}<FolderOpen size={13} />{/snippet}
-          {t('common-open')}
-        </Button>
+        <div class="buttons">
+          <DataFolderDialog current={system?.dataDir ?? ''} disabled={!system} />
+          <Button size="sm" disabled={!system} onclick={() => system && openPath(system.dataDir)}>
+            {#snippet icon()}<FolderOpen size={13} />{/snippet}
+            {t('common-open')}
+          </Button>
+        </div>
       </div>
       <div class="row top">
         <div class="what">
@@ -940,5 +944,10 @@
     align-items: center;
     gap: 6px;
     color: var(--warn);
+  }
+  .buttons {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
   }
 </style>

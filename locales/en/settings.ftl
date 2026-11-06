@@ -124,3 +124,16 @@ settings-default-style = Default citation style
 settings-default-none = None, as the document type has it
 # Whether a line of the preview, pressed, shows a chip at the edge of the page that says what it is and opens Look at it.
 settings-look-chips = Display look chips in the preview window
+
+## The data folder chosen by the writer (docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md).
+
+settings-data-change = Change…
+settings-data-move = Move everything to “{ $path }”
+settings-data-use = Use what is in “{ $path }”
+settings-data-use-note = What is in “{ $path }” now stays there, unused.
+settings-data-not-empty = The folder is not empty.
+settings-data-restart = Glaukopis closes and starts again.
+settings-data-move-button = Move
+settings-data-use-button = Use
+settings-data-copying = Copying… { $done } of { $count } files
+settings-data-failed = The folder could not be changed

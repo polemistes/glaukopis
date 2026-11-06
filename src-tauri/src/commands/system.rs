@@ -1,14 +1,15 @@
 use std::io::{Read, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 use tauri::ipc::{Request, Response};
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Emitter, Manager, State, WebviewWindow};
 use tauri_plugin_opener::OpenerExt;
 
 use glaukopis_core::error::{Error, IoContext};
-use glaukopis_core::{i18n, tr};
+use glaukopis_core::{i18n, paths, tr};
 
+use super::viewer::blocking;
 use crate::error::{CommandError, CommandResult};
 use crate::state::AppState;
 
@@ -23,6 +24,8 @@ pub struct SystemInfo {
     /// The name the system gives the user: the history of a project names
     /// them so where they have not given a name of their own.
     pub user: String,
+    /// Whether the data folder is the one the writer chose, not the usual one.
+    pub data_folder_chosen: bool,
 }
 
 #[tauri::command(async)]
@@ -33,6 +36,7 @@ pub fn system_info(state: State<'_, AppState>) -> CommandResult<SystemInfo> {
         logs: state.data.root().join(crate::log::DIR).display().to_string(),
         platform: std::env::consts::OS,
         user: user_name(),
+        data_folder_chosen: state.data_folder_chosen,
     })
 }
 
@@ -228,5 +232,109 @@ pub fn log_page(level: String, message: String) {
         tracing::error!(target: "page", "{message}");
     } else {
         tracing::warn!(target: "page", "{message}");
+    }
+}
+
+/// What a folder chosen for the data holds (ADR 0084): `empty`, where
+/// everything can be moved; `glaukopis`, data of Glaukopis to be used as it
+/// is; `other`, refused. A folder inside the data folder is `other`; the
+/// folder in use is `current`, which there is nothing to do with.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DataFolderCheck {
+    pub holds: String,
+    pub current: bool,
+}
+
+#[tauri::command]
+pub async fn data_folder_check(app: AppHandle, path: String) -> CommandResult<DataFolderCheck> {
+    blocking(move || {
+        let state = app.state::<AppState>();
+        let path = Path::new(&path);
+        let root = state.data.root();
+        let canonical = |p: &Path| std::fs::canonicalize(p).unwrap_or_else(|_| p.to_owned());
+        let current = canonical(path) == canonical(root);
+        let inside = !current && canonical(path).starts_with(canonical(root));
+        let holds = match paths::what_holds(path) {
+            _ if inside => paths::Holds::Other,
+            holds => holds,
+        };
+        let holds = serde_json::to_value(holds).ok().and_then(|v| v.as_str().map(str::to_owned)).unwrap_or_default();
+        Ok(DataFolderCheck { holds, current })
+    })
+    .await
+}
+
+/// How many files of how many are copied, told to the window that asked.
+#[derive(Clone, Serialize)]
+pub struct DataFolderProgress {
+    pub done: usize,
+    pub count: usize,
+}
+
+/// The event by which the progress of a copy is told.
+pub const DATA_FOLDER_PROGRESS: &str = "data-folder-progress";
+
+/// Moves everything to an empty folder, as far as can be done while the
+/// application runs: on another disk the files are copied, with progress,
+/// and checked; then the file of the location says the folder and where the
+/// data is moved from, and the next start brings over what was written
+/// after the copy, or renames the folder where it is on the same disk, and
+/// removes the old one (`paths::finish_move`). What fails writes nothing.
+#[tauri::command]
+pub async fn data_folder_move(app: AppHandle, window: WebviewWindow, path: String) -> CommandResult<()> {
+    blocking(move || {
+        let state = app.state::<AppState>();
+        let from = state.data.root().to_owned();
+        let to = PathBuf::from(&path);
+        if paths::what_holds(&to) != paths::Holds::Empty {
+            return Err(Error::invalid(tr!("core-data-move-failed", from = &from, to = &to, error = "")).into());
+        }
+        if !paths::same_disk(&from, &to) {
+            let mut last = std::time::Instant::now() - std::time::Duration::from_secs(1);
+            paths::copy_tree(&from, &to, false, &mut |done, count| {
+                // Every file or every 200 ms, whichever is rarer.
+                if done == 0 || done == count || last.elapsed() >= std::time::Duration::from_millis(200) {
+                    last = std::time::Instant::now();
+                    let _ = window.emit_to(window.label(), DATA_FOLDER_PROGRESS, DataFolderProgress { done, count });
+                }
+            })?;
+            paths::check_copy(&from, &to)?;
+            tracing::info!(from = %from.display(), to = %to.display(), "the data folder is copied, and checked");
+        }
+        paths::set_location(
+            &paths::settings_place(),
+            &paths::Location { folder: to.clone(), moving_from: Some(from.clone()) },
+        )?;
+        tracing::info!(from = %from.display(), to = %to.display(), "the data folder is to be moved at the next start");
+        Ok(())
+    })
+    .await
+}
+
+/// Uses a folder that holds data of Glaukopis already, from the next start;
+/// what is in the folder used till now stays there.
+#[tauri::command]
+pub async fn data_folder_use(path: String) -> CommandResult<()> {
+    blocking(move || {
+        let to = PathBuf::from(&path);
+        paths::set_location(&paths::settings_place(), &paths::Location { folder: to.clone(), moving_from: None })?;
+        tracing::info!(folder = %to.display(), "the data folder is to be used from the next start");
+        Ok(())
+    })
+    .await
+}
+
+/// Closes every window, each saving what it has as it does when it is
+/// closed, and starts the application again when the last has closed
+/// (`run`'s `ExitRequested`).
+#[tauri::command]
+pub fn app_restart(app: AppHandle, state: State<'_, AppState>) {
+    state.restart.store(true, std::sync::atomic::Ordering::SeqCst);
+    tracing::info!("the application closes, to start again");
+    for window in app.webview_windows().values() {
+        if let Err(error) = window.close() {
+            tracing::warn!(%error, window = window.label(), "a window could not be asked to close");
+        }
     }
 }

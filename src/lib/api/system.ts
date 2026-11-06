@@ -1,4 +1,5 @@
-import { call, withHead } from './backend';
+import { listen } from '@tauri-apps/api/event';
+import { call, inTauri, withHead } from './backend';
 import type { Layout } from './ocr';
 import type { Arrangement } from '$lib/project/sides.svelte';
 
@@ -10,6 +11,8 @@ export interface SystemInfo {
   platform: string;
   /** The name the system gives the user: their full name where it is known, or their login. */
   user: string;
+  /** Whether the data folder is the one the writer chose, not the usual one. */
+  dataFolderChosen: boolean;
 }
 
 export const systemInfo = () => call<SystemInfo>('system_info');
@@ -273,3 +276,38 @@ export const settingsSave = (settings: Settings) => call<void>('settings_save', 
 /** Writes into the log of the run what went wrong in the page: see `shell/page-log.ts`. */
 export const logPage = (level: 'error' | 'warn', message: string) =>
   call<void>('log_page', { level, message });
+
+/** What a folder chosen for the data holds (ADR 0084), and whether it is the one in use. */
+export interface DataFolderCheck {
+  holds: 'empty' | 'glaukopis' | 'other';
+  current: boolean;
+}
+
+export const dataFolderCheck = (path: string) =>
+  call<DataFolderCheck>('data_folder_check', { path });
+/**
+ * Moves everything to an empty folder as far as can be done while the
+ * application runs, copying where it is on another disk; the next start
+ * finishes it. Its progress comes to `onDataFolderProgress`.
+ */
+export const dataFolderMove = (path: string) => call<void>('data_folder_move', { path });
+/** Uses a folder holding Glaukopis's data already, from the next start. */
+export const dataFolderUse = (path: string) => call<void>('data_folder_use', { path });
+/** Closes every window, each saving as it does, and starts the application again. */
+export const appRestart = () => call<void>('app_restart');
+
+/** How many files of how many are copied, as a copy of the data folder goes. */
+export interface DataFolderProgress {
+  done: number;
+  count: number;
+}
+
+/** Listens for the progress of a copy of the data folder. Gives what ends the listening. */
+export async function onDataFolderProgress(
+  told: (done: number, count: number) => void,
+): Promise<() => void> {
+  if (!inTauri) return () => {};
+  return listen<DataFolderProgress>('data-folder-progress', (e) =>
+    told(e.payload.done, e.payload.count),
+  );
+}
