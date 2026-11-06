@@ -1655,9 +1655,26 @@ pub fn preview_print_pages(ctx: &Context, key: &str, from: u32, to: u32, _stop: 
 pub fn preview_stop(work: &Path, key: &str) {
     let dir = work.join(safe_key(key)).join("preview");
     served::end(&dir);
-    let mut held = HELD.lock().unwrap_or_else(|p| p.into_inner());
-    if held.as_ref().is_some_and(|(d, _)| *d == dir) {
-        *held = None;
+    {
+        let mut held = HELD.lock().unwrap_or_else(|p| p.into_inner());
+        if held.as_ref().is_some_and(|(d, _)| *d == dir) {
+            *held = None;
+        }
+    }
+    given_back();
+}
+
+/// Gives back to the system what this process has freed and the allocator
+/// keeps: the readying of a long document for the pane leaves tens of
+/// megabytes free in the heaps of the threads that did it, which glibc
+/// does not give back by itself (record 0087).
+fn given_back() {
+    #[cfg(all(target_os = "linux", target_env = "gnu"))]
+    {
+        let began = std::time::Instant::now();
+        // SAFETY: malloc_trim has no preconditions; it only gives back pages that are free.
+        unsafe { libc::malloc_trim(0) };
+        tracing::debug!(took = ?began.elapsed(), "what was freed is given back");
     }
 }
 
