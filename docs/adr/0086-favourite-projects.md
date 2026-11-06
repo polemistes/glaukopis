@@ -1,6 +1,6 @@
 # 0086 — Favourite projects
 
-Date: 2026-11-06. Status: proposed on 2026-11-06, from the owner's words of the same day ("We also need a list of favourite projects."), with the plan `docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md`; to be built when the owner has read it. Builds on 0063 (the list is the tree) and 0031 (folders, on this computer).
+Date: 2026-11-06. Status: built on 2026-11-06, its choices not yet confirmed by the owner; proposed on 2026-11-06, from the owner's words of the same day ("We also need a list of favourite projects."), with the plan `docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md`; to be built when the owner has read it. Builds on 0063 (the list is the tree) and 0031 (folders, on this computer).
 
 ## Context
 
@@ -23,3 +23,9 @@ The list of projects at the left is one tree: folders, and the projects by name 
 ## Consequences
 
 - The core keeps a list of ids in the arrangement, with one command to set it; the list's rows gain a group; the start screen a strip; the guide, *Many projects*, a paragraph; a script covers it.
+
+## As built, 2026-11-06
+
+- **As decided.** `favourites` in `projects/folders.json`, left out where empty; *Add to favourites* and *Remove from favourites* in a project's menu after the fold, with the star; the heading *Favourites* at the top of the list, folding as a folder does, its rows in the order added, and a strip of them first on the start screen, the last opened leaving them out. A project deleted is no longer a favourite, nor again when brought back.
+- **Choices made in building.** A favourite's row is kept apart from the project's own row in the tree: it is not marked as the open project, has no fold in its menu, is neither dragged nor dropped on, and Alt and the arrows, F2, Delete and typing do nothing on it; Enter opens the project and the menu key gives its menu. The cards of the start screen gained the project's menu on a right click, since the record has the item on the start screen too.
+- **Counts.** Two new tests of the core; the list's and the menu's tests in the interface; `e2e/favourites.mjs` passes its 31 checks, and `list` 39, `projects` 24, `tree-keys` 44 and `languages` 17 (which now makes a favourite in Norwegian) as they were.

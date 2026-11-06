@@ -1,6 +1,6 @@
 # 0087 — What the program holds in memory
 
-Date: 2026-11-06. Status: proposed on 2026-11-06, from the owner's question of the same day ("Even before I started to contemplate implementing more than one open window, I thought that the program consumes too much memory. If I had specified more than one open window and that we should optimize on memory use, would you have chosen the same frameworks and solutions for making Glaukopis in the first place?"), with the plan `docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md`; to be built when the owner has read it. Builds on 0023 (Typst within the application), 0064 (the typesetting pane), 0072 (a child keeps a file open and draws its pages) and 0085 (more than one window), whose consequence it measures.
+Date: 2026-11-06. Status: built in part on 2026-11-06 (decisions 1, 2, 3 and 6; decision 4, the text view drawing what is near, left on the owner's word), its choices not yet confirmed by the owner; proposed on 2026-11-06, from the owner's question of the same day ("Even before I started to contemplate implementing more than one open window, I thought that the program consumes too much memory. If I had specified more than one open window and that we should optimize on memory use, would you have chosen the same frameworks and solutions for making Glaukopis in the first place?"), with the plan `docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md`; to be built when the owner has read it. Builds on 0023 (Typst within the application), 0064 (the typesetting pane), 0072 (a child keeps a file open and draws its pages) and 0085 (more than one window), whose consequence it measures.
 
 ## Context
 
@@ -52,3 +52,21 @@ The search through everything added some 30 MB to the page; each PDF shown in a 
 - The page's memory is of what is shown, not of the project, once the text view draws only what is near.
 - Every window's page in one web process on Linux, where that is kept; the windows are then one crash domain.
 - Nothing changes in the frameworks, in what the user sees, or in the words.
+
+## As built, 2026-11-06
+
+- **The typesetting is bounded.** Typst sets and keeps the pane's document in a served child of its own (`export/served.rs`, the task `typeset-serve`), with half the available memory and 512 MB at least, two minutes for a setting and thirty seconds for pages; at most three are served, and one is ended with its pane and with its project. `KEPT` is gone. The child is started as the document is readied, so its fonts load while Pandoc runs. Where no child can start, the core sets in its own process and keeps one document at most. The export sets in the process and lets Typst's cache go when done; it does not ask the child, whose document has the large pictures made small. A fault found on the way: a project closed with its pane open asked the core to stop with an empty key, so nothing was let go; the pane now takes its key when it starts. And the allocator kept some 90 MB of what readying the document took after the pane closed: on Linux the core gives it back (`malloc_trim`) when a pane closes.
+- **Measured** with `e2e/memory.mjs` (PSS in MB, debug builds under Xvfb, a book of 40,377 words):
+
+  | State | Rust before | Rust after | Web after | Typesetting after |
+  | --- | --- | --- | --- | --- |
+  | Start screen | 146 | 146 | 152 | 0 |
+  | The book in the text view | 148 | 149 | 220 | 0 |
+  | The pane open, its first pages come | 304 | 219 | 301 | 116 |
+  | Pane and project closed, twenty seconds later | 304 | 154 | 293 | 0 |
+  | Opened, typeset and closed again with its pane open | 304 | 155 | 382 | 0 |
+
+  Before, the Rust process held 158 MB over the start screen after the project was closed; after, 8. The first page of the book came in 2.0 to 2.5 s, where it had come in 4.0 to 6.5; of `e2e/preview.mjs`'s document in 0.7 s, where it had come in 0.8 to 1.3.
+- **A second window** at the start screen: with the web process shared, 39 MB (24 in the web process, 16 in the Rust process); with a process of its own, 102 (77 and 26). The shared process is kept (record 0085).
+- **Left out, on the owner's word**: decision 4, the text view drawing only the elements near the view.
+- **Counts.** Four tests of the served child with the real child; `memory` 7, `preview` 48, `print` 30, `look` 82, `the-document` 29 and `large` 7, all passing.
