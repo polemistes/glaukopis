@@ -1,7 +1,7 @@
 //! What the application holds while it runs.
 
 use std::path::PathBuf;
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, AtomicUsize};
 use std::sync::{Mutex, MutexGuard, RwLock};
 
 use glaukopis_core::export::Tools;
@@ -51,6 +51,8 @@ pub struct AppState {
     /// Whether the application starts again when its windows have closed,
     /// as it does when the data folder is changed.
     pub restart: AtomicBool,
+    /// The number the next window made after the first is labelled with.
+    pub windows: AtomicUsize,
 }
 
 /// A reading of a PDF into elements, kept under a token of its own: the
@@ -157,6 +159,7 @@ impl AppState {
             reading: Mutex::new(None),
             data_folder_chosen: false,
             restart: AtomicBool::new(false),
+            windows: AtomicUsize::new(2),
             data,
             _claim: claim,
         };

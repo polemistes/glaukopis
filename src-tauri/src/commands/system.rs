@@ -65,12 +65,14 @@ pub fn settings_load(state: State<'_, AppState>) -> CommandResult<glaukopis_core
     Ok(glaukopis_core::settings::load_or_set_aside(&state.data.settings_file())?)
 }
 
+/// Writes the settings a window changed, merged into the file: the rest
+/// as it is, written by whichever window changed it (ADR 0085).
 #[tauri::command(async)]
-pub fn settings_save(
+pub fn settings_set(
     state: State<'_, AppState>,
-    settings: serde_json::Map<String, serde_json::Value>,
+    changed: serde_json::Map<String, serde_json::Value>,
 ) -> CommandResult<()> {
-    Ok(glaukopis_core::settings::save(&state.data.settings_file(), &settings)?)
+    Ok(glaukopis_core::settings::merge(&state.data.settings_file(), &changed)?)
 }
 
 /// A language the interface is in: its tag, and its name in itself.
@@ -337,4 +339,16 @@ pub fn app_restart(app: AppHandle, state: State<'_, AppState>) {
             tracing::warn!(%error, window = window.label(), "a window could not be asked to close");
         }
     }
+}
+
+/// A new window, beside the one that asked (ADR 0085): the start screen, or
+/// the place `open` names, a route of the page.
+#[tauri::command]
+pub async fn window_new(app: AppHandle, window: WebviewWindow, open: Option<String>) -> CommandResult<()> {
+    blocking(move || {
+        crate::make_window(&app, open, Some(&window))
+            .map(|_| ())
+            .map_err(|error| Error::invalid(error.to_string()).into())
+    })
+    .await
 }

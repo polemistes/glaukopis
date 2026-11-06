@@ -9,6 +9,7 @@
  */
 
 import { open as chooseFile, save } from '@tauri-apps/plugin-dialog';
+import AppWindow from '@lucide/svelte/icons/app-window';
 import ChevronRight from '@lucide/svelte/icons/chevron-right';
 import Columns2 from '@lucide/svelte/icons/columns-2';
 import Copy from '@lucide/svelte/icons/copy';
@@ -33,6 +34,7 @@ import Waypoints from '@lucide/svelte/icons/waypoints';
 import X from '@lucide/svelte/icons/x';
 import { isDocumentPath, isPlainTextPath } from '$lib/api/imported';
 import { isReadPath } from '$lib/api/ocr';
+import { windowNew } from '$lib/api/system';
 import {
   projectTrash,
   type FileChoice,
@@ -48,7 +50,7 @@ import { t } from '$lib/i18n';
 import { keysFor } from '$lib/shell/keys.svelte';
 import { projects } from '$lib/state/projects.svelte';
 import { settings } from '$lib/state/settings.svelte';
-import { router, type MapMode } from '$lib/state/router.svelte';
+import { formatRoute, router, type MapMode } from '$lib/state/router.svelte';
 import { openMenu, type MenuItem } from '$lib/ui/menu.svelte';
 import { describeError, notify, notifyError, notifyOk } from '$lib/ui/toast.svelte';
 import { safeFileName } from '$lib/util/file-name';
@@ -674,6 +676,12 @@ export class ProjectActions {
           action: () => (this.showTrash = true),
         },
         { label: t('home-map-menu'), icon: Waypoints, action: () => (this.mapping = true) },
+        { kind: 'separator' },
+        {
+          label: t('home-new-window'),
+          icon: AppWindow,
+          action: () => void windowNew().catch((e) => notifyError(t('home-failed'), e)),
+        },
       ] satisfies MenuItem[],
       { align: 'start' },
     );
@@ -727,6 +735,14 @@ export class ProjectActions {
             } as MenuItem,
           ]
         : []),
+      {
+        label: t('home-open-window'),
+        icon: AppWindow,
+        action: () =>
+          void windowNew(formatRoute({ view: 'project', project: p.id })).catch((e) =>
+            notifyError(t('home-failed'), e),
+          ),
+      },
       ...(close && here
         ? [{ label: t('home-close'), icon: X, action: () => close(p.id) } as MenuItem]
         : []),

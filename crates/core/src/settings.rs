@@ -158,6 +158,24 @@ pub fn save(path: &Path, settings: &Map<String, Value>) -> Result<()> {
     write_atomic(path, text.as_bytes())
 }
 
+/// Merges `changed` into the settings in the file: each key written as it
+/// is given, a key given as null taken out, the rest of the file as it was.
+/// Each window writes only what it changed, so that no window writes over
+/// what another changed (ADR 0085). One merge at a time; whole or not at all.
+pub fn merge(path: &Path, changed: &Map<String, Value>) -> Result<()> {
+    static MERGING: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    let _one = MERGING.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut settings = load(path)?;
+    for (key, value) in changed {
+        if value.is_null() {
+            settings.remove(key);
+        } else {
+            settings.insert(key.clone(), value.clone());
+        }
+    }
+    save(path, &settings)
+}
+
 /// A string setting, when set and not empty.
 pub fn string(settings: &Map<String, Value>, key: &str) -> Option<String> {
     settings.get(key).and_then(Value::as_str).map(str::trim).filter(|s| !s.is_empty()).map(str::to_owned)
@@ -166,6 +184,21 @@ pub fn string(settings: &Map<String, Value>, key: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_merge_writes_what_changed_and_keeps_the_rest() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("settings.json");
+        let first = serde_json::json!({ "theme": "dark", "person": "p1", "textSize": 17 });
+        merge(&path, first.as_object().unwrap()).unwrap();
+        // Another window changes one key, and takes one away.
+        let other = serde_json::json!({ "textSize": 19, "person": null });
+        merge(&path, other.as_object().unwrap()).unwrap();
+        let read = load(&path).unwrap();
+        assert_eq!(read.get("theme"), Some(&Value::from("dark")));
+        assert_eq!(read.get("textSize"), Some(&Value::from(19)));
+        assert!(!read.contains_key("person"));
+    }
 
     fn set_aside_in(dir: &Path) -> Vec<String> {
         let mut names: Vec<String> = std::fs::read_dir(dir)

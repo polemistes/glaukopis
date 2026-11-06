@@ -1,13 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Settings, SettingsLoaded } from '$lib/api/system';
 
-const writes: { settings: Settings; resolve: () => void; reject: (e: unknown) => void }[] = [];
+const writes: { settings: Partial<Settings>; resolve: () => void; reject: (e: unknown) => void }[] =
+  [];
 
 vi.mock('$lib/api/system', async (original) => ({
   ...(await original<typeof import('$lib/api/system')>()),
   settingsLoad: vi.fn(async (): Promise<SettingsLoaded> => ({ settings: {}, setAside: null })),
-  settingsSave: vi.fn(
-    (settings: Settings) =>
+  settingsSet: vi.fn(
+    (settings: Partial<Settings>) =>
       new Promise<void>((resolve, reject) => writes.push({ settings, resolve, reject })),
   ),
 }));
@@ -43,6 +44,34 @@ describe('the settings as they are written', () => {
     expect(writes[1].settings.theme).toBe('mellow');
     writes[1].resolve();
     await now;
+  });
+
+  it('are written as the keys changed alone, so that another window’s are not written over', async () => {
+    settings.set('textSize', 19);
+    const now = settings.saveNow();
+    await settle();
+    expect(writes).toHaveLength(1);
+    expect(Object.keys(writes[0].settings)).toEqual(['textSize']);
+    writes[0].resolve();
+    await now;
+  });
+
+  it('read again keep what this window changed and has not yet written', async () => {
+    vi.useFakeTimers();
+    settings.set('theme', 'mellow');
+    vi.mocked(settingsLoad).mockResolvedValueOnce({
+      settings: { theme: 'light', textSize: 21 },
+      setAside: null,
+    });
+    await settings.reload();
+    expect(settings.value.theme).toBe('mellow');
+    expect(settings.value.textSize).toBe(21);
+    vi.advanceTimersByTime(300);
+    vi.useRealTimers();
+    await settle();
+    expect(Object.keys(writes[0].settings)).toEqual(['theme']);
+    writes[0].resolve();
+    await settle();
   });
 
   it('are written before the window closes, when changed a moment before', async () => {

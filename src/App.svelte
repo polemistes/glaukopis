@@ -3,7 +3,7 @@
   import { getCurrentWebview } from '@tauri-apps/api/webview';
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import { inTauri } from '$lib/api/backend';
-  import { languageSet, languagesInfo } from '$lib/api/system';
+  import { languageSet, languagesInfo, windowNew } from '$lib/api/system';
   import { noticesTake, onNotices } from '$lib/api/notices';
   import { languageName, languages, load, t } from '$lib/i18n';
   import { notifyError, toasts } from '$lib/ui/toast.svelte';
@@ -12,7 +12,7 @@
   import { formatRoute, parseRoute, router, type Route } from '$lib/state/router.svelte';
   import { projects } from '$lib/state/projects.svelte';
   import { asItCloses } from '$lib/state/closing';
-  import { placeWindow, windowPlace } from '$lib/state/window-place';
+  import { madeAfterTheFirst, placeWindow, windowPlace } from '$lib/state/window-place';
   import { keysUi, shortcuts } from '$lib/shell/keys.svelte';
   import KeySheet from '$lib/shell/KeySheet.svelte';
   import Palette from '$lib/shell/Palette.svelte';
@@ -90,7 +90,9 @@
    */
   async function goToPlaceKept() {
     if (location.hash && location.hash !== '#' && location.hash !== '#/') return;
-    const kept = settings.value.lastPlace;
+    // A window made after the first shows what it was made for, or the start screen.
+    const made = madeAfterTheFirst();
+    const kept = made ? made.open : settings.value.lastPlace;
     if (typeof kept !== 'string' || !kept) return;
     const place = parseRoute(kept);
     if (place.view === 'home' || place.view === 'settings') return;
@@ -123,7 +125,8 @@
     if (!inTauri) return;
     const window = getCurrentWindow();
     try {
-      await placeWindow(window, settings.value.window);
+      // A window made after the first was placed by the shell, beside the one it came from.
+      if (!madeAfterTheFirst()) await placeWindow(window, settings.value.window);
     } catch (error) {
       console.warn('The window could not be put where it was left', error);
     } finally {
@@ -136,6 +139,8 @@
     asItCloses(async () => {
       const place = await windowPlace(getCurrentWindow(), settings.value.window);
       if (place) settings.set('window', place);
+      // The place in the program, too: of several windows, the last to close is gone to at start.
+      if (route.view !== 'settings') settings.set('lastPlace', formatRoute(route));
     }),
   );
 
@@ -262,6 +267,7 @@
       files: () => go(router.lastFiles ?? { view: 'files' }),
       settings: () => settingsUi.toggle(),
       'search-everything': () => go({ view: 'search' }),
+      'new-window': () => void windowNew().catch((error) => console.error('No new window', error)),
       palette: () => keysUi.togglePalette(),
       sheet: () => keysUi.toggleSheet(),
     }),

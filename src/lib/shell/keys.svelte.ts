@@ -99,6 +99,7 @@ const ENTRIES = [
   { id: 'files', keys: 'Ctrl+4', place: 'everywhere', bound: true },
   { id: 'settings', keys: 'Ctrl+,', place: 'everywhere', bound: true },
   { id: 'search-everything', keys: 'Ctrl+Shift+F', place: 'everywhere', bound: true },
+  { id: 'new-window', keys: 'Ctrl+Shift+N', place: 'everywhere', bound: true },
   { id: 'palette', keys: 'Ctrl+K', place: 'everywhere', bound: true },
   { id: 'sheet', keys: 'Ctrl+/', place: 'everywhere', bound: true },
 

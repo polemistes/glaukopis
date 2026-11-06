@@ -1,9 +1,10 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "What the main window may do",
+  "description": "What every window may do: the first, and those made after it (window-2, window-3, …)",
   "windows": [
-    "main"
+    "main",
+    "window-*"
   ],
   "permissions": [
     "core:default",

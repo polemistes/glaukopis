@@ -1,7 +1,7 @@
 import {
   defaultSettings,
   settingsLoad,
-  settingsSave,
+  settingsSet,
   type FoundSettings,
   type Settings,
 } from '$lib/api/system';
@@ -163,6 +163,12 @@ class SettingsState {
   #saving: Promise<void> = Promise.resolve();
   /** Whether something was changed that is not yet written, or could not be. */
   #unsaved = false;
+  /**
+   * The keys changed and not yet written: only they are written, merged
+   * into the file by the core, so that what another window changed is not
+   * written over (ADR 0085).
+   */
+  #changed = new Set<keyof AllSettings>();
 
   constructor() {
     // A setting changed a moment before the window closes is written before it goes.
@@ -207,6 +213,7 @@ class SettingsState {
       // Who this installation is in the history of projects: made once, and kept.
       if (!this.value.person) {
         this.value.person = crypto.randomUUID();
+        this.#changed.add('person');
         await this.saveNow();
       }
     } catch (error) {
@@ -227,12 +234,44 @@ class SettingsState {
     return this.#unsaved ? this.saveNow() : this.#saving;
   }
 
-  /** Writes the settings as they are now, after the writes asked for before. */
+  /**
+   * Reads the settings again, as another window wrote them: what this
+   * window changed and has not yet written is kept over what is read.
+   */
+  async reload() {
+    let kept: Partial<AllSettings>;
+    try {
+      kept = (await settingsLoad()).settings;
+    } catch (error) {
+      console.warn('The settings could not be read again', error);
+      return;
+    }
+    const mine = Object.fromEntries(
+      [...this.#changed].map((key) => [key, $state.snapshot(this.value[key])]),
+    ) as Partial<AllSettings>;
+    const merged = { ...kept, ...mine };
+    this.value = {
+      ...defaultSettings,
+      ...merged,
+      ...more(merged),
+      found: { ...defaultSettings.found, ...(merged.found ?? {}) },
+    };
+  }
+
+  /** Writes what was changed, after the writes asked for before. */
   #write(): Promise<void> {
-    const value = $state.snapshot(this.value);
+    const keys = [...this.#changed];
+    this.#changed.clear();
     this.#unsaved = false;
-    const done = this.#saving.then(() => settingsSave(value));
+    if (!keys.length) return this.#saving;
+    // A key whose value is gone is written as null, which takes it out.
+    const changed = Object.fromEntries(
+      keys.map((key) => [key, $state.snapshot(this.value[key]) ?? null]),
+    ) as Partial<AllSettings>;
+    const done = this.#saving.then(() => settingsSet(changed));
     this.#saving = done.catch(() => {
+      // What could not be written is written with the next.
+      for (const key of keys) this.#changed.add(key);
       this.#unsaved = true;
     });
     return done;
@@ -247,6 +286,7 @@ class SettingsState {
   set<K extends keyof MoreSettings>(key: K, value: MoreSettings[K]): void;
   set(key: keyof AllSettings, value: AllSettings[keyof AllSettings]) {
     Object.assign(this.value, { [key]: value });
+    this.#changed.add(key);
     this.#unsaved = true;
     clearTimeout(this.#saveTimer);
     this.#saveTimer = setTimeout(() => {

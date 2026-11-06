@@ -322,3 +322,8 @@ home-mindmap-left-out-references = { $count ->
 home-favourites = Favourites
 home-favourite-add = Add to favourites
 home-favourite-remove = Remove from favourites
+
+## More than one window (docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md).
+
+home-new-window = New window
+home-open-window = Open in a new window

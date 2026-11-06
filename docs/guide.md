@@ -122,6 +122,21 @@ deleted is made again with what was in it. In the list, **Ctrl+Z** and
 **Ctrl+Shift+Z** undo and redo them, one after another, as long as
 Glaukopis runs; in a project they undo what was written.
 
+### More than one window
+
+**New window**, in the **⋯** at the head of the list of projects, or
+**Ctrl+Shift+N**, opens another window with the start screen, a little down
+and to the right of the one you are in. **Open in a new window**, in a
+project's menu, opens the project there. Every window shows the same
+projects and the same library. Closing a window closes
+it alone, saving what it holds; closing the last ends Glaukopis, and the
+next start opens one window, where the last window closed was.
+
+The windows share one process of the web view, which keeps a window to a
+few tens of megabytes. Should that process fail, every window goes with it
+at once; nothing written is lost, since every change is saved as it is
+made.
+
 ### The start screen
 
 While no project is open, the start screen stands beside the list: the owl,
@@ -3502,6 +3517,7 @@ what is to be done by its name, and does it.
 | **Ctrl+F**, **Ctrl+H** | In the text and in the edit box of an element: search; search and replace |
 | **Enter**, **Shift+Enter** | In the search: the next that is found, the one before; **F3** and **Shift+F3** as well |
 | **Ctrl+Shift+F** | Search through everything |
+| **Ctrl+Shift+N** | A new window |
 | **Ctrl+Shift+E** | The panel of changes, to review them |
 | **Ctrl+Alt+Y**, **Ctrl+Alt+N** | In a review: accept the change, reject it |
 | **F8**, **Shift+F8** | In a review: the next change (leaving this one for later), the one before |

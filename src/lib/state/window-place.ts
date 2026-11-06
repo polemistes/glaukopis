@@ -28,6 +28,16 @@ const finite = (n: unknown): n is number => typeof n === 'number' && Number.isFi
  * the window may be; none where what was kept is not a place, as when the
  * settings were written by hand.
  */
+/**
+ * What a window made after the first is told before its page runs: that it
+ * is such a window, placed by the shell, and the place in the program it is
+ * to show (a route), or the start screen. Nothing for the first window.
+ */
+export function madeAfterTheFirst(): { open: string | null } | null {
+  if (typeof window === 'undefined') return null;
+  return (window as { __glaukopisWindow?: { open: string | null } }).__glaukopisWindow ?? null;
+}
+
 export function usable(kept: unknown): WindowPlace | null {
   if (!kept || typeof kept !== 'object') return null;
   const { width, height, x, y, maximized } = kept as Record<string, unknown>;

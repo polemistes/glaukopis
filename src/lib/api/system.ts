@@ -271,7 +271,11 @@ export interface SettingsLoaded {
 }
 
 export const settingsLoad = () => call<SettingsLoaded>('settings_load');
-export const settingsSave = (settings: Settings) => call<void>('settings_save', { settings });
+/**
+ * Writes the settings a window changed, merged into the file by the core;
+ * a key given as null is taken out.
+ */
+export const settingsSet = (changed: Partial<Settings>) => call<void>('settings_set', { changed });
 
 /** Writes into the log of the run what went wrong in the page: see `shell/page-log.ts`. */
 export const logPage = (level: 'error' | 'warn', message: string) =>
@@ -293,6 +297,12 @@ export const dataFolderCheck = (path: string) =>
 export const dataFolderMove = (path: string) => call<void>('data_folder_move', { path });
 /** Uses a folder holding Glaukopis's data already, from the next start. */
 export const dataFolderUse = (path: string) => call<void>('data_folder_use', { path });
+/**
+ * A new window, beside this one (ADR 0085): the start screen, or the place
+ * `open` names, a route of the page (`formatRoute`).
+ */
+export const windowNew = (open?: string) => call<void>('window_new', { open: open ?? null });
+
 /** Closes every window, each saving as it does, and starts the application again. */
 export const appRestart = () => call<void>('app_restart');
 

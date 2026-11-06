@@ -142,3 +142,7 @@ keys-viewer-tab-previous = Forrige fane
 keys-viewer-bookmark = Merk dette stedet
 # Utskrift (docs/plans/printing.md, record 0075).
 keys-print = Skriv ut
+
+## More than one window (docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md).
+
+keys-new-window = Nytt vindu

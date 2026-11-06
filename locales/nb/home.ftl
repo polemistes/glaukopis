@@ -306,3 +306,8 @@ home-mindmap-left-out-references = { $count ->
 home-favourites = Favoritter
 home-favourite-add = Legg til i favoritter
 home-favourite-remove = Fjern fra favoritter
+
+## More than one window (docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md).
+
+home-new-window = Nytt vindu
+home-open-window = Åpne i nytt vindu

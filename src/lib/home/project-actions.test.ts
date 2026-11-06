@@ -179,6 +179,7 @@ describe('what is done with a project from a list of them', () => {
     const menu = actions.items(p);
     expect(labels(menu)).toEqual([
       t('home-open'),
+      t('home-open-window'),
       t('home-favourite-add'),
       '—',
       t('home-menu-rename'),
@@ -215,9 +216,10 @@ describe('what is done with a project from a list of them', () => {
     const beside = vi.fn();
     const toggle = vi.fn();
     const other = actions.items(p, { shown: ['q'], close, beside, fold: { folded: true, toggle } });
-    expect(labels(other).slice(0, 3)).toEqual([
+    expect(labels(other).slice(0, 4)).toEqual([
       t('home-open'),
       t('home-open-beside'),
+      t('home-open-window'),
       t('home-unfold'),
     ]);
     expect(labels(other)).not.toContain(t('home-close'));
@@ -242,8 +244,9 @@ describe('what is done with a project from a list of them', () => {
     projects.isFavourite.mockReturnValue(false);
     const toggle = vi.fn();
     const menu = actions.items(p, { fold: { folded: true, toggle } });
-    expect(labels(menu).slice(0, 4)).toEqual([
+    expect(labels(menu).slice(0, 5)).toEqual([
       t('home-open'),
+      t('home-open-window'),
       t('home-unfold'),
       t('home-favourite-add'),
       '—',

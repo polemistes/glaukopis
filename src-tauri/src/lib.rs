@@ -112,7 +112,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::system::system_info,
             commands::system::settings_load,
-            commands::system::settings_save,
+            commands::system::settings_set,
             commands::system::languages,
             commands::system::language_set,
             commands::system::reveal_path,
@@ -125,6 +125,7 @@ pub fn run() {
             commands::system::data_folder_move,
             commands::system::data_folder_use,
             commands::system::app_restart,
+            commands::system::window_new,
             commands::notices::notices_take,
             commands::clipboard::clipboard_read,
             commands::library::library_list,
@@ -501,19 +502,26 @@ fn speak_as_chosen(data: Option<&DataDir>) {
     }
 }
 
+/// Whether the harness runs the application: the hooks the e2e scripts
+/// reach the page by are there only then (`shell/testing.ts`), never in a
+/// working window.
+fn testing() -> bool {
+    std::env::var_os("GLAUKOPIS_E2E").is_some_and(|v| !v.is_empty())
+}
+
+/// Whether a new window's page is put in the web process of a window there
+/// is already, on Linux, where every web view is otherwise a process of its
+/// own with its own copy of the engine (ADR 0087, decision 3). One line, so
+/// that the other way is measured as easily.
+#[cfg(target_os = "linux")]
+const SHARED_WEB_PROCESS: bool = true;
+
 /// Makes the windows of the configuration, which Tauri is told not to make
 /// itself, and watches each. A window is shown only once it is watched, so
 /// that the log sees it come on the screen.
 fn make_windows(app: &AppHandle) -> tauri::Result<()> {
-    // The hooks the e2e scripts reach the page by are there only when the
-    // harness asks for them (`shell/testing.ts`), never in a working window.
-    let testing = std::env::var_os("GLAUKOPIS_E2E").is_some_and(|v| !v.is_empty());
     for config in &app.config().app.windows {
-        let mut builder = tauri::WebviewWindowBuilder::from_config(app, config)?.visible(false);
-        if testing {
-            builder = builder.initialization_script("window.__glaukopisTesting = true;");
-        }
-        let window = builder.build()?;
+        let window = window_builder(app, config, None)?.build()?;
         watch(&window);
         if config.visible {
             window.show()?;
@@ -522,6 +530,80 @@ fn make_windows(app: &AppHandle) -> tauri::Result<()> {
         }
     }
     Ok(())
+}
+
+/// A window as the configuration says, hidden until its page shows it.
+/// A window made after the first is told so, and where to go (`open`, a
+/// route of the page, or the start screen), by a script run before the page.
+fn window_builder<'a>(
+    app: &'a AppHandle,
+    config: &tauri::utils::config::WindowConfig,
+    open: Option<Option<&str>>,
+) -> tauri::Result<tauri::WebviewWindowBuilder<'a, tauri::Wry, AppHandle>> {
+    let mut builder = tauri::WebviewWindowBuilder::from_config(app, config)?.visible(false);
+    if testing() {
+        builder = builder.initialization_script("window.__glaukopisTesting = true;");
+    }
+    if let Some(open) = open {
+        let open = serde_json::to_string(&open).unwrap_or_else(|_| "null".into());
+        builder = builder.initialization_script(format!("window.__glaukopisWindow = {{ open: {open} }};"));
+    }
+    Ok(builder)
+}
+
+/// Makes a new window (ADR 0085), like the first, with the start screen or
+/// the place `open` names, beside `beside` and a little down and to the
+/// right of it. On Linux its page goes in the web process of a window there
+/// is already, where `SHARED_WEB_PROCESS` says so.
+pub(crate) fn make_window(
+    app: &AppHandle,
+    open: Option<String>,
+    beside: Option<&tauri::WebviewWindow>,
+) -> tauri::Result<tauri::WebviewWindow> {
+    let count = app.state::<state::AppState>().windows.fetch_add(1, Ordering::SeqCst);
+    let mut config = app.config().app.windows.first().cloned().ok_or(tauri::Error::WindowNotFound)?;
+    config.label = format!("window-{count}");
+    let place = beside.and_then(|beside| {
+        let position = beside.outer_position().ok()?;
+        let scale = beside.scale_factor().ok()?;
+        Some(position.to_logical::<f64>(scale))
+    });
+    #[cfg(target_os = "linux")]
+    let shared = SHARED_WEB_PROCESS.then(|| app.webview_windows().into_values().next()).flatten();
+    #[cfg(not(target_os = "linux"))]
+    let shared: Option<tauri::WebviewWindow> = None;
+    let is_shared = shared.is_some();
+    let window = match shared {
+        #[cfg(target_os = "linux")]
+        Some(first) => {
+            // The view of the first is had on the main thread, and cannot be
+            // sent from it: the new window is built there.
+            let (sent, received) = std::sync::mpsc::channel();
+            let (app, config, open) = (app.clone(), config.clone(), open.clone());
+            first.with_webview(move |platform| {
+                let built = window_builder(&app, &config, Some(open.as_deref()))
+                    .and_then(|builder| placed(builder, place).with_related_view(platform.inner()).build());
+                let _ = sent.send(built);
+            })?;
+            received.recv().map_err(|_| tauri::Error::WindowNotFound)??
+        }
+        _ => placed(window_builder(app, &config, Some(open.as_deref()))?, place).build()?,
+    };
+    tracing::info!(window = window.label(), shared_web_process = is_shared, "a new window");
+    watch(&window);
+    show_late(&window);
+    Ok(window)
+}
+
+/// A new window down and to the right of the window it came from.
+fn placed(
+    builder: tauri::WebviewWindowBuilder<'_, tauri::Wry, AppHandle>,
+    place: Option<tauri::LogicalPosition<f64>>,
+) -> tauri::WebviewWindowBuilder<'_, tauri::Wry, AppHandle> {
+    match place {
+        Some(place) => builder.position(place.x + 40.0, place.y + 40.0),
+        None => builder,
+    }
 }
 
 /// A window made hidden is shown by its page, once the page is drawn where the

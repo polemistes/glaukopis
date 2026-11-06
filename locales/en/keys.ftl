@@ -145,3 +145,7 @@ keys-viewer-tab-previous = Previous tab
 keys-viewer-bookmark = Mark this place
 # Printing (docs/plans/printing.md, record 0075).
 keys-print = Print
+
+## More than one window (docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md).
+
+keys-new-window = New window
