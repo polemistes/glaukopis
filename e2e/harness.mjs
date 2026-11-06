@@ -1157,6 +1157,52 @@ export class App {
   }
 
   /**
+   * What each process of the application holds now: the driver's children
+   * and all that descend from them, each with its name (the task, for a
+   * child of `glaukopis-isolated`, as `typeset-serve`) and its RSS, PSS and
+   * anonymous memory in kilobytes, as `/proc/<pid>/smaps_rollup` has them.
+   * A process gone between the listing and the reading is passed over.
+   * Linux only. `[{ pid, name, rss, pss, anonymous }]`, the first first.
+   */
+  memory() {
+    const children = (pid) => {
+      const found = [];
+      try {
+        for (const task of readdirSync(`/proc/${pid}/task`)) {
+          const listed = readFileSync(`/proc/${pid}/task/${task}/children`, 'utf8');
+          found.push(...listed.split(' ').filter(Boolean).map(Number));
+        }
+      } catch {
+        // Gone.
+      }
+      return found;
+    };
+    const all = [];
+    const waiting = this.appPids();
+    while (waiting.length) {
+      const pid = waiting.shift();
+      if (all.includes(pid)) continue;
+      all.push(pid);
+      waiting.push(...children(pid));
+    }
+    const out = [];
+    for (const pid of all) {
+      try {
+        let name = readFileSync(`/proc/${pid}/comm`, 'utf8').trim();
+        const args = readFileSync(`/proc/${pid}/cmdline`, 'utf8').split('\0');
+        const flag = args.indexOf('--glaukopis-isolated');
+        if (flag >= 0 && args[flag + 1]) name = args[flag + 1];
+        const rollup = readFileSync(`/proc/${pid}/smaps_rollup`, 'utf8');
+        const kb = (field) => Number(new RegExp(`^${field}:\\s+(\\d+) kB`, 'm').exec(rollup)?.[1] ?? 0);
+        out.push({ pid, name, rss: kb('Rss'), pss: kb('Pss'), anonymous: kb('Anonymous') });
+      } catch {
+        // Gone between the listing and the reading.
+      }
+    }
+    return out;
+  }
+
+  /**
    * Closes the window as the user does, through its close request, so that
    * what is done before it closes is done (the projects saved, the settings
    * written with the place and the window's size), waits until the

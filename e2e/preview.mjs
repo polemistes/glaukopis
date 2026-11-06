@@ -86,8 +86,22 @@ try {
   check('a citation can be made within a note', (await app.count('.text-view .footnote')) === 1);
 
   // --- The preview ---
+  // How long the first page takes, from the press of the button: printed, not judged.
+  await app.exec(
+    `window.__firstAsked = performance.now(); window.__firstCame = null;
+     const watching = setInterval(() => {
+       if (document.querySelector('.preview .page img')) {
+         window.__firstCame = performance.now();
+         clearInterval(watching);
+       }
+     }, 20);`,
+  );
   await app.typeset();
   await app.waitFor('.preview .page', 20000);
+  await app.waitUntil('return window.__firstCame !== null', 20000, 'the first page').catch(() => {});
+  console.log(
+    `      the first page came ${await app.exec('return Math.round((window.__firstCame ?? NaN) - window.__firstAsked)')} ms after the pane was asked for`,
+  );
   await sleep(500);
   /** How many pages the document has. Of many, only those that are looked at have a place in the window. */
   const counted = () =>
