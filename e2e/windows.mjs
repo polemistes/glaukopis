@@ -2,10 +2,12 @@
 // the list of projects; the same project open in two windows, a line typed
 // in one read in the other; a project renamed in one, its new name in the
 // other's list; a favourite made in one, in the other's list; a reference
-// added in one, in the other's library; the list of projects hidden in one,
-// hidden in the other; the second window closed and the first going on;
-// Ctrl+Shift+N; and Open in a new window from a project's row, the project
-// open there. The windows are reached by their handles.
+// added in one, in the other's library; the list of projects of each window
+// its own, hidden or made wider in one and left as it was in the other, and a
+// new window beginning with the list as the window it came from has it; the
+// second window closed and the first going on; Ctrl+Shift+N; and Open in a
+// new window from a project's row, the project open there. The windows are
+// reached by their handles.
 
 import { App, sleep } from './harness.mjs';
 
@@ -109,20 +111,33 @@ try {
   check('a reference added in one window is in the other’s library', library.includes('Added in the first window'));
   await app.screenshot('windows-2-library');
 
-  // The list of projects hidden in the first, hidden in the second.
+  // The list of projects is each window's own: hidden or made wider in one, as it was in the other.
   await app.switchTo(first);
   const shown = () => app.exec(`return !!document.querySelector('[data-projects-pane]')`);
+  const width = () => app.exec(`return document.querySelector('[data-projects-pane]')?.getBoundingClientRect().width ?? 0`);
   check('the list of projects is shown in the first', await shown());
+  await app.switchTo(second);
+  await app.keys(['Control', '1']);
+  await until(shown, (s) => s);
+  const before = await width();
+  await app.exec(
+    `document.querySelector('[role="separator"][aria-label="Between the list of projects and the project"]').focus(); return null;`,
+  );
+  await app.keys(['Shift', 'ArrowRight']);
+  const wider = await until(width, (w) => w > before);
+  check('the list made wider in the second', wider > before, `${before} → ${wider}`);
+  await app.switchTo(first);
   await app.click('[data-projects-button]');
   await until(shown, (s) => !s);
   await app.switchTo(second);
-  await app.keys(['Control', '1']);
-  await sleep(500);
-  const hidden = await until(shown, (s) => !s);
-  check('the list of projects hidden in one window is hidden in the other', !hidden);
+  await sleep(800);
+  check(
+    'the list hidden in the first is shown in the second, as wide as it was made there',
+    (await shown()) && (await width()) === wider,
+    `${await width()}`,
+  );
   await app.switchTo(first);
-  await app.click('[data-projects-button]');
-  await until(shown, (s) => s);
+  check('and the first keeps its list hidden', !(await shown()));
 
   // The second closed: the first goes on.
   await app.exec(
@@ -139,11 +154,15 @@ try {
   const third = again.find((h) => h !== first);
   await app.switchTo(third);
   await app.waitFor('[data-start]', 10000);
+  await sleep(500);
+  check('a new window begins with the list as the window it came from has it: hidden', !(await shown()));
   await app.exec(
     `window.__TAURI_INTERNALS__.invoke('plugin:window|close', { label: 'window-3' }).catch(() => {}); return null;`,
   );
   await app.waitForWindows(1);
   await app.switchTo(first);
+  await app.click('[data-projects-button]');
+  await until(shown, (s) => s);
 
   // Open in a new window, from the project's row.
   await app.home();

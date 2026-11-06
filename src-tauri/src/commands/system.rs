@@ -342,11 +342,17 @@ pub fn app_restart(app: AppHandle, state: State<'_, AppState>) {
 }
 
 /// A new window, beside the one that asked (ADR 0085): the start screen, or
-/// the place `open` names, a route of the page.
+/// the place `open` names, a route of the page; its list of projects as
+/// `list` says, which is how the asking window has it.
 #[tauri::command]
-pub async fn window_new(app: AppHandle, window: WebviewWindow, open: Option<String>) -> CommandResult<()> {
+pub async fn window_new(
+    app: AppHandle,
+    window: WebviewWindow,
+    open: Option<String>,
+    list: Option<serde_json::Value>,
+) -> CommandResult<()> {
     blocking(move || {
-        crate::make_window(&app, open, Some(&window))
+        crate::make_window(&app, open, list, Some(&window))
             .map(|_| ())
             .map_err(|error| Error::invalid(error.to_string()).into())
     })

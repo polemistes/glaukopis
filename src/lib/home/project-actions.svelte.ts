@@ -34,7 +34,6 @@ import Waypoints from '@lucide/svelte/icons/waypoints';
 import X from '@lucide/svelte/icons/x';
 import { isDocumentPath, isPlainTextPath } from '$lib/api/imported';
 import { isReadPath } from '$lib/api/ocr';
-import { windowNew } from '$lib/api/system';
 import {
   projectTrash,
   type FileChoice,
@@ -64,6 +63,7 @@ import {
   renameProject,
 } from './changes';
 import { folderOf, folderTree, foldersOpenTo } from './folders';
+import { newWindow } from './list.svelte';
 import {
   isMindMapPath,
   kindOfPath,
@@ -680,7 +680,7 @@ export class ProjectActions {
         {
           label: t('home-new-window'),
           icon: AppWindow,
-          action: () => void windowNew().catch((e) => notifyError(t('home-failed'), e)),
+          action: () => void newWindow().catch((e) => notifyError(t('home-failed'), e)),
         },
       ] satisfies MenuItem[],
       { align: 'start' },
@@ -739,7 +739,7 @@ export class ProjectActions {
         label: t('home-open-window'),
         icon: AppWindow,
         action: () =>
-          void windowNew(formatRoute({ view: 'project', project: p.id })).catch((e) =>
+          void newWindow(formatRoute({ view: 'project', project: p.id })).catch((e) =>
             notifyError(t('home-failed'), e),
           ),
       },

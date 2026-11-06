@@ -558,28 +558,31 @@ fn make_windows(app: &AppHandle) -> tauri::Result<()> {
 fn window_builder<'a>(
     app: &'a AppHandle,
     config: &tauri::utils::config::WindowConfig,
-    open: Option<Option<&str>>,
+    made: Option<&serde_json::Value>,
 ) -> tauri::Result<tauri::WebviewWindowBuilder<'a, tauri::Wry, AppHandle>> {
     let mut builder = tauri::WebviewWindowBuilder::from_config(app, config)?.visible(false);
     if testing() {
         builder = builder.initialization_script("window.__glaukopisTesting = true;");
     }
-    if let Some(open) = open {
-        let open = serde_json::to_string(&open).unwrap_or_else(|_| "null".into());
-        builder = builder.initialization_script(format!("window.__glaukopisWindow = {{ open: {open} }};"));
+    if let Some(made) = made {
+        builder = builder.initialization_script(format!("window.__glaukopisWindow = {made};"));
     }
     Ok(builder)
 }
 
 /// Makes a new window (ADR 0085), like the first, with the start screen or
-/// the place `open` names, beside `beside` and a little down and to the
+/// the place `open` names, and the list of projects as `list` says (shown or
+/// not, and how wide, as in the window it came from; as the settings say
+/// where nothing is said), beside `beside` and a little down and to the
 /// right of it. On Linux its page goes in the web process of a window there
 /// is already, where `SHARED_WEB_PROCESS` says so.
 pub(crate) fn make_window(
     app: &AppHandle,
     open: Option<String>,
+    list: Option<serde_json::Value>,
     beside: Option<&tauri::WebviewWindow>,
 ) -> tauri::Result<tauri::WebviewWindow> {
+    let made = serde_json::json!({ "open": open, "list": list });
     let count = app.state::<state::AppState>().windows.fetch_add(1, Ordering::SeqCst);
     let mut config = app.config().app.windows.first().cloned().ok_or(tauri::Error::WindowNotFound)?;
     config.label = format!("window-{count}");
@@ -599,15 +602,15 @@ pub(crate) fn make_window(
             // The view of the first is had on the main thread, and cannot be
             // sent from it: the new window is built there.
             let (sent, received) = std::sync::mpsc::channel();
-            let (app, config, open) = (app.clone(), config.clone(), open.clone());
+            let (app, config, made) = (app.clone(), config.clone(), made.clone());
             first.with_webview(move |platform| {
-                let built = window_builder(&app, &config, Some(open.as_deref()))
+                let built = window_builder(&app, &config, Some(&made))
                     .and_then(|builder| placed(builder, place).with_related_view(platform.inner()).build());
                 let _ = sent.send(built);
             })?;
             received.recv().map_err(|_| tauri::Error::WindowNotFound)??
         }
-        _ => placed(window_builder(app, &config, Some(open.as_deref()))?, place).build()?,
+        _ => placed(window_builder(app, &config, Some(&made))?, place).build()?,
     };
     tracing::info!(window = window.label(), shared_web_process = is_shared, "a new window");
     watch(&window);
@@ -633,7 +636,7 @@ fn started_again(app: &AppHandle) {
             .find(|w| w.is_focused().unwrap_or(false))
             .or_else(|| windows.get("main"))
             .or_else(|| windows.values().next());
-        if let Err(error) = make_window(&app, None, beside) {
+        if let Err(error) = make_window(&app, None, None, beside) {
             tracing::error!(%error, "no new window was made for the second start");
         }
     });

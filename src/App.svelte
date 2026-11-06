@@ -3,7 +3,8 @@
   import { getCurrentWebview } from '@tauri-apps/api/webview';
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import { inTauri } from '$lib/api/backend';
-  import { languageSet, languagesInfo, windowNew } from '$lib/api/system';
+  import { languageSet, languagesInfo } from '$lib/api/system';
+  import { listPane, newWindow } from '$lib/home/list.svelte';
   import { noticesTake, onNotices } from '$lib/api/notices';
   import { languageName, languages, load, t } from '$lib/i18n';
   import { notifyError, toasts } from '$lib/ui/toast.svelte';
@@ -73,6 +74,8 @@
     // The own words, laid over those built in, by the interface and the core (ADR 0035).
     const own = readOwnWords().catch((error) => console.warn('Own words not read', error));
     await Promise.all([settings.load(), known, own]);
+    // The list of projects of this window begins as the one it came from has it, or as it was left.
+    listPane.begin();
     // And the words of the language, lest the interface be shown in English first.
     // Those that do not come are tried again, and said, as the language is spoken below.
     const tag = interfaceTag();
@@ -151,7 +154,9 @@
     asItCloses(async () => {
       const place = await windowPlace(getCurrentWindow(), settings.value.window);
       if (place) settings.set('window', place);
-      // The place in the program, too: of several windows, the last to close is gone to at start.
+      // The list of projects as this window has it, and the place in the program: of
+      // several windows, the last to close is what the next start begins with.
+      listPane.keep();
       if (route.view !== 'settings') settings.set('lastPlace', formatRoute(route));
     }),
   );
@@ -279,7 +284,7 @@
       files: () => go(router.lastFiles ?? { view: 'files' }),
       settings: () => settingsUi.toggle(),
       'search-everything': () => go({ view: 'search' }),
-      'new-window': () => void windowNew().catch((error) => console.error('No new window', error)),
+      'new-window': () => void newWindow().catch((error) => console.error('No new window', error)),
       palette: () => keysUi.togglePalette(),
       sheet: () => keysUi.toggleSheet(),
     }),
@@ -309,7 +314,7 @@
       {:else if route.view === 'project' || route.view === 'file'}
         <!-- The pane of projects stands outside the view of a project, which is made anew for each. -->
         <div class="in-project">
-          {#if settings.value.projectsList}
+          {#if listPane.shown}
             <!-- Until the view says what its sides show, the project of the place is the one shown. -->
             <ProjectsPane
               sides={viewing.sides.length || route.view === 'file'
@@ -325,7 +330,7 @@
         </div>
       {:else if route.view === 'home' || route.view === 'settings'}
         <div class="in-project">
-          {#if settings.value.projectsList}
+          {#if listPane.shown}
             <ProjectsPane />
           {/if}
           <div class="project-view">

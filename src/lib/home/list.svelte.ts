@@ -1,11 +1,16 @@
 /**
  * What the list of projects at the left keeps while the application runs
  * (ADR 0033, 0063): which folders are closed, and a row it is to put the
- * focus on. And the list itself: whether it is shown and how wide, which the
- * settings remember.
+ * focus on. And the list itself: whether it is shown and how wide, which
+ * is the window's own, since it is a matter of the room the window has
+ * (ADR 0085, addendum): a new window begins as the one it came from has it,
+ * and the settings keep it as the last window to close had it, for the
+ * next start.
  */
 
+import { windowNew, type ListPane } from '$lib/api/system';
 import { settings } from '$lib/state/settings.svelte';
+import { madeAfterTheFirst } from '$lib/state/window-place';
 
 class ListUi {
   /** The folders that are closed, by id. */
@@ -46,9 +51,44 @@ export function paneWidth(width: number, dx: number): number {
   return Math.round(Math.min(PANE_MAX, Math.max(PANE_MIN, from + dx)));
 }
 
-/** Opens the pane of projects, or closes it. */
+/** The list of projects of this window: whether it is shown, and how wide. */
+class Pane {
+  shown = $state(true);
+  width = $state(PANE_WIDTH);
+
+  /**
+   * As it begins: as the window this one came from has it, else as the
+   * settings say, which is how the last window to close had it.
+   */
+  begin() {
+    const from = madeAfterTheFirst()?.list;
+    this.shown = from?.shown ?? settings.value.projectsList;
+    this.width = paneWidth(from?.width ?? settings.value.projectsPaneWidth, 0);
+  }
+
+  /** As it is now, for a new window, or for the settings as the window closes. */
+  get now(): ListPane {
+    return { shown: this.shown, width: this.width };
+  }
+
+  /** Kept in the settings, for the next start: done as the window closes. */
+  keep() {
+    if (settings.value.projectsList !== this.shown) settings.set('projectsList', this.shown);
+    if (settings.value.projectsPaneWidth !== this.width)
+      settings.set('projectsPaneWidth', this.width);
+  }
+}
+
+export const listPane = new Pane();
+
+/** A new window beside this one, showing `open` or the start screen, with the list as this window has it. */
+export function newWindow(open: string | null = null): Promise<void> {
+  return windowNew(open, listPane.now);
+}
+
+/** Opens the pane of projects, or closes it, in this window. */
 export function toggleProjectsPane() {
-  settings.set('projectsList', !settings.value.projectsList);
+  listPane.shown = !listPane.shown;
 }
 
 /**
@@ -57,6 +97,6 @@ export function toggleProjectsPane() {
  * keys of the tree go on from there.
  */
 export function toList(project: string) {
-  if (!settings.value.projectsList) settings.set('projectsList', true);
+  listPane.shown = true;
   listUi.focusRow = `p:${project}`;
 }

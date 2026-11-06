@@ -5,7 +5,7 @@
   import PanelLeft from '@lucide/svelte/icons/panel-left';
   import Search from '@lucide/svelte/icons/search';
   import Settings from '@lucide/svelte/icons/settings';
-  import { toggleProjectsPane } from '$lib/home/list.svelte';
+  import { listPane, toggleProjectsPane } from '$lib/home/list.svelte';
   import { t } from '$lib/i18n';
   import { router } from '$lib/state/router.svelte';
   import { settings } from '$lib/state/settings.svelte';
@@ -41,9 +41,9 @@
   <button
     type="button"
     class="place list"
-    class:current={listed && settings.value.projectsList}
+    class:current={listed && listPane.shown}
     aria-label={t('home-pane-toggle')}
-    aria-pressed={listed && settings.value.projectsList}
+    aria-pressed={listed && listPane.shown}
     disabled={!listed}
     data-projects-button
     use:tooltip={{ text: t('home-pane-toggle'), shortcut: keysFor('projects-pane'), side: 'right' }}

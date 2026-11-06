@@ -16,7 +16,7 @@ import {
   type Monitor,
   type Window,
 } from '@tauri-apps/api/window';
-import type { WindowPlace } from '$lib/api/system';
+import type { ListPane, WindowPlace } from '$lib/api/system';
 
 /** The least the window may be, as its configuration has it. */
 const LEAST = { width: 480, height: 400 };
@@ -33,9 +33,19 @@ const finite = (n: unknown): n is number => typeof n === 'number' && Number.isFi
  * is such a window, placed by the shell, and the place in the program it is
  * to show (a route), or the start screen. Nothing for the first window.
  */
-export function madeAfterTheFirst(): { open: string | null } | null {
+export function madeAfterTheFirst(): MadeAfterTheFirst | null {
   if (typeof window === 'undefined') return null;
-  return (window as { __glaukopisWindow?: { open: string | null } }).__glaukopisWindow ?? null;
+  return (window as { __glaukopisWindow?: MadeAfterTheFirst }).__glaukopisWindow ?? null;
+}
+
+/**
+ * What a window made after the first is told: the place it is to show, or
+ * none for the start screen, and its list of projects as the window it came
+ * from had it, or none where it came from no window.
+ */
+export interface MadeAfterTheFirst {
+  open: string | null;
+  list?: ListPane | null;
 }
 
 export function usable(kept: unknown): WindowPlace | null {

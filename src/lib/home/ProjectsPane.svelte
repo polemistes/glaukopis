@@ -20,11 +20,10 @@
   import { PROJECT } from '$lib/project/model/types';
   import { projects } from '$lib/state/projects.svelte';
   import { router, type MapMode } from '$lib/state/router.svelte';
-  import { settings } from '$lib/state/settings.svelte';
   import Divider from '$lib/ui/Divider.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
-  import { PANE_WIDTH, paneWidth, toggleProjectsPane } from './list.svelte';
+  import { listPane, PANE_WIDTH, paneWidth, toggleProjectsPane } from './list.svelte';
   import { ProjectActions } from './project-actions.svelte';
   import ProjectActionsHost from './ProjectActionsHost.svelte';
   import ProjectList from './ProjectList.svelte';
@@ -38,7 +37,7 @@
 
   let { sides = [], onenter }: Props = $props();
 
-  const width = $derived(paneWidth(settings.value.projectsPaneWidth, 0));
+  const width = $derived(paneWidth(listPane.width, 0));
 
   function open(p: ProjectInfo, mode?: MapMode) {
     if (!mode && sides.some((s) => s.id === p.id)) {
@@ -94,8 +93,8 @@
 </aside>
 <Divider
   label={t('home-pane-between')}
-  onmove={(dx) => settings.set('projectsPaneWidth', paneWidth(width, dx))}
-  onreset={() => settings.set('projectsPaneWidth', PANE_WIDTH)}
+  onmove={(dx) => (listPane.width = paneWidth(width, dx))}
+  onreset={() => (listPane.width = PANE_WIDTH)}
 />
 
 <ProjectActionsHost {actions} />

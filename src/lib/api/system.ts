@@ -297,11 +297,19 @@ export const dataFolderCheck = (path: string) =>
 export const dataFolderMove = (path: string) => call<void>('data_folder_move', { path });
 /** Uses a folder holding Glaukopis's data already, from the next start. */
 export const dataFolderUse = (path: string) => call<void>('data_folder_use', { path });
+/** The list of projects of a window: whether it is shown, and how wide. */
+export interface ListPane {
+  shown: boolean;
+  width: number;
+}
+
 /**
  * A new window, beside this one (ADR 0085): the start screen, or the place
- * `open` names, a route of the page (`formatRoute`).
+ * `open` names, a route of the page (`formatRoute`); its list of projects
+ * as `list` says.
  */
-export const windowNew = (open?: string) => call<void>('window_new', { open: open ?? null });
+export const windowNew = (open: string | null, list: ListPane | null) =>
+  call<void>('window_new', { open, list });
 
 /** Closes every window, each saving as it does, and starts the application again. */
 export const appRestart = () => call<void>('app_restart');

@@ -2,15 +2,19 @@ import { describe, expect, it, vi } from 'vitest';
 
 const { settings } = vi.hoisted(() => ({
   settings: {
-    value: { projectsList: false },
+    value: { projectsList: false, projectsPaneWidth: 300 } as Record<string, unknown>,
     set: vi.fn((key: string, value: unknown) => Object.assign(settings.value, { [key]: value })),
   },
 }));
 
 vi.mock('$lib/state/settings.svelte', () => ({ settings }));
+const { windowNew } = vi.hoisted(() => ({ windowNew: vi.fn(async () => {}) }));
+vi.mock('$lib/api/system', () => ({ windowNew }));
 
 import {
+  listPane,
   listUi,
+  newWindow,
   PANE_MAX,
   PANE_MIN,
   PANE_WIDTH,
@@ -29,19 +33,38 @@ describe('the pane of projects', () => {
     expect(paneWidth(0, 10)).toBe(PANE_WIDTH + 10);
   });
 
-  it('is opened and closed, and the settings remember it', () => {
+  it('is opened and closed in its own window, and kept in the settings as the window closes', () => {
+    listPane.begin();
+    expect(listPane.now).toEqual({ shown: false, width: 300 });
+    settings.set.mockClear();
     toggleProjectsPane();
-    expect(settings.set).toHaveBeenLastCalledWith('projectsList', true);
-    toggleProjectsPane();
-    expect(settings.set).toHaveBeenLastCalledWith('projectsList', false);
+    expect(listPane.shown).toBe(true);
+    listPane.width = 320;
+    // Not written while the window is open: another window has its own.
+    expect(settings.set).not.toHaveBeenCalled();
+    listPane.keep();
+    expect(settings.value.projectsList).toBe(true);
+    expect(settings.value.projectsPaneWidth).toBe(320);
+  });
+
+  it('begins in a new window as the window it came from has it', async () => {
+    await newWindow('/project/p1');
+    expect(windowNew).toHaveBeenLastCalledWith('/project/p1', { shown: true, width: 320 });
+    (window as { __glaukopisWindow?: unknown }).__glaukopisWindow = {
+      open: null,
+      list: { shown: false, width: 200 },
+    };
+    listPane.begin();
+    expect(listPane.now).toEqual({ shown: false, width: 200 });
+    delete (window as { __glaukopisWindow?: unknown }).__glaukopisWindow;
   });
 });
 
 describe('up from the top of a project', () => {
   it('shows the list where it was hidden, and asks for the row of the project', () => {
-    settings.value.projectsList = false;
+    listPane.shown = false;
     toList('p1');
-    expect(settings.set).toHaveBeenLastCalledWith('projectsList', true);
+    expect(listPane.shown).toBe(true);
     expect(listUi.focusRow).toBe('p:p1');
   });
 });
