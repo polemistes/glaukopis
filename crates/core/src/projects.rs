@@ -148,6 +148,9 @@ pub struct Arrangement {
     /// each from what holds it, by its key there: `folder:<id>` or `project:<id>`.
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub places: BTreeMap<String, Place>,
+    /// The favourite projects, by id, in the order they were made favourites (ADR 0086).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub favourites: Vec<String>,
 }
 
 /// A place on the map of the projects, from what holds the thing put there.
@@ -520,6 +523,16 @@ impl Projects {
         fs::create_dir_all(&trash).context(|| tr!("io-creating", path = &trash))?;
         let target = trash.join(format!("{}_{}", stamp_name(time::OffsetDateTime::now_utc().unix_timestamp()), id));
         fs::rename(&dir, &target).context(|| tr!("core-projects-to-trash"))?;
+        // A project deleted is no longer a favourite, nor again when it is brought back.
+        if self.read_arrangement().is_ok_and(|a| a.favourites.iter().any(|f| f == id)) {
+            let left = self.change_arrangement(|a| {
+                a.favourites.retain(|f| f != id);
+                Ok(())
+            });
+            if let Err(e) = left {
+                tracing::warn!(%e, "a deleted project could not be taken off the favourites");
+            }
+        }
         Ok(())
     }
 
@@ -687,6 +700,29 @@ impl Projects {
                 };
             }
             Ok(a.places.clone())
+        })
+    }
+
+    /// The favourite projects, by id, in the order they were made favourites.
+    pub fn favourites(&self) -> Result<Vec<String>> {
+        Ok(self.read_arrangement()?.favourites)
+    }
+
+    /// Makes a project a favourite, after the others, or takes it off the
+    /// favourites; the order of the rest is kept. Returns the favourites.
+    pub fn set_favourite(&self, id: &str, on: bool) -> Result<Vec<String>> {
+        check_id(id)?;
+        if on {
+            self.existing_dir(id)?;
+        }
+        self.change_arrangement(|a| {
+            let there = a.favourites.iter().any(|f| f == id);
+            if on && !there {
+                a.favourites.push(id.to_owned());
+            } else if !on {
+                a.favourites.retain(|f| f != id);
+            }
+            Ok(a.favourites.clone())
         })
     }
 
@@ -1288,6 +1324,49 @@ mod tests {
         let kept = p.dir(&b.id).unwrap().join("maps");
         assert!(!kept.join("Book.md").exists());
         assert_eq!(fs::read_to_string(kept.join("mine.txt")).unwrap(), "put here by the user");
+    }
+
+    #[test]
+    fn favourites_are_added_in_order_and_taken_off() {
+        let (_tmp, p) = projects();
+        let a = p.create("Iliad").unwrap();
+        let b = p.create("Odyssey").unwrap();
+        let c = p.create("Aeneid").unwrap();
+        assert!(p.favourites().unwrap().is_empty());
+        assert_eq!(p.set_favourite(&b.id, true).unwrap(), vec![b.id.clone()]);
+        assert_eq!(p.set_favourite(&a.id, true).unwrap(), vec![b.id.clone(), a.id.clone()], "in the order added");
+        assert_eq!(p.set_favourite(&b.id, true).unwrap(), vec![b.id.clone(), a.id.clone()], "not added twice");
+        p.set_favourite(&c.id, true).unwrap();
+        assert_eq!(
+            p.set_favourite(&a.id, false).unwrap(),
+            vec![b.id.clone(), c.id.clone()],
+            "the rest keep their order"
+        );
+        assert_eq!(p.set_favourite(&a.id, false).unwrap(), vec![b.id.clone(), c.id.clone()], "off again is nothing");
+        assert!(p.set_favourite("not-there", true).is_err(), "a project that is not there is refused");
+        assert!(p.set_favourite("../x", true).is_err());
+        assert_eq!(
+            Projects::at(p.root.clone()).favourites().unwrap(),
+            vec![b.id.clone(), c.id.clone()],
+            "kept on disk"
+        );
+
+        // Deleted, it is no longer a favourite, nor when it is brought back.
+        p.delete(&b.id).unwrap();
+        assert_eq!(p.favourites().unwrap(), vec![c.id.clone()]);
+        let (entry, _) = p.trash().unwrap().into_iter().next().unwrap();
+        p.restore(&entry).unwrap();
+        assert_eq!(p.favourites().unwrap(), vec![c.id.clone()]);
+        // The project itself knows nothing of it.
+        assert!(!fs::read_to_string(p.dir(&c.id).unwrap().join(INFO)).unwrap().contains("favourite"));
+    }
+
+    #[test]
+    fn an_arrangement_without_favourites_is_written_as_before() {
+        let (_tmp, p) = projects();
+        p.set_shown("list").unwrap();
+        let text = fs::read_to_string(p.root.join(FOLDERS)).unwrap();
+        assert!(!text.contains("favourites"), "{text}");
     }
 
     #[test]

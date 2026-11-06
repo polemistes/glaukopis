@@ -224,6 +224,8 @@ pub fn run() {
             commands::projects::folder_delete,
             commands::projects::project_move_to_folder,
             commands::projects::projects_shown,
+            commands::projects::favourites_list,
+            commands::projects::favourite_set,
             commands::history::history_read,
             commands::history::history_room,
             commands::history::history_delete,
