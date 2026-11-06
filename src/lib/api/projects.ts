@@ -145,6 +145,11 @@ export const projectSources = (id: string) => call<unknown>('project_sources', {
 export const projectSaveSources = (id: string, sources: unknown) =>
   call<void>('project_save_sources', { id, sources });
 export const foldersList = () => call<Folder[]>('folders_list');
+/** The favourite projects, by id, in the order they were made favourites. */
+export const favouritesList = () => call<string[]>('favourites_list');
+/** Makes a project a favourite or takes it off; returns the favourites. */
+export const favouriteSet = (id: string, on: boolean) =>
+  call<string[]>('favourite_set', { id, on });
 
 /** A place on the map of the projects, from what holds the thing put there. */
 export interface Place {

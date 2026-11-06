@@ -1,8 +1,10 @@
 <script lang="ts">
   /**
    * The start screen (ADR 0063), shown beside the list while no project is
-   * open: the owl, a button for a new project, and the projects last opened,
-   * newest first, each opened with a click. With no project at all, the
+   * open: the owl, a button for a new project, the favourite projects in the
+   * order they were made favourites (ADR 0086), and the projects last opened,
+   * newest first, each opened with a click and with its menu on the right
+   * button. With no project at all, the
    * welcome and the ways to begin. A document or a mind map of another
    * program dropped on it becomes a project of its own.
    */
@@ -22,6 +24,7 @@
   import { settings } from '$lib/state/settings.svelte';
   import Button from '$lib/ui/Button.svelte';
   import { dropTarget } from '$lib/ui/drag.svelte';
+  import { openContextMenu } from '$lib/ui/menu.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { ago } from '$lib/util/time';
   import ProjectBadge from './ProjectBadge.svelte';
@@ -40,14 +43,21 @@
   /** No project and no folder at all: the welcome, with the ways to begin. */
   const empty = $derived(projects.loaded && !projects.list.length && !projects.folders.length);
 
-  /** The projects last opened that are still there, newest first. */
-  const recent = $derived.by(() => {
-    const byId = new Map(projects.list.map((p) => [p.id, p]));
-    return (settings.value.recentProjects ?? [])
+  const byId = $derived(new Map(projects.list.map((p) => [p.id, p])));
+
+  /** The favourite projects that are there, in the order they were made favourites. */
+  const favourites = $derived(
+    projects.favourites.map((id) => byId.get(id)).filter((p): p is ProjectInfo => !!p),
+  );
+
+  /** The projects last opened that are still there and not among the favourites, newest first. */
+  const recent = $derived(
+    (settings.value.recentProjects ?? [])
+      .filter((id) => !projects.isFavourite(id))
       .map((id) => byId.get(id))
       .filter((p): p is ProjectInfo => !!p)
-      .slice(0, RECENT);
-  });
+      .slice(0, RECENT),
+  );
 
   const folderName = (p: ProjectInfo) => (p.folder ? projects.folder(p.folder)?.name : undefined);
 
@@ -122,31 +132,46 @@
           {t('home-new')}
         </Button>
       </div>
+      {#if favourites.length}
+        <section class="recent" data-start-favourites aria-labelledby="start-favourites">
+          <h3 id="start-favourites">{t('home-favourites')}</h3>
+          {@render cards(favourites)}
+        </section>
+      {/if}
       {#if recent.length}
         <section class="recent" data-start-recent aria-labelledby="start-recent">
           <h3 id="start-recent">{t('home-start-recent')}</h3>
-          <ul>
-            {#each recent as p (p.id)}
-              {@const folder = folderName(p)}
-              <li>
-                <button type="button" data-start-project={p.id} onclick={() => open(p)}>
-                  <ProjectBadge
-                    name={p.name}
-                    sharing={p.sharing ? { owner: p.sharing.owner } : null}
-                    size={15}
-                  />
-                  <span class="name serif truncate">{p.name}</span>
-                  {#if folder}<span class="folder truncate">{folder}</span>{/if}
-                  <span class="when">{ago(p.modified)}</span>
-                </button>
-              </li>
-            {/each}
-          </ul>
+          {@render cards(recent)}
         </section>
       {/if}
     </div>
   {/if}
 </div>
+
+{#snippet cards(list: ProjectInfo[])}
+  <ul>
+    {#each list as p (p.id)}
+      {@const folder = folderName(p)}
+      <li>
+        <button
+          type="button"
+          data-start-project={p.id}
+          onclick={() => open(p)}
+          oncontextmenu={(e) => openContextMenu(e, actions.items(p))}
+        >
+          <ProjectBadge
+            name={p.name}
+            sharing={p.sharing ? { owner: p.sharing.owner } : null}
+            size={15}
+          />
+          <span class="name serif truncate">{p.name}</span>
+          {#if folder}<span class="folder truncate">{folder}</span>{/if}
+          <span class="when">{ago(p.modified)}</span>
+        </button>
+      </li>
+    {/each}
+  </ul>
+{/snippet}
 
 <ProjectActionsHost {actions} />
 <DocumentHost />

@@ -316,3 +316,9 @@ home-mindmap-left-out-references = { $count ->
     [one] One reference to a figure or a part, which has nothing to point to there
    *[other] { $count } references to figures or parts, which have nothing to point to there
 }
+
+## Favourite projects (plan: the data folder, more than one window, favourites and the copied space)
+
+home-favourites = Favourites
+home-favourite-add = Add to favourites
+home-favourite-remove = Remove from favourites
