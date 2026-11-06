@@ -709,6 +709,25 @@ describe('the Org form of a text', () => {
     );
   });
 
+  it('keeps a space at the end or the start of a line from being trimmed, unless nothing trims the lines', () => {
+    const plain = { trimmedLines: false };
+    expect(writeBlocks([p([t('words ')])])).toBe('words\\ {}\n');
+    expect(writeBlocks([p([t('words ')])], plain)).toBe('words \n');
+    expect(writeBlocks([p([t(' words')])])).toBe('\\ words\n');
+    expect(writeBlocks([p([t(' words')])], plain)).toBe(' words\n');
+    expect(readBlocks('words\\ {}\n')).toEqual([p([t('words ')])]);
+    expect(readBlocks('\\ words\n')).toEqual([p([t(' words')])]);
+    // A line of spaces alone, a break with a space before it or after it, and verse.
+    expect(writeBlocks([p([t('   ')])])).toBe('\\  \\ {}\n');
+    expect(writeBlocks([p([t('   ')])], plain)).toBe('   \n');
+    expect(writeBlocks([p([t('words '), br, t('more')])])).toBe('words\\ {} \\\\\nmore\n');
+    expect(writeBlocks([p([t('words '), br, t('more')])], plain)).toBe('words  \\\\\nmore\n');
+    expect(writeBlocks([p([t('words'), br, t(' more')])], plain)).toBe('words \\\\\n more\n');
+    const verse = [p([t('  in verse ')], 'line'), p([t(' next')], 'line')];
+    expect(writeBlocks(verse)).toBe('#+BEGIN_VERSE\n\\  in verse\\ {}\n\n\\ next\n#+END_VERSE\n');
+    expect(writeBlocks(verse, plain)).toBe('#+BEGIN_VERSE\n  in verse \n\n next\n#+END_VERSE\n');
+  });
+
   it('reads back a text made of nothing but words that look like signs', () => {
     const blocks = trapBlocks();
     const text = writeBlocks(blocks);

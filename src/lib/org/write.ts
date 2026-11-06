@@ -118,6 +118,7 @@ export function writeBlocks(blocks: Block[], options: OrgTextOptions = {}): stri
     references: options.references ?? [],
     targets: options.targets ?? targetsOf(blocks),
     unsure: unsure.add,
+    trimmedLines: options.trimmedLines,
   });
   const lines = bodyLines(blocks, ctx);
   unsure.tell('text');

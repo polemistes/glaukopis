@@ -1563,6 +1563,8 @@ export function textContext(opts: {
   make?: (name: string, words: boolean) => string;
   /** Told of words that would not read back the same, as `InlineWriting.unsure` is. */
   unsure?: (text: string) => void;
+  /** Whether what reads the text trims its lines, as `InlineWriting.trimmedLines`. */
+  trimmedLines?: boolean;
 }): TextContext {
   const kinds = opts.paragraphKinds;
   const slugs = opts.slugs ?? ownSlugs(kinds, takenName);
@@ -1586,6 +1588,7 @@ export function textContext(opts: {
       citeKey: (id) => keys.get(id) || id,
       refPrefix: (target) => opts.targets.get(target) ?? 'id',
       unsure: opts.unsure,
+      trimmedLines: opts.trimmedLines,
     },
     reading: {
       kindOf: (name) => kindOf(name, true),

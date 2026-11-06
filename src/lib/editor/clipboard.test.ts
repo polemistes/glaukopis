@@ -82,6 +82,14 @@ describe('text copied as Org', () => {
     );
   });
 
+  it('writes a space at the end of a line as it is, with nothing after it', () => {
+    const para = (text: string) => bodySchema.nodes.paragraph.create(null, [bodySchema.text(text)]);
+    const one = bodySchema.nodes.doc.create(null, [para('words ')]);
+    expect(copiedText(new Slice(one.content, 0, 0), 'en')).toBe('words ');
+    const two = bodySchema.nodes.doc.create(null, [para('first '), para('second')]);
+    expect(copiedText(new Slice(two.content, 0, 0), 'en').split('\n')[0]).toBe('first ');
+  });
+
   it('what is copied within a paragraph is a line of Org', () => {
     const d = doc();
     const slice = d.slice(4, 11);

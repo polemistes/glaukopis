@@ -231,6 +231,8 @@ export interface InlineWriting {
    * whole says so once.
    */
   unsure?: (text: string) => void;
+  /** Whether what reads the text trims its lines (`OrgTextOptions.trimmedLines`); true where not given. */
+  trimmedLines?: boolean;
 }
 
 /** How hard the words are escaped: only where needed; every sign; every sign and every mark in brackets. */
@@ -318,8 +320,16 @@ const couldClose = (before: string, after: string) =>
  * stand, and before a space at either end of a line, which would be taken
  * for the line's indentation or trimmed away. `before` is the sign written before them ('' at a line's start,
  * '\n' after a line break), `after` the first sign of what follows them.
+ * Where `trimmed` is false, nothing trims the lines, and a space at either
+ * end is written as it is.
  */
-function escapeWords(text: string, before: string, after: string, mode: Mode): string {
+function escapeWords(
+  text: string,
+  before: string,
+  after: string,
+  mode: Mode,
+  trimmed: boolean,
+): string {
   const chars = Array.from(text.replace(/\0/g, '').replace(/\r?\n/g, ' '));
   let out = '';
   for (let k = 0; k < chars.length; k++) {
@@ -328,6 +338,7 @@ function escapeWords(text: string, before: string, after: string, mode: Mode): s
     const a = k + 1 < chars.length ? chars[k + 1] : after;
     let escape = false;
     if (c === '\\') escape = ESCAPABLE.has(a) || a === '(';
+    else if (isSpace(c) && !trimmed) escape = false;
     else if (isSpace(c) && (a === '' || a === '\n')) {
       // A space at a line's end, kept from whatever trims lines by empty braces after it.
       out += `\\${c}{}`;
@@ -435,7 +446,8 @@ const orgLink = (href: string) =>
   !!href && !/[\n\0]/.test(href) && !/^(fig|tab|eq|id|file):/i.test(href);
 
 function writeNode(node: MarkNode, before: string, after: string, w: Writing): string {
-  if (node.t === 'text') return escapeWords(node.text, before, after, w.mode);
+  if (node.t === 'text')
+    return escapeWords(node.text, before, after, w.mode, w.trimmedLines !== false);
   if (node.t === 'mark') {
     const { name } = node;
     const edgeOk =
@@ -570,13 +582,19 @@ export function writeContentLines(
   reading: InlineReading,
 ): string[] {
   const want = normalInlines(content);
+  // The way of escaping is chosen as Org reads the lines, which trims them;
+  // where nothing trims, the lines are then written that way with the
+  // spaces at their ends as they are.
+  const trimmed = { ...writing, trimmedLines: true };
+  const plain = (mode: Mode) =>
+    writing.trimmedLines === false ? contentLines(want, form, { ...writing, mode }) : null;
   let lines: string[] = [];
   for (const mode of [0, 1, 2] as Mode[]) {
-    lines = contentLines(want, form, { ...writing, mode });
-    if (sameInlines(readContentLines(lines, form, reading), want)) return lines;
+    lines = contentLines(want, form, { ...trimmed, mode });
+    if (sameInlines(readContentLines(lines, form, reading), want)) return plain(mode) ?? lines;
   }
   writing.unsure?.(lines.join('\n'));
-  return lines;
+  return plain(2) ?? lines;
 }
 
 /** Words on one line, as a name or a caption is: written in the plainest way that reads back the same. */
@@ -586,13 +604,18 @@ export function writeLine(
   reading: InlineReading,
 ): string {
   const want = normalInlines(content).filter((i) => i.kind !== 'break' && i.kind !== 'linemark');
+  const trimmed = { ...writing, trimmedLines: true };
+  const plain = (mode: Mode) =>
+    writing.trimmedLines === false
+      ? escapeLineStart(writeNodes(treeOf(want), '', '', { ...writing, mode }))
+      : null;
   let line = '';
   for (const mode of [0, 1, 2] as Mode[]) {
-    line = escapeLineStart(writeNodes(treeOf(want), '', '', { ...writing, mode }));
-    if (sameInlines(readLine(line, reading), want)) return line;
+    line = escapeLineStart(writeNodes(treeOf(want), '', '', { ...trimmed, mode }));
+    if (sameInlines(readLine(line, reading), want)) return plain(mode) ?? line;
   }
   writing.unsure?.(line);
-  return line;
+  return plain(2) ?? line;
 }
 
 // ---- reading ----

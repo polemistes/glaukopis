@@ -95,4 +95,12 @@ export interface OrgTextOptions {
    * written where not given.
    */
   targets?: Map<string, 'fig' | 'tab' | 'eq'>;
+  /**
+   * Whether what reads the text trims the ends of its lines, as Org and its
+   * editors do: a space at the end or the start of a line is then written
+   * with a backslash, and at the end with empty braces after it. True where
+   * not given; the clipboard, where nothing trims, writes such a space as it
+   * is (ADR 0041, addendum of 2026-11-06).
+   */
+  trimmedLines?: boolean;
 }

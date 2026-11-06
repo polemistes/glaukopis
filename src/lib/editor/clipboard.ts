@@ -144,7 +144,8 @@ export function copiedText(
   const blocks = schema ? copiedBlocks(slice, schema) : null;
   if (blocks) {
     try {
-      return writeBlocks(blocks, org?.() ?? {}).replace(/\n$/, '');
+      // Nothing trims the lines on the clipboard: a space at a line's end is written as it is.
+      return writeBlocks(blocks, { ...(org?.() ?? {}), trimmedLines: false }).replace(/\n$/, '');
     } catch (error) {
       console.warn('what was copied could not be written as Org', error);
     }

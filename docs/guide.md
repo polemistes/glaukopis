@@ -3367,9 +3367,10 @@ no place in a project is kept as a draft paragraph, so that nothing is lost.
 
 **The clipboard** speaks Org too. What you copy is, as plain text, its Org
 form, so that a quotation or a list keeps its shape when it is pasted into a
-plain text editor; text pasted that is written in Org (a block, a list, a
-citation) comes in with its kinds and marks. Text that is not Org is pasted
-as before, line by line.
+plain text editor; a space at the end of a line is copied as it is, without
+the backslash and braces the Org file keeps it with. Text pasted that is
+written in Org (a block, a list, a citation) comes in with its kinds and
+marks. Text that is not Org is pasted as before, line by line.
 
 **The history and the review** can show what changed as Org: tick **Show as
 Org** to see the text as it was and as it is, the lines taken out and put in
