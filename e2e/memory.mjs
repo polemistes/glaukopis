@@ -1,7 +1,8 @@
 // What the application holds in memory (record 0087): a book of 40,000
 // words in 12 chapters is brought in from an Org file, read in the text
-// view, typeset, and closed, and what each process holds is printed at
-// each state, as a table of PSS, RSS and anonymous memory in megabytes.
+// view, typeset, and closed, then opened, typeset and closed again with
+// its pane open, and what each process holds is printed at each state, as
+// a table of PSS, RSS and anonymous memory in megabytes.
 // It measures, and fails only where memory is kept that should not be:
 // where the Rust process, twenty seconds after the typeset project was
 // closed, holds more than 80 MB over what it held at the start screen (the
@@ -214,12 +215,21 @@ try {
     left.map((p) => `${p.pid}, ${mb(p.pss)} MB`).join('; '),
   );
 
-  // --- The book opened again, and closed again ---
+  // --- The book opened again, typeset, and closed with its pane open ---
   await app.openProject(name);
   await app.waitFor('.text-view .section, .diagram .node.root', 30000);
-  await sleep(5000);
+  await sleep(3000);
+  if (!(await app.exists('.preview'))) await app.typeset();
+  await app.waitFor('.preview .page img', 120000);
+  await sleep(2000);
   await app.home();
-  await settled(app, 'The book opened again and closed again', 10);
+  const again = await settled(app, 'The book opened again, typeset, and closed with its pane open', 10);
+  const leftAgain = again.rows.filter((p) => p.role === 'Typesetting');
+  check(
+    'no child of the typesetting is alive once the project is closed with its pane open',
+    leftAgain.length === 0,
+    leftAgain.map((p) => `${p.pid}, ${mb(p.pss)} MB`).join('; '),
+  );
 
   // --- A second window, where the ⋯ menu has New window ---
   await app.click('[data-projects-more]');
