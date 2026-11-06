@@ -11,7 +11,7 @@
 use std::path::Path;
 use std::sync::OnceLock;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use typst::diag::{FileError, FileResult, Severity, SourceDiagnostic, Warned};
 use typst::foundations::{Bytes, Content, Datetime, NativeElement, Selector, Smart, StyleChain, Value};
 use typst::introspection::{Introspector, Location, MetadataElem, Tag};
@@ -215,7 +215,7 @@ pub fn svg(document: &PagedDocument, number: usize) -> Option<String> {
 /// the drawn page: where it begins, the y of its baseline, how far it
 /// reaches, the size of its type, and its characters. All in points from
 /// the top left corner of the page, as the SVG of the page has them.
-#[derive(Debug, Clone, Default, PartialEq, Serialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TextRun {
     pub x: f32,
@@ -228,7 +228,7 @@ pub struct TextRun {
 /// Where an element of the document begins on the pages: the page, the
 /// first being 1, and the y in points from the top of it. By these the text
 /// and the pages are kept side by side.
-#[derive(Debug, Clone, Default, PartialEq, Serialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Place {
     /// The id of the element.
@@ -301,7 +301,7 @@ pub fn places(document: &PagedDocument) -> Vec<Place> {
 /// line is and to open its look: the page, the first being 1, the top and
 /// the bottom in points from the top of the page, as the SVG of the page
 /// has them, and what it is.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Spot {
     pub page: u32,

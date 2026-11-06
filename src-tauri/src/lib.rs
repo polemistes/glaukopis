@@ -367,6 +367,8 @@ pub fn run() {
             }
             // The children that keep files open for the views end with it (ADR 0072).
             glaukopis_core::ocr::server::end_all();
+            // And those that keep the typesetting panes' documents (record 0087).
+            glaukopis_core::export::served::end_all();
         }
         _ => {}
     });

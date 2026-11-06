@@ -8,6 +8,7 @@ pub mod after;
 pub mod latex;
 pub mod math;
 pub mod reference;
+pub mod served;
 pub mod tools;
 pub mod typeset;
 
@@ -1523,6 +1524,8 @@ pub fn preview_ready(ctx: &Context, request: &Request) -> Result<Readied> {
     ctx.tools.pandoc()?;
     let began = std::time::Instant::now();
     let dir = work_dir(ctx, &request.key, "preview")?;
+    // The child that sets the pages finds its fonts while the document is readied.
+    served::begin(&dir);
     let placed = place_files(ctx, request, &dir, "files", true);
     let prepared = prepare(ctx, request, Target::Typst, false, placed)?;
     let bib = dir.join("references.bib");
@@ -1555,21 +1558,9 @@ pub fn preview_made(
     warnings.extend(warnings_of(&out.messages));
     write_atomic(&dir.join("document.typ"), source.as_bytes())?;
 
-    let set = set_for_preview(&dir, stop)?;
+    let set = set_for_preview(&dir, stop, margins_of(&request.format))?;
     warnings.extend(set.warnings);
-    let (count, pages) = pages_from(&set.document, wanted);
-    let places = typeset::places(&set.document);
-    // The text stands between the margins the opening of the document sets on
-    // every page; in them, the header and the footer, where the layout shows
-    // them (ADRs 0056 and 0057).
-    let f = &request.format;
-    let margins = typeset::Margins {
-        top: f.page.margin_top.points(),
-        bottom: f.page.margin_bottom.points(),
-        head: f.header.shown.then_some("header"),
-        foot: f.footer.shown.then_some("footer"),
-    };
-    let spots = typeset::spots(&set.document, &margins);
+    let (count, pages) = drawn(&dir, wanted)?;
     tracing::debug!(pandoc = ?written, typst = ?(began.elapsed() - written), count, "the pages of the preview are made");
     let (width, height) = request.format.page.dimensions();
     Ok(Preview {
@@ -1580,31 +1571,49 @@ pub fn preview_made(
         warnings,
         missing: prepared.bibliography.missing,
         substitute: reference::substitute(&request.format, ctx.fonts),
-        places,
-        spots,
+        places: set.places,
+        spots: set.spots,
     })
+}
+
+/// Where the text stands on every page: between the margins the opening of
+/// the document sets; in them, the header and the footer, where the layout
+/// shows them (ADRs 0056 and 0057).
+fn margins_of(f: &DocumentFormat) -> served::Margins {
+    served::Margins {
+        top: f.page.margin_top.points(),
+        bottom: f.page.margin_bottom.points(),
+        head: f.header.shown,
+        foot: f.footer.shown,
+    }
 }
 
 /// Pages of the document that was made last for a key: those that come into
 /// view when the preview is moved through. How many pages there are, and
-/// the pages. They are drawn from the document as it was set, which is set
-/// again only where it is not kept, as after the application was restarted.
-pub fn preview_pages(ctx: &Context, key: &str, wanted: &[u32], stop: &AtomicBool) -> Result<(usize, Vec<Page>)> {
-    let document = kept_or_set(ctx, key, stop)?;
-    Ok(pages_from(&document, wanted))
+/// the pages. They are drawn from the document as it was set, by the child
+/// that keeps it (record 0087), which sets it again from what was written
+/// for it where it was ended meanwhile, as after the pane was idle.
+pub fn preview_pages(ctx: &Context, key: &str, wanted: &[u32], _stop: &AtomicBool) -> Result<(usize, Vec<Page>)> {
+    let dir = work_dir(ctx, key, "preview")?;
+    drawn(&dir, wanted)
 }
 
-/// The document last set for the preview of a key: the one kept, or, where
-/// it is no longer kept, set again from what was written for it.
-fn kept_or_set(ctx: &Context, key: &str, stop: &AtomicBool) -> Result<Arc<typeset::PagedDocument>> {
-    let dir = work_dir(ctx, key, "preview")?;
-    if let Some(document) = kept(&dir) {
-        return Ok(document);
+/// The pages wanted of the document set in `dir`, and how many it has: from
+/// the document held here, where the child could not be started; else by
+/// the child; else set here and held.
+fn drawn(dir: &Path, wanted: &[u32]) -> Result<(usize, Vec<Page>)> {
+    if let Some(document) = held(dir) {
+        return Ok(pages_from(&document, wanted));
     }
     if !dir.join("document.typ").is_file() {
         return Err(Error::NotFound(tr!("core-export-preview-document")));
     }
-    Ok(set_for_preview(&dir, stop)?.document)
+    // None named is all of them, to the child as well.
+    if let Some(drawn) = served::pages(dir, &chosen(wanted)) {
+        return drawn;
+    }
+    let document = set_here(dir)?.0;
+    Ok(pages_from(&document, wanted))
 }
 
 /// A page to be printed (record 0075): drawn as SVG, without the runs of its
@@ -1620,68 +1629,136 @@ pub struct PrintPage {
 /// The pages `from` to `to` of the document last set for the preview of a
 /// key, for printing: as many as are asked, not the few the preview is
 /// given at a time; those the document has not are passed over.
-pub fn preview_print_pages(ctx: &Context, key: &str, from: u32, to: u32, stop: &AtomicBool) -> Result<Vec<PrintPage>> {
-    let document = kept_or_set(ctx, key, stop)?;
+pub fn preview_print_pages(ctx: &Context, key: &str, from: u32, to: u32, _stop: &AtomicBool) -> Result<Vec<PrintPage>> {
+    let dir = work_dir(ctx, key, "preview")?;
+    let document = match held(&dir) {
+        Some(document) => document,
+        None => {
+            if !dir.join("document.typ").is_file() {
+                return Err(Error::NotFound(tr!("core-export-preview-document")));
+            }
+            if let Some(printed) = served::print(&dir, from, to) {
+                return printed;
+            }
+            set_here(&dir)?.0
+        }
+    };
     let count = document.pages().len() as u32;
     Ok((from.max(1)..=to.min(count))
         .filter_map(|number| Some(PrintPage { number, svg: typeset::svg(&document, number as usize)? }))
         .collect())
 }
 
-/// The documents last set for the preview, by the places they were made
-/// in: the pages are drawn from them as they are looked at. A few, for the
-/// projects last looked at.
-static KEPT: Mutex<Vec<(PathBuf, Arc<typeset::PagedDocument>)>> = Mutex::new(Vec::new());
-const KEPT_MOST: usize = 4;
-
-fn kept(dir: &Path) -> Option<Arc<typeset::PagedDocument>> {
-    let kept = KEPT.lock().unwrap_or_else(|p| p.into_inner());
-    kept.iter().find(|(d, _)| d == dir).map(|(_, document)| document.clone())
+/// The pane of a key was closed: the child that keeps its document is
+/// ended, and what Typst held of it is given back (record 0087). `work` is
+/// where work in progress is kept, as the context has it.
+pub fn preview_stop(work: &Path, key: &str) {
+    let dir = work.join(safe_key(key)).join("preview");
+    served::end(&dir);
+    {
+        let mut held = HELD.lock().unwrap_or_else(|p| p.into_inner());
+        if held.as_ref().is_some_and(|(d, _)| *d == dir) {
+            *held = None;
+        }
+    }
+    given_back();
 }
 
-/// A document set by Typst for the preview, and kept to draw its pages from.
+/// Gives back to the system what this process has freed and the allocator
+/// keeps: the readying of a long document for the pane leaves tens of
+/// megabytes free in the heaps of the threads that did it, which glibc
+/// does not give back by itself (record 0087).
+fn given_back() {
+    #[cfg(all(target_os = "linux", target_env = "gnu"))]
+    {
+        let began = std::time::Instant::now();
+        // SAFETY: malloc_trim has no preconditions; it only gives back pages that are free.
+        unsafe { libc::malloc_trim(0) };
+        tracing::debug!(took = ?began.elapsed(), "what was freed is given back");
+    }
+}
+
+/// The one document held here, where the child that keeps the documents
+/// could not be started: by the place it was made in. One at most, let go
+/// when its pane closes.
+static HELD: Mutex<Option<(PathBuf, Arc<typeset::PagedDocument>)>> = Mutex::new(None);
+
+fn held(dir: &Path) -> Option<Arc<typeset::PagedDocument>> {
+    let held = HELD.lock().unwrap_or_else(|p| p.into_inner());
+    held.as_ref().filter(|(d, _)| d == dir).map(|(_, document)| document.clone())
+}
+
+/// What was set for the preview: how many pages, what Typst said, and where
+/// the elements and the rest stand on the pages.
 struct SetForPreview {
-    document: Arc<typeset::PagedDocument>,
     warnings: Vec<String>,
+    places: Vec<Place>,
+    spots: Vec<Spot>,
 }
 
-/// Sets the document that stands in a place of the preview. Typst cannot be
+/// Sets the document that stands in a place of the preview, by the child
+/// that keeps it, or here where none can be started. Typst cannot be
 /// stopped while it sets, which takes a second or so of a long book: it is
 /// asked whether to stop before, and after.
-fn set_for_preview(dir: &Path, stop: &AtomicBool) -> Result<SetForPreview> {
+fn set_for_preview(dir: &Path, stop: &AtomicBool, margins: served::Margins) -> Result<SetForPreview> {
     let stopped = || Error::Refused { kind: tools::STOPPED, message: tr!("program-stopped", program = "Typst") };
     if stop.load(Ordering::Relaxed) {
         return Err(stopped());
     }
-    let set = typeset::set(dir, "document.typ")?;
-    let document = Arc::new(set.document);
-    {
-        let mut kept = KEPT.lock().unwrap_or_else(|p| p.into_inner());
-        kept.retain(|(d, _)| d != dir);
-        kept.push((dir.to_path_buf(), document.clone()));
-        let over = kept.len().saturating_sub(KEPT_MOST);
-        kept.drain(..over);
-    }
+    let set = match served::set(dir, Some(margins)) {
+        Some(set) => {
+            let set = set?;
+            // A document held here before the child could be started is of no use now.
+            let mut held = HELD.lock().unwrap_or_else(|p| p.into_inner());
+            if held.as_ref().is_some_and(|(d, _)| d == dir) {
+                *held = None;
+            }
+            SetForPreview { warnings: set.warnings, places: set.places, spots: set.spots }
+        }
+        None => {
+            let (document, warnings) = set_here(dir)?;
+            let places = typeset::places(&document);
+            let spots = typeset::spots(&document, &margins.typeset());
+            SetForPreview { warnings, places, spots }
+        }
+    };
     // What was set is kept all the same, for the pages that are asked for next.
     if stop.load(Ordering::Relaxed) {
         return Err(stopped());
     }
-    Ok(SetForPreview { document, warnings: set.warnings })
+    Ok(set)
+}
+
+/// Sets the document in `dir` here, where no child can be started, and
+/// holds it in place of the one held before.
+fn set_here(dir: &Path) -> Result<(Arc<typeset::PagedDocument>, Vec<String>)> {
+    // The one held before is let go first, so that two are never held.
+    *HELD.lock().unwrap_or_else(|p| p.into_inner()) = None;
+    let set = typeset::set(dir, "document.typ")?;
+    let document = Arc::new(set.document);
+    *HELD.lock().unwrap_or_else(|p| p.into_inner()) = Some((dir.to_path_buf(), document.clone()));
+    Ok((document, set.warnings))
+}
+
+/// The pages named, those that can be pages, in order, each once, and no
+/// more than [`MOST_PAGES`] of them.
+fn chosen(wanted: &[u32]) -> Vec<u32> {
+    let mut named: Vec<u32> = wanted.iter().copied().filter(|n| *n > 0).collect();
+    named.sort_unstable();
+    named.dedup();
+    named.truncate(MOST_PAGES);
+    named
 }
 
 /// The pages of a document that are wanted, drawn and with their text, and
 /// how many there are. Pages that are wanted and are not there are passed
 /// over; where none is named, all are drawn.
-fn pages_from(document: &typeset::PagedDocument, wanted: &[u32]) -> (usize, Vec<Page>) {
+pub(crate) fn pages_from(document: &typeset::PagedDocument, wanted: &[u32]) -> (usize, Vec<Page>) {
     let count = document.pages().len();
     let wanted: Vec<u32> = if wanted.is_empty() {
         (1..=count as u32).collect()
     } else {
-        let mut named: Vec<u32> = wanted.iter().copied().filter(|n| *n > 0 && (*n as usize) <= count).collect();
-        named.sort_unstable();
-        named.dedup();
-        named.truncate(MOST_PAGES);
-        named
+        chosen(wanted).into_iter().filter(|n| (*n as usize) <= count).collect()
     };
     let pages = wanted
         .into_iter()
@@ -1733,7 +1810,10 @@ pub fn export_until(
         if stop.load(Ordering::Relaxed) {
             return Err(Error::Refused { kind: tools::STOPPED, message: tr!("program-stopped", program = "Typst") });
         }
-        let (bytes, said) = typeset::pdf_of(&dir, "document.typ")?;
+        let made = typeset::pdf_of(&dir, "document.typ");
+        // Nothing Typst remembers of a file it set once is kept (record 0087).
+        comemo::evict(0);
+        let (bytes, said) = made?;
         exported.warnings.extend(said);
         write_atomic(path, &bytes)?;
         return Ok(exported);

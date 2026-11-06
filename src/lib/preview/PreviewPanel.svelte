@@ -769,14 +769,21 @@
     untrack(later);
   });
 
-  $effect(() => () => {
-    gone = true;
-    clearTimeout(waiting);
-    clearTimeout(settled);
-    clearTimeout(marking);
-    release();
-    // What is being made is no longer wanted.
-    void documentPreviewStop(projectId).catch(() => {});
+  $effect(() => {
+    // The pane is made anew for another project: its key is the one it began
+    // with, taken now, since a project closed with the pane open has none by
+    // the time the pane goes.
+    const key = untrack(() => projectId);
+    return () => {
+      gone = true;
+      clearTimeout(waiting);
+      clearTimeout(settled);
+      clearTimeout(marking);
+      release();
+      // What is being made is no longer wanted, and the child that keeps the
+      // document ends (record 0087).
+      void documentPreviewStop(key).catch(() => {});
+    };
   });
 
   /** The most words the template allows; nothing where it says none. */
