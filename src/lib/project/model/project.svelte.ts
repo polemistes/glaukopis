@@ -27,7 +27,7 @@ import { linkChanges } from './changing/links';
 import { cleanLook, family, passageKindChanges } from './changing/passage-kinds';
 import { referenceChanges } from './changing/references';
 import { cleanTemplate, templateChanges } from './changing/templates';
-import { HISTORY, LOAD, LOCAL, str, TIDY, type YNode } from './origins';
+import { HISTORY, LOAD, LOCAL, str, TIDY, WINDOW, type YNode } from './origins';
 import { beforeClose } from '$lib/state/closing';
 import { People, type Me } from './people';
 import { Presence, type Other } from './presence.svelte';
@@ -358,6 +358,8 @@ export class Project {
         if (origin === LOAD || this.#closed) return;
         this.revision++;
         for (const heard of this.#listeners) heard();
+        // What another window wrote, that window saved.
+        if (origin === WINDOW) return;
         // What came from another copy is applied as a change that is not local.
         this.#saving.change(update, transaction.local);
       },
@@ -714,6 +716,20 @@ export class Project {
       this.#listeners.delete(heard);
       clearTimeout(timer);
     };
+  }
+
+  /** Whether the project is closed, and its document let go. */
+  get closed(): boolean {
+    return this.#closed;
+  }
+
+  /**
+   * Applies what another window of this program wrote into the project, open
+   * in both (ADR 0085): drawn here, not saved again, not undone here.
+   */
+  applyFromWindow(update: Uint8Array) {
+    if (this.#closed) return;
+    Y.applyUpdate(this.doc, update, WINDOW);
   }
 
   async close(): Promise<void> {

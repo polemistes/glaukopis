@@ -10,6 +10,12 @@ export const LOCAL = 'local';
 /** Origin of changes read from disk: not to be saved again, nor undone. */
 export const LOAD = 'load';
 
+/**
+ * Origin of what another window of this program wrote into a project open in
+ * both (ADR 0085): that window saved it, and it is not undone here.
+ */
+export const WINDOW = 'window';
+
 /** Origin of what the history writes into the document: who is who, and what they deleted. */
 export const HISTORY = 'history';
 

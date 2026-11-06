@@ -8,6 +8,7 @@ import {
   foldersList,
   favouriteSet,
   favouritesList,
+  onProjectUpdate,
   projectAppend,
   projectCreate,
   projectRestore,
@@ -174,6 +175,36 @@ export function rememberOpened(id: string) {
     settings.set('recentProjects', [id, ...recent.filter((x) => x !== id)].slice(0, REMEMBERED));
 }
 
+/** The projects open in this window, by id, that another window's changes are applied to. */
+const openHere = new Map<string, Set<Project>>();
+let listening: Promise<unknown> | null = null;
+
+/**
+ * Applies what another window wrote into a project to every copy of it open
+ * in this window (ADR 0085); the closed are forgotten as they are met.
+ */
+export function fromAnotherWindow(id: string, update: Uint8Array) {
+  const here = openHere.get(id);
+  if (!here) return;
+  for (const project of [...here]) {
+    if (project.closed) here.delete(project);
+    else project.applyFromWindow(update);
+  }
+  if (!here.size) openHere.delete(id);
+}
+
+/** Holds a project opened in this window, so that what other windows write into it comes to it. */
+function heldOpen(id: string, project: Project) {
+  for (const [key, set] of openHere) {
+    for (const p of set) if (p.closed) set.delete(p);
+    if (!set.size) openHere.delete(key);
+  }
+  openHere.set(id, (openHere.get(id) ?? new Set()).add(project));
+  listening ??= onProjectUpdate(fromAnotherWindow).catch((error) =>
+    console.warn('The changes of other windows are not heard', error),
+  );
+}
+
 export async function openProject(id: string): Promise<OpenProject> {
   projects.lastOpened = id;
   const loaded = await projectLoad(id);
@@ -188,6 +219,7 @@ export async function openProject(id: string): Promise<OpenProject> {
   };
   const project = new Project(persistence);
   project.load(loaded.state, loaded.updates);
+  heldOpen(id, project);
   // A new project begins with its own element, named after it, and one
   // written before is brought into one tree (ADR 0037). One that was joined
   // and has not been fetched is left empty: what it holds is on its way.

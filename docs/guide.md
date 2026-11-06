@@ -128,7 +128,9 @@ Glaukopis runs; in a project they undo what was written.
 **Ctrl+Shift+N**, opens another window with the start screen, a little down
 and to the right of the one you are in. **Open in a new window**, in a
 project's menu, opens the project there. Every window shows the same
-projects and the same library. Closing a window closes
+projects and the same library. A project may be open in two windows at once,
+and it is one project: what you write in one is in the other at once. Undo
+in a window undoes what was written in that window. Closing a window closes
 it alone, saving what it holds; closing the last ends Glaukopis, and the
 next start opens one window, where the last window closed was.
 

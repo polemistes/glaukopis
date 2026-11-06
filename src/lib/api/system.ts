@@ -1,4 +1,4 @@
-import { listen } from '@tauri-apps/api/event';
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { call, inTauri, withHead } from './backend';
 import type { Layout } from './ocr';
 import type { Arrangement } from '$lib/project/sides.svelte';
@@ -317,7 +317,8 @@ export async function onDataFolderProgress(
   told: (done: number, count: number) => void,
 ): Promise<() => void> {
   if (!inTauri) return () => {};
-  return listen<DataFolderProgress>('data-folder-progress', (e) =>
+  // Told to the window that asked, which listens as itself.
+  return getCurrentWebviewWindow().listen<DataFolderProgress>('data-folder-progress', (e) =>
     told(e.payload.done, e.payload.count),
   );
 }

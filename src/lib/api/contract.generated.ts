@@ -3539,6 +3539,11 @@ export const dataFolderProgress: system.DataFolderProgress = {
   "done": 3
 };
 
+export const projectUpdate: projects.ProjectUpdate = {
+  "id": "p1",
+  "update": "AAA="
+};
+
 export const languagesInfo: system.LanguagesInfo = {
   "interface": [
     {

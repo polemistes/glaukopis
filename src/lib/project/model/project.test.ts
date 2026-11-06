@@ -732,6 +732,31 @@ describe('saving', () => {
     error.mockRestore();
   });
 
+  it('what another window wrote is drawn here, and neither saved again nor undone here', async () => {
+    const there = new Project(null);
+    there.begin('Shared');
+    const disk = new Disk();
+    const here = new Project(disk);
+    here.load(Y.encodeStateAsUpdate(there.doc), []);
+    await here.flush();
+    disk.log = [];
+    const written: Uint8Array[] = [];
+    there.doc.on('update', (u: Uint8Array) => written.push(u));
+    const a = there.addChild(PROJECT, { title: 'Written in the other window' })!;
+    const before = here.revision;
+    for (const u of written) here.applyFromWindow(u);
+    expect(here.node(a)?.title).toBe('Written in the other window');
+    expect(here.revision).toBeGreaterThan(before);
+    await here.flush();
+    expect(disk.log).toHaveLength(0);
+    expect(here.canUndo).toBe(false);
+    // What is written here is undone here, and saved here.
+    here.setTitle(a, 'Renamed here');
+    expect(here.canUndo).toBe(true);
+    await here.flush();
+    expect(disk.log).toHaveLength(1);
+  });
+
   it('what is saved can be read again', async () => {
     const disk = new Disk();
     const p = new Project(disk);

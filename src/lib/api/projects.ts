@@ -1,6 +1,8 @@
 /** Projects on disk. Mirrors `src-tauri/src/commands/projects.rs`. */
 
-import { call, withHead } from './backend';
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { fromBase64 } from '$lib/util/base64';
+import { call, inTauri, withHead } from './backend';
 import type { Certainty, Person, Reason, Reference, SummaryLite } from './library';
 
 export interface MapInfo {
@@ -129,6 +131,26 @@ export async function projectLoad(id: string): Promise<LoadedProject> {
 /** A batch of changes: made here or received from another, and when, in milliseconds since 1970. */
 export const projectAppend = (id: string, update: Uint8Array, here = true, time?: number) =>
   call<void>('project_append', withHead({ id, here, time: time ?? null }, update));
+/** A change to a project as another window wrote it: the update of its document, in base64. */
+export interface ProjectUpdate {
+  id: string;
+  update: string;
+}
+
+/**
+ * Listens for what another window of this program writes into a project
+ * (ADR 0085). The shell passes it to every window but the one that wrote
+ * it, so this window listens as itself. Gives what ends the listening.
+ */
+export async function onProjectUpdate(
+  heard: (id: string, update: Uint8Array) => void,
+): Promise<() => void> {
+  if (!inTauri) return () => {};
+  return getCurrentWebviewWindow().listen<ProjectUpdate>('project-update', (e) =>
+    heard(e.payload.id, fromBase64(e.payload.update)),
+  );
+}
+
 /** With `keep`, where the project's full history is on, the log is kept in it. */
 export const projectSaveState = (
   id: string,

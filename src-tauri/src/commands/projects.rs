@@ -8,8 +8,8 @@ use base64::Engine;
 use base64::engine::general_purpose::STANDARD as B64;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
-use tauri::State;
 use tauri::ipc::{InvokeBody, Request, Response};
+use tauri::{Emitter, EventTarget, State, WebviewWindow};
 
 use glaukopis_core::i18n::tr;
 use glaukopis_core::projects::{Folder, HistoryEntry, Place, ProjectInfo, Summary};
@@ -135,11 +135,33 @@ struct AppendHead {
 /// Adds a change to the log: made here or received from another, and when it
 /// was written, in milliseconds since 1970 (now, where it is not said). The
 /// change is the bytes of the request, after what it says of itself.
+///
+/// The change is passed to every other window, which applies it to the
+/// project where it has it open, as one written there (ADR 0085): a project
+/// open in two windows is one document.
 #[tauri::command(async)]
-pub fn project_append(state: State<'_, AppState>, request: Request<'_>) -> CommandResult<()> {
+pub fn project_append(window: WebviewWindow, state: State<'_, AppState>, request: Request<'_>) -> CommandResult<()> {
     let (head, update) = with_head::<AppendHead>(&request)?;
     let time = head.time.unwrap_or_else(glaukopis_core::history::now_ms);
-    Ok(state.projects.append_change(&head.id, &update, head.here.unwrap_or(true), time)?)
+    state.projects.append_change(&head.id, &update, head.here.unwrap_or(true), time)?;
+    let from = window.label().to_owned();
+    let passed = ProjectUpdate { id: head.id, update: B64.encode(&update) };
+    let others = |target: &EventTarget| matches!(target, EventTarget::WebviewWindow { label } if *label != from);
+    if let Err(error) = window.emit_filter(PROJECT_UPDATE, passed, others) {
+        tracing::warn!(%error, "a change was not passed to the other windows");
+    }
+    Ok(())
+}
+
+/// The event by which a change to a project is passed to the other windows.
+pub const PROJECT_UPDATE: &str = "project-update";
+
+/// A change to a project, as one window wrote it, for the others: the
+/// update of its document, in base64.
+#[derive(Clone, Serialize)]
+pub struct ProjectUpdate {
+    pub id: String,
+    pub update: String,
 }
 
 #[derive(serde::Deserialize)]

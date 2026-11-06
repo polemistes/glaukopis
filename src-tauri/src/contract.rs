@@ -228,6 +228,7 @@ fn what_is_sent_is_what_the_interface_declares() {
     };
     let data_folder_check = crate::commands::system::DataFolderCheck { holds: "glaukopis".into(), current: false };
     let data_folder_progress = crate::commands::system::DataFolderProgress { done: 3, count: 10 };
+    let project_update = crate::commands::projects::ProjectUpdate { id: "p1".into(), update: "AAA=".into() };
     let languages = crate::commands::system::Languages {
         system: "nb-NO".into(),
         interface: vec![crate::commands::system::Language { tag: "nb", name: "norsk bokmål" }],
@@ -637,6 +638,7 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("systemInfo", "system.SystemInfo", &system_info);
     put("dataFolderCheck", "system.DataFolderCheck", &data_folder_check);
     put("dataFolderProgress", "system.DataFolderProgress", &data_folder_progress);
+    put("projectUpdate", "projects.ProjectUpdate", &project_update);
     put("languagesInfo", "system.LanguagesInfo", &languages);
     put("settingsLoaded", "system.SettingsLoaded", &settings);
     let zip_entry = crate::commands::system::ZipEntry { name: "content.json".into(), text: "[]".into() };
