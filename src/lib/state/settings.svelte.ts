@@ -169,6 +169,8 @@ class SettingsState {
    * written over (ADR 0085).
    */
   #changed = new Set<keyof AllSettings>();
+  /** The keys being written now: kept over what is read again, as those not yet written are. */
+  #writing = new Set<keyof AllSettings>();
 
   constructor() {
     // A setting changed a moment before the window closes is written before it goes.
@@ -247,7 +249,7 @@ class SettingsState {
       return;
     }
     const mine = Object.fromEntries(
-      [...this.#changed].map((key) => [key, $state.snapshot(this.value[key])]),
+      [...this.#changed, ...this.#writing].map((key) => [key, $state.snapshot(this.value[key])]),
     ) as Partial<AllSettings>;
     const merged = { ...kept, ...mine };
     this.value = {
@@ -268,7 +270,12 @@ class SettingsState {
     const changed = Object.fromEntries(
       keys.map((key) => [key, $state.snapshot(this.value[key]) ?? null]),
     ) as Partial<AllSettings>;
-    const done = this.#saving.then(() => settingsSet(changed));
+    for (const key of keys) this.#writing.add(key);
+    const done = this.#saving
+      .then(() => settingsSet(changed))
+      .finally(() => {
+        for (const key of keys) this.#writing.delete(key);
+      });
     this.#saving = done.catch(() => {
       // What could not be written is written with the next.
       for (const key of keys) this.#changed.add(key);

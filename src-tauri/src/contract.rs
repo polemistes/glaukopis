@@ -639,6 +639,7 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("dataFolderCheck", "system.DataFolderCheck", &data_folder_check);
     put("dataFolderProgress", "system.DataFolderProgress", &data_folder_progress);
     put("projectUpdate", "projects.ProjectUpdate", &project_update);
+    put("changed", "changes.Area", &glaukopis_core::changes::Area::Projects);
     put("languagesInfo", "system.LanguagesInfo", &languages);
     put("settingsLoaded", "system.SettingsLoaded", &settings);
     let zip_entry = crate::commands::system::ZipEntry { name: "content.json".into(), text: "[]".into() };

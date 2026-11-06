@@ -25,6 +25,7 @@ use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
 
+use crate::changes::{self, Area};
 use crate::error::{Error, IoContext, Result};
 use crate::fsutil::write_atomic;
 use crate::history::{Record, append_record, now_ms, read_records};
@@ -236,7 +237,9 @@ impl Projects {
     }
 
     fn write_info(dir: &Path, info: &ProjectInfo) -> Result<()> {
-        write_atomic(&dir.join(INFO), serde_json::to_string_pretty(info)?.as_bytes())
+        write_atomic(&dir.join(INFO), serde_json::to_string_pretty(info)?.as_bytes())?;
+        changes::changed(Area::Projects);
+        Ok(())
     }
 
     /// All projects, the most recently changed first.
@@ -523,6 +526,7 @@ impl Projects {
         fs::create_dir_all(&trash).context(|| tr!("io-creating", path = &trash))?;
         let target = trash.join(format!("{}_{}", stamp_name(time::OffsetDateTime::now_utc().unix_timestamp()), id));
         fs::rename(&dir, &target).context(|| tr!("core-projects-to-trash"))?;
+        changes::changed(Area::Projects);
         // A project deleted is no longer a favourite, nor again when it is brought back.
         if self.read_arrangement().is_ok_and(|a| a.favourites.iter().any(|f| f == id)) {
             let left = self.change_arrangement(|a| {
@@ -603,7 +607,9 @@ impl Projects {
         if !dir.is_dir() {
             return Err(Error::not_found(tr!("core-projects-the-project-in-trash")));
         }
-        fs::remove_dir_all(&dir).context(|| tr!("io-removing", path = &dir))
+        fs::remove_dir_all(&dir).context(|| tr!("io-removing", path = &dir))?;
+        changes::changed(Area::Projects);
+        Ok(())
     }
 
     /// A new project that holds what another held at an earlier time. The
@@ -656,7 +662,9 @@ impl Projects {
     }
 
     fn write_arrangement(&self, arrangement: &Arrangement) -> Result<()> {
-        write_atomic(&self.root.join(FOLDERS), serde_json::to_string_pretty(arrangement)?.as_bytes())
+        write_atomic(&self.root.join(FOLDERS), serde_json::to_string_pretty(arrangement)?.as_bytes())?;
+        changes::changed(Area::Projects);
+        Ok(())
     }
 
     /// Reads the arrangement, changes it, and writes it back, one at a time.

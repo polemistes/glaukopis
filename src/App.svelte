@@ -12,6 +12,7 @@
   import { formatRoute, parseRoute, router, type Route } from '$lib/state/router.svelte';
   import { projects } from '$lib/state/projects.svelte';
   import { asItCloses } from '$lib/state/closing';
+  import { followChanges } from '$lib/state/changes.svelte';
   import { madeAfterTheFirst, placeWindow, windowPlace } from '$lib/state/window-place';
   import { keysUi, shortcuts } from '$lib/shell/keys.svelte';
   import KeySheet from '$lib/shell/KeySheet.svelte';
@@ -133,6 +134,12 @@
       await window.show().catch((error) => console.error('The window could not be shown', error));
     }
   }
+
+  // What another window writes is read again here (ADR 0085).
+  onMount(() => {
+    const stop = followChanges();
+    return () => void stop.then((f) => f());
+  });
 
   // Its size and place are kept as it closes, and written with the other settings.
   onMount(() =>

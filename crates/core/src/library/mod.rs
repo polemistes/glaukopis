@@ -286,6 +286,7 @@ impl Library {
         }
         write_atomic_with_backup(&self.file, out.as_bytes())?;
         self.stamp = stamp_of(&self.file);
+        crate::changes::changed(crate::changes::Area::Library);
         self.save_files_if_changed()
     }
 

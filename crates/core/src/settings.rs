@@ -155,7 +155,9 @@ fn person_in(text: &str) -> Option<String> {
 
 pub fn save(path: &Path, settings: &Map<String, Value>) -> Result<()> {
     let text = serde_json::to_string_pretty(settings)?;
-    write_atomic(path, text.as_bytes())
+    write_atomic(path, text.as_bytes())?;
+    crate::changes::changed(crate::changes::Area::Settings);
+    Ok(())
 }
 
 /// Merges `changed` into the settings in the file: each key written as it

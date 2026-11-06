@@ -39,6 +39,8 @@ fn changed(state: &AppState, kinds: impl IntoIterator<Item = Kind>) {
     if kinds.contains(&Kind::Ocr) {
         state.discover_tools();
     }
+    // The other windows read the languages again (ADR 0085).
+    glaukopis_core::changes::changed(glaukopis_core::changes::Area::Languages);
 }
 
 /// The languages that are imported.

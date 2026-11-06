@@ -49,7 +49,9 @@ impl Collections {
 
     pub fn save(&self, path: &Path) -> Result<()> {
         let file = CollectionsFile { collections: self.list.clone() };
-        write_atomic(path, serde_json::to_string_pretty(&file)?.as_bytes())
+        write_atomic(path, serde_json::to_string_pretty(&file)?.as_bytes())?;
+        crate::changes::changed(crate::changes::Area::Library);
+        Ok(())
     }
 
     /// A parent that does not exist, or a cycle, makes a collection a top-level one.

@@ -5,7 +5,8 @@
    * of more, and how text is read at first (`how.ts`). Where Tesseract is,
    * is said among the programs (`OcrSettings.svelte`).
    */
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
+  import { changes } from '$lib/state/changes.svelte';
   import { toolsInfo, type ToolsInfo } from '$lib/api/documents';
   import { languagesInstalled, languagesRemove } from '$lib/api/languages';
   import { languages, t } from '$lib/i18n';
@@ -40,6 +41,10 @@
   }
 
   onMount(loadImported);
+  // Imported or taken away in another window (ADR 0085).
+  $effect(() => {
+    if (changes.counts.languages) void untrack(loadImported);
+  });
 
   async function lookAgain() {
     await loadImported();

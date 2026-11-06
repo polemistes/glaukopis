@@ -296,6 +296,7 @@ impl Spelling {
         for read in self.read_of(&key) {
             take_in(&mut read.dictionary.write().unwrap_or_else(PoisonError::into_inner), &word);
         }
+        crate::changes::changed(crate::changes::Area::Words);
         Ok(())
     }
 
@@ -308,6 +309,7 @@ impl Spelling {
             // without forbidding it where it had the word itself: those of
             // the language are read anew when next needed.
             lock(&self.read).retain(|_, slot| !of_language(slot, &key));
+            crate::changes::changed(crate::changes::Area::Words);
         }
         Ok(())
     }

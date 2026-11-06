@@ -102,6 +102,11 @@ pub fn run() {
             glaukopis_core::notices::on_told(move || {
                 let _ = handle.emit(commands::notices::EVENT, ());
             });
+            // What changed on disk is told to every window, which reads it again (ADR 0085).
+            let handle = app.handle().clone();
+            glaukopis_core::changes::on_changed(move |area| {
+                let _ = handle.emit("changed", area);
+            });
             let start = Start { log: log_file.clone(), resources: app.path().resource_dir().ok() };
             match &root {
                 Ok(root) => start.open(app.handle(), root.clone(), chosen),

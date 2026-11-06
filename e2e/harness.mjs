@@ -1146,6 +1146,33 @@ export class App {
       }`);
   }
 
+  /** The handles of the windows of the application, as the driver sees them (record 0085). */
+  windows() {
+    return this.cmd('GET', '/window/handles');
+  }
+
+  /** The handle of the window the driver works in now. */
+  currentWindow() {
+    return this.cmd('GET', '/window');
+  }
+
+  /** Works in another window from here on: every method reaches that window, until switched again. */
+  switchTo(handle) {
+    return this.cmd('POST', '/window', { handle });
+  }
+
+  /** Waits until there are `count` windows, and gives their handles. */
+  async waitForWindows(count, ms = 10000) {
+    const until = Date.now() + ms;
+    let handles = await this.windows();
+    while (handles.length !== count && Date.now() < until) {
+      await sleep(200);
+      handles = await this.windows();
+    }
+    if (handles.length !== count) throw new Error(`${handles.length} windows, not ${count}`);
+    return handles;
+  }
+
   /** The processes of the application the driver started: the driver's children. */
   appPids() {
     const pids = [];

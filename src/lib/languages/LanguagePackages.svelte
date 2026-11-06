@@ -6,7 +6,8 @@
    * unless another is said; it may be a folder. The languages there are,
    * imported or of the system, are listed by the settings themselves.
    */
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
+  import { changes } from '$lib/state/changes.svelte';
   import {
     DEFAULT_LANGUAGES_SERVER,
     languagesInstall,
@@ -51,6 +52,10 @@
   }
 
   onMount(reload);
+  // Imported or taken away in another window (ADR 0085).
+  $effect(() => {
+    if (changes.counts.languages) void untrack(reload);
+  });
 
   /** The name of a language, in the language of the interface. */
   function named(l: { kind: LanguageKind; name: string; language: string }): string {

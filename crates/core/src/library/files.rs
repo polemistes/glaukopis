@@ -198,7 +198,9 @@ impl Files {
     }
 
     pub fn save(&self, path: &Path) -> Result<()> {
-        write_atomic(path, serde_json::to_string_pretty(self)?.as_bytes())
+        write_atomic(path, serde_json::to_string_pretty(self)?.as_bytes())?;
+        crate::changes::changed(crate::changes::Area::Files);
+        Ok(())
     }
 
     pub fn get(&self, hash: &str) -> Option<&FileRecord> {

@@ -4,6 +4,7 @@
 //! command-line tools both call it.
 
 pub mod bib;
+pub mod changes;
 pub mod document;
 pub mod duplicates;
 pub mod error;

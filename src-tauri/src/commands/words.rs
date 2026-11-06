@@ -161,7 +161,9 @@ pub fn words_own(state: State<'_, AppState>) -> CommandResult<Vec<OwnWords>> {
 /// the words are read again (`words_own_use`).
 #[tauri::command(async)]
 pub fn words_own_write(state: State<'_, AppState>, tag: String, files: Vec<WordsFile>) -> CommandResult<()> {
-    Ok(own_write(&state.data.words(), &tag, files)?)
+    own_write(&state.data.words(), &tag, files)?;
+    glaukopis_core::changes::changed(glaukopis_core::changes::Area::Words);
+    Ok(())
 }
 
 /// Takes away the own words of a language, or of all where none is named,
@@ -169,6 +171,7 @@ pub fn words_own_write(state: State<'_, AppState>, tag: String, files: Vec<Words
 #[tauri::command(async)]
 pub fn words_own_remove(state: State<'_, AppState>, tag: Option<String>) -> CommandResult<Vec<LeftOut>> {
     own_remove(&state.data.words(), tag.as_deref())?;
+    glaukopis_core::changes::changed(glaukopis_core::changes::Area::Words);
     Ok(i18n::use_own_words(&state.data.words()))
 }
 

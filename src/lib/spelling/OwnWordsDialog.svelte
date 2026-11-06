@@ -3,7 +3,8 @@
    * The words added to the dictionaries, a language at a time: each can be
    * taken away, and words can be added here as from the menu of a word.
    */
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
+  import { changes } from '$lib/state/changes.svelte';
   import Plus from '@lucide/svelte/icons/plus';
   import X from '@lucide/svelte/icons/x';
   import { spellingWords } from '$lib/api/spelling';
@@ -38,6 +39,11 @@
       notifyError(t('spelling-settings-failed'), error);
     }
   }
+
+  // Changed in another window (ADR 0085).
+  $effect(() => {
+    if (changes.counts.words) void untrack(load);
+  });
 
   onMount(async () => {
     await load();

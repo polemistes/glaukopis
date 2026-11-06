@@ -10,6 +10,7 @@ import type * as projects from './projects';
 import type * as documents from './documents';
 import type * as templates from './templates';
 import type * as system from './system';
+import type * as changes from './changes';
 import type * as clipboard from './clipboard';
 import type * as sources from './sources';
 import type * as found from './found';
@@ -3543,6 +3544,8 @@ export const projectUpdate: projects.ProjectUpdate = {
   "id": "p1",
   "update": "AAA="
 };
+
+export const changed: changes.Area = "projects";
 
 export const languagesInfo: system.LanguagesInfo = {
   "interface": [
