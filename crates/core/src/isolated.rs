@@ -653,6 +653,8 @@ fn task(name: &str) -> Option<Task> {
         "pdf-job" => Some(crate::ocr::child::work_task),
         // A PDF kept open while its pages are drawn to be shown (`ocr/server.rs`).
         "pdf-serve" => Some(crate::ocr::child::serve_task),
+        // The typesetting pane's document, set and kept (`export/served.rs`).
+        "typeset-serve" => Some(crate::export::served::serve_task),
         // For the tests of this module, only where they ask for them.
         "test-sleep" if testing() => Some(|_| {
             std::thread::sleep(Duration::from_secs(600));

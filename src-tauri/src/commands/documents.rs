@@ -6,7 +6,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
-use tauri::State;
+use tauri::{AppHandle, Manager, State};
 
 use glaukopis_core::document::{
     Block, CarriedReference, Contributor, Document, ElementLook, Inline, OwnKind, Part, Section,
@@ -17,6 +17,7 @@ use glaukopis_core::formats::{DocumentFormat, FormatSummary};
 use glaukopis_core::styles::{Found, StyleSummary};
 use glaukopis_core::templates::{Output, Template};
 
+use super::viewer::blocking;
 use super::work::{self, Work};
 use crate::error::CommandResult;
 use crate::state::AppState;
@@ -317,23 +318,28 @@ pub fn document_preview(state: State<'_, AppState>, request: LeanRequest, pages:
 }
 
 /// Pages of the document that was made last for a key, as they come into
-/// view, each with the runs of its text. It waits for nothing that is being
-/// made.
-#[tauri::command(async)]
-pub fn document_preview_pages(state: State<'_, AppState>, key: String, pages: Vec<u32>) -> CommandResult<PagesOf> {
-    let tools = state.tools();
-    let fonts = state.fonts();
-    let ctx = Context {
-        tools: &tools,
-        resources: &state.resources,
-        styles: &state.styles,
-        library: None,
-        work: state.data.work(),
-        fonts: &fonts,
-        pictures: None,
-    };
-    let (count, pages) = export::preview_pages(&ctx, &key, &pages, &AtomicBool::new(false))?;
-    Ok(PagesOf { count, pages })
+/// view, each with the runs of its text. They may wait for the document to
+/// be set by the child that keeps it (record 0087), and so are drawn on the
+/// threads for blocking work.
+#[tauri::command]
+pub async fn document_preview_pages(app: AppHandle, key: String, pages: Vec<u32>) -> CommandResult<PagesOf> {
+    blocking(move || {
+        let state = app.state::<AppState>();
+        let tools = state.tools();
+        let fonts = state.fonts();
+        let ctx = Context {
+            tools: &tools,
+            resources: &state.resources,
+            styles: &state.styles,
+            library: None,
+            work: state.data.work(),
+            fonts: &fonts,
+            pictures: None,
+        };
+        let (count, pages) = export::preview_pages(&ctx, &key, &pages, &AtomicBool::new(false))?;
+        Ok(PagesOf { count, pages })
+    })
+    .await
 }
 
 #[derive(Debug, Serialize)]
@@ -345,34 +351,39 @@ pub struct PagesOf {
 
 /// The pages `from` to `to` of the document last set for the preview of a
 /// key, for printing (record 0075): as SVG, as many as are asked.
-#[tauri::command(async)]
-pub fn document_print_pages(
-    state: State<'_, AppState>,
+#[tauri::command]
+pub async fn document_print_pages(
+    app: AppHandle,
     key: String,
     from: u32,
     to: u32,
 ) -> CommandResult<Vec<glaukopis_core::export::PrintPage>> {
-    let tools = state.tools();
-    let fonts = state.fonts();
-    let ctx = Context {
-        tools: &tools,
-        resources: &state.resources,
-        styles: &state.styles,
-        library: None,
-        work: state.data.work(),
-        fonts: &fonts,
-        pictures: None,
-    };
-    Ok(export::preview_print_pages(&ctx, &key, from, to, &AtomicBool::new(false))?)
+    blocking(move || {
+        let state = app.state::<AppState>();
+        let tools = state.tools();
+        let fonts = state.fonts();
+        let ctx = Context {
+            tools: &tools,
+            resources: &state.resources,
+            styles: &state.styles,
+            library: None,
+            work: state.data.work(),
+            fonts: &fonts,
+            pictures: None,
+        };
+        Ok(export::preview_print_pages(&ctx, &key, from, to, &AtomicBool::new(false))?)
+    })
+    .await
 }
 
 /// Stops what is being made for a key, and lets go of what is kept for it:
-/// the preview was closed.
+/// the preview was closed. The child that keeps its document is ended.
 #[tauri::command(async)]
-pub fn document_preview_stop(key: String) {
+pub fn document_preview_stop(state: State<'_, AppState>, key: String) {
     if let Some(kept) = previews().as_mut().and_then(|all| all.remove(&key)) {
         kept.stop.store(true, Ordering::Relaxed);
     }
+    export::preview_stop(&state.data.work(), &key);
 }
 
 /// Makes a document into a file. With a ticket, the making can be stopped

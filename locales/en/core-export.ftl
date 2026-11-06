@@ -73,3 +73,9 @@ core-export-output-unknown = The template has no output “{ $id }”.
 ## Stage 5 of the settings in plain words: LaTeX's hyphenation.
 
 core-export-latex-no-hyphenation = LaTeX has no hyphenation patterns for { $language }: the words are divided as English ones until the language's package of TeX Live is installed (on Arch, texlive-langeuropean for most European languages).
+
+## The data folder, more than one window, favourites: the typesetting in a child of its own.
+
+core-export-typeset-time = Typst took longer to set the document than it may, and was stopped.
+core-export-typeset-memory = Typst took more memory to set the document than it may, and was stopped.
+core-export-typeset-ended = Typst ended before the document was set: { $message }
