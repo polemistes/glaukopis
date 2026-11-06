@@ -282,3 +282,7 @@ There is no view of the Org form inside the application, and signs typed in the 
 ## 9. Decided here without asking
 
 Small things the owner may want otherwise: the signs `@ ` and `> ` for a speaker and a direction on a line; `{…}` at a line's end for its marks and `{#…}` for a reference mark; `[words]{what}` for what Org cannot say of words; `@foot` and `@end` inside a note; `#+BREAK:` for page and column breaks; `#+ATTR_GLAUKOPIS:` as the one settings line; the description list for a glossary; the names of the properties in an element's drawer.
+
+## Addendum, 2026-11-06: spaces at the ends of lines, on the clipboard
+
+The owner copied a text from an element's editor and found `\ {}` at its end. That is the Org form of a space at the end of a line, written so by *Text that looks like a sign*: Org and the editors of Org files trim the ends of lines, and the empty braces keep the space from being trimmed, the backslash before it saying that it is text. The text copied ended with a space, and the clipboard carries the Org form of what is copied. On the clipboard the escape is noise: nothing trims there, and what other programs are given must read as words. From now on, the text put on the clipboard writes a space at the end or the start of a line as it is, with no backslash and no braces; the Org files keep the escape, so that they still read back as they were. The HTML put on the clipboard beside the text is as it was.

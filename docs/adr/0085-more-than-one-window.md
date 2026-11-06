@@ -1,0 +1,39 @@
+# 0085 — More than one window
+
+Date: 2026-11-06. Status: proposed on 2026-11-06, from the owner's questions of the same day ("why is it so difficult to open more than one window of Glaukopis? Is it because the windows must synchronize? Why can't both windows just hold the exact same data, no matter what? Libreoffice Writer seems to be able to do it without any problems. Are you assuming that someone will write in more than one window at the same time? That seems unlikely. And why would that matter, anyway?"), with the plan `docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md`; to be built when the owner has read it. Builds on 0002 (a project is one Yjs document), 0006 and 0021 (the sharing exchanges updates), 0063 (one list, one window) and 0064 (the sides). Amends how a second start of Glaukopis is met.
+
+## Context
+
+The owner's questions, answered:
+
+- **It is not about two people typing.** Nothing in Glaukopis assumes that, and with Yjs it would not matter: two copies of a document that exchange their changes end the same whatever was typed where and when; that is what the sharing rests on.
+- **It is about where the data lives.** In LibreOffice the document is one object in the program's memory, and every window is a view of that one object; there is nothing to keep the same. In Glaukopis the core, in Rust, holds the library, the files and the projects on disk; but a project, while it is open, lives in the page of the window as a Yjs document, in the web view's JavaScript, and the page holds besides its own copies of the list of projects, the library's list and collections, the settings. A second window is a second page, with its own copy of each: what is typed in one does not show in the other; a project renamed in one leaves the other's list stale; the settings, written whole by either, are written over by the other. So the one copy that LibreOffice has by its shape has to be made here by telling every window what the others did. That is work, not a difficulty of principle, and it was not done because one window was enough until now.
+- **A second start is refused** because a second process would be a second core with its own library in memory, and two cores would write the one `library.bib` over each other; that is the claim on the data folder. It is right between two programs, and wrong as the answer to "open Glaukopis again".
+- **What there is to build on.** A project's changes already leave the page as updates appended to its log through the shell (`project_append`), and the sharing already takes updates from elsewhere and applies them with an origin of their own, neither saved again nor undone. The core already tells every window, without being asked, that there are notices (`notices::on_told`). The pages reload their lists after their own writes.
+- **What a window costs.** A window is a web view with a page of its own: the interface, the project, the library's list, the fonts; tens of megabytes, a few hundred with a large project. On Linux every window is a process of WebKitGTK.
+
+## Decision
+
+1. **New window.** *New window* in the ⋯ at the head of the list of projects, in the palette, and on Ctrl+Shift+N: a window like the first, with the start screen, beside the window it came from and a little down and to the right of it. *Open in a new window* in a project's menu, in the list and on the start screen: the project open in a new window, as *Open* would open it here. A second start of Glaukopis while it runs opens a new window of the running one and brings it to the front (Tauri's single-instance plugin); the claim stays for what that does not catch, two installations on one folder or a system where the plugin fails, with the dialog as today.
+2. **One data, in every window.**
+   - **A project open in two windows is one document.** Every update appended by one window is passed by the shell to every other window that has the project open, and applied there as the sharing applies what comes from the server: not saved again, not undone there. Typed in both, the result is the same, as between collaborators. Each window's undo is of its own changes. The comments, the kinds, the history, everything in the document goes with it. A project shared with others and open in two windows gets each change twice, once through the shell and once through the server; Yjs takes the second as nothing.
+   - **The lists follow.** The list of projects, its folders, favourites and trash; the library, its collections, files and notes; the settings; the languages, the dictionaries and the own words: a change made in one window shows in the others. The core says what changed, by area, as it says that there are notices; the shell tells every window; each reloads the area. The settings are written key by key and merged in the core, so that no window writes the others' changes over.
+   - **What a window keeps of a project's view**, the cameras, the folds, the top of the text, the tabs, the document mark, is kept by the window that leaves the project last.
+3. **Each window has its own place**: where it is in the program, its sides and their elements, its panes, the window's size and place. What the settings say is the same in every window, the list of projects shown or hidden and its width among them.
+4. **Closing.** A window closes alone, saving what it holds, as the one window does today; the last window closing ends the program. The size and place kept, and the place in the program gone to at start, are of the last window closed: one window comes back at start, as today.
+5. **The harness** drives a second window by its handle, and a script checks the same text in two windows, and a rename seen in both lists.
+
+## Choices made in writing this
+
+1. **Through the shell, not a server or a shared worker**: the shell has every window; two web views share no memory; the updates are bytes already on their way through it.
+2. **The lists reload rather than apply the change**: the pages reload after their own writes already, and a reload is right whatever the change was.
+3. **One window at start**, not every window as it was: plain, and what the owner asked for is to open more, not to come back to more.
+4. **The project's view kept by the last to leave**: two windows on one project have two views, and one must win; the last is the one the writer was in.
+5. **The settings shared**, the list of projects among them: a setting is of the program, not of a window.
+6. **The words**: *New window* / *Nytt vindu*; *Open in a new window* / *Åpne i nytt vindu*. Ctrl+Shift+N is free.
+
+## Consequences
+
+- Memory grows with every window, by a page.
+- The relay is a seam the sharing already has; the lists' reloads are a few events and a handful of listeners; the second start is a plugin and one function.
+- Not built: a side dragged out into a window of its own; the windows as they were at start; a window remembering its project.
