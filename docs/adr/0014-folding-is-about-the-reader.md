@@ -38,3 +38,13 @@ everyone the project is shared with has it as well.
 
 - What is folded does not follow the project to another computer.
 - A copy of a map has nothing folded, since its elements are new ones.
+
+## Addendum, 2026-11-10: a folded element is marked at the end of its name
+
+A folded element stood with a line under its name saying what was folded
+away: its text, how many elements, how many words, and a button to unfold
+all under it. The owner found it unneeded and messy. A folded element now
+has a small mark, **…**, at the end of its name, and nothing under it;
+pressing the mark unfolds the element, with Shift all under it as well, as
+the chevron does. Unfolding all is still in the menu of the element. The
+words of what is folded are no longer counted for it.

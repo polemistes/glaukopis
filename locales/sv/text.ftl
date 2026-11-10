@@ -13,27 +13,6 @@ text-heading-kept = Det som följer efter markören rymmer något som ett namn i
 text-join = Foga till elementet ovanför
 text-open-as-map = Gå in
 
-## Folding away what is under an element, and its text
-
-# What is folded away, in its place: whether the element's own text is (text is
-# "yes" or "no"), how many elements under it, and how many words in all, which
-# may be none.
-text-folded = { $text ->
-    [yes] { $parts ->
-        [0] Dess text ihopfälld
-        [one] Dess text och { $parts } element ihopfällda
-       *[other] Dess text och { $parts } element ihopfällda
-    }
-   *[no] { $parts ->
-        [one] { $parts } element ihopfällt
-       *[other] { $parts } element ihopfällda
-    }
-}{ $words ->
-    [0] {""}
-    [one] , { $words } ord
-   *[other] , { $words } ord
-}
-
 ## Associations, in the margin
 
 text-associations = Associationer
@@ -63,7 +42,6 @@ text-unfold = Fäll ut det här elementet
 text-fold-this = Fäll ihop det här elementet
 text-unfold-all-under = Fäll ut alla underelement
 text-fold-all-sub = Fäll ihop alla underelement
-text-unfold-all = Fäll ut allt
 # The tooltips of the mark that folds an element in the text.
 text-unfold-shift = Fäll ut · med Skift även alla underelement
 text-fold-this-shift = Fäll ihop det här elementet · med Skift fäll ut alla underelement

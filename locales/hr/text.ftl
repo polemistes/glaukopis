@@ -6,30 +6,6 @@ text-grip = Premjesti ili izmijeni ovaj element
 text-split = Razdvoji ovdje
 text-join = Spoji s elementom iznad
 
-## Folding away what is under an element, and its text
-
-# What is folded away, in its place: whether the element's own text is (text is
-# "yes" or "no"), how many elements under it, and how many words in all, which
-# may be none.
-text-folded = { $text ->
-    [yes] { $parts ->
-        [0] Njegov tekst sklopljen
-        [one] Njegov tekst i { $parts } element sklopljeni
-        [few] Njegov tekst i { $parts } elementa sklopljeni
-       *[other] Njegov tekst i { $parts } elemenata sklopljeni
-    }
-   *[no] { $parts ->
-        [one] { $parts } element sklopljen
-        [few] { $parts } elementa sklopljena
-       *[other] { $parts } elemenata sklopljeno
-    }
-}{ $words ->
-    [0] {""}
-    [one] , { $words } riječ
-    [few] , { $words } riječi
-   *[other] , { $words } riječi
-}
-
 ## Associations, in the margin
 
 text-associations = Veze

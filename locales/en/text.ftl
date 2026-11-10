@@ -13,27 +13,6 @@ text-heading-kept = What follows the cursor holds what a name cannot, such as a 
 text-join = Join to the element above
 text-open-as-map = Enter
 
-## Folding away what is under an element, and its text
-
-# What is folded away, in its place: whether the element's own text is (text is
-# "yes" or "no"), how many elements under it, and how many words in all, which
-# may be none.
-text-folded = { $text ->
-    [yes] { $parts ->
-        [0] Its text folded away
-        [one] Its text and { $parts } element folded away
-       *[other] Its text and { $parts } elements folded away
-    }
-   *[no] { $parts ->
-        [one] { $parts } element folded away
-       *[other] { $parts } elements folded away
-    }
-}{ $words ->
-    [0] {""}
-    [one] , { $words } word
-   *[other] , { $words } words
-}
-
 ## Associations, in the margin
 
 text-associations = Associations
@@ -63,7 +42,6 @@ text-unfold = Unfold this element
 text-fold-this = Fold this element
 text-unfold-all-under = Unfold all sub-elements
 text-fold-all-sub = Fold all sub-elements
-text-unfold-all = Unfold all
 # The tooltips of the mark that folds an element in the text.
 text-unfold-shift = Unfold · with Shift, all sub-elements as well
 text-fold-this-shift = Fold this element · with Shift, unfold all sub-elements

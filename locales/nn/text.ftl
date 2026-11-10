@@ -13,27 +13,6 @@ text-heading-kept = Det som står etter markøren, har noko eit namn ikkje kan r
 text-join = Slå saman med elementet over
 text-open-as-map = Gå inn
 
-## Folding away what is under an element, and its text
-
-# What is folded away, in its place: whether the element's own text is (text is
-# "yes" or "no"), how many elements under it, and how many words in all, which
-# may be none.
-text-folded = { $text ->
-    [yes] { $parts ->
-        [0] Teksten er bretta saman
-        [one] Teksten og { $parts } element er bretta saman
-       *[other] Teksten og { $parts } element er bretta saman
-    }
-   *[no] { $parts ->
-        [one] { $parts } element er bretta saman
-       *[other] { $parts } element er bretta saman
-    }
-}{ $words ->
-    [0] {""}
-    [one] , { $words } ord
-   *[other] , { $words } ord
-}
-
 ## Associations, in the margin
 
 text-associations = Assosiasjonar
@@ -63,7 +42,6 @@ text-unfold = Brett ut dette elementet
 text-fold-this = Brett saman dette elementet
 text-unfold-all-under = Brett ut alle underelementa
 text-fold-all-sub = Brett saman alle underelementa
-text-unfold-all = Brett ut alt
 # The tooltips of the mark that folds an element in the text.
 text-unfold-shift = Brett ut · med Shift: alle underelementa òg
 text-fold-this-shift = Brett saman dette elementet · med Shift: brett ut alle underelementa

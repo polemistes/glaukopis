@@ -28,6 +28,7 @@
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import CircleOff from '@lucide/svelte/icons/circle-off';
+  import Ellipsis from '@lucide/svelte/icons/ellipsis';
   import FileInput from '@lucide/svelte/icons/file-input';
   import GripVertical from '@lucide/svelte/icons/grip-vertical';
   import Maximize2 from '@lucide/svelte/icons/maximize-2';
@@ -90,8 +91,8 @@
     others?: Other[];
     /** Whether it has text or something under it, which can be folded away. */
     foldable?: boolean;
-    /** What is folded away of it, when it is folded: the elements under it, its own text, the words of all of it. */
-    hidden?: { parts: number; text: boolean; words: number } | null;
+    /** Whether it is folded: its text and all under it hidden, its name shown with a mark that unfolds it. */
+    folded?: boolean;
     /** Whether something under it is folded. */
     openable?: boolean;
     /** Folds it away, or opens it; with `all`, opens all that is folded under it as well. */
@@ -128,7 +129,7 @@
     excluded,
     others = [],
     foldable = false,
-    hidden = null,
+    folded = false,
     openable = false,
     onfold,
     drop,
@@ -243,15 +244,8 @@
     level === 0 || depthShown === 'indent' ? null : depthShown === 'numbers' ? number : level,
   );
 
-  /** What is folded away, in words. */
-  const away = $derived.by(() => {
-    if (!hidden) return '';
-    return t('text-folded', {
-      text: hidden.text ? 'yes' : 'no',
-      parts: hidden.parts,
-      words: hidden.words,
-    });
-  });
+  /** What the chevron and the mark of a folded element say they do when pressed. */
+  const unfoldTip = $derived(openable ? t('text-unfold-shift') : t('text-unfold'));
 
   function press(event: MouseEvent, part: Part) {
     if (linkable) {
@@ -278,7 +272,7 @@
   function pressGap(event: MouseEvent) {
     if (event.button !== 0) return;
     const target = event.target as HTMLElement;
-    if (target.closest('.heading, .body, .away, .include, button, a, input')) return;
+    if (target.closest('.heading, .body, .include, button, a, input')) return;
     if (linkable) {
       event.preventDefault();
       onpick(node.id);
@@ -314,10 +308,10 @@
   class:drop-before={drop === 'before'}
   class:drop-after={drop === 'after'}
   class:drop-inside={drop === 'inside'}
-  class:folded={!!hidden}
+  class:folded
   data-section={node.id}
   class:commented={commented.length > 0}
-  data-folded={hidden ? '' : undefined}
+  data-folded={folded ? '' : undefined}
   data-review={changedAsElement?.kind}
   data-change={changedAsElement?.change}
   class:review-current={changedAsElement?.current}
@@ -340,24 +334,18 @@
       <button
         type="button"
         class="fold"
-        aria-expanded={!hidden}
-        aria-label={hidden ? t('text-unfold') : t('text-fold-this')}
+        aria-expanded={!folded}
+        aria-label={folded ? t('text-unfold') : t('text-fold-this')}
         tabindex="-1"
         use:tooltip={{
-          text: hidden
-            ? openable
-              ? t('text-unfold-shift')
-              : t('text-unfold')
-            : openable
-              ? t('text-fold-this-shift')
-              : t('text-fold-this'),
+          text: folded ? unfoldTip : openable ? t('text-fold-this-shift') : t('text-fold-this'),
           shortcut: keysFor('tree-fold'),
           side: 'top',
         }}
         onmousedown={(e) => e.preventDefault()}
         onclick={(e) => onfold?.(node.id, e.shiftKey)}
       >
-        {#if hidden}<ChevronRight size={15} />{:else}<ChevronDown size={15} />{/if}
+        {#if folded}<ChevronRight size={15} />{:else}<ChevronDown size={15} />{/if}
       </button>
     {/if}
     <button
@@ -398,7 +386,7 @@
   </div>
 
   <div class="content">
-    {#if commented.length && !hidden}
+    {#if commented.length && !folded}
       <button
         type="button"
         class="comment-marker"
@@ -466,10 +454,27 @@
             {level === 0 ? t('text-title') : t('text-name')}
           </div>
         {/if}
+        {#if folded}
+          <!-- What is folded away is marked at the end of the name, and opened from there. -->
+          <button
+            type="button"
+            class="more"
+            aria-label={t('text-unfold')}
+            tabindex="-1"
+            use:tooltip={{ text: unfoldTip, shortcut: keysFor('tree-fold'), side: 'top' }}
+            onmousedown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onclick={(e) => onfold?.(node.id, e.shiftKey)}
+          >
+            <Ellipsis size={14} />
+          </button>
+        {/if}
       </div>
     </div>
 
-    {#if included && !hidden}
+    {#if included && !folded}
       <button type="button" class="include" onclick={() => onenter(included.id)}>
         <FileInput size={14} />
         <span>
@@ -482,7 +487,7 @@
     {/if}
 
     <!-- A clone has no text of its own: its original's is read where it is written. -->
-    {#if !hidden && !node.include}
+    {#if !folded && !node.include}
       <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
       <div class="body" class:closed data-part="body" onmousedown={(e) => press(e, 'body')}>
         {#if active && body}
@@ -523,18 +528,6 @@
           </div>
         {:else}
           <div class="prose body static blank">&nbsp;</div>
-        {/if}
-      </div>
-    {:else}
-      <div class="away">
-        <button type="button" class="open" onclick={(e) => onfold?.(node.id, e.shiftKey)}>
-          <ChevronRight size={13} />
-          <span>{away}</span>
-        </button>
-        {#if openable}
-          <button type="button" class="all" onclick={() => onfold?.(node.id, true)}>
-            {t('text-unfold-all')}
-          </button>
         {/if}
       </div>
     {/if}
@@ -689,39 +682,6 @@
     background: var(--paper-hover);
     color: var(--ink);
   }
-  .away {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    margin: 0.35em 0 0.2em;
-    font-family: var(--font-ui);
-    font-size: var(--text-sm);
-  }
-  .away button {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    height: 24px;
-    padding: 0 9px 0 6px;
-    border: 1px solid transparent;
-    border-radius: 12px;
-    background: transparent;
-    color: var(--ink-3);
-    font: inherit;
-    cursor: pointer;
-  }
-  .away .open {
-    border-color: var(--line);
-    background: var(--paper-raised, var(--paper));
-  }
-  .away .all {
-    padding: 0 8px;
-    color: var(--accent-strong);
-  }
-  .away button:hover {
-    background: var(--paper-hover);
-    color: var(--ink);
-  }
   .grip {
     display: inline-flex;
     align-items: center;
@@ -795,6 +755,29 @@
   .named > :global(:last-child) {
     flex: 1 1 auto;
     min-width: 0;
+  }
+  /* Folded, the name is as wide as its words, and the mark stands after them. */
+  .folded .named > :global(:not(.number, .more)) {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+  .named > .more {
+    flex: none;
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 16px;
+    padding: 0 5px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--paper-raised, var(--paper));
+    color: var(--ink-3);
+    cursor: pointer;
+  }
+  .named > .more:hover {
+    background: var(--paper-hover);
+    color: var(--ink);
   }
   .number {
     flex: none;

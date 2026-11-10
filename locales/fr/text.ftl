@@ -13,30 +13,6 @@ text-heading-kept = Ce qui suit le curseur contient ce qu’un nom ne peut pas c
 text-join = Joindre à l’élément au-dessus
 text-open-as-map = Entrer
 
-## Folding away what is under an element, and its text
-
-# What is folded away, in its place: whether the element's own text is (text is
-# "yes" or "no"), how many elements under it, and how many words in all, which
-# may be none.
-text-folded = { $text ->
-    [yes] { $parts ->
-        [0] Son texte replié
-        [one] Son texte et { $parts } élément repliés
-        [many] Son texte et { $parts } éléments repliés
-       *[other] Son texte et { $parts } éléments repliés
-    }
-   *[no] { $parts ->
-        [one] { $parts } élément replié
-        [many] { $parts } éléments repliés
-       *[other] { $parts } éléments repliés
-    }
-}{ $words ->
-    [0] {""}
-    [one] , { $words } mot
-    [many] , { $words } mots
-   *[other] , { $words } mots
-}
-
 ## Associations, in the margin
 
 text-associations = Associations
@@ -67,7 +43,6 @@ text-unfold = Déplier cet élément
 text-fold-this = Replier cet élément
 text-unfold-all-under = Déplier tous les sous-éléments
 text-fold-all-sub = Replier tous les sous-éléments
-text-unfold-all = Tout déplier
 # The tooltips of the mark that folds an element in the text.
 text-unfold-shift = Déplier · avec Maj, tous les sous-éléments aussi
 text-fold-this-shift = Replier cet élément · avec Maj, déplier tous les sous-éléments

@@ -13,21 +13,6 @@ text-heading-kept = カーソルの後には、引用や注など名前に入れ
 text-join = 上の要素とつなげる
 text-open-as-map = 中に入る
 
-## 要素の下にあるものと、そのテキストを折りたたむ
-
-# 折りたたまれたものの代わりに出る：要素自体のテキストが折りたたまれているか
-# （text は "yes" か "no"）、その下の要素の数、そして全体の語数（0のこともある）。
-text-folded = { $text ->
-    [yes] { $parts ->
-        [0] 折りたたまれたテキスト
-       *[other] 折りたたまれたテキストと{ $parts }個の要素
-    }
-   *[no] 折りたたまれた{ $parts }個の要素
-}{ $words ->
-    [0] {""}
-   *[other] 、{ $words }語
-}
-
 ## 余白の関連付け
 
 text-associations = 関連付け
@@ -54,7 +39,6 @@ text-unfold = この要素を展開
 text-fold-this = この要素を折りたたむ
 text-unfold-all-under = 下位要素をすべて展開
 text-fold-all-sub = 下位要素をすべて折りたたむ
-text-unfold-all = すべて展開
 # テキストの中で要素を折りたたむ印のツールチップ。
 text-unfold-shift = 展開 · Shiftを押しながらで、下位要素もすべて
 text-fold-this-shift = この要素を折りたたむ · Shiftを押しながらで、下位要素をすべて展開

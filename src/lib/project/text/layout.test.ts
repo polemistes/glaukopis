@@ -82,14 +82,14 @@ describe('the rows of the text', () => {
     expect(rows.every((r) => !r.away && !r.hidden && r.foldable)).toBe(true);
   });
 
-  it('a folded element hides all under it and says how many words it holds in all', () => {
+  it('a folded element hides all under it', () => {
     const rows = textRows(
       tree,
       factsOf({ 'one-a-i': { words: 3 }, 'one-b': { excluded: true } }),
       (id) => id === 'one' || id === 'one-a',
     );
     const one = rows.find((r) => r.id === 'one')!;
-    expect(one.hidden).toEqual({ ids: ['one-a', 'one-a-i', 'one-b'], text: true, words: 33 });
+    expect(one.hidden).toEqual({ ids: ['one-a', 'one-a-i', 'one-b'] });
     expect(rows.filter((r) => r.away).map((r) => r.id)).toEqual(['one-a', 'one-a-i', 'one-b']);
     // What is folded under what is folded hides nothing of its own while it is away.
     expect(rows.find((r) => r.id === 'one-a')!.hidden).toBe(null);
@@ -108,14 +108,14 @@ describe('the rows of the text', () => {
     expect(three.foldable).toBe(false);
     expect(three.hidden).toBe(null);
     const two = rows.find((r) => r.id === 'two')!;
-    expect(two.hidden).toEqual({ ids: ['two-a'], text: true, words: 20 });
+    expect(two.hidden).toEqual({ ids: ['two-a'] });
     const alone = textRows(
       tree,
       factsOf({ 'two-a': { empty: true, include: 'one' } }),
       (id) => id === 'two-a',
     ).find((r) => r.id === 'two-a')!;
     expect(alone.foldable).toBe(true);
-    expect(alone.hidden).toEqual({ ids: [], text: true, words: 10 });
+    expect(alone.hidden).toEqual({ ids: [] });
   });
 });
 

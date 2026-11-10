@@ -6,27 +6,6 @@ text-grip = Dit element verplaatsen of wijzigen
 text-split = Hier splitsen
 text-join = Aan het element erboven vastmaken
 
-## Folding away what is under an element, and its text
-
-# What is folded away, in its place: whether the element's own text is (text is
-# "yes" or "no"), how many elements under it, and how many words in all, which
-# may be none.
-text-folded = { $text ->
-    [yes] { $parts ->
-        [0] De tekst ingevouwen
-        [one] De tekst en { $parts } element ingevouwen
-       *[other] De tekst en { $parts } elementen ingevouwen
-    }
-   *[no] { $parts ->
-        [one] { $parts } element ingevouwen
-       *[other] { $parts } elementen ingevouwen
-    }
-}{ $words ->
-    [0] {""}
-    [one] , { $words } woord
-   *[other] , { $words } woorden
-}
-
 ## Associations, in the margin
 
 text-associations = Verbindingen

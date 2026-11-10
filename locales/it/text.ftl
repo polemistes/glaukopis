@@ -13,30 +13,6 @@ text-heading-kept = Ciò che segue il cursore contiene qualcosa che un nome non 
 text-join = Unisci all'elemento sopra
 text-open-as-map = Entra
 
-## Folding away what is under an element, and its text
-
-# What is folded away, in its place: whether the element's own text is (text is
-# "yes" or "no"), how many elements under it, and how many words in all, which
-# may be none.
-text-folded = { $text ->
-    [yes] { $parts ->
-        [0] Il suo testo ripiegato
-        [one] Il suo testo e { $parts } elemento ripiegati
-        [many] Il suo testo e { $parts } elementi ripiegati
-       *[other] Il suo testo e { $parts } elementi ripiegati
-    }
-   *[no] { $parts ->
-        [one] { $parts } elemento ripiegato
-        [many] { $parts } elementi ripiegati
-       *[other] { $parts } elementi ripiegati
-    }
-}{ $words ->
-    [0] {""}
-    [one] , { $words } parola
-    [many] , { $words } parole
-   *[other] , { $words } parole
-}
-
 ## Associations, in the margin
 
 text-associations = Associazioni
@@ -67,7 +43,6 @@ text-unfold = Dispiega questo elemento
 text-fold-this = Ripiega questo elemento
 text-unfold-all-under = Dispiega tutti i sottoelementi
 text-fold-all-sub = Ripiega tutti i sottoelementi
-text-unfold-all = Dispiega tutto
 # The tooltips of the mark that folds an element in the text.
 text-unfold-shift = Dispiega · con Maiusc, anche tutti i sottoelementi
 text-fold-this-shift = Ripiega questo elemento · con Maiusc, dispiega tutti i sottoelementi

@@ -79,26 +79,6 @@ describe('the words of a diagram', () => {
 });
 
 describe('the words of a text', () => {
-  const folded = (text: boolean, parts: number, words: number) =>
-    t('text-folded', { text: text ? 'yes' : 'no', parts, words });
-
-  it('say what is folded away as they did before they had names', () => {
-    expect(folded(true, 1, 10)).toBe('Its text and 1 element folded away, 10 words');
-    expect(folded(true, 3, 18)).toBe('Its text and 3 elements folded away, 18 words');
-    expect(folded(true, 0, 4)).toBe('Its text folded away, 4 words');
-    expect(folded(true, 0, 1)).toBe('Its text folded away, 1 word');
-    expect(folded(true, 0, 0)).toBe('Its text folded away');
-    expect(folded(false, 1, 0)).toBe('1 element folded away');
-    expect(folded(false, 2, 1500)).toBe('2 elements folded away, 1,500 words');
-  });
-
-  it('say what is folded away in Norwegian', () => {
-    languages.current = 'nb';
-    expect(folded(true, 1, 10)).toBe('Teksten og 1 element er brettet sammen, 10 ord');
-    expect(folded(true, 0, 0)).toBe('Teksten er brettet sammen');
-    expect(folded(false, 3, 1)).toBe('3 elementer er brettet sammen, 1 ord');
-  });
-
   it('count what is under the text', () => {
     expect(t('text-notes', { count: 2 })).toBe('2 notes');
     const keys = pieces((m) => t('text-keys', m), {

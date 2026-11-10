@@ -6,33 +6,6 @@ text-grip = Przenieś lub zmień ten element
 text-split = Podziel tutaj
 text-join = Połącz z elementem powyżej
 
-## Folding away what is under an element, and its text
-
-# What is folded away, in its place: whether the element's own text is (text is
-# "yes" or "no"), how many elements under it, and how many words in all, which
-# may be none.
-text-folded = { $text ->
-    [yes] { $parts ->
-        [0] Jego tekst zwinięty
-        [one] Jego tekst i { $parts } element zwinięte
-        [few] Jego tekst i { $parts } elementy zwinięte
-        [many] Jego tekst i { $parts } elementów zwinięte
-       *[other] Jego tekst i { $parts } elementów zwinięte
-    }
-   *[no] { $parts ->
-        [one] { $parts } element zwinięty
-        [few] { $parts } elementy zwinięte
-        [many] { $parts } elementów zwiniętych
-       *[other] { $parts } elementów zwiniętych
-    }
-}{ $words ->
-    [0] {""}
-    [one] , { $words } słowo
-    [few] , { $words } słowa
-    [many] , { $words } słów
-   *[other] , { $words } słów
-}
-
 ## Associations, in the margin
 
 text-associations = Powiązania

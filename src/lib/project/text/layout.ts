@@ -20,11 +20,8 @@ export interface Row {
   excluded: boolean;
   /** Whether it has text of its own or something under it, which can be folded away. */
   foldable: boolean;
-  /**
-   * What is folded away of it: the elements under it, whether it has text
-   * of its own, and how many words there are in all of it.
-   */
-  hidden: { ids: string[]; text: boolean; words: number } | null;
+  /** What is folded away of it, when it is folded: the elements under it. */
+  hidden: { ids: string[] } | null;
   /** Whether it is folded away itself, under another. */
   away: boolean;
 }
@@ -33,7 +30,7 @@ export interface Row {
  * Every element of the branch, the one in view first, those that are
  * folded away as well (`away`). `folded` says whether an element is
  * folded; one that is folded with something to fold away hides all under
- * it, and counts the words of all it hides.
+ * it.
  */
 export function textRows(
   tree: Tree,
@@ -46,15 +43,14 @@ export function textRows(
     if (!node) return;
     const out_ = excluded || node.excluded;
     const under = tree.children.get(id) ?? [];
-    const text = !node.empty || !!node.include;
-    const foldable = under.length > 0 || text;
+    const foldable = under.length > 0 || !node.empty || !!node.include;
     const hides = !away && foldable && folded(id);
     const row: Row = {
       id,
       level,
       excluded: out_,
       foldable,
-      hidden: hides ? { ids: [], text, words: node.words } : null,
+      hidden: hides ? { ids: [] } : null,
       away,
     };
     out.push(row);
@@ -62,10 +58,7 @@ export function textRows(
     const from = out.length;
     for (const c of under) walk(c, level + 1, out_, away || hides);
     if (row.hidden) {
-      for (const r of out.slice(from)) {
-        row.hidden.ids.push(r.id);
-        row.hidden.words += facts(r.id)?.words ?? 0;
-      }
+      for (const r of out.slice(from)) row.hidden.ids.push(r.id);
     }
   };
   walk(tree.root, 0, false, false);

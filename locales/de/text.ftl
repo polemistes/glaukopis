@@ -13,27 +13,6 @@ text-heading-kept = Was auf den Cursor folgt, enthält, was ein Name nicht entha
 text-join = Mit dem Element darüber zusammenfügen
 text-open-as-map = Hineingehen
 
-## Folding away what is under an element, and its text
-
-# What is folded away, in its place: whether the element's own text is (text is
-# "yes" or "no"), how many elements under it, and how many words in all, which
-# may be none.
-text-folded = { $text ->
-    [yes] { $parts ->
-        [0] Sein Text eingeklappt
-        [one] Sein Text und { $parts } Element eingeklappt
-       *[other] Sein Text und { $parts } Elemente eingeklappt
-    }
-   *[no] { $parts ->
-        [one] { $parts } Element eingeklappt
-       *[other] { $parts } Elemente eingeklappt
-    }
-}{ $words ->
-    [0] {""}
-    [one] , { $words } Wort
-   *[other] , { $words } Wörter
-}
-
 ## Associations, in the margin
 
 text-associations = Verbindungen
@@ -63,7 +42,6 @@ text-unfold = Dieses Element ausklappen
 text-fold-this = Dieses Element einklappen
 text-unfold-all-under = Alle Unterelemente ausklappen
 text-fold-all-sub = Alle Unterelemente einklappen
-text-unfold-all = Alles ausklappen
 # The tooltips of the mark that folds an element in the text.
 text-unfold-shift = Ausklappen · mit Umschalt auch alle Unterelemente
 text-fold-this-shift = Dieses Element einklappen · mit Umschalt alle Unterelemente ausklappen

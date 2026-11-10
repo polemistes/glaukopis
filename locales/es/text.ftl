@@ -6,30 +6,6 @@ text-grip = Mover o cambiar este elemento
 text-split = Dividir aquí
 text-join = Unir al elemento de arriba
 
-## Folding away what is under an element, and its text
-
-# What is folded away, in its place: whether the element's own text is (text is
-# "yes" or "no"), how many elements under it, and how many words in all, which
-# may be none.
-text-folded = { $text ->
-    [yes] { $parts ->
-        [0] Su texto plegado
-        [one] Su texto y { $parts } elemento plegados
-        [many] Su texto y { $parts } de elementos plegados
-       *[other] Su texto y { $parts } elementos plegados
-    }
-   *[no] { $parts ->
-        [one] { $parts } elemento plegado
-        [many] { $parts } de elementos plegados
-       *[other] { $parts } elementos plegados
-    }
-}{ $words ->
-    [0] {""}
-    [one] , { $words } palabra
-    [many] , { $words } de palabras
-   *[other] , { $words } palabras
-}
-
 ## Associations, in the margin
 
 text-associations = Asociaciones

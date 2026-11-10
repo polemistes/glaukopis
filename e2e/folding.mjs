@@ -1,7 +1,8 @@
 // An element is folded away in the text, its own text and what is under
 // it; it is as it was left when the project is opened again; and all that
-// is folded under an element is opened at once. What is folded away is no
-// part of how far the text is scrolled.
+// is folded under an element is opened at once. A folded element is marked
+// by a small … at the end of its name, with nothing under it, and the mark
+// opens it. What is folded away is no part of how far the text is scrolled.
 
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -85,10 +86,10 @@ try {
     app.exec(
       `return Array.from(document.querySelectorAll('.text-view .section')).map((s) => (s.querySelector('.heading .prose.title')?.textContent ?? '').trim())`,
     );
-  /** The elements that are folded, with what they say is folded away. */
+  /** The elements that are folded, by their names, each marked so at the end of its name. */
   const folded = () =>
     app.exec(
-      `return Array.from(document.querySelectorAll('.text-view .section[data-folded]')).map((s) => (s.querySelector('.heading .prose.title')?.textContent ?? '').trim() + ': ' + s.querySelector('.away .open').textContent.replace(/\\s+/g, ' ').trim())`,
+      `return Array.from(document.querySelectorAll('.text-view .section[data-folded]')).map((s) => (s.querySelector('.heading .prose.title')?.textContent ?? '').trim() + (s.querySelector('.heading .named > .more') ? ' …' : ''))`,
     );
   const section = (name) =>
     app.exec(
@@ -151,7 +152,7 @@ try {
   // ---- an element is folded ----
   await fold('One A');
   check('what is under an element is folded away', JSON.stringify(await shown()) === JSON.stringify(ALL.filter((n) => n !== 'One A i')), JSON.stringify(await shown()));
-  check('and it says what is folded away', JSON.stringify(await folded()) === JSON.stringify(['One A: Its text and 1 element folded away, 10 words']), JSON.stringify(await folded()));
+  check('and its name is marked as folded', JSON.stringify(await folded()) === JSON.stringify(['One A …']), JSON.stringify(await folded()));
   check('its own text is folded away as well, and its name is shown', await app.exec(`const s = document.querySelector('.text-view .section[data-named="One A"]'); return !s.querySelector('.body') && !s.textContent.includes('Under the first') && s.querySelector('.heading').textContent.trim() === 'One A'`));
   check('the words of the document are counted as before', (await words()) === counted, `${await words()} / ${counted}`);
   await app.screenshot('folding-1-folded');
@@ -159,7 +160,7 @@ try {
   // ---- one over it is folded, and opened: the one under it is as it was ----
   await fold('One');
   check('folded over it, all under it is away', JSON.stringify(await shown()) === JSON.stringify(['The book', 'One', 'Two', 'Two A', 'Three']), JSON.stringify(await shown()));
-  check('counted with all that is under it', JSON.stringify(await folded()) === JSON.stringify(['One: Its text and 3 elements folded away, 18 words']), JSON.stringify(await folded()));
+  check('folded over it, only it is marked', JSON.stringify(await folded()) === JSON.stringify(['One …']), JSON.stringify(await folded()));
   await fold('One');
   check('opened again, what was folded under it is folded still', JSON.stringify(await shown()) === JSON.stringify(ALL.filter((n) => n !== 'One A i')) && (await folded()).length === 1, JSON.stringify(await shown()));
 
@@ -171,7 +172,7 @@ try {
   await sleep(300);
   check('Tab in its name folds away the element the cursor is in', !(await shown()).includes('Two A') && (await folded()).length === 2, JSON.stringify(await shown()));
   await fold('One');
-  check('three are folded, of which one is hidden', JSON.stringify(await folded()) === JSON.stringify(['One: Its text and 3 elements folded away, 18 words', 'Two: Its text and 1 element folded away, 6 words']), JSON.stringify(await folded()));
+  check('three are folded, of which one is hidden', JSON.stringify(await folded()) === JSON.stringify(['One …', 'Two …']), JSON.stringify(await folded()));
   await app.screenshot('folding-2-several');
 
   // ---- it is as it was left when the project is opened again ----
@@ -196,14 +197,23 @@ try {
   // ---- all that is folded under an element is opened at once ----
   await fold('One', true);
   check('with Shift, all that is folded under it is opened', JSON.stringify(await shown()) === JSON.stringify(ALL.filter((n) => n !== 'Two A')), JSON.stringify(await shown()));
-  check('and what is folded beside it stays folded', JSON.stringify(await folded()) === JSON.stringify(['Two: Its text and 1 element folded away, 6 words']), JSON.stringify(await folded()));
+  check('and what is folded beside it stays folded', JSON.stringify(await folded()) === JSON.stringify(['Two …']), JSON.stringify(await folded()));
 
-  // The same from the line that says what is folded away.
+  // The same from the mark at the end of its name: pressed, it opens the element; with Shift, all under it.
   await fold('One A');
   await fold('One');
-  await app.clickText('.text-view .section[data-named="One"] .away .all', 'Unfold all');
+  await app.screenshot('folding-2-marked');
+  check('nothing stands under the name of a folded element', await app.exec(`const s = document.querySelector('.text-view .section[data-named="One"]'); return s.querySelector('.content').children.length === 1`));
+  check('the mark stands at the end of the name, on its line', await app.exec(`const s = document.querySelector('.text-view .section[data-named="One"]'); const name = s.querySelector('.heading .prose.title').getBoundingClientRect(); const more = s.querySelector('.heading .named > .more').getBoundingClientRect(); return more.left >= name.right - 1 && more.left - name.right < 20 && more.top < name.bottom && more.bottom > name.top`));
+  await app.click('.text-view .section[data-named="One"] .heading .named > .more');
   await sleep(300);
-  check('“Unfold all” opens all under it', JSON.stringify(await shown()) === JSON.stringify(ALL.filter((n) => n !== 'Two A')), JSON.stringify(await shown()));
+  check('the mark unfolds it, and what is under it is as it was', JSON.stringify(await folded()) === JSON.stringify(['One A …', 'Two …']) && (await app.exists('.text-view .section[data-named="One"] .body')), JSON.stringify(await folded()));
+  await fold('One');
+  await app.exec(
+    `document.querySelector('.text-view .section[data-named="One"] .heading .named > .more').dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true }))`,
+  );
+  await sleep(300);
+  check('with Shift, the mark opens all under it', JSON.stringify(await shown()) === JSON.stringify(ALL.filter((n) => n !== 'Two A')), JSON.stringify(await shown()));
 
   // And from the menu of the element, for the whole of the text.
   await fold('One A');
@@ -231,7 +241,7 @@ try {
   check('all under the title folded, the parts are shown by their names and nothing deeper', JSON.stringify(await shown()) === JSON.stringify(['The book', 'One', 'Two', 'Three']) && (await folded()).length === 3, JSON.stringify(await folded()));
   check('the text of the title itself is shown', await app.exec(`return document.querySelector('.text-view .section .body').textContent.includes('Before the parts')`));
   const last = await folded();
-  check('an element with text and nothing under it says so', last[2] === 'Three: Its text folded away, 4 words', last[2]);
+  check('an element with text and nothing under it says so', last[2] === 'Three …', last[2]);
   await app.screenshot('folding-3-outline');
 
   // ---- the diagram is as it was ----
@@ -250,7 +260,7 @@ try {
   await app.press('End');
   await app.press('Enter');
   await sleep(400);
-  check('Enter in the name of a folded element opens it, and what is under it is as it was', JSON.stringify(await folded()) === JSON.stringify(['One: Its text and 3 elements folded away, 18 words', 'Two A: Its text folded away, 3 words', 'Three: Its text folded away, 4 words']), JSON.stringify(await folded()));
+  check('Enter in the name of a folded element opens it, and what is under it is as it was', JSON.stringify(await folded()) === JSON.stringify(['One …', 'Two A …', 'Three …']), JSON.stringify(await folded()));
 
   // ---- what is written under a folded element is shown ----
   await app.keys(['Control', 'End']);

@@ -12,23 +12,6 @@ text-heading-kept = Det som står etter markøren, har noe et navn ikke kan romm
 text-join = Slå sammen med elementet over
 text-open-as-map = Gå inn
 
-## Å brette sammen det som står under et element, og teksten til elementet
-
-text-folded = { $text ->
-    [yes] { $parts ->
-        [0] Teksten er brettet sammen
-        [one] Teksten og { $parts } element er brettet sammen
-       *[other] Teksten og { $parts } elementer er brettet sammen
-    }
-   *[no] { $parts ->
-        [one] { $parts } element er brettet sammen
-       *[other] { $parts } elementer er brettet sammen
-    }
-}{ $words ->
-    [0] {""}
-   *[other] , { $words } ord
-}
-
 ## Assosiasjoner, i margen
 
 text-associations = Assosiasjoner
@@ -57,7 +40,6 @@ text-unfold = Brett ut dette elementet
 text-fold-this = Brett sammen dette elementet
 text-unfold-all-under = Brett ut alle underelementer
 text-fold-all-sub = Brett sammen alle underelementer
-text-unfold-all = Brett ut alt
 # The tooltips of the mark that folds an element in the text.
 text-unfold-shift = Brett ut · med Shift: alle underelementer også
 text-fold-this-shift = Brett sammen dette elementet · med Shift: brett ut alle underelementer

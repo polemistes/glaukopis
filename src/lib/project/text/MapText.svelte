@@ -1508,9 +1508,7 @@
               linkable={!!linkFrom && linkFrom !== row.id}
               others={othersAt(row)}
               foldable={row.foldable}
-              hidden={row.hidden
-                ? { parts: row.hidden.ids.length, text: row.hidden.text, words: row.hidden.words }
-                : null}
+              folded={!!row.hidden}
               openable={row.foldable && folding.anyFoldedUnder(tree, row.id)}
               onfold={fold}
               onactivate={activate}

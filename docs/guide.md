@@ -404,9 +404,8 @@ text.
 A long text is easier to work in when what you are not working on is out of
 the way. Every element that has text, or other elements under it, has a
 small arrow beside its name. Press it, and the element is folded away: its
-name stays, and its own text and all that is under it are hidden. A line
-under the name says how much that is. Press the arrow or the line to open
-it again. **Tab**, with the cursor in the element's name, does the same,
+name stays, with a small **…** after it, and its own text and all that is
+under it are hidden. Press the arrow or the **…** to open it again. **Tab**, with the cursor in the element's name, does the same,
 and **Shift+Tab** there unfolds all that is folded or, where nothing is,
 folds everything at the first level.
 
@@ -415,8 +414,7 @@ folded still when the element over it is folded and opened again, so the
 text stays as you arranged it. To open an element with everything under
 it at once, however deep:
 
-- **Unfold all**, in the line that says what is folded away; or
-- press the arrow with **Shift** held down; or
+- press the arrow or the **…** with **Shift** held down; or
 - **Unfold all sub-elements**, in the menu of the element. From the title
   of the document, that opens the whole text.
 
