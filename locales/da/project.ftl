@@ -315,3 +315,9 @@ project-library-no-images-hint = Tilføj billeder fra filer, eller slip dem på 
 
 # The tabs opened (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
 project-beside-tabs = Projektets faner
+
+# The element marked as the document (docs/plans/the-document-marked-in-the-tree.md).
+# In the menu of an element; checked on the element that is the document, where choosing it takes the mark off.
+project-make-document = Gør dette til dokumentet
+# The sign of the element marked as the document, in the path, the list and the head of the typesetting pane.
+project-the-document = Dokumentet

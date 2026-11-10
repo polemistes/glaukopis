@@ -76,3 +76,9 @@ core-export-output-unknown = Skabelonen har ingen fil »{ $id }«.
 ## Stage 5 of the settings in plain words: LaTeX's hyphenation.
 
 core-export-latex-no-hyphenation = LaTeX har ingen orddelingsmønstre for { $language }: ordene deles som engelske, indtil sprogets pakke i TeX Live er installeret (på Arch texlive-langeuropean for de fleste europæiske sprog).
+
+## The data folder, more than one window, favourites: the typesetting in a child of its own.
+
+core-export-typeset-time = Typst brugte længere tid på at sætte dokumentet, end det må, og blev standset.
+core-export-typeset-memory = Typst brugte mere hukommelse på at sætte dokumentet, end det må, og blev standset.
+core-export-typeset-ended = Typst sluttede, før dokumentet var sat: { $message }
