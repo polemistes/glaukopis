@@ -387,8 +387,11 @@ try {
 
   // --- The preview rests when nothing changes ---
   await sleep(3000);
-  const watch = (ms) =>
-    app.execAsync(
+  // The pages drawn again are watched in the page, and gathered when the time
+  // is up: the driver does one thing at a time, so a script that waited in the
+  // page would hold back the keys that are to change the text.
+  const watch = async (ms) => {
+    await app.exec(
       `const drawn = [];
        const pages = document.querySelector('.preview .pages');
        const observer = new MutationObserver((records) => {
@@ -400,22 +403,25 @@ try {
          }
        });
        observer.observe(pages, { subtree: true, childList: true, attributes: true, attributeFilter: ['src'] });
-       await new Promise((r) => setTimeout(r, arguments[0]));
-       observer.disconnect();
-       return drawn;`,
-      ms,
+       window.__drawnAgain = { drawn, observer };`,
     );
-  let drawn = await watch(5000);
+    const began = Date.now();
+    return async () => {
+      await sleep(Math.max(0, ms - (Date.now() - began)));
+      return app.exec(`const w = window.__drawnAgain; w.observer.disconnect(); return w.drawn;`);
+    };
+  };
+  let drawn = await (await watch(5000))();
   check('nothing is drawn again while nothing changes', drawn.length === 0, JSON.stringify(drawn));
 
   // What changes nothing in the document: folding a branch in the diagram.
   await app.keys(['Control', 'd']);
   await app.waitFor('.diagram .node');
   await sleep(1500);
-  const folding = watch(4000);
+  const folding = await watch(4000);
   await sleep(300);
   await app.exec(`document.querySelector('.diagram .node .fold')?.click()`);
-  drawn = await folding;
+  drawn = await folding();
   check(
     'nor when the map changes and the document does not',
     drawn.length === 0,
@@ -457,10 +463,10 @@ try {
   );
   await app.waitFor(`.preview .page[data-page="${many}"] img`, 10000);
   await sleep(1500);
-  const writing = watch(4500);
+  const writing = await watch(4500);
   await sleep(300);
   await app.keys(' And so it ends.');
-  drawn = await writing;
+  drawn = await writing();
   check(
     'when the text changes on one page, only that page is drawn again',
     many >= 3 && new Set(drawn).size === 1 && drawn[0] > 1,
