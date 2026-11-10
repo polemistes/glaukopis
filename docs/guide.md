@@ -795,7 +795,8 @@ write. **More…** has every kind, by its group:
 
 Typing `> `, `- ` or `1. ` at the start of a paragraph of text makes it a
 quotation, a point or a numbered point, as Markdown has it; `7. ` begins a
-numbered list at 7.
+numbered list at 7, and the points after it count on from it: so a list
+goes on after paragraphs of text between its points.
 
 **Marks**, in the bar, are a look set by hand on any letters, from one to
 many paragraphs: **Italic** (**Ctrl+I**), **Bold** (**Ctrl+B**), **Small
@@ -1963,6 +1964,10 @@ What becomes of what is in the document:
   in the text as figures, with what is said of them. Those that a Word or OpenDocument file
   holds are called after the document. An image that is to be fetched from
   the network is left out: nothing is fetched.
+- **Lists** become lists. The paragraphs of a point that have no number of
+  their own, as a word processor writes them between the points, stand
+  under the point as text, set in, and the count of the points goes on past
+  them.
 - **Tables** become tables, with their headings, cells that span, and what
   is said of them.
 - **Captions** are found where the document has them: with the figure or

@@ -213,6 +213,19 @@ pub(super) fn join(line: Vec<Inline>) -> Vec<Inline> {
 
 /// Blocks as one line: the paragraphs joined. Figures cannot stand in a
 /// line, and are set aside.
+/// The mark that gives a point of a numbered list its number, where the count is not to begin at one.
+fn number_mark(number: u32) -> Inline {
+    Inline::LineMark {
+        number: Some(number.to_string()),
+        counted: true,
+        hidden: false,
+        shown: false,
+        margin: None,
+        indent: 0,
+        continues: false,
+    }
+}
+
 fn line_of(blocks: Vec<Block>, aside: &mut Vec<Block>) -> Vec<Inline> {
     fn walk(blocks: Vec<Block>, out: &mut Vec<Inline>, aside: &mut Vec<Block>) {
         let apart = |out: &mut Vec<Inline>| {
@@ -831,35 +844,40 @@ impl Reading<'_, '_> {
     /// deeper. A numbered list that does not begin at one gives its first
     /// item the number it begins at, in a mark at the head of its line. What
     /// is no paragraph of text stands after the item it stood in.
+    /// The items of a list, each its point, a paragraph of the list's kind.
+    /// What more an item holds follows its point: its further paragraphs set
+    /// in under it as text, without a number, as a word processor shows
+    /// them; a list within it set in a step further. Where the list has been
+    /// broken so, by paragraphs that are no points or by what is no
+    /// paragraph, the next point of a numbered list says its number, so
+    /// that the count goes on.
     fn list_items(&mut self, items: &[Value], kind: &str, start: u32, out: &mut Vec<Block>) {
-        let mut first = start != 1;
-        for item in items {
+        let mut say = start != 1;
+        for (n, item) in items.iter().enumerate() {
+            let number = start.saturating_add(u32::try_from(n).unwrap_or(u32::MAX));
+            let mut point = false;
             let mut aside = Vec::new();
             for b in self.blocks(list(item)) {
                 match b {
                     Block::Paragraph { name, indent, content, .. } if matches!(name.as_str(), "item" | "numbered") => {
                         out.push(Block::of_kind(&name, content).indented(indent + 1));
                     }
+                    // A further paragraph of the item, or of an item of a list within it.
+                    Block::Paragraph { name, indent, content, .. } if name == "text" && (point || indent > 0) => {
+                        out.push(Block::of_kind("text", content).indented(indent + 1));
+                        say = true;
+                    }
                     Block::Paragraph { name, mut content, .. } if name == "text" => {
-                        if std::mem::take(&mut first) {
-                            content.insert(
-                                0,
-                                Inline::LineMark {
-                                    number: Some(start.to_string()),
-                                    counted: true,
-                                    hidden: false,
-                                    shown: false,
-                                    margin: None,
-                                    indent: 0,
-                                    continues: false,
-                                },
-                            );
+                        if std::mem::take(&mut say) && kind == "numbered" {
+                            content.insert(0, number_mark(number));
                         }
+                        point = true;
                         out.push(Block::of_kind(kind, content));
                     }
                     other => aside.push(other),
                 }
             }
+            say |= !aside.is_empty();
             out.extend(aside);
         }
     }

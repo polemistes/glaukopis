@@ -1,5 +1,6 @@
 /** The behaviour of an editor: keys, rules for what is typed, the placeholder. */
 
+import { givenNumbers } from './given-numbers';
 import {
   baseKeymap,
   chainCommands,
@@ -406,6 +407,8 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
     continuesPlugin(own),
     // The numbers of the lines of a numbered stretch: see `numbers.ts`.
     stretchNumbersPlugin(own, () => hooks.numbers?.() ?? LAYOUT_NUMBERS),
+    // The number given a point of a numbered list by hand: see `given-numbers.ts`.
+    givenNumbers(),
     // The bracket of every run, with its name: see `brackets.ts`.
     runBrackets(
       own,

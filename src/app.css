@@ -555,6 +555,29 @@ body.dragging * {
   content: counter(item) '.';
   font-variant-numeric: tabular-nums;
 }
+/* A point given its number by hand, as `7. ` typed at its start gives it,
+   counts on from it, as the document does (lib/editor/given-numbers.ts). */
+.prose p[data-kind='numbered'][data-given] {
+  counter-set: item var(--given);
+}
+/* Drawn without an editor, the points stand in lists of HTML, for other
+   programs (lib/project/model/html.ts), each with its number written: the
+   lists' own marks are not drawn, so that a point looks as it does where
+   it is written. */
+.prose.static ol,
+.prose.static ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* With the gap between paragraphs where they are written. */
+.prose.static :is(ol, ul, li) + :is(p, ol, ul, li),
+.prose.static p + :is(ol, ul) {
+  margin-top: 0.62em;
+}
+.prose li > p[data-kind='numbered'][data-number]::before {
+  content: attr(data-number) '.';
+}
 .prose a {
   color: var(--accent-strong);
   text-decoration: underline;

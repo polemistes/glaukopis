@@ -80,3 +80,14 @@ of document there are.
 - A file over 50 MB is not read.
 - Where things stand, and the width of a figure where the file gives none,
   are as the format says (ADR 0011).
+
+## Addendum, 2026-11-10: the paragraphs of a list without a number
+
+The owner brought in an ODT file with a numbered list that had paragraphs of text between its points, and every paragraph came in numbered. A word processor keeps such a paragraph with the point before it: LibreOffice writes it as an entry without a number (`text:list-header`), which Pandoc reads as an item of its own; a point of several paragraphs Pandoc reads as one item, of which the import made every paragraph a point.
+
+- **Before Pandoc reads an ODT**, an entry without a number is moved into the item before it, as a further paragraph of it; one before the first item, a heading of the list, is put before the list (`lifting.rs`).
+- **An item's first paragraph is its point**; what more it holds follows the point as text, set in a step further than the point, as the word processor shows it. Where the list has been broken so, the next point of a numbered list is given its number in the mark of its line, as `7. ` typed at the start of a paragraph gives it, so that the count goes on: in the document, which begins a numbered list at the number of its first point, and where the text is shown.
+- **A point given its number by hand is shown with it.** The editor counted the points of a run from one whatever the mark said, and the text drawn without an editor showed the browser's numbers of its lists beside the editor's; now the editor counts on from the number given (`editor/given-numbers.ts`), and the drawn text writes each point's number and draws no marks of its own lists, with the gaps between paragraphs the editor has.
+- **Not done**: a list that LibreOffice ends and continues after paragraphs that are no part of it (`text:continue-list`) is read by Pandoc as two lists, the second begun at one; Pandoc reads no number given an entry (`text:start-value`) either. That is left until it is met.
+
+Checked: a test of the move, of the items read, of the numbers drawn and of the editor's plugin; `e2e/lists-brought-in.mjs` brings in both shapes and finds the points 1, 2 and 3 with the paragraphs set in between them, in the drawn text, where it is written and in the Typst of the preview.

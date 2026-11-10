@@ -430,10 +430,38 @@ fn odt_boxes(source: &str, document: &Document) -> Vec<Lift> {
     out
 }
 
+/// The paragraphs of a list that have no number of their own, as
+/// LibreOffice writes them, each in a `text:list-header` between the items:
+/// moved into the item before them, as more paragraphs of it, so that
+/// Pandoc does not read each as an item of its own and number it. One that
+/// stands before the first item, a heading of the list, is put before the
+/// list. Nothing, where there is none.
+fn odt_unnumbered(source: &str) -> Option<String> {
+    let document = parse(source)?;
+    let mut changes = Vec::new();
+    for header in document.descendants().filter(|n| is(n, TEXT, "list-header")) {
+        let content = held(source, &header).to_owned();
+        let item = header.prev_siblings().skip(1).find(|n| is(n, TEXT, "list-item"));
+        let at = match item {
+            // Before the end of the item, where its paragraphs end.
+            Some(item) => source.get(..item.range().end)?.rfind("</")?,
+            None => header.parent()?.range().start,
+        };
+        changes.push(Change { at: header.range(), with: String::new() });
+        changes.push(Change { at: at..at, with: content });
+    }
+    if changes.is_empty() {
+        return None;
+    }
+    changed(source, changes)
+}
+
 /// The text of an ODT as Pandoc is to read it. Nothing, where that is the
 /// text as it is.
 fn odt_text(content: &str, styles: Option<&str>) -> Option<String> {
     let lifted = lifted(content, &odt_boxes);
+    let unnumbered = odt_unnumbered(lifted.as_deref().unwrap_or(content));
+    let lifted = unnumbered.or(lifted);
     let now = lifted.as_deref().unwrap_or(content);
 
     let mut parts = vec![now];
@@ -602,6 +630,25 @@ mod tests {
     }
 
     const STYLES: &str = r#"<office:document-styles xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"><office:styles><style:style style:name="Heading_20_2" style:family="paragraph" style:default-outline-level="2"/><style:style style:name="Caption" style:family="paragraph"/><style:style style:name="Illustration" style:family="paragraph" style:parent-style-name="Caption"/><style:style style:name="Quiet" style:family="paragraph" style:parent-style-name="Heading_20_2" style:default-outline-level=""/></office:styles></office:document-styles>"#;
+
+    #[test]
+    fn the_paragraphs_of_a_list_without_a_number_join_the_item_before_them() {
+        let text = odt(
+            "",
+            r#"<text:list><text:list-header><text:p>A heading of the list.</text:p></text:list-header><text:list-item><text:p>First.</text:p></text:list-item><text:list-header><text:p>Under the first.</text:p></text:list-header><text:list-header><text:p>And more.</text:p></text:list-header><text:list-item><text:p>Second.</text:p></text:list-item></text:list>"#,
+        );
+        let read = odt_text(&text, None).unwrap();
+        assert_eq!(
+            body(&read),
+            r#"<text:p>A heading of the list.</text:p><text:list><text:list-item><text:p>First.</text:p><text:p>Under the first.</text:p><text:p>And more.</text:p></text:list-item><text:list-item><text:p>Second.</text:p></text:list-item></text:list>"#
+        );
+        assert!(parse(&read).is_some());
+        // A list where every paragraph has its number is read as it is.
+        assert!(
+            odt_text(&odt("", "<text:list><text:list-item><text:p>One.</text:p></text:list-item></text:list>"), None)
+                .is_none()
+        );
+    }
 
     #[test]
     fn what_stands_in_a_frame_is_lifted_out() {

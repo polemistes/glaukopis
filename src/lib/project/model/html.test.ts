@@ -79,13 +79,27 @@ describe('a text as HTML', () => {
     ]);
     expect(html).toBe(
       '<ul><li><p data-kind="item">one</p>' +
-        '<ol><li value="3"><p data-kind="numbered" data-indent="1" style="--indent: 1">' +
+        '<ol><li value="3"><p data-kind="numbered" data-indent="1" style="--indent: 1" data-number="3">' +
         '<span class="linemark" data-number="3"></span>three</p></li></ol>' +
         '</li><li><p data-kind="item">two</p></li></ul>' +
         '<div class="pagebreak" data-what="column"></div>' +
         '<ul><li><p data-kind="item">again</p></li></ul>' +
         '<ul><li><p data-kind="item" data-new>anew</p></li></ul>',
     );
+  });
+
+  it('gives each point of a numbered list its number, counting on from one given by hand', () => {
+    const html = blocksHtml([
+      paragraph([t('first')], 'numbered'),
+      paragraph([t('said of it')], 'text', 1),
+      paragraph([linemark({ number: '2' }), t('second')], 'numbered'),
+      paragraph([t('third')], 'numbered'),
+    ]);
+    expect(html.match(/data-number="\d+">(?:<span[^>]*><\/span>)?\w+/g)).toEqual([
+      'data-number="1">first',
+      'data-number="2"><span class="linemark" data-number="2"></span>second',
+      'data-number="3">third',
+    ]);
   });
 
   it('cuts a text at a block, a break taking no room', () => {

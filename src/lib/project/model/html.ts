@@ -179,13 +179,16 @@ function paragraphHtml(
   p: ParagraphBlock,
   shown: (Shown | null)[] | undefined,
   notes: Notes,
+  /** Of a point of a numbered list, its number, which the style sheet puts before it. */
+  number?: number,
 ): string {
   const lines = linesOf(p.content)
     .map(
       (line, i) => numberHtml(shown?.[i]) + lineMarkHtml(line.mark) + inlines(line.content, notes),
     )
     .join(BREAK);
-  return `<p${paragraphAttrs(p)}>${lines}</p>`;
+  const numbered = number === undefined ? '' : ` data-number="${number}"`;
+  return `<p${paragraphAttrs(p)}${numbered}>${lines}</p>`;
 }
 
 /** What the lines of each numbered paragraph of a text show, by its index among the blocks. */
@@ -221,13 +224,17 @@ function listHtml(
     while (at < items.length && items[at].item.indent >= depth) {
       const tag = items[at].item.name === 'numbered' ? 'ol' : 'ul';
       out += `<${tag}>`;
+      // The count of the points, from one or from the number given a point by hand.
+      let count = 0;
       while (at < items.length && items[at].item.indent >= depth) {
         const { item, shown } = items[at];
         if ((item.name === 'numbered' ? 'ol' : 'ul') !== tag && item.indent === depth) break;
         at++;
         const given = linesOf(item.content)[0]?.mark?.number ?? '';
         const value = /^\d+$/.test(given) ? ` value="${given}"` : '';
-        out += `<li${value}>${paragraphHtml(item, shown, notes)}`;
+        count = value ? Number(given) : count + 1;
+        const number = tag === 'ol' && item.name === 'numbered' ? count : undefined;
+        out += `<li${value}>${paragraphHtml(item, shown, notes, number)}`;
         // What is deeper stands within this item.
         if (at < items.length && items[at].item.indent > depth) out += level(depth + 1);
         out += '</li>';

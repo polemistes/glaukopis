@@ -368,6 +368,48 @@ fn mathematics_in_the_line_and_by_itself() {
 }
 
 #[test]
+fn the_further_paragraphs_of_an_item_are_set_in_under_it_and_the_count_goes_on() {
+    let read = read_json(
+        &doc(
+            "{}",
+            &[format!(
+                r#"{{"t":"OrderedList","c":[[1,{{"t":"Decimal"}},{{"t":"Period"}}],[[{},{},{}],[{},{{"t":"OrderedList","c":[[1,{{"t":"Decimal"}},{{"t":"Period"}}],[[{},{}]]]}}],[{}]]]}}"#,
+                para("First."),
+                para("Under the first."),
+                para("And more."),
+                para("Second."),
+                para("Within."),
+                para("Under it."),
+                para("Third."),
+            )],
+        ),
+        &none,
+    );
+    let mark = |number: &str| Inline::LineMark {
+        number: Some(number.into()),
+        counted: true,
+        hidden: false,
+        shown: false,
+        margin: None,
+        indent: 0,
+        continues: false,
+    };
+    let of = |name: &str, indent: u32, content: Vec<Inline>| Block::of_kind(name, content).indented(indent);
+    assert_eq!(
+        read.sections[0].blocks,
+        vec![
+            of("numbered", 0, vec![text("First.")]),
+            of("text", 1, vec![text("Under the first.")]),
+            of("text", 1, vec![text("And more.")]),
+            of("numbered", 0, vec![mark("2"), text("Second.")]),
+            of("numbered", 1, vec![text("Within.")]),
+            of("text", 2, vec![text("Under it.")]),
+            of("numbered", 0, vec![mark("3"), text("Third.")]),
+        ]
+    );
+}
+
+#[test]
 fn lists_quotations_and_what_has_no_place() {
     let read = read_json(
         &doc(
