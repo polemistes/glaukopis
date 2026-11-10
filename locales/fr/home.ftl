@@ -338,3 +338,14 @@ home-mindmap-left-out-references = { $count ->
     [many] { $count } renvois à des figures ou à des parties, qui n’y désignent rien
    *[other] { $count } renvois à des figures ou à des parties, qui n’y désignent rien
 }
+
+## Favourite projects (plan: the data folder, more than one window, favourites and the copied space)
+
+home-favourites = Favoris
+home-favourite-add = Ajouter aux favoris
+home-favourite-remove = Retirer des favoris
+
+## More than one window (docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md).
+
+home-new-window = Nouvelle fenêtre
+home-open-window = Ouvrir dans une nouvelle fenêtre

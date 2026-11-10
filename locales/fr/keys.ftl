@@ -35,6 +35,7 @@ keys-projects-pane = La liste des projets à gauche
 keys-preview = Composition
 keys-document-settings = Propriétés du document
 keys-what-document = Type de document…
+keys-mark-document = En faire le document
 keys-side-look = Aspect
 keys-look-type = Changer la police…
 keys-side-references = Références
@@ -144,3 +145,7 @@ keys-viewer-tab-previous = Onglet précédent
 keys-viewer-bookmark = Marquer cet endroit
 # Printing (docs/plans/printing.md, record 0075).
 keys-print = Imprimer
+
+## More than one window (docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md).
+
+keys-new-window = Nouvelle fenêtre
