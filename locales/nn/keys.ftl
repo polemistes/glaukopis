@@ -35,6 +35,7 @@ keys-projects-pane = Prosjektlista til venstre
 keys-preview = Ombrekking
 keys-document-settings = Dokumenteigenskapar
 keys-what-document = Dokumenttype …
+keys-mark-document = Gjer dette til dokumentet
 keys-side-look = Utsjånad
 keys-look-type = Endre skrifta …
 keys-side-references = Referansar
@@ -144,3 +145,7 @@ keys-viewer-tab-previous = Førre fane
 keys-viewer-bookmark = Merk denne staden
 # Printing (docs/plans/printing.md, record 0075).
 keys-print = Skriv ut
+
+## More than one window (docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md).
+
+keys-new-window = Nytt vindauge

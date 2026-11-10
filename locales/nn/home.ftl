@@ -316,3 +316,14 @@ home-mindmap-left-out-references = { $count ->
     [one] Éin kryssreferanse til ein figur eller ein del, som ikkje har noko å vise til der
    *[other] { $count } kryssreferansar til figurar eller delar, som ikkje har noko å vise til der
 }
+
+## Favourite projects (plan: the data folder, more than one window, favourites and the copied space)
+
+home-favourites = Favorittar
+home-favourite-add = Legg til i favorittar
+home-favourite-remove = Fjern frå favorittar
+
+## More than one window (docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md).
+
+home-new-window = Nytt vindauge
+home-open-window = Opne i nytt vindauge
