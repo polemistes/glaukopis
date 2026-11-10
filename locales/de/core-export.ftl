@@ -73,3 +73,9 @@ core-export-output-unknown = Die Vorlage hat keine Ausgabe „{ $id }“.
 ## Stage 5 of the settings in plain words: LaTeX's hyphenation.
 
 core-export-latex-no-hyphenation = LaTeX hat keine Trennmuster für { $language }: die Wörter werden wie englische getrennt, bis das Paket der Sprache aus TeX Live installiert ist (unter Arch texlive-langeuropean für die meisten europäischen Sprachen).
+
+## The data folder, more than one window, favourites: the typesetting in a child of its own.
+
+core-export-typeset-time = Typst brauchte länger, um das Dokument zu setzen, als es darf, und wurde abgebrochen.
+core-export-typeset-memory = Typst brauchte mehr Speicher, um das Dokument zu setzen, als es darf, und wurde abgebrochen.
+core-export-typeset-ended = Typst endete, bevor das Dokument gesetzt war: { $message }

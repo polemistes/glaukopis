@@ -83,3 +83,14 @@ core-start-failed-log = Mehr darüber, was geschah, steht im Protokoll der Sitzu
 
 # What the program said of itself is given after the colon, in English.
 core-worker-panicked = In Glaukopis selbst ist etwas schiefgegangen, und was gerade getan wurde, ist aufgegeben: { $message }. Das Protokoll der Sitzung sagt mehr.
+
+## The data folder chosen by the writer (docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md).
+
+core-data-cannot-open-title = Der Ordner konnte nicht geöffnet werden
+core-data-cannot-open = Glaukopis bewahrt alles in { $path } auf, und der Ordner konnte nicht geöffnet werden: { $error }
+core-data-usual = Den üblichen Ordner verwenden
+core-data-quit = Beenden
+core-data-move-failed = Alles bleibt in { $from }: Es konnte nicht nach { $to } verschoben werden. { $error }
+# A file of the data folder that is not whole where it was copied to.
+core-data-not-copied = { $path } wurde nicht vollständig kopiert.
+core-data-inside = { $to } liegt in { $from }, oder { $from } darin.

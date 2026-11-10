@@ -316,3 +316,14 @@ home-mindmap-left-out-references = { $count ->
     [one] Ein Verweis auf eine Abbildung oder einen Teil, der dort auf nichts zeigt
    *[other] { $count } Verweise auf Abbildungen oder Teile, die dort auf nichts zeigen
 }
+
+## Favourite projects (plan: the data folder, more than one window, favourites and the copied space)
+
+home-favourites = Favoriten
+home-favourite-add = Zu den Favoriten hinzufügen
+home-favourite-remove = Aus den Favoriten entfernen
+
+## More than one window (docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md).
+
+home-new-window = Neues Fenster
+home-open-window = In neuem Fenster öffnen
