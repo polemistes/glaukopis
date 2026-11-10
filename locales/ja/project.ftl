@@ -281,3 +281,9 @@ project-library-no-images-hint = ファイルから画像を追加するか、�
 
 # タブを開く（docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md）。
 project-beside-tabs = プロジェクトのタブ
+
+# The element marked as the document (docs/plans/the-document-marked-in-the-tree.md).
+# In the menu of an element; checked on the element that is the document, where choosing it takes the mark off.
+project-make-document = これを文書にする
+# The sign of the element marked as the document, in the path, the list and the head of the typesetting pane.
+project-the-document = 文書

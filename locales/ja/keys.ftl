@@ -35,6 +35,7 @@ keys-projects-pane = 左のプロジェクト一覧
 keys-preview = 組版
 keys-document-settings = 文書のプロパティ
 keys-what-document = 文書種別…
+keys-mark-document = これを文書にする
 keys-side-look = 見た目
 keys-look-type = フォントを変更…
 keys-side-references = 文献
@@ -144,3 +145,7 @@ keys-viewer-tab-previous = 前のタブ
 keys-viewer-bookmark = この場所をブックマーク
 # 印刷（docs/plans/printing.md、記録 0075）。
 keys-print = 印刷
+
+## More than one window (docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md).
+
+keys-new-window = 新しいウィンドウ

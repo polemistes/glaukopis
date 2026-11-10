@@ -39,7 +39,12 @@ settings-text-depth-dots = 点
 settings-text-depth-indent = 字下げと線
 # 見出しが印字する番号を、テキストビューとダイアグラムで名前の前に表示するかどうか。アウトラインには常に表示される。
 settings-heading-numbers = 見出しの番号（文書に印字されるとおり）
+settings-heading-numbers-printed = 文書に印字されるとおり
+# Every box of the map numbered from the element in view, whatever the look prints (record 0083).
+settings-heading-numbers-tree = すべての要素に
 settings-heading-numbers-hidden = 非表示
+settings-heading-numbers-text = テキストで
+settings-heading-numbers-diagram = ダイアグラムで
 settings-interface-size = インターフェースの大きさ
 # 選んだ大きさのテキストの一行。字の形を見せる。そのあとにホメロスの
 # ギリシア語の一行が続く。
@@ -120,3 +125,16 @@ settings-default-style = 既定の引用スタイル
 settings-default-none = なし（文書種別のとおり）
 # プレビューの行を押したとき、それが何かを言い、そこで見た目の欄を開くラベルをページの端に出すかどうか。
 settings-look-chips = プレビューに見た目ラベルを表示する
+
+## The data folder chosen by the writer (docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md).
+
+settings-data-change = 変更…
+settings-data-move = すべてを「{ $path }」に移動
+settings-data-use = 「{ $path }」にあるものを使う
+settings-data-use-note = 今「{ $path }」にあるものは、使われないままそこに残ります。
+settings-data-not-empty = フォルダーが空ではありません。
+settings-data-restart = Glaukopisを閉じて、もう一度起動します。
+settings-data-move-button = 移動
+settings-data-use-button = 使う
+settings-data-copying = ファイルをコピーしています… { $done }/{ $count }
+settings-data-failed = フォルダーを変更できませんでした

@@ -258,3 +258,14 @@ home-mindmap-left-out-labels = 2つ目以降のラベル{ $count }個（最初�
 home-mindmap-left-out-times = 読み取れなかった時期{ $count }件
 home-mindmap-left-out-associations = そこにないトピックへの関連付け{ $count }件
 home-mindmap-left-out-references = 図や部分への相互参照{ $count }件（そこには指すものがありません）
+
+## Favourite projects (plan: the data folder, more than one window, favourites and the copied space)
+
+home-favourites = お気に入り
+home-favourite-add = お気に入りに追加
+home-favourite-remove = お気に入りから外す
+
+## More than one window (docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md).
+
+home-new-window = 新しいウィンドウ
+home-open-window = 新しいウィンドウで開く

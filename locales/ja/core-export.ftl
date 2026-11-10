@@ -72,3 +72,9 @@ core-export-output-unknown = テンプレートに出力「{ $id }」はあり�
 ## わかりやすい言葉での設定、第5段階：LaTeXのハイフネーション。
 
 core-export-latex-no-hyphenation = LaTeXには{ $language }のハイフネーションのパターンがありません。TeX Liveのその言語のパッケージをインストールするまで（Archでは、ほとんどのヨーロッパ言語はtexlive-langeuropean）、語は英語と同じように分割されます。
+
+## The data folder, more than one window, favourites: the typesetting in a child of its own.
+
+core-export-typeset-time = Typstによる文書の組版が許される時間を超えたため、中止しました。
+core-export-typeset-memory = Typstによる文書の組版が許されるメモリを超えたため、中止しました。
+core-export-typeset-ended = 文書の組版が終わる前にTypstが終了しました：{ $message }
