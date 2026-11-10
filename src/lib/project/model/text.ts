@@ -704,6 +704,8 @@ export interface BodyFacts {
   /** Ids of the references cited, each once, in the order of first citation. */
   cited: string[];
   notes: number;
+  /** Of the notes, those set to a place of their own, which are counted by themselves. */
+  placedNotes: number;
   /** The words that stand in notes, which are among the words. */
   noteWords: number;
   /**
@@ -726,6 +728,7 @@ export function joinedFacts(parts: BodyFacts[]): BodyFacts {
   let empty = true;
   let words = 0;
   let notes = 0;
+  let placedNotes = 0;
   let noteWords = 0;
   for (const f of parts) {
     for (const s of f.set) set.push(s);
@@ -734,9 +737,10 @@ export function joinedFacts(parts: BodyFacts[]): BodyFacts {
     empty &&= f.empty;
     words += f.words;
     notes += f.notes;
+    placedNotes += f.placedNotes;
     noteWords += f.noteWords;
   }
-  return { set, empty, words, cited: [...cited], notes, noteWords, uses: [...uses] };
+  return { set, empty, words, cited: [...cited], notes, placedNotes, noteWords, uses: [...uses] };
 }
 
 export function bodyFacts(blocks: Block[]): BodyFacts {
@@ -746,6 +750,7 @@ export function bodyFacts(blocks: Block[]): BodyFacts {
     if (typeof id === 'string' && id && id !== 'text' && !uses.includes(id)) uses.push(id);
   };
   let notes = 0;
+  let placedNotes = 0;
   /** What the notes say. */
   let noted = '';
   /** Figures, formulas, tables and breaks: what is part of a document without being words. */
@@ -767,6 +772,7 @@ export function bodyFacts(blocks: Block[]): BodyFacts {
         for (const item of i.items) if (!cited.includes(item.id)) cited.push(item.id);
       } else if (i.kind === 'footnote') {
         notes++;
+        if (i.place) placedNotes++;
         text += ' ';
         const from = text.length;
         visitInlines(i.content);
@@ -826,6 +832,7 @@ export function bodyFacts(blocks: Block[]): BodyFacts {
     words: countWords(text),
     cited,
     notes,
+    placedNotes,
     noteWords: notes ? countWords(noted) : 0,
     uses,
   };

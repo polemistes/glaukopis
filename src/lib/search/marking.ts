@@ -4,9 +4,8 @@
  * the style sheet (the CSS Custom Highlight API), which lie over the page
  * without changing it: `::highlight(search)` for all that is found,
  * `::highlight(search-current)` for the one that is shown, and
- * `::highlight(search-scope)` for the text a search is kept to. The mark of
- * a note, whose number is drawn by the style sheet and is no text, is a
- * class of its own. The web view draws highlights only in the text that
+ * `::highlight(search-scope)` for the text a search is kept to. A note in
+ * which something was found is marked as a whole, by a class of its own. The web view draws highlights only in the text that
  * flows in the page, and wrongly in a box that stands over it: there the
  * editors draw the marks themselves (`decorations.ts`).
  *
@@ -102,7 +101,7 @@ function drawnHolders(root: HTMLElement): HTMLElement[] {
   const out: HTMLElement[] = [];
   for (const el of root.querySelectorAll<HTMLElement>('p, figcaption, div.equation')) {
     out.push(el);
-    if (el.tagName === 'P') out.push(...el.querySelectorAll<HTMLElement>('sup.footnote'));
+    if (el.tagName === 'P') out.push(...el.querySelectorAll<HTMLElement>('span.footnote'));
   }
   holdersRead.set(root, { round, holders: out });
   return out;
@@ -120,7 +119,7 @@ function newRound() {
   round++;
 }
 
-const ATOMS = 'span.citation, span.math, span.crossref, sup.footnote, span.hard-break, br';
+const ATOMS = 'span.citation, span.math, span.crossref, span.footnote, span.hard-break, br';
 
 /** What stands in drawn text and is not read at all: a reference mark, the number of a line, a line mark. */
 const PASSED = 'span.refmark, span.line-number, span.linemark';

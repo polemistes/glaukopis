@@ -24,7 +24,7 @@ const OURS = 'review-mark';
 
 /** What stands in drawn text as one sign, and is not gone into. */
 const ATOMS =
-  'span.citation, span.math, span.crossref, span.refmark, span.linemark, sup.footnote, span.hard-break, br';
+  'span.citation, span.math, span.crossref, span.refmark, span.linemark, span.footnote, span.hard-break, br';
 
 function elements(y: Y.XmlFragment): Y.XmlElement[] {
   return y.toArray().filter((c): c is Y.XmlElement => c instanceof Y.XmlElement);
@@ -140,7 +140,7 @@ export function drawnHolder(
   for (let i = 1; i < path.length; i++) {
     const step = path[i];
     if (step === 'note') {
-      const notes = dom.querySelectorAll('sup.footnote');
+      const notes = dom.querySelectorAll('span.footnote');
       return notes[Number(path[i + 1])] ?? null;
     }
     const next = within(y, dom, step);

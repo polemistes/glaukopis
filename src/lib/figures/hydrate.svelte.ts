@@ -1,8 +1,9 @@
 /**
  * Text that is shown and not written is made as HTML, in which a picture is
- * the name of its file, a formula what was written, and words that point
- * what they point to. Here they are given what they are shown as, when the
- * text has been put into the page and whenever it is put there anew.
+ * the name of its file, a formula what was written, words that point
+ * nothing and a note no number. Here they are given what they are shown
+ * as, when the text has been put into the page and whenever it is put
+ * there anew.
  */
 
 import { untrack } from 'svelte';
@@ -12,6 +13,7 @@ import { showFormula } from './math.svelte';
 import { numbering, pointerText, topOf } from './numbering.svelte';
 import { pictures, showPicture } from './pictures.svelte';
 import { dress } from '$lib/tables/look';
+import { NO_NOTES_BEFORE, numberNotes } from '$lib/editor/notes';
 import { usualOf } from './placing';
 import { figureLabel, showPlacing } from './views.svelte';
 
@@ -37,7 +39,11 @@ function fill(root: HTMLElement, shown: Shown) {
   // The numbers, what the document calls things, and where they stand.
   // That the element is there, not what it is: what it has is filled in
   // anew when it is shown anew, and its numbers are followed on their own.
-  if (!untrack(() => shown.project.node(shown.element))) return;
+  // The notes of what is no element are numbered from one.
+  if (!untrack(() => shown.project.node(shown.element))) {
+    numberNotes(root, NO_NOTES_BEFORE);
+    return;
+  }
   const at = shown.at ?? topOf(shown.project, shown.element);
   const format = numbering.formatOf(shown.project, at);
   for (const [selector, kind] of [
@@ -61,6 +67,8 @@ function fill(root: HTMLElement, shown: Shown) {
   const numbers = numbering.of(shown.project, at);
   const counting = numbering.countingOf(shown.project, at);
   const within = numbers.within.get(shown.element);
+  // The notes of an element that is not in the document are numbered from one.
+  numberNotes(root, within?.notes ?? NO_NOTES_BEFORE);
   root.querySelectorAll<HTMLElement>('figure.figure').forEach((figure, i) => {
     const said = figure.querySelector<HTMLElement>('figcaption');
     if (!said) return;

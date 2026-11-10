@@ -190,6 +190,8 @@ export interface NodeRecord {
   words: number;
   cited: string[];
   notes: number;
+  /** Of the notes, those set to a place of their own, which are counted by themselves. */
+  placedNotes: number;
   /** The words that stand in notes, which are among the words. */
   noteWords: number;
   /** The figures and equations of the text, in the order they stand in. */

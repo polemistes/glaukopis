@@ -182,8 +182,33 @@ export interface ShowIn {
   focus: boolean;
 }
 
-/** What each editor was given to reach the world outside it. Notes use their editor's. */
-export const hooksOf = new WeakMap<EditorView, EditorHooks>();
+/**
+ * What each editor was given to reach the world outside it. Notes use their
+ * editor's; what a note says, drawn in the text, is an editor within it,
+ * made before its host is given its own, which asks the host when asked.
+ */
+class Hooks {
+  #own = new WeakMap<EditorView, EditorHooks>();
+  #host = new WeakMap<EditorView, EditorView>();
+
+  get(view: EditorView): EditorHooks | undefined {
+    const own = this.#own.get(view);
+    if (own) return own;
+    const host = this.#host.get(view);
+    return host ? this.get(host) : undefined;
+  }
+
+  set(view: EditorView, hooks: EditorHooks) {
+    this.#own.set(view, hooks);
+  }
+
+  /** An editor within another, which has the other's. */
+  within(view: EditorView, host: EditorView) {
+    this.#host.set(view, host);
+  }
+}
+
+export const hooksOf = new Hooks();
 
 /** The editor that a part of the page belongs to, for what is dropped on it. */
 export const viewsByDom = new WeakMap<Element, EditorView>();

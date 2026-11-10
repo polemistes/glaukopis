@@ -862,6 +862,7 @@ export class Project {
       words: facts.words,
       cited: facts.cited,
       notes: facts.notes,
+      placedNotes: facts.placedNotes,
       noteWords: facts.noteWords,
       set: facts.set,
       uses: facts.uses,

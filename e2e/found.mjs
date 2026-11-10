@@ -208,12 +208,22 @@ try {
     app.exec(
       `const body = Array.from(document.querySelectorAll('.text-view .prose.body'));
        const all = (s) => body.flatMap((b) => Array.from(b.querySelectorAll(s)));
+       // In the text, not in what its notes say.
+       const outside = (s) => all(s).filter((e) => !e.closest('.note-text'));
        return {
-         citations: all('.citation').map((e) => e.textContent),
-         found: [...new Set(all('.found:not(.left)').map((e) => e.dataset.foundId || e.dataset.found))].length,
+         citations: outside('.citation').map((e) => e.textContent),
+         found: [...new Set(outside('.found:not(.left)').map((e) => e.dataset.foundId || e.dataset.found))].length,
          // A blank that does not break, as Pandoc sets after "cf.", is a blank.
-         notes: all('.footnote').map((e) => (e.getAttribute('title') || '').replace(/\\s+/g, ' ')),
-         text: body.map((b) => b.textContent).join(' ').replace(/\\s+/g, ' '),
+         notes: all('.footnote').map((e) => (e.querySelector('.note-text')?.textContent || '').replace(/\\s+/g, ' ').trim()),
+         // The text without what its notes say, which is read in them.
+         text: body
+           .map((b) => {
+             const c = b.cloneNode(true);
+             c.querySelectorAll('.footnote').forEach((n) => n.remove());
+             return c.textContent;
+           })
+           .join(' ')
+           .replace(/\\s+/g, ' '),
        };`,
     );
   /** The trees under the project, as the bar lists them while the project is in view. */

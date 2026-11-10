@@ -16,8 +16,10 @@ import { pastedTextSlice } from './clipboard';
 import { refMarkKey, RefMarkView } from './refmarks';
 import { citationLabel, currentProject, isMissing, languageOf } from './references.svelte';
 import { notePlace, type CiteItem, type CiteMode } from './schema';
+import { NO_NOTES_BEFORE, numberNotes, type NotesBefore } from './notes';
+import { untrack } from 'svelte';
 import { editorUi, hooksOf, OPEN, passing, SHOW, viewsByDom, type ShowIn } from './ui.svelte';
-import { topOf } from '$lib/figures/numbering.svelte';
+import { numbering, topOf } from '$lib/figures/numbering.svelte';
 import { CrossRefView, FormulaView } from '$lib/figures/views.svelte';
 import { markIn, searchMarks } from '$lib/search/decorations';
 import { spellingOptions } from '$lib/spelling/menu';
@@ -125,39 +127,6 @@ export class CitationView implements NodeView {
   }
 }
 
-/**
- * The number a note is shown with: its place among the notes that are
- * counted with it. In the text of a branch those are the notes of the
- * branch; of an element that is left out of the document, its own.
- */
-export function noteNumberOf(mark: HTMLElement): number {
-  const own = mark.closest<HTMLElement>('.section.excluded');
-  const scope =
-    own ?? mark.closest<HTMLElement>('[data-notes]') ?? mark.closest<HTMLElement>('.prose');
-  if (!scope) return 0;
-  // Those that have been set to a place of their own are counted by themselves.
-  const placed = mark.hasAttribute('data-place');
-  let n = 0;
-  for (const other of scope.querySelectorAll<HTMLElement>('.footnote')) {
-    if (!own && other.closest('.section.excluded')) continue;
-    if (other.hasAttribute('data-place') !== placed) continue;
-    n++;
-    if (other === mark) return n;
-  }
-  return 0;
-}
-
-/** a, b, … z, aa, ab, … */
-export function letters(n: number): string {
-  let out = '';
-  while (n > 0) {
-    const r = (n - 1) % 26;
-    out = String.fromCharCode(97 + r) + out;
-    n = (n - 1 - r) / 26;
-  }
-  return out;
-}
-
 const PLACES = (): [string, string][] => [
   ['', t('editor-note-place-format')],
   ['foot', t('editor-note-place-foot')],
@@ -168,10 +137,52 @@ const noteRules = inputRules({
   rules: [new InputRule(/–-$/, '—'), new InputRule(/--$/, '–'), new InputRule(/\.\.\.$/, '…')],
 });
 
+/** The notes of each editor's text, by what is drawn of them. */
+const noteViews = new WeakMap<HTMLElement, FootnoteView>();
+
 /**
- * A note. In the text it is its number; selected, it opens as a small panel
- * in which its own text is written. The panel holds an editor of its own,
- * whose changes are passed on to the text the note is in.
+ * The notes before the element of an editor in the document it is part of:
+ * none, where the element is not in it, or the editor holds no element's text.
+ */
+function notesBefore(view: EditorView): NotesBefore {
+  const hooks = hooksOf.get(view);
+  const element = hooks?.element;
+  const project = currentProject();
+  // That the element is there, not what it is: see `documentOf` in `figures/views.svelte.ts`.
+  if (!element || !project || !untrack(() => project.node(element))) return NO_NOTES_BEFORE;
+  const at = hooks?.at ?? topOf(project, element);
+  return numbering.of(project, at).within.get(element)?.notes ?? NO_NOTES_BEFORE;
+}
+
+/**
+ * Numbers the notes of the text of an editor as the document numbers them
+ * (`notes.ts`): when the text has changed, and when the notes before it in
+ * the document have.
+ */
+export function noteNumbers(): Plugin {
+  return new Plugin({
+    view(view) {
+      const number = () =>
+        numberNotes(view.dom, notesBefore(view), (note) => noteViews.get(note)?.numbered());
+      const stop = $effect.root(() => {
+        $effect(number);
+      });
+      number();
+      return {
+        update: (v, before) => {
+          if (v.state.doc !== before.doc) untrack(number);
+        },
+        destroy: stop,
+      };
+    },
+  });
+}
+
+/**
+ * A note. In the text it is its number and what it says, to be read without
+ * opening it; selected, it opens as a small panel in which its own text is
+ * written. The panel holds an editor of its own, whose changes are passed
+ * on to the text the note is in.
  */
 export class FootnoteView implements NodeView {
   dom: HTMLElement;
@@ -180,38 +191,52 @@ export class FootnoteView implements NodeView {
   #getPos: () => number | undefined;
   #panel: HTMLElement | null = null;
   #inner: EditorView | null = null;
+  /** What the note says, as it is drawn in the text: an editor that is only read. */
+  #shownText: EditorView;
 
   constructor(node: Node, view: EditorView, getPos: () => number | undefined) {
     this.#node = node;
     this.#outer = view;
     this.#getPos = getPos;
-    this.dom = document.createElement('sup');
+    this.dom = document.createElement('span');
     this.dom.className = 'footnote';
     this.dom.contentEditable = 'false';
+    const mark = document.createElement('span');
+    mark.className = 'note-mark';
+    const text = document.createElement('span');
+    text.className = 'note-text';
+    // A line may break before it, as in the text drawn without an editor (`model/html.ts`).
+    this.dom.append(document.createElement('wbr'), mark, text);
+    this.#shownText = new EditorView(
+      { mount: text },
+      {
+        state: EditorState.create({ doc: node }),
+        editable: () => false,
+        // Citations, formulas and words that point, as the text shows them.
+        nodeViews: {
+          citation: (n, v, getPos) => new CitationView(n, v, getPos),
+          math: (n, v, getPos) => new FormulaView(n, v, getPos),
+          crossref: (n, v, getPos) => new CrossRefView(n, v, getPos),
+          refmark: (n, v, getPos) => new RefMarkView(n, v, getPos),
+        },
+        attributes: { spellcheck: 'false' },
+      },
+    );
+    hooksOf.within(this.#shownText, view);
+    noteViews.set(this.dom, this);
     this.dom.addEventListener(OPEN, this.#asked);
     this.dom.addEventListener(SHOW, this.#shown);
     this.#number();
-    this.#tell();
   }
 
-  /** What the note says, as the text drawn without an editor has it: to be read without opening it. */
-  #tell() {
-    const language = this.#outer.dom.closest<HTMLElement>('[lang]')?.lang;
-    const text = this.#node.textBetween(0, this.#node.content.size, ' ', (leaf) =>
-      leaf.type.name === 'citation'
-        ? citationLabel(leaf.attrs.items as CiteItem[], leaf.attrs.mode as CiteMode, language)
-        : leaf.type.name === 'hard_break'
-          ? ' '
-          : '',
-    );
-    const title = text.replace(/\s+/g, ' ').trim();
-    if (this.dom.title !== title) this.dom.title = title;
+  /** Its number has been given it (`noteNumbers`): the open panel says it. */
+  numbered() {
+    this.#number();
   }
 
   /**
-   * The number is not written into the text: it is counted by the page, from
-   * where the notes stand (see app.css), so that the notes of a document
-   * are numbered through all its elements.
+   * The number is not kept in the text: it is given by `noteNumbers`, from
+   * where the note stands in the document.
    */
   #number() {
     this.dom.classList.toggle('blank', this.#node.content.size === 0);
@@ -221,12 +246,10 @@ export class FootnoteView implements NodeView {
     if (!this.#panel) return;
     if (place) this.#panel.dataset.place = place;
     else delete this.#panel.dataset.place;
-    const n = noteNumberOf(this.dom);
+    const number = this.dom.dataset.number;
     const heading = this.#panel.querySelector('.note-number');
     if (heading)
-      heading.textContent = n
-        ? t('editor-note-numbered', { number: place ? letters(n) : String(n) })
-        : t('editor-note');
+      heading.textContent = number ? t('editor-note-numbered', { number }) : t('editor-note');
     const select = this.#panel.querySelector<HTMLSelectElement>('.note-place');
     if (select && select.value !== place) select.value = place;
   }
@@ -466,7 +489,8 @@ export class FootnoteView implements NodeView {
   update(node: Node): boolean {
     if (node.type !== this.#node.type) return false;
     this.#node = node;
-    this.#tell();
+    if (this.#shownText.state.doc !== node)
+      this.#shownText.updateState(EditorState.create({ doc: node }));
     const inner = this.#inner;
     if (inner) {
       const state = inner.state;
@@ -500,6 +524,7 @@ export class FootnoteView implements NodeView {
     this.dom.removeEventListener(OPEN, this.#asked);
     this.dom.removeEventListener(SHOW, this.#shown);
     this.#close();
+    this.#shownText.destroy();
   }
 }
 

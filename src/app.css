@@ -694,75 +694,57 @@ body.dragging * {
   }
 }
 
-/* Notes are numbered by where they stand: within a text, and in the text of
-   a map through all its elements. An element that is left out of the
-   document, or loose, numbers its own. */
-.prose,
-.tip {
-  counter-reset: note;
-}
-[data-notes] {
-  counter-reset: note;
-}
-[data-notes] .prose {
-  counter-reset: none;
-}
-[data-notes] .section.excluded .prose,
-[data-notes] .section.loose .prose {
-  counter-reset: note;
-}
+/* A note, in the text: its number, and what it says, to be read where it
+   stands. The number is given by the page, as the document numbers the
+   note (lib/editor/notes.ts). */
 .footnote {
-  counter-increment: note;
+  display: inline;
+  margin: 0 0.12em;
+  padding: 0.05em 0.3em 0.05em 0.2em;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--gold-soft) 70%, transparent);
+  color: var(--ink-2);
+  font-size: 0.86em;
+  font-variant-numeric: lining-nums;
+  white-space: normal;
+  cursor: pointer;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
 }
-.footnote::before {
-  content: counter(note);
-}
-/* A note that has been set to a place of its own is lettered, as it is in
-   the document when that place is not where the format has its notes. */
-.prose,
-.tip,
-[data-notes] {
-  counter-reset: note placed-note;
-}
-[data-notes] .section.excluded .prose,
-[data-notes] .section.loose .prose {
-  counter-reset: note placed-note;
-}
-.footnote[data-place] {
-  counter-increment: placed-note;
-  background: var(--accent-soft);
-  color: var(--accent-strong);
-}
-.footnote[data-place]::before {
-  content: counter(placed-note, lower-alpha);
-}
-.footnote[data-place]:hover,
-.footnote[data-place].selected {
-  box-shadow: 0 0 0 1px var(--accent);
-}
-.footnote {
-  display: inline-block;
-  min-width: 1.1em;
-  margin: 0 0.08em;
-  padding: 0 0.22em;
-  border-radius: 0.6em;
-  background: var(--gold-soft);
+.footnote .note-mark {
+  margin-right: 0.3em;
   color: var(--gold);
   font-family: var(--font-ui);
-  font-size: 0.66em;
+  font-size: 0.78em;
   font-weight: 600;
-  line-height: 1.5;
-  text-align: center;
   vertical-align: super;
-  cursor: pointer;
-  font-variant-numeric: lining-nums;
+  line-height: 0;
+}
+/* What the note says is drawn, not written in: it is opened to be written. */
+.footnote .note-text {
+  pointer-events: none;
 }
 .footnote:hover,
 .footnote.selected {
   box-shadow: 0 0 0 1px var(--gold);
 }
+/* A note that has been set to a place of its own is lettered, as it is in
+   the document when that place is not where the format has its notes. */
+.footnote[data-place] {
+  background: var(--accent-softer);
+}
+.footnote[data-place] .note-mark {
+  color: var(--accent-strong);
+}
+.footnote[data-place]:hover,
+.footnote[data-place].selected {
+  box-shadow: 0 0 0 1px var(--accent);
+}
 .footnote.blank {
   opacity: 0.6;
+}
+.footnote.blank .note-mark {
+  margin-right: 0;
 }
 
 /* Mathematics. The font comes with the application: see figures/math.svelte.ts. */

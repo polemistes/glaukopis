@@ -949,7 +949,7 @@ try {
   await sleep(400);
   const flowing = await app.exec(
     `const f = document.querySelectorAll(arguments[0] + ' figure.tabular')[1]; const p = f.nextElementSibling; const a = f.getBoundingClientRect(); const b = p.getBoundingClientRect(); const t = f.querySelector('table').getBoundingClientRect();
-     return { float: getComputedStyle(f).float, beside: b.top < a.bottom, fills: Math.abs(t.width - a.width) < 2, next: p.tagName }`,
+     return { float: getComputedStyle(f).float, beside: b.top < a.bottom, fills: Math.abs(t.width - a.width) < 2, next: p.tagName, table: Math.round(t.width), figure: Math.round(a.width) }`,
     text,
   );
   check(

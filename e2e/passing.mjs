@@ -82,7 +82,12 @@ try {
     app.exec(
       `const e = document.querySelector('.text-view .ProseMirror .selected, .text-view .ProseMirror .ProseMirror-selectednode'); return e ? e.className.split(' ')[0] : ''`,
     );
-  const line = await app.text('.text-view .ProseMirror.body p');
+  // The line without its note, which is read by itself.
+  const line = await app.exec(
+    `const p = document.querySelector('.text-view .ProseMirror.body p').cloneNode(true);
+     p.querySelectorAll('.footnote').forEach((n) => n.remove());
+     return p.textContent;`,
+  );
   check('the line is written', /^before\s*cited \(Nagy 1979, 73\) and .* after$/.test(line.replace(/ /g, ' ')), line);
 
   // ---- through the line, to its beginning and to its end ----

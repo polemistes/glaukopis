@@ -20,7 +20,7 @@ import {
   type Counting,
 } from './numbering.svelte';
 
-const { paragraph, figure, equation, crossref } = bodySchema.nodes;
+const { paragraph, figure, equation, crossref, footnote } = bodySchema.nodes;
 const HASH = (c: string) => c.repeat(64);
 
 const fig = (id: string, file: string, said = '', numbered = true) =>
@@ -38,6 +38,7 @@ function write(p: Project, element: string, ...blocks: ReturnType<typeof text>[]
 }
 
 const plain = countingOf(undefined);
+const NONE = { notes: 0, placed: 0 };
 const numbered: Counting = { ...plain, numberedHeadings: true };
 
 /** A tree under the project, of two parts, the first with a part under it. */
@@ -64,10 +65,15 @@ describe('the numbers of a document', () => {
     expect(['q1', 'q2', 'q3'].map(called)).toEqual(['1', null, '2']);
     // One in which nothing is written is nothing.
     expect(n.byId.has('q4')).toBe(false);
-    expect(n.within.get(top)).toEqual({ figure: ['1'], table: [], equation: [] });
-    expect(n.within.get(a)).toEqual({ figure: ['2'], table: [], equation: ['1', null] });
-    expect(n.within.get(a1)).toEqual({ figure: [null], table: [], equation: ['2'] });
-    expect(n.within.get(b)).toEqual({ figure: ['3'], table: [], equation: [] });
+    expect(n.within.get(top)).toEqual({ figure: ['1'], table: [], equation: [], notes: NONE });
+    expect(n.within.get(a)).toEqual({
+      figure: ['2'],
+      table: [],
+      equation: ['1', null],
+      notes: NONE,
+    });
+    expect(n.within.get(a1)).toEqual({ figure: [null], table: [], equation: ['2'], notes: NONE });
+    expect(n.within.get(b)).toEqual({ figure: ['3'], table: [], equation: [], notes: NONE });
     expect(n.byId.get('f1')).toMatchObject({ kind: 'figure', words: 'A vase', element: a });
     expect(n.byId.get('f1')?.file).toBe(HASH('b'));
     expect(n.byId.get('q1')).toMatchObject({ kind: 'equation', words: 'a = b' });
@@ -125,7 +131,36 @@ describe('the numbers of a document', () => {
     write(p, b, fig('f1', 'z', 'A copy'), fig('f3', 'd', 'The shield'));
     const n = count(p, top, plain);
     expect(n.byId.get('f1')).toMatchObject({ number: '2', words: 'A vase' });
-    expect(n.within.get(b)).toEqual({ figure: ['3', '4'], table: [], equation: [] });
+    expect(n.within.get(b)).toEqual({ figure: ['3', '4'], table: [], equation: [], notes: NONE });
+  });
+});
+
+describe('the notes of a document', () => {
+  /** A paragraph with notes after its words, one for each place given: '' where the format has its notes. */
+  const noted = (words: string, ...places: string[]) =>
+    paragraph.create(null, [
+      bodySchema.text(words),
+      ...places.map((place) => footnote.create({ place }, bodySchema.text('A note.'))),
+    ]);
+
+  it('are counted through the document, those set to a place of their own by themselves', () => {
+    const { p, top, a, a1, b } = sample();
+    write(p, top, noted('Before.', '', ''));
+    write(p, a, noted('Text.', '', 'end', ''));
+    write(p, a1, noted('Deeper.', 'foot'));
+    write(p, b, noted('After.', ''));
+    const n = count(p, top, plain);
+    expect(n.within.get(top)?.notes).toEqual(NONE);
+    expect(n.within.get(a)?.notes).toEqual({ notes: 2, placed: 0 });
+    expect(n.within.get(a1)?.notes).toEqual({ notes: 4, placed: 1 });
+    expect(n.within.get(b)?.notes).toEqual({ notes: 4, placed: 2 });
+    // Left out, an element's notes are not counted, and it has none before it.
+    p.setExcluded(a, true);
+    const m = count(p, top, plain);
+    expect(m.within.has(a)).toBe(false);
+    expect(m.within.get(b)?.notes).toEqual({ notes: 2, placed: 0 });
+    // A change of the notes is a change of the numbers.
+    expect(sameNumbers(n, m)).toBe(false);
   });
 });
 

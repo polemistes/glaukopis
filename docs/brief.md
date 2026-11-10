@@ -1380,3 +1380,9 @@ Answered by measuring the installed release off-screen, with a book of 44,000 wo
 > Could you change this plan so it reflects your considerations?
 
 Record 0087 follows, and the plan `docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md` is changed: the typesetting is bounded before the windows are built, with a script that measures; the windows stage carries what a window costs and tries the shared web process; the text view drawing what is near is the last stage, the one to leave where it will not come whole.
+
+## 2026-11-10 — notes read in the text
+
+> In Glaukopis, when there are foot/end-notes in the text view, they are all numbered "1", and the text can only be seen when hovering over the text. I think we should see the whole text, as we see the whole citation text for citations, just with the current note number in front of it.
+
+Built: a note stands in the text as its number and then what it says, and its number is the one it has in the document, counted from the project as the figures are; the style sheet's counters, which WebKit did not carry from one element's text to the next, are gone. Record 0088.

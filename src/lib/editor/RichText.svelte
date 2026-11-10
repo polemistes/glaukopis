@@ -52,7 +52,7 @@
   import { kindKeysOf, kindName } from './kinds';
   import { toCm } from '$lib/ui/settings/rows';
   import { annotationsGapWhere, numbersGap } from '$lib/document/line-gaps';
-  import { CitationView, FootnoteView, PageBreakView } from './views.svelte';
+  import { CitationView, FootnoteView, noteNumbers, PageBreakView } from './views.svelte';
   import { RefMarkView } from './refmarks';
   import { topOf } from '$lib/figures/numbering.svelte';
   import { pictures, PICTURES_DRAGGED } from '$lib/figures/pictures.svelte';
@@ -515,6 +515,8 @@
         yCursorPlugin(project.awareness),
         sharedUndo(project.undoManager),
         ...(kind === 'body' ? bodyPlugins(schema, hooks) : titlePlugins(hooks)),
+        // The numbers of the notes, as the document has them.
+        ...(kind === 'body' ? [noteNumbers()] : []),
         placeholderPlugin(() => placeholder),
         // What a search found, where the editor is to draw it: see `search/decorations.ts`.
         searchMarks(),

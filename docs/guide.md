@@ -441,10 +441,11 @@ opened.
 
 ### Notes
 
-A note is written in a small panel that opens where the note stands, and is
-shown in the text as its number. In the text the notes are numbered through
-all that is in view, as they will be in the document. An element that is
-left out of the document numbers its own.
+A note is written in a small panel that opens where the note stands. In the
+text it is shown where it stands, as its number and then what it says, so
+that it is read without being opened; pressing it opens it. The number is
+the one the note has in the document: the notes are numbered through all
+its elements. An element that is left out of the document numbers its own.
 
 Whether notes stand at the foot of the page or at the end of the text is
 said by the layout of the document. Some books keep two kinds of notes apart: the

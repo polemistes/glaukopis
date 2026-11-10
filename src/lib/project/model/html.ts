@@ -88,8 +88,12 @@ function inlines(list: Inline[], notes: Notes): string {
         break;
       case 'footnote':
         notes.n++;
-        // The number is counted by the page, from where the note stands.
-        out += `<sup class="footnote"${i.place ? ` data-place="${i.place}"` : ''} title="${escape(plain(i.content))}"></sup>`;
+        // The note is read where it stands, after its number, which is put in
+        // where the text is shown: it is counted through the document (`editor/notes.ts`).
+        // A line may break before it, as a column of a table that holds it may be narrow.
+        out +=
+          `<span class="footnote${i.content.length ? '' : ' blank'}"${i.place ? ` data-place="${i.place}"` : ''}>` +
+          `<wbr><span class="note-mark"></span><span class="note-text">${inlines(i.content, notes)}</span></span>`;
         break;
     }
   }

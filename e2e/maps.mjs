@@ -521,19 +521,21 @@ try {
   await app.press('Escape');
   await app.waitGone('.note-panel');
   await sleep(200);
-  // What the page counts cannot be asked for; what it counts by can.
+  // Each note shows its number and what it says, numbered through the elements.
   const counted = await app.exec(
     `const notes = Array.from(document.querySelectorAll('.text-view .column .footnote'));
      const sections = new Set(notes.map((n) => n.closest('.section')));
-     const resets = notes.map((n) => getComputedStyle(n.closest('.prose')).counterReset);
-     return { notes: notes.length, sections: sections.size, resets, column: getComputedStyle(document.querySelector('.text-view .column')).counterReset };`,
+     return {
+       sections: sections.size,
+       marks: notes.map((n) => n.querySelector('.note-mark')?.textContent),
+       texts: notes.map((n) => n.querySelector('.note-text')?.textContent),
+     };`,
   );
   check(
-    'the notes of a map are numbered through its elements',
-    counted.notes === 2 &&
-      counted.sections === 2 &&
-      counted.resets.every((r) => r === 'none') &&
-      /^note\b/.test(counted.column),
+    'the notes of a map are numbered through its elements, and say what they say',
+    counted.sections === 2 &&
+      counted.marks.join(',') === '1,2' &&
+      counted.texts.join(' | ') === 'So already the scholia. | Thus Lord.',
     JSON.stringify(counted),
   );
   await app.screenshot('maps-11a-notes');

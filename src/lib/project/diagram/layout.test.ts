@@ -80,6 +80,7 @@ function make(spec: Record<string, Partial<NodeRecord> & { parent: string | null
       words: 0,
       cited: [],
       notes: 0,
+      placedNotes: 0,
       noteWords: 0,
       set: [],
       uses: [],

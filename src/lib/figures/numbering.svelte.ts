@@ -21,6 +21,7 @@ import type { Project } from '$lib/project/model/project.svelte';
 import { partOf } from '$lib/project/parts';
 import type { RefForm } from '$lib/project/model/text';
 import { PROJECT } from '$lib/project/model/types';
+import type { NotesBefore } from '$lib/editor/notes';
 import {
   PLAIN_POINTER,
   pointerText as pointerWords,
@@ -49,13 +50,15 @@ export interface Within {
   figure: (string | null)[];
   table: (string | null)[];
   equation: (string | null)[];
+  /** The notes that stand before the element in the document (`editor/notes.ts`). */
+  notes: NotesBefore;
 }
 
 export interface Numbers {
   /** What can be pointed to, in the order of the document. */
   all: Pointed[];
   byId: Map<string, Pointed>;
-  /** The numbers of the figures, the tables and the equations of each element, in the order they stand in. */
+  /** The numbers of the figures, the tables and the equations of each element, in the order they stand in, and the notes before it. */
   within: Map<string, Within>;
 }
 
@@ -130,6 +133,7 @@ export function count(project: Project, at: string, counting: Counting = PLAIN):
     if (p.id && !byId.has(p.id)) byId.set(p.id, p);
   };
   const counted = { figure: 0, table: 0, equation: 0 };
+  const notes = { notes: 0, placed: 0 };
   const levels = [0, 0, 0, 0, 0, 0];
   // The numbers as the document prints them (record 0079): by the styles of
   // the levels, a level counted on through the document not begun anew.
@@ -152,7 +156,12 @@ export function count(project: Project, at: string, counting: Counting = PLAIN):
     // The same element may stand twice in a document, where a branch stands
     // in the place of an element: its numbers are those of the first.
     const first = !within.has(placed.id);
-    const numbers: Within = { figure: [], table: [], equation: [] };
+    const numbers: Within = { figure: [], table: [], equation: [], notes: { ...notes } };
+    // The notes are numbered through the document; a clone's own text is not printed.
+    if (!placed.clone) {
+      notes.notes += node.notes - node.placedNotes;
+      notes.placed += node.placedNotes;
+    }
     for (const s of node.set) {
       const number = s.numbered ? String(++counted[s.kind]) : null;
       numbers[s.kind].push(number);
@@ -223,6 +232,7 @@ export function sameNumbers(a: Numbers, b: Numbers): boolean {
     const y = b.within.get(element);
     if (!list(x.figure, y?.figure) || !list(x.table, y?.table) || !list(x.equation, y?.equation))
       return false;
+    if (x.notes.notes !== y?.notes.notes || x.notes.placed !== y.notes.placed) return false;
   }
   return true;
 }

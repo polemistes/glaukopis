@@ -76,6 +76,7 @@ function long(paragraphs = 200) {
       words: n.words,
       cited: n.cited,
       notes: n.notes,
+      placedNotes: n.placedNotes,
       noteWords: n.noteWords,
       set: n.set,
       uses: n.uses,

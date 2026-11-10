@@ -190,10 +190,10 @@ try {
   await app.waitFor('.text-view .section', 8000);
   await sleep(500);
 
-  const foundInText = () => app.count('.text-view .prose .found:not(.left)');
+  const foundInText = () => app.count('.text-view .prose .found:not(.left):not(.note-text *)');
   const citationsInText = () =>
     app.exec(
-      `return Array.from(document.querySelectorAll('.text-view .prose.body .citation')).map((e) => e.textContent)`,
+      `return Array.from(document.querySelectorAll('.text-view .prose.body .citation:not(.note-text *)')).map((e) => e.textContent)`,
     );
   const notesInText = () => app.count('.text-view .prose.body .footnote');
   const P = '.found-panel';
@@ -518,7 +518,7 @@ try {
   await press(await button('Make it a citation'));
   await sleep(600);
   const notes = await app.exec(
-    `return Array.from(document.querySelectorAll('.text-view .prose.body .footnote')).map((e) => e.getAttribute('title'))`,
+    `return Array.from(document.querySelectorAll('.text-view .prose.body .footnote')).map((e) => e.querySelector('.note-text')?.textContent.replace(/\\s+/g, ' ').trim())`,
   );
   check(
     'the citation stands in the note, which stays a note',
@@ -584,7 +584,7 @@ try {
   await sleep(400);
   check(
     'where the text is written, what was found is marked as well',
-    (await app.count('.text-view .ProseMirror.body .found:not(.left)')) === 3,
+    (await app.count('.text-view .ProseMirror.body .found:not(.left):not(.note-text *)')) === 3,
   );
   await app.click('.text-view .ProseMirror.body .found[data-by="key"]');
   await opened();
@@ -598,7 +598,7 @@ try {
   await press(await button('Make it a citation'));
   await sleep(600);
   const inEditor = await app.exec(
-    `return Array.from(document.querySelectorAll('.text-view .ProseMirror.body .citation')).map((e) => e.textContent)`,
+    `return Array.from(document.querySelectorAll('.text-view .ProseMirror.body .citation:not(.note-text *)')).map((e) => e.textContent)`,
   );
   check(
     'the citation is made in the text that is being written in',
@@ -607,13 +607,13 @@ try {
   );
   check(
     'whose marks are those that are left',
-    (await app.count('.text-view .ProseMirror.body .found:not(.left)')) === 2,
+    (await app.count('.text-view .ProseMirror.body .found:not(.left):not(.note-text *)')) === 2,
   );
   await app.keys(['Control', 'z']);
   await sleep(700);
   check(
     'and taken back by Ctrl+Z',
-    (await app.count('.text-view .ProseMirror.body .found:not(.left)')) === 3 &&
+    (await app.count('.text-view .ProseMirror.body .found:not(.left):not(.note-text *)')) === 3 &&
       (await current()) === '[@parry1971, 12]',
     await current(),
   );
@@ -622,7 +622,7 @@ try {
   left = await rows();
   check(
     'and made again',
-    left.length === 3 && (await app.count('.text-view .ProseMirror.body .found:not(.left)')) === 2,
+    left.length === 3 && (await app.count('.text-view .ProseMirror.body .found:not(.left):not(.note-text *)')) === 2,
     JSON.stringify(left),
   );
   await closePanel();

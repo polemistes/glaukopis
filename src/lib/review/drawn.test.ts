@@ -84,7 +84,7 @@ describe('drawn text', () => {
     expect(at([4, 0])).toBe('A shield.');
     expect(at([5, 0])).toBe('A table.');
     expect(at([5, 1, 0, 0, 0])).toBe('Cell');
-    expect(drawnHolder(root, body, 'body', [6, 'note', 0])?.matches('sup.footnote')).toBe(true);
+    expect(drawnHolder(root, body, 'body', [6, 'note', 0])?.matches('span.footnote')).toBe(true);
     expect(drawnHolder(root, body, 'body', [7])?.matches('div.pagebreak')).toBe(true);
     expect(at([8])).toBe('Singgoddess');
   });
