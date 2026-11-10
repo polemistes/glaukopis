@@ -79,3 +79,9 @@ core-export-output-unknown = Il modello non ha nessun file «{ $id }».
 ## Stage 5 of the settings in plain words: LaTeX's hyphenation.
 
 core-export-latex-no-hyphenation = LaTeX non ha le regole di sillabazione per la lingua { $language }: le parole vanno a capo come quelle inglesi finché non è installato il pacchetto della lingua di TeX Live (su Arch, texlive-langeuropean per la maggior parte delle lingue europee).
+
+## The data folder, more than one window, favourites: the typesetting in a child of its own.
+
+core-export-typeset-time = Typst ha impiegato più tempo di quanto possa per comporre il documento, ed è stato fermato.
+core-export-typeset-memory = Typst ha preso più memoria di quanta possa per comporre il documento, ed è stato fermato.
+core-export-typeset-ended = Typst si è chiuso prima che il documento fosse composto: { $message }

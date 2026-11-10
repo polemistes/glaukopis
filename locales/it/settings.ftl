@@ -39,7 +39,12 @@ settings-text-depth-dots = Punti
 settings-text-depth-indent = Rientri, con linee
 # Whether the number a heading will print stands before its name in the text view and the diagram: the outline has it always.
 settings-heading-numbers = Numeri dei titoli, come il documento li stampa
+settings-heading-numbers-printed = Come il documento li stampa
+# Every box of the map numbered from the element in view, whatever the look prints (record 0083).
+settings-heading-numbers-tree = Per ogni elemento
 settings-heading-numbers-hidden = Nascosti
+settings-heading-numbers-text = Nel testo
+settings-heading-numbers-diagram = Nel diagramma
 settings-interface-size = Dimensione dell'interfaccia
 # A line of text in the size chosen, which shows the face of the letters; a
 # line of Homer's Greek follows it.
@@ -119,3 +124,16 @@ settings-default-style = Stile di citazione predefinito
 settings-default-none = Nessuno, come vuole il tipo di documento
 # Whether a line of the preview, pressed, shows a chip at the edge of the page that says what it is and opens Look at it.
 settings-look-chips = Mostra i cartellini dell'aspetto nell'anteprima
+
+## The data folder chosen by the writer (docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md).
+
+settings-data-change = Cambia…
+settings-data-move = Sposta tutto in «{ $path }»
+settings-data-use = Usa ciò che è in «{ $path }»
+settings-data-use-note = Ciò che ora è in «{ $path }» resta lì, inutilizzato.
+settings-data-not-empty = La cartella non è vuota.
+settings-data-restart = Glaukopis si chiude e si riavvia.
+settings-data-move-button = Sposta
+settings-data-use-button = Usa
+settings-data-copying = Copia in corso… { $done } di { $count } file
+settings-data-failed = La cartella non si è potuta cambiare
