@@ -1,6 +1,7 @@
 // An element is folded away in the text, its own text and what is under
 // it; it is as it was left when the project is opened again; and all that
-// is folded under an element is opened at once.
+// is folded under an element is opened at once. What is folded away is no
+// part of how far the text is scrolled.
 
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -259,6 +260,21 @@ try {
   await sleep(300);
   check('a new element is made under it, and shown', // The driver loses capitals after keys that were pressed together.
     (await shown()).join('|').toLowerCase().includes('two|two first|two a'), JSON.stringify(await shown()));
+
+  // ---- what is folded away is no part of how far the text is scrolled ----
+  await app.press('Enter');
+  await sleep(300);
+  await app.exec(
+    `document.execCommand('insertText', false, arguments[0]);`,
+    'Many cities of men he saw, and learned their minds, and many woes he suffered on the sea. '.repeat(60),
+  );
+  await sleep(800);
+  const height = () => app.exec(`return document.querySelector('.text-view .scroller').scrollHeight`);
+  const long = await height();
+  await fold('Two');
+  await sleep(800);
+  const short = await height();
+  check('folded, a long text no longer makes the text longer to scroll through', short < long - 400, `${long} → ${short}`);
 
   const errors = await app.pageErrors();
   check('no errors in the window', errors.length === 0, errors.join(' ‖ '));

@@ -1627,7 +1627,14 @@
   .margin {
     position: relative;
   }
+  /* As high as the column, and no part of how high the page is: in the
+     grid's row it would keep the row, and the column stretched to it, as
+     high as it was measured, and the text could not grow shorter when
+     something is folded away. */
   .margin svg {
+    position: absolute;
+    top: 0;
+    left: 0;
     display: block;
     overflow: visible;
   }
