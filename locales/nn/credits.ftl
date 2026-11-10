@@ -26,7 +26,7 @@ credits-lookup-about = DOI-ar hos doi.org, Crossref og DataCite; bøker i katalo
 ## What each is to Glaukopis
 
 credits-what-tauri = Ramma rundt programmet: vindauget, og vegen mellom grensesnittet og resten.
-credits-what-tauri-plugins = Vindauga for å velje filer og mapper, og for å opne filer og adresser i andre program.
+credits-what-tauri-plugins = Vindauga for å velje filer og mapper, for å opne filer og adresser i andre program, og eit nytt vindauge når Glaukopis vert starta på nytt.
 credits-what-webkitgtk = Nettmotoren grensesnittet blir vist i, på Linux. Den er ein del av systemet, ikkje av Glaukopis.
 credits-what-gtk = Kva som blir av vindauget og sida på Linux, for loggen.
 credits-what-svelte = Grensesnittet er skrive med det.

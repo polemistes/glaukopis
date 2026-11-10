@@ -26,7 +26,7 @@ credits-lookup-about = DOIはdoi.org、Crossref、DataCiteで、書籍はK10plus
 ## それぞれがGlaukopisにとって何であるか
 
 credits-what-tauri = アプリケーションの枠組み。ウィンドウと、インターフェースとそれ以外の部分をつなぐ仕組み。
-credits-what-tauri-plugins = ファイルやフォルダーを選ぶウィンドウと、ファイルやアドレスをほかのプログラムで開く機能。
+credits-what-tauri-plugins = ファイルやフォルダーを選ぶウィンドウ、ファイルやアドレスをほかのプログラムで開く機能、そして Glaukopis をもう一度起動したときの新しいウィンドウ。
 credits-what-webkitgtk = Linuxでインターフェースを表示するWebエンジン。Glaukopisではなく、システムの一部です。
 credits-what-gtk = Linuxでウィンドウとページに何が起きたかを、ログのために知らせます。
 credits-what-svelte = インターフェースはこれで書かれています。

@@ -26,7 +26,7 @@ credits-lookup-about = Les DOI sur doi.org et chez Crossref et DataCite ; les 
 ## What each is to Glaukopis
 
 credits-what-tauri = Le cadre de l’application : sa fenêtre, et le lien entre l’interface et le reste.
-credits-what-tauri-plugins = Les fenêtres où choisir des fichiers et des dossiers, et l’ouverture de fichiers et d’adresses dans d’autres programmes.
+credits-what-tauri-plugins = Les fenêtres où choisir des fichiers et des dossiers, l’ouverture de fichiers et d’adresses dans d’autres programmes, et une nouvelle fenêtre quand Glaukopis est relancé.
 credits-what-webkitgtk = Le moteur web dans lequel l’interface est affichée, sous Linux. Il fait partie du système, pas de Glaukopis.
 credits-what-gtk = Ce que deviennent la fenêtre et la page sous Linux, pour le journal.
 credits-what-svelte = Ce avec quoi l’interface est écrite.

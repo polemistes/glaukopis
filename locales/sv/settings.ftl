@@ -38,7 +38,7 @@ settings-text-depth-numbers = Nummer
 settings-text-depth-dots = Punkter
 settings-text-depth-indent = Indraget, med linjer
 # Whether the number a heading will print stands before its name in the text view and the diagram: the outline has it always.
-settings-heading-numbers = Rubrikernas nummer, som dokumentet skriver ut dem
+settings-heading-numbers = Rubrikernas nummer
 settings-heading-numbers-printed = Som dokumentet skriver ut dem
 # Every box of the map numbered from the element in view, whatever the look prints (record 0083).
 settings-heading-numbers-tree = För varje element

@@ -38,7 +38,7 @@ settings-text-depth-numbers = 番号
 settings-text-depth-dots = 点
 settings-text-depth-indent = 字下げと線
 # 見出しが印字する番号を、テキストビューとダイアグラムで名前の前に表示するかどうか。アウトラインには常に表示される。
-settings-heading-numbers = 見出しの番号（文書に印字されるとおり）
+settings-heading-numbers = 見出しの番号
 settings-heading-numbers-printed = 文書に印字されるとおり
 # Every box of the map numbered from the element in view, whatever the look prints (record 0083).
 settings-heading-numbers-tree = すべての要素に
