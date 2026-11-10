@@ -316,3 +316,14 @@ home-mindmap-left-out-references = { $count ->
     [one] En korshänvisning till en figur eller en del, som inte pekar på något där
    *[other] { $count } korshänvisningar till figurer eller delar, som inte pekar på något där
 }
+
+## Favourite projects (plan: the data folder, more than one window, favourites and the copied space)
+
+home-favourites = Favoriter
+home-favourite-add = Lägg till i favoriter
+home-favourite-remove = Ta bort från favoriter
+
+## More than one window (docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md).
+
+home-new-window = Nytt fönster
+home-open-window = Öppna i nytt fönster

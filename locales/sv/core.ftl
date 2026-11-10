@@ -83,3 +83,14 @@ core-start-failed-log = Mer om vad som hände står i körningens logg, { $log }
 
 # What the program said of itself is given after the colon, in English.
 core-worker-panicked = Något gick fel inne i Glaukopis, och det som höll på att göras gavs upp: { $message }. Körningens logg säger mer.
+
+## The data folder chosen by the writer (docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md).
+
+core-data-cannot-open-title = Mappen kunde inte öppnas
+core-data-cannot-open = Glaukopis har allt i { $path }, som inte kunde öppnas: { $error }
+core-data-usual = Använd den vanliga mappen
+core-data-quit = Avsluta
+core-data-move-failed = Allt blir kvar i { $from }: det kunde inte flyttas till { $to }. { $error }
+# A file of the data folder that is not whole where it was copied to.
+core-data-not-copied = { $path } kopierades inte helt.
+core-data-inside = { $to } ligger i { $from }, eller { $from } i den.

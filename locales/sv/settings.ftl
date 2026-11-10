@@ -39,7 +39,12 @@ settings-text-depth-dots = Punkter
 settings-text-depth-indent = Indraget, med linjer
 # Whether the number a heading will print stands before its name in the text view and the diagram: the outline has it always.
 settings-heading-numbers = Rubrikernas nummer, som dokumentet skriver ut dem
+settings-heading-numbers-printed = Som dokumentet skriver ut dem
+# Every box of the map numbered from the element in view, whatever the look prints (record 0083).
+settings-heading-numbers-tree = För varje element
 settings-heading-numbers-hidden = Dolda
+settings-heading-numbers-text = I texten
+settings-heading-numbers-diagram = I diagrammet
 settings-interface-size = Gränssnittets storlek
 # A line of text in the size chosen, which shows the face of the letters; a
 # line of Homer's Greek follows it.
@@ -119,3 +124,16 @@ settings-default-style = Förvald referensstil
 settings-default-none = Ingen, som dokumenttypen har det
 # Whether a line of the preview, pressed, shows a chip at the edge of the page that says what it is and opens Look at it.
 settings-look-chips = Visa utseendeetiketter i förhandsvisningen
+
+## The data folder chosen by the writer (docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md).
+
+settings-data-change = Ändra…
+settings-data-move = Flytta allt till ”{ $path }”
+settings-data-use = Använd det som finns i ”{ $path }”
+settings-data-use-note = Det som nu finns i ”{ $path }” blir kvar där, oanvänt.
+settings-data-not-empty = Mappen är inte tom.
+settings-data-restart = Glaukopis stängs och startar igen.
+settings-data-move-button = Flytta
+settings-data-use-button = Använd
+settings-data-copying = Kopierar… { $done } av { $count } filer
+settings-data-failed = Mappen kunde inte ändras

@@ -76,3 +76,9 @@ core-export-output-unknown = Mallen har ingen fil ”{ $id }”.
 ## Stage 5 of the settings in plain words: LaTeX's hyphenation.
 
 core-export-latex-no-hyphenation = LaTeX har inga avstavningsmönster för { $language }: orden avstavas som engelska ord tills språkets paket i TeX Live är installerat (på Arch texlive-langeuropean för de flesta europeiska språk).
+
+## The data folder, more than one window, favourites: the typesetting in a child of its own.
+
+core-export-typeset-time = Typst tog längre tid på sig att sätta dokumentet än det får, och stoppades.
+core-export-typeset-memory = Typst tog mer minne för att sätta dokumentet än det får, och stoppades.
+core-export-typeset-ended = Typst slutade innan dokumentet var satt: { $message }
