@@ -1392,3 +1392,9 @@ Built: a note stands in the text as its number and then what it says, and its nu
 > I was mistaken. It was not notes that had made into end notes. It was a numbered list that had been messed up a bit. My document has a numbered list with several normal text paragraphs between the numbered entries. The import numbers each of the paragraphs, not only the lines that are numbered in the odt file.
 
 Mended: the text grows shorter when something is folded away (the picture of the associations in the margin held the page as high as it was), and the paragraphs of a list without a number come in as text set in under the point before them, the count going on past them; a point given its number by hand is now shown with it where one writes and where the text is drawn. The notes of a document brought in follow Look, as a new script shows. Record 0012 has an addendum.
+
+## 2026-11-12 — elements dragged in the outline, and a finer wheel in the diagram
+
+> It would be great if it were possible to move elements around in the outline pane. Also, in diagram view, the mouse zoom should be more fine grained.
+
+Built: a name in the outline is dragged to another place among the names, with all that is under it, as deep as the pointer has gone sideways, and what is dragged is what the text and the diagram drag, so that elements go between the three; the wheel with Ctrl zooms the map by a thousandth for each pixel it turns, a notch a twentieth or so where it was a tenth or more. Record 0089.

@@ -90,7 +90,21 @@ export function bringing(
   return dx || dy ? { ...view, x: view.x + dx, y: view.y + dy } : null;
 }
 
-/** The view after the wheel: zoomed about the pointer with Ctrl held, and moved otherwise. */
+/** By how much the scale changes for each pixel the wheel turns: a thousandth. */
+export const WHEEL = 0.001;
+/**
+ * The most one turn of the wheel counts for, in pixels: the notch of a
+ * mouse as the web view of Linux tells it, so that a notch told larger
+ * elsewhere zooms no further.
+ */
+export const NOTCH = 60;
+
+/**
+ * The view after the wheel: zoomed about the pointer with Ctrl held, and
+ * moved otherwise. The zoom is by so much for each pixel, a mouse's notch
+ * a twentieth or so and the small turns of a touchpad as small as they
+ * are; lines and pages are taken as pixels.
+ */
 export function wheeled(
   view: View,
   event: WheelEvent,
@@ -99,7 +113,9 @@ export function wheeled(
   min = MIN_ZOOM,
 ): View {
   if (event.ctrlKey || event.metaKey) {
-    return zoomedAt(view, px, py, view.k * Math.exp(-event.deltaY * 0.0022), min);
+    const turned = event.deltaY * (event.deltaMode === 1 ? 40 : event.deltaMode === 2 ? 800 : 1);
+    const d = Math.max(-NOTCH, Math.min(NOTCH, turned));
+    return zoomedAt(view, px, py, view.k * Math.exp(-d * WHEEL), min);
   }
   const scale = event.deltaMode === 1 ? 32 : 1;
   return { ...view, x: view.x - event.deltaX * scale, y: view.y - event.deltaY * scale };

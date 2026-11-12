@@ -654,6 +654,38 @@ try {
   );
   await app.screenshot('maps-12-diagram-again');
 
+  // --- The wheel with Ctrl: a notch is a small step ---
+  const scale = () =>
+    app.exec(
+      `return Number(/scale\\(([\\d.]+)\\)/.exec(document.querySelector('.diagram .world').style.transform)?.[1])`,
+    );
+  const turn = (deltaY) =>
+    app.exec(
+      `const el = document.querySelector('.diagram');
+       const r = el.getBoundingClientRect();
+       el.dispatchEvent(new WheelEvent('wheel', { deltaY: arguments[0], ctrlKey: true, bubbles: true, cancelable: true,
+         clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }));`,
+      deltaY,
+    );
+  const k0 = await scale();
+  await turn(-60);
+  await sleep(150);
+  const k1 = await scale();
+  await turn(-120);
+  await sleep(150);
+  const k2 = await scale();
+  await turn(60);
+  await turn(60);
+  await sleep(150);
+  const k3 = await scale();
+  check(
+    'a notch of the wheel with Ctrl zooms the map by a small step',
+    Math.abs(k1 / k0 - 1.062) < 0.004,
+    `${k0} → ${k1}`,
+  );
+  check('a notch told twice as large zooms no further', Math.abs(k2 / k1 - 1.062) < 0.004, `${k1} → ${k2}`);
+  check('and two notches back bring the scale back', Math.abs(k3 - k0) < 0.004, `${k2} → ${k3}`);
+
   // --- A second tree under the project, entered and left; then two side by side ---
   // "Add child element" in the menu of the element in view adds a child
   // of it, the project, and names it there; the view stays where it was.

@@ -329,6 +329,7 @@
           ongo={(id) => (spec.mode === 'text' && text ? text.goTo(id) : goTo(id))}
           onclose={() => sides.toggleOutline(key)}
           width={open.outlineWidth}
+          besideProject={other}
         />
         <Divider
           label={t('text-outline-between')}

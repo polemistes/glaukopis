@@ -202,7 +202,7 @@ behind. The new project opens on its text.
 | Undo, redo | **Ctrl+Z**, **Ctrl+Shift+Z** |
 | Enter an element: it comes to the centre, with what is under it, and the rest is out of the way | The small round button at its corner, which shows when the pointer is on it or it is selected; **Alt+Shift+Down**; or **Enter** in its menu |
 | Go up, to the element over the one in view | **Alt+Shift+Up**; the small round button at the corner of the element in view; or its name, small, at the left of the bar |
-| Move about the map | Drag the background; scroll to zoom |
+| Move about the map | Drag the background, or turn the wheel; **Ctrl** with the wheel zooms, a small step for each notch |
 | Everything else | Right-click an element, or **Shift+F10** |
 
 The element in view stands at the centre of the map, never folded, and what
@@ -398,6 +398,16 @@ opens it again, as the left and right arrows do; this folding is the
 outline's own and changes nothing in the text. The up and down arrows go
 from name to name, and **Alt** with the arrows moves an element, as in the
 text.
+
+Drag a name to move its element, with all that is under it, to another
+place among the names: a line shows where it will stand, and the element it
+will stand under is marked. Straight up or down it stays as deep as it was;
+a little to the right it goes deeper, under the element above, and to the
+left less deep, as far out as the element below. Held near the top or the
+bottom of the outline, the names scroll under it. With **Ctrl** held, a
+copy is put there. What is dragged in the outline can be dropped in the
+text or on the diagram, and an element dragged from either can be dropped
+in the outline.
 
 ### Folding elements away
 

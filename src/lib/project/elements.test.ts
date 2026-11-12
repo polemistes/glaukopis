@@ -1,6 +1,14 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { toasts } from '$lib/ui/toast.svelte';
-import { indent, outdent, removeElements, shift } from './elements';
+import {
+  indent,
+  outdent,
+  putDragged,
+  removeElements,
+  shift,
+  standsAt,
+  type ElementsPayload,
+} from './elements';
 import { Project } from './model/project.svelte';
 import { PROJECT } from './model/types';
 
@@ -64,6 +72,56 @@ describe('moving an element by the keys', () => {
     indent(p, p.tree(), b);
     p.undo();
     expect(names()).toBe('Wrath -A -B -C');
+  });
+});
+
+describe('elements dragged to a place in the order', () => {
+  const dragged = (p: Project, ids: string[]): ElementsPayload => ({
+    project: p,
+    at: PROJECT,
+    ids,
+    grab: { x: 0, y: 0 },
+  });
+
+  it('are moved there, or copied, in one step', () => {
+    const { p, a, b, c, names } = project();
+    p.checkpoint();
+    expect(putDragged(p, dragged(p, [c]), { parent: a, index: 0 }, false)).toEqual([c]);
+    expect(names()).toBe('Wrath -A --C -B');
+    expect(putDragged(p, dragged(p, [a]), { parent: PROJECT, index: 2 }, false)).toEqual([a]);
+    expect(names()).toBe('Wrath -B -A --C');
+    p.undo();
+    expect(names()).toBe('Wrath -A --C -B');
+    const made = putDragged(p, dragged(p, [b]), { parent: a, index: 1 }, true);
+    expect(made.length).toBe(1);
+    expect(made[0]).not.toBe(b);
+    expect(names()).toBe('Wrath -A --C --B -B');
+  });
+
+  it('are left as they are where one would stand where it stands', () => {
+    const { p, a, b, names } = project();
+    expect(standsAt(p.tree(), b, PROJECT, 1)).toBe(true);
+    expect(standsAt(p.tree(), b, PROJECT, 2)).toBe(true);
+    expect(standsAt(p.tree(), b, PROJECT, 0)).toBe(false);
+    expect(standsAt(p.tree(), b, PROJECT, 3)).toBe(false);
+    expect(standsAt(p.tree(), b, a, 0)).toBe(false);
+    p.checkpoint();
+    const steps = p.undoManager.undoStack.length;
+    expect(putDragged(p, dragged(p, [b]), { parent: PROJECT, index: 2 }, false)).toEqual([]);
+    expect(p.undoManager.undoStack.length).toBe(steps);
+    expect(names()).toBe('Wrath -A -B -C');
+    // A copy made there is a copy all the same.
+    expect(putDragged(p, dragged(p, [b]), { parent: PROJECT, index: 2 }, true).length).toBe(1);
+    expect(names()).toBe('Wrath -A -B -B -C');
+  });
+
+  it('are carried across from the project beside, and taken away there', () => {
+    const { p, a, names } = project();
+    const other = project();
+    const made = putDragged(p, dragged(other.p, [other.b]), { parent: a, index: 0 }, false);
+    expect(made.length).toBe(1);
+    expect(names()).toBe('Wrath -A --B -B -C');
+    expect(other.names()).toBe('Wrath -A -C');
   });
 });
 

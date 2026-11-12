@@ -3,7 +3,11 @@
   element under it by its name, as deep as it stands, the one in view marked. A name is pressed to go there;
   what has something under it folds and opens by its chevron, or with the
   left and right arrows; the up and down arrows go through the names, and
-  Alt with the arrows moves an element, as in the text and the diagram.
+  Alt with the arrows moves an element, as in the text and the diagram. An
+  element is dragged by its name to another place among the names: a line
+  shows where it would stand, as deep as the pointer has gone sideways, and
+  the element it would stand under is marked. What is dragged is what the
+  text and the diagram drag, so that elements go between the three.
 -->
 <script lang="ts">
   import { tick } from 'svelte';
@@ -13,12 +17,28 @@
   import { t } from '$lib/i18n';
   import { numbering } from '$lib/figures/numbering.svelte';
   import { keysFor } from '$lib/shell/keys.svelte';
+  import {
+    drag,
+    dropTarget,
+    startDrag,
+    type DragPayload,
+    type DropEvent,
+  } from '$lib/ui/drag.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
-  import { indent, outdent, shift } from '../elements';
+  import { indent, outdent, putDragged, shift, type ElementsPayload } from '../elements';
   import { kindColour } from '../kinds';
   import { isDoubled, kindLabel } from '../parts';
   import type { Project } from '../model/project.svelte';
-  import { listed, outlineFolds, type OutlineItem } from '../outline';
+  import { subtree } from '../model/tree';
+  import {
+    depthWanted,
+    listed,
+    outlineFolds,
+    outlineIndent,
+    outlinePlace,
+    type OutlineItem,
+  } from '../outline';
+  import { placeAt } from './layout';
 
   interface Props {
     project: Project;
@@ -37,6 +57,8 @@
     onclose: () => void;
     /** How wide it stands, in pixels. */
     width?: number;
+    /** The project of the other side, where it shows another: its elements dragged here are carried across. */
+    besideProject?: Project | null;
   }
 
   let {
@@ -48,6 +70,7 @@
     ongo,
     onclose,
     width = 240,
+    besideProject = null,
   }: Props = $props();
 
   const folded = $derived(outlineFolds(at));
@@ -128,6 +151,129 @@
       focusItem(next.id);
     }
   }
+
+  // ---- dragging ----
+
+  /** The room at each side of the rows, and the width of a chevron with what is after it: see the styles. */
+  const SIDE = 6;
+  const CHEVRON = 16;
+  /** How near its upper or lower edge the list scrolls under what is dragged, and how far in each frame. */
+  const EDGE = 28;
+  const SCROLL = 6;
+
+  /** Where what is dragged would go: under which element, at which place, and where the line is drawn. */
+  interface Place {
+    parent: string;
+    index: number;
+    top: number;
+    left: number;
+  }
+
+  let place = $state<Place | null>(null);
+  /** The drag that began here, while it lasts: where the pointer took the element, and how deep it stood. */
+  let grabbed: { x: number; depth: number } | null = null;
+
+  /** Whether what is dragged is elements the outline takes: the project's own, or those of the project beside. */
+  function takes(data: ElementsPayload): boolean {
+    return data.project === project || (!!besideProject && data.project === besideProject);
+  }
+
+  /** The elements of this project that are dragged, and all under them: no places for themselves. */
+  const lifted = $derived.by(() => {
+    const out = new Set<string>();
+    const p = drag.payload;
+    if (p?.kind !== 'elements') return out;
+    const data = p.data as ElementsPayload;
+    if (data.project !== project) return out;
+    const tree = project.tree(at);
+    for (const id of data.ids) for (const d of subtree(tree, id)) out.add(d);
+    return out;
+  });
+
+  function ongrab(event: PointerEvent, item: OutlineItem) {
+    // The element in view stays where it is; a chevron folds.
+    if (item.id === at || (event.target as HTMLElement).closest('.chevron')) return;
+    startDrag(
+      event,
+      () => {
+        const data: ElementsPayload = { project, at, ids: [item.id], grab: { x: 0, y: 0 } };
+        grabbed = { x: event.clientX, depth: item.level };
+        return {
+          kind: 'elements',
+          data,
+          label: project.node(item.id)?.title || t('project-untitled'),
+        };
+      },
+      () => (grabbed = null),
+    );
+  }
+
+  /**
+   * Where elements dragged would go, with the pointer where it is. Its
+   * height says between which two rows; how far it has gone sideways says
+   * how deep, among the depths that place allows. The choice is made in
+   * `outline`; here the rows are measured.
+   */
+  function placeOf(payload: DragPayload, x: number, y: number): Place | null {
+    if (!list || payload.kind !== 'elements') return null;
+    const data = payload.data as ElementsPayload;
+    const rows = [...list.querySelectorAll<HTMLElement>('[data-outline]')].filter(
+      (row) => !lifted.has(row.dataset.outline!),
+    );
+    if (!rows.length) return null;
+    const above = placeAt(y, rows.length, (i) => rows[i].getBoundingClientRect());
+    const box = list.getBoundingClientRect();
+    const wanted = depthWanted(x, grabbed, box.left + SIDE + outlineIndent(1) + CHEVRON);
+    const chosen = outlinePlace(
+      project,
+      at,
+      rows.map((row) => row.dataset.outline!),
+      above,
+      wanted,
+      data.project === project ? data.ids : null,
+    );
+    if (!chosen) return null;
+    return {
+      parent: chosen.parent,
+      index: chosen.index,
+      top: Math.round(rows[above].getBoundingClientRect().bottom - box.top + list.scrollTop),
+      left: SIDE + outlineIndent(chosen.depth),
+    };
+  }
+
+  let scrolling = 0;
+
+  /** Near its upper or lower edge, the list scrolls under what is dragged, for as long as it is held there. */
+  function scrollNear(y: number | null) {
+    cancelAnimationFrame(scrolling);
+    scrolling = 0;
+    if (y === null || !list) return;
+    const box = list.getBoundingClientRect();
+    const by = y < box.top + EDGE ? -1 : y > box.bottom - EDGE ? 1 : 0;
+    if (!by) return;
+    scrolling = requestAnimationFrame(() => {
+      if (!list || !drag.payload) return;
+      list.scrollTop += by * SCROLL;
+      scrollNear(drag.y);
+    });
+  }
+
+  function onover(event: DropEvent | null) {
+    place = event ? placeOf(event.payload, event.x, event.y) : null;
+    scrollNear(event ? event.y : null);
+  }
+
+  async function ondrop(event: DropEvent) {
+    const to = placeOf(event.payload, event.x, event.y);
+    place = null;
+    if (!to) return;
+    const made = putDragged(project, event.payload.data as ElementsPayload, to, event.copy);
+    if (!made.length) return;
+    // What it went under is opened here, so that it is seen where it stands.
+    fold(to.parent, false);
+    await tick();
+    focusItem(made[0]);
+  }
 </script>
 
 <aside class="outline" aria-label={t('text-outline')} style:--outline-width="{width}px">
@@ -142,7 +288,27 @@
       <X size={14} />
     </IconButton>
   </header>
-  <ol bind:this={list}>
+  <ol
+    bind:this={list}
+    use:dropTarget={{
+      accepts: (p) => p.kind === 'elements' && takes(p.data as ElementsPayload),
+      ondrop,
+      onover,
+    }}
+    onscroll={() => {
+      // The rows have moved under the pointer: by the wheel, or near an edge.
+      if (place && drag.payload) place = placeOf(drag.payload, drag.x, drag.y);
+    }}
+  >
+    {#if place && drag.payload}
+      <!-- Where what is dragged would go: the line set in as deep as it would stand. -->
+      <li
+        class="drop-line"
+        role="presentation"
+        style:top="{place.top}px"
+        style:left="{place.left}px"
+      ></li>
+    {/if}
     {#each items as item, i (item.id)}
       {@const node = project.nodes.get(item.id)}
       {@const number = numberOf(item.id)}
@@ -153,11 +319,14 @@
           class:chosen={item.id === current}
           class:away={item.away}
           class:excluded={item.excluded}
-          style:padding-left="{4 + Math.min(item.level, 6) * 12}px"
+          class:lifted={lifted.has(item.id)}
+          class:into={place?.parent === item.id && !!drag.payload}
+          style:padding-left="{outlineIndent(item.level)}px"
           aria-current={item.id === current ? 'location' : undefined}
           tabindex={item.id === current || (!current && i === 0) ? 0 : -1}
           onclick={() => ongo(item.id)}
           onkeydown={(e) => onkeydown(e, i)}
+          onpointerdown={(e) => ongrab(e, item)}
         >
           {#if item.children > 0}
             <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
@@ -229,12 +398,33 @@
     text-transform: uppercase;
   }
   ol {
+    position: relative;
     flex: 1;
     min-height: 0;
     overflow-y: auto;
     margin: 0;
     padding: 0 6px 24px;
     list-style: none;
+  }
+  .drop-line {
+    position: absolute;
+    right: 6px;
+    z-index: 1;
+    height: 2px;
+    margin-top: -1px;
+    border-radius: 2px;
+    background: var(--accent);
+    pointer-events: none;
+  }
+  .drop-line::before {
+    content: '';
+    position: absolute;
+    left: -3px;
+    top: -2px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
   }
   button {
     display: flex;
@@ -262,6 +452,13 @@
   }
   button.away {
     color: var(--ink-4);
+  }
+  /* What is dragged, where it still stands; and the element it would go under. */
+  button.lifted {
+    opacity: 0.45;
+  }
+  button.into {
+    box-shadow: inset 0 0 0 1px var(--accent);
   }
   button.excluded .name {
     text-decoration: line-through;

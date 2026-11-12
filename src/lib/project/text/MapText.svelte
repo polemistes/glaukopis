@@ -51,6 +51,7 @@
     elementMenu,
     indent as indentElement,
     outdent as outdentElement,
+    putDragged,
     shift as shiftElement,
     type DocumentMark,
     type ElementActions,
@@ -58,7 +59,6 @@
   } from '../elements';
   import { openDrawnWordMenu } from '$lib/spelling/drawn';
   import { replaceWhenShown } from '$lib/spelling/menu';
-  import { carryAcross } from '../elsewhere';
   import type { Project } from '../model/project.svelte';
   import { isAncestor } from '../model/tree';
   import { pieces } from '../pieces';
@@ -1265,24 +1265,7 @@
   function dropElements(event: DropEvent, place: DropSlot) {
     const payload = event.payload.data as ElementsPayload;
     if (!takes(payload)) return;
-    const { parent, index } = place;
-    let made: string[];
-    if (payload.project !== project) {
-      // From the project beside: made here, and with a move taken away there.
-      made = carryAcross(
-        payload.project,
-        payload.ids,
-        project,
-        { under: parent, index },
-        !event.copy,
-      );
-    } else {
-      project.checkpoint();
-      made = event.copy
-        ? project.copy(payload.ids, parent, index, { pos: null })
-        : project.move(payload.ids, parent, index, { pos: null });
-      project.checkpoint();
-    }
+    const made = putDragged(project, payload, place, event.copy);
     if (made[0]) {
       current = made[0];
       folding.reveal(project.tree(at), made[0]);

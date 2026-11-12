@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bringing, centred, fitting, kept, MAX_ZOOM, MIN_ZOOM, zoomedAt } from './camera';
+import { bringing, centred, fitting, kept, MAX_ZOOM, MIN_ZOOM, wheeled, zoomedAt } from './camera';
 import type { Placed } from './layout';
 
 describe('the camera of a diagram', () => {
@@ -16,6 +16,33 @@ describe('the camera of a diagram', () => {
     expect((200 - zoomed.y) / zoomed.k).toBeCloseTo(world.y);
     expect(zoomedAt(view, 0, 0, 100).k).toBe(MAX_ZOOM);
     expect(zoomedAt(view, 0, 0, 0.01).k).toBe(MIN_ZOOM);
+  });
+
+  it('zooms a little for a notch of the wheel with Ctrl, and moves without', () => {
+    const view = { x: 50, y: 20, k: 1 };
+    const turn = (deltaY: number, more: Partial<WheelEvent> = {}) =>
+      wheeled(
+        view,
+        { deltaX: 0, deltaY, deltaMode: 0, ctrlKey: true, ...more } as WheelEvent,
+        300,
+        200,
+      );
+    // A notch as the web view of Linux tells it: forty pixels, or sixty.
+    expect(turn(-40).k).toBeCloseTo(1.041, 3);
+    expect(turn(40).k).toBeCloseTo(0.961, 3);
+    expect(turn(-60).k).toBeCloseTo(1.062, 3);
+    // A notch told larger zooms no further; a touchpad's small turn as little as it is.
+    expect(turn(-100).k).toBe(turn(-60).k);
+    expect(turn(-1000).k).toBe(turn(-60).k);
+    expect(turn(-2).k).toBeCloseTo(1.002, 3);
+    // Lines are taken as pixels.
+    expect(turn(-1, { deltaMode: 1 }).k).toBe(turn(-40).k);
+    // About the pointer, which stays over the same point.
+    const zoomed = turn(-60);
+    expect((300 - zoomed.x) / zoomed.k).toBeCloseTo(250);
+    expect((200 - zoomed.y) / zoomed.k).toBeCloseTo(180);
+    // Without Ctrl the view moves, as large as it was.
+    expect(turn(40, { ctrlKey: false, deltaX: 10 })).toEqual({ x: 40, y: -20, k: 1 });
   });
 
   it('shows all of a map, and nothing larger than it is', () => {

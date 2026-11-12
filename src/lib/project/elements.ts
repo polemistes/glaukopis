@@ -39,7 +39,14 @@ import { compareCopy } from './copies.svelte';
 import { canPaste } from './clipboard.svelte';
 import { notify, notifyError, toasts } from '$lib/ui/toast.svelte';
 import { openProject, projects } from '$lib/state/projects.svelte';
-import { lastStep, openElsewhere, openProjectId, removeCarried, type Elsewhere } from './elsewhere';
+import {
+  carryAcross,
+  lastStep,
+  openElsewhere,
+  openProjectId,
+  removeCarried,
+  type Elsewhere,
+} from './elsewhere';
 import { router } from '$lib/state/router.svelte';
 import type { ProjectInfo } from '$lib/api/projects';
 import { makePortable, portable } from './model/portable';
@@ -173,6 +180,41 @@ export function shift(project: Project, tree: Tree, id: string, by: -1 | 1): boo
   project.move([id], parent, by > 0 ? j + 1 : j, { pos: null });
   project.checkpoint();
   return true;
+}
+
+// ---- elements dragged to a place in the order, in the text and in the outline ----
+
+/** Whether an element moved to a place among what is under a parent would stand where it stands. */
+export function standsAt(tree: Tree, id: string, parent: string, index: number): boolean {
+  if (tree.parent.get(id) !== parent) return false;
+  const i = (tree.children.get(parent) ?? []).indexOf(id);
+  return index === i || index === i + 1;
+}
+
+/**
+ * Puts elements dragged at a place among what is under an element: moved
+ * there, or copied; from the project beside, made here, and with a move
+ * taken away there. One element moved to where it stands is left as it is.
+ * Returns the topmost of what was put there.
+ */
+export function putDragged(
+  project: Project,
+  payload: ElementsPayload,
+  place: { parent: string; index: number },
+  copy: boolean,
+): string[] {
+  const { parent, index } = place;
+  if (payload.project !== project) {
+    return carryAcross(payload.project, payload.ids, project, { under: parent, index }, !copy);
+  }
+  if (!copy && payload.ids.length === 1 && standsAt(project.tree(), payload.ids[0], parent, index))
+    return [];
+  project.checkpoint();
+  const made = copy
+    ? project.copy(payload.ids, parent, index, { pos: null })
+    : project.move(payload.ids, parent, index, { pos: null });
+  project.checkpoint();
+  return made;
 }
 
 /** Removes elements, and says what went, with a way back. The project itself stays. */
