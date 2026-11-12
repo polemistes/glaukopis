@@ -228,6 +228,7 @@ const ENTRIES = [
   // In the library.
   { id: 'library-find', keys: 'Ctrl+F', place: 'library', bound: true },
   { id: 'library-new', keys: 'Ctrl+N', place: 'library', bound: true },
+  { id: 'library-copy', keys: 'Ctrl+C', place: 'library' },
 
   // Among the files of the library.
   { id: 'files-find', keys: 'Ctrl+F', place: 'files', bound: true },

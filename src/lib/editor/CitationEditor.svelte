@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Copy from '@lucide/svelte/icons/copy';
   import Plus from '@lucide/svelte/icons/plus';
   import Scissors from '@lucide/svelte/icons/scissors';
   import Trash2 from '@lucide/svelte/icons/trash-2';
@@ -25,7 +26,8 @@
   let adding = $state(false);
   let waiting = $state(false);
 
-  function commit() {
+  /** Says the citation as it is now to what it stands in, and gives it back as it was said. */
+  function commit(): CiteItem[] {
     const clean = $state.snapshot(items).map((i) => {
       const out: CiteItem = { id: i.id };
       if (i.locator?.trim()) out.locator = i.locator.trim();
@@ -36,6 +38,7 @@
       return out;
     });
     request.onchange(clean, mode);
+    return clean;
   }
 
   $effect(() => {
@@ -127,6 +130,11 @@
             request.onsplit?.();
             onclose();
           }}><Scissors size={14} /> {t('editor-citation-split')}</button
+        >
+      {/if}
+      {#if request.oncopy}
+        <button type="button" data-citation-copy onclick={() => request.oncopy?.(commit(), mode)}
+          ><Copy size={14} /> {t('editor-citation-copy')}</button
         >
       {/if}
       <label class="check inline">

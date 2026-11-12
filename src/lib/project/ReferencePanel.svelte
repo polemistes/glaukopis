@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Copy from '@lucide/svelte/icons/copy';
   import Eye from '@lucide/svelte/icons/eye';
   import { libraryGet } from '$lib/api/library';
   import { showFile } from '$lib/viewer/show';
@@ -10,8 +11,10 @@
   import X from '@lucide/svelte/icons/x';
   import type { Summary } from '$lib/api/library';
   import { t } from '$lib/i18n';
+  import { copyReferences } from '$lib/library/copying';
   import ReferenceList from '$lib/library/ReferenceList.svelte';
   import { editReference, importFile, newReference } from '$lib/library/references.svelte';
+  import { keysFor } from '$lib/shell/keys.svelte';
   import { library, search, sortEntries } from '$lib/state/library.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
@@ -79,6 +82,12 @@
       ...(one
         ? [{ label: t('project-edit-reference'), action: () => void editReference(one.id) }]
         : []),
+      {
+        label: t('project-copy'),
+        icon: Copy,
+        shortcut: keysFor('library-copy'),
+        action: () => void copyReferences(entries.map((e) => e.id)),
+      },
       ...files.map((f) => ({
         label:
           files.length === 1

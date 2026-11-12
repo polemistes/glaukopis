@@ -40,6 +40,8 @@ export interface CitationRequest {
   onchange: (items: CiteItem[], mode: CiteMode) => void;
   /** Parts the words before and after from the citation, into the line: see `splitCitation`. */
   onsplit?: () => void;
+  /** Copies the citation as it is said now, as the reference style of its document writes it; where it is not given, nothing offers it. */
+  oncopy?: (items: CiteItem[], mode: CiteMode) => void;
   onclose: () => void;
 }
 

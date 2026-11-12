@@ -266,11 +266,15 @@ library-open-file = Open the file
 library-file-open-failed = The file could not be opened
 library-add-to-collection = Add to collection
 library-remove-from = Remove from “{ $name }”
+# Copying references as the usual reference style writes them in a bibliography.
+library-copy = Copy
 library-copy-key = Copy citation key
 library-copied-key = Copied “{ $key }”
 library-copy-biblatex = Copy as BibLaTeX
 library-copied = Copied
 library-copy-failed = Nothing was copied
+# Said under "Nothing was copied": the reference style made nothing of what was to be copied.
+library-copy-nothing-written = The reference style wrote nothing.
 library-delete-one-title = Delete “{ $name }”?
 library-delete-many-title = { $count ->
     [one] Delete { $count } reference?

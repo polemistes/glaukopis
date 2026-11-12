@@ -48,6 +48,7 @@ core-export-style-needs-name = En stil må ha et navn.
 core-export-style-own-only = Bare dine egne stiler kan slettes.
 core-export-the-reference-style = referansestilen «{ $id }»
 core-export-any-reference-style = noen referansestil
+core-export-a-reference-cited = en referanse som er sitert
 core-export-the-style = stilen «{ $id }»
 
 ## Dokumentformater.

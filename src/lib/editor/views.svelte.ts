@@ -93,6 +93,7 @@ export class CitationView implements NodeView {
         const at = this.#getPos();
         if (at !== undefined) splitCitation(at)(view.state, view.dispatch);
       },
+      oncopy: (items, mode) => hooksOf.get(view)?.copyCitation?.({ items, mode }),
       onclose: () => view.focus(),
     });
   };

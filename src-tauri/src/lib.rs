@@ -286,6 +286,7 @@ pub fn run() {
             commands::documents::styles_save,
             commands::documents::styles_delete,
             commands::documents::style_sample,
+            commands::documents::style_written,
             commands::documents::formats_list,
             commands::documents::formats_get,
             commands::documents::formats_save,

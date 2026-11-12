@@ -109,6 +109,7 @@ keys-writing-redo = Redo
 keys-writing-redo-y = Redo
 keys-library-find = Search the library
 keys-library-new = A new reference
+keys-library-copy = Copy the references selected
 keys-files-find = Search the files
 keys-list-undo = Undo what was done to folders and projects
 keys-list-redo = Redo what was done to folders and projects

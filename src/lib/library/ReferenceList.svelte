@@ -2,6 +2,7 @@
   import type { Summary } from '$lib/api/library';
   import { t } from '$lib/i18n';
   import { startDrag } from '$lib/ui/drag.svelte';
+  import { copyReferences } from './copying';
   import { shortLabel } from './format';
   import ReferenceRow from './ReferenceRow.svelte';
   import { keyOf } from '$lib/shell/keys.svelte';
@@ -149,6 +150,19 @@
     if ((event.ctrlKey || event.metaKey) && keyOf(event) === 'a') {
       selection = entries.map((e) => e.id);
       event.preventDefault();
+      return;
+    }
+    // Ctrl+C copies those selected, as the usual reference style writes them, in the order they are listed.
+    if (
+      (event.ctrlKey || event.metaKey) &&
+      !event.shiftKey &&
+      !event.altKey &&
+      keyOf(event) === 'c'
+    ) {
+      const ids = entries.filter((e) => selected.has(e.id)).map((e) => e.id);
+      if (!ids.length) return;
+      event.preventDefault();
+      void copyReferences(ids);
       return;
     }
     switch (event.key) {

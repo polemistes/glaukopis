@@ -37,6 +37,9 @@ pub struct AppState {
     pub making: Mutex<()>,
     /// And one file, beside them, in a place of its own.
     pub exporting: Mutex<()>,
+    /// And what a style writes to be copied, in a place of its own: a copy
+    /// does not wait for a preview that is being made.
+    pub writing: Mutex<()>,
     /// The copies of Zotero's databases that the dialog of Zotero reads,
     /// each by the path it was asked for: made once while the dialog is
     /// open, for every step of it, and removed when it closes.
@@ -154,6 +157,7 @@ impl AppState {
             library: Mutex::new(library),
             tools: RwLock::new(Tools::default()),
             making: Mutex::new(()),
+            writing: Mutex::new(()),
             exporting: Mutex::new(()),
             zotero: Mutex::new(Vec::new()),
             reading: Mutex::new(None),

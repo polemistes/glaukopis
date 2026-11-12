@@ -568,6 +568,33 @@ export const stylesDelete = (id: string) => call<void>('styles_delete', { id });
 export const styleSample = (xml: string, references: ExportReference[], language?: string) =>
   call<string>('style_sample', { xml, references, language: language ?? null });
 
+/** A citation as it stands in a text: its works, with what is said of each, and whether the author is named in the sentence. */
+export interface Cited {
+  items: {
+    id: string;
+    locator?: string;
+    label?: string;
+    prefix?: string;
+    suffix?: string;
+    suppressAuthor?: boolean;
+  }[];
+  mode: 'normal' | 'intext';
+}
+
+/**
+ * What the reference style of an id writes of works, or of one citation of
+ * them, as HTML: the citation alone in the block `gk-sample-1`, as the
+ * first of a document; without one, the works as the entries of `refs`,
+ * and each cited once in a block `gk-sample-…`. A work given by its id
+ * alone is the library's.
+ */
+export const styleWritten = (
+  style: string,
+  references: ExportReference[],
+  citation: Cited | null,
+  language?: string,
+) => call<string>('style_written', { style, references, citation, language: language ?? null });
+
 export const formatsList = () => call<FormatSummary[]>('formats_list');
 export const formatsGet = (id: string) => call<DocumentFormat>('formats_get', { id });
 export const formatsSave = (format: DocumentFormat) =>

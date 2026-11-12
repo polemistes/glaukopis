@@ -2323,13 +2323,76 @@ pub fn style_sample(
     language: Option<&str>,
 ) -> Result<String> {
     use crate::document::fixtures_for_samples as samples;
-    let pandoc = ctx.tools.pandoc()?;
     let dir = work_dir(ctx, "style-sample", "sample")?;
     let style = dir.join("style.csl");
     write_atomic(&style, xml.as_bytes())?;
+    let (html, _) = written_by(ctx, &style, &dir, &samples::document(references, language))?;
+    Ok(html)
+}
 
-    let document = samples::document(references, language);
-    let bibliography = gather(&document, ctx.library);
+/// A citation as the interface says it, to be written by a style.
+#[derive(Debug, Clone, Default, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Cited {
+    pub items: Vec<crate::document::CiteItem>,
+    pub mode: crate::document::CiteMode,
+}
+
+/// What a reference style writes of works, or of one citation of them, for
+/// what is copied (record 0090): as HTML. A citation stands alone in the
+/// block `gk-sample-1`, written as the first of a document is, a note where
+/// it is made; without one, the works are the entries of `refs`, as the
+/// bibliography has them, in its order.
+///
+/// `style` is the id of a style. The works are read from the library where
+/// it has them, and from `references` otherwise, as a document's are; one
+/// that neither has, or that is given by its id alone and is not the
+/// library's, is an error, since what was written of it would be a question
+/// mark.
+pub fn style_written(
+    ctx: &Context,
+    style: &str,
+    references: &[crate::document::CarriedReference],
+    citation: Option<&Cited>,
+    language: Option<&str>,
+) -> Result<String> {
+    use crate::document::{CiteItem, CiteMode};
+    let cite = |items: Vec<CiteItem>, mode: CiteMode| Section {
+        level: 0,
+        heading: None,
+        blocks: vec![Block::paragraph(vec![Inline::Citation { items, mode }])],
+        ..Default::default()
+    };
+    let sections = match citation {
+        Some(c) => vec![cite(c.items.clone(), c.mode)],
+        None => references
+            .iter()
+            .map(|r| cite(vec![CiteItem { id: r.id.clone(), ..Default::default() }], CiteMode::Normal))
+            .collect(),
+    };
+    let document = Document {
+        language: language.map(str::to_owned),
+        sections,
+        // A work given by its id alone is carried by no project: it is the library's, or lacking.
+        references: references.iter().filter(|r| !r.entry_type.is_empty()).cloned().collect(),
+        ..Default::default()
+    };
+    let csl = ctx.styles.path_or_default(style)?;
+    let dir = work_dir(ctx, "style-written", "written")?;
+    let (html, missing) = written_by(ctx, &csl, &dir, &document)?;
+    if !missing.is_empty() {
+        return Err(Error::not_found(tr!("core-export-a-reference-cited")));
+    }
+    Ok(html)
+}
+
+/// What a reference style makes of a document: each of its sections in a
+/// block named `gk-sample-…`, the notes shown where they are made, and its
+/// works in `refs`, as HTML; and the works cited that were not found.
+fn written_by(ctx: &Context, csl: &Path, dir: &Path, document: &Document) -> Result<(String, Vec<String>)> {
+    let pandoc = ctx.tools.pandoc()?;
+    let language = document.language.as_deref();
+    let bibliography = gather(document, ctx.library);
     let bib = dir.join("references.bib");
     write_atomic(&bib, bibliography.text.as_bytes())?;
 
@@ -2364,14 +2427,14 @@ pub fn style_sample(
         "--wrap=none".into(),
         "--citeproc".into(),
         "--csl".into(),
-        style.display().to_string(),
+        csl.display().to_string(),
         "--bibliography".into(),
         bib.display().to_string(),
         "--lua-filter".into(),
         ctx.resources.join("pandoc").join("inline-notes.lua").display().to_string(),
     ];
-    let out = tools::run(&pandoc.path, "Pandoc", &args, Some(&serde_json::to_vec(&json)?), Some(&dir))?;
-    Ok(String::from_utf8_lossy(&out.stdout).into_owned())
+    let out = tools::run(&pandoc.path, "Pandoc", &args, Some(&serde_json::to_vec(&json)?), Some(dir))?;
+    Ok((String::from_utf8_lossy(&out.stdout).into_owned(), bibliography.missing))
 }
 
 /// Counts the words of a document as it would be printed: the text, with
@@ -5137,6 +5200,52 @@ mod tests {
         // A style that is broken says so.
         let broken = author_date.replace("</style>", "");
         assert!(style_sample(&s.ctx(), &broken, &references, None).is_err());
+    }
+
+    #[test]
+    fn works_and_a_citation_as_a_style_writes_them() {
+        use crate::document::{CiteItem, CiteMode};
+        let Some(s) = setup() else { return };
+        let references = sample().references;
+        let first = references[0].id.clone();
+        let item = |locator: Option<&str>| CiteItem {
+            id: first.clone(),
+            locator: locator.map(str::to_owned),
+            ..Default::default()
+        };
+
+        // The works alone: the entries of the bibliography, one for each, and no more.
+        let html = style_written(&s.ctx(), "chicago-author-date", &references, None, Some("en-GB")).unwrap();
+        assert_eq!(html.matches("class=\"csl-entry\"").count(), references.len(), "{html}");
+        assert!(html.contains("Nagy, Gregory. 1979."), "{html}");
+        assert!(html.contains("<em>The Best of the"), "{html}");
+        let one = style_written(&s.ctx(), "chicago-author-date", &references[..1], None, None).unwrap();
+        assert_eq!(one.matches("class=\"csl-entry\"").count(), 1, "{one}");
+
+        // A citation alone, as the first of a document: in the line, and with the author in the sentence.
+        let cited = Cited { items: vec![item(Some("45"))], mode: CiteMode::Normal };
+        let html = style_written(&s.ctx(), "chicago-author-date", &references, Some(&cited), Some("en-GB")).unwrap();
+        assert!(html.contains("id=\"gk-sample-1\""), "{html}");
+        assert!(html.contains("(Nagy 1979, 45)"), "{html}");
+        assert!(!html.contains("id=\"gk-sample-2\""), "{html}");
+        let intext = Cited { items: vec![item(None)], mode: CiteMode::Intext };
+        let html = style_written(&s.ctx(), "chicago-author-date", &references, Some(&intext), None).unwrap();
+        assert!(html.contains("Nagy (1979)"), "{html}");
+
+        // In a style with notes, the citation is the note, whole as a first one is.
+        let html = style_written(&s.ctx(), "chicago-notes-bibliography", &references, Some(&cited), None).unwrap();
+        assert!(html.contains("class=\"gk-note\""), "{html}");
+        assert!(html.contains("Gregory Nagy, <em>The Best of the"), "{html}");
+        assert!(html.contains("45."), "{html}");
+
+        // A work that nothing has is said to be lacking, not written as a question mark.
+        let gone =
+            Cited { items: vec![CiteItem { id: "nowhere".into(), ..Default::default() }], mode: CiteMode::Normal };
+        let e = style_written(&s.ctx(), "chicago-author-date", &references, Some(&gone), None).unwrap_err();
+        assert_eq!(e.kind(), "not-found", "{e}");
+        let bare = [crate::document::CarriedReference { id: "nowhere".into(), ..Default::default() }];
+        let e = style_written(&s.ctx(), "chicago-author-date", &bare, None, None).unwrap_err();
+        assert_eq!(e.kind(), "not-found", "{e}");
     }
 
     /// The sample with the kinds of passage and of words in it: an epigraph

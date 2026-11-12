@@ -195,6 +195,8 @@ editor-citation-add = Add a work
 editor-citation-add-purpose = Add a work to the citation
 editor-citation-in-text = Author in the text: Nagy (1979)
 editor-citation-remove = Remove the citation
+# Copying the citation as the reference style of its document writes it.
+editor-citation-copy = Copy the citation
 editor-citation-split = Part the words from the citation
 editor-citation-split-hint = The words before and after become text of the line, and each work a citation of its own, with its page and nothing else
 editor-citation-not-in-library = This reference is not in your library.

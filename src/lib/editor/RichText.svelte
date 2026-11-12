@@ -26,7 +26,17 @@
     titlePlugins,
     type KeyAction,
   } from './plugins';
-  import { copiedHtml, copiedText, looksLikeOrg, pastedTextSlice } from './clipboard';
+  import {
+    copiedAsUsual,
+    copiedHtml,
+    copiedText,
+    loneCitation,
+    looksLikeOrg,
+    pastedTextSlice,
+  } from './clipboard';
+  import { citationWrittenIn, copyCitation, putWritten } from '$lib/library/copying';
+  import type { Cited } from '$lib/api/documents';
+  import { keyOf } from '$lib/shell/keys.svelte';
   import { bodySchema, titleSchema } from './schema';
   import { dropTarget } from '$lib/ui/drag.svelte';
   import { editorUi, rectAt } from './ui.svelte';
@@ -355,6 +365,7 @@
                 );
               }
             },
+            oncopy: (items, mode) => void copyCitation(project, element, { items, mode }),
             onclose: () => v.focus(),
           });
         }
@@ -502,6 +513,7 @@
       askLine: kind === 'body' ? askLine : undefined,
       askLanguage: kind === 'body' ? askLanguage : undefined,
       language: () => untrack(() => language),
+      copyCitation: (said: Cited) => void copyCitation(project, element, said),
       // The keys of the kinds, as the document type of the element written in gives them.
       kindKeys: () =>
         untrack(() =>
@@ -553,6 +565,21 @@
           spellcheck: 'false',
         },
         handlePaste: (v, event) => kind === 'body' && pasted(v, event),
+        // Ctrl+C on a citation selected alone copies it as the reference
+        // style of its document writes it (record 0090), and as all text
+        // is copied where the style cannot write it. The key is taken, so
+        // that nothing else writes the clipboard meanwhile: a web view
+        // gives up a writing that waits when the clipboard changes under it.
+        handleKeyDown: (v, event) => {
+          if (!(event.ctrlKey || event.metaKey) || event.shiftKey || event.altKey) return false;
+          if (keyOf(event) !== 'c') return false;
+          const slice = v.state.selection.content();
+          const said = loneCitation(slice);
+          if (!said) return false;
+          const usual = () => copiedAsUsual(slice, language, orgOptions);
+          putWritten(citationWrittenIn(project, element, said).catch(usual)).catch(() => {});
+          return true;
+        },
         // Text pasted as text is read as Org where it is, and keeps every line break where it is not (see `clipboard.ts`).
         clipboardTextParser: kind === 'body' ? pastedText : undefined,
         // What is copied as text is Org; as HTML, it carries its citations as they are shown.

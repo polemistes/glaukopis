@@ -1398,3 +1398,9 @@ Mended: the text grows shorter when something is folded away (the picture of the
 > It would be great if it were possible to move elements around in the outline pane. Also, in diagram view, the mouse zoom should be more fine grained.
 
 Built: a name in the outline is dragged to another place among the names, with all that is under it, as deep as the pointer has gone sideways, and what is dragged is what the text and the diagram drag, so that elements go between the three; the wheel with Ctrl zooms the map by a thousandth for each pixel it turns, a notch a twentieth or so where it was a tenth or more. Record 0089.
+
+## 2026-11-12 — references and citations copied
+
+> It should be possible to copy both references and citations. References in the default citation style, and citations in the style of the document in which it resides.
+
+Built: references are copied as the usual reference style writes them in a list of references, by Ctrl+C in a list of them and by Copy in their menu; a citation as the style of its document writes it, by Copy the citation where it is opened and by Ctrl+C when it is selected alone; both as words and with the italics for programs that take them. Record 0090.

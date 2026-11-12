@@ -27,6 +27,7 @@ import {
   type Transaction,
 } from 'prosemirror-state';
 import { ySyncPluginKey } from 'y-prosemirror';
+import type { Cited } from '$lib/api/documents';
 import { rows } from '$lib/figures/placing';
 import { tablePlugins } from '$lib/tables/plugins';
 import { newId } from '$lib/util/id';
@@ -105,6 +106,8 @@ export interface EditorHooks {
   askLanguage?: (view: EditorView, tag: string | null) => void;
   /** The language of the document whose text the editor holds, as a tag; nothing where it is not known. */
   language?: () => string | null;
+  /** Copies a citation of the text as the reference style of its document writes it (record 0090). */
+  copyCitation?: (said: Cited) => void;
   /** What the document's layout says of the numbers of a stretch that does not say: every how many, on which side, and where the annotations stand. */
   numbers?: () => NumbersLayout;
   /**

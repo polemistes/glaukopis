@@ -1,7 +1,16 @@
 import { EditorState } from 'prosemirror-state';
 import { describe, expect, it } from 'vitest';
-import { DOMParser as PMParser, Slice } from 'prosemirror-model';
-import { copiedHtml, copiedText, looksLikeOrg, pastedTextSlice, wordsOf } from './clipboard';
+import { DOMParser as PMParser, Fragment, Slice } from 'prosemirror-model';
+import {
+  copiedAsUsual,
+  copiedHtml,
+  copiedText,
+  loneCitation,
+  looksLikeOrg,
+  pastedTextSlice,
+  wordsOf,
+} from './clipboard';
+import { citationWritten } from '$lib/library/written';
 import { bodySchema } from './schema';
 
 /** What is pasted into an empty paragraph of a text, as the editor then holds it. */
@@ -165,6 +174,66 @@ describe('text pasted as Org', () => {
     expect(looksLikeOrg('a *bold* word')).toBe(false);
     expect(looksLikeOrg('* A headline')).toBe(true);
     expect(looksLikeOrg('| a | b |')).toBe(true);
+  });
+});
+
+describe('a citation selected alone', () => {
+  const { nodes } = bodySchema;
+  const said = { items: [{ id: 'R1', locator: '73' }], mode: 'normal' };
+  const citation = () => nodes.citation.create(said);
+
+  it('is known as all of what is copied, by itself or within its paragraph', () => {
+    const state = EditorState.create({
+      schema: bodySchema,
+      doc: bodySchema.topNodeType.create(null, [
+        nodes.paragraph.create(null, [bodySchema.text('See '), citation(), bodySchema.text('.')]),
+      ]),
+    });
+    // "See " is four letters: the citation stands from 5 to 6.
+    expect(loneCitation(state.doc.slice(5, 6))).toEqual(said);
+    expect(
+      loneCitation(new Slice(Fragment.from(nodes.paragraph.create(null, citation())), 1, 1)),
+    ).toEqual(said);
+  });
+
+  it('is not known where words or another citation are copied with it', () => {
+    const state = EditorState.create({
+      schema: bodySchema,
+      doc: bodySchema.topNodeType.create(null, [
+        nodes.paragraph.create(null, [bodySchema.text('See '), citation(), citation()]),
+      ]),
+    });
+    expect(loneCitation(state.doc.slice(4, 6))).toBeNull();
+    expect(loneCitation(state.doc.slice(5, 7))).toBeNull();
+    expect(loneCitation(state.doc.slice(1, 4))).toBeNull();
+    expect(loneCitation(Slice.empty)).toBeNull();
+  });
+
+  it('is copied as all text is where the style cannot write it: as Org, and as HTML that says which citation it is', () => {
+    const slice = new Slice(Fragment.from(citation()), 0, 0);
+    const usual = copiedAsUsual(slice, 'en');
+    expect(usual.text).toMatch(/^\[cite:@[^\]]*73\]$/);
+    const holder = document.createElement('div');
+    holder.innerHTML = usual.html;
+    const span = holder.querySelector('span[data-citation]')!;
+    expect(JSON.parse(span.getAttribute('data-citation')!)).toEqual(said.items);
+    expect(span.textContent?.length).toBeGreaterThan(0);
+  });
+
+  it('pasted as the HTML it is copied with, it is the citation again', () => {
+    const written = citationWritten(
+      '<div id="gk-sample-1"><p><span class="citation">(Nagy 1979, 73)</span></p></div>',
+      { items: [{ id: 'R1', locator: '73' }], mode: 'normal' },
+    )!;
+    const place = document.createElement('div');
+    place.innerHTML = `<p>${written.html}</p>`;
+    const found: unknown[] = [];
+    PMParser.fromSchema(bodySchema)
+      .parse(place)
+      .descendants((n) => {
+        if (n.type.name === 'citation') found.push(n.attrs);
+      });
+    expect(found).toEqual([said]);
   });
 });
 

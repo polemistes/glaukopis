@@ -106,6 +106,7 @@ keys-writing-redo = Gjør om
 keys-writing-redo-y = Gjør om
 keys-library-find = Søk i biblioteket
 keys-library-new = En ny referanse
+keys-library-copy = Kopier referansene som er valgt
 keys-files-find = Søk i filene
 keys-list-undo = Angre det som ble gjort med mapper og prosjekter
 keys-list-redo = Gjør om det som ble gjort med mapper og prosjekter

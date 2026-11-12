@@ -424,6 +424,22 @@ pub fn style_sample(
     })
 }
 
+/// What a reference style writes of works, or of one citation of them, as
+/// HTML: for what is copied. The style by its id; the works from the library
+/// where it has them, and from `references` otherwise.
+#[tauri::command(async)]
+pub fn style_written(
+    state: State<'_, AppState>,
+    style: String,
+    references: Vec<glaukopis_core::document::CarriedReference>,
+    citation: Option<export::Cited>,
+    language: Option<String>,
+) -> CommandResult<String> {
+    with_context(&state, Of::Held, &state.writing, |ctx| {
+        export::style_written(ctx, &style, &references, citation.as_ref(), language.as_deref())
+    })
+}
+
 /// Opens a file that was made, in the program the system uses for its kind.
 #[tauri::command(async)]
 pub fn open_path(app: tauri::AppHandle, path: String, reveal: Option<bool>) -> CommandResult<()> {

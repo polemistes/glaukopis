@@ -113,6 +113,20 @@ function citationText(node: Node, language: string | null | undefined): string {
   return citationLabel(node.attrs.items as CiteItem[], node.attrs.mode as CiteMode, language);
 }
 
+/**
+ * The citation that is all of what is copied, where it is one: a citation
+ * selected alone, within whatever it stands in.
+ */
+export function loneCitation(slice: Slice): { items: CiteItem[]; mode: CiteMode } | null {
+  let content = slice.content;
+  while (content.childCount === 1 && !content.firstChild!.isInline)
+    content = content.firstChild!.content;
+  const only = content.childCount === 1 ? content.firstChild! : null;
+  return only?.type.name === 'citation'
+    ? { items: only.attrs.items as CiteItem[], mode: only.attrs.mode as CiteMode }
+    : null;
+}
+
 /** What is copied as the blocks of a text; nothing where it cannot be read so. */
 export function copiedBlocks(slice: Slice, schema: Schema): Block[] | null {
   try {
@@ -208,4 +222,21 @@ export function copiedHtml(
     ];
   }
   return new DOMSerializer(nodes, base.marks);
+}
+
+/**
+ * What is copied as all text is, as its words and its HTML together: for a
+ * copy that is put on the clipboard by hand, where the system's own copy
+ * is not let through.
+ */
+export function copiedAsUsual(
+  slice: Slice,
+  language: string | null | undefined,
+  org?: () => OrgTextOptions,
+): { text: string; html: string } {
+  const holder = document.createElement('div');
+  const schema = slice.content.firstChild?.type.schema;
+  if (schema)
+    holder.appendChild(copiedHtml(schema, () => language).serializeFragment(slice.content));
+  return { text: copiedText(slice, language, org), html: holder.innerHTML };
 }

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { save } from '@tauri-apps/plugin-dialog';
   import { onMount, untrack } from 'svelte';
-  import { shortcuts } from '$lib/shell/keys.svelte';
+  import { keysFor, shortcuts } from '$lib/shell/keys.svelte';
   import ArrowDownUp from '@lucide/svelte/icons/arrow-down-up';
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import ClipboardPaste from '@lucide/svelte/icons/clipboard-paste';
@@ -49,7 +49,7 @@
   import { treeMenu } from '$lib/ui/tree-menu';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { notifyError, notifyOk } from '$lib/ui/toast.svelte';
-  import { copyOut } from './copying';
+  import { copyOut, copyReferences } from './copying';
   import { safeFileName } from '$lib/util/file-name';
   import { citing } from './citing.svelte';
   import CollectionTree from './CollectionTree.svelte';
@@ -277,11 +277,16 @@
           ]
         : []),
       { kind: 'separator' },
+      {
+        label: t('library-copy'),
+        icon: Copy,
+        shortcut: keysFor('library-copy'),
+        action: () => copyReferences(ids),
+      },
       ...(one
         ? [
             {
               label: t('library-copy-key'),
-              icon: Copy,
               action: () => copyOut(() => one.key, t('library-copied-key', { key: one.key })),
             } as MenuItem,
           ]

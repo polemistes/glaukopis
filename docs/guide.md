@@ -1011,6 +1011,16 @@ its own, with its page and nothing else. A note written as one long citation,
 55; Olson 1996 attributes the view to Lowe…*, becomes text with the
 citations in it, to be written on as text.
 
+**Copy the citation**, in the same place, copies it as the reference style
+of its document writes it, in the document's language: *(Nagy 1979, 73)* in
+a style of author and year, the whole note in a style of notes, as the first
+citation of the work is written. So does **Ctrl+C** when the citation is
+selected alone, as the arrows select it on their way through the text. It is
+copied as words, and for a program that takes more with the titles in
+italics. Pasted into a text in Glaukopis it is the citation again, not its
+words. Words copied together with their citations are copied as all text is,
+the citations by their keys (see *Your project as Org*).
+
 What you cite is thereby among the references of the project: there is
 nothing else to do to put it there. The panel of references
 (**Ctrl+Shift+R**) lists them, for this map, which is the element in view
@@ -1166,6 +1176,15 @@ menu of a reference, by those who want to.
 References can be added wherever they are used: from the library, from the
 picker that **@** opens, and from the panel of references of a project. It
 is the same form in all three.
+
+References are copied as your usual reference style writes them in a list
+of references, the one chosen as **Default citation style** in the settings,
+in the language new texts are given: select them and press **Ctrl+C**, or
+choose **Copy** in their menu, in the library and in the panel of references
+of a project alike. Each is a line, in the order the style puts them in; a
+program that takes more than words gets the titles in italics. **Copy
+citation key** and **Copy as BibLaTeX**, in the same menu, copy the key of a
+reference and its entry as the file has it.
 
 **Collections** gather references for a subject or a piece of work. A
 collection holds links, not copies: a reference can be in any number of
@@ -3544,7 +3563,7 @@ what is to be done by its name, and does it.
 | **Ctrl+Alt+Y**, **Ctrl+Alt+N** | In a review: accept the change, reject it |
 | **F8**, **Shift+F8** | In a review: the next change (leaving this one for later), the one before |
 | **F7**, **Shift+F7** | In the text: the menu of the next misspelt word, or of the one before |
-| **Ctrl+F**, **Ctrl+N** | In the library: search, new reference |
+| **Ctrl+F**, **Ctrl+N**, **Ctrl+C** | In the library: search, new reference, copy the references selected |
 
 ## What Glaukopis needs
 

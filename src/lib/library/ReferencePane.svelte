@@ -40,7 +40,7 @@
   import { openMenu } from '$lib/ui/menu.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError, notifyError, notifyOk } from '$lib/ui/toast.svelte';
-  import { copyOut } from './copying';
+  import { copyOut, copyReferences } from './copying';
   import { citing, showCitations } from './citing.svelte';
   import { dateWords, fileSize } from './format';
   import { toLines, withNoteAsItIs } from './notes.svelte';
@@ -351,8 +351,12 @@
       event.currentTarget as HTMLElement,
       [
         {
-          label: t('library-copy-key'),
+          label: t('library-copy'),
           icon: Copy,
+          action: () => copyReferences([r.id]),
+        },
+        {
+          label: t('library-copy-key'),
           action: () => copyOut(() => r.key, t('library-copied-key', { key: r.key })),
         },
         {

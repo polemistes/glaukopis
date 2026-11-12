@@ -247,6 +247,21 @@ class Documents {
     };
   }
 
+  /**
+   * The same choice, made once the template and the layout it is made by
+   * have been read: for what is done once, as a copy is, and cannot be done
+   * again when they arrive.
+   */
+  async choiceRead(
+    document: { template?: string; style?: string; format?: string },
+    project?: Project | null,
+  ): Promise<Choice> {
+    await this.load();
+    await this.templateOf(this.choice(document, project).template).catch(() => {});
+    await this.format(this.choice(document, project).format).catch(() => {});
+    return this.choice(document, project);
+  }
+
   /** The layout of a document whose type brings none: the writer's usual, or a fresh installation's where the settings say none. */
   usualFormat(): string {
     return settings.value.defaultFormat || defaultSettings.defaultFormat;
