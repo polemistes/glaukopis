@@ -531,8 +531,7 @@ impl Text {
         let (opens, closes) = if self.chars[open] == '(' { ('(', ')') } else { ('[', ']') };
         let mut depth = 0;
         let end = self.chars.len().min(open + FAR);
-        for at in open + 1..end {
-            let c = self.chars[at];
+        for (at, &c) in self.chars.iter().enumerate().take(end).skip(open + 1) {
             if c == NOTHING {
                 return None;
             }
@@ -553,8 +552,8 @@ impl Text {
         let mut parts = Vec::new();
         let mut begun = from;
         let mut depth = 0usize;
-        for at in from..to {
-            match self.chars[at] {
+        for (at, &c) in self.chars.iter().enumerate().take(to).skip(from) {
+            match c {
                 '(' | '[' => depth += 1,
                 ')' | ']' => depth = depth.saturating_sub(1),
                 ';' if depth == 0 => {

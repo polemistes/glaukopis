@@ -874,17 +874,23 @@ async fn one_too_many_is_told_the_room_is_crowded() {
     server.stop().await;
 }
 
-/// Opens a connection to the room and reads what comes first: the server's
-/// asking for what one has, by which one is in, or the closing, whose code
-/// is returned. Nothing is sent, so that a door closed is not written to.
+/// Opens a connection to the room and reads what the server says first of
+/// it: its asking for what one has, by which one is in, or the closing,
+/// whose code is returned. Nothing is sent, so that a door closed is not
+/// written to.
 async fn entering(server: &Running, token: &str) -> Result<Socket, u16> {
     let ticket = server.ticket(token).await;
     let url = format!("ws://{}/ws/{ROOM}?ticket={ticket}", server.addr);
     let (mut socket, _) = tokio_tungstenite::connect_async(url).await.expect("the ticket opens the door");
-    let first = tokio::time::timeout(Duration::from_secs(10), socket.next()).await.expect("the server spoke");
-    match first {
-        Some(Ok(Frame::Binary(_))) => Ok(socket),
-        Some(Ok(Frame::Close(frame))) => Err(frame.map(|f| u16::from(f.code)).unwrap_or(0)),
-        other => panic!("the server said {other:?}"),
+    loop {
+        let said = tokio::time::timeout(Duration::from_secs(10), socket.next()).await.expect("the server spoke");
+        match said {
+            Some(Ok(Frame::Binary(_))) => return Ok(socket),
+            Some(Ok(Frame::Close(frame))) => return Err(frame.map(|f| u16::from(f.code)).unwrap_or(0)),
+            // The server asks at once whether the other side is there, and
+            // that may come before what it has to say: it says nothing of the door.
+            Some(Ok(Frame::Ping(_) | Frame::Pong(_))) => continue,
+            other => panic!("the server said {other:?}"),
+        }
     }
 }
