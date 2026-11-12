@@ -49,6 +49,7 @@ core-export-style-own-only = 削除できるのは独自のスタイルだけで
 # 「見つかりません：」の後に示す。
 core-export-the-reference-style = 引用スタイル「{ $id }」
 core-export-any-reference-style = 引用スタイル
+core-export-a-reference-cited = 引用されている文献
 core-export-the-style = スタイル「{ $id }」
 
 ## 文書のレイアウト。

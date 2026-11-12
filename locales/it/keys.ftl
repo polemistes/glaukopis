@@ -109,6 +109,7 @@ keys-writing-redo = Ripeti
 keys-writing-redo-y = Ripeti
 keys-library-find = Cerca nella biblioteca
 keys-library-new = Un nuovo riferimento
+keys-library-copy = Copia i riferimenti selezionati
 keys-files-find = Cerca tra i file
 keys-list-undo = Annulla ciò che si è fatto a cartelle e progetti
 keys-list-redo = Ripeti ciò che si è fatto a cartelle e progetti

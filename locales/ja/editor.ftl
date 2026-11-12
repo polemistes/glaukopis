@@ -193,6 +193,8 @@ editor-citation-add = 作品を追加
 editor-citation-add-purpose = 引用に作品を追加
 editor-citation-in-text = 本文中に著者名：Nagy (1979)
 editor-citation-remove = 引用を外す
+# 引用を、その文書の引用スタイルが書くとおりにコピーする。
+editor-citation-copy = 引用をコピー
 editor-citation-split = 語句を引用から切り離す
 editor-citation-split-hint = 前後の語句は行のテキストになり、各作品はページだけを持つ独立した引用になります
 editor-citation-not-in-library = この文献はライブラリにありません。

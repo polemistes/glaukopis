@@ -53,6 +53,7 @@ core-export-style-own-only = Bara dina egna stilar kan raderas.
 # Shown after "not found: ".
 core-export-the-reference-style = referensstilen ”{ $id }”
 core-export-any-reference-style = någon referensstil alls
+core-export-a-reference-cited = en referens som det hänvisas till
 core-export-the-style = stilen ”{ $id }”
 
 ## Document formats.

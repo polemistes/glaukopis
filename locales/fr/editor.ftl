@@ -197,6 +197,8 @@ editor-citation-add = Ajouter une œuvre
 editor-citation-add-purpose = Ajouter une œuvre à la citation
 editor-citation-in-text = Auteur dans le texte : Nagy (1979)
 editor-citation-remove = Retirer la citation
+# Copying the citation as the reference style of its document writes it.
+editor-citation-copy = Copier la citation
 editor-citation-split = Séparer les mots de la citation
 editor-citation-split-hint = Les mots avant et après deviennent du texte de la ligne, et chaque œuvre une citation à part, avec sa page et rien d’autre
 editor-citation-not-in-library = Cette référence n’est pas dans votre bibliothèque.

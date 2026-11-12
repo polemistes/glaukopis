@@ -266,11 +266,15 @@ library-open-file = Opne fila
 library-file-open-failed = Fila kunne ikkje opnast
 library-add-to-collection = Legg til i samling
 library-remove-from = Fjern frå «{ $name }»
+# Copying references as the usual reference style writes them in a bibliography.
+library-copy = Kopier
 library-copy-key = Kopier referansenøkkelen
 library-copied-key = Kopierte «{ $key }»
 library-copy-biblatex = Kopier som BibLaTeX
 library-copied = Kopiert
 library-copy-failed = Ingenting vart kopiert
+# Said under "Nothing was copied": the reference style made nothing of what was to be copied.
+library-copy-nothing-written = Referansestilen skreiv ingenting.
 library-delete-one-title = Slette «{ $name }»?
 library-delete-many-title = { $count ->
     [one] Slette { $count } referanse?

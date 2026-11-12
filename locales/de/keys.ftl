@@ -109,6 +109,7 @@ keys-writing-redo = Wiederherstellen
 keys-writing-redo-y = Wiederherstellen
 keys-library-find = Die Bibliothek durchsuchen
 keys-library-new = Eine neue Quelle
+keys-library-copy = Die ausgewählten Quellen kopieren
 keys-files-find = Die Dateien durchsuchen
 keys-list-undo = Rückgängig machen, was mit Ordnern und Projekten getan wurde
 keys-list-redo = Wiederherstellen, was mit Ordnern und Projekten getan wurde

@@ -109,6 +109,7 @@ keys-writing-redo = Rétablir
 keys-writing-redo-y = Rétablir
 keys-library-find = Rechercher dans la bibliothèque
 keys-library-new = Une nouvelle référence
+keys-library-copy = Copier les références sélectionnées
 keys-files-find = Rechercher dans les fichiers
 keys-list-undo = Annuler ce qui a été fait aux dossiers et aux projets
 keys-list-redo = Rétablir ce qui a été fait aux dossiers et aux projets

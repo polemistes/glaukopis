@@ -280,11 +280,15 @@ library-open-file = Apri il file
 library-file-open-failed = Il file non si è potuto aprire
 library-add-to-collection = Aggiungi a una raccolta
 library-remove-from = Togli da «{ $name }»
+# Copying references as the usual reference style writes them in a bibliography.
+library-copy = Copia
 library-copy-key = Copia la chiave di citazione
 library-copied-key = Copiata «{ $key }»
 library-copy-biblatex = Copia come BibLaTeX
 library-copied = Copiato
 library-copy-failed = Non si è copiato nulla
+# Said under "Nothing was copied": the reference style made nothing of what was to be copied.
+library-copy-nothing-written = Lo stile di citazione non ha scritto nulla.
 library-delete-one-title = Eliminare «{ $name }»?
 library-delete-many-title = { $count ->
     [one] Eliminare { $count } riferimento?

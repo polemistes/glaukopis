@@ -53,6 +53,7 @@ core-export-style-own-only = Kun dine egne stile kan slettes.
 # Shown after "not found: ".
 core-export-the-reference-style = referencestilen »{ $id }«
 core-export-any-reference-style = nogen referencestil
+core-export-a-reference-cited = en reference, der er citeret
 core-export-the-style = stilen »{ $id }«
 
 ## Document formats.

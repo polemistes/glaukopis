@@ -50,6 +50,7 @@ core-export-style-own-only = Nur eigene Stile können gelöscht werden.
 # Shown after "not found: ".
 core-export-the-reference-style = der Zitierstil „{ $id }“
 core-export-any-reference-style = irgendein Zitierstil
+core-export-a-reference-cited = eine zitierte Quelle
 core-export-the-style = der Stil „{ $id }“
 
 ## Document formats.

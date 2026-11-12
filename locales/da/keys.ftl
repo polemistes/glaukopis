@@ -109,6 +109,7 @@ keys-writing-redo = Gentag
 keys-writing-redo-y = Gentag
 keys-library-find = Søg i biblioteket
 keys-library-new = En ny reference
+keys-library-copy = Kopiér de valgte referencer
 keys-files-find = Søg i filerne
 keys-list-undo = Fortryd det, der blev gjort med mapper og projekter
 keys-list-redo = Gentag det, der blev gjort med mapper og projekter

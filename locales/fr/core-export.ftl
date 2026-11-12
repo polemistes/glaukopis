@@ -56,6 +56,7 @@ core-export-style-own-only = Seuls vos propres styles peuvent être supprimés.
 # Shown after "not found: ".
 core-export-the-reference-style = le style de référence « { $id } »
 core-export-any-reference-style = le moindre style de référence
+core-export-a-reference-cited = une référence citée
 core-export-the-style = le style « { $id } »
 
 ## Document formats.

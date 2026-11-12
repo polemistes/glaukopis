@@ -250,11 +250,15 @@ library-open-file = ファイルを開く
 library-file-open-failed = ファイルを開けませんでした
 library-add-to-collection = コレクションに追加
 library-remove-from = 「{ $name }」から外す
+# 文献を、いつもの引用スタイルが文献一覧に書くとおりにコピーする。
+library-copy = コピー
 library-copy-key = 引用キーをコピー
 library-copied-key = 「{ $key }」をコピーしました
 library-copy-biblatex = BibLaTeXとしてコピー
 library-copied = コピーしました
 library-copy-failed = 何もコピーされませんでした
+# 「何もコピーされませんでした」の下に示す：コピーするはずのものから、引用スタイルが何も作らなかった。
+library-copy-nothing-written = 引用スタイルは何も書き出しませんでした。
 library-delete-one-title = 「{ $name }」を削除しますか？
 library-delete-many-title = { $count ->
    *[other] { $count }件の文献を削除しますか？

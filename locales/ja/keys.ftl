@@ -109,6 +109,7 @@ keys-writing-redo = やり直す
 keys-writing-redo-y = やり直す
 keys-library-find = ライブラリを検索
 keys-library-new = 新しい文献
+keys-library-copy = 選択した文献をコピー
 keys-files-find = ファイルを検索
 keys-list-undo = フォルダーとプロジェクトへの操作を元に戻す
 keys-list-redo = フォルダーとプロジェクトへの操作をやり直す

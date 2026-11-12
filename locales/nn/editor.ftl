@@ -195,6 +195,8 @@ editor-citation-add = Legg til verk
 editor-citation-add-purpose = Legg til eit verk i kjeldetilvisinga
 editor-citation-in-text = Forfattar i teksten: Nagy (1979)
 editor-citation-remove = Fjern tilvisinga
+# Copying the citation as the reference style of its document writes it.
+editor-citation-copy = Kopier tilvisinga
 editor-citation-split = Skil orda frå tilvisinga
 editor-citation-split-hint = Orda før og etter blir tekst i linja, og kvart verk ei tilvising for seg, med sida si og ikkje anna
 editor-citation-not-in-library = Denne referansen er ikkje i biblioteket ditt.

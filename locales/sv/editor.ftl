@@ -198,6 +198,8 @@ editor-citation-add = Lägg till ett verk
 editor-citation-add-purpose = Lägg till ett verk i källhänvisningen
 editor-citation-in-text = Författaren i texten: Nagy (1979)
 editor-citation-remove = Ta bort källhänvisningen
+# Copying the citation as the reference style of its document writes it.
+editor-citation-copy = Kopiera källhänvisningen
 editor-citation-split = Skilj orden från källhänvisningen
 editor-citation-split-hint = Orden före och efter blir text i raden, och varje verk en egen källhänvisning, med sin sida och inget annat
 editor-citation-not-in-library = Den här referensen finns inte i ditt bibliotek.
