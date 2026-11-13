@@ -3,7 +3,7 @@ import type { Block, Inline } from '$lib/project/model/text';
 import type { PassageKindRecord } from '$lib/project/model/types';
 import { br, everything, mark, p, t, trapBlocks, TRAPS } from './fixtures';
 import { normalInlines } from './inline';
-import { readProperties } from './properties';
+import { readProperties, writeProperties } from './properties';
 import { readBlocks, readProject } from './read';
 import type { OrgProject } from './types';
 import { writeBlocks, writeProject } from './write';
@@ -102,7 +102,7 @@ describe('the Org form of a project', () => {
         ':ORIGIN:       old1',
         ':POS:          120,-40',
         ':COLLAPSED:    t',
-        ':LINKS:        [[id:kinds][answers]] [[id:blocks]]',
+        ':LINKS:        [[id:kinds][answers]]{to teal} [[id:blocks]]{both}',
         ':TITLE:        ""',
       ),
     );
@@ -884,6 +884,29 @@ describe('reading an Org file written by hand', () => {
     const bad = readProperties([':COMPOSITION: {"parts":', ':COMPOSITION: [1, 2]']);
     expect(bad.document.composition).toBeUndefined();
     expect(bad.unknown).toEqual([':COMPOSITION: {"parts":', ':COMPOSITION: [1, 2]']);
+  });
+
+  it('reads the associations as written before arrows and colours, and passes over what it does not know in the braces', () => {
+    const read = readProperties([
+      String.raw`:LINKS: [[id:a][old \w\[x\]]] [[id:b][x]]{from} [[id:c]]{rust both} [[id:d][y]]{sideways mauve}`,
+    ]);
+    expect(read.links).toEqual([
+      { to: 'a', label: 'old w[x]' },
+      { to: 'b', label: 'x', arrow: 'from' },
+      { to: 'c', label: '', arrow: 'both', colour: 'rust' },
+      { to: 'd', label: 'y' },
+    ]);
+  });
+
+  it('writes a line break in the words of an association as \\n, and reads it back', () => {
+    const element = everything().elements.find((e) => e.id === 'kinds')!;
+    const label = 'one [two]\nthree \\n four \\';
+    const [line] = writeProperties(element, {
+      kindName: (id) => id,
+      links: [{ from: 'kinds', to: 'x', label, arrow: 'to' }],
+    }).filter((l) => l.startsWith(':LINKS:'));
+    expect(line).toBe(String.raw`:LINKS:  [[id:x][one \[two\]\nthree \\n four \\]]{to}`);
+    expect(readProperties([line]).links).toEqual([{ to: 'x', label, arrow: 'to' }]);
   });
 
   it('reads signs that open and never close without reading them over and over', () => {

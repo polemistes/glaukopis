@@ -14,6 +14,7 @@ import * as Y from 'yjs';
 import { generateNKeysBetween } from 'fractional-indexing';
 import type { Template } from '$lib/api/templates';
 import { writeBody, writeName } from '$lib/project/model/blocks';
+import { lookOf, makeLink } from '$lib/project/model/changing/links';
 import { cleanLook, family } from '$lib/project/model/changing/passage-kinds';
 import { cleanTemplate } from '$lib/project/model/changing/templates';
 import { TIDY } from '$lib/project/model/origins';
@@ -73,7 +74,7 @@ export function orgOf(project: Project): OrgProject {
   const links: OrgLink[] = project.links
     .filter((l) => place.has(l.from) && place.has(l.to))
     .sort((a, b) => at(a.from) - at(b.from) || at(a.to) - at(b.to) || cmp(a.label, b.label))
-    .map((l) => ({ from: l.from, to: l.to, label: l.label }));
+    .map((l) => ({ from: l.from, to: l.to, ...lookOf(l) }));
 
   const comments: OrgThread[] = [];
   for (const e of elements)
@@ -224,11 +225,7 @@ export function intoProject(org: OrgProject, project: Project) {
       const from = known(l.from);
       const to = known(l.to);
       if (!from || !to || from === to) continue;
-      const y = new Y.Map<unknown>();
-      y.set('from', from);
-      y.set('to', to);
-      if (l.label) y.set('label', l.label);
-      project.yLinks.set(newId(), y);
+      makeLink(project, from, to, l);
     }
 
     org.comments.forEach((c, i) => {

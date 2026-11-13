@@ -10,6 +10,7 @@ import type { Block, Inline } from '$lib/project/model/text';
 import type {
   DocumentSettings,
   KindRecord,
+  LinkArrow,
   PassageKindRecord,
   Position,
   RefRecord,
@@ -44,7 +45,11 @@ export interface OrgElement {
 export interface OrgLink {
   from: string;
   to: string;
+  /** Its words, in lines. */
   label: string;
+  arrow?: LinkArrow;
+  /** The name of one of the colours of kinds. */
+  colour?: string;
 }
 
 /** One note of a comment: who wrote it, on which day, and what it says. */
