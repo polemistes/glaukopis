@@ -4,11 +4,13 @@
  * text, where the text of each element was read, how wide its outline
  * stands, where it was left, the element and the way it was shown, and what
  * stood beside it then where that was its own: its tabs, or itself the other
- * way (ADR 0073), and the element marked as the document (record 0081).
+ * way (ADR 0073), the element marked as the document (record 0081), and
+ * the message of the chat that was read last (record 0092).
  * What the window shows, its sides and its panes, is the
  * window's, kept with the settings (`sides.svelte.ts`).
  */
 
+import { readMark, type ReadMark } from '$lib/chat/reading';
 import type { MapMode } from '$lib/state/router.svelte';
 import type { Camera } from './diagram/camera';
 import { PROJECT } from './model/types';
@@ -52,6 +54,8 @@ export interface StoredView {
   mode?: MapMode;
   /** The element marked as the document, where one is (record 0081). */
   document?: string;
+  /** The message of the chat read last, where one was (record 0092). */
+  chat?: ReadMark;
   /** As the view was kept before the sides were the window's: the first pane says where it was left. */
   panes?: { at?: string; mode?: MapMode }[];
 }
@@ -65,6 +69,8 @@ export interface Memory {
   beside: Beside | null;
   /** The element marked as the document, or none. */
   document: string | null;
+  /** The message of the chat read last, or none. */
+  chat: ReadMark | null;
 }
 
 export const OUTLINE_WIDTH = 240;
@@ -97,6 +103,7 @@ export function readMemory(stored: unknown): Memory {
     left: at ? { at, mode: MODES.includes(mode as MapMode) ? (mode as MapMode) : 'diagram' } : null,
     beside: readBeside(s.beside),
     document: typeof s.document === 'string' && s.document ? s.document : null,
+    chat: readMark(s.chat),
   };
 }
 
@@ -140,7 +147,7 @@ export function documentOf(marked: string | null, elements: Elements, at: string
   return marked && inView(elements, marked) ? marked : at;
 }
 
-/** What is kept: the cameras and the tops of elements that are there, the folds given, and the mark where its element is there. */
+/** What is kept: the cameras and the tops of elements that are there, the folds given, the mark where its element is there, and the message read last. */
 export function toStore(memory: Memory, elements: Elements, folded: string[]): StoredView {
   const cameras: Record<string, Camera> = {};
   for (const [id, c] of Object.entries(memory.cameras)) if (inView(elements, id)) cameras[id] = c;
@@ -162,6 +169,7 @@ export function toStore(memory: Memory, elements: Elements, folded: string[]): S
         }
       : {}),
     ...(inView(elements, memory.document ?? undefined) ? { document: memory.document! } : {}),
+    ...(memory.chat ? { chat: memory.chat } : {}),
   };
 }
 

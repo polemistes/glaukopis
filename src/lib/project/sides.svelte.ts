@@ -95,7 +95,8 @@ export function besideOnArrival(
 }
 
 /** What the document pane shows. Look is a column of the typesetting pane. */
-export type DocumentTab = 'references' | 'images' | 'comments' | 'found' | 'history' | 'changes';
+export type DocumentTab =
+  'references' | 'images' | 'comments' | 'found' | 'history' | 'changes' | 'chat';
 
 /** What the window keeps of its sides and its panes, with the settings. */
 export interface Arrangement {
@@ -131,6 +132,7 @@ const TABS: readonly DocumentTab[] = [
   'found',
   'history',
   'changes',
+  'chat',
 ];
 /** Tabs as an older arrangement kept them: Look went to the typesetting pane, the pictures are the images. */
 const OLD_TABS: Readonly<Record<string, DocumentTab>> = { look: 'references', pictures: 'images' };

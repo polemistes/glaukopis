@@ -30,7 +30,15 @@ function opener() {
         calls.push(`open ${id}`);
         return {
           project: project(id) as never,
-          info: { id, view: { at: 'x', mode: 'text', document: 'chapter' } } as never,
+          info: {
+            id,
+            view: {
+              at: 'x',
+              mode: 'text',
+              document: 'chapter',
+              chat: { id: 'm1', created: '2026-11-13T09:00:00Z' },
+            },
+          } as never,
         };
       }),
       share: () => ({ sharing: null, shared: false, close: () => {} }),
@@ -74,6 +82,18 @@ describe('the projects the sides show', () => {
     expect(one.toStore()).not.toHaveProperty('document');
     one.document = null;
     expect(one.toStore()).not.toHaveProperty('document');
+  });
+
+  it('bring back the message of the chat read last, and keep the one read since', async () => {
+    const { o } = opener();
+    const open = new OpenProjects(o);
+    const one = open.acquire('a');
+    await settle();
+    expect(one.chatRead).toEqual({ id: 'm1', created: '2026-11-13T09:00:00Z' });
+    one.chatRead = { id: 'm2', created: '2026-11-13T10:00:00Z' };
+    expect(one.toStore().chat).toEqual({ id: 'm2', created: '2026-11-13T10:00:00Z' });
+    one.chatRead = null;
+    expect(one.toStore()).not.toHaveProperty('chat');
   });
 
   it('let go at once of a project let go while it was being opened', async () => {

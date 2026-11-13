@@ -25,6 +25,8 @@
   import type { Project } from './model/project.svelte';
   import { panes } from './panes.svelte';
   import type { MapSide } from './sides.svelte';
+  import { unreadCount } from '$lib/chat/chat.svelte';
+  import { openProjects } from './open-projects.svelte';
 
   interface Props {
     spec: MapSide;
@@ -168,7 +170,13 @@
     data-document
     onclick={onDocument}
   >
-    <PanelRight size={15} />
+    <!-- A dot while the chat of the project has messages unread (record 0092), seen with the pane closed. -->
+    <span class="with-dot"
+      ><PanelRight size={15} />{#if unreadCount(openProjects.get(spec.project))}<span
+          class="dot"
+          data-chat-unread
+        ></span>{/if}</span
+    >
   </IconButton>
 </div>
 
@@ -205,6 +213,20 @@
   .views button.on {
     background: var(--accent-soft);
     color: var(--accent-strong);
+  }
+  .with-dot {
+    position: relative;
+    display: inline-flex;
+  }
+  .dot {
+    position: absolute;
+    top: -3px;
+    right: -4px;
+    width: 7px;
+    height: 7px;
+    border: 1px solid var(--paper);
+    border-radius: 50%;
+    background: var(--accent);
   }
   .rule {
     flex: none;

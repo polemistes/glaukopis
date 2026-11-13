@@ -66,6 +66,9 @@
   import { confirm } from '$lib/ui/confirm.svelte';
   import { notify, notifyError } from '$lib/ui/toast.svelte';
   import CommentsPanel from '$lib/comments/CommentsPanel.svelte';
+  import ChatHost from '$lib/chat/ChatHost.svelte';
+  import ChatPanel from '$lib/chat/ChatPanel.svelte';
+  import { hasChat, tabShown, unreadCount } from '$lib/chat/chat.svelte';
   import { selectedPassage } from '$lib/comments/marks';
   import { commentsUi } from '$lib/comments/ui.svelte';
   import EditorHost from '$lib/editor/EditorHost.svelte';
@@ -986,6 +989,7 @@
       // Not Ctrl+Shift+I, which the window keeps for itself while the application is being developed.
       'side-pictures': () => documentPane.show('images'),
       'side-comments': () => documentPane.show('comments'),
+      'side-chat': { run: () => documentPane.show('chat'), when: () => hasChat(activeOpen) },
       'side-found': () => documentPane.show('found'),
       comment: { run: beginComment, when: () => !!project && mapFocused },
       'side-history': () => documentPane.show('history'),
@@ -1242,12 +1246,13 @@
     <!-- /the typesetting pane -->
     <!-- the document pane -->
     {#if documentPane.kind && project && active}
-      {@const kind = documentPane.kind}
+      {@const kind = tabShown(documentPane.kind, activeOpen)}
       {@const shared = activeOpen?.sharing as ProjectSharing | null | undefined}
       {#snippet tabs()}
         <SideTabs
           current={kind}
-          counts={{ found: foundCount }}
+          counts={{ found: foundCount, chat: unreadCount(activeOpen) }}
+          without={hasChat(activeOpen) ? [] : ['chat']}
           onpick={(tab) => documentPane.show(tab, true)}
         />
       {/snippet}
@@ -1260,7 +1265,9 @@
               ? t('comments-between')
               : kind === 'found'
                 ? t('found-between')
-                : t('project-between-references')}
+                : kind === 'chat'
+                  ? t('chat-between')
+                  : t('project-between-references')}
         onstart={() => measure('references')}
         onmove={(dx) => moveSide('references', dx)}
         onreset={() => (panes.documentWidth = 0)}
@@ -1333,6 +1340,13 @@
               onshow={(entry) => showFound(at, entry)}
             />
           {/key}
+        {:else if kind === 'chat'}
+          <ChatPanel
+            {project}
+            shared={!!shared?.shared}
+            head={tabs}
+            onclose={() => documentPane.close()}
+          />
         {:else if kind === 'images'}
           <PicturePanel
             {project}
@@ -1364,6 +1378,7 @@
   {/key}
 {/if}
 <DocumentHost />
+<ChatHost />
 
 <!-- What is asked from the menu of an element is done in the project of the active side. -->
 <ProjectDialogs

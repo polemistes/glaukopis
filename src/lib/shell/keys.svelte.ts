@@ -118,6 +118,8 @@ const ENTRIES = [
   { id: 'side-references', keys: 'Ctrl+Shift+R', place: 'project', bound: true },
   { id: 'side-pictures', keys: 'Ctrl+Shift+P', place: 'project', bound: true },
   { id: 'side-comments', keys: 'Ctrl+Shift+M', place: 'project', bound: true },
+  // No key of its own: the palette finds it, while the project has a chat (record 0092).
+  { id: 'side-chat', keys: '', place: 'project', bound: true },
   { id: 'comment', keys: 'Ctrl+Alt+C', place: 'project', bound: true },
   { id: 'side-history', keys: 'Ctrl+Shift+H', place: 'project', bound: true },
   { id: 'side-changes', keys: 'Ctrl+Shift+E', place: 'project', bound: true },

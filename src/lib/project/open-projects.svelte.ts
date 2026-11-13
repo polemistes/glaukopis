@@ -21,6 +21,7 @@ import { beforeClose } from '$lib/state/closing';
 import { openProject, projects, rememberOpened } from '$lib/state/projects.svelte';
 import { describeError } from '$lib/ui/toast.svelte';
 import { closedHere, openHere } from './elsewhere';
+import type { ReadMark } from '$lib/chat/reading';
 import { leftAt, readMemory, toStore, type Beside, type Left, type Memory } from './layout';
 import type { Camera } from './diagram/camera';
 import type { Project } from './model/project.svelte';
@@ -112,6 +113,11 @@ export class OpenProject {
    * computer, not in the project.
    */
   document = $state.raw<string | null>(null);
+  /**
+   * The message of its chat that was read last, or none: kept with the view
+   * on this computer, as the mark of the document is (record 0092).
+   */
+  chatRead = $state.raw<ReadMark | null>(null);
   /** How many sides show it. */
   refs = 0;
   /** It was let go while it was still being opened. */
@@ -137,6 +143,7 @@ export class OpenProject {
       left: this.left,
       beside: this.beside,
       document: this.document,
+      chat: this.chatRead,
     };
   }
 
@@ -245,6 +252,7 @@ export class OpenProjects {
       open.left = memory.left;
       open.beside = memory.beside;
       open.document = memory.document;
+      open.chatRead = memory.chat;
       open.info = opened.info;
       open.sharing = o.share(id, p, opened.info);
       open.project = p;

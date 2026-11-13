@@ -23,6 +23,7 @@ describe('what a project keeps of how it was looked at', () => {
         left: null,
         beside: null,
         document: null,
+        chat: null,
       });
     expect(leftAt(readMemory(null), elements)).toEqual({ at: PROJECT, mode: 'diagram' });
   });
@@ -35,6 +36,7 @@ describe('what a project keeps of how it was looked at', () => {
       left: { at: 'a', mode: 'text' as const },
       beside: null,
       document: 'b',
+      chat: { id: 'm', created: '2026-11-13T09:00:00Z' },
     };
     const stored = toStore(memory, elements, ['a']);
     expect(stored).toEqual({
@@ -45,6 +47,7 @@ describe('what a project keeps of how it was looked at', () => {
       at: 'a',
       mode: 'text',
       document: 'b',
+      chat: { id: 'm', created: '2026-11-13T09:00:00Z' },
     });
     expect(readMemory(JSON.parse(JSON.stringify(stored)))).toEqual({
       ...memory,

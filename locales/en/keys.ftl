@@ -41,6 +41,7 @@ keys-look-type = Change the font…
 keys-side-references = References
 keys-side-pictures = The images of the project
 keys-side-comments = Comments
+keys-side-chat = Chat
 keys-comment = Comment on the passage selected, or the element
 keys-side-history = History
 keys-side-changes = Review changes

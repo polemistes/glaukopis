@@ -38,6 +38,7 @@ keys-look-type = Endre skriften …
 keys-side-references = Referanser
 keys-side-pictures = Bildene i prosjektet
 keys-side-comments = Kommentarer
+keys-side-chat = Samtale
 keys-comment = Kommenter det merkede, eller elementet
 keys-side-history = Historikk
 keys-side-changes = Gjennomgå endringer

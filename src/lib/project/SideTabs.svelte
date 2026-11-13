@@ -1,9 +1,10 @@
 <!--
   The head of the document pane: what it can show, as tabs. The references,
-  the images, the comments, the citations that were found, the history and
-  the changes have the one place, and are one at a time. A tab may carry a
-  count, as of the citations that are left to go through. The pane puts its
-  own tools, and the way to close it, after these.
+  the images, the comments, the citations that were found, the history, the
+  changes and the chat have the one place, and are one at a time. A tab may
+  carry a count, as of the citations that are left to go through, and may be
+  left out, as the chat of a project that has none. The pane puts its own
+  tools, and the way to close it, after these.
 -->
 <script lang="ts">
   import BookMarked from '@lucide/svelte/icons/book-marked';
@@ -11,6 +12,7 @@
   import HistoryIcon from '@lucide/svelte/icons/history';
   import Images from '@lucide/svelte/icons/images';
   import MessageSquare from '@lucide/svelte/icons/message-square';
+  import MessagesSquare from '@lucide/svelte/icons/messages-square';
   import TextSearch from '@lucide/svelte/icons/text-search';
   import { t } from '$lib/i18n';
   import { keysFor } from '$lib/shell/keys.svelte';
@@ -22,11 +24,13 @@
     onpick: (kind: DocumentTab) => void;
     /** What a tab counts, where it counts anything: shown beside it. */
     counts?: Partial<Record<DocumentTab, number>>;
+    /** The tabs that are not there now. */
+    without?: DocumentTab[];
   }
 
-  let { current, onpick, counts = {} }: Props = $props();
+  let { current, onpick, counts = {}, without = [] }: Props = $props();
 
-  const kinds = $derived([
+  const all = $derived([
     {
       kind: 'references' as const,
       label: t('project-references'),
@@ -63,7 +67,14 @@
       icon: FileDiff,
       shortcut: keysFor('side-changes'),
     },
+    {
+      kind: 'chat' as const,
+      label: t('chat-title'),
+      icon: MessagesSquare,
+      shortcut: keysFor('side-chat'),
+    },
   ]);
+  const kinds = $derived(all.filter((k) => !without.includes(k.kind)));
 
   function onkeydown(event: KeyboardEvent) {
     const i = kinds.findIndex((k) => k.kind === current);
