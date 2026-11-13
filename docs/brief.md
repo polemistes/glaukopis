@@ -1404,3 +1404,9 @@ Built: a name in the outline is dragged to another place among the names, with a
 > It should be possible to copy both references and citations. References in the default citation style, and citations in the style of the document in which it resides.
 
 Built: references are copied as the usual reference style writes them in a list of references, by Ctrl+C in a list of them and by Copy in their menu; a citation as the style of its document writes it, by Copy the citation where it is opened and by Ctrl+C when it is selected alone; both as words and with the italics for programs that take them. Record 0090.
+
+## 2026-11-13 — export and print from a side, a chat, and associations with arrows
+
+> A user has asked if export and print could be reached without opening the typesetting pane. Also, there should be a chat for shared projects. And it would be nice if the associations could have arrows and colours. And the label of the arrows should be text fileds that can have more than one line. Could you make this and delegate to less expensive models as long as it does not compromise the quality?
+
+Being built from `docs/plans/export-and-print-from-a-side-a-chat-and-associations-with-arrows.md`, in three parts with a record each: 0091, 0092, 0093.
