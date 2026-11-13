@@ -27,6 +27,8 @@ export interface Diagram {
   linkFrom: string | null;
   /** The association that is selected. */
   selectedLink: string | null;
+  /** Opens the menu of an association, as by its key. */
+  linkMenu(id: string): void;
   readonly actions: ElementActions;
   select(ids: string[]): void;
   add(kind: 'child' | 'sibling', at: string): void;
@@ -138,6 +140,10 @@ export function pressed(event: KeyboardEvent, d: Diagram): boolean {
 
   // The menu of what is selected, from the keys.
   if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
+    if (d.selectedLink) {
+      d.linkMenu(d.selectedLink);
+      return true;
+    }
     const at = last && d.elementAt(last);
     if (!at) return true;
     d.openedByKey();

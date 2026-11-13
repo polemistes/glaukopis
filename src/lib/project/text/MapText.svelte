@@ -12,20 +12,17 @@
   import { onDestroy, onMount, tick, untrack } from 'svelte';
   import { prosemirrorToYXmlFragment } from 'y-prosemirror';
   import * as Y from 'yjs';
-  import ArrowRight from '@lucide/svelte/icons/arrow-right';
   import ChevronsDownUp from '@lucide/svelte/icons/chevrons-down-up';
   import ChevronsUpDown from '@lucide/svelte/icons/chevrons-up-down';
   import FoldVertical from '@lucide/svelte/icons/fold-vertical';
   import MapIcon from '@lucide/svelte/icons/map';
   import UnfoldVertical from '@lucide/svelte/icons/unfold-vertical';
   import Merge from '@lucide/svelte/icons/merge';
-  import Pencil from '@lucide/svelte/icons/pencil';
   import SplitSquareVertical from '@lucide/svelte/icons/split-square-vertical';
   import Hash from '@lucide/svelte/icons/hash';
   import ListOrdered from '@lucide/svelte/icons/list-ordered';
   import CornerDownRight from '@lucide/svelte/icons/corner-down-right';
   import { continueLine, continuesAt } from '$lib/editor/numbers';
-  import Trash2 from '@lucide/svelte/icons/trash-2';
   import { widthFor } from '$lib/editor/commands';
   import type { KeyAction } from '$lib/editor/plugins';
   import type RichText from '$lib/editor/RichText.svelte';
@@ -47,6 +44,10 @@
   import { pointRect } from '$lib/ui/floating';
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
+  import LinesField from '$lib/ui/LinesField.svelte';
+  import { associationMenu } from '../associations';
+  import { kindColour } from '../kinds';
+  import { endsWritten } from '../model/changing/links';
   import {
     elementMenu,
     indent as indentElement,
@@ -66,6 +67,7 @@
   import { headingAt, nameDoc } from './heading';
   import {
     bracketsOf,
+    marginHead,
     depthAt,
     dropChoices,
     dropIndent,
@@ -1324,46 +1326,30 @@
   let hoveredLink = $state<string | null>(null);
 
   function linkWords(b: Bracket): string {
-    const a = project.node(b.from)?.title || t('project-untitled');
-    const z = project.node(b.to)?.title || t('project-untitled');
-    return `${truncate(a, 40)} ↔ ${truncate(z, 40)}${b.label ? ` · ${b.label}` : ''}`;
+    const link = project.links.find((l) => l.id === b.id);
+    if (!link) return '';
+    const name = (id: string) => truncate(project.node(id)?.title || t('project-untitled'), 40);
+    const words = link.label.replace(/\n+/g, ' ');
+    return `${endsWritten(name(link.from), name(link.to), link.arrow)}${words ? ` · ${words}` : ''}`;
   }
 
   function linkMenu(event: MouseEvent, b: Bracket) {
     event.preventDefault();
-    const end = (id: string): MenuItem => ({
-      label: t('text-go-to', {
-        name: truncate(project.node(id)?.title || t('project-untitled'), 36),
-      }),
-      icon: ArrowRight,
-      action: async () => {
-        if (folding.reveal(tree, id)) await tick();
-        scroller
-          ?.querySelector(`[data-section="${id}"]`)
-          ?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        current = id;
-      },
-    });
-    openMenu(pointRect(event.clientX, event.clientY), [
-      end(b.from),
-      end(b.to),
-      { kind: 'separator' },
-      {
-        label: b.label ? t('text-change-label') : t('text-add-label'),
-        icon: Pencil,
-        action: () => (labelling = { id: b.id, value: b.label, top: (b.top + b.bottom) / 2 }),
-      },
-      {
-        label: t('text-remove-association'),
-        icon: Trash2,
-        danger: true,
-        action: () => {
-          project.checkpoint();
-          project.removeLink(b.id);
-          project.checkpoint();
+    const link = project.links.find((l) => l.id === b.id);
+    if (!link) return;
+    openMenu(
+      pointRect(event.clientX, event.clientY),
+      associationMenu(project, link, {
+        write: () => (labelling = { id: b.id, value: b.label, top: (b.top + b.bottom) / 2 }),
+        goTo: async (id) => {
+          if (folding.reveal(tree, id)) await tick();
+          scroller
+            ?.querySelector(`[data-section="${id}"]`)
+            ?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          current = id;
         },
-      },
-    ]);
+      }),
+    );
   }
 
   function pick(id: string) {
@@ -1375,9 +1361,11 @@
     linkFrom = null;
   }
 
-  function commitLabel() {
+  function commitLabel(value: string) {
     if (!labelling) return;
-    project.setLinkLabel(labelling.id, labelling.value);
+    project.checkpoint();
+    project.setLinkLabel(labelling.id, value);
+    project.checkpoint();
     labelling = null;
   }
 </script>
@@ -1432,6 +1420,8 @@
               <g
                 class="bracket"
                 class:hot={hoveredLink === b.id || current === b.from || current === b.to}
+                data-link={b.id}
+                style:--link={b.colour ? kindColour(b.colour).ink : null}
                 onpointerenter={() => (hoveredLink = b.id)}
                 onpointerleave={() => (hoveredLink = null)}
                 onclick={(e) => linkMenu(e, b)}
@@ -1440,27 +1430,27 @@
               >
                 <path d={b.path} class="hit" />
                 <path d={b.path} class="line" />
-                <circle cx="1.5" cy={b.top} r="2.2" />
-                <circle cx="1.5" cy={b.bottom} r="2.2" />
+                {#each [{ y: b.top, head: b.heads.top }, { y: b.bottom, head: b.heads.bottom }] as end, i (i)}
+                  {#if end.head}
+                    <path d={marginHead(end.y)} class="head" />
+                  {:else}
+                    <circle cx="1.5" cy={end.y} r="2.2" />
+                  {/if}
+                {/each}
               </g>
             {/each}
           </g>
         </svg>
         {#if labelling}
-          <input
-            class="label-input"
-            style:top="{labelling.top - 13}px"
-            bind:value={labelling.value}
-            placeholder={t('project-link-placeholder')}
-            aria-label={t('project-link-label')}
-            onblur={commitLabel}
-            onkeydown={(e) => {
-              e.stopPropagation();
-              if (e.key === 'Enter') commitLabel();
-              else if (e.key === 'Escape') labelling = null;
-            }}
-            {@attach (el: HTMLInputElement) => el.focus()}
-          />
+          <div class="label-input" style:top="{labelling.top - 13}px">
+            <LinesField
+              value={labelling.value}
+              placeholder={t('project-link-placeholder')}
+              label={t('project-link-label')}
+              ondone={commitLabel}
+              oncancel={() => (labelling = null)}
+            />
+          </div>
         {/if}
       </div>
 
@@ -1625,7 +1615,7 @@
   }
   .bracket .line {
     fill: none;
-    stroke: var(--gold);
+    stroke: var(--link, var(--gold));
     stroke-width: 1.15;
     opacity: 0.6;
     transition:
@@ -1637,8 +1627,9 @@
     stroke: transparent;
     stroke-width: 10;
   }
-  .bracket circle {
-    fill: var(--gold);
+  .bracket circle,
+  .bracket .head {
+    fill: var(--link, var(--gold));
     opacity: 0.6;
     pointer-events: none;
   }
@@ -1646,16 +1637,19 @@
     opacity: 1;
     stroke-width: 2;
   }
-  .bracket.hot circle {
+  .bracket.hot circle,
+  .bracket.hot .head {
     opacity: 1;
   }
   .label-input {
     position: absolute;
     z-index: 2;
     left: 0;
+  }
+  .label-input :global(.lines-field) {
     width: 200px;
-    height: 26px;
-    padding: 0 8px;
+    min-height: 26px;
+    padding: 3px 8px;
     border: 1px solid var(--gold);
     border-radius: var(--radius-s);
     background: var(--paper-raised);

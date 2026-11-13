@@ -220,6 +220,14 @@ project-elements = { $count ->
 project-other-here = { $name } is here
 project-link-placeholder = How they are related
 project-link-label = Label of the association
+# The menu of an association, in the diagram and in the margin of the text.
+project-link-arrow = Arrow
+project-link-arrow-none = None
+# An arrow that points at the element named.
+project-link-arrow-to = To “{ $name }”
+project-link-arrow-both = Both ways
+project-link-colour = Colour
+project-link-colour-none = None
 
 ## A copy and its original.
 copy-title = The copy and its original

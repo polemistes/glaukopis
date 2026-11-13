@@ -738,9 +738,14 @@ export function everything(): OrgProject {
     ],
     templates: { play: template },
     links: [
-      { from: 'scene1', to: 'kinds', label: 'answers' },
-      { from: 'scene1', to: 'blocks', label: '' },
-      { from: 'kinds', to: 'scene1', label: 'a [bracketed] label' },
+      { from: 'scene1', to: 'kinds', label: 'answers', arrow: 'to', colour: 'teal' },
+      { from: 'scene1', to: 'blocks', label: '', arrow: 'both' },
+      {
+        from: 'kinds',
+        to: 'scene1',
+        label: 'a [bracketed] label\nin two lines, with a \\n and a \\ of its own',
+        colour: 'plum',
+      },
     ],
     comments: [
       {

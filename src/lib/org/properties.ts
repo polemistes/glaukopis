@@ -12,15 +12,27 @@
  * `TIMELINE`, `LOOK` and `COMPOSITION` are written as one line of JSON for
  * now: the words the program writes for a placement in time are not yet a
  * form that reads back.
+ *
+ * `LINKS` holds the associations that go from the element, each an Org link
+ * to the element it goes to, with its words as the link's description:
+ * `[[id:…][son of Peleus]]`. A backslash comes before `\`, `[` and `]` in
+ * the words, and a line break in them is written `\n`. Where the
+ * association has an arrow or a colour, they follow the link in braces:
+ * `[[id:…][words]]{to teal}`, the arrow `to`, `from` or `both`, the colour
+ * by its name, either or both (record 0093). A reader that does not know
+ * the braces passes them over.
  */
 
 import type { Template } from '$lib/api/templates';
 import type { KindFamily, Look } from '$lib/api/documents';
+import { KIND_COLOURS } from '$lib/project/kinds';
 import {
+  LINK_ARROWS,
   ROLES,
   type Contributor,
   type DocumentSettings,
   type KindRecord,
+  type LinkArrow,
   type PassageKindRecord,
   type Person,
   type Position,
@@ -300,6 +312,16 @@ function readAuthors(v: string): Person[] {
     });
 }
 
+/** The arrow and the colour of an association, from the words in braces after its link; what is not known is passed over. */
+function linkLook(said: string): { arrow?: LinkArrow; colour?: string } {
+  const out: { arrow?: LinkArrow; colour?: string } = {};
+  for (const word of said.split(/\s+/)) {
+    if (LINK_ARROWS.includes(word as LinkArrow)) out.arrow = word as LinkArrow;
+    else if (KIND_COLOURS.some((c) => c.name === word)) out.colour = word;
+  }
+  return out;
+}
+
 /** What writing an element's drawer needs of the project. */
 export interface DrawerWriting {
   /** The name an element's kind is written by: its name where that is one kind's alone, else its id. */
@@ -326,8 +348,11 @@ export function writeProperties(e: OrgElement, w: DrawerWriting): string[] {
         ? w.links
             .map((l) => {
               const to = l.to.replace(/[\\[\]]/g, (c) => `\\${c}`);
-              const label = l.label.replace(/[\\[\]]/g, (c) => `\\${c}`).replace(/\n/g, ' ');
-              return label ? `[[id:${to}][${label}]]` : `[[id:${to}]]`;
+              const label = l.label.replace(/[\\[\]]/g, (c) => `\\${c}`).replace(/\r?\n/g, '\\n');
+              const look = [l.arrow, l.colour].filter(Boolean).join(' ');
+              return (
+                (label ? `[[id:${to}][${label}]]` : `[[id:${to}]]`) + (look ? `{${look}}` : '')
+              );
             })
             .join(' ')
         : undefined,
@@ -380,7 +405,7 @@ export interface ReadProperties {
   origin: string | null;
   pos: Position | null;
   collapsed: boolean;
-  links: { to: string; label: string }[];
+  links: Omit<OrgLink, 'from'>[];
   document: DocumentSettings;
   timeline: TimelineSettings | null;
   unknown: string[];
@@ -451,10 +476,14 @@ export function readProperties(lines: string[]): ReadProperties {
         out.collapsed = bool(v) === true;
         break;
       case 'LINKS':
-        for (const l of raw.matchAll(/\[\[id:((?:\\.|[^\]\\])*)\](?:\[((?:\\.|[^\]\\])*)\])?\]/g))
+        for (const l of raw.matchAll(
+          /\[\[id:((?:\\.|[^\]\\])*)\](?:\[((?:\\.|[^\]\\])*)\])?\](?:\{([^{}]*)\})?/g,
+        ))
           out.links.push({
             to: l[1].replace(/\\(.)/g, '$1'),
-            label: (l[2] ?? '').replace(/\\(.)/g, '$1'),
+            // `\n` is a line break; a backslash before anything else is let go of.
+            label: (l[2] ?? '').replace(/\\(.)/g, (_, c: string) => (c === 'n' ? '\n' : c)),
+            ...linkLook(l[3] ?? ''),
           });
         break;
       case 'TITLE':

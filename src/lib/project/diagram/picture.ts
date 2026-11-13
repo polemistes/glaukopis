@@ -296,17 +296,47 @@ function dotShapes(dot: Element, status: string, at: Reader): Shape[] {
   return out;
 }
 
+/** How opaque a shape of `svg.lines` is drawn: its own opacity, and that of the group it is in. */
+function opacityOf(el: SVGElement, cs: CSSStyleDeclaration): number {
+  const parent = el.parentElement;
+  return (
+    (parseFloat(cs.opacity) || 1) *
+    (parent && parent.tagName.toLowerCase() === 'g'
+      ? parseFloat(getComputedStyle(parent).opacity) || 1
+      : 1)
+  );
+}
+
+/** A filled path of `svg.lines`, an arrowhead, with the colour it is filled with. */
+function fillShape(el: SVGPathElement, at: Reader): Shape | null {
+  const cs = getComputedStyle(el);
+  const fill = colourOf(cs.fill);
+  const d = el.getAttribute('d');
+  if (!fill || !d) return null;
+  try {
+    const bb = el.getBBox();
+    at.take({ x: bb.x, y: bb.y, w: bb.width, h: bb.height });
+  } catch {
+    // Not drawn: nothing to take in.
+  }
+  return {
+    kind: 'path',
+    d,
+    fill,
+    stroke: null,
+    strokeWidth: 0,
+    dash: [],
+    cap: 'butt',
+    opacity: opacityOf(el, cs),
+  };
+}
+
 /** A line or a curve of `svg.lines`, with the stroke it is drawn with. */
 function strokeShape(el: SVGGeometryElement, d: string, at: Reader): Shape | null {
   const cs = getComputedStyle(el);
   const stroke = colourOf(cs.stroke);
   if (!stroke) return null;
-  const parent = el.parentElement;
-  const opacity =
-    (parseFloat(cs.opacity) || 1) *
-    (parent && parent.tagName.toLowerCase() === 'g'
-      ? parseFloat(getComputedStyle(parent).opacity) || 1
-      : 1);
+  const opacity = opacityOf(el, cs);
   const dash =
     cs.strokeDasharray && cs.strokeDasharray !== 'none'
       ? cs.strokeDasharray
@@ -375,6 +405,13 @@ export function pictureOf(
     world.querySelectorAll<SVGPathElement>('svg.lines g.association path.curve'),
   )) {
     const s = strokeShape(curve, curve.getAttribute('d') ?? '', at);
+    if (s) shapes.push(s);
+  }
+  // Their arrowheads, filled paths of their own.
+  for (const head of Array.from(
+    world.querySelectorAll<SVGPathElement>('svg.lines g.association path.head'),
+  )) {
+    const s = fillShape(head, at);
     if (s) shapes.push(s);
   }
 

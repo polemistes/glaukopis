@@ -84,7 +84,7 @@ try {
      const box = g.querySelector('.curve').getBoundingClientRect();
      g.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, clientX: box.left + box.width / 2, clientY: box.top + box.height / 2 }));`,
   );
-  await app.waitFor('.diagram .link-label.editing', 3000);
+  await app.waitFor('.diagram .link-field textarea', 3000);
   await app.keys('answers');
   await app.press('Enter');
   await sleep(200);

@@ -11,6 +11,7 @@ import {
   GUTTER,
   joinable,
   lineBetween,
+  marginHead,
   marginWidth,
   nearestChoice,
   outlineNumbers,
@@ -333,5 +334,21 @@ describe('the brackets of associations', () => {
       itself,
     );
     expect(flat[0].path).toBe('M 0 40 H 10');
+  });
+
+  it('has an arrowhead at the end the arrow points at, whichever end stands higher, and its colour', () => {
+    const heads = (arrow: LinkRecord['arrow'], from: string, to: string) =>
+      bracketsOf([{ ...link('l', from, to), arrow }], anchors, itself)[0].heads;
+    // Going down the text, and up it.
+    expect(heads(undefined, 'one', 'two')).toEqual({ top: false, bottom: false });
+    expect(heads('to', 'one', 'two')).toEqual({ top: false, bottom: true });
+    expect(heads('to', 'two', 'one')).toEqual({ top: true, bottom: false });
+    expect(heads('from', 'one', 'two')).toEqual({ top: true, bottom: false });
+    expect(heads('from', 'two', 'one')).toEqual({ top: false, bottom: true });
+    expect(heads('both', 'two', 'one')).toEqual({ top: true, bottom: true });
+
+    const [b] = bracketsOf([{ ...link('l', 'one', 'two'), colour: 'teal' }], anchors, itself);
+    expect(b.colour).toBe('teal');
+    expect(marginHead(10)).toBe('M 0 10 L 6 7 L 6 13 Z');
   });
 });

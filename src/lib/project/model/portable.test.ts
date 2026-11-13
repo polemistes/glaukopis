@@ -220,6 +220,29 @@ describe('elements to another project', () => {
     expect(portable(s.p, [PROJECT]).elements).toEqual([]);
   });
 
+  it('carry the arrow, the colour and the lines of the words of an association', () => {
+    const s = source();
+    const d = project('Book');
+    const [link] = s.p.links.filter((l) => l.to === s.a2);
+    s.p.setLinkLabel(link.id, 'rivals\nfor Briseis');
+    s.p.setLinkArrow(link.id, 'both');
+    s.p.setLinkColour(link.id, 'rust');
+    // Through words, as it goes between windows.
+    const carried = JSON.parse(JSON.stringify(portable(s.p, [s.a])));
+    const [a] = makePortable(d.p, carried, { under: d.root });
+    const [a1, a2] = d.p.tree().children.get(a)!;
+    expect(d.p.links).toEqual([
+      {
+        id: d.p.links[0].id,
+        from: a1,
+        to: a2,
+        label: 'rivals\nfor Briseis',
+        arrow: 'both',
+        colour: 'rust',
+      },
+    ]);
+  });
+
   it('use the kinds of the same name there, and name them as they are there', () => {
     const s = source();
     const d = project('Book');

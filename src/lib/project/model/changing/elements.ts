@@ -22,7 +22,7 @@ import {
   type TimelineSettings,
 } from '../types';
 import { deleteComments } from './comments';
-import { makeLink } from './links';
+import { lookOf, makeLink } from './links';
 
 /** A key that sorts between two siblings. `siblings` is the list the element will join, without it. */
 export function keyAt(p: Project, siblings: string[], index: number): string {
@@ -108,7 +108,7 @@ export function cloneLinks(p: Project, ids: Map<string, string>) {
   for (const l of p.links) {
     const from = ids.get(l.from);
     const to = ids.get(l.to);
-    if (from && to) makeLink(p, from, to, l.label);
+    if (from && to) makeLink(p, from, to, lookOf(l));
   }
 }
 

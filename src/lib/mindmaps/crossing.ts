@@ -73,7 +73,13 @@ export function intoPortable(map: MindMap): Portable {
   const elements = map.root.children.map(element);
   return {
     elements,
-    links: map.links.filter((l) => ids.has(l.from) && ids.has(l.to) && l.from !== l.to),
+    // An association's colour brought to the nearest of the colours of kinds, as a kind's is.
+    links: map.links
+      .filter((l) => ids.has(l.from) && ids.has(l.to) && l.from !== l.to)
+      .map(({ colour, ...l }) => {
+        const near = nearestColour(colour ?? null);
+        return near ? { ...l, colour: near } : l;
+      }),
     kinds: [...kinds.values()].map((k) => ({
       id: k.id,
       name: k.name,
@@ -150,7 +156,9 @@ export function mindMapOf(name: string, middle: Middle, carried: Portable): Mind
     excluded: false,
     children: firsts,
   };
-  const links: Association[] = carried.links.map((l) => ({ ...l }));
+  const links: Association[] = carried.links.map(({ colour, ...l }) =>
+    colour ? { ...l, colour: kindColour(colour).ink } : { ...l },
+  );
   return { name, root, links };
 }
 

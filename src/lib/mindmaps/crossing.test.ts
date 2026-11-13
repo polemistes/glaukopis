@@ -59,6 +59,26 @@ describe('a mind map made into a project', () => {
   });
 });
 
+describe('the associations of a map', () => {
+  it('cross with their arrows, their colours brought to the nearest of the kinds, and their lines', () => {
+    const { map } = readFreeplane(fixture('odyssey.mm'));
+    const [link] = map.links;
+    map.links = [{ ...link, label: 'helps\nin disguise', arrow: 'both', colour: '#ff0000' }];
+    const p = new Project(null);
+    p.begin(map.name);
+    makePortable(p, intoPortable(map), { under: PROJECT });
+    expect(p.links.map(({ label, arrow, colour }) => ({ label, arrow, colour }))).toEqual([
+      { label: 'helps\nin disguise', arrow: 'both', colour: 'rust' },
+    ]);
+
+    const under = p.tree().children.get(PROJECT) ?? [];
+    const back = mindMapOf('The Odyssey', { id: PROJECT, name: [], text: [] }, portable(p, under));
+    expect(back.links.map(({ label, arrow, colour }) => ({ label, arrow, colour }))).toEqual([
+      { label: 'helps\nin disguise', arrow: 'both', colour: '#c2410c' },
+    ]);
+  });
+});
+
 describe('the colours and times of a map', () => {
   it('takes the colour of the kinds nearest the one in the file', () => {
     expect(nearestColour('#0e7490')).toBe('teal');

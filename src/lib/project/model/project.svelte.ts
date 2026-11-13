@@ -24,7 +24,7 @@ import { chatChanges, chatMessageOf } from './changing/chat';
 import { commentChanges } from './changing/comments';
 import { kindChanges } from './changing/kinds';
 import { elementChanges, elementOf } from './changing/elements';
-import { linkChanges } from './changing/links';
+import { linkChanges, readLink } from './changing/links';
 import { cleanLook, family, passageKindChanges } from './changing/passage-kinds';
 import { referenceChanges } from './changing/references';
 import { cleanTemplate, templateChanges } from './changing/templates';
@@ -819,9 +819,8 @@ export class Project {
     const list: LinkRecord[] = [];
     for (const [id, l] of this.yLinks) {
       if (!(l instanceof Y.Map)) continue;
-      const from = str(l.get('from'));
-      const to = str(l.get('to'));
-      if (from && to && from !== to) list.push({ id, from, to, label: str(l.get('label')) });
+      const link = readLink(id, l);
+      if (link) list.push(link);
     }
     list.sort((a, b) => (a.id < b.id ? -1 : 1));
     this.links = list;

@@ -185,6 +185,14 @@ project-elements = { $count ->
 project-other-here = { $name } er her
 project-link-placeholder = Hvordan de henger sammen
 project-link-label = Merkelapp på assosiasjonen
+# The menu of an association, in the diagram and in the margin of the text.
+project-link-arrow = Pil
+project-link-arrow-none = Ingen
+# An arrow that points at the element named.
+project-link-arrow-to = Til «{ $name }»
+project-link-arrow-both = Begge veier
+project-link-colour = Farge
+project-link-colour-none = Ingen
 
 ## En kopi og originalen.
 copy-title = Kopien og originalen

@@ -10,7 +10,7 @@
 
 import type { When } from '$lib/timeline/solve';
 import type { Block, Inline } from '$lib/project/model/text';
-import type { Status } from '$lib/project/model/types';
+import type { LinkArrow, Status } from '$lib/project/model/types';
 
 /** A topic of a mind map, with all under it. */
 export interface Topic {
@@ -33,7 +33,12 @@ export interface Topic {
 export interface Association {
   from: string;
   to: string;
+  /** Its words, in lines. */
   label: string;
+  /** At the end it goes to, at the end it comes from, or both; absent for none. */
+  arrow?: LinkArrow;
+  /** The colour the file gives it, as `#rrggbb`. */
+  colour?: string;
 }
 
 /** A mind map: its name, the topic in the middle, and the associations. */

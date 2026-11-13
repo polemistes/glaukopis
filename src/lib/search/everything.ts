@@ -27,6 +27,7 @@ import {
   type LabelWords,
   type PointedKind,
 } from '$lib/editor/labels';
+import { endsWritten, linkArrow } from '$lib/project/model/changing/links';
 import { migrate, needsMigration } from '$lib/project/model/migrate';
 import {
   bodyFacts,
@@ -43,6 +44,7 @@ import {
   OWN_SETTINGS,
   PROJECT,
   type DocumentSettings,
+  type LinkArrow,
   type RefRecord,
 } from '$lib/project/model/types';
 import { Matcher, type SearchOptions } from './matching';
@@ -90,7 +92,7 @@ export interface ProjectRead {
   elements: ElementRead[];
   byId: Map<string, ElementRead>;
   /** The associations that have a name. */
-  links: { from: string; to: string; label: string }[];
+  links: { from: string; to: string; label: string; arrow?: LinkArrow }[];
   refs: Map<string, RefRecord>;
   /** What is written about the works cited, for this project, by the reference. */
   notes: { ref: string; text: string }[];
@@ -166,13 +168,14 @@ export function readProject(
   }
   const byId = new Map(elements.map((e) => [e.id, e]));
 
-  const links: { from: string; to: string; label: string }[] = [];
+  const links: ProjectRead['links'] = [];
   for (const l of yLinks.values()) {
     if (!(l instanceof Y.Map)) continue;
     const label = str(l.get('label'));
     const from = str(l.get('from'));
     const to = str(l.get('to'));
-    if (label && byId.has(from) && byId.has(to)) links.push({ from, to, label });
+    if (label && byId.has(from) && byId.has(to))
+      links.push({ from, to, label, arrow: linkArrow(l.get('arrow')) });
   }
 
   const refs = new Map<string, RefRecord>();
@@ -508,19 +511,25 @@ export function searchProject(
     }
     for (const link of project.links) {
       const from = project.byId.get(link.from);
-      for (const hit of matcher.find(link.label))
+      // Its lines read as one, so that words are found whichever line they stand in, and across two.
+      const words = link.label.replace(/\n/g, ' ');
+      for (const hit of matcher.find(words))
         put(
           {
             where: 'association',
             ...treeOf(from),
             element: link.from,
-            elementName: `${from?.name ?? ''} ↔ ${project.byId.get(link.to)?.name ?? ''}`,
+            elementName: endsWritten(
+              from?.name ?? '',
+              project.byId.get(link.to)?.name ?? '',
+              link.arrow,
+            ),
             part: null,
             passage: 0,
             start: hit.start,
             end: hit.end,
           },
-          link.label,
+          words,
         );
     }
     for (const note of project.notes) {

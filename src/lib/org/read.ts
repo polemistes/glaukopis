@@ -197,7 +197,7 @@ function readWhole(text: string, references: RefRecord[]): OrgProject {
     element.excluded = head.excluded;
     const kept: string[][] = head.kept.length ? [head.kept] : [];
     const threads: OrgThread[] = [];
-    const links: { to: string; label: string }[] = [];
+    const links: Omit<OrgLink, 'from'>[] = [];
     let kindName: string | null = null;
     const ls = section.lines;
     let i = 0;
@@ -258,8 +258,7 @@ function readWhole(text: string, references: RefRecord[]): OrgProject {
     const body: Block[] = readBody(ls.slice(i), c);
     element.blocks = [...kept.map(keptAsDraft), ...body];
     element.kind = kindName ? kindIdOf(kindName, project.elementKinds) : null;
-    for (const l of links)
-      project.links.push({ from: element.id, to: l.to, label: l.label } satisfies OrgLink);
+    for (const l of links) project.links.push({ from: element.id, ...l } satisfies OrgLink);
     for (const inner of commentLines) threads.push(...readComments(inner, element.id));
     project.comments.push(...threads);
     project.elements.push(element);

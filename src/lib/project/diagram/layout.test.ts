@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { buildTree, viewOf, type FlatNode } from '../model/tree';
 import type { NodeRecord } from '../model/types';
 import {
+  ARROWHEAD,
+  arrowheadsOf,
   associationCurve,
   balance,
   CHAIN_GAP,
@@ -518,6 +520,38 @@ describe('lines', () => {
     expect(one.path).toMatch(/^M [-\d.]+ [-\d.]+ Q /);
     expect(one.middle.y).not.toBe(0);
     expect(Math.round(one.middle.y)).toBe(Math.round(other.middle.y));
+  });
+
+  it('an arrowhead stands where the curve meets the box, turned as the curve arrives', () => {
+    const c = associationCurve(p('a'), p('b'));
+    expect(arrowheadsOf(c, undefined)).toEqual([]);
+    const [to] = arrowheadsOf(c, 'to');
+    const [from] = arrowheadsOf(c, 'from');
+    expect(arrowheadsOf(c, 'both')).toEqual([from, to]);
+
+    const corners = (d: string) =>
+      [...d.matchAll(/(-?[\d.]+) (-?[\d.]+)/g)].map((m) => ({ x: +m[1], y: +m[2] }));
+    for (const [head, tip] of [
+      [to, c.end],
+      [from, c.start],
+    ] as const) {
+      expect(head).toMatch(/^M .* L .* L .* Z$/);
+      const [t, b1, b2] = corners(head);
+      // The tip is the end of the curve.
+      expect(t.x).toBeCloseTo(tip.x, 0);
+      expect(t.y).toBeCloseTo(tip.y, 0);
+      // The base is as wide as it should be, and as far back from the tip.
+      expect(Math.hypot(b1.x - b2.x, b1.y - b2.y)).toBeCloseTo(ARROWHEAD.width, 0);
+      const base = { x: (b1.x + b2.x) / 2, y: (b1.y + b2.y) / 2 };
+      expect(Math.hypot(t.x - base.x, t.y - base.y)).toBeCloseTo(ARROWHEAD.length, 0);
+      // Turned as the curve arrives: the base lies towards the point the curve bows to.
+      const along = { x: t.x - base.x, y: t.y - base.y };
+      const arriving = { x: tip.x - c.control.x, y: tip.y - c.control.y };
+      const cos =
+        (along.x * arriving.x + along.y * arriving.y) /
+        (Math.hypot(along.x, along.y) * Math.hypot(arriving.x, arriving.y));
+      expect(cos).toBeGreaterThan(0.99);
+    }
   });
 
   it('the arrow keys find what lies in their direction', () => {
