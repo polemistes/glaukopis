@@ -88,3 +88,7 @@ Counts: `pnpm check` without errors or warnings; `pnpm test` 1362; `cargo test -
 ## Addendum, 2026-10-31: printing from the files of the library
 
 The owner asked why the files of the library do not offer printing, and whether images should print too. They do now, both: **Print…** stands in the menu of a PDF or an image among the files, after *Open in another program*, and among the actions of its pane; the reader of the files view (record 0073) has the printer in its bar, as a file in a view has. A PDF asks which pages first, from its first; an image prints as it is, on the system's paper. The pages are drawn and printed by one function for all three places, `src/lib/print/file.ts`, lifted out of the file side, which never prints two files at once; the files view fetches the facts of the file before it asks. Printing is offered for one file at a time, since each PDF asks its pages. `e2e/print.mjs` tries the menu, the pane and the reader. Ctrl+P prints in the window of a project alone, as before; in the library the printer in the bar is the way.
+
+## Addendum, 2026-11-13: amended by 0091
+
+Record 0091 amends two things said above. **Ctrl+P no longer opens the typesetting pane** to print (the fourth choice, and *From the typesetting pane, and with Ctrl+P*): where the pane is open for the side it prints its pages, and otherwise the document is set out of sight, printed and let go of, the pane staying closed. **Print… also stands in the bar of a side**, beside a new **Export…** (Ctrl+E). The rest of this record holds.
