@@ -80,6 +80,15 @@ export async function printSetPages(
 }
 
 /**
+ * A page that no document has. The core sets a document when it is asked
+ * for pages of it, and draws, with the runs of their text, those it is asked
+ * for, and all of them where it is asked for none; asked for this one it sets
+ * the document, says how many pages it has, and draws none. The pages for the
+ * printing are fetched afterwards, as they are wanted (`documentPrintPages`).
+ */
+export const NO_PAGE = 4_294_967_295;
+
+/**
  * The key a document is set under to be printed out of sight: its own, so
  * that the document the typesetting pane keeps for the project is not
  * replaced.
@@ -133,7 +142,7 @@ export async function printDocument(
   try {
     const request = await requestOf(project, projectId, at);
     kept = true;
-    const set = await documentPreviewWhole({ ...request, key }, []);
+    const set = await documentPreviewWhole({ ...request, key }, [NO_PAGE]);
     toasts.dismiss(notice);
     if (!set.count) return null;
     return await printSetPages(

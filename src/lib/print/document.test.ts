@@ -28,8 +28,16 @@ vi.mock('./pages', async (original) => ({
   printPages: api.printPages,
 }));
 
-const { PRINT_BATCH, paneOpened, printDocument, printKey, printSetPages, printSide, requestOf } =
-  await import('./document');
+const {
+  NO_PAGE,
+  PRINT_BATCH,
+  paneOpened,
+  printDocument,
+  printKey,
+  printSetPages,
+  printSide,
+  requestOf,
+} = await import('./document');
 
 /** A page as Typst draws it: an SVG whose viewBox is its size in points. */
 const svg = (width: number, height: number) =>
@@ -137,14 +145,16 @@ describe('the pages of a set document printed', () => {
 });
 
 describe('a document printed out of sight', () => {
-  it('is set under a key of its own, printed, and let go of', async () => {
+  it('is set under a key of its own with none of its pages drawn, printed, and let go of', async () => {
     const printed = await printDocument(project, 'p1', 'e1');
     expect(printKey('p1')).toBe('p1-print');
     expect(api.whole).toHaveBeenCalledTimes(1);
     const [request, wanted] = api.whole.mock.calls[0];
     // The pane's key is the project's own: it is not touched.
     expect(request.key).toBe('p1-print');
-    expect(wanted).toEqual([]);
+    // Asked for none, the core would draw every page with its text and send them all; asked for a page that is not there, it draws none.
+    expect(wanted).toEqual([NO_PAGE]);
+    expect(NO_PAGE).toBeGreaterThan(1_000_000);
     expect(api.pages.mock.calls).toEqual([['p1-print', 1, 3]]);
     expect(api.printPages.mock.calls[0][1]).toBe('Iliad');
     expect(printed).toEqual({ count: 3, width: 300, height: 400 });
