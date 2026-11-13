@@ -3,10 +3,12 @@
    * The bar of a side (ADR 0064): icons with tooltips, in this order: the
    * outline; the views, Diagram, Text, and Timeline where the element has
    * times; the writing tools with their three menus, undo and redo of the
-   * side's project between them and spelling, and Insert; Typesetting and
-   * Document. The × that closes the side stands in the top row, in the
-   * side's cell (ADR 0065). While the side shows no text, the writing tools
-   * are disabled, not hidden, so that the bar does not shift.
+   * side's project between them and spelling, and Insert; Typesetting,
+   * Print… and Export…, and Document. Print and Export act on the document
+   * of the side, the typesetting pane open or not (record 0091). The ×
+   * that closes the side stands in the top row, in the side's cell (ADR
+   * 0065). While the side shows no text, the writing tools are disabled,
+   * not hidden, so that the bar does not shift.
    */
   import Clock from '@lucide/svelte/icons/clock';
   import BookOpenText from '@lucide/svelte/icons/book-open-text';
@@ -14,10 +16,14 @@
   import ListTree from '@lucide/svelte/icons/list-tree';
   import Network from '@lucide/svelte/icons/network';
   import PanelRight from '@lucide/svelte/icons/panel-right';
+  import Printer from '@lucide/svelte/icons/printer';
   import Redo2 from '@lucide/svelte/icons/redo-2';
+  import Share from '@lucide/svelte/icons/share';
   import Undo2 from '@lucide/svelte/icons/undo-2';
   import WritingTools from '$lib/editor/WritingTools.svelte';
   import { t } from '$lib/i18n';
+  import { printSide } from '$lib/print/document';
+  import { exportUi } from '$lib/print/export.svelte';
   import { keysFor } from '$lib/shell/keys.svelte';
   import type { MapMode } from '$lib/state/router.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
@@ -36,11 +42,13 @@
     scope: HTMLElement | undefined;
     /** Whether the element in view has anything to show as a timeline. */
     timed: boolean;
+    /** The document of the side: the element marked as the document where there is one, else the element in view (record 0081). */
+    documentAt: string;
     onview: (mode: MapMode) => void;
     onoutline: () => void;
   }
 
-  let { spec, project, focused, scope, timed, onview, onoutline }: Props = $props();
+  let { spec, project, focused, scope, timed, documentAt, onview, onoutline }: Props = $props();
 
   const views = $derived([
     { mode: 'diagram' as const, label: t('project-diagram'), icon: Network },
@@ -62,6 +70,9 @@
       .querySelector<HTMLElement>(`[data-view="${next.mode}"]`)
       ?.focus();
   }
+
+  /** Whether the side has a document to print or export: a project that has come, and its element. */
+  const documented = $derived(!!project?.node(documentAt));
 
   /** Whether the Document button is lit: the pane is open, and shows this side, which has the focus. */
   const documentShown = $derived(panes.document && focused);
@@ -160,6 +171,27 @@
     onclick={() => panes.typesetFor(spec.key)}
   >
     <BookOpenText size={15} />
+  </IconButton>
+  <IconButton
+    label={t('project-bar-print')}
+    shortcut={focused ? keysFor('print') : undefined}
+    size="sm"
+    disabled={!documented}
+    data-bar-print
+    onclick={() => project && void printSide(spec, project, documentAt)}
+  >
+    <Printer size={15} />
+  </IconButton>
+  <IconButton
+    label={t('project-bar-export')}
+    shortcut={focused ? keysFor('export') : undefined}
+    size="sm"
+    disabled={!documented}
+    data-bar-export
+    onclick={() =>
+      project && exportUi.open({ project, projectId: spec.project, at: documentAt })}
+  >
+    <Share size={15} />
   </IconButton>
   <IconButton
     label={t('project-bar-document')}

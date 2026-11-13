@@ -143,6 +143,8 @@ keys-viewer-tab-previous = Forrige fane
 keys-viewer-bookmark = Merk dette stedet
 # Utskrift (docs/plans/printing.md, record 0075).
 keys-print = Skriv ut
+# Eksport og utskrift fra linjen på en side (record 0091).
+keys-export = Eksporter
 
 ## More than one window (docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md).
 

@@ -293,6 +293,7 @@
       focused={active}
       scope={el}
       timed={timed(at)}
+      {documentAt}
       onview={(mode) => sides.setMode(key, mode)}
       onoutline={() => sides.toggleOutline(key)}
     />

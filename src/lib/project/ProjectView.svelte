@@ -49,7 +49,7 @@
    */
   import { testHook } from '$lib/shell/testing';
   import WordsBar from '$lib/words/WordsBar.svelte';
-  import { onDestroy, onMount, tick, untrack } from 'svelte';
+  import { onDestroy, onMount, untrack } from 'svelte';
   import Columns2 from '@lucide/svelte/icons/columns-2';
   import X from '@lucide/svelte/icons/x';
   import Presence from '$lib/sharing/Presence.svelte';
@@ -107,6 +107,8 @@
   import FilePath from '$lib/viewer/FilePath.svelte';
   import PanelRight from '@lucide/svelte/icons/panel-right';
   import PreviewPanel from '$lib/preview/PreviewPanel.svelte';
+  import { printSide } from '$lib/print/document';
+  import { exportUi } from '$lib/print/export.svelte';
   import LookPanel from '$lib/look/LookPanel.svelte';
   import { lookUi } from '$lib/look/look.svelte';
   import { aboutDocumentUi } from '$lib/document/about-document.svelte';
@@ -449,23 +451,25 @@
     if (active) panes.typesetFor(active.key);
   }
 
-  /** The typesetting pane shown, which prints. */
-  let previewPanel = $state<PreviewPanel>();
-
   /**
-   * Prints what the side that has the focus shows (record 0075): a file side
-   * its file; else the document of the side, the typesetting pane opened for
-   * it where it is closed or shows the other side, and its pages waited for.
+   * Prints what the side that has the focus shows (records 0075 and 0091): a
+   * file side its file; else the document of the side, through the
+   * typesetting pane where it is open for it, else out of sight.
    */
   async function printActive() {
     const shown = sides.active;
     if (isFile(shown)) return fileSideViews[shown.key]?.print();
-    const side = active;
-    if (!side) return;
-    if (panes.typesetting !== side.key) panes.typesetFor(side.key);
-    await tick();
-    await previewPanel?.print();
+    if (active && project) await printSide(active, project, activeDocument);
   }
+
+  // The e2e scripts print the document of the active side to a file, where the dialog cannot be pressed.
+  onMount(() => {
+    testHook('__glaukopisPrint', {
+      toFile: (path: string) =>
+        active && project ? printSide(active, project, activeDocument, path) : null,
+    });
+    return () => testHook('__glaukopisPrint', undefined);
+  });
 
   /** The element the text of the side the typesetting pane shows is at; nothing where it shows no text. */
   function previewCurrent(): string | null {
@@ -955,6 +959,13 @@
       },
       preview: { run: togglePreview, when: shown },
       print: { run: () => void printActive(), when: () => !!sides.active },
+      export: {
+        run: () => {
+          if (active && project)
+            exportUi.open({ project, projectId: active.project, at: activeDocument });
+        },
+        when: onMap,
+      },
       'document-settings': {
         run: () => {
           if (project) aboutDocumentUi.open({ project, at: activeDocument });
@@ -1195,7 +1206,6 @@
           <!-- Of the project of the side it shows: made anew when that is another. -->
           {#key previewSpec?.project}
             <PreviewPanel
-              bind:this={previewPanel}
               project={of}
               projectId={previewSpec?.project ?? ''}
               at={typesetAt}

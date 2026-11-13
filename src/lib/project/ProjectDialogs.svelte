@@ -3,11 +3,13 @@
   place that lasts while the project is open: what is asked from the menu of
   an element (a copy compared, a kind, a kind of one's own, when it is, the
   kinds managed) is done in the project of the pane that has the focus;
-  Document properties in the project it was asked for; and the template
-  editor, of which a template saved anew is copied afresh into the project
-  of the view where that carries it.
+  Document properties in the project it was asked for; the export of the
+  document of a side, whether the typesetting pane is open or not; and the
+  template editor, of which a template saved anew is copied afresh into the
+  project of the view where that carries it.
 -->
 <script lang="ts">
+  import { onDestroy } from 'svelte';
   import type { Template } from '$lib/api/templates';
   import AboutDocumentWindow from '$lib/document/AboutDocumentWindow.svelte';
   import { aboutDocumentUi } from '$lib/document/about-document.svelte';
@@ -16,6 +18,8 @@
   import { ownKindsUi } from '$lib/editor/own-kinds.svelte';
   import { t } from '$lib/i18n';
   import { documents } from '$lib/preview/documents.svelte';
+  import ExportDocument from '$lib/print/ExportDocument.svelte';
+  import { exportUi } from '$lib/print/export.svelte';
   import WhenDialog from '$lib/timeline/WhenDialog.svelte';
   import { whenUi } from '$lib/timeline/when.svelte';
   import { notifyError } from '$lib/ui/toast.svelte';
@@ -39,6 +43,9 @@
   }
 
   let { project, focused, at, ongo }: Props = $props();
+
+  // The dialog is of the project that is open: it goes with the view.
+  onDestroy(() => exportUi.close());
 
   /**
    * A template of the writer's own saved anew: where the project carries a
@@ -98,6 +105,18 @@
       section={asked.section}
       {ongo}
       onclose={() => aboutDocumentUi.close()}
+    />
+  {/key}
+{/if}
+
+{#if exportUi.request}
+  {@const asked = exportUi.request}
+  {#key asked}
+    <ExportDocument
+      project={asked.project}
+      projectId={asked.projectId}
+      at={asked.at}
+      onclose={() => exportUi.close()}
     />
   {/key}
 {/if}

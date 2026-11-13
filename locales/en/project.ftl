@@ -280,6 +280,13 @@ project-bar-document = Document
 project-badge-offline = the server cannot be reached
 project-badge-refused = the server does not take the latest changes
 
+## Export and print from the bar of a side (record 0091)
+# The buttons in the bar of a side that print and export its document, whether the typesetting pane is open or not.
+project-bar-print = Print…
+project-bar-export = Export…
+# Told at once when a document is printed with the typesetting pane closed, while the pages are set.
+project-print-setting = Setting the pages…
+
 ## Fewer words, stage 2 (agent "chrome"): the clone, which has nothing of its own but its name.
 
 project-clone-other = Clone other element…

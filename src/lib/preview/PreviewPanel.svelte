@@ -16,7 +16,6 @@
     documentPreview,
     documentPreviewPages,
     documentPreviewStop,
-    documentPrintPages,
     type DocumentFormat,
     type Place,
     type Preview,
@@ -46,9 +45,8 @@
   import IconButton from '$lib/ui/IconButton.svelte';
   import Popover from '$lib/ui/Popover.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
-  import { describeError, notifyError, toasts } from '$lib/ui/toast.svelte';
-  import { printPages, svgSize, type PrintablePage } from '$lib/print/pages';
-  import { testHook } from '$lib/shell/testing';
+  import { describeError, notifyError } from '$lib/ui/toast.svelte';
+  import { paneOpened, printSetPages, type Printed } from '$lib/print/document';
   import { documentRequest, looksWithin, templateUsed } from './documents.svelte';
   import ExportDialog from './ExportDialog.svelte';
 
@@ -180,9 +178,6 @@
   const BESIDE = 2;
   /** The programs the core may say are missing, by the names it gives them in every language. */
   const PROGRAMS = ['Pandoc', 'Typst', 'LaTeX'];
-
-  /** So many pages are asked of the core at a time for printing. */
-  const PRINT_BATCH = 24;
 
   /** How many pages the document has. */
   let count = $state(0);
@@ -465,58 +460,36 @@
 
   /**
    * Prints the document the pane shows (record 0075): every page as it is
-   * set, through the system's dialog. The pages are waited for where they are
-   * being made; where they could not be made, the pane says why and nothing
-   * is printed. With `toFile`, to a PDF there with no dialog, for the e2e
-   * scripts. What was printed: how many pages, and the size of the first.
+   * set, through the system's dialog. The pages are waited for where they
+   * are being made; where they could not be made, the pane says why and
+   * nothing is printed. It is what prints the document of the side the pane
+   * is open for (`printSide`, record 0091). With `toFile`, to a PDF there
+   * with no dialog, for the e2e scripts. What was printed: how many pages,
+   * and the size of the first.
    */
-  export async function print(
-    toFile?: string,
-  ): Promise<{ count: number; width: number; height: number } | null> {
+  async function print(toFile?: string): Promise<Printed | null> {
     if (printing) return null;
     printing = true;
-    let notice: number | null = null;
-    const urls: string[] = [];
     try {
       await madeNow();
       if (gone || status !== 'shown' || !count) return null;
-      notice = toasts.show({ kind: 'info', message: t('preview-print-preparing', { count }) }, 0);
-      const pages: PrintablePage[] = [];
-      for (let from = 1; from <= count; from += PRINT_BATCH) {
-        const got = await documentPrintPages(
-          projectId,
-          from,
-          Math.min(count, from + PRINT_BATCH - 1),
-        );
-        if (gone) return null;
-        for (const page of got) {
-          const url = URL.createObjectURL(new Blob([page.svg], { type: 'image/svg+xml' }));
-          urls.push(url);
-          const [width, height] = svgSize(page.svg) ?? [size.width, size.height];
-          pages.push({ url, width, height });
-        }
-      }
-      toasts.dismiss(notice);
-      notice = null;
-      // The pictures are the printing's from here: it lets go of them when it is over.
-      urls.length = 0;
-      await printPages(pages, project.node(at)?.title || t('preview-file-name'), { toFile });
-      return { count: pages.length, width: pages[0]?.width ?? 0, height: pages[0]?.height ?? 0 };
+      return await printSetPages(
+        projectId,
+        count,
+        size,
+        project.node(at)?.title || t('preview-file-name'),
+        { toFile, cancelled: () => gone },
+      );
     } catch (e) {
       notifyError(t('preview-print-failed'), e);
       return null;
     } finally {
-      if (notice !== null) toasts.dismiss(notice);
-      for (const url of urls) URL.revokeObjectURL(url);
       printing = false;
     }
   }
 
-  // The e2e scripts print to a file, where the dialog cannot be pressed.
-  onMount(() => {
-    testHook('__glaukopisPrint', { toFile: (path: string) => print(path) });
-    return () => testHook('__glaukopisPrint', undefined);
-  });
+  // The window prints through the pane while it is open for the side.
+  onMount(() => paneOpened({ print }));
 
   /** Fetches the pages that have come into view and are not there, or are of an earlier making. */
   let fetching = false;

@@ -146,6 +146,8 @@ keys-viewer-tab-previous = Previous tab
 keys-viewer-bookmark = Mark this place
 # Printing (docs/plans/printing.md, record 0075).
 keys-print = Print
+# Export and print from the bar of a side (record 0091).
+keys-export = Export
 
 ## More than one window (docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md).
 

@@ -109,6 +109,8 @@ const ENTRIES = [
   { id: 'projects-pane', keys: 'Ctrl+Shift+L', place: 'project', bound: true },
   // P prints, as in every program (record 0075); the typesetting pane takes T, its first letter.
   { id: 'print', keys: 'Ctrl+P', place: 'project', bound: true },
+  // E exports, beside P printing: both act on the document of the side, the typesetting pane open or not (record 0091).
+  { id: 'export', keys: 'Ctrl+E', place: 'project', bound: true },
   { id: 'preview', keys: 'Ctrl+T', place: 'project', bound: true },
   { id: 'document-settings', keys: 'Ctrl+Shift+D', place: 'project', bound: true },
   { id: 'what-document', keys: '', place: 'project', bound: true },
