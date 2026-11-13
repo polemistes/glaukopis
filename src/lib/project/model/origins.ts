@@ -33,6 +33,14 @@ export const TIDY = 'tidy';
 export const COMMENTS = 'comments';
 
 /**
+ * Origin of what is written in the chat of a project (record 0092): a
+ * message said, taken back, or the conversation deleted. Saved, but not
+ * undone; the chat is not in the scope of undo at all, so that Ctrl+Z in
+ * the text never takes a message back.
+ */
+export const CHAT = 'chat';
+
+/**
  * Origin of the copy of a template the project keeps (ADR 0038): saved,
  * but not undone. It is no change of the writer's to the project, as a work
  * cited is not: it is made afresh when the template is saved again.

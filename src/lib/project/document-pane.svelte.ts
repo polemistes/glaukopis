@@ -1,18 +1,19 @@
 /**
  * The document pane (ADR 0064), what the panel at the side became: the
  * references, the images, the comments, the citations that were found, the
- * history and the changes of the document in the active side, one at a
- * time, as tabs. Whether it is open and what it shows are the window's
+ * history, the changes of the document in the active side and the chat of
+ * its project, one at a time, as tabs. Whether it is open and what it shows are the window's
  * (`panes`); this holds what the pane does: the review of the changes while
  * their tab is shown (ADR 0022), the moment of the history that is looked
  * at, which images are shown, the reference the library asked to be shown,
  * and the answers to what is asked of the pane from elsewhere: the
- * comments, the citations found and the images.
+ * comments, the citations found, the images and the chat.
  *
  * It follows the focus: what it needs of the active side it asks the window.
  */
 
 import { untrack } from 'svelte';
+import { chatUi } from '$lib/chat/chat.svelte';
 import { commentsUi } from '$lib/comments/ui.svelte';
 import { foundUi } from '$lib/found/found.svelte';
 import type { Looking } from '$lib/history/looking';
@@ -22,7 +23,7 @@ import { sourceFor } from '$lib/review/source';
 import type { MapMode } from '$lib/state/router.svelte';
 import type { Project } from './model/project.svelte';
 import { panes } from './panes.svelte';
-import type { DocumentTab } from './sides.svelte';
+import { sides, type DocumentTab } from './sides.svelte';
 
 /** What the document pane asks of the window: the active side and its project. */
 export interface DocumentPaneHost {
@@ -189,6 +190,25 @@ export class DocumentPane {
         const at = host.holding(asked.at);
         if (own.at !== at) host.show(at);
         this.show('found', true);
+      });
+    });
+
+    // The chat of a project is asked for by the toast that tells of a message
+    // (record 0092): a side of that project is given the focus, where it is
+    // not the active one, and the pane is opened at the chat. What was asked
+    // before this window was made is not for it. It depends on the count of
+    // the asks alone; a project no side shows any more is not shown.
+    let chatHandled = untrack(() => chatUi.asked);
+    $effect(() => {
+      const n = chatUi.asked;
+      untrack(() => {
+        if (n === chatHandled) return;
+        chatHandled = n;
+        const id = chatUi.project;
+        const side = host.id === id && host.key ? null : sides.maps.find((s) => s.project === id);
+        if (side) sides.focus(side.key);
+        else if (host.id !== id) return;
+        this.show('chat', true);
       });
     });
 
