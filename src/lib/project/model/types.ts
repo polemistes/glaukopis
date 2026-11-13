@@ -253,3 +253,16 @@ export interface Note {
   edited?: string;
   text: string;
 }
+
+/**
+ * A message of the chat of a project (record 0092): kept in the project's
+ * document as a note of a comment is, with who wrote it and when. It is
+ * never changed; its author may take it back.
+ */
+export interface ChatMessage {
+  id: string;
+  author: { id: string; name: string };
+  /** When it was written. */
+  created: string;
+  text: string;
+}

@@ -20,6 +20,7 @@ import { ThreadMap } from '$lib/comments/threads';
 import * as Y from 'yjs';
 import { ySyncPluginKey } from 'y-prosemirror';
 import type { Awareness } from 'y-protocols/awareness';
+import { chatChanges, chatMessageOf } from './changing/chat';
 import { commentChanges } from './changing/comments';
 import { kindChanges } from './changing/kinds';
 import { elementChanges, elementOf } from './changing/elements';
@@ -68,6 +69,7 @@ import {
   OWN_SETTINGS,
   PROJECT,
   STATUSES,
+  type ChatMessage,
   type DocumentSettings,
   type KindRecord,
   type Note,
@@ -169,6 +171,7 @@ type ElementChanges = typeof elementChanges;
 type ReferenceChanges = typeof referenceChanges;
 type LinkChanges = typeof linkChanges;
 type CommentChanges = typeof commentChanges;
+type ChatChanges = typeof chatChanges;
 type KindChanges = typeof kindChanges;
 type PassageKindChanges = typeof passageKindChanges;
 type TemplateChanges = typeof templateChanges;
@@ -180,6 +183,7 @@ export interface Project
     ReferenceChanges,
     LinkChanges,
     CommentChanges,
+    ChatChanges,
     KindChanges,
     PassageKindChanges,
     TemplateChanges {}
@@ -201,6 +205,11 @@ export class Project {
   readonly yHistory: Y.Map<unknown>;
   /** The comments: threads by their id, each on an element. See `changing/comments.ts`. */
   readonly yComments: Y.Map<Y.Map<unknown>>;
+  /**
+   * The chat: its messages as plain objects, the oldest first (record
+   * 0092). See `changing/chat.ts`. Not in the scope of undo.
+   */
+  readonly yChat: Y.Array<ChatMessage>;
   /** The kinds of elements, by their id. See `changing/kinds.ts`. */
   readonly yKinds: Y.Map<Y.Map<unknown>>;
   /** The kinds of paragraph and of words of the writer's own, by their id. See `changing/passage-kinds.ts`. */
@@ -230,6 +239,8 @@ export class Project {
   ignored = $state.raw<ReadonlySet<string>>(new Set());
   /** The comments, by the id of the thread. A thread is made anew whenever it changes. */
   readonly comments = new ThreadMap();
+  /** The messages of the chat, the oldest first: a new list whenever the chat changes. */
+  chat = $state.raw<ChatMessage[]>([]);
   /** The kinds of elements, in their order. */
   kinds = $state.raw<KindRecord[]>([]);
   /** The kinds of paragraph and of words of the writer's own, in their order. */
@@ -269,6 +280,7 @@ export class Project {
     this.yIgnored = this.doc.getMap('ignored');
     this.yHistory = this.doc.getMap('history');
     this.yComments = this.doc.getMap('comments');
+    this.yChat = this.doc.getArray('chat');
     this.yKinds = this.doc.getMap('kinds');
     this.yPassageKinds = this.doc.getMap('passageKinds');
     this.yTemplates = this.doc.getMap('templates');
@@ -292,6 +304,8 @@ export class Project {
     // deleted comes back as a kind, not only as a name on its elements, and
     // an element removed comes back with its comments. What is changed there
     // that is not to be undone has an origin of its own (see `origins.ts`).
+    // The chat is not among them: no change of one's own to the work touches
+    // it, and nothing in it is undone (record 0092).
     this.undoManager = new Y.UndoManager(
       [
         this.yMeta,
@@ -342,6 +356,8 @@ export class Project {
     this.yKinds.observeDeep(() => this.#readKinds());
     this.yPassageKinds.observeDeep(() => this.#readPassageKinds());
     this.yTemplates.observe(() => this.#readTemplates());
+    // Read when the chat changes, and only then: never on a keystroke in the text.
+    this.yChat.observe(() => this.#readChat());
     this.yComments.observeDeep((events) => {
       const touched = new Set<string>();
       for (const event of events) {
@@ -531,7 +547,15 @@ export class Project {
     for (const id of this.yComments.keys()) this.#readThread(id);
     this.#readKinds();
     this.#readTemplates();
+    this.#readChat();
     this.structure++;
+  }
+
+  #readChat() {
+    this.chat = this.yChat.toArray().flatMap((m) => {
+      const message = chatMessageOf(m);
+      return message ? [message] : [];
+    });
   }
 
   #readKinds() {
@@ -1214,6 +1238,7 @@ Object.assign(
   referenceChanges,
   linkChanges,
   commentChanges,
+  chatChanges,
   kindChanges,
   passageKindChanges,
   templateChanges,
