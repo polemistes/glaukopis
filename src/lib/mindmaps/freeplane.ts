@@ -14,7 +14,8 @@
  */
 
 import { isTime } from '$lib/timeline/time';
-import type { Status } from '$lib/project/model/types';
+import { cleanLinkLabel } from '$lib/project/model/changing/links';
+import type { LinkArrow, Status } from '$lib/project/model/types';
 import { escapeAttr, hasMarks, htmlToBlocks, nameHtml, nameOfHtml, plainToBlocks } from './html';
 import {
   leave,
@@ -22,6 +23,7 @@ import {
   timeOfWords,
   timeWords,
   topic,
+  type Association,
   type LeftOut,
   type MindMap,
   type Topic,
@@ -58,6 +60,28 @@ function richHtml(rich: Element): { html: string } | { plain: string } {
   };
 }
 
+/**
+ * The arrow of an association, from the heads Freeplane gives a connector:
+ * `STARTARROW` at the node it goes from, `ENDARROW` at the one it goes to,
+ * each `NONE` or `DEFAULT` (FreeMind wrote `None` and `Default`). Where they
+ * are not said, a connector of Freeplane and of FreeMind has a head at its
+ * end and none at its start.
+ */
+function arrowRead(el: Element): LinkArrow | undefined {
+  const head = (name: string, absent: string) =>
+    (el.getAttribute(name) ?? absent).trim().toUpperCase() !== 'NONE';
+  const start = head('STARTARROW', 'NONE');
+  const end = head('ENDARROW', 'DEFAULT');
+  return start && end ? 'both' : end ? 'to' : start ? 'from' : undefined;
+}
+
+/** The heads of a connector as Freeplane writes them, both always said. */
+function arrowWritten(arrow: LinkArrow | undefined): string {
+  const start = arrow === 'from' || arrow === 'both';
+  const end = arrow === 'to' || arrow === 'both';
+  return `STARTARROW="${start ? 'DEFAULT' : 'NONE'}" ENDARROW="${end ? 'DEFAULT' : 'NONE'}"`;
+}
+
 /** Whether what a file holds is a map of Freeplane or FreeMind. */
 export function isFreeplane(xml: string): boolean {
   return /<map[\s>]/.test(xml.slice(0, 4096));
@@ -78,7 +102,7 @@ export function readFreeplane(xml: string): { map: MindMap; leftOut: LeftOut } {
   const first = childrenNamed(map, 'node')[0];
   if (!first) throw new Error('not a map of Freeplane or FreeMind');
   const left: LeftOut = {};
-  const links: { from: string; to: string; label: string }[] = [];
+  const links: Association[] = [];
   const seen = new Set<string>();
 
   const read = (el: Element, depth: number): Topic => {
@@ -141,8 +165,14 @@ export function readFreeplane(xml: string): { map: MindMap; leftOut: LeftOut } {
         arrow.getAttribute('SOURCE_LABEL') ||
         arrow.getAttribute('TARGET_LABEL') ||
         '';
-      if (to) links.push({ from: id, to, label: label.replace(/\s+/g, ' ').trim() });
-      else leave(left, 'associations');
+      if (to) {
+        const link: Association = { from: id, to, label: cleanLinkLabel(label) };
+        const arrowOf = arrowRead(arrow);
+        if (arrowOf) link.arrow = arrowOf;
+        const colour = arrow.getAttribute('COLOR') ?? '';
+        if (/^#[0-9a-f]{6}$/i.test(colour)) link.colour = colour.toLowerCase();
+        links.push(link);
+      } else leave(left, 'associations');
     }
     t.children = childrenNamed(el, 'node').map((c) => read(c, depth + 1));
     return t;
@@ -181,11 +211,11 @@ export function writeFreeplane(map: MindMap, notes: (t: Topic) => string): strin
     t.children.forEach(gather);
   };
   gather(map.root);
-  const from = new Map<string, { to: string; label: string }[]>();
+  const from = new Map<string, Association[]>();
   for (const l of map.links) {
     if (!known.has(l.from) || !known.has(l.to)) continue;
     const list = from.get(l.from) ?? [];
-    list.push({ to: l.to, label: l.label });
+    list.push(l);
     from.set(l.from, list);
   }
 
@@ -220,7 +250,7 @@ export function writeFreeplane(map: MindMap, notes: (t: Topic) => string): strin
     if (t.excluded) inner.push(`${more}<attribute NAME="${ATTRIBUTE_LEFT_OUT}" VALUE="true"/>`);
     for (const l of from.get(t.id) ?? [])
       inner.push(
-        `${more}<arrowlink DESTINATION="${idOf(l.to)}" STARTARROW="None" ENDARROW="None"${l.label ? ` MIDDLE_LABEL="${escapeAttr(l.label)}"` : ''}/>`,
+        `${more}<arrowlink DESTINATION="${idOf(l.to)}"${l.colour ? ` COLOR="${escapeAttr(l.colour)}"` : ''} ${arrowWritten(l.arrow)}${l.label ? ` MIDDLE_LABEL="${escapeAttr(l.label)}"` : ''}/>`,
       );
     if (!inner.length && !t.children.length) {
       lines.push(`${pad}<node ${attrs}/>`);
