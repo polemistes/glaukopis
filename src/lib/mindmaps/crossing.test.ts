@@ -3,7 +3,7 @@ import { makePortable, portable } from '$lib/project/model/portable';
 import { Project } from '$lib/project/model/project.svelte';
 import { inlineText } from '$lib/project/model/text';
 import { PROJECT } from '$lib/project/model/types';
-import { intoPortable, mindMapOf, nearestColour, topicsOf } from './crossing';
+import { associationColour, intoPortable, mindMapOf, nearestColour, topicsOf } from './crossing';
 import { fixture } from './fixtures';
 import { readFreeplane, writeFreeplane } from './freeplane';
 import { notesHtml } from './html';
@@ -76,6 +76,24 @@ describe('the associations of a map', () => {
     expect(back.links.map(({ label, arrow, colour }) => ({ label, arrow, colour }))).toEqual([
       { label: 'helps\nin disguise', arrow: 'both', colour: '#c2410c' },
     ]);
+  });
+
+  it('have no colour where the file gives them black or a grey, as a connector nobody coloured has', () => {
+    expect(associationColour('#000000')).toBeNull();
+    expect(associationColour('#808080')).toBeNull();
+    expect(associationColour('#ffffff')).toBeNull();
+    expect(associationColour(null)).toBeNull();
+    // The bluish grey of the kinds is a colour, and so is one near it.
+    expect(associationColour('#475569')).toBe('slate');
+    expect(associationColour('#ff0000')).toBe('rust');
+
+    const { map } = readFreeplane(fixture('odyssey.mm'));
+    const [link] = map.links;
+    map.links = [{ ...link, colour: '#000000' }];
+    const p = new Project(null);
+    p.begin(map.name);
+    makePortable(p, intoPortable(map), { under: PROJECT });
+    expect(p.links.map((l) => l.colour)).toEqual([undefined]);
   });
 });
 

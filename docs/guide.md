@@ -3548,7 +3548,7 @@ and *left out of the document*, as attributes named *Kind*, *Time* and
 *Left out* in Freeplane and as labels in XMind, the kind also in its colour
 in Freeplane; and the associations with their words, and in Freeplane
 with their arrows and colours too, a colour brought to the nearest of the
-colours kinds have. What does not cross:
+colours kinds have, and black or a grey to none. What does not cross:
 where you put elements by hand (a map opened is laid out anew), images,
 comments, that a clone is a clone, the look of documents, and the records
 of the works cited. Where something of the project has no place in the

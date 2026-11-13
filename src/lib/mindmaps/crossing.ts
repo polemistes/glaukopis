@@ -37,6 +37,23 @@ export function nearestColour(hex: string | null): string | null {
   return best;
 }
 
+/** So little between the strongest and the weakest of red, green and blue is a grey: the bluish grey of the kinds has more. */
+const GREY = 24;
+
+/**
+ * The colour of an association from the one a file gives it: the nearest of
+ * the colours of kinds, and none for black, white or a grey. Other programs
+ * write a colour for every connector, black where the writer chose none,
+ * and a connector nobody coloured is an association without a colour.
+ */
+export function associationColour(hex: string | null): string | null {
+  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i.exec(hex?.trim() ?? '');
+  if (!m) return null;
+  const parts = [1, 2, 3].map((i) => parseInt(m[i], 16));
+  if (Math.max(...parts) - Math.min(...parts) < GREY) return null;
+  return nearestColour(hex);
+}
+
 /**
  * The topics under the one in the middle as elements another project can
  * take, with the kinds they name, each made once by its name, in the
@@ -73,11 +90,11 @@ export function intoPortable(map: MindMap): Portable {
   const elements = map.root.children.map(element);
   return {
     elements,
-    // An association's colour brought to the nearest of the colours of kinds, as a kind's is.
+    // An association's colour brought to the nearest of the colours of kinds, as a kind's is; a grey is none.
     links: map.links
       .filter((l) => ids.has(l.from) && ids.has(l.to) && l.from !== l.to)
       .map(({ colour, ...l }) => {
-        const near = nearestColour(colour ?? null);
+        const near = associationColour(colour ?? null);
         return near ? { ...l, colour: near } : l;
       }),
     kinds: [...kinds.values()].map((k) => ({
