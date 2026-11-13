@@ -38,7 +38,7 @@ Date: 2026-11-13. Status: built on 2026-11-13, its choices not yet confirmed by 
 
 - **XMind's arrows and colours** (choice 7).
 - **Any colour beyond the ten**, and an arrow that is drawn otherwise than as a filled triangle.
-- **The script `associations` has not been run**: it was written beside the others and will be run, and mended, with the other parts of the plan once they are merged. Nothing here has been seen in the running application.
+- **Freeplane itself was not asked**: what a connector that says nothing of its heads looks like there, and whether it writes a colour for every connector, are as understood here, not as seen in Freeplane.
 
 ## As built, 2026-11-13
 
@@ -48,3 +48,4 @@ Date: 2026-11-13. Status: built on 2026-11-13, its choices not yet confirmed by 
 - **The margin**: `bracketsOf` in `text/layout.ts` gives the colour and which ends have a head (`marginHead` draws one); `MapText.svelte` draws them and opens the same menu.
 - **Org**: `org/types.ts`, `org/properties.ts` (`LINKS`), `org/read.ts`, `org/of-project.ts`. **Mind maps**: `mindmaps/map.ts` (`Association`, its colour as `#rrggbb`, as a kind's), `mindmaps/freeplane.ts`, `mindmaps/crossing.ts`. **Search**: `search/everything.ts`.
 - **Counts.** Twenty-one new tests of the interface: the model (arrow, colour and lines kept and cleaned, an old link read as none and gold, copies within a project and to another, undo step by step), the arrowhead's geometry, the heads and colour of the brackets in the margin, the menu's items and what they do, the menu key, the SVG of an arrowhead, the Org form written and read back (and as written before), Freeplane written and read back (and as FreeMind wrote it), a map's associations into a project and back, and search. All 1465 pass, and `pnpm check` finds nothing. The script `associations` (33 checks) is written and not run; `diagram-picture` was changed to wait for the new field, and not run.
+- **Tried in the running application, 2026-11-13, after the three parts of the plan were merged.** The script `associations` passed as it was written, 33 of 33: the menu of the curve, the field of two lines, the arrowheads at the elements they point to, the colour on curve, heads and words, the menu key, the picture as SVG with the heads and both lines, the bracket in the margin with its heads and its menu, and undo taking each change back. The scripts of the parts it touches passed with it: `diagram-picture` 29 of 29, `mindmaps` 20, `maps` 81 of 81, `org` 21 of 21, `search` 55 of 55, and `languages` 17 of 17. With the grey that is no colour, the interface has 1519 tests, all passing.
