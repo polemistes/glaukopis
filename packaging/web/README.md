@@ -1,6 +1,6 @@
 # The page of packages
 
-`packages/index.html` is the page that lists the packages put out for testing,
+`packages/index.html` is the page that lists the packages,
 with what each file is, and the language packages of spelling and of OCR;
 `packages/SHA256SUMS` holds the checksums of the installers and packages. `packages/releases.html` holds what was new in every version,
 the latest first; the page shows only what is new in the present one and links

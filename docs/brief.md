@@ -1416,3 +1416,18 @@ Built the same day from `docs/plans/export-and-print-from-a-side-a-chat-and-asso
 - **An association may have an arrow**, to either end or both, **and one of the colours the kinds have**, and its words are written in a field of several lines, Enter being done and Shift+Enter a new line; all given in one menu of the association, the same in the diagram and in the margin of the text, and carried by copies, the picture of the diagram, Org, Freeplane and search. A new association has neither arrow nor colour, as before. Record 0093.
 
 The building was delegated as asked: the plan and the choices were made in the main thread (Fable), the associations and the chat built by Opus and export and print by Sonnet, each in a working copy of its own with the interface's checks; they were merged, read, and tried in the running application in the main thread, where one fault was mended (a black connector of a mind map came in green). The three new scripts passed as the agents had written them, unrun.
+
+## 2026-11-13 — no "a version to test"
+
+> COuld you cut the "a version to test" thing? I have tried to get rid of it several times, so please record it, so it does not come back. There is a warning that it is a test version on top of the download page. That is enough. Take it away for all other places.
+
+What this settles, and it holds over the 0.1.0 and 0.2.0 entries above:
+
+- A release on GitHub is named **Glaukopis x.y.z**, nothing after it. Its
+  notes begin with what Glaukopis is, with no paragraph about testing.
+- The one warning that a version is for testing is the one at the top of
+  the page of packages (`packaging/web/packages/index.html`). It is said
+  nowhere else: not on GitHub, not on the page of release notes, not in the
+  notes kept for a release in `.claude/briefs/`.
+- Every release from 0.1.0 to 0.2.11 on GitHub was renamed and its notes
+  cut the same day; the page of release notes lost its own three mentions.
