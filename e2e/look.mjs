@@ -288,6 +288,8 @@ try {
   );
   check('which the document uses, with no changes of its own', top.layout === 'Layout: Mine' && top.changes === 0, top.layout);
   check('Look still names only what the document is', (await app.whatIs()) === 'Plain document', await app.whatIs());
+  // The line names the layout a moment before the layout itself has been read, and only then is it known to be one's own.
+  await app.waitFor('.side .look .keep button:nth-child(2)', 3000).catch(() => {});
   check('a layout of one’s own offers to take changes into itself', await app.exists('.side .look .keep button:nth-child(2)'));
   await app.screenshot('look-4-kept');
 

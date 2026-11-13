@@ -258,6 +258,8 @@ try {
   await app.clickText('.menu [role="menuitem"]', 'Rename');
   await nameIn('The Iliad');
   await until(() => hasRow(app, 'project', 'The Iliad'));
+  // The list has the new name a moment before the dialog that asked for it is gone, and a row under a dialog takes no click.
+  await app.waitGone('dialog[open]', 5000);
   await app.click(await rowEl(app, 'project', 'The Iliad'));
   await until(async () => (await sideProjects())[0] === 'The Iliad', 10000);
   await sleep(500);
