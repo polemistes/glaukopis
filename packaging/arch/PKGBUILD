@@ -54,6 +54,11 @@ check() {
   pnpm test
   # The core as it is packaged: without the fonts of Typst.
   cargo test --release --frozen -p glaukopis-core -p glaukopis-server --no-default-features
+  # The tests build the server once more, together with the core and with
+  # what the tests themselves depend on, and leave that program where the
+  # one built above stood. The one built above is put back, which builds
+  # nothing anew: it is the one to be packaged.
+  cargo build --release --frozen -p glaukopis-server
 }
 
 package_glaukopis() {
