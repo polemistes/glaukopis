@@ -246,6 +246,15 @@ export interface Bracket {
   label: string;
   /** The path drawn, from the edge of the text outwards. */
   path: string;
+  /** The name of its colour, where it has one. */
+  colour?: string;
+  /** Which of its ends the arrow points at: an arrowhead there, in place of the dot. */
+  heads: { top: boolean; bottom: boolean };
+}
+
+/** An arrowhead at the end of a bracket, its tip at the edge of the text, pointing at it. */
+export function marginHead(y: number): string {
+  return `M 0 ${y} L 6 ${y - 3} L 6 ${y + 3} Z`;
 }
 
 /** How far apart the lanes are, and where the first is. */
@@ -275,6 +284,10 @@ export function bracketsOf(
       if (a === undefined || b === undefined) return null;
       const upper = a <= b ? from : to;
       const lower = a <= b ? to : from;
+      // Where the end it goes to stands higher up, an arrow to it points up.
+      const turned = upper === to;
+      const atTo = l.arrow === 'to' || l.arrow === 'both';
+      const atFrom = l.arrow === 'from' || l.arrow === 'both';
       return {
         id: l.id,
         from: upper,
@@ -282,6 +295,8 @@ export function bracketsOf(
         top: Math.min(a, b),
         bottom: Math.max(a, b),
         label: l.label,
+        ...(l.colour ? { colour: l.colour } : {}),
+        heads: { top: turned ? atTo : atFrom, bottom: turned ? atFrom : atTo },
       };
     })
     .filter((s): s is NonNullable<typeof s> => s !== null)

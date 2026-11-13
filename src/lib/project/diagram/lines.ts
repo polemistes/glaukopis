@@ -4,9 +4,17 @@
  * to be seen of its ends.
  */
 
+import { kindColour } from '../kinds';
 import type { Tree } from '../model/tree';
 import type { LinkRecord, Position } from '../model/types';
-import { associationCurve, edgePoint, hierarchyLine, type Layout, type Placed } from './layout';
+import {
+  arrowheadsOf,
+  associationCurve,
+  edgePoint,
+  hierarchyLine,
+  type Layout,
+  type Placed,
+} from './layout';
 
 export interface Line {
   id: string;
@@ -23,6 +31,10 @@ export interface DrawnAssociation {
   path: string;
   middle: Position;
   label: string;
+  /** The arrowheads, filled paths of their own: see `arrowheadsOf`. */
+  heads: string[];
+  /** The ink of its colour, or null for the gold of an association. */
+  colour: string | null;
   /** Where an end is folded away, and the curve goes to what it is folded under. */
   faint: boolean;
 }
@@ -64,6 +76,8 @@ export function associationsOf(links: LinkRecord[], lay: Layout, tree: Tree): Dr
       path: c.path,
       middle: c.middle,
       label: link.label,
+      heads: arrowheadsOf(c, link.arrow),
+      colour: link.colour ? kindColour(link.colour).ink : null,
       faint: a.id !== link.from || b.id !== link.to,
     });
   }

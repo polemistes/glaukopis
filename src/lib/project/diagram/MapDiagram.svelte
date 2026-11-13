@@ -22,7 +22,9 @@
   import { keyLabel, keysFor } from '$lib/shell/keys.svelte';
   import { drag, dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
   import type { RectLike } from '$lib/ui/floating';
-  import { openContextMenu, type MenuItem } from '$lib/ui/menu.svelte';
+  import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
+  import LinesField from '$lib/ui/LinesField.svelte';
+  import { associationMenu } from '../associations';
   import { tooltip } from '$lib/ui/tooltip';
   import ElementBox from '../ElementBox.svelte';
   import {
@@ -169,7 +171,8 @@
   let linking = $state<{ from: string; x: number; y: number; over: string | null } | null>(null);
   /** An association begun from the menu: the next element clicked ends it. */
   let linkFrom = $state<string | null>(null);
-  let labelling = $state<{ id: string; value: string } | null>(null);
+  /** The association whose words are being written. */
+  let labelling = $state<string | null>(null);
   let band = $state<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
   let panning = $state(false);
 
@@ -864,11 +867,32 @@
   const lines = $derived(linesOf(lay, lifted));
   const pendingCurve = $derived(linking ? drawing(lay, linking) : null);
 
-  function commitLabel() {
+  function commitLabel(value: string) {
     if (!labelling) return;
-    project.setLinkLabel(labelling.id, labelling.value);
+    project.checkpoint();
+    project.setLinkLabel(labelling, value);
+    project.checkpoint();
     labelling = null;
     viewport?.focus({ preventScroll: true });
+  }
+
+  /** The menu of an association, which selects it. */
+  function linkMenuItems(id: string): MenuItem[] {
+    const link = project.links.find((l) => l.id === id);
+    if (!link) return [];
+    selection = [];
+    selectedLink = id;
+    return associationMenu(project, link, { write: () => (labelling = id) });
+  }
+
+  /** The menu of an association opened by a key: at its words, or at its curve. */
+  function linkMenuByKey(id: string) {
+    const at =
+      viewport?.querySelector<HTMLElement>(`.link-label[data-link="${id}"]`) ??
+      viewport?.querySelector<SVGPathElement>(`g.association[data-link="${id}"] path.curve`);
+    if (!at) return;
+    menuByKey = true;
+    openMenu(at.getBoundingClientRect(), linkMenuItems(id));
   }
 
   // ---- keys ----
@@ -1020,6 +1044,7 @@
     set selectedLink(id) {
       selectedLink = id;
     },
+    linkMenu: linkMenuByKey,
     actions,
     select,
     add,
@@ -1137,6 +1162,11 @@
     event.preventDefault();
     hovered = null;
     clearTimeout(hoverTimer);
+    const link = (event.target as Element).closest<HTMLElement | SVGElement>('[data-link]');
+    if (link) {
+      openContextMenu(event, linkMenuItems(link.dataset.link!));
+      return;
+    }
     if (!el) {
       const world = toWorld(event.clientX, event.clientY);
       openContextMenu(event, [
@@ -1312,6 +1342,8 @@
           class="association"
           class:selected={!picturing && selectedLink === c.id}
           class:faint={c.faint}
+          data-link={c.id}
+          style:--link={c.colour}
           onpointerdown={(e) => {
             e.stopPropagation();
             viewport?.focus({ preventScroll: true });
@@ -1320,11 +1352,14 @@
           }}
           ondblclick={(e) => {
             e.stopPropagation();
-            labelling = { id: c.id, value: c.label };
+            labelling = c.id;
           }}
         >
           <path d={c.path} class="link-hit" />
           <path d={c.path} class="curve" />
+          {#each c.heads as head, i (i)}
+            <path d={head} class="head" />
+          {/each}
         </g>
       {/each}
       {#if pendingCurve}
@@ -1345,29 +1380,29 @@
     </svg>
 
     {#each curves as c (c.id)}
-      {#if labelling?.id === c.id}
-        <input
-          class="link-label editing"
+      {#if labelling === c.id}
+        <div
+          class="link-field"
           style:transform="translate(-50%, -50%) translate({c.middle.x}px, {c.middle.y}px)"
-          bind:value={labelling.value}
-          placeholder={t('project-link-placeholder')}
-          aria-label={t('project-link-label')}
-          onblur={commitLabel}
-          onkeydown={(e) => {
-            e.stopPropagation();
-            if (e.key === 'Enter') commitLabel();
-            else if (e.key === 'Escape') {
+        >
+          <LinesField
+            value={c.label}
+            placeholder={t('project-link-placeholder')}
+            label={t('project-link-label')}
+            ondone={commitLabel}
+            oncancel={() => {
               labelling = null;
               viewport?.focus({ preventScroll: true });
-            }
-          }}
-          {@attach (el: HTMLInputElement) => el.focus()}
-        />
+            }}
+          />
+        </div>
       {:else if c.label}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <span
           class="link-label"
           class:selected={!picturing && selectedLink === c.id}
+          data-link={c.id}
+          style:--link={c.colour}
           style:transform="translate(-50%, -50%) translate({c.middle.x}px, {c.middle.y}px)"
           onpointerdown={(e) => {
             e.stopPropagation();
@@ -1376,7 +1411,7 @@
           }}
           ondblclick={(e) => {
             e.stopPropagation();
-            labelling = { id: c.id, value: c.label };
+            labelling = c.id;
           }}>{c.label}</span
         >
       {/if}
@@ -1624,13 +1659,19 @@
   }
   .curve {
     fill: none;
-    stroke: var(--gold);
+    stroke: var(--link, var(--gold));
     stroke-width: 1.5;
     stroke-dasharray: 5 4;
     stroke-linecap: round;
   }
-  .association.faint .curve {
+  .association.faint .curve,
+  .association.faint .head {
     opacity: 0.45;
+  }
+  /* An arrowhead: a filled path of its own, so that the picture reads it as it reads the curve. */
+  .head {
+    fill: var(--link, var(--gold));
+    stroke: none;
   }
   .association:hover .curve,
   .association.selected .curve {
@@ -1660,25 +1701,38 @@
     padding: 1px 7px;
     border-radius: 9px;
     background: var(--canvas);
-    color: var(--gold);
+    color: var(--link, var(--gold));
     font-size: 12px;
     font-style: italic;
     font-family: var(--font-text);
-    white-space: nowrap;
+    line-height: 1.35;
+    /* Its lines as they were written, centred, a line longer than the width broken. */
+    width: max-content;
+    max-width: 240px;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+    text-align: center;
     cursor: pointer;
   }
   .link-label.selected {
-    box-shadow: 0 0 0 1px var(--gold);
+    box-shadow: 0 0 0 1px var(--link, var(--gold));
   }
-  input.link-label {
-    width: 180px;
+  .link-field {
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-size: 12px;
+    font-family: var(--font-text);
+  }
+  .link-field :global(.lines-field) {
+    width: 220px;
+    padding: 2px 8px;
     border: 1px solid var(--gold);
+    border-radius: 9px;
     background: var(--paper-raised);
     color: var(--ink);
     outline: none;
-    cursor: text;
-    font-style: normal;
-    padding: 2px 8px;
+    text-align: center;
   }
   .hold {
     display: contents;

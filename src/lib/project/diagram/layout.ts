@@ -363,6 +363,44 @@ export interface Curve {
   path: string;
   /** The middle of the curve, where its label goes. */
   middle: Point;
+  /** Where it leaves the first box, the point it bows towards, and where it meets the second box. */
+  start: Point;
+  control: Point;
+  end: Point;
+}
+
+/** How long an arrowhead is along the curve, and how wide across it. */
+export const ARROWHEAD = { length: 10, width: 8 };
+
+/**
+ * A filled arrowhead as a path: a triangle with its tip at `tip`, pointing
+ * away from `behind`, which gives the direction the curve arrives in.
+ */
+export function arrowhead(tip: Point, behind: Point): string {
+  const dx = tip.x - behind.x;
+  const dy = tip.y - behind.y;
+  const d = Math.hypot(dx, dy) || 1;
+  const ux = dx / d;
+  const uy = dy / d;
+  const bx = tip.x - ux * ARROWHEAD.length;
+  const by = tip.y - uy * ARROWHEAD.length;
+  const px = (-uy * ARROWHEAD.width) / 2;
+  const py = (ux * ARROWHEAD.width) / 2;
+  const r = (n: number) => Math.round(n * 10) / 10;
+  return `M ${r(tip.x)} ${r(tip.y)} L ${r(bx + px)} ${r(by + py)} L ${r(bx - px)} ${r(by - py)} Z`;
+}
+
+/**
+ * The arrowheads of an association drawn along a curve from its first box to
+ * its second: at the second for `to`, at the first for `from`, at both, or
+ * none. Each where the curve meets the box, turned as the curve arrives
+ * there (a quadratic curve arrives from its control point).
+ */
+export function arrowheadsOf(c: Curve, arrow: 'to' | 'from' | 'both' | undefined): string[] {
+  const out: string[] = [];
+  if (arrow === 'from' || arrow === 'both') out.push(arrowhead(c.start, c.control));
+  if (arrow === 'to' || arrow === 'both') out.push(arrowhead(c.end, c.control));
+  return out;
 }
 
 /**
@@ -391,6 +429,9 @@ export function associationCurve(a: Placed, b: Placed): Curve {
   return {
     path: `M ${r(start.x)} ${r(start.y)} Q ${r(control.x)} ${r(control.y)} ${r(end.x)} ${r(end.y)}`,
     middle,
+    start,
+    control,
+    end,
   };
 }
 

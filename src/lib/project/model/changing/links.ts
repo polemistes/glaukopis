@@ -31,6 +31,16 @@ export function cleanLinkLabel(label: string): string {
     .replace(/\n{3,}/g, '\n\n');
 }
 
+/** The sign between the ends of an association, as its arrow points: `–` where it has none. */
+export function arrowSign(arrow: LinkArrow | undefined): string {
+  return arrow === 'to' ? '→' : arrow === 'from' ? '←' : arrow === 'both' ? '↔' : '–';
+}
+
+/** The ends of an association by their names, with the sign of its arrow between: `A → B`. */
+export function endsWritten(from: string, to: string, arrow: LinkArrow | undefined): string {
+  return `${from} ${arrowSign(arrow)} ${to}`;
+}
+
 /** An arrow as the document keeps it, or none where it is not one the program knows. */
 export function linkArrow(value: unknown): LinkArrow | undefined {
   return LINK_ARROWS.includes(value as LinkArrow) ? (value as LinkArrow) : undefined;

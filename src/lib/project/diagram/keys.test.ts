@@ -34,6 +34,7 @@ function diagram(pick: (ids: Record<string, string>) => string[] = () => []) {
     selection: pick(ids),
     linkFrom: null,
     selectedLink: null,
+    linkMenu: () => {},
     actions: {},
     select: (s) => {
       d.selection.splice(0, d.selection.length, ...s);
