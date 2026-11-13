@@ -1451,16 +1451,17 @@ there. Importing the same a second time adds nothing.
 ## The document pane
 
 The references, the images, the comments, the loose citations, the history
-and the changes to review of a document share one pane beside the sides, one
-at a time. **Document**, the button with the pane on it in the bar of a side,
+and the changes to review of a document, and the chat of a shared project,
+share one pane beside the sides, one at a time. **Document**, the button with the pane on it in the bar of a side,
 opens it as it was last, and closes it; the tabs at its head change what it
 shows. Each has its key as well: **Ctrl+Shift+R**, **Ctrl+Shift+P**,
 **Ctrl+Shift+M**, **Ctrl+Shift+T**, **Ctrl+Shift+H** and **Ctrl+Shift+E**.
 The pane always shows the document of the active side, the element in view
 there with all under it, named in the line over its tabs, with its project
 where two are shown; it turns with the focus. The history alone is of the
-whole project. While others are in a shared project, a small sign with
-people in the pane's head says how many; rest the pointer on it to see who.
+whole project, and so is the chat. While others are in a shared project, a
+small sign with people in the pane's head says how many; rest the pointer on
+it to see who.
 
 ## A file in a view
 
@@ -3079,6 +3080,40 @@ The images of the figures of the project are shared: they are sent to the
 server when they are put in, and fetched by the others from there, into
 their own stores. No other image of your store is sent. An image that
 has not arrived yet is shown as an empty frame until it has.
+
+### The chat
+
+A shared project has a chat, for what is said about the work as a whole,
+or simply to talk: **Chat** is the last tab of the document pane, there as
+long as the project is shared. **Ctrl+K** finds it as well.
+
+- The messages stand from the oldest to the newest, each with who wrote it
+  and when; those one person writes close together stand under one name,
+  and a line with the date comes where the day changes.
+- Write in the field at the foot. **Enter** sends; **Shift+Enter** makes a
+  new line.
+- A message of yours can be deleted from its menu, the three dots that come
+  when the pointer rests on it, or a right click; **Undo** in the message
+  that says so puts it back. Messages are not changed once they are sent,
+  and nobody deletes another's.
+- The messages are kept in the project, so they are there for whoever opens
+  it later, and what you write without the server is sent when it is
+  reached again. Undo in the text never takes a message back.
+- A message that comes while the chat is not shown is told at the foot of
+  the window, with **Show**, which opens the chat. How many messages you
+  have not read is counted on the tab, and a dot on **Document**, in the bar
+  of the side, says that there are some while the pane is closed. Which you
+  have read is remembered on your computer.
+
+The chat is never part of the text: it is not typeset or exported, not in
+the Org copy of the project, not found by the search, and not copied with
+elements into another project; the history does not count a message as a
+change. A duplicate of the project, and the project saved as a file, carry it.
+
+When the project is no longer shared, a chat that holds messages stays in
+the pane, to be read, without the field; **Delete the conversation**, at
+the head of the pane, takes every message out of the project, after it has
+asked.
 
 ## The history of a project
 
