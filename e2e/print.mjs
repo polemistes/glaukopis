@@ -1,5 +1,7 @@
-// Printing (record 0075), tried through the interface: the typesetting
-// pane's Print…, Ctrl+P, and a file's Print….
+// Printing (records 0075 and 0091), tried through the interface: the
+// typesetting pane's Print…, Ctrl+P, the Print… and Export… of the bar of a
+// side, Ctrl+E (with the pane open or closed: printing with it closed sets
+// the pages out of sight and leaves the pane closed), and a file's Print….
 //
 // The system's own print dialog cannot be pressed by WebDriver, and is not
 // tried here. The pages are printed instead to a PDF file through GTK's
@@ -165,6 +167,18 @@ try {
   check('the palette finds Print, with Ctrl+P', found === 'Print Ctrl+P', found);
   await app.press('Escape');
   await app.waitGone('dialog[open]');
+  await app.keys(['Control', 'k']);
+  await app.waitFor('dialog[open] .query', 3000);
+  await sleep(200);
+  await app.keys('export');
+  await sleep(200);
+  const foundExport = await app.exec(
+    `const li = document.querySelector('dialog[open] li.active');
+     return li && li.querySelector('.label')?.textContent.trim() + ' ' + (li.querySelector('kbd')?.textContent.trim() ?? '');`,
+  );
+  check('the palette finds Export, with Ctrl+E', foundExport === 'Export Ctrl+E', foundExport);
+  await app.press('Escape');
+  await app.waitGone('dialog[open]');
   await app.keys(['Control', '/']);
   await app.waitForText('dialog[open] h2', 'Keys', 3000);
   await sleep(300);
@@ -176,34 +190,128 @@ try {
     rows.includes('Print Ctrl+P') && rows.includes('Typesetting Ctrl+T'),
     rows.filter((r) => /^(Print|Typesetting) /.test(r)).join(' | '),
   );
+  check(
+    'and Export as Ctrl+E',
+    rows.includes('Export Ctrl+E'),
+    rows.filter((r) => /^Export /.test(r)).join(' | '),
+  );
   await app.press('Escape');
   await app.waitGone('dialog[open]');
 
-  // Ctrl+P with the pane closed: the pane opens, the pages are made, and the
-  // system's dialog opens over the window. It is seen on the private display
-  // and closed with Escape, which prints nothing.
+  // ---- the pane closed: Print… and Ctrl+P print the document, and the pane stays closed ----
+  check('the typesetting pane is closed', !(await app.exists('.preview')));
+  const barOrder = await app.exec(
+    `const bar = document.querySelector('[data-side-key] [data-bar]');
+     return Array.from(bar.querySelectorAll('[data-typeset], [data-bar-print], [data-bar-export], [data-document]')).map((b) =>
+       b.hasAttribute('data-typeset') ? 'typesetting' : b.hasAttribute('data-bar-print') ? 'print' : b.hasAttribute('data-bar-export') ? 'export' : 'document');`,
+  );
+  check(
+    'the bar of the side has Print and Export, after Typesetting and before Document',
+    barOrder.join(' ') === 'typesetting print export document',
+    barOrder.join(' '),
+  );
+  const barLabels = await app.exec(
+    `return ['[data-bar-print]', '[data-bar-export]'].map((s) => {
+       const b = document.querySelector(s);
+       return b.getAttribute('aria-label') + (b.disabled ? ' (disabled)' : '');
+     });`,
+  );
+  check('they say Print… and Export…, and are there to be pressed', barLabels.join(' ') === 'Print… Export…', barLabels.join(' '));
+  await app.screenshot('print-1b-bar');
+
+  // What Ctrl+P prints with the pane closed, to a file, with no dialog.
+  const hidden = join(outputDir, 'print-hidden.pdf');
+  rmSync(hidden, { force: true });
+  const printedHidden = await app.execAsync(
+    'return await window.__glaukopisPrint.toFile(arguments[0]);',
+    hidden,
+  );
+  check('with the pane closed the document is printed', !!printedHidden && (await written(hidden)), JSON.stringify(printedHidden));
+  if (printedHidden && existsSync(hidden)) {
+    const info = infoOf(hidden);
+    check(
+      'every page of it, as the pane printed it',
+      info.pages === count && printedHidden.count === count && near(info.width, 595.28),
+      `${info.pages} printed of ${count}`,
+    );
+  }
+  check('and the pane stays closed', !(await app.exists('.preview')));
+  check('the pages leave the page when they are printed', !(await app.exists('#print-pages')));
+
+  // Ctrl+P and the bar's Print… with the pane closed: the pages are set out of
+  // sight, and the system's dialog opens over the window. It is seen on the
+  // private display and closed with Escape, which prints nothing.
+  const onTheDisplay = { env: { ...process.env, DISPLAY: app.display }, encoding: 'utf8', timeout: 20000 };
+  /** Waits for the system's print dialog on the private display, photographs it into `shot`, and closes it with Escape. */
+  async function seenAndClosed(shot) {
+    let dialog = '';
+    try {
+      dialog = execFileSync('xdotool', ['search', '--sync', '--onlyvisible', '--name', '^Print$'], onTheDisplay)
+        .trim()
+        .split('\n')[0];
+    } catch {
+      // Not there in time.
+    }
+    if (dialog) {
+      await sleep(1500);
+      if (shot) execFileSync('import', ['-display', app.display, '-window', 'root', join(outputDir, shot)], onTheDisplay);
+      // GTK takes no key sent to a window; the dialog is given the focus, and the key pressed on the display.
+      execFileSync('xdotool', ['windowfocus', '--sync', dialog, 'key', 'Escape'], onTheDisplay);
+    }
+    return !!dialog;
+  }
   await app.click('.text-view .section .body');
   await sleep(200);
   await app.keys(['Control', 'p']);
-  const paned = await app.waitFor('.preview .page', 20000).then(() => true, () => false);
-  check('Ctrl+P opens the typesetting pane where it is closed', paned);
-  const onTheDisplay = { env: { ...process.env, DISPLAY: app.display }, encoding: 'utf8', timeout: 20000 };
-  let dialog = '';
-  try {
-    dialog = execFileSync('xdotool', ['search', '--sync', '--onlyvisible', '--name', '^Print$'], onTheDisplay)
-      .trim()
-      .split('\n')[0];
-  } catch {
-    // Not there in time.
+  const opened1 = await seenAndClosed('print-2-dialog.png');
+  check("Ctrl+P with the pane closed opens the system's print dialog", opened1);
+  check('closed without printing, the pages leave the page', await app.waitGone('#print-pages', 10000).then(() => true, () => false));
+  check('and the pane has not been opened', !(await app.exists('.preview')));
+
+  await app.click('[data-bar-print]');
+  const opened2 = await seenAndClosed(null);
+  check("Print… in the bar opens the system's print dialog as well", opened2);
+  check('closed without printing, the pages leave the page', await app.waitGone('#print-pages', 10000).then(() => true, () => false));
+  check('and the pane is still closed', !(await app.exists('.preview')));
+
+  // ---- Export…, from the bar and by its key, with the pane closed ----
+  // The dialog of the system that asks where to write cannot be driven: the dialog of the kinds is seen, and left.
+  await app.click('[data-bar-export]');
+  const kinds = await app.waitFor('dialog .kinds', 10000).then(() => true, () => false);
+  check('Export… in the bar opens the dialog of the kinds of file', kinds && !(await app.exists('.preview')));
+  if (kinds) {
+    const offered = await app.text('dialog .kinds');
+    check('with the kinds of file a document is made as', /PDF/.test(offered) && /Word/.test(offered), offered.replace(/\s+/g, ' ').slice(0, 80));
+    await app.screenshot('print-2b-export');
+    await app.clickText('dialog footer button', 'Cancel');
+    await app.waitGone('dialog', 3000).catch(() => {});
   }
-  check("and the system's print dialog opens", !!dialog);
-  if (dialog) {
-    await sleep(1500);
-    execFileSync('import', ['-display', app.display, '-window', 'root', join(outputDir, 'print-2-dialog.png')], onTheDisplay);
-    // GTK takes no key sent to a window; the dialog is given the focus, and the key pressed on the display.
-    execFileSync('xdotool', ['windowfocus', '--sync', dialog, 'key', 'Escape'], onTheDisplay);
-    const gone = await app.waitGone('#print-pages', 10000).then(() => true, () => false);
-    check('closed without printing, the pages leave the page', gone);
+  await app.click('.text-view .section .body');
+  await sleep(200);
+  await app.keys(['Control', 'e']);
+  const kindsByKey = await app.waitFor('dialog .kinds', 10000).then(() => true, () => false);
+  check('Ctrl+E opens it too, and the pane stays closed', kindsByKey && !(await app.exists('.preview')));
+  if (kindsByKey) {
+    await app.clickText('dialog footer button', 'Cancel');
+    await app.waitGone('dialog', 3000).catch(() => {});
+  }
+
+  // With the pane open, Ctrl+P prints through it, and the pane stays open.
+  check('the pane is opened again', await app.typeset());
+  await app.waitFor('.preview .page', 20000);
+  await app.click('.text-view .section .body');
+  await sleep(200);
+  await app.keys(['Control', 'p']);
+  const opened3 = await seenAndClosed(null);
+  check("Ctrl+P with the pane open opens the system's print dialog", opened3);
+  check('closed without printing, the pages leave the page', await app.waitGone('#print-pages', 10000).then(() => true, () => false));
+  check('and the pane stays open', await app.exists('.preview'));
+  await app.click('[data-bar-export]');
+  const kindsOpen = await app.waitFor('dialog .kinds', 10000).then(() => true, () => false);
+  check('Export… with the pane open opens the dialog of the kinds as well', kindsOpen);
+  if (kindsOpen) {
+    await app.clickText('dialog footer button', 'Cancel');
+    await app.waitGone('dialog', 3000).catch(() => {});
   }
 
   // ---- a file in a view: a PDF by a range of its pages, an image as it is ----
@@ -269,6 +377,11 @@ try {
     await app.press('Escape');
     await app.waitGone('dialog[open]', 3000);
   }
+  await app.click('[data-viewer-pages]');
+  await sleep(200);
+  await app.keys(['Control', 'e']);
+  await sleep(800);
+  check('Ctrl+E does nothing on a file', !(await app.exists('dialog[open]')));
 
   await app.execAsync('window.__glaukopisViewer.show(arguments[0]);', owlHash);
   await app.waitFor('[data-file-side] .bar', 10000);
