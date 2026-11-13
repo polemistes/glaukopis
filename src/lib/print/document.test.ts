@@ -28,15 +28,8 @@ vi.mock('./pages', async (original) => ({
   printPages: api.printPages,
 }));
 
-const {
-  PRINT_BATCH,
-  paneOpened,
-  printDocument,
-  printKey,
-  printSetPages,
-  printSide,
-  requestOf,
-} = await import('./document');
+const { PRINT_BATCH, paneOpened, printDocument, printKey, printSetPages, printSide, requestOf } =
+  await import('./document');
 
 /** A page as Typst draws it: an SVG whose viewBox is its size in points. */
 const svg = (width: number, height: number) =>

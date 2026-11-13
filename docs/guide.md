@@ -287,12 +287,13 @@ Write as in any editor. Each side has a bar of its own, of icons, each
 named when the pointer rests on it: the outline; **Diagram**, **Text**, and
 **Timeline** where the element has times; then three menus, **Paragraph
 kind**, **Words kind** and **Marks**; undo and redo; spelling, and the marks
-of whitespace; **Insert**; and **Typesetting** and **Document**, which open
-the two panes (see *Typesetting* and *The document pane*); and at the right
-the **×** that closes the side. The menus act where the cursor is, or on
-what is selected, and are greyed while the side shows the diagram; the box
-that opens when an element is double-clicked in the diagram has the same
-three menus and **Insert**.
+of whitespace; **Insert**; **Typesetting**, **Print…** and **Export…**, which
+open the pane of the pages, print the document and make a file of it (see
+*Typesetting*); **Document**, which opens the pane of what goes with it (see
+*The document pane*); and at the right the **×** that closes the side. The
+menus act where the cursor is, or on what is selected, and are greyed while
+the side shows the diagram; the box that opens when an element is
+double-clicked in the diagram has the same three menus and **Insert**.
 
 - **Paragraph kind** says what the paragraph the cursor is in is, and
   changes it: text, quotation, list, numbered list, verse, and the rest under
@@ -2713,13 +2714,16 @@ changed at any time.
 Both are chosen, and the look changed, in Look (see *The look of a
 document*).
 
-**Export** makes the manuscript: PDF, Word, OpenDocument, LaTeX, Markdown, a
-web page, or an **e-book** (EPUB), in which the reader sets the text and each
-chapter is a part of its own. The cover of the e-book is the first image
-in an element of the kind **Cover** under the element printed (see *What
-goes into the document*). Where the document is given as it is written, in
-LaTeX, Typst or Markdown, its images are put in a folder beside it, named
-after it.
+**Export…**, in the bar of a side, in the head of the typesetting pane, or
+**Ctrl+E** anywhere in a project, makes a file of the document of the side you
+are in, the same whether the typesetting pane is open or not: a window asks
+what kind of file, and then where to put it. The manuscript is made as PDF,
+Word, OpenDocument, LaTeX, Markdown, a web page, or an **e-book** (EPUB), in
+which the reader sets the text and each chapter is a part of its own. The
+cover of the e-book is the first image in an element of the kind **Cover**
+under the element printed (see *What goes into the document*). Where the
+document is given as it is written, in LaTeX, Typst or Markdown, its images
+are put in a folder beside it, named after it.
 
 Every document that is made follows the typesetting in what it holds and in
 what order: the half title, the title page, the abstract, the keywords and
@@ -2779,19 +2783,24 @@ pages: those of the typesetting, and those of the PDF, which are the same.
 
 ### Printing
 
-**Print…**, in the head of the typesetting pane before *Export*, or
-**Ctrl+P** anywhere in a project, prints the document of the side you are
-in through the printing of your computer: its own dialog, with its
-printers, the number of copies, the pages, printing on both sides and the
-rest. On Linux that is the dialog of GTK, which lists the printers your
-system knows through CUPS and *Print to File*, which makes a PDF or a
-PostScript file; on a Mac the print sheet; on Windows the print dialog of
-Edge, with a preview. The pages print as they are set, each on a sheet of
-its size with nothing added, and the dialog comes up with the paper of the
-document's page: an A4 document on A4. Where the typesetting pane is
-closed, Ctrl+P opens it and prints when the pages are set. Nothing is
-printed that the typesetting does not show: the diagram and the text as
-you write it are not printed, the document is.
+**Print…**, the printer in the bar of a side, in the head of the typesetting
+pane before *Export*, or **Ctrl+P** anywhere in a project, prints the
+document of the side you are in through the printing of your computer: its
+own dialog, with its printers, the number of copies, the pages, printing on
+both sides and the rest. On Linux that is the dialog of GTK, which lists the
+printers your system knows through CUPS and *Print to File*, which makes a
+PDF or a PostScript file; on a Mac the print sheet; on Windows the print
+dialog of Edge, with a preview. The pages print as they are set, each on a
+sheet of its size with nothing added, and the dialog comes up with the paper
+of the document's page: an A4 document on A4.
+
+The typesetting pane need not be open, and printing does not open it. Where it
+is closed, a message says that the pages are being set, which takes a few
+seconds for a long book, and the dialog opens when they are; the pane stays as
+it was, and nothing of the document is kept afterwards. Where the pane is open
+for the side, its pages are the ones that print. Nothing is printed that the
+typesetting does not show: the diagram and the text as you write it are not
+printed, the document is.
 
 ## The look of a document
 
@@ -3521,6 +3530,7 @@ what is to be done by its name, and does it.
 | **Ctrl+Shift+O** | The outline beside the text |
 | **Ctrl+Shift+L** | The list of projects at the left: hide it, or show it again |
 | **Ctrl+P** | Print: the document of the side you are in, or the file shown in it |
+| **Ctrl+E** | Export: the document of the side you are in, as a file |
 | **Ctrl+T** | Typesetting: the pages of the side you are in, beside the sides |
 | **Ctrl++**, **Ctrl+-**, **Ctrl+0** | In the typesetting pane and in a file: larger pages, smaller pages, pages as wide as the pane |
 | **PageDown**, **PageUp**, **Home**, **End** | In a file: the next page, the one before, the first, the last |

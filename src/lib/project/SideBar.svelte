@@ -188,8 +188,7 @@
     size="sm"
     disabled={!documented}
     data-bar-export
-    onclick={() =>
-      project && exportUi.open({ project, projectId: spec.project, at: documentAt })}
+    onclick={() => project && exportUi.open({ project, projectId: spec.project, at: documentAt })}
   >
     <Share size={15} />
   </IconButton>
