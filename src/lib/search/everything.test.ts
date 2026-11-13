@@ -135,7 +135,23 @@ describe('the search through everything', () => {
     ]);
     // The details are said of the project itself, which is in no tree under it.
     expect(wrath.found[3]).toMatchObject({ tree: null, element: PROJECT, elementName: 'The poem' });
-    expect(wrath.found[4].elementName).toBe('Part 1 ↔ Part 2');
+    expect(wrath.found[4].elementName).toBe('Part 1 – Part 2');
+  });
+
+  it('finds the words of an association in any of its lines, and writes its ends with its arrow', () => {
+    const { pr } = made();
+    const [link] = pr.links;
+    pr.setLinkLabel(link.id, 'the wrath\nof Achilles\n\nreturns');
+    pr.setLinkArrow(link.id, 'from');
+    const search = (words: string) =>
+      found(searchProject(read(pr), words, options({ labels: true }))).found.filter(
+        (f) => f.where === 'association',
+      );
+    expect(search('Achilles').map((f) => [f.elementName, f.text])).toEqual([
+      ['Part 1 ← Part 2', 'Achilles'],
+    ]);
+    expect(search('wrath of Achilles')).toHaveLength(1);
+    expect(search('returns')).toHaveLength(1);
   });
 
   it('says of the words around what was found where they are cut', () => {

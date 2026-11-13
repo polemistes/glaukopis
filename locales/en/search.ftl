@@ -64,7 +64,7 @@ search-everything-found = { $count ->
    *[other] in { $projects } projects
 }
 search-where-details = The details of the document
-# An association that has a name, with the elements at its ends: "Part 1 ↔ Part 2".
+# An association that has a name, with the elements at its ends and the sign of its arrow between: "Part 1 → Part 2", "Part 1 – Part 2" where it has none.
 search-where-association = The association { $ends }
 search-where-note = What you think of { $work }
 # Said before what was found in a note.
