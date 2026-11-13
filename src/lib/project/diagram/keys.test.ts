@@ -34,7 +34,7 @@ function diagram(pick: (ids: Record<string, string>) => string[] = () => []) {
     selection: pick(ids),
     linkFrom: null,
     selectedLink: null,
-    linkMenu: () => {},
+    linkMenu: (id) => log('linkMenu')(id),
     actions: {},
     select: (s) => {
       d.selection.splice(0, d.selection.length, ...s);
@@ -125,6 +125,18 @@ describe('the keys of the diagram', () => {
     const none = diagram();
     pressed(key('Enter'), none.d);
     expect(none.calls).toEqual(['select root']);
+  });
+
+  it('open the menu of the association selected with the menu key, and remove it with Delete', () => {
+    const one = diagram();
+    const link = one.p.addLink(one.ids.a, one.ids.b)!;
+    one.d.selectedLink = link;
+    expect(pressed(key('ContextMenu'), one.d)).toBe(true);
+    expect(pressed(key('F10', { shiftKey: true }), one.d)).toBe(true);
+    expect(one.calls).toEqual([`linkMenu ${link}`, `linkMenu ${link}`]);
+    pressed(key('Delete'), one.d);
+    expect(one.p.links).toEqual([]);
+    expect(one.d.selectedLink).toBeNull();
   });
 
   it('fold and unfold what is under the element with Tab, and keep the focus with nothing to fold', () => {

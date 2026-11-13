@@ -236,8 +236,19 @@ See *One tree, entered anywhere*.
 Lines between an element and what is under it are straight. **Associations**
 are curved. To make one, right-click an element, choose **Associate with…**,
 and click the other element; or, from the keys, **Shift+F10**, **Associate
-with…**, the arrows to the other element, and **Enter**. An association can be given a few words that say
-what it is.
+with…**, the arrows to the other element, and **Enter**. There is one
+association between two elements, whichever way it was drawn.
+
+Click an association to select it, and **Delete** removes it. Double-click
+it to write a few words that say what it is: **Shift+Enter** begins a new
+line, **Enter** keeps the words, and **Escape** leaves them as they were.
+The words stand on the curve in their lines. Right-click the association or
+its words, or press the menu key while it is selected, for its menu: its
+words; **Arrow**, to the one element, to the other, both ways, or none; and
+**Colour**, one of the colours kinds have, or none for its gold. A new
+association has neither arrow nor colour, and what the direction means is
+yours to say. An association to an element folded away is drawn faintly to
+what it is folded under, with its arrow.
 
 An element that has text shows a small mark. The box in which the text is
 written can be dragged by the room around its name to wherever it is wanted,
@@ -383,8 +394,10 @@ figure or a table that stands before it, and a second **Backspace** takes it
 away.
 
 Associations are shown as narrow lines in the left margin, between the
-sections they join. Click one to go to either end of it, to give it a few
-words, or to remove it.
+sections they join, in their colour, with an arrowhead towards the text at
+the end an arrow points at. Pointing at one says what it joins, as
+*Achilles → Hector* (*–* where it has no arrow), and its words. Click one
+for the menu it has in the diagram, with the two ends to go to before it.
 
 ### The outline
 
@@ -3430,8 +3443,9 @@ what Glaukopis works from:
   (`#+BEGIN_QUOTE`, `#+BEGIN_VERSE`, lists with `- `), its marks as Org's
   (`/italic/`, `*bold*`), its notes as `[fn::…]` and its citations as
   `[cite:@key]`. What is said of an element (its kind, how far it has come,
-  when it is, its associations, its settings as a document) is in a drawer
-  under its headline, and its comments in another.
+  when it is, its associations with their words, arrows and colours, its
+  settings as a document) is in a drawer under its headline, and its
+  comments in another.
 - `references.bib`: the works the project cites, by the keys the citations
   use.
 - `pictures/`: the images its figures show.
@@ -3488,7 +3502,9 @@ what is folded; how far the writing has come, as Freeplane's icons of an
 idea, a pencil and a tick, and as XMind's task markers; the kind, the time
 and *left out of the document*, as attributes named *Kind*, *Time* and
 *Left out* in Freeplane and as labels in XMind, the kind also in its colour
-in Freeplane; and the associations with their words. What does not cross:
+in Freeplane; and the associations with their words, and in Freeplane
+with their arrows and colours too, a colour brought to the nearest of the
+colours kinds have. What does not cross:
 where you put elements by hand (a map opened is laid out anew), images,
 comments, that a clone is a clone, the look of documents, and the records
 of the works cited. Where something of the project has no place in the
