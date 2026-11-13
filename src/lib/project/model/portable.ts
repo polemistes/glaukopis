@@ -19,13 +19,14 @@ import type { Bound, When } from '$lib/timeline/solve';
 import { newId } from '$lib/util/id';
 import { writeBody, writeName } from './blocks';
 import { keyAt, makeNode } from './changing/elements';
-import { makeLink } from './changing/links';
+import { lookOf, makeLink } from './changing/links';
 import type { Project } from './project.svelte';
 import { readTitle, type Block, type Inline } from './text';
 import { topmost } from './tree';
 import {
   PROJECT,
   type KindRecord,
+  type LinkLook,
   type PassageKindRecord,
   type Position,
   type RefRecord,
@@ -50,7 +51,7 @@ export interface Portable {
   /** The topmost of the elements, each with all under it. */
   elements: PortableElement[];
   /** The links between them, by the ids they had. */
-  links: { from: string; to: string; label: string }[];
+  links: ({ from: string; to: string } & LinkLook)[];
   /** The kinds of element they are. */
   kinds: Omit<KindRecord, 'order'>[];
   /** The kinds of paragraph and of words of the project's own that their texts use, with those they are based on. */
@@ -146,7 +147,7 @@ export function portable(p: Project, ids: string[]): Portable {
     elements,
     links: p.links
       .filter((l) => carried.has(l.from) && carried.has(l.to))
-      .map((l) => ({ from: l.from, to: l.to, label: l.label })),
+      .map((l) => ({ from: l.from, to: l.to, ...lookOf(l) })),
     // In the order they have where they came from, which they keep where they are added.
     kinds: p.kinds.flatMap((k) => kinds.get(k.id) ?? []),
     passageKinds: p.passageKinds.flatMap((k) => passageKinds.get(k.id) ?? []),
@@ -348,7 +349,7 @@ export function makePortable(p: Project, carried: Portable, place: Place): strin
     for (const l of carried.links) {
       const from = ids.get(l.from);
       const to = ids.get(l.to);
-      if (from && to && from !== to) makeLink(p, from, to, l.label);
+      if (from && to && from !== to) makeLink(p, from, to, l);
     }
   });
 

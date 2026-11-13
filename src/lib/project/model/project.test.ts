@@ -945,6 +945,106 @@ describe('comments', () => {
   });
 });
 
+describe('associations', () => {
+  it('a new association has no arrow, no colour and no words; one is made between two elements', () => {
+    const { p, root } = project();
+    const a = p.addChild(root, { title: 'A' })!;
+    const b = p.addChild(root, { title: 'B' })!;
+    const id = p.addLink(a, b)!;
+    expect(p.links).toEqual([{ id, from: a, to: b, label: '' }]);
+    // Drawn the other way, it is the one that is there.
+    expect(p.addLink(b, a)).toBe(id);
+    expect(p.links).toHaveLength(1);
+  });
+
+  it('keeps an arrow and a colour, and lets them go', () => {
+    const { p, root } = project();
+    const a = p.addChild(root, { title: 'A' })!;
+    const b = p.addChild(root, { title: 'B' })!;
+    const id = p.addLink(a, b)!;
+    p.setLinkArrow(id, 'from');
+    p.setLinkColour(id, 'teal');
+    expect(p.links[0]).toMatchObject({ arrow: 'from', colour: 'teal' });
+    p.setLinkArrow(id, 'both');
+    expect(p.links[0].arrow).toBe('both');
+    // A colour that is not one of the colours of kinds is none.
+    p.setLinkColour(id, '#ff0000');
+    expect(p.links[0].colour).toBeUndefined();
+    p.setLinkArrow(id, null);
+    expect(p.links[0]).toEqual({ id, from: a, to: b, label: '' });
+    expect(p.yLinks.get(id)!.has('arrow')).toBe(false);
+  });
+
+  it('keeps the lines of its words, cleaned', () => {
+    const { p, root } = project();
+    const a = p.addChild(root, { title: 'A' })!;
+    const b = p.addChild(root, { title: 'B' })!;
+    const id = p.addLink(a, b)!;
+    p.setLinkLabel(id, '\n\n  son\tof   \r\n Peleus \n\n\n\n\nslayer of  Hector  \n \n');
+    expect(p.links[0].label).toBe('son of\nPeleus\n\nslayer of Hector');
+    p.setLinkLabel(id, ' \n \t ');
+    expect(p.links[0].label).toBe('');
+    expect(p.yLinks.get(id)!.has('label')).toBe(false);
+  });
+
+  it('a link written before arrows and colours reads as none and gold; what is not known is passed over', () => {
+    const { p, root } = project();
+    const a = p.addChild(root, { title: 'A' })!;
+    const b = p.addChild(root, { title: 'B' })!;
+    p.doc.transact(() => {
+      const old = new Y.Map<unknown>();
+      old.set('from', a);
+      old.set('to', b);
+      old.set('label', 'old');
+      p.yLinks.set('old', old);
+      const strange = new Y.Map<unknown>();
+      strange.set('from', b);
+      strange.set('to', root);
+      strange.set('arrow', 'sideways');
+      strange.set('colour', 'mauve');
+      p.yLinks.set('strange', strange);
+    });
+    expect(p.links).toEqual([
+      { id: 'old', from: a, to: b, label: 'old' },
+      { id: 'strange', from: b, to: root, label: '' },
+    ]);
+  });
+
+  it('a copy of the elements carries the arrow, the colour and the lines', () => {
+    const { p, root } = project();
+    const a = p.addChild(root, { title: 'A' })!;
+    const a1 = p.addChild(a, { title: 'A1' })!;
+    const id = p.addLink(a, a1)!;
+    p.setLinkLabel(id, 'one\ntwo');
+    p.setLinkArrow(id, 'to');
+    p.setLinkColour(id, 'plum');
+    const [copy] = p.copy([a], root);
+    const [made] = p.linksOf(copy);
+    expect(made).toMatchObject({ from: copy, label: 'one\ntwo', arrow: 'to', colour: 'plum' });
+    expect(made.id).not.toBe(id);
+  });
+
+  it('undo takes back the words, the arrow and the colour one by one', () => {
+    const { p, root } = project();
+    const a = p.addChild(root, { title: 'A' })!;
+    const b = p.addChild(root, { title: 'B' })!;
+    const id = p.addLink(a, b)!;
+    p.checkpoint();
+    p.setLinkLabel(id, 'one\ntwo');
+    p.checkpoint();
+    p.setLinkArrow(id, 'to');
+    p.checkpoint();
+    p.setLinkColour(id, 'rose');
+    p.checkpoint();
+    p.undo();
+    expect(p.links[0]).toEqual({ id, from: a, to: b, label: 'one\ntwo', arrow: 'to' });
+    p.undo();
+    expect(p.links[0]).toEqual({ id, from: a, to: b, label: 'one\ntwo' });
+    p.undo();
+    expect(p.links[0]).toEqual({ id, from: a, to: b, label: '' });
+  });
+});
+
 describe('kinds of elements', () => {
   it('kinds are made, changed and deleted, and elements are of them', () => {
     const { p, root } = project();

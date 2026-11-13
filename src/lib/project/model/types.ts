@@ -200,12 +200,29 @@ export interface NodeRecord {
   uses: string[];
 }
 
+/**
+ * The arrow of an association: at the end it goes to, at the end it comes
+ * from, or at both. None is no arrow, which is what a new association has.
+ * The program gives the direction no meaning; it is the writer's.
+ */
+export type LinkArrow = 'to' | 'from' | 'both';
+
+export const LINK_ARROWS: readonly LinkArrow[] = ['to', 'from', 'both'];
+
 export interface LinkRecord {
   id: string;
   from: string;
   to: string;
+  /** Its words, in lines (see `cleanLinkLabel`). */
   label: string;
+  /** Absent for none. */
+  arrow?: LinkArrow;
+  /** The name of one of the colours of kinds (`KIND_COLOURS`); absent for the gold of an association. */
+  colour?: string;
 }
+
+/** What of an association is carried when it is made anew elsewhere: all but its ends and its id. */
+export type LinkLook = Pick<LinkRecord, 'label' | 'arrow' | 'colour'>;
 
 /** A reference as the project carries it, so that a shared project is complete. */
 export interface RefRecord {
