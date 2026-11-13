@@ -1431,3 +1431,8 @@ What this settles, and it holds over the 0.1.0 and 0.2.0 entries above:
   notes kept for a release in `.claude/briefs/`.
 - Every release from 0.1.0 to 0.2.11 on GitHub was renamed and its notes
   cut the same day; the page of release notes lost its own three mentions.
+
+> Yes, turn off the pre-release. These are releases.
+
+- A release on GitHub is a release, not a pre-release, and the newest is
+  marked the latest. All twelve were changed the same day.

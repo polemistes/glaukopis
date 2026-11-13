@@ -217,7 +217,8 @@ owner uploads it. Language packages come from
 `scripts/make-language-packages.py` into `packaging/languages/out`, uploaded
 by the owner too.
 
-A release on GitHub is named *Glaukopis x.y.z* and nothing more: never "a
-version to test", and no paragraph about testing in its notes. The only
+A release on GitHub is a release, not a pre-release, named *Glaukopis
+x.y.z* and nothing more: never "a version to test", and no paragraph about
+testing in its notes. The only
 warning that a version is for testing is the one at the top of the page of
 packages (the owner's word, 2026-11-13, in the brief).
