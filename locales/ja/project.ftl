@@ -201,6 +201,14 @@ project-elements = 要素{ $count }個
 project-other-here = { $name }がここにいます
 project-link-placeholder = どう関係しているか
 project-link-label = 関連付けのラベル
+# The menu of an association, in the diagram and in the margin of the text.
+project-link-arrow = 矢印
+project-link-arrow-none = 矢印なし
+# An arrow that points at the element named.
+project-link-arrow-to = 「{ $name }」へ
+project-link-arrow-both = 両方向
+project-link-colour = 色
+project-link-colour-none = 色なし
 
 ## コピーとその原本。
 copy-title = コピーとその原本
@@ -248,6 +256,13 @@ project-bar-typesetting = 組版
 project-bar-document = 文書
 project-badge-offline = サーバーに接続できません
 project-badge-refused = サーバーが最新の変更を受け付けません
+
+## Export and print from the bar of a side (record 0091)
+# The buttons in the bar of a side that print and export its document, whether the typesetting pane is open or not.
+project-bar-print = 印刷…
+project-bar-export = 書き出す…
+# Told at once when a document is printed with the typesetting pane closed, while the pages are set.
+project-print-setting = ページを組版しています…
 
 ## 言葉を減らす、第2段階（エージェント「chrome」）：クローン。自分のものは名前のほかに何も持たない。
 

@@ -128,6 +128,11 @@ Bild ab, Einfg.
   verwerfen
 - **sharing**, **working together** — das Teilen, geteilt; die
   Zusammenarbeit; man *tritt* einem geteilten Projekt *bei*
+- **the chat** (eines geteilten Projekts, ein Tab des Dokumentbereichs) —
+  der Chat, wie Teams, Zoom und Nextcloud ihn nennen: das gewöhnliche Wort,
+  nicht „Gespräch“; **message** — die Nachricht (nicht „Meldung“, das sagt
+  das Programm); **the conversation** (alle Nachrichten des Chats) — die
+  Unterhaltung, „Die Unterhaltung löschen“
 
 ## Lesen und Prüfen
 
@@ -160,7 +165,10 @@ Bild ab, Einfg.
 
 ## Unterwegs dazugekommen
 
-- **association** (zwischen Elementen) — die Verbindung, verbinden
+- **association** (zwischen Elementen) — die Verbindung, verbinden.
+  **Arrow** (einer Verbindung) — der Pfeil; **To “…”** — „Zu „…““; **Both
+  ways** — „In beide Richtungen“; **Colour** — „Farbe“. Die zwei **None**
+  folgen ihrem Nomen: „Kein Pfeil“, „Keine Farbe“
 - **note** (Fußnote/Endnote, auch im Dokument) — die Anmerkung; die Notiz
   nur für Notizen zu Quellen, Bildern und in Kommentaren
 - **remark** (der Vorschau) — der Hinweis
@@ -368,7 +376,10 @@ Eine Datei in einer Ansicht:
   Seiten“; **From [3] to [10]** — „Von [3] bis [10]“; **Drawing n pages for
   printing…** — „n Seiten werden für den Druck gezeichnet…“; **Preparing n
   pages for printing…** (der Umbruch) — „n Seiten werden für den Druck
-  vorbereitet…“; **Stop** — „Anhalten“, wie beim Durchgehen der Dateien
+  vorbereitet…“; **Stop** — „Anhalten“, wie beim Durchgehen der Dateien.
+  **Setting the pages…** (gedruckt bei geschlossenem Umbruch) — „Die Seiten
+  werden gesetzt…“; **Export…** auf der Leiste einer Seite —
+  „Exportieren…“, wie im Umbruch
 
 Die Bildbearbeitung:
 

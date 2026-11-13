@@ -41,6 +41,7 @@ keys-look-type = フォントを変更…
 keys-side-references = 文献
 keys-side-pictures = プロジェクトの画像
 keys-side-comments = コメント
+keys-side-chat = チャット
 keys-comment = 選択した箇所、または要素にコメント
 keys-side-history = 履歴
 keys-side-changes = 変更の確認
@@ -146,6 +147,8 @@ keys-viewer-tab-previous = 前のタブ
 keys-viewer-bookmark = この場所をブックマーク
 # 印刷（docs/plans/printing.md、記録 0075）。
 keys-print = 印刷
+# Export and print from the bar of a side (record 0091).
+keys-export = 書き出し
 
 ## More than one window (docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md).
 

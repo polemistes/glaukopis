@@ -41,6 +41,7 @@ keys-look-type = Ændr skriften…
 keys-side-references = Referencer
 keys-side-pictures = Projektets billeder
 keys-side-comments = Kommentarer
+keys-side-chat = Chat
 keys-comment = Kommenter det markerede, eller elementet
 keys-side-history = Historik
 keys-side-changes = Gennemgå ændringer
@@ -146,6 +147,8 @@ keys-viewer-tab-previous = Forrige fane
 keys-viewer-bookmark = Sæt et bogmærke her
 # Printing (docs/plans/printing.md, record 0075).
 keys-print = Udskriv
+# Export and print from the bar of a side (record 0091).
+keys-export = Eksporter
 
 ## More than one window (docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md).
 

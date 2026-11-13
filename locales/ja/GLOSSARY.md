@@ -444,6 +444,23 @@
 - 見た目の二つの長さ：**Numbers from the text** — 番号と本文の間隔；
   **Annotations from the text** — 注記と本文の間隔（センチメートル）
 
+## 2026-11-13 の追加：チャット、関連付けの矢印と色、側のツールバーの印刷と書き出し
+
+- **chat**（共有プロジェクトの、文書ペインのタブ）— チャット（日本語の
+  ソフトウェアでふつうの語）。**Between the map and the chat** —
+  マップとチャットの境
+- **message**（チャットの）— メッセージ（助数詞は件）；**Write a message**
+  （入力欄）— メッセージを入力；**Send** — 送信
+- **the conversation**（チャットのメッセージ全部）— 会話。
+  **Delete the conversation** — 会話を削除
+- **Someone**（名前のない書き手）— 誰か（コメント、履歴と同じ）
+- **arrow**（関連付けの）— 矢印：**None** 矢印なし、**To “X”** 「X」へ、
+  **Both ways** 両方向。**Colour**（関連付けの）— 色：**None** 色なし
+  （二つの None はそれぞれの名詞に合わせる。「状態なし」と同じ形）
+- **Print… / Export…**（側のツールバー）— 印刷… / 書き出す…；
+  **Export**（キー）— 書き出し（「印刷」と同じく名詞）；
+  **Setting the pages…** — ページを組版しています…
+
 ## Glaukopisの文言
 
 - **the words / strings**（インターフェースの）— 文言；**a message**

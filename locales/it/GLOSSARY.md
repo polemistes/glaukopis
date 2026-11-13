@@ -330,6 +330,18 @@ Il senso di ciascuna parola è in `locales/GLOSSARY.md`.
 | too large (a file read) | più grande di n MB, il massimo che si legge | `io-too-large` |
 | not a zip archive | non è un archivio zip | `io-not-an-archive`; «archivio» per gli archivi veri, come dice la voce *the store* |
 
+## Nuovo dopo la 0.2.10 (2026-11-13)
+
+| inglese | italiano | note |
+| --- | --- | --- |
+| chat, Chat | chat, Chat | la scheda del riquadro del documento in cui chi condivide un progetto si scrive; «chat» è la parola comune del software italiano (femminile, invariabile: «la chat del progetto») |
+| message | messaggio | uno di quelli scritti nella chat; «Scrivi un messaggio», «Il messaggio è stato eliminato» |
+| the conversation | la conversazione | tutti i messaggi della chat di un progetto: «Elimina la conversazione» |
+| arrow (of an association), None, To “…”, Both ways | freccia, Nessuna, Verso «…», Nei due sensi | la punta alla fine della linea tratteggiata; «Nessuna» al femminile, accordato con *freccia* |
+| colour (of an association), None | colore, Nessuno | i colori dei tipi; «Nessuno» al maschile, accordato con *colore* |
+| Print…, Export… (on the bar of a side) | Stampa…, Esporta… | come `preview-print` e `preview-export-run`; il tasto Ctrl+E è «Esporta» |
+| Setting the pages… | Composizione delle pagine… | mentre Typst compone le pagine prima della stampa; «composizione» come il riquadro della composizione |
+
 ## Nomi che non si traducono
 
 Glaukopis; Pandoc, Typst, Tesseract, Hunspell, LaTeX, LuaLaTeX, BibLaTeX,

@@ -220,6 +220,14 @@ project-elements = { $count ->
 project-other-here = { $name } är här
 project-link-placeholder = Hur de hänger ihop
 project-link-label = Associationens etikett
+# The menu of an association, in the diagram and in the margin of the text.
+project-link-arrow = Pil
+project-link-arrow-none = Ingen
+# An arrow that points at the element named.
+project-link-arrow-to = Till ”{ $name }”
+project-link-arrow-both = Åt båda hållen
+project-link-colour = Färg
+project-link-colour-none = Ingen
 
 ## A copy and its original.
 copy-title = Kopian och dess original
@@ -279,6 +287,13 @@ project-bar-typesetting = Ombrytning
 project-bar-document = Dokument
 project-badge-offline = servern kan inte nås
 project-badge-refused = servern tar inte emot de senaste ändringarna
+
+## Export and print from the bar of a side (record 0091)
+# The buttons in the bar of a side that print and export its document, whether the typesetting pane is open or not.
+project-bar-print = Skriv ut…
+project-bar-export = Exportera…
+# Told at once when a document is printed with the typesetting pane closed, while the pages are set.
+project-print-setting = Bryter om sidorna…
 
 ## Fewer words, stage 2 (agent "chrome"): the clone, which has nothing of its own but its name.
 

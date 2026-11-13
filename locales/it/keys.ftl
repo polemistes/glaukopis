@@ -41,6 +41,7 @@ keys-look-type = Cambia il font…
 keys-side-references = Riferimenti
 keys-side-pictures = Le immagini del progetto
 keys-side-comments = Commenti
+keys-side-chat = Chat
 keys-comment = Commenta il passo selezionato, o l'elemento
 keys-side-history = Cronologia
 keys-side-changes = Rivedi le modifiche
@@ -146,6 +147,8 @@ keys-viewer-tab-previous = Scheda precedente
 keys-viewer-bookmark = Segna questo punto
 # Printing (docs/plans/printing.md, record 0075).
 keys-print = Stampa
+# Export and print from the bar of a side (record 0091).
+keys-export = Esporta
 
 ## More than one window (docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md).
 

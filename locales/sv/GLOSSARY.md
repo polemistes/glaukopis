@@ -376,6 +376,24 @@ Page Down, piltangenterna. Pluralformer: one, other.
 - **too large** (core) — *{ $path } är större än { $most } MB, vilket är det
   mesta som läses*; **not a zip archive** — inte ett zip-arkiv
 
+## Chatten, associationernas pilar och utskrift från raden (2026-11-13)
+
+- **chat** — chatt (chatten): en flik i dokumentpanelen, bredvid
+  Kommentarer, där de som delar ett projekt skriver korta meddelanden till
+  varandra. *Chatt* är det vanliga svenska ordet (SAOL stavar det så) och
+  det som svensk programvara använder; *samtal* låter som ett telefonsamtal.
+- **message** — meddelande (meddelandet, meddelanden); *Skriv ett
+  meddelande*, *Skicka*; den som skrev utan namn är *Någon*
+- **the conversation** — konversationen: alla meddelanden i ett projekts
+  chatt (*Radera konversationen*), som i svenska chattprogram
+- **arrow** (av en association) — pil (pilen): *Pil* med *Ingen*,
+  *Till ”…”* och *Åt båda hållen*; **colour** — färg (*Färg*, *Ingen*).
+  Både *pil* och *färg* är en-ord, så båda *None* blir *Ingen*.
+- **Setting the pages…** — Bryter om sidorna… (som ombrytningen, när
+  ett dokument skrivs ut med ombrytningspanelen stängd)
+- **Print…** / **Export…** på en sidas rad — Skriv ut… / Exportera…, som i
+  ombrytningspanelen
+
 ## Namn som inte översätts
 
 Glaukopis; Pandoc, Typst, Tesseract, Hunspell, LaTeX, LuaLaTeX, BibLaTeX,

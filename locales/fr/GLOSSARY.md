@@ -187,6 +187,16 @@ personne qui écrit. Un mot choisi ici est le même dans tous les fichiers.
 - **accept** / **reject** → **accepter** / **rejeter**
 - **sharing** → le **partage** ; **working together** → **travailler
   ensemble** ; **join** → **rejoindre**
+- **chat** → la **discussion** (l’onglet du volet du document, dans un projet
+  partagé ; le mot des logiciels français, pas l’emprunt « chat ») ;
+  **message** → le **message** ; **the conversation** → la **conversation**
+  (tous les messages : « Supprimer la conversation »)
+- **arrow** (of an association) → la **flèche** : **None** → **Aucune**,
+  **To “…”** → **Vers « … »**, **Both ways** → **Dans les deux sens** ;
+  **Colour** → **Couleur**, **None** → **Aucune** (les deux noms sont
+  féminins)
+- **Setting the pages…** → **Composition des pages…** (la composition, comme
+  le panneau de composition)
 
 ## Lecture et vérification
 

@@ -295,6 +295,21 @@ prosjekt hadde vorte eitt tre.
   nemner *lageret* frå før, står som dei er
 - **Open in another program** — **Opne i eit anna program**
 
+## Nytt 2026-11-13: samtalen, pilene og fargane til assosiasjonane, utskrift frå lina
+
+- **chat** — **samtale** (ein samtale, samtalen, samtalar, samtalane): fana
+  i dokumentpanelet der dei som deler eit prosjekt, skriv til kvarandre;
+  «Mellom kartet og samtalen». Det norske ordet, ikkje lånordet, som i
+  bokmål. **the conversation** (alt som er skrive) er same ordet:
+  «Slett samtalen»
+- **message** — **melding** (ei melding, meldinga, meldingar, meldingane):
+  «Skriv ei melding», «Meldinga vart sletta», «Ei ny melding i …»
+- **arrow** (av ein assosiasjon) — **pil** (ei pil, pila, piler, pilene):
+  «Pil», «Til «…»», «Begge vegar». Dei to *None* følgjer kjønnet: **Inga**
+  (pil) og **Ingen** (farge)
+- **Setting the pages…** — **Bryt om sidene …**, med ordet for
+  ombrekkinga (bryte – bryt – braut – brote)
+
 ## Referansar og tilvisingar
 
 - **the library** — biblioteket

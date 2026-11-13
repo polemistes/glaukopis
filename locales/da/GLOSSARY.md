@@ -422,6 +422,27 @@ Hvor dette afsnit og et ældre siger noget forskelligt, gælder dette.
 - **Library** (det tredje valg blandt et projekts billeder: alle
   bibliotekets) — Bibliotek
 
+## Nyt efter 0.2.10 (2026-11-13)
+
+- **the chat** (en fane i dokumentpanelet i et delt projekt, hvor de, der
+  deler projektet, skriver korte beskeder til hinanden) — chat (chatten),
+  som dansk software kalder det; låneordet er det almindelige ord på dansk.
+  *Between the map and the chat* — Mellem kortet og chatten
+- **message** (i chatten) — besked (beskeden, beskeder), som danske
+  beskedprogrammer siger; ikke »meddelelse«, som er det, programmet selv
+  fortæller. *Write a message* — Skriv en besked; *Send* — Send
+- **the conversation** (alle chattens beskeder i et projekt) — samtalen;
+  *Delete the conversation* — Slet samtalen
+- **Someone** (hvor den, der skrev, intet navn har) — Nogen
+- **arrow** (på en association) — pil (pilen, pile); *None* — Ingen (ingen
+  pil); *To “X”* — Mod »X«; *Both ways* — Begge veje
+- **colour** (på en association) — farve, som arternes farver; *None* —
+  Ingen (ingen farve). De to *None* er ens på dansk, da pil og farve begge
+  er fælleskøn.
+- **Print… / Export…** på en sides bjælke — Udskriv… / Eksporter…, som i
+  ombrydningspanelet; *Setting the pages…* — Ombryder siderne…, med
+  ombrydningens ord
+
 ## Navne, der ikke oversættes
 
 Glaukopis; Pandoc, Typst, Tesseract, Hunspell, LaTeX, LuaLaTeX, BibLaTeX,

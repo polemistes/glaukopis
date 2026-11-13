@@ -232,6 +232,14 @@ project-elements = { $count ->
 project-other-here = { $name } est ici
 project-link-placeholder = En quoi ils sont liés
 project-link-label = Étiquette de l’association
+# The menu of an association, in the diagram and in the margin of the text.
+project-link-arrow = Flèche
+project-link-arrow-none = Aucune
+# An arrow that points at the element named.
+project-link-arrow-to = Vers « { $name } »
+project-link-arrow-both = Dans les deux sens
+project-link-colour = Couleur
+project-link-colour-none = Aucune
 
 ## A copy and its original.
 copy-title = La copie et son original
@@ -299,6 +307,13 @@ project-bar-typesetting = Composition
 project-bar-document = Document
 project-badge-offline = le serveur ne peut pas être joint
 project-badge-refused = le serveur n’accepte pas les dernières modifications
+
+## Export and print from the bar of a side (record 0091)
+# The buttons in the bar of a side that print and export its document, whether the typesetting pane is open or not.
+project-bar-print = Imprimer…
+project-bar-export = Exporter…
+# Told at once when a document is printed with the typesetting pane closed, while the pages are set.
+project-print-setting = Composition des pages…
 
 ## Fewer words, stage 2 (agent "chrome"): the clone, which has nothing of its own but its name.
 project-clone-other = Cloner un autre élément…
