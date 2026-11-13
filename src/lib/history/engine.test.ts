@@ -147,6 +147,27 @@ describe('the history of a project', () => {
     expect(people).toContain('bo');
   });
 
+  it('makes no session of a message of the chat, said or taken back', async () => {
+    const { a, b, ann, root, flush } = await two();
+    paragraph(a, root, 'Sing, goddess.');
+    await flush();
+    const before = engineOf(ann, 'ann').sessions();
+    const id = b.say('Shall I go on with the second book?')!;
+    await flush();
+    b.unsay(id);
+    await flush();
+    const after = engineOf(ann, 'ann');
+    expect(after.sessions()).toEqual(before);
+    expect(after.records.length).toBeGreaterThan(before[before.length - 1].last + 1);
+    // What is written in the text after it is a session as before.
+    paragraph(b, root, 'And so on.');
+    await flush();
+    const people = engineOf(ann, 'ann')
+      .sessions()
+      .map((s) => s.person);
+    expect(people[people.length - 1]).toBe('bo');
+  });
+
   it('shows objects in the text, and figures and equations as wholes', async () => {
     const { a, b, ann, at, root, flush } = await two();
     paragraph(a, root, 'As Nagy says.');

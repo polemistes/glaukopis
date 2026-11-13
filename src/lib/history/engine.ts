@@ -81,6 +81,11 @@ export interface Kept {
   deleted: DeleteSet;
   added: number;
   removed: number;
+  /**
+   * Whether all it made and deleted is in the chat (record 0092), or among
+   * who deleted what: no change to the work, and no session of its own.
+   */
+  aside: boolean;
   /** Where it is in the store on disk; nothing for what was written while it was looked at. */
   stored: boolean;
   /** The change itself, of what is in the store: to be merged with others. */
@@ -203,7 +208,7 @@ export class Engine {
     if (this.damaged) throw new Error(this.damaged);
   }
 
-  #keep(effects: Effect[], record: Omit<Kept, 'made' | 'deleted' | 'added' | 'removed'>) {
+  #keep(effects: Effect[], record: Omit<Kept, 'made' | 'deleted' | 'added' | 'removed' | 'aside'>) {
     const made = new Map<number, [number, number]>();
     const deleted: DeleteSet[] = [];
     for (const e of effects) {
@@ -217,9 +222,10 @@ export class Engine {
       deleted.push(...e.deleted);
     }
     const ds = deleted.length === 1 ? deleted[0] : Y.mergeDeleteSets(deleted);
-    const kept: Kept = { ...record, made, deleted: ds, added: 0, removed: 0 };
+    const kept: Kept = { ...record, made, deleted: ds, added: 0, removed: 0, aside: false };
     kept.added = this.#signsMade(made);
     kept.removed = this.#signsDeleted(ds);
+    kept.aside = this.#aside(made, ds);
     this.records.push(kept);
     return kept;
   }
@@ -366,7 +372,7 @@ export class Engine {
     this.#sound();
     const out: Session[] = [];
     this.records.forEach((r, i) => {
-      if (r.kind !== 'start' && !r.made.size && !r.deleted.clients.size) return;
+      if (r.kind !== 'start' && ((!r.made.size && !r.deleted.clients.size) || r.aside)) return;
       const person = r.kind === 'start' ? null : this.personOf(r);
       const last = out[out.length - 1];
       if (
@@ -998,6 +1004,41 @@ export class Engine {
     for (const [client, list] of ds.clients)
       for (const d of list) n += this.#signs(client, d.clock, d.clock + d.len);
     return n;
+  }
+
+  /**
+   * Whether all that was made and deleted is in the chat, or among who
+   * deleted what: a message said or taken back, and who took it back, which
+   * is no change to the work (record 0092). Who deleted what is written in
+   * a batch after the deleting, so it is a record of its own; the deleting
+   * itself, of text, is the change, and its session. Asks no more than the
+   * first item of a change to the text.
+   */
+  #aside(made: Map<number, [number, number]>, ds: DeleteSet): boolean {
+    const chat = this.doc.share.get('chat');
+    if (!chat) return false;
+    const users = this.doc.share.get('users');
+    const within = (client: number, from: number, to: number): boolean => {
+      const structs = this.doc.store.clients.get(client);
+      if (!structs || from >= to) return true;
+      for (
+        let i = Y.findIndexSS(structs, Math.min(from, Y.getState(this.doc.store, client) - 1));
+        i < structs.length;
+        i++
+      ) {
+        const s = structs[i];
+        if (s.id.clock >= to) break;
+        if (!(s instanceof Y.Item)) continue;
+        let type = s.parent as AnyType;
+        while (type._item) type = type._item.parent as AnyType;
+        if (type !== chat && type !== users) return false;
+      }
+      return true;
+    };
+    for (const [client, [from, to]] of made) if (!within(client, from, to)) return false;
+    for (const [client, list] of ds.clients)
+      for (const d of list) if (!within(client, d.clock, d.clock + d.len)) return false;
+    return true;
   }
 
   /** The signs of text among the items a copy made between two clocks. */
