@@ -60,7 +60,6 @@ project-untitled = Bez naslova
 project-drop-on-map = Ispustite na mapu da se premjesti onamo · držite Ctrl za kopiranje
 project-open-beside = Otvori pokraj
 project-open-beside-hint = Dvije mape usporedo, za premještanje elemenata između njih
-project-side-by-side-short = Usporedo
 # The count is of those found in the map.
 project-found-hint = { $count } za proći i pretvoriti u citate
 project-copied-to = Kopirano u „{ $name }”

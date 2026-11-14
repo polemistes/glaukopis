@@ -26,7 +26,8 @@
   import ReferenceHost from '$lib/library/ReferenceHost.svelte';
   import MenuHost from '$lib/ui/MenuHost.svelte';
   import Toaster from '$lib/ui/Toaster.svelte';
-  import Rail from '$lib/shell/Rail.svelte';
+  import TopRow from '$lib/shell/TopRow.svelte';
+  import LibrarySwitch from '$lib/files/LibrarySwitch.svelte';
   import ProjectsPane from '$lib/home/ProjectsPane.svelte';
   import StartView from '$lib/home/StartView.svelte';
   import LibraryView from '$lib/library/LibraryView.svelte';
@@ -304,13 +305,20 @@
 />
 
 {#if ready}
+  <!-- The places of the window stand in the row at its top, at both ends (ADR 0096): in the
+       project's top row and the head of the list of projects, and over the other views. -->
   <div class="app">
-    <Rail />
     <main>
-      {#if route.view === 'library'}
-        <LibraryView />
-      {:else if route.view === 'files'}
-        <FilesView />
+      {#if route.view === 'library' || route.view === 'files'}
+        <!-- The switch of the library stays in the row while a file of it is read. -->
+        <TopRow><LibrarySwitch current={route.view === 'files' ? 'files' : 'references'} /></TopRow>
+        <div class="under-row">
+          {#if route.view === 'library'}
+            <LibraryView />
+          {:else}
+            <FilesView />
+          {/if}
+        </div>
       {:else if route.view === 'project' || route.view === 'file'}
         <!-- The pane of projects stands outside the view of a project, which is made anew for each. -->
         <div class="in-project">
@@ -334,11 +342,15 @@
             <ProjectsPane />
           {/if}
           <div class="project-view">
+            <TopRow start={!listPane.shown} />
             <StartView />
           </div>
         </div>
       {:else if route.view === 'search'}
-        <SearchView />
+        <TopRow />
+        <div class="under-row">
+          <SearchView />
+        </div>
       {/if}
     </main>
   </div>
@@ -365,6 +377,13 @@
     display: flex;
     flex-direction: column;
     background: var(--paper);
+  }
+  /* The view under the row, as high as is left of the window. */
+  .under-row {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
   }
   .in-project {
     flex: 1;

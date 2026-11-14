@@ -1,10 +1,8 @@
-# The frame of the application: the rail at the left.
+# The frame of the application: the places in the row at the top of the window.
 
 shell-projects = Projekt
 shell-library = Bibliotek
 shell-settings = Inställningar
-# What the rail is called to those who do not see it.
-shell-main = Huvudnavigering
 
 # Closing the window: what is said while saving is waited for, and when it fails.
 closing-still-saving = Sparar fortfarande innan fönstret stängs. Stäng det igen för att stänga utan att vänta.

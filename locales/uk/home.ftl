@@ -1,6 +1,5 @@
 # The projects: the list of them, and what is done with them.
 
-home-title = Проєкти
 home-join = Приєднатися до спільного проєкту
 home-from-document = Проєкт із документа…
 home-new = Новий проєкт

@@ -88,7 +88,6 @@
   --space-7: 48px;
 
   --control-h: 30px;
-  --rail-w: 52px;
   --bar-h: 46px;
 
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
@@ -390,6 +389,41 @@ kbd {
   margin-left: 8px;
   opacity: 0.6;
   font-size: var(--text-xs);
+}
+
+/* The places of the row at the top of the window (lib/shell/RowStart.svelte
+   and RowEnd.svelte), here because the two groups share them: a square that
+   is lit while one is at its place. */
+:is([data-row-start], [data-row-end]) .place {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-m);
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition:
+    background var(--fast) var(--ease),
+    color var(--fast) var(--ease);
+}
+:is([data-row-start], [data-row-end]) .place:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+:is([data-row-start], [data-row-end]) .place:hover:not(:disabled) {
+  background: var(--paper-hover);
+  color: var(--ink);
+  text-decoration: none;
+}
+:is([data-row-start], [data-row-end]) .place.current {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
 }
 
 /* While something is dragged (see lib/ui/drag.svelte.ts) */

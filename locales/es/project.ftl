@@ -58,7 +58,6 @@ project-untitled = Sin título
 project-drop-on-map = Suelte sobre un mapa para moverlo allí · mantenga Ctrl para copiar
 project-open-beside = Abrir al lado
 project-open-beside-hint = Dos mapas en paralelo, para mover elementos entre ellos
-project-side-by-side-short = En paralelo
 # The count is of those found in the map.
 project-found-hint = { $count ->
     [one] { $count } por repasar y convertir en cita

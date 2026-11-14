@@ -60,7 +60,6 @@ project-untitled = Bez tytułu
 project-drop-on-map = Upuść na mapę, by tam przenieść · przytrzymaj Ctrl, by skopiować
 project-open-beside = Otwórz obok
 project-open-beside-hint = Dwie mapy obok siebie, by przenosić elementy między nimi
-project-side-by-side-short = Obok siebie
 # The count is of those found in the map.
 project-found-hint = { $count ->
     [one] { $count } do przejrzenia i zrobienia z niego cytowania

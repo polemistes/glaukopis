@@ -88,7 +88,6 @@ project-document-into = ここに文書を取り込む…
 project-drop-on-map = マップにドロップして移動 · Ctrlキーを押したままでコピー
 project-open-beside = 隣に開く
 project-open-beside-hint = 二つのマップを並べて、要素をあいだで移動する
-project-side-by-side-short = 分割
 # 数は、表示中の要素とその下で見つかったもの。
 project-found-hint = 確認して引用にするもの{ $count }件
 project-copied-to = 「{ $name }」にコピーしました

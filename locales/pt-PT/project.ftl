@@ -58,7 +58,6 @@ project-untitled = Sem título
 project-drop-on-map = Largue sobre um mapa para mover para lá · com Ctrl premido, copia
 project-open-beside = Abrir ao lado
 project-open-beside-hint = Dois mapas lado a lado, para mover elementos entre eles
-project-side-by-side-short = Lado a lado
 # The count is of those found in the map.
 project-found-hint = { $count } por percorrer, e tornar citações
 project-copied-to = Copiado para «{ $name }»

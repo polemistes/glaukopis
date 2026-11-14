@@ -1,6 +1,5 @@
 # The projects: the list of them, and what is done with them.
 
-home-title = Projekty
 home-join = Pripojiť sa k zdieľanému projektu
 home-from-document = Projekt z dokumentu…
 home-new = Nový projekt

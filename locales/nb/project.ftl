@@ -77,7 +77,6 @@ project-document-into = Et dokument inn i det …
 project-drop-on-map = Slipp på et kart for å flytte dit · hold Ctrl for å kopiere
 project-open-beside = Åpne ved siden av
 project-open-beside-hint = To kart side om side, for å flytte elementer mellom dem
-project-side-by-side-short = Del
 project-found-hint = { $count } å gå gjennom og gjøre om til kildehenvisninger
 project-copied-to = Kopiert til «{ $name }»
 project-moved-to = Flyttet til «{ $name }»

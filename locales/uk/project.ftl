@@ -60,7 +60,6 @@ project-untitled = Без назви
 project-drop-on-map = Киньте на мапу, щоб перемістити туди · тримайте Ctrl, щоб скопіювати
 project-open-beside = Відкрити поруч
 project-open-beside-hint = Дві мапи поруч, щоб переносити елементи між ними
-project-side-by-side-short = Поруч
 # The count is of those found in the map.
 project-found-hint = Переглянути й зробити цитуваннями: { $count }
 project-copied-to = Скопійовано до «{ $name }»

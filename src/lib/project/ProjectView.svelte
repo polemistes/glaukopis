@@ -80,13 +80,14 @@
   import { jumpFor } from '$lib/search/everything.svelte';
   import { takeCitations } from '$lib/library/citing.svelte';
   import { router } from '$lib/state/router.svelte';
-  import { toggleProjectsPane } from '$lib/home/list.svelte';
+  import { listPane, toggleProjectsPane } from '$lib/home/list.svelte';
+  import RowEnd from '$lib/shell/RowEnd.svelte';
+  import RowStart from '$lib/shell/RowStart.svelte';
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import { keysFor, shortcuts } from '$lib/shell/keys.svelte';
   import { settings } from '$lib/state/settings.svelte';
   import Divider from '$lib/ui/Divider.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
-  import { tooltip } from '$lib/ui/tooltip';
   import { t } from '$lib/i18n';
   import { comparing } from './copies.svelte';
   import { clamp, documentOf, sameBeside, sideWidth, type Beside } from './layout';
@@ -104,6 +105,7 @@
   import { closesHere } from './elsewhere';
   import PicturePanel from './PicturePanel.svelte';
   import ReferencePanel from './ReferencePanel.svelte';
+  import SideBySideButton from './SideBySideButton.svelte';
   import SideTabs from './SideTabs.svelte';
   import SideView from './SideView.svelte';
   import FileSide from '$lib/viewer/FileSide.svelte';
@@ -698,13 +700,19 @@
     if (id) sides.beside(active.project, id);
   }
 
-  let sideBySideButton = $state<HTMLButtonElement>();
+  /** The top row, in which the button of Split view stands where the sides have it. */
+  let topEl = $state<HTMLDivElement>();
   /** Whether the chooser of another project to show beside is open. */
   let choosingBeside = $state(false);
 
-  /** The menu of Split view: what the other side shows, switching the sides, and one side again. */
-  function sideBySideMenu() {
-    if (!sideBySideButton || !sides.active) return;
+  /**
+   * The menu of Split view: what the other side shows, switching the sides,
+   * and one side again. It opens at the button pressed, or, by its key, at
+   * the button wherever it stands: in the cell of one side, or on the join of two.
+   */
+  function sideBySideMenu(button?: HTMLElement) {
+    const at = button ?? topEl?.querySelector<HTMLElement>('[data-side-by-side]');
+    if (!at || !sides.active) return;
     const items: MenuItem[] = [
       {
         label: t('project-beside-this'),
@@ -739,7 +747,7 @@
         },
         { label: t('project-one-at-a-time'), icon: X, action: oneAtATime },
       );
-    openMenu(sideBySideButton, items, { align: 'start' });
+    openMenu(at, items, { align: 'start' });
   }
 
   /** Shows a project in a side, at its top or at an element of it, as it is chosen in the tree of all projects of the side's path. */
@@ -833,6 +841,11 @@
   const between = $derived(
     paneWidths.length > 1 ? Math.max(0, panesWidth - paneWidths[0] - paneWidths[1]) : 0,
   );
+  /** The width of the start of the row, where it stands in the top row: while the list of projects is hidden. */
+  let startWidth = $state(0);
+  const startTaken = $derived(listPane.shown ? 0 : startWidth);
+  /** The cell shown leftmost, which gives the start of the row its width, so that the line between the cells stays over that between the sides. */
+  const leftmost = $derived(sides.sides.length > 1 && sides.mirrored ? 1 : 0);
 
   // The sides are measured as they change width. It depends on the elements
   // of the sides and on how many there are.
@@ -1006,7 +1019,7 @@
       'side-history': () => documentPane.show('history'),
       'side-changes': () => documentPane.toggleReview(),
       'side-panel': () => panes.toggleDocument(),
-      'side-by-side': sideBySideMenu,
+      'side-by-side': () => sideBySideMenu(),
       // On a file side, the tab shown closes first, and the side with its last (ADR 0072).
       'close-side': {
         run: () => {
@@ -1044,29 +1057,23 @@
 <svelte:window {onblur} {onkeydown} />
 
 <div class="project">
-  <!-- the top row: over each side a cell with its path and its ×, as wide as the side, and on the join of two the button that switches them; Split view at the right end. The list's button is on the rail. -->
-  <div class="top" data-top>
+  <!-- the top row: the start of the row while the list of projects is hidden; over each side a cell with its path and its ×, as wide as the side, with Split view before the × of one side or on the join of two; the end of the row at the right end (ADR 0096). -->
+  <div class="top" data-top bind:this={topEl}>
+    {#if !listPane.shown}
+      <div class="start" bind:offsetWidth={startWidth}><RowStart /></div>
+    {/if}
     <div
       class="cells"
       class:mirrored={sides.mirrored}
       style:gap="{between / 2}px"
-      style:flex-basis="{panesWidth}px"
+      style:flex-basis="{Math.max(0, panesWidth - startTaken)}px"
     >
       {#each sides.sides as spec, i (spec.key)}
         {@const of = openOf(spec)?.project}
         {#if i === 1}
           <!-- On the join of the two cells, over the line between the sides. -->
           <div class="join">
-            <button
-              type="button"
-              class="switch"
-              aria-label={t('project-switch-sides')}
-              data-switch-sides
-              use:tooltip={{ text: t('project-switch-sides'), side: 'bottom' }}
-              onclick={() => sides.switchSides()}
-            >
-              <ArrowLeftRight size={13} />
-            </button>
+            <SideBySideButton join onopen={sideBySideMenu} />
           </div>
         {/if}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -1077,7 +1084,10 @@
           class:before-join={sides.sides.length > 1 && i === (sides.mirrored ? 1 : 0)}
           class:after-join={sides.sides.length > 1 && i === (sides.mirrored ? 0 : 1)}
           data-side={i}
-          style:flex-basis="{paneWidths[i] ?? 0}px"
+          style:flex-basis="{Math.max(
+            0,
+            (paneWidths[i] ?? 0) - (i === leftmost ? startTaken : 0),
+          )}px"
           style:flex-shrink={i === (sides.mirrored ? 0 : sides.sides.length - 1) ? 1 : 0}
           onpointerdowncapture={() => sides.focus(spec.key)}
           onfocusin={() => sides.focus(spec.key)}
@@ -1102,8 +1112,11 @@
               onfile={(hash) => fileIn(spec, hash)}
             />
           {/if}
-          <!-- At the right end of the cell: the path gives way, the × stays. With one side, closing it brings the start screen. -->
+          <!-- At the right end of the cell: the path gives way, the × stays. With one side, closing it brings the start screen; Split view stands before it. -->
           <span class="close">
+            {#if sides.sides.length === 1}
+              <SideBySideButton join={false} onopen={sideBySideMenu} />
+            {/if}
             <IconButton
               label={t('project-close-side')}
               shortcut={keysFor('close-side')}
@@ -1117,27 +1130,7 @@
         </div>
       {/each}
     </div>
-    <div class="split">
-      <!-- Lit while two sides are shown; its menu chooses what the other side shows. -->
-      <button
-        type="button"
-        class="tool"
-        class:on={sides.sides.length > 1}
-        bind:this={sideBySideButton}
-        aria-haspopup="menu"
-        aria-label={t('project-side-by-side')}
-        data-side-by-side
-        use:tooltip={{
-          text: t('project-side-by-side'),
-          shortcut: keysFor('side-by-side'),
-          side: 'bottom',
-        }}
-        onclick={sideBySideMenu}
-      >
-        <Columns2 size={15} />
-        <span>{t('project-side-by-side-short')}</span>
-      </button>
-    </div>
+    <div class="end"><RowEnd /></div>
   </div>
   <!-- /the top row -->
   {#if active && project}
@@ -1433,7 +1426,7 @@
     height: 100%;
     min-height: 0;
   }
-  /* The top row: the paths of the sides, and Split view. */
+  /* The top row: the places of the window at both ends, and between them the paths of the sides. */
   .top {
     display: flex;
     align-items: stretch;
@@ -1451,7 +1444,7 @@
   .panes.mirrored {
     flex-direction: row-reverse;
   }
-  /* Where Split view needs room, the cell at the right gives way, so that the line between the cells stays over that between the sides. */
+  /* Where the end of the row needs room, the cell at the right gives way, so that the line between the cells stays over that between the sides. */
   .cell {
     display: flex;
     align-items: center;
@@ -1477,20 +1470,26 @@
     --ink: var(--ink-3);
     --ink-2: var(--ink-3);
   }
-  .split {
+  .start {
+    display: flex;
+    align-items: center;
+    flex: none;
+  }
+  .end {
     display: flex;
     align-items: center;
     justify-content: flex-end;
     flex: 1 0 auto;
-    padding: 0 10px 0 8px;
   }
   .close {
     display: flex;
+    align-items: center;
+    gap: 2px;
     flex: none;
     margin-left: auto;
     padding-left: 4px;
   }
-  /* Where two sides are shown, the cells leave room on the join for the button that switches them. */
+  /* Where two sides are shown, the cells leave room on the join for the button of Split view. */
   .cell.before-join {
     padding-right: 16px;
   }
@@ -1502,52 +1501,6 @@
     flex: 0 0 0;
     width: 0;
     z-index: 2;
-  }
-  .switch {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    padding: 0;
-    transform: translate(-50%, -50%);
-    border: 1px solid var(--line-strong);
-    border-radius: 50%;
-    background: var(--paper-raised);
-    color: var(--ink-3);
-    cursor: pointer;
-    box-shadow: var(--shadow-1);
-  }
-  .switch:hover {
-    color: var(--ink);
-    border-color: var(--accent);
-  }
-  .tool {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    flex: none;
-    height: 28px;
-    padding: 0 9px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-s);
-    background: var(--paper-sunken);
-    color: var(--ink-2);
-    font: inherit;
-    font-size: var(--text-sm);
-    cursor: pointer;
-  }
-  .tool:hover {
-    background: var(--paper-hover);
-    color: var(--ink);
-  }
-  .tool.on {
-    background: var(--accent-soft);
-    border-color: color-mix(in srgb, var(--accent) 35%, transparent);
-    color: var(--accent-strong);
   }
   .work {
     flex: 1;

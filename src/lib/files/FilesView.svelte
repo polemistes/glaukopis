@@ -51,7 +51,6 @@
   import FileList from './FileList.svelte';
   import FilePane from './FilePane.svelte';
   import FolderTree from './FolderTree.svelte';
-  import LibrarySwitch from './LibrarySwitch.svelte';
   import ReferenceChooser from './ReferenceChooser.svelte';
   import UnassignedBar from './UnassignedBar.svelte';
   import GoThroughDialog from './GoThroughDialog.svelte';
@@ -576,7 +575,6 @@
       <FileReader hash={reading} onback={stopReading} />
     {:else}
       <header>
-        <LibrarySwitch current="files" />
         <div class="search">
           <Search size={15} />
           <input

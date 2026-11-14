@@ -88,7 +88,6 @@ project-document-into = Ein Dokument hinein…
 project-drop-on-map = Auf eine Karte fallen lassen, um dorthin zu verschieben · Strg halten, um zu kopieren
 project-open-beside = Daneben öffnen
 project-open-beside-hint = Zwei Karten nebeneinander, um Elemente zwischen ihnen zu verschieben
-project-side-by-side-short = Teilen
 # The count is of those found in the element in view, and under it.
 project-found-hint = { $count } durchzugehen und zu Zitationen zu machen
 project-copied-to = Nach „{ $name }“ kopiert

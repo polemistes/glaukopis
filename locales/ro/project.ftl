@@ -58,7 +58,6 @@ project-untitled = Fără titlu
 project-drop-on-map = Trageți pe o hartă ca să mutați acolo · țineți Ctrl ca să copiați
 project-open-beside = Deschide alături
 project-open-beside-hint = Două hărți alăturate, ca să mutați elemente între ele
-project-side-by-side-short = Alăturate
 # The count is of those found in the map.
 project-found-hint = { $count ->
     [one] Una de parcurs, din care să se facă o citare

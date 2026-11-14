@@ -90,7 +90,6 @@ project-document-into = Importer un document dedans…
 project-drop-on-map = Déposez sur une carte pour y déplacer · maintenez Ctrl pour copier
 project-open-beside = Ouvrir à côté
 project-open-beside-hint = Deux cartes côte à côte, pour déplacer des éléments de l’une à l’autre
-project-side-by-side-short = Scinder
 # The count is of those found in the element in view, and under it.
 project-found-hint = { $count } à passer en revue, pour en faire des citations
 project-copied-to = Copié dans « { $name } »

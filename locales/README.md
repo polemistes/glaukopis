@@ -8,7 +8,7 @@ See ADR 0020 for why it is done so.
 
 ```
 locales/en/common.ftl      words used in many places: Cancel, Close, …
-locales/en/shell.ftl       the rail
+locales/en/shell.ftl       the places in the row at the top of the window
 locales/en/library.ftl     the library, and so on for each part
 locales/en/core*.ftl       what the core (Rust) says: errors, warnings, remarks
 locales/en/document.ftl    what documents print: Notes, Abstract, Figure, …

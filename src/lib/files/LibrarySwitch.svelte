@@ -1,5 +1,5 @@
 <script lang="ts">
-  /** At the head of the library: its references, or its files, which stand in its place. */
+  /** In the row over the library: its references, or its files, which stand in its place. */
   import FileStack from '@lucide/svelte/icons/file-stack';
   import LibraryBig from '@lucide/svelte/icons/library-big';
   import { t } from '$lib/i18n';

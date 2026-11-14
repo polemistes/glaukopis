@@ -60,7 +60,6 @@ project-untitled = Brez naslova
 project-drop-on-map = Spustite na miselni vzorec, da premaknete tja · držite Ctrl za kopiranje
 project-open-beside = Odpri ob strani
 project-open-beside-hint = Dva miselna vzorca vzporedno, da premikate elemente med njima
-project-side-by-side-short = Vzporedno
 # The count is of those found in the map.
 project-found-hint = { $count ->
     [one] { $count } za pregled, da iz nje nastane navedba

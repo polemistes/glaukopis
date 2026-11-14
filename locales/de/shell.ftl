@@ -1,10 +1,8 @@
-# The frame of the application: the rail at the left.
+# The frame of the application: the places in the row at the top of the window.
 
 shell-projects = Projekte
 shell-library = Bibliothek
 shell-settings = Einstellungen
-# What the rail is called to those who do not see it.
-shell-main = Hauptleiste
 
 # Closing the window: what is said while saving is waited for, and when it fails.
 closing-still-saving = Vor dem Schließen des Fensters wird noch gespeichert. Schließen Sie es erneut, um ohne Warten zu schließen.

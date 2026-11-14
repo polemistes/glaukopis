@@ -56,7 +56,6 @@ project-untitled = Zonder titel
 project-drop-on-map = Laat vallen op een mindmap om ernaartoe te verplaatsen · houd Ctrl ingedrukt om te kopiëren
 project-open-beside = Ernaast openen
 project-open-beside-hint = Twee mindmaps naast elkaar, om elementen ertussen te verplaatsen
-project-side-by-side-short = Naast elkaar
 # The count is of those found in the map.
 project-found-hint = { $count } om door te nemen en verwijzingen van te maken
 project-copied-to = Gekopieerd naar ‘{ $name }’
