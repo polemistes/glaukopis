@@ -1453,3 +1453,36 @@ What this settles:
 - It is kept on this computer with the project's view, and not in the
   project: nobody a project is shared with sees what was not sent.
   Record 0094.
+
+## 2026-11-14 — the lists of the document pane, and the row over the window
+
+> We need to rethink some of the way the Library page works in contrast to the Library and Image tabs in the document pane. A user got very confused because he was told to import a pdf file in the Library. He went to the Library tab instead of the Library page, and was only able to import references. One solution is to rename the library tab, but there is more going on that needs to be looked at. On the library page, images, pdfs and other files are one type of thing, while there is a library tab and an image tab on the document pane. It is not concistent. The user wants to be able to add files in the pane (it is, after all, where he intuitively went to do just that). I am not sure it is the best design to have that function two places. It will make the handeling of references and files even more messy than it is. Unless we rethink the whole thing, perhaps. At least, the distinction between "This map" and "This project" does not exist anymore, does it? And Library is a bad name for the list of all references, since that is the name of the page containing both references and files. So "All References" perhaps, or just "All". "References" is on the tab, so it needs not be stated. I would like to know your views on suggestions to this before doing anything. I also have another suggetsion. What if we move the project, library, keys, search and settings icons to the top pane instead of having a side pane for them. Horizontal space is precious for this program. Perhps only the projects and list of projects icons are on the left side, with the others on the right side, in place of the split button. I do not think the split button is placed in an intuitive place now. What if it was a button all the way to the right in the tool bar of the project, instead of the title bar, when the view is not split, and in the middle of the views when it is split. It could replace the switch sides icon (which then would be in the toolbar,  between the two vies, instead of in the title bar. What do you thin about this?
+
+The views were given, with four things to decide, and the owner answered:
+
+> 1. The whole project. 2. The same adding. No files tab. 3. Yes. 4. One button was what I meant, yes. If the button will be in the title bar when the view is split, it should be there also when it is not split. But let it just be the button, beside the close window button. Please write a plan and delegate the work between less expensive models when it does not compromise the quality.
+
+What this settles:
+
+- **Only the page is called Library.** The lists of the document pane have
+  two choices where they had three: the references the project cites, or
+  **all**; the images the project uses, or **all**. *This map* is gone: the
+  first choice is always of the whole project.
+- **The pane lists what the document has, the page what one has.** There is
+  no tab of files in the pane. The references and the images are the two
+  things that go into a text.
+- **Adding is the same act wherever it stands.** The references of the pane
+  are added to as those of the page are: a new reference, from a `.bib`
+  file, from PDFs, from Zotero, pasted; and a file dropped on either list
+  goes where its kind belongs.
+- **The rail is gone.** Its places stand in the row at the top of the
+  window: the list's button and Projects at the left, Library, Search, Keys
+  and Settings at the right, where Split view stood. The width is the
+  text's.
+- **Split view is one button in that row, beside the × of the side**, a
+  button and no word; with two sides it stands on the line between them,
+  where the button that switched them stood. Switching the sides is in its
+  menu, as it was.
+
+Plan: `docs/plans/the-lists-of-the-document-pane-and-the-row-over-the-window.md`.
+Records 0095 and 0096.
