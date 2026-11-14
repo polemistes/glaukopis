@@ -1,6 +1,6 @@
 <script lang="ts">
   import { save } from '@tauri-apps/plugin-dialog';
-  import { onMount, untrack } from 'svelte';
+  import { onMount, tick, untrack } from 'svelte';
   import { keysFor, shortcuts } from '$lib/shell/keys.svelte';
   import ArrowDownUp from '@lucide/svelte/icons/arrow-down-up';
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
@@ -34,6 +34,7 @@
   import { t } from '$lib/i18n';
   import { dropTarget } from '$lib/ui/drag.svelte';
   import DocumentHost from '$lib/documents/DocumentHost.svelte';
+  import FileReader from '$lib/files/FileReader.svelte';
   import { files as filesState } from '$lib/files/store.svelte';
   import { library, search, sortEntries, type SortKey } from '$lib/state/library.svelte';
   import { router } from '$lib/state/router.svelte';
@@ -92,6 +93,15 @@
     ),
   );
   const single = $derived(selection.length === 1 ? selection[0] : null);
+
+  /** A file of the reference selected, read in the place of the list (ADR 0097). */
+  let reading = $state<string | null>(null);
+  // Another reference, or another collection, ends the reading. It depends on those alone.
+  $effect(() => {
+    void single;
+    void collectionId;
+    untrack(() => (reading = null));
+  });
 
   onMount(() => {
     if (library.loaded) void library.checkForChanges();
@@ -404,119 +414,135 @@
   />
 
   <section class="middle" aria-label={t('library-references')}>
-    <header>
-      <div class="search">
-        <Search size={15} />
-        <input
-          bind:this={searchField}
-          bind:value={libraryUi.query}
-          type="search"
-          placeholder={collection
-            ? t('library-search-in', { name: collection.name })
-            : t('library-search')}
-          aria-label={t('common-search')}
-          spellcheck="false"
-          onkeydown={(e) => {
-            if (e.key === 'Escape' && libraryUi.query) {
-              libraryUi.query = '';
-              e.stopPropagation();
-            }
-          }}
-        />
-        {#if libraryUi.query}
+    {#if reading}
+      <FileReader
+        hash={reading}
+        backLabel={t('library-back-to-references')}
+        onback={() => {
+          const was = single;
+          reading = null;
+          void tick().then(() => {
+            if (was) list?.scrollTo(was);
+            document.querySelector<HTMLElement>('.library .middle [role="listbox"]')?.focus();
+          });
+        }}
+      />
+    {:else}
+      <header>
+        <div class="search">
+          <Search size={15} />
+          <input
+            bind:this={searchField}
+            bind:value={libraryUi.query}
+            type="search"
+            placeholder={collection
+              ? t('library-search-in', { name: collection.name })
+              : t('library-search')}
+            aria-label={t('common-search')}
+            spellcheck="false"
+            onkeydown={(e) => {
+              if (e.key === 'Escape' && libraryUi.query) {
+                libraryUi.query = '';
+                e.stopPropagation();
+              }
+            }}
+          />
+          {#if libraryUi.query}
+            <button
+              type="button"
+              class="clear"
+              aria-label={t('library-search-clear')}
+              onclick={() => (libraryUi.query = '')}
+            >
+              <X size={13} />
+            </button>
+          {/if}
+        </div>
+        <span class="filter" bind:this={filterButton}>
+          <IconButton
+            label={active ? t('library-filters-on', { count: active }) : t('library-filters')}
+            active={active > 0 || filtering}
+            aria-expanded={filtering}
+            onclick={() => (filtering = !filtering)}
+          >
+            <ListFilter size={15} />
+          </IconButton>
+          {#if active}<span class="badge" aria-hidden="true">{active}</span>{/if}
+        </span>
+        <IconButton label={t('library-sort')} onclick={sortMenu}
+          ><ArrowDownUp size={15} /></IconButton
+        >
+        <div class="split">
+          <Button variant="primary" onclick={add}>
+            {#snippet icon()}<Plus size={15} />{/snippet}
+            {t('library-new-reference')}
+          </Button>
           <button
             type="button"
-            class="clear"
-            aria-label={t('library-search-clear')}
-            onclick={() => (libraryUi.query = '')}
+            class="split-more"
+            aria-label={t('library-import-export')}
+            onclick={addMenu}
           >
-            <X size={13} />
+            <ChevronDown size={14} />
           </button>
-        {/if}
-      </div>
-      <span class="filter" bind:this={filterButton}>
-        <IconButton
-          label={active ? t('library-filters-on', { count: active }) : t('library-filters')}
-          active={active > 0 || filtering}
-          aria-expanded={filtering}
-          onclick={() => (filtering = !filtering)}
-        >
-          <ListFilter size={15} />
-        </IconButton>
-        {#if active}<span class="badge" aria-hidden="true">{active}</span>{/if}
-      </span>
-      <IconButton label={t('library-sort')} onclick={sortMenu}><ArrowDownUp size={15} /></IconButton
-      >
-      <div class="split">
-        <Button variant="primary" onclick={add}>
-          {#snippet icon()}<Plus size={15} />{/snippet}
-          {t('library-new-reference')}
-        </Button>
-        <button
-          type="button"
-          class="split-more"
-          aria-label={t('library-import-export')}
-          onclick={addMenu}
-        >
-          <ChevronDown size={14} />
-        </button>
-      </div>
-    </header>
+        </div>
+      </header>
 
-    <div class="body">
-      {#if !library.loaded}
-        <div class="centre"><Spinner size={22} /></div>
-      {:else if !library.entries.length}
-        <EmptyState icon={LibraryBig} title={t('library-empty')} text={t('library-empty.text')}>
-          <Button variant="primary" onclick={add}>{t('library-new-reference')}</Button>
-          <Button onclick={() => importFile(collectionId)}>{t('library-import-bibtex')}</Button>
-        </EmptyState>
-      {:else if !scoped.length}
-        <EmptyState
-          icon={FolderPlus}
-          title={t('library-collection-empty')}
-          text={t('library-collection-empty.text')}
-        >
-          <Button variant="primary" onclick={add}>{t('library-new-reference')}</Button>
-        </EmptyState>
-      {:else if !shown.length}
-        <EmptyState
-          icon={active ? ListFilter : SearchX}
-          title={t('library-nothing-found')}
-          text={active ? t('library-nothing-passes') : t('library-nothing-found.text')}
-        >
-          {#if libraryUi.query}
-            <Button onclick={() => (libraryUi.query = '')}>{t('library-search-clear')}</Button>
-          {/if}
-          {#if active}
-            <Button onclick={() => (libraryUi.filters = { ...noFilters })}
-              >{t('library-filter-clear')}</Button
-            >
-          {/if}
-        </EmptyState>
-      {:else}
-        <ReferenceList
-          bind:this={list}
-          entries={shown}
-          scroll={libraryUi.scroll}
-          bind:selection
-          oncontext={context}
-          ondelete={remove}
-          label={collection?.name ?? t('library-all-references')}
-        />
-      {/if}
-    </div>
-
-    {#if library.loaded && library.entries.length}
-      <footer>
-        {#if selection.length > 1}
-          {t('library-selected-of', { selected: selection.length, count: shown.length })}
-        {:else if libraryUi.query || collection || active}
-          {t('library-count', { count: shown.length })}
+      <div class="body">
+        {#if !library.loaded}
+          <div class="centre"><Spinner size={22} /></div>
+        {:else if !library.entries.length}
+          <EmptyState icon={LibraryBig} title={t('library-empty')} text={t('library-empty.text')}>
+            <Button variant="primary" onclick={add}>{t('library-new-reference')}</Button>
+            <Button onclick={() => importFile(collectionId)}>{t('library-import-bibtex')}</Button>
+          </EmptyState>
+        {:else if !scoped.length}
+          <EmptyState
+            icon={FolderPlus}
+            title={t('library-collection-empty')}
+            text={t('library-collection-empty.text')}
+          >
+            <Button variant="primary" onclick={add}>{t('library-new-reference')}</Button>
+          </EmptyState>
+        {:else if !shown.length}
+          <EmptyState
+            icon={active ? ListFilter : SearchX}
+            title={t('library-nothing-found')}
+            text={active ? t('library-nothing-passes') : t('library-nothing-found.text')}
+          >
+            {#if libraryUi.query}
+              <Button onclick={() => (libraryUi.query = '')}>{t('library-search-clear')}</Button>
+            {/if}
+            {#if active}
+              <Button onclick={() => (libraryUi.filters = { ...noFilters })}
+                >{t('library-filter-clear')}</Button
+              >
+            {/if}
+          </EmptyState>
         {:else}
-          {t('library-count', { count: library.entries.length })}
+          <ReferenceList
+            bind:this={list}
+            entries={shown}
+            scroll={libraryUi.scroll}
+            bind:selection
+            oncontext={context}
+            ondelete={remove}
+            label={collection?.name ?? t('library-all-references')}
+          />
         {/if}
-      </footer>
+      </div>
+
+      {#if library.loaded && library.entries.length}
+        <footer>
+          {#if selection.length > 1}
+            {t('library-selected-of', { selected: selection.length, count: shown.length })}
+          {:else if libraryUi.query || collection || active}
+            {t('library-count', { count: shown.length })}
+          {:else}
+            {t('library-count', { count: library.entries.length })}
+          {/if}
+        </footer>
+      {/if}
     {/if}
   </section>
 
@@ -529,6 +555,7 @@
     {#if single}
       <ReferencePane
         id={single}
+        onshow={(hash) => (reading = hash)}
         ondelete={(id) => {
           const entry = library.get(id);
           if (entry) remove([entry]);

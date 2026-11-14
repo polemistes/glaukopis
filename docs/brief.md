@@ -1490,3 +1490,20 @@ Records 0095 and 0096.
 Built the same day, nothing of it in Rust. The building was delegated as asked: the views, the plan and its choices were the main thread's (Fable); the lists of the pane were built by Sonnet and the row over the window by Opus, each in a working copy of its own with the interface's checks; they were merged, read, and tried in the running application in the main thread, thirty-two scripts, which passed as the builders had written them but for one check that was wrong in a script.
 
 Chosen in the building, and not asked: the word *Projects* and the × leave the head of the list, where the list's button now stands; the switch *References | Files* stands in the row over the library; what is added in the pane is shown under *All*, selected; the Split button is not lit with two sides. The line over the tabs of the pane still says *Map* before the name of the element in view: it was not part of this.
+
+## 2026-11-14 — the row reordered, and a file of a reference shown
+
+> The icons on the title bare should be placed like this: Left side: Projects, Library, List of Projects. Right side: Search, Keyboard, Settings. When I press the file name of an added file to a reference on the library page, I get a menu with all the projects. What is that for? I suspect we do not want it. Would it be possible to have a show button for pdfs and images added to references where it is listed in the info view of the reference?
+
+What this settles:
+
+- **The row**: the house, the library and the list's button at the left; the
+  search, the keys and the settings at the right.
+- **The menu of projects** in the pane of a reference added the file to the
+  tabs of the project chosen. It leaves that pane; it stays in the files of
+  the library, and the tabs are added to from their plus in the project.
+- **Show**: a PDF or an image of a reference is read in the library, in the
+  place of the list of references, the reference beside it, by an eye beside
+  the file or a press on its name; Back to the references, or Escape, returns.
+
+Record 0097.

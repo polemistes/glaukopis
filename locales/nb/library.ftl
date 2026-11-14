@@ -514,4 +514,5 @@ library-resize-detail = Dra for å gjøre ruten til høyre bredere eller smalere
 library-import-bibtex = Importer Bib(La)TeX …
 
 # Filene til en referanse i ruten (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
-library-pane-add-to-tabs = Legg til i et prosjekts faner …
+library-pane-show = Vis
+library-back-to-references = Tilbake til referansene

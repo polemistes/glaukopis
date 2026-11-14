@@ -40,19 +40,19 @@ afterEach(() => {
 });
 
 describe('the row at the top of the window', () => {
-  it('has the six places of the window in their order: the list and the house at its start, the rest at its end', () => {
+  it('has the six places of the window in their order: the house, the library and the list at its start, the rest at its end', () => {
     router.replace({ view: 'library' });
     const { target, places } = setUp();
     expect(places().map((p) => p.place)).toEqual([
-      'list',
       'projects',
       'library',
+      'list',
       'search',
       'keys',
       'settings',
     ]);
     expect(target.querySelector('[data-row-start] [data-projects-button]')).not.toBeNull();
-    expect(target.querySelectorAll('[data-row-end] .place')).toHaveLength(4);
+    expect(target.querySelectorAll('[data-row-end] .place')).toHaveLength(3);
   });
 
   it('shows the list button disabled where there is no list, and lights the place one is at', () => {
@@ -68,7 +68,7 @@ describe('the row at the top of the window', () => {
     const { places } = setUp();
     let shown = places();
     expect(shown.find((p) => p.place === 'list')?.disabled).toBe(false);
-    expect(shown.filter((p) => p.lit).map((p) => p.place)).toEqual(['list', 'projects']);
+    expect(shown.filter((p) => p.lit).map((p) => p.place)).toEqual(['projects', 'list']);
     listPane.shown = false;
     flushSync();
     shown = places();
@@ -79,6 +79,6 @@ describe('the row at the top of the window', () => {
     router.replace({ view: 'home' });
     const { target, places } = setUp({ start: false });
     expect(target.querySelector('[data-row-start]')).toBeNull();
-    expect(places().map((p) => p.place)).toEqual(['library', 'search', 'keys', 'settings']);
+    expect(places().map((p) => p.place)).toEqual(['search', 'keys', 'settings']);
   });
 });

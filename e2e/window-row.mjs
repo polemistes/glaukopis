@@ -33,7 +33,7 @@ const places = (app) =>
          in: el.closest('[data-projects-pane]') ? 'list' : el.closest('.project > .top') ? 'project' : el.closest('[data-top-row]') ? 'row' : '?',
        }));`,
   );
-const ORDER = 'list projects library search keys settings';
+const ORDER = 'projects library list search keys settings';
 const order = (shown) => shown.map((p) => p.place).join(' ');
 const lit = (shown) => shown.filter((p) => p.lit).map((p) => p.place).join(' ');
 const at = (shown, place) => shown.find((p) => p.place === place);
@@ -63,10 +63,10 @@ try {
   check('in one line at the top of the window', await inOneLine(app));
   check(
     'on the start screen with the list shown, the start of the row is in the list\'s head, the end in the row over the start screen',
-    at(shown, 'list')?.in === 'list' && at(shown, 'projects')?.in === 'list' && ['library', 'search', 'keys', 'settings'].every((p) => at(shown, p)?.in === 'row'),
+    ['projects', 'library', 'list'].every((p) => at(shown, p)?.in === 'list') && ['search', 'keys', 'settings'].every((p) => at(shown, p)?.in === 'row'),
     JSON.stringify(shown.map((p) => `${p.place}:${p.in}`)),
   );
-  check('the list\'s button and the house are lit', lit(shown) === 'list projects', lit(shown));
+  check('the house and the list\'s button are lit', lit(shown) === 'projects list', lit(shown));
   check(
     'the list\'s head has no word Projects and no ×, but its + and ⋯',
     await app.exec(`const h = document.querySelector('[data-projects-pane] header');
@@ -98,10 +98,10 @@ try {
   shown = await places(app);
   check(
     'in a project with the list shown, the start of the row is in the list\'s head, the end at the right of the project\'s top row',
-    order(shown) === ORDER && at(shown, 'list').in === 'list' && at(shown, 'projects').in === 'list' && ['library', 'search', 'keys', 'settings'].every((p) => at(shown, p).in === 'project'),
+    order(shown) === ORDER && ['projects', 'library', 'list'].every((p) => at(shown, p).in === 'list') && ['search', 'keys', 'settings'].every((p) => at(shown, p).in === 'project'),
     JSON.stringify(shown.map((p) => `${p.place}:${p.in}`)),
   );
-  check('the list\'s button and the house are lit', lit(shown) === 'list projects', lit(shown));
+  check('the house and the list\'s button are lit', lit(shown) === 'projects list', lit(shown));
   check('in one line at the top of the window', await inOneLine(app));
   check(
     'the list\'s head and the project\'s top row are as high, their lines meeting',

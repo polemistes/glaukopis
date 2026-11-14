@@ -1,6 +1,7 @@
 <script lang="ts">
   /**
-   * A file read in the files view (ADR 0073): a PDF page by page, or an
+   * A file read in the files view (ADR 0073), or in the library from the
+   * files of a reference (ADR 0097): a PDF page by page, or an
    * image, large, with the viewer of the window (its bar, its pages, its
    * zoom, the text over the pages to be selected and copied), in the place of
    * the list, the pane of the file staying beside it so that a reference is
@@ -34,9 +35,12 @@
     /** The hash of the file. */
     hash: string;
     onback: () => void;
+    /** Where back goes, in words: the files, unless it is said. */
+    backLabel?: string;
   }
 
-  let { hash, onback }: Props = $props();
+  let { hash, onback, backLabel }: Props = $props();
+  const back = $derived(backLabel ?? t('viewer-back-to-files'));
 
   /** The reader's own name with what is known of the files shown: it is no side. */
   const key = `reader-${newId()}`;
@@ -124,7 +128,7 @@
   <header>
     <Button variant="ghost" size="sm" onclick={onback} data-reader-back>
       {#snippet icon()}<ArrowLeft size={14} />{/snippet}
-      {t('viewer-back-to-files')}
+      {back}
     </Button>
     <span class="name truncate" title={name}>{name}</span>
   </header>
@@ -144,11 +148,11 @@
   {/if}
   {#if viewed?.gone}
     <EmptyState icon={FileX} title={t('viewer-not-found')}>
-      <Button onclick={onback}>{t('viewer-back-to-files')}</Button>
+      <Button onclick={onback}>{back}</Button>
     </EmptyState>
   {:else if facts?.locked}
     <EmptyState icon={Lock} title={t('viewer-locked')}>
-      <Button onclick={onback}>{t('viewer-back-to-files')}</Button>
+      <Button onclick={onback}>{back}</Button>
     </EmptyState>
   {:else if viewed?.failure}
     <EmptyState
@@ -157,7 +161,7 @@
       text={describeError(viewed.failure)}
     >
       <Button onclick={openElsewhere}>{t('files-open-elsewhere')}</Button>
-      <Button onclick={onback}>{t('viewer-back-to-files')}</Button>
+      <Button onclick={onback}>{back}</Button>
     </EmptyState>
   {:else if !facts}
     <div class="centre"><Spinner size={20} /> <span>{t('viewer-loading')}</span></div>

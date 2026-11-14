@@ -892,16 +892,29 @@ try {
   await app.waitGone('dialog', 3000);
   await until('the pane to have it', async () => (await paneFiles()) === had + 1, 5000).catch(() => {});
   check('the reference has the chapter now', (await paneFiles()) === had + 1, `${had} → ${await paneFiles()}`);
-  // A PDF of the reference goes to the tabs of a project chosen from a menu (ADR 0074); here there is none.
-  const openTitle = await app.exec(`return document.querySelector('.pane .file button.open')?.title ?? null`);
-  check('a PDF of the reference is added to a project\'s tabs', openTitle === 'Add to a project\'s tabs…', openTitle);
+  // A PDF of the reference is shown in the library, in the place of the list, the reference beside it (ADR 0097).
+  check('a PDF of the reference has a Show button', await app.exists('.pane .file [data-show-file="chapter 3.pdf"]'));
+  await app.click('.pane .file [data-show-file="chapter 3.pdf"]');
+  await app.waitFor('.library .middle [data-reader]', 5000);
+  await app.waitFor('.library .middle [data-reader] [data-viewer-pages], .library .middle [data-reader] .centre', 5000).catch(() => {});
+  check(
+    'it is read in the library, the reference still beside it',
+    (await app.text('.library .middle [data-reader-back]')).trim() === 'Back to the references' &&
+      (await app.exists('.pane [data-add-files]')) &&
+      !(await app.exists('.library .middle [role="listbox"]')),
+    await app.text('.library .middle [data-reader-back]'),
+  );
+  await app.screenshot('files-5-reference-file-shown');
+  await app.click('.library .middle [data-reader-back]');
+  await app.waitFor('.library .middle [role="listbox"]', 3000);
+  check('back goes to the references', !(await app.exists('.library .middle [data-reader]')));
+  // The name of the file shows it too, and Escape goes back.
   await app.click('.pane .file button.open');
-  await app.waitFor('[role="menu"]', 3000);
-  await sleep(250);
-  const noProject = await app.exec(`return Array.from(document.querySelectorAll('[role="menu"] [role="menuitem"]')).map((e) => e.textContent.trim() + (e.getAttribute('aria-disabled') === 'true' ? ' (disabled)' : ''))`);
-  check('from a menu of projects, which says where there is none', JSON.stringify(noProject) === JSON.stringify(['No project to add to (disabled)']), noProject.join(' | '));
-  await app.press('Escape');
-  await app.waitGone('[role="menu"]', 3000).catch(() => {});
+  await app.waitFor('.library .middle [data-reader]', 5000);
+  check('the name of the file shows it too, with no menu', !(await app.exists('[role="menu"]')));
+  await app.exec(`document.querySelector('.library .middle [data-reader]').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))`);
+  await app.waitGone('.library .middle [data-reader]', 3000).catch(() => {});
+  check('Escape goes back to the references', !(await app.exists('.library .middle [data-reader]')));
 
   // All taken from it at once, with one question that names the count.
   const all = had + 1;

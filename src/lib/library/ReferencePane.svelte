@@ -5,6 +5,7 @@
   import Code from '@lucide/svelte/icons/code';
   import Copy from '@lucide/svelte/icons/copy';
   import Ellipsis from '@lucide/svelte/icons/ellipsis';
+  import Eye from '@lucide/svelte/icons/eye';
   import FolderOpen from '@lucide/svelte/icons/folder-open';
   import Network from '@lucide/svelte/icons/network';
   import Map from '@lucide/svelte/icons/map';
@@ -49,7 +50,6 @@
   import PdfMapDialog from '$lib/ocr/PdfMapDialog.svelte';
   import PictureTextDialog from '$lib/ocr/PictureTextDialog.svelte';
   import FileChooser from '$lib/files/FileChooser.svelte';
-  import { addToTabsMenu } from '$lib/viewer/show';
   import ExternalLink from '@lucide/svelte/icons/external-link';
   import { filesAssign } from '$lib/api/files';
   import { KIND_ICONS, bringInFile, files as filesState } from '$lib/files/store.svelte';
@@ -69,6 +69,8 @@
     at?: string | null;
     /** Asks for an element made in that project to be entered. */
     onenter?: (id: string) => void;
+    /** Shows a PDF or an image of the reference where the pane stands. */
+    onshow?: (hash: string) => void;
   }
 
   let {
@@ -80,6 +82,7 @@
     projectId = null,
     at = null,
     onenter,
+    onshow,
   }: Props = $props();
 
   /** The projects that cite the work; those that did not say are read once. */
@@ -455,14 +458,10 @@
               type="button"
               class="open"
               disabled={!file.exists}
-              title={file.kind === 'pdf' || file.kind === 'picture'
-                ? t('library-pane-add-to-tabs')
-                : undefined}
-              onclick={(e) => {
-                // A PDF or an image goes to the tabs of a project chosen from a menu (ADR 0074);
-                // another kind opens in its own program.
-                if (file.kind === 'pdf' || file.kind === 'picture')
-                  void addToTabsMenu(e.currentTarget as HTMLElement, [file.hash]);
+              onclick={() => {
+                // A PDF or an image is shown in the library (ADR 0097); another kind opens in its
+                // own program.
+                if (onshow && (file.kind === 'pdf' || file.kind === 'picture')) onshow(file.hash);
                 else
                   attachmentOpen(file.path).catch((e) =>
                     notifyError(t('library-file-open-failed'), e),
@@ -475,6 +474,16 @@
                 >{file.exists ? fileSize(file.size) : t('library-pane-missing')}</span
               >
             </button>
+            {#if onshow && file.exists && (file.kind === 'pdf' || file.kind === 'picture')}
+              <IconButton
+                label={t('library-pane-show')}
+                size="sm"
+                data-show-file={file.name}
+                onclick={() => onshow(file.hash)}
+              >
+                <Eye size={13} />
+              </IconButton>
+            {/if}
             <IconButton
               label={t('library-pane-reveal')}
               size="sm"

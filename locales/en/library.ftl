@@ -542,4 +542,5 @@ library-resize-detail = Drag to make the pane at the right wider or narrower
 library-import-bibtex = Import Bib(La)TeX…
 
 # The files of a reference in its pane (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
-library-pane-add-to-tabs = Add to a project's tabs…
+library-pane-show = Show
+library-back-to-references = Back to the references

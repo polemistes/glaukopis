@@ -61,8 +61,8 @@ Everything is saved as you work. There is nothing to press.
 them, and under the project you are in its whole tree, folded but for the
 way down to the element in view, which is marked. A click on a project opens
 it, and a click on an element enters it (see *One tree, entered anywhere*).
-**Ctrl+Shift+L**, or the button at the left end of the row at the top of the
-window, hides it and shows it again; its edge can be dragged to make it
+**Ctrl+Shift+L**, or the button after the house and the library at the left
+of the row at the top of the window, hides it and shows it again; its edge can be dragged to make it
 wider. It stays as you leave it.
 
 ### Many projects
@@ -1409,6 +1409,12 @@ in the pane of a reference takes it from that reference, and **Remove all N
 from this reference** takes them all, with one question. **Unassigned
 only**, under the filter button, shows the files that belong to none.
 
+**A file of a reference, shown.** A PDF or an image in the pane of a
+reference on the Library page is shown by **Show**, the eye beside it, or a
+press on its name: it is read in the place of the list of references, with
+the reference beside it. **Back to the references**, or Escape, returns to
+the list. A file of another kind opens in its own program.
+
 **Going through the files.** Where files of the folder in view belong to no
 reference, a line at the head of the list says how many, with **Go through
 them…**; it stays until they are gone through, or until you hide it, and
@@ -1505,10 +1511,9 @@ may stand in two tabs, each at its own place.
 A file is added to the project's tabs from:
 
 - **Add to a project's tabs…** in the pane of a PDF or an image among the
-  files of the library, or in its menu, and a press on a PDF or an image in
-  the pane of a reference: these ask which project, and leave you in the
-  library, and **Show** in the message after opens that project with the
-  file (see *The files of the library*);
+  files of the library, or in its menu: this asks which project, and
+  leaves you in the library, and **Show** in the message after opens that
+  project with the file (see *The files of the library*);
 - **Show the file** in the editor of a citation, beside each work that has a
   file, and in the menu of a work among the references of a document;
 - the plus at the end of the row of tabs, which asks for the files by their
@@ -1878,9 +1883,9 @@ keeps them, one level up.
 
 The top row holds, over each side, its path and at its right end the
 **×** that closes the side, with the button of **Split view** just before
-it. At the left end of the row stand the button of the list of projects and
-the house, in the head of the list while it is shown; at the right end the
-library, the search, the keys and the settings. Under the path, each side
+it. At the left end of the row stand the house, the library and the button of
+the list of projects, in the head of the list while it is shown; at the
+right end the search, the keys and the settings. Under the path, each side
 has its bar (see *The text*).
 
 This is what makes it safe to write. A tree that is valuable as it is, the
@@ -3605,7 +3610,7 @@ what is to be done by its name, and does it.
 | **Ctrl+D** | Diagram or text |
 | **Alt+Shift+Up** | Up to the element over this one, in the diagram and in the text; from the top of a project, to its row in the list of projects |
 | **Ctrl+Shift+O** | The outline beside the text |
-| **Ctrl+Shift+L** | The list of projects at the left: hide it, or show it again; also the button at the left end of the row at the top |
+| **Ctrl+Shift+L** | The list of projects at the left: hide it, or show it again; also the button after the house and the library in the row at the top |
 | **Ctrl+P** | Print: the document of the side you are in, or the file shown in it |
 | **Ctrl+E** | Export: the document of the side you are in, as a file |
 | **Ctrl+T** | Typesetting: the pages of the side you are in, beside the sides |
