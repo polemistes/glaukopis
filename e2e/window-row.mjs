@@ -125,10 +125,11 @@ try {
     order(shown) === ORDER && shown.every((p) => p.in === 'project') && lit(shown) === 'projects',
     JSON.stringify(shown),
   );
-  const leftEdge = await app.exec(`const s = document.querySelector('.project > .top [data-row-start]').getBoundingClientRect(), p = document.querySelector('.pane').getBoundingClientRect(), c = document.querySelector('.top .cell').getBoundingClientRect();
-    return { start: Math.round(s.left), pane: Math.round(p.left), cellLeft: Math.round(c.left - s.right), cellRight: Math.round(Math.abs(c.right - p.right)) };`);
+  const leftEdge = await app.exec(`const s = document.querySelector('.project > .top [data-row-start]').getBoundingClientRect(), p = document.querySelector('.pane').getBoundingClientRect(), c = document.querySelector('.top .cell').getBoundingClientRect(), e = document.querySelector('.project > .top [data-row-end]').getBoundingClientRect();
+    // With no pane at the right, the end of the row stands over the side's end, and the cell gives way to it.
+    return { start: Math.round(s.left), pane: Math.round(p.left), cellLeft: Math.round(c.left - s.right), cellRight: Math.round(Math.abs(c.right - Math.min(p.right, e.left))) };`);
   check(
-    'the start of the row at the left edge of the window, the cell after it and ending over the side\'s end',
+    'the start of the row at the left edge of the window, the cell after it and ending where the end of the row begins',
     leftEdge.start < 2 && leftEdge.pane < 2 && Math.abs(leftEdge.cellLeft) < 3 && leftEdge.cellRight < 4,
     JSON.stringify(leftEdge),
   );

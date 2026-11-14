@@ -106,11 +106,12 @@ language would use, not a transliteration of the English.
 
 ## Pictures, figures, tables and formulas
 
-- **picture** — an image file, kept in the store, with what is said of it.
-- **the store** — where all pictures live, shared by every project, like
-  the library; the third view of the rail is *Pictures*.
-- **figure** — a picture as it stands in a text, with a caption, a width
-  and a number of its own. A picture and a figure are two things.
+- **image** — a picture kept as a file of the library, like every other
+  file of it, in the folder *Images* unless it is moved. It is shown among
+  the files of the library and, in a project, under *Images* in the
+  document pane. The names of the messages say `picture` for it.
+- **figure** — an image as it stands in a text, with a caption, a width
+  and a number of its own. An image and a figure are two things.
 - **caption** — the text under a figure or over a table.
 - **pointer** — a reference from one place in a text to another: to a
   figure, a table, an element, a page.
