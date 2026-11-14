@@ -16,3 +16,5 @@ core-packages-fetch-status = { $url } kunne ikke hentes: tjeneren svarte { $stat
 # $server is the address of the server, or the folder.
 core-packages-index = Det { $server } tilbyr, kan ikke leses: { $message }
 core-packages-checksum = «{ $file }» er ikke det tjeneren sa den skulle være. Ingenting ble importert; prøv igjen senere.
+# What the site says is the newest version of Glaukopis (record 0099). $server is its address.
+core-packages-version = Det { $server } sier om den nyeste versjonen, kan ikke leses: { $message }

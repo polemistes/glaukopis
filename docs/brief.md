@@ -1532,3 +1532,27 @@ rather than in a page beside it; the field searches all projects when
 nothing is chosen, where the page searched the last; the choices are in a
 menu of the field's glass, and the options of the search over what was
 found.
+
+## 2026-11-14 — told of a new version
+
+Asked how easy it would be for Windows and Mac to tell that a new version
+is released, and to download and install it, the owner was told it would
+take a key of its own to sign updates with, files of the update made on
+GitHub, and trials on a real Windows and a real Mac. The owner then wrote:
+
+> Let us instead just notify about the release (only win and mac) with a link to the download page: www.robertemilberge.no/glaukopis.
+
+What this settles:
+
+- **Told, not installed.** On Windows and macOS, Glaukopis asks the site at
+  its start whether a newer version is out, and says so once, with
+  **Download page**, which opens www.robertemilberge.no/glaukopis.
+- **Linux is not asked**: its packages are updated by the system.
+- **The site names the version** in a file, `version.json`, uploaded with
+  the installers of each release.
+
+Record 0099.
+
+Chosen in the building, and not asked: on unless turned off under
+*Settings › About*; asked at every start; the message stays until it is
+closed, and the version stays named under About.

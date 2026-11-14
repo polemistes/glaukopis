@@ -15,6 +15,7 @@
   import { asItCloses } from '$lib/state/closing';
   import { followChanges } from '$lib/state/changes.svelte';
   import { madeAfterTheFirst, placeWindow, windowPlace } from '$lib/state/window-place';
+  import { askIfToldHere } from '$lib/state/new-version.svelte';
   import { keysUi, shortcuts } from '$lib/shell/keys.svelte';
   import KeySheet from '$lib/shell/KeySheet.svelte';
   import Palette from '$lib/shell/Palette.svelte';
@@ -55,6 +56,8 @@
       await tick();
       await showWindow();
     }
+    // Whether a newer version is out, asked once, by the first window (record 0099).
+    if (!madeAfterTheFirst()) void askIfToldHere();
   });
 
   /** What is known before anything is shown: the settings, the languages, and the place to begin at. */

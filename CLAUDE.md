@@ -212,8 +212,9 @@ CI (`tests.yml`) runs `pnpm build`, `cargo fmt --check`, clippy with
 ## Releases, only when asked
 
 The version in `Cargo.toml`, `Cargo.lock`, `package.json`,
-`src-tauri/tauri.conf.json`, `packaging/arch/PKGBUILD` and
-`packaging/arch/release/PKGBUILD`; a `v*` tag starts the Installers workflow;
+`src-tauri/tauri.conf.json`, `packaging/arch/PKGBUILD`,
+`packaging/arch/release/PKGBUILD` and `packaging/web/packages/version.json`
+(which tells the installations of Windows and macOS that it is out); a `v*` tag starts the Installers workflow;
 the Arch package is built from `packaging/arch` in a capped unit; the website
 folder `packaging/release-x.y.z/` gets the files, checksums and notes, and the
 owner uploads it. Language packages come from

@@ -26,6 +26,7 @@ pub mod paths;
 pub mod projectfile;
 pub mod projects;
 pub mod readable;
+pub mod releases;
 pub mod settings;
 pub mod sharing;
 mod shelf;

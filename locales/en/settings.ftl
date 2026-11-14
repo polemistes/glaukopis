@@ -94,6 +94,14 @@ settings-error-programs = The programs could not be looked for
 settings-about = About
 settings-licence = Free software under the GNU General Public License, version 3 or later. It comes without warranty.
 settings-data = Where everything is kept
+# Whether Glaukopis asks at its start, on Windows and macOS, whether a newer version is out (record 0099).
+settings-new-versions = Tell me when a new version is out
+settings-new-versions-on = On
+settings-new-versions-off = Off
+# $version is the newer version, such as 0.2.12.
+settings-new-version-out = Glaukopis { $version } is out.
+# The button that opens the web page of the installers.
+settings-download-page = Download page
 
 ## Language
 

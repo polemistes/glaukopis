@@ -129,6 +129,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::system::system_info,
+            commands::system::newer_version,
             commands::system::settings_load,
             commands::system::settings_set,
             commands::system::languages,

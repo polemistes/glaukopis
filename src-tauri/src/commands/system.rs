@@ -40,6 +40,18 @@ pub fn system_info(state: State<'_, AppState>) -> CommandResult<SystemInfo> {
     })
 }
 
+/// The newest version of Glaukopis, where the project's site names one newer
+/// than this (record 0099); `server` is another place to ask, for the tests.
+/// The page asks only on Windows and macOS.
+#[tauri::command]
+pub async fn newer_version(server: Option<String>) -> CommandResult<Option<String>> {
+    blocking(move || {
+        let server = server.as_deref().unwrap_or(glaukopis_core::releases::DEFAULT_SERVER);
+        Ok(glaukopis_core::releases::newer(server, env!("CARGO_PKG_VERSION"))?)
+    })
+    .await
+}
+
 /// The user's full name where the system keeps one, and their login otherwise.
 fn user_name() -> String {
     let login = std::env::var("USER").or_else(|_| std::env::var("USERNAME")).unwrap_or_default();

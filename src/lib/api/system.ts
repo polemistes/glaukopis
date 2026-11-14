@@ -17,6 +17,13 @@ export interface SystemInfo {
 
 export const systemInfo = () => call<SystemInfo>('system_info');
 
+/**
+ * The newest version, where the project's site names one newer than this
+ * (record 0099); `server` is another place to ask, an address or a folder.
+ */
+export const newerVersion = (server?: string) =>
+  call<string | null>('newer_version', { server: server ?? null });
+
 /** The languages of the application, and what the system says: see `i18n`. */
 export interface LanguagesInfo {
   /** What the system says its language is: `nb-NO`. */

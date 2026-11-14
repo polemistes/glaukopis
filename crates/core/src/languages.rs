@@ -527,7 +527,8 @@ pub fn server(configured: Option<&str>) -> String {
     configured.map(str::trim).filter(|s| !s.is_empty()).unwrap_or(DEFAULT_SERVER).to_owned()
 }
 
-fn get(server: &str, file: &str, limit: u64) -> Result<Vec<u8>> {
+/// A file of a server, an address or a folder of this computer, of at most `limit` bytes.
+pub(crate) fn get(server: &str, file: &str, limit: u64) -> Result<Vec<u8>> {
     if !is_remote(server) {
         let path = folder(server).join(file);
         return fs::read(&path).context(|| tr!("io-reading", path = &path));

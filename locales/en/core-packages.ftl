@@ -16,3 +16,5 @@ core-packages-fetch-status = { $url } could not be fetched: the server answered 
 # $server is the address of the server, or the folder.
 core-packages-index = What { $server } offers cannot be read: { $message }
 core-packages-checksum = “{ $file }” is not what the server said it would be. Nothing was imported; try again later.
+# What the site says is the newest version of Glaukopis (record 0099). $server is its address.
+core-packages-version = What { $server } says of the newest version cannot be read: { $message }

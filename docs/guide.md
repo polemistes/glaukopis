@@ -3691,6 +3691,19 @@ Glaukopis the first time by right-clicking it in *Applications* and choosing
 **Open**; if macOS says it is damaged, run `xattr -cr
 /Applications/Glaukopis.app` in the Terminal and try again.
 
+### New versions
+
+On Windows and macOS, Glaukopis asks at its start whether a newer version
+is out. If one is, it says so at the foot of the window, once for each
+version, with **Download page**, which opens the page of the installers,
+www.robertemilberge.no/glaukopis, in your browser; install the new version
+over the one you have. Under *Settings* › *About* the newer version stays
+named, with the same button, and **Tell me when a new version is out**
+turns the asking off. To ask is to fetch one small file from
+robertemilberge.no, where the language packages come from too; nothing
+about you is sent. On Linux, Glaukopis is updated with the system's
+packages, and does not ask.
+
 Pandoc makes the documents: Pandoc 3.1.10 or newer. One that is older is said
 to be so under *Settings*. It is installed with Glaukopis when Glaukopis is
 installed as a package, and where it is found is shown under *Settings*.

@@ -2,7 +2,10 @@
 
 `packages/index.html` is the page that lists the packages,
 with what each file is, and the language packages of spelling and of OCR;
-`packages/SHA256SUMS` holds the checksums of the installers and packages. `packages/releases.html` holds what was new in every version,
+`packages/SHA256SUMS` holds the checksums of the installers and packages;
+`packages/version.json` names the newest version, `{"version": "X.Y.Z"}`,
+which the installations of Windows and macOS ask for at their start, to say
+that a newer one is out (record 0099). `packages/releases.html` holds what was new in every version,
 the latest first; the page shows only what is new in the present one and links
 to it. When a release is made, its list goes at the top of both. Both
 go into the folder `glaukopis/` of robertemilberge.no, beside the installers,
@@ -23,7 +26,7 @@ Intel: `Glaukopis_X.Y.Z_aarch64.dmg` and `Glaukopis_X.Y.Z_x64.dmg`, and the
 server's `…-macos-aarch64.zip` and `…-macos-x86_64.zip`. The first time, the
 page's macOS section gets the two Intel files, and loses its sentence that
 there is no build for Intel Macs. All
-of them, the PKGBUILD, the page and the language packages
+of them, the PKGBUILD, the page, `version.json` with the new version and the language packages
 (`languages/out/*`) are gathered in one folder, `release-X.Y.Z/` (ignored by
 git), and the checksums are made there:
 
@@ -35,6 +38,9 @@ sha256sum Glaukopis_*-setup.exe Glaukopis_*.msi Glaukopis_*.dmg glaukopis-*.pkg.
 
 Change the names and the sizes in the page, copy it, `releases.html` and
 `SHA256SUMS` back here, and upload the whole folder into `glaukopis/` of the site.
+`version.json` goes up with the installers and not before them: an
+installation told of a version whose installers are not there yet would
+find the page without them.
 
 The page stands on its own: one file, no scripts, its own styles, light and
 dark with the system.

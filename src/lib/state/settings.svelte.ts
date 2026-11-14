@@ -89,6 +89,13 @@ export interface MoreSettings {
   headingNumbersDiagram: DiagramNumbers;
   /** How the files of the library are shown. */
   filesView: FilesViewSettings;
+  /**
+   * Whether Glaukopis asks at its start, on Windows and macOS, whether a
+   * newer version is out (record 0099). On, unless turned off.
+   */
+  newVersions: boolean;
+  /** The newer version last told of, so that each is told of once. */
+  versionTold: string;
 }
 
 export type AllSettings = Settings & MoreSettings;
@@ -122,6 +129,8 @@ const more = (kept: Partial<AllSettings> = {}): MoreSettings => ({
   headingNumbersText: shownOr(kept.headingNumbersText, kept),
   headingNumbersDiagram: diagramNumbersOf(kept.headingNumbersDiagram, kept),
   filesView: filesViewOf(kept.filesView),
+  newVersions: typeof kept.newVersions === 'boolean' ? kept.newVersions : true,
+  versionTold: typeof kept.versionTold === 'string' ? kept.versionTold : '',
 });
 
 /**

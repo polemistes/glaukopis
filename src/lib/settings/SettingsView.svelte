@@ -38,6 +38,12 @@
     type Theme,
   } from '$lib/api/system';
   import { settings, type DiagramNumbers } from '$lib/state/settings.svelte';
+  import {
+    askIfToldHere,
+    newVersion,
+    openDownloadPage,
+    toldOn,
+  } from '$lib/state/new-version.svelte';
   import Button from '$lib/ui/Button.svelte';
   import DataFolderDialog from './DataFolderDialog.svelte';
   import Segmented from '$lib/ui/Segmented.svelte';
@@ -643,6 +649,35 @@
           </div>
         </div>
       </div>
+      <!-- Whether a newer version is out (record 0099): asked on Windows and macOS only. -->
+      {#if toldOn(system?.platform) || newVersion.version}
+        {@const out = settings.value.newVersions ? newVersion.version : null}
+        <div class="row top" data-new-versions>
+          <div class="what">
+            <div class="label">{t('settings-new-versions')}</div>
+            {#if out}<div class="hint">{t('settings-new-version-out', { version: out })}</div>{/if}
+          </div>
+          <div class="buttons">
+            {#if out}
+              <Button size="sm" onclick={openDownloadPage} data-download-page>
+                {t('settings-download-page')}
+              </Button>
+            {/if}
+            <Segmented
+              value={settings.value.newVersions ? 'on' : 'off'}
+              label={t('settings-new-versions')}
+              options={[
+                { value: 'on', label: t('settings-new-versions-on') },
+                { value: 'off', label: t('settings-new-versions-off') },
+              ]}
+              onchange={(on: 'on' | 'off') => {
+                settings.set('newVersions', on === 'on');
+                if (on === 'on') void askIfToldHere();
+              }}
+            />
+          </div>
+        </div>
+      {/if}
       <div class="row top">
         <div class="what">
           <div class="label">{t('settings-data')}</div>
