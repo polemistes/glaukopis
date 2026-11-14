@@ -4,8 +4,18 @@ import { formatRoute, parseRoute } from './router.svelte';
 describe('where one is', () => {
   it('names the start screen, and reads the old places of the home as it', () => {
     expect(formatRoute({ view: 'home' })).toBe('#/');
-    // The empty place, the map of all projects and its folders, the page of projects, and what is not known.
-    for (const place of ['', '#/', '#/owl', '#/owl/abc', '#/projects', '#/project', '#/nowhere'])
+    // The empty place, the map of all projects and its folders, the page of projects, the page of
+    // the search through everything (in the list of projects since record 0098), and what is not known.
+    for (const place of [
+      '',
+      '#/',
+      '#/owl',
+      '#/owl/abc',
+      '#/projects',
+      '#/project',
+      '#/search',
+      '#/nowhere',
+    ])
       expect(parseRoute(place)).toEqual({ view: 'home' });
   });
 

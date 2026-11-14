@@ -19,7 +19,6 @@
   import Ellipsis from '@lucide/svelte/icons/ellipsis';
   import Folder from '@lucide/svelte/icons/folder';
   import FolderPlus from '@lucide/svelte/icons/folder-plus';
-  import Search from '@lucide/svelte/icons/search';
   import Star from '@lucide/svelte/icons/star';
   import type { Folder as FolderInfo, ProjectInfo } from '$lib/api/projects';
   import { t } from '$lib/i18n';
@@ -33,12 +32,14 @@
   import IconButton from '$lib/ui/IconButton.svelte';
   import { dropTarget, startDrag, type DragPayload, type DropEvent } from '$lib/ui/drag.svelte';
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
-  import TextField from '$lib/ui/TextField.svelte';
+  import { everything } from '$lib/search/everything.svelte';
+  import FoundList from '$lib/search/FoundList.svelte';
   import { tick, untrack } from 'svelte';
   import { ancestors, FAVOURITES, folderOf, rowKey, rows as makeRows } from './folders';
   import { moveThings, thingsOf, wouldMove } from './changes';
   import { closedTrees } from './closed.svelte';
   import { listUi } from './list.svelte';
+  import ListField from './ListField.svelte';
   import { pressed, type ListRow, type ListSurface } from './list-keys';
   import { indent, outdent, shift as shiftElement } from '$lib/project/elements';
   import type { ProjectActions } from './project-actions.svelte';
@@ -76,6 +77,12 @@
     revealAt?: { project: string; element: string } | { folder: string };
     /** Whether the field that finds a project has the cursor when the list is shown. */
     focusField?: boolean;
+    /**
+     * Whether the field searches what is written in the projects as well,
+     * showing what it found in the place of the tree: the list at the left
+     * (record 0098).
+     */
+    search?: boolean;
   }
 
   let {
@@ -86,6 +93,7 @@
     unavailable = [],
     revealAt,
     focusField = false,
+    search = false,
   }: Props = $props();
 
   /** The projects shown in the sides, by id. */
@@ -95,14 +103,20 @@
   /** The element in view in the side that has the focus. */
   const at = $derived(sides.find((side) => side.id === current)?.at ?? null);
 
+  /** The words that find a project, in a list whose field does not search what is written. */
   let filter = $state('');
   let listEl = $state<HTMLDivElement>();
+
+  /** The words that find a project by its name: those of the field, where it finds a project. */
+  const named = $derived(search ? (listUi.field === 'names' ? everything.words : '') : filter);
+  /** Whether what was found in the projects stands in the place of the tree. */
+  const finding = $derived(search && listUi.field === 'texts' && !!everything.words.trim());
 
   const rows = $derived(
     makeRows(projects.folders, projects.list, {
       collapsed: listUi.collapsed,
       favourites: projects.favourites,
-      filter,
+      filter: named,
     }),
   );
   /** How far each step deeper is drawn in. */
@@ -542,8 +556,13 @@
         event.code === 'Tab');
 
   function onlistkey(event: KeyboardEvent) {
-    // The field that finds a project keeps its keys.
-    if ((event.target as HTMLElement).closest('input, textarea, [contenteditable="true"]')) return;
+    // The field that finds a project keeps its keys, and what it found in the projects has its own.
+    if (
+      (event.target as HTMLElement).closest(
+        'input, textarea, [contenteditable="true"], [data-found-list]',
+      )
+    )
+      return;
     // The changes of folders and projects are undone here, not those of the project beside.
     if (!choose && (event.ctrlKey || event.metaKey) && !event.altKey && event.code === 'KeyZ') {
       event.preventDefault();
@@ -580,14 +599,12 @@
   use:dropTarget={{ accepts: accepts(null), ondrop: (e) => drop(e, null) }}
 >
   <div class="tools">
-    <TextField
-      bind:value={filter}
-      size="sm"
-      placeholder={t('home-search')}
-      aria-label={t('home-search')}
-    >
-      {#snippet leading()}<Search size={14} />{/snippet}
-    </TextField>
+    <ListField
+      {search}
+      bind:filter
+      ondown={() =>
+        listEl?.querySelector<HTMLElement>(finding ? '[data-hit]' : '[data-row]')?.focus()}
+    />
     {#if !choose}
       <IconButton label={t('home-new-folder')} size="sm" onclick={() => actions.newFolder(null)}>
         <FolderPlus size={15} />
@@ -595,251 +612,255 @@
     {/if}
   </div>
 
-  {#each rows as row (rowKey(row))}
-    {#if row.kind === 'favourites'}
-      <!-- The heading of the favourites: folds as a folder does, and nothing is dropped on it or dragged from it. -->
-      <!-- svelte-ignore a11y_click_events_have_key_events -->
-      <div
-        class="row folder favourites"
-        role="treeitem"
-        tabindex={tabOf(favouritesKey)}
-        aria-selected={selected === favouritesKey}
-        aria-expanded={row.open}
-        data-row={favouritesKey}
-        data-row-kind="folder"
-        data-row-holds=""
-        data-row-open={row.open ? '' : undefined}
-        data-depth={0}
-        data-favourites=""
-        style:padding-left="{left}px"
-        onclick={() => {
-          selected = favouritesKey;
-          toggle(FAVOURITES);
-        }}
-      >
-        <span class="twisty" class:open={row.open}>
-          <ChevronRight size={13} />
-        </span>
-        <Star size={15} strokeWidth={1.6} />
-        <span class="name truncate">{t('home-favourites')}</span>
-      </div>
-    {:else if row.kind === 'project' && row.favourite}
-      {@const p = row.project}
-      {@const vk = `v:${p.id}`}
-      <!-- A favourite: opens the project and has its menu; its tree stands under its row in the tree. -->
-      <!-- svelte-ignore a11y_click_events_have_key_events -->
-      <div
-        class="row project"
-        class:unavailable={!!choose && unavailable.includes(p.id)}
-        aria-disabled={choose && unavailable.includes(p.id) ? true : undefined}
-        role="treeitem"
-        tabindex={tabOf(vk)}
-        aria-selected={selected === vk}
-        data-row={vk}
-        data-row-kind="project"
-        data-row-parent={favouritesKey}
-        data-depth={row.depth}
-        data-favourite={p.id}
-        title={p.name}
-        style:padding-left="{left + row.depth * step}px"
-        onclick={() => {
-          selected = vk;
-          open(p);
-        }}
-        oncontextmenu={choose ? undefined : (e) => openContextMenu(e, projectItems(p, false))}
-      >
-        <span class="fold hidden"></span>
-        <ProjectBadge
-          name={p.name}
-          sharing={p.sharing ? { owner: p.sharing.owner } : null}
-          size={14}
-        />
-        <span class="name serif truncate">{p.name}</span>
-        {#if choose && unavailable.includes(p.id)}
-          <span class="when">{t('home-open-now')}</span>
-        {/if}
-        {#if !choose}
-          <button
-            type="button"
-            class="row-menu"
-            aria-label={t('home-more-for', { name: p.name })}
-            onclick={(e) => {
-              e.stopPropagation();
-              openMenu(e.currentTarget, projectItems(p, false), { align: 'end' });
-            }}
-            onpointerdown={(e) => e.stopPropagation()}
-          >
-            <Ellipsis size={15} />
-          </button>
-        {/if}
-      </div>
-    {:else if row.kind === 'folder'}
-      {@const f = row.folder}
-      {@const fk = `f:${f.id}`}
-      <!-- svelte-ignore a11y_click_events_have_key_events -->
-      <div
-        class="row folder"
-        role="treeitem"
-        tabindex={tabOf(fk)}
-        aria-selected={selected === fk}
-        aria-expanded={row.holds ? row.open : undefined}
-        data-row={fk}
-        data-row-kind="folder"
-        data-row-parent={f.parent && projects.folder(f.parent) ? `f:${f.parent}` : undefined}
-        data-row-holds={row.holds ? '' : undefined}
-        data-row-open={row.open ? '' : undefined}
-        data-row-changeable=""
-        data-depth={row.depth}
-        data-folder={f.id}
-        style:padding-left="{left + row.depth * step}px"
-        use:dropTarget={{ accepts: accepts(f.id), ondrop: (e) => drop(e, f.id) }}
-        onclick={() => {
-          selected = fk;
-          toggle(f.id);
-        }}
-        oncontextmenu={choose ? undefined : (e) => openContextMenu(e, folderItems(f))}
-        onpointerdown={choose
-          ? undefined
-          : (e) => startDrag(e, () => ({ kind: 'folder', data: f.id, label: f.name }))}
-      >
-        <span class="twisty" class:open={row.open} class:hidden={!row.holds}>
-          <ChevronRight size={13} />
-        </span>
-        <Folder size={15} strokeWidth={1.6} />
-        <span class="name truncate">{f.name}</span>
-        {#if !choose}
-          <button
-            type="button"
-            class="row-menu"
-            aria-label={t('home-more-for', { name: f.name })}
-            onclick={(e) => {
-              e.stopPropagation();
-              openMenu(e.currentTarget, folderItems(f), { align: 'end' });
-            }}
-            onpointerdown={(e) => e.stopPropagation()}
-          >
-            <Ellipsis size={15} />
-          </button>
-        {/if}
-      </div>
-    {:else}
-      {@const p = row.project}
-      {@const pk = `p:${p.id}`}
-      {@const pf = folderOf(projects.folders, p)}
-      {@const isShown = shownIds.includes(p.id)}
-      {@const live = liveShown.get(p.id)}
-      {@const unfolded = unfoldable(p) && closedUnfolded.has(p.id)}
-      <!-- svelte-ignore a11y_click_events_have_key_events -->
-      <div
-        class="row project"
-        class:current={(p.id === current && !choose) ||
-          (revealed?.project === p.id && revealed.element === PROJECT)}
-        class:shown={isShown && p.id !== current && !choose}
-        class:unavailable={!!choose && unavailable.includes(p.id)}
-        aria-disabled={choose && unavailable.includes(p.id) ? true : undefined}
-        role="treeitem"
-        tabindex={tabOf(pk)}
-        aria-selected={selected === pk}
-        data-row={pk}
-        data-row-kind="project"
-        data-row-parent={pf ? `f:${pf}` : undefined}
-        data-row-holds={unfoldable(p) || live ? '' : undefined}
-        data-row-open={live || closedUnfolded.has(p.id) ? '' : undefined}
-        data-row-changeable={!choose ? '' : undefined}
-        aria-current={p.id === current ? 'page' : undefined}
-        data-depth={row.depth}
-        data-project={p.id}
-        data-current={p.id === current ? '' : undefined}
-        data-shown={isShown ? '' : undefined}
-        title={p.name}
-        style:padding-left="{left + row.depth * step}px"
-        onclick={() => {
-          selected = pk;
-          open(p);
-        }}
-        oncontextmenu={choose ? undefined : (e) => openContextMenu(e, projectItems(p))}
-        onpointerdown={choose
-          ? undefined
-          : (e) => startDrag(e, () => ({ kind: 'project', data: p.id, label: p.name }))}
-      >
-        <button
-          type="button"
-          class="fold"
-          class:open={unfolded}
-          class:hidden={!unfoldable(p)}
-          tabindex="-1"
-          aria-label={unfolded ? t('home-fold') : t('home-unfold')}
-          aria-expanded={unfoldable(p) ? unfolded : undefined}
-          onclick={(e) => {
-            e.stopPropagation();
-            toggleClosed(p);
+  {#if finding}
+    <FoundList onup={() => listEl?.querySelector<HTMLInputElement>('.tools input')?.focus()} />
+  {:else}
+    {#each rows as row (rowKey(row))}
+      {#if row.kind === 'favourites'}
+        <!-- The heading of the favourites: folds as a folder does, and nothing is dropped on it or dragged from it. -->
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <div
+          class="row folder favourites"
+          role="treeitem"
+          tabindex={tabOf(favouritesKey)}
+          aria-selected={selected === favouritesKey}
+          aria-expanded={row.open}
+          data-row={favouritesKey}
+          data-row-kind="folder"
+          data-row-holds=""
+          data-row-open={row.open ? '' : undefined}
+          data-depth={0}
+          data-favourites=""
+          style:padding-left="{left}px"
+          onclick={() => {
+            selected = favouritesKey;
+            toggle(FAVOURITES);
           }}
-          onpointerdown={(e) => e.stopPropagation()}
         >
-          <ChevronRight size={12} />
-        </button>
-        <ProjectBadge
-          name={p.name}
-          sharing={p.sharing ? { owner: p.sharing.owner } : null}
-          size={14}
-        />
-        <span class="name serif truncate">{p.name}</span>
-        {#if live?.document === PROJECT}{@render documentSign()}{/if}
-        {#if choose && unavailable.includes(p.id)}
-          <span class="when">{t('home-open-now')}</span>
-        {/if}
-        {#if !choose}
-          <button
-            type="button"
-            class="row-menu"
-            aria-label={t('home-more-for', { name: p.name })}
-            onclick={(e) => {
-              e.stopPropagation();
-              openMenu(e.currentTarget, projectItems(p), { align: 'end' });
-            }}
-            onpointerdown={(e) => e.stopPropagation()}
-          >
-            <Ellipsis size={15} />
-          </button>
-        {/if}
-      </div>
-      {#if live && (live.tree.children.get(PROJECT)?.length ?? 0) > 0}
-        <div class="tree" data-project-tree={p.id}>
-          {@render branch(
-            live,
-            live.tree.children.get(PROJECT) ?? [],
-            0,
-            left + row.depth * step + 22,
-          )}
+          <span class="twisty" class:open={row.open}>
+            <ChevronRight size={13} />
+          </span>
+          <Star size={15} strokeWidth={1.6} />
+          <span class="name truncate">{t('home-favourites')}</span>
         </div>
-      {:else if unfoldable(p) && closedUnfolded.has(p.id)}
-        {@const reading = closedTrees.get(p.id)}
-        {@const indent = left + row.depth * step + 22}
-        <div class="tree closed" data-closed-tree={p.id}>
-          {#if reading?.state === 'read'}
-            {@const top = reading.tree.tree.children.get(PROJECT) ?? []}
-            {#if top.length}
-              {@render branch(
-                closedShown(p, reading.tree.tree, reading.tree.names),
-                top,
-                0,
-                indent,
-              )}
-            {:else}
-              <p class="say" style:padding-left="{indent + 18}px">{t('home-tree-empty')}</p>
-            {/if}
-          {:else if reading?.state === 'failed'}
-            <p class="say" style:padding-left="{indent + 18}px">{t('home-tree-unreadable')}</p>
-          {:else}
-            <p class="say" style:padding-left="{indent + 18}px"><Spinner size={12} /></p>
+      {:else if row.kind === 'project' && row.favourite}
+        {@const p = row.project}
+        {@const vk = `v:${p.id}`}
+        <!-- A favourite: opens the project and has its menu; its tree stands under its row in the tree. -->
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <div
+          class="row project"
+          class:unavailable={!!choose && unavailable.includes(p.id)}
+          aria-disabled={choose && unavailable.includes(p.id) ? true : undefined}
+          role="treeitem"
+          tabindex={tabOf(vk)}
+          aria-selected={selected === vk}
+          data-row={vk}
+          data-row-kind="project"
+          data-row-parent={favouritesKey}
+          data-depth={row.depth}
+          data-favourite={p.id}
+          title={p.name}
+          style:padding-left="{left + row.depth * step}px"
+          onclick={() => {
+            selected = vk;
+            open(p);
+          }}
+          oncontextmenu={choose ? undefined : (e) => openContextMenu(e, projectItems(p, false))}
+        >
+          <span class="fold hidden"></span>
+          <ProjectBadge
+            name={p.name}
+            sharing={p.sharing ? { owner: p.sharing.owner } : null}
+            size={14}
+          />
+          <span class="name serif truncate">{p.name}</span>
+          {#if choose && unavailable.includes(p.id)}
+            <span class="when">{t('home-open-now')}</span>
+          {/if}
+          {#if !choose}
+            <button
+              type="button"
+              class="row-menu"
+              aria-label={t('home-more-for', { name: p.name })}
+              onclick={(e) => {
+                e.stopPropagation();
+                openMenu(e.currentTarget, projectItems(p, false), { align: 'end' });
+              }}
+              onpointerdown={(e) => e.stopPropagation()}
+            >
+              <Ellipsis size={15} />
+            </button>
           {/if}
         </div>
+      {:else if row.kind === 'folder'}
+        {@const f = row.folder}
+        {@const fk = `f:${f.id}`}
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <div
+          class="row folder"
+          role="treeitem"
+          tabindex={tabOf(fk)}
+          aria-selected={selected === fk}
+          aria-expanded={row.holds ? row.open : undefined}
+          data-row={fk}
+          data-row-kind="folder"
+          data-row-parent={f.parent && projects.folder(f.parent) ? `f:${f.parent}` : undefined}
+          data-row-holds={row.holds ? '' : undefined}
+          data-row-open={row.open ? '' : undefined}
+          data-row-changeable=""
+          data-depth={row.depth}
+          data-folder={f.id}
+          style:padding-left="{left + row.depth * step}px"
+          use:dropTarget={{ accepts: accepts(f.id), ondrop: (e) => drop(e, f.id) }}
+          onclick={() => {
+            selected = fk;
+            toggle(f.id);
+          }}
+          oncontextmenu={choose ? undefined : (e) => openContextMenu(e, folderItems(f))}
+          onpointerdown={choose
+            ? undefined
+            : (e) => startDrag(e, () => ({ kind: 'folder', data: f.id, label: f.name }))}
+        >
+          <span class="twisty" class:open={row.open} class:hidden={!row.holds}>
+            <ChevronRight size={13} />
+          </span>
+          <Folder size={15} strokeWidth={1.6} />
+          <span class="name truncate">{f.name}</span>
+          {#if !choose}
+            <button
+              type="button"
+              class="row-menu"
+              aria-label={t('home-more-for', { name: f.name })}
+              onclick={(e) => {
+                e.stopPropagation();
+                openMenu(e.currentTarget, folderItems(f), { align: 'end' });
+              }}
+              onpointerdown={(e) => e.stopPropagation()}
+            >
+              <Ellipsis size={15} />
+            </button>
+          {/if}
+        </div>
+      {:else}
+        {@const p = row.project}
+        {@const pk = `p:${p.id}`}
+        {@const pf = folderOf(projects.folders, p)}
+        {@const isShown = shownIds.includes(p.id)}
+        {@const live = liveShown.get(p.id)}
+        {@const unfolded = unfoldable(p) && closedUnfolded.has(p.id)}
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <div
+          class="row project"
+          class:current={(p.id === current && !choose) ||
+            (revealed?.project === p.id && revealed.element === PROJECT)}
+          class:shown={isShown && p.id !== current && !choose}
+          class:unavailable={!!choose && unavailable.includes(p.id)}
+          aria-disabled={choose && unavailable.includes(p.id) ? true : undefined}
+          role="treeitem"
+          tabindex={tabOf(pk)}
+          aria-selected={selected === pk}
+          data-row={pk}
+          data-row-kind="project"
+          data-row-parent={pf ? `f:${pf}` : undefined}
+          data-row-holds={unfoldable(p) || live ? '' : undefined}
+          data-row-open={live || closedUnfolded.has(p.id) ? '' : undefined}
+          data-row-changeable={!choose ? '' : undefined}
+          aria-current={p.id === current ? 'page' : undefined}
+          data-depth={row.depth}
+          data-project={p.id}
+          data-current={p.id === current ? '' : undefined}
+          data-shown={isShown ? '' : undefined}
+          title={p.name}
+          style:padding-left="{left + row.depth * step}px"
+          onclick={() => {
+            selected = pk;
+            open(p);
+          }}
+          oncontextmenu={choose ? undefined : (e) => openContextMenu(e, projectItems(p))}
+          onpointerdown={choose
+            ? undefined
+            : (e) => startDrag(e, () => ({ kind: 'project', data: p.id, label: p.name }))}
+        >
+          <button
+            type="button"
+            class="fold"
+            class:open={unfolded}
+            class:hidden={!unfoldable(p)}
+            tabindex="-1"
+            aria-label={unfolded ? t('home-fold') : t('home-unfold')}
+            aria-expanded={unfoldable(p) ? unfolded : undefined}
+            onclick={(e) => {
+              e.stopPropagation();
+              toggleClosed(p);
+            }}
+            onpointerdown={(e) => e.stopPropagation()}
+          >
+            <ChevronRight size={12} />
+          </button>
+          <ProjectBadge
+            name={p.name}
+            sharing={p.sharing ? { owner: p.sharing.owner } : null}
+            size={14}
+          />
+          <span class="name serif truncate">{p.name}</span>
+          {#if live?.document === PROJECT}{@render documentSign()}{/if}
+          {#if choose && unavailable.includes(p.id)}
+            <span class="when">{t('home-open-now')}</span>
+          {/if}
+          {#if !choose}
+            <button
+              type="button"
+              class="row-menu"
+              aria-label={t('home-more-for', { name: p.name })}
+              onclick={(e) => {
+                e.stopPropagation();
+                openMenu(e.currentTarget, projectItems(p), { align: 'end' });
+              }}
+              onpointerdown={(e) => e.stopPropagation()}
+            >
+              <Ellipsis size={15} />
+            </button>
+          {/if}
+        </div>
+        {#if live && (live.tree.children.get(PROJECT)?.length ?? 0) > 0}
+          <div class="tree" data-project-tree={p.id}>
+            {@render branch(
+              live,
+              live.tree.children.get(PROJECT) ?? [],
+              0,
+              left + row.depth * step + 22,
+            )}
+          </div>
+        {:else if unfoldable(p) && closedUnfolded.has(p.id)}
+          {@const reading = closedTrees.get(p.id)}
+          {@const indent = left + row.depth * step + 22}
+          <div class="tree closed" data-closed-tree={p.id}>
+            {#if reading?.state === 'read'}
+              {@const top = reading.tree.tree.children.get(PROJECT) ?? []}
+              {#if top.length}
+                {@render branch(
+                  closedShown(p, reading.tree.tree, reading.tree.names),
+                  top,
+                  0,
+                  indent,
+                )}
+              {:else}
+                <p class="say" style:padding-left="{indent + 18}px">{t('home-tree-empty')}</p>
+              {/if}
+            {:else if reading?.state === 'failed'}
+              <p class="say" style:padding-left="{indent + 18}px">{t('home-tree-unreadable')}</p>
+            {:else}
+              <p class="say" style:padding-left="{indent + 18}px"><Spinner size={12} /></p>
+            {/if}
+          </div>
+        {/if}
       {/if}
-    {/if}
-  {/each}
+    {/each}
 
-  {#if !rows.length}
-    <p class="none">{filter.trim() ? t('home-search-none') : t('home-list-none')}</p>
+    {#if !rows.length}
+      <p class="none">{named.trim() ? t('home-search-none') : t('home-list-none')}</p>
+    {/if}
   {/if}
 </div>
 

@@ -448,7 +448,6 @@ library-pane-editing = Editing…
 library-pane-not-saved = Not saved
 library-pane-unread = The reference could not be read.
 library-pane-save-failed = The changes could not be saved.
-library-pane-note-placeholder = What you make of it. For yourself: it is not part of what is cited.
 library-pane-files = Files
 library-pane-attach = Attach
 library-pane-attach-title = Attach files
@@ -516,8 +515,6 @@ library-notes-write-on-work = Write a note on this work
 library-notes-not-in-library = A reference that is not in your library
 library-notes-this-project = In this project
 library-notes-all-projects = In all projects
-library-notes-project-placeholder = What you make of it, for this work
-library-notes-all-placeholder = What you make of it, wherever you cite it
 library-notes-keep-for-all = Keep it for all projects
 library-notes-write-for-all = Write for all projects
 library-notes-carried = The reference came with the project, and is not in your library. What is written here is with everyone who has the project.
@@ -542,5 +539,4 @@ library-resize-detail = Drag to make the pane at the right wider or narrower
 library-import-bibtex = Import Bib(La)TeX…
 
 # The files of a reference in its pane (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
-library-pane-show = Show
 library-back-to-references = Back to the references

@@ -10,6 +10,9 @@ home-new = New project
 # The button that opens the menu of the page.
 home-page-menu = More
 home-search = Find a project
+# The field of the list searches what is written, in all projects or the last; its glass has a menu of what is searched.
+home-search-what = What is searched
+home-search-last = Search the last project
 home-search-none = No project has that name.
 home-list-none = There are no projects.
 

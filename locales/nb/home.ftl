@@ -8,6 +8,8 @@ home-new = Nytt prosjekt
 
 home-page-menu = Mer
 home-search = Finn et prosjekt
+home-search-what = Hva det søkes i
+home-search-last = Søk i det siste prosjektet
 home-search-none = Ingen prosjekter har det navnet.
 home-list-none = Det er ingen prosjekter.
 

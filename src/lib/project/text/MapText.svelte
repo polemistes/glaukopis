@@ -32,7 +32,7 @@
   import { citationLabel } from '$lib/editor/references.svelte';
   import { numbering, pointerText } from '$lib/figures/numbering.svelte';
   import { pictures, PICTURES_DRAGGED } from '$lib/figures/pictures.svelte';
-  import { takeJump, type Jump } from '$lib/search/everything.svelte';
+  import { jumpAsked, takeJump, type Jump } from '$lib/search/everything.svelte';
   import SearchBar from '$lib/search/SearchBar.svelte';
   import { remembered, TextSearch, type Surface } from '$lib/search/text.svelte';
   import { truncate } from '$lib/library/format';
@@ -864,6 +864,16 @@
     void s?.close(focus);
   }
 
+  /** Whether the search over the text is open: the Find button of the side's bar is lit. */
+  export function searchOpen(): boolean {
+    return searching !== null;
+  }
+
+  /** Closes the search over the text, the cursor going back to the text. */
+  export function endSearch() {
+    closeSearch(true);
+  }
+
   /**
    * Which elements are shown. The rows are made anew whenever a text is
    * changed; this is the same while the same elements are shown.
@@ -887,6 +897,18 @@
       beginEmpty();
       void readFromTop();
     }
+  });
+
+  // And while it is shown already: what is found is chosen in the list of
+  // projects beside it (record 0098). It depends on what is asked and on the
+  // element in view.
+  $effect(() => {
+    void jumpAsked();
+    const shown = at;
+    untrack(() => {
+      const jump = takeJump(shown);
+      if (jump) void tick().then(() => jumpTo(jump));
+    });
   });
 
   /**
@@ -938,6 +960,7 @@
     }
     remembered.query = jump.words;
     Object.assign(remembered.options, jump.options);
+    void searching?.close(false);
     searching = new TextSearch(surface);
     searching.open(false, null);
     searching.beginAt(jump.element, jump.part, jump.passage, jump.start);

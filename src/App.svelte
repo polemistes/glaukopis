@@ -4,7 +4,7 @@
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import { inTauri } from '$lib/api/backend';
   import { languageSet, languagesInfo } from '$lib/api/system';
-  import { listPane, newWindow } from '$lib/home/list.svelte';
+  import { listPane, newWindow, toSearch } from '$lib/home/list.svelte';
   import { noticesTake, onNotices } from '$lib/api/notices';
   import { languageName, languages, load, t } from '$lib/i18n';
   import { notifyError, toasts } from '$lib/ui/toast.svelte';
@@ -35,7 +35,6 @@
   import ProjectView, { viewing } from '$lib/project/ProjectView.svelte';
   import { PROJECT } from '$lib/project/model/types';
   import { panes } from '$lib/project/panes.svelte';
-  import SearchView from '$lib/search/SearchView.svelte';
   import SettingsDialog from '$lib/settings/SettingsDialog.svelte';
   import { settingsUi } from '$lib/settings/settings-ui.svelte';
   // The ways a file is shown in a side, with the hook of the e2e scripts.
@@ -284,7 +283,14 @@
       library: () => go(router.lastLibrary ?? { view: 'library' }),
       files: () => go(router.lastFiles ?? { view: 'files' }),
       settings: () => settingsUi.toggle(),
-      'search-everything': () => go({ view: 'search' }),
+      // To the field of the list of projects, which searches them (record 0098): where the
+      // view has no list, to the projects first.
+      'search-everything': () => {
+        const view = router.route.view;
+        if (view === 'library' || view === 'files') go(router.lastProject ?? { view: 'home' });
+        settingsUi.hide();
+        toSearch();
+      },
       'new-window': () => void newWindow().catch((error) => console.error('No new window', error)),
       palette: () => keysUi.togglePalette(),
       sheet: () => keysUi.toggleSheet(),
@@ -345,11 +351,6 @@
             <TopRow start={!listPane.shown} />
             <StartView />
           </div>
-        </div>
-      {:else if route.view === 'search'}
-        <TopRow />
-        <div class="under-row">
-          <SearchView />
         </div>
       {/if}
     </main>

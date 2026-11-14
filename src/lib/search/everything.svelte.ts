@@ -1,13 +1,14 @@
 /**
- * The search through everything, as its place in the row at the top shows it:
- * the words, the options, whether the project opened last or all projects
- * are searched, and what was found in each. The projects are read and
+ * The search through everything, as the field of the list of projects has it
+ * (record 0098): the words, the options, whether all projects or the one
+ * opened last are searched, and what was found in each. The projects are read and
  * searched by the engine (`engine.ts`), in a thread of its own; a project
  * that has not changed since it was read is not read again.
  *
  * Choosing what was found opens the project at the element that holds it,
  * as text, and the text goes to it: what is to be gone to waits here as a
- * jump, which the text takes when it is shown (`MapText.svelte`).
+ * jump, which the text takes when it is shown, or at once where it is shown
+ * already (`MapText.svelte`).
  */
 
 import type { DocumentFormat } from '$lib/api/documents';
@@ -44,6 +45,13 @@ export interface Jump {
 }
 
 let waiting: Jump | null = null;
+/** How many times a jump was asked for: the text already in view takes one as it is asked. */
+let asked = $state(0);
+
+/** How many times a jump was asked for, read where a jump is to be taken as soon as it is asked. */
+export function jumpAsked(): number {
+  return asked;
+}
 
 /** The jump that waits for the text of an element in view, if one does. It is taken. */
 export function takeJump(at: string): Jump | null {
@@ -98,7 +106,8 @@ export async function labelWordsOf(settings: DocumentSettings): Promise<LabelWor
 
 class Everything {
   words = $state('');
-  scope = $state<Scope>('last');
+  /** All projects, unless the one opened last is chosen (record 0098). */
+  scope = $state<Scope>('all');
   options = $state<SearchOptions>({ ...NO_OPTIONS });
   /** What was found, by project, in the order the projects are searched. */
   found = $state.raw<ProjectFound[]>([]);
@@ -288,6 +297,7 @@ class Everything {
       options: { ...$state.snapshot(this.options), selection: false },
       references: found.where === 'note',
     };
+    asked++;
     router.go({
       view: 'project',
       project: project.project,

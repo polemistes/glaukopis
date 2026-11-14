@@ -42,8 +42,6 @@ search-labels-outside = Și ce stă în afara textelor
 
 ## The search through everything
 
-search-everything = Caută
-search-everything-title = Caută peste tot
 search-everything-field = Caută în proiecte
 search-last-project = Ultimul proiect
 search-all-projects = Toate proiectele

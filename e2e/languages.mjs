@@ -97,7 +97,7 @@ try {
      await window.__TAURI_INTERNALS__.invoke('import_apply', { plan });`,
     bib,
   );
-  await app.waitFor('[data-row-end] a.place', 8000);
+  await app.waitFor('[data-row-end] .place', 8000);
   await sleep(300);
   const places = () =>
     app.exec(
@@ -105,7 +105,7 @@ try {
     );
   check(
     'the interface is in the language of the system',
-    (await places()).join(' ') === 'Prosjekter Bibliotek Prosjektlisten Søk Taster Innstillinger',
+    (await places()).join(' ') === 'Prosjekter Bibliotek Prosjektlisten Taster Innstillinger',
     (await places()).join(' '),
   );
   check('and the page says so', (await app.exec(`return document.documentElement.lang`)) === 'nb');
@@ -447,10 +447,21 @@ try {
   await app.keys(['Control', '3']);
   await sleep(500);
   await english('the pictures');
+  // The search through everything is the field of the list of projects (record 0098): its menu, and what it finds.
   await app.keys(['Control', 'Shift', 'F']);
   await sleep(500);
+  await app.click('[data-projects-pane] [data-list-field-menu]').catch(() => {});
+  await sleep(300);
+  await english('the menu of what the field of the list searches');
+  await app.press('Escape');
+  await sleep(200);
+  await app.exec(`document.querySelector('[data-projects-pane] input[data-list-field]')?.focus()`);
+  await app.keys('e');
+  await sleep(2000);
   await english('the search through everything');
   await app.screenshot('languages-5b-search');
+  await app.press('Escape');
+  await sleep(200);
   await app.keys(['Control', ',']);
   await app.waitForText('h2', 'Språk');
   await sleep(300);
@@ -484,7 +495,7 @@ try {
   await sleep(300);
   check(
     'English is chosen, and the interface changes at once',
-    (await places()).join(' ') === 'Projects Library The list of projects Search Keys Settings',
+    (await places()).join(' ') === 'Projects Library The list of projects Keys Settings',
     (await places()).join(' '),
   );
   check('the page says so', (await app.exec(`return document.documentElement.lang`)) === 'en');

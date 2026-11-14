@@ -42,8 +42,6 @@ search-labels-outside = Aj to, čo stojí mimo textov
 
 ## The search through everything
 
-search-everything = Hľadať
-search-everything-title = Hľadať vo všetkom
 search-everything-field = Hľadať v projektoch
 search-last-project = Posledný projekt
 search-all-projects = Všetky projekty

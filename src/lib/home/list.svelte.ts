@@ -29,6 +29,16 @@ class ListUi {
    */
   focusRow = $state<string | null>(null);
 
+  /**
+   * What the field at the top of the list does (record 0098): it searches
+   * what is written in the projects, or it finds a project by its name.
+   * The words are those of the search through everything in both.
+   */
+  field = $state<'texts' | 'names'>('texts');
+
+  /** Whether the field is to take the cursor once the list is drawn: asked for by `toSearch`. */
+  fieldAsked = $state(false);
+
   /** Opens the folders given, so that what is in them is seen. */
   reveal(ids: (string | null)[]) {
     if (!ids.some((id) => id && this.collapsed.has(id))) return;
@@ -89,6 +99,16 @@ export function newWindow(open: string | null = null): Promise<void> {
 /** Opens the pane of projects, or closes it, in this window. */
 export function toggleProjectsPane() {
   listPane.shown = !listPane.shown;
+}
+
+/**
+ * To the search through the projects (record 0098): the list is shown, its
+ * field searches what is written, and it takes the cursor.
+ */
+export function toSearch() {
+  listPane.shown = true;
+  listUi.field = 'texts';
+  listUi.fieldAsked = true;
 }
 
 /**

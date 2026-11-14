@@ -1507,3 +1507,28 @@ What this settles:
   the file or a press on its name; Back to the references, or Escape, returns.
 
 Record 0097.
+
+## 2026-11-14 — the search in the list, Find in the bar, and fewer words
+
+> There does not seem to be a way to reach the search within a project except by ctrl+f. There should an icon for it, I guess in the toolbar. The search for all projects should not be in the title bar. Instead the find a project search field should be reworked so it can do both. Searching for a project is something few people will need, so searching within the projects should be the default. "Close this side" sounds strange when there is only one side. "Close View" is better, I think. We do not need the eye icon in the reference info view for pdfs and images, when it opens by clicking the file name. In the Your Notes, lose the "What you make of it..." help text. It is patronizing.
+
+What this settles:
+
+- **Find in the bar of a side**: a magnifying glass beside undo and redo
+  opens the search over the text, as Ctrl+F does, and closes it.
+- **The search through everything is the field of the list of projects.**
+  It searches what is written, in all projects; what it finds stands in the
+  list in the place of the tree, and the project opens beside it. The menu
+  of its glass chooses *The last project*, or *Find a project* by its name.
+  The page of the search, and its glass in the row at the top, are gone.
+- **Close view** is the × of a side.
+- **No eye** beside a file of a reference: its name shows it.
+- **No hints** in the fields of what one thinks of a work.
+
+Record 0098.
+
+Chosen in the building, and not asked: what is found stands in the list
+rather than in a page beside it; the field searches all projects when
+nothing is chosen, where the page searched the last; the choices are in a
+menu of the field's glass, and the options of the search over what was
+found.

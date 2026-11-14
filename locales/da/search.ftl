@@ -41,8 +41,6 @@ search-labels-outside = Også det, der står uden for teksterne
 
 ## The search through everything
 
-search-everything = Søg
-search-everything-title = Søg gennem alt
 search-everything-field = Søg i projekterne
 search-last-project = Det seneste projekt
 search-all-projects = Alle projekter

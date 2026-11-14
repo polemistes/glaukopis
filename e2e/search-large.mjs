@@ -206,23 +206,23 @@ try {
 
   // ---- through everything ----
   await app.keys(['Control', 'Shift', 'f']);
-  await app.waitFor('.search-view input', 5000);
+  await app.waitFor('[data-projects-pane] input[data-list-field]', 5000);
   await sleep(2500);
   await took();
   began = Date.now();
   await app.keys('wrath');
-  await until('what is found through everything', () => app.exec(`return document.querySelectorAll('.search-view .hit').length > 0`), 60000);
+  await until('what is found through everything', () => app.exec(`return document.querySelectorAll('[data-found-list] .hit').length > 0`), 60000);
   const through = Date.now() - began;
   await sleep(500);
   t = await took();
-  const told = await app.exec(`return document.querySelector('.search-view .said').textContent.replace(/\\s+/g, ' ').trim()`);
+  const told = await app.exec(`return document.querySelector('[data-found-list] .said').textContent.replace(/\\s+/g, ' ').trim()`);
   console.log(`      through everything: ${told}, ${through} ms after the first letter, the project read from disk; the window stood still for ${t.still} ms at the most`);
   check('the search through everything reads the project without the window standing still', t.still < 400, `${t.still} ms`);
-  await app.exec(`const i = document.querySelector('.search-view input'); i.focus(); i.select();`);
+  await app.exec(`const i = document.querySelector('[data-projects-pane] input[data-list-field]'); i.focus(); i.select();`);
   await took();
   began = Date.now();
   await app.keys('achaeans');
-  await until('the next words', () => app.exec(`return /Achaeans/i.test(document.querySelector('.search-view .hit mark')?.textContent ?? '')`), 30000);
+  await until('the next words', () => app.exec(`return /Achaeans/i.test(document.querySelector('[data-found-list] .hit mark')?.textContent ?? '')`), 30000);
   const again = Date.now() - began;
   t = await took();
   console.log(`      and again, the project kept as it was read: ${again} ms; the window stood still for ${t.still} ms at the most`);

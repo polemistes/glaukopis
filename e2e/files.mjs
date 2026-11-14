@@ -308,7 +308,7 @@ try {
   );
   // The library is kept as it was left: gone elsewhere and back by the book in
   // the row at the top, the files are in view, at the file selected, with the filter still on.
-  await app.go('#/search');
+  await app.go('#/');
   await app.waitGone('.files-view', 5000);
   await app.click('[data-place="library"]');
   await app.waitFor(`.file-pane[data-file="${pdf.hash}"]`, 5000);
@@ -892,9 +892,11 @@ try {
   await app.waitGone('dialog', 3000);
   await until('the pane to have it', async () => (await paneFiles()) === had + 1, 5000).catch(() => {});
   check('the reference has the chapter now', (await paneFiles()) === had + 1, `${had} → ${await paneFiles()}`);
-  // A PDF of the reference is shown in the library, in the place of the list, the reference beside it (ADR 0097).
-  check('a PDF of the reference has a Show button', await app.exists('.pane .file [data-show-file="chapter 3.pdf"]'));
-  await app.click('.pane .file [data-show-file="chapter 3.pdf"]');
+  // A PDF of the reference is shown in the library by a press on its name, in the place of the list, the
+  // reference beside it (ADR 0097), and has no eye of its own beside the name (ADR 0098).
+  check('a PDF of the reference has no Show button beside its name', !(await app.exists('.pane .file button[aria-label="Show"]')));
+  await app.exec(`Array.from(document.querySelectorAll('.pane .file button.open')).find((b) => b.textContent.includes('chapter 3.pdf')).dataset.pick = '1'`);
+  await app.click('.pane .file button.open[data-pick]');
   await app.waitFor('.library .middle [data-reader]', 5000);
   await app.waitFor('.library .middle [data-reader] [data-viewer-pages], .library .middle [data-reader] .centre', 5000).catch(() => {});
   check(
@@ -908,10 +910,10 @@ try {
   await app.click('.library .middle [data-reader-back]');
   await app.waitFor('.library .middle [role="listbox"]', 3000);
   check('back goes to the references', !(await app.exists('.library .middle [data-reader]')));
-  // The name of the file shows it too, and Escape goes back.
+  // The name of the file shows it again, with no menu, and Escape goes back.
   await app.click('.pane .file button.open');
   await app.waitFor('.library .middle [data-reader]', 5000);
-  check('the name of the file shows it too, with no menu', !(await app.exists('[role="menu"]')));
+  check('the name of the file shows it, with no menu', !(await app.exists('[role="menu"]')));
   await app.exec(`document.querySelector('.library .middle [data-reader]').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))`);
   await app.waitGone('.library .middle [data-reader]', 3000).catch(() => {});
   check('Escape goes back to the references', !(await app.exists('.library .middle [data-reader]')));

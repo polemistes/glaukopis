@@ -141,7 +141,6 @@
           <textarea
             bind:value={local}
             use:grow={local}
-            placeholder={t('library-notes-project-placeholder')}
             spellcheck="true"
             data-scope="project"
             data-autofocus
@@ -174,7 +173,6 @@
           <textarea
             bind:value={global}
             use:grow={global}
-            placeholder={t('library-notes-all-placeholder')}
             spellcheck="true"
             data-scope="all"
             oninput={writeGlobal}

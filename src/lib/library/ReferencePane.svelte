@@ -5,7 +5,6 @@
   import Code from '@lucide/svelte/icons/code';
   import Copy from '@lucide/svelte/icons/copy';
   import Ellipsis from '@lucide/svelte/icons/ellipsis';
-  import Eye from '@lucide/svelte/icons/eye';
   import FolderOpen from '@lucide/svelte/icons/folder-open';
   import Network from '@lucide/svelte/icons/network';
   import Map from '@lucide/svelte/icons/map';
@@ -426,7 +425,6 @@
           class="note"
           value={note}
           use:growNote={note}
-          placeholder={t('library-pane-note-placeholder')}
           aria-label={t('library-notes-on-work')}
           spellcheck="true"
           oninput={(e) => writeNote(e.currentTarget.value)}></textarea>
@@ -474,16 +472,6 @@
                 >{file.exists ? fileSize(file.size) : t('library-pane-missing')}</span
               >
             </button>
-            {#if onshow && file.exists && (file.kind === 'pdf' || file.kind === 'picture')}
-              <IconButton
-                label={t('library-pane-show')}
-                size="sm"
-                data-show-file={file.name}
-                onclick={() => onshow(file.hash)}
-              >
-                <Eye size={13} />
-              </IconButton>
-            {/if}
             <IconButton
               label={t('library-pane-reveal')}
               size="sm"

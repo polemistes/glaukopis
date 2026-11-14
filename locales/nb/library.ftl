@@ -423,7 +423,6 @@ library-pane-editing = Redigerer …
 library-pane-not-saved = Ikke lagret
 library-pane-unread = Referansen kunne ikke leses.
 library-pane-save-failed = Endringene kunne ikke lagres.
-library-pane-note-placeholder = Det du tenker om verket. For deg selv: det hører ikke med når det vises til.
 library-pane-files = Filer
 library-pane-attach = Legg ved
 library-pane-attach-title = Legg ved filer
@@ -488,8 +487,6 @@ library-notes-write-on-work = Skriv et notat om dette verket
 library-notes-not-in-library = En referanse som ikke er i biblioteket ditt
 library-notes-this-project = I dette prosjektet
 library-notes-all-projects = I alle prosjekter
-library-notes-project-placeholder = Det du tenker om verket, i dette arbeidet
-library-notes-all-placeholder = Det du tenker om verket, hvor du enn viser til det
 library-notes-keep-for-all = Bruk det i alle prosjekter
 library-notes-write-for-all = Skriv for alle prosjekter
 library-notes-carried = Referansen fulgte med prosjektet og er ikke i biblioteket ditt. Det som skrives her, følger med til alle som har prosjektet.
@@ -514,5 +511,4 @@ library-resize-detail = Dra for å gjøre ruten til høyre bredere eller smalere
 library-import-bibtex = Importer Bib(La)TeX …
 
 # Filene til en referanse i ruten (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
-library-pane-show = Vis
 library-back-to-references = Tilbake til referansene

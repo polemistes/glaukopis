@@ -298,8 +298,10 @@
       scope={el}
       timed={timed(at)}
       {documentAt}
+      finding={spec.mode === 'text' && !!text?.searchOpen()}
       onview={(mode) => sides.setMode(key, mode)}
       onoutline={() => sides.toggleOutline(key)}
+      onfind={() => (spec.mode === 'text' && text?.searchOpen() ? text.endSearch() : find(false))}
     />
   </div>
   <!-- /the bar -->

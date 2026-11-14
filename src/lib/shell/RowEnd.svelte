@@ -1,32 +1,19 @@
 <script lang="ts">
   /**
-   * The end of the row at the top of the window (ADR 0096): the search, the
-   * keys and the settings. It stands at the right end of the
-   * project's top row, and of the row over every other view.
+   * The end of the row at the top of the window (ADR 0096): the keys and the
+   * settings; the search through everything is in the field of the list of
+   * projects since record 0098. It stands at the right end of the project's
+   * top row, and of the row over every other view.
    */
   import Keyboard from '@lucide/svelte/icons/keyboard';
-  import Search from '@lucide/svelte/icons/search';
   import Settings from '@lucide/svelte/icons/settings';
   import { t } from '$lib/i18n';
-  import { router } from '$lib/state/router.svelte';
   import { settingsUi } from '$lib/settings/settings-ui.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import { keysFor, keysUi } from './keys.svelte';
-
-  const view = $derived(router.route.view);
 </script>
 
 <div class="row-end" data-row-end>
-  <a
-    href="#/search"
-    class="place"
-    class:current={view === 'search'}
-    aria-label={t('search-everything')}
-    data-place="search"
-    use:tooltip={{ text: t('search-everything-title'), shortcut: keysFor('search-everything') }}
-  >
-    <Search size={17} strokeWidth={1.7} />
-  </a>
   <button
     type="button"
     class="place"

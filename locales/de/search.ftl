@@ -41,8 +41,6 @@ search-labels-outside = Auch, was außerhalb der Texte steht
 
 ## The search through everything
 
-search-everything = Suchen
-search-everything-title = Alles durchsuchen
 search-everything-field = Die Projekte durchsuchen
 search-last-project = Das letzte Projekt
 search-all-projects = Alle Projekte

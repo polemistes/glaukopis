@@ -37,8 +37,6 @@ search-labels-outside = テキストの外にあるものも
 
 ## すべてを通した検索
 
-search-everything = 検索
-search-everything-title = すべてを検索
 search-everything-field = プロジェクトを検索
 search-last-project = 最後に開いたプロジェクト
 search-all-projects = すべてのプロジェクト

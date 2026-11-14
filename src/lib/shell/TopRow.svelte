@@ -1,7 +1,7 @@
 <script lang="ts">
   /**
    * The row at the top of a view that has none of its own (ADR 0096): the
-   * library and its files, the search, the start screen. The start of the
+   * library and its files, the start screen. The start of the
    * row, what the view puts between, the end of the row; as high as the
    * project's top row and the head of the list of projects, so that their
    * lines meet. The start is left out where the list of projects beside has

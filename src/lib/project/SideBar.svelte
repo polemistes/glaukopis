@@ -3,7 +3,8 @@
    * The bar of a side (ADR 0064): icons with tooltips, in this order: the
    * outline; the views, Diagram, Text, and Timeline where the element has
    * times; the writing tools with their three menus, undo and redo of the
-   * side's project between them and spelling, and Insert; Typesetting,
+   * side's project and Find (record 0098) between them and spelling, and
+   * Insert; Typesetting,
    * Print… and Export…, and Document. Print and Export act on the document
    * of the side, the typesetting pane open or not (record 0091). The ×
    * that closes the side stands in the top row, in the side's cell (ADR
@@ -18,6 +19,7 @@
   import PanelRight from '@lucide/svelte/icons/panel-right';
   import Printer from '@lucide/svelte/icons/printer';
   import Redo2 from '@lucide/svelte/icons/redo-2';
+  import Search from '@lucide/svelte/icons/search';
   import Share from '@lucide/svelte/icons/share';
   import Undo2 from '@lucide/svelte/icons/undo-2';
   import WritingTools from '$lib/editor/WritingTools.svelte';
@@ -46,11 +48,26 @@
     timed: boolean;
     /** The document of the side: the element marked as the document where there is one, else the element in view (record 0081). */
     documentAt: string;
+    /** Whether the search over the text of the side is open. */
+    finding: boolean;
     onview: (mode: MapMode) => void;
     onoutline: () => void;
+    /** Opens the search over the text, turning the side to its text, or closes it. */
+    onfind: () => void;
   }
 
-  let { spec, project, focused, scope, timed, documentAt, onview, onoutline }: Props = $props();
+  let {
+    spec,
+    project,
+    focused,
+    scope,
+    timed,
+    documentAt,
+    finding,
+    onview,
+    onoutline,
+    onfind,
+  }: Props = $props();
 
   const views = $derived([
     { mode: 'diagram' as const, label: t('project-diagram'), icon: Network },
@@ -157,6 +174,19 @@
           onclick={() => project?.redo()}
         >
           <Redo2 size={15} />
+        </IconButton>
+        <!-- Not disabled beside the diagram: as Ctrl+F does, it turns the side to its text. The
+             text keeps the focus, and what is selected in it, for a search in the selection. -->
+        <IconButton
+          label={t('search-find')}
+          shortcut={focused ? keysFor('find') : undefined}
+          size="sm"
+          active={finding}
+          data-bar-find
+          onmousedown={(e) => e.preventDefault()}
+          onclick={onfind}
+        >
+          <Search size={15} />
         </IconButton>
       {/snippet}
     </WritingTools>

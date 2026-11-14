@@ -71,8 +71,10 @@ The list is where projects are kept, opened and closed. At its head, the
 **+** has **New project…**, **New folder**, **Join a shared project…**, **A
 project from a document…**, **Open a project file…** and **Open an Org
 file…**; the **⋯** beside it has the deleted projects, with their number,
-and **A project of all the projects…**. Under the head, a field finds a
-project by its name, and the button beside it makes a folder.
+and **A project of all the projects…**. Under the head, a field searches
+what is written in the projects, or, chosen in the menu of its glass, finds a
+project by its name (see *Searching through everything*); the button beside
+it makes a folder.
 
 A folder is opened and closed with a click. Make one inside another from that folder's menu; drag a project onto
 a folder, or choose **Move to folder** in its menu, and **Out of folders**
@@ -162,8 +164,8 @@ to the start screen.
 **Glaukopis opens as you left it**: in the project you were in, with the
 same sides, each at the element and in the view it showed, the text at the
 heading that stood at its top and the diagram where it was looked at, the
-side you were in, and the sides switched if they were; or in the library, the
-images, the files or the search, if that is where you were. The window has
+side you were in, and the sides switched if they were; or in the library or
+its files, if that is where you were. The window has
 the size and the place it had, where your screen allows. A project that has
 been deleted since gives the start screen.
 
@@ -1410,9 +1412,8 @@ from this reference** takes them all, with one question. **Unassigned
 only**, under the filter button, shows the files that belong to none.
 
 **A file of a reference, shown.** A PDF or an image in the pane of a
-reference on the Library page is shown by **Show**, the eye beside it, or a
-press on its name: it is read in the place of the list of references, with
-the reference beside it. **Back to the references**, or Escape, returns to
+reference on the Library page is shown by a press on its name: it is read in
+the place of the list of references, with the reference beside it. **Back to the references**, or Escape, returns to
 the list. A file of another kind opens in its own program.
 
 **Going through the files.** Where files of the folder in view belong to no
@@ -1882,10 +1883,12 @@ takes all under the element with it; **Delete and promote sub-elements**
 keeps them, one level up.
 
 The top row holds, over each side, its path and at its right end the
-**×** that closes the side, with the button of **Split view** just before
-it. At the left end of the row stand the house, the library and the button of
-the list of projects, in the head of the list while it is shown; at the
-right end the search, the keys and the settings. Under the path, each side
+**×** that closes the side, **Close view**, with the button of **Split view**
+just before it. At the left end of the row stand the house, the library and
+the button of the list of projects, in the head of the list while it is
+shown; at the right end the keys and the settings. The search through all
+the projects is the field at the top of the list (see *Searching through
+everything*). Under the path, each side
 has its bar (see *The text*).
 
 This is what makes it safe to write. A tree that is valuable as it is, the
@@ -2431,22 +2434,33 @@ name, its notes, the captions of figures and tables, the cells of a table, or
 from one side of a parallel text to the other. (`\p{L}` and the other
 classes of Unicode keep their meaning.)
 
-The edit box of an element in the diagram can be searched in the same way,
-its name and its text. In the diagram itself, **Ctrl+F** turns to the text
-and searches it.
+The magnifying glass in the bar of each side, beside undo and redo, does what
+**Ctrl+F** does; it is lit while the bar is open, and a press on it then
+closes the bar. The edit box of an element in the diagram can be searched in
+the same way, its name and its text. In the diagram itself, **Ctrl+F** or the
+glass turns to the text and searches it.
 
 ### Searching through everything
 
-**Ctrl+Shift+F**, or the magnifying glass in the row at the top of the window,
-searches all you have written: the project you had open last, or all
-projects. What is found is listed by project, and within it by the tree
-under the project, each with the words around it; choose one, and the
-project opens there, with the words in the bar over the text.
+The field at the top of the list of projects searches all you have written,
+in all projects. **Ctrl+Shift+F** puts the cursor there, and shows the list
+if it was hidden. What is found stands in the list, in the place of the tree:
+by project, and within it by the tree under the project, each with the words
+around it. Choose one, and the project opens beside the list there, with the
+words in the bar over the text; the list keeps what was found, so that you
+can go on to the next. Clear the field, by its **×** or by **Escape**, and the
+tree is back.
 
-With the last of the options, what stands outside the texts is searched as
-well: citations as they are shown, formulas and cross-references, the
-details of the documents, what you have written about the works cited in
-each project, and the words that name associations.
+The small menu of the glass at the left of the field says what it searches:
+**All projects**, **The last project**, the one you had open last, or **Find
+a project**, which only finds projects by their names, the tree showing those
+that have the words in their names.
+
+Over what is found stand the options, as over the text: capitals, whole
+words, accents, regular expressions, and, with the last of them, what stands
+outside the texts: citations as they are shown, formulas and
+cross-references, the details of the documents, what you have written about
+the works cited in each project, and the words that name associations.
 
 A project that is not open is read for the search, which takes a moment for
 a large one. It is read again only when it has changed.

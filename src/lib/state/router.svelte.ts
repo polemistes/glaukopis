@@ -19,7 +19,6 @@ export type Route =
    * else of the window's.
    */
   | { view: 'file'; file: string; page?: number; project?: string }
-  | { view: 'search' }
   | { view: 'settings'; section?: string };
 
 /**
@@ -78,11 +77,10 @@ export function parseRoute(hash: string): Route {
     }
     case 'settings':
       return { view: 'settings', section: parts[1] };
-    case 'search':
-      return { view: 'search' };
     default:
       // The start screen, as `#/`; and the old places of the home, `#/owl` and
-      // `#/projects`, and anything not known.
+      // `#/projects`; the search through everything, `#/search`, which is in the
+      // list of projects since record 0098; and anything not known.
       return { view: 'home' };
   }
 }
@@ -121,8 +119,6 @@ export function formatRoute(route: Route): string {
     }
     case 'settings':
       return '#/settings' + (route.section ? `/${e(route.section)}` : '');
-    case 'search':
-      return '#/search';
   }
 }
 

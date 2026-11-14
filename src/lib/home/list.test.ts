@@ -21,6 +21,7 @@ import {
   paneWidth,
   toggleProjectsPane,
   toList,
+  toSearch,
 } from './list.svelte';
 
 describe('the pane of projects', () => {
@@ -66,6 +67,18 @@ describe('up from the top of a project', () => {
     toList('p1');
     expect(listPane.shown).toBe(true);
     expect(listUi.focusRow).toBe('p:p1');
+  });
+});
+
+describe('to the search through the projects', () => {
+  it('shows the list where it was hidden, turns its field to what is written, and asks for the cursor in it', () => {
+    listPane.shown = false;
+    listUi.field = 'names';
+    listUi.fieldAsked = false;
+    toSearch();
+    expect(listPane.shown).toBe(true);
+    expect(listUi.field).toBe('texts');
+    expect(listUi.fieldAsked).toBe(true);
   });
 });
 

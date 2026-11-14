@@ -1,13 +1,15 @@
-// The row over the window (record 0096): no rail; the six places of the
-// window in the row at its top, the list's button and the house at its start,
-// the library, the search, the keys and the settings at its end, in that
+// The row over the window (records 0096, 0097, 0098): no rail; the five
+// places of the window in the row at its top, the house, the library and the
+// list's button at its start, the keys and the settings at its end, in that
 // order, in every view: the start screen with the list shown (the start in
 // the list's head) and hidden (the start in the row over it), a project with
-// the list shown and hidden, the library, its files and the search. Each
-// place is lit where it should be and goes where it goes; the list's button
-// is disabled where there is no list; the switch References | Files stands in
-// the row over the library and its files. Screenshots of each view, and of a
-// project with two sides in the light, the dark and the mellow theme.
+// the list shown and hidden, the library and its files. Each place is lit
+// where it should be and goes where it goes; the list's button is disabled
+// where there is no list; the switch References | Files stands in the row
+// over the library and its files. The search through everything is no place
+// of the row: Ctrl+Shift+F from the library goes to the field of the list of
+// projects. Screenshots of each view, and of a project with two sides in the
+// light, the dark and the mellow theme.
 
 import { App, sleep } from './harness.mjs';
 
@@ -33,7 +35,7 @@ const places = (app) =>
          in: el.closest('[data-projects-pane]') ? 'list' : el.closest('.project > .top') ? 'project' : el.closest('[data-top-row]') ? 'row' : '?',
        }));`,
   );
-const ORDER = 'projects library list search keys settings';
+const ORDER = 'projects library list keys settings';
 const order = (shown) => shown.map((p) => p.place).join(' ');
 const lit = (shown) => shown.filter((p) => p.lit).map((p) => p.place).join(' ');
 const at = (shown, place) => shown.find((p) => p.place === place);
@@ -42,7 +44,7 @@ const inOneLine = (app) =>
   app.exec(
     `const ps = Array.from(document.querySelectorAll('[data-row-start] .place, [data-row-end] .place')).map((p) => p.getBoundingClientRect());
      const bar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bar-h'));
-     return ps.length === 6 && ps.every((r) => r.top >= 0 && r.bottom <= bar + 2 && Math.abs(r.top - ps[0].top) < 2);`,
+     return ps.length === 5 && ps.every((r) => r.top >= 0 && r.bottom <= bar + 2 && Math.abs(r.top - ps[0].top) < 2);`,
   );
 const noRail = (app) => app.exec(`return !document.querySelector('.rail, nav.rail')`);
 
@@ -59,11 +61,11 @@ try {
   // ---- the start screen, the list shown: the start of the row in its head ----
   let shown = await places(app);
   check('no rail', await noRail(app));
-  check('the six places, in their order', order(shown) === ORDER, order(shown));
+  check('the five places, in their order', order(shown) === ORDER, order(shown));
   check('in one line at the top of the window', await inOneLine(app));
   check(
     'on the start screen with the list shown, the start of the row is in the list\'s head, the end in the row over the start screen',
-    ['projects', 'library', 'list'].every((p) => at(shown, p)?.in === 'list') && ['search', 'keys', 'settings'].every((p) => at(shown, p)?.in === 'row'),
+    ['projects', 'library', 'list'].every((p) => at(shown, p)?.in === 'list') && ['keys', 'settings'].every((p) => at(shown, p)?.in === 'row'),
     JSON.stringify(shown.map((p) => `${p.place}:${p.in}`)),
   );
   check('the house and the list\'s button are lit', lit(shown) === 'projects list', lit(shown));
@@ -98,7 +100,7 @@ try {
   shown = await places(app);
   check(
     'in a project with the list shown, the start of the row is in the list\'s head, the end at the right of the project\'s top row',
-    order(shown) === ORDER && ['projects', 'library', 'list'].every((p) => at(shown, p).in === 'list') && ['search', 'keys', 'settings'].every((p) => at(shown, p).in === 'project'),
+    order(shown) === ORDER && ['projects', 'library', 'list'].every((p) => at(shown, p).in === 'list') && ['keys', 'settings'].every((p) => at(shown, p).in === 'project'),
     JSON.stringify(shown.map((p) => `${p.place}:${p.in}`)),
   );
   check('the house and the list\'s button are lit', lit(shown) === 'projects list', lit(shown));
@@ -113,6 +115,11 @@ try {
     await app.exec(`const e = document.querySelector('.project > .top [data-row-end]').getBoundingClientRect(); return Math.abs(window.innerWidth - e.right) < 2;`),
   );
   check('Split view stands in the cell, before the ×', await app.exists('.top .cell .close [data-side-by-side] + [data-close-side]'));
+  check(
+    'the × is called Close view',
+    (await app.exec(`return document.querySelector('.top .cell [data-close-side]')?.getAttribute('aria-label')`)) === 'Close view',
+    await app.exec(`return document.querySelector('.top .cell [data-close-side]')?.getAttribute('aria-label')`),
+  );
   await app.screenshot('window-row-3-project');
 
   // ---- a project, the list hidden ----
@@ -179,7 +186,7 @@ try {
   shown = await places(app);
   check('the book goes to the library', (await app.exec('return location.hash')).startsWith('#/library'), await app.exec('return location.hash'));
   check(
-    'over the library a row with the six places, the list\'s button disabled, the book lit',
+    'over the library a row with the five places, the list\'s button disabled, the book lit',
     order(shown) === ORDER && shown.every((p) => p.in === 'row') && at(shown, 'list').disabled && lit(shown) === 'library',
     JSON.stringify(shown),
   );
@@ -203,25 +210,28 @@ try {
   );
   await app.screenshot('window-row-8-files');
 
-  // ---- the search ----
-  await app.click('[data-place="search"]');
-  await app.waitFor('.search-view', 8000);
-  await sleep(400);
-  shown = await places(app);
-  check('the magnifying glass goes to the search', (await app.exec('return location.hash')) === '#/search', await app.exec('return location.hash'));
-  check(
-    'over the search a row with the six places and nothing between, the list\'s button disabled, the glass lit',
-    order(shown) === ORDER && at(shown, 'list').disabled && lit(shown) === 'search' && (await app.exec(`return document.querySelector('[data-top-row] .between')?.children.length === 0`)),
-    JSON.stringify(shown),
-  );
-  await app.screenshot('window-row-9-search');
-
   // ---- the house goes back to the project shown last ----
   await app.click('[data-place="projects"]');
   await app.waitFor('.project', 8000);
   await sleep(300);
   check('the house goes back to the project shown last', (await app.exec('return location.hash')).includes(homer.id), await app.exec('return location.hash'));
   check('no rail anywhere', await noRail(app));
+
+  // ---- the search is the field of the list of projects (record 0098) ----
+  await app.go('#/library');
+  await app.waitFor('.library', 8000);
+  await sleep(300);
+  check('no search among the places', !(await app.exists('[data-place="search"]')));
+  await app.keys(['Control', 'Shift', 'f']);
+  await app.waitFor('[data-projects-pane] input[data-list-field="texts"]', 8000);
+  await sleep(400);
+  check(
+    'Ctrl+Shift+F from the library goes to the project shown last, the cursor in the field of the list',
+    (await app.exec('return location.hash')).includes(homer.id) &&
+      (await app.exec(`return document.activeElement === document.querySelector('[data-projects-pane] input[data-list-field]')`)),
+    await app.exec('return location.hash'),
+  );
+  await app.screenshot('window-row-9-search');
 
   const errors = await app.pageErrors();
   check('no errors in the page', errors.length === 0, errors.join(' | '));

@@ -40,19 +40,18 @@ afterEach(() => {
 });
 
 describe('the row at the top of the window', () => {
-  it('has the six places of the window in their order: the house, the library and the list at its start, the rest at its end', () => {
+  it('has the five places of the window in their order: the house, the library and the list at its start, the keys and the settings at its end', () => {
     router.replace({ view: 'library' });
     const { target, places } = setUp();
     expect(places().map((p) => p.place)).toEqual([
       'projects',
       'library',
       'list',
-      'search',
       'keys',
       'settings',
     ]);
     expect(target.querySelector('[data-row-start] [data-projects-button]')).not.toBeNull();
-    expect(target.querySelectorAll('[data-row-end] .place')).toHaveLength(3);
+    expect(target.querySelectorAll('[data-row-end] .place')).toHaveLength(2);
   });
 
   it('shows the list button disabled where there is no list, and lights the place one is at', () => {
@@ -79,6 +78,6 @@ describe('the row at the top of the window', () => {
     router.replace({ view: 'home' });
     const { target, places } = setUp({ start: false });
     expect(target.querySelector('[data-row-start]')).toBeNull();
-    expect(places().map((p) => p.place)).toEqual(['search', 'keys', 'settings']);
+    expect(places().map((p) => p.place)).toEqual(['keys', 'settings']);
   });
 });

@@ -40,8 +40,6 @@ search-labels-outside = Ook wat buiten de teksten staat
 
 ## The search through everything
 
-search-everything = Zoeken
-search-everything-title = Overal zoeken
 search-everything-field = In de projecten zoeken
 search-last-project = Het laatste project
 search-all-projects = Alle projecten

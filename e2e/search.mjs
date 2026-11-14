@@ -194,6 +194,16 @@ try {
   m = await marked();
   check('and takes the marks away', m.all === 0 && m.current === 0, JSON.stringify(m));
 
+  // ---- the Find button of the side's bar (record 0098) ----
+  const findLit = () => app.exec(`return document.querySelector('[data-bar-find]')?.getAttribute('aria-pressed') ?? null`);
+  await app.click('[data-bar-find]');
+  await app.waitFor('.search-bar input', 3000);
+  check('the Find button of the bar opens the search over the text, and is lit', (await findLit()) === 'true', await findLit());
+  await app.screenshot('search-3a-find-button');
+  await app.click('[data-bar-find]');
+  await app.waitGone('.search-bar', 3000).catch(() => {});
+  check('and closes it again, unlit', !(await app.exists('.search-bar')) && (await findLit()) === 'false', await findLit());
+
   // ---- the options ----
   // By the beginning of its name: that of a regular expression goes on to say what \n and \p are.
   const option = (label) => app.click(`.search-bar button[aria-label^="${label}"]`);
@@ -325,48 +335,103 @@ try {
   await sleep(300);
   await app.keys('The anger of Achilles, and his wrath.');
   await sleep(800);
+  // The search through everything is the field of the list of projects (record 0098).
+  check('there is no search in the row at the top', !(await app.exists('[data-place="search"]')));
   await app.keys(['Control', 'Shift', 'f']);
-  await app.waitFor('.search-view input', 5000);
-  check('Ctrl+Shift+F opens the search through everything', await app.exec(`return document.activeElement === document.querySelector('.search-view input')`));
+  await app.waitFor('[data-projects-pane] input[data-list-field="texts"]', 5000);
+  const field = '[data-projects-pane] input[data-list-field]';
+  await until('the cursor in the field', () => app.exec(`return document.activeElement === document.querySelector(arguments[0])`, field), 3000).catch(() => {});
+  check(
+    'Ctrl+Shift+F puts the cursor in the field of the list, which searches the projects',
+    (await app.exec(`return document.activeElement === document.querySelector(arguments[0])`, field)) &&
+      (await app.exec(`return document.querySelector(arguments[0]).placeholder`, field)) === 'Search the projects',
+    await app.exec(`return document.querySelector(arguments[0]).placeholder`, field),
+  );
   const results = () =>
-    app.exec(`return Array.from(document.querySelectorAll('.search-view .project')).map((p) => ({ name: p.querySelector('.name').textContent.trim(), hits: Array.from(p.querySelectorAll('.hit')).map((h) => h.textContent.replace(/\\s+/g, ' ').trim()) }))`);
-  const everythingSaid = () => app.exec(`return document.querySelector('.search-view .said').textContent.replace(/\\s+/g, ' ').trim()`);
+    app.exec(`return Array.from(document.querySelectorAll('[data-found-list] .project')).map((p) => ({ name: p.querySelector('.name').textContent.trim(), hits: Array.from(p.querySelectorAll('.hit')).map((h) => h.textContent.replace(/\\s+/g, ' ').trim()) }))`);
+  const everythingSaid = () => app.exec(`return document.querySelector('[data-found-list] .said').textContent.replace(/\\s+/g, ' ').trim()`);
+  const retype = async (words) => {
+    await app.exec(`const i = document.querySelector(arguments[0]); i.focus(); i.select();`, field);
+    await app.keys(words);
+  };
+  /** Chooses in the menu of the field's glass. */
+  const searchIn = async (label) => {
+    await app.click('[data-projects-pane] [data-list-field-menu]');
+    await app.waitFor('[role="menu"]', 3000);
+    await app.clickText('[role="menu"] [role^="menuitem"]', label);
+    await sleep(300);
+  };
   await app.keys('wrath');
-  await until('what was found', async () => (await results()).length > 0, 15000);
-  let r = await results();
-  check('the project opened last is searched', r.length === 1 && r[0].name === 'Second' && r[0].hits.length === 1, JSON.stringify(r));
-  check('what was found is shown with the words around it', r[0].hits[0].includes('The anger of Achilles, and his wrath.'), JSON.stringify(r[0].hits));
-  await app.clickText('.search-view [role="radio"]', 'All projects');
   await until('both projects', async () => (await results()).length === 2, 20000);
   await sleep(500);
-  r = await results();
+  let r = await results();
+  check('what was found stands in the list in the place of the tree', !(await app.exists('[data-projects-pane] [data-row]')));
   const wrathProject = r.find((p) => p.name === 'Wrath');
   // The first map of the project is named after it, and so is its centre: "Wrath".
   check('all projects are searched, those not open read from disk', wrathProject?.hits.length === 6, JSON.stringify(r));
   check('and it is said how much was found where', (await everythingSaid()) === '7 found in 2 projects', await everythingSaid());
+  check('what was found is shown with the words around it', r.find((p) => p.name === 'Second')?.hits[0]?.includes('The anger of Achilles, and his wrath.'), JSON.stringify(r));
   check('with citations in the words around what was found, as the text shows them', wrathProject?.hits.some((h) => h.includes('the wrath of Achilles (Nagy 1979, 73).')), JSON.stringify(wrathProject?.hits));
   await app.screenshot('search-8-everything');
-  check('what stands outside the texts is not searched', (await (async () => { await app.exec(`const i = document.querySelector('.search-view input'); i.focus(); i.select();`); await app.keys('Nagy'); await sleep(1500); return everythingSaid(); })()) === 'Nothing found', await everythingSaid());
-  await app.click('.search-view button[aria-label="What stands outside the texts as well"]');
+  await searchIn('The last project');
+  await until('one project', async () => (await results()).length === 1, 15000);
+  r = await results();
+  check(
+    'the menu of the glass searches the project opened last',
+    r.length === 1 && r[0].name === 'Second' && r[0].hits.length === 1 && (await app.exec(`return document.querySelector(arguments[0]).placeholder`, field)) === 'Search the last project',
+    JSON.stringify(r),
+  );
+  await searchIn('Find a project');
+  await app.waitFor('[data-projects-pane] [data-row]', 5000);
+  check(
+    'and finds a project by its name, the tree in the list again',
+    !(await app.exists('[data-found-list]')) && (await app.exec(`return document.querySelector(arguments[0]).placeholder`, field)) === 'Find a project',
+  );
+  await retype('Seco');
+  await sleep(400);
+  const rowsNamed = await app.exec(`return Array.from(document.querySelectorAll('[data-projects-pane] [data-row-kind="project"] .name')).map((n) => n.textContent.trim())`);
+  check('only the project of that name is in the tree', rowsNamed.length >= 1 && rowsNamed.every((n) => n === 'Second'), JSON.stringify(rowsNamed));
+  await searchIn('All projects');
+  await retype('Nagy');
+  await sleep(1500);
+  check('what stands outside the texts is not searched', (await everythingSaid()) === 'Nothing found', await everythingSaid());
+  await app.click('[data-found-list] button[aria-label="What stands outside the texts as well"]');
   await until('the citation', async () => (await results()).length > 0, 10000);
   r = await results();
   check('unless that is asked for', r.length === 1 && r[0].hits.some((h) => h.includes('Nagy 1979')), JSON.stringify(r));
-  await app.click('.search-view button[aria-label="What stands outside the texts as well"]');
-  await app.exec(`const i = document.querySelector('.search-view input'); i.focus(); i.select();`);
-  await app.keys('wrath');
+  await app.click('[data-found-list] button[aria-label="What stands outside the texts as well"]');
+  await retype('wrath');
   await until('the projects again', async () => (await results()).length === 2, 15000);
   await sleep(400);
   // Choosing what was found in the element that was folded opens the project at the tree that holds it.
-  await app.exec(`Array.from(document.querySelectorAll('.search-view .hit')).find((h) => h.textContent.includes('Deep under')).dataset.pick = '1'`);
-  const chosen = await app.exec(`return document.querySelector('.search-view .hit[data-pick]').textContent.replace(/\\s+/g, ' ').trim()`);
-  await app.click('.search-view .hit[data-pick]');
+  await app.exec(`Array.from(document.querySelectorAll('[data-found-list] .hit')).find((h) => h.textContent.includes('Deep under')).dataset.pick = '1'`);
+  const chosen = await app.exec(`return document.querySelector('[data-found-list] .hit[data-pick]').textContent.replace(/\\s+/g, ' ').trim()`);
+  await app.click('[data-found-list] .hit[data-pick]');
   await app.waitFor('.text-view .section', 10000);
   await until('the match', async () => /of 5$/.test((await said()) ?? ''), 10000);
-  const there = await app.exec(`
+  const markedNow = () =>
+    app.exec(`
     let marked = null; for (const r of CSS.highlights.get('search-current') ?? []) marked = r;
     const section = marked && marked.startContainer.parentElement.closest('[data-section]');
     return { said: document.querySelector('.search-bar .said').textContent.trim(), text: marked && marked.toString(), element: section && section.querySelector('.heading').textContent.trim() };`);
+  const there = await markedNow();
   check('choosing what was found opens the project at it, with the search in the bar', there.text === 'wrath' && there.element === 'One A' && there.said === '5 of 5', `${chosen} → ${JSON.stringify(there)}`);
+  check('and what was found stays in the list beside it', (await results()).length === 2);
+  // Another in the same text, shown already: the text goes to it.
+  await app.exec(`Array.from(document.querySelectorAll('[data-found-list] .hit')).find((h) => h.textContent.includes('countless')).dataset.pick = '2'`);
+  await app.click('[data-found-list] .hit[data-pick="2"]');
+  await until('the next one chosen', async () => (await markedNow()).element === 'One', 8000).catch(() => {});
+  const next = await markedNow();
+  check('another chosen in the text in view is gone to there', next.element === 'One' && /^wrath$/i.test(next.text ?? ''), JSON.stringify(next));
+  check('and is marked in the list as the one chosen', await app.exec(`return document.querySelector('[data-found-list] .hit.chosen')?.dataset.pick === '2'`));
+  // Escape in the field clears it, and the tree is back.
+  await app.exec(`document.querySelector(arguments[0]).focus()`, field);
+  await app.press('Escape');
+  await app.waitFor('[data-projects-pane] [data-row]', 5000).catch(() => {});
+  check(
+    'Escape in the field clears it, and the tree is back in the list',
+    !(await app.exists('[data-found-list]')) && (await app.exec(`return document.querySelector(arguments[0]).value`, field)) === '',
+  );
   await app.screenshot('search-9-gone-to');
 
   // ---- in a table and an equation, drawn without an editor ----
