@@ -33,7 +33,6 @@
   } from '$lib/api/library';
   import { t } from '$lib/i18n';
   import { dropTarget } from '$lib/ui/drag.svelte';
-  import LibrarySwitch from '$lib/files/LibrarySwitch.svelte';
   import DocumentHost from '$lib/documents/DocumentHost.svelte';
   import { files as filesState } from '$lib/files/store.svelte';
   import { library, search, sortEntries, type SortKey } from '$lib/state/library.svelte';
@@ -406,7 +405,6 @@
 
   <section class="middle" aria-label={t('library-references')}>
     <header>
-      <LibrarySwitch current="references" />
       <div class="search">
         <Search size={15} />
         <input

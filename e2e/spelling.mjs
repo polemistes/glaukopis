@@ -255,7 +255,7 @@ try {
   };
   // Not by Ctrl+, from the text, which lowers the writing there.
   // The settings are a window over the view; Ctrl+1, in newProject, closes it.
-  await app.click('nav.rail button[aria-label="Settings"]');
+  await app.click('[data-place="settings"]');
   await sleep(500);
   await app.click('[data-manage-words]');
   await app.waitFor('[data-words="en"] li', 8000);
@@ -284,7 +284,7 @@ try {
     'with checking turned off, nothing is underlined',
     (await drawnUnderlined()).length === 0 && (await underlined()).length === 0,
   );
-  await app.click('nav.rail button[aria-label="Settings"]');
+  await app.click('[data-place="settings"]');
   await sleep(500);
   await app.click(
     '[role="radiogroup"][aria-label="Check spelling as you write"] button[aria-label="On"]',

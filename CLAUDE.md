@@ -30,11 +30,14 @@ records are history, not a map: read the one your work touches, not the rest.
 
 ### The interface, `src/`
 
-`App.svelte` composes the window: the rail (`lib/shell/Rail.svelte`), the list
-of projects at the left (`lib/home/`), the view the route names
-(`lib/state/router.svelte.ts`: start, project, library, files, search), the
-settings window, and the hosts of menus, dialogs, toasts and drags. One folder
-per part under `src/lib/`:
+`App.svelte` composes the window: the list of projects at the left
+(`lib/home/`), the view the route names (`lib/state/router.svelte.ts`: start,
+project, library, files, search) with the row at its top (the places of the
+window at both ends, `lib/shell/RowStart.svelte` and `RowEnd.svelte`, which
+stand in the list's head and the project's top row, and in
+`lib/shell/TopRow.svelte` over the other views), the settings window, and
+the hosts of menus, dialogs, toasts and drags. One folder per part under
+`src/lib/`:
 
 | Folder | What it is |
 | --- | --- |
@@ -47,7 +50,7 @@ per part under `src/lib/`:
 | `preview/` | The typesetting pane: pages, zoom, export, the CSL styles and their editor. `print/`: printing through the system dialog, and the document of a side printed and exported with the pane closed. |
 | `library/` | The reference library: pane, collections, filters, lookup, citing. `files/`: the files of the library in their own view. `viewer/`: a file (PDF or image) shown in a side, its tabs and bookmarks, the image editor. |
 | `figures/`, `tables/`, `timeline/`, `comments/`, `review/`, `history/`, `sharing/`, `chat/`, `search/`, `found/`, `spelling/`, `ocr/`, `org/`, `mindmaps/`, `words/`, `languages/`, `settings/` | Figures and mathematics; tables; timelines; comments; reviewing changes; the full history (in a worker); working together; the chat of a shared project; search (in a worker); citations found in documents brought in; spelling; text read from scans; every project kept as Org; mind maps of other programs; the words of the interface as a project of their own; language packages; the settings window. |
-| `shell/` | The rail, the keys of the window (`keys.svelte.ts`, the sheet, the palette), the test hooks (`testing.ts`), the page log. |
+| `shell/` | The places of the window in the row at its top (`RowStart`, `RowEnd`, `TopRow`), the keys of the window (`keys.svelte.ts`, the sheet, the palette), the test hooks (`testing.ts`), the page log. |
 | `state/` | The router, the open projects, the library, the settings, closing, the window's place. |
 | `ui/`, `util/`, `theme/`, `i18n/` | Widgets (buttons, dialogs, menus, popovers, toasts, drag); small helpers; own colours; the words (`t`). |
 

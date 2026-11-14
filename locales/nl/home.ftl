@@ -1,6 +1,5 @@
 # The projects: the list of them, and what is done with them.
 
-home-title = Projecten
 home-join = Deelnemen aan een gedeeld project
 home-from-document = Een project uit een document…
 home-new = Nieuw project

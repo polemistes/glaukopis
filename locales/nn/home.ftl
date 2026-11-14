@@ -1,6 +1,5 @@
 # The projects: the list of them, and what is done with them.
 
-home-title = Prosjekt
 home-join = Bli med i eit delt prosjekt
 home-from-document = Eit prosjekt av eit dokument …
 home-new = Nytt prosjekt
@@ -34,7 +33,6 @@ home-move-failed = Prosjektet kunne ikkje flyttast
 
 home-pane = Prosjektlista
 home-pane-toggle = Prosjektlista
-home-pane-close = Lukk prosjektlista
 home-pane-between = Mellom prosjektlista og prosjektet
 # On the chevron before an element of the open project, in the pane: what is under it is shown, or hidden.
 # Why the project that is open cannot be renamed or deleted from its menu.

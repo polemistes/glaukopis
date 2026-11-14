@@ -88,7 +88,6 @@ project-document-into = Hämta in ett dokument i det…
 project-drop-on-map = Släpp på en karta för att flytta dit · håll Ctrl för att kopiera
 project-open-beside = Öppna bredvid
 project-open-beside-hint = Två kartor sida vid sida, för att flytta element mellan dem
-project-side-by-side-short = Dela upp
 # The count is of those found in the element in view, and under it.
 project-found-hint = { $count } att gå igenom och göra till källhänvisningar
 project-copied-to = Kopierat till ”{ $name }”

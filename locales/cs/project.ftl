@@ -58,7 +58,6 @@ project-untitled = Bez názvu
 project-drop-on-map = Pusťte na mapu, kam se má přesunout · s Ctrl se kopíruje
 project-open-beside = Otevřít vedle
 project-open-beside-hint = Dvě mapy vedle sebe, pro přesouvání prvků mezi nimi
-project-side-by-side-short = Vedle sebe
 # The count is of those found in the map.
 project-found-hint = { $count } k projití a převedení na citace
 project-copied-to = Zkopírováno do „{ $name }“

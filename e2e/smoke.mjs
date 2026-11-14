@@ -4,7 +4,7 @@ const app = await App.launch();
 try {
   await app.installErrorHook();
   console.log('title:', await app.exec('return document.title'));
-  console.log('rail links:', await app.count('nav.rail a'));
+  console.log('places in the row:', await app.count('[data-row-start] .place, [data-row-end] .place'));
   const info = await app.execAsync(`return await window.__TAURI_INTERNALS__.invoke('system_info');`);
   console.log('system_info:', JSON.stringify(info));
   console.log('screenshot:', await app.screenshot('smoke'));

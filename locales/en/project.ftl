@@ -88,7 +88,6 @@ project-document-into = A document into it…
 project-drop-on-map = Drop on a map to move there · hold Ctrl to copy
 project-open-beside = Open beside
 project-open-beside-hint = Two maps side by side, to move elements between them
-project-side-by-side-short = Split
 # The count is of those found in the element in view, and under it.
 project-found-hint = { $count } to go through, and make citations of
 project-copied-to = Copied to “{ $name }”

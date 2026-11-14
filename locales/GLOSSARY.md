@@ -12,7 +12,8 @@ language would use, not a transliteration of the English.
 
 - **project** — one piece of work: a book, an article, a thesis. It is one
   tree of elements, whose top element bears the project's name, and is what
-  is shared with others. *Projects* is the first view of the rail.
+  is shared with others. *Projects* is the house in the row at the top of
+  the window.
 - **map** — a mind map: the elements under one element, drawn around it.
   Any element of a project can be opened as a map, and one goes back up to
   the one above it. A map is also a document in the making; the text of a
@@ -71,7 +72,7 @@ language would use, not a transliteration of the English.
 ## References and citations
 
 - **the library** — all the references the writer has, shared by every
-  project; the second view of the rail. Not a project's own.
+  project; the book in the row at the top of the window. Not a project's own.
 - **reference** — one entry of the library: a book, an article, a chapter;
   a *work*.
 - **collection** — a named group of references within the library, like a
@@ -143,8 +144,9 @@ language would use, not a transliteration of the English.
 
 ## The interface
 
-- **the rail** — the bar at the left with the views: Projects, Library,
-  Pictures, Settings.
+- **the row at the top** — the row over the window with its places: the
+  list of projects and Projects at its start; Library, Search, Keys and
+  Settings at its end.
 - **the panel at the side** — the pane beside the text with references,
   pictures, comments, changes, history.
 - **pane** — one side of a split, when two maps are open side by side.

@@ -131,14 +131,14 @@ class Router {
   /**
    * The project shown last while the application has run, at its element and
    * in its view, or the file shown last in a side of the window: where the
-   * house in the rail goes back to. None once it is closed.
+   * house in the row at the top goes back to. None once it is closed.
    */
   lastProject = $state<Extract<Route, { view: 'project' } | { view: 'file' }> | null>(null);
   /**
    * The library as it was left while the application has run: its references
    * at their collection and entry, its files at their folder and file, and
-   * which of the two was shown last. The book in the rail goes back to the
-   * last of them; the switch at the head of the library to each.
+   * which of the two was shown last. The book in the row at the top goes
+   * back to the last of them; the switch in the row over the library to each.
    */
   lastReferences = $state<Extract<Route, { view: 'library' }> | null>(null);
   lastFiles = $state<Extract<Route, { view: 'files' }> | null>(null);

@@ -90,7 +90,6 @@ project-document-into = Un documento al suo interno…
 project-drop-on-map = Lascia cadere su una mappa per spostare lì · tieni premuto Ctrl per copiare
 project-open-beside = Apri accanto
 project-open-beside-hint = Due mappe affiancate, per spostare elementi dall'una all'altra
-project-side-by-side-short = Dividi
 # The count is of those found in the element in view, and under it.
 project-found-hint = { $count } da passare in rassegna, e di cui fare citazioni
 project-copied-to = Copiato in «{ $name }»

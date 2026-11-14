@@ -1,6 +1,5 @@
 # The projects: the list of them, and what is done with them.
 
-home-title = Projects
 home-join = Join a shared project
 home-from-document = A project from a document…
 home-new = New project
@@ -34,7 +33,6 @@ home-move-failed = The project could not be moved
 
 home-pane = The list of projects
 home-pane-toggle = The list of projects
-home-pane-close = Close the list of projects
 home-pane-between = Between the list of projects and the project
 # On the chevron before an element of the open project, in the pane: what is under it is shown, or hidden.
 # Why the project that is open cannot be renamed or deleted from its menu.

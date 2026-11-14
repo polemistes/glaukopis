@@ -5,7 +5,7 @@ a thesis, a novel, a play, a report, a letter. The work is done in one place:
 working out what you think, collecting what you have read, writing, and
 producing the finished text in the form it is to be published in.
 
-It has two places, reached from the left edge of the window: the **projects**,
+It has two places, reached from the row at the top of the window: the **projects**,
 one for each piece of writing, and the **library**, which holds your
 references and is the same for all projects.
 
@@ -61,8 +61,8 @@ Everything is saved as you work. There is nothing to press.
 them, and under the project you are in its whole tree, folded but for the
 way down to the element in view, which is marked. A click on a project opens
 it, and a click on an element enters it (see *One tree, entered anywhere*).
-**Ctrl+Shift+L**, the × at its head or the button at the top of the rail,
-where the owl stood, hides it and shows it again; its edge can be dragged to make it
+**Ctrl+Shift+L**, or the button at the left end of the row at the top of the
+window, hides it and shows it again; its edge can be dragged to make it
 wider. It stays as you leave it.
 
 ### Many projects
@@ -155,7 +155,7 @@ the right button gives the project's menu. With no project
 at all, it welcomes you, with **Begin a project** and the other ways to
 begin. A document dropped on it becomes a project of its own.
 
-The house in the rail and **Ctrl+1** go back to the project you were in, at
+The house at the top left and **Ctrl+1** go back to the project you were in, at
 the element and in the view you left; from there, closing the project comes
 to the start screen.
 
@@ -1175,13 +1175,13 @@ nothing about your references is locked into Glaukopis. Files that belong to
 references, such as the PDF of an article, are copied into the library when
 they are added. Glaukopis does not depend on where they came from.
 
-The library stays as you left it while Glaukopis runs. The book in the rail
-and **Ctrl+2** go back to the references or the files, whichever you were in,
+The library stays as you left it while Glaukopis runs. The book in the row
+at the top and **Ctrl+2** go back to the references or the files, whichever you were in,
 at the collection or the folder you had open and the entry or the file you
 had selected, with the word you searched for, the filters, the order and the
 folders folded in the tree as they were, and the list scrolled to where it
-was; the switch at its head goes to each as it was left. Looking at a file in
-a view and coming back costs no finding of the way again.
+was; the switch in the row over it goes to each as it was left. Looking at
+a file in a view and coming back costs no finding of the way again.
 
 **New reference** opens a form with the fields that are usual for the kind of
 publication. Other fields are added from **Add field**. The entry as it
@@ -1303,8 +1303,8 @@ the next section is about.
 
 The library keeps files as well as references: the PDFs of articles and
 books, scans and photographs of pages, papers in Word or OpenDocument,
-ebooks, and anything else you want at hand. **Files**, at the head of the
-library beside *References*, shows them all (Ctrl+4). A file is copied into
+ebooks, and anything else you want at hand. **Files**, in the row at the
+top of the library beside *References*, shows them all (Ctrl+4). A file is copied into
 the library when it is taken in, and Glaukopis does not depend on where it
 came from.
 
@@ -1877,9 +1877,11 @@ takes all under the element with it; **Delete and promote sub-elements**
 keeps them, one level up.
 
 The top row holds, over each side, its path and at its right end the
-**×** that closes the side; at the right end of the row, on a ground of its
-own, **Split view**. The button of the list of projects is at the top of
-the rail. Under the path, each side has its bar (see *The text*).
+**×** that closes the side, with the button of **Split view** just before
+it. At the left end of the row stand the button of the list of projects and
+the house, in the head of the list while it is shown; at the right end the
+library, the search, the keys and the settings. Under the path, each side
+has its bar (see *The text*).
 
 This is what makes it safe to write. A tree that is valuable as it is, the
 first sketch of the argument, or the plan for the whole book, need not be
@@ -1934,7 +1936,7 @@ consumed by the writing:
   clone**; a clone of a clone is a clone of the original. In the text, a
   clone is its name, with a line that says what it is a clone of: its text
   is read in the original. The typesetting of the book shows the book.
-- **Split view**, at the right end of the top of the window
+- **Split view**, the button before the **×** of the side's path
   (**Ctrl+Shift+S**), opens a menu of what the other side shows. **This
   element, as diagram and text** shows the element in view both ways,
   beside one another. **Another element…** shows the tree of the project,
@@ -1945,11 +1947,12 @@ consumed by the writing:
   has its own outline. The window is split all the way up: each side has
   its own path at the top. The side you are in has its path in the colour
   of the buttons, the other in grey; the keys, undo, the document pane and
-  the dialogs act in the side you are in. The round button with arrows on
-  the line between the two paths, or **Switch sides** in the menu, puts the
-  two the other way round. **One at a time** closes the side you are not
-  in; the **×** at the right end of a side's path, or **Ctrl+W**, closes that side. With
-  one side, they close the project, and the start screen comes.
+  the dialogs act in the side you are in. With two sides, the button of
+  Split view stands, round, on the line between the two paths, and its
+  menu has **Switch sides**, which puts the two the other way round.
+  **One at a time** closes the side you are not in; the **×** at the right
+  end of a side's path, or **Ctrl+W**, closes that side. With one side,
+  they close the project, and the start screen comes.
 - **Another project beside**: **Another project…**, in the same menu, shows
   the list of projects, with its folders and its field; choose a project to
   see it in the other side, or unfold it with the chevron before its name
@@ -2429,7 +2432,7 @@ and searches it.
 
 ### Searching through everything
 
-**Ctrl+Shift+F**, or the magnifying glass at the left edge of the window,
+**Ctrl+Shift+F**, or the magnifying glass in the row at the top of the window,
 searches all you have written: the project you had open last, or all
 projects. What is found is listed by project, and within it by the tree
 under the project, each with the words around it; choose one, and the
@@ -3589,20 +3592,20 @@ opened as a document, with **A project from a document…**.
 
 ## Keys
 
-Everything here is also in the application: **Ctrl+/**, or the keyboard at
-the foot of the rail, shows the keys by where they hold. **Ctrl+K** finds
+Everything here is also in the application: **Ctrl+/**, or the keyboard in
+the row at the top of the window, shows the keys by where they hold. **Ctrl+K** finds
 what is to be done by its name, and does it.
 
 | | |
 | --- | --- |
-| **Ctrl+/** | All the keys, by where they hold; also the keyboard in the rail |
+| **Ctrl+/** | All the keys, by where they hold; also the keyboard in the row at the top |
 | **Ctrl+K** | What is to be done: anything that has a key, and some that have none, found by its name |
 | **Ctrl+1**, **Ctrl+2**, **Ctrl+4** | The projects, the library, the files of the library |
 | **Ctrl+,** | Settings, in a window over what is open; closing it leaves you where you were |
 | **Ctrl+D** | Diagram or text |
 | **Alt+Shift+Up** | Up to the element over this one, in the diagram and in the text; from the top of a project, to its row in the list of projects |
 | **Ctrl+Shift+O** | The outline beside the text |
-| **Ctrl+Shift+L** | The list of projects at the left: hide it, or show it again |
+| **Ctrl+Shift+L** | The list of projects at the left: hide it, or show it again; also the button at the left end of the row at the top |
 | **Ctrl+P** | Print: the document of the side you are in, or the file shown in it |
 | **Ctrl+E** | Export: the document of the side you are in, as a file |
 | **Ctrl+T** | Typesetting: the pages of the side you are in, beside the sides |

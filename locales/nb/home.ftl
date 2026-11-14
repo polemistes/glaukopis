@@ -1,6 +1,5 @@
 # Prosjektene: listen over dem, og det som gjøres med dem.
 
-home-title = Prosjekter
 home-join = Bli med i et delt prosjekt
 home-from-document = Et prosjekt av et dokument …
 home-new = Nytt prosjekt
@@ -32,7 +31,6 @@ home-move-failed = Prosjektet kunne ikke flyttes
 
 home-pane = Prosjektlisten
 home-pane-toggle = Prosjektlisten
-home-pane-close = Lukk prosjektlisten
 home-pane-between = Mellom prosjektlisten og prosjektet
 home-open-now = Det er åpent nå
 home-open-beside = Åpne ved siden av

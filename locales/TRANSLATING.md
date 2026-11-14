@@ -23,7 +23,7 @@ not a rendering word for word: change the order, split or join sentences,
 leave out what the language does not need.
 
 - **The application's own words** (map, element, kind, look, format,
-  style, passage, the store, the rail…) are chosen once, from
+  style, passage, the store, the row at the top…) are chosen once, from
   `GLOSSARY.md`, and used the same in every file. Write your choices first,
   in `locales/<tag>/GLOSSARY.md`, before translating; add to it as you go.
 - **The form of address** is the one that software in your language uses
@@ -158,8 +158,9 @@ It is turned off under *Tools* › *AutoCorrect Options*.
 
 ## The files
 
-`common.ftl` has the words used everywhere; `shell.ftl` the rail; the
-other files each have one part of the application, named by the file:
+`common.ftl` has the words used everywhere; `shell.ftl` the places in the
+row at the top of the window; the other files each have one part of the
+application, named by the file:
 `library`, `project`, `editor`, `preview`, `settings` and so on. `keys.ftl`
 describes the keys of the keyboard; `fields.ftl` names the fields of a
 reference, as a librarian would name them in your language; `style.ftl`

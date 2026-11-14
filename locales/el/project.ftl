@@ -56,7 +56,6 @@ project-untitled = Χωρίς τίτλο
 project-drop-on-map = Αφήστε πάνω σε χάρτη για μετακίνηση εκεί · με πατημένο το Ctrl για αντιγραφή
 project-open-beside = Άνοιγμα δίπλα
 project-open-beside-hint = Δύο χάρτες δίπλα δίπλα, για να μετακινείτε στοιχεία ανάμεσά τους
-project-side-by-side-short = Δίπλα δίπλα
 # The count is of those found in the map.
 project-found-hint = { $count } προς εξέταση, για να γίνουν παραπομπές
 project-copied-to = Αντιγράφηκε στο «{ $name }»

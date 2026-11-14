@@ -195,14 +195,14 @@ try {
     5000,
   ).catch(() => '');
   check('the message of the import outlives its dialog', !!imported, imported);
-  // The switch at the head of the library leads to the files.
-  check('the library has a switch to its files', await app.exists('[data-library-switch]'));
+  // The switch in the row over the library leads to the files.
+  check('the library has a switch to its files, in the row at the top', await app.exists('[data-top-row] [data-library-switch]'));
   await app.clickText('[data-library-switch] [role="radio"]', 'Files');
   await app.waitForText('h3', 'No files yet', 5000);
   check('the switch leads to the files', (await app.exec('return location.hash')) === '#/files');
   check(
-    'and the library keeps its place in the rail',
-    await app.exists('.rail a.place.current[href="#/library"]'),
+    'and the library keeps its place lit in the row at the top, the switch still there',
+    (await app.exists('[data-place="library"].current')) && (await app.exists('[data-top-row] [data-library-switch]')),
   );
   await app.screenshot('files-0-empty');
 
@@ -307,13 +307,13 @@ try {
     (await app.exec('return location.hash')).includes(`file=${pdf.hash}`),
   );
   // The library is kept as it was left: gone elsewhere and back by the book in
-  // the rail, the files are in view, at the file selected, with the filter still on.
+  // the row at the top, the files are in view, at the file selected, with the filter still on.
   await app.go('#/search');
   await app.waitGone('.files-view', 5000);
-  await app.click('.rail a[href="#/library"]');
+  await app.click('[data-place="library"]');
   await app.waitFor(`.file-pane[data-file="${pdf.hash}"]`, 5000);
   check(
-    'back by the rail, the library shows its files, at the file selected',
+    'back by the book, the library shows its files, at the file selected',
     (await app.exec('return location.hash')) === `#/files?file=${pdf.hash}`,
     await app.exec('return location.hash'),
   );

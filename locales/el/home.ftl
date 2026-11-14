@@ -1,6 +1,5 @@
 # The projects: the list of them, and what is done with them.
 
-home-title = Έργα
 home-join = Συμμετοχή σε κοινό έργο
 home-from-document = Έργο από έγγραφο…
 home-new = Νέο έργο

@@ -97,16 +97,16 @@ try {
      await window.__TAURI_INTERNALS__.invoke('import_apply', { plan });`,
     bib,
   );
-  await app.waitFor('.rail a.place', 8000);
+  await app.waitFor('[data-row-end] a.place', 8000);
   await sleep(300);
-  const rail = () =>
+  const places = () =>
     app.exec(
-      `return Array.from(document.querySelectorAll('.rail .place')).map((a) => a.getAttribute('aria-label'))`,
+      `return Array.from(document.querySelectorAll('[data-row-start] .place, [data-row-end] .place')).map((a) => a.getAttribute('aria-label'))`,
     );
   check(
     'the interface is in the language of the system',
-    (await rail()).join(' ') === 'Prosjektlisten Prosjekter Bibliotek Søk Taster Innstillinger',
-    (await rail()).join(' '),
+    (await places()).join(' ') === 'Prosjektlisten Prosjekter Bibliotek Søk Taster Innstillinger',
+    (await places()).join(' '),
   );
   check('and the page says so', (await app.exec(`return document.documentElement.lang`)) === 'nb');
   await english('the projects');
@@ -484,8 +484,8 @@ try {
   await sleep(300);
   check(
     'English is chosen, and the interface changes at once',
-    (await rail()).join(' ') === 'The list of projects Projects Library Search Keys Settings',
-    (await rail()).join(' '),
+    (await places()).join(' ') === 'The list of projects Projects Library Search Keys Settings',
+    (await places()).join(' '),
   );
   check('the page says so', (await app.exec(`return document.documentElement.lang`)) === 'en');
   check(
