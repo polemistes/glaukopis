@@ -43,7 +43,7 @@ const press = (app, within, text) =>
 const app = await App.launch({ width: 1360, height: 900, dataDir: data, env: { GLAUKOPIS_LANGUAGE: 'en' } });
 try {
   await app.installErrorHook();
-  await app.waitFor('[data-row-end] a.place', 8000);
+  await app.waitFor('[data-row-end] .place', 8000);
   const before = await invoke(app, 'spelling_prepare', { language: 'nb' });
   check('at first there is no dictionary of Bokmål but the system’s', !before || before.dictionaries[0].source === 'system', JSON.stringify(before?.dictionaries?.[0]?.source ?? null));
 

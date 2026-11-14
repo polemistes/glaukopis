@@ -148,7 +148,11 @@ try {
   await app.press('Escape');
   await sleep(150);
 
-  // ---- the filter ----
+  // ---- the filter: the field finds projects by name when its menu says so (record 0098) ----
+  await app.click('[data-projects-pane] [data-list-field-menu]');
+  await app.waitFor('[role="menu"]', 3000);
+  await app.clickText('[role="menu"] [role^="menuitem"]', 'Find a project');
+  await sleep(300);
   await filterBy(app, 'ili');
   await sleep(300);
   check('with a filter, the favourites that match', JSON.stringify(await favourites(app)) === JSON.stringify(['Iliad']), JSON.stringify(await favourites(app)));

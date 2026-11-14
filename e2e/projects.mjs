@@ -150,7 +150,11 @@ try {
   check('and opens it again', (await rowsOf(app)).length === 4);
   await app.screenshot('projects-3-list-with-folder');
 
-  // Found by name.
+  // Found by name, which the field does when its menu says so (record 0098).
+  await app.click('[data-projects-pane] [data-list-field-menu]');
+  await app.waitFor('[role="menu"]', 3000);
+  await app.clickText('[role="menu"] [role^="menuitem"]', 'Find a project');
+  await sleep(300);
   await app.type('[data-projects-pane] .list .tools input', 'bet');
   await sleep(300);
   rows = await rowsOf(app);

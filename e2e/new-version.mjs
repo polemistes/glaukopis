@@ -46,7 +46,7 @@ try {
   await app.waitForText('.toaster .toast', 'Glaukopis 99.0.0 is out.', 5000);
   check(
     'a newer version is told of, with Download page',
-    (await app.text('.toaster .toast .action')) === 'Download page',
+    (await app.exec(`return document.querySelector('.toaster .toast .action')?.textContent.trim()`)) === 'Download page',
     await toastText(app),
   );
   await app.screenshot('new-version-1-told');
