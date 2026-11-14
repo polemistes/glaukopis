@@ -1486,3 +1486,7 @@ What this settles:
 
 Plan: `docs/plans/the-lists-of-the-document-pane-and-the-row-over-the-window.md`.
 Records 0095 and 0096.
+
+Built the same day, nothing of it in Rust. The building was delegated as asked: the views, the plan and its choices were the main thread's (Fable); the lists of the pane were built by Sonnet and the row over the window by Opus, each in a working copy of its own with the interface's checks; they were merged, read, and tried in the running application in the main thread, thirty-two scripts, which passed as the builders had written them but for one check that was wrong in a script.
+
+Chosen in the building, and not asked: the word *Projects* and the × leave the head of the list, where the list's button now stands; the switch *References | Files* stands in the row over the library; what is added in the pane is shown under *All*, selected; the Split button is not lit with two sides. The line over the tabs of the pane still says *Map* before the name of the element in view: it was not part of this.

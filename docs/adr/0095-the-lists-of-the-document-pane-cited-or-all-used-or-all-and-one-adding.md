@@ -51,4 +51,4 @@ Date: 2026-11-14. Status: built on 2026-11-14, its choices not yet confirmed by 
 - **The scripts**: `e2e/picture-panel.mjs`, `e2e/image-editing.mjs` and `e2e/notes.mjs` press the choices by their new words; `e2e/pane-adding.mjs` is new: the choices, the menu, a `.bib` file dropped on the references, an image dropped on the references, a PDF dropped on the images.
 - **The guide**: *Images*, the panel of references, *References can be added wherever they are used*, *Importing*, *Where the file is dropped* (a row for the lists of the pane) and *The document pane*.
 - **Counts.** 1563 tests of the interface pass, and svelte-check finds nothing. No change to the core, the shell or the server, and none to the contract.
-- **Not tried in the running application**: the scripts were written and not run (the working copy had no build); they are run after this part is merged with the other.
+- **Tried in the running application** in the main thread, after this part was merged with the other: `e2e/pane-adding.mjs` (17 checks), `e2e/picture-panel.mjs`, `e2e/image-editing.mjs` and `e2e/notes.mjs` passed as they were written.
