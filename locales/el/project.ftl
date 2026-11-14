@@ -105,13 +105,8 @@ project-left-out-of-document = Έξω από το έγγραφο
 
 ## The panels at the side: the references and the pictures
 
-project-this-map = Αυτός ο χάρτης
-project-project = Έργο
-project-library = Βιβλιοθήκη
 project-nothing-found = Δεν βρέθηκε τίποτα
 project-edit-reference = Επεξεργασία της αναφοράς…
-project-new-reference = Νέα αναφορά
-project-import-file = Εισαγωγή αρχείου
 project-which-references = Ποιες αναφορές
 project-search-references = Αναζήτηση αναφορών
 project-library-empty = Η βιβλιοθήκη σας είναι άδεια
@@ -136,11 +131,6 @@ project-not-on-computer = Όχι σε αυτόν τον υπολογιστή
 project-nothing-said = Δεν λέγεται τίποτα γι’ αυτήν ακόμη
 project-no-pictures = Καμία εικόνα ακόμη
 project-pictures-drag = Σύρετε μια εικόνα μέσα σε κείμενο για να γίνει σχήμα εκεί, ή πάνω σε στοιχείο για να μπει στο τέλος του κειμένου του.
-# The count is of the pictures that are used and are not in the store of this computer.
-project-pictures-absent-map = { $count ->
-    [one] { $count } σε αυτόν τον χάρτη δεν είναι σε αυτόν τον υπολογιστή.
-   *[other] { $count } σε αυτόν τον χάρτη δεν είναι σε αυτόν τον υπολογιστή.
-}
 project-pictures-absent-project = { $count ->
     [one] { $count } σε αυτό το έργο δεν είναι σε αυτόν τον υπολογιστή.
    *[other] { $count } σε αυτό το έργο δεν είναι σε αυτόν τον υπολογιστή.

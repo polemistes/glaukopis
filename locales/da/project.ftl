@@ -166,13 +166,8 @@ project-left-out-of-document = Udeladt af dokumentet
 
 ## The panels at the side: the references and the pictures
 
-project-this-map = Dette kort
-project-project = Projekt
-project-library = Bibliotek
 project-nothing-found = Intet fundet
 project-edit-reference = Rediger referencen…
-project-new-reference = Ny reference
-project-import-file = Importer en fil
 project-which-references = Hvilke referencer
 project-search-references = Søg i referencerne
 project-library-empty = Dit bibliotek er tomt
@@ -196,14 +191,7 @@ project-a-picture = Et billede
 project-not-on-computer = Ikke på denne computer
 project-nothing-said = Der er intet sagt om det endnu
 project-no-pictures = Ingen billeder endnu
-project-no-pictures-map = Billederne i dette korts figurer står her. Bibliotekets billeder står under Bibliotek.
-project-no-pictures-project = Billederne i projektets figurer står her. Bibliotekets billeder står under Bibliotek.
 project-pictures-drag = Træk et billede ind i en tekst for at lave en figur af det dér, eller hen på et element for at sætte det sidst i dets tekst.
-# The count is of the pictures that are used and are not in the store of this computer.
-project-pictures-absent-map = { $count ->
-    [one] { $count } i dette kort er ikke på denne computer.
-   *[other] { $count } i dette kort er ikke på denne computer.
-}
 project-pictures-absent-project = { $count ->
     [one] { $count } i dette projekt er ikke på denne computer.
    *[other] { $count } i dette projekt er ikke på denne computer.
@@ -323,8 +311,6 @@ project-show-file-named = Vis »{ $name }«
 # Over the document pane while the side that has the focus shows a file: the document is that of the other side.
 project-document-of-other = Den anden sides dokument
 
-# One place for files (ADR 0070): the third choice of the images at the side of a project, all of the library.
-project-pictures-library = Bibliotek
 project-library-no-images = Biblioteket har ingen billeder
 project-library-no-images-hint = Tilføj billeder fra filer, eller slip dem på en tekst.
 

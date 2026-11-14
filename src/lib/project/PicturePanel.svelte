@@ -1,11 +1,11 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   /**
-   * The images at the side of a project: those of the element in view, of
-   * the project, or all of the library (ADR 0070). An image is dragged from
-   * here into a text, where it becomes a figure.
+   * The images at the side of a project: those its figures show, or all of
+   * the library (ADR 0070, record 0095). An image is dragged from here into
+   * a text, where it becomes a figure.
    */
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import type { EditorView } from 'prosemirror-view';
   import ImagePlus from '@lucide/svelte/icons/image-plus';
   import Plus from '@lucide/svelte/icons/plus';
@@ -16,29 +16,28 @@
   import { insertFigure } from '$lib/editor/commands';
   import { editorUi } from '$lib/editor/ui.svelte';
   import {
-    isPicturePath,
     pictureMatches,
     pictures,
     PICTURES_DRAGGED,
     type Picture,
   } from '$lib/figures/pictures.svelte';
   import { t } from '$lib/i18n';
-  import { importDropped } from '$lib/library/references.svelte';
-  import { addPictures, takeIn, type PictureScope } from '$lib/figures/images.svelte';
+  import { addPictures, type PictureScope } from '$lib/figures/images.svelte';
   import { files, storedOf } from '$lib/files/store.svelte';
   import PictureTextDialog from '$lib/ocr/PictureTextDialog.svelte';
   import Thumb from '$lib/files/Thumb.svelte';
   import { router } from '$lib/state/router.svelte';
-  import { dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
+  import { dropTarget, startDrag } from '$lib/ui/drag.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
   import { openContextMenu } from '$lib/ui/menu.svelte';
   import Segmented from '$lib/ui/Segmented.svelte';
   import type { Project } from './model/project.svelte';
+  import { arrivals, arrive, dropOnList } from './pane-adding.svelte';
 
   interface Props {
     project: Project;
-    /** The element in view: "This map" shows the pictures of its branch. */
+    /** The element in view, for the text read of an image to be made an element at. */
     at: string;
     /** Which pictures are shown. */
     scope?: PictureScope;
@@ -65,6 +64,8 @@
   let reading = $state<string | null>(null);
   const readingFile = $derived(reading ? files.get(reading) : undefined);
   let list = $state<HTMLDivElement>();
+  /** The image to bring into view as soon as the list has it. */
+  let revealing = $state<string | null>(null);
   /** The text that had the cursor last: where a picture is put when that is asked for. */
   let written: EditorView | null = null;
 
@@ -88,7 +89,7 @@
         picture: p,
       }));
     return project
-      .usedPictures(scope === 'map' ? at : undefined)
+      .usedPictures()
       .map((used) => {
         const picture = pictures.get(used.hash);
         return {
@@ -114,6 +115,29 @@
     pictures.loaded && scope !== 'library' ? rows.filter((r) => !r.picture).length : 0,
   );
 
+  // What came into the library through a list of the pane and stands among
+  // the images is shown: all of the library, nothing searched for, what came
+  // selected and in view (record 0095). It depends on what waits alone.
+  $effect(() => {
+    const arrived = arrivals.waiting;
+    if (arrived?.tab !== 'images') return;
+    untrack(() => {
+      arrivals.waiting = null;
+      scope = 'library';
+      query = '';
+      selected = revealing = arrived.ids[arrived.ids.length - 1];
+    });
+  });
+
+  // The image to bring into view is scrolled to once the list is there with
+  // it: the list is made as the images are shown, or as they come.
+  $effect(() => {
+    if (!revealing || !list || !shown.some((r) => r.hash === revealing)) return;
+    const hash = revealing;
+    revealing = null;
+    reveal(hash);
+  });
+
   /** An image is looked at, named and given its words where every file is: among the files of the library. */
   function open(hash: string) {
     router.go({ view: 'files', file: hash });
@@ -136,24 +160,11 @@
     view.focus();
   }
 
-  /** Images that were taken in are in the library, and in no text yet: all of the library is shown. */
-  function took(taken: Picture[]) {
-    if (!taken.length) return;
-    scope = 'library';
-    query = '';
-    selected = taken[taken.length - 1].hash;
-  }
-
   async function add() {
-    took(await addPictures());
-  }
-
-  /** Files from the desktop: the pictures among them are taken in, the others go to the library. */
-  async function dropped(event: DropEvent) {
-    const paths = event.payload.data as string[];
-    const others = paths.filter((path) => !isPicturePath(path));
-    took(await takeIn(paths));
-    if (others.length) void importDropped(others);
+    arrive(
+      'images',
+      (await addPictures()).map((p) => p.hash),
+    );
   }
 
   function onpointerdown(event: PointerEvent, row: Row) {
@@ -220,8 +231,8 @@
   aria-label={t('project-pictures')}
   data-beside-text
   use:dropTarget={{
-    accepts: (p) => p.kind === 'files' && (p.data as string[]).some(isPicturePath),
-    ondrop: (e) => void dropped(e),
+    accepts: (p) => p.kind === 'files',
+    ondrop: (e) => void dropOnList(e.payload.data as string[], 'images'),
   }}
 >
   <header>
@@ -236,9 +247,8 @@
         label={t('project-which-pictures')}
         size="sm"
         options={[
-          { value: 'map', label: t('project-this-map') },
-          { value: 'project', label: t('project-project') },
-          { value: 'library', label: t('project-pictures-library') },
+          { value: 'project', label: t('project-pictures-used') },
+          { value: 'library', label: t('project-all') },
         ]}
       />
       <span class="spring"></span>
@@ -315,20 +325,14 @@
         text={t('project-library-no-images-hint')}
       />
     {:else}
-      <EmptyState
-        compact
-        title={t('project-no-pictures')}
-        text={scope === 'map' ? t('project-no-pictures-map') : t('project-no-pictures-project')}
-      />
+      <EmptyState compact title={t('project-no-pictures')} text={t('project-no-pictures-hint')} />
     {/if}
   </div>
 
   <footer>
     {t('project-pictures-drag')}
     {#if absent}
-      <br />{scope === 'map'
-        ? t('project-pictures-absent-map', { count: absent })
-        : t('project-pictures-absent-project', { count: absent })}
+      <br />{t('project-pictures-absent-project', { count: absent })}
     {/if}
   </footer>
 </aside>

@@ -122,13 +122,8 @@ project-left-out-of-document = Pominięty w dokumencie
 
 ## The panels at the side: the references and the pictures
 
-project-this-map = Ta mapa
-project-project = Projekt
-project-library = Biblioteka
 project-nothing-found = Nic nie znaleziono
 project-edit-reference = Edytuj pozycję…
-project-new-reference = Nowa pozycja
-project-import-file = Importuj plik
 project-which-references = Które pozycje
 project-search-references = Szukaj pozycji
 project-library-empty = Twoja biblioteka jest pusta
@@ -155,13 +150,6 @@ project-not-on-computer = Nie ma na tym komputerze
 project-nothing-said = Nic jeszcze o nim nie powiedziano
 project-no-pictures = Nie ma jeszcze obrazów
 project-pictures-drag = Przeciągnij obraz do tekstu, by zrobić tam z niego rycinę, albo na element, by wstawić go na końcu jego tekstu.
-# The count is of the pictures that are used and are not in the store of this computer.
-project-pictures-absent-map = { $count ->
-    [one] Na tym komputerze brakuje { $count } z tej mapy.
-    [few] Na tym komputerze brakuje { $count } z tej mapy.
-    [many] Na tym komputerze brakuje { $count } z tej mapy.
-   *[other] Na tym komputerze brakuje { $count } z tej mapy.
-}
 project-pictures-absent-project = { $count ->
     [one] Na tym komputerze brakuje { $count } z tego projektu.
     [few] Na tym komputerze brakuje { $count } z tego projektu.

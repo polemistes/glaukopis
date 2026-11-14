@@ -166,13 +166,8 @@ project-left-out-of-document = Utelate frå dokumentet
 
 ## The panels at the side: the references and the pictures
 
-project-this-map = Dette kartet
-project-project = Prosjekt
-project-library = Bibliotek
 project-nothing-found = Ingenting funne
 project-edit-reference = Rediger referansen …
-project-new-reference = Ny referanse
-project-import-file = Importer ei fil
 project-which-references = Kva referansar
 project-search-references = Søk i referansane
 project-library-empty = Biblioteket ditt er tomt
@@ -196,14 +191,7 @@ project-a-picture = Eit bilete
 project-not-on-computer = Ikkje på denne datamaskina
 project-nothing-said = Ingenting er skrive om det enno
 project-no-pictures = Ingen bilete enno
-project-no-pictures-map = Bileta i figurane i dette kartet står her. Dei i biblioteket står under Bibliotek.
-project-no-pictures-project = Bileta i figurane i prosjektet står her. Dei i biblioteket står under Bibliotek.
 project-pictures-drag = Dra eit bilete inn i ein tekst for å lage ein figur av det der, eller til eit element for å setje det inn på slutten av teksten.
-# The count is of the pictures that are used and are not in the store of this computer.
-project-pictures-absent-map = { $count ->
-    [one] { $count } i dette kartet er ikkje på denne datamaskina.
-   *[other] { $count } i dette kartet er ikkje på denne datamaskina.
-}
 project-pictures-absent-project = { $count ->
     [one] { $count } i dette prosjektet er ikkje på denne datamaskina.
    *[other] { $count } i dette prosjektet er ikkje på denne datamaskina.
@@ -320,8 +308,6 @@ project-show-file-named = Vis «{ $name }»
 # Over the document pane while the side that has the focus shows a file: the document is that of the other side.
 project-document-of-other = Dokumentet på den andre sida
 
-# One place for files (ADR 0070): the third choice of the images at the side of a project, all of the library.
-project-pictures-library = Bibliotek
 project-library-no-images = Biblioteket har ingen bilete
 project-library-no-images-hint = Legg til bilete frå filer, eller slepp dei på ein tekst.
 

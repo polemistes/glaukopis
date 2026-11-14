@@ -166,13 +166,16 @@ project-left-out-of-document = Left out of the document
 
 ## The panels at the side: the references and the pictures
 
-project-this-map = This map
-project-project = Project
-project-library = Library
+# The two choices of the references: those the project cites anywhere in it, or every one of the library.
+project-references-cited = Cited
+# The two choices of the images: those the figures of the project show, or every one of the library.
+project-pictures-used = Used
+# The second choice of both lists.
+project-all = All
 project-nothing-found = Nothing found
 project-edit-reference = Edit the reference…
-project-new-reference = New reference
-project-import-file = Import a file
+# The label of the plus that opens the menu of adding references: a new one, or from files and text.
+project-add-references = Add references
 project-which-references = Which references
 project-search-references = Search references
 project-library-empty = Your library is empty
@@ -196,14 +199,9 @@ project-a-picture = An image
 project-not-on-computer = Not on this computer
 project-nothing-said = Nothing is said of it yet
 project-no-pictures = No images yet
-project-no-pictures-map = The images of the figures of this map are listed here. Those of the library are under Library.
-project-no-pictures-project = The images of the figures of the project are listed here. Those of the library are under Library.
+project-no-pictures-hint = The images of the figures of the project are listed here. Every image of the library is under All.
 project-pictures-drag = Drag an image into a text to make a figure of it there, or onto an element to put it at the end of its text.
 # The count is of the images that are used and are not among the files of this computer.
-project-pictures-absent-map = { $count ->
-    [one] { $count } in this map is not on this computer.
-   *[other] { $count } in this map are not on this computer.
-}
 project-pictures-absent-project = { $count ->
     [one] { $count } in this project is not on this computer.
    *[other] { $count } in this project are not on this computer.
@@ -320,8 +318,7 @@ project-show-file-named = Show “{ $name }”
 # Over the document pane while the side that has the focus shows a file: the document is that of the other side.
 project-document-of-other = The document of the other side
 
-# One place for files (ADR 0070): the third choice of the images at the side of a project, all of the library.
-project-pictures-library = Library
+# One place for files (ADR 0070): what the list of all the images says where there are none.
 project-library-no-images = The library has no images
 project-library-no-images-hint = Add images from files, or drop them on a text.
 

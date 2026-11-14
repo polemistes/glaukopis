@@ -166,13 +166,8 @@ project-left-out-of-document = Aus dem Dokument weggelassen
 
 ## The panels at the side: the references and the pictures
 
-project-this-map = Diese Karte
-project-project = Projekt
-project-library = Bibliothek
 project-nothing-found = Nichts gefunden
 project-edit-reference = Quelle bearbeiten…
-project-new-reference = Neue Quelle
-project-import-file = Datei importieren
 project-which-references = Welche Quellen
 project-search-references = Quellen durchsuchen
 project-library-empty = Ihre Bibliothek ist leer
@@ -196,14 +191,7 @@ project-a-picture = Ein Bild
 project-not-on-computer = Nicht auf diesem Computer
 project-nothing-said = Noch nichts dazu gesagt
 project-no-pictures = Noch keine Bilder
-project-no-pictures-map = Hier stehen die Bilder der Abbildungen dieser Karte. Die der Bibliothek stehen unter Bibliothek.
-project-no-pictures-project = Hier stehen die Bilder der Abbildungen des Projekts. Die der Bibliothek stehen unter Bibliothek.
 project-pictures-drag = Ziehen Sie ein Bild in einen Text, um dort eine Abbildung daraus zu machen, oder auf ein Element, um es ans Ende seines Textes zu setzen.
-# The count is of the pictures that are used and are not in the store of this computer.
-project-pictures-absent-map = { $count ->
-    [one] { $count } in dieser Karte ist nicht auf diesem Computer.
-   *[other] { $count } in dieser Karte sind nicht auf diesem Computer.
-}
 project-pictures-absent-project = { $count ->
     [one] { $count } in diesem Projekt ist nicht auf diesem Computer.
    *[other] { $count } in diesem Projekt sind nicht auf diesem Computer.
@@ -320,8 +308,6 @@ project-show-file-named = „{ $name }“ zeigen
 # Over the document pane while the side that has the focus shows a file: the document is that of the other side.
 project-document-of-other = Das Dokument der anderen Fensterseite
 
-# One place for files (ADR 0070): the third choice of the images at the side of a project, all of the library.
-project-pictures-library = Bibliothek
 project-library-no-images = Die Bibliothek hat keine Bilder
 project-library-no-images-hint = Fügen Sie Bilder aus Dateien hinzu, oder lassen Sie sie auf einen Text fallen.
 

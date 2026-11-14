@@ -30,8 +30,8 @@ describe('the words of a project', () => {
     expect(t('project-references-foreign', { count: 1 })).toBe(
       '1 in this project is not in your library.',
     );
-    expect(t('project-pictures-absent-map', { count: 3 })).toBe(
-      '3 in this map are not on this computer.',
+    expect(t('project-pictures-absent-project', { count: 3 })).toBe(
+      '3 in this project are not on this computer.',
     );
   });
 

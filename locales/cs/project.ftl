@@ -111,13 +111,8 @@ project-left-out-of-document = Vynecháno z dokumentu
 
 ## The panels at the side: the references and the pictures
 
-project-this-map = Tato mapa
-project-project = Projekt
-project-library = Knihovna
 project-nothing-found = Nic nenalezeno
 project-edit-reference = Upravit záznam…
-project-new-reference = Nový záznam
-project-import-file = Importovat soubor
 project-which-references = Které záznamy
 project-search-references = Hledat záznamy
 project-library-empty = Vaše knihovna je prázdná
@@ -143,12 +138,6 @@ project-not-on-computer = Není v tomto počítači
 project-nothing-said = Zatím se o něm nic neříká
 project-no-pictures = Zatím žádné obrázky
 project-pictures-drag = Přetáhněte obrázek do textu, aby se z něj tam stalo vyobrazení, nebo na prvek, aby se vložil na konec jeho textu.
-# The count is of the pictures that are used and are not in the store of this computer.
-project-pictures-absent-map = { $count ->
-    [one] { $count } v této mapě není v tomto počítači.
-    [few] { $count } v této mapě nejsou v tomto počítači.
-   *[other] { $count } v této mapě není v tomto počítači.
-}
 project-pictures-absent-project = { $count ->
     [one] { $count } v tomto projektu není v tomto počítači.
     [few] { $count } v tomto projektu nejsou v tomto počítači.

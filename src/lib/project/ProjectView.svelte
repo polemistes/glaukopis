@@ -1380,7 +1380,6 @@
         {:else}
           <ReferencePanel
             {project}
-            {at}
             head={tabs}
             onclose={() => documentPane.close()}
             show={documentPane.citationsOf}

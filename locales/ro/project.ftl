@@ -115,13 +115,8 @@ project-left-out-of-document = Lăsat afară din document
 
 ## The panels at the side: the references and the pictures
 
-project-this-map = Această hartă
-project-project = Proiect
-project-library = Bibliotecă
 project-nothing-found = Nu s-a găsit nimic
 project-edit-reference = Modifică referința…
-project-new-reference = Referință nouă
-project-import-file = Importă un fișier
 project-which-references = Ce referințe
 project-search-references = Caută referințe
 project-library-empty = Biblioteca dumneavoastră este goală
@@ -147,12 +142,6 @@ project-not-on-computer = Nu este pe acest calculator
 project-nothing-said = Nu se spune nimic despre ea încă
 project-no-pictures = Nicio imagine încă
 project-pictures-drag = Trageți o imagine într-un text ca să faceți din ea o figură acolo, sau pe un element ca să o puneți la sfârșitul textului lui.
-# The count is of the pictures that are used and are not in the store of this computer.
-project-pictures-absent-map = { $count ->
-    [one] Una din această hartă nu este pe acest calculator.
-    [few] { $count } din această hartă nu sunt pe acest calculator.
-   *[other] { $count } din această hartă nu sunt pe acest calculator.
-}
 project-pictures-absent-project = { $count ->
     [one] Una din acest proiect nu este pe acest calculator.
     [few] { $count } din acest proiect nu sunt pe acest calculator.

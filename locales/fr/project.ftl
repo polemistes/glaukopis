@@ -174,13 +174,8 @@ project-left-out-of-document = Laissé hors du document
 
 ## The panels at the side: the references and the pictures
 
-project-this-map = Cette carte
-project-project = Projet
-project-library = Bibliothèque
 project-nothing-found = Rien trouvé
 project-edit-reference = Modifier la référence…
-project-new-reference = Nouvelle référence
-project-import-file = Importer un fichier
 project-which-references = Quelles références
 project-search-references = Rechercher des références
 project-library-empty = Votre bibliothèque est vide
@@ -205,15 +200,7 @@ project-a-picture = Une image
 project-not-on-computer = Pas sur cet ordinateur
 project-nothing-said = Rien n’en est encore dit
 project-no-pictures = Pas encore d’images
-project-no-pictures-map = Les images des figures de cette carte sont listées ici. Celles de la bibliothèque sont sous Bibliothèque.
-project-no-pictures-project = Les images des figures du projet sont listées ici. Celles de la bibliothèque sont sous Bibliothèque.
 project-pictures-drag =Glissez une image dans un texte pour en faire une figure à cet endroit, ou sur un élément pour la mettre à la fin de son texte.
-# The count is of the pictures that are used and are not in the store of this computer.
-project-pictures-absent-map = { $count ->
-    [one] { $count } de cette carte n’est pas sur cet ordinateur.
-    [many] { $count } de cette carte ne sont pas sur cet ordinateur.
-   *[other] { $count } de cette carte ne sont pas sur cet ordinateur.
-}
 project-pictures-absent-project = { $count ->
     [one] { $count } de ce projet n’est pas sur cet ordinateur.
     [many] { $count } de ce projet ne sont pas sur cet ordinateur.
@@ -339,8 +326,6 @@ project-show-file-named = Afficher « { $name } »
 # Over the document pane while the side that has the focus shows a file: the document is that of the other side.
 project-document-of-other = Le document de l’autre côté
 
-# One place for files (ADR 0070): the third choice of the images at the side of a project, all of the library.
-project-pictures-library = Bibliothèque
 project-library-no-images = La bibliothèque n’a pas d’images
 project-library-no-images-hint = Ajoutez des images depuis des fichiers, ou déposez-les sur un texte.
 

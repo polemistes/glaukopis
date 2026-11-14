@@ -174,13 +174,8 @@ project-left-out-of-document = Lasciato fuori dal documento
 
 ## The panels at the side: the references and the pictures
 
-project-this-map = Questa mappa
-project-project = Progetto
-project-library = Biblioteca
 project-nothing-found = Nulla di trovato
 project-edit-reference = Modifica il riferimento…
-project-new-reference = Nuovo riferimento
-project-import-file = Importa un file
 project-which-references = Quali riferimenti
 project-search-references = Cerca riferimenti
 project-library-empty = La tua biblioteca è vuota
@@ -205,15 +200,7 @@ project-a-picture = Un'immagine
 project-not-on-computer = Non su questo computer
 project-nothing-said = Non se ne dice ancora nulla
 project-no-pictures = Ancora nessuna immagine
-project-no-pictures-map = Qui sono elencate le immagini delle figure di questa mappa. Quelle della biblioteca sono sotto Biblioteca.
-project-no-pictures-project = Qui sono elencate le immagini delle figure del progetto. Quelle della biblioteca sono sotto Biblioteca.
 project-pictures-drag = Trascina un'immagine in un testo per farne una figura lì, o su un elemento per metterla alla fine del suo testo.
-# The count is of the images that are used and are not among the files of this computer.
-project-pictures-absent-map = { $count ->
-    [one] { $count } in questa mappa non è su questo computer.
-    [many] { $count } in questa mappa non sono su questo computer.
-   *[other] { $count } in questa mappa non sono su questo computer.
-}
 project-pictures-absent-project = { $count ->
     [one] { $count } in questo progetto non è su questo computer.
     [many] { $count } in questo progetto non sono su questo computer.
@@ -336,8 +323,6 @@ project-show-file-named = Mostra «{ $name }»
 # Over the document pane while the side that has the focus shows a file: the document is that of the other side.
 project-document-of-other = Il documento dell'altro lato
 
-# One place for files (ADR 0070): the third choice of the images at the side of a project, all of the library.
-project-pictures-library = Biblioteca
 project-library-no-images = La biblioteca non ha immagini
 project-library-no-images-hint = Aggiungi immagini da file, o lasciale cadere su un testo.
 
