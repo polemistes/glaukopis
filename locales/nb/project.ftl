@@ -144,13 +144,16 @@ project-left-out-of-document = Utelatt fra dokumentet
 
 ## Panelene ved siden av: referansene og bildene
 
-project-this-map = Dette kartet
-project-project = Prosjekt
-project-library = Bibliotek
+# De to valgene for referansene: de prosjektet viser til hvor som helst i det, eller alle i biblioteket.
+project-references-cited = Sitert
+# De to valgene for bildene: de figurene i prosjektet viser, eller alle i biblioteket.
+project-pictures-used = Brukt
+# Det andre valget i begge listene.
+project-all = Alle
 project-nothing-found = Ingenting funnet
 project-edit-reference = Rediger referansen …
-project-new-reference = Ny referanse
-project-import-file = Importer en fil
+# Navnet på plusset som åpner menyen for å legge til referanser: en ny, eller fra filer og tekst.
+project-add-references = Legg til referanser
 project-which-references = Hvilke referanser
 project-search-references = Søk i referansene
 project-library-empty = Biblioteket ditt er tomt
@@ -170,10 +173,8 @@ project-a-picture = Et bilde
 project-not-on-computer = Ikke på denne datamaskinen
 project-nothing-said = Ingenting er skrevet om det ennå
 project-no-pictures = Ingen bilder ennå
-project-no-pictures-map = Bildene i figurene i dette kartet står her. Bildene i biblioteket står under Bibliotek.
-project-no-pictures-project = Bildene i figurene i prosjektet står her. Bildene i biblioteket står under Bibliotek.
+project-no-pictures-hint = Bildene i figurene i prosjektet står her. Alle bildene i biblioteket står under Alle.
 project-pictures-drag = Dra et bilde inn i en tekst for å lage en figur av det der, eller til et element for å sette det inn på slutten av teksten.
-project-pictures-absent-map = { $count } i dette kartet er ikke på denne datamaskinen.
 project-pictures-absent-project = { $count } i dette prosjektet er ikke på denne datamaskinen.
 
 ## Felles for diagrammet og teksten
@@ -272,8 +273,7 @@ project-show-file-named = Vis «{ $name }»
 # Over dokumentpanelet mens siden som har fokus, viser en fil: dokumentet er den andre sidens.
 project-document-of-other = Dokumentet på den andre siden
 
-# Ett sted for filer (ADR 0070).
-project-pictures-library = Bibliotek
+# Ett sted for filer (ADR 0070): det listen over alle bildene sier der det ikke er noen.
 project-library-no-images = Biblioteket har ingen bilder
 project-library-no-images-hint = Legg til bilder fra filer, eller slipp dem på en tekst.
 

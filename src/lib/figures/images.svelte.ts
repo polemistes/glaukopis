@@ -1,6 +1,6 @@
 /**
  * What the picture panel of a project needs of the images of the library
- * (ADR 0070): which it shows, taking images in to be figures, who uses one,
+ * (ADR 0070, record 0095): which it shows, taking images in to be figures, who uses one,
  * and the words for its kind. The images themselves are files of the
  * library, read for figures in `pictures.svelte.ts`.
  */
@@ -13,8 +13,8 @@ import { projects } from '$lib/state/projects.svelte';
 import { notifyOk } from '$lib/ui/toast.svelte';
 import { isPicturePath, pictures, PICTURE_ENDINGS, type Picture } from './pictures.svelte';
 
-/** Which images the panel of a project shows: those of the map, of the project, or all of the library. */
-export type PictureScope = 'map' | 'project' | 'library';
+/** Which images the panel of a project shows: those its figures show, or all of the library. */
+export type PictureScope = 'project' | 'library';
 
 class PicturesUi {
   /** Set when the panel of the project is asked for from elsewhere, as from the tools for writing. */

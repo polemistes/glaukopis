@@ -105,13 +105,8 @@ project-left-out-of-document = Uit het document weggelaten
 
 ## The panels at the side: the references and the pictures
 
-project-this-map = Deze mindmap
-project-project = Project
-project-library = Bibliotheek
 project-nothing-found = Niets gevonden
 project-edit-reference = De referentie bewerken…
-project-new-reference = Nieuwe referentie
-project-import-file = Een bestand importeren
 project-which-references = Welke referenties
 project-search-references = Referenties zoeken
 project-library-empty = Je bibliotheek is leeg
@@ -136,11 +131,6 @@ project-not-on-computer = Niet op deze computer
 project-nothing-said = Er is nog niets over gezegd
 project-no-pictures = Nog geen afbeeldingen
 project-pictures-drag = Sleep een afbeelding in een tekst om er daar een figuur van te maken, of op een element om haar aan het eind van zijn tekst te zetten.
-# The count is of the pictures that are used and are not in the store of this computer.
-project-pictures-absent-map = { $count ->
-    [one] { $count } in deze mindmap staat niet op deze computer.
-   *[other] { $count } in deze mindmap staan niet op deze computer.
-}
 project-pictures-absent-project = { $count ->
     [one] { $count } in dit project staat niet op deze computer.
    *[other] { $count } in dit project staan niet op deze computer.

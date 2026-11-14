@@ -159,13 +159,8 @@ project-left-out-of-document = 文書から除外
 
 ## 側のパネル：文献と画像
 
-project-this-map = このマップ
-project-project = プロジェクト
-project-library = ライブラリ
 project-nothing-found = 見つかりません
 project-edit-reference = 文献を編集…
-project-new-reference = 新しい文献
-project-import-file = ファイルをインポート
 project-which-references = 表示する文献
 project-search-references = 文献を検索
 project-library-empty = ライブラリは空です
@@ -186,11 +181,7 @@ project-a-picture = 画像
 project-not-on-computer = このコンピューターにはありません
 project-nothing-said = まだ何も書かれていません
 project-no-pictures = まだ画像はありません
-project-no-pictures-map = ここにはこのマップの図の画像が並びます。ライブラリの画像は「ライブラリ」にあります。
-project-no-pictures-project = ここにはプロジェクトの図の画像が並びます。ライブラリの画像は「ライブラリ」にあります。
 project-pictures-drag = 画像をテキストの中にドラッグするとそこで図になり、要素の上にドラッグするとそのテキストの末尾に入ります。
-# 数は、使われている画像のうち、このコンピューターの画像庫にないもの。
-project-pictures-absent-map = このマップの{ $count }枚はこのコンピューターにありません。
 project-pictures-absent-project = このプロジェクトの{ $count }枚はこのコンピューターにありません。
 
 ## ダイアグラムとテキストに共通
@@ -289,8 +280,6 @@ project-show-file-named = 「{ $name }」を表示
 # フォーカスのある側がファイルを表示しているあいだ、文書ペインの上に：文書はもう一方の側のもの。
 project-document-of-other = もう一方の側の文書
 
-# 一か所にまとめたファイル（ADR 0070）：プロジェクトの脇の画像の三つ目の選択肢、ライブラリ全体。
-project-pictures-library = ライブラリ
 project-library-no-images = ライブラリに画像はありません
 project-library-no-images-hint = ファイルから画像を追加するか、テキストにドロップしてください。
 

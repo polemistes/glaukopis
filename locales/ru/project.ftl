@@ -117,13 +117,8 @@ project-left-out-of-document = Не входит в документ
 
 ## The panels at the side: the references and the pictures
 
-project-this-map = Эта карта
-project-project = Проект
-project-library = Библиотека
 project-nothing-found = Ничего не найдено
 project-edit-reference = Изменить источник…
-project-new-reference = Новый источник
-project-import-file = Импортировать файл
 project-which-references = Какие источники
 project-search-references = Поиск источников
 project-library-empty = Ваша библиотека пуста
@@ -145,8 +140,6 @@ project-not-on-computer = Нет на этом компьютере
 project-nothing-said = О нём пока ничего не сказано
 project-no-pictures = Изображений пока нет
 project-pictures-drag = Перетащите изображение в текст, чтобы сделать там рисунок, или на элемент, чтобы поставить его в конце его текста.
-# The count is of the pictures that are used and are not in the store of this computer.
-project-pictures-absent-map = { $count } из этой карты нет на этом компьютере.
 project-pictures-absent-project = { $count } из этого проекта нет на этом компьютере.
 
 ## Shared by the diagram and the text

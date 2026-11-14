@@ -7,7 +7,8 @@
  * their tab is shown (ADR 0022), the moment of the history that is looked
  * at, which images are shown, the reference the library asked to be shown,
  * and the answers to what is asked of the pane from elsewhere: the
- * comments, the citations found, the images and the chat.
+ * comments, the citations found, the images and the chat, and what came into
+ * the library through its lists.
  *
  * It follows the focus: what it needs of the active side it asks the window.
  */
@@ -22,6 +23,7 @@ import { Review } from '$lib/review/review.svelte';
 import { sourceFor } from '$lib/review/source';
 import type { MapMode } from '$lib/state/router.svelte';
 import type { Project } from './model/project.svelte';
+import { arrivals } from './pane-adding.svelte';
 import { panes } from './panes.svelte';
 import { sides, type DocumentTab } from './sides.svelte';
 
@@ -223,6 +225,15 @@ export class DocumentPane {
         this.pictureScope = wanted.scope;
         this.show('images', true);
       });
+    });
+
+    // What came into the library through a list of the pane is shown where it
+    // stands (record 0095): the tab of that list, which takes what came as it
+    // is made. It depends on what waits alone.
+    $effect(() => {
+      const arrived = arrivals.waiting;
+      if (!arrived) return;
+      untrack(() => this.show(arrived.tab, true));
     });
   }
 }

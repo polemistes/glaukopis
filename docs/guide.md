@@ -962,10 +962,11 @@ of the library*). An image that is used in several texts or projects is the
 same file in all of them, and is kept once.
 
 In a project, **Insert** › **Image** or **Ctrl+Shift+P** opens the images in
-the document pane (see *The document pane*). They can be shown for **this
-map**, which is the element in view with all under it, for the **project**,
-or for the whole **library**; new ones are added there from a file, or
-dropped on it, and go into the folder **Images** of the library. Drag one
+the document pane (see *The document pane*). **Used** lists the images the
+figures of the project show, wherever they stand in it; **All** lists every
+image of the library. New ones are added there with the **+**, from a file,
+or dropped on the list, and go into the folder **Images** of the library;
+they are then shown under **All**, the new image chosen. Drag one
 into a text, onto an element of the diagram or onto a part of the text to
 make a figure of it there; **Open…** in the menu of a row shows it among the
 files.
@@ -1037,8 +1038,8 @@ the citations by their keys (see *Your project as Org*).
 
 What you cite is thereby among the references of the project: there is
 nothing else to do to put it there. The panel of references
-(**Ctrl+Shift+R**) lists them, for this map, which is the element in view
-with all under it, for the project, and the whole library. A reference
+(**Ctrl+Shift+R**) lists them: **Cited** shows those the project cites,
+wherever in it, and **All** every reference of the library. A reference
 dragged from the panel is cited where it is dropped in a text; dropped on an
 element of the diagram, it is cited at the end of that element's text.
 
@@ -1189,7 +1190,12 @@ menu of a reference, by those who want to.
 
 References can be added wherever they are used: from the library, from the
 picker that **@** opens, and from the panel of references of a project. It
-is the same form in all three.
+is the same form in all three. The **+** of the panel has the whole menu of
+adding the library has: **New reference**, then **Import Bib(La)TeX…**,
+**Import from Zotero…**, **Paste references…** and **Add PDF files…** (see
+*Importing*). What is added is shown under **All**, with it chosen, and a
+file dropped on the list goes where its kind belongs (see *Where the file is
+dropped*).
 
 References are copied as your usual reference style writes them in a list
 of references, the one chosen as **Default citation style** in the settings,
@@ -1288,6 +1294,7 @@ Where the file is dropped decides what becomes of it:
 | The library | A reference is made of it, in the collection in view |
 | A reference that is open | The file is attached to that reference |
 | An element of the diagram | A reference is made of it, and cited at the end of the element's text |
+| The references or the images in the document pane | The images among the files are taken into the library; PDFs become references, and `.bib` files are read. The pane shows where what came now stands, under **All**, with it chosen: an image dropped on the references shows the images, a PDF dropped on the images shows the references; where both came, it stays at the tab you dropped on |
 
 Every file of a reference also stands among the files of the library, which
 the next section is about.
@@ -1448,8 +1455,9 @@ another reference manager can read the whole.
 
 ### Importing
 
-The arrow beside **New reference** has the ways to bring references in.
-**Import Bib(La)TeX…** reads `.bib` files, BibLaTeX or BibTeX.
+The arrow beside **New reference** has the ways to bring references in; the
+**+** of the references in the document pane has the same, under **New
+reference**. **Import Bib(La)TeX…** reads `.bib` files, BibLaTeX or BibTeX.
 
 **Import from Zotero…**, under it, reads the library that Zotero keeps on
 this computer: all of it, or one collection, with the files and the notes if
@@ -1472,8 +1480,14 @@ shows. Each has its key as well: **Ctrl+Shift+R**, **Ctrl+Shift+P**,
 **Ctrl+Shift+M**, **Ctrl+Shift+T**, **Ctrl+Shift+H** and **Ctrl+Shift+E**.
 The pane always shows the document of the active side, the element in view
 there with all under it, named in the line over its tabs, with its project
-where two are shown; it turns with the focus. The history alone is of the
-whole project, and so is the chat. While others are in a shared project, a
+where two are shown; it turns with the focus. The history is of the whole
+project, and so are the chat and the two lists of what goes into a text, the
+references and the images: **Cited** and **Used** are what the project cites
+and shows in figures, wherever in it, and **All** is what the library has.
+What is added to either list is shown under **All**, with it chosen, and
+files dropped on either go where their kind belongs: images become images of
+the library, PDFs and `.bib` files become references. The pane turns to the
+tab where what came now stands. While others are in a shared project, a
 small sign with people in the pane's head says how many; rest the pointer on
 it to see who.
 

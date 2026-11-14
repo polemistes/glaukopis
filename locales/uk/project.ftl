@@ -117,13 +117,8 @@ project-left-out-of-document = Не включено в документ
 
 ## The panels at the side: the references and the pictures
 
-project-this-map = Ця мапа
-project-project = Проєкт
-project-library = Бібліотека
 project-nothing-found = Нічого не знайдено
 project-edit-reference = Редагувати джерело…
-project-new-reference = Нове джерело
-project-import-file = Імпортувати файл
 project-which-references = Які джерела
 project-search-references = Шукати джерела
 project-library-empty = Ваша бібліотека порожня
@@ -150,13 +145,6 @@ project-not-on-computer = Немає на цьому компʼютері
 project-nothing-said = Про нього ще нічого не сказано
 project-no-pictures = Зображень ще немає
 project-pictures-drag = Перетягніть зображення в текст, щоб зробити там із нього рисунок, або на елемент, щоб поставити його в кінці тексту елемента.
-# The count is of the pictures that are used and are not in the store of this computer.
-project-pictures-absent-map = { $count ->
-    [one] { $count } із цієї мапи немає на цьому компʼютері.
-    [few] { $count } із цієї мапи немає на цьому компʼютері.
-    [many] { $count } із цієї мапи немає на цьому компʼютері.
-   *[other] { $count } із цієї мапи немає на цьому компʼютері.
-}
 project-pictures-absent-project = { $count ->
     [one] { $count } із цього проєкту немає на цьому компʼютері.
     [few] { $count } із цього проєкту немає на цьому компʼютері.
