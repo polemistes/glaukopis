@@ -15,7 +15,7 @@ const titles = (app) =>
     `return Array.from(document.querySelectorAll('.diagram .node .caption')).map((e) => e.textContent.trim())`,
   );
 
-// Split view: the items of the menu that is open, what each side shows (the element by the last crumb of its path), and whether the button is lit.
+// Split view: the items of the menu that is open, what each side shows (the element by the last crumb of its path), and where the button stands: on the join of two cells, or in the cell of one side.
 const offered = async () => {
   await app.waitFor('.menu [role="menuitem"]', 3000);
   return app.exec(`return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((m) => m.textContent.trim())`);
@@ -24,7 +24,7 @@ const shownIn = () =>
   app.exec(
     `return Array.from(document.querySelectorAll('.pane')).map((p, i) => (p.querySelector('.diagram') ? 'diagram' : p.querySelector('.text-view') ? 'text' : '?') + ':' + (document.querySelector('.top .cell[data-side="' + i + '"] [data-crumb-last] .name')?.textContent.trim() ?? ''))`,
   );
-const lit = () => app.exec(`return document.querySelector('.top button[data-side-by-side]').classList.contains('on')`);
+const onJoin = () => app.exec(`return !!document.querySelector('.top .join button[data-side-by-side]') && !document.querySelector('.top .cell button[data-side-by-side]')`);
 /** Unfolds the tree under a project's row in a list, where it is folded: the folds of the list at the left and of the chooser are one. */
 const unfoldRow = (list, name) =>
   app.exec(
@@ -728,12 +728,12 @@ try {
     JSON.stringify(one) === JSON.stringify(['This element, as diagram and text', 'Another element…', 'Another project…', "The project's tabs"]),
     one.join(' | '),
   );
-  check('and the button is not lit with one side', !(await lit()));
+  check('and the button stands in the cell of the one side', !(await onJoin()) && (await app.exists('.top .cell button[data-side-by-side]')));
   await app.screenshot('maps-13a-beside-menu');
   await app.clickText('.menu [role="menuitem"]', 'This element, as diagram and text');
   await sleep(500);
   check('two sides, from Split view', (await app.count('.pane')) === 2);
-  check('and the button is lit while two sides are shown', await lit());
+  check('and the button stands on the join of the two cells while two sides are shown', await onJoin());
   await app.screenshot('maps-13-beside');
 
   // --- The room each has can be changed ---

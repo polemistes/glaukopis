@@ -14,7 +14,7 @@ try {
   await app.installErrorHook();
   await app.waitForText('h2', 'Welcome to Glaukopis');
 
-  // --- The sheet, by Ctrl+/ and by the rail ---
+  // --- The sheet, by Ctrl+/ and by the keyboard in the row at the top ---
   await app.keys(['Control', '/']);
   await app.waitForText('dialog[open] h2', 'Keys', 3000);
   await sleep(300);
@@ -23,9 +23,9 @@ try {
   check('Ctrl+/ shows the keys, by where they hold', groups.includes('Everywhere') && groups.includes('In the diagram') && groups.includes('Writing'), groups.join(' | '));
   await app.press('Escape');
   await app.waitGone('dialog[open]');
-  await app.click('nav.rail button[aria-label="Keys"]');
+  await app.click('[data-place="keys"]');
   await app.waitForText('dialog[open] h2', 'Keys', 3000);
-  check('and so does the button in the rail', true);
+  check('and so does the keyboard in the row at the top', true);
   await app.press('Escape');
   await app.waitGone('dialog[open]');
 

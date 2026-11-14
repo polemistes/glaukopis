@@ -830,7 +830,7 @@ try {
     await app.press('Escape');
     await app.waitGone('dialog[open]', 15000);
   }
-  await app.click('nav.rail a[aria-label="Library"]');
+  await app.click('[data-place="library"]');
   await app.waitFor('[role="option"]', 8000);
   await app.click(await app.findByText('[role="option"]', 'Nagy'));
   await app.waitFor('.pane .cited .citer', 8000);

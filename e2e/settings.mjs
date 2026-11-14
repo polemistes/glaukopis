@@ -28,8 +28,8 @@ try {
     await app.exec(`return location.hash`),
   );
   check(
-    'the gear in the rail is marked while they are open',
-    await app.exists('nav.rail button[aria-label="Settings"].current'),
+    'the gear in the row at the top is marked while they are open',
+    await app.exists('[data-place="settings"].current'),
   );
   await app.waitFor('.program .mark.ok', 8000);
   await sleep(300);

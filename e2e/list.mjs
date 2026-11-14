@@ -219,10 +219,10 @@ try {
   check('a click on one opens it', (await app.exec('return location.hash')).includes('/project/'));
 
   // ---- the house goes back to the project shown last ----
-  await app.click('nav.rail a.place[href="#/library"]');
+  await app.click('[data-place="library"]');
   await app.waitFor('.library, [data-library]', 8000).catch(() => {});
   await sleep(300);
-  await app.click('nav.rail a.place[href="#/"]');
+  await app.click('[data-place="projects"]');
   await app.waitFor('.project', 8000);
   check('the house goes back to the project shown last', (await app.exec('return location.hash')).includes('/project/'));
 

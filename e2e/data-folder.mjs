@@ -53,8 +53,8 @@ try {
   mkdirSync(join(app.dataDir, 'work', 'kept-not'), { recursive: true });
   writeFileSync(join(app.dataDir, 'work', 'kept-not', 'made-again.txt'), 'x');
 
-  // From the rail: in the text, Ctrl+, is a key of the writing.
-  await app.click('nav button[aria-label="Settings"]');
+  // From the row at the top: in the text, Ctrl+, is a key of the writing.
+  await app.click('[data-place="settings"]');
   await app.waitForText('dialog[open] header h2', 'Settings');
   await app.waitFor('[data-data-folder-change]');
   check('Change… stands beside the data folder', await app.exists('[data-data-folder-change]'));
