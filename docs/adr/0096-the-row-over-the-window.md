@@ -57,4 +57,5 @@ Date: 2026-11-14. Status: built on 2026-11-14, its choices not yet confirmed by 
 - **Words**: dropped `project-side-by-side-short`, `home-pane-close`, `home-title`, `shell-main`; none new. The comments of `shell.ftl` and the line of `locales/README.md` say what `shell.ftl` holds now.
 - **The guide** and `CLAUDE.md` say where the places stand.
 - **The scripts**: every script that found a place on the rail, the list's ×, the Split button's look or the button that switched the sides finds them where they stand now; `e2e/path.mjs` checks the row anew; a new script, `e2e/window-row.mjs`, walks the row in every view. They have not been run.
-- **Counts.** svelte-check finds nothing; the tests of the interface pass (see the commit). No change to the core, the shell or the server, and none to the contract.
+- **Tests**: the row mounted over the library and the start screen, its six places in their order, the list's button disabled where there is no list and lit while the list is shown, the start left out (`shell/TopRow.test.ts`); the button of Split view in the cell and on the join, opening its menu at itself and never lit (`project/SideBySideButton.test.ts`).
+- **Counts.** All 1540 tests of the interface pass, and svelte-check finds nothing. No change to the core, the shell or the server, and none to the contract.
