@@ -105,7 +105,7 @@ try {
   await sleep(300);
   await app.keys(['Control', 'Shift', 'p']);
   await app.waitFor('.panel[aria-label="Images"]', 5000);
-  await app.clickText('.panel [role="radio"]', 'Library');
+  await app.clickText('.panel [role="radio"]', 'All');
   await app.waitFor('.panel .list .row', 5000);
   await app.doubleClick('.diagram .node.root');
   await app.waitFor('.box .text .prose');

@@ -1,8 +1,8 @@
-// The images at the side of a project (ADR 0070): images of the library,
-// shown for the map, the project or the whole library, and how they come
-// into the texts of a project as figures. A figure's caption is the
-// document's; one of an image of a kind not every document holds shows a
-// copy made of it beside it in the library.
+// The images at the side of a project (ADR 0070, record 0095): images of the
+// library, shown as those the figures of the project show or as all of the
+// library, and how they come into the texts of a project as figures. A
+// figure's caption is the document's; one of an image of a kind not every
+// document holds shows a copy made of it beside it in the library.
 
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -159,8 +159,8 @@ try {
   check('the panel of images takes the place of that of the references', !(await app.exists('.panel[aria-label="References"]')));
   check('the project has no images yet', /No images yet/.test(await app.text('.panel .body')));
   const scopes = await app.exec(`return Array.from(document.querySelectorAll('.panel [role="radio"]')).map((r) => r.textContent.trim()).join('|')`);
-  check('the panel shows the map, the project or the library', scopes === 'This map|Project|Library', scopes);
-  await app.clickText('.panel [role="radio"]', 'Library');
+  check('the panel shows the images the figures show, or all of the library', scopes === 'Used|All', scopes);
+  await app.clickText('.panel [role="radio"]', 'All');
   await app.waitFor('.panel .list .row', 5000);
   check('the library has all its images', (await rows()).length === 4, (await rows()).join('|'));
   const line = await app.exec(
@@ -209,18 +209,15 @@ try {
   await sleep(200);
   await app.drag(await row('forms.svg'), await app.findByText('.diagram .node', 'Forms'));
   await sleep(800);
-  await app.clickText('.panel [role="radio"]', 'Project');
+  await app.clickText('.panel [role="radio"]', 'Used');
   await until('the project to have two images', async () => (await rows()).length === 2);
   check('an image dragged onto an element is a figure in its text', (await rows()).join('|') === 'forms.svg|The shield.png', (await rows()).join('|'));
-  await app.clickText('.panel [role="radio"]', 'This map');
-  await sleep(300);
-  check('the images of the map are those of its figures', (await rows()).length === 2, (await rows()).join('|'));
 
   // ---- onto a section of the text ----
   await app.keys(['Control', 'd']);
   await app.waitFor('.text-view .section', 5000);
   await until('the figures in the text of the map', async () => (await app.count('.text-view figure img[src^="blob:"]')) === 2, 10000);
-  await app.clickText('.panel [role="radio"]', 'Library');
+  await app.clickText('.panel [role="radio"]', 'All');
   await app.waitFor('.panel .list .row', 5000);
   const heading = () =>
     app.exec(
@@ -255,7 +252,7 @@ try {
   await app.clickText('.menu [role="menuitem"]', 'Image');
   await app.waitFor('.panel[aria-label="Images"] .list .row', 5000);
   const chosen = await app.exec(`return document.querySelector('.panel [role="radio"][aria-checked="true"]').textContent.trim()`);
-  check('Insert › Image opens the panel on the library', chosen === 'Library', chosen);
+  check('Insert › Image opens the panel on all the images', chosen === 'All', chosen);
   check('and leaves the cursor in the text', await app.exec(`return !!document.activeElement && !!document.activeElement.closest('.text-view .ProseMirror')`));
 
   // Files dropped on the panel are taken into the library.

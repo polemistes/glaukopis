@@ -184,7 +184,7 @@ try {
   // The panel is the window's: it may be open still from the project before.
   if (!(await app.exists('.panel'))) await app.keys(['Control', 'Shift', 'r']);
   await app.waitFor('.panel', 5000);
-  await app.clickText('.panel [role="radio"]', 'Library');
+  await app.clickText('.panel [role="radio"]', 'All');
   await app.waitFor('.panel .item', 5000);
   await sleep(300);
   await press(await button('Singer of Tales', '.panel .item'));
