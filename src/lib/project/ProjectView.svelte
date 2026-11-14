@@ -39,8 +39,8 @@
 <script lang="ts">
   /**
    * The window while projects are shown (ADR 0064): the top row with the
-   * path of each side and Split view; the sides, each a project of its own
-   * (`SideView`); the typesetting pane, with its Look column, of the side
+   * places of the window, the path of each side and Split view (ADR 0096);
+   * the sides, each a project of its own (`SideView`); the typesetting pane, with its Look column, of the side
    * whose button was pressed; the document pane, of the active side's
    * document. What is of the window (the
    * keys, the dialogs, the title, the pictures, the editor's dialogs) reads

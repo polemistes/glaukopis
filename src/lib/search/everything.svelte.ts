@@ -1,5 +1,5 @@
 /**
- * The search through everything, as the place of it in the rail shows it:
+ * The search through everything, as its place in the row at the top shows it:
  * the words, the options, whether the project opened last or all projects
  * are searched, and what was found in each. The projects are read and
  * searched by the engine (`engine.ts`), in a thread of its own; a project

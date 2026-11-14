@@ -1,6 +1,6 @@
 /**
  * Whether the settings are open. They are a window laid over whatever view
- * is open, so that closing them leaves the view as it was: the rail's gear
+ * is open, so that closing them leaves the view as it was: the gear in the row
  * and Ctrl+, open and close it, and the old place `#/settings` opens it over
  * the projects.
  */
