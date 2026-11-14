@@ -4,13 +4,10 @@
   import { keysFor, shortcuts } from '$lib/shell/keys.svelte';
   import ArrowDownUp from '@lucide/svelte/icons/arrow-down-up';
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
-  import ClipboardPaste from '@lucide/svelte/icons/clipboard-paste';
   import CopyCheck from '@lucide/svelte/icons/copy-check';
-  import FileText from '@lucide/svelte/icons/file-text';
   import DuplicatesDialog from './DuplicatesDialog.svelte';
   import Copy from '@lucide/svelte/icons/copy';
   import FileDown from '@lucide/svelte/icons/file-down';
-  import FileUp from '@lucide/svelte/icons/file-up';
   import FolderMinus from '@lucide/svelte/icons/folder-minus';
   import FolderPlus from '@lucide/svelte/icons/folder-plus';
   import LibraryBig from '@lucide/svelte/icons/library-big';
@@ -61,14 +58,8 @@
   import MapDialog from './MapDialog.svelte';
   import ReferenceList from './ReferenceList.svelte';
   import ReferencePane from './ReferencePane.svelte';
-  import {
-    importDropped,
-    importFile,
-    importFromZotero,
-    importPasted,
-    importPdfFiles,
-    newReference,
-  } from './references.svelte';
+  import { addingItems } from './adding';
+  import { importDropped, importFile, newReference } from './references.svelte';
 
   let findingDuplicates = $state(false);
   /** A map is being made of the library, or of a collection. */
@@ -319,26 +310,7 @@
     openMenu(
       event.currentTarget as HTMLElement,
       [
-        {
-          label: t('library-import-bibtex'),
-          icon: FileUp,
-          action: () => importFile(collectionId),
-        },
-        {
-          label: t('library-import-zotero'),
-          icon: LibraryBig,
-          action: () => importFromZotero(collectionId),
-        },
-        {
-          label: t('library-paste'),
-          icon: ClipboardPaste,
-          action: () => importPasted(collectionId),
-        },
-        {
-          label: t('library-add-pdfs'),
-          icon: FileText,
-          action: () => importPdfFiles(undefined, collectionId),
-        },
+        ...addingItems(collectionId),
         { kind: 'separator' },
         {
           label: t('library-find-duplicates'),
