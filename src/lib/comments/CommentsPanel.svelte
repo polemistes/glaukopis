@@ -5,15 +5,19 @@
    * notes, and a place to answer.
    * A thread is begun here too, on an element or on a passage, when asked
    * from the text or the diagram. A note is its author's alone to change.
+   * What is written here and not yet sent (an answer, a comment being begun,
+   * a note being changed) is the project's to keep, so that it is there
+   * again when the panel is (record 0094).
    */
   import type { Snippet } from 'svelte';
-  import { tick } from 'svelte';
+  import { tick, untrack } from 'svelte';
   import Check from '@lucide/svelte/icons/check';
   import Pencil from '@lucide/svelte/icons/pencil';
   import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
   import Trash2 from '@lucide/svelte/icons/trash-2';
   import X from '@lucide/svelte/icons/x';
   import { languages, t } from '$lib/i18n';
+  import { Drafts } from '$lib/project/drafts.svelte';
   import type { Project } from '$lib/project/model/project.svelte';
   import type { Note, Thread } from '$lib/project/model/types';
   import { colourOf, initials } from '$lib/sharing/connection.svelte';
@@ -26,11 +30,16 @@
   import { ago } from '$lib/util/time';
   import { passageGone } from './marks';
   import { commentsUi } from './ui.svelte';
+  import { answerField, BEGINNING_FIELD, noteField, type Beginning } from './unsent';
 
   interface Props {
     project: Project;
     /** The element in view: the threads on it and on all under it are shown. */
     at: string;
+    /** What is written in the fields and not yet sent, where it is kept for the panel. */
+    drafts?: Drafts;
+    /** The comment that is being begun, kept as what is written is. */
+    beginning?: Beginning | null;
     onclose: () => void;
     /** What stands at the head in place of the title: the tabs of the panel at the side. */
     head?: Snippet;
@@ -40,7 +49,20 @@
     onopen?: (element: string) => void;
   }
 
-  let { project, at, onclose, head, ongo, onopen }: Props = $props();
+  let {
+    project,
+    at,
+    drafts,
+    beginning = $bindable(null),
+    onclose,
+    head,
+    ongo,
+    onopen,
+  }: Props = $props();
+
+  /** Where nobody keeps what is written for the panel, it does so itself, while it is there. */
+  const own = new Drafts();
+  const unsent = $derived(drafts ?? own);
 
   type Which = 'open' | 'settled' | 'all';
   let which = $state<Which>('open');
@@ -91,26 +113,32 @@
   const mine = (note: Note) => !!me && note.author.id === me;
 
   // ---- a thread being begun ----
-  let begun = $state('');
-  let beginning = $state<HTMLTextAreaElement>();
-  const composing = $derived(commentsUi.composing);
-  const composingOn = $derived(composing ? project.node(composing.element) : undefined);
+  let beginningField = $state<HTMLTextAreaElement>();
+  const beginningOn = $derived(beginning ? project.node(beginning.element) : undefined);
 
+  // A thread asked to be begun is kept from then on as what is written of it
+  // is, and its field has the focus. What was written of another that was
+  // being begun stays in the field. It depends on the ask alone.
   $effect(() => {
-    if (composing && beginning) beginning.focus();
+    const asked = commentsUi.composing;
+    if (!asked) return;
+    untrack(() => {
+      beginning = asked;
+      commentsUi.composing = null;
+      void tick().then(() => beginningField?.focus());
+    });
   });
 
   function begin() {
-    if (!composing) return;
-    const id = project.comment(composing.element, composing.passage, begun);
-    begun = '';
-    commentsUi.done();
+    if (!beginning) return;
+    const id = project.comment(beginning.element, beginning.passage, unsent.of(BEGINNING_FIELD));
+    cancelBeginning();
     if (id && project.comments.get(id)?.resolved === false && which === 'settled') which = 'open';
   }
 
   function cancelBeginning() {
-    begun = '';
-    commentsUi.done();
+    unsent.drop(BEGINNING_FIELD);
+    beginning = null;
   }
 
   // ---- what was asked to be shown ----
@@ -131,24 +159,26 @@
   });
 
   // ---- answering, changing, taking back ----
-  let answers = $state<Record<string, string>>({});
-  let editing = $state<{ thread: string; note: string; text: string } | null>(null);
-
   function reply(thread: Thread) {
-    const text = answers[thread.id] ?? '';
+    const field = answerField(thread.id);
+    const text = unsent.of(field);
     if (!text.trim()) return;
     project.reply(thread.id, text);
-    answers[thread.id] = '';
+    unsent.drop(field);
   }
 
+  /** A note is being changed while its field is written in: until the change is saved or given up. */
   function edit(thread: Thread, note: Note) {
-    editing = { thread: thread.id, note: note.id, text: note.text };
+    unsent.write(noteField(thread.id, note.id), note.text);
+    void tick().then(() =>
+      list?.querySelector<HTMLElement>(`[data-note-edit="${note.id}"]`)?.focus(),
+    );
   }
 
-  function keepEdit() {
-    if (!editing) return;
-    project.editNote(editing.thread, editing.note, editing.text);
-    editing = null;
+  function keepEdit(thread: Thread, note: Note) {
+    const field = noteField(thread.id, note.id);
+    project.editNote(thread.id, note.id, unsent.of(field));
+    unsent.drop(field);
   }
 
   function remove(thread: Thread, note: Note) {
@@ -216,24 +246,29 @@
     <IconButton label={t('common-close')} size="sm" onclick={onclose}><X size={15} /></IconButton>
   </header>
 
-  {#if composing && composingOn}
-    <div class="beginning">
+  {#if beginning && beginningOn}
+    <div class="beginning" data-comment-beginning>
       <div class="on">
-        {t('comments-on', { name: nameOf(composing.element) })}
+        {t('comments-on', { name: nameOf(beginning.element) })}
       </div>
-      {#if composing.passage}
-        <blockquote class="passage">{composing.passage.text}</blockquote>
+      {#if beginning.passage}
+        <blockquote class="passage">{beginning.passage.text}</blockquote>
       {/if}
       <textarea
-        bind:this={beginning}
-        bind:value={begun}
+        bind:this={beginningField}
+        bind:value={() => unsent.of(BEGINNING_FIELD), (text) => unsent.write(BEGINNING_FIELD, text)}
         rows="3"
         placeholder={t('comments-write')}
         aria-label={t('comments-write')}
         onkeydown={(e) => sending(e, begin)}></textarea>
       <div class="buttons">
         <Button size="sm" variant="ghost" onclick={cancelBeginning}>{t('common-cancel')}</Button>
-        <Button size="sm" variant="primary" disabled={!begun.trim()} onclick={begin}>
+        <Button
+          size="sm"
+          variant="primary"
+          disabled={!unsent.of(BEGINNING_FIELD).trim()}
+          onclick={begin}
+        >
           {t('comments-comment')}
         </Button>
       </div>
@@ -256,7 +291,7 @@
   {/if}
 
   <div class="body" bind:this={list}>
-    {#if !threads.length && !composing}
+    {#if !threads.length && !beginning}
       <EmptyState title={t('comments-none')} text={t('comments-none-detail')} compact />
     {:else if !shown.length}
       <p class="nothing">{t('comments-none-of-these')}</p>
@@ -305,6 +340,8 @@
           <!-- Keyed by place: a note written by another copy may lack an id,
                or share one, and a key met twice throws. -->
           {#each thread.notes as note, i (i)}
+            {@const field = noteField(thread.id, note.id)}
+            {@const changing = mine(note) && unsent.has(field)}
             <div class="note" class:answer={i > 0}>
               <span
                 class="who"
@@ -317,7 +354,7 @@
                   <span class="when" use:tooltip={note.created ? written(note.created) : ''}
                     >{ago(note.created)}{note.edited ? ` · ${t('comments-edited')}` : ''}</span
                   >
-                  {#if mine(note) && !(editing?.note === note.id)}
+                  {#if mine(note) && !changing}
                     <span class="own">
                       <IconButton
                         label={t('comments-edit')}
@@ -332,19 +369,18 @@
                     </span>
                   {/if}
                 </div>
-                {#if editing?.note === note.id}
-                  <!-- svelte-ignore a11y_autofocus -->
+                {#if changing}
                   <textarea
-                    bind:value={editing.text}
+                    bind:value={() => unsent.of(field), (text) => unsent.write(field, text)}
                     rows="3"
-                    autofocus
                     aria-label={t('comments-edit')}
-                    onkeydown={(e) => sending(e, keepEdit)}></textarea>
+                    data-note-edit={note.id}
+                    onkeydown={(e) => sending(e, () => keepEdit(thread, note))}></textarea>
                   <div class="buttons">
-                    <Button size="sm" variant="ghost" onclick={() => (editing = null)}
+                    <Button size="sm" variant="ghost" onclick={() => unsent.drop(field)}
                       >{t('common-cancel')}</Button
                     >
-                    <Button size="sm" variant="primary" onclick={keepEdit}
+                    <Button size="sm" variant="primary" onclick={() => keepEdit(thread, note)}
                       >{t('common-save')}</Button
                     >
                   </div>
@@ -356,7 +392,10 @@
           {/each}
           <div class="answering">
             <textarea
-              bind:value={answers[thread.id]}
+              bind:value={
+                () => unsent.of(answerField(thread.id)),
+                (text) => unsent.write(answerField(thread.id), text)
+              }
               rows="1"
               placeholder={t('comments-answer')}
               aria-label={t('comments-answer')}

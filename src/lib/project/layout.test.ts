@@ -24,6 +24,8 @@ describe('what a project keeps of how it was looked at', () => {
         beside: null,
         document: null,
         chat: null,
+        drafts: {},
+        commenting: null,
       });
     expect(leftAt(readMemory(null), elements)).toEqual({ at: PROJECT, mode: 'diagram' });
   });
@@ -37,6 +39,8 @@ describe('what a project keeps of how it was looked at', () => {
       beside: null,
       document: 'b',
       chat: { id: 'm', created: '2026-11-13T09:00:00Z' },
+      drafts: {},
+      commenting: null,
     };
     const stored = toStore(memory, elements, ['a']);
     expect(stored).toEqual({
@@ -95,6 +99,51 @@ describe('what a project keeps of how it was looked at', () => {
     );
     expect(readMemory({ at: 'a', document: '' }).document).toBeNull();
     expect(readMemory({ at: 'a', document: 3 }).document).toBeNull();
+  });
+
+  it('keeps what is written in a field and not yet sent, where the field holds words', () => {
+    const stored = toStore(
+      { ...readMemory(null), drafts: { chat: 'Shall we', 'answer:t': '' } },
+      elements,
+      [],
+    );
+    expect(stored.drafts).toEqual({ chat: 'Shall we' });
+    expect(readMemory(JSON.parse(JSON.stringify(stored))).drafts).toEqual({ chat: 'Shall we' });
+    expect(toStore(readMemory(null), elements, [])).not.toHaveProperty('drafts');
+    for (const kept of [3, 'x', ['a'], { chat: 4, other: null }])
+      expect(readMemory({ drafts: kept }).drafts).toEqual({});
+  });
+
+  it('keeps the comment that is being begun while its element is there, with its passage', () => {
+    const passage = { from: new Uint8Array([1, 2, 250]), to: new Uint8Array([3]), text: 'wrath' };
+    const onPassage = toStore(
+      { ...readMemory(null), commenting: { element: 'a', passage } },
+      elements,
+      [],
+    );
+    expect(readMemory(JSON.parse(JSON.stringify(onPassage))).commenting).toEqual({
+      element: 'a',
+      passage,
+    });
+    const onElement = toStore(
+      { ...readMemory(null), commenting: { element: PROJECT, passage: null } },
+      elements,
+      [],
+    );
+    expect(onElement.commenting).toEqual({ element: PROJECT });
+    expect(readMemory(onElement).commenting).toEqual({ element: PROJECT, passage: null });
+    const gone = toStore(
+      { ...readMemory(null), commenting: { element: 'gone', passage: null } },
+      elements,
+      [],
+    );
+    expect(gone).not.toHaveProperty('commenting');
+    for (const kept of [3, {}, { element: '' }, { element: 'a', passage: { from: 1 } }])
+      expect(readMemory({ commenting: kept }).commenting).toBeNull();
+    expect(
+      readMemory({ commenting: { element: 'a', passage: { from: '*', to: '*', text: 'x' } } })
+        .commenting,
+    ).toBeNull();
   });
 
   it('has as its document the element marked, wherever the element in view is, else the element in view', () => {

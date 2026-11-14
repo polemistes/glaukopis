@@ -1787,6 +1787,12 @@ anyone's. A thread that is dealt with is **settled** from the tick at its
 head, which takes its marks away; the panel shows the open threads, the
 settled ones, or all, and a settled thread can be opened again.
 
+What you have begun and not yet sent, an answer, a new comment, a change to
+a note of yours, stays where you wrote it while you look at something else,
+and is there when the program is opened again, until you send it or press
+**Cancel**. It is kept on your computer: nobody else sees it before it is
+sent.
+
 When an element is deleted, its comments go with it. When the words a
 comment was on are deleted, the comment stays on the element, with the
 words it was on quoted. Comments travel with a shared project, and are kept
@@ -3113,7 +3119,10 @@ long as the project is shared. **Ctrl+K** finds it as well.
   and when; those one person writes close together stand under one name,
   and a line with the date comes where the day changes.
 - Write in the field at the foot. **Enter** sends; **Shift+Enter** makes a
-  new line.
+  new line. What you have written and not yet sent stays in the field while
+  you look at something else, another tab, another project or the library,
+  and is there when the program is opened again. It is kept on your
+  computer: nobody else sees it until you send it.
 - A message of yours can be deleted from its menu, the three dots that come
   when the pointer rests on it, or a right click; **Undo** in the message
   that says so puts it back. Messages are not changed once they are sent,

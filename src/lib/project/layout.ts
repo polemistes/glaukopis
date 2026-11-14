@@ -4,13 +4,21 @@
  * text, where the text of each element was read, how wide its outline
  * stands, where it was left, the element and the way it was shown, and what
  * stood beside it then where that was its own: its tabs, or itself the other
- * way (ADR 0073), the element marked as the document (record 0081), and
- * the message of the chat that was read last (record 0092).
+ * way (ADR 0073), the element marked as the document (record 0081), the
+ * message of the chat that was read last (record 0092), and what is written
+ * in a field and not yet sent, with the comment that is being begun (record
+ * 0094).
  * What the window shows, its sides and its panes, is the
  * window's, kept with the settings (`sides.svelte.ts`).
  */
 
 import { readMark, type ReadMark } from '$lib/chat/reading';
+import {
+  keptBeginning,
+  readBeginning,
+  type Beginning,
+  type StoredBeginning,
+} from '$lib/comments/unsent';
 import type { MapMode } from '$lib/state/router.svelte';
 import type { Camera } from './diagram/camera';
 import { PROJECT } from './model/types';
@@ -56,6 +64,10 @@ export interface StoredView {
   document?: string;
   /** The message of the chat read last, where one was (record 0092). */
   chat?: ReadMark;
+  /** What is written in a field and not yet sent, by the field (record 0094). */
+  drafts?: Record<string, string>;
+  /** The comment that is being begun, where one is (record 0094). */
+  commenting?: StoredBeginning;
   /** As the view was kept before the sides were the window's: the first pane says where it was left. */
   panes?: { at?: string; mode?: MapMode }[];
 }
@@ -71,6 +83,10 @@ export interface Memory {
   document: string | null;
   /** The message of the chat read last, or none. */
   chat: ReadMark | null;
+  /** What is written in a field and not yet sent, by the field. */
+  drafts: Record<string, string>;
+  /** The comment that is being begun, or none. */
+  commenting: Beginning | null;
 }
 
 export const OUTLINE_WIDTH = 240;
@@ -104,7 +120,18 @@ export function readMemory(stored: unknown): Memory {
     beside: readBeside(s.beside),
     document: typeof s.document === 'string' && s.document ? s.document : null,
     chat: readMark(s.chat),
+    drafts: readDrafts(s.drafts),
+    commenting: readBeginning(s.commenting),
   };
+}
+
+/** What was written and not sent, read with care: the fields that hold words. */
+export function readDrafts(kept: unknown): Record<string, string> {
+  const drafts: Record<string, string> = {};
+  if (kept && typeof kept === 'object' && !Array.isArray(kept))
+    for (const [field, text] of Object.entries(kept))
+      if (typeof text === 'string' && text) drafts[field] = text;
+  return drafts;
 }
 
 /** What stood beside, read with care: what is neither is none. */
@@ -147,13 +174,19 @@ export function documentOf(marked: string | null, elements: Elements, at: string
   return marked && inView(elements, marked) ? marked : at;
 }
 
-/** What is kept: the cameras and the tops of elements that are there, the folds given, the mark where its element is there, and the message read last. */
+/**
+ * What is kept: the cameras and the tops of elements that are there, the
+ * folds given, the mark where its element is there, the message read last,
+ * the fields in which something is written and not yet sent, and the comment
+ * being begun where its element is there.
+ */
 export function toStore(memory: Memory, elements: Elements, folded: string[]): StoredView {
   const cameras: Record<string, Camera> = {};
   for (const [id, c] of Object.entries(memory.cameras)) if (inView(elements, id)) cameras[id] = c;
   const tops: Record<string, string> = {};
   for (const [at, top] of Object.entries(memory.tops))
     if (inView(elements, at) && inView(elements, top)) tops[at] = top;
+  const drafts = readDrafts(memory.drafts);
   return {
     cameras,
     folded,
@@ -170,6 +203,10 @@ export function toStore(memory: Memory, elements: Elements, folded: string[]): S
       : {}),
     ...(inView(elements, memory.document ?? undefined) ? { document: memory.document! } : {}),
     ...(memory.chat ? { chat: memory.chat } : {}),
+    ...(Object.keys(drafts).length ? { drafts } : {}),
+    ...(memory.commenting && inView(elements, memory.commenting.element)
+      ? { commenting: keptBeginning(memory.commenting) }
+      : {}),
   };
 }
 

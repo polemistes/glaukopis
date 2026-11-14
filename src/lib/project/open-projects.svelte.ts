@@ -3,8 +3,8 @@
  * however many sides show it, with its own sharing, so that one that is
  * shared stays in touch; with what it keeps of how it was looked at (the
  * cameras of its diagrams, what is folded in its text, where each text was
- * read, its outline, where it was left), saved a moment after that changes
- * and when it is let go. A side takes a project (`acquire`) and gives it
+ * read, its outline, where it was left, what is written in a field and not
+ * yet sent), saved a moment after that changes and when it is let go. A side takes a project (`acquire`) and gives it
  * back (`release`); the last to give it back lets it go: what was written is
  * put on disk, it is out of touch with the others, and closed.
  *
@@ -22,8 +22,10 @@ import { openProject, projects, rememberOpened } from '$lib/state/projects.svelt
 import { describeError } from '$lib/ui/toast.svelte';
 import { closedHere, openHere } from './elsewhere';
 import type { ReadMark } from '$lib/chat/reading';
+import { fieldThere, type Beginning } from '$lib/comments/unsent';
 import { leftAt, readMemory, toStore, type Beside, type Left, type Memory } from './layout';
 import type { Camera } from './diagram/camera';
+import { Drafts } from './drafts.svelte';
 import type { Project } from './model/project.svelte';
 import { PROJECT } from './model/types';
 import { Folding } from './text/folding.svelte';
@@ -118,6 +120,15 @@ export class OpenProject {
    * on this computer, as the mark of the document is (record 0092).
    */
   chatRead = $state.raw<ReadMark | null>(null);
+  /**
+   * What is written in its fields and not yet sent: the message of the chat
+   * being written, an answer to a comment. There until it is sent or given
+   * up, whatever is shown meanwhile; kept with the view on this computer,
+   * not in the project, so that nobody else sees it (record 0094).
+   */
+  readonly drafts = new Drafts();
+  /** The comment that is being begun in it, or none: kept as what is written of it is (record 0094). */
+  commenting = $state.raw<Beginning | null>(null);
   /** How many sides show it. */
   refs = 0;
   /** It was let go while it was still being opened. */
@@ -136,6 +147,7 @@ export class OpenProject {
   }
 
   #memory(): Memory {
+    const p = this.project;
     return {
       cameras: $state.snapshot(this.cameras),
       tops: $state.snapshot(this.tops),
@@ -144,6 +156,8 @@ export class OpenProject {
       beside: this.beside,
       document: this.document,
       chat: this.chatRead,
+      drafts: this.drafts.kept((field) => !p || fieldThere(field, p.comments)),
+      commenting: this.commenting,
     };
   }
 
@@ -253,6 +267,8 @@ export class OpenProjects {
       open.beside = memory.beside;
       open.document = memory.document;
       open.chatRead = memory.chat;
+      open.drafts.load(memory.drafts);
+      open.commenting = memory.commenting;
       open.info = opened.info;
       open.sharing = o.share(id, p, opened.info);
       open.project = p;

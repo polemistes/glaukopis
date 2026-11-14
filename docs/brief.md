@@ -1436,3 +1436,20 @@ What this settles, and it holds over the 0.1.0 and 0.2.0 entries above:
 
 - A release on GitHub is a release, not a pre-release, and the newest is
   marked the latest. All twelve were changed the same day.
+
+## 2026-11-14 — what is written and not yet sent is kept
+
+> When I start writing a comment in the chat of a shared project, and go somewhere else to check something, the comment I had started has vanished when I come back. This happens often, so whatever is typed into the field before submitting it should be saved until it is either cancelled or submitted.
+
+What this settles:
+
+- **What is written in a field and not yet sent stays there** until it is
+  sent or given up, whatever is looked at meanwhile: another tab of the
+  document pane, the pane closed, another project, the library, the
+  application closed and opened again. So for the field of the chat, and
+  for the fields of the comments, which lost what was written in the same
+  way: an answer, a comment that is being begun, a note that is being
+  changed.
+- It is kept on this computer with the project's view, and not in the
+  project: nobody a project is shared with sees what was not sent.
+  Record 0094.

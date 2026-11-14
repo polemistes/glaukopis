@@ -117,7 +117,8 @@
   // What the project keeps of how it was looked at is saved a moment after
   // it changes: each camera (by its entry, which reading the record alone
   // would not see), each top, the outline's width, what is folded, the
-  // element marked as the document, the message of the chat read last.
+  // element marked as the document, the message of the chat read last,
+  // what is written in each field and not yet sent, the comment being begun.
   $effect(() => {
     if (open.state !== 'open') return;
     void Object.values(open.cameras);
@@ -125,6 +126,8 @@
     void open.outlineWidth;
     void open.document;
     void open.chatRead;
+    void open.drafts.kept();
+    void open.commenting;
     const folding = open.folding;
     void folding.folded.size;
     void [...folding.folded];

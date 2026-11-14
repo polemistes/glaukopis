@@ -4,7 +4,9 @@
    * messages from the oldest to the newest, the newest at the foot, those of
    * one person written close together under one name, a line with the date
    * where the day changes; under them a field that grows with what is
-   * written, where Enter sends and Shift+Enter makes a new line. One's own
+   * written, where Enter sends and Shift+Enter makes a new line. What is
+   * written there and not yet sent is its holder's to keep (`draft`), so
+   * that it is there again when the panel is (record 0094). One's own
    * message can be deleted from its menu. While the project is not shared,
    * the messages are shown without the field, and the whole conversation can
    * be deleted.
@@ -33,12 +35,14 @@
     project: Project;
     /** Whether the project is shared now: only then can anything be written. */
     shared: boolean;
+    /** What is written in the field and not yet sent. */
+    draft?: string;
     onclose: () => void;
     /** What stands at the head in place of the title: the tabs of the document pane. */
     head?: Snippet;
   }
 
-  let { project, shared, onclose, head }: Props = $props();
+  let { project, shared, draft = $bindable(''), onclose, head }: Props = $props();
 
   const me = $derived(project.me?.id ?? '');
   const shown = $derived(groups(project.chat, me));
@@ -82,24 +86,27 @@
   });
 
   // ---- writing ----
-  let text = $state('');
   let field = $state<HTMLTextAreaElement>();
 
-  /** The field grows with what is written, up to some lines, and then scrolls. */
-  function grow() {
+  // The field grows with what is written, up to some lines, and then
+  // scrolls: as it is written in, and when it comes with what was written
+  // before. It depends on what is written and on the field being there.
+  $effect(() => {
+    void draft;
     if (!field) return;
     field.style.height = 'auto';
-    field.style.height = `${Math.min(field.scrollHeight, 160)}px`;
-  }
+    // The height set is that of the box, its border with it: without the
+    // border, what is written stands a hair too high for the field, and a
+    // scrollbar comes though all of it is shown.
+    const border = field.offsetHeight - field.clientHeight;
+    field.style.height = `${Math.min(field.scrollHeight + border, 160)}px`;
+  });
 
   function send() {
-    if (!project.say(text)) return;
-    text = '';
+    if (!project.say(draft)) return;
+    draft = '';
     atFoot = true;
-    void tick().then(() => {
-      grow();
-      toFoot();
-    });
+    void tick().then(toFoot);
   }
 
   /** Enter sends; Shift+Enter is a new line, as everywhere in the application. */
@@ -222,14 +229,13 @@
     {#if shared}
       <textarea
         bind:this={field}
-        bind:value={text}
+        bind:value={draft}
         rows="1"
         placeholder={t('chat-write')}
         aria-label={t('chat-write')}
         data-chat-field
-        oninput={grow}
         {onkeydown}></textarea>
-      <Button size="sm" variant="primary" disabled={!text.trim()} data-chat-send onclick={send}>
+      <Button size="sm" variant="primary" disabled={!draft.trim()} data-chat-send onclick={send}>
         <SendHorizontal size={14} />
         {t('chat-send')}
       </Button>

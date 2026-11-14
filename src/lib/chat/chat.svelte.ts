@@ -37,6 +37,12 @@ class ChatUi {
 export const chatUi = new ChatUi();
 
 /**
+ * The field of the chat, among those of a project in which something is
+ * written and not yet sent (`OpenProject.drafts`, record 0094).
+ */
+export const CHAT_FIELD = 'chat';
+
+/**
  * Whether a project has a chat to show: while it is shared, or while it
  * holds messages, as when the sharing has ended or it came as a file.
  */

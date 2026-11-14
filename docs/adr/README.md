@@ -97,6 +97,7 @@ This is the index of the decision records in this folder, with a word on whether
 | [0091](0091-export-and-print-from-the-bar-of-a-side.md) | Export and print from the bar of a side | holds | Print… and Export… stand in the bar of a side after Typesetting, and Ctrl+E exports; they act on the side's document with the typesetting pane open or closed; printing with the pane closed sets the document out of sight under a key of its own, prints it and lets go of it, and no longer opens the pane. |
 | [0092](0092-a-chat-in-a-shared-project.md) | A chat in a shared project | holds | The messages of a project's chat are kept in its own document, outside undo, and reach the others as every change does; the chat is the last tab of the document pane, there while the project is shared or holds messages; Enter sends, one's own message can be deleted, the whole conversation once the project is no longer shared; what is unread is counted on the tab and by a dot on Document, a message that arrives is told by a toast with Show; it is part of nothing written, and the history makes no session of it. |
 | [0093](0093-associations-with-arrows-colours-and-words-in-lines.md) | Associations with arrows, colours and words in lines | holds | An association may have an arrow (to, from, both or none) and one of the colours of kinds, given in one menu of it in the diagram and in the margin of the text, and its words may be in lines, written in a field where Enter is done and Shift+Enter a new line; arrowheads are paths of their own; copies, the picture, the Org copy (`[[id:…][words]]{to teal}`, `\n` for a line break), Freeplane and search carry all of it; XMind is left as it was. |
+| [0094](0094-what-is-written-and-not-yet-sent-is-kept.md) | What is written and not yet sent is kept | holds | What is written in a field of a project and not yet sent (a message of the chat, an answer to a comment, a comment being begun, a note being changed) is there until it is sent or given up, through another tab, a closed pane, another project, the library and the application closed and opened; it is kept with the project's view on this computer, never in the project, so nobody else sees it. |
 
 ## Superseded, and by what
 
@@ -108,6 +109,7 @@ This is the index of the decision records in this folder, with a word on whether
 - 0018 (text read from PDFs and pictures) → 0044 (the text a PDF has), 0047 (the structure of a document read from a PDF) and 0061 (the workbench of a reading), in part.
 - 0019 (spelling) → 0032 (languages that are imported), in part.
 - 0021 (the full history of a project) → 0092 (no session of a message of the chat), in part.
+- 0024 (comments) → 0094 (what is written and not yet sent is the project's to keep; a comment being begun belongs to its project), in part.
 - 0027 (verse, and texts side by side) → 0040 (the kind of a paragraph) and 0041 (the shape of a text), in part.
 - 0028 (formats by kind) → 0038 (templates, layouts and the parts of a document) and 0057 (header and footer as places), in part.
 - 0029 (kinds of passage and of words, and their looks) → 0040 (the kind of a paragraph) and 0041 (the shape of a text), in part.
@@ -142,3 +144,4 @@ This is the index of the decision records in this folder, with a word on whether
 - 0077 (a closer map) → 0082 (the map spreads from the hub), in part.
 - 0079 (the numbers of headings in the views) → 0081 (the document marked, a setting for each view), in part.
 - 0081 (the document marked, a setting for each view) → 0083 (the order is its own, the diagram's numbers of every element), in part.
+- 0092 (a chat in a shared project) → 0094 (what is written in its field and not yet sent is the project's to keep), in part.

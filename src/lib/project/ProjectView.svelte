@@ -68,7 +68,7 @@
   import CommentsPanel from '$lib/comments/CommentsPanel.svelte';
   import ChatHost from '$lib/chat/ChatHost.svelte';
   import ChatPanel from '$lib/chat/ChatPanel.svelte';
-  import { hasChat, tabShown, unreadCount } from '$lib/chat/chat.svelte';
+  import { CHAT_FIELD, hasChat, tabShown, unreadCount } from '$lib/chat/chat.svelte';
   import { selectedPassage } from '$lib/comments/marks';
   import { commentsUi } from '$lib/comments/ui.svelte';
   import EditorHost from '$lib/editor/EditorHost.svelte';
@@ -1329,6 +1329,13 @@
           <CommentsPanel
             {project}
             {at}
+            drafts={activeOpen?.drafts}
+            bind:beginning={
+              () => activeOpen?.commenting ?? null,
+              (beginning) => {
+                if (activeOpen) activeOpen.commenting = beginning;
+              }
+            }
             head={tabs}
             onclose={() => documentPane.close()}
             ongo={(element) => activeApi?.goTo(element)}
@@ -1354,6 +1361,10 @@
           <ChatPanel
             {project}
             shared={!!shared?.shared}
+            bind:draft={
+              () => activeOpen?.drafts.of(CHAT_FIELD) ?? '',
+              (text) => activeOpen?.drafts.write(CHAT_FIELD, text)
+            }
             head={tabs}
             onclose={() => documentPane.close()}
           />

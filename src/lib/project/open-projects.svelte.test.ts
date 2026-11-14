@@ -19,6 +19,7 @@ function opener() {
       ['chapter', {}],
     ]),
     node: () => ({}),
+    comments: new Map([['t1', { id: 't1', notes: [{ id: 'n1' }] }]]),
     close: vi.fn(async () => calls.push(`close ${id}`)),
     snapshot: vi.fn(),
   });
@@ -37,6 +38,8 @@ function opener() {
               mode: 'text',
               document: 'chapter',
               chat: { id: 'm1', created: '2026-11-13T09:00:00Z' },
+              drafts: { chat: 'Shall we', 'answer:t1': 'Yes', 'answer:gone': 'No' },
+              commenting: { element: 'chapter' },
             },
           } as never,
         };
@@ -94,6 +97,38 @@ describe('the projects the sides show', () => {
     expect(one.toStore().chat).toEqual({ id: 'm2', created: '2026-11-13T10:00:00Z' });
     one.chatRead = null;
     expect(one.toStore()).not.toHaveProperty('chat');
+  });
+
+  it('bring back what was written and not sent, and keep it until it is sent or given up', async () => {
+    const { o } = opener();
+    const open = new OpenProjects(o);
+    const one = open.acquire('a');
+    await settle();
+    expect(one.drafts.of('chat')).toBe('Shall we');
+    expect(one.drafts.of('answer:t1')).toBe('Yes');
+    // An answer whose thread is gone is kept no more.
+    expect(one.toStore().drafts).toEqual({ chat: 'Shall we', 'answer:t1': 'Yes' });
+    one.drafts.write('chat', 'Shall we begin');
+    one.drafts.write('note:t1:n1', 'Changed');
+    one.drafts.write('note:t1:gone', 'Changed');
+    one.drafts.drop('answer:t1');
+    expect(one.toStore().drafts).toEqual({ chat: 'Shall we begin', 'note:t1:n1': 'Changed' });
+    // A field emptied is still being written in, and is not kept.
+    one.drafts.write('chat', '');
+    expect(one.drafts.has('chat')).toBe(true);
+    one.drafts.drop('note:t1:n1');
+    expect(one.toStore()).not.toHaveProperty('drafts');
+  });
+
+  it('bring back the comment that was being begun, and keep it while it is', async () => {
+    const { o } = opener();
+    const open = new OpenProjects(o);
+    const one = open.acquire('a');
+    await settle();
+    expect(one.commenting).toEqual({ element: 'chapter', passage: null });
+    expect(one.toStore().commenting).toEqual({ element: 'chapter' });
+    one.commenting = null;
+    expect(one.toStore()).not.toHaveProperty('commenting');
   });
 
   it('let go at once of a project let go while it was being opened', async () => {

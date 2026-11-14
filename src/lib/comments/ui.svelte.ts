@@ -6,12 +6,17 @@
  */
 
 import type { Thread } from '$lib/project/model/types';
+import type { Beginning } from './unsent';
 
 class CommentsUi {
   /** The thread the panel is to show, when it was asked for. */
   shown = $state<string | null>(null);
-  /** A thread that is being begun: its element, and its passage where it is on one. */
-  composing = $state<{ element: string; passage: Thread['passage'] } | null>(null);
+  /**
+   * A thread asked to be begun: its element, and its passage where it is on
+   * one. The panel takes it, and the project keeps it from then on with
+   * what is written of it (record 0094).
+   */
+  composing = $state<Beginning | null>(null);
   /** Rises each time the panel is asked to open: the view of the project follows it. */
   asked = $state(0);
   /** Whether the diagram shows every open thread as a card under its element. */
