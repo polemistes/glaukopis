@@ -10,6 +10,9 @@ home-new = 新しいプロジェクト
 # ページのメニューを開くボタン。
 home-page-menu = その他
 home-search = プロジェクトを探す
+# The field of the list searches what is written, in all projects or the last; its glass has a menu of what is searched.
+home-search-what = 検索の対象
+home-search-last = 最後に開いたプロジェクトを検索
 home-search-none = その名前のプロジェクトはありません。
 home-list-none = プロジェクトはありません。
 

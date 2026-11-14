@@ -116,7 +116,7 @@ keys-list-undo = Rückgängig machen, was mit Ordnern und Projekten getan wurde
 keys-list-redo = Wiederherstellen, was mit Ordnern und Projekten getan wurde
 
 ## The sides (stage 4 of the list, the path and the window as it was left)
-keys-close-side = Den Tab schließen, oder diese Seite des Fensters
+keys-close-side = Den Tab schließen, oder die Ansicht
 keys-switch-sides = Seiten tauschen
 
 ## Stage 3 of the sides, the panes and the bars (agent "bars")

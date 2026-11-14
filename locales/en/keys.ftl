@@ -116,7 +116,7 @@ keys-list-undo = Undo what was done to folders and projects
 keys-list-redo = Redo what was done to folders and projects
 
 ## The sides (stage 4 of the list, the path and the window as it was left)
-keys-close-side = Close the tab, or this side
+keys-close-side = Close the tab, or the view
 keys-switch-sides = Switch sides
 
 ## Stage 3 of the sides, the panes and the bars (agent "bars")

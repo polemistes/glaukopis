@@ -16,3 +16,5 @@ core-packages-fetch-status = { $url } non si è potuto scaricare: il server ha r
 # $server is the address of the server, or the folder.
 core-packages-index = Ciò che { $server } offre non si può leggere: { $message }
 core-packages-checksum = «{ $file }» non è ciò che il server aveva detto. Non è stato importato nulla; riprova più tardi.
+# What the site says is the newest version of Glaukopis (record 0099). $server is its address.
+core-packages-version = Ciò che { $server } dice della versione più recente non si può leggere: { $message }

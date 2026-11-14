@@ -29,7 +29,7 @@ project-beside-element-title = Ved siden af: vælg et element
 project-beside-show = Vis ved siden af
 project-beside-title = Ved siden af: vælg et projekt
 project-beside-subtitle = Et projekt, eller et element i dets træ, der skal vises ved siden af dette
-project-close-side = Luk denne side
+project-close-side = Luk visningen
 project-references = Referencer
 project-pictures = Billeder
 project-side-tabs = Hvad dokumentpanelet viser
@@ -165,8 +165,16 @@ project-left-out-of-document = Udeladt af dokumentet
 
 ## The panels at the side: the references and the pictures
 
+# The two choices of the references: those the project cites anywhere in it, or every one of the library.
+project-references-cited = Citeret
+# The two choices of the images: those the figures of the project show, or every one of the library.
+project-pictures-used = Brugt
+# The second choice of both lists.
+project-all = Alle
 project-nothing-found = Intet fundet
 project-edit-reference = Rediger referencen…
+# The label of the plus that opens the menu of adding references: a new one, or from files and text.
+project-add-references = Tilføj referencer
 project-which-references = Hvilke referencer
 project-search-references = Søg i referencerne
 project-library-empty = Dit bibliotek er tomt
@@ -190,6 +198,7 @@ project-a-picture = Et billede
 project-not-on-computer = Ikke på denne computer
 project-nothing-said = Der er intet sagt om det endnu
 project-no-pictures = Ingen billeder endnu
+project-no-pictures-hint = Billederne i projektets figurer står her. Alle bibliotekets billeder står under Alle.
 project-pictures-drag = Træk et billede ind i en tekst for at lave en figur af det dér, eller hen på et element for at sætte det sidst i dets tekst.
 project-pictures-absent-project = { $count ->
     [one] { $count } i dette projekt er ikke på denne computer.

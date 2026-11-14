@@ -16,3 +16,5 @@ core-packages-fetch-status = { $url }を取得できませんでした。サー�
 # $server はサーバーのアドレス、またはフォルダー。
 core-packages-index = { $server }が提供するものを読み込めません：{ $message }
 core-packages-checksum = 「{ $file }」は、サーバーが示したものと一致しません。何もインポートしていません。あとでもう一度試してください。
+# What the site says is the newest version of Glaukopis (record 0099). $server is its address.
+core-packages-version = { $server }が示す最新バージョンの情報を読み込めません：{ $message }

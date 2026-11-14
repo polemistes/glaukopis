@@ -394,6 +394,20 @@ Page Down, piltangenterna. Pluralformer: one, other.
 - **Print…** / **Export…** på en sidas rad — Skriv ut… / Exportera…, som i
   ombrytningspanelen
 
+## Sökning, listorna i dokumentpanelen och nya versioner (2026-11-14)
+
+- **view** (för en sida av ett projektfönster) — vy (vyn): *Stäng vyn*
+  (×:et på en sida, tidigare *Stäng den här sidan*), som *Delad vy*.
+- **Cited** / **Used** / **All** (omkopplaren i listorna över referenser
+  och bilder i dokumentpanelen) — *Hänvisade till* / *Använda* / *Alla*;
+  *Alla* passar bredvid både referenser och bilder.
+- **What is searched** — *Vad det söks i* (menyn bakom förstoringsglaset i
+  projektlistans fält); *Search the last project* = *Sök i det senaste
+  projektet*.
+- **Download page** — *Nedladdningssidan* (webbsidan installationsfilerna
+  hämtas från); *Tell me when a new version is out* = *Säg till när en ny
+  version finns*; *is out* = *är ute*.
+
 ## Namn som inte översätts
 
 Glaukopis; Pandoc, Typst, Tesseract, Hunspell, LaTeX, LuaLaTeX, BibLaTeX,

@@ -95,6 +95,14 @@ settings-error-programs = プログラムを探せませんでした
 settings-about = Glaukopisについて
 settings-licence = GNU General Public Licenseバージョン3またはそれ以降のもとで配布されるフリーソフトウェアです。無保証です。
 settings-data = データの保存場所
+# Whether Glaukopis asks at its start, on Windows and macOS, whether a newer version is out (record 0099).
+settings-new-versions = 新しいバージョンが出たら知らせる
+settings-new-versions-on = オン
+settings-new-versions-off = オフ
+# $version is the newer version, such as 0.2.12.
+settings-new-version-out = Glaukopis { $version }が公開されました。
+# The button that opens the web page of the installers.
+settings-download-page = ダウンロードページ
 
 ## 言語
 

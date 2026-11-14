@@ -116,7 +116,7 @@ keys-list-undo = Annuler ce qui a été fait aux dossiers et aux projets
 keys-list-redo = Rétablir ce qui a été fait aux dossiers et aux projets
 
 ## The sides (stage 4 of the list, the path and the window as it was left)
-keys-close-side = Fermer l’onglet, ou ce côté
+keys-close-side = Fermer l’onglet, ou la vue
 keys-switch-sides = Intervertir les côtés
 
 ## Stage 3 of the sides, the panes and the bars (agent "bars")

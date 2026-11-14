@@ -29,7 +29,7 @@ project-beside-element-title = Bredvid: välj ett element
 project-beside-show = Visa bredvid
 project-beside-title = Bredvid: välj ett projekt
 project-beside-subtitle = Ett projekt, eller ett element i dess träd, att visa bredvid det här
-project-close-side = Stäng den här sidan
+project-close-side = Stäng vyn
 project-references = Referenser
 project-pictures = Bilder
 project-side-tabs = Vad dokumentpanelen visar
@@ -165,8 +165,16 @@ project-left-out-of-document = Utelämnat ur dokumentet
 
 ## The panels at the side: the references and the pictures
 
+# The two choices of the references: those the project cites anywhere in it, or every one of the library.
+project-references-cited = Hänvisade till
+# The two choices of the images: those the figures of the project show, or every one of the library.
+project-pictures-used = Använda
+# The second choice of both lists.
+project-all = Alla
 project-nothing-found = Inget hittat
 project-edit-reference = Redigera referensen…
+# The label of the plus that opens the menu of adding references: a new one, or from files and text.
+project-add-references = Lägg till referenser
 project-which-references = Vilka referenser
 project-search-references = Sök referenser
 project-library-empty = Ditt bibliotek är tomt
@@ -190,6 +198,7 @@ project-a-picture = En bild
 project-not-on-computer = Inte på den här datorn
 project-nothing-said = Inget sägs om den än
 project-no-pictures = Inga bilder än
+project-no-pictures-hint = Bilderna i projektets figurer listas här. Varje bild i biblioteket finns under Alla.
 project-pictures-drag = Dra en bild in i en text för att göra en figur av den där, eller till ett element för att sätta den i slutet av dess text.
 project-pictures-absent-project = { $count ->
     [one] { $count } i det här projektet finns inte på den här datorn.

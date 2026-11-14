@@ -29,7 +29,7 @@ project-beside-element-title = Ved sida av: vel eit element
 project-beside-show = Vis ved sida av
 project-beside-title = Ved sida av: vel eit prosjekt
 project-beside-subtitle = Eit prosjekt, eller eit element i treet til det, som skal visast ved sida av dette
-project-close-side = Lukk denne sida
+project-close-side = Lukk visinga
 project-references = Referansar
 project-pictures = Bilete
 project-side-tabs = Kva dokumentpanelet viser
@@ -165,8 +165,16 @@ project-left-out-of-document = Utelate frå dokumentet
 
 ## The panels at the side: the references and the pictures
 
+# The two choices of the references: those the project cites anywhere in it, or every one of the library.
+project-references-cited = Sitert
+# The two choices of the images: those the figures of the project show, or every one of the library.
+project-pictures-used = Brukt
+# The second choice of both lists.
+project-all = Alle
 project-nothing-found = Ingenting funne
 project-edit-reference = Rediger referansen …
+# The label of the plus that opens the menu of adding references: a new one, or from files and text.
+project-add-references = Legg til referansar
 project-which-references = Kva referansar
 project-search-references = Søk i referansane
 project-library-empty = Biblioteket ditt er tomt
@@ -190,6 +198,7 @@ project-a-picture = Eit bilete
 project-not-on-computer = Ikkje på denne datamaskina
 project-nothing-said = Ingenting er skrive om det enno
 project-no-pictures = Ingen bilete enno
+project-no-pictures-hint = Bileta i figurane i prosjektet står her. Alle bileta i biblioteket står under Alle.
 project-pictures-drag = Dra eit bilete inn i ein tekst for å lage ein figur av det der, eller til eit element for å setje det inn på slutten av teksten.
 project-pictures-absent-project = { $count ->
     [one] { $count } i dette prosjektet er ikkje på denne datamaskina.

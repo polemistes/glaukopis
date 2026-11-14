@@ -116,7 +116,7 @@ keys-list-undo = Ångra det som gjordes med mappar och projekt
 keys-list-redo = Gör om det som gjordes med mappar och projekt
 
 ## The sides (stage 4 of the list, the path and the window as it was left)
-keys-close-side = Stäng fliken, eller den här sidan
+keys-close-side = Stäng fliken, eller vyn
 keys-switch-sides = Byt plats på sidorna
 
 ## Stage 3 of the sides, the panes and the bars (agent "bars")

@@ -342,6 +342,16 @@ Il senso di ciascuna parola è in `locales/GLOSSARY.md`.
 | Print…, Export… (on the bar of a side) | Stampa…, Esporta… | come `preview-print` e `preview-export-run`; il tasto Ctrl+E è «Esporta» |
 | Setting the pages… | Composizione delle pagine… | mentre Typst compone le pagine prima della stampa; «composizione» come il riquadro della composizione |
 
+## Nuovo dopo la 0.2.11 (2026-11-14)
+
+| inglese | italiano | note |
+| --- | --- | --- |
+| Close view | Chiudi la vista | la × di un lato della finestra di un progetto, e i pulsanti che chiudono un lato che non si è potuto aprire; fino al 2026-11-14 «Chiudi questo lato». «Lato» resta nelle altre voci (`project-switch-sides`, `project-document-of-other`) |
+| Cited, Used, All | Citati, Usate, Tutto | le due scelte dell'elenco dei riferimenti («Citati» come i riferimenti che il progetto cita) e dell'elenco delle immagini («Usate» come le immagini che le figure mostrano); «Tutto» serve a entrambi, al neutro, perché «Tutti» e «Tutte» non stanno bene accanto a due nomi di genere diverso |
+| What is searched | Dove si cerca | il menu della lente nel campo dell'elenco dei progetti; «Che cosa si cerca» direbbe invece ciò che si va cercando |
+| Download page | Pagina di download | il pulsante che apre la pagina da cui si scaricano gli installatori; «download» è la parola comune del software italiano |
+| Tell me when a new version is out | Avvisami quando esce una nuova versione | l'impostazione sotto Informazioni; Acceso, Spento come `settings-page-chips-on/off` |
+
 ## Nomi che non si traducono
 
 Glaukopis; Pandoc, Typst, Tesseract, Hunspell, LaTeX, LuaLaTeX, BibLaTeX,

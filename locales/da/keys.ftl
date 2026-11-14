@@ -116,7 +116,7 @@ keys-list-undo = Fortryd det, der blev gjort med mapper og projekter
 keys-list-redo = Gentag det, der blev gjort med mapper og projekter
 
 ## The sides (stage 4 of the list, the path and the window as it was left)
-keys-close-side = Luk fanen, eller denne side
+keys-close-side = Luk fanen, eller visningen
 keys-switch-sides = Byt side
 
 ## Stage 3 of the sides, the panes and the bars (agent "bars")

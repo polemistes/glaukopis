@@ -538,3 +538,6 @@ library-resize-detail = Træk for at gøre ruden til højre bredere eller smalle
 # Importing a file of references: .bib, BibLaTeX or BibTeX.
 library-import-bibtex = Importer Bib(La)TeX…
 
+# The files of a reference in its pane (docs/plans/the-tabs-opened-files-by-their-references-and-a-file-read-in-the-library.md).
+library-back-to-references = Tilbage til referencerne
+

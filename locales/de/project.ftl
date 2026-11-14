@@ -29,7 +29,7 @@ project-beside-element-title = Daneben: ein Element wählen
 project-beside-show = Daneben zeigen
 project-beside-title = Daneben: ein Projekt wählen
 project-beside-subtitle = Ein Projekt oder ein Element seines Baums, das neben diesem gezeigt werden soll
-project-close-side = Diese Seite schließen
+project-close-side = Ansicht schließen
 project-references = Quellen
 project-pictures = Bilder
 project-side-tabs = Was der Dokumentbereich zeigt
@@ -165,8 +165,16 @@ project-left-out-of-document = Aus dem Dokument weggelassen
 
 ## The panels at the side: the references and the pictures
 
+# The two choices of the references: those the project cites anywhere in it, or every one of the library.
+project-references-cited = Zitiert
+# The two choices of the images: those the figures of the project show, or every one of the library.
+project-pictures-used = Verwendet
+# The second choice of both lists.
+project-all = Alle
 project-nothing-found = Nichts gefunden
 project-edit-reference = Quelle bearbeiten…
+# The label of the plus that opens the menu of adding references: a new one, or from files and text.
+project-add-references = Quellen hinzufügen
 project-which-references = Welche Quellen
 project-search-references = Quellen durchsuchen
 project-library-empty = Ihre Bibliothek ist leer
@@ -190,6 +198,7 @@ project-a-picture = Ein Bild
 project-not-on-computer = Nicht auf diesem Computer
 project-nothing-said = Noch nichts dazu gesagt
 project-no-pictures = Noch keine Bilder
+project-no-pictures-hint = Hier stehen die Bilder, die die Abbildungen des Projekts zeigen. Jedes Bild der Bibliothek finden Sie unter „Alle“.
 project-pictures-drag = Ziehen Sie ein Bild in einen Text, um dort eine Abbildung daraus zu machen, oder auf ein Element, um es ans Ende seines Textes zu setzen.
 project-pictures-absent-project = { $count ->
     [one] { $count } in diesem Projekt ist nicht auf diesem Computer.

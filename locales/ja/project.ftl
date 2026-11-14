@@ -29,7 +29,7 @@ project-beside-element-title = 隣に表示：要素を選択
 project-beside-show = 隣に表示
 project-beside-title = 隣に表示：プロジェクトを選択
 project-beside-subtitle = このプロジェクトの隣に表示するプロジェクト、またはそのツリーの要素
-project-close-side = この側を閉じる
+project-close-side = 表示を閉じる
 project-references = 文献
 project-pictures = 画像
 project-side-tabs = 文書ペインに表示するもの
@@ -158,8 +158,16 @@ project-left-out-of-document = 文書から除外
 
 ## 側のパネル：文献と画像
 
+# The two choices of the references: those the project cites anywhere in it, or every one of the library.
+project-references-cited = 引用済み
+# The two choices of the images: those the figures of the project show, or every one of the library.
+project-pictures-used = 使用中
+# The second choice of both lists.
+project-all = すべて
 project-nothing-found = 見つかりません
 project-edit-reference = 文献を編集…
+# The label of the plus that opens the menu of adding references: a new one, or from files and text.
+project-add-references = 文献を追加
 project-which-references = 表示する文献
 project-search-references = 文献を検索
 project-library-empty = ライブラリは空です
@@ -180,6 +188,7 @@ project-a-picture = 画像
 project-not-on-computer = このコンピューターにはありません
 project-nothing-said = まだ何も書かれていません
 project-no-pictures = まだ画像はありません
+project-no-pictures-hint = プロジェクトの図に使われている画像がここに一覧されます。ライブラリのどの画像も「すべて」で見られます。
 project-pictures-drag = 画像をテキストの中にドラッグするとそこで図になり、要素の上にドラッグするとそのテキストの末尾に入ります。
 project-pictures-absent-project = このプロジェクトの{ $count }枚はこのコンピューターにありません。
 
