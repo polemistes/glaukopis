@@ -1,7 +1,8 @@
 /**
  * What the notebook is made of, as the interface reads it: its notes, the
- * sources of what was taken in, the passages taken, and the files its
- * notes hold (record 0101; `docs/plans/the-notebook.md`).
+ * sources of what was taken in, the passages taken, the files its notes
+ * hold, and the boxes the notes lie in (record 0101;
+ * `docs/plans/the-notebook.md`).
  */
 
 import type { Place } from '$lib/api/notebook';
@@ -144,4 +145,33 @@ export interface NoteRecord {
   /** The first picture it holds, for the lists. */
   picture: { hash: string; extension: string } | null;
   went: Went[];
+  /** The box it lies in: `FIRST_BOX` where it was given none, or its box is gone. */
+  box: string;
+  /** Where its card lies on the surface of its box, its top left corner; none where it is not yet put, and stands in the strip. */
+  at: Point | null;
+  /** The width of its card, in pixels of the surface; none for the usual (`CARD_WIDTH`). */
+  width: number | null;
+  /** Its tags, sorted as words are sorted. */
+  tags: string[];
+}
+
+/** A place on the surface of a box, in its pixels. */
+export interface Point {
+  x: number;
+  y: number;
+}
+
+/** A box of the notebook, which notes lie in. */
+export interface BoxRecord {
+  id: string;
+  /** Given by the writer; empty for the first box while it has none, which the interface names. */
+  name: string;
+  /** What it sorts by among the boxes; empty for the first, which stands first. */
+  order: string;
+}
+
+/** A tag, with how many notes have it. */
+export interface TagCount {
+  tag: string;
+  count: number;
 }

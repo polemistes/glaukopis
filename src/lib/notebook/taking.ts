@@ -69,10 +69,15 @@ function sayProblems(problems: string[]) {
 /**
  * Takes files of this computer into the notebook, each a note of its own
  * with the file as its source: an image a figure of what a figure shows
- * of it, any other file a file in the note. All in one step of undo. Gives
- * the ids of the notes, in the order of the files.
+ * of it, any other file a file in the note. In the box given, else the
+ * first. All in one step of undo. Gives the ids of the notes, in the order
+ * of the files.
  */
-export async function takeFiles(notebook: Notebook, paths: string[]): Promise<string[]> {
+export async function takeFiles(
+  notebook: Notebook,
+  paths: string[],
+  box?: string,
+): Promise<string[]> {
   if (!paths.length) return [];
   let taken: Awaited<ReturnType<typeof notebookTakeFiles>>;
   try {
@@ -86,7 +91,7 @@ export async function takeFiles(notebook: Notebook, paths: string[]): Promise<st
   const made = (i: number) => new Date(now + taken.files.length - 1 - i).toISOString();
   const ids = notebook.transact(() =>
     taken.files.map((f, i) => {
-      const id = notebook.addNote({ made: made(i) });
+      const id = notebook.addNote({ made: made(i), box });
       const source = notebook.addSource(fileSourceOf(f));
       holdTaken(notebook, f, source);
       if (f.shown) notebook.addFigure(id, figureOf(f.shown));
@@ -159,10 +164,14 @@ function picturesOf(data: DataTransfer): { file: File; path: string | null }[] {
 /**
  * A paste outside any text is a new note: the pictures among its files
  * figures in it, else its words its text, taken in one passage whose
- * source is the page the paste says it came from. Nothing where it holds
- * neither. Gives the id of the note.
+ * source is the page the paste says it came from. In the box given, else
+ * the first. Nothing where it holds neither. Gives the id of the note.
  */
-export async function takePasted(notebook: Notebook, data: DataTransfer): Promise<string | null> {
+export async function takePasted(
+  notebook: Notebook,
+  data: DataTransfer,
+  box?: string,
+): Promise<string | null> {
   const pictures = picturesOf(data);
   if (pictures.length) {
     const fromPaths: NotebookFile[] = [];
@@ -186,7 +195,7 @@ export async function takePasted(notebook: Notebook, data: DataTransfer): Promis
     sayProblems(problems);
     if (!shown.length) return null;
     return notebook.transact(() => {
-      const id = notebook.addNote();
+      const id = notebook.addNote({ box });
       for (const f of fromPaths) holdTaken(notebook, f, notebook.addSource(fileSourceOf(f)));
       // Pasted as a picture: where it came from is given by hand.
       for (const f of pasted) holdTaken(notebook, f, null);
@@ -200,7 +209,7 @@ export async function takePasted(notebook: Notebook, data: DataTransfer): Promis
   if (!words) return null;
   const page = pastedPage(data);
   return notebook.transact(() => {
-    const id = notebook.addNote();
+    const id = notebook.addNote({ box });
     const source = page
       ? notebook.addSource({ sort: 'web', url: page, title: '', read: nowIso() })
       : null;
