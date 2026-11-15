@@ -36,6 +36,13 @@ notebook-went-quotation = quotation
 notebook-went-figure = image
 notebook-went-reference = reference
 notebook-went-file = file
+# What the plugin for Firefox handed over has arrived.
+notebook-arrived = Added to the notebook
+notebook-arrived-from = Added to the notebook: { $title }
+notebook-arrived-many = { $count ->
+    [one] One thing added to the notebook
+   *[other] { $count } things added to the notebook
+}
 
 ## A note and its text
 

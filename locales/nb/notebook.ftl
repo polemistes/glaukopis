@@ -35,6 +35,12 @@ notebook-went-quotation = sitat
 notebook-went-figure = bilde
 notebook-went-reference = referanse
 notebook-went-file = fil
+notebook-arrived = Lagt i notatblokken
+notebook-arrived-from = Lagt i notatblokken: { $title }
+notebook-arrived-many = { $count ->
+    [one] Én ting lagt i notatblokken
+   *[other] { $count } ting lagt i notatblokken
+}
 
 ## Et notat og teksten i det
 
