@@ -63,6 +63,7 @@
   import type { Project } from '../model/project.svelte';
   import { isAncestor } from '../model/tree';
   import { pieces } from '../pieces';
+  import { draggedPieces, NOTE_PIECES, piecesIntoElement } from '$lib/notebook/out';
   import type { Folding } from './folding.svelte';
   import { headingAt, nameDoc } from './heading';
   import {
@@ -1274,6 +1275,13 @@
       current = target.id;
       return;
     }
+    const dragged = draggedPieces(event.payload);
+    if (dragged) {
+      void piecesIntoElement(project, target.id, dragged);
+      folding.open(target.id);
+      current = target.id;
+      return;
+    }
     if (event.payload.kind === 'references') {
       const ids = event.payload.data as string[];
       project.checkpoint();
@@ -1421,7 +1429,8 @@
       accepts: (p) =>
         (p.kind === 'elements' && takes(p.data as ElementsPayload)) ||
         p.kind === PICTURES_DRAGGED ||
-        p.kind === 'references',
+        p.kind === 'references' ||
+        p.kind === NOTE_PIECES,
       ondrop,
       onover: (e) => {
         drop = e && e.payload.kind !== 'elements' ? targetAt(e) : null;
