@@ -81,6 +81,12 @@ notebook-source-own-words = My own words
 
 ## The surface
 
+notebook-surface = Surface of the box
+notebook-surface-not-placed = Not yet placed
+notebook-surface-empty-note = Empty note
+notebook-surface-new-note-here = New note here
+notebook-surface-link-handle = Drag to another note to link them
+
 ## The list in the document pane, and what goes into a text
 
 notebook-between = Between the sides and the notes
