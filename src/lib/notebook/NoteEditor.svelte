@@ -164,7 +164,7 @@
           size="sm"
           disabled={!textFocused}
           data-divide
-          onpointerdown={(e) => e.preventDefault()}
+          onmousedown={(e) => e.preventDefault()}
           onclick={() => divide()}
         >
           <Scissors size={15} />

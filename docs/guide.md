@@ -1494,24 +1494,73 @@ chosen when you left it.
 
 ### The page
 
-At the left stand the notes, the newest on top, each by its name, or by how
-it begins where it has none, with the day it was made and small signs for
-what it holds: an image, a file, words taken in. Over them is one field that
-finds notes by their words (**Ctrl+F**), and beside it **New note**
-(**Ctrl+N**) and **Add files…**. The edge between the list and the note can
-be dragged.
+The page is made as the library's is. At the left is a narrow column with
+**All notes**, the boxes and the tags (see *Boxes and tags* below). In the
+middle are the notes of what is chosen there. All notes are a list, the
+newest on top, each by its name, or by how it begins where it has none,
+with the day it was made and small signs for what it holds: an image, a
+file, words taken in. A box is shown as its **surface** or as a list, by the
+choice **Surface** | **List** over it; each box is shown as it was last,
+and as its surface until you choose otherwise. Over the notes is one field
+that finds notes by their words (**Ctrl+F**) in what is chosen at the left,
+and beside it **New note** (**Ctrl+N**) and **Add files…**, which put what
+they make in the box in view, or in the first box where all notes are in
+view. The edges between the parts can be dragged.
 
-At the right is the note chosen. It has a name, if you give it one, and a
-text, written as every text in Glaukopis is: the kinds of paragraph, lists,
-the marks, the kinds of words and languages, citations with **@**, images,
-tables and mathematics, from the same tools at its head. What only a
-document has is not offered: notes at the foot, comments, pointers, breaks
-of the page, the look of a kind.
+At the right is the note chosen in the list. Beside a surface, a note is
+opened to be written and closed again by the **×** at its head, or by
+**Escape** where the cursor is not in its text. A note has a name, if you
+give it one, its tags under the name, and a text, written as every text in
+Glaukopis is: the kinds of paragraph, lists, the marks, the kinds of words
+and languages, citations with **@**, images, tables and mathematics, from
+the same tools at its head. What only a document has is not offered: notes
+at the foot, comments, pointers, breaks of the page, the look of a kind.
 
 **Delete** deletes the notes selected, more than one with Shift and Ctrl as
 in other lists, and says so with **Undo**. **Ctrl+Z** and **Ctrl+Shift+Z**
 undo and redo what was done in the notebook: in a text they are the text's,
-elsewhere on the page the notebook's.
+elsewhere on the page the notebook's. The right button on notes opens one,
+joins several, moves them to another box, or deletes them.
+
+### Boxes and tags
+
+A note lies in one **box**. The first box, **Unsorted** until you give it a
+name, is where everything lands; it is always there. Beside each box stands
+how many notes it holds. The **+** over the boxes makes a box, named where
+it stands: **Enter** keeps the name, **Escape** gives it up. A box is renamed
+by two presses or **F2**, put elsewhere among the others by dragging it, and
+deleted from its menu or by **Delete**; where it holds notes you are asked
+first, and they go to the first box, which is never deleted. Notes dragged
+from the list onto a box move to it; **Move to** in the menu of the right
+button does the same.
+
+A note has any number of **tags**, written in the field under its name.
+What you type offers the tags there are that begin with it or hold it: the
+arrows choose one and **Enter** takes it; **Enter** or a comma with none
+chosen makes a new tag of what you typed. **Backspace** in the empty field
+takes the last tag away, and the **×** of a tag takes that one away.
+
+Under the boxes stand all the tags, with how many notes have each. A press
+on a tag shows only the notes that have it, and a press again lets it go;
+with more than one on, a note must have them all. A new note made while
+tags are on has them. The menu of a tag renames it on every note, which
+makes it one with a tag of the new name if there is one, and you are told
+so first; or removes it from all notes.
+
+### Join and Divide
+
+**Join** makes one note of several: select them, in the list with Shift
+or Ctrl, and choose **Join** in the menu of the right button, or press
+**Ctrl+J**. Their texts follow one another in the order the list has them,
+or on a surface as it is read, from the top down and from left to right. The
+note that stands keeps the tags, the links and the sources of all of them.
+It says so with **Undo**.
+
+**Divide**, the scissors in the bar of a note, or **Ctrl+Shift+D**, cuts
+the note where the cursor is: what follows it becomes a note of its own.
+With words selected, those words are lifted out into a note of their own.
+The new note lies in the same box with the same tags, and is chosen. Both
+are undone as one step.
 
 ### What is taken in
 
