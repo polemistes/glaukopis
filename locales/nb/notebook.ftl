@@ -73,6 +73,10 @@ notebook-source-changed = Endret siden det ble tatt. Det lød:
 notebook-source-bring-back = Hent tilbake
 notebook-source-own-words = Mine egne ord
 
+## Bokser og merkelapper
+
+## Flaten
+
 ## Listen i dokumentpanelet, og det som går inn i en tekst
 
 notebook-between = Mellom sidene og notatene

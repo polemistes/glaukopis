@@ -77,6 +77,10 @@ notebook-source-changed = Changed since it was taken. It read:
 notebook-source-bring-back = Bring back
 notebook-source-own-words = My own words
 
+## Boxes and tags
+
+## The surface
+
 ## The list in the document pane, and what goes into a text
 
 notebook-between = Between the sides and the notes
