@@ -12,6 +12,7 @@ import type * as templates from './templates';
 import type * as system from './system';
 import type * as changes from './changes';
 import type * as clipboard from './clipboard';
+import type * as notebook from './notebook';
 import type * as sources from './sources';
 import type * as found from './found';
 import type * as viewer from './viewer';
@@ -3596,7 +3597,86 @@ export const pasted: clipboard.Pasted = {
       "path": "/home/someone/dot.png"
     }
   ],
-  "text": "Wrath"
+  "text": "Wrath",
+  "url": "https://example.org/page"
+};
+
+export const notebookFile: notebook.NotebookFile = {
+  "file": {
+    "added": "2026-01-01T00:00:00Z",
+    "alt": "",
+    "bookmarks": [],
+    "exists": true,
+    "folder": "00000000-0000-4000-8000-000000000000",
+    "hash": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+    "height": 1,
+    "kind": "picture",
+    "madeFrom": null,
+    "name": "plate.png",
+    "origin": "/data/plate.png",
+    "path": "attachments/4f/4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5/plate.png",
+    "references": [],
+    "size": 70,
+    "width": 1
+  },
+  "place": {
+    "lat": 59.9,
+    "lon": 10.75
+  },
+  "shown": {
+    "added": "2026-01-01T00:00:00Z",
+    "alt": "",
+    "bookmarks": [],
+    "exists": true,
+    "folder": "00000000-0000-4000-8000-000000000000",
+    "hash": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+    "height": 1,
+    "kind": "picture",
+    "madeFrom": null,
+    "name": "plate.png",
+    "origin": "/data/plate.png",
+    "path": "attachments/4f/4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5/plate.png",
+    "references": [],
+    "size": 70,
+    "width": 1
+  },
+  "taken": "2026-01-01T00:00:00Z",
+  "time": "2026-01-01T00:00:00Z"
+};
+
+export const takenFiles: notebook.TakenFiles = {
+  "files": [
+    {
+      "file": {
+        "added": "2026-01-01T00:00:00Z",
+        "alt": "",
+        "bookmarks": [],
+        "exists": true,
+        "folder": "00000000-0000-4000-8000-000000000000",
+        "hash": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+        "height": 1,
+        "kind": "picture",
+        "madeFrom": null,
+        "name": "plate.png",
+        "origin": "/data/plate.png",
+        "path": "attachments/4f/4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5/plate.png",
+        "references": [],
+        "size": 70,
+        "width": 1
+      },
+      "place": null,
+      "shown": null,
+      "taken": null,
+      "time": null
+    }
+  ],
+  "problems": [
+    "a.pdf: not there"
+  ]
+};
+
+export const notebookUpdate: notebook.NotebookUpdate = {
+  "update": "AAA="
 };
 
 export const trashed: projects.Trashed[] = [

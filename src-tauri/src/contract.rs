@@ -247,6 +247,7 @@ fn what_is_sent_is_what_the_interface_declares() {
     let pasted = crate::commands::clipboard::Pasted {
         text: Some("Wrath".into()),
         html: None,
+        url: Some("https://example.org/page".into()),
         pictures: vec![
             crate::commands::clipboard::PastedPicture {
                 name: String::new(),
@@ -553,6 +554,25 @@ fn what_is_sent_is_what_the_interface_declares() {
     let files_told = Told { ticket: "t".into(), told: Count { done: 1, total: 3, name: "nagy.pdf".into() } };
     let pdfs_told = files_told.clone();
     let ocr_told = Told { ticket: "t".into(), told: glaukopis_core::ocr::Progress { done: 1, total: 3, page: 2 } };
+    // A file taken into the notebook: a photograph that says when and where it was taken.
+    let notebook_file = crate::commands::notebook::NotebookFile {
+        file: taken_in.files[0].clone(),
+        shown: Some(taken_in.files[0].clone()),
+        time: Some("2026-11-15T13:03:22Z".into()),
+        taken: Some("2026-11-15T14:03:22".into()),
+        place: Some(glaukopis_core::notebook::Place { lat: 59.9, lon: 10.75 }),
+    };
+    let taken_files = crate::commands::notebook::TakenFiles {
+        files: vec![crate::commands::notebook::NotebookFile {
+            file: taken_in.files[0].clone(),
+            shown: None,
+            time: None,
+            taken: None,
+            place: None,
+        }],
+        problems: vec!["a.pdf: not there".into()],
+    };
+    let notebook_update = crate::commands::notebook::NotebookUpdate { update: "AAA=".into() };
 
     let mut values: Vec<(&str, &str, Value)> = Vec::new();
     let mut put = |name: &'static str, kind: &'static str, value: &dyn erased::Json| {
@@ -645,6 +665,9 @@ fn what_is_sent_is_what_the_interface_declares() {
     let zip_entry = crate::commands::system::ZipEntry { name: "content.json".into(), text: "[]".into() };
     put("zipEntry", "system.ZipEntry", &zip_entry);
     put("pasted", "clipboard.Pasted", &pasted);
+    put("notebookFile", "notebook.NotebookFile", &notebook_file);
+    put("takenFiles", "notebook.TakenFiles", &taken_files);
+    put("notebookUpdate", "notebook.NotebookUpdate", &notebook_update);
     put("trashed", "projects.Trashed[]", &trashed);
     put("history", "projects.HistoryEntry[]", &history);
     put("place", "projects.Place", &place);

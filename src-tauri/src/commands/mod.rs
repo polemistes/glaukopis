@@ -7,6 +7,7 @@ pub mod import;
 pub mod languages;
 pub mod library;
 pub mod math;
+pub mod notebook;
 pub mod notices;
 pub mod ocr;
 pub mod printing;

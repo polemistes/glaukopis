@@ -10,6 +10,7 @@ use glaukopis_core::formats::Formats;
 use glaukopis_core::import::zotero::ZoteroCopy;
 use glaukopis_core::library::Library;
 use glaukopis_core::net::Client;
+use glaukopis_core::notebook::Notebook;
 use glaukopis_core::ocr;
 use glaukopis_core::paths::{Claim, DataDir};
 use glaukopis_core::projects::Projects;
@@ -23,6 +24,11 @@ pub struct AppState {
     /// Held while the application runs, so that no other works in the same data.
     _claim: Claim,
     pub projects: Projects,
+    /// The notebook's document (its files are in the library's store).
+    pub notebook: Notebook,
+    /// Whether the files the notebook held alone and no note holds have
+    /// been swept out of the store in this run: it is done once.
+    pub notebook_swept: AtomicBool,
     /// The store of pictures.
     /// What comes with the application: styles, formats, filters.
     pub resources: PathBuf,
@@ -149,6 +155,8 @@ impl AppState {
         }
         let state = AppState {
             projects,
+            notebook: Notebook::new(&data),
+            notebook_swept: AtomicBool::new(false),
             resources,
             styles,
             formats,
