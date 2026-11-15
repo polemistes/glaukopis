@@ -11,6 +11,7 @@
   import { untrack } from 'svelte';
   import { commentsUi } from '$lib/comments/ui.svelte';
   import RichText from '$lib/editor/RichText.svelte';
+  import { holderOf } from '$lib/project/holder';
   import type { KeyAction } from '$lib/editor/plugins';
   import { t } from '$lib/i18n';
   import { keysFor } from '$lib/shell/keys.svelte';
@@ -172,7 +173,7 @@
         data-document-sign><BookOpenText size={placed.depth === 0 ? 15 : 12} /></span
       >{/if}{#if renaming && title}
       <RichText
-        {project}
+        holder={holderOf(project)}
         fragment={title}
         kind="title"
         placeholder={t('diagram-idea')}

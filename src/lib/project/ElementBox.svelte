@@ -14,6 +14,7 @@
   import type { KeyAction } from '$lib/editor/plugins';
   import { citationLabel } from '$lib/editor/references.svelte';
   import RichText from '$lib/editor/RichText.svelte';
+  import { holderOf } from '$lib/project/holder';
   import WritingTools from '$lib/editor/WritingTools.svelte';
   import { editorUi } from '$lib/editor/ui.svelte';
   import { numbering, pointerText } from '$lib/figures/numbering.svelte';
@@ -248,7 +249,7 @@
     <header onpointerdown={grab}>
       <RichText
         bind:this={name}
-        {project}
+        holder={holderOf(project)}
         fragment={title}
         kind="title"
         placeholder={t('project-name-placeholder')}
@@ -271,7 +272,7 @@
     <div class="text">
       <RichText
         bind:this={body}
-        {project}
+        holder={holderOf(project)}
         fragment={text}
         kind="body"
         element={id}

@@ -33,9 +33,15 @@ export interface WordMenu {
   anchor: RectLike;
   /** Puts what was chosen in place of the word. */
   replace: (by: string) => void;
-  project: Project | null | undefined;
+  /** What holds the text, where it keeps words that spelling passes over: a project. */
+  project: Ignoring | null | undefined;
   /** Gives the focus back to where the word is, when the menu closes. */
   back?: () => void;
+}
+
+/** What keeps the words spelling passes over in its texts, where it keeps any. */
+export interface Ignoring {
+  ignoreWord?(word: string): void;
 }
 
 const nothing = () => {};
@@ -70,11 +76,11 @@ export async function openWordMenu(menu: WordMenu) {
     },
   ];
   const project = menu.project;
-  if (project) {
+  if (project?.ignoreWord) {
     items.push({
       label: t('spelling-ignore'),
       icon: EyeOff,
-      action: () => project.ignoreWord(menu.word),
+      action: () => project.ignoreWord?.(menu.word),
     });
   }
   openMenu(menu.anchor, items, { side: 'bottom', align: 'start', onclose: menu.back });
@@ -196,9 +202,22 @@ export function spellingOptions(
     const id = element();
     return id && p?.node(id) ? (p.documentOf(id).settings.language ?? null) : null;
   };
+  return spellingFor(language, () => project()?.ignored ?? NOTHING, project);
+}
+
+/**
+ * Spelling for an editor, of whatever holds its text: the language the
+ * text is written in, the words passed over in it, what keeps those words
+ * where anything does, and the menus.
+ */
+export function spellingFor(
+  language: () => string | null | undefined,
+  ignored: () => ReadonlySet<string>,
+  ignoring: () => Ignoring | null | undefined,
+): SpellingOptions {
   return {
     language,
-    ignored: () => project()?.ignored ?? NOTHING,
+    ignored,
     menu: (view, at, event) => {
       if (!event) {
         // From the keyboard: the word is selected, so that it is seen which it is.
@@ -213,7 +232,7 @@ export function spellingOptions(
         word: at.word,
         anchor: event ? pointRect(event.clientX, event.clientY) : rectOf(view, at.to),
         replace: (by) => replaceIn(view, at, by),
-        project: project(),
+        project: ignoring(),
         back: backTo(view),
       });
     },

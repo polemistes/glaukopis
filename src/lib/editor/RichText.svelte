@@ -14,7 +14,7 @@
   import { untrack } from 'svelte';
   import { ySyncPlugin, yCursorPlugin } from 'y-prosemirror';
   import type * as Y from 'yjs';
-  import type { Project } from '$lib/project/model/project.svelte';
+  import type { TextHolder } from './holder';
   import type { RefRecord } from '$lib/project/model/types';
   import { library } from '$lib/state/library.svelte';
   import type { ResolvedPos, Slice } from 'prosemirror-model';
@@ -34,7 +34,7 @@
     looksLikeOrg,
     pastedTextSlice,
   } from './clipboard';
-  import { citationWrittenIn, copyCitation, putWritten } from '$lib/library/copying';
+  import { copyWritten, putWritten } from '$lib/library/copying';
   import type { Cited } from '$lib/api/documents';
   import { keyOf } from '$lib/shell/keys.svelte';
   import { bodySchema, titleSchema } from './schema';
@@ -58,13 +58,11 @@
   import LanguageDialog from './LanguageDialog.svelte';
   import LineDialog from './LineDialog.svelte';
   import LineNumberingDialog from './LineNumberingDialog.svelte';
-  import { documents, templateUsedCached } from '$lib/preview/documents.svelte';
-  import { kindKeysOf, kindName } from './kinds';
+  import { kindName } from './kinds';
   import { toCm } from '$lib/ui/settings/rows';
   import { annotationsGapWhere, numbersGap } from '$lib/document/line-gaps';
   import { CitationView, FootnoteView, noteNumbers, PageBreakView } from './views.svelte';
   import { RefMarkView } from './refmarks';
-  import { topOf } from '$lib/figures/numbering.svelte';
   import { pictures, PICTURES_DRAGGED } from '$lib/figures/pictures.svelte';
   import { pastedPaths } from '$lib/util/paste';
   import { choosePicture, CrossRefView, FigureView, FormulaView } from '$lib/figures/views.svelte';
@@ -72,14 +70,15 @@
   import { hooksOf, viewsByDom } from './ui.svelte';
   import { pressedFound } from '$lib/found/found.svelte';
   import { searchMarks } from '$lib/search/decorations';
-  import { spellingOptions } from '$lib/spelling/menu';
+  import { spellingFor } from '$lib/spelling/menu';
   import { lookAgain, spellingPlugin } from '$lib/spelling/plugin';
   import { reviewMarks } from '$lib/review/editor';
   import { commentMarks, markComments, pressedThread } from '$lib/comments/marks';
   import { commentsUi } from '$lib/comments/ui.svelte';
 
   interface Props {
-    project: Project;
+    /** What holds the text: a project, or the notebook. See `holder.ts`. */
+    holder: TextHolder;
     fragment: Y.XmlFragment;
     kind: 'body' | 'title';
     /** The element whose text it is: what stands in the text is numbered by it. */
@@ -113,7 +112,7 @@
   }
 
   let {
-    project,
+    holder,
     fragment,
     kind,
     element,
@@ -141,7 +140,7 @@
   // The threads of comments on the element, drawn over their passages;
   // again whenever they change, and when the editor is made anew.
   $effect(() => {
-    const threads = kind === 'body' && element ? project.threadsOf(element) : [];
+    const threads = kind === 'body' && element ? holder.threadsOf(element) : [];
     void made;
     untrack(() => {
       if (view) markComments(view, threads);
@@ -149,10 +148,8 @@
   });
 
   /** The element whose name or text this is: its document has the language the spelling is checked in. */
-  const owner = $derived(element ?? project.ownerOf(fragment));
-  const language = $derived(
-    owner && project.node(owner) ? (project.documentOf(owner).settings.language ?? null) : null,
-  );
+  const owner = $derived(element ?? holder.ownerOf(fragment));
+  const language = $derived(holder.languageOf(owner));
 
   // The text says what language it is in, by which a mentioned word takes
   // the quotation marks of the language (`:lang()` in the style sheet);
@@ -179,8 +176,8 @@
   // the names of the kinds of the catalogue are said. That is what this
   // depends on; the rest is read untracked.
   const numbersLayout = $derived.by<NumbersLayout>(() => {
-    if (kind !== 'body' || !owner || !project.node(owner)) return LAYOUT_NUMBERS;
-    const format = documents.formatForCached(project, owner);
+    if (kind !== 'body' || !owner || !holder.has(owner)) return LAYOUT_NUMBERS;
+    const format = holder.formatOf(owner);
     const verse = format?.verse;
     const step = toCm(format?.text.indentStep ?? '');
     return {
@@ -197,9 +194,7 @@
    */
   const gaps = $derived.by(() => {
     const verse =
-      kind === 'body' && owner && project.node(owner)
-        ? documents.formatForCached(project, owner)?.verse
-        : undefined;
+      kind === 'body' && owner && holder.has(owner) ? holder.formatOf(owner)?.verse : undefined;
     const look = verse ?? { every: 5, side: 'left' as const };
     return {
       numbers: numbersGap(look),
@@ -211,7 +206,7 @@
   $effect(() => {
     const now = {
       numbers: numbersLayout,
-      kinds: project.passageKinds,
+      kinds: holder.passageKinds,
       language: languages.current,
     };
     void made;
@@ -248,8 +243,8 @@
       title: e.title,
       container: e.container,
     }));
-    references.push(...project.refs.values());
-    return { paragraphKinds: project.passageKinds, references };
+    references.push(...holder.refs.values());
+    return { paragraphKinds: holder.passageKinds, references };
   };
 
   /** Text pasted as text; the works it cites that the project keeps no copy of are kept. */
@@ -259,7 +254,7 @@
     slice.content.descendants((node) => {
       if (node.type.name !== 'citation') return;
       for (const item of node.attrs.items as { id: string }[])
-        if (item?.id && !project.refs.has(item.id)) cited.add(item.id);
+        if (item?.id && !holder.refs.has(item.id)) cited.add(item.id);
     });
     if (cited.size) queueMicrotask(() => cited.forEach((id) => oncite?.(id)));
     return slice;
@@ -289,7 +284,7 @@
   }
 
   /** The kinds of paragraph of the writer's own, as much as the shape of a text needs of them. */
-  const ownKinds = $derived(project.passageKinds.filter((k) => k.family === 'paragraph'));
+  const ownKinds = $derived(holder.passageKinds.filter((k) => k.family === 'paragraph'));
 
   // The windows the menus and the bracket of a run ask for through the
   // hooks: how the lines are numbered from the cursor on, and what is said
@@ -327,7 +322,7 @@
   // the words ignored in the project do.
   let lookedWith: { language: string | null; ignored: ReadonlySet<string> } | null = null;
   $effect(() => {
-    const now = { language, ignored: project.ignored };
+    const now = { language, ignored: holder.ignored };
     untrack(() => {
       const before = lookedWith;
       lookedWith = now;
@@ -335,6 +330,11 @@
         lookAgain(view);
     });
   });
+
+  /** Copies a citation of the text as the reference style of its document writes it (record 0090). */
+  function copyCitation(said: Cited) {
+    void copyWritten(() => holder.citationWritten(element, said), t('library-copied'));
+  }
 
   function cite(v: EditorView, typed: boolean) {
     const from = v.state.selection.from;
@@ -365,7 +365,7 @@
                 );
               }
             },
-            oncopy: (items, mode) => void copyCitation(project, element, { items, mode }),
+            oncopy: (items, mode) => copyCitation({ items, mode }),
             onclose: () => v.focus(),
           });
         }
@@ -392,11 +392,11 @@
    * pointed to is what stands in the document of the element in view.
    */
   function point(v: EditorView, pos?: number) {
-    if (!element || !project.node(element)) return;
+    if (!element || !holder.has(element)) return;
     const from = pos ?? v.state.selection.from;
     editorUi.pickTarget({
       anchor: rectAt(v, from),
-      at: at ?? topOf(project, element),
+      at: at ?? holder.topOf(element),
       onpick: (target) => {
         editorUi.closeTargets(false);
         if (v.isDestroyed) return;
@@ -495,8 +495,8 @@
     const f = fragment;
     const schema = kind === 'body' ? bodySchema : titleSchema;
     const hooks = {
-      undo: () => project.undo(),
-      redo: () => project.redo(),
+      undo: () => holder.undo(),
+      redo: () => holder.redo(),
       action: (action: KeyAction, v: EditorView) => untrack(() => onaction?.(action, v) ?? false),
       cite: kind === 'body' ? cite : undefined,
       picture: kind === 'body' ? picture : undefined,
@@ -505,7 +505,7 @@
       at: untrack(() => at),
       inView: untrack(() => inView),
       // The kinds of the writer's own, for what they are based on: a line of verse, a kind that is counted, the name of a run.
-      passageKinds: () => project.passageKinds,
+      passageKinds: () => holder.passageKinds,
       // What the layout says of the numbers of a stretch: see above.
       numbers: () => drawnWith?.numbers ?? LAYOUT_NUMBERS,
       // The windows of the numbering and of a language, and the language of the document for the one of a language.
@@ -513,19 +513,16 @@
       askLine: kind === 'body' ? askLine : undefined,
       askLanguage: kind === 'body' ? askLanguage : undefined,
       language: () => untrack(() => language),
-      copyCitation: (said: Cited) => void copyCitation(project, element, said),
+      copyCitation,
       // The keys of the kinds, as the document type of the element written in gives them.
-      kindKeys: () =>
-        untrack(() =>
-          kindKeysOf(owner && project.node(owner) ? templateUsedCached(project, owner) : null),
-        ),
+      kindKeys: () => untrack(() => holder.kindKeysOf(owner)),
     };
 
     const created = untrack(() => {
       const plugins = [
         ySyncPlugin(f),
-        yCursorPlugin(project.awareness),
-        sharedUndo(project.undoManager),
+        yCursorPlugin(holder.awareness),
+        sharedUndo(holder.undoManager),
         ...(kind === 'body' ? bodyPlugins(schema, hooks) : titlePlugins(hooks)),
         // The numbers of the notes, as the document has them.
         ...(kind === 'body' ? [noteNumbers()] : []),
@@ -537,9 +534,10 @@
         // The passages that are commented on: see `comments/marks.ts`.
         commentMarks(),
         spellingPlugin(
-          spellingOptions(
-            () => project,
-            () => owner,
+          spellingFor(
+            () => holder.languageOf(owner),
+            () => holder.ignored,
+            () => holder,
           ),
         ),
       ];
@@ -577,7 +575,7 @@
           const said = loneCitation(slice);
           if (!said) return false;
           const usual = () => copiedAsUsual(slice, language, orgOptions);
-          putWritten(citationWrittenIn(project, element, said).catch(usual)).catch(() => {});
+          putWritten(holder.citationWritten(element, said).catch(usual)).catch(() => {});
           return true;
         },
         // Text pasted as text is read as Org where it is, and keeps every line break where it is not (see `clipboard.ts`).
@@ -597,7 +595,7 @@
           return pressedFound(
             event.target,
             untrack(() =>
-              element && project.node(element) ? (inView ?? at ?? topOf(project, element)) : null,
+              element && holder.has(element) ? (inView ?? at ?? holder.topOf(element)) : null,
             ),
           );
         },
@@ -753,7 +751,7 @@
     stretch={numbering.stretch}
     layout={numbersLayout}
     from={numbering.from}
-    kinds={numbering.kinds.map((id) => ({ id, name: kindName(id, project.passageKinds) }))}
+    kinds={numbering.kinds.map((id) => ({ id, name: kindName(id, holder.passageKinds) }))}
     onclose={() => (numbering = null)}
     onset={(how) => {
       if (!numbering) return;

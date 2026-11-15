@@ -68,6 +68,7 @@
   import { lookUi } from '$lib/look/look.svelte';
   import { panes } from '$lib/project/panes.svelte';
   import type { Project } from '$lib/project/model/project.svelte';
+  import type { PassageKindRecord } from '$lib/project/model/types';
   import { spelling } from '$lib/spelling/spelling.svelte';
   import { settings } from '$lib/state/settings.svelte';
   import { askForTable, chooseTable } from '$lib/tables/ask';
@@ -95,6 +96,7 @@
     groupOf,
     inHand,
     kindKeysOf,
+    PLAIN_KINDS,
     specOf,
     WORD_KINDS,
     type KindGroup,
@@ -107,7 +109,8 @@
   import { insertParallel } from './parallel';
 
   interface Props {
-    project: Project;
+    /** The project whose texts the tools are for; none, where the text is in no project: a note of the notebook. */
+    project: Project | null;
     /** The part of the window whose texts the tools are for. */
     scope?: HTMLElement | null;
     /** The element in view: whose document sets the tools, where no text has the cursor. */
@@ -120,6 +123,8 @@
 
   let { project, scope = null, at = null, disabled = false, middle }: Props = $props();
 
+  const NO_KINDS: PassageKindRecord[] = [];
+
   const s = $derived.by(() => {
     if (disabled) return null;
     const selection = editorUi.selection;
@@ -129,8 +134,10 @@
     return selection;
   });
   const body = $derived(s?.kind === 'body');
+  /** The kinds of the writer's own: those of the project, none where there is no project. */
+  const ownKinds = $derived(project?.passageKinds ?? NO_KINDS);
   /** The kinds of paragraph of the writer's own, as much as the shape of a text needs of them. */
-  const own = $derived(project.passageKinds.filter((k) => k.family === 'paragraph'));
+  const own = $derived(ownKinds.filter((k) => k.family === 'paragraph'));
   /** The id of the kind of paragraph the cursor is in, or that the selection begins in. */
   const kind = $derived(s && body ? kindOf(s.view.state) : 'text');
   /** Whether the selection runs over paragraphs of more kinds than one. */
@@ -193,7 +200,7 @@
   const element = $derived(elementOf(s?.view) ?? at ?? null);
   /** What is said of that element as a document, with what it inherits, and from where. */
   const ofDocument = $derived(
-    element && project.node(element) ? project.documentOf(element) : null,
+    element && project?.node(element) ? project.documentOf(element) : null,
   );
   // The format of the document: for the kinds it suggests, and its name at the foot of the kind menu.
   $effect(() => {
@@ -219,15 +226,15 @@
   });
   // The kinds Ctrl+Alt with a digit gives in the document type of the element, for the menu to show (ADR 0066).
   const kindKeys = $derived(
-    kindKeysOf(element && ofDocument ? templateUsedCached(project, element) : null),
+    kindKeysOf(project && element && ofDocument ? templateUsedCached(project, element) : null),
   );
   // The kinds the template puts in hand (ADR 0038); nothing until the template is read.
   const suggests = $derived(documents.templateCached(choice.template)?.passageKinds ?? []);
   const formatName = $derived(
     documents.formatSummary(choice.format)?.name ?? format?.name ?? choice.format,
   );
-  const ownParagraphs = $derived(project.passageKinds.filter((k) => k.family === 'paragraph'));
-  const ownWords = $derived(project.passageKinds.filter((k) => k.family === 'words'));
+  const ownParagraphs = $derived(ownKinds.filter((k) => k.family === 'paragraph'));
+  const ownWords = $derived(ownKinds.filter((k) => k.family === 'words'));
 
   /** The icons of the kinds: by id for the plain kinds and the lines of verse, by group for the rest. */
   const ICONS: Record<string, typeof Pilcrow> = {
@@ -260,13 +267,13 @@
 
   /** The name of a kind, of the catalogue or the writer's own. */
   function nameOf(id: string): string {
-    return specOf(id)?.label() ?? project.passageKind(id)?.name ?? id;
+    return specOf(id)?.label() ?? project?.passageKind(id)?.name ?? id;
   }
 
   /** Whether a kind is set from the kind menu: a kind of paragraph, not a kind of words. */
   function ofParagraphs(id: string): boolean {
     const spec = specOf(id);
-    return spec ? spec.family === 'paragraph' : project.passageKind(id)?.family === 'paragraph';
+    return spec ? spec.family === 'paragraph' : project?.passageKind(id)?.family === 'paragraph';
   }
 
   /** The element whose text an editor holds. */
@@ -294,11 +301,15 @@
    * in the text and is not text. The names say what each is. An image is
    * chosen among the images, which the document pane shows, and put in at
    * the cursor from there, where an image from a file is taken in as well.
+   * A text in no project, a note of the notebook, is part of no document:
+   * it is offered what a note holds, a citation, an image from a file, a
+   * table and mathematics, and not what only a document has.
    */
   function insert(event: MouseEvent) {
     const view = s?.view;
     if (!view) return;
     const hooks = hooksOf.get(view);
+    const ofDocuments = (items: MenuItem[]): MenuItem[] => (project ? items : []);
     openMenu(
       event.currentTarget as HTMLElement,
       [
@@ -308,27 +319,31 @@
           shortcut: keysFor('writing-cite-keys'),
           action: () => hooks?.cite?.(view, false),
         },
-        {
-          label: t('editor-note'),
-          icon: StickyNote,
-          shortcut: keysFor('writing-note'),
-          disabled: !body,
-          // A note opens a panel of its own, which takes the cursor: it is not taken back.
-          action: () => insertFootnote(view.state, view.dispatch, view),
-        },
-        {
-          label: t('editor-comment'),
-          icon: MessageSquare,
-          shortcut: keysFor('comment'),
-          disabled: !body || !elementOf(view),
-          action: () => comment(view),
-        },
+        ...ofDocuments([
+          {
+            label: t('editor-note'),
+            icon: StickyNote,
+            shortcut: keysFor('writing-note'),
+            disabled: !body,
+            // A note opens a panel of its own, which takes the cursor: it is not taken back.
+            action: () => insertFootnote(view.state, view.dispatch, view),
+          },
+          {
+            label: t('editor-comment'),
+            icon: MessageSquare,
+            shortcut: keysFor('comment'),
+            disabled: !body || !elementOf(view),
+            action: () => comment(view),
+          },
+        ]),
         { kind: 'separator' },
         {
           label: t('editor-image'),
           icon: Images,
           disabled: !body,
           action: () => {
+            // Where there is no project, there is no pane of images: one is asked for among the files.
+            if (!project) return hooks?.picture?.(view);
             // The cursor stays where the image is to go.
             showPictures('library');
             view.focus();
@@ -361,38 +376,40 @@
           // It opens a panel of its own, which takes the cursor.
           action: () => void insertEquation(view.state, view.dispatch, view),
         },
-        {
-          label: t('editor-pointer'),
-          icon: Link2,
-          shortcut: keysFor('writing-crossref'),
-          disabled: !hooks?.point,
-          action: () => hooks?.point?.(view),
-        },
-        {
-          label: t('editor-inline-number'),
-          icon: Milestone,
-          shortcut: keysFor('writing-refmark'),
-          action: () => void askRefMark(view),
-        },
-        {
-          label: t('editor-parallel'),
-          icon: Columns2,
-          disabled: !body,
-          action: () => run(insertParallel, view),
-        },
-        { kind: 'separator' },
-        {
-          label: t('editor-page-break'),
-          icon: FileMinus,
-          disabled: !body,
-          action: () => run(insertBreak('page'), view),
-        },
-        {
-          label: t('editor-column-break'),
-          icon: Columns3,
-          disabled: !body,
-          action: () => run(insertBreak('column'), view),
-        },
+        ...ofDocuments([
+          {
+            label: t('editor-pointer'),
+            icon: Link2,
+            shortcut: keysFor('writing-crossref'),
+            disabled: !hooks?.point,
+            action: () => hooks?.point?.(view),
+          },
+          {
+            label: t('editor-inline-number'),
+            icon: Milestone,
+            shortcut: keysFor('writing-refmark'),
+            action: () => void askRefMark(view),
+          },
+          {
+            label: t('editor-parallel'),
+            icon: Columns2,
+            disabled: !body,
+            action: () => run(insertParallel, view),
+          },
+          { kind: 'separator' },
+          {
+            label: t('editor-page-break'),
+            icon: FileMinus,
+            disabled: !body,
+            action: () => run(insertBreak('page'), view),
+          },
+          {
+            label: t('editor-column-break'),
+            icon: Columns3,
+            disabled: !body,
+            action: () => run(insertBreak('column'), view),
+          },
+        ]),
       ],
       { align: 'start' },
     );
@@ -494,14 +511,19 @@
             ...ownParagraphs.map((k) => kindItem(k.id, view)),
           ]
         : []),
-      { kind: 'separator' },
-      {
-        label: t('editor-kinds-make'),
-        icon: Plus,
-        // The kind is put on the paragraphs that were selected when it is made.
-        action: () => newPassageKind('paragraph', (id) => run(setKind(id), view)),
-      },
-      ...changeOwn(ownParagraphs, 'paragraph'),
+      // A kind of the writer's own is kept by a project: none is made where there is no project.
+      ...(project
+        ? [
+            { kind: 'separator' as const },
+            {
+              label: t('editor-kinds-make'),
+              icon: Plus,
+              // The kind is put on the paragraphs that were selected when it is made.
+              action: () => newPassageKind('paragraph', (id) => run(setKind(id), view)),
+            },
+            ...changeOwn(ownParagraphs, 'paragraph'),
+          ]
+        : []),
     ];
   }
 
@@ -518,7 +540,9 @@
     // stage direction in verse, every part of a script in one; then the kinds
     // at hand, less those shown already.
     const roles = rolesOf(view);
-    const hand = inHand(project, suggests).filter((id) => ofParagraphs(id) && !roles.includes(id));
+    const hand = (project ? inHand(project, suggests) : [...PLAIN_KINDS]).filter(
+      (id) => ofParagraphs(id) && !roles.includes(id),
+    );
     openMenu(
       event.currentTarget as HTMLElement,
       [
@@ -527,14 +551,22 @@
         ...hand.map((id) => kindItem(id, view)),
         { kind: 'separator' },
         { kind: 'submenu', label: t('editor-kinds-menu-more'), items: moreItems(view) },
-        { kind: 'separator' },
-        { kind: 'heading', label: t('editor-kinds-set-by', { format: formatName }) },
-        {
-          label: t('editor-kinds-change-look', { kind: nameOf(kind) }),
-          icon: Palette,
-          disabled: !element,
-          action: changeLook,
-        },
+        // The look of a kind is the document's: a text in no project has none to change.
+        ...(project
+          ? [
+              { kind: 'separator' as const },
+              {
+                kind: 'heading' as const,
+                label: t('editor-kinds-set-by', { format: formatName }),
+              },
+              {
+                label: t('editor-kinds-change-look', { kind: nameOf(kind) }),
+                icon: Palette,
+                disabled: !element,
+                action: changeLook,
+              },
+            ]
+          : []),
       ],
       { align: 'start' },
     );
@@ -593,14 +625,18 @@
         ...ownWords.map((k) => ofWords(k.id)),
         { kind: 'separator' },
         ofPassage,
-        { kind: 'separator' },
-        {
-          label: t('editor-words-make'),
-          icon: Plus,
-          // The kind is put on the words that were selected when it is made.
-          action: () => newPassageKind('words', (id) => run(toggleKind(id), view)),
-        },
-        ...changeOwn(ownWords, 'words'),
+        ...(project
+          ? [
+              { kind: 'separator' as const },
+              {
+                label: t('editor-words-make'),
+                icon: Plus,
+                // The kind is put on the words that were selected when it is made.
+                action: () => newPassageKind('words', (id) => run(toggleKind(id), view)),
+              },
+              ...changeOwn(ownWords, 'words'),
+            ]
+          : []),
       ],
       { align: 'start' },
     );

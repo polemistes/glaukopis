@@ -7,7 +7,8 @@
   import { keepReference, setProject } from './references.svelte';
   import { editorUi } from './ui.svelte';
 
-  let { project }: { project: Project } = $props();
+  /** The project whose texts are written; none, where they are in no project: the notes of the notebook. */
+  let { project }: { project: Project | null } = $props();
 
   $effect(() => {
     setProject(project);
@@ -17,11 +18,11 @@
     };
   });
 
-  const used = $derived(project.usedReferences());
+  const used = $derived(project?.usedReferences() ?? []);
 
-  /** The project keeps a copy of every reference it uses. */
+  /** The project keeps a copy of every reference it uses; where there is no project, the library has it. */
   export function keep(id: string) {
-    return keepReference(project, id);
+    return project ? keepReference(project, id) : Promise.resolve();
   }
 </script>
 
@@ -41,7 +42,7 @@
   {/key}
 {/if}
 
-{#if editorUi.pointing}
+{#if editorUi.pointing && project}
   {#key editorUi.pointing}
     <TargetPicker
       {project}

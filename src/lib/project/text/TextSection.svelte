@@ -38,6 +38,7 @@
   import type { TextDepth } from '$lib/api/system';
   import { commentsUi } from '$lib/comments/ui.svelte';
   import RichText, { type FocusAt } from '$lib/editor/RichText.svelte';
+  import { holderOf } from '$lib/project/holder';
   import { editorUi } from '$lib/editor/ui.svelte';
   import { blocksHtml } from '../model/html';
   import { hydrate } from '$lib/figures/hydrate.svelte';
@@ -424,7 +425,7 @@
         {#if active && title}
           <RichText
             bind:this={titleEditor}
-            {project}
+            holder={holderOf(project)}
             fragment={title}
             kind="title"
             placeholder={level === 0 ? t('text-title') : t('text-name')}
@@ -493,7 +494,7 @@
         {#if active && body}
           <RichText
             bind:this={bodyEditor}
-            {project}
+            holder={holderOf(project)}
             fragment={body}
             kind="body"
             element={node.id}
