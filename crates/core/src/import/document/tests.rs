@@ -1159,7 +1159,8 @@ fn a_list_to_tick_in_markdown_is_read_as_points_to_tick() {
     .unwrap();
     let read = s.read(&path).unwrap();
     let blocks: Vec<&Block> = read.sections.iter().flat_map(|s| &s.blocks).collect();
-    let todo = |indent: u32, done: bool, content: Vec<Inline>| Block::of_kind("todo", content).indented(indent).ticked(done);
+    let todo =
+        |indent: u32, done: bool, content: Vec<Inline>| Block::of_kind("todo", content).indented(indent).ticked(done);
     assert_eq!(blocks[1], &todo(0, false, vec![text("Buy bread")]));
     assert_eq!(blocks[2], &todo(0, true, vec![text("Read the "), marked("proofs", &["em"])]));
     assert_eq!(blocks[3], &todo(1, false, vec![text("Within")]));

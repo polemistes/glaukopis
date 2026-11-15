@@ -2144,6 +2144,15 @@ export const kinds: documents.KindEntry[] = [
     "basedOn": null,
     "counted": true,
     "family": "paragraph",
+    "group": "list",
+    "id": "todo",
+    "style": "",
+    "words": false
+  },
+  {
+    "basedOn": null,
+    "counted": true,
+    "family": "paragraph",
     "group": "code",
     "id": "code",
     "style": "Source Code",
@@ -2712,6 +2721,27 @@ export const kindLooks: documents.KindLooks = {
       "monospace": false,
       "newPage": false,
       "size": 0.0,
+      "spaceAfter": "0pt",
+      "spaceBefore": "0pt",
+      "text": "",
+      "underline": false
+    },
+    "said": false
+  },
+  "todo": {
+    "look": {
+      "align": "left",
+      "bold": false,
+      "case": "none",
+      "firstLine": "1.27cm",
+      "indentLeft": "0pt",
+      "indentRight": "0pt",
+      "italic": false,
+      "keepWithNext": false,
+      "lineSpacing": 2.0,
+      "monospace": false,
+      "newPage": false,
+      "size": 12.0,
       "spaceAfter": "0pt",
       "spaceBefore": "0pt",
       "text": "",

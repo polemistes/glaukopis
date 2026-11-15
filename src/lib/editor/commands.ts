@@ -108,8 +108,8 @@ const KEEPS_INDENT = ['item', 'numbered', 'todo', 'line'];
  * (ADR 0041). The indent is kept where the kind is an item or a line of
  * verse, or based on one, and taken away otherwise; the numbering, the line
  * marks and every word stay. Ticked is said of a point to tick only, and
- * goes where the paragraph becomes of another kind. A kind of words is toggled on the words
- * instead, as `toggleKind` does. An id that is not in the catalogue is a
+ * goes where the paragraph becomes of another kind. A kind of words is
+ * toggled on the words instead, as `toggleKind` does. An id that is not in the catalogue is a
  * kind of the writer's own, which `own` says what it is based on.
  */
 export function setKind(id: string, own: readonly BasedKind[] = []): Command {
