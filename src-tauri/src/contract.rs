@@ -573,6 +573,40 @@ fn what_is_sent_is_what_the_interface_declares() {
         problems: vec!["a.pdf: not there".into()],
     };
     let notebook_update = crate::commands::notebook::NotebookUpdate { update: "AAA=".into() };
+    // What the plugin for Firefox handed over: a part of a page as a picture, and a selection.
+    let inbox_items = vec![
+        crate::commands::notebook::InboxItem {
+            kind: glaukopis_core::notebook::inbox::Kind::Region,
+            url: "https://example.org/an-article".into(),
+            title: "An article".into(),
+            when: "2026-11-15T12:00:00.000Z".into(),
+            text: String::new(),
+            html: String::new(),
+            alt: String::new(),
+            image: Some(crate::commands::notebook::NotebookFile {
+                file: taken_in.files[0].clone(),
+                shown: Some(taken_in.files[0].clone()),
+                time: None,
+                taken: None,
+                place: None,
+            }),
+        },
+        crate::commands::notebook::InboxItem {
+            kind: glaukopis_core::notebook::inbox::Kind::Selection,
+            url: "https://example.org/an-article".into(),
+            title: "An article".into(),
+            when: "2026-11-15T12:01:00.000Z".into(),
+            text: "What it says.".into(),
+            html: "<p>What it <em>says</em>.</p>".into(),
+            alt: String::new(),
+            image: None,
+        },
+    ];
+    let firefox_setup = crate::commands::notebook::FirefoxSetup {
+        installed: false,
+        manifest: "/home/a/.mozilla/native-messaging-hosts/org.glaukopis.notebook.json".into(),
+        other: Some("/opt/glaukopis-old/glaukopis".into()),
+    };
 
     let mut values: Vec<(&str, &str, Value)> = Vec::new();
     let mut put = |name: &'static str, kind: &'static str, value: &dyn erased::Json| {
@@ -668,6 +702,8 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("notebookFile", "notebook.NotebookFile", &notebook_file);
     put("takenFiles", "notebook.TakenFiles", &taken_files);
     put("notebookUpdate", "notebook.NotebookUpdate", &notebook_update);
+    put("inboxItems", "notebook.InboxItem[]", &inbox_items);
+    put("firefoxSetup", "notebook.FirefoxSetup", &firefox_setup);
     put("trashed", "projects.Trashed[]", &trashed);
     put("history", "projects.HistoryEntry[]", &history);
     put("place", "projects.Place", &place);

@@ -5,7 +5,9 @@
 
 use std::collections::HashSet;
 use std::path::PathBuf;
+use std::sync::PoisonError;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::Duration;
 
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as B64;
@@ -15,7 +17,8 @@ use tauri::{AppHandle, Emitter, EventTarget, Manager, State, WebviewWindow};
 
 use glaukopis_core::i18n::tr;
 use glaukopis_core::library::{FileView, Library, attachments, files};
-use glaukopis_core::notebook::{self, Place, Summary};
+use glaukopis_core::notebook::inbox::{self, Stamp};
+use glaukopis_core::notebook::{self, Place, Summary, firefox};
 
 use super::projects::{put_part, with_head};
 use super::viewer::blocking;
@@ -210,4 +213,212 @@ pub fn notebook_sweep(state: State<'_, AppState>, held: Vec<String>) -> CommandR
         state.notebook_swept.store(false, Ordering::SeqCst);
     }
     Ok(swept?)
+}
+
+// ---- what the plugin for Firefox hands over (record 0102) ----
+
+/// A thing the plugin for Firefox handed to the helper, as it is taken out
+/// of the notebook's inbox: where it came from, what it is, and its picture
+/// taken into the store where it has one.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InboxItem {
+    pub kind: inbox::Kind,
+    pub url: String,
+    pub title: String,
+    pub when: String,
+    pub text: String,
+    pub html: String,
+    pub alt: String,
+    pub image: Option<NotebookFile>,
+}
+
+/// The event by which one window is told that something lies in the inbox.
+pub const NOTEBOOK_INBOX: &str = "notebook-inbox";
+
+/// The name a picture handed over is taken in by, where it has none.
+const PICTURE_NAME: &str = "image.png";
+
+/// Takes one thing out of the inbox: its picture, where it has one, into
+/// the store as a picture of a note.
+fn take(state: &AppState, id: &str) -> glaukopis_core::Result<InboxItem> {
+    let (collected, picture) = state.inbox.read(id)?;
+    let image = match picture {
+        Some(bytes) => {
+            let name = if collected.name.trim().is_empty() { PICTURE_NAME } else { collected.name.as_str() };
+            let mut library = state.library();
+            let file = library.notebook_take_image(name, &bytes)?;
+            let shown = shown(&mut library, &file.hash);
+            Some(NotebookFile { file, shown, time: None, taken: None, place: None })
+        }
+        None => None,
+    };
+    let inbox::Collected { kind, url, title, when, text, html, alt, name: _ } = collected;
+    Ok(InboxItem { kind, url, title, when, text, html, alt, image })
+}
+
+/// Takes what lies in the notebook's inbox out of it, in the order it came:
+/// each thing given once, to whichever window asks first, and removed from
+/// the inbox then. A thing that cannot be read or taken is set aside and
+/// said in the log, and the rest go on. Run on the threads for blocking
+/// work: pictures are read and copied.
+#[tauri::command]
+pub async fn notebook_inbox_take(app: AppHandle) -> CommandResult<Vec<InboxItem>> {
+    blocking(move || Ok(take_all(&app.state::<AppState>()))).await
+}
+
+/// Takes everything that lies in the inbox, one taking at a time.
+pub(crate) fn take_all(state: &AppState) -> Vec<InboxItem> {
+    let _taking = state.inbox_taking.lock().unwrap_or_else(PoisonError::into_inner);
+    let mut items = Vec::new();
+    for id in state.inbox.ids() {
+        match take(state, &id) {
+            Ok(item) => {
+                items.push(item);
+                if let Err(error) = state.inbox.remove(&id) {
+                    // Left there, it would be given again: set aside.
+                    tracing::warn!(%error, id, "a thing taken from the inbox could not be removed from it");
+                    if let Err(error) = state.inbox.set_aside(&id) {
+                        tracing::error!(%error, id, "a thing taken from the inbox could not be set aside");
+                    }
+                }
+            }
+            Err(error) => {
+                tracing::warn!(%error, id, "a thing in the inbox could not be taken in: it is set aside");
+                if let Err(error) = state.inbox.set_aside(&id) {
+                    tracing::error!(%error, id, "a thing in the inbox could not be set aside");
+                }
+            }
+        }
+    }
+    if !items.is_empty() {
+        tracing::info!(count = items.len(), "taken from the notebook's inbox");
+    }
+    items
+}
+
+/// How often the inbox is looked at while the application runs.
+const LOOK_EVERY: Duration = Duration::from_millis(1500);
+/// After how many looks a window is told again of things that still lie
+/// there: one told before its page listened would otherwise never ask.
+const TELL_AGAIN_AFTER: u32 = 20;
+
+/// Looks at the inbox every second and a half, on a thread of its own, and
+/// tells one window (`main` where it is there, else the first) when
+/// something has come and lies there, which then asks for it. One look at
+/// a folder while nothing comes. The thread holds the application from
+/// nothing: it ends with the process.
+pub fn look_at_the_inbox(app: AppHandle) {
+    let looking = std::thread::Builder::new().name("notebook-inbox".into()).spawn(move || {
+        let mut last = Stamp::default();
+        let mut unchanged = 0u32;
+        loop {
+            std::thread::sleep(LOOK_EVERY);
+            let Some(state) = app.try_state::<AppState>() else { continue };
+            let stamp = state.inbox.stamp();
+            unchanged = if stamp == last { unchanged + 1 } else { 0 };
+            if stamp.waiting() && unchanged.is_multiple_of(TELL_AGAIN_AFTER) {
+                tell_one_window(&app);
+            }
+            last = stamp;
+        }
+    });
+    if let Err(error) = looking {
+        tracing::warn!(%error, "the notebook's inbox is not looked at while the application runs");
+    }
+}
+
+/// Tells the window labelled `main`, else the first there is, that
+/// something lies in the inbox.
+fn tell_one_window(app: &AppHandle) {
+    let windows = app.webview_windows();
+    let Some(label) = windows.get("main").map(|w| w.label().to_owned()).or_else(|| {
+        let mut labels: Vec<&String> = windows.keys().collect();
+        labels.sort();
+        labels.first().map(|l| (*l).clone())
+    }) else {
+        return;
+    };
+    if let Err(error) = app.emit_to(EventTarget::WebviewWindow { label }, NOTEBOOK_INBOX, ()) {
+        tracing::warn!(%error, "a window was not told of what lies in the notebook's inbox");
+    }
+}
+
+/// Whether Firefox is set up to start the helper for this user.
+pub type FirefoxSetup = firefox::Setup;
+
+/// This program, as Firefox is to start it.
+fn this_program() -> glaukopis_core::Result<PathBuf> {
+    let exe = std::env::current_exe().map_err(|e| glaukopis_core::Error::invalid(e.to_string()))?;
+    Ok(firefox::this_program(exe))
+}
+
+/// Whether the file that tells Firefox of the helper is there, and names this program.
+#[tauri::command(async)]
+pub fn firefox_setup() -> CommandResult<FirefoxSetup> {
+    Ok(firefox::Place::of_this_user().state(&this_program()?))
+}
+
+/// Writes the file that tells Firefox of the helper, for this user.
+#[tauri::command(async)]
+pub fn firefox_set_up() -> CommandResult<FirefoxSetup> {
+    let setup = firefox::Place::of_this_user().set_up(&this_program()?)?;
+    tracing::info!(manifest = setup.manifest, "Firefox is told of the helper of the notebook");
+    Ok(setup)
+}
+
+/// Removes it.
+#[tauri::command(async)]
+pub fn firefox_remove() -> CommandResult<FirefoxSetup> {
+    let setup = firefox::Place::of_this_user().remove(&this_program()?)?;
+    tracing::info!(manifest = setup.manifest, "Firefox is no longer told of the helper of the notebook");
+    Ok(setup)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use glaukopis_core::notebook::inbox::{Collected, Kind};
+
+    fn collected(kind: Kind, name: &str) -> Collected {
+        Collected {
+            kind,
+            url: "https://example.org/an-article".into(),
+            title: "An article".into(),
+            when: "2026-11-15T12:00:00.000Z".into(),
+            text: "What it says.".into(),
+            html: "<p>What it says.</p>".into(),
+            alt: "A red square".into(),
+            name: name.into(),
+        }
+    }
+
+    #[test]
+    fn what_lies_in_the_inbox_is_taken_once_in_order_and_what_cannot_be_is_set_aside() {
+        let tmp = tempfile::tempdir().unwrap();
+        let crate::Opening::Ready(state) = crate::opening(tmp.path().join("data"), false, None, |_| {}) else {
+            panic!("the data folder was not opened");
+        };
+        let picture = include_bytes!("../../icons/32x32.png");
+        state.inbox.put(&collected(Kind::Page, ""), None).unwrap();
+        state.inbox.put(&collected(Kind::Region, ""), Some(picture)).unwrap();
+        let broken = state.inbox.put(&collected(Kind::Image, "a map.jpg"), Some(b"\xFF\xD8\xFFnot a jpeg")).unwrap();
+        state.inbox.put(&collected(Kind::Image, "owl.png"), Some(picture)).unwrap();
+
+        let items = take_all(&state);
+        let kinds: Vec<Kind> = items.iter().map(|item| item.kind).collect();
+        assert_eq!(kinds, vec![Kind::Page, Kind::Region, Kind::Image], "the one that cannot be read is left out");
+        assert!(items[0].image.is_none());
+        assert_eq!(items[0].title, "An article");
+        assert_eq!(items[0].alt, "A red square");
+        let region = items[1].image.as_ref().expect("the picture was taken into the store");
+        assert!(region.shown.is_some());
+        assert_eq!(region.file.name, "image.png", "named so where the plugin gave no name");
+        assert!(state.library().file_view(&region.file.hash).is_some());
+        assert!(items[2].image.is_some());
+
+        assert!(state.inbox.ids().is_empty(), "taken once");
+        assert!(take_all(&state).is_empty());
+        assert!(state.inbox.dir().join(format!(".unread-{broken}")).is_dir(), "set aside, not lost");
+    }
 }

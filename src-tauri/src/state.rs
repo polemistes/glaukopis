@@ -11,6 +11,7 @@ use glaukopis_core::import::zotero::ZoteroCopy;
 use glaukopis_core::library::Library;
 use glaukopis_core::net::Client;
 use glaukopis_core::notebook::Notebook;
+use glaukopis_core::notebook::inbox::Inbox;
 use glaukopis_core::ocr;
 use glaukopis_core::paths::{Claim, DataDir};
 use glaukopis_core::projects::Projects;
@@ -29,6 +30,11 @@ pub struct AppState {
     /// Whether the files the notebook held alone and no note holds have
     /// been swept out of the store in this run: it is done once.
     pub notebook_swept: AtomicBool,
+    /// What the plugin for Firefox handed to the helper, until it is taken in.
+    pub inbox: Inbox,
+    /// Held while what lies in the inbox is taken, so that two windows never
+    /// get the same thing.
+    pub inbox_taking: Mutex<()>,
     /// The store of pictures.
     /// What comes with the application: styles, formats, filters.
     pub resources: PathBuf,
@@ -157,6 +163,8 @@ impl AppState {
             projects,
             notebook: Notebook::new(&data),
             notebook_swept: AtomicBool::new(false),
+            inbox: Inbox::new(&data),
+            inbox_taking: Mutex::new(()),
             resources,
             styles,
             formats,

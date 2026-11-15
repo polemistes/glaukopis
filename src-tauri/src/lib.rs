@@ -243,6 +243,10 @@ pub fn run() {
             commands::notebook::notebook_hold,
             commands::notebook::notebook_to_library,
             commands::notebook::notebook_sweep,
+            commands::notebook::notebook_inbox_take,
+            commands::notebook::firefox_setup,
+            commands::notebook::firefox_set_up,
+            commands::notebook::firefox_remove,
             commands::projects::project_save_state,
             commands::projects::project_save_view,
             commands::projects::project_sources,
@@ -427,7 +431,11 @@ impl Start {
                 // without it had its first command panic on the main thread.
                 if let Err(error) = make_windows(app) {
                     self.failed(app, &error);
+                    return;
                 }
+                // What the plugin for Firefox hands over while the
+                // application runs is told to a window as it comes.
+                commands::notebook::look_at_the_inbox(app.clone());
             }
             Opening::InUse(root) => {
                 // Another is at work in the same data: this one says so, and goes.
