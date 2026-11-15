@@ -245,8 +245,12 @@
       data-naming
       onblur={() => void commit()}
       onkeydown={(e) => {
-        if (e.key === 'Enter') void commit();
-        else if (e.key === 'Escape') naming = null;
+        if (e.key === 'Enter') {
+          // The key is taken whole: what it asks next, as whether two tags are
+          // to be one, must not be answered by the same press of Enter.
+          e.preventDefault();
+          void commit();
+        } else if (e.key === 'Escape') naming = null;
         e.stopPropagation();
       }}
     />

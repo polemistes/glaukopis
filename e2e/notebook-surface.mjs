@@ -154,7 +154,11 @@ async function makeNote(app, button, name, words) {
 
 /** Shows the notes of the box as its surface: the choice Surface | List over the notes. */
 async function showSurface(app) {
-  await app.clickText('[role="radio"], [role="tab"], button', 'Surface');
+  // The first box, in the column at the left; a box comes up as its surface the first time it is shown.
+  await app.click('[data-box-row="first"]');
+  await sleep(300);
+  if (!(await app.exists(SURFACE)))
+    await app.click('[data-shown-as-choice] [role="radio"][aria-label="Surface"]');
   await app.waitFor(SURFACE, 5000);
   await sleep(500);
 }
