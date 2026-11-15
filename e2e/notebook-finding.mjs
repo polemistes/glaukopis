@@ -102,7 +102,12 @@ const filterCount = (app) =>
 /** The paragraphs of the text of the note shown: their kind and their words. */
 const noteParagraphs = (app) =>
   app.exec(
-    `return Array.from(document.querySelectorAll('[data-note-text] .ProseMirror > p')).map((p) => [p.getAttribute('data-kind') ?? 'text', p.textContent])`,
+    // The words alone, without what the editor draws into a paragraph: the name on the bracket of a run of points.
+    `return Array.from(document.querySelectorAll('[data-note-text] .ProseMirror > p')).map((p) => {
+       const words = p.cloneNode(true);
+       words.querySelectorAll('.ProseMirror-widget, [contenteditable="false"]').forEach((e) => e.remove());
+       return [p.getAttribute('data-kind') ?? 'text', words.textContent];
+     })`,
   );
 /** Chooses the note whose row says these words. */
 async function chooseNote(app, words) {
