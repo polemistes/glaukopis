@@ -90,6 +90,11 @@
     });
   });
 
+  // A note just made takes the cursor once: chosen again later, the focus stays where it is.
+  $effect(() => {
+    if (fresh && chosen !== fresh) fresh = null;
+  });
+
   // What is selected must be there: deleted here, or in another window.
   $effect(() => {
     if (!notebook) return;
