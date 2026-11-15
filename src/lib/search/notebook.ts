@@ -87,12 +87,20 @@ export function readNotebook(state: Uint8Array | null, updates: Uint8Array[]): N
     }
   }
   const notes: NoteRead[] = [];
+  const files = doc.getMap<unknown>('files');
   for (const [id, n] of doc.getMap<unknown>('notes')) {
     if (!(n instanceof Y.Map)) continue;
     const body = n.get('body');
     const pieces = piecesOf(body instanceof Y.XmlFragment ? body : null);
     const name = str(n.get('name')).trim();
-    const blocks = pieces.flatMap((p) => (p.kind === 'file' ? [nameParagraph(p.name)] : p.blocks));
+    // A file is found by its name; an image also by the words read in it, kept with the file.
+    const blocks = pieces.flatMap((p) =>
+      p.kind === 'file'
+        ? [nameParagraph(p.name)]
+        : p.kind === 'figure'
+          ? [...p.blocks, ...readIn(files.get(p.hash)).map(nameParagraph)]
+          : p.blocks,
+    );
     notes.push({
       id,
       name,
@@ -106,6 +114,12 @@ export function readNotebook(state: Uint8Array | null, updates: Uint8Array[]): N
   // The newest first, as the notebook lists them.
   notes.sort((a, b) => (a.made === b.made ? (a.id < b.id ? 1 : -1) : a.made < b.made ? 1 : -1));
   return { notes, unapplied };
+}
+
+/** The words read in an image, line by line, from what the notebook keeps of the file; none where nothing was read. */
+function readIn(file: unknown): string[] {
+  const text = file && typeof file === 'object' ? (file as { text?: unknown }).text : null;
+  return typeof text === 'string' ? text.split('\n').filter((line) => line.trim()) : [];
 }
 
 /** Each passage by itself, as lines read as one are. */

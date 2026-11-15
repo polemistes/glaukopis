@@ -32,6 +32,21 @@ function found(result: ReturnType<typeof searchNotebook>): NotebookFound {
 }
 
 describe('the notebook in the search through everything', () => {
+  it('finds an image by the words read in it, which the notebook keeps with the file', () => {
+    const nb = new Notebook();
+    nb.load(null, []);
+    const sign = nb.addNote({ made: '2026-11-05T10:00:00.000Z' });
+    nb.addFigure(sign, { hash: HASH, name: 'sign.png', extension: 'png' });
+    nb.holdFile({ hash: HASH, name: 'sign.png', extension: 'png' }, null);
+    nb.setFileText(HASH, 'KERAMEIKOS\nthe potters\u2019 quarter');
+    const read = readNotebook(Y.encodeStateAsUpdate(nb.doc), []);
+    const result = found(searchNotebook(read, 'kerameikos', options()));
+    expect(result.count).toBe(1);
+    expect(result.found[0].note).toBe(sign);
+    // Nothing read, nothing found there.
+    expect(found(searchNotebook(read, 'agora', options())).count).toBe(0);
+  });
+
   it('reads the notebook as the disk keeps it: each note with how it is called, the newest first', () => {
     const { nb, named, taken, filed } = made();
     const read = readNotebook(Y.encodeStateAsUpdate(nb.doc), []);
