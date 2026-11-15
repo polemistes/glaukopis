@@ -201,6 +201,51 @@ notebook-start-none = No starting texts yet.
 notebook-start-delete-title = Delete { $name }?
 notebook-start-delete-message = The notes begun from it stay as they are.
 
+## Notes from other programs
+
+notebook-import = Import notes…
+notebook-import-title = Import notes
+notebook-import-folder = A folder…
+notebook-import-file = A file…
+notebook-import-programs = A folder from Obsidian, Joplin, Notion, Bear or Google Keep, or of Markdown and text; a file from Evernote (.enex) or OneNote, or one Markdown file.
+notebook-import-choose-folder = Choose a folder of notes
+notebook-import-choose-file = Choose a file of notes
+notebook-import-filter = Notes
+notebook-import-kind = { $kind ->
+    [obsidian] Notes from Obsidian
+    [joplin] Notes from Joplin
+    [notion] Notes from Notion
+    [bear] Notes from Bear
+    [evernote] Notes from Evernote
+    [keep] Notes from Google Keep
+    [onenote] Notes from OneNote
+   *[markdown] Markdown and text files
+}
+notebook-import-count = { $count ->
+    [one] One note
+   *[other] { $count } notes
+}
+notebook-import-files = { $count ->
+    [0] no pictures or files
+    [one] one picture or file
+   *[other] { $count } pictures and files
+}
+notebook-import-none = No notes were found here.
+notebook-import-to-know = To know
+notebook-import-unread = This could not be read as notes.
+notebook-import-do = Import
+notebook-import-reading = Reading { $done } of { $count }: { $name }
+notebook-import-stop = Stop
+notebook-import-done = { $count ->
+    [one] One note imported into { $box }
+   *[other] { $count } notes imported into { $box }
+}
+notebook-import-nothing = Nothing was found to import
+notebook-import-problems = { $count ->
+    [one] One thing could not be read: { $first }
+   *[other] { $count } things could not be read: { $first }
+}
+
 ## The list in the document pane, and what goes into a text
 
 notebook-between = Between the sides and the notes

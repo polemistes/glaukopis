@@ -66,7 +66,8 @@ const figure: Block = {
   caption: [],
   alt: 'An owl',
   width: 50,
-} as Block;
+  numbered: true,
+};
 
 const note = (over: Partial<ReadNote>): ReadNote => ({
   key: '',
@@ -207,7 +208,7 @@ describe('notes read from another program, made notes', () => {
     notesOfRead(nb, read, 'Vault');
     const athena = byName(nb, 'Athena');
     expect(nb.files.get(PNG)!.source).toBe(athena.sources[0]);
-    expect(nb.sources.get(athena.sources[0]!)!.url).toBe('https://example.org/athena');
+    expect(nb.sources.get(athena.sources[0]!)).toMatchObject({ url: 'https://example.org/athena' });
   });
 
   it('links two notes that name each other once, and none to a note not read with them', () => {

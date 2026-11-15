@@ -188,6 +188,51 @@ notebook-start-none = Ingen starttekster ennå.
 notebook-start-delete-title = Slette { $name }?
 notebook-start-delete-message = Notatene som ble begynt fra den, blir stående som de er.
 
+## Notater fra andre programmer
+
+notebook-import = Importer notater…
+notebook-import-title = Importer notater
+notebook-import-folder = En mappe…
+notebook-import-file = En fil…
+notebook-import-programs = En mappe fra Obsidian, Joplin, Notion, Bear eller Google Keep, eller med Markdown og tekst; en fil fra Evernote (.enex) eller OneNote, eller én Markdown-fil.
+notebook-import-choose-folder = Velg en mappe med notater
+notebook-import-choose-file = Velg en fil med notater
+notebook-import-filter = Notater
+notebook-import-kind = { $kind ->
+    [obsidian] Notater fra Obsidian
+    [joplin] Notater fra Joplin
+    [notion] Notater fra Notion
+    [bear] Notater fra Bear
+    [evernote] Notater fra Evernote
+    [keep] Notater fra Google Keep
+    [onenote] Notater fra OneNote
+   *[markdown] Markdown- og tekstfiler
+}
+notebook-import-count = { $count ->
+    [one] Ett notat
+   *[other] { $count } notater
+}
+notebook-import-files = { $count ->
+    [0] ingen bilder eller filer
+    [one] ett bilde eller én fil
+   *[other] { $count } bilder og filer
+}
+notebook-import-none = Fant ingen notater her.
+notebook-import-to-know = Verdt å vite
+notebook-import-unread = Dette kunne ikke leses som notater.
+notebook-import-do = Importer
+notebook-import-reading = Leser { $done } av { $count }: { $name }
+notebook-import-stop = Stopp
+notebook-import-done = { $count ->
+    [one] Ett notat importert til { $box }
+   *[other] { $count } notater importert til { $box }
+}
+notebook-import-nothing = Fant ingenting å importere
+notebook-import-problems = { $count ->
+    [one] Én ting kunne ikke leses: { $first }
+   *[other] { $count } ting kunne ikke leses: { $first }
+}
+
 ## Listen i dokumentpanelet, og det som går inn i en tekst
 
 notebook-between = Mellom sidene og notatene

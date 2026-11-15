@@ -17,6 +17,10 @@
    * chooses it or opens it, not when the page chooses it for having taken
    * it in; Read the text of the images of notes (`reading.svelte.ts`); New
    * note begun from a starting text, and the window of starting texts.
+   *
+   * From stage 5: Import notes…, beside Add files, and its window
+   * (`ImportNotesDialog`), which makes the notes of another program in a box
+   * of their own.
    */
   import { open as openDialog } from '@tauri-apps/plugin-dialog';
   import { onMount, tick, untrack } from 'svelte';
@@ -25,6 +29,7 @@
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import Combine from '@lucide/svelte/icons/combine';
   import FilePlus from '@lucide/svelte/icons/file-plus';
+  import ImportIcon from '@lucide/svelte/icons/import';
   import Inbox from '@lucide/svelte/icons/inbox';
   import LayoutDashboard from '@lucide/svelte/icons/layout-dashboard';
   import List from '@lucide/svelte/icons/list';
@@ -65,6 +70,7 @@
     type NoteFilters,
   } from './filters';
   import { holderOfNotebook } from './holder';
+  import ImportNotesDialog from './ImportNotesDialog.svelte';
   import { FIRST_BOX } from './model/boxes';
   import type { Notebook } from './model/notebook.svelte';
   import NoteEditor from './NoteEditor.svelte';
@@ -108,6 +114,8 @@
   /** Notes looked at since the filters last changed: they still pass Not looked at. */
   const lookedNow = new SvelteSet<string>();
   let startsOpen = $state(false);
+  /** The window of Import notes…, with what was chosen before it opened; none while it is closed. */
+  let importing = $state<{ path: string | null } | null>(null);
   let newMenuButton = $state<HTMLButtonElement>();
   /**
    * The note the page chose itself, for having just taken it in: shown, but
@@ -542,7 +550,12 @@
 
   // The scripts cannot answer the system's dialog of files: they hand its answer here.
   onMount(() => {
-    testHook('__glaukopisNotebook', { addFiles: (paths: string[]) => takeIn(paths) });
+    testHook('__glaukopisNotebook', {
+      addFiles: (paths: string[]) => takeIn(paths),
+      importNotes: (path: string) => {
+        importing = { path };
+      },
+    });
     return () => testHook('__glaukopisNotebook', undefined);
   });
 </script>
@@ -575,6 +588,14 @@
     onclick={() => void addFiles()}
   >
     <FilePlus size={16} />
+  </IconButton>
+  <IconButton
+    label={t('notebook-import')}
+    disabled={!nb}
+    data-import-notes-open
+    onclick={() => (importing = { path: null })}
+  >
+    <ImportIcon size={16} />
   </IconButton>
 {/snippet}
 
@@ -653,6 +674,10 @@
             <Button onclick={() => void addFiles()}>
               {#snippet icon()}<FilePlus size={15} />{/snippet}
               {t('notebook-add-files')}
+            </Button>
+            <Button onclick={() => (importing = { path: null })}>
+              {#snippet icon()}<ImportIcon size={15} />{/snippet}
+              {t('notebook-import')}
             </Button>
           </EmptyState>
         </div>
@@ -828,6 +853,16 @@
   />
   {#if startsOpen}
     <StartsDialog {notebook} onclose={() => (startsOpen = false)} />
+  {/if}
+  {#if importing}
+    {#key importing}
+      <ImportNotesDialog
+        {notebook}
+        path={importing.path}
+        onclose={() => (importing = null)}
+        onshow={showBox}
+      />
+    {/key}
   {/if}
 {/if}
 <ReadingLine />
