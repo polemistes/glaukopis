@@ -16,6 +16,10 @@ pub struct Pasted {
     pub html: Option<String>,
     /// A picture copied as one, and the files of pictures copied in a file manager.
     pub pictures: Vec<PastedPicture>,
+    /// The address of the page it was copied from, where the program that
+    /// holds the clipboard says it: Firefox does, on Linux. Only an address
+    /// of the web, `http` or `https`.
+    pub url: Option<String>,
 }
 
 #[derive(Serialize, Debug)]
@@ -65,6 +69,9 @@ mod linux {
     /// How long a program that holds the clipboard is waited for.
     const WAIT: Duration = Duration::from_secs(10);
 
+    /// Where Firefox says the address of the page a selection was copied from.
+    const PAGE: &str = "text/x-moz-url-priv";
+
     pub fn read(app: &AppHandle, primary: bool) -> Pasted {
         let (tx, rx) = mpsc::channel();
         if app.run_on_main_thread(move || ask(primary, tx)).is_err() {
@@ -85,6 +92,7 @@ mod linux {
     /// What is still to be asked of the clipboard, one request after another.
     enum Step {
         Html,
+        Page,
         Text,
         Image,
         Files,
@@ -112,6 +120,9 @@ mod linux {
             let mut steps = Vec::new();
             if targets.iter().any(|t| t.name() == "text/html") {
                 steps.push(Step::Html);
+            }
+            if targets.iter().any(|t| t.name() == PAGE) {
+                steps.push(Step::Page);
             }
             if data.targets_include_text() {
                 steps.push(Step::Text);
@@ -142,6 +153,12 @@ mod linux {
                 }
                 next(clipboard, asking);
             }),
+            Step::Page => clipboard.request_contents(&gdk::Atom::intern(PAGE), move |clipboard, data| {
+                if data.length() > 0 {
+                    asking.borrow_mut().pasted.url = url_of(&data.data());
+                }
+                next(clipboard, asking);
+            }),
             Step::Text => clipboard.request_text(move |clipboard, text| {
                 asking.borrow_mut().pasted.text = text.map(str::to_owned);
                 next(clipboard, asking);
@@ -165,6 +182,31 @@ mod linux {
                 next(clipboard, asking);
             }),
         }
+    }
+
+    /// The address of a page as Firefox says it: in UTF-16, the least byte
+    /// first, perhaps with a mark of the order of its bytes and a nought at
+    /// its end; its first line, where it is an address of the web.
+    pub(super) fn url_of(bytes: &[u8]) -> Option<String> {
+        let units = |bytes: &[u8], little: bool| -> String {
+            let units: Vec<u16> = bytes
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|&c| if little { u16::from_le_bytes(c) } else { u16::from_be_bytes(c) })
+                .collect();
+            String::from_utf16_lossy(&units)
+        };
+        let text = match bytes {
+            [0xff, 0xfe, rest @ ..] => units(rest, true),
+            [0xfe, 0xff, rest @ ..] => units(rest, false),
+            // UTF-16 of an address has a nought after every letter; UTF-8 has none.
+            [_, 0, ..] => units(bytes, true),
+            _ => String::from_utf8_lossy(bytes).into_owned(),
+        };
+        let line = text.trim_matches(|c: char| c == '\0' || c.is_whitespace()).lines().next()?.trim();
+        let web = line.starts_with("http://") || line.starts_with("https://");
+        (web && !line.contains(char::is_whitespace)).then(|| line.to_owned())
     }
 
     /// HTML as programs put it on the clipboard: mostly UTF-8, from some in
@@ -216,7 +258,24 @@ mod linux {
 
 #[cfg(all(test, target_os = "linux"))]
 mod tests {
-    use super::linux::html_of;
+    use super::linux::{html_of, url_of};
+
+    #[test]
+    fn the_page_copied_from_as_firefox_says_it() {
+        let utf16 = |text: &str, mark: bool| {
+            let mut out = if mark { vec![0xff, 0xfe] } else { Vec::new() };
+            out.extend(text.encode_utf16().flat_map(u16::to_le_bytes));
+            out
+        };
+        let page = "https://example.org/ἄνδρα?x=1";
+        assert_eq!(url_of(&utf16(page, false)).as_deref(), Some(page));
+        assert_eq!(url_of(&utf16(&format!("{page}\0"), true)).as_deref(), Some(page));
+        assert_eq!(url_of(&utf16("http://example.org/a\nThe title", false)).as_deref(), Some("http://example.org/a"));
+        assert_eq!(url_of(b"https://example.org/b").as_deref(), Some("https://example.org/b"));
+        assert_eq!(url_of(&utf16("file:///home/someone/page.html", false)), None);
+        assert_eq!(url_of(&utf16("about:blank", false)), None);
+        assert_eq!(url_of(b""), None);
+    }
 
     #[test]
     fn html_in_utf8_and_utf16() {

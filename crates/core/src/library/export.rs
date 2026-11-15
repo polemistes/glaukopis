@@ -223,7 +223,8 @@ impl Library {
                     if !seen.insert(hash) {
                         continue;
                     }
-                    match self.files.get(hash) {
+                    // One the notebook holds alone is none of the library's files.
+                    match self.files.get(hash).filter(|r| r.listed()) {
                         Some(record) => chosen.push((record, Vec::new())),
                         None => {
                             out.problems.push(Error::not_found(tr!("core-library-the-file-of-library")).to_string())
@@ -232,14 +233,14 @@ impl Library {
                 }
             }
             ExportSelection::All => {
-                for record in self.files.files() {
+                for record in self.files.listed() {
                     // A file whose folder is not known any more stands at the top.
                     let dir = dirs.get(&record.folder).cloned().unwrap_or_default();
                     chosen.push((record, dir));
                 }
             }
             ExportSelection::Folder { .. } => {
-                for record in self.files.files() {
+                for record in self.files.listed() {
                     if let Some(dir) = dirs.get(&record.folder) {
                         chosen.push((record, dir.clone()));
                     }

@@ -20,6 +20,7 @@ pub mod languages;
 pub mod library;
 pub mod lookup;
 pub mod net;
+pub mod notebook;
 pub mod notices;
 pub mod ocr;
 pub mod paths;

@@ -121,6 +121,12 @@ impl DataDir {
         self.projects().join(id)
     }
 
+    /// The notebook, one document kept as a project's is (`notebook`): made
+    /// when it is first written to.
+    pub fn notebook(&self) -> PathBuf {
+        self.root.join("notebook")
+    }
+
     /// For what can be made again: documents on their way to preview and export.
     pub fn work(&self) -> PathBuf {
         self.root.join("work")

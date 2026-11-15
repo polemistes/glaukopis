@@ -273,7 +273,8 @@ pub fn files_identify(
         library.refresh()?;
         let mut wanted = Vec::new();
         for hash in &hashes {
-            if let Some(record) = library.files.get(hash) {
+            // One the notebook holds alone is none of the library's files.
+            if let Some(record) = library.files.get(hash).filter(|r| r.listed()) {
                 let path = library.attachment_path(&record.path)?;
                 let kind = files::kind_of(&record.path);
                 // The folder it stands in and those above it, the nearest first.
