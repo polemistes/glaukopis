@@ -270,6 +270,23 @@ Written on 2026-11-15 from a reading of the search, the reading of text, the kin
 5. **Notes in the search through everything**: read in the search's worker, shown under *Notebook* among what is found, a hit going to its note.
 6. **The notebook as Org**: `notebook.org` in the notebook's folder, with its pictures and files beside it, written a moment after the notebook is saved: a heading for each box, under it one for each note with when it was made and its tags, its text as Org, a passage as a quotation with its source. It is a copy to be read; it is not read back.
 
+## Stage 5 in detail
+
+Written on 2026-11-15 from a reading of how a document is brought in today and of what each program's export holds.
+
+### What was found, and what it settles
+
+- **A document is read by Pandoc into sections of blocks** (`crates/core/src/import/document.rs`), with its pictures taken in among the library's images. A note is the same reading with three differences: the sections become one text (a heading inside a note is a paragraph in bold: there is no kind of paragraph that is a heading); the pictures are the notebook's, out of the library's lists; and what a note says of itself before its text (its name, when it was made, its tags, where it was clipped from) is read by the core, since Pandoc's reading keeps only some of it.
+- **What the exports hold**: a folder of Markdown (Obsidian: `[[links]]`, `![[embeds]]`, `#tags`, tags in the lines before the text; Joplin with those lines: title, created, source, tags, and `_resources/`; Notion: names with a long number after them, links as paths; Bear: `#tags#`, TextBundle folders with `assets/`); Evernote's `.enex` (XML: title, the text as HTML, created, tags, where it was clipped from, the files in base64, found in the text by the MD5 of what they hold); Google Keep's folder from Takeout (a `.json` for each note: title, text or a list with ticks, labels, the pages it names, attachments beside it).
+- **OneNote**: its own export gives Word files, page by page or section by section, which the reading of documents takes already; a notebook whole cannot be exported so. A library that reads OneNote's own files exists (`onenote_parser`, MPL-2.0). It is tried last, and left out if it does not hold.
+- **Links between notes** are by name in these exports (Obsidian, Notion, Joplin's paths), or cannot be told (Evernote names the note linked only by words). They are made links of the notebook where the name is one of the notes imported with it.
+- **Whose words**: a note that says where it was clipped from is taken in from that page, as one passage; any other is the writer's own.
+
+### What is built
+
+1. **The readers** (the core, `import/notes/`): what is there is looked at first (which program's, how many notes, tags, pictures and files), then read with a count that can be stopped: each note its name, when it was made, its tags, its source, its text as blocks, its pictures and files taken into the store as the notebook's, and the names of the notes it links to.
+2. **Import notes…** on the notebook's page, as the library's import from Zotero is made: a folder or a file is chosen; what was found is shown before anything is made; the notes are made in a box of their own, named after what was imported, in one step of undo; what could not be read is said.
+
 ## What may go wrong
 
 - **The editor.** See above. Cut the seam first, alone, with every test and script of the editor passing, before anything of the notebook stands on it.
