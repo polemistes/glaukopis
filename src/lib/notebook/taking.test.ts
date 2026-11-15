@@ -115,6 +115,16 @@ describe('files taken in as notes', () => {
     expect(nb.list).toEqual([]);
   });
 
+  it('files are taken into the box given, else the first', async () => {
+    const nb = new Notebook();
+    const box = nb.addBox('Letters');
+    api.notebookTakeFiles.mockResolvedValue({ files: [letter], problems: [] });
+    const [inBox] = await takeFiles(nb, ['/p/letter.pdf'], box);
+    const [inFirst] = await takeFiles(nb, ['/p/letter.pdf']);
+    expect(nb.note(inBox)!.box).toBe(box);
+    expect(nb.note(inFirst)!.box).toBe('first');
+  });
+
   it('a failure of the store is said, and makes nothing', async () => {
     const nb = new Notebook();
     api.notebookTakeFiles.mockRejectedValue(new Error('no store'));
@@ -185,6 +195,23 @@ describe('a paste outside any text', () => {
     expect(nb.files.get(PASTED)!.source).toBeNull();
     expect(nb.files.get(UPRIGHT)!.source).not.toBeNull();
     checked(nb, id!);
+  });
+
+  it('a paste is a note in the box given', async () => {
+    const nb = new Notebook();
+    const box = nb.addBox('Pasted');
+    const words = await takePasted(nb, paste({ 'text/plain': 'Grey-eyed' }), box);
+    expect(nb.note(words!)!.box).toBe(box);
+    api.notebookTakeImage.mockResolvedValue({
+      file: view(PASTED, 'image.png'),
+      shown: view(PASTED, 'image.png'),
+      time: null,
+      taken: null,
+      place: null,
+    });
+    const picture = new File([new Uint8Array([1])], 'image.png', { type: 'image/png' });
+    const pictured = await takePasted(nb, paste({}, [picture]), box);
+    expect(nb.note(pictured!)!.box).toBe(box);
   });
 
   it('a paste with neither words nor pictures makes nothing', async () => {
