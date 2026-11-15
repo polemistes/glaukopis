@@ -9,13 +9,22 @@
  * as text, and the text goes to it: what is to be gone to waits here as a
  * jump, which the text takes when it is shown, or at once where it is shown
  * already (`MapText.svelte`).
+ *
+ * Where all projects are searched, the notebook is searched after them
+ * (`notebook.ts`): as this window holds it, where it is open here, so that
+ * what was just written is found, and as the disk keeps it where it is not.
+ * What is found in it opens the note.
  */
 
+import * as Y from 'yjs';
 import type { DocumentFormat } from '$lib/api/documents';
+import { notebookLoad } from '$lib/api/notebook';
 import { projectLoad, type ProjectInfo } from '$lib/api/projects';
 import type { LabelWords } from '$lib/editor/labels';
 import { citationWordsData } from '$lib/editor/references.svelte';
 import { countingOf } from '$lib/figures/numbering.svelte';
+import type { Notebook } from '$lib/notebook/model/notebook.svelte';
+import { theNotebook } from '$lib/notebook/open.svelte';
 import { documents } from '$lib/preview/documents.svelte';
 import { PROJECT, type DocumentSettings } from '$lib/project/model/types';
 import { projects } from '$lib/state/projects.svelte';
@@ -23,6 +32,7 @@ import { router } from '$lib/state/router.svelte';
 import { Engine } from './engine';
 import type { Found, ProjectFound, ReadDocument } from './everything';
 import { NO_OPTIONS, type SearchOptions } from './matching';
+import type { NoteFound, NotebookFound } from './notebook';
 
 export type Scope = 'last' | 'all';
 
@@ -126,6 +136,8 @@ class Everything {
   done = $state(false);
   /** Whether there were no projects to search. */
   none = $state(false);
+  /** What was found in the notebook, where anything was. */
+  notebook = $state.raw<NotebookFound | null>(null);
 
   #engine: Engine | null = null;
   /** What was read of each project: its time of change when it was read. */
@@ -138,9 +150,17 @@ class Everything {
   /** The projects, as they were changed, already said in the log to be read in part. */
   #told = new Set<string>();
   #timer: ReturnType<typeof setTimeout> | undefined;
+  /**
+   * The notebook of this window as the engine holds it: as it was at a
+   * revision, read by a beginning of the worker. None where what the engine
+   * holds was read from disk, which is read again at each search.
+   */
+  #notebookHeld: { notebook: Notebook; revision: number; generation: number } | null = null;
+  /** Whether the notebook was said in the log to be read in part. */
+  #notebookTold = false;
 
   get count(): number {
-    return this.found.reduce((n, p) => n + p.count, 0);
+    return this.found.reduce((n, p) => n + p.count, 0) + (this.notebook?.count ?? 0);
   }
 
   /** The projects that are searched: the one opened last, or all, the last changed first. */
@@ -164,6 +184,7 @@ class Everything {
     const words = this.words;
     const options = $state.snapshot(this.options) as SearchOptions;
     this.found = [];
+    this.notebook = null;
     this.error = null;
     this.unread = [];
     this.partly = [];
@@ -222,6 +243,12 @@ class Everything {
       if (result?.count) this.found = [...this.found, { ...result, name: info.name }];
     }
     if (round !== this.#round) return;
+    if (this.scope === 'all' && !this.error) {
+      const result = await this.#searchNotebook(engine, words, options);
+      if (round !== this.#round) return;
+      if (result && 'error' in result) this.error = result.error;
+      else if (result?.count) this.notebook = result;
+    }
     this.reading = null;
     this.done = true;
   }
@@ -265,6 +292,52 @@ class Everything {
     return out;
   }
 
+  /** Searches the notebook; one that cannot be read is passed over, and said in the log. */
+  async #searchNotebook(
+    engine: Engine,
+    words: string,
+    options: SearchOptions,
+  ): Promise<NotebookFound | { error: string } | null> {
+    try {
+      await this.#readNotebook(engine);
+      return await engine.searchNotebook(words, options);
+    } catch (error) {
+      console.warn('the notebook could not be searched', error);
+      return null;
+    }
+  }
+
+  /**
+   * Gives the engine the notebook: this window's as it is now, where it has
+   * changed since the engine read it; the disk's, read again each time,
+   * where this window has not read it.
+   */
+  async #readNotebook(engine: Engine) {
+    const live = theNotebook.current;
+    const generation = engine.generation;
+    let unapplied: number;
+    if (live && !live.closed) {
+      const held = this.#notebookHeld;
+      const revision = live.revision;
+      if (held?.notebook === live && held.revision === revision && held.generation === generation)
+        return;
+      this.#notebookHeld = null;
+      unapplied = await engine.readNotebook(Y.encodeStateAsUpdate(live.doc), []);
+      if (engine.generation === generation)
+        this.#notebookHeld = { notebook: live, revision, generation };
+    } else {
+      this.#notebookHeld = null;
+      const loaded = await notebookLoad();
+      unapplied = await engine.readNotebook(loaded.state, loaded.updates);
+    }
+    if (unapplied && !this.#notebookTold) {
+      this.#notebookTold = true;
+      console.warn(
+        `the notebook was searched in part: ${unapplied} of its changes could not be applied`,
+      );
+    }
+  }
+
   /**
    * Forgets what is held of the projects that are gone, and, when only the
    * one opened last is searched, of all the others: a project read for a
@@ -304,6 +377,11 @@ class Everything {
       at: at ?? undefined,
       mode: 'text',
     });
+  }
+
+  /** Opens the note something was found in. */
+  goNote(found: NoteFound) {
+    router.go({ view: 'notebook', note: found.note });
   }
 }
 

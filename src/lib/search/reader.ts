@@ -9,6 +9,7 @@ import type { Answerer } from '$lib/util/worker-client';
 import type { LabelWords } from '$lib/editor/labels';
 import { citedIn, documentsOf, readProject, searchProject, type ProjectRead } from './everything';
 import type { SearchOptions } from './matching';
+import { readNotebook, searchNotebook, type NotebookRead } from './notebook';
 
 export type Asked =
   | {
@@ -27,13 +28,23 @@ export type Asked =
       labels?: Record<string, LabelWords>;
     }
   | { kind: 'cited'; id: string }
-  | { kind: 'forget'; id: string };
+  | { kind: 'forget'; id: string }
+  /** The notebook, read from its state and the changes after it (`notebook.ts`). */
+  | { kind: 'read-notebook'; state: Uint8Array | null; updates: Uint8Array[] }
+  | { kind: 'search-notebook'; words: string; options: SearchOptions };
 
-/** A reader of its own, holding what it was given to read until it is forgotten. */
+/** A reader of its own, holding what it was given to read until it is forgotten; the notebook until it is read anew. */
 export function reader(): Answerer<Asked> {
   const read = new Map<string, ProjectRead>();
+  let notebook: NotebookRead | null = null;
   return {
     answer(asked) {
+      if (asked.kind === 'read-notebook') {
+        notebook = readNotebook(asked.state, asked.updates);
+        return notebook.unapplied;
+      }
+      if (asked.kind === 'search-notebook')
+        return notebook ? searchNotebook(notebook, asked.words, asked.options) : null;
       if (asked.kind === 'read') {
         const project = readProject(asked.id, asked.name, asked.state, asked.updates);
         read.set(asked.id, project);

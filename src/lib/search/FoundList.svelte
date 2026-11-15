@@ -11,6 +11,8 @@
    * what was found in it, by the tree and the element it is in, with the
    * words around it. Choosing one opens the project at it, beside the list,
    * which stays as it is, so that one is gone through after another.
+   * What was found in the notebook stands after the projects, by the note
+   * it is in, and opens the note.
    */
   import CaseSensitive from '@lucide/svelte/icons/case-sensitive';
   import Regex from '@lucide/svelte/icons/regex';
@@ -22,6 +24,7 @@
   import { tooltip } from '$lib/ui/tooltip';
   import type { Found, ProjectFound } from './everything';
   import { everything } from './everything.svelte';
+  import type { NoteFound, NotebookFound } from './notebook';
 
   interface Props {
     /** Up from the first that was found, back to the field. */
@@ -69,17 +72,32 @@
     }
   }
 
+  /** What was found in the notebook, with the note it is in said where it changes. */
+  function inNotes(notebook: NotebookFound): { found: NoteFound; where: string | null }[] {
+    let note: string | null = null;
+    return notebook.found.map((found) => {
+      const where = found.note !== note ? found.called || t('search-untitled') : null;
+      note = found.note;
+      return { found, where };
+    });
+  }
+
   const said = $derived.by(() => {
     if (everything.error) return t('search-invalid');
-    if (everything.none) return t('search-no-projects');
     const count = everything.count;
+    if (everything.none && !count) return t('search-no-projects');
     if (!count) return everything.done ? t('search-nothing') : '';
-    return t('search-everything-found', { count, projects: everything.found.length });
+    const projects = everything.found.length;
+    return everything.notebook
+      ? t('search-everything-found-notebook', { count, projects })
+      : t('search-everything-found', { count, projects });
   });
 
   /** What was found, as it is told apart from the rest. */
   const keyOf = (project: ProjectFound, found: Found) =>
     [project.project, found.where, found.element, found.part, found.passage, found.start].join(' ');
+  const noteKeyOf = (found: NoteFound) =>
+    ['notebook', found.note, found.part, found.passage, found.start].join(' ');
 
   /** Up and down through what was found, as through the rows of the list. */
   function onkeydown(event: KeyboardEvent) {
@@ -193,6 +211,39 @@
       {/if}
     </section>
   {/each}
+
+  {#if everything.notebook}
+    {@const notebook = everything.notebook}
+    <section class="project" data-found-notebook>
+      <h3>
+        <span class="name serif truncate">{t('notebook-title')}</span>
+        <span class="count">{notebook.count}</span>
+      </h3>
+      <ul>
+        {#each inNotes(notebook) as { found, where }, i (i)}
+          {@const key = noteKeyOf(found)}
+          <li>
+            <button
+              type="button"
+              class="hit"
+              class:chosen={chosen === key}
+              data-hit
+              onclick={() => {
+                chosen = key;
+                everything.goNote(found);
+              }}
+            >
+              {#if where !== null}<span class="where truncate">{where}</span>{/if}
+              <span class="words serif">{found.before}<mark>{found.text}</mark>{found.after}</span>
+            </button>
+          </li>
+        {/each}
+      </ul>
+      {#if notebook.count > notebook.found.length}
+        <p class="more">{t('search-more', { count: notebook.count - notebook.found.length })}</p>
+      {/if}
+    </section>
+  {/if}
 </div>
 
 <style>
