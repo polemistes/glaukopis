@@ -1,6 +1,6 @@
 # The notebook — the build plan
 
-From the owner's words of 2026-11-15 (the last section of `docs/brief.md`: read it first, every quotation and what they settle). This is the plan of the whole. The owner asked for it to be built on the same day. Each stage is given its detailed part here (the files, the words, the checks) when it is begun, after the code it touches has been read, and its record when it is built. **Built so far**: the seam of the editor (record 0100) and stage 1 (record 0101). Stage 2 is detailed below, and not begun.
+From the owner's words of 2026-11-15 (the last section of `docs/brief.md`: read it first, every quotation and what they settle). This is the plan of the whole. The owner asked for it to be built on the same day. Each stage is given its detailed part here (the files, the words, the checks) when it is begun, after the code it touches has been read, and its record when it is built. **Built so far**: the seam of the editor (record 0100), stage 1 (record 0101), stage 3 (record 0102, the plugin not yet signed) and stage 2 (record 0103). Stages 4 and 5 are being built.
 
 ## What it is
 
