@@ -3679,6 +3679,73 @@ export const notebookUpdate: notebook.NotebookUpdate = {
   "update": "AAA="
 };
 
+export const inboxItems: notebook.InboxItem[] = [
+  {
+    "alt": "",
+    "html": "",
+    "image": {
+      "file": {
+        "added": "2026-01-01T00:00:00Z",
+        "alt": "",
+        "bookmarks": [],
+        "exists": true,
+        "folder": "00000000-0000-4000-8000-000000000000",
+        "hash": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+        "height": 1,
+        "kind": "picture",
+        "madeFrom": null,
+        "name": "plate.png",
+        "origin": "/data/plate.png",
+        "path": "attachments/4f/4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5/plate.png",
+        "references": [],
+        "size": 70,
+        "width": 1
+      },
+      "place": null,
+      "shown": {
+        "added": "2026-01-01T00:00:00Z",
+        "alt": "",
+        "bookmarks": [],
+        "exists": true,
+        "folder": "00000000-0000-4000-8000-000000000000",
+        "hash": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+        "height": 1,
+        "kind": "picture",
+        "madeFrom": null,
+        "name": "plate.png",
+        "origin": "/data/plate.png",
+        "path": "attachments/4f/4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5/plate.png",
+        "references": [],
+        "size": 70,
+        "width": 1
+      },
+      "taken": null,
+      "time": null
+    },
+    "kind": "region",
+    "text": "",
+    "title": "An article",
+    "url": "https://example.org/an-article",
+    "when": "2026-01-01T00:00:00Z"
+  },
+  {
+    "alt": "",
+    "html": "<p>What it <em>says</em>.</p>",
+    "image": null,
+    "kind": "selection",
+    "text": "What it says.",
+    "title": "An article",
+    "url": "https://example.org/an-article",
+    "when": "2026-01-01T00:00:00Z"
+  }
+];
+
+export const firefoxSetup: notebook.FirefoxSetup = {
+  "installed": false,
+  "manifest": "/home/a/.mozilla/native-messaging-hosts/org.glaukopis.notebook.json",
+  "other": "/opt/glaukopis-old/glaukopis"
+};
+
 export const trashed: projects.Trashed[] = [
   {
     "entry": "20260101T000000Z-wrath",

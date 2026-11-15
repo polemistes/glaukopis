@@ -15,7 +15,10 @@
 //! with a record that says the notebook holds it (`library::files::Held`).
 //!
 //! What a file says of itself, read before it is copied into the store, is
-//! in `facts`.
+//! in `facts`. What the plugin for Firefox collects comes through the helper
+//! Firefox starts (`host`, the application in another role) into an inbox
+//! (`inbox`), from which the application takes it; Firefox is told of the
+//! helper in `firefox`.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -32,6 +35,9 @@ use crate::projects::{LOG, STATE, keep_history, read_log};
 use crate::tr;
 
 pub mod facts;
+pub mod firefox;
+pub mod host;
+pub mod inbox;
 
 pub use facts::{Facts, Place, facts};
 
