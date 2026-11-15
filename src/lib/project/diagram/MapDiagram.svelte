@@ -25,7 +25,7 @@
   import type { RectLike } from '$lib/ui/floating';
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import LinesField from '$lib/ui/LinesField.svelte';
-  import { associationMenu } from '../associations';
+  import { associationMenu, linkHolderOf } from '../associations';
   import { tooltip } from '$lib/ui/tooltip';
   import ElementBox from '../ElementBox.svelte';
   import {
@@ -898,7 +898,7 @@
     if (!link) return [];
     selection = [];
     selectedLink = id;
-    return associationMenu(project, link, { write: () => (labelling = id) });
+    return associationMenu(linkHolderOf(project), link, { write: () => (labelling = id) });
   }
 
   /** The menu of an association opened by a key: at its words, or at its curve. */

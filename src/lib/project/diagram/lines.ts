@@ -12,6 +12,7 @@ import {
   associationCurve,
   edgePoint,
   hierarchyLine,
+  type Box,
   type Layout,
   type Placed,
 } from './layout';
@@ -63,6 +64,24 @@ export function visibleEnd(lay: Layout, tree: Tree, id: string): Placed | null {
   return null;
 }
 
+/**
+ * An association drawn between two boxes: those of its ends, or of what
+ * is shown in place of an end, which makes it faint. Whatever holds the
+ * links (a project, the notebook) draws each of them with this.
+ */
+export function associationDrawn(link: LinkRecord, a: Box, b: Box): DrawnAssociation {
+  const c = associationCurve(a, b);
+  return {
+    id: link.id,
+    path: c.path,
+    middle: c.middle,
+    label: link.label,
+    heads: arrowheadsOf(c, link.arrow),
+    colour: link.colour ? kindColour(link.colour).ink : null,
+    faint: a.id !== link.from || b.id !== link.to,
+  };
+}
+
 /** The associations of a map, as they are drawn. */
 export function associationsOf(links: LinkRecord[], lay: Layout, tree: Tree): DrawnAssociation[] {
   const out: DrawnAssociation[] = [];
@@ -70,16 +89,7 @@ export function associationsOf(links: LinkRecord[], lay: Layout, tree: Tree): Dr
     const a = visibleEnd(lay, tree, link.from);
     const b = visibleEnd(lay, tree, link.to);
     if (!a || !b || a.id === b.id) continue;
-    const c = associationCurve(a, b);
-    out.push({
-      id: link.id,
-      path: c.path,
-      middle: c.middle,
-      label: link.label,
-      heads: arrowheadsOf(c, link.arrow),
-      colour: link.colour ? kindColour(link.colour).ink : null,
-      faint: a.id !== link.from || b.id !== link.to,
-    });
+    out.push(associationDrawn(link, a, b));
   }
   return out;
 }

@@ -65,12 +65,7 @@ export function zoomedAt(view: View, px: number, py: number, k: number, min = MI
  * The view that shows all of a map, and nothing larger than it is; no
  * smaller than `min`, where a map too large is shown about its middle.
  */
-export function fitting(
-  bounds: Bounds,
-  width: number,
-  height: number,
-  min = MIN_ZOOM,
-): View {
+export function fitting(bounds: Bounds, width: number, height: number, min = MIN_ZOOM): View {
   const w = bounds.right - bounds.left;
   const h = bounds.bottom - bounds.top;
   const k = Math.max(

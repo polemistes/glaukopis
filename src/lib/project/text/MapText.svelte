@@ -45,7 +45,7 @@
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import LinesField from '$lib/ui/LinesField.svelte';
-  import { associationMenu } from '../associations';
+  import { associationMenu, linkHolderOf } from '../associations';
   import { kindColour } from '../kinds';
   import { endsWritten } from '../model/changing/links';
   import {
@@ -1370,7 +1370,7 @@
     if (!link) return;
     openMenu(
       pointRect(event.clientX, event.clientY),
-      associationMenu(project, link, {
+      associationMenu(linkHolderOf(project), link, {
         write: () => (labelling = { id: b.id, value: b.label, top: (b.top + b.bottom) / 2 }),
         goTo: async (id) => {
           if (folding.reveal(tree, id)) await tick();
