@@ -198,6 +198,36 @@ One Yjs document (`src/lib/notebook/model/notebook.svelte.ts`, class `Notebook`)
 
 Tests beside the code (the model, the pieces, the sources, a passage made one's own and brought back, the ways out, the route, the row, the keys; in the core the keeping, the marks of files, the sweep, the times of a photograph, the contract). Scripts: `e2e/notebook.mjs` (the place in the row; a note written; words pasted and their source given; files dropped; found by words; there after the application is closed and opened; seen in a second window) and `e2e/notebook-out.mjs` (the list in the pane; own words, a passage and a picture dragged into a text; the reference made; the file in the library; the note says where it went). The scripts of the editor again, and `languages`.
 
+## Stage 2 in detail
+
+Written on 2026-11-15 while stage 1 was being built, from a reading of the diagram; nothing of it is begun before stage 1 holds in the running application.
+
+### What was found in the code, and what it settles
+
+- **`camera.ts` is geometry and nothing else**, and was used once before by another view. What makes a view pan and zoom is still inside `MapDiagram.svelte`: the wheel, the dragging of the ground, keeping the middle when the window changes its size, the first placing, telling the camera to be kept, the buttons of zoom, and the reckoning between the screen and the world. A surface needs all of it. It is lifted out first, alone, as the seam of the editor was: `MapDiagram` uses what was lifted and behaves as before, shown by its scripts (`maps`, `associations`, `diagram-picture`, `tree-keys`, `map-icons`, `ordering`).
+- **An association is drawn from two boxes and a record** (`associationCurve`, `arrowheadsOf` in `layout.ts`; the curve, the heads, the words in the middle). What is a project's in it is which end is shown where an element is folded away, the menu (which takes a `Project`), and the changes. The drawing is lifted into two parts, the curves and the words, which stay where the picture of a diagram looks for them (`picture.ts` reads `svg.lines g.association` and `.world > .link-label`); the menu takes what holds the links, a project or the notebook.
+- **A node of the diagram is as wide as its words** and cannot be made wider by hand; its place is kept relative to its parent. A card of the surface has a place and a width of its own: that is the notebook's, written new. The nearest thing in the diagram is the card of a comment, moved with the pointer held.
+- **Joining two elements of a project loses things**: the text is cloned, and the element that goes takes its associations and its comments with it. The owner's Join keeps the tags and the links of all that is joined, so it is written for the notebook and not taken from there. Dividing an element goes through the editor (what follows the cursor becomes the new element's text, then is cut from the old), and a note is divided the same way.
+- **There is no field that offers what was written before**, and no tags anywhere. The tags get a field of their own.
+- **The filters of the library are one fixed record** shown in a popover, counted on their button. The notebook's are made the same way.
+
+### What the document gains
+
+| Part | Holds |
+| --- | --- |
+| `boxes` | By id: `name`, `order`. The first box has a fixed id and is always there, named *Unsorted* until it is given another name. |
+| A note, more | `box` (none: the first), `at` (where it lies on the surface of its box; none: in the strip, not yet put), `width` (of its card), `tags` (a set of words). |
+| `links` | By id: `from`, `to`, `label`, `arrow`, `colour`: as an association of a project, between two notes. One for each pair. |
+
+Where each box was looked at (its camera, surface or list) is kept on this computer with the settings, not in the notebook.
+
+### What is built, part by part
+
+1. **The lifting** (alone, first): the view that pans and zooms, and the drawing of associations, out of `MapDiagram.svelte`; the menu of an association for whatever holds the links.
+2. **The model**: boxes (made, named, reordered, deleted, the notes of a deleted box to the first); places and widths; tags (on a note; all tags with how many notes have each; a tag renamed everywhere, which makes it one with another of that name; a tag taken away everywhere); links (as a project's); **Join** (the notes selected become the first of them, in the order they lie: their texts one after another, their tags and links all kept, what became of each kept, the others gone; one step of undo) and **Divide** (at the cursor, or what is selected lifted out: a new note beside the old in the same box with the same tags; one step of undo).
+3. **The surface**: a box as a surface; cards that show the notes themselves, moved, made wider by their edge, selected one or many (Ctrl, a band drawn with Shift); the strip of notes not yet put, newest on top, dragged onto the surface; links drawn from a handle of a card to another card, with their words, arrows and colours; the note opened beside the surface to be written; the keys of the diagram where they mean the same.
+4. **Boxes, tags and the list**: the boxes at the head of the page; a note moved to another box (dragged onto it, or from its menu); the tags of a note under its name, offered as they are typed; the window where tags are renamed, made one and taken away; the filters of the list, the box and the tags first; Join and Divide in the menus and by keys.
+
 ## What may go wrong
 
 - **The editor.** See above. Cut the seam first, alone, with every test and script of the editor passing, before anything of the notebook stands on it.
