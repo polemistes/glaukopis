@@ -9,14 +9,18 @@
 import * as Y from 'yjs';
 import type { RefRecord } from './types';
 
-export interface Persistence {
+/**
+ * Where what is saved is written. `S` is what is told of it when the whole
+ * is saved: a project's summary, unless another is said (the notebook's).
+ */
+export interface Persistence<S = Summary> {
   /**
    * Writes a batch of changes to the log: whether they were made here or
    * came from another, and when, in milliseconds since 1970.
    */
   append(update: Uint8Array, here: boolean, time: number): Promise<void>;
   /** With `keep`, where the project's full history is on, the log is kept in it. */
-  saveState(state: Uint8Array, summary: Summary, keep: boolean): Promise<void>;
+  saveState(state: Uint8Array, summary: S, keep: boolean): Promise<void>;
   /**
    * Writes the readable copy of the project into its folder: its Org form,
    * the pictures it shows by their hash, and the works it cites. Where it
@@ -52,10 +56,10 @@ export interface Summary {
 
 export type SaveStatus = 'saved' | 'unsaved' | 'saving' | 'error';
 
-/** What the saving asks of the project it saves. */
-export interface Saved {
+/** What the saving asks of the project it saves, or of whatever else is saved so. */
+export interface Saved<S = Summary> {
   readonly doc: Y.Doc;
-  summary(): Summary;
+  summary(): S;
   /** Whether the full history is kept, and the log with it. */
   keepsHistory(): boolean;
   /** Before a batch is written: what was deleted here is written into the document. */
@@ -71,12 +75,12 @@ const SNAPSHOT_AFTER_BYTES = 200_000;
 const APPEND_DELAY = 400;
 const SNAPSHOT_IDLE = 90_000;
 
-export class Saving {
+export class Saving<S = Summary> {
   status = $state<SaveStatus>('saved');
   saveError = $state<string | null>(null);
 
-  readonly #persistence: Persistence | null;
-  readonly #project: Saved;
+  readonly #persistence: Persistence<S> | null;
+  readonly #project: Saved<S>;
   /** Changes not yet written, each with whether it was made here. */
   #pending: { update: Uint8Array; here: boolean }[] = [];
   #followers = new Set<Follower>();
@@ -85,7 +89,7 @@ export class Saving {
   #sinceSnapshot = { updates: 0, bytes: 0 };
   #writing: Promise<void> = Promise.resolve();
 
-  constructor(persistence: Persistence | null, project: Saved) {
+  constructor(persistence: Persistence<S> | null, project: Saved<S>) {
     this.#persistence = persistence;
     this.#project = project;
   }

@@ -428,7 +428,7 @@ function paragraphOf(el: Y.XmlElement): ParagraphBlock {
 }
 
 /** The blocks an element of a text stands for. */
-function blocksOfElement(child: Y.XmlElement): Block[] {
+export function blocksOfElement(child: Y.XmlElement): Block[] {
   switch (child.nodeName) {
     case 'paragraph':
     case 'title':
