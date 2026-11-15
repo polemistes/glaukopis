@@ -11,6 +11,16 @@ notebook-notes = Notes
 notebook-file-open-named = Open { $name }
 notebook-file-not-here = The file is not on this computer
 
+# Files that could not be taken in as notes, said in one message.
+notebook-files-not-taken = Some files could not be taken in
+
 ## Sources
+
+notebook-source-none = No source
+# Where a photograph was taken, in degrees.
+notebook-source-north = { $degrees }° N
+notebook-source-south = { $degrees }° S
+notebook-source-east = { $degrees }° E
+notebook-source-west = { $degrees }° W
 
 ## The list in the document pane, and what goes into a text

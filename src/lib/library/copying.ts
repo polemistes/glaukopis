@@ -97,20 +97,29 @@ export function copyReferences(ids: string[]): Promise<boolean> {
  * document's language, alone: as the first citation of a document is
  * written, a note where the style makes one. The document is that of the
  * element the citation stands in; the works are the library's, or what the
- * project carries of them.
+ * project carries of them. With no project, as in a note of the notebook,
+ * it is written as the writer's usual reference style writes it, in the
+ * language new texts are given, of the library's works.
  */
 export async function citationWrittenIn(
-  project: Project,
+  project: Project | null,
   element: string | null | undefined,
   said: Cited,
 ): Promise<Written> {
-  const document = element && project.node(element) ? project.documentOf(element).settings : {};
-  const { style } = await documents.choiceRead(document, project);
-  const carried = [...new Set(said.items.map((i) => i.id))].flatMap((id): ExportReference[] => {
-    const r = project.refs.get(id);
-    return r ? [{ id: r.id, key: r.key, type: r.type, fields: r.fields, names: r.names }] : [];
-  });
-  const html = await styleWritten(style, carried, said, document.language);
+  const ids = [...new Set(said.items.map((i) => i.id))];
+  let html: string;
+  if (project) {
+    const document = element && project.node(element) ? project.documentOf(element).settings : {};
+    const { style } = await documents.choiceRead(document, project);
+    const carried = ids.flatMap((id): ExportReference[] => {
+      const r = project.refs.get(id);
+      return r ? [{ id: r.id, key: r.key, type: r.type, fields: r.fields, names: r.names }] : [];
+    });
+    html = await styleWritten(style, carried, said, document.language);
+  } else {
+    const style = settings.value.defaultStyle || defaultSettings.defaultStyle;
+    html = await styleWritten(style, ids.map(byId), said, newTextLanguage());
+  }
   const written = citationWritten(html, said);
   if (!written) throw new Error(t('library-copy-nothing-written'));
   return written;
