@@ -24,10 +24,13 @@
   import { describeError, notifyError } from '$lib/ui/toast.svelte';
   import { newId } from '$lib/util/id';
   import ImageView from '$lib/viewer/ImageView.svelte';
+  import MarkPart from '$lib/viewer/MarkPart.svelte';
   import PdfView from '$lib/viewer/PdfView.svelte';
   import PrintRangeDialog from '$lib/viewer/PrintRangeDialog.svelte';
   import ViewerBar from '$lib/viewer/ViewerBar.svelte';
   import { START } from '$lib/viewer/sources';
+  import { ToNotebook } from '$lib/viewer/to-notebook.svelte';
+  import { shortcuts } from '$lib/shell/keys.svelte';
   import { viewers } from '$lib/viewer/viewers.svelte';
   import { files } from './store.svelte';
 
@@ -104,6 +107,28 @@
   }
 
   let root = $state<HTMLElement>();
+
+  // ---- to the notebook (the plan of the notebook, stage 3): as from a file in a view ----
+
+  const toNotebook = new ToNotebook(() => ({ file: hash, facts, root }));
+  /** A drawing has no pixels to mark. */
+  const notebookDisabled = $derived(
+    !!facts?.picture && (files.get(hash)?.name ?? name).toLowerCase().endsWith('.svg'),
+  );
+  // Another file read gives a marking up.
+  $effect(() => {
+    void hash;
+    return () => toNotebook.cancel();
+  });
+  onMount(() =>
+    shortcuts.bind({
+      'viewer-to-notebook': {
+        run: () => void toNotebook.press(),
+        when: () => !!facts && !facts.locked && !notebookDisabled,
+      },
+    }),
+  );
+
   onMount(() => {
     root?.querySelector<HTMLElement>('[data-viewer-pages]')?.focus();
     // The e2e scripts print to a file, where the dialog cannot be pressed.
@@ -142,6 +167,9 @@
       {percent}
       onpage={goToPage}
       onzoom={zoomTo}
+      ontonotebook={(anchor) => void toNotebook.press(anchor)}
+      marking={toNotebook.marking}
+      {notebookDisabled}
       onprint={print}
       {printing}
     />
@@ -173,7 +201,9 @@
       name={facts.name}
       {zoom}
       onzoom={(z) => (zoom = z)}
-    />
+    >
+      {#if toNotebook.marking}{@render marker()}{/if}
+    </ImageView>
   {:else}
     {#key hash}
       <PdfView
@@ -186,10 +216,19 @@
         onplace={() => {}}
         onmiddle={(n) => (middle = n)}
         onzoom={(z) => (zoom = z)}
-      />
+      >
+        {#if toNotebook.marking}{@render marker()}{/if}
+      </PdfView>
     {/key}
   {/if}
 </section>
+
+{#snippet marker()}
+  <MarkPart
+    onmarked={(part) => void toNotebook.marked(part)}
+    oncancel={() => toNotebook.cancel()}
+  />
+{/snippet}
 
 {#if askingRange && facts}
   <PrintRangeDialog

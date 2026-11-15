@@ -267,6 +267,8 @@ const ENTRIES = [
   { id: 'viewer-tab-next', keys: 'Ctrl+PageDown', place: 'viewer', bound: true },
   { id: 'viewer-tab-previous', keys: 'Ctrl+PageUp', place: 'viewer', bound: true },
   { id: 'viewer-bookmark', keys: 'Ctrl+Shift+B', place: 'viewer', bound: true },
+  // What is selected, or a part of a page marked, to the notebook (the plan of the notebook, stage 3): a key free wherever a file is read.
+  { id: 'viewer-to-notebook', keys: 'Ctrl+Shift+J', place: 'viewer', bound: true },
 ] as const satisfies readonly KeyEntry[];
 
 /** The name of an entry of the table. */

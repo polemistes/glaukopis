@@ -19,7 +19,7 @@
    * the zoom rests they are laid out at the new size and drawn anew, into
    * canvases that hold their pixels (addendum of 2026-10-31).
    */
-  import { flushSync, onDestroy, onMount, untrack } from 'svelte';
+  import { flushSync, onDestroy, onMount, untrack, type Snippet } from 'svelte';
   import { SvelteMap } from 'svelte/reactivity';
   import { isNotFound } from '$lib/api/backend';
   import { ocrStop } from '$lib/api/ocr';
@@ -69,9 +69,11 @@
     /** The page at the middle of the view, as it changes. */
     onmiddle: (page: number) => void;
     onzoom: (zoom: number | null) => void;
+    /** Laid over the pages, the size of what holds them: a part of a page being marked. */
+    children?: Snippet;
   }
 
-  let { file, facts, tab, place, zoom, onplace, onmiddle, onzoom }: Props = $props();
+  let { file, facts, tab, place, zoom, onplace, onmiddle, onzoom, children }: Props = $props();
   // What the view tells of its place is of the tab it was made for, even as it goes:
   // the tab is taken once, as the view is made.
   // svelte-ignore state_referenced_locally
@@ -473,6 +475,7 @@
         {/if}
       </div>
     {/each}
+    {@render children?.()}
   </div>
 </div>
 

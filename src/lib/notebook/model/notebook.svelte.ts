@@ -123,6 +123,7 @@ function sourceOf(id: string, value: unknown): Source | null {
           place && Number.isFinite(place.lat) && Number.isFinite(place.lon)
             ? { lat: place.lat as number, lon: place.lon as number }
             : undefined,
+        locator: str(v.locator) || undefined,
       });
     }
     case 'words':
@@ -146,7 +147,11 @@ function sameSource(a: Source, b: NewSource): boolean {
         trim((a as typeof b).label) === trim(b.label)
       );
     case 'file':
-      return (a as typeof b).name === b.name && trim((a as typeof b).time) === trim(b.time);
+      return (
+        (a as typeof b).name === b.name &&
+        trim((a as typeof b).time) === trim(b.time) &&
+        trim((a as typeof b).locator) === trim(b.locator)
+      );
     case 'words':
       return trim((a as typeof b).words) === trim(b.words);
   }

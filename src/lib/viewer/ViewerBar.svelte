@@ -4,10 +4,13 @@
    * has in print where that differs from its count; a field to go to a page
    * by either; and the zoom, in a field that takes any percent and a menu
    * of steps. Nothing of a map: no views, no writing tools. An image that
-   * has pixels has *Edit* after the zoom (ADR 0071).
+   * has pixels has *Edit* after the zoom (ADR 0071). *To the notebook*
+   * sends what is selected, or a part marked, to the notebook (its plan,
+   * stage 3).
    */
   import BookmarkIcon from '@lucide/svelte/icons/bookmark';
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
+  import NotebookPen from '@lucide/svelte/icons/notebook-pen';
   import Pencil from '@lucide/svelte/icons/pencil';
   import Printer from '@lucide/svelte/icons/printer';
   import { t } from '$lib/i18n';
@@ -35,6 +38,12 @@
     onedit?: () => void;
     /** Opens the bookmarks and the contents of a PDF, by the button (ADR 0072). */
     onplaces?: (anchor: HTMLElement) => void;
+    /** Sends what is selected in the pages to the notebook, or begins to mark a part of a page; given the button. */
+    ontonotebook?: (anchor: HTMLElement) => void;
+    /** Whether a part of a page is being marked: the button is pressed. */
+    marking?: boolean;
+    /** Whether nothing can be sent now: an image being edited, or a drawing. */
+    notebookDisabled?: boolean;
     /** Prints the file (record 0075). */
     onprint?: () => void;
     /** Whether it is being printed: the button waits. */
@@ -54,6 +63,9 @@
     editing = false,
     onedit,
     onplaces,
+    ontonotebook,
+    marking = false,
+    notebookDisabled = false,
     onprint,
     printing = false,
   }: Props = $props();
@@ -182,6 +194,23 @@
       <BookmarkIcon size={13} />
     </button>
   {/if}
+  {#if ontonotebook}
+    <!-- A press keeps the focus and the selection where they are: what is selected is what goes. -->
+    <button
+      type="button"
+      class="zoom notebook"
+      class:on={marking}
+      aria-label={t('viewer-to-notebook')}
+      aria-pressed={marking}
+      disabled={notebookDisabled}
+      data-viewer-notebook
+      use:tooltip={{ text: t('viewer-to-notebook'), shortcut: keysFor('viewer-to-notebook') }}
+      onmousedown={(e) => e.preventDefault()}
+      onclick={(e) => ontonotebook(e.currentTarget)}
+    >
+      <NotebookPen size={13} />
+    </button>
+  {/if}
   {#if onprint}
     <button
       type="button"
@@ -291,6 +320,15 @@
   .zoom:hover {
     background: var(--paper-hover);
     color: var(--ink);
+  }
+  .notebook.on,
+  .notebook.on:hover {
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+  }
+  .notebook:disabled {
+    opacity: 0.45;
+    cursor: default;
   }
   .edit.on,
   .edit.on:hover {

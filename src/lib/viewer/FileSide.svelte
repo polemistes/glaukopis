@@ -39,11 +39,13 @@
   import { isNothing, nothing } from './editing';
   import EditRow from './EditRow.svelte';
   import ImageView from './ImageView.svelte';
+  import MarkPart from './MarkPart.svelte';
   import PdfView from './PdfView.svelte';
   import PlacesPopover from './PlacesPopover.svelte';
   import PrintRangeDialog from './PrintRangeDialog.svelte';
   import { activeTab, START } from './sources';
   import TabRow from './TabRow.svelte';
+  import { ToNotebook } from './to-notebook.svelte';
   import ViewerBar from './ViewerBar.svelte';
   import { viewers } from './viewers.svelte';
 
@@ -375,6 +377,26 @@
     });
   });
 
+  // ---- to the notebook (the plan of the notebook, stage 3) ----
+
+  const toNotebook = new ToNotebook(() => ({ file, facts, root: pane }));
+  /** Nothing is sent from an image being edited, or from a drawing, which has no pixels to mark. */
+  const notebookDisabled = $derived(!!editing || (!!facts?.picture && !editable));
+  // Another file shown, or editing begun, gives a marking up.
+  $effect(() => {
+    void file;
+    void !!editing;
+    return () => toNotebook.cancel();
+  });
+  onMount(() =>
+    shortcuts.bind({
+      'viewer-to-notebook': {
+        run: () => void toNotebook.press(),
+        when: () => (active || count === 1) && !!facts && !facts.locked && !notebookDisabled,
+      },
+    }),
+  );
+
   async function openElsewhere() {
     const path = files.get(file)?.path;
     if (!path) return;
@@ -414,6 +436,9 @@
       {percent}
       onpage={goToPage}
       onplaces={(anchor) => openPlaces(anchor)}
+      ontonotebook={(anchor) => void toNotebook.press(anchor)}
+      marking={toNotebook.marking}
+      {notebookDisabled}
       onprint={print}
       {printing}
       onzoom={zoomTo}
@@ -479,6 +504,7 @@
             onchange={changeCrop}
           />
         {/if}
+        {#if toNotebook.marking}{@render marker()}{/if}
       </ImageView>
     {/key}
   {:else}
@@ -495,10 +521,19 @@
         onplace={(of, place) => sides.setPlace(spec.key, of, place)}
         onmiddle={(n) => (middle = n)}
         onzoom={(z) => sides.setTabZoom(spec.key, id, z)}
-      />
+      >
+        {#if toNotebook.marking}{@render marker()}{/if}
+      </PdfView>
     {/key}
   {/if}
 </div>
+
+{#snippet marker()}
+  <MarkPart
+    onmarked={(part) => void toNotebook.marked(part)}
+    oncancel={() => toNotebook.cancel()}
+  />
+{/snippet}
 
 {#if placesAt && facts && file}
   <PlacesPopover

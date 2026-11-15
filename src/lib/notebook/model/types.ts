@@ -42,6 +42,8 @@ export interface FileSource extends SourceBase {
   taken?: string;
   /** Of a photograph, where it was taken. */
   place?: Place;
+  /** A place in it, where something was taken from a page of it read in Glaukopis: a page, as a citation's locator takes one. */
+  locator?: string;
 }
 
 /** Words of the writer's: a broadcast and its day, a place, a person. */

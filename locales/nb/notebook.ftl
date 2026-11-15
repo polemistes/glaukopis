@@ -43,6 +43,9 @@ notebook-file-not-here = Filen er ikke på denne datamaskinen
 
 notebook-files-not-taken = Noen filer kunne ikke tas inn
 
+notebook-from-file-added = Lagt i notatblokken
+notebook-from-file-not-added = Kunne ikke legges i notatblokken
+
 ## Kilder
 
 notebook-source-none = Ingen kilde

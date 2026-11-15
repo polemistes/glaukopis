@@ -150,6 +150,7 @@ keys-viewer-last = Siste side
 keys-viewer-tab-next = Neste fane
 keys-viewer-tab-previous = Forrige fane
 keys-viewer-bookmark = Merk dette stedet
+keys-viewer-to-notebook = Til notatblokken
 # Utskrift (docs/plans/printing.md, record 0075).
 keys-print = Skriv ut
 # Eksport og utskrift fra linjen på en side (record 0091).
