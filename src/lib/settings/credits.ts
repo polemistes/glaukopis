@@ -287,6 +287,13 @@ export const CREDIT_GROUPS: CreditGroup[] = [
         by: 'Johann Tuffe',
       },
       {
+        name: 'kamadak-exif',
+        what: 'credits-what-kamadak-exif',
+        licence: 'BSD-2-Clause',
+        url: 'https://github.com/kamadak/exif-rs',
+        by: "KAMADA Ken'ichi",
+      },
+      {
         name: 'encoding_rs',
         what: 'credits-what-encoding-rs',
         licence: '(Apache-2.0 OR MIT) AND BSD-3-Clause',

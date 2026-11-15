@@ -54,6 +54,7 @@ credits-what-sqlite = The database Zotero keeps its references in, read by way o
 credits-what-roxmltree = Reads XML: reference styles, Word documents and what catalogues send.
 credits-what-zip = Reads and writes Word and OpenDocument files, projects as files and language packages.
 credits-what-calamine = Reads spreadsheets, for tables brought in.
+credits-what-kamadak-exif = Reads when and where a photograph was taken, for the notebook.
 credits-what-encoding-rs = Reads text in the encodings older files have.
 credits-what-spellbook = Checks spelling, with dictionaries of Hunspell's.
 credits-what-icu = Knows what each character is, for finding words.

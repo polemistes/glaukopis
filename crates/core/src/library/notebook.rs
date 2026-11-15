@@ -305,7 +305,7 @@ mod tests {
         assert_eq!(listed(&lib), ["theirs.pdf"]);
         assert!(lib.file_view(&ours.hash).is_some());
         assert!(lib.files.left_empty(&[theirs.hash.as_str()].into_iter().collect()).contains(&shelf.id));
-        let named = lib.name_files_by_reference(&[ours.hash.clone()]).unwrap();
+        let named = lib.name_files_by_reference(std::slice::from_ref(&ours.hash)).unwrap();
         assert_eq!((named.changed.len(), named.kept), (0, 0), "not counted at all");
         let out = tmp.path().join("out");
         let exported =
@@ -383,7 +383,7 @@ mod tests {
 
         // A folder deleted with its files: the held one stays in the store.
         let box_ = lib.files.folder_create("Box", None).unwrap();
-        lib.move_files(&[held.hash.clone()], Some(&box_.id)).unwrap();
+        lib.move_files(std::slice::from_ref(&held.hash), Some(&box_.id)).unwrap();
         assert_eq!(lib.delete_folder(&box_.id, true, true).unwrap(), 1);
         assert!(on_disk(&lib, &held.hash));
         assert_eq!(mark(&lib, &held.hash), Some(Held::Only));

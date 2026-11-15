@@ -54,6 +54,7 @@ credits-what-sqlite = Databasen Zotero har referansene sine i, lest via rusqlite
 credits-what-roxmltree = Leser XML: referansestiler, Word-dokumenter og det katalogene sender.
 credits-what-zip = Leser og skriver Word- og OpenDocument-filer, prosjekter som filer og språkpakker.
 credits-what-calamine = Leser regneark, for tabeller som hentes inn.
+credits-what-kamadak-exif = Leser når og hvor et fotografi ble tatt, for notatblokken.
 credits-what-encoding-rs = Leser tekst i tegnkodingene eldre filer har.
 credits-what-spellbook = Kontrollerer stavingen, med ordbøker for Hunspell.
 credits-what-icu = Vet hva hvert tegn er, for å finne ordene.
