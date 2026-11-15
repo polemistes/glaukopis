@@ -218,9 +218,7 @@ impl Inbox {
 
     /// The folder of a thing; an id that is no name of one is refused.
     fn of(&self, id: &str) -> Result<PathBuf> {
-        let plain = !id.is_empty()
-            && !id.starts_with('.')
-            && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-');
+        let plain = !id.is_empty() && !id.starts_with('.') && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-');
         if !plain {
             return Err(Error::invalid(tr!("io-reading", path = &self.dir.join(id))));
         }

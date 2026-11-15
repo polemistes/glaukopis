@@ -252,7 +252,10 @@ mod tests {
         let dir = tmp.path().join("mozilla").join("native-messaging-hosts");
         let exe = tmp.path().join("bin").join("glaukopis");
         let before = state(&dir, &exe);
-        assert_eq!(before, Setup { installed: false, manifest: manifest_path(&dir).display().to_string(), other: None });
+        assert_eq!(
+            before,
+            Setup { installed: false, manifest: manifest_path(&dir).display().to_string(), other: None }
+        );
 
         let setup = set_up(&dir, &exe).unwrap();
         assert!(setup.installed);
@@ -307,7 +310,10 @@ mod tests {
         assert!(!state(tmp.path(), &exe).installed);
         let other = serde_json::json!({"name": "org.other", "path": exe, "type": "stdio", "allowed_extensions": [EXTENSION_ID]});
         fs::write(manifest_path(tmp.path()), other.to_string()).unwrap();
-        assert_eq!(state(tmp.path(), &exe), Setup { installed: false, manifest: manifest_path(tmp.path()).display().to_string(), other: None });
+        assert_eq!(
+            state(tmp.path(), &exe),
+            Setup { installed: false, manifest: manifest_path(tmp.path()).display().to_string(), other: None }
+        );
     }
 
     #[test]
@@ -328,7 +334,9 @@ mod tests {
         let printed = "\r\nHKEY_CURRENT_USER\\SOFTWARE\\Mozilla\\NativeMessagingHosts\\org.glaukopis.notebook\r\n    (Standard)    REG_SZ    C:\\Users\\A B\\AppData\\Roaming\\glaukopis\\native-messaging-hosts\\org.glaukopis.notebook.json\r\n\r\n";
         assert_eq!(
             default_value(printed),
-            Some(PathBuf::from(r"C:\Users\A B\AppData\Roaming\glaukopis\native-messaging-hosts\org.glaukopis.notebook.json"))
+            Some(PathBuf::from(
+                r"C:\Users\A B\AppData\Roaming\glaukopis\native-messaging-hosts\org.glaukopis.notebook.json"
+            ))
         );
         assert_eq!(default_value("    (Default)    REG_SZ    \r\n"), None);
         assert_eq!(default_value("ERROR: nothing"), None);

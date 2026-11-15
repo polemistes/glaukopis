@@ -276,7 +276,8 @@ mod tests {
     fn a_region_with_a_picture_is_written_with_it() {
         let helper = Helper::new();
         let png = png();
-        let message = json!({"kind": "region", "url": "https://example.org/", "title": "A map", "image": B64.encode(&png)});
+        let message =
+            json!({"kind": "region", "url": "https://example.org/", "title": "A map", "image": B64.encode(&png)});
         let (_, answers) = helper.run(&framed(&[message]));
         assert_eq!(answers, vec![json!({"ok": true})]);
         let inbox = helper.inbox();
