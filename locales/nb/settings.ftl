@@ -129,3 +129,14 @@ settings-data-move-button = Flytt
 settings-data-use-button = Bruk
 settings-data-copying = Kopierer … { $done } av { $count } filer
 settings-data-failed = Mappen kunne ikke endres
+
+settings-firefox = Firefox
+settings-firefox-about = Tillegget for Firefox sender sider, utvalg og bilder til notatblokken.
+settings-firefox-set-up = Firefox er satt opp
+settings-firefox-not-set-up = Firefox er ikke satt opp
+settings-firefox-other = Firefox er satt opp for en annen installasjon av Glaukopis
+settings-firefox-set-up-button = Sett opp
+settings-firefox-remove = Fjern
+settings-firefox-unread = Om Firefox er satt opp, kunne ikke leses
+settings-firefox-not-set-up-error = Firefox kunne ikke settes opp
+settings-firefox-not-removed = Oppsettet for Firefox kunne ikke fjernes

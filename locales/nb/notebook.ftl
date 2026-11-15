@@ -42,6 +42,12 @@ notebook-close-note = Lukk notatet
 notebook-resize-column = Bredden på boksene
 notebook-resize-note = Bredden på notatet
 notebook-box-empty = Ingen notater i denne boksen
+notebook-arrived = Lagt i notatblokken
+notebook-arrived-from = Lagt i notatblokken: { $title }
+notebook-arrived-many = { $count ->
+    [one] Én ting lagt i notatblokken
+   *[other] { $count } ting lagt i notatblokken
+}
 
 ## Et notat og teksten i det
 

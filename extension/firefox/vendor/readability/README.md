@@ -1,0 +1,1 @@
+Mozilla's Readability 0.6.0 (`@mozilla/readability@0.6.0` on npm, taken with `npm pack`; the archive's SHA-256 was `6d3c3cc50dad51b543925deadc66d5b58cd2262d1d585f2ae0a44975627ad919`), `Readability.js` as it is, under the Apache License 2.0 (`LICENSE`: the package's notice, then the licence's terms).

@@ -34,6 +34,7 @@
   import LibraryView from '$lib/library/LibraryView.svelte';
   import FilesView from '$lib/files/FilesView.svelte';
   import NotebookView from '$lib/notebook/NotebookView.svelte';
+  import { watchInbox } from '$lib/notebook/arriving.svelte';
   import ProjectView, { viewing } from '$lib/project/ProjectView.svelte';
   import { PROJECT } from '$lib/project/model/types';
   import { panes } from '$lib/project/panes.svelte';
@@ -59,6 +60,8 @@
     }
     // Whether a newer version is out, asked once, by the first window (record 0099).
     if (!madeAfterTheFirst()) void askIfToldHere();
+    // What the plugin for Firefox handed over is taken in by the first window (record 0102).
+    if (!madeAfterTheFirst()) watchInbox();
   });
 
   /** What is known before anything is shown: the settings, the languages, and the place to begin at. */

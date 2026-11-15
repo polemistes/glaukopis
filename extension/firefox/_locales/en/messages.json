@@ -1,0 +1,26 @@
+{
+  "name": { "message": "Glaukopis Notebook" },
+  "description": {
+    "message": "Adds pages, selections and images to the notebook of Glaukopis, with where they came from."
+  },
+  "actionTitle": { "message": "Add to the notebook" },
+  "commandAdd": { "message": "Add the selection, or the page, to the notebook" },
+  "menuPage": { "message": "Add the page to the notebook" },
+  "menuSelection": { "message": "Add the selection to the notebook" },
+  "menuImage": { "message": "Add the image to the notebook" },
+  "menuRegion": { "message": "Add a part of the page as a picture…" },
+  "signDone": { "message": "Added to the notebook" },
+  "reasonNotSetUp": {
+    "message": "Glaukopis is not set up for Firefox: Settings › Firefox in Glaukopis sets it up."
+  },
+  "reasonNoDataFolder": {
+    "message": "Glaukopis has not been started on this computer yet."
+  },
+  "reasonPageClosed": { "message": "This page does not let itself be read." },
+  "reasonNothing": { "message": "Nothing is selected." },
+  "reasonNoImage": { "message": "The image could not be read." },
+  "reasonTooLarge": { "message": "It is too large." },
+  "reasonNotAPicture": { "message": "The picture could not be read." },
+  "reasonNotUnderstood": { "message": "Glaukopis did not understand what it was given." },
+  "reasonNotWritten": { "message": "Glaukopis could not keep it." }
+}

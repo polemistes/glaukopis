@@ -44,6 +44,13 @@ notebook-close-note = Close the note
 notebook-resize-column = Width of the boxes
 notebook-resize-note = Width of the note
 notebook-box-empty = No notes in this box
+# What the plugin for Firefox handed over has arrived.
+notebook-arrived = Added to the notebook
+notebook-arrived-from = Added to the notebook: { $title }
+notebook-arrived-many = { $count ->
+    [one] One thing added to the notebook
+   *[other] { $count } things added to the notebook
+}
 
 ## A note and its text
 
