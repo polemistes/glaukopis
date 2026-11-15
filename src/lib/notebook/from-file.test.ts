@@ -308,6 +308,8 @@ describe('what is sent is a new note', () => {
     expect(doc.child(1).textContent).toBe('Second one.');
     // The notebook holds no file for words.
     expect(nb.files.size).toBe(0);
+    // What is sent from a file has not been looked at.
+    expect(note.seen).toBe(false);
     // One step of undo.
     nb.undo();
     expect(nb.note(id)).toBeUndefined();
