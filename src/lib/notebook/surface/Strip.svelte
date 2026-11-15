@@ -20,6 +20,8 @@
     selection: string[];
     /** A card of the ground is being moved over the strip, and would be taken off. */
     taking: boolean;
+    /** A card of the ground is being moved: the strip stands the whole height of the surface, to be dropped on. */
+    offered?: boolean;
     domPrefix: string;
     /** The strip itself, for the surface to know where it is. */
     element?: HTMLElement;
@@ -32,6 +34,7 @@
     notes,
     selection,
     taking,
+    offered = false,
     domPrefix,
     element = $bindable(),
     onpress,
@@ -60,7 +63,7 @@
   }
 </script>
 
-<div bind:this={element} class="strip" class:taking data-strip>
+<div bind:this={element} class="strip" class:taking class:offered data-strip>
   <div class="heading">{t('notebook-surface-not-placed')}</div>
   <div class="column">
     {#each notes as note (note.id)}
@@ -96,7 +99,9 @@
     position: absolute;
     left: 10px;
     top: 10px;
-    bottom: 10px;
+    /* As high as what it holds, and no higher than the surface: it covers no more of the ground than it needs. */
+    max-height: calc(100% - 20px);
+    min-height: 96px;
     z-index: 8;
     display: flex;
     flex-direction: column;
@@ -107,6 +112,10 @@
     background: color-mix(in srgb, var(--paper-raised) 92%, transparent);
     box-shadow: var(--shadow-1);
     cursor: default;
+  }
+  .strip.offered {
+    bottom: 10px;
+    max-height: none;
   }
   .strip.taking {
     border-color: var(--accent);

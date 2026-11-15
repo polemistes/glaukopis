@@ -582,6 +582,7 @@
       notes={unplaced}
       {selection}
       taking={!!moving?.overStrip}
+      offered={!!moving}
       {domPrefix}
       onpress={(event, id) => {
         focus();

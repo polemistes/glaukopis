@@ -189,12 +189,12 @@ try {
     await app.drag(item, { dx, dy });
     await sleep(400);
   };
-  await putOne('Owls', 420, -120);
+  await putOne('Owls', 220, 40);
   let owls = await until(() => cardNamed(app, 'Owls'), Boolean);
   check('a note dragged from the strip lies on the ground', !!owls, JSON.stringify(owls));
   check('and is no longer in the strip', !(await stripNames(app)).includes('Owls'));
-  await putOne('Athens', 760, -120);
-  await putOne('Olives', 420, 160);
+  await putOne('Athens', 540, 40);
+  await putOne('Olives', 220, 300);
   const all = await until(() => cards(app), (c) => c.length === 3);
   check('the three lie on the ground', all.length === 3, all.map((c) => c.name).join(' | '));
   check('and the strip is not shown when every note is put', !(await app.exists(`${SURFACE} [data-strip]`)));
@@ -304,6 +304,9 @@ try {
   await app.screenshot('notebook-surface-5-new-here');
 
   // ---- two presses open the note beside ----
+  // The note opened beside it has made the surface narrower: all of it is shown again first.
+  await app.click(`${SURFACE} .controls button[aria-label="Show all"]`);
+  await sleep(500);
   await app.doubleClick(`${SURFACE} [data-card="${athens.id}"]`);
   await sleep(500);
   const opened = await app.exec(`return document.querySelector('[data-note-name]')?.value ?? document.querySelector('[data-note-name]')?.textContent ?? ''`);

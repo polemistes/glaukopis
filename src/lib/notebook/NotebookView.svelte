@@ -116,8 +116,10 @@
     });
   });
   $effect(() => {
-    const note = chosen ?? undefined;
-    if (!notebook || note === named || (!note && selection.ids.length)) return;
+    // In the list the place names the note chosen; beside a surface the note
+    // that is open, so that a card only selected does not come back opened.
+    const note = inEditor ?? undefined;
+    if (!notebook || note === named || (mode === 'list' && !note && selection.ids.length)) return;
     named = note;
     applied = note;
     untrack(() => {
