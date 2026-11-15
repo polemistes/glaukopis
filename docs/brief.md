@@ -1556,3 +1556,69 @@ Record 0099.
 Chosen in the building, and not asked: on unless turned off under
 *Settings › About*; asked at every start; the message stays until it is
 closed, and the version stays named under About.
+
+## 2026-11-15 — the notebook
+
+The owner began by thinking aloud about a new main part of Glaukopis, and
+settled what it is over a conversation in which the assistant proposed and
+the owner corrected. The owner's words, in their order:
+
+> I am contemplating a whole new main feature of Glaukopis: Notes. It is a place to collect your notes of things you may want to look at later. It may be something you read, some website, something in a social media post, just a thought or idea. It is not something you are necessarily thinking of as part of a project yet, or it may me something you think may be useful, but you don't know its place yet. The Mind Map can of course be used for that kind of notes too, but it enforces a kind of hierarchy which all things are not necessarilly ready for. It may be a place outside all the projects, or a place within each project, separate from its map. I am still only contemplating it. One association is the MS Office OneNote app. I do not want to mimick it, but some of the ease by which you can just throw everything into it without worring about finding it later, is what I am looking for.
+
+On the name, after *Scraps* in a *Scrapbook*, *Notisblokk* and *notis*, and
+a scratch pad had been weighed:
+
+> The problem with notes is not really the overlap. I don't think it would cause any confusion. The problem is rather that the type of "notes" people would put in the repository will probably be much more diverse than what we would call notes. That goes for all the other terms we have come up with also.
+
+Asking whether Glaukopis could take a screenshot and know its page:
+
+> If I go to nb.no and read a book, and want to take a screenshot from a book. Could Glaukopis have a screenshot function that would be able to know that the screenshot is from a browser, and record the webpage I took it from?
+
+The owner was told that only the browser knows the page, and that a plugin
+in the browser can say it. Then:
+
+> Let us just make it with "notebook" with "notes" in English and "notatblokk" with "notater" in Norwegian for now. I think perhaps the analogies will break, but there should be ways to organize the notes, but I am not sure how. I think perhaps it should be possible to put notes in different boxes, and to rearrange them. Annotate them and connect them. One should of course be able to write different kinds of notes, lists and plans. Perhaps tags is an idea? And of course import from other programs. I want the browser plugins.
+
+To the proposal that a note be an element, and the notebook a project of
+its own standing:
+
+> No, I don't think notes should be elements. A note can go in to become a reference, an image, a quote, worked into the text, copied into the library and probably many other things I have not thought about. Making it an element takes away some of the point with a separate notebook feature. Why not just make a notes project, then? We want tags. We support only Firefox for now. I don't want to pay a fee, as things are now.
+
+Asking for the plan to be gone through again with clear eyes:
+
+> The point is to have a way of collecting anything that turns up while studying or browsing the internet, or anything turninng up wile watching tv or reading a book, anyting while walking outside, taking a picture, making a drawing, whatever that you think you would like to keep for later. This repository of a mishmash of all kinds of things should then provide strategies for finding things, modifying them, organizing them, connecting them, perhaps even merging them into bigger wholes, or splitting them up into smaller units, but in the end, some of these collected items might turn out to be useful for a project, as any of the mentioned things, or other things I have not thought about yet. All this should be possible, while also keeping track of where everything comes from.
+
+Asked whether a link between two notes is enough for connecting them, and
+whether a folder that Glaukopis watches is enough for what is on a phone:
+
+> I like the idea of a surface to surface on which to arrange notes an look at them together, and then arrange them into units, or divide them, whatever seems right. I also like the idea of an app. But if we are having an app, it needs to be more than a notes collection app. It needs to at least be a project viewer. That imples a server, of course, which we have. I think a folder is not a good idea.
+
+And, when told what such an app would ask of the server:
+
+> No, we leave out the phone for now, as well as the app. Users will just have to get whatever they have on their phone on to the computer. From there they can add files or drag and drop them into Glaukopis. I see no need of a folder, agree?
+
+What this settles:
+
+- **A place of its own for what is collected**, with the ease of throwing
+  anything in: the **Notebook**, which holds **notes**; in Bokmål
+  **Notatblokk** and **notater**. The names are for now.
+- **A note is not an element, and the notebook is not a project.** A note
+  may become a reference, an image, a quotation, text, a file of the
+  library, and what nobody has thought of yet.
+- **Anything is collected**, and what is collected is found, changed,
+  organised, connected, joined into larger wholes and divided into smaller.
+- **Where everything comes from is kept**, through all of that.
+- **A surface** to arrange notes on, to look at them together, to make
+  units of them and to divide them. **Boxes**, and rearranging. **Tags**.
+- **Different kinds of notes, lists and plans**, and **import** from other
+  programs.
+- **A plugin for the browser**: Firefox only, for now. Nothing that costs a
+  fee, as things are now.
+- **No phone, no app and no watched folder**, for now: what is on a phone
+  is brought to the computer by its owner, and added as files or dropped.
+  An app, should it come, is to show projects as well, through the server.
+
+The plan is `docs/plans/the-notebook.md`. It says, beside what the owner
+decided, what the assistant proposed in the conversation and the owner has
+not yet confirmed. Nothing is built; each stage is given its record when it
+is.
