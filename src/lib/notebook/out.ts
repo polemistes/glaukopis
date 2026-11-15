@@ -279,6 +279,14 @@ async function madeReference(notebook: Notebook, source: Source): Promise<string
   }
 }
 
+/**
+ * Whether a picture is the notebook's and not yet among the library's
+ * files: one that went into a text before is listed by the library.
+ */
+function heldAlone(notebook: Notebook, hash: string): boolean {
+  return notebook.files.has(hash) && !files.get(hash);
+}
+
 /** The passages whose words the blocks hold, each once. */
 function passagesIn(blocks: Block[]): Set<string> {
   const out = new Set<string>();
@@ -405,7 +413,7 @@ async function arrival(
 ): Promise<Arrival> {
   const passages = passagesIn(blocks);
   const { cite, cited } = await citationsOf(notebook, passages);
-  const held = new Set([...picturesIn(blocks)].filter((h) => notebook.files.has(h)));
+  const held = new Set([...picturesIn(blocks)].filter((h) => heldAlone(notebook, h)));
   const failed = await picturesToLibrary(notebook, held);
   const converted = convertBlocks(withoutPictures(blocks, failed), cite, inline);
   const pictures = new Set([...held].filter((h) => !failed.has(h)));
@@ -455,7 +463,8 @@ export function holdsWhatNotesHold(slice: Slice, notebook: Notebook | null): boo
     if (found) return false;
     if (node.isText) found = node.marks.some((m) => m.type.name === 'taken');
     else if (node.type.name === 'file') found = true;
-    else if (node.type.name === 'figure') found = !!notebook?.files.has(node.attrs.file);
+    else if (node.type.name === 'figure')
+      found = !!notebook && heldAlone(notebook, node.attrs.file);
     return !found;
   });
   return found;
