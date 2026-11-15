@@ -117,6 +117,13 @@ keys-notebook-new = Et nytt notat
 keys-notebook-undo = Angre
 keys-notebook-redo = Gjør om
 keys-notebook-redo-y = Gjør om
+keys-notebook-join = Slå sammen notatene som er valgt
+keys-notebook-divide = Del notatet ved markøren, eller løft ut det som er merket
+keys-notebook-whole = Vis hele flaten
+keys-notebook-closer = Nærmere
+keys-notebook-farther = Lenger unna
+keys-notebook-go = Gå fra det ene kortet til det neste
+keys-notebook-open = Åpne notatet som er valgt
 keys-list-undo = Angre det som ble gjort med mapper og prosjekter
 keys-list-redo = Gjør om det som ble gjort med mapper og prosjekter
 

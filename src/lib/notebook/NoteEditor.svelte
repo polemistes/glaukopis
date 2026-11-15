@@ -3,7 +3,8 @@
    * The note chosen on the page of the notebook (record 0101): the tools of
    * writing with undo and redo, its name in one line, its text in the editor
    * of the texts, and under the text the sources of what it holds, each
-   * once, and what became of it.
+   * once, and what became of it. From stage 2: its tags under its name,
+   * Divide in its bar, and beside the surface an × that closes it.
    */
   import { untrack } from 'svelte';
   import BookMarked from '@lucide/svelte/icons/book-marked';
@@ -11,8 +12,10 @@
   import Globe from '@lucide/svelte/icons/globe';
   import MessageSquareQuote from '@lucide/svelte/icons/message-square-quote';
   import Redo2 from '@lucide/svelte/icons/redo-2';
+  import Scissors from '@lucide/svelte/icons/scissors';
   import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
   import Undo2 from '@lucide/svelte/icons/undo-2';
+  import X from '@lucide/svelte/icons/x';
   import type { TextHolder } from '$lib/editor/holder';
   import RichText from '$lib/editor/RichText.svelte';
   import WritingTools from '$lib/editor/WritingTools.svelte';
@@ -21,11 +24,13 @@
   import { projects } from '$lib/state/projects.svelte';
   import { router } from '$lib/state/router.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
+  import { divideAt, liftOut } from './dividing';
   import type { Notebook } from './model/notebook.svelte';
   import type { Source } from './model/types';
   import { chipsOf, wentLines, type SourceChip } from './page.svelte';
   import SourceDialog from './SourceDialog.svelte';
   import { sourceDetail, sourceLabel } from './sources';
+  import TagsField from './TagsField.svelte';
 
   interface Props {
     notebook: Notebook;
@@ -33,9 +38,13 @@
     id: string;
     /** Whether the note was just made: the cursor goes into its text. */
     fresh?: boolean;
+    /** Where the note stands beside the surface: an × at its head closes it, as Escape does. */
+    onclose?: () => void;
+    /** The note was divided: the new note. */
+    ondivided?: (id: string) => void;
   }
 
-  let { notebook, holder, id, fresh = false }: Props = $props();
+  let { notebook, holder, id, fresh = false, onclose, ondivided }: Props = $props();
 
   let scope = $state<HTMLElement>();
   let nameField = $state<HTMLInputElement>();
@@ -56,6 +65,9 @@
       if (now !== name.trim()) name = now;
     });
   });
+
+  /** Whether the text has the cursor: Divide is offered only then. */
+  let textFocused = $state(false);
 
   /** The source whose window is open: a chip pressed. */
   let opened = $state<{ source: Source | null } | null>(null);
@@ -89,9 +101,39 @@
   export function focusText() {
     text?.focus('end');
   }
+
+  /** Whether the note can be divided now: its text has the cursor. */
+  export function canDivide(): boolean {
+    return textFocused && !!text?.getView();
+  }
+
+  /**
+   * Divides the note: what is selected in its text lifted out into a note
+   * of its own, or with nothing selected, the note cut at the cursor. Gives
+   * the new note; none where nothing could be done.
+   */
+  export function divide(): string | null {
+    const view = text?.getView();
+    if (!view || !note) return null;
+    const made = view.state.selection.empty
+      ? divideAt(notebook, id, view)
+      : liftOut(notebook, id, view);
+    if (made) ondivided?.(made);
+    return made;
+  }
+
+  /** Escape closes the note beside the surface, where the cursor is not in its text. */
+  function onkeydown(event: KeyboardEvent) {
+    if (event.key !== 'Escape' || !onclose || event.defaultPrevented) return;
+    const target = event.target as HTMLElement | null;
+    if (target?.closest?.('.prose, [contenteditable="true"]')) return;
+    event.preventDefault();
+    onclose();
+  }
 </script>
 
-<div class="note" bind:this={scope} data-note-editor={id}>
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div class="note" bind:this={scope} data-note-editor={id} {onkeydown}>
   <div class="bar">
     <WritingTools project={null} {scope}>
       {#snippet middle()}
@@ -115,8 +157,27 @@
         >
           <Redo2 size={15} />
         </IconButton>
+        <!-- The text keeps the cursor: Divide acts where it is. -->
+        <IconButton
+          label={t('notebook-divide')}
+          shortcut={keysFor('notebook-divide')}
+          size="sm"
+          disabled={!textFocused}
+          data-divide
+          onmousedown={(e) => e.preventDefault()}
+          onclick={() => divide()}
+        >
+          <Scissors size={15} />
+        </IconButton>
       {/snippet}
     </WritingTools>
+    {#if onclose}
+      <span class="end">
+        <IconButton label={t('notebook-close-note')} size="sm" data-close-note onclick={onclose}>
+          <X size={15} />
+        </IconButton>
+      </span>
+    {/if}
   </div>
 
   <div class="scroller">
@@ -138,8 +199,30 @@
         }}
       />
 
+      {#if note}
+        <TagsField
+          tags={note.tags}
+          all={notebook.tags}
+          onadd={(tag) => {
+            notebook.checkpoint();
+            notebook.addTag([id], tag);
+            notebook.checkpoint();
+          }}
+          onremove={(tag) => {
+            notebook.checkpoint();
+            notebook.removeTag([id], tag);
+            notebook.checkpoint();
+          }}
+        />
+      {/if}
+
       {#if fragment}
-        <div class="text" data-note-text>
+        <div
+          class="text"
+          data-note-text
+          onfocusin={() => (textFocused = true)}
+          onfocusout={() => (textFocused = false)}
+        >
           <RichText
             bind:this={text}
             {holder}
@@ -218,10 +301,16 @@
   .bar {
     display: flex;
     align-items: center;
+    gap: 4px;
     flex: none;
     min-height: var(--bar-h);
     padding: 4px 12px;
     border-bottom: 1px solid var(--line);
+  }
+  .end {
+    display: inline-flex;
+    margin-left: auto;
+    flex: none;
   }
   .scroller {
     flex: 1;

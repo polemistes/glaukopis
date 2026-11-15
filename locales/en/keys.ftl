@@ -120,6 +120,13 @@ keys-notebook-new = A new note
 keys-notebook-undo = Undo
 keys-notebook-redo = Redo
 keys-notebook-redo-y = Redo
+keys-notebook-join = Join the notes selected
+keys-notebook-divide = Divide the note at the cursor, or lift out what is selected
+keys-notebook-whole = Show the whole surface
+keys-notebook-closer = Closer
+keys-notebook-farther = Farther
+keys-notebook-go = Go from one card to the next
+keys-notebook-open = Open the note chosen
 keys-list-undo = Undo what was done to folders and projects
 keys-list-redo = Redo what was done to folders and projects
 

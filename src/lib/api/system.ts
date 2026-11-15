@@ -211,8 +211,6 @@ export interface Settings {
   librarySideWidth: number;
   /** How wide the pane of what is selected in the library is, in pixels. */
   libraryDetailWidth: number;
-  /** How wide the list of notes of the notebook is, in pixels. */
-  notebookListWidth: number;
 }
 
 export const defaultSettings: Settings = {
@@ -257,7 +255,6 @@ export const defaultSettings: Settings = {
   projectsPaneWidth: 240,
   librarySideWidth: 224,
   libraryDetailWidth: 400,
-  notebookListWidth: 320,
 };
 
 /** A damaged file of settings, set aside at the start under its name with `.broken-<time>` added. */

@@ -5,7 +5,8 @@
    * what it holds, and a small picture of the first picture it holds. Only
    * the rows in view are drawn, as in the library's list, so that thousands
    * stay quick. A press chooses, Shift and Ctrl select more; the arrows,
-   * Home and End move; Delete deletes what is selected.
+   * Home and End move; Delete deletes what is selected. What is selected
+   * is dragged by its rows, onto a box (stage 2).
    */
   import ImageIcon from '@lucide/svelte/icons/image';
   import Paperclip from '@lucide/svelte/icons/paperclip';
@@ -13,8 +14,9 @@
   import Thumb from '$lib/files/Thumb.svelte';
   import { t } from '$lib/i18n';
   import { keyOf } from '$lib/shell/keys.svelte';
+  import { startDrag } from '$lib/ui/drag.svelte';
   import type { NoteRecord } from './model/types';
-  import { rowOf, type NoteSelection } from './page.svelte';
+  import { NOTES_DRAGGED, rowOf, type NoteSelection } from './page.svelte';
 
   interface Props {
     notes: NoteRecord[];
@@ -65,10 +67,29 @@
     viewport?.focus({ preventScroll: true });
   }
 
+  /** A note of several selected, pressed alone: chosen alone once the press is a click, not a drag. */
+  let pressedAlone: string | null = null;
+
   function onpointerdown(event: PointerEvent, id: string) {
     if (event.button !== 0) return;
     viewport?.focus({ preventScroll: true });
-    selection.press(id, event, order);
+    const plain = !event.shiftKey && !event.ctrlKey && !event.metaKey;
+    pressedAlone = plain && selection.has(id) && selection.ids.length > 1 ? id : null;
+    if (!pressedAlone) selection.press(id, event, order);
+    startDrag(event, () => {
+      const ids = order.filter((x) => selection.has(x));
+      if (!ids.length) return null;
+      const one = ids.length === 1 ? notes.find((n) => n.id === ids[0]) : undefined;
+      const label = one
+        ? rowOf(one).title || t('notebook-empty-note')
+        : t('notebook-selected', { count: ids.length });
+      return { kind: NOTES_DRAGGED, data: ids, label };
+    });
+  }
+
+  function onclick(id: string) {
+    if (pressedAlone === id) selection.only(id);
+    pressedAlone = null;
   }
 
   function oncontextmenu(event: MouseEvent, id: string) {
@@ -139,6 +160,7 @@
           data-note={note.id}
           style:height="{ROW}px"
           onpointerdown={(e) => onpointerdown(e, note.id)}
+          onclick={() => onclick(note.id)}
           oncontextmenu={(e) => oncontextmenu(e, note.id)}
         >
           <div class="text">

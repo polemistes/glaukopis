@@ -35,6 +35,13 @@ notebook-went-quotation = sitat
 notebook-went-figure = bilde
 notebook-went-reference = referanse
 notebook-went-file = fil
+notebook-shown-as = Vises som
+notebook-surface = Flate
+notebook-list = Liste
+notebook-close-note = Lukk notatet
+notebook-resize-column = Bredden på boksene
+notebook-resize-note = Bredden på notatet
+notebook-box-empty = Ingen notater i denne boksen
 
 ## Et notat og teksten i det
 
@@ -77,6 +84,35 @@ notebook-source-bring-back = Hent tilbake
 notebook-source-own-words = Mine egne ord
 
 ## Bokser og merkelapper
+
+notebook-all-notes = Alle notater
+notebook-boxes = Bokser
+notebook-box-unsorted = Usortert
+notebook-box-new = Ny boks
+notebook-box-name = Navn på boksen
+notebook-box-delete-title = Slette { $name }?
+notebook-box-delete-message = { $count ->
+    [one] Notatet i den går til { $first }.
+   *[other] De { $count } notatene i den går til { $first }.
+}
+notebook-move-to = Flytt til
+notebook-tags = Merkelapper
+notebook-tag-name = Navn på merkelappen
+notebook-tag-remove = Fjern fra alle notater
+notebook-tag-remove-title = Fjerne { $tag } fra alle notater?
+notebook-tag-remove-message = { $count ->
+    [one] Ett notat har den.
+   *[other] { $count } notater har den.
+}
+notebook-tag-merge-title = Gi { $from } navnet { $to }?
+notebook-tag-merge-message = { $from } og { $to } blir én merkelapp.
+notebook-tags-off = Vis alle, uansett merkelapper
+notebook-tag-add = Legg til en merkelapp
+notebook-tag-take-away = Fjern { $tag }
+notebook-tags-offered = Merkelapper
+notebook-join = Slå sammen
+notebook-joined = { $count } notater er slått sammen
+notebook-divide = Del
 
 ## Flaten
 

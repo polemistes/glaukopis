@@ -1,16 +1,30 @@
 /**
  * The logic of the page of the notebook (record 0101), apart from its
  * markup: which notes are selected, what a row of the list says of a note,
- * the sources of what a note holds and how one is given or changed, and
- * what became of a note, a line to each project and kind.
+ * the sources of what a note holds and how one is given or changed, what
+ * became of a note, a line to each project and kind; and from stage 2 what
+ * is in view (a box or all notes, the tags that are on), the order notes
+ * are joined in, and the tags offered as a tag is typed.
  */
 
 import type { ProjectInfo } from '$lib/api/projects';
-import { languages } from '$lib/i18n';
+import { languages, t } from '$lib/i18n';
 import { nowIso } from '$lib/project/model/origins';
 import type { Notebook } from './model/notebook.svelte';
+import { FIRST_BOX } from './model/boxes';
 import { metOf } from './model/pieces';
-import type { NewSource, NoteRecord, Passage, Source, SourceChange, Went } from './model/types';
+import { cleanTag } from './model/tags';
+import type {
+  BoxRecord,
+  NewSource,
+  NoteRecord,
+  Passage,
+  Point,
+  Source,
+  SourceChange,
+  TagCount,
+  Went,
+} from './model/types';
 
 // =====================================================================
 // The rows of the list
@@ -373,4 +387,115 @@ export function wentLines(went: Went[], projects: ProjectInfo[]): WentLine[] {
     else lines.set(key, line);
   }
   return [...lines.values()];
+}
+
+// =====================================================================
+// What is in view: a box or all notes, and the tags that are on
+// =====================================================================
+
+/** What notes are dragged as, from the list onto a box: their ids, in the order they stand. */
+export const NOTES_DRAGGED = 'notebook-notes';
+
+/** What a box is called: its name, or for the first while it has none, Unsorted. Reactive, as `t` is. */
+export function boxName(box: Pick<BoxRecord, 'id' | 'name'>): string {
+  return box.name || (box.id === FIRST_BOX ? t('notebook-box-unsorted') : '');
+}
+
+/** The box in view: the one kept, where it is still there; the first where it is gone; none for all notes. */
+export function boxInView(kept: string | null, boxes: readonly BoxRecord[]): string | null {
+  if (kept === null) return null;
+  return boxes.some((b) => b.id === kept) ? kept : FIRST_BOX;
+}
+
+/** The tags that are on and that some note still has. */
+export function tagsInView(on: readonly string[], tags: readonly TagCount[]): string[] {
+  return on.filter((tag) => tags.some((t) => t.tag === tag));
+}
+
+/** The tags that are on once a tag is pressed: on where it was off, off where it was on. */
+export function toggledTag(on: readonly string[], tag: string): string[] {
+  return on.includes(tag) ? on.filter((t) => t !== tag) : [...on, tag];
+}
+
+/** The tags that are on once one is renamed: the new name in the place of the old, once. */
+export function renamedTag(on: readonly string[], from: string, to: string): string[] {
+  if (!on.includes(from)) return [...on];
+  const out = on.map((t) => (t === from ? to : t));
+  return out.filter((t, i) => out.indexOf(t) === i);
+}
+
+/**
+ * The box a box is to be put before, dropped on a row: before that row, or
+ * after it where the pointer is in its lower half; none for the end. The
+ * first box stays first: what is dropped on it goes after it.
+ */
+export function dropBefore(
+  boxes: readonly string[],
+  target: string,
+  lower: boolean,
+): string | null {
+  const at = boxes.indexOf(target);
+  if (at < 0) return null;
+  if (!lower && at > 0) return target;
+  return boxes[at + 1] ?? null;
+}
+
+// =====================================================================
+// The order of joining
+// =====================================================================
+
+/** How near the tops of two cards are, in pixels of the surface, for them to stand in one line. */
+export const SAME_LINE = 40;
+
+/**
+ * Notes on a surface in the order they are read: by their places, top to
+ * bottom, then left to right, cards whose tops are within `SAME_LINE` of
+ * the first card of a line standing in that line; after them the notes not
+ * yet put, as the strip has them (in the order given).
+ */
+export function readingOrder(notes: readonly Pick<NoteRecord, 'id' | 'at'>[]): string[] {
+  const put = notes
+    .filter((n): n is Pick<NoteRecord, 'id'> & { at: Point } => !!n.at)
+    .sort((a, b) => a.at.y - b.at.y || a.at.x - b.at.x);
+  const lines: (typeof put)[] = [];
+  for (const n of put) {
+    const line = lines[lines.length - 1];
+    if (line && n.at.y - line[0].at.y <= SAME_LINE) line.push(n);
+    else lines.push([n]);
+  }
+  const read = lines.flatMap((line) => line.sort((a, b) => a.at.x - b.at.x || a.at.y - b.at.y));
+  return [...read.map((n) => n.id), ...notes.filter((n) => !n.at).map((n) => n.id)];
+}
+
+/** Notes in the order they stand in a list, top first: those of `ids` that are in it. */
+export function inListOrder(order: readonly string[], ids: readonly string[]): string[] {
+  const wanted = new Set(ids);
+  return order.filter((id) => wanted.has(id));
+}
+
+// =====================================================================
+// The field of the tags of a note
+// =====================================================================
+
+/** How many tags the field offers at most. */
+export const OFFERED = 8;
+
+/**
+ * The tags offered as a tag is typed: those there are, and the note has
+ * not, that begin with what is typed, then those that hold it, each as
+ * words are sorted; none where nothing is typed. Case is not minded.
+ */
+export function offeredTags(
+  tags: readonly TagCount[],
+  typed: string,
+  has: readonly string[],
+  max = OFFERED,
+): string[] {
+  const q = cleanTag(typed).toLocaleLowerCase();
+  if (!q) return [];
+  const free = tags.map((t) => t.tag).filter((t) => !has.includes(t));
+  const low = (t: string) => t.toLocaleLowerCase();
+  const begins = free.filter((t) => low(t).startsWith(q));
+  const holds = free.filter((t) => !low(t).startsWith(q) && low(t).includes(q));
+  return [...begins, ...holds].slice(0, max);
 }
