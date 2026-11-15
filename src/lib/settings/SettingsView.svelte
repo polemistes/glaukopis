@@ -57,6 +57,7 @@
   import StructureSample from './StructureSample.svelte';
   import SpellingSettings from '$lib/spelling/SpellingSettings.svelte';
   import WordsSettings from '$lib/words/WordsSettings.svelte';
+  import FirefoxSettings from '$lib/notebook/FirefoxSettings.svelte';
 
   let system = $state<SystemInfo | null>(null);
   let tools = $state<ToolsInfo | null>(null);
@@ -625,6 +626,11 @@
           {t('settings-look-again')}
         </Button>
       </div>
+    </section>
+
+    <section data-firefox>
+      <h2>{t('settings-firefox')}</h2>
+      <FirefoxSettings />
     </section>
 
     <section data-translation-project>
