@@ -85,6 +85,18 @@ function partOf(child: Y.XmlElement): Part {
   return { kind: 'own', blocks };
 }
 
+/** Whether a text holds nothing but empty paragraphs. */
+export function holdsNothing(fragment: Y.XmlFragment): boolean {
+  return fragment
+    .toArray()
+    .every(
+      (c) =>
+        c instanceof Y.XmlElement &&
+        c.nodeName === 'paragraph' &&
+        c.toArray().every((t) => t instanceof Y.XmlText && !t.toString().trim()),
+    );
+}
+
 /** The pieces of a note's text, in the order they stand. */
 export function piecesOf(fragment: Y.XmlFragment | null | undefined): Piece[] {
   if (!fragment) return [];

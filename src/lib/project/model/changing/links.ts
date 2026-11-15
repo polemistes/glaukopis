@@ -1,7 +1,8 @@
 /**
  * Associations between elements, with the words that name them, an arrow
  * and a colour. These are methods of `Project`, which takes them in (see
- * there).
+ * there); those that change a link once it is made are the notebook's too,
+ * whose links between notes are the same thing.
  *
  * In the document a link is a map of `from`, `to`, and where they are given
  * `label` (its words, in lines), `arrow` (`to`, `from` or `both`; absent for
@@ -72,9 +73,15 @@ export function lookOf(l: LinkLook): LinkLook {
   return look;
 }
 
+/** What holds links as a project does: the map of them, and a way to change it as one step. */
+export interface LinkHolder {
+  readonly yLinks: Y.Map<Y.Map<unknown>>;
+  transact<T>(change: () => T): T;
+}
+
 /** Makes a link, with its words, arrow and colour where they are given. */
 export function makeLink(
-  p: Project,
+  p: Pick<LinkHolder, 'yLinks'>,
   from: string,
   to: string,
   look: Partial<LinkLook> = {},
@@ -93,24 +100,15 @@ export function makeLink(
   return id;
 }
 
-export const linkChanges = {
-  /** Associates two elements. Returns the id of the link, or of the one that was there, whichever way it was drawn. */
-  addLink(this: Project, from: string, to: string): string | null {
-    if (from === to || !this.yNodes.has(from) || !this.yNodes.has(to)) return null;
-    const existing = this.links.find(
-      (l) => (l.from === from && l.to === to) || (l.from === to && l.to === from),
-    );
-    if (existing) return existing.id;
-    return this.transact(() => makeLink(this, from, to));
-  },
-
-  removeLink(this: Project, id: string) {
+/** What changes a link once it is made, in whatever holds links: a project, or the notebook. */
+export const linkLookChanges = {
+  removeLink(this: LinkHolder, id: string) {
     if (!this.yLinks.has(id)) return;
     this.transact(() => this.yLinks.delete(id));
   },
 
   /** Gives an association its words, cleaned as `cleanLinkLabel` says; none where nothing is left. */
-  setLinkLabel(this: Project, id: string, label: string) {
+  setLinkLabel(this: LinkHolder, id: string, label: string) {
     const l = this.yLinks.get(id);
     if (!l) return;
     const clean = cleanLinkLabel(label);
@@ -122,7 +120,7 @@ export const linkChanges = {
   },
 
   /** Gives an association an arrow, or none. */
-  setLinkArrow(this: Project, id: string, arrow: LinkArrow | null) {
+  setLinkArrow(this: LinkHolder, id: string, arrow: LinkArrow | null) {
     const l = this.yLinks.get(id);
     if (!l) return;
     const value = linkArrow(arrow);
@@ -134,7 +132,7 @@ export const linkChanges = {
   },
 
   /** Gives an association one of the colours of kinds, by its name, or none for its gold. */
-  setLinkColour(this: Project, id: string, colour: string | null) {
+  setLinkColour(this: LinkHolder, id: string, colour: string | null) {
     const l = this.yLinks.get(id);
     if (!l) return;
     const value = linkColour(colour);
@@ -144,4 +142,17 @@ export const linkChanges = {
       else l.delete('colour');
     });
   },
+};
+
+export const linkChanges = {
+  /** Associates two elements. Returns the id of the link, or of the one that was there, whichever way it was drawn. */
+  addLink(this: Project, from: string, to: string): string | null {
+    if (from === to || !this.yNodes.has(from) || !this.yNodes.has(to)) return null;
+    const existing = this.links.find(
+      (l) => (l.from === from && l.to === to) || (l.from === to && l.to === from),
+    );
+    if (existing) return existing.id;
+    return this.transact(() => makeLink(this, from, to));
+  },
+  ...linkLookChanges,
 };

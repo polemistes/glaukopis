@@ -4,36 +4,62 @@
  * project in small (`project/model/project.svelte.ts`): made, read,
  * undone, saved, loaded and passed between windows as a project is.
  *
- * Four parts stand at its top: `notes`, by id, each a map with its text
+ * Six parts stand at its top: `notes`, by id, each a map with its text
  * (`body`, written in the editor of the texts), its `name`, when it was
- * collected (`made`) and what became of pieces of it (`went`); `sources`,
- * by id, plain records; `passages`, by id, where words taken in came from
- * and how they read when they were taken; and `files`, by the hash of a
- * file a note holds, what it is called and where it came from.
+ * collected (`made`), what became of pieces of it (`went`), its `box`,
+ * where its card lies on the surface of the box (`at`) and how wide it is
+ * (`width`), and its `tags`; `sources`, by id, plain records; `passages`,
+ * by id, where words taken in came from and how they read when they were
+ * taken; `files`, by the hash of a file a note holds, what it is called and
+ * where it came from; `boxes`, by id, what notes lie in (`boxes.ts`); and
+ * `links`, by id, between notes, as a project's (`links.ts`).
+ *
+ * What changes boxes, places, tags and links, and joins notes, stands in
+ * modules of its own beside this, as a project's changes stand in
+ * `changing/`, and is taken in below.
  *
  * Nothing outside this writes to the document, except the editors, which
  * write the text of notes through y-prosemirror.
  */
 
+import type { Node as PMNode } from 'prosemirror-model';
 import { SvelteMap } from 'svelte/reactivity';
 import * as Y from 'yjs';
-import { ySyncPluginKey } from 'y-prosemirror';
+import { prosemirrorToYXmlFragment, ySyncPluginKey } from 'y-prosemirror';
 import { Awareness } from 'y-protocols/awareness';
 import type { NotebookSummary } from '$lib/api/notebook';
 import { widthFor } from '$lib/editor/commands';
 import { LOAD, LOCAL, WINDOW, nowIso, str } from '$lib/project/model/origins';
 import { Saving, type Persistence, type SaveStatus } from '$lib/project/model/saving.svelte';
+import type { LinkRecord } from '$lib/project/model/types';
 import { newId } from '$lib/util/id';
+import { boxChanges, boxesOf, FIRST_BOX } from './boxes';
+import { joinChanges } from './joining';
+import { linksOf, linksTouching, noteLinkChanges } from './links';
 import { bringBack, readsNow, unmark } from './marks';
-import { beginsOf, holdsOf, metOf, pictureOf, piecesOf, wordsOf, type Met } from './pieces';
+import {
+  beginsOf,
+  holdsNothing,
+  holdsOf,
+  metOf,
+  pictureOf,
+  piecesOf,
+  wordsOf,
+  type Met,
+} from './pieces';
+import { cardWidth, placeChanges, pointOf, widthOf } from './places';
+import { cleanTag, TagCounts, tagChanges, tagsIn } from './tags';
 import type {
+  BoxRecord,
   HeldFile,
   NewSource,
   NoteRecord,
   Passage,
   Piece,
+  Point,
   Source,
   SourceChange,
+  TagCount,
   Went,
 } from './types';
 
@@ -164,18 +190,6 @@ function hashesIn(parent: Y.XmlElement | Y.XmlFragment, into: Set<string>) {
   }
 }
 
-/** Whether a text holds nothing but empty paragraphs. */
-function holdsNothing(fragment: Y.XmlFragment): boolean {
-  return fragment
-    .toArray()
-    .every(
-      (c) =>
-        c instanceof Y.XmlElement &&
-        c.nodeName === 'paragraph' &&
-        c.toArray().every((t) => t instanceof Y.XmlText && !t.toString().trim()),
-    );
-}
-
 /** What is kept of a note as it was last read, beside its record. */
 interface Reading {
   pieces: Piece[];
@@ -183,12 +197,36 @@ interface Reading {
   hashes: Set<string>;
 }
 
+/** What a note is made with, beside its text. */
+export interface NewNote {
+  name?: string;
+  /** When it was collected; now, to the thousandth of a second, where none is given. */
+  made?: string;
+  /** Its box; the first where none is given, or the box is not there. */
+  box?: string;
+  tags?: string[];
+  at?: Point | null;
+  width?: number | null;
+}
+
+type BoxChanges = typeof boxChanges;
+type PlaceChanges = typeof placeChanges;
+type TagChanges = typeof tagChanges;
+type NoteLinkChanges = typeof noteLinkChanges;
+type JoinChanges = typeof joinChanges;
+
+/** What changes boxes, places, tags and links, and joins notes, in modules beside this: its methods, which it takes in below. */
+export interface Notebook
+  extends BoxChanges, PlaceChanges, TagChanges, NoteLinkChanges, JoinChanges {}
+
 export class Notebook {
   readonly doc: Y.Doc;
   readonly yNotes: Y.Map<YNote>;
   readonly ySources: Y.Map<unknown>;
   readonly yPassages: Y.Map<StoredPassage>;
   readonly yFiles: Y.Map<StoredFile>;
+  readonly yBoxes: Y.Map<Y.Map<unknown>>;
+  readonly yLinks: Y.Map<Y.Map<unknown>>;
   readonly undoManager: Y.UndoManager;
   /** Who is in the texts: nobody else is ever there, but the editor asks. */
   readonly awareness: Awareness;
@@ -198,6 +236,12 @@ export class Notebook {
   readonly sources = new SvelteMap<string, Source>();
   readonly passages = new SvelteMap<string, Passage>();
   readonly files = new SvelteMap<string, HeldFile>();
+  /** The boxes: the first, then the rest in their order. */
+  boxes = $state.raw<BoxRecord[]>(boxesOf(new Y.Map()));
+  /** The links between notes that are there, by their ids. */
+  links = $state.raw<LinkRecord[]>([]);
+  /** Every tag any note has, with how many notes have it, sorted as words are. */
+  tags = $state.raw<TagCount[]>([]);
   /** Rises with every change to the notebook, whoever made it. */
   revision = $state(0);
   canUndo = $state(false);
@@ -207,6 +251,7 @@ export class Notebook {
   readonly #told: NotebookTold;
   /** For each note, what was read of it beside its record. */
   #readings = new Map<string, Reading>();
+  #tagCounts = new TagCounts();
   #closed = false;
 
   constructor(persistence: NotebookPersistence | null = null, told: NotebookTold = {}) {
@@ -215,6 +260,8 @@ export class Notebook {
     this.ySources = this.doc.getMap('sources');
     this.yPassages = this.doc.getMap('passages');
     this.yFiles = this.doc.getMap('files');
+    this.yBoxes = this.doc.getMap('boxes');
+    this.yLinks = this.doc.getMap('links');
     this.awareness = new Awareness(this.doc);
     this.#told = told;
     this.#saving = new Saving<NotebookSummary>(persistence, {
@@ -226,7 +273,7 @@ export class Notebook {
     });
 
     this.undoManager = new Y.UndoManager(
-      [this.yNotes, this.ySources, this.yPassages, this.yFiles],
+      [this.yNotes, this.ySources, this.yPassages, this.yFiles, this.yBoxes, this.yLinks],
       { trackedOrigins: new Set<unknown>([LOCAL, ySyncPluginKey]), captureTimeout: 600 },
     );
     const stacks = () => {
@@ -239,19 +286,48 @@ export class Notebook {
 
     this.yNotes.observeDeep((events) => {
       const touched = new Set<string>();
+      /** The notes whose text changed, or that came or went: read whole; the rest only for what stands beside their text. */
+      const texts = new Set<string>();
+      let comeOrGone = false;
       let local = false;
       for (const event of events) {
         local ||= event.transaction.local && event.transaction.origin !== WINDOW;
-        if (event.target === this.yNotes)
-          for (const key of (event as Y.YMapEvent<unknown>).keysChanged) touched.add(key);
-        else {
-          const id = this.#noteOf(event.target);
-          if (id) touched.add(id);
+        if (event.target === this.yNotes) {
+          comeOrGone = true;
+          for (const key of (event as Y.YMapEvent<unknown>).keysChanged) {
+            touched.add(key);
+            texts.add(key);
+          }
+          continue;
         }
+        const where = this.#whereIn(event.target);
+        if (!where) continue;
+        touched.add(where.note);
+        if (
+          where.part === 'body' ||
+          (where.part === null && (event as Y.YMapEvent<unknown>).keysChanged.has('body'))
+        )
+          texts.add(where.note);
       }
-      for (const id of touched) this.#readNote(id);
-      if (local) this.#enterFiles(touched);
+      for (const id of touched) this.#readNote(id, texts.has(id));
+      this.#tagsRead();
+      if (comeOrGone) this.#readLinks();
+      if (local) this.#enterFiles(texts);
     });
+    this.yBoxes.observeDeep((events) => {
+      this.boxes = boxesOf(this.yBoxes);
+      // A box come or gone: the notes said to lie in it lie in it, or in the first.
+      const changed = new Set<string>();
+      for (const event of events)
+        if (event.target === this.yBoxes)
+          for (const key of (event as Y.YMapEvent<unknown>).keysChanged) changed.add(key);
+      if (!changed.size) return;
+      for (const [id, n] of this.yNotes) {
+        const box = n.get('box');
+        if (typeof box === 'string' && changed.has(box)) this.#readNote(id, false);
+      }
+    });
+    this.yLinks.observeDeep(() => this.#readLinks());
     this.ySources.observe((event) => {
       for (const id of event.keysChanged) {
         const source = sourceOf(id, this.ySources.get(id));
@@ -381,9 +457,23 @@ export class Notebook {
     for (const id of this.yPassages.keys()) this.#readPassage(id);
     this.files.clear();
     for (const hash of this.yFiles.keys()) this.#readFile(hash);
+    this.boxes = boxesOf(this.yBoxes);
     this.notes.clear();
     this.#readings.clear();
+    this.#tagCounts.clear();
     for (const id of this.yNotes.keys()) this.#readNote(id);
+    this.#tagsRead();
+    this.#readLinks();
+  }
+
+  #readLinks() {
+    this.links = linksOf(this.yLinks, this.yNotes);
+  }
+
+  /** The list of tags made anew, where the tags of a note changed. */
+  #tagsRead() {
+    const list = this.#tagCounts.takeList();
+    if (list) this.tags = list;
   }
 
   #readPassage(id: string) {
@@ -412,12 +502,21 @@ export class Notebook {
       });
   }
 
-  /** The note a part of the document stands in, found by going up from it. */
-  #noteOf(type: Y.AbstractType<unknown>): string | null {
+  /**
+   * The note a part of the document stands in, found by going up from it,
+   * and the part of the note it is or stands in (`body`, `tags`, `went`):
+   * none where it is the note itself.
+   */
+  #whereIn(type: Y.AbstractType<unknown>): { note: string; part: string | null } | null {
     let at: Y.AbstractType<unknown> = type;
+    let part: string | null = null;
     while (at._item) {
       const parent = at._item.parent as Y.AbstractType<unknown>;
-      if (parent === this.yNotes) return at._item.parentSub;
+      if (parent === this.yNotes) {
+        const note = at._item.parentSub;
+        return note ? { note, part } : null;
+      }
+      part = at._item.parentSub;
       at = parent;
     }
     return null;
@@ -436,32 +535,56 @@ export class Notebook {
     return out;
   }
 
-  #readNote(id: string) {
+  /**
+   * Reads a note into its record. With `text` false, where it was read
+   * before, its text is not read again: only what stands beside it.
+   */
+  #readNote(id: string, text = true) {
     const n = this.yNotes.get(id);
+    const before = this.notes.get(id);
     if (!(n instanceof Y.Map)) {
+      if (before) this.#tagCounts.change(before.tags, []);
       this.notes.delete(id);
       this.#readings.delete(id);
       return;
     }
-    const body = n.get('body');
-    const fragment = body instanceof Y.XmlFragment ? body : null;
-    const pieces = piecesOf(fragment);
-    const met = metOf(pieces);
-    const hashes = new Set<string>();
-    if (fragment) hashesIn(fragment, hashes);
-    this.#readings.set(id, { pieces, met, hashes });
+    let read: Pick<NoteRecord, 'pieces' | 'begins' | 'holds' | 'sources' | 'picture'>;
+    if (!text && before && this.#readings.has(id)) read = before;
+    else {
+      const body = n.get('body');
+      const fragment = body instanceof Y.XmlFragment ? body : null;
+      const pieces = piecesOf(fragment);
+      const met = metOf(pieces);
+      const hashes = new Set<string>();
+      if (fragment) hashesIn(fragment, hashes);
+      this.#readings.set(id, { pieces, met, hashes });
+      read = {
+        pieces,
+        begins: beginsOf(pieces),
+        holds: holdsOf(pieces),
+        sources: this.#sourcesOf(met),
+        picture: pictureOf(pieces),
+      };
+    }
     const went = n.get('went');
     const name = str(n.get('name'));
+    const box = n.get('box');
+    const tags = tagsIn(n);
+    this.#tagCounts.change(before?.tags ?? [], tags);
     this.notes.set(id, {
       id,
       name,
       made: str(n.get('made')),
-      pieces,
-      words: wordsOf(pieces, name),
-      begins: beginsOf(pieces),
-      holds: holdsOf(pieces),
-      sources: this.#sourcesOf(met),
-      picture: pictureOf(pieces),
+      pieces: read.pieces,
+      words: wordsOf(read.pieces, name),
+      begins: read.begins,
+      holds: read.holds,
+      sources: read.sources,
+      picture: read.picture,
+      box: typeof box === 'string' && this.yBoxes.has(box) ? box : FIRST_BOX,
+      at: pointOf(n.get('at')),
+      width: widthOf(n.get('width')),
+      tags,
       went:
         went instanceof Y.Array
           ? (went.toArray() as unknown[]).flatMap((w) => {
@@ -532,11 +655,20 @@ export class Notebook {
     );
   }
 
-  /** The notes whose words hold every word of what is asked, the newest first; all of them where nothing is. */
-  find(query: string): NoteRecord[] {
+  /**
+   * The notes whose words hold every word of what is asked, the newest
+   * first; all of them where nothing is. Within a box where one is given,
+   * and having every tag given.
+   */
+  find(query: string, within: { box?: string | null; tags?: string[] } = {}): NoteRecord[] {
     const words = query.toLowerCase().split(/\s+/).filter(Boolean);
-    const list = this.list;
-    return words.length ? list.filter((n) => words.every((w) => n.words.includes(w))) : list;
+    const { box = null, tags = [] } = within;
+    return this.list.filter(
+      (n) =>
+        (box === null || n.box === box) &&
+        tags.every((t) => n.tags.includes(t)) &&
+        words.every((w) => n.words.includes(w)),
+    );
   }
 
   note(id: string): NoteRecord | undefined {
@@ -554,7 +686,7 @@ export class Notebook {
    * When it was made is kept to the thousandth of a second, so that notes
    * made one right after another stand in the order they were made.
    */
-  addNote(options: { name?: string; made?: string } = {}): string {
+  addNote(options: NewNote = {}): string {
     const id = newId();
     this.transact(() => {
       const n = new Y.Map<unknown>();
@@ -562,17 +694,44 @@ export class Notebook {
       n.set('body', body);
       n.set('made', options.made ?? new Date().toISOString());
       n.set('went', new Y.Array());
+      const tags = new Y.Map<boolean>();
+      for (const tag of options.tags ?? []) {
+        const clean = cleanTag(tag);
+        if (clean) tags.set(clean, true);
+      }
+      n.set('tags', tags);
       if (options.name?.trim()) n.set('name', options.name.trim());
+      if (options.box && options.box !== FIRST_BOX && this.yBoxes.has(options.box))
+        n.set('box', options.box);
+      const at = pointOf(options.at);
+      if (at) n.set('at', { x: Math.round(at.x), y: Math.round(at.y) });
+      if (typeof options.width === 'number' && Number.isFinite(options.width))
+        n.set('width', cardWidth(options.width));
       this.yNotes.set(id, n);
       paragraphWith(body, '', null);
     });
     return id;
   }
 
+  /** Deletes notes, and their links with them. */
   deleteNotes(ids: string[]) {
     this.transact(() => {
+      for (const link of linksTouching(this.yLinks, new Set(ids))) this.yLinks.delete(link);
       for (const id of ids) this.yNotes.delete(id);
     });
+  }
+
+  /**
+   * Makes the text of a note that is still empty what a document of the
+   * editor of the texts holds, as a note divided from another is filled.
+   * Gives whether it was filled: not where the note is not there, or holds
+   * something already.
+   */
+  fillFrom(id: string, doc: PMNode): boolean {
+    const fragment = this.fragment(id);
+    if (!fragment || !holdsNothing(fragment)) return false;
+    this.transact(() => prosemirrorToYXmlFragment(doc, fragment));
+    return true;
   }
 
   /** Names a note; with nothing, it has no name, and is shown by how it begins. */
@@ -800,6 +959,11 @@ export class Notebook {
     return this.doc.transact(change, LOCAL);
   }
 
+  /** What is changed after this is a step of undo of its own, apart from what was changed before. */
+  checkpoint() {
+    this.undoManager.stopCapturing();
+  }
+
   undo() {
     this.undoManager.undo();
   }
@@ -808,3 +972,12 @@ export class Notebook {
     this.undoManager.redo();
   }
 }
+
+Object.assign(
+  Notebook.prototype,
+  boxChanges,
+  placeChanges,
+  tagChanges,
+  noteLinkChanges,
+  joinChanges,
+);
