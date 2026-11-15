@@ -237,7 +237,7 @@ export class Notebook {
   readonly passages = new SvelteMap<string, Passage>();
   readonly files = new SvelteMap<string, HeldFile>();
   /** The boxes: the first, then the rest in their order. */
-  boxes = $state.raw<BoxRecord[]>(boxesOf(new Y.Map()));
+  boxes = $state.raw<BoxRecord[]>([{ id: FIRST_BOX, name: '', order: '' }]);
   /** The links between notes that are there, by their ids. */
   links = $state.raw<LinkRecord[]>([]);
   /** Every tag any note has, with how many notes have it, sorted as words are. */
