@@ -12,7 +12,10 @@
  * by id, where words taken in came from and how they read when they were
  * taken; `files`, by the hash of a file a note holds, what it is called and
  * where it came from; `boxes`, by id, what notes lie in (`boxes.ts`); and
- * `links`, by id, between notes, as a project's (`links.ts`).
+ * `links`, by id, between notes, as a project's (`links.ts`). From stage 4
+ * a seventh: `starts`, the starting texts of new notes (`starts.ts`); a
+ * note taken in from elsewhere says it has not been looked at (`seen`),
+ * and a file what was read in it (`text`).
  *
  * What changes boxes, places, tags and links, and joins notes, stands in
  * modules of its own beside this, as a project's changes stand in
@@ -49,6 +52,7 @@ import {
   type Met,
 } from './pieces';
 import { cardWidth, placeChanges, pointOf, widthOf } from './places';
+import { startChanges, startsOf } from './starts';
 import { cleanTag, TagCounts, tagChanges, tagsIn } from './tags';
 import type {
   BoxRecord,
@@ -60,6 +64,7 @@ import type {
   Point,
   Source,
   SourceChange,
+  StartRecord,
   TagCount,
   Went,
 } from './types';
@@ -220,6 +225,8 @@ export interface NewNote {
   tags?: string[];
   at?: Point | null;
   width?: number | null;
+  /** False for a note taken in from elsewhere, which has not been looked at. */
+  seen?: boolean;
 }
 
 type BoxChanges = typeof boxChanges;
@@ -227,10 +234,11 @@ type PlaceChanges = typeof placeChanges;
 type TagChanges = typeof tagChanges;
 type NoteLinkChanges = typeof noteLinkChanges;
 type JoinChanges = typeof joinChanges;
+type StartChanges = typeof startChanges;
 
 /** What changes boxes, places, tags and links, and joins notes, in modules beside this: its methods, which it takes in below. */
 export interface Notebook
-  extends BoxChanges, PlaceChanges, TagChanges, NoteLinkChanges, JoinChanges {}
+  extends BoxChanges, PlaceChanges, TagChanges, NoteLinkChanges, JoinChanges, StartChanges {}
 
 export class Notebook {
   readonly doc: Y.Doc;
@@ -240,6 +248,7 @@ export class Notebook {
   readonly yFiles: Y.Map<StoredFile>;
   readonly yBoxes: Y.Map<Y.Map<unknown>>;
   readonly yLinks: Y.Map<Y.Map<unknown>>;
+  readonly yStarts: Y.Map<Y.Map<unknown>>;
   readonly undoManager: Y.UndoManager;
   /** Who is in the texts: nobody else is ever there, but the editor asks. */
   readonly awareness: Awareness;
@@ -253,6 +262,8 @@ export class Notebook {
   boxes = $state.raw<BoxRecord[]>([{ id: FIRST_BOX, name: '', order: '' }]);
   /** The links between notes that are there, by their ids. */
   links = $state.raw<LinkRecord[]>([]);
+  /** The starting texts of new notes, in their order. */
+  starts = $state.raw<StartRecord[]>([]);
   /** Every tag any note has, with how many notes have it, sorted as words are. */
   tags = $state.raw<TagCount[]>([]);
   /** Rises with every change to the notebook, whoever made it. */
@@ -354,6 +365,9 @@ export class Notebook {
       }
     });
     this.yLinks.observeDeep(() => this.#readLinks());
+    this.yStarts = this.doc.getMap('starts');
+    this.undoManager.addToScope(this.yStarts);
+    this.yStarts.observeDeep(() => (this.starts = startsOf(this.yStarts)));
     this.ySources.observe((event) => {
       for (const id of event.keysChanged) {
         const source = sourceOf(id, this.ySources.get(id));
@@ -496,6 +510,7 @@ export class Notebook {
     for (const id of this.yNotes.keys()) this.#readNote(id);
     this.#tagsRead();
     this.#readLinks();
+    this.starts = startsOf(this.yStarts);
   }
 
   #readLinks() {
@@ -531,6 +546,7 @@ export class Notebook {
         source: typeof f.source === 'string' && f.source ? f.source : null,
         taken: str(f.taken),
         ...(typeof f.madeFrom === 'string' && f.madeFrom ? { madeFrom: f.madeFrom } : {}),
+        ...(typeof f.text === 'string' ? { text: f.text } : {}),
       });
   }
 
@@ -608,7 +624,7 @@ export class Notebook {
       name,
       made: str(n.get('made')),
       pieces: read.pieces,
-      words: wordsOf(read.pieces, name),
+      words: this.#wordsOf(id, read.pieces, name),
       begins: read.begins,
       holds: read.holds,
       sources: read.sources,
@@ -624,10 +640,26 @@ export class Notebook {
               return read ? [read] : [];
             })
           : [],
+      seen: n.get('seen') !== false,
     });
   }
 
-  /** Passages or files were changed: the notes that hold them say their sources anew, their text not read again. */
+  /** A note's words for finding: its name, its text, and what was read in the images it holds. */
+  #wordsOf(id: string, pieces: Piece[], name: string): string {
+    const words = wordsOf(pieces, name);
+    const read: string[] = [];
+    for (const hash of this.#readings.get(id)?.hashes ?? []) {
+      const text = this.files.get(hash)?.text;
+      if (text) read.push(text);
+    }
+    return read.length ? `${words}\n${read.join('\n').toLowerCase()}` : words;
+  }
+
+  /**
+   * Passages or files were changed: the notes that hold them say their
+   * sources anew, and the words read in their images, their text not read
+   * again.
+   */
   #metChanged(keys: Set<string>, what: 'passage' | 'hash') {
     for (const [id, reading] of this.#readings) {
       const touches = reading.met.some((m) =>
@@ -635,9 +667,14 @@ export class Notebook {
           ? 'passage' in m && keys.has(m.passage)
           : 'hash' in m && keys.has(m.hash),
       );
+      const read = what === 'hash' && [...reading.hashes].some((h) => keys.has(h));
       const record = this.notes.get(id);
-      if (touches && record)
-        this.notes.set(id, { ...record, sources: this.#sourcesOf(reading.met) });
+      if ((touches || read) && record)
+        this.notes.set(id, {
+          ...record,
+          sources: this.#sourcesOf(reading.met),
+          words: this.#wordsOf(id, reading.pieces, record.name),
+        });
     }
   }
 
@@ -739,6 +776,7 @@ export class Notebook {
       if (at) n.set('at', { x: Math.round(at.x), y: Math.round(at.y) });
       if (typeof options.width === 'number' && Number.isFinite(options.width))
         n.set('width', cardWidth(options.width));
+      if (options.seen === false) n.set('seen', false);
       this.yNotes.set(id, n);
       paragraphWith(body, '', null);
     });
@@ -832,6 +870,13 @@ export class Notebook {
       el.setAttribute('extension', file.extension);
       fragment.insert(fragment.length, [el]);
     });
+  }
+
+  /** A note has been looked at: kept, and not undone. */
+  lookedAt(id: string) {
+    const n = this.yNotes.get(id);
+    if (n?.get('seen') !== false) return;
+    this.doc.transact(() => n.delete('seen'), RECORD);
   }
 
   /** Records what became of a piece of a note: kept, and not undone. */
@@ -945,6 +990,7 @@ export class Notebook {
           source: source ?? before?.source ?? null,
           taken: before?.taken || nowIso(),
           madeFrom: file.madeFrom ?? before?.madeFrom ?? undefined,
+          text: before?.text,
         }),
       ),
     );
@@ -954,6 +1000,13 @@ export class Notebook {
     const f = this.yFiles.get(hash);
     if (!f || (f.source ?? null) === source) return;
     this.transact(() => this.yFiles.set(hash, plain({ ...f, source })));
+  }
+
+  /** Keeps what was read in an image a note holds, in the place of what was read before: kept, and not undone. */
+  setFileText(hash: string, text: string) {
+    const f = this.yFiles.get(hash);
+    if (!f || typeof f !== 'object' || f.text === text) return;
+    this.doc.transact(() => this.yFiles.set(hash, { ...f, text }), RECORD);
   }
 
   /** The words of a passage stay, and their mark goes: the passage was no taking. One step of undo. */
@@ -1012,4 +1065,5 @@ Object.assign(
   tagChanges,
   noteLinkChanges,
   joinChanges,
+  startChanges,
 );

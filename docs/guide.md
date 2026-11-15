@@ -1703,6 +1703,57 @@ In the same window:
 - **My own words** is for what was pasted and was yours all along: the
   words stay, and are no longer something taken in.
 
+### Finding notes
+
+Beside the field that finds is **Filter**, as in the library: it opens a
+small window, and the button shows how many filters are on. What is chosen
+there holds together with the words searched for, the box and the tags, in
+the list; a surface always shows all the notes of its box.
+
+- **Holds**: an image, a file, words taken in, a link to another note. A
+  note must hold every one that is ticked.
+- **Collected**: from a day, to a day. A year (`2026`) or a month
+  (`2026-11`) may be written for a day: the first of it in **From**, the last
+  in **To**.
+- **From**: a web page, a reference, a file, other, no source. A note may
+  have come from any one that is ticked; **No source** is for what has none,
+  your own words among them.
+- **Not looked at**, and whether a note has been **Used in a project** or
+  **Not used**.
+
+**Clear the filters** takes them all away, and so does the button of the
+same name where nothing passes them. The filters are not kept when
+Glaukopis is closed.
+
+What comes from elsewhere, files added or dropped, a paste outside a text,
+what the plugin for Firefox hands over and what is sent from a file read in
+Glaukopis, is **not looked at** until you choose it in the list or open it
+beside a surface: until then it has a small dot before its name, or at the
+corner of its card. A note you make yourself is looked at from the start.
+Chosen while **Not looked at** is on, a note stays in the list until the
+filters change.
+
+The field also finds words in the images of notes, once they have been
+read. **Read the text**, in the menu of the right button on notes, reads the
+text in every image the notes selected hold, one after another, with the
+reading of text in the languages of the settings (see *Text in scans and
+images*); a line at the foot of the window says what is being read, and
+**Stop** stops it. In the window of an image's source, under **Text read**,
+stands what was read, with **Read again**. What is read is not put into the
+note. Nothing is read by itself, and nothing where Tesseract is not
+installed: you are told so.
+
+### Starting texts
+
+The arrow beside **New note** opens a menu of **starting texts**: a note
+made from one begins with its lines, the cursor at the end of the first.
+**Starting texts…** at the foot of that menu opens their window: the list
+at the left, the one chosen at the right with its name, its lines and what
+its lines are, text, points of a list or numbered points. **New** makes one,
+**Delete** deletes one, after asking; the two small arrows, or dragging in
+the list, change their order. All of it is undone as the rest of the
+notebook is.
+
 ### Into a project
 
 In a project, **Notes** is the third tab of the document pane, after the

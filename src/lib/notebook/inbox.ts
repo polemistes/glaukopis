@@ -321,6 +321,7 @@ export function notesOfInbox(notebook: Notebook, items: InboxItem[]): string[] {
       const source = sourceOf(item, made);
       const id = notebook.addNote({
         made,
+        seen: false,
         ...(item.kind === 'page' && item.title.trim() ? { name: item.title } : {}),
       });
       if (pictured) {

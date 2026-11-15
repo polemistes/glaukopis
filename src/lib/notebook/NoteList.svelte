@@ -6,7 +6,8 @@
    * the rows in view are drawn, as in the library's list, so that thousands
    * stay quick. A press chooses, Shift and Ctrl select more; the arrows,
    * Home and End move; Delete deletes what is selected. What is selected
-   * is dragged by its rows, onto a box (stage 2).
+   * is dragged by its rows, onto a box (stage 2). A note taken in and not
+   * yet looked at has a dot before its name (stage 4).
    */
   import ImageIcon from '@lucide/svelte/icons/image';
   import Paperclip from '@lucide/svelte/icons/paperclip';
@@ -21,13 +22,15 @@
   interface Props {
     notes: NoteRecord[];
     selection: NoteSelection;
+    /** A note pressed: the writer chose it. */
+    onpress?: (id: string) => void;
     /** Enter on the note chosen: to its text. */
     onopen?: (id: string) => void;
     ondelete?: (ids: string[]) => void;
     oncontext?: (event: MouseEvent, ids: string[]) => void;
   }
 
-  let { notes, selection, onopen, ondelete, oncontext }: Props = $props();
+  let { notes, selection, onpress, onopen, ondelete, oncontext }: Props = $props();
 
   const ROW = 60;
   const OVERSCAN = 6;
@@ -90,6 +93,7 @@
   function onclick(id: string) {
     if (pressedAlone === id) selection.only(id);
     pressedAlone = null;
+    onpress?.(id);
   }
 
   function oncontextmenu(event: MouseEvent, id: string) {
@@ -158,11 +162,15 @@
           tabindex="-1"
           aria-selected={selected.has(note.id)}
           data-note={note.id}
+          data-unseen={note.seen ? undefined : ''}
           style:height="{ROW}px"
           onpointerdown={(e) => onpointerdown(e, note.id)}
           onclick={() => onclick(note.id)}
           oncontextmenu={(e) => oncontextmenu(e, note.id)}
         >
+          {#if !note.seen}
+            <span class="unseen" title={t('notebook-unseen')}></span>
+          {/if}
           <div class="text">
             <span class="title truncate" class:empty={row.empty}
               >{row.empty ? t('notebook-empty-note') : row.title}</span
@@ -208,6 +216,7 @@
     top: 0;
   }
   .row {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -224,6 +233,17 @@
   }
   .list:focus-visible .row.selected {
     box-shadow: inset 2px 0 0 var(--accent);
+  }
+  /* A note taken in and not yet looked at: a dot before its name. */
+  .unseen {
+    position: absolute;
+    left: 4px;
+    top: 50%;
+    width: 7px;
+    height: 7px;
+    margin-top: -4px;
+    border-radius: 50%;
+    background: var(--accent);
   }
   .text {
     flex: 1;

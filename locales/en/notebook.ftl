@@ -141,6 +141,66 @@ notebook-surface-new-note-here = New note here
 notebook-surface-show-all = Show all
 notebook-surface-link-handle = Drag to another note to link them
 
+## Finding, and starting texts
+
+# The filters of the list, in a window at a button beside the field that finds.
+notebook-filters = Filter
+notebook-filters-on = { $count ->
+    [one] Filter: { $count } on
+   *[other] Filter: { $count } on
+}
+notebook-filter-holds = Holds
+notebook-filter-picture = An image
+notebook-filter-file = A file
+notebook-filter-passage = Words taken in
+notebook-filter-link = A link to another note
+notebook-filter-collected = Collected
+notebook-filter-from = From
+notebook-filter-to = To
+notebook-filter-came = From
+notebook-filter-web = A web page
+notebook-filter-reference = A reference
+notebook-filter-file-source = A file
+notebook-filter-other = Other
+notebook-filter-no-source = No source
+notebook-filter-unseen = Not looked at
+notebook-filter-use = Used
+notebook-filter-use-all = All
+notebook-filter-used = Used in a project
+notebook-filter-unused = Not used
+notebook-filter-clear = Clear the filters
+notebook-nothing-passes = No note in view passes the filters.
+# A note taken in that has not been looked at: the dot before its name.
+notebook-unseen = Not looked at
+# Words read in the images of notes, kept for finding.
+notebook-read-text = Read the text
+notebook-read-again = Read again
+notebook-text-read = Text read
+notebook-reading = { $count ->
+    [one] Reading { $name }…
+   *[other] Reading { $name } ({ $done } of { $count })…
+}
+notebook-reading-stop = Stop
+notebook-read-done = { $count ->
+    [one] The text of the image is read
+   *[other] The text of { $count } images is read
+}
+notebook-read-failed = The text of { $name } could not be read
+# Starting texts: a new note that begins with lines given.
+notebook-new-note-from = New note from a starting text
+notebook-starts = Starting texts…
+notebook-starts-title = Starting texts
+notebook-start-new = New
+notebook-start-unnamed = Unnamed
+notebook-start-name = Name
+notebook-start-lines = Lines
+notebook-start-kind = Its lines are
+notebook-start-up = Move up
+notebook-start-down = Move down
+notebook-start-none = No starting texts yet.
+notebook-start-delete-title = Delete { $name }?
+notebook-start-delete-message = The notes begun from it stay as they are.
+
 ## The list in the document pane, and what goes into a text
 
 notebook-between = Between the sides and the notes

@@ -161,6 +161,8 @@ describe('things the plugin handed over, made notes', () => {
     });
     expect(nb.note(id)!.sources).toEqual([source]);
     expect(nb.note(id)!.name).toBe('');
+    // What the plugin hands over has not been looked at.
+    expect(nb.note(id)!.seen).toBe(false);
   });
 
   it('a part of a page is the same, and an image that did not come makes no note', () => {

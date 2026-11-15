@@ -94,6 +94,7 @@
     onopen(note.id);
   }}
 >
+  {#if !note.seen}<span class="unseen" title={t('notebook-unseen')} data-unseen></span>{/if}
   {#if note.name}
     <div class="name">{note.name}</div>
   {/if}
@@ -143,6 +144,17 @@
   }
   .card:hover {
     border-color: var(--line-strong);
+  }
+  /* A note taken in and not yet looked at: a dot at the corner of its card. */
+  .unseen {
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    width: 11px;
+    height: 11px;
+    border: 2px solid var(--paper-raised);
+    border-radius: 50%;
+    background: var(--accent);
   }
   .card.selected {
     border-color: var(--accent);

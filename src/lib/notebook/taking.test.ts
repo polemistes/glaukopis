@@ -125,6 +125,16 @@ describe('files taken in as notes', () => {
     expect(nb.note(inFirst)!.box).toBe('first');
   });
 
+  it('what is taken in is not looked at, as a paste is not', async () => {
+    const nb = new Notebook();
+    api.notebookTakeFiles.mockResolvedValue({ files: [letter], problems: [] });
+    const [taken] = await takeFiles(nb, ['/p/letter.pdf']);
+    const pasted = await takePasted(nb, paste({ 'text/plain': 'Words found' }));
+    expect(nb.note(taken)!.seen).toBe(false);
+    expect(nb.note(pasted!)!.seen).toBe(false);
+    expect(nb.note(nb.addNote())!.seen).toBe(true);
+  });
+
   it('a failure of the store is said, and makes nothing', async () => {
     const nb = new Notebook();
     api.notebookTakeFiles.mockRejectedValue(new Error('no store'));

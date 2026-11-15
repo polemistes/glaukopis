@@ -10,18 +10,29 @@
    * has the focus is a new note, in the box in view. The note chosen is
    * named by the route, so that the window comes back to it; how the page
    * is looked at is kept on this computer (`page-view.svelte.ts`).
+   *
+   * From stage 4: the filters of the list beside the field that finds
+   * (`filters.ts`), which hold in the list and not on the surface, as the
+   * words searched for do; a note taken in is looked at once the writer
+   * chooses it or opens it, not when the page chooses it for having taken
+   * it in; Read the text of the images of notes (`reading.svelte.ts`); New
+   * note begun from a starting text, and the window of starting texts.
    */
   import { open as openDialog } from '@tauri-apps/plugin-dialog';
   import { onMount, tick, untrack } from 'svelte';
+  import { SvelteSet } from 'svelte/reactivity';
   import Box from '@lucide/svelte/icons/box';
+  import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import Combine from '@lucide/svelte/icons/combine';
   import FilePlus from '@lucide/svelte/icons/file-plus';
   import Inbox from '@lucide/svelte/icons/inbox';
   import LayoutDashboard from '@lucide/svelte/icons/layout-dashboard';
   import List from '@lucide/svelte/icons/list';
+  import ListFilter from '@lucide/svelte/icons/list-filter';
   import NotebookPen from '@lucide/svelte/icons/notebook-pen';
   import PanelRightOpen from '@lucide/svelte/icons/panel-right-open';
   import Plus from '@lucide/svelte/icons/plus';
+  import ScanText from '@lucide/svelte/icons/scan-text';
   import Search from '@lucide/svelte/icons/search';
   import SearchX from '@lucide/svelte/icons/search-x';
   import Trash2 from '@lucide/svelte/icons/trash-2';
@@ -38,11 +49,21 @@
   import { dropTarget } from '$lib/ui/drag.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
-  import { openContextMenu, type MenuItem } from '$lib/ui/menu.svelte';
+  import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import Segmented from '$lib/ui/Segmented.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { toasts } from '$lib/ui/toast.svelte';
   import BoxColumn from './BoxColumn.svelte';
+  import FilterPopover from './FilterPopover.svelte';
+  import {
+    activeFilters,
+    applyFilters,
+    linkedNotes,
+    noFilters,
+    passes,
+    type FilterContext,
+    type NoteFilters,
+  } from './filters';
   import { holderOfNotebook } from './holder';
   import { FIRST_BOX } from './model/boxes';
   import type { Notebook } from './model/notebook.svelte';
@@ -59,6 +80,9 @@
     tagsInView,
   } from './page.svelte';
   import { pageView, type BoxMode } from './page-view.svelte';
+  import ReadingLine from './ReadingLine.svelte';
+  import { imageReading, imagesOf } from './reading.svelte';
+  import StartsDialog from './StartsDialog.svelte';
   import Surface from './surface/Surface.svelte';
   import { takeFiles, takePasted } from './taking';
 
@@ -74,6 +98,22 @@
   let fresh = $state<string | null>(null);
   /** The note opened beside the surface; none where none is. */
   let opened = $state<string | null>(null);
+  /** The note just begun from a starting text, whose text takes the cursor at the end of its first line. */
+  let begun = $state<string | null>(null);
+
+  /** The filters of the list, beside the words searched for; not kept across runs. */
+  let filters = $state<NoteFilters>({ ...noFilters });
+  let filtering = $state(false);
+  let filterButton = $state<HTMLElement>();
+  /** Notes looked at since the filters last changed: they still pass Not looked at. */
+  const lookedNow = new SvelteSet<string>();
+  let startsOpen = $state(false);
+  let newMenuButton = $state<HTMLButtonElement>();
+  /**
+   * The note the page chose itself, for having just taken it in: shown, but
+   * not looked at until the writer chooses or opens it, or writes in it.
+   */
+  let quiet: string | null = null;
 
   /** The box in view; none for all notes, which are shown as a list only. */
   const inView = $derived(notebook ? boxInView(pageView.box, notebook.boxes) : null);
@@ -81,7 +121,14 @@
   const mode = $derived<BoxMode>(inView === null ? 'list' : pageView.modeOf(inView));
 
   const all = $derived(notebook?.list ?? []);
-  const shown = $derived(notebook ? notebook.find(query, { box: inView, tags: tagsOn }) : []);
+  const filterContext = $derived<FilterContext>({
+    sortOf: (id) => notebook?.sources.get(id)?.sort,
+    linked: linkedNotes(notebook?.links ?? []),
+    lookedNow,
+  });
+  const active = $derived(activeFilters(filters));
+  const found = $derived(notebook ? notebook.find(query, { box: inView, tags: tagsOn }) : []);
+  const shown = $derived(applyFilters(found, filters, filterContext));
   const chosen = $derived(
     selection.single && notebook?.note(selection.single) ? selection.single : null,
   );
@@ -130,7 +177,40 @@
   // A note just made takes the cursor once: chosen again later, the focus stays where it is.
   $effect(() => {
     if (fresh && inEditor !== fresh) fresh = null;
+    if (begun && inEditor !== begun) begun = null;
   });
+
+  // The filters changed: what was looked at under them no longer passes Not looked at.
+  $effect(() => {
+    void filters;
+    untrack(() => lookedNow.clear());
+  });
+
+  // The note at the right is looked at, unless the page chose it itself for having taken it in.
+  $effect(() => {
+    const id = inEditor;
+    if (!notebook || !id) return;
+    untrack(() => {
+      if (id === quiet) return;
+      quiet = null;
+      look(id);
+    });
+  });
+
+  /** A note has been looked at: under Not looked at, it stays in the list until the filters change. */
+  function look(id: string) {
+    const nb = notebook;
+    if (!nb || nb.note(id)?.seen !== false) return;
+    if (filters.unseen) lookedNow.add(id);
+    nb.lookedAt(id);
+  }
+
+  /** The writer chose or opened a note, or wrote in it: it is looked at. */
+  function looked(id: string | null) {
+    if (!id) return;
+    if (id === quiet) quiet = null;
+    look(id);
+  }
 
   // What is selected must be there: deleted here, or in another window.
   $effect(() => {
@@ -173,6 +253,7 @@
     if (inView !== null && note.box !== inView) showBox(note.box);
     if (tagsOn.some((tag) => !note.tags.includes(tag))) pageView.setTags([]);
     if (query && !nb.find(query).some((n) => n.id === id)) query = '';
+    if (active && !passes(note, filters, filterContext)) filters = { ...noFilters };
     fresh = options.fresh ? id : null;
     selection.only(id);
     if (mode === 'surface') opened = id;
@@ -190,13 +271,41 @@
     choose(id, { fresh: true });
   }
 
+  /** Makes a note that begins with a starting text, in the box in view, with the tags that are on. */
+  function newNoteFrom(start: string) {
+    const nb = notebook;
+    if (!nb) return;
+    nb.checkpoint();
+    const id = nb.addNoteFrom(start, { box: intoBox, tags: tagsOn });
+    nb.checkpoint();
+    query = '';
+    begun = id;
+    choose(id, { fresh: true });
+  }
+
+  /** The menu of the arrow beside New note: each starting text, then the window of them. */
+  function newMenu() {
+    const nb = notebook;
+    if (!nb || !newMenuButton) return;
+    const items: MenuItem[] = nb.starts.map((s) => ({
+      label: s.name || t('notebook-start-unnamed'),
+      action: () => newNoteFrom(s.id),
+    }));
+    if (items.length) items.push({ kind: 'separator' });
+    items.push({ label: t('notebook-starts'), action: () => (startsOpen = true) });
+    openMenu(newMenuButton, items, { align: 'end' });
+  }
+
   async function takeIn(paths: string[]): Promise<string[]> {
     const nb = notebook ?? (await theNotebook.open().catch(() => null));
     if (!nb || !paths.length) return [];
     nb.checkpoint();
     const ids = await takeFiles(nb, paths, intoBox);
     nb.checkpoint();
-    if (ids.length) choose(ids[0]);
+    if (ids.length) {
+      quiet = ids[0];
+      choose(ids[0]);
+    }
     return ids;
   }
 
@@ -305,6 +414,7 @@
 
   /** Opens a note: in the list, its text; beside the surface, the note itself. */
   function openNote(id: string) {
+    looked(id);
     if (mode === 'surface') {
       selection.only(id);
       opened = id;
@@ -331,6 +441,14 @@
         icon: Combine,
         shortcut: keysFor('notebook-join'),
         action: () => joinNotes(ids, on),
+      });
+    const images = imagesOf(ids.flatMap((id) => nb.note(id) ?? []));
+    if (images.length)
+      items.push({
+        label: t('notebook-read-text'),
+        icon: ScanText,
+        disabled: imageReading.busy,
+        action: () => void imageReading.read(nb, images),
       });
     items.push(
       {
@@ -387,7 +505,9 @@
       nb.checkpoint();
       void takePasted(nb, data, intoBox).then((id) => {
         nb.checkpoint();
-        if (id) choose(id);
+        if (!id) return;
+        quiet = id;
+        choose(id);
       });
     };
     window.addEventListener('beforepaste', onbeforepaste);
@@ -428,15 +548,26 @@
 </script>
 
 {#snippet adding(nb: Notebook | null)}
-  <IconButton
-    label={t('notebook-new-note')}
-    shortcut={keysFor('notebook-new')}
-    disabled={!nb}
-    data-new-note
-    onclick={newNote}
-  >
-    <Plus size={16} />
-  </IconButton>
+  <span class="new-note">
+    <IconButton
+      label={t('notebook-new-note')}
+      shortcut={keysFor('notebook-new')}
+      disabled={!nb}
+      data-new-note
+      onclick={newNote}
+    >
+      <Plus size={16} />
+    </IconButton>
+    <IconButton
+      bind:el={newMenuButton}
+      label={t('notebook-new-note-from')}
+      disabled={!nb}
+      data-new-note-from
+      onclick={newMenu}
+    >
+      <ChevronDown size={13} />
+    </IconButton>
+  </span>
   <IconButton
     label={t('notebook-add-files')}
     disabled={!nb}
@@ -455,6 +586,7 @@
       holder={holder!}
       {id}
       fresh={fresh === id}
+      begun={begun === id}
       {onclose}
       ondivided={divided}
     />
@@ -558,6 +690,19 @@
               </button>
             {/if}
           </div>
+          <span class="filter" bind:this={filterButton}>
+            <IconButton
+              label={active ? t('notebook-filters-on', { count: active }) : t('notebook-filters')}
+              active={active > 0 || filtering}
+              aria-expanded={filtering}
+              data-notebook-filter
+              onclick={() => (filtering = !filtering)}
+            >
+              <ListFilter size={15} />
+            </IconButton>
+            {#if active}<span class="badge" aria-hidden="true" data-filter-count>{active}</span
+              >{/if}
+          </span>
           {@render adding(notebook)}
           {#if inView !== null}
             <span class="shown-as" data-shown-as-choice>
@@ -599,17 +744,28 @@
               bind:this={list}
               notes={shown}
               {selection}
+              onpress={(id) => selection.single === id && looked(id)}
               onopen={() => editor?.focusText()}
               ondelete={remove}
               oncontext={(event, ids) => context(event, ids, 'list')}
             />
-          {:else if query || tagsOn.length}
-            <EmptyState compact icon={SearchX} title={t('notebook-nothing-found')}>
+          {:else if query || tagsOn.length || active}
+            <EmptyState
+              compact
+              icon={active ? ListFilter : SearchX}
+              title={t('notebook-nothing-found')}
+              text={active ? t('notebook-nothing-passes') : undefined}
+            >
               {#if query}
                 <Button onclick={() => (query = '')}>{t('notebook-search-clear')}</Button>
               {/if}
               {#if tagsOn.length}
                 <Button onclick={() => pageView.setTags([])}>{t('notebook-tags-off')}</Button>
+              {/if}
+              {#if active}
+                <Button data-filters-clear onclick={() => (filters = { ...noFilters })}
+                  >{t('notebook-filter-clear')}</Button
+                >
               {/if}
             </EmptyState>
           {:else}
@@ -630,7 +786,7 @@
         onmove={(dx) => pageView.moveList(dx)}
         onreset={() => pageView.resetList()}
       />
-      <section class="chosen" aria-label={t('notebook-note')}>
+      <section class="chosen" aria-label={t('notebook-note')} onfocusin={() => looked(inEditor)}>
         {#if inEditor && holder}
           {@render noteAt(notebook, inEditor)}
         {:else}
@@ -647,7 +803,12 @@
         onmove={(dx) => pageView.moveNote(dx)}
         onreset={() => pageView.resetNote()}
       />
-      <section class="chosen" aria-label={t('notebook-note')} data-note-beside>
+      <section
+        class="chosen"
+        aria-label={t('notebook-note')}
+        data-note-beside
+        onfocusin={() => looked(inEditor)}
+      >
         {@render noteAt(notebook, inEditor, closeNote)}
       </section>
     {/if}
@@ -656,6 +817,20 @@
 
 <!-- The pickers the editor asks for: a reference to cite, a citation's place. -->
 <EditorHost project={null} />
+
+{#if notebook}
+  <FilterPopover
+    open={filtering}
+    anchor={filterButton}
+    notes={found}
+    bind:filters
+    onclose={() => (filtering = false)}
+  />
+  {#if startsOpen}
+    <StartsDialog {notebook} onclose={() => (startsOpen = false)} />
+  {/if}
+{/if}
+<ReadingLine />
 
 <style>
   /* The boxes, the notes and the note, as the library has its collections,
@@ -760,6 +935,34 @@
   .clear:hover {
     background: var(--paper-hover);
     color: var(--ink);
+  }
+  .new-note {
+    display: inline-flex;
+    flex: none;
+  }
+  .new-note :global(.icon-button:last-child) {
+    width: 16px;
+  }
+  .filter {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+  }
+  .badge {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    min-width: 15px;
+    height: 15px;
+    padding: 0 4px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 15px;
+    text-align: center;
+    pointer-events: none;
   }
   .shown-as {
     display: inline-flex;

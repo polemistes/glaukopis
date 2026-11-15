@@ -89,6 +89,8 @@ export interface HeldFile {
    * PNG), the file it was made from, which the notebook holds with it.
    */
   madeFrom?: string;
+  /** Of an image, the words read in it by the reading of text, as plain text, where it has been read. */
+  text?: string;
 }
 
 /** What became of a piece of a note. */
@@ -155,6 +157,8 @@ export interface NoteRecord {
   width: number | null;
   /** Its tags, sorted as words are sorted. */
   tags: string[];
+  /** Whether it has been looked at: a note taken in from elsewhere is not, until it is chosen. */
+  seen: boolean;
 }
 
 /** A place on the surface of a box, in its pixels. */
@@ -176,4 +180,16 @@ export interface BoxRecord {
 export interface TagCount {
   tag: string;
   count: number;
+}
+
+/** A starting text of a new note: its name, its lines, and the kind of paragraph they are. */
+export interface StartRecord {
+  id: string;
+  name: string;
+  /** Its lines, each a paragraph, apart by a line break. */
+  text: string;
+  /** The kind of paragraph its lines are: an id of the editor's catalogue; empty for text. */
+  begins: string;
+  /** What it sorts by among the starting texts. */
+  order: string;
 }
