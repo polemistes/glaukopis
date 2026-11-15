@@ -68,8 +68,12 @@
 
   const number = (n: number) => n.toLocaleString(languages.current);
 
+  /** What is typed in the field of a name, kept apart so that the field outlives what it names. */
+  let typed = $state('');
+
   async function nameInPlace(next: NonNullable<typeof naming>) {
     naming = next;
+    typed = next.value;
     await tick();
     input?.focus();
     input?.select();
@@ -89,8 +93,8 @@
   }
 
   async function commit() {
-    const n = naming;
-    if (!n) return;
+    if (!naming) return;
+    const n = { ...naming, value: typed };
     naming = null;
     if (n.what === 'box') {
       if (n.id === 'new') {
@@ -234,7 +238,7 @@
     <Icon size={15} strokeWidth={1.6} />
     <input
       bind:this={input}
-      bind:value={naming!.value}
+      bind:value={typed}
       placeholder={label}
       aria-label={label}
       spellcheck="false"

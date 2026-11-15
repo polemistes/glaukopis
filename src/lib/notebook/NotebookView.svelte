@@ -259,8 +259,9 @@
         shown.map((n) => n.id),
         ids,
       );
+    // The surface shows every note of its box, whatever is searched for: read among them all.
     const wanted = new Set(ids);
-    return readingOrder(shown.filter((n) => wanted.has(n.id)));
+    return readingOrder(all.filter((n) => wanted.has(n.id)));
   }
 
   /** Joins notes into one, which is chosen; said with Undo. */
