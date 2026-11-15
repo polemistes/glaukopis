@@ -175,20 +175,30 @@
     ]);
   }
 
-  /** Whether a paste is aimed at something that takes it itself: a field, a text, a dialog. */
-  function aimedElsewhere(target: EventTarget | null): boolean {
-    if (!(target instanceof Element)) return false;
-    if (target.closest('input, textarea, select, [contenteditable="true"], dialog')) return true;
-    return target instanceof HTMLElement && target.isContentEditable;
+  /** Whether something takes a paste itself: a field or a text, or what is in a dialog. */
+  function takesPaste(node: unknown): boolean {
+    if (!(node instanceof Element)) return false;
+    if (node.closest('input, textarea, select, [contenteditable="true"], dialog')) return true;
+    return node instanceof HTMLElement && node.isContentEditable;
+  }
+
+  /** Whether a paste is the page's: no text, no field and no dialog has the focus, nor is it aimed at one. */
+  function pasteIsOurs(event: Event): boolean {
+    if (event.defaultPrevented || document.querySelector('dialog[open]')) return false;
+    return !takesPaste(document.activeElement) && !takesPaste(event.target);
   }
 
   // A paste while no text and no field has the focus is a new note. On
   // Linux it comes as an event the page makes, with what the Rust side read
-  // (`util/paste.ts`), aimed where the focus was.
+  // (`util/paste.ts`), aimed where the focus was. WebKit pastes where
+  // nothing can be written only where `beforepaste` was cancelled, which
+  // says the page takes the paste itself.
   onMount(() => {
+    const onbeforepaste = (event: Event) => {
+      if (pasteIsOurs(event)) event.preventDefault();
+    };
     const onpaste = (event: ClipboardEvent) => {
-      if (event.defaultPrevented || aimedElsewhere(event.target)) return;
-      if (document.querySelector('dialog[open]')) return;
+      if (!pasteIsOurs(event)) return;
       const data = event.clipboardData;
       const nb = notebook;
       if (!data || !nb) return;
@@ -199,8 +209,12 @@
         if (id) choose(id);
       });
     };
+    window.addEventListener('beforepaste', onbeforepaste);
     window.addEventListener('paste', onpaste);
-    return () => window.removeEventListener('paste', onpaste);
+    return () => {
+      window.removeEventListener('beforepaste', onbeforepaste);
+      window.removeEventListener('paste', onpaste);
+    };
   });
 
   // The keys of the notebook, while it is shown: see `shell/keys`.

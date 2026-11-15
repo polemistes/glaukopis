@@ -35,6 +35,9 @@ describe('a row of the list of notes', () => {
     expect(rowOf(nb.note(words)!).title).toBe('Athena is grey-eyed.');
     expect(rowOf(nb.note(empty)!)).toMatchObject({ title: '', empty: true });
     expect(rowOf(nb.note(pictured)!)).toMatchObject({
+      // Nothing but a picture: said by its name.
+      title: 'owl.png',
+      empty: false,
       pictures: true,
       files: false,
       passages: false,

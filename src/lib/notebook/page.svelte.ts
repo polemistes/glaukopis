@@ -42,8 +42,16 @@ export function dayOf(iso: string): string {
   }).format(d);
 }
 
+/** The name of the first file or picture a note holds. */
+function firstFileName(note: NoteRecord): string {
+  for (const piece of note.pieces)
+    if ((piece.kind === 'file' || piece.kind === 'figure') && piece.name) return piece.name;
+  return '';
+}
+
+/** A note in its row: by its name, else how it begins, else the name of the first file or picture it holds. */
 export function rowOf(note: NoteRecord): NoteRow {
-  const title = note.name || note.begins;
+  const title = note.name || note.begins || firstFileName(note);
   return {
     title,
     empty: !title,
