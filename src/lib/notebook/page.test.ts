@@ -1,14 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import type { ProjectInfo } from '$lib/api/projects';
+import { FIRST_BOX } from './model/boxes';
 import { Notebook } from './model/notebook.svelte';
 import {
+  boxInView,
   chipsOf,
+  dropBefore,
   givesAnything,
+  inListOrder,
   neighbourOf,
   NoteSelection,
+  offeredTags,
+  readingOrder,
+  renamedTag,
   rowOf,
   saveSource,
   takenFrom,
+  tagsInView,
+  toggledTag,
   wentLines,
 } from './page.svelte';
 
@@ -225,5 +234,80 @@ describe('what became of a note', () => {
       { what: 'figure', project: 'p1', name: 'The book', here: true, element: 'e3' },
       { what: 'text', project: 'gone', name: 'A deleted project', here: false },
     ]);
+  });
+});
+
+describe('what is in view', () => {
+  const boxes = [
+    { id: FIRST_BOX, name: '', order: '' },
+    { id: 'b1', name: 'Homer', order: 'a0' },
+  ];
+
+  it('is the box kept while it is there, the first once it is gone, and none for all notes', () => {
+    expect(boxInView('b1', boxes)).toBe('b1');
+    expect(boxInView('gone', boxes)).toBe(FIRST_BOX);
+    expect(boxInView(null, boxes)).toBeNull();
+  });
+
+  it('has the tags that are on while some note has them', () => {
+    const tags = [
+      { tag: 'owls', count: 2 },
+      { tag: 'Athena', count: 1 },
+    ];
+    expect(tagsInView(['owls', 'gone', 'Athena'], tags)).toEqual(['owls', 'Athena']);
+  });
+
+  it('turns a tag on and off by a press, and follows a tag renamed, once', () => {
+    expect(toggledTag(['a'], 'b')).toEqual(['a', 'b']);
+    expect(toggledTag(['a', 'b'], 'a')).toEqual(['b']);
+    expect(renamedTag(['a', 'b'], 'a', 'c')).toEqual(['c', 'b']);
+    expect(renamedTag(['a', 'b'], 'a', 'b')).toEqual(['b']);
+    expect(renamedTag(['b'], 'a', 'c')).toEqual(['b']);
+  });
+
+  it('puts a box dropped on a row before it, or after it from its lower half, and never before the first', () => {
+    const order = [FIRST_BOX, 'b1', 'b2', 'b3'];
+    expect(dropBefore(order, 'b2', false)).toBe('b2');
+    expect(dropBefore(order, 'b2', true)).toBe('b3');
+    expect(dropBefore(order, 'b3', true)).toBeNull();
+    expect(dropBefore(order, FIRST_BOX, false)).toBe('b1');
+    expect(dropBefore(order, FIRST_BOX, true)).toBe('b1');
+    expect(dropBefore(order, 'gone', true)).toBeNull();
+  });
+});
+
+describe('the order of joining', () => {
+  it('reads cards top to bottom, then left to right, a line holding the cards near its first, then the strip', () => {
+    const notes = [
+      { id: 'strip1', at: null },
+      { id: 'right', at: { x: 400, y: 110 } },
+      { id: 'below', at: { x: 0, y: 400 } },
+      { id: 'left', at: { x: 10, y: 130 } },
+      { id: 'top', at: { x: 900, y: 0 } },
+      { id: 'strip2', at: null },
+    ];
+    expect(readingOrder(notes)).toEqual(['top', 'left', 'right', 'below', 'strip1', 'strip2']);
+  });
+
+  it('in a list is the order of the list, top first', () => {
+    expect(inListOrder(['a', 'b', 'c', 'd'], ['d', 'b'])).toEqual(['b', 'd']);
+  });
+});
+
+describe('the tags offered as a tag is typed', () => {
+  const tags = ['Athena', 'athletes', 'Homer', 'owls', 'Pallas Athena'].map((tag) => ({
+    tag,
+    count: 1,
+  }));
+
+  it('are those that begin with what is typed, then those that hold it, not those the note has', () => {
+    expect(offeredTags(tags, 'ath', [])).toEqual(['Athena', 'athletes', 'Pallas Athena']);
+    expect(offeredTags(tags, 'ATH', ['Athena'])).toEqual(['athletes', 'Pallas Athena']);
+    expect(offeredTags(tags, '#ow', [])).toEqual(['owls']);
+  });
+
+  it('are none where nothing is typed, and no more than so many', () => {
+    expect(offeredTags(tags, '  ', [])).toEqual([]);
+    expect(offeredTags(tags, 'a', [], 2)).toEqual(['Athena', 'athletes']);
   });
 });

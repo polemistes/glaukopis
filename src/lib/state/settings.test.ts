@@ -257,3 +257,38 @@ describe('how the files are shown, as it was kept', () => {
     });
   });
 });
+
+describe('how the page of the notebook was left, as it was kept', () => {
+  it('is read with care, and takes the width of the list kept on its own before', async () => {
+    const { notebookViewOf, NOTEBOOK_VIEW } = await import('./settings.svelte');
+    expect(notebookViewOf(undefined)).toEqual(NOTEBOOK_VIEW);
+    expect(notebookViewOf(undefined, 410).list).toBe(410);
+    expect(
+      notebookViewOf(
+        {
+          box: 'b1',
+          tags: ['owls', 3, ''],
+          boxes: {
+            b1: { list: true, camera: { cx: 10, cy: -4, k: 1.5 } },
+            b2: { camera: { cx: 'x', cy: 0, k: 1 } },
+            b3: 'list',
+          },
+          column: 240,
+          list: 300,
+          note: -2,
+        },
+        410,
+      ),
+    ).toEqual({
+      box: 'b1',
+      tags: ['owls'],
+      boxes: {
+        b1: { list: true, camera: { cx: 10, cy: -4, k: 1.5 } },
+        b2: { list: false, camera: null },
+      },
+      column: 240,
+      list: 300,
+      note: NOTEBOOK_VIEW.note,
+    });
+  });
+});

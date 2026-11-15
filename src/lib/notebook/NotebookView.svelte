@@ -32,7 +32,7 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import { toasts } from '$lib/ui/toast.svelte';
   import { holderOfNotebook } from './holder';
-  import { listWidth } from './list-width.svelte';
+  import { pageView } from './page-view.svelte';
   import type { Notebook } from './model/notebook.svelte';
   import NoteEditor from './NoteEditor.svelte';
   import NoteList from './NoteList.svelte';
@@ -265,7 +265,7 @@
 
 <div
   class="notebook"
-  style:--list="{listWidth.width}px"
+  style:--list="{pageView.list}px"
   data-notebook
   use:dropTarget={{
     accepts: (p) => p.kind === 'files',
@@ -354,8 +354,8 @@
 
     <Divider
       label={t('notebook-resize-list')}
-      onmove={(dx) => listWidth.move(dx)}
-      onreset={() => listWidth.reset()}
+      onmove={(dx) => pageView.moveList(dx)}
+      onreset={() => pageView.resetList()}
     />
 
     <section class="chosen" aria-label={t('notebook-note')}>

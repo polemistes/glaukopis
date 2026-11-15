@@ -7,6 +7,7 @@ import {
 } from '$lib/api/system';
 import type { KindFamily, Look } from '$lib/api/documents';
 import type { Person } from '$lib/project/model/types';
+import type { Camera } from '$lib/ui/camera';
 import { t } from '$lib/i18n';
 import { notifyError } from '$lib/ui/toast.svelte';
 import { beforeClose } from './closing';
@@ -63,6 +64,78 @@ export function filesViewOf(kept: unknown): FilesViewSettings {
   };
 }
 
+/** How a box of the notebook was looked at, on this computer: as a list or as its surface, and where its surface was looked at. */
+export interface NotebookBoxView {
+  list: boolean;
+  camera: Camera | null;
+}
+
+/** How the page of the notebook was left (stage 2): what was in view, how each box was looked at, the widths. */
+export interface NotebookViewSettings {
+  /** The box in view; null for all notes. */
+  box: string | null;
+  /** The tags that are on: only the notes that have them all are shown. */
+  tags: string[];
+  /** Each box as it was looked at, by its id; a box not here is shown as its surface. */
+  boxes: Record<string, NotebookBoxView>;
+  /** How wide the column of the boxes and the tags is, in pixels. */
+  column: number;
+  /** How wide the list of notes is, where a note stands beside it. */
+  list: number;
+  /** How wide the note is, where it stands beside the surface. */
+  note: number;
+}
+
+export const NOTEBOOK_VIEW: NotebookViewSettings = {
+  box: null,
+  tags: [],
+  boxes: {},
+  column: 200,
+  list: 320,
+  note: 460,
+};
+
+/** A camera as it was kept, or none where it is not one. */
+function cameraOf(kept: unknown): Camera | null {
+  const c = (kept && typeof kept === 'object' ? kept : {}) as Partial<
+    Record<keyof Camera, unknown>
+  >;
+  const n = (v: unknown) => typeof v === 'number' && Number.isFinite(v);
+  return n(c.cx) && n(c.cy) && n(c.k) && (c.k as number) > 0
+    ? { cx: c.cx as number, cy: c.cy as number, k: c.k as number }
+    : null;
+}
+
+/**
+ * The page of the notebook as it was kept, read with care: what is not what
+ * it should be is the default. The width of the list was kept on its own
+ * before (`notebookListWidth`): it is read where this has none.
+ */
+export function notebookViewOf(kept: unknown, listWidth?: unknown): NotebookViewSettings {
+  const k = (kept && typeof kept === 'object' ? kept : {}) as Partial<
+    Record<keyof NotebookViewSettings, unknown>
+  >;
+  const width = (...given: unknown[]) =>
+    given.find((v): v is number => typeof v === 'number' && Number.isFinite(v) && v > 0);
+  const boxes: Record<string, NotebookBoxView> = {};
+  if (k.boxes && typeof k.boxes === 'object')
+    for (const [id, b] of Object.entries(k.boxes as Record<string, unknown>)) {
+      if (!b || typeof b !== 'object') continue;
+      const v = b as { list?: unknown; camera?: unknown };
+      boxes[id] = { list: v.list === true, camera: cameraOf(v.camera) };
+    }
+  return {
+    box: typeof k.box === 'string' && k.box ? k.box : null,
+    tags: Array.isArray(k.tags)
+      ? k.tags.filter((t): t is string => typeof t === 'string' && !!t)
+      : [],
+    boxes,
+    column: width(k.column) ?? NOTEBOOK_VIEW.column,
+    list: width(k.list, listWidth) ?? NOTEBOOK_VIEW.list,
+    note: width(k.note) ?? NOTEBOOK_VIEW.note,
+  };
+}
+
 /** How the diagram numbers its boxes (record 0083): as the document prints the headings, every element from the element in view, or not at all. */
 export type DiagramNumbers = 'printed' | 'tree' | 'hidden';
 
@@ -96,6 +169,8 @@ export interface MoreSettings {
   newVersions: boolean;
   /** The newer version last told of, so that each is told of once. */
   versionTold: string;
+  /** How the page of the notebook was left. */
+  notebookView: NotebookViewSettings;
 }
 
 export type AllSettings = Settings & MoreSettings;
@@ -131,6 +206,10 @@ const more = (kept: Partial<AllSettings> = {}): MoreSettings => ({
   filesView: filesViewOf(kept.filesView),
   newVersions: typeof kept.newVersions === 'boolean' ? kept.newVersions : true,
   versionTold: typeof kept.versionTold === 'string' ? kept.versionTold : '',
+  notebookView: notebookViewOf(
+    kept.notebookView,
+    (kept as { notebookListWidth?: unknown }).notebookListWidth,
+  ),
 });
 
 /**

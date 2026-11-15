@@ -250,6 +250,15 @@ const ENTRIES = [
   { id: 'notebook-undo', keys: 'Ctrl+Z', place: 'notebook', bound: true, notInFields: true },
   { id: 'notebook-redo', keys: 'Ctrl+Shift+Z', place: 'notebook', bound: true, notInFields: true },
   { id: 'notebook-redo-y', keys: 'Ctrl+Y', place: 'notebook', bound: true, notInFields: true },
+  // Stage 2: J joins the notes selected; D divides the note at the cursor, in its text.
+  { id: 'notebook-join', keys: 'Ctrl+J', place: 'notebook', bound: true, notInFields: true },
+  { id: 'notebook-divide', keys: 'Ctrl+Shift+D', place: 'notebook', bound: true },
+  // The surface of a box, done by the surface itself, as the diagram's are.
+  { id: 'notebook-whole', keys: 'Ctrl+0', place: 'notebook' },
+  { id: 'notebook-closer', keys: 'Ctrl+=', place: 'notebook' },
+  { id: 'notebook-farther', keys: 'Ctrl+-', place: 'notebook' },
+  { id: 'notebook-go', keys: '↑↓←→', place: 'notebook' },
+  { id: 'notebook-open', keys: 'Enter', place: 'notebook' },
 
   // The settings in plain words, stage 2: the zoom of the typesetting pane, while it has the focus or the pointer.
   { id: 'preview-zoom-in', keys: 'Ctrl++', place: 'preview', bound: true },
