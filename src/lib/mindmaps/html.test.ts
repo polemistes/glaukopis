@@ -50,6 +50,36 @@ describe('the text as HTML for another program, and back', () => {
     expect(left).toEqual({});
   });
 
+  it('writes a point to tick with its box as words, and reads it back ticked as it was', () => {
+    const blocks: Block[] = [
+      paragraph([t('Buy bread')], 'todo'),
+      paragraph([t('Read')], 'todo', { indent: 1, done: true }),
+      paragraph([t('A point')], 'item'),
+    ];
+    const left: LeftOut = {};
+    const html = notesHtml(blocks, null, cite, left);
+    expect(html).not.toMatch(/data-|class=/);
+    expect(html).toContain('☐ Buy bread');
+    expect(html).toContain('☒ Read');
+    const back = htmlToBlocks(html, left);
+    expect(shape(back)).toEqual(shape(blocks));
+    expect(back.map((b) => (b.kind === 'paragraph' ? !!b.done : null))).toEqual([
+      false,
+      true,
+      false,
+    ]);
+    expect(notesPlain(blocks, cite, left)).toBe('☐ Buy bread\n\n  ☒ Read\n\n• A point');
+    // The boxes of other programs' lists to tick too.
+    const theirs = htmlToBlocks(
+      '<ul><li><input type="checkbox" checked> Done</li><li><p><input type="checkbox"> Open</p></li></ul>',
+      {},
+    );
+    expect(theirs.map((b) => (b.kind === 'paragraph' ? [b.name, !!b.done] : null))).toEqual([
+      ['todo', true],
+      ['todo', false],
+    ]);
+  });
+
   it('writes a citation as its words, and a note in square brackets where it stands', () => {
     const blocks: Block[] = [
       paragraph([

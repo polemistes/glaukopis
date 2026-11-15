@@ -1197,7 +1197,7 @@ function listOf(
         ]);
       }
       const kind = numbered ? 'numbered' : box ? 'todo' : 'item';
-      const done = !!box && (box[1] === 'x' || box[1] === 'X');
+      const done = box && (box[1] === 'x' || box[1] === 'X') ? true : undefined;
       const p = makeParagraph(content, kind, { indent: Math.min(8, Math.floor(col / 2)), done });
       out.push(apply(p, said, false));
       // A further paragraph of a point stands as a point of its kind; of a point to tick, as a

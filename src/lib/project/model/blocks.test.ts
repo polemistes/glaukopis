@@ -266,8 +266,8 @@ describe('text written without an editor', () => {
       paragraph([t('open')], 'todo'),
       paragraph([t('ticked')], 'todo', { indent: 0, done: true }),
     ]);
-    expect(shape(open).attrs).toEqual({ kind: 'todo', indent: 0 });
-    expect(shape(ticked).attrs).toEqual({ kind: 'todo', indent: 0, done: true });
+    expect(open.getAttributes()).toEqual({ kind: 'todo', indent: 0 });
+    expect(ticked.getAttributes()).toEqual({ kind: 'todo', indent: 0, done: true });
     // What a paragraph leaves to the layout, or does not say, is not written.
     expect(shape(plain)).toEqual({
       name: 'paragraph',

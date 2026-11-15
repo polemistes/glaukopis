@@ -162,7 +162,13 @@ describe('the Org form of a text', () => {
         p([t('Counted')], 'numbered'),
       ]),
     ).toBe(
-      lines('- [ ] Buy bread', '- [X] Read the proofs', '  - [ ] Within', '- A point', '1. Counted'),
+      lines(
+        '- [ ] Buy bread',
+        '- [X] Read the proofs',
+        '  - [ ] Within',
+        '- A point',
+        '1. Counted',
+      ),
     );
     // A small x is read as ticked too, and so is a point after a plus.
     expect(readBlocks(lines('- [x] done', '+ [ ] open', '- [-] partly'))).toEqual([

@@ -244,7 +244,10 @@ export function paragraph(
   content: Inline[],
   name = 'text',
   more:
-    | Pick<ParagraphBlock, 'indent' | 'numbering' | 'every' | 'side' | 'only' | 'from' | 'new' | 'done'>
+    | Pick<
+        ParagraphBlock,
+        'indent' | 'numbering' | 'every' | 'side' | 'only' | 'from' | 'new' | 'done'
+      >
     | number = 0,
 ): ParagraphBlock {
   const said = typeof more === 'number' ? { indent: more } : more;
