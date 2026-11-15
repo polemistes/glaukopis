@@ -8,6 +8,7 @@ pub mod figures;
 pub mod files;
 pub mod keys;
 pub mod migration;
+mod notebook;
 pub mod schema;
 pub mod small;
 
@@ -29,7 +30,7 @@ use crate::{notices, tr};
 pub use attachments::StoredFile;
 pub use collections::{Collection, Collections};
 pub use entry::{Draft, Entry, EntryView, Summary};
-pub use files::{Bookmark, FileFolder, FileKind, FileRecord, Files};
+pub use files::{Bookmark, FileFolder, FileKind, FileRecord, Files, Held};
 
 const HEADER: &str = "\
 % The reference library of Glaukopis. BibLaTeX, UTF-8.
@@ -776,7 +777,8 @@ impl Library {
             if !seen.insert(hash.as_str()) {
                 continue;
             }
-            let Some(record) = self.files.get(hash) else { continue };
+            // One the notebook holds alone is none of the library's.
+            let Some(record) = self.files.get(hash).filter(|r| r.listed()) else { continue };
             match self.reference_name_with(hash, &first) {
                 None => kept += 1,
                 Some(name) if name == record.name => {}
@@ -840,6 +842,12 @@ impl Library {
             }
             self.files_dirty = true;
         }
+        // A file the notebook held alone is the library's too once a reference has it.
+        if let Some(hash) = attachments::hash_of_path(&stored)
+            && self.files.adopt(hash, None, origin)
+        {
+            self.files_dirty = true;
+        }
         let entry = &mut self.entries[index];
         let mut files = entry.attachments();
         if files.contains(&stored) {
@@ -895,9 +903,12 @@ impl Library {
     }
 
     /// Removes a file from the store: from every entry that has it, from the
-    /// record, and from the disk. The one way a file leaves the library.
+    /// record, and from the disk. The one way a file leaves the library. A
+    /// file the notebook holds leaves the entries and its folder and stays
+    /// in the store, held by the notebook alone.
     pub fn remove_file(&mut self, hash: &str) -> Result<()> {
         self.refresh()?;
+        let held = self.files.get(hash).is_some_and(|r| r.notebook.is_some());
         let mut stored: Vec<String> = self.files.get(hash).map(|r| vec![r.path.clone()]).unwrap_or_default();
         let mut changed = false;
         for entry in &mut self.entries {
@@ -915,6 +926,11 @@ impl Library {
                 entry.modified = now();
                 changed = true;
             }
+        }
+        if held {
+            self.files.leave_to_notebook(hash);
+            self.files_dirty = true;
+            return if changed { self.save() } else { self.save_files() };
         }
         if stored.is_empty() && attachments::find_by_hash(&self.dir, hash).is_none() {
             return Err(Error::not_found(tr!("core-library-the-file-of-library")));
@@ -943,20 +959,29 @@ impl Library {
     /// entry that has them, from the record, and from the disk; the library
     /// and the record written once. With `folders`, the folders this leaves
     /// empty go too (`Files::left_empty`). Hashes the library does not know
-    /// are passed over. Returns how many files and folders went.
+    /// are passed over. A file the notebook holds leaves the library as
+    /// `remove_file` has it leave, and stays in the store; it is counted
+    /// with those that went. Returns how many files and folders went.
     pub fn remove_files(&mut self, hashes: &[String], folders: bool) -> Result<(usize, usize)> {
         self.refresh()?;
         let wanted: HashSet<&str> = hashes.iter().map(String::as_str).collect();
+        let held: HashSet<&str> =
+            wanted.iter().copied().filter(|h| self.files.get(h).is_some_and(|r| r.notebook.is_some())).collect();
         let emptied = if folders { self.files.left_empty(&wanted) } else { Vec::new() };
-        let mut stored: HashSet<String> =
-            hashes.iter().filter_map(|h| self.files.get(h)).map(|r| r.path.clone()).collect();
+        let mut stored: HashSet<String> = hashes
+            .iter()
+            .filter(|h| !held.contains(h.as_str()))
+            .filter_map(|h| self.files.get(h))
+            .map(|r| r.path.clone())
+            .collect();
         let mut changed = false;
         for entry in &mut self.entries {
             let mut files = entry.attachments();
             let before = files.len();
             files.retain(|f| {
-                let ours = attachments::hash_of_path(f).is_some_and(|h| wanted.contains(h));
-                if ours {
+                let hash = attachments::hash_of_path(f);
+                let ours = hash.is_some_and(|h| wanted.contains(h));
+                if ours && !hash.is_some_and(|h| held.contains(h)) {
                     stored.insert(f.clone());
                 }
                 !ours
@@ -968,6 +993,12 @@ impl Library {
             }
         }
         let mut count = 0;
+        for &hash in &held {
+            self.files.leave_to_notebook(hash);
+            self.files_dirty = true;
+            count += 1;
+        }
+        let wanted: HashSet<&str> = wanted.difference(&held).copied().collect();
         for &hash in &wanted {
             let found = attachments::find_by_hash(&self.dir, hash);
             let known = self.files.get(hash).is_some();
@@ -1014,8 +1045,7 @@ impl Library {
         let gone: Vec<String> = if with_folders { self.files.with_descendants(id) } else { vec![id.to_owned()] };
         let inside: Vec<String> = self
             .files
-            .files()
-            .iter()
+            .listed()
             .filter(|f| f.folder.as_ref().is_some_and(|at| gone.contains(at)))
             .map(|f| f.hash.clone())
             .collect();
@@ -1102,6 +1132,9 @@ impl Library {
             alt: source.alt.clone(),
             made_from: Some(source.hash.clone()),
             bookmarks: Vec::new(),
+            // A copy of a file the notebook holds is held as its source is:
+            // one of a file it holds alone is in none of the library's lists either.
+            notebook: source.notebook,
         });
         self.files_dirty = true;
         self.save_files()?;
@@ -1159,6 +1192,11 @@ impl Library {
             _ => return Err(figures::not_a_picture()),
         };
         if self.files.get(&image.hash).is_some() {
+            // One the notebook held alone is the library's now, among its images.
+            if self.files.get(&image.hash).is_some_and(|r| !r.listed()) {
+                let folder = self.files.folder_named(&tr!("core-library-images-folder"), None)?.id;
+                self.files.adopt(&image.hash, Some(&folder), None);
+            }
             self.files.add_image_facts(&image.hash, image.width, image.height, &image.alt);
             self.save_files()?;
             return Ok(false);
@@ -1191,6 +1229,16 @@ impl Library {
         let hash = attachments::hash_bytes(&content);
         if let Some(there) = self.files.get(&hash) {
             let there = there.clone();
+            if !there.listed() {
+                // The notebook held it alone: it comes into the library as new.
+                let folder = match folder {
+                    Some(id) => self.files.folder(id)?.id.clone(),
+                    None => self.files.folder_named(&tr!("core-library-images-folder"), None)?.id,
+                };
+                self.files.adopt(&hash, Some(&folder), origin);
+                self.save_files()?;
+                return Ok((self.file_view(&hash).unwrap_or_else(|| self.view_of(&there)), true));
+            }
             return Ok((self.view_of(&there), false));
         }
         let name = figures::shown_name(name, ending);
@@ -1370,7 +1418,8 @@ impl Library {
         Some(self.view_of(record))
     }
 
-    /// Every file of the store, in the order of the record.
+    /// Every file of the library, in the order of the record: those the
+    /// notebook holds alone are left out.
     pub fn file_views(&self) -> Vec<FileView> {
         let mut by_hash: HashMap<&str, Vec<Summary>> = HashMap::new();
         for e in &self.entries {
@@ -1386,8 +1435,7 @@ impl Library {
             }
         }
         self.files
-            .files()
-            .iter()
+            .listed()
             .map(|r| FileView::of(&self.dir, r, by_hash.remove(r.hash.as_str()).unwrap_or_default()))
             .collect()
     }
@@ -1411,7 +1459,9 @@ impl Library {
         let mut seen = HashSet::new();
         for t in taken {
             let Some(hash) = attachments::hash_of_path(&t.stored).map(str::to_owned) else { continue };
-            if self.files.get(&hash).is_some() || !seen.insert(hash.clone()) {
+            // One the notebook holds alone is new to the library, and is put in its folder.
+            let only = self.files.get(&hash).is_some_and(|r| !r.listed());
+            if (self.files.get(&hash).is_some() && !only) || !seen.insert(hash.clone()) {
                 if let Some(view) = self.file_view(&hash)
                     && !out.same.iter().any(|v: &FileView| v.hash == hash)
                 {
@@ -1426,8 +1476,12 @@ impl Library {
                     Err(e) => out.problems.push(format!("{name}: {e}")),
                 }
             }
-            self.files.record(&t.stored, at.as_deref(), Some(&t.origin), &now());
-            self.files.measure(&self.dir, &hash);
+            if only {
+                self.files.adopt(&hash, at.as_deref(), Some(&t.origin));
+            } else {
+                self.files.record(&t.stored, at.as_deref(), Some(&t.origin), &now());
+                self.files.measure(&self.dir, &hash);
+            }
             if let Some(view) = self.file_view(&hash) {
                 out.files.push(view);
             }

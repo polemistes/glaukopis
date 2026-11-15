@@ -73,6 +73,29 @@ pub struct FileRecord {
     /// 0072): of the file, so the same from every project.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub bookmarks: Vec<Bookmark>,
+    /// Whether notes of the notebook hold the file: beside the library, or
+    /// alone, when the library's lists leave it out (`listed`). Nothing
+    /// where the file is the library's alone.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub notebook: Option<Held>,
+}
+
+/// How the notebook holds a file of the store.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Held {
+    /// The notebook holds it, and the library has it too.
+    Also,
+    /// The notebook holds it alone: it is in none of the library's lists.
+    Only,
+}
+
+impl FileRecord {
+    /// Whether the library lists the file: every file but one the notebook
+    /// holds alone.
+    pub fn listed(&self) -> bool {
+        self.notebook != Some(Held::Only)
+    }
 }
 
 /// A place marked in a file: a page, how far down it the top of the view
@@ -207,7 +230,42 @@ impl Files {
         self.by_hash.get(hash).map(|&i| &self.files[i])
     }
 
-    fn get_mut(&mut self, hash: &str) -> Result<&mut FileRecord> {
+    /// The files the library lists, in the order of the record: all but
+    /// those the notebook holds alone.
+    pub fn listed(&self) -> impl Iterator<Item = &FileRecord> {
+        self.files.iter().filter(|f| f.listed())
+    }
+
+    /// Makes a file the notebook holds alone the library's as well: in
+    /// `folder`, where it stands in none, and from `origin`, where it says
+    /// none. A file the library lists already is left as it is. Returns
+    /// whether anything changed.
+    pub fn adopt(&mut self, hash: &str, folder: Option<&str>, origin: Option<&str>) -> bool {
+        let folder = folder.filter(|f| self.by_id.contains_key(*f)).map(str::to_owned);
+        let Ok(file) = self.get_mut(hash) else { return false };
+        if file.listed() {
+            return false;
+        }
+        file.notebook = Some(Held::Also);
+        if file.folder.is_none() {
+            file.folder = folder;
+        }
+        if file.origin.is_none() {
+            file.origin = origin.filter(|o| !o.is_empty()).map(str::to_owned);
+        }
+        true
+    }
+
+    /// Takes a file the notebook holds out of the library's lists: out of
+    /// its folder, held by the notebook alone. Returns whether it was there.
+    pub fn leave_to_notebook(&mut self, hash: &str) -> bool {
+        let Ok(file) = self.get_mut(hash) else { return false };
+        file.notebook = Some(Held::Only);
+        file.folder = None;
+        true
+    }
+
+    pub(super) fn get_mut(&mut self, hash: &str) -> Result<&mut FileRecord> {
         match self.by_hash.get(hash) {
             Some(&i) => Ok(&mut self.files[i]),
             None => Err(Error::not_found(tr!("core-library-the-file-of-library"))),
@@ -435,17 +493,13 @@ impl Files {
     /// come, and stays.
     pub fn left_empty(&self, removed: &HashSet<&str>) -> Vec<String> {
         let mut touched: HashSet<String> = HashSet::new();
-        for file in self.files.iter().filter(|f| removed.contains(f.hash.as_str())) {
+        for file in self.listed().filter(|f| removed.contains(f.hash.as_str())) {
             if let Some(folder) = &file.folder {
                 touched.extend(self.path_of(folder).into_iter().map(|f| f.id));
             }
         }
-        let kept: Vec<&str> = self
-            .files
-            .iter()
-            .filter(|f| !removed.contains(f.hash.as_str()))
-            .filter_map(|f| f.folder.as_deref())
-            .collect();
+        let kept: Vec<&str> =
+            self.listed().filter(|f| !removed.contains(f.hash.as_str())).filter_map(|f| f.folder.as_deref()).collect();
         let mut out: Vec<String> = touched
             .iter()
             .filter(|id| {

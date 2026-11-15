@@ -161,6 +161,7 @@ impl Library {
                 alt: old.alt.split_whitespace().collect::<Vec<_>>().join(" "),
                 made_from: None,
                 bookmarks: Vec::new(),
+                notebook: None,
             });
             out.moved += 1;
         }
