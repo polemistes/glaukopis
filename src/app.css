@@ -559,15 +559,17 @@ body.dragging * {
 .prose.static .run-line {
   display: none;
 }
-/* Lists: items with a bullet or a number before them, a deeper indent a
-   list within the list. The count of numbered items begins again where
-   they begin. */
+/* Lists: items with a bullet or a number before them, or a box to tick, a
+   deeper indent a list within the list. The count of numbered items begins
+   again where they begin. */
 .prose p[data-kind='item'],
-.prose p[data-kind='numbered'] {
+.prose p[data-kind='numbered'],
+.prose p[data-kind='todo'] {
   position: relative;
 }
 .prose p[data-kind='item']::before,
-.prose p[data-kind='numbered']::before {
+.prose p[data-kind='numbered']::before,
+.prose p[data-kind='todo']::before {
   position: absolute;
   left: calc(var(--indent, 0) * var(--step, 1.5em) - 1.1em);
   color: var(--ink-3);
@@ -575,6 +577,36 @@ body.dragging * {
 }
 .prose p[data-kind='item']::before {
   content: '•';
+}
+/* A point to tick: a box where a point has its dot, which a press in an
+   editor ticks (lib/editor/ticking.ts finds the press by where it fell, so
+   the box keeps within the 1.1em before the words); ticked, a tick in it
+   and the words a little fainter. */
+.prose p[data-kind='todo']::before {
+  content: '';
+  box-sizing: border-box;
+  top: 0.42em;
+  width: 0.78em;
+  height: 0.78em;
+  border: 1.5px solid var(--ink-3);
+  border-radius: 3px;
+  font-family: var(--font-ui);
+  font-size: inherit;
+  font-weight: 700;
+  line-height: 0.72em;
+  text-align: center;
+  text-indent: 0;
+}
+.prose p[data-kind='todo'][data-done]::before {
+  content: '✓';
+  color: var(--paper);
+  background: var(--ink-3);
+}
+.prose p[data-kind='todo'][data-done] {
+  color: var(--ink-2);
+}
+.prose:not(.static) p[data-kind='todo']::before {
+  cursor: pointer;
 }
 .prose p[data-kind='numbered'] {
   counter-increment: item;

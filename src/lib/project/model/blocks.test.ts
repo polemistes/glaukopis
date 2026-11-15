@@ -134,6 +134,8 @@ const everything: Block[] = [
   paragraph([linemark({ number: '3' }), t('nested')], 'numbered', 1),
   paragraph([t('more')], 'numbered', 1),
   paragraph([t('first')], 'numbered'),
+  paragraph([t('Buy bread')], 'todo'),
+  paragraph([t('Read the proofs')], 'todo', { indent: 1, done: true }),
   paragraph([t('Dear reader,')], 'k1'),
   pagebreak('column'),
   {
@@ -259,6 +261,13 @@ describe('text written without an editor', () => {
       pagebreak('page'),
       pagebreak('column'),
     ]);
+    // A point to tick is written ticked where it is, and says nothing where it is not.
+    const [open, ticked] = elements([
+      paragraph([t('open')], 'todo'),
+      paragraph([t('ticked')], 'todo', { indent: 0, done: true }),
+    ]);
+    expect(open.getAttributes()).toEqual({ kind: 'todo', indent: 0 });
+    expect(ticked.getAttributes()).toEqual({ kind: 'todo', indent: 0, done: true });
     // What a paragraph leaves to the layout, or does not say, is not written.
     expect(shape(plain)).toEqual({
       name: 'paragraph',

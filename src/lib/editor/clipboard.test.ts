@@ -115,6 +115,21 @@ describe('text copied as Org', () => {
     expect(back.toJSON()).toEqual(doc().toJSON());
   });
 
+  it('copies points to tick as Org writes them, and pastes them back ticked as they were', () => {
+    const list = bodySchema.node('doc', null, [
+      nodes.paragraph.create({ kind: 'todo' }, [bodySchema.text('Buy bread')]),
+      nodes.paragraph.create({ kind: 'todo', done: true, indent: 1 }, [bodySchema.text('Read')]),
+    ]);
+    const text = copiedText(new Slice(list.content, 0, 0), 'en');
+    expect(text).toBe('- [ ] Buy bread\n  - [X] Read');
+    expect(looksLikeOrg(text)).toBe(true);
+    const state = EditorState.create({ schema: bodySchema });
+    const back = state.tr.replaceSelection(
+      pastedTextSlice(text, state.doc.resolve(1), bodySchema),
+    ).doc;
+    expect(back.toJSON()).toEqual(list.toJSON());
+  });
+
   it('the words of what is copied, where it is not Org: the citations as they are shown', () => {
     const text = wordsOf(new Slice(doc().content, 0, 0), 'en');
     expect(text.startsWith('As was said ')).toBe(true);
@@ -145,6 +160,7 @@ describe('text pasted as Org', () => {
   it('is read as Org where it holds a sign of Org at the start of a line', () => {
     expect(kinds('- One\n- Two')).toEqual(['item: One', 'item: Two']);
     expect(kinds('1. First\n2. Second')).toEqual(['numbered: First', 'numbered: Second']);
+    expect(kinds('- [ ] Open\n- [x] Done')).toEqual(['todo: Open', 'todo: Done']);
     expect(kinds('#+BEGIN_VERSE\n@ Nurse\nIf only the Argo\nhad never flown\n#+END_VERSE')).toEqual(
       ['speaker: Nurse', 'line: If only the Argo⏎had never flown'],
     );

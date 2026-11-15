@@ -344,6 +344,8 @@ Everything the tools do can be done from the keys, and much of it by typing:
 | Write a space no line breaks at | **Ctrl+Shift+Space** |
 | Choose the kind of a paragraph, or make a kind of your own | **Paragraph kind**; **Make a kind…** under **More…** in its menu |
 | Begin a quotation or a list | Type `> `, `- ` or `1. ` at the start of a line |
+| Begin a list to tick | Type `[ ] ` at the start of a line, or after `- `; `[x] ` for a point already ticked; or **Ctrl+Shift+9** |
+| Tick or untick a point to do | Press its box, or **Ctrl+Enter** with the cursor in it; with several selected, all are ticked, or all unticked where all were ticked |
 | Make a dash | Type `--` for –, `---` for — |
 | Make a heading at the cursor: a new element after the one the cursor is in | **Alt+Enter**; or right-click there: **Split here** |
 | The same, with the new element under the one the cursor is in, the first | **Alt+Shift+Enter** |
@@ -815,13 +817,25 @@ write. **More…** has every kind, by its group:
 | **Quotation** | **Quotation**, words of another, set apart from the text; **Epigraph**, a quotation at the head of a part; **Attribution**, whose words a quotation is, a paragraph of its own after it |
 | **Verse** | **Verse**, a stanza of poetry, drama or a transcript, its lines kept as lines; **Speaker** and **Stage direction**: see *Lines and paragraphs, verse, and texts side by side* |
 | **Script** | **Scene heading**, **Action**, **Character**, **Dialogue**, **Parenthetical** and **Transition**: the parts of a screenplay |
-| **List** | **List**, a point with a mark before it, and **Numbered list**, a point that is counted; an indent makes a list within the list |
+| **List** | **List**, a point with a mark before it; **Numbered list**, a point that is counted; and **To do**, a point with a box before it, to tick when it is done; an indent makes a list within the list |
 | **More** | **Headword** and **Gloss**, the two paragraphs of a glossary; **Code**, a line kept letter for letter; **Break**, a pause between parts, which holds no text and prints the sign the layout gives it; **Draft note**, for your eyes, which goes into no document |
 
 Typing `> `, `- ` or `1. ` at the start of a paragraph of text makes it a
 quotation, a point or a numbered point, as Markdown has it; `7. ` begins a
 numbered list at 7, and the points after it count on from it: so a list
 goes on after paragraphs of text between its points.
+
+**To do** is a point with a box before it. A press on the box ticks it,
+and a second press unticks it; **Ctrl+Enter** does the same for the
+points the cursor or the selection is in. A ticked point has a tick in its
+box, and its words are a little fainter. **Enter** at the end of a point
+gives a new one, not ticked; on an empty one, it leaves the list. Typing
+`[ ] ` at the start of a paragraph of text, or of a point just begun with
+`- `, makes a point to do, and `[x] ` one that is ticked. The points to do
+are a list in the document, each with its box, ticked or not, in a PDF,
+in Word and Writer and on the web alike; in the Org copy they are written
+`- [ ]` and `- [X]`, as Org writes a box, and a list to tick in a document
+brought in, from Markdown or Word, comes in as points to do.
 
 **Marks**, in the bar, are a look set by hand on any letters, from one to
 many paragraphs: **Italic** (**Ctrl+I**), **Bold** (**Ctrl+B**), **Small

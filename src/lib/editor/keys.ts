@@ -99,6 +99,7 @@ export const enterKey: Command = (state, dispatch) => {
             ...paragraph.attrs,
             kind: 'text',
             indent: 0,
+            done: null,
             ...leaves,
           })
           .scrollIntoView(),
@@ -113,6 +114,8 @@ export const enterKey: Command = (state, dispatch) => {
   if (!found) return false;
   const { line } = found;
   let cut = onlyMarksBefore(tr.doc, line, at) ? line.start : at;
+  // Cut before all its words, a point to tick keeps its tick, and the empty one before it has none.
+  const start = line === found.lines[0] && cut === line.start;
   const before = tr.doc.resolve(cut).nodeBefore;
   const after = tr.doc.resolve(at).nodeAfter;
   if (before?.type.name === 'hard_break') {
@@ -121,8 +124,13 @@ export const enterKey: Command = (state, dispatch) => {
   } else if (after?.type.name === 'hard_break' && at === line.end) {
     tr.delete(at, at + 1);
   }
-  const attrs = { ...found.paragraph.attrs, new: null };
+  // A new point to tick is not ticked.
+  const attrs = { ...found.paragraph.attrs, new: null, done: null };
   tr.split(cut, 1, [{ type: found.paragraph.type, attrs }]);
+  if (start && found.paragraph.attrs.done === true) {
+    tr.setNodeMarkup(found.pos, undefined, { ...found.paragraph.attrs, done: null });
+    tr.setNodeMarkup(tr.doc.resolve(cut + 2).before(), undefined, { ...attrs, done: true });
+  }
   // The cursor at the start of the new paragraph, after its line mark if it has one.
   const $start = tr.doc.resolve(cut + 2);
   const mark = $start.nodeAfter?.type.name === 'linemark' ? 1 : 0;

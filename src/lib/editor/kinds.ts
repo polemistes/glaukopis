@@ -61,6 +61,7 @@ const WORDS: Record<string, string> = {
   gloss: 'editor-gloss',
   item: 'editor-list',
   numbered: 'editor-numbered-list',
+  todo: 'editor-todo',
   code: 'editor-code',
   break: 'editor-break',
   draft: 'editor-draft',
@@ -77,6 +78,7 @@ const SHORTCUTS: Record<string, string> = {
   quote: keysFor('writing-quotation'),
   item: keysFor('writing-list'),
   numbered: keysFor('writing-numbered'),
+  todo: keysFor('writing-todo'),
 };
 
 /** The kinds that come with the application, in the order the tools list them: the order of `families.ts`, which is the core's. */
@@ -107,7 +109,7 @@ export const GROUPS: { id: KindGroup; kinds: readonly string[]; label(): string 
     kinds: ['scene', 'action', 'character', 'dialogue', 'parenthetical', 'transition'],
     label: () => t('editor-kinds-script'),
   },
-  { id: 'list', kinds: ['item', 'numbered'], label: () => t('editor-kinds-list') },
+  { id: 'list', kinds: ['item', 'numbered', 'todo'], label: () => t('editor-kinds-list') },
   {
     id: 'more',
     kinds: ['headword', 'gloss', 'code', 'break', 'draft'],
@@ -130,14 +132,14 @@ export function groupOf(id: string): KindGroup {
  * The kinds that are written together, which the kind menu offers first
  * while the cursor is among them: lines of verse with speakers and
  * directions, the parts of a script, a headword and its gloss, a quotation
- * and what goes with it, the two kinds of item.
+ * and what goes with it, the kinds of item.
  */
 const FELLOWS: readonly (readonly string[])[] = [
   ['line', 'speaker', 'direction'],
   ['scene', 'action', 'character', 'dialogue', 'parenthetical', 'transition'],
   ['headword', 'gloss'],
   ['quote', 'epigraph', 'attribution'],
-  ['item', 'numbered'],
+  ['item', 'numbered', 'todo'],
 ];
 
 /** The kind of the catalogue a kind is, or is based on through the writer's own; text for one based on nothing known. */
@@ -302,6 +304,7 @@ const CUES: Record<string, Look> = {
   gloss: { spaceBefore: '0pt', spaceAfter: '6pt' },
   item: { indentLeft: '18.9pt' },
   numbered: { indentLeft: '18.9pt' },
+  todo: { indentLeft: '18.9pt' },
   code: { monospace: true, lineSpacing: 1, align: 'left', size: 10.3, indentLeft: '16.5pt' },
   break: { align: 'center', spaceBefore: '12pt', spaceAfter: '12pt', text: '* * *' },
   foreign: { italic: true },

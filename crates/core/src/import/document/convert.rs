@@ -214,6 +214,35 @@ pub(super) fn join(line: Vec<Inline>) -> Vec<Inline> {
 /// Blocks as one line: the paragraphs joined. Figures cannot stand in a
 /// line, and are set aside.
 /// The mark that gives a point of a numbered list its number, where the count is not to begin at one.
+/// Whether the words of a point begin with a box, as Pandoc gives a point
+/// of a list to tick: `Some(true)` where it is ticked, `Some(false)` where
+/// it is not, with the box and the room after it taken away; nothing, and
+/// the words as they were, where they do not.
+fn ticked(content: &mut Vec<Inline>) -> Option<bool> {
+    let Some(Inline::Text { text, .. }) = content.first_mut() else { return None };
+    let mut chars = text.chars();
+    let done = match chars.next()? {
+        '\u{2610}' => false,
+        '\u{2612}' | '\u{2611}' => true,
+        _ => return None,
+    };
+    let rest = chars.as_str();
+    // The box is a sign of its own, with room after it, not the first letter of a word.
+    if !rest.is_empty() && !rest.starts_with(char::is_whitespace) {
+        return None;
+    }
+    let rest = rest.trim_start().to_owned();
+    if rest.is_empty() {
+        content.remove(0);
+        if let Some(Inline::Text { text, .. }) = content.first_mut() {
+            *text = text.trim_start().to_owned();
+        }
+    } else {
+        *text = rest;
+    }
+    Some(done)
+}
+
 fn number_mark(number: u32) -> Inline {
     Inline::LineMark {
         number: Some(number.to_string()),
@@ -859,8 +888,10 @@ impl Reading<'_, '_> {
             let mut aside = Vec::new();
             for b in self.blocks(list(item)) {
                 match b {
-                    Block::Paragraph { name, indent, content, .. } if matches!(name.as_str(), "item" | "numbered") => {
-                        out.push(Block::of_kind(&name, content).indented(indent + 1));
+                    Block::Paragraph { name, indent, done, content, .. }
+                        if matches!(name.as_str(), "item" | "numbered" | "todo") =>
+                    {
+                        out.push(Block::of_kind(&name, content).indented(indent + 1).ticked(done));
                     }
                     // A further paragraph of the item, or of an item of a list within it.
                     Block::Paragraph { name, indent, content, .. } if name == "text" && (point || indent > 0) => {
@@ -872,7 +903,11 @@ impl Reading<'_, '_> {
                             content.insert(0, number_mark(number));
                         }
                         point = true;
-                        out.push(Block::of_kind(kind, content));
+                        // A point of a list to tick begins with its box, as Pandoc reads one.
+                        match (kind, ticked(&mut content)) {
+                            ("item", Some(done)) => out.push(Block::of_kind("todo", content).ticked(done)),
+                            _ => out.push(Block::of_kind(kind, content)),
+                        }
                     }
                     other => aside.push(other),
                 }

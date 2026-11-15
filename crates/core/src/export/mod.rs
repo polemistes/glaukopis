@@ -5421,6 +5421,46 @@ mod tests {
     }
 
     #[test]
+    fn a_list_to_tick_in_every_kind_of_document() {
+        use crate::document::Block;
+        use crate::document::fixtures::text;
+        let Some(s) = setup() else { return };
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let mut r = request("chicago-author-date");
+        let blocks = &mut r.document.sections[1].blocks;
+        blocks.push(Block::of_kind("todo", vec![text("Zzopenzz")]));
+        blocks.push(Block::of_kind("todo", vec![text("Zzticked")]).ticked(true));
+        blocks.push(Block::of_kind("todo", vec![text("Zzwithinzz")]).indented(1));
+
+        let typ = out.join("todo.typ");
+        export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
+        let t = fs::read_to_string(&typ).unwrap();
+        assert!(t.contains("☐ Zzopenzz") && t.contains("☒ Zzticked") && t.contains("☐ Zzwithinzz"), "{t}");
+        let p = preview(&s.ctx(), &r).unwrap();
+        assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+
+        let tex = out.join("todo.tex");
+        export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
+        let l = fs::read_to_string(&tex).unwrap();
+        assert!(l.contains("Zzopenzz") && l.contains("Zzticked"), "{l}");
+        assert!(!l.contains("☐ Zzopenzz"), "LaTeX is given a box it can set, not the sign: {l}");
+
+        let md = out.join("todo.md");
+        export(&s.ctx(), &r, Target::Markdown, &md, &ExportOptions::default()).unwrap();
+        let m = fs::read_to_string(&md).unwrap();
+        assert!(m.contains("[ ] Zzopenzz") && m.contains("[x] Zzticked"), "{m}");
+
+        let docx = out.join("todo.docx");
+        export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        // Word is given the box as the sign of the point, as Pandoc writes a list to tick.
+        let document = unzip(&docx, "word/document.xml");
+        assert!(document.contains(">Zzopenzz<") && !document.contains("☐"), "{document}");
+        let numbering = unzip(&docx, "word/numbering.xml");
+        assert!(numbering.contains("w:val=\"☐\"") && numbering.contains("w:val=\"☒\""), "{numbering}");
+    }
+
+    #[test]
     fn kinds_of_passage_and_of_words_on_the_web_and_in_writer() {
         let Some(s) = setup() else { return };
         let out = s.work.join("out");

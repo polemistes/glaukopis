@@ -70,6 +70,8 @@ struct Para<'a> {
     name: &'a str,
     indent: u32,
     new: bool,
+    /// A point to tick that is ticked.
+    done: bool,
     content: &'a [Inline],
     shown: &'a [Option<Shown>],
 }
@@ -240,8 +242,8 @@ impl Converter<'_> {
                 .iter()
                 .zip(&shown)
                 .filter_map(|(b, shown)| match b {
-                    Block::Paragraph { name, indent, new, content, .. } => {
-                        Some(Para { name, indent: *indent, new: *new, content, shown })
+                    Block::Paragraph { name, indent, new, done, content, .. } => {
+                        Some(Para { name, indent: *indent, new: *new, done: *done, content, shown })
                     }
                     _ => None,
                 })
@@ -826,7 +828,14 @@ impl Converter<'_> {
             if p.indent < level || (i > at && p.indent == level && numbered(p) != kind) {
                 break;
             }
-            let mut inner = vec![json!({"t": "Plain", "c": self.lined(p.content, Numbers { shown: p.shown, side })})];
+            let mut words = self.lined(p.content, Numbers { shown: p.shown, side });
+            // A point to tick begins with its box, as Pandoc writes a list to tick, which every
+            // kind of document then shows as a box.
+            if self.base_of(p.name) == "todo" {
+                let sign = if p.done { "\u{2612}" } else { "\u{2610}" };
+                words.splice(0..0, [json!({"t": "Str", "c": sign}), json!({"t": "Space"})]);
+            }
+            let mut inner = vec![json!({"t": "Plain", "c": words})];
             i += 1;
             while i < paras.len() && paras[i].indent > level {
                 let (sub, next) = self.list_from(paras, i, paras[i].indent, side);
@@ -937,7 +946,7 @@ impl Converter<'_> {
             return;
         };
         let look = &info.look;
-        if matches!(name, "text" | "quote" | "item" | "numbered") {
+        if matches!(name, "text" | "quote" | "item" | "numbered" | "todo") {
             let inner = lined(content);
             if !inner.is_empty() {
                 grouped(json!({"t": "Para", "c": inner}), out);
@@ -1578,6 +1587,40 @@ mod tests {
         assert_eq!(nested[1][1]["t"], "BulletList");
         assert_eq!(out[1]["t"], "OrderedList");
         assert_eq!(out[1]["c"][0][0], 1);
+    }
+
+    #[test]
+    fn a_list_to_tick_is_a_bullet_list_whose_points_begin_with_a_box() {
+        let keys = HashMap::new();
+        for flavour in [Flavour::Plain, Flavour::Typst, Flavour::Latex, Flavour::Docx] {
+            let c = converter(&keys, flavour);
+            let list = vec![
+                kind("todo", vec![text("Buy bread")]),
+                kind("todo", vec![text("Read the proofs")]).ticked(true),
+                kind("todo", vec![text("Within")]).indented(1),
+                kind("item", vec![text("A point")]),
+            ];
+            let out = written(&c, &list);
+            assert_eq!(out.len(), 1, "one list, the points and the point to tick together");
+            assert_eq!(out[0]["t"], "BulletList");
+            let items = out[0]["c"].as_array().unwrap();
+            assert_eq!(items.len(), 3);
+            let words = |item: &Value| item[0]["c"].as_array().unwrap().clone();
+            let first = words(&items[0]);
+            assert_eq!(first[0], json!({"t": "Str", "c": "\u{2610}"}));
+            assert_eq!(first[1], json!({"t": "Space"}));
+            assert_eq!(words(&items[1])[0]["c"], "\u{2612}", "ticked");
+            // The point within stands in a list of its own under the one before.
+            assert_eq!(items[1][1]["t"], "BulletList");
+            assert_eq!(words(&items[1][1]["c"][0])[0]["c"], "\u{2610}");
+            // A plain point has no box.
+            assert_ne!(words(&items[2])[0]["c"], "\u{2610}");
+        }
+        // Ticked is not written where it is not.
+        let json = serde_json::to_value(kind("todo", vec![text("a")])).unwrap();
+        assert!(json.get("done").is_none());
+        let json = serde_json::to_value(kind("todo", vec![text("a")]).ticked(true)).unwrap();
+        assert_eq!(json["done"], true);
     }
 
     #[test]

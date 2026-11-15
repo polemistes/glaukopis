@@ -100,15 +100,16 @@ export function kindsIn(state: EditorState): string[] {
 }
 
 /** The kinds whose paragraphs keep their indent when a paragraph is made one of them: items, and lines of verse. */
-const KEEPS_INDENT = ['item', 'numbered', 'line'];
+const KEEPS_INDENT = ['item', 'numbered', 'todo', 'line'];
 
 /**
  * Makes the paragraphs the selection touches of one kind, or the one the
  * cursor is in: never more, never less, and nothing but the label changes
  * (ADR 0041). The indent is kept where the kind is an item or a line of
  * verse, or based on one, and taken away otherwise; the numbering, the line
- * marks and every word stay. A kind of words is toggled on the words
- * instead, as `toggleKind` does. An id that is not in the catalogue is a
+ * marks and every word stay. Ticked is said of a point to tick only, and
+ * goes where the paragraph becomes of another kind. A kind of words is
+ * toggled on the words instead, as `toggleKind` does. An id that is not in the catalogue is a
  * kind of the writer's own, which `own` says what it is based on.
  */
 export function setKind(id: string, own: readonly BasedKind[] = []): Command {
@@ -120,13 +121,69 @@ export function setKind(id: string, own: readonly BasedKind[] = []): Command {
     if (dispatch) {
       const tr = state.tr;
       const keeps = KEEPS_INDENT.includes(catalogueKindOf(kind, own));
+      const ticks = catalogueKindOf(kind, own) === 'todo';
       for (const { node, pos } of paragraphs) {
-        const attrs = { ...node.attrs, kind, indent: keeps ? node.attrs.indent : 0 };
-        if (attrs.kind === node.attrs.kind && attrs.indent === node.attrs.indent) continue;
+        const attrs = {
+          ...node.attrs,
+          kind,
+          indent: keeps ? node.attrs.indent : 0,
+          done: ticks ? (node.attrs.done ?? null) : null,
+        };
+        if (
+          attrs.kind === node.attrs.kind &&
+          attrs.indent === node.attrs.indent &&
+          attrs.done === (node.attrs.done ?? null)
+        )
+          continue;
         tr.setNodeMarkup(pos, undefined, attrs);
       }
       dispatch(tr.scrollIntoView());
     }
+    return true;
+  };
+}
+
+/** Whether a paragraph is a point to tick, or of a kind of the writer's own based on one. */
+export function ticksNode(node: Node, own: readonly BasedKind[] = []): boolean {
+  return (
+    node.type.name === 'paragraph' &&
+    catalogueKindOf((node.attrs.kind as string) || 'text', own) === 'todo'
+  );
+}
+
+/**
+ * Ticks the points to tick the selection touches, or the one the cursor
+ * is in, where any of them is not ticked, and unticks them where all are:
+ * one step of undo. Nothing where none is a point to tick.
+ */
+export function toggleDone(own: readonly BasedKind[] = []): Command {
+  return (state, dispatch) => {
+    const points = paragraphsIn(state).filter(({ node }) => ticksNode(node, own));
+    if (!points.length) return false;
+    const tick = points.some(({ node }) => node.attrs.done !== true);
+    if (dispatch) {
+      const tr = state.tr;
+      for (const { node, pos } of points)
+        if ((node.attrs.done === true) !== tick)
+          tr.setNodeMarkup(pos, undefined, { ...node.attrs, done: tick ? true : null });
+      dispatch(tr);
+    }
+    return true;
+  };
+}
+
+/** Ticks or unticks the point to tick that stands at `pos`, where one does: a press on its box. */
+export function toggleDoneAt(pos: number, own: readonly BasedKind[] = []): Command {
+  return (state, dispatch) => {
+    const node = state.doc.nodeAt(pos);
+    if (!node || !ticksNode(node, own)) return false;
+    if (dispatch)
+      dispatch(
+        state.tr.setNodeMarkup(pos, undefined, {
+          ...node.attrs,
+          done: node.attrs.done === true ? null : true,
+        }),
+      );
     return true;
   };
 }

@@ -1028,7 +1028,7 @@ fn kinds(blocks: &[Block]) -> Vec<&'static str> {
             Block::Paragraph { name, .. } => match name.as_str() {
                 "quote" => "quotation",
                 "line" => "verse",
-                "item" | "numbered" => "list",
+                "item" | "numbered" | "todo" => "list",
                 "code" => "code",
                 "headword" | "gloss" => "glossary",
                 _ => "paragraph",
@@ -1146,6 +1146,29 @@ fn markdown_with_everything_in_it() {
     // What was found gets an id of its own every time.
     assert_eq!(without_ids(&again.sections), without_ids(&read.sections));
     assert_ne!(again.sections, read.sections);
+}
+
+#[test]
+fn a_list_to_tick_in_markdown_is_read_as_points_to_tick() {
+    let Some(s) = setup() else { return };
+    let path = s.desk().join("plan.md");
+    fs::write(
+        &path,
+        "Before.\n\n- [ ] Buy bread\n- [x] Read the *proofs*\n    - [ ] Within\n- A point\n- ☐Box as a letter\n\n1. [ ] Numbered\n",
+    )
+    .unwrap();
+    let read = s.read(&path).unwrap();
+    let blocks: Vec<&Block> = read.sections.iter().flat_map(|s| &s.blocks).collect();
+    let todo =
+        |indent: u32, done: bool, content: Vec<Inline>| Block::of_kind("todo", content).indented(indent).ticked(done);
+    assert_eq!(blocks[1], &todo(0, false, vec![text("Buy bread")]));
+    assert_eq!(blocks[2], &todo(0, true, vec![text("Read the "), marked("proofs", &["em"])]));
+    assert_eq!(blocks[3], &todo(1, false, vec![text("Within")]));
+    // A plain point stays one, and so does one whose box is a letter of its first word.
+    assert_eq!(blocks[4], &Block::of_kind("item", vec![text("A point")]));
+    assert_eq!(blocks[5], &Block::of_kind("item", vec![text("☐Box as a letter")]));
+    // A numbered point is no point to tick: its box stays as Pandoc gave it.
+    assert!(matches!(blocks[6], Block::Paragraph { name, .. } if name == "numbered"), "{:?}", blocks[6]);
 }
 
 #[test]

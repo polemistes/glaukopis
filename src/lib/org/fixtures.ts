@@ -27,7 +27,7 @@ export function p(
   content: Inline[],
   name = 'text',
   more: Partial<
-    Pick<ParagraphBlock, 'indent' | 'numbering' | 'every' | 'side' | 'only' | 'new'>
+    Pick<ParagraphBlock, 'indent' | 'numbering' | 'every' | 'side' | 'only' | 'new' | 'done'>
   > = {},
 ): ParagraphBlock {
   return {
@@ -39,6 +39,7 @@ export function p(
     ...(more.side ? { side: more.side } : {}),
     ...(more.only ? { only: more.only } : {}),
     ...(more.new ? { new: true as const } : {}),
+    ...(more.done ? { done: true as const } : {}),
     content,
   };
 }
@@ -94,6 +95,10 @@ export const TRAPS: string[] = [
   'a :: b',
   '[@5] a counter',
   '[ ] a box',
+  '[x] a box ticked',
+  '[X] and so',
+  '[-] a box partly ticked',
+  '[ ]',
   'TODO in the text',
   '[#A] a priority',
   'C:\\path\\*\\file',
@@ -122,6 +127,10 @@ export function trapBlocks(): Block[] {
     lines('quote'),
     lines('item'),
     lines('numbered', { indent: 1 }),
+    lines('todo'),
+    lines('todo', { indent: 1, done: true }),
+    ...TRAPS.map((s) => p([t(s)], 'item')),
+    ...TRAPS.map((s) => p([t(s)], 'todo', { done: true })),
     lines('headword'),
     lines('gloss'),
     lines('epigraph'),
@@ -381,6 +390,11 @@ const kinds: Block[] = [
   p([t('An item on'), br, t('two lines')], 'item'),
   p([mark({ number: '7a', margin: 'm' }), t('Numbered by a label')], 'numbered'),
   p([t('A new list')], 'item', { new: true }),
+  p([t('A point to tick')], 'todo'),
+  p([t('Ticked, with '), t('words', { em: true })], 'todo', { done: true }),
+  p([t('[ ] that is words in a point to tick')], 'todo', { indent: 1 }),
+  p([t('[ ] that is words in a point')], 'item'),
+  p([t('[X] ticked words')], 'todo', { indent: 1, done: true }),
   p([t('print("hello")')], 'code'),
   p([t('    return x * 2')], 'code'),
   p([t('#+not a keyword in code')], 'code'),

@@ -179,6 +179,9 @@ export function notesHtml(
     el.replaceWith(quote);
     quote.append(el);
   }
+  // A point to tick begins with its box, ticked or not, as words every program shows.
+  for (const el of [...body.querySelectorAll('p[data-kind="todo"]')])
+    el.prepend(doc.createTextNode(el.hasAttribute('data-done') ? '☒ ' : '☐ '));
   for (const el of [...body.querySelectorAll('span.smallcaps')]) {
     el.removeAttribute('class');
     el.setAttribute('style', 'font-variant: small-caps');
@@ -211,6 +214,7 @@ export function notesPlain(blocks: Block[], cite: Cite, left: LeftOut): string {
           const said = words(b.content).trim();
           const indent = '  '.repeat(b.indent);
           if (b.name === 'item') parts.push(`${indent}• ${said}`);
+          else if (b.name === 'todo') parts.push(`${indent}${b.done ? '☒' : '☐'} ${said}`);
           else if (b.name === 'numbered') parts.push(`${indent}${++numbered}. ${said}`);
           else if (said) parts.push(said);
           break;
@@ -273,16 +277,37 @@ export function plainToBlocks(words: string): Block[] {
 /**
  * Lists of another program's HTML as this text has its lists: each item a
  * paragraph of the kind of item, or numbered, indented by its depth, where
- * a list in a list would otherwise be read as plain paragraphs.
+ * a list in a list would otherwise be read as plain paragraphs; an item of a
+ * list without numbers that begins with a box, a box to tick or the sign
+ * of one (☐, ☒), a point to tick, ticked as the box is.
  */
 function flattenLists(doc: Document) {
+  /** Whether an item begins with a box, ticked or not, which is taken away; null where it does not. */
+  const boxOf = (li: Element): boolean | null => {
+    const input = li.querySelector(
+      ':scope > input[type="checkbox"], :scope > p:first-child > input[type="checkbox"]',
+    );
+    if (input) {
+      input.remove();
+      return input.hasAttribute('checked');
+    }
+    const walker = doc.createTreeWalker(li, NodeFilter.SHOW_TEXT);
+    let first = walker.nextNode() as Text | null;
+    while (first && !first.data.trim()) first = walker.nextNode() as Text | null;
+    const sign = first ? /^\s*([☐☒☑])\s+/.exec(first.data) : null;
+    if (!first || !sign) return null;
+    first.data = first.data.slice(sign[0].length);
+    return sign[1] !== '☐';
+  };
   const items = (list: Element, depth: number): Element[] => {
     const kind = list.localName === 'ol' ? 'numbered' : 'item';
     const out: Element[] = [];
     for (const li of [...list.children]) {
       if (li.localName !== 'li') continue;
       const p = doc.createElement('p');
-      p.setAttribute('data-kind', kind);
+      const ticks = kind === 'item' ? boxOf(li) : null;
+      p.setAttribute('data-kind', ticks === null ? kind : 'todo');
+      if (ticks) p.setAttribute('data-done', '');
       if (depth) p.setAttribute('data-indent', String(depth));
       const nested: Element[] = [];
       for (const child of [...li.childNodes]) {

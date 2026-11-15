@@ -88,6 +88,21 @@ describe('a text as HTML', () => {
     );
   });
 
+  it('draws points to tick as points of a list, ticked where they are', () => {
+    const html = blocksHtml([
+      paragraph([t('open')], 'todo'),
+      paragraph([t('ticked')], 'todo', { indent: 0, done: true }),
+      paragraph([t('within')], 'todo', { indent: 1 }),
+      paragraph([t('a point')], 'item'),
+    ]);
+    expect(html).toBe(
+      '<ul><li><p data-kind="todo">open</p></li>' +
+        '<li><p data-kind="todo" data-done>ticked</p>' +
+        '<ul><li><p data-kind="todo" data-indent="1" style="--indent: 1">within</p></li></ul></li>' +
+        '<li><p data-kind="item">a point</p></li></ul>',
+    );
+  });
+
   it('gives each point of a numbered list its number, counting on from one given by hand', () => {
     const html = blocksHtml([
       paragraph([t('first')], 'numbered'),
