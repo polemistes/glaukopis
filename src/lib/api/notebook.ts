@@ -165,6 +165,13 @@ export interface InboxItem {
 export const notebookInboxTake = () => call<InboxItem[]>('notebook_inbox_take');
 
 /**
+ * How many things lie in the notebook's inbox: asked before they are taken,
+ * so that the notebook is read first and nothing leaves the inbox that the
+ * notebook is not there to receive.
+ */
+export const notebookInboxWaiting = () => call<number>('notebook_inbox_waiting');
+
+/**
  * Hears that something has come into the notebook's inbox. The shell tells
  * one window, so this window listens as itself. Gives what ends the
  * listening.

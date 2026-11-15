@@ -4,6 +4,7 @@ import type { InboxItem } from '$lib/api/notebook';
 const api = vi.hoisted(() => ({
   heard: null as (() => void) | null,
   notebookInboxTake: vi.fn(),
+  notebookInboxWaiting: vi.fn(),
   onNotebookInbox: vi.fn(async (heard: () => void) => {
     api.heard = heard;
     return () => {
@@ -13,6 +14,7 @@ const api = vi.hoisted(() => ({
 }));
 vi.mock('$lib/api/notebook', () => ({
   notebookInboxTake: api.notebookInboxTake,
+  notebookInboxWaiting: api.notebookInboxWaiting,
   onNotebookInbox: api.onNotebookInbox,
   notebookTakeFiles: vi.fn(),
   notebookTakeImage: vi.fn(),
@@ -55,13 +57,17 @@ beforeEach(() => {
   notebook = new Notebook();
   opened.open.mockResolvedValue(notebook);
   api.notebookInboxTake.mockResolvedValue([]);
+  // Something waits unless a test says nothing does: what is taken says what.
+  api.notebookInboxWaiting.mockResolvedValue(1);
 });
 
 describe('what arrives from the plugin', () => {
-  it('nothing in the inbox: the notebook is not even read', async () => {
+  it('nothing in the inbox: the notebook is not even read, and nothing is taken', async () => {
+    api.notebookInboxWaiting.mockResolvedValue(0);
     const stop = watchInbox();
     await settled();
-    expect(api.notebookInboxTake).toHaveBeenCalledTimes(1);
+    expect(api.notebookInboxWaiting).toHaveBeenCalledTimes(1);
+    expect(api.notebookInboxTake).not.toHaveBeenCalled();
     expect(opened.open).not.toHaveBeenCalled();
     expect(shown.show).not.toHaveBeenCalled();
     stop();
@@ -105,6 +111,8 @@ describe('what arrives from the plugin', () => {
     const first = takeInbox();
     void takeInbox();
     void takeInbox();
+    // The inbox is looked at and the notebook read before anything is taken.
+    await settled();
     expect(api.notebookInboxTake).toHaveBeenCalledTimes(1);
     release([item({ text: 'First' })]);
     await first;
@@ -112,12 +120,14 @@ describe('what arrives from the plugin', () => {
     expect(notebook.list.map((n) => n.begins).sort()).toEqual(['First', 'Second']);
   });
 
-  it('a notebook that cannot be read is said', async () => {
+  it('a notebook that cannot be read is said, and what waits stays in the inbox', async () => {
     api.notebookInboxTake.mockResolvedValueOnce([item()]);
     opened.open.mockRejectedValueOnce(new Error('no disk'));
     await takeInbox();
     expect(shown.notifyError).toHaveBeenCalledWith(expect.any(String), expect.any(Error));
     expect(shown.show).not.toHaveBeenCalled();
+    // The notebook is read before anything is taken: nothing left the inbox.
+    expect(api.notebookInboxTake).not.toHaveBeenCalled();
   });
 });
 

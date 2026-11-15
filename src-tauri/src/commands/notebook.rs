@@ -262,6 +262,14 @@ fn take(state: &AppState, id: &str) -> glaukopis_core::Result<InboxItem> {
 /// the inbox then. A thing that cannot be read or taken is set aside and
 /// said in the log, and the rest go on. Run on the threads for blocking
 /// work: pictures are read and copied.
+/// How many things lie in the notebook's inbox: one look at a folder. The
+/// window asks before it takes, so that the notebook is read first and
+/// nothing leaves the inbox that the notebook is not there to receive.
+#[tauri::command(async)]
+pub fn notebook_inbox_waiting(state: State<'_, AppState>) -> usize {
+    state.inbox.ids().len()
+}
+
 #[tauri::command]
 pub async fn notebook_inbox_take(app: AppHandle) -> CommandResult<Vec<InboxItem>> {
     blocking(move || Ok(take_all(&app.state::<AppState>()))).await

@@ -243,6 +243,7 @@ pub fn run() {
             commands::notebook::notebook_hold,
             commands::notebook::notebook_to_library,
             commands::notebook::notebook_sweep,
+            commands::notebook::notebook_inbox_waiting,
             commands::notebook::notebook_inbox_take,
             commands::notebook::firefox_setup,
             commands::notebook::firefox_set_up,

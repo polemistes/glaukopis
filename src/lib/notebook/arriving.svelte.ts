@@ -8,7 +8,12 @@
  * not even read.
  */
 
-import { notebookInboxTake, onNotebookInbox, type InboxItem } from '$lib/api/notebook';
+import {
+  notebookInboxTake,
+  notebookInboxWaiting,
+  onNotebookInbox,
+  type InboxItem,
+} from '$lib/api/notebook';
 import { t } from '$lib/i18n';
 import { router } from '$lib/state/router.svelte';
 import { notifyError, toasts } from '$lib/ui/toast.svelte';
@@ -24,6 +29,22 @@ export function arrivedWords(items: InboxItem[], count: number): string {
 
 /** Takes what lies in the inbox, once: notes made of it, and said. */
 async function takeOnce() {
+  // Nothing there: the notebook is not even read.
+  try {
+    if (!(await notebookInboxWaiting())) return;
+  } catch (error) {
+    console.warn('the inbox of the notebook could not be looked at', error);
+    return;
+  }
+  // The notebook first: what lies in the inbox stays there until the
+  // notebook is there to receive it.
+  let notebook;
+  try {
+    notebook = await theNotebook.open();
+  } catch (error) {
+    notifyError(t('notebook-unreadable'), error);
+    return;
+  }
   let items: InboxItem[];
   try {
     items = await notebookInboxTake();
@@ -34,9 +55,7 @@ async function takeOnce() {
   if (!items.length) return;
   let ids: string[];
   try {
-    const notebook = await theNotebook.open();
     ids = notesOfInbox(notebook, items);
-    // Taken out of the inbox, it is written to the notebook's log at once.
     void notebook.flush().catch(() => {});
   } catch (error) {
     notifyError(t('notebook-unreadable'), error);
