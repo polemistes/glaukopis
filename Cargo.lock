@@ -2226,6 +2226,7 @@ dependencies = [
  "kamadak-exif",
  "libc",
  "lopdf",
+ "md-5",
  "pdf-text",
  "roxmltree 0.21.1",
  "rusqlite",

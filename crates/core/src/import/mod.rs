@@ -12,6 +12,8 @@ pub mod bibfile;
 pub mod decoding;
 /// Documents, which become maps: apart from the references, and not in three steps.
 pub mod document;
+/// Notes of other programs, brought into the notebook (record 0105).
+pub mod notes;
 pub mod pdf;
 /// What the files of the library may be: the finding-out of the going-through.
 pub mod proposals;

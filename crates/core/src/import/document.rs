@@ -539,6 +539,67 @@ pub(crate) fn pandoc_value(json: &[u8], file: &str) -> Result<Value> {
     value.map_err(|e| Error::invalid(tr!("core-import-document-pandoc-unreadable", file = file, error = e.to_string())))
 }
 
+/// What Pandoc makes of a file, read as `reader`, as JSON: kept from reading
+/// anything but the file, run in `work` and ended where `stop` is set. A
+/// file it cannot read is an error that says so, with `kind` the kind of
+/// file in words.
+pub(crate) fn pandoc_json(
+    tools: &Tools,
+    reader: &str,
+    path: &Path,
+    kind: &str,
+    work: &Path,
+    stop: &AtomicBool,
+) -> Result<Value> {
+    let file = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    let args: Vec<String> =
+        vec!["-f".into(), reader.into(), "-t".into(), "json".into(), "--sandbox".into(), path.display().to_string()];
+    let json = pandoc(tools, &args, work, work, stop).map_err(|e| match e {
+        Error::Program { message, .. } => {
+            Error::invalid(tr!("core-import-document-unreadable", file = &file, kind = kind, message = message))
+        }
+        other => other,
+    })?;
+    pandoc_value(&json, &file)
+}
+
+pub(crate) use convert::note_blocks;
+
+/// A picture as a figure of which nothing is said, as wide as suits it.
+pub(crate) fn figure_of(picture: &Image) -> Block {
+    Block::Figure {
+        id: String::new(),
+        width: pictures::width_for(picture),
+        file: picture.hash.clone(),
+        extension: picture.extension.clone(),
+        name: picture.name.clone(),
+        caption: Vec::new(),
+        alt: picture.alt.clone(),
+        numbered: false,
+        align: None,
+        wrap: None,
+    }
+}
+
+/// Text without marks, as `.txt` is read, as one run of paragraphs.
+pub(crate) fn plain_blocks(text: &str) -> Vec<Block> {
+    plain(text, "").sections.into_iter().flat_map(|s| s.blocks).collect()
+}
+
+/// What a picture holds that is named by no file: data in its address, read
+/// as `picture_bytes` reads it; one named by an address of the network is
+/// not fetched, and says so. Nothing, for a picture named by a path.
+pub(crate) fn named_picture_bytes(named: &str) -> Option<std::result::Result<Vec<u8>, String>> {
+    let lower = named.trim().to_ascii_lowercase();
+    if lower.starts_with("data:") {
+        return Some(picture_bytes(named.trim(), Path::new(""), Path::new(""), false));
+    }
+    if lower.starts_with("http://") || lower.starts_with("https://") || lower.starts_with("//") {
+        return Some(Err(tr!("core-import-document-picture-network")));
+    }
+    None
+}
+
 /// Takes pictures out of the library again: those that were new to it,
 /// taken in for a document of which no map was made. Nothing uses them yet.
 pub fn forget(library: &std::sync::Mutex<Library>, hashes: &[String]) {

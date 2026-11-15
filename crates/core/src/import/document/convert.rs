@@ -1306,6 +1306,31 @@ pub(super) fn found_remark(counts: &Counts) -> Option<String> {
     Some(tr!("core-import-document-found", count = counts.found, made = made, some = counts.found_made))
 }
 
+/// What Pandoc read of a note, as one run of blocks: no sections and no
+/// title, a heading within it a paragraph in bold, as one within a
+/// quotation is. Gives the pictures that were left out beside it, each with
+/// why, as the remarks of a document say them.
+pub(crate) fn note_blocks(doc: &Value, take_in: &mut TakeIn) -> (Vec<Block>, Vec<(String, String)>) {
+    let keys = |_: &str| None;
+    let mut reading = Reading {
+        keys: &keys,
+        take_in,
+        terms: terms_for(None),
+        naming: false,
+        made: &[],
+        within: None,
+        keeps_lines: false,
+        told: None,
+        hoisted: Vec::new(),
+        tally: Tally::default(),
+        language: None,
+        passage: None,
+    };
+    let mut blocks = reading.blocks(list(doc.get("blocks").unwrap_or(&Value::Null)));
+    blocks.append(&mut reading.hoisted);
+    (blocks, reading.tally.lost)
+}
+
 /// As `convert`, of a file in which programs that keep references made
 /// something, which was read before Pandoc read the file.
 pub(super) fn convert_with(
