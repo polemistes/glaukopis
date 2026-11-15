@@ -15,6 +15,7 @@ import { bodySchema } from '$lib/editor/schema';
 import { newTextLanguage, t } from '$lib/i18n';
 import { citationWrittenIn } from '$lib/library/copying';
 import { nowIso } from '$lib/project/model/origins';
+import type { PassageKindRecord, RefRecord, Thread } from '$lib/project/model/types';
 import { notifyError } from '$lib/ui/toast.svelte';
 import { toBase64 } from '$lib/util/base64';
 import type { Notebook } from './model/notebook.svelte';
@@ -33,10 +34,10 @@ export function holderOfNotebook(notebook: Notebook): TextHolder {
   return holder;
 }
 
-const NO_KINDS: never[] = [];
-const NO_REFS: ReadonlyMap<never, never> = new Map();
+const NO_KINDS: PassageKindRecord[] = [];
+const NO_REFS: ReadonlyMap<string, RefRecord> = new Map();
 const NO_WORDS: ReadonlySet<string> = new Set();
-const NO_THREADS: never[] = [];
+const NO_THREADS: readonly Thread[] = [];
 
 /** The words of a slice as plain text: paragraphs parted by line breaks, and lines within them so. */
 export function sliceText(slice: Slice): string {
