@@ -130,8 +130,9 @@ try {
   await sleep(300);
 
   // Words of the writer's own, written in a new note.
-  await app.click(`${page} button[aria-label="New note"]`);
-  await app.waitFor(`${page} .ProseMirror`, 5000);
+  await app.waitFor('[data-notebook-empty]', 8000);
+  await app.clickText('[data-notebook-empty] button', 'New note');
+  await app.waitFor(`${page} [data-note-text] .ProseMirror`, 5000);
   await sleep(300);
   await app.keys(OWN);
   await sleep(800);
@@ -156,17 +157,14 @@ try {
 
   // The source of the words is given a title in its window.
   try {
-    const chip = await app.waitForText(`${page} button`, 'owls.example', 4000);
-    await app.click(chip);
-    await app.waitFor('dialog[open]', 4000);
-    const empty = await app.exec(
-      `return Array.from(document.querySelectorAll('dialog[open] input[type="text"], dialog[open] input:not([type])')).find((i) => !i.value) ?? null`,
-    );
-    if (!empty) throw new Error('no empty field for the title');
-    await app.type(empty, 'Owls at night');
-    await app.clickText('dialog[open] footer button', 'Save');
+    await app.waitForText('[data-note-sources] [data-source]', 'owls.example', 4000);
+    await app.click('[data-note-sources] [data-source]');
+    await app.waitFor('[data-source-dialog]', 4000);
+    await app.click('[data-source-title]');
+    await app.keys('Owls at night');
+    await app.click('[data-source-apply]');
     await app.waitGone('dialog[open]', 4000);
-    await app.waitForText(`${page} button`, 'Owls at night', 4000);
+    await app.waitForText('[data-note-sources] [data-source]', 'Owls at night', 4000);
     check('the source of the words is the page, given its title', true);
   } catch (error) {
     passOver('the title of the page given in the window of its source', String(error.message ?? error));
@@ -264,7 +262,7 @@ try {
   await app.go('#/notebook');
   await app.waitFor(page, 8000);
   try {
-    const row = await app.waitForText(`${page} [role="option"], ${page} [role="listitem"], ${page} li`, TAKEN[0], 4000);
+    const row = await app.waitForText(`${page} [data-note]`, TAKEN[0], 4000);
     await app.click(row);
     await sleep(400);
   } catch (error) {
@@ -278,7 +276,7 @@ try {
   // ---- the passage copied in its note and pasted into the text ----
   let copied = false;
   try {
-    await app.click(`${page} .ProseMirror`);
+    await app.click(`${page} [data-note-text] .ProseMirror`);
     await sleep(200);
     await app.keys(['Control', 'a']);
     await app.keys(['Control', 'c']);
@@ -293,8 +291,9 @@ try {
   await app.waitFor(`${body} .ProseMirror`, 5000);
   await sleep(200);
   await app.keys(['Control', 'End']);
-  await app.press('Enter');
+  // Counted before the new paragraph, which is of the kind of the one it was made from.
   const before = (await quotes()).length;
+  await app.press('Enter');
   await app.keys(['Control', 'v']);
   if (copied) {
     await until('the pasted quotation', async () => (await quotes()).length === before + 2, 10000).catch(() => {});

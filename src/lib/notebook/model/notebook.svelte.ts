@@ -549,14 +549,18 @@ export class Notebook {
     return body instanceof Y.XmlFragment ? body : null;
   }
 
-  /** Makes a note, with one empty paragraph to write in, and gives its id. */
+  /**
+   * Makes a note, with one empty paragraph to write in, and gives its id.
+   * When it was made is kept to the thousandth of a second, so that notes
+   * made one right after another stand in the order they were made.
+   */
   addNote(options: { name?: string; made?: string } = {}): string {
     const id = newId();
     this.transact(() => {
       const n = new Y.Map<unknown>();
       const body = new Y.XmlFragment();
       n.set('body', body);
-      n.set('made', options.made ?? nowIso());
+      n.set('made', options.made ?? new Date().toISOString());
       n.set('went', new Y.Array());
       if (options.name?.trim()) n.set('name', options.name.trim());
       this.yNotes.set(id, n);

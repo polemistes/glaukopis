@@ -81,10 +81,12 @@ export async function takeFiles(notebook: Notebook, paths: string[]): Promise<st
     notifyError(t('notebook-files-not-taken'), error);
     return [];
   }
-  const made = nowIso();
+  // Made together, they stand in the list in the order they were given: the first of them on top.
+  const now = Date.now();
+  const made = (i: number) => new Date(now + taken.files.length - 1 - i).toISOString();
   const ids = notebook.transact(() =>
-    taken.files.map((f) => {
-      const id = notebook.addNote({ made });
+    taken.files.map((f, i) => {
+      const id = notebook.addNote({ made: made(i) });
       const source = notebook.addSource(fileSourceOf(f));
       holdTaken(notebook, f, source);
       if (f.shown) notebook.addFigure(id, figureOf(f.shown));

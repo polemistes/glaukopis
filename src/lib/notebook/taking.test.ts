@@ -106,6 +106,10 @@ describe('files taken in as notes', () => {
     });
     expect(nb.summary().files).toEqual([PHOTO, UPRIGHT, PDF].sort());
     expect(notifyError).toHaveBeenCalledWith(expect.any(String), 'x.bin: unreadable');
+    // Made together, they stand in the list in the order they were given, over what was there before.
+    const before = nb.addNote({ made: '2020-01-01T00:00:00.000Z' });
+    expect(nb.list.map((n) => n.id)).toEqual([ids[0], ids[1], before]);
+    nb.undo();
     // One step of undo takes them all back.
     nb.undo();
     expect(nb.list).toEqual([]);
