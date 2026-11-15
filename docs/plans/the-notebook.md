@@ -249,6 +249,27 @@ Written on 2026-11-15, when stage 1 held, from a reading of what Mozilla says of
 3. **In the application**: each thing taken from the inbox a note (the page by its title with its text as a passage; a selection as it was marked up; a picture as a figure), with the page as its source; a message that says what arrived; the row in the settings that sets Firefox up and says whether it is.
 4. **From a file read in Glaukopis** (after stage 2's page is settled): a passage selected, or a part of a page marked, sent to the notebook with the file's reference and the page as its source.
 
+## Stage 4 in detail
+
+Written on 2026-11-15 from a reading of the search, the reading of text, the kinds and the Org copy. Its parts are separable; those that touch the page wait for stage 2's page.
+
+### What was found, and what it settles
+
+- **The search through everything reads each project in a worker**, from its state on disk, and keeps what it read until the project changes. A note's pieces are read by code that needs only Yjs and the reading of a text (`pieces.ts`), so the same worker reads the notebook. What is found is shown project by project in the place of the tree; the notebook is one more heading there, and a hit goes to its note. (In that list, *note* already means what is written about a work cited: the notebook's hits are said to be in the notebook.)
+- **Text read from an image is not kept anywhere**: it is read by hand in a window and shown. For finding, what is read of a picture of a note is kept with the notebook's record of that file. It is read when asked for, not by itself: a photograph of a street yields noise, and the program cannot know which pictures hold words.
+- **A point of a list is a kind of paragraph** (`item`, `numbered`), drawn by the style sheet, written to Org as `-` and `1.`, and typeset as Pandoc's lists. A point to tick is one more kind with one more thing said of it, ticked or not; it touches the catalogue on both sides, the paragraph's attributes, the drawing, Org (`- [ ]`, `- [X]`) and what is typeset (a box before the point).
+- **A kind of element may begin with a text** (lines, each a paragraph, of a kind of paragraph); the names of kinds are remembered across projects, their texts are not. The starting texts of notes are the notebook's own, kept in its document.
+- **A project's readable copy** is written into its folder a moment after its state is saved: `project.org`, the works cited, the pictures. The marks of what was taken in are not something Org has; a passage is written as a quotation with its source under it.
+
+### What is built
+
+1. **The other filters** of the notebook's list, in a window at a button beside the field, counted on the button as the library's are: what a note holds (images, files, words taken in, links to other notes), when it was collected (from, to), where it came from (a page of the web, a reference, a file, other, no source), whether it has been looked at since it was collected, whether it has been used. A note taken in is **not looked at** until it is chosen; it shows a small dot in the list until then.
+2. **Words read from images**: *Read the text* on an image of a note (in the window of its source, and for the notes selected from their menu) reads it with the reading of text Glaukopis has, in the languages of the settings; what is read is kept with the file and found by the field. Not there where Tesseract is not installed: the window says so, as the reading of text does.
+3. **Lists to tick**: a kind of paragraph, *To do*, in notes and in texts: a box before the point, ticked by a press on it or by a key; `[ ] ` at the start of a paragraph makes one; in Org `- [ ]` and `- [X]`; typeset with a box.
+4. **Starting texts** for a new note, named by the writer: *New note* has a menu of them; each has a name, its lines and the kind of paragraph its lines are (a list to tick for a plan); made, changed and deleted in one window.
+5. **Notes in the search through everything**: read in the search's worker, shown under *Notebook* among what is found, a hit going to its note.
+6. **The notebook as Org**: `notebook.org` in the notebook's folder, with its pictures and files beside it, written a moment after the notebook is saved: a heading for each box, under it one for each note with when it was made and its tags, its text as Org, a passage as a quotation with its source. It is a copy to be read; it is not read back.
+
 ## What may go wrong
 
 - **The editor.** See above. Cut the seam first, alone, with every test and script of the editor passing, before anything of the notebook stands on it.
