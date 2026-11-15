@@ -96,7 +96,7 @@ export function besideOnArrival(
 
 /** What the document pane shows. Look is a column of the typesetting pane. */
 export type DocumentTab =
-  'references' | 'images' | 'comments' | 'found' | 'history' | 'changes' | 'chat';
+  'references' | 'images' | 'notes' | 'comments' | 'found' | 'history' | 'changes' | 'chat';
 
 /** What the window keeps of its sides and its panes, with the settings. */
 export interface Arrangement {
@@ -128,6 +128,7 @@ const MODES: readonly MapMode[] = ['diagram', 'text', 'timeline'];
 const TABS: readonly DocumentTab[] = [
   'references',
   'images',
+  'notes',
   'comments',
   'found',
   'history',

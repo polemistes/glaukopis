@@ -495,7 +495,7 @@ try {
   await sleep(300);
   check(
     'English is chosen, and the interface changes at once',
-    (await places()).join(' ') === 'Projects Library The list of projects Keys Settings',
+    (await places()).join(' ') === 'Projects Library Notebook The list of projects Keys Settings',
     (await places()).join(' '),
   );
   check('the page says so', (await app.exec(`return document.documentElement.lang`)) === 'en');

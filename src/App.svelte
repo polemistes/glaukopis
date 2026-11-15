@@ -33,6 +33,7 @@
   import StartView from '$lib/home/StartView.svelte';
   import LibraryView from '$lib/library/LibraryView.svelte';
   import FilesView from '$lib/files/FilesView.svelte';
+  import NotebookView from '$lib/notebook/NotebookView.svelte';
   import ProjectView, { viewing } from '$lib/project/ProjectView.svelte';
   import { PROJECT } from '$lib/project/model/types';
   import { panes } from '$lib/project/panes.svelte';
@@ -285,12 +286,15 @@
       // To the library as it was left; to its files, at the folder and file they showed.
       library: () => go(router.lastLibrary ?? { view: 'library' }),
       files: () => go(router.lastFiles ?? { view: 'files' }),
+      // To the notebook, at the note chosen in it when it was left.
+      notebook: () => go(router.lastNotebook ?? { view: 'notebook' }),
       settings: () => settingsUi.toggle(),
       // To the field of the list of projects, which searches them (record 0098): where the
       // view has no list, to the projects first.
       'search-everything': () => {
         const view = router.route.view;
-        if (view === 'library' || view === 'files') go(router.lastProject ?? { view: 'home' });
+        if (view === 'library' || view === 'files' || view === 'notebook')
+          go(router.lastProject ?? { view: 'home' });
         settingsUi.hide();
         toSearch();
       },
@@ -327,6 +331,11 @@
           {:else}
             <FilesView />
           {/if}
+        </div>
+      {:else if route.view === 'notebook'}
+        <TopRow />
+        <div class="under-row">
+          <NotebookView />
         </div>
       {:else if route.view === 'project' || route.view === 'file'}
         <!-- The pane of projects stands outside the view of a project, which is made anew for each. -->

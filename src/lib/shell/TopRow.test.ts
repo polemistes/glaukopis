@@ -40,12 +40,13 @@ afterEach(() => {
 });
 
 describe('the row at the top of the window', () => {
-  it('has the five places of the window in their order: the house, the library and the list at its start, the keys and the settings at its end', () => {
+  it('has the six places of the window in their order: the house, the library, the notebook and the list at its start, the keys and the settings at its end', () => {
     router.replace({ view: 'library' });
     const { target, places } = setUp();
     expect(places().map((p) => p.place)).toEqual([
       'projects',
       'library',
+      'notebook',
       'list',
       'keys',
       'settings',

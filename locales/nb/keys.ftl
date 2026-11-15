@@ -17,12 +17,14 @@ keys-place-text = I teksten til et kart
 keys-place-writing = Skriving
 keys-place-library = I biblioteket
 keys-place-files = Blant filene i biblioteket
+keys-place-notebook = I notatblokken
 
 ## Hva de gjør
 
 keys-projects = Prosjektene
 keys-library = Biblioteket
 keys-files = Filene i biblioteket
+keys-notebook = Notatblokken
 keys-settings = Innstillinger
 keys-search-everything = Søk gjennom alt
 keys-palette = Hva skal gjøres?
@@ -37,6 +39,7 @@ keys-side-look = Utseende
 keys-look-type = Endre skriften …
 keys-side-references = Referanser
 keys-side-pictures = Bildene i prosjektet
+keys-side-notes = Notatene i notatblokken
 keys-side-comments = Kommentarer
 keys-side-chat = Samtale
 keys-comment = Kommenter det merkede, eller elementet
@@ -109,6 +112,11 @@ keys-library-find = Søk i biblioteket
 keys-library-new = En ny referanse
 keys-library-copy = Kopier referansene som er valgt
 keys-files-find = Søk i filene
+keys-notebook-find = Søk i notatene
+keys-notebook-new = Et nytt notat
+keys-notebook-undo = Angre
+keys-notebook-redo = Gjør om
+keys-notebook-redo-y = Gjør om
 keys-list-undo = Angre det som ble gjort med mapper og prosjekter
 keys-list-redo = Gjør om det som ble gjort med mapper og prosjekter
 

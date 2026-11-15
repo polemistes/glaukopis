@@ -23,6 +23,7 @@
     'review',
     'library',
     'files',
+    'notebook',
   ];
 
   /**

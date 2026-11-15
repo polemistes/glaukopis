@@ -105,6 +105,7 @@
   import { PROJECT } from './model/types';
   import { closesHere } from './elsewhere';
   import PicturePanel from './PicturePanel.svelte';
+  import NotesPanel from '$lib/notebook/NotesPanel.svelte';
   import ReferencePanel from './ReferencePanel.svelte';
   import SideBySideButton from './SideBySideButton.svelte';
   import SideTabs from './SideTabs.svelte';
@@ -1013,6 +1014,7 @@
       'side-references': () => documentPane.show('references'),
       // Not Ctrl+Shift+I, which the window keeps for itself while the application is being developed.
       'side-pictures': () => documentPane.show('images'),
+      'side-notes': () => documentPane.show('notes'),
       'side-comments': () => documentPane.show('comments'),
       'side-chat': { run: () => documentPane.show('chat'), when: () => hasChat(activeOpen) },
       'side-found': () => documentPane.show('found'),
@@ -1263,15 +1265,17 @@
       <Divider
         label={kind === 'images'
           ? t('project-between-pictures')
-          : kind === 'history'
-            ? t('history-between')
-            : kind === 'comments'
-              ? t('comments-between')
-              : kind === 'found'
-                ? t('found-between')
-                : kind === 'chat'
-                  ? t('chat-between')
-                  : t('project-between-references')}
+          : kind === 'notes'
+            ? t('notebook-between')
+            : kind === 'history'
+              ? t('history-between')
+              : kind === 'comments'
+                ? t('comments-between')
+                : kind === 'found'
+                  ? t('found-between')
+                  : kind === 'chat'
+                    ? t('chat-between')
+                    : t('project-between-references')}
         onstart={() => measure('references')}
         onmove={(dx) => moveSide('references', dx)}
         onreset={() => (panes.documentWidth = 0)}
@@ -1371,6 +1375,8 @@
             onclose={() => documentPane.close()}
             onenter={(id) => activeApi?.show(id)}
           />
+        {:else if kind === 'notes'}
+          <NotesPanel head={tabs} onclose={() => documentPane.close()} />
         {:else}
           <ReferencePanel
             {project}

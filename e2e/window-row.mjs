@@ -1,4 +1,4 @@
-// The row over the window (records 0096, 0097, 0098): no rail; the five
+// The row over the window (records 0096, 0097, 0098): no rail; the six
 // places of the window in the row at its top, the house, the library and the
 // list's button at its start, the keys and the settings at its end, in that
 // order, in every view: the start screen with the list shown (the start in
@@ -35,7 +35,7 @@ const places = (app) =>
          in: el.closest('[data-projects-pane]') ? 'list' : el.closest('.project > .top') ? 'project' : el.closest('[data-top-row]') ? 'row' : '?',
        }));`,
   );
-const ORDER = 'projects library list keys settings';
+const ORDER = 'projects library notebook list keys settings';
 const order = (shown) => shown.map((p) => p.place).join(' ');
 const lit = (shown) => shown.filter((p) => p.lit).map((p) => p.place).join(' ');
 const at = (shown, place) => shown.find((p) => p.place === place);
@@ -44,7 +44,7 @@ const inOneLine = (app) =>
   app.exec(
     `const ps = Array.from(document.querySelectorAll('[data-row-start] .place, [data-row-end] .place')).map((p) => p.getBoundingClientRect());
      const bar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bar-h'));
-     return ps.length === 5 && ps.every((r) => r.top >= 0 && r.bottom <= bar + 2 && Math.abs(r.top - ps[0].top) < 2);`,
+     return ps.length === 6 && ps.every((r) => r.top >= 0 && r.bottom <= bar + 2 && Math.abs(r.top - ps[0].top) < 2);`,
   );
 const noRail = (app) => app.exec(`return !document.querySelector('.rail, nav.rail')`);
 
@@ -61,7 +61,7 @@ try {
   // ---- the start screen, the list shown: the start of the row in its head ----
   let shown = await places(app);
   check('no rail', await noRail(app));
-  check('the five places, in their order', order(shown) === ORDER, order(shown));
+  check('the six places, in their order', order(shown) === ORDER, order(shown));
   check('in one line at the top of the window', await inOneLine(app));
   check(
     'on the start screen with the list shown, the start of the row is in the list\'s head, the end in the row over the start screen',
@@ -100,7 +100,7 @@ try {
   shown = await places(app);
   check(
     'in a project with the list shown, the start of the row is in the list\'s head, the end at the right of the project\'s top row',
-    order(shown) === ORDER && ['projects', 'library', 'list'].every((p) => at(shown, p).in === 'list') && ['keys', 'settings'].every((p) => at(shown, p).in === 'project'),
+    order(shown) === ORDER && ['projects', 'library', 'notebook', 'list'].every((p) => at(shown, p).in === 'list') && ['keys', 'settings'].every((p) => at(shown, p).in === 'project'),
     JSON.stringify(shown.map((p) => `${p.place}:${p.in}`)),
   );
   check('the house and the list\'s button are lit', lit(shown) === 'projects list', lit(shown));
@@ -186,7 +186,7 @@ try {
   shown = await places(app);
   check('the book goes to the library', (await app.exec('return location.hash')).startsWith('#/library'), await app.exec('return location.hash'));
   check(
-    'over the library a row with the five places, the list\'s button disabled, the book lit',
+    'over the library a row with the six places, the list\'s button disabled, the book lit',
     order(shown) === ORDER && shown.every((p) => p.in === 'row') && at(shown, 'list').disabled && lit(shown) === 'library',
     JSON.stringify(shown),
   );

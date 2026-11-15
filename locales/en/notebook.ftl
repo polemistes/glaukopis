@@ -14,3 +14,5 @@ notebook-file-not-here = The file is not on this computer
 ## Sources
 
 ## The list in the document pane, and what goes into a text
+
+notebook-between = Between the sides and the notes

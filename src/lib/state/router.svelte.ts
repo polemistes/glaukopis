@@ -11,6 +11,8 @@ export type Route =
   | { view: 'library'; collection?: string; entry?: string }
   /** The files of the library, in the library's place: the folder in view, and the file selected. */
   | { view: 'files'; folder?: string; file?: string }
+  /** The notebook (record 0101), and the note chosen in it. */
+  | { view: 'notebook'; note?: string }
   /** A project, and the element in view within it (ADR 0037): the project itself where none is named. */
   | { view: 'project'; project: string; at?: string; mode?: MapMode }
   /**
@@ -57,6 +59,8 @@ export function parseRoute(hash: string): Route {
         folder: params.get('folder') ?? undefined,
         file: params.get('file') ?? undefined,
       };
+    case 'notebook':
+      return { view: 'notebook', note: params.get('note') ?? undefined };
     case 'project':
       if (!parts[1]) return { view: 'home' };
       return {
@@ -104,6 +108,8 @@ export function formatRoute(route: Route): string {
       const q = params.toString();
       return '#/files' + (q ? `?${q}` : '');
     }
+    case 'notebook':
+      return '#/notebook' + (route.note ? `?note=${e(route.note)}` : '');
     case 'project': {
       let s = `#/project/${e(route.project)}`;
       if (route.at) s += `/${e(route.at)}`;
@@ -142,6 +148,8 @@ class Router {
   get lastLibrary(): Extract<Route, { view: 'library' } | { view: 'files' }> | null {
     return this.#lastShelf === 'files' ? this.lastFiles : this.lastReferences;
   }
+  /** The notebook as it was left while the application has run: at the note chosen in it. */
+  lastNotebook = $state<Extract<Route, { view: 'notebook' }> | null>(null);
 
   constructor() {
     this.#follow(this.route);
@@ -161,7 +169,7 @@ class Router {
     } else if (route.view === 'files') {
       this.lastFiles = route;
       this.#lastShelf = 'files';
-    }
+    } else if (route.view === 'notebook') this.lastNotebook = route;
   }
 
   /** The project shown last was closed: the house goes to the start screen. */

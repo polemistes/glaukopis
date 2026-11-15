@@ -11,6 +11,7 @@
   import FileDiff from '@lucide/svelte/icons/file-diff';
   import HistoryIcon from '@lucide/svelte/icons/history';
   import Images from '@lucide/svelte/icons/images';
+  import Notebook from '@lucide/svelte/icons/notebook';
   import MessageSquare from '@lucide/svelte/icons/message-square';
   import MessagesSquare from '@lucide/svelte/icons/messages-square';
   import TextSearch from '@lucide/svelte/icons/text-search';
@@ -42,6 +43,13 @@
       label: t('project-pictures'),
       icon: Images,
       shortcut: keysFor('side-pictures'),
+    },
+    // The notes of the notebook (record 0101): no key of their own, the palette finds them.
+    {
+      kind: 'notes' as const,
+      label: t('notebook-notes'),
+      icon: Notebook,
+      shortcut: keysFor('side-notes'),
     },
     {
       kind: 'comments' as const,

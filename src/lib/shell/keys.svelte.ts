@@ -30,6 +30,7 @@ export type Place =
   | 'writing'
   | 'library'
   | 'files'
+  | 'notebook'
   | 'preview'
   | 'viewer';
 
@@ -63,6 +64,7 @@ export const TOGETHER: Readonly<Record<Place, readonly Place[]>> = {
     'writing',
     'library',
     'files',
+    'notebook',
     'preview',
     'viewer',
   ],
@@ -83,9 +85,11 @@ export const TOGETHER: Readonly<Record<Place, readonly Place[]>> = {
   diagram: ['everywhere', 'project', 'tree', 'diagram'],
   list: ['everywhere', 'project', 'tree', 'list'],
   text: ['everywhere', 'project', 'review', 'tree', 'text', 'writing'],
-  writing: ['everywhere', 'project', 'review', 'tree', 'text', 'writing'],
+  writing: ['everywhere', 'project', 'review', 'tree', 'text', 'writing', 'notebook'],
   library: ['everywhere', 'library'],
   files: ['everywhere', 'files'],
+  // A note is written in the editor of the texts: its keys hold in the notebook too.
+  notebook: ['everywhere', 'writing', 'notebook'],
   // The typesetting pane's keys hold while it has the focus or the pointer, not the diagram's.
   preview: ['everywhere', 'project', 'preview', 'viewer'],
   // A file in a side: its pages, with the typesetting pane's keys of zoom.
@@ -96,6 +100,7 @@ const ENTRIES = [
   // Everywhere.
   { id: 'projects', keys: 'Ctrl+1', place: 'everywhere', bound: true },
   { id: 'library', keys: 'Ctrl+2', place: 'everywhere', bound: true },
+  { id: 'notebook', keys: 'Ctrl+3', place: 'everywhere', bound: true },
   { id: 'files', keys: 'Ctrl+4', place: 'everywhere', bound: true },
   { id: 'settings', keys: 'Ctrl+,', place: 'everywhere', bound: true },
   { id: 'search-everything', keys: 'Ctrl+Shift+F', place: 'everywhere', bound: true },
@@ -119,6 +124,8 @@ const ENTRIES = [
   { id: 'look-type', keys: '', place: 'project', bound: true },
   { id: 'side-references', keys: 'Ctrl+Shift+R', place: 'project', bound: true },
   { id: 'side-pictures', keys: 'Ctrl+Shift+P', place: 'project', bound: true },
+  // No key of its own: the palette finds it (record 0101).
+  { id: 'side-notes', keys: '', place: 'project', bound: true },
   { id: 'side-comments', keys: 'Ctrl+Shift+M', place: 'project', bound: true },
   // No key of its own: the palette finds it, while the project has a chat (record 0092).
   { id: 'side-chat', keys: '', place: 'project', bound: true },
@@ -211,9 +218,9 @@ const ENTRIES = [
   { id: 'writing-spelling', keys: 'F7', place: 'writing' },
   { id: 'writing-spelling-back', keys: 'Shift+F7', place: 'writing' },
   // The editor's own; the project's undo is the same undo.
-  { id: 'writing-undo', keys: 'Ctrl+Z', place: 'writing', over: ['undo'] },
-  { id: 'writing-redo', keys: 'Ctrl+Shift+Z', place: 'writing', over: ['redo'] },
-  { id: 'writing-redo-y', keys: 'Ctrl+Y', place: 'writing', over: ['redo-y'] },
+  { id: 'writing-undo', keys: 'Ctrl+Z', place: 'writing', over: ['undo', 'notebook-undo'] },
+  { id: 'writing-redo', keys: 'Ctrl+Shift+Z', place: 'writing', over: ['redo', 'notebook-redo'] },
+  { id: 'writing-redo-y', keys: 'Ctrl+Y', place: 'writing', over: ['redo-y', 'notebook-redo-y'] },
 
   // Stage 4 of the settings, the zoom and the keys of the kinds: the kinds
   // of paragraph the document type gives the digits, 0 being text (ADR
@@ -236,6 +243,13 @@ const ENTRIES = [
 
   // Among the files of the library.
   { id: 'files-find', keys: 'Ctrl+F', place: 'files', bound: true },
+
+  // In the notebook (record 0101): what is done to the notes is undone there.
+  { id: 'notebook-find', keys: 'Ctrl+F', place: 'notebook', bound: true },
+  { id: 'notebook-new', keys: 'Ctrl+N', place: 'notebook', bound: true },
+  { id: 'notebook-undo', keys: 'Ctrl+Z', place: 'notebook', bound: true, notInFields: true },
+  { id: 'notebook-redo', keys: 'Ctrl+Shift+Z', place: 'notebook', bound: true, notInFields: true },
+  { id: 'notebook-redo-y', keys: 'Ctrl+Y', place: 'notebook', bound: true, notInFields: true },
 
   // The settings in plain words, stage 2: the zoom of the typesetting pane, while it has the focus or the pointer.
   { id: 'preview-zoom-in', keys: 'Ctrl++', place: 'preview', bound: true },

@@ -2,6 +2,7 @@
 
 shell-projects = Prosjekter
 shell-library = Bibliotek
+shell-notebook = Notatblokk
 shell-settings = Innstillinger
 
 # Når vinduet lukkes: det som sies mens lagringen ventes på, og når den mislykkes.

@@ -20,12 +20,14 @@ keys-place-text = In the text of a map
 keys-place-writing = Writing
 keys-place-library = In the library
 keys-place-files = Among the files of the library
+keys-place-notebook = In the notebook
 
 ## What they do
 
 keys-projects = The projects
 keys-library = The library
 keys-files = The files of the library
+keys-notebook = The notebook
 keys-settings = Settings
 keys-search-everything = Search through everything
 keys-palette = What is to be done?
@@ -40,6 +42,7 @@ keys-side-look = Look
 keys-look-type = Change the font…
 keys-side-references = References
 keys-side-pictures = The images of the project
+keys-side-notes = The notes of the notebook
 keys-side-comments = Comments
 keys-side-chat = Chat
 keys-comment = Comment on the passage selected, or the element
@@ -112,6 +115,11 @@ keys-library-find = Search the library
 keys-library-new = A new reference
 keys-library-copy = Copy the references selected
 keys-files-find = Search the files
+keys-notebook-find = Search the notes
+keys-notebook-new = A new note
+keys-notebook-undo = Undo
+keys-notebook-redo = Redo
+keys-notebook-redo-y = Redo
 keys-list-undo = Undo what was done to folders and projects
 keys-list-redo = Redo what was done to folders and projects
 

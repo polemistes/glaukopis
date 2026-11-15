@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatRoute, parseRoute } from './router.svelte';
+import { formatRoute, parseRoute, router } from './router.svelte';
 
 describe('where one is', () => {
   it('names the start screen, and reads the old places of the home as it', () => {
@@ -52,5 +52,24 @@ describe('the library as it was left', () => {
     // The files are where they were, behind the references.
     expect(router.lastFiles).toEqual({ view: 'files', folder: 'f1', file: 'abc' });
     router.replace({ view: 'home' });
+  });
+});
+
+describe('the notebook', () => {
+  it('is a place of its own, with the note chosen in it', () => {
+    expect(parseRoute('#/notebook')).toEqual({ view: 'notebook', note: undefined });
+    expect(parseRoute('#/notebook?note=n1')).toEqual({ view: 'notebook', note: 'n1' });
+    expect(formatRoute({ view: 'notebook' })).toBe('#/notebook');
+    expect(formatRoute({ view: 'notebook', note: 'n 1' })).toBe('#/notebook?note=n%201');
+    expect(parseRoute(formatRoute({ view: 'notebook', note: 'n 1' }))).toEqual({
+      view: 'notebook',
+      note: 'n 1',
+    });
+  });
+
+  it('is gone back to at the note that was chosen when it was left', () => {
+    router.replace({ view: 'notebook', note: 'n1' });
+    router.replace({ view: 'library' });
+    expect(router.lastNotebook).toEqual({ view: 'notebook', note: 'n1' });
   });
 });
