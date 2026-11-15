@@ -4,6 +4,38 @@
 
 notebook-title = Notebook
 notebook-notes = Notes
+notebook-note = Note
+notebook-search = Search the notes
+notebook-search-clear = Clear the search
+notebook-new-note = New note
+notebook-add-files = Add files…
+notebook-add-files-title = Add files to the notebook
+notebook-empty = The notebook is empty
+    .text = Collect here whatever turns up, outside all projects: words, pictures and files, each a note that keeps where it came from.
+notebook-unreadable = The notebook could not be read
+notebook-nothing-found = No notes found
+notebook-empty-note = Empty note
+notebook-holds-picture = A picture
+notebook-holds-file = A file
+notebook-holds-passage = Words taken in
+notebook-resize-list = Width of the list of notes
+notebook-choose = Choose a note, or make a new one
+notebook-selected = { $count } notes selected
+notebook-deleted = { $count ->
+    [one] Note deleted
+   *[other] { $count } notes deleted
+}
+notebook-redo = Redo
+notebook-name = Name
+notebook-write = Write, or paste what you have found
+# What became of a note: "Used in ‹project› · quotation".
+notebook-went = What became of it
+notebook-used-in = Used in
+notebook-went-text = text
+notebook-went-quotation = quotation
+notebook-went-figure = image
+notebook-went-reference = reference
+notebook-went-file = file
 
 ## A note and its text
 
@@ -22,6 +54,28 @@ notebook-source-north = { $degrees }° N
 notebook-source-south = { $degrees }° S
 notebook-source-east = { $degrees }° E
 notebook-source-west = { $degrees }° W
+
+notebook-sources = Sources
+notebook-source = Source
+notebook-source-sort = What it is
+notebook-source-web = Web page
+notebook-source-reference = Reference
+notebook-source-other = Other
+notebook-source-url = Address
+notebook-source-page-title = Title
+notebook-source-choose-reference = Choose a reference…
+notebook-source-place = Place
+notebook-source-words = Where it came from
+notebook-source-file-name = Name
+notebook-source-file-changed = Last changed
+notebook-source-file-taken = Taken
+notebook-source-file-where = Where
+notebook-source-make-reference = Make a reference
+notebook-source-in-library = In the library:
+notebook-source-passages = Taken from it
+notebook-source-changed = Changed since it was taken. It read:
+notebook-source-bring-back = Bring back
+notebook-source-own-words = My own words
 
 ## The list in the document pane, and what goes into a text
 
