@@ -1547,6 +1547,38 @@ tags are on has them. The menu of a tag renames it on every note, which
 makes it one with a tag of the new name if there is one, and you are told
 so first; or removes it from all notes.
 
+### The surface
+
+A box shown as its surface is a ground on which its notes lie as cards,
+where you put them. It is for looking at notes together: laying those that
+belong together near one another, seeing what is there, and making larger
+notes of several or smaller of one (see *Join and Divide*).
+
+- **The ground** is moved by dragging it, and comes closer and goes farther
+  with **Ctrl** and the wheel, with the buttons at its corner, or with
+  **Ctrl+=** and **Ctrl+-**; **Ctrl+0** shows all the cards. It comes back
+  as you left it.
+- **Not yet placed**, at the left edge, holds the notes of the box that lie
+  nowhere yet, the newest on top: everything new lands there. Drag one onto
+  the ground and it lies where you let go. A card dragged back onto that
+  edge lies nowhere again.
+- **A card** shows the note itself: its name, and what it holds, down to a
+  height. Drag it to move it, and those selected with it; drag its right
+  edge to make it wider or narrower. A press selects it, **Ctrl** adds
+  another, and a band drawn on the ground with **Shift** takes all it
+  touches. Two presses, or **Enter**, open the note beside the surface to
+  be written.
+- **A link** goes from one note to another. A card selected, or under the
+  pointer, has a small handle at its lower edge: drag it to another card.
+  A link has what an association of a map has: two presses on it write
+  its words, and the right button gives it an arrow or a colour, or
+  removes it.
+- The right button on the ground makes a **New note here**. Files dropped
+  on the ground are notes that lie where they were dropped.
+
+The field that finds, and the tags chosen at the left, hold in the list;
+on a surface every note of the box is shown.
+
 ### Join and Divide
 
 **Join** makes one note of several: select them, in the list with Shift
@@ -1584,6 +1616,62 @@ them: the lists of the library do not show a file that only a note holds,
 and a file a note holds stays for the note though the library removes it. A
 file leaves the computer's store once no note holds it and the library does
 not list it.
+
+### From Firefox
+
+The plugin for Firefox puts what you find on the web into the notebook
+without your leaving the page, and with it the address and the title of
+the page it came from:
+
+| In Firefox | What becomes a note |
+| --- | --- |
+| The owl's button in the bar, or **Alt+Shift+N** | The page: a note named by its title, with the page's text as it reads, since pages disappear. With words selected, the selection instead |
+| The right button on a page or a selection | **Add the page to the notebook**, **Add the selection to the notebook** |
+| The right button on an image | **Add the image to the notebook** |
+| The right button, **Add a part of the page as a picture…** | The part you then mark with the pointer, as a picture. **Escape** gives it up |
+
+The button shows a tick for a moment when the thing was handed over, and
+an exclamation mark, with the reason when you rest the pointer on it, when
+it was not. In Glaukopis a message says what was added, with **Show**.
+Glaukopis need not be running: what is handed over waits, and is taken in
+the next time it starts.
+
+Nothing leaves the computer. The plugin hands what you choose to Glaukopis
+itself, which Firefox starts for that moment; no image is fetched, and the
+plugin can see only the page you are on, when you ask it to. That is also
+why it must be set up once:
+
+1. In Glaukopis, **Settings › Firefox › Set up**. This writes a small file
+   among Firefox's own that tells it where Glaukopis is. **Remove** takes
+   it away again. After Glaukopis has been moved or installed anew, set it
+   up again; the settings say where another installation is named.
+2. In Firefox, add the plugin. Until it carries Mozilla's signature and is
+   offered as a file with Glaukopis, Firefox takes it for one session at a
+   time: `about:debugging`, **This Firefox**, **Load Temporary Add-on…**,
+   and the file `manifest.json` in the folder `extension/firefox` of
+   Glaukopis's source.
+
+Firefox as Ubuntu installs it (a Snap) asks once whether the plugin may
+start Glaukopis. Firefox installed as a Flatpak cannot start other programs
+unless it is given leave by hand.
+
+### From a file read in Glaukopis
+
+In a PDF or an image shown in Glaukopis, in a side or in the library,
+**To the notebook** in the bar over it (**Ctrl+Shift+J**) makes a note of
+what you are reading:
+
+- **With words selected**, the words are the note, taken in as one passage,
+  their lines joined into running text.
+- **With nothing selected**, the pointer marks a part of the page: press
+  and drag over it, and that part is a picture in a note. **Escape** gives
+  it up.
+
+The source is the reference the file belongs to, with the page as its
+place, as the file numbers it in print; where the file belongs to several
+references you are asked which, once for that file. A file that belongs to
+no reference is itself the source, with the page. A message says the note
+was added, with **Show**; what you were reading stays as it was.
 
 ### Sources
 
@@ -3822,6 +3910,8 @@ what is to be done by its name, and does it.
 | **PageDown**, **PageUp**, **Home**, **End** | In a file: the next page, the one before, the first, the last |
 | **Ctrl+PageDown**, **Ctrl+PageUp** | In the tabs of files: the next tab, the one before |
 | **Ctrl+Shift+B** | In a PDF: mark the place in view |
+| **Ctrl+Shift+J** | In a file: to the notebook, the words selected, or a part of the page that you then mark |
+| **Ctrl+J**, **Ctrl+Shift+D** | In the notebook: join the notes selected; divide the note at the cursor, or lift out what is selected |
 | **Ctrl+Shift+S** | Split view: this element as diagram and text, another element or another project beside it, switch sides, or one at a time |
 | **Ctrl+W** | Close the side you are in; with one side, the project. In the tabs of files, the tab shown, and the side with its last |
 | **Ctrl+Shift+D** | Document properties: the details, the document type, the language and the checklist of the document, the element in view unless one is marked as the document |
