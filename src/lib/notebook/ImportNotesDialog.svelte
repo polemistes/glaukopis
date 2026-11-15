@@ -114,8 +114,9 @@
         notes,
         found.name.trim() || t('notebook-import-kind', { kind: found.kind }),
       );
-      onclose();
+      // Said while the window is still there to say it, then closed.
       say(made, notes.problems);
+      onclose();
     } catch (e) {
       // Stopped, nothing was made, and the window stays as it was.
       if (!(isBackendError(e) && e.kind === 'stopped'))
@@ -144,6 +145,7 @@
       return;
     }
     const box = notebook.boxes.find((b) => b.id === made.box);
+    const show = onshow;
     toasts.show(
       {
         kind: 'ok',
@@ -152,7 +154,7 @@
           box: box ? boxName(box) : '',
         }),
         detail: unread,
-        action: { label: t('common-show'), run: () => onshow(made.box) },
+        action: { label: t('common-show'), run: () => show(made.box) },
       },
       unread ? 15000 : 8000,
     );
