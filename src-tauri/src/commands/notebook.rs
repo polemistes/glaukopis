@@ -402,7 +402,8 @@ mod tests {
         let picture = include_bytes!("../../icons/32x32.png");
         state.inbox.put(&collected(Kind::Page, ""), None).unwrap();
         state.inbox.put(&collected(Kind::Region, ""), Some(picture)).unwrap();
-        let broken = state.inbox.put(&collected(Kind::Image, "a map.jpg"), Some(b"\xFF\xD8\xFFnot a jpeg")).unwrap();
+        let broken = state.inbox.put(&collected(Kind::Selection, ""), None).unwrap();
+        std::fs::write(state.inbox.dir().join(&broken).join("item.json"), "{ not whole").unwrap();
         state.inbox.put(&collected(Kind::Image, "owl.png"), Some(picture)).unwrap();
 
         let items = take_all(&state);
