@@ -131,3 +131,61 @@ export const notebookToLibrary = (hash: string, origin: string | null) =>
  * again in the same run, nothing is done.
  */
 export const notebookSweep = (held: string[]) => call<number>('notebook_sweep', { held });
+
+// ---- what the plugin for Firefox hands over (record 0102) ----
+
+/** What a thing the plugin handed over is: the page, what was selected in it, an image of it, a part of it as a picture. */
+export type InboxKind = 'page' | 'selection' | 'image' | 'region';
+
+/**
+ * A thing the plugin for Firefox handed to the helper, as the application
+ * takes it out of the notebook's inbox: where it came from, and what it is.
+ */
+export interface InboxItem {
+  kind: InboxKind;
+  /** The address of the page, and its title. */
+  url: string;
+  title: string;
+  /** When it was collected, as the browser said: an ISO date-time. */
+  when: string;
+  /** The words: of a page its readable text, of a selection what was selected. */
+  text: string;
+  /** The same as HTML, where the plugin gave it: a selection with its links, a page as it reads. Not to be trusted. */
+  html: string;
+  /** Of an image, what it says it shows, where it says. */
+  alt: string;
+  /** The picture, taken into the store, where the thing is or has one. */
+  image: NotebookFile | null;
+}
+
+/**
+ * Takes what lies in the notebook's inbox out of it: each thing is given
+ * once, to whichever window asks first, and is gone from the inbox then.
+ */
+export const notebookInboxTake = () => call<InboxItem[]>('notebook_inbox_take');
+
+/**
+ * Hears that something has come into the notebook's inbox. The shell tells
+ * one window, so this window listens as itself. Gives what ends the
+ * listening.
+ */
+export async function onNotebookInbox(heard: () => void): Promise<() => void> {
+  if (!inTauri) return () => {};
+  return getCurrentWebviewWindow().listen<null>('notebook-inbox', () => heard());
+}
+
+/** Whether Firefox is set up to start the helper for this user. */
+export interface FirefoxSetup {
+  /** Whether the file that tells Firefox of the helper is there, and names this application. */
+  installed: boolean;
+  /** Where that file is, or would be. */
+  manifest: string;
+  /** The program it names where it names another than this application: an older or another installation. */
+  other: string | null;
+}
+
+export const firefoxSetup = () => call<FirefoxSetup>('firefox_setup');
+/** Writes the file that tells Firefox of the helper, for this user. */
+export const firefoxSetUp = () => call<FirefoxSetup>('firefox_set_up');
+/** Removes it. */
+export const firefoxRemove = () => call<FirefoxSetup>('firefox_remove');

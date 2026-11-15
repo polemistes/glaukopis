@@ -228,6 +228,27 @@ Where each box was looked at (its camera, surface or list) is kept on this compu
 3. **The surface**: a box as a surface; cards that show the notes themselves, moved, made wider by their edge, selected one or many (Ctrl, a band drawn with Shift); the strip of notes not yet put, newest on top, dragged onto the surface; links drawn from a handle of a card to another card, with their words, arrows and colours; the note opened beside the surface to be written; the keys of the diagram where they mean the same.
 4. **Boxes, tags and the list**: the boxes at the head of the page; a note moved to another box (dragged onto it, or from its menu); the tags of a note under its name, offered as they are typed; the window where tags are renamed, made one and taken away; the filters of the list, the box and the tags first; Join and Divide in the menus and by keys.
 
+## Stage 3 in detail
+
+Written on 2026-11-15, when stage 1 held, from a reading of what Mozilla says of native messaging today (Firefox 160) and of the application's own start. Built beside stage 2, in working copies of its own.
+
+### What was found, and what it settles
+
+- **Firefox starts a program named in a small file** (the native manifest: `~/.mozilla/native-messaging-hosts/<name>.json` on Linux, `~/Library/Application Support/Mozilla/NativeMessagingHosts/` on macOS, a key under `HKCU\SOFTWARE\Mozilla\NativeMessagingHosts` on Windows), with the path of that file and the id of the plugin as its arguments, and speaks with it over its input and output: a length in four bytes, then JSON; up to 4 GB to the program, 1 MB back. No port is opened.
+- **The application already starts itself in another role** (`--glaukopis-isolated`, decided first thing in `main`). The helper is therefore the application itself: started with the path of its own manifest as its first argument, it is the helper and nothing else. No second program is built or packaged.
+- **The helper must not need the application to be running**, and the application must not be reached from outside. What the plugin hands over is therefore written into a folder of the notebook, `notebook/inbox/`, each thing a folder of its own, made whole before it is named; the application takes in what lies there when it starts and whenever the folder changes while it runs (it looks every second or two, which costs nothing). That folder is the application's own, in its data folder: it is no watched folder of the writer's.
+- **Firefox as a Snap** (Ubuntu's) finds the manifest in the same place and asks the writer once whether the plugin may start the program; **as a Flatpak** it needs two settings made by hand, said in the guide. To be tried: neither is on this computer.
+- **Signing costs nothing** but needs an account with Mozilla, the owner's; the signed file is offered from the owner's site. Without a signature the plugin runs only for a session, loaded by hand: that is how it is tried here.
+- **What the plugin may ask for**: `activeTab`, `contextMenus`, `scripting` and `nativeMessaging` are enough for the page, the selection, a part of the page as a picture, and an image as it is shown; the only line the writer is shown at installing is that it exchanges messages with another program. An image is drawn from the page where the page allows it, else cut out of a picture of the tab: nothing is fetched, by the plugin or by the application.
+- **What Mozilla asks a plugin to declare of the data it handles** counts what is handed to a program on the same computer. The plugin declares what it hands over (the address and the content of the page). The owner may judge otherwise when signing.
+
+### What is built
+
+1. **The helper and the inbox** (the core, `notebook/host.rs`, `notebook/inbox.rs`; `main`): the role, the messages (`hello`, and a thing collected: its kind, the page's address and title, when, its words and HTML, or a picture), each written into the inbox; the application's taking of what lies there (a picture into the store as any picture of a note); the looking while it runs, told to one window; and setting Firefox up: the manifest written, read and removed for this user, from the settings.
+2. **The plugin** (`extension/firefox/`, no build step): the button in the bar (the selection where there is one, else the page with its readable text, by Mozilla's Readability), the same from the menu of the right button and by a key, **an image** from that menu, and **a part of the page as a picture**, marked with the pointer; its words in English and Bokmål; the owl for its icon.
+3. **In the application**: each thing taken from the inbox a note (the page by its title with its text as a passage; a selection as it was marked up; a picture as a figure), with the page as its source; a message that says what arrived; the row in the settings that sets Firefox up and says whether it is.
+4. **From a file read in Glaukopis** (after stage 2's page is settled): a passage selected, or a part of a page marked, sent to the notebook with the file's reference and the page as its source.
+
 ## What may go wrong
 
 - **The editor.** See above. Cut the seam first, alone, with every test and script of the editor passing, before anything of the notebook stands on it.
