@@ -262,6 +262,29 @@ fn take(state: &AppState, id: &str) -> glaukopis_core::Result<InboxItem> {
 /// the inbox then. A thing that cannot be read or taken is set aside and
 /// said in the log, and the rest go on. Run on the threads for blocking
 /// work: pictures are read and copied.
+/// A file a note holds, as the notebook's readable copy names it.
+#[derive(serde::Deserialize)]
+pub struct HeldNamed {
+    hash: String,
+    name: String,
+}
+
+/// Writes the readable copy of the notebook into its folder: the Org form
+/// the interface made, the pictures its notes show and the files they hold
+/// (record 0104). A copy to be read, never read back.
+#[tauri::command(async)]
+pub fn notebook_readable_write(
+    state: State<'_, AppState>,
+    org: String,
+    pictures: Vec<String>,
+    files: Vec<HeldNamed>,
+) -> CommandResult<()> {
+    let held: Vec<glaukopis_core::notebook::readable::Held<'_>> =
+        files.iter().map(|f| glaukopis_core::notebook::readable::Held { hash: &f.hash, name: &f.name }).collect();
+    let library = state.library();
+    Ok(glaukopis_core::notebook::readable::write(state.notebook.dir(), &org, &pictures, &held, &library)?)
+}
+
 /// How many things lie in the notebook's inbox: one look at a folder. The
 /// window asks before it takes, so that the notebook is read first and
 /// nothing leaves the inbox that the notebook is not there to receive.

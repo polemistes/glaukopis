@@ -109,6 +109,13 @@ impl Library {
         Ok(Some(shown))
     }
 
+    /// Where a file of the store lies, by its hash, whether the library lists
+    /// it or the notebook holds it alone; none where the store has it not.
+    pub fn stored_path(&self, hash: &str) -> Option<std::path::PathBuf> {
+        let record = self.files.get(hash)?;
+        attachments::absolute(&self.dir, &record.path).ok().filter(|p| p.is_file())
+    }
+
     /// Notes have come to hold these files of the store, as when an image
     /// of the library is dropped into one: those of the library alone are
     /// held beside it. Hashes the record does not know are passed over.

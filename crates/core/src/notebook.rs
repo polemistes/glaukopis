@@ -38,6 +38,7 @@ pub mod facts;
 pub mod firefox;
 pub mod host;
 pub mod inbox;
+pub mod readable;
 
 pub use facts::{Facts, Place, facts};
 
