@@ -5,9 +5,10 @@ a thesis, a novel, a play, a report, a letter. The work is done in one place:
 working out what you think, collecting what you have read, writing, and
 producing the finished text in the form it is to be published in.
 
-It has two places, reached from the row at the top of the window: the **projects**,
-one for each piece of writing, and the **library**, which holds your
-references and is the same for all projects.
+It has three places, reached from the row at the top of the window: the **projects**,
+one for each piece of writing, the **library**, which holds your
+references and is the same for all projects, and the **notebook**, where
+anything that turns up is collected before it has a place in any project.
 
 Every window that opens over the others, such as the settings or the window
 that reads a PDF, can be moved by dragging its title, to see what lies under
@@ -61,7 +62,7 @@ Everything is saved as you work. There is nothing to press.
 them, and under the project you are in its whole tree, folded but for the
 way down to the element in view, which is marked. A click on a project opens
 it, and a click on an element enters it (see *One tree, entered anywhere*).
-**Ctrl+Shift+L**, or the button after the house and the library at the left
+**Ctrl+Shift+L**, or the button after the house, the library and the notebook at the left
 of the row at the top of the window, hides it and shows it again; its edge can be dragged to make it
 wider. It stays as you leave it.
 
@@ -1477,17 +1478,140 @@ program; for **Add PDF files…**, see *PDF files*.
 Before anything is added you are shown what was found and what is already
 there. Importing the same a second time adds nothing.
 
+## The notebook
+
+The notebook is for whatever turns up before it has a place: something read,
+a page of the web, a picture taken on a walk, a thought. It stands outside
+all projects, and there is one. What is put in it is a **note**. A note is
+no element and belongs to no document; when something in it proves useful,
+it goes into a project as what it then is: text, a quotation with its
+citation, an image, a reference. Through all of it the notebook keeps where
+each thing came from.
+
+The notebook is the third place in the row at the top of the window, after
+the house and the library, and **Ctrl+3**. It opens at the note you had
+chosen when you left it.
+
+### The page
+
+At the left stand the notes, the newest on top, each by its name, or by how
+it begins where it has none, with the day it was made and small signs for
+what it holds: an image, a file, words taken in. Over them is one field that
+finds notes by their words (**Ctrl+F**), and beside it **New note**
+(**Ctrl+N**) and **Add files…**. The edge between the list and the note can
+be dragged.
+
+At the right is the note chosen. It has a name, if you give it one, and a
+text, written as every text in Glaukopis is: the kinds of paragraph, lists,
+the marks, the kinds of words and languages, citations with **@**, images,
+tables and mathematics, from the same tools at its head. What only a
+document has is not offered: notes at the foot, comments, pointers, breaks
+of the page, the look of a kind.
+
+**Delete** deletes the notes selected, more than one with Shift and Ctrl as
+in other lists, and says so with **Undo**. **Ctrl+Z** and **Ctrl+Shift+Z**
+undo and redo what was done in the notebook: in a text they are the text's,
+elsewhere on the page the notebook's.
+
+### What is taken in
+
+Words you write are your own. Whatever comes from elsewhere is **taken in**,
+and the notebook knows which is which, word by word: a paragraph taken whole
+has a faint line beside it, and taken words among your own a faint dotted
+line under them.
+
+- **Paste** into a note what you copied in another program: the words are
+  taken in. What you copy in Glaukopis itself is pasted as it is.
+- **Paste while no text has the cursor**, anywhere on the page, and what
+  you copied is a new note.
+- **Add files…**, or drop files on the page, many at once and folders too:
+  each is a note of its own. An image is shown in its note; any other file
+  stands there by its name and is opened by two presses, a PDF or an image
+  in a view of the window, anything else in the program that opens it. An
+  image pasted is taken in the same way.
+
+The files of notes are kept with the library's files but are not among
+them: the lists of the library do not show a file that only a note holds,
+and a file a note holds stays for the note though the library removes it. A
+file leaves the computer's store once no note holds it and the library does
+not list it.
+
+### Sources
+
+Under the text of a note stand the **sources** of what it holds, each named
+once. A source is one of four things:
+
+| Source | What is kept of it | How it comes |
+| --- | --- | --- |
+| A file | Its name, when it was last changed, and of a photograph when and where it was taken | By itself, when the file is added or dropped |
+| A page of the web | Its address, its title, the day it was read | Given by you. What was copied in Firefox, on Linux, has the site it came from already: Firefox says the site, not the page, so the rest of the address and the title are yours to add |
+| A reference | The reference of the library, and a place in it, as a citation has | Given by you |
+| Other | Your own words for it: a broadcast and its day, a place, a person | Given by you |
+
+What is taken in and has no source yet says **No source**. Press a source to
+open its window, where it is given or changed: **Web page**, **Reference**
+or **Other**. A source is shared: what you change holds for everything that
+came from it, in every note.
+
+In the same window:
+
+- **Make a reference** opens the library's own window for a new reference,
+  filled in with what the source says, for you to complete or look up; once
+  it is saved, the source is that reference, and the window says **In the
+  library**.
+- **Taken from it** shows each passage of the note that came from the
+  source. A passage keeps how it read when it was taken: one you have
+  changed since says so and shows the first reading, and **Bring back**
+  puts it back.
+- **My own words** is for what was pasted and was yours all along: the
+  words stay, and are no longer something taken in.
+
+### Into a project
+
+In a project, **Notes** is the third tab of the document pane, after the
+references and the images. It lists the same notes, found by the same kind
+of field, each shown as what it holds: your own words, passages with their
+source under them, images, files. **Open the notebook** beside the field
+goes to the page, and two presses on a note open it there.
+
+Drag a note by its head, or one part of it by itself, into the text. In a
+text you are writing it lands where you drop it; on an element whose text
+is not being written, in the text or in the diagram, at the end of that
+element's text. **Put into the text**, in the menu of the right button,
+puts it where the cursor is.
+
+| What is dragged | What arrives |
+| --- | --- |
+| Your own words | Text, as it was written |
+| A passage taken | Paragraphs of the kind **Quotation**, with the citation of its source after the last |
+| Taken words within a paragraph of your own | The paragraph as it was, with the citation after the words |
+| An image | A figure. Its file is from then one of the library's images, and says where it came from |
+| A file that is no image | Nothing: a file does not go into a text |
+
+A source that is no reference yet is made one first, so that it can be
+cited: a page of the web becomes a **Web page** with its address, title and
+day. A message says what was added, with **Show**. What has no source
+arrives without a citation.
+
+Copying in a note and pasting in a text does the same.
+
+A note that has gone somewhere stays in the notebook. It says under its
+sources where it was used, **Used in** with the name of the project, and in
+the pane of that project it has a small tick.
+
 ## The document pane
 
-The references, the images, the comments, the loose citations, the history
-and the changes to review of a document, and the chat of a shared project,
-share one pane beside the sides, one at a time. **Document**, the button with the pane on it in the bar of a side,
+The references, the images, the notes of the notebook, the comments, the
+loose citations, the history and the changes to review of a document, and
+the chat of a shared project, share one pane beside the sides, one at a time. **Document**, the button with the pane on it in the bar of a side,
 opens it as it was last, and closes it; the tabs at its head change what it
 shows. Each has its key as well: **Ctrl+Shift+R**, **Ctrl+Shift+P**,
 **Ctrl+Shift+M**, **Ctrl+Shift+T**, **Ctrl+Shift+H** and **Ctrl+Shift+E**.
 The pane always shows the document of the active side, the element in view
 there with all under it, named in the line over its tabs, with its project
-where two are shown; it turns with the focus. The history is of the whole
+where two are shown; it turns with the focus. The notes have no key of
+their own; **Ctrl+K** finds them, and they are the same in every project
+(see *The notebook*). The history is of the whole
 project, and so are the chat and the two lists of what goes into a text, the
 references and the images: **Cited** and **Used** are what the project cites
 and shows in figures, wherever in it, and **All** is what the library has.
@@ -1884,8 +2008,8 @@ keeps them, one level up.
 
 The top row holds, over each side, its path and at its right end the
 **×** that closes the side, **Close view**, with the button of **Split view**
-just before it. At the left end of the row stand the house, the library and
-the button of the list of projects, in the head of the list while it is
+just before it. At the left end of the row stand the house, the library, the
+notebook and the button of the list of projects, in the head of the list while it is
 shown; at the right end the keys and the settings. The search through all
 the projects is the field at the top of the list (see *Searching through
 everything*). Under the path, each side
@@ -3619,12 +3743,12 @@ what is to be done by its name, and does it.
 | --- | --- |
 | **Ctrl+/** | All the keys, by where they hold; also the keyboard in the row at the top |
 | **Ctrl+K** | What is to be done: anything that has a key, and some that have none, found by its name |
-| **Ctrl+1**, **Ctrl+2**, **Ctrl+4** | The projects, the library, the files of the library |
+| **Ctrl+1**, **Ctrl+2**, **Ctrl+3**, **Ctrl+4** | The projects, the library, the notebook, the files of the library |
 | **Ctrl+,** | Settings, in a window over what is open; closing it leaves you where you were |
 | **Ctrl+D** | Diagram or text |
 | **Alt+Shift+Up** | Up to the element over this one, in the diagram and in the text; from the top of a project, to its row in the list of projects |
 | **Ctrl+Shift+O** | The outline beside the text |
-| **Ctrl+Shift+L** | The list of projects at the left: hide it, or show it again; also the button after the house and the library in the row at the top |
+| **Ctrl+Shift+L** | The list of projects at the left: hide it, or show it again; also the button after the house, the library and the notebook in the row at the top |
 | **Ctrl+P** | Print: the document of the side you are in, or the file shown in it |
 | **Ctrl+E** | Export: the document of the side you are in, as a file |
 | **Ctrl+T** | Typesetting: the pages of the side you are in, beside the sides |

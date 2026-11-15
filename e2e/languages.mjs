@@ -105,7 +105,7 @@ try {
     );
   check(
     'the interface is in the language of the system',
-    (await places()).join(' ') === 'Prosjekter Bibliotek Prosjektlisten Taster Innstillinger',
+    (await places()).join(' ') === 'Prosjekter Bibliotek Notatblokk Prosjektlisten Taster Innstillinger',
     (await places()).join(' '),
   );
   check('and the page says so', (await app.exec(`return document.documentElement.lang`)) === 'nb');
@@ -444,9 +444,18 @@ try {
   await sleep(200);
   await app.keys(['Control', '4']);
   await sleep(500);
+  // The notebook (record 0101): empty, then with a note being written.
   await app.keys(['Control', '3']);
-  await sleep(500);
-  await english('the pictures');
+  await app.waitFor('[data-notebook-empty]', 8000);
+  await sleep(300);
+  await english('the notebook, empty');
+  await app.click('[data-notebook-empty] button');
+  await app.waitFor('[data-notebook] [data-note-text] .ProseMirror', 5000);
+  await sleep(300);
+  await app.keys('Ugla ser i skumringen.');
+  await sleep(600);
+  await english('a note in the notebook');
+  await app.screenshot('languages-5a-notebook');
   // The search through everything is the field of the list of projects (record 0098): its menu, and what it finds.
   await app.keys(['Control', 'Shift', 'F']);
   await sleep(500);

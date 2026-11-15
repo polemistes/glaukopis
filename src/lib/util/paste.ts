@@ -73,9 +73,10 @@ const PATHS = 'application/x-glaukopis-picture-paths';
 const PAGE = 'application/x-glaukopis-page';
 
 /**
- * The address of the page of the web what is pasted was copied from, where
- * the clipboard said it: Firefox says it, read by the Rust side (record
- * 0101). Nothing where it is not known, as for a paste WebKit made itself.
+ * The address on the web what is pasted was copied from, where the
+ * clipboard said one, read by the Rust side (record 0101). Firefox says the
+ * site, not the page: `http://host`, with nothing after it. Nothing where
+ * it is not known, as for a paste WebKit made itself.
  */
 export function pastedPage(data: DataTransfer | null): string | null {
   const page = data?.getData(PAGE)?.trim();

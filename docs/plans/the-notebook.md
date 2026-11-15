@@ -1,6 +1,6 @@
 # The notebook — the build plan
 
-From the owner's words of 2026-11-15 (the last section of `docs/brief.md`: read it first, every quotation and what they settle). This is the plan of the whole. The owner asked for it to be built on the same day. Each stage is given its detailed part here (the files, the words, the checks) when it is begun, after the code it touches has been read, and its record when it is built. **Built so far**: the seam of the editor (record 0100). **Begun**: stage 1, in detail below.
+From the owner's words of 2026-11-15 (the last section of `docs/brief.md`: read it first, every quotation and what they settle). This is the plan of the whole. The owner asked for it to be built on the same day. Each stage is given its detailed part here (the files, the words, the checks) when it is begun, after the code it touches has been read, and its record when it is built. **Built so far**: the seam of the editor (record 0100) and stage 1 (record 0101). Stage 2 is detailed below, and not begun.
 
 ## What it is
 
@@ -66,7 +66,7 @@ A source is a record of the notebook, of one of four sorts:
 
 | Sort | What is known of it | Where it comes from |
 | --- | --- | --- |
-| A page of the web | Its address, its title, when it was read | The plugin; a paste from the browser, where the clipboard says the page (to be tried on each system) |
+| A page of the web | Its address, its title, when it was read | The plugin; a paste from Firefox says the site and not the page (tried on Linux, record 0101), so the rest is given by hand |
 | A reference of the library | The reference, and a place in it: a page, or what a citation's locator takes | A passage or a part of a page from a file read in Glaukopis; chosen by hand for a book on the desk |
 | A file | Its name, its own time, and what it says of itself: for a photograph when and where it was taken | A file added or dropped |
 | Words of the writer | What they say: a broadcast and its day, a place, a person | Written by hand |
@@ -232,7 +232,7 @@ Where each box was looked at (its camera, surface or list) is kept on this compu
 
 - **The editor.** See above. Cut the seam first, alone, with every test and script of the editor passing, before anything of the notebook stands on it.
 - **The size.** This is a program within the program. Stage 1 is the thin line for that reason; nothing of stages 2 to 5 is begun before the line holds.
-- **What the clipboard says of a page** differs between browsers and systems. Where it says nothing, the source is given by hand, and the plugin is the sure way.
+- **What the clipboard says of a page** differs between browsers and systems. Tried with Firefox on Linux: it says the site, not the page. The source is completed by hand, and the plugin is the sure way.
 - **Years of notes in one document.** Should it grow slow to open, boxes can be put away into documents of their own; built when it is needed.
 
 ## What holds throughout

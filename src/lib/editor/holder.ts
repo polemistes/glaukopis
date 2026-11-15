@@ -25,7 +25,11 @@ import type { PassageKindRecord, RefRecord, Thread } from '$lib/project/model/ty
 export interface Came {
   /** Whether it was copied in a text of Glaukopis, and not in another program. */
   fromGlaukopis: boolean;
-  /** The address of the page it was copied from, where the clipboard says it. */
+  /**
+   * The address it was copied from, where the clipboard says one. Firefox
+   * says the site, not the page (`http://host`, tried with Firefox 159 on
+   * Linux): the rest of the address is not known from a paste.
+   */
   page: string | null;
 }
 

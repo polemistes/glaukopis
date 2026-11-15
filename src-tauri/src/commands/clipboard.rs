@@ -16,9 +16,10 @@ pub struct Pasted {
     pub html: Option<String>,
     /// A picture copied as one, and the files of pictures copied in a file manager.
     pub pictures: Vec<PastedPicture>,
-    /// The address of the page it was copied from, where the program that
-    /// holds the clipboard says it: Firefox does, on Linux. Only an address
-    /// of the web, `http` or `https`.
+    /// The address it was copied from, where the program that holds the
+    /// clipboard says one, on Linux. Firefox says the site, not the page
+    /// (`http://host`; tried with Firefox 159). Only an address of the web,
+    /// `http` or `https`.
     pub url: Option<String>,
 }
 
@@ -69,7 +70,7 @@ mod linux {
     /// How long a program that holds the clipboard is waited for.
     const WAIT: Duration = Duration::from_secs(10);
 
-    /// Where Firefox says the address of the page a selection was copied from.
+    /// Where Firefox says the address a selection was copied from: the site, not the page.
     const PAGE: &str = "text/x-moz-url-priv";
 
     pub fn read(app: &AppHandle, primary: bool) -> Pasted {
