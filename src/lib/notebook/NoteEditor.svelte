@@ -4,8 +4,11 @@
    * writing with undo and redo, its name in one line, its text in the editor
    * of the texts, and under the text the sources of what it holds, each
    * once, and what became of it. From stage 2: its tags under its name,
-   * Divide in its bar, and beside the surface an × that closes it.
+   * Divide in its bar, and beside the surface an × that closes it. From
+   * stage 4, a note begun from a starting text takes the cursor at the end
+   * of its first line.
    */
+  import { TextSelection } from 'prosemirror-state';
   import { untrack } from 'svelte';
   import BookMarked from '@lucide/svelte/icons/book-marked';
   import FileIcon from '@lucide/svelte/icons/file';
@@ -29,6 +32,7 @@
   import type { Source } from './model/types';
   import { chipsOf, wentLines, type SourceChip } from './page.svelte';
   import SourceDialog from './SourceDialog.svelte';
+  import { firstLineEnd } from './starting';
   import { sourceDetail, sourceLabel } from './sources';
   import TagsField from './TagsField.svelte';
 
@@ -38,13 +42,15 @@
     id: string;
     /** Whether the note was just made: the cursor goes into its text. */
     fresh?: boolean;
+    /** Whether it was begun from a starting text: the cursor goes to the end of its first line. */
+    begun?: boolean;
     /** Where the note stands beside the surface: an × at its head closes it, as Escape does. */
     onclose?: () => void;
     /** The note was divided: the new note. */
     ondivided?: (id: string) => void;
   }
 
-  let { notebook, holder, id, fresh = false, onclose, ondivided }: Props = $props();
+  let { notebook, holder, id, fresh = false, begun = false, onclose, ondivided }: Props = $props();
 
   let scope = $state<HTMLElement>();
   let nameField = $state<HTMLInputElement>();
@@ -230,6 +236,11 @@
             kind="body"
             placeholder={t('notebook-write')}
             autofocus={fresh ? 'end' : null}
+            onready={(view) => {
+              const at = begun ? firstLineEnd(view.state.doc) : null;
+              if (at !== null)
+                view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, at)));
+            }}
             onaction={(action) => {
               if (action !== 'up-out') return false;
               nameField?.focus();

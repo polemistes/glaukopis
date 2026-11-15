@@ -7,7 +7,9 @@
    * made a reference of the library here; and the passages taken from it in
    * the note are shown as they read now, brought back where they have been
    * changed, or made the writer's own words. All of it is undone by the
-   * notebook's undo.
+   * notebook's undo. Of a file that is an image, the words read in it, and
+   * Read the text, or Read again (stage 4; `reading.svelte.ts`), which is
+   * kept and not undone.
    */
   import { untrack } from 'svelte';
   import BookMarked from '@lucide/svelte/icons/book-marked';
@@ -19,10 +21,12 @@
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
   import Segmented from '$lib/ui/Segmented.svelte';
+  import Spinner from '$lib/ui/Spinner.svelte';
   import TextField from '$lib/ui/TextField.svelte';
   import type { Notebook } from './model/notebook.svelte';
   import type { Source } from './model/types';
   import { dayOf, givesAnything, saveSource, takenFrom, type GivenSource } from './page.svelte';
+  import { imageReading, imagesOf } from './reading.svelte';
   import { draftOf, placeWords, sourceLabel } from './sources';
 
   interface Props {
@@ -91,6 +95,15 @@
     const some = taken.passages.length + taken.files.length > 0;
     if (some) held = true;
     else if (held) onclose();
+  });
+
+  /** The images in the note that came from this source, where it is a file: their words read, to be read or read again. */
+  const images = $derived.by(() => {
+    if (!record || !isFile) return [];
+    const files = new Set(taken.files);
+    return imagesOf([record])
+      .filter((image) => files.has(image.hash))
+      .map((image) => ({ ...image, text: notebook.files.get(image.hash)?.text }));
   });
 
   /** The reference the source has been made, said in short; none where it has not. */
@@ -222,6 +235,47 @@
         <TextField bind:value={words} label={t('notebook-source-words')} data-source-words />
       {/if}
     {/if}
+
+    {#each images as image (image.hash)}
+      <section class="read" aria-label={t('notebook-text-read')} data-text-read={image.hash}>
+        {#if image.text !== undefined}
+          <h3 class="overline">{t('notebook-text-read')}</h3>
+          {#if image.text}
+            <p class="words selectable" data-read-words>{image.text}</p>
+          {:else}
+            <p class="nothing">{t('ocr-picture-empty')}</p>
+          {/if}
+        {/if}
+        <!-- The line at the foot of the window lies under this window: what is read is said here too. -->
+        <div class="actions">
+          {#if imageReading.now}
+            {@const now = imageReading.now}
+            <span class="busy" role="status">
+              <Spinner size={13} />
+              <span class="truncate"
+                >{t('notebook-reading', {
+                  name: now.name,
+                  done: now.done + 1,
+                  count: now.count,
+                })}</span
+              >
+            </span>
+            <Button size="sm" variant="ghost" onclick={() => imageReading.stop()}
+              >{t('notebook-reading-stop')}</Button
+            >
+          {:else}
+            <Button
+              size="sm"
+              variant="ghost"
+              data-read-text
+              onclick={() => void imageReading.read(notebook, [image])}
+            >
+              {image.text !== undefined ? t('notebook-read-again') : t('notebook-read-text')}
+            </Button>
+          {/if}
+        </div>
+      </section>
+    {/each}
 
     {#if made && current?.reference}
       <p class="made">
@@ -382,6 +436,42 @@
   }
   .link:hover {
     text-decoration: underline;
+  }
+  .read {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+  }
+  .words {
+    max-height: 12em;
+    margin: 0;
+    padding: 8px 10px;
+    overflow-y: auto;
+    border-radius: var(--radius-s);
+    background: var(--paper-sunken);
+    font-family: var(--font-text);
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+  }
+  .nothing {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--ink-3);
+  }
+  .read .actions {
+    align-items: center;
+    margin-top: 0;
+  }
+  .busy {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    font-size: var(--text-sm);
+    color: var(--ink-2);
   }
   .passages {
     display: flex;

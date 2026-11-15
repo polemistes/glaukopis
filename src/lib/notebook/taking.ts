@@ -91,7 +91,7 @@ export async function takeFiles(
   const made = (i: number) => new Date(now + taken.files.length - 1 - i).toISOString();
   const ids = notebook.transact(() =>
     taken.files.map((f, i) => {
-      const id = notebook.addNote({ made: made(i), box });
+      const id = notebook.addNote({ made: made(i), box, seen: false });
       const source = notebook.addSource(fileSourceOf(f));
       holdTaken(notebook, f, source);
       if (f.shown) notebook.addFigure(id, figureOf(f.shown));
@@ -195,7 +195,7 @@ export async function takePasted(
     sayProblems(problems);
     if (!shown.length) return null;
     return notebook.transact(() => {
-      const id = notebook.addNote({ box });
+      const id = notebook.addNote({ box, seen: false });
       for (const f of fromPaths) holdTaken(notebook, f, notebook.addSource(fileSourceOf(f)));
       // Pasted as a picture: where it came from is given by hand.
       for (const f of pasted) holdTaken(notebook, f, null);
@@ -209,7 +209,7 @@ export async function takePasted(
   if (!words) return null;
   const page = pastedPage(data);
   return notebook.transact(() => {
-    const id = notebook.addNote({ box });
+    const id = notebook.addNote({ box, seen: false });
     const source = page
       ? notebook.addSource({ sort: 'web', url: page, title: '', read: nowIso() })
       : null;

@@ -255,7 +255,7 @@ export async function noteOfWords(text: string, source: NewSource): Promise<stri
     .join('\n');
   notebook.checkpoint();
   const id = notebook.transact(() => {
-    const id = notebook.addNote();
+    const id = notebook.addNote({ seen: false });
     const passage = notebook.addPassage(notebook.addSource(source), words);
     notebook.addText(id, words, passage);
     return id;
@@ -280,7 +280,7 @@ export async function noteOfPicture(
   const notebook = await theNotebook.open();
   notebook.checkpoint();
   const id = notebook.transact(() => {
-    const id = notebook.addNote();
+    const id = notebook.addNote({ seen: false });
     holdTaken(notebook, taken, notebook.addSource(source));
     notebook.addFigure(id, figureOf(shown));
     return id;

@@ -129,6 +129,62 @@ notebook-surface-new-note-here = Nytt notat her
 notebook-surface-show-all = Vis alt
 notebook-surface-link-handle = Dra til et annet notat for å lenke dem
 
+## Å finne, og starttekster
+
+notebook-filters = Filtrer
+notebook-filters-on = { $count ->
+    [one] Filter: { $count } på
+   *[other] Filter: { $count } på
+}
+notebook-filter-holds = Har
+notebook-filter-picture = Et bilde
+notebook-filter-file = En fil
+notebook-filter-passage = Ord som er tatt inn
+notebook-filter-link = En lenke til et annet notat
+notebook-filter-collected = Samlet
+notebook-filter-from = Fra
+notebook-filter-to = Til
+notebook-filter-came = Fra
+notebook-filter-web = En nettside
+notebook-filter-reference = En referanse
+notebook-filter-file-source = En fil
+notebook-filter-other = Annet
+notebook-filter-no-source = Ingen kilde
+notebook-filter-unseen = Ikke sett på
+notebook-filter-use = Brukt
+notebook-filter-use-all = Alle
+notebook-filter-used = Brukt i et prosjekt
+notebook-filter-unused = Ikke brukt
+notebook-filter-clear = Fjern filtrene
+notebook-nothing-passes = Ingen notater i oversikten slipper gjennom filtrene.
+notebook-unseen = Ikke sett på
+notebook-read-text = Les teksten
+notebook-read-again = Les på nytt
+notebook-text-read = Lest tekst
+notebook-reading = { $count ->
+    [one] Leser { $name } …
+   *[other] Leser { $name } ({ $done } av { $count }) …
+}
+notebook-reading-stop = Stopp
+notebook-read-done = { $count ->
+    [one] Teksten i bildet er lest
+   *[other] Teksten i { $count } bilder er lest
+}
+notebook-read-failed = Teksten i { $name } kunne ikke leses
+notebook-new-note-from = Nytt notat fra en starttekst
+notebook-starts = Starttekster …
+notebook-starts-title = Starttekster
+notebook-start-new = Ny
+notebook-start-unnamed = Uten navn
+notebook-start-name = Navn
+notebook-start-lines = Linjer
+notebook-start-kind = Linjene er
+notebook-start-up = Flytt opp
+notebook-start-down = Flytt ned
+notebook-start-none = Ingen starttekster ennå.
+notebook-start-delete-title = Slette { $name }?
+notebook-start-delete-message = Notatene som ble begynt fra den, blir stående som de er.
+
 ## Listen i dokumentpanelet, og det som går inn i en tekst
 
 notebook-between = Mellom sidene og notatene
