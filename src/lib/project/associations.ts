@@ -1,7 +1,9 @@
 /**
  * The menu of an association, one and the same in the diagram and in the
  * margin of the text (record 0093): its words, its arrow, its colour, and
- * taking it away. The margin puts the two ends to go to before it.
+ * taking it away. The margin puts the two ends to go to before it. It asks
+ * what it needs of whatever holds the links (`LinkHolder`): a project
+ * answers through `linkHolderOf`, and so can the notebook.
  */
 
 import ArrowLeft from '@lucide/svelte/icons/arrow-left';
@@ -17,7 +19,7 @@ import { truncate } from '$lib/library/format';
 import type { MenuItem } from '$lib/ui/menu.svelte';
 import type { Component } from 'svelte';
 import { KIND_COLOURS } from './kinds';
-import type { Project } from './model/project.svelte';
+import { Project } from './model/project.svelte';
 import type { LinkArrow, LinkRecord } from './model/types';
 
 type Icon = Component<{ size?: number | string }>;
@@ -30,29 +32,57 @@ export interface AssociationActions {
   goTo?(id: string): void;
 }
 
-/** The name of an element as a menu says it. */
-function nameOf(project: Project, id: string): string {
-  return truncate(project.node(id)?.title || t('project-untitled'), 36);
+/** What the menu of an association asks of whatever holds the links, and nothing more. */
+export interface LinkHolder {
+  /** The name of an end, by its id; empty where it has none. */
+  nameOf(id: string): string;
+  setArrow(link: string, arrow: LinkArrow | null): void;
+  setColour(link: string, colour: string | null): void;
+  remove(link: string): void;
+  /** Makes a change that one undo takes back. */
+  change(act: () => void): void;
 }
 
-/** A change of the association, taken back by one undo. */
-function change(project: Project, act: () => void) {
-  project.checkpoint();
-  act();
-  project.checkpoint();
+const linkHolders = new WeakMap<Project, LinkHolder>();
+
+/** The project as what holds its associations: one for each project, the same whenever it is asked for. */
+export function linkHolderOf(project: Project): LinkHolder {
+  let holder = linkHolders.get(project);
+  if (!holder) {
+    holder = {
+      nameOf: (id) => project.node(id)?.title ?? '',
+      setArrow: (link, arrow) => project.setLinkArrow(link, arrow),
+      setColour: (link, colour) => project.setLinkColour(link, colour),
+      remove: (link) => project.removeLink(link),
+      change(act) {
+        project.checkpoint();
+        act();
+        project.checkpoint();
+      },
+    };
+    linkHolders.set(project, holder);
+  }
+  return holder;
 }
 
+/**
+ * The menu of an association, of what holds it; a project given is taken
+ * as its holder.
+ */
 export function associationMenu(
-  project: Project,
+  of: LinkHolder | Project,
   link: LinkRecord,
   actions: AssociationActions,
 ): MenuItem[] {
+  const holder = of instanceof Project ? linkHolderOf(of) : of;
+  /** The name of an end as a menu says it. */
+  const nameOf = (id: string) => truncate(holder.nameOf(id) || t('project-untitled'), 36);
   const items: MenuItem[] = [];
   if (actions.goTo) {
     const goTo = actions.goTo;
     for (const id of [link.from, link.to])
       items.push({
-        label: t('text-go-to', { name: nameOf(project, id) }),
+        label: t('text-go-to', { name: nameOf(id) }),
         icon: ArrowRight,
         action: () => goTo(id),
       });
@@ -63,13 +93,13 @@ export function associationMenu(
     label,
     icon,
     checked: (link.arrow ?? null) === value,
-    action: () => change(project, () => project.setLinkArrow(link.id, value)),
+    action: () => holder.change(() => holder.setArrow(link.id, value)),
   });
   const colour = (value: string | null, label: string, ink: string): MenuItem => ({
     label,
     colour: ink,
     checked: (link.colour ?? null) === value,
-    action: () => change(project, () => project.setLinkColour(link.id, value)),
+    action: () => holder.change(() => holder.setColour(link.id, value)),
   });
 
   items.push(
@@ -84,8 +114,8 @@ export function associationMenu(
       icon: MoveRight,
       items: [
         arrow(null, t('project-link-arrow-none'), Minus),
-        arrow('to', t('project-link-arrow-to', { name: nameOf(project, link.to) }), ArrowRight),
-        arrow('from', t('project-link-arrow-to', { name: nameOf(project, link.from) }), ArrowLeft),
+        arrow('to', t('project-link-arrow-to', { name: nameOf(link.to) }), ArrowRight),
+        arrow('from', t('project-link-arrow-to', { name: nameOf(link.from) }), ArrowLeft),
         arrow('both', t('project-link-arrow-both'), ArrowLeftRight),
       ],
     },
@@ -103,7 +133,7 @@ export function associationMenu(
       label: t('text-remove-association'),
       icon: Trash2,
       danger: true,
-      action: () => change(project, () => project.removeLink(link.id)),
+      action: () => holder.change(() => holder.remove(link.id)),
     },
   );
   return items;

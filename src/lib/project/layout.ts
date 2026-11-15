@@ -20,7 +20,7 @@ import {
   type StoredBeginning,
 } from '$lib/comments/unsent';
 import type { MapMode } from '$lib/state/router.svelte';
-import type { Camera } from './diagram/camera';
+import type { Camera } from '$lib/ui/camera';
 import { PROJECT } from './model/types';
 
 /** The elements there are, by id: `project.nodes` will do. */

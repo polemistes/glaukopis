@@ -6,11 +6,8 @@
   import { safeFileName } from '$lib/util/file-name';
   import { testHook } from '$lib/shell/testing';
   import { SvelteMap } from 'svelte/reactivity';
-  import Maximize from '@lucide/svelte/icons/maximize';
   import Minimize2 from '@lucide/svelte/icons/minimize-2';
   import MessageSquare from '@lucide/svelte/icons/message-square';
-  import Minus from '@lucide/svelte/icons/minus';
-  import Plus from '@lucide/svelte/icons/plus';
   import { commentsUi } from '$lib/comments/ui.svelte';
   import { widthFor } from '$lib/editor/commands';
   import { colourOf, initials } from '$lib/sharing/connection.svelte';
@@ -24,8 +21,7 @@
   import { drag, dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
   import type { RectLike } from '$lib/ui/floating';
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
-  import LinesField from '$lib/ui/LinesField.svelte';
-  import { associationMenu } from '../associations';
+  import { associationMenu, linkHolderOf } from '../associations';
   import { tooltip } from '$lib/ui/tooltip';
   import ElementBox from '../ElementBox.svelte';
   import {
@@ -49,21 +45,16 @@
   import { isAncestor, numbered, subtree } from '../model/tree';
   import type { Position } from '../model/types';
   import { pieces } from '../pieces';
-  import {
-    bringing,
-    centred,
-    fitting,
-    kept,
-    wheeled,
-    zoomedAt,
-    type Camera,
-    type View,
-  } from './camera';
+  import type { Camera } from '$lib/ui/camera';
+  import { followPointer, PanZoom } from '$lib/ui/pan-zoom.svelte';
+  import ZoomControls from '$lib/ui/ZoomControls.svelte';
+  import AssociationCurves from './AssociationCurves.svelte';
+  import AssociationLabels from './AssociationLabels.svelte';
   import DiagramNode from './DiagramNode.svelte';
   import { foldAll, pressed, type Diagram } from './keys';
   import { progressOf, progressWords } from '../status';
   import { associationsOf, drawing, linesOf } from './lines';
-  import { layout, type Layout, type Placed, type Size } from './layout';
+  import { layout, type Layout, type Size } from './layout';
   import { slotAt } from './slots';
   import { fontsOf, imageScale, pictureOf, toPng, toSvg } from './picture';
 
@@ -134,11 +125,17 @@
   }
 
   let viewport = $state<HTMLDivElement>();
-  let width = $state(0);
-  let height = $state(0);
-  /** Where the origin of the canvas is in the window, and the scale. */
-  let cam = $state<View>({ x: 0, y: 0, k: 1 });
-  let placedCamera = false;
+  /** The view of the map, which pans and zooms. */
+  const panZoom = new PanZoom({
+    viewport: () => viewport,
+    camera: () => camera,
+    oncamera: (kept) => oncamera?.(kept),
+    wheel: (event) => {
+      if ((event.target as HTMLElement).closest('.rename')) return false;
+      hovered = null;
+      return true;
+    },
+  });
 
   const sizes = new SvelteMap<string, Size>();
   let selection = $state<string[]>([]);
@@ -175,7 +172,6 @@
   /** The association whose words are being written. */
   let labelling = $state<string | null>(null);
   let band = $state<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
-  let panning = $state(false);
 
   /** The tree seen from the element in view: that element its root, its branch under it. */
   const tree = $derived(project.tree(at));
@@ -245,7 +241,7 @@
       p.kind !== NOTE_PIECES
     )
       return null;
-    if (!pointerInside(drag.x, drag.y)) return null;
+    if (!panZoom.pointerInside(drag.x, drag.y)) return null;
     const world = toWorld(drag.x, drag.y);
     const target = hit(world, p.kind === 'elements' ? lifted : new Set());
     // No promise of a move the project would refuse.
@@ -264,7 +260,7 @@
     const p = drag.payload;
     if (p?.kind !== 'elements' || !drag.welcome || drag.alone) return null;
     const data = p.data as ElementsPayload;
-    if (!takes(data) || !pointerInside(drag.x, drag.y)) return null;
+    if (!takes(data) || !panZoom.pointerInside(drag.x, drag.y)) return null;
     const world = toWorld(drag.x, drag.y);
     const own = data.project === project;
     const except = own ? lifted : new Set<string>();
@@ -297,35 +293,7 @@
   // ---- coordinates ----
 
   function toWorld(clientX: number, clientY: number): Position {
-    const rect = viewport?.getBoundingClientRect();
-    const left = rect?.left ?? 0;
-    const top = rect?.top ?? 0;
-    return { x: (clientX - left - cam.x) / cam.k, y: (clientY - top - cam.y) / cam.k };
-  }
-
-  function pointerInside(clientX: number, clientY: number): boolean {
-    const rect = viewport?.getBoundingClientRect();
-    return (
-      !!rect &&
-      clientX >= rect.left &&
-      clientX <= rect.right &&
-      clientY >= rect.top &&
-      clientY <= rect.bottom
-    );
-  }
-
-  function screenRect(p: Placed): RectLike {
-    const rect = viewport?.getBoundingClientRect();
-    const left = (rect?.left ?? 0) + cam.x + (p.x - p.w / 2) * cam.k;
-    const top = (rect?.top ?? 0) + cam.y + (p.y - p.h / 2) * cam.k;
-    return {
-      left,
-      top,
-      right: left + p.w * cam.k,
-      bottom: top + p.h * cam.k,
-      width: p.w * cam.k,
-      height: p.h * cam.k,
-    };
+    return panZoom.toWorld(clientX, clientY);
   }
 
   /** The element at a point of the canvas, the topmost first. */
@@ -341,67 +309,17 @@
 
   // ---- the camera ----
 
-  $effect(() => {
-    if (!viewport) return;
-    const el = viewport;
-    const resized = () => {
-      const w = el.clientWidth;
-      const h = el.clientHeight;
-      if (w === width && h === height) return;
-      untrack(() => {
-        if (placedCamera && width && height) {
-          // What was in the middle stays in the middle.
-          cam = { ...cam, x: cam.x + (w - width) / 2, y: cam.y + (h - height) / 2 };
-        }
-        width = w;
-        height = h;
-      });
-    };
-    const observer = new ResizeObserver(() => requestAnimationFrame(resized));
-    observer.observe(el);
-    resized();
-    return () => observer.disconnect();
-  });
+  panZoom.follow();
 
-  // The first time the size is known, the view is put where it was left; or
-  // else the element in view, which stands at the origin, goes to the middle.
-  $effect(() => {
-    if (placedCamera || !width || !height) return;
-    placedCamera = true;
-    untrack(() => {
-      cam = centred({ cx: camera?.cx ?? 0, cy: camera?.cy ?? 0, k: camera?.k ?? 1 }, width, height);
-    });
-  });
-
-  let cameraTimer: ReturnType<typeof setTimeout> | undefined;
-  $effect(() => {
-    if (!placedCamera || !width) return;
-    const snapshot: Camera = kept(cam, width, height);
-    clearTimeout(cameraTimer);
-    cameraTimer = setTimeout(() => oncamera?.(snapshot), 400);
-  });
-
-  // A diagram that goes leaves nothing to come after it: a camera told late
-  // would be kept under the element the pane has turned to, which is not
-  // this map, and would put that map's view off its elements.
+  // A diagram that goes leaves nothing to come after it (the camera is
+  // seen to by the view).
   onDestroy(() => {
-    clearTimeout(cameraTimer);
     clearTimeout(hoverTimer);
     clearTimeout(typedAheadTimer);
   });
 
-  function zoomAt(clientX: number, clientY: number, k: number) {
-    const rect = viewport?.getBoundingClientRect();
-    if (rect) cam = zoomedAt(cam, clientX - rect.left, clientY - rect.top, k);
-  }
-
-  function zoomBy(factor: number) {
-    const rect = viewport?.getBoundingClientRect();
-    if (rect) zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, cam.k * factor);
-  }
-
   export function fit() {
-    if (width && height) cam = fitting(lay.bounds, width, height);
+    panZoom.fit(lay.bounds);
   }
 
   /** Opens an element for writing, in its box, bringing it into view first. */
@@ -418,24 +336,8 @@
   /** Moves the view, if need be, so that an element is in it. */
   function bringIntoView(id: string) {
     const p = lay.placed.get(id);
-    if (!p || !width) return;
-    const moved = bringing(cam, p, width, height);
-    if (moved) cam = moved;
+    if (p) panZoom.bring(p);
   }
-
-  $effect(() => {
-    if (!viewport) return;
-    const el = viewport;
-    const onwheel = (event: WheelEvent) => {
-      if ((event.target as HTMLElement).closest('.rename')) return;
-      event.preventDefault();
-      hovered = null;
-      const rect = el.getBoundingClientRect();
-      cam = wheeled(cam, event, event.clientX - rect.left, event.clientY - rect.top);
-    };
-    el.addEventListener('wheel', onwheel, { passive: false });
-    return () => el.removeEventListener('wheel', onwheel);
-  });
 
   // ---- selection ----
 
@@ -549,11 +451,11 @@
   }
 
   function nodeEnter(id: string) {
-    if (drag.payload || renaming || editing || linking || panning) return;
+    if (drag.payload || renaming || editing || linking || panZoom.panning) return;
     clearTimeout(hoverTimer);
     hoverTimer = setTimeout(() => {
       const p = lay.placed.get(id);
-      if (p && !drag.payload && !editing) hovered = { id, anchor: screenRect(p) };
+      if (p && !drag.payload && !editing) hovered = { id, anchor: panZoom.screenRect(p) };
     }, 480);
   }
 
@@ -571,7 +473,7 @@
     clearTimeout(hoverTimer);
     if (renaming) finishRename(renaming, 'blur');
     select([id]);
-    editing = { id, anchor: screenRect(p), begin };
+    editing = { id, anchor: panZoom.screenRect(p), begin };
   }
 
   function closeBox() {
@@ -783,19 +685,19 @@
       return;
     }
 
+    // With Shift, a band selects what it touches; else the ground is
+    // dragged. A press that does not move clears the selection.
+    if (event.shiftKey && event.button === 0) drawBand(event);
+    else panZoom.pan(event, (moved) => !moved && select([]));
+  }
+
+  function drawBand(event: PointerEvent) {
     const startX = event.clientX;
     const startY = event.clientY;
-    const origin = { x: cam.x, y: cam.y };
-    const banding = event.shiftKey && event.button === 0;
-    let moved = false;
-    const base = banding ? selection.slice() : [];
-
-    const move = (e: PointerEvent) => {
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
-      if (!moved && Math.hypot(dx, dy) < 4) return;
-      moved = true;
-      if (banding) {
+    const base = selection.slice();
+    followPointer(
+      event,
+      (e) => {
         const a = toWorld(startX, startY);
         const b = toWorld(e.clientX, e.clientY);
         band = {
@@ -814,22 +716,12 @@
           );
         });
         selection = [...new Set([...base, ...inside])];
-      } else {
-        panning = true;
-        cam = { ...cam, x: origin.x + dx, y: origin.y + dy };
-      }
-    };
-    const up = () => {
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', up);
-      window.removeEventListener('pointercancel', up);
-      panning = false;
-      band = null;
-      if (!moved) select([]);
-    };
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', up);
-    window.addEventListener('pointercancel', up);
+      },
+      (moved) => {
+        band = null;
+        if (!moved) select([]);
+      },
+    );
   }
 
   /** A new element under the one in view, where the pointer is: a thought that has no place yet. */
@@ -892,13 +784,18 @@
     viewport?.focus({ preventScroll: true });
   }
 
+  /** Selects an association, and nothing else. */
+  function selectLink(id: string) {
+    selection = [];
+    selectedLink = id;
+  }
+
   /** The menu of an association, which selects it. */
   function linkMenuItems(id: string): MenuItem[] {
     const link = project.links.find((l) => l.id === id);
     if (!link) return [];
-    selection = [];
-    selectedLink = id;
-    return associationMenu(project, link, { write: () => (labelling = id) });
+    selectLink(id);
+    return associationMenu(linkHolderOf(project), link, { write: () => (labelling = id) });
   }
 
   /** The menu of an association opened by a key: at its words, or at its curve. */
@@ -1096,7 +993,7 @@
       typedAheadTimer = setTimeout(() => (typedAhead = null), 2000);
     },
     fit,
-    zoomBy,
+    zoomBy: (factor) => panZoom.zoomBy(factor),
     bringIntoView,
     elementAt: (id) => viewport?.querySelector<HTMLElement>(`[data-node="${id}"]`) ?? null,
     openedByKey: () => (menuByKey = true),
@@ -1288,8 +1185,8 @@
     const el = event.currentTarget as HTMLElement;
     el.setPointerCapture(event.pointerId);
     const onmove = (e: PointerEvent) => {
-      const dx = (e.clientX - start.x) / cam.k;
-      const dy = (e.clientY - start.y) / cam.k;
+      const dx = (e.clientX - start.x) / panZoom.view.k;
+      const dy = (e.clientY - start.y) / panZoom.view.k;
       if (!moved && Math.hypot(dx, dy) < 3) return;
       moved = true;
       project.setCard(id, { x: was.x + dx, y: was.y + dy });
@@ -1320,7 +1217,7 @@
 <div
   bind:this={viewport}
   class="diagram"
-  class:panning
+  class:panning={panZoom.panning}
   class:linking={!!linking || !!linkFrom}
   role="tree"
   aria-multiselectable="true"
@@ -1348,40 +1245,21 @@
   {onkeydown}
   {oncontextmenu}
 >
-  <div class="world" style:transform="translate({cam.x}px, {cam.y}px) scale({cam.k})">
+  <div class="world" style:transform={panZoom.transform}>
     <svg class="lines" aria-hidden="true">
       {#each lines as l (l.id)}
         <line x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} class="branch" class:faint={l.faint} />
       {/each}
-      {#each curves as c (c.id)}
-        <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-        <g
-          class="association"
-          class:selected={!picturing && selectedLink === c.id}
-          class:faint={c.faint}
-          data-link={c.id}
-          style:--link={c.colour}
-          onpointerdown={(e) => {
-            e.stopPropagation();
-            viewport?.focus({ preventScroll: true });
-            selection = [];
-            selectedLink = c.id;
-          }}
-          ondblclick={(e) => {
-            e.stopPropagation();
-            labelling = c.id;
-          }}
-        >
-          <path d={c.path} class="link-hit" />
-          <path d={c.path} class="curve" />
-          {#each c.heads as head, i (i)}
-            <path d={head} class="head" />
-          {/each}
-        </g>
-      {/each}
-      {#if pendingCurve}
-        <path d={pendingCurve} class="curve pending" />
-      {/if}
+      <AssociationCurves
+        associations={curves}
+        selected={picturing ? null : selectedLink}
+        pending={pendingCurve}
+        onselect={(id) => {
+          viewport?.focus({ preventScroll: true });
+          selectLink(id);
+        }}
+        onwrite={(id) => (labelling = id)}
+      />
       {#each threads as th (th.id)}
         <line x1={th.from.x} y1={th.from.y} x2={th.x + 12} y2={th.y} class="to-card" />
       {/each}
@@ -1396,43 +1274,18 @@
       {/if}
     </svg>
 
-    {#each curves as c (c.id)}
-      {#if labelling === c.id}
-        <div
-          class="link-field"
-          style:transform="translate(-50%, -50%) translate({c.middle.x}px, {c.middle.y}px)"
-        >
-          <LinesField
-            value={c.label}
-            placeholder={t('project-link-placeholder')}
-            label={t('project-link-label')}
-            ondone={commitLabel}
-            oncancel={() => {
-              labelling = null;
-              viewport?.focus({ preventScroll: true });
-            }}
-          />
-        </div>
-      {:else if c.label}
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <span
-          class="link-label"
-          class:selected={!picturing && selectedLink === c.id}
-          data-link={c.id}
-          style:--link={c.colour}
-          style:transform="translate(-50%, -50%) translate({c.middle.x}px, {c.middle.y}px)"
-          onpointerdown={(e) => {
-            e.stopPropagation();
-            selection = [];
-            selectedLink = c.id;
-          }}
-          ondblclick={(e) => {
-            e.stopPropagation();
-            labelling = c.id;
-          }}>{c.label}</span
-        >
-      {/if}
-    {/each}
+    <AssociationLabels
+      associations={curves}
+      selected={picturing ? null : selectedLink}
+      writing={labelling}
+      onselect={selectLink}
+      onwrite={(id) => (labelling = id)}
+      ondone={commitLabel}
+      oncancel={() => {
+        labelling = null;
+        viewport?.focus({ preventScroll: true });
+      }}
+    />
 
     {#each threads as th (th.id)}
       <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -1534,36 +1387,7 @@
     </div>
   {/if}
 
-  <div class="controls" role="group" aria-label={t('diagram-view')}>
-    <button
-      type="button"
-      aria-label={t('diagram-zoom-out')}
-      use:tooltip={{
-        text: t('diagram-zoom-out'),
-        shortcut: keysFor('diagram-farther'),
-        side: 'top',
-      }}
-      onclick={() => zoomBy(1 / 1.25)}
-    >
-      <Minus size={14} />
-    </button>
-    <button
-      type="button"
-      class="level"
-      aria-label={t('diagram-actual-size')}
-      use:tooltip={{ text: t('diagram-actual-size'), side: 'top' }}
-      onclick={() => zoomBy(1 / cam.k)}
-    >
-      {t('diagram-zoom', { percent: Math.round(cam.k * 100) })}
-    </button>
-    <button
-      type="button"
-      aria-label={t('diagram-zoom-in')}
-      use:tooltip={{ text: t('diagram-zoom-in'), shortcut: keysFor('diagram-closer'), side: 'top' }}
-      onclick={() => zoomBy(1.25)}
-    >
-      <Plus size={14} />
-    </button>
+  <ZoomControls view={panZoom} onfit={fit}>
     {#if anyThreads}
       <span class="rule"></span>
       <button
@@ -1577,16 +1401,7 @@
         <MessageSquare size={14} />
       </button>
     {/if}
-    <span class="rule"></span>
-    <button
-      type="button"
-      aria-label={t('diagram-show-all')}
-      use:tooltip={{ text: t('diagram-show-all'), shortcut: keysFor('diagram-whole'), side: 'top' }}
-      onclick={fit}
-    >
-      <Maximize size={14} />
-    </button>
-  </div>
+  </ZoomControls>
 </div>
 
 {#if hovered && !editing && !renaming && !drag.payload}
@@ -1670,86 +1485,10 @@
   .slot-dot {
     fill: var(--accent);
   }
-  .association {
-    pointer-events: stroke;
-    cursor: pointer;
-  }
-  .curve {
-    fill: none;
-    stroke: var(--link, var(--gold));
-    stroke-width: 1.5;
-    stroke-dasharray: 5 4;
-    stroke-linecap: round;
-  }
-  .association.faint .curve,
-  .association.faint .head {
-    opacity: 0.45;
-  }
-  /* An arrowhead: a filled path of its own, so that the picture reads it as it reads the curve. */
-  .head {
-    fill: var(--link, var(--gold));
-    stroke: none;
-  }
-  .association:hover .curve,
-  .association.selected .curve {
-    stroke-width: 2.4;
-  }
-  .association.selected .curve {
-    stroke-dasharray: none;
-  }
-  .link-hit {
-    fill: none;
-    stroke: transparent;
-    stroke-width: 14;
-  }
-  .curve.pending {
-    opacity: 0.8;
-    pointer-events: none;
-  }
   .band {
     fill: var(--selection);
     stroke: var(--accent);
     stroke-width: 1;
-  }
-  .link-label {
-    position: absolute;
-    left: 0;
-    top: 0;
-    padding: 1px 7px;
-    border-radius: 9px;
-    background: var(--canvas);
-    color: var(--link, var(--gold));
-    font-size: 12px;
-    font-style: italic;
-    font-family: var(--font-text);
-    line-height: 1.35;
-    /* Its lines as they were written, centred, a line longer than the width broken. */
-    width: max-content;
-    max-width: 240px;
-    white-space: pre-line;
-    overflow-wrap: anywhere;
-    text-align: center;
-    cursor: pointer;
-  }
-  .link-label.selected {
-    box-shadow: 0 0 0 1px var(--link, var(--gold));
-  }
-  .link-field {
-    position: absolute;
-    left: 0;
-    top: 0;
-    font-size: 12px;
-    font-family: var(--font-text);
-  }
-  .link-field :global(.lines-field) {
-    width: 220px;
-    padding: 2px 8px;
-    border: 1px solid var(--gold);
-    border-radius: 9px;
-    background: var(--paper-raised);
-    color: var(--ink);
-    outline: none;
-    text-align: center;
   }
   .hold {
     display: contents;
@@ -1843,49 +1582,5 @@
     font-size: var(--text-xs);
     color: var(--ink-3);
     pointer-events: none;
-  }
-  .controls {
-    position: absolute;
-    right: 14px;
-    bottom: 14px;
-    display: flex;
-    align-items: center;
-    padding: 2px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-m);
-    background: var(--paper-raised);
-    box-shadow: var(--shadow-1);
-    cursor: default;
-  }
-  .controls button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 26px;
-    height: 26px;
-    padding: 0 5px;
-    border: none;
-    border-radius: 5px;
-    background: transparent;
-    color: var(--ink-3);
-    cursor: pointer;
-  }
-  .controls button.active {
-    color: var(--gold);
-  }
-  .controls button:hover {
-    background: var(--paper-hover);
-    color: var(--ink);
-  }
-  .controls .level {
-    min-width: 46px;
-    font-size: var(--text-xs);
-    font-variant-numeric: tabular-nums;
-  }
-  .controls .rule {
-    width: 1px;
-    height: 14px;
-    margin: 0 2px;
-    background: var(--line);
   }
 </style>

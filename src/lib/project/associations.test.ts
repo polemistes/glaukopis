@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { MenuItem } from '$lib/ui/menu.svelte';
-import { associationMenu } from './associations';
+import { associationMenu, linkHolderOf, type LinkHolder } from './associations';
 import { KIND_COLOURS } from './kinds';
 import { endsWritten } from './model/changing/links';
 import { Project } from './model/project.svelte';
-import { PROJECT } from './model/types';
+import { PROJECT, type LinkRecord } from './model/types';
 
 function project() {
   const p = new Project(null);
@@ -103,5 +103,55 @@ describe('the menu of an association', () => {
     expect(endsWritten('A', 'B', 'from')).toBe('A ← B');
     expect(endsWritten('A', 'B', 'both')).toBe('A ↔ B');
     expect(endsWritten('A', 'B', undefined)).toBe('A – B');
+  });
+});
+
+describe('the menu of an association, of whatever holds the links', () => {
+  /** Links held in a plain record, as the notebook may hold them: no project anywhere. */
+  function held() {
+    const names: Record<string, string> = { n1: 'A passage', n2: '' };
+    const link: LinkRecord = { id: 'l1', from: 'n1', to: 'n2', label: '' };
+    const done: string[] = [];
+    let steps = 0;
+    const holder: LinkHolder = {
+      nameOf: (id) => names[id] ?? '',
+      setArrow: (id, arrow) => {
+        done.push(`arrow ${id} ${arrow}`);
+        link.arrow = arrow ?? undefined;
+      },
+      setColour: (id, colour) => done.push(`colour ${id} ${colour}`),
+      remove: (id) => done.push(`remove ${id}`),
+      change(act) {
+        steps++;
+        act();
+      },
+    };
+    return { holder, link, done, steps: () => steps };
+  }
+
+  it('names the ends as the holder names them, an end without a name untitled', () => {
+    const { holder, link } = held();
+    const all = labels(associationMenu(holder, link, { write: () => {} }));
+    expect(all).toContain('  To “Untitled”');
+    expect(all).toContain('  To “A passage”');
+  });
+
+  it('asks the holder for each change, each in a step of its own', () => {
+    const { holder, link, done, steps } = held();
+    find(associationMenu(holder, link, { write: () => {} }), 'Both ways')!.action();
+    find(associationMenu(holder, link, { write: () => {} }), 'Teal')!.action();
+    find(associationMenu(holder, link, { write: () => {} }), 'Remove the association')!.action();
+    expect(done).toEqual(['arrow l1 both', 'colour l1 teal', 'remove l1']);
+    expect(steps()).toBe(3);
+    expect(labels(associationMenu(holder, link, { write: () => {} }))).toContain('  ✓ Both ways');
+  });
+
+  it('is the same for a project as for its holder', () => {
+    const { p, link } = project();
+    const write = () => {};
+    expect(labels(associationMenu(linkHolderOf(p), link(), { write }))).toEqual(
+      labels(associationMenu(p, link(), { write })),
+    );
+    expect(linkHolderOf(p)).toBe(linkHolderOf(p));
   });
 });

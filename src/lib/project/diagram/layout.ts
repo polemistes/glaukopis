@@ -45,6 +45,9 @@ export interface Placed {
   pinned: boolean;
 }
 
+/** What a box is to the lines between boxes: its id, its centre and its size. */
+export type Box = Pick<Placed, 'id' | 'x' | 'y' | 'w' | 'h'>;
+
 export interface Layout {
   placed: Map<string, Placed>;
   /** Visible elements, parents before children. */
@@ -346,7 +349,7 @@ export function hierarchyLine(parent: Placed, child: Placed): [Point, Point] {
 }
 
 /** Where the line from the centre of a box towards a point leaves the box. */
-export function edgePoint(box: Placed, towards: Point, margin = 3): Point {
+export function edgePoint(box: Box, towards: Point, margin = 3): Point {
   const dx = towards.x - box.x;
   const dy = towards.y - box.y;
   if (dx === 0 && dy === 0) return { x: box.x, y: box.y };
@@ -408,7 +411,7 @@ export function arrowheadsOf(c: Curve, arrow: 'to' | 'from' | 'both' | undefined
  * an amount that grows with the distance, so that it is never mistaken for a
  * line of the hierarchy.
  */
-export function associationCurve(a: Placed, b: Placed): Curve {
+export function associationCurve(a: Box, b: Box): Curve {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const distance = Math.hypot(dx, dy) || 1;
