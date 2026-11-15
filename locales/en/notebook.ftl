@@ -39,6 +39,9 @@ notebook-went-file = file
 
 ## A note and its text
 
+# The first box of the notebook, named so in the copy of the notebook written as Org until it is given a name.
+notebook-org-first-box = Unsorted
+
 # A file a note holds, as it stands in the note: opened by two presses.
 notebook-file-open-named = Open { $name }
 notebook-file-not-here = The file is not on this computer

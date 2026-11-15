@@ -37,7 +37,15 @@ describe('the notebook in the search through everything', () => {
     const read = readNotebook(Y.encodeStateAsUpdate(nb.doc), []);
     expect(read.unapplied).toBe(0);
     expect(read.notes.map((n) => n.id)).toEqual([filed, taken, named]);
-    expect(read.notes.map((n) => n.called)).toEqual(['', 'Sing, goddess, the wrath', 'On wrath']);
+    // A note of no name and no words is called by the file it holds.
+    expect(read.notes.map((n) => n.called)).toEqual([
+      'wrath-notes.pdf',
+      'Sing, goddess, the wrath',
+      'On wrath',
+    ]);
+    // A note that holds nothing to read is called nothing: the list says it is untitled.
+    nb.addNote({ made: '2026-11-04T10:00:00.000Z' });
+    expect(readNotebook(Y.encodeStateAsUpdate(nb.doc), []).notes[0].called).toBe('');
   });
 
   it('finds in the name and the text of each note, paragraph by paragraph, with the words around', () => {

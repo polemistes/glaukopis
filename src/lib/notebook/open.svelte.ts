@@ -2,13 +2,16 @@
  * The one notebook of the window (record 0101): read from disk once, when
  * it is first asked for, and kept open while the window is. What another
  * window writes into it comes to it; what is written here is appended to
- * its log, and before the window closes what is not yet written is.
+ * its log, and before the window closes what is not yet written is. A
+ * moment after its whole state is saved, its readable copy is written into
+ * its folder as Org (`org.ts`).
  */
 
 import {
   notebookAppend,
   notebookHold,
   notebookLoad,
+  notebookReadableWrite,
   notebookSaveState,
   notebookSweep,
   onNotebookUpdate,
@@ -17,6 +20,7 @@ import type { TextHolder } from '$lib/editor/holder';
 import { beforeClose } from '$lib/state/closing';
 import { holderOfNotebook } from './holder';
 import { Notebook } from './model/notebook.svelte';
+import { orgOfNotebook } from './org';
 
 class TheNotebook {
   /** The notebook, once it has been read. */
@@ -42,6 +46,10 @@ class TheNotebook {
       {
         append: (update, _here, time) => notebookAppend(update, time),
         saveState: (state, summary) => notebookSaveState(state, summary),
+        readable: (nb) => {
+          const { org, pictures, files } = orgOfNotebook(nb);
+          return notebookReadableWrite(org, pictures, files);
+        },
       },
       {
         hold: (hashes) => {
@@ -61,7 +69,11 @@ class TheNotebook {
       const error = notebook.saveError;
       if (notebook.unwritten && error) throw new Error(error);
     }, 'first');
-    beforeClose(() => notebook.snapshot());
+    // Then its readable copy, where one waits.
+    beforeClose(async () => {
+      await notebook.snapshot();
+      await notebook.finishCopy();
+    });
     notebookSweep(notebook.summary().files).catch((error) =>
       console.warn('the files no note holds could not be swept', error),
     );

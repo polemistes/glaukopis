@@ -84,13 +84,14 @@ function whenIdle(fn: () => void) {
 }
 
 /**
- * The readable copy of one project, kept up as it is saved. `schedule` is
- * called after each save; `finish` when the project is closed, to write
- * at once what is waiting.
+ * A copy kept up as what it is of is saved, written by `make`: at most
+ * once every few seconds, when the window is idle. `schedule` is called
+ * after each save; `finish` when what it is of is closed, to write at once
+ * what is waiting. A copy that fails is said in the log, as `what`.
  */
-export class ReadableCopy {
-  readonly #gather: () => { org: OrgProject; beside: Beside };
-  readonly #send: Send;
+export class Copying {
+  readonly #make: () => Promise<void>;
+  readonly #what: string;
   #timer: ReturnType<typeof setTimeout> | undefined;
   /** Whether a copy is to be written: asked for, and not yet begun. */
   #due = false;
@@ -98,9 +99,9 @@ export class ReadableCopy {
   #writing: Promise<void> | null = null;
   #last = -Infinity;
 
-  constructor(gather: () => { org: OrgProject; beside: Beside }, send: Send) {
-    this.#gather = gather;
-    this.#send = send;
+  constructor(make: () => Promise<void>, what: string) {
+    this.#make = make;
+    this.#what = what;
   }
 
   /** A copy is to be written: once the last is a few seconds old, when the window is idle. */
@@ -125,10 +126,9 @@ export class ReadableCopy {
     this.#last = Date.now();
     this.#writing = (async () => {
       try {
-        const { org, beside } = this.#gather();
-        await this.#send(await writeElsewhere(org), beside);
+        await this.#make();
       } catch (error) {
-        console.warn('the readable copy of the project could not be written', error);
+        console.warn(`${this.#what} could not be written`, error);
       }
     })().finally(() => {
       this.#writing = null;
@@ -144,16 +144,26 @@ export class ReadableCopy {
    */
   async finish(): Promise<void> {
     clearTimeout(this.#timer);
-    if (this.#writing && !(await within(this.#writing))) {
+    if (this.#writing && !(await within(this.#writing, this.#what))) {
       this.#due = false;
       return;
     }
-    if (this.#due && !(await within(this.#write()))) this.#due = false;
+    if (this.#due && !(await within(this.#write(), this.#what))) this.#due = false;
+  }
+}
+
+/** The readable copy of one project, kept up as it is saved: its Org form, written in a thread of its own, and what goes beside it. */
+export class ReadableCopy extends Copying {
+  constructor(gather: () => { org: OrgProject; beside: Beside }, send: Send) {
+    super(async () => {
+      const { org, beside } = gather();
+      await send(await writeElsewhere(org), beside);
+    }, 'the readable copy of the project');
   }
 }
 
 /** Whether `writing` is done within `FINISH_WAIT`; said in the log where it is not. */
-async function within(writing: Promise<void>): Promise<boolean> {
+async function within(writing: Promise<void>, what: string): Promise<boolean> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const late = new Promise<boolean>((resolve) => {
     timer = setTimeout(() => resolve(false), FINISH_WAIT);
@@ -162,7 +172,7 @@ async function within(writing: Promise<void>): Promise<boolean> {
   clearTimeout(timer);
   if (!done)
     console.warn(
-      `the readable copy of the project was not written within ${FINISH_WAIT / 1000} s of its closing; it is left to be written by itself`,
+      `${what} was not written within ${FINISH_WAIT / 1000} s of its closing; it is left to be written by itself`,
     );
   return done;
 }

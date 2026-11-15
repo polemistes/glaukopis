@@ -10,7 +10,7 @@
  */
 
 import * as Y from 'yjs';
-import { beginsOf, piecesOf } from '$lib/notebook/model/pieces';
+import { beginsOf, firstFileName, piecesOf } from '$lib/notebook/model/pieces';
 import type { Block } from '$lib/project/model/text';
 import { around } from './everything';
 import { Matcher, type SearchOptions } from './matching';
@@ -20,7 +20,7 @@ import { bodyPassages, joined, placeIn, type Joined, type Passage } from './pass
 interface NoteRead {
   id: string;
   name: string;
-  /** How it is called: its name, or how it begins. */
+  /** How it is called: its name, how it begins, or the name of the first file or picture it holds. */
   called: string;
   /** When it was collected. */
   made: string;
@@ -38,7 +38,7 @@ export interface NotebookRead {
 /** Something found in a note, with the words around it. */
 export interface NoteFound {
   note: string;
-  /** How the note is called: its name, or how it begins; empty where it has neither. */
+  /** How the note is called, as its row in the notebook's list: its name, how it begins, or the name of the first file or picture it holds; empty where it has none. */
   called: string;
   part: 'name' | 'text';
   passage: number;
@@ -96,7 +96,7 @@ export function readNotebook(state: Uint8Array | null, updates: Uint8Array[]): N
     notes.push({
       id,
       name,
-      called: name || beginsOf(pieces),
+      called: name || beginsOf(pieces) || firstFileName(pieces),
       made: str(n.get('made')),
       title: linePassage(name),
       body: bodyPassages(blocks),

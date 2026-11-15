@@ -258,6 +258,13 @@ export function beginsOf(pieces: Piece[]): string {
   return `${(space > BEGINS / 2 ? cut.slice(0, space) : cut).trimEnd()}…`;
 }
 
+/** The name of the first file or picture of a note's pieces; empty where it holds none. */
+export function firstFileName(pieces: Piece[]): string {
+  for (const piece of pieces)
+    if ((piece.kind === 'file' || piece.kind === 'figure') && piece.name) return piece.name;
+  return '';
+}
+
 /** What a note's pieces hold. */
 export function holdsOf(pieces: Piece[]): Holds {
   const holds: Holds = { own: false, passages: false, pictures: false, files: false, links: false };

@@ -38,6 +38,9 @@ notebook-went-file = fil
 
 ## Et notat og teksten i det
 
+# Den første boksen i notatblokken, kalt slik i kopien av notatblokken skrevet som Org til den får et navn.
+notebook-org-first-box = Usortert
+
 notebook-file-open-named = Åpne { $name }
 notebook-file-not-here = Filen er ikke på denne datamaskinen
 

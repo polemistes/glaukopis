@@ -91,6 +91,18 @@ export const notebookSaveState = (document: Uint8Array, summary: NotebookSummary
   call<void>('notebook_save_state', withHead({ summary }, document));
 
 /**
+ * Writes the readable copy of the notebook into its folder: `notebook.org`,
+ * with the pictures its notes show (by their hashes) in `pictures/` and
+ * the files they hold in `files/`, each by the name given. A copy to be
+ * read, never read back.
+ */
+export const notebookReadableWrite = (
+  org: string,
+  pictures: string[],
+  files: { hash: string; name: string }[],
+) => call<void>('notebook_readable_write', { org, pictures, files });
+
+/**
  * Hears what the other windows write into the notebook. The shell passes a
  * change to every window but the one that wrote it, so this window listens
  * as itself. Gives what ends the listening.
