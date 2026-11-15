@@ -5,7 +5,7 @@
  *
  * The kind of the paragraph, its indent after `>`, its numbering after `#`,
  * every how many after `/`, the side, the one kind counted after `only=`, the number counted from after `from=`,
- * and `new`; after the colon its content, where ` / ` is a line break,
+ * `new`, and `done` for a point to tick that is ticked; after the colon its content, where ` / ` is a line break,
  * `{…}` a line mark (`n=` its number, `m=` its margin words, `i=` its
  * indent, `-` not counted, `~` hidden, `+` always shown, `^` begins where
  * the line before ended) and `|` the cursor. `pagebreak` and `pagebreak
@@ -52,7 +52,7 @@ function writeMark(node: Node): string {
 }
 
 const HEAD =
-  /^([\w-]+)(?:>(\d))?(?: #(counted|given))?(?:\/(\d+))?(?: (left|right))?(?: only=([\w-]+))?(?: from=([\w-]+))?( new)?: ?(.*)$/;
+  /^([\w-]+)(?:>(\d))?(?: #(counted|given))?(?:\/(\d+))?(?: (left|right))?(?: only=([\w-]+))?(?: from=([\w-]+))?( new)?( done)?: ?(.*)$/;
 
 /** A text read from its blocks written out, with where the cursor is, if it is said. */
 export function text(...blocks: string[]): { doc: Node; cursor: number | null } {
@@ -68,7 +68,7 @@ export function text(...blocks: string[]): { doc: Node; cursor: number | null } 
     }
     const m = HEAD.exec(block);
     if (!m) throw new Error(`Not a block: ${block}`);
-    const [, kind, indent, numbering, every, side, only, from, isNew, content] = m;
+    const [, kind, indent, numbering, every, side, only, from, isNew, done, content] = m;
     const inline: Node[] = [];
     let at = pos + 1;
     for (const piece of content.split(/( \/ |\{[^}]*\}|\|)/)) {
@@ -91,6 +91,7 @@ export function text(...blocks: string[]): { doc: Node; cursor: number | null } 
         only: only ?? null,
         from: from ?? null,
         new: isNew ? true : null,
+        done: done ? true : null,
       },
       inline,
     );
@@ -114,6 +115,7 @@ function writeBlock(node: Node, pos: number, cursor: number | null): string {
   if (a.only) head += ` only=${a.only}`;
   if (a.from) head += ` from=${a.from}`;
   if (a.new) head += ' new';
+  if (a.done) head += ' done';
   let out = '';
   node.forEach((child, offset) => {
     const at = pos + 1 + offset;

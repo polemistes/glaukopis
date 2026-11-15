@@ -138,7 +138,10 @@ function makeParagraph(
   content: Inline[],
   name: string,
   more: Partial<
-    Pick<ParagraphBlock, 'indent' | 'numbering' | 'every' | 'side' | 'only' | 'from' | 'new'>
+    Pick<
+      ParagraphBlock,
+      'indent' | 'numbering' | 'every' | 'side' | 'only' | 'from' | 'new' | 'done'
+    >
   > = {},
 ): ParagraphBlock {
   return {
@@ -151,6 +154,7 @@ function makeParagraph(
     ...(more.only ? { only: more.only } : {}),
     ...(more.from ? { from: more.from } : {}),
     ...(more.new ? { new: true as const } : {}),
+    ...(more.done ? { done: true as const } : {}),
     content,
   };
 }
@@ -189,7 +193,7 @@ function formOf(
   if (kind === 'text') return { t: 'text' };
   if (SD.has(kind)) return { t: 'sd' };
   if (kind === 'break') return { t: 'break' };
-  if (kind === 'item' || kind === 'numbered') return { t: 'list' };
+  if (LIST.has(kind)) return { t: 'list' };
   if (kind === 'headword' || kind === 'gloss') return { t: 'glossary' };
   if (kind === 'line') return { t: 'block', form: 'verse', name: 'VERSE', kindAttr: null };
   if (kind === 'quote') return { t: 'block', form: 'quote', name: 'QUOTE', kindAttr: null };
@@ -204,12 +208,14 @@ function formOf(
   return { t: 'block', form: 'generic', name: own, kindAttr: null };
 }
 
+/** The kinds written as the points of Org's lists. */
+const LIST = new Set(['item', 'numbered', 'todo']);
+
 /** Whether paragraphs of these two kinds go on in one block. */
 function sameRun(a: string, b: string): boolean {
   if (a === b) return true;
-  const list = new Set(['item', 'numbered']);
   const glossary = new Set(['headword', 'gloss']);
-  return (list.has(a) && list.has(b)) || (glossary.has(a) && glossary.has(b));
+  return (LIST.has(a) && LIST.has(b)) || (glossary.has(a) && glossary.has(b));
 }
 
 /** The blocks a stretch of paragraphs is written in. */
@@ -262,15 +268,20 @@ function sdLines(p: ParagraphBlock, ctx: TextContext, langSaid: boolean): string
   return lines.map((l) => (l ? `${sign} ${l}` : sign));
 }
 
-/** What is said of one paragraph on the line before it: its language, its indent, a new run. */
+/**
+ * What is said of one paragraph on the line before it: its language, its
+ * indent, a new run, and that a point to tick is ticked where its box does
+ * not say so, as in a block of its kind.
+ */
 function paragraphSaid(
   p: ParagraphBlock,
-  opts: { lang: boolean; indent: boolean; isNew: boolean | null },
+  opts: { lang: boolean; indent: boolean; isNew: boolean | null; boxed?: boolean },
 ): [string, Value | undefined][] {
   return [
     ['lang', opts.lang ? (wholeLang(p) ?? undefined) : undefined],
     ['indent', opts.indent && p.indent ? p.indent : undefined],
     ['new', opts.isNew === null ? undefined : opts.isNew],
+    ['done', p.done && !opts.boxed ? true : undefined],
   ];
 }
 
@@ -339,7 +350,11 @@ function srcLines(ps: ParagraphBlock[]): string[] | null {
   return out;
 }
 
-/** The lines of a list: `- ` and `1. ` nested by two spaces a step, a number given to a numbered item as `[@5]`. */
+/**
+ * The lines of a list: `- ` and `1. ` nested by two spaces a step, a number
+ * given to a numbered item as `[@5]`, a point to tick `- [ ] ` and, ticked,
+ * `- [X] `, as Org writes a box.
+ */
 function listLines(ps: ParagraphBlock[], ctx: TextContext): string[] {
   const out: string[] = [];
   const counters: number[] = [];
@@ -351,6 +366,7 @@ function listLines(ps: ParagraphBlock[], ctx: TextContext): string[] {
           lang: true,
           indent: false,
           isNew: p.new && k === 0 ? true : p.new ? true : null,
+          boxed: p.name === 'todo',
         }),
       ),
     );
@@ -370,7 +386,10 @@ function listLines(ps: ParagraphBlock[], ctx: TextContext): string[] {
         content = [rest, ...normalInlines(content).slice(1)];
       }
       marker = `${counters[depth]}.`;
-    } else counters[depth] = 0;
+    } else {
+      counters[depth] = 0;
+      if (p.name === 'todo') cookie = p.done ? '[X] ' : '[ ] ';
+    }
     const lines = prose(content, ctx);
     const lead = '  '.repeat(depth);
     const hang = ' '.repeat(lead.length + marker.length + 1);
@@ -816,6 +835,7 @@ function sayOn(
     if (indent !== undefined)
       out = { ...out, indent: Math.max(0, Math.min(8, Math.round(indent))) };
   }
+  if (bool(said.get('done')) === true) out = { ...out, done: true };
   if (which.isNew) {
     const isNew = bool(said.get('new'));
     if (isNew === true) out = { ...out, new: true };
@@ -1164,6 +1184,10 @@ function listOf(
           first[0] = first[0].slice(c[0].length);
         }
       }
+      // A box at the head of a point of a bullet list, as Org has it: a point to tick, ticked
+      // by an X; `[-]`, which Org gives a point whose points are partly ticked, is not ticked.
+      const box = numbered ? null : /^\[([ xX-])\](?:\s+|$)/.exec(first[0]);
+      if (box) first[0] = first[0].slice(box[0].length);
       let content = readContentLines(first, 'prose', ctx.reading);
       if (cookie) {
         const mark = content[0]?.kind === 'linemark' ? content[0] : null;
@@ -1172,12 +1196,17 @@ function listOf(
           ...(mark ? content.slice(1) : content),
         ]);
       }
-      const kind = numbered ? 'numbered' : 'item';
-      const p = makeParagraph(content, kind, { indent: Math.min(8, Math.floor(col / 2)) });
+      const kind = numbered ? 'numbered' : box ? 'todo' : 'item';
+      const done = !!box && (box[1] === 'x' || box[1] === 'X');
+      const p = makeParagraph(content, kind, { indent: Math.min(8, Math.floor(col / 2)), done });
       out.push(apply(p, said, false));
+      // A further paragraph of a point stands as a point of its kind; of a point to tick, as a
+      // point, which has no box of its own.
+      const further = kind === 'todo' ? 'item' : kind;
       for (const m2 of more) {
         const c = readContentLines(m2.lines, 'prose', ctx.reading);
-        if (c.length) out.push(apply(makeParagraph(c, kind, { indent: p.indent }), m2.said, false));
+        if (c.length)
+          out.push(apply(makeParagraph(c, further, { indent: p.indent }), m2.said, false));
       }
     }
     said = null;

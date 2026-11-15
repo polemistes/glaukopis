@@ -44,7 +44,9 @@ import {
   leaveCaption,
   setKind,
   toggle,
+  toggleDone,
 } from './commands';
+import { boxRule, ticking } from './ticking';
 import { runBrackets } from './brackets';
 import { breakKey, enterKey, indentKey, joinLineKey, lineMarks } from './keys';
 import { kindName } from './kinds';
@@ -202,6 +204,7 @@ function blockRules(schema: Schema): InputRule[] {
     kindRule(/^\uFFFC?\s*>\s$/, 'quote'),
     kindRule(/^\uFFFC?\s*([-+*])\s$/, 'item'),
     kindRule(/^\uFFFC?(\d+)\.\s$/, 'numbered', (match) => (match[1] === '1' ? null : match[1])),
+    boxRule(),
   ];
 }
 
@@ -310,6 +313,9 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
       setKind(kindOf(state) === 'item' ? 'text' : 'item', own())(state, dispatch, view),
     'Shift-Mod-7': (state, dispatch, view) =>
       setKind(kindOf(state) === 'numbered' ? 'text' : 'numbered', own())(state, dispatch, view),
+    'Shift-Mod-9': (state, dispatch, view) =>
+      setKind(kindOf(state) === 'todo' ? 'text' : 'todo', own())(state, dispatch, view),
+    'Mod-Enter': (state, dispatch, view) => toggleDone(own())(state, dispatch, view),
     'Mod-Alt-f': insertFootnote,
     'Mod-Alt-m': insertMath,
     'Mod-Alt-e': insertEquation,
@@ -415,6 +421,8 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
     stretchNumbersPlugin(own, () => hooks.numbers?.() ?? LAYOUT_NUMBERS),
     // The number given a point of a numbered list by hand: see `given-numbers.ts`.
     givenNumbers(),
+    // A press on the box of a point to tick: see `ticking.ts`.
+    ticking(own),
     // The bracket of every run, with its name: see `brackets.ts`.
     runBrackets(
       own,

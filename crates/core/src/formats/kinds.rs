@@ -324,6 +324,8 @@ pub const CATALOGUE: &[Entry] = {
         // Lists, which the program that writes the document sets.
         entry("item", Paragraph, "list", None, "", true),
         entry("numbered", Paragraph, "list", None, "", true),
+        // A point to tick, ticked or not.
+        entry("todo", Paragraph, "list", None, "", true),
         entry("code", Paragraph, "code", None, "Source Code", true),
         entry("break", Paragraph, "none", None, "Section Break", false),
         entry("draft", Paragraph, "none", None, "", false),
@@ -835,8 +837,8 @@ mod tests {
         let table = table(&DocumentFormat::default(), &own);
         assert_eq!(table["x"].style, "Epigraph 2");
         assert_eq!(table["y"].style, "Epigraph 3");
-        // Text and quote are Pandoc's own; items and drafts and highlights have no style.
-        assert_eq!(styled(&DocumentFormat::default(), &own).len(), catalogue().len() - 6 + 2);
+        // Text and quote are Pandoc's own; items, points to tick, drafts and highlights have no style.
+        assert_eq!(styled(&DocumentFormat::default(), &own).len(), catalogue().len() - 7 + 2);
     }
 
     #[test]
@@ -903,6 +905,7 @@ mod tests {
                 "gloss",
                 "item",
                 "numbered",
+                "todo",
                 "code",
                 "break",
                 "draft",

@@ -154,7 +154,8 @@ pub enum Block {
     /// `every`, `side` and `only` are the settings of the stretch it stands
     /// in: consecutive paragraphs with the same settings are numbered
     /// together, whatever their kinds. `new` begins a new run of its kind,
-    /// where two runs of one kind stand together. See ADR 0041.
+    /// where two runs of one kind stand together. `done` is said of a
+    /// point to tick that is ticked, and nothing where it is not. See ADR 0041.
     Paragraph {
         #[serde(default = "text_kind")]
         name: String,
@@ -181,6 +182,9 @@ pub enum Block {
         /// Begins a new run of its kind.
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
         new: bool,
+        /// A point to tick that is ticked.
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        done: bool,
         content: Vec<Inline>,
     },
     /// A break of the page or of the column: what follows stands at the top
@@ -429,6 +433,7 @@ impl Block {
             only: None,
             from: None,
             new: false,
+            done: false,
             content,
         }
     }
@@ -471,6 +476,14 @@ impl Block {
     pub fn begins_run(mut self) -> Block {
         if let Block::Paragraph { new, .. } = &mut self {
             *new = true;
+        }
+        self
+    }
+
+    /// The same paragraph, ticked or not, as a point to tick is.
+    pub fn ticked(mut self, ticked: bool) -> Block {
+        if let Block::Paragraph { done, .. } = &mut self {
+            *done = ticked;
         }
         self
     }

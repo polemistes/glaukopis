@@ -138,7 +138,8 @@ function paragraphAttrs(p: ParagraphBlock): string {
     (p.side ? ` data-side="${p.side}"` : '') +
     (p.only ? ` data-only="${escape(p.only)}"` : '') +
     (p.from ? ` data-from="${escape(p.from)}"` : '') +
-    (p.new ? ' data-new' : '')
+    (p.new ? ' data-new' : '') +
+    (p.done ? ' data-done' : '')
   );
 }
 

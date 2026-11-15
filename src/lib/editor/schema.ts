@@ -344,7 +344,8 @@ const bodyNodes: Record<string, NodeSpec> = {
    * shown and `side` where, nothing for what the layout says; `only` the
    * one kind whose lines are counted, nothing for every kind that is
    * counted. `new` is true where the paragraph begins a
-   * new run of its kind beside another of the same kind. What is not said
+   * new run of its kind beside another of the same kind. `done` is true
+   * where a point to tick is ticked. What is not said
    * is nothing, never false, so that it is not stored. See ADR 0041.
    */
   paragraph: {
@@ -359,6 +360,7 @@ const bodyNodes: Record<string, NodeSpec> = {
       only: { default: null },
       from: { default: null },
       new: { default: null },
+      done: { default: null },
     },
     parseDOM: [
       {
@@ -374,6 +376,7 @@ const bodyNodes: Record<string, NodeSpec> = {
             only: onlyAttr(el.getAttribute('data-only')),
             from: onlyAttr(el.getAttribute('data-from')),
             new: el.hasAttribute('data-new') ? true : null,
+            done: el.hasAttribute('data-done') ? true : null,
           };
         },
       },
@@ -392,6 +395,7 @@ const bodyNodes: Record<string, NodeSpec> = {
           'data-only': onlyAttr(node.attrs.only),
           'data-from': onlyAttr(node.attrs.from),
           'data-new': node.attrs.new === true ? '' : null,
+          'data-done': node.attrs.done === true ? '' : null,
         },
         0,
       ];

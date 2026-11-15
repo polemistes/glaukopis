@@ -203,6 +203,8 @@ const ENTRIES = [
   { id: 'writing-quotation', keys: "Ctrl+'", place: 'writing' },
   { id: 'writing-list', keys: 'Ctrl+Shift+8', place: 'writing' },
   { id: 'writing-numbered', keys: 'Ctrl+Shift+7', place: 'writing' },
+  { id: 'writing-todo', keys: 'Ctrl+Shift+9', place: 'writing' },
+  { id: 'writing-tick', keys: 'Ctrl+Enter', place: 'writing' },
   { id: 'writing-list-in', keys: 'Tab', place: 'writing' },
   { id: 'writing-list-out', keys: 'Shift+Tab', place: 'writing' },
   { id: 'writing-line', keys: 'Shift+Enter', place: 'writing' },

@@ -125,7 +125,8 @@ export type Stand = 'left' | 'center' | 'right';
  * the stretch it stands in: consecutive paragraphs with the same settings
  * are one stretch, numbered together, whatever their kinds (`lines.ts`).
  * `new` begins a new run of its kind, where two runs of one kind stand
- * together. What is not said is left out when written.
+ * together. `done` is said of a point to tick that is ticked, and of no
+ * other paragraph. What is not said is left out when written.
  */
 export interface ParagraphBlock {
   kind: 'paragraph';
@@ -143,6 +144,8 @@ export interface ParagraphBlock {
   from?: string;
   /** Begins a new run of its kind. */
   new?: true;
+  /** A point to tick that is ticked. */
+  done?: true;
   content: Inline[];
 }
 
@@ -241,7 +244,7 @@ export function paragraph(
   content: Inline[],
   name = 'text',
   more:
-    | Pick<ParagraphBlock, 'indent' | 'numbering' | 'every' | 'side' | 'only' | 'from' | 'new'>
+    | Pick<ParagraphBlock, 'indent' | 'numbering' | 'every' | 'side' | 'only' | 'from' | 'new' | 'done'>
     | number = 0,
 ): ParagraphBlock {
   const said = typeof more === 'number' ? { indent: more } : more;
@@ -255,6 +258,7 @@ export function paragraph(
     ...(said.only ? { only: said.only } : {}),
     ...(said.from ? { from: said.from } : {}),
     ...(said.new ? { new: true as const } : {}),
+    ...(said.done ? { done: true as const } : {}),
     content,
   };
 }
@@ -424,6 +428,7 @@ function paragraphOf(el: Y.XmlElement): ParagraphBlock {
     // The number the count begins from (0067's addendum): without it the core counts nothing.
     from: text(el.getAttribute('from') as unknown).trim() || undefined,
     new: (el.getAttribute('new') as unknown) === true ? true : undefined,
+    done: (el.getAttribute('done') as unknown) === true ? true : undefined,
   });
 }
 

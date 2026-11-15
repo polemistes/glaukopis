@@ -193,7 +193,19 @@ describe('the kind of a paragraph', () => {
       only: null,
       from: null,
       new: true,
+      done: null,
     });
+    // A point to tick that is ticked says so, and is read back so; one that is not says nothing.
+    const ticked = at(['todo>1 done: Buy bread']).dom.querySelector('p')!;
+    expect(ticked.getAttribute('data-kind')).toBe('todo');
+    expect(ticked.hasAttribute('data-done')).toBe(true);
+    const back = bodySchema.nodes.paragraph.spec.parseDOM![0].getAttrs!(ticked) as Record<
+      string,
+      unknown
+    >;
+    expect(back.kind).toBe('todo');
+    expect(back.done).toBe(true);
+    expect(at(['todo: Open']).dom.querySelector('p')!.hasAttribute('data-done')).toBe(false);
     const markAttrs = bodySchema.nodes.linemark.spec.parseDOM![0].getAttrs!(mark);
     expect(markAttrs).toEqual({
       number: '5',

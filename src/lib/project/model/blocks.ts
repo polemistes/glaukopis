@@ -179,7 +179,8 @@ function lineMarkElement(m: InlineLineMark): Y.XmlElement {
 /**
  * A paragraph as the editors write one: its kind and indent always; how its
  * stretch is numbered, every how many, the side, the number a count begins
- * from and whether it begins a new run only where said.
+ * from, whether it begins a new run and whether a point to tick is ticked
+ * only where said.
  */
 function paragraphElement(p: ParagraphBlock): Y.XmlElement {
   const every = Math.round(Number(p.every));
@@ -194,6 +195,7 @@ function paragraphElement(p: ParagraphBlock): Y.XmlElement {
       only: p.only?.trim() || null,
       from: p.numbering === 'counted' ? p.from?.trim() || null : null,
       new: p.new ? true : null,
+      done: p.done ? true : null,
     },
     inlineChildren(p.content, 'text'),
   );

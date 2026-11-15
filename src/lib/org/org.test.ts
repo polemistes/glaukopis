@@ -152,6 +152,50 @@ describe('the Org form of a project', () => {
 });
 
 describe('the Org form of a text', () => {
+  it('writes a point to tick with a box, ticked with an X, and reads it back', () => {
+    expect(
+      written([
+        p([t('Buy bread')], 'todo'),
+        p([t('Read the proofs')], 'todo', { done: true }),
+        p([t('Within')], 'todo', { indent: 1 }),
+        p([t('A point')], 'item'),
+        p([t('Counted')], 'numbered'),
+      ]),
+    ).toBe(
+      lines('- [ ] Buy bread', '- [X] Read the proofs', '  - [ ] Within', '- A point', '1. Counted'),
+    );
+    // A small x is read as ticked too, and so is a point after a plus.
+    expect(readBlocks(lines('- [x] done', '+ [ ] open', '- [-] partly'))).toEqual([
+      p([t('done')], 'todo', { done: true }),
+      p([t('open')], 'todo'),
+      p([t('partly')], 'todo'),
+    ]);
+    // A numbered point is never one to tick: its box is words.
+    expect(readBlocks(lines('1. [ ] words'))).toEqual([p([t('[ ] words')], 'numbered')]);
+  });
+
+  it('keeps a point whose words begin with a box a point, and the words of a point to tick as they are', () => {
+    expect(written([p([t('[ ] words')], 'item')])).toBe(lines('- \\[ ] words'));
+    expect(written([p([t('[x] words')], 'todo')])).toBe(lines('- [ ] \\[x] words'));
+    expect(written([p([t('[ ] words')])])).toBe(lines('\\[ ] words'));
+  });
+
+  it('keeps a point to tick ticked in a block of a kind of its own based on one', () => {
+    const own: PassageKindRecord[] = [
+      {
+        id: 'own-chore',
+        name: 'Chore',
+        family: 'paragraph',
+        basedOn: 'todo',
+        look: {},
+        order: '0',
+      },
+    ];
+    written([p([t('Sweep')], 'own-chore', { done: true }), p([t('Dust')], 'own-chore')], {
+      paragraphKinds: own,
+    });
+  });
+
   it('writes verse with speakers, directions, a stanza gap and what is said of its lines', () => {
     const S = { numbering: 'counted' as const, every: 5, side: 'right' as const };
     expect(
@@ -839,7 +883,8 @@ describe('reading an Org file written by hand', () => {
     ]);
     expect(task.blocks).toContainEqual(p([t('literal *text*')], 'code'));
     expect(task.blocks).toContainEqual(p([t('an item')], 'item'));
-    expect(task.blocks).toContainEqual(p([t('[ ] a box')], 'item'));
+    // Org's box at the head of a point is a point to tick, as Org has it.
+    expect(task.blocks).toContainEqual(p([t('a box')], 'todo'));
     expect(
       task.blocks.some((b) => b.kind === 'table' && b.rows.length === 2 && b.rows[0][0].header),
     ).toBe(true);

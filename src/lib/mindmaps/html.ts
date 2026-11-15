@@ -211,6 +211,7 @@ export function notesPlain(blocks: Block[], cite: Cite, left: LeftOut): string {
           const said = words(b.content).trim();
           const indent = '  '.repeat(b.indent);
           if (b.name === 'item') parts.push(`${indent}• ${said}`);
+          else if (b.name === 'todo') parts.push(`${indent}${b.done ? '☒' : '☐'} ${said}`);
           else if (b.name === 'numbered') parts.push(`${indent}${++numbered}. ${said}`);
           else if (said) parts.push(said);
           break;
@@ -273,7 +274,8 @@ export function plainToBlocks(words: string): Block[] {
 /**
  * Lists of another program's HTML as this text has its lists: each item a
  * paragraph of the kind of item, or numbered, indented by its depth, where
- * a list in a list would otherwise be read as plain paragraphs.
+ * a list in a list would otherwise be read as plain paragraphs; an item that
+ * begins with a box to tick a point to tick, ticked as the box is.
  */
 function flattenLists(doc: Document) {
   const items = (list: Element, depth: number): Element[] => {
@@ -282,7 +284,12 @@ function flattenLists(doc: Document) {
     for (const li of [...list.children]) {
       if (li.localName !== 'li') continue;
       const p = doc.createElement('p');
-      p.setAttribute('data-kind', kind);
+      const box = li.querySelector(':scope > input[type="checkbox"], :scope > p > input[type="checkbox"]');
+      p.setAttribute('data-kind', box && kind === 'item' ? 'todo' : kind);
+      if (box && kind === 'item') {
+        if (box.hasAttribute('checked')) p.setAttribute('data-done', '');
+        box.remove();
+      }
       if (depth) p.setAttribute('data-indent', String(depth));
       const nested: Element[] = [];
       for (const child of [...li.childNodes]) {

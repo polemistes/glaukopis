@@ -62,8 +62,12 @@ export const CONSTRUCTS: readonly RegExp[] = [
   /^\\(begin|end)\{/,
 ];
 
-/** What is escaped at a line's start beyond the constructs: a counter of a list, and every backslash before a bracket of a formula. */
-const MORE_SIGNS: readonly RegExp[] = [/^\\[[\]]/, /^\[@/];
+/**
+ * What is escaped at a line's start beyond the constructs: a counter of a
+ * list, every backslash before a bracket of a formula, and a box, which at
+ * the head of a point makes it a point to tick.
+ */
+const MORE_SIGNS: readonly RegExp[] = [/^\\[[\]]/, /^\[@/, /^\[[ xX-]\](\s|$)/];
 
 /** Whether a line read as it stands would be a construct, when it is not escaped. */
 export function isConstruct(line: string): boolean {

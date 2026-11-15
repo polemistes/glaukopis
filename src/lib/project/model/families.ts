@@ -66,6 +66,7 @@ export const KIND_FACTS: Record<string, KindFacts> = {
   gloss: f('glossary', true),
   item: f('list', true),
   numbered: f('list', true),
+  todo: f('list', true),
   code: f('code', true),
   break: f('none', false),
   draft: f('none', false),
