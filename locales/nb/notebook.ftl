@@ -81,6 +81,7 @@ notebook-surface = Flaten i boksen
 notebook-surface-not-placed = Ikke plassert ennå
 notebook-surface-empty-note = Tomt notat
 notebook-surface-new-note-here = Nytt notat her
+notebook-surface-show-all = Vis alt
 notebook-surface-link-handle = Dra til et annet notat for å lenke dem
 
 ## Listen i dokumentpanelet, og det som går inn i en tekst

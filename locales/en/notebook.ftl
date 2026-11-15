@@ -85,6 +85,7 @@ notebook-surface = Surface of the box
 notebook-surface-not-placed = Not yet placed
 notebook-surface-empty-note = Empty note
 notebook-surface-new-note-here = New note here
+notebook-surface-show-all = Show all
 notebook-surface-link-handle = Drag to another note to link them
 
 ## The list in the document pane, and what goes into a text

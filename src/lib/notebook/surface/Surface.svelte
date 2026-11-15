@@ -403,7 +403,7 @@
     openContextMenu(event, [
       { label: t('notebook-surface-new-note-here'), icon: Plus, action: () => newNoteAt(at) },
       { kind: 'separator' },
-      { label: t('diagram-show-all'), shortcut: keysFor('diagram-whole'), action: fit },
+      { label: t('notebook-surface-show-all'), shortcut: keysFor('diagram-whole'), action: fit },
     ]);
   }
 
@@ -594,7 +594,7 @@
     />
   {/if}
 
-  <ZoomControls view={panZoom} onfit={fit} />
+  <ZoomControls view={panZoom} onfit={fit} fitLabel={t('notebook-surface-show-all')} />
 </div>
 
 <style>

@@ -18,11 +18,15 @@
     view: PanZoom;
     /** Shows all there is: the view knows what that is. */
     onfit: () => void;
+    /** What showing all is called in this view: the whole map, where none is given. */
+    fitLabel?: string;
     /** Buttons of the view's own, before showing all; each group after a `span.rule`. */
     children?: Snippet;
   }
 
-  let { view, onfit, children }: Props = $props();
+  let { view, onfit, fitLabel, children }: Props = $props();
+
+  const fitWords = $derived(fitLabel ?? t('diagram-show-all'));
 </script>
 
 <div class="controls" role="group" aria-label={t('diagram-view')}>
@@ -59,8 +63,8 @@
   <span class="rule"></span>
   <button
     type="button"
-    aria-label={t('diagram-show-all')}
-    use:tooltip={{ text: t('diagram-show-all'), shortcut: keysFor('diagram-whole'), side: 'top' }}
+    aria-label={fitWords}
+    use:tooltip={{ text: fitWords, shortcut: keysFor('diagram-whole'), side: 'top' }}
     onclick={onfit}
   >
     <Maximize size={14} />
