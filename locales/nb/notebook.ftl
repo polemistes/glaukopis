@@ -116,7 +116,7 @@ notebook-divide = Del
 
 ## Flaten
 
-notebook-surface = Flaten i boksen
+notebook-surface-of-box = Flaten i boksen
 notebook-surface-not-placed = Ikke plassert ennå
 notebook-surface-empty-note = Tomt notat
 notebook-surface-new-note-here = Nytt notat her

@@ -506,7 +506,7 @@
   class:linking={!!linking}
   role="listbox"
   aria-multiselectable="true"
-  aria-label={t('notebook-surface')}
+  aria-label={t('notebook-surface-of-box')}
   aria-activedescendant={selection.length ? domPrefix + selection[selection.length - 1] : undefined}
   tabindex="0"
   data-surface

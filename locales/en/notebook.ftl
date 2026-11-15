@@ -124,7 +124,7 @@ notebook-divide = Divide
 
 ## The surface
 
-notebook-surface = Surface of the box
+notebook-surface-of-box = Surface of the box
 notebook-surface-not-placed = Not yet placed
 notebook-surface-empty-note = Empty note
 notebook-surface-new-note-here = New note here
