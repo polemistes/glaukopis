@@ -29,6 +29,7 @@ import { prosemirrorToYXmlFragment, ySyncPluginKey } from 'y-prosemirror';
 import { Awareness } from 'y-protocols/awareness';
 import type { NotebookSummary } from '$lib/api/notebook';
 import { widthFor } from '$lib/editor/commands';
+import { Copying } from '$lib/org/folder';
 import { LOAD, LOCAL, WINDOW, nowIso, str } from '$lib/project/model/origins';
 import { Saving, type Persistence, type SaveStatus } from '$lib/project/model/saving.svelte';
 import type { LinkRecord } from '$lib/project/model/types';
@@ -63,7 +64,14 @@ import type {
   Went,
 } from './types';
 
-export type NotebookPersistence = Persistence<NotebookSummary>;
+/** Where the notebook is written: as a project is, and its readable copy (`notebook/org.ts`). */
+export interface NotebookPersistence extends Omit<Persistence<NotebookSummary>, 'readable'> {
+  /**
+   * Writes the readable copy of the notebook into its folder. Where it is
+   * given, it is written a little after the whole is saved.
+   */
+  readable?(notebook: Notebook): Promise<void>;
+}
 
 /** What the notebook tells of itself as it is changed: that its notes hold files the store is to keep. */
 export interface NotebookTold {
@@ -253,6 +261,8 @@ export class Notebook {
   canRedo = $state(false);
 
   readonly #saving: Saving<NotebookSummary>;
+  /** The readable copy in the notebook's folder, where it has one: see `org/folder.ts`. */
+  readonly #copy: Copying | null;
   readonly #told: NotebookTold;
   /** For each note, what was read of it beside its record. */
   #readings = new Map<string, Reading>();
@@ -269,13 +279,24 @@ export class Notebook {
     this.yLinks = this.doc.getMap('links');
     this.awareness = new Awareness(this.doc);
     this.#told = told;
-    this.#saving = new Saving<NotebookSummary>(persistence, {
-      doc: this.doc,
-      summary: () => this.summary(),
-      keepsHistory: () => false,
-      beforeBatch: () => {},
-      beforeState: () => {},
-    });
+    const readable = persistence?.readable?.bind(persistence);
+    this.#copy = readable
+      ? new Copying(() => readable(this), 'the readable copy of the notebook')
+      : null;
+    this.#saving = new Saving<NotebookSummary>(
+      persistence && {
+        append: (update, here, time) => persistence.append(update, here, time),
+        saveState: (state, summary, keep) => persistence.saveState(state, summary, keep),
+      },
+      {
+        doc: this.doc,
+        summary: () => this.summary(),
+        keepsHistory: () => false,
+        beforeBatch: () => {},
+        beforeState: () => {},
+        afterState: () => this.#copy?.schedule(),
+      },
+    );
 
     this.undoManager = new Y.UndoManager(
       [this.yNotes, this.ySources, this.yPassages, this.yFiles, this.yBoxes, this.yLinks],
@@ -419,9 +440,15 @@ export class Notebook {
     return this.#closed;
   }
 
+  /** Writes at once the readable copy that waits to be written, while the document is there. */
+  finishCopy(): Promise<void> {
+    return this.#copy?.finish() ?? Promise.resolve();
+  }
+
   async close(): Promise<void> {
     if (this.#closed) return;
     await this.snapshot();
+    await this.finishCopy();
     this.#closed = true;
     this.#saving.stop();
     this.undoManager.destroy();

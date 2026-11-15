@@ -11,6 +11,7 @@ import { WorkerClient } from '$lib/util/worker-client';
 import type { LabelWords } from '$lib/editor/labels';
 import type { ProjectFound, ReadDocument } from './everything';
 import type { SearchOptions } from './matching';
+import type { NotebookFound } from './notebook';
 import { reader, type Asked } from './reader';
 
 /**
@@ -61,6 +62,23 @@ export class Engine {
   /** The references a project that was read cites. */
   cited(id: string): Promise<string[]> {
     return this.#client.ask({ kind: 'cited', id });
+  }
+
+  /**
+   * Reads the notebook from its state and the changes after it, in place of
+   * what was read of it before. Gives how many of the changes could not be
+   * applied.
+   */
+  readNotebook(state: Uint8Array | null, updates: Uint8Array[]): Promise<number> {
+    return this.#client.ask({ kind: 'read-notebook', state, updates });
+  }
+
+  /** Searches the notebook that was read; nothing where none was. */
+  searchNotebook(
+    words: string,
+    options: SearchOptions,
+  ): Promise<NotebookFound | { error: string } | null> {
+    return this.#client.ask({ kind: 'search-notebook', words, options });
   }
 
   /** Forgets what was read of a project. */

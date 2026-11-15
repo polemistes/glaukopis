@@ -61,6 +61,14 @@ search-everything-found = { $count ->
     [one] i ett prosjekt
    *[other] i { $projects } prosjekter
 }
+search-everything-found-notebook = { $count ->
+    [one] Ett treff
+   *[other] { $count } treff
+} { $projects ->
+    [0] i notatblokken
+    [one] i ett prosjekt og i notatblokken
+   *[other] i { $projects } prosjekter og i notatblokken
+}
 search-where-details = Opplysningene om dokumentet
 # En assosiasjon som har et navn, med elementene i endene og tegnet for pilen imellom: «Del 1 → Del 2», «Del 1 – Del 2» der den ikke har noen.
 search-where-association = Assosiasjonen { $ends }
