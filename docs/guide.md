@@ -1687,6 +1687,31 @@ references you are asked which, once for that file. A file that belongs to
 no reference is itself the source, with the page. A message says the note
 was added, with **Show**; what you were reading stays as it was.
 
+### From other programs
+
+**Import notes…**, the button beside **Add files…** (and in the empty
+notebook, beside **New note**), brings in the notes you kept in another
+program. Its window asks for **A folder…**, for a folder of Markdown or
+text files, an Obsidian vault, or what Joplin, Notion, Bear or Google Keep
+(through Takeout) export; or **A file…**, for Evernote's `.enex`, one
+Markdown file, or a OneNote file.
+
+Before anything is made you are shown what was found: whose notes they are,
+what the folder or the file is called, how many notes and how many pictures
+and files lie with them, and under **To know** anything you should know
+before reading them. **Import** reads them; the window says how far it has
+come, and **Stop** stops it, with nothing made.
+
+The notes come into a **box of their own**, named after what was imported,
+not yet placed on its surface, each **not looked at**. Each keeps its name,
+when it was made, its tags and its pictures and files; a file that is no
+picture stands at the end of its note. A note that says the page it was
+clipped from is taken in from that page, as one passage with the page as
+its source; any other is your own words. Where notes link to one another,
+they are linked in the notebook. A message says how many were imported,
+with **Show**, and what could not be read. All of it is one step of
+**Undo**.
+
 ### Sources
 
 Under the text of a note stand the **sources** of what it holds, each named
