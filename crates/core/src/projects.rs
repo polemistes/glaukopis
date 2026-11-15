@@ -35,9 +35,9 @@ use crate::sidefile;
 use crate::tr;
 
 const INFO: &str = "project.json";
-const STATE: &str = "state.bin";
+pub(crate) const STATE: &str = "state.bin";
 pub(crate) const LOG: &str = "updates.log";
-const HISTORY: &str = "history";
+pub(crate) const HISTORY: &str = "history";
 const TRASH: &str = ".trash";
 const TOKEN: &str = "sharing.key";
 const FOLDERS: &str = "folders.json";
@@ -398,7 +398,7 @@ impl Projects {
         keep: bool,
     ) -> Result<ProjectInfo> {
         let dir = self.existing_dir(id)?;
-        self.keep_history(&dir)?;
+        keep_history(&dir)?;
         write_atomic(&dir.join(STATE), state)?;
         remove_copies(&dir);
         if keep {
@@ -428,34 +428,6 @@ impl Projects {
                 }
             }
         })
-    }
-
-    fn keep_history(&self, dir: &Path) -> Result<()> {
-        let state = dir.join(STATE);
-        if !state.is_file() {
-            return Ok(());
-        }
-        let history = dir.join(HISTORY);
-        let mut kept = list_history(&history);
-        let now_unix = time::OffsetDateTime::now_utc().unix_timestamp();
-        let newest = kept.last().and_then(|h| parse_stamp(&h.id));
-        if newest.is_some_and(|t| now_unix - t < HISTORY_INTERVAL) {
-            return Ok(());
-        }
-        fs::create_dir_all(&history).context(|| tr!("io-creating", path = &history))?;
-        let name = format!("{}.bin", stamp_name(now_unix));
-        fs::copy(&state, history.join(&name)).context(|| tr!("core-projects-keeping-state"))?;
-
-        // Thin: when over the limit, drop the entry closest in time to its neighbours,
-        // so that recent history is dense and old history sparse but present.
-        kept = list_history(&history);
-        while kept.len() > HISTORY_LIMIT {
-            let times: Vec<i64> = kept.iter().map(|h| parse_stamp(&h.id).unwrap_or(0)).collect();
-            let drop = which_to_thin(&times, now_unix);
-            let _ = fs::remove_file(history.join(&kept[drop].id));
-            kept.remove(drop);
-        }
-        Ok(())
     }
 
     pub fn history(&self, id: &str) -> Result<Vec<HistoryEntry>> {
@@ -892,9 +864,41 @@ fn remove_copies(dir: &Path) {
     let _ = fs::remove_dir(&copies);
 }
 
+/// Keeps the state in `dir` (`state.bin`) in its `history/` before it is
+/// replaced, now and then: not within ten minutes of the newest kept, and
+/// the history thinned to forty, the old sparse and the recent dense. A
+/// project's document and the notebook's are kept so.
+pub(crate) fn keep_history(dir: &Path) -> Result<()> {
+    let state = dir.join(STATE);
+    if !state.is_file() {
+        return Ok(());
+    }
+    let history = dir.join(HISTORY);
+    let mut kept = list_history(&history);
+    let now_unix = time::OffsetDateTime::now_utc().unix_timestamp();
+    let newest = kept.last().and_then(|h| parse_stamp(&h.id));
+    if newest.is_some_and(|t| now_unix - t < HISTORY_INTERVAL) {
+        return Ok(());
+    }
+    fs::create_dir_all(&history).context(|| tr!("io-creating", path = &history))?;
+    let name = format!("{}.bin", stamp_name(now_unix));
+    fs::copy(&state, history.join(&name)).context(|| tr!("core-projects-keeping-state"))?;
+
+    // Thin: when over the limit, drop the entry closest in time to its neighbours,
+    // so that recent history is dense and old history sparse but present.
+    kept = list_history(&history);
+    while kept.len() > HISTORY_LIMIT {
+        let times: Vec<i64> = kept.iter().map(|h| parse_stamp(&h.id).unwrap_or(0)).collect();
+        let drop = which_to_thin(&times, now_unix);
+        let _ = fs::remove_file(history.join(&kept[drop].id));
+        kept.remove(drop);
+    }
+    Ok(())
+}
+
 /// Reads the changes of the log. A record cut short by a crash, and anything
 /// after it, is left out.
-fn read_log(path: &Path) -> Result<Vec<Vec<u8>>> {
+pub(crate) fn read_log(path: &Path) -> Result<Vec<Vec<u8>>> {
     Ok(read_records(path)?.into_iter().map(|r| r.update).collect())
 }
 
