@@ -18,6 +18,7 @@
   import { numbering } from '$lib/figures/numbering.svelte';
   import { settings as writerSettings } from '$lib/state/settings.svelte';
   import { pictures, PICTURES_DRAGGED } from '$lib/figures/pictures.svelte';
+  import { draggedPieces, NOTE_PIECES, piecesIntoElement } from '$lib/notebook/out';
   import { t } from '$lib/i18n';
   import { keyLabel, keysFor } from '$lib/shell/keys.svelte';
   import { drag, dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
@@ -237,7 +238,12 @@
   const dropOn = $derived.by(() => {
     const p = drag.payload;
     if (!p || !drag.welcome || drag.copy === undefined) return null;
-    if (p.kind !== 'elements' && p.kind !== 'references' && p.kind !== PICTURES_DRAGGED)
+    if (
+      p.kind !== 'elements' &&
+      p.kind !== 'references' &&
+      p.kind !== PICTURES_DRAGGED &&
+      p.kind !== NOTE_PIECES
+    )
       return null;
     if (!pointerInside(drag.x, drag.y)) return null;
     const world = toWorld(drag.x, drag.y);
@@ -644,6 +650,16 @@
       project.cite(target, refs);
       project.checkpoint();
       for (const ref of refs) onkeep(ref);
+      select([target]);
+      return;
+    }
+
+    const dragged = draggedPieces(payload);
+    if (dragged) {
+      const target = hit(world);
+      if (!target) return;
+      // Pieces of a note dropped on an element go at the end of its text.
+      void piecesIntoElement(project, target, dragged);
       select([target]);
       return;
     }
@@ -1317,7 +1333,8 @@
         takes(p.data as ElementsPayload) &&
         !holdsThis(p.data as ElementsPayload)) ||
       p.kind === 'references' ||
-      p.kind === PICTURES_DRAGGED,
+      p.kind === PICTURES_DRAGGED ||
+      p.kind === NOTE_PIECES,
     ondrop,
     // What stands on this map is shown held where the pointer is: no label is wanted beside it.
     quiet: (p) =>
