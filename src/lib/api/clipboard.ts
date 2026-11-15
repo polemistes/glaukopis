@@ -18,6 +18,8 @@ export interface Pasted {
   html: string | null;
   /** A picture copied as one, and the files of pictures copied in a file manager. */
   pictures: PastedPicture[];
+  /** The address of the page it was copied from, where the program that holds the clipboard says it: Firefox does. */
+  url?: string | null;
 }
 
 /** The clipboard, or with `primary` the text last selected anywhere, which the middle button pastes. */

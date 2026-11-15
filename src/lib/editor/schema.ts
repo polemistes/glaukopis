@@ -230,6 +230,31 @@ const marks: Record<string, MarkSpec> = {
       0,
     ],
   },
+  /**
+   * Words taken in from elsewhere, in a note of the notebook: `passage` is
+   * the id of the passage they were taken in as, by which the notebook
+   * knows their source and how they read when they were taken (record
+   * 0101). What is written beside them is the writer's own. A text of a
+   * project does not keep the mark: taken words that go into it become a
+   * quotation with the citation of their source.
+   */
+  taken: {
+    attrs: { passage: { default: '' } },
+    // Itself: a run of words is of one passage, and y-prosemirror keeps a
+    // mark that may overlap itself under a changed name.
+    excludes: 'taken',
+    // What is written beside it is the writer's own.
+    inclusive: false,
+    parseDOM: [
+      {
+        tag: 'span.taken[data-passage]',
+        getAttrs: (node) => ({
+          passage: (node as HTMLElement).getAttribute('data-passage') ?? '',
+        }),
+      },
+    ],
+    toDOM: (mark) => ['span', { class: 'taken', 'data-passage': mark.attrs.passage }, 0],
+  },
 };
 
 /** What the mark `found` holds, from what may be it. Nothing, where it has no id. */
@@ -811,8 +836,51 @@ const tableNodesOfOurs: Record<string, NodeSpec> = {
   },
 };
 
+/**
+ * A file a note of the notebook holds, which is no image: a PDF, a
+ * document, a recording. It stands in the note as a block by itself, shown
+ * by its name, and is opened from there; `hash` is the name the store of
+ * files keeps it by, `name` what it is called and `extension` the ending of
+ * its name (record 0101). The notebook knows its source by its hash. A text
+ * of a project holds none: a file does not go into a text.
+ */
+const heldNodes: Record<string, NodeSpec> = {
+  file: {
+    group: 'block',
+    atom: true,
+    selectable: true,
+    draggable: true,
+    attrs: { hash: { default: '' }, name: { default: '' }, extension: { default: '' } },
+    parseDOM: [
+      {
+        tag: 'div.held-file[data-file]',
+        getAttrs: (node) => {
+          const el = node as HTMLElement;
+          const hash = el.getAttribute('data-file') ?? '';
+          if (!/^[0-9a-f]{64}$/.test(hash)) return false;
+          return {
+            hash,
+            name: el.getAttribute('data-name') ?? '',
+            extension: el.getAttribute('data-extension') ?? '',
+          };
+        },
+      },
+    ],
+    toDOM: (node) => [
+      'div',
+      {
+        class: 'held-file',
+        'data-file': node.attrs.hash,
+        'data-name': node.attrs.name || null,
+        'data-extension': node.attrs.extension || null,
+      },
+      node.attrs.name || node.attrs.hash,
+    ],
+  },
+};
+
 export const bodySchema = new Schema({
-  nodes: { ...bodyNodes, ...figureNodes, ...tableNodesOfOurs },
+  nodes: { ...bodyNodes, ...figureNodes, ...tableNodesOfOurs, ...heldNodes },
   marks,
 });
 

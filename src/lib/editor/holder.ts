@@ -10,11 +10,32 @@
  * with none, and answers what holds for every text it has.
  */
 
+import type { Slice } from 'prosemirror-model';
+import type { Plugin } from 'prosemirror-state';
+import type { EditorView } from 'prosemirror-view';
 import type { Awareness } from 'y-protocols/awareness';
 import type * as Y from 'yjs';
 import type { Cited, DocumentFormat } from '$lib/api/documents';
+import type { DragPayload } from '$lib/ui/drag.svelte';
+import type { FigureOf } from './commands';
 import type { Written } from '$lib/library/written';
 import type { PassageKindRecord, RefRecord, Thread } from '$lib/project/model/types';
+
+/** Where what is pasted came from, as much as the clipboard says. */
+export interface Came {
+  /** Whether it was copied in a text of Glaukopis, and not in another program. */
+  fromGlaukopis: boolean;
+  /** The address of the page it was copied from, where the clipboard says it. */
+  page: string | null;
+}
+
+/** What is dragged within the window that the texts of a holder take, beside references and images. */
+export interface TextDrops {
+  /** The kinds of what is dragged (`DragPayload.kind`). */
+  accepts: string[];
+  /** Dropped on a text: `at` is the place in it, or none where there is none under the pointer. */
+  ondrop(view: EditorView, at: number | null, payload: DragPayload): void;
+}
 
 export interface TextHolder {
   // ---- one history for all its texts, and who else is in them ----
@@ -54,4 +75,25 @@ export interface TextHolder {
   threadsOf(element: string): readonly Thread[];
   /** A citation as the reference style of the document of an element writes it, alone (record 0090). */
   citationWritten(element: string | null | undefined, said: Cited): Promise<Written>;
+
+  // ---- what comes into a text ----
+
+  /**
+   * Takes in an image chosen or pasted into a text, from a file of this
+   * computer or as it was pasted, and gives what a figure shows of it;
+   * nothing where it could not be taken in, which is said.
+   */
+  pictureFromFile(path: string): Promise<FigureOf | null>;
+  pictureFromBlob(blob: Blob, name: string): Promise<FigureOf | null>;
+  /**
+   * What the holder makes of what is pasted into one of its texts: the
+   * text to put in, at once or when it has been made; nothing, where what
+   * was pasted goes in as it is. Not there where the holder makes nothing
+   * of any paste.
+   */
+  received?(slice: Slice, came: Came): Slice | Promise<Slice> | null;
+  /** What more than references and images its texts take of what is dragged within the window. */
+  readonly drops?: TextDrops;
+  /** Plugins of the holder's own for the editors of its texts: made anew for each editor. */
+  plugins?(): Plugin[];
 }

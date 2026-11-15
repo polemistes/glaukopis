@@ -1,6 +1,6 @@
 # The notebook — the build plan
 
-From the owner's words of 2026-11-15 (the last section of `docs/brief.md`: read it first, every quotation and what they settle). This is the plan of the whole. **Nothing is built yet.** Each stage is given its detailed part here (the files, the words, the checks) when it is begun, after the code it touches has been read, and its record when it is built.
+From the owner's words of 2026-11-15 (the last section of `docs/brief.md`: read it first, every quotation and what they settle). This is the plan of the whole. The owner asked for it to be built on the same day. Each stage is given its detailed part here (the files, the words, the checks) when it is begun, after the code it touches has been read, and its record when it is built. **Built so far**: the seam of the editor (record 0100). **Begun**: stage 1, in detail below.
 
 ## What it is
 
@@ -130,6 +130,73 @@ The other filters; words read from pictures; lists to tick, in notes and in text
 ### Stage 5 — import
 
 A folder of Markdown or text files (Obsidian, Joplin, the exports of Notion and Bear), with tags and the links between notes kept; Evernote's and Google Keep's exports; OneNote through its export to Word, which the import of documents reads. Whether OneNote's own files can be read is to be tried.
+
+## Stage 1 in detail
+
+Written on 2026-11-15, when the owner asked for the plan to be built, after the code it touches had been read. The seam of the editor is cut first and alone (record 0100, built and checked). What follows is built on it.
+
+### What was found in the code, and what it settles
+
+- **Saving is cut loose already.** `Saving` (`src/lib/project/model/saving.svelte.ts`) asks what it saves through `Saved` and writes through `Persistence`. The notebook's document is saved by the same class.
+- **The core's `Projects` keeps any document in any root**, but every write of it tells every window that the projects changed, and its locks are the projects'. The notebook therefore has a small keeping of its own in the core, which uses the same log and the same states kept now and then, and tells nobody of projects.
+- **The library's record enters every file of the store it does not know** (`Files::reconcile`), and the one way a file leaves the store is `Library::remove_file(s)`. A file of a note therefore has a record like any other, which says that the notebook holds it; the library's lists leave out those the notebook holds alone.
+- **A text is read without an editor** by `readBody` and drawn by `blocksHtml` (`src/lib/project/model/text.ts`, `html.ts`). What they do not know they keep the text of, and marks are read whatever their names. A note is drawn in a list by these.
+- **Nothing reads when and where a photograph was taken**; a file stored loses its own time. Both are read from the file before it is copied.
+- **Dragging inside the window** is the application's own (`src/lib/ui/drag.svelte.ts`: `startDrag`, `dropTarget`), and files dropped from the system come by the same way (`kind: 'files'`). Pickers have no test hook; scripts drop files by emitting `tauri://drag-drop`.
+- **Disk and memory**: one build directory for all (no room for a second), Rust built by one agent at a time, two jobs when memory is short.
+
+### The document of the notebook
+
+One Yjs document (`src/lib/notebook/model/notebook.svelte.ts`, class `Notebook`), kept under `<data>/notebook/`:
+
+| Part | Holds |
+| --- | --- |
+| `notes` | By id, a map: `body` (the text, as an element's), `name` (given by the writer, or none), `made` (when it was collected, ISO), `went` (a list: what became of pieces of it). |
+| `sources` | By id, a record: see *Sources* above. `sort` is `web` (`url`, `title`, `read`), `reference` (`reference`, `locator`, `label`), `file` (`name`, `time`, `taken`, `place`) or `words` (`words`); `reference` on any that has been made a reference. |
+| `passages` | By id: `source` (or none, where it has not been given), `text` (how it read when taken), `taken` (when). |
+| `files` | By the hash of a file a note holds: `name`, `extension`, `source` (or none), `taken`. |
+
+- Words taken in carry the mark `taken` with the id of their passage; a picture is a `figure` and any other file a `file` (a new node, shown by its name), and the source of either is that of its hash in `files`.
+- One history of undo over all four parts. An awareness that says nothing: nobody else is there.
+- A note is read again when it changes, and only it: its **pieces**, its words for finding, how it begins, what it holds, its sources.
+- A **piece** is what is dragged and what goes somewhere: a run of the writer's own paragraphs (which may hold taken words within a paragraph); a run of paragraphs taken whole in one passage; a picture; a file.
+
+### What is built, part by part
+
+**The core and the shell.**
+
+- `crates/core/src/notebook.rs`: `Notebook` at `<data>/notebook` (`DataDir::notebook()`): `load`, `append`, `save_state` (the state before kept in `history/` now and then as a project's is, the log emptied, `notebook.json` written with how many notes there are and the files they hold).
+- `FileRecord.notebook`: nothing, `also` or `only`. The notebook takes a file in: new to the store, `only`; known to the library, `also`. The library's lists, and everything that goes through them, leave out `only`. The library removes one the notebook holds: it leaves its references and its folder and is `only`, and stays in the store. A copy made of one that is `only` is `only`. *To the library*: `only` becomes `also`, with its origin. At the first loading of the notebook in a run, the notebook says which files its notes hold: `only` and not held, removed from the store; `also` and not held, the library's alone again.
+- What a file says of itself: its own time, and of a photograph when and where it was taken (the crate `kamadak-exif`), read before it is copied.
+- `src-tauri/src/commands/notebook.rs`, `src/lib/api/notebook.ts`: `notebook_load`, `notebook_append` (passed to the other windows as `notebook-update`), `notebook_save_state`, `notebook_take_files`, `notebook_take_image`, `notebook_hold`, `notebook_to_library`, `notebook_sweep`.
+- The clipboard read through GTK also says the address of the page copied from, where Firefox says it (`text/x-moz-url-priv`).
+
+**The editor**, on the seam.
+
+- The schema: the mark `taken` and the node `file`, in the one schema of the texts, so that a piece is the same thing in a note and on its way into a text.
+- The holder is asked three things more: to take in a picture pasted or chosen (a project puts it among the library's images as before; the notebook holds it itself); what it makes of what is pasted into it (the notebook marks what comes from outside Glaukopis as taken, with the page where the clipboard says it; a project makes of taken words a quotation with its citation); and for plugins of its own (the notebook's: the faint line beside what was taken).
+- A file in a text is shown by its name, and opens in a view (a PDF, an image) or in its program.
+
+**The page of the notebook** (`src/lib/notebook/`, the route `notebook`, the third place in the row at the top, Ctrl+3).
+
+- At the left the notes, newest first, each by its name or how it begins, with its day and what it holds; over them one field that finds by words, **New note** and **Add files…**. At the right the note chosen: the tools of writing, its name, its text, and under it its sources, each named, and what became of it.
+- Files dropped anywhere on the page are a note each. A paste outside a text is a new note.
+- A source is given or changed in one window: a page of the web, a reference of the library with a place in it, words of the writer's. There too: **Make a reference**, **My own words** for a passage that was no taking, and how a passage read when it was taken, with **Bring back** where it has been changed.
+
+**The list in the document pane** (`Notes`, the third tab).
+
+- The same notes, found by the same field, each shown as its pieces. A note, or one piece of it, is dragged into the text: where it is dropped in a text being written, else at the end of the text of the element it is dropped on.
+- Own words arrive as they are. A passage arrives as paragraphs of the kind *Quotation* with the citation of its source after it, the source made a reference first where it is none (a web page: *Web page* with its address, title and day; said in a message with **Show**); taken words inside a paragraph of the writer's stay where they are, with the citation after them. A picture arrives as a figure, and is from then a file of the library with its origin. A file that is no picture does not go into a text.
+- The same holds for what is copied in a note and pasted in a text.
+- The note says where its pieces went.
+
+### The order, and who builds what
+
+1. The seam (done). 2. This part of the plan, the calls of the interface (`src/lib/api/notebook.ts`) and what more the holder is asked (`src/lib/editor/holder.ts`), written by the main thread as what the parts agree on. 3. Side by side: the core and the shell; the model of the notebook; the editor's additions (main thread). 4. Side by side: the page; the list in the pane and the ways out. 5. The main thread merges, builds, runs the scripts and looks at the screenshots; the guide, the record (0101) and the choices that await the owner.
+
+### Checked by
+
+Tests beside the code (the model, the pieces, the sources, a passage made one's own and brought back, the ways out, the route, the row, the keys; in the core the keeping, the marks of files, the sweep, the times of a photograph, the contract). Scripts: `e2e/notebook.mjs` (the place in the row; a note written; words pasted and their source given; files dropped; found by words; there after the application is closed and opened; seen in a second window) and `e2e/notebook-out.mjs` (the list in the pane; own words, a passage and a picture dragged into a text; the reference made; the file in the library; the note says where it went). The scripts of the editor again, and `languages`.
 
 ## What may go wrong
 

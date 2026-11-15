@@ -14,7 +14,7 @@
   import { untrack } from 'svelte';
   import { ySyncPlugin, yCursorPlugin } from 'y-prosemirror';
   import type * as Y from 'yjs';
-  import type { TextHolder } from './holder';
+  import type { Came, TextHolder } from './holder';
   import type { RefRecord } from '$lib/project/model/types';
   import { library } from '$lib/state/library.svelte';
   import type { ResolvedPos, Slice } from 'prosemirror-model';
@@ -64,7 +64,8 @@
   import { CitationView, FootnoteView, noteNumbers, PageBreakView } from './views.svelte';
   import { RefMarkView } from './refmarks';
   import { pictures, PICTURES_DRAGGED } from '$lib/figures/pictures.svelte';
-  import { pastedPaths } from '$lib/util/paste';
+  import { HeldFileView } from '$lib/notebook/file-view';
+  import { pastedPage, pastedPaths } from '$lib/util/paste';
   import { choosePicture, CrossRefView, FigureView, FormulaView } from '$lib/figures/views.svelte';
   import { insertCrossRef, insertFigure } from './commands';
   import { hooksOf, viewsByDom } from './ui.svelte';
@@ -273,13 +274,60 @@
     const at = v.state.selection.$from;
     if (!empty || at.depth !== 1 || !at.parent.isTextblock || at.parent.content.size) return false;
     event.preventDefault();
+    put(v, pastedText(text, at), cameOf(event));
+    return true;
+  }
+
+  /** Where what is pasted came from, as much as the paste says. */
+  function cameOf(event: ClipboardEvent): Came {
+    const data = event.clipboardData;
+    return {
+      // What an editor of Glaukopis copies says so in its HTML.
+      fromGlaukopis: (data?.getData('text/html') ?? '').includes('data-pm-slice'),
+      page: pastedPage(data),
+    };
+  }
+
+  /** Puts what is pasted into the text in place of what is selected, as a paste. */
+  function putIn(v: EditorView, slice: Slice) {
+    if (v.isDestroyed) return;
     v.dispatch(
       v.state.tr
-        .replaceSelection(pastedText(text, at))
+        .replaceSelection(slice)
         .scrollIntoView()
         .setMeta('paste', true)
         .setMeta('uiEvent', 'paste'),
     );
+  }
+
+  /** Puts what is pasted into the text, as what holds the text takes it: as it is, where the holder makes nothing of it. */
+  function put(v: EditorView, slice: Slice, came: Came) {
+    const made = holder.received?.(slice, came) ?? slice;
+    if (made instanceof Promise)
+      // What could not be made of it is not lost: it goes in as it was pasted.
+      void made.then(
+        (s) => putIn(v, s),
+        () => putIn(v, slice),
+      );
+    else putIn(v, made);
+  }
+
+  /**
+   * What is pasted, where the holder of the text makes something of it:
+   * the notebook marks what comes from elsewhere as taken, a project makes
+   * a quotation of taken words. Returns whether it was taken care of here.
+   */
+  function received(v: EditorView, event: ClipboardEvent, slice: Slice): boolean {
+    if (!holder.received) return false;
+    const made = holder.received(slice, cameOf(event));
+    if (made === null) return false;
+    event.preventDefault();
+    if (made instanceof Promise)
+      void made.then(
+        (s) => putIn(v, s),
+        () => putIn(v, slice),
+      );
+    else putIn(v, made);
     return true;
   }
 
@@ -380,7 +428,7 @@
 
   /** Asks for a picture among the files, and puts a figure with it where the cursor is. */
   async function picture(v: EditorView) {
-    const chosen = await choosePicture();
+    const chosen = await choosePicture((path) => holder.pictureFromFile(path));
     if (!chosen || v.isDestroyed) return;
     insertFigure(chosen)(v.state, v.dispatch);
     v.focus();
@@ -427,8 +475,8 @@
     void (async () => {
       for (const { file, path } of files) {
         const taken = path
-          ? await pictures.addFile(path)
-          : await pictures.addBlob(file, file.name || t('editor-pasted-picture'));
+          ? await holder.pictureFromFile(path)
+          : await holder.pictureFromBlob(file, file.name || t('editor-pasted-picture'));
         if (!taken || v.isDestroyed) continue;
         insertFigure(taken)(v.state, v.dispatch);
       }
@@ -500,6 +548,7 @@
       action: (action: KeyAction, v: EditorView) => untrack(() => onaction?.(action, v) ?? false),
       cite: kind === 'body' ? cite : undefined,
       picture: kind === 'body' ? picture : undefined,
+      takePicture: (path: string) => holder.pictureFromFile(path),
       point: kind === 'body' ? point : undefined,
       element: untrack(() => element),
       at: untrack(() => at),
@@ -540,6 +589,8 @@
             () => holder,
           ),
         ),
+        // What the holder of the text adds of its own: see `holder.ts`.
+        ...(kind === 'body' ? (holder.plugins?.() ?? []) : []),
       ];
       return new EditorView(target, {
         state: EditorState.create({ schema, plugins }),
@@ -555,6 +606,7 @@
                 crossref: (node, v, getPos) => new CrossRefView(node, v, getPos),
                 refmark: (node, v, getPos) => new RefMarkView(node, v, getPos),
                 pagebreak: (node) => new PageBreakView(node),
+                file: (node, v, getPos) => new HeldFileView(node, v, getPos),
               }
             : {},
         attributes: {
@@ -562,7 +614,8 @@
           // Spelling is checked by the application, in the language of the text (ADR 0019).
           spellcheck: 'false',
         },
-        handlePaste: (v, event) => kind === 'body' && pasted(v, event),
+        handlePaste: (v, event, slice) =>
+          kind === 'body' && (pasted(v, event) || received(v, event, slice)),
         // Ctrl+C on a citation selected alone copies it as the reference
         // style of its document writes it (record 0090), and as all text
         // is copied where the style cannot write it. The key is taken, so
@@ -697,11 +750,16 @@
   style:--annotations-gap-across={gaps.across}
   style:--annotations-gap-beside={gaps.beside}
   use:dropTarget={{
-    accepts: ['references', PICTURES_DRAGGED],
+    accepts: ['references', PICTURES_DRAGGED, ...(holder.drops?.accepts ?? [])],
     disabled: kind !== 'body',
     ondrop: (event) => {
       if (!view) return;
       const at = view.posAtCoords({ left: event.x, top: event.y });
+      // What the holder of the text takes of its own: see `holder.ts`.
+      if (holder.drops?.accepts.includes(event.payload.kind)) {
+        holder.drops.ondrop(view, at?.pos ?? null, event.payload);
+        return;
+      }
       if (event.payload.kind === PICTURES_DRAGGED) {
         // An image of the library dropped into the text is a figure where it
         // was dropped, of the file the figure shows: itself, or a copy made of it.

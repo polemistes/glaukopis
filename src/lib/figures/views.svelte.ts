@@ -9,6 +9,7 @@ import { currentProject } from '$lib/editor/references.svelte';
 import type { DocumentFormat } from '$lib/api/documents';
 import { figureWidth, flow, stand, tableWidth } from '$lib/editor/schema';
 import { hooksOf, OPEN, passing } from '$lib/editor/ui.svelte';
+import type { FigureOf } from '$lib/editor/commands';
 import { t } from '$lib/i18n';
 import { refForm } from '$lib/project/model/text';
 import { fileEnding } from '$lib/util/file-name';
@@ -373,15 +374,21 @@ export class FormulaView implements NodeView {
   }
 }
 
-/** Asks for an image among the files of this computer, and takes it into the library to be a figure. */
-export async function choosePicture() {
+/**
+ * Asks for an image among the files of this computer, and takes it in to be
+ * a figure: into the library, or as `take` takes it, where what holds the
+ * text takes its images in itself.
+ */
+export async function choosePicture(
+  take: (path: string) => Promise<FigureOf | null> = (path) => pictures.addFile(path),
+) {
   const path = await openFile({
     title: t('figures-choose-picture'),
     multiple: false,
     filters: [{ name: t('figures-picture-files'), extensions: PICTURE_ENDINGS }],
   });
   if (typeof path !== 'string') return null;
-  return pictures.addFile(path);
+  return take(path);
 }
 
 /**
@@ -563,7 +570,8 @@ export class FigureView implements NodeView {
   }
 
   async #replace() {
-    const picture = await choosePicture();
+    // Taken in as what holds the text takes its images in.
+    const picture = await choosePicture(hooksOf.get(this.#view)?.takePicture);
     if (picture)
       this.#change({ file: picture.hash, extension: picture.extension, name: picture.name });
     this.#again();

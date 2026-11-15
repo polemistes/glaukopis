@@ -34,6 +34,7 @@ import { newId } from '$lib/util/id';
 import { keyWent, OPEN } from './ui.svelte';
 import { Decoration, DecorationSet, type EditorView } from 'prosemirror-view';
 import {
+  type FigureOf,
   insertEquation,
   insertFootnote,
   insertMath,
@@ -73,6 +74,8 @@ export interface EditorHooks {
   cite?: (view: EditorView, typed: boolean) => void;
   /** Asks for a picture, and puts a figure with it where the cursor is. */
   picture?: (view: EditorView) => void;
+  /** Takes in an image chosen among the files of this computer, as what holds the text takes its images in. */
+  takePicture?: (path: string) => Promise<FigureOf | null>;
   /**
    * Asks what the text is to point to, and puts the words where the cursor
    * is; or, with `at`, in place of the words that stand there.

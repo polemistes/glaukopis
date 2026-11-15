@@ -1522,6 +1522,40 @@ span.math.selected {
 .prose .pagebreak.ProseMirror-selectednode .pagebreak-label {
   color: var(--accent-strong);
 }
+
+/* Words taken in from elsewhere, in a note of the notebook (record 0101):
+   a faint dotted line under them where they stand among the writer's own
+   words, and a faint line beside a paragraph that was taken whole, which
+   the notebook's plugin marks (notebook/taken-lines.ts). */
+.prose .taken {
+  text-decoration: underline dotted var(--line-strong);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.28em;
+}
+.prose .taken-whole {
+  box-shadow:
+    -0.75em 0 0 0 var(--paper),
+    -0.75em 0 0 2px var(--line-strong);
+  clip-path: inset(0 0 0 calc(-0.75em - 2px));
+}
+.prose .taken-whole .taken {
+  text-decoration: none;
+}
+
+/* A file a note holds, which is no image: a block by itself, shown by its
+   name (notebook/HeldFile.svelte). */
+.prose .held-file {
+  margin: 0.6em 0;
+  line-height: 1.3;
+  font-family: var(--font-ui);
+}
+.prose .held-file.ProseMirror-selectednode {
+  outline: none;
+}
+.prose .held-file.ProseMirror-selectednode .held {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
 /* Two texts side by side. */
 .prose .parallel {
   display: grid;

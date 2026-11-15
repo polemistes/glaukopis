@@ -8,6 +8,7 @@
 import type { TextHolder } from '$lib/editor/holder';
 import { kindKeysOf } from '$lib/editor/kinds';
 import { topOf } from '$lib/figures/numbering.svelte';
+import { pictures } from '$lib/figures/pictures.svelte';
 import { citationWrittenIn } from '$lib/library/copying';
 import { documents, templateUsedCached } from '$lib/preview/documents.svelte';
 import type { Project } from './model/project.svelte';
@@ -55,5 +56,8 @@ function made(project: Project): TextHolder {
     topOf: (element) => topOf(project, element),
     threadsOf: (element) => project.threadsOf(element),
     citationWritten: (element, said) => citationWrittenIn(project, element, said),
+    // An image of a text of a project is one of the library's images (record 0070).
+    pictureFromFile: (path) => pictures.addFile(path),
+    pictureFromBlob: (blob, name) => pictures.addBlob(blob, name),
   };
 }

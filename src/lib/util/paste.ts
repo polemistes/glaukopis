@@ -69,6 +69,19 @@ async function pasteAgain(target: EventTarget | null, primary: boolean) {
 /** Where the pictures of a paste are, by the order of its files: see `pastedPaths`. */
 const PATHS = 'application/x-glaukopis-picture-paths';
 
+/** The address of the page a paste was copied from: see `pastedPage`. */
+const PAGE = 'application/x-glaukopis-page';
+
+/**
+ * The address of the page of the web what is pasted was copied from, where
+ * the clipboard said it: Firefox says it, read by the Rust side (record
+ * 0101). Nothing where it is not known, as for a paste WebKit made itself.
+ */
+export function pastedPage(data: DataTransfer | null): string | null {
+  const page = data?.getData(PAGE)?.trim();
+  return page && /^https?:\/\//i.test(page) ? page : null;
+}
+
 /**
  * Where each picture of a paste is on this computer, by the order of the
  * paste's files: the path of one copied as a file in a file manager, whose
@@ -95,6 +108,7 @@ function dataOf(pasted: Pasted): DataTransfer {
   }
   if (pasted.pictures.some((p) => p.path))
     data.setData(PATHS, JSON.stringify(pasted.pictures.map((p) => p.path)));
+  if (pasted.url) data.setData(PAGE, pasted.url);
   return data;
 }
 
