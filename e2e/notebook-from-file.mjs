@@ -76,7 +76,7 @@ const selectLines = (app, page, words) =>
 function joined(a, b) {
   const x = a.trim();
   const y = b.trim();
-  if (/\p{L}[-‐]$/u.test(x)) return /^\p{Ll}/u.test(y) ? x.slice(0, -1) + y : x + y;
+  if (/\p{L}[-\u2010]$/u.test(x)) return /^\p{Ll}/u.test(y) ? x.slice(0, -1) + y : x + y;
   return `${x} ${y}`;
 }
 
