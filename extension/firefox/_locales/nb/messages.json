@@ -1,0 +1,26 @@
+{
+  "name": { "message": "Glaukopis notatblokk" },
+  "description": {
+    "message": "Legger sider, utvalg og bilder i notatblokken i Glaukopis, med hvor de kom fra."
+  },
+  "actionTitle": { "message": "Legg i notatblokken" },
+  "commandAdd": { "message": "Legg utvalget, eller siden, i notatblokken" },
+  "menuPage": { "message": "Legg siden i notatblokken" },
+  "menuSelection": { "message": "Legg utvalget i notatblokken" },
+  "menuImage": { "message": "Legg bildet i notatblokken" },
+  "menuRegion": { "message": "Legg en del av siden i notatblokken som bilde …" },
+  "signDone": { "message": "Lagt i notatblokken" },
+  "reasonNotSetUp": {
+    "message": "Glaukopis er ikke satt opp for Firefox: Innstillinger › Firefox i Glaukopis setter det opp."
+  },
+  "reasonNoDataFolder": {
+    "message": "Glaukopis er ikke startet på denne datamaskinen ennå."
+  },
+  "reasonPageClosed": { "message": "Denne siden lar seg ikke lese." },
+  "reasonNothing": { "message": "Ingenting er merket." },
+  "reasonNoImage": { "message": "Bildet kunne ikke leses." },
+  "reasonTooLarge": { "message": "Det er for stort." },
+  "reasonNotAPicture": { "message": "Bildet kunne ikke leses." },
+  "reasonNotUnderstood": { "message": "Glaukopis forstod ikke det den fikk." },
+  "reasonNotWritten": { "message": "Glaukopis kunne ikke ta vare på det." }
+}
