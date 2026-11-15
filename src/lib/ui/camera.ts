@@ -1,11 +1,10 @@
 /**
- * The camera of a diagram: where the world of the map stands on the screen
- * (`x`, `y`, the place of its origin in the viewport) and how large (`k`);
- * and what is kept of it with the project, the point of the world in the
- * middle and the scale, so that it is the same in a window of another size.
+ * The camera of a view that pans and zooms (a diagram, a surface): where
+ * its world stands on the screen (`x`, `y`, the place of its origin in the
+ * viewport) and how large (`k`); and what is kept of it, the point of the
+ * world in the middle and the scale, so that it is the same in a window of
+ * another size. Geometry only: `pan-zoom.svelte.ts` is the view itself.
  */
-
-import type { Layout, Placed } from './layout';
 
 /** Where the world stands on the screen, and how large. */
 export interface View {
@@ -19,6 +18,22 @@ export interface Camera {
   cx: number;
   cy: number;
   k: number;
+}
+
+/** A box of the world, by its centre and its size. */
+export interface Box {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** The edges of what there is in the world. */
+export interface Bounds {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
 }
 
 export const MIN_ZOOM = 0.25;
@@ -51,7 +66,7 @@ export function zoomedAt(view: View, px: number, py: number, k: number, min = MI
  * smaller than `min`, where a map too large is shown about its middle.
  */
 export function fitting(
-  bounds: Layout['bounds'],
+  bounds: Bounds,
   width: number,
   height: number,
   min = MIN_ZOOM,
@@ -72,7 +87,7 @@ export function fitting(
 /** The view moved as little as need be for an element to be in it; nothing where it is. */
 export function bringing(
   view: View,
-  p: Placed,
+  p: Box,
   width: number,
   height: number,
   margin = 60,

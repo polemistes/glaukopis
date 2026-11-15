@@ -24,7 +24,7 @@ import { closedHere, openHere } from './elsewhere';
 import type { ReadMark } from '$lib/chat/reading';
 import { fieldThere, type Beginning } from '$lib/comments/unsent';
 import { leftAt, readMemory, toStore, type Beside, type Left, type Memory } from './layout';
-import type { Camera } from './diagram/camera';
+import type { Camera } from '$lib/ui/camera';
 import { Drafts } from './drafts.svelte';
 import type { Project } from './model/project.svelte';
 import { PROJECT } from './model/types';

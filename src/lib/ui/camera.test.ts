@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { bringing, centred, fitting, kept, MAX_ZOOM, MIN_ZOOM, wheeled, zoomedAt } from './camera';
-import type { Placed } from './layout';
+import type { Placed } from '$lib/project/diagram/layout';
 
 describe('the camera of a diagram', () => {
   it('keeps the point in the middle and the scale, whatever the size of the window', () => {

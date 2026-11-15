@@ -58,7 +58,7 @@
     zoomedAt,
     type Camera,
     type View,
-  } from './camera';
+  } from '$lib/ui/camera';
   import DiagramNode from './DiagramNode.svelte';
   import { foldAll, pressed, type Diagram } from './keys';
   import { progressOf, progressWords } from '../status';
