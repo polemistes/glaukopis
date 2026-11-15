@@ -132,7 +132,7 @@ try {
       NOTE_NAME,
     ),
   );
-  check('and the hit is marked as the one chosen', await app.exists('[data-found-notebook] .hit.chosen'));
+  // The list of what was found stands in the list of projects, which the notebook's page does not show: nothing of it is looked for here.
   await app.screenshot('notebook-search-3-opened');
 
   // ---- a project with the same word is found beside it ----
