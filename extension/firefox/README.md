@@ -67,7 +67,8 @@ each new signing.
 
 - `manifest.json`; `background.js`, the event page; `page.js`, what is done
   in the page; `reckon.js`, what is reckoned without a browser (tested by
-  Glaukopis's tests, `src/lib/notebook/plugin.test.ts`).
+  Glaukopis's tests, `src/lib/notebook/plugin.test.ts`, which take their
+  types from `page.d.ts` and `reckon.d.ts`; Firefox does not read those).
 - `_locales/`: its words, in English and Norwegian Bokmål.
 - `icons/`: the owl, Glaukopis's own icon.
 - `vendor/readability/`: Mozilla's Readability, as it is, with its licence.
