@@ -152,15 +152,24 @@ async function addPage(tab) {
   await give(tab.id, 'page', pageOf(tab, got), { text: got.text, html: got.html });
 }
 
-/** Adds what is selected; gives false where nothing is, so that the page can be added instead. */
-async function addSelection(tab, frameId = 0) {
+/**
+ * Adds what is selected; gives false where nothing is, so that the page can
+ * be added instead. From the menu, Firefox says the words selected itself:
+ * where the page cannot be read, or the selection is where it cannot be
+ * reached, those words are handed over alone.
+ */
+async function addSelection(tab, frameId = 0, said = '') {
   let got;
   try {
     got = await inPage(tab.id, frameId, readSelection);
   } catch {
-    await notDone(tab.id, 'reasonPageClosed');
-    return true;
+    got = null;
+    if (!said.trim()) {
+      await notDone(tab.id, 'reasonPageClosed');
+      return true;
+    }
   }
+  if (!got && said.trim()) got = { text: said, html: '' };
   if (!got) return false;
   await sign(tab.id, 'busy');
   await give(tab.id, 'selection', pageOf(tab, got), { text: got.text, html: got.html });
@@ -243,7 +252,9 @@ menus.onClicked.addListener((info, tab) => {
   const run = {
     page: () => addPage(tab),
     selection: () =>
-      addSelection(tab, info.frameId).then((added) => added || notDone(tab.id, 'reasonNothing')),
+      addSelection(tab, info.frameId, info.selectionText ?? '').then(
+        (added) => added || notDone(tab.id, 'reasonNothing'),
+      ),
     image: () => addImage(tab, info),
     region: () => addRegion(tab),
   }[info.menuItemId];
