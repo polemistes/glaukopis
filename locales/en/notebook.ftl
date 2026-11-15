@@ -36,6 +36,14 @@ notebook-went-quotation = quotation
 notebook-went-figure = image
 notebook-went-reference = reference
 notebook-went-file = file
+# How a box is shown: as its surface, or as a list.
+notebook-shown-as = Shown as
+notebook-surface = Surface
+notebook-list = List
+notebook-close-note = Close the note
+notebook-resize-column = Width of the boxes
+notebook-resize-note = Width of the note
+notebook-box-empty = No notes in this box
 
 ## A note and its text
 
@@ -78,6 +86,37 @@ notebook-source-bring-back = Bring back
 notebook-source-own-words = My own words
 
 ## Boxes and tags
+
+notebook-all-notes = All notes
+notebook-boxes = Boxes
+# The first box, where everything lands, until it is given a name.
+notebook-box-unsorted = Unsorted
+notebook-box-new = New box
+notebook-box-name = Name of the box
+notebook-box-delete-title = Delete { $name }?
+notebook-box-delete-message = { $count ->
+    [one] The note in it goes to { $first }.
+   *[other] The { $count } notes in it go to { $first }.
+}
+notebook-move-to = Move to
+notebook-tags = Tags
+notebook-tag-name = Name of the tag
+notebook-tag-remove = Remove from all notes
+notebook-tag-remove-title = Remove { $tag } from all notes?
+notebook-tag-remove-message = { $count ->
+    [one] One note has it.
+   *[other] { $count } notes have it.
+}
+notebook-tag-merge-title = Rename { $from } to { $to }?
+notebook-tag-merge-message = { $from } and { $to } will be one tag.
+notebook-tags-off = Show all, whatever their tags
+# The field under the name of a note, where a tag is added.
+notebook-tag-add = Add a tag
+notebook-tag-take-away = Remove { $tag }
+notebook-tags-offered = Tags
+notebook-join = Join
+notebook-joined = { $count } notes joined
+notebook-divide = Divide
 
 ## The surface
 

@@ -8,7 +8,7 @@
  */
 
 import type { ProjectInfo } from '$lib/api/projects';
-import { languages } from '$lib/i18n';
+import { languages, t } from '$lib/i18n';
 import { nowIso } from '$lib/project/model/origins';
 import type { Notebook } from './model/notebook.svelte';
 import { FIRST_BOX } from './model/boxes';
@@ -392,6 +392,14 @@ export function wentLines(went: Went[], projects: ProjectInfo[]): WentLine[] {
 // =====================================================================
 // What is in view: a box or all notes, and the tags that are on
 // =====================================================================
+
+/** What notes are dragged as, from the list onto a box: their ids, in the order they stand. */
+export const NOTES_DRAGGED = 'notebook-notes';
+
+/** What a box is called: its name, or for the first while it has none, Unsorted. Reactive, as `t` is. */
+export function boxName(box: Pick<BoxRecord, 'id' | 'name'>): string {
+  return box.name || (box.id === FIRST_BOX ? t('notebook-box-unsorted') : '');
+}
 
 /** The box in view: the one kept, where it is still there; the first where it is gone; none for all notes. */
 export function boxInView(kept: string | null, boxes: readonly BoxRecord[]): string | null {
