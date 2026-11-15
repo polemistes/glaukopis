@@ -1599,6 +1599,18 @@ A note that has gone somewhere stays in the notebook. It says under its
 sources where it was used, **Used in** with the name of the project, and in
 the pane of that project it has a small tick.
 
+### The notebook as Org
+
+The notebook is kept as plain text too, as every project is (see *Your
+project as Org*): `notebook.org` in the folder *notebook*, in the folder
+shown under *Settings*, with `pictures/` and `files/` beside it. Each box is
+a headline, and under it each of its notes, the newest first, with its tags
+at the end of the line and, in a drawer, when it was made and where it was
+used; then its text, a passage taken in as a quotation with its source
+under it, an image as a figure, a file as a link to it, and at its foot its
+links to other notes. It is written anew a few seconds after the notebook
+is saved, and Glaukopis never reads it back.
+
 ## The document pane
 
 The references, the images, the notes of the notebook, the comments, the
@@ -2588,6 +2600,11 @@ the works cited in each project, and the words that name associations.
 
 A project that is not open is read for the search, which takes a moment for
 a large one. It is read again only when it has changed.
+
+With **All projects**, the notebook is searched as well, the names and the
+texts of its notes. What is found there stands after the projects, under
+**Notebook**, by the note it is in; choose one, and the note opens on the
+notebook's page.
 
 ## What goes into the document
 

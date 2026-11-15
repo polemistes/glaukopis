@@ -124,9 +124,9 @@ export function orgOfNotebook(notebook: Notebook, words: OrgWords = interfaceWor
         return linesOf(writeBlocks(piece.blocks));
       case 'passage':
         return [
-          '#+begin_quote',
+          '#+BEGIN_QUOTE',
           ...linesOf(writeBlocks(piece.blocks)),
-          '#+end_quote',
+          '#+END_QUOTE',
           sourceLine(piece.passage),
         ];
       case 'figure':

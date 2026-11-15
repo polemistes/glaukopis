@@ -214,7 +214,7 @@
 
   {#if everything.notebook}
     {@const notebook = everything.notebook}
-    <section class="project" data-found-notebook>
+    <section class="notebook" data-found-notebook>
       <h3>
         <span class="name serif truncate">{t('notebook-title')}</span>
         <span class="count">{notebook.count}</span>
@@ -303,7 +303,8 @@
   .unread {
     color: var(--danger);
   }
-  .project {
+  .project,
+  .notebook {
     margin-bottom: 14px;
   }
   h3 {

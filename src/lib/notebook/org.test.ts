@@ -72,9 +72,9 @@ describe('the notebook as Org', () => {
       '',
       'The first word is wrath.',
       '',
-      '#+begin_quote',
+      '#+BEGIN_QUOTE',
       'Sing, goddess, the wrath',
-      '#+end_quote',
+      '#+END_QUOTE',
       '— The Iliad online, https://example.org/iliad',
       '',
       `[[id:${b}][owl.png]] seen together`,
@@ -144,7 +144,7 @@ describe('the notebook as Org', () => {
       key: (reference) => (reference === 'r1' ? 'nagy1979' : null),
     };
     expect(orgOfNotebook(nb, words).org).toContain(
-      '#+end_quote\n— Nagy 1979, 73, [cite:@nagy1979]\n',
+      '#+END_QUOTE\n— Nagy 1979, 73, [cite:@nagy1979]\n',
     );
   });
 
