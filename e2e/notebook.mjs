@@ -224,7 +224,8 @@ try {
   // My own words: the words stay, and the chip goes.
   await app.click('[data-note-sources] [data-source]');
   await app.waitFor('[data-source-dialog] [data-passage]', 3000);
-  const passageWords = await app.text('[data-source-dialog] [data-passage]');
+  // Read as it is written, not as the driver sees it: the driver passes over a paragraph cut to two lines.
+  const passageWords = await app.exec(`return document.querySelector('[data-source-dialog] [data-passage] .now')?.textContent ?? ''`);
   check('the window shows the passage taken from it', passageWords.includes('Minerva'), passageWords);
   await app.click('[data-source-dialog] [data-own-words]');
   await app.waitGone('dialog[open]', 3000).catch(() => {});
