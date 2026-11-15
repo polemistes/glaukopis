@@ -2,7 +2,8 @@
 
 Glaukopis is a desktop application for writing. A project is one tree of
 elements, read as a diagram, as text and as the finished document, with a
-library of references, files and pictures beside it. It is made with Tauri 2
+library of references, files and pictures beside it, and a notebook, outside
+all projects, where anything that turns up is collected as notes. It is made with Tauri 2
 on the system's web view, a Rust core with no Tauri in it, Svelte 5 with
 runes, TypeScript, ProseMirror for the text and Yjs for the project. Pandoc,
 Typst and Tesseract are used as installed programs. GPL-3.0-or-later.
@@ -36,7 +37,8 @@ project, library, files, search) with the row at its top (the places of the
 window at both ends, `lib/shell/RowStart.svelte` and `RowEnd.svelte`, which
 stand in the list's head and the project's top row, and in
 `lib/shell/TopRow.svelte` over the other views), the settings window, and
-the hosts of menus, dialogs, toasts and drags. One folder per part under
+the hosts of menus, dialogs, toasts and drags. The routes are start, project,
+library, files, notebook and a file in a side. One folder per part under
 `src/lib/`:
 
 | Folder | What it is |
@@ -44,15 +46,16 @@ the hosts of menus, dialogs, toasts and drags. One folder per part under
 | `api/` | The calls to Rust, one file per area, named as `src-tauri/src/commands/` names them. `contract.generated.ts` is written by a Rust test; never change it by hand. |
 | `home/` | The list of projects, which is the one tree: rows, folders, keys (`list-keys.ts`), menus and actions (`ProjectList.svelte`, `project-actions.svelte.ts`), changes with undo (`changes.ts`), the start screen. |
 | `project/` | A project open in the window: `ProjectView.svelte` with its sides (`sides.svelte.ts`, `SideView.svelte`), the path over them, the panes. `model/`: the Yjs document of a project, its elements, blocks, kinds, families, lines, import and migration. `diagram/`: the map drawn (layout, camera, keys). `text/`: the map as text, folding, outline. |
-| `editor/` | The ProseMirror editor of an element: schema, commands, keys (`keys.ts`), kinds of paragraph and of words (`kinds.ts`), citations, numbers, brackets, clipboard. |
+| `editor/` | The ProseMirror editor of a text: schema, commands, keys (`keys.ts`), kinds of paragraph and of words (`kinds.ts`), citations, numbers, brackets, clipboard. It asks what holds its text through `holder.ts` (record 0100): a project (`project/holder.ts`) or the notebook. |
 | `look/` | The Look panel: how a document looks, in one place. |
 | `document/` | What a document is: about this document, its template, composition, checklist. `documents/`: documents brought in from files. |
 | `preview/` | The typesetting pane: pages, zoom, export, the CSL styles and their editor. `print/`: printing through the system dialog, and the document of a side printed and exported with the pane closed. |
-| `library/` | The reference library: pane, collections, filters, lookup, citing. `files/`: the files of the library in their own view. `viewer/`: a file (PDF or image) shown in a side, its tabs and bookmarks, the image editor. |
+| `library/` | The reference library: pane, collections, filters, lookup, citing. `files/`: the files of the library in their own view. `viewer/`: a file (PDF or image) shown in a side, its tabs and bookmarks, the image editor, and To the notebook. |
+| `notebook/` | The notebook (records 0101 to 0105; the plan `docs/plans/the-notebook.md`). `model/`: its Yjs document (notes, sources, passages, files, boxes, tags, links, starting texts), read note by note into pieces. `open.svelte.ts`: the one notebook of the window. `holder.ts`: the notebook as what holds the texts of its notes. The page (`NotebookView.svelte`, `BoxColumn`, `NoteList`, `NoteEditor`, `SourceDialog`, `FilterPopover`, `surface/`), the list in the document pane (`NotesPanel`, `NoteCard`), the ways into a text (`out.ts`), taking in (`taking.ts`, `inbox.ts` for the plugin, `from-file.ts`), `org.ts`, the import of other programs' notes. |
 | `figures/`, `tables/`, `timeline/`, `comments/`, `review/`, `history/`, `sharing/`, `chat/`, `search/`, `found/`, `spelling/`, `ocr/`, `org/`, `mindmaps/`, `words/`, `languages/`, `settings/` | Figures and mathematics; tables; timelines; comments; reviewing changes; the full history (in a worker); working together; the chat of a shared project; search (in a worker); citations found in documents brought in; spelling; text read from scans; every project kept as Org; mind maps of other programs; the words of the interface as a project of their own; language packages; the settings window. |
 | `shell/` | The places of the window in the row at its top (`RowStart`, `RowEnd`, `TopRow`), the keys of the window (`keys.svelte.ts`, the sheet, the palette), the test hooks (`testing.ts`), the page log. |
 | `state/` | The router, the open projects, the library, the settings, closing, the window's place. |
-| `ui/`, `util/`, `theme/`, `i18n/` | Widgets (buttons, dialogs, menus, popovers, toasts, drag); small helpers; own colours; the words (`t`). |
+| `ui/`, `util/`, `theme/`, `i18n/` | Widgets (buttons, dialogs, menus, popovers, toasts, drag; the view that pans and zooms, `pan-zoom.svelte.ts` with `camera.ts`, which the diagram and the notebook's surface share); small helpers; own colours; the words (`t`). |
 
 Tests are `*.test.ts` beside the code (vitest with jsdom). Reactive modules
 are `*.svelte.ts`. The largest files are `look/LookPanel.svelte`,
@@ -72,6 +75,7 @@ No Tauri in it; everything that is data and not interface.
 | `document/`, `export/`, `formats/`, `templates/`, `written/` | A document as the interface hands it over; preview and export, typeset by Typst or LaTeX or through Pandoc; the formats (how a manuscript looks); templates (what a document of a kind consists of); the small forms of what is written (identifiers, locators, pages, roman numbers). |
 | `ocr/`, `isolated.rs` | Tesseract in a child process (`child.rs`; a served child, `server.rs`), the pages cache, layers, searchable PDFs, rules, schemes of glyph names; child processes with time and memory limits (binary `glaukopis-isolated`), for anything that can crash or hang. |
 | `found/`, `spelling/`, `languages.rs`, `i18n.rs` | Citations found in texts written elsewhere; spelling; language packages; the core's words (`tr!`). |
+| `notebook.rs`, `notebook/`, `library/notebook.rs`, `import/notes/` | The notebook's document on disk, kept as a project's is; what a file says of itself; the inbox the plugin's helper writes into, the helper Firefox starts (the application itself in another role, `host.rs`), setting Firefox up, the readable Org copy; the files of notes in the library's store, out of its lists; the readers of other programs' notes. |
 | `net.rs`, `paths.rs`, `settings.rs`, `shelf.rs`, `sidefile.rs`, `notices.rs`, `error.rs` | One network client that says who asks, one request at a time; where data is kept; settings; things kept as JSON files; a store's own files; what the core tells the user; errors. |
 
 `crates/pdf-text` is the vendored PDF text extraction with glyph names;
@@ -93,6 +97,9 @@ Linux. A command that can wait long or be called many times at once runs on
 - `resources/`: what comes with the application: CSL styles, formats,
   templates, Typst and Pandoc pieces, BibLaTeX, the owl (`brand/`, the owner's
   own drawing, under its own licence).
+- `extension/firefox/`: the plugin for Firefox (record 0102): plain
+  JavaScript, no build step, Mozilla's Readability as it is in `vendor/`.
+  Its README says how it is tried unsigned and how it is signed.
 - `e2e/`: scripts that drive the real application off-screen; `harness.mjs`
   is the client, `run.mjs` runs them. The first comment of each script says
   what it covers.
@@ -144,7 +151,9 @@ Linux. A command that can wait long or be called many times at once runs on
 - **Rust.** The core knows nothing of Tauri; commands are thin; what can
   crash or hang runs in a child with limits; `clippy` is clean.
 - **Never** read or write `~/.local/share/glaukopis` (the owner's real data)
-  or `~/.local/share/org.glaukopis.Glaukopis` (the older application). Tests
+  or `~/.local/share/org.glaukopis.Glaukopis` (the older application), nor
+  the owner's `~/.mozilla`: what sets Firefox up is given a folder of its
+  own in tests and scripts (`GLAUKOPIS_FIREFOX_HOSTS_DIR`). Tests
   make directories of their own. Never fetch the first attempt's repository.
   Nothing connects to any service the application does not already use, and
   no personal detail is sent anywhere.
