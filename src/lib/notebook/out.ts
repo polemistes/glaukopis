@@ -572,7 +572,7 @@ export function putAtEnd(project: Project, element: string, arrived: Arrival): b
 }
 
 /** The project's id, as the window has it open. */
-function idOf(project: Project): string | undefined {
+export function idOf(project: Project): string | undefined {
   return openProjects.all().find((o) => o.project === project)?.id;
 }
 
@@ -596,7 +596,7 @@ function sayNothing(what: Arrival) {
 }
 
 /** The element whose text an editor holds, where it is a project's. */
-function elementOf(project: Project, view: EditorView): string | null {
+export function elementOf(project: Project, view: EditorView): string | null {
   const given = hooksOf.get(view)?.element;
   if (given) return given;
   const type = (ySyncPluginKey.getState(view.state) as { type?: unknown } | undefined)?.type;

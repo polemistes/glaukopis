@@ -1376,7 +1376,7 @@
             onenter={(id) => activeApi?.show(id)}
           />
         {:else if kind === 'notes'}
-          <NotesPanel head={tabs} onclose={() => documentPane.close()} />
+          <NotesPanel {project} head={tabs} onclose={() => documentPane.close()} />
         {:else}
           <ReferencePanel
             {project}
