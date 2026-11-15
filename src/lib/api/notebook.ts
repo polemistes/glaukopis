@@ -11,7 +11,9 @@
 
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { fromBase64 } from '$lib/util/base64';
-import { call, inTauri, withHead } from './backend';
+import { listen } from '@tauri-apps/api/event';
+import type { Block } from '$lib/project/model/text';
+import { call, inTauri, withHead, type Count, type Told } from './backend';
 import type { FileView } from './files';
 
 /** The notebook as it is on disk: its state, none where nothing was written yet, and the changes after it. */
@@ -208,3 +210,71 @@ export const firefoxSetup = () => call<FirefoxSetup>('firefox_setup');
 export const firefoxSetUp = () => call<FirefoxSetup>('firefox_set_up');
 /** Removes it. */
 export const firefoxRemove = () => call<FirefoxSetup>('firefox_remove');
+
+// ---- notes brought in from other programs (record 0105) ----
+
+/** Which program's notes a folder or a file holds. */
+export type NotesKind =
+  'markdown' | 'obsidian' | 'joplin' | 'notion' | 'bear' | 'evernote' | 'keep' | 'onenote';
+
+/** What a folder or a file of notes holds, looked at before anything is read. */
+export interface NotesLook {
+  kind: NotesKind;
+  /** What it is called: the folder's name, or the file's without its ending. */
+  name: string;
+  /** How many notes it holds. */
+  notes: number;
+  /** How many pictures and other files lie with them. */
+  attachments: number;
+  /** What the writer should know before reading it: each a line. */
+  remarks: string[];
+}
+
+/** A note as it was read from another program. */
+export interface ReadNote {
+  /** By which the other notes read with it link to it. */
+  key: string;
+  name: string;
+  /** When it was made, where it says: an ISO date-time. */
+  made: string | null;
+  tags: string[];
+  /** The page it was clipped from, where it says. */
+  source: { url: string; title: string } | null;
+  /** Its text. A figure in it names a picture by its hash, taken into the store as the notebook's. */
+  blocks: Block[];
+  /** Every file taken into the store for it: the pictures of its text as they are shown, and its other files. */
+  held: NotebookFile[];
+  /** Among those, by their hashes, the files that are no picture of the text: they stand at the note's end. */
+  attachments: string[];
+  /** The keys of the notes it links to. */
+  links: string[];
+}
+
+/** The notes read, and what could not be: each said in a line. */
+export interface ReadNotes {
+  notes: ReadNote[];
+  problems: string[];
+}
+
+/** Looks at a folder or a file of notes of another program, without taking anything in. */
+export const notesLook = (path: string) => call<NotesLook>('notes_look', { path });
+
+/**
+ * Reads the notes: their pictures and files are taken into the store as the
+ * notebook's while it reads. Stopped, it fails with the kind `stopped`.
+ */
+export const notesRead = (path: string, ticket: string) =>
+  call<ReadNotes>('notes_read', { path, ticket });
+
+export const notesReadStop = (ticket: string) => call<void>('notes_read_stop', { ticket });
+
+/** How far a reading of notes has come: how many are done of how many, and the one at hand. */
+export async function onNotesProgress(
+  ticket: string,
+  told: (count: Count) => void,
+): Promise<() => void> {
+  if (!inTauri) return () => {};
+  return listen<Told<Count>>('notes-progress', (event) => {
+    if (event.payload.ticket === ticket) told(event.payload);
+  });
+}
