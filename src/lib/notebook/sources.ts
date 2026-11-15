@@ -5,7 +5,7 @@
  */
 
 import type { Draft } from '$lib/api/library';
-import { itemLabel } from '$lib/editor/references.svelte';
+import { itemLabel, locatorWord } from '$lib/editor/references.svelte';
 import { languages, newTextLanguage, t } from '$lib/i18n';
 import type { Place } from '$lib/api/notebook';
 import type { Source } from './model/types';
@@ -75,7 +75,7 @@ export function placeWords(place: Place): string {
   return `${lat}, ${lon}`;
 }
 
-/** The line under a source: a page's address and the day it was read; the day a file was taken, and where. */
+/** The line under a source: a page's address and the day it was read; of a file the page taken from, the day it was taken, and where. */
 export function sourceDetail(source: Source | null): string {
   if (!source) return '';
   const parts: string[] = [];
@@ -84,6 +84,9 @@ export function sourceDetail(source: Source | null): string {
       parts.push(source.url, day(source.read));
       break;
     case 'file':
+      // The page first, as a citation says it: "p. 12".
+      if (source.locator?.trim())
+        parts.push(`${locatorWord('page', newTextLanguage())} ${source.locator.trim()}`);
       parts.push(day(source.taken ?? source.time));
       if (source.place) parts.push(placeWords(source.place));
       break;

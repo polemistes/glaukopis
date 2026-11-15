@@ -153,6 +153,8 @@ keys-viewer-last = Last page
 keys-viewer-tab-next = Next tab
 keys-viewer-tab-previous = Previous tab
 keys-viewer-bookmark = Mark this place
+# From a file to the notebook (docs/plans/the-notebook.md, stage 3).
+keys-viewer-to-notebook = To the notebook
 # Printing (docs/plans/printing.md, record 0075).
 keys-print = Print
 # Export and print from the bar of a side (record 0091).

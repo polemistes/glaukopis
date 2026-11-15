@@ -93,3 +93,7 @@ viewer-print-drawing = { $count ->
 }
 viewer-print-stop = Stopp
 viewer-print-failed = Sidene kunne ikke tegnes for utskrift
+
+viewer-to-notebook = Til notatblokken
+viewer-mark-part = Merk en del av siden
+viewer-to-notebook-which = Hvilken referanse?

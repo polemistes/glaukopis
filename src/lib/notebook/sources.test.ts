@@ -6,6 +6,7 @@ vi.mock('$lib/editor/references.svelte', () => ({
     (item: { id: string; locator?: string }) =>
       `Nagy 1979${item.locator ? `, ${item.locator}` : ''}`,
   ),
+  locatorWord: vi.fn((kind: string) => (kind === 'page' ? 'p.' : '')),
 }));
 
 const { draftOf, originOf, sourceDetail, sourceLabel } = await import('./sources');
@@ -54,6 +55,10 @@ describe('a source said', () => {
       }),
     ).toBe('June 2, 2025 · 59.9139° N, 10.75° W');
     expect(sourceDetail({ id: 's', sort: 'words', words: 'x' })).toBe('');
+    // The page of a file read in Glaukopis, as a citation says it.
+    expect(sourceDetail({ id: 's', sort: 'file', name: 'letter.pdf', locator: '12' })).toBe(
+      'p. 12',
+    );
     languages.current = 'nb';
     expect(
       sourceDetail({

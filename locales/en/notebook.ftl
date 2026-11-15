@@ -46,6 +46,10 @@ notebook-file-not-here = The file is not on this computer
 # Files that could not be taken in as notes, said in one message.
 notebook-files-not-taken = Some files could not be taken in
 
+# Words selected in a file read in Glaukopis, or a part of a page marked, sent to the notebook as a new note.
+notebook-from-file-added = Added to the notebook
+notebook-from-file-not-added = Could not be added to the notebook
+
 ## Sources
 
 notebook-source-none = No source
