@@ -1,10 +1,12 @@
 // The keys of the tree, one set for the diagram and the text: Alt+Enter a
 // new element after, Alt+Shift+Enter one under, Tab to fold and Shift+Tab
-// all, Enter to open the text, F2 to rename. In the text Alt+Enter makes a
-// heading at the cursor: at the start, the middle and the end of a
-// paragraph, and with a citation in it, which a name cannot hold. The same
-// keys on the map of all projects and in the list at the left. And the keys
-// that once did these things do nothing now.
+// all, Enter to open the text, F2 to rename. In the text Alt+Enter makes the
+// paragraph the cursor is in the name of a new element, wherever in it the
+// cursor stands, and in an empty paragraph an element with an empty name; and
+// with a citation in the paragraph, which a name cannot hold, it is the first
+// paragraph of the new element's text. The same keys on the map of all
+// projects and in the list at the left. And the keys that once did these
+// things do nothing now.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -38,6 +40,13 @@ try {
       `const s = Array.from(document.querySelectorAll('.text-view .section')).find((s) => (s.querySelector('.heading .title')?.textContent ?? '').trim() === arguments[0]) ?? null;
        s?.scrollIntoView({ block: 'center' });
        return s;`,
+      name,
+    );
+  /** How many paragraphs an element's text has, the empty ones too. */
+  const lines = (name) =>
+    app.exec(
+      `const s = Array.from(document.querySelectorAll('.text-view .section')).find((s) => (s.querySelector('.heading .title')?.textContent ?? '').trim() === arguments[0]);
+       return s?.querySelector('[data-part="body"] .ProseMirror')?.children.length ?? 0;`,
       name,
     );
   /** The paragraphs of an element's text, each as its words. */
@@ -329,25 +338,30 @@ try {
   );
   check('the cursor is in the new name', at.section === 'Gamma third.' && at.part === 'title', JSON.stringify(at));
 
-  // In the middle of a paragraph: the rest of the paragraph is the name.
-  await intoParagraph('One', 'Beta', 5);
+  // In the middle of a paragraph: the whole paragraph is the name, the paragraphs below its text.
+  await intoParagraph('One', 'Alpha', 3);
   await app.keys(['Alt', 'Enter']);
   await sleep(600);
   list = await sections();
+  at = await where();
   check(
-    'Alt+Enter in the middle of a paragraph makes the rest of it the name',
+    'Alt+Enter in the middle of a paragraph makes the whole paragraph the name',
     JSON.stringify(list.slice(0, 4)) ===
-      JSON.stringify(['Tree:0', 'One:1', 'second part.:1', 'Gamma third.:1']),
-    list.join(' | '),
+      JSON.stringify(['Tree:0', 'One:1', 'Alpha first.:1', 'Gamma third.:1']) &&
+      at.section === 'Alpha first.' &&
+      at.part === 'title',
+    `${list.join(' | ')} ${JSON.stringify(at)}`,
   );
   check(
-    'and the head of it stays where it was',
-    JSON.stringify((await paragraphs('One')).slice(-2)) === JSON.stringify(['Alpha first.', 'Beta']),
-    JSON.stringify(await paragraphs('One')),
+    'and the paragraphs below it are its text, and what stood above it stays where it was',
+    JSON.stringify(await paragraphs('Alpha first.')) === JSON.stringify(['Beta second part.']) &&
+      JSON.stringify(await paragraphs('One')) === JSON.stringify(['The text of one.']),
+    `${JSON.stringify(await paragraphs('Alpha first.'))} ${JSON.stringify(await paragraphs('One'))}`,
   );
 
-  // At the end of a paragraph, Alt+Shift+Enter: an unnamed element under it, with the paragraphs below.
-  await intoParagraph('One', 'Alpha', 0, true);
+  // An empty line, then Alt+Shift+Enter: an element under it with an empty name, and no empty line left behind.
+  await intoParagraph('One', 'The text', 0, true);
+  await app.press('Enter');
   await app.keys(['Alt', 'Shift', 'Enter']);
   await sleep(600);
   at = await where();
@@ -355,18 +369,19 @@ try {
   await sleep(300);
   list = await sections();
   check(
-    'Alt+Shift+Enter at the end of a paragraph makes an element under it with an empty name, the cursor in it',
+    'Enter and then Alt+Shift+Enter make an element under it with an empty name, the cursor in it',
     JSON.stringify(list.slice(0, 4)) ===
-      JSON.stringify(['Tree:0', 'One:1', 'Under one:2', 'second part.:1']) && at.part === 'title',
+      JSON.stringify(['Tree:0', 'One:1', 'Under one:2', 'Alpha first.:1']) && at.part === 'title',
     `${list.join(' | ')} ${JSON.stringify(at)}`,
   );
   check(
-    'and the paragraphs below are its text',
-    JSON.stringify(await paragraphs('Under one')) === JSON.stringify(['Beta']),
-    JSON.stringify(await paragraphs('Under one')),
+    'and the empty line is gone from the text it was made in',
+    (await lines('One')) === 1 && (await lines('Under one')) <= 1,
+    `${await lines('One')} ${await lines('Under one')}`,
   );
   // Where the element has elements under it, the new one after it comes first among them.
-  await intoParagraph('One', 'Alpha', 0, true);
+  await intoParagraph('One', 'The text', 0, true);
+  await app.press('Enter');
   await app.keys(['Alt', 'Enter']);
   await sleep(600);
   await app.keys('First under');
@@ -375,7 +390,7 @@ try {
   check(
     'with elements under it, Alt+Enter makes the new one first among them, where the cursor was',
     JSON.stringify(list.slice(0, 5)) ===
-      JSON.stringify(['Tree:0', 'One:1', 'First under:2', 'Under one:2', 'second part.:1']),
+      JSON.stringify(['Tree:0', 'One:1', 'First under:2', 'Under one:2', 'Alpha first.:1']),
     list.join(' | '),
   );
 
@@ -416,15 +431,15 @@ try {
   );
 
   // In the middle of a name: the rest of the name goes to the new element.
-  await intoName('second part.');
+  await intoName('Alpha first.');
   await app.press('Home');
-  for (let i = 0; i < 7; i++) await app.press('ArrowRight');
+  for (let i = 0; i < 6; i++) await app.press('ArrowRight');
   await app.keys(['Alt', 'Enter']);
   await sleep(600);
   list = await sections();
   check(
     'Alt+Enter in the middle of a name gives the rest of it to a new element after',
-    list.includes('second:1') && list.indexOf('part.:1') === list.indexOf('second:1') + 1,
+    list.includes('Alpha:1') && list.indexOf('first.:1') === list.indexOf('Alpha:1') + 1,
     list.join(' | '),
   );
 
@@ -465,19 +480,19 @@ try {
   );
 
   // F2 goes to the name, the name selected.
-  await intoParagraph('Under one', 'Beta', 2);
+  await intoParagraph('One', 'The text', 2);
   await app.press('F2');
   await sleep(400);
   at = await where();
   check(
     'F2 in a text goes to the name of the element, the name selected',
-    at.section === 'Under one' && at.part === 'title' && at.selected.trim() === 'Under one',
+    at.section === 'One' && at.part === 'title' && at.selected.trim() === 'One',
     JSON.stringify(at),
   );
 
   // Ctrl+Enter makes nothing in the text, nor breaks the line.
   const many = (await sections()).length;
-  await intoParagraph('One', 'Alpha', 0, true);
+  await intoParagraph('One', 'The text', 0, true);
   await app.keys(['Control', 'Enter']);
   await sleep(400);
   await app.keys(['Control', 'Shift', 'Enter']);

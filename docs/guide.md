@@ -358,7 +358,7 @@ Everything the tools do can be done from the keys, and much of it by typing:
 | Begin a list to tick | Type `[ ] ` at the start of a line, or after `- `; `[x] ` for a point already ticked; or **Ctrl+Shift+9** |
 | Tick or untick a point to do | Press its box, or **Ctrl+Enter** with the cursor in it; with several selected, all are ticked, or all unticked where all were ticked |
 | Make a dash | Type `--` for –, `---` for — |
-| Make a heading at the cursor: a new element after the one the cursor is in | **Alt+Enter**; or right-click there: **Split here** |
+| Make the paragraph the cursor is in an element after the one it is in; with words selected, make them the element | **Alt+Enter**; or right-click there: **Make the paragraph an element**, or **Make the selection an element** |
 | The same, with the new element under the one the cursor is in, the first | **Alt+Shift+Enter** |
 | Make the element deeper or less deep | **Alt+Right**, **Alt+Left** |
 | Fold or unfold the element | **Tab** in its name, or the arrow beside it |
@@ -370,21 +370,31 @@ Everything the tools do can be done from the keys, and much of it by typing:
 | Go up, to the element over the one in view | **Alt+Shift+Up**, with the cursor anywhere in the text; the small round button before the title, which shows when the pointer is on it; or its name in the path at the top |
 | Move an element to another place | Drag it by the grip beside its heading: the line shows where it goes, and how far to the right the pointer is says how deep, under the element above, after it, or as far out as before the element below |
 
-**A heading at the cursor.** **Alt+Enter** makes a new element where the
-cursor is: what follows the cursor in its paragraph becomes the new
-element's name, and the paragraphs below it, to the end of the text, become
-its text. So at the start of a paragraph the whole paragraph is the name; at
-its end the name is empty, and the paragraphs below go in; in its middle,
-the rest of the paragraph is the name. A name holds italics, small capitals,
-raised and lowered text and nothing else: where what follows the cursor
-holds a citation, a note, an image, a formula, an inline number, a line
+**A paragraph made an element.** **Alt+Enter** makes the paragraph the
+cursor is in the name of a new element, wherever in the paragraph the cursor
+is, at its end too: the paragraphs below it, to the end of the text, become
+the new element's text, and the paragraphs above stay where they were. The
+paragraph itself goes from the old text, and the cursor is at the end of the
+new name. **With words selected**, the words are the name: what stood before
+them stays in the element, and what stood after them in the paragraph
+becomes the first paragraph of the new text, followed by the paragraphs
+below. A selection over more than one paragraph takes what is selected of
+the first for the name, and every paragraph after it whole for the text; one
+that begins at the very end of a paragraph and goes on into the next begins
+with the next. For an **empty element**, press **Enter** for an empty line,
+and **Alt+Enter** in it: the name is empty, the paragraphs below go in, the
+empty line goes, and the cursor is in the name. A name holds italics, small
+capitals, raised and lowered text and nothing else: where what would be the
+name holds a citation, a note, an image, a formula, an inline number, a line
 break or bold, it becomes the first paragraph of the new element's text
-instead, the name is left empty, and a message says why. Where the element
-the cursor is in has elements under it, the new one is made first among
-them, so that it stands in the text where the cursor was. In a name,
-**Alt+Enter** at its end makes an empty element after it, and in its middle
-gives the rest of the name to the new element. **Alt+Shift+Enter** does all
-this with the new element under the one the cursor is in.
+instead, the name is left empty, and a message says why; with words
+selected, what is selected, with what follows it in the paragraph, is that
+paragraph. Where the element the cursor is in has elements under it, the
+new one is made first among them, so that it stands in the text where the
+cursor was. In a name, **Alt+Enter** at its end makes an empty element after
+it, and in its middle gives the rest of the name to the new element.
+**Alt+Shift+Enter** does all this with the new element under the one the
+cursor is in. **Ctrl+Z** takes the whole step back.
 
 A text has two breaks: **Enter** begins a new paragraph, and
 **Shift+Enter** breaks the line within the paragraph, as in an address or a
@@ -4041,8 +4051,8 @@ what is to be done by its name, and does it.
 | **Ctrl+Alt+C** | A comment on the passage selected, or on the element |
 | **Ctrl+Shift+H** | The history of the project |
 | **Ctrl+Z**, **Ctrl+Shift+Z** | Undo, redo; in the list of projects, what was done to folders and projects |
-| **Alt+Enter** | In the diagram: a new element after the one selected; in the text, a heading at the cursor |
-| **Alt+Shift+Enter** | In the diagram: a new element under the one selected, the first; in the text, a heading at the cursor, under the element it is in |
+| **Alt+Enter** | In the diagram: a new element after the one selected; in the text, the paragraph at the cursor, or the words selected, made a new element |
+| **Alt+Shift+Enter** | In the diagram: a new element under the one selected, the first; in the text, the same, with the new element under the one the cursor is in |
 | **Tab** | In the diagram, and in a name in the text: fold or unfold the element |
 | **Shift+Tab** | In the diagram, and in a name in the text: unfold all that is folded under the element in view, or fold everything at the first level |
 | **Enter** | In the diagram: write the text of the element selected |
