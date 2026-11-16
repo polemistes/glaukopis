@@ -3,10 +3,13 @@
 // box ticks it; Ctrl+Enter unticks it; Enter gives a new point, not
 // ticked; the points copied and pasted are points again, ticked as they
 // were, and the clipboard holds them as Org writes them (`- [X] `); the
-// typeset pages show each with its box; they are there, ticked as they
-// were, after the project is closed and opened again; in a note of the
-// notebook the same, the note there after the application is closed and
-// opened again on the same data folder. Screenshots at each stage in
+// typeset pages set each with a box that is drawn, in the place of the
+// list's dot (the screenshot shows the boxes; the script reads that no dot
+// and no sign of a font stands before the words); they are there, ticked as
+// they were, after the project is closed and opened again, in the text as
+// it is shown before it is written in; in a note of the notebook the same,
+// the note there after the application is closed and opened again on the
+// same data folder. Screenshots at each stage in
 // e2e/output/todo-<n>-<what>.png.
 
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -22,13 +25,21 @@ function check(name, ok, detail = '') {
 
 const dataDir = mkdtempSync(join(tmpdir(), 'glaukopis-e2e-todo-'));
 const TEXT = '.text-view .section .body .ProseMirror';
+/** The text of a section as it is shown, written in or not. */
+const SHOWN = '.text-view .section .body';
 const NOTE = '[data-note-text] .ProseMirror';
+const ROWS = '[data-notes] [role="option"]';
 
 /** The points to tick in what the selector names, each as `[X] words` or `[ ] words`. */
 const points = (app, scope) =>
   app.exec(
+    // The words alone, without what the editor draws into a paragraph: the name on the bracket of a run of points.
     `return Array.from(document.querySelectorAll(arguments[0] + ' p[data-kind="todo"]'))
-       .map((p) => (p.hasAttribute('data-done') ? '[X] ' : '[ ] ') + p.textContent.trim())`,
+       .map((p) => {
+         const words = p.cloneNode(true);
+         words.querySelectorAll('.ProseMirror-widget, [contenteditable="false"]').forEach((e) => e.remove());
+         return (p.hasAttribute('data-done') ? '[X] ' : '[ ] ') + words.textContent.trim();
+       })`,
     scope,
   );
 
@@ -50,7 +61,7 @@ async function pointsUntil(app, scope, want, ms = 4000) {
 async function pressBox(app, scope, words) {
   const at = await app.exec(
     `const p = Array.from(document.querySelectorAll(arguments[0] + ' p[data-kind="todo"]'))
-       .find((e) => e.textContent.trim().startsWith(arguments[1]));
+       .find((e) => e.textContent.includes(arguments[1]));
      if (!p) return null;
      p.scrollIntoView({ block: 'center' });
      const r = p.getBoundingClientRect();
@@ -161,16 +172,18 @@ try {
   );
   await app.screenshot('todo-3-pasted');
 
-  // --- The typeset pages show each point with its box ---
+  // --- The typeset pages set each point with its box ---
+  // The box is drawn, so the words of the page hold neither a sign for it
+  // nor the dot of a list: the screenshot shows the boxes themselves.
   await app.typeset();
   await app.waitFor('.preview .page', 30000);
   await app.waitFor('.preview .page .texts span', 15000);
   const runs = await app.exec(
-    `return Array.from(document.querySelectorAll('.preview .page .texts span')).map((s) => s.textContent).join(' ')`,
+    `return Array.from(document.querySelectorAll('.preview .page .texts span')).map((s) => s.textContent).join(' ').replace(/\\s+/g, ' ')`,
   );
   check(
-    'the typeset pages show the points, each with its box, ticked or not',
-    runs.includes('Buy bread') && runs.includes('☐') && runs.includes('☒'),
+    'the typeset pages hold the points, with no dot of a list and no sign of a font before them',
+    runs.includes('Buy bread') && runs.includes('Read the proofs') && !/[☐☒•]/.test(runs),
     runs.slice(0, 200),
   );
   await app.screenshot('todo-4-typeset');
@@ -180,8 +193,8 @@ try {
   // --- Closed and opened again, the points are as they were ---
   await sleep(1500);
   await app.openProject('Plans');
-  await app.waitFor(`${TEXT} p[data-kind="todo"]`, 10000);
-  got = await pointsUntil(app, TEXT, ['[X] Buy bread', '[ ] Read the proofs', '[X] Buy bread', '[ ] Read the proofs']);
+  await app.waitFor(`${SHOWN} p[data-kind="todo"]`, 10000);
+  got = await pointsUntil(app, SHOWN, ['[X] Buy bread', '[ ] Read the proofs', '[X] Buy bread', '[ ] Read the proofs']);
   check(
     'after the project is closed and opened, the points are there, ticked as they were',
     got.join('|') === '[X] Buy bread|[ ] Read the proofs|[X] Buy bread|[ ] Read the proofs',
@@ -232,7 +245,11 @@ try {
 app = await App.launch({ dataDir, keepData: true, width: 1400, height: 900 });
 try {
   await app.installErrorHook();
-  await app.keys(['Control', '3']);
+  await app.waitFor('#app > *', 15000);
+  await app.go('#/notebook');
+  await app.waitFor(ROWS, 10000);
+  // No note is chosen where the place names none: the note is chosen from the list.
+  await app.clickText(ROWS, 'Feed the owl');
   await app.waitFor(NOTE, 10000);
   const got = await pointsUntil(app, NOTE, ['[X] Feed the owl', '[ ] Clean the cage'], 8000);
   check(

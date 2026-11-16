@@ -5437,6 +5437,8 @@ mod tests {
         export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
         let t = fs::read_to_string(&typ).unwrap();
         assert!(t.contains("☐ Zzopenzz") && t.contains("☒ Zzticked") && t.contains("☐ Zzwithinzz"), "{t}");
+        // The box is drawn where the list's dot would stand: the rule that draws it is said before the text.
+        assert!(t.contains("#let glaukopis-tick(done)") && t.contains("#show list:"), "{t}");
         let p = preview(&s.ctx(), &r).unwrap();
         assert!(p.warnings.is_empty(), "{:?}", p.warnings);
 

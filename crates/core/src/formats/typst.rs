@@ -12,6 +12,45 @@ use super::{
     TitlePlacement, counted_through, fallbacks,
 };
 
+/// How a list to tick is set (record 0104). Pandoc writes a point to tick as
+/// a point of a list whose words begin with a box, `☐` or `☒`; set so, the
+/// list's dot would stand before the box. Here the box stands where the
+/// point's sign would, and is drawn, so that it needs no font that has the
+/// sign; a plain point among points to tick keeps its dot. A list that
+/// holds no point to tick is set as it was.
+const LISTS_TO_TICK: &str = r#"#let glaukopis-tick(done) = context {
+  let ink = text.fill
+  box(baseline: 0.08em, width: 0.72em, height: 0.72em, stroke: 0.55pt + ink, radius: 0.08em, {
+    if done {
+      place(line(start: (18%, 52%), end: (42%, 78%), stroke: 0.7pt + ink))
+      place(line(start: (42%, 78%), end: (84%, 20%), stroke: 0.7pt + ink))
+    }
+  })
+}
+#let glaukopis-boxed(body) = {
+  let kids = if body.has("children") { body.children } else { (body,) }
+  if kids.len() == 0 { return none }
+  let first = kids.first()
+  if not first.has("text") { return none }
+  let t = first.text
+  if not (t.starts-with("☐") or t.starts-with("☒")) { return none }
+  let sign = t.clusters().first()
+  let after = t.slice(sign.len())
+  let rest = kids.slice(1)
+  if after.trim() == "" and rest.len() > 0 and rest.first() == [ ] { rest = rest.slice(1) }
+  (sign == "☒", [#after.trim(at: start)#rest.join()])
+}
+#show list: it => {
+  let parts = it.children.map(c => glaukopis-boxed(c.body))
+  if parts.any(p => p != none) {
+    list(marker: none, indent: it.indent, body-indent: 0pt, tight: it.tight,
+      ..it.children.zip(parts).map(((c, p)) =>
+        if p == none { grid(columns: (1.3em, 1fr), [•], c.body) }
+        else { grid(columns: (1.3em, 1fr), glaukopis-tick(p.at(0)), p.at(1)) }))
+  } else { it }
+}
+"#;
+
 /// What the header, the footer and the properties of the file are made from.
 #[derive(Debug, Clone, Default)]
 pub struct Particulars {
@@ -610,6 +649,7 @@ pub fn rules(format: &DocumentFormat, p: &Particulars) -> String {
         let _ = writeln!(out, "#set par.line(numbering: \"1\")");
     }
     let _ = writeln!(out, "#set list(indent: 1em)\n#set enum(indent: 1em)\n#set terms(hanging-indent: 1.5em)");
+    out.push_str(LISTS_TO_TICK);
 
     // Headings.
     let _ = writeln!(out, "{}", heading_numbering(f));
