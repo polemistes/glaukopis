@@ -10,6 +10,9 @@ text-drop-after = After “{ $name }”
 text-drop-before = Before “{ $name }”
 text-split = Split here
 text-heading-kept = What follows the cursor holds what a name cannot, such as a citation or a note, and is the first paragraph of the new element
+text-make-paragraph-element = Make the paragraph an element
+text-make-selection-element = Make the selection an element
+text-name-kept = What was to be the name holds what a name cannot, such as a citation or a note, and is the first paragraph of the new element
 text-join = Join to the element above
 text-open-as-map = Enter
 

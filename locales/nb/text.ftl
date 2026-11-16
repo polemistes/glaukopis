@@ -9,6 +9,9 @@ text-drop-after = Etter «{ $name }»
 text-drop-before = Foran «{ $name }»
 text-split = Del her
 text-heading-kept = Det som står etter markøren, har noe et navn ikke kan romme, som en kildehenvisning eller en note, og er blitt første avsnitt i det nye elementet
+text-make-paragraph-element = Gjør avsnittet til et element
+text-make-selection-element = Gjør det merkede til et element
+text-name-kept = Det som skulle være navnet, har noe et navn ikke kan romme, som en kildehenvisning eller en note, og er blitt første avsnitt i det nye elementet
 text-join = Slå sammen med elementet over
 text-open-as-map = Gå inn
 

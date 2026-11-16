@@ -65,7 +65,7 @@
   import { pieces } from '../pieces';
   import { draggedPieces, NOTE_PIECES, piecesIntoElement } from '$lib/notebook/out';
   import type { Folding } from './folding.svelte';
-  import { headingAt, nameDoc } from './heading';
+  import { headingOfSelection, nameDoc, selectsWords } from './heading';
   import {
     bracketsOf,
     marginHead,
@@ -474,14 +474,14 @@
   }
 
   /**
-   * A heading at the cursor (see `heading.ts`): what follows the cursor in
-   * its paragraph becomes the name of a new element, where a name can hold
-   * it, and the paragraphs below it the new element's text; after this
+   * A paragraph made an element (see `heading.ts`): the paragraph the cursor
+   * is in, or what is selected, becomes the name of a new element, where a
+   * name can hold it, and what follows it the new element's text; after this
    * element, or with `under` the first under it.
    */
   function split(id: string, view: EditorView, under = false) {
     const { state } = view;
-    const heading = headingAt(state.doc, state.selection.from);
+    const heading = headingOfSelection(state.doc, state.selection);
     const body = heading.body.size
       ? bodySchema.topNodeType.createAndFill(null, heading.body)
       : null;
@@ -504,7 +504,7 @@
     }
     project.checkpoint();
     if (!made) return;
-    if (heading.keptAsParagraph) notify(t('text-heading-kept'));
+    if (heading.keptAsParagraph) notify(t('text-name-kept'));
     go(made, 'title', name ? 'end' : 'start');
   }
 
@@ -552,8 +552,8 @@
 
   /**
    * A new element where the cursor is, after the element or under it: in a
-   * text, a heading at the cursor; in a name, with the rest of the name, or
-   * at its end with nothing in it.
+   * text, the paragraph or the selection made an element; in a name, with
+   * the rest of the name, or at its end with nothing in it.
    */
   function addHere(id: string, part: Part | undefined, under = false) {
     const view = part ? editors.get(id)?.[part]?.getView() : undefined;
@@ -698,7 +698,8 @@
     if (!id) return;
 
     // Alt+Enter a new element after this one, and Alt+Shift+Enter one under
-    // it, as in the diagram: in a text, a heading at the cursor.
+    // it, as in the diagram: in a text, the paragraph or the selection made
+    // an element.
     if (event.key === 'Enter' && event.altKey && !mod) {
       const part = (event.target as HTMLElement).closest<HTMLElement>('[data-part]')?.dataset
         .part as Part | undefined;
@@ -1097,7 +1098,11 @@
     }
     if (view && view.hasFocus()) {
       extra.push({
-        label: t('text-split'),
+        label: t(
+          selectsWords(view.state.selection)
+            ? 'text-make-selection-element'
+            : 'text-make-paragraph-element',
+        ),
         icon: SplitSquareVertical,
         shortcut: keysFor('tree-new'),
         action: () => split(id, view),
