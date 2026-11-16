@@ -1695,3 +1695,11 @@ like, hold lists, pictures and other files**. Asked what the assistant
 thought of other files, it said yes: a note of the notebook holds files
 already, and they come the same way as pictures.
 
+Told that a citation or a note in a paragraph made a name was moved to the
+start of the new element's text, the owner wrote:
+
+> If a paragraph or selection contains a note or a citation, let the message say so, and refuse the conversion.
+
+So **a paragraph or a selection that holds a note or a citation is not made
+an element**, and the message says what it holds.
+

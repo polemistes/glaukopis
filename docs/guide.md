@@ -387,10 +387,11 @@ text, followed by the paragraphs below. A selection over more than one
 paragraph takes what is selected of the first for the name, and every
 paragraph after it whole for the text; one that begins at the very end of a
 paragraph or of a line and goes on into the next begins with the next.
-**What is not words**, a citation, a note, a formula, an inline number or a
-cross-reference, cannot stand in a name: it is taken out of the name and
-stands at the start of the new element's text, in the order it stood, and a
-message says so. For an **empty element**, press **Enter** for an empty line,
+**What is not words**, a citation, a note, a formula, an inline number, a
+cross-reference, or a number or words set in the margin of the line, cannot
+stand in a name: where the paragraph, its line or what is selected holds
+any, nothing is made, and a message says what it holds. Take it out, or
+select the words without it, and press again. For an **empty element**, press **Enter** for an empty line,
 and **Alt+Enter** in it: the name is empty, the paragraphs below go in, the
 empty line goes, and the cursor is in the name. Where the element the cursor
 is in has elements under it, the new one is made first among them, so that it

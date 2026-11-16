@@ -10,7 +10,16 @@ text-drop-after = After “{ $name }”
 text-drop-before = Before “{ $name }”
 text-make-paragraph-element = Make the paragraph an element
 text-make-selection-element = Make the selection an element
-text-name-kept = What a name cannot hold, such as a citation or a note, stands at the start of the new element’s text
+text-paragraph-holds = The paragraph holds { $things } and was not made an element
+text-selection-holds = What is selected holds { $things } and was not made an element
+# What stands in a paragraph or a selection that a name cannot hold, as the two messages above name it.
+text-holds-citation = a citation
+text-holds-footnote = a note
+text-holds-math = a formula
+text-holds-refmark = an inline number
+text-holds-crossref = a cross-reference
+text-holds-linemark = a number or words in the margin
+text-holds-other = something a name cannot hold
 text-join = Join to the element above
 text-open-as-map = Enter
 

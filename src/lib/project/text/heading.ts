@@ -15,8 +15,9 @@
  * any other mark on the words is dropped and the words kept. What is not
  * words at all, a citation, a note, a formula, a reference mark, a
  * cross-reference, or a number or words set by hand in the margin of a line,
- * is taken out of the name and stands at the start of the new element's
- * text, so that nothing is lost.
+ * cannot stand in a name: where what was to be the name holds any, nothing
+ * is made, and the one who asked is told what it holds (`Heading.holds`).
+ * Nothing is taken out, moved or dropped unasked.
  */
 
 import { Fragment, type Node } from 'prosemirror-model';
@@ -91,10 +92,15 @@ export function nameDoc(name: Fragment): Node {
 export interface Heading {
   /** The name of the new element, which may be empty: words with the marks a name may have, and nothing else. */
   name: Fragment;
-  /** The new element's text: the paragraphs after the first one, and before them what was taken out of the name and what stood after the name in its paragraph. */
+  /** The new element's text: the paragraphs after the first one, and before them what stood after the name in its paragraph. */
   body: Fragment;
-  /** Something that is not words was taken out of the name and stands at the start of the body. */
-  keptInText: boolean;
+  /**
+   * What stands where the name was to be that a name cannot hold, by the
+   * names of its nodes (`citation`, `footnote`, `math`, `refmark`,
+   * `crossref`, `linemark`), each once, in the order they stand. Where
+   * there is any, nothing is to be made of this.
+   */
+  holds: string[];
   /** The position from which the old text is cut to its end: the end of what stays of the paragraph, or the start of the paragraph where nothing of it stays. */
   cutFrom: number;
 }
@@ -129,37 +135,29 @@ function breaksOf(content: Fragment): number[] {
 }
 
 /**
- * What is words of a stretch of one line, and what is not. The words keep the
- * marks a name may have; where taking something out leaves two spaces
- * together, one stays. A line mark that holds a number or words for the
- * margin, given by hand, is kept with what is not words, so that they are
- * not lost; one that only says how its line is set (set in, not counted,
- * going on from the line before) says nothing of a name, and is dropped.
+ * The words of a stretch of one line, with the marks a name may have, and
+ * what stands among them that a name cannot hold, by the names of its nodes,
+ * each once. A line mark that holds a number or words for the margin, given
+ * by hand, is such a thing; one that only says how its line is set (set in,
+ * not counted, going on from the line before) says nothing of a name, and is
+ * left out of it without a word.
  */
-function wordsAndThings(line: Fragment): { words: Fragment; things: Node[] } {
+function wordsAndWhatElse(line: Fragment): { words: Fragment; holds: string[] } {
   const words: Node[] = [];
-  const things: Node[] = [];
-  let last = '';
-  let gap = false;
+  const holds: string[] = [];
   line.forEach((node) => {
-    if (!node.isText) {
-      const written =
-        node.type.name === 'linemark' ? !!(node.attrs.number || node.attrs.margin) : true;
-      if (node.type.name !== 'hard_break' && written) {
-        things.push(node);
-        gap = true;
-      }
+    if (node.isText) {
+      if (!node.text) return;
+      const marks = node.marks.filter((m) => NAME_MARKS.has(m.type.name));
+      words.push(node.type.schema.text(node.text, marks));
       return;
     }
-    let text = node.text ?? '';
-    if (gap && /\s$/.test(last) && /^\s/.test(text)) text = text.slice(1);
-    if (!text) return;
-    gap = false;
-    last = text;
-    const marks = node.marks.filter((m) => NAME_MARKS.has(m.type.name));
-    words.push(node.type.schema.text(text, marks));
+    const kind = node.type.name;
+    if (kind === 'hard_break') return;
+    if (kind === 'linemark' && !(node.attrs.number || node.attrs.margin)) return;
+    if (!holds.includes(kind)) holds.push(kind);
   });
-  return { words: trimmed(Fragment.fromArray(words)), things };
+  return { words: trimmed(Fragment.fromArray(words)), holds };
 }
 
 /**
@@ -184,7 +182,7 @@ export function headingAt(doc: Node, from: number, to: number = from): Heading {
     return {
       name: Fragment.empty,
       body: doc.content.cut(after),
-      keptInText: false,
+      holds: [],
       cutFrom: after,
     };
   }
@@ -211,27 +209,14 @@ export function headingAt(doc: Node, from: number, to: number = from): Heading {
   const cutFrom =
     startBlank(head) >= head.size ? $from.before(1) : $from.start() + first - endBlank(head);
 
-  const { words, things } = wordsAndThings(content.cut(first, last));
-  const tail = content.cut(endsAtBreak ? last + 1 : last);
-  let paragraph: Fragment;
-  if (!things.length) {
-    paragraph = trimmedStart(tail);
-  } else if (endsAtBreak) {
-    // What was taken out stood in a line of its own, and the lines after it stay after it.
-    const lines = trimmedStart(tail);
-    const line = Fragment.from(things);
-    paragraph = lines.size
-      ? line.addToEnd(block.type.schema.nodes.hard_break.create()).append(lines)
-      : line;
-  } else {
-    paragraph = Fragment.from(things).append(tail);
-  }
+  const { words, holds } = wordsAndWhatElse(content.cut(first, last));
+  const paragraph = trimmedStart(content.cut(endsAtBreak ? last + 1 : last));
   return {
     name: words,
     body: (paragraph.size ? Fragment.from(block.copy(paragraph)) : Fragment.empty).append(
       doc.content.cut($from.after(1)),
     ),
-    keptInText: things.length > 0,
+    holds,
     cutFrom,
   };
 }

@@ -3,9 +3,8 @@
 // all, Enter to open the text, F2 to rename. In the text Alt+Enter makes the
 // paragraph the cursor is in the name of a new element, wherever in it the
 // cursor stands, and in an empty paragraph an element with an empty name; and
-// with a citation in the paragraph, which a name cannot hold, the words are
-// the name and the citation stands at the start of the new element's text,
-// with a message that says so. The same keys on the map of all
+// with a citation in the paragraph, which a name cannot hold, nothing is
+// made and a message says what the paragraph holds. The same keys on the map of all
 // projects and in the list at the left. And the keys that once did these
 // things do nothing now.
 
@@ -395,51 +394,41 @@ try {
     list.join(' | '),
   );
 
-  // With a citation in it, the words are the name, and the citation, which a name cannot hold, stands at the start of the new element's text.
+  // With a citation in it, the paragraph is not made an element: nothing is made, nothing is moved, and a message says what it holds.
+  const sectionsBefore = await sections();
+  const gammaBefore = await app.exec(
+    `const s = Array.from(document.querySelectorAll('.text-view .section')).find((s) => (s.querySelector('.heading .title')?.textContent ?? '').trim() === 'Gamma third.');
+     const body = s?.querySelector('[data-part="body"] .ProseMirror');
+     return body ? { paragraphs: body.children.length, citations: body.querySelectorAll('.citation').length } : null;`,
+  );
   await intoParagraph('Gamma third.', 'Delta');
   await app.keys(['Alt', 'Enter']);
   await sleep(600);
   list = await sections();
   const said = await toasts();
-  const gammaAt = list.indexOf('Gamma third.:1');
+  at = await where();
+  const gammaAfter = await app.exec(
+    `const s = Array.from(document.querySelectorAll('.text-view .section')).find((s) => (s.querySelector('.heading .title')?.textContent ?? '').trim() === 'Gamma third.');
+     const body = s?.querySelector('[data-part="body"] .ProseMirror');
+     return body ? { paragraphs: body.children.length, citations: body.querySelectorAll('.citation').length } : null;`,
+  );
   check(
-    'with a citation, Alt+Enter makes the words of the paragraph the name of an element after this one, the citation taken out of it',
-    gammaAt > 0 && list[gammaAt + 1] === 'Delta cites here.:1',
+    'with a citation in the paragraph, Alt+Enter makes nothing',
+    JSON.stringify(list) === JSON.stringify(sectionsBefore),
     list.join(' | '),
   );
-  const kept = await app.exec(
-    `const all = Array.from(document.querySelectorAll('.text-view .section'));
-     const g = all.findIndex((s) => (s.querySelector('.heading .title')?.textContent ?? '').trim() === 'Gamma third.');
-     const s = all[g + 1];
-     const body = s?.querySelector('[data-part="body"] .ProseMirror');
-     return body ? {
-       paragraphs: Array.from(body.children).length,
-       first: body.children[0].querySelectorAll('.citation').length,
-       second: body.children[1]?.textContent.trim() ?? null,
-       citations: body.querySelectorAll('.citation').length,
-       inName: s.querySelectorAll('.heading .title .citation').length,
-     } : null;`,
+  check(
+    'the text is as it was, the citation where it stood',
+    !!gammaBefore && gammaBefore.citations === 1 && JSON.stringify(gammaAfter) === JSON.stringify(gammaBefore),
+    `${JSON.stringify(gammaBefore)} ${JSON.stringify(gammaAfter)}`,
   );
   check(
-    'and the citation is the first paragraph of its text, with the paragraph below it after, and none in the name',
-    kept?.paragraphs === 2 &&
-      kept.first === 1 &&
-      kept.second === 'Epsilon last.' &&
-      kept.citations === 1 &&
-      kept.inName === 0,
-    JSON.stringify(kept),
-  );
-  check(
-    'a message says that what a name cannot hold stands at the start of the text',
-    said.some((s) => s.includes('stands at the start of the new element')),
+    'a message says that the paragraph holds a citation and was not made an element',
+    said.some((s) => s.includes('The paragraph holds a citation and was not made an element')),
     JSON.stringify(said),
   );
-  await app.screenshot('tree-keys-2-text-kept');
-  check(
-    'the text that is left has no citation and nothing below',
-    (await paragraphs('Gamma third.')).length === 0,
-    JSON.stringify(await paragraphs('Gamma third.')),
-  );
+  check('and the cursor stays in the text', at.section === 'Gamma third.' && at.part === 'body', JSON.stringify(at));
+  await app.screenshot('tree-keys-2-text-held');
 
   // In the middle of a name: the rest of the name goes to the new element.
   await intoName('Alpha first.');

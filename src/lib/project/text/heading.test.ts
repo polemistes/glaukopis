@@ -99,7 +99,7 @@ describe('a paragraph made an element, with the cursor', () => {
     const h = headingAt(d, at(d, 'son of'));
     expect(nameOf(h)).toBe('Of Achilles, son of Peleus.');
     expect(words(h.body)).toEqual(['That brought woes.']);
-    expect(h.keptInText).toBe(false);
+    expect(h.holds).toEqual([]);
     expect(left(d, h.cutFrom)).toEqual(['Sing, goddess, the wrath.']);
   });
 
@@ -116,7 +116,7 @@ describe('a paragraph made an element, with the cursor', () => {
     const h = headingAt(d, at(d, 'Peleus.', true));
     expect(nameOf(h)).toBe('Of Achilles, son of Peleus.');
     expect(words(h.body)).toEqual(['That brought woes.']);
-    expect(h.keptInText).toBe(false);
+    expect(h.holds).toEqual([]);
     expect(left(d, h.cutFrom)).toEqual(['Sing, goddess, the wrath.']);
   });
 
@@ -160,7 +160,7 @@ describe('a paragraph made an element, with the cursor', () => {
     const h = headingAt(d, d.content.size - 1);
     expect(h.name.size).toBe(0);
     expect(h.body.size).toBe(0);
-    expect(h.keptInText).toBe(false);
+    expect(h.holds).toEqual([]);
     expect(left(d, h.cutFrom)).toEqual(['Sing.', 'Of Achilles.']);
   });
 
@@ -177,7 +177,7 @@ describe('a paragraph made an element, with the cursor', () => {
     const h = headingAt(d, 1);
     expect(h.name.size).toBe(0);
     expect(h.body.size).toBe(0);
-    expect(h.keptInText).toBe(false);
+    expect(h.holds).toEqual([]);
     expect(after(d, h.cutFrom).textContent).toBe('');
   });
 
@@ -190,7 +190,7 @@ describe('a paragraph made an element, with the cursor', () => {
   it('keeps italics in the name', () => {
     const d = doc(p('On the '), p(em('Iliad'), ' of Homer'), p('Below.'));
     const h = headingAt(d, at(d, 'Iliad'));
-    expect(h.keptInText).toBe(false);
+    expect(h.holds).toEqual([]);
     const name = nameDoc(h.name);
     expect(name.textContent).toBe('Iliad of Homer');
     expect(name.firstChild!.firstChild!.marks.map((m) => m.type.name)).toEqual(['em']);
@@ -204,7 +204,7 @@ describe('a paragraph made an element, whatever marks its words have', () => {
       const h = headingAt(d, at(d, where, where === 'here'));
       expect(nameOf(h)).toBe('As sung here');
       expect(marked(h.name)).toEqual([['As sung here', []]]);
-      expect(h.keptInText).toBe(false);
+      expect(h.holds).toEqual([]);
       expect(words(h.body)).toEqual(['Below.']);
       expect(left(d, h.cutFrom)).toEqual(['Before.']);
     }
@@ -234,7 +234,7 @@ describe('a paragraph made an element, whatever marks its words have', () => {
       ['3', ['sup']],
       ['4', ['sub']],
     ]);
-    expect(h.keptInText).toBe(false);
+    expect(h.holds).toEqual([]);
     const name = nameDoc(h.name);
     expect(name.textContent).toBe('Iliad and Homer and Troy and II34');
     name.check();
@@ -249,7 +249,7 @@ describe('a paragraph made an element, whatever marks its words have', () => {
       const d = doc(p(s.text('Some words', [made])));
       const h = headingAt(d, at(d, 'words'));
       expect(marked(h.name), mark).toEqual([['Some words', []]]);
-      expect(h.keptInText, mark).toBe(false);
+      expect(h.holds, mark).toEqual([]);
     }
   });
 });
@@ -260,7 +260,7 @@ describe('a paragraph made an element, where it has line breaks', () => {
     const h = headingAt(d, at(d, 'First'));
     expect(nameOf(h)).toBe('First line');
     expect(shown(h.body)).toEqual(['Second line/Third line', 'Below.']);
-    expect(h.keptInText).toBe(false);
+    expect(h.holds).toEqual([]);
     expect(leftShown(d, h.cutFrom)).toEqual(['Before.']);
   });
 
@@ -325,51 +325,35 @@ describe('a paragraph made an element, where it has line breaks', () => {
       ['Sing', ['em']],
       [' goddess', []],
     ]);
-    expect(h.keptInText).toBe(false);
+    expect(h.holds).toEqual([]);
     expect(shown(h.body)).toEqual(['Next']);
   });
 
-  it('keeps a number or words set by hand in the margin of the line, at the start of the text', () => {
+  it('names a number or words set by hand in the margin of the line as what a name cannot hold', () => {
     for (const attrs of [{ number: '12' }, { margin: 'Chryses' }]) {
       const d = doc(p(s.nodes.linemark.create(attrs), 'Sing goddess', br(), 'Next'));
-      const h = headingAt(d, at(d, 'goddess'));
-      expect(nameOf(h)).toBe('Sing goddess');
-      expect(h.keptInText).toBe(true);
-      const first = h.body.firstChild!;
-      expect(first.firstChild!.type.name).toBe('linemark');
-      expect(first.firstChild!.attrs).toMatchObject(attrs);
-      expect(first.child(1).type.name).toBe('hard_break');
-      expect(first.textContent).toBe('Next');
+      expect(headingAt(d, at(d, 'goddess')).holds).toEqual(['linemark']);
+      // The line after it holds none, and is made a name as any line is.
+      const next = headingAt(d, at(d, 'Next'));
+      expect(next.holds).toEqual([]);
+      expect(nameOf(next)).toBe('Next');
     }
   });
 });
 
-describe('a paragraph made an element, where its name is not all words', () => {
-  it('takes what is not words out of the name and puts it at the start of the text: a citation at the start, in the middle, and at the end', () => {
+describe('a paragraph that holds what a name cannot', () => {
+  it('names a citation wherever it stands in the paragraph, so that nothing is made of it', () => {
     for (const [what, made] of [
       ['at the start', () => p(citation(), ' As sung')],
       ['in the middle', () => p('As ', citation(), ' sung')],
       ['at the end', () => p('As sung ', citation())],
     ] as const) {
       const d = doc(p('Before.'), made(), p('Below.'));
-      const h = headingAt(d, at(d, 'sung'));
-      expect(nameOf(h), what).toBe('As sung');
-      expect(h.keptInText, what).toBe(true);
-      expect(shown(h.body), what).toEqual(['[citation]', 'Below.']);
-      expect(leftShown(d, h.cutFrom), what).toEqual(['Before.']);
+      expect(headingAt(d, at(d, 'sung')).holds, what).toEqual(['citation']);
     }
   });
 
-  it('leaves one space where taking something out would leave two together, and none where there were none', () => {
-    const d = doc(p('As ', citation(), ' sung'), p('Near', note('a note'), 'by'));
-    const h = headingAt(d, at(d, 'sung'));
-    expect(nameOf(h)).toBe('As sung');
-    expect(nameOf(headingAt(d, at(d, 'Near')))).toBe('Nearby');
-    const two = headingAt(doc(p('As ', citation(), ' ', note('n'), ' sung')), 2);
-    expect(nameOf(two)).toBe('As sung');
-  });
-
-  it('keeps what was taken out in the order it stood, whatever it is', () => {
+  it('names each kind of thing once, in the order they stand', () => {
     const d = doc(
       p(
         'A',
@@ -383,45 +367,42 @@ describe('a paragraph made an element, where its name is not all words', () => {
         'E',
         s.nodes.crossref.create({ target: 'fig' }),
         'F',
+        citation(),
+        note('another'),
       ),
     );
-    const h = headingAt(d, at(d, 'C'));
-    expect(nameOf(h)).toBe('ABCDEF');
-    expect(shown(h.body)).toEqual(['[citation][footnote][math][refmark][crossref]']);
-    expect(h.keptInText).toBe(true);
+    expect(headingAt(d, at(d, 'C')).holds).toEqual([
+      'citation',
+      'footnote',
+      'math',
+      'refmark',
+      'crossref',
+    ]);
   });
 
-  it('keeps it in a paragraph of its own, of the kind of the paragraph, where nothing stood after the name', () => {
-    const d = doc(quote('Sung ', citation()));
-    const h = headingAt(d, at(d, 'Sung', true));
-    expect(nameOf(h)).toBe('Sung');
-    expect(h.body.childCount).toBe(1);
-    expect(h.body.firstChild!.attrs.kind).toBe('quote');
-    expect(shown(h.body)).toEqual(['[citation]']);
-    expect(after(d, h.cutFrom).textContent).toBe('');
-  });
-
-  it('gives an empty name and keeps the things where a paragraph is nothing but them', () => {
+  it('names what a paragraph of nothing but such things holds', () => {
     for (const thing of [citation(), s.nodes.math.create({ tex: 'x' }), note('a note')]) {
       const d = doc(p('Before.'), p(thing), p('Below.'));
-      const h = headingAt(d, at(d, 'Before.', true) + 2);
-      expect(h.name.size).toBe(0);
-      expect(h.keptInText).toBe(true);
-      expect(shown(h.body)).toEqual([`[${thing.type.name}]`, 'Below.']);
-      expect(leftShown(d, h.cutFrom)).toEqual(['Before.']);
+      expect(headingAt(d, at(d, 'Before.', true) + 2).holds).toEqual([thing.type.name]);
     }
   });
 
-  it('keeps it on a line of its own before the lines that follow the name, where the name is a line', () => {
-    const d = doc(p('One', br(), 'Two ', citation(), br(), 'Three', br(), 'Four'));
-    const h = headingAt(d, at(d, 'Two'));
-    expect(nameOf(h)).toBe('Two');
-    expect(h.keptInText).toBe(true);
-    expect(shown(h.body)).toEqual(['[citation]/Three/Four']);
-    expect(leftShown(d, h.cutFrom)).toEqual(['One']);
+  it('looks only at the line the cursor is in, where the paragraph has line breaks', () => {
+    const d = doc(p('One', br(), 'Two ', citation(), br(), 'Three', note('a note'), br(), 'Four'));
+    expect(headingAt(d, at(d, 'Two')).holds).toEqual(['citation']);
+    expect(headingAt(d, at(d, 'Three')).holds).toEqual(['footnote']);
+    // A line without any is made a name, and the lines after it, with what they hold, begin the text.
+    const one = headingAt(d, at(d, 'One'));
+    expect(one.holds).toEqual([]);
+    expect(nameOf(one)).toBe('One');
+    expect(shown(one.body)).toEqual(['Two [citation]/Three[footnote]/Four']);
+  });
 
-    const last = doc(p('One', br(), 'Two', citation()));
-    expect(shown(headingAt(last, at(last, 'Two')).body)).toEqual(['[citation]']);
+  it('moves nothing and takes nothing out: what follows the name is as it stood', () => {
+    const d = doc(p('Name', br(), 'After ', citation(), ' it'), p('Below.'));
+    const h = headingAt(d, at(d, 'Name'));
+    expect(h.holds).toEqual([]);
+    expect(shown(h.body)).toEqual(['After [citation] it', 'Below.']);
   });
 });
 
@@ -430,7 +411,7 @@ describe('a paragraph made an element, with words selected', () => {
     const d = text();
     const h = headingAt(d, at(d, 'son of'), at(d, 'son of', true));
     expect(nameOf(h)).toBe('son of');
-    expect(h.keptInText).toBe(false);
+    expect(h.holds).toEqual([]);
     expect(words(h.body)).toEqual(['Peleus.', 'That brought woes.']);
     expect(left(d, h.cutFrom)).toEqual(['Sing, goddess, the wrath.', 'Of Achilles,']);
   });
@@ -485,7 +466,7 @@ describe('a paragraph made an element, with words selected', () => {
   it('keeps italics in a name that is selected, and drops bold', () => {
     const d = doc(p('See the ', em('Iliad'), ' and ', bold('Odyssey'), ' again'));
     const h = headingAt(d, at(d, 'the'), at(d, 'Odyssey', true));
-    expect(h.keptInText).toBe(false);
+    expect(h.holds).toEqual([]);
     expect(marked(h.name)).toEqual([
       ['the ', []],
       ['Iliad', ['em']],
@@ -498,26 +479,25 @@ describe('a paragraph made an element, with words selected', () => {
     const d = doc(p('Before the name and ', citation(), ' more'), p('Below.'));
     const h = headingAt(d, at(d, 'the name'), at(d, 'the name', true));
     expect(nameOf(h)).toBe('the name');
-    expect(h.keptInText).toBe(false);
+    expect(h.holds).toEqual([]);
     expect(h.body.childCount).toBe(2);
     expect(h.body.firstChild!.childCount).toBe(3);
     expect(h.body.firstChild!.textContent).toBe('and  more');
   });
 
-  it('takes what is not words out of what is selected, and puts it before what follows the selection in its paragraph', () => {
+  it('names a citation within what is selected, and none that stands after it', () => {
     const d = doc(p('Before the name', citation(), ' and more'), p('Below.'));
-    const h = headingAt(d, at(d, 'the name'), at(d, 'the name', true) + 1);
-    expect(nameOf(h)).toBe('the name');
-    expect(h.keptInText).toBe(true);
-    expect(shown(h.body)).toEqual(['[citation] and more', 'Below.']);
-    expect(leftShown(d, h.cutFrom)).toEqual(['Before']);
+    expect(headingAt(d, at(d, 'the name'), at(d, 'the name', true) + 1).holds).toEqual([
+      'citation',
+    ]);
+    expect(headingAt(d, at(d, 'the name'), at(d, 'the name', true)).holds).toEqual([]);
   });
 
   it('takes what is selected of the first paragraph for the name, and every paragraph after it whole for the text', () => {
     const d = text();
     const h = headingAt(d, at(d, 'goddess'), at(d, 'son of', true));
     expect(nameOf(h)).toBe('goddess, the wrath.');
-    expect(h.keptInText).toBe(false);
+    expect(h.holds).toEqual([]);
     expect(words(h.body)).toEqual(['Of Achilles, son of Peleus.', 'That brought woes.']);
     expect(left(d, h.cutFrom)).toEqual(['Sing,']);
   });
@@ -607,7 +587,7 @@ describe('a paragraph made an element, within what stands as one block', () => {
     const d = doc(p('Before.'), sides(), p('Below.'));
     const h = headingAt(d, at(d, 'Left.'));
     expect(h.name.size).toBe(0);
-    expect(h.keptInText).toBe(false);
+    expect(h.holds).toEqual([]);
     expect(words(h.body)).toEqual(['Below.']);
     expect(left(d, h.cutFrom)).toEqual(['Before.', 'Left.Right.']);
   });

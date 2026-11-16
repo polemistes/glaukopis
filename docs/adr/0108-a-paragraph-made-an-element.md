@@ -76,3 +76,15 @@ Told what was built, and which choices had been made without asking, the owner w
 - **Checked**: `pnpm check` finds nothing; `pnpm test` passes, 241 files and 2137 tests, among them the 54 of `heading.test.ts` and the help reader against the whole guide. The scripts are not yet run.
 - **Tried in the running application, 2026-11-16 (later), after the merge.** The scripts changed for it passed as they were written: `paragraph-element` 40 of 40, with the paragraph of three lines and the bold word made a name, and `tree-keys` 44 of 44, with the citation standing at the start of the new text; `text-structure` 35 of 35 and `maps` 81 of 81 with them.
 
+## Changed on the owner's word, 2026-11-16 (in the evening)
+
+Told that a citation or a note in a paragraph made a name was taken out of the name and put at the start of the new element's text, the owner wrote: "If a paragraph or selection contains a note or a citation, let the message say so, and refuse the conversion."
+
+- **Where what was to be the name holds what a name cannot, nothing is made.** A citation, a note, a formula, an inline number, a cross-reference, or a number or words set by hand in the margin of the line: the paragraph, its line where it has line breaks, or what is selected, is looked at, and where it holds any, no element is made, nothing in the text is moved, and the cursor stays. This takes the place of what the addition above says of what is not words (it stood at the start of the new text), and of the line mark kept there.
+- **The message says what it holds**: *The paragraph holds a citation and was not made an element*, or *What is selected holds a note and a formula and was not made an element*, each kind of thing named once, joined as the language joins a list (`project/text/holds.ts`).
+- **Only where the name was to be**: a citation in another line of the paragraph, or after what is selected, is no hindrance, and goes with its line as it stands.
+- **Unchanged**: a mark a name cannot have (bold and the like) is still left off and the words kept, with no message; a line mark that only says how its line is set is left out of the name without a word.
+- **Chosen in the building, and not asked**: that the same holds for a formula, an inline number, a cross-reference and the margin's number or words, of which the owner did not speak; the words of the two messages.
+- **As built**: `Heading.holds` in `heading.ts` takes the place of `keptInText`; `split` in `MapText.svelte` says `heldMessage` and returns; the words `text-paragraph-holds`, `text-selection-holds` and `text-holds-…` in English and Bokmål take the place of `text-name-kept`; `heading.test.ts` and `holds.test.ts`; the step with a citation in `e2e/tree-keys.mjs`.
+- **Tried in the running application.** `tree-keys` 44 of 44, its step with a citation now that nothing is made, the text is as it was, the message says *The paragraph holds a citation and was not made an element* and the cursor stays; `paragraph-element` 40 of 40 and `languages` 17 of 17. All 2177 tests of the interface pass.
+

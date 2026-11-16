@@ -66,6 +66,7 @@
   import { draggedPieces, NOTE_PIECES, piecesIntoElement } from '$lib/notebook/out';
   import type { Folding } from './folding.svelte';
   import { headingOfSelection, nameDoc, selectsWords } from './heading';
+  import { heldMessage } from './holds';
   import {
     bracketsOf,
     marginHead,
@@ -477,11 +478,17 @@
    * A paragraph made an element (see `heading.ts`): the paragraph the cursor
    * is in (its line, where it has line breaks), or what is selected, becomes
    * the name of a new element, and what follows it the new element's text;
-   * after this element, or with `under` the first under it.
+   * after this element, or with `under` the first under it. Where it holds
+   * what a name cannot, a citation or a note, nothing is made, and that is
+   * said.
    */
   function split(id: string, view: EditorView, under = false) {
     const { state } = view;
     const heading = headingOfSelection(state.doc, state.selection);
+    if (heading.holds.length) {
+      notify(heldMessage(heading.holds, selectsWords(state.selection)));
+      return;
+    }
     const body = heading.body.size
       ? bodySchema.topNodeType.createAndFill(null, heading.body)
       : null;
@@ -504,7 +511,6 @@
     }
     project.checkpoint();
     if (!made) return;
-    if (heading.keptInText) notify(t('text-name-kept'));
     go(made, 'title', name ? 'end' : 'start');
   }
 

@@ -324,8 +324,8 @@ try {
     JSON.stringify(kept),
   );
   check(
-    'and no message is given, since nothing was taken out',
-    !said.some((t) => t.includes('cannot hold') || t.includes('stands at the start')),
+    'and no message is given: a bold word is no reason to refuse',
+    !said.some((t) => t.includes('was not made an element')),
     JSON.stringify(said),
   );
   check(
