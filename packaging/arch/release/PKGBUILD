@@ -75,6 +75,7 @@ package_glaukopis() {
     'libreoffice-fresh: to open what is exported as ODT or DOCX'
     'noto-fonts: for the interface in Hindi, Marathi, Bengali, Gujarati, Tamil or Telugu'
     'noto-fonts-cjk: for the interface in Chinese or Japanese'
+    'noto-fonts-emoji: for emojis in the chat of a shared project'
     'tesseract-data-nor: to read Norwegian in scans and pictures'
     'tesseract-data-dan: to read Danish in scans and pictures'
     'tesseract-data-swe: to read Swedish in scans and pictures'
