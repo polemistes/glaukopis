@@ -178,6 +178,10 @@ describe('the history of a project', () => {
     b.markChatRead({ id, created: b.chat[0].created });
     await flush();
     expect(engineOf(ann, 'ann').sessions()).toEqual(before);
+    // Taken out again, by one who shows the others nothing of what they read.
+    b.unmarkChatRead();
+    await flush();
+    expect(engineOf(ann, 'ann').sessions()).toEqual(before);
     b.react(id, '👍');
     await flush();
     expect(engineOf(ann, 'ann').sessions()).toEqual(before);
