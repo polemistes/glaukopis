@@ -281,6 +281,19 @@ mod tests {
     }
 
     #[test]
+    fn the_text_and_the_files_of_a_note_are_none_of_the_plugins() {
+        let helper = Helper::new();
+        let mut message = page();
+        message["doc"] = json!({"type": "doc", "content": []});
+        message["files"] = json!([{"hash": "a".repeat(64), "name": "not here.pdf"}]);
+        let (code, answers) = helper.run(&framed(&[message]));
+        assert_eq!((code, answers), (0, vec![json!({"ok": true})]));
+        let inbox = helper.inbox();
+        let (collected, _) = inbox.read(&inbox.ids()[0]).unwrap();
+        assert!(collected.doc.is_null() && collected.files.is_empty());
+    }
+
+    #[test]
     fn a_region_with_a_picture_is_written_with_it() {
         let helper = Helper::new();
         let png = png();
