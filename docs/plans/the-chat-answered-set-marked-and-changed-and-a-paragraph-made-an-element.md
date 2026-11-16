@@ -230,3 +230,148 @@ Part C builds `src/lib/ui/EmojiPicker.svelte` with the props given there. **Writ
 - **The script** `e2e/chat.mjs` is kept passing (its field is no longer a `textarea`: see how it types and reads), and a new one, **`e2e/chat-answers.mjs`**, with the real server and the program twice as `chat.mjs` has them: an answer stands under its message for both, and an answer to the answer after it; bold by its key in the field is bold for the other; an emoji chosen from the picker stands in the message; a reaction given by one is shown to both with its count, and taken back; the writer sees the other's circle on their message once the other has shown the chat, and not before; a message changed says *changed* for both; with the list at its foot and an answer arriving far up, the button of what is new is there and leads to it; what is written with a mark and an answering is there again after another tab; in Norwegian the new words are Norwegian; no errors in the page. Say in the first comment what it covers.
 - **The guide**: the part about the chat, rewritten for all of this, and the keys of the field where the guide lists keys.
 - **Record** `0107-the-chat-answered-set-marked-and-changed.md`; in `docs/adr/README.md` its row, the row of 0092 (*holds in part*: a message can be changed, and who has read is kept in the project too) and the row of 0094 (what is kept of the chat's field now holds its marks and what it answers or changes).
+
+---
+
+# The second round, the same day
+
+The first round is built, merged and tried (records 0107 and 0108, as built). Told of it, the owner asked for more (`docs/brief.md`, *Later the same day*). Three parts again, each an agent in a working copy of its own; **How each part is built**, above, holds for all three, with what is said here of Rust for part F.
+
+| Part | Record | The branch's work |
+| --- | --- | --- |
+| D | 0108, added to | any paragraph the name, and the line where there are line breaks: `project/text/heading.ts`, `split` in `MapText.svelte`, the scripts of Alt+Enter |
+| E | 0107, added to | words of the chat quoted; reading told or not: the model's chat, `src/lib/chat/`, the settings |
+| F | 0109, new | a note written in a window of its own: the shell, the notebook's inbox, a small page of its own, the Linux packages |
+
+Parts D and E change no Rust and run no cargo. A record that is *added to* gets a dated section at its end, **Added to, 2026-11-16 (later)**, in the form of the addenda of other records (read one, e.g. the end of 0041 or 0075), its row in `docs/adr/README.md` changed to say it; the decisions above it are not rewritten, except where they are no longer true, which the addendum says.
+
+---
+
+## Part D — any paragraph the name, and the line where there are line breaks (0108, added to)
+
+> I think any paragraph type should be turned into the name of the element. An exception I thought about now is when there are line breaks in a paragraph. Only the part that is after and before a line break becomes the name of the element.
+
+Today a paragraph that holds what a name cannot (a bold word, a citation, a note, a line break…) is not made the name: it becomes the first paragraph of the new element's text, the name is empty, and a toast says why (0108, decision 4). The owner wants every paragraph to become the name.
+
+### Decided
+
+1. **Every paragraph becomes the name**: its words. **A mark a name cannot have is dropped and the words kept** (bold, underlined, struck through, code, a kind of words, a language, a link, and any other mark that is not of the title's schema); italics, small capitals, raised and lowered text stay, as today. Nothing is said of a dropped mark.
+2. **Where the paragraph has line breaks, only the line the cursor is in becomes the name**: from the line break before the cursor (or the paragraph's start) to the line break after it (or its end). The lines before it stay in the old element as the paragraph they were, without the break that ended them; the lines after it become the first paragraph of the new element's text, a paragraph of the same kind and attributes, without the break that began them, followed by the paragraphs below. In the first line nothing of the paragraph stays; in the last nothing follows.
+3. **With words selected**, the name is what is selected, as today, **up to the first line break within it**; what follows from there on, without that break, begins the new element's text with what stood after the selection. What stands before the selection stays as it is, the lines before it too; a line break, like the spaces, at the end of what stays is not left there.
+4. **What is not words cannot stand in a name, and is not lost**: a citation, a note, a picture, a formula, a reference mark, a cross-reference (every inline node that is neither text nor a line break) is taken out of the name and **stands at the start of the first paragraph of the new element's text**, in the order they stood, before what stood after the name in the paragraph; where nothing stood after it, in a paragraph of their own, of the paragraph's kind and attributes. Where taking one out leaves two spaces together in the name, one stays. **A toast says so** whenever something was taken out so (below). A paragraph of nothing but such things gives an empty name and keeps them, as before.
+5. All else is as 0108 has it: a block left whole, a selection that is not of text, where the new element goes, Alt+Shift+Enter, the cursor in the new name, one step of undo, a name unchanged, the menu's two entries.
+6. `Heading.name` is always a fragment now, never null; `keptAsParagraph` gives way to a field that says whether something was taken out of the name and kept in the text (name it for that). `nameDoc` already keeps the marks a name may have and nothing else.
+
+### Choices the owner has not been asked about
+
+- Item 4: what is not words is kept at the start of the new text, with a toast, rather than left out, or turned into the words it shows as. The owner said *any paragraph*, and spoke of line breaks alone.
+- Item 3: a selection over line breaks ends the name at the first of them.
+
+### Words
+
+`text-name-kept` in `locales/en/text.ftl` and `locales/nb/text.ftl` (no other language has it yet; it was added this morning), reworded in place: *What a name cannot hold, such as a citation or a note, stands at the start of the new element’s text* / in Bokmål, in the words the present message uses (*kildehenvisning*, *note*).
+
+### Verify
+
+- `heading.test.ts`: every case of items 1 to 4, by what it shows: a bold word in the name's place; marks kept and dropped side by side; the first, a middle and the last line of a paragraph of three lines, with a cursor; a selection within one line, and one over a line break; a citation and a note at the start, in the middle (the two spaces) and at the end of the name's place, with and without words after the name; a paragraph of a picture alone. The tests of this morning that no longer hold are changed, not kept beside the new.
+- `pnpm check`, `pnpm test`.
+- **The scripts** (unrun): `e2e/paragraph-element.mjs`: the paragraph with a bold word now becomes the name, without the bold and without a toast; a new case of a paragraph of three lines (Shift+Enter makes a line break) with the cursor in the second: the second line is the name, the first stays, the third begins the new text; Ctrl+Z takes it back. `e2e/tree-keys.mjs` has a step with a citation in the paragraph (near its comment *With a citation in it…*): under the new rule the words become the name and the citation stands at the start of the new element's text, with the toast's new words; change the step and its checks for that. Look for any other script that relies on the old rule (`grep -n "holds what a name cannot" e2e/*.mjs`).
+- **The guide**: the paragraph *A paragraph made an element* and whatever else says what becomes of bold, a citation or a line break there.
+- **The record**: 0108, added to; its row in the README.
+
+---
+
+## Part E — words of the chat quoted, and reading told or not (0107, added to)
+
+> Let it be an option in settings to turn off notification of having read comments. […] In comments I forgot to ask for one thing. If I mark some of the text in a message or a reply and then reply to it or another message, or add a new message, the marked part of the text will show as what I am commenting on at the top of my new message, and pressing it takes me to the message/reply where it stands.
+
+The owner's *comments* are the messages of the chat. Read record 0107 to its end, and `src/lib/chat/` as it is now, before anything else.
+
+### Decided: words quoted
+
+1. **A message can carry a quote**: `quote?: { id: string; text: string }` on `ChatMessage`, the message the words are from and the words themselves, plain, at most 500 characters (cut, with an ellipsis). The words are kept in the message that quotes, so that they stay as they were quoted when the message they are from is changed or taken back. `chatMessageOf` reads it with care; `say` takes it (extend its arguments in the plainest way; keep `say(words)` and `say(words, to)` working); `reword` keeps it, as it keeps `to`. An earlier version of the program shows the message without it.
+2. **What is marked is caught at the press**, before the press itself changes what is selected: at `pointerdown`, in its capture phase, anywhere in the panel, the selection as it stands is read; where it is not empty and both its ends are within the words (`.text`) of one message of this chat, an answer too, it is remembered for this press as the message's id and the words selected (`toString()`, trimmed). A selection over more than one message, or anywhere else, is nothing. This order matters: a right click selects the word under it on macOS, and a press in the field takes the selection away.
+3. **What was caught is used by what the press begins**: *Answer* among the tools of a message; *Answer* in the right-click menu, which that press opened (the menu's entry holds what was caught when it was opened); and **a press within the field**, which begins a new message, or goes on with what is written. Each puts the quote into what is written. *Answer* on the message the words are from answers it with the quote; on another message it answers that one, with the quote of the first. A quote caught while one stands over the field already takes its place; a press with nothing marked changes nothing.
+4. **Over the field, a line of its own** for the quote, above the line of what is answered where both are there: an icon (Lucide `quote`), the quoted words on one line, cut with an ellipsis where they do not fit, and a × that gives the quote up. **Escape** gives up a change, as today; else it gives up the answering and the quote, both where both are there, and keeps what is written.
+5. **What is written keeps its quote** as it keeps what it answers (0094): in the draft's JSON, there again after another tab or a restart. A quote with no words written keeps the field in the drafts, but nothing is sent without words. A change of one's own message keeps the quote the message had; no new one is caught while a message is being changed.
+6. **Sent, the quote stands at the top of the message**, over its words: the quoted words, quiet, with a line at their left, three lines at most and then an ellipsis. **Pressing it goes to the message it is from**: brought into the middle of what is shown, and lit for a moment (a background that fades within about a second and a half). Its tooltip names who wrote the quoted message. Where that message is no longer there, the quote stays as words and cannot be pressed. The quote is not among the words of a message that can be marked for another quote.
+7. For the scripts: `data-chat-quote` on the quote of a message, `data-chat-quoting` on the line over the field, `data-chat-lit` on a message while it is lit.
+
+### Decided: reading told or not
+
+8. **A setting, *Show the others what I have read in the chat***, on unless turned off, in the settings window under **You** (`settings-you`), drawn as the other settings that are on or off are drawn there or nearby (look at how *Tell me of new versions* is drawn under About). It is kept by the interface alone, as `recentEmojis` and `versionTold` are (`MoreSettings` in `state/settings.svelte.ts`): no change in Rust.
+9. **Off**, one's mark of how far one has read is not written into any project; and where a project holds one's mark from before, it is taken out of it when its chat is next shown with the window in front, while the project is shared (a method beside `markChatRead` that deletes one's own entry, with the origin `CHAT`), so that one's circle goes from the others' messages. One still sees the circles of the others: nothing is bargained. **On** again, the mark is written at the next such showing. `ChatHost` does both where it writes the mark today, and follows the setting as it changes.
+10. The mark of this computer, which counts the unread, is untouched by the setting.
+
+### Choices the owner has not been asked about
+
+- The quote is caught at any press in the field, so words marked only to be copied are quoted too, until the × or Escape; this is what the owner's words say.
+- 500 characters; three lines shown; the words kept in the quoting message.
+- The setting's place and words; that turning it off also takes one's earlier marks out; that the others' circles are still shown to someone who shows none.
+
+### Words
+
+- `chat.ftl`: a label for the × of the quote's line if `common-cancel` does not fit; a tooltip for the quote, *From { $name }* / *Fra { $name }*, or the plainer thing you find.
+- `settings.ftl`: `settings-chat-read = Show the others what I have read in the chat` / `Vis de andre hva jeg har lest i samtalen`, with the words for on and off the neighbouring settings use.
+
+### Verify
+
+- **The model**: a message said with a quote, read by a second copy; the careful reading (a quote that is no object, without words, too long); `reword` keeps it; one's own mark taken out, and only one's own.
+- **What is written**: the draft with a quote, to JSON and back; a quote alone keeps the field.
+- **The panel**: words marked in a message and *Answer* pressed give the line over the field and a message with the quote; a press in the field does the same for a new message; the quote of a message taken back cannot be pressed; Escape gives the quote up. jsdom has no layout and a thin `Selection`: set the selection with a `Range` over a part of a text node, and say in your report what could only be tried in the real window.
+- **The setting**: off, `ChatHost` writes no mark and takes an earlier one out; on, it writes it.
+- `pnpm check`, `pnpm test`.
+- **The script** `e2e/chat-answers.mjs` (it passes 39 of 39 as it is; keep what is there), added to, unrun: words of a message are marked by the page (`getSelection()` with a `Range` over part of the message's text node), then a real press in the field: the line of the quote is there; sent, the message has the quote at its top for both; pressed, the message it is from is within what is shown and lit; marked words and *Answer* on another message give an answer under that one with the quote of the first; the guest turns the setting off (Ctrl+, opens the settings, as the Norwegian part of the script does), and after the guest has shown the chat again the owner's messages have no circle of the guest's; on again, they have.
+- **The guide**: the part about the chat, and the settings where they are listed.
+- **The record**: 0107, added to; its row in the README.
+
+---
+
+## Part F — a note written in a window of its own (record 0109)
+
+> One more thing: I would like to have an executable that opens a note window in which I can write whatever. When I submit it, it goes to the notebook. It would be great if it works also when the main Glaukopis app is closed.
+
+The notebook has an inbox (`crates/core/src/notebook/inbox.rs`, record 0102): the helper Firefox starts, which is the application itself in another role (`notebook/host.rs`, taken in `src-tauri/src/main.rs` before anything of the application starts), writes each thing whole into it without the application running; the application looks at it at its start and every second and a half while it runs (`look_at_the_inbox` in `src-tauri/src/commands/notebook.rs`), and the interface makes notes of what it holds (`src/lib/notebook/inbox.ts`). **The note window is another such role, and writes into the same inbox.** Read record 0102, those files, `src-tauri/src/lib.rs` (how the data folder is found, what the web view needs on Linux, how a window is made) and `src/main.ts` first.
+
+### Decided
+
+1. **`glaukopis --note`** opens one small window and nothing else of the application: no project, no library and no notebook is opened by it, no folder is moved or claimed, nothing of the settings is written. It works while Glaukopis runs and while it does not, beside it and never through it: it does not take part in the single instance (`tauri_plugin_single_instance`), and a second `--note` opens a second window.
+2. **The window**: about 480 by 320, resizable, its title the word for a note; a field for plain words that fills it, with the cursor in it from the start (a `textarea`: its own undo, and lines as they are written), and at its foot, at the right, the button **To the notebook**. **Ctrl+Enter** sends as the button does. **Escape** closes the window where nothing is written, and does nothing where something is. Nothing is sent of spaces alone.
+3. **Sent**, the words are written into the notebook's inbox, whole or not at all, as a thing of a new kind, `note` (written by its writer, from no page), with when; then the window closes and the process ends. Where it cannot be written, the window stays, with its words, and says so.
+4. **What is written and not sent is kept** (the thought of 0094): as it is written, a moment after each change, the words are kept in a file of the notebook's folder in the data (beside `inbox/`; written whole, by a temporary name first); the window opens with them; they go when they are sent or the field is emptied. Closed with words in it, by its own × or the system, the window loses nothing.
+5. **The application takes the note in** as it takes what the plugin hands over: a note without a name, its text the words, a paragraph for each line that holds words, and no source. What the application tells of things taken from the inbox must be true of a note written so too: read how `inbox.ts` and its callers tell it, and change the words where they say *Firefox* of everything.
+6. **The window speaks the language of the settings and has their look** (the theme, the colours of one's own, the zoom, where these are settings): read, never written. On Linux the page stops pastes and has them read through GTK as the application does (`guardPaste`, record 0048: WebKitGTK ends the program at a paste from an empty clipboard), so the command that reads the clipboard is there in this role too; the web view gets the same environment as the application's (the Skia switch of record 0049): share the code, do not copy it.
+7. **The shell**: the flag is taken in `main.rs` as the other roles are, before `run()`; a function beside `run()` builds the small application: the data folder found as `run()` finds it (the folder the writer chose, or the one the environment names) with nothing moved; a log that does not write into the application's own file while it may be running (the standard error, or a file of its own); the window made with a label of its own; only the commands this window needs. The page (`src/main.ts`) mounts a small component of its own for that window instead of `App.svelte`, told which by the window's label or by a flag the shell sets before the page runs, and loads nothing of the projects, the library or the notebook. Look at `src-tauri/capabilities/`: a window is allowed what it does by its label.
+8. **The core**: the new kind in `inbox::Kind`, written through the inbox's own writing with its limits; the keeping of the unsent words. Whatever maps the kinds for the interface (`InboxItem` in `commands/notebook.rs`, the contract) follows. Tests make directories of their own.
+9. **Names**: the commands, the file of the commands and `src/lib/api/<area>.ts` are named as the others are, for what the thing is (a note written in a window of its own), not for one use of it.
+10. **The Linux packages**: a command **`glaukopis-note`**, a script of two lines in `packaging/linux/` that starts `glaukopis --note`, installed beside `glaukopis` by both Arch recipes (`packaging/arch/PKGBUILD` and `packaging/arch/release/PKGBUILD`), and by the deb and the rpm if the bundler's configuration in `src-tauri/tauri.conf.json` can place a file (look; where it cannot, say so and leave it); and an action **New note** / **Nytt notat** on the desktop file (`packaging/linux/org.glaukopis.app.desktop`), so that the launcher offers it. **Do not build a package.**
+11. **Windows and macOS** get no program of their own: the same flag, `glaukopis.exe --note`, and on macOS `open -n -a Glaukopis --args --note`. The guide says so, and that a key of the desktop can be bound to it; the record says that neither was tried.
+
+### Not done
+
+- No bold or other marks in the window, no pictures, no name for the note, no box or tag chosen there: the notebook has all of that once the note is in it.
+- No key of the system bound by Glaukopis itself: that is the desktop's.
+
+### Choices the owner has not been asked about
+
+- The application in another role rather than a second program; plain words; the unsent words kept; Escape that does nothing where something is written; a second window where it is started twice; the names of the command, the button and the action.
+
+### Words
+
+In the notebook's part (`locales/en/notebook.ftl`, `locales/nb/notebook.ftl`; the notebook is *Notatblokk*, a note *notat*): the window's title, *Note* / *Notat*; the placeholder, *Write a note* / *Skriv et notat*; the button, *To the notebook* / *Til notatblokken*; what it says where the note could not be written. If the core tells anything of its own, `core-notebook-…` in both languages.
+
+### Rust, for this part only
+
+- **Build nothing of your own from nothing**: set `CARGO_TARGET_DIR=/home/proteus/koding/glaukopis/target` for every cargo command, so that what is built there already is used; and `CARGO_BUILD_JOBS=6`. Cargo takes turns with whatever else builds there.
+- Run **`pnpm build` once** before the first cargo command that touches the shell (it needs `dist/`).
+- Allowed: `cargo fmt --all`; `cargo clippy --workspace --all-targets -- -D warnings`; `cargo test -p glaukopis-core -p glaukopis` (the contract test of the shell rewrites `src/lib/api/contract.generated.ts`: commit it with the change).
+- **Not allowed**: `cargo build -p glaukopis`, `cargo run`, `pnpm e2e:build`, any e2e script, `cargo test --workspace` (it would build the server and the application where the scripts of the main working copy find them). Never start the application.
+
+### Verify
+
+- **The core**: the new kind written and read back; the limits; the unsent words kept, read, replaced and removed.
+- **The interface**: a thing of the new kind made a note with its paragraphs and no source (`inbox` tests beside those there); the small page mounted, the button by whether words are written, Ctrl+Enter, Escape by whether words are written, the unsent words shown at its start.
+- `pnpm check`, `pnpm test`, and the cargo commands above; `prettier --check src`.
+- **A script** `e2e/note-window.mjs`, unrun (read `e2e/harness.mjs` for how the program is started and whether it can be given an argument; add what it needs to the harness, in the harness's own way): with the application not running, the window is opened in a data folder of the run, words are written and sent, the window is gone, and a thing lies in the inbox of that folder; the application started in the same folder then has the note in its notebook, with its words and no source; while the application runs, a note sent from the window is in its notebook within a few seconds; words written and the window closed are there when it is opened again; in Norwegian the window's words are Norwegian; no errors in the page.
+- **The guide**: in the chapter of the notebook, a part of its own: what the command is, on each system, the launcher's action and `glaukopis-note` on Linux, binding a key of the desktop to it, and that it works with Glaukopis closed.
+- **The record** `0109-a-note-written-in-a-window-of-its-own.md`; its row in the README; the row of 0102 where the inbox is no longer the plugin's alone.
