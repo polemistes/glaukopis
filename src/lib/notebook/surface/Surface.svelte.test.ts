@@ -204,6 +204,52 @@ describe('the surface of a box', () => {
     expect(s.nb.note(a)!.width).toBe(400);
   });
 
+  it('shows more or less of a note by the lower edge of its card, and both by its corner', () => {
+    let a = '';
+    const s = setUp((nb) => {
+      a = nb.addNote({ name: 'A', at: { x: 0, y: 0 } });
+    });
+    // Given no height, the card is as high as what it holds.
+    expect(s.card(a)!.style.maxHeight).toBe('');
+    expect(s.card(a)!.classList.contains('sized')).toBe(false);
+    const bottom = s.card(a)!.querySelector('[data-card-edge-bottom]')!;
+    pointer(bottom, 'pointerdown', 600, 500);
+    pointer(bottom, 'pointermove', 600, 580);
+    expect(s.card(a)!.style.maxHeight).toBe('200px');
+    pointer(bottom, 'pointerup', 600, 580);
+    expect(s.nb.note(a)!.height).toBe(200);
+    expect(s.nb.note(a)!.width).toBeNull();
+    expect(s.card(a)!.classList.contains('sized')).toBe(true);
+
+    // The corner changes both, as one step of undo.
+    const corner = s.card(a)!.querySelector('[data-card-corner]')!;
+    pointer(corner, 'pointerdown', 780, 580);
+    pointer(corner, 'pointermove', 900, 680);
+    pointer(corner, 'pointerup', 900, 680);
+    expect(s.nb.note(a)!.width).toBe(400);
+    expect(s.nb.note(a)!.height).toBe(300);
+    s.nb.undo();
+    expect(s.nb.note(a)!.width).toBeNull();
+    expect(s.nb.note(a)!.height).toBe(200);
+    s.nb.redo();
+
+    // The right edge leaves the height as it is; pressed and let go without a move, nothing is kept.
+    const edge = s.card(a)!.querySelector('[data-card-edge]')!;
+    pointer(edge, 'pointerdown', 900, 420);
+    pointer(edge, 'pointerup', 900, 420);
+    expect(s.nb.note(a)!.width).toBe(400);
+    expect(s.nb.note(a)!.height).toBe(300);
+
+    // Two presses on the lower edge give the card its own height again; on the corner, the usual of both.
+    bottom.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    expect(s.nb.note(a)!.height).toBeNull();
+    expect(s.nb.note(a)!.width).toBe(400);
+    s.nb.setHeight(a, 250);
+    corner.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    expect(s.nb.note(a)!.height).toBeNull();
+    expect(s.nb.note(a)!.width).toBeNull();
+  });
+
   it('links one card to another from its handle', () => {
     let a = '';
     let b = '';

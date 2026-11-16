@@ -13,15 +13,21 @@
     extension: string;
     /** As it is shown in a list. */
     small?: boolean;
+    /**
+     * As wide as where it stands, and as high as it then is: where the
+     * picture says how high its frame is, and not the frame how large the
+     * picture.
+     */
+    whole?: boolean;
     alt?: string;
   }
 
-  let { hash, extension, small = false, alt = '' }: Props = $props();
+  let { hash, extension, small = false, whole = false, alt = '' }: Props = $props();
 
   const shown = $derived(pictures.of(hash, extension, small));
 </script>
 
-<div class="thumb" class:small data-state={shown.url ? undefined : shown.state}>
+<div class="thumb" class:small class:whole data-state={shown.url ? undefined : shown.state}>
   {#if shown.url}
     <img src={shown.url} {alt} draggable="false" />
   {:else if shown.state === 'absent'}
@@ -66,5 +72,17 @@
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
+  }
+  .thumb.whole {
+    height: auto;
+  }
+  .thumb.whole img {
+    width: 100%;
+    height: auto;
+    max-height: none;
+  }
+  /* While it is read, or where it is not here, a frame of the height a small picture has. */
+  .thumb.whole[data-state] {
+    height: 96px;
   }
 </style>

@@ -34,6 +34,7 @@ function note(id: string, over: Partial<NoteRecord> = {}): NoteRecord {
     box: 'first',
     at: null,
     width: null,
+    height: null,
     tags: [],
     seen: true,
     ...over,

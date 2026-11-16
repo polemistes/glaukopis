@@ -2,15 +2,20 @@
   /**
    * A note as a card on the surface of its box: its name where it has one,
    * and its pieces as the document pane's card draws them
-   * (`NotePieces.svelte`); as wide as it was made, as high as what it holds
-   * up to some twenty-two lines, under which it is cut with a fade. Its right
-   * edge makes it wider or narrower; the handle at its foot draws a link.
-   * What a press means is the surface's (`Surface.svelte`).
+   * (`NotePieces.svelte`), its pictures as wide as the card. It is as wide
+   * as it was made, and as high as what it holds: up to some twenty-two
+   * lines where it was given no height, else up to the height it was given;
+   * under that it is cut with a fade. Its right edge makes it wider or
+   * narrower, its lower edge shows more or less of the note, the corner
+   * between them does both, and two presses on any of them give back the
+   * usual; the handle at its foot draws a link. What a press means is the
+   * surface's (`Surface.svelte`).
    */
   import { t } from '$lib/i18n';
   import type { Notebook } from '../model/notebook.svelte';
   import type { NoteRecord, Point } from '../model/types';
   import NotePieces from '../NotePieces.svelte';
+  import type { CardEdge } from './geometry';
 
   interface Props {
     notebook: Notebook;
@@ -18,6 +23,8 @@
     /** Where its top left corner is shown, and how wide: while it is moved or made wider, not yet as kept. */
     at: Point;
     width: number;
+    /** The most it is high; none where it is as high as what it holds, up to the usual. */
+    height: number | null;
     selected: boolean;
     /** A link being drawn would end here. */
     target: boolean;
@@ -28,7 +35,10 @@
     onsize: (id: string, height: number) => void;
     onpress: (event: PointerEvent, id: string) => void;
     onopen: (id: string) => void;
-    onwiden: (event: PointerEvent, id: string) => void;
+    /** An edge or the corner pressed, to be dragged. */
+    onresize: (event: PointerEvent, id: string, edge: CardEdge) => void;
+    /** Two presses on an edge or the corner: the usual again. */
+    onusual: (id: string, edge: CardEdge) => void;
     onlinkstart: (event: PointerEvent, id: string) => void;
   }
 
@@ -37,6 +47,7 @@
     note,
     at,
     width,
+    height,
     selected,
     target,
     moving,
@@ -44,7 +55,8 @@
     onsize,
     onpress,
     onopen,
-    onwiden,
+    onresize,
+    onusual,
     onlinkstart,
   }: Props = $props();
 
@@ -82,12 +94,14 @@
   class:selected
   class:target
   class:moving
+  class:sized={height !== null}
   role="option"
   aria-selected={selected}
   aria-label={note.name || note.begins || t('notebook-surface-empty-note')}
   data-card={note.id}
   style:transform="translate({at.x}px, {at.y}px)"
   style:width="{width}px"
+  style:max-height={height === null ? undefined : `${height}px`}
   onpointerdown={(e) => onpress(e, note.id)}
   ondblclick={(e) => {
     e.stopPropagation();
@@ -103,19 +117,27 @@
       {#if empty}
         <div class="empty">{t('notebook-surface-empty-note')}</div>
       {:else if note.pieces.length}
-        <NotePieces {notebook} {note} />
+        <NotePieces {notebook} {note} wide />
       {/if}
     </div>
   </div>
-  <span
-    class="edge"
-    role="presentation"
-    data-card-edge
-    onpointerdown={(e) => {
-      e.stopPropagation();
-      onwiden(e, note.id);
-    }}
-  ></span>
+  {#each [['right', 'edge'], ['bottom', 'edge-bottom'], ['corner', 'corner']] as const as [edge, name] (edge)}
+    <span
+      class={name}
+      role="presentation"
+      data-card-edge={edge === 'right' ? '' : undefined}
+      data-card-edge-bottom={edge === 'bottom' ? '' : undefined}
+      data-card-corner={edge === 'corner' ? '' : undefined}
+      onpointerdown={(e) => {
+        e.stopPropagation();
+        onresize(e, note.id, edge);
+      }}
+      ondblclick={(e) => {
+        e.stopPropagation();
+        onusual(note.id, edge);
+      }}
+    ></span>
+  {/each}
   <span
     class="link-handle"
     role="presentation"
@@ -133,6 +155,8 @@
     position: absolute;
     left: 0;
     top: 0;
+    display: flex;
+    flex-direction: column;
     padding-top: 4px;
     border: 1px solid var(--line);
     border-radius: var(--radius-m);
@@ -174,16 +198,21 @@
     cursor: grabbing;
   }
   .name {
+    flex: none;
     padding: 4px 10px 2px;
     font-weight: 600;
     overflow-wrap: anywhere;
   }
   .frame {
     position: relative;
-    /* Some twenty-two lines of the text of a note (14px, at 1.45). */
-    max-height: calc(22 * 1.45 * 14px);
+    flex: 0 1 auto;
+    min-height: 0;
     overflow: hidden;
     border-radius: 0 0 var(--radius-m) var(--radius-m);
+  }
+  /* Given no height: some twenty-two lines of the text of a note (14px, at 1.45). */
+  .card:not(.sized) .frame {
+    max-height: calc(22 * 1.45 * 14px);
   }
   .frame.cut::after {
     content: '';
@@ -205,9 +234,27 @@
     position: absolute;
     top: 0;
     right: -5px;
-    bottom: 0;
+    bottom: 8px;
     width: 10px;
     cursor: ew-resize;
+  }
+  /* The lower edge, which shows more or less of the note. */
+  .edge-bottom {
+    position: absolute;
+    left: 0;
+    right: 8px;
+    bottom: -5px;
+    height: 10px;
+    cursor: ns-resize;
+  }
+  /* The corner between them, which does both. */
+  .corner {
+    position: absolute;
+    right: -6px;
+    bottom: -6px;
+    width: 16px;
+    height: 16px;
+    cursor: nwse-resize;
   }
   .link-handle {
     position: absolute;

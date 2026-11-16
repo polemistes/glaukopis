@@ -21,6 +21,9 @@ export const AROUND = 240;
  */
 export const LET_GO = { x: 24, y: 14 };
 
+/** What of a card is dragged to make it larger or smaller: its right edge, its lower edge, or the corner between them. */
+export type CardEdge = 'right' | 'bottom' | 'corner';
+
 /** A card as a box of the surface: its middle, its width and its height. */
 export interface CardBox {
   id: string;

@@ -51,7 +51,7 @@ import {
   wordsOf,
   type Met,
 } from './pieces';
-import { cardWidth, placeChanges, pointOf, widthOf } from './places';
+import { cardWidth, heightOf, placeChanges, pointOf, widthOf } from './places';
 import { startChanges, startsOf } from './starts';
 import { cleanTag, TagCounts, tagChanges, tagsIn } from './tags';
 import type {
@@ -632,6 +632,7 @@ export class Notebook {
       box: typeof box === 'string' && this.yBoxes.has(box) ? box : FIRST_BOX,
       at: pointOf(n.get('at')),
       width: widthOf(n.get('width')),
+      height: heightOf(n.get('height')),
       tags,
       went:
         went instanceof Y.Array

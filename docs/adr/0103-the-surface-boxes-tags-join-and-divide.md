@@ -42,3 +42,13 @@ Date: 2026-11-16. Status: built on 2026-11-15 and 2026-11-16, as stage 2 of `doc
 ## Checked
 
 `pnpm check`, `pnpm test`. Against the built application: the diagram's scripts over the lifting (`maps`, `associations`, `diagram-picture`, `tree-keys`, `map-icons`, `ordering`, `comments`, `as-left`: 309 checks); `e2e/notebook-boxes.mjs` (56 checks), `e2e/notebook-surface.mjs` (28), and `e2e/notebook.mjs`, `notebook-out.mjs` as before.
+
+## Addendum, 2026-11-16: a card is made larger and smaller both ways
+
+The owner, trying it: why can a card only be made wider, and why is the picture of a note shown at the size of a thumbnail that cannot be changed? Both were choices made in the building and not asked. Now:
+
+- **A card has a height of its own where it is given one** (`height`, kept with the note as `width` is): its lower edge shows more or less of the note, its lower right corner changes width and height together, and two presses on an edge or the corner give back the usual width, or its own height, as high as what it holds up to some twenty-two lines. A card given a height is still lower where the note is shorter, so it never shows empty room. One step of undo for each drag; only what was changed is kept.
+- **The pictures of a note are as wide as its card**, whole, and grow and shrink with it; in the list of the document pane they stay small.
+- A card may be from 160 to 1600 wide (it was 720 at most) and from 56 to 2400 high.
+
+At the same time, in the bar over the notes the buttons stand first and the field that finds after them, no wider than 360: they no longer move to the far right when a surface makes the middle wide.

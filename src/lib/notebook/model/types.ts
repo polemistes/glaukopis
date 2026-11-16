@@ -155,6 +155,8 @@ export interface NoteRecord {
   at: Point | null;
   /** The width of its card, in pixels of the surface; none for the usual (`CARD_WIDTH`). */
   width: number | null;
+  /** The most its card is high, in pixels of the surface; none where it is as high as what it holds, up to the usual. */
+  height: number | null;
   /** Its tags, sorted as words are sorted. */
   tags: string[];
   /** Whether it has been looked at: a note taken in from elsewhere is not, until it is chosen. */

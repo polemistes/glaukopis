@@ -1,10 +1,11 @@
 /**
- * Where the cards of notes lie on the surface of their box, and how wide
+ * Where the cards of notes lie on the surface of their box, and how large
  * they are (`docs/plans/the-notebook.md`, stage 2). A note keeps `at`, the
  * top left corner of its card in pixels of the surface, and none where it is
- * not yet put and stands in the strip; and `width`, none for the usual.
- * Both are whole numbers. These are methods of `Notebook`, which takes them
- * in (see there).
+ * not yet put and stands in the strip; `width`, none for the usual; and
+ * `height`, the most its card is high, none where the card is as high as
+ * what it holds, up to the usual. All are whole numbers. These are methods
+ * of `Notebook`, which takes them in (see there).
  */
 
 import type { Notebook } from './notebook.svelte';
@@ -13,13 +14,22 @@ import type { Point } from './types';
 /** The usual width of a card, in pixels of the surface. */
 export const CARD_WIDTH = 280;
 export const MIN_CARD_WIDTH = 160;
-export const MAX_CARD_WIDTH = 720;
+/** Wide enough for a picture to be looked at on its card. */
+export const MAX_CARD_WIDTH = 1600;
+/** The least a card may be made high: its name and a line; and the most. */
+export const MIN_CARD_HEIGHT = 56;
+export const MAX_CARD_HEIGHT = 2400;
 /** The room between a card and one put beside it. */
 export const CARD_GAP = 24;
 
 /** A width as it is kept: a whole number, between the narrowest and the widest. */
 export function cardWidth(width: number): number {
   return Math.min(MAX_CARD_WIDTH, Math.max(MIN_CARD_WIDTH, Math.round(width)));
+}
+
+/** A height as it is kept: a whole number, between the lowest and the highest. */
+export function cardHeight(height: number): number {
+  return Math.min(MAX_CARD_HEIGHT, Math.max(MIN_CARD_HEIGHT, Math.round(height)));
 }
 
 /** A place as the document holds it, or none where it is none. */
@@ -34,6 +44,11 @@ export function pointOf(value: unknown): Point | null {
 /** A width as the document holds it, or none for the usual. */
 export function widthOf(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? cardWidth(value) : null;
+}
+
+/** A height as the document holds it, or none where the card is as high as what it holds. */
+export function heightOf(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? cardHeight(value) : null;
 }
 
 export const placeChanges = {
@@ -73,6 +88,22 @@ export const placeChanges = {
     this.transact(() => {
       if (to === null) n.delete('width');
       else n.set('width', to);
+    });
+  },
+
+  /**
+   * Makes a card at most as high as given, kept between the lowest and the
+   * highest: it shows the note down to there, and is lower where the note
+   * is shorter. With none, it is as high as what it holds, up to the usual.
+   */
+  setHeight(this: Notebook, id: string, height: number | null) {
+    const n = this.yNotes.get(id);
+    if (!n) return;
+    const to = height === null || !Number.isFinite(height) ? null : cardHeight(height);
+    if (to === heightOf(n.get('height')) && (to !== null || !n.has('height'))) return;
+    this.transact(() => {
+      if (to === null) n.delete('height');
+      else n.set('height', to);
     });
   },
 

@@ -89,6 +89,7 @@ describe('a note divided at the cursor', () => {
       tags: ['Athena', 'owl'],
       at: { x: 40 + 300 + 24, y: 60 },
       width: null,
+      height: null,
     });
     expect(nb.list[0].id).toBe(made);
 

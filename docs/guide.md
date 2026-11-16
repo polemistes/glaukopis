@@ -1577,9 +1577,13 @@ notes of several or smaller of one (see *Join and Divide*).
   nowhere yet, the newest on top: everything new lands there. Drag one onto
   the ground and it lies where you let go. A card dragged back onto that
   edge lies nowhere again.
-- **A card** shows the note itself: its name, and what it holds, down to a
-  height. Drag it to move it, and those selected with it; drag its right
-  edge to make it wider or narrower. A press selects it, **Ctrl** adds
+- **A card** shows the note itself: its name, and what it holds, with its
+  pictures as wide as the card. Drag it to move it, and those selected with
+  it. Drag its right edge to make it wider or narrower, its lower edge to
+  show more or less of the note, and its lower right corner to do both: a
+  picture grows and shrinks with its card. Two presses on an edge or the
+  corner give the card back the usual width, or its own height, as high as
+  what it holds. A press selects it, **Ctrl** adds
   another, and a band drawn on the ground with **Shift** takes all it
   touches. Two presses, or **Enter**, open the note beside the surface to
   be written.

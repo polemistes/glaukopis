@@ -683,6 +683,39 @@
         </div>
       {:else}
         <header>
+          {@render adding(notebook)}
+          {#if inView !== null}
+            <span class="shown-as" data-shown-as-choice>
+              <Segmented
+                value={mode}
+                label={t('notebook-shown-as')}
+                size="sm"
+                options={[
+                  {
+                    value: 'surface',
+                    label: t('notebook-surface'),
+                    icon: LayoutDashboard,
+                    iconOnly: true,
+                  },
+                  { value: 'list', label: t('notebook-list'), icon: List, iconOnly: true },
+                ]}
+                onchange={showAs}
+              />
+            </span>
+          {/if}
+          <span class="filter" bind:this={filterButton}>
+            <IconButton
+              label={active ? t('notebook-filters-on', { count: active }) : t('notebook-filters')}
+              active={active > 0 || filtering}
+              aria-expanded={filtering}
+              data-notebook-filter
+              onclick={() => (filtering = !filtering)}
+            >
+              <ListFilter size={15} />
+            </IconButton>
+            {#if active}<span class="badge" aria-hidden="true" data-filter-count>{active}</span
+              >{/if}
+          </span>
           <div class="search">
             <Search size={14} />
             <input
@@ -715,39 +748,6 @@
               </button>
             {/if}
           </div>
-          <span class="filter" bind:this={filterButton}>
-            <IconButton
-              label={active ? t('notebook-filters-on', { count: active }) : t('notebook-filters')}
-              active={active > 0 || filtering}
-              aria-expanded={filtering}
-              data-notebook-filter
-              onclick={() => (filtering = !filtering)}
-            >
-              <ListFilter size={15} />
-            </IconButton>
-            {#if active}<span class="badge" aria-hidden="true" data-filter-count>{active}</span
-              >{/if}
-          </span>
-          {@render adding(notebook)}
-          {#if inView !== null}
-            <span class="shown-as" data-shown-as-choice>
-              <Segmented
-                value={mode}
-                label={t('notebook-shown-as')}
-                size="sm"
-                options={[
-                  {
-                    value: 'surface',
-                    label: t('notebook-surface'),
-                    icon: LayoutDashboard,
-                    iconOnly: true,
-                  },
-                  { value: 'list', label: t('notebook-list'), icon: List, iconOnly: true },
-                ]}
-                onchange={showAs}
-              />
-            </span>
-          {/if}
         </header>
         <div class="body">
           {#if mode === 'surface' && inView !== null}
@@ -915,13 +915,15 @@
   .surface .middle {
     background: var(--paper);
   }
+  /* The buttons stand first, so that they keep their places when the middle
+     grows wide for a surface; the field that finds takes the room after them. */
   header {
     display: flex;
     align-items: center;
     gap: 4px;
     height: var(--bar-h);
     flex: none;
-    padding: 0 8px 0 12px;
+    padding: 0 12px 0 8px;
     border-bottom: 1px solid var(--line);
     background: var(--paper-raised);
   }
@@ -932,7 +934,9 @@
     align-items: center;
     gap: 7px;
     height: 28px;
-    margin-right: 4px;
+    /* No wider than a field to find in needs to be, however wide the surface. */
+    max-width: 360px;
+    margin-left: 4px;
     padding: 0 8px 0 9px;
     border-radius: var(--radius-s);
     background: var(--paper-sunken);
@@ -1002,7 +1006,7 @@
   .shown-as {
     display: inline-flex;
     flex: none;
-    margin-left: 4px;
+    margin: 0 4px;
   }
   .body {
     display: flex;

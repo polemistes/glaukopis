@@ -22,9 +22,14 @@
     note: NoteRecord;
     /** A press on a piece, where a piece can be dragged by itself. */
     onpiecedown?: (event: PointerEvent, index: number) => void;
+    /**
+     * Its pictures as wide as what it is drawn in, each whole: on a card
+     * that can be made larger. Else they are small, as in a list.
+     */
+    wide?: boolean;
   }
 
-  let { notebook, note, onpiecedown }: Props = $props();
+  let { notebook, note, onpiecedown, wide = false }: Props = $props();
 
   /** The text of a piece of words, as the text draws it. */
   function htmlOf(piece: Piece): string {
@@ -78,8 +83,14 @@
     >
       {#if piece.kind === 'figure'}
         {@const said = saidOf(piece)}
-        <div class="picture">
-          <Thumb hash={piece.hash} extension={piece.extension} small alt={said} />
+        <div class="picture" class:wide>
+          <Thumb
+            hash={piece.hash}
+            extension={piece.extension}
+            small={!wide}
+            whole={wide}
+            alt={said}
+          />
         </div>
         {#if said}<div class="said">{said}</div>{/if}
       {:else if piece.kind === 'file'}
@@ -137,6 +148,9 @@
   .picture {
     height: 96px;
     max-width: 100%;
+  }
+  .picture.wide {
+    height: auto;
   }
   .said {
     margin-top: 3px;

@@ -22,7 +22,7 @@
   import { followPointer, PanZoom } from '$lib/ui/pan-zoom.svelte';
   import ZoomControls from '$lib/ui/ZoomControls.svelte';
   import type { Notebook } from '../model/notebook.svelte';
-  import { CARD_WIDTH, cardWidth } from '../model/places';
+  import { CARD_WIDTH, cardHeight, cardWidth } from '../model/places';
   import type { NoteRecord, Point } from '../model/types';
   import { takeFiles } from '../taking';
   import {
@@ -36,7 +36,9 @@
     nearestTo,
     stacked,
     touching,
+    USUAL_HEIGHT,
     type CardBox,
+    type CardEdge,
     type Direction,
   } from './geometry';
   import { linkBeingDrawn, linksDrawn, notebookLinkHolder } from './links';
@@ -90,8 +92,8 @@
   const heights = new SvelteMap<string, number>();
   /** Cards being moved, and by how much, in pixels of the surface; not kept until they are let go. */
   let moving = $state<{ ids: string[]; dx: number; dy: number; overStrip: boolean } | null>(null);
-  /** A card being made wider or narrower, and its width now. */
-  let widening = $state<{ id: string; width: number } | null>(null);
+  /** A card being made larger or smaller, and its width and its height now. */
+  let sizing = $state<{ id: string; width: number; height: number | null } | null>(null);
   /** A link being drawn: from a card to where the pointer is, and the card it is over. */
   let linking = $state<{ from: string; x: number; y: number; over: string | null } | null>(null);
   let band = $state<Bounds | null>(null);
@@ -112,7 +114,12 @@
   }
 
   function shownWidth(note: NoteRecord): number {
-    return widening?.id === note.id ? widening.width : (note.width ?? CARD_WIDTH);
+    return sizing?.id === note.id ? sizing.width : (note.width ?? CARD_WIDTH);
+  }
+
+  /** The most a card is shown high; none where it is as high as what it holds. */
+  function shownHeight(note: NoteRecord): number | null {
+    return sizing?.id === note.id ? sizing.height : note.height;
   }
 
   const boxes = $derived<CardBox[]>(
@@ -250,34 +257,63 @@
     el.addEventListener('pointercancel', onup);
   }
 
-  /** The right edge of a card dragged: it is made wider or narrower, and kept when let go. */
-  function widen(event: PointerEvent, id: string) {
+  /**
+   * An edge of a card dragged, or its corner: the right edge makes it wider
+   * or narrower, the lower edge shows more or less of the note, the corner
+   * does both. Kept when let go, as one step of undo, and only what was
+   * changed: a card whose lower edge was never dragged stays as high as
+   * what it holds.
+   */
+  function resize(event: PointerEvent, id: string, edge: CardEdge) {
     if (event.button !== 0) return;
     event.preventDefault();
     focus();
     const note = notebook.note(id);
     if (!note) return;
-    const from = shownWidth(note);
-    const start = event.clientX;
+    const fromWidth = shownWidth(note);
+    // From as high as it is drawn: of a card given no height, what it measures.
+    const measured = heights.get(id);
+    const fromHeight = cardHeight(
+      note.height ?? (measured && measured > 0 ? measured : USUAL_HEIGHT),
+    );
+    const start = { x: event.clientX, y: event.clientY };
     const el = event.currentTarget as HTMLElement;
     el.setPointerCapture?.(event.pointerId);
     const onmove = (e: PointerEvent) => {
-      widening = { id, width: cardWidth(from + (e.clientX - start) / panZoom.view.k) };
+      const k = panZoom.view.k;
+      const width =
+        edge === 'bottom' ? fromWidth : cardWidth(fromWidth + (e.clientX - start.x) / k);
+      const height = cardHeight(fromHeight + (e.clientY - start.y) / k);
+      // The height is the card's own until the lower edge or the corner has been moved.
+      const moved = edge !== 'right' && height !== fromHeight;
+      sizing = { id, width, height: moved ? height : note.height };
     };
     const onup = () => {
       el.removeEventListener('pointermove', onmove);
       el.removeEventListener('pointerup', onup);
       el.removeEventListener('pointercancel', onup);
-      const w = widening;
-      widening = null;
-      if (!w || w.width === from) return;
+      const to = sizing;
+      sizing = null;
+      if (!to) return;
+      const wider = to.width !== fromWidth;
+      const higher = to.height !== note.height;
+      if (!wider && !higher) return;
       notebook.checkpoint();
-      notebook.setWidth(id, w.width);
+      if (wider) notebook.setWidth(id, to.width);
+      if (higher) notebook.setHeight(id, to.height);
       notebook.checkpoint();
     };
     el.addEventListener('pointermove', onmove);
     el.addEventListener('pointerup', onup);
     el.addEventListener('pointercancel', onup);
+  }
+
+  /** Two presses on an edge of a card, or its corner: the usual width, its own height, or both. */
+  function usual(id: string, edge: CardEdge) {
+    notebook.checkpoint();
+    if (edge !== 'bottom') notebook.setWidth(id, null);
+    if (edge !== 'right') notebook.setHeight(id, null);
+    notebook.checkpoint();
   }
 
   // ---- links ----
@@ -559,6 +595,7 @@
           {note}
           at={shownAt(note)}
           width={shownWidth(note)}
+          height={shownHeight(note)}
           selected={selected.has(note.id)}
           target={linking?.over === note.id}
           moving={movingIds.has(note.id)}
@@ -568,7 +605,8 @@
           }}
           onpress={cardPress}
           {onopen}
-          onwiden={widen}
+          onresize={resize}
+          onusual={usual}
           onlinkstart={linkStart}
         />
       {/if}

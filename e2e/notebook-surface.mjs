@@ -2,7 +2,8 @@
 // 2): three notes made on the page stand in the strip of the surface (Not
 // yet placed), newest on top; one dragged from the strip onto the ground
 // lies there, and still there after going to the library and back; a card
-// dragged elsewhere lies there; a card made wider by its right edge; two
+// dragged elsewhere lies there; a card made wider by its right edge, lower by
+// its lower edge, and given its own height again by two presses there; two
 // cards selected with Ctrl and moved together; a link drawn from the handle
 // of one card to another, given words by two presses on its curve; the
 // wheel with Ctrl zooms and the ground dragged pans (read from the transform
@@ -232,6 +233,16 @@ try {
   await sleep(400);
   const wider = await cardNamed(app, 'Athens');
   check('a card is made wider by its right edge', wider.width > athens.width + 60, `${athens.width} → ${wider.width}`);
+  // ---- made higher by its lower edge, and given back its own height ----
+  const before = await app.exec(`return document.querySelector('${SURFACE} [data-card="${athens.id}"]').getBoundingClientRect().height`);
+  await app.drag(`${SURFACE} [data-card="${athens.id}"] [data-card-edge-bottom]`, { dx: 0, dy: -30 });
+  await sleep(300);
+  const lower = await app.exec(`const c = document.querySelector('${SURFACE} [data-card="${athens.id}"]'); return { h: c.getBoundingClientRect().height, sized: c.classList.contains('sized') }`);
+  check('a card shows less of its note by its lower edge', lower.sized && lower.h < before - 10, `${before} → ${lower.h}`);
+  await app.doubleClick(`${SURFACE} [data-card="${athens.id}"] [data-card-edge-bottom]`);
+  await sleep(300);
+  const own = await app.exec(`return document.querySelector('${SURFACE} [data-card="${athens.id}"]').classList.contains('sized')`);
+  check('two presses on its lower edge give it its own height again', own === false);
   await app.screenshot('notebook-surface-3-moved-wider');
 
   // ---- two selected with Ctrl, moved together ----

@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 import { FIRST_BOX } from './boxes';
 import { Notebook } from './notebook.svelte';
-import { CARD_WIDTH, MAX_CARD_WIDTH, MIN_CARD_WIDTH } from './places';
+import {
+  CARD_WIDTH,
+  MAX_CARD_HEIGHT,
+  MAX_CARD_WIDTH,
+  MIN_CARD_HEIGHT,
+  MIN_CARD_WIDTH,
+} from './places';
 
 /** Two copies of one notebook, that see each other's changes when they are passed. */
 function two() {
@@ -180,6 +186,18 @@ describe('the places and widths of cards', () => {
     nb.setWidth(a, null);
     expect(nb.note(a)!.width).toBeNull();
     expect(CARD_WIDTH).toBe(280);
+
+    // A card has a height of its own only where it was given one.
+    expect(nb.note(a)!.height).toBeNull();
+    nb.setHeight(a, 211.4);
+    nb.checkpoint();
+    expect(nb.note(a)!.height).toBe(211);
+    nb.setHeight(a, 1);
+    expect(nb.note(a)!.height).toBe(MIN_CARD_HEIGHT);
+    nb.setHeight(a, 100_000);
+    expect(nb.note(a)!.height).toBe(MAX_CARD_HEIGHT);
+    nb.setHeight(a, null);
+    expect(nb.note(a)!.height).toBeNull();
 
     nb.unplace([a]);
     nb.checkpoint();
