@@ -1,6 +1,6 @@
 # 0110 — The box that receives, the row over the note, and keys of the plugin
 
-Date: 2026-11-16. Status: built on 2026-11-16, its choices not yet confirmed by the owner; from the owner's words of the same day ("In the popup window for notes, could you put the toolbar at the top instead of at the bottom? Also, could the plugin for firefox have keyboard shortcuts? Is it possible to set a default box for notes to go into from either of the popups?"). Amends 0109 (where the row of the window of a note stands), 0102 (the plugin has one key) and 0103 (the first box is where everything lands).
+Date: 2026-11-16. Status: built on 2026-11-16, and its choices approved by the owner the same day ("It is approved."); from the owner's words of the same day ("In the popup window for notes, could you put the toolbar at the top instead of at the bottom? Also, could the plugin for firefox have keyboard shortcuts? Is it possible to set a default box for notes to go into from either of the popups?"). Amends 0109 (where the row of the window of a note stands), 0102 (the plugin has one key) and 0103 (the first box is where everything lands).
 
 ## Context
 
@@ -22,7 +22,7 @@ Date: 2026-11-16. Status: built on 2026-11-16, its choices not yet confirmed by 
 4. **The tray is the mark of the box that receives**, in the column and in *Move to*; every other box has the box, the first too.
 5. **It is kept in the notebook's document**, as `receives` on the box, undone and redone with everything else. Where two boxes have it (made so at once in two windows), the first of them in their order receives, and making a box the one takes the mark from the others.
 
-## Choices made in building this, which the owner has not been asked about
+## Choices made in building this, which the owner approved once it was built
 
 1. **One box for all that comes from outside**, not one for the window and one for Firefox, and set in the notebook, not in the window of a note or in the plugin: neither knows the boxes, and a setting in one place is the plain thing. A box chosen in the window of a note itself, for that note, would need the window to be told the boxes (a small file the application keeps beside the inbox); it is not done.
 2. **What is sent from a file read in Glaukopis goes there too**, though the owner named the two windows only: it is made outside the notebook's page as they are, and three ways in with two rules would have to be explained.
