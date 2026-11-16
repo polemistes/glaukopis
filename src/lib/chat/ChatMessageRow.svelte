@@ -1,11 +1,14 @@
 <script lang="ts">
   /**
-   * One message of the chat (records 0092 and 0107): its words as they are
-   * set, *changed* after them where it was changed, the circles of who has
+   * One message of the chat (records 0092 and 0107): the words of another
+   * message it quotes at its top, which go to that message when pressed;
+   * its words as they are set, *changed* after them where it was changed, the circles of who has
    * read it at the end of its last line, the reactions under it, and its
    * tools, which come over its top right corner when the pointer is on it
    * or the focus within it: *React*, *Answer*, and on one's own the menu
-   * with *Change* and *Delete*. The right-click menu has the same. While the
+   * with *Change* and *Delete*. The right-click menu has the same. *Answer*
+   * quotes the words marked in a message when it was pressed, or when the
+   * right-click menu was opened. While the
    * project is not shared nothing can be written, and one's own message can
    * only be deleted.
    */
@@ -40,6 +43,9 @@
   const readers = $derived(ctx.readersOf(message.id));
   const chips = $derived(ctx.chipsOf(message.id));
   const fresh = $derived(ctx.isNew(message.id));
+  const lit = $derived(ctx.isLit(message.id));
+  /** The message the words quoted are from, where it is still there. */
+  const quoted = $derived(message.quote ? ctx.messageOf(message.quote.id) : null);
   const edited = $derived(
     message.edited ? format(new Date(message.edited), languages.current) : '',
   );
@@ -61,10 +67,12 @@
 
   /** The right-click menu: what can be done with the message here. */
   function contextMenu(at: HTMLElement): MenuItem[] {
+    // The words marked when the press that opened the menu began.
+    const quote = ctx.caught();
     return [
       ...(ctx.shared
         ? [
-            { label: t('chat-answer'), icon: Reply, action: () => ctx.answer(message) },
+            { label: t('chat-answer'), icon: Reply, action: () => ctx.answer(message, quote) },
             {
               label: t('chat-react-choose'),
               icon: SmilePlus,
@@ -85,12 +93,27 @@
   bind:this={row}
   class="message"
   class:fresh
+  class:lit
   data-chat-message={message.id}
   data-chat-new={fresh || undefined}
+  data-chat-lit={lit || undefined}
   oncontextmenu={ctx.shared || mine
     ? (event) => openContextMenu(event, contextMenu(row!))
     : undefined}
 >
+  {#if message.quote}
+    {#if quoted}
+      <button
+        type="button"
+        class="quote"
+        data-chat-quote
+        use:tooltip={t('chat-quote-from', { name: quoted.author.name || t('chat-someone') })}
+        onclick={() => ctx.goTo(quoted.id)}><span>{message.quote.text}</span></button
+      >
+    {:else}
+      <div class="quote" data-chat-quote><span>{message.quote.text}</span></div>
+    {/if}
+  {/if}
   <div class="line">
     <p class="words selectable" class:big use:tooltip={tip ? { text: tip, side: 'left' } : null}>
       <span class="text"><MessageWords words={message} /></span>{#if message.edited}<span
@@ -122,7 +145,7 @@
           label={t('chat-answer')}
           size="sm"
           data-chat-answer
-          onclick={() => ctx.answer(message)}><Reply size={13} /></IconButton
+          onclick={() => ctx.answer(message, ctx.caught())}><Reply size={13} /></IconButton
         >
       {/if}
       {#if mine}
@@ -149,6 +172,49 @@
   /* A new message has a thin bar of the accent at its left. */
   .fresh {
     box-shadow: inset 2px 0 0 var(--accent);
+  }
+  /* A message gone to from a quote of it is lit for a moment. */
+  .lit {
+    animation: lit 1.5s ease-out;
+  }
+  @keyframes lit {
+    from {
+      background: var(--accent-soft);
+    }
+    to {
+      background: transparent;
+    }
+  }
+  /* The words quoted, quiet, with a line at their left, three lines at most. */
+  .quote {
+    display: block;
+    width: 100%;
+    margin: 1px 0 3px;
+    padding: 0 0 0 8px;
+    border: none;
+    border-left: 2px solid var(--line-strong);
+    background: none;
+    color: var(--ink-3);
+    font: inherit;
+    font-family: var(--font-ui), var(--font-emoji);
+    font-size: var(--text-sm);
+    line-height: 1.4;
+    text-align: start;
+  }
+  .quote > span {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  button.quote {
+    cursor: pointer;
+  }
+  button.quote:hover {
+    color: var(--ink-2);
   }
   .line {
     display: flex;

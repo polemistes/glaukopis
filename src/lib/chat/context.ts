@@ -5,7 +5,7 @@
  * what it reads.
  */
 
-import type { ChatMessage, ChatReader } from '$lib/project/model/types';
+import type { ChatMessage, ChatQuote, ChatReader } from '$lib/project/model/types';
 import type { Chip } from './reading';
 
 export interface MessageContext {
@@ -19,8 +19,16 @@ export interface MessageContext {
   chipsOf(id: string): Chip[];
   /** Whether a message is new (record 0107): of another, unread when the chat came to be shown, or arrived since. */
   isNew(id: string): boolean;
-  /** Begins an answer to a message. */
-  answer(message: ChatMessage): void;
+  /** Whether a message is lit for a moment, having been gone to from a quote of it. */
+  isLit(id: string): boolean;
+  /** A message of the chat, by its id: nothing where it is not there (taken back). */
+  messageOf(id: string): ChatMessage | null;
+  /** Words of a message marked when the press going on began (`quoting.ts`): nothing at a key. */
+  caught(): ChatQuote | null;
+  /** Begins an answer to a message, with words marked to be quoted, where there are any. */
+  answer(message: ChatMessage, quote?: ChatQuote | null): void;
+  /** Brings a message into the middle of the list, and lights it for a moment. */
+  goTo(id: string): void;
   /** Opens the choosing of an emoji for a message, at an element. */
   react(message: ChatMessage, at: HTMLElement): void;
   /** Gives one's own reaction of an emoji to a message, or takes it back. */

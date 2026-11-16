@@ -63,6 +63,9 @@ settings-email = E-post
 settings-orcid = ORCID
 settings-orcid-problem = En ORCID iD er fire grupper med fire sifre: 0000-0002-1825-0097.
 settings-contact-problem = Det ser ikke ut som en e-postadresse.
+settings-chat-read = Vis de andre hva jeg har lest i samtalen
+settings-chat-read-on = På
+settings-chat-read-off = Av
 
 ## Programmer: Pandoc og Typst
 

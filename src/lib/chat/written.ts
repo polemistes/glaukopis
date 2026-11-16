@@ -1,29 +1,37 @@
 /**
  * What is written in the chat, and how a message is drawn (record 0107),
  * as plain functions: the words and marks of the field to a message and back
- * again; what is written and not yet sent, with what it answers or changes,
- * as the drafts of the project keep it (record 0094); and the stretches a
+ * again; what is written and not yet sent, with what it answers or changes
+ * and the words it quotes, as the drafts of the project keep it (record 0094); and the stretches a
  * message is drawn as, its addresses of the web as links, and whether it is
  * a few emojis and nothing else.
  */
 
 import type { Mark, Node as PMNode } from 'prosemirror-model';
 import { chatSchema } from '$lib/editor/schema';
-import { chatMessageOf, isEmoji, tidyMarks } from '$lib/project/model/changing/chat';
-import type { ChatMark, ChatMarkKind, ChatWords } from '$lib/project/model/types';
+import {
+  chatMessageOf,
+  chatQuoteOf,
+  isEmoji,
+  tidyMarks,
+} from '$lib/project/model/changing/chat';
+import type { ChatMark, ChatMarkKind, ChatQuote, ChatWords } from '$lib/project/model/types';
 
 /**
  * What is written in the field of the chat and not yet sent: its words and
- * marks, the message it answers, or the message of one's own it changes.
+ * marks, the message it answers, the words of a message it quotes, or the
+ * message of one's own it changes.
  */
 export interface Written {
   words: ChatWords;
   /** The message pressed *Answer* on: what is sent answers the message that one answers, or it. */
   to?: string;
+  /** Words marked in a message, which stand quoted at the top of what is sent. */
+  quote?: ChatQuote;
   /** The message of one's own being changed. */
   editing?: string;
   /** While a message is changed, what was being written before: it comes back when the change is kept or given up. */
-  before?: { words: ChatWords; to?: string };
+  before?: { words: ChatWords; to?: string; quote?: ChatQuote };
 }
 
 /** A field with nothing written in it. */
@@ -87,16 +95,17 @@ export function sameWords(a: ChatWords, b: ChatWords): boolean {
 
 /**
  * What is written as the drafts keep it: as JSON in their string, or
- * nothing where nothing is written and nothing answered or changed, so that
+ * nothing where nothing is written, answered, quoted or changed, so that
  * the field is dropped from the drafts.
  */
 export function keptOf(written: Written): string {
-  const { words, to, editing, before } = written;
-  if (!words.text && !to && !editing) return '';
+  const { words, to, quote, editing, before } = written;
+  if (!words.text && !to && !quote && !editing) return '';
   return JSON.stringify({
     text: words.text,
     ...(words.marks?.length ? { marks: words.marks } : {}),
     ...(to ? { to } : {}),
+    ...(quote ? { quote } : {}),
     ...(editing ? { editing } : {}),
     ...(editing && before
       ? {
@@ -104,6 +113,7 @@ export function keptOf(written: Written): string {
             text: before.words.text,
             ...(before.words.marks?.length ? { marks: before.words.marks } : {}),
             ...(before.to ? { to: before.to } : {}),
+            ...(before.quote ? { quote: before.quote } : {}),
           },
         }
       : {}),
@@ -129,17 +139,21 @@ export function writtenOf(kept: string): Written {
       const words = keptWords(held);
       if (words) {
         const { to, editing, before } = held as Record<string, unknown>;
+        const quote = chatQuoteOf((held as Record<string, unknown>).quote);
         const was = before && typeof before === 'object' ? keptWords(before) : null;
         const wasTo = was ? (before as Record<string, unknown>).to : undefined;
+        const wasQuote = was ? chatQuoteOf((before as Record<string, unknown>).quote) : null;
         return {
           words,
           ...(typeof to === 'string' && to ? { to } : {}),
+          ...(quote ? { quote } : {}),
           ...(typeof editing === 'string' && editing ? { editing } : {}),
           ...(typeof editing === 'string' && editing && was
             ? {
                 before: {
                   words: was,
                   ...(typeof wasTo === 'string' && wasTo ? { to: wasTo } : {}),
+                  ...(wasQuote ? { quote: wasQuote } : {}),
                 },
               }
             : {}),

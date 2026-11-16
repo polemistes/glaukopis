@@ -33,3 +33,4 @@ chat-new = { $count ->
    *[other] { $count } nye meldinger
 }
 chat-emoji = Emojier
+chat-quote-from = Fra { $name }
