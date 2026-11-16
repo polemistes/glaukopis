@@ -569,6 +569,21 @@
           onblur={() => !orcidProblem && keep('orcid', orcid)}
         />
       </div>
+      <!-- Whether the others see how far one has read in the chat of a shared project (record 0107). -->
+      <div class="row top" data-chat-read-setting>
+        <div class="what">
+          <div class="label">{t('settings-chat-read')}</div>
+        </div>
+        <Segmented
+          value={settings.value.chatReadShown ? 'on' : 'off'}
+          label={t('settings-chat-read')}
+          options={[
+            { value: 'on', label: t('settings-chat-read-on') },
+            { value: 'off', label: t('settings-chat-read-off') },
+          ]}
+          onchange={(on: 'on' | 'off') => settings.set('chatReadShown', on === 'on')}
+        />
+      </div>
     </section>
 
     <section>

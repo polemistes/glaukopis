@@ -44,3 +44,5 @@ chat-new = { $count ->
 }
 # The button under the field that opens the emojis.
 chat-emoji = Emojis
+# The tooltip of words quoted at the top of a message: $name wrote the message they are from.
+chat-quote-from = From { $name }

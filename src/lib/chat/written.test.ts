@@ -117,6 +117,31 @@ describe('what is written and not yet sent, as it is kept', () => {
     expect(writtenOf(keptOf(editing))).toEqual(editing);
   });
 
+  it('with the words it quotes, and those of what was written before a change', () => {
+    const quoting = {
+      words: { text: 'Why?' },
+      to: 'm1',
+      quote: { id: 'm3', text: 'the wrath\nof Achilles' },
+    };
+    expect(writtenOf(keptOf(quoting))).toEqual(quoting);
+    const editing = {
+      words: { text: 'Changed' },
+      editing: 'm2',
+      before: { words: { text: 'Half' }, quote: { id: 'm3', text: 'the wrath' } },
+    };
+    expect(writtenOf(keptOf(editing))).toEqual(editing);
+    // A quote that cannot be read is left out, and what is written kept.
+    expect(writtenOf(JSON.stringify({ text: 'Why?', quote: { id: 'm3', text: ' ' } }))).toEqual({
+      words: { text: 'Why?' },
+    });
+  });
+
+  it('keeps the field where a quote stands alone, without words', () => {
+    const alone = { words: { text: '' }, quote: { id: 'm3', text: 'the wrath' } };
+    expect(keptOf(alone)).not.toBe('');
+    expect(writtenOf(keptOf(alone))).toEqual(alone);
+  });
+
   it('as nothing, where nothing is written, answered or changed', () => {
     expect(keptOf(NOTHING)).toBe('');
     expect(keptOf({ words: { text: '' }, to: 'm1' })).not.toBe('');

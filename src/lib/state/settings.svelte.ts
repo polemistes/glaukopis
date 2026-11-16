@@ -174,6 +174,13 @@ export interface MoreSettings {
   notebookView: NotebookViewSettings;
   /** The emojis chosen last, the newest first: the picker offers them first (`ui/EmojiPicker.svelte`). */
   recentEmojis: string[];
+  /**
+   * Whether one's mark of how far one has read in the chat of a shared
+   * project is written into the project, so that the others see it (record
+   * 0107, added to). On, unless turned off; off, an earlier mark is taken
+   * out of a project when its chat is next shown.
+   */
+  chatReadShown: boolean;
 }
 
 export type AllSettings = Settings & MoreSettings;
@@ -214,6 +221,7 @@ const more = (kept: Partial<AllSettings> = {}): MoreSettings => ({
     (kept as { notebookListWidth?: unknown }).notebookListWidth,
   ),
   recentEmojis: recentEmojisOf(kept.recentEmojis),
+  chatReadShown: typeof kept.chatReadShown === 'boolean' ? kept.chatReadShown : true,
 });
 
 /**

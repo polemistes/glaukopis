@@ -105,6 +105,32 @@ const press = (
   flushSync();
 };
 
+/**
+ * Marks words of a message, as the pointer would: a range over a part of a
+ * text node of its words. jsdom has no layout, so nothing is selected by a
+ * press; the press only reads what is marked.
+ */
+function markIn(row: HTMLElement, from: number, to: number) {
+  const node = wordsNode(row);
+  const range = document.createRange();
+  range.setStart(node, from);
+  range.setEnd(node, to);
+  const selection = document.getSelection()!;
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
+/** The first text node of the words of a message. */
+const wordsNode = (row: HTMLElement) =>
+  document.createTreeWalker(row.querySelector('.text')!, NodeFilter.SHOW_TEXT).nextNode()!;
+
+/** A press of the pointer on an element, as far as the panel reads it, and the click it ends in. */
+function pressOn(el: Element, { click = true } = {}) {
+  el.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, cancelable: true }));
+  if (click) (el as HTMLElement).click();
+  flushSync();
+}
+
 /** The items of the menu open now, by their labels. */
 const menuLabels = () =>
   (menuState.current?.items ?? []).flatMap((i) =>
@@ -420,6 +446,153 @@ describe('the panel of the chat', () => {
     expect(again.message('n').hasAttribute('data-chat-new')).toBe(false);
     expect(again.target.querySelector('[data-chat-new-button]')).toBeNull();
     again.done();
+  });
+
+  it('quotes the words marked in a message when Answer is pressed on it', () => {
+    const { project, target, field, write, message, done } = setUp(true);
+    theirs(project, 'q', 'Sing, goddess, the wrath of Achilles');
+    markIn(message('q'), 15, 24);
+    pressOn(message('q').querySelector('[data-chat-answer]')!);
+    const line = target.querySelector('[data-chat-quoting]')!;
+    expect(line.textContent).toContain('the wrath');
+    expect(target.querySelector('[data-chat-answering]')).not.toBeNull();
+    write('Why the wrath?');
+    press(field(), 'Enter');
+    const sent = project.chat[1];
+    expect(sent).toMatchObject({ to: 'q', quote: { id: 'q', text: 'the wrath' } });
+    expect(target.querySelector('[data-chat-quoting]')).toBeNull();
+    const quote = message(sent.id).querySelector('[data-chat-quote]')!;
+    expect(quote.textContent).toBe('the wrath');
+    // The quote is not among the words of the message.
+    expect(message(sent.id).querySelector('.text')!.textContent).toBe('Why the wrath?');
+    done();
+  });
+
+  it('quotes the words of one message in an answer to another', () => {
+    const { project, target, message, done } = setUp(true);
+    theirs(project, 'q', 'Sing, goddess, the wrath of Achilles');
+    theirs(project, 'r', 'Not the anger?');
+    markIn(message('q'), 0, 4);
+    pressOn(message('r').querySelector('[data-chat-answer]')!);
+    expect(target.querySelector('[data-chat-answering]')!.textContent).toContain('Not the anger?');
+    expect(target.querySelector('[data-chat-quoting]')!.textContent).toContain('Sing');
+    done();
+  });
+
+  it('quotes the words marked when the field is pressed, for a new message', () => {
+    const { project, target, field, write, kept, message, done } = setUp(true);
+    theirs(project, 'q', 'Sing, goddess, the wrath of Achilles');
+    markIn(message('q'), 6, 13);
+    pressOn(field(), { click: false });
+    expect(target.querySelector('[data-chat-quoting]')!.textContent).toContain('goddess');
+    expect(target.querySelector('[data-chat-answering]')).toBeNull();
+    expect(writtenOf(kept.text).quote).toEqual({ id: 'q', text: 'goddess' });
+    // A press with nothing marked changes nothing.
+    document.getSelection()!.removeAllRanges();
+    pressOn(field(), { click: false });
+    expect(writtenOf(kept.text).quote).toEqual({ id: 'q', text: 'goddess' });
+    write('Which one?');
+    press(field(), 'Enter');
+    expect(project.chat[1]).toMatchObject({
+      text: 'Which one?',
+      quote: { id: 'q', text: 'goddess' },
+    });
+    expect('to' in project.chat[1]).toBe(false);
+    done();
+  });
+
+  it('quotes nothing of a selection over two messages, or of an earlier press at a key', () => {
+    const { project, target, field, message, done } = setUp(true);
+    theirs(project, 'q', 'Sing, goddess');
+    theirs(project, 'r', 'the wrath');
+    const range = document.createRange();
+    range.setStart(wordsNode(message('q')), 2);
+    range.setEnd(wordsNode(message('r')), 3);
+    const selection = document.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+    pressOn(field(), { click: false });
+    expect(target.querySelector('[data-chat-quoting]')).toBeNull();
+    // Caught by a press that began nothing, then forgotten at a key.
+    markIn(message('q'), 0, 4);
+    pressOn(target.querySelector('[data-chat] .body')!, { click: false });
+    field().dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    message('r').querySelector<HTMLButtonElement>('[data-chat-answer]')!.click();
+    flushSync();
+    expect(target.querySelector('[data-chat-answering]')).not.toBeNull();
+    expect(target.querySelector('[data-chat-quoting]')).toBeNull();
+    done();
+  });
+
+  it('quotes by Answer in the right-click menu what was marked when it was opened', () => {
+    const { project, target, message, done } = setUp(true);
+    theirs(project, 'q', 'Sing, goddess, the wrath of Achilles');
+    markIn(message('q'), 28, 36);
+    pressOn(message('q'), { click: false });
+    message('q').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+    // The menu is pressed outside the panel, after the selection has gone.
+    document.getSelection()!.removeAllRanges();
+    choose('Answer');
+    expect(target.querySelector('[data-chat-quoting]')!.textContent).toContain('Achilles');
+    done();
+  });
+
+  it('gives the quote up by Escape, with the answering, and by its ×, without it', () => {
+    const { project, target, field, write, kept, message, done } = setUp(true);
+    theirs(project, 'q', 'Sing, goddess, the wrath of Achilles');
+    markIn(message('q'), 15, 24);
+    pressOn(message('q').querySelector('[data-chat-answer]')!);
+    write('Half');
+    press(field(), 'Escape');
+    expect(writtenOf(kept.text)).toEqual({ words: { text: 'Half' } });
+    markIn(message('q'), 15, 24);
+    pressOn(message('q').querySelector('[data-chat-answer]')!);
+    target.querySelector<HTMLButtonElement>('[data-chat-quoting] button')!.click();
+    flushSync();
+    expect(writtenOf(kept.text)).toEqual({ words: { text: 'Half' }, to: 'q' });
+    done();
+  });
+
+  it('keeps the quote of a message changed, and catches none while it is', () => {
+    const { project, target, field, write, message, done } = setUp(true);
+    theirs(project, 'q', 'Sing, goddess, the wrath of Achilles');
+    const id = project.say('Whch wrath?', undefined, { id: 'q', text: 'the wrath' })!;
+    flushSync();
+    message(id).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+    choose('Change');
+    markIn(message('q'), 0, 4);
+    pressOn(field(), { click: false });
+    expect(target.querySelector('[data-chat-quoting]')).toBeNull();
+    write('Which wrath?');
+    press(field(), 'Enter');
+    expect(project.chat[1]).toMatchObject({
+      text: 'Which wrath?',
+      quote: { id: 'q', text: 'the wrath' },
+    });
+    done();
+  });
+
+  it('goes to the message a quote is from, and lights it; a quote of one taken back is words', () => {
+    vi.useFakeTimers();
+    const { project, message, done } = setUp(true);
+    const from = project.say('Sing, goddess')!;
+    const id = project.say('Which?', undefined, { id: from, text: 'goddess' })!;
+    flushSync();
+    const quote = message(id).querySelector<HTMLElement>('[data-chat-quote]')!;
+    expect(quote.tagName).toBe('BUTTON');
+    quote.click();
+    flushSync();
+    expect(message(from).hasAttribute('data-chat-lit')).toBe(true);
+    vi.advanceTimersByTime(1600);
+    flushSync();
+    expect(message(from).hasAttribute('data-chat-lit')).toBe(false);
+    project.unsay(from);
+    flushSync();
+    const words = message(id).querySelector<HTMLElement>('[data-chat-quote]')!;
+    expect(words.tagName).not.toBe('BUTTON');
+    expect(words.textContent).toBe('goddess');
+    vi.useRealTimers();
+    done();
   });
 
   it('while the project is shared, has the field and not the deleting of the conversation', () => {

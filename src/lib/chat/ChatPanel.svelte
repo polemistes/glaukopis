@@ -5,13 +5,16 @@
    * message it answers, those of one person written close together under
    * one name, a line with the date where the day changes; under them the
    * field (`ChatField`), where Enter sends and Shift+Enter makes a new line,
-   * and over it a line that says what is answered or changed. What is
-   * written there and not yet sent is its holder's to keep (`draft`), with
-   * what it answers or changes, so that it is there again when the panel is
-   * (record 0094). New messages are marked, and a button over the foot of
-   * the list leads to those not yet seen. While the project is not shared,
-   * the messages are shown without the field, nothing can be written, and
-   * the whole conversation can be deleted.
+   * and over it the lines that say what is quoted, answered or changed.
+   * Words marked in a message when *Answer* or the field is pressed are
+   * quoted at the top of what is sent; pressed there, the quote goes to the
+   * message it is from. What is written and not yet sent is its holder's to
+   * keep (`draft`), with what it answers, quotes or changes, so that it is
+   * there again when the panel is (record 0094). New messages are marked,
+   * and a button over the foot of the list leads to those not yet seen.
+   * While the project is not shared, the messages are shown without the
+   * field, nothing can be written, and the whole conversation can be
+   * deleted.
    */
   import type { Snippet } from 'svelte';
   import { untrack } from 'svelte';
@@ -19,12 +22,13 @@
   import ArrowUp from '@lucide/svelte/icons/arrow-up';
   import MessagesSquare from '@lucide/svelte/icons/messages-square';
   import Pencil from '@lucide/svelte/icons/pencil';
+  import Quote from '@lucide/svelte/icons/quote';
   import Reply from '@lucide/svelte/icons/reply';
   import Trash2 from '@lucide/svelte/icons/trash-2';
   import X from '@lucide/svelte/icons/x';
   import { languages, t } from '$lib/i18n';
   import type { Project } from '$lib/project/model/project.svelte';
-  import type { ChatMessage, ChatWords } from '$lib/project/model/types';
+  import type { ChatMessage, ChatQuote, ChatWords } from '$lib/project/model/types';
   import { confirm } from '$lib/ui/confirm.svelte';
   import EmojiPicker from '$lib/ui/EmojiPicker.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
@@ -34,6 +38,7 @@
   import ChatGroup from './ChatGroup.svelte';
   import type { MessageContext } from './context';
   import { ListPlace } from './list-place.svelte';
+  import { caughtOf } from './quoting';
   import { chipsOf, firstWords, placed, readersOf } from './reading';
   import { NOTHING, keptOf, writtenOf, type Written } from './written';
 
@@ -73,6 +78,8 @@
   const written = $derived(writtenOf(draft));
   const answering = $derived(written.to ? (byId.get(written.to) ?? null) : null);
   const editing = $derived(written.editing ? (byId.get(written.editing) ?? null) : null);
+  /** The words quoted in what is written; none while a message is changed, which keeps its own. */
+  const quoting = $derived(written.editing ? null : (written.quote ?? null));
   /** Rises each time the field is to take the focus. */
   let focus = $state(0);
 
@@ -80,14 +87,22 @@
   /** What was being written before a change, which comes back when the change is kept or given up. */
   const before = (w: Written): Written => (w.before ? { ...w.before } : NOTHING);
 
+  /** What is written, with what it answers and quotes as asked. */
+  const writing = (words: ChatWords, to?: string, quote?: ChatQuote | null): Written => ({
+    words,
+    ...(to ? { to } : {}),
+    ...(quote ? { quote } : {}),
+  });
+
   // A change whose message is gone is given up; an answer whose message is
-  // gone answers none. It depends on what is written and on the messages.
+  // gone answers none, and keeps what it quotes, whose words are its own.
+  // It depends on what is written and on the messages.
   $effect(() => {
     const w = written;
     const there = byId;
     untrack(() => {
       if (w.editing && !there.has(w.editing)) write(before(w));
-      else if (w.to && !there.has(w.to)) write({ words: w.words });
+      else if (w.to && !there.has(w.to)) write(writing(w.words, undefined, w.quote));
     });
   });
 
@@ -99,7 +114,7 @@
       write(before(w));
       return;
     }
-    const id = project.say(w.words, w.to);
+    const id = project.say(w.words, w.to, w.quote);
     if (!id) return;
     write(NOTHING);
     // An answer is brought into view where it stands; anything else is at the foot.
@@ -107,17 +122,57 @@
     else place.toFootNext();
   }
 
-  /** Escape gives up a change, or an answering, keeping what is written. */
+  /** Escape gives up a change; else the answering and the quote, both where both are there, keeping what is written. */
   function escape(): boolean {
     const w = written;
     if (w.editing) write(before(w));
-    else if (w.to) write({ words: w.words });
+    else if (w.to || w.quote) write(writing(w.words));
     else return false;
     return true;
   }
 
+  /** The × of the line of what is answered: the quote stays. */
+  const unanswer = () => write(writing(written.words, undefined, written.quote));
+  /** The × of the line of the quote: the answering stays. */
+  const unquote = () => write(writing(written.words, written.to));
+
   /** What is written, without a change that was being made. */
   const unchanged = (w: Written): Written => (w.editing ? before(w) : w);
+
+  // ---- words quoted ----
+  let panel = $state<HTMLDivElement>();
+  /**
+   * Words of a message marked when the press going on began: read at its
+   * `pointerdown`, in the capture phase, before the press changes what is
+   * selected (`quoting.ts`), for what the press begins. A key forgets them,
+   * so that *Answer* pressed by a key quotes nothing of an earlier press.
+   */
+  let caught: ChatQuote | null = null;
+
+  function pressed(event: PointerEvent) {
+    caught = panel ? caughtOf(document.getSelection(), panel) : null;
+    // A press within the field begins a new message, or goes on with what is
+    // written: the words marked take the place of what was quoted. Nothing
+    // is quoted while a message is being changed.
+    const target = event.target instanceof Element ? event.target : null;
+    if (caught && !written.editing && target?.closest('[data-chat-field]'))
+      write({ ...written, quote: caught });
+  }
+
+  /** A message lit for a moment, having been gone to from a quote of it. */
+  let lit = $state<string | null>(null);
+  let unlight: ReturnType<typeof setTimeout> | undefined;
+  /** How long a message stays lit: the light fades within it. */
+  const LIT = 1500;
+
+  function goTo(id: string) {
+    if (!id || !place.goTo(id)) return;
+    clearTimeout(unlight);
+    lit = id;
+    unlight = setTimeout(() => (lit = null), LIT);
+  }
+
+  $effect(() => () => clearTimeout(unlight));
 
   // ---- what is done with a message ----
   let reacting = $state<{ message: ChatMessage; at: HTMLElement } | null>(null);
@@ -147,10 +202,16 @@
     readersOf: (id) => readers.get(id) ?? NONE,
     chipsOf: (id) => chips.get(id) ?? NONE,
     isNew: (id) => fresh.has(id) && place.marks(id),
-    answer(message) {
-      write({ words: unchanged(written).words, to: message.id });
+    isLit: (id) => !!id && lit === id,
+    messageOf: (id) => (id ? (byId.get(id) ?? null) : null),
+    caught: () => caught,
+    answer(message, quote = null) {
+      // Words marked take the place of what was quoted; with none, it stays.
+      const was = unchanged(written);
+      write(writing(was.words, message.id, quote ?? was.quote));
       focus++;
     },
+    goTo,
     react(message, at) {
       if (shared) reacting = { message, at };
     },
@@ -163,7 +224,7 @@
       const words: ChatWords = message.marks
         ? { text: message.text, marks: message.marks }
         : { text: message.text };
-      write({ words, editing: message.id, before: { words: was.words, to: was.to } });
+      write({ words, editing: message.id, before: writing(was.words, was.to, was.quote) });
       focus++;
     },
     remove,
@@ -197,7 +258,13 @@
   });
 </script>
 
-<div class="panel" data-chat>
+<div
+  class="panel"
+  data-chat
+  bind:this={panel}
+  onpointerdowncapture={pressed}
+  onkeydowncapture={() => (caught = null)}
+>
   <header>
     {#if head}{@render head()}{:else}<h2>{t('chat-title')}</h2>{/if}
     {#if !shared && project.chat.length}
@@ -257,17 +324,28 @@
             ><X size={13} /></IconButton
           >
         </div>
-      {:else if answering}
-        <div class="over" data-chat-answering>
-          <Reply size={13} />
-          <span class="what"
-            >{t('chat-answering', { name: answering.author.name || t('chat-someone') })}</span
-          >
-          <span class="first">{firstWords(answering.text)}</span>
-          <IconButton label={t('common-cancel')} size="sm" onclick={escape}
-            ><X size={13} /></IconButton
-          >
-        </div>
+      {:else}
+        {#if quoting}
+          <div class="over" data-chat-quoting>
+            <Quote size={13} />
+            <span class="first">{quoting.text}</span>
+            <IconButton label={t('common-cancel')} size="sm" onclick={unquote}
+              ><X size={13} /></IconButton
+            >
+          </div>
+        {/if}
+        {#if answering}
+          <div class="over" data-chat-answering>
+            <Reply size={13} />
+            <span class="what"
+              >{t('chat-answering', { name: answering.author.name || t('chat-someone') })}</span
+            >
+            <span class="first">{firstWords(answering.text)}</span>
+            <IconButton label={t('common-cancel')} size="sm" onclick={unanswer}
+              ><X size={13} /></IconButton
+            >
+          </div>
+        {/if}
       {/if}
       <ChatField
         words={written.words}

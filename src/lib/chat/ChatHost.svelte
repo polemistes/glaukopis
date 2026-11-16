@@ -5,14 +5,17 @@
   several that arrive at once are told by one toast that counts them. While
   the chat is shown with the window in front, its messages are counted as
   read: the mark is kept with the project's view, and, while the project is
-  shared, in the project, so that the others see who has read what. While
-  the chat is shown, what is new in it is kept for the panel to mark.
+  shared, in the project, so that the others see who has read what; where
+  one has chosen not to show it (`chatReadShown`), one's mark is taken out
+  of the project instead. While the chat is shown, what is new in it is kept
+  for the panel to mark.
   Mounted once, by the view of the projects; it draws nothing.
 -->
 <script lang="ts">
   import { onDestroy, untrack } from 'svelte';
   import { t } from '$lib/i18n';
   import { openProjects, type OpenProject } from '$lib/project/open-projects.svelte';
+  import { settings } from '$lib/state/settings.svelte';
   import { toasts } from '$lib/ui/toast.svelte';
   import { chatShown, chatUi, keepFresh, unreadOf } from './chat.svelte';
   import { firstWords, markOf, sameMark } from './reading';
@@ -56,12 +59,14 @@
   // For every project open: what is new in its chat is kept while the chat
   // is shown; where it is shown with the window in front, all its messages
   // are read, and while the project is shared, how far is kept in the
-  // project for the others; else what is unread and untold is told a moment
-  // after. It depends on the messages of each project, the mark of what was
-  // read, the panes, the sharing and whether the window is in front;
-  // nothing of the texts.
+  // project for the others, or, where one shows them nothing of it, one's
+  // mark of before taken out; else what is unread and untold is told a
+  // moment after. It depends on the messages of each project, the mark of
+  // what was read, the panes, the sharing, the setting and whether the
+  // window is in front; nothing of the texts.
   $effect(() => {
     const inFront = chatUi.inFront;
+    const shownToOthers = settings.value.chatReadShown;
     for (const open of openProjects.all()) {
       const p = open.project;
       if (!p) continue;
@@ -74,7 +79,9 @@
         if (shown && inFront) {
           const mark = markOf(messages);
           if (mark && !sameMark(mark, open.chatRead)) open.chatRead = mark;
-          if (mark && shared) p.markChatRead(mark);
+          // The mark of this computer counts the unread whatever the setting.
+          if (shared && !shownToOthers) p.unmarkChatRead();
+          else if (mark && shared) p.markChatRead(mark);
           return;
         }
         const seen = toldOf(open.id);

@@ -73,6 +73,10 @@ settings-email = Email
 settings-orcid = ORCID
 settings-orcid-problem = An ORCID iD is four groups of four digits: 0000-0002-1825-0097.
 settings-contact-problem = That does not look like an address.
+# Whether one's mark of how far one has read in the chat of a shared project is shown to the others.
+settings-chat-read = Show the others what I have read in the chat
+settings-chat-read-on = On
+settings-chat-read-off = Off
 
 ## Programs: Pandoc and Typst
 

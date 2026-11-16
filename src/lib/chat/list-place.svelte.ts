@@ -88,11 +88,17 @@ export class ListPlace {
 
   /** Goes to the nearest new message not yet seen. */
   goToNew = () => {
-    const el = this.toNearest && this.#elementOf(this.toNearest.id);
-    if (!el) return;
+    if (this.toNearest) this.goTo(this.toNearest.id);
+  };
+
+  /** Brings a message into the middle of what is shown: whether it is in the list. */
+  goTo(id: string): boolean {
+    const el = id ? this.#elementOf(id) : undefined;
+    if (!el) return false;
     el.scrollIntoView?.({ block: 'center' });
     this.look();
-  };
+    return true;
+  }
 
   /** Counts as seen the new messages within what is shown, and finds the nearest of those that are not. */
   look() {

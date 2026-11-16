@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 import {
   MESSAGE_LENGTH,
+  QUOTE_LENGTH,
   chatMessageOf,
+  chatQuoteOf,
   chatReactionOf,
   isEmoji,
   reactionKey,
@@ -383,6 +385,70 @@ describe('the chat of a project', () => {
       expect(p.chatReaders).toEqual([]);
       expect(p.chatReactions).toEqual([]);
     }
+  });
+
+  it('keeps words quoted at the top of a message, for the other copy too', () => {
+    const { a, b, sync } = two();
+    const first = a.say('Sing, goddess, the wrath of Achilles')!;
+    sync();
+    const id = b.say('Why the wrath?', undefined, { id: first, text: '  the wrath  ' })!;
+    sync();
+    expect(a.chat.find((m) => m.id === id)).toMatchObject({
+      text: 'Why the wrath?',
+      quote: { id: first, text: 'the wrath' },
+    });
+    expect('to' in a.chat[1]).toBe(false);
+    // An answer that quotes, and one without words, which is not said.
+    const answer = b.say('And whose?', first, { id: first, text: 'Achilles' })!;
+    expect(b.chat.find((m) => m.id === answer)).toMatchObject({
+      to: first,
+      quote: { id: first, text: 'Achilles' },
+    });
+    expect(b.say('  ', first, { id: first, text: 'Achilles' })).toBeNull();
+    expect(b.chat).toHaveLength(3);
+  });
+
+  it('keeps the words quoted when the message is changed', () => {
+    const p = project();
+    const first = p.say('Sing, goddess')!;
+    const id = p.say('Wich goddess?', undefined, { id: first, text: 'goddess' })!;
+    expect(p.reword(id, 'Which goddess?')).toBe(true);
+    expect(p.chat[1]).toMatchObject({
+      text: 'Which goddess?',
+      quote: { id: first, text: 'goddess' },
+    });
+  });
+
+  it('reads a quote with care: none that is no object or has no words, a long one cut', () => {
+    const read = (quote: unknown) => chatMessageOf({ id: 'm', text: 'Yes', quote })?.quote;
+    expect(read('the wrath')).toBeUndefined();
+    expect(read(null)).toBeUndefined();
+    expect(read({ id: 'q', text: '   ' })).toBeUndefined();
+    expect(read({ id: 'q' })).toBeUndefined();
+    expect(read({ id: 7, text: 'Words' })).toEqual({ id: '', text: 'Words' });
+    const long = read({ id: 'q', text: 'w'.repeat(800) })!;
+    expect([...long.text]).toHaveLength(QUOTE_LENGTH);
+    expect(long.text.endsWith('w…')).toBe(true);
+    expect(chatQuoteOf({ id: 'q', text: 'short' })).toEqual({ id: 'q', text: 'short' });
+  });
+
+  it('takes one’s own mark of reading out, and only one’s own', () => {
+    const { a, b, sync } = two();
+    const id = a.say('Read me')!;
+    sync();
+    const created = b.chat[0].created;
+    a.markChatRead({ id, created });
+    b.markChatRead({ id, created });
+    sync();
+    b.unmarkChatRead();
+    sync();
+    expect(a.chatReaders.map((r) => r.id)).toEqual(['hector']);
+    expect(b.chatReaders.map((r) => r.id)).toEqual(['hector']);
+    // Nothing is written where there is nothing to take out.
+    let writes = 0;
+    b.yChatRead.observe(() => writes++);
+    b.unmarkChatRead();
+    expect(writes).toBe(0);
   });
 
   it('is not undone in the text: no answer, change, mark of reading or reaction', () => {

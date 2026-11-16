@@ -1,8 +1,9 @@
 /**
  * Changing the chat of a project (records 0092 and 0107): saying something,
- * perhaps as an answer to another message; changing one's own message, and
- * taking it back; marking how far one has read; reacting to a message with
- * an emoji; and deleting the whole conversation. These are methods of
+ * perhaps as an answer to another message, perhaps quoting words of one;
+ * changing one's own message, and taking it back; marking how far one has
+ * read, or taking that mark out; reacting to a message with an emoji; and
+ * deleting the whole conversation. These are methods of
  * `Project`, which takes them in (see there).
  *
  * The messages are an array of plain objects in the project's document,
@@ -23,6 +24,7 @@ import type {
   ChatMark,
   ChatMarkKind,
   ChatMessage,
+  ChatQuote,
   ChatReaction,
   ChatReader,
   ChatWords,
@@ -30,6 +32,9 @@ import type {
 
 /** The most characters a message holds: what is longer is cut. */
 export const MESSAGE_LENGTH = 4000;
+
+/** The most characters of words quoted: what is longer is cut, with an ellipsis. */
+export const QUOTE_LENGTH = 500;
 
 /** The ways a stretch of a message can be set, in the order a message's marks are kept. */
 export const CHAT_MARKS: readonly ChatMarkKind[] = ['strong', 'em', 'underline', 'strike', 'code'];
@@ -84,6 +89,27 @@ export function cleanWords(what: string | ChatWords): ChatWords {
   return marks.length ? { text, marks } : { text };
 }
 
+/**
+ * Words quoted, from what may be a quote (record 0107, added to): the id of
+ * the message they are from, and the words, trimmed, cut with an ellipsis
+ * where they are longer than `QUOTE_LENGTH`. Nothing where it is no object
+ * or has no words; another copy may have written anything there.
+ */
+export function chatQuoteOf(value: unknown): ChatQuote | null {
+  if (!value || typeof value !== 'object') return null;
+  const held = value as Record<string, unknown>;
+  if (typeof held.text !== 'string') return null;
+  let text = held.text.trim();
+  if (!text) return null;
+  const signs = [...text];
+  if (signs.length > QUOTE_LENGTH)
+    text = `${signs
+      .slice(0, QUOTE_LENGTH - 1)
+      .join('')
+      .trimEnd()}…`;
+  return { id: str(held.id), text };
+}
+
 /** Whether two lists of marks, each tidy, say the same. */
 const sameMarks = (a: readonly ChatMark[] = [], b: readonly ChatMark[] = []) =>
   a.length === b.length &&
@@ -111,22 +137,32 @@ export function reactionKey(message: string, person: string, emoji: string): str
 export const chatChanges = {
   /**
    * Says something in the chat: words alone, or words with their marks;
-   * as an answer to a message, where `to` names one. An answer to an answer
-   * answers what that one answered, so that answers are one deep; where the
-   * message answered is not there, what is said answers none. Returns the
-   * id of the message; nothing for an empty one.
+   * as an answer to a message, where `to` names one; with words of another
+   * message quoted at its top, where `quote` holds them. An answer to an
+   * answer answers what that one answered, so that answers are one deep;
+   * where the message answered is not there, what is said answers none. The
+   * words quoted are kept as they are given, whether their message is there
+   * or not. Returns the id of the message; nothing for an empty one, quote
+   * or no quote.
    */
-  say(this: Project, what: string | ChatWords, to?: string): string | null {
+  say(
+    this: Project,
+    what: string | ChatWords,
+    to?: string,
+    quote?: ChatQuote | null,
+  ): string | null {
     const words = cleanWords(what);
     if (!words.text) return null;
     const id = newId();
     const answered = to ? this.chat.find((m) => m.id === to) : undefined;
     const root = answered ? (answered.to ?? answered.id) : undefined;
+    const quoted = chatQuoteOf(quote);
     const message: ChatMessage = {
       id,
       author: author(this),
       created: nowIso(),
       ...(root ? { to: root } : {}),
+      ...(quoted ? { quote: quoted } : {}),
       ...words,
     };
     this.doc.transact(() => this.yChat.push([message]), CHAT);
@@ -135,8 +171,8 @@ export const chatChanges = {
 
   /**
    * Changes one's own message, and nobody else's: it is put in again where
-   * it stands, with its id, its author, when it was written and what it
-   * answers, and when it was changed. Nothing is done where neither the
+   * it stands, with its id, its author, when it was written, what it
+   * answers and the words it quotes, and when it was changed. Nothing is done where neither the
    * words nor the marks differ, or the words would be empty. Returns
    * whether it was changed.
    */
@@ -160,6 +196,7 @@ export const chatChanges = {
       created: was.created,
       edited: nowIso(),
       ...(was.to ? { to: was.to } : {}),
+      ...(was.quote ? { quote: was.quote } : {}),
       ...words,
     };
     this.doc.transact(() => {
@@ -207,6 +244,18 @@ export const chatChanges = {
       return;
     const entry = { name: me.name, read: { id: mark.id, created: mark.created }, when: nowIso() };
     this.doc.transact(() => this.yChatRead.set(me.id, entry), CHAT);
+  },
+
+  /**
+   * Takes one's own mark of how far one has read out of the project, and
+   * nobody else's (record 0107, added to): for one who has chosen not to
+   * show the others what they have read. Nothing is written where there is
+   * none.
+   */
+  unmarkChatRead(this: Project) {
+    const me = this.me?.id;
+    if (!me || !this.yChatRead.has(me)) return;
+    this.doc.transact(() => this.yChatRead.delete(me), CHAT);
   },
 
   /**
@@ -265,7 +314,7 @@ function marksOf(value: unknown, length: number): ChatMark[] {
  * program wrote, a later one or one gone wrong, may lack what a message has:
  * a message is its text, and of the rest each part is taken where it is of
  * its type and is else left out. A mark of a kind not known, or outside the
- * words, is dropped, not the message.
+ * words, is dropped, not the message, and so is a quote that cannot be read.
  */
 export function chatMessageOf(value: unknown): ChatMessage | null {
   if (!value || typeof value !== 'object') return null;
@@ -275,6 +324,7 @@ export function chatMessageOf(value: unknown): ChatMessage | null {
     held.author && typeof held.author === 'object' ? (held.author as Record<string, unknown>) : {};
   const edited = str(held.edited);
   const to = str(held.to);
+  const quote = chatQuoteOf(held.quote);
   const marks = marksOf(held.marks, held.text.length);
   return {
     id: str(held.id),
@@ -282,6 +332,7 @@ export function chatMessageOf(value: unknown): ChatMessage | null {
     created: str(held.created),
     ...(edited ? { edited } : {}),
     ...(to ? { to } : {}),
+    ...(quote ? { quote } : {}),
     text: held.text,
     ...(marks.length ? { marks } : {}),
   };

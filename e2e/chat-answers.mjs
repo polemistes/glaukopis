@@ -8,8 +8,15 @@
 // and not before; a message changed says changed for both; with the list
 // at its foot and an answer arriving far up, the button of what is new is
 // there and leads to it; what is written with a mark and an answering is
-// there again after another tab; in Norwegian the new words are Norwegian;
-// no errors in the page.
+// there again after another tab; words of a message marked by the page and
+// a real press in the field put the line of the quote over it, and the
+// message sent has the quote at its top for both, which, pressed, brings the
+// message it is from into view and lights it; words marked and Answer on
+// another message give an answer under that one with the quote of the
+// first, and Escape gives a quote up; the guest turns off Show the others
+// what I have read in the chat, and once the guest has shown the chat again
+// the owner's messages have no circle of the guest's, and on again they
+// have; in Norwegian the new words are Norwegian; no errors in the page.
 
 import { spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
@@ -117,6 +124,33 @@ const fieldText = (app) =>
 const lineOver = (app) =>
   app.exec(
     `return Array.from(document.querySelector('[data-chat-answering]')?.children ?? []).map((c) => c.textContent.trim()).filter(Boolean).join(' ')`,
+  );
+
+/**
+ * Marks words of the message whose words are these, as the pointer would:
+ * a range over a part of a text node of its words, the message brought into
+ * view first. Whether the words were marked.
+ */
+const markWords = (app, words, part) =>
+  app.exec(
+    `const m = Array.from(document.querySelectorAll('[data-chat] [data-chat-message]')).find((m) => m.querySelector('.text')?.textContent === arguments[0]);
+     if (!m) return false;
+     m.scrollIntoView({ block: 'center' });
+     const walker = document.createTreeWalker(m.querySelector('.text'), NodeFilter.SHOW_TEXT);
+     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+       const at = node.data.indexOf(arguments[1]);
+       if (at < 0) continue;
+       const range = document.createRange();
+       range.setStart(node, at);
+       range.setEnd(node, at + arguments[1].length);
+       const s = getSelection();
+       s.removeAllRanges();
+       s.addRange(range);
+       return s.toString() === arguments[1];
+     }
+     return false;`,
+    words,
+    part,
   );
 
 /** Opens the document pane, where it is closed, by the Document button of the side. */
@@ -431,6 +465,128 @@ try {
   check('Escape gives the answering up and keeps what is written', (await fieldText(guest)) === 'Half an answer');
   await guest.keys(['Control', 'a']);
   await guest.press('Backspace');
+
+  // ---- words of a message quoted ----
+  await markWords(guest, FIRST, 'the proem').then((ok) => check('the page marks words of a message', ok));
+  // A real press in the field: what is marked is read at its pointerdown, before the press takes it away.
+  await guest.click('[data-chat-field]');
+  await guest.waitFor('[data-chat-quoting]', 3000).catch(() => {});
+  const quoting = await guest.exec(`return document.querySelector('[data-chat-quoting]')?.textContent.trim() ?? null`);
+  check('a press in the field puts the words marked on a line over it', quoting === 'the proem', quoting);
+  check('and answers nothing', !(await guest.exists('[data-chat-answering]')));
+  await guest.screenshot('chat-answers-7-quoting');
+  await guest.keys('Which proem?');
+  await guest.press('Enter');
+  await guest.waitGone('[data-chat-quoting]', 3000).catch(() => {});
+  await until('the message with its quote to reach the owner', async () => (await messages(owner)).includes('Which proem?'), 10000);
+  const quoteOn = (app, words) =>
+    ofMessage(
+      app,
+      words,
+      `const q = m.querySelector('[data-chat-quote]');
+       return q ? { text: q.textContent.trim(), first: !!(q.compareDocumentPosition(m.querySelector('.text')) & Node.DOCUMENT_POSITION_FOLLOWING), button: q.tagName === 'BUTTON' } : null;`,
+    );
+  const sentQuote = { guest: await quoteOn(guest, 'Which proem?'), owner: await quoteOn(owner, 'Which proem?') };
+  check(
+    'sent, the message has the quote at its top, for both',
+    ['guest', 'owner'].every((who) => sentQuote[who]?.text === 'the proem' && sentQuote[who].first && sentQuote[who].button),
+    JSON.stringify(sentQuote),
+  );
+  check('and the quote is not among its words', !(await messages(owner)).some((w) => w.includes('the proem') && w !== FIRST));
+  await owner.screenshot('chat-answers-8-quoted');
+
+  // Pressed, the quote brings the message it is from into view, lit.
+  await owner.exec(`const b = document.querySelector('[data-chat] .body'); b.scrollTop = b.scrollHeight;`);
+  await sleep(300);
+  const quoteButton = await ofMessage(owner, 'Which proem?', `return m.querySelector('[data-chat-quote]');`);
+  await owner.click(quoteButton);
+  await sleep(150);
+  const gone = await ofMessage(
+    owner,
+    FIRST,
+    `const list = document.querySelector('[data-chat] .body').getBoundingClientRect();
+     const at = m.getBoundingClientRect();
+     return { inView: at.bottom > list.top && at.top < list.bottom, lit: m.hasAttribute('data-chat-lit') };`,
+  );
+  check('pressed, the quote brings the message it is from into view', !!gone?.inView, JSON.stringify(gone));
+  check('and lights it for a moment', !!gone?.lit, JSON.stringify(gone));
+  await owner.screenshot('chat-answers-9-lit');
+  await sleep(2000);
+  check('the light goes', !(await ofMessage(owner, FIRST, `return m.hasAttribute('data-chat-lit');`)));
+
+  // Words marked, and Answer on another message: the answer stands under that one, with the quote of the first.
+  const boldId = await idOf(guest, 'Bold words and plain');
+  await markWords(guest, 'Yes, with the wrath.', 'wrath');
+  await menuOn(guest, 'Bold words and plain', 'Answer');
+  await guest.waitFor('[data-chat-answering]', 3000);
+  const lines = await guest.exec(
+    `return { quoting: document.querySelector('[data-chat-quoting]')?.textContent.trim() ?? null, answering: document.querySelector('[data-chat-answering]')?.textContent ?? '' }`,
+  );
+  check(
+    'words marked and Answer on another message give both lines over the field',
+    lines.quoting === 'wrath' && lines.answering.includes('Robert') && lines.answering.includes('Bold words and plain'),
+    JSON.stringify(lines),
+  );
+  await guest.keys('With the wrath, then.');
+  await guest.press('Enter');
+  await until('the quoting answer to reach the owner', async () => (await answersTo(owner, boldId)).includes('With the wrath, then.'), 10000);
+  const answerQuote = { guest: await quoteOn(guest, 'With the wrath, then.'), owner: await quoteOn(owner, 'With the wrath, then.') };
+  check(
+    'and the answer stands under that one, with the quote of the first, for both',
+    (await answersTo(guest, boldId)).includes('With the wrath, then.') && answerQuote.guest?.text === 'wrath' && answerQuote.owner?.text === 'wrath',
+    JSON.stringify(answerQuote),
+  );
+
+  // Escape gives a quote up, keeping what is written.
+  await markWords(guest, FIRST, 'begin');
+  await guest.click('[data-chat-field]');
+  await guest.waitFor('[data-chat-quoting]', 3000).catch(() => {});
+  await guest.keys('Kept');
+  await guest.press('Escape');
+  await guest.waitGone('[data-chat-quoting]', 3000).catch(() => {});
+  check('Escape gives the quote up and keeps what is written', !(await guest.exists('[data-chat-quoting]')) && (await fieldText(guest)) === 'Kept', await fieldText(guest));
+  await guest.keys(['Control', 'a']);
+  await guest.press('Backspace');
+
+  // ---- reading told or not ----
+  /** How many circles of the guest's stand on the messages shown. */
+  const circlesOfGuest = (app) =>
+    app.exec(`return Array.from(document.querySelectorAll('[data-chat] [data-chat-reader]')).filter((c) => c.textContent.trim() === 'AL').length`);
+  /** Sets the guest's setting of reading told, in the settings window, and shows the chat again. */
+  async function tellReading(on) {
+    await guest.keys(['Control', ',']);
+    await guest.waitForText('dialog[open] header h2', 'Settings', 5000);
+    await guest.exec(`document.querySelector('[data-chat-read-setting]')?.scrollIntoView({ block: 'center' })`);
+    await sleep(300);
+    const now = await guest.text('[data-chat-read-setting] button.selected');
+    if (now !== (on ? 'On' : 'Off')) await guest.click('[data-chat-read-setting] button[aria-checked="false"]');
+    await sleep(300);
+    const set = await guest.text('[data-chat-read-setting] button.selected');
+    await guest.press('Escape');
+    await guest.waitGone('dialog[open]', 3000).catch(() => {});
+    await showChat(guest);
+    return { was: now, set };
+  }
+  check('the owner sees the guest’s circles before the setting is turned off', (await circlesOfGuest(owner)) > 0, String(await circlesOfGuest(owner)));
+  const off = await tellReading(false);
+  check(
+    'the setting is under Your details, on at first, and turned off',
+    off.was === 'On' && off.set === 'Off' && (await guest.exists('[data-your-details] [data-chat-read-setting]')),
+    JSON.stringify(off),
+  );
+  await until('the guest’s circles to go for the owner', async () => (await circlesOfGuest(owner)) === 0, 10000).catch(() => {});
+  check('turned off, the owner’s messages have no circle of the guest’s once the guest has shown the chat', (await circlesOfGuest(owner)) === 0, String(await circlesOfGuest(owner)));
+  const ownerCircle = await ofMessage(guest, 'Yes, with the wrath.', `return m.querySelector('[data-chat-read]')?.getAttribute('aria-label') ?? null;`);
+  check('and the guest still sees the owner’s circle', ownerCircle === 'Read by Robert', ownerCircle);
+  await owner.screenshot('chat-answers-10-not-told');
+  await say(owner, 'Still there?');
+  await until('the owner’s message to reach the guest', async () => (await messages(guest)).includes('Still there?'), 10000);
+  await sleep(1500);
+  check('a message the guest has read since has no circle of the guest’s either', ((await readersOn(owner, 'Still there?')) ?? []).length === 0, JSON.stringify(await readersOn(owner, 'Still there?')));
+  const on = await tellReading(true);
+  check('turned on again', on.set === 'On', JSON.stringify(on));
+  await until('the guest’s circle to come back', async () => ((await readersOn(owner, 'Still there?')) ?? []).includes('AL'), 10000).catch(() => {});
+  check('on again, the owner’s messages have the guest’s circle', ((await readersOn(owner, 'Still there?')) ?? []).includes('AL'), JSON.stringify(await readersOn(owner, 'Still there?')));
 
   // ---- in Norwegian ----
   await guest.keys(['Control', ',']);

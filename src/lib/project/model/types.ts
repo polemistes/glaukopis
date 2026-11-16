@@ -288,6 +288,17 @@ export interface ChatWords {
 }
 
 /**
+ * Words of another message quoted at the top of a message (record 0107,
+ * added to): the message they are from, and the words themselves, plain,
+ * kept in the message that quotes, so that they stay as they were quoted
+ * when the message they are from is changed or taken back.
+ */
+export interface ChatQuote {
+  id: string;
+  text: string;
+}
+
+/**
  * A message of the chat of a project (records 0092 and 0107): kept in the
  * project's document as a note of a comment is, with who wrote it and when.
  * Its author may change it, or take it back. What it has not is left out,
@@ -303,6 +314,8 @@ export interface ChatMessage {
   edited?: string;
   /** The message it answers: one that answers none itself. */
   to?: string;
+  /** Words of another message it quotes, which stand at its top. */
+  quote?: ChatQuote;
   /** Its words, plain, with their line breaks. */
   text: string;
   marks?: ChatMark[];
