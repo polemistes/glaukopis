@@ -43,20 +43,20 @@
     align-items: center;
     flex: none;
     align-self: flex-end;
-    margin: 0 0 4px 4px;
+    margin: 0 0 3px 4px;
   }
   .circle {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 14px;
-    height: 14px;
-    margin-left: -3px;
+    width: 16px;
+    height: 16px;
+    margin-left: -4px;
     border: 1px solid var(--paper-raised);
     border-radius: 50%;
     color: #fff;
     font-family: var(--font-ui);
-    font-size: 6.5px;
+    font-size: 7.5px;
     font-weight: 700;
     line-height: 1;
   }

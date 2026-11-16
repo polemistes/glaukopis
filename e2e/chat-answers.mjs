@@ -113,6 +113,12 @@ const fieldText = (app) =>
      return f ? Array.from(f.querySelectorAll('p')).map((p) => p.textContent).join('\\n') : null;`,
   );
 
+/** What the line over the field says of what is answered: who, and the first words. */
+const lineOver = (app) =>
+  app.exec(
+    `return Array.from(document.querySelector('[data-chat-answering]')?.children ?? []).map((c) => c.textContent.trim()).filter(Boolean).join(' ')`,
+  );
+
 /** Opens the document pane, where it is closed, by the Document button of the side. */
 async function openPane(app) {
   if (await app.exists('[data-document-pane]')) return;
@@ -215,7 +221,9 @@ try {
 
   await menuOn(guest, FIRST, 'Answer');
   await guest.waitFor('[data-chat-answering]', 3000);
-  const line = await guest.text('[data-chat-answering]');
+  // Its words as they are written: what does not fit the line ends in an ellipsis, and is not in the text the driver reads.
+  const line = await lineOver(guest);
+  await guest.screenshot('chat-answers-0-answering');
   check('Answer puts a line over the field that names whom and what is answered', line.includes('Answer to Robert') && line.includes(FIRST), line);
   await guest.keys('Yes, with the wrath.');
   await guest.press('Enter');
@@ -226,7 +234,7 @@ try {
 
   await menuOn(owner, 'Yes, with the wrath.', 'Answer');
   await owner.waitFor('[data-chat-answering]', 3000);
-  const again = await owner.text('[data-chat-answering]');
+  const again = await lineOver(owner);
   check('Answer on an answer names that answer and its writer', again.includes('Answer to Anna Lind') && again.includes('Yes, with the wrath.'), again);
   await owner.keys('Then the quarrel.');
   await owner.press('Enter');
@@ -308,6 +316,44 @@ try {
   check('and stands where it stood', !(await messages(owner)).includes('Are you there?'));
   check('the field is empty again after the change', (await fieldText(owner)) === '');
 
+  // ---- the field: written in its middle, its own undo, and a paste with its marks ----
+  await owner.click('[data-chat-field]');
+  await owner.keys('Hello world');
+  for (let i = 0; i < 5; i++) await owner.press('ArrowLeft');
+  await owner.keys('wide ');
+  check('what is written in the middle of the field stands there, the cursor staying where it is', (await fieldText(owner)) === 'Hello wide world', await fieldText(owner));
+  await sleep(900);
+  await owner.keys('very ');
+  check('and more of it', (await fieldText(owner)) === 'Hello wide very world', await fieldText(owner));
+  await owner.keys(['Control', 'z']);
+  await sleep(200);
+  check('Ctrl+Z in the field takes back what was written there after the pause, and no more', (await fieldText(owner)) === 'Hello wide world', await fieldText(owner));
+  await owner.keys(['Control', 'Shift', 'z']);
+  await sleep(200);
+  check('and Ctrl+Shift+Z brings it again', (await fieldText(owner)) === 'Hello wide very world', await fieldText(owner));
+  await owner.keys(['Control', 'z']);
+  await owner.keys(['Control', 'a']);
+  await owner.keys(['Control', 'b']);
+  await owner.keys(['Control', 'c']);
+  await owner.press('ArrowRight');
+  await owner.keys(' ');
+  await owner.keys(['Control', 'v']);
+  // A whole line copied is pasted as a line of its own, as the editor of the text does it.
+  const twice = (text) => (text ?? '').replace(/\s+/g, ' ').trim() === 'Hello wide world Hello wide world';
+  await until('the paste to come into the field', async () => twice(await fieldText(owner)), 8000).catch(() => {});
+  const pasted = await owner.exec(
+    `const f = document.querySelector('[data-chat-field]');
+     return { text: Array.from(f.querySelectorAll('p')).map((p) => p.textContent).join('\\n'), bold: Array.from(f.querySelectorAll('strong')).map((b) => b.textContent).join('|') };`,
+  );
+  check(
+    'what is copied in the field is pasted into it with its mark',
+    twice(pasted.text) && pasted.bold.replace(/[|\s]/g, '') === 'HellowideworldHellowideworld',
+    JSON.stringify(pasted),
+  );
+  await owner.keys(['Control', 'a']);
+  await owner.press('Backspace');
+  check('and the field is emptied', (await fieldText(owner)) === '');
+
   // ---- an answer far up, and the button of what is new ----
   await owner.click('[data-chat-field]');
   for (let i = 1; i <= 40; i++) {
@@ -362,6 +408,14 @@ try {
   await sleep(300);
   await guest.documentPane('references');
   check('another tab is shown', !(await guest.exists('[data-chat]')));
+  // Eight tabs, and a long name chosen among them: every tab stays within the pane.
+  const within = await guest.exec(
+    `const pane = document.querySelector('[data-document-pane]').getBoundingClientRect();
+     const tabs = Array.from(document.querySelectorAll('[data-document-pane] .side-tabs [role="tab"]'));
+     return { count: tabs.length, inside: tabs.every((t) => t.getBoundingClientRect().right <= pane.right - 20 && t.getBoundingClientRect().width > 0) };`,
+  );
+  check('every tab of the document pane stands within it, the chat among them', within.count === 8 && within.inside, JSON.stringify(within));
+  await guest.screenshot('chat-answers-5b-tabs');
   await showChat(guest);
   const kept = await guest.exec(
     `return { answering: document.querySelector('[data-chat-answering]')?.textContent ?? null, em: document.querySelector('[data-chat-field] em')?.textContent ?? null }`,
@@ -415,7 +469,7 @@ try {
   );
   await menuOn(guest, 'Yes, with the wrath.', 'Svar');
   await guest.waitFor('[data-chat-answering]', 3000);
-  const svar = await guest.text('[data-chat-answering]');
+  const svar = await lineOver(guest);
   check('and so is the line over the field', svar.includes('Svar til Anna Lind'), svar);
   await guest.click('[data-chat-field]');
   await guest.press('Escape');

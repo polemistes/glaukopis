@@ -121,6 +121,8 @@
 
   // ---- what is done with a message ----
   let reacting = $state<{ message: ChatMessage; at: HTMLElement } | null>(null);
+  /** Where the list stands, and what of the new has been seen. */
+  const place = new ListPlace();
 
   function remove(message: ChatMessage) {
     const taken = project.unsay(message.id);
@@ -144,7 +146,7 @@
     },
     readersOf: (id) => readers.get(id) ?? NONE,
     chipsOf: (id) => chips.get(id) ?? NONE,
-    isNew: (id) => fresh.has(id),
+    isNew: (id) => fresh.has(id) && place.marks(id),
     answer(message) {
       write({ words: unchanged(written).words, to: message.id });
       focus++;
@@ -179,7 +181,6 @@
   }
 
   // ---- where the list stands, and what of the new is not yet seen ----
-  const place = new ListPlace();
 
   // Where the list was at its foot when the messages changed, it goes to
   // the foot again once they are drawn; where the reader had gone up, it

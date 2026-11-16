@@ -1881,7 +1881,9 @@ The references, the images, the notes of the notebook, the comments, the
 loose citations, the history and the changes to review of a document, and
 the chat of a shared project, share one pane beside the sides, one at a time. **Document**, the button with the pane on it in the bar of a side,
 opens it as it was last, and closes it; the tabs at its head change what it
-shows. Each has its key as well: **Ctrl+Shift+R**, **Ctrl+Shift+P**,
+shows. The tab chosen says its name where there is room; in a pane too narrow
+for all the tabs it is an icon like the others, and its name is in its
+tooltip. Each has its key as well: **Ctrl+Shift+R**, **Ctrl+Shift+P**,
 **Ctrl+Shift+M**, **Ctrl+Shift+T**, **Ctrl+Shift+H** and **Ctrl+Shift+E**.
 The pane always shows the document of the active side, the element in view
 there with all under it, named in the line over its tabs, with its project
@@ -3611,8 +3613,8 @@ long as the project is shared. **Ctrl+K** finds it as well.
   circles of the others.
 - Since an answer stands under its message, what is new is not always at
   the foot. A new message has a thin line in the colour of the program at
-  its left. When the chat is shown, the first new message is brought into
-  view; and while new messages stand where you have not seen them, a button
+  its left, until you have seen it and others have come after it. When the
+  chat is shown, the first new message is brought into view; and while new messages stand where you have not seen them, a button
   over the foot of the list says how many, with an arrow up or down, and
   takes you to the nearest of them.
 

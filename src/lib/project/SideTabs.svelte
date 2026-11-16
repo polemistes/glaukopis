@@ -4,7 +4,10 @@
   changes and the chat have the one place, and are one at a time. A tab may
   carry a count, as of the citations that are left to go through, and may be
   left out, as the chat of a project that has none. The pane puts its own
-  tools, and the way to close it, after these.
+  tools, and the way to close it, after these. The tab chosen says its name
+  while there is room for it; in a pane too narrow for all the tabs with a
+  name among them, it is told by its tooltip as the others are, so that
+  every tab stays within the pane.
 -->
 <script lang="ts">
   import BookMarked from '@lucide/svelte/icons/book-marked';
@@ -15,6 +18,7 @@
   import MessageSquare from '@lucide/svelte/icons/message-square';
   import MessagesSquare from '@lucide/svelte/icons/messages-square';
   import TextSearch from '@lucide/svelte/icons/text-search';
+  import { tick, untrack } from 'svelte';
   import { t } from '$lib/i18n';
   import { keysFor } from '$lib/shell/keys.svelte';
   import { tooltip } from '$lib/ui/tooltip';
@@ -84,6 +88,43 @@
   ]);
   const kinds = $derived(all.filter((k) => !without.includes(k.kind)));
 
+  // ---- room for the name of the tab chosen ----
+  let tabs = $state<HTMLDivElement>();
+  /** Whether the tabs do not fit with the name of the one chosen: it is then left out. */
+  let narrow = $state(false);
+  /** How wide the tabs are with the name: the room they need to show it again. */
+  let needed = 0;
+
+  /** Leaves the name out where the tabs go past their room, and shows it again once they have it. */
+  function fit() {
+    if (!tabs) return;
+    if (!narrow) {
+      if (tabs.scrollWidth > tabs.clientWidth + 1) {
+        needed = tabs.scrollWidth;
+        narrow = true;
+      }
+    } else if (tabs.clientWidth >= needed) narrow = false;
+  }
+
+  // The room changes with the pane; what is needed, with the tabs there are,
+  // the one chosen, what they count and the language: measured anew then,
+  // with the name shown.
+  $effect(() => {
+    if (!tabs || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(fit);
+    observer.observe(tabs);
+    return () => observer.disconnect();
+  });
+  $effect(() => {
+    void kinds;
+    void current;
+    void Object.values(counts).join();
+    untrack(() => {
+      narrow = false;
+      void tick().then(fit);
+    });
+  });
+
   function onkeydown(event: KeyboardEvent) {
     const i = kinds.findIndex((k) => k.kind === current);
     const by = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
@@ -100,7 +141,13 @@
 </script>
 
 <!-- svelte-ignore a11y_interactive_supports_focus -->
-<div class="side-tabs" role="tablist" aria-label={t('project-side-tabs')} {onkeydown}>
+<div
+  class="side-tabs"
+  role="tablist"
+  aria-label={t('project-side-tabs')}
+  bind:this={tabs}
+  {onkeydown}
+>
   {#each kinds as k (k.kind)}
     {@const Icon = k.icon}
     {@const chosen = k.kind === current}
@@ -112,23 +159,28 @@
       aria-label={k.label}
       tabindex={chosen ? 0 : -1}
       class:chosen
-      use:tooltip={chosen ? null : { text: k.label, shortcut: k.shortcut }}
+      use:tooltip={chosen && !narrow ? null : { text: k.label, shortcut: k.shortcut }}
       onclick={() => onpick(k.kind)}
     >
       <Icon size={15} />
-      {#if chosen}<span class="label">{k.label}</span>{/if}
+      {#if chosen && !narrow}<span class="label">{k.label}</span>{/if}
       {#if counts[k.kind]}<span class="count">{counts[k.kind]}</span>{/if}
     </button>
   {/each}
 </div>
-<span class="spacer"></span>
 
 <style>
+  /* The tabs take the room there is, so that what the pane puts after them
+     stands at the right, and so that their room can be measured. */
   .side-tabs {
     display: flex;
+    flex: 1;
     align-items: center;
     gap: 2px;
     min-width: 0;
+  }
+  button {
+    flex: none;
   }
   button {
     display: inline-flex;
@@ -170,8 +222,5 @@
   }
   button.chosen .count {
     background: var(--paper);
-  }
-  .spacer {
-    flex: 1;
   }
 </style>

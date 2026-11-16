@@ -3,12 +3,16 @@
  * while messages arrive there, if it was at its foot; at the first new
  * message when the chat comes to be shown; at one's own answer once it is
  * sent; and which of the new messages have been within what is shown, so
- * that a button can lead to the nearest of those that have not. The panel
- * holds one, gives it the element of the list, and tells it when the
+ * that a button can lead to the nearest of those that have not, and so that
+ * the mark of a new message is taken off once it has been seen and others
+ * have arrived after it: the mark is for the latest news and for what has
+ * not been seen, not for everything that came while the chat was shown. The
+ * panel holds one, gives it the element of the list, and tells it when the
  * messages and what is new change.
  */
 
 import { tick } from 'svelte';
+import { SvelteSet } from 'svelte/reactivity';
 import { nearest, within, type Standing } from './reading';
 
 /** Whether a list is at its foot, or near enough to it. */
@@ -21,6 +25,8 @@ export class ListPlace {
   unseen = $state(0);
   /** The nearest of them, and whether it is above what is shown. */
   toNearest = $state<{ id: string; up: boolean } | null>(null);
+  /** The new messages that are marked no more: seen, and others have arrived since. */
+  readonly settled = new SvelteSet<string>();
 
   /** Whether the list was at its foot before the messages last changed. */
   #atFoot = true;
@@ -51,10 +57,24 @@ export class ListPlace {
     void tick().then(() => this.#afterDraw());
   }
 
-  /** What is new changed: nothing new is seen any more where nothing is new; then what is shown is looked at. */
+  /**
+   * What is new changed: where nothing is new, nothing is seen or settled
+   * any more; where others have arrived, those seen before them are marked
+   * no more. Then what is shown is looked at.
+   */
   freshChanged(fresh: ReadonlySet<string>) {
-    if (!fresh.size) this.#seen.clear();
+    if (!fresh.size) {
+      this.#seen.clear();
+      this.settled.clear();
+    } else {
+      for (const id of this.#seen) if (fresh.has(id)) this.settled.add(id);
+    }
     void tick().then(() => this.look());
+  }
+
+  /** Whether a new message is still marked as new. */
+  marks(id: string): boolean {
+    return !this.settled.has(id);
   }
 
   /** The list was scrolled: what is shown is looked at, once a frame. */
