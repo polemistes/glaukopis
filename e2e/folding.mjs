@@ -264,6 +264,8 @@ try {
 
   // ---- what is written under a folded element is shown ----
   await app.keys(['Control', 'End']);
+  // An empty line first: Alt+Enter in a paragraph with words makes that paragraph the name.
+  await app.press('Enter');
   await app.keys(['Alt', 'Enter']);
   await sleep(500);
   await app.keys('Two first');

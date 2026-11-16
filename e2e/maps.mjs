@@ -358,7 +358,7 @@ try {
   );
   await app.screenshot('maps-10-text');
 
-  // Writing in the text, and making a new element from what follows the cursor.
+  // Writing in the text, and making an element of an empty line after it.
   const economy = await app.exec(
     `const s = Array.from(document.querySelectorAll('.text-view .section')).find((e) => e.querySelector('.heading').textContent.includes('economy'));
      return s.querySelector('.body');`,
@@ -369,6 +369,8 @@ try {
   );
   await sleep(200);
   await app.keys('Honour is counted in prizes. ');
+  // An empty line first: Alt+Enter in a paragraph with words makes that paragraph the name.
+  await app.press('Enter');
   await app.keys(['Alt', 'Enter']);
   await sleep(400);
   await app.keys('The prize of Briseis');
@@ -380,12 +382,13 @@ try {
     `return Array.from(document.querySelectorAll('.text-view .section .heading .title')).map((e) => e.textContent.trim())`,
   );
   check(
-    'Alt+Enter at the end of a text begins a new element after the one written in',
+    'Enter and then Alt+Enter after a text begin a new element after the one written in',
     after[4] === 'The prize of Briseis',
     after.join(' | '),
   );
 
-  // Alt+Enter one after, Alt+Shift+Enter one under.
+  // Alt+Enter one after, Alt+Shift+Enter one under: Enter first, for an empty line, as above.
+  await app.press('Enter');
   await app.keys(['Alt', 'Enter']);
   await sleep(400);
   await app.keys('The gifts of Agamemnon');
@@ -398,7 +401,7 @@ try {
     `return Array.from(document.querySelectorAll('.text-view .section')).map((s) => s.querySelector('.heading .title').textContent.trim() + ':' + (s.className.match(/level-(\\d)/) || [])[1])`,
   );
   check(
-    'Alt+Enter at the end of a text begins a new element after this one',
+    'Enter and then Alt+Enter after a text begin a new element after this one',
     org[5]?.startsWith('The gifts of Agamemnon:'),
     org.join(' | '),
   );

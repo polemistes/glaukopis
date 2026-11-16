@@ -65,6 +65,8 @@ try {
   await app.press('Enter');
   await sleep(250);
   await app.keys('Tell me, Muse, of the man of many ways.');
+  // An empty line first: Alt+Enter in a paragraph with words makes that paragraph the name.
+  await app.press('Enter');
   await app.keys(['Alt', 'Enter']);
   await sleep(400);
   await app.keys('Book two');

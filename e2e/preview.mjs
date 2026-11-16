@@ -51,6 +51,8 @@ try {
   await app.click('.text-view .section .body');
   await sleep(300);
   await app.keys('The poem begins with a word. ');
+  // An empty line first: Alt+Enter in a paragraph with words makes that paragraph the name.
+  await app.press('Enter');
   await app.keys(['Alt', 'Enter']);
   await sleep(400);
   await app.keys('The word');

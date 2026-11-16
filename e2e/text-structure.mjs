@@ -82,12 +82,13 @@ try {
   await app.press('Enter');
   await sleep(250);
   await app.keys('Alpha beta');
-  for (let i = 0; i < 4; i++) await app.press('ArrowLeft');
+  // The last word selected: with words selected, they are the name.
+  for (let i = 0; i < 4; i++) await app.keys(['Shift', 'ArrowLeft']);
   await app.keys(['Alt', 'Shift', 'Enter']);
   await sleep(400);
   let list = await sections();
   check(
-    'Alt+Shift+Enter in a text makes the first element under it, the rest of the paragraph its name',
+    'Alt+Shift+Enter in a text makes the first element under it, the words selected its name',
     JSON.stringify(list) === JSON.stringify(['Structure:0', 'One:1', 'beta:2']) &&
       (await bodyOf('One')) === 'Alpha',
     `${list.join(' | ')} / ${await bodyOf('One')}`,
