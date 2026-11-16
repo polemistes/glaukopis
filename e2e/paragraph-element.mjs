@@ -5,10 +5,12 @@
 // name, what stood before them stays, and what stood after them in the
 // paragraph begins the new text. Alt+Shift+Enter puts the new element under
 // the one the cursor is in. Enter and then Alt+Enter make an empty element and
-// leave no empty line behind. A paragraph with a bold word, which a name
-// cannot hold, is the first paragraph of the new element's text, and a message
-// says why. The entry of the right-click menu says what it does, with and
-// without words selected. Ctrl+Z takes each step back whole.
+// leave no empty line behind. A paragraph with a bold word is the name too,
+// without the bold and without a message. Where a paragraph has line breaks,
+// only the line the cursor is in is the name: the lines before it stay, the
+// lines after it begin the new element's text. The entry of the right-click
+// menu says what it does, with and without words selected. Ctrl+Z takes each
+// step back whole.
 
 import { App, sleep } from './harness.mjs';
 
@@ -55,6 +57,26 @@ try {
     app.exec(
       `const s = Array.from(document.querySelectorAll('.text-view .section')).find((s) => (s.querySelector('.heading .title')?.textContent ?? '').trim() === arguments[0]);
        return s?.querySelector('[data-part="body"] .ProseMirror')?.children.length ?? 0;`,
+      name,
+    );
+  /** The paragraphs of an element's text, each as its lines (parted by its line breaks), the empty paragraphs left out. */
+  const linesOf = (name) =>
+    app.exec(
+      `const s = Array.from(document.querySelectorAll('.text-view .section')).find((s) => (s.querySelector('.heading .title')?.textContent ?? '').trim() === arguments[0]);
+       const body = s?.querySelector('[data-part="body"] .ProseMirror');
+       if (!body) return [];
+       return Array.from(body.children).map((p) => {
+         const out = [''];
+         const walk = (node) => {
+           for (const c of node.childNodes) {
+             if (c.nodeType === 3) out[out.length - 1] += c.textContent;
+             else if (c.matches?.('.hard-break')) out.push('');
+             else walk(c);
+           }
+         };
+         walk(p);
+         return out.map((l) => l.trim());
+       }).filter((l) => l.some((x) => x));`,
       name,
     );
   /** Where the cursor is: in which element, which part, how far in. */
@@ -273,7 +295,7 @@ try {
   );
   await back('what the menu made of the selection');
 
-  // ==== A paragraph a name cannot hold is the first paragraph of the new text ====
+  // ==== A paragraph with a bold word is the name too, the bold dropped ====
   await intoParagraph('Marked', 'The wrath', 0, true);
   await app.keys(['Alt', 'Enter']);
   await sleep(600);
@@ -281,31 +303,37 @@ try {
   at = await where();
   const said = await toasts();
   check(
-    'a paragraph with a bold word makes an element after this one with an empty name, the cursor in the name',
-    JSON.stringify(list) === JSON.stringify([...base, ':1']) && at.part === 'title' && at.section === '' && at.offset === 0,
+    'a paragraph with a bold word is made the name of a new element after this one, the cursor at the end of the name',
+    JSON.stringify(list) === JSON.stringify([...base, `${MARKED}:1`]) &&
+      at.part === 'title' &&
+      at.section === MARKED &&
+      at.offset === MARKED.length,
     `${list.join(' | ')} ${JSON.stringify(at)}`,
   );
   const kept = await app.exec(
     `const s = Array.from(document.querySelectorAll('.text-view .section'))[3];
-     const body = s?.querySelector('[data-part="body"] .ProseMirror');
-     return body ? { paragraphs: Array.from(body.children).map((p) => p.textContent.trim()), bold: body.querySelectorAll('strong').length } : null;`,
+     return s ? {
+       bold: s.querySelectorAll('.heading .title strong, .heading .title b').length,
+       words: s.querySelector('.heading .title')?.textContent.trim(),
+       text: Array.from(s.querySelector('[data-part="body"] .ProseMirror')?.children ?? []).map((p) => p.textContent.trim()).filter((t) => t),
+     } : null;`,
   );
   check(
-    'and the paragraph, the bold word in it, is the first of its text',
-    kept?.paragraphs.length === 1 && kept.paragraphs[0] === MARKED && kept.bold === 1,
+    'the name has the words without the bold, and the new element has no text',
+    kept?.bold === 0 && kept.words === MARKED && kept.text.length === 0,
     JSON.stringify(kept),
   );
   check(
-    'a message says why',
-    said.some((t) => t.includes('holds what a name cannot')),
+    'and no message is given, since nothing was taken out',
+    !said.some((t) => t.includes('cannot hold') || t.includes('stands at the start')),
     JSON.stringify(said),
   );
   check(
-    'and nothing of it is left where it was',
+    'and nothing of the paragraph is left where it was',
     (await paragraphs('Marked')).length === 0,
     JSON.stringify(await paragraphs('Marked')),
   );
-  await app.screenshot('paragraph-element-5-kept');
+  await app.screenshot('paragraph-element-5-marked');
   await app.keys(['Control', 'z']);
   await sleep(500);
   check(
@@ -313,6 +341,58 @@ try {
     JSON.stringify(await sections()) === JSON.stringify(base) &&
       JSON.stringify(await paragraphs('Marked')) === JSON.stringify([MARKED]),
     `${(await sections()).join(' | ')} / ${(await paragraphs('Marked')).join(' | ')}`,
+  );
+
+  // ==== A paragraph of three lines: the line the cursor is in is the name ====
+  await intoParagraph('Marked', 'The wrath', 0, true);
+  await app.press('Enter');
+  await app.keys('Line one');
+  await app.keys(['Shift', 'Enter']);
+  await app.keys('Line two');
+  await app.keys(['Shift', 'Enter']);
+  await app.keys('Line three');
+  await sleep(300);
+  const threeLines = [[MARKED], ['Line one', 'Line two', 'Line three']];
+  check(
+    'a paragraph of three lines is written, parted by line breaks',
+    JSON.stringify(await linesOf('Marked')) === JSON.stringify(threeLines),
+    JSON.stringify(await linesOf('Marked')),
+  );
+  // The cursor in the middle of the second line.
+  await app.press('ArrowUp');
+  await app.press('Home');
+  for (let i = 0; i < 3; i++) await app.press('ArrowRight');
+  await sleep(100);
+  await app.keys(['Alt', 'Enter']);
+  await sleep(600);
+  list = await sections();
+  at = await where();
+  check(
+    'Alt+Enter with the cursor in the second line makes only that line the name of a new element after this one',
+    JSON.stringify(list) === JSON.stringify([...base, 'Line two:1']) &&
+      at.part === 'title' &&
+      at.section === 'Line two' &&
+      at.offset === 'Line two'.length,
+    `${list.join(' | ')} ${JSON.stringify(at)}`,
+  );
+  check(
+    'the first line stays where it was, as its own paragraph, with no line break after it',
+    JSON.stringify(await linesOf('Marked')) === JSON.stringify([[MARKED], ['Line one']]),
+    JSON.stringify(await linesOf('Marked')),
+  );
+  check(
+    'and the third line begins the text of the new element',
+    JSON.stringify(await linesOf('Line two')) === JSON.stringify([['Line three']]),
+    JSON.stringify(await linesOf('Line two')),
+  );
+  await app.screenshot('paragraph-element-6-lines');
+  await app.keys(['Control', 'z']);
+  await sleep(500);
+  check(
+    'Ctrl+Z takes it back in one step, the three lines one paragraph again',
+    JSON.stringify(await sections()) === JSON.stringify(base) &&
+      JSON.stringify(await linesOf('Marked')) === JSON.stringify(threeLines),
+    `${(await sections()).join(' | ')} / ${JSON.stringify(await linesOf('Marked'))}`,
   );
 
   // ==== Enter and then Alt+Enter: an empty element, and no empty line behind it ====
@@ -337,7 +417,7 @@ try {
     (await lines('Book')) === 3 && JSON.stringify(await paragraphs('Book')) === JSON.stringify(BOOK),
     `${await lines('Book')} / ${(await paragraphs('Book')).join(' | ')}`,
   );
-  await app.screenshot('paragraph-element-6-empty');
+  await app.screenshot('paragraph-element-7-empty');
 
   const errors = await app.pageErrors();
   check('no errors in the page', errors.length === 0, errors.join(' | '));

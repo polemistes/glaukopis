@@ -1,6 +1,6 @@
 # 0108 — A paragraph made an element
 
-Date: 2026-11-16. Status: built on 2026-11-16, its choices not yet confirmed by the owner; from the owner's words of the same day ("Then a feature in the text view. When pressing alt+enter with the cursor inside a paragraph, the paragraph text should be made an element. If alt+enter is pressed when text is selected, the selected text becomes the element. The text before the selection belongs to the previous element, and the text after belongs to the new element.").
+Date: 2026-11-16. Status: built on 2026-11-16, its choices not yet confirmed by the owner, and added to later the same day (the last section); from the owner's words of the same day ("Then a feature in the text view. When pressing alt+enter with the cursor inside a paragraph, the paragraph text should be made an element. If alt+enter is pressed when text is selected, the selected text becomes the element. The text before the selection belongs to the previous element, and the text after belongs to the new element.").
 
 ## Context
 
@@ -41,3 +41,36 @@ Date: 2026-11-16. Status: built on 2026-11-16, its choices not yet confirmed by 
 - **The scripts**: `e2e/paragraph-element.mjs` is new; the scripts that pressed Alt+Enter at the end of a paragraph with words in it to begin an empty element press Enter first (`folding`, `maps`, `preview`, `scope`), `text-structure` selects the word it means for the name, and the text's part of `tree-keys` is rewritten for the whole paragraph as the name. Written, and not yet run.
 - **Checked**: `pnpm check` finds nothing; `pnpm test` passes, 236 files and 2017 tests, among them the 32 of `heading.test.ts` and the help reader against the whole guide.
 - **Tried in the running application, 2026-11-16, after the merge.** The script `paragraph-element` passed as it was written, 35 of 35, and the scripts changed for the new rule with it: `tree-keys` 44 of 44, `text-structure` 35 of 35, `maps` 81 of 81, `folding` 30 of 30, `preview` 48 of 48 and `scope` 12 of 12. The presses of Alt+Enter in seventeen of the scripts left unchanged were read again: each is in the diagram or in an empty text.
+
+## Added to, 2026-11-16 (later)
+
+Told what was built, and which choices had been made without asking, the owner wrote: "I think any paragraph type should be turned into the name of the element. An exception I thought about now is when there are line breaks in a paragraph. Only the part that is after and before a line break becomes the name of the element."
+
+**What no longer holds above.** Decision 4, that what a name cannot hold makes the name empty and is kept as the first paragraph of the new element's text, is replaced by what follows, and so is the toast of choice 4 of the choices made in building. Decision 3 gains the line, and decision 2 gains the line break. The rest holds.
+
+### Decision
+
+1. **Every paragraph becomes the name**: its words. A mark a name cannot have, which is every mark but italics, small capitals, raised and lowered text, is **dropped and the words kept**: bold, underlined, struck through, code, a kind of words, a language, a link. Nothing is said of a dropped mark.
+2. **Where the paragraph has line breaks, only the line the cursor is in becomes the name**: from the line break before the cursor, or the paragraph's start, to the line break after it, or its end. The lines before it stay in the element as the paragraph they were, without the break that ended them; the lines after it become the first paragraph of the new element's text, a paragraph of the same kind and attributes, without the break that began them, followed by the paragraphs below. In the first line nothing of the paragraph stays; in the last nothing follows.
+3. **With words selected**, the name is what is selected, as before, **up to the first line break within it**. What follows from there, without that break, begins the new element's text, with what stood after the selection. What stands before the selection stays, the lines before it too, and a line break at the end of what stays is not left there, as the spaces are not.
+4. **What is not words cannot stand in a name, and is not lost**: a citation, a note, a formula, a reference mark or a cross-reference, every inline node that is neither text nor a line break, is taken out of the name and **stands at the start of the first paragraph of the new element's text**, in the order it stood, before what stood after the name in the paragraph; where nothing stood after it, in a paragraph of its own, of the paragraph's kind and attributes. Where taking one out leaves two spaces together in the name, one stays. **A toast says so** whenever something was taken out: *What a name cannot hold, such as a citation or a note, stands at the start of the new element’s text*. A paragraph of nothing but such things gives an empty name and keeps them, as before.
+5. Everything else is as above: a block left whole, a selection that is not of text, where the new element goes, Alt+Shift+Enter, the cursor in the new name, one step of undo, a name unchanged, the two entries of the menu.
+
+### Choices made in building this, which the owner has not been asked about
+
+- **What is not words is kept at the start of the new text, with a toast**, rather than left out, or turned into the words it shows as. The owner said any paragraph, and spoke of line breaks alone.
+- **A selection over line breaks ends the name at the first of them.**
+- **What was taken out stands on a line of its own, with a line break between it and the lines that follow**, where the name was a line or a paragraph that ended at a line break; where a selection ended in the middle of a line, it runs straight into the rest of that line, as it stood. So a citation that was on the second line is not set against the first word of the third.
+- **Blank lines and spaces are not left at the seams.** What stays does not end, and what begins the new text does not begin, with spaces or line breaks: a paragraph of "One, an empty line, Three" with the cursor in Three leaves "One", and the empty line between is gone, as the space at the end of what stayed was gone in the first form. Only empty lines are dropped, never words.
+- **A selection that begins at the very end of a line and goes on into the next begins with the next line**, as one that begins at the end of a paragraph begins with the next paragraph.
+- **A line mark** (the number or the note in the margin that is set by hand on a line of verse) **is dropped from the name without a word**: it says something of the line, not in it, a name is no line of verse, and a message about *a citation or a note* for something that shows nothing would mislead.
+- **A figure is left whole**, as a table is. Its caption is a text too, and the rule that took the paragraph the cursor is in for the name took the caption of a figure as well, and cut the picture away with it. Only a paragraph is a paragraph here.
+- **`nameable` goes**: nothing asks whether a paragraph can be a name any more.
+
+### As built, 2026-11-16 (later)
+
+- **The parting of the text**: `headingAt` in `project/text/heading.ts` finds the line, or the selection to its first break; `Heading.name` is always a fragment, and `keptAsParagraph` gave way to `keptInText`, which says that something was taken out of the name and stands at the start of the body. `split` in `MapText.svelte` follows it and tells by the same message, reworded, `text-name-kept`, in English and Bokmål (no other language has it yet).
+- **The guide**: *A paragraph made an element* and the two rows of the keys that name what Alt+Enter takes.
+- **Tests**: `heading.test.ts` is written again for the new rule: a bold word in the name's place; marks kept and dropped side by side, and every mark of the schema that a name cannot have; the first, a middle and the last line of a paragraph of three lines, with the cursor at the end of a line and at the start of the next; empty lines; a selection within a line and over a line break, at the end of a line and of a whole line; a citation, a note, a formula, a reference mark and a cross-reference at the start, in the middle and at the end, with the two spaces, with and without words after the name, on a line of its own before the lines after it; a paragraph of nothing but such things; a figure.
+- **The scripts, written and not yet run**: `paragraph-element` has the paragraph with a bold word as the name without a message, and a paragraph of three lines with the cursor in the second, which Ctrl+Z takes back whole; `tree-keys` has the paragraph with a citation, whose words are the name and whose citation is the first paragraph of the new text, with the new message. No other script relied on the old rule.
+- **Checked**: `pnpm check` finds nothing; `pnpm test` passes, 241 files and 2137 tests, among them the 54 of `heading.test.ts` and the help reader against the whole guide. The scripts are not yet run.
