@@ -14,6 +14,17 @@ Every window that opens over the others, such as the settings or the window
 that reads a PDF, can be moved by dragging its title, to see what lies under
 it; a double-click on the title puts it back in the middle.
 
+### Help
+
+This guide is in Glaukopis too. **F1**, or the question mark at the right
+end of the row at the top of the window, opens it over what you are doing,
+at the part about where you are: the diagram, the text, the library, the
+notebook. **F1** again, or **Escape**, closes it. Opened again where you
+were, it is where you left it, so that you can read a step, do it, and read
+on. The chapters are at its left; **Find in the guide**, over them, shows
+the parts that hold all the words you type, and **Enter** goes to the one
+chosen, with the words marked.
+
 ## The idea
 
 You do not write a document in Glaukopis. You make a **map** of your ideas,
@@ -2265,7 +2276,7 @@ The top row holds, over each side, its path and at its right end the
 **×** that closes the side, **Close view**, with the button of **Split view**
 just before it. At the left end of the row stand the house, the library, the
 notebook and the button of the list of projects, in the head of the list while it is
-shown; at the right end the keys and the settings. The search through all
+shown; at the right end Help, the keys and the settings. The search through all
 the projects is the field at the top of the list (see *Searching through
 everything*). Under the path, each side
 has its bar (see *The text*).
@@ -4005,6 +4016,7 @@ what is to be done by its name, and does it.
 | **Ctrl+K** | What is to be done: anything that has a key, and some that have none, found by its name |
 | **Ctrl+1**, **Ctrl+2**, **Ctrl+3**, **Ctrl+4** | The projects, the library, the notebook, the files of the library |
 | **Ctrl+,** | Settings, in a window over what is open; closing it leaves you where you were |
+| **F1** | Help: this guide, at the part about where you are; also the question mark in the row at the top |
 | **Ctrl+D** | Diagram or text |
 | **Alt+Shift+Up** | Up to the element over this one, in the diagram and in the text; from the top of a project, to its row in the list of projects |
 | **Ctrl+Shift+O** | The outline beside the text |

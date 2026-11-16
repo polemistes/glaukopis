@@ -29,6 +29,7 @@ keys-library = The library
 keys-files = The files of the library
 keys-notebook = The notebook
 keys-settings = Settings
+keys-help = Help
 keys-search-everything = Search through everything
 keys-palette = What is to be done?
 keys-sheet = The keys

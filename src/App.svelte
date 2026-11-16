@@ -40,6 +40,9 @@
   import { panes } from '$lib/project/panes.svelte';
   import SettingsDialog from '$lib/settings/SettingsDialog.svelte';
   import { settingsUi } from '$lib/settings/settings-ui.svelte';
+  import HelpView from '$lib/help/HelpView.svelte';
+  import { helpUi } from '$lib/help/help-ui.svelte';
+  import { toggleHelp } from '$lib/help/open';
   // The ways a file is shown in a side, with the hook of the e2e scripts.
   import '$lib/viewer/show';
 
@@ -276,10 +279,11 @@
     router.replace({ view: 'home' });
   });
 
-  // The keys that hold wherever one is. Going to a place closes the settings,
-  // which would otherwise lie over it.
+  // The keys that hold wherever one is. Going to a place closes the settings
+  // and Help, which would otherwise lie over it.
   const go = (route: Route) => {
     settingsUi.hide();
+    helpUi.hide();
     router.go(route);
   };
   onMount(() =>
@@ -292,6 +296,8 @@
       // To the notebook, at the note chosen in it when it was left.
       notebook: () => go(router.lastNotebook ?? { view: 'notebook' }),
       settings: () => settingsUi.toggle(),
+      // The user's guide, at the part about where one is.
+      help: () => toggleHelp(),
       // To the field of the list of projects, which searches them (record 0098): where the
       // view has no list, to the projects first.
       'search-everything': () => {
@@ -299,6 +305,7 @@
         if (view === 'library' || view === 'files' || view === 'notebook')
           go(router.lastProject ?? { view: 'home' });
         settingsUi.hide();
+        helpUi.hide();
         toSearch();
       },
       'new-window': () => void newWindow().catch((error) => console.error('No new window', error)),
@@ -377,6 +384,7 @@
   {#if keysUi.sheet}<KeySheet onclose={() => (keysUi.sheet = false)} />{/if}
   {#if keysUi.palette}<Palette onclose={() => (keysUi.palette = false)} />{/if}
   <SettingsDialog />
+  <HelpView />
   <MenuHost />
   <DragGhost />
 {/if}
