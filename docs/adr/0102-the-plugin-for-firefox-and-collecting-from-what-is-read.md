@@ -39,10 +39,18 @@ Date: 2026-11-16. Status: built on 2026-11-15 and 2026-11-16, as stage 3 of `doc
 
 ## Left for later
 
-- **The signature**, and offering the signed file from the owner's site, with the address in the settings.
+- ~~The signature~~ (see the addendum). Offering the signed file from the owner's site comes with the first release that has the notebook; the address in the settings is still to be made.
 - Firefox as a Flatpak, which needs leave given by hand.
 - The words of the plugin and of the settings in the other languages.
 
 ## Checked
 
 `cargo test --workspace`, `cargo clippy`, `pnpm check`, `pnpm test`. Against the built application: `e2e/notebook-plugin.mjs` (25 checks: the settings, the manifest, the helper spoken to as Firefox speaks to it, notes of a selection, a part of a page and a page, harmful HTML of which nothing survives) and `e2e/notebook-from-file.mjs` (24 checks); and the trial in a real Firefox above.
+
+## Addendum, 2026-11-16: the plugin is signed, and offered as a file
+
+The owner made the account with Mozilla and signed version 1.0.0 as *unlisted*: signed, and not shown in Mozilla's collection of add-ons. Asked whether it should be listed there, the owner chose the file for now. The signed file is the plugin exactly as the source had it; it is kept in `packaging/firefox/` (not in git, as no package is) and goes with the packages on the owner's site from the first release with the notebook (`packaging/web/README.md`). The guide says how it is added to Firefox.
+
+Mozilla's check found no faults and gave four warnings, each looked at and left as it is, with the reasons in `packaging/firefox/README.md`: the lowest Firefox asked for (140) is older than what Firefox for Android needs for the declaration of what a plugin handles, and the plugin is for computers; an assignment of HTML in `page.js` is into a template, which is inert; two more are in Mozilla's own Readability, kept as published. The declaration of what the plugin handles went through as built.
+
+Still open: listing it in Mozilla's collection, should the owner want that later (it needs a listing with a summary, a category and a licence, a higher version, and goes through Mozilla's review); and the address of the file in the settings.

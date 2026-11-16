@@ -20,3 +20,6 @@
 /packaging/installers
 /packaging/release-*
 /packaging/languages/out
+/extension/firefox/web-ext-artifacts
+/extension/firefox/.amo-upload-uuid
+/packaging/firefox/*.xpi

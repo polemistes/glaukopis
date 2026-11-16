@@ -36,6 +36,12 @@ sha256sum Glaukopis_*-setup.exe Glaukopis_*.msi Glaukopis_*.dmg glaukopis-*.pkg.
   PKGBUILD Glaukopis_*.deb Glaukopis-*.rpm > SHA256SUMS
 ```
 
+From the first release with the notebook, the plugin for Firefox goes with
+them: `packaging/firefox/glaukopis-notebook-<version>.xpi`, the file Mozilla
+signed (see the README beside it), is copied into the folder, named in the
+`sha256sum` above, and has a part of its own on the page, which says that
+it is added to Firefox by opening it and needs Glaukopis with the notebook.
+
 Change the names and the sizes in the page, copy it, `releases.html` and
 `SHA256SUMS` back here, and upload the whole folder into `glaukopis/` of the site.
 `version.json` goes up with the installers and not before them: an

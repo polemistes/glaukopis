@@ -63,6 +63,11 @@ Signed as *unlisted*, it is not shown on addons.mozilla.org; the signed
 installed in Firefox by opening it. Raise `version` in `manifest.json` for
 each new signing.
 
+Version 1.0.0 is signed. The signed file is kept in `packaging/firefox/`,
+whose README says where it goes at a release and what Mozilla's check said
+of it. `web-ext-artifacts/` and `.amo-upload-uuid`, which the signing leaves
+here, are not kept in git.
+
 ## Its parts
 
 - `manifest.json`; `background.js`, the event page; `page.js`, what is done

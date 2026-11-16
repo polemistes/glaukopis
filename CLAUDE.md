@@ -107,7 +107,9 @@ Linux. A command that can wait long or be called many times at once runs on
   Norwegian dictionaries, the CSL update.
 - `packaging/`: `arch/` (PKGBUILD, and `release/` for the tagged one),
   `linux/`, `server/`, `web/`, `release-x.y.z/` (the website folder of a
-  release, uploaded by the owner by hand), `languages/`.
+  release, uploaded by the owner by hand), `languages/`, `firefox/` (the
+  plugin as Mozilla signed it, which goes with the packages; its README says
+  how a new version of it is signed).
 - `.github/workflows/`: `tests.yml` on every push; `installers.yml` on a `v*`
   tag (Windows, macOS on Apple silicon and Intel, deb, rpm, server packages).
 

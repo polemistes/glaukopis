@@ -1661,11 +1661,14 @@ why it must be set up once:
    among Firefox's own that tells it where Glaukopis is. **Remove** takes
    it away again. After Glaukopis has been moved or installed anew, set it
    up again; the settings say where another installation is named.
-2. In Firefox, add the plugin. Until it carries Mozilla's signature and is
-   offered as a file with Glaukopis, Firefox takes it for one session at a
-   time: `about:debugging`, **This Firefox**, **Load Temporary Add-on…**,
-   and the file `manifest.json` in the folder `extension/firefox` of
-   Glaukopis's source.
+2. In Firefox, add the plugin. It is a file signed by Mozilla, *Glaukopis
+   Notebook* (`.xpi`), with Glaukopis's packages at
+   www.robertemilberge.no/glaukopis; it is not in Mozilla's own collection
+   of add-ons. Press its link there in Firefox, which offers to add it or
+   fetches the file; with the file, `about:addons`, the gear, **Install
+   Add-on From File…**. Firefox says what the plugin may do, among it that
+   it exchanges messages with other programs: that is how it hands things
+   to Glaukopis. It stays until you remove it.
 
 Firefox as Ubuntu installs it (a Snap) asks once whether the plugin may
 start Glaukopis. Firefox installed as a Flatpak cannot start other programs
