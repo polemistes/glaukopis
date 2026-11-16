@@ -16,7 +16,9 @@ a part of the page as a picture, Alt+Shift+P, which Firefox has for its own
 menu of profiles, and a command without a key for the page whole.
 
 **1.0.2** is in the source since 2026-11-16 and not yet signed: the same,
-with Alt+Shift+R for a part of the page. Until it is signed and its file is
+with keys of Ctrl+Alt, since Firefox takes Alt+Shift and a letter for the
+letters of its own menus: Ctrl+Alt+N for the selection or the page, and
+Ctrl+Alt+P for a part of the page. Until it is signed and its file is
 here, 1.0.0 is the plugin that is offered.
 
 ## At a release

@@ -190,13 +190,25 @@ describe('the plugin as Firefox reads it', () => {
   });
 
   it('asks for no key that Firefox has for itself', () => {
-    // Alt+Shift+P opens Firefox's menu of profiles (found by the owner, 2026-11-16).
-    const taken = ['Alt+Shift+P', 'Ctrl+Shift+P', 'Ctrl+Shift+N', 'Ctrl+Shift+S', 'Ctrl+Alt+R'];
+    // Alt+Shift and a letter opens the menu of Firefox that has the letter, whatever it is in
+    // its language: Alt+Shift+P its menu of profiles (found by the owner, 2026-11-16). Of
+    // Ctrl+Alt, Firefox has R (the reader), Z (the sidebar) and X (the chat) for itself.
+    const taken = [
+      'Ctrl+Shift+P',
+      'Ctrl+Shift+N',
+      'Ctrl+Shift+S',
+      'Ctrl+Alt+R',
+      'Ctrl+Alt+Z',
+      'Ctrl+Alt+X',
+    ];
     const asked = Object.values(manifest.commands).flatMap((c) =>
       'suggested_key' in c ? [c.suggested_key.default] : [],
     );
-    expect(asked).toEqual(['Alt+Shift+N', 'Alt+Shift+R']);
-    for (const key of asked) expect(taken).not.toContain(key);
+    expect(asked).toEqual(['Ctrl+Alt+N', 'Ctrl+Alt+P']);
+    for (const key of asked) {
+      expect(taken).not.toContain(key);
+      expect(key.startsWith('Alt+Shift+')).toBe(false);
+    }
   });
 
   it('has every word in English and in Bokmål', () => {

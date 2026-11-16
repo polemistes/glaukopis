@@ -23,11 +23,11 @@
   },
   "commands": {
     "add-to-notebook": {
-      "suggested_key": { "default": "Alt+Shift+N" },
+      "suggested_key": { "default": "Ctrl+Alt+N" },
       "description": "__MSG_commandAdd__"
     },
     "add-region": {
-      "suggested_key": { "default": "Alt+Shift+R" },
+      "suggested_key": { "default": "Ctrl+Alt+P" },
       "description": "__MSG_menuRegion__"
     },
     "add-page": {

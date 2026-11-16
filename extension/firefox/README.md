@@ -7,14 +7,14 @@ It adds one of four things:
 - **The page**: its readable text, as Mozilla's Readability finds it (the
   whole text where it finds no article). The button in the bar where nothing
   is selected, *Add the page to the notebook* in the menu of the right
-  button, or Alt+Shift+N.
+  button, or Ctrl+Alt+N.
 - **What is selected**, with its links. The button in the bar, *Add the
-  selection to the notebook*, or Alt+Shift+N where something is selected.
+  selection to the notebook*, or Ctrl+Alt+N where something is selected.
 - **An image**: *Add the image to the notebook* on an image. It is read from
   the page as it is shown, or cut out of a picture of the tab where the page
   does not let it be read. Nothing is fetched.
 - **A part of the page as a picture**: *Add a part of the page as a
-  picture…* or Alt+Shift+R, then a rectangle marked with the pointer (Esc
+  picture…* or Ctrl+Alt+P, then a rectangle marked with the pointer (Esc
   gives it up).
 
 The keys are commands of the manifest, so Firefox lets them be changed
@@ -69,10 +69,13 @@ Signed as *unlisted*, it is not shown on addons.mozilla.org; the signed
 installed in Firefox by opening it. Raise `version` in `manifest.json` for
 each new signing.
 
-Versions 1.0.0 and 1.0.1 are signed. 1.0.1 gave a part of the page the key
-Alt+Shift+P, which Firefox has for its menu of profiles; 1.0.2 has
-Alt+Shift+R for it and is not yet signed. Try a new key in Firefox with the
-plugin loaded unsigned, as above, before a version is signed for it. The
+Versions 1.0.0 and 1.0.1 are signed, both with keys of Alt+Shift and a
+letter (Alt+Shift+N; in 1.0.1 Alt+Shift+P too). Firefox takes those for the
+letters of its own menus, which differ with its language (Alt+Shift+P opens
+its menu of profiles), so no key of the plugin is of that family any more:
+1.0.2 has Ctrl+Alt+N and Ctrl+Alt+P, and is not yet signed. Try a new key in
+Firefox with the plugin loaded unsigned, as above, before a version is
+signed for it. The
 signed file is kept in `packaging/firefox/`,
 whose README says where it goes at a release and what Mozilla's check said
 of it. `web-ext-artifacts/` and `.amo-upload-uuid`, which the signing leaves
