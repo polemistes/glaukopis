@@ -253,3 +253,10 @@ notebook-pane-reference-not-made = { $source } kunne ikke legges til i bibliotek
 notebook-pane-picture-not-moved = { $name } kunne ikke legges blant filene i biblioteket
 notebook-pane-file-not-into-text = En fil kan ikke settes inn i en tekst
 notebook-pane-not-into-text = Notatet kunne ikke settes inn i teksten
+
+## Vinduet for et eget notat (record 0109)
+
+notebook-note-window-placeholder = Skriv et notat
+notebook-note-window-send = Til notatblokken
+notebook-note-window-add-file = Legg til en fil …
+notebook-note-window-not-sent = Notatet kunne ikke skrives inn i notatblokken

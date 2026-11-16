@@ -1,5 +1,6 @@
 /**
- * What arrives from the plugin for Firefox (record 0102): the first window
+ * What arrives in the notebook's inbox, from the plugin for Firefox (record
+ * 0102) and from the window of a note (record 0109): the first window
  * of the application asks for what lies in the notebook's inbox when it
  * starts and whenever the shell says something has come, makes notes of
  * it, and says what arrived at the foot of the window, with **Show**,
@@ -20,7 +21,7 @@ import { notifyError, toasts } from '$lib/ui/toast.svelte';
 import { notesOfInbox } from './inbox';
 import { theNotebook } from './open.svelte';
 
-/** What is said of what arrived: the page's title where one thing came, else how many. */
+/** What is said of what arrived: the page's title where one thing came and has one, else how many. */
 export function arrivedWords(items: InboxItem[], count: number): string {
   if (count !== 1) return t('notebook-arrived-many', { count });
   const title = items.find((i) => i.kind !== 'image' || i.image)?.title.trim() ?? '';

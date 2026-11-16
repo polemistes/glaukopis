@@ -47,6 +47,8 @@ const item = (over: Partial<InboxItem>): InboxItem => ({
   html: '',
   alt: '',
   image: null,
+  doc: null,
+  files: [],
   ...over,
 });
 
@@ -190,6 +192,153 @@ describe('things the plugin handed over, made notes', () => {
     nb.undo();
     expect(nb.list).toEqual([]);
     expect(nb.sources.size).toBe(0);
+  });
+});
+
+describe('a note written in a window of its own', () => {
+  const PDF = 'f'.repeat(64);
+  const letter: NotebookFile = {
+    file: { ...view(PDF, 'letter.pdf'), kind: 'pdf' },
+    shown: null,
+    time: null,
+    taken: null,
+    place: null,
+  };
+  const paragraph = (kind: string, text: string, marks: unknown[] = []) => ({
+    type: 'paragraph',
+    attrs: { kind },
+    content: [{ type: 'text', text, marks }],
+  });
+  /** A note of each kind of list, a bold word, a picture and a file, as the window hands it over. */
+  const written = {
+    type: 'doc',
+    content: [
+      paragraph('item', 'A point'),
+      paragraph('numbered', 'A counted point'),
+      paragraph('todo', 'A point to tick'),
+      {
+        type: 'paragraph',
+        content: [
+          { type: 'text', text: 'A ' },
+          { type: 'text', text: 'bold', marks: [{ type: 'strong' }] },
+          { type: 'text', text: ' word' },
+        ],
+      },
+      { type: 'figure', attrs: { file: PNG, extension: 'png', name: 'owl.png' } },
+      { type: 'file', attrs: { hash: PDF, name: 'letter.pdf', extension: 'pdf' } },
+    ],
+  };
+  const note = (over: Partial<InboxItem> = {}) =>
+    item({
+      kind: 'note',
+      url: '',
+      title: '',
+      text: 'A point\nA counted point\nA point to tick\nA bold word',
+      doc: written,
+      files: [picture, letter],
+      ...over,
+    });
+
+  it('is a note without a name and with no source, its text as it was written', () => {
+    const nb = new Notebook();
+    const [id] = notesOfInbox(nb, [note()]);
+    const made = nb.note(id)!;
+    expect(made.name).toBe('');
+    // What it holds has no source: null, as for a picture pasted.
+    expect(made.sources.every((s) => s === null)).toBe(true);
+    expect(nb.sources.size).toBe(0);
+    expect(nb.passages.size).toBe(0);
+    const doc = docOf(nb, id);
+    expect(doc.content.content.map((n) => [n.type.name, n.attrs.kind ?? null])).toEqual([
+      ['paragraph', 'item'],
+      ['paragraph', 'numbered'],
+      ['paragraph', 'todo'],
+      ['paragraph', 'text'],
+      ['figure', null],
+      ['file', null],
+    ]);
+    let bold = '';
+    doc.descendants((n) => {
+      if (n.marks.some((m) => m.type.name === 'strong')) bold = n.text!;
+      expect(n.marks.some((m) => m.type.name === 'taken')).toBe(false);
+    });
+    expect(bold).toBe('bold');
+    expect(doc.child(4).attrs).toMatchObject({ file: PNG, name: 'owl.png', extension: 'png' });
+    expect(doc.child(5).attrs).toMatchObject({ hash: PDF, name: 'letter.pdf' });
+    // The note holds both files, with no source.
+    expect(nb.files.get(PNG)).toBeTruthy();
+    expect(nb.files.get(PDF)).toBeTruthy();
+    expect(nb.files.get(PDF)!.source ?? null).toBe(null);
+  });
+
+  it('a picture points to what a figure shows of it, where that is another file', () => {
+    const SHOWN = '1'.repeat(64);
+    const tiff: NotebookFile = {
+      ...picture,
+      file: view(PNG, 'scan.png'),
+      shown: { ...view(SHOWN, 'scan-shown.jpg'), madeFrom: PNG },
+    };
+    const nb = new Notebook();
+    const [id] = notesOfInbox(nb, [note({ files: [tiff, letter] })]);
+    expect(docOf(nb, id).child(4).attrs).toMatchObject({
+      file: SHOWN,
+      extension: 'jpg',
+      name: 'scan-shown.jpg',
+    });
+  });
+
+  it('what the window does not make is left out: a citation, a note, a formula, a mark of its own', () => {
+    const nb = new Notebook();
+    const harmful = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [
+            { type: 'text', text: 'Before ' },
+            { type: 'citation', attrs: { items: [{ id: 'x' }] } },
+            { type: 'footnote', content: [{ type: 'paragraph' }] },
+            { type: 'math', attrs: { tex: 'x' } },
+            { type: 'text', text: 'held', marks: [{ type: 'taken', attrs: { passage: 'p' } }] },
+            {
+              type: 'text',
+              text: ' link',
+              marks: [{ type: 'link', attrs: { href: 'javascript:alert(1)' } }],
+            },
+          ],
+        },
+        { type: 'equation', attrs: { tex: 'y' } },
+        { type: 'file', attrs: { hash: 'a'.repeat(64), name: 'not taken in' } },
+      ],
+    };
+    const [id] = notesOfInbox(nb, [note({ doc: harmful, text: 'Before held link', files: [] })]);
+    const doc = docOf(nb, id);
+    expect(doc.textContent).toBe('Before held link');
+    const kept = json(nb, id);
+    for (const gone of [
+      'citation',
+      'footnote',
+      'math',
+      'equation',
+      '"taken"',
+      'javascript',
+      '"file"',
+    ])
+      expect(kept).not.toContain(gone);
+  });
+
+  it('a text that is no document falls back to its words, a paragraph to each line, and then its files', () => {
+    for (const doc of [null, 'words', { type: 'doc', content: 'no list' }, { type: 'table' }, []]) {
+      const nb = new Notebook();
+      const [id] = notesOfInbox(nb, [note({ doc, text: ' First line \n\nSecond ' })]);
+      const read = docOf(nb, id);
+      expect(read.content.content.map((n) => [n.type.name, n.textContent])).toEqual([
+        ['paragraph', 'First line'],
+        ['paragraph', 'Second'],
+        ['figure', ''],
+        ['file', ''],
+      ]);
+    }
   });
 });
 

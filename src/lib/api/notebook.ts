@@ -148,12 +148,17 @@ export const notebookSweep = (held: string[]) => call<number>('notebook_sweep', 
 
 // ---- what the plugin for Firefox hands over (record 0102) ----
 
-/** What a thing the plugin handed over is: the page, what was selected in it, an image of it, a part of it as a picture. */
-export type InboxKind = 'page' | 'selection' | 'image' | 'region';
+/**
+ * What a thing in the inbox is: of the plugin, the page, what was selected
+ * in it, an image of it, a part of it as a picture; or a note written in a
+ * window of its own (record 0109).
+ */
+export type InboxKind = 'page' | 'selection' | 'image' | 'region' | 'note';
 
 /**
- * A thing the plugin for Firefox handed to the helper, as the application
- * takes it out of the notebook's inbox: where it came from, and what it is.
+ * A thing the plugin for Firefox handed to the helper, or a note written in
+ * a window of its own, as the application takes it out of the notebook's
+ * inbox: where it came from, and what it is.
  */
 export interface InboxItem {
   kind: InboxKind;
@@ -170,6 +175,10 @@ export interface InboxItem {
   alt: string;
   /** The picture, taken into the store, where the thing is or has one. */
   image: NotebookFile | null;
+  /** Of a note, its text as ProseMirror's JSON of the body schema; null for the rest. Not to be trusted. */
+  doc: unknown;
+  /** Of a note, the files it holds, taken into the store, each by the hash the note names it by. */
+  files: NotebookFile[];
 }
 
 /**

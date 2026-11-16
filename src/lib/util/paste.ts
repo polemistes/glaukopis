@@ -72,6 +72,9 @@ const PATHS = 'application/x-glaukopis-picture-paths';
 /** The address of the page a paste was copied from: see `pastedPage`. */
 const PAGE = 'application/x-glaukopis-page';
 
+/** Where the other files of a paste are: see `pastedFiles`. */
+const FILES = 'application/x-glaukopis-file-paths';
+
 /**
  * The address on the web what is pasted was copied from, where the
  * clipboard said one, read by the Rust side (record 0101). Firefox says the
@@ -99,6 +102,20 @@ export function pastedPaths(data: DataTransfer | null): (string | null)[] {
   }
 }
 
+/**
+ * Where the files of a paste that are no pictures are on this computer:
+ * those copied in a file manager, which a note written in a window of its
+ * own takes in (record 0109). Nothing for a paste that WebKit made itself.
+ */
+export function pastedFiles(data: DataTransfer | null): string[] {
+  try {
+    const paths: unknown = JSON.parse(data?.getData(FILES) || '[]');
+    return Array.isArray(paths) ? paths.filter((p): p is string => typeof p === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
 function dataOf(pasted: Pasted): DataTransfer {
   const data = new DataTransfer();
   if (pasted.html) data.setData('text/html', pasted.html);
@@ -110,6 +127,7 @@ function dataOf(pasted: Pasted): DataTransfer {
   if (pasted.pictures.some((p) => p.path))
     data.setData(PATHS, JSON.stringify(pasted.pictures.map((p) => p.path)));
   if (pasted.url) data.setData(PAGE, pasted.url);
+  if (pasted.files.length) data.setData(FILES, JSON.stringify(pasted.files));
   return data;
 }
 

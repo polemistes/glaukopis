@@ -6,7 +6,6 @@ import './placing.css';
 import './settings.css';
 import { mount } from 'svelte';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import App from './App.svelte';
 import { showCatalogueKinds } from '$lib/editor/kinds';
 import { nameLanguagesBy } from '$lib/editor/schema';
 import { languageName } from '$lib/i18n';
@@ -14,6 +13,7 @@ import { inTauri } from '$lib/api/backend';
 import { logPage } from '$lib/api/system';
 import { guardPaste, pastesThroughGtk } from '$lib/util/paste';
 import { forwardToLog } from '$lib/shell/page-log';
+import { isNoteWindow } from '$lib/notebook/window/label';
 
 nameLanguagesBy(languageName);
 
@@ -46,6 +46,11 @@ if (inTauri)
       .catch((error) => console.error('The window could not be shown', error));
   }, 5000);
 
-const app = mount(App, { target: document.getElementById('app')! });
+// The window of a note (record 0109) has a page of its own, and nothing of
+// the application: each is loaded only where it is shown.
+const target = document.getElementById('app')!;
+const app = isNoteWindow()
+  ? import('$lib/notebook/window/mount').then((page) => page.mountNoteWindow(target))
+  : import('./App.svelte').then(({ default: App }) => mount(App, { target }));
 
 export default app;

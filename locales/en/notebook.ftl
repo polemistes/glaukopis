@@ -267,3 +267,10 @@ notebook-pane-reference-not-made = { $source } could not be added to the library
 notebook-pane-picture-not-moved = { $name } could not be put among the library's files
 notebook-pane-file-not-into-text = A file does not go into a text
 notebook-pane-not-into-text = The note could not be put into the text
+
+## The window of a note of its own (record 0109)
+
+notebook-note-window-placeholder = Write a note
+notebook-note-window-send = To the notebook
+notebook-note-window-add-file = Add a file…
+notebook-note-window-not-sent = The note could not be written into the notebook

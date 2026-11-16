@@ -44,6 +44,8 @@ const item = (over: Partial<InboxItem> = {}): InboxItem => ({
   html: '',
   alt: '',
   image: null,
+  doc: null,
+  files: [],
   ...over,
 });
 

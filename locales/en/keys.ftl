@@ -130,6 +130,7 @@ keys-notebook-closer = Closer
 keys-notebook-farther = Farther
 keys-notebook-go = Go from one card to the next
 keys-notebook-open = Open the note chosen
+keys-notebook-note-window-send = In the window of a note: to the notebook
 keys-list-undo = Undo what was done to folders and projects
 keys-list-redo = Redo what was done to folders and projects
 
