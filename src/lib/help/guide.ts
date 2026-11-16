@@ -181,9 +181,12 @@ export function queryWords(query: string): string[] {
  * library finds its references: as stretches of the text as it is, in
  * order, those that overlap made one.
  */
-export function hitsIn(text: string, words: readonly string[]): [number, number][] {
+export function hitsIn(
+  text: string,
+  words: readonly string[],
+  mapped: Mapped = foldMapped(text),
+): [number, number][] {
   if (!words.length) return [];
-  const mapped = foldMapped(text);
   const f = mapped.text;
   const found: [number, number][] = [];
   for (const word of words) {
@@ -215,6 +218,14 @@ export interface Found {
 const BEFORE = 40;
 const AFTER = 70;
 
+/** The text of each part folded, kept once it is first found in: a search is made at every letter typed. */
+const mappedParts = new WeakMap<Part, Mapped>();
+function mappedOf(part: Part): Mapped {
+  let mapped = mappedParts.get(part);
+  if (!mapped) mappedParts.set(part, (mapped = foldMapped(part.text)));
+  return mapped;
+}
+
 /** The parts whose words hold all the words, in the order of the guide. */
 export function findInGuide(guide: Guide, query: string): Found[] {
   const words = queryWords(query);
@@ -223,7 +234,7 @@ export function findInGuide(guide: Guide, query: string): Found[] {
   for (const chapter of guide.chapters) {
     for (const part of chapter.parts) {
       if (!words.every((w) => part.folded.includes(' ' + w))) continue;
-      found.push({ chapter, part, ...lineAround(part.text, words) });
+      found.push({ chapter, part, ...lineAround(part.text, words, mappedOf(part)) });
     }
   }
   return found;
@@ -233,8 +244,9 @@ export function findInGuide(guide: Guide, query: string): Found[] {
 export function lineAround(
   text: string,
   words: readonly string[],
+  mapped?: Mapped,
 ): { before: string; hit: string; after: string } {
-  const [first] = hitsIn(text, words);
+  const [first] = hitsIn(text, words, mapped);
   const [start, end] = first ?? [0, 0];
   let from = Math.max(0, start - BEFORE);
   let to = Math.min(text.length, end + AFTER);

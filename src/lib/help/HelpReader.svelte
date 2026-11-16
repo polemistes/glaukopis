@@ -427,6 +427,7 @@
     font-size: 15.5px;
     line-height: 1.6;
     user-select: text;
+    -webkit-user-select: text;
     cursor: text;
   }
   .text :global(h2) {
