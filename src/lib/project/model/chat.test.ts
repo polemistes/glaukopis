@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
-import { MESSAGE_LENGTH, chatMessageOf } from './changing/chat';
+import {
+  MESSAGE_LENGTH,
+  chatMessageOf,
+  chatReactionOf,
+  isEmoji,
+  reactionKey,
+} from './changing/chat';
 import { Project } from './project.svelte';
 import { PROJECT } from './types';
 
@@ -161,5 +167,241 @@ describe('the chat of a project', () => {
     const p = project();
     p.yChat.push([{ nonsense: true } as never, { id: 'm', text: 'Read' } as never]);
     expect(texts(p)).toEqual(['Read']);
+  });
+
+  it('places an answer, and an answer to an answer, under the first message', () => {
+    const p = project();
+    const first = p.say('Shall we begin?')!;
+    const answer = p.say('Yes.', first)!;
+    const again = p.say('Now?', answer)!;
+    expect(p.chat.find((m) => m.id === answer)!.to).toBe(first);
+    expect(p.chat.find((m) => m.id === again)!.to).toBe(first);
+    expect(p.chat.find((m) => m.id === first)!.to).toBeUndefined();
+  });
+
+  it('says an answer to a message that is not there as one that answers none', () => {
+    const p = project();
+    const id = p.say('Hello', 'gone')!;
+    expect(p.chat[0].id).toBe(id);
+    expect('to' in p.chat[0]).toBe(false);
+  });
+
+  it('keeps the marks of the words, and cuts them with the words', () => {
+    const p = project();
+    p.say({ text: '  Bold and plain ', marks: [{ from: 2, to: 6, mark: 'strong' }] });
+    expect(p.chat[0]).toMatchObject({
+      text: 'Bold and plain',
+      marks: [{ from: 0, to: 4, mark: 'strong' }],
+    });
+    p.say({
+      text: 'a'.repeat(5000),
+      marks: [
+        { from: 3990, to: 4100, mark: 'em' },
+        { from: 4500, to: 4600, mark: 'code' },
+      ],
+    });
+    expect(p.chat[1].text).toHaveLength(MESSAGE_LENGTH);
+    expect(p.chat[1].marks).toEqual([{ from: 3990, to: MESSAGE_LENGTH, mark: 'em' }]);
+  });
+
+  it('changes one’s own message where it stands, keeping who wrote it, when and what it answers', () => {
+    const p = project();
+    const first = p.say('One')!;
+    const answer = p.say('Tow', first)!;
+    p.say('Three');
+    const before = p.chat.find((m) => m.id === answer)!;
+    expect(p.reword(answer, { text: 'Two', marks: [{ from: 0, to: 3, mark: 'em' }] })).toBe(true);
+    expect(texts(p)).toEqual(['One', 'Two', 'Three']);
+    const after = p.chat[1];
+    expect(after).toMatchObject({
+      id: answer,
+      author: before.author,
+      created: before.created,
+      to: first,
+      marks: [{ from: 0, to: 3, mark: 'em' }],
+    });
+    expect(after.edited).toMatch(/^\d{4}-/);
+  });
+
+  it('changes nothing where nothing differs, or the words would be empty', () => {
+    const p = project();
+    const id = p.say({ text: 'Same', marks: [{ from: 0, to: 4, mark: 'strong' }] })!;
+    expect(p.reword(id, { text: 'Same', marks: [{ from: 0, to: 4, mark: 'strong' }] })).toBe(false);
+    expect(p.reword(id, '   ')).toBe(false);
+    expect(p.chat[0].edited).toBeUndefined();
+  });
+
+  it('refuses to change another’s message', () => {
+    const { a, b, sync } = two();
+    const theirs = b.say('Theirs')!;
+    sync();
+    expect(a.reword(theirs, 'Mine now')).toBe(false);
+    expect(texts(a)).toEqual(['Theirs']);
+  });
+
+  it('reaches the other copy as one message, changed', () => {
+    const { a, b, sync } = two();
+    const id = a.say('Frist')!;
+    sync();
+    a.reword(id, 'First');
+    sync();
+    expect(texts(b)).toEqual(['First']);
+    expect(b.chat[0].id).toBe(id);
+  });
+
+  it('reads the copy changed last where a message was changed on two computers at once', () => {
+    const { a, b, sync } = two();
+    const id = a.say('Frist')!;
+    sync();
+    // The same person on another computer: the second copy writes as the first.
+    b.setMe({ id: 'hector', name: 'Hector' });
+    a.reword(id, 'First');
+    b.reword(id, 'Fist');
+    // The second is changed later.
+    const index = b.yChat.toArray().findIndex((m) => m.id === id);
+    b.doc.transact(() => {
+      const m = b.yChat.get(index);
+      b.yChat.delete(index, 1);
+      b.yChat.insert(index, [{ ...m, edited: '2999-01-01T00:00:00Z' }]);
+    });
+    sync();
+    expect(a.yChat.length).toBe(2);
+    expect(texts(a)).toEqual(['Fist']);
+    expect(texts(b)).toEqual(['Fist']);
+  });
+
+  it('keeps how far each has read, for both copies', () => {
+    const { a, b, sync } = two();
+    const id = a.say('Read me')!;
+    sync();
+    const created = b.chat[0].created;
+    b.markChatRead({ id, created });
+    a.markChatRead({ id, created });
+    sync();
+    const readers = (p: Project) =>
+      p.chatReaders.map((r) => [r.id, r.name, r.read.id]).sort((x, y) => (x[0] < y[0] ? -1 : 1));
+    expect(readers(a)).toEqual([
+      ['andromache', 'Andromache', id],
+      ['hector', 'Hector', id],
+    ]);
+    expect(readers(b)).toEqual(readers(a));
+  });
+
+  it('writes how far one has read only where it differs', () => {
+    const p = project();
+    const id = p.say('Once')!;
+    const created = p.chat[0].created;
+    p.markChatRead({ id, created });
+    let writes = 0;
+    p.yChatRead.observe(() => writes++);
+    p.markChatRead({ id, created });
+    expect(writes).toBe(0);
+  });
+
+  it('keeps the reactions of two copies to one message given at once, and takes one’s own back', () => {
+    const { a, b, sync } = two();
+    const id = a.say('Good news')!;
+    sync();
+    a.react(id, '👍');
+    b.react(id, '👍');
+    b.react(id, '🎉');
+    sync();
+    const of = (p: Project) => p.chatReactions.map((r) => `${r.person.id}:${r.emoji}`).sort();
+    expect(of(a)).toEqual(['andromache:🎉', 'andromache:👍', 'hector:👍']);
+    expect(of(b)).toEqual(of(a));
+    expect(b.react(id, '👍')).toBe(false);
+    sync();
+    expect(of(a)).toEqual(['andromache:🎉', 'hector:👍']);
+  });
+
+  it('keeps the reactions of a message taken back, so that they come back with it', () => {
+    const p = project();
+    const id = p.say('Oops')!;
+    p.react(id, '😀');
+    const taken = p.unsay(id)!;
+    expect(p.chatReactions).toHaveLength(1);
+    p.resay(taken);
+    expect(p.chatReactions.map((r) => r.message)).toEqual([id]);
+  });
+
+  it('reads with care what another copy wrote: marks, kinds and reactions', () => {
+    expect(
+      chatMessageOf({
+        id: 'm',
+        text: 'Four',
+        to: 5,
+        edited: '',
+        marks: [
+          { from: 0, to: 2, mark: 'strong' },
+          { from: 2, to: 9, mark: 'em' },
+          { from: 1, to: 2, mark: 'blink' },
+          { from: 3, to: 3, mark: 'code' },
+          { from: 'a', to: 2, mark: 'em' },
+          null,
+        ],
+      }),
+    ).toEqual({
+      id: 'm',
+      author: { id: '', name: '' },
+      created: '',
+      text: 'Four',
+      marks: [{ from: 0, to: 2, mark: 'strong' }],
+    });
+    expect(chatMessageOf({ text: 'x', marks: 'bold' })).not.toHaveProperty('marks');
+    expect(isEmoji('👍')).toBe(true);
+    expect(isEmoji('🏳️‍🌈')).toBe(true);
+    expect(isEmoji('1️⃣')).toBe(true);
+    expect(isEmoji('a')).toBe(false);
+    expect(isEmoji('👍 and words that go on')).toBe(false);
+    expect(isEmoji(7)).toBe(false);
+    expect(chatReactionOf(reactionKey('m', 'p', 'yes'), {})).toBeNull();
+    expect(chatReactionOf('not json', {})).toBeNull();
+    expect(chatReactionOf(reactionKey('m', 'p', '👍'), 'nonsense')).toEqual({
+      message: 'm',
+      person: { id: 'p', name: '' },
+      emoji: '👍',
+      when: '',
+    });
+    const p = project();
+    p.yChatReactions.set(reactionKey('m', 'p', 'no'), { name: 'P' });
+    p.yChatRead.set('q', { name: 'Q' });
+    expect(p.chatReactions).toEqual([]);
+    expect(p.chatReaders).toEqual([]);
+  });
+
+  it('deletes who has read and the reactions with the conversation', () => {
+    const { a, b, sync } = two();
+    const id = a.say('One')!;
+    sync();
+    b.react(id, '👍');
+    b.markChatRead({ id, created: b.chat[0].created });
+    sync();
+    a.clearChat();
+    sync();
+    for (const p of [a, b]) {
+      expect(p.chat).toEqual([]);
+      expect(p.chatReaders).toEqual([]);
+      expect(p.chatReactions).toEqual([]);
+    }
+  });
+
+  it('is not undone in the text: no answer, change, mark of reading or reaction', () => {
+    const p = project();
+    const a = p.addChild(PROJECT, { title: 'A' })!;
+    p.checkpoint();
+    p.setTitle(a, 'B');
+    p.checkpoint();
+    const steps = p.undoManager.undoStack.length;
+    const id = p.say('Hello')!;
+    const answer = p.say('Again', id)!;
+    p.reword(answer, 'Once again');
+    p.react(id, '👍');
+    p.markChatRead({ id: answer, created: p.chat[1].created });
+    expect(p.undoManager.undoStack.length).toBe(steps);
+    p.undo();
+    p.undo();
+    expect(texts(p)).toEqual(['Hello', 'Once again']);
+    expect(p.chatReactions).toHaveLength(1);
+    expect(p.chatReaders).toHaveLength(1);
   });
 });

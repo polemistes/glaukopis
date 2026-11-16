@@ -3562,12 +3562,44 @@ long as the project is shared. **Ctrl+K** finds it as well.
 - Write in the field at the foot. **Enter** sends; **Shift+Enter** makes a
   new line. What you have written and not yet sent stays in the field while
   you look at something else, another tab, another project or the library,
-  and is there when the program is opened again. It is kept on your
-  computer: nobody else sees it until you send it.
-- A message of yours can be deleted from its menu, the three dots that come
-  when the pointer rests on it, or a right click; **Undo** in the message
-  that says so puts it back. Messages are not changed once they are sent,
-  and nobody deletes another's.
+  and is there when the program is opened again, with what it answers. It
+  is kept on your computer: nobody else sees it until you send it.
+- Words can be set in **bold**, *italics*, underlined, struck through or as
+  code, by the buttons under the field or by the keys the text has for them:
+  **Ctrl+B**, **Ctrl+I**, **Ctrl+U** and **Ctrl+Shift+X**. The face beside
+  them opens the emojis, and each one you choose is put where the cursor
+  is. **Ctrl+Z** in the field takes back what you wrote there, and never
+  anything in the text. An address of the web in a message is a link, which
+  opens in your browser, and a message of one to three emojis alone is shown
+  larger.
+- When the pointer rests on a message, its tools come at its top right:
+  **React**, **Answer**, and on a message of yours the three dots of its
+  menu. A right click on a message has the same.
+- **Answer** puts a line over the field, *Answer to* and the name of the one
+  who wrote the message, with its first words; what you send then stands
+  under that message, however old it is, after the answers already there,
+  set in with a thin line at its left. An answer to an answer stands with
+  the others under the first message. **Escape**, or the × of the line,
+  gives the answering up and keeps what you wrote. A message that was
+  deleted leaves its answers where they were, under the line *A message
+  that was deleted*.
+- **React** opens the emojis: the one you choose stands under the message,
+  with how many gave it. Press it to give the same, or to take yours back;
+  the one you gave is in the colour of the program, and the tooltip says who
+  gave it. Anyone can react to any message, as often as they like, and
+  nobody is told.
+- The small circles at the end of a message are those who have read it,
+  with their initials; the tooltip names them. You are not among them, nor
+  is the one who wrote it. Someone has read a message once they have shown
+  the chat with it there.
+- A message of yours can be changed with **Change** in its menu: its words
+  come into the field, under the line *Changing a message*. **Enter** keeps
+  the change, **Escape** gives it up, and what you were writing before comes
+  back. A message that was changed says *changed* after its words; it is not
+  new again for anyone.
+- A message of yours can be deleted from its menu; **Undo** in the message
+  that says so puts it back, with its answers and reactions. Nobody changes
+  or deletes another's message.
 - The messages are kept in the project, so they are there for whoever opens
   it later, and what you write without the server is sent when it is
   reached again. Undo in the text never takes a message back.
@@ -3575,12 +3607,20 @@ long as the project is shared. **Ctrl+K** finds it as well.
   the window, with **Show**, which opens the chat. How many messages you
   have not read is counted on the tab, and a dot on **Document**, in the bar
   of the side, says that there are some while the pane is closed. Which you
-  have read is remembered on your computer.
+  have read is remembered on your computer, and kept in the project for the
+  circles of the others.
+- Since an answer stands under its message, what is new is not always at
+  the foot. A new message has a thin line in the colour of the program at
+  its left. When the chat is shown, the first new message is brought into
+  view; and while new messages stand where you have not seen them, a button
+  over the foot of the list says how many, with an arrow up or down, and
+  takes you to the nearest of them.
 
 The chat is never part of the text: it is not typeset or exported, not in
 the Org copy of the project, not found by the search, and not copied with
-elements into another project; the history does not count a message as a
-change. A duplicate of the project, and the project saved as a file, carry it.
+elements into another project; the history does not count a message, a
+reaction or who has read as a change. A duplicate of the project, and the
+project saved as a file, carry it.
 
 When the project is no longer shared, a chat that holds messages stays in
 the pane, to be read, without the field; **Delete the conversation**, at
@@ -4063,6 +4103,7 @@ what is to be done by its name, and does it.
 | **F2** | Rename; in the text, go to the name of the element the cursor is in |
 | **@** | In the text: cite |
 | **Ctrl+I**, **Ctrl+B**, **Ctrl+U** | In the text: italics, bold, underlined |
+| **Enter**, **Shift+Enter**, **Escape** | In the field of the chat: send, a new line, give up an answer or a change; the marks by the keys of the text, and **Ctrl+Z** for what was written there |
 | **Ctrl+Alt+F** | In the text: a note |
 | **Ctrl+Alt+P** | In the text: an image |
 | **Ctrl+Alt+T** | In the text: a table |

@@ -6,7 +6,8 @@ vi.mock('$lib/project/panes.svelte', () => ({ panes }));
 vi.mock('$lib/project/sides.svelte', () => ({ sides }));
 vi.mock('$lib/history/me.svelte', () => ({ me: () => ({ id: 'hector', name: 'Hector' }) }));
 
-const { chatShown, chatUi, hasChat, tabShown, unreadCount } = await import('./chat.svelte');
+const { chatShown, chatUi, hasChat, keepFresh, tabShown, unreadCount } =
+  await import('./chat.svelte');
 
 const hector = { id: 'hector', name: 'Hector' };
 const paris = { id: 'paris', name: 'Paris' };
@@ -61,6 +62,37 @@ describe('the chat of a project open', () => {
     expect(chatShown(shared)).toBe(false);
     panes.document = true;
     expect(chatShown(open('a'))).toBe(false);
+  });
+
+  it('keeps what is new while it is shown: the unread, what arrives, none once one’s own is sent', () => {
+    const one = open('n', { shared: true, chat: [message('m1', paris), message('m2', paris)] }) as {
+      project: { chat: ReturnType<typeof message>[] };
+      chatRead: unknown;
+    };
+    one.chatRead = { id: 'm1', created: '2026-11-13T09:00:00Z' };
+    const fresh = () => [...(chatUi.fresh.get('n') ?? [])];
+    keepFresh(one as never, true);
+    expect(fresh()).toEqual(['m2']);
+    // Read now; what arrives while it is shown is new as well.
+    one.chatRead = { id: 'm2', created: '2026-11-13T09:00:00Z' };
+    one.project.chat = [...one.project.chat, message('m3', paris)];
+    keepFresh(one as never, true);
+    expect(fresh()).toEqual(['m2', 'm3']);
+    // A message changed keeps its id, and is not new again.
+    one.project.chat = one.project.chat.map((m) => (m.id === 'm1' ? { ...m, text: 'changed' } : m));
+    keepFresh(one as never, true);
+    expect(fresh()).toEqual(['m2', 'm3']);
+    one.project.chat = [...one.project.chat, message('m4', hector)];
+    keepFresh(one as never, true);
+    expect(fresh()).toEqual([]);
+    one.project.chat = [...one.project.chat, message('m5', paris)];
+    keepFresh(one as never, true);
+    expect(fresh()).toEqual(['m5']);
+    keepFresh(one as never, false);
+    expect(chatUi.fresh.has('n')).toBe(false);
+    // Shown again, what is unread then is new.
+    keepFresh(one as never, true);
+    expect(fresh()).toEqual(['m3', 'm5']);
   });
 
   it('is asked to be shown by the project', () => {
