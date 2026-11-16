@@ -470,12 +470,18 @@ pub fn run_note_window() {
             }
             Ok(())
         })
+        // The system's dialog, to choose the files added to the note.
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             commands::notewindow::note_window_start,
             commands::notewindow::note_window_keep,
             commands::notewindow::note_window_send,
+            commands::notewindow::note_window_add_files,
+            commands::notewindow::note_window_add_bytes,
+            commands::notewindow::note_window_file_path,
             commands::system::languages,
             commands::system::log_page,
+            commands::system::file_read,
             commands::clipboard::clipboard_read,
         ])
         .build(context());
@@ -499,17 +505,20 @@ pub fn run_note_window() {
 /// Makes the window of a note, about 480 by 320 and resizable, hidden
 /// until its page has its words and its look and shows it (`show_late`
 /// shows it all the same after a while). Its title is the page's, in the
-/// language of the settings. What is dropped on it is the page's to take,
-/// as text into the field, and not files for the application.
+/// language of the settings. Files dropped on it come to the page by their
+/// paths, as they come to the application's windows. The hooks of the e2e
+/// scripts are there only where the harness runs it, as in `window_builder`.
 fn make_note_window(app: &AppHandle) -> tauri::Result<()> {
-    let window = tauri::WebviewWindowBuilder::new(app, NOTE_WINDOW, tauri::WebviewUrl::default())
+    let mut builder = tauri::WebviewWindowBuilder::new(app, NOTE_WINDOW, tauri::WebviewUrl::default())
         .title("Glaukopis")
         .inner_size(480.0, 320.0)
         .min_inner_size(280.0, 160.0)
         .resizable(true)
-        .visible(false)
-        .disable_drag_drop_handler()
-        .build()?;
+        .visible(false);
+    if testing() {
+        builder = builder.initialization_script("window.__glaukopisTesting = true;");
+    }
+    let window = builder.build()?;
     watch(&window);
     show_late(&window);
     Ok(())

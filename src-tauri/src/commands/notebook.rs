@@ -217,9 +217,11 @@ pub fn notebook_sweep(state: State<'_, AppState>, held: Vec<String>) -> CommandR
 
 // ---- what the plugin for Firefox hands over (record 0102) ----
 
-/// A thing the plugin for Firefox handed to the helper, as it is taken out
-/// of the notebook's inbox: where it came from, what it is, and its picture
-/// taken into the store where it has one.
+/// A thing the plugin for Firefox handed to the helper, or a note written
+/// in a window of its own, as it is taken out of the notebook's inbox:
+/// where it came from, what it is, its picture taken into the store where
+/// it has one, and of a note its text and the files it holds, taken into
+/// the store.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct InboxItem {
@@ -231,6 +233,12 @@ pub struct InboxItem {
     pub html: String,
     pub alt: String,
     pub image: Option<NotebookFile>,
+    /// Of a note, its text as ProseMirror's JSON of the body schema; null for the rest.
+    pub doc: serde_json::Value,
+    /// Of a note, the files it holds, in the order it names them; each by
+    /// the hash the store keeps it by, which is the hash the note names it
+    /// by. A file that could not be taken in is left out, and logged.
+    pub files: Vec<NotebookFile>,
 }
 
 /// The event by which one window is told that something lies in the inbox.
@@ -253,15 +261,49 @@ fn take(state: &AppState, id: &str) -> glaukopis_core::Result<InboxItem> {
         }
         None => None,
     };
-    let inbox::Collected { kind, url, title, when, text, html, alt, name: _ } = collected;
-    Ok(InboxItem { kind, url, title, when, text, html, alt, image })
+    let files = if collected.kind == inbox::Kind::Note { held(state, id, &collected.files) } else { Vec::new() };
+    let inbox::Collected { kind, url, title, when, text, html, alt, name: _, doc, files: _ } = collected;
+    Ok(InboxItem { kind, url, title, when, text, html, alt, image, doc, files })
 }
 
-/// Takes what lies in the notebook's inbox out of it, in the order it came:
-/// each thing given once, to whichever window asks first, and removed from
-/// the inbox then. A thing that cannot be read or taken is set aside and
-/// said in the log, and the rest go on. Run on the threads for blocking
-/// work: pictures are read and copied.
+/// The files a note in the inbox holds, taken into the store as the
+/// notebook's, with what each says of itself, read from where it lies, and
+/// under the name the note gives it. A file the store has already is that
+/// file. One that cannot be taken in is left out, and the rest go on.
+fn held(state: &AppState, id: &str, held: &[inbox::HeldFile]) -> Vec<NotebookFile> {
+    let dir = state.library().dir().to_owned();
+    let mut taken = Vec::new();
+    let mut facts = Vec::new();
+    for file in held {
+        let stored = state
+            .inbox
+            .file_of(id, &file.hash)
+            .and_then(|path| Ok((notebook::facts(&path), attachments::store_file(&dir, &path, &file.name)?)));
+        match stored {
+            Ok((said, stored)) => {
+                facts.push(said);
+                taken.push(files::Taken { stored, folders: Vec::new(), origin: file.name.clone() });
+            }
+            Err(error) => {
+                tracing::warn!(%error, id, hash = file.hash, "a file of a note in the inbox could not be taken in")
+            }
+        }
+    }
+    let mut library = state.library();
+    if let Err(error) = library.notebook_take(&taken) {
+        tracing::warn!(%error, id, "the files of a note in the inbox could not be entered as the notebook's");
+        return Vec::new();
+    }
+    let mut out = Vec::with_capacity(taken.len());
+    for (t, facts) in taken.iter().zip(facts) {
+        let Some(hash) = attachments::hash_of_path(&t.stored) else { continue };
+        let Some(file) = library.file_view(hash) else { continue };
+        let shown = shown(&mut library, hash);
+        out.push(NotebookFile { file, shown, time: facts.time, taken: facts.taken, place: facts.place });
+    }
+    out
+}
+
 /// A file a note holds, as the notebook's readable copy names it.
 #[derive(serde::Deserialize)]
 pub struct HeldNamed {
@@ -293,6 +335,11 @@ pub fn notebook_inbox_waiting(state: State<'_, AppState>) -> usize {
     state.inbox.ids().len()
 }
 
+/// Takes what lies in the notebook's inbox out of it, in the order it came:
+/// each thing given once, to whichever window asks first, and removed from
+/// the inbox then. A thing that cannot be read or taken is set aside and
+/// said in the log, and the rest go on. Run on the threads for blocking
+/// work: pictures and files are read and copied.
 #[tauri::command]
 pub async fn notebook_inbox_take(app: AppHandle) -> CommandResult<Vec<InboxItem>> {
     blocking(move || Ok(take_all(&app.state::<AppState>()))).await
@@ -421,7 +468,48 @@ mod tests {
             html: "<p>What it says.</p>".into(),
             alt: "A red square".into(),
             name: name.into(),
+            doc: serde_json::Value::Null,
+            files: Vec::new(),
         }
+    }
+
+    #[test]
+    fn a_note_in_the_inbox_is_taken_with_its_files_into_the_store() {
+        use glaukopis_core::notebook::note_window::{NoteText, NoteWindow};
+        let tmp = tempfile::tempdir().unwrap();
+        let crate::Opening::Ready(state) = crate::opening(tmp.path().join("data"), false, None, |_| {}) else {
+            panic!("the data folder was not opened");
+        };
+        // Written in a window of its own, beside the application.
+        let window = NoteWindow::new(glaukopis_core::paths::DataDir::at(tmp.path().join("data")));
+        let picture = window.add_bytes("owl.png", include_bytes!("../../icons/32x32.png")).unwrap();
+        let letter = tmp.path().join("letter.pdf");
+        std::fs::write(&letter, b"%PDF-1.4").unwrap();
+        let file = window.add_file(&letter).unwrap();
+        let doc = serde_json::json!({"type": "doc", "content": [
+            {"type": "paragraph", "content": [{"type": "text", "text": "Words"}]},
+            {"type": "figure", "attrs": {"file": picture.hash, "extension": "png", "name": "owl.png"}},
+            {"type": "file", "attrs": {"hash": file.hash, "name": "letter.pdf", "extension": "pdf"}},
+        ]});
+        let files = vec![
+            inbox::HeldFile { hash: picture.hash.clone(), name: "owl.png".into() },
+            inbox::HeldFile { hash: file.hash.clone(), name: "letter.pdf".into() },
+        ];
+        window.send(&NoteText { doc: doc.clone(), words: "Words".into(), files }).unwrap();
+
+        let items = take_all(&state);
+        assert_eq!(items.len(), 1);
+        let note = &items[0];
+        assert_eq!(note.kind, Kind::Note);
+        assert_eq!((note.text.as_str(), &note.doc), ("Words", &doc));
+        assert!(note.image.is_none() && note.url.is_empty());
+        let hashes: Vec<&str> = note.files.iter().map(|f| f.file.hash.as_str()).collect();
+        assert_eq!(hashes, vec![picture.hash.as_str(), file.hash.as_str()], "the store keeps each by the note's hash");
+        assert_eq!(note.files[1].file.name, "letter.pdf");
+        assert!(note.files[0].shown.is_some(), "a picture a figure can show");
+        assert!(note.files[1].shown.is_none());
+        assert!(state.library().file_view(&file.hash).is_some());
+        assert!(state.inbox.ids().is_empty(), "taken, and gone from the inbox");
     }
 
     #[test]

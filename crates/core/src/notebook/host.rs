@@ -132,11 +132,14 @@ fn answer(message: &[u8], inbox: std::result::Result<&Inbox, &Error>) -> Value {
         return json!({ "ok": true, "version": VERSION });
     }
     let image = message.as_object_mut().and_then(|fields| fields.remove("image"));
-    let Ok(collected) = serde_json::from_value::<Collected>(message) else { return refused("not-understood") };
-    // A note written in a window of its own is no kind the plugin hands over.
+    let Ok(mut collected) = serde_json::from_value::<Collected>(message) else { return refused("not-understood") };
+    // A note written in a window of its own is no kind the plugin hands
+    // over, and the text and the files of one are none of the plugin's.
     if collected.kind == Kind::Note {
         return refused("not-understood");
     }
+    collected.doc = Value::Null;
+    collected.files.clear();
     let wants_picture = matches!(collected.kind, Kind::Image | Kind::Region);
     let picture = match image {
         Some(Value::String(encoded)) => match picture(&encoded) {

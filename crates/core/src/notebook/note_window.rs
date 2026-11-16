@@ -6,32 +6,44 @@
 //! the application runs or not, beside it and never through it: it claims
 //! nothing, moves nothing, and writes nothing of the settings.
 //!
-//! What is written and not yet sent is kept, a moment after each change,
-//! in a file of the notebook's folder, so that a window closed with words
-//! in it loses nothing; it goes when they are sent or the field is emptied:
+//! The note is a text as the notes of the notebook are, with its marks,
+//! its lists, its pictures and its files. What is written and not yet
+//! sent is kept, so that a window closed with a note in it loses nothing:
+//! the text a moment after each change, each file as it is added. It goes
+//! when the note is sent or emptied:
 //!
 //! ```text
-//! notebook/unsent-note.txt   the words, as they were last kept
-//! notebook/inbox/            where they go when they are sent
+//! notebook/unsent-note/note.json   the text as it was last kept (`NoteText`)
+//! notebook/unsent-note/<hash>      each file added, by what it holds
+//! notebook/inbox/                  where the note goes when it is sent
 //! ```
 
 use std::ffi::OsString;
 use std::fs;
+use std::io::Cursor;
 use std::path::{Path, PathBuf};
 
+use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
-use super::inbox::{Collected, Inbox, Kind, MAX_TEXT, cut_bytes};
+use super::inbox::{Collected, HeldFile, Inbox, Kind, MAX_FILE, MAX_TEXT, file_too_large, is_hash};
 use crate::error::{Error, IoContext, Result};
 use crate::fsutil::write_atomic;
+use crate::library::attachments::{hash_bytes, hash_file};
 use crate::paths::{self, DataDir};
 use crate::tr;
 
 /// The argument by which the application is the window of a note.
 pub const FLAG: &str = "--note";
 
-/// The file of the words not yet sent, in the notebook's folder.
-const UNSENT: &str = "unsent-note.txt";
+/// The folder of the note not yet sent, in the notebook's folder.
+const UNSENT: &str = "unsent-note";
+/// The file of its text, in that folder.
+const TEXT: &str = "note.json";
+
+/// The endings of the pictures a note shows as pictures, of which it is
+/// told how wide they are: those a figure shows as they are.
+const PICTURES: &[&str] = &["png", "jpg", "jpeg"];
 
 /// Whether the application is asked to be the window of a note: `--note`
 /// among its arguments, wherever it stands (macOS's `open --args` may put
@@ -65,6 +77,41 @@ fn root_in(place: &Path, environment: Option<PathBuf>, usual: impl FnOnce() -> P
         _ => location.folder,
     };
     if root.is_dir() { Ok(root) } else { Err(Error::not_found(root.display().to_string())) }
+}
+
+/// The text of a note as the window hands it over: as the texts of the
+/// notebook are written (ProseMirror's JSON of the body schema), its plain
+/// words beside it, and the files it holds.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct NoteText {
+    pub doc: Value,
+    pub words: String,
+    pub files: Vec<HeldFile>,
+}
+
+impl NoteText {
+    /// Whether it holds nothing: no words and no file.
+    pub fn is_empty(&self) -> bool {
+        self.words.trim().is_empty() && self.files.is_empty()
+    }
+}
+
+/// A file added to a note: what it holds, what it is called, the ending of
+/// its name in small letters, how large it is, and of a picture how many
+/// pixels wide, where that can be read.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Added {
+    pub hash: String,
+    pub name: String,
+    pub extension: String,
+    pub size: u64,
+    pub width: Option<u32>,
+}
+
+/// The ending of a name, in small letters; nothing where it has none.
+fn ending(name: &str) -> String {
+    Path::new(name).extension().and_then(|e| e.to_str()).map(str::to_ascii_lowercase).unwrap_or_default()
 }
 
 /// The window of a note, in the data folder it writes into.
@@ -101,56 +148,132 @@ impl NoteWindow {
         })
     }
 
-    fn unsent_file(&self) -> PathBuf {
+    fn unsent_dir(&self) -> PathBuf {
         self.data.notebook().join(UNSENT)
     }
 
-    /// The words written and not sent, as they were last kept; nothing
-    /// where none are kept or they cannot be read.
-    pub fn unsent(&self) -> String {
-        let path = self.unsent_file();
-        match fs::read(&path) {
-            Ok(bytes) => {
-                let mut words = String::from_utf8_lossy(&bytes).into_owned();
-                cut_bytes(&mut words, MAX_TEXT);
-                words
-            }
+    /// The note written and not sent, as it was last kept; nothing where
+    /// none is kept, or what is kept cannot be read.
+    pub fn unsent(&self) -> Option<NoteText> {
+        let path = self.unsent_dir().join(TEXT);
+        let bytes = match fs::read(&path) {
+            Ok(bytes) => bytes,
             Err(e) => {
                 if e.kind() != std::io::ErrorKind::NotFound {
-                    tracing::warn!(error = %e, path = %path.display(), "the words not sent could not be read");
+                    tracing::warn!(error = %e, path = %path.display(), "the note not sent could not be read");
                 }
-                String::new()
+                return None;
+            }
+        };
+        match serde_json::from_slice::<NoteText>(&bytes) {
+            Ok(text) if !text.is_empty() => Some(text),
+            Ok(_) => None,
+            Err(error) => {
+                tracing::warn!(%error, path = %path.display(), "the note not sent is not one");
+                None
             }
         }
     }
 
-    /// Keeps the words written and not sent, in place of those kept
-    /// before, whole or not at all; words of nothing but spaces are no
-    /// words, and what was kept goes.
-    pub fn keep(&self, words: &str) -> Result<()> {
-        if words.trim().is_empty() {
+    /// Keeps the note written and not sent, in place of what was kept
+    /// before, whole or not at all; a note that holds nothing is no note,
+    /// and what was kept of it goes, its files with it.
+    pub fn keep(&self, text: &NoteText) -> Result<()> {
+        if text.is_empty() {
             return self.forget();
         }
-        let mut words = words.to_owned();
-        cut_bytes(&mut words, MAX_TEXT);
-        write_atomic(&self.unsent_file(), words.as_bytes())
+        let bytes = serde_json::to_vec(text)?;
+        if bytes.len() > MAX_TEXT * 2 {
+            return Err(Error::invalid(tr!("core-notebook-note-too-large", most = (MAX_TEXT / (1024 * 1024)) as u64)));
+        }
+        write_atomic(&self.unsent_dir().join(TEXT), &bytes)
     }
 
-    /// Forgets the words kept. None kept are forgotten already.
+    /// Forgets the note kept, and the files added to it. None kept is
+    /// forgotten already.
     fn forget(&self) -> Result<()> {
-        let path = self.unsent_file();
-        match fs::remove_file(&path) {
-            Err(e) if e.kind() != std::io::ErrorKind::NotFound => Err(e).context(|| tr!("io-removing", path = &path)),
+        let dir = self.unsent_dir();
+        match fs::remove_dir_all(&dir) {
+            Err(e) if e.kind() != std::io::ErrorKind::NotFound => Err(e).context(|| tr!("io-removing", path = &dir)),
             _ => Ok(()),
         }
     }
 
-    /// Writes the words into the notebook's inbox as a note, with when,
-    /// whole or not at all, and forgets what was kept of them. Words of
-    /// nothing but spaces are refused, and nothing is written. Gives the
-    /// id of the thing in the inbox.
-    pub fn send(&self, words: &str) -> Result<String> {
-        if words.trim().is_empty() {
+    /// Adds a file of this computer to the note: a copy of it is kept
+    /// beside the text, by what it holds. One larger than `MAX_FILE` is
+    /// refused.
+    pub fn add_file(&self, path: &Path) -> Result<Added> {
+        let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+        let meta = fs::metadata(path).context(|| tr!("io-reading", path = path))?;
+        if !meta.is_file() {
+            return Err(Error::invalid(tr!("core-library-not-a-file", path = path)));
+        }
+        if meta.len() > MAX_FILE as u64 {
+            return Err(file_too_large(&name));
+        }
+        let hash = hash_file(path)?;
+        let dir = self.unsent_dir();
+        let there = dir.join(&hash);
+        if !there.is_file() {
+            fs::create_dir_all(&dir).context(|| tr!("io-creating", path = &dir))?;
+            // Copied under a name that is no hash first, so that a copy cut short is never taken for the file.
+            let copying = dir.join(format!(".tmp-{hash}"));
+            fs::copy(path, &copying).context(|| tr!("io-writing", path = &copying))?;
+            fs::rename(&copying, &there).context(|| tr!("io-writing", path = &there))?;
+        }
+        let extension = ending(&name);
+        let width = PICTURES
+            .contains(&extension.as_str())
+            .then(|| {
+                // Kept by its hash, with no ending to tell its kind: known by what it holds.
+                image::ImageReader::open(&there)
+                    .ok()
+                    .and_then(|r| r.with_guessed_format().ok())
+                    .and_then(|r| r.into_dimensions().ok())
+                    .map(|(w, _)| w)
+            })
+            .flatten();
+        Ok(Added { hash, name, extension, size: meta.len(), width })
+    }
+
+    /// Adds a file the window holds to the note, by its name and its
+    /// bytes: a picture pasted. One larger than `MAX_FILE` is refused.
+    pub fn add_bytes(&self, name: &str, bytes: &[u8]) -> Result<Added> {
+        if bytes.len() > MAX_FILE {
+            return Err(file_too_large(name));
+        }
+        let hash = hash_bytes(bytes);
+        let there = self.unsent_dir().join(&hash);
+        if !there.is_file() {
+            write_atomic(&there, bytes)?;
+        }
+        let extension = ending(name);
+        let width = PICTURES
+            .contains(&extension.as_str())
+            .then(|| {
+                image::ImageReader::new(Cursor::new(bytes))
+                    .with_guessed_format()
+                    .ok()
+                    .and_then(|r| r.into_dimensions().ok())
+                    .map(|(w, _)| w)
+            })
+            .flatten();
+        Ok(Added { hash, name: name.to_owned(), extension, size: bytes.len() as u64, width })
+    }
+
+    /// Where a file added to the note lies, by what it holds.
+    pub fn file_path(&self, hash: &str) -> Result<PathBuf> {
+        let path = self.unsent_dir().join(hash);
+        if is_hash(hash) && path.is_file() { Ok(path) } else { Err(Error::not_found(hash.to_owned())) }
+    }
+
+    /// Writes the note into the notebook's inbox, with when, its files
+    /// moved there with it, whole or not at all; and forgets what was kept
+    /// of it, and the files added and taken out of it again. A note that
+    /// holds nothing is refused, and nothing is written. Gives the id of
+    /// the thing in the inbox.
+    pub fn send(&self, text: &NoteText) -> Result<String> {
+        if text.is_empty() {
             return Err(Error::invalid(tr!("core-notebook-note-empty")));
         }
         let note = Collected {
@@ -158,15 +281,17 @@ impl NoteWindow {
             url: String::new(),
             title: String::new(),
             when: crate::library::now(),
-            text: words.to_owned(),
+            text: text.words.clone(),
             html: String::new(),
             alt: String::new(),
             name: String::new(),
+            doc: text.doc.clone(),
+            files: text.files.clone(),
         };
-        let id = self.inbox.put(&note, None)?;
+        let id = self.inbox.put_note(&note, &self.unsent_dir())?;
         // Kept, it would be there to be sent again when the window is next opened.
         if let Err(error) = self.forget() {
-            tracing::warn!(%error, "a note was sent, and the words kept of it could not be forgotten");
+            tracing::warn!(%error, "a note was sent, and what was kept of it could not be forgotten");
         }
         Ok(id)
     }
@@ -180,6 +305,36 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let data = DataDir::open(tmp.path().join("data")).unwrap();
         (tmp, NoteWindow::new(data))
+    }
+
+    /// A PNG three pixels wide, made here.
+    fn png() -> Vec<u8> {
+        let mut bytes = Cursor::new(Vec::new());
+        image::RgbImage::from_pixel(3, 2, image::Rgb([200, 30, 30]))
+            .write_to(&mut bytes, image::ImageFormat::Png)
+            .unwrap();
+        bytes.into_inner()
+    }
+
+    /// A note of a list, a bold word, a picture and a file, as the window hands it over.
+    fn text(picture: &Added, file: &Added) -> NoteText {
+        let doc = serde_json::json!({"type": "doc", "content": [
+            {"type": "paragraph", "attrs": {"kind": "item"}, "content": [{"type": "text", "text": "First"}]},
+            {"type": "paragraph", "attrs": {"kind": "numbered"}, "content": [{"type": "text", "text": "Counted"}]},
+            {"type": "paragraph", "attrs": {"kind": "todo"}, "content": [{"type": "text", "text": "To do"}]},
+            {"type": "paragraph", "content": [
+                {"type": "text", "text": "A "}, {"type": "text", "text": "bold", "marks": [{"type": "strong"}]}]},
+            {"type": "figure", "attrs": {"file": picture.hash, "extension": "png", "name": picture.name}},
+            {"type": "file", "attrs": {"hash": file.hash, "name": file.name, "extension": "pdf"}},
+        ]});
+        NoteText {
+            doc,
+            words: "First\nCounted\nTo do\nA bold".into(),
+            files: vec![
+                HeldFile { hash: picture.hash.clone(), name: picture.name.clone() },
+                HeldFile { hash: file.hash.clone(), name: file.name.clone() },
+            ],
+        }
     }
 
     #[test]
@@ -227,89 +382,139 @@ mod tests {
     }
 
     #[test]
-    fn a_note_sent_lies_in_the_inbox_as_a_note_of_its_words() {
-        let (_tmp, window) = window();
-        let id = window.send("A thought.\n\nAnd another, on a line of its own.").unwrap();
-        assert_eq!(window.inbox().ids(), vec![id.clone()]);
-        let (note, picture) = window.inbox().read(&id).unwrap();
+    fn files_are_added_by_what_they_hold_and_found_again() {
+        let (tmp, window) = window();
+        let source = tmp.path().join("Holiday.PNG");
+        fs::write(&source, png()).unwrap();
+        let added = window.add_file(&source).unwrap();
+        assert_eq!(added.hash, hash_bytes(&png()));
+        assert_eq!((added.name.as_str(), added.extension.as_str(), added.width), ("Holiday.PNG", "png", Some(3)));
+        assert_eq!(fs::read(window.file_path(&added.hash).unwrap()).unwrap(), png());
+        assert!(source.is_file(), "copied, not moved");
+        // Pasted, the same picture is the same file.
+        let pasted = window.add_bytes("image.png", &png()).unwrap();
+        assert_eq!(pasted.hash, added.hash);
+        assert_eq!(pasted.width, Some(3));
+        let letter = tmp.path().join("letter.pdf");
+        fs::write(&letter, b"%PDF-1.4").unwrap();
+        let file = window.add_file(&letter).unwrap();
+        assert_eq!((file.extension.as_str(), file.width, file.size), ("pdf", None, 8));
+        assert!(window.file_path("../note.json").is_err());
+        assert!(window.file_path(&"0".repeat(64)).is_err());
+        assert!(window.add_file(tmp.path()).is_err(), "a folder is no file");
+    }
+
+    #[test]
+    fn a_file_too_large_is_not_added() {
+        let (tmp, window) = window();
+        let large = tmp.path().join("large.bin");
+        fs::File::create(&large).unwrap().set_len(MAX_FILE as u64 + 1).unwrap();
+        let error = window.add_file(&large).unwrap_err();
+        assert!(error.to_string().contains("large.bin"), "{error}");
+        assert!(!window.unsent_dir().exists(), "nothing of it is kept");
+        assert!(window.add_bytes("large.png", &vec![0u8; MAX_FILE + 1]).is_err());
+    }
+
+    #[test]
+    fn a_note_sent_lies_in_the_inbox_with_its_text_and_its_files() {
+        let (tmp, window) = window();
+        let source = tmp.path().join("plate.png");
+        fs::write(&source, png()).unwrap();
+        let picture = window.add_file(&source).unwrap();
+        let letter = tmp.path().join("letter.pdf");
+        fs::write(&letter, b"%PDF-1.4").unwrap();
+        let file = window.add_file(&letter).unwrap();
+        let text = text(&picture, &file);
+        let id = window.send(&text).unwrap();
+        let (note, image) = window.inbox().read(&id).unwrap();
         assert_eq!(note.kind, Kind::Note);
-        assert_eq!(note.text, "A thought.\n\nAnd another, on a line of its own.");
+        assert_eq!(note.text, text.words);
+        assert_eq!(note.doc, text.doc);
+        assert_eq!(note.files, text.files);
         assert!(note.url.is_empty() && note.title.is_empty() && note.html.is_empty());
         assert!(note.when.starts_with("20") && note.when.contains('T'), "{}", note.when);
-        assert_eq!(picture, None);
+        assert_eq!(image, None);
+        assert_eq!(fs::read(window.inbox().file_of(&id, &picture.hash).unwrap()).unwrap(), png());
+        assert_eq!(fs::read(window.inbox().file_of(&id, &file.hash).unwrap()).unwrap(), b"%PDF-1.4");
+        assert!(!window.unsent_dir().exists(), "nothing is kept of what was sent");
     }
 
     #[test]
-    fn spaces_alone_are_not_sent() {
+    fn a_note_of_nothing_is_not_sent() {
         let (_tmp, window) = window();
-        assert!(window.send("").is_err());
-        assert!(window.send(" \n\t ").is_err());
+        assert!(window.send(&NoteText::default()).is_err());
+        let spaces = NoteText { words: " \n\t ".into(), ..NoteText::default() };
+        assert!(window.send(&spaces).is_err());
         assert!(window.inbox().ids().is_empty());
+        // A picture alone is a note.
+        let picture = window.add_bytes("image.png", &png()).unwrap();
+        let alone = NoteText {
+            doc: serde_json::json!({"type": "doc", "content": [{"type": "figure", "attrs": {"file": picture.hash}}]}),
+            words: String::new(),
+            files: vec![HeldFile { hash: picture.hash.clone(), name: picture.name.clone() }],
+        };
+        window.send(&alone).unwrap();
+        assert_eq!(window.inbox().ids().len(), 1);
     }
 
     #[test]
-    fn words_too_long_are_cut_and_sent() {
-        let (_tmp, window) = window();
-        let id = window.send(&format!("{}é", "w".repeat(MAX_TEXT - 1))).unwrap();
-        let (note, _) = window.inbox().read(&id).unwrap();
-        assert_eq!(note.text.len(), MAX_TEXT - 1, "cut where a sign begins");
+    fn the_note_not_sent_is_kept_read_replaced_and_removed() {
+        let (tmp, window) = window();
+        assert_eq!(window.unsent(), None);
+        let first = NoteText { doc: serde_json::json!({"type": "doc"}), words: "First".into(), files: Vec::new() };
+        window.keep(&first).unwrap();
+        assert_eq!(window.unsent(), Some(first));
+        let source = tmp.path().join("plate.png");
+        fs::write(&source, png()).unwrap();
+        let picture = window.add_file(&source).unwrap();
+        let letter = tmp.path().join("letter.pdf");
+        fs::write(&letter, b"%PDF-1.4").unwrap();
+        let file = window.add_file(&letter).unwrap();
+        let second = text(&picture, &file);
+        window.keep(&second).unwrap();
+        assert_eq!(window.unsent(), Some(second));
+        assert!(window.file_path(&picture.hash).is_ok());
+        // Emptied: no note to keep, and its files go with it.
+        window.keep(&NoteText { words: "  \n".into(), ..NoteText::default() }).unwrap();
+        assert_eq!(window.unsent(), None);
+        assert!(!window.unsent_dir().exists());
+        // What cannot be read is no note.
+        window.keep(&NoteText { words: "Again".into(), ..NoteText::default() }).unwrap();
+        fs::write(window.unsent_dir().join(TEXT), "{ not whole").unwrap();
+        assert_eq!(window.unsent(), None);
     }
 
     #[test]
-    fn the_words_not_sent_are_kept_read_replaced_and_removed() {
-        let (_tmp, window) = window();
-        assert_eq!(window.unsent(), "");
-        window.keep("First words").unwrap();
-        assert_eq!(window.unsent(), "First words");
-        window.keep("First words, and more\non two lines").unwrap();
-        assert_eq!(window.unsent(), "First words, and more\non two lines");
-        let file = window.data().notebook().join(UNSENT);
-        assert!(file.is_file());
-        // Emptied, or nothing but spaces: no words to keep.
-        window.keep("  \n").unwrap();
-        assert_eq!(window.unsent(), "");
-        assert!(!file.exists());
-        window.keep("").unwrap();
-        assert!(!file.exists());
-        // Nothing is left beside it of the writing.
-        window.keep("Again").unwrap();
-        let names: Vec<_> = fs::read_dir(window.data().notebook())
-            .unwrap()
-            .map(|e| e.unwrap().file_name().into_string().unwrap())
-            .collect();
-        assert_eq!(names, vec![UNSENT.to_owned()]);
-    }
-
-    #[test]
-    fn what_is_sent_is_no_longer_kept() {
-        let (_tmp, window) = window();
-        window.keep("To be sent").unwrap();
-        window.send("To be sent").unwrap();
-        assert_eq!(window.unsent(), "");
-        assert!(!window.data().notebook().join(UNSENT).exists());
-    }
-
-    #[test]
-    fn what_cannot_be_sent_is_still_kept() {
-        let (_tmp, window) = window();
-        window.keep("Not lost").unwrap();
+    fn what_cannot_be_sent_is_still_kept_with_its_files() {
+        let (tmp, window) = window();
+        let source = tmp.path().join("plate.png");
+        fs::write(&source, png()).unwrap();
+        let picture = window.add_file(&source).unwrap();
+        let letter = tmp.path().join("letter.pdf");
+        fs::write(&letter, b"%PDF-1.4").unwrap();
+        let file = window.add_file(&letter).unwrap();
+        let text = text(&picture, &file);
+        window.keep(&text).unwrap();
         // The inbox cannot be made: a file stands where it would be.
+        fs::create_dir_all(window.data().notebook()).unwrap();
         fs::write(window.inbox().dir(), "in the way").unwrap();
-        assert!(window.send("Not lost").is_err());
-        assert_eq!(window.unsent(), "Not lost");
+        assert!(window.send(&text).is_err());
+        assert_eq!(window.unsent(), Some(text));
+        assert!(window.file_path(&picture.hash).is_ok() && window.file_path(&file.hash).is_ok());
     }
 
     #[test]
-    fn a_data_folder_not_yet_there_is_made_when_words_are_first_kept() {
+    fn a_data_folder_not_yet_there_is_made_when_a_note_is_first_kept() {
         let tmp = tempfile::tempdir().unwrap();
         let root = tmp.path().join("never started");
         let window = NoteWindow::new(DataDir::at(&root));
         assert!(!root.exists(), "nothing is made by opening the window");
-        assert_eq!(window.unsent(), "");
+        assert_eq!(window.unsent(), None);
         assert!(window.settings().is_empty());
         assert!(!root.exists(), "nor by reading");
-        window.keep("Words").unwrap();
-        window.send("Words").unwrap();
+        let words = NoteText { words: "Words".into(), ..NoteText::default() };
+        window.keep(&words).unwrap();
+        window.send(&words).unwrap();
         assert_eq!(Inbox::in_data_folder(&root).ids().len(), 1);
     }
 

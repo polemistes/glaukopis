@@ -262,6 +262,7 @@ fn what_is_sent_is_what_the_interface_declares() {
                 path: Some("/home/someone/dot.png".into()),
             },
         ],
+        files: vec!["/home/someone/letter.pdf".into()],
     };
     let trashed =
         vec![crate::commands::projects::Trashed { entry: "20260101T000000Z-wrath".into(), info: project_info.clone() }];
@@ -574,6 +575,9 @@ fn what_is_sent_is_what_the_interface_declares() {
     };
     let notebook_update = crate::commands::notebook::NotebookUpdate { update: "AAA=".into() };
     // What the plugin for Firefox handed over: a part of a page as a picture, and a selection.
+    let note_doc = serde_json::json!({"type": "doc", "content": [{"type": "paragraph", "content": [
+        {"type": "text", "text": "A "}, {"type": "text", "text": "bold", "marks": [{"type": "strong"}]},
+        {"type": "text", "text": " word."}]}]});
     let inbox_items = vec![
         crate::commands::notebook::InboxItem {
             kind: glaukopis_core::notebook::inbox::Kind::Region,
@@ -590,6 +594,8 @@ fn what_is_sent_is_what_the_interface_declares() {
                 taken: None,
                 place: None,
             }),
+            doc: Value::Null,
+            files: Vec::new(),
         },
         crate::commands::notebook::InboxItem {
             kind: glaukopis_core::notebook::inbox::Kind::Selection,
@@ -600,23 +606,58 @@ fn what_is_sent_is_what_the_interface_declares() {
             html: "<p>What it <em>says</em>.</p>".into(),
             alt: String::new(),
             image: None,
+            doc: Value::Null,
+            files: Vec::new(),
         },
-        // A note written in a window of its own (record 0109): words, from no page.
+        // A note written in a window of its own (record 0109): a text of a bold word, and a file it holds.
         crate::commands::notebook::InboxItem {
             kind: glaukopis_core::notebook::inbox::Kind::Note,
             url: String::new(),
             title: String::new(),
             when: "2026-11-16T12:00:00Z".into(),
-            text: "A thought.\nAnd another.".into(),
+            text: "A bold word.".into(),
             html: String::new(),
             alt: String::new(),
             image: None,
+            doc: note_doc.clone(),
+            files: vec![crate::commands::notebook::NotebookFile {
+                file: taken_in.files[0].clone(),
+                shown: Some(taken_in.files[0].clone()),
+                time: None,
+                taken: None,
+                place: None,
+            }],
         },
     ];
-    // What the window of a note begins with: the settings, and the words not sent.
+    // What the window of a note begins with: the settings, and the note not sent;
+    // and files added to it.
+    let note_text = glaukopis_core::notebook::note_window::NoteText {
+        doc: note_doc,
+        words: "A bold word.".into(),
+        files: vec![glaukopis_core::notebook::inbox::HeldFile { hash: "a".repeat(64), name: "plate.png".into() }],
+    };
     let note_window_start = crate::commands::notewindow::NoteWindowStart {
         settings: serde_json::json!({ "language": "nb", "theme": "dark" }).as_object().unwrap().clone(),
-        unsent: "Words written and not sent.".into(),
+        unsent: Some(note_text),
+    };
+    let added_files = crate::commands::notewindow::AddedFiles {
+        files: vec![
+            glaukopis_core::notebook::note_window::Added {
+                hash: "a".repeat(64),
+                name: "plate.png".into(),
+                extension: "png".into(),
+                size: 70,
+                width: Some(1),
+            },
+            glaukopis_core::notebook::note_window::Added {
+                hash: "b".repeat(64),
+                name: "letter.pdf".into(),
+                extension: "pdf".into(),
+                size: 8,
+                width: None,
+            },
+        ],
+        problems: vec!["large.bin is larger than 50 MB".into()],
     };
     let firefox_setup = crate::commands::notebook::FirefoxSetup {
         installed: false,
@@ -787,6 +828,7 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("inboxItems", "notebook.InboxItem[]", &inbox_items);
     put("firefoxSetup", "notebook.FirefoxSetup", &firefox_setup);
     put("noteWindowStart", "notewindow.NoteWindowStart", &note_window_start);
+    put("addedFiles", "notewindow.AddedFiles", &added_files);
     put("notesLook", "notebook.NotesLook", &notes_look);
     put("readNotes", "notebook.ReadNotes", &read_notes);
     put("trashed", "projects.Trashed[]", &trashed);
