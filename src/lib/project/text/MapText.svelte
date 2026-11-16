@@ -475,9 +475,9 @@
 
   /**
    * A paragraph made an element (see `heading.ts`): the paragraph the cursor
-   * is in, or what is selected, becomes the name of a new element, where a
-   * name can hold it, and what follows it the new element's text; after this
-   * element, or with `under` the first under it.
+   * is in (its line, where it has line breaks), or what is selected, becomes
+   * the name of a new element, and what follows it the new element's text;
+   * after this element, or with `under` the first under it.
    */
   function split(id: string, view: EditorView, under = false) {
     const { state } = view;
@@ -487,7 +487,7 @@
       : null;
     // What could not be made a text of its own is not cut from this one.
     if (heading.body.size && !body) return;
-    const name = heading.name?.size ? heading.name : null;
+    const name = heading.name.size ? heading.name : null;
 
     project.checkpoint();
     const made = project.transact(() => {
@@ -504,7 +504,7 @@
     }
     project.checkpoint();
     if (!made) return;
-    if (heading.keptAsParagraph) notify(t('text-name-kept'));
+    if (heading.keptInText) notify(t('text-name-kept'));
     go(made, 'title', name ? 'end' : 'start');
   }
 

@@ -10,7 +10,7 @@ text-drop-after = After “{ $name }”
 text-drop-before = Before “{ $name }”
 text-make-paragraph-element = Make the paragraph an element
 text-make-selection-element = Make the selection an element
-text-name-kept = What was to be the name holds what a name cannot, such as a citation or a note, and is the first paragraph of the new element
+text-name-kept = What a name cannot hold, such as a citation or a note, stands at the start of the new element’s text
 text-join = Join to the element above
 text-open-as-map = Enter
 

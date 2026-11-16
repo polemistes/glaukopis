@@ -2,17 +2,20 @@
  * A paragraph made an element (Alt+Enter in the text of an element): the
  * paragraph the cursor is in becomes the name of a new element, wherever in
  * it the cursor stands, and the paragraphs below it, to the end of the text,
- * become the new element's text. With words selected, what is selected
- * becomes the name: what stands before it stays in the old text, and what
- * stands after it in its paragraph becomes the first paragraph of the new
- * element's text, before the paragraphs below. In an empty paragraph the
- * name is empty, so that Enter and then Alt+Enter begins an empty element.
+ * become the new element's text. Where the paragraph has line breaks, only
+ * the line the cursor is in becomes the name: the lines before it stay, the
+ * lines after it begin the new element's text. With words selected, what is
+ * selected becomes the name, to the first line break within it: what stands
+ * before it stays in the old text, and what stands after it in its paragraph
+ * becomes the first paragraph of the new element's text, before the
+ * paragraphs below. In an empty paragraph the name is empty, so that Enter
+ * and then Alt+Enter begins an empty element.
  *
- * A name holds italics, small capitals, raised and lowered text, and nothing
- * else: where what would be the name holds a citation, a note, a picture, a
- * formula, a reference mark, a line break or a mark a name cannot have, it
- * becomes the first paragraph of the new element's text instead, and the
- * name stays empty.
+ * A name holds words, with italics, small capitals, raised and lowered text:
+ * any other mark on the words is dropped and the words kept. What is not
+ * words at all, a citation, a note, a formula, a reference mark or a
+ * cross-reference, is taken out of the name and stands at the start of the
+ * new element's text, so that nothing is lost.
  */
 
 import { Fragment, type Node } from 'prosemirror-model';
@@ -22,54 +25,53 @@ import { titleSchema } from '$lib/editor/schema';
 /** The marks a name may have: those of the title's schema. */
 const NAME_MARKS = new Set(Object.keys(titleSchema.marks));
 
-/** What a name may hold: text with the title's marks (em, smallcaps, sup, sub) and nothing else. */
-export function nameable(fragment: Fragment): boolean {
-  let ok = true;
-  fragment.forEach((node) => {
-    if (!node.isText || node.marks.some((m) => !NAME_MARKS.has(m.type.name))) ok = false;
-  });
-  return ok;
-}
-
-/** How many spaces begin a fragment of inline content: those of its first text nodes, never those inside a note. */
-function startSpaces(fragment: Fragment): number {
-  let spaces = 0;
+/** How much of a fragment's start is spaces and line breaks: those of its first nodes, never those inside a note. */
+function startBlank(fragment: Fragment): number {
+  let size = 0;
   for (let i = 0; i < fragment.childCount; i++) {
     const node = fragment.child(i);
+    if (node.type.name === 'hard_break') {
+      size += node.nodeSize;
+      continue;
+    }
     if (!node.isText) break;
     const text = node.text ?? '';
     const here = text.length - text.trimStart().length;
-    spaces += here;
+    size += here;
     if (here < text.length) break;
   }
-  return spaces;
+  return size;
 }
 
-/** How many spaces end a fragment of inline content: those of its last text nodes, never those inside a note. */
-function endSpaces(fragment: Fragment): number {
-  let spaces = 0;
+/** How much of a fragment's end is spaces and line breaks: those of its last nodes, never those inside a note. */
+function endBlank(fragment: Fragment): number {
+  let size = 0;
   for (let i = fragment.childCount - 1; i >= 0; i--) {
     const node = fragment.child(i);
+    if (node.type.name === 'hard_break') {
+      size += node.nodeSize;
+      continue;
+    }
     if (!node.isText) break;
     const text = node.text ?? '';
     const here = text.length - text.trimEnd().length;
-    spaces += here;
+    size += here;
     if (here < text.length) break;
   }
-  return spaces;
+  return size;
 }
 
 /** Text without the spaces at its two ends, as a name is kept. */
 function trimmed(fragment: Fragment): Fragment {
-  const start = startSpaces(fragment);
+  const start = startBlank(fragment);
   return start >= fragment.size
     ? Fragment.empty
-    : fragment.cut(start, fragment.size - endSpaces(fragment));
+    : fragment.cut(start, fragment.size - endBlank(fragment));
 }
 
-/** Text without the spaces it begins with, as a paragraph begins. */
+/** Text without the spaces and line breaks it begins with, as a paragraph begins. */
 function trimmedStart(fragment: Fragment): Fragment {
-  return fragment.cut(startSpaces(fragment));
+  return fragment.cut(startBlank(fragment));
 }
 
 /** The name as the editors of names hold it: a title of the title's schema, the marks kept. */
@@ -86,12 +88,12 @@ export function nameDoc(name: Fragment): Node {
 }
 
 export interface Heading {
-  /** The name of the new element, which may be empty; null where what was to be the name could not be one. */
-  name: Fragment | null;
-  /** The new element's text: the paragraphs after the first one, and before them what stood after the name in its paragraph, or the paragraph that could not be a name. */
+  /** The name of the new element, which may be empty: words with the marks a name may have, and nothing else. */
+  name: Fragment;
+  /** The new element's text: the paragraphs after the first one, and before them what was taken out of the name and what stood after the name in its paragraph. */
   body: Fragment;
-  /** What was to be the name held what a name cannot, and is the first paragraph of the body instead. */
-  keptAsParagraph: boolean;
+  /** Something that is not words was taken out of the name and stands at the start of the body. */
+  keptInText: boolean;
   /** The position from which the old text is cut to its end: the end of what stays of the paragraph, or the start of the paragraph where nothing of it stays. */
   cutFrom: number;
 }
@@ -99,31 +101,72 @@ export interface Heading {
 /**
  * Where a heading begins for a selection from `from` to `to`: where the
  * selection begins, but in the next paragraph where it begins at the very
- * end of a paragraph and goes on into the next, since someone who dragged
- * over a whole line from the end of the line above means that line.
+ * end of a paragraph and goes on into the next, and after the line break
+ * where it begins at the very end of a line and goes on into the next, since
+ * someone who dragged over a whole line from the end of the line above means
+ * that line.
  */
 function beginning(doc: Node, from: number, to: number): number {
   if (to <= from) return from;
   const $from = doc.resolve(from);
-  if (
-    $from.depth !== 1 ||
-    !$from.parent.isTextblock ||
-    $from.parentOffset < $from.parent.content.size
-  ) {
-    return from;
+  if ($from.depth !== 1 || !$from.parent.isTextblock) return from;
+  if ($from.parentOffset < $from.parent.content.size) {
+    let start = from;
+    while (start < to && doc.resolve(start).nodeAfter?.type.name === 'hard_break') start += 1;
+    return start;
   }
   return doc.resolve($from.after(1)).nodeAfter?.isTextblock ? $from.after(1) + 1 : from;
 }
 
+/** The offsets within a paragraph's content of its line breaks. */
+function breaksOf(content: Fragment): number[] {
+  const offsets: number[] = [];
+  content.forEach((node, offset) => {
+    if (node.type.name === 'hard_break') offsets.push(offset);
+  });
+  return offsets;
+}
+
+/**
+ * What is words of a stretch of one line, and what is not. The words keep the
+ * marks a name may have; where taking something out leaves two spaces
+ * together, one stays. A line mark says something of the line, not in it, and
+ * a name is no line of verse: it is dropped, and nothing is said of it.
+ */
+function wordsAndThings(line: Fragment): { words: Fragment; things: Node[] } {
+  const words: Node[] = [];
+  const things: Node[] = [];
+  let last = '';
+  let gap = false;
+  line.forEach((node) => {
+    if (!node.isText) {
+      if (node.type.name !== 'linemark' && node.type.name !== 'hard_break') {
+        things.push(node);
+        gap = true;
+      }
+      return;
+    }
+    let text = node.text ?? '';
+    if (gap && /\s$/.test(last) && /^\s/.test(text)) text = text.slice(1);
+    if (!text) return;
+    gap = false;
+    last = text;
+    const marks = node.marks.filter((m) => NAME_MARKS.has(m.type.name));
+    words.push(node.type.schema.text(text, marks));
+  });
+  return { words: trimmed(Fragment.fromArray(words)), things };
+}
+
 /**
  * A text parted for a new element, by the cursor at `from` or by the
- * selection from `from` to `to`. With a cursor, the whole paragraph it is in
- * is the name, where a name can hold it; with a selection, what is selected
- * of its first paragraph (to the paragraph's end where it goes on into the
- * next), and what follows that in the paragraph is the first paragraph of
- * the body. The paragraphs after the first are the rest of the body, whole.
- * Where the cursor is within something that stands as one block, as a text
- * side by side with another or a table, the block stays whole, the name is
+ * selection from `from` to `to`. With a cursor, the line it is in is the
+ * name, the whole paragraph where it has no line breaks; with a selection,
+ * what is selected of its first paragraph, to the first line break within it
+ * and to the paragraph's end where it goes on into the next. What follows the
+ * name in its paragraph is the first paragraph of the body, and the
+ * paragraphs after the first are the rest of the body, whole. Where the
+ * cursor is within something that stands as one block, as a text side by
+ * side with another, a table or a figure, the block stays whole, the name is
  * empty, and what follows the block is the body.
  */
 export function headingAt(doc: Node, from: number, to: number = from): Heading {
@@ -131,42 +174,59 @@ export function headingAt(doc: Node, from: number, to: number = from): Heading {
   const end = Math.max(to, start);
   const $from = doc.resolve(start);
   const block = $from.parent;
-  if (!block.isTextblock || $from.depth !== 1) {
+  if (block.type.name !== 'paragraph' || $from.depth !== 1) {
     const after = $from.depth === 0 ? start : $from.after(1);
     return {
       name: Fragment.empty,
       body: doc.content.cut(after),
-      keptAsParagraph: false,
+      keptInText: false,
       cutFrom: after,
     };
   }
-  // With a cursor the paragraph is the name, all of it; with a selection,
-  // what is selected of it, to its end where the selection goes further.
-  const collapsed = end === start;
-  const first = collapsed ? 0 : $from.parentOffset;
-  const last = collapsed || end > $from.end() ? block.content.size : end - $from.start();
-  const head = block.content.cut(0, first);
-  const rest = doc.content.cut($from.after(1));
-  // The paragraph goes whole where nothing but spaces stands before the name;
-  // else the cut begins at the name, with the spaces before it, which would
-  // otherwise be left at the end of the line.
+  const content = block.content;
+  const breaks = breaksOf(content);
+  // Where the name is within the paragraph: with a cursor, its line; with a
+  // selection, what is selected, to the first line break within it.
+  const cursor = start - $from.start();
+  let first = cursor;
+  let last: number;
+  if (end === start) {
+    first = (breaks.filter((b) => b < cursor).pop() ?? -1) + 1;
+    last = breaks.find((b) => b >= cursor) ?? content.size;
+  } else {
+    const selectedTo = end > $from.end() ? content.size : end - $from.start();
+    last = Math.min(selectedTo, breaks.find((b) => b >= first) ?? content.size);
+  }
+  // Where the name's line ends at a line break, that break is not kept.
+  const endsAtBreak = breaks.includes(last);
+  const head = content.cut(0, first);
+  // The paragraph goes whole where nothing but spaces and breaks stand before
+  // the name; else the cut begins at the name, with the spaces and the break
+  // before it, which would otherwise be left at the end of what stays.
   const cutFrom =
-    startSpaces(head) >= head.size ? $from.before(1) : $from.start() + first - endSpaces(head);
+    startBlank(head) >= head.size ? $from.before(1) : $from.start() + first - endBlank(head);
 
-  const selected = block.content.cut(first, last);
-  if (nameable(selected)) {
-    const after = trimmedStart(block.content.cut(last));
-    return {
-      name: trimmed(selected),
-      body: (after.size ? Fragment.from(block.copy(after)) : Fragment.empty).append(rest),
-      keptAsParagraph: false,
-      cutFrom,
-    };
+  const { words, things } = wordsAndThings(content.cut(first, last));
+  const tail = content.cut(endsAtBreak ? last + 1 : last);
+  let paragraph: Fragment;
+  if (!things.length) {
+    paragraph = trimmedStart(tail);
+  } else if (endsAtBreak) {
+    // What was taken out stood in a line of its own, and the lines after it stay after it.
+    const lines = trimmedStart(tail);
+    const line = Fragment.from(things);
+    paragraph = lines.size
+      ? line.addToEnd(block.type.schema.nodes.hard_break.create()).append(lines)
+      : line;
+  } else {
+    paragraph = Fragment.from(things).append(tail);
   }
   return {
-    name: null,
-    body: Fragment.from(block.copy(trimmedStart(block.content.cut(first)))).append(rest),
-    keptAsParagraph: true,
+    name: words,
+    body: (paragraph.size ? Fragment.from(block.copy(paragraph)) : Fragment.empty).append(
+      doc.content.cut($from.after(1)),
+    ),
+    keptInText: things.length > 0,
     cutFrom,
   };
 }
