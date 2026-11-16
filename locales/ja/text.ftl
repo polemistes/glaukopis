@@ -8,8 +8,6 @@ text-grip = この要素を移動または変更
 text-drop-under = 「{ $name }」の下
 text-drop-after = 「{ $name }」の後
 text-drop-before = 「{ $name }」の前
-text-split = ここで分割
-text-heading-kept = カーソルの後には、引用や注など名前に入れられないものがあるため、新しい要素の最初の段落になります
 text-join = 上の要素とつなげる
 text-open-as-map = 中に入る
 

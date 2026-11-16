@@ -3,7 +3,6 @@
 text-title = Titel
 text-name = Naam van het element
 text-grip = Dit element verplaatsen of wijzigen
-text-split = Hier splitsen
 text-join = Aan het element erboven vastmaken
 
 ## Associations, in the margin

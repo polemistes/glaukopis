@@ -8,8 +8,6 @@ text-grip = Flytt eller endre dette elementet
 text-drop-under = Under «{ $name }»
 text-drop-after = Etter «{ $name }»
 text-drop-before = Framfor «{ $name }»
-text-split = Del her
-text-heading-kept = Det som står etter markøren, har noko eit namn ikkje kan romme, som ei kjeldetilvising eller ein note, og er det første avsnittet i det nye elementet
 text-join = Slå saman med elementet over
 text-open-as-map = Gå inn
 

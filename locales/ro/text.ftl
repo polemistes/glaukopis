@@ -3,7 +3,6 @@
 text-title = Titlu
 text-name = Numele elementului
 text-grip = Mută sau modifică acest element
-text-split = Desparte aici
 text-join = Unește cu elementul de deasupra
 
 ## Associations, in the margin

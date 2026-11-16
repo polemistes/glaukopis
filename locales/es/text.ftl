@@ -3,7 +3,6 @@
 text-title = Título
 text-name = Nombre del elemento
 text-grip = Mover o cambiar este elemento
-text-split = Dividir aquí
 text-join = Unir al elemento de arriba
 
 ## Associations, in the margin

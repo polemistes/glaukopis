@@ -8,8 +8,6 @@ text-grip = Sposta o modifica questo elemento
 text-drop-under = Sotto «{ $name }»
 text-drop-after = Dopo «{ $name }»
 text-drop-before = Prima di «{ $name }»
-text-split = Dividi qui
-text-heading-kept = Ciò che segue il cursore contiene qualcosa che un nome non può tenere, come una citazione o una nota, ed è il primo paragrafo del nuovo elemento
 text-join = Unisci all'elemento sopra
 text-open-as-map = Entra
 

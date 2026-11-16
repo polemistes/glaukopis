@@ -3,7 +3,6 @@
 text-title = Naslov
 text-name = Naziv elementa
 text-grip = Premjesti ili izmijeni ovaj element
-text-split = Razdvoji ovdje
 text-join = Spoji s elementom iznad
 
 ## Associations, in the margin

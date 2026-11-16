@@ -3,7 +3,6 @@
 text-title = Název
 text-name = Název prvku
 text-grip = Přesunout nebo změnit tento prvek
-text-split = Rozdělit zde
 text-join = Připojit k prvku nad ním
 
 ## Associations, in the margin

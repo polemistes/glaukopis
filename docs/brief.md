@@ -1653,3 +1653,33 @@ What this settles:
 The plan is
 `docs/plans/the-chat-answered-set-marked-and-changed-and-a-paragraph-made-an-element.md`.
 Records 0107 (the chat) and 0108 (the paragraph made an element).
+
+### Later the same day
+
+Told what was built and which choices had been made without asking, the
+owner wrote:
+
+> Just remove unused messages. Let it be an option in settings to turn off notification of having read comments. I think any paragraph type should be turned into the name of the element. An exception I thought about now is when there are line breaks in a paragraph. Only the part that is after and before a line break becomes the name of the element. In comments I forgot to ask for one thing. If I mark some of the text in a message or a reply and then reply to it or another message, or add a new message, the marked part of the text will show as what I am commenting on at the top of my new message, and pressing it takes me to the message/reply where it stands.
+
+And, while that was being planned:
+
+> One more thing: I would like to have an executable that opens a note window in which I can write whatever. When I submit it, it goes to the notebook. It would be great if it works also when the main Glaukopis app is closed.
+
+What this settles (*comments* here are the messages of the chat, which is
+what the owner had been told of):
+
+- **The two messages no longer used** go from every language.
+- **Telling the others what one has read can be turned off**, in the
+  settings.
+- **Any paragraph becomes the name** of the element made of it, whatever it
+  holds. **Where a paragraph has line breaks, only the line the cursor is
+  in**, from the break before it to the break after it, becomes the name.
+- **Words marked in a message or an answer of the chat are quoted** at the
+  top of what one writes next, an answer to that message or to another, or
+  a new message; pressing the quote goes to the message it is from.
+- **A window of its own to write a note in**, opened by a program of its
+  own, whose words go to the notebook when they are sent; also while
+  Glaukopis itself is closed.
+
+The plan has a second round for these. Records 0107 and 0108 are added to,
+and 0109 is the note written in a window of its own.
