@@ -562,16 +562,18 @@ try {
     if (now !== (on ? 'On' : 'Off')) await guest.click('[data-chat-read-setting] button[aria-checked="false"]');
     await sleep(300);
     const set = await guest.text('[data-chat-read-setting] button.selected');
+    // Looked for while the settings are open: they are gone once this returns.
+    const under = await guest.exists('[data-your-details] [data-chat-read-setting]');
     await guest.press('Escape');
     await guest.waitGone('dialog[open]', 3000).catch(() => {});
     await showChat(guest);
-    return { was: now, set };
+    return { was: now, set, under };
   }
   check('the owner sees the guest’s circles before the setting is turned off', (await circlesOfGuest(owner)) > 0, String(await circlesOfGuest(owner)));
   const off = await tellReading(false);
   check(
     'the setting is under Your details, on at first, and turned off',
-    off.was === 'On' && off.set === 'Off' && (await guest.exists('[data-your-details] [data-chat-read-setting]')),
+    off.was === 'On' && off.set === 'Off' && off.under,
     JSON.stringify(off),
   );
   await until('the guest’s circles to go for the owner', async () => (await circlesOfGuest(owner)) === 0, 10000).catch(() => {});
