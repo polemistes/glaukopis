@@ -563,7 +563,7 @@ pub(crate) fn pandoc_json(
     pandoc_value(&json, &file)
 }
 
-pub(crate) use convert::note_blocks;
+pub(crate) use convert::{boxed_as_points, note_blocks};
 
 /// A picture as a figure of which nothing is said, as wide as suits it.
 pub(crate) fn figure_of(picture: &Image) -> Block {

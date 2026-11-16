@@ -1693,8 +1693,12 @@ was added, with **Show**; what you were reading stays as it was.
 notebook, beside **New note**), brings in the notes you kept in another
 program. Its window asks for **A folder…**, for a folder of Markdown or
 text files, an Obsidian vault, or what Joplin, Notion, Bear or Google Keep
-(through Takeout) export; or **A file…**, for Evernote's `.enex`, one
-Markdown file, or a OneNote file.
+(through Takeout) export; or **A file…**, for Evernote's `.enex` or one
+Markdown file.
+
+OneNote's own files are not read; choose one, and the window says so.
+OneNote can export a page or a section as a Word file, and that is brought
+in as a document (see *A document you have written*).
 
 Before anything is made you are shown what was found: whose notes they are,
 what the folder or the file is called, how many notes and how many pictures
@@ -1705,7 +1709,8 @@ come, and **Stop** stops it, with nothing made.
 The notes come into a **box of their own**, named after what was imported,
 not yet placed on its surface, each **not looked at**. Each keeps its name,
 when it was made, its tags and its pictures and files; a file that is no
-picture stands at the end of its note. A note that says the page it was
+picture stands at the end of its note, and a list to tick comes as points
+to tick, ticked as they were. A note that says the page it was
 clipped from is taken in from that page, as one passage with the page as
 its source; any other is your own words. Where notes link to one another,
 they are linked in the notebook. A message says how many were imported,

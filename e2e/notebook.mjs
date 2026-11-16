@@ -35,6 +35,23 @@ async function until(probe, ok, ms = 6000) {
   return got;
 }
 
+/**
+ * Puts words on the clipboard, as another program would have. The page may
+ * write the clipboard only right after a press: where it is refused, `press`
+ * presses something that changes nothing, and it is tried again.
+ */
+async function toClipboard(app, words, press) {
+  for (let tries = 0; ; tries++) {
+    try {
+      await app.execAsync(`await navigator.clipboard.writeText(arguments[0])`, words);
+      return;
+    } catch (error) {
+      if (tries >= 3) throw error;
+      await press();
+    }
+  }
+}
+
 // ---- what is on the desk: an image and two PDFs ----
 const desk = mkdtempSync(join(tmpdir(), 'glaukopis-e2e-desk-'));
 // The picture of one dot of `contract.rs`, as files.mjs and pane-adding.mjs have it.
@@ -179,7 +196,9 @@ try {
 
   // Words pasted from outside, while the list has the focus: a new note, taken in, with No source.
   await chooseNote(app, 'Owls of Athens');
-  await app.execAsync(`await navigator.clipboard.writeText('The owl of Minerva spreads its wings only with the falling of the dusk.')`);
+  await toClipboard(app, 'The owl of Minerva spreads its wings only with the falling of the dusk.', () =>
+    app.clickText(ROWS, 'Owls of Athens'),
+  );
   await app.exec(`document.querySelector('[data-notes]').focus(); return null;`);
   await app.keys(['Control', 'v']);
   const pasted = await until(() => titles(app), (t) => t.length === 3, 8000);
@@ -258,7 +277,8 @@ try {
   check('with its file as its source', shown.length === 1 && shown[0].words === 'Shape.pdf', JSON.stringify(shown));
   await app.click('[data-note-sources] [data-source]');
   await app.waitFor('[data-source-dialog]', 3000);
-  const fileWords = await app.text('[data-source-dialog]');
+  // The window rises into place, and has no words to be seen before it stands.
+  const fileWords = await until(() => app.text('[data-source-dialog]'), (words) => words.includes('Shape.pdf'), 4000);
   check(
     'the window of a file says what it says of itself, with no choice of sort',
     fileWords.includes('Shape.pdf') && !(await app.exists('[data-source-dialog] [role="radio"]')),

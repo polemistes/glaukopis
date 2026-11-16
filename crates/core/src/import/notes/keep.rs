@@ -179,9 +179,12 @@ fn note(reading: &mut Reading, dir: &Path, key: &str, value: &Value) -> ReadNote
     for point in list("listContent") {
         let words = point.get("text").and_then(Value::as_str).unwrap_or("").trim();
         let ticked = point.get("isChecked").and_then(Value::as_bool).unwrap_or(false);
-        let sign = if ticked { "☒" } else { "☐" };
-        let text = if words.is_empty() { sign.to_owned() } else { format!("{sign} {words}") };
-        blocks.push(Block::of_kind("item", vec![Inline::Text { text, marks: Default::default() }]));
+        let content = if words.is_empty() {
+            Vec::new()
+        } else {
+            vec![Inline::Text { text: words.to_owned(), marks: Default::default() }]
+        };
+        blocks.push(Block::of_kind("todo", content).ticked(ticked));
     }
     ReadNote {
         key: key.to_owned(),

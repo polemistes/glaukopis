@@ -243,6 +243,38 @@ fn ticked(content: &mut Vec<Inline>) -> Option<bool> {
     Some(done)
 }
 
+/// Paragraphs of text that begin with a box, made points to tick: for what
+/// marks a point to tick with a box before its words and not as a point of
+/// a list, as Evernote does. A paragraph of several lines of which any
+/// begins with a box is as many paragraphs, each line a point to tick where
+/// it begins with one and text where it does not. Any other block is as it
+/// was.
+pub(crate) fn boxed_as_points(blocks: Vec<Block>) -> Vec<Block> {
+    let mut out = Vec::with_capacity(blocks.len());
+    for block in blocks {
+        let lines = match &block {
+            Block::Paragraph { name, content, .. } if name == "text" => {
+                let lines: Vec<Vec<Inline>> =
+                    content.split(|i| matches!(i, Inline::Break)).map(<[Inline]>::to_vec).collect();
+                lines.iter().any(|line| ticked(&mut line.clone()).is_some()).then_some(lines)
+            }
+            _ => None,
+        };
+        let (Some(lines), Block::Paragraph { indent, .. }) = (lines, &block) else {
+            out.push(block);
+            continue;
+        };
+        for mut line in lines {
+            match ticked(&mut line) {
+                Some(done) => out.push(Block::of_kind("todo", line).indented(*indent).ticked(done)),
+                None if document::plain(&line).trim().is_empty() => {}
+                None => out.push(Block::of_kind("text", line).indented(*indent)),
+            }
+        }
+    }
+    out
+}
+
 fn number_mark(number: u32) -> Inline {
     Inline::LineMark {
         number: Some(number.to_string()),

@@ -91,6 +91,19 @@ fn paragraphs(note: &ReadNote) -> Vec<(String, String)> {
         .collect()
 }
 
+/// The points to tick of a note: the words of each, and whether it is ticked.
+fn ticks(note: &ReadNote) -> Vec<(String, bool)> {
+    note.blocks
+        .iter()
+        .filter_map(|b| match b {
+            Block::Paragraph { name, content, done, .. } if name == "todo" => {
+                Some((crate::document::plain(content), *done))
+            }
+            _ => None,
+        })
+        .collect()
+}
+
 /// The words of a note with the mark they carry, where they carry one.
 fn marked<'a>(note: &'a ReadNote, mark: &str) -> Vec<(&'a str, &'a serde_json::Value)> {
     let mut out = Vec::new();
@@ -243,7 +256,8 @@ fn an_obsidian_vault_is_read_with_its_names_tags_pictures_files_and_links() {
     );
     let said = paragraphs(first);
     assert!(!said.iter().any(|(_, words)| words == "The first note"), "the name is taken off the text: {said:?}");
-    assert!(said.contains(&("item".into(), "☐ open".into())) && said.contains(&("item".into(), "☒ done".into())));
+    let boxes = ticks(first);
+    assert!(boxes.contains(&("open".into(), false)) && boxes.contains(&("done".into(), true)), "{boxes:?}");
     assert!(said.iter().any(|(_, w)| w.starts_with("Text with #inline/tag and Second and other words and Third#Part")));
     let bold = marked(first, "strong");
     assert_eq!(bold.iter().map(|(t, _)| *t).collect::<Vec<_>>(), ["Within"], "a heading within is a paragraph in bold");
@@ -431,8 +445,7 @@ fn an_evernote_export_is_read_with_its_pictures_and_files() {
         Some(Source { url: "https://example.org/clipped".into(), title: "A clipped page".into() })
     );
     let said = paragraphs(clipped);
-    assert!(said.iter().any(|(_, w)| w == "☒ Done it"), "{said:?}");
-    assert!(said.iter().any(|(_, w)| w == "☐ Not yet"), "{said:?}");
+    assert_eq!(ticks(clipped), [("Done it".into(), true), ("Not yet".into(), false)], "{said:?}");
     assert!(!said.iter().any(|(_, w)| w.contains("U2VjcmV0")), "what is encrypted is left out");
     assert_eq!(marked(clipped, "strong").iter().map(|(t, _)| *t).collect::<Vec<_>>(), ["Inside"]);
     assert_eq!(marked(clipped, "link").iter().map(|(t, _)| *t).collect::<Vec<_>>(), ["link"]);
@@ -511,7 +524,7 @@ fn google_keep_s_notes_are_read_without_pandoc() {
     let groceries = &read.notes[1];
     assert_eq!(groceries.name, "Groceries");
     assert_eq!(groceries.tags, ["home"]);
-    assert_eq!(paragraphs(groceries), [("item".into(), "☒ Milk".into()), ("item".into(), "☐ Bread".into())]);
+    assert_eq!(ticks(groceries), [("Milk".into(), true), ("Bread".into(), false)]);
     assert_eq!(s.listed(), 0);
 }
 

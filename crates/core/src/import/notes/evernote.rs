@@ -3,7 +3,8 @@
 //! text as ENML (HTML of Evernote's own) and its files, in base64, which
 //! the text names by the MD5 of what they hold. The file is read once,
 //! whole. The text is made HTML that Pandoc reads: a picture of the text a
-//! picture, a box to tick its sign, an encrypted part passed over. Which
+//! picture, a box to tick its sign (and the words after it a point to tick,
+//! once read), an encrypted part passed over. Which
 //! note a link leads to the file does not say: no links between notes are
 //! read.
 
@@ -287,6 +288,8 @@ fn note(reading: &mut Reading, path: &Path, node: roxmltree::Node, n: usize, nam
     };
     let pandoc = Pandoc { tools: reading.tools, work: reading.work, stop: reading.stop };
     let (blocks, lost) = pandoc.read(&html, "html", "HTML", &mut edit, &mut take_in)?;
+    // A box to tick stands before its words in Evernote, in a list or not: each is a point to tick.
+    let blocks = crate::import::document::boxed_as_points(blocks);
     // The files the text shows no picture of stand at its end.
     let pictured = pictured.into_inner();
     let mut failed = Vec::new();

@@ -9,8 +9,10 @@
 // strip of its surface, not placed; in the list, the note clipped from a page is taken in as a
 // passage and has that page as its source; the picture is shown in its note; the two notes that
 // link are linked (Holds: a link, in the window of the filters, lets those two through and not
-// the third); the tags stand in the column; Undo takes the box and its notes away; no errors in
-// the page. Screenshots into e2e/output/notebook-import-<n>-<what>.png.
+// the third); a list to tick written in Markdown comes as points to tick, ticked as they were;
+// the tags stand in the column; Undo takes the box and its notes away; a file of OneNote's own
+// is told to be one, with what can be done and nothing to import; no errors in the page.
+// Screenshots into e2e/output/notebook-import-<n>-<what>.png.
 
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -88,7 +90,7 @@ writeFileSync(
   ['---', "title: Athena's owl", 'tags:', '  - owls', '  - greek', `source: ${PAGE}`, '---', '', CLIPPED, ''].join('\n'),
 );
 writeFileSync(join(folder, 'Glaux.md'), 'Glaux is the little owl. See [[Night]].\n\n#little-owl\n');
-writeFileSync(join(folder, 'Night.md'), 'An owl at night.\n\n![](night.png)\n');
+writeFileSync(join(folder, 'Night.md'), 'An owl at night.\n\n![](night.png)\n\n- [ ] Feed the owl\n- [x] Clean the cage\n');
 writeFileSync(join(folder, 'night.png'), png(160, 100));
 
 const dataDir = mkdtempSync(join(tmpdir(), 'glaukopis-e2e-notebook-import-'));
@@ -121,6 +123,7 @@ const noteShown = (app) =>
       taken: !!text?.querySelector('span.taken[data-passage]'),
       pictures: images.length,
       drawn: images.filter((i) => i.complete && i.naturalWidth > 0).length,
+      ticks: text ? Array.from(text.querySelectorAll('p[data-kind="todo"]')).map((p) => p.hasAttribute('data-done')) : [],
       sources: Array.from(document.querySelectorAll('[data-note-sources] [data-source]')).map((c) => ({ words: c.textContent.trim(), detail: c.title ?? '' })),
     };`);
 /** Chooses the note whose row says these words. */
@@ -167,6 +170,8 @@ try {
   check('named after the folder, with three notes', found.notes === '3' && /Owls/.test(found.words) && /3 notes/.test(found.words), found.words);
   check('and the picture beside them', /one picture or file|1 picture/.test(found.words), found.words);
   check('nothing is made before Import', (await app.exists('[data-notebook-empty]')) && (await boxes(app)).length === 1);
+  // The window rises into place: the picture is taken when it stands.
+  await sleep(600);
   await app.screenshot('notebook-import-1-found');
 
   // ---- Import ----
@@ -226,6 +231,7 @@ try {
   const night = await noteShown(app);
   check('the picture is shown in its note', night.pictures === 1 && night.drawn === 1, JSON.stringify(night));
   check('and the note is the writer’s own: nothing taken in', !night.taken);
+  check('its list to tick comes as points to tick, ticked as they were', JSON.stringify(night.ticks) === '[false,true]', JSON.stringify(night.ticks));
   await app.screenshot('notebook-import-5-picture');
 
   // ---- the note that links ----
@@ -265,6 +271,30 @@ try {
   check('Undo takes the box away', !after.some((b) => b.name === 'Owls'), JSON.stringify(after));
   check('and its notes: the notebook is empty again', await app.exists('[data-notebook-empty]'));
   await app.screenshot('notebook-import-7-undone');
+
+  // ---- a file of OneNote's own is not read: the window says what can be done ----
+  const section = join(desk, 'Section.one');
+  writeFileSync(section, Buffer.from([0xe4, 0x52, 0x5c, 0x7b, 0x8c, 0xd8, 0xa7, 0x4d]));
+  await app.exec(`window.__glaukopisNotebook.importNotes(arguments[0]); return null;`, section);
+  await app.waitFor('dialog[open] [data-import-found]', 15000);
+  const oneNote = await app.exec(
+    `const f = document.querySelector('[data-import-found]');
+     return {
+       kind: f.dataset.kind,
+       counted: !!f.querySelector('.facts') || !!document.querySelector('[data-import-none]'),
+       toKnow: document.querySelector('[data-import-remarks]')?.textContent.replace(/\\s+/g, ' ').trim() ?? '',
+       disabled: document.querySelector('[data-import-do]')?.disabled ?? null,
+     };`,
+  );
+  check(
+    'a file of OneNote is told to be one, with what can be done and nothing to import',
+    oneNote.kind === 'onenote' && !oneNote.counted && /Word/.test(oneNote.toKnow) && oneNote.disabled === true,
+    JSON.stringify(oneNote),
+  );
+  await sleep(600);
+  await app.screenshot('notebook-import-8-onenote');
+  await app.clickText('dialog[open] footer button', 'Cancel');
+  await app.waitGone('[data-import-notes]', 5000);
 
   const errors = await app.pageErrors();
   check('no errors in the page', errors.length === 0, errors.join(' | '));
