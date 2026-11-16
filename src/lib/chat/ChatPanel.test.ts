@@ -493,7 +493,10 @@ describe('the panel of the chat', () => {
     expect(writtenOf(kept.text).quote).toEqual({ id: 'q', text: 'goddess' });
     write('Which one?');
     press(field(), 'Enter');
-    expect(project.chat[1]).toMatchObject({ text: 'Which one?', quote: { id: 'q', text: 'goddess' } });
+    expect(project.chat[1]).toMatchObject({
+      text: 'Which one?',
+      quote: { id: 'q', text: 'goddess' },
+    });
     expect('to' in project.chat[1]).toBe(false);
     done();
   });

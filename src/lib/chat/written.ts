@@ -9,12 +9,7 @@
 
 import type { Mark, Node as PMNode } from 'prosemirror-model';
 import { chatSchema } from '$lib/editor/schema';
-import {
-  chatMessageOf,
-  chatQuoteOf,
-  isEmoji,
-  tidyMarks,
-} from '$lib/project/model/changing/chat';
+import { chatMessageOf, chatQuoteOf, isEmoji, tidyMarks } from '$lib/project/model/changing/chat';
 import type { ChatMark, ChatMarkKind, ChatQuote, ChatWords } from '$lib/project/model/types';
 
 /**

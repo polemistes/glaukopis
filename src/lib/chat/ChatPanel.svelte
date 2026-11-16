@@ -10,10 +10,11 @@
    * quoted at the top of what is sent; pressed there, the quote goes to the
    * message it is from. What is written and not yet sent is its holder's to
    * keep (`draft`), with what it answers, quotes or changes, so that it is
-   * there again when the panel is (record 0094). New messages are marked, and a button over the foot of
-   * the list leads to those not yet seen. While the project is not shared,
-   * the messages are shown without the field, nothing can be written, and
-   * the whole conversation can be deleted.
+   * there again when the panel is (record 0094). New messages are marked,
+   * and a button over the foot of the list leads to those not yet seen.
+   * While the project is not shared, the messages are shown without the
+   * field, nothing can be written, and the whole conversation can be
+   * deleted.
    */
   import type { Snippet } from 'svelte';
   import { untrack } from 'svelte';

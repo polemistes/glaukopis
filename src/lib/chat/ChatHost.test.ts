@@ -36,7 +36,12 @@ function shared() {
   project.begin('Wrath');
   project.setMe({ id: 'hector', name: 'Hector' });
   project.yChat.push([
-    { id: 'm1', author: { id: 'paris', name: 'Paris' }, created: '2026-11-16T09:00:00Z', text: 'Hi' },
+    {
+      id: 'm1',
+      author: { id: 'paris', name: 'Paris' },
+      created: '2026-11-16T09:00:00Z',
+      text: 'Hi',
+    },
   ]);
   project.yChatRead.set('hector', {
     name: 'Hector',
@@ -86,7 +91,12 @@ describe('the host of the chats, and the setting of reading told', () => {
     // The mark of this computer, which counts the unread, is kept as ever.
     expect(open.chatRead).toEqual({ id: 'm1', created: '2026-11-16T09:00:00Z' });
     project.yChat.push([
-      { id: 'm2', author: { id: 'paris', name: 'Paris' }, created: '2026-11-16T09:01:00Z', text: 'Hm' },
+      {
+        id: 'm2',
+        author: { id: 'paris', name: 'Paris' },
+        created: '2026-11-16T09:01:00Z',
+        text: 'Hm',
+      },
     ]);
     flushSync();
     expect(marks(project)).toEqual({ paris: 'm1' });

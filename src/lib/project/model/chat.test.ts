@@ -413,7 +413,10 @@ describe('the chat of a project', () => {
     const first = p.say('Sing, goddess')!;
     const id = p.say('Wich goddess?', undefined, { id: first, text: 'goddess' })!;
     expect(p.reword(id, 'Which goddess?')).toBe(true);
-    expect(p.chat[1]).toMatchObject({ text: 'Which goddess?', quote: { id: first, text: 'goddess' } });
+    expect(p.chat[1]).toMatchObject({
+      text: 'Which goddess?',
+      quote: { id: first, text: 'goddess' },
+    });
   });
 
   it('reads a quote with care: none that is no object or has no words, a long one cut', () => {
