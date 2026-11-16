@@ -3746,6 +3746,176 @@ export const firefoxSetup: notebook.FirefoxSetup = {
   "other": "/opt/glaukopis-old/glaukopis"
 };
 
+export const notesLook: notebook.NotesLook = {
+  "attachments": 3,
+  "kind": "obsidian",
+  "name": "Vault",
+  "notes": 12,
+  "remarks": [
+    "The notes written in Markdown are read by Pandoc."
+  ]
+};
+
+export const readNotes: notebook.ReadNotes = {
+  "notes": [
+    {
+      "attachments": [
+        "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5"
+      ],
+      "blocks": [
+        {
+          "content": [
+            {
+              "kind": "text",
+              "marks": {},
+              "text": "Text with "
+            },
+            {
+              "kind": "break"
+            },
+            {
+              "kind": "text",
+              "marks": {},
+              "text": "Second"
+            }
+          ],
+          "indent": 0,
+          "kind": "paragraph",
+          "name": "text"
+        },
+        {
+          "content": [
+            {
+              "kind": "text",
+              "marks": {},
+              "text": "☐ open"
+            }
+          ],
+          "indent": 0,
+          "kind": "paragraph",
+          "name": "item"
+        },
+        {
+          "alt": "",
+          "caption": [],
+          "extension": "png",
+          "file": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+          "id": "",
+          "kind": "figure",
+          "name": "plate.png",
+          "numbered": false,
+          "width": 40
+        }
+      ],
+      "held": [
+        {
+          "file": {
+            "added": "2026-01-01T00:00:00Z",
+            "alt": "",
+            "bookmarks": [],
+            "exists": true,
+            "folder": "00000000-0000-4000-8000-000000000000",
+            "hash": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+            "height": 1,
+            "kind": "picture",
+            "madeFrom": null,
+            "name": "plate.png",
+            "origin": "/data/plate.png",
+            "path": "attachments/4f/4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5/plate.png",
+            "references": [],
+            "size": 70,
+            "width": 1
+          },
+          "place": null,
+          "shown": {
+            "added": "2026-01-01T00:00:00Z",
+            "alt": "",
+            "bookmarks": [],
+            "exists": true,
+            "folder": "00000000-0000-4000-8000-000000000000",
+            "hash": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+            "height": 1,
+            "kind": "picture",
+            "madeFrom": null,
+            "name": "plate.png",
+            "origin": "/data/plate.png",
+            "path": "attachments/4f/4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5/plate.png",
+            "references": [],
+            "size": 70,
+            "width": 1
+          },
+          "taken": null,
+          "time": "2026-01-01T00:00:00Z"
+        },
+        {
+          "file": {
+            "added": "2026-01-01T00:00:00Z",
+            "alt": "",
+            "bookmarks": [],
+            "exists": true,
+            "folder": "00000000-0000-4000-8000-000000000000",
+            "hash": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+            "height": 1,
+            "kind": "picture",
+            "madeFrom": null,
+            "name": "plate.png",
+            "origin": "/data/plate.png",
+            "path": "attachments/4f/4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5/plate.png",
+            "references": [],
+            "size": 70,
+            "width": 1
+          },
+          "place": null,
+          "shown": null,
+          "taken": null,
+          "time": null
+        }
+      ],
+      "key": "Inbox/First.md",
+      "links": [
+        "Notes/Second.md"
+      ],
+      "made": "2026-01-01T00:00:00Z",
+      "name": "The first note",
+      "source": {
+        "title": "The first note",
+        "url": "https://example.org/article"
+      },
+      "tags": [
+        "alpha",
+        "inline/tag"
+      ]
+    },
+    {
+      "attachments": [],
+      "blocks": [
+        {
+          "content": [
+            {
+              "kind": "text",
+              "marks": {},
+              "text": "Plain."
+            }
+          ],
+          "indent": 0,
+          "kind": "paragraph",
+          "name": "text"
+        }
+      ],
+      "held": [],
+      "key": "Notes/Second.md",
+      "links": [],
+      "made": null,
+      "name": "",
+      "source": null,
+      "tags": []
+    }
+  ],
+  "problems": [
+    "The note “Bad” could not be read."
+  ]
+};
+
 export const trashed: projects.Trashed[] = [
   {
     "entry": "20260101T000000Z-wrath",
@@ -4621,6 +4791,13 @@ export const pdfsProgress: backend.Told<sources.PdfsProgress> = {
 export const ocrProgress: backend.Told<ocr.Progress> = {
   "done": 1,
   "page": 2,
+  "ticket": "t",
+  "total": 3
+};
+
+export const notesProgress: backend.Told<backend.Count> = {
+  "done": 1,
+  "name": "nagy.pdf",
   "ticket": "t",
   "total": 3
 };

@@ -608,6 +608,72 @@ fn what_is_sent_is_what_the_interface_declares() {
         other: Some("/opt/glaukopis-old/glaukopis".into()),
     };
 
+    // Notes brought in from another program: what was looked at first, and
+    // what was read: a note clipped from a page, with a picture, a file and a
+    // link to another, and one that says nothing of itself.
+    use glaukopis_core::document::{Block, Inline};
+    use glaukopis_core::import::notes::{HeldFile, Kind, Look, ReadNote, ReadNotes, Source};
+    let notes_look = Look {
+        kind: Kind::Obsidian,
+        name: "Vault".into(),
+        notes: 12,
+        attachments: 3,
+        remarks: vec!["The notes written in Markdown are read by Pandoc.".into()],
+    };
+    let words = |text: &str| Inline::Text { text: text.into(), marks: Default::default() };
+    let picture = taken_in.files[0].clone();
+    let read_notes = ReadNotes {
+        notes: vec![
+            ReadNote {
+                key: "Inbox/First.md".into(),
+                name: "The first note".into(),
+                made: Some("2024-05-06T07:08:09Z".into()),
+                tags: vec!["alpha".into(), "inline/tag".into()],
+                source: Some(Source { url: "https://example.org/article".into(), title: "The first note".into() }),
+                blocks: vec![
+                    Block::paragraph(vec![words("Text with "), Inline::Break, words("Second")]),
+                    Block::of_kind("item", vec![words("☐ open")]),
+                    Block::Figure {
+                        id: String::new(),
+                        file: picture.hash.clone(),
+                        extension: "png".into(),
+                        name: picture.name.clone(),
+                        caption: Vec::new(),
+                        alt: String::new(),
+                        width: 40,
+                        numbered: false,
+                        align: None,
+                        wrap: None,
+                    },
+                ],
+                held: vec![
+                    HeldFile {
+                        file: picture.clone(),
+                        shown: Some(picture.clone()),
+                        time: Some("2026-11-15T13:03:22Z".into()),
+                        taken: None,
+                        place: None,
+                    },
+                    HeldFile { file: picture.clone(), shown: None, time: None, taken: None, place: None },
+                ],
+                attachments: vec![picture.hash.clone()],
+                links: vec!["Notes/Second.md".into()],
+            },
+            ReadNote {
+                key: "Notes/Second.md".into(),
+                name: String::new(),
+                made: None,
+                tags: Vec::new(),
+                source: None,
+                blocks: vec![Block::paragraph(vec![words("Plain.")])],
+                held: Vec::new(),
+                attachments: Vec::new(),
+                links: Vec::new(),
+            },
+        ],
+        problems: vec!["The note “Bad” could not be read.".into()],
+    };
+
     let mut values: Vec<(&str, &str, Value)> = Vec::new();
     let mut put = |name: &'static str, kind: &'static str, value: &dyn erased::Json| {
         values.push((name, kind, steady(value.json(), tmp.path(), &resources)));
@@ -704,6 +770,8 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("notebookUpdate", "notebook.NotebookUpdate", &notebook_update);
     put("inboxItems", "notebook.InboxItem[]", &inbox_items);
     put("firefoxSetup", "notebook.FirefoxSetup", &firefox_setup);
+    put("notesLook", "notebook.NotesLook", &notes_look);
+    put("readNotes", "notebook.ReadNotes", &read_notes);
     put("trashed", "projects.Trashed[]", &trashed);
     put("history", "projects.HistoryEntry[]", &history);
     put("place", "projects.Place", &place);
@@ -749,6 +817,7 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("filesProgress", "backend.Told<files.FilesProgress>", &files_told);
     put("pdfsProgress", "backend.Told<sources.PdfsProgress>", &pdfs_told);
     put("ocrProgress", "backend.Told<ocr.Progress>", &ocr_told);
+    put("notesProgress", "backend.Told<backend.Count>", &files_told);
 
     let mut out = String::from(
         "// Made by the test `contract` in src-tauri/src/contract.rs: what the Rust side\n\
