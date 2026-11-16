@@ -601,7 +601,23 @@ fn what_is_sent_is_what_the_interface_declares() {
             alt: String::new(),
             image: None,
         },
+        // A note written in a window of its own (record 0109): words, from no page.
+        crate::commands::notebook::InboxItem {
+            kind: glaukopis_core::notebook::inbox::Kind::Note,
+            url: String::new(),
+            title: String::new(),
+            when: "2026-11-16T12:00:00Z".into(),
+            text: "A thought.\nAnd another.".into(),
+            html: String::new(),
+            alt: String::new(),
+            image: None,
+        },
     ];
+    // What the window of a note begins with: the settings, and the words not sent.
+    let note_window_start = crate::commands::notewindow::NoteWindowStart {
+        settings: serde_json::json!({ "language": "nb", "theme": "dark" }).as_object().unwrap().clone(),
+        unsent: "Words written and not sent.".into(),
+    };
     let firefox_setup = crate::commands::notebook::FirefoxSetup {
         installed: false,
         manifest: "/home/a/.mozilla/native-messaging-hosts/org.glaukopis.notebook.json".into(),
@@ -770,6 +786,7 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("notebookUpdate", "notebook.NotebookUpdate", &notebook_update);
     put("inboxItems", "notebook.InboxItem[]", &inbox_items);
     put("firefoxSetup", "notebook.FirefoxSetup", &firefox_setup);
+    put("noteWindowStart", "notewindow.NoteWindowStart", &note_window_start);
     put("notesLook", "notebook.NotesLook", &notes_look);
     put("readNotes", "notebook.ReadNotes", &read_notes);
     put("trashed", "projects.Trashed[]", &trashed);
