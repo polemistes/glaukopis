@@ -350,9 +350,7 @@ export function blockHtml(block: Block, heading: { level?: number; attributes?: 
 
 /** Words without their marks, as they are read. */
 export function inlineText(nodes: readonly Inline[]): string {
-  return nodes
-    .map((n) => (n.kind === 'strong' || n.kind === 'em' ? inlineText(n.children) : n.text))
-    .join('');
+  return nodes.map((n) => ('children' in n ? inlineText(n.children) : n.text)).join('');
 }
 
 /** The words of a block, as they are read: for finding in. */

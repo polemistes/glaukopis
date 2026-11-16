@@ -26,6 +26,7 @@ keys-library = Biblioteket
 keys-files = Filene i biblioteket
 keys-notebook = Notatblokken
 keys-settings = Innstillinger
+keys-help = Hjelp
 keys-search-everything = Søk gjennom alt
 keys-palette = Hva skal gjøres?
 keys-sheet = Tastene

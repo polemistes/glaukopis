@@ -16,6 +16,7 @@
  * the table is the one place a key is written.
  */
 
+import { helpUi } from '$lib/help/help-ui.svelte';
 import { onMac } from './platform.svelte';
 
 /** Where a key holds. */
@@ -103,6 +104,8 @@ const ENTRIES = [
   { id: 'notebook', keys: 'Ctrl+3', place: 'everywhere', bound: true },
   { id: 'files', keys: 'Ctrl+4', place: 'everywhere', bound: true },
   { id: 'settings', keys: 'Ctrl+,', place: 'everywhere', bound: true },
+  // The user's guide, as in every program; also while a text has the cursor.
+  { id: 'help', keys: 'F1', place: 'everywhere', bound: true },
   { id: 'search-everything', keys: 'Ctrl+Shift+F', place: 'everywhere', bound: true },
   { id: 'new-window', keys: 'Ctrl+Shift+N', place: 'everywhere', bound: true },
   { id: 'palette', keys: 'Ctrl+K', place: 'everywhere', bound: true },
@@ -531,7 +534,10 @@ class Shortcuts {
 
 export const shortcuts = new Shortcuts();
 
-/** Whether the sheet of keys, or the palette of commands, is open: one at a time. */
+/**
+ * Whether the sheet of keys, or the palette of commands, is open: one at a
+ * time. The sheet lies over the view as Help does, and opening it closes Help.
+ */
 class KeysUi {
   sheet = $state(false);
   palette = $state(false);
@@ -539,6 +545,7 @@ class KeysUi {
   toggleSheet() {
     this.palette = false;
     this.sheet = !this.sheet;
+    if (this.sheet) helpUi.hide();
   }
 
   togglePalette() {
