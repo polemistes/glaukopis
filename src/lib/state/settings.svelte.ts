@@ -8,6 +8,7 @@ import {
 import type { KindFamily, Look } from '$lib/api/documents';
 import type { Person } from '$lib/project/model/types';
 import type { Camera } from '$lib/ui/camera';
+import { recentEmojisOf } from '$lib/ui/emoji';
 import { t } from '$lib/i18n';
 import { notifyError } from '$lib/ui/toast.svelte';
 import { beforeClose } from './closing';
@@ -171,6 +172,8 @@ export interface MoreSettings {
   versionTold: string;
   /** How the page of the notebook was left. */
   notebookView: NotebookViewSettings;
+  /** The emojis chosen last, the newest first: the picker offers them first (`ui/EmojiPicker.svelte`). */
+  recentEmojis: string[];
 }
 
 export type AllSettings = Settings & MoreSettings;
@@ -210,6 +213,7 @@ const more = (kept: Partial<AllSettings> = {}): MoreSettings => ({
     kept.notebookView,
     (kept as { notebookListWidth?: unknown }).notebookListWidth,
   ),
+  recentEmojis: recentEmojisOf(kept.recentEmojis),
 });
 
 /**
