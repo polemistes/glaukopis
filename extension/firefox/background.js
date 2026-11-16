@@ -1,6 +1,6 @@
 /**
  * The plugin's event page: the button in the bar, the menu of the right
- * button, the key; what each asks of the page; and the handing over to the
+ * button, the keys; what each asks of the page; and the handing over to the
  * helper Firefox starts, which writes the thing into the inbox of the
  * notebook of Glaukopis. The plugin says nothing but a sign on its button
  * for a few seconds: a tick when the thing was handed over, an exclamation
@@ -226,7 +226,7 @@ async function addRegion(tab) {
   await give(tab.id, 'region', pageOf(tab, got), { image });
 }
 
-// ---- the menus, the button, the key ----
+// ---- the menus, the button, the keys ----
 
 const MENUS = [
   { id: 'page', contexts: ['page'], title: 'menuPage' },
@@ -271,11 +271,20 @@ browser.action.onClicked.addListener((tab) => {
   });
 });
 
+/** What each key does, by the name the manifest gives it. */
+const KEYS = {
+  'add-to-notebook': addFromTab,
+  'add-region': addRegion,
+  'add-page': addPage,
+};
+
 browser.commands.onCommand.addListener(async (command, given) => {
-  if (command !== 'add-to-notebook') return;
+  const run = KEYS[command];
+  if (!run) return;
   const tab = given ?? (await browser.tabs.query({ active: true, currentWindow: true }))[0];
-  addFromTab(tab).catch((error) => {
+  if (!tab?.id) return;
+  run(tab).catch((error) => {
     console.error(error);
-    if (tab?.id) notDone(tab.id, 'reasonNotWritten');
+    notDone(tab.id, 'reasonNotWritten');
   });
 });

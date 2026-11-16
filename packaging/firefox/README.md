@@ -11,6 +11,11 @@ signed version stays.
 not shown in its collection of add-ons. It is the plugin exactly as the
 source had it that day.
 
+**1.0.1** is in the source since 2026-11-16 and not yet signed: it adds a
+key for a part of the page as a picture (Alt+Shift+P) and a command without
+a key for the page whole. Until it is signed and its file is here, 1.0.0 is
+the plugin that is offered.
+
 ## At a release
 
 The file goes into the release's folder with the packages

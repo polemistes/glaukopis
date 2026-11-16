@@ -263,7 +263,7 @@ try {
   // The box deleted from its menu, after the question: its notes go back to the first.
   await app.rightClick(await boxRow(app, 'Olympians'));
   const boxMenu = await menuItems(app);
-  check('the menu of a box offers Rename and Delete', boxMenu.length === 2 && boxMenu[0].startsWith('Rename') && boxMenu[1].startsWith('Delete'), boxMenu.join(' | '));
+  check('the menu of a box offers Rename, Notes from outside come here and Delete', boxMenu.length === 3 && boxMenu[0].startsWith('Rename') && boxMenu[1].startsWith('Notes from outside come here') && boxMenu[2].startsWith('Delete'), boxMenu.join(' | '));
   await chooseItem(app, null, 'Delete');
   const asked = await question(app);
   check('deleting a box that holds notes is asked first', asked.includes('Delete Olympians?') && asked.includes('2 notes in it go to Unsorted'), asked.replace(/\s+/g, ' '));
@@ -273,7 +273,7 @@ try {
   check('the box is gone, and its notes are back in the first', !column.some((x) => x.name === 'Olympians') && column[0].count === '3', JSON.stringify(column));
   await app.rightClick(await boxRow(app, 'Unsorted'));
   const firstMenu = await menuItems(app);
-  check('the first box is never deleted: its menu does not offer it', firstMenu.length === 1 && firstMenu[0].startsWith('Rename'), firstMenu.join(' | '));
+  check('the first box is never deleted: its menu does not offer it', firstMenu.length === 2 && firstMenu[0].startsWith('Rename') && firstMenu[1].startsWith('Notes from outside come here'), firstMenu.join(' | '));
   await app.press('Escape');
   await sleep(200);
 

@@ -14,7 +14,13 @@ It adds one of four things:
   the page as it is shown, or cut out of a picture of the tab where the page
   does not let it be read. Nothing is fetched.
 - **A part of the page as a picture**: *Add a part of the page as a
-  picture…*, then a rectangle marked with the pointer (Esc gives it up).
+  picture…* or Alt+Shift+P, then a rectangle marked with the pointer (Esc
+  gives it up).
+
+The keys are commands of the manifest, so Firefox lets them be changed
+(`about:addons`, the gear, *Manage Extension Shortcuts*). A third command,
+the page whole though something is selected, has no key until it is given
+one there.
 
 It hands the thing to a small helper that Firefox starts: Glaukopis itself,
 in another role, which writes it into the notebook's inbox. Glaukopis takes
@@ -25,7 +31,7 @@ reason as the button's title.
 
 ## What it asks for, and why
 
-- `activeTab`: to read the tab in view when the button, the menu or the key
+- `activeTab`: to read the tab in view when the button, the menu or a key
   is used, and only then. No other site is asked for.
 - `scripting`: to read the page, the selection or the image in that tab, and
   to mark a part of it.
@@ -63,7 +69,9 @@ Signed as *unlisted*, it is not shown on addons.mozilla.org; the signed
 installed in Firefox by opening it. Raise `version` in `manifest.json` for
 each new signing.
 
-Version 1.0.0 is signed. The signed file is kept in `packaging/firefox/`,
+Version 1.0.0 is signed; 1.0.1, which has the keys for a part of the page
+and for the page whole, is not yet. The signed file is kept in
+`packaging/firefox/`,
 whose README says where it goes at a release and what Mozilla's check said
 of it. `web-ext-artifacts/` and `.amo-upload-uuid`, which the signing leaves
 here, are not kept in git.

@@ -7,7 +7,7 @@
  * part of a page, is a note holding the picture as a figure. A note
  * written in a window of its own (record 0109) is a note without a name
  * and with no source, its text as it was written, read with care
- * (`window/text.ts`).
+ * (`window/text.ts`). Each lies in the box that receives (`model/boxes.ts`).
  *
  * The HTML the plugin gives is not to be trusted. It is read without being
  * run, in a document of its own that is never put into the page; every
@@ -357,6 +357,7 @@ export function notesOfInbox(notebook: Notebook, items: InboxItem[]): string[] {
       const source = sourceOf(item, made);
       const id = notebook.addNote({
         made,
+        box: notebook.receiving,
         seen: false,
         ...(item.kind === 'page' && item.title.trim() ? { name: item.title } : {}),
       });

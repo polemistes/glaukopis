@@ -131,6 +131,35 @@ describe('the event page', () => {
     expect(posted).toEqual([expect.objectContaining({ kind: 'selection', html: '<b>Wise</b>' })]);
   });
 
+  it('a key of its own adds the page whole, though something is selected', async () => {
+    inPage = {
+      readSelection: { url: 'x', title: 'y', text: 'Wise', html: '<b>Wise</b>' },
+      readPage: { url: 'x', title: 'y', text: 'Words', html: '<p>Words</p>' },
+    };
+    await browser.commands.onCommand.fire('add-page', tab);
+    await settled();
+    expect(posted).toEqual([expect.objectContaining({ kind: 'page', html: '<p>Words</p>' })]);
+  });
+
+  it('a key of its own marks a part of the page, in the tab in view where Firefox names none', async () => {
+    inPage = { markRegion: null };
+    browser.tabs.query.mockResolvedValueOnce([tab]);
+    await browser.commands.onCommand.fire('add-region');
+    await settled();
+    const call = browser.scripting.executeScript.mock.calls[0] as unknown as [
+      { target: { tabId: number }; func: { name: string } },
+    ];
+    expect(call[0].func.name).toBe('markRegion');
+    expect(call[0].target.tabId).toBe(7);
+    expect(posted).toEqual([]);
+  });
+
+  it('a key the plugin does not know does nothing', async () => {
+    await browser.commands.onCommand.fire('something-else', tab);
+    await settled();
+    expect(browser.scripting.executeScript).not.toHaveBeenCalled();
+  });
+
   it('says Glaukopis is not set up where Firefox finds no helper', async () => {
     helper = { closed: 'No such native application org.glaukopis.notebook' };
     inPage = { readSelection: { url: 'x', title: 'y', text: 'Wise', html: '' } };

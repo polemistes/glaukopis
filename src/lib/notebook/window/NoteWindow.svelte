@@ -2,7 +2,7 @@
   /**
    * The window of a note (record 0109): one text, the text's own editor
    * over the body schema as the notebook's notes have it, with its marks,
-   * its lists, its keys and its undo; under it one row, the buttons of the
+   * its lists, its keys and its undo; over it one row, the buttons of the
    * marks and of the lists and *Add a file…* at the left and *To the
    * notebook* at the right. Pictures and files come in pasted, dropped on
    * the window, or chosen; each is copied beside the note until it is
@@ -352,6 +352,57 @@
 
 <!-- The window's own keys and pastes, seen before the editor sees them. -->
 <div class="note-window" onkeydowncapture={onkeydown} onpastecapture={onpaste} role="presentation">
+  <div class="tools">
+    {#each MARKS as m (m.mark)}
+      <IconButton
+        label={m.label()}
+        shortcut={m.key}
+        size="sm"
+        active={!!current && markActive(current, bodySchema.marks[m.mark])}
+        data-note-window-mark={m.mark}
+        onmousedown={keep}
+        onclick={() => run(toggle(m.mark))}><m.icon size={14} /></IconButton
+      >
+    {/each}
+    <span class="between"></span>
+    {#each LISTS as l (l.kind)}
+      <IconButton
+        label={l.label()}
+        shortcut={l.key}
+        size="sm"
+        active={!!current && kindOf(current) === l.kind}
+        data-note-window-list={l.kind}
+        onmousedown={keep}
+        onclick={() =>
+          run((state, dispatch, v) =>
+            setKind(kindOf(state) === l.kind ? 'text' : l.kind)(state, dispatch, v),
+          )}><l.icon size={14} /></IconButton
+      >
+    {/each}
+    <span class="between"></span>
+    <IconButton
+      label={t('notebook-note-window-add-file')}
+      size="sm"
+      data-note-window-add
+      onmousedown={keep}
+      onclick={() => void chooseFiles()}><Paperclip size={14} /></IconButton
+    >
+    <span class="gap"></span>
+    <span
+      use:tooltip={{
+        text: t('notebook-note-window-send'),
+        shortcut: keysFor('notebook-note-window-send'),
+      }}
+    >
+      <Button
+        size="sm"
+        variant="primary"
+        disabled={empty || sending}
+        data-note-window-send
+        onclick={() => void send()}>{t('notebook-note-window-send')}</Button
+      >
+    </span>
+  </div>
   <div class="field" data-note-window-field>
     <RichText
       bind:this={editor}
@@ -375,61 +426,6 @@
       {t('notebook-note-window-not-sent')}: {problem}
     </p>
   {/if}
-  <div class="tools">
-    {#each MARKS as m (m.mark)}
-      <IconButton
-        label={m.label()}
-        shortcut={m.key}
-        size="sm"
-        side="top"
-        active={!!current && markActive(current, bodySchema.marks[m.mark])}
-        data-note-window-mark={m.mark}
-        onmousedown={keep}
-        onclick={() => run(toggle(m.mark))}><m.icon size={14} /></IconButton
-      >
-    {/each}
-    <span class="between"></span>
-    {#each LISTS as l (l.kind)}
-      <IconButton
-        label={l.label()}
-        shortcut={l.key}
-        size="sm"
-        side="top"
-        active={!!current && kindOf(current) === l.kind}
-        data-note-window-list={l.kind}
-        onmousedown={keep}
-        onclick={() =>
-          run((state, dispatch, v) =>
-            setKind(kindOf(state) === l.kind ? 'text' : l.kind)(state, dispatch, v),
-          )}><l.icon size={14} /></IconButton
-      >
-    {/each}
-    <span class="between"></span>
-    <IconButton
-      label={t('notebook-note-window-add-file')}
-      size="sm"
-      side="top"
-      data-note-window-add
-      onmousedown={keep}
-      onclick={() => void chooseFiles()}><Paperclip size={14} /></IconButton
-    >
-    <span class="gap"></span>
-    <span
-      use:tooltip={{
-        text: t('notebook-note-window-send'),
-        shortcut: keysFor('notebook-note-window-send'),
-        side: 'top',
-      }}
-    >
-      <Button
-        size="sm"
-        variant="primary"
-        disabled={empty || sending}
-        data-note-window-send
-        onclick={() => void send()}>{t('notebook-note-window-send')}</Button
-      >
-    </span>
-  </div>
 </div>
 <Toaster />
 
@@ -472,7 +468,7 @@
     align-items: center;
     gap: 1px;
     padding: 6px 10px;
-    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
   }
   .between {
     width: 8px;

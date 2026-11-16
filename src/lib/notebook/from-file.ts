@@ -242,7 +242,7 @@ export function pictureName(fileName: string, place: string | null): string {
 // ---- the note ----
 
 /**
- * Words as a new note in the first box, taken in as one passage with their
+ * Words as a new note in the box that receives, taken in as one passage with their
  * source: each paragraph a paragraph of the note. One step of undo. Gives
  * the id of the note.
  */
@@ -255,7 +255,7 @@ export async function noteOfWords(text: string, source: NewSource): Promise<stri
     .join('\n');
   notebook.checkpoint();
   const id = notebook.transact(() => {
-    const id = notebook.addNote({ seen: false });
+    const id = notebook.addNote({ box: notebook.receiving, seen: false });
     const passage = notebook.addPassage(notebook.addSource(source), words);
     notebook.addText(id, words, passage);
     return id;
@@ -265,7 +265,7 @@ export async function noteOfWords(text: string, source: NewSource): Promise<stri
 }
 
 /**
- * A picture, as the bytes of a PNG, as a new note in the first box: taken
+ * A picture, as the bytes of a PNG, as a new note in the box that receives: taken
  * into the store, held by the notebook with its source, and shown as a
  * figure. One step of undo. Gives the id of the note.
  */
@@ -280,7 +280,7 @@ export async function noteOfPicture(
   const notebook = await theNotebook.open();
   notebook.checkpoint();
   const id = notebook.transact(() => {
-    const id = notebook.addNote({ seen: false });
+    const id = notebook.addNote({ box: notebook.receiving, seen: false });
     holdTaken(notebook, taken, notebook.addSource(source));
     notebook.addFigure(id, figureOf(shown));
     return id;

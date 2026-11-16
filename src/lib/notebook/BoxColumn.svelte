@@ -7,7 +7,9 @@
    * that are on marked. A box is made with the + and named in place,
    * renamed by two presses or F2, reordered by dragging its row, deleted
    * from its menu or by Delete (asked first where it holds notes, which go
-   * to the first box). Notes dragged onto a box move to it. A tag pressed is
+   * to the first box). The box that receives what is made outside the page
+   * has the tray for its mark, and any box is made that one from its menu.
+   * Notes dragged onto a box move to it. A tag pressed is
    * on, pressed again off; its menu renames it, which makes it one with a
    * tag of the new name, or removes it from all notes.
    */
@@ -162,9 +164,22 @@
     ontags(tags.filter((x) => x !== tag));
   }
 
+  /** Makes a box the one that receives what is made outside the page; chosen on the one that does, the first receives again. */
+  function receiveIn(b: BoxRecord) {
+    notebook.checkpoint();
+    notebook.receiveIn(notebook.receiving === b.id ? FIRST_BOX : b.id);
+    notebook.checkpoint();
+  }
+
   function boxMenu(event: MouseEvent, b: BoxRecord) {
     openContextMenu(event, [
       { label: t('common-rename'), icon: Pencil, shortcut: 'F2', action: () => renameBox(b) },
+      {
+        label: t('notebook-box-receives'),
+        icon: Inbox,
+        checked: notebook.receiving === b.id,
+        action: () => receiveIn(b),
+      },
       ...(b.id === FIRST_BOX
         ? []
         : [
@@ -279,7 +294,7 @@
   </div>
 
   {#each notebook.boxes as b (b.id)}
-    {@const Icon = b.id === FIRST_BOX ? Inbox : Box}
+    {@const Icon = b.id === notebook.receiving ? Inbox : Box}
     {#if naming?.what === 'box' && naming.id === b.id}
       {@render nameField(t('notebook-box-name'), Icon)}
     {:else}

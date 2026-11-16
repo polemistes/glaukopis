@@ -315,6 +315,14 @@ describe('what is sent is a new note', () => {
     expect(nb.note(id)).toBeUndefined();
   });
 
+  it('in the box that receives, where one is made that', async () => {
+    const nb = opened.notebook as InstanceType<typeof Notebook>;
+    const box = nb.addBox('From outside');
+    nb.receiveIn(box);
+    const id = await noteOfWords('Words.', { sort: 'reference', reference: 'R1', locator: '1' });
+    expect(nb.note(id)!.box).toBe(box);
+  });
+
   it('of the picture of a part, held with its source and shown as a figure', async () => {
     const nb = opened.notebook as InstanceType<typeof Notebook>;
     const part = view('e'.repeat(64), 'structure 3.png');

@@ -99,6 +99,7 @@ notebook-boxes = Bokser
 notebook-box-unsorted = Usortert
 notebook-box-new = Ny boks
 notebook-box-name = Navn på boksen
+notebook-box-receives = Notater utenfra kommer hit
 notebook-box-delete-title = Slette { $name }?
 notebook-box-delete-message = { $count ->
     [one] Notatet i den går til { $first }.

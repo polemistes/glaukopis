@@ -12,7 +12,9 @@
 // few seconds, Show goes to the note, whose text holds the words and the link
 // made whole and nothing of the script, and whose source is the page; a part
 // of a page with a small PNG is a note with the picture, the page its source;
-// a page is a note named by its title; the helper ends when its input ends;
+// a page is a note named by its title; a box made and, from its menu, made
+// the one where notes from outside come, has the tray for its mark, and a
+// selection handed over then lies in it; the helper ends when its input ends;
 // Remove takes the manifest away; no errors in the page. Screenshots in
 // e2e/output/notebook-plugin-<n>-<what>.png.
 
@@ -118,6 +120,17 @@ const noteText = (app) =>
 const chips = (app) =>
   app.exec(
     `return Array.from(document.querySelectorAll('[data-note-sources] [data-source]')).map((c) => c.textContent.trim())`,
+  );
+/** The boxes of the column, as their rows say them: the name, how many notes, whether it is in view and whether it has the tray. */
+const boxes = (app) =>
+  app.exec(
+    `return Array.from(document.querySelectorAll('[data-box-row]')).filter((r) => r.dataset.boxRow !== 'all').map((r) => ({ name: r.querySelector('.name').textContent.trim(), count: r.querySelector('.count').textContent.trim(), on: r.getAttribute('aria-pressed') === 'true', tray: !!r.querySelector('svg.lucide-inbox') }))`,
+  );
+/** The row of a box by its name. */
+const boxRow = (app, name) =>
+  app.exec(
+    `return Array.from(document.querySelectorAll('[data-box-row]')).find((r) => r.querySelector('.name')?.textContent.trim() === arguments[0]) ?? null`,
+    name,
   );
 const toastText = (app) =>
   app.exec(
@@ -274,6 +287,58 @@ try {
   check('there are three notes', (await titles(app)).length === 3, (await titles(app)).join(' | '));
   await app.screenshot('notebook-plugin-6-page');
 
+  // ---- The box where notes from outside come ----
+  await app.click('[data-new-box]');
+  await app.waitFor('[data-box-column] [data-naming]', 3000);
+  await app.keys('From the web');
+  await app.press('Enter');
+  let column = await until(() => boxes(app), (b) => b.some((x) => x.name === 'From the web'));
+  check(
+    'the first box has the tray, a box made has not',
+    column.find((b) => b.name === 'Unsorted')?.tray === true && column.find((b) => b.name === 'From the web')?.tray === false,
+    JSON.stringify(column),
+  );
+  await app.rightClick(await boxRow(app, 'From the web'));
+  await app.waitFor('.menu [role="menuitem"]', 3000);
+  await sleep(200);
+  await app.screenshot('notebook-plugin-7-menu-of-a-box');
+  await app.clickText('.menu [role="menuitem"]', 'Notes from outside come here');
+  column = await until(() => boxes(app), (b) => b.find((x) => x.name === 'From the web')?.tray === true);
+  check(
+    'made the one where notes from outside come, it has the tray, and the first has not',
+    column.find((b) => b.name === 'From the web')?.tray === true && column.find((b) => b.name === 'Unsorted')?.tray === false,
+    JSON.stringify(column),
+  );
+  await app.rightClick(await boxRow(app, 'From the web'));
+  await app.waitFor('.menu [role="menuitem"]', 3000);
+  await sleep(200);
+  check(
+    'its menu says so with a tick',
+    await app.exec(
+      `return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).some((m) => m.textContent.includes('Notes from outside come here') && !!m.querySelector('.check svg'))`,
+    ),
+  );
+  await app.screenshot('notebook-plugin-8-receiving');
+  await app.press('Escape');
+  await app.click(await boxRow(app, 'Unsorted'));
+  await sleep(300);
+  const night = { url: 'https://example.org/owls/night', title: 'Owls of the night' };
+  const later = await helper.say(thing('selection', night, { text: 'They hunt at night.', html: '' }));
+  check('a selection handed over then is answered ok', later?.ok === true, JSON.stringify(later));
+  await app.waitForText('.toaster .toast', 'Added to the notebook: Owls of the night', 10000);
+  await show(app, 'Owls of the night');
+  column = await until(() => boxes(app), (b) => b.find((x) => x.name === 'From the web')?.on === true);
+  check(
+    'it lies in that box, which Show brings into view, and the first holds what came before',
+    column.find((b) => b.name === 'From the web')?.count === '1' &&
+      column.find((b) => b.name === 'From the web')?.on === true &&
+      column.find((b) => b.name === 'Unsorted')?.count === '3',
+    JSON.stringify(column),
+  );
+  const nightText = await until(() => noteText(app), (t) => t.includes('hunt'));
+  check('with its words', nightText.includes('They hunt at night.'), nightText);
+  await app.screenshot('notebook-plugin-9-in-the-box');
+
   const code = await helper.end();
   check('the helper ends when its input ends', code === 0, `${code} ${helper.errors.trim().slice(0, 300)}`);
   helper = null;
@@ -283,7 +348,7 @@ try {
   await app.click('[data-firefox-remove]');
   const removed = await until(() => firefoxState(app), (s) => s === 'none');
   check('Remove takes the manifest away', removed === 'none' && !existsSync(manifestPath), removed);
-  await app.screenshot('notebook-plugin-7-removed');
+  await app.screenshot('notebook-plugin-10-removed');
   await app.press('Escape');
 
   const errors = await app.pageErrors();

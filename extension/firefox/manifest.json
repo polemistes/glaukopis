@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "__MSG_name__",
   "description": "__MSG_description__",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "default_locale": "en",
   "homepage_url": "https://www.robertemilberge.no/glaukopis/",
   "icons": {
@@ -25,6 +25,13 @@
     "add-to-notebook": {
       "suggested_key": { "default": "Alt+Shift+N" },
       "description": "__MSG_commandAdd__"
+    },
+    "add-region": {
+      "suggested_key": { "default": "Alt+Shift+P" },
+      "description": "__MSG_menuRegion__"
+    },
+    "add-page": {
+      "description": "__MSG_menuPage__"
     }
   },
   "permissions": ["activeTab", "contextMenus", "scripting", "nativeMessaging"],

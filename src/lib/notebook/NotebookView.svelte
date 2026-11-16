@@ -465,7 +465,7 @@
         icon: Box,
         items: nb.boxes.map((b) => ({
           label: boxName(b),
-          icon: b.id === FIRST_BOX ? Inbox : Box,
+          icon: b.id === nb.receiving ? Inbox : Box,
           disabled: ids.every((id) => nb.note(id)?.box === b.id),
           action: () => moveTo(ids, b.id),
         })),

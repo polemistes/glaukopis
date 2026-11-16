@@ -195,6 +195,29 @@ describe('things the plugin handed over, made notes', () => {
   });
 });
 
+describe('where what arrives lies', () => {
+  it('in the first box, and in the box that receives once one is made that', () => {
+    const nb = new Notebook();
+    const [first] = notesOfInbox(nb, [item({ text: 'one' })]);
+    expect(nb.note(first)!.box).toBe(nb.boxes[0].id);
+    const box = nb.addBox('From outside');
+    nb.receiveIn(box);
+    const ids = notesOfInbox(nb, [
+      item({ text: 'two' }),
+      item({ kind: 'page', text: 'three' }),
+      item({ kind: 'region', image: picture }),
+      item({ kind: 'note', url: '', title: '', text: 'four' }),
+    ]);
+    expect(ids.map((id) => nb.note(id)!.box)).toEqual([box, box, box, box]);
+    // Not yet put anywhere on the surface of the box.
+    expect(ids.map((id) => nb.note(id)!.at)).toEqual([null, null, null, null]);
+    // The box deleted, the first receives again.
+    nb.deleteBox(box);
+    const [last] = notesOfInbox(nb, [item({ text: 'five' })]);
+    expect(nb.note(last)!.box).toBe(nb.boxes[0].id);
+  });
+});
+
 describe('a note written in a window of its own', () => {
   const PDF = 'f'.repeat(64);
   const letter: NotebookFile = {

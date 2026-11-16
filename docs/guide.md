@@ -1574,6 +1574,12 @@ first, and they go to the first box, which is never deleted. Notes dragged
 from the list onto a box move to it; **Move to** in the menu of the right
 button does the same.
 
+Notes made outside the notebook, in the window of a note, by the plugin for
+Firefox and from a file read in Glaukopis, come into the first box. To have
+them in another, choose **Notes from outside come here** in the menu of
+that box: it has the tray for its mark then, and the menu a tick. Choose it
+again, or delete the box, and they come into the first box as before.
+
 A note has any number of **tags**, written in the field under its name.
 What you type offers the tags there are that begin with it or hold it: the
 arrows choose one and **Enter** takes it; **Enter** or a comma with none
@@ -1673,7 +1679,11 @@ the page it came from:
 | The owl's button in the bar, or **Alt+Shift+N** | The page: a note named by its title, with the page's text as it reads, since pages disappear. With words selected, the selection instead |
 | The right button on a page or a selection | **Add the page to the notebook**, **Add the selection to the notebook** |
 | The right button on an image | **Add the image to the notebook** |
-| The right button, **Add a part of the page as a picture…** | The part you then mark with the pointer, as a picture. **Escape** gives it up |
+| The right button, **Add a part of the page as a picture…**, or **Alt+Shift+P** | The part you then mark with the pointer, as a picture. **Escape** gives it up |
+
+The keys are Firefox's to change: `about:addons`, the gear, **Manage
+Extension Shortcuts**. There a key can also be given to **Add the page to
+the notebook**, which takes the page whole though words are selected.
 
 The button shows a tick for a moment when the thing was handed over, and
 an exclamation mark, with the reason when you rest the pointer on it, when
@@ -1743,18 +1753,19 @@ of the system itself.
 
 The window holds one text, written as the text of a note is: the same
 keys, the same marks, lists made by typing `- `, `1. ` or `[ ] ` at the
-start of a line, and undo. The row under it has buttons for bold, italic,
+start of a line, and undo. The row over it has buttons for bold, italic,
 underlined, struck through and code, for the three kinds of list, and
 **Add a file…** to choose files. A picture or a file can also be pasted, a
 screenshot or what you copied in a file manager, or dropped on the window:
 a picture stands in the note as a picture, any other file by its name. A
 file larger than 50 MB is not added, and the window says so.
 
-**To the notebook** (**Ctrl+S**) puts the note into the notebook, without
-a name and with no source, and the window closes. Glaukopis need not be
-running: the note waits, and is in the notebook the next time Glaukopis
-starts; while it runs, the note is there within a moment, and a message at
-the foot of its window says so, with **Show**. **Escape** closes the window
+**To the notebook** (**Ctrl+S**), at the right of the row, puts the note
+into the notebook, without a name and with no source, and the window
+closes. Glaukopis need not be running: the note waits, and is in the
+notebook the next time Glaukopis starts; while it runs, the note is there
+within a moment, and a message at the foot of its window says so, with
+**Show**. **Escape** closes the window
 while nothing is written in it, and does nothing once something is. What
 you write is kept as you write: close the window with a note in it, and
 the note is there again the next time the window opens. Two windows open at

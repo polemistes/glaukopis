@@ -107,6 +107,7 @@ notebook-boxes = Boxes
 notebook-box-unsorted = Unsorted
 notebook-box-new = New box
 notebook-box-name = Name of the box
+notebook-box-receives = Notes from outside come here
 notebook-box-delete-title = Delete { $name }?
 notebook-box-delete-message = { $count ->
     [one] The note in it goes to { $first }.

@@ -1,6 +1,6 @@
 // A note written in a window of its own (record 0109): the program is
 // launched with --note in a data folder of the run, with the application not
-// running. The window opens with its title, the field and the row, and To
+// running. The window opens with its title, the row over the field, and To
 // the notebook pressed by nothing while it is empty; a list is typed with
 // "- ", a word made bold by Ctrl+B, a picture and a file added through the
 // hook of the system's dialog, and Ctrl+S sends it: the window is gone, the
@@ -117,6 +117,10 @@ try {
   win = await noteWindow(dataDir);
   check('the window is the window of a note, and nothing else', (await win.exists('.note-window')) && !(await win.exists('.projects-pane, .start, [data-notes]')));
   check('its title is the word for a note', (await win.exec('return document.title')) === 'Note', await win.exec('return document.title'));
+  check(
+    'the row of buttons stands over the field',
+    await win.exec(`const row = document.querySelector('.note-window .tools').getBoundingClientRect(); const field = document.querySelector('[data-note-window-field]').getBoundingClientRect(); return row.top < 4 && row.bottom <= field.top + 1`),
+  );
   check('the field has the cursor', await win.exec(`return document.activeElement?.closest('[data-note-window-field]') != null`));
   check('the placeholder says to write a note', (await win.exec(`return document.querySelector('${FIELD} [data-placeholder]')?.getAttribute('data-placeholder') ?? ''`)) === 'Write a note');
   check('To the notebook is there, and pressed by nothing while the note is empty', (await win.text(SEND)).includes('To the notebook') && (await sendDisabled(win)) === true);

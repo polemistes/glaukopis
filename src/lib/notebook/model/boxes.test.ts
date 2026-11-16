@@ -131,6 +131,58 @@ describe('the boxes of the notebook', () => {
     expect(nb.note(n1)).toMatchObject({ box: FIRST_BOX, at: { x: 5, y: 5 } });
   });
 
+  it('the first box receives what is made outside the page until another is made the one; deleted, the first does again', () => {
+    const nb = new Notebook();
+    const a = nb.addBox('Athena');
+    const b = nb.addBox('Bia');
+    nb.checkpoint();
+    expect(nb.receiving).toBe(FIRST_BOX);
+    nb.receiveIn(b);
+    nb.checkpoint();
+    expect(nb.receiving).toBe(b);
+    // One box at a time: the mark goes from the one that had it.
+    nb.receiveIn(a);
+    nb.checkpoint();
+    expect(nb.receiving).toBe(a);
+    expect(nb.yBoxes.get(b)!.has('receives')).toBe(false);
+    nb.undo();
+    expect(nb.receiving).toBe(b);
+    nb.redo();
+    // A box that is not there is not made the one.
+    nb.receiveIn('no such box');
+    expect(nb.receiving).toBe(a);
+    nb.receiveIn(FIRST_BOX);
+    nb.checkpoint();
+    expect(nb.receiving).toBe(FIRST_BOX);
+    expect(nb.yBoxes.get(a)!.has('receives')).toBe(false);
+    nb.receiveIn(a);
+    nb.checkpoint();
+    nb.deleteBox(a);
+    expect(nb.receiving).toBe(FIRST_BOX);
+    // Read again from what was kept, the box that receives is known.
+    nb.receiveIn(b);
+    const again = new Notebook();
+    again.load(Y.encodeStateAsUpdate(nb.doc), []);
+    expect(again.receiving).toBe(b);
+  });
+
+  it('two boxes made the one that receives at once in two windows: the first of them in their order is', () => {
+    const { a, b, sync } = two();
+    const athena = a.addBox('Athena');
+    const bia = a.addBox('Bia');
+    sync();
+    a.receiveIn(bia);
+    b.receiveIn(athena);
+    sync();
+    expect(a.receiving).toBe(athena);
+    expect(b.receiving).toBe(athena);
+    // Made the one again, it alone has the mark.
+    a.receiveIn(bia);
+    sync();
+    expect(b.receiving).toBe(bia);
+    expect(b.yBoxes.get(athena)!.has('receives')).toBe(false);
+  });
+
   it('two copies see each other’s boxes, and a note in a box deleted in the other lies in the first', () => {
     const { a, b, sync } = two();
     const box = a.addBox('Shared');

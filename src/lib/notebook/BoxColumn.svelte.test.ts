@@ -21,6 +21,20 @@ vi.mock('$lib/ui/confirm.svelte', () => ({
   },
 }));
 
+// The menu of the right button is not opened: what it would hold is kept.
+interface Offered {
+  label: string;
+  checked?: boolean;
+  action: () => void;
+}
+const menu = vi.hoisted(() => ({ items: [] as unknown[] }));
+vi.mock('$lib/ui/menu.svelte', async (original) => ({
+  ...(await original<typeof import('$lib/ui/menu.svelte')>()),
+  openContextMenu: (_event: MouseEvent, items: unknown[]) => {
+    menu.items = items;
+  },
+}));
+
 const { flushSync, mount, tick, unmount } = await import('svelte');
 const { Notebook } = await import('./model/notebook.svelte');
 const { FIRST_BOX } = await import('./model/boxes');
@@ -167,6 +181,36 @@ describe('the column of boxes and tags', () => {
     expect(nb.note(note)!.box).toBe(FIRST_BOX);
     expect(state.box).toBe(FIRST_BOX);
     expect(deleted).toEqual([empty, full]);
+  });
+
+  it('the menu of a box makes it the one where notes from outside come, marked by the tray; chosen again, the first is', () => {
+    const nb = new Notebook();
+    const homer = nb.addBox('Homer');
+    const { row } = setUp(nb);
+    const tray = (id: string) => row('box', id).querySelector('svg.lucide-inbox') !== null;
+    /** The item of the menu of a box that makes it the one that receives. */
+    const offered = (id: string) => {
+      row('box', id).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }));
+      return (menu.items as Offered[]).find((i) => i.label === 'Notes from outside come here')!;
+    };
+    expect([tray(FIRST_BOX), tray(homer)]).toEqual([true, false]);
+    expect(offered(FIRST_BOX).checked).toBe(true);
+    const item = offered(homer);
+    expect(item.checked).toBe(false);
+    item.action();
+    flushSync();
+    expect(nb.receiving).toBe(homer);
+    expect([tray(FIRST_BOX), tray(homer)]).toEqual([false, true]);
+    expect(offered(homer).checked).toBe(true);
+    // One step of undo.
+    nb.undo();
+    flushSync();
+    expect(nb.receiving).toBe(FIRST_BOX);
+    nb.redo();
+    offered(homer).action();
+    flushSync();
+    expect(nb.receiving).toBe(FIRST_BOX);
+    expect([tray(FIRST_BOX), tray(homer)]).toEqual([true, false]);
   });
 
   it('shows the tags under the boxes, as words are sorted, with their counts; a press turns one on and off', () => {

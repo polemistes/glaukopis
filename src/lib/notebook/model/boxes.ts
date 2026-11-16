@@ -8,6 +8,11 @@
  * deleted, and is named by the interface until it is given a name. A note
  * keeps its box under `box`, and none for the first.
  *
+ * One box receives what is made outside the notebook's page (a note
+ * written in a window of its own, what the plugin for Firefox hands over,
+ * what is sent from a file read in Glaukopis): the one that has `receives`,
+ * and the first where none has.
+ *
  * These are methods of `Notebook`, which takes them in (see there).
  */
 
@@ -43,6 +48,21 @@ export function boxesOf(yBoxes: Y.Map<Y.Map<unknown>>): BoxRecord[] {
     },
     ...rest,
   ];
+}
+
+/**
+ * The box that receives what is made outside the notebook's page: the one
+ * marked so, the first of them in their order where there are two (marked
+ * at once in two windows), else the first box.
+ */
+export function receivingOf(
+  yBoxes: Y.Map<Y.Map<unknown>>,
+  boxes: readonly BoxRecord[] = boxesOf(yBoxes),
+): string {
+  return (
+    boxes.find((b) => b.id !== FIRST_BOX && yBoxes.get(b.id)?.get('receives') === true)?.id ??
+    FIRST_BOX
+  );
 }
 
 /** An order between two, or null where they are no keys to go between (two boxes of one order, made at once in two windows). */
@@ -133,6 +153,21 @@ export const boxChanges = {
           n.delete('at');
         }
       this.yBoxes.delete(id);
+    });
+  },
+
+  /**
+   * Makes a box the one that receives what is made outside the notebook's
+   * page. The first receives while no other is made so: given the first,
+   * the mark is taken from the others.
+   */
+  receiveIn(this: Notebook, id: string) {
+    if (id !== FIRST_BOX && !this.yBoxes.has(id)) return;
+    if (receivingOf(this.yBoxes) === id) return;
+    this.transact(() => {
+      for (const [other, b] of this.yBoxes)
+        if (other !== id && b instanceof Y.Map && b.has('receives')) b.delete('receives');
+      if (id !== FIRST_BOX) this.yBoxes.get(id)?.set('receives', true);
     });
   },
 

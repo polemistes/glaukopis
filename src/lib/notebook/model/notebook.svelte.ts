@@ -37,7 +37,7 @@ import { LOAD, LOCAL, WINDOW, nowIso, str } from '$lib/project/model/origins';
 import { Saving, type Persistence, type SaveStatus } from '$lib/project/model/saving.svelte';
 import type { LinkRecord } from '$lib/project/model/types';
 import { newId } from '$lib/util/id';
-import { boxChanges, boxesOf, FIRST_BOX } from './boxes';
+import { boxChanges, boxesOf, FIRST_BOX, receivingOf } from './boxes';
 import { joinChanges } from './joining';
 import { linksOf, linksTouching, noteLinkChanges } from './links';
 import { bringBack, readsNow, unmark } from './marks';
@@ -260,6 +260,8 @@ export class Notebook {
   readonly files = new SvelteMap<string, HeldFile>();
   /** The boxes: the first, then the rest in their order. */
   boxes = $state.raw<BoxRecord[]>([{ id: FIRST_BOX, name: '', order: '' }]);
+  /** The box that receives what is made outside the notebook's page (`boxes.ts`). */
+  receiving = $state<string>(FIRST_BOX);
   /** The links between notes that are there, by their ids. */
   links = $state.raw<LinkRecord[]>([]);
   /** The starting texts of new notes, in their order. */
@@ -353,6 +355,7 @@ export class Notebook {
     });
     this.yBoxes.observeDeep((events) => {
       this.boxes = boxesOf(this.yBoxes);
+      this.receiving = receivingOf(this.yBoxes, this.boxes);
       // A box come or gone: the notes said to lie in it lie in it, or in the first.
       const changed = new Set<string>();
       for (const event of events)
@@ -504,6 +507,7 @@ export class Notebook {
     this.files.clear();
     for (const hash of this.yFiles.keys()) this.#readFile(hash);
     this.boxes = boxesOf(this.yBoxes);
+    this.receiving = receivingOf(this.yBoxes, this.boxes);
     this.notes.clear();
     this.#readings.clear();
     this.#tagCounts.clear();
