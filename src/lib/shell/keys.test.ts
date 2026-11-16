@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { HELP_OFFERED } from '$lib/help/help-ui.svelte';
 import { has } from '$lib/i18n';
 import {
   KEYS,
@@ -24,6 +25,30 @@ describe('the keys', () => {
       ([a, b]) => `${a.keys}: ${a.id} (${a.place}) and ${b.id} (${b.place})`,
     );
     expect(found).toEqual([]);
+  });
+
+  it('have Help and its F1 only where Help is offered, which it is not for now', () => {
+    expect(KEYS.some((e) => e.id === 'help')).toBe(HELP_OFFERED);
+    expect(KEYS.some((e) => e.keys === 'F1')).toBe(HELP_OFFERED);
+    // What the key would be is still known, for the day it is offered again.
+    expect(keysFor('help')).toBe('F1');
+    expect(HELP_OFFERED).toBe(false);
+  });
+
+  it('let Help be bound while it is not offered, with the keys bound beside it, and do nothing at F1', () => {
+    let done = '';
+    const unbind = shortcuts.bind({
+      help: () => (done += 'help '),
+      settings: () => (done += 'settings '),
+    });
+    try {
+      expect(shortcuts.handle(press('F1', { code: 'F1' }))).toBe(HELP_OFFERED);
+      expect(shortcuts.handle(press(',', { code: 'Comma', ctrlKey: true }))).toBe(true);
+      expect(done).toBe(HELP_OFFERED ? 'help settings ' : 'settings ');
+    } finally {
+      unbind();
+    }
+    expect(() => shortcuts.bind({ 'no-such-key': () => {} })).toThrow();
   });
 
   it('find a clash that is not declared', () => {

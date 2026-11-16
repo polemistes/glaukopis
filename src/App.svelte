@@ -41,7 +41,7 @@
   import SettingsDialog from '$lib/settings/SettingsDialog.svelte';
   import { settingsUi } from '$lib/settings/settings-ui.svelte';
   import HelpView from '$lib/help/HelpView.svelte';
-  import { helpUi } from '$lib/help/help-ui.svelte';
+  import { HELP_OFFERED, helpUi } from '$lib/help/help-ui.svelte';
   import { toggleHelp } from '$lib/help/open';
   // The ways a file is shown in a side, with the hook of the e2e scripts.
   import '$lib/viewer/show';
@@ -385,7 +385,7 @@
   {#if keysUi.sheet}<KeySheet onclose={() => (keysUi.sheet = false)} />{/if}
   {#if keysUi.palette}<Palette onclose={() => (keysUi.palette = false)} />{/if}
   <SettingsDialog />
-  <HelpView />
+  {#if HELP_OFFERED}<HelpView />{/if}
   <MenuHost />
   <DragGhost />
 {/if}

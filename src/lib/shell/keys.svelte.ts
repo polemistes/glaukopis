@@ -16,7 +16,7 @@
  * the table is the one place a key is written.
  */
 
-import { helpUi } from '$lib/help/help-ui.svelte';
+import { HELP_OFFERED, helpUi } from '$lib/help/help-ui.svelte';
 import { onMac } from './platform.svelte';
 
 /** Where a key holds. */
@@ -290,11 +290,14 @@ const ENTRIES = [
 /** The name of an entry of the table. */
 export type KeyId = (typeof ENTRIES)[number]['id'];
 
-export const KEYS: readonly KeyEntry[] = ENTRIES;
+/** The table as the window has it: without Help while Help is not offered (`help-ui`). */
+export const KEYS: readonly KeyEntry[] = HELP_OFFERED
+  ? ENTRIES
+  : ENTRIES.filter((e) => e.id !== 'help');
 
 /** The keys of an entry, as the table writes them: for a menu or a tooltip, which show them by `keyLabel`. */
 export function keysFor(id: KeyId): string {
-  return KEYS.find((e) => e.id === id)!.keys;
+  return ENTRIES.find((e) => e.id === id)!.keys;
 }
 
 /** The entries of the keys of the kinds, by their digit. */
@@ -488,7 +491,8 @@ class Shortcuts {
       typeof b === 'function' ? { run: b } : b,
     ]);
     for (const [id, b] of made) {
-      if (!KEYS.some((e) => e.id === id)) throw new Error(`No key is called “${id}”`);
+      // By the whole table: what is not offered now (Help) may be bound, and is never done.
+      if (!ENTRIES.some((e) => e.id === id)) throw new Error(`No key is called “${id}”`);
       this.#bound.set(id, [...(this.#bound.get(id) ?? []), b]);
     }
     this.revision++;

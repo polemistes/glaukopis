@@ -8,7 +8,7 @@
   import CircleQuestionMark from '@lucide/svelte/icons/circle-question-mark';
   import Keyboard from '@lucide/svelte/icons/keyboard';
   import Settings from '@lucide/svelte/icons/settings';
-  import { helpUi } from '$lib/help/help-ui.svelte';
+  import { HELP_OFFERED, helpUi } from '$lib/help/help-ui.svelte';
   import { toggleHelp } from '$lib/help/open';
   import { t } from '$lib/i18n';
   import { settingsUi } from '$lib/settings/settings-ui.svelte';
@@ -17,18 +17,20 @@
 </script>
 
 <div class="row-end" data-row-end>
-  <!-- Help is a window over the view, as the settings are: see help-ui. -->
-  <button
-    type="button"
-    class="place"
-    class:current={helpUi.open}
-    aria-label={t('help-title')}
-    data-place="help"
-    use:tooltip={{ text: t('help-title'), shortcut: keysFor('help') }}
-    onclick={() => toggleHelp()}
-  >
-    <CircleQuestionMark size={17} strokeWidth={1.7} />
-  </button>
+  {#if HELP_OFFERED}
+    <!-- Help is a window over the view, as the settings are: see help-ui. -->
+    <button
+      type="button"
+      class="place"
+      class:current={helpUi.open}
+      aria-label={t('help-title')}
+      data-place="help"
+      use:tooltip={{ text: t('help-title'), shortcut: keysFor('help') }}
+      onclick={() => toggleHelp()}
+    >
+      <CircleQuestionMark size={17} strokeWidth={1.7} />
+    </button>
+  {/if}
   <button
     type="button"
     class="place"

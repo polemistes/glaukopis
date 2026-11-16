@@ -24,6 +24,11 @@ import { setTimeout as sleep } from 'node:timers/promises';
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const root = resolve(here, '..');
+
+/** Whether Help is offered in the window: the switch of `src/lib/help/help-ui.svelte.ts`, read from the source, for the scripts that count the places of the row. */
+export const helpOffered = /HELP_OFFERED: boolean = true/.test(
+  readFileSync(join(root, 'src/lib/help/help-ui.svelte.ts'), 'utf8'),
+);
 export const outputDir = join(here, 'output');
 
 const ELEMENT = 'element-6066-11e4-a52e-4f735466cecf';

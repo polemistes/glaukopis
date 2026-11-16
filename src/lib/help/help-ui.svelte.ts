@@ -9,6 +9,15 @@
  * settings and the sheet of keys (`open.ts`), and they close Help.
  */
 
+/**
+ * Whether Help is offered at all. It is not, for now, on the owner's word
+ * of 2026-11-16 (record 0106, its last addendum): no question mark in the
+ * row at the top, no F1, no entry in the sheet of keys or the palette, and
+ * the window is not mounted. Everything of Help is kept and tested; set
+ * this to true, and bring back what the guide said of it, to offer it again.
+ */
+export const HELP_OFFERED: boolean = false;
+
 /** Where Help was left: at which place, in which chapter, and how far down. */
 export interface Left {
   place: string | null;

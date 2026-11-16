@@ -14,8 +14,12 @@
 // Norwegian, the window's own words are Norwegian (the title, the field,
 // the step to the next chapter). No errors in the page. Screenshots in
 // e2e/output/help-<n>-<what>.png.
+//
+// While Help is not offered (the switch in src/lib/help/help-ui.svelte.ts,
+// off since 2026-11-16), the script holds only that it is not there: no
+// question mark in the row, F1 opens nothing, and the palette has no Help.
 
-import { App, sleep } from './harness.mjs';
+import { App, helpOffered, sleep } from './harness.mjs';
 
 const checks = [];
 function check(name, ok, detail = '') {
@@ -77,6 +81,39 @@ async function pressAt(app, selector) {
 }
 
 let app = await App.launch({ width: 1360, height: 880 });
+if (!helpOffered) {
+  try {
+    await app.installErrorHook();
+    await app.waitForText('h2', 'Welcome to Glaukopis', 10000);
+    await sleep(300);
+    check('no question mark in the row at the top', !(await app.exists('[data-place="help"]')));
+    check('the keys and the settings are there', (await app.exists('[data-place="keys"]')) && (await app.exists('[data-place="settings"]')));
+    await app.keys([F1]);
+    await sleep(800);
+    check('F1 opens nothing', !(await app.exists('[data-help]')));
+    await app.keys(['Control', 'k']);
+    await app.waitFor('[role="option"]', 3000);
+    await app.keys('Help');
+    await sleep(400);
+    const offered = await app.exec(
+      `return Array.from(document.querySelectorAll('[role="option"]')).map((o) => o.textContent.replace(/\\s+/g, ' ').trim())`,
+    );
+    check('the palette has no Help', !offered.some((o) => /^Help\b/.test(o)), offered.join(' | '));
+    await app.screenshot('help-off');
+    await app.press('Escape');
+    const errors = await app.pageErrors();
+    check('no errors in the page', errors.length === 0, errors.join(' | '));
+    await app.quit();
+  } catch (error) {
+    console.error(error);
+    await app.screenshot('help-failure').catch(() => {});
+    checks.push({ name: 'the run completed', ok: false });
+    await app.close().catch(() => {});
+  }
+  const failed = checks.filter((c) => !c.ok);
+  console.log(`\n${checks.length - failed.length} of ${checks.length} checks passed`);
+  process.exit(failed.length ? 1 : 0);
+}
 try {
   await app.installErrorHook();
   await app.waitForText('h2', 'Welcome to Glaukopis', 10000);

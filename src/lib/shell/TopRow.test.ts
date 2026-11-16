@@ -12,6 +12,10 @@ const { flushSync, mount, unmount } = await import('svelte');
 const { router } = await import('$lib/state/router.svelte');
 const { listPane } = await import('$lib/home/list.svelte');
 const { default: TopRow } = await import('./TopRow.svelte');
+const { HELP_OFFERED } = await import('$lib/help/help-ui.svelte');
+
+/** The end of the row: with Help where Help is offered (it is not, for now). */
+const END = HELP_OFFERED ? ['help', 'keys', 'settings'] : ['keys', 'settings'];
 
 let done = () => {};
 
@@ -40,7 +44,7 @@ afterEach(() => {
 });
 
 describe('the row at the top of the window', () => {
-  it('has the seven places of the window in their order: the house, the library, the notebook and the list at its start, Help, the keys and the settings at its end', () => {
+  it('has the places of the window in their order: the house, the library, the notebook and the list at its start, the keys and the settings at its end, with Help before them where it is offered', () => {
     router.replace({ view: 'library' });
     const { target, places } = setUp();
     expect(places().map((p) => p.place)).toEqual([
@@ -48,12 +52,10 @@ describe('the row at the top of the window', () => {
       'library',
       'notebook',
       'list',
-      'help',
-      'keys',
-      'settings',
+      ...END,
     ]);
     expect(target.querySelector('[data-row-start] [data-projects-button]')).not.toBeNull();
-    expect(target.querySelectorAll('[data-row-end] .place')).toHaveLength(3);
+    expect(target.querySelectorAll('[data-row-end] .place')).toHaveLength(END.length);
   });
 
   it('shows the list button disabled where there is no list, and lights the place one is at', () => {
@@ -80,6 +82,6 @@ describe('the row at the top of the window', () => {
     router.replace({ view: 'home' });
     const { target, places } = setUp({ start: false });
     expect(target.querySelector('[data-row-start]')).toBeNull();
-    expect(places().map((p) => p.place)).toEqual(['help', 'keys', 'settings']);
+    expect(places().map((p) => p.place)).toEqual(END);
   });
 });

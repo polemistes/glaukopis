@@ -34,3 +34,11 @@ Date: 2026-11-16. Status: built on 2026-11-16, from the owner's words of the sam
 ## Checked
 
 `pnpm check`, `pnpm test` (the reader against the whole guide, the chapters and finding, where Help opens, the marks, the window mounted). Against the built application: `e2e/help.mjs`, and `window-row` and `languages`, whose counts of the row at the top have the new button.
+
+## Addendum, 2026-11-16: Help is not offered, for now
+
+On the owner's word ("Let us turn off the help for now."), Help is turned off: no question mark in the row at the top, no F1, no entry in the sheet of keys or in the palette, and its window is not mounted. Nothing of it is taken out: one switch, `HELP_OFFERED` in `src/lib/help/help-ui.svelte.ts`, holds it off, and the reader, the chapters, the finding and the window are kept and tested as before.
+
+- **The guide** no longer says that it is in Glaukopis: its part *Help* (after the first part, on windows that can be moved) the row of **F1** in its table of keys and the word Help where it names the right end of the top row are taken out, and are in the commit before this addendum's.
+- **To offer it again**: set the switch to true, put those pieces back into the guide, and take the last line out of the test of the keys that says it is off. The tests of the row and the scripts `window-row`, `languages` and `help` follow the switch by themselves (the scripts read it from the source, `helpOffered` in `e2e/harness.mjs`); while it is off, `e2e/help.mjs` holds only that Help is not there.
+- The words (`help.ftl`, `keys-help`) stay in every language.

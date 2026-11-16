@@ -1,6 +1,6 @@
 // The row over the window (records 0096, 0097, 0098): no rail; the seven
 // places of the window in the row at its top, the house, the library, the
-// notebook and the list's button at its start, Help, the keys and the
+// notebook and the list's button at its start, Help (where it is offered), the keys and the
 // settings at its end, in that
 // order, in every view: the start screen with the list shown (the start in
 // the list's head) and hidden (the start in the row over it), a project with
@@ -12,7 +12,7 @@
 // projects. Screenshots of each view, and of a project with two sides in the
 // light, the dark and the mellow theme.
 
-import { App, sleep } from './harness.mjs';
+import { App, helpOffered, sleep } from './harness.mjs';
 
 const checks = [];
 function check(name, ok, detail = '') {
@@ -36,7 +36,9 @@ const places = (app) =>
          in: el.closest('[data-projects-pane]') ? 'list' : el.closest('.project > .top') ? 'project' : el.closest('[data-top-row]') ? 'row' : '?',
        }));`,
   );
-const ORDER = 'projects library notebook list help keys settings';
+/** The end of the row: with Help where Help is offered (it is not, for now: the harness reads the switch). */
+const END = helpOffered ? ['help', 'keys', 'settings'] : ['keys', 'settings'];
+const ORDER = ['projects', 'library', 'notebook', 'list', ...END].join(' ');
 const order = (shown) => shown.map((p) => p.place).join(' ');
 const lit = (shown) => shown.filter((p) => p.lit).map((p) => p.place).join(' ');
 const at = (shown, place) => shown.find((p) => p.place === place);
@@ -45,7 +47,7 @@ const inOneLine = (app) =>
   app.exec(
     `const ps = Array.from(document.querySelectorAll('[data-row-start] .place, [data-row-end] .place')).map((p) => p.getBoundingClientRect());
      const bar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bar-h'));
-     return ps.length === 7 && ps.every((r) => r.top >= 0 && r.bottom <= bar + 2 && Math.abs(r.top - ps[0].top) < 2);`,
+     return ps.length === ${4 + END.length} && ps.every((r) => r.top >= 0 && r.bottom <= bar + 2 && Math.abs(r.top - ps[0].top) < 2);`,
   );
 const noRail = (app) => app.exec(`return !document.querySelector('.rail, nav.rail')`);
 
@@ -62,11 +64,11 @@ try {
   // ---- the start screen, the list shown: the start of the row in its head ----
   let shown = await places(app);
   check('no rail', await noRail(app));
-  check('the seven places, in their order', order(shown) === ORDER, order(shown));
+  check('the places, in their order', order(shown) === ORDER, order(shown));
   check('in one line at the top of the window', await inOneLine(app));
   check(
     'on the start screen with the list shown, the start of the row is in the list\'s head, the end in the row over the start screen',
-    ['projects', 'library', 'list'].every((p) => at(shown, p)?.in === 'list') && ['help', 'keys', 'settings'].every((p) => at(shown, p)?.in === 'row'),
+    ['projects', 'library', 'list'].every((p) => at(shown, p)?.in === 'list') && END.every((p) => at(shown, p)?.in === 'row'),
     JSON.stringify(shown.map((p) => `${p.place}:${p.in}`)),
   );
   check('the house and the list\'s button are lit', lit(shown) === 'projects list', lit(shown));
@@ -101,7 +103,7 @@ try {
   shown = await places(app);
   check(
     'in a project with the list shown, the start of the row is in the list\'s head, the end at the right of the project\'s top row',
-    order(shown) === ORDER && ['projects', 'library', 'notebook', 'list'].every((p) => at(shown, p).in === 'list') && ['help', 'keys', 'settings'].every((p) => at(shown, p).in === 'project'),
+    order(shown) === ORDER && ['projects', 'library', 'notebook', 'list'].every((p) => at(shown, p).in === 'list') && END.every((p) => at(shown, p).in === 'project'),
     JSON.stringify(shown.map((p) => `${p.place}:${p.in}`)),
   );
   check('the house and the list\'s button are lit', lit(shown) === 'projects list', lit(shown));
