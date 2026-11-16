@@ -14,7 +14,7 @@
    * the whole conversation can be deleted.
    */
   import type { Snippet } from 'svelte';
-  import { tick, untrack } from 'svelte';
+  import { untrack } from 'svelte';
   import ArrowDown from '@lucide/svelte/icons/arrow-down';
   import ArrowUp from '@lucide/svelte/icons/arrow-up';
   import MessagesSquare from '@lucide/svelte/icons/messages-square';
@@ -33,15 +33,8 @@
   import ChatField from './ChatField.svelte';
   import ChatGroup from './ChatGroup.svelte';
   import type { MessageContext } from './context';
-  import {
-    chipsOf,
-    firstWords,
-    nearest,
-    placed,
-    readersOf,
-    within,
-    type Standing,
-  } from './reading';
+  import { ListPlace } from './list-place.svelte';
+  import { chipsOf, firstWords, placed, readersOf } from './reading';
   import { NOTHING, keptOf, writtenOf, type Written } from './written';
 
   interface Props {
@@ -110,8 +103,8 @@
     if (!id) return;
     write(NOTHING);
     // An answer is brought into view where it stands; anything else is at the foot.
-    if (w.to) bring = id;
-    else footNext = true;
+    if (w.to) place.bringNext(id);
+    else place.toFootNext();
   }
 
   /** Escape gives up a change, or an answering, keeping what is written. */
@@ -185,111 +178,22 @@
     if (sure) project.clearChat();
   }
 
-  // ---- where the list stands ----
-  let list = $state<HTMLDivElement>();
-  /** Whether the list was at its foot before the messages last changed. */
-  let atFoot = true;
-  /** Whether the list is to go to its foot when the messages are drawn: one's own message was sent. */
-  let footNext = false;
-  /** A message to bring into view when the messages are drawn: one's own answer, sent. */
-  let bring: string | null = null;
-  /** Whether the list has been placed since the chat came to be shown. */
-  let placedYet = false;
-
-  const footOf = (el: HTMLElement) => el.scrollHeight - el.scrollTop - el.clientHeight < 24;
-
-  function toFoot() {
-    if (list) list.scrollTop = list.scrollHeight;
-  }
-
-  /** The element of a message in the list. */
-  const elementOf = (id: string) =>
-    [...(list?.querySelectorAll<HTMLElement>('[data-chat-message]') ?? [])].find(
-      (el) => el.dataset.chatMessage === id,
-    );
-
-  /** Brings a message into view near the top of the list. */
-  function nearTop(el: HTMLElement) {
-    if (!list) return;
-    list.scrollTop += el.getBoundingClientRect().top - list.getBoundingClientRect().top - 32;
-  }
-
-  /**
-   * Once the messages are drawn: when the chat has come to be shown, the
-   * first new message near the top, or else the foot; one's own answer
-   * sent, into view; else the foot where the list was at its foot.
-   */
-  function afterDraw() {
-    if (!list) return;
-    if (!placedYet) {
-      placedYet = true;
-      const first = list.querySelector<HTMLElement>('[data-chat-new]');
-      if (first) nearTop(first);
-      else toFoot();
-    } else if (bring) elementOf(bring)?.scrollIntoView?.({ block: 'nearest' });
-    else if (atFoot) toFoot();
-    bring = null;
-    look();
-  }
+  // ---- where the list stands, and what of the new is not yet seen ----
+  const place = new ListPlace();
 
   // Where the list was at its foot when the messages changed, it goes to
   // the foot again once they are drawn; where the reader had gone up, it
   // stays where it is. It depends on the messages alone.
   $effect.pre(() => {
     void project.chat;
-    untrack(() => {
-      if (list) atFoot = footNext || footOf(list);
-      footNext = false;
-      void tick().then(afterDraw);
-    });
+    untrack(() => place.beforeDraw());
   });
-
-  // ---- what is new and not yet seen ----
-  /** The new messages that have been within what is shown of the list. */
-  const seen = new Set<string>();
-  let unseen = $state(0);
-  let toNearest = $state<{ id: string; up: boolean } | null>(null);
-
-  /** Counts as seen the new messages within what is shown, and finds the nearest of those that are not. */
-  function look() {
-    if (!list) return;
-    const view = list.getBoundingClientRect();
-    const out: Standing[] = [];
-    for (const el of list.querySelectorAll<HTMLElement>('[data-chat-new]')) {
-      const id = el.dataset.chatMessage ?? '';
-      if (!id || seen.has(id)) continue;
-      const at = el.getBoundingClientRect();
-      if (within(at, view)) seen.add(id);
-      else out.push({ id, top: at.top, bottom: at.bottom });
-    }
-    unseen = out.length;
-    toNearest = nearest(out, view);
-  }
 
   // What is new changes as messages arrive and when one's own is sent.
   $effect(() => {
     const now = fresh;
-    untrack(() => {
-      if (!now.size) seen.clear();
-      void tick().then(look);
-    });
+    untrack(() => place.freshChanged(now));
   });
-
-  let looking = 0;
-  function onscroll() {
-    if (looking) return;
-    looking = requestAnimationFrame(() => {
-      looking = 0;
-      look();
-    });
-  }
-
-  function goToNew() {
-    const el = toNearest && elementOf(toNearest.id);
-    if (!el) return;
-    el.scrollIntoView?.({ block: 'center' });
-    look();
-  }
 </script>
 
 <div class="panel" data-chat>
@@ -304,7 +208,7 @@
   </header>
 
   <div class="list">
-    <div class="body" bind:this={list} {onscroll}>
+    <div class="body" bind:this={place.list} onscroll={place.onscroll}>
       {#if !entries.length}
         <EmptyState
           icon={MessagesSquare}
@@ -334,10 +238,10 @@
         {/each}
       {/if}
     </div>
-    {#if unseen && toNearest}
-      <button type="button" class="new" data-chat-new-button onclick={goToNew}>
-        {#if toNearest.up}<ArrowUp size={13} />{:else}<ArrowDown size={13} />{/if}
-        {t('chat-new', { count: unseen })}
+    {#if place.unseen && place.toNearest}
+      <button type="button" class="new" data-chat-new-button onclick={place.goToNew}>
+        {#if place.toNearest.up}<ArrowUp size={13} />{:else}<ArrowDown size={13} />{/if}
+        {t('chat-new', { count: place.unseen })}
       </button>
     {/if}
   </div>
