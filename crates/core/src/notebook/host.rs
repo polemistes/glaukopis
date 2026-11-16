@@ -18,7 +18,8 @@
 //! what goes wrong                                → {"ok":false,"error":"<a word>"}
 //! ```
 //!
-//! The words: `not-understood` (no JSON, or a kind not known), `too-large`
+//! The words: `not-understood` (no JSON, or a kind not known, or `note`,
+//! which is the window's of a note and never the plugin's), `too-large`
 //! (a message over 96 MB, which ends the helper, or a picture over 50 MB),
 //! `not-a-picture`, `no-data-folder` (Glaukopis was never started for this
 //! user), `not-written`. The plugin says them to the writer in its own words.
@@ -132,6 +133,10 @@ fn answer(message: &[u8], inbox: std::result::Result<&Inbox, &Error>) -> Value {
     }
     let image = message.as_object_mut().and_then(|fields| fields.remove("image"));
     let Ok(collected) = serde_json::from_value::<Collected>(message) else { return refused("not-understood") };
+    // A note written in a window of its own is no kind the plugin hands over.
+    if collected.kind == Kind::Note {
+        return refused("not-understood");
+    }
     let wants_picture = matches!(collected.kind, Kind::Image | Kind::Region);
     let picture = match image {
         Some(Value::String(encoded)) => match picture(&encoded) {
@@ -311,12 +316,14 @@ mod tests {
         input.extend_from_slice(b"oops");
         input.extend(framed(&[json!({"kind": "video", "url": "x"}), json!({"url": "no kind"}), json!([1, 2])]));
         input.extend(framed(&[json!({"kind": "page", "title": 3})]));
+        // A note of the window of its own is not the plugin's to hand over.
+        input.extend(framed(&[json!({"kind": "note", "text": "Words."})]));
         input.extend(framed(&[json!({"kind": "hello"})]));
         let (code, answers) = helper.run(&input);
         assert_eq!(code, 0);
         let refused = json!({"ok": false, "error": "not-understood"});
-        assert_eq!(answers[..5], vec![refused; 5][..]);
-        assert_eq!(answers[5]["ok"], json!(true), "it went on");
+        assert_eq!(answers[..6], vec![refused; 6][..]);
+        assert_eq!(answers[6]["ok"], json!(true), "it went on");
         assert!(helper.inbox().ids().is_empty());
     }
 

@@ -1,5 +1,6 @@
 //! The notebook's inbox: what the plugin for Firefox hands to the helper
-//! (`host`), kept until the application takes it in. The helper needs no
+//! (`host`), and the notes written in a window of their own (`note`),
+//! kept until the application takes them in. Neither writer needs a
 //! running application, and the application is reached from nowhere: it
 //! looks here at its start and while it runs.
 //!
@@ -55,10 +56,14 @@ pub enum Kind {
     Image,
     /// A part of a page, as a picture.
     Region,
+    /// A note its writer wrote in a window of its own (`note`): plain
+    /// words, from no page. Never what the plugin hands over.
+    Note,
 }
 
-/// A thing the plugin collected, as it sends it. Nothing of it is to be
-/// trusted: it is what a page said.
+/// A thing the plugin collected, as it sends it, or a note written in a
+/// window of its own. Nothing of what the plugin sends is to be trusted: it
+/// is what a page said.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Collected {
@@ -109,7 +114,7 @@ fn cut_signs(text: &mut String, most: usize) {
 }
 
 /// Cuts `text` to at most `most` bytes, where a sign begins.
-fn cut_bytes(text: &mut String, most: usize) {
+pub(crate) fn cut_bytes(text: &mut String, most: usize) {
     if text.len() > most {
         let mut at = most;
         while !text.is_char_boundary(at) {

@@ -3,3 +3,4 @@
 
 core-notebook-reading = kunne ikke lese notatblokken
 core-notebook-picture-too-large = et bilde gitt til notatblokken er større enn { $most } MB
+core-notebook-note-empty = et notat uten ord sendes ikke
