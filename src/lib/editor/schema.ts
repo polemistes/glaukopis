@@ -913,3 +913,49 @@ export const titleSchema = new Schema({
   },
   marks: titleMarks,
 });
+
+/** The marks a message of the chat can have (record 0107), drawn as the text draws them. */
+const chatMarks: Record<string, MarkSpec> = {
+  strong: marks.strong,
+  em: marks.em,
+  underline: marks.underline,
+  strike: marks.strike,
+  code: marks.code,
+};
+
+/**
+ * What the field of the chat holds (record 0107): lines of words with five
+ * marks, and nothing else. Whatever block is pasted is a line, a break
+ * within one is a break of the line, and all else comes as plain words.
+ */
+export const chatSchema = new Schema({
+  nodes: {
+    doc: { content: 'line+' },
+    line: {
+      content: 'inline*',
+      parseDOM: [
+        { tag: 'p' },
+        { tag: 'div' },
+        { tag: 'li' },
+        { tag: 'pre', preserveWhitespace: 'full' },
+        { tag: 'h1' },
+        { tag: 'h2' },
+        { tag: 'h3' },
+        { tag: 'h4' },
+        { tag: 'h5' },
+        { tag: 'h6' },
+        { tag: 'blockquote' },
+      ],
+      toDOM: () => ['p', 0],
+    },
+    text: { group: 'inline' },
+    hard_break: {
+      inline: true,
+      group: 'inline',
+      selectable: false,
+      parseDOM: [{ tag: 'br' }],
+      toDOM: () => ['br'],
+    },
+  },
+  marks: chatMarks,
+});
