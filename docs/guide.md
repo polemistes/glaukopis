@@ -1749,7 +1749,8 @@ starts; while it runs, the note is there within a moment, and a message at
 the foot of its window says so, with **Show**. **Escape** closes the window
 while nothing is written in it, and does nothing once something is. What
 you write is kept as you write: close the window with a note in it, and
-the note is there again the next time the window opens.
+the note is there again the next time the window opens. Two windows open at
+once each keep their own note.
 
 ### From other programs
 

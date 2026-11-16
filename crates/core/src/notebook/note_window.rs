@@ -9,19 +9,28 @@
 //! The note is a text as the notes of the notebook are, with its marks,
 //! its lists, its pictures and its files. What is written and not yet
 //! sent is kept, so that a window closed with a note in it loses nothing:
-//! the text a moment after each change, each file as it is added. It goes
-//! when the note is sent or emptied:
+//! the text a moment after each change, each file as it is added, in a
+//! folder that the window claims while it is open, so that two windows open
+//! at once never write into one. A window opened finds the oldest note not
+//! sent that no other window has, and goes on with it. The text goes when
+//! the note is sent or emptied; the files with it when it is sent, or when
+//! a window next takes the folder and finds no note in it:
 //!
 //! ```text
-//! notebook/unsent-note/note.json   the text as it was last kept (`NoteText`)
-//! notebook/unsent-note/<hash>      each file added, by what it holds
-//! notebook/inbox/                  where the note goes when it is sent
+//! notebook/unsent-notes/<id>/note.json   the text as it was last kept (`NoteText`)
+//! notebook/unsent-notes/<id>/<hash>      each file added, by what it holds
+//! notebook/unsent-notes/<id>.in-use      claimed by the window that has it
+//! notebook/inbox/                        where the note goes when it is sent
 //! ```
+//!
+//! An `<id>` is thirteen digits of milliseconds, a dash and eight signs at
+//! random, as the inbox's are, so that the oldest sorts first.
 
 use std::ffi::OsString;
 use std::fs;
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
+use std::sync::{Mutex, PoisonError};
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
@@ -36,8 +45,10 @@ use crate::tr;
 /// The argument by which the application is the window of a note.
 pub const FLAG: &str = "--note";
 
-/// The folder of the note not yet sent, in the notebook's folder.
-const UNSENT: &str = "unsent-note";
+/// The folder of the notes not yet sent, in the notebook's folder.
+const UNSENT: &str = "unsent-notes";
+/// What follows the id of a note not sent in the name of the file that claims it.
+const CLAIM: &str = ".in-use";
 /// The file of its text, in that folder.
 const TEXT: &str = "note.json";
 
@@ -109,9 +120,39 @@ pub struct Added {
     pub width: Option<u32>,
 }
 
+/// Claims the note not sent of this id for this window: its file of the
+/// claim made and locked. None where another window has it. Where the file
+/// system cannot lock, it is claimed without, as the data folder is.
+fn try_claim(root: &Path, id: &str) -> Result<Option<fs::File>> {
+    let path = root.join(format!("{id}{CLAIM}"));
+    let file = fs::OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .write(true)
+        .open(&path)
+        .context(|| tr!("io-creating", path = &path))?;
+    match file.try_lock() {
+        Ok(()) => Ok(Some(file)),
+        Err(fs::TryLockError::WouldBlock) => Ok(None),
+        Err(fs::TryLockError::Error(e)) => {
+            tracing::warn!("a note not sent cannot be claimed, and is used without: {e}");
+            Ok(Some(file))
+        }
+    }
+}
+
 /// The ending of a name, in small letters; nothing where it has none.
 fn ending(name: &str) -> String {
     Path::new(name).extension().and_then(|e| e.to_str()).map(str::to_ascii_lowercase).unwrap_or_default()
+}
+
+/// The folder of a note not sent that a window has, and the file that
+/// claims it, locked while the window is open: let go when it is dropped,
+/// or when the process ends however it ends.
+#[derive(Debug)]
+struct Claimed {
+    dir: PathBuf,
+    _lock: fs::File,
 }
 
 /// The window of a note, in the data folder it writes into.
@@ -119,6 +160,8 @@ fn ending(name: &str) -> String {
 pub struct NoteWindow {
     data: DataDir,
     inbox: Inbox,
+    /// The folder of its note not sent, once it has one.
+    claimed: Mutex<Option<Claimed>>,
 }
 
 impl NoteWindow {
@@ -126,7 +169,7 @@ impl NoteWindow {
     /// opened nor claimed (`DataDir::at`).
     pub fn new(data: DataDir) -> Self {
         let inbox = Inbox::new(&data);
-        NoteWindow { data, inbox }
+        NoteWindow { data, inbox, claimed: Mutex::new(None) }
     }
 
     pub fn data(&self) -> &DataDir {
@@ -148,14 +191,60 @@ impl NoteWindow {
         })
     }
 
-    fn unsent_dir(&self) -> PathBuf {
+    fn unsent_root(&self) -> PathBuf {
         self.data.notebook().join(UNSENT)
     }
 
-    /// The note written and not sent, as it was last kept; nothing where
-    /// none is kept, or what is kept cannot be read.
+    /// The folder of this window's note not sent, claimed where it has none
+    /// yet: the oldest that no other window has, else a new one. A folder
+    /// taken that holds no note is emptied of the files left in it.
+    fn unsent_dir(&self) -> Result<PathBuf> {
+        let mut claimed = self.claimed.lock().unwrap_or_else(PoisonError::into_inner);
+        if let Some(claimed) = claimed.as_ref() {
+            return Ok(claimed.dir.clone());
+        }
+        let root = self.unsent_root();
+        fs::create_dir_all(&root).context(|| tr!("io-creating", path = &root))?;
+        let mut ids: Vec<String> = fs::read_dir(&root)
+            .context(|| tr!("io-reading", path = &root))?
+            .filter_map(|entry| entry.ok()?.file_name().into_string().ok())
+            .filter_map(|name| name.strip_suffix(CLAIM).map(str::to_owned).or(Some(name)))
+            .filter(|id| !id.starts_with('.'))
+            .collect();
+        ids.sort();
+        ids.dedup();
+        for id in ids {
+            if let Some(lock) = try_claim(&root, &id)? {
+                let dir = root.join(&id);
+                if serde_json::from_slice::<NoteText>(&fs::read(dir.join(TEXT)).unwrap_or_default()).is_err() {
+                    let _ = fs::remove_dir_all(&dir);
+                }
+                *claimed = Some(Claimed { dir: dir.clone(), _lock: lock });
+                return Ok(dir);
+            }
+        }
+        let id = crate::notebook::inbox::new_id();
+        let lock = try_claim(&root, &id)?.ok_or_else(|| Error::invalid(tr!("io-creating", path = &root.join(&id))))?;
+        let dir = root.join(&id);
+        *claimed = Some(Claimed { dir: dir.clone(), _lock: lock });
+        Ok(dir)
+    }
+
+    /// The note written and not sent, as it was last kept: the oldest that
+    /// no other window has. Nothing where none is kept, or what is kept
+    /// cannot be read; no folder is made by looking.
     pub fn unsent(&self) -> Option<NoteText> {
-        let path = self.unsent_dir().join(TEXT);
+        if !self.unsent_root().is_dir() {
+            return None;
+        }
+        let dir = match self.unsent_dir() {
+            Ok(dir) => dir,
+            Err(error) => {
+                tracing::warn!(%error, "no note not sent could be had");
+                return None;
+            }
+        };
+        let path = dir.join(TEXT);
         let bytes = match fs::read(&path) {
             Ok(bytes) => bytes,
             Err(e) => {
@@ -176,23 +265,32 @@ impl NoteWindow {
     }
 
     /// Keeps the note written and not sent, in place of what was kept
-    /// before, whole or not at all; a note that holds nothing is no note,
-    /// and what was kept of it goes, its files with it.
+    /// before, whole or not at all. A note that holds nothing is no note:
+    /// what was kept of its text goes, and its files are left for a window
+    /// that next takes the folder to clear, so that a file being added
+    /// while the note is empty is not taken from under it.
     pub fn keep(&self, text: &NoteText) -> Result<()> {
+        let dir = self.unsent_dir()?;
         if text.is_empty() {
-            return self.forget();
+            let path = dir.join(TEXT);
+            return match fs::remove_file(&path) {
+                Err(e) if e.kind() != std::io::ErrorKind::NotFound => {
+                    Err(e).context(|| tr!("io-removing", path = &path))
+                }
+                _ => Ok(()),
+            };
         }
         let bytes = serde_json::to_vec(text)?;
         if bytes.len() > MAX_TEXT * 2 {
             return Err(Error::invalid(tr!("core-notebook-note-too-large", most = (MAX_TEXT / (1024 * 1024)) as u64)));
         }
-        write_atomic(&self.unsent_dir().join(TEXT), &bytes)
+        write_atomic(&dir.join(TEXT), &bytes)
     }
 
     /// Forgets the note kept, and the files added to it. None kept is
-    /// forgotten already.
+    /// forgotten already. The folder stays claimed, empty.
     fn forget(&self) -> Result<()> {
-        let dir = self.unsent_dir();
+        let dir = self.unsent_dir()?;
         match fs::remove_dir_all(&dir) {
             Err(e) if e.kind() != std::io::ErrorKind::NotFound => Err(e).context(|| tr!("io-removing", path = &dir)),
             _ => Ok(()),
@@ -212,7 +310,7 @@ impl NoteWindow {
             return Err(file_too_large(&name));
         }
         let hash = hash_file(path)?;
-        let dir = self.unsent_dir();
+        let dir = self.unsent_dir()?;
         let there = dir.join(&hash);
         if !there.is_file() {
             fs::create_dir_all(&dir).context(|| tr!("io-creating", path = &dir))?;
@@ -243,7 +341,7 @@ impl NoteWindow {
             return Err(file_too_large(name));
         }
         let hash = hash_bytes(bytes);
-        let there = self.unsent_dir().join(&hash);
+        let there = self.unsent_dir()?.join(&hash);
         if !there.is_file() {
             write_atomic(&there, bytes)?;
         }
@@ -263,7 +361,7 @@ impl NoteWindow {
 
     /// Where a file added to the note lies, by what it holds.
     pub fn file_path(&self, hash: &str) -> Result<PathBuf> {
-        let path = self.unsent_dir().join(hash);
+        let path = self.unsent_dir()?.join(hash);
         if is_hash(hash) && path.is_file() { Ok(path) } else { Err(Error::not_found(hash.to_owned())) }
     }
 
@@ -288,7 +386,7 @@ impl NoteWindow {
             doc: text.doc.clone(),
             files: text.files.clone(),
         };
-        let id = self.inbox.put_note(&note, &self.unsent_dir())?;
+        let id = self.inbox.put_note(&note, &self.unsent_dir()?)?;
         // Kept, it would be there to be sent again when the window is next opened.
         if let Err(error) = self.forget() {
             tracing::warn!(%error, "a note was sent, and what was kept of it could not be forgotten");
@@ -411,7 +509,8 @@ mod tests {
         fs::File::create(&large).unwrap().set_len(MAX_FILE as u64 + 1).unwrap();
         let error = window.add_file(&large).unwrap_err();
         assert!(error.to_string().contains("large.bin"), "{error}");
-        assert!(!window.unsent_dir().exists(), "nothing of it is kept");
+        let kept = fs::read_dir(window.unsent_dir().unwrap()).map(|d| d.count()).unwrap_or(0);
+        assert_eq!(kept, 0, "nothing of it is kept");
         assert!(window.add_bytes("large.png", &vec![0u8; MAX_FILE + 1]).is_err());
     }
 
@@ -436,7 +535,7 @@ mod tests {
         assert_eq!(image, None);
         assert_eq!(fs::read(window.inbox().file_of(&id, &picture.hash).unwrap()).unwrap(), png());
         assert_eq!(fs::read(window.inbox().file_of(&id, &file.hash).unwrap()).unwrap(), b"%PDF-1.4");
-        assert!(!window.unsent_dir().exists(), "nothing is kept of what was sent");
+        assert!(!window.unsent_dir().unwrap().exists(), "nothing is kept of what was sent");
     }
 
     #[test]
@@ -474,14 +573,42 @@ mod tests {
         window.keep(&second).unwrap();
         assert_eq!(window.unsent(), Some(second));
         assert!(window.file_path(&picture.hash).is_ok());
-        // Emptied: no note to keep, and its files go with it.
+        // Emptied: no note to keep; its files stay while the window is open.
         window.keep(&NoteText { words: "  \n".into(), ..NoteText::default() }).unwrap();
         assert_eq!(window.unsent(), None);
-        assert!(!window.unsent_dir().exists());
+        assert!(window.file_path(&picture.hash).is_ok());
         // What cannot be read is no note.
         window.keep(&NoteText { words: "Again".into(), ..NoteText::default() }).unwrap();
-        fs::write(window.unsent_dir().join(TEXT), "{ not whole").unwrap();
+        fs::write(window.unsent_dir().unwrap().join(TEXT), "{ not whole").unwrap();
         assert_eq!(window.unsent(), None);
+        // A window that next takes the folder finds no note, and clears what was left in it.
+        let data = window.data().clone();
+        drop(window);
+        let next = NoteWindow::new(data);
+        assert_eq!(next.unsent(), None);
+        assert!(next.file_path(&picture.hash).is_err());
+    }
+
+    #[test]
+    fn two_windows_open_at_once_keep_two_notes_and_a_window_opened_later_goes_on_with_the_oldest() {
+        let (_tmp, first) = window();
+        let data = first.data().clone();
+        first.keep(&NoteText { words: "One".into(), ..NoteText::default() }).unwrap();
+        let second = NoteWindow::new(data.clone());
+        assert_eq!(second.unsent(), None, "the first window has its note");
+        second.keep(&NoteText { words: "Two".into(), ..NoteText::default() }).unwrap();
+        assert_eq!(first.unsent().unwrap().words, "One", "neither writes into the other's");
+        drop(first);
+        drop(second);
+        let third = NoteWindow::new(data.clone());
+        assert_eq!(third.unsent().unwrap().words, "One", "the oldest first");
+        let fourth = NoteWindow::new(data.clone());
+        assert_eq!(fourth.unsent().unwrap().words, "Two");
+        let fifth = NoteWindow::new(data);
+        assert_eq!(fifth.unsent(), None, "both are had");
+        third.send(&third.unsent().unwrap()).unwrap();
+        assert_eq!(third.inbox().ids().len(), 1);
+        assert_eq!(fourth.unsent().unwrap().words, "Two", "sending one leaves the other");
     }
 
     #[test]

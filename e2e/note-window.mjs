@@ -90,6 +90,15 @@ function inboxOf(dataDir) {
     });
 }
 
+/** The notes not sent that are kept in a data folder: the words of each. */
+function unsentOf(dataDir) {
+  const dir = join(dataDir, 'notebook', 'unsent-notes');
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .filter((name) => !name.endsWith('.in-use') && existsSync(join(dir, name, 'note.json')))
+    .map((name) => JSON.parse(readFileSync(join(dir, name, 'note.json'), 'utf8')).words);
+}
+
 const fieldText = (win) => win.exec(`return document.querySelector('${FIELD}')?.innerText ?? ''`);
 const sendDisabled = (win) => win.exec(`return document.querySelector('${SEND}')?.disabled ?? null`);
 
@@ -155,7 +164,7 @@ try {
   check('a note lies in the inbox of the data folder', sent.length === 1 && sent[0].item.kind === 'note', JSON.stringify(sent.map((s) => s.item.kind)));
   check('with its words, and its text as the body schema writes it', sent[0]?.item.text.includes('First point') && JSON.stringify(sent[0]?.item.doc ?? {}).includes('"strong"'));
   check('and both files beside it', sent[0]?.files.length === 2 && sent[0]?.item.files.length === 2, JSON.stringify(sent[0]?.item.files ?? []));
-  check('nothing is kept of what was sent', !existsSync(join(dataDir, 'notebook', 'unsent-note')));
+  check('nothing is kept of what was sent', unsentOf(dataDir).length === 0, JSON.stringify(unsentOf(dataDir)));
 
   // ---- Written, closed by its ×, and opened again ----
   win = await noteWindow(dataDir);
@@ -165,7 +174,7 @@ try {
   check('closed by its ×, the window goes', await ended(win));
   await win.close();
   win = null;
-  check('what was written is kept in the notebook’s folder', existsSync(join(dataDir, 'notebook', 'unsent-note', 'note.json')));
+  check('what was written is kept in the notebook’s folder', JSON.stringify(unsentOf(dataDir)) === JSON.stringify(['Kept for later']), JSON.stringify(unsentOf(dataDir)));
   win = await noteWindow(dataDir);
   check('and is there when the window is opened again', (await until(() => fieldText(win), (t) => t.includes('Kept for later'))).includes('Kept for later'), await fieldText(win));
   await win.screenshot('note-window-3-kept');
@@ -182,7 +191,7 @@ try {
   check('emptied, Escape closes it', await ended(win));
   await win.close();
   win = null;
-  check('and nothing is kept', !existsSync(join(dataDir, 'notebook', 'unsent-note')));
+  check('and nothing is kept', unsentOf(dataDir).length === 0, JSON.stringify(unsentOf(dataDir)));
   check('the inbox still holds the one note', inboxOf(dataDir).length === 1);
 
   // ---- The application, started in the same folder ----

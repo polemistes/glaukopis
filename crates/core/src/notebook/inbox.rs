@@ -202,8 +202,7 @@ impl Inbox {
         let mut last = self.last.lock().unwrap_or_else(PoisonError::into_inner);
         let ms = crate::history::now_ms().max(*last + 1);
         *last = ms;
-        let random = uuid::Uuid::new_v4().simple().to_string();
-        format!("{ms:013}-{}", &random[..8])
+        id_at(ms)
     }
 
     /// Puts a thing into the inbox, cut to the limits, with its picture
@@ -370,6 +369,17 @@ impl Inbox {
 
 fn too_large() -> Error {
     Error::invalid(tr!("core-notebook-picture-too-large", most = (MAX_PICTURE / (1024 * 1024)) as u64))
+}
+
+/// An id of a thing, or of a note not sent, made now: thirteen digits of
+/// milliseconds, a dash and eight signs at random.
+pub(crate) fn new_id() -> String {
+    id_at(crate::history::now_ms())
+}
+
+fn id_at(ms: i64) -> String {
+    let random = uuid::Uuid::new_v4().simple().to_string();
+    format!("{ms:013}-{}", &random[..8])
 }
 
 /// A file too large for a note, by what it is called.
