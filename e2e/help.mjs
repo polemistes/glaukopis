@@ -141,7 +141,8 @@ try {
      const inView = marks.some((m) => { const r = m.getBoundingClientRect(); return r.top >= page.top && r.bottom <= page.bottom; });
      return { words: [...new Set(marks.map((m) => m.textContent.toLowerCase()))], inView };`,
   );
-  check('Enter shows the part in The notebook', now?.chapter === 'the-notebook' && now.heading === 'The notebook', JSON.stringify(now));
+  // While the field holds words, the hits stand in the place of the contents: the chapter is told by its heading.
+  check('Enter shows the part in The notebook', now?.heading === 'The notebook', JSON.stringify(now));
   check('with the words marked in the text', marked.words.includes('plugin') && marked.words.includes('firefox'), marked.words.join(' '));
   check('and one of them in view', marked.inView);
   await app.screenshot('help-4-marked');

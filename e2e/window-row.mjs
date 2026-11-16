@@ -45,7 +45,7 @@ const inOneLine = (app) =>
   app.exec(
     `const ps = Array.from(document.querySelectorAll('[data-row-start] .place, [data-row-end] .place')).map((p) => p.getBoundingClientRect());
      const bar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bar-h'));
-     return ps.length === 6 && ps.every((r) => r.top >= 0 && r.bottom <= bar + 2 && Math.abs(r.top - ps[0].top) < 2);`,
+     return ps.length === 7 && ps.every((r) => r.top >= 0 && r.bottom <= bar + 2 && Math.abs(r.top - ps[0].top) < 2);`,
   );
 const noRail = (app) => app.exec(`return !document.querySelector('.rail, nav.rail')`);
 

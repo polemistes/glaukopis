@@ -169,8 +169,11 @@
     else if (event.key === 'Enter' && words.length) {
       if (found[active]) go(found[active]);
     }
-    // Escape empties the field; where it is empty, it closes Help, as it does elsewhere.
+    // Escape empties the field; where it is empty, it closes Help. That is
+    // done here: WebKitGTK does not close the window by itself after the
+    // field has taken an Escape.
     else if (event.key === 'Escape' && query) query = '';
+    else if (event.key === 'Escape') helpUi.hide();
     else return;
     event.preventDefault();
     event.stopPropagation();

@@ -56,6 +56,11 @@ async function opened(place: string | null) {
   done = () => unmount(view);
   helpUi.show(place);
   await settle();
+  // The guide is read when Help is first opened, which may take more than a few turns on a busy machine.
+  await vi.waitFor(() => {
+    if (!target.querySelector('[data-help-text] h2')) throw new Error('the guide is not drawn yet');
+  });
+  flushSync();
   return target;
 }
 
@@ -149,7 +154,7 @@ describe('the window of Help', () => {
     expect(target.textContent).toContain('Nothing found');
   });
 
-  it('empties the field on Escape where it holds words, and leaves Escape to close Help where it is empty', async () => {
+  it('empties the field on Escape where it holds words, and closes Help where it is empty', async () => {
     const target = await opened(null);
     type(target, 'notebook');
     const emptied = press(field(target), 'Escape');
@@ -157,8 +162,8 @@ describe('the window of Help', () => {
     expect(field(target).value).toBe('');
     expect(target.querySelector('[data-help-chapter]')).not.toBeNull();
     expect(target.querySelector('mark[data-help-mark]')).toBeNull();
-    const closing = press(field(target), 'Escape');
-    expect(closing.defaultPrevented).toBe(false);
+    press(field(target), 'Escape');
+    expect(helpUi.open).toBe(false);
   });
 
   it('goes to the field on Ctrl+F', async () => {

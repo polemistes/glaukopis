@@ -78,11 +78,21 @@
       onsize(id, c.offsetHeight);
       cut = i.offsetHeight > f.clientHeight + 1;
     };
-    const watch = new ResizeObserver(measure);
+    // Measured in the next frame, not within the watcher's own call: what is
+    // told may change what is drawn, and a change of size seen there again
+    // would be a loop to the browser.
+    let frameAsked = 0;
+    const watch = new ResizeObserver(() => {
+      cancelAnimationFrame(frameAsked);
+      frameAsked = requestAnimationFrame(measure);
+    });
     watch.observe(c);
     watch.observe(i);
     measure();
-    return () => watch.disconnect();
+    return () => {
+      cancelAnimationFrame(frameAsked);
+      watch.disconnect();
+    };
   });
 </script>
 

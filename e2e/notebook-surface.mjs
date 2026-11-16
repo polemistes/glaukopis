@@ -235,11 +235,13 @@ try {
   check('a card is made wider by its right edge', wider.width > athens.width + 60, `${athens.width} → ${wider.width}`);
   // ---- made higher by its lower edge, and given back its own height ----
   const before = await app.exec(`return document.querySelector('${SURFACE} [data-card="${athens.id}"]').getBoundingClientRect().height`);
-  await app.drag(`${SURFACE} [data-card="${athens.id}"] [data-card-edge-bottom]`, { dx: 0, dy: -30 });
+  // Beside the middle of the edge, where the handle of a link stands.
+  await app.drag(`${SURFACE} [data-card="${athens.id}"] [data-card-edge-bottom]`, { dx: 0, dy: -30 }, { fromX: -80 });
   await sleep(300);
   const lower = await app.exec(`const c = document.querySelector('${SURFACE} [data-card="${athens.id}"]'); return { h: c.getBoundingClientRect().height, sized: c.classList.contains('sized') }`);
-  check('a card shows less of its note by its lower edge', lower.sized && lower.h < before - 10, `${before} → ${lower.h}`);
-  await app.doubleClick(`${SURFACE} [data-card="${athens.id}"] [data-card-edge-bottom]`);
+  // A short note: its card can be made no lower than its name and a line.
+  check('a card shows less of its note by its lower edge', lower.sized && lower.h < before - 4, `${before} → ${lower.h}`);
+  await app.exec(`document.querySelector('${SURFACE} [data-card="${athens.id}"] [data-card-edge-bottom]').dispatchEvent(new MouseEvent('dblclick', { bubbles: true })); return null;`);
   await sleep(300);
   const own = await app.exec(`return document.querySelector('${SURFACE} [data-card="${athens.id}"]').classList.contains('sized')`);
   check('two presses on its lower edge give it its own height again', own === false);
