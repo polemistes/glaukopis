@@ -189,6 +189,16 @@ describe('the plugin as Firefox reads it', () => {
     expect(manifest.browser_specific_settings.gecko.id).toBe('notebook@glaukopis');
   });
 
+  it('asks for no key that Firefox has for itself', () => {
+    // Alt+Shift+P opens Firefox's menu of profiles (found by the owner, 2026-11-16).
+    const taken = ['Alt+Shift+P', 'Ctrl+Shift+P', 'Ctrl+Shift+N', 'Ctrl+Shift+S', 'Ctrl+Alt+R'];
+    const asked = Object.values(manifest.commands).flatMap((c) =>
+      'suggested_key' in c ? [c.suggested_key.default] : [],
+    );
+    expect(asked).toEqual(['Alt+Shift+N', 'Alt+Shift+R']);
+    for (const key of asked) expect(taken).not.toContain(key);
+  });
+
   it('has every word in English and in Bokmål', () => {
     const named = new Set(
       [...JSON.stringify(manifest).matchAll(/__MSG_(\w+)__/g)].map((m) => m[1]),

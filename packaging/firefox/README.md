@@ -11,10 +11,13 @@ signed version stays.
 not shown in its collection of add-ons. It is the plugin exactly as the
 source had it that day.
 
-**1.0.1** is in the source since 2026-11-16 and not yet signed: it adds a
-key for a part of the page as a picture (Alt+Shift+P) and a command without
-a key for the page whole. Until it is signed and its file is here, 1.0.0 is
-the plugin that is offered.
+**1.0.1** was signed on 2026-11-16 and is not offered: it added a key for
+a part of the page as a picture, Alt+Shift+P, which Firefox has for its own
+menu of profiles, and a command without a key for the page whole.
+
+**1.0.2** is in the source since 2026-11-16 and not yet signed: the same,
+with Alt+Shift+R for a part of the page. Until it is signed and its file is
+here, 1.0.0 is the plugin that is offered.
 
 ## At a release
 

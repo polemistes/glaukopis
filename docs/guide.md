@@ -1679,7 +1679,7 @@ the page it came from:
 | The owl's button in the bar, or **Alt+Shift+N** | The page: a note named by its title, with the page's text as it reads, since pages disappear. With words selected, the selection instead |
 | The right button on a page or a selection | **Add the page to the notebook**, **Add the selection to the notebook** |
 | The right button on an image | **Add the image to the notebook** |
-| The right button, **Add a part of the page as a picture…**, or **Alt+Shift+P** | The part you then mark with the pointer, as a picture. **Escape** gives it up |
+| The right button, **Add a part of the page as a picture…**, or **Alt+Shift+R** | The part you then mark with the pointer, as a picture. **Escape** gives it up |
 
 The keys are Firefox's to change: `about:addons`, the gear, **Manage
 Extension Shortcuts**. There a key can also be given to **Add the page to
