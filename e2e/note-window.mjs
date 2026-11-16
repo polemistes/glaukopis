@@ -138,7 +138,14 @@ try {
   await win.keys(['Control', 'b']);
   await win.keys(' word');
   await sleep(300);
-  const kinds = await win.exec(`return Array.from(document.querySelectorAll('${FIELD} > p')).map((p) => [p.dataset.kind ?? 'text', p.textContent])`);
+  // The words of each paragraph, without what the editor shows beside them: the name of a kind where a run of it begins.
+  const kinds = await win.exec(
+    `return Array.from(document.querySelectorAll('${FIELD} > p')).map((p) => {
+       const words = p.cloneNode(true);
+       for (const shown of words.querySelectorAll('[contenteditable="false"]')) shown.remove();
+       return [p.dataset.kind ?? 'text', words.textContent];
+     })`,
+  );
   check(
     'the list is a list, typed with "- ", and the line after it text',
     JSON.stringify(kinds.slice(0, 3)) === JSON.stringify([['item', 'First point'], ['item', 'Second point'], ['text', 'A bold word']]),
@@ -156,9 +163,10 @@ try {
   check('no errors in the window', errors.length === 0, errors.join(' | '));
   await win.screenshot('note-window-2-written');
 
-  await win.keys(['Control', 's']);
+  // The window ends itself at these keys, and the driver's session with it: the command may never be answered.
+  await win.keys(['Control', 's']).catch(() => {});
   check('Ctrl+S sends it, and the window is gone with its program', await ended(win));
-  await win.close();
+  await win.close().catch(() => {});
   win = null;
   const sent = inboxOf(dataDir);
   check('a note lies in the inbox of the data folder', sent.length === 1 && sent[0].item.kind === 'note', JSON.stringify(sent.map((s) => s.item.kind)));
@@ -172,7 +180,7 @@ try {
   await sleep(900);
   await win.exec(`window.__TAURI_INTERNALS__.invoke('plugin:window|close', { label: 'note' }).catch(() => {}); return null;`).catch(() => {});
   check('closed by its ×, the window goes', await ended(win));
-  await win.close();
+  await win.close().catch(() => {});
   win = null;
   check('what was written is kept in the notebook’s folder', JSON.stringify(unsentOf(dataDir)) === JSON.stringify(['Kept for later']), JSON.stringify(unsentOf(dataDir)));
   win = await noteWindow(dataDir);
@@ -187,9 +195,9 @@ try {
   await sleep(900);
   errors = await win.pageErrors();
   check('no errors in the window opened again', errors.length === 0, errors.join(' | '));
-  await win.keys(['Escape']);
+  await win.keys(['Escape']).catch(() => {});
   check('emptied, Escape closes it', await ended(win));
-  await win.close();
+  await win.close().catch(() => {});
   win = null;
   check('and nothing is kept', unsentOf(dataDir).length === 0, JSON.stringify(unsentOf(dataDir)));
   check('the inbox still holds the one note', inboxOf(dataDir).length === 1);
@@ -225,9 +233,9 @@ try {
   // ---- While the application runs ----
   win = await noteWindow(dataDir);
   await win.keys('Written while it runs');
-  await win.keys(['Control', 's']);
+  await win.keys(['Control', 's']).catch(() => {});
   check('sent while the application runs, the window goes', await ended(win));
-  await win.close();
+  await win.close().catch(() => {});
   win = null;
   await app.waitForText('.toaster .toast', 'Added to the notebook', 10000).catch(() => {});
   await app.go('#/notebook');
