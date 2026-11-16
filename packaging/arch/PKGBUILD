@@ -26,11 +26,15 @@ _tree="$(realpath "${startdir:-.}/../..")"
 
 prepare() {
   # A copy, so that nothing is built in the tree itself, and nothing that was
-  # built there comes along.
+  # built there comes along: nor what was made or fetched for releases, the
+  # installers and the folders for the website, which are tens of gigabytes
+  # and no part of what is built here.
   rsync -a --delete \
     --exclude=/target --exclude=/node_modules --exclude=/dist --exclude=/.git \
     --exclude=/e2e/output --exclude=/packaging/arch --exclude=/src-tauri/gen \
     --exclude=/.claude \
+    --exclude=/packaging/build --exclude=/packaging/installers \
+    --exclude='/packaging/release-*' --exclude=/build \
     "$_tree/" "$srcdir/$pkgbase-$pkgver/"
   cd "$srcdir/$pkgbase-$pkgver"
   export CARGO_HOME="${CARGO_HOME:-$HOME/.cargo}"
