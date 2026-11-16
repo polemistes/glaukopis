@@ -54,3 +54,15 @@ The owner made the account with Mozilla and signed version 1.0.0 as *unlisted*: 
 Mozilla's check found no faults and gave four warnings, each looked at and left as it is, with the reasons in `packaging/firefox/README.md`: the lowest Firefox asked for (140) is older than what Firefox for Android needs for the declaration of what a plugin handles, and the plugin is for computers; an assignment of HTML in `page.js` is into a template, which is inert; two more are in Mozilla's own Readability, kept as published. The declaration of what the plugin handles went through as built.
 
 Still open: listing it in Mozilla's collection, should the owner want that later (it needs a listing with a summary, a category and a licence, a higher version, and goes through Mozilla's review); and the address of the file in the settings.
+
+## Added to, 2026-11-16: the packages set Firefox up
+
+The owner asked why the plugin must be activated in the settings ("Why must the plugin be activated in the settings?"), was told that it need not on Linux, and said yes to this.
+
+- **The Linux packages bring the file that tells Firefox of the helper**, in the place Firefox reads for everyone on the computer: `/usr/lib/mozilla/native-messaging-hosts/org.glaukopis.notebook.json`, and with the rpm `/usr/lib64/…` as well, naming `/usr/bin/glaukopis` and the plugin. It is `packaging/linux/org.glaukopis.notebook.json`, and a test of the core holds it to what *Set up* writes. Who installs a package has nothing to set up. This takes the place of decision 4's *Nothing is written there unasked* where a package is installed: the package writes it, in the system's place, and nothing is written among the user's own files unasked, as before.
+- **The settings read the system's place and never write it** (`notebook/firefox.rs`): where the user has no file of their own for the helper, a file of the system's that names this program says *Firefox is set up*, with neither *Set up* nor *Remove*; where it names another program, as when a Glaukopis that was built by hand runs beside an installed one, that is said, and *Set up* writes a file of the user's own, which Firefox takes before the system's. The user's own file, where there is one, is what is said and what is removed.
+- **The line of help in the section is gone** (*The plugin for Firefox sends pages, selections and images to the notebook*): the settings have no help texts but the two the script of the settings names.
+- **Unchanged**: Windows, macOS, an AppImage and a Glaukopis not installed by a package are set up by the button. An installer that writes the key of the registry on Windows was not made: it could not be tried here.
+- **For the scripts**: `GLAUKOPIS_FIREFOX_SYSTEM_HOSTS_DIR` names the folder read as the system's; with `GLAUKOPIS_FIREFOX_HOSTS_DIR` set and not this one, no folder of the system is read, so that no script reads the computer it runs on.
+- **Not tried**: a package installed; Firefox reading the file from the system's place. The file is the one *Set up* writes but for where it lies, and the place is the one Firefox documents and other programs' packages use.
+

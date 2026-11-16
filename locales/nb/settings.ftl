@@ -134,7 +134,6 @@ settings-data-copying = Kopierer … { $done } av { $count } filer
 settings-data-failed = Mappen kunne ikke endres
 
 settings-firefox = Firefox
-settings-firefox-about = Tillegget for Firefox sender sider, utvalg og bilder til notatblokken.
 settings-firefox-set-up = Firefox er satt opp
 settings-firefox-not-set-up = Firefox er ikke satt opp
 settings-firefox-other = Firefox er satt opp for en annen installasjon av Glaukopis

@@ -152,7 +152,6 @@ settings-data-failed = The folder could not be changed
 
 # Firefox: telling Firefox of the helper of the plugin for Firefox (record 0102).
 settings-firefox = Firefox
-settings-firefox-about = The plugin for Firefox sends pages, selections and images to the notebook.
 settings-firefox-set-up = Firefox is set up
 settings-firefox-not-set-up = Firefox is not set up
 settings-firefox-other = Firefox is set up for another installation of Glaukopis

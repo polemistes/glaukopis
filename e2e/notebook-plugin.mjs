@@ -17,7 +17,7 @@
 // e2e/output/notebook-plugin-<n>-<what>.png.
 
 import { spawn } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { endianness, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { App, sleep } from './harness.mjs';
@@ -166,8 +166,9 @@ try {
   const before = await until(() => firefoxState(app), (s) => s !== '');
   check('Settings › Firefox says Firefox is not set up', before === 'none' && (await app.text('[data-firefox]')).includes('Firefox is not set up'), before);
   check(
-    'it says what the plugin does',
-    (await app.text('[data-firefox]')).includes('The plugin for Firefox sends pages, selections and images to the notebook.'),
+    'with no words of help, and no file of the system said',
+    !(await app.text('[data-firefox]')).includes('sends pages') &&
+      !(await app.exists('[data-firefox-setup][data-firefox-system]')),
   );
   await app.screenshot('notebook-plugin-1-not-set-up');
 
@@ -295,6 +296,53 @@ try {
   if (helper) helper.child.kill('SIGTERM');
   await app.close().catch(() => {});
   rmSync(hosts, { recursive: true, force: true });
+}
+
+// ---- Set up by a package: a file in the system's place, for everyone, and nothing to press ----
+const ofTheUser = mkdtempSync(join(tmpdir(), 'glaukopis-e2e-firefox-hosts-'));
+const ofTheSystem = mkdtempSync(join(tmpdir(), 'glaukopis-e2e-firefox-system-'));
+let packaged = null;
+try {
+  // The file as the packages install it, naming the program that is tried here in the place of /usr/bin/glaukopis.
+  const file = JSON.parse(readFileSync(new URL('../packaging/linux/org.glaukopis.notebook.json', import.meta.url), 'utf8'));
+  check('the file of the packages names /usr/bin/glaukopis and the plugin', file.path === '/usr/bin/glaukopis' && file.allowed_extensions?.[0] === 'notebook@glaukopis' && file.type === 'stdio', JSON.stringify(file));
+  packaged = await App.launch({
+    env: { GLAUKOPIS_FIREFOX_HOSTS_DIR: ofTheUser, GLAUKOPIS_FIREFOX_SYSTEM_HOSTS_DIR: ofTheSystem },
+    width: 1360,
+    height: 900,
+  });
+  writeFileSync(join(ofTheSystem, MANIFEST_NAME), JSON.stringify({ ...file, path: realpathSync(packaged.binary) }));
+  await packaged.installErrorHook();
+  await packaged.waitFor('#app > *', 15000);
+  await settingsAtFirefox(packaged);
+  const state = await until(() => firefoxState(packaged), (s) => s !== '');
+  const said = await packaged.exec(
+    `const f = document.querySelector('[data-firefox]');
+     return {
+       system: !!f.querySelector('[data-firefox-setup][data-firefox-system]'),
+       text: f.textContent,
+       file: f.querySelector('[data-firefox-manifest]')?.textContent.trim() ?? '',
+       buttons: f.querySelectorAll('[data-firefox-set-up], [data-firefox-remove]').length,
+     };`,
+  );
+  check(
+    'with the file in the system’s place and none of the user’s, Firefox is set up and there is nothing to press',
+    state === 'installed' && said.system && said.text.includes('Firefox is set up') && said.buttons === 0,
+    JSON.stringify({ state, ...said }),
+  );
+  check('the file named is the system’s', said.file === join(ofTheSystem, MANIFEST_NAME), said.file);
+  check('and nothing was written for the user', !existsSync(join(ofTheUser, MANIFEST_NAME)));
+  await packaged.screenshot('notebook-plugin-6-by-the-package');
+  const errors = await packaged.pageErrors();
+  check('no errors in the page', errors.length === 0, errors.join(' | '));
+} catch (error) {
+  console.error(error);
+  await packaged?.screenshot('notebook-plugin-failure-package').catch(() => {});
+  checks.push({ name: 'the part of the package completed', ok: false });
+} finally {
+  await packaged?.close().catch(() => {});
+  rmSync(ofTheUser, { recursive: true, force: true });
+  rmSync(ofTheSystem, { recursive: true, force: true });
 }
 
 const failed = checks.filter((c) => !c.ok);

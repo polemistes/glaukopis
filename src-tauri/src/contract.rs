@@ -606,6 +606,7 @@ fn what_is_sent_is_what_the_interface_declares() {
         installed: false,
         manifest: "/home/a/.mozilla/native-messaging-hosts/org.glaukopis.notebook.json".into(),
         other: Some("/opt/glaukopis-old/glaukopis".into()),
+        system: false,
     };
 
     // Notes brought in from another program: what was looked at first, and

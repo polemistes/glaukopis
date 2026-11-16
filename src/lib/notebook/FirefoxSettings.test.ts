@@ -13,6 +13,7 @@ const at = (over: Partial<FirefoxSetup>): FirefoxSetup => ({
   installed: false,
   manifest: MANIFEST,
   other: null,
+  system: false,
   ...over,
 });
 
@@ -86,6 +87,31 @@ describe('Firefox in the settings', () => {
     expect(target.querySelector('[data-firefox-other]')!.textContent).toBe('/opt/old/glaukopis');
     expect(button(target, 'set-up')).not.toBeNull();
     expect(button(target, 'remove')).not.toBeNull();
+  });
+
+  it('set up by a file of the system, it says so and offers nothing to press', async () => {
+    const system = '/usr/lib/mozilla/native-messaging-hosts/org.glaukopis.notebook.json';
+    api.firefoxSetup.mockResolvedValue(at({ installed: true, system: true, manifest: system }));
+    const target = await shown();
+    expect(target.textContent).toContain('Firefox is set up');
+    expect(target.querySelector('[data-firefox-manifest]')!.textContent).toBe(system);
+    expect(button(target, 'set-up')).toBeNull();
+    expect(button(target, 'remove')).toBeNull();
+  });
+
+  it('where the file of the system names another installation, Set up is offered and Remove is not', async () => {
+    api.firefoxSetup.mockResolvedValue(at({ other: '/usr/bin/glaukopis', system: true }));
+    const target = await shown();
+    expect(target.querySelector('[data-firefox-other]')!.textContent).toBe('/usr/bin/glaukopis');
+    expect(button(target, 'set-up')).not.toBeNull();
+    expect(button(target, 'remove')).toBeNull();
+  });
+
+  it('has no words of help', async () => {
+    api.firefoxSetup.mockResolvedValue(at({}));
+    const target = await shown();
+    expect(target.querySelector('.about')).toBeNull();
+    expect(target.textContent).not.toContain('sends pages');
   });
 
   it('says it where Firefox could not be set up', async () => {

@@ -1,0 +1,7 @@
+{
+  "name": "org.glaukopis.notebook",
+  "description": "Glaukopis: takes what the Glaukopis plugin collects into the notebook",
+  "path": "/usr/bin/glaukopis",
+  "type": "stdio",
+  "allowed_extensions": ["notebook@glaukopis"]
+}

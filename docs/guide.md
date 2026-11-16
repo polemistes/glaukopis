@@ -1683,12 +1683,16 @@ the next time it starts.
 Nothing leaves the computer. The plugin hands what you choose to Glaukopis
 itself, which Firefox starts for that moment; no image is fetched, and the
 plugin can see only the page you are on, when you ask it to. That is also
-why it must be set up once:
+why Firefox must be told where Glaukopis is, by a small file among its own:
 
-1. In Glaukopis, **Settings › Firefox › Set up**. This writes a small file
-   among Firefox's own that tells it where Glaukopis is. **Remove** takes
-   it away again. After Glaukopis has been moved or installed anew, set it
-   up again; the settings say where another installation is named.
+1. **Installed from a package on Linux** (Arch, deb, rpm), Glaukopis brings
+   that file with it, for everyone on the computer: there is nothing to do,
+   and **Settings › Firefox** says *Firefox is set up*. **Otherwise**, on
+   Windows, on macOS, or with a Glaukopis that was not installed by a
+   package: **Settings › Firefox › Set up** writes the file for you;
+   **Remove** takes it away again. After Glaukopis has been moved or
+   installed anew, set it up again; the settings say where another
+   installation is named.
 2. In Firefox, add the plugin. It is a file signed by Mozilla, *Glaukopis
    Notebook* (`.xpi`), with Glaukopis's packages at
    www.robertemilberge.no/glaukopis; it is not in Mozilla's own collection

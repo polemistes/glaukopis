@@ -11,6 +11,17 @@
 //! application's own, beside its settings (`%APPDATA%\glaukopis-native-messaging-hosts`). `GLAUKOPIS_FIREFOX_HOSTS_DIR`,
 //! where it is set, is the folder, and nothing else is written or read:
 //! no key of the registry either.
+//!
+//! On Linux Firefox looks in folders of the system as well, for everyone
+//! on the computer: `/usr/lib/mozilla/native-messaging-hosts/`, and
+//! `/usr/lib64/…` where the system keeps its libraries so. The packages put
+//! the file there (`packaging/linux/org.glaukopis.notebook.json`, naming
+//! `/usr/bin/glaukopis`), so that nobody who installed one has anything to
+//! set up. Those folders are read here and never written: a file of the
+//! user's own, where there is one, is the one Firefox takes, and the one
+//! that is set up and removed. `GLAUKOPIS_FIREFOX_SYSTEM_HOSTS_DIR` names
+//! the folder of the system for the scripts; with the first variable set
+//! and not this one, no folder of the system is read.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -29,6 +40,10 @@ pub const MANIFEST_FILE: &str = "org.glaukopis.notebook.json";
 pub const EXTENSION_ID: &str = "notebook@glaukopis";
 /// The variable that says where the file is written and read instead.
 pub const HOSTS_DIR_VARIABLE: &str = "GLAUKOPIS_FIREFOX_HOSTS_DIR";
+/// The variable that says which folder is read as the system's instead.
+pub const SYSTEM_HOSTS_DIR_VARIABLE: &str = "GLAUKOPIS_FIREFOX_SYSTEM_HOSTS_DIR";
+/// Where Firefox looks for everyone on a Linux computer: where the packages put the file.
+const SYSTEM_DIRS: [&str; 2] = ["/usr/lib/mozilla/native-messaging-hosts", "/usr/lib64/mozilla/native-messaging-hosts"];
 
 /// What is shown of the helper, by Firefox's own question in a Snap: one plain English line.
 const DESCRIPTION: &str = "Glaukopis: takes what the Glaukopis plugin collects into the notebook";
@@ -45,6 +60,11 @@ pub struct Setup {
     pub manifest: String,
     /// The program it names where it names another than this one.
     pub other: Option<String>,
+    /// Whether this is said of a file of the system's, there for everyone
+    /// on the computer, as a package puts it: nothing is set up or removed
+    /// here then, and Set up writes a file of the user's own, which Firefox
+    /// takes before the system's.
+    pub system: bool,
 }
 
 /// The file as Firefox reads it.
@@ -75,9 +95,9 @@ pub fn state(dir: &Path, exe: &Path) -> Setup {
         Some(named) if named.name == HOST_NAME => {
             let this = same_program(Path::new(&named.path), exe)
                 && named.allowed_extensions.iter().any(|id| id == EXTENSION_ID);
-            Setup { installed: this, manifest, other: (!this).then_some(named.path) }
+            Setup { installed: this, manifest, other: (!this).then_some(named.path), system: false }
         }
-        _ => Setup { installed: false, manifest, other: None },
+        _ => Setup { installed: false, manifest, other: None, system: false },
     }
 }
 
@@ -110,21 +130,29 @@ pub fn remove(dir: &Path) -> Result<()> {
     }
 }
 
-/// Where the file is for this user, and whether a key of the registry
-/// points to it (on Windows, where the variable does not say the folder).
+/// Where the file is for this user, whether a key of the registry points
+/// to it (on Windows, where the variable does not say the folder), and the
+/// folders of the system where Firefox looks as well (on Linux).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Place {
     pub dir: PathBuf,
     pub registry: bool,
+    pub system: Vec<PathBuf>,
 }
 
 impl Place {
     /// The place of this user on this system, or the folder the variable names.
     pub fn of_this_user() -> Place {
-        if let Some(dir) = std::env::var_os(HOSTS_DIR_VARIABLE).filter(|v| !v.is_empty()) {
-            return Place { dir: PathBuf::from(dir), registry: false };
+        let named = |variable: &str| std::env::var_os(variable).filter(|v| !v.is_empty()).map(PathBuf::from);
+        let system = named(SYSTEM_HOSTS_DIR_VARIABLE);
+        if let Some(dir) = named(HOSTS_DIR_VARIABLE) {
+            return Place { dir, registry: false, system: system.into_iter().collect() };
         }
-        Place::of_the_system()
+        let mut place = Place::of_the_system();
+        if let Some(system) = system {
+            place.system = vec![system];
+        }
+        place
     }
 
     /// Where Firefox looks on this system.
@@ -133,24 +161,42 @@ impl Place {
             // Beside the settings, not in their folder: on Windows that is
             // the usual data folder, which a move of the data takes away.
             let dir = crate::paths::settings_place().with_file_name("glaukopis-native-messaging-hosts");
-            Place { dir, registry: true }
+            Place { dir, registry: true, system: Vec::new() }
         } else if cfg!(target_os = "macos") {
             let dir = home().join("Library").join("Application Support").join("Mozilla").join("NativeMessagingHosts");
-            Place { dir, registry: false }
+            Place { dir, registry: false, system: Vec::new() }
         } else {
-            Place { dir: home().join(".mozilla").join("native-messaging-hosts"), registry: false }
+            Place {
+                dir: home().join(".mozilla").join("native-messaging-hosts"),
+                registry: false,
+                system: SYSTEM_DIRS.iter().map(PathBuf::from).collect(),
+            }
         }
     }
 
     /// Whether Firefox is set up here to start `exe`. On Windows the key
-    /// must point to the file as well.
+    /// must point to the file as well. Where the user has no file of their
+    /// own for the helper, a file of the system's says it: Firefox takes the
+    /// user's before the system's.
     pub fn state(&self, exe: &Path) -> Setup {
         let mut setup = state(&self.dir, exe);
         if self.registry && setup.installed {
             let pointed = registered().is_some_and(|path| same_program(&path, &manifest_path(&self.dir)));
             setup.installed = pointed;
         }
-        setup
+        if setup.installed || setup.other.is_some() {
+            return setup;
+        }
+        let of_the_system: Vec<Setup> = self.system.iter().map(|dir| state(dir, exe)).collect();
+        // One that names this program before one that names another.
+        let found = of_the_system
+            .iter()
+            .find(|found| found.installed)
+            .or_else(|| of_the_system.iter().find(|found| found.other.is_some()));
+        match found {
+            Some(found) => Setup { system: true, ..found.clone() },
+            None => setup,
+        }
     }
 
     /// Writes the file naming `exe`, and on Windows the key that points to it.
@@ -254,7 +300,7 @@ mod tests {
         let before = state(&dir, &exe);
         assert_eq!(
             before,
-            Setup { installed: false, manifest: manifest_path(&dir).display().to_string(), other: None }
+            Setup { installed: false, manifest: manifest_path(&dir).display().to_string(), other: None, system: false }
         );
 
         let setup = set_up(&dir, &exe).unwrap();
@@ -312,8 +358,64 @@ mod tests {
         fs::write(manifest_path(tmp.path()), other.to_string()).unwrap();
         assert_eq!(
             state(tmp.path(), &exe),
-            Setup { installed: false, manifest: manifest_path(tmp.path()).display().to_string(), other: None }
+            Setup {
+                installed: false,
+                manifest: manifest_path(tmp.path()).display().to_string(),
+                other: None,
+                system: false
+            }
         );
+    }
+
+    /// A place with a folder of the user's and one of the system's, both in a folder of the test.
+    fn place_in(tmp: &Path) -> Place {
+        Place { dir: tmp.join("user"), registry: false, system: vec![tmp.join("none"), tmp.join("system")] }
+    }
+
+    #[test]
+    fn a_file_of_the_system_sets_firefox_up_for_everyone() {
+        let tmp = tempfile::tempdir().unwrap();
+        let place = place_in(tmp.path());
+        let exe = tmp.path().join("bin").join("glaukopis");
+        assert!(!place.state(&exe).installed, "nothing anywhere yet");
+
+        set_up(&tmp.path().join("system"), &exe).unwrap();
+        let setup = place.state(&exe);
+        assert!(setup.installed && setup.system && setup.other.is_none());
+        assert_eq!(setup.manifest, manifest_path(&tmp.path().join("system")).display().to_string());
+        assert!(!tmp.path().join("user").exists(), "the user's folder is not made by looking");
+    }
+
+    #[test]
+    fn the_users_own_file_is_said_before_the_systems() {
+        let tmp = tempfile::tempdir().unwrap();
+        let place = place_in(tmp.path());
+        let packaged = tmp.path().join("usr").join("glaukopis");
+        let built = tmp.path().join("built").join("glaukopis");
+        set_up(&tmp.path().join("system"), &packaged).unwrap();
+
+        // Another program than the system's file names: said, as of the system's.
+        let setup = place.state(&built);
+        assert!(!setup.installed && setup.system);
+        assert_eq!(setup.other.as_deref(), Some(packaged.display().to_string().as_str()));
+
+        // Set up writes the user's own, which is then what is said, and Remove takes it away again.
+        let setup = place.set_up(&built).unwrap();
+        assert!(setup.installed && !setup.system);
+        assert_eq!(setup.manifest, manifest_path(&tmp.path().join("user")).display().to_string());
+        let setup = place.remove(&built).unwrap();
+        assert!(!setup.installed && setup.system, "the system's file is left where it is");
+        assert!(tmp.path().join("system").join(MANIFEST_FILE).is_file());
+    }
+
+    #[test]
+    fn the_file_the_packages_install_is_the_one_set_up_writes() {
+        let packaged = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packaging/linux").join(MANIFEST_FILE);
+        let packaged: serde_json::Value = serde_json::from_slice(&fs::read(&packaged).unwrap()).unwrap();
+        let tmp = tempfile::tempdir().unwrap();
+        set_up(tmp.path(), Path::new("/usr/bin/glaukopis")).unwrap();
+        let written: serde_json::Value = serde_json::from_slice(&fs::read(manifest_path(tmp.path())).unwrap()).unwrap();
+        assert_eq!(packaged, written, "the packages' file names /usr/bin/glaukopis as Set up would");
     }
 
     #[test]
@@ -321,11 +423,22 @@ mod tests {
         // Read as the scripts set it; not set by a test, which would reach
         // the others running at the same time.
         let place = Place::of_this_user();
+        let system = std::env::var_os(SYSTEM_HOSTS_DIR_VARIABLE).filter(|v| !v.is_empty()).map(PathBuf::from);
         if let Some(dir) = std::env::var_os(HOSTS_DIR_VARIABLE).filter(|v| !v.is_empty()) {
-            assert_eq!(place, Place { dir: PathBuf::from(dir), registry: false });
+            assert_eq!(
+                place,
+                Place { dir: PathBuf::from(dir), registry: false, system: system.into_iter().collect() },
+                "with the folder named, no folder of the system is read but one that is named too"
+            );
         } else if cfg!(target_os = "linux") {
             assert!(place.dir.ends_with(".mozilla/native-messaging-hosts"));
             assert!(!place.registry);
+            if system.is_none() {
+                assert!(
+                    place.system.iter().all(|dir| dir.starts_with("/usr") && dir.ends_with("native-messaging-hosts"))
+                );
+                assert_eq!(place.system.len(), 2);
+            }
         }
     }
 

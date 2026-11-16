@@ -1,10 +1,12 @@
 <script lang="ts">
   /**
    * Firefox in the settings (record 0102): whether Firefox is told of the
-   * helper that takes what the plugin hands over, for this user, and
-   * setting it up or removing it. Where the file Firefox reads names
-   * another installation of Glaukopis, that is said, and Set up makes it
-   * this one.
+   * helper that takes what the plugin hands over, and setting it up or
+   * removing it for this user. Where a package has put the file Firefox
+   * reads in the system's place, for everyone on the computer, Firefox is
+   * set up and there is nothing to press. Where the file names another
+   * installation of Glaukopis, that is said, and Set up makes it this one,
+   * for this user.
    */
   import { onMount } from 'svelte';
   import Check from '@lucide/svelte/icons/check';
@@ -43,8 +45,11 @@
   );
 </script>
 
-<div class="firefox" data-firefox-setup={standing ?? ''}>
-  <p class="about">{t('settings-firefox-about')}</p>
+<div
+  class="firefox"
+  data-firefox-setup={standing ?? ''}
+  data-firefox-system={setup?.system ? '' : undefined}
+>
   <div class="row">
     <div class="state">
       {#if standing === 'installed'}
@@ -83,7 +88,8 @@
           {t('settings-firefox-set-up-button')}
         </Button>
       {/if}
-      {#if standing && standing !== 'none'}
+      <!-- The system's file is the package's: it is not removed from here. -->
+      {#if standing && standing !== 'none' && !setup?.system}
         <Button size="sm" disabled={working} onclick={() => change('remove')} data-firefox-remove>
           {t('settings-firefox-remove')}
         </Button>
@@ -97,11 +103,6 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
-  }
-  .about {
-    margin-top: -8px;
-    color: var(--ink-2);
-    line-height: 1.5;
   }
   .row {
     display: flex;

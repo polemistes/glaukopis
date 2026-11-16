@@ -3773,7 +3773,8 @@ export const inboxItems: notebook.InboxItem[] = [
 export const firefoxSetup: notebook.FirefoxSetup = {
   "installed": false,
   "manifest": "/home/a/.mozilla/native-messaging-hosts/org.glaukopis.notebook.json",
-  "other": "/opt/glaukopis-old/glaukopis"
+  "other": "/opt/glaukopis-old/glaukopis",
+  "system": false
 };
 
 export const notesLook: notebook.NotesLook = {

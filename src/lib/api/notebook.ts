@@ -203,6 +203,11 @@ export interface FirefoxSetup {
   manifest: string;
   /** The program it names where it names another than this application: an older or another installation. */
   other: string | null;
+  /**
+   * Whether this is said of a file of the system's, there for everyone on
+   * the computer, as a package puts it: nothing is set up or removed then.
+   */
+  system: boolean;
 }
 
 export const firefoxSetup = () => call<FirefoxSetup>('firefox_setup');
