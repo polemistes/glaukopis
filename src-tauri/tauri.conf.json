@@ -53,9 +53,18 @@
     },
     "linux": {
       "deb": {
+        "files": {
+          "/usr/bin/glaukopis-note": "../packaging/linux/glaukopis-note",
+          "/usr/lib/mozilla/native-messaging-hosts/org.glaukopis.notebook.json": "../packaging/linux/org.glaukopis.notebook.json"
+        },
         "recommends": ["tesseract-ocr", "tesseract-ocr-eng", "poppler-utils", "librsvg2-bin", "hunspell-en-us", "hunspell-en-gb", "fonts-noto-core", "fonts-noto-cjk", "fonts-noto-color-emoji"]
       },
       "rpm": {
+        "files": {
+          "/usr/bin/glaukopis-note": "../packaging/linux/glaukopis-note",
+          "/usr/lib/mozilla/native-messaging-hosts/org.glaukopis.notebook.json": "../packaging/linux/org.glaukopis.notebook.json",
+          "/usr/lib64/mozilla/native-messaging-hosts/org.glaukopis.notebook.json": "../packaging/linux/org.glaukopis.notebook.json"
+        },
         "depends": ["webkit2gtk4.1", "gtk3", "openssl-libs"],
         "recommends": ["tesseract", "tesseract-langpack-eng", "poppler-utils", "librsvg2-tools", "hunspell-en-US", "hunspell-en-GB", "google-noto-sans-cjk-fonts", "google-noto-color-emoji-fonts"]
       }

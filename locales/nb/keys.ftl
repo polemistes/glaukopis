@@ -127,6 +127,7 @@ keys-notebook-closer = Nærmere
 keys-notebook-farther = Lenger unna
 keys-notebook-go = Gå fra det ene kortet til det neste
 keys-notebook-open = Åpne notatet som er valgt
+keys-notebook-note-window-send = I vinduet for et notat: til notatblokken
 keys-list-undo = Angre det som ble gjort med mapper og prosjekter
 keys-list-redo = Gjør om det som ble gjort med mapper og prosjekter
 

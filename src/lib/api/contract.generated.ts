@@ -13,6 +13,7 @@ import type * as system from './system';
 import type * as changes from './changes';
 import type * as clipboard from './clipboard';
 import type * as notebook from './notebook';
+import type * as notewindow from './notewindow';
 import type * as sources from './sources';
 import type * as found from './found';
 import type * as viewer from './viewer';
@@ -3612,6 +3613,9 @@ export const zipEntry: system.ZipEntry = {
 };
 
 export const pasted: clipboard.Pasted = {
+  "files": [
+    "/home/someone/letter.pdf"
+  ],
   "html": null,
   "pictures": [
     {
@@ -3712,6 +3716,8 @@ export const notebookUpdate: notebook.NotebookUpdate = {
 export const inboxItems: notebook.InboxItem[] = [
   {
     "alt": "",
+    "doc": null,
+    "files": [],
     "html": "",
     "image": {
       "file": {
@@ -3760,12 +3766,92 @@ export const inboxItems: notebook.InboxItem[] = [
   },
   {
     "alt": "",
+    "doc": null,
+    "files": [],
     "html": "<p>What it <em>says</em>.</p>",
     "image": null,
     "kind": "selection",
     "text": "What it says.",
     "title": "An article",
     "url": "https://example.org/an-article",
+    "when": "2026-01-01T00:00:00Z"
+  },
+  {
+    "alt": "",
+    "doc": {
+      "content": [
+        {
+          "content": [
+            {
+              "text": "A ",
+              "type": "text"
+            },
+            {
+              "marks": [
+                {
+                  "type": "strong"
+                }
+              ],
+              "text": "bold",
+              "type": "text"
+            },
+            {
+              "text": " word.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "type": "doc"
+    },
+    "files": [
+      {
+        "file": {
+          "added": "2026-01-01T00:00:00Z",
+          "alt": "",
+          "bookmarks": [],
+          "exists": true,
+          "folder": "00000000-0000-4000-8000-000000000000",
+          "hash": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+          "height": 1,
+          "kind": "picture",
+          "madeFrom": null,
+          "name": "plate.png",
+          "origin": "/data/plate.png",
+          "path": "attachments/4f/4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5/plate.png",
+          "references": [],
+          "size": 70,
+          "width": 1
+        },
+        "place": null,
+        "shown": {
+          "added": "2026-01-01T00:00:00Z",
+          "alt": "",
+          "bookmarks": [],
+          "exists": true,
+          "folder": "00000000-0000-4000-8000-000000000000",
+          "hash": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+          "height": 1,
+          "kind": "picture",
+          "madeFrom": null,
+          "name": "plate.png",
+          "origin": "/data/plate.png",
+          "path": "attachments/4f/4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5/plate.png",
+          "references": [],
+          "size": 70,
+          "width": 1
+        },
+        "taken": null,
+        "time": null
+      }
+    ],
+    "html": "",
+    "image": null,
+    "kind": "note",
+    "text": "A bold word.",
+    "title": "",
+    "url": "",
     "when": "2026-01-01T00:00:00Z"
   }
 ];
@@ -3775,6 +3861,71 @@ export const firefoxSetup: notebook.FirefoxSetup = {
   "manifest": "/home/a/.mozilla/native-messaging-hosts/org.glaukopis.notebook.json",
   "other": "/opt/glaukopis-old/glaukopis",
   "system": false
+};
+
+export const noteWindowStart: notewindow.NoteWindowStart = {
+  "settings": {
+    "language": "nb",
+    "theme": "dark"
+  },
+  "unsent": {
+    "doc": {
+      "content": [
+        {
+          "content": [
+            {
+              "text": "A ",
+              "type": "text"
+            },
+            {
+              "marks": [
+                {
+                  "type": "strong"
+                }
+              ],
+              "text": "bold",
+              "type": "text"
+            },
+            {
+              "text": " word.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "type": "doc"
+    },
+    "files": [
+      {
+        "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "name": "plate.png"
+      }
+    ],
+    "words": "A bold word."
+  }
+};
+
+export const addedFiles: notewindow.AddedFiles = {
+  "files": [
+    {
+      "extension": "png",
+      "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "name": "plate.png",
+      "size": 70,
+      "width": 1
+    },
+    {
+      "extension": "pdf",
+      "hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "name": "letter.pdf",
+      "size": 8,
+      "width": null
+    }
+  ],
+  "problems": [
+    "large.bin is larger than 50 MB"
+  ]
 };
 
 export const notesLook: notebook.NotesLook = {

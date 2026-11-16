@@ -4,7 +4,10 @@
  * it came from as its source. A page is a note named by its title, its
  * text the page's as it reads; a selection a note without a name, its
  * text what was selected; each taken in as one passage. An image, or a
- * part of a page, is a note holding the picture as a figure.
+ * part of a page, is a note holding the picture as a figure. A note
+ * written in a window of its own (record 0109) is a note without a name
+ * and with no source, its text as it was written, read with care
+ * (`window/text.ts`).
  *
  * The HTML the plugin gives is not to be trusted. It is read without being
  * run, in a document of its own that is never put into the page; every
@@ -20,6 +23,7 @@ import { bodySchema, safeHref } from '$lib/editor/schema';
 import { fileEnding } from '$lib/util/file-name';
 import type { Notebook } from './model/notebook.svelte';
 import { figureOf, holdTaken } from './taking';
+import { readNoteDoc } from './window/text';
 
 /** What is not read at all, with all it holds: what runs, what is drawn or loaded, what is typed into. */
 const DROPPED = new Set([
@@ -284,6 +288,37 @@ function writeWords(notebook: Notebook, note: string, item: InboxItem, source: s
   notebook.addText(note, lines.join('\n'), passage);
 }
 
+/**
+ * Writes a note written in a window of its own into its note: the files it
+ * holds held, with no source; its text as it was written, where it can be
+ * read; else its words, a paragraph to each line that holds any, and then
+ * its pictures and files, so that nothing of it is lost.
+ */
+function writeNote(notebook: Notebook, note: string, item: InboxItem) {
+  const files = new Map(item.files.map((f) => [f.file.hash, f]));
+  for (const f of item.files) holdTaken(notebook, f, null);
+  const doc = readNoteDoc(item.doc, files);
+  const fragment = notebook.fragment(note);
+  if (doc && fragment) {
+    prosemirrorToYXmlFragment(doc, fragment);
+    return;
+  }
+  const lines = item.text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (lines.length) notebook.addText(note, lines.join('\n'));
+  for (const f of item.files) {
+    if (f.shown) notebook.addFigure(note, figureOf(f.shown));
+    else
+      notebook.addFile(note, {
+        hash: f.file.hash,
+        name: f.file.name,
+        extension: fileEnding(f.file.name),
+      });
+  }
+}
+
 /** When a thing was collected, as the note keeps it; where the browser said no time that can be read, `fallback`. */
 function madeOf(when: string, fallback: string): string {
   const time = new Date(when);
@@ -291,10 +326,11 @@ function madeOf(when: string, fallback: string): string {
 }
 
 /**
- * Makes a note of each thing the plugin handed over, in order, all in one
- * step of undo, with the page as the source of what is in it. A picture
- * that did not come leaves nothing to make a note of. Gives the ids of
- * the notes made.
+ * Makes a note of each thing in the inbox, in order, all in one step of
+ * undo: of what the plugin handed over with the page as the source of what
+ * is in it; of a note written in a window of its own as it was written. A
+ * picture that did not come leaves nothing to make a note of. Gives the
+ * ids of the notes made.
  */
 export function notesOfInbox(notebook: Notebook, items: InboxItem[]): string[] {
   if (!items.length) return [];
@@ -324,7 +360,8 @@ export function notesOfInbox(notebook: Notebook, items: InboxItem[]): string[] {
         seen: false,
         ...(item.kind === 'page' && item.title.trim() ? { name: item.title } : {}),
       });
-      if (pictured) {
+      if (item.kind === 'note') writeNote(notebook, id, item);
+      else if (pictured) {
         const taken = item.image!;
         holdTaken(notebook, taken, source);
         if (taken.shown)

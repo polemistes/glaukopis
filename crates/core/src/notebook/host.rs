@@ -18,7 +18,8 @@
 //! what goes wrong                                → {"ok":false,"error":"<a word>"}
 //! ```
 //!
-//! The words: `not-understood` (no JSON, or a kind not known), `too-large`
+//! The words: `not-understood` (no JSON, or a kind not known, or `note`,
+//! which is the window's of a note and never the plugin's), `too-large`
 //! (a message over 96 MB, which ends the helper, or a picture over 50 MB),
 //! `not-a-picture`, `no-data-folder` (Glaukopis was never started for this
 //! user), `not-written`. The plugin says them to the writer in its own words.
@@ -131,7 +132,14 @@ fn answer(message: &[u8], inbox: std::result::Result<&Inbox, &Error>) -> Value {
         return json!({ "ok": true, "version": VERSION });
     }
     let image = message.as_object_mut().and_then(|fields| fields.remove("image"));
-    let Ok(collected) = serde_json::from_value::<Collected>(message) else { return refused("not-understood") };
+    let Ok(mut collected) = serde_json::from_value::<Collected>(message) else { return refused("not-understood") };
+    // A note written in a window of its own is no kind the plugin hands
+    // over, and the text and the files of one are none of the plugin's.
+    if collected.kind == Kind::Note {
+        return refused("not-understood");
+    }
+    collected.doc = Value::Null;
+    collected.files.clear();
     let wants_picture = matches!(collected.kind, Kind::Image | Kind::Region);
     let picture = match image {
         Some(Value::String(encoded)) => match picture(&encoded) {
@@ -273,6 +281,19 @@ mod tests {
     }
 
     #[test]
+    fn the_text_and_the_files_of_a_note_are_none_of_the_plugins() {
+        let helper = Helper::new();
+        let mut message = page();
+        message["doc"] = json!({"type": "doc", "content": []});
+        message["files"] = json!([{"hash": "a".repeat(64), "name": "not here.pdf"}]);
+        let (code, answers) = helper.run(&framed(&[message]));
+        assert_eq!((code, answers), (0, vec![json!({"ok": true})]));
+        let inbox = helper.inbox();
+        let (collected, _) = inbox.read(&inbox.ids()[0]).unwrap();
+        assert!(collected.doc.is_null() && collected.files.is_empty());
+    }
+
+    #[test]
     fn a_region_with_a_picture_is_written_with_it() {
         let helper = Helper::new();
         let png = png();
@@ -311,12 +332,14 @@ mod tests {
         input.extend_from_slice(b"oops");
         input.extend(framed(&[json!({"kind": "video", "url": "x"}), json!({"url": "no kind"}), json!([1, 2])]));
         input.extend(framed(&[json!({"kind": "page", "title": 3})]));
+        // A note of the window of its own is not the plugin's to hand over.
+        input.extend(framed(&[json!({"kind": "note", "text": "Words."})]));
         input.extend(framed(&[json!({"kind": "hello"})]));
         let (code, answers) = helper.run(&input);
         assert_eq!(code, 0);
         let refused = json!({"ok": false, "error": "not-understood"});
-        assert_eq!(answers[..5], vec![refused; 5][..]);
-        assert_eq!(answers[5]["ok"], json!(true), "it went on");
+        assert_eq!(answers[..6], vec![refused; 6][..]);
+        assert_eq!(answers[6]["ok"], json!(true), "it went on");
         assert!(helper.inbox().ids().is_empty());
     }
 

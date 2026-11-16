@@ -79,6 +79,8 @@ export interface TextHolder {
   threadsOf(element: string): readonly Thread[];
   /** A citation as the reference style of the document of an element writes it, alone (record 0090). */
   citationWritten(element: string | null | undefined, said: Cited): Promise<Written>;
+  /** Whether its texts cite works: they do, where it does not say they do not. */
+  readonly cites?: boolean;
 
   // ---- what comes into a text ----
 

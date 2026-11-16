@@ -16,6 +16,9 @@ pub struct Pasted {
     pub html: Option<String>,
     /// A picture copied as one, and the files of pictures copied in a file manager.
     pub pictures: Vec<PastedPicture>,
+    /// The other files copied in a file manager, by where they are: what a
+    /// note written in a window of its own takes in (record 0109).
+    pub files: Vec<String>,
     /// The address it was copied from, where the program that holds the
     /// clipboard says one, on Linux. Firefox says the site, not the page
     /// (`http://host`; tried with Firefox 159). Only an address of the web,
@@ -85,6 +88,10 @@ mod linux {
         for path in files {
             if let Some(picture) = picture_file(&path) {
                 pasted.pictures.push(picture);
+            } else if path.is_file()
+                && let Some(path) = path.to_str()
+            {
+                pasted.files.push(path.to_owned());
             }
         }
         pasted

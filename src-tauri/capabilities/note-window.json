@@ -1,0 +1,18 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "note-window",
+  "description": "What the window of a note may do (record 0109): be shown with its title and its zoom, come to the front, choose files in the system's dialog, and close",
+  "windows": [
+    "note"
+  ],
+  "permissions": [
+    "core:default",
+    "dialog:allow-open",
+    "core:window:allow-set-title",
+    "core:window:allow-show",
+    "core:window:allow-set-focus",
+    "core:window:allow-close",
+    "core:window:allow-destroy",
+    "core:webview:allow-set-webview-zoom"
+  ]
+}

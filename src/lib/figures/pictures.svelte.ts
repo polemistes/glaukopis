@@ -143,6 +143,12 @@ class Pictures {
   #said = new Set<string>();
   /** How often each image that is not there has been asked for again. */
   #tries = new Map<string, number>();
+  /**
+   * Where the bytes of a picture a figure shows are read from: the
+   * library's store; in the window of a note, which has no library, the
+   * files of the note (record 0109).
+   */
+  readFrom: (hash: string) => Promise<Uint8Array> = async (hash) => fileRead(await filePath(hash));
 
   // ---- what is known: the files of the library that are images ----
 
@@ -261,7 +267,7 @@ class Pictures {
   async #read(hash: string, extension: string, small: boolean, asked = false) {
     const key = this.#key({ hash, extension }, small);
     try {
-      const bytes = small ? await fileSmall(hash) : await fileRead(await filePath(hash));
+      const bytes = small ? await fileSmall(hash) : await this.readFrom(hash);
       // A thumbnail is a photograph or a PNG, which is known by what it holds; a drawing is said to be one.
       const type = small && extension !== 'svg' ? undefined : TYPES[extension];
       const url = URL.createObjectURL(new Blob([bytes as BlobPart], type ? { type } : {}));

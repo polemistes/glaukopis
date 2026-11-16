@@ -51,6 +51,14 @@ impl DataDir {
         Ok(dir)
     }
 
+    /// The data directory at `root` as it is: nothing is made, and nothing
+    /// claimed. For a role of the application that reads its settings and
+    /// writes into one part of it while the application may be at work in
+    /// it, as the window of a note (`notebook::note`).
+    pub fn at(root: impl Into<PathBuf>) -> Self {
+        DataDir { root: root.into() }
+    }
+
     pub fn root(&self) -> &Path {
         &self.root
     }

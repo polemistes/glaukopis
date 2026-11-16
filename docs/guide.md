@@ -1724,6 +1724,41 @@ references you are asked which, once for that file. A file that belongs to
 no reference is itself the source, with the page. A message says the note
 was added, with **Show**; what you were reading stays as it was.
 
+### A note in a window of its own
+
+A small window to write a note in, whenever something comes to mind,
+whether Glaukopis is open or not. It opens nothing else of Glaukopis, and
+it can be opened as often as you like: each time is a window of its own.
+
+| On | Open it with |
+| --- | --- |
+| Linux | **New note** on Glaukopis in the launcher (the right button on its icon), or the command `glaukopis-note` |
+| Windows | `glaukopis.exe --note` |
+| macOS | `open -n -a Glaukopis --args --note` |
+
+To have it under one key, bind that key to the command in the settings of
+your desktop, as a keyboard shortcut of your own: Glaukopis binds no key
+of the system itself.
+
+The window holds one text, written as the text of a note is: the same
+keys, the same marks, lists made by typing `- `, `1. ` or `[ ] ` at the
+start of a line, and undo. The row under it has buttons for bold, italic,
+underlined, struck through and code, for the three kinds of list, and
+**Add a file…** to choose files. A picture or a file can also be pasted, a
+screenshot or what you copied in a file manager, or dropped on the window:
+a picture stands in the note as a picture, any other file by its name. A
+file larger than 50 MB is not added, and the window says so.
+
+**To the notebook** (**Ctrl+S**) puts the note into the notebook, without
+a name and with no source, and the window closes. Glaukopis need not be
+running: the note waits, and is in the notebook the next time Glaukopis
+starts; while it runs, the note is there within a moment, and a message at
+the foot of its window says so, with **Show**. **Escape** closes the window
+while nothing is written in it, and does nothing once something is. What
+you write is kept as you write: close the window with a note in it, and
+the note is there again the next time the window opens. Two windows open at
+once each keep their own note.
+
 ### From other programs
 
 **Import notes…**, the button beside **Add files…** (and in the empty

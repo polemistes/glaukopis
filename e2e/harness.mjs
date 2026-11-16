@@ -99,7 +99,9 @@ function alive(pid) {
 
 export class App {
   /**
-   * @param {{ binary?: string, dataDir?: string, width?: number, height?: number, env?: Record<string,string>, keepData?: boolean }} options
+   * @param {{ binary?: string, dataDir?: string, width?: number, height?: number, env?: Record<string,string>, keepData?: boolean, args?: string[] }} options
+   *
+   * `args` are given to the program, as `--note` for the window of a note (record 0109).
    */
   static async launch(options = {}) {
     const app = new App();
@@ -184,7 +186,7 @@ export class App {
       const created = await app.raw('POST', '/session', {
         capabilities: {
           alwaysMatch: {
-            'webkitgtk:browserOptions': { binary: app.binary, args: [] },
+            'webkitgtk:browserOptions': { binary: app.binary, args: options.args ?? [] },
           },
         },
       });

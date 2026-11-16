@@ -546,7 +546,8 @@
       undo: () => holder.undo(),
       redo: () => holder.redo(),
       action: (action: KeyAction, v: EditorView) => untrack(() => onaction?.(action, v) ?? false),
-      cite: kind === 'body' ? cite : undefined,
+      // Not where the holder's texts cite nothing: `@` is then a sign as any other.
+      cite: kind === 'body' && holder.cites !== false ? cite : undefined,
       picture: kind === 'body' ? picture : undefined,
       takePicture: (path: string) => holder.pictureFromFile(path),
       point: kind === 'body' ? point : undefined,

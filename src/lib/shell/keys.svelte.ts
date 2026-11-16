@@ -264,6 +264,8 @@ const ENTRIES = [
   { id: 'notebook-farther', keys: 'Ctrl+-', place: 'notebook' },
   { id: 'notebook-go', keys: '↑↓←→', place: 'notebook' },
   { id: 'notebook-open', keys: 'Enter', place: 'notebook' },
+  // In the window of a note of its own (record 0109), done by the window: S sends, as it saves elsewhere.
+  { id: 'notebook-note-window-send', keys: 'Ctrl+S', place: 'notebook' },
 
   // The settings in plain words, stage 2: the zoom of the typesetting pane, while it has the focus or the pointer.
   { id: 'preview-zoom-in', keys: 'Ctrl++', place: 'preview', bound: true },

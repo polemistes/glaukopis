@@ -63,7 +63,8 @@
     }
     // Whether a newer version is out, asked once, by the first window (record 0099).
     if (!madeAfterTheFirst()) void askIfToldHere();
-    // What the plugin for Firefox handed over is taken in by the first window (record 0102).
+    // What lies in the notebook's inbox is taken in by the first window: what the plugin for
+    // Firefox handed over (record 0102), and the notes of the window of a note (record 0109).
     if (!madeAfterTheFirst()) watchInbox();
   });
 

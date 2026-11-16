@@ -1,11 +1,13 @@
 //! The notebook's inbox: what the plugin for Firefox hands to the helper
-//! (`host`), kept until the application takes it in. The helper needs no
+//! (`host`), and the notes written in a window of their own (`note`),
+//! kept until the application takes them in. Neither writer needs a
 //! running application, and the application is reached from nowhere: it
 //! looks here at its start and while it runs.
 //!
 //! ```text
 //! notebook/inbox/<id>/item.json   what the thing is (`Collected`)
 //! notebook/inbox/<id>/image       its picture, as it came, where it has one
+//! notebook/inbox/<id>/files/<hash> of a note, each file it holds, by what it holds
 //! notebook/inbox/.tmp-<id>/       a thing being written
 //! notebook/inbox/.unread-<id>/    a thing that could not be read, set aside
 //! ```
@@ -23,6 +25,7 @@ use std::sync::Mutex;
 use std::sync::PoisonError;
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use crate::error::{Error, IoContext, Result};
 use crate::paths::DataDir;
@@ -30,6 +33,8 @@ use crate::tr;
 
 /// The most a picture may be, in bytes.
 pub const MAX_PICTURE: usize = 50 * 1024 * 1024;
+/// The most each file a note holds may be, in bytes: what a picture may be.
+pub const MAX_FILE: usize = MAX_PICTURE;
 /// The most the words, and the HTML, of a thing may be, in bytes each.
 pub const MAX_TEXT: usize = 8 * 1024 * 1024;
 /// The most signs of an address.
@@ -40,6 +45,7 @@ pub const MAX_SHORT: usize = 2_000;
 const FOLDER: &str = "inbox";
 const ITEM: &str = "item.json";
 const IMAGE: &str = "image";
+const FILES: &str = "files";
 const WRITING: &str = ".tmp-";
 const UNREAD: &str = ".unread-";
 
@@ -55,10 +61,14 @@ pub enum Kind {
     Image,
     /// A part of a page, as a picture.
     Region,
+    /// A note its writer wrote in a window of its own (`note`): plain
+    /// words, from no page. Never what the plugin hands over.
+    Note,
 }
 
-/// A thing the plugin collected, as it sends it. Nothing of it is to be
-/// trusted: it is what a page said.
+/// A thing the plugin collected, as it sends it, or a note written in a
+/// window of its own. Nothing of what the plugin sends is to be trusted: it
+/// is what a page said.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Collected {
@@ -84,6 +94,29 @@ pub struct Collected {
     /// Of an image, the name of its file, where it has one.
     #[serde(default)]
     pub name: String,
+    /// Of a note, its text as the texts of the notebook are written
+    /// (ProseMirror's JSON of the body schema), beside its plain words in
+    /// `text` for whatever cannot read it. Nothing for the other kinds.
+    #[serde(default, skip_serializing_if = "Value::is_null")]
+    pub doc: Value,
+    /// Of a note, the files it holds, which lie beside it in the inbox
+    /// (`files/<hash>`). None for the other kinds.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub files: Vec<HeldFile>,
+}
+
+/// A file a note holds: what it holds, as the store of files names it (the
+/// SHA-256 of its bytes, in small hexadecimal letters), and what it is called.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct HeldFile {
+    pub hash: String,
+    pub name: String,
+}
+
+/// Whether `hash` names a file as the store does: 64 small hexadecimal
+/// letters, and so a name that is nothing else.
+pub fn is_hash(hash: &str) -> bool {
+    hash.len() == 64 && hash.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
 }
 
 impl Collected {
@@ -97,6 +130,9 @@ impl Collected {
         cut_signs(&mut self.name, MAX_SHORT);
         cut_bytes(&mut self.text, MAX_TEXT);
         cut_bytes(&mut self.html, MAX_TEXT);
+        for file in &mut self.files {
+            cut_signs(&mut file.name, MAX_SHORT);
+        }
         self
     }
 }
@@ -109,7 +145,7 @@ fn cut_signs(text: &mut String, most: usize) {
 }
 
 /// Cuts `text` to at most `most` bytes, where a sign begins.
-fn cut_bytes(text: &mut String, most: usize) {
+pub(crate) fn cut_bytes(text: &mut String, most: usize) {
     if text.len() > most {
         let mut at = most;
         while !text.is_char_boundary(at) {
@@ -166,8 +202,7 @@ impl Inbox {
         let mut last = self.last.lock().unwrap_or_else(PoisonError::into_inner);
         let ms = crate::history::now_ms().max(*last + 1);
         *last = ms;
-        let random = uuid::Uuid::new_v4().simple().to_string();
-        format!("{ms:013}-{}", &random[..8])
+        id_at(ms)
     }
 
     /// Puts a thing into the inbox, cut to the limits, with its picture
@@ -195,6 +230,78 @@ impl Inbox {
             return Err(error);
         }
         Ok(id)
+    }
+
+    /// Puts a note into the inbox, cut to the limits, with the files it
+    /// holds moved into it from `from`, where each lies named by its hash
+    /// (the same disk: a rename). It is there whole, or not at all: where
+    /// it cannot be put, the files are moved back. Its text in `doc` is
+    /// refused where it is larger than `MAX_TEXT`, a file where it is
+    /// larger than `MAX_FILE`. Gives its id.
+    pub fn put_note(&self, note: &Collected, from: &Path) -> Result<String> {
+        let note = note.clone().limited();
+        if serde_json::to_vec(&note.doc)?.len() > MAX_TEXT {
+            return Err(Error::invalid(tr!("core-notebook-note-too-large", most = (MAX_TEXT / (1024 * 1024)) as u64)));
+        }
+        let item = serde_json::to_vec(&note)?;
+        let mut hashes: Vec<&str> = Vec::new();
+        for file in &note.files {
+            if !is_hash(&file.hash) {
+                return Err(Error::invalid(tr!("io-reading", path = &from.join(&file.hash))));
+            }
+            let path = from.join(&file.hash);
+            let meta = fs::metadata(&path).context(|| tr!("io-reading", path = &path))?;
+            if meta.len() > MAX_FILE as u64 {
+                return Err(file_too_large(&file.name));
+            }
+            if !hashes.contains(&file.hash.as_str()) {
+                hashes.push(&file.hash);
+            }
+        }
+        fs::create_dir_all(&self.dir).context(|| tr!("io-creating", path = &self.dir))?;
+        let id = self.new_id();
+        let writing = self.dir.join(format!("{WRITING}{id}"));
+        let held = writing.join(FILES);
+        let mut moved: Vec<&str> = Vec::new();
+        let written = (|| {
+            fs::create_dir(&writing).context(|| tr!("io-creating", path = &writing))?;
+            write_whole(&writing.join(ITEM), &item)?;
+            if !hashes.is_empty() {
+                fs::create_dir(&held).context(|| tr!("io-creating", path = &held))?;
+            }
+            for hash in &hashes {
+                let there = held.join(hash);
+                fs::rename(from.join(hash), &there).context(|| tr!("io-writing", path = &there))?;
+                moved.push(hash);
+            }
+            let there = self.dir.join(&id);
+            fs::rename(&writing, &there).context(|| tr!("io-writing", path = &there))
+        })();
+        if let Err(error) = written {
+            for hash in moved {
+                if let Err(e) = fs::rename(held.join(hash), from.join(hash)) {
+                    tracing::error!(error = %e, hash, "a file of a note that could not be sent was not moved back");
+                }
+            }
+            let _ = fs::remove_dir_all(&writing);
+            return Err(error);
+        }
+        Ok(id)
+    }
+
+    /// Where a file a note in the inbox holds lies; a name that is no hash,
+    /// and a file larger than `MAX_FILE`, are refused.
+    pub fn file_of(&self, id: &str, hash: &str) -> Result<PathBuf> {
+        let dir = self.of(id)?;
+        if !is_hash(hash) {
+            return Err(Error::invalid(tr!("io-reading", path = &dir.join(FILES).join(hash))));
+        }
+        let path = dir.join(FILES).join(hash);
+        let meta = fs::metadata(&path).context(|| tr!("io-reading", path = &path))?;
+        if meta.len() > MAX_FILE as u64 {
+            return Err(too_large());
+        }
+        Ok(path)
     }
 
     /// The things in the inbox, by their ids, in the order they came. An
@@ -264,6 +371,22 @@ fn too_large() -> Error {
     Error::invalid(tr!("core-notebook-picture-too-large", most = (MAX_PICTURE / (1024 * 1024)) as u64))
 }
 
+/// An id of a thing, or of a note not sent, made now: thirteen digits of
+/// milliseconds, a dash and eight signs at random.
+pub(crate) fn new_id() -> String {
+    id_at(crate::history::now_ms())
+}
+
+fn id_at(ms: i64) -> String {
+    let random = uuid::Uuid::new_v4().simple().to_string();
+    format!("{ms:013}-{}", &random[..8])
+}
+
+/// A file too large for a note, by what it is called.
+pub(crate) fn file_too_large(name: &str) -> Error {
+    Error::invalid(tr!("core-notebook-file-too-large", name = name, most = (MAX_FILE / (1024 * 1024)) as u64))
+}
+
 /// Writes a file and has it on the disk.
 fn write_whole(path: &Path, bytes: &[u8]) -> Result<()> {
     let mut file = fs::File::create(path).context(|| tr!("io-creating", path = path))?;
@@ -285,6 +408,8 @@ mod tests {
             html: "<p>Words.</p>".into(),
             alt: String::new(),
             name: String::new(),
+            doc: Value::Null,
+            files: Vec::new(),
         }
     }
 
@@ -384,12 +509,85 @@ mod tests {
         assert_eq!(fs::read_dir(inbox.dir()).unwrap().count(), 1);
     }
 
+    /// A note with a bold word, as the window of a note sends it, with the files it holds.
+    fn note(files: Vec<HeldFile>) -> Collected {
+        Collected {
+            kind: Kind::Note,
+            when: "2026-11-16T12:00:00Z".into(),
+            text: "A bold word.".into(),
+            html: String::new(),
+            url: String::new(),
+            title: String::new(),
+            doc: serde_json::json!({"type": "doc", "content": [{"type": "paragraph", "content": [
+                {"type": "text", "text": "A "}, {"type": "text", "text": "bold", "marks": [{"type": "strong"}]},
+                {"type": "text", "text": " word."}]}]}),
+            files,
+            ..page("")
+        }
+    }
+
+    #[test]
+    fn a_note_is_put_with_its_files_moved_into_it_and_read_back() {
+        let (tmp, inbox) = inbox();
+        let from = tmp.path().join("unsent");
+        fs::create_dir_all(&from).unwrap();
+        let hash = "a".repeat(64);
+        fs::write(from.join(&hash), b"%PDF-1.4").unwrap();
+        let files = vec![HeldFile { hash: hash.clone(), name: "Letter.pdf".into() }];
+        let id = inbox.put_note(&note(files.clone()), &from).unwrap();
+        assert!(!from.join(&hash).exists(), "moved, not copied");
+        let (read, picture) = inbox.read(&id).unwrap();
+        assert_eq!(read, note(files));
+        assert_eq!(picture, None);
+        assert_eq!(fs::read(inbox.file_of(&id, &hash).unwrap()).unwrap(), b"%PDF-1.4");
+        assert!(inbox.file_of(&id, "../item.json").is_err());
+        assert!(inbox.file_of(&id, &"b".repeat(64)).is_err());
+    }
+
+    #[test]
+    fn a_note_that_cannot_be_put_leaves_its_files_where_they_were() {
+        let (tmp, inbox) = inbox();
+        let from = tmp.path().join("unsent");
+        fs::create_dir_all(&from).unwrap();
+        let there = "c".repeat(64);
+        fs::write(from.join(&there), b"one").unwrap();
+        // The second file is not there: nothing is put, and the first is not moved.
+        let files = vec![
+            HeldFile { hash: there.clone(), name: "one.txt".into() },
+            HeldFile { hash: "d".repeat(64), name: "two.txt".into() },
+        ];
+        assert!(inbox.put_note(&note(files), &from).is_err());
+        assert!(from.join(&there).is_file());
+        assert!(inbox.ids().is_empty());
+        // A name that is no hash is refused.
+        let files = vec![HeldFile { hash: "../../x".into(), name: "x".into() }];
+        assert!(inbox.put_note(&note(files), &from).is_err());
+        // A file too large is refused, and stays.
+        let large = "e".repeat(64);
+        fs::File::create(from.join(&large)).unwrap().set_len(MAX_FILE as u64 + 1).unwrap();
+        let files = vec![HeldFile { hash: large.clone(), name: "large.bin".into() }];
+        assert!(inbox.put_note(&note(files), &from).is_err());
+        assert!(from.join(&large).is_file());
+        assert!(inbox.ids().is_empty());
+    }
+
+    #[test]
+    fn the_text_of_a_note_too_large_is_refused() {
+        let (tmp, inbox) = inbox();
+        let mut long = note(Vec::new());
+        long.doc = serde_json::json!({"type": "doc", "content": [{"type": "paragraph", "content": [
+            {"type": "text", "text": "w".repeat(MAX_TEXT)}]}]});
+        assert!(inbox.put_note(&long, tmp.path()).is_err());
+        assert!(inbox.ids().is_empty());
+    }
+
     #[test]
     fn what_the_plugin_leaves_out_is_empty() {
         let collected: Collected = serde_json::from_str(r#"{"kind":"selection","text":"x"}"#).unwrap();
         assert_eq!(collected.kind, Kind::Selection);
         assert_eq!(collected.text, "x");
         assert!(collected.url.is_empty() && collected.html.is_empty());
+        assert!(collected.doc.is_null() && collected.files.is_empty());
         assert!(serde_json::from_str::<Collected>(r#"{"text":"x"}"#).is_err(), "a kind it must have");
         assert!(serde_json::from_str::<Collected>(r#"{"kind":"video"}"#).is_err());
     }

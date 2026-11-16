@@ -18,7 +18,9 @@
 //! in `facts`. What the plugin for Firefox collects comes through the helper
 //! Firefox starts (`host`, the application in another role) into an inbox
 //! (`inbox`), from which the application takes it; Firefox is told of the
-//! helper in `firefox`.
+//! helper in `firefox`. A note written in a window of its own, the
+//! application in yet another role, goes into the same inbox
+//! (`note_window`).
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -38,6 +40,7 @@ pub mod facts;
 pub mod firefox;
 pub mod host;
 pub mod inbox;
+pub mod note_window;
 pub mod readable;
 
 pub use facts::{Facts, Place, facts};

@@ -23,5 +23,11 @@ fn main() {
     if let Some(code) = glaukopis_core::isolated::serve(&args) {
         std::process::exit(code);
     }
+    // Started to write a note in a window of its own (`--note`): that
+    // window, and nothing else of the application.
+    if glaukopis_core::notebook::note_window::asked(&args) {
+        glaukopis_app::run_note_window();
+        return;
+    }
     glaukopis_app::run()
 }
