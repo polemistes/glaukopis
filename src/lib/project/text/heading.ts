@@ -13,9 +13,10 @@
  *
  * A name holds words, with italics, small capitals, raised and lowered text:
  * any other mark on the words is dropped and the words kept. What is not
- * words at all, a citation, a note, a formula, a reference mark or a
- * cross-reference, is taken out of the name and stands at the start of the
- * new element's text, so that nothing is lost.
+ * words at all, a citation, a note, a formula, a reference mark, a
+ * cross-reference, or a number or words set by hand in the margin of a line,
+ * is taken out of the name and stands at the start of the new element's
+ * text, so that nothing is lost.
  */
 
 import { Fragment, type Node } from 'prosemirror-model';
@@ -130,8 +131,10 @@ function breaksOf(content: Fragment): number[] {
 /**
  * What is words of a stretch of one line, and what is not. The words keep the
  * marks a name may have; where taking something out leaves two spaces
- * together, one stays. A line mark says something of the line, not in it, and
- * a name is no line of verse: it is dropped, and nothing is said of it.
+ * together, one stays. A line mark that holds a number or words for the
+ * margin, given by hand, is kept with what is not words, so that they are
+ * not lost; one that only says how its line is set (set in, not counted,
+ * going on from the line before) says nothing of a name, and is dropped.
  */
 function wordsAndThings(line: Fragment): { words: Fragment; things: Node[] } {
   const words: Node[] = [];
@@ -140,7 +143,9 @@ function wordsAndThings(line: Fragment): { words: Fragment; things: Node[] } {
   let gap = false;
   line.forEach((node) => {
     if (!node.isText) {
-      if (node.type.name !== 'linemark' && node.type.name !== 'hard_break') {
+      const written =
+        node.type.name === 'linemark' ? !!(node.attrs.number || node.attrs.margin) : true;
+      if (node.type.name !== 'hard_break' && written) {
         things.push(node);
         gap = true;
       }

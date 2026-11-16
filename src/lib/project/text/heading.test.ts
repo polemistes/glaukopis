@@ -318,10 +318,8 @@ describe('a paragraph made an element, where it has line breaks', () => {
     expect(leftShown(d, h.cutFrom)).toEqual(['Before.']);
   });
 
-  it('keeps the marks a name may have on the words of its line, and drops the line mark', () => {
-    const d = doc(
-      p(s.nodes.linemark.create({ number: '12' }), em('Sing'), ' goddess', br(), 'Next'),
-    );
+  it('keeps the marks a name may have on the words of its line, and drops a line mark that only says how the line is set', () => {
+    const d = doc(p(s.nodes.linemark.create({ indent: 2 }), em('Sing'), ' goddess', br(), 'Next'));
     const h = headingAt(d, at(d, 'goddess'));
     expect(marked(h.name)).toEqual([
       ['Sing', ['em']],
@@ -329,6 +327,20 @@ describe('a paragraph made an element, where it has line breaks', () => {
     ]);
     expect(h.keptInText).toBe(false);
     expect(shown(h.body)).toEqual(['Next']);
+  });
+
+  it('keeps a number or words set by hand in the margin of the line, at the start of the text', () => {
+    for (const attrs of [{ number: '12' }, { margin: 'Chryses' }]) {
+      const d = doc(p(s.nodes.linemark.create(attrs), 'Sing goddess', br(), 'Next'));
+      const h = headingAt(d, at(d, 'goddess'));
+      expect(nameOf(h)).toBe('Sing goddess');
+      expect(h.keptInText).toBe(true);
+      const first = h.body.firstChild!;
+      expect(first.firstChild!.type.name).toBe('linemark');
+      expect(first.firstChild!.attrs).toMatchObject(attrs);
+      expect(first.child(1).type.name).toBe('hard_break');
+      expect(first.textContent).toBe('Next');
+    }
   });
 });
 
