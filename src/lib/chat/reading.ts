@@ -177,7 +177,7 @@ export function placed(
         continue;
       }
       out.push({
-        key: message.id || `${answered}:${out.length}`,
+        key: message.id || `#${answered}:${out.length}`,
         author: message.author,
         mine: isMine(message, me),
         day: null,
@@ -197,7 +197,7 @@ export function placed(
       const begins = !!day && day !== lastDay;
       lastDay = day || lastDay;
       out.push({
-        key: `gone:${item.gone}`,
+        key: `#gone:${item.gone}`,
         day: begins ? first.created : null,
         group: null,
         answered: item.gone,
@@ -221,7 +221,8 @@ export function placed(
     }
     const begins = !!day && day !== lastDay;
     lastDay = day || lastDay;
-    const key = message.id || `${out.length}`;
+    // A message without an id is known by its place, in a way no id is written.
+    const key = message.id || `#${out.length}`;
     out.push({
       key,
       day: begins ? message.created : null,

@@ -19,3 +19,17 @@ chat-arrived = { $count ->
    *[other] { $count } nye meldinger i { $project }
 }
 chat-show = Vis
+chat-answer = Svar
+chat-react = Reager
+chat-react-choose = Reager …
+chat-edit = Endre
+chat-edited = endret
+chat-answering = Svar til { $name }
+chat-editing = Endrer en melding
+chat-gone = En melding som ble slettet
+chat-read-by = Lest av { $names }
+chat-new = { $count ->
+    [one] 1 ny melding
+   *[other] { $count } nye meldinger
+}
+chat-emoji = Emojier

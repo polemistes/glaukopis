@@ -21,3 +21,26 @@ chat-arrived = { $count ->
    *[other] { $count } new messages in { $project }
 }
 chat-show = Show
+
+# A message answered, set, reacted to, read and changed (record 0107).
+chat-answer = Answer
+chat-react = React
+# In the right-click menu of a message: opens the choosing of an emoji.
+chat-react-choose = React…
+chat-edit = Change
+# After the words of a message its writer changed.
+chat-edited = changed
+# Over the field, while an answer is written: $name wrote the message answered.
+chat-answering = Answer to { $name }
+chat-editing = Changing a message
+# In the place of a message that was deleted, over its answers.
+chat-gone = A message that was deleted
+# $names: those who have read a message, as a list.
+chat-read-by = Read by { $names }
+# The button over the foot of the list that leads to new messages not yet seen.
+chat-new = { $count ->
+    [one] 1 new message
+   *[other] { $count } new messages
+}
+# The button under the field that opens the emojis.
+chat-emoji = Emojis

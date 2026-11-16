@@ -69,7 +69,7 @@
   import CommentsPanel from '$lib/comments/CommentsPanel.svelte';
   import ChatHost from '$lib/chat/ChatHost.svelte';
   import ChatPanel from '$lib/chat/ChatPanel.svelte';
-  import { CHAT_FIELD, hasChat, tabShown, unreadCount } from '$lib/chat/chat.svelte';
+  import { CHAT_FIELD, chatUi, hasChat, tabShown, unreadCount } from '$lib/chat/chat.svelte';
   import { selectedPassage } from '$lib/comments/marks';
   import { commentsUi } from '$lib/comments/ui.svelte';
   import EditorHost from '$lib/editor/EditorHost.svelte';
@@ -1363,6 +1363,7 @@
               () => activeOpen?.drafts.of(CHAT_FIELD) ?? '',
               (text) => activeOpen?.drafts.write(CHAT_FIELD, text)
             }
+            fresh={activeOpen ? chatUi.fresh.get(activeOpen.id) : undefined}
             head={tabs}
             onclose={() => documentPane.close()}
           />
