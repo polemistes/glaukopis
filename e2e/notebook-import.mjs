@@ -10,9 +10,11 @@
 // passage and has that page as its source; the picture is shown in its note; the two notes that
 // link are linked (Holds: a link, in the window of the filters, lets those two through and not
 // the third); a list to tick written in Markdown comes as points to tick, ticked as they were;
-// the tags stand in the column; Undo takes the box and its notes away; a file of OneNote's own
-// is told to be one, with what can be done and nothing to import; no errors in the page.
-// Screenshots into e2e/output/notebook-import-<n>-<what>.png.
+// the tags stand in the column; Undo takes the box and its notes away; a file named as a section
+// of OneNote that is none is said to be unreadable as one; and, where a real section of OneNote
+// is named by GLAUKOPIS_E2E_ONENOTE (none comes with the code), its pages are imported as notes
+// into a box of their own, and a program held by a page is kept in its note and not started by
+// two presses; no errors in the page. Screenshots into e2e/output/notebook-import-<n>-<what>.png.
 
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -272,31 +274,92 @@ try {
   check('and its notes: the notebook is empty again', await app.exists('[data-notebook-empty]'));
   await app.screenshot('notebook-import-7-undone');
 
-  // ---- a file of OneNote's own is not read: the window says what can be done ----
-  const section = join(desk, 'Section.one');
-  writeFileSync(section, Buffer.from([0xe4, 0x52, 0x5c, 0x7b, 0x8c, 0xd8, 0xa7, 0x4d]));
-  await app.exec(`window.__glaukopisNotebook.importNotes(arguments[0]); return null;`, section);
-  await app.waitFor('dialog[open] [data-import-found]', 15000);
-  const oneNote = await app.exec(
-    `const f = document.querySelector('[data-import-found]');
-     return {
-       kind: f.dataset.kind,
-       counted: !!f.querySelector('.facts') || !!document.querySelector('[data-import-none]'),
-       toKnow: document.querySelector('[data-import-remarks]')?.textContent.replace(/\\s+/g, ' ').trim() ?? '',
+  // ---- what is named as a section of OneNote and is none: said in the window, nothing to import ----
+  const broken = join(desk, 'Broken.one');
+  writeFileSync(broken, Buffer.from([0xe4, 0x52, 0x5c, 0x7b, 0x8c, 0xd8, 0xa7, 0x4d]));
+  await app.exec(`window.__glaukopisNotebook.importNotes(arguments[0]); return null;`, broken);
+  await app.waitFor('dialog[open] [data-import-error]', 30000);
+  const refused = await app.exec(
+    `return {
+       said: document.querySelector('[data-import-error]')?.textContent.replace(/\\s+/g, ' ').trim() ?? '',
+       found: !!document.querySelector('[data-import-found]'),
        disabled: document.querySelector('[data-import-do]')?.disabled ?? null,
      };`,
   );
   check(
-    'a file of OneNote is told to be one, with what can be done and nothing to import',
-    oneNote.kind === 'onenote' && !oneNote.counted && /Word/.test(oneNote.toKnow) && oneNote.disabled === true,
-    JSON.stringify(oneNote),
+    'a file that is no section of OneNote is said to be unreadable as one, with nothing to import',
+    /Broken\.one/.test(refused.said) && /OneNote/.test(refused.said) && !refused.found && refused.disabled === true,
+    JSON.stringify(refused),
   );
   await sleep(600);
-  await app.screenshot('notebook-import-8-onenote');
+  await app.screenshot('notebook-import-8-no-onenote');
   await app.clickText('dialog[open] footer button', 'Cancel');
   await app.waitGone('[data-import-notes]', 5000);
 
-  const errors = await app.pageErrors();
+  // ---- a section of OneNote's own, where one is at hand (GLAUKOPIS_E2E_ONENOTE): none comes with the code ----
+  const section = process.env.GLAUKOPIS_E2E_ONENOTE;
+  if (section) {
+    await app.exec(`window.__glaukopisNotebook.importNotes(arguments[0]); return null;`, section);
+    await app.waitFor('dialog[open] [data-import-found]', 60000);
+    const one = await app.exec(
+      `const f = document.querySelector('[data-import-found]');
+       return { kind: f.dataset.kind, notes: Number(f.dataset.notes), words: f.textContent.replace(/\\s+/g, ' ').trim() };`,
+    );
+    check('a section of OneNote is told to be one, with its pages counted', one.kind === 'onenote' && one.notes > 0, JSON.stringify(one));
+    await sleep(600);
+    await app.screenshot('notebook-import-9-onenote');
+    await app.click('[data-import-do]');
+    await app.waitGone('[data-import-notes]', 60000);
+    const said = await told(app);
+    check('its pages are imported as notes, with nothing left unread', !!said && /imported into/.test(said.message) && !said.detail, JSON.stringify(said));
+    const made = (await until(() => boxes(app), (b) => b.some((x) => x.count === String(one.notes) && x.id !== 'first'))).filter((b) => b.id !== 'first');
+    check('into a box of their own', made.length === 1 && made[0].count === String(one.notes), JSON.stringify(made));
+    await app.click(`[data-box-row="${made[0]?.id}"]`);
+    await sleep(400);
+    if ((await app.exec(`return document.querySelector('[data-notebook]')?.dataset.shownAs`)) === 'surface') {
+      await app.click('[data-shown-as-choice] [role="radio"][aria-label="List"]');
+      await sleep(400);
+    }
+    await app.click(ROWS);
+    await app.waitFor('[data-note-text] .ProseMirror', 5000);
+    await sleep(500);
+    const page = await app.exec(
+      `const text = document.querySelector('[data-note-text] .ProseMirror');
+       return {
+         name: document.querySelector('${ROWS}[aria-selected="true"] .title')?.textContent.trim() ?? '',
+         words: (text?.textContent ?? '').trim().length,
+         files: Array.from(text?.querySelectorAll('.held-file') ?? []).map((f) => f.textContent.trim()),
+       };`,
+    );
+    check('a page is a note with its name and what it holds', page.name.length > 0 && (page.words > 0 || page.files.length > 0), JSON.stringify(page));
+    await app.screenshot('notebook-import-10-onenote-note');
+    // A file of the page that is a program or a script is kept in the note, and two presses do not start it.
+    const program = page.files.find((name) => /\.(bat|cmd|exe|vbs|vbe|js|wsf|hta|ps1|lnk)\b/i.test(name));
+    if (program) {
+      const held = await app.exec(
+        // The file's own chip, not the line it stands in.
+        `return Array.from(document.querySelectorAll('[data-note-text] .held-file .held')).find((f) => f.textContent.includes(arguments[0])) ?? null;`,
+        program,
+      );
+      await app.doubleClick(held);
+      const refusal = await until(
+        () =>
+          app.exec(
+            `const t = Array.from(document.querySelectorAll('.toast')).find((t) => /could not be opened/.test(t.querySelector('.message')?.textContent ?? ''));
+             return t ? (t.querySelector('.detail')?.textContent.trim() ?? '') : null;`,
+          ),
+        (d) => d !== null,
+        8000,
+      );
+      check('a program held by the note is not started by two presses, and that is said', !!refusal && /program or a script/.test(refusal), String(refusal));
+      // The message rises into place: the picture is taken when it stands.
+      await sleep(700);
+      await app.screenshot('notebook-import-11-not-started');
+    }
+  } else console.log('      (no section of OneNote is named by GLAUKOPIS_E2E_ONENOTE: its import is not tried)');
+
+  // The refusal to start a program is said in the page's log too: it is what was to happen.
+  const errors = (await app.pageErrors()).filter((e) => !/is a program or a script/.test(e));
   check('no errors in the page', errors.length === 0, errors.join(' | '));
 } catch (error) {
   console.log('FAIL  the run stopped:', error?.message ?? error);

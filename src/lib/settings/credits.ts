@@ -294,6 +294,20 @@ export const CREDIT_GROUPS: CreditGroup[] = [
         by: "KAMADA Ken'ichi",
       },
       {
+        name: 'onenote_parser',
+        what: 'credits-what-onenote-parser',
+        licence: 'MPL-2.0',
+        url: 'https://github.com/msiemens/onenote.rs',
+        by: 'Markus Siemens',
+      },
+      {
+        name: 'typed-path',
+        what: 'credits-what-typed-path',
+        licence: 'MIT OR Apache-2.0',
+        url: 'https://github.com/chipsenkbeil/typed-path',
+        by: 'Chip Senkbeil',
+      },
+      {
         name: 'encoding_rs',
         what: 'credits-what-encoding-rs',
         licence: '(Apache-2.0 OR MIT) AND BSD-3-Clause',

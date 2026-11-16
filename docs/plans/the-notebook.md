@@ -1,6 +1,6 @@
 # The notebook — the build plan
 
-From the owner's words of 2026-11-15 (the last section of `docs/brief.md`: read it first, every quotation and what they settle). This is the plan of the whole. The owner asked for it to be built on the same day. Each stage is given its detailed part here (the files, the words, the checks) when it is begun, after the code it touches has been read, and its record when it is built. **Built**: the seam of the editor (record 0100), stage 1 (record 0101), stage 3 (record 0102, the plugin not yet signed), stage 2 (record 0103), stage 4 (record 0104) and stage 5 (record 0105; OneNote's own files tried and left out). Each record says what was chosen in the building and not asked, what was tried and what was not.
+From the owner's words of 2026-11-15 (the last section of `docs/brief.md`: read it first, every quotation and what they settle). This is the plan of the whole. The owner asked for it to be built on the same day. Each stage is given its detailed part here (the files, the words, the checks) when it is begun, after the code it touches has been read, and its record when it is built. **Built**: the seam of the editor (record 0100), stage 1 (record 0101), stage 3 (record 0102, the plugin not yet signed), stage 2 (record 0103), stage 4 (record 0104) and stage 5 (record 0105; OneNote's own files are read, tried with one section the owner named). Each record says what was chosen in the building and not asked, what was tried and what was not.
 
 ## What it is
 

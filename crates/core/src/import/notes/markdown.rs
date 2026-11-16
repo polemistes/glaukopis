@@ -3,7 +3,8 @@
 //! `.txt` under it a note, and every TextBundle (`.textbundle`,
 //! `.bearnote`) one. Folders and files whose names begin with a dot are
 //! passed over, as `.obsidian`; Joplin's `_resources` and a TextBundle's
-//! `assets` are where files lie, not notes.
+//! `assets` are where files lie, not notes. The same walk finds Evernote's
+//! exports and the sections of OneNote, which are read by their own readers.
 //!
 //! The notes are looked at in two passes: first what each says of itself
 //! (its name, when it was made, its tags, its source), so that every link
@@ -62,8 +63,8 @@ pub(super) struct Found {
     pub(super) files: usize,
     /// Evernote's exports among them.
     pub(super) enex: Vec<PathBuf>,
-    /// Whether OneNote's own files are among them.
-    pub(super) onenote: bool,
+    /// The sections of OneNote among them (`.one`).
+    pub(super) onenote: Vec<PathBuf>,
     /// Whether it is one file, read as a folder of one: pictures are then
     /// not looked for by their names in the folder it lies in.
     single: bool,
@@ -95,7 +96,7 @@ pub(super) fn single(path: &Path) -> Found {
         notes: vec![NoteFile { path: path.to_owned(), bundle: None, key }],
         files: 0,
         enex: Vec::new(),
-        onenote: false,
+        onenote: Vec::new(),
         single: true,
     }
 }
@@ -131,7 +132,7 @@ struct Walk {
     notes: Vec<NoteFile>,
     files: usize,
     enex: Vec<PathBuf>,
-    onenote: bool,
+    onenote: Vec<PathBuf>,
     obsidian: bool,
     bear: bool,
     joplin: bool,
@@ -179,6 +180,8 @@ impl Walk {
                 } else if name == "_resources" {
                     self.joplin = true;
                     self.files += count_files(&path);
+                } else if name == "OneNote_RecycleBin" {
+                    // What was thrown away in OneNote is not brought in.
                 } else {
                     self.folder(root, &path, &joined(rel, &name));
                 }
@@ -190,8 +193,9 @@ impl Walk {
                     self.notes.push(NoteFile { path, bundle: None, key: joined(rel, &name) });
                 } else if ending == "enex" {
                     self.enex.push(path);
+                } else if ending == super::ONENOTE_SECTION {
+                    self.onenote.push(path);
                 } else {
-                    self.onenote |= super::ONENOTE.contains(&ending.as_str());
                     self.files += 1;
                 }
             }

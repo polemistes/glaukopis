@@ -36,6 +36,10 @@ image = { version = "0.25", default-features = false, features = ["png", "jpeg",
 calamine = "0.36"
 # What a photograph says of when and where it was taken, for the notebook (BSD-2-Clause).
 kamadak-exif = "0.6.1"
+# OneNote's own files, read for the notebook in a process of its own (MPL-2.0);
+# typed-path is how a path is handed to it.
+onenote_parser = "2.1"
+typed-path = "0.12"
 encoding_rs = "0.8"
 fluent-bundle = "0.16"
 # The parser fluent-bundle reads with, and the plural rules it says by: for

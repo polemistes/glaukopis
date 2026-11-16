@@ -66,6 +66,21 @@ impl<'a> Taker<'a> {
         Ok(held)
     }
 
+    /// Takes a file into the store that was written out of another file,
+    /// which lies at `origin`: it is copied from `path` under the name it
+    /// has there. Of a photograph, when and where it was taken is read; the
+    /// time of the file is that of its writing out, and says nothing.
+    pub(super) fn written(&mut self, path: &Path, origin: &str) -> Result<HeldFile, String> {
+        let facts = Facts { time: None, ..notebook::facts(path) };
+        let (taken, problems) =
+            files::store_paths(&self.dir, &[path.to_owned()], false, &mut |_, _, _| {}, &AtomicBool::new(false));
+        let Some(mut taken) = taken.into_iter().next() else {
+            return Err(problems.into_iter().next().unwrap_or_else(|| tr!("core-notes-file-unreadable")));
+        };
+        origin.clone_into(&mut taken.origin);
+        self.enter(&taken, facts)
+    }
+
     /// Takes a file into the store from what it holds, held within another
     /// file: named `name`, come from `origin`.
     pub(super) fn bytes(&mut self, bytes: &[u8], name: &str, origin: &str) -> Result<HeldFile, String> {

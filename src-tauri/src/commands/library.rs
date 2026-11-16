@@ -294,12 +294,19 @@ pub fn attachment_remove_all(state: State<'_, AppState>, id: String) -> CommandR
     Ok(full(&library, &entry))
 }
 
-/// Opens a stored file in the program the system uses for its kind.
+/// Opens a stored file in the program the system uses for its kind. A
+/// program or a script is not opened: the system would start it, and a file
+/// that came with notes or documents written elsewhere may be made for that.
 #[tauri::command(async)]
 pub fn attachment_open(app: AppHandle, state: State<'_, AppState>, path: String) -> CommandResult<()> {
     let absolute = state.library().attachment_path(&path)?;
     if !absolute.is_file() {
         return Err(glaukopis_core::Error::not_found(tr!("core-library-the-file", path = &absolute)).into());
+    }
+    let name = absolute.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    if glaukopis_core::library::files::is_program(&name) {
+        let message = tr!("core-library-file-is-program", name = name.as_str());
+        return Err(glaukopis_core::Error::Refused { kind: "program", message }.into());
     }
     app.opener()
         .open_path(absolute.display().to_string(), None::<&str>)

@@ -14,7 +14,9 @@
 //!   them.
 //! - **Google Keep's export** (`keep.rs`): Takeout's folder `Keep`, a file
 //!   `.json` for each note.
-//! - **OneNote**'s own files are not read: `look` says what can be done.
+//! - **OneNote's own files** (`onenote.rs`): a section `.one`, or a
+//!   notebook's folder of them, each page a note; read in a process of its
+//!   own.
 //!
 //! Every picture and file of what is read is taken into the store as the
 //! notebook's (`taking.rs`), out of the library's lists. Read and stopped,
@@ -25,6 +27,7 @@ mod evernote;
 mod front;
 mod keep;
 mod markdown;
+mod onenote;
 mod tags;
 mod taking;
 #[cfg(test)]
@@ -45,6 +48,7 @@ use crate::export::tools;
 use crate::library::Library;
 use crate::tr;
 
+pub(crate) use onenote::{TASK as ONENOTE_TASK, task as onenote_task};
 pub use taking::HeldFile;
 
 /// Which program's notes a folder or a file holds.
@@ -127,11 +131,14 @@ enum There {
     Folder(markdown::Found),
     Evernote(Vec<PathBuf>),
     Keep(keep::Found),
-    OneNote,
+    /// The sections of OneNote: each a file.
+    OneNote(Vec<PathBuf>),
 }
 
-/// The endings of OneNote's own files.
-const ONENOTE: [&str; 2] = ["one", "onetoc2"];
+/// The ending of a section of OneNote's, and of the table of contents that
+/// lies beside the sections of a notebook.
+const ONENOTE_SECTION: &str = "one";
+const ONENOTE_CONTENTS: &str = "onetoc2";
 
 fn ending_of(path: &Path) -> String {
     path.extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default()
@@ -153,7 +160,12 @@ fn tell(path: &Path) -> Result<There> {
             _ if markdown::is_note(path) => Ok(There::Folder(markdown::single(path))),
             "enex" => Ok(There::Evernote(vec![path.to_owned()])),
             "json" if keep::is_note(path) => Ok(There::Keep(keep::single(path))),
-            _ if ONENOTE.contains(&ending.as_str()) => Ok(There::OneNote),
+            ONENOTE_SECTION => Ok(There::OneNote(vec![path.to_owned()])),
+            // The table of contents of a notebook: the sections lie beside it, and below.
+            ONENOTE_CONTENTS => match path.parent().map(markdown::found).map(|found| found.onenote) {
+                Some(sections) if !sections.is_empty() => Ok(There::OneNote(sections)),
+                _ => Err(Error::invalid(tr!("core-notes-nothing-found", name = name))),
+            },
             _ => Err(Error::invalid(tr!("core-notes-nothing-found", name = name))),
         };
     }
@@ -168,8 +180,8 @@ fn tell(path: &Path) -> Result<There> {
     if !found.enex.is_empty() {
         return Ok(There::Evernote(found.enex));
     }
-    if found.onenote {
-        return Ok(There::OneNote);
+    if !found.onenote.is_empty() {
+        return Ok(There::OneNote(found.onenote));
     }
     Err(Error::invalid(tr!("core-notes-nothing-found", name = name)))
 }
@@ -178,7 +190,9 @@ fn tell(path: &Path) -> Result<There> {
 /// anything in and without Pandoc: which program's it is, how many notes
 /// and files it holds, and what the writer should know first. Anything that
 /// holds no notes Glaukopis reads is an error that says what was looked for.
-pub fn look(path: &Path, tools: &Tools) -> Result<Look> {
+/// OneNote's files are read for it, in a process of its own, which is asked
+/// by a file in `work`.
+pub fn look(path: &Path, tools: &Tools, work: &Path) -> Result<Look> {
     let name = name_of(path);
     let pandoc = || tools.pandoc().err().map(|e| tr!("core-notes-without-pandoc", message = e.to_string()));
     Ok(match tell(path)? {
@@ -205,8 +219,9 @@ pub fn look(path: &Path, tools: &Tools) -> Result<Look> {
         There::Keep(found) => {
             Look { kind: Kind::Keep, name, notes: found.notes.len(), attachments: found.files, remarks: Vec::new() }
         }
-        There::OneNote => {
-            Look { kind: Kind::Onenote, name, notes: 0, attachments: 0, remarks: vec![tr!("core-notes-onenote")] }
+        There::OneNote(sections) => {
+            let (notes, attachments, remarks) = onenote::look(&sections, work)?;
+            Look { kind: Kind::Onenote, name, notes, attachments, remarks }
         }
     })
 }
@@ -244,7 +259,7 @@ pub fn read(
         There::Folder(found) => markdown::read(&mut reading, found, count)?,
         There::Evernote(files) => evernote::read(&mut reading, &files, count)?,
         There::Keep(found) => keep::read(&mut reading, found, count)?,
-        There::OneNote => return Err(Error::invalid(tr!("core-notes-onenote"))),
+        There::OneNote(sections) => onenote::read(&mut reading, &sections, count)?,
     };
     reading.stopped()?;
     let total = notes.len();

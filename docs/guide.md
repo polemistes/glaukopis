@@ -1323,7 +1323,8 @@ books, scans and photographs of pages, papers in Word or OpenDocument,
 ebooks, and anything else you want at hand. **Files**, in the row at the
 top of the library beside *References*, shows them all (Ctrl+4). A file is copied into
 the library when it is taken in, and Glaukopis does not depend on where it
-came from.
+came from. A file that is a program or a script is kept as any other, and
+is not opened from Glaukopis, which starts no programs.
 
 **Folders.** The files stand in folders of their own, which may lie in
 folders, in the tree at the left. **New folder** makes one; a folder is
@@ -1622,8 +1623,9 @@ line under them.
 - **Add files…**, or drop files on the page, many at once and folders too:
   each is a note of its own. An image is shown in its note; any other file
   stands there by its name and is opened by two presses, a PDF or an image
-  in a view of the window, anything else in the program that opens it. An
-  image pasted is taken in the same way.
+  in a view of the window, anything else in the program that opens it; a
+  program or a script is kept, and is not opened. An image pasted is taken
+  in the same way.
 
 The files of notes are kept with the library's files but are not among
 them: the lists of the library do not show a file that only a note holds,
@@ -1692,13 +1694,15 @@ was added, with **Show**; what you were reading stays as it was.
 **Import notes…**, the button beside **Add files…** (and in the empty
 notebook, beside **New note**), brings in the notes you kept in another
 program. Its window asks for **A folder…**, for a folder of Markdown or
-text files, an Obsidian vault, or what Joplin, Notion, Bear or Google Keep
-(through Takeout) export; or **A file…**, for Evernote's `.enex` or one
+text files, an Obsidian vault, what Joplin, Notion, Bear or Google Keep
+(through Takeout) export, or the folder of a notebook of OneNote; or
+**A file…**, for Evernote's `.enex`, one section of OneNote (`.one`) or one
 Markdown file.
 
-OneNote's own files are not read; choose one, and the window says so.
-OneNote can export a page or a section as a Word file, and that is brought
-in as a document (see *A document you have written*).
+Of OneNote, each page is a note, with its lists, its tables, its pictures
+and its files. A tag with a box is a point to tick, and the other tags on
+its paragraphs are tags of the note. Handwriting and drawings are not read,
+and what OneNote had thrown away is not brought in.
 
 Before anything is made you are shown what was found: whose notes they are,
 what the folder or the file is called, how many notes and how many pictures

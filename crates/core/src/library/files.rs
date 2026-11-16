@@ -713,6 +713,103 @@ pub fn kind_of(name: &str) -> FileKind {
     }
 }
 
+/// The endings of the files a system starts, where it is asked to open
+/// them: programs, and scripts that a program of the system runs. Those of
+/// Windows, where a press on such a file runs it, are the most; those of
+/// macOS and Linux are with them, and the scripts of languages that run by
+/// the ending where the language is installed.
+const PROGRAM_ENDINGS: [&str; 78] = [
+    "accde",
+    "action",
+    "ade",
+    "adp",
+    "app",
+    "appimage",
+    "application",
+    "appref-ms",
+    "appx",
+    "appxbundle",
+    "bash",
+    "bat",
+    "bin",
+    "chm",
+    "cmd",
+    "com",
+    "command",
+    "cpl",
+    "csh",
+    "desktop",
+    "diagcab",
+    "exe",
+    "fileloc",
+    "fish",
+    "gadget",
+    "hlp",
+    "hta",
+    "inetloc",
+    "inf",
+    "jar",
+    "jnlp",
+    "js",
+    "jse",
+    "ksh",
+    "library-ms",
+    "lnk",
+    "mde",
+    "msc",
+    "msi",
+    "msix",
+    "msixbundle",
+    "msp",
+    "mst",
+    "php",
+    "pif",
+    "pkg",
+    "pl",
+    "ps1",
+    "ps1xml",
+    "psd1",
+    "psm1",
+    "py",
+    "pyc",
+    "pyw",
+    "pyz",
+    "rb",
+    "reg",
+    "run",
+    "scf",
+    "scpt",
+    "scr",
+    "sct",
+    "search-ms",
+    "settingcontent-ms",
+    "sh",
+    "shb",
+    "terminal",
+    "tool",
+    "url",
+    "vb",
+    "vbe",
+    "vbs",
+    "workflow",
+    "ws",
+    "wsc",
+    "wsf",
+    "wsh",
+    "zsh",
+];
+
+/// Whether a file is a program or a script, by its ending: one the system
+/// would start, not show, where it is asked to open it. Such a file is kept
+/// as any other, and is never handed to the system to be opened: a file
+/// that came with notes written elsewhere may be made to be pressed on.
+pub fn is_program(name: &str) -> bool {
+    // What follows the last dot, whatever stands after it of room or dots, which Windows drops.
+    let name = name.trim_end_matches(|c: char| c == '.' || c.is_whitespace());
+    let ending = name.rsplit_once('.').map(|(_, e)| e.trim().to_ascii_lowercase()).unwrap_or_default();
+    PROGRAM_ENDINGS.contains(&ending.as_str())
+}
+
 fn check_name(name: &str) -> Result<String> {
     let name = name.split_whitespace().collect::<Vec<_>>().join(" ");
     if name.is_empty() {
@@ -848,6 +945,22 @@ mod tests {
         assert_eq!(kind_of("book.epub"), FileKind::Document);
         assert_eq!(kind_of("book.djvu"), FileKind::Other);
         assert_eq!(kind_of("README"), FileKind::Other);
+    }
+
+    #[test]
+    fn a_program_or_a_script_is_told_by_its_ending() {
+        for name in
+            ["test.bat", "Setup.EXE", "run.ps1", "page.hta", "a.vbs", "b.js", "c.wsf", "d.lnk", "e.sh", "f.desktop"]
+        {
+            assert!(is_program(name), "{name}");
+        }
+        // Windows drops what stands after the ending of room and dots.
+        assert!(is_program("test.bat.") && is_program("test.cmd  "));
+        // The last ending is the one that counts, either way.
+        assert!(is_program("invoice.pdf.exe") && !is_program("setup.exe.pdf"));
+        for name in ["paper.pdf", "plate.jpeg", "notes.docx", "data.json", "song.mp3", "README", "archive.zip"] {
+            assert!(!is_program(name), "{name}");
+        }
     }
 
     /// A store of many files in many folders, taken in, reconciled and

@@ -140,6 +140,7 @@ fn what_is_there_is_told_apart_and_counted() {
     let s = Setup::new();
     let desk = s.desk();
     let none = Tools::default();
+    let work = s.tmp.path().join("work");
 
     let vault = desk.join("Vault");
     write(&vault.join(".obsidian/app.json"), "{}");
@@ -148,7 +149,7 @@ fn what_is_there_is_told_apart_and_counted() {
     write(&vault.join("Folder/Three.txt"), "three");
     write(&vault.join(".trash/Gone.md"), "gone");
     write(&vault.join("pictures/cat.png"), png(1, 2, 3));
-    let look = look(&vault, &none).unwrap();
+    let look = look(&vault, &none, &work).unwrap();
     assert_eq!((look.kind, look.name.as_str(), look.notes, look.attachments), (Kind::Obsidian, "Vault", 3, 1));
     assert_eq!(look.remarks.len(), 1, "without Pandoc, Markdown is not read: {:?}", look.remarks);
 
@@ -156,53 +157,60 @@ fn what_is_there_is_told_apart_and_counted() {
     write(&joplin.join("_resources/a.png"), png(1, 2, 4));
     write(&joplin.join("_resources/b.pdf"), "%PDF");
     write(&joplin.join("Book/Note.md"), "x");
-    let look = super::look(&joplin, &none).unwrap();
+    let look = super::look(&joplin, &none, &work).unwrap();
     assert_eq!((look.kind, look.notes, look.attachments), (Kind::Joplin, 1, 2));
 
     let notion = desk.join("Notion");
     write(&notion.join("Page 0123456789abcdef0123456789abcdef.md"), "x");
-    assert_eq!(super::look(&notion, &none).unwrap().kind, Kind::Notion);
+    assert_eq!(super::look(&notion, &none, &work).unwrap().kind, Kind::Notion);
 
     let bear = desk.join("Bear");
     write(&bear.join("A note.textbundle/text.md"), "x");
     write(&bear.join("A note.textbundle/info.json"), "{}");
     write(&bear.join("A note.textbundle/assets/p.png"), png(1, 2, 5));
     write(&bear.join("Loose.md"), "y");
-    let look = super::look(&bear, &none).unwrap();
+    let look = super::look(&bear, &none, &work).unwrap();
     assert_eq!((look.kind, look.notes, look.attachments), (Kind::Bear, 2, 1));
 
     let plain = desk.join("Plain");
     write(&plain.join("a.txt"), "a");
-    let look = super::look(&plain, &none).unwrap();
+    let look = super::look(&plain, &none, &work).unwrap();
     assert_eq!((look.kind, look.notes, look.attachments), (Kind::Markdown, 1, 0));
     assert!(look.remarks.is_empty(), "text needs no Pandoc");
-    let look = super::look(&plain.join("a.txt"), &none).unwrap();
+    let look = super::look(&plain.join("a.txt"), &none, &work).unwrap();
     assert_eq!((look.kind, look.name.as_str(), look.notes), (Kind::Markdown, "a", 1));
 
     let enex = desk.join("Export.enex");
     write(&enex, evernote_export());
-    let look = super::look(&enex, &none).unwrap();
+    let look = super::look(&enex, &none, &work).unwrap();
     assert_eq!((look.kind, look.name.as_str(), look.notes, look.attachments), (Kind::Evernote, "Export", 2, 2));
     assert!(!look.remarks.is_empty(), "links between notes are not read");
 
     let takeout = desk.join("Takeout");
     keep_export(&takeout.join("Keep"));
-    let look = super::look(&takeout, &none).unwrap();
+    let look = super::look(&takeout, &none, &work).unwrap();
     assert_eq!((look.kind, look.notes, look.attachments), (Kind::Keep, 3, 2));
 
-    let onenote = desk.join("Notebook.one");
-    write(&onenote, [0u8; 16]);
-    let look = super::look(&onenote, &none).unwrap();
-    assert_eq!((look.kind, look.notes), (Kind::Onenote, 0));
-    assert!(look.remarks[0].contains("Word"), "{:?}", look.remarks);
+    // What is named as a section of OneNote and is none is said to be unreadable as one,
+    // alone or with the table of contents of its notebook chosen; what OneNote threw away is not looked at.
+    let notebook = desk.join("Notebook");
+    write(&notebook.join("Section.one"), [0u8; 16]);
+    write(&notebook.join("Open Notebook.onetoc2"), [0u8; 16]);
+    write(&notebook.join("OneNote_RecycleBin/Gone.one"), [0u8; 16]);
+    for chosen in [notebook.clone(), notebook.join("Section.one"), notebook.join("Open Notebook.onetoc2")] {
+        let error = super::look(&chosen, &none, &work).unwrap_err();
+        assert_eq!(error.kind(), "invalid");
+        assert!(error.to_string().contains("Section.one") && error.to_string().contains("OneNote"), "{error}");
+        assert!(!error.to_string().contains("Gone.one"), "{error}");
+    }
 
     let empty = desk.join("Empty");
     write(&empty.join("paper.pdf"), "%PDF");
-    let error = super::look(&empty, &none).unwrap_err();
+    let error = super::look(&empty, &none, &work).unwrap_err();
     assert_eq!(error.kind(), "invalid");
     assert!(error.to_string().contains("holds no notes"), "{error}");
-    assert_eq!(super::look(&empty.join("paper.pdf"), &none).unwrap_err().kind(), "invalid");
-    assert!(super::look(&desk.join("nothing here"), &none).is_err());
+    assert_eq!(super::look(&empty.join("paper.pdf"), &none, &work).unwrap_err().kind(), "invalid");
+    assert!(super::look(&desk.join("nothing here"), &none, &work).is_err());
 }
 
 #[test]

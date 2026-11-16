@@ -44,19 +44,13 @@
   let { notebook, path = null, onclose, onshow }: Props = $props();
 
   /** The endings of the files of notes a file can be. */
-  const ENDINGS = ['enex', 'md', 'markdown', 'txt', 'one'];
+  const ENDINGS = ['enex', 'md', 'markdown', 'txt', 'one', 'onetoc2'];
   /** How many of what could not be read the message names. */
   const NAMED = 3;
 
   let chosen = $state<string | null>(null);
   let look = $state.raw<NotesLook | null>(null);
   let looking = $state(false);
-  /**
-   * Whether what was chosen is of a program whose own files are not read:
-   * then no count is said, which would say there were no notes in it, but
-   * only what can be done.
-   */
-  const unread = $derived(look?.kind === 'onenote');
   let error = $state<string | null>(null);
   /** How far the reading has come; none while nothing is read. */
   let progress = $state.raw<Count | null>(null);
@@ -192,15 +186,13 @@
       <div class="found" data-import-found data-kind={look.kind} data-notes={look.notes}>
         <div class="kind">{t('notebook-import-kind', { kind: look.kind })}</div>
         <div class="name selectable" title={chosen ?? undefined}>{look.name}</div>
-        {#if !unread}
-          <div class="facts">
-            {t('notebook-import-count', { count: look.notes })} · {t('notebook-import-files', {
-              count: look.attachments,
-            })}
-          </div>
-        {/if}
+        <div class="facts">
+          {t('notebook-import-count', { count: look.notes })} · {t('notebook-import-files', {
+            count: look.attachments,
+          })}
+        </div>
       </div>
-      {#if !look.notes && !unread}
+      {#if !look.notes}
         <p class="lead" data-import-none>{t('notebook-import-none')}</p>
       {/if}
       {#if look.remarks.length}

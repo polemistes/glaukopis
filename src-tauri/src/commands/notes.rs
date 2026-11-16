@@ -24,12 +24,13 @@ pub type NotesLook = Look;
 /// Looks at a folder or a file of another program's notes, without taking
 /// anything in: which program's, how many notes and files, and what the
 /// writer should know first. One look at a folder and its files' names, or
-/// at an export's tags.
+/// at an export's tags; OneNote's files are read for it, in a process of
+/// their own.
 #[tauri::command]
 pub async fn notes_look(app: AppHandle, path: PathBuf) -> CommandResult<NotesLook> {
     blocking(move || {
-        let tools = app.state::<AppState>().tools();
-        Ok(notes::look(&path, &tools)?)
+        let state = app.state::<AppState>();
+        Ok(notes::look(&path, &state.tools(), &state.data.work())?)
     })
     .await
 }

@@ -215,21 +215,20 @@ describe('the window that imports notes', () => {
     );
   });
 
-  it('says of a file of a program that is not read what can be done, and no count', async () => {
+  it('shows a section of OneNote as any other notes, with what is to be known of it', async () => {
     api.notesLook.mockResolvedValue({
       kind: 'onenote',
       name: 'Section',
-      notes: 0,
-      attachments: 0,
-      remarks: ['OneNote can export a page as a Word file.'],
+      notes: 2,
+      attachments: 1,
+      remarks: ['One page holds handwriting or drawings, which are not read.'],
     });
     const { target } = await shown('/notes/Section.one');
     const found = target.querySelector('[data-import-found]')!;
     expect(found.textContent).toContain('Notes from OneNote');
-    expect(found.querySelector('.facts')).toBeNull();
-    expect(target.querySelector('[data-import-none]')).toBeNull();
-    expect(target.querySelector('[data-import-remarks]')!.textContent).toContain('Word file');
-    expect(button(target, 'do')!.disabled).toBe(true);
+    expect(found.textContent).toContain('2 notes');
+    expect(target.querySelector('[data-import-remarks]')!.textContent).toContain('handwriting');
+    expect(button(target, 'do')!.disabled).toBe(false);
   });
 
   it('says what could not be read with how many notes were made', async () => {
