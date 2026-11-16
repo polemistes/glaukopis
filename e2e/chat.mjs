@@ -170,7 +170,8 @@ try {
     (await owner.text('[data-chat] [data-chat-name]')) === 'Robert' &&
       (await messages(owner))[0] === 'Shall we begin with the proem?',
   );
-  check('and the field is empty again', (await owner.exec(`return document.querySelector('[data-chat-field]').value`)) === '');
+  // The field is an editor of its own (record 0107): what it holds is the words of its lines.
+  check('and the field is empty again', (await owner.exec(`return document.querySelector('[data-chat-field]').textContent`)) === '');
   await owner.screenshot('chat-1-owner');
 
   await until('the toast to come to the guest', () => toastWith(guest, 'Robert: Shall we begin'), 10000);

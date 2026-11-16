@@ -27,8 +27,9 @@
       >{@render marked(text, marks, i + 1)}</strong
     >{:else if marks[i] === 'em'}<em>{@render marked(text, marks, i + 1)}</em
     >{:else if marks[i] === 'underline'}<u>{@render marked(text, marks, i + 1)}</u
-    >{:else if marks[i] === 'strike'}<s>{@render marked(text, marks, i + 1)}</s
-    >{:else}<code>{@render marked(text, marks, i + 1)}</code>{/if}
+    >{:else if marks[i] === 'strike'}<s>{@render marked(text, marks, i + 1)}</s>{:else}<code
+      >{@render marked(text, marks, i + 1)}</code
+    >{/if}
 {/snippet}
 
 {#each parts as part, i (i)}

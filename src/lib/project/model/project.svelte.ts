@@ -20,12 +20,7 @@ import { ThreadMap } from '$lib/comments/threads';
 import * as Y from 'yjs';
 import { ySyncPluginKey } from 'y-prosemirror';
 import type { Awareness } from 'y-protocols/awareness';
-import {
-  chatChanges,
-  chatMessagesOf,
-  chatReactionOf,
-  chatReaderOf,
-} from './changing/chat';
+import { chatChanges, chatMessagesOf, chatReactionOf, chatReaderOf } from './changing/chat';
 import { commentChanges } from './changing/comments';
 import { kindChanges } from './changing/kinds';
 import { elementChanges, elementOf } from './changing/elements';

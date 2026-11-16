@@ -136,7 +136,12 @@ export function writtenOf(kept: string): Written {
           ...(typeof to === 'string' && to ? { to } : {}),
           ...(typeof editing === 'string' && editing ? { editing } : {}),
           ...(typeof editing === 'string' && editing && was
-            ? { before: { words: was, ...(typeof wasTo === 'string' && wasTo ? { to: wasTo } : {}) } }
+            ? {
+                before: {
+                  words: was,
+                  ...(typeof wasTo === 'string' && wasTo ? { to: wasTo } : {}),
+                },
+              }
             : {}),
         };
       }

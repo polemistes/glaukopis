@@ -306,8 +306,7 @@ describe('the chat of a project', () => {
     b.react(id, '👍');
     b.react(id, '🎉');
     sync();
-    const of = (p: Project) =>
-      p.chatReactions.map((r) => `${r.person.id}:${r.emoji}`).sort();
+    const of = (p: Project) => p.chatReactions.map((r) => `${r.person.id}:${r.emoji}`).sort();
     expect(of(a)).toEqual(['andromache:🎉', 'andromache:👍', 'hector:👍']);
     expect(of(b)).toEqual(of(a));
     expect(b.react(id, '👍')).toBe(false);

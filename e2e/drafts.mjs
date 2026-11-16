@@ -67,9 +67,19 @@ const answering = '.thread .answering textarea';
 const beginning = '[data-comment-beginning] textarea';
 const changing = '.thread textarea[data-note-edit]';
 
-/** What stands in a field; null where the field is not there. */
+/**
+ * What stands in a field; null where the field is not there. The field of
+ * the chat is an editor of its own (record 0107): its lines, joined by line
+ * breaks.
+ */
 const valueOf = (app, selector) =>
-  app.exec(`return document.querySelector(arguments[0])?.value ?? null`, selector);
+  app.exec(
+    `const el = document.querySelector(arguments[0]);
+     if (!el) return null;
+     if (typeof el.value === 'string') return el.value;
+     return Array.from(el.querySelectorAll('p')).map((p) => p.textContent).join('\\n');`,
+    selector,
+  );
 /** How high a field stands, in pixels. */
 const heightOf = (app, selector) =>
   app.exec(`return document.querySelector(arguments[0])?.getBoundingClientRect().height ?? 0`, selector);

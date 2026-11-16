@@ -20,8 +20,15 @@
     align?: Align;
   }
 
-  let { open, anchor, onpick, onclose, stay = false, side = 'top', align = 'start' }: Props =
-    $props();
+  let {
+    open,
+    anchor,
+    onpick,
+    onclose,
+    stay = false,
+    side = 'top',
+    align = 'start',
+  }: Props = $props();
 
   const EMOJIS = ['👍', '❤️', '😀', '😂', '🎉', '🙏', '👀', '🤔', '😢', '🔥', '✅', '👋'];
 

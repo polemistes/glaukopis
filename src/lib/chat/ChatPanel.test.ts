@@ -86,26 +86,30 @@ function setUp(shared: boolean, { kept = keeper(), project = newProject(), fresh
   };
   const field = () => target.querySelector<HTMLElement>('[data-chat-field]')!;
   /** What stands in the field: its lines joined by line breaks. */
-  const fieldText = () =>
-    [...field().querySelectorAll('p')].map((p) => p.textContent).join('\n');
+  const fieldText = () => [...field().querySelectorAll('p')].map((p) => p.textContent).join('\n');
   /** Writes in the field, as what is written comes back to it. */
   const write = (text: string) => {
     kept.text = keptOf({ ...writtenOf(kept.text), words: { text } });
     flushSync();
   };
-  const message = (id: string) =>
-    target.querySelector<HTMLElement>(`[data-chat-message="${id}"]`)!;
+  const message = (id: string) => target.querySelector<HTMLElement>(`[data-chat-message="${id}"]`)!;
   return { project, target, kept, field, fieldText, write, message, done };
 }
 
-const press = (el: HTMLElement, key: string, mods: { shiftKey?: boolean; ctrlKey?: boolean } = {}) => {
+const press = (
+  el: HTMLElement,
+  key: string,
+  mods: { shiftKey?: boolean; ctrlKey?: boolean } = {},
+) => {
   el.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...mods }));
   flushSync();
 };
 
 /** The items of the menu open now, by their labels. */
 const menuLabels = () =>
-  (menuState.current?.items ?? []).flatMap((i) => ('label' in i && i.kind !== 'heading' ? [i.label] : []));
+  (menuState.current?.items ?? []).flatMap((i) =>
+    'label' in i && i.kind !== 'heading' ? [i.label] : [],
+  );
 
 /** Chooses an item of the menu open now. */
 function choose(label: string) {
@@ -272,7 +276,9 @@ describe('the panel of the chat', () => {
     const id = project.say('Frist')!;
     flushSync();
     write('Half written');
-    target.querySelector<HTMLButtonElement>(`[data-chat-message="${id}"] [data-chat-message-menu]`)!.click();
+    target
+      .querySelector<HTMLButtonElement>(`[data-chat-message="${id}"] [data-chat-message-menu]`)!
+      .click();
     flushSync();
     expect(menuLabels()).toEqual(['Change', 'Delete']);
     choose('Change');
@@ -386,8 +392,12 @@ describe('the panel of the chat', () => {
     theirs(project, 'a', 'An answer', id);
     const taken = project.unsay(id)!;
     flushSync();
-    expect(target.querySelector('[data-chat-gone]')!.textContent).toBe('A message that was deleted');
-    expect(target.querySelector(`[data-chat-answers="${id}"] [data-chat-message="a"]`)).not.toBeNull();
+    expect(target.querySelector('[data-chat-gone]')!.textContent).toBe(
+      'A message that was deleted',
+    );
+    expect(
+      target.querySelector(`[data-chat-answers="${id}"] [data-chat-message="a"]`),
+    ).not.toBeNull();
     project.resay(taken);
     flushSync();
     expect(target.querySelector('[data-chat-gone]')).toBeNull();

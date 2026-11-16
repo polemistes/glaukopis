@@ -48,11 +48,7 @@
     </div>
     <!-- Keyed by place: a message written by another copy may lack an id, or share one. -->
     {#each group.messages as message, i (i)}
-      <ChatMessageRow
-        {message}
-        {ctx}
-        tip={i > 0 ? format(fullFormat, message.created) : null}
-      />
+      <ChatMessageRow {message} {ctx} tip={i > 0 ? format(fullFormat, message.created) : null} />
     {/each}
   </div>
 </article>

@@ -65,7 +65,11 @@
       ...(ctx.shared
         ? [
             { label: t('chat-answer'), icon: Reply, action: () => ctx.answer(message) },
-            { label: t('chat-react-choose'), icon: SmilePlus, action: () => ctx.react(message, at) },
+            {
+              label: t('chat-react-choose'),
+              icon: SmilePlus,
+              action: () => ctx.react(message, at),
+            },
           ]
         : []),
       ...(mine ? [{ kind: 'separator' as const }, ...ownMenu()] : []),
@@ -89,9 +93,10 @@
 >
   <div class="line">
     <p class="words selectable" class:big use:tooltip={tip ? { text: tip, side: 'left' } : null}>
-      <span class="text"><MessageWords words={message} /></span
-      >{#if message.edited}<span class="edited" data-chat-edited use:tooltip={edited}
-          >{t('chat-edited')}</span
+      <span class="text"><MessageWords words={message} /></span>{#if message.edited}<span
+          class="edited"
+          data-chat-edited
+          use:tooltip={edited}>{t('chat-edited')}</span
         >{/if}
     </p>
     {#if readers.length}<ReadCircles {readers} />{/if}

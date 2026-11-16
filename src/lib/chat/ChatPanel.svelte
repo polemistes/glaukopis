@@ -60,14 +60,7 @@
   const NONE: never[] = [];
   const NO_IDS: ReadonlySet<string> = new Set();
 
-  let {
-    project,
-    shared,
-    draft = $bindable(''),
-    fresh = NO_IDS,
-    onclose,
-    head,
-  }: Props = $props();
+  let { project, shared, draft = $bindable(''), fresh = NO_IDS, onclose, head }: Props = $props();
 
   const me = $derived(project.me?.id ?? '');
   const entries = $derived(placed(project.chat, me));

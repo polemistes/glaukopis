@@ -62,7 +62,9 @@ export function tidyMarks(marks: readonly ChatMark[], length: number): ChatMark[
       else out.push({ ...span, mark: kind });
     }
   }
-  return out.sort((a, b) => a.from - b.from || CHAT_MARKS.indexOf(a.mark) - CHAT_MARKS.indexOf(b.mark));
+  return out.sort(
+    (a, b) => a.from - b.from || CHAT_MARKS.indexOf(a.mark) - CHAT_MARKS.indexOf(b.mark),
+  );
 }
 
 /**
@@ -147,7 +149,10 @@ export const chatChanges = {
     if (index < 0) return false;
     const was = chatMessageOf(this.yChat.get(index));
     if (!was || was.author.id !== me) return false;
-    if (was.text === words.text && sameMarks(tidyMarks(was.marks ?? [], was.text.length), words.marks))
+    if (
+      was.text === words.text &&
+      sameMarks(tidyMarks(was.marks ?? [], was.text.length), words.marks)
+    )
       return false;
     const message: ChatMessage = {
       id: was.id,
@@ -198,12 +203,7 @@ export const chatChanges = {
     const me = this.me;
     if (!me?.id || !mark.id) return;
     const was = chatReaderOf(me.id, this.yChatRead.get(me.id));
-    if (
-      was &&
-      was.read.id === mark.id &&
-      was.read.created === mark.created &&
-      was.name === me.name
-    )
+    if (was && was.read.id === mark.id && was.read.created === mark.created && was.name === me.name)
       return;
     const entry = { name: me.name, read: { id: mark.id, created: mark.created }, when: nowIso() };
     this.doc.transact(() => this.yChatRead.set(me.id, entry), CHAT);

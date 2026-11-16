@@ -276,12 +276,7 @@ describe('the reactions to a message', () => {
       when: '',
     });
     const chips = chipsOf(
-      [
-        r('a', 'hector', '👍'),
-        r('a', 'paris', '👍'),
-        r('a', 'paris', '🎉'),
-        r('b', 'paris', '👍'),
-      ],
+      [r('a', 'hector', '👍'), r('a', 'paris', '👍'), r('a', 'paris', '🎉'), r('b', 'paris', '👍')],
       'hector',
     );
     expect(chips.get('a')).toEqual([
