@@ -12,11 +12,10 @@
 <script lang="ts">
   import { onDestroy, untrack } from 'svelte';
   import { t } from '$lib/i18n';
-  import type { ChatMessage } from '$lib/project/model/types';
   import { openProjects, type OpenProject } from '$lib/project/open-projects.svelte';
   import { toasts } from '$lib/ui/toast.svelte';
-  import { chatShown, chatUi, meIn, unreadOf } from './chat.svelte';
-  import { arrivals, firstWords, markOf, sameMark } from './reading';
+  import { chatShown, chatUi, keepFresh, unreadOf } from './chat.svelte';
+  import { firstWords, markOf, sameMark } from './reading';
 
   /** How long after a message arrives it is told: those that come with it are told with it. */
   const GATHER = 300;
@@ -54,34 +53,6 @@
     );
   }
 
-  /** The ids of the messages of each project whose chat is shown, as they were when last looked at. */
-  const known = new Map<string, Set<string>>();
-
-  /**
-   * Keeps what is new in a project's chat (record 0107): when the chat comes
-   * to be shown, the unread messages of others; while it is shown, those of
-   * others that arrive; nothing once one's own is sent, or the chat is not
-   * shown. Looked at before the messages are counted as read.
-   */
-  function keepFresh(open: OpenProject, messages: readonly ChatMessage[], shown: boolean) {
-    if (!shown) {
-      known.delete(open.id);
-      if (chatUi.fresh.has(open.id)) chatUi.fresh.delete(open.id);
-      return;
-    }
-    const me = meIn(open);
-    const was = known.get(open.id);
-    known.set(open.id, new Set(messages.map((m) => m.id).filter(Boolean)));
-    if (!was) {
-      chatUi.fresh.set(open.id, new Set(unreadOf(open).map((m) => m.id)));
-      return;
-    }
-    const { theirs, mine } = arrivals(messages, was, me);
-    if (mine) chatUi.fresh.set(open.id, new Set());
-    else if (theirs.length)
-      chatUi.fresh.set(open.id, new Set([...(chatUi.fresh.get(open.id) ?? []), ...theirs]));
-  }
-
   // For every project open: what is new in its chat is kept while the chat
   // is shown; where it is shown with the window in front, all its messages
   // are read, and while the project is shared, how far is kept in the
@@ -99,7 +70,7 @@
       const shared = !!open.sharing?.shared;
       const waiting = unreadOf(open);
       untrack(() => {
-        keepFresh(open, messages, shown);
+        keepFresh(open, shown);
         if (shown && inFront) {
           const mark = markOf(messages);
           if (mark && !sameMark(mark, open.chatRead)) open.chatRead = mark;

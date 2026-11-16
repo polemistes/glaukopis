@@ -15,7 +15,7 @@ import { me } from '$lib/history/me.svelte';
 import type { OpenProject } from '$lib/project/open-projects.svelte';
 import { panes } from '$lib/project/panes.svelte';
 import { sides, type DocumentTab } from '$lib/project/sides.svelte';
-import { unread } from './reading';
+import { arrivals, unread } from './reading';
 
 class ChatUi {
   /** The project whose chat is asked to be shown. */
@@ -68,6 +68,35 @@ export function unreadOf(open: OpenProject | null | undefined) {
   const p = open?.project;
   if (!p || !p.chat.length) return [];
   return unread(p.chat, open.chatRead, meIn(open));
+}
+
+/** The ids of the messages of each project whose chat is shown, as they were when last looked at. */
+const known = new Map<string, Set<string>>();
+
+/**
+ * Keeps what is new in a project's chat (record 0107), in `chatUi.fresh`:
+ * when the chat comes to be shown, the unread messages of others; while it
+ * is shown, those of others that arrive; nothing once one's own is sent,
+ * or the chat is not shown. Called by `ChatHost` whenever the messages or
+ * the panes change, before the messages are counted as read.
+ */
+export function keepFresh(open: OpenProject, shown: boolean) {
+  const messages = open.project?.chat ?? [];
+  if (!shown) {
+    known.delete(open.id);
+    if (chatUi.fresh.has(open.id)) chatUi.fresh.delete(open.id);
+    return;
+  }
+  const was = known.get(open.id);
+  known.set(open.id, new Set(messages.map((m) => m.id).filter(Boolean)));
+  if (!was) {
+    chatUi.fresh.set(open.id, new Set(unreadOf(open).map((m) => m.id)));
+    return;
+  }
+  const { theirs, mine } = arrivals(messages, was, meIn(open));
+  if (mine) chatUi.fresh.set(open.id, new Set());
+  else if (theirs.length)
+    chatUi.fresh.set(open.id, new Set([...(chatUi.fresh.get(open.id) ?? []), ...theirs]));
 }
 
 /** How many messages of a project's chat are unread. */
