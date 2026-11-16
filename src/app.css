@@ -64,6 +64,8 @@
   --font-ui: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-text: 'Literata Variable', 'Literata', 'Gentium Plus', 'Source Serif 4', Georgia, serif;
   --font-mono: ui-monospace, 'JetBrains Mono', 'DejaVu Sans Mono', Menlo, Consolas, monospace;
+  /* Emojis in colour, where the system has a font of them; after the font of the words. */
+  --font-emoji: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Twemoji Mozilla';
 
   --text-xs: 11.5px;
   --text-sm: 12.5px;

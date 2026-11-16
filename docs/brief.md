@@ -1622,3 +1622,34 @@ The plan is `docs/plans/the-notebook.md`. It says, beside what the owner
 decided, what the assistant proposed in the conversation and the owner has
 not yet confirmed. Nothing is built; each stage is given its record when it
 is.
+
+## 2026-11-16 — the chat answered, set, marked and changed, and a paragraph made an element
+
+> In the shared project chat, it would be nice with some adjustments: Answering specific messages, which then are placed as answers to them. Formatting in the chat text, at least bold, italics etc. Emojis. A mark telling who has read the message. Possibility to edit the text. Then a feature in the text view. When pressing alt+enter with the cursor inside a paragraph, the paragraph text should be made an element. If alt+enter is pressed when text is selected, the selected text becomes the element. The text before the selection belongs to the previous element, and the text after belongs to the new element.
+
+Asked three things before anything was built, the owner chose:
+
+- that an answer stands **under the message** it answers, however old that
+  message is, rather than at the foot with the message quoted over it;
+- that Alt+Enter at the very end of a paragraph makes **the paragraph the
+  element**, as everywhere else in it, rather than an empty element as
+  before: one rule, and Enter before Alt+Enter for an empty one;
+- that emojis are **in the text and reactions** to a message, not in the
+  text alone.
+
+What this settles:
+
+- **A message is answered**, and the answer is placed under it.
+- **What is written in the chat can be set** in bold, italics and the like.
+- **Emojis** are chosen into a message, and put on a message as a reaction.
+- **Each message tells who has read it.**
+- **One's own message can be changed** after it is sent.
+- **In the text, Alt+Enter makes the paragraph the cursor is in an
+  element**, wherever in the paragraph the cursor is. **With text
+  selected, what is selected becomes the element**: what stands before it
+  stays with the element it was in, and what stands after it belongs to
+  the new one.
+
+The plan is
+`docs/plans/the-chat-answered-set-marked-and-changed-and-a-paragraph-made-an-element.md`.
+Records 0107 (the chat) and 0108 (the paragraph made an element).
