@@ -335,7 +335,7 @@ export const CREDIT_GROUPS: CreditGroup[] = [
         by: 'Martin Algesten',
       },
       {
-        name: 'sha2 (RustCrypto)',
+        name: 'sha2 and md-5 (RustCrypto)',
         what: 'credits-what-sha2',
         licence: 'MIT OR Apache-2.0',
         url: 'https://github.com/RustCrypto/hashes',
