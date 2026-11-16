@@ -3564,8 +3564,9 @@ long as the project is shared. **Ctrl+K** finds it as well.
 - Write in the field at the foot. **Enter** sends; **Shift+Enter** makes a
   new line. What you have written and not yet sent stays in the field while
   you look at something else, another tab, another project or the library,
-  and is there when the program is opened again, with what it answers. It
-  is kept on your computer: nobody else sees it until you send it.
+  and is there when the program is opened again, with what it answers and
+  quotes. It is kept on your computer: nobody else sees it until you send
+  it.
 - Words can be set in **bold**, *italics*, underlined, struck through or as
   code, by the buttons under the field or by the keys the text has for them:
   **Ctrl+B**, **Ctrl+I**, **Ctrl+U** and **Ctrl+Shift+X**. The face beside
@@ -3585,6 +3586,15 @@ long as the project is shared. **Ctrl+K** finds it as well.
   gives the answering up and keeps what you wrote. A message that was
   deleted leaves its answers where they were, under the line *A message
   that was deleted*.
+- To quote some words of a message, or of an answer, mark them with the
+  pointer, then press **Answer** on that message or on another, or press in
+  the field to write a new message. The words stand on a line of their own
+  over the field, and at the top of what you send, set in quietly with a
+  line at their left. Pressing them there takes you to the message they are
+  from and lights it for a moment; the tooltip says who wrote it. They stay
+  as they were quoted when that message is changed, and stay as words when
+  it is deleted. **Escape** gives up the quote and the answering, and the ×
+  of each line gives up that one; what you wrote is kept.
 - **React** opens the emojis: the one you choose stands under the message,
   with how many gave it. Press it to give the same, or to take yours back;
   the one you gave is in the colour of the program, and the tooltip says who
@@ -3610,7 +3620,11 @@ long as the project is shared. **Ctrl+K** finds it as well.
   have not read is counted on the tab, and a dot on **Document**, in the bar
   of the side, says that there are some while the pane is closed. Which you
   have read is remembered on your computer, and kept in the project for the
-  circles of the others.
+  circles of the others, unless you turn off **Show the others what I have
+  read in the chat** under *Settings* › *Your details*. Then no circle
+  of yours is shown to anyone, and one shown before goes the next time you
+  look at the chat of that project; you still see the circles of the
+  others.
 - Since an answer stands under its message, what is new is not always at
   the foot. A new message has a thin line in the colour of the program at
   its left, until you have seen it and others have come after it. When the
@@ -4105,7 +4119,7 @@ what is to be done by its name, and does it.
 | **F2** | Rename; in the text, go to the name of the element the cursor is in |
 | **@** | In the text: cite |
 | **Ctrl+I**, **Ctrl+B**, **Ctrl+U** | In the text: italics, bold, underlined |
-| **Enter**, **Shift+Enter**, **Escape** | In the field of the chat: send, a new line, give up an answer or a change; the marks by the keys of the text, and **Ctrl+Z** for what was written there |
+| **Enter**, **Shift+Enter**, **Escape** | In the field of the chat: send, a new line, give up an answer, a quote or a change; the marks by the keys of the text, and **Ctrl+Z** for what was written there |
 | **Ctrl+Alt+F** | In the text: a note |
 | **Ctrl+Alt+P** | In the text: an image |
 | **Ctrl+Alt+T** | In the text: a table |
