@@ -20,7 +20,12 @@ import { ThreadMap } from '$lib/comments/threads';
 import * as Y from 'yjs';
 import { ySyncPluginKey } from 'y-prosemirror';
 import type { Awareness } from 'y-protocols/awareness';
-import { chatChanges, chatMessageOf } from './changing/chat';
+import {
+  chatChanges,
+  chatMessagesOf,
+  chatReactionOf,
+  chatReaderOf,
+} from './changing/chat';
 import { commentChanges } from './changing/comments';
 import { kindChanges } from './changing/kinds';
 import { elementChanges, elementOf } from './changing/elements';
@@ -70,6 +75,8 @@ import {
   PROJECT,
   STATUSES,
   type ChatMessage,
+  type ChatReaction,
+  type ChatReader,
   type DocumentSettings,
   type KindRecord,
   type Note,
@@ -210,6 +217,17 @@ export class Project {
    * 0092). See `changing/chat.ts`. Not in the scope of undo.
    */
   readonly yChat: Y.Array<ChatMessage>;
+  /**
+   * Who has read the chat, and how far: by the id of the person, their name,
+   * the message they read last and when (record 0107). Not in the scope of undo.
+   */
+  readonly yChatRead: Y.Map<unknown>;
+  /**
+   * The reactions to the messages of the chat: one entry for each person's
+   * one emoji on one message, by `reactionKey` (record 0107). Not in the
+   * scope of undo.
+   */
+  readonly yChatReactions: Y.Map<unknown>;
   /** The kinds of elements, by their id. See `changing/kinds.ts`. */
   readonly yKinds: Y.Map<Y.Map<unknown>>;
   /** The kinds of paragraph and of words of the writer's own, by their id. See `changing/passage-kinds.ts`. */
@@ -241,6 +259,10 @@ export class Project {
   readonly comments = new ThreadMap();
   /** The messages of the chat, the oldest first: a new list whenever the chat changes. */
   chat = $state.raw<ChatMessage[]>([]);
+  /** Who has read the chat, and how far: a new list whenever that changes. */
+  chatReaders = $state.raw<ChatReader[]>([]);
+  /** The reactions to the messages of the chat, in the order they were given: a new list whenever they change. */
+  chatReactions = $state.raw<ChatReaction[]>([]);
   /** The kinds of elements, in their order. */
   kinds = $state.raw<KindRecord[]>([]);
   /** The kinds of paragraph and of words of the writer's own, in their order. */
@@ -281,6 +303,8 @@ export class Project {
     this.yHistory = this.doc.getMap('history');
     this.yComments = this.doc.getMap('comments');
     this.yChat = this.doc.getArray('chat');
+    this.yChatRead = this.doc.getMap('chatRead');
+    this.yChatReactions = this.doc.getMap('chatReactions');
     this.yKinds = this.doc.getMap('kinds');
     this.yPassageKinds = this.doc.getMap('passageKinds');
     this.yTemplates = this.doc.getMap('templates');
@@ -304,8 +328,9 @@ export class Project {
     // deleted comes back as a kind, not only as a name on its elements, and
     // an element removed comes back with its comments. What is changed there
     // that is not to be undone has an origin of its own (see `origins.ts`).
-    // The chat is not among them: no change of one's own to the work touches
-    // it, and nothing in it is undone (record 0092).
+    // The chat is not among them, nor who has read it, nor the reactions to
+    // it: no change of one's own to the work touches them, and nothing in
+    // them is undone (records 0092 and 0107).
     this.undoManager = new Y.UndoManager(
       [
         this.yMeta,
@@ -358,6 +383,8 @@ export class Project {
     this.yTemplates.observe(() => this.#readTemplates());
     // Read when the chat changes, and only then: never on a keystroke in the text.
     this.yChat.observe(() => this.#readChat());
+    this.yChatRead.observe(() => this.#readChatReaders());
+    this.yChatReactions.observe(() => this.#readChatReactions());
     this.yComments.observeDeep((events) => {
       const touched = new Set<string>();
       for (const event of events) {
@@ -548,14 +575,32 @@ export class Project {
     this.#readKinds();
     this.#readTemplates();
     this.#readChat();
+    this.#readChatReaders();
+    this.#readChatReactions();
     this.structure++;
   }
 
   #readChat() {
-    this.chat = this.yChat.toArray().flatMap((m) => {
-      const message = chatMessageOf(m);
-      return message ? [message] : [];
-    });
+    this.chat = chatMessagesOf(this.yChat.toArray());
+  }
+
+  #readChatReaders() {
+    const readers: ChatReader[] = [];
+    for (const [id, value] of this.yChatRead) {
+      const reader = chatReaderOf(id, value);
+      if (reader) readers.push(reader);
+    }
+    this.chatReaders = readers;
+  }
+
+  #readChatReactions() {
+    const reactions: ChatReaction[] = [];
+    for (const [key, value] of this.yChatReactions) {
+      const reaction = chatReactionOf(key, value);
+      if (reaction) reactions.push(reaction);
+    }
+    reactions.sort((a, b) => (a.when < b.when ? -1 : a.when > b.when ? 1 : 0));
+    this.chatReactions = reactions;
   }
 
   #readKinds() {

@@ -271,15 +271,62 @@ export interface Note {
   text: string;
 }
 
+/** The ways a stretch of a message of the chat can be set (record 0107). */
+export type ChatMarkKind = 'strong' | 'em' | 'underline' | 'strike' | 'code';
+
+/** How a stretch of a message's words is set: from a sign of `text` up to another (UTF-16 offsets). */
+export interface ChatMark {
+  from: number;
+  to: number;
+  mark: ChatMarkKind;
+}
+
+/** The words of a message, plain with their line breaks, and how stretches of them are set. */
+export interface ChatWords {
+  text: string;
+  marks?: ChatMark[];
+}
+
 /**
- * A message of the chat of a project (record 0092): kept in the project's
- * document as a note of a comment is, with who wrote it and when. It is
- * never changed; its author may take it back.
+ * A message of the chat of a project (records 0092 and 0107): kept in the
+ * project's document as a note of a comment is, with who wrote it and when.
+ * Its author may change it, or take it back. What it has not is left out,
+ * so that a message of an earlier version is read as before, and an earlier
+ * version shows a later message as its plain words.
  */
 export interface ChatMessage {
   id: string;
   author: { id: string; name: string };
   /** When it was written. */
   created: string;
+  /** When its author last changed it, where they did. */
+  edited?: string;
+  /** The message it answers: one that answers none itself. */
+  to?: string;
+  /** Its words, plain, with their line breaks. */
   text: string;
+  marks?: ChatMark[];
+}
+
+/**
+ * Who has read the chat of a project, and how far (record 0107): kept in
+ * the project, so that the others see it. `read` is the message they read
+ * last, by its id and when it was written, as the mark on their computer
+ * has it.
+ */
+export interface ChatReader {
+  id: string;
+  name: string;
+  read: { id: string; created: string };
+  /** When they read it. */
+  when: string;
+}
+
+/** One person's one emoji on one message of the chat (record 0107). */
+export interface ChatReaction {
+  /** The id of the message. */
+  message: string;
+  person: { id: string; name: string };
+  emoji: string;
+  when: string;
 }

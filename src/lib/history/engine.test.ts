@@ -168,6 +168,24 @@ describe('the history of a project', () => {
     expect(people[people.length - 1]).toBe('bo');
   });
 
+  it('makes no session of a mark of who has read, nor of a reaction, alone', async () => {
+    const { a, b, ann, root, flush } = await two();
+    paragraph(a, root, 'Sing, goddess.');
+    await flush();
+    const id = a.say('Shall I go on?')!;
+    await flush();
+    const before = engineOf(ann, 'ann').sessions();
+    b.markChatRead({ id, created: b.chat[0].created });
+    await flush();
+    expect(engineOf(ann, 'ann').sessions()).toEqual(before);
+    b.react(id, '👍');
+    await flush();
+    expect(engineOf(ann, 'ann').sessions()).toEqual(before);
+    a.reword(id, 'Shall I go on with the second book?');
+    await flush();
+    expect(engineOf(ann, 'ann').sessions()).toEqual(before);
+  });
+
   it('shows objects in the text, and figures and equations as wholes', async () => {
     const { a, b, ann, at, root, flush } = await two();
     paragraph(a, root, 'As Nagy says.');

@@ -82,8 +82,9 @@ export interface Kept {
   added: number;
   removed: number;
   /**
-   * Whether all it made and deleted is in the chat (record 0092), or among
-   * who deleted what: no change to the work, and no session of its own.
+   * Whether all it made and deleted is in the chat, in who has read it or in
+   * the reactions to it (records 0092 and 0107), or among who deleted what:
+   * no change to the work, and no session of its own.
    */
   aside: boolean;
   /** Where it is in the store on disk; nothing for what was written while it was looked at. */
@@ -1007,16 +1008,21 @@ export class Engine {
   }
 
   /**
-   * Whether all that was made and deleted is in the chat, or among who
-   * deleted what: a message said or taken back, and who took it back, which
-   * is no change to the work (record 0092). Who deleted what is written in
-   * a batch after the deleting, so it is a record of its own; the deleting
-   * itself, of text, is the change, and its session. Asks no more than the
-   * first item of a change to the text.
+   * Whether all that was made and deleted is in the chat, in who has read
+   * it, in the reactions to it, or among who deleted what: a message said,
+   * changed or taken back, a mark of how far someone has read, an emoji
+   * given, and who took what back, which are no change to the work (records
+   * 0092 and 0107). A mark of who has read is written each time someone
+   * reads, and would else be a session each time. Who deleted what is
+   * written in a batch after the deleting, so it is a record of its own;
+   * the deleting itself, of text, is the change, and its session. Asks no
+   * more than the first item of a change to the text.
    */
   #aside(made: Map<number, [number, number]>, ds: DeleteSet): boolean {
-    const chat = this.doc.share.get('chat');
-    if (!chat) return false;
+    const chat = new Set(
+      ['chat', 'chatRead', 'chatReactions'].map((name) => this.doc.share.get(name)).filter(Boolean),
+    );
+    if (!chat.size) return false;
     const users = this.doc.share.get('users');
     const within = (client: number, from: number, to: number): boolean => {
       const structs = this.doc.store.clients.get(client);
@@ -1031,7 +1037,7 @@ export class Engine {
         if (!(s instanceof Y.Item)) continue;
         let type = s.parent as AnyType;
         while (type._item) type = type._item.parent as AnyType;
-        if (type !== chat && type !== users) return false;
+        if (!chat.has(type) && type !== users) return false;
       }
       return true;
     };
