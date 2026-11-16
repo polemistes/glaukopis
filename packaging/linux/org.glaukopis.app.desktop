@@ -13,3 +13,9 @@ Keywords=research;writing;references;bibliography;mind map;citation;biblatex;
 MimeType=text/x-bibtex;
 StartupNotify=true
 StartupWMClass=glaukopis
+Actions=new-note;
+
+[Desktop Action new-note]
+Name=New note
+Name[nb]=Nytt notat
+Exec=glaukopis --note

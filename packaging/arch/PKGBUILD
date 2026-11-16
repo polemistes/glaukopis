@@ -99,6 +99,8 @@ package_glaukopis() {
 
   cd "$srcdir/$pkgbase-$pkgver"
   install -Dm755 "$srcdir/target/release/glaukopis" "$pkgdir/usr/bin/glaukopis"
+  # A note written in a window of its own (record 0109): the same program, as glaukopis --note.
+  install -Dm755 packaging/linux/glaukopis-note "$pkgdir/usr/bin/glaukopis-note"
 
   install -d "$pkgdir/usr/share/glaukopis"
   cp -r resources "$pkgdir/usr/share/glaukopis/resources"
