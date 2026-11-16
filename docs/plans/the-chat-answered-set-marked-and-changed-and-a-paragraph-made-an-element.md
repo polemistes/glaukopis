@@ -347,9 +347,27 @@ The notebook has an inbox (`crates/core/src/notebook/inbox.rs`, record 0102): th
 10. **The Linux packages**: a command **`glaukopis-note`**, a script of two lines in `packaging/linux/` that starts `glaukopis --note`, installed beside `glaukopis` by both Arch recipes (`packaging/arch/PKGBUILD` and `packaging/arch/release/PKGBUILD`), and by the deb and the rpm if the bundler's configuration in `src-tauri/tauri.conf.json` can place a file (look; where it cannot, say so and leave it); and an action **New note** / **Nytt notat** on the desktop file (`packaging/linux/org.glaukopis.app.desktop`), so that the launcher offers it. **Do not build a package.**
 11. **Windows and macOS** get no program of their own: the same flag, `glaukopis.exe --note`, and on macOS `open -n -a Glaukopis --args --note`. The guide says so, and that a key of the desktop can be bound to it; the record says that neither was tried.
 
+### Changed by the owner while it was being built
+
+> Let it be possible to format in the note window, and also to add pictures. Perhaps also other files, what do you think?
+
+> It should be possible to make lists also.
+
+The window is no longer of plain words. **This takes the place of items 2, 3, 4, 5 and 8 above, and of *Not done*:**
+
+- **The field is the text's own editor**: the note is a text as the notebook's notes are (the body schema), so that the marks, the kinds of paragraph with the lists among them (bulleted, numbered, to tick), the keys, what is typed at the start of a line, undo and pasting are the text's own. First `editor/RichText.svelte` with a holder of its own, a third beside the project's and the notebook's (record 0100); only where that cannot be had without standing in for too much, a ProseMirror view of its own over the body schema with those of the body's plugins that stand alone.
+- **Under the field one row**: the five marks, the kinds of list, **Add a file…**, and at the right **To the notebook**.
+- **Pictures and other files** come in pasted (a screenshot above all), dropped on the window, or by **Add a file…**, the system's file picker (with a test hook). A picture stands in the note as a picture, any other file as the notebook shows a file held in a note. A file is copied, at most 50 MB each.
+- **Ctrl+S sends**: Ctrl+Enter ticks a point of a list to tick, in the text and so here. Escape closes the window where the note is empty.
+- **What is written and not sent is kept with its pictures and files**, in a folder beside the inbox.
+- **Sent**, the note is a thing of the kind `note` in the inbox: its text as ProseMirror's JSON of the body schema, its plain words beside it, and its files beside `item.json`, each named there.
+- **Taken in**, it is a note without a name and with no source: its text read with care (what the window cannot make left out; what cannot be read at all, a paragraph for each line of the plain words), its files taken into the store as the notebook's.
+
+Chosen for the owner's question of other files: **yes**. A note of the notebook holds files of any kind already, when they are dropped into it; once several pictures can go with one note, other files go the same way at little more cost.
+
 ### Not done
 
-- No bold or other marks in the window, no pictures, no name for the note, no box or tag chosen there: the notebook has all of that once the note is in it.
+- No citing, no notes at the foot, no formulas and no tables in the window; no name, box or tag for the note there; no picker of emojis (it writes the settings, which this role never does): the notebook has all of that once the note is in it.
 - No key of the system bound by Glaukopis itself: that is the desktop's.
 
 ### Choices the owner has not been asked about

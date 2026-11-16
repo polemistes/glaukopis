@@ -1683,3 +1683,15 @@ what the owner had been told of):
 
 The plan has a second round for these. Records 0107 and 0108 are added to,
 and 0109 is the note written in a window of its own.
+
+Told that the note window would be of plain words, the owner wrote:
+
+> Let it be possible to format in the note window, and also to add pictures. Perhaps also other files, what do you think?
+
+> It should be possible to make lists also.
+
+So **the note written in a window of its own can be set in bold and the
+like, hold lists, pictures and other files**. Asked what the assistant
+thought of other files, it said yes: a note of the notebook holds files
+already, and they come the same way as pictures.
+
