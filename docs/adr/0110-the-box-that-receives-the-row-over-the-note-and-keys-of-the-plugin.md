@@ -51,3 +51,8 @@ The owner signed 1.0.1 and tried it: **Alt+Shift+P opens Firefox's own menu of p
 ## Addendum, 2026-11-16, later: no key of Alt+Shift; Ctrl+Alt+N and Ctrl+Alt+P
 
 The owner, having looked: "I think most alt+shift keys open menus." Firefox takes Alt+Shift and a letter for the letters of its own menus, as it takes Alt and a letter, and those letters differ with the language of Firefox: a key of that family that is free in one language is a menu in another. **No key of the plugin is Alt+Shift and a letter**, the first one neither: what is selected, or the page, is **Ctrl+Alt+N** (it was Alt+Shift+N since 0102), and a part of the page as a picture **Ctrl+Alt+P** (Alt+Shift+R in the addendum above, never signed). The page whole still has no key. This is version 1.0.2, not yet signed; the guide and the READMEs say the new keys, and the test of the manifest holds that no command asks for a key of Alt+Shift or one Firefox is known to have for itself (Ctrl+Alt+R, Z and X among them). Neither key was tried in Firefox when this was written.
+
+## Addendum, 2026-11-17: 1.0.2 is signed
+
+The owner signed 1.0.2, with Ctrl+Alt+N and Ctrl+Alt+P, on 2026-11-17, the day 0.2.13 was released. It is the plugin that is offered: its file is in `packaging/firefox/`, on the page of packages and among the files of the release, in the place of 1.0.0, which the release had for its first hours. What *Not done* says of the signing no longer holds.
+
