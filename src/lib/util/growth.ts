@@ -13,6 +13,12 @@
  * with the square of it. The sizes are best kept small enough that what
  * is made fits in the caches of the machine and leaves the collector of
  * garbage little to do, which would add growth of their own.
+ *
+ * A machine that runs other tests beside this one gives a high number now
+ * and then all the same (GitHub's gave 8.6 once for work that grows with
+ * its size, 4.4 here): where the growth comes out as more than 6, it is
+ * measured again, three times at most, and the least is given. Work that
+ * grows with the square gives 16 every time.
  */
 
 /** What `run` takes, in milliseconds, done `runs` times at a size. */
@@ -22,11 +28,12 @@ function timed(run: (size: number) => void, size: number, runs: number): number 
   return performance.now() - started;
 }
 
-/** How many times longer `run` takes at four times `size` than at `size`. */
-export function growth(
+/** How many times longer `run` takes at four times `size` than at `size`, measured once. */
+function measured(
   run: (size: number) => void,
   size: number,
-  { enough = 10, times = 5 }: { enough?: number; times?: number } = {},
+  enough: number,
+  times: number,
 ): number {
   let runs = 1;
   while (timed(run, size, runs) < enough && runs < 2 ** 16) runs *= 2;
@@ -37,4 +44,16 @@ export function growth(
     large = Math.min(large, timed(run, 4 * size, runs));
   }
   return large / small;
+}
+
+/** How many times longer `run` takes at four times `size` than at `size`. */
+export function growth(
+  run: (size: number) => void,
+  size: number,
+  { enough = 10, times = 5, tries = 3 }: { enough?: number; times?: number; tries?: number } = {},
+): number {
+  let least = Infinity;
+  for (let i = 0; i < tries && least > 6; i++)
+    least = Math.min(least, measured(run, size, enough, times));
+  return least;
 }
