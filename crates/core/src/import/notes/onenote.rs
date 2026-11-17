@@ -1080,11 +1080,13 @@ mod tests {
 
     /// A section of OneNote's own, where one is at hand: named by
     /// `GLAUKOPIS_ONENOTE_SAMPLE`. None comes with the code (those that can
-    /// be had are not ours to hand on), so the test is passed over without.
+    /// be had are not ours to hand on), so the test is passed over without,
+    /// on GitHub too: it is no program that could be installed there, which
+    /// is what `GLAUKOPIS_TESTS_NEED_ALL` asks for.
     #[test]
     fn a_section_of_onenote_is_read_where_one_is_at_hand() {
         let Some(sample) = std::env::var_os("GLAUKOPIS_ONENOTE_SAMPLE").map(PathBuf::from) else {
-            crate::testing::passed_over("no section of OneNote is named by GLAUKOPIS_ONENOTE_SAMPLE");
+            eprintln!("no section of OneNote is named by GLAUKOPIS_ONENOTE_SAMPLE; the test is passed over");
             return;
         };
         let s = Setup::new();

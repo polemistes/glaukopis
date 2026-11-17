@@ -594,6 +594,9 @@ mod tests {
         let (_tmp, first) = window();
         let data = first.data().clone();
         first.keep(&NoteText { words: "One".into(), ..NoteText::default() }).unwrap();
+        // The folders are named by the thousandth of a second they were made in: a
+        // window opened by a hand comes later than that, and so does this one.
+        std::thread::sleep(std::time::Duration::from_millis(3));
         let second = NoteWindow::new(data.clone());
         assert_eq!(second.unsent(), None, "the first window has its note");
         second.keep(&NoteText { words: "Two".into(), ..NoteText::default() }).unwrap();

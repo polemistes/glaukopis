@@ -145,7 +145,10 @@ fn two_calls_for_pages_of_a_file_are_served_by_one_process() {
     assert_eq!(pictures(&second, 100), [12_000, 19_999], "those the file has");
     assert_eq!(server::serving(&pdf), Some(pid), "the same process");
     eprintln!("the first call {first_took:?}, the second {second_took:?}");
-    assert!(second_took * 5 < first_took, "the first {first_took:?}, the second {second_took:?}");
+    // The second call does not open the file again: it takes a fraction of the first. How
+    // small a fraction is the machine's: a slow one (the Intel Mac that builds the installers)
+    // had it at a third, so no more than half is asked.
+    assert!(second_took * 2 < first_took, "the first {first_took:?}, the second {second_took:?}");
 
     // What it drew was moved out of its folder, into the cache.
     let place =
