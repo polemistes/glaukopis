@@ -310,6 +310,47 @@ prosjekt hadde vorte eitt tre.
 - **Setting the pages…** — **Bryt om sidene …**, med ordet for
   ombrekkinga (bryte – bryt – braut – brote)
 
+## Nytt 2026-11-17: notatblokka, samtalen svart, element av eit avsnitt
+
+- **notebook** — **notatblokk** (ei notatblokk, notatblokka, notatblokker,
+  notatblokkene): det tredje stadet i vindauget ved sida av prosjekta og
+  biblioteket, utanfor alle prosjekt, der alt som dukkar opp, blir samla som
+  notat. Hokjønn, som `tekstblokk` og `kodeblokk` alt er. Ikkje
+  «Jupyter-notatbok» (`core-import-document-notebook`). Som i bokmål
+  («Notatblokk»); til notatblokka, i notatblokka
+- **note** (i notatblokka) — **notat** (eit notat, notatet, notat, notata),
+  same ord som for notata i biblioteket; **ein note** er framleis ein note
+  nedst på sida (`keys-writing-note`, `text-holds-footnote`)
+- **box** — **boks** (ein boks, boksen, boksar, boksane); den første heiter
+  **Usortert**
+- **tag** — **merkelapp** (ein merkelapp, merkelappen, merkelappar,
+  merkelappane), som i bokmål og som merkelappane på mapper, slag og
+  assosiasjonar. **Etikett** står framleis berre for *labels* i tankekart
+- **surface** — **flate** (ei flate, flata, flater, flatene): ein boks vist
+  som ei flate med notata som **kort** (eit kort, kortet, kort, korta) som
+  blir flytte rundt; den andre visinga er **Liste**; **Not yet placed** —
+  **Ikkje plassert enno**
+- **taken in** — **teke inn** (ta – tek – tok – teke; «takast inn»): ord som
+  kom frå ein annan stad, mot dei eigne orda; skilt frå **hente inn** (om
+  dokument og referansar). **passage** står som **stykke** der det trengst.
+  **source** — **kjelde** (ei kjelde, kjelda, kjelder, kjeldene): **Nettside**,
+  **Referanse**, **Fil** eller **Anna**; **No source** — **Inga kjelde**
+- **Not looked at** — **Ikkje sett på**
+- **Join** — **Slå saman**; **Divide** — **Del opp**, ikkje berre «Del», som
+  er å dele med andre
+- **Starting texts** — **starttekstar** (ein starttekst, starttekstar,
+  starttekstane)
+- **To the notebook** — **Til notatblokka**; **Notes from outside come here**
+  — **Notat utanfrå kjem hit**; **the window of a note** — **vindauget til
+  eit notat**
+- **set up** (Firefox) — **setje opp** («Firefox er sett opp», knappen
+  **Set opp**); **the plugin for Firefox** står berre i kommentarar
+- **Emoji** — **emoji**, uendra; gruppene har namn som i Unicode:
+  **Smilefjes**, **Menneske**, **Dyr og natur**, **Mat og drikke**,
+  **Reise og stader**, **Aktivitetar**, **Gjenstandar**, **Symbol**
+- **Help** — **Hjelp**; **the guide** — **rettleiinga**
+- **to do** (eit punkt som kan krysse av) — **gjeremål**
+
 ## Referansar og tilvisingar
 
 - **the library** — biblioteket

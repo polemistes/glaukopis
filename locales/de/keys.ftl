@@ -20,13 +20,16 @@ keys-place-text = Im Text einer Karte
 keys-place-writing = Beim Schreiben
 keys-place-library = In der Bibliothek
 keys-place-files = Bei den Dateien der Bibliothek
+keys-place-notebook = Im Notizbuch
 
 ## What they do
 
 keys-projects = Die Projekte
 keys-library = Die Bibliothek
 keys-files = Die Dateien der Bibliothek
+keys-notebook = Das Notizbuch
 keys-settings = Einstellungen
+keys-help = Hilfe
 keys-search-everything = Alles durchsuchen
 keys-palette = Was soll geschehen?
 keys-sheet = Die Tasten
@@ -40,6 +43,7 @@ keys-side-look = Aussehen
 keys-look-type = Die Schrift ändern…
 keys-side-references = Quellen
 keys-side-pictures = Die Bilder des Projekts
+keys-side-notes = Die Notizen des Notizbuchs
 keys-side-comments = Kommentare
 keys-side-chat = Chat
 keys-comment = Die ausgewählte Passage oder das Element kommentieren
@@ -57,8 +61,8 @@ keys-review-next = Die nächste Änderung; diese bleibt für später
 keys-review-previous = Die Änderung davor
 keys-review-accept = Die Änderung annehmen
 keys-review-reject = Die Änderung verwerfen
-keys-tree-new = Ein neues Element nach diesem; im Text eine Überschrift am Cursor; in der Liste ein neues Projekt
-keys-tree-new-under = Ein neues Element unter diesem, als erstes; im Text eine Überschrift am Cursor; in der Liste ein neuer Ordner
+keys-tree-new = Ein neues Element nach diesem; im Text der Absatz oder die Auswahl, zu einem Element gemacht; in der Liste ein neues Projekt
+keys-tree-new-under = Ein neues Element unter diesem, als erstes; im Text der Absatz oder die Auswahl, zu einem Element gemacht; in der Liste ein neuer Ordner
 keys-tree-fold = Das Element ein- oder ausklappen; im Text mit dem Cursor in einem Namen
 keys-tree-fold-all = Alle Unterelemente des angezeigten Elements ausklappen, oder alle Unterelemente der ersten Ebene einklappen
 keys-tree-shift = Das Element nach oben oder unten verschieben, unter denen daneben
@@ -93,6 +97,8 @@ keys-writing-lowered = Tiefgestellt
 keys-writing-quotation = Zitat
 keys-writing-list = Liste
 keys-writing-numbered = Nummerierte Liste
+keys-writing-todo = Aufgabe
+keys-writing-tick = Eine Aufgabe abhaken oder das Häkchen wieder entfernen
 keys-writing-list-in = In einer Liste oder einem Vers: einen Schritt einrücken
 keys-writing-list-out = In einer Liste oder einem Vers: einen Schritt ausrücken
 keys-writing-line = Eine neue Zeile im selben Absatz
@@ -112,6 +118,19 @@ keys-library-find = Die Bibliothek durchsuchen
 keys-library-new = Eine neue Quelle
 keys-library-copy = Die ausgewählten Quellen kopieren
 keys-files-find = Die Dateien durchsuchen
+keys-notebook-find = Die Notizen durchsuchen
+keys-notebook-new = Eine neue Notiz
+keys-notebook-undo = Rückgängig
+keys-notebook-redo = Wiederherstellen
+keys-notebook-redo-y = Wiederherstellen
+keys-notebook-join = Die ausgewählten Notizen zusammenführen
+keys-notebook-divide = Die Notiz am Cursor aufteilen, oder das Ausgewählte herauslösen
+keys-notebook-whole = Die ganze Fläche zeigen
+keys-notebook-closer = Näher
+keys-notebook-farther = Ferner
+keys-notebook-go = Auf der Fläche von einer Notiz zur nächsten gehen
+keys-notebook-open = Die ausgewählte Notiz öffnen
+keys-notebook-note-window-send = Im Fenster einer Notiz: ins Notizbuch
 keys-list-undo = Rückgängig machen, was mit Ordnern und Projekten getan wurde
 keys-list-redo = Wiederherstellen, was mit Ordnern und Projekten getan wurde
 
@@ -145,6 +164,8 @@ keys-viewer-last = Letzte Seite
 keys-viewer-tab-next = Nächster Tab
 keys-viewer-tab-previous = Voriger Tab
 keys-viewer-bookmark = Hier ein Lesezeichen setzen
+# From a file to the notebook (docs/plans/the-notebook.md, stage 3).
+keys-viewer-to-notebook = Ins Notizbuch
 # Printing (docs/plans/printing.md, record 0075).
 keys-print = Drucken
 # Export and print from the bar of a side (record 0091).

@@ -8,6 +8,18 @@ text-grip = この要素を移動または変更
 text-drop-under = 「{ $name }」の下
 text-drop-after = 「{ $name }」の後
 text-drop-before = 「{ $name }」の前
+text-make-paragraph-element = 段落を要素にする
+text-make-selection-element = 選択範囲を要素にする
+text-paragraph-holds = 段落に{ $things }が含まれているため、要素にしませんでした
+text-selection-holds = 選択範囲に{ $things }が含まれているため、要素にしませんでした
+# What stands in a paragraph or a selection that a name cannot hold, as the two messages above name it.
+text-holds-citation = 引用
+text-holds-footnote = 注
+text-holds-math = 数式
+text-holds-refmark = 文中番号
+text-holds-crossref = 相互参照
+text-holds-linemark = 余白の番号や語句
+text-holds-other = 名前に入れられないもの
 text-join = 上の要素とつなげる
 text-open-as-map = 中に入る
 

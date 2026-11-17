@@ -8,6 +8,18 @@ text-grip = Dieses Element verschieben oder ändern
 text-drop-under = Unter „{ $name }“
 text-drop-after = Nach „{ $name }“
 text-drop-before = Vor „{ $name }“
+text-make-paragraph-element = Den Absatz zu einem Element machen
+text-make-selection-element = Die Auswahl zu einem Element machen
+text-paragraph-holds = Der Absatz enthält { $things } und wurde nicht zu einem Element gemacht
+text-selection-holds = Die Auswahl enthält { $things } und wurde nicht zu einem Element gemacht
+# What stands in a paragraph or a selection that a name cannot hold, as the two messages above name it.
+text-holds-citation = eine Zitation
+text-holds-footnote = eine Anmerkung
+text-holds-math = eine Formel
+text-holds-refmark = eine Nummer in der Zeile
+text-holds-crossref = einen Verweis
+text-holds-linemark = eine Nummer oder eine Randbemerkung
+text-holds-other = etwas, das ein Name nicht aufnehmen kann
 text-join = Mit dem Element darüber zusammenfügen
 text-open-as-map = Hineingehen
 

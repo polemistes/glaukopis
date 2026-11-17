@@ -74,6 +74,10 @@ settings-email = メールアドレス
 settings-orcid = ORCID
 settings-orcid-problem = ORCID iDは4桁の数字を4組並べたものです：0000-0002-1825-0097。
 settings-contact-problem = アドレスとして正しくないようです。
+# Whether one's mark of how far one has read in the chat of a shared project is shown to the others.
+settings-chat-read = チャットで読んだところまでをほかの人に表示する
+settings-chat-read-on = オン
+settings-chat-read-off = オフ
 
 ## プログラム：PandocとTypst
 
@@ -146,3 +150,14 @@ settings-data-move-button = 移動
 settings-data-use-button = 使う
 settings-data-copying = ファイルをコピーしています… { $done }/{ $count }
 settings-data-failed = フォルダーを変更できませんでした
+
+# Firefox: telling Firefox of the helper of the plugin for Firefox (record 0102).
+settings-firefox = Firefox
+settings-firefox-set-up = Firefoxはセットアップ済みです
+settings-firefox-not-set-up = Firefoxはセットアップされていません
+settings-firefox-other = Firefoxは、別のGlaukopisのインストール用にセットアップされています
+settings-firefox-set-up-button = セットアップ
+settings-firefox-remove = 解除
+settings-firefox-unread = Firefoxがセットアップ済みかどうかを調べられませんでした
+settings-firefox-not-set-up-error = Firefoxをセットアップできませんでした
+settings-firefox-not-removed = Firefoxのセットアップを解除できませんでした

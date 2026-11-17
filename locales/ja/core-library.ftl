@@ -34,6 +34,7 @@ core-library-merge-itself = 項目をそれ自身と統合することはでき�
 core-library-the-reference = 文献
 core-library-the-stored-file = 保管場所のファイル{ $path }
 core-library-the-file = ファイル{ $path }
+core-library-file-is-program = 「{ $name }」はプログラムまたはスクリプトです。Glaukopisはプログラムを起動しないので、開きません。
 core-library-the-collection = コレクション
 core-library-the-collection-to-put-in = 入れる先のコレクション
 core-library-the-collection-to-move-to = 移動先のコレクション

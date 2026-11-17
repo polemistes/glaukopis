@@ -83,6 +83,7 @@ notebook-source-place = Sted
 notebook-source-words = Hvor det kom fra
 notebook-source-file-name = Navn
 notebook-source-file-changed = Sist endret
+# Of a photograph: when it was taken, and where.
 notebook-source-file-taken = Tatt
 notebook-source-file-where = Hvor
 notebook-source-make-reference = Lag en referanse

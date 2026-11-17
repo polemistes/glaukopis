@@ -8,6 +8,18 @@ text-grip = Flytta eller ändra det här elementet
 text-drop-under = Under ”{ $name }”
 text-drop-after = Efter ”{ $name }”
 text-drop-before = Före ”{ $name }”
+text-make-paragraph-element = Gör stycket till ett element
+text-make-selection-element = Gör det markerade till ett element
+text-paragraph-holds = Stycket innehåller { $things } och gjordes inte till ett element
+text-selection-holds = Det markerade innehåller { $things } och gjordes inte till ett element
+# What stands in a paragraph or a selection that a name cannot hold, as the two messages above name it.
+text-holds-citation = en källhänvisning
+text-holds-footnote = en not
+text-holds-math = en formel
+text-holds-refmark = ett nummer i raden
+text-holds-crossref = en korshänvisning
+text-holds-linemark = ett nummer eller ord i marginalen
+text-holds-other = något som ett namn inte kan rymma
 text-join = Foga till elementet ovanför
 text-open-as-map = Gå in
 

@@ -294,6 +294,15 @@ try {
   check('no citation is in the text yet', (await citationsInText()).length === 0);
   await app.screenshot('found-1-text');
 
+  // What the tab of the loose citations says: its name, which it shows while the pane has
+  // room for it and tells by its label where it has not, and after it what it counts.
+  const tabSays = () =>
+    app.exec(
+      `const tab = document.querySelector('.side-tabs [data-kind="found"]');
+       const count = tab?.querySelector('.count')?.textContent.trim() ?? '';
+       return [tab?.getAttribute('aria-label') ?? '', count].filter(Boolean).join(' ');`,
+    );
+
   // ---- where the panel is reached from ----
   // The loose citations are a tab of the panel at the side, which its key opens.
   await app.keys(['Control', 'Shift', 't']);
@@ -302,9 +311,8 @@ try {
   // ---- the panel ----
   check(
     'the panel at the side opens, under its tab, which says how many there are',
-    (await app.text('.side-tabs [data-kind="found"]')).replace(/\s+/g, ' ').trim() ===
-      'Loose citations 7',
-    await app.text('.side-tabs [data-kind="found"]'),
+    (await tabSays()) === 'Loose citations 7',
+    await tabSays(),
   );
   const all = await rows();
   check(
@@ -655,9 +663,8 @@ try {
   );
   check(
     'and the tab counts none',
-    (await app.text('.side-tabs [data-kind="found"]')).replace(/\s+/g, ' ').trim() ===
-      'Loose citations',
-    await app.text('.side-tabs [data-kind="found"]'),
+    (await tabSays()) === 'Loose citations',
+    await tabSays(),
   );
   await app.screenshot('found-6-nothing');
   await app.setTheme('dark');

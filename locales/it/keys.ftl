@@ -20,13 +20,16 @@ keys-place-text = Nel testo di una mappa
 keys-place-writing = Scrivendo
 keys-place-library = Nella biblioteca
 keys-place-files = Tra i file della biblioteca
+keys-place-notebook = Nel taccuino
 
 ## What they do
 
 keys-projects = I progetti
 keys-library = La biblioteca
 keys-files = I file della biblioteca
+keys-notebook = Il taccuino
 keys-settings = Impostazioni
+keys-help = Guida
 keys-search-everything = Cerca in tutto
 keys-palette = Che cosa fare?
 keys-sheet = I tasti
@@ -40,6 +43,7 @@ keys-side-look = Aspetto
 keys-look-type = Cambia il font…
 keys-side-references = Riferimenti
 keys-side-pictures = Le immagini del progetto
+keys-side-notes = Le note del taccuino
 keys-side-comments = Commenti
 keys-side-chat = Chat
 keys-comment = Commenta il passo selezionato, o l'elemento
@@ -57,8 +61,8 @@ keys-review-next = La modifica successiva, lasciando questa per dopo
 keys-review-previous = La modifica precedente
 keys-review-accept = Accetta la modifica
 keys-review-reject = Rifiuta la modifica
-keys-tree-new = Un nuovo elemento dopo questo; in un testo, un titolo al cursore; nell'elenco, un nuovo progetto
-keys-tree-new-under = Un nuovo elemento sotto questo, il primo; in un testo, un titolo al cursore; nell'elenco, una nuova cartella
+keys-tree-new = Un nuovo elemento dopo questo; in un testo, il paragrafo o la selezione resi un elemento; nell'elenco, un nuovo progetto
+keys-tree-new-under = Un nuovo elemento sotto questo, il primo; in un testo, il paragrafo o la selezione resi un elemento; nell'elenco, una nuova cartella
 keys-tree-fold = Ripiega o dispiega l'elemento; in un testo, con il cursore in un nome
 keys-tree-fold-all = Dispiega tutti i sottoelementi dell'elemento in vista, o ripiega tutti i sottoelementi al primo livello
 keys-tree-shift = Sposta l'elemento su o giù, tra quelli accanto
@@ -93,6 +97,8 @@ keys-writing-lowered = Pedice
 keys-writing-quotation = Citazione
 keys-writing-list = Elenco
 keys-writing-numbered = Elenco numerato
+keys-writing-todo = Da fare
+keys-writing-tick = Spunta o togli la spunta a un punto da fare
 keys-writing-list-in = In un elenco o in versi: rientra di un passo
 keys-writing-list-out = In un elenco o in versi: torna indietro di un passo
 keys-writing-line = A capo nello stesso paragrafo
@@ -112,6 +118,19 @@ keys-library-find = Cerca nella biblioteca
 keys-library-new = Un nuovo riferimento
 keys-library-copy = Copia i riferimenti selezionati
 keys-files-find = Cerca tra i file
+keys-notebook-find = Cerca nelle note
+keys-notebook-new = Una nuova nota
+keys-notebook-undo = Annulla
+keys-notebook-redo = Ripeti
+keys-notebook-redo-y = Ripeti
+keys-notebook-join = Unisci le note selezionate
+keys-notebook-divide = Dividi la nota al cursore, o estrai ciò che è selezionato
+keys-notebook-whole = Mostra tutto il tavolo
+keys-notebook-closer = Più vicino
+keys-notebook-farther = Più lontano
+keys-notebook-go = Passa da una nota alla successiva
+keys-notebook-open = Apri la nota scelta
+keys-notebook-note-window-send = Nella finestra di una nota: al taccuino
 keys-list-undo = Annulla ciò che si è fatto a cartelle e progetti
 keys-list-redo = Ripeti ciò che si è fatto a cartelle e progetti
 
@@ -145,6 +164,8 @@ keys-viewer-last = Ultima pagina
 keys-viewer-tab-next = Scheda successiva
 keys-viewer-tab-previous = Scheda precedente
 keys-viewer-bookmark = Segna questo punto
+# From a file to the notebook (docs/plans/the-notebook.md, stage 3).
+keys-viewer-to-notebook = Al taccuino
 # Printing (docs/plans/printing.md, record 0075).
 keys-print = Stampa
 # Export and print from the bar of a side (record 0091).

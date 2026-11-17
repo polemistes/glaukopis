@@ -20,13 +20,16 @@ keys-place-text = マップのテキストの中
 keys-place-writing = 執筆中
 keys-place-library = ライブラリの中
 keys-place-files = ライブラリのファイルの中
+keys-place-notebook = ノートブックの中
 
 ## キーがすること
 
 keys-projects = プロジェクト
 keys-library = ライブラリ
 keys-files = ライブラリのファイル
+keys-notebook = ノートブック
 keys-settings = 設定
+keys-help = ヘルプ
 keys-search-everything = すべてを検索
 keys-palette = 何をしますか？
 keys-sheet = キー
@@ -40,6 +43,7 @@ keys-side-look = 見た目
 keys-look-type = フォントを変更…
 keys-side-references = 文献
 keys-side-pictures = プロジェクトの画像
+keys-side-notes = ノートブックのノート
 keys-side-comments = コメント
 keys-side-chat = チャット
 keys-comment = 選択した箇所、または要素にコメント
@@ -57,8 +61,8 @@ keys-review-next = 次の変更（この変更はあとで）
 keys-review-previous = 前の変更
 keys-review-accept = 変更を承諾
 keys-review-reject = 変更を却下
-keys-tree-new = この要素の後に新しい要素。テキストではカーソルの位置に見出し、一覧では新しいプロジェクト
-keys-tree-new-under = この要素の下の最初に新しい要素。テキストではカーソルの位置に見出し、一覧では新しいフォルダー
+keys-tree-new = この要素の後に新しい要素。テキストでは段落または選択範囲を要素にする。一覧では新しいプロジェクト
+keys-tree-new-under = この要素の下の最初に新しい要素。テキストでは段落または選択範囲を要素にする。一覧では新しいフォルダー
 keys-tree-fold = 要素を折りたたむ、または展開する。テキストでは、カーソルが名前にあるとき
 keys-tree-fold-all = 表示中の要素の下位要素をすべて展開、または第一階層の下位要素をすべて折りたたむ
 keys-tree-shift = 要素を、同じ階層の中で上または下へ移動
@@ -93,6 +97,8 @@ keys-writing-lowered = 下付き
 keys-writing-quotation = 引用文
 keys-writing-list = リスト
 keys-writing-numbered = 番号付きリスト
+keys-writing-todo = ToDo
+keys-writing-tick = ToDoの項目のチェックを入れる・外す
 keys-writing-list-in = リストや韻文で：一段下げる
 keys-writing-list-out = リストや韻文で：一段戻す
 keys-writing-line = 同じ段落の中で新しい行
@@ -112,6 +118,19 @@ keys-library-find = ライブラリを検索
 keys-library-new = 新しい文献
 keys-library-copy = 選択した文献をコピー
 keys-files-find = ファイルを検索
+keys-notebook-find = ノートを検索
+keys-notebook-new = 新しいノート
+keys-notebook-undo = 元に戻す
+keys-notebook-redo = やり直す
+keys-notebook-redo-y = やり直す
+keys-notebook-join = 選択したノートを結合
+keys-notebook-divide = カーソルの位置でノートを分割、または選択範囲を取り出す
+keys-notebook-whole = キャンバス全体を表示
+keys-notebook-closer = 拡大
+keys-notebook-farther = 縮小
+keys-notebook-go = カードからカードへ移動
+keys-notebook-open = 選択したノートを開く
+keys-notebook-note-window-send = ノートのウィンドウで：ノートブックへ送る
 keys-list-undo = フォルダーとプロジェクトへの操作を元に戻す
 keys-list-redo = フォルダーとプロジェクトへの操作をやり直す
 
@@ -145,6 +164,8 @@ keys-viewer-last = 最後のページ
 keys-viewer-tab-next = 次のタブ
 keys-viewer-tab-previous = 前のタブ
 keys-viewer-bookmark = この場所をブックマーク
+# From a file to the notebook (docs/plans/the-notebook.md, stage 3).
+keys-viewer-to-notebook = ノートブックへ送る
 # 印刷（docs/plans/printing.md、記録 0075）。
 keys-print = 印刷
 # Export and print from the bar of a side (record 0091).

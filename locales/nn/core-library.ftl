@@ -38,6 +38,7 @@ core-library-merge-itself = Ei oppføring kan ikkje slåast saman med seg sjølv
 core-library-the-reference = referansen
 core-library-the-stored-file = den lagra fila { $path }
 core-library-the-file = fila { $path }
+core-library-file-is-program = «{ $name }» er eit program eller eit skript. Glaukopis startar ingen program, og det blir ikkje opna.
 core-library-the-collection = samlinga
 core-library-the-collection-to-put-in = samlinga den skulle leggjast i
 core-library-the-collection-to-move-to = samlinga den skulle flyttast til

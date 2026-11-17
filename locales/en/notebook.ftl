@@ -90,6 +90,7 @@ notebook-source-place = Place
 notebook-source-words = Where it came from
 notebook-source-file-name = Name
 notebook-source-file-changed = Last changed
+# Of a photograph: when it was taken, and where.
 notebook-source-file-taken = Taken
 notebook-source-file-where = Where
 notebook-source-make-reference = Make a reference

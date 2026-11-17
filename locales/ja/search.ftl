@@ -45,6 +45,10 @@ search-no-projects = 検索するプロジェクトがありません。
 search-more = ほか{ $count }件
 search-in-project = このプロジェクトに{ $count }件
 search-everything-found = { $projects }件のプロジェクトで{ $count }件見つかりました
+search-everything-found-notebook = { $projects ->
+    [0] ノートブックで{ $count }件見つかりました
+   *[other] { $projects }件のプロジェクトとノートブックで{ $count }件見つかりました
+}
 search-where-details = 文書の詳細
 # 名前のある関連付けと、その両端の要素：「第1部 ↔ 第2部」。
 search-where-association = 関連付け：{ $ends }

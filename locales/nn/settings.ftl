@@ -73,6 +73,10 @@ settings-email = E-post
 settings-orcid = ORCID
 settings-orcid-problem = Ein ORCID iD er fire grupper med fire siffer: 0000-0002-1825-0097.
 settings-contact-problem = Det ser ikkje ut som ei e-postadresse.
+# Whether one's mark of how far one has read in the chat of a shared project is shown to the others.
+settings-chat-read = Vis dei andre kva eg har lese i samtalen
+settings-chat-read-on = På
+settings-chat-read-off = Av
 
 ## Programs: Pandoc and Typst
 
@@ -145,3 +149,14 @@ settings-data-move-button = Flytt
 settings-data-use-button = Bruk
 settings-data-copying = Kopierer … { $done } av { $count } filer
 settings-data-failed = Mappa kunne ikkje endrast
+
+# Firefox: telling Firefox of the helper of the plugin for Firefox (record 0102).
+settings-firefox = Firefox
+settings-firefox-set-up = Firefox er sett opp
+settings-firefox-not-set-up = Firefox er ikkje sett opp
+settings-firefox-other = Firefox er sett opp for ein annan installasjon av Glaukopis
+settings-firefox-set-up-button = Set opp
+settings-firefox-remove = Fjern
+settings-firefox-unread = Om Firefox er sett opp, kunne ikkje lesast
+settings-firefox-not-set-up-error = Firefox kunne ikkje setjast opp
+settings-firefox-not-removed = Oppsettet for Firefox kunne ikkje fjernast

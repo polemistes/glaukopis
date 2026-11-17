@@ -73,6 +73,10 @@ settings-email = Courriel
 settings-orcid = ORCID
 settings-orcid-problem = Un identifiant ORCID se compose de quatre groupes de quatre chiffres : 0000-0002-1825-0097.
 settings-contact-problem = Cela ne ressemble pas à une adresse.
+# Whether one's mark of how far one has read in the chat of a shared project is shown to the others.
+settings-chat-read = Montrer aux autres ce que j’ai lu dans la discussion
+settings-chat-read-on = Activé
+settings-chat-read-off = Désactivé
 
 ## Programs: Pandoc and Typst
 
@@ -145,3 +149,14 @@ settings-data-move-button = Déplacer
 settings-data-use-button = Utiliser
 settings-data-copying = Copie… { $done } sur { $count } fichiers
 settings-data-failed = Le dossier n’a pas pu être changé
+
+# Firefox: telling Firefox of the helper of the plugin for Firefox (record 0102).
+settings-firefox = Firefox
+settings-firefox-set-up = Firefox est configuré
+settings-firefox-not-set-up = Firefox n’est pas configuré
+settings-firefox-other = Firefox est configuré pour une autre installation de Glaukopis
+settings-firefox-set-up-button = Configurer
+settings-firefox-remove = Retirer
+settings-firefox-unread = Il n’a pas été possible de lire si Firefox est configuré
+settings-firefox-not-set-up-error = Firefox n’a pas pu être configuré
+settings-firefox-not-removed = La configuration de Firefox n’a pas pu être retirée

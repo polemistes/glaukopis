@@ -20,13 +20,16 @@ keys-place-text = I et korts tekst
 keys-place-writing = Skrivning
 keys-place-library = I biblioteket
 keys-place-files = Blandt bibliotekets filer
+keys-place-notebook = I notesbogen
 
 ## What they do
 
 keys-projects = Projekterne
 keys-library = Biblioteket
 keys-files = Bibliotekets filer
+keys-notebook = Notesbogen
 keys-settings = Indstillinger
+keys-help = Hjælp
 keys-search-everything = Søg gennem alt
 keys-palette = Hvad skal der gøres?
 keys-sheet = Tasterne
@@ -40,6 +43,7 @@ keys-side-look = Udseende
 keys-look-type = Ændr skriften…
 keys-side-references = Referencer
 keys-side-pictures = Projektets billeder
+keys-side-notes = Notesbogens notater
 keys-side-comments = Kommentarer
 keys-side-chat = Chat
 keys-comment = Kommenter det markerede, eller elementet
@@ -57,8 +61,8 @@ keys-review-next = Den næste ændring, og lad denne vente
 keys-review-previous = Ændringen før
 keys-review-accept = Godtag ændringen
 keys-review-reject = Afvis ændringen
-keys-tree-new = Et nyt element efter dette; i en tekst en overskrift ved markøren; i listen et nyt projekt
-keys-tree-new-under = Et nyt element under dette, som det første; i en tekst en overskrift ved markøren; i listen en ny mappe
+keys-tree-new = Et nyt element efter dette; i en tekst afsnittet eller det markerede gjort til et element; i listen et nyt projekt
+keys-tree-new-under = Et nyt element under dette, som det første; i en tekst afsnittet eller det markerede gjort til et element; i listen en ny mappe
 keys-tree-fold = Fold elementet sammen eller ud; i en tekst med markøren i et navn
 keys-tree-fold-all = Fold alle underelementer af det viste element ud, eller fold alle underelementer på første niveau sammen
 keys-tree-shift = Flyt elementet op eller ned blandt dem ved siden af det
@@ -93,6 +97,8 @@ keys-writing-lowered = Sænket
 keys-writing-quotation = Citat
 keys-writing-list = Liste
 keys-writing-numbered = Nummereret liste
+keys-writing-todo = Gøremål
+keys-writing-tick = Afkryds eller fjern afkrydsningen af et gøremål
 keys-writing-list-in = I en liste eller et vers: ét trin ind
 keys-writing-list-out = I en liste eller et vers: ét trin ud
 keys-writing-line = En ny linje i samme afsnit
@@ -112,6 +118,19 @@ keys-library-find = Søg i biblioteket
 keys-library-new = En ny reference
 keys-library-copy = Kopiér de valgte referencer
 keys-files-find = Søg i filerne
+keys-notebook-find = Søg i notaterne
+keys-notebook-new = Et nyt notat
+keys-notebook-undo = Fortryd
+keys-notebook-redo = Gentag
+keys-notebook-redo-y = Gentag
+keys-notebook-join = Slå de valgte notater sammen
+keys-notebook-divide = Opdel notatet ved markøren, eller løft det markerede ud
+keys-notebook-whole = Vis hele fladen
+keys-notebook-closer = Nærmere
+keys-notebook-farther = Længere væk
+keys-notebook-go = Gå fra det ene kort til det næste
+keys-notebook-open = Åbn det valgte notat
+keys-notebook-note-window-send = I notatvinduet: til notesbogen
 keys-list-undo = Fortryd det, der blev gjort med mapper og projekter
 keys-list-redo = Gentag det, der blev gjort med mapper og projekter
 
@@ -145,6 +164,8 @@ keys-viewer-last = Sidste side
 keys-viewer-tab-next = Næste fane
 keys-viewer-tab-previous = Forrige fane
 keys-viewer-bookmark = Sæt et bogmærke her
+# From a file to the notebook (docs/plans/the-notebook.md, stage 3).
+keys-viewer-to-notebook = Til notesbogen
 # Printing (docs/plans/printing.md, record 0075).
 keys-print = Udskriv
 # Export and print from the bar of a side (record 0091).

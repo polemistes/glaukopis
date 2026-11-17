@@ -96,3 +96,11 @@ viewer-print-to = ～
 viewer-print-drawing = 印刷のために{ $count }ページを描いています…
 viewer-print-stop = 中止
 viewer-print-failed = 印刷のためにページを描けませんでした
+
+# From a file read in Glaukopis to the notebook (docs/plans/the-notebook.md, stage 3).
+# The button in the bar: words selected go to the notebook; with none, a part of the page is marked with the pointer.
+viewer-to-notebook = ノートブックへ
+# The pages while a part of one is being marked.
+viewer-mark-part = ページの一部を選ぶ
+# The menu at the button, where the file belongs to more than one reference.
+viewer-to-notebook-which = どの文献ですか？

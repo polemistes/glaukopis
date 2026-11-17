@@ -2,6 +2,7 @@
 
 shell-projects = Projets
 shell-library = Bibliothèque
+shell-notebook = Carnet
 shell-settings = Réglages
 
 # Closing the window: what is said while saving is waited for, and when it fails.

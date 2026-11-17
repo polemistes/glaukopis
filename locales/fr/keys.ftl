@@ -20,13 +20,16 @@ keys-place-text = Dans le texte d’une carte
 keys-place-writing = En écrivant
 keys-place-library = Dans la bibliothèque
 keys-place-files = Parmi les fichiers de la bibliothèque
+keys-place-notebook = Dans le carnet
 
 ## What they do
 
 keys-projects = Les projets
 keys-library = La bibliothèque
 keys-files = Les fichiers de la bibliothèque
+keys-notebook = Le carnet
 keys-settings = Réglages
+keys-help = Aide
 keys-search-everything = Rechercher dans tout
 keys-palette = Que faire ?
 keys-sheet = Les touches
@@ -40,6 +43,7 @@ keys-side-look = Aspect
 keys-look-type = Changer la police…
 keys-side-references = Références
 keys-side-pictures = Les images du projet
+keys-side-notes = Les notes du carnet
 keys-side-comments = Commentaires
 keys-side-chat = Discussion
 keys-comment = Commenter le passage sélectionné, ou l’élément
@@ -57,8 +61,8 @@ keys-review-next = La modification suivante, en laissant celle-ci pour plus tard
 keys-review-previous = La modification précédente
 keys-review-accept = Accepter la modification
 keys-review-reject = Rejeter la modification
-keys-tree-new = Un nouvel élément après celui-ci ; dans un texte, un titre au curseur ; dans la liste, un nouveau projet
-keys-tree-new-under = Un nouvel élément sous celui-ci, en premier ; dans un texte, un titre au curseur ; dans la liste, un nouveau dossier
+keys-tree-new = Un nouvel élément après celui-ci ; dans un texte, le paragraphe ou la sélection transformé en élément ; dans la liste, un nouveau projet
+keys-tree-new-under = Un nouvel élément sous celui-ci, en premier ; dans un texte, le paragraphe ou la sélection transformé en élément ; dans la liste, un nouveau dossier
 keys-tree-fold = Replier ou déplier l’élément ; dans un texte, le curseur dans un nom
 keys-tree-fold-all = Déplier tous les sous-éléments de l’élément affiché, ou replier tous les sous-éléments du premier niveau
 keys-tree-shift = Monter ou descendre l’élément parmi ceux de même niveau
@@ -93,6 +97,8 @@ keys-writing-lowered = Indice
 keys-writing-quotation = Citation
 keys-writing-list = Liste
 keys-writing-numbered = Liste numérotée
+keys-writing-todo = À faire
+keys-writing-tick = Cocher ou décocher un point à faire
 keys-writing-list-in = Dans une liste ou un vers : augmenter le retrait
 keys-writing-list-out = Dans une liste ou un vers : diminuer le retrait
 keys-writing-line = Une nouvelle ligne dans le même paragraphe
@@ -112,6 +118,19 @@ keys-library-find = Rechercher dans la bibliothèque
 keys-library-new = Une nouvelle référence
 keys-library-copy = Copier les références sélectionnées
 keys-files-find = Rechercher dans les fichiers
+keys-notebook-find = Rechercher dans les notes
+keys-notebook-new = Une nouvelle note
+keys-notebook-undo = Annuler
+keys-notebook-redo = Rétablir
+keys-notebook-redo-y = Rétablir
+keys-notebook-join = Fusionner les notes sélectionnées
+keys-notebook-divide = Diviser la note au curseur, ou en détacher ce qui est sélectionné
+keys-notebook-whole = Afficher toute la surface
+keys-notebook-closer = Plus près
+keys-notebook-farther = Plus loin
+keys-notebook-go = Passer d’une note à la suivante
+keys-notebook-open = Ouvrir la note choisie
+keys-notebook-note-window-send = Dans la fenêtre d’une note : vers le carnet
 keys-list-undo = Annuler ce qui a été fait aux dossiers et aux projets
 keys-list-redo = Rétablir ce qui a été fait aux dossiers et aux projets
 
@@ -145,6 +164,8 @@ keys-viewer-last = Dernière page
 keys-viewer-tab-next = Onglet suivant
 keys-viewer-tab-previous = Onglet précédent
 keys-viewer-bookmark = Marquer cet endroit
+# From a file to the notebook (docs/plans/the-notebook.md, stage 3).
+keys-viewer-to-notebook = Vers le carnet
 # Printing (docs/plans/printing.md, record 0075).
 keys-print = Imprimer
 # Export and print from the bar of a side (record 0091).

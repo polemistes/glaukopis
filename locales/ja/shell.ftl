@@ -2,6 +2,7 @@
 
 shell-projects = プロジェクト
 shell-library = ライブラリ
+shell-notebook = ノートブック
 shell-settings = 設定
 
 # ウィンドウを閉じるとき：保存を待つあいだに言うことと、保存できなかったときに言うこと。

@@ -36,6 +36,7 @@ core-library-merge-itself = Una voce non si può unire con se stessa.
 core-library-the-reference = il riferimento
 core-library-the-stored-file = il file conservato { $path }
 core-library-the-file = il file { $path }
+core-library-file-is-program = «{ $name }» è un programma o uno script. Glaukopis non avvia programmi, e il file non si apre.
 core-library-the-collection = la raccolta
 core-library-the-collection-to-put-in = la raccolta in cui metterlo
 core-library-the-collection-to-move-to = la raccolta in cui spostarlo

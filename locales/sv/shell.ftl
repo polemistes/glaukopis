@@ -2,6 +2,7 @@
 
 shell-projects = Projekt
 shell-library = Bibliotek
+shell-notebook = Anteckningsbok
 shell-settings = Inställningar
 
 # Closing the window: what is said while saving is waited for, and when it fails.

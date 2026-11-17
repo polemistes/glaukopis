@@ -61,6 +61,14 @@ search-everything-found = { $count ->
     [one] in einem Projekt
    *[other] in { $projects } Projekten
 }
+search-everything-found-notebook = { $count ->
+    [one] Ein Treffer
+   *[other] { $count } Treffer
+} { $projects ->
+    [0] im Notizbuch
+    [one] in einem Projekt und im Notizbuch
+   *[other] in { $projects } Projekten und im Notizbuch
+}
 search-where-details = Die Angaben des Dokuments
 # An association that has a name, with the elements at its ends: "Part 1 ↔ Part 2".
 search-where-association = Die Verbindung { $ends }

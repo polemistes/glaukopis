@@ -408,6 +408,39 @@ Page Down, piltangenterna. Pluralformer: one, other.
   hämtas från); *Tell me when a new version is out* = *Säg till när en ny
   version finns*; *is out* = *är ute*.
 
+## Anteckningsboken (2026-11-17)
+
+- **notebook** — anteckningsbok (anteckningsboken): ett ställe utanför alla
+  projekt där allt som dyker upp samlas som anteckningar. Den tredje platsen
+  i raden överst, efter projekten och biblioteket.
+- **note** (i anteckningsboken) — anteckning (anteckningen, anteckningar),
+  samma ord som anteckningarna på en referens i biblioteket. En not vid
+  sidans fot heter *not* som förut och blandas inte ihop med den.
+- **box** — låda (lådan, lådor): anteckningarna ligger i lådor, som papper i
+  lådor på ett skrivbord. **Unsorted** — Osorterat (den första lådan).
+- **tag** — tagg (taggen, taggar), som i *found.ftl*; *etikett* är kvar för
+  utseendeetiketter och associationernas etiketter.
+- **surface** — yta (ytan): en låda visad som en yta där anteckningarna
+  ligger som **kort** (*card*) som flyttas runt; det andra sättet är
+  **Lista**. **Not yet placed** — Ännu inte placerade.
+- **taken in** — *tas in* (togs in, tagits in), som filerna som tas in i
+  biblioteket: *Ord som tagits in*. *Brought in* (dokument, tabeller,
+  anteckningar från andra program) är *hämtas in*. **passage** — passage.
+- **source** — källa (källan, källor): en webbsida, en referens, en fil
+  eller *Annat*. **Not looked at** — Inte tittad på.
+- **Join** — Slå ihop; **Divide** — Dela (som *Dela cellen* i tabeller;
+  *Dela* betyder också att dela ett projekt med andra, men saxen i
+  anteckningens rad gör det tydligt). *Dela upp* är Delad vy.
+- **Starting texts** — Starttexter. **To the notebook** — Till
+  anteckningsboken. **Notes from outside come here** — Anteckningar utifrån
+  kommer hit.
+- **the plugin for Firefox** — tillägget för Firefox (Firefox säger själv
+  *tillägg*); **Set up** — Ställ in; *Firefox är inställt*.
+- **The window of a note** — ett eget fönster för en anteckning.
+- **emoji groups** — som Unicodes grupper heter på svenska: Smileys,
+  Människor, Djur och natur, Mat och dryck, Resor och platser, Aktiviteter,
+  Objekt, Symboler.
+
 ## Namn som inte översätts
 
 Glaukopis; Pandoc, Typst, Tesseract, Hunspell, LaTeX, LuaLaTeX, BibLaTeX,

@@ -352,6 +352,31 @@ Il senso di ciascuna parola è in `locales/GLOSSARY.md`.
 | Download page | Pagina di download | il pulsante che apre la pagina da cui si scaricano gli installatori; «download» è la parola comune del software italiano |
 | Tell me when a new version is out | Avvisami quando esce una nuova versione | l'impostazione sotto Informazioni; Acceso, Spento come `settings-page-chips-on/off` |
 
+## Nuovo dopo la 0.2.12 (2026-11-17)
+
+| inglese | italiano | note |
+| --- | --- | --- |
+| notebook, Notebook | taccuino, Taccuino | il luogo fuori da tutti i progetti dove si raccoglie ciò che capita, come note; come il «taccuino» di Evernote e di Joplin in italiano. Non «blocco note» (il programma di Windows), non «appunti» (che sono la zona di copia) |
+| note (of the notebook) | nota | breve testo proprio o raccolto. «Nota» è anche la nota a piè di pagina e la nota di un riferimento (`editor-note`, `library-notes`): il contesto («taccuino») le tiene distinte; la nota a piè di pagina è «nota a piè di pagina» dove va detta per intero |
+| box | scatola | le note stanno in scatole, come fogli in scatole su una scrivania; plurale «scatole» |
+| Unsorted | Da ordinare | il nome della prima scatola |
+| tag | tag | invariabile; non «etichetta», che è già delle citazioni, delle associazioni e di XMind |
+| surface | tavolo | una scatola mostrata come un piano su cui le note stanno come cartellini che si spostano; l'altro modo è «Elenco». «Non ancora collocate» è il bordo dove i cartellini aspettano. Non «superficie», troppo geometrico; non «lavagna», che fa pensare al disegno |
+| taken in (words) | prese da altrove | parole venute da fuori (incollate, da una pagina web, da un file), contro «parole mie»; per i file resta «aggiungere» |
+| passage (of the notebook) | passo | un pezzo preso; «Passi presi da qui» sotto una fonte |
+| source | fonte | da dove viene: una pagina web, un riferimento della biblioteca, un file, Altro |
+| My own words | Parole mie | una fonte «Altro» che non è presa da nessuno |
+| Not looked at | Non ancora guardata | una nota arrivata e non ancora aperta; la stessa parola nel filtro e nel punto prima del nome |
+| Join, Divide | Unisci, Dividi | tante note una sola; una nota due. «Dividi» è anche il verbo di «Vista divisa» |
+| Starting texts | Testi di partenza | testi con cui una nuova nota può cominciare |
+| To the notebook | Al taccuino | il pulsante che manda qualcosa al taccuino (un PDF, un'immagine, la finestra di una nota) |
+| Notes from outside come here | Le note dall'esterno arrivano qui | la spunta nel menu di una scatola |
+| the plugin for Firefox | l'estensione per Firefox | come la chiama Firefox in italiano; «Configura» dice a Firefox dov'è Glaukopis |
+| the window of a note | la finestra di una nota | la finestra piccola in cui si scrive una nota (`glaukopis --note`) |
+| To do (kind of paragraph) | Da fare | un punto da spuntare |
+| emoji | emoji | invariabile; i gruppi del selettore hanno i nomi che usano Windows e Unicode in italiano: Faccine, Persone, Animali e natura, Cibo e bevande, Viaggi e luoghi, Attività, Oggetti, Simboli |
+| Help (the guide) | Guida | la guida dell'utente in una finestra; «Indice», «Cerca nella guida» |
+
 ## Nomi che non si traducono
 
 Glaukopis; Pandoc, Typst, Tesseract, Hunspell, LaTeX, LuaLaTeX, BibLaTeX,

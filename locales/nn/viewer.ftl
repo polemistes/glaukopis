@@ -99,3 +99,11 @@ viewer-print-drawing = { $count ->
 }
 viewer-print-stop = Stopp
 viewer-print-failed = Sidene kunne ikkje teiknast for utskrift
+
+# From a file read in Glaukopis to the notebook (docs/plans/the-notebook.md, stage 3).
+# The button in the bar: words selected go to the notebook; with none, a part of the page is marked with the pointer.
+viewer-to-notebook = Til notatblokka
+# The pages while a part of one is being marked.
+viewer-mark-part = Merk ein del av sida
+# The menu at the button, where the file belongs to more than one reference.
+viewer-to-notebook-which = Kva for ein referanse?

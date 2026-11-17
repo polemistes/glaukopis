@@ -101,3 +101,11 @@ viewer-print-drawing = { $count ->
 }
 viewer-print-stop = Ferma
 viewer-print-failed = Le pagine non si sono potute disegnare per la stampa
+
+# From a file read in Glaukopis to the notebook (docs/plans/the-notebook.md, stage 3).
+# The button in the bar: words selected go to the notebook; with none, a part of the page is marked with the pointer.
+viewer-to-notebook = Al taccuino
+# The pages while a part of one is being marked.
+viewer-mark-part = Segna una parte della pagina
+# The menu at the button, where the file belongs to more than one reference.
+viewer-to-notebook-which = Quale riferimento?

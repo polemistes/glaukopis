@@ -2,6 +2,7 @@
 
 shell-projects = Progetti
 shell-library = Biblioteca
+shell-notebook = Taccuino
 shell-settings = Impostazioni
 
 # Closing the window: what is said while saving is waited for, and when it fails.
