@@ -104,8 +104,8 @@ try {
   await app.documentPane('references');
   const tabs = await app.exec(`return Array.from(document.querySelectorAll('[data-document-pane] .side-tabs [data-kind]')).map((b) => b.dataset.kind)`);
   check(
-    'the document pane beside it has no tab of Look: its tabs are the references, the images, the comments, the loose citations, the history and the changes',
-    JSON.stringify(tabs) === JSON.stringify(['references', 'images', 'comments', 'found', 'history', 'changes']),
+    'the document pane beside it has no tab of Look: its tabs are the references, the images, the notes, the comments, the loose citations, the history and the changes',
+    JSON.stringify(tabs) === JSON.stringify(['references', 'images', 'notes', 'comments', 'found', 'history', 'changes']),
     tabs.join(' '),
   );
   await app.keys(['Control', 'Shift', 'r']);
