@@ -910,6 +910,10 @@ pub struct HandWords {
     pub size: Option<f64>,
     /// The six digits, in small letters, without the sign before them.
     pub colour: Option<String>,
+    /// The colour behind the words, their ground (ADR 0116), as the colour
+    /// is kept: only where it is said to be set in the document, which it
+    /// is on a sheet of rich text (`grounds.rs`).
+    pub ground: Option<String>,
 }
 
 impl HandWords {
@@ -935,8 +939,15 @@ impl HandWords {
             .and_then(Value::as_str)
             .filter(|c| c.len() == 7 && c.starts_with('#') && c[1..].chars().all(|d| d.is_ascii_hexdigit()))
             .map(|c| c[1..].to_ascii_lowercase());
-        let said = HandWords { font, size, colour };
-        (said.font.is_some() || said.size.is_some() || said.colour.is_some()).then_some(said)
+        let ground = marks
+            .get(super::grounds::GROUND)
+            .filter(|v| v.get(super::grounds::SET) == Some(&Value::Bool(true)))
+            .and_then(|v| v.get("value"))
+            .and_then(Value::as_str)
+            .filter(|c| c.len() == 7 && c.starts_with('#') && c[1..].chars().all(|d| d.is_ascii_hexdigit()))
+            .map(|c| c[1..].to_ascii_lowercase());
+        let said = HandWords { font, size, colour, ground };
+        (said.font.is_some() || said.size.is_some() || said.colour.is_some() || said.ground.is_some()).then_some(said)
     }
 
     /// As Typst's `text` takes it: `font: ("EB Garamond",), size: 20pt,
@@ -988,6 +999,9 @@ impl HandWords {
         if let Some(hex) = &self.colour {
             let _ = write!(name, " {}", hex.to_ascii_uppercase());
         }
+        if let Some(hex) = &self.ground {
+            let _ = write!(name, " on {}", hex.to_ascii_uppercase());
+        }
         if let Some(font) = &self.font {
             let _ = write!(name, " {}", plain_words(font));
         }
@@ -1005,6 +1019,9 @@ impl HandWords {
         }
         if let Some(hex) = &self.colour {
             said.push(format!("color: #{hex}"));
+        }
+        if let Some(hex) = &self.ground {
+            said.push(format!("background-color: #{hex}"));
         }
         said.join("; ")
     }
@@ -1201,9 +1218,27 @@ impl Converter<'_> {
             out
         };
         match x.flavour {
-            // Ended, so that what follows is not read as more of it.
-            Flavour::Typst => around("typst", format!("#text({})[", said.typst()), "];"),
-            Flavour::Latex => around("latex", said.latex(), "}"),
+            // Ended, so that what follows is not read as more of it. The ground is about the words as they are set.
+            Flavour::Typst => {
+                let (mut open, mut close) = (String::new(), String::new());
+                if let Some(hex) = &said.ground {
+                    let _ = write!(open, "#highlight(fill: rgb(\"#{hex}\"))[");
+                    close.push_str("];");
+                }
+                let text = said.typst();
+                if !text.is_empty() {
+                    let _ = write!(open, "#text({text})[");
+                    close.insert_str(0, "];");
+                }
+                around("typst", open, &close)
+            }
+            // The ground by a command of the document's own (`export/latex.rs`), which breaks with the line where LaTeX can.
+            Flavour::Latex => match &said.ground {
+                Some(hex) => {
+                    around("latex", format!("\\gkground{{{}}}{{{}", hex.to_ascii_uppercase(), said.latex()), "}}")
+                }
+                None => around("latex", said.latex(), "}"),
+            },
             Flavour::Plain if x.classes => {
                 vec![json!({"t": "Span", "c": [["", [], [["style", said.css()]]], current]})]
             }

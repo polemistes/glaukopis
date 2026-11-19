@@ -30,7 +30,7 @@
  * written is read back before it is given out.
  */
 
-import { HAND_MARKS, handMarkAttrs, isHandMark } from '$lib/byhand/hand';
+import { handMarkAttrs, isValuedMark, VALUED_MARKS } from '$lib/byhand/hand';
 import { linesOf } from '$lib/project/model/lines';
 import type { Inline, InlineLineMark, InlineText } from '$lib/project/model/text';
 import { readCitation, writeCitation } from './cite';
@@ -99,6 +99,7 @@ const ORDER = [
   'font',
   'size',
   'colour',
+  'ground',
   'strong',
   'em',
   'underline',
@@ -148,8 +149,8 @@ export function canonicalMarks(marks: Marks | undefined): Marks {
     } else if (name === 'found') {
       const found = foundOf(value);
       if (found) out.found = found;
-    } else if (isHandMark(name)) {
-      // Set by hand in a box of rich text: a font, a size, a colour, each as it is kept.
+    } else if (isValuedMark(name)) {
+      // Set by hand in a box of rich text: a font, a size, a colour, each as it is kept; and the ground of words.
       const attrs = handMarkAttrs(name, value);
       if (attrs) out[name] = attrs;
     }
@@ -423,6 +424,9 @@ function spanSpec(name: string, value: unknown, w: Writing): string {
       return `size=${specValue(String(held.pt ?? ''))}`;
     case 'colour':
       return `colour=${specValue(String(held.value ?? ''))}`;
+    // The ground of words, a highlight (ADR 0116).
+    case 'ground':
+      return `ground=${specValue(String(held.value ?? ''))}`;
     case 'link':
       return `link href=${specValue(String(held.href ?? ''))}`;
     case 'kind': {
@@ -456,9 +460,9 @@ function writeSpan(node: Extract<MarkNode, { t: 'mark' }>, w: Writing): string {
   // What is set by hand of the very same words is said in one bracket: `[words]{size=20 colour=#a02020}`.
   const said = [spanSpec(node.name, node.value, w)];
   let inner = node;
-  while (isHandMark(inner.name) && inner.kids.length === 1) {
+  while (isValuedMark(inner.name) && inner.kids.length === 1) {
     const kid = inner.kids[0];
-    if (kid.t !== 'mark' || !isHandMark(kid.name)) break;
+    if (kid.t !== 'mark' || !isValuedMark(kid.name)) break;
     said.push(spanSpec(kid.name, kid.value, w));
     inner = kid;
   }
@@ -741,7 +745,8 @@ function readSpec(spec: string): { name: string | null; said: Map<string, unknow
     }
   }
   if (name !== null && !/^\.?[\p{L}\p{N}][\p{L}\p{N}_.-]*$/u.test(name)) return null;
-  if (name === null && !said.has('lang') && !HAND_MARKS.some((mark) => said.has(mark))) return null;
+  if (name === null && !said.has('lang') && !VALUED_MARKS.some((mark) => said.has(mark)))
+    return null;
   return { name, said };
 }
 
@@ -1107,7 +1112,7 @@ class Reader {
     if (name === null) {
       // With no name: the language of the words, and what is set by hand of them, whichever are said.
       let marked = text('lang') ? withMark(kids, 'lang', { tag: text('lang') }) : kids;
-      for (const mark of HAND_MARKS) {
+      for (const mark of VALUED_MARKS) {
         const attrs = said.has(mark) ? handMarkAttrs(mark, said.get(mark)) : null;
         if (attrs) marked = withMark(marked, mark, attrs);
       }

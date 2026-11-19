@@ -16,6 +16,21 @@ export type HandMark = (typeof HAND_MARKS)[number];
 export const isHandMark = (name: string): name is HandMark =>
   (HAND_MARKS as readonly string[]).includes(name);
 
+/**
+ * The ground of words (ADR 0116): the colour behind them, a highlight. A
+ * mark with one value as those set by hand are, but of every text and not
+ * of a box alone: it is not among `HAND_MARKS`, which are taken away
+ * outside a box.
+ */
+export const GROUND = 'ground';
+
+/** The marks that are kept with one value each: those set by hand, and the ground. */
+export const VALUED_MARKS = [...HAND_MARKS, GROUND] as const;
+export type ValuedMark = (typeof VALUED_MARKS)[number];
+
+export const isValuedMark = (name: string): name is ValuedMark =>
+  (VALUED_MARKS as readonly string[]).includes(name);
+
 /** The smallest and the largest size of letters, in points. */
 export const SMALLEST = 4;
 export const LARGEST = 400;
@@ -59,8 +74,8 @@ export function colourOf(value: unknown): string | null {
   return short ? `#${short[1]}${short[1]}${short[2]}${short[2]}${short[3]}${short[3]}` : null;
 }
 
-/** The attributes of a mark set by hand as the schema keeps them; nothing where what was given says nothing. */
-export function handMarkAttrs(name: HandMark, value: unknown): Record<string, unknown> | null {
+/** The attributes of a mark set by hand, or of the ground, as the schema keeps them; nothing where what was given says nothing. */
+export function handMarkAttrs(name: ValuedMark, value: unknown): Record<string, unknown> | null {
   if (name === 'font') {
     const family = fontOf(value);
     return family ? { family } : null;
@@ -174,6 +189,8 @@ export const fontStyle = (family: string) => `font-family: "${family}"`;
 export const sizeStyle = (pt: number) =>
   `font-size: calc(var(--text-size, 17px) * ${pt} / var(--hand-base, 11))`;
 export const colourStyle = (value: string) => `color: ${value}`;
+/** The ground of words: the colour is said, and the style sheet draws it (`app.css`), fainter where it is only for the eye. */
+export const groundStyle = (value: string) => `--ground: ${value}`;
 
 /**
  * How a paragraph that stands by hand is drawn, as the style of the

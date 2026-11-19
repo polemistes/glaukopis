@@ -2014,6 +2014,10 @@ fn docx_hand_styles(hand: &HandStyles) -> String {
             let half = (pt * 2.0).round() as i32;
             let _ = write!(inner, "<w:sz w:val=\"{half}\"/><w:szCs w:val=\"{half}\"/>");
         }
+        // The ground of the words (ADR 0116): any colour, which Word's own highlight has not.
+        if let Some(hex) = &words.ground {
+            let _ = write!(inner, "<w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"{}\"/>", hex.to_ascii_uppercase());
+        }
         s.push_str(&character_style(&style_id(name), &xml(name), None, &inner));
     }
     for (name, (base, said)) in &hand.paragraphs {
@@ -2106,6 +2110,9 @@ fn odt_hand_styles(s: &mut String, hand: &HandStyles) {
         }
         if let Some(hex) = &words.colour {
             let _ = write!(text, " fo:color=\"#{hex}\"");
+        }
+        if let Some(hex) = &words.ground {
+            let _ = write!(text, " fo:background-color=\"#{hex}\"");
         }
         let stored = odt_style_name(name);
         let style = format!(

@@ -14,8 +14,8 @@
 
 import { ySyncPluginKey } from 'y-prosemirror';
 import * as Y from 'yjs';
-import { handMarkAttrs, handOf, HAND_MARKS, isHandMark } from '$lib/byhand/hand';
-import { formOfElements, raiseForm } from '$lib/editor/form';
+import { GROUND, handMarkAttrs, handOf, HAND_MARKS, isValuedMark } from '$lib/byhand/hand';
+import { formOfElements, formOfMark, raiseForm } from '$lib/editor/form';
 import { figureWidth, foundAttrs, tableWidth } from '$lib/editor/schema';
 import { newId } from '$lib/util/id';
 import {
@@ -48,6 +48,8 @@ const BODY_MARKS = new Set([
   'lang',
   'link',
   'found',
+  // The ground of words, a highlight (ADR 0116): of every text.
+  GROUND,
 ]);
 
 /** The marks a name can have. */
@@ -65,6 +67,14 @@ const BOX_MARKS = new Set([...BODY_MARKS, ...HAND_MARKS]);
  * place could not show or take away.
  */
 let inBox = false;
+
+/**
+ * The form of the texts that the marks of the words written since
+ * `blockElements` began need, and what each element it made needs by them:
+ * the elements are not in a document yet, and cannot be asked.
+ */
+let needed = 1;
+const needs = new WeakMap<Y.XmlElement, number>();
 
 /**
  * The marks of a run of words as attributes of its text, each what the
@@ -98,10 +108,13 @@ function attributesOf(marks: InlineText['marks'], known: Set<string>): Record<st
       const tag = held.tag;
       if (typeof tag !== 'string' || !tag.trim()) continue;
       out.lang = { tag: tag.trim() };
-    } else if (isHandMark(name)) {
-      // Set by hand: a font, a size, a colour, each as it is kept.
+    } else if (isValuedMark(name)) {
+      // Set by hand: a font, a size, a colour, each as it is kept; and the ground of words.
       const attrs = handMarkAttrs(name, value);
-      if (attrs) out[name] = attrs;
+      if (attrs) {
+        out[name] = attrs;
+        needed = Math.max(needed, formOfMark(name));
+      }
     } else {
       if (name === 'sup') delete out.sub;
       if (name === 'sub') delete out.sup;
@@ -323,6 +336,8 @@ function setOff(block: Block): Y.XmlElement | null {
  */
 export function blockElements(blocks: readonly Block[]): Y.XmlElement[] {
   const out: Y.XmlElement[] = [];
+  // What the marks of the words written here need of the form of the texts: said of each element made (`sayFormOf`).
+  needed = 1;
   let box: Block[] = [];
   const close = () => {
     inBox = true;
@@ -341,6 +356,7 @@ export function blockElements(blocks: readonly Block[]): Y.XmlElement[] {
     else out.push(...plainElements([block]));
   }
   if (box.length) close();
+  if (needed > 1) for (const made of out) needs.set(made, needed);
   return out;
 }
 
@@ -398,7 +414,10 @@ export function nameElement(name: Inline[]): Y.XmlElement {
  * writes them. An editor asks it itself (`saysForm`).
  */
 export function sayFormOf(text: Y.XmlFragment, elements: readonly Y.XmlElement[]) {
-  if (text.doc) raiseForm(text.doc, formOfElements(elements));
+  if (!text.doc) return;
+  let form = formOfElements(elements);
+  for (const made of elements) form = Math.max(form, needs.get(made) ?? 1);
+  raiseForm(text.doc, form);
 }
 
 /**

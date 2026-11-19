@@ -33,6 +33,8 @@ const MARKS = new Set([
   'kind',
   'lang',
   'link',
+  // The ground of words: what was marked where the note was taken.
+  'ground',
 ]);
 
 /** The endings of the files a note shows as pictures: those a figure shows as they are. */

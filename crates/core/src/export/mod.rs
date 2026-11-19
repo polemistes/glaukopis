@@ -368,6 +368,7 @@ fn particulars(doc: &Document, f: &DocumentFormat) -> Particulars {
         flows,
         tables,
         own_kinds: doc.kinds.clone(),
+        grounds: crate::document::grounds::has_grounds(doc),
         // Known when the document has been written for Word or Writer: see `export_until`.
         hand_styles: Default::default(),
     }
@@ -901,6 +902,8 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
         &request.format,
         matches!(target, Target::Pdf | Target::Typst),
     );
+    // The ground of words is set in the document on a sheet of rich text, and nowhere else (`document/grounds.rs`).
+    crate::document::grounds::set_grounds(&mut document);
     if !keep_citations {
         let notes = ctx.styles.get(&request.style).is_ok_and(|s| s.kind == "note");
         crate::document::beside::place_citations(&mut document, notes);
@@ -3951,6 +3954,89 @@ mod tests {
         export(&s.ctx(), &r, Target::Markdown, &md, &ExportOptions::default()).unwrap();
         let m = fs::read_to_string(&md).unwrap();
         assert!(m.contains("**A heading of the sheet**") && !m.contains("# A heading of the sheet"), "{m}");
+    }
+
+    #[test]
+    fn the_ground_of_words_is_set_on_a_sheet_of_rich_text_in_every_kind_of_document_and_nowhere_else() {
+        let Some(s) = setup() else { return };
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let mut r = request("chicago-author-date");
+        let marked: Vec<crate::document::Block> = serde_json::from_value(serde_json::json!([
+            { "kind": "paragraph", "name": "text", "content": [
+                { "kind": "text", "text": "Marked for the eye alone.", "marks": { "ground": { "value": "#a5d8ff" } } }
+            ] },
+            { "kind": "paragraph", "name": "text", "rich": "first", "content": [
+                { "kind": "text", "text": "On the sheet ", "marks": {} },
+                { "kind": "text", "text": "this stands on yellow", "marks": { "ground": { "value": "#FFE066" } } },
+                { "kind": "text", "text": " and ", "marks": {} },
+                { "kind": "text", "text": "this large on green", "marks": {
+                    "ground": { "value": "#b7eb8f" }, "size": { "pt": 20 }
+                } },
+                { "kind": "text", "text": ".", "marks": {} }
+            ] }
+        ]))
+        .unwrap();
+        r.document.sections[1].blocks.extend(marked);
+
+        // Typst: a highlight of that colour about the words of the sheet, and none about those of the text.
+        let typ = out.join("ground.typ");
+        export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
+        let t = fs::read_to_string(&typ).unwrap();
+        assert!(t.contains("#highlight(fill: rgb(\"#ffe066\"))[this stands on yellow];"), "{t}");
+        assert!(t.contains("#highlight(fill: rgb(\"#b7eb8f\"))[#text(size: 20pt)[this large on green];];"), "{t}");
+        assert!(!t.contains("a5d8ff") && t.contains("Marked for the eye alone."), "{t}");
+        let p = preview(&s.ctx(), &r).unwrap();
+        assert!(!p.pages.is_empty(), "{:?}", p.warnings);
+
+        // LaTeX: by the document's own command, which the header has only where it is needed.
+        let tex = out.join("ground.tex");
+        export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
+        let l = fs::read_to_string(&tex).unwrap();
+        assert!(l.contains("\\newcommand{\\gkground}[2]"), "{l}");
+        assert!(l.contains("\\gkground{FFE066}{{this stands on yellow}}"), "{l}");
+        assert!(l.contains("\\gkground{B7EB8F}{{\\fontsize{20pt}"), "{l}");
+        assert!(!l.contains("A5D8FF"), "{l}");
+        if s.tools.latex_engine().is_ok() {
+            let pdf = out.join("ground.pdf");
+            let e = export(&s.ctx(), &r, Target::PdfLatex, &pdf, &ExportOptions::default()).unwrap();
+            assert!(fs::read(&pdf).unwrap().starts_with(b"%PDF"), "{:?}", e.warnings);
+        }
+        let plain = out.join("plain.tex");
+        export(&s.ctx(), &request("chicago-author-date"), Target::Latex, &plain, &ExportOptions::default()).unwrap();
+        assert!(!fs::read_to_string(&plain).unwrap().contains("gkground"));
+
+        // A page of the web.
+        let html = out.join("ground.html");
+        export(&s.ctx(), &r, Target::Html, &html, &ExportOptions::default()).unwrap();
+        let h = fs::read_to_string(&html).unwrap();
+        assert!(h.contains("<span style=\"background-color: #ffe066\">this stands on yellow</span>"), "{h}");
+        assert!(h.contains("font-size: 20pt; background-color: #b7eb8f"), "{h}");
+        assert!(!h.contains("a5d8ff"), "{h}");
+
+        // Word and Writer: in a style made for it.
+        let docx = out.join("ground.docx");
+        let e = export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        assert!(e.warnings.is_empty(), "{:?}", e.warnings);
+        let styles = unzip(&docx, "word/styles.xml");
+        roxmltree::Document::parse(&styles).unwrap();
+        let document = unzip(&docx, "word/document.xml");
+        assert!(document.contains("<w:rStyle w:val=\"RichtextonFFE066\""), "{document}");
+        assert!(styles.contains("w:val=\"Rich text on FFE066\"") && styles.contains("w:fill=\"FFE066\""), "{styles}");
+        assert!(styles.contains("w:val=\"Rich text 20pt on B7EB8F\""), "{styles}");
+        assert!(!styles.contains("A5D8FF") && !document.contains("A5D8FF"));
+        let odt = out.join("ground.odt");
+        let e = export(&s.ctx(), &r, Target::Odt, &odt, &ExportOptions::default()).unwrap();
+        assert!(e.warnings.is_empty(), "{:?}", e.warnings);
+        let styles = unzip(&odt, "styles.xml");
+        roxmltree::Document::parse(&styles).unwrap();
+        assert!(styles.contains("fo:background-color=\"#ffe066\""), "{styles}");
+
+        // Markdown has the words alone.
+        let md = out.join("ground.md");
+        export(&s.ctx(), &r, Target::Markdown, &md, &ExportOptions::default()).unwrap();
+        let m = fs::read_to_string(&md).unwrap();
+        assert!(m.contains("this stands on yellow") && !m.contains("ffe066"), "{m}");
     }
 
     #[test]

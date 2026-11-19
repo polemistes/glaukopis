@@ -7,6 +7,7 @@
 
 pub mod beside;
 pub mod bibliography;
+pub mod grounds;
 pub mod headed;
 mod numbers;
 pub mod pandoc;

@@ -9,6 +9,7 @@ import {
   formInUpdate,
   formOf,
   formOfElements,
+  formOfMark,
   formOfText,
   formOfStored,
   raiseForm,
@@ -151,6 +152,56 @@ describe('the form of the texts', () => {
       view.state.tr.delete(view.state.doc.content.size - box.nodeSize, view.state.doc.content.size),
     );
     expect(formOf(doc)).toBe(2);
+  });
+
+  it('is said by the document before the first ground of words is put into one of its texts', () => {
+    const doc = new Y.Doc();
+    const text = doc.getXmlFragment('text');
+    const changes: number[] = [];
+    doc.on('update', (update: Uint8Array) => changes.push(formInUpdate(update)));
+    const place = document.body.appendChild(document.createElement('div'));
+    const view = new EditorView(place, {
+      state: EditorState.create({
+        schema: bodySchema,
+        plugins: [ySyncPlugin(text), saysForm(text)],
+      }),
+    });
+    views.push(view);
+    const ground = bodySchema.marks.ground.create({ value: '#ffe066' });
+    view.dispatch(view.state.tr.insertText('Plain words.', 1));
+    view.dispatch(view.state.tr.addMark(1, 6, bodySchema.marks.strong.create()));
+    expect(formOf(doc)).toBe(1);
+    // On words that were there.
+    view.dispatch(view.state.tr.addMark(1, 6, ground));
+    expect(formOf(doc)).toBe(2);
+    const said = changes.findIndex((form) => form === 2);
+    expect(said).toBeGreaterThan(-1);
+    expect(said).toBeLessThan(changes.length - 1);
+    expect(text.toString()).toContain('ground');
+
+    // And on words that are put in with it, as what is pasted is.
+    const other = new Y.Doc();
+    const pasted = other.getXmlFragment('text');
+    const second = new EditorView(document.body.appendChild(document.createElement('div')), {
+      state: EditorState.create({
+        schema: bodySchema,
+        plugins: [ySyncPlugin(pasted), saysForm(pasted)],
+      }),
+    });
+    views.push(second);
+    second.dispatch(second.state.tr.insert(1, bodySchema.text('marked', [ground])));
+    expect(formOf(other)).toBe(2);
+  });
+
+  it('is asked of the marks of the words of a text too', () => {
+    const { paragraph } = bodySchema.nodes;
+    const ground = bodySchema.marks.ground.create({ value: '#ffe066' });
+    const marked = bodySchema.node('doc', null, [
+      paragraph.create(null, [bodySchema.text('plain '), bodySchema.text('marked', [ground])]),
+    ]);
+    expect(formOfText(marked)).toBe(2);
+    expect(formOfMark('ground')).toBe(2);
+    expect(formOfMark('strong')).toBe(1);
   });
 
   it('is the latest form of a project file that the core reads', () => {

@@ -922,6 +922,26 @@ describe('a box of rich text in Org', () => {
         '#+END_rich',
       ),
     );
+    // The ground of words, a highlight, is said as what is set by hand is, in a box and outside one; the highlight that is a kind of words is another thing.
+    expect(
+      written([
+        p([
+          t('Plain '),
+          t('marked', { ground: { value: '#ffe066' } }),
+          t(' and '),
+          t('of the kind', { kind: { name: 'highlight', lang: '' } }),
+        ]),
+        first(p([t('large on green', { size: { pt: 20 }, ground: { value: '#b7eb8f' } })])),
+      ]),
+    ).toBe(
+      lines(
+        'Plain [marked]{ground=#ffe066} and [of the kind]{highlight}',
+        '',
+        '#+BEGIN_rich',
+        '[large on green]{size=20 ground=#b7eb8f}',
+        '#+END_rich',
+      ),
+    );
     // A heading of rich text is said so of its paragraph: it is no headline of Org, which is an element.
     expect(
       written([

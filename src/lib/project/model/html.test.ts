@@ -187,6 +187,17 @@ describe('a text as HTML', () => {
     expect(text.dataset.heading).toBeUndefined();
   });
 
+  it('draws the ground of words as the editor draws it', () => {
+    const root = document.createElement('div');
+    root.innerHTML = blocksHtml([
+      paragraph([t('Plain '), t('marked', { ground: { value: '#a5d8ff' } })]),
+    ]);
+    const mark = root.querySelector('mark')!;
+    expect(mark.dataset.ground).toBe('#a5d8ff');
+    expect(mark.getAttribute('style')).toBe('--ground: #a5d8ff');
+    expect(mark.textContent).toBe('marked');
+  });
+
   it('cuts a text at a block, a break taking no room', () => {
     const { blocks, cut } = excerpt([pagebreak(), paragraph([t('a'.repeat(50))])], 60);
     expect(blocks).toHaveLength(2);

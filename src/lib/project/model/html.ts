@@ -14,6 +14,7 @@ import {
   colourStyle,
   fontOf,
   fontStyle,
+  groundStyle,
   handOf,
   handStyle,
   sizeOf,
@@ -69,6 +70,10 @@ function inlines(list: Inline[], notes: Notes): string {
         const colour = colourOf(i.marks.colour);
         if (colour)
           html = `<span data-colour="${colour}" style="${escape(colourStyle(colour))}">${html}</span>`;
+        // The ground of words, a highlight (ADR 0116).
+        const ground = colourOf(i.marks.ground);
+        if (ground)
+          html = `<mark data-ground="${ground}" style="${escape(groundStyle(ground))}">${html}</mark>`;
         // The language of a passage, inside any kind of words, as the editor has it: its name is told on hover.
         const lang = i.marks.lang;
         const tag = typeof lang === 'object' && typeof lang.tag === 'string' ? lang.tag.trim() : '';

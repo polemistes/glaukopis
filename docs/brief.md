@@ -1791,3 +1791,13 @@ other kinds of paragraph left as they are on the sheet.
 - **The looks of the kinds of paragraph are not drawn on the sheet**, for
   now ("Perhaps not implement kinds").
 
+## 2026-11-19 — the background colour of text, and highlighting
+
+> The background colour of the text should also be adjustable. This should
+> also be possible in the normal editor. Highlighting text should be
+> generally possible.
+
+- **The background colour of words can be set** in rich text.
+- **And in the ordinary editor.**
+- **Highlighting is possible everywhere.**
+

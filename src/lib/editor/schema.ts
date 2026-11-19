@@ -12,6 +12,7 @@ import {
   colourStyle,
   fontOf,
   fontStyle,
+  groundStyle,
   handOf,
   handStyle,
   sizeOf,
@@ -335,7 +336,30 @@ const marks: Record<string, MarkSpec> = {
       return ['span', { 'data-colour': value, style: colourStyle(value) }, 0];
     },
   },
+  // The ground of words (ADR 0116): the colour behind them, a highlight. In every text, not in a box alone.
+  ground: {
+    attrs: { value: {} },
+    excludes: 'ground',
+    parseDOM: [
+      {
+        tag: 'mark[data-ground]',
+        getAttrs: (node) => {
+          const value = colourOf((node as HTMLElement).getAttribute('data-ground'));
+          return value ? { value } : false;
+        },
+      },
+      // What another program has marked with a marker pen.
+      { tag: 'mark', getAttrs: () => ({ value: MARKER }) },
+    ],
+    toDOM: (mark) => {
+      const value = colourOf(mark.attrs.value) ?? MARKER;
+      return ['mark', { 'data-ground': value, style: groundStyle(value) }, 0];
+    },
+  },
 };
+
+/** The yellow of a marker pen: the ground of what another program has marked. */
+export const MARKER = '#ffe066';
 
 /** How a paragraph stands by hand, from what a paragraph of our own HTML says of it. */
 function handFromData(data: string | null): HandLook | null {

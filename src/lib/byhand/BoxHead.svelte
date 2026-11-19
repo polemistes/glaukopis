@@ -4,7 +4,8 @@
    * that set the look by hand, and the menu of the box. It stands at the
    * top of the box and stays in view while the box is scrolled through. The
    * tools show while the cursor is in this box, each showing what is set of
-   * what is selected: whether the paragraphs are text or a heading; the font, the size and the colour of the words; bold,
+   * what is selected: whether the paragraphs are text or a heading; the font,
+   * the size and the colour of the words, and the colour behind them; bold,
    * italic and underlined; how the paragraphs stand; the lists; a panel
    * with the spacing and the indents; and what takes it all away. The head
    * is as high with the tools as without, so that nothing moves when the
@@ -19,6 +20,7 @@
   import Bold from '@lucide/svelte/icons/bold';
   import ChevronsRight from '@lucide/svelte/icons/chevrons-right';
   import Ellipsis from '@lucide/svelte/icons/ellipsis';
+  import Highlighter from '@lucide/svelte/icons/highlighter';
   import Italic from '@lucide/svelte/icons/italic';
   import List from '@lucide/svelte/icons/list';
   import ListOrdered from '@lucide/svelte/icons/list-ordered';
@@ -33,6 +35,7 @@
   import type { EditorView } from 'prosemirror-view';
   import { kindOf, markActive, setKind, toggle } from '$lib/editor/commands';
   import { dragWhole } from '$lib/editor/dragged';
+  import { groundAt, groundItems, groundsOpenedIn } from '$lib/editor/ground';
   import { hooksOf } from '$lib/editor/ui.svelte';
   import { t } from '$lib/i18n';
   import { fonts } from '$lib/look/fonts.svelte';
@@ -153,6 +156,13 @@
     openMenu(event.currentTarget as HTMLElement, colourItems(), { align: 'start' });
   }
 
+  /** The ground of the words selected, their highlight (ADR 0116): on a sheet it is their look, and set in the document. */
+  const ground = $derived(here ? groundAt(here) : null);
+  function grounds(event: MouseEvent) {
+    groundsOpenedIn(view);
+    openMenu(event.currentTarget as HTMLElement, groundItems(view), { align: 'start' });
+  }
+
   // For the scripts of the running application, which cannot press the system's chooser of colours: any colour, as if chosen there.
   testHook('__glaukopisRichColour', (value: string) => run(setHandMark('colour', value)));
 
@@ -233,14 +243,14 @@
    * the line before it counted in. They stand in this order.
    */
   const ROOM = {
-    level: 103,
-    font: 109,
-    size: 47,
-    colour: 25,
-    marks: 85,
-    aligns: 110,
-    lists: 60,
-    paragraph: 60,
+    level: 99,
+    font: 106,
+    size: 45,
+    colour: 50,
+    marks: 81,
+    aligns: 106,
+    lists: 56,
+    paragraph: 56,
   } as const;
   type Group = keyof typeof ROOM;
   /**
@@ -344,7 +354,10 @@
         ],
       },
     ]);
-    part('colour', [{ kind: 'submenu', label: t('byhand-colour'), items: colourItems() }]);
+    part('colour', [
+      { kind: 'submenu', label: t('byhand-colour'), items: colourItems() },
+      { kind: 'submenu', label: t('editor-highlight'), items: groundItems(view) },
+    ]);
     part(
       'marks',
       MARKS.map((m): MenuItem => ({
@@ -485,6 +498,24 @@
         >
           <Baseline size={14} />
           <span class="swatch" style:background={typeof colour === 'string' ? colour : 'var(--ink)'}
+          ></span>
+        </button>
+      {/if}
+      {#if shown.has('colour')}
+        <button
+          type="button"
+          class="tool colour"
+          aria-label={t('editor-highlight')}
+          aria-haspopup="menu"
+          use:tooltip={t('editor-highlight')}
+          data-rich-ground={typeof ground === 'string' ? ground : ''}
+          onclick={grounds}
+        >
+          <Highlighter size={14} />
+          <span
+            class="swatch"
+            class:none={typeof ground !== 'string'}
+            style:background={typeof ground === 'string' ? ground : 'transparent'}
           ></span>
         </button>
       {/if}
@@ -690,7 +721,7 @@
     flex: none;
     width: 1px;
     height: 14px;
-    margin: 0 4px;
+    margin: 0 2px;
     background: var(--line-strong);
   }
   .tool {
@@ -730,6 +761,10 @@
     margin-top: -3px;
     border-radius: 1px;
   }
+  /* No ground: the place of the colour is shown, empty. */
+  .swatch.none {
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+  }
   /* The system's chooser of colours is opened from the menu; its field is not seen. */
   .any {
     position: absolute;
@@ -754,15 +789,15 @@
     line-height: 1;
   }
   .level {
-    width: 96px;
+    width: 92px;
     margin-right: 6px;
   }
   .font {
-    width: 108px;
+    width: 105px;
   }
   .size {
     width: 40px;
-    margin: 0 3px;
+    margin: 0 2px;
     text-align: right;
   }
   .paragraph {

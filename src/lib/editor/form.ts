@@ -18,8 +18,9 @@
  * can be read from its bytes, before anything of it is taken in.
  */
 
-import type { Node } from 'prosemirror-model';
-import { Plugin } from 'prosemirror-state';
+import type { Fragment, Node } from 'prosemirror-model';
+import { Plugin, type Transaction } from 'prosemirror-state';
+import { AddMarkStep, ReplaceAroundStep, ReplaceStep } from 'prosemirror-transform';
 import * as Y from 'yjs';
 
 /**
@@ -34,6 +35,16 @@ export const FORM = 2;
  * top of a text only, where each of these stands.
  */
 const SINCE: Readonly<Record<string, number>> = { rich: 2 };
+
+/**
+ * The marks of words that an earlier form does not know, as the blocks
+ * above. The ground of words came with the second form too (ADR 0116):
+ * no version that knew the box and not the ground was released.
+ */
+const SINCE_MARKS: Readonly<Record<string, number>> = { ground: 2 };
+
+/** The form a mark of words needs, by its name; the first for one every form knows. */
+export const formOfMark = (name: string): number => SINCE_MARKS[name] ?? 1;
 
 /** The map of a document that says its form. */
 const NAME = 'form';
@@ -64,12 +75,44 @@ export function raiseForm(doc: Y.Doc, to: number): void {
   doc.transact(() => said.set(String(to), true));
 }
 
-/** The form a text is of by what it holds, as the editor has it: the first where it holds nothing a later form brought. */
-export function formOfText(text: Node): number {
+/** The form the blocks of a text need, as the editor has it: asked at the top of the text only. */
+function formOfBlocks(text: Node): number {
   let form = 1;
   text.forEach((block) => {
     form = Math.max(form, SINCE[block.type.name] ?? 1);
   });
+  return form;
+}
+
+/** The form the marks of the words in a piece of a text need. */
+function formOfMarksIn(piece: Node | Fragment): number {
+  let form = 1;
+  piece.descendants((node) => {
+    for (const mark of node.marks) form = Math.max(form, formOfMark(mark.type.name));
+    return form < FORM;
+  });
+  return form;
+}
+
+/** The form a text is of by what it holds, its blocks and the marks of its words: the first where it holds nothing a later form brought. */
+export function formOfText(text: Node): number {
+  return Math.max(formOfBlocks(text), formOfMarksIn(text));
+}
+
+/**
+ * The form of what a change puts into a text: of the blocks the text then
+ * has, and of the marks the change itself brings, on words it puts in or
+ * on words that were there. The words that were there already are not gone
+ * through: this is asked of every change, and a text may be long.
+ */
+function formOfChange(tr: Transaction): number {
+  let form = formOfBlocks(tr.doc);
+  for (const step of tr.steps) {
+    if (form >= FORM) break;
+    if (step instanceof AddMarkStep) form = Math.max(form, formOfMark(step.mark.type.name));
+    else if (step instanceof ReplaceStep || step instanceof ReplaceAroundStep)
+      form = Math.max(form, formOfMarksIn(step.slice.content));
+  }
   return form;
 }
 
@@ -92,8 +135,11 @@ export function saysForm(text: Y.XmlFragment): Plugin {
     filterTransaction(tr) {
       const doc = text.doc;
       if (!tr.docChanged || !doc) return true;
-      const form = formOfText(tr.doc);
-      if (form > 1 && formOf(doc) < form) raiseForm(doc, form);
+      // Nothing more to say where the document is of this version's form already.
+      const said = formOf(doc);
+      if (said >= FORM) return true;
+      const form = formOfChange(tr);
+      if (form > said) raiseForm(doc, form);
       return true;
     },
   });

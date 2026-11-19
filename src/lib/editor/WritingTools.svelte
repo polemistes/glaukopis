@@ -109,6 +109,7 @@
   import { askRefMark } from './refmarks';
   import { insertBox } from '$lib/byhand/box';
   import { richTextOffered } from '$lib/byhand/offered';
+  import { groundItems, groundsOpenedIn } from './ground';
   import { putBox } from '$lib/byhand/put';
   import { insertParallel } from './parallel';
 
@@ -437,16 +438,33 @@
     const on = s?.marks;
     if (!view || !on) return;
     const schema = view.state.schema;
+    // The ground of words, a highlight (ADR 0116): offered with rich text, since both are new to the form of the texts.
+    const highlight: MenuItem[] =
+      richTextOffered && schema.marks.ground
+        ? [
+            { kind: 'separator' },
+            {
+              kind: 'submenu',
+              label: t('editor-highlight'),
+              icon: Highlighter,
+              items: groundItems(view),
+            },
+          ]
+        : [];
+    groundsOpenedIn(view);
     openMenu(
       event.currentTarget as HTMLElement,
-      MARKS.map((m): MenuItem => ({
-        label: m.label(),
-        icon: m.icon,
-        shortcut: m.key,
-        checked: !!on[m.name],
-        disabled: !schema.marks[m.name],
-        action: () => run(toggle(m.name), view),
-      })),
+      [
+        ...MARKS.map((m): MenuItem => ({
+          label: m.label(),
+          icon: m.icon,
+          shortcut: m.key,
+          checked: !!on[m.name],
+          disabled: !schema.marks[m.name],
+          action: () => run(toggle(m.name), view),
+        })),
+        ...highlight,
+      ],
       { align: 'start' },
     );
   }
@@ -637,7 +655,10 @@
       [
         foreign,
         // The kinds of words, then a speaker and a direction within a line.
-        ...WORD_KINDS.filter((id) => id !== 'foreign').map((id) => ofWords(id)),
+        // The highlight that was a kind of words is under Marks, with colours, where that is offered (ADR 0116).
+        ...WORD_KINDS.filter(
+          (id) => id !== 'foreign' && !(id === 'highlight' && richTextOffered),
+        ).map((id) => ofWords(id)),
         ...ownWords.map((k) => ofWords(k.id)),
         { kind: 'separator' },
         ofPassage,

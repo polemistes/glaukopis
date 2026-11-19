@@ -210,6 +210,43 @@ describe('a box of rich text, as the project keeps it', () => {
     expect(bad).toEqual(boxed(paragraph([{ kind: 'text', text: 'x', marks: {} }]), 'first'));
   });
 
+  it('keeps the ground of words in every text, in a box and outside one, and in a note at the foot', () => {
+    const yellow = { ground: { value: '#ffe066' } };
+    const marked = (rich: Boxed | null): Block =>
+      boxed(
+        paragraph([
+          { kind: 'text', text: 'Marked', marks: yellow },
+          { kind: 'footnote', content: [{ kind: 'text', text: 'A note', marks: yellow }] },
+        ]),
+        rich,
+      );
+    expect(readBody(textOf([marked(null)]))).toEqual([marked(null)]);
+    expect(readBody(textOf([marked('first')]))).toEqual([marked('first')]);
+    // What is no colour is no ground.
+    const [bad] = readBody(
+      textOf([paragraph([{ kind: 'text', text: 'x', marks: { ground: { value: 'yellow' } } }])]),
+    );
+    expect(bad).toEqual(paragraph([{ kind: 'text', text: 'x', marks: {} }]));
+  });
+
+  it('has the document say the second form of the texts when a text is written with a ground of words', () => {
+    const doc = new Y.Doc();
+    const text = doc.getXmlFragment('text');
+    writeBody(text, [words('Plain')]);
+    expect(formOf(doc)).toBe(1);
+    writeBody(text, [
+      paragraph([{ kind: 'text', text: 'Marked', marks: { ground: { value: '#ffe066' } } }]),
+    ]);
+    expect(formOf(doc)).toBe(2);
+    // And not by a text written after it that has none.
+    const other = new Y.Doc();
+    blockElements([
+      paragraph([{ kind: 'text', text: 'Marked', marks: { ground: { value: '#ffe066' } } }]),
+    ]);
+    writeBody(other.getXmlFragment('text'), [words('Plain')]);
+    expect(formOf(other)).toBe(1);
+  });
+
   it('has the document say the second form of the texts when a text is written with one', () => {
     const doc = new Y.Doc();
     const text = doc.getXmlFragment('text');

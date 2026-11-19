@@ -260,6 +260,19 @@ pub fn settings(f: &DocumentFormat, looks: &[&DocumentFormat], p: &Particulars) 
     // of that line, measured into this length (ADR 0067).
     let _ = writeln!(h, "\\newlength{{\\gkafter}}");
 
+    // The ground of words set by hand in rich text (ADR 0116): a colour
+    // behind them. With LuaLaTeX and the package for it, it breaks with the
+    // line; else it is a box of that colour about the words, which does not.
+    if p.grounds {
+        let _ = writeln!(
+            h,
+            "\\ifdefined\\directlua\\IfFileExists{{lua-ul.sty}}{{\\usepackage{{luacolor,lua-ul}}}}{{}}\\fi\n\
+             \\newcommand{{\\gkground}}[2]{{{{\\definecolor{{gkground}}{{HTML}}{{#1}}\
+             \\ifdefined\\highLight\\highLight[gkground]{{#2}}\
+             \\else{{\\setlength{{\\fboxsep}}{{0pt}}\\colorbox{{gkground}}{{\\strut #2}}}}\\fi}}}}"
+        );
+    }
+
     // Quotations.
     let _ = writeln!(h, "\\usepackage{{etoolbox}}\n\\usepackage{{setspace}}");
     let mut quote = String::new();
