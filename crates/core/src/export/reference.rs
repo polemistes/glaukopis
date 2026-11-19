@@ -7,6 +7,7 @@
 use std::fmt::Write as _;
 use std::io::{Cursor, Read, Write};
 
+use crate::document::pandoc::HandStyles;
 use crate::error::{Error, Result};
 use crate::formats::kinds::{self, Family, OwnKind, Resolved};
 use crate::formats::typst::Particulars;
@@ -955,7 +956,10 @@ pub fn docx(default: &[u8], f: &DocumentFormat, p: &Particulars) -> Result<Vec<u
     let first_differs = first_differs(f);
     let alternate = [&f.header, &f.footer].iter().any(|m| m.is_visible() && m.alternate);
     rewrite(default, |files| {
-        put(files, "word/styles.xml", docx_styles(f, p.language.as_deref(), &p.own_kinds));
+        // With the styles made for what is set by hand in the document, after those of the layout and the kinds.
+        let styles = docx_styles(f, p.language.as_deref(), &p.own_kinds)
+            .replace("</w:styles>", &format!("{}</w:styles>", docx_hand_styles(&p.hand_styles)));
+        put(files, "word/styles.xml", styles);
 
         // Headers and footers, and their place in the list of parts.
         let mut relations = text_of(files, "word/_rels/document.xml.rels")?;
@@ -1765,6 +1769,7 @@ pub fn odt_styles_with_looks(default: &str, f: &DocumentFormat, p: &Particulars,
             s.insert_str(at, numbering);
         }
     }
+    odt_hand_styles(&mut s, &p.hand_styles);
     s
 }
 
@@ -1985,6 +1990,158 @@ pub fn substitute(f: &DocumentFormat, installed: &[String]) -> Option<String> {
         return None;
     }
     fallbacks(&f.font.family).into_iter().find(|c| has(c)).map(str::to_owned)
+}
+
+/// The styles of Word made for what is set by hand in a box of rich text
+/// (ADR 0113), each by the name the document gives it: of words, their
+/// font, their colour and their size; of a paragraph, the style it would
+/// have had, and over it only what was said by hand.
+fn docx_hand_styles(hand: &HandStyles) -> String {
+    let mut s = String::new();
+    for (name, words) in &hand.words {
+        let mut inner = String::new();
+        if let Some(font) = &words.font {
+            let font = xml(font);
+            let _ = write!(
+                inner,
+                "<w:rFonts w:ascii=\"{font}\" w:hAnsi=\"{font}\" w:eastAsia=\"{font}\" w:cs=\"{font}\"/>"
+            );
+        }
+        if let Some(hex) = &words.colour {
+            let _ = write!(inner, "<w:color w:val=\"{}\"/>", hex.to_ascii_uppercase());
+        }
+        if let Some(pt) = words.size {
+            let half = (pt * 2.0).round() as i32;
+            let _ = write!(inner, "<w:sz w:val=\"{half}\"/><w:szCs w:val=\"{half}\"/>");
+        }
+        s.push_str(&character_style(&style_id(name), &xml(name), None, &inner));
+    }
+    for (name, (base, said)) in &hand.paragraphs {
+        let mut inner = String::new();
+        let mut spacing = String::new();
+        if let Some(before) = said.space_before() {
+            let _ = write!(spacing, " w:before=\"{}\"", before.twips());
+        }
+        if let Some(after) = said.space_after() {
+            let _ = write!(spacing, " w:after=\"{}\"", after.twips());
+        }
+        if let Some(lines) = said.line_spacing() {
+            let _ = write!(spacing, " w:line=\"{}\" w:lineRule=\"auto\"", line(lines));
+        }
+        if !spacing.is_empty() {
+            let _ = write!(inner, "<w:spacing{spacing}/>");
+        }
+        let mut ind = String::new();
+        if let Some(left) = said.indent_left() {
+            let _ = write!(ind, " w:left=\"{}\"", left.twips());
+        }
+        if let Some(right) = said.indent_right() {
+            let _ = write!(ind, " w:right=\"{}\"", right.twips());
+        }
+        if let Some(first) = said.first_line() {
+            // A first line that begins before the rest hangs.
+            if first.twips() < 0 {
+                let _ = write!(ind, " w:hanging=\"{}\"", -first.twips());
+            } else {
+                let _ = write!(ind, " w:firstLine=\"{}\"", first.twips());
+            }
+        }
+        if !ind.is_empty() {
+            let _ = write!(inner, "<w:ind{ind}/>");
+        }
+        if let Some(to) = said.align() {
+            let _ = write!(inner, "<w:jc w:val=\"{}\"/>", jc(to));
+        }
+        let _ = write!(
+            s,
+            "<w:style w:type=\"paragraph\" w:customStyle=\"1\" w:styleId=\"{id}\"><w:name w:val=\"{name}\"/>\
+             <w:basedOn w:val=\"{base}\"/><w:qFormat/><w:pPr>{inner}</w:pPr></w:style>",
+            id = style_id(name),
+            name = xml(name),
+            base = style_id(base),
+        );
+    }
+    s
+}
+
+/// The name Writer keeps a style under, from the name it shows: a space is written `_20_`.
+fn odt_style_name(display: &str) -> String {
+    display.replace(' ', "_20_")
+}
+
+/// The style of Writer that stands for a style of Word a paragraph set by
+/// hand is based on: text, the first paragraph and a quotation have names
+/// of their own in Writer's pattern; a style of a kind has the same name.
+fn odt_base(word: &str) -> String {
+    match word {
+        "Body Text" => "Text_20_body".to_owned(),
+        "First Paragraph" => "First_20_paragraph".to_owned(),
+        "Block Text" => "Quotations".to_owned(),
+        other => odt_style_name(other),
+    }
+}
+
+/// The styles of Writer made for what is set by hand in a box of rich text
+/// (ADR 0113), put into the styles of the pattern: as `docx_hand_styles`.
+fn odt_hand_styles(s: &mut String, hand: &HandStyles) {
+    for (name, words) in &hand.words {
+        let mut text = String::new();
+        if let Some(font) = &words.font {
+            let font = xml(font);
+            declare_font(s, &font, "roman", "variable");
+            let _ = write!(
+                text,
+                " style:font-name=\"{font}\" style:font-name-asian=\"{font}\" style:font-name-complex=\"{font}\""
+            );
+        }
+        if let Some(pt) = words.size {
+            let _ = write!(
+                text,
+                " fo:font-size=\"{pt}pt\" style:font-size-asian=\"{pt}pt\" style:font-size-complex=\"{pt}pt\""
+            );
+        }
+        if let Some(hex) = &words.colour {
+            let _ = write!(text, " fo:color=\"#{hex}\"");
+        }
+        let stored = odt_style_name(name);
+        let style = format!(
+            "<style:style style:name=\"{stored}\" style:display-name=\"{}\" style:family=\"text\"><style:text-properties{text}/></style:style>",
+            xml(name)
+        );
+        replace_style(s, &stored, &style);
+    }
+    for (name, (base, said)) in &hand.paragraphs {
+        let mut paragraph = String::new();
+        if let Some(to) = said.align() {
+            let _ = write!(paragraph, " fo:text-align=\"{}\" style:justify-single-word=\"false\"", fo_align(to));
+        }
+        if let Some(lines) = said.line_spacing() {
+            let _ = write!(paragraph, " fo:line-height=\"{}\"", percent(lines));
+        }
+        if let Some(before) = said.space_before() {
+            let _ = write!(paragraph, " fo:margin-top=\"{}\"", inches(before));
+        }
+        if let Some(after) = said.space_after() {
+            let _ = write!(paragraph, " fo:margin-bottom=\"{}\"", inches(after));
+        }
+        if let Some(left) = said.indent_left() {
+            let _ = write!(paragraph, " fo:margin-left=\"{}\"", inches(left));
+        }
+        if let Some(right) = said.indent_right() {
+            let _ = write!(paragraph, " fo:margin-right=\"{}\"", inches(right));
+        }
+        if let Some(first) = said.first_line() {
+            let _ = write!(paragraph, " fo:text-indent=\"{}\" style:auto-text-indent=\"false\"", inches(first));
+        }
+        let stored = odt_style_name(name);
+        let style = format!(
+            "<style:style style:name=\"{stored}\" style:display-name=\"{}\" style:family=\"paragraph\" \
+             style:parent-style-name=\"{}\" style:class=\"text\"><style:paragraph-properties{paragraph}/></style:style>",
+            xml(name),
+            odt_base(base),
+        );
+        replace_style(s, &stored, &style);
+    }
 }
 
 #[cfg(test)]

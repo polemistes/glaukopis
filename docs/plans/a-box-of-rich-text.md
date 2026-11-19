@@ -42,7 +42,7 @@ The owner has read these and not objected; none is confirmed. They are the assis
 The owner chose that the guard goes out a release ahead of the box. The box is built on the same branch as the guard, so a release cut now would have both. One switch settles it: `RICH_TEXT_OFFERED` (`src/lib/byhand/offered.ts`), false.
 
 - **A version built with it false is the release that goes ahead**, and more than a guard: it knows the box, shows one it is given, keeps it and writes in it, and is not kept out of a project when someone with a later version puts a box in. It offers no way of making one.
-- **It stays false until the owner says otherwise.** With stage 3 the sheet does what it is for where the page is set by Typst: the typesetting pane and the PDF. Word, Writer, LaTeX, HTML and EPUB set the text without what was set by hand until stage 4.
+- **It stays false until the owner says otherwise.** With stage 3 the sheet does what it is for where the page is set by Typst: the typesetting pane and the PDF. With stage 4 every kind of document sets it but Markdown, which has the words alone.
 - **The scripts that drive the running application are offered it** whatever the switch says, so that all of it stays tried.
 - **To offer it**: set the switch to true, bring the section below into the guide, and release; the release before must have been one with the guard.
 
@@ -103,7 +103,11 @@ it, and what is pasted elsewhere, is ordinary text there; **Make it
 ordinary text** asks first where anything is set by hand, since it is
 taken away with the sheet.
 
-The typesetting pane and the PDF set all of it. The sheet shows the font,
+Every kind of document sets it: the typesetting pane and the PDF, LaTeX,
+a page of the web and a book for e-readers (whose reader may put its own
+font and colours over it), and Word and Writer, where each look set by
+hand is a style named *Rich text …* for what it sets. Markdown has the
+words alone. The sheet shows the font,
 the sizes, the colours and how the paragraphs stand; where the lines and
 the pages break is shown by the typesetting pane.
 
@@ -241,7 +245,7 @@ All four are built with stage 2 (record 0112).
 1. **The guard. Built** (record 0111): the form of the texts in a project's document and the notebook's, asked before either is opened and of everything the others send; the server keeping out those who do not know a project's form; the words; the tests, one of them binding an editor to a document that holds a block and a mark its schema does not know, which it deletes; `e2e/later-form.mjs`, and `e2e/later-form-shared.mjs` with the real server, two applications and the script as a later version. Nothing of the box. It goes out a release ahead of the box, and the server is updated with it.
 2. **The box, with nothing set by hand. Built** (record 0112), and smaller than this stage feared: the box is a block of its own in the editor only, and everything else reads a text as a run of blocks that each say they stand in a box, as paragraphs say how they are numbered; so the rule below holds by how a text is read, the core is not told of the box, and the places that had to learn of it are the editor, the reading and writing of a text, Org and the drawn text. As it was planned: The block and its place in the schema; *Insert → Rich text*, the keys in and out, the head and its menu, the white surface; every walk of a text's paragraphs going into the box, held by the test of the rule; the Org block; the core setting what is in a box as it sets any text. What one sees: a white sheet in the text that changes nothing in the document. This is the stage that touches the most places, and it is checked before any tool is added.
 3. **Set by hand, and seen. Built** (record 0113). As it was planned: The three marks and the paragraph's measures; the row of tools with the chooser of fonts lifted out; *Clear formatting*; the rule that nothing by hand lives outside a box; the Org forms; Typst, so that the typesetting pane and the PDF show it; the empty paragraph as a blank line. From here the box does what it is for.
-4. **The other forms of a document.** LaTeX; Word and Writer with their made styles; HTML and EPUB; Markdown. Four parts that do not touch each other, for four agents. **Built so far** (record 0113, its addendum): LaTeX, HTML and EPUB, and Markdown with the words alone, in the main thread. **Left**: Word and Writer.
+4. **The other forms of a document.** LaTeX; Word and Writer with their made styles; HTML and EPUB; Markdown. Four parts that do not touch each other, for four agents. **Built** (record 0113, its two addenda), in the main thread and not by agents: LaTeX, HTML and EPUB, Word and Writer with a named style for each look, and Markdown with the words alone.
 5. **Around it.** The colours on the white surface in a dark scheme; the tools folded in small places; the history and the review; Find and Replace; copying between boxes; the notebook; the mind maps; the guide; Bokmål with the English, the other languages in a round. Separable parts again.
 
 Stages 2 and 3 are the main thread's with one agent at a time, since they settle the shape; 4 and 5 are fanned out when 3 holds.

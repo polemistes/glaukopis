@@ -71,6 +71,8 @@ pub struct Particulars {
     pub tables: bool,
     /// The kinds of paragraph and of words that are the writer's own, which the document carries.
     pub own_kinds: Vec<OwnKind>,
+    /// The styles made for what is set by hand in the document (ADR 0113), where it is written for Word or Writer.
+    pub hand_styles: crate::document::pandoc::HandStyles,
 }
 
 impl Particulars {

@@ -368,6 +368,8 @@ fn particulars(doc: &Document, f: &DocumentFormat) -> Particulars {
         flows,
         tables,
         own_kinds: doc.kinds.clone(),
+        // Known when the document has been written for Word or Writer: see `export_until`.
+        hand_styles: Default::default(),
     }
 }
 
@@ -598,6 +600,8 @@ fn list_mark(target: Target, name: &str) -> Option<Value> {
 
 struct Prepared {
     json: Value,
+    /// The styles made for what is set by hand, where the document is written for Word or Writer.
+    hand_styles: crate::document::pandoc::HandStyles,
     bibliography: Bibliography,
     has_citations: bool,
     /// What there is to say of the document that was prepared.
@@ -1367,7 +1371,8 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
         })
         .collect();
 
-    Ok(Prepared { json, bibliography, has_citations, remarks, toc, lof, lot })
+    let hand_styles = converter.extras.hand_styles.take();
+    Ok(Prepared { json, hand_styles, bibliography, has_citations, remarks, toc, lof, lot })
 }
 
 /// The arguments for Pandoc that are the same for every target.
@@ -1839,6 +1844,8 @@ pub fn export_until(
         Target::Docx | Target::Odt => {
             let name = if target == Target::Docx { "reference.docx" } else { "reference.odt" };
             let default = tools::run(&pandoc.path, "Pandoc", ["--print-default-data-file", name], None, None)?.stdout;
+            // The pattern is given the styles made for what is set by hand, which the writing of the document named.
+            let p = Particulars { hand_styles: prepared.hand_styles.clone(), ..p.clone() };
             let pattern = if target == Target::Docx {
                 reference::docx(&default, &request.format, &p)?
             } else {
@@ -3884,6 +3891,89 @@ mod tests {
         let epub = out.join("hand.epub");
         export(&s.ctx(), &r, Target::Epub, &epub, &ExportOptions::default()).unwrap();
         assert!(fs::metadata(&epub).unwrap().len() > 0);
+
+        // What a pattern says of the style of a name: from where the style begins to where it ends.
+        // Pandoc writes the styles anew, its attributes in an order of its own.
+        fn said_of<'a>(styles: &'a str, named: &str, end: &str) -> &'a str {
+            let at = styles.find(named).unwrap_or_else(|| panic!("no style {named} in {styles}"));
+            let from = styles[..at].rfind('<').unwrap_or(at);
+            let rest = &styles[from..];
+            &rest[..rest.find(end).unwrap_or(rest.len())]
+        }
+
+        // Word: the words and the paragraphs in styles made for them, which its styles have, each based on the style it would have had.
+        let docx = out.join("hand.docx");
+        let e = export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        assert!(e.warnings.is_empty(), "{:?}", e.warnings);
+        let document = unzip(&docx, "word/document.xml");
+        roxmltree::Document::parse(&document).unwrap();
+        let styles = unzip(&docx, "word/styles.xml");
+        roxmltree::Document::parse(&styles).unwrap();
+        assert!(document.contains("<w:rStyle w:val=\"Richtext20ptA02020\""), "{document}");
+        let words = said_of(&styles, "w:styleId=\"Richtext20ptA02020\"", "</w:style>");
+        assert!(words.contains("w:val=\"Rich text 20pt A02020\""), "{words}");
+        assert!(words.contains("<w:color w:val=\"A02020\"") && words.contains("<w:sz w:val=\"40\""), "{words}");
+        assert!(styles.contains("w:ascii=\"No Such Font Of Any Computer\""), "{styles}");
+        let centred = "RichtextBodyTextcentred15linesbefore6ptafter12pt";
+        assert!(document.contains(&format!("<w:pStyle w:val=\"{centred}\"")), "{document}");
+        let paragraph = said_of(&styles, &format!("w:styleId=\"{centred}\""), "</w:style>");
+        assert!(paragraph.contains("<w:basedOn w:val=\"BodyText\""), "{paragraph}");
+        for part in ["w:before=\"120\"", "w:after=\"240\"", "w:line=\"360\"", "<w:jc w:val=\"center\""] {
+            assert!(paragraph.contains(part), "{part}: {paragraph}");
+        }
+        assert!(!paragraph.contains("<w:ind"), "nothing is said of what was not set by hand: {paragraph}");
+        // Set in and to the right; and a quotation, based on the style of quotations.
+        let set_in = said_of(&styles, "w:styleId=\"RichtextBodyTextrightin1cminright5mmfirst0pt\"", "</w:style>");
+        for part in ["w:left=\"567\"", "w:right=\"283\"", "w:firstLine=\"0\"", "<w:jc w:val=\"right\""] {
+            assert!(set_in.contains(part), "{part}: {set_in}");
+        }
+        let quoted = said_of(&styles, "w:styleId=\"RichtextBlockTextjustifiedfirst05cm\"", "</w:style>");
+        assert!(quoted.contains("<w:basedOn w:val=\"BlockText\""), "{quoted}");
+        // Every style the document names for what is set by hand is one its styles have.
+        let mut named = 0;
+        for used in document.split("w:val=\"Richtext").skip(1) {
+            let id = format!("Richtext{}", used.split('"').next().unwrap());
+            assert!(styles.contains(&format!("w:styleId=\"{id}\"")), "{id} is not among the styles");
+            named += 1;
+        }
+        assert!(named >= 6, "{named}: {document}");
+
+        // Writer: the same, in its own styles.
+        let odt = out.join("hand.odt");
+        let e = export(&s.ctx(), &r, Target::Odt, &odt, &ExportOptions::default()).unwrap();
+        assert!(e.warnings.is_empty(), "{:?}", e.warnings);
+        let content = unzip(&odt, "content.xml");
+        roxmltree::Document::parse(&content).unwrap();
+        let styles = unzip(&odt, "styles.xml");
+        roxmltree::Document::parse(&styles).unwrap();
+        assert!(content.contains("\"Rich_20_text_20_20pt_20_A02020\""), "{content}");
+        let words = said_of(&styles, "style:name=\"Rich_20_text_20_20pt_20_A02020\"", "</style:style>");
+        assert!(
+            words.contains("style:display-name=\"Rich text 20pt A02020\"") && words.contains("style:family=\"text\""),
+            "{words}"
+        );
+        assert!(words.contains("fo:font-size=\"20pt\"") && words.contains("fo:color=\"#a02020\""), "{words}");
+        assert!(styles.contains("style:name=\"No Such Font Of Any Computer\""), "{styles}");
+        let centred = "Rich_20_text_20_Body_20_Text_20_centred_20_1_20_5_20_lines_20_before_20_6pt_20_after_20_12pt";
+        assert!(content.contains(centred), "{content}");
+        let paragraph = said_of(&styles, &format!("style:name=\"{centred}\""), "</style:style>");
+        assert!(paragraph.contains("style:parent-style-name=\"Text_20_body\""), "{paragraph}");
+        for part in [
+            "fo:text-align=\"center\"",
+            "fo:line-height=\"150%\"",
+            "fo:margin-top=\"0.0833in\"",
+            "fo:margin-bottom=\"0.1667in\"",
+        ] {
+            assert!(paragraph.contains(part), "{part}: {paragraph}");
+        }
+        assert!(styles.contains("style:parent-style-name=\"Quotations\""), "{styles}");
+        let mut named = 0;
+        for used in content.split("style-name=\"Rich_20_text").skip(1) {
+            let name = format!("Rich_20_text{}", used.split('"').next().unwrap());
+            assert!(styles.contains(&format!("style:name=\"{name}\"")), "{name} is not among the styles");
+            named += 1;
+        }
+        assert!(named >= 6, "{named}: {content}");
 
         // Markdown has the words alone.
         let md = out.join("hand.md");

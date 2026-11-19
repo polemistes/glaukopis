@@ -139,6 +139,8 @@ pub struct Extras {
     pub(super) line_before: RefCell<Option<super::passages::Before>>,
     /// Whether the document can carry the classes of kinds, as a page of the web can.
     pub classes: bool,
+    /// The styles made for what is set by hand, as the document is written for Word or Writer.
+    pub hand_styles: RefCell<HandStyles>,
     /// How many columns the text is set in, as the layout says: 1, or nought for one.
     pub columns: u8,
     /// Whether what is written stands within a block, in which Typst allows no break.
@@ -903,7 +905,7 @@ pub(super) fn looked(mut current: Vec<Value>, look: &Resolved) -> Vec<Value> {
 /// end what it is written in, in any kind of document; a size letters can
 /// have, to the half point; a colour of six digits.
 #[derive(Debug, Clone, PartialEq)]
-pub(super) struct HandWords {
+pub struct HandWords {
     pub font: Option<String>,
     pub size: Option<f64>,
     /// The six digits, in small letters, without the sign before them.
@@ -974,6 +976,24 @@ impl HandWords {
         open
     }
 
+    /// The name of the style that Word and Writer are given the words in:
+    /// said by what it sets, so that the same look has the same style
+    /// wherever it stands, and of letters, digits and spaces alone, which
+    /// both keep in a name as they are. `Rich text 20pt A02020 EB Garamond`.
+    pub fn style_name(&self) -> String {
+        let mut name = String::from("Rich text");
+        if let Some(pt) = self.size {
+            let _ = write!(name, " {}pt", plain_number(pt));
+        }
+        if let Some(hex) = &self.colour {
+            let _ = write!(name, " {}", hex.to_ascii_uppercase());
+        }
+        if let Some(font) = &self.font {
+            let _ = write!(name, " {}", plain_words(font));
+        }
+        name
+    }
+
     /// As a style of a page of the web says it.
     pub fn css(&self) -> String {
         let mut said = Vec::new();
@@ -988,6 +1008,60 @@ impl HandWords {
         }
         said.join("; ")
     }
+}
+
+/// A number as a name of a style can hold it: `10 5` for 10.5.
+fn plain_number(n: f64) -> String {
+    format!("{}", (n * 100.0).round() / 100.0).replace('.', " ")
+}
+
+/// Words as a name of a style can hold them: their letters and digits, with single spaces between.
+fn plain_words(text: &str) -> String {
+    let kept: String = text.chars().map(|c| if c.is_alphanumeric() { c } else { ' ' }).collect();
+    kept.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+/// The name of the style that Word and Writer are given a paragraph in that
+/// stands by hand: the style it would have had, and what was said of it.
+/// `Rich text Body Text centred 1 5 lines before 6pt after 12pt`.
+pub(super) fn hand_style_name(base: &str, hand: &super::Hand) -> String {
+    use crate::formats::Align;
+    let mut name = format!("Rich text {}", plain_words(base));
+    match hand.align() {
+        Some(Align::Left) => name.push_str(" left"),
+        Some(Align::Center) => name.push_str(" centred"),
+        Some(Align::Right) => name.push_str(" right"),
+        Some(Align::Justified) => name.push_str(" justified"),
+        None => {}
+    }
+    if let Some(spacing) = hand.line_spacing() {
+        let _ = write!(name, " {} lines", plain_number(f64::from(spacing)));
+    }
+    let lengths = [
+        ("before", hand.space_before()),
+        ("after", hand.space_after()),
+        ("in", hand.indent_left()),
+        ("in right", hand.indent_right()),
+        ("first", hand.first_line()),
+    ];
+    for (word, length) in lengths {
+        if let Some(length) = length {
+            let _ = write!(name, " {word} {}", plain_words(&length.to_string().replace('.', " ")));
+        }
+    }
+    name
+}
+
+/// The styles made for what is set by hand in a document (ADR 0113), by
+/// their names: gathered as the document is written for Word or Writer,
+/// and put into the pattern document afterwards, as the styles of the kinds
+/// are.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct HandStyles {
+    /// Of words: what each sets.
+    pub words: std::collections::BTreeMap<String, HandWords>,
+    /// Of paragraphs: the style each is based on, by its name in Word, and what it says by hand.
+    pub paragraphs: std::collections::BTreeMap<String, (String, super::Hand)>,
 }
 
 /// The words of inlines as one string: for code, which holds its text as it stands.
@@ -1130,7 +1204,13 @@ impl Converter<'_> {
             Flavour::Plain if x.classes => {
                 vec![json!({"t": "Span", "c": [["", [], [["style", said.css()]]], current]})]
             }
-            _ => current,
+            // In a style made for it, which the pattern document is given (`export/reference.rs`).
+            Flavour::Docx | Flavour::Odt => {
+                let name = said.style_name();
+                x.hand_styles.borrow_mut().words.insert(name.clone(), said);
+                vec![json!({"t": "Span", "c": [["", [], [["custom-style", name]]], current]})]
+            }
+            Flavour::Plain => current,
         }
     }
 }

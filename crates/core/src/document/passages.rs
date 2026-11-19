@@ -43,7 +43,7 @@ use std::fmt::Write as _;
 use serde_json::{Value, json};
 
 use super::numbers::{Shown, lines_of, stretch_numbers, stretches};
-use super::pandoc::{Converter, Flavour, attr, label, looked, tokens, upper};
+use super::pandoc::{Converter, Flavour, attr, hand_style_name, label, looked, tokens, upper};
 use super::{Block, BreakKind, Hand, Inline, Numbering, Side};
 use crate::formats::typst::{leading, string};
 use crate::formats::{Align, Case, Length};
@@ -195,6 +195,9 @@ fn hand_css(hand: &Hand) -> (Vec<&'static str>, String) {
     }
     (classes, said.join("; "))
 }
+
+/// The style of a paragraph of text in Word, by its name; Writer calls it otherwise (`export/reference.rs`).
+const BODY_TEXT: &str = "Body Text";
 
 /// A line with nothing on it: a paragraph that holds a space that is not
 /// broken at, which every kind of document sets as an empty line.
@@ -415,7 +418,7 @@ impl Converter<'_> {
                 {
                     let inner = self.lined(run[0].content, Numbers { shown: run[0].shown, side });
                     if !inner.is_empty() {
-                        self.handed(run[0].hand, vec![self.paragraph_after(inner)], out);
+                        self.handed(run[0].hand, vec![self.paragraph_after(inner)], BODY_TEXT, out);
                     } else if run[0].boxed {
                         out.push(blank_line());
                     }
@@ -493,7 +496,7 @@ impl Converter<'_> {
                 for p in run {
                     let mut own = Vec::new();
                     self.kind_paragraph(p.name, p.content, Numbers { shown: p.shown, side }, p.indent, &mut own);
-                    self.handed(p.hand, own, &mut inner);
+                    self.handed(p.hand, own, "Block Text", &mut inner);
                 }
                 if !inner.is_empty() {
                     out.push(json!({"t": "BlockQuote", "c": inner}));
@@ -516,7 +519,7 @@ impl Converter<'_> {
                     if own.is_empty() && p.boxed && p.name == "text" {
                         own.push(blank_line());
                     }
-                    self.handed(p.hand, own, out);
+                    self.handed(p.hand, own, BODY_TEXT, out);
                 }
             }
         }
@@ -528,7 +531,11 @@ impl Converter<'_> {
     /// and on a page of the web and in a book for e-readers; Markdown has
     /// nothing to say it with, and Word and Writer are given it in named
     /// styles (`styled`).
-    fn handed(&self, hand: Option<&Hand>, own: Vec<Value>, out: &mut Vec<Value>) {
+    ///
+    /// `base` is the style of Word and Writer that a paragraph of what was
+    /// written is in where it names none itself: that of text, or that of a
+    /// quotation.
+    fn handed(&self, hand: Option<&Hand>, own: Vec<Value>, base: &str, out: &mut Vec<Value>) {
         let Some(hand) = hand.filter(|_| !own.is_empty()) else {
             out.extend(own);
             return;
@@ -551,7 +558,45 @@ impl Converter<'_> {
                 let (classes, style) = hand_css(hand);
                 out.push(json!({"t": "Div", "c": [["", classes, [["style", style]]], own]}));
             }
-            _ => out.extend(own),
+            Flavour::Docx | Flavour::Odt => out.extend(own.into_iter().map(|block| self.styled(hand, block, base))),
+            Flavour::Plain => out.extend(own),
+        }
+    }
+
+    /// A block as Word and Writer are given it where its paragraph stands
+    /// by hand: in a style made for it, based on the style it would have
+    /// had, with what was said (`export/reference.rs`). A paragraph in a
+    /// style of its kind, or the first after a heading, is in a division
+    /// that names that style: the name is changed for the made one. A
+    /// paragraph of text is put in one, based on the style of text.
+    fn styled(&self, hand: &Hand, block: Value, base: &str) -> Value {
+        let record = |base: &str| {
+            let name = hand_style_name(base, hand);
+            let mut styles = self.extras.hand_styles.borrow_mut();
+            styles.paragraphs.entry(name.clone()).or_insert_with(|| (base.to_owned(), hand.clone()));
+            name
+        };
+        match block["t"].as_str() {
+            Some("Para" | "Plain") => {
+                let name = record(base);
+                json!({"t": "Div", "c": [["", [], [["custom-style", name]]], [block]]})
+            }
+            Some("Div") => {
+                let mut block = block;
+                let base = block["c"][0][2].as_array().and_then(|attrs| {
+                    attrs.iter().find(|a| a[0] == "custom-style").and_then(|a| a[1].as_str()).map(str::to_owned)
+                });
+                if let Some(base) = base {
+                    let name = record(&base);
+                    if let Some(attrs) = block["c"][0][2].as_array_mut() {
+                        for a in attrs.iter_mut().filter(|a| a[0] == "custom-style") {
+                            a[1] = json!(name);
+                        }
+                    }
+                }
+                block
+            }
+            _ => block,
         }
     }
 
