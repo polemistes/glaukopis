@@ -1749,8 +1749,8 @@ of the system itself.
 The window holds one text, written as the text of a note is: the same
 keys, the same marks, lists made by typing `- `, `1. ` or `[ ] ` at the
 start of a line, and undo. The row over it has buttons for bold, italic,
-underlined, struck through and code, for the three kinds of list, and
-**Add a file…** to choose files. A picture or a file can also be pasted, a
+underlined, struck through and code, for the three kinds of list, the
+highlighter with its colours, and **Add a file…** to choose files. A picture or a file can also be pasted, a
 screenshot or what you copied in a file manager, or dropped on the window:
 a picture stands in the note as a picture, any other file by its name. A
 file larger than 50 MB is not added, and the window says so.
@@ -1760,7 +1760,8 @@ into the notebook, without a name and with no source, and the window
 closes. Glaukopis need not be running: the note waits, and is in the
 notebook the next time Glaukopis starts; while it runs, the note is there
 within a moment, and a message at the foot of its window says so, with
-**Show**. **Escape** closes the window
+**Show**. **Clear the note**, beside it, takes away everything written, so
+that the note is empty; undo brings it back. **Escape** closes the window
 while nothing is written in it, and does nothing once something is. What
 you write is kept as you write: close the window with a note in it, and
 the note is there again the next time the window opens. Two windows open at

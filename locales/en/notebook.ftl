@@ -277,4 +277,6 @@ notebook-pane-not-into-text = The note could not be put into the text
 notebook-note-window-placeholder = Write a note
 notebook-note-window-send = To the notebook
 notebook-note-window-add-file = Add a file…
+# A button in the row of the window of a note: takes away everything written in the note, so that it is empty. Undo brings it back.
+notebook-note-window-clear = Clear the note
 notebook-note-window-not-sent = The note could not be written into the notebook

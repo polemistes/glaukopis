@@ -172,6 +172,62 @@ try {
   );
   check('Enter in an empty line at its end leaves the box', await win.exec(`return document.getSelection()?.anchorNode?.parentElement?.closest('.rich') == null`));
 
+  // The highlight (record 0116), from its button in the row; and the menus of a sheet of rich text, which open in this window too.
+  await win.exec(
+    `const p = Array.from(document.querySelectorAll('${FIELD} p')).find((p) => p.textContent.includes('A bold word'));
+     const n = Array.from(p.childNodes).find((c) => c.nodeType === 3 && c.data.includes('word'));
+     const at = n.data.indexOf('word');
+     const r = document.createRange(); r.setStart(n, at); r.setEnd(n, at + 4);
+     const s = getSelection(); s.removeAllRanges(); s.addRange(r);`,
+  );
+  await sleep(250);
+  await win.click('[data-note-window-highlight]');
+  await win.waitFor('.menu', 3000).catch(() => {});
+  const highlights = await win.exec(`return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((e) => e.textContent.trim())`);
+  check('the row has the highlighter, which opens its colours', highlights[0] === 'None' && highlights.includes('Yellow') && highlights.at(-1) === 'Another…', highlights.join(' | '));
+  await win.clickText('.menu [role="menuitem"]', 'Green');
+  await sleep(300);
+  check('a colour chosen there stands behind the words selected', (await win.exec(`const m = document.querySelector('${FIELD} mark[data-ground]'); return m ? m.textContent + ' ' + m.dataset.ground : ''`)) === 'word #b7eb8f');
+  await win.exec(`const b = document.querySelector('${FIELD} .rich .rich-body p'); const s = getSelection(); s.selectAllChildren(b);`);
+  await sleep(300);
+  await win.click(`${FIELD} .rich [data-rich-menu]`);
+  await win.waitFor('.menu', 3000).catch(() => {});
+  const ofSheet = await win.exec(`return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((e) => e.textContent.trim())`);
+  check('the menu of a sheet of rich text opens in this window', ofSheet.includes('Select') && ofSheet.includes('Make it ordinary text') && ofSheet.includes('Delete'), ofSheet.join(' | '));
+  await win.keys(['Escape']);
+  await sleep(200);
+  // The highlighter of the sheet: in the row of its head, or folded into More tools where the window is narrow.
+  await win.exec(`const b = document.querySelector('${FIELD} .rich .rich-body p'); const s = getSelection(); s.selectAllChildren(b);`);
+  await sleep(300);
+  if (await win.exists(`${FIELD} .rich [data-rich-ground]`)) await win.click(`${FIELD} .rich [data-rich-ground]`);
+  else {
+    await win.click(`${FIELD} .rich [data-rich-folded]`);
+    await win.waitFor('.menu', 3000).catch(() => {});
+    await win.clickText('.menu [role="menuitem"]', 'Highlight');
+  }
+  await sleep(250);
+  await win.clickText('.menu [role="menuitem"]', 'Yellow');
+  await sleep(300);
+  check('and the highlighter of the sheet sets the ground of its words', (await win.exec(`const m = document.querySelector('${FIELD} .rich mark[data-ground]'); return m ? m.textContent + ' ' + m.dataset.ground : ''`)) === 'In a box #ffe066');
+
+  // Clear the note: everything is taken away in one step, and undo brings it back.
+  // What is written, paragraph by paragraph, without the tools in the head of a sheet.
+  const writtenNow = () => win.exec(`return Array.from(document.querySelectorAll('${FIELD} p')).map((p) => p.textContent.replace(/\u200b/g, '')).join(' | ')`);
+  const beforeClear = await writtenNow();
+  await win.click('[data-note-window-clear]');
+  await sleep(300);
+  check(
+    'Clear the note takes everything away, and nothing is left to send',
+    (await writtenNow()) === '' && (await sendDisabled(win)) === true && (await win.exec(`return document.querySelector('[data-note-window-clear]').disabled`)) === true,
+  );
+  await win.keys(['Control', 'z']);
+  await sleep(400);
+  check('and undo brings it back', (await writtenNow()) === beforeClear && beforeClear.includes('In a box') && (await sendDisabled(win)) === false, `${beforeClear} / ${await writtenNow()}`);
+  check('with what was set just before it: the highlights are both there', (await win.exec(`return Array.from(document.querySelectorAll('${FIELD} mark[data-ground]')).map((m) => m.dataset.ground).join(' ')`)) === '#b7eb8f #ffe066');
+  // The cursor after the sheet again, for what follows.
+  await win.exec(`const all = document.querySelectorAll('${FIELD} > p'); const s = getSelection(); s.selectAllChildren(all[all.length - 1]); s.collapseToEnd();`);
+  await sleep(200);
+
   // A picture and a file, by the hook of the system's dialog.
   await win.execAsync(`await window.__glaukopisNoteWindow.add(arguments[0]); return null;`, [picturePath, letterPath]);
   await win.waitFor(`${FIELD} .figure img[src]`, 5000).catch(() => {});

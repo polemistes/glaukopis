@@ -15,6 +15,8 @@
   import ALargeSmall from '@lucide/svelte/icons/a-large-small';
   import Bold from '@lucide/svelte/icons/bold';
   import Code from '@lucide/svelte/icons/code';
+  import Eraser from '@lucide/svelte/icons/eraser';
+  import Highlighter from '@lucide/svelte/icons/highlighter';
   import Italic from '@lucide/svelte/icons/italic';
   import List from '@lucide/svelte/icons/list';
   import ListOrdered from '@lucide/svelte/icons/list-ordered';
@@ -44,6 +46,7 @@
   import { insertBox } from '$lib/byhand/box';
   import { richTextOffered } from '$lib/byhand/offered';
   import { putBox } from '$lib/byhand/put';
+  import { groundAt, groundItems, groundsOpenedIn } from '$lib/editor/ground';
   import RichText from '$lib/editor/RichText.svelte';
   import { bodySchema } from '$lib/editor/schema';
   import { t } from '$lib/i18n';
@@ -51,8 +54,11 @@
   import { testHook } from '$lib/shell/testing';
   import { beforeClose } from '$lib/state/closing';
   import Button from '$lib/ui/Button.svelte';
+  import ConfirmHost from '$lib/ui/ConfirmHost.svelte';
   import { outsideDrop, outsideLeave, outsideOver, type DragPayload } from '$lib/ui/drag.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
+  import { openMenu } from '$lib/ui/menu.svelte';
+  import MenuHost from '$lib/ui/MenuHost.svelte';
   import Toaster from '$lib/ui/Toaster.svelte';
   import { describeError } from '$lib/ui/toast.svelte';
   import { tooltip } from '$lib/ui/tooltip';
@@ -329,6 +335,26 @@
   /** The buttons of the row keep the cursor in the text. */
   const keep = (event: MouseEvent) => event.preventDefault();
 
+  /** Takes away everything that is written, in one step, which undo takes back: the note is as when the window was opened empty. */
+  const clear: Command = (state, dispatch) => {
+    if (dispatch) {
+      const tr = state.tr.replaceWith(
+        0,
+        state.doc.content.size,
+        bodySchema.nodes.paragraph.create(),
+      );
+      dispatch(tr.setSelection(Selection.atStart(tr.doc)).scrollIntoView());
+    }
+    return true;
+  };
+
+  /** Clears the note as a step of its own: undo brings back what was cleared, and nothing done just before it is undone with it. */
+  function clearNote() {
+    holder.undoManager.stopCapturing();
+    run(clear);
+    holder.undoManager.stopCapturing();
+  }
+
   // ---- the window ----
 
   // Its title is the word for a note, in the language of the settings.
@@ -383,6 +409,22 @@
           )}><l.icon size={14} /></IconButton
       >
     {/each}
+    <!-- The highlight: the colour behind the words selected (ADR 0116), with its colours. -->
+    <IconButton
+      label={t('editor-highlight-colour')}
+      shortcut={keysFor('writing-highlight')}
+      size="sm"
+      active={!!current && typeof groundAt(current) === 'string'}
+      disabled={!current}
+      data-note-window-highlight
+      onmousedown={keep}
+      onclick={(event: MouseEvent) => {
+        const v = view();
+        if (!v) return;
+        groundsOpenedIn(v);
+        openMenu(event.currentTarget as HTMLElement, groundItems(v), { align: 'start' });
+      }}><Highlighter size={14} /></IconButton
+    >
     <span class="between"></span>
     <!-- A box of rich text (ADR 0112), as Insert has it in the other texts, where it is offered. -->
     {#if richTextOffered}
@@ -406,6 +448,15 @@
       onclick={() => void chooseFiles()}><Paperclip size={14} /></IconButton
     >
     <span class="gap"></span>
+    <!-- Clears the note: everything written is taken away, and undo brings it back. -->
+    <IconButton
+      label={t('notebook-note-window-clear')}
+      size="sm"
+      disabled={empty}
+      data-note-window-clear
+      onmousedown={keep}
+      onclick={clearNote}><Eraser size={14} /></IconButton
+    >
     <span
       use:tooltip={{
         text: t('notebook-note-window-send'),
@@ -445,6 +496,9 @@
     </p>
   {/if}
 </div>
+<!-- What the tools of a text open, here as in the window of the application: the menus (of colours, of a sheet of rich text) and what is asked before something is taken away. -->
+<ConfirmHost />
+<MenuHost />
 <Toaster />
 
 <style>

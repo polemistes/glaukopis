@@ -262,5 +262,6 @@ notebook-pane-not-into-text = Notatet kunne ikke settes inn i teksten
 
 notebook-note-window-placeholder = Skriv et notat
 notebook-note-window-send = Til notatblokken
+notebook-note-window-clear = Tøm notatet
 notebook-note-window-add-file = Legg til en fil …
 notebook-note-window-not-sent = Notatet kunne ikke skrives inn i notatblokken
