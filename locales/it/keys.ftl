@@ -92,6 +92,8 @@ keys-writing-bold = Grassetto
 keys-writing-underline = Sottolineato
 keys-writing-smallcaps = Maiuscoletto
 keys-writing-strike = Barrato
+# Turns the highlight of the words selected on, in the colour last chosen, or off.
+keys-writing-highlight = Evidenziato
 keys-writing-raised = Apice
 keys-writing-lowered = Pedice
 keys-writing-quotation = Citazione

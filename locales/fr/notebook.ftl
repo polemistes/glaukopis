@@ -13,6 +13,8 @@ notebook-add-files-title = Ajouter des fichiers au carnet
 notebook-empty = Le carnet est vide
     .text = Recueillez ici ce qui se présente, en dehors de tous les projets : mots, images et fichiers, chacun une note qui garde d’où elle vient.
 notebook-unreadable = Le carnet n’a pas pu être lu
+# Said under notebook-unreadable where a later version of Glaukopis has written in the notebook, in a form of the texts this version does not know.
+notebook-later = Le carnet a été écrit par une version plus récente de Glaukopis. Mettez Glaukopis à jour pour l’ouvrir.
 notebook-nothing-found = Aucune note trouvée
 notebook-empty-note = Note vide
 notebook-holds-picture = Une image
@@ -286,4 +288,6 @@ notebook-pane-not-into-text = La note n’a pas pu être mise dans le texte
 notebook-note-window-placeholder = Écrivez une note
 notebook-note-window-send = Vers le carnet
 notebook-note-window-add-file = Ajouter un fichier…
+# A button in the row of the window of a note: takes away everything written in the note, so that it is empty. Undo brings it back.
+notebook-note-window-clear = Vider la note
 notebook-note-window-not-sent = La note n’a pas pu être écrite dans le carnet

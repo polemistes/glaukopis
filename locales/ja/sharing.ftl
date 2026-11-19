@@ -25,6 +25,10 @@ sharing-connected = 接続済み。書いたものはすぐにほかの人に届
 sharing-connecting = 接続中…
 sharing-offline = サーバーに接続できません。書いたものはここに保たれ、接続でき次第送られます。
 sharing-too-large = サーバーが最新の変更を受け付けません。それを加えると、プロジェクトがサーバーの保てる大きさを超えるためです。変更はここに保たれています。サーバーの管理者は、より大きなプロジェクトを許可できます。
+# Said in the sharing window, and once in a dialog when it is found, where someone else has written in a shared project with a later version of Glaukopis than this one, in a form of the texts this one does not know. "Then" is when Glaukopis has been updated.
+sharing-later = このプロジェクトには、より新しいバージョンのGlaukopisで書き込まれた内容があります。ほかの人と作業を続けるにはGlaukopisを更新してください。書いたものはここに保たれ、更新後に送られます。
+# The title of the dialog that says sharing-later.
+sharing-later-title = より新しいバージョンで書き込まれました
 sharing-your-name-seen = ほかの人に表示される名前です。
 
 ## 招待

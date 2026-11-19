@@ -277,3 +277,20 @@ editor-line-annotation-placeholder = 韻律、別の版の番号
 ## 行の始まる位置と、字下げの段（著者等と行の第4段階）
 # テキストの右クリックメニューにあり、カーソルのある行がそうなっている間はチェックが付く。
 editor-line-continues = 前の行の終わりから始める
+
+## The ground of words, a highlight with a choice of colours (record 0116): a tool in the bar of a text and in the head of rich text, and under Marks. The name of it is editor-highlight, above. It goes into every document.
+
+# In the menu of colours for a highlight: takes the highlight away.
+editor-highlight-none = なし
+# The colours of that menu, those of marker pens, by their plain names.
+editor-highlight-yellow = 黄色
+editor-highlight-green = 緑
+editor-highlight-blue = 青
+editor-highlight-pink = ピンク
+editor-highlight-orange = オレンジ
+editor-highlight-purple = 紫
+editor-highlight-grey = グレー
+# The last entry of that menu: opens the system's own window for choosing any colour.
+editor-highlight-other = その他の色…
+# The button in the bar of a text that opens that menu of colours.
+editor-highlight-colour = ハイライトの色

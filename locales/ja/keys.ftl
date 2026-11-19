@@ -92,6 +92,8 @@ keys-writing-bold = 太字
 keys-writing-underline = 下線
 keys-writing-smallcaps = スモールキャピタル
 keys-writing-strike = 取り消し線
+# Turns the highlight of the words selected on, in the colour last chosen, or off.
+keys-writing-highlight = ハイライト
 keys-writing-raised = 上付き
 keys-writing-lowered = 下付き
 keys-writing-quotation = 引用文

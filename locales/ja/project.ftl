@@ -8,6 +8,8 @@ project-list-unreadable = プロジェクトを読み込めませんでした
 project-open-failed = プロジェクトを開けませんでした
 # 理由がそれ以上わからないとき、上の文の下に表示する。
 project-open-failed-detail = プロジェクトを開けませんでした。
+# Said in the place of a project that is not opened because a later version of Glaukopis has written in it, in a form of the texts this version does not know.
+project-later = このプロジェクトは、より新しいバージョンのGlaukopisで書かれています。開くにはGlaukopisを更新してください。
 project-back = プロジェクト一覧に戻る
 project-fetching = プロジェクトを取得しています
 project-fetching-offline = サーバーに接続できません。接続でき次第、プロジェクトを取得します。

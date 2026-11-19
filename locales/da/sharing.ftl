@@ -25,6 +25,10 @@ sharing-connected = Forbundet. Det, der skrives, er straks hos de andre.
 sharing-connecting = Forbinder…
 sharing-offline = Serveren kan ikke nås. Det, du skriver, gemmes her og sendes med, når det kan lade sig gøre.
 sharing-too-large = Serveren tager ikke imod de seneste ændringer: med dem ville projektet blive større, end den gemmer. De gemmes her. Den, der driver serveren, kan tillade større projekter.
+# Said in the sharing window, and once in a dialog when it is found, where someone else has written in a shared project with a later version of Glaukopis than this one, in a form of the texts this one does not know. "Then" is when Glaukopis has been updated.
+sharing-later = Der er skrevet i dette projekt med en nyere version af Glaukopis. Opdater Glaukopis for at arbejde på projektet sammen med de andre. Det, du skriver, gemmes her og sendes med, når Glaukopis er opdateret.
+# The title of the dialog that says sharing-later.
+sharing-later-title = Skrevet i med en nyere version
 sharing-your-name-seen = Som de andre ser dig.
 
 ## Invitations

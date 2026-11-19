@@ -522,10 +522,11 @@ library-notes-kept = Bei der Quelle in Ihrer Bibliothek aufbewahrt. Es geht mit 
 library-notes-unread = Ihre Notizen konnten nicht gelesen werden
 library-notes-unsaved = Ihre Notiz konnte nicht gespeichert werden
 
-## The switch at the head of the library.
+## The switch at the head of the library: its references, the notebook, which stands in the library's place too, and its files.
 
-library-switch = Quellen oder Dateien
+library-switch = Quellen, das Notizbuch oder Dateien
 library-switch-references = Quellen
+library-switch-notebook = Notizbuch
 library-switch-files = Dateien
 
 ## The columns of the library, which can be dragged wider or narrower.

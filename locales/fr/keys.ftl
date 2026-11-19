@@ -92,6 +92,8 @@ keys-writing-bold = Gras
 keys-writing-underline = Souligné
 keys-writing-smallcaps = Petites capitales
 keys-writing-strike = Barré
+# Turns the highlight of the words selected on, in the colour last chosen, or off.
+keys-writing-highlight = Surlignage
 keys-writing-raised = Exposant
 keys-writing-lowered = Indice
 keys-writing-quotation = Citation

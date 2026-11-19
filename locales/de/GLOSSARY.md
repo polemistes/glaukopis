@@ -470,6 +470,34 @@ Der Kern:
 - **io-too-large** — „… ist größer als n MB, mehr wird nicht gelesen“;
   **zip archive** — das Zip-Archiv
 
+## Seit 0.2.14 (2026-11-19)
+
+- **Rich text** (eine Strecke Text, in der das Aussehen von Hand
+  eingestellt wird, wie in einer Textverarbeitung) — „Formatierter Text“,
+  wie Mailprogramme ihn dem reinen Text gegenüberstellen; nicht „Rich
+  Text“ und nie ein Wort für „Kasten“. **Set by hand** — „von Hand
+  eingestellt“; **Clear formatting** — „Formatierung entfernen“;
+  **Make it ordinary text** — „Zu gewöhnlichem Text machen“, wie schon
+  *gewöhnliche Wörter*
+- **Text**, **Heading**, **Subheading** (die Absätze in formatiertem Text) —
+  „Text“, „Überschrift“, „Zwischenüberschrift“, wie die Liste der
+  Formatvorlagen einer Textverarbeitung sie hat
+- **As the document** (nimmt Schrift, Größe oder Farbe von Hand wieder weg)
+  — „Wie das Dokument“; „Leer bedeutet: wie im Dokument.“
+- **Highlight colours** — Markierung wie zuvor; die Farben Gelb, Grün,
+  Blau, Rosa, Orange, Lila, Grau; **None** — „Keine“ (folgt *Markierung*);
+  **Another…** (Farbe) — „Andere Farbe…“; **Highlight colour** — „Farbe der
+  Markierung“. *Lila*, nicht „Purpur“, für *purple*; *Violett* bleibt
+  *violet* der Arten.
+- **Clear the note** — „Notiz leeren“
+- **later version** (von Glaukopis, die in ein Projekt oder das Notizbuch
+  geschrieben hat) — „neuere Version“, wie in der Meldung des Kerns;
+  **Update Glaukopis** — „Bringen Sie Glaukopis auf den neuesten Stand“;
+  **Written in by a later version** — „Mit einer neueren Version
+  geschrieben“
+- **the notebook** (in der Wahl der Bibliothek) — „Notizbuch“, wie in der
+  Leiste
+
 ## Namen, die nicht übersetzt werden
 
 Glaukopis; Pandoc, Typst, Tesseract, Hunspell, LaTeX, LuaLaTeX, BibLaTeX,

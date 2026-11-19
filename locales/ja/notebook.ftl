@@ -13,6 +13,8 @@ notebook-add-files-title = ノートブックにファイルを追加
 notebook-empty = ノートブックは空です
     .text = プロジェクトの外で出会ったものを、何でもここに集めます：言葉、画像、ファイル。それぞれが、出どころを覚えているノートになります。
 notebook-unreadable = ノートブックを読み込めませんでした
+# Said under notebook-unreadable where a later version of Glaukopis has written in the notebook, in a form of the texts this version does not know.
+notebook-later = ノートブックは、より新しいバージョンのGlaukopisで書かれています。開くにはGlaukopisを更新してください。
 notebook-nothing-found = ノートが見つかりません
 notebook-empty-note = 空のノート
 notebook-holds-picture = 画像
@@ -268,4 +270,6 @@ notebook-pane-not-into-text = ノートをテキストに入れられません�
 notebook-note-window-placeholder = ノートを書く
 notebook-note-window-send = ノートブックへ
 notebook-note-window-add-file = ファイルを追加…
+# A button in the row of the window of a note: takes away everything written in the note, so that it is empty. Undo brings it back.
+notebook-note-window-clear = ノートをクリア
 notebook-note-window-not-sent = ノートをノートブックに書き込めませんでした

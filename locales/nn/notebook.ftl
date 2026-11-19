@@ -13,6 +13,8 @@ notebook-add-files-title = Legg til filer i notatblokka
 notebook-empty = Notatblokka er tom
     .text = Samle her det du kjem over, utanfor alle prosjekt: ord, bilete og filer. Alt blir eit notat som hugsar kvar det kom frå.
 notebook-unreadable = Notatblokka kunne ikkje lesast
+# Said under notebook-unreadable where a later version of Glaukopis has written in the notebook, in a form of the texts this version does not know.
+notebook-later = Notatblokka er skriven av ein nyare versjon av Glaukopis. Oppdater Glaukopis for å opne den.
 notebook-nothing-found = Ingen notat funne
 notebook-empty-note = Tomt notat
 notebook-holds-picture = Eit bilete
@@ -275,4 +277,6 @@ notebook-pane-not-into-text = Notatet kunne ikkje setjast inn i teksten
 notebook-note-window-placeholder = Skriv eit notat
 notebook-note-window-send = Til notatblokka
 notebook-note-window-add-file = Legg til ei fil …
+# A button in the row of the window of a note: takes away everything written in the note, so that it is empty. Undo brings it back.
+notebook-note-window-clear = Tøm notatet
 notebook-note-window-not-sent = Notatet kunne ikkje skrivast inn i notatblokka

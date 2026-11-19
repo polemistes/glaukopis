@@ -92,6 +92,8 @@ keys-writing-bold = Fett
 keys-writing-underline = Unterstrichen
 keys-writing-smallcaps = Kapitälchen
 keys-writing-strike = Durchgestrichen
+# Turns the highlight of the words selected on, in the colour last chosen, or off.
+keys-writing-highlight = Markierung
 keys-writing-raised = Hochgestellt
 keys-writing-lowered = Tiefgestellt
 keys-writing-quotation = Zitat

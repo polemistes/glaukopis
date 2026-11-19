@@ -8,6 +8,8 @@ project-list-unreadable = Les projets n’ont pas pu être lus
 project-open-failed = Le projet n’a pas pu être ouvert
 # Shown under the words above when nothing more is known of why.
 project-open-failed-detail = Le projet n’a pas pu être ouvert.
+# Said in the place of a project that is not opened because a later version of Glaukopis has written in it, in a form of the texts this version does not know.
+project-later = Ce projet a été écrit par une version plus récente de Glaukopis. Mettez Glaukopis à jour pour l’ouvrir.
 project-back = Retour aux projets
 project-fetching = Récupération du projet
 project-fetching-offline = Le serveur ne peut pas être joint. Le projet sera récupéré dès que possible.

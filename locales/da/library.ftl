@@ -522,10 +522,11 @@ library-notes-kept = Gemt med referencen i dit bibliotek. Det følger med et pro
 library-notes-unread = Dine notater kunne ikke læses
 library-notes-unsaved = Dit notat kunne ikke gemmes
 
-## The switch at the head of the library.
+## The switch at the head of the library: its references, the notebook, which stands in the library's place too, and its files.
 
-library-switch = Referencer eller filer
+library-switch = Referencer, notesbogen eller filer
 library-switch-references = Referencer
+library-switch-notebook = Notesbog
 library-switch-files = Filer
 
 ## The columns of the library, which can be dragged wider or narrower.

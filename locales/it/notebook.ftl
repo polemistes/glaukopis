@@ -13,6 +13,8 @@ notebook-add-files-title = Aggiungi file al taccuino
 notebook-empty = Il taccuino è vuoto
     .text = Raccogli qui ciò che capita, fuori da tutti i progetti: parole, immagini e file, ciascuno una nota che ricorda da dove viene.
 notebook-unreadable = Il taccuino non si è potuto leggere
+# Said under notebook-unreadable where a later version of Glaukopis has written in the notebook, in a form of the texts this version does not know.
+notebook-later = Il taccuino è stato scritto da una versione più recente di Glaukopis. Aggiorna Glaukopis per aprirlo.
 notebook-nothing-found = Nessuna nota trovata
 notebook-empty-note = Nota vuota
 notebook-holds-picture = Un'immagine
@@ -294,4 +296,6 @@ notebook-pane-not-into-text = La nota non si è potuta mettere nel testo
 notebook-note-window-placeholder = Scrivi una nota
 notebook-note-window-send = Al taccuino
 notebook-note-window-add-file = Aggiungi un file…
+# A button in the row of the window of a note: takes away everything written in the note, so that it is empty. Undo brings it back.
+notebook-note-window-clear = Svuota la nota
 notebook-note-window-not-sent = La nota non si è potuta scrivere nel taccuino

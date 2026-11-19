@@ -13,6 +13,8 @@ notebook-add-files-title = Dateien zum Notizbuch hinzufügen
 notebook-empty = Das Notizbuch ist leer
     .text = Sammeln Sie hier, was Ihnen begegnet, außerhalb aller Projekte: Wörter, Bilder und Dateien, jedes eine Notiz, die sich merkt, woher sie kam.
 notebook-unreadable = Das Notizbuch konnte nicht gelesen werden
+# Said under notebook-unreadable where a later version of Glaukopis has written in the notebook, in a form of the texts this version does not know.
+notebook-later = Das Notizbuch wurde von einer neueren Version von Glaukopis geschrieben. Bringen Sie Glaukopis auf den neuesten Stand, um es zu öffnen.
 notebook-nothing-found = Keine Notizen gefunden
 notebook-empty-note = Leere Notiz
 notebook-holds-picture = Ein Bild
@@ -278,4 +280,6 @@ notebook-pane-not-into-text = Die Notiz konnte nicht in den Text eingefügt werd
 notebook-note-window-placeholder = Eine Notiz schreiben
 notebook-note-window-send = Ins Notizbuch
 notebook-note-window-add-file = Eine Datei hinzufügen…
+# A button in the row of the window of a note: takes away everything written in the note, so that it is empty. Undo brings it back.
+notebook-note-window-clear = Notiz leeren
 notebook-note-window-not-sent = Die Notiz konnte nicht ins Notizbuch geschrieben werden

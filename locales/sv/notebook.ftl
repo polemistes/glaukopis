@@ -13,6 +13,8 @@ notebook-add-files-title = Lägg till filer i anteckningsboken
 notebook-empty = Anteckningsboken är tom
     .text = Samla här det som dyker upp, utanför alla projekt: ord, bilder och filer, var och en en anteckning som minns varifrån den kom.
 notebook-unreadable = Anteckningsboken kunde inte läsas
+# Said under notebook-unreadable where a later version of Glaukopis has written in the notebook, in a form of the texts this version does not know.
+notebook-later = Anteckningsboken skrevs av en senare version av Glaukopis. Uppdatera Glaukopis för att öppna den.
 notebook-nothing-found = Inga anteckningar hittades
 notebook-empty-note = Tom anteckning
 notebook-holds-picture = En bild
@@ -275,4 +277,6 @@ notebook-pane-not-into-text = Anteckningen kunde inte läggas in i texten
 notebook-note-window-placeholder = Skriv en anteckning
 notebook-note-window-send = Till anteckningsboken
 notebook-note-window-add-file = Lägg till en fil…
+# A button in the row of the window of a note: takes away everything written in the note, so that it is empty. Undo brings it back.
+notebook-note-window-clear = Töm anteckningen
 notebook-note-window-not-sent = Anteckningen kunde inte skrivas in i anteckningsboken

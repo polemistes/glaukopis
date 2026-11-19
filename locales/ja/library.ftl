@@ -492,10 +492,11 @@ library-notes-kept = ライブラリの文献とともに保存されます。�
 library-notes-unread = 自分のメモを読み取れませんでした
 library-notes-unsaved = メモを保存できませんでした
 
-## ライブラリの上端の切り替え。
+## The switch at the head of the library: its references, the notebook, which stands in the library's place too, and its files.
 
-library-switch = 文献／ファイルの切り替え
+library-switch = 文献／ノートブック／ファイルの切り替え
 library-switch-references = 文献
+library-switch-notebook = ノートブック
 library-switch-files = ファイル
 
 ## ライブラリの列。ドラッグして広くも狭くもできる。

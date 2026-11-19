@@ -476,6 +476,39 @@ est devenu **Propriétés du document** ; « Ouvrir comme carte » est devenu
   lengths) → **Distance des numéros au texte** / **Distance des annotations
   au texte**, en centimètres
 
+## Le texte enrichi, le surlignage en couleurs, « plus récente » (0.2.14)
+
+- **rich text** → le **texte enrichi** : un passage du texte où l’aspect se
+  règle à la main, comme dans un traitement de texte, montré comme une feuille
+  blanche avec ses outils en haut. Le mot des logiciels de courrier et de
+  traitement de texte en français ; jamais un mot qui dise « boîte ». **Make it
+  ordinary text** → **En faire du texte ordinaire** (les mots restent, ce qui
+  est réglé à la main disparaît).
+- **Text** / **Heading** / **Subheading** (dans le texte enrichi) →
+  **Texte** / **Titre** / **Sous-titre**, comme l’échantillon des réglages
+  (`settings-sample-heading`, `settings-sample-subheading`) et comme la liste
+  de styles d’un traitement de texte. Un titre n’y est que de l’aspect : il
+  ne fait pas partie du plan et n’a pas de numéro.
+- **As the document** → **Selon le document** : ce qui retire une police, une
+  taille ou une couleur réglée à la main ; un champ laissé vide fait de même
+  (« Vide : selon le document. »). **Several** → **Plusieurs**.
+- **set by hand** → **réglé à la main** ; **Clear formatting** → **Effacer la
+  mise en forme** (le mot de Word et de LibreOffice pour ce geste) ;
+  **More tools** → **Plus d’outils** ; **Another…** (une couleur) → **Une
+  autre…**
+- **highlight colour** → la **couleur de surlignage**, avec le mot déjà choisi
+  pour *highlight* (le **surlignage**) ; **None** → **Aucun**. Les couleurs :
+  Jaune, Vert, Bleu, Rose, Orange, Violet, Gris ; pour le texte enrichi : Noir,
+  Gris, Rouge, Orange, Vert, Bleu, Violet, Marron.
+- **Clear the note** → **Vider la note** (la fenêtre d’une note).
+- **written by a later version** → **écrit par une version plus récente** de
+  Glaukopis ; **Update Glaukopis** → **Mettez Glaukopis à jour**, comme le
+  dit déjà le message du fichier de projet. **Written in by a later version**
+  (le titre de la fenêtre, dans un projet partagé) → **Écrit avec une version
+  plus récente**.
+- **the notebook** (dans le commutateur de la bibliothèque) → **Carnet**, comme
+  dans la barre du haut : « Références, carnet ou fichiers ».
+
 ## Les noms qui ne se traduisent pas
 
 Glaukopis ; Pandoc, Typst, Tesseract, Hunspell, LaTeX, LuaLaTeX, BibLaTeX,

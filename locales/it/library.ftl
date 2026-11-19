@@ -554,10 +554,11 @@ library-notes-kept = Tenuta con il riferimento nella tua biblioteca. Va con un p
 library-notes-unread = Le tue note non si sono potute leggere
 library-notes-unsaved = La tua nota non si è potuta conservare
 
-## The switch at the head of the library.
+## The switch at the head of the library: its references, the notebook, which stands in the library's place too, and its files.
 
-library-switch = Riferimenti o file
+library-switch = Riferimenti, taccuino o file
 library-switch-references = Riferimenti
+library-switch-notebook = Taccuino
 library-switch-files = File
 
 ## The columns of the library, which can be dragged wider or narrower.

@@ -377,6 +377,21 @@ Il senso di ciascuna parola è in `locales/GLOSSARY.md`.
 | emoji | emoji | invariabile; i gruppi del selettore hanno i nomi che usano Windows e Unicode in italiano: Faccine, Persone, Animali e natura, Cibo e bevande, Viaggi e luoghi, Attività, Oggetti, Simboli |
 | Help (the guide) | Guida | la guida dell'utente in una finestra; «Indice», «Cerca nella guida» |
 
+## Nuovo nella 0.2.14 (2026-11-19)
+
+| inglese | italiano | note |
+| --- | --- | --- |
+| rich text | testo formattato | un tratto di testo in cui l'aspetto è impostato a mano, come in un programma di videoscrittura; come «testo formattato» nei programmi di posta. Mai una parola per «scatola» |
+| Text, Heading, Subheading (in rich text) | Testo, Titolo, Sottotitolo | gli stessi di `settings-sample-heading` e `settings-sample-subheading`, come nell'elenco degli stili di Word; un titolo qui ha solo l'aspetto di un titolo |
+| Make it ordinary text | Trasforma in testo normale | «normale» come lo stile Normale di Word; «testo semplice» resta il testo senza formato di un file |
+| As the document | Come il documento | ciò che toglie un font, una dimensione o un colore impostati a mano |
+| Several | Diversi | al posto di un font, di una dimensione o di un colore quando le parole selezionate ne hanno più d'uno; al maschile plurale, forma neutra |
+| Another… (menu of colours) | Altri colori… | apre la finestra del sistema per scegliere un colore qualunque, come in Word |
+| Clear formatting | Cancella la formattazione | come nei programmi di videoscrittura italiani |
+| Clear the note | Svuota la nota | il pulsante della finestra di una nota che la lascia vuota; «Azzera» resta di ricerche e filtri |
+| highlight: None; Highlight colour | Nessun colore; Colore di evidenziazione | il menu dei colori dell'evidenziazione; il nome dello strumento resta «Evidenziato» |
+| Later (version) | più recente | «una versione più recente di Glaukopis», come in `core-projectfile-later`: un progetto o il taccuino scritto da una versione più nuova di quella in uso, che perciò non lo apre |
+
 ## Nomi che non si traducono
 
 Glaukopis; Pandoc, Typst, Tesseract, Hunspell, LaTeX, LuaLaTeX, BibLaTeX,

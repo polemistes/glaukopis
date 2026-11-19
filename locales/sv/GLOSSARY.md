@@ -441,6 +441,29 @@ Page Down, piltangenterna. Pluralformer: one, other.
   Människor, Djur och natur, Mat och dryck, Resor och platser, Aktiviteter,
   Objekt, Symboler.
 
+## Formaterad text, överstrykning och senare versioner (2026-11-19)
+
+- **Rich text** — formaterad text (som Outlook och andra e-postprogram säger):
+  ett stycke av en text där utseendet ställs in för hand, som i en
+  ordbehandlare, visat som ett vitt ark med verktyg överst. Aldrig ett ord
+  för ”ruta” eller ”låda”. *Make it ordinary text* = Gör till vanlig text.
+- **Text**, **Heading**, **Subheading** (i formaterad text) — Text, Rubrik,
+  Underrubrik, som formatmallarna i en ordbehandlare. Rubriken ser bara ut
+  som en.
+- **As the document** — Som dokumentet (det som tar bort ett typsnitt, en
+  storlek eller en färg som ställts in för hand); **Several** — Flera;
+  **Clear formatting** — Rensa formatering.
+- **Highlight** — överstrykning, som förut; dess färger: Ingen, Gul, Grön,
+  Blå, Rosa, Orange, Lila, Grå, *En annan…*; knappen: *Överstrykningsfärg*.
+  Färgerna i formaterad text: Svart, Grå, Röd, Orange, Grön, Blå, Lila, Brun.
+- **Clear the note** — Töm anteckningen (knappen i anteckningens eget
+  fönster).
+- **Later** (en version av Glaukopis som skrev i ett projekt eller i
+  anteckningsboken, som den som kör inte kan öppna) — *senare version*
+  (*skrevs av en senare version av Glaukopis*, *Uppdatera Glaukopis för att
+  öppna det*), som core-projectfile-later.
+- **Notebook** (i bibliotekets omkopplare) — Anteckningsbok.
+
 ## Namn som inte översätts
 
 Glaukopis; Pandoc, Typst, Tesseract, Hunspell, LaTeX, LuaLaTeX, BibLaTeX,

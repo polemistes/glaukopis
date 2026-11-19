@@ -351,6 +351,32 @@ prosjekt hadde vorte eitt tre.
 - **Help** — **Hjelp**; **the guide** — **rettleiinga**
 - **to do** (eit punkt som kan krysse av) — **gjeremål**
 
+## Nytt 2026-11-19: formatert tekst, uthevingsfargar, ei nyare versjon
+
+- **rich text** — **formatert tekst** (`byhand-name`): eit stykke av ein
+  tekst der utsjånaden blir stilt for hand, som i eit tekstbehandlingsprogram,
+  vist som eit kvitt ark med verktøy øvst. Aldri eit ord for «boks». Som i
+  bokmål («Formatert tekst»)
+- **Text**, **Heading**, **Subheading** (i formatert tekst) — **Tekst**,
+  **Overskrift**, **Mellomtittel**; ein overskrift her ser berre ut som ein
+  overskrift. *Undertittel* er *subtitle* i opplysningane til eit dokument
+- **As the document** — **Som dokumentet**: vala som tek ein font, ein
+  storleik eller ein farge sett for hand bort att
+- **Several** — **Fleire**; **More tools** — **Fleire verktøy**; **More**
+  (menyen med tre prikkar) — **Meir**
+- **set by hand** — **sett for hand**; **Clear formatting** — **Fjern
+  formatering**
+- **colours** (i fargemenyar) — **Svart**, **Grå**, **Raud**, **Oransje**,
+  **Grøn**, **Blå**, **Lilla**, **Brun**; for markørpenn **Gul**, **Grøn**,
+  **Blå**, **Rosa**, **Oransje**, **Lilla**, **Grå**; **None** — **Ingen**;
+  **Another…** — **Ein annan …**
+- **Highlight colour** — **Uthevingsfarge**; sjølve ordet er som før
+  **utheving** (`editor-highlight`)
+- **Clear the note** — **Tøm notatet**, som **Tøm søket**
+- **written by a later version** — **skriven av ein nyare versjon**
+  (`project-later`, `notebook-later`); i eit delt prosjekt **Skrive i med ein
+  nyare versjon**. **Update** — **Oppdater**
+
 ## Referansar og tilvisingar
 
 - **the library** — biblioteket

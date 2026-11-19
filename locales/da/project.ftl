@@ -8,6 +8,8 @@ project-list-unreadable = Projekterne kunne ikke læses
 project-open-failed = Projektet kunne ikke åbnes
 # Shown under the words above when nothing more is known of why.
 project-open-failed-detail = Projektet kunne ikke åbnes.
+# Said in the place of a project that is not opened because a later version of Glaukopis has written in it, in a form of the texts this version does not know.
+project-later = Dette projekt er skrevet af en nyere version af Glaukopis. Opdater Glaukopis for at åbne det.
 project-back = Tilbage til projekterne
 project-fetching = Henter projektet
 project-fetching-offline = Serveren kan ikke nås. Projektet hentes, når det kan lade sig gøre.

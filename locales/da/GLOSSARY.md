@@ -443,6 +443,34 @@ Hvor dette afsnit og et ældre siger noget forskelligt, gælder dette.
   ombrydningspanelet; *Setting the pages…* — Ombryder siderne…, med
   ombrydningens ord
 
+## Nyt i 0.2.14 (2026-11-19)
+
+- **rich text** (en strækning af en tekst, hvor udseendet sættes for hånd,
+  som i et tekstbehandlingsprogram; vist som et hvidt ark med værktøjer
+  øverst) — formateret tekst, som danske tekstbehandlings- og
+  mailprogrammer kalder det. Aldrig et ord for »boks«. *Make it ordinary
+  text* — Gør til almindelig tekst
+- **Text / Heading / Subheading** (afsnittets slags i formateret tekst; en
+  overskrift ser her kun ud som en) — Tekst / Overskrift / Underoverskrift.
+  Bokmåls *Mellomtittel* er journalistens »mellemrubrik«; »underoverskrift«
+  siger, at den står et trin under overskriften, og forveksles ikke med
+  *Undertitel* (et værks undertitel).
+- **As the document** (vælger en skrift, en størrelse eller en farve væk
+  igen) — Som dokumentet; *an empty field* — Tomt felt: som dokumentet har
+  det
+- **set by hand** — sat for hånd (dansk idiom; ikke »manuelt«)
+- **Clear formatting** — Ryd formatering; **Clear the note** — Ryd notatet.
+  »Ryd« er ordet for *clear* i de ældre filer (Ryd søgningen, Ryd filtrene).
+- **Highlight** (farven bag ord, som fra en overstregningstusch) —
+  fremhævning, som før; farverne: Ingen, Gul, Grøn, Blå, Lyserød, Orange,
+  Lilla, Grå, En anden…; knappen: Fremhævningsfarve
+- **a later version** (et projekt eller en notesbog skrevet af en nyere
+  version af Glaukopis, end den, der kører) — en nyere version, som i
+  core-projectfile-later; *Written in by a later version* — Skrevet i med en
+  nyere version
+- **the notebook** i bibliotekets valg mellem referencer, notesbog og
+  filer — Notesbog (notesbogen), som i shell-notebook
+
 ## Navne, der ikke oversættes
 
 Glaukopis; Pandoc, Typst, Tesseract, Hunspell, LaTeX, LuaLaTeX, BibLaTeX,

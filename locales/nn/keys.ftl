@@ -92,6 +92,8 @@ keys-writing-bold = Feit
 keys-writing-underline = Understreka
 keys-writing-smallcaps = Kapitélar
 keys-writing-strike = Gjennomstreka
+# Turns the highlight of the words selected on, in the colour last chosen, or off.
+keys-writing-highlight = Utheving
 keys-writing-raised = Heva
 keys-writing-lowered = Senka
 keys-writing-quotation = Sitat

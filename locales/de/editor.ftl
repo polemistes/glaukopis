@@ -280,3 +280,20 @@ editor-line-annotation-placeholder = Ein Versmaß, die Nummer einer anderen Ausg
 ## Where a line begins, and the step (stage 4 of the contributors and the lines)
 # In the right-click menu of the text, with a check while the line the cursor is in does so.
 editor-line-continues = Beginnt, wo die Zeile davor endete
+
+## The ground of words, a highlight with a choice of colours (record 0116): a tool in the bar of a text and in the head of rich text, and under Marks. The name of it is editor-highlight, above. It goes into every document.
+
+# In the menu of colours for a highlight: takes the highlight away.
+editor-highlight-none = Keine
+# The colours of that menu, those of marker pens, by their plain names.
+editor-highlight-yellow = Gelb
+editor-highlight-green = Grün
+editor-highlight-blue = Blau
+editor-highlight-pink = Rosa
+editor-highlight-orange = Orange
+editor-highlight-purple = Lila
+editor-highlight-grey = Grau
+# The last entry of that menu: opens the system's own window for choosing any colour.
+editor-highlight-other = Andere Farbe…
+# The button in the bar of a text that opens that menu of colours.
+editor-highlight-colour = Farbe der Markierung
