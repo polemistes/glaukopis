@@ -27,7 +27,7 @@ use tokio::sync::mpsc;
 
 use crate::files::{Begun, Kept, Refused};
 use crate::registry::{self, Invitation, Refusal, Registry, RoomMeta, Who};
-use crate::rooms::{EnterError, Outgoing, close};
+use crate::rooms::{EnterError, LATER_FORM, Outgoing, close};
 use crate::{Shared, secrets};
 
 /// The version of what is said between the application and the server. Raised
@@ -733,10 +733,13 @@ async fn socket(
     let Some(member) = server.tickets.lock().await.redeem(&room, ticket) else {
         return Failure::new(StatusCode::UNAUTHORIZED, "not-admitted", BAD_TICKET).into_response();
     };
+    // The form of the texts the application knows, as its address says it;
+    // the first for a version from before it said any (see `rooms::form_of`).
+    let form = query.get("form").and_then(|f| f.parse::<u32>().ok()).unwrap_or(1).max(1);
     // A message may hold no more than the document may: the first may bring all of it.
     upgrade
         .max_message_size(server.config.max_document_bytes)
-        .on_upgrade(move |socket| attend(server, room, member, socket))
+        .on_upgrade(move |socket| attend(server, room, member, form, socket))
 }
 
 fn still_admitted(registry: &Registry, room: &str, member: &Option<String>) -> bool {
@@ -751,7 +754,7 @@ async fn end(mut socket: WebSocket, code: u16, reason: &'static str) {
     let _ = socket.send(Frame::Close(Some(CloseFrame { code, reason: reason.into() }))).await;
 }
 
-async fn attend(server: Shared, id: String, member: Option<String>, socket: WebSocket) {
+async fn attend(server: Shared, id: String, member: Option<String>, form: u32, socket: WebSocket) {
     let entered = loop {
         let room = {
             // Held while the room is found, so that no one finds a room that
@@ -771,7 +774,7 @@ async fn attend(server: Shared, id: String, member: Option<String>, socket: WebS
         };
         // Not held while entering, which waits for the room: a room busy
         // with a large change would hold up every call and every connection.
-        match room.enter(member.clone()).await {
+        match room.enter(member.clone(), form).await {
             Ok(Some(entered)) => break Ok((room, entered)),
             // Put away, or taken off the server, after it was found.
             Ok(None) => continue,
@@ -781,6 +784,7 @@ async fn attend(server: Shared, id: String, member: Option<String>, socket: WebS
     let (room, mut entered) = match entered {
         Ok(entered) => entered,
         Err(EnterError::Crowded) => return end(socket, close::CROWDED, "too many have the project open").await,
+        Err(EnterError::Later) => return end(socket, close::LATER, LATER_FORM).await,
         Err(EnterError::Io(e)) => {
             tracing::error!(room = %id, %e, "a room could not be opened");
             return end(socket, close::UNAVAILABLE, "the server could not read the project").await;

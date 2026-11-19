@@ -13,6 +13,8 @@ notebook-add-files-title = Add files to the notebook
 notebook-empty = The notebook is empty
     .text = Collect here whatever turns up, outside all projects: words, images and files, each a note that keeps where it came from.
 notebook-unreadable = The notebook could not be read
+# Said under notebook-unreadable where a later version of Glaukopis has written in the notebook, in a form of the texts this version does not know.
+notebook-later = The notebook was written by a later version of Glaukopis. Update Glaukopis to open it.
 notebook-nothing-found = No notes found
 notebook-empty-note = Empty note
 notebook-holds-picture = An image

@@ -23,6 +23,7 @@ import {
   type Folder,
   type ProjectInfo,
 } from '$lib/api/projects';
+import { FORM, formOfStored, LaterForm } from '$lib/editor/form';
 import { t } from '$lib/i18n';
 import { Project, type Persistence, type Summary } from '$lib/project/model/project.svelte';
 import { notifyError } from '$lib/ui/toast.svelte';
@@ -208,6 +209,10 @@ function heldOpen(id: string, project: Project) {
 export async function openProject(id: string): Promise<OpenProject> {
   projects.lastOpened = id;
   const loaded = await projectLoad(id);
+  // A project of a later form of the texts is not opened: its editors would
+  // take out of it what this version does not know (ADR 0111). Asked of
+  // what is on disk, before anything is made of it.
+  if (formOfStored(loaded.state, loaded.updates) > FORM) throw new LaterForm(t('project-later'));
   const persistence: Persistence = {
     append: (update: Uint8Array, here: boolean, time: number) =>
       projectAppend(id, update, here, time),

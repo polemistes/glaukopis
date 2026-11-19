@@ -16,7 +16,9 @@ import {
   notebookSweep,
   onNotebookUpdate,
 } from '$lib/api/notebook';
+import { FORM, formOfStored, LaterForm } from '$lib/editor/form';
 import type { TextHolder } from '$lib/editor/holder';
+import { t } from '$lib/i18n';
 import { beforeClose } from '$lib/state/closing';
 import { holderOfNotebook } from './holder';
 import { Notebook } from './model/notebook.svelte';
@@ -42,6 +44,8 @@ class TheNotebook {
 
   async #read(): Promise<Notebook> {
     const loaded = await notebookLoad();
+    // A notebook of a later form of the texts is not opened, as a project is not (ADR 0111).
+    if (formOfStored(loaded.state, loaded.updates) > FORM) throw new LaterForm(t('notebook-later'));
     const notebook = new Notebook(
       {
         append: (update, _here, time) => notebookAppend(update, time),

@@ -192,4 +192,21 @@ shared anew from any copy.
 | "Too many attempts have been made from here" for everyone at once | The server is behind a proxy and was started without `--trust-proxy`, so that all callers seem to be the proxy. |
 | A figure is refused as too large, or does not reach the others | The limits `--max-file-mb` and `--max-room-mb`. Behind nginx, `client_max_body_size`. |
 | Glaukopis says that the server does not take the latest changes | The project would be larger than `--max-project-mb` lets it be. |
+| Glaukopis says that a project has been written in by a later version | Someone in the project has a later Glaukopis, and has used something in a text that this one does not know. The one who is told updates Glaukopis. See *The versions of Glaukopis* below. |
+| One of those who share a project is never "connected", with a version of Glaukopis up to 0.2.13 | The same: such a version is kept out and cannot say why. The log of the server says `one who does not know the form the texts are in now is let go`. |
 | The server does not start | `journalctl -u glaukopis-server` says why. Most often the port is in use, the data directory cannot be written to, or no password is set. |
+
+## The versions of Glaukopis
+
+A version of Glaukopis takes out of a text what it does not know: something
+a later version put there would be deleted by an earlier one, for everyone
+in the project. So each project says which form its texts are in, each
+Glaukopis tells the server which form it knows, and the server lets no one
+into a project who does not know its form. When someone raises the form of
+a project, those present who do not know the new form are let go before
+anything of it reaches them. What they write meanwhile is kept on their own
+computers, and brought along when they have updated Glaukopis.
+
+A server from before this does none of it. **Update the server before
+anyone who uses it updates Glaukopis**: a newer server serves every older
+Glaukopis as before.

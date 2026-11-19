@@ -4,6 +4,7 @@ import * as encoding from 'lib0/encoding';
 import { applyAwarenessUpdate, Awareness } from 'y-protocols/awareness';
 import { writeSyncStep1 } from 'y-protocols/sync';
 import * as Y from 'yjs';
+import { FORM, formOf, raiseForm } from '$lib/editor/form';
 import { Connection } from './connection.svelte';
 
 /** A socket as the browser gives one, opened and closed by the test. */
@@ -161,5 +162,97 @@ describe('the connection to the server', () => {
     sockets[0].sent.slice(before).forEach(hear);
     expect(other.getStates().has(doc.clientID)).toBe(false);
     other.destroy();
+  });
+
+  /** What a server sends: an answer of what this copy lacks (1), or a change of another's (2). */
+  function sync(step: 1 | 2, update: Uint8Array): MessageEvent {
+    const encoder = encoding.createEncoder();
+    encoding.writeVarUint(encoder, 0);
+    encoding.writeVarUint(encoder, step);
+    encoding.writeVarUint8Array(encoder, update);
+    return { data: encoding.toUint8Array(encoder).buffer } as MessageEvent;
+  }
+
+  /** A project as another has it, who wrote in it with a version of a later form of the texts. */
+  function ofLaterForm(): Uint8Array {
+    const theirs = new Y.Doc();
+    raiseForm(theirs, FORM + 1);
+    const block = new Y.XmlElement('of-a-later-form');
+    block.insert(0, [new Y.XmlText('What this version does not know.')]);
+    theirs.getXmlFragment('text').insert(0, [block]);
+    return Y.encodeStateAsUpdate(theirs);
+  }
+
+  function own() {
+    const doc = new Y.Doc();
+    const sockets: Socket[] = [];
+    let told = 0;
+    const connection = new Connection(doc, new Awareness(doc), {
+      ticket: async () => 'ws://server/room',
+      onlater: () => told++,
+      socket: () => {
+        sockets.push(new Socket());
+        return sockets.at(-1) as unknown as WebSocket;
+      },
+    });
+    return { doc, connection, sockets, told: () => told };
+  }
+
+  it.each([
+    ['what the server holds', 1 as const],
+    ['a change another makes', 2 as const],
+  ])(
+    'takes in nothing of a later form of the texts, sent as %s, and stays away',
+    async (_, step) => {
+      const { doc, connection, sockets, told } = own();
+      await vi.advanceTimersByTimeAsync(0);
+      sockets[0].open();
+      sockets[0].hear();
+      sockets[0].onmessage?.(sync(step, ofLaterForm()));
+      expect(connection.later).toBe(true);
+      expect(told()).toBe(1);
+      expect(connection.status).toBe('offline');
+      expect(sockets[0].readyState).toBe(3);
+      // Nothing of it is here: neither what this version does not know, nor that there is a later form.
+      expect(doc.getXmlFragment('text').length).toBe(0);
+      expect(formOf(doc)).toBe(FORM);
+      // No other socket is opened, by time or by asking, and what is written here is not sent.
+      const sent = sockets[0].sent.length;
+      doc.getMap('meta').set('name', 'Written meanwhile');
+      connection.retry();
+      await vi.advanceTimersByTimeAsync(120_000);
+      expect(sockets).toHaveLength(1);
+      expect(sockets[0].sent).toHaveLength(sent);
+      expect(told()).toBe(1);
+      connection.stop();
+    },
+  );
+
+  it('takes in what is of the form it knows', async () => {
+    const { doc, connection, sockets } = own();
+    await vi.advanceTimersByTimeAsync(0);
+    sockets[0].open();
+    const theirs = new Y.Doc();
+    raiseForm(theirs, FORM);
+    theirs.getMap('meta').set('name', 'Theirs');
+    sockets[0].onmessage?.(sync(1, Y.encodeStateAsUpdate(theirs)));
+    expect(connection.later).toBe(false);
+    expect(connection.synced).toBe(true);
+    expect(doc.getMap('meta').get('name')).toBe('Theirs');
+    connection.stop();
+  });
+
+  it('stays away when the server lets it go for not knowing the form of the texts', async () => {
+    const { connection, sockets, told } = own();
+    await vi.advanceTimersByTimeAsync(0);
+    sockets[0].open();
+    sockets[0].hear();
+    sockets[0].closed(4007, 'the project is of a later form');
+    expect(connection.later).toBe(true);
+    expect(told()).toBe(1);
+    expect(connection.status).toBe('offline');
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(sockets).toHaveLength(1);
+    connection.stop();
   });
 });

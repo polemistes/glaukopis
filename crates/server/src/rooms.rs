@@ -31,7 +31,7 @@ use yrs::encoding::read::Cursor;
 use yrs::sync::{Awareness, Message, MessageReader, SyncMessage};
 use yrs::updates::decoder::{Decode, DecoderV1};
 use yrs::updates::encoder::{Encode, Encoder, EncoderV1};
-use yrs::{ClientID, Doc, ReadTxn, StateVector, Transact, Update};
+use yrs::{ClientID, Doc, Map, ReadTxn, StateVector, Transact, Update};
 
 use crate::registry::room_dir;
 
@@ -83,12 +83,16 @@ pub mod close {
     pub const CROWDED: u16 = 4005;
     /// A change would make the project larger than the server keeps.
     pub const TOO_LARGE: u16 = 4006;
+    /// The project's texts are in a later form than the one connected knows.
+    pub const LATER: u16 = 4007;
 }
 
 #[derive(Debug, thiserror::Error)]
 pub enum EnterError {
     #[error("as many have the project open as the server allows at a time")]
     Crowded,
+    #[error("the texts of the project are in a later form than the one who would enter knows")]
+    Later,
     #[error("the server could not read the project: {0}")]
     Io(#[from] io::Error),
 }
@@ -98,6 +102,8 @@ struct Peer {
     waiting: Arc<Waiting>,
     /// The member, or none for the owner.
     member: Option<String>,
+    /// The form of the texts they know: see `form_of`.
+    form: u32,
     /// Those whose presence came by this connection, and goes with it.
     clients: HashSet<ClientID>,
 }
@@ -150,6 +156,8 @@ impl Peer {
 
 struct Inner {
     awareness: Awareness,
+    /// The form the texts of the document are in: see `form_of`.
+    form: u32,
     peers: HashMap<u64, Peer>,
     next: u64,
     /// Whether there is something that has not been written.
@@ -263,6 +271,16 @@ impl Inner {
         }
     }
 
+    /// Lets go those who know no form of the texts as late as `form`. One
+    /// who raised it knows it, and stays.
+    fn dismiss_below(&mut self, form: u32) {
+        let below: Vec<u64> = self.peers.iter().filter(|(_, peer)| peer.form < form).map(|(id, _)| *id).collect();
+        for id in below {
+            tracing::info!(peer = id, form, "one who does not know the form the texts are in now is let go");
+            self.dismiss(id, Some((close::LATER, LATER_FORM)));
+        }
+    }
+
     /// Answers one. An `answer` is to their asking for what they lack.
     fn reply(&mut self, to: u64, message: &Message, answer: bool) {
         let most = self.most_waiting();
@@ -317,6 +335,14 @@ impl Inner {
                 let update = Update::decode_v1(&bytes)?;
                 self.awareness.doc().transact_mut().apply_update(update)?;
                 self.unsaved = true;
+                // Where the change raised the form of the texts, those who do
+                // not know the new form are let go before it is passed on:
+                // nothing of it reaches them.
+                let form = form_of(self.awareness.doc());
+                if form > self.form {
+                    self.form = form;
+                    self.dismiss_below(form);
+                }
                 self.tell(encode(&Message::Sync(SyncMessage::Update(bytes))), Some(from));
             }
             Message::Awareness(mut update) => {
@@ -375,6 +401,29 @@ impl Inner {
     }
 }
 
+/// What one is told who is let go, or not let in, for not knowing the form
+/// of the texts. Short: the reason a socket is closed with has little room.
+pub const LATER_FORM: &str = "the project was written in by a later version of Glaukopis";
+
+/// The form the texts of a document are in. The application says it in a
+/// map of the document, `form`, with the number as a key (its
+/// `editor/form.ts`, ADR 0111): the highest of the keys, and the first where
+/// there is none. A version of the application takes out of a project, for
+/// everyone, what its texts hold that it does not know; so one who does not
+/// know the form of a project is not let into it, and those present are let
+/// go when the form rises beyond what they know.
+fn form_of(doc: &Doc) -> u32 {
+    let txn = doc.transact();
+    let Some(said) = txn.get_map("form") else { return 1 };
+    said.keys(&txn).filter_map(form_of_key).max().unwrap_or(1).max(1)
+}
+
+/// A key of the map as the form it stands for, as the application reads it.
+fn form_of_key(key: &str) -> Option<u32> {
+    let plain = !key.is_empty() && key.len() <= 9 && !key.starts_with('0') && key.bytes().all(|b| b.is_ascii_digit());
+    if plain { key.parse().ok() } else { None }
+}
+
 /// A document made from a state as the room writes it.
 fn read_state(bytes: &[u8]) -> Result<Doc, String> {
     let doc = Doc::new();
@@ -420,11 +469,13 @@ impl Room {
             Err(e) => return Err(e),
         };
         let present = Arc::new(Guarded::new(Vec::new()));
+        let form = form_of(&doc);
         Ok(Room {
             id: id.to_owned(),
             dir,
             inner: Guarded::new(Inner {
                 awareness: Awareness::new(doc),
+                form,
                 peers: HashMap::new(),
                 next: 1,
                 unsaved: false,
@@ -462,23 +513,27 @@ impl Room {
         }
     }
 
-    /// Lets one in. None where the room was put away, or taken off the
-    /// server, after it was found: it is then to be found again.
-    pub async fn enter(self: &Arc<Self>, member: Option<String>) -> Result<Option<Entered>, EnterError> {
-        self.aside(move |room| room.admit(member)).await
+    /// Lets one in, who knows the form `form` of the texts. None where the
+    /// room was put away, or taken off the server, after it was found: it is
+    /// then to be found again.
+    pub async fn enter(self: &Arc<Self>, member: Option<String>, form: u32) -> Result<Option<Entered>, EnterError> {
+        self.aside(move |room| room.admit(member, form)).await
     }
 
-    fn admit(&self, member: Option<String>) -> Result<Option<Entered>, EnterError> {
+    fn admit(&self, member: Option<String>, form: u32) -> Result<Option<Entered>, EnterError> {
         let mut inner = self.inner();
         if inner.put_away || inner.gone {
             return Ok(None);
+        }
+        if form < inner.form {
+            return Err(EnterError::Later);
         }
         if inner.peers.len() >= MOST_PRESENT {
             return Err(EnterError::Crowded);
         }
         let (tx, rx) = mpsc::channel(WAITING);
         let waiting = Arc::new(Waiting::default());
-        let peer = Peer { tx, waiting: waiting.clone(), member, clients: HashSet::new() };
+        let peer = Peer { tx, waiting: waiting.clone(), member, form, clients: HashSet::new() };
         let id = inner.next;
         inner.next += 1;
         inner.empty_since = None;
@@ -655,10 +710,10 @@ impl Rooms {
 
     /// Lets one into a room, as a connection does in two steps.
     #[cfg(test)]
-    pub async fn enter(&self, id: &str, member: Option<String>) -> Result<(Arc<Room>, Entered), EnterError> {
+    pub async fn enter(&self, id: &str, member: Option<String>, form: u32) -> Result<(Arc<Room>, Entered), EnterError> {
         loop {
             let room = self.open(id).await?;
-            if let Some(entered) = room.enter(member.clone()).await? {
+            if let Some(entered) = room.enter(member.clone(), form).await? {
                 return Ok((room, entered));
             }
         }
@@ -746,7 +801,12 @@ mod tests {
 
     impl Side {
         async fn enter(rooms: &Rooms, member: Option<&str>) -> Side {
-            let (room, entered) = rooms.enter(ROOM, member.map(str::to_owned)).await.unwrap();
+            Side::enter_knowing(rooms, member, 1).await
+        }
+
+        /// Enters as a version of the application that knows the form `form` of the texts.
+        async fn enter_knowing(rooms: &Rooms, member: Option<&str>, form: u32) -> Side {
+            let (room, entered) = rooms.enter(ROOM, member.map(str::to_owned), form).await.unwrap();
             let side = Side { doc: Doc::new(), peer: entered.peer, incoming: entered.incoming, room };
             // As the application does on connecting.
             let sv = side.doc.transact().state_vector();
@@ -795,6 +855,43 @@ mod tests {
             self.doc.get_or_insert_text("text").get_string(&self.doc.transact())
         }
 
+        /// Says that the texts are of the form `form` and writes in that
+        /// form, in one change, as one does who wrote both while away from
+        /// the server and brings them along together.
+        fn write_in_form(&self, form: u32, words: &str) {
+            let before = self.doc.transact().state_vector();
+            let said = self.doc.get_or_insert_map("form");
+            let text = self.doc.get_or_insert_text("text");
+            {
+                let mut txn = self.doc.transact_mut();
+                said.insert(&mut txn, form.to_string(), true);
+                text.insert(&mut txn, 0, words);
+            }
+            let change = self.doc.transact().encode_state_as_update_v1(&before);
+            self.send(&Message::Sync(SyncMessage::Update(change)));
+        }
+
+        /// Whether anything of the document has been sent to this side, and
+        /// the code it was let go with, if it was: all that waited is taken.
+        fn sent(&mut self) -> (bool, Option<u16>) {
+            let (mut changes, mut code) = (false, None);
+            while let Ok(out) = self.incoming.try_recv() {
+                match out {
+                    Outgoing::Close(c, _) => code = Some(c),
+                    Outgoing::Message(bytes) => {
+                        let mut decoder = DecoderV1::new(Cursor::new(&bytes[..]));
+                        for message in MessageReader::new(&mut decoder) {
+                            changes |= matches!(
+                                message.unwrap(),
+                                Message::Sync(SyncMessage::SyncStep2(_)) | Message::Sync(SyncMessage::Update(_))
+                            );
+                        }
+                    }
+                }
+            }
+            (changes, code)
+        }
+
         fn closed_with(&mut self) -> Option<u16> {
             let mut code = None;
             while let Ok(out) = self.incoming.try_recv() {
@@ -813,6 +910,77 @@ mod tests {
         let mut clients = HashMap::new();
         clients.insert(client, yrs::sync::awareness::AwarenessUpdateEntry { clock, json: json.into() });
         Message::Awareness(AwarenessUpdate { clients })
+    }
+
+    #[tokio::test]
+    async fn those_who_do_not_know_a_form_of_the_texts_are_let_go_before_it_is_passed_on() {
+        let tmp = tempfile::tempdir().unwrap();
+        let rooms = Rooms::new(tmp.path().to_owned(), MAX_DOCUMENT_BYTES);
+        let mut owner = Side::enter_knowing(&rooms, None, 2).await;
+        let mut anna = Side::enter(&rooms, Some("anna")).await;
+        let mut bo = Side::enter_knowing(&rooms, Some("bo"), 2).await;
+        owner.take_in();
+        anna.take_in();
+        bo.take_in();
+        // The first form says nothing of itself, and all take part in it.
+        owner.write(0, "plain");
+        anna.take_in();
+        bo.take_in();
+        assert_eq!(anna.text(), "plain");
+
+        owner.write_in_form(2, "of the second form, ");
+        assert_eq!(anna.sent(), (false, Some(close::LATER)), "let go, and sent nothing of it");
+        bo.take_in();
+        assert_eq!(bo.text(), "of the second form, plain");
+        assert_eq!(owner.closed_with(), None, "the one who raised it knows it");
+        assert_eq!(rooms.present(ROOM).await, vec![None, Some("bo".to_owned())]);
+
+        // Nor is one let in after, who does not know it; one who does is.
+        assert!(matches!(rooms.enter(ROOM, Some("anna".into()), 1).await, Err(EnterError::Later)));
+        let mut later = Side::enter_knowing(&rooms, Some("anna"), 3).await;
+        later.take_in();
+        assert_eq!(later.text(), "of the second form, plain");
+    }
+
+    #[tokio::test]
+    async fn the_form_of_the_texts_is_known_of_a_room_read_from_disk() {
+        let tmp = tempfile::tempdir().unwrap();
+        {
+            let rooms = Rooms::new(tmp.path().to_owned(), MAX_DOCUMENT_BYTES);
+            let mut owner = Side::enter_knowing(&rooms, None, 2).await;
+            owner.take_in();
+            owner.write_in_form(2, "kept");
+            rooms.save_all().await;
+        }
+        let rooms = Rooms::new(tmp.path().to_owned(), MAX_DOCUMENT_BYTES);
+        assert!(matches!(rooms.enter(ROOM, None, 1).await, Err(EnterError::Later)));
+        let mut owner = Side::enter_knowing(&rooms, None, 2).await;
+        owner.take_in();
+        assert_eq!(owner.text(), "kept");
+    }
+
+    /// A project as the application's own library writes it (Yjs, in
+    /// `src/lib/editor/form.ts`): named, and said to be of the second form.
+    const AS_THE_APPLICATION_SAYS_IT: [u8; 40] = [
+        1, 2, 7, 0, 40, 1, 4, 109, 101, 116, 97, 4, 110, 97, 109, 101, 1, 119, 9, 65, 32, 112, 114, 111, 106, 101, 99,
+        116, 40, 1, 4, 102, 111, 114, 109, 1, 50, 1, 120, 0,
+    ];
+
+    #[test]
+    fn the_form_is_read_as_the_application_says_it() {
+        let doc = read_state(&AS_THE_APPLICATION_SAYS_IT).unwrap();
+        assert_eq!(form_of(&doc), 2);
+    }
+
+    #[test]
+    fn the_form_of_a_document_is_the_highest_of_its_plain_numbers() {
+        let doc = Doc::new();
+        assert_eq!(form_of(&doc), 1, "the first where none is said");
+        let said = doc.get_or_insert_map("form");
+        for key in ["2", "later", "07", "-4", "", "3", "99999999999"] {
+            said.insert(&mut doc.transact_mut(), key, true);
+        }
+        assert_eq!(form_of(&doc), 3);
     }
 
     #[tokio::test]
@@ -1028,7 +1196,7 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let rooms = Rooms::new(tmp.path().to_owned(), MAX_DOCUMENT_BYTES);
         // One who wrote while away from the server, or whose server lost what it had.
-        let (room, entered) = rooms.enter(ROOM, None).await.unwrap();
+        let (room, entered) = rooms.enter(ROOM, None, 1).await.unwrap();
         let mut a = Side { doc: Doc::new(), peer: entered.peer, incoming: entered.incoming, room };
         a.doc.get_or_insert_text("text").insert(&mut a.doc.transact_mut(), 0, "written on the train");
         let sv = a.doc.transact().state_vector();
@@ -1135,7 +1303,7 @@ mod tests {
         rooms.unload_idle().await;
         assert_eq!(rooms.open_count().await, 0);
 
-        assert!(found.enter(None).await.unwrap().is_none(), "the room put away lets no one in");
+        assert!(found.enter(None, 1).await.unwrap().is_none(), "the room put away lets no one in");
         let mut b = Side::enter(&rooms, Some("anna")).await;
         assert!(!Arc::ptr_eq(&b.room, &found));
         b.take_in();

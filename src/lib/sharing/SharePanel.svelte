@@ -322,11 +322,13 @@
       <div
         class="state"
         class:off={connection?.status !== 'connected'}
-        class:refused={connection?.tooLarge}
-        role={connection?.tooLarge ? 'alert' : undefined}
+        class:refused={connection?.tooLarge || connection?.later}
+        role={connection?.tooLarge || connection?.later ? 'alert' : undefined}
       >
         <span class="dot"></span>
-        {#if connection?.tooLarge}
+        {#if connection?.later}
+          {t('sharing-later')}
+        {:else if connection?.tooLarge}
           {t('sharing-too-large')}
         {:else if connection?.status === 'connected'}
           {t('sharing-connected')}

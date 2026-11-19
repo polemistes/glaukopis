@@ -73,7 +73,9 @@ export const sharingPublish = (id: string, server: string, password: string | nu
   call<ProjectInfo>('sharing_publish', { id, server, password });
 export const sharingJoin = (server: string, code: string, name: string) =>
   call<ProjectInfo>('sharing_join', { server, code, name });
-export const sharingTicket = (id: string) => call<SharingTicket>('sharing_ticket', { id });
+/** A ticket for the socket of a project, for one who knows the form `form` of the texts (`editor/form.ts`). */
+export const sharingTicket = (id: string, form: number) =>
+  call<SharingTicket>('sharing_ticket', { id, form });
 export const sharingRoom = (id: string) => call<Room>('sharing_room', { id });
 export const sharingInvite = (
   id: string,

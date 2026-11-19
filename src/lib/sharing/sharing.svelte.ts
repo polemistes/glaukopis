@@ -2,10 +2,12 @@
 
 import type { ProjectInfo, Sharing } from '$lib/api/projects';
 import { sharingEnd, sharingForget, sharingPublish, sharingTicket } from '$lib/api/sharing';
+import { FORM } from '$lib/editor/form';
 import { t } from '$lib/i18n';
 import type { Project } from '$lib/project/model/project.svelte';
 import { projects } from '$lib/state/projects.svelte';
 import { settings } from '$lib/state/settings.svelte';
+import { confirm } from '$lib/ui/confirm.svelte';
 import { colourOf, Connection, type Ending } from './connection.svelte';
 
 export class ProjectSharing {
@@ -48,8 +50,18 @@ export class ProjectSharing {
     this.ended = null;
     this.introduce();
     this.connection = new Connection(this.#project.doc, this.#project.awareness, {
-      ticket: async () => (await sharingTicket(this.#id)).url,
+      // The server is told which form of the texts this version knows, and
+      // lets no one in who does not know the project's (ADR 0111).
+      ticket: async () => (await sharingTicket(this.#id, FORM)).url,
       onended: (why) => void this.#onEnded(why),
+      // Told once, when it is found; the sharing window says it for as long as it holds.
+      onlater: () =>
+        void confirm({
+          title: t('sharing-later-title'),
+          message: t('sharing-later'),
+          confirm: t('project-understood'),
+          cancel: '',
+        }),
       // What arrives may be an old document, with maps, or one not yet begun;
       // a project in shape is left as it is (ADR 0037).
       onsynced: () => void this.#project.begin(this.#project.name || this.#name),

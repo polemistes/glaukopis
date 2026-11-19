@@ -5,6 +5,10 @@
  * what it has, and is given what it lacks. A project that cannot reach its
  * server is worked on as any other; what was written meanwhile is brought
  * along when the server is reached again. See ADR 0006.
+ *
+ * What the others send is not taken in where it is of a later form of the
+ * texts than this version knows (ADR 0111, `editor/form.ts`): the editor
+ * would take out of the project, for everyone, what it does not know.
  */
 
 import * as decoding from 'lib0/decoding';
@@ -17,11 +21,13 @@ import {
 } from 'y-protocols/awareness';
 import {
   messageYjsSyncStep2,
+  messageYjsUpdate,
   readSyncMessage,
   writeSyncStep1,
   writeUpdate,
 } from 'y-protocols/sync';
 import type * as Y from 'yjs';
+import { FORM, formInUpdate } from '$lib/editor/form';
 
 const SYNC = 0;
 const AWARENESS = 1;
@@ -32,6 +38,8 @@ const REMOVED = 4001;
 const DELETED = 4002;
 /** The code with which it refuses a change that would make the project larger than it keeps. */
 const TOO_LARGE = 4006;
+/** The code with which it lets go one who does not know the form the project's texts are in. */
+const LATER = 4007;
 
 const LONGEST_WAIT = 30_000;
 /** How long a connection must have lasted for one that fails after it to be tried again at once. */
@@ -58,6 +66,8 @@ export interface ConnectionOptions {
    * and is brought into shape when it arrives.
    */
   onsynced?: () => void;
+  /** Called when the project is found to be of a later form than this version knows: see `later`. */
+  onlater?: () => void;
   /** For tests. */
   socket?: (url: string) => WebSocket;
 }
@@ -83,6 +93,14 @@ export class Connection {
    * be larger with it than the server keeps. It is tried again, seldom.
    */
   tooLarge = $state(false);
+  /**
+   * Whether the project has been written in by a later version, in a form
+   * of the texts this one does not know: said by the server, or read from
+   * what it sent, of which nothing was taken in. Nothing more is received
+   * or sent until the project is opened by a version that knows the form;
+   * what is written here meanwhile is kept, and brought along then.
+   */
+  later = $state(false);
   readonly #doc: Y.Doc;
   readonly #awareness: Awareness;
   readonly #options: ConnectionOptions;
@@ -130,7 +148,8 @@ export class Connection {
 
   /** Tries at once, rather than when the time for the next attempt has come. */
   retry() {
-    if (this.#stopped || this.status === 'ended' || this.#socket || this.#opening) return;
+    if (this.#stopped || this.later || this.status === 'ended' || this.#socket || this.#opening)
+      return;
     clearTimeout(this.#retry);
     void this.#open();
   }
@@ -168,7 +187,7 @@ export class Connection {
   }
 
   async #open() {
-    if (this.#stopped || this.#opening || this.#socket) return;
+    if (this.#stopped || this.later || this.#opening || this.#socket) return;
     this.#opening = true;
     let url: string;
     try {
@@ -230,6 +249,7 @@ export class Connection {
       this.#forgetOthers();
       if (event.code === REMOVED) this.#end('removed');
       else if (event.code === DELETED) this.#end('deleted');
+      else if (event.code === LATER) this.#late();
       else if (event.code === TOO_LARGE) {
         // What was refused would be sent, and refused, again at once.
         this.tooLarge = true;
@@ -246,6 +266,7 @@ export class Connection {
     while (decoding.hasContent(decoder)) {
       const kind = decoding.readVarUint(decoder);
       if (kind === SYNC) {
+        if (this.#ofLaterForm(decoder)) return this.#late();
         const encoder = encoding.createEncoder();
         encoding.writeVarUint(encoder, SYNC);
         const step = readSyncMessage(decoder, encoder, this.#doc, this);
@@ -270,8 +291,44 @@ export class Connection {
     }
   }
 
+  /**
+   * Whether the message that is next, which is not read by this, brings a
+   * change of a later form than this version knows.
+   */
+  #ofLaterForm(decoder: decoding.Decoder): boolean {
+    const ahead = decoding.clone(decoder);
+    try {
+      const step = decoding.readVarUint(ahead);
+      if (step !== messageYjsSyncStep2 && step !== messageYjsUpdate) return false;
+      return formInUpdate(decoding.readVarUint8Array(ahead)) > FORM;
+    } catch {
+      // What cannot be read is said to be so by what reads it.
+      return false;
+    }
+  }
+
+  /** The project is of a later form: the socket is closed, and none is opened after it. */
+  #late() {
+    if (this.#stopped || this.later) return;
+    this.later = true;
+    clearTimeout(this.#retry);
+    this.tooLarge = false;
+    this.#forgetOthers();
+    const socket = this.#socket;
+    this.#socket = null;
+    if (socket) {
+      socket.onclose = null;
+      socket.onmessage = null;
+      socket.onerror = null;
+      socket.close(1000);
+    }
+    this.status = 'offline';
+    this.synced = false;
+    this.#options.onlater?.();
+  }
+
   #failed(why: string | null) {
-    if (this.#stopped || this.status === 'ended') return;
+    if (this.#stopped || this.later || this.status === 'ended') return;
     this.status = 'offline';
     this.problem = why;
     const wait = Math.min(LONGEST_WAIT, 1000 * 2 ** this.#attempts) * (0.75 + Math.random() * 0.5);

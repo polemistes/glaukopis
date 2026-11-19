@@ -1,6 +1,6 @@
 # A box of rich text — the build plan
 
-From the owner's words of 2026-11-19 (the last section of `docs/brief.md`: read it first). This is the plan of the whole, written to be read by the owner before anything is built. **Nothing is built.** Each stage is given its detailed part here (the files, the words, the checks) when it is begun, after the code it touches has been read, and its record when it is built, as the notebook's stages were.
+From the owner's words of 2026-11-19 (the last section of `docs/brief.md`: read it first). This is the plan of the whole, written to be read by the owner before anything is built. **Built**: stage 1, the guard (record 0111, on 2026-11-19); nothing of the box. Each stage is given its detailed part here (the files, the words, the checks) when it is begun, after the code it touches has been read, and its record when it is built, as the notebook's stages were.
 
 ## What it is
 
@@ -142,15 +142,23 @@ A font that the machine does not have gets the fallback and the notice a layout'
 
 ### Older versions, and shared projects
 
-A box, or words with a font set by hand, would be deleted from a shared project for everyone by anyone who opened it in a version that does not know them. The same is true today of anything added to a text since a version that someone still runs.
+Built as stage 1; record 0111 says how, and what was chosen in the building. In short:
 
-- **The project's document says which form its texts are in**, a number. It is raised when something is first put into the project that an earlier form does not know: here, the first box.
-- **A version that meets a number it does not know** does not open the project to be written in, and says that it was written by a later version, in the words the project file has for it.
-- **The versions that are out** (0.2.13 and before) know nothing of the number. For them the server can refuse a project of a later form; what the server and an old version do then is to be read and tried before this is promised. Until everyone has a version with the guard, making the first box in a shared project warns that all who share it need this version.
+- **The texts have a form, a number**, 1 today (`src/lib/editor/form.ts`). A project's document and the notebook's say theirs in a map of their own, where the number is a key set once, so that it can be read from the bytes of a change before anything of it is taken in.
+- **A project or a notebook of a later form is not opened**, and says that it was written by a later version.
+- **What the others send of a later form is not taken in**: the sharing stops for the while, the project stays open, and what is written is brought along when the version knows the form.
+- **The server keeps the form of each project**, is told by each application which form it knows, lets no one in who does not know the project's, and lets go those who do not when it rises, before anything of the new form reaches them. That is what keeps the versions that are out (0.2.13 and before) from deleting a box: to them the server is not within reach.
+
+**What the box must do with it** (stage 2):
+
+- **`FORM` becomes 2** with the box in the schema, and **the first box put into a document raises the document's form** (`raiseForm`, a change of its own, made before the box is), in a project and in the notebook alike. A document in which no box was ever made stays of the first form, open to every version.
+- **A project file** (`.glaukopis`) written from a project of the second form is written with a higher number of its own (`projectfile.rs`, `FORMAT`), so that the versions that are out refuse the file by the guard they have, and do not open it and lose the box.
+- **Making the first box in a shared project warns** that all who share it need this version, since the others will be kept out until they have it.
+- **The server must be the one of stage 1 or later** before the box is used in a shared project; an older server lets everyone in. `docs/server.md` says so.
 
 ## The stages
 
-1. **The guard.** The number of the form in the project's document, read on opening and in sharing; the refusal and its words; a test with a document that holds a block the schema does not know. Nothing of the box. It is of use by itself, and the earlier it is out the fewer versions are without it.
+1. **The guard. Built** (record 0111): the form of the texts in a project's document and the notebook's, asked before either is opened and of everything the others send; the server keeping out those who do not know a project's form; the words; the tests, one of them binding an editor to a document that holds a block and a mark its schema does not know, which it deletes; `e2e/later-form.mjs`, and `e2e/later-form-shared.mjs` with the real server, two applications and the script as a later version. Nothing of the box. It goes out a release ahead of the box, and the server is updated with it.
 2. **The box, with nothing set by hand.** The block and its place in the schema; *Insert → Rich text*, the keys in and out, the head and its menu, the white surface; every walk of a text's paragraphs going into the box, held by the test of the rule; the Org block; the core setting what is in a box as it sets any text. What one sees: a white sheet in the text that changes nothing in the document. This is the stage that touches the most places, and it is checked before any tool is added.
 3. **Set by hand, and seen.** The three marks and the paragraph's measures; the row of tools with the chooser of fonts lifted out; *Clear formatting*; the rule that nothing by hand lives outside a box; the Org forms; Typst, so that the typesetting pane and the PDF show it; the empty paragraph as a blank line. From here the box does what it is for.
 4. **The other forms of a document.** LaTeX; Word and Writer with their made styles; HTML and EPUB; Markdown. Four parts that do not touch each other, for four agents.

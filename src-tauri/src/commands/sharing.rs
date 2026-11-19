@@ -117,13 +117,15 @@ fn code_is_of(state: &AppState, project: &ProjectInfo, code: &str) -> bool {
 
 /// A ticket for the socket of a project. A refusal of the kinds `no-room` and
 /// `not-admitted` means that the server has no place for this copy any more.
+/// `form` is the form of the texts the interface knows, which the address
+/// of the socket tells the server (ADR 0111).
 #[tauri::command(async)]
-pub fn sharing_ticket(state: State<'_, AppState>, id: String) -> CommandResult<Ticket> {
+pub fn sharing_ticket(state: State<'_, AppState>, id: String, form: u32) -> CommandResult<Ticket> {
     let (sharing, token) = state.projects.shared(&id)?;
     let client = state.client();
     let remote = Remote::new(&client, &sharing.server)?;
     let ticket = remote.ticket(&sharing.room, &token)?;
-    Ok(Ticket { url: sharing::socket_url(remote.server(), &sharing.room, &ticket) })
+    Ok(Ticket { url: sharing::socket_url(remote.server(), &sharing.room, &ticket, form) })
 }
 
 /// The project as the server knows it: who is there, and the codes that are out.

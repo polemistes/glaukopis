@@ -3589,6 +3589,14 @@ From then on:
 - The one who shared the project can see who has it, remove someone, and stop
   sharing. Those who are removed keep the project as it was then.
 
+Those who share a project do best with the same version of Glaukopis. A
+later version may put into a text something an earlier one does not know.
+Where someone has, the earlier version is kept out of the project by the
+server, and says that the project has been written in by a later version:
+update Glaukopis. What you wrote meanwhile is kept, and brought along when
+you have. A version up to 0.2.13 says only that the server is not within
+reach.
+
 The files of the library are not shared; the references themselves are.
 The images of the figures of the project are shared: they are sent to the
 server when they are put in, and fetched by the others from there, into
@@ -4210,6 +4218,11 @@ turns the asking off. To ask is to fetch one small file from
 robertemilberge.no, where the language packages come from too; nothing
 about you is sent. On Linux, Glaukopis is updated with the system's
 packages, and does not ask.
+
+A project that a later version of Glaukopis has written in, in a way this
+version does not know, is not opened by this one, and neither is the
+notebook: it says that it was written by a later version, and nothing in it
+is changed. Update Glaukopis to open it.
 
 Pandoc makes the documents: Pandoc 3.1.10 or newer. One that is older is said
 to be so under *Settings*. It is installed with Glaukopis when Glaukopis is

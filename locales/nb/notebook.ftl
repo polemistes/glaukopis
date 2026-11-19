@@ -13,6 +13,8 @@ notebook-add-files-title = Legg til filer i notatblokken
 notebook-empty = Notatblokken er tom
     .text = Samle her det du kommer over, utenfor alle prosjekter: ord, bilder og filer, hver et notat som husker hvor det kom fra.
 notebook-unreadable = Notatblokken kunne ikke leses
+# Said under notebook-unreadable where a later version of Glaukopis has written in the notebook, in a form of the texts this version does not know.
+notebook-later = Notatblokken er skrevet av en nyere versjon av Glaukopis. Oppdater Glaukopis for å åpne den.
 notebook-nothing-found = Fant ingen notater
 notebook-empty-note = Tomt notat
 notebook-holds-picture = Et bilde

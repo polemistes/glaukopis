@@ -190,14 +190,18 @@ pub fn is_encrypted(server: &str) -> bool {
     server.starts_with("https://") || is_this_computer(server)
 }
 
-/// The address the interface opens its socket at.
-pub fn socket_url(server: &str, room: &str, ticket: &str) -> String {
+/// The address the interface opens its socket at. `form` is the form of the
+/// texts the interface knows: a server that knows of forms lets no one into
+/// a project who does not know the form its texts are in, since their editor
+/// would take out of the project, for everyone, what it does not know (ADR
+/// 0111). An address that says none is taken as saying the first.
+pub fn socket_url(server: &str, room: &str, ticket: &str, form: u32) -> String {
     let base = match server.split_once("://") {
         Some(("https", rest)) => format!("wss://{rest}"),
         Some((_, rest)) => format!("ws://{rest}"),
         None => format!("wss://{server}"),
     };
-    format!("{base}/ws/{}?ticket={}", net::encode(room), net::encode(ticket))
+    format!("{base}/ws/{}?ticket={}&form={form}", net::encode(room), net::encode(ticket))
 }
 
 /// An invitation as it was pasted: the address and the code may come together,
@@ -682,8 +686,11 @@ mod tests {
         assert!(!is_encrypted("http://192.168.1.20:8375"));
         assert!(!is_encrypted("http://localhost.example.org"));
 
-        assert_eq!(socket_url("https://example.org/g", "0a1b-2c", "abc"), "wss://example.org/g/ws/0a1b-2c?ticket=abc");
-        assert_eq!(socket_url("http://localhost:8375", "r", "t"), "ws://localhost:8375/ws/r?ticket=t");
+        assert_eq!(
+            socket_url("https://example.org/g", "0a1b-2c", "abc", 1),
+            "wss://example.org/g/ws/0a1b-2c?ticket=abc&form=1"
+        );
+        assert_eq!(socket_url("http://localhost:8375", "r", "t", 2), "ws://localhost:8375/ws/r?ticket=t&form=2");
     }
 
     #[test]
