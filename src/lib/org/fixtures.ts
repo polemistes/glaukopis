@@ -44,6 +44,16 @@ export function p(
   };
 }
 
+/** A block as the first of a box of rich text, or as one that stands in the box of the block before it (ADR 0112). */
+export const first = <B extends Exclude<Block, { kind: 'parallel' }>>(block: B): B => ({
+  ...block,
+  rich: 'first',
+});
+export const within = <B extends Exclude<Block, { kind: 'parallel' }>>(block: B): B => ({
+  ...block,
+  rich: 'in',
+});
+
 const cell = (content: Block[], more: Partial<TableCell> = {}): TableCell => ({
   content,
   colspan: 1,
@@ -679,6 +689,43 @@ export function everything(): OrgProject {
             only: 'own-letter',
           }),
           p([mark({ continues: true }), t('A line of prose that begins where one ended')]),
+        ],
+      }),
+      // Boxes of rich text: one that holds paragraphs of several kinds, a
+      // citation and a note, a list, a break and an equation; one that stands
+      // right after it; a list and a numbered stretch that begin in a box and
+      // go on after it; and a box that is all a text ends with.
+      element({
+        id: 'boxes',
+        depth: 1,
+        name: [t('Rich text')],
+        blocks: [
+          p([t('Before the box.')]),
+          first(p([t('Dear all, '), t('welcome', { strong: true }), t(' to the opening.')])),
+          within(
+            p([
+              t('So Nagy'),
+              { kind: 'citation', mode: 'normal', items: [{ id: 'r1', locator: '73' }] },
+              t(', and not he alone.'),
+              { kind: 'footnote', content: [t('A note written in a box.')] },
+            ]),
+          ),
+          within(p([t('A quotation, still a quotation.')], 'quote')),
+          within(p([t('A point')], 'item')),
+          within(p([t('under it')], 'item', { indent: 1 })),
+          within(p([t('A numbered point')], 'numbered')),
+          within({ kind: 'break', what: 'page' }),
+          within({ kind: 'equation', id: 'boxed', tex: 'x^2 = 2', numbered: true }),
+          within(p([t('#+END_rich is words here, and so is #+BEGIN_rich.')])),
+          first(p([t('A second box, right after the first.')])),
+          p([t('Between the boxes.')]),
+          first(p([t('A point in a box')], 'item')),
+          p([t('and a point after the box')], 'item'),
+          first(
+            p([mark({ number: '1' }), t('Counted in a box')], 'line', { numbering: 'counted' }),
+          ),
+          p([t('and counted on after it')], 'line', { numbering: 'counted' }),
+          first(p([t('The text ends in a box.')])),
         ],
       }),
     ],

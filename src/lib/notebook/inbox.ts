@@ -19,6 +19,7 @@
 import { DOMParser as SchemaParser, Fragment, type Mark, type Node } from 'prosemirror-model';
 import { prosemirrorToYXmlFragment } from 'y-prosemirror';
 import type { InboxItem } from '$lib/api/notebook';
+import { formOfText, raiseForm } from '$lib/editor/form';
 import { bodySchema, safeHref } from '$lib/editor/schema';
 import { fileEnding } from '$lib/util/file-name';
 import type { Notebook } from './model/notebook.svelte';
@@ -300,6 +301,8 @@ function writeNote(notebook: Notebook, note: string, item: InboxItem) {
   const doc = readNoteDoc(item.doc, files);
   const fragment = notebook.fragment(note);
   if (doc && fragment) {
+    // The notebook says the form of what the note holds, before it is written (ADR 0111).
+    if (fragment.doc) raiseForm(fragment.doc, formOfText(doc));
     prosemirrorToYXmlFragment(doc, fragment);
     return;
   }

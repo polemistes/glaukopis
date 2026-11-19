@@ -12,6 +12,7 @@
    * is next opened; sent, the window goes.
    */
   import { onMount, tick, untrack } from 'svelte';
+  import ALargeSmall from '@lucide/svelte/icons/a-large-small';
   import Bold from '@lucide/svelte/icons/bold';
   import Code from '@lucide/svelte/icons/code';
   import Italic from '@lucide/svelte/icons/italic';
@@ -40,6 +41,8 @@
     toggle,
   } from '$lib/editor/commands';
   import type { TextHolder } from '$lib/editor/holder';
+  import { insertBox } from '$lib/byhand/box';
+  import { putBox } from '$lib/byhand/put';
   import RichText from '$lib/editor/RichText.svelte';
   import { bodySchema } from '$lib/editor/schema';
   import { t } from '$lib/i18n';
@@ -380,6 +383,18 @@
       >
     {/each}
     <span class="between"></span>
+    <!-- A box of rich text (ADR 0112), as Insert has it in the other texts. -->
+    <IconButton
+      label={t('byhand-name')}
+      size="sm"
+      disabled={!current || !insertBox(current)}
+      data-note-window-rich
+      onmousedown={keep}
+      onclick={() => {
+        const v = view();
+        if (v) void putBox(v);
+      }}><ALargeSmall size={14} /></IconButton
+    >
     <IconButton
       label={t('notebook-note-window-add-file')}
       size="sm"

@@ -883,8 +883,33 @@ const heldNodes: Record<string, NodeSpec> = {
   },
 };
 
+/**
+ * A box of rich text (ADR 0112): a stretch of a text in which the look is
+ * set by hand, as in a word processor, shown where one writes as a sheet of
+ * the document's paper with its tools at its head (`byhand/`). It holds
+ * what a text holds, each paragraph of its own kind, but neither another
+ * box nor texts side by side; and it stands only at the top of a text.
+ *
+ * It is a block of its own for the editor's sake alone: so that the sheet
+ * is one, and its head stays in view. Whatever reads a text otherwise reads
+ * it as if there were no box, each block saying that it stands in one
+ * (`project/model/text.ts`). An earlier version of the application does not
+ * know it, so a document that is given one says the second form of the
+ * texts first (`form.ts`).
+ */
+const boxNodes: Record<string, NodeSpec> = {
+  rich: {
+    group: 'block',
+    content: '(paragraph | pagebreak | equation | figure | tabular | row | file)+',
+    defining: true,
+    isolating: true,
+    parseDOM: [{ tag: 'div[data-rich]' }],
+    toDOM: () => ['div', { 'data-rich': '', class: 'rich' }, 0],
+  },
+};
+
 export const bodySchema = new Schema({
-  nodes: { ...bodyNodes, ...figureNodes, ...tableNodesOfOurs, ...heldNodes },
+  nodes: { ...bodyNodes, ...figureNodes, ...tableNodesOfOurs, ...heldNodes, ...boxNodes },
   marks,
 });
 

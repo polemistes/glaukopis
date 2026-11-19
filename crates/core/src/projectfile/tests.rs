@@ -101,7 +101,7 @@ fn a_project_is_written_as_one_file_and_read_again() {
     assert_eq!(names_in(&bytes), expected, "a picture the store has not is left out, and one twice is there once");
 
     let manifest: Manifest = serde_json::from_str(&text_in(&bytes, "manifest.json")).unwrap();
-    assert_eq!(manifest.format, FORMAT);
+    assert_eq!(manifest.format, 1, "of the first form, where nothing is said of its texts");
     assert_eq!((manifest.name.as_str(), manifest.app.as_str()), ("Wrath", "0.1.0"));
     assert_eq!(manifest.description, "On the wrath of Achilles");
     assert!(!manifest.written.is_empty());
@@ -208,6 +208,29 @@ fn pictures_are_taken_in_by_their_hash() {
 }
 
 #[test]
+fn a_file_is_written_in_the_form_of_its_texts() {
+    let tmp = tempfile::tempdir().unwrap();
+    let pictures = store(&tmp, "pictures");
+    let written_as = |form: u32| -> u32 {
+        let contents = Contents {
+            manifest: Manifest { format: form, name: "P".into(), ..Default::default() },
+            state: b"the document",
+            pictures: &[],
+            records: &[],
+        };
+        let bytes = to_bytes(&contents, &pictures, None).unwrap();
+        let manifest: Manifest = serde_json::from_str(&text_in(&bytes, "manifest.json")).unwrap();
+        assert_eq!(read_from(Cursor::new(bytes)).unwrap().manifest.format, manifest.format, "and read again");
+        manifest.format
+    };
+    assert_eq!(written_as(0), 1, "the first, where nothing is said");
+    assert_eq!(written_as(1), 1);
+    // A project that holds a box of rich text: a version that knows only the first form refuses the file.
+    assert_eq!(written_as(2), 2);
+    assert_eq!(written_as(FORMAT + 5), FORMAT, "never in a form this version does not read");
+}
+
+#[test]
 fn what_is_no_project_file_is_refused() {
     let kind_of = |bytes: Vec<u8>| read_from(Cursor::new(bytes)).unwrap_err().to_string();
     assert_eq!(kind_of(b"plain text".to_vec()), "This is not a project file of Glaukopis.");
@@ -222,8 +245,8 @@ fn what_is_no_project_file_is_refused() {
     };
     assert_eq!(kind_of(zip_of(&[("other.txt", b"x")])), "This is not a project file of Glaukopis.");
     assert_eq!(
-        kind_of(zip_of(&[("manifest.json", br#"{"format": 2, "name": "Later"}"#), ("document.bin", b"x")])),
-        "This project file was written by a later version of Glaukopis (form 2). Update Glaukopis to open it."
+        kind_of(zip_of(&[("manifest.json", br#"{"format": 3, "name": "Later"}"#), ("document.bin", b"x")])),
+        "This project file was written by a later version of Glaukopis (form 3). Update Glaukopis to open it."
     );
     assert_eq!(
         kind_of(zip_of(&[("manifest.json", br#"{"format": 1, "name": "Empty"}"#)])),

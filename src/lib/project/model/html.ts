@@ -12,10 +12,10 @@
 import { citationLabel, isMissing } from '$lib/editor/references.svelte';
 import { figureWidth, foundAttrs, tableWidth } from '$lib/editor/schema';
 import { isPictureName } from '$lib/figures/pictures.svelte';
-import { languageName } from '$lib/i18n';
+import { languageName, t } from '$lib/i18n';
 import { groupingOf, type BasedKind } from './families';
 import { linesOf, stretches, stretchNumbers, type Shown } from './lines';
-import type { Block, Inline, InlineLineMark, ParagraphBlock } from './text';
+import type { Block, Boxed, Inline, InlineLineMark, ParagraphBlock } from './text';
 
 /** The notes met so far. */
 type Notes = { n: number };
@@ -247,17 +247,37 @@ function listHtml(
   return level(Math.min(...items.map((i) => i.item.indent)));
 }
 
+/** What a block says of standing in a box of rich text: nothing, where it stands in none. */
+const richOf = (b: Block | undefined): Boxed | null =>
+  !b || b.kind === 'parallel' ? null : (b.rich ?? null);
+
 function blocks(list: Block[], notes: Notes, own: readonly BasedKind[]): string {
   const numbers = numbersOf(list, own);
   let out = '';
+  // A box of rich text is drawn as a sheet around the blocks that stand in it (ADR 0112).
+  let sheet = false;
   for (let at = 0; at < list.length; at++) {
     const b = list[at];
+    const rich = richOf(b);
+    if (sheet && rich !== 'in') {
+      out += '</div>';
+      sheet = false;
+    }
+    if (rich && !sheet) {
+      // Its name is said beside it and is no text of it: the sheet is drawn with the head the editor gives it (app.css).
+      out += `<div class="rich" data-rich data-rich-name="${escape(t('byhand-name'))}">`;
+      sheet = true;
+    }
     switch (b.kind) {
       case 'paragraph': {
         if (listed(b, own)) {
-          // The items that stand together, until one begins a new run.
+          // The items that stand together, until one begins a new run, or the box they stand in ends.
           const items = [{ item: b, shown: numbers.get(at) }];
-          while (listed(list[at + 1], own) && !(list[at + 1] as ParagraphBlock).new) {
+          while (
+            listed(list[at + 1], own) &&
+            !(list[at + 1] as ParagraphBlock).new &&
+            richOf(list[at + 1]) === (rich ? 'in' : null)
+          ) {
             at++;
             items.push({ item: list[at] as ParagraphBlock, shown: numbers.get(at) });
           }
@@ -318,6 +338,7 @@ function blocks(list: Block[], notes: Notes, own: readonly BasedKind[]): string 
       }
     }
   }
+  if (sheet) out += '</div>';
   return out;
 }
 

@@ -16,7 +16,7 @@
 
 import * as Y from 'yjs';
 import type { NotebookFile, ReadNote, ReadNotes } from '$lib/api/notebook';
-import { blockElements } from '$lib/project/model/blocks';
+import { blockElements, sayFormOf } from '$lib/project/model/blocks';
 import { inlineText, type Block } from '$lib/project/model/text';
 import { fileEnding } from '$lib/util/file-name';
 import { cleanBoxName } from './model/boxes';
@@ -87,6 +87,7 @@ function writeText(notebook: Notebook, id: string, note: ReadNote, source: () =>
   if (!fragment) return;
   const elements = blockElements(note.blocks);
   if (!elements.length) return;
+  sayFormOf(fragment, elements);
   fragment.delete(0, fragment.length);
   fragment.insert(0, elements);
   const from = note.source ? source() : null;

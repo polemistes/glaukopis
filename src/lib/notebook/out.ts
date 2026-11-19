@@ -32,7 +32,7 @@ import { hooksOf, viewsByDom } from '$lib/editor/ui.svelte';
 import { files } from '$lib/files/store.svelte';
 import { t } from '$lib/i18n';
 import { openProjects } from '$lib/project/open-projects.svelte';
-import { blockElements } from '$lib/project/model/blocks';
+import { blockElements, sayFormOf } from '$lib/project/model/blocks';
 import type { Project } from '$lib/project/model/project.svelte';
 import type { Block, Inline, InlineText, ParagraphBlock } from '$lib/project/model/text';
 import { library } from '$lib/state/library.svelte';
@@ -568,6 +568,7 @@ export function putAtEnd(project: Project, element: string, arrived: Arrival): b
   const elements = blockElements(arrived.blocks);
   if (!body || !elements.length) return false;
   project.checkpoint();
+  sayFormOf(body, elements);
   project.transact(() => {
     const last = body.length ? body.get(body.length - 1) : null;
     const at =

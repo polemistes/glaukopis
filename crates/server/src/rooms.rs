@@ -933,7 +933,10 @@ mod tests {
         bo.take_in();
         assert_eq!(bo.text(), "of the second form, plain");
         assert_eq!(owner.closed_with(), None, "the one who raised it knows it");
-        assert_eq!(rooms.present(ROOM).await, vec![None, Some("bo".to_owned())]);
+        // Those present are told in no order.
+        let mut present = rooms.present(ROOM).await;
+        present.sort();
+        assert_eq!(present, vec![None, Some("bo".to_owned())]);
 
         // Nor is one let in after, who does not know it; one who does is.
         assert!(matches!(rooms.enter(ROOM, Some("anna".into()), 1).await, Err(EnterError::Later)));

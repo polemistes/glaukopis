@@ -117,6 +117,18 @@ export function refForm(value: unknown): RefForm {
 export type Stand = 'left' | 'center' | 'right';
 
 /**
+ * That a block stands in a box of rich text (ADR 0112): `first` for the
+ * first block of a box, `in` for every block after it in the same box.
+ * Blocks that stand together and say so are one box; a `first` among them
+ * begins another. The editor keeps a box as a block of its own
+ * (`editor/schema.ts`); everything else reads a text as if there were no
+ * box, and finds only this said of the blocks that stand in one. So what is
+ * counted, cited, numbered and found in a text is the same with a box and
+ * without it. A block within a table or a side of two texts says none.
+ */
+export type Boxed = 'first' | 'in';
+
+/**
  * A paragraph, of a kind (ADR 0041). `name` is the id of its kind, `text`
  * for plain text; `indent` its steps of indentation, for items of lists and
  * any paragraph that is indented. A paragraph is lines, parted by line
@@ -146,6 +158,8 @@ export interface ParagraphBlock {
   new?: true;
   /** A point to tick that is ticked. */
   done?: true;
+  /** Stands in a box of rich text. */
+  rich?: Boxed;
   content: Inline[];
 }
 
@@ -153,6 +167,8 @@ export interface ParagraphBlock {
 export interface BreakBlock {
   kind: 'break';
   what: 'page' | 'column';
+  /** Stands in a box of rich text. */
+  rich?: Boxed;
 }
 
 /** A picture with what is said of it. The picture is a file of the project. */
@@ -173,6 +189,8 @@ export interface FigureBlock {
   /** In hundredths of the width of the text. */
   width: number;
   numbered: boolean;
+  /** Stands in a box of rich text. */
+  rich?: Boxed;
 }
 
 export interface EquationBlock {
@@ -181,6 +199,8 @@ export interface EquationBlock {
   tex: string;
   numbered: boolean;
   align?: Stand;
+  /** Stands in a box of rich text. */
+  rich?: Boxed;
 }
 
 /** Two texts side by side: an original and its translation. Each side holds paragraphs. */
@@ -194,6 +214,8 @@ export interface ParallelBlock {
 export interface RowBlock {
   kind: 'row';
   items: Block[];
+  /** Stands in a box of rich text. */
+  rich?: Boxed;
 }
 
 export type Block =
@@ -220,6 +242,8 @@ export interface TableBlock {
   wrap?: boolean;
   /** In hundredths of the width of the text; nought for as wide as it needs to be. */
   width: number;
+  /** Stands in a box of rich text. */
+  rich?: Boxed;
 }
 
 /**
@@ -435,6 +459,18 @@ function paragraphOf(el: Y.XmlElement): ParagraphBlock {
   });
 }
 
+/**
+ * A block as one that stands in a box of rich text, the first of it or
+ * not; or, with nothing, as one that stands in none. The block itself where
+ * it says so already. Two texts side by side stand in no box.
+ */
+export function boxed(block: Block, rich: Boxed | null): Block {
+  if (block.kind === 'parallel') return block;
+  if ((block.rich ?? null) === rich) return block;
+  const { rich: _, ...plain } = block;
+  return (rich ? { ...plain, rich } : plain) as Block;
+}
+
 /** The blocks an element of a text stands for. */
 export function blocksOfElement(child: Y.XmlElement): Block[] {
   switch (child.nodeName) {
@@ -448,6 +484,14 @@ export function blocksOfElement(child: Y.XmlElement): Block[] {
       return [paragraph(inlinesOf(child))];
     case 'pagebreak':
       return [pagebreak((child.getAttribute('what') as unknown) === 'column' ? 'column' : 'page')];
+    case 'rich': {
+      // A box of rich text: what it holds, standing where it stands, each block saying that it stands in a box.
+      const held: Block[] = [];
+      for (const inner of elementsOf(child))
+        for (const block of blocksOfElement(inner))
+          held.push(boxed(block, held.length ? 'in' : 'first'));
+      return held;
+    }
     case 'parallel': {
       const sides = elementsOf(child).filter((c) => c.nodeName === 'parallel_side');
       return [
@@ -577,29 +621,51 @@ function trimmed(blocks: Block[]): Block[] {
  * read is what `readBody` and `bodyFacts` give for the whole text.
  */
 export class BodyReading {
-  #parts = new WeakMap<Y.XmlElement, { blocks: Block[]; facts: BodyFacts }>();
+  #parts = new WeakMap<Y.XmlElement, { blocks: Block[]; facts: BodyFacts; rich: Boxed | null }>();
 
   /**
    * Something within a part at the top of a text has changed, or the part
    * itself: it is read again. A change of the text itself, a part put in or
-   * taken out, needs no word: a part put in has not been read.
+   * taken out, needs no word: a part put in has not been read. Of a box of
+   * rich text the parts are what it holds, each kept by itself, so that a
+   * text written whole in a box is read again paragraph by paragraph too:
+   * `within` is the part of the box the change is in, where it is in one.
    */
-  changed(part: Y.XmlElement) {
+  changed(part: Y.XmlElement, within: Y.XmlElement | null = null) {
     this.#parts.delete(part);
+    if (within) this.#parts.delete(within);
+  }
+
+  /** A part as it reads, standing in a box of rich text as `rich` says or in none. */
+  #part(child: Y.XmlElement, rich: Boxed | null) {
+    let part = this.#parts.get(child);
+    if (!part || part.rich !== rich) {
+      const own = blocksOfElement(child).map((block, i) => boxed(block, rich && i ? 'in' : rich));
+      part = { blocks: own, facts: part?.facts ?? bodyFacts(own), rich };
+      this.#parts.set(child, part);
+    }
+    return part;
   }
 
   read(fragment: Y.XmlFragment | undefined): { blocks: Block[]; facts: BodyFacts } {
     const blocks: Block[] = [];
     const facts: BodyFacts[] = [];
-    for (const child of fragment ? elementsOf(fragment) : []) {
-      let part = this.#parts.get(child);
-      if (!part) {
-        const own = blocksOfElement(child);
-        part = { blocks: own, facts: bodyFacts(own) };
-        this.#parts.set(child, part);
-      }
+    const take = (part: { blocks: Block[]; facts: BodyFacts }) => {
       for (const b of part.blocks) blocks.push(b);
       facts.push(part.facts);
+    };
+    for (const child of fragment ? elementsOf(fragment) : []) {
+      if (child.nodeName !== 'rich') {
+        take(this.#part(child, null));
+        continue;
+      }
+      // The first part of a box that reads as anything begins it.
+      let begun = false;
+      for (const inner of elementsOf(child)) {
+        const part = this.#part(inner, begun ? 'in' : 'first');
+        if (part.blocks.length) begun = true;
+        take(part);
+      }
     }
     // The empty paragraphs at the end that are dropped say nothing of the facts.
     return { blocks: trimmed(blocks), facts: joinedFacts(facts) };

@@ -215,7 +215,7 @@ describe('the connection to the server', () => {
       expect(sockets[0].readyState).toBe(3);
       // Nothing of it is here: neither what this version does not know, nor that there is a later form.
       expect(doc.getXmlFragment('text').length).toBe(0);
-      expect(formOf(doc)).toBe(FORM);
+      expect(formOf(doc)).toBe(1);
       // No other socket is opened, by time or by asking, and what is written here is not sent.
       const sent = sockets[0].sent.length;
       doc.getMap('meta').set('name', 'Written meanwhile');

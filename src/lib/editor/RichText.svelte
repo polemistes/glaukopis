@@ -62,6 +62,8 @@
   import { toCm } from '$lib/ui/settings/rows';
   import { annotationsGapWhere, numbersGap } from '$lib/document/line-gaps';
   import { CitationView, FootnoteView, noteNumbers, PageBreakView } from './views.svelte';
+  import { BoxView } from '$lib/byhand/view';
+  import { saysForm } from './form';
   import { RefMarkView } from './refmarks';
   import { pictures, PICTURES_DRAGGED } from '$lib/figures/pictures.svelte';
   import { HeldFileView } from '$lib/notebook/file-view';
@@ -564,6 +566,8 @@
       askLanguage: kind === 'body' ? askLanguage : undefined,
       language: () => untrack(() => language),
       copyCitation,
+      // A text is shared where the one who writes is told to the others by name (`Presence.present`).
+      shared: () => !!(holder.awareness.getLocalState() as { user?: unknown } | null)?.user,
       // The keys of the kinds, as the document type of the element written in gives them.
       kindKeys: () => untrack(() => holder.kindKeysOf(owner)),
     };
@@ -571,6 +575,8 @@
     const created = untrack(() => {
       const plugins = [
         ySyncPlugin(f),
+        // The document says the form of what is put into the text, before it is put in: see `form.ts`.
+        ...(kind === 'body' ? [saysForm(f)] : []),
         yCursorPlugin(holder.awareness),
         sharedUndo(holder.undoManager),
         ...(kind === 'body' ? bodyPlugins(schema, hooks) : titlePlugins(hooks)),
@@ -608,6 +614,7 @@
                 refmark: (node, v, getPos) => new RefMarkView(node, v, getPos),
                 pagebreak: (node) => new PageBreakView(node),
                 file: (node, v, getPos) => new HeldFileView(node, v, getPos),
+                rich: (node, v, getPos) => new BoxView(node, v, getPos),
               }
             : {},
         attributes: {

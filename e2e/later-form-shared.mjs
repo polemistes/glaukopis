@@ -1,9 +1,10 @@
 // A shared project that a later version writes in (record 0111): the real
 // server, the application running twice, and the script itself standing in
 // for a later version of Glaukopis, which speaks to the server as the
-// application does and says that it knows the second form of the texts.
+// application does and says that it knows a form of the texts that no
+// version knows yet.
 // The owner makes a project, writes in it and shares it; a guest joins and
-// writes too. The later version then says that the texts are of the second
+// writes too. The later version then says that the texts are of that
 // form and puts a block into the text that neither application knows, both
 // in one change. The server lets both applications go before anything of
 // it reaches them; each says once, in a dialog, that the project has been
@@ -48,6 +49,8 @@ async function until(what, fn, ms = 10000) {
   }
 }
 
+/** A form of the texts that no version knows yet: see `FORM` in `src/lib/editor/form.ts`. */
+const LATER = 99;
 const OWNERS = 'Sing, goddess, the wrath.';
 const GUESTS = 'Of Achilles, son of Peleus.';
 const LATERS = 'What an earlier version does not know.';
@@ -199,10 +202,10 @@ try {
   )[0].id;
 
   // ---- a later version enters, and writes in a form the two do not know ----
-  const later = await enter(room, token, 2);
+  const later = await enter(room, token, LATER);
   await until('the later version to be given the project', () => later.synced && textOf(later.doc).includes(GUESTS));
   later.doc.transact(() => {
-    later.doc.getMap('form').set('2', true);
+    later.doc.getMap('form').set(String(LATER), true);
     const text = later.doc.getMap('nodes').get('project').get('body');
     const block = new Y.XmlElement('of-a-later-form');
     const paragraph = new Y.XmlElement('paragraph');
@@ -285,7 +288,7 @@ try {
 
   // ---- and nobody deleted what the later version wrote ----
   await sleep(1500);
-  const again = await enter(room, token, 2);
+  const again = await enter(room, token, LATER);
   await until('one who knows the form to be given the project', () => again.synced);
   const kept = textOf(again.doc);
   check(

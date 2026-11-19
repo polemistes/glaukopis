@@ -3,7 +3,17 @@ import { EditorView } from 'prosemirror-view';
 import { ySyncPlugin } from 'y-prosemirror';
 import { afterEach, describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
-import { FORM, formInUpdate, formOf, formOfStored, raiseForm } from './form';
+import projectfile from '/crates/core/src/projectfile.rs?raw';
+import {
+  FORM,
+  formInUpdate,
+  formOf,
+  formOfElements,
+  formOfText,
+  formOfStored,
+  raiseForm,
+  saysForm,
+} from './form';
 import { bodySchema } from './schema';
 
 /** A text of two paragraphs, and between them a block no schema of ours has. */
@@ -106,9 +116,59 @@ describe('the form of the texts', () => {
     expect(formInUpdate(new Uint8Array())).toBe(0);
   });
 
-  it('is the first in this version', () => {
+  it('is the second in this version, which has the box of rich text', () => {
     // Raised with what is added to `schema.ts` that an earlier version does not know; see ADR 0111.
-    expect(FORM).toBe(1);
+    expect(FORM).toBe(2);
+  });
+
+  it('is said by the document before a box is put into one of its texts in the editor', () => {
+    const doc = new Y.Doc();
+    const text = doc.getXmlFragment('text');
+    const changes: number[] = [];
+    doc.on('update', (update: Uint8Array) => changes.push(formInUpdate(update)));
+    const place = document.body.appendChild(document.createElement('div'));
+    const view = new EditorView(place, {
+      state: EditorState.create({
+        schema: bodySchema,
+        plugins: [ySyncPlugin(text), saysForm(text)],
+      }),
+    });
+    views.push(view);
+    const { paragraph, rich } = bodySchema.nodes;
+    view.dispatch(view.state.tr.insertText('Plain words.', 1));
+    expect(formOf(doc)).toBe(1);
+    const box = rich.create(null, paragraph.create(null, bodySchema.text('In a box.')));
+    view.dispatch(view.state.tr.insert(view.state.doc.content.size, box));
+    expect(formOf(doc)).toBe(2);
+    expect(text.toString()).toContain('<rich><paragraph');
+    // The change that says the form is the first to be sent after the plain words, and the box comes after it.
+    const said = changes.findIndex((form) => form === 2);
+    const boxed = changes.length - 1;
+    expect(said).toBeGreaterThan(-1);
+    expect(said).toBeLessThan(boxed);
+    // Taken out again, the document stays of the form it said.
+    view.dispatch(
+      view.state.tr.delete(view.state.doc.content.size - box.nodeSize, view.state.doc.content.size),
+    );
+    expect(formOf(doc)).toBe(2);
+  });
+
+  it('is the latest form of a project file that the core reads', () => {
+    // A project file is written in the form of its texts (`projectfile.rs`).
+    expect(Number(/pub const FORMAT: u32 = (\d+);/.exec(projectfile)?.[1])).toBe(FORM);
+  });
+
+  it('is asked of the blocks at the top of a text', () => {
+    const { paragraph, rich } = bodySchema.nodes;
+    const plain = bodySchema.node('doc', null, [paragraph.create()]);
+    const boxed = bodySchema.node('doc', null, [
+      paragraph.create(),
+      rich.create(null, paragraph.create()),
+    ]);
+    expect(formOfText(plain)).toBe(1);
+    expect(formOfText(boxed)).toBe(2);
+    expect(formOfElements([new Y.XmlElement('paragraph')])).toBe(1);
+    expect(formOfElements([new Y.XmlElement('paragraph'), new Y.XmlElement('rich')])).toBe(2);
   });
 });
 

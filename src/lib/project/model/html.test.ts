@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { blocksHtml, excerpt } from './html';
-import { linemark, pagebreak, paragraph, type Inline, type ParagraphBlock } from './text';
+import { boxed, linemark, pagebreak, paragraph, type Inline, type ParagraphBlock } from './text';
 
 const t = (text: string, marks: Record<string, Record<string, unknown>> = {}): Inline => ({
   kind: 'text',
@@ -115,6 +115,29 @@ describe('a text as HTML', () => {
       'data-number="2"><span class="linemark" data-number="2"></span>second',
       'data-number="3">third',
     ]);
+  });
+
+  it('draws a box of rich text as a sheet around what stands in it, and one for each box', () => {
+    const words = (text: string, name = 'text') =>
+      paragraph([{ kind: 'text', text, marks: {} }], name);
+    // Each sheet says its name beside what it holds, for the head it is drawn with.
+    const sheet = '<div class="rich" data-rich data-rich-name="Rich text">';
+    const html = blocksHtml([
+      words('Before'),
+      boxed(words('One'), 'first'),
+      boxed(words('A point', 'item'), 'in'),
+      // A point after the box is a list of its own.
+      words('A point outside', 'item'),
+      boxed(words('Two'), 'first'),
+      boxed(words('Three'), 'first'),
+    ]);
+    expect(html).toBe(
+      '<p>Before</p>' +
+        `${sheet}<p>One</p><ul><li><p data-kind="item">A point</p></li></ul></div>` +
+        '<ul><li><p data-kind="item">A point outside</p></li></ul>' +
+        `${sheet}<p>Two</p></div>` +
+        `${sheet}<p>Three</p></div>`,
+    );
   });
 
   it('cuts a text at a block, a break taking no room', () => {

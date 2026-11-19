@@ -1013,7 +1013,11 @@ export class Project {
         }
       } else if (where.text === 'body') {
         written.add(where.id);
-        if (where.part instanceof Y.XmlElement) this.#reading.changed(where.part);
+        if (where.part instanceof Y.XmlElement)
+          this.#reading.changed(
+            where.part,
+            where.within instanceof Y.XmlElement ? where.within : null,
+          );
       }
     }
     for (const id of touched) this.#readNode(id, written.has(id));
@@ -1024,27 +1028,31 @@ export class Project {
    * Where something that was changed among the elements stands: in which
    * element, whether it is the element's own map, in which of its texts
    * (`body`, `title`), and, in a text, the part at the top of it that holds
-   * it. Found by going up from what was changed, and not by the path of the
-   * change, which counts the place of each part among all beside it.
+   * it, with the part of that part it is within, as a paragraph in a box of
+   * rich text. Found by going up from what was changed, and not by the path
+   * of the change, which counts the place of each part among all beside it.
    */
   #whereIn(target: Y.AbstractType<unknown>): {
     id: string;
     own: boolean;
     text: string | null;
     part: Y.AbstractType<unknown> | null;
+    within: Y.AbstractType<unknown> | null;
   } | null {
+    let within: Y.AbstractType<unknown> | null = null;
     let part: Y.AbstractType<unknown> | null = null;
     let below: Y.AbstractType<unknown> | null = null;
     let at = target;
     while (at.parent !== this.yNodes) {
       if (!at.parent) return null;
+      within = part;
       part = below;
       below = at;
       at = at.parent;
     }
     const id = at._item?.parentSub;
     if (typeof id !== 'string') return null;
-    return { id, own: !below, text: below?._item?.parentSub ?? null, part };
+    return { id, own: !below, text: below?._item?.parentSub ?? null, part, within };
   }
 
   node(id: string | null | undefined): NodeRecord | undefined {

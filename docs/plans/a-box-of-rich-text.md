@@ -1,6 +1,6 @@
 # A box of rich text — the build plan
 
-From the owner's words of 2026-11-19 (the last section of `docs/brief.md`: read it first). This is the plan of the whole, written to be read by the owner before anything is built. **Built**: stage 1, the guard (record 0111, on 2026-11-19); nothing of the box. Each stage is given its detailed part here (the files, the words, the checks) when it is begun, after the code it touches has been read, and its record when it is built, as the notebook's stages were.
+From the owner's words of 2026-11-19 (the last section of `docs/brief.md`: read it first). This is the plan of the whole, written to be read by the owner before anything is built. **Built**: stage 1, the guard (record 0111, on 2026-11-19), and stage 2, the box with nothing set by hand (record 0112, the same day). Each stage is given its detailed part here (the files, the words, the checks) when it is begun, after the code it touches has been read, and its record when it is built, as the notebook's stages were.
 
 ## What it is
 
@@ -65,10 +65,10 @@ Read on 2026-11-19, each to be read again by whoever builds on it.
 
 - **Made** from *Insert → Rich text*: around the paragraphs selected, or empty where nothing is selected.
 - **Holds** what a text holds: paragraphs of every kind, figures, tables, formulas, breaks. Not another box, and not texts side by side; the sides of texts side by side hold no box.
-- **Left** by Enter on an empty paragraph of text at its end, as a list is left; by the arrows; a paragraph is made after it where nothing follows. Backspace in an empty box takes the box away.
+- **Left** by Enter on an empty paragraph of text at its end, as a list is left. Backspace in an empty box takes the box away. (As built: the arrows go in and out where there is a line to go to, and make no paragraph; record 0112 says why.)
 - **Its head**: the name at the left; the tools; at the right a menu with *Select*, *Make it ordinary text* and *Delete*. *Make it ordinary text* asks first where anything in the box is set by hand, saying that it will be taken away; where nothing is, it does not ask.
 - **In small places** (the box of an element in the diagram, a narrow side) the tools fold into a menu in the head, as the side's bar folds.
-- **In the code it is not called rich text**: `editor/RichText.svelte` is the editor of every text already. The part is *by hand* (`src/lib/byhand/`, `byhand.ftl`); only the words the user sees say *Rich text*.
+- **In the code it is not called rich text**: `editor/RichText.svelte` is the editor of every text already. The part is *by hand* (`src/lib/byhand/`, `byhand.ftl`); the words the user sees say *Rich text*, and so do the block of the schema and of Org, `rich`. **The interface and the guide never say "box"**, which is the notebook's word: what is seen is called a sheet.
 
 ### What is set by hand
 
@@ -151,6 +151,8 @@ Built as stage 1; record 0111 says how, and what was chosen in the building. In 
 
 **What the box must do with it** (stage 2):
 
+All four are built with stage 2 (record 0112).
+
 - **`FORM` becomes 2** with the box in the schema, and **the first box put into a document raises the document's form** (`raiseForm`, a change of its own, made before the box is), in a project and in the notebook alike. A document in which no box was ever made stays of the first form, open to every version.
 - **A project file** (`.glaukopis`) written from a project of the second form is written with a higher number of its own (`projectfile.rs`, `FORMAT`), so that the versions that are out refuse the file by the guard they have, and do not open it and lose the box.
 - **Making the first box in a shared project warns** that all who share it need this version, since the others will be kept out until they have it.
@@ -159,7 +161,7 @@ Built as stage 1; record 0111 says how, and what was chosen in the building. In 
 ## The stages
 
 1. **The guard. Built** (record 0111): the form of the texts in a project's document and the notebook's, asked before either is opened and of everything the others send; the server keeping out those who do not know a project's form; the words; the tests, one of them binding an editor to a document that holds a block and a mark its schema does not know, which it deletes; `e2e/later-form.mjs`, and `e2e/later-form-shared.mjs` with the real server, two applications and the script as a later version. Nothing of the box. It goes out a release ahead of the box, and the server is updated with it.
-2. **The box, with nothing set by hand.** The block and its place in the schema; *Insert → Rich text*, the keys in and out, the head and its menu, the white surface; every walk of a text's paragraphs going into the box, held by the test of the rule; the Org block; the core setting what is in a box as it sets any text. What one sees: a white sheet in the text that changes nothing in the document. This is the stage that touches the most places, and it is checked before any tool is added.
+2. **The box, with nothing set by hand. Built** (record 0112), and smaller than this stage feared: the box is a block of its own in the editor only, and everything else reads a text as a run of blocks that each say they stand in a box, as paragraphs say how they are numbered; so the rule below holds by how a text is read, the core is not told of the box, and the places that had to learn of it are the editor, the reading and writing of a text, Org and the drawn text. As it was planned: The block and its place in the schema; *Insert → Rich text*, the keys in and out, the head and its menu, the white surface; every walk of a text's paragraphs going into the box, held by the test of the rule; the Org block; the core setting what is in a box as it sets any text. What one sees: a white sheet in the text that changes nothing in the document. This is the stage that touches the most places, and it is checked before any tool is added.
 3. **Set by hand, and seen.** The three marks and the paragraph's measures; the row of tools with the chooser of fonts lifted out; *Clear formatting*; the rule that nothing by hand lives outside a box; the Org forms; Typst, so that the typesetting pane and the PDF show it; the empty paragraph as a blank line. From here the box does what it is for.
 4. **The other forms of a document.** LaTeX; Word and Writer with their made styles; HTML and EPUB; Markdown. Four parts that do not touch each other, for four agents.
 5. **Around it.** The colours on the white surface in a dark scheme; the tools folded in small places; the history and the review; Find and Replace; copying between boxes; the notebook; the mind maps; the guide; Bokmål with the English, the other languages in a round. Separable parts again.

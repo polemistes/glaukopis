@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Block, Inline } from '$lib/project/model/text';
 import type { PassageKindRecord } from '$lib/project/model/types';
-import { br, everything, mark, p, t, trapBlocks, TRAPS } from './fixtures';
+import { br, everything, first, mark, p, t, trapBlocks, TRAPS, within } from './fixtures';
 import { normalInlines } from './inline';
 import { readProperties, writeProperties } from './properties';
 import { readBlocks, readProject } from './read';
@@ -793,6 +793,82 @@ describe('the Org form of a text', () => {
         `\n${trap.startsWith('#') ? '#\\+TITLE: not a keyword' : `\\${trap}`}\n`,
       );
     expect(TRAPS.length).toBeGreaterThan(40);
+  });
+});
+
+describe('a box of rich text in Org', () => {
+  it('is a block of its own around the blocks that stand in it, each written as it would be without it', () => {
+    const blocks: Block[] = [
+      p([t('Before.')]),
+      first(p([t('In the box, '), t('bold', { strong: true }), t('.')])),
+      within(p([t('Quoted.')], 'quote')),
+      within(p([t('A point')], 'item')),
+      p([t('After.')]),
+    ];
+    expect(written(blocks)).toBe(
+      lines(
+        'Before.',
+        '',
+        '#+BEGIN_rich',
+        'In the box, *bold*.',
+        '',
+        '#+BEGIN_QUOTE',
+        'Quoted.',
+        '#+END_QUOTE',
+        '',
+        '- A point',
+        '#+END_rich',
+        '',
+        'After.',
+      ),
+    );
+  });
+
+  it('is two blocks where two boxes stand together', () => {
+    const blocks: Block[] = [first(p([t('One.')])), within(p([t('More.')])), first(p([t('Two.')]))];
+    expect(written(blocks)).toBe(
+      lines(
+        '#+BEGIN_rich',
+        'One.',
+        '',
+        'More.',
+        '#+END_rich',
+        '',
+        '#+BEGIN_rich',
+        'Two.',
+        '#+END_rich',
+      ),
+    );
+  });
+
+  it('holds the words that look like signs, and reads them back', () => {
+    const blocks = trapBlocks().map((b, n) =>
+      b.kind === 'parallel' ? b : n ? within(b) : first(b),
+    );
+    const text = writeBlocks(blocks);
+    expect(text.startsWith('#+BEGIN_rich\n')).toBe(true);
+    expect(readBlocks(text)).toEqual(normal(blocks));
+  });
+
+  it('is read whatever the case of its name, and its name is no kind of the writer’s own', () => {
+    const read = readBlocks(
+      lines('#+begin_RICH', 'Words.', '', '- A point', '#+end_RICH', '', 'After.'),
+    );
+    expect(read).toEqual([
+      first(p([t('Words.')])),
+      within(p([t('A point')], 'item')),
+      p([t('After.')]),
+    ]);
+    // A kind of the writer's own that is called Rich is written under another name than the box's.
+    const kinds: PassageKindRecord[] = [
+      { id: 'k9', name: 'Rich', family: 'paragraph', basedOn: 'text', look: {}, order: 'a' },
+    ];
+    const text = written([p([t('Of a kind called Rich.')], 'k9')], { paragraphKinds: kinds });
+    expect(text).not.toMatch(/^#\+BEGIN_rich$/im);
+  });
+
+  it('that holds nothing that Org keeps is not written', () => {
+    expect(writeBlocks([first(p([])), p([t('After.')])])).toBe(lines('After.'));
   });
 });
 

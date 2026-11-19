@@ -119,6 +119,7 @@ class Reader {
           break;
         case 'row':
         case 'parallel':
+        case 'rich':
           this.blocks(child);
           break;
         case 'pagebreak':

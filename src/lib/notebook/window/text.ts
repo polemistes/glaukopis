@@ -6,8 +6,9 @@
  * anything could have written. The note is a text of the body schema, as
  * the notes of the notebook are; what is read of it is what the window
  * makes: paragraphs of every kind with the lists among them, line breaks,
- * the marks of words, links, pictures and files. A citation, a note, a
- * formula, a cross-reference, a table and the like are left out.
+ * the marks of words, links, pictures and files, and boxes of rich text
+ * around any of them. A citation, a note, a formula, a cross-reference, a
+ * table and the like are left out.
  */
 
 import { Node } from 'prosemirror-model';
@@ -17,7 +18,7 @@ import { bodySchema, safeHref } from '$lib/editor/schema';
 import { fileEnding } from '$lib/util/file-name';
 
 /** The nodes the window makes, and so the nodes read of a note. */
-const NODES = new Set(['doc', 'paragraph', 'text', 'hard_break', 'figure', 'row', 'file']);
+const NODES = new Set(['doc', 'paragraph', 'text', 'hard_break', 'figure', 'row', 'file', 'rich']);
 
 /** The marks of words the window makes, and so the marks read of a note. */
 const MARKS = new Set([
@@ -127,8 +128,8 @@ function kept(
   const content = Array.isArray(value.content)
     ? value.content.flatMap((child) => kept(child, files, depth + 1) ?? [])
     : [];
-  // A row of pictures side by side that has lost them all is no row.
-  if (type === 'row' && !content.length) return null;
+  // A row of pictures side by side that has lost them all is no row, and a box of rich text that holds nothing is none.
+  if ((type === 'row' || type === 'rich') && !content.length) return null;
   return { type, attrs, content };
 }
 

@@ -158,6 +158,20 @@ try {
   check('the word is bold by Ctrl+B', (await win.exec(`return document.querySelector('${FIELD} strong')?.textContent ?? ''`)) === 'bold');
   check('To the notebook can be pressed now', (await sendDisabled(win)) === false);
 
+  // A box of rich text (record 0112), from its button in the row: written in, and left by Enter in an empty line at its end.
+  await win.keys(['Enter']);
+  await win.click('[data-note-window-rich]');
+  await win.waitFor(`${FIELD} .rich`, 5000).catch(() => {});
+  await win.keys('In a box');
+  await win.keys(['Enter']);
+  await win.keys(['Enter']);
+  check(
+    'the row has Rich text, which puts a box into the note',
+    (await win.exec(`return document.querySelector('${FIELD} .rich .rich-body')?.textContent ?? ''`)).includes('In a box') &&
+      (await win.exec(`return document.querySelector('${FIELD} .rich .rich-head')?.textContent.trim() ?? ''`)) === 'Rich text',
+  );
+  check('Enter in an empty line at its end leaves the box', await win.exec(`return document.getSelection()?.anchorNode?.parentElement?.closest('.rich') == null`));
+
   // A picture and a file, by the hook of the system's dialog.
   await win.execAsync(`await window.__glaukopisNoteWindow.add(arguments[0]); return null;`, [picturePath, letterPath]);
   await win.waitFor(`${FIELD} .figure img[src]`, 5000).catch(() => {});
@@ -227,6 +241,7 @@ try {
     (await app.exec(`return Array.from(document.querySelectorAll('[data-note-text] .ProseMirror > p[data-kind="item"]')).length`)) === 2,
   );
   check('the bold word is bold', (await app.exec(`return document.querySelector('[data-note-text] .ProseMirror strong')?.textContent ?? ''`)) === 'bold');
+  check('the box of rich text is a box in the notebook too', (await app.exec(`return document.querySelector('[data-note-text] .ProseMirror .rich')?.textContent ?? ''`)).includes('In a box'));
   await app.waitFor('[data-note-text] .figure img[src]', 5000).catch(() => {});
   check('the picture is there', await app.exists('[data-note-text] .figure img[src]'));
   check('the file is there by its name', (await app.exec(`return document.querySelector('[data-note-text] .held-file')?.textContent ?? ''`)).includes('letter.pdf'));
@@ -267,7 +282,8 @@ try {
   errors = await win.pageErrors();
   check('no errors in the Norwegian window', errors.length === 0, errors.join(' | '));
   check('nothing of the settings was written', JSON.parse(readFileSync(join(norwegian, 'settings.json'), 'utf8')).language === 'nb' && Object.keys(JSON.parse(readFileSync(join(norwegian, 'settings.json'), 'utf8'))).length === 1);
-  await win.keys(['Escape']);
+  // The window may be gone before the key is let go: that is what is asked for.
+  await win.keys(['Escape']).catch(() => {});
   check('empty, Escape closes it', await ended(win));
 } catch (error) {
   console.error(error);

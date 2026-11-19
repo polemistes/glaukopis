@@ -53,6 +53,7 @@ import { kindName } from './kinds';
 import { kindKeyOf } from '$lib/shell/keys.svelte';
 import { continuesPlugin } from './continues';
 import { LAYOUT_NUMBERS, stretchNumbersPlugin, type NumbersLayout } from './numbers';
+import { backOutOfBox, leaveBox } from '$lib/byhand/box';
 import { acrossParallel, backOutOfParallel } from './parallel';
 import { refMarkKey } from './refmarks';
 import { hardSpaces, insertHardSpace } from './hard-space';
@@ -111,6 +112,13 @@ export interface EditorHooks {
   askLanguage?: (view: EditorView, tag: string | null) => void;
   /** The language of the document whose text the editor holds, as a tag; nothing where it is not known. */
   language?: () => string | null;
+  /**
+   * Whether others may be in the text through a server. Where they may,
+   * what an earlier version of the application does not know is asked
+   * about before it is first put in (ADR 0112): those who have such a
+   * version are kept out of the project from then on.
+   */
+  shared?: () => boolean;
   /** Copies a citation of the text as the reference style of its document writes it (record 0090). */
   copyCitation?: (said: Cited) => void;
   /** What the document's layout says of the numbers of a stretch that does not say: every how many, on which side, and where the annotations stand. */
@@ -344,6 +352,7 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
         (state) => isAtStart(state) && state.selection.$from.depth === 1,
       ),
       backOutOfParallel,
+      backOutOfBox,
       joinLineKey,
       joinBackward,
       selectNodeBackward,
@@ -357,6 +366,8 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
   keys.Enter = chainCommands(
     openSelected,
     leaveCaption,
+    // An empty paragraph at the end of a box of rich text leaves the box, as an empty point leaves a list.
+    leaveBox,
     enterKey,
     createParagraphNear,
     liftEmptyBlock,

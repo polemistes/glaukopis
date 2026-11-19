@@ -34,8 +34,14 @@ use crate::library::{Draft, Entry, Library, now};
 use crate::notices;
 use crate::tr;
 
-/// The form of the file this version writes, and the latest it reads.
-pub const FORMAT: u32 = 1;
+/// The latest form of the file this version reads. A file is written in the
+/// form of the texts it holds, which the interface says (`FORM` in its
+/// `editor/form.ts`, the same number: a test of the interface holds the two
+/// alike). So a project in which nothing of a later form was used is written
+/// as a file every version opens, and one that holds a box of rich text, of
+/// the second form, as a file that a version which would lose the box
+/// refuses, by the guard it has always had (ADR 0111, 0112).
+pub const FORMAT: u32 = 2;
 /// What the name of a project file ends in.
 pub const ENDING: &str = "glaukopis";
 
@@ -189,7 +195,9 @@ pub struct Contents<'a> {
 /// The file, as bytes. A picture the library does not have is left out:
 /// the figure that shows it is without it here as well.
 pub fn to_bytes(contents: &Contents<'_>, images: &impl Images, library: Option<&Library>) -> Result<Vec<u8>> {
-    let manifest = Manifest { format: FORMAT, written: now(), ..contents.manifest.clone() };
+    // In the form its texts are said to be of; the first where nothing is said.
+    let format = contents.manifest.format.clamp(1, FORMAT);
+    let manifest = Manifest { format, written: now(), ..contents.manifest.clone() };
     let mut zip = zip::ZipWriter::new(Cursor::new(Vec::new()));
     let packed = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
     // Pictures are packed already.

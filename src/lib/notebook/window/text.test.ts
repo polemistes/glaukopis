@@ -81,6 +81,44 @@ describe('the text of a note as the application reads it', () => {
     expect(readNoteDoc(doc.toJSON(), files)!.eq(doc)).toBe(true);
   });
 
+  it('reads a box of rich text with what it holds, and none that is left empty or stands within another', () => {
+    const doc = s.node('doc', null, [
+      s.node('paragraph', null, [s.text('Before')]),
+      s.node('rich', null, [
+        s.node('paragraph', { kind: 'item' }, [s.text('A point')]),
+        s.node('figure', { file: PNG, extension: 'png', name: 'owl.png' }),
+      ]),
+    ]);
+    expect(readNoteDoc(doc.toJSON(), files)!.eq(doc)).toBe(true);
+    const emptied = {
+      type: 'doc',
+      content: [
+        { type: 'paragraph', content: [{ type: 'text', text: 'Words' }] },
+        {
+          type: 'rich',
+          content: [{ type: 'file', attrs: { hash: 'd'.repeat(64), name: 'gone.pdf' } }],
+        },
+      ],
+    };
+    expect(readNoteDoc(emptied, files)!.childCount).toBe(1);
+    // A box in a box is no text of the schema: the note is then read by its words.
+    const nested = {
+      type: 'doc',
+      content: [
+        {
+          type: 'rich',
+          content: [
+            {
+              type: 'rich',
+              content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Deep' }] }],
+            },
+          ],
+        },
+      ],
+    };
+    expect(readNoteDoc(nested, files)).toBeNull();
+  });
+
   it('leaves out a picture or a file that was not taken in, and a row that is left empty', () => {
     const json = {
       type: 'doc',

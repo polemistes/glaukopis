@@ -374,6 +374,36 @@ try {
   await until('the guest to be given what the owner wrote', async () => (await titles(guest)).includes('Milton'), 45000);
   check('when the server is back, each is given what the other wrote meanwhile', true);
 
+  // ---- the first box of rich text in a shared project is asked about (record 0112) ----
+  // Both know the second form of the texts, and tell the server so: neither is let go when the project comes to be of it.
+  await owner.view('text');
+  await owner.click('.text-view .section .body');
+  await owner.keys(['Control', 'End']);
+  await owner.keys('Shared words.');
+  await owner.press('Enter');
+  await owner.insert('Rich text');
+  await owner.waitForText('dialog h2', 'Rich text in a shared project', 5000);
+  const askedOfBox = (await owner.text('dialog[open]')).replace(/\s+/g, ' ');
+  check('the first box of rich text in a shared project is asked about', askedOfBox.includes('are kept out of it until they have updated'), askedOfBox.slice(0, 200));
+  check('and none is put in before the answer', !(await owner.exists('.text-view .prose .rich')));
+  await owner.screenshot('sharing-9a-rich-text-asked');
+  await owner.clickText('dialog footer button', 'Put it in');
+  await owner.waitFor('.text-view .prose .rich', 5000);
+  await owner.keys('In a box, for both.');
+  await guest.view('text');
+  await until('the box to reach the guest', async () => ((await guest.exec(`return document.querySelector('.text-view .rich')?.textContent ?? ''`)) ?? '').includes('In a box, for both.'), 15000);
+  check('the box is with the other, who knows the form too, and both stay connected', (await owner.attr('.top [data-path] [data-crumb="project"] .badge', 'data-status')) === 'connected' && (await guest.attr('.top [data-path] [data-crumb="project"] .badge', 'data-status')) === 'connected');
+  // A second box is not asked about: the project is of the form already.
+  await owner.press('Enter');
+  await owner.press('Enter');
+  await owner.insert('Rich text');
+  await until('a second box', async () => (await owner.count('.text-view .prose .rich')) === 2, 5000);
+  check('a second box is put in without asking', !(await owner.exists('dialog[open]')));
+  await owner.view('diagram');
+  await guest.view('diagram');
+  await owner.waitFor('.diagram .node.root', 8000);
+  await guest.waitFor('.diagram .node.root', 8000);
+
   // ---- the owner sees who has the project, and removes the guest ----
   await owner.shareWindow();
   await owner.waitForText('dialog .people', 'Anna Lind', 8000);

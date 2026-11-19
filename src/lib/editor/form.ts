@@ -18,10 +18,22 @@
  * can be read from its bytes, before anything of it is taken in.
  */
 
+import type { Node } from 'prosemirror-model';
+import { Plugin } from 'prosemirror-state';
 import * as Y from 'yjs';
 
-/** The form of the texts this version writes and reads. */
-export const FORM = 1;
+/**
+ * The form of the texts this version writes and reads. The second came with
+ * the box of rich text (ADR 0112).
+ */
+export const FORM = 2;
+
+/**
+ * The blocks of a text that an earlier form does not know, by their names
+ * in the schema, each with the form it came with. A block is asked at the
+ * top of a text only, where each of these stands.
+ */
+const SINCE: Readonly<Record<string, number>> = { rich: 2 };
 
 /** The map of a document that says its form. */
 const NAME = 'form';
@@ -50,6 +62,41 @@ export function raiseForm(doc: Y.Doc, to: number): void {
   const said = doc.getMap<boolean>(NAME);
   if (said.has(String(to))) return;
   doc.transact(() => said.set(String(to), true));
+}
+
+/** The form a text is of by what it holds, as the editor has it: the first where it holds nothing a later form brought. */
+export function formOfText(text: Node): number {
+  let form = 1;
+  text.forEach((block) => {
+    form = Math.max(form, SINCE[block.type.name] ?? 1);
+  });
+  return form;
+}
+
+/** The form the blocks of a text are of, as the document keeps them. */
+export function formOfElements(blocks: readonly Y.XmlElement[]): number {
+  let form = 1;
+  for (const block of blocks) form = Math.max(form, SINCE[block.nodeName] ?? 1);
+  return form;
+}
+
+/**
+ * Has the document of a text say the form of what is put into the text,
+ * before it is put in: asked of every change of the text in the editor,
+ * whoever makes it, a command, a paste, a drop or an undo. The binding
+ * writes the change into the document only after it has been made here, so
+ * the form is said first, in a change of its own.
+ */
+export function saysForm(text: Y.XmlFragment): Plugin {
+  return new Plugin({
+    filterTransaction(tr) {
+      const doc = text.doc;
+      if (!tr.docChanged || !doc) return true;
+      const form = formOfText(tr.doc);
+      if (form > 1 && formOf(doc) < form) raiseForm(doc, form);
+      return true;
+    },
+  });
 }
 
 /** The name of the map as a change names it: its length, then its letters. */

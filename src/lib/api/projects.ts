@@ -295,6 +295,12 @@ export interface ProjectFileWriting {
   pictures: string[];
   /** The works cited. */
   records: WorkRecord[];
+  /**
+   * The form of the texts the document holds (`editor/form.ts`). The file
+   * is written in it, so that a version that does not know the form refuses
+   * the file, and does not open it and lose what it does not know.
+   */
+  form: number;
 }
 
 /** Writes a project file of a document, at `path`. */

@@ -2,7 +2,7 @@
 // 0111): each says which form its texts are in, and one of a later form
 // than this version knows is not opened, since the editor would take out of
 // it what it does not know. Two projects are made; the change a later
-// version would make, saying the second form, is written into the log of
+// version would make, saying a form not known yet, is written into the log of
 // one of them on disk, as the application writes changes; that project is
 // not opened and says why, in a side, and nothing more is written into it;
 // the other opens as before; the same change written into the notebook
@@ -29,10 +29,13 @@ async function until(probe, ok, ms = 8000) {
   return got;
 }
 
-/** The change by which a later version says that the texts are of the form after the one known here: see `src/lib/editor/form.ts`. */
+/** A form of the texts that no version knows yet: see `FORM` in `src/lib/editor/form.ts`. */
+const LATER = 99;
+
+/** The change by which a later version says that the texts are of a form not known here. */
 function saysLaterForm() {
   const doc = new Y.Doc();
-  doc.getMap('form').set('2', true);
+  doc.getMap('form').set(String(LATER), true);
   return Buffer.from(Y.encodeStateAsUpdate(doc)).toString('base64');
 }
 

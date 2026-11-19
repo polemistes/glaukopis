@@ -1590,6 +1590,98 @@ span.math.selected {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px var(--focus-ring);
 }
+/* A box of rich text (ADR 0112): a stretch of the text in which the look is
+   set by hand, shown as a sheet of the document's paper. The sheet is white
+   whatever the scheme of the window, and what stands on it is drawn in the
+   colours of the light scheme, as `:root` has them (a test holds the two
+   alike): ink on white, as the document will have it. Its head is the box's
+   own and no text; it stays at the top of what is seen while a long box is
+   scrolled through, and leaves with the box's end. Where a text is only
+   shown, the sheet holds its blocks itself, and the head is drawn before
+   them with the name the sheet says, of the same measures: so nothing moves
+   when the text is pressed and the editor takes its place. */
+.prose .rich {
+  --paper: #fbfaf7;
+  --paper-raised: #ffffff;
+  --paper-sunken: #f4f2ed;
+  --paper-hover: #eeebe4;
+  --ink: #1f2528;
+  --ink-2: #4b555a;
+  --ink-3: #636d71;
+  --ink-4: #858f92;
+  --line: #e6e2da;
+  --line-strong: #d2cdc3;
+  --accent: #3f7174;
+  --accent-strong: #2e595c;
+  --accent-soft: #e2eeec;
+  --accent-softer: #f0f6f5;
+  --accent-ink: #ffffff;
+  --gold: #b9832a;
+  --gold-soft: #f6ecd8;
+  --highlight: rgba(248, 214, 76, 0.5);
+  --danger: #b0412f;
+  --danger-soft: #f8e6e2;
+  --ok: #4b7a4a;
+  --ok-soft: #e5f0e3;
+  --warn: #a8741a;
+  --selection: rgba(63, 113, 116, 0.22);
+  --focus-ring: rgba(63, 113, 116, 0.45);
+  color-scheme: light;
+
+  position: relative;
+  margin: 0.9em 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  background: #ffffff;
+  color: var(--ink);
+}
+.prose .rich-head,
+.prose .rich:not(:has(> .rich-head))::before {
+  display: block;
+  box-sizing: border-box;
+  height: 27px;
+  padding: 0 4px 0 12px;
+  border-bottom: 1px solid var(--line);
+  border-radius: 3px 3px 0 0;
+  background: var(--paper-sunken);
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 500;
+  font-variant: normal;
+  line-height: 26px;
+  letter-spacing: 0.02em;
+  text-indent: 0;
+  text-align: left;
+  white-space: nowrap;
+  color: var(--ink-3);
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+.prose .rich-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+/* The room about what the sheet holds, the same where it is written in and
+   where it is only shown; there the head, drawn within that room, is set
+   out to the edges of the sheet. */
+.prose .rich-body,
+.prose .rich:not(:has(> .rich-body)) {
+  padding: 12px 18px 14px;
+}
+.prose .rich:not(:has(> .rich-head))::before {
+  content: attr(data-rich-name);
+  margin: -12px -18px 12px;
+}
+/* What a box holds is drawn on the sheet: the ground of what stands over
+   the text within it is the sheet's. */
+.prose .rich .pagebreak-label,
+.prose .rich .run-label {
+  background: #ffffff;
+}
+
 /* Two texts side by side. */
 .prose .parallel {
   display: grid;

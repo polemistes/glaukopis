@@ -14,6 +14,7 @@
 
 import { ySyncPluginKey } from 'y-prosemirror';
 import * as Y from 'yjs';
+import { formOfElements, raiseForm } from '$lib/editor/form';
 import { figureWidth, foundAttrs, tableWidth } from '$lib/editor/schema';
 import { newId } from '$lib/util/id';
 import {
@@ -291,9 +292,31 @@ function setOff(block: Block): Y.XmlElement | null {
 
 /**
  * A text as the elements of XML the project keeps it in. Figures, equations
- * and tables that have no id are given one.
+ * and tables that have no id are given one. Blocks that say they stand in a
+ * box of rich text (`Boxed`) are put in one, those standing together in the
+ * same; a box stands at the top of a text only, so the blocks of a side of
+ * two texts are written as they are, whatever they say.
  */
 export function blockElements(blocks: readonly Block[]): Y.XmlElement[] {
+  const out: Y.XmlElement[] = [];
+  let box: Block[] = [];
+  const close = () => {
+    const held = plainElements(box);
+    if (held.length) out.push(element('rich', {}, held));
+    box = [];
+  };
+  for (const block of blocks) {
+    const rich = block.kind === 'parallel' ? undefined : block.rich;
+    if (box.length && rich !== 'in') close();
+    if (rich) box.push(block);
+    else out.push(...plainElements([block]));
+  }
+  if (box.length) close();
+  return out;
+}
+
+/** Blocks as the elements they are kept in, with no box about any of them. */
+function plainElements(blocks: readonly Block[]): Y.XmlElement[] {
   const out: Y.XmlElement[] = [];
   for (const block of blocks) {
     switch (block.kind) {
@@ -305,7 +328,7 @@ export function blockElements(blocks: readonly Block[]): Y.XmlElement[] {
         break;
       case 'parallel': {
         const side = (list: Block[]) => {
-          const content = blockElements(list);
+          const content = plainElements(list);
           return element('parallel_side', {}, content.length ? content : [emptyParagraph()]);
         };
         out.push(element('parallel', {}, [side(block.left), side(block.right)]));
@@ -340,12 +363,23 @@ export function nameElement(name: Inline[]): Y.XmlElement {
 }
 
 /**
+ * Has the document of a text say the form of what is about to be written
+ * into the text, where an earlier form does not know it (ADR 0111): asked
+ * by whatever writes elements into a text without an editor, before it
+ * writes them. An editor asks it itself (`saysForm`).
+ */
+export function sayFormOf(text: Y.XmlFragment, elements: readonly Y.XmlElement[]) {
+  if (text.doc) raiseForm(text.doc, formOfElements(elements));
+}
+
+/**
  * Puts elements in a place of the project in place of what stood there, in
  * one transaction, as the editors write: so that undo takes it back where
  * it is not within a transaction of the project's already.
  */
 function replace(fragment: Y.XmlFragment, elements: Y.XmlElement[]) {
   const write = () => {
+    sayFormOf(fragment, elements);
     if (fragment.length) fragment.delete(0, fragment.length);
     fragment.insert(0, elements);
   };

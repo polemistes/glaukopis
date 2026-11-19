@@ -29,6 +29,9 @@ struct WriteHead {
     /// The works cited, as the document keeps them.
     #[serde(default)]
     records: Vec<Record>,
+    /// The form of the texts the document holds, which the file is written in.
+    #[serde(default)]
+    form: u32,
 }
 
 /// Writes a project file: what it is written from says itself before the
@@ -37,6 +40,7 @@ struct WriteHead {
 pub fn project_file_write(app: AppHandle, state: State<'_, AppState>, request: Request<'_>) -> CommandResult<()> {
     let (head, document) = with_head::<WriteHead>(&request)?;
     let manifest = Manifest {
+        format: head.form,
         name: head.name,
         description: head.description,
         app: app.package_info().version.to_string(),

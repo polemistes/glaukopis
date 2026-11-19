@@ -43,6 +43,7 @@ export const OBJECT = '￼';
  */
 const CONTAINERS = new Set([
   'passage',
+  'rich',
   'parallel',
   'parallel_side',
   'row',

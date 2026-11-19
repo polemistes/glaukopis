@@ -22,6 +22,7 @@ import {
   type FoundWork,
   type ProjectInfo,
 } from '$lib/api/projects';
+import { formOf } from '$lib/editor/form';
 import { recordOf } from '$lib/editor/references.svelte';
 import { gather } from '$lib/org/folder';
 import { writeProject } from '$lib/org/write';
@@ -112,6 +113,7 @@ export async function writeProjectFile(
         description: info.description,
         pictures: project.usedPictures().map((p) => p.hash),
         records: citedRecords(project),
+        form: formOf(project.doc),
       },
       Y.encodeStateAsUpdate(project.doc),
     );

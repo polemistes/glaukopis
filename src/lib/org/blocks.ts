@@ -27,10 +27,15 @@
  * Texts side by side are `#+BEGIN_parallel` with `#+BEGIN_left` and
  * `#+BEGIN_right` in it; figures, formulas and tables side by side
  * `#+BEGIN_row`; a page or column break `#+BREAK: page`.
+ *
+ * A box of rich text (ADR 0112) is `#+BEGIN_rich … #+END_rich` around the
+ * blocks that stand in it, each written as it would be without the box: to
+ * other tools a block they do not know, with ordinary paragraphs in it.
  */
 
 import type {
   Block,
+  Boxed,
   BreakBlock,
   EquationBlock,
   FigureBlock,
@@ -740,6 +745,19 @@ function stretchLines(
   };
 }
 
+/** What a block says of standing in a box of rich text: nothing, where it stands in none. */
+const richOf = (b: Block): Boxed | null => (b.kind === 'parallel' ? null : (b.rich ?? null));
+
+/**
+ * A block as one that stands in a box of rich text, or in none: as `boxed`
+ * of `project/model/text.ts`, which this module takes no values from.
+ */
+function boxed(block: Block, rich: Boxed | null): Block {
+  if (block.kind === 'parallel' || richOf(block) === rich) return block;
+  const { rich: _, ...plain } = block;
+  return (rich ? { ...plain, rich } : plain) as Block;
+}
+
 /** The lines of a text: its blocks, parted by blank lines. */
 export function bodyLines(blocks: readonly Block[], ctx: TextContext): string[] {
   const items: string[][] = [];
@@ -747,10 +765,23 @@ export function bodyLines(blocks: readonly Block[], ctx: TextContext): string[] 
   let k = 0;
   while (k < blocks.length) {
     const b = blocks[k];
+    if (richOf(b)) {
+      // A box of rich text: the blocks that stand in it, to the next that begins another or stands in none.
+      let end = k + 1;
+      while (end < blocks.length && richOf(blocks[end]) === 'in') end++;
+      const held = blocks.slice(k, end).map((held) => boxed(held, null));
+      // One that holds nothing Org keeps, as an empty paragraph alone, is not written.
+      const lines = bodyLines(held, ctx);
+      if (lines.length) items.push(['#+BEGIN_rich', ...lines, '#+END_rich']);
+      before = null;
+      k = end;
+      continue;
+    }
     if (b.kind === 'paragraph') {
       let end = k + 1;
       while (end < blocks.length) {
         const next = blocks[end];
+        if (richOf(next)) break;
         if (next.kind !== 'paragraph' || settingsKey(next) !== settingsKey(b)) break;
         end++;
       }
@@ -1312,6 +1343,9 @@ export function readBody(lines: readonly string[], ctx: TextContext): Block[] {
         } else if (lower === 'row') {
           const items = readBody(inner, ctx);
           push(items.length ? [{ kind: 'row', items }] : []);
+        } else if (lower === 'rich') {
+          // A box of rich text: what it holds, each block saying that it stands in it.
+          push(readBody(inner, ctx).map((held, n) => boxed(held, n ? 'in' : 'first')));
         } else if (lower === 'parallel') {
           const sides: Block[][] = [[], []];
           for (let k = 0; k < inner.length; k++) {
@@ -1552,6 +1586,7 @@ const BLOCK_NAMES = new Set([
   'numbered',
   'numbered-item',
   'row',
+  'rich',
   'parallel',
   'left',
   'right',

@@ -16,6 +16,7 @@
    * selected; the keys do it without either.
    */
   import type { Snippet } from 'svelte';
+  import ALargeSmall from '@lucide/svelte/icons/a-large-small';
   import AlignLeft from '@lucide/svelte/icons/align-left';
   import Bold from '@lucide/svelte/icons/bold';
   import BookType from '@lucide/svelte/icons/book-type';
@@ -106,6 +107,8 @@
   import { editPassageKind, newPassageKind } from './own-kinds.svelte';
   import { editorUi, hooksOf } from './ui.svelte';
   import { askRefMark } from './refmarks';
+  import { insertBox } from '$lib/byhand/box';
+  import { putBox } from '$lib/byhand/put';
   import { insertParallel } from './parallel';
 
   interface Props {
@@ -410,6 +413,14 @@
             action: () => run(insertBreak('column'), view),
           },
         ]),
+        // A box of rich text (ADR 0112): in a text of a project and in a note alike.
+        { kind: 'separator' },
+        {
+          label: t('byhand-name'),
+          icon: ALargeSmall,
+          disabled: !body || !insertBox(view.state),
+          action: () => void putBox(view),
+        },
       ],
       { align: 'start' },
     );
