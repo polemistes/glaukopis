@@ -3,7 +3,8 @@
  * is of a document, the sheet draws its paragraphs of text as the document
  * sets them, in its font, with its line spacing, its alignment, the indent
  * of its first lines and the space between its paragraphs. What is set by
- * hand is laid over that, there as in the document.
+ * hand is laid over that, there as in the document. A heading on a sheet
+ * (ADR 0115) is drawn as the layout sets the headings of its level.
  *
  * It is said here as properties of what holds the text, the editor and
  * what shows a text that is not written in alike, and the style sheet
@@ -28,7 +29,7 @@ const points = (length: string | undefined): number => {
  * a line is 1.2 of the size of type at single spacing, as the typesetter
  * has it (`formats/typst.rs`, `leading`).
  */
-export function sheetLook(format: DocumentFormat | undefined): string {
+export function sheetLook(format: DocumentFormat | undefined, depth = 0): string {
   if (!format) return '';
   const said: string[] = [];
   const size = format.font?.size;
@@ -49,6 +50,61 @@ export function sheetLook(format: DocumentFormat | undefined): string {
   said.push(`--sheet-indent: ${indent}`);
   // The paragraph that follows no other begins with the rest, unless the layout sets every one in.
   said.push(`--sheet-indent-first: ${text.indentFirst ? indent : 0}`);
-  said.push(`--sheet-between: ${points(text.spaceBetween)}`);
+  const between = points(text.spaceBetween);
+  said.push(`--sheet-between: ${between}`);
+  said.push(
+    ...headings(format, depth, typeof size === 'number' && size > 0 ? size : 11, spacing, between),
+  );
   return said.join('; ');
+}
+
+/**
+ * The headings of a sheet (ADR 0115), which are paragraphs and no
+ * elements: *Heading* is drawn as the layout sets the headings one level
+ * under the element the text is of, *Subheading* as those two under it.
+ * `depth` is how deep that element stands in its document.
+ *
+ * The room over and under one is counted as the typesetter leaves it
+ * (`formats/typst.rs`, `heading_rule`): over it the larger of its space
+ * before and what stands between two paragraphs; under it the larger of
+ * its space after, with what wide line spacing adds, and the same. Of that
+ * the sheet's lines hold some themselves: half of what is between the
+ * lines of the text, and a tenth of the heading's size. The rest is said.
+ */
+function headings(
+  format: DocumentFormat,
+  depth: number,
+  size: number,
+  spacing: number,
+  between: number,
+): string[] {
+  const levels = format.headings?.levels ?? [];
+  if (!levels.length) return [];
+  const round = (n: number) => Math.round(n * 100) / 100;
+  const lead = Math.max(0, (spacing * 1.2 - 1) * size);
+  const paragraphs = lead + between;
+  const said: string[] = [];
+  for (const n of [1, 2]) {
+    const h = levels[Math.min(Math.max(depth + n, 1), levels.length) - 1];
+    const own = typeof h.size === 'number' && h.size > 0 ? h.size : size;
+    const held = lead / 2 + own * 0.1;
+    const over = Math.max(points(h.spaceBefore), paragraphs);
+    const under = Math.max(
+      points(h.spaceAfter) + Math.max(0, (spacing - 1) * 1.2 * size),
+      paragraphs,
+    );
+    const name = `--sheet-h${n}`;
+    said.push(
+      `${name}-size: ${round(own)}`,
+      `${name}-weight: ${h.bold ? 700 : 400}`,
+      `${name}-style: ${h.italic ? 'italic' : 'normal'}`,
+      `${name}-align: ${h.align === 'center' || h.align === 'right' ? h.align : 'left'}`,
+      `${name}-transform: ${h.case === 'upper' ? 'uppercase' : 'none'}`,
+      `${name}-caps: ${h.case === 'smallcaps' ? 'small-caps' : 'normal'}`,
+      `${name}-in: ${h.indent ? points(format.text.indent) : 0}`,
+      `${name}-before: ${round(Math.max(0, over - held))}`,
+      `${name}-after: ${round(Math.max(0, under - held))}`,
+    );
+  }
+  return said;
 }

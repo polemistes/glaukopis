@@ -55,6 +55,11 @@ function made(project: Project): TextHolder {
     kindKeysOf: (element) =>
       kindKeysOf(element && has(element) ? templateUsedCached(project, element) : null),
     topOf: (element) => topOf(project, element),
+    depthOf: (element, at) => {
+      const path = project.pathTo(element);
+      const from = at ? path.indexOf(at) : -1;
+      return Math.max(0, path.length - 1 - (from >= 0 ? from : 1));
+    },
     threadsOf: (element) => project.threadsOf(element),
     citationWritten: (element, said) => citationWrittenIn(project, element, said),
     // An image of a text of a project is one of the library's images (record 0070).

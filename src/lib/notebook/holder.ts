@@ -94,6 +94,7 @@ function made(notebook: Notebook): TextHolder {
     formatOf: () => undefined,
     kindKeysOf: () => kindKeysOf(null),
     topOf: () => '',
+    depthOf: () => 0,
     threadsOf: () => NO_THREADS,
     citationWritten: (_element, said) => citationWrittenIn(null, null, said),
 

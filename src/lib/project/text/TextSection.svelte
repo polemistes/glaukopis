@@ -166,7 +166,12 @@
   });
   /** The look of the document, for the sheets of rich text in a text that is shown: as the editor says it (`byhand/sheet.ts`). */
   const sheet = $derived(
-    html.includes('data-rich') ? sheetLook(holderOf(project).formatOf(node.id)) : '',
+    html.includes('data-rich')
+      ? sheetLook(
+          holderOf(project).formatOf(node.id),
+          holderOf(project).depthOf(node.id, documentAt),
+        )
+      : '',
   );
   /** The original, where the element is a clone: its text is read there (ADR 0065). */
   const included = $derived(node.include ? project.node(node.include) : undefined);

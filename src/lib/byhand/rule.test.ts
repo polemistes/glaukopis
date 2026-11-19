@@ -92,3 +92,28 @@ describe('what is set by hand lives only in a box', () => {
     expect(TextSelection.atStart(touched.doc)).toBeTruthy();
   });
 });
+
+describe('a heading of rich text', () => {
+  it('is a paragraph of text: made a point of a list, it is a heading no more, and keeps what else was set', () => {
+    const doc = text(
+      rich.create(null, [p('Title', { heading: 1, align: 'center' }), p('Sub', { heading: 2 })]),
+    );
+    const before = state(doc);
+    const after = before.apply(
+      before.tr.setNodeAttribute(1, 'kind', 'item').setNodeAttribute(8, 'kind', 'item'),
+    );
+    expect(after.doc.child(0).child(0).attrs.hand).toEqual({ align: 'center' });
+    expect(after.doc.child(0).child(1).attrs.hand).toBeNull();
+  });
+
+  it('stays one as a paragraph of text in a box, and is none outside', () => {
+    const doc = text(rich.create(null, [p('Title', { heading: 2 })]));
+    const written = state(doc).apply(state(doc).tr.insertText('!', 3));
+    expect(written.doc.child(0).child(0).attrs.hand).toEqual({ heading: 2 });
+    const out = state(doc);
+    let made = out;
+    unwrapBox(0)(out, (tr) => (made = out.apply(tr)));
+    expect(made.doc.child(0).type.name).toBe('paragraph');
+    expect(made.doc.child(0).attrs.hand).toBeNull();
+  });
+});

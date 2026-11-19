@@ -922,6 +922,26 @@ describe('a box of rich text in Org', () => {
         '#+END_rich',
       ),
     );
+    // A heading of rich text is said so of its paragraph: it is no headline of Org, which is an element.
+    expect(
+      written([
+        first({ ...p([t('The opening')]), hand: { heading: 1 } }),
+        within(p([t('Dear all.')])),
+        within({ ...p([t('The programme')]), hand: { heading: 2, align: 'center' } }),
+      ]),
+    ).toBe(
+      lines(
+        '#+BEGIN_rich',
+        '#+ATTR_GLAUKOPIS: :heading 1',
+        'The opening',
+        '',
+        'Dear all.',
+        '',
+        '#+ATTR_GLAUKOPIS: :heading 2 :align center',
+        'The programme',
+        '#+END_rich',
+      ),
+    );
     // Where a list cannot say how one of its points stands, it is written so that it reads back: `written` holds it to that.
     written([
       first(p([t('One')], 'item')),

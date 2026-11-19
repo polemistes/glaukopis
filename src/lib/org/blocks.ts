@@ -172,6 +172,7 @@ function makeParagraph(
  * says it in: `:align center :space-after 12pt`.
  */
 const HAND_KEYS: [keyof HandLook, string][] = [
+  ['heading', 'heading'],
   ['align', 'align'],
   ['lineSpacing', 'line-spacing'],
   ['spaceBefore', 'space-before'],

@@ -86,8 +86,25 @@ fn hand_typst(hand: &Hand) -> (String, String) {
     if let Some(first) = hand.first_line().or(set_in.then(|| Length::pt(0.0))) {
         said.push(format!("#set par(first-line-indent: (amount: {first}, all: true))"));
     }
-    let mut open = format!("#[{}", said.join("; "));
-    if let Some(before) = hand.space_before() {
+    // A heading of rich text (ADR 0115) stands as a heading does: in a block
+    // that is kept with what follows it, the space before and after it all
+    // the room there is about it, and not added to what stands between
+    // paragraphs. The block is as wide as the text, so that the heading
+    // stands across it as it was said to.
+    let heading = hand.heading().is_some();
+    let mut open = if heading {
+        let mut block = vec!["width: 100%".to_owned(), "sticky: true".to_owned()];
+        if let Some(before) = hand.space_before() {
+            block.push(format!("above: {before}"));
+        }
+        if let Some(after) = hand.space_after() {
+            block.push(format!("below: {after}"));
+        }
+        format!("#block({})[{}", block.join(", "), said.join("; "))
+    } else {
+        format!("#[{}", said.join("; "))
+    };
+    if let Some(before) = hand.space_before().filter(|_| !heading) {
         let _ = write!(open, "\n#v({before})");
     }
     if set_in {
@@ -98,7 +115,7 @@ fn hand_typst(hand: &Hand) -> (String, String) {
     if set_in {
         close.push_str("]\n");
     }
-    if let Some(after) = hand.space_after() {
+    if let Some(after) = hand.space_after().filter(|_| !heading) {
         let _ = writeln!(close, "#v({after})");
     }
     close.push(']');
@@ -144,6 +161,10 @@ fn hand_latex(hand: &Hand) -> (String, String) {
     }
     open.push(' ');
     let mut close = String::from("\\par");
+    // A heading of rich text is kept with what follows it: no page is broken at the room under it.
+    if hand.heading().is_some() {
+        close.push_str("\\nobreak");
+    }
     if let Some(after) = hand.space_after() {
         let _ = write!(close, "\\vspace{{{after}}}");
     }
@@ -186,6 +207,11 @@ fn hand_css(hand: &Hand) -> (Vec<&'static str>, String) {
     }
     if let Some(right) = hand.indent_right() {
         said.push(format!("margin-right: {right}"));
+    }
+    // A heading of rich text is kept with what follows it.
+    if hand.heading().is_some() {
+        said.push("break-after: avoid".to_owned());
+        said.push("page-break-after: avoid".to_owned());
     }
     let mut classes = vec!["gk-hand"];
     let first = hand.first_line().or(matches!(align, Some(Align::Center | Align::Right)).then(|| Length::pt(0.0)));

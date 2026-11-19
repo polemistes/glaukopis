@@ -486,6 +486,8 @@ const bodyNodes: Record<string, NodeSpec> = {
           'data-kind': node.attrs.kind && node.attrs.kind !== 'text' ? node.attrs.kind : null,
           'data-indent': node.attrs.indent ? String(node.attrs.indent) : null,
           'data-hand': hand ? JSON.stringify(hand) : null,
+          // A heading in rich text is drawn by the style sheet, as the layout sets its level (`byhand/sheet.ts`).
+          'data-heading': hand?.heading ? String(hand.heading) : null,
           style: style || null,
           'data-numbering': numberingAttr(node.attrs.numbering),
           'data-every': every ? String(every) : null,

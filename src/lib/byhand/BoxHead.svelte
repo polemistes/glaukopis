@@ -4,11 +4,12 @@
    * that set the look by hand, and the menu of the box. It stands at the
    * top of the box and stays in view while the box is scrolled through. The
    * tools show while the cursor is in this box, each showing what is set of
-   * what is selected: the font, the size and the colour of the words; bold,
+   * what is selected: whether the paragraphs are text or a heading; the font, the size and the colour of the words; bold,
    * italic and underlined; how the paragraphs stand; the lists; a panel
    * with the spacing and the indents; and what takes it all away. The head
    * is as high with the tools as without, so that nothing moves when the
-   * cursor comes into the box. Where the head is too narrow for all of
+   * cursor comes into the box; the tools stand in the place of the name
+   * while they show, of which the sign of the grip is left. Where the head is too narrow for all of
    * them, as beside the typesetting pane or in the box of an element, those
    * that do not fit are folded into one menu at the end of the row. The
    * name is the grip by which the sheet is dragged to another place in the
@@ -41,7 +42,14 @@
   import { tooltip } from '$lib/ui/tooltip';
   import { boxAt } from './box';
   import { clearHand, handAt, handMarkAt, setHand, setHandMark } from './commands';
-  import { fontOf, lengthOf, sizeOf, type HandAlign, type HandLook } from './hand';
+  import {
+    fontOf,
+    lengthOf,
+    sizeOf,
+    type HandAlign,
+    type HandHeading,
+    type HandLook,
+  } from './hand';
   import { nowOf } from './now.svelte';
 
   interface Props {
@@ -176,6 +184,23 @@
     { align: 'justified', label: () => t('format-align-justified'), icon: TextAlignJustify },
   ];
 
+  /** Whether the paragraphs selected are text, a heading or one under it (ADR 0115): `undefined` where they differ. */
+  const level = $derived(
+    stands.mixed.includes('heading') ? undefined : (stands.look.heading ?? null),
+  );
+  const LEVELS: { level: HandHeading | null; label: () => string }[] = [
+    { level: null, label: () => t('byhand-text') },
+    { level: 1, label: () => t('byhand-heading') },
+    { level: 2, label: () => t('byhand-subheading') },
+  ];
+  /** Makes the paragraphs selected a heading, or text again. A heading is a paragraph of text: a point of a list is made text first. */
+  const headed =
+    (to: HandHeading | null): Command =>
+    (s, dispatch, v) => {
+      if (to && kindOf(s) !== 'text') setKind('text', own())(s, dispatch, v);
+      return setHand({ heading: to })(v?.state ?? s, dispatch, v);
+    };
+
   let paragraphOpen = $state(false);
   let paragraphButton = $state<HTMLElement>();
   const SPACINGS: [number, () => string][] = [
@@ -208,21 +233,24 @@
    * the line before it counted in. They stand in this order.
    */
   const ROOM = {
-    font: 133,
+    level: 103,
+    font: 109,
     size: 47,
     colour: 25,
-    marks: 84,
-    aligns: 109,
-    lists: 59,
-    paragraph: 59,
+    marks: 85,
+    aligns: 110,
+    lists: 60,
+    paragraph: 60,
   } as const;
   type Group = keyof typeof ROOM;
   /**
-   * The order they are kept in where the head is narrow: the font, the size
-   * and the colour longest, which nothing else in the window offers; how
+   * The order they are kept in where the head is narrow: whether it is a
+   * heading, the font, the size and the colour longest, which nothing else
+   * in the window offers; how
    * the paragraphs stand next; then what the bar of the side has as well.
    */
   const KEPT: readonly Group[] = [
+    'level',
     'font',
     'size',
     'colour',
@@ -270,6 +298,14 @@
       if (items.length) items.push({ kind: 'separator' });
       items.push(...entries);
     };
+    part(
+      'level',
+      LEVELS.map((l): MenuItem => ({
+        label: l.label(),
+        checked: level === l.level,
+        action: () => run(headed(l.level)),
+      })),
+    );
     part('font', [
       {
         kind: 'submenu',
@@ -362,6 +398,7 @@
   <span
     class="name"
     class:grip={editable}
+    class:given-way={!!here}
     data-rich-grip
     draggable={editable}
     ondragstart={drag}
@@ -369,6 +406,24 @@
   >
   {#if here}
     <div class="tools" role="toolbar" aria-label={t('byhand-name')} data-rich-tools>
+      {#if shown.has('level')}
+        <select
+          class="level"
+          aria-label={t('byhand-level')}
+          use:tooltip={t('byhand-level')}
+          data-rich-level
+          value={level === undefined ? '\u0000' : String(level ?? '')}
+          onchange={(e) =>
+            run(
+              headed(e.currentTarget.value ? (Number(e.currentTarget.value) as HandHeading) : null),
+            )}
+        >
+          {#if level === undefined}<option value={'\u0000'} disabled>{t('byhand-several')}</option
+            >{/if}
+          {#each LEVELS as l (l.level)}<option value={String(l.level ?? '')}>{l.label()}</option
+            >{/each}
+        </select>
+      {/if}
       {#if shown.has('font')}
         <select
           class="font"
@@ -615,6 +670,11 @@
   .name.grip {
     cursor: grab;
   }
+  /* While the tools show, they stand in the place of the name: the sign of the grip is left, and the grip under it. */
+  .name.given-way {
+    width: 0;
+    overflow: hidden;
+  }
   .gap {
     flex: 1;
   }
@@ -693,8 +753,12 @@
     font-size: 0.72rem;
     line-height: 1;
   }
+  .level {
+    width: 96px;
+    margin-right: 6px;
+  }
   .font {
-    width: 132px;
+    width: 108px;
   }
   .size {
     width: 40px;

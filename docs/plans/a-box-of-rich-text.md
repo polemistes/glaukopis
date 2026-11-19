@@ -49,7 +49,7 @@ The owner chose that the guard goes out a release ahead of the box. The box is b
 
 ### What the guide says when Rich text is offered
 
-Written with stage 2, and to be added to with each stage. In the guide's part on writing, before *Kinds of paragraph and of words*; *Rich text* is also named among what Insert puts in, among what a note holds, in the row of the window of a note, and, in *Your project as Org*, as the block `#+BEGIN_rich` around what it holds, with what is set by hand of words in a bracket after them (`[welcome]{size=20 colour=#a02020}`) and of a paragraph on a line before it (`#+ATTR_GLAUKOPIS: :align center`). In *Working together*, after what is said of versions: *Rich text is such a thing: before the first is put into a shared project, Glaukopis asks, and says who will be kept out.*
+Written with stage 2, and to be added to with each stage. In the guide's part on writing, before *Kinds of paragraph and of words*; *Rich text* is also named among what Insert puts in, among what a note holds, in the row of the window of a note, and, in *Your project as Org*, as the block `#+BEGIN_rich` around what it holds, with what is set by hand of words in a bracket after them (`[welcome]{size=20 colour=#a02020}`) and of a paragraph on a line before it (`#+ATTR_GLAUKOPIS: :align center`, and `:heading 1` or `:heading 2` for a heading of rich text). In *Working together*, after what is said of versions: *Rich text is such a thing: before the first is put into a shared project, Glaukopis asks, and says who will be kept out.*
 
 #### Rich text
 
@@ -78,6 +78,14 @@ numbered and set in the document as the rest of the text is.
 In it the look is set by hand, as in a word processor, from the tools in
 its head, which show while the cursor is in the sheet:
 
+- **Text**, **Heading** or **Subheading**, the first tool, for the
+  paragraphs selected. A heading here looks as the headings of the
+  document do one level under the element you are writing in, and a
+  subheading as those a level further down; change them in the Look and
+  these follow. It is kept on the page with what comes after it. It is a
+  paragraph and no element: it has no number, and is not in the outline,
+  the diagram or the table of contents. For a heading that is, make an
+  element. **Enter** at the end of a heading goes on in ordinary text.
 - **The font**, **the size** in points, and **the colour** of the words
   selected, or of what you write next where nothing is selected. *As the
   document* in the list of fonts and in the menu of colours, and an empty
@@ -256,7 +264,7 @@ All four are built with stage 2 (record 0112).
 2. **The box, with nothing set by hand. Built** (record 0112), and smaller than this stage feared: the box is a block of its own in the editor only, and everything else reads a text as a run of blocks that each say they stand in a box, as paragraphs say how they are numbered; so the rule below holds by how a text is read, the core is not told of the box, and the places that had to learn of it are the editor, the reading and writing of a text, Org and the drawn text. As it was planned: The block and its place in the schema; *Insert → Rich text*, the keys in and out, the head and its menu, the white surface; every walk of a text's paragraphs going into the box, held by the test of the rule; the Org block; the core setting what is in a box as it sets any text. What one sees: a white sheet in the text that changes nothing in the document. This is the stage that touches the most places, and it is checked before any tool is added.
 3. **Set by hand, and seen. Built** (record 0113). As it was planned: The three marks and the paragraph's measures; the row of tools with the chooser of fonts lifted out; *Clear formatting*; the rule that nothing by hand lives outside a box; the Org forms; Typst, so that the typesetting pane and the PDF show it; the empty paragraph as a blank line. From here the box does what it is for.
 4. **The other forms of a document.** LaTeX; Word and Writer with their made styles; HTML and EPUB; Markdown. Four parts that do not touch each other, for four agents. **Built** (record 0113, its two addenda), in the main thread and not by agents: LaTeX, HTML and EPUB, Word and Writer with a named style for each look, and Markdown with the words alone.
-5. **Around it.** **Built of it**: the tools folded into a menu where the head is narrow (record 0113, its third addendum); the sheet moved by its name, and words moved by dragging them (record 0114); the look of the document drawn on the sheet, and what is set by hand drawn where a text is only shown (record 0113, its fourth addendum). The rest is left, and with it the looks of the kinds of paragraph on the sheet. As it was planned: The colours on the white surface in a dark scheme; the tools folded in small places; the history and the review; Find and Replace; copying between boxes; the notebook; the mind maps; the guide; Bokmål with the English, the other languages in a round. Separable parts again.
+5. **Around it.** **Built of it**: the tools folded into a menu where the head is narrow (record 0113, its third addendum); the sheet moved by its name, and words moved by dragging them (record 0114); the look of the document drawn on the sheet, and what is set by hand drawn where a text is only shown (record 0113, its fourth addendum). Headings on the sheet, which are paragraphs and no elements (record 0115). The rest is left, and with it the looks of the kinds of paragraph on the sheet, which the owner would rather not have for now. As it was planned: The colours on the white surface in a dark scheme; the tools folded in small places; the history and the review; Find and Replace; copying between boxes; the notebook; the mind maps; the guide; Bokmål with the English, the other languages in a round. Separable parts again.
 
 Stages 2 and 3 are the main thread's with one agent at a time, since they settle the shape; 4 and 5 are fanned out when 3 holds.
 

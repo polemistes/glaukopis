@@ -1027,6 +1027,9 @@ fn plain_words(text: &str) -> String {
 pub(super) fn hand_style_name(base: &str, hand: &super::Hand) -> String {
     use crate::formats::Align;
     let mut name = format!("Rich text {}", plain_words(base));
+    if hand.heading().is_some() {
+        name.push_str(" heading");
+    }
     match hand.align() {
         Some(Align::Left) => name.push_str(" left"),
         Some(Align::Center) => name.push_str(" centred"),

@@ -75,6 +75,8 @@ export interface TextHolder {
   kindKeysOf(element: string | null | undefined): Readonly<Record<string, string>>;
   /** The top of the tree under the holder an element stands in: in its document what stands in the text is numbered, where none is in view. */
   topOf(element: string): string;
+  /** How many levels an element stands under the element `at`, whose document is in view; under the top of its tree, where none is. Nought for that element itself. */
+  depthOf(element: string, at?: string): number;
   /** The threads of comments on an element. */
   threadsOf(element: string): readonly Thread[];
   /** A citation as the reference style of the document of an element writes it, alone (record 0090). */

@@ -1721,6 +1721,40 @@ span.math.selected {
 .prose .rich p:not([data-kind]) + p:not([data-kind]) {
   margin-top: var(--sheet-between-drawn, 0.62em);
 }
+/* A heading on a sheet (ADR 0115): a paragraph of text that is drawn as
+   the layout sets the headings one level under the element the text is of
+   (1), or two (2), and is no element. What holds the text says the looks
+   of the two levels (`byhand/sheet.ts`); a text of no document says none,
+   and a heading there is bold and somewhat larger. What is set by hand of
+   the paragraph is laid over it, as over any. */
+.prose .rich p[data-heading]:not([data-kind]) {
+  font-size: calc(var(--sheet-point) * var(--sheet-h1-size, 15.4));
+  font-weight: var(--sheet-h1-weight, 700);
+  font-style: var(--sheet-h1-style, normal);
+  font-variant-caps: var(--sheet-h1-caps, normal);
+  text-transform: var(--sheet-h1-transform, none);
+  text-align: var(--sheet-h1-align, left);
+  line-height: var(--hand-single, 1.3);
+  margin-left: calc(var(--sheet-point) * var(--sheet-h1-in, 0));
+  padding-top: calc(var(--sheet-point) * var(--sheet-h1-before, 9));
+  padding-bottom: calc(var(--sheet-point) * var(--sheet-h1-after, 2));
+}
+.prose .rich p[data-heading='2']:not([data-kind]) {
+  font-size: calc(var(--sheet-point) * var(--sheet-h2-size, 12.65));
+  font-weight: var(--sheet-h2-weight, 700);
+  font-style: var(--sheet-h2-style, normal);
+  font-variant-caps: var(--sheet-h2-caps, normal);
+  text-transform: var(--sheet-h2-transform, none);
+  text-align: var(--sheet-h2-align, left);
+  margin-left: calc(var(--sheet-point) * var(--sheet-h2-in, 0));
+  padding-top: calc(var(--sheet-point) * var(--sheet-h2-before, 7));
+  padding-bottom: calc(var(--sheet-point) * var(--sheet-h2-after, 1));
+}
+/* What follows a heading is the first of a run, and stands as near it as the heading says. */
+.prose .rich p[data-heading]:not([data-kind]) + p:not([data-kind]) {
+  margin-top: 0;
+  text-indent: calc(var(--sheet-point) * var(--sheet-indent-first, 0));
+}
 /* What a box holds is drawn on the sheet: the ground of what stands over
    the text within it is the sheet's. */
 .prose .rich .pagebreak-label,

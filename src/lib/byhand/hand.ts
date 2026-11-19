@@ -73,6 +73,9 @@ export function handMarkAttrs(name: HandMark, value: unknown): Record<string, un
   return colour ? { value: colour } : null;
 }
 
+/** A heading in rich text: how many levels under the element its text is of. */
+export type HandHeading = 1 | 2;
+
 /** How a paragraph stands across the line. */
 export type HandAlign = 'left' | 'center' | 'right' | 'justified';
 
@@ -82,6 +85,12 @@ export type HandAlign = 'left' | 'center' | 'right' | 'justified';
  * is a number, 1 for single. What is not said is the layout's.
  */
 export interface HandLook {
+  /**
+   * A heading that is no element (ADR 0115): the paragraph is set as the
+   * layout sets the headings one level under the element the text is of
+   * (1), or two (2), and what else is said here is laid over that.
+   */
+  heading?: HandHeading;
   align?: HandAlign;
   lineSpacing?: number;
   spaceBefore?: string;
@@ -124,6 +133,8 @@ export function handOf(value: unknown): HandLook | null {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
   const given = value as Record<string, unknown>;
   const look: HandLook = {};
+  const heading = typeof given.heading === 'string' ? Number(given.heading) : given.heading;
+  if (heading === 1 || heading === 2) look.heading = heading;
   if (typeof given.align === 'string' && ALIGNS.includes(given.align))
     look.align = given.align as HandAlign;
   const spacing =
@@ -171,7 +182,8 @@ export const colourStyle = (value: string) => `color: ${value}`;
  * the editor's own text. The space before and after is added to what the
  * paragraph has between it and the next. Centred, set to the right or set
  * in, its first line begins with the rest unless it was said where it
- * begins: as the document sets it.
+ * begins: as the document sets it. A heading (ADR 0115) is drawn by the
+ * style sheet, by its level; here it begins with the rest too.
  */
 export function handStyle(hand: HandLook | null): string {
   if (!hand) return '';
@@ -190,7 +202,16 @@ export function handStyle(hand: HandLook | null): string {
   if (hand.indentLeft) said.push(`margin-left: ${length(hand.indentLeft)}`);
   if (hand.indentRight) said.push(`margin-right: ${length(hand.indentRight)}`);
   if (hand.firstLine) said.push(`text-indent: ${length(hand.firstLine)}`);
-  else if (hand.indentLeft || hand.indentRight || hand.align === 'center' || hand.align === 'right')
+  else if (
+    hand.heading ||
+    hand.indentLeft ||
+    hand.indentRight ||
+    hand.align === 'center' ||
+    hand.align === 'right'
+  )
     said.push('text-indent: 0');
+  // The room about a heading is its own, all of it (`sheet.ts`): none of what stands between paragraphs.
+  if (hand.heading && !(hand.spaceBefore && pointsOf(hand.spaceBefore) < 0))
+    said.push('margin-top: 0');
   return said.join('; ');
 }

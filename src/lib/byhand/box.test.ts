@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { bodySchema } from '$lib/editor/schema';
 import { RICH_TEXT_OFFERED, richTextOffered } from './offered';
 import {
+  afterHeading,
   backOutOfBox,
   boxAt,
   deleteBox,
@@ -90,6 +91,38 @@ describe('putting a box in', () => {
     // With only the cursor in a side, it is put after the two texts.
     const after = run(insertBox, state(doc, 8))!;
     expect(after.doc.child(2).type.name).toBe('rich');
+  });
+});
+
+describe('a heading in a box', () => {
+  const heading = (words: string, more: Record<string, unknown> = {}) =>
+    paragraph.create(
+      { kind: 'text', hand: { heading: 1, ...more } },
+      words ? bodySchema.text(words) : null,
+    );
+
+  it('is followed by text: Enter at its end goes on in a paragraph that is none', () => {
+    // [Title] with the cursor at its end.
+    const after = run(afterHeading, state(text(box(heading('Title', { align: 'center' }))), 7))!;
+    expect(shape(after.doc)).toBe('[Title | ]');
+    const made = after.selection.$from.parent;
+    expect(made.attrs.hand).toBeNull();
+    expect(made.content.size).toBe(0);
+    expect(after.doc.child(0).child(0).attrs.hand).toEqual({ heading: 1, align: 'center' });
+  });
+
+  it('that holds nothing becomes text at Enter, with what else was set of it', () => {
+    const after = run(afterHeading, state(text(box(heading('', { align: 'center' }))), 2))!;
+    expect(shape(after.doc)).toBe('[]');
+    expect(after.doc.child(0).child(0).attrs.hand).toEqual({ align: 'center' });
+    const plain = run(afterHeading, state(text(box(heading(''))), 2))!;
+    expect(plain.doc.child(0).child(0).attrs.hand).toBeNull();
+  });
+
+  it('is split as any paragraph where the cursor is within it, and left alone elsewhere', () => {
+    expect(run(afterHeading, state(text(box(heading('Title'))), 4))).toBeNull();
+    expect(run(afterHeading, state(text(box(p('Text'))), 6))).toBeNull();
+    expect(run(afterHeading, state(text(heading('Title')), 6))).toBeNull();
   });
 });
 

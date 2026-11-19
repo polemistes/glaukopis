@@ -4,6 +4,7 @@ import {
   fontOf,
   handMarkAttrs,
   handOf,
+  handStyle,
   lengthOf,
   pointsOf,
   sameHand,
@@ -85,5 +86,20 @@ describe('how a paragraph stands by hand, as it is kept', () => {
     ).toBe(true);
     expect(sameHand(null, {})).toBe(true);
     expect(sameHand({ align: 'center' }, { align: 'right' })).toBe(false);
+  });
+});
+
+describe('a heading, as it is kept', () => {
+  it('is one level under the element, or two, and nothing else', () => {
+    expect(handOf({ heading: 1 })).toEqual({ heading: 1 });
+    expect(handOf({ heading: '2', align: 'center' })).toEqual({ heading: 2, align: 'center' });
+    expect(handOf({ heading: 3 })).toBeNull();
+    expect(handOf({ heading: 0, align: 'left' })).toEqual({ align: 'left' });
+    expect(handOf({ heading: true })).toBeNull();
+  });
+
+  it('begins with the rest where it is drawn, with none of what stands between paragraphs over it', () => {
+    expect(handStyle({ heading: 1 })).toBe('text-indent: 0; margin-top: 0');
+    expect(handStyle({ heading: 2, firstLine: '12pt' })).not.toContain('text-indent: 0');
   });
 });

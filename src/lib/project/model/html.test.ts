@@ -174,6 +174,19 @@ describe('a text as HTML', () => {
     expect(p.textContent).toBe('Plain set');
   });
 
+  it('says of a heading of rich text that it is one, for the style sheet', () => {
+    const html = blocksHtml([
+      boxed(paragraph([t('Title')], 'text', { indent: 0, hand: { heading: 2 } }), 'first'),
+      boxed(paragraph([t('Text')]), 'in'),
+    ]);
+    const root = document.createElement('div');
+    root.innerHTML = html;
+    const [title, text] = Array.from(root.querySelectorAll('p'));
+    expect(title.dataset.heading).toBe('2');
+    expect(title.style.textIndent).toBe('0px');
+    expect(text.dataset.heading).toBeUndefined();
+  });
+
   it('cuts a text at a block, a break taking no room', () => {
     const { blocks, cut } = excerpt([pagebreak(), paragraph([t('a'.repeat(50))])], 60);
     expect(blocks).toHaveLength(2);

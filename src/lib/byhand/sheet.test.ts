@@ -101,6 +101,60 @@ describe('the look of the document on the sheet', () => {
     expect(look).toContain('--sheet-font: "Evil color: red",');
   });
 
+  it('says how the two levels of heading under the element are set', () => {
+    const level = (size: number, more: Record<string, unknown> = {}) => ({
+      size,
+      bold: true,
+      italic: false,
+      align: 'left',
+      case: 'none',
+      indent: false,
+      spaceBefore: '24pt',
+      spaceAfter: '6pt',
+      ...more,
+    });
+    const laid = {
+      ...format({ lineSpacing: 2, spaceBetween: '0pt' }),
+      headings: {
+        numbered: false,
+        levels: [
+          level(20, { align: 'center' }),
+          level(16, { case: 'upper' }),
+          level(13, { bold: false, italic: true, case: 'smallcaps', indent: true }),
+        ],
+      },
+    } as unknown as DocumentFormat;
+    // In the text of the document itself: the first level and the second.
+    const top = said(sheetLook(laid, 0));
+    expect(top.get('--sheet-h1-size')).toBe('20');
+    expect(top.get('--sheet-h1-align')).toBe('center');
+    expect(top.get('--sheet-h1-weight')).toBe('700');
+    expect(top.get('--sheet-h2-size')).toBe('16');
+    expect(top.get('--sheet-h2-transform')).toBe('uppercase');
+    // Under an element of the first level: the second and the third.
+    const under = said(sheetLook(laid, 1));
+    expect(under.get('--sheet-h1-size')).toBe('16');
+    expect(under.get('--sheet-h2-size')).toBe('13');
+    expect(under.get('--sheet-h2-style')).toBe('italic');
+    expect(under.get('--sheet-h2-weight')).toBe('400');
+    expect(under.get('--sheet-h2-caps')).toBe('small-caps');
+    // Set in as a paragraph is: a centimetre.
+    expect(under.get('--sheet-h2-in')).toBe('28.35');
+    // Deeper than the layout has levels: its last, for both.
+    expect(said(sheetLook(laid, 7)).get('--sheet-h1-size')).toBe('13');
+    // The room over a heading of 20 points in a text of 12 at double spacing: its
+    // 24 points, of which the lines hold 8.4 (half of 16.8) and 2 (a tenth of 20).
+    expect(top.get('--sheet-h1-before')).toBe('13.6');
+    // Under it: its 6 points and the 14.4 that double spacing asks for, less the same.
+    expect(top.get('--sheet-h1-after')).toBe('10');
+  });
+
+  it('draws a heading by its level, and what follows it as the first of a run', () => {
+    expect(css).toContain('font-size: calc(var(--sheet-point) * var(--sheet-h1-size, 15.4));');
+    expect(css).toContain('font-size: calc(var(--sheet-point) * var(--sheet-h2-size, 12.65));');
+    expect(css).toContain('.prose .rich p[data-heading]:not([data-kind]) + p:not([data-kind]) {');
+  });
+
   it('is drawn by the style sheet on the paragraphs of text of a sheet', () => {
     expect(css).toContain('font-family: var(--sheet-font, inherit);');
     expect(css).toContain('line-height: var(--sheet-line, inherit);');

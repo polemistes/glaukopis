@@ -7,6 +7,7 @@
 
 pub mod beside;
 pub mod bibliography;
+pub mod headed;
 mod numbers;
 pub mod pandoc;
 mod passages;
@@ -436,6 +437,14 @@ fn text_kind() -> String {
 #[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Hand {
+    /// A heading that is no element (ADR 0115): 1 for one set as the
+    /// headings one level under the element the text is of, 2 for two
+    /// under it. Before a document is set, what the layout gives that
+    /// level is written into the measures here and onto the words
+    /// (`headed.rs`); what is left of it for the writers is that the
+    /// paragraph is kept with what follows it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub heading: Option<u8>,
     /// `left`, `center`, `right` or `justified`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub align: Option<String>,
@@ -479,6 +488,11 @@ impl Hand {
         Self::length(&self.first_line)
     }
 
+    /// A heading of rich text, where it is one: how many levels under the element its text is of.
+    pub fn heading(&self) -> Option<u8> {
+        self.heading.filter(|under| (1..=2).contains(under))
+    }
+
     /// How it stands across the line, where that is said.
     pub fn align(&self) -> Option<crate::formats::Align> {
         use crate::formats::Align;
@@ -498,7 +512,8 @@ impl Hand {
 
     /// Whether nothing is said.
     pub fn is_empty(&self) -> bool {
-        self.align().is_none()
+        self.heading().is_none()
+            && self.align().is_none()
             && self.line_spacing().is_none()
             && self.space_before().is_none()
             && self.space_after().is_none()

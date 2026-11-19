@@ -4,7 +4,9 @@
  * taken away from whatever comes to stand outside a box: a paragraph
  * dragged or lifted out, what is pasted elsewhere, a box made ordinary
  * text. In a note at the foot, though it is written in a box, nothing is
- * set by hand either: its look is the layout's. Done at once, with the
+ * set by hand either: its look is the layout's. And a heading (ADR 0115)
+ * is a paragraph of text: made a point of a list or of another kind, it is
+ * a heading no more. Done at once, with the
  * change that brought it about, so that it is one step of undo with it,
  * and so that the document never holds a look the tools of the place
  * cannot show or take away.
@@ -14,7 +16,7 @@ import type { MarkType, Node } from 'prosemirror-model';
 import { Plugin, type Transaction } from 'prosemirror-state';
 import { AddMarkStep, AttrStep } from 'prosemirror-transform';
 import { BOX } from './box';
-import { HAND_MARKS } from './hand';
+import { HAND_MARKS, handOf } from './hand';
 
 /** The stretches of the text as it now stands that the changes touched. */
 function touched(transactions: readonly Transaction[]): [number, number][] {
@@ -76,8 +78,15 @@ export function onlyInBoxes(): Plugin {
           if (holdsHand(block)) clear(tr, pos, end, types);
           return;
         }
-        // In a box: the notes at the foot are the layout's.
+        // In a box: the notes at the foot are the layout's, and a heading is a paragraph of text and of no other kind.
         block.descendants((node, at) => {
+          if (node.type.name === 'paragraph' && node.attrs.kind !== 'text') {
+            const hand = handOf(node.attrs.hand);
+            if (hand?.heading) {
+              const { heading: _, ...rest } = hand;
+              tr.setNodeAttribute(pos + 1 + at, 'hand', handOf(rest));
+            }
+          }
           if (node.type.name !== 'footnote') return true;
           const start = pos + 1 + at;
           if (holdsHand(node)) clear(tr, start + 1, start + node.nodeSize - 1, types);

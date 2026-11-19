@@ -1770,3 +1770,24 @@ Having tried rich text in the package built for it:
   the other formatting the document sets.
 - **Selected text can be dragged** to another place, in ordinary text and
   in rich text.
+
+## 2026-11-19 — headings in rich text
+
+> At least some way to make headings is needed in the rich text. Perhaps
+> not implement kinds. Perhaps headings in rich text are not elements? What
+> do you think is best?
+
+Proposed in answer: a heading in rich text is a paragraph that looks like a
+heading and is no element (not numbered, not in the outline or the table of
+contents); a chooser first in the head, *Text*, *Heading*, *Subheading*;
+set as the document's own headings one and two levels under the element the
+sheet stands in; the levels relative, and not Word's *Heading 1, 2, 3*; the
+other kinds of paragraph left as they are on the sheet.
+
+> Yes, let us try that.
+
+- **Headings are needed in rich text.**
+- **They are not elements**, and are tried as proposed.
+- **The looks of the kinds of paragraph are not drawn on the sheet**, for
+  now ("Perhaps not implement kinds").
+

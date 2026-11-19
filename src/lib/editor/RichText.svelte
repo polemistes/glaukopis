@@ -199,7 +199,9 @@
    * the notebook.
    */
   const sheet = $derived(
-    kind === 'body' && owner && holder.has(owner) ? sheetLook(holder.formatOf(owner)) : '',
+    kind === 'body' && owner && holder.has(owner)
+      ? sheetLook(holder.formatOf(owner), holder.depthOf(owner, at))
+      : '',
   );
   /**
    * How far the numbers and the annotations stand from the text, as the

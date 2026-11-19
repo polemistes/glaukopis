@@ -159,6 +159,7 @@ function paragraphAttrs(p: ParagraphBlock): string {
     (p.name !== 'text' ? ` data-kind="${escape(p.name)}"` : '') +
     (p.indent ? ` data-indent="${p.indent}"` : '') +
     (hand ? ` data-hand="${escape(JSON.stringify(hand))}"` : '') +
+    (hand?.heading ? ` data-heading="${hand.heading}"` : '') +
     (style ? ` style="${escape(style)}"` : '') +
     (p.numbering ? ` data-numbering="${p.numbering}"` : '') +
     (p.every ? ` data-every="${p.every}"` : '') +

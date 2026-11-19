@@ -92,6 +92,7 @@ export function noteHolder(doc: Y.Doc, fragment: Y.XmlFragment): TextHolder {
     formatOf: () => undefined,
     kindKeysOf: () => kindKeysOf(null),
     topOf: () => '',
+    depthOf: () => 0,
     threadsOf: () => NO_THREADS,
     // Nothing is cited here, and so nothing is copied as a style writes it.
     citationWritten: () => Promise.reject(new Error('a note of its own window cites nothing')),

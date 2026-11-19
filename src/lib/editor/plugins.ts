@@ -54,7 +54,7 @@ import { kindKeyOf } from '$lib/shell/keys.svelte';
 import { continuesPlugin } from './continues';
 import { movesDragged } from './dragged';
 import { LAYOUT_NUMBERS, stretchNumbersPlugin, type NumbersLayout } from './numbers';
-import { backOutOfBox, leaveBox } from '$lib/byhand/box';
+import { afterHeading, backOutOfBox, leaveBox } from '$lib/byhand/box';
 import { showsTools } from '$lib/byhand/now.svelte';
 import { onlyInBoxes } from '$lib/byhand/rule';
 import { acrossParallel, backOutOfParallel } from './parallel';
@@ -369,6 +369,8 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
   keys.Enter = chainCommands(
     openSelected,
     leaveCaption,
+    // After a heading in a box of rich text the text goes on.
+    afterHeading,
     // An empty paragraph at the end of a box of rich text leaves the box, as an empty point leaves a list.
     leaveBox,
     enterKey,

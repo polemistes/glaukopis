@@ -895,6 +895,12 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
     // otherwise. Where the citations are kept as they are, for another
     // program to set, they stand as they were written.
     let mut document = request.document.clone();
+    // The headings of rich text are paragraphs, set as the layout sets the headings of their level (`document/headed.rs`).
+    crate::document::headed::set_headings(
+        &mut document,
+        &request.format,
+        matches!(target, Target::Pdf | Target::Typst),
+    );
     if !keep_citations {
         let notes = ctx.styles.get(&request.style).is_ok_and(|s| s.kind == "note");
         crate::document::beside::place_citations(&mut document, notes);
@@ -3841,6 +3847,110 @@ mod tests {
               "content": [{ "kind": "text", "text": "A quotation that stands by hand.", "marks": {} }] }
         ]))
         .unwrap()
+    }
+
+    /// A heading and a subheading of rich text, with text under each (ADR 0115).
+    fn headed_text() -> Vec<crate::document::Block> {
+        serde_json::from_value(serde_json::json!([
+            { "kind": "paragraph", "name": "text", "rich": "first", "hand": { "heading": 1 },
+              "content": [{ "kind": "text", "text": "A heading of the sheet", "marks": {} }] },
+            { "kind": "paragraph", "name": "text", "rich": "in",
+              "content": [{ "kind": "text", "text": "Text under the heading.", "marks": {} }] },
+            { "kind": "paragraph", "name": "text", "rich": "in", "hand": { "heading": 2, "align": "right" },
+              "content": [{ "kind": "text", "text": "A subheading set to the right", "marks": {} }] },
+            { "kind": "paragraph", "name": "text", "rich": "in",
+              "content": [{ "kind": "text", "text": "Text under the subheading.", "marks": {} }] }
+        ]))
+        .unwrap()
+    }
+
+    #[test]
+    fn a_heading_of_rich_text_in_every_kind_of_document() {
+        let Some(s) = setup() else { return };
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let mut r = request("chicago-author-date");
+        let level = usize::from(r.document.sections[1].level);
+        r.document.sections[1].blocks.extend(headed_text());
+        // The levels the two are set as, made to be told apart.
+        let levels = &mut r.format.headings.levels;
+        while levels.len() < level + 2 {
+            levels.push(levels.last().cloned().unwrap_or_default());
+        }
+        levels[level].size = 17.0;
+        levels[level].bold = true;
+        levels[level].italic = false;
+        levels[level].align = crate::formats::Align::Center;
+        levels[level].space_before = crate::formats::Length::pt(21.0);
+        levels[level].space_after = crate::formats::Length::pt(7.0);
+        levels[level + 1].size = 13.0;
+        levels[level + 1].bold = false;
+        levels[level + 1].italic = true;
+        r.format.text.line_spacing = 1.0;
+
+        // Typst: a block kept with what follows, with the room of the level; the words in its size and weight; and no heading of the document.
+        let typ = out.join("headed.typ");
+        export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
+        let t = fs::read_to_string(&typ).unwrap();
+        assert!(
+            t.contains("#block(width: 100%, sticky: true, above: 21pt, below: 7pt)[#set align(center); #set par(justify: false)"),
+            "{t}"
+        );
+        assert!(t.contains("#text(size: 17pt)[#strong[A heading of the sheet]]"), "{t}");
+        assert!(t.contains("#block(width: 100%, sticky: true,") && t.contains("#set align(right)"), "{t}");
+        assert!(t.contains("#text(size: 13pt)[#emph[A subheading set to the right]]"), "{t}");
+        assert!(
+            !t.lines().any(|l| l.starts_with('=') && l.contains("of the sheet")),
+            "it is no heading of the document: {t}"
+        );
+        let p = preview(&s.ctx(), &r).unwrap();
+        assert!(!p.pages.is_empty(), "{:?}", p.warnings);
+
+        // LaTeX: no page is broken under it.
+        let tex = out.join("headed.tex");
+        export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
+        let l = fs::read_to_string(&tex).unwrap();
+        assert!(l.contains("\\par\\nobreak\\vspace{7pt}}"), "{l}");
+        assert!(l.contains("\\fontsize{17pt}"), "{l}");
+        assert!(!l.contains("section{A heading of the sheet"), "{l}");
+        if s.tools.latex_engine().is_ok() {
+            let pdf = out.join("headed.pdf");
+            let e = export(&s.ctx(), &r, Target::PdfLatex, &pdf, &ExportOptions::default()).unwrap();
+            assert!(fs::read(&pdf).unwrap().starts_with(b"%PDF"), "{:?}", e.warnings);
+        }
+
+        // A page of the web: kept with what follows, and no heading of the page.
+        let html = out.join("headed.html");
+        export(&s.ctx(), &r, Target::Html, &html, &ExportOptions::default()).unwrap();
+        let h = fs::read_to_string(&html).unwrap();
+        assert!(h.contains("break-after: avoid"), "{h}");
+        assert!(h.contains("<span style=\"font-size: 17pt\"><strong>A heading of the sheet</strong></span>"), "{h}");
+        assert!(!h.contains(">A heading of the sheet</h"), "{h}");
+
+        // Word and Writer: a style of its own that keeps it with what follows.
+        let docx = out.join("headed.docx");
+        let e = export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        assert!(e.warnings.is_empty(), "{:?}", e.warnings);
+        let styles = unzip(&docx, "word/styles.xml");
+        roxmltree::Document::parse(&styles).unwrap();
+        let document = unzip(&docx, "word/document.xml");
+        let named = "RichtextBodyTextheadingcentred1linesbefore21ptafter7ptfirst0pt";
+        assert!(document.contains(&format!("<w:pStyle w:val=\"{named}\"")), "{document}");
+        let at = styles.find(&format!("w:styleId=\"{named}\"")).unwrap_or_else(|| panic!("{styles}"));
+        let style = &styles[at..at + styles[at..].find("</w:style>").unwrap()];
+        assert!(style.contains("<w:keepNext") && style.contains("<w:jc w:val=\"center\""), "{style}");
+        let odt = out.join("headed.odt");
+        let e = export(&s.ctx(), &r, Target::Odt, &odt, &ExportOptions::default()).unwrap();
+        assert!(e.warnings.is_empty(), "{:?}", e.warnings);
+        let styles = unzip(&odt, "styles.xml");
+        roxmltree::Document::parse(&styles).unwrap();
+        assert!(styles.contains("fo:keep-with-next=\"always\""), "{styles}");
+
+        // Markdown has the words, in bold where the level is.
+        let md = out.join("headed.md");
+        export(&s.ctx(), &r, Target::Markdown, &md, &ExportOptions::default()).unwrap();
+        let m = fs::read_to_string(&md).unwrap();
+        assert!(m.contains("**A heading of the sheet**") && !m.contains("# A heading of the sheet"), "{m}");
     }
 
     #[test]

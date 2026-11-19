@@ -2018,6 +2018,10 @@ fn docx_hand_styles(hand: &HandStyles) -> String {
     }
     for (name, (base, said)) in &hand.paragraphs {
         let mut inner = String::new();
+        // A heading of rich text (ADR 0115) is kept with what follows it.
+        if said.heading().is_some() {
+            inner.push_str("<w:keepNext/>");
+        }
         let mut spacing = String::new();
         if let Some(before) = said.space_before() {
             let _ = write!(spacing, " w:before=\"{}\"", before.twips());
@@ -2132,6 +2136,10 @@ fn odt_hand_styles(s: &mut String, hand: &HandStyles) {
         }
         if let Some(first) = said.first_line() {
             let _ = write!(paragraph, " fo:text-indent=\"{}\" style:auto-text-indent=\"false\"", inches(first));
+        }
+        // A heading of rich text (ADR 0115) is kept with what follows it.
+        if said.heading().is_some() {
+            paragraph.push_str(" fo:keep-with-next=\"always\"");
         }
         let stored = odt_style_name(name);
         let style = format!(

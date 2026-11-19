@@ -19,6 +19,12 @@ byhand-shared-put = Put it in
 
 ## The tools at the head of rich text, which set the look by hand (record 0113). They show while the cursor is in it. The names of bold, of the alignments and of the measures of a paragraph are those the rest of the application has.
 
+# The first tool, a list: whether the paragraphs selected are ordinary text or a heading. A heading here is a paragraph that looks like a heading of the document; it is no part of the outline and has no number (record 0115).
+byhand-level = Text or heading
+# The choices of that list. "Heading" looks as the headings one level under the element the text belongs to; "Subheading" as those a level further down.
+byhand-text = Text
+byhand-heading = Heading
+byhand-subheading = Subheading
 # In the list of fonts, the list of sizes and the menu of colours: what takes the font, the size or the colour away, so that the words are as the document sets them.
 byhand-as-document = As the document
 # Shown in the place of a font, a size or a colour where the words selected have several.
@@ -50,4 +56,4 @@ byhand-clear = Clear formatting
 byhand-whole = The look of the whole document…
 # The question asked before rich text that has something set by hand is made ordinary text.
 byhand-to-text-title = Make it ordinary text?
-byhand-to-text-warning = What is set by hand in it is taken away: fonts, sizes and colours, and how its paragraphs stand. The words stay.
+byhand-to-text-warning = What is set by hand in it is taken away: fonts, sizes and colours, headings, and how its paragraphs stand. The words stay.

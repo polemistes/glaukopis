@@ -12,6 +12,7 @@
 import { Fragment, type Node } from 'prosemirror-model';
 import { TextSelection, type Command, type EditorState } from 'prosemirror-state';
 import { findWrapping } from 'prosemirror-transform';
+import { handOf } from './hand';
 
 /** The name of the block in the schema, and of its block in Org. */
 export const BOX = 'rich';
@@ -92,6 +93,32 @@ export const leaveBox: Command = (state, dispatch) => {
     const after = tr.mapping.map(at.pos + at.box.nodeSize);
     tr.insert(after, paragraph.create());
     tr.setSelection(TextSelection.create(tr.doc, after + 1));
+    dispatch(tr.scrollIntoView());
+  }
+  return true;
+};
+
+/**
+ * Enter at the end of a heading in a box goes on in text: what follows a
+ * heading is none (ADR 0115). In a heading that holds nothing, it makes the
+ * heading text, as an empty point of a list becomes text.
+ */
+export const afterHeading: Command = (state, dispatch) => {
+  const { $from, empty } = state.selection;
+  const heading = $from.parent;
+  if (!empty || !boxAt(state) || heading.type.name !== 'paragraph') return false;
+  const hand = handOf(heading.attrs.hand);
+  if (!hand?.heading || $from.parentOffset !== heading.content.size) return false;
+  if (dispatch) {
+    const tr = state.tr;
+    if (!heading.content.size) {
+      const { heading: _, ...rest } = hand;
+      tr.setNodeAttribute($from.before(), 'hand', handOf(rest));
+    } else {
+      const after = $from.after();
+      tr.insert(after, state.schema.nodes.paragraph.create());
+      tr.setSelection(TextSelection.create(tr.doc, after + 1));
+    }
     dispatch(tr.scrollIntoView());
   }
   return true;
