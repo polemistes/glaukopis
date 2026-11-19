@@ -702,6 +702,32 @@ export function everything(): OrgProject {
         blocks: [
           p([t('Before the box.')]),
           first(p([t('Dear all, '), t('welcome', { strong: true }), t(' to the opening.')])),
+          // Set by hand: a size and a colour on the very same words, a font over more of them, and bold within; a paragraph that stands by hand.
+          within({
+            ...p([
+              t('Come '),
+              t('one', { font: { family: 'EB Garamond' } }),
+              t(' and ', {
+                font: { family: 'EB Garamond' },
+                size: { pt: 20 },
+                colour: { value: '#a02020' },
+              }),
+              t('all', {
+                font: { family: 'EB Garamond' },
+                size: { pt: 20 },
+                colour: { value: '#a02020' },
+                strong: true,
+              }),
+              t(', at 10.5 points', { size: { pt: 10.5 } }),
+              t('.'),
+            ]),
+            hand: { align: 'center', lineSpacing: 1.5, spaceAfter: '12pt', firstLine: '0pt' },
+          }),
+          within({ ...p([t('A point that stands by hand')], 'item'), hand: { indentLeft: '1cm' } }),
+          within({
+            ...p([t('A quotation set to the right.')], 'quote'),
+            hand: { align: 'right', indentRight: '2.5mm', spaceBefore: '6pt' },
+          }),
           within(
             p([
               t('So Nagy'),

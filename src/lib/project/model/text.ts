@@ -15,6 +15,7 @@
  * interface: it runs in the thread of the search as well.
  */
 
+import { handOf, type HandLook } from '$lib/byhand/hand';
 import * as Y from 'yjs';
 import {
   figureWidth,
@@ -160,6 +161,8 @@ export interface ParagraphBlock {
   done?: true;
   /** Stands in a box of rich text. */
   rich?: Boxed;
+  /** How it stands by hand, in a box of rich text and nowhere else (ADR 0113): see `byhand/hand.ts`. */
+  hand?: HandLook;
   content: Inline[];
 }
 
@@ -270,7 +273,7 @@ export function paragraph(
   more:
     | Pick<
         ParagraphBlock,
-        'indent' | 'numbering' | 'every' | 'side' | 'only' | 'from' | 'new' | 'done'
+        'indent' | 'numbering' | 'every' | 'side' | 'only' | 'from' | 'new' | 'done' | 'hand'
       >
     | number = 0,
 ): ParagraphBlock {
@@ -286,6 +289,7 @@ export function paragraph(
     ...(said.from ? { from: said.from } : {}),
     ...(said.new ? { new: true as const } : {}),
     ...(said.done ? { done: true as const } : {}),
+    ...(said.hand ? { hand: said.hand } : {}),
     content,
   };
 }
@@ -456,6 +460,7 @@ function paragraphOf(el: Y.XmlElement): ParagraphBlock {
     from: text(el.getAttribute('from') as unknown).trim() || undefined,
     new: (el.getAttribute('new') as unknown) === true ? true : undefined,
     done: (el.getAttribute('done') as unknown) === true ? true : undefined,
+    hand: handOf(el.getAttribute('hand') as unknown) ?? undefined,
   });
 }
 

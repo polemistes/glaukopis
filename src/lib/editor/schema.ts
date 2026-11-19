@@ -7,6 +7,7 @@
  * content is stored in the project document, so they must not be changed.
  */
 
+import { colourOf, fontOf, handOf, pointsOf, sizeOf, type HandLook } from '$lib/byhand/hand';
 import { Schema, type MarkSpec, type NodeSpec } from 'prosemirror-model';
 import { tableNodes } from 'prosemirror-tables';
 
@@ -255,7 +256,108 @@ const marks: Record<string, MarkSpec> = {
     ],
     toDOM: (mark) => ['span', { class: 'taken', 'data-passage': mark.attrs.passage }, 0],
   },
+  /**
+   * What is set by hand of words in a box of rich text (ADR 0113): their
+   * font, by its name; their size, in points; their colour. Three marks, so
+   * that a colour is laid over words of several sizes without cutting them
+   * up. They live only in a box: what carries one outside a box loses it at
+   * once (`byhand/rule.ts`). Each is read from our own HTML alone, not from
+   * the styles of what is pasted from another program.
+   *
+   * A size is drawn in proportion: the size of type of the document
+   * (`--hand-base`, in points) is the editor's own size of text.
+   */
+  font: {
+    attrs: { family: {} },
+    excludes: 'font',
+    parseDOM: [
+      {
+        tag: 'span[data-font]',
+        getAttrs: (node) => {
+          const family = fontOf((node as HTMLElement).getAttribute('data-font'));
+          return family ? { family } : false;
+        },
+      },
+    ],
+    toDOM: (mark) => {
+      const family = fontOf(mark.attrs.family) ?? '';
+      return ['span', { 'data-font': family, style: `font-family: "${family}"` }, 0];
+    },
+  },
+  size: {
+    attrs: { pt: {} },
+    excludes: 'size',
+    parseDOM: [
+      {
+        tag: 'span[data-size]',
+        getAttrs: (node) => {
+          const pt = sizeOf((node as HTMLElement).getAttribute('data-size'));
+          return pt === null ? false : { pt };
+        },
+      },
+    ],
+    toDOM: (mark) => {
+      const pt = sizeOf(mark.attrs.pt) ?? 0;
+      return [
+        'span',
+        {
+          'data-size': String(pt),
+          style: `font-size: calc(var(--text-size, 17px) * ${pt} / var(--hand-base, 11))`,
+        },
+        0,
+      ];
+    },
+  },
+  colour: {
+    attrs: { value: {} },
+    excludes: 'colour',
+    parseDOM: [
+      {
+        tag: 'span[data-colour]',
+        getAttrs: (node) => {
+          const value = colourOf((node as HTMLElement).getAttribute('data-colour'));
+          return value ? { value } : false;
+        },
+      },
+    ],
+    toDOM: (mark) => {
+      const value = colourOf(mark.attrs.value) ?? '';
+      return ['span', { 'data-colour': value, style: `color: ${value}` }, 0];
+    },
+  },
 };
+
+/** How a paragraph stands by hand, from what a paragraph of our own HTML says of it. */
+function handFromData(data: string | null): HandLook | null {
+  if (!data) return null;
+  try {
+    return handOf(JSON.parse(data));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * How a paragraph that stands by hand is drawn where one writes. Lengths
+ * are drawn in proportion, as the sizes of letters are: a point of the
+ * document is the editor's size of text over the document's size of type.
+ */
+export function handStyle(hand: HandLook | null): string {
+  if (!hand) return '';
+  const point = 'calc(var(--text-size, 17px) / var(--hand-base, 11))';
+  const length = (value: string) => `calc(${point} * ${Math.round(pointsOf(value) * 100) / 100})`;
+  const said: string[] = [];
+  if (hand.align) said.push(`text-align: ${hand.align === 'justified' ? 'justify' : hand.align}`);
+  // Single spacing is the line of the editor's own text; more is as much more.
+  if (hand.lineSpacing)
+    said.push(`line-height: ${Math.round(1.62 * hand.lineSpacing * 100) / 100}`);
+  if (hand.spaceBefore) said.push(`margin-top: ${length(hand.spaceBefore)}`);
+  if (hand.spaceAfter) said.push(`margin-bottom: ${length(hand.spaceAfter)}`);
+  if (hand.indentLeft) said.push(`margin-left: ${length(hand.indentLeft)}`);
+  if (hand.indentRight) said.push(`margin-right: ${length(hand.indentRight)}`);
+  if (hand.firstLine) said.push(`text-indent: ${length(hand.firstLine)}`);
+  return said.join('; ');
+}
 
 /** What the mark `found` holds, from what may be it. Nothing, where it has no id. */
 export function foundAttrs(value: unknown): {
@@ -361,6 +463,8 @@ const bodyNodes: Record<string, NodeSpec> = {
       from: { default: null },
       new: { default: null },
       done: { default: null },
+      // How it stands by hand, in a box of rich text (ADR 0113): see `byhand/hand.ts`. Nothing outside a box.
+      hand: { default: null },
     },
     parseDOM: [
       {
@@ -368,6 +472,7 @@ const bodyNodes: Record<string, NodeSpec> = {
         getAttrs: (node) => {
           const el = node as HTMLElement;
           return {
+            hand: handFromData(el.getAttribute('data-hand')),
             kind: el.getAttribute('data-kind') || 'text',
             indent: indentAttr(el.getAttribute('data-indent')),
             numbering: numberingAttr(el.getAttribute('data-numbering')),
@@ -383,12 +488,17 @@ const bodyNodes: Record<string, NodeSpec> = {
     ],
     toDOM: (node) => {
       const every = everyAttr(node.attrs.every);
+      const hand = handOf(node.attrs.hand);
+      const style = [node.attrs.indent ? `--indent: ${node.attrs.indent}` : '', handStyle(hand)]
+        .filter(Boolean)
+        .join('; ');
       return [
         'p',
         {
           'data-kind': node.attrs.kind && node.attrs.kind !== 'text' ? node.attrs.kind : null,
           'data-indent': node.attrs.indent ? String(node.attrs.indent) : null,
-          style: node.attrs.indent ? `--indent: ${node.attrs.indent}` : null,
+          'data-hand': hand ? JSON.stringify(hand) : null,
+          style: style || null,
           'data-numbering': numberingAttr(node.attrs.numbering),
           'data-every': every ? String(every) : null,
           'data-side': sideAttr(node.attrs.side),

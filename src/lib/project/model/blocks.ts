@@ -14,6 +14,7 @@
 
 import { ySyncPluginKey } from 'y-prosemirror';
 import * as Y from 'yjs';
+import { handMarkAttrs, handOf, HAND_MARKS, isHandMark } from '$lib/byhand/hand';
 import { formOfElements, raiseForm } from '$lib/editor/form';
 import { figureWidth, foundAttrs, tableWidth } from '$lib/editor/schema';
 import { newId } from '$lib/util/id';
@@ -52,6 +53,19 @@ const BODY_MARKS = new Set([
 /** The marks a name can have. */
 const TITLE_MARKS = new Set(['em', 'smallcaps', 'sup', 'sub']);
 
+/** The marks of words in a box of rich text: those of every text, and those set by hand (ADR 0113). */
+const BOX_MARKS = new Set([...BODY_MARKS, ...HAND_MARKS]);
+
+/**
+ * Whether what is being written stands in a box of rich text: there, and
+ * nowhere else, words keep what is set by hand of them and a paragraph how
+ * it stands by hand. Said while a box is written (`blockElements`), so that
+ * whatever is written outside a box is written without, wherever its
+ * blocks came from: no text comes to hold by hand what the tools of its
+ * place could not show or take away.
+ */
+let inBox = false;
+
 /**
  * The marks of a run of words as attributes of its text, each what the
  * mark holds, as y-prosemirror writes them. A mark that is not known, or
@@ -84,6 +98,10 @@ function attributesOf(marks: InlineText['marks'], known: Set<string>): Record<st
       const tag = held.tag;
       if (typeof tag !== 'string' || !tag.trim()) continue;
       out.lang = { tag: tag.trim() };
+    } else if (isHandMark(name)) {
+      // Set by hand: a font, a size, a colour, each as it is kept.
+      const attrs = handMarkAttrs(name, value);
+      if (attrs) out[name] = attrs;
     } else {
       if (name === 'sup') delete out.sub;
       if (name === 'sub') delete out.sup;
@@ -111,7 +129,12 @@ function element(
  * each run of words, an element for what is not words. In a note, no note;
  * in what is said of a figure or a table, no note and no reference mark.
  */
-function inlineChildren(inlines: Inline[], line: Line, known = BODY_MARKS): Child[] {
+function inlineChildren(
+  inlines: Inline[],
+  line: Line,
+  // In a note at the foot nothing is set by hand, though it is written in a box: its look is the layout's.
+  known = inBox && line !== 'note' ? BOX_MARKS : BODY_MARKS,
+): Child[] {
   const out: Child[] = [];
   let text: Y.XmlText | null = null;
   let at = 0;
@@ -197,6 +220,7 @@ function paragraphElement(p: ParagraphBlock): Y.XmlElement {
       from: p.numbering === 'counted' ? p.from?.trim() || null : null,
       new: p.new ? true : null,
       done: p.done ? true : null,
+      hand: inBox ? handOf(p.hand) : null,
     },
     inlineChildren(p.content, 'text'),
   );
@@ -301,8 +325,13 @@ export function blockElements(blocks: readonly Block[]): Y.XmlElement[] {
   const out: Y.XmlElement[] = [];
   let box: Block[] = [];
   const close = () => {
-    const held = plainElements(box);
-    if (held.length) out.push(element('rich', {}, held));
+    inBox = true;
+    try {
+      const held = plainElements(box);
+      if (held.length) out.push(element('rich', {}, held));
+    } finally {
+      inBox = false;
+    }
     box = [];
   };
   for (const block of blocks) {

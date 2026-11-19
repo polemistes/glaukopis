@@ -194,6 +194,8 @@ describe('the kind of a paragraph', () => {
       from: null,
       new: true,
       done: null,
+      // Nothing is set by hand of it.
+      hand: null,
     });
     // A point to tick that is ticked says so, and is read back so; one that is not says nothing.
     const ticked = at(['todo>1 done: Buy bread']).dom.querySelector('p')!;

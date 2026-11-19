@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
+import { isHandMark } from '$lib/byhand/hand';
 import { formOf } from '$lib/editor/form';
 import { everything, trapBlocks } from '$lib/org/fixtures';
 import { blockElements, writeBody } from './blocks';
@@ -12,6 +13,7 @@ import {
   readBody,
   type Block,
   type Boxed,
+  type Inline,
 } from './text';
 
 const words = (text: string, name = 'text'): Block =>
@@ -48,8 +50,50 @@ function allInOneBox(blocks: Block[]): Block[] {
   });
 }
 
-/** Blocks with nothing said of a box. */
-const unboxed = (blocks: Block[]): Block[] => blocks.map((b) => boxed(b, null));
+/** Words without what is set by hand of them. */
+function plainWords(inlines: Inline[]): Inline[] {
+  const merged: Inline[] = [];
+  for (const i of inlines) {
+    if (i.kind === 'footnote') {
+      merged.push({ ...i, content: plainWords(i.content) });
+      continue;
+    }
+    if (i.kind !== 'text') {
+      merged.push(i);
+      continue;
+    }
+    const marks = Object.fromEntries(Object.entries(i.marks).filter(([name]) => !isHandMark(name)));
+    const last = merged[merged.length - 1];
+    // Words that differed only by hand are one run of words without it.
+    if (last?.kind === 'text' && JSON.stringify(last.marks) === JSON.stringify(marks))
+      merged[merged.length - 1] = { ...last, text: last.text + i.text };
+    else merged.push({ ...i, marks });
+  }
+  return merged;
+}
+
+/** A block without its look: with nothing said of a box, and nothing set by hand. */
+function plainBlock(block: Block): Block {
+  const b = boxed(block, null);
+  if (b.kind === 'paragraph') {
+    const { hand: _, ...rest } = b;
+    return { ...rest, content: plainWords(b.content) };
+  }
+  if (b.kind === 'figure') return { ...b, caption: plainWords(b.caption) };
+  if (b.kind === 'row') return { ...b, items: b.items.map(plainBlock) };
+  if (b.kind === 'table')
+    return {
+      ...b,
+      caption: plainWords(b.caption),
+      rows: b.rows.map((row) =>
+        row.map((cell) => ({ ...cell, content: cell.content.map(plainBlock) })),
+      ),
+    };
+  return b;
+}
+
+/** Blocks without their look: what is left when the box is taken away. */
+const unboxed = (blocks: Block[]): Block[] => blocks.map(plainBlock);
 
 describe('a box of rich text, as the project keeps it', () => {
   it('is one block of the document, around the blocks that say they stand in it', () => {
@@ -115,6 +159,57 @@ describe('a box of rich text, as the project keeps it', () => {
     expect(unboxed(read)).toEqual(readBody(textOf(unboxed(blocks))));
   });
 
+  it('keeps what is set by hand in a box, and nowhere else: not outside one, and not in a note at the foot', () => {
+    const red = { colour: { value: '#a02020' } };
+    const byHand = (rich: Boxed | null): Block =>
+      boxed(
+        {
+          ...paragraph([
+            {
+              kind: 'text',
+              text: 'Big',
+              marks: { size: { pt: 20 }, font: { family: 'Futura' }, strong: {} },
+            },
+            { kind: 'footnote', content: [{ kind: 'text', text: 'A note', marks: red }] },
+          ]),
+          hand: { align: 'center', spaceAfter: '12pt' },
+        },
+        rich,
+      );
+    const [inside] = readBody(textOf([byHand('first')]));
+    expect(inside).toEqual({
+      ...byHand('first'),
+      content: [
+        // A mark that holds nothing is read as nothing held.
+        {
+          kind: 'text',
+          text: 'Big',
+          marks: { size: { pt: 20 }, font: { family: 'Futura' }, strong: {} },
+        },
+        { kind: 'footnote', content: [{ kind: 'text', text: 'A note', marks: {} }] },
+      ],
+    });
+    const [outside] = readBody(textOf([byHand(null)]));
+    expect(outside).toEqual(plainBlock(byHand(null)));
+    expect(JSON.stringify(outside)).not.toMatch(/size|font|colour|hand/);
+    // What is no size, no font and no colour is not kept as one.
+    const [bad] = readBody(
+      textOf([
+        boxed(
+          paragraph([
+            {
+              kind: 'text',
+              text: 'x',
+              marks: { size: { pt: 9000 }, colour: { value: 'red' }, font: { family: '' } },
+            },
+          ]),
+          'first',
+        ),
+      ]),
+    );
+    expect(bad).toEqual(boxed(paragraph([{ kind: 'text', text: 'x', marks: {} }]), 'first'));
+  });
+
   it('has the document say the second form of the texts when a text is written with one', () => {
     const doc = new Y.Doc();
     const text = doc.getXmlFragment('text');
@@ -125,7 +220,7 @@ describe('a box of rich text, as the project keeps it', () => {
   });
 });
 
-/** Take the box away, and nothing but the look changes (ADR 0112). */
+/** Take the box away, and nothing but the look changes (ADR 0112): what was set by hand goes with it (ADR 0113). */
 describe('what is read of a text is the same with a box and without it', () => {
   const all = everythingThereIs();
   const plain = readBody(textOf(unboxed(all)));

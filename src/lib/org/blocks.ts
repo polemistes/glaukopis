@@ -51,6 +51,7 @@ import {
   type BasedKind,
   type Numbering,
 } from '$lib/project/model/families';
+import { handOf, type HandLook } from '$lib/byhand/hand';
 import { escapeCodeLine, isConstruct, isEscapedLine, slug, unescapeCodeLine } from './escape';
 import { readGrid, writeGrid } from './grid';
 import {
@@ -145,10 +146,11 @@ function makeParagraph(
   more: Partial<
     Pick<
       ParagraphBlock,
-      'indent' | 'numbering' | 'every' | 'side' | 'only' | 'from' | 'new' | 'done'
+      'indent' | 'numbering' | 'every' | 'side' | 'only' | 'from' | 'new' | 'done' | 'hand'
     >
   > = {},
 ): ParagraphBlock {
+  const hand = handOf(more.hand);
   return {
     kind: 'paragraph',
     name,
@@ -160,8 +162,36 @@ function makeParagraph(
     ...(more.from ? { from: more.from } : {}),
     ...(more.new ? { new: true as const } : {}),
     ...(more.done ? { done: true as const } : {}),
+    ...(hand ? { hand } : {}),
     content,
   };
+}
+
+/**
+ * How a paragraph stands by hand (ADR 0113), by the words the settings line
+ * says it in: `:align center :space-after 12pt`.
+ */
+const HAND_KEYS: [keyof HandLook, string][] = [
+  ['align', 'align'],
+  ['lineSpacing', 'line-spacing'],
+  ['spaceBefore', 'space-before'],
+  ['spaceAfter', 'space-after'],
+  ['indentLeft', 'indent-left'],
+  ['indentRight', 'indent-right'],
+  ['firstLine', 'first-line'],
+];
+
+/** What the settings line says of how a paragraph stands by hand. */
+function handSaid(p: ParagraphBlock): [string, Value | undefined][] {
+  const hand = handOf(p.hand);
+  return HAND_KEYS.map(([key, word]) => [word, hand?.[key]]);
+}
+
+/** How a paragraph stands by hand, from what a settings line said. */
+function handRead(said: Map<string, unknown>): HandLook | null {
+  const given: Record<string, unknown> = {};
+  for (const [key, word] of HAND_KEYS) if (said.has(word)) given[key] = said.get(word);
+  return handOf(given);
 }
 
 /** Whether a paragraph holds anything: an empty one is not written, as Org has none, but for a break. */
@@ -287,6 +317,7 @@ function paragraphSaid(
     ['indent', opts.indent && p.indent ? p.indent : undefined],
     ['new', opts.isNew === null ? undefined : opts.isNew],
     ['done', p.done && !opts.boxed ? true : undefined],
+    ...handSaid(p),
   ];
 }
 
@@ -867,6 +898,8 @@ function sayOn(
       out = { ...out, indent: Math.max(0, Math.min(8, Math.round(indent))) };
   }
   if (bool(said.get('done')) === true) out = { ...out, done: true };
+  const hand = handRead(said);
+  if (hand) out = { ...out, hand: { ...out.hand, ...hand } };
   if (which.isNew) {
     const isNew = bool(said.get('new'));
     if (isNew === true) out = { ...out, new: true };
