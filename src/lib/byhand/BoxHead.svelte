@@ -8,10 +8,13 @@
    * italic and underlined; how the paragraphs stand; the lists; a panel
    * with the spacing and the indents; and what takes it all away. The head
    * is as high with the tools as without, so that nothing moves when the
-   * cursor comes into the box.
+   * cursor comes into the box. Where the head is too narrow for all of
+   * them, as beside the typesetting pane or in the box of an element, those
+   * that do not fit are folded into one menu at the end of the row.
    */
   import Baseline from '@lucide/svelte/icons/baseline';
   import Bold from '@lucide/svelte/icons/bold';
+  import ChevronsRight from '@lucide/svelte/icons/chevrons-right';
   import Ellipsis from '@lucide/svelte/icons/ellipsis';
   import Italic from '@lucide/svelte/icons/italic';
   import List from '@lucide/svelte/icons/list';
@@ -115,8 +118,9 @@
   /** The field by which the system's own chooser of colours is opened. */
   let any = $state<HTMLInputElement>();
 
-  function colours(event: MouseEvent) {
-    const items: MenuItem[] = [
+  /** The colours to choose among: as the document, the plain ones, and any other. */
+  function colourItems(): MenuItem[] {
+    return [
       {
         label: t('byhand-as-document'),
         checked: colour === null,
@@ -132,7 +136,10 @@
       { kind: 'separator' },
       { label: t('byhand-colour-other'), action: () => any?.click() },
     ];
-    openMenu(event.currentTarget as HTMLElement, items, { align: 'start' });
+  }
+
+  function colours(event: MouseEvent) {
+    openMenu(event.currentTarget as HTMLElement, colourItems(), { align: 'start' });
   }
 
   // For the scripts of the running application, which cannot press the system's chooser of colours: any colour, as if chosen there.
@@ -150,6 +157,11 @@
     { kind: 'numbered', label: () => t('editor-numbered-list'), icon: ListOrdered },
   ] as const;
   const own = () => hooksOf.get(view)?.passageKinds?.() ?? [];
+  /** Makes the paragraphs selected points of a list of a kind, or text again where they are that. */
+  const listed =
+    (kind: string): Command =>
+    (s, dispatch, v) =>
+      setKind(kindOf(s) === kind ? 'text' : kind, own())(s, dispatch, v);
 
   // ---- the paragraphs: how they stand ----
 
@@ -186,6 +198,148 @@
     else setHand({ [key]: length })(view.state, view.dispatch, view);
   }
 
+  // ---- what fits in the head, and what is folded away ----
+
+  /**
+   * The tools in groups, each with the room it takes in the row, in pixels,
+   * the line before it counted in. They stand in this order.
+   */
+  const ROOM = {
+    font: 133,
+    size: 47,
+    colour: 25,
+    marks: 84,
+    aligns: 109,
+    lists: 59,
+    paragraph: 59,
+  } as const;
+  type Group = keyof typeof ROOM;
+  /**
+   * The order they are kept in where the head is narrow: the font, the size
+   * and the colour longest, which nothing else in the window offers; how
+   * the paragraphs stand next; then what the bar of the side has as well.
+   */
+  const KEPT: readonly Group[] = [
+    'font',
+    'size',
+    'colour',
+    'aligns',
+    'paragraph',
+    'marks',
+    'lists',
+  ];
+  /** The room the button of what is folded away takes. */
+  const FOLDED = 26;
+
+  let headWidth = $state(0);
+  let nameWidth = $state(0);
+  /**
+   * The groups that are shown in the row. All of them where there is room,
+   * and before the head has been measured; where there is not, those that
+   * fit beside the button of the rest, taken in the order they are kept in.
+   */
+  const shown = $derived.by(() => {
+    // Beside the name: the room between the parts of the head, and the button of the box's menu.
+    const room = headWidth - nameWidth - 24 - 24;
+    const all = KEPT.reduce((sum, group) => sum + ROOM[group], 0);
+    if (!headWidth || room >= all) return new Set<Group>(KEPT);
+    let left = room - FOLDED;
+    const fit = new Set<Group>();
+    // One that has no room does not keep a smaller one after it from the room that is left.
+    for (const group of KEPT) {
+      if (ROOM[group] > left) continue;
+      fit.add(group);
+      left -= ROOM[group];
+    }
+    return fit;
+  });
+  const folded = $derived(KEPT.some((group) => !shown.has(group)));
+
+  let foldedButton = $state<HTMLElement>();
+
+  /** The menu of the tools that have no room in the row: each as it is in the row, in the order of the row. */
+  function foldedMenu(event: MouseEvent) {
+    const s = here;
+    if (!s) return;
+    const items: MenuItem[] = [];
+    const part = (group: Group, entries: MenuItem[]) => {
+      if (shown.has(group)) return;
+      if (items.length) items.push({ kind: 'separator' });
+      items.push(...entries);
+    };
+    part('font', [
+      {
+        kind: 'submenu',
+        label: t('format-typeface'),
+        items: [
+          {
+            label: t('byhand-as-document'),
+            checked: font === null,
+            action: () => run(setHandMark('font', null)),
+          },
+          { kind: 'separator' },
+          ...[...fontsHere, ...fontsRest].map((family): MenuItem => ({
+            label: family,
+            checked: font === family,
+            action: () => run(setHandMark('font', family)),
+          })),
+        ],
+      },
+    ]);
+    part('size', [
+      {
+        kind: 'submenu',
+        label: t('format-size'),
+        items: [
+          {
+            label: t('byhand-as-document'),
+            checked: size === null,
+            action: () => run(setHandMark('size', null)),
+          },
+          { kind: 'separator' },
+          ...SIZES.map((pt): MenuItem => ({
+            label: String(pt),
+            checked: size === pt,
+            action: () => run(setHandMark('size', pt)),
+          })),
+        ],
+      },
+    ]);
+    part('colour', [{ kind: 'submenu', label: t('byhand-colour'), items: colourItems() }]);
+    part(
+      'marks',
+      MARKS.map((m): MenuItem => ({
+        label: m.label(),
+        icon: m.icon,
+        checked: markActive(s, s.schema.marks[m.mark]),
+        action: () => run(toggle(m.mark)),
+      })),
+    );
+    part(
+      'aligns',
+      ALIGNS.map((a): MenuItem => ({
+        label: a.label(),
+        icon: a.icon,
+        checked: stands.look.align === a.align,
+        action: () => run(setHand({ align: stands.look.align === a.align ? null : a.align })),
+      })),
+    );
+    part(
+      'lists',
+      LISTS.map((l): MenuItem => ({
+        label: l.label(),
+        icon: l.icon,
+        checked: kindOf(s) === l.kind,
+        action: () => run(listed(l.kind)),
+      })),
+    );
+    part('paragraph', [
+      { label: t('byhand-paragraph'), icon: UnfoldVertical, action: () => (paragraphOpen = true) },
+      { label: t('byhand-clear'), icon: RemoveFormatting, action: () => run(clearHand) },
+    ]);
+    openMenu(event.currentTarget as HTMLElement, items, { align: 'end' });
+  }
+
   /** A press in the head leaves the cursor where it is in the text; a field or a list takes it, and gives it back. */
   function keep(event: MouseEvent) {
     const target = event.target as HTMLElement;
@@ -194,68 +348,74 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="head" data-rich-head onmousedown={keep}>
-  <span class="name">{t('byhand-name')}</span>
+<div class="head" data-rich-head bind:clientWidth={headWidth} onmousedown={keep}>
+  <span class="name" bind:clientWidth={nameWidth}>{t('byhand-name')}</span>
   {#if here}
     <div class="tools" role="toolbar" aria-label={t('byhand-name')} data-rich-tools>
-      <select
-        class="font"
-        aria-label={t('format-typeface')}
-        use:tooltip={t('format-typeface')}
-        data-rich-font
-        value={font === undefined ? '\u0000' : (font ?? '')}
-        onchange={(e) => run(setHandMark('font', fontOf(e.currentTarget.value)))}
-      >
-        {#if font === undefined}<option value={'\u0000'} disabled>{t('byhand-several')}</option
-          >{/if}
-        <option value="">{t('byhand-as-document')}</option>
-        {#if fontsHere.length}
-          <optgroup label={t('byhand-fonts-here')}>
-            {#each fontsHere as family (family)}<option value={family}>{family}</option>{/each}
+      {#if shown.has('font')}
+        <select
+          class="font"
+          aria-label={t('format-typeface')}
+          use:tooltip={t('format-typeface')}
+          data-rich-font
+          value={font === undefined ? '\u0000' : (font ?? '')}
+          onchange={(e) => run(setHandMark('font', fontOf(e.currentTarget.value)))}
+        >
+          {#if font === undefined}<option value={'\u0000'} disabled>{t('byhand-several')}</option
+            >{/if}
+          <option value="">{t('byhand-as-document')}</option>
+          {#if fontsHere.length}
+            <optgroup label={t('byhand-fonts-here')}>
+              {#each fontsHere as family (family)}<option value={family}>{family}</option>{/each}
+            </optgroup>
+          {/if}
+          <optgroup label={t('look-fonts-all')}>
+            {#each fontsRest as family (family)}<option value={family}>{family}</option>{/each}
           </optgroup>
-        {/if}
-        <optgroup label={t('look-fonts-all')}>
-          {#each fontsRest as family (family)}<option value={family}>{family}</option>{/each}
-        </optgroup>
-      </select>
-      <input
-        class="size"
-        type="text"
-        inputmode="decimal"
-        list="rich-sizes"
-        aria-label={t('format-size')}
-        use:tooltip={t('format-size')}
-        data-rich-size
-        placeholder={size === undefined ? '…' : ''}
-        value={typeof size === 'number' ? String(size) : ''}
-        onchange={sizeTyped}
-        onkeydown={(e) => {
-          // The key is taken here: the cursor goes back to the text while it is down, where it would break the line.
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            (e.currentTarget as HTMLInputElement).blur();
-          } else if (e.key === 'Escape') {
-            e.preventDefault();
-            view.focus();
-          }
-        }}
-      />
-      <datalist id="rich-sizes">
-        {#each SIZES as pt (pt)}<option value={String(pt)}></option>{/each}
-      </datalist>
-      <button
-        type="button"
-        class="tool colour"
-        aria-label={t('byhand-colour')}
-        aria-haspopup="menu"
-        use:tooltip={t('byhand-colour')}
-        data-rich-colour={typeof colour === 'string' ? colour : ''}
-        onclick={colours}
-      >
-        <Baseline size={14} />
-        <span class="swatch" style:background={typeof colour === 'string' ? colour : 'var(--ink)'}
-        ></span>
-      </button>
+        </select>
+      {/if}
+      {#if shown.has('size')}
+        <input
+          class="size"
+          type="text"
+          inputmode="decimal"
+          list="rich-sizes"
+          aria-label={t('format-size')}
+          use:tooltip={t('format-size')}
+          data-rich-size
+          placeholder={size === undefined ? '…' : ''}
+          value={typeof size === 'number' ? String(size) : ''}
+          onchange={sizeTyped}
+          onkeydown={(e) => {
+            // The key is taken here: the cursor goes back to the text while it is down, where it would break the line.
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              (e.currentTarget as HTMLInputElement).blur();
+            } else if (e.key === 'Escape') {
+              e.preventDefault();
+              view.focus();
+            }
+          }}
+        />
+        <datalist id="rich-sizes">
+          {#each SIZES as pt (pt)}<option value={String(pt)}></option>{/each}
+        </datalist>
+      {/if}
+      {#if shown.has('colour')}
+        <button
+          type="button"
+          class="tool colour"
+          aria-label={t('byhand-colour')}
+          aria-haspopup="menu"
+          use:tooltip={t('byhand-colour')}
+          data-rich-colour={typeof colour === 'string' ? colour : ''}
+          onclick={colours}
+        >
+          <Baseline size={14} />
+          <span class="swatch" style:background={typeof colour === 'string' ? colour : 'var(--ink)'}
+          ></span>
+        </button>
+      {/if}
       <input
         bind:this={any}
         class="any"
@@ -265,69 +425,87 @@
         value={typeof colour === 'string' ? colour : '#000000'}
         onchange={(e) => run(setHandMark('colour', e.currentTarget.value))}
       />
-      <span class="between"></span>
-      {#each MARKS as m (m.mark)}
+      {#if shown.has('marks')}
+        <span class="between"></span>
+        {#each MARKS as m (m.mark)}
+          <button
+            type="button"
+            class="tool"
+            class:active={markActive(here, here.schema.marks[m.mark])}
+            aria-label={m.label()}
+            aria-pressed={markActive(here, here.schema.marks[m.mark])}
+            use:tooltip={m.label()}
+            data-rich-mark={m.mark}
+            onclick={() => run(toggle(m.mark))}><m.icon size={14} /></button
+          >
+        {/each}
+      {/if}
+      {#if shown.has('aligns')}
+        <span class="between"></span>
+        {#each ALIGNS as a (a.align)}
+          <button
+            type="button"
+            class="tool"
+            class:active={stands.look.align === a.align}
+            aria-label={a.label()}
+            aria-pressed={stands.look.align === a.align}
+            use:tooltip={a.label()}
+            data-rich-align={a.align}
+            onclick={() => run(setHand({ align: stands.look.align === a.align ? null : a.align }))}
+            ><a.icon size={14} /></button
+          >
+        {/each}
+      {/if}
+      {#if shown.has('lists')}
+        <span class="between"></span>
+        {#each LISTS as l (l.kind)}
+          <button
+            type="button"
+            class="tool"
+            class:active={kindOf(here) === l.kind}
+            aria-label={l.label()}
+            aria-pressed={kindOf(here) === l.kind}
+            use:tooltip={l.label()}
+            data-rich-list={l.kind}
+            onclick={() => run(listed(l.kind))}><l.icon size={14} /></button
+          >
+        {/each}
+      {/if}
+      {#if shown.has('paragraph')}
+        <span class="between"></span>
+        <button
+          bind:this={paragraphButton}
+          type="button"
+          class="tool"
+          class:active={paragraphOpen}
+          aria-label={t('byhand-paragraph')}
+          aria-haspopup="dialog"
+          use:tooltip={t('byhand-paragraph')}
+          data-rich-paragraph
+          onclick={() => (paragraphOpen = !paragraphOpen)}><UnfoldVertical size={14} /></button
+        >
         <button
           type="button"
           class="tool"
-          class:active={markActive(here, here.schema.marks[m.mark])}
-          aria-label={m.label()}
-          aria-pressed={markActive(here, here.schema.marks[m.mark])}
-          use:tooltip={m.label()}
-          data-rich-mark={m.mark}
-          onclick={() => run(toggle(m.mark))}><m.icon size={14} /></button
+          aria-label={t('byhand-clear')}
+          use:tooltip={t('byhand-clear')}
+          data-rich-clear
+          onclick={() => run(clearHand)}><RemoveFormatting size={14} /></button
         >
-      {/each}
-      <span class="between"></span>
-      {#each ALIGNS as a (a.align)}
+      {/if}
+      {#if folded}
+        <!-- The tools that have no room in the row, in one menu. -->
         <button
+          bind:this={foldedButton}
           type="button"
           class="tool"
-          class:active={stands.look.align === a.align}
-          aria-label={a.label()}
-          aria-pressed={stands.look.align === a.align}
-          use:tooltip={a.label()}
-          data-rich-align={a.align}
-          onclick={() => run(setHand({ align: stands.look.align === a.align ? null : a.align }))}
-          ><a.icon size={14} /></button
+          aria-label={t('byhand-more-tools')}
+          aria-haspopup="menu"
+          use:tooltip={t('byhand-more-tools')}
+          data-rich-folded
+          onclick={foldedMenu}><ChevronsRight size={14} /></button
         >
-      {/each}
-      <span class="between"></span>
-      {#each LISTS as l (l.kind)}
-        <button
-          type="button"
-          class="tool"
-          class:active={kindOf(here) === l.kind}
-          aria-label={l.label()}
-          aria-pressed={kindOf(here) === l.kind}
-          use:tooltip={l.label()}
-          data-rich-list={l.kind}
-          onclick={() =>
-            run((s, dispatch, v) =>
-              setKind(kindOf(s) === l.kind ? 'text' : l.kind, own())(s, dispatch, v),
-            )}><l.icon size={14} /></button
-        >
-      {/each}
-      <span class="between"></span>
-      <button
-        bind:this={paragraphButton}
-        type="button"
-        class="tool"
-        class:active={paragraphOpen}
-        aria-label={t('byhand-paragraph')}
-        aria-haspopup="dialog"
-        use:tooltip={t('byhand-paragraph')}
-        data-rich-paragraph
-        onclick={() => (paragraphOpen = !paragraphOpen)}><UnfoldVertical size={14} /></button
-      >
-      <button
-        type="button"
-        class="tool"
-        aria-label={t('byhand-clear')}
-        use:tooltip={t('byhand-clear')}
-        data-rich-clear
-        onclick={() => run(clearHand)}><RemoveFormatting size={14} /></button
-      >
+      {/if}
     </div>
   {/if}
   <span class="gap"></span>
@@ -348,7 +526,7 @@
 
 <Popover
   open={paragraphOpen && !!here}
-  anchor={paragraphButton}
+  anchor={paragraphButton ?? foldedButton}
   align="end"
   width={250}
   label={t('byhand-paragraph')}

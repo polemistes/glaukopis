@@ -19,7 +19,9 @@
 // from the system's chooser; the typesetting pane sets it; the readable
 // copy says it in Org; Clear formatting takes it away and leaves bold; and
 // Make it ordinary text asks first where something is set by hand, and
-// takes it away with the sheet. And, since rich
+// takes it away with the sheet. Where the head is narrow, beside the
+// typesetting pane, the tools that do not fit are folded into one menu,
+// from which they do what they do in the row. And, since rich
 // text is not offered yet (`src/lib/byhand/offered.ts`) but to the scripts:
 // in a window as someone works in it, started without what the harness
 // asks for, Insert has no Rich text.
@@ -403,7 +405,66 @@ try {
   check('the typesetting pane sets the text with what is set by hand', handOpen && handPages > 0 && !handFailed, `pages ${handPages} ${handFailed}`);
   await sleep(1500);
   await app.screenshot('rich-text-10-typeset-by-hand');
+
+  // Beside the typesetting pane the head is narrow: the tools that do not fit are folded into one menu.
+  await app.click(`${PROSE} .rich .rich-body p:nth-child(2)`);
+  const narrow = await until(
+    () =>
+      app.exec(
+        `const head = document.querySelector('${PROSE} .rich .rich-head');
+         const tools = head.querySelector('[data-rich-tools]');
+         if (!tools) return null;
+         const right = tools.getBoundingClientRect().right;
+         const cut = Array.from(tools.querySelectorAll('select, input[type="text"], button')).filter((el) => el.getBoundingClientRect().right > right + 0.5).length;
+         return {
+           head: Math.round(head.getBoundingClientRect().width),
+           height: Math.round(head.getBoundingClientRect().height),
+           cut,
+           fits: tools.scrollWidth <= tools.clientWidth,
+           folded: !!tools.querySelector('[data-rich-folded]'),
+           font: !!tools.querySelector('[data-rich-font]'), size: !!tools.querySelector('[data-rich-size]'), colour: !!tools.querySelector('[data-rich-colour]'),
+           lists: tools.querySelectorAll('[data-rich-list]').length,
+         };`,
+      ),
+    (n) => !!n && n.folded,
+    4000,
+  );
+  check(
+    'in a narrow head no tool is cut: the font, the size and the colour stay, and the rest is folded away',
+    !!narrow && narrow.folded && narrow.cut === 0 && narrow.fits && narrow.font && narrow.size && narrow.colour && narrow.lists === 0 && narrow.height === withTools,
+    JSON.stringify(narrow),
+  );
+  await app.click('[data-rich-folded]');
+  await app.waitFor('.menu');
+  const foldedAway = await app.exec(`return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((e) => e.textContent.trim())`);
+  check(
+    'the menu of what is folded away has the tools that have no room, as they are in the row',
+    foldedAway.includes('Bold') && foldedAway.includes('Numbered list') && foldedAway.includes('Paragraph') && foldedAway.includes('Clear formatting') && !foldedAway.includes('Red'),
+    foldedAway.join(' | '),
+  );
+  await app.screenshot('rich-text-10a-narrow-head');
+  await app.clickText('.menu [role="menuitem"]', 'Numbered list');
+  await sleep(300);
+  const numbered = await app.exec(`return Array.from(document.querySelectorAll('${PROSE} .rich .rich-body p')).find((p) => p.textContent.includes('welcome'))?.dataset.kind ?? 'text'`);
+  check('a tool chosen there does what it does in the row', numbered === 'numbered', numbered);
+  await app.click('[data-rich-folded]');
+  await app.waitFor('.menu');
+  await app.clickText('.menu [role="menuitem"]', 'Numbered list');
+  await sleep(300);
+  // The panel of the paragraph opens from there too.
+  await app.click('[data-rich-folded]');
+  await app.waitFor('.menu');
+  await app.clickText('.menu [role="menuitem"]', 'Paragraph');
+  await app.waitFor('[data-rich-paragraph-panel]', 3000);
+  check('the panel of the paragraph opens from the menu, showing what is set', (await app.exec(`return document.querySelector('[data-rich-length="spaceAfter"]')?.value`)) === '12pt');
+  await app.press('Escape');
+  await sleep(300);
   await app.typeset();
+  await sleep(400);
+  // With the pane closed there is room again, and nothing is folded.
+  await app.click(`${PROSE} .rich .rich-body p:nth-child(2)`);
+  const wide = await until(() => app.exec(`const t = document.querySelector('${PROSE} .rich [data-rich-tools]'); return t ? { folded: !!t.querySelector('[data-rich-folded]'), lists: t.querySelectorAll('[data-rich-list]').length } : null`), (w) => !!w && !w.folded, 4000);
+  check('where there is room, every tool is in the row and nothing is folded', !!wide && !wide.folded && wide.lists === 2, JSON.stringify(wide));
 
   // Clear formatting takes it from what is selected, and leaves bold.
   await app.click(`${PROSE} .rich .rich-body p:nth-child(2)`);

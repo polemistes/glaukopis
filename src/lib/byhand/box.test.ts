@@ -44,7 +44,7 @@ const shape = (doc: Node): string => {
 
 describe('rich text', () => {
   it('is not offered yet, and is under the scripts of the running application', () => {
-    // The guard goes out a release ahead of the box, and nothing is set by hand in it yet: see `offered.ts`.
+    // The guard goes out a release ahead of the box: see `offered.ts`. Only a build that is told to offers it.
     expect(RICH_TEXT_OFFERED).toBe(false);
     expect(richTextOffered).toBe(false);
   });

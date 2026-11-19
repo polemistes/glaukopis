@@ -14,10 +14,15 @@
  * All of it is kept and tested: under the scripts that drive the running
  * application it is offered, whatever this says. To offer it, set this to
  * true, and bring into the guide what the plan keeps for it.
+ *
+ * A package for the owner to try it in is built with it offered, and
+ * nothing here changed: `VITE_GLAUKOPIS_RICH_TEXT=1` when the interface is
+ * built, which the Arch recipe sets where it is run with
+ * `GLAUKOPIS_OFFER_RICH_TEXT=1` (`packaging/arch/PKGBUILD`).
  */
 import { testing } from '$lib/shell/testing';
 
-export const RICH_TEXT_OFFERED: boolean = false;
+export const RICH_TEXT_OFFERED: boolean = import.meta.env.VITE_GLAUKOPIS_RICH_TEXT === '1';
 
 /** Whether the tools offer Rich text in this window. */
 export const richTextOffered: boolean = RICH_TEXT_OFFERED || testing;

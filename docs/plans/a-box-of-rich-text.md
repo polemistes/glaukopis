@@ -45,6 +45,7 @@ The owner chose that the guard goes out a release ahead of the box. The box is b
 - **It stays false until the owner says otherwise.** With stage 3 the sheet does what it is for where the page is set by Typst: the typesetting pane and the PDF. With stage 4 every kind of document sets it but Markdown, which has the words alone.
 - **The scripts that drive the running application are offered it** whatever the switch says, so that all of it stays tried.
 - **To offer it**: set the switch to true, bring the section below into the guide, and release; the release before must have been one with the guard.
+- **A package for the owner to try it in** is built with it offered and nothing changed: `GLAUKOPIS_OFFER_RICH_TEXT=1 makepkg` in `packaging/arch`.
 
 ### What the guide says when Rich text is offered
 
@@ -91,6 +92,8 @@ its head, which show while the cursor is in the sheet:
   the indents; an empty field is as the document has it.
 - **Clear formatting** takes away everything set by hand of what is
   selected, or of the paragraph the cursor is in. Bold and italic stay.
+- Where the sheet is too narrow for all the tools, those that do not fit
+  are under **More tools**, the two arrowheads at the end of the row.
 
 What you do not set is as the Look sets it, and so are the page, the
 headings, the notes at the foot and the bibliography: **The look of the
@@ -246,7 +249,7 @@ All four are built with stage 2 (record 0112).
 2. **The box, with nothing set by hand. Built** (record 0112), and smaller than this stage feared: the box is a block of its own in the editor only, and everything else reads a text as a run of blocks that each say they stand in a box, as paragraphs say how they are numbered; so the rule below holds by how a text is read, the core is not told of the box, and the places that had to learn of it are the editor, the reading and writing of a text, Org and the drawn text. As it was planned: The block and its place in the schema; *Insert → Rich text*, the keys in and out, the head and its menu, the white surface; every walk of a text's paragraphs going into the box, held by the test of the rule; the Org block; the core setting what is in a box as it sets any text. What one sees: a white sheet in the text that changes nothing in the document. This is the stage that touches the most places, and it is checked before any tool is added.
 3. **Set by hand, and seen. Built** (record 0113). As it was planned: The three marks and the paragraph's measures; the row of tools with the chooser of fonts lifted out; *Clear formatting*; the rule that nothing by hand lives outside a box; the Org forms; Typst, so that the typesetting pane and the PDF show it; the empty paragraph as a blank line. From here the box does what it is for.
 4. **The other forms of a document.** LaTeX; Word and Writer with their made styles; HTML and EPUB; Markdown. Four parts that do not touch each other, for four agents. **Built** (record 0113, its two addenda), in the main thread and not by agents: LaTeX, HTML and EPUB, Word and Writer with a named style for each look, and Markdown with the words alone.
-5. **Around it.** The colours on the white surface in a dark scheme; the tools folded in small places; the history and the review; Find and Replace; copying between boxes; the notebook; the mind maps; the guide; Bokmål with the English, the other languages in a round. Separable parts again.
+5. **Around it.** **Built of it**: the tools folded into a menu where the head is narrow (record 0113, its third addendum). The rest is left. As it was planned: The colours on the white surface in a dark scheme; the tools folded in small places; the history and the review; Find and Replace; copying between boxes; the notebook; the mind maps; the guide; Bokmål with the English, the other languages in a round. Separable parts again.
 
 Stages 2 and 3 are the main thread's with one agent at a time, since they settle the shape; 4 and 5 are fanned out when 3 holds.
 

@@ -42,6 +42,8 @@ byhand-colour-other = Another…
 byhand-paragraph = Paragraph
 # In that panel, under each field: what an empty field means.
 byhand-paragraph-empty = Empty is as the document has it.
+# The button at the end of the row of tools, where the head is too narrow for all of them: opens a menu with those that do not fit.
+byhand-more-tools = More tools
 # The button that takes away everything set by hand of what is selected: fonts, sizes, colours, and how the paragraphs stand. Bold and italic stay.
 byhand-clear = Clear formatting
 # In the menu of the three dots: opens the Look, where the font and the size of the whole document are set, with its notes and headings.
