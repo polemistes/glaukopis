@@ -1703,3 +1703,40 @@ start of the new element's text, the owner wrote:
 So **a paragraph or a selection that holds a note or a citation is not made
 an element**, and the message says what it holds.
 
+
+## 2026-11-19 — rich text in a box
+
+> Would it be possible to make a new kind of text, called for example "rich text", where the user can write a more conventional rich text, which is not dependent on the looks or document type in the same way as the other kinds are? The problem is of course how to represent this in the orgmode markup. I would like you thoughts on the possibilities for this, and what the disadvantages and problems would be.
+
+What was answered, in short: that it can be done; that Org has the forms
+for it already (a settings line before a block, the bracket for what Org
+cannot say of words, the words a look is written in); that it fits better
+as something said of a stretch than as a kind, since a paragraph has one
+kind and rich text has lists; and that the costs are the Org of a text
+with much set by hand, every form of a document, fonts, the editor no
+longer neutral paper, headings made by hand, pasting, and that it becomes
+the easy way.
+
+> Perhaps the strech should be shown as a rich text editor in place, with all the formatting tools on the top of the strech (but not scrolling off screen), where the writing surface is white if the background is white, so we get a real and clearly marked wysiwyg editor for the strech?
+
+> I am guessing this is something people will mostly use when writing a simple text that they just want to make look this way or that, as they are used to in Word. It is a feature I am very reluctant to include, but users are frustrated about not being able to work as they are used to. When it comes to the page size etc. that cannot be set in the strech, these things can still be set in the look, right? There is also a challenge with footnotes and citations.
+
+Told that the page stays in the Look, that what is not set by hand should
+then follow the Look too (so that the notes, the bibliography and the
+headings are not in another font than the text), and how notes and
+citations would go, and asked whether a plan should be written:
+
+> Yes, make the plan.
+
+What this settles:
+
+- **A stretch where the look is set by hand** is wanted, with reluctance,
+  because users are frustrated at not working as they are used to in Word;
+  it is for a simple text that someone wants to look this way or that.
+- **It is shown as a rich text editor in place**: its tools at the top of
+  the stretch, not scrolling off the screen; a white surface where the
+  paper is white; clearly marked.
+- **The page stays in the Look.**
+- **Nothing is built yet.** The plan is `docs/plans/a-box-of-rich-text.md`,
+  to be read by the owner first; what in it is the assistant's and not
+  confirmed is listed there.
