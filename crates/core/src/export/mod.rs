@@ -2087,6 +2087,7 @@ p {{ margin: 0 0 {between} 0; text-indent: {indent}; }}
 h1 {{ text-align: {h1_align}; font-weight: {h1_weight}; font-style: {h1_style}; margin: 2em 0 1em; }}
 h2 {{ text-align: {h2_align}; font-weight: {h2_weight}; font-style: {h2_style}; margin: 1.5em 0 0.8em; }}
 h1 + p, h2 + p, h3 + p {{ text-indent: 0; }}
+.gk-hand-first > p {{ text-indent: inherit; }}
 blockquote {{ margin: 1em 1.5em; }}
 .line-block {{ margin-left: 1.5em; white-space: pre-wrap; }}
 .line-block p {{ text-indent: 0; margin: 0; }}
@@ -2169,7 +2170,8 @@ fn html_styles(f: &DocumentFormat, own: &[OwnKind]) -> String {
     };
     let above = |c: CaptionPosition| if c == CaptionPosition::Above { "0.2em" } else { "0.6em" };
     let mut css = format!(
-        ".gk-figure, .gk-table {{ margin: 1.5em 0; }}\n\
+        ".gk-hand-first > p {{ text-indent: inherit; }}\n\
+         .gk-figure, .gk-table {{ margin: 1.5em 0; }}\n\
          .gk-figure img {{ max-width: 100%; height: auto; }}\n\
          .gk-figure.gk-center, .gk-table.gk-center {{ text-align: center; }}\n\
          .gk-figure.gk-right, .gk-table.gk-right {{ text-align: right; }}\n\
@@ -3803,6 +3805,91 @@ mod tests {
         export(&s.ctx(), &r, Target::Markdown, &md, &ExportOptions::default()).unwrap();
         let m = fs::read_to_string(&md).unwrap();
         assert!(m.contains("\\newpage") && !m.contains("break-before"), "{m}");
+    }
+
+    /// A box of rich text as the interface hands it over: words set by hand,
+    /// one in a font no computer has, an empty paragraph, and paragraphs that
+    /// stand by hand.
+    fn rich_text() -> Vec<crate::document::Block> {
+        serde_json::from_value(serde_json::json!([
+            { "kind": "paragraph", "name": "text", "rich": "first", "content": [
+                { "kind": "text", "text": "Dear ", "marks": {} },
+                { "kind": "text", "text": "all", "marks": {
+                    "strong": true, "size": { "pt": 20 }, "colour": { "value": "#a02020" }
+                } },
+                { "kind": "text", "text": ", in a font that is not there", "marks": {
+                    "font": { "family": "No Such Font Of Any Computer" }, "size": { "pt": 9.5 }
+                } },
+                { "kind": "text", "text": ".", "marks": {} }
+            ] },
+            { "kind": "paragraph", "name": "text", "rich": "in", "content": [] },
+            { "kind": "paragraph", "name": "text", "rich": "in",
+              "hand": { "align": "center", "lineSpacing": 1.5, "spaceBefore": "6pt", "spaceAfter": "12pt" },
+              "content": [{ "kind": "text", "text": "Centred by hand.", "marks": {} }] },
+            { "kind": "paragraph", "name": "text", "rich": "in",
+              "hand": { "align": "right", "indentLeft": "1cm", "indentRight": "5mm", "firstLine": "0pt" },
+              "content": [{ "kind": "text", "text": "Set in and to the right.", "marks": { "colour": { "value": "#2060a0" } } }] },
+            { "kind": "paragraph", "name": "quote", "rich": "in",
+              "hand": { "align": "justified", "firstLine": "0.5cm" },
+              "content": [{ "kind": "text", "text": "A quotation that stands by hand.", "marks": {} }] }
+        ]))
+        .unwrap()
+    }
+
+    #[test]
+    fn what_is_set_by_hand_in_every_kind_of_document() {
+        let Some(s) = setup() else { return };
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let mut r = request("chicago-author-date");
+        r.document.sections[1].blocks.extend(rich_text());
+
+        // Typst: the words and the paragraphs as they were set; the pages are made, a font that is not there or not.
+        let typ = out.join("hand.typ");
+        export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
+        let t = fs::read_to_string(&typ).unwrap();
+        assert!(t.contains("#text(size: 20pt, fill: rgb(\"#a02020\"))["), "{t}");
+        assert!(t.contains("#[#set align(center); #set par(justify: false); #set par(leading: 0.8em)\n#v(6pt)"), "{t}");
+        assert!(t.contains("#pad(left: 1cm, right: 5mm)["), "{t}");
+        let p = preview(&s.ctx(), &r).unwrap();
+        assert!(!p.pages.is_empty(), "{:?}", p.warnings);
+
+        // LaTeX: groups about the words and the paragraphs, and the pages are made with them.
+        let tex = out.join("hand.tex");
+        export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
+        let l = fs::read_to_string(&tex).unwrap();
+        assert!(l.contains("\\fontsize{20pt}{24pt}\\selectfont \\color[HTML]{A02020}"), "{l}");
+        assert!(l.contains("\\IfFontExistsTF{No Such Font Of Any Computer}"), "{l}");
+        assert!(l.contains("{\\par\\vspace{6pt}\\centering\\setstretch{1.5}"), "{l}");
+        assert!(l.contains("\\raggedleft\\leftskip=1cm plus 1fil\\rightskip=5mm\\parindent=0pt"), "{l}");
+        if s.tools.latex_engine().is_ok() {
+            let pdf = out.join("hand.pdf");
+            let e = export(&s.ctx(), &r, Target::PdfLatex, &pdf, &ExportOptions::default()).unwrap();
+            assert!(fs::read(&pdf).unwrap().starts_with(b"%PDF"), "{:?}", e.warnings);
+        }
+
+        // A page of the web and a book for e-readers: spans and divisions with their styles, and the rule for first lines.
+        let html = out.join("hand.html");
+        export(&s.ctx(), &r, Target::Html, &html, &ExportOptions::default()).unwrap();
+        let h = fs::read_to_string(&html).unwrap();
+        assert!(h.contains("<span style=\"font-size: 20pt; color: #a02020\">"), "{h}");
+        assert!(h.contains("class=\"gk-hand gk-hand-first\""), "{h}");
+        assert!(
+            h.contains(
+                "text-align: center; line-height: 1.8; padding-top: 6pt; padding-bottom: 12pt; text-indent: 0pt"
+            ),
+            "{h}"
+        );
+        assert!(h.contains(".gk-hand-first > p { text-indent: inherit; }"), "{h}");
+        let epub = out.join("hand.epub");
+        export(&s.ctx(), &r, Target::Epub, &epub, &ExportOptions::default()).unwrap();
+        assert!(fs::metadata(&epub).unwrap().len() > 0);
+
+        // Markdown has the words alone.
+        let md = out.join("hand.md");
+        export(&s.ctx(), &r, Target::Markdown, &md, &ExportOptions::default()).unwrap();
+        let m = fs::read_to_string(&md).unwrap();
+        assert!(m.contains("Centred by hand.") && !m.contains("style=") && !m.contains("gk-hand"), "{m}");
     }
 
     #[test]

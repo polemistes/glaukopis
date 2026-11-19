@@ -5,6 +5,7 @@
 
 use std::cell::{Cell, RefCell};
 use std::collections::{HashMap, HashSet};
+use std::fmt::Write as _;
 
 use serde_json::{Value, json};
 
@@ -897,31 +898,96 @@ pub(super) fn looked(mut current: Vec<Value>, look: &Resolved) -> Vec<Value> {
     current
 }
 
-/// What is set by hand of words, as Typst's `text` takes it: `font: ("EB
-/// Garamond",), size: 20pt, fill: rgb("#a02020")`. Each only where it is
-/// said and is one: a name of a font without what could end the string it
-/// is written in, a size letters can have, a colour of six digits. Nothing
-/// where none is.
-pub(super) fn hand_text(marks: &std::collections::BTreeMap<String, Value>) -> Option<String> {
-    let mut said = Vec::new();
-    let family = marks.get("font").and_then(|v| v.get("family")).and_then(Value::as_str).map(str::trim);
-    if let Some(family) = family.filter(|f| {
-        !f.is_empty() && f.chars().count() <= 100 && !f.chars().any(|c| c.is_control() || "\"\\{}<>;".contains(c))
-    }) {
-        // One font is named: where it is not there, Typst sets the words in the document's.
-        said.push(format!("font: ({},)", crate::formats::typst::string(family)));
+/// What is set by hand of words, in a box of rich text (ADR 0113): each
+/// only where it is said and is one. A name of a font without what could
+/// end what it is written in, in any kind of document; a size letters can
+/// have, to the half point; a colour of six digits.
+#[derive(Debug, Clone, PartialEq)]
+pub(super) struct HandWords {
+    pub font: Option<String>,
+    pub size: Option<f64>,
+    /// The six digits, in small letters, without the sign before them.
+    pub colour: Option<String>,
+}
+
+impl HandWords {
+    /// What the marks of some words say by hand; nothing where they say none.
+    pub fn of(marks: &std::collections::BTreeMap<String, Value>) -> Option<HandWords> {
+        let family = marks.get("font").and_then(|v| v.get("family")).and_then(Value::as_str).map(str::trim);
+        let font = family
+            .filter(|f| {
+                !f.is_empty()
+                    && f.chars().count() <= 100
+                    && !f.chars().any(|c| c.is_control() || "\"'\\{}<>;".contains(c))
+            })
+            .map(str::to_owned);
+        let size = marks
+            .get("size")
+            .and_then(|v| v.get("pt"))
+            .and_then(Value::as_f64)
+            .filter(|pt| pt.is_finite() && (4.0..=400.0).contains(pt))
+            .map(|pt| (pt * 2.0).round() / 2.0);
+        let colour = marks
+            .get("colour")
+            .and_then(|v| v.get("value"))
+            .and_then(Value::as_str)
+            .filter(|c| c.len() == 7 && c.starts_with('#') && c[1..].chars().all(|d| d.is_ascii_hexdigit()))
+            .map(|c| c[1..].to_ascii_lowercase());
+        let said = HandWords { font, size, colour };
+        (said.font.is_some() || said.size.is_some() || said.colour.is_some()).then_some(said)
     }
-    let size = marks.get("size").and_then(|v| v.get("pt")).and_then(Value::as_f64);
-    if let Some(pt) = size.filter(|pt| pt.is_finite() && (4.0..=400.0).contains(pt)) {
-        said.push(format!("size: {}pt", (pt * 2.0).round() / 2.0));
+
+    /// As Typst's `text` takes it: `font: ("EB Garamond",), size: 20pt,
+    /// fill: rgb("#a02020")`. One font is named: where it is not there,
+    /// Typst sets the words in the document's.
+    pub fn typst(&self) -> String {
+        let mut said = Vec::new();
+        if let Some(font) = &self.font {
+            said.push(format!("font: ({},)", crate::formats::typst::string(font)));
+        }
+        if let Some(pt) = self.size {
+            said.push(format!("size: {pt}pt"));
+        }
+        if let Some(hex) = &self.colour {
+            said.push(format!("fill: rgb(\"#{hex}\")"));
+        }
+        said.join(", ")
     }
-    let colour = marks.get("colour").and_then(|v| v.get("value")).and_then(Value::as_str);
-    if let Some(hex) =
-        colour.filter(|c| c.len() == 7 && c.starts_with('#') && c[1..].chars().all(|d| d.is_ascii_hexdigit()))
-    {
-        said.push(format!("fill: rgb(\"{}\")", hex.to_ascii_lowercase()));
+
+    /// What opens a group of LaTeX in which the words are so set. The font
+    /// only where LaTeX can take the fonts of the computer (LuaLaTeX and
+    /// XeLaTeX) and has this one: else the words are in the document's
+    /// font, and the document is set all the same. A name with a sign that
+    /// LaTeX reads as its own is not given to it.
+    pub fn latex(&self) -> String {
+        let mut open = String::from("{");
+        if let Some(font) = self.font.as_deref().filter(|f| !f.chars().any(|c| "#%&_^~$".contains(c))) {
+            let _ =
+                write!(open, "\\ifdefined\\IfFontExistsTF\\IfFontExistsTF{{{font}}}{{\\fontspec{{{font}}}}}{{}}\\fi ");
+        }
+        if let Some(pt) = self.size {
+            let _ = write!(open, "\\fontsize{{{pt}pt}}{{{}pt}}\\selectfont ", (pt * 12.0).round() / 10.0);
+        }
+        if let Some(hex) = &self.colour {
+            let _ = write!(open, "\\color[HTML]{{{}}}", hex.to_ascii_uppercase());
+        }
+        open
     }
-    if said.is_empty() { None } else { Some(said.join(", ")) }
+
+    /// As a style of a page of the web says it.
+    pub fn css(&self) -> String {
+        let mut said = Vec::new();
+        if let Some(font) = &self.font {
+            said.push(format!("font-family: '{font}'"));
+        }
+        if let Some(pt) = self.size {
+            said.push(format!("font-size: {pt}pt"));
+        }
+        if let Some(hex) = &self.colour {
+            said.push(format!("color: #{hex}"));
+        }
+        said.join("; ")
+    }
 }
 
 /// The words of inlines as one string: for code, which holds its text as it stands.
@@ -1040,20 +1106,32 @@ impl Converter<'_> {
 
     /// Words as they are set by hand, in a box of rich text (ADR 0113):
     /// their font, their size, their colour, about everything else that is
-    /// said of them. In Typst, which sets the pages of the typesetting and
-    /// of the PDF; the other kinds of document set the words without it,
-    /// until each is taught.
+    /// said of them. In Typst and in LaTeX within what each has for it; on
+    /// a page of the web and in a book for e-readers in a span with its
+    /// style. Markdown has the words alone; Word and Writer are given them
+    /// in named styles (`styled`).
     fn by_hand(&self, current: Vec<Value>, marks: &std::collections::BTreeMap<String, Value>) -> Vec<Value> {
-        if self.extras.flavour != Flavour::Typst || current.is_empty() {
+        if current.is_empty() {
             return current;
         }
-        let Some(said) = hand_text(marks) else { return current };
-        let mut out = Vec::with_capacity(current.len() + 2);
-        out.push(json!({"t": "RawInline", "c": ["typst", format!("#text({said})[")]}));
-        out.extend(current);
-        // Ended, so that what follows is not read as more of it.
-        out.push(json!({"t": "RawInline", "c": ["typst", "];"]}));
-        out
+        let Some(said) = HandWords::of(marks) else { return current };
+        let x = &self.extras;
+        let around = |format: &str, open: String, close: &str| {
+            let mut out = Vec::with_capacity(current.len() + 2);
+            out.push(json!({"t": "RawInline", "c": [format, open]}));
+            out.extend(current.iter().cloned());
+            out.push(json!({"t": "RawInline", "c": [format, close]}));
+            out
+        };
+        match x.flavour {
+            // Ended, so that what follows is not read as more of it.
+            Flavour::Typst => around("typst", format!("#text({})[", said.typst()), "];"),
+            Flavour::Latex => around("latex", said.latex(), "}"),
+            Flavour::Plain if x.classes => {
+                vec![json!({"t": "Span", "c": [["", [], [["style", said.css()]]], current]})]
+            }
+            _ => current,
+        }
     }
 }
 

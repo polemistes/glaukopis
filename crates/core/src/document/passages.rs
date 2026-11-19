@@ -56,6 +56,146 @@ fn raw_inline(format: &str, text: impl Into<String>) -> Value {
     json!({"t": "RawInline", "c": [format, text.into()]})
 }
 
+/// How a paragraph stands by hand, as Typst is told: what opens it and what
+/// closes it. How it stands across the line, its line spacing and its first
+/// line are said for the paragraph alone, with nothing set about it, so
+/// that it stands among the paragraphs beside it as before. The space
+/// before and after it is room added there. Set in from the left or the
+/// right, it stands in a block of its own, where its first line begins as
+/// the writer said, or with the rest.
+fn hand_typst(hand: &Hand) -> (String, String) {
+    let mut said = Vec::new();
+    match hand.align() {
+        Some(Align::Justified) => said.push("#set align(left); #set par(justify: true)".to_owned()),
+        Some(to) => said.push(format!(
+            "#set align({}); #set par(justify: false)",
+            match to {
+                Align::Center => "center",
+                Align::Right => "right",
+                _ => "left",
+            }
+        )),
+        None => {}
+    }
+    if let Some(spacing) = hand.line_spacing() {
+        said.push(format!("#set par(leading: {})", leading(spacing)));
+    }
+    let (left, right) = (hand.indent_left(), hand.indent_right());
+    let set_in = left.is_some() || right.is_some();
+    // Within a block of its own a paragraph is the first, and would begin with the rest whatever the layout says.
+    if let Some(first) = hand.first_line().or(set_in.then(|| Length::pt(0.0))) {
+        said.push(format!("#set par(first-line-indent: (amount: {first}, all: true))"));
+    }
+    let mut open = format!("#[{}", said.join("; "));
+    if let Some(before) = hand.space_before() {
+        let _ = write!(open, "\n#v({before})");
+    }
+    if set_in {
+        let zero = Length::pt(0.0);
+        let _ = write!(open, "\n#pad(left: {}, right: {})[", left.unwrap_or(zero), right.unwrap_or(zero));
+    }
+    let mut close = String::new();
+    if set_in {
+        close.push_str("]\n");
+    }
+    if let Some(after) = hand.space_after() {
+        let _ = writeln!(close, "#v({after})");
+    }
+    close.push(']');
+    (open, close)
+}
+
+/// How a paragraph stands by hand, as LaTeX is told: a group about the
+/// paragraph, as about a paragraph of a kind (`export/latex.rs`, `around`),
+/// with only what was said. Centred or set to a side, its first line begins
+/// with the rest unless one was said; set in, the room at its sides is that
+/// much and whatever its alignment adds.
+fn hand_latex(hand: &Hand) -> (String, String) {
+    let mut open = String::from("{\\par");
+    if let Some(before) = hand.space_before() {
+        let _ = write!(open, "\\vspace{{{before}}}");
+    }
+    let align = hand.align();
+    match align {
+        Some(Align::Center) => open.push_str("\\centering"),
+        Some(Align::Right) => open.push_str("\\raggedleft"),
+        Some(Align::Left) => open.push_str("\\ifdefined\\RaggedRight\\RaggedRight\\else\\raggedright\\fi"),
+        // Where the text is set ragged, the package that sets it so can set it justified.
+        Some(Align::Justified) => open.push_str("\\ifdefined\\justifying\\justifying\\fi"),
+        None => {}
+    }
+    let (left, right) = (hand.indent_left(), hand.indent_right());
+    if left.is_some() || right.is_some() {
+        let zero = Length::pt(0.0);
+        let (l, r) = (left.unwrap_or(zero), right.unwrap_or(zero));
+        let (stretch_left, stretch_right) = match align {
+            Some(Align::Center) => (" plus 1fil", " plus 1fil"),
+            Some(Align::Right) => (" plus 1fil", ""),
+            Some(Align::Left) => ("", " plus 1fil"),
+            _ => ("", ""),
+        };
+        let _ = write!(open, "\\leftskip={l}{stretch_left}\\rightskip={r}{stretch_right}");
+    }
+    if let Some(first) = hand.first_line() {
+        let _ = write!(open, "\\parindent={first}");
+    }
+    if let Some(spacing) = hand.line_spacing() {
+        let _ = write!(open, "\\setstretch{{{spacing}}}");
+    }
+    open.push(' ');
+    let mut close = String::from("\\par");
+    if let Some(after) = hand.space_after() {
+        let _ = write!(close, "\\vspace{{{after}}}");
+    }
+    close.push('}');
+    (open, close)
+}
+
+/// How a paragraph stands by hand, on a page of the web and in a book for
+/// e-readers: the classes and the style of a division about it. The style
+/// sheet has every paragraph begin as the layout says (`export/mod.rs`);
+/// where a first line is said by hand, or the paragraph is centred or set
+/// to the right, the class `gk-hand-first` has it begin as the division
+/// says. The space before and after is room within the division, added to
+/// what stands between paragraphs.
+fn hand_css(hand: &Hand) -> (Vec<&'static str>, String) {
+    let mut said = Vec::new();
+    let align = hand.align();
+    if let Some(to) = align {
+        said.push(format!(
+            "text-align: {}",
+            match to {
+                Align::Left => "left",
+                Align::Center => "center",
+                Align::Right => "right",
+                Align::Justified => "justify",
+            }
+        ));
+    }
+    if let Some(spacing) = hand.line_spacing() {
+        said.push(format!("line-height: {}", (spacing * 120.0).round() / 100.0));
+    }
+    if let Some(before) = hand.space_before() {
+        said.push(format!("padding-top: {before}"));
+    }
+    if let Some(after) = hand.space_after() {
+        said.push(format!("padding-bottom: {after}"));
+    }
+    if let Some(left) = hand.indent_left() {
+        said.push(format!("margin-left: {left}"));
+    }
+    if let Some(right) = hand.indent_right() {
+        said.push(format!("margin-right: {right}"));
+    }
+    let mut classes = vec!["gk-hand"];
+    let first = hand.first_line().or(matches!(align, Some(Align::Center | Align::Right)).then(|| Length::pt(0.0)));
+    if let Some(first) = first {
+        said.push(format!("text-indent: {first}"));
+        classes.push("gk-hand-first");
+    }
+    (classes, said.join("; "))
+}
+
 /// A line with nothing on it: a paragraph that holds a space that is not
 /// broken at, which every kind of document sets as an empty line.
 fn blank_line() -> Value {
@@ -384,63 +524,35 @@ impl Converter<'_> {
 
     /// What a paragraph was written as, standing as its writer set it by
     /// hand (ADR 0113), where anything is: laid over what the layout gives
-    /// its kind, each measure only where it is said. In Typst, which sets
-    /// the pages of the typesetting and of the PDF; the other kinds of
-    /// document set the paragraph as the layout has it, until each is
-    /// taught.
-    ///
-    /// How it stands across the line, its line spacing and its first line
-    /// are said for the paragraph alone, with nothing set about it, so that
-    /// it stands among the paragraphs beside it as before. The space before
-    /// and after it is room added there. Set in from the left or the right,
-    /// it stands in a block of its own, where its first line begins as the
-    /// writer said, or with the rest.
+    /// its kind, each measure only where it is said. In Typst, in LaTeX,
+    /// and on a page of the web and in a book for e-readers; Markdown has
+    /// nothing to say it with, and Word and Writer are given it in named
+    /// styles (`styled`).
     fn handed(&self, hand: Option<&Hand>, own: Vec<Value>, out: &mut Vec<Value>) {
-        let Some(hand) = hand.filter(|_| self.extras.flavour == Flavour::Typst && !own.is_empty()) else {
+        let Some(hand) = hand.filter(|_| !own.is_empty()) else {
             out.extend(own);
             return;
         };
-        let mut said = Vec::new();
-        match hand.align() {
-            Some(Align::Justified) => said.push("#set align(left); #set par(justify: true)".to_owned()),
-            Some(to) => said.push(format!(
-                "#set align({}); #set par(justify: false)",
-                match to {
-                    Align::Center => "center",
-                    Align::Right => "right",
-                    _ => "left",
-                }
-            )),
-            None => {}
+        let x = &self.extras;
+        match x.flavour {
+            Flavour::Typst => {
+                let (open, close) = hand_typst(hand);
+                out.push(raw("typst", open));
+                out.extend(own);
+                out.push(raw("typst", close));
+            }
+            Flavour::Latex => {
+                let (open, close) = hand_latex(hand);
+                out.push(raw("latex", open));
+                out.extend(own);
+                out.push(raw("latex", close));
+            }
+            Flavour::Plain if x.classes => {
+                let (classes, style) = hand_css(hand);
+                out.push(json!({"t": "Div", "c": [["", classes, [["style", style]]], own]}));
+            }
+            _ => out.extend(own),
         }
-        if let Some(spacing) = hand.line_spacing() {
-            said.push(format!("#set par(leading: {})", leading(spacing)));
-        }
-        let (left, right) = (hand.indent_left(), hand.indent_right());
-        let set_in = left.is_some() || right.is_some();
-        // Within a block of its own a paragraph is the first, and would begin with the rest whatever the layout says.
-        if let Some(first) = hand.first_line().or(set_in.then(|| Length::pt(0.0))) {
-            said.push(format!("#set par(first-line-indent: (amount: {first}, all: true))"));
-        }
-        let mut open = format!("#[{}", said.join("; "));
-        if let Some(before) = hand.space_before() {
-            let _ = write!(open, "\n#v({before})");
-        }
-        if set_in {
-            let zero = Length::pt(0.0);
-            let _ = write!(open, "\n#pad(left: {}, right: {})[", left.unwrap_or(zero), right.unwrap_or(zero));
-        }
-        out.push(raw("typst", open));
-        out.extend(own);
-        let mut close = String::new();
-        if set_in {
-            close.push_str("]\n");
-        }
-        if let Some(after) = hand.space_after() {
-            let _ = writeln!(close, "#v({after})");
-        }
-        close.push(']');
-        out.push(raw("typst", close));
     }
 
     /// The inlines of a paragraph, line by line, each with what stands
@@ -1259,7 +1371,7 @@ mod tests {
             ),
             "{typst}"
         );
-        // Another kind of document sets the words without it, for now.
+        // Markdown has the words alone.
         let plain = flat(&Value::Array(written(&converter(&keys, Flavour::Plain), &by_hand())));
         assert!(plain.contains("Dear all, welcome."), "{plain}");
         assert!(!plain.contains("#text"), "{plain}");
@@ -1267,8 +1379,9 @@ mod tests {
 
     #[test]
     fn what_is_no_font_no_size_and_no_colour_is_not_set() {
-        use super::super::pandoc::hand_text;
+        use super::super::pandoc::HandWords;
         let marks = |v: Value| serde_json::from_value::<std::collections::BTreeMap<String, Value>>(v).unwrap();
+        let hand_text = |m: &std::collections::BTreeMap<String, Value>| HandWords::of(m).map(|said| said.typst());
         assert_eq!(hand_text(&marks(json!({ "strong": true }))), None);
         assert_eq!(
             hand_text(&marks(json!({
@@ -1308,9 +1421,76 @@ mod tests {
         assert!(typst.contains("\nNothing said well.\n"), "{typst}");
         // Outside a box nothing stands by hand, whatever the paragraph says.
         assert!(!typst.contains("align(right)"), "{typst}");
-        // Another kind of document sets the paragraphs as the layout has them, for now.
+        // Markdown has nothing to say it with.
         let plain = written(&converter(&keys, Flavour::Plain), &by_hand());
         assert!(raws(&plain).iter().all(|r| !r.starts_with("#[")), "{plain:?}");
+    }
+
+    #[test]
+    fn what_is_set_by_hand_is_set_in_latex() {
+        let keys = HashMap::new();
+        let latex = flat(&Value::Array(written(&converter(&keys, Flavour::Latex), &by_hand())));
+        // The font where LaTeX takes the fonts of the computer and has this one; the size with its line; the colour.
+        assert!(
+            latex.contains(
+                "Dear {\\ifdefined\\IfFontExistsTF\\IfFontExistsTF{EB Garamond}{\\fontspec{EB Garamond}}{}\\fi \\fontsize{20pt}{24pt}\\selectfont \\color[HTML]{A02020}all}{\\fontsize{10.5pt}{12.6pt}\\selectfont , welcome.}"
+            ),
+            "{latex}"
+        );
+        // A paragraph in a group of its own, with what was said and nothing else.
+        assert!(
+            latex.contains("{\\par\\vspace{6pt}\\centering\\setstretch{1.5} \nCentred.\n\\par\\vspace{12pt}}\n"),
+            "{latex}"
+        );
+        assert!(
+            latex.contains("{\\par\\ifdefined\\justifying\\justifying\\fi\\leftskip=1cm\\rightskip=0pt\\parindent=0.5cm \nSet in.\n\\par}\n"),
+            "{latex}"
+        );
+        assert_eq!(latex.matches("{\\par").count(), 2, "{latex}");
+        assert!(!latex.contains("raggedleft"), "outside a box nothing stands by hand: {latex}");
+    }
+
+    #[test]
+    fn a_name_of_a_font_that_latex_would_read_as_its_own_signs_is_not_given_to_it() {
+        use super::super::pandoc::HandWords;
+        let marks = |v: Value| serde_json::from_value::<std::collections::BTreeMap<String, Value>>(v).unwrap();
+        let said = HandWords::of(&marks(json!({ "font": { "family": "R&D 100%" }, "colour": { "value": "#00ff00" } })))
+            .unwrap();
+        assert_eq!(said.latex(), "{\\color[HTML]{00FF00}");
+        assert_eq!(said.css(), "font-family: 'R&D 100%'; color: #00ff00");
+    }
+
+    #[test]
+    fn what_is_set_by_hand_is_set_on_a_page_of_the_web_and_not_in_markdown() {
+        let keys = HashMap::new();
+        let mut c = converter(&keys, Flavour::Plain);
+        c.extras.classes = true;
+        let out = written(&c, &by_hand());
+        let json = serde_json::to_string(&out).unwrap();
+        // The words in a span with its style.
+        assert!(
+            json.contains(r##"["style","font-family: 'EB Garamond'; font-size: 20pt; color: #a02020"]"##),
+            "{json}"
+        );
+        assert!(json.contains(r#"["style","font-size: 10.5pt"]"#), "{json}");
+        // A paragraph in a division with its style; centred, its first line begins with the rest.
+        assert!(
+            json.contains(
+                r#"["",["gk-hand","gk-hand-first"],[["style","text-align: center; line-height: 1.8; padding-top: 6pt; padding-bottom: 12pt; text-indent: 0pt"]]]"#
+            ),
+            "{json}"
+        );
+        assert!(
+            json.contains(r#"["",["gk-hand","gk-hand-first"],[["style","text-align: justify; margin-left: 1cm; text-indent: 0.5cm"]]]"#),
+            "{json}"
+        );
+        assert_eq!(json.matches("gk-hand\"").count(), 2, "{json}");
+        // Markdown has the words, and nothing set by hand.
+        let markdown = serde_json::to_string(&written(&converter(&keys, Flavour::Plain), &by_hand())).unwrap();
+        assert!(!markdown.contains("style") && !markdown.contains("gk-hand"), "{markdown}");
+        // Word and Writer are given what is set by hand in named styles, and nothing raw.
+        let word = serde_json::to_string(&written(&converter(&keys, Flavour::Docx), &by_hand())).unwrap();
+        assert!(!word.contains("RawInline") && !word.contains("gk-hand"), "{word}");
     }
 
     #[test]
