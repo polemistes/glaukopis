@@ -64,7 +64,9 @@ numbered and set in the document as the rest of the text is.
 - **Enter** in an empty paragraph at its end leaves the sheet, as an empty
   point leaves a list. **Backspace** in a sheet that holds nothing takes it
   away.
-- The head stays in view while a long sheet is scrolled through. The
+- The head stays in view while a long sheet is scrolled through. Drag the
+  sheet by the name in its head, with the six dots before it, to move it
+  to another place in the text: a line shows where it goes. The
   **…** at its right has **Select**, which selects all the sheet holds;
   **Make it ordinary text**, which takes the sheet away and leaves what it
   holds where it stood; and **Delete**, which takes both away.
@@ -110,9 +112,14 @@ Every kind of document sets it: the typesetting pane and the PDF, LaTeX,
 a page of the web and a book for e-readers (whose reader may put its own
 font and colours over it), and Word and Writer, where each look set by
 hand is a style named *Rich text …* for what it sets. Markdown has the
-words alone. The sheet shows the font,
-the sizes, the colours and how the paragraphs stand; where the lines and
-the pages break is shown by the typesetting pane.
+words alone. The sheet shows its paragraphs of text as the document sets
+them: its font, its line spacing, its alignment, the indent of first lines
+and the space between paragraphs, as the Look has them, with what you set
+by hand over it. A quotation, a list or another kind of paragraph is drawn
+there as everywhere in the text; how the document sets those, and where
+the lines and the pages break, is shown by the typesetting pane. In a note
+of the notebook, which is of no document, a sheet is drawn as the text
+around it.
 
 A version of Glaukopis from before rich text does not know it. A project
 that holds rich text is not opened by such a version, which says that the
@@ -249,7 +256,7 @@ All four are built with stage 2 (record 0112).
 2. **The box, with nothing set by hand. Built** (record 0112), and smaller than this stage feared: the box is a block of its own in the editor only, and everything else reads a text as a run of blocks that each say they stand in a box, as paragraphs say how they are numbered; so the rule below holds by how a text is read, the core is not told of the box, and the places that had to learn of it are the editor, the reading and writing of a text, Org and the drawn text. As it was planned: The block and its place in the schema; *Insert → Rich text*, the keys in and out, the head and its menu, the white surface; every walk of a text's paragraphs going into the box, held by the test of the rule; the Org block; the core setting what is in a box as it sets any text. What one sees: a white sheet in the text that changes nothing in the document. This is the stage that touches the most places, and it is checked before any tool is added.
 3. **Set by hand, and seen. Built** (record 0113). As it was planned: The three marks and the paragraph's measures; the row of tools with the chooser of fonts lifted out; *Clear formatting*; the rule that nothing by hand lives outside a box; the Org forms; Typst, so that the typesetting pane and the PDF show it; the empty paragraph as a blank line. From here the box does what it is for.
 4. **The other forms of a document.** LaTeX; Word and Writer with their made styles; HTML and EPUB; Markdown. Four parts that do not touch each other, for four agents. **Built** (record 0113, its two addenda), in the main thread and not by agents: LaTeX, HTML and EPUB, Word and Writer with a named style for each look, and Markdown with the words alone.
-5. **Around it.** **Built of it**: the tools folded into a menu where the head is narrow (record 0113, its third addendum). The rest is left. As it was planned: The colours on the white surface in a dark scheme; the tools folded in small places; the history and the review; Find and Replace; copying between boxes; the notebook; the mind maps; the guide; Bokmål with the English, the other languages in a round. Separable parts again.
+5. **Around it.** **Built of it**: the tools folded into a menu where the head is narrow (record 0113, its third addendum); the sheet moved by its name, and words moved by dragging them (record 0114); the look of the document drawn on the sheet, and what is set by hand drawn where a text is only shown (record 0113, its fourth addendum). The rest is left, and with it the looks of the kinds of paragraph on the sheet. As it was planned: The colours on the white surface in a dark scheme; the tools folded in small places; the history and the review; Find and Replace; copying between boxes; the notebook; the mind maps; the guide; Bokmål with the English, the other languages in a round. Separable parts again.
 
 Stages 2 and 3 are the main thread's with one agent at a time, since they settle the shape; 4 and 5 are fanned out when 3 holds.
 

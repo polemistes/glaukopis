@@ -36,6 +36,7 @@
   import type { EditorView } from 'prosemirror-view';
   import type { KeyAction } from '$lib/editor/plugins';
   import type { TextDepth } from '$lib/api/system';
+  import { sheetLook } from '$lib/byhand/sheet';
   import { commentsUi } from '$lib/comments/ui.svelte';
   import RichText, { type FocusAt } from '$lib/editor/RichText.svelte';
   import { holderOf } from '$lib/project/holder';
@@ -163,6 +164,10 @@
     const own = project.passageKinds;
     return body ? blocksHtml(project.blocksOf(node.id), language, own) : '';
   });
+  /** The look of the document, for the sheets of rich text in a text that is shown: as the editor says it (`byhand/sheet.ts`). */
+  const sheet = $derived(
+    html.includes('data-rich') ? sheetLook(holderOf(project).formatOf(node.id)) : '',
+  );
   /** The original, where the element is a clone: its text is read there (ADR 0065). */
   const included = $derived(node.include ? project.node(node.include) : undefined);
   /** What it is a clone of, with the original's name in bold. */
@@ -514,6 +519,7 @@
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
           <div
             class="prose body static"
+            style={sheet || undefined}
             use:hydrate={{ html, project, element: node.id, at: documentAt }}
             use:spellingMarks={{
               project,

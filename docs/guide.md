@@ -342,6 +342,7 @@ Everything the tools do can be done from the keys, and much of it by typing:
 | Set words in italics or bold | **Marks**, or **Ctrl+I**, **Ctrl+B** |
 | Underline words | **Marks**, or **Ctrl+U** |
 | Write a space no line breaks at | **Ctrl+Shift+Space** |
+| Move words to another place | Select them and drag them there; with **Ctrl** held when you let go, a copy is put there |
 | Choose the kind of a paragraph, or make a kind of your own | **Paragraph kind**; **Make a kind…** under **More…** in its menu |
 | Begin a quotation or a list | Type `> `, `- ` or `1. ` at the start of a line |
 | Begin a list to tick | Type `[ ] ` at the start of a line, or after `- `; `[x] ` for a point already ticked; or **Ctrl+Shift+9** |

@@ -8,6 +8,7 @@
 
 import { baseKeymap, splitBlock, toggleMark } from 'prosemirror-commands';
 import { keymap } from 'prosemirror-keymap';
+import { movesDragged } from '$lib/editor/dragged';
 import type { Command, EditorState, Plugin } from 'prosemirror-state';
 import { chatSchema } from '$lib/editor/schema';
 import type { ChatMarkKind } from '$lib/project/model/types';
@@ -51,6 +52,7 @@ export function fieldPlugins(hooks: FieldHooks): Plugin[] {
       Escape: () => hooks.escape(),
     }),
     keymap(baseKeymap),
+    movesDragged(),
   ];
 }
 

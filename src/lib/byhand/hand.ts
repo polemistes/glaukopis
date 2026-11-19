@@ -145,3 +145,52 @@ export function sameHand(a: HandLook | null | undefined, b: HandLook | null | un
   for (const key of keys) if (one[key] !== other[key]) return false;
   return true;
 }
+
+/* ---- As it is drawn where a text is written and where it is shown ---- */
+
+/**
+ * A point of the document where a text is drawn: the size of the text
+ * there over the document's size of type, so that lengths are drawn in
+ * proportion, as the sizes of letters are.
+ */
+const POINT = 'calc(var(--text-size, 17px) / var(--hand-base, 11))';
+
+/** A length of so many points of the document, as a style sheet has it where a text is drawn. */
+export const drawnLength = (points: number) => `calc(${POINT} * ${Math.round(points * 100) / 100})`;
+
+/** A font, a size in points and a colour of words, as the style of what holds them. */
+export const fontStyle = (family: string) => `font-family: "${family}"`;
+export const sizeStyle = (pt: number) =>
+  `font-size: calc(var(--text-size, 17px) * ${pt} / var(--hand-base, 11))`;
+export const colourStyle = (value: string) => `color: ${value}`;
+
+/**
+ * How a paragraph that stands by hand is drawn, as the style of the
+ * paragraph. Single spacing is that of the document, which the text says
+ * where it is of one (`--hand-single`, see `sheet.ts`); else the line of
+ * the editor's own text. The space before and after is added to what the
+ * paragraph has between it and the next. Centred, set to the right or set
+ * in, its first line begins with the rest unless it was said where it
+ * begins: as the document sets it.
+ */
+export function handStyle(hand: HandLook | null): string {
+  if (!hand) return '';
+  const length = (value: string) => drawnLength(pointsOf(value));
+  // Added to what stands between paragraphs; a space taken away is taken from it.
+  const space = (side: 'top' | 'bottom', value: string) =>
+    `${pointsOf(value) < 0 ? 'margin' : 'padding'}-${side}: ${length(value)}`;
+  const said: string[] = [];
+  if (hand.align) said.push(`text-align: ${hand.align === 'justified' ? 'justify' : hand.align}`);
+  if (hand.lineSpacing)
+    said.push(
+      `line-height: calc(var(--hand-single, 1.62) * ${Math.round(hand.lineSpacing * 100) / 100})`,
+    );
+  if (hand.spaceBefore) said.push(space('top', hand.spaceBefore));
+  if (hand.spaceAfter) said.push(space('bottom', hand.spaceAfter));
+  if (hand.indentLeft) said.push(`margin-left: ${length(hand.indentLeft)}`);
+  if (hand.indentRight) said.push(`margin-right: ${length(hand.indentRight)}`);
+  if (hand.firstLine) said.push(`text-indent: ${length(hand.firstLine)}`);
+  else if (hand.indentLeft || hand.indentRight || hand.align === 'center' || hand.align === 'right')
+    said.push('text-indent: 0');
+  return said.join('; ');
+}

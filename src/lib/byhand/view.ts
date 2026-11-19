@@ -21,6 +21,9 @@ import { BOX, deleteBox, selectBox, unwrapBox } from './box';
 import BoxHead from './BoxHead.svelte';
 import { holdsHand } from './rule';
 
+/** The events of a drag that is over the head, or ends. */
+const DRAGGED_OVER = new Set(['dragenter', 'dragover', 'dragleave', 'drop', 'dragend']);
+
 export class BoxView implements NodeView {
   dom: HTMLElement;
   contentDOM: HTMLElement;
@@ -104,8 +107,14 @@ export class BoxView implements NodeView {
     return node.type.name === BOX;
   }
 
-  /** What is done in the head is the head's, and nothing for the editor to read as writing. */
+  /**
+   * What is done in the head is the head's, and nothing for the editor to
+   * read as writing. What is dragged over the head or dropped on it is the
+   * text's, as is the end of a drag that began at the grip (the drag itself
+   * is begun by the head: `BoxHead.svelte`).
+   */
   stopEvent(event: Event): boolean {
+    if (DRAGGED_OVER.has(event.type)) return false;
     return event.target instanceof globalThis.Node && this.#head.contains(event.target);
   }
 

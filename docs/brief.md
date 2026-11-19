@@ -1754,3 +1754,19 @@ So **the name is *Rich text* and *Formatert tekst***; **the guard goes out
 a release ahead of the box**; **the box is offered in a note, on the
 notebook's page and in the window of a note alone**; and ***Make it
 ordinary text* warns** before it takes away what was set by hand.
+
+## 2026-11-19 — moving rich text, the document's look in it, dragging words
+
+Having tried rich text in the package built for it:
+
+> It is now impossible to move the rich text box around. Also, when the
+> document look has a paragraph indent, the rich text does not reflect
+> this. I guess that goes for other formatting that is set in the document
+> too. Another unrelated thing you may fix at the same time: In both normal
+> and rich text mode, it should be possible to drag selected text around.
+
+- **Rich text can be moved** to another place in the text.
+- **Rich text shows the look of the document**: its paragraph indent, and
+  the other formatting the document sets.
+- **Selected text can be dragged** to another place, in ordinary text and
+  in rich text.

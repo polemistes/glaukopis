@@ -9,6 +9,16 @@
  * holds its paragraph. A page or column break is a `div.pagebreak`.
  */
 
+import {
+  colourOf,
+  colourStyle,
+  fontOf,
+  fontStyle,
+  handOf,
+  handStyle,
+  sizeOf,
+  sizeStyle,
+} from '$lib/byhand/hand';
 import { citationLabel, isMissing } from '$lib/editor/references.svelte';
 import { figureWidth, foundAttrs, tableWidth } from '$lib/editor/schema';
 import { isPictureName } from '$lib/figures/pictures.svelte';
@@ -49,6 +59,16 @@ function inlines(list: Inline[], notes: Notes): string {
         if (i.marks.strike) html = `<s>${html}</s>`;
         if (i.marks.underline) html = `<u>${html}</u>`;
         if (i.marks.code) html = `<code>${html}</code>`;
+        // What is set by hand in rich text, drawn as the editor draws it.
+        const font = fontOf(i.marks.font);
+        if (font)
+          html = `<span data-font="${escape(font)}" style="${escape(fontStyle(font))}">${html}</span>`;
+        const size = sizeOf(i.marks.size);
+        if (size !== null)
+          html = `<span data-size="${size}" style="${escape(sizeStyle(size))}">${html}</span>`;
+        const colour = colourOf(i.marks.colour);
+        if (colour)
+          html = `<span data-colour="${colour}" style="${escape(colourStyle(colour))}">${html}</span>`;
         // The language of a passage, inside any kind of words, as the editor has it: its name is told on hover.
         const lang = i.marks.lang;
         const tag = typeof lang === 'object' && typeof lang.tag === 'string' ? lang.tag.trim() : '';
@@ -130,9 +150,16 @@ function placing(b: { align?: string; wrap?: boolean }): string {
  * it stands in.
  */
 function paragraphAttrs(p: ParagraphBlock): string {
+  // How it stands by hand, in rich text, drawn as the editor draws it.
+  const hand = handOf(p.hand);
+  const style = [p.indent ? `--indent: ${p.indent}` : '', handStyle(hand)]
+    .filter(Boolean)
+    .join('; ');
   return (
     (p.name !== 'text' ? ` data-kind="${escape(p.name)}"` : '') +
-    (p.indent ? ` data-indent="${p.indent}" style="--indent: ${p.indent}"` : '') +
+    (p.indent ? ` data-indent="${p.indent}"` : '') +
+    (hand ? ` data-hand="${escape(JSON.stringify(hand))}"` : '') +
+    (style ? ` style="${escape(style)}"` : '') +
     (p.numbering ? ` data-numbering="${p.numbering}"` : '') +
     (p.every ? ` data-every="${p.every}"` : '') +
     (p.side ? ` data-side="${p.side}"` : '') +

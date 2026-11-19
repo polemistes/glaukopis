@@ -62,6 +62,7 @@
   import { toCm } from '$lib/ui/settings/rows';
   import { annotationsGapWhere, numbersGap } from '$lib/document/line-gaps';
   import { CitationView, FootnoteView, noteNumbers, PageBreakView } from './views.svelte';
+  import { sheetLook } from '$lib/byhand/sheet';
   import { BoxView } from '$lib/byhand/view';
   import { saysForm } from './form';
   import { RefMarkView } from './refmarks';
@@ -191,16 +192,15 @@
     };
   });
   /**
-   * The size of type of the document, in points: what is set by hand in a
-   * box of rich text is drawn in proportion to it, the document's size of
-   * type at the editor's own size of text (ADR 0113). Eleven where the text
-   * is of no document, as a note of the notebook.
+   * The look of the document, as the sheets of rich text in the text draw
+   * it (`byhand/sheet.ts`, ADR 0113): its font, its lines and its
+   * paragraphs, and its size of type, to which what is set by hand is drawn
+   * in proportion. Nothing where the text is of no document, as a note of
+   * the notebook.
    */
-  const typeSize = $derived.by(() => {
-    if (kind !== 'body' || !owner || !holder.has(owner)) return 11;
-    const size = holder.formatOf(owner)?.font.size;
-    return typeof size === 'number' && size > 0 ? size : 11;
-  });
+  const sheet = $derived(
+    kind === 'body' && owner && holder.has(owner) ? sheetLook(holder.formatOf(owner)) : '',
+  );
   /**
    * How far the numbers and the annotations stand from the text, as the
    * layout in force puts them on the page (ADR 0076): the annotations as
@@ -764,8 +764,8 @@
 <div
   bind:this={host}
   class="rich-text {className}"
+  style={sheet || undefined}
   style:--step="{numbersLayout.step}pt"
-  style:--hand-base={typeSize}
   style:--numbers-gap={gaps.numbers}
   style:--annotations-gap-across={gaps.across}
   style:--annotations-gap-beside={gaps.beside}

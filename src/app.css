@@ -723,6 +723,7 @@ body.dragging * {
   width: 0;
   overflow: visible;
   transform: translateX(0.15em);
+  text-indent: 0;
   white-space: nowrap;
   color: var(--ink-4);
   font-family: var(--font-ui);
@@ -744,6 +745,8 @@ body.dragging * {
   width: 0;
   overflow: visible;
   transform: translateX(0.2em);
+  /* It stands at the end of the line though the paragraph's first line begins in. */
+  text-indent: 0;
   white-space: nowrap;
   color: var(--ink-4);
   font-family: var(--font-ui);
@@ -1640,10 +1643,15 @@ span.math.selected {
   display: block;
   box-sizing: border-box;
   height: 27px;
-  padding: 0 4px 0 12px;
+  /* Before the name the sign of the grip the sheet is moved by (Lucide's
+     grip-vertical, in the third ink of the sheet), drawn here so that it
+     stands the same where the text is only shown. */
+  padding: 0 4px 0 28px;
   border-bottom: 1px solid var(--line);
   border-radius: 3px 3px 0 0;
-  background: var(--paper-sunken);
+  background: var(--paper-sunken)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23858f92' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='12' r='1'/%3E%3Ccircle cx='9' cy='5' r='1'/%3E%3Ccircle cx='9' cy='19' r='1'/%3E%3Ccircle cx='15' cy='12' r='1'/%3E%3Ccircle cx='15' cy='5' r='1'/%3E%3Ccircle cx='15' cy='19' r='1'/%3E%3C/svg%3E")
+    9px center / 14px 14px no-repeat;
   font-family: var(--font-ui);
   font-size: 0.72rem;
   font-style: normal;
@@ -1674,6 +1682,44 @@ span.math.selected {
 .prose .rich:not(:has(> .rich-head))::before {
   content: attr(data-rich-name);
   margin: -12px -18px 12px;
+}
+/* The look of the document on the sheet (ADR 0113): where the text is of a
+   document, what holds it says how the document sets its text
+   (`byhand/sheet.ts`), and the paragraphs of text on the sheet are drawn
+   so: in its font, with its lines, its alignment, the indent of its first
+   lines and the space between its paragraphs. Lengths are numbers of
+   points of the document, drawn in proportion as the sizes of letters are.
+   A paragraph of text that follows another begins in; the first of a run
+   begins with the rest unless the layout sets every one in, and the first
+   on a sheet follows what stands before the sheet. A text of no document
+   says nothing of this, and its sheets are drawn as the text around them.
+   The kinds of paragraph are drawn as the editor draws them everywhere. */
+.prose .rich {
+  --sheet-point: calc(var(--text-size, 17px) / var(--hand-base, 11));
+  /* No value at all where the text says no space between paragraphs: what reads it then has its own. */
+  --sheet-between-drawn: calc(var(--sheet-point) * var(--sheet-between));
+  font-family: var(--sheet-font, inherit);
+}
+.prose .rich p {
+  line-height: var(--sheet-line, inherit);
+}
+.prose .rich p:not([data-kind]) {
+  text-align: var(--sheet-align, inherit);
+  text-indent: calc(var(--sheet-point) * var(--sheet-indent-first, 0));
+}
+/* What stands in a line as a thing of its own does not begin in within itself. */
+.prose .rich p:not([data-kind]) > * {
+  text-indent: 0;
+}
+.prose .rich p:not([data-kind]) + p:not([data-kind]),
+.prose p:not([data-kind]) + .rich > .rich-body > p:not([data-kind]):first-child,
+.prose p:not([data-kind]) + .rich > p:not([data-kind]):first-child {
+  text-indent: calc(var(--sheet-point) * var(--sheet-indent, 0));
+}
+/* Between two paragraphs of text: what the layout says beyond the line;
+   where nothing is said, what the editor has between paragraphs. */
+.prose .rich p:not([data-kind]) + p:not([data-kind]) {
+  margin-top: var(--sheet-between-drawn, 0.62em);
 }
 /* What a box holds is drawn on the sheet: the ground of what stands over
    the text within it is the sheet's. */

@@ -3,6 +3,7 @@
 import { baseKeymap } from 'prosemirror-commands';
 import { inputRules, InputRule } from 'prosemirror-inputrules';
 import { keymap } from 'prosemirror-keymap';
+import { movesDragged } from './dragged';
 import type { Node } from 'prosemirror-model';
 import { EditorState, NodeSelection, Plugin, TextSelection, type Command } from 'prosemirror-state';
 import { StepMap } from 'prosemirror-transform';
@@ -380,6 +381,7 @@ export class FootnoteView implements NodeView {
           keymap({ Enter: openSelected }),
           keymap(keys),
           keymap(baseKeymap),
+          movesDragged(),
           placeholder(() => t('editor-note-placeholder')),
           searchMarks(),
           // In the language of the document of the element the note is in.

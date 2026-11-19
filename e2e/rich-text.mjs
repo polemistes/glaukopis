@@ -437,10 +437,12 @@ try {
   await app.click('[data-rich-folded]');
   await app.waitFor('.menu');
   const foldedAway = await app.exec(`return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((e) => e.textContent.trim())`);
+  // Which of the groups are in the row: each is in the row or in the menu, never in both.
+  const inRow = await app.exec(`const t = document.querySelector('${PROSE} .rich [data-rich-tools]'); return { marks: !!t.querySelector('[data-rich-mark]'), aligns: !!t.querySelector('[data-rich-align]'), paragraph: !!t.querySelector('[data-rich-paragraph]'), clear: !!t.querySelector('[data-rich-clear]') };`);
   check(
-    'the menu of what is folded away has the tools that have no room, as they are in the row',
-    foldedAway.includes('Bold') && foldedAway.includes('Numbered list') && foldedAway.includes('Paragraph') && foldedAway.includes('Clear formatting') && !foldedAway.includes('Red'),
-    foldedAway.join(' | '),
+    'the menu of what is folded away has the tools that have no room, as they are in the row, and no others',
+    foldedAway.includes('Bold') !== inRow.marks && foldedAway.includes('Centred') !== inRow.aligns && foldedAway.includes('Paragraph') !== inRow.paragraph && foldedAway.includes('Clear formatting') !== inRow.clear && foldedAway.includes('Numbered list') && !foldedAway.includes('Red'),
+    `${foldedAway.join(' | ')} ${JSON.stringify(inRow)}`,
   );
   await app.screenshot('rich-text-10a-narrow-head');
   await app.clickText('.menu [role="menuitem"]', 'Numbered list');
@@ -451,12 +453,15 @@ try {
   await app.waitFor('.menu');
   await app.clickText('.menu [role="menuitem"]', 'Numbered list');
   await sleep(300);
-  // The panel of the paragraph opens from there too.
-  await app.click('[data-rich-folded]');
-  await app.waitFor('.menu');
-  await app.clickText('.menu [role="menuitem"]', 'Paragraph');
+  // The panel of the paragraph opens from where its tool is: the menu, or the row where it has room.
+  if (inRow.paragraph) await app.click(`${PROSE} .rich [data-rich-paragraph]`);
+  else {
+    await app.click('[data-rich-folded]');
+    await app.waitFor('.menu');
+    await app.clickText('.menu [role="menuitem"]', 'Paragraph');
+  }
   await app.waitFor('[data-rich-paragraph-panel]', 3000);
-  check('the panel of the paragraph opens from the menu, showing what is set', (await app.exec(`return document.querySelector('[data-rich-length="spaceAfter"]')?.value`)) === '12pt');
+  check('the panel of the paragraph opens in a narrow head, showing what is set', (await app.exec(`return document.querySelector('[data-rich-length="spaceAfter"]')?.value`)) === '12pt');
   await app.press('Escape');
   await sleep(300);
   await app.typeset();

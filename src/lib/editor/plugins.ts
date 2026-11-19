@@ -52,6 +52,7 @@ import { breakKey, enterKey, indentKey, joinLineKey, lineMarks } from './keys';
 import { kindName } from './kinds';
 import { kindKeyOf } from '$lib/shell/keys.svelte';
 import { continuesPlugin } from './continues';
+import { movesDragged } from './dragged';
 import { LAYOUT_NUMBERS, stretchNumbersPlugin, type NumbersLayout } from './numbers';
 import { backOutOfBox, leaveBox } from '$lib/byhand/box';
 import { showsTools } from '$lib/byhand/now.svelte';
@@ -450,6 +451,8 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
     ...tablePlugins(),
     keymap(keys),
     keymap(baseKeymap),
+    // What is dragged within a text is moved: see `dragged.ts`.
+    movesDragged(),
     dropCursor({ color: 'var(--accent)', width: 2 }),
     gapCursor(),
   ];
@@ -481,5 +484,12 @@ export function titlePlugins(hooks: EditorHooks): Plugin[] {
       act(hooks, 'backspace-at-start', (state) => isAtStart(state)),
     ),
   };
-  return [passes(), inputRules({ rules: dashes }), hardSpaces(), keymap(keys), keymap(baseKeymap)];
+  return [
+    passes(),
+    inputRules({ rules: dashes }),
+    hardSpaces(),
+    keymap(keys),
+    keymap(baseKeymap),
+    movesDragged(),
+  ];
 }

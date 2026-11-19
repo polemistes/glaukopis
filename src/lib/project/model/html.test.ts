@@ -140,6 +140,40 @@ describe('a text as HTML', () => {
     );
   });
 
+  it('draws what is set by hand in rich text as the editor draws it', () => {
+    const html = blocksHtml([
+      boxed(
+        paragraph(
+          [
+            t('Plain '),
+            t('set', {
+              font: { family: 'EB Garamond' },
+              size: { pt: 20 },
+              colour: { value: '#a02020' },
+            }),
+          ],
+          'text',
+          { indent: 0, hand: { align: 'center', spaceAfter: '12pt' } },
+        ),
+        'first',
+      ),
+    ]);
+    const root = document.createElement('div');
+    root.innerHTML = html;
+    const p = root.querySelector('p')!;
+    expect(JSON.parse(p.dataset.hand!)).toEqual({ align: 'center', spaceAfter: '12pt' });
+    expect(p.style.textAlign).toBe('center');
+    expect(p.getAttribute('style')).toContain('padding-bottom: calc(');
+    const font = root.querySelector<HTMLElement>('span[data-font]')!;
+    expect(font.dataset.font).toBe('EB Garamond');
+    expect(font.style.fontFamily).toBe('"EB Garamond"');
+    expect(root.querySelector<HTMLElement>('span[data-size]')!.getAttribute('style')).toBe(
+      'font-size: calc(var(--text-size, 17px) * 20 / var(--hand-base, 11))',
+    );
+    expect(root.querySelector<HTMLElement>('span[data-colour]')!.dataset.colour).toBe('#a02020');
+    expect(p.textContent).toBe('Plain set');
+  });
+
   it('cuts a text at a block, a break taking no room', () => {
     const { blocks, cut } = excerpt([pagebreak(), paragraph([t('a'.repeat(50))])], 60);
     expect(blocks).toHaveLength(2);

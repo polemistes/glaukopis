@@ -10,7 +10,9 @@
    * is as high with the tools as without, so that nothing moves when the
    * cursor comes into the box. Where the head is too narrow for all of
    * them, as beside the typesetting pane or in the box of an element, those
-   * that do not fit are folded into one menu at the end of the row.
+   * that do not fit are folded into one menu at the end of the row. The
+   * name is the grip by which the sheet is dragged to another place in the
+   * text.
    */
   import Baseline from '@lucide/svelte/icons/baseline';
   import Bold from '@lucide/svelte/icons/bold';
@@ -29,6 +31,7 @@
   import type { Command } from 'prosemirror-state';
   import type { EditorView } from 'prosemirror-view';
   import { kindOf, markActive, setKind, toggle } from '$lib/editor/commands';
+  import { dragWhole } from '$lib/editor/dragged';
   import { hooksOf } from '$lib/editor/ui.svelte';
   import { t } from '$lib/i18n';
   import { fonts } from '$lib/look/fonts.svelte';
@@ -239,8 +242,8 @@
    * fit beside the button of the rest, taken in the order they are kept in.
    */
   const shown = $derived.by(() => {
-    // Beside the name: the room between the parts of the head, and the button of the box's menu.
-    const room = headWidth - nameWidth - 24 - 24;
+    // Beside the name, which reaches 18 over the sign before it: the room between the parts of the head, and the button of the box's menu.
+    const room = headWidth - (nameWidth - 18) - 24 - 24;
     const all = KEPT.reduce((sum, group) => sum + ROOM[group], 0);
     if (!headWidth || room >= all) return new Set<Group>(KEPT);
     let left = room - FOLDED;
@@ -343,13 +346,27 @@
   /** A press in the head leaves the cursor where it is in the text; a field or a list takes it, and gives it back. */
   function keep(event: MouseEvent) {
     const target = event.target as HTMLElement;
-    if (!target.closest('select, input')) event.preventDefault();
+    if (!target.closest('select, input, [data-rich-grip]')) event.preventDefault();
+  }
+
+  let head = $state<HTMLElement>();
+  /** The sheet is moved by its name, with all it holds: see `editor/dragged.ts`. */
+  function drag(event: DragEvent) {
+    const pos = getPos();
+    if (pos === undefined || !dragWhole(view, pos, event, head)) event.preventDefault();
   }
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="head" data-rich-head bind:clientWidth={headWidth} onmousedown={keep}>
-  <span class="name" bind:clientWidth={nameWidth}>{t('byhand-name')}</span>
+<div class="head" data-rich-head bind:this={head} bind:clientWidth={headWidth} onmousedown={keep}>
+  <span
+    class="name"
+    class:grip={editable}
+    data-rich-grip
+    draggable={editable}
+    ondragstart={drag}
+    bind:clientWidth={nameWidth}>{t('byhand-name')}</span
+  >
   {#if here}
     <div class="tools" role="toolbar" aria-label={t('byhand-name')} data-rich-tools>
       {#if shown.has('font')}
@@ -588,9 +605,15 @@
     height: 26px;
     min-width: 0;
   }
+  /* The name is the grip the sheet is moved by; the sign before it is drawn by the sheet (app.css), over which the name reaches. */
   .name {
     flex: none;
+    margin-left: -18px;
+    padding-left: 18px;
     white-space: nowrap;
+  }
+  .name.grip {
+    cursor: grab;
   }
   .gap {
     flex: 1;
